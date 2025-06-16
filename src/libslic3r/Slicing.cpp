@@ -177,27 +177,27 @@ SlicingParameters SlicingParameters::create_from_config(
 // Convert layer_config_ranges to layer_height_profile. Both are referenced to z=0, meaning the raft layers are not accounted for
 // in the height profile and the printed object may be lifted by the raft thickness at the time of the G-code generation.
 std::vector<double> layer_height_profile_from_ranges(
-	const SlicingParameters 	&slicing_params,
-	const t_layer_config_ranges &layer_config_ranges)
+	const SlicingParameters &slicing_params,
+	const LayerConfigRanges &layer_config_ranges)
 {
     // 1) If there are any height ranges, trim one by the other to make them non-overlapping. Insert the 1st layer if fixed.
-    std::vector<std::pair<t_layer_height_range,double>> ranges_non_overlapping;
+    std::vector<std::pair<LayerHeightRange,double>> ranges_non_overlapping;
     ranges_non_overlapping.reserve(layer_config_ranges.size() * 4);
     if (slicing_params.first_object_layer_height_fixed())
-        ranges_non_overlapping.push_back(std::pair<t_layer_height_range,double>(
-            t_layer_height_range(0., slicing_params.first_object_layer_height), 
+        ranges_non_overlapping.push_back(std::pair<LayerHeightRange,double>(
+            LayerHeightRange(0., slicing_params.first_object_layer_height),
             slicing_params.first_object_layer_height));
     // The height ranges are sorted lexicographically by low / high layer boundaries.
-    for (t_layer_config_ranges::const_iterator it_range = layer_config_ranges.begin(); it_range != layer_config_ranges.end(); ++ it_range) {
+    for (LayerConfigRanges::const_iterator it_range = layer_config_ranges.begin(); it_range != layer_config_ranges.end(); ++ it_range) {
         double lo = it_range->first.first;
         double hi = std::min(it_range->first.second, slicing_params.object_print_z_height());
-        double height = it_range->second.option("layer_height")->getFloat();
+        double height = it_range->second.contains("layer_height").item->get<double>();
         if (! ranges_non_overlapping.empty())
             // Trim current low with the last high.
             lo = std::max(lo, ranges_non_overlapping.back().first.second);
         if (lo + EPSILON < hi)
             // Ignore too narrow ranges.
-            ranges_non_overlapping.push_back(std::pair<t_layer_height_range,double>(t_layer_height_range(lo, hi), height));
+            ranges_non_overlapping.push_back(std::pair<LayerHeightRange,double>(LayerHeightRange(lo, hi), height));
     }
 
     // 2) Convert the trimmed ranges to a height profile, fill in the undefined intervals between z=0 and z=slicing_params.object_print_z_max()
@@ -226,7 +226,7 @@ std::vector<double> layer_height_profile_from_ranges(
         layer_height_profile.push_back(layer_height);
     };
 
-    for (const std::pair<t_layer_height_range,double> &non_overlapping_range : ranges_non_overlapping) {
+    for (const std::pair<LayerHeightRange,double> &non_overlapping_range : ranges_non_overlapping) {
         double lo = non_overlapping_range.first.first;
         double hi = non_overlapping_range.first.second;
         double height = non_overlapping_range.second;

@@ -321,8 +321,7 @@ enum class ModelVolumeType : int {
 
 
 using LayerHeightRange = std::pair<double,double>;
-using LayerConfigRanges = std::map<LayerHeightRange, ModelConfig>;
-using LayerConfigRangesNew = std::map<LayerHeightRange, Slic3r::Domain::VolumeSettings>;
+using LayerConfigRanges = std::map<LayerHeightRange, Slic3r::Domain::VolumeSettings>;
 
 // A printable object, possibly having multiple print volumes (each with its own set of parameters and materials),
 // and possibly having multiple modifier volumes, each modifier volume with its set of parameters and materials.
@@ -347,8 +346,6 @@ public:
 
     // Variation of a layer thickness for spans of Z coordinates + optional parameter overrides.
     LayerConfigRanges       layer_config_ranges;
-
-    LayerConfigRangesNew layer_config_ranges_new;
 
     // Profile of increasing z to a layer height, to be linearly interpolated when calculating the layers.
     // The pairs of <z, layer_height> are packed into a 1D array.

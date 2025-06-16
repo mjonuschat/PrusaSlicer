@@ -245,12 +245,12 @@ public:
     // possibly clipped by the layer_height_range.
     struct LayerRangeRegions
     {
-        t_layer_height_range        layer_height_range;
+        LayerHeightRange                    layer_height_range;
         // Config of the layer range, null if there is just a single range with no config override.
         // Config is owned by the associated ModelObject.
-        Domain::PartialVolumeConfigFDMPtr config;
+        Domain::PartialVolumeConfigFDMPtr   config;
         // Volumes sorted by ModelVolume::id().
-        std::vector<VolumeExtents>  volumes;
+        std::vector<VolumeExtents>          volumes;
 
         // Sorted in the order of their source ModelVolumes, thus reflecting the order of region clipping, modifier overrides etc.
         std::vector<VolumeRegion>           volume_regions;

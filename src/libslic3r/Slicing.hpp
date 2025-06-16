@@ -19,6 +19,7 @@
 #include "Point.hpp"
 #include "libslic3r.h"
 #include "Utils.hpp"
+#include "libslic3r/Model.hpp"
 #include "libslic3r/PrintConfig.hpp"
 
 namespace Slic3r
@@ -146,12 +147,9 @@ inline bool equal_layering(const SlicingParameters &sp1, const SlicingParameters
             sp1.object_print_z_min                  == sp2.object_print_z_min;
 }
 
-typedef std::pair<double,double> t_layer_height_range;
-typedef std::map<t_layer_height_range, ModelConfig> t_layer_config_ranges;
-
 std::vector<double> layer_height_profile_from_ranges(
-    const SlicingParameters     &slicing_params,
-    const t_layer_config_ranges &layer_config_ranges);
+    const SlicingParameters &slicing_params,
+    const LayerConfigRanges &layer_config_ranges);
 
 std::vector<double> layer_height_profile_adaptive(
     const SlicingParameters& slicing_params,
@@ -218,7 +216,7 @@ namespace Slicing {
 
 namespace cereal
 {
-	template<class Archive> void serialize(Archive& archive, Slic3r::t_layer_height_range &lhr) { archive(lhr.first, lhr.second); }
+	template<class Archive> void serialize(Archive& archive, Slic3r::LayerHeightRange &lhr) { archive(lhr.first, lhr.second); }
 }
 
 #endif /* slic3r_Slicing_hpp_ */

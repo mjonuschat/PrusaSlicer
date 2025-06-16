@@ -547,8 +547,8 @@ namespace Slic3rLegacy {
         typedef std::map<int, ObjectMetadata> IdToMetadataMap;
         typedef std::map<PathId, Geometry> IdToGeometryMap;
         typedef std::map<int, std::vector<double>> IdToLayerHeightsProfileMap;
-        typedef std::map<int, LayerConfigRangesNew> IdToLayerConfigRangesMap;
-        typedef std::map<int, CutObjectInfo>         IdToCutObjectInfoMap;
+        typedef std::map<int, LayerConfigRanges> IdToLayerConfigRangesMap;
+        typedef std::map<int, CutObjectInfo> IdToCutObjectInfoMap;
         typedef std::map<int, std::vector<SupportPoint>> IdToSlaSupportPointsMap;
         typedef std::map<int, std::vector<Domain::SLA::DrainHole>> IdToSlaDrainHolesMap;
         using PathToEmbossShapeFileMap = std::map<std::string, std::shared_ptr<std::string>>;
@@ -1035,7 +1035,7 @@ namespace Slic3rLegacy {
             // m_layer_config_ranges are indexed by a 1 based model object index.
             IdToLayerConfigRangesMap::iterator obj_layer_config_ranges = m_layer_config_ranges.find(object.second + 1);
             if (obj_layer_config_ranges != m_layer_config_ranges.end())
-                model_object->layer_config_ranges_new = std::move(obj_layer_config_ranges->second);
+                model_object->layer_config_ranges = std::move(obj_layer_config_ranges->second);
 
             // m_sla_support_points are indexed by a 1 based model object index.
             IdToSlaSupportPointsMap::iterator obj_sla_support_points = m_sla_support_points.find(object.second + 1);
@@ -3651,7 +3651,7 @@ namespace Slic3rLegacy {
         unsigned int object_cnt = 0;
         for (const ModelObject* object : model.objects) {
             object_cnt++;
-            const auto& ranges = object->layer_config_ranges_new;
+            const auto& ranges = object->layer_config_ranges;
             if (!ranges.empty())
             {
                 pt::ptree& obj_tree = tree.add("objects.object","");

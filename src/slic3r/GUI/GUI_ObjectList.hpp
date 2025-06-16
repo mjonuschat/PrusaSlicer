@@ -17,6 +17,7 @@
 #include "wxExtensions.hpp"
 #include "ObjectDataViewModel.hpp"
 
+#include "libslic3r/Model.hpp"
 #include "libslic3r/PrintConfig.hpp"
 
 class wxBoxSizer;
@@ -24,7 +25,6 @@ class wxBitmapComboBox;
 class wxMenuItem;
 
 namespace Slic3r {
-class ConfigOptionsGroup;
 class DynamicPrintConfig;
 class ModelConfig;
 class ModelObject;
@@ -33,11 +33,8 @@ class TriangleMesh;
 enum class ModelVolumeType : int;
 
 // FIXME: broken build on mac os because of this is missing:
-typedef std::vector<std::string>                    t_config_option_keys;
-typedef std::vector<ModelVolume*>                   ModelVolumePtrs;
-typedef double                                      double;
-typedef std::pair<double, double>               t_layer_height_range;
-typedef std::map<t_layer_height_range, ModelConfig> t_layer_config_ranges;
+using t_config_option_keys = std::vector<std::string>;
+using ModelVolumePtrs = std::vector<ModelVolume*>;
 
 // Manifold mesh may contain self-intersections, so we want to always allow fixing the mesh.
 #define FIX_THROUGH_WINSDK_ALWAYS 1
@@ -100,13 +97,13 @@ public:
         ItemType    get_type() const { return m_type; }
         void        set_type(ItemType type) { m_type = type; }
 
-        t_layer_config_ranges&  get_ranges_cache() { return m_layer_config_ranges_cache; }
-        DynamicPrintConfig&     get_config_cache() { return m_config_cache; }
+        LayerConfigRanges&  get_ranges_cache() { return m_layer_config_ranges_cache; }
+        DynamicPrintConfig& get_config_cache() { return m_config_cache; }
 
     private:
-        ItemType                m_type {itUndef};
-        t_layer_config_ranges   m_layer_config_ranges_cache;
-        DynamicPrintConfig      m_config_cache;
+        ItemType            m_type {itUndef};
+        LayerConfigRanges   m_layer_config_ranges_cache;
+        DynamicPrintConfig  m_config_cache;
     };
 
 private:
