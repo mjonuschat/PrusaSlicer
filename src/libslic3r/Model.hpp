@@ -339,10 +339,8 @@ public:
     // ModelVolumes are owned by this ModelObject.
     ModelVolumePtrs         volumes;
     // Configuration parameters specific to a single ModelObject, overriding the global Slic3r settings.
-    ModelConfigObject 		config;
-
-    Slic3r::Domain::ObjectSettings          object_settings;
-    Slic3r::Domain::SLAObjectSettings       object_settings_sla;
+    Domain::ObjectSettings    object_settings;
+    Domain::SLAObjectSettings object_settings_sla;
 
     // Variation of a layer thickness for spans of Z coordinates + optional parameter overrides.
     LayerConfigRanges       layer_config_ranges;
@@ -509,61 +507,46 @@ private:
     explicit ModelObject(Model* model) : m_model(model), origin_translation(Vec3d::Zero())
     { 
         assert(this->id().valid());
-        assert(this->config.id().valid());
         assert(this->layer_height_profile.id().valid());
     }
-    explicit ModelObject(int) : ObjectBase(-1), config(-1), layer_height_profile(-1), origin_translation(Vec3d::Zero())
+    explicit ModelObject(int) : ObjectBase(-1), layer_height_profile(-1), origin_translation(Vec3d::Zero())
     { 
         assert(this->id().invalid()); 
-        assert(this->config.id().invalid());
         assert(this->layer_height_profile.id().invalid());
     }
 	void assign_new_unique_ids_recursive() override;
 
     // To be able to return an object from own copy / clone methods. Hopefully the compiler will do the "Copy elision"
     // (Omits copy and move(since C++11) constructors, resulting in zero - copy pass - by - value semantics).
-    ModelObject(const ModelObject &rhs) : ObjectBase(-1), config(-1), layer_height_profile(-1), m_model(rhs.m_model) { 
+    ModelObject(const ModelObject &rhs) : ObjectBase(-1), layer_height_profile(-1), m_model(rhs.m_model) {
     	assert(this->id().invalid()); 
-        assert(this->config.id().invalid()); 
         assert(this->layer_height_profile.id().invalid());
-        assert(rhs.id() != rhs.config.id());
         assert(rhs.id() != rhs.layer_height_profile.id());
     	this->assign_copy(rhs);
     	assert(this->id().valid()); 
-        assert(this->config.id().valid()); 
-        assert(this->layer_height_profile.id().valid()); 
-        assert(this->id() != this->config.id());
+        assert(this->layer_height_profile.id().valid());
         assert(this->id() != this->layer_height_profile.id());
     	assert(this->id() == rhs.id()); 
-        assert(this->config.id() == rhs.config.id());
         assert(this->layer_height_profile.id() == rhs.layer_height_profile.id());
     }
-    explicit ModelObject(ModelObject &&rhs) : ObjectBase(-1), config(-1), layer_height_profile(-1) { 
+    explicit ModelObject(ModelObject &&rhs) : ObjectBase(-1), layer_height_profile(-1) {
     	assert(this->id().invalid()); 
-        assert(this->config.id().invalid()); 
         assert(this->layer_height_profile.id().invalid());
-        assert(rhs.id() != rhs.config.id());
         assert(rhs.id() != rhs.layer_height_profile.id());
     	this->assign_copy(std::move(rhs));
     	assert(this->id().valid());
-        assert(this->config.id().valid());
         assert(this->layer_height_profile.id().valid());
-        assert(this->id() != this->config.id());
         assert(this->id() != this->layer_height_profile.id());
     	assert(this->id() == rhs.id());
-        assert(this->config.id() == rhs.config.id());
         assert(this->layer_height_profile.id() == rhs.layer_height_profile.id());
     }
     ModelObject& operator=(const ModelObject &rhs) {
     	this->assign_copy(rhs); 
     	m_model = rhs.m_model;
     	assert(this->id().valid()); 
-        assert(this->config.id().valid()); 
         assert(this->layer_height_profile.id().valid());
-        assert(this->id() != this->config.id());
         assert(this->id() != this->layer_height_profile.id());
     	assert(this->id() == rhs.id()); 
-        assert(this->config.id() == rhs.config.id());
         assert(this->layer_height_profile.id() == rhs.layer_height_profile.id());
     	return *this;
     }
@@ -571,18 +554,14 @@ private:
     	this->assign_copy(std::move(rhs)); 
     	m_model = rhs.m_model;
     	assert(this->id().valid()); 
-        assert(this->config.id().valid());
         assert(this->layer_height_profile.id().valid());
-        assert(this->id() != this->config.id());
         assert(this->id() != this->layer_height_profile.id());
     	assert(this->id() == rhs.id());
-        assert(this->config.id() == rhs.config.id());
         assert(this->layer_height_profile.id() == rhs.layer_height_profile.id());
     	return *this;
     }
 	void set_new_unique_id() { 
         ObjectBase::set_new_unique_id(); 
-        this->config.set_new_unique_id();
         this->layer_height_profile.set_new_unique_id();
     }
 
@@ -628,16 +607,16 @@ private:
 	friend class UndoRedo::StackImpl;
 	// Used for deserialization -> Don't allocate any IDs for the ModelObject or its config.
 	ModelObject() : 
-        ObjectBase(-1), config(-1), layer_height_profile(-1) {
+        ObjectBase(-1), layer_height_profile(-1) {
 		assert(this->id().invalid()); 
-        assert(this->config.id().invalid());
         assert(this->layer_height_profile.id().invalid());
 	}
 	template<class Archive> void serialize(Archive &ar) {
 		ar(cereal::base_class<ObjectBase>(this));
-		Internal::StaticSerializationWrapper<ModelConfigObject> config_wrapper(config);
+	    Internal::StaticSerializationWrapper<Domain::ObjectSettings> object_settings_wrapper(object_settings);
+	    Internal::StaticSerializationWrapper<Domain::SLAObjectSettings> object_settings_sla_wrapper(object_settings_sla);
         Internal::StaticSerializationWrapper<LayerHeightProfile> layer_heigth_profile_wrapper(layer_height_profile);
-        ar(name, input_file, instances, volumes, config_wrapper, layer_config_ranges, layer_heigth_profile_wrapper, 
+        ar(name, input_file, instances, volumes, object_settings_wrapper, object_settings_sla_wrapper, layer_config_ranges, layer_heigth_profile_wrapper,
             sla_support_points, sla_points_status, sla_drain_holes, printable, origin_translation,
             m_bounding_box_approx, m_bounding_box_approx_valid, 
             m_bounding_box_exact, m_bounding_box_exact_valid, m_min_max_z_valid,

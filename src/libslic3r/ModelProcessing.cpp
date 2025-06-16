@@ -362,17 +362,16 @@ void split(ModelObject* object, ModelObjectPtrs* new_objects)
             // XXX: this seems to be the only real usage of m_model, maybe refactor this so that it's not needed?
             ModelObject* new_object = object->get_model()->add_object();
             if (meshes.size() == 1) {
-                new_object->name = volume->name;
+                new_object->name                = volume->name;
                 new_object->object_settings     = object->object_settings.overrides.empty()     ? create_object_settings_from_volume_settings<Domain::ObjectSettings>(volume->volume_settings)    : object->object_settings;
                 new_object->object_settings_sla = object->object_settings_sla.overrides.empty() ? create_object_settings_from_volume_settings<Domain::SLAObjectSettings>(volume->volume_settings) : object->object_settings_sla;
             }
             else {
-                new_object->name = object->name + (meshes.size() > 1 ? "_" + std::to_string(counter++) : "");
-                // Don't copy the config's ID.
-                new_object->config.assign_config(object->config);
+                new_object->name                = object->name + (meshes.size() > 1 ? "_" + std::to_string(counter++) : "");
+                new_object->object_settings     = object->object_settings;
+                new_object->object_settings_sla = object->object_settings_sla;
             }
-            assert(new_object->config.id().valid());
-            assert(new_object->config.id() != object->config.id());
+
             new_object->instances.reserve(object->instances.size());
             for (const ModelInstance* model_instance : object->instances)
                 new_object->add_instance(*model_instance);

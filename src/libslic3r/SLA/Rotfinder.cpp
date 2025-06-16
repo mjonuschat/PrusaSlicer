@@ -208,14 +208,6 @@ XYRotation from_transform3f(const Transform3f &tr)
     return {rot3.x(), rot3.y()};
 }
 
-inline bool is_on_floor(const SLAPrintObjectConfig &cfg)
-{
-    auto opt_elevation = cfg.support_object_elevation.getFloat();
-    auto opt_padaround = cfg.pad_around_object.getBool();
-
-    return opt_elevation < EPSILON || opt_padaround;
-}
-
 // collect the rotations for each face of the convex hull
 std::vector<XYRotation> get_chull_rotations(const TriangleMesh &mesh, size_t max_count)
 {
@@ -369,21 +361,36 @@ Vec2d find_best_misalignment_rotation(const ModelObject &      mo,
     return {result.optimum[0], result.optimum[1]};
 }
 
+inline bool is_on_floor(const SLAPrintObjectConfig &cfg, const Domain::SLAObjectSettings &object_settings_sla)
+{
+    double support_object_elevation = cfg.support_object_elevation.getFloat();
+    bool   pad_around_object        = cfg.pad_around_object.getBool();
+
+    if (object_settings_sla.overrides.get("support_object_elevation").has_value()) {
+        support_object_elevation = object_settings_sla.overrides.get("support_object_elevation")->get<double>();
+    }
+
+    if (object_settings_sla.overrides.get("pad_around_object").has_value()) {
+        pad_around_object = object_settings_sla.overrides.get("pad_around_object")->get<bool>();
+    }
+
+    return support_object_elevation < EPSILON || pad_around_object;
+}
+
 Vec2d find_least_supports_rotation(const ModelObject &      mo,
                                    const RotOptimizeParams &params)
 {
     RotfinderBoilerplate<1000> bp{mo, params};
 
     SLAPrintObjectConfig pocfg;
-    if (params.print_config())
+    if (params.print_config()) {
         pocfg.apply(*params.print_config(), true);
-
-    pocfg.apply(mo.config.get());
+    }
 
     XYRotation rot;
 
     // Different search methods have to be used depending on the model elevation
-    if (is_on_floor(pocfg)) {
+    if (is_on_floor(pocfg, mo.object_settings_sla)) {
 
         std::vector<XYRotation> inputs = get_chull_rotations(bp.mesh, bp.max_tries);
         bp.max_tries = inputs.size();

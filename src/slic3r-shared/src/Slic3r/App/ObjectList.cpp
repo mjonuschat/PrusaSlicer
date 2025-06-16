@@ -299,7 +299,7 @@ static bool hovered_current_row()
 // object is simple: has just one instance, one volume and no aditional information
 static bool has_overrides(const Slic3r::ModelObject* object, bool is_sla_config)
 {
-    bool has_config_overrides = !object->config.empty() || !object->layer_config_ranges.empty();
+    bool has_config_overrides = (is_sla_config ? !object->object_settings_sla.overrides.empty() : !object->object_settings.overrides.empty()) || !object->layer_config_ranges.empty();
     if (!has_config_overrides) {
         for (auto volume : object->volumes)
             if (!volume->volume_settings.overrides.empty()) {

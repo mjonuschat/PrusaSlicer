@@ -356,16 +356,12 @@ ModelObject::~ModelObject()
 ModelObject& ModelObject::assign_copy(const ModelObject &rhs)
 {
 	assert(this->id().invalid() || this->id() == rhs.id());
-	assert(this->config.id().invalid() || this->config.id() == rhs.config.id());
 	this->copy_id(rhs);
 
     this->name                        = rhs.name;
     this->input_file                  = rhs.input_file;
-    // Copies the config's ID
-    this->config                      = rhs.config;
     this->object_settings             = rhs.object_settings;
     this->object_settings_sla         = rhs.object_settings_sla;
-    assert(this->config.id() == rhs.config.id());
     this->sla_support_points          = rhs.sla_support_points;
     this->sla_points_status           = rhs.sla_points_status;
     this->sla_drain_holes             = rhs.sla_drain_holes;
@@ -400,11 +396,8 @@ ModelObject& ModelObject::assign_copy(ModelObject &&rhs)
 
     this->name                        = std::move(rhs.name);
     this->input_file                  = std::move(rhs.input_file);
-    // Moves the config's ID
-    this->config                      = std::move(rhs.config);
     this->object_settings             = std::move(rhs.object_settings);
     this->object_settings_sla         = std::move(rhs.object_settings_sla);
-    assert(this->config.id() == rhs.config.id());
     this->sla_support_points          = std::move(rhs.sla_support_points);
     this->sla_points_status           = std::move(rhs.sla_points_status);
     this->sla_drain_holes             = std::move(rhs.sla_drain_holes);
@@ -1627,7 +1620,6 @@ void check_model_ids_validity(const Model &model)
     };
     for (const ModelObject *model_object : model.objects) {
         check(model_object->id());
-        check(model_object->config.id());
         for (const ModelVolume *model_volume : model_object->volumes) {
             check(model_volume->id());
         }
@@ -1644,7 +1636,6 @@ void check_model_ids_equal(const Model &model1, const Model &model2)
         const ModelObject &model_object1 = *model1.objects[idx_model];
         const ModelObject &model_object2 = *  model2.objects[idx_model];
         assert(model_object1.id() == model_object2.id());
-        assert(model_object1.config.id() == model_object2.config.id());
         assert(model_object1.volumes.size() == model_object2.volumes.size());
         assert(model_object1.instances.size() == model_object2.instances.size());
         for (size_t i = 0; i < model_object1.volumes.size(); ++ i) {
