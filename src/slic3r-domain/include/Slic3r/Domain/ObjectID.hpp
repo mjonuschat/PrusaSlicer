@@ -14,7 +14,7 @@ namespace Slic3r::Domain {
 
 // Unique identifier of a mutable object accross the application.
 // Used to synchronize the front end (UI) with the back end (BackgroundSlicingProcess / Print / PrintObject)
-// (for Model, ModelObject, ModelVolume, ModelInstance or ModelMaterial classes)
+// (for Model, ModelObject, ModelVolume or ModelInstance classes)
 // and to serialize / deserialize an object onto the Undo / Redo stack.
 // Valid IDs are strictly positive (non zero).
 // It is declared as an object, as some compilers (notably msvcc) consider a typedef size_t equivalent to size_t
@@ -43,7 +43,7 @@ private:
     template<class Archive> void serialize(Archive &ar) { ar(id); }
 };
 
-// Base for Model, ModelObject, ModelVolume, ModelInstance or ModelMaterial to provide a unique ID
+// Base for Model, ModelObject, ModelVolume or ModelInstance to provide a unique ID
 // to synchronize the front end (UI) with the back end (BackgroundSlicingProcess / Print / PrintObject).
 // Also base for Print, PrintObject, SLAPrint, SLAPrintObject to provide a unique ID for matching Model / ModelObject
 // with their corresponding Print / PrintObject objects by the notification center at the UI when processing back-end warnings.

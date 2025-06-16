@@ -97,7 +97,6 @@ void add_object(
     ModelObject *object = model.add_object();
     object->name = name;
     ModelVolume *volume = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
-    volume->set_material_id("material" + extruder_id);
     volume->translate(offset);
     DynamicPrintConfig config;
     config.set_deserialize_strict({

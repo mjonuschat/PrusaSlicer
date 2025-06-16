@@ -150,7 +150,6 @@ void convert_units(Model& model_to, ModelObject* object_from, ConversionType con
             vol->config.assign_config(volume->config);
             assert(vol->config.id().valid());
             assert(vol->config.id() != volume->config.id());
-            vol->set_material(volume->material_id(), *volume->material());
             vol->source.input_file = volume->source.input_file;
             vol->source.object_idx = (int)model_to.objects.size()-1;
             vol->source.volume_idx = vol_idx;

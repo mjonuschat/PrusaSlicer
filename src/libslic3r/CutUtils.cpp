@@ -73,7 +73,6 @@ static void add_cut_volume(TriangleMesh& mesh, ModelObject* object, const ModelV
     vol->config.assign_config(src_volume->config);
     assert(vol->config.id().valid());
     assert(vol->config.id() != src_volume->config.id());
-    vol->set_material(src_volume->material_id(), *src_volume->material());
     vol->cut_info = src_volume->cut_info;
 }
 

@@ -55,11 +55,7 @@ bool fill_model(Model* model, const boost::filesystem::path& model_path, const s
 		throw Slic3r::RuntimeError("Failed reading PrintRequest file. Path doesn't exists. " + model_path.string());
 	if (!boost::algorithm::iends_with(model_path.string(), ".stl"))
 		throw Slic3r::RuntimeError("Failed reading PrintRequest file. Path is not stl file. " + model_path.string());
-	bool result = load_stl(model_path.string().c_str(), model);
-	if (!material.empty()) {
-		model->objects.back()->volumes.front()->set_material_id(material);
-	}
-	return result;
+	return load_stl(model_path.string().c_str(), model);;
 }
 void add_instance(Model* model, const boost::filesystem::path& model_path, const std::vector<std::string>& transformation_matrix)
 {

@@ -52,7 +52,6 @@ namespace Slic3r {
 class BuildVolume;
 class Model;
 class ModelInstance;
-class ModelMaterial;
 class ModelObject;
 class ModelVolume;
 class Print;
@@ -69,7 +68,6 @@ private:
 	friend class UndoRedo::StackImpl;
 	friend class ModelObject;
 	friend class ModelVolume;
-	friend class ModelMaterial;
 
     // Constructors to be only called by derived classes.
     // Default constructor to assign a unique ID.
@@ -109,11 +107,6 @@ namespace Internal {
 	};
 }
 
-typedef std::string t_model_material_id;
-typedef std::string t_model_material_attribute;
-typedef std::map<t_model_material_attribute, std::string> t_model_material_attributes;
-
-typedef std::map<t_model_material_id, ModelMaterial*> ModelMaterialMap;
 typedef std::vector<ModelObject*> ModelObjectPtrs;
 typedef std::vector<ModelVolume*> ModelVolumePtrs;
 typedef std::vector<ModelInstance*> ModelInstancePtrs;
@@ -149,50 +142,6 @@ typedef std::vector<ModelInstance*> ModelInstancePtrs;
         assert(this->id().valid() && this->id() != rhs.id()); \
 		return *this; \
     }
-
-// Material, which may be shared across multiple ModelObjects of a single Model.
-class ModelMaterial final : public Domain::ObjectBase
-{
-public:
-    // Attributes are defined by the AMF file format, but they don't seem to be used by Slic3r for any purpose.
-    t_model_material_attributes attributes;
-    // Dynamic configuration storage for the object specific configuration values, overriding the global configuration.
-    ModelConfigObject config;
-
-    Model* get_model() const { return m_model; }
-    void apply(const t_model_material_attributes &attributes)
-        { this->attributes.insert(attributes.begin(), attributes.end()); }
-
-private:
-    // Parent, owning this material.
-    Model *m_model;
-
-    // To be accessed by the Model.
-    friend class Model;
-	// Constructor, which assigns a new unique ID to the material and to its config.
-	ModelMaterial(Model *model) : m_model(model) { assert(this->id().valid()); }
-	// Copy constructor copies the IDs of the ModelMaterial and its config, and m_model!
-	ModelMaterial(const ModelMaterial &rhs) = default;
-	void set_model(Model *model) { m_model = model; }
-	void set_new_unique_id() { ObjectBase::set_new_unique_id(); this->config.set_new_unique_id(); }
-
-	// To be accessed by the serialization and Undo/Redo code.
-	friend class cereal::access;
-	friend class UndoRedo::StackImpl;
-	// Create an object for deserialization, don't allocate IDs for ModelMaterial and its config.
-	ModelMaterial() : ObjectBase(-1), config(-1) { assert(this->id().invalid()); assert(this->config.id().invalid()); }
-	template<class Archive> void serialize(Archive &ar) { 
-		assert(this->id().invalid()); assert(this->config.id().invalid());
-		Internal::StaticSerializationWrapper<ModelConfigObject> config_wrapper(config);
-		ar(attributes, config_wrapper);
-		// assert(this->id().valid()); assert(this->config.id().valid());
-	}
-
-	// Disabled methods.
-	ModelMaterial(ModelMaterial &&rhs) = delete;
-	ModelMaterial& operator=(const ModelMaterial &rhs) = delete;
-    ModelMaterial& operator=(ModelMaterial &&rhs) = delete;
-};
 
 class LayerHeightProfile final : public Domain::ObjectWithTimestamp {
 public:
@@ -526,7 +475,6 @@ public:
     // This method could only be called before the meshes of this ModelVolumes are not shared!
     void scale_mesh_after_creation(const float scale);
 
-    size_t materials_count() const;
     size_t facets_count() const;
     size_t parts_count() const;
     // invalidate cut state for this object and its connectors/volumes
@@ -827,11 +775,7 @@ public:
     bool                is_text()               const { return text_configuration.has_value(); }
     bool                is_svg() const { return emboss_shape.has_value()  && !text_configuration.has_value(); }
     bool                is_the_only_one_part() const; // behave like an object
-    t_model_material_id material_id() const { return m_material_id; }
     void                reset_extra_facets();
-    void                set_material_id(t_model_material_id material_id);
-    ModelMaterial*      material() const;
-    void                set_material(t_model_material_id material_id, const ModelMaterial &material);
     // Extract the current extruder ID based on this ModelVolume's config and the parent ModelObject's config.
     // Extruder ID is only valid for FFF. Returns -1 for SLA or if the extruder ID is not applicable (support volumes).
     int                 extruder_id() const;
@@ -938,7 +882,6 @@ private:
     std::shared_ptr<const Domain::TriangleMesh> m_mesh;
     // Is it an object to be printed, or a modifier volume?
     ModelVolumeType                 	m_type;
-    t_model_material_id             	m_material_id;
     // The convex hull of this model's mesh.
     std::shared_ptr<const Domain::TriangleMesh> m_convex_hull;
     Domain::Transformation        	m_transformation;
@@ -1005,7 +948,6 @@ private:
         assert(this->seam_facets.id() == other.seam_facets.id());
         assert(this->mm_segmentation_facets.id() == other.mm_segmentation_facets.id());
         assert(this->fuzzy_skin_facets.id() == other.fuzzy_skin_facets.id());
-        this->set_material_id(other.material_id());
     }
     // Providing a new mesh, therefore this volume will get a new unique ID assigned.
     ModelVolume(ModelObject *object, const ModelVolume &other, Domain::TriangleMesh &&mesh) :
@@ -1025,7 +967,6 @@ private:
         assert(this->id() != this->fuzzy_skin_facets.id());
 		assert(this->id() != other.id());
         assert(this->config.id() == other.config.id());
-        this->set_material_id(other.material_id());
         this->config.set_new_unique_id();
         if (m_mesh->facets_count() > 1)
             calculate_convex_hull();
@@ -1057,7 +998,7 @@ private:
 	}
 	template<class Archive> void load(Archive &ar) {
 		bool has_convex_hull;
-        ar(name, source, m_mesh, m_type, m_material_id, m_transformation, m_is_splittable, has_convex_hull, cut_info);
+        ar(name, source, m_mesh, m_type, m_transformation, m_is_splittable, has_convex_hull, cut_info);
         cereal::load_by_value(ar, supported_facets);
         cereal::load_by_value(ar, seam_facets);
         cereal::load_by_value(ar, mm_segmentation_facets);
@@ -1076,7 +1017,7 @@ private:
 	}
 	template<class Archive> void save(Archive &ar) const {
 		bool has_convex_hull = m_convex_hull.get() != nullptr;
-        ar(name, source, m_mesh, m_type, m_material_id, m_transformation, m_is_splittable, has_convex_hull, cut_info);
+        ar(name, source, m_mesh, m_type, m_transformation, m_is_splittable, has_convex_hull, cut_info);
         cereal::save_by_value(ar, supported_facets);
         cereal::save_by_value(ar, seam_facets);
         cereal::save_by_value(ar, mm_segmentation_facets);
@@ -1211,11 +1152,8 @@ private:
 class Model final : public Domain::ObjectBase
 {
 public:
-    // Materials are owned by a model and referenced by objects through t_model_material_id.
-    // Single material may be shared by multiple models.
-    ModelMaterialMap    materials;
     // Objects are owned by a model. Each model may have multiple instances, each instance having its own transformation (shift, scale, rotation).
-    ModelObjectPtrs     objects;
+    ModelObjectPtrs objects;
 
     void copy_id(const Model& rhs) {
         ObjectBase::copy_id(rhs);
@@ -1224,7 +1162,7 @@ public:
 public:
     // Default constructor assigns a new ID to the model.
     Model() { assert(this->id().valid()); }
-    ~Model() { this->clear_objects(); this->clear_materials(); }
+    ~Model() override { this->clear_objects(); }
 
     /* To be able to return an object from own copy / clone methods. Hopefully the compiler will do the "Copy elision" */
     /* (Omits copy and move(since C++11) constructors, resulting in zero - copy pass - by - value semantics). */
@@ -1245,15 +1183,6 @@ public:
     bool         delete_object(ModelObject* object);
     void         clear_objects();
 
-    ModelMaterial* add_material(t_model_material_id material_id);
-    ModelMaterial* add_material(t_model_material_id material_id, const ModelMaterial &other);
-    ModelMaterial* get_material(t_model_material_id material_id) {
-        ModelMaterialMap::iterator i = this->materials.find(material_id);
-        return (i == this->materials.end()) ? nullptr : i->second;
-    }
-
-    void          delete_material(t_model_material_id material_id);
-    void          clear_materials();
     bool          add_default_instances();
     // Returns approximate axis aligned bounding box of this model.
     Domain::BoundingBox3d bounding_box_approx() const;
@@ -1299,7 +1228,7 @@ private:
 	friend class cereal::access;
 	friend class UndoRedo::StackImpl;
 	template<class Archive> void serialize(Archive &ar) {
-		ar(materials, objects);
+		ar(objects);
     }
 };
 
@@ -1342,7 +1271,7 @@ bool model_has_parameter_modifiers_in_objects(const Model& model);
 bool model_has_advanced_features(const Model &model);
 
 #ifndef NDEBUG
-// Verify whether the IDs of Model / ModelObject / ModelVolume / ModelInstance / ModelMaterial are valid and unique.
+// Verify whether the IDs of Model / ModelObject / ModelVolume / ModelInstance are valid and unique.
 void check_model_ids_validity(const Model &model);
 void check_model_ids_equal(const Model &model1, const Model &model2);
 #endif /* NDEBUG */

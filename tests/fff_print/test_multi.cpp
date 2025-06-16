@@ -175,10 +175,8 @@ std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &
     ModelObject *object = model.add_object();
     object->name = "object.stl";
     ModelVolume *v1 = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
-    v1->set_material_id("lower_material");
     v1->volume_settings = volume1config;
     ModelVolume *v2 = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
-    v2->set_material_id("upper_material");
     v2->translate(0., 0., 20.);
     v2->volume_settings = volume2config;
     object->add_instance();

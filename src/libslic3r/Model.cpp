@@ -56,14 +56,6 @@ namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
 Model& Model::assign_copy(const Model &rhs)
 {
     this->copy_id(rhs);
-    // copy materials
-    this->clear_materials();
-    this->materials = rhs.materials;
-    for (std::pair<const t_model_material_id, ModelMaterial*> &m : this->materials) {
-        // Copy including the ID and m_model.
-        m.second = new ModelMaterial(*m.second);
-        m.second->set_model(this);
-    }
     // copy objects
     this->clear_objects();
     this->objects.reserve(rhs.objects.size());
@@ -80,12 +72,6 @@ Model& Model::assign_copy(const Model &rhs)
 Model& Model::assign_copy(Model &&rhs)
 {
     this->copy_id(rhs);
-	// Move materials, adjust the parent pointer.
-    this->clear_materials();
-    this->materials = std::move(rhs.materials);
-    for (std::pair<const t_model_material_id, ModelMaterial*> &m : this->materials)
-        m.second->set_model(this);
-    rhs.materials.clear();
     // Move objects, adjust the parent pointer.
     this->clear_objects();
 	this->objects = std::move(rhs.objects);
@@ -99,16 +85,12 @@ Model& Model::assign_copy(Model &&rhs)
 void Model::assign_new_unique_ids_recursive()
 {
     this->set_new_unique_id();
-    for (std::pair<const t_model_material_id, ModelMaterial*> &m : this->materials)
-        m.second->assign_new_unique_ids_recursive();
     for (ModelObject *model_object : this->objects)
         model_object->assign_new_unique_ids_recursive();
 }
 
 void Model::update_links_bottom_up_recursive()
 {
-	for (std::pair<const t_model_material_id, ModelMaterial*> &kvp : this->materials)
-		kvp.second->set_model(this);
 	for (ModelObject *model_object : this->objects) {
 		model_object->set_model(this);
 		for (ModelInstance *model_instance : model_object->instances)
@@ -206,44 +188,6 @@ void Model::clear_objects()
     for (ModelObject *o : this->objects)
         delete o;
     this->objects.clear();
-}
-
-void Model::delete_material(t_model_material_id material_id)
-{
-    ModelMaterialMap::iterator i = this->materials.find(material_id);
-    if (i != this->materials.end()) {
-        delete i->second;
-        this->materials.erase(i);
-    }
-}
-
-void Model::clear_materials()
-{
-    for (auto &m : this->materials)
-        delete m.second;
-    this->materials.clear();
-}
-
-ModelMaterial* Model::add_material(t_model_material_id material_id)
-{
-    assert(! material_id.empty());
-    ModelMaterial* material = this->get_material(material_id);
-    if (material == nullptr)
-        material = this->materials[material_id] = new ModelMaterial(this);
-    return material;
-}
-
-ModelMaterial* Model::add_material(t_model_material_id material_id, const ModelMaterial &other)
-{
-    assert(! material_id.empty());
-    // delete existing material if any
-    ModelMaterial* material = this->get_material(material_id);
-    delete material;
-    // set new material
-	material = new ModelMaterial(other);
-	material->set_model(this);
-    this->materials[material_id] = material;
-    return material;
 }
 
 // makes sure all objects have at least one instance
@@ -985,14 +929,6 @@ void ModelObject::scale_mesh_after_creation(const float scale)
     this->invalidate_bounding_box();
 }
 
-size_t ModelObject::materials_count() const
-{
-    std::set<t_model_material_id> material_ids;
-    for (const ModelVolume *v : this->volumes)
-        material_ids.insert(v->material_id());
-    return material_ids.size();
-}
-
 size_t ModelObject::facets_count() const
 {
     size_t num = 0;
@@ -1297,26 +1233,6 @@ bool ModelObject::has_negative_volume_mesh() const
         if (volume->is_negative_volume())
             return true;
     return false;
-}
-
-void ModelVolume::set_material_id(t_model_material_id material_id)
-{
-    m_material_id = material_id;
-    // ensure m_material_id references an existing material
-    if (! material_id.empty())
-        this->object->get_model()->add_material(material_id);
-}
-
-ModelMaterial* ModelVolume::material() const
-{ 
-    return this->object->get_model()->get_material(m_material_id);
-}
-
-void ModelVolume::set_material(t_model_material_id material_id, const ModelMaterial &material)
-{
-    m_material_id = material_id;
-    if (! material_id.empty())
-        this->object->get_model()->add_material(material_id, material);
 }
 
 // Extract the current extruder ID based on this ModelVolume's config and the parent ModelObject's config.
@@ -1694,7 +1610,7 @@ bool model_has_advanced_features(const Model &model)
 }
 
 #ifndef NDEBUG
-// Verify whether the IDs of Model / ModelObject / ModelVolume / ModelInstance / ModelMaterial are valid and unique.
+// Verify whether the IDs of Model / ModelObject / ModelVolume / ModelInstance are valid and unique.
 void check_model_ids_validity(const Model &model)
 {
     std::set<Domain::ObjectID> ids;
@@ -1712,10 +1628,6 @@ void check_model_ids_validity(const Model &model)
         }
         for (const ModelInstance *model_instance : model_object->instances)
             check(model_instance->id());
-    }
-    for (const auto &mm : model.materials) {
-        check(mm.second->id());
-        check(mm.second->config.id());
     }
 }
 
@@ -1736,16 +1648,6 @@ void check_model_ids_equal(const Model &model1, const Model &model2)
         }
         for (size_t i = 0; i < model_object1.instances.size(); ++ i)
             assert(model_object1.instances[i]->id() == model_object2.instances[i]->id());
-    }
-    assert(model1.materials.size() == model2.materials.size());
-    {
-        auto it1 = model1.materials.begin();
-        auto it2 = model2.materials.begin();
-        for (; it1 != model1.materials.end(); ++ it1, ++ it2) {
-            assert(it1->first == it2->first); // compare keys
-            assert(it1->second->id() == it2->second->id());
-        	assert(it1->second->config.id() == it2->second->config.id());
-        }
     }
 }
 
