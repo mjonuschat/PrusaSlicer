@@ -184,13 +184,6 @@ std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &
     object->add_instance();
     object->ensure_on_bed();
     Print print;
-    print.auto_assign_extruders(object);
-    THEN("auto_assign_extruders() assigned correct extruder to first volume") {
-        REQUIRE(v1->config.extruder() == 1);
-    }
-    THEN("auto_assign_extruders() assigned correct extruder to second volume") {
-        REQUIRE(v2->config.extruder() == 2);
-    }
     print.apply(model, config, {}, {}, {});
     print.validate();
     return Test::gcode(print);

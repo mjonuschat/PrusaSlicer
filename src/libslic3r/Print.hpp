@@ -639,8 +639,6 @@ public:
     std::vector<unsigned int> extruders() const;
     double              max_allowed_layer_height() const;
     bool                has_support_material() const;
-    // Make sure the background processing has no access to this model_object during this call!
-    void                auto_assign_extruders(ModelObject* model_object) const;
 
     const PrintConfigView& config() const { return m_config; }
     void set_config(const PrintConfigView& config) { m_config = config; }

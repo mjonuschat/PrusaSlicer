@@ -680,23 +680,6 @@ bool Print::has_support_material() const
     return false;
 }
 
-/*  This method assigns extruders to the volumes having a material
-    but not having extruders set in the volume config. */
-void Print::auto_assign_extruders(ModelObject* model_object) const
-{
-    // only assign extruders if object has more than one volume
-    if (model_object->volumes.size() < 2)
-        return;
-    
-//    size_t extruders = m_config.nozzle_diameter.values.size();
-    for (size_t volume_id = 0; volume_id < model_object->volumes.size(); ++ volume_id) {
-        ModelVolume *volume = model_object->volumes[volume_id];
-        //FIXME Vojtech: This assigns an extruder ID even to a modifier volume, if it has a material assigned.
-        if ((volume->is_model_part() || volume->is_modifier()) && ! volume->material_id().empty() && ! volume->config.has("extruder"))
-            volume->config.set("extruder", int(volume_id + 1));
-    }
-}
-
 Biz::Print::WipeTowerGeometry get_wipe_tower_geometry(const WipeTowerData& wipe_tower_data) {
     using Biz::Print::ZDepth;
     using Biz::Print::WipeTowerGeometry;

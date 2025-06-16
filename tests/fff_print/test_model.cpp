@@ -54,7 +54,6 @@ SCENARIO("Model construction", "[Model]") {
                                 min_object_distance(config.get_view())));
 
             model_object->ensure_on_bed();
-			print.auto_assign_extruders(model_object);
 			THEN("Print works?") {
 				print.set_status_silent();
 				print.apply(model, config, {}, {}, {});
