@@ -10,8 +10,8 @@ namespace Slic3r::Seams::ModelInfo {
 
 using Domain::its_merge;
 
-Painting::Painting(const Transform3d &obj_transform, const ModelVolumePtrs &volumes) {
-    for (const ModelVolume *mv : volumes) {
+Painting::Painting(const Transform3d &obj_transform, const Domain::ModelVolumePtrs &volumes) {
+    for (const Domain::ModelVolume *mv : volumes) {
         if (mv->is_seam_painted()) {
             auto model_transformation = obj_transform * mv->get_matrix();
 

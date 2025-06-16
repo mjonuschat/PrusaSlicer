@@ -151,7 +151,7 @@ std::vector<double> layer_height_profile_from_ranges(
 
 std::vector<double> layer_height_profile_adaptive(
     const SlicingParameters& slicing_params,
-    const ModelObject& object, float quality_factor);
+    const Domain::ModelObject& object, float quality_factor);
 
 struct HeightProfileSmoothingParams
 {

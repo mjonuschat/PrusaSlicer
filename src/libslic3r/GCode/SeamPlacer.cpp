@@ -79,7 +79,7 @@ ObjectSeams precalculate_seams(
         switch (print_object->config().get<Domain::SeamPosition>("seam_position")) {
             case Domain::SeamPosition::spAligned: {
             const Transform3d transformation{print_object->trafo_centered()};
-            const ModelVolumePtrs &volumes{print_object->model_object()->volumes};
+            const Domain::ModelVolumePtrs &volumes{print_object->model_object()->volumes};
 
             Slic3r::ModelInfo::Visibility
                 points_visibility{transformation, volumes, params.visibility, throw_if_canceled};
@@ -160,7 +160,7 @@ void Placer::init(
     ObjectPainting object_painting;
     for (const PrintObject *print_object : objects) {
         const Transform3d transformation{print_object->trafo_centered()};
-        const ModelVolumePtrs &volumes{print_object->model_object()->volumes};
+        const Domain::ModelVolumePtrs &volumes{print_object->model_object()->volumes};
         object_painting.emplace(print_object, ModelInfo::Painting{transformation, volumes});
     }
 

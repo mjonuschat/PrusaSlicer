@@ -30,14 +30,17 @@ class wxDataViewCtrl;
 class wxBookCtrlBase;
 struct wxLanguageInfo;
 
+namespace Slic3r::Domain {
+class Model;
+class ModelObject;
+} // namespace Slic3r::Domain
+
 namespace Slic3r {
 
 class AppConfig;
 class PresetBundle;
 class PresetUpdaterWrapper;
-class ModelObject;
 class PrintHostJobQueue;
-class Model;
 class AppUpdater;
 
 namespace Search {

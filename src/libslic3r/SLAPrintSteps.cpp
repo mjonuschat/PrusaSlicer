@@ -244,7 +244,7 @@ struct csg_inserter {
 // Used for filtrate support points by support Blockers and Enforcers
 template<class Pred>
 static std::vector<ExPolygons> slice_volumes(
-    const ModelVolumePtrs& volumes,
+    const Domain::ModelVolumePtrs& volumes,
     const std::vector<float>& slice_grid,
     const Transform3d& trafo,
     const MeshSlicingParamsEx& slice_params,
@@ -252,7 +252,7 @@ static std::vector<ExPolygons> slice_volumes(
 )
 {
     indexed_triangle_set mesh;
-    for (const ModelVolume* vol : volumes) {
+    for (const Domain::ModelVolume* vol : volumes) {
         if (predicate(vol)) {
             indexed_triangle_set vol_mesh = vol->mesh().its;
             its_transform(vol_mesh, trafo * vol->get_matrix());
@@ -875,14 +875,14 @@ void SLAPrint::Steps::support_points(SLAPrintObject &po)
     std::vector<ExPolygons> blockers =
         slice_volumes(po.model_object()->volumes,
                         po.m_model_height_levels, po.trafo(), params,
-                        [](const ModelVolume *vol) {
+                        [](const Domain::ModelVolume *vol) {
                             return vol->is_support_blocker();
                         });
 
     std::vector<ExPolygons> enforcers =
         slice_volumes(po.model_object()->volumes,
                         po.m_model_height_levels, po.trafo(), params,
-                        [](const ModelVolume *vol) {
+                        [](const Domain::ModelVolume *vol) {
                             return vol->is_support_enforcer();
                         });
         

@@ -144,44 +144,44 @@ static std::string icon_str(const Render::Icon icon)
     return Slic3r::format(" %1%  ", boost::nowide::narrow(std::wstring(&icon_char, 1)));
 }
 
-static std::string icon_str(const Slic3r::ModelVolume* volume)
+static std::string icon_str(const Domain::ModelVolume* volume)
 {
     if (volume->is_text()) {
         switch (volume->type()) {
-        case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(Render::Icon::TextSolidPartVolume);
-        case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(Render::Icon::TextNegativeVolume);
-        case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(Render::Icon::TextModifierVolume);
+        case Domain::ModelVolumeType::MODEL_PART        : return icon_str(Render::Icon::TextSolidPartVolume);
+        case Domain::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(Render::Icon::TextNegativeVolume);
+        case Domain::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(Render::Icon::TextModifierVolume);
         }
         return "";
     }
     if (volume->is_svg()) {
         switch (volume->type()) {
-        case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(Render::Icon::SvgSolidPartVolume);
-        case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(Render::Icon::SvgNegativeVolume);
-        case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(Render::Icon::SvgModifierVolume);
+        case Domain::ModelVolumeType::MODEL_PART        : return icon_str(Render::Icon::SvgSolidPartVolume);
+        case Domain::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(Render::Icon::SvgNegativeVolume);
+        case Domain::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(Render::Icon::SvgModifierVolume);
         }
         return "";
     }
 
     switch (volume->type()) {
-    case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(Render::Icon::SolidPartVolume);
-    case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(Render::Icon::NegativeVolume );
-    case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(Render::Icon::ModifierVolume );
-    case Slic3r::ModelVolumeType::SUPPORT_BLOCKER   : return icon_str(Render::Icon::SupportBlocker );
-    case Slic3r::ModelVolumeType::SUPPORT_ENFORCER  : return icon_str(Render::Icon::SupportModifier);
+    case Domain::ModelVolumeType::MODEL_PART        : return icon_str(Render::Icon::SolidPartVolume);
+    case Domain::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(Render::Icon::NegativeVolume );
+    case Domain::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(Render::Icon::ModifierVolume );
+    case Domain::ModelVolumeType::SUPPORT_BLOCKER   : return icon_str(Render::Icon::SupportBlocker );
+    case Domain::ModelVolumeType::SUPPORT_ENFORCER  : return icon_str(Render::Icon::SupportModifier);
     default:
         return "";
     }
 }
 
-static std::string volume_icon_tooltip(const Slic3r::ModelVolume* volume)
+static std::string volume_icon_tooltip(const Domain::ModelVolume* volume)
 {
     switch (volume->type()) {
-    case Slic3r::ModelVolumeType::MODEL_PART        : return "Solid Part Volume ";
-    case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return "Negative Volume ";
-    case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return "Modifier Volume  ";
-    case Slic3r::ModelVolumeType::SUPPORT_BLOCKER   : return "Support Blocker ";
-    case Slic3r::ModelVolumeType::SUPPORT_ENFORCER  : return "Support Modifier";
+    case Domain::ModelVolumeType::MODEL_PART        : return "Solid Part Volume ";
+    case Domain::ModelVolumeType::NEGATIVE_VOLUME   : return "Negative Volume ";
+    case Domain::ModelVolumeType::PARAMETER_MODIFIER: return "Modifier Volume  ";
+    case Domain::ModelVolumeType::SUPPORT_BLOCKER   : return "Support Blocker ";
+    case Domain::ModelVolumeType::SUPPORT_ENFORCER  : return "Support Modifier";
     default:
         return "";
     }
@@ -196,27 +196,27 @@ static std::string get_cc_name(const Slic3r::DynamicPrintConfig& print_config)
            + print_config.opt_string("printer_model");
 }
 
-static bool bed_has_object(const Domain::ModelInstanceList& bed_model_instances, const Slic3r::ModelObject* object)
+static bool bed_has_object(const Domain::ModelInstanceList& bed_model_instances, const Domain::ModelObject* object)
 {
-    for (const Slic3r::ModelInstance* instance : bed_model_instances)
+    for (const Domain::ModelInstance* instance : bed_model_instances)
         if (instance->get_object() == object)
             return true;
 
     return false;
 }
 
-static std::set<size_t> get_object_instance_ids_on_bed(const Domain::ModelInstanceList& bed_model_instances, const Slic3r::ModelObject* object)
+static std::set<size_t> get_object_instance_ids_on_bed(const Domain::ModelInstanceList& bed_model_instances, const Domain::ModelObject* object)
 {
     std::set<size_t> object_instances_on_bed;
 
-    for (Slic3r::ModelInstance* instance : bed_model_instances)
+    for (Domain::ModelInstance* instance : bed_model_instances)
         if (instance->get_object() == object)
             object_instances_on_bed.emplace(instance->id().id);
 
     return object_instances_on_bed;
 }
 
-static bool is_whole_object_selected(const Slic3r::ModelObject* object, const Slic3r::Biz::Scene::Selection& selection)
+static bool is_whole_object_selected(const Domain::ModelObject* object, const Slic3r::Biz::Scene::Selection& selection)
 {
     if (selection.mode == Biz::Scene::SelectionMode::Instance) {
         size_t cnt = 0;
@@ -240,7 +240,7 @@ static bool is_volume_selected(const Domain::ElementRef& sel_element, const Slic
     return false;
 }
 
-static size_t visible_volumes_count(const ModelObject* object)
+static size_t visible_volumes_count(const Domain::ModelObject* object)
 {
     if (object->is_cut()) {
         size_t count{ 0 };
@@ -254,11 +254,11 @@ static size_t visible_volumes_count(const ModelObject* object)
     return object->volumes.size();
 }
 
-static std::set<Render::Icon> get_infos(const Slic3r::ModelObject* object, bool is_sla_config)
+static std::set<Render::Icon> get_infos(const Domain::ModelObject* object, bool is_sla_config)
 {
     std::set<Render::Icon> infos;
     if (!is_sla_config) {
-        for (const ModelVolume* mv : object->volumes) {
+        for (const Domain::ModelVolume* mv : object->volumes) {
             if (!mv->supported_facets.empty())
                 infos.insert(Render::Icon::CustomSupports);
             if (!mv->seam_facets.empty())
@@ -297,7 +297,7 @@ static bool hovered_current_row()
 }
 
 // object is simple: has just one instance, one volume and no aditional information
-static bool has_overrides(const Slic3r::ModelObject* object, bool is_sla_config)
+static bool has_overrides(const Domain::ModelObject* object, bool is_sla_config)
 {
     bool has_config_overrides = (is_sla_config ? !object->object_settings_sla.overrides.empty() : !object->object_settings.overrides.empty()) || !object->layer_config_ranges.empty();
     if (!has_config_overrides) {
@@ -311,7 +311,7 @@ static bool has_overrides(const Slic3r::ModelObject* object, bool is_sla_config)
 }
 
 // object is simple: has just one instance, one volume and no aditional information
-static bool is_simple(const Slic3r::ModelObject* object, bool is_sla_config)
+static bool is_simple(const Domain::ModelObject* object, bool is_sla_config)
 {
     return  object->instances.size() == 1 &&
             object->volumes.size() == 1 &&
@@ -388,7 +388,7 @@ void ObjectList::handle_dragging(const Domain::ElementRef& id)
         ctx.is_dragging = true;
 }
 
-void ObjectList::force_select_whole_object(const Slic3r::ModelObject* object)
+void ObjectList::force_select_whole_object(const Domain::ModelObject* object)
 {
     auto& ctx = selected_project_context();
     size_t object_id = object->id().id;
@@ -397,7 +397,7 @@ void ObjectList::force_select_whole_object(const Slic3r::ModelObject* object)
         // remove object element
         ctx.selected_items.erase(sel_element);
         //  and push all instances instad
-        for (const Slic3r::ModelInstance* instance : object->instances)
+        for (const Domain::ModelInstance* instance : object->instances)
             ctx.selected_items.insert(Domain::ElementRef{ object_id, instance->id().id });
     }
 }
@@ -447,13 +447,13 @@ void ObjectList::update_selection_from_scene()
 {
     auto& ctx = selected_project_context();
     const Biz::Scene::Selection& scene_selection = m_scene_interactor->selection();
-    for (const ModelObject* object : ctx.model->objects) {
+    for (const Domain::ModelObject* object : ctx.model->objects) {
         size_t object_id = object->id().id;
 
-        MultiSelectionStorage& inst_ms = ctx.instances_ms.get_ms<Slic3r::ModelInstancePtrs>(object_id);
+        MultiSelectionStorage& inst_ms = ctx.instances_ms.get_ms<Domain::ModelInstancePtrs>(object_id);
         inst_ms.UserData = (void*)&object->instances;
 
-        MultiSelectionStorage& vol_ms = ctx.volumes_ms.get_ms<Slic3r::ModelVolumePtrs>(object_id);
+        MultiSelectionStorage& vol_ms = ctx.volumes_ms.get_ms<Domain::ModelVolumePtrs>(object_id);
         vol_ms.UserData = (void*)&object->volumes;
     }
 
@@ -669,7 +669,7 @@ bool ObjectList::render_out_of_beds()
     BedsTable table;
     if (table.begin(size_t(-1), m_table_flags)) {
         IndentGuard ig(m_inner_padding.x());
-        for (const ModelObject* object : ctx.model->objects) {
+        for (const Domain::ModelObject* object : ctx.model->objects) {
             if (bed_has_object(m_scene_interactor->selected_project_unplaced_model_instances(), object))
                 is_changed_selection |= render_object_node(object);
         }
@@ -733,7 +733,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
 
     if (is_open) {
         bg.set_next();
-        for (const Slic3r::ModelObject* object : ctx.model->objects) {
+        for (const Domain::ModelObject* object : ctx.model->objects) {
             if (bed_has_object(bed->model_instances, object))
                 is_changed_selection |= render_object_node(object, bed, is_sla_config);
         }
@@ -743,7 +743,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     return is_changed_selection;
 }
 
-bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed /*= nullptr*/, bool is_sla_config /*= false*/)
+bool ObjectList::render_object_node(const Domain::ModelObject* object, const Domain::BedInstance* bed /*= nullptr*/, bool is_sla_config /*= false*/)
 {
     auto& ctx = selected_project_context();
     size_t object_id = object->id().id;
@@ -804,7 +804,7 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
     return is_changed_selection;
 }
 
-bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_t bed_id)
+bool ObjectList::render_connectors_node(const Domain::ModelObject* object, size_t bed_id)
 {
     if (!object->is_cut() || object->volumes.size() == 1)
         return false;
@@ -824,7 +824,7 @@ bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_
         clear_all_ms();
 
         std::set<Domain::ElementRef> selected_items_tmp;
-        for (const Slic3r::ModelVolume* volume : object->volumes) {
+        for (const Domain::ModelVolume* volume : object->volumes) {
             if (volume->is_cut_connector())
                 selected_items_tmp.insert(Domain::ElementRef{ object_id, instance_id, volume->id().id });
         }
@@ -837,7 +837,7 @@ bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_
     return false;
 }
 
-bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id, bool is_sla_config)
+bool ObjectList::render_volumes(const Domain::ModelObject* object, size_t bed_id, bool is_sla_config)
 {
     auto& ctx = selected_project_context();
     if (visible_volumes_count(object) < 2)
@@ -851,7 +851,7 @@ bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id
     new_row();
     bool is_open = tree_node(name_id.c_str(), m_node_flags, "Volumes");
 
-    const Slic3r::ModelVolumePtrs& volumes = object->volumes;
+    const Domain::ModelVolumePtrs& volumes = object->volumes;
     MultiSelectionStorage& ms = ctx.volumes_ms.at(object_id);
 
     if (is_open) {
@@ -860,7 +860,7 @@ bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id
         ms.ApplyRequests(ms_io);
 
         for (size_t vol_id = 0; vol_id < volumes.size(); vol_id++) {
-            const Slic3r::ModelVolume* volume = object->volumes[vol_id];
+            const Domain::ModelVolume* volume = object->volumes[vol_id];
             if (volume->is_cut_connector())
                 continue;
             size_t volume_id = volume->id().id;
@@ -880,7 +880,7 @@ bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id
         ctx.volumes_ms.clear_except(object_id);
 
         std::set<Domain::ElementRef> selected_items_tmp;
-        for (const Slic3r::ModelVolume* volume : volumes) {
+        for (const Domain::ModelVolume* volume : volumes) {
             size_t volume_id = volume->id().id;
             if (ms.Contains((ImGuiID)volume_id))
                 selected_items_tmp.insert(Domain::ElementRef{ object_id, instance_id, volume_id });
@@ -896,7 +896,7 @@ bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id
 }
 
 // render edited item as an input text and propagate new name to scene_interactor
-void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, const Domain::ElementRef& sel_element, bool is_selected, bool is_sla_config)
+void ObjectList::render_volume_node(const Domain::ModelVolume* volume, const Domain::ElementRef& sel_element, bool is_selected, bool is_sla_config)
 {
     auto& ctx = selected_project_context();
     std::string volume_name = (volume->name.empty() ? "Volume " + std::to_string(volume->id().id) : volume->name);
@@ -935,7 +935,7 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, const Dom
         render_extruder_marker(2, {"#40E740"});
 }
 
-bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed /*= nullptr*/)
+bool ObjectList::render_instances_node(const Domain::ModelObject* object, const Domain::BedInstance* bed /*= nullptr*/)
 {
     if (object->instances.size() == 1)
         return false;
@@ -974,10 +974,10 @@ bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const 
     return is_changed_selection;
 }
 
-bool ObjectList::render_instances(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed)
+bool ObjectList::render_instances(const Domain::ModelObject* object, const std::set<size_t>& instances_on_bed)
 {
     auto& ctx = selected_project_context();
-    const ModelInstancePtrs& instances = object->instances;
+    const Domain::ModelInstancePtrs& instances = object->instances;
     size_t object_id = object->id().id;
 
     MultiSelectionStorage& ms = ctx.instances_ms.at(object_id);
@@ -1005,7 +1005,7 @@ bool ObjectList::render_instances(const Slic3r::ModelObject* object, const std::
             ctx.selected_items.clear();
         }
 
-        for (const Slic3r::ModelInstance* instance : instances) {
+        for (const Domain::ModelInstance* instance : instances) {
             size_t instance_id = instance->id().id;
             if (instances_on_bed.count(instance_id)) {
                 Domain::ElementRef sel_element{ object_id, instance->id().id };
@@ -1025,9 +1025,9 @@ bool ObjectList::render_instances(const Slic3r::ModelObject* object, const std::
     return is_changed_selection;
 }
 
-void ObjectList::render_instance_node(const Slic3r::ModelObject* object, size_t inst_id, bool is_selected)
+void ObjectList::render_instance_node(const Domain::ModelObject* object, size_t inst_id, bool is_selected)
 {
-    const Slic3r::ModelInstance* instance = object->instances[inst_id];
+    const Domain::ModelInstance* instance = object->instances[inst_id];
     size_t id = instance->id().id;
     Domain::ElementRef sel_element{ object->id().id, id, 0 };
 
@@ -1042,7 +1042,7 @@ void ObjectList::render_instance_node(const Slic3r::ModelObject* object, size_t 
     handle_dragging(sel_element);
 }
 
-void ObjectList::render_infos_node(const Slic3r::ModelObject* object, bool is_sla_config)
+void ObjectList::render_infos_node(const Domain::ModelObject* object, bool is_sla_config)
 {
     const std::set<Render::Icon> infos = get_infos(object, is_sla_config);
     if (infos.empty())
@@ -1168,7 +1168,7 @@ static std::map<Render::Icon, std::string> info_descriptions = {
     { Render::Icon::HRModifier    , "Height range Modifier" },
 };
 
-void ObjectList::render_infos_selectable(const std::set<Render::Icon>& infos, const Slic3r::ModelObject* object, bool force_render)
+void ObjectList::render_infos_selectable(const std::set<Render::Icon>& infos, const Domain::ModelObject* object, bool force_render)
 {
     for (Render::Icon info : infos) {
         NewRowWithSelectable row;

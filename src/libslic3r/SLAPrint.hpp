@@ -233,7 +233,7 @@ protected:
     friend class PrintBaseWithState<SLAPrintStep, slapsCount>;
 
 public:
-	SLAPrintObject(SLAPrint* print, ModelObject* model_object, const SLAPrintObjectConfigView& config);
+	SLAPrintObject(SLAPrint* print, Domain::ModelObject* model_object, const SLAPrintObjectConfigView& config);
 
     void                    set_trafo(const Transform3d& trafo, bool left_handed) {
         m_trafo = trafo;
@@ -346,14 +346,14 @@ public:
     std::vector<Domain::ObjectID> print_object_ids() const override;
 
     Biz::Print::ApplyStatus update(
-        Model& model,
+        Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
         const Biz::Print::SerializedConfig& serialized_config
     ) override;
 
     ApplyStatus apply(
-        const Model& model,
+        const Domain::Model& model,
         const Domain::ConfigPackSLA& config_pack,
         const Biz::Print::SerializedConfig& serialized_config,
         std::vector<std::string>* warnings = nullptr
@@ -396,7 +396,7 @@ public:
     Vec3d                       relative_correction() const;
 
     // Return sla tansformation for a given model_object
-    Transform3d sla_trafo(const ModelObject &model_object) const;
+    Transform3d sla_trafo(const Domain::ModelObject &model_object) const;
 
 	std::string                 output_filename(const std::string &filename_base = std::string()) const override;
 

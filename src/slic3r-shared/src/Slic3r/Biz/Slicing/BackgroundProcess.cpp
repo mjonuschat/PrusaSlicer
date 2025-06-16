@@ -108,7 +108,7 @@ Domain::PrinterTechnology get_printer_technology(const ConfigPack& config) {
 
 BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
-    Model& model,
+    Domain::Model& model,
     ConfigPack&& config,
     const Domain::BedInstance& bed,
     const SlicingId id
@@ -125,7 +125,7 @@ BackgroundProcess::BackgroundProcess(
 BackgroundProcess::BackgroundProcess(
     std::unique_ptr<IPrint>&& print,
     IProcessCallbacks& callbacks,
-    Model& model,
+    Domain::Model& model,
     ConfigPack&& config,
     const Domain::BedInstance& bed,
     const SlicingId id
@@ -148,7 +148,7 @@ BackgroundProcess::~BackgroundProcess() {
 }
 
 void BackgroundProcess::update(
-    Model& model,
+    Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed
 )

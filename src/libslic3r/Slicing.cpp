@@ -251,7 +251,7 @@ std::vector<double> layer_height_profile_from_ranges(
 
 // Based on the work of @platsch
 // Fill layer_height_profile by heights ensuring a prescribed maximum cusp height.
-std::vector<double> layer_height_profile_adaptive(const SlicingParameters& slicing_params, const ModelObject& object, float quality_factor)
+std::vector<double> layer_height_profile_adaptive(const SlicingParameters& slicing_params, const Domain::ModelObject& object, float quality_factor)
 {
     // 1) Initialize the SlicingAdaptive class with the object meshes.
     SlicingAdaptive as;

@@ -19,7 +19,7 @@ namespace Tests {
     }
 
     struct Loaded3mf{
-        Slic3r::Model model;
+        Slic3r::Domain::Model model;
         Slic3r::Domain::ConfigPack config;
         Slic3r::Domain::WipeTowersOnBeds wipe_towers;
     };
@@ -29,7 +29,7 @@ namespace Tests {
         REQUIRE(boost::filesystem::exists(path));
 
         Domain::ConfigPack config;
-        Model model;
+        Domain::Model model;
         Slic3r::Domain::WipeTowersOnBeds wipe_towers;
         Slic3r::Domain::CustomGCodesOnBeds custom_gcodes;
 

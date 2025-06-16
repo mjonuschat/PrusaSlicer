@@ -68,7 +68,7 @@ bool RectangleSelection::update_selection(SelectionHandler& selection_handler)
     else if (m_type == Type::Replace) {
         if (std::any_of(nodes.begin(), nodes.end(),
             [&](const Scene::Node* n) {
-                return n->tag_of_type<SceneNodeTag>()->volume_type == ModelVolumeType::MODEL_PART;
+                return n->tag_of_type<SceneNodeTag>()->volume_type == Domain::ModelVolumeType::MODEL_PART;
             }))
             nodes = extract_instance_nodes(nodes);
         else if (nodes.size() != 1) {

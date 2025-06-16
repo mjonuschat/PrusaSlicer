@@ -16,18 +16,18 @@
 
 namespace Slic3r {
 
-void duplicate_objects(Model &model, size_t copies_num)
+void duplicate_objects(Domain::Model &model, size_t copies_num)
 {
-    for (ModelObject *o : model.objects) {
+    for (Domain::ModelObject *o : model.objects) {
         // make a copy of the pointers in order to avoid recursion when appending their copies
-        ModelInstancePtrs instances = o->instances;
-        for (const ModelInstance *i : instances)
+        Domain::ModelInstancePtrs instances = o->instances;
+        for (const Domain::ModelInstance *i : instances)
             for (size_t k = 2; k <= copies_num; ++ k)
                 o->add_instance(*i);
     }
 }
 
-bool arrange_objects(Model &model,
+bool arrange_objects(Domain::Model &model,
                      const arr2::ArrangeBed &bed,
                      const arr2::ArrangeSettingsView &settings)
 {
@@ -37,7 +37,7 @@ bool arrange_objects(Model &model,
                        .set_model(model));
 }
 
-void duplicate_objects(Model &model,
+void duplicate_objects(Domain::Model &model,
                        size_t copies_num,
                        const arr2::ArrangeBed &bed,
                        const arr2::ArrangeSettingsView &settings)
@@ -46,7 +46,7 @@ void duplicate_objects(Model &model,
     arrange_objects(model, bed, settings);
 }
 
-void duplicate(Model &model,
+void duplicate(Domain::Model &model,
                size_t copies_num,
                const arr2::ArrangeBed &bed,
                const arr2::ArrangeSettingsView &settings)

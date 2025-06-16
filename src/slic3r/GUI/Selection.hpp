@@ -12,13 +12,16 @@
 #include <set>
 #include <optional>
 
-namespace Slic3r {
-
-class Shader;
+namespace Slic3r::Domain {
+class ObjectID;
 class Model;
 class ModelObject;
 class ModelVolume;
-class ObjectID;
+} // namespace Slic3r::Domain
+
+namespace Slic3r {
+
+class Shader;
 class GLVolume;
 class GLArrow;
 class GLCurvedArrow;

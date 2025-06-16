@@ -12,10 +12,13 @@
 #include <mutex>
 #include <thread>
 
-namespace Slic3r {
-class ModelObject;
-class Model;
+namespace Slic3r::Domain {
 class ObjectID;
+class Model;
+class ModelObject;
+} // namespace Slic3r::Domain
+
+namespace Slic3r {
 
 namespace GUI {
 class NotificationManager; // for simplify suggestion

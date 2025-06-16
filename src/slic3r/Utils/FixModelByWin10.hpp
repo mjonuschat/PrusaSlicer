@@ -9,10 +9,12 @@
 
 class wxProgressDialog;
 
-namespace Slic3r {
-
+namespace Slic3r::Domain {
 class Model;
 class ModelObject;
+} // namespace Slic3r::Domain
+
+namespace Slic3r {
 class Print;
 
 #ifdef HAS_WIN10SDK

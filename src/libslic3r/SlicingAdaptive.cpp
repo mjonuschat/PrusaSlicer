@@ -83,14 +83,14 @@ void SlicingAdaptive::clear()
 	m_faces.clear();
 }
 
-void SlicingAdaptive::prepare(const ModelObject &object)
+void SlicingAdaptive::prepare(const Domain::ModelObject &object)
 {
     namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
     this->clear();
 
     Domain::TriangleMesh		 mesh			= object.raw_mesh();
-    const ModelInstance &first_instance = *object.instances.front();
+    const Domain::ModelInstance &first_instance = *object.instances.front();
     mesh.transform(first_instance.get_matrix(), first_instance.is_left_handed());
 
     // 1) Collect faces from mesh.

@@ -200,7 +200,7 @@ std::vector<float> raycast_visibility(
 
 Visibility::Visibility(
     const Transform3d &obj_transform,
-    const ModelVolumePtrs &volumes,
+    const Domain::ModelVolumePtrs &volumes,
     const Params &params,
     const std::function<void(void)> &throw_if_canceled
 ) {
@@ -209,13 +209,13 @@ Visibility::Visibility(
     indexed_triangle_set triangle_set;
     indexed_triangle_set negative_volumes_set;
     //add all parts
-    for (const ModelVolume *model_volume : volumes) {
-        if (model_volume->type() == ModelVolumeType::MODEL_PART
-                || model_volume->type() == ModelVolumeType::NEGATIVE_VOLUME) {
+    for (const Domain::ModelVolume *model_volume : volumes) {
+        if (model_volume->type() == Domain::ModelVolumeType::MODEL_PART
+                || model_volume->type() == Domain::ModelVolumeType::NEGATIVE_VOLUME) {
             auto model_transformation = model_volume->get_matrix();
             indexed_triangle_set model_its = model_volume->mesh().its;
             its_transform(model_its, model_transformation);
-            if (model_volume->type() == ModelVolumeType::MODEL_PART) {
+            if (model_volume->type() == Domain::ModelVolumeType::MODEL_PART) {
                 its_merge(triangle_set, model_its);
             } else {
                 its_merge(negative_volumes_set, model_its);

@@ -38,7 +38,7 @@ struct Visibility
 
     Visibility(
         const Transform3d &obj_transform,
-        const ModelVolumePtrs &volumes,
+        const Domain::ModelVolumePtrs &volumes,
         const Params &params,
         const std::function<void(void)> &throw_if_canceled
     );

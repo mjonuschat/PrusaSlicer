@@ -51,7 +51,7 @@ struct IWipeTowerGeometryListener : ISlicingListener
 };
 
 struct UpdateRequest {
-    std::reference_wrapper<Model> model;
+    std::reference_wrapper<Domain::Model> model;
     std::reference_wrapper<const Domain::ConfigPack> config;
     std::reference_wrapper<const Domain::BedInstance> bed;
 };
@@ -76,7 +76,7 @@ public:
      * process will be signaled to stop and the update scheduled after the stop happens. This means
      * that model and config references must be valid as long as the process exists! After the process
      * is removed (using remove_process) the validity of the references is no longer required.*/
-    void update_process(Model& model, const Domain::ConfigPack& config, const Domain::BedInstance& bed);
+    void update_process(Domain::Model& model, const Domain::ConfigPack& config, const Domain::BedInstance& bed);
 
     /* Blocks the UI thread if the process is running! */
     void remove_bed(const Domain::SelectionId bed_instance_id);
@@ -104,7 +104,7 @@ private:
     int64_t get_active_processes_count() const;
     void update_status(const SlicingId id, const Status status);
     void create_process(
-        Model& model,
+        Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
         const SlicingId id

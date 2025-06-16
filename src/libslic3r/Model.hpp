@@ -48,68 +48,59 @@ namespace Slic3r {
 class BuildVolume;
 class Print;
 
-using Model = Domain::Model;
-using ModelVolume = Domain::ModelVolume;
-using ModelObject = Domain::ModelObject;
-using ModelInstance = Domain::ModelInstance;
-using ModelVolumePtrs = Domain::ModelVolumePtrs;
-using ModelObjectPtrs = Domain::ModelObjectPtrs;
-using ModelVolumeType = Domain::ModelVolumeType;
-using ModelInstancePtrs = Domain::ModelInstancePtrs;
-
 // Set the print_volume_state of PrintObject::instances, return the total number of printable objects.
-unsigned int update_print_volume_state(Model& model, const BuildVolume& build_volume);
+unsigned int update_print_volume_state(Domain::Model& model, const BuildVolume& build_volume);
 
-inline void model_volumes_sort_by_id(ModelVolumePtrs &model_volumes)
+inline void model_volumes_sort_by_id(Domain::ModelVolumePtrs &model_volumes)
 {
-    std::sort(model_volumes.begin(), model_volumes.end(), [](const ModelVolume *l, const ModelVolume *r) { return l->id() < r->id(); });
+    std::sort(model_volumes.begin(), model_volumes.end(), [](const Domain::ModelVolume *l, const Domain::ModelVolume *r) { return l->id() < r->id(); });
 }
 
-inline const ModelVolume* model_volume_find_by_id(const ModelVolumePtrs &model_volumes, const Domain::ObjectID id)
+inline const Domain::ModelVolume* model_volume_find_by_id(const Domain::ModelVolumePtrs &model_volumes, const Domain::ObjectID id)
 {
-    auto it = lower_bound_by_predicate(model_volumes.begin(), model_volumes.end(), [id](const ModelVolume *mv) { return mv->id() < id; });
+    auto it = lower_bound_by_predicate(model_volumes.begin(), model_volumes.end(), [id](const Domain::ModelVolume *mv) { return mv->id() < id; });
     return it != model_volumes.end() && (*it)->id() == id ? *it : nullptr;
 }
 
 // Test whether the two models contain the same number of ModelObjects with the same set of IDs
 // ordered in the same order. In that case it is not necessary to kill the background processing.
-bool model_object_list_equal(const ModelObjectPtrs &old_objects, const ModelObjectPtrs &new_objects);
+bool model_object_list_equal(const Domain::ModelObjectPtrs &old_objects, const Domain::ModelObjectPtrs &new_objects);
 
 // Test whether the new model is just an extension of the old model (new objects were added
 // to the end of the original list. In that case it is not necessary to kill the background processing.
-bool model_object_list_extended(const Model &model_old, const Model &model_new);
+bool model_object_list_extended(const Domain::Model &model_old, const Domain::Model &model_new);
 
 // Test whether the new ModelObject contains a different set of volumes (or sorted in a different order)
 // than the old ModelObject.
-bool model_volume_list_changed(const ModelObject &model_object_old, const ModelObject &model_object_new, const ModelVolumeType type);
-bool model_volume_list_changed(const ModelObject &model_object_old, const ModelObject &model_object_new, const std::initializer_list<ModelVolumeType> &types);
+bool model_volume_list_changed(const Domain::ModelObject &model_object_old, const Domain::ModelObject &model_object_new, const Domain::ModelVolumeType type);
+bool model_volume_list_changed(const Domain::ModelObject &model_object_old, const Domain::ModelObject &model_object_new, const std::initializer_list<Domain::ModelVolumeType> &types);
 
 // Test whether the now ModelObject has newer custom supports data than the old one.
 // The function assumes that volumes list is synchronized.
-bool model_custom_supports_data_changed(const ModelObject& mo, const ModelObject& mo_new);
+bool model_custom_supports_data_changed(const Domain::ModelObject& mo, const Domain::ModelObject& mo_new);
 
 // Test whether the now ModelObject has newer custom seam data than the old one.
 // The function assumes that volumes list is synchronized.
-bool model_custom_seam_data_changed(const ModelObject& mo, const ModelObject& mo_new);
+bool model_custom_seam_data_changed(const Domain::ModelObject& mo, const Domain::ModelObject& mo_new);
 
 // Test whether the now ModelObject has newer MMU segmentation data than the old one.
 // The function assumes that volumes list is synchronized.
-extern bool model_mmu_segmentation_data_changed(const ModelObject& mo, const ModelObject& mo_new);
+extern bool model_mmu_segmentation_data_changed(const Domain::ModelObject& mo, const Domain::ModelObject& mo_new);
 
 // Test whether the now ModelObject has newer fuzzy skin data than the old one.
 // The function assumes that volumes list is synchronized.
-extern bool model_fuzzy_skin_data_changed(const ModelObject &mo, const ModelObject &mo_new);
+extern bool model_fuzzy_skin_data_changed(const Domain::ModelObject &mo, const Domain::ModelObject &mo_new);
 
 // If the model has object(s) which contains a modofoer, then it is currently not supported by the SLA mode.
 // Either the model cannot be loaded, or a SLA printer has to be activated.
-bool model_has_parameter_modifiers_in_objects(const Model& model);
+bool model_has_parameter_modifiers_in_objects(const Domain::Model& model);
 // If the model has advanced features, then it cannot be processed in simple mode.
-bool model_has_advanced_features(const Model &model);
+bool model_has_advanced_features(const Domain::Model &model);
 
 #ifndef NDEBUG
 // Verify whether the IDs of Model / ModelObject / ModelVolume / ModelInstance are valid and unique.
-void check_model_ids_validity(const Model &model);
-void check_model_ids_equal(const Model &model1, const Model &model2);
+void check_model_ids_validity(const Domain::Model &model);
+void check_model_ids_equal(const Domain::Model &model1, const Domain::Model &model2);
 #endif /* NDEBUG */
 
 } // namespace Slic3r

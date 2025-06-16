@@ -34,19 +34,22 @@
 
 class wxString;
 
-namespace Slic3r {
-
-class BuildVolume;
+namespace Slic3r::Domain {
 class Model;
 class ModelObject;
 class ModelInstance;
+} // namespace Slic3r::Domain
+
+namespace Slic3r {
+
+class BuildVolume;
 class Print;
 class SLAPrint;
 enum PrintObjectStep : unsigned int;
 enum SLAPrintObjectStep : unsigned int;
 enum class ConversionType : int;
 
-using ModelInstancePtrs = std::vector<ModelInstance*>;
+using ModelInstancePtrs = std::vector<Domain::ModelInstance*>;
 
 namespace UndoRedo {
     class Stack;
@@ -94,8 +97,8 @@ public:
     bool is_project_temp() const;
 
     Sidebar& sidebar();
-    const Model& model() const;
-    Model& model();
+    const Domain::Model& model() const;
+    Domain::Model& model();
     //const Print& fff_print() const;
     //Print& fff_print();
     //const SLAPrint& sla_print() const;
@@ -213,7 +216,7 @@ public:
     void convert_unit(ConversionType conv_type);
     void toggle_layers_editing(bool enable);
 
-    void apply_cut_object_to_model(size_t init_obj_idx, const ModelObjectPtrs& cut_objects);
+    void apply_cut_object_to_model(size_t init_obj_idx, const Domain::ModelObjectPtrs& cut_objects);
 
     void with_mocked_fff_background_process(
         Print &print,

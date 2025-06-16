@@ -110,12 +110,7 @@ inline double angle(const Eigen::MatrixBase<Derived> &v1, const Eigen::MatrixBas
     return atan2(cross2(v1d, v2d), v1d.dot(v2d));
 }
 
-template<typename Derived>
-Domain::Advanced::Vec<typename Derived::Scalar, 2> to_2d(const Eigen::MatrixBase<Derived> &ptN) {
-    static_assert(Derived::IsVectorAtCompileTime && int(Derived::SizeAtCompileTime) >= 3, "to_2d(): first parameter is not a 3D or higher dimensional vector");
-    return ptN.template head<2>();
-}
-
+using Slic3r::Biz::Algorithms::Point::to_2d;
 using Slic3r::Biz::Algorithms::Point::to_3d;
 
 inline Vec2d   unscale(coord_t x, coord_t y) { return Vec2d(unscale<double>(x), unscale<double>(y)); }

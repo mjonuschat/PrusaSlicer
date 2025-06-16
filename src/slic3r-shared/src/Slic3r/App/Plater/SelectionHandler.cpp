@@ -18,7 +18,7 @@ void SelectionHandler::mark_selected(Scene::Node& n, bool replace)
 
     auto selection_mode = m_scene_interactor.selection().mode;
 
-    auto new_selection_mode = tag->volume_type == ModelVolumeType::MODEL_PART ?
+    auto new_selection_mode = tag->volume_type == Domain::ModelVolumeType::MODEL_PART ?
         Biz::Scene::SelectionMode::Instance :
         replace ? Biz::Scene::SelectionMode::Volume : selection_mode;
 

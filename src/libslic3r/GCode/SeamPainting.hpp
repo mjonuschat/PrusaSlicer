@@ -10,7 +10,7 @@ namespace Slic3r::Seams::ModelInfo {
 class Painting
 {
 public:
-    Painting(const Transform3d &obj_transform, const ModelVolumePtrs &volumes);
+    Painting(const Transform3d &obj_transform, const Domain::ModelVolumePtrs &volumes);
 
     bool is_enforced(const Vec3f &position, float radius) const;
     bool is_blocked(const Vec3f &position, float radius) const;

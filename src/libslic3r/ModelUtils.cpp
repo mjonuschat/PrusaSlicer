@@ -6,14 +6,14 @@
 
 namespace Slic3r::Biz::Slicing {
 
-using ObjectInstances = std::vector<std::pair<ModelObject*, ModelInstancePtrs>>;
-ObjectInstances get_object_instances(const Model& model) {
+using ObjectInstances = std::vector<std::pair<Domain::ModelObject*, Domain::ModelInstancePtrs>>;
+ObjectInstances get_object_instances(const Domain::Model& model) {
     ObjectInstances result;
 
     std::ranges::transform(
         model.objects,
         std::back_inserter(result),
-        [](ModelObject *object){
+        [](Domain::ModelObject *object){
             return std::pair{object, object->instances};
         }
     );
@@ -21,13 +21,13 @@ ObjectInstances get_object_instances(const Model& model) {
     return result;
 }
 
-void restore_object_instances(Model& model, const ObjectInstances &object_instances) {
-    ModelObjectPtrs objects;
+void restore_object_instances(Domain::Model& model, const ObjectInstances &object_instances) {
+    Domain::ModelObjectPtrs objects;
 
     std::ranges::transform(
         object_instances,
         std::back_inserter(objects),
-        [](const std::pair<ModelObject *, ModelInstancePtrs> &key_value){
+        [](const std::pair<Domain::ModelObject *, Domain::ModelInstancePtrs> &key_value){
             auto [object, instances]{key_value};
             object->instances = std::move(instances);
             return object;
@@ -37,28 +37,28 @@ void restore_object_instances(Model& model, const ObjectInstances &object_instan
     model.objects = objects;
 }
 
-bool contains(const ModelInstance* instance, const Domain::ModelInstanceList& bed_instances)
+bool contains(const Domain::ModelInstance* instance, const Domain::ModelInstanceList& bed_instances)
 {
     return std::ranges::find(bed_instances, instance) != bed_instances.end();
 }
 
 void remove_instances(
-    Model& model,
+    Domain::Model& model,
     const Domain::ModelInstanceList& bed_instances
 ) {
-    for (ModelObject* mo : model.objects) {
-        std::erase_if(mo->instances, [&](const ModelInstance* instance) {
+    for (Domain::ModelObject* mo : model.objects) {
+        std::erase_if(mo->instances, [&](const Domain::ModelInstance* instance) {
             return !contains(instance, bed_instances);
         });
     }
 
-    std::erase_if(model.objects, [](const ModelObject* object) {
+    std::erase_if(model.objects, [](const Domain::ModelObject* object) {
         return object->instances.empty();
     });
 }
 
 void with_limited_instances(
-    Model &model,
+    Domain::Model &model,
     const Domain::ModelInstanceList& bed_instances,
     const std::function<void()> &callable
 ) {

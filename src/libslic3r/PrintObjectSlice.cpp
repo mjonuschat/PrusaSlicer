@@ -72,7 +72,7 @@ LayerPtrs new_layers(
 
 // Slice single triangle mesh.
 static std::vector<ExPolygons> slice_volume(
-    const ModelVolume             &volume,
+    const Domain::ModelVolume     &volume,
     const std::vector<float>      &zs, 
     const MeshSlicingParamsEx     &params,
     const std::function<void()>   &throw_on_cancel_callback)
@@ -95,7 +95,7 @@ static std::vector<ExPolygons> slice_volume(
 // Slice single triangle mesh.
 // Filter the zs not inside the ranges. The ranges are closed at the bottom and open at the top, they are sorted lexicographically and non overlapping.
 static std::vector<ExPolygons> slice_volume(
-    const ModelVolume                           &volume,
+    const Domain::ModelVolume                   &volume,
     const std::vector<float>                    &z,
     const std::vector<Domain::LayerHeightRange> &ranges,
     const MeshSlicingParamsEx                   &params,
@@ -139,10 +139,10 @@ struct VolumeSlices
     std::vector<ExPolygons> slices;
 };
 
-static inline bool model_volume_needs_slicing(const ModelVolume &mv)
+static inline bool model_volume_needs_slicing(const Domain::ModelVolume &mv)
 {
-    ModelVolumeType type = mv.type();
-    return type == ModelVolumeType::MODEL_PART || type == ModelVolumeType::NEGATIVE_VOLUME || type == ModelVolumeType::PARAMETER_MODIFIER;
+    Domain::ModelVolumeType type = mv.type();
+    return type == Domain::ModelVolumeType::MODEL_PART || type == Domain::ModelVolumeType::NEGATIVE_VOLUME || type == Domain::ModelVolumeType::PARAMETER_MODIFIER;
 }
 
 // Slice printable volumes, negative volumes and modifier volumes, sorted by ModelVolume::id().
@@ -150,10 +150,10 @@ static inline bool model_volume_needs_slicing(const ModelVolume &mv)
 // Apply positive XY compensation to ModelVolumeType::MODEL_PART and ModelVolumeType::PARAMETER_MODIFIER, not to ModelVolumeType::NEGATIVE_VOLUME.
 // Apply contour simplification.
 static std::vector<VolumeSlices> slice_volumes_inner(
-    const PrintConfigView                                        &print_config,
-    const PrintObjectConfigView                                  &print_object_config,
+    const PrintConfigView                                    &print_config,
+    const PrintObjectConfigView                              &print_object_config,
     const Transform3d                                        &object_trafo,
-    ModelVolumePtrs                                           model_volumes,
+    Domain::ModelVolumePtrs                                   model_volumes,
     const std::vector<PrintObjectRegions::LayerRangeRegions> &layer_ranges,
     const std::vector<float>                                 &zs,
     const std::function<void()>                              &throw_on_cancel_callback)
@@ -182,10 +182,10 @@ static std::vector<VolumeSlices> slice_volumes_inner(
     params_base.mode_below     = params_base.mode;
 
     const size_t num_extruders = print_config.get<std::vector<double>>("nozzle_diameter").size();
-    const bool   is_mm_painted = num_extruders > 1 && std::any_of(model_volumes.cbegin(), model_volumes.cend(), [](const ModelVolume *mv) { return mv->is_mm_painted(); });
+    const bool   is_mm_painted = num_extruders > 1 && std::any_of(model_volumes.cbegin(), model_volumes.cend(), [](const Domain::ModelVolume *mv) { return mv->is_mm_painted(); });
     const auto   extra_offset  = is_mm_painted ? 0.f : std::max(0.f, float(print_object_config.get<double>("xy_size_compensation")));
 
-    for (const ModelVolume *model_volume : model_volumes)
+    for (const Domain::ModelVolume *model_volume : model_volumes)
         if (model_volume_needs_slicing(*model_volume)) {
             MeshSlicingParamsEx params { params_base };
             if (! model_volume->is_negative_volume())
@@ -264,7 +264,7 @@ static std::vector<PrintObjectRegions::LayerRangeRegions>::const_iterator layer_
 }
 
 static std::vector<std::vector<ExPolygons>> slices_to_regions(
-    ModelVolumePtrs                                           model_volumes,
+    Domain::ModelVolumePtrs                                   model_volumes,
     const PrintObjectRegions                                 &print_object_regions,
     const std::vector<float>                                 &zs,
     std::vector<VolumeSlices>                               &&volume_slices,
@@ -282,7 +282,7 @@ static std::vector<std::vector<ExPolygons>> slices_to_regions(
             for (; z_idx < zs.size() && zs[z_idx] < layer_range.layer_height_range.first; ++ z_idx) ;
             if (layer_range.volume_regions.empty()) {
             } else if (layer_range.volume_regions.size() == 1) {
-                const ModelVolume *model_volume = layer_range.volume_regions.front().model_volume;
+                const Domain::ModelVolume *model_volume = layer_range.volume_regions.front().model_volume;
                 assert(model_volume != nullptr);
                 if (model_volume->is_model_part()) {
                     VolumeSlices &slices_src = volume_slices_find_by_id(volume_slices, model_volume->id());
@@ -1012,7 +1012,7 @@ void PrintObject::slice_volumes()
     BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - make_slices in parallel - end";
 }
 
-std::vector<Polygons> PrintObject::slice_support_volumes(const ModelVolumeType model_volume_type) const
+std::vector<Polygons> PrintObject::slice_support_volumes(const Domain::ModelVolumeType model_volume_type) const
 {
     auto it_volume     = this->model_object()->volumes.begin();
     auto it_volume_end = this->model_object()->volumes.end();

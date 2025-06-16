@@ -47,6 +47,7 @@
 #include <set>
 #include <tcbspan/span.hpp>
 #include "libslic3r/ConfigViews.hpp"
+#include "Slic3r/Domain/ModelObject.hpp"
 
 namespace Slic3r {
 
@@ -179,7 +180,7 @@ struct PrintInstance
     // Parent PrintObject
     PrintObject 		*print_object;
     // Source ModelInstance of a ModelObject, for which this print_object was created.
-	ModelInstance        model_instance;
+	Domain::ModelInstance model_instance;
     std::size_t          model_instance_index;
 	// Shift of this instance's center into the world coordinates.
 	Point 				 shift;
@@ -203,7 +204,7 @@ public:
     struct VolumeRegion
     {
         // ID of the associated ModelVolume.
-        const ModelVolume   *model_volume { nullptr };
+        const Domain::ModelVolume *model_volume { nullptr };
         // Index of a parent VolumeRegion.
         int                  parent { -1 };
         // Pointer to PrintObjectRegions::all_regions, null for a negative volume.
@@ -353,7 +354,7 @@ public:
     
     // Initialize the layer_height_profile from the model_object's layer_height_profile, from model_object's layer height table, or from slicing parameters.
     // Returns true, if the layer_height_profile was changed.
-    static bool     update_layer_height_profile(const ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<double> &layer_height_profile);
+    static bool     update_layer_height_profile(const Domain::ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<double> &layer_height_profile);
 
     // Collect the slicing parameters, to be used by variable layer thickness algorithm,
     // by the interactive layer height editor and by the printing process itself.
@@ -362,7 +363,7 @@ public:
     const SlicingParameters&    slicing_parameters() const { return m_slicing_params; }
     static SlicingParameters slicing_parameters(
         const PrintObjectConfigView& full_config,
-        const ModelObject& model_object,
+        const Domain::ModelObject& model_object,
         float object_max_z,
         const Vec3d& object_shrinkage_compensation
     );
@@ -388,9 +389,9 @@ public:
     void slice();
 
     // Helpers to slice support enforcer / blocker meshes by the support generator.
-    std::vector<Polygons>       slice_support_volumes(const ModelVolumeType model_volume_type) const;
-    std::vector<Polygons>       slice_support_blockers() const { return this->slice_support_volumes(ModelVolumeType::SUPPORT_BLOCKER); }
-    std::vector<Polygons>       slice_support_enforcers() const { return this->slice_support_volumes(ModelVolumeType::SUPPORT_ENFORCER); }
+    std::vector<Polygons>       slice_support_volumes(const Domain::ModelVolumeType model_volume_type) const;
+    std::vector<Polygons>       slice_support_blockers() const { return this->slice_support_volumes(Domain::ModelVolumeType::SUPPORT_BLOCKER); }
+    std::vector<Polygons>       slice_support_enforcers() const { return this->slice_support_volumes(Domain::ModelVolumeType::SUPPORT_ENFORCER); }
 
     // Helpers to project custom facets on slices
     void project_and_append_custom_facets(bool seam, Domain::TriangleSelector::TriangleStateType type, std::vector<Polygons>& expolys) const;
@@ -401,7 +402,7 @@ private:
     friend class PrintBaseWithState<PrintStep, psCount>;
 
 public:
-	PrintObject(Print* print, ModelObject* model_object, const PrintObjectConfigView& config, const Transform3d& trafo, PrintInstances&& instances);
+	PrintObject(Print* print, Domain::ModelObject* model_object, const PrintObjectConfigView& config, const Transform3d& trafo, PrintInstances&& instances);
 
     ~PrintObject() override {
         clear_layers();
@@ -577,14 +578,14 @@ public:
     std::vector<Domain::ObjectID> print_object_ids() const override;
 
     virtual Biz::Print::ApplyStatus update(
-        Model& model,
+        Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
         const Biz::Print::SerializedConfig& serialized_config
     ) override;
 
     ApplyStatus apply(
-        const Model& model,
+        const Domain::Model& model,
         const Domain::ConfigPackFDM& config_pack,
         const Biz::Print::SerializedConfig& serialized_config,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
@@ -596,9 +597,9 @@ public:
         const PrintConfigView& new_full_config
     );
 
-    static ModelInstancePtrs deep_copy_instances(
-        const ModelInstancePtrs& instances,
-        ModelObject* model_object
+    static Domain::ModelInstancePtrs deep_copy_instances(
+        const Domain::ModelInstancePtrs& instances,
+        Domain::ModelObject* model_object
     );
 
     bool invalidate_object_steps(

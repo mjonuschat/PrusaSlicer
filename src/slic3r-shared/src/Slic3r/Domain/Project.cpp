@@ -51,17 +51,17 @@ ConfigContainer* Project::find_config_container(size_t id)
     return find_by_id<ConfigContainer>(m_config_containers, id);
 }
 
-const ModelObject* Project::find_object_by_id(size_t id) const
+const Domain::ModelObject* Project::find_object_by_id(size_t id) const
 {
-    return find_by_id<ModelObject>(m_model->objects, id);
+    return find_by_id<Domain::ModelObject>(m_model->objects, id);
 }
 
-const ModelVolume* Project::find_volume_by_id(size_t obj_id, size_t vol_id) const
+const Domain::ModelVolume* Project::find_volume_by_id(size_t obj_id, size_t vol_id) const
 {
     const auto* obj = find_object_by_id(obj_id);
     if (obj == nullptr)
         return nullptr;
-    return find_by_id<ModelVolume>(obj->volumes, vol_id);
+    return find_by_id<Domain::ModelVolume>(obj->volumes, vol_id);
 }
 
 const ModelInstance* Project::find_instance_by_id(size_t obj_id, size_t inst_id) const
@@ -72,17 +72,17 @@ const ModelInstance* Project::find_instance_by_id(size_t obj_id, size_t inst_id)
     return find_by_id<ModelInstance>(obj->instances, inst_id);
 }
 
-ModelObject* Project::find_object_by_id(size_t id)
+Domain::ModelObject* Project::find_object_by_id(size_t id)
 {
-    return find_by_id<ModelObject>(m_model->objects, id);
+    return find_by_id<Domain::ModelObject>(m_model->objects, id);
 }
 
-ModelVolume* Project::find_volume_by_id(size_t obj_id, size_t vol_id)
+Domain::ModelVolume* Project::find_volume_by_id(size_t obj_id, size_t vol_id)
 {
     auto* obj = find_object_by_id(obj_id);
     if (obj == nullptr)
         return nullptr;
-    return find_by_id<ModelVolume>(obj->volumes, vol_id);
+    return find_by_id<Domain::ModelVolume>(obj->volumes, vol_id);
 }
 
 ModelInstance* Project::find_instance_by_id(size_t obj_id, size_t inst_id)

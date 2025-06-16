@@ -36,6 +36,8 @@ using Slic3r::Biz::Platform::PlatformServices;
 using Slic3r::Domain::ElementRef;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::ObjectID;
+using Slic3r::Domain::ModelObject;
+using Slic3r::Domain::ModelVolume;
 
 using Slic3r::Biz::Algorithms::its_quadric_edge_collapse;
 

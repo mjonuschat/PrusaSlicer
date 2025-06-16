@@ -21,12 +21,15 @@
 #include "slic3r/Utils/PrintHost.hpp"
 
 
+namespace Slic3r::Domain {
+class Model;
+} // namespace Slic3r::Domain
+
 namespace boost { namespace filesystem { class path; } }
 
 namespace Slic3r {
 
 class DynamicPrintConfig;
-class Model;
 class SLAPrint;
 
 class SlicingStatusEvent : public wxEvent

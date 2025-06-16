@@ -87,12 +87,12 @@ struct PrintObjectTrafoAndInstances
 };
 
 // Generate a list of trafos and XY offsets for instances of a ModelObject
-static std::vector<PrintObjectTrafoAndInstances> print_objects_from_model_object(const ModelInstancePtrs &instances, const Vec3d &shrinkage_compensation)
+static std::vector<PrintObjectTrafoAndInstances> print_objects_from_model_object(const Domain::ModelInstancePtrs &instances, const Vec3d &shrinkage_compensation)
 {
     std::set<PrintObjectTrafoAndInstances> trafos;
     PrintObjectTrafoAndInstances           trafo;
     for (std::size_t index{}; index < instances.size(); ++index) {
-        const ModelInstance& model_instance{*instances[index]};
+        const Domain::ModelInstance& model_instance{*instances[index]};
         if (model_instance.is_printable()) {
             Geometry::Transformation model_instance_transformation = model_instance.get_transformation();
             trafo.trafo = model_instance_transformation.get_matrix_with_applied_shrinkage_compensation(shrinkage_compensation);
@@ -237,10 +237,10 @@ private:
     std::vector<LayerRange>  m_ranges;
 };
 
-static inline bool model_volume_solid_or_modifier(const ModelVolume &mv)
+static inline bool model_volume_solid_or_modifier(const Domain::ModelVolume &mv)
 {
-    ModelVolumeType type = mv.type();
-    return type == ModelVolumeType::MODEL_PART || type == ModelVolumeType::NEGATIVE_VOLUME || type == ModelVolumeType::PARAMETER_MODIFIER;
+    Domain::ModelVolumeType type = mv.type();
+    return type == Domain::ModelVolumeType::MODEL_PART || type == Domain::ModelVolumeType::NEGATIVE_VOLUME || type == Domain::ModelVolumeType::PARAMETER_MODIFIER;
 }
 
 static inline Transform3f trafo_for_bbox(const Transform3d &object_trafo, const Transform3d &volume_trafo)
@@ -335,7 +335,7 @@ static void transformed_its_bboxes_in_z_ranges(
 
 // Find a bounding box of a volume's part intersecting layer_range. Such a bounding box will likely be smaller in XY than the full bounding box,
 // thus it will intersect with lower number of other volumes.
-const PrintObjectRegions::BoundingBox* find_volume_extents(const PrintObjectRegions::LayerRangeRegions &layer_range, const ModelVolume &volume)
+const PrintObjectRegions::BoundingBox* find_volume_extents(const PrintObjectRegions::LayerRangeRegions &layer_range, const Domain::ModelVolume &volume)
 {
     auto it = lower_bound_by_predicate(layer_range.volumes.begin(), layer_range.volumes.end(), [&volume](const PrintObjectRegions::VolumeExtents &l){ return l.volume_id < volume.id(); });
     return it != layer_range.volumes.end() && it->volume_id == volume.id() ? &it->bbox : nullptr;
@@ -368,7 +368,7 @@ PrintObjectRegions::BoundingBox find_modifier_volume_extents(const PrintObjectRe
 void update_volume_bboxes(
     std::vector<PrintObjectRegions::LayerRangeRegions>  &layer_ranges,
     std::vector<Domain::ObjectID>                       &cached_volume_ids,
-    ModelVolumePtrs                                      model_volumes,
+    Domain::ModelVolumePtrs                              model_volumes,
     const Transform3d                                   &object_trafo, 
     const float                                          offset)
 {
@@ -379,7 +379,7 @@ void update_volume_bboxes(
         PrintObjectRegions::LayerRangeRegions &layer_range = layer_ranges.front();
         std::vector<PrintObjectRegions::VolumeExtents> volumes_old(std::move(layer_range.volumes));
         layer_range.volumes.reserve(model_volumes.size());
-        for (const ModelVolume *model_volume : model_volumes)
+        for (const Domain::ModelVolume *model_volume : model_volumes)
             if (model_volume_solid_or_modifier(*model_volume)) {
                 if (std::binary_search(cached_volume_ids.begin(), cached_volume_ids.end(), model_volume->id())) {
                     auto it = lower_bound_by_predicate(volumes_old.begin(), volumes_old.end(), [model_volume](PrintObjectRegions::VolumeExtents &l) { return l.volume_id < model_volume->id(); });
@@ -409,7 +409,7 @@ void update_volume_bboxes(
             r.second += EPSILON;
             ranges.emplace_back(r);
         }
-        for (const ModelVolume *model_volume : model_volumes)
+        for (const Domain::ModelVolume *model_volume : model_volumes)
             if (model_volume_solid_or_modifier(*model_volume)) {
                 if (std::binary_search(cached_volume_ids.begin(), cached_volume_ids.end(), model_volume->id())) {
                     for (PrintObjectRegions::LayerRangeRegions &layer_range : layer_ranges) {
@@ -429,7 +429,7 @@ void update_volume_bboxes(
 
     cached_volume_ids.clear();
     cached_volume_ids.reserve(model_volumes.size());
-    for (const ModelVolume *v : model_volumes)
+    for (const Domain::ModelVolume *v : model_volumes)
         if (model_volume_solid_or_modifier(*v))
             cached_volume_ids.emplace_back(v->id());
 }
@@ -454,11 +454,11 @@ PrintAndObjectSteps Print::update_config(const PrintConfigView& new_full_config)
     return invalidated_steps;
 }
 
-ModelInstancePtrs Print::deep_copy_instances(const ModelInstancePtrs& instances, ModelObject* model_object)
+Domain::ModelInstancePtrs Print::deep_copy_instances(const Domain::ModelInstancePtrs& instances, Domain::ModelObject* model_object)
 {
-    ModelInstancePtrs result;
-    for (ModelInstance* model_instance : instances) {
-        result.emplace_back(new ModelInstance(*model_instance));
+    Domain::ModelInstancePtrs result;
+    for (Domain::ModelInstance* model_instance : instances) {
+        result.emplace_back(new Domain::ModelInstance(*model_instance));
         result.back()->set_model_object(model_object);
     }
     return result;
@@ -550,15 +550,15 @@ T preprocess_config(const T& partial_config)
 // Generate PrintRegions from scratch.
 std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
     std::shared_ptr<PrintObjectRegions> print_object_regions_old,
-    const ModelVolumePtrs& model_volumes,
-    const LayerRanges& model_layer_ranges,
-    const PrintObjectConfigView& new_object_settings,
-    const FullConfigFDMPtr& new_full_config,
-    const Transform3d& trafo,
-    size_t num_extruders,
-    const float xy_size_compensation,
-    const std::vector<unsigned int>& painting_extruders,
-    const bool has_painted_fuzzy_skin
+    const Domain::ModelVolumePtrs&      model_volumes,
+    const LayerRanges&                  model_layer_ranges,
+    const PrintObjectConfigView&        new_object_settings,
+    const FullConfigFDMPtr&             new_full_config,
+    const Transform3d&                  trafo,
+    size_t                              num_extruders,
+    const float                         xy_size_compensation,
+    const std::vector<unsigned int>&    painting_extruders,
+    const bool                          has_painted_fuzzy_skin
 )
 {
     // Reuse the old object or generate a new one.
@@ -573,7 +573,7 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
     for (const auto &range : model_layer_ranges)
         layer_ranges_regions.push_back({ range.layer_height_range, range.config });
 
-    const bool is_mm_painted = num_extruders > 1 && std::any_of(model_volumes.cbegin(), model_volumes.cend(), [](const ModelVolume *mv) { return mv->is_mm_painted(); });
+    const bool is_mm_painted = num_extruders > 1 && std::any_of(model_volumes.cbegin(), model_volumes.cend(), [](const Domain::ModelVolume *mv) { return mv->is_mm_painted(); });
     update_volume_bboxes(layer_ranges_regions, out->cached_volume_ids, model_volumes, out->trafo_bboxes, is_mm_painted ? 0.f : std::max(0.f, xy_size_compensation));
 
     std::vector<PrintRegion*> region_set;
@@ -592,7 +592,7 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
 
     // Chain the regions in the order they are stored in the volumes list.
     for (int volume_id = 0; volume_id < int(model_volumes.size()); ++ volume_id) {
-        const ModelVolume &volume = *model_volumes[volume_id];
+        const Domain::ModelVolume &volume = *model_volumes[volume_id];
         if (model_volume_solid_or_modifier(volume)) {
             for (PrintObjectRegions::LayerRangeRegions &layer_range : layer_ranges_regions)
                 if (const PrintObjectRegions::BoundingBox *bbox = find_volume_extents(layer_range, volume); bbox) {
@@ -628,7 +628,7 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
                         int  parent_model_part_id = -1;
                         for (int parent_region_id = int(layer_range.volume_regions.size()) - 1; parent_region_id >= 0; -- parent_region_id) {
                             const PrintObjectRegions::VolumeRegion &parent_region = layer_range.volume_regions[parent_region_id];
-                            const ModelVolume                      &parent_volume = *parent_region.model_volume;
+                            const Domain::ModelVolume              &parent_volume = *parent_region.model_volume;
                             if (parent_volume.is_model_part() || parent_volume.is_modifier())
                                 if (PrintObjectRegions::BoundingBox parent_bbox = find_modifier_volume_extents(layer_range, parent_region_id); parent_bbox.intersects(*bbox)) {
                                     PrintRegionConfigView new_config{parent_region.region->config()};
@@ -800,14 +800,14 @@ PlaceholderParser init_placeholder_parser(
 }
 
 bool get_solid_or_modifier_differ(
-    const ModelObject& model_object,
-    const ModelObject& model_object_new,
+    const Domain::ModelObject& model_object,
+    const Domain::ModelObject& model_object_new,
     const bool num_extruders_changed
 ) {
-    const std::initializer_list<ModelVolumeType> solid_or_modifier_types{
-        ModelVolumeType::MODEL_PART,
-        ModelVolumeType::NEGATIVE_VOLUME,
-        ModelVolumeType::PARAMETER_MODIFIER
+    const std::initializer_list<Domain::ModelVolumeType> solid_or_modifier_types{
+        Domain::ModelVolumeType::MODEL_PART,
+        Domain::ModelVolumeType::NEGATIVE_VOLUME,
+        Domain::ModelVolumeType::PARAMETER_MODIFIER
     };
     const bool volumes_changed{
         model_volume_list_changed(model_object, model_object_new, solid_or_modifier_types)
@@ -825,8 +825,8 @@ bool get_solid_or_modifier_differ(
 }
 
 bool get_layers_or_translation_differ(
-    const ModelObject& model_object,
-    const ModelObject& model_object_new
+    const Domain::ModelObject& model_object,
+    const Domain::ModelObject& model_object_new
 )
 {
     const bool layer_height_ranges_differ = !layer_height_ranges_equal(
@@ -847,7 +847,7 @@ bool get_layers_or_translation_differ(
         || layer_height_profile_differ;
 }
 
-bool instance_ids_equal(const ModelInstancePtrs& current, const ModelInstancePtrs& next)
+bool instance_ids_equal(const Domain::ModelInstancePtrs& current, const Domain::ModelInstancePtrs& next)
 {
     if (current.size() != next.size()) {
         return false;
@@ -858,7 +858,7 @@ bool instance_ids_equal(const ModelInstancePtrs& current, const ModelInstancePtr
 }
 
 std::vector<unsigned int> get_painting_extruders(
-    const ModelVolumePtrs& volumes,
+    const Domain::ModelVolumePtrs& volumes,
     const std::size_t num_extruders,
     const bool is_mm_painted
 )
@@ -867,7 +867,7 @@ std::vector<unsigned int> get_painting_extruders(
 
     if (num_extruders > 1 && is_mm_painted) {
         std::array<bool, static_cast<size_t>(TriangleStateType::Count)> used_facet_states{};
-        for (const ModelVolume* volume : volumes) {
+        for (const Domain::ModelVolume* volume : volumes) {
             if (volume->is_mm_painted()) {
                 const std::vector<bool>& volume_used_facet_states{
                     volume->mm_segmentation_facets.get_data().used_states
@@ -941,8 +941,8 @@ private:
 };
 
 PrintAndObjectSteps get_model_invalidated_steps(
-    const ModelObject& model_object,
-    const ModelObject& model_object_new,
+    const Domain::ModelObject& model_object,
+    const Domain::ModelObject& model_object_new,
     const std::size_t num_extruders_changed
 )
 {
@@ -951,8 +951,8 @@ PrintAndObjectSteps get_model_invalidated_steps(
     };
 
     const bool supports_differ{
-        model_volume_list_changed(model_object, model_object_new, ModelVolumeType::SUPPORT_BLOCKER)
-        || model_volume_list_changed(model_object, model_object_new, ModelVolumeType::SUPPORT_ENFORCER)
+        model_volume_list_changed(model_object, model_object_new, Domain::ModelVolumeType::SUPPORT_BLOCKER)
+        || model_volume_list_changed(model_object, model_object_new, Domain::ModelVolumeType::SUPPORT_ENFORCER)
     };
 
 
@@ -990,27 +990,27 @@ PrintAndObjectSteps get_model_invalidated_steps(
 using StepsPerModelObjectId = std::map<ModelObjectId, PrintAndObjectSteps>;
 
 struct ModelObjectsSyncResult {
-    ModelObjectPtrs objects;
+    Domain::ModelObjectPtrs objects;
     StepsPerModelObjectId reused_objects;
 };
 
 ModelObjectsSyncResult sync_model_objects(
-    const ModelObjectPtrs& new_objects,
-    const std::map<ObjectID, ModelObject*>& reuse_candidates,
+    const Domain::ModelObjectPtrs& new_objects,
+    const std::map<ObjectID, Domain::ModelObject*>& reuse_candidates,
     const bool num_extruders_changed
 )
 {
     ModelObjectsSyncResult result;
 
-    for (ModelObject* model_object_new : new_objects) {
+    for (Domain::ModelObject* model_object_new : new_objects) {
         const auto current_object_it{reuse_candidates.find(model_object_new->id())};
 
         if (current_object_it == reuse_candidates.end()) {
-            result.objects.push_back(ModelObject::new_copy(*model_object_new));
+            result.objects.push_back(Domain::ModelObject::new_copy(*model_object_new));
             continue;
         }
 
-        ModelObject* model_object{current_object_it->second};
+        Domain::ModelObject* model_object{current_object_it->second};
 
         const PrintAndObjectSteps invalidated_steps{
             get_model_invalidated_steps(*model_object, *model_object_new, num_extruders_changed)
@@ -1018,7 +1018,7 @@ ModelObjectsSyncResult sync_model_objects(
 
         if (std::holds_alternative<AllSteps>(invalidated_steps.first)
             && std::holds_alternative<AllSteps>(invalidated_steps.second)) {
-            result.objects.push_back(ModelObject::new_copy(*model_object_new));
+            result.objects.push_back(Domain::ModelObject::new_copy(*model_object_new));
             continue;
         }
 
@@ -1037,7 +1037,7 @@ std::map<PrintObjectUniqueId, PrintObject*> get_reuse_candidates(
 )
 {
     std::map<PrintObjectUniqueId, PrintObject*> result;
-    for (ModelObject* model_object : model_objects_sync_result.objects) {
+    for (Domain::ModelObject* model_object : model_objects_sync_result.objects) {
         if (model_objects_sync_result.reused_objects.count(model_object->id()) == 0) {
             continue;
         }
@@ -1062,7 +1062,7 @@ struct PrintObjectsSyncResult {
 };
 
 PrintObjectsSyncResult sync_print_objects(
-    const ModelObjectPtrs& model_objects,
+    const Domain::ModelObjectPtrs& model_objects,
     const std::map<PrintObjectUniqueId, PrintObject*>& reuse_candidates,
     const FullConfigFDMPtr& new_full_config,
     const std::size_t num_extruders,
@@ -1072,7 +1072,7 @@ PrintObjectsSyncResult sync_print_objects(
 {
     PrintObjectsSyncResult result;
 
-    for (ModelObject* model_object : model_objects) {
+    for (Domain::ModelObject* model_object : model_objects) {
         std::vector<PrintObjectTrafoAndInstances> print_instances = print_objects_from_model_object(
             model_object->instances,
             shrinkage_compensation
@@ -1242,14 +1242,14 @@ using Regions = std::vector<std::pair<PrintObject *, std::shared_ptr<PrintObject
 
 struct ModelSyncResult {
     PrintObjectPtrs print_objects;
-    ModelObjectPtrs model_objects;
+    Domain::ModelObjectPtrs model_objects;
     Regions regions;
     InvalidatedSteps invalidated_steps;
 };
 
 ModelSyncResult sync_model(
-    const Model& current_model,
-    const Model& new_model,
+    const Domain::Model& current_model,
+    const Domain::Model& new_model,
     const PrintObjectPtrs& current_objects,
     const std::shared_ptr<FullConfigFDM>& new_full_config,
 
@@ -1260,10 +1260,10 @@ ModelSyncResult sync_model(
     bool num_extruders_changed
 )
 {
-    std::map<ObjectID, ModelObject*> current_model_objects;
+    std::map<ObjectID, Domain::ModelObject*> current_model_objects;
 
     if (current_model.id() == new_model.id()) {
-        for (ModelObject* model_object : current_model.objects) {
+        for (Domain::ModelObject* model_object : current_model.objects) {
             current_model_objects.insert({model_object->id(), model_object});
         }
     }
@@ -1321,12 +1321,12 @@ InvalidatedSteps to_invalidated_steps(const PrintAndObjectSteps& steps, const Pr
     return result;
 }
 
-void delete_old_model_objects(const ModelObjectPtrs& old_objects, const ModelObjectPtrs& new_objects) {
-    const std::set<ModelObject*> model_objects_set{
+void delete_old_model_objects(const Domain::ModelObjectPtrs& old_objects, const Domain::ModelObjectPtrs& new_objects) {
+    const std::set<Domain::ModelObject*> model_objects_set{
         new_objects.begin(),
         new_objects.end()
     };
-    for (ModelObject* model_object : old_objects) {
+    for (Domain::ModelObject* model_object : old_objects) {
         if (model_objects_set.count(model_object) == 0) {
             delete model_object;
         }
@@ -1369,7 +1369,7 @@ bool InvalidatedSteps::empty() const {
 }
 
 Print::ApplyStatus Print::apply(
-    const Model& model,
+    const Domain::Model& model,
     const Domain::ConfigPackFDM& config_pack,
     const Biz::Print::SerializedConfig& serialized_config,
     const std::optional<Domain::ModelWipeTower>& wipe_tower,

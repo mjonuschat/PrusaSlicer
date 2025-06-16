@@ -18,12 +18,13 @@
 #include <cinttypes>
 #include <cstddef>
 
-typedef double                          double;
 typedef std::pair<double, double>   t_layer_height_range;
 
-namespace Slic3r {
-
+namespace Slic3r::Domain {
 class Model;
+} // namespace Slic3r::Domain
+
+namespace Slic3r {
 
 namespace GUI {
 	class Selection;

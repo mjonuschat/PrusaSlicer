@@ -197,9 +197,9 @@ void SLAPrint::clear()
 }
 
 // Transformation without rotation around Z and without a shift by X and Y.
-Transform3d SLAPrint::sla_trafo(const ModelObject &model_object) const
+Transform3d SLAPrint::sla_trafo(const Domain::ModelObject &model_object) const
 {
-    ModelInstance &model_instance = *model_object.instances.front();
+    Domain::ModelInstance &model_instance = *model_object.instances.front();
     auto trafo = Transform3d::Identity();
     trafo.translate(Vec3d{ 0., 0., model_instance.get_offset().z() * this->relative_correction().z() });
     trafo.linear() = Eigen::DiagonalMatrix<double, 3, 3>(this->relative_correction()) * model_instance.get_matrix().linear();
@@ -210,9 +210,9 @@ Transform3d SLAPrint::sla_trafo(const ModelObject &model_object) const
 
 namespace {
 // Transformation without rotation around Z and without a shift by X and Y.
-Transform3d sla_trafo(const ModelObject &model_object, const Vec3d& relative_correction)
+Transform3d sla_trafo(const Domain::ModelObject &model_object, const Vec3d& relative_correction)
 {
-    ModelInstance &model_instance = *model_object.instances.front();
+    Domain::ModelInstance &model_instance = *model_object.instances.front();
     auto trafo = Transform3d::Identity();
     trafo.translate(Vec3d{ 0., 0., model_instance.get_offset().z() * relative_correction.z() });
     trafo.linear() = Eigen::DiagonalMatrix<double, 3, 3>(relative_correction) * model_instance.get_matrix().linear();
@@ -223,13 +223,13 @@ Transform3d sla_trafo(const ModelObject &model_object, const Vec3d& relative_cor
 }
 
 // List of instances, where the ModelInstance transformation is a composite of sla_trafo and the transformation defined by SLAPrintObject::Instance.
-static std::vector<SLAPrintObject::Instance> sla_instances(const ModelObject &model_object)
+static std::vector<SLAPrintObject::Instance> sla_instances(const Domain::ModelObject &model_object)
 {
     std::vector<SLAPrintObject::Instance> instances;
     assert(! model_object.instances.empty());
     if (! model_object.instances.empty()) {
         const Transform3d& trafo0 = model_object.instances.front()->get_matrix();
-        for (ModelInstance *model_instance : model_object.instances)
+        for (Domain::ModelInstance *model_instance : model_object.instances)
             if (model_instance->is_printable()) {
                 instances.emplace_back(
                     model_instance->id(),
@@ -305,39 +305,39 @@ InvalidatedSteps merge(const std::vector<InvalidatedSteps>& invalidated_steps) {
 
 
 struct ModelObjectsSyncResult {
-    ModelObjectPtrs objects;
+    Domain::ModelObjectPtrs objects;
     std::map<ObjectID, SLAPrintObject*> reuse_candidates;
     InvalidatedSteps invalidated_steps;
 };
 
 ModelObjectsSyncResult sync_model_objects(
-    const ModelObjectPtrs& new_objects,
-    const std::map<ObjectID, ModelObject*>& reuse_candidates,
+    const Domain::ModelObjectPtrs& new_objects,
+    const std::map<ObjectID, Domain::ModelObject*>& reuse_candidates,
     const PrintObjects& old_objects,
     const Vec3d& relative_correction
 )
 {
-    ModelObjectPtrs objects;
+    Domain::ModelObjectPtrs objects;
     StepsPerModelObjectId reused_objects;
 
-    for (ModelObject* model_object_new : new_objects) {
+    for (Domain::ModelObject* model_object_new : new_objects) {
         const auto current_object_it{reuse_candidates.find(model_object_new->id())};
 
         if (current_object_it == reuse_candidates.end()) {
-            objects.push_back(ModelObject::new_copy(*model_object_new));
+            objects.push_back(Domain::ModelObject::new_copy(*model_object_new));
             continue;
         }
 
-        ModelObject* model_object{current_object_it->second};
+        Domain::ModelObject* model_object{current_object_it->second};
 
         // Check whether a model part volume was added or removed, their transformations or order changed.
         const bool model_parts_differ{model_volume_list_changed(
             *model_object,
             *model_object_new,
-            {ModelVolumeType::MODEL_PART,
-             ModelVolumeType::NEGATIVE_VOLUME,
-             ModelVolumeType::SUPPORT_ENFORCER,
-             ModelVolumeType::SUPPORT_BLOCKER}
+            {Domain::ModelVolumeType::MODEL_PART,
+             Domain::ModelVolumeType::NEGATIVE_VOLUME,
+             Domain::ModelVolumeType::SUPPORT_ENFORCER,
+             Domain::ModelVolumeType::SUPPORT_BLOCKER}
         )};
 
         const bool sla_trafo_differs = model_object->instances.empty() != model_object_new->instances.empty()
@@ -345,7 +345,7 @@ ModelObjectsSyncResult sync_model_objects(
             || model_object->instances.front()->is_left_handed() != model_object_new->instances.front()->is_left_handed()));
 
         if (model_parts_differ || sla_trafo_differs) {
-            objects.push_back(ModelObject::new_copy(*model_object_new));
+            objects.push_back(Domain::ModelObject::new_copy(*model_object_new));
             continue;
         }
 
@@ -398,12 +398,12 @@ ModelObjectsSyncResult sync_model_objects(
     return result;
 }
 
-void delete_old_model_objects(const ModelObjectPtrs& old_objects, const ModelObjectPtrs& new_objects) {
-    const std::set<ModelObject*> model_objects_set{
+void delete_old_model_objects(const Domain::ModelObjectPtrs& old_objects, const Domain::ModelObjectPtrs& new_objects) {
+    const std::set<Domain::ModelObject*> model_objects_set{
         new_objects.begin(),
         new_objects.end()
     };
-    for (ModelObject* model_object : old_objects) {
+    for (Domain::ModelObject* model_object : old_objects) {
         if (model_objects_set.count(model_object) == 0) {
             delete model_object;
         }
@@ -625,7 +625,7 @@ struct PrintObjectsSyncResult {
 };
 
 PrintObjectsSyncResult sync_print_objects(
-    const ModelObjectPtrs& model_objects,
+    const Domain::ModelObjectPtrs& model_objects,
     const std::map<ObjectID, SLAPrintObject*>& reuse_candidates,
     const FullConfigSLAPtr& new_full_config,
     const Vec3d relative_correction,
@@ -634,7 +634,7 @@ PrintObjectsSyncResult sync_print_objects(
 {
     PrintObjectsSyncResult result;
 
-    for (ModelObject* model_object: model_objects) {
+    for (Domain::ModelObject* model_object: model_objects) {
         std::vector<SLAPrintObject::Instance> new_instances = sla_instances(*model_object);
         if (new_instances.empty()) {
             continue;
@@ -749,17 +749,17 @@ bool InvalidatedSteps::empty() const {
 }
 
 struct ModelSyncResult {
-    ModelObjectPtrs model_objects;
+    Domain::ModelObjectPtrs model_objects;
     PrintObjects print_objects;
     InvalidatedSteps invalidated_steps;
 };
 
 ModelSyncResult sync_model(
-    const Model& old_model,
-    const Model& new_model,
+    const Domain::Model& old_model,
+    const Domain::Model& new_model,
     const FullConfigSLAPtr& new_full_config,
     const PrintObjects& old_objects,
-    const std::map<ObjectID, ModelObject*>& reuse_candidates,
+    const std::map<ObjectID, Domain::ModelObject*>& reuse_candidates,
     const Vec3d& relative_correction,
     SLAPrint* print
 )
@@ -804,7 +804,7 @@ ModelSyncResult sync_model(
 }
 
 Biz::Print::ApplyStatus SLAPrint::update(
-    Model& model,
+    Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
     const Biz::Print::SerializedConfig& serialized_config
@@ -822,7 +822,7 @@ Biz::Print::ApplyStatus SLAPrint::update(
 }
 
 SLAPrint::ApplyStatus SLAPrint::apply(
-    const Model& model,
+    const Domain::Model& model,
     const Domain::ConfigPackSLA& config_pack,
     const Biz::Print::SerializedConfig& serialized_config,
     std::vector<std::string>* warnings
@@ -859,9 +859,9 @@ SLAPrint::ApplyStatus SLAPrint::apply(
 
     const bool all_invalidated{std::holds_alternative<AllSteps>(config_invalidated_steps.print)};
 
-    std::map<ObjectID, ModelObject*> reuse_candidates;
+    std::map<ObjectID, Domain::ModelObject*> reuse_candidates;
     if (model.id() == m_model.id() && !all_invalidated) {
-        for (ModelObject* model_object: m_model.objects) {
+        for (Domain::ModelObject* model_object: m_model.objects) {
             reuse_candidates.insert({model_object->id(), model_object});
         }
     }
@@ -1296,7 +1296,7 @@ bool SLAPrint::is_step_done(SLAPrintObjectStep step) const
 }
 
 SLAPrintObject::SLAPrintObject(
-    SLAPrint* print, ModelObject* model_object, const SLAPrintObjectConfigView& config
+    SLAPrint* print, Domain::ModelObject* model_object, const SLAPrintObjectConfigView& config
 )
     : Inherited(print, model_object),
     m_config(config)

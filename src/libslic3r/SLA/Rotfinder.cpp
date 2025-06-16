@@ -302,11 +302,11 @@ struct RotfinderBoilerplate {
 
     // Assemble the mesh with the correct transformation to be used in rotation
     // optimization.
-    static TriangleMesh get_mesh_to_rotate(const ModelObject &mo)
+    static TriangleMesh get_mesh_to_rotate(const Domain::ModelObject &mo)
     {
         TriangleMesh mesh = mo.raw_mesh();
 
-        ModelInstance *mi = mo.instances[0];
+        Domain::ModelInstance *mi = mo.instances[0];
         const Geometry::Transformation trafo = mi->get_transformation();
         Transform3d trafo_instance = trafo.get_scaling_factor_matrix() * trafo.get_mirror_matrix();
         mesh.transform(trafo_instance);
@@ -314,7 +314,7 @@ struct RotfinderBoilerplate {
         return mesh;
     }
 
-    RotfinderBoilerplate(const ModelObject &mo, const RotOptimizeParams &p)
+    RotfinderBoilerplate(const Domain::ModelObject &mo, const RotOptimizeParams &p)
         : mesh{get_mesh_to_rotate(mo)}
         , max_tries(p.accuracy() * MAX_TRIES)
         , params{p}
@@ -333,8 +333,8 @@ struct RotfinderBoilerplate {
     bool stopcond() { return ! params.statuscb()(-1); }
 };
 
-Vec2d find_best_misalignment_rotation(const ModelObject &      mo,
-                                      const RotOptimizeParams &params)
+Vec2d find_best_misalignment_rotation(const Domain::ModelObject &mo,
+                                      const RotOptimizeParams   &params)
 {
     RotfinderBoilerplate<1000> bp{mo, params};
 
@@ -377,8 +377,8 @@ inline bool is_on_floor(const SLAPrintObjectConfig &cfg, const Domain::SLAObject
     return support_object_elevation < EPSILON || pad_around_object;
 }
 
-Vec2d find_least_supports_rotation(const ModelObject &      mo,
-                                   const RotOptimizeParams &params)
+Vec2d find_least_supports_rotation(const Domain::ModelObject &mo,
+                                   const RotOptimizeParams   &params)
 {
     RotfinderBoilerplate<1000> bp{mo, params};
 
@@ -453,8 +453,8 @@ inline BoundingBoxf3 bounding_box_with_tr(const indexed_triangle_set &its,
     return {bmin.cast<double>(), bmax.cast<double>()};
 }
 
-Vec2d find_min_z_height_rotation(const ModelObject &mo,
-                                 const RotOptimizeParams &params)
+Vec2d find_min_z_height_rotation(const Domain::ModelObject &mo,
+                                 const RotOptimizeParams   &params)
 {
     RotfinderBoilerplate<1000> bp{mo, params};
 

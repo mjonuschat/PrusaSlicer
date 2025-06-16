@@ -319,7 +319,7 @@ constexpr bool debug_files{true};
 TEST_CASE("Legacy FDM 3MF roundtrip", "[config]")
 {
     for (const std::string& filename : std::vector<std::string>{"fdm_roundtrip1.3mf", "fdm_roundtrip2.3mf"}) {
-        Slic3r::Model model;
+        Domain::Model model;
         Domain::ConfigPack cfg;
         boost::optional<Slic3r::Semver> prusaslicer_generator_version;
         Domain::WipeTowersOnBeds wipe_towers;
@@ -341,7 +341,7 @@ TEST_CASE("Legacy FDM 3MF roundtrip", "[config]")
 TEST_CASE("Legacy SLA 3MF roundtrip", "[config]")
 {
     for (const std::string& filename : std::vector<std::string>{"sla_roundtrip1.3mf", "sla_roundtrip2.3mf"}) {
-        Slic3r::Model model;
+        Domain::Model model;
         Domain::ConfigPack cfg;
         boost::optional<Slic3r::Semver> prusaslicer_generator_version;
         Domain::WipeTowersOnBeds wipe_towers;

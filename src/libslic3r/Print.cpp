@@ -91,7 +91,7 @@ void Print::clear()
 }
 
 Biz::Print::ApplyStatus Print::update(
-    Model& model,
+    Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
     const Biz::Print::SerializedConfig& serialized_config
@@ -502,7 +502,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             // Do we have custom support data that would not be used?
             // Notify the user in that case.
             if (! object->has_support() && warnings) {
-                for (const ModelVolume* mv : object->model_object()->volumes) {
+                for (const Domain::ModelVolume* mv : object->model_object()->volumes) {
                     bool has_enforcers = mv->is_support_enforcer() || 
                         (mv->is_model_part() && Algorithms::FacetsAnnotation::has_facets(mv->supported_facets, Domain::TriangleSelector::TriangleStateType::ENFORCER));
                     if (has_enforcers) {
@@ -1105,7 +1105,7 @@ void Print::alert_when_supports_needed()
         std::vector<std::pair<const PrintObject *, std::vector<std::pair<SupportSpotsGenerator::SupportPointCause, bool>>>> objects_isssues;
 
         for (const PrintObject *object : m_objects) {
-            std::unordered_set<const ModelObject *> checked_model_objects;
+            std::unordered_set<const Domain::ModelObject *> checked_model_objects;
             if (!object->has_support() && checked_model_objects.find(object->model_object()) == checked_model_objects.end()) {
                 if (object->m_shared_regions->generated_support_points.has_value()) {
                     SupportSpotsGenerator::SupportPoints  supp_points = object->m_shared_regions->generated_support_points->support_points;

@@ -102,7 +102,7 @@ class BackgroundProcess
 public:
     BackgroundProcess(
         IProcessCallbacks& callbacks,
-        Model& model,
+        Domain::Model& model,
         Domain::ConfigPack&& config,
         const Domain::BedInstance& bed,
         const SlicingId id
@@ -110,7 +110,7 @@ public:
     BackgroundProcess(
         std::unique_ptr<Print::IPrint>&& print,
         IProcessCallbacks& callbacks,
-        Model& model,
+        Domain::Model& model,
         Domain::ConfigPack&& config,
         const Domain::BedInstance& bed,
         const SlicingId id
@@ -119,7 +119,7 @@ public:
 
     /* WARNING! It is up to the caller to ensure update is not called on a running thread! */
     void update(
-        Model& model,
+        Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed
     );
