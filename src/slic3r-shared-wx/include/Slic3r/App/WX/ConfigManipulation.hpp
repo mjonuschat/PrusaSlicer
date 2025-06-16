@@ -11,7 +11,7 @@
 class wxWindow;
 
 namespace Slic3r::Domain {
-    class ConfigBox;
+    struct ConfigBox;
 }
 
 namespace Slic3r::App::WX {

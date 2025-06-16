@@ -16,7 +16,7 @@
 #include "Field.hpp"
 
 namespace Domain {
-    class ConfigBox;
+    struct ConfigBox;
 } // namespace Domain
 
 
