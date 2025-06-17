@@ -99,6 +99,32 @@ void TopBar::add_load_project_btn(Item* parent)
 void TopBar::add_save_project_btn(Item* parent)
 {
     m_save_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarSave);
+    m_save_btn->callbacks().action = [this]() {
+        auto& dlg_manager = DialogManagerProvider::instance().get();
+        dlg_manager.show_yesno_dialog(
+            "DEVELOPER WARNING",
+            "EXPORT TO 3MF IS NOT FINALIZED YET.\n\nThe exported project MUST NOT be shared publicly, "
+            "it will not be compatible with both old PrusaSlicer and the finalized 3.0.0.\n\n"
+            "Do you really want to export it?",
+            [this](bool answer) {
+                if (! answer)
+                    return;
+                const std::string& project_name = m_project_interactor->get_project_name(m_project_interactor->selected_project_id());
+                if (true || project_name.empty()) { // The 'true' is here for the development phase - effectively it always "Saves as".
+                    // Saving a new project - show file save dialog.
+                    IDialogManager::FileCallback callback = [this](bool success, const boost::filesystem::path& file_path) {
+                        if (success)
+                            m_project_interactor->save_project(file_path.string());
+                    };
+                    auto& dlg_manager = DialogManagerProvider::instance().get();            
+                    dlg_manager.show_file_dialog(FileDialogType::Open, _u8L("Save Project"), "", "", "*.3mf", callback);
+                } else {
+                    // Saving an existing project - just save.
+                    m_project_interactor->save_project(project_name);
+                }
+            }
+        );
+    };
 }
 
 void TopBar::add_show_ui_btn(Item* parent)

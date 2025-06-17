@@ -93,6 +93,15 @@ public:
     Domain::SelectionId load_project(const std::string& file_path);
 
     /**
+     * @name Project manipulation
+     * @{
+     */
+    /**
+     * @brief Save project into the file
+     */
+    void save_project(const std::string& file_path);
+
+    /**
      * Select already opened project. If the project is already selected, do nothing.
      * @param project_id An index of project to be selected.
      */

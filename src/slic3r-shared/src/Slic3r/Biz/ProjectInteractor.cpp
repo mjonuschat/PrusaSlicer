@@ -31,6 +31,11 @@ Domain::SelectionId ProjectInteractor::load_project(const std::string& file_path
     return project_id;
 }
 
+void ProjectInteractor::save_project(const std::string& file_path)
+{
+    store_3mf(file_path, this->selected_project());
+}
+
 void ProjectInteractor::initialize_new_project_before_inserting(Domain::Project& p)
 {
     auto& cc_ptr = p.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());

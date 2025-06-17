@@ -466,21 +466,5 @@ void MainFrame::update_canvas_ui_settings()
     m_canvas->set_font_global_scale(this->GetDPIScaleFactor());
 }
 
-void MainFrame::load_project()
-{
-    auto& dlg_manager = DialogManagerProvider::instance().get();
-
-
-    IDialogManager::FileCallback callback = [this](bool success, const boost::filesystem::path& file_path)
-    {
-        if (success)
-            m_project_interactor.load_project(file_path.string());
-    };
-
-    dlg_manager.show_file_dialog(FileDialogType::Open, "Open Project", "", "", "*.3mf", callback);
-
-
-}
-
 
 }
