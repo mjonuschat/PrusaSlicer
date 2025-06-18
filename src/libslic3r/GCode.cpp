@@ -1510,10 +1510,10 @@ void GCodeGenerator::_do_export(
     // The delimiters are structured as configuration key / value pairs to be parsable by older versions of PrusaSlicer G-code viewer.
     {
         file.write("\n; prusaslicer_config = begin\n");
-        file.write(serialized_config.ini);
+        file.write(std::string("; ") + boost::replace_all_copy(serialized_config.ini, "\n", "\n; ") + "\n");
         file.write("; prusaslicer_config = end\n\n");
         file.write("; prusaslicer_json_config = begin\n");
-        file.write(serialized_config.json);
+        file.write(std::string("; ") + boost::replace_all_copy(serialized_config.json, "\n", "\n; ") + "\n");
         file.write("; prusaslicer_json_config = end\n");
     }
 

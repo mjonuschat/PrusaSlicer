@@ -139,12 +139,19 @@ std::variant<std::string, std::vector<std::string>> serialize_to_string(const Co
         return trim_quotes(value.dump(-1, ' ', false));
 }
 
-std::string serialize(
-    const BoxOrBoxesVector& input,
-    int indent,
-    bool prepend_semicolons)
+
+
+std::string beautify_json(const Domain::BoxOrBoxesVector& box_or_boxes_vector, int indent)
 {
-    const nlohmann::ordered_json complete_json = input;
+    return beautify_json(nlohmann::ordered_json(box_or_boxes_vector), indent);
+}
+
+
+
+std::string beautify_json(
+    const nlohmann::ordered_json& complete_json,
+    int indent)
+{
     std::string str = complete_json.dump(indent);
 
     std::set<std::string> box_names;
@@ -197,8 +204,6 @@ std::string serialize(
 
     str = {};
     for (const std::string& line : aggregated_lines) {
-        if (prepend_semicolons)
-            str += "; ";
         str += line;
     }
 

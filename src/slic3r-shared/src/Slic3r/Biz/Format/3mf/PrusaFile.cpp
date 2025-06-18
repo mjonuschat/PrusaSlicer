@@ -1387,9 +1387,9 @@ void write(
 
         const auto& cfg_var = config_container->new_config();
         if (std::holds_alternative<Domain::ConfigPackFDM>(cfg_var))
-            cc_json[CONFIGURATION] = Biz::serialize(Domain::as_boxes(std::get<Domain::ConfigPackFDM>(cfg_var)), 2, false);
+            cc_json[CONFIGURATION] = nlohmann::ordered_json(Domain::as_boxes(std::get<Domain::ConfigPackFDM>(cfg_var)));
         else if (std::holds_alternative<Domain::ConfigPackSLA>(cfg_var))
-            cc_json[CONFIGURATION] = Biz::serialize(Domain::as_boxes(std::get<Domain::ConfigPackSLA>(cfg_var)), 2, false);
+            cc_json[CONFIGURATION] = nlohmann::ordered_json(Domain::as_boxes(std::get<Domain::ConfigPackSLA>(cfg_var)));
         else
             PANIC();
         all_containers_json.emplace_back(cc_json);

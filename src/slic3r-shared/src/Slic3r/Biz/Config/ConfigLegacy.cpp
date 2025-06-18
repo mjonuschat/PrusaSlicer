@@ -564,7 +564,7 @@ ConfigPack load_config_from_legacy_file(const std::string& filename)
 
 
 
-static std::string serialize_as_legacy_config(const std::variant<const ConfigPackFDM*, const ConfigPackSLA*>& cfgvar, bool prepend_semicolons)
+static std::string serialize_as_legacy_config(const std::variant<const ConfigPackFDM*, const ConfigPackSLA*>& cfgvar)
 {
     std::vector<std::pair<const Domain::ConfigBox*, int>> boxes;
     LegacyKeysAndOverrides legacy_data;
@@ -614,25 +614,26 @@ static std::string serialize_as_legacy_config(const std::variant<const ConfigPac
     }
 
     std::string out;
-    std::string prefix = prepend_semicolons ? "; " : "";
     for (const std::string& key : cfg_old->keys()) {
-        out += prefix + key + " = " + cfg_old->opt_serialize(key) + "\n";
+        out += key + " = " + cfg_old->opt_serialize(key) + "\n";
     }
+    if (! out.empty())
+        out.pop_back();
     return out;
 }
 
 
 
-std::string serialize_as_legacy_config(const ConfigPackFDM& cfg, bool prepend_semicolons)
+std::string serialize_as_legacy_config(const ConfigPackFDM& cfg)
 {
     std::variant<const ConfigPackFDM*, const ConfigPackSLA*> cfgvar = &cfg;
-    return serialize_as_legacy_config(cfgvar, prepend_semicolons);
+    return serialize_as_legacy_config(cfgvar);
 }
 
-std::string serialize_as_legacy_config(const ConfigPackSLA& cfg, bool prepend_semicolons)
+std::string serialize_as_legacy_config(const ConfigPackSLA& cfg)
 {
     std::variant<const ConfigPackFDM*, const ConfigPackSLA*> cfgvar = &cfg;
-    return serialize_as_legacy_config(cfgvar, prepend_semicolons);
+    return serialize_as_legacy_config(cfgvar);
 }
 
 

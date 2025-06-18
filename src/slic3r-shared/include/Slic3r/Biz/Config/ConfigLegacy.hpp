@@ -20,7 +20,7 @@ void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg, Do
 Slic3rLegacy::DynamicPrintConfig convert_box_to_dynamic_print_config(const Domain::ConfigBox& box);
 
 // Export the config in the old format.
-std::string serialize_as_legacy_config(const Domain::ConfigPackFDM&, bool prepend_semicolons = false);
-std::string serialize_as_legacy_config(const Domain::ConfigPackSLA&, bool prepend_semicolons = false);
+std::string serialize_as_legacy_config(const Domain::ConfigPackFDM&);
+std::string serialize_as_legacy_config(const Domain::ConfigPackSLA&);
 
 } // namespace Slic3r::Biz
