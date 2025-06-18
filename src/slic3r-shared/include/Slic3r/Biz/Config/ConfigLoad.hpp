@@ -5,11 +5,15 @@
 
 namespace Slic3r::Biz::Config {
 
-enum ItemParsingIssue {
+enum ItemParsingIssueType {
     InvalidFormat,
     NotFound,
     ExtraKey,
-    InvalidEnumValue
+};
+
+struct ItemParsingIssue {
+    ItemParsingIssueType type;
+    std::string message;
 };
 
 enum GlobalParsingIssue {

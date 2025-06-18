@@ -506,6 +506,9 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/Config/ConfigJson.hpp
         src/Slic3r/Biz/Config/ConfigJson.cpp
+
+        include/Slic3r/Biz/Config/HwConfigJson.hpp
+        src/Slic3r/Biz/Config/HwConfigJson.cpp
 )
 
 if (WIN32)
@@ -670,6 +673,8 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Config/ConfigLegacyTests.cpp
         test/Slic3r/Biz/Config/ConfigLoadTests.cpp
         test/Slic3r/Biz/Config/ConfigRoundtripTests.cpp
+
+        test/Slic3r/Biz/Config/HwConfigJsonTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 

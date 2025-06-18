@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
 #include "Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Biz/Config/HwConfigJson.hpp" // IWYU pragma: keep
 
 #include <fstream>
 #include <ranges>
@@ -19,136 +20,8 @@
 
 using namespace Slic3r::Domain::Preset;
 namespace fs = boost::filesystem;
-using json = nlohmann::json;
+using nlohmann::ordered_json;
 
-
-NLOHMANN_JSON_NAMESPACE_BEGIN
-
-template<>
-struct adl_serializer<FeatureValue>
-{
-
-    static void to_json(json& j, const FeatureValue& v)
-    {
-        std::visit([&j](auto&& arg) { j = arg; }, v);
-    }
-
-    static void from_json(const json& j, FeatureValue& v)
-    {
-        if (j.is_boolean())
-            v = j.get<bool>();
-        else if (j.is_number())
-            v = j.get<float>();
-        else if (j.is_string())
-            v = j.get<std::string>();
-    }
-};
-
-template<>
-struct adl_serializer<HwToolConfig>
-{
-    static void to_json(json& j, const HwToolConfig& v)
-    {
-        j = json{ {"id", v.id}, {"features", v.features}};
-    }
-
-    static void from_json(const json& j, HwToolConfig& v)
-    {
-        j.at("id").get_to(v.id);
-        j.at("features").get_to(v.features);
-    }
-};
-
-template<>
-struct adl_serializer<Address>
-{
-    static void to_json(json& j, const Address& v)
-    {
-        j = fmt::to_string(fmt::join(v | std::views::transform([](auto slot) { return int(slot); }), "."));
-    }
-
-    static void from_json(const json& j, Address& v)
-    {
-        v.clear();
-        for (const auto& slot : std::views::split(j.get<std::string>(), ".")){
-            int slot_v;
-            auto result = std::from_chars(std::to_address(slot.begin()), std::to_address(slot.end()), slot_v, 10);
-            ASSERT(result.ec == std::errc(), std::make_tuple(v, slot));
-            v.push_back(slot_v);
-        }
-    }
-};
-
-template<>
-struct adl_serializer<HwModel>
-{
-    static void to_json(json& j, const HwModel& v)
-    {
-        j = json{{"base_model", v.base_model}, {"model", v.model}};
-    }
-
-    static void from_json(const json& j, HwModel& v)
-    {
-        j.at("base_model").get_to(v.base_model);
-        j.at("model").get_to(v.model);
-    }
-};
-
-template <>
-struct adl_serializer<HwFeederConfig>
-{
-    static void to_json(json& j, const HwFeederConfig& v)
-    {
-        j = json{ {"id", v.id}, {"slot_count", v.slot_count}, {"type", v.type}, {"model", v.model}, {"features", v.features}};
-    }
-
-    static void from_json(const json& j, HwFeederConfig& v)
-    {
-        j.at("id").get_to(v.id);
-        j.at("slot_count").get_to(v.slot_count);
-        j.at("type").get_to(v.type);
-        j.at("model").get_to(v.model);
-        j.at("features").get_to(v.features);
-
-    }
-};
-
-template<>
-struct adl_serializer<HwPrinterConfig>
-{
-    static void to_json(json& j, const HwPrinterConfig& v)
-    {
-        j = json{ {"id", v.id}, {"printer_id", v.printer_id}, {"vendor_id", v.vendor_id}, {"features", v.features}};
-    }
-
-    static void from_json(const json& j, HwPrinterConfig& v)
-    {
-        j.at("id").get_to(v.id);
-        j.at("printer_id").get_to(v.printer_id);
-        j.at("vendor_id").get_to(v.vendor_id);
-        j.at("features").get_to(v.features);
-
-        v.tools.clear();
-        auto tools = j.at("tools");
-        for (const auto& t : tools) {
-            HwToolConfig tc;
-            Address addr;
-            t.get_to(tc);
-            t["address"].get_to(addr);
-            v.tools.emplace_back(t);
-        }
-
-        auto feeders = j.at("feeders");
-        for (const auto& f : feeders) {
-            HwFeederConfig fc;
-            Address addr;
-            f.get_to(fc);
-            f["address"].get_to(addr);
-            v.feeders.emplace(addr, fc);
-        }
-    }
-};
-NLOHMANN_JSON_NAMESPACE_END
 
 STRUCT_DESC(HwModel,
     FIELD_DESC_SIMPLE(model),
@@ -329,20 +202,22 @@ Domain::Preset::HwPrinterConfigs load_vendor_user_configs(const std::string& dir
         if (p.extension() != ".json")
             continue;
 
-        HwPrinterConfig config;
+        std::ifstream f(p.string());
+        const ordered_json j = ordered_json::parse(f);
+        const auto loading_result{Config::load_hw_config(j)};
 
-        try {
-            std::ifstream f(p.string());
-            json j = json::parse(f);
-            f.close();
-            j.get_to(config);
+        if (!loading_result.has_value()) {
+            SPDLOG_INFO(
+                "Parsing HwPritnerConfig {} failed: {}",
+                p.string(),
+                loading_result.error()
+            );
         }
-        catch (json::parse_error& e){
-            SPDLOG_INFO("Parsing HwPritnerConfig {} failed: {}", p.string(), e.what());
-        }
 
-
+        HwPrinterConfig config{loading_result.value_or(HwPrinterConfig{})};
         fill_missing_features_with_default(config, vendor_data);
+
+        ret.push_back(config);
     }
 
     return ret;
@@ -360,8 +235,7 @@ void save_vendor_user_configs(const Domain::Preset::HwPrinterConfigs& configs, c
     for (const auto& base_config : configs) {
         auto config = remove_features_with_default(base_config, vendor_data);
 
-        json j;
-        nlohmann::adl_serializer<HwPrinterConfig>::to_json(j, config);
+        ordered_json j = config;
 
         std::string name = config.name;
         if (name.empty())

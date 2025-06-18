@@ -32,30 +32,10 @@ using Domain::is_std_vector_v;
 
 namespace {
 
-template<typename T>
-tl::expected<T, ItemParsingIssue> parse(const ordered_json& json_value)
-{
-    if constexpr (Domain::is_std_vector_v<T>) {
-        if (!is_valid_vec<T>(json_value)) {
-            return tl::unexpected{ItemParsingIssue::InvalidFormat};
-        }
-    } else if constexpr (Domain::is_std_optional_v<T>) {
-        if (!is_valid_optional<T>(json_value)) {
-            return tl::unexpected{ItemParsingIssue::InvalidFormat};
-        }
-    } else {
-        if (!is_valid<T>(json_value)) {
-            return tl::unexpected{ItemParsingIssue::InvalidFormat};
-        }
-    }
-
-    return json_value.template get<T>();
-}
-
-std::optional<ItemParsingIssue> get_enum_issue(const ordered_json& json_value, const EnumValueDefs& enum_def)
+std::optional<std::string> get_enum_issue(const ordered_json& json_value, const EnumValueDefs& enum_def)
 {
     if (!json_value.is_string()) {
-        return ItemParsingIssue::InvalidFormat;
+        return "Value is not string!";
     }
     const auto serialized_value{json_value.get<std::string>()};
 
@@ -64,12 +44,12 @@ std::optional<ItemParsingIssue> get_enum_issue(const ordered_json& json_value, c
     })};
 
     if (def_it == enum_def.end()) {
-        return ItemParsingIssue::InvalidEnumValue;
+        return "Value '" + serialized_value + "' is not possible enum value!";
     }
     return std::nullopt;
 }
 
-tl::expected<std::string, ItemParsingIssue> parse_enum(
+tl::expected<std::string, std::string> parse_enum(
     const ordered_json& json_value,
     const EnumValueDefs& enum_def
 )
@@ -81,13 +61,13 @@ tl::expected<std::string, ItemParsingIssue> parse_enum(
     return json_value.get<std::string>();
 }
 
-tl::expected<std::vector<std::string>, ItemParsingIssue> parse_enum_vector(
+tl::expected<std::vector<std::string>, std::string> parse_enum_vector(
     const ordered_json& json_value,
     const EnumValueDefs& enum_def
 )
 {
     if (!json_value.is_array()) {
-        return tl::unexpected{ItemParsingIssue::InvalidFormat};
+        return tl::unexpected{"Value is not an array!"};
     }
     for (const auto& value : json_value) {
         if (auto issue{get_enum_issue(value, enum_def)}) {
@@ -107,24 +87,28 @@ struct BoxLoadResult
 
 tl::expected<void, ItemParsingIssue> fill_item(ConfigItem& item, const ordered_json& json_value)
 {
+    const auto map_error{[&](const std::string& error) {
+        return ItemParsingIssue{.type = ItemParsingIssueType::InvalidFormat, .message = error};
+    }};
+
     return item.visit(overloaded(
         [&](Domain::EnumWrapper& enum_wrapper) {
             return parse_enum(json_value, enum_wrapper.def())
                 .map([&](const std::string& value) { enum_wrapper.set_string(value); })
-                .map_error([&](const ItemParsingIssue issue) { return issue; });
+                .map_error(map_error);
         },
         [&](Domain::EnumVectorWrapper& enum_vector_wrapper) {
             return parse_enum_vector(json_value, enum_vector_wrapper.def())
                 .map([&](const std::vector<std::string>& value) {
                     enum_vector_wrapper.set_strings(value);
                 })
-                .map_error([&](const ItemParsingIssue issue) { return issue; });
+                .map_error(map_error);
         },
-        [&](auto& box_value) {
+        [&](auto& box_value) -> tl::expected<void, ItemParsingIssue> {
             using ValueType = std::remove_cvref_t<decltype(box_value)>;
             return parse<ValueType>(json_value)
-                .map([&](const ValueType value) { box_value = value; })
-                .map_error([&](const ItemParsingIssue issue) { return issue; });
+                .map([&](const ValueType& value) { box_value = value; })
+                .map_error(map_error);
         }
     ));
 }
@@ -151,24 +135,25 @@ BoxLoadResult<Settings> load_box(const ordered_json& json)
             });
             json_keys.erase(item.name());
         } else {
-            issues[item.name()] = ItemParsingIssue::NotFound;
+            issues[item.name()] = {ItemParsingIssueType::NotFound};
         }
     }
 
-    for (ConfigItem& item : result.settings.overrides.all_items()) {
+    Domain::ConfigOverrides& overrides{result.settings.overrides};
+    for (ConfigItem& item : overrides.all_items()) {
         const auto it{json.find(item.name())};
         if (it != json.end()) {
             if (!it->is_null()) {
-                fill_item(item, *it).map(
-                                        [&]() { result.settings.overrides.enable(item.name()); }
-                ).or_else([&](const ItemParsingIssue& issue) { issues[item.name()] = issue; });
+                fill_item(item, *it) //
+                    .map([&]() { overrides.enable(item.name()); })
+                    .or_else([&](const ItemParsingIssue& issue) { issues[item.name()] = issue; });
             }
             json_keys.erase(item.name());
         }
     }
 
     for (const std::string& key : json_keys) {
-        issues[key] = ItemParsingIssue::ExtraKey;
+        issues[key] = {ItemParsingIssueType::ExtraKey};
     }
 
     return result;

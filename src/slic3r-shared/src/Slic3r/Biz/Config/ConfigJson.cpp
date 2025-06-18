@@ -54,48 +54,90 @@ using Slic3r::Domain::Percentage;
 using Slic3r::Domain::FloatOrPercentage;
 
 template<>
-bool is_valid<int>(const ordered_json& json_value) {
-    return json_value.is_number_integer();
+tl::expected<void, std::string> is_valid<int>(const ordered_json& json_value) {
+    if (!json_value.is_number_integer()) {
+        return tl::unexpected{"Not an integer!"};
+    }
+    return tl::expected<void, std::string>{};
 }
 
 template<>
-bool is_valid<double>(const ordered_json& json_value) {
-    return json_value.is_number();
+tl::expected<void, std::string> is_valid<double>(const ordered_json& json_value) {
+    if (!json_value.is_number()) {
+        return tl::unexpected{"Not a number!"};
+    }
+    return tl::expected<void, std::string>{};
 }
 
 template<>
-bool is_valid<std::string>(const ordered_json& json_value) {
-    return json_value.is_string();
+tl::expected<void, std::string> is_valid<std::string>(const ordered_json& json_value) {
+    if (!json_value.is_string()) {
+        return tl::unexpected{"Not a string!"};
+    }
+    return tl::expected<void, std::string>{};
 }
 
 template<>
-bool is_valid<bool>(const ordered_json& json_value) {
-    return json_value.is_boolean();
+tl::expected<void, std::string> is_valid<bool>(const ordered_json& json_value) {
+    if (!json_value.is_boolean()) {
+        return tl::unexpected{"Not a boolean!"};
+    }
+    return tl::expected<void, std::string>{};
 }
 
 template<>
-bool is_valid<Vec2d>(const ordered_json& json_value)
+tl::expected<void, std::string> is_valid<Vec2d>(const ordered_json& json_value)
 {
-    return json_value.is_array()
-        && json_value.size() == 2
-        && json_value.at(0).is_number()
-        && json_value.at(1).is_number();
+    if (!json_value.is_array()) {
+        return tl::unexpected{"Not an array!"};
+    }
+
+    if (json_value.size() != 2) {
+        return tl::unexpected{"The array size is not 2!"};
+    }
+
+    if (!json_value.at(0).is_number()) {
+        return tl::unexpected{"The first element is not a number"};
+    }
+
+    if (!json_value.at(1).is_number()) {
+        return tl::unexpected{"The first element is not a number"};
+    }
+    return tl::expected<void, std::string>{};
 }
 
 template<>
-bool is_valid<FloatOrPercentage>(const ordered_json& json_value)
+tl::expected<void, std::string> is_valid<FloatOrPercentage>(const ordered_json& json_value)
 {
-    return json_value.is_object()
-        && json_value.contains("value")
-        && json_value.contains("is_percent")
-        && json_value["value"].is_number()
-        && json_value["is_percent"].is_boolean();
+    if (!json_value.is_object()) {
+        return tl::unexpected{"Not an object!"};
+    }
+    if (!json_value.contains("value")) {
+        return tl::unexpected{"Does not contain value!"};
+    }
+    if (!json_value.contains("is_percent")) {
+        return tl::unexpected{"Does not contain is_percent!"};
+    }
+    if (!json_value["value"].is_number()) {
+        return tl::unexpected{"value is not a number!"};
+    }
+    if (!json_value["is_percent"].is_boolean()) {
+        return tl::unexpected{"is_percent is not a boolean!"};
+    }
+    return tl::expected<void, std::string>{};
 }
 
 template<>
-bool is_valid<Percentage>(const ordered_json& json_value)
+tl::expected<void, std::string> is_valid<Percentage>(const ordered_json& json_value)
 {
-    return is_valid<FloatOrPercentage>(json_value) && json_value["is_percent"].get<bool>();
+    const auto valid{is_valid<FloatOrPercentage>(json_value)};
+    if (!valid) {
+        return valid;
+    }
+    if (!json_value["is_percent"].get<bool>()) {
+        return tl::unexpected{"is_percent must always be true for Percentage!"};
+    }
+    return tl::expected<void, std::string>{};
 }
 
 } // namespace Slic3r::Biz::Config

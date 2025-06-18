@@ -7,7 +7,7 @@ using nlohmann::ordered_json;
 using Slic3r::Biz::Config::BoxIssues;
 using Slic3r::Biz::Config::GlobalParsingIssue;
 using Slic3r::Biz::Config::IssuesPerLocation;
-using Slic3r::Biz::Config::ItemParsingIssue;
+using Slic3r::Biz::Config::ItemParsingIssueType;
 using Slic3r::Biz::Config::load;
 using Slic3r::Biz::Config::LocationIssues;
 using Slic3r::Domain::ConfigLocation;
@@ -20,7 +20,7 @@ using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::FloatOrPercentage;
 using Slic3r::Domain::Percentage;
 
-std::optional<ItemParsingIssue> get_issue(
+std::optional<ItemParsingIssueType> get_issue(
     const IssuesPerLocation& issues,
     const ConfigLocation& location,
     const std::string& key,
@@ -34,17 +34,17 @@ std::optional<ItemParsingIssue> get_issue(
     const LocationIssues& location_issues{issues.at(location)};
     return std::visit(
         overloaded{
-            [&](const std::vector<BoxIssues>& boxes_issues) -> std::optional<ItemParsingIssue> {
+            [&](const std::vector<BoxIssues>& boxes_issues) -> std::optional<ItemParsingIssueType> {
                 ASSERT(index && index < boxes_issues.size());
                 if (boxes_issues[*index].contains(key)) {
-                    return boxes_issues[*index].at(key);
+                    return boxes_issues[*index].at(key).type;
                 }
                 return std::nullopt;
             },
-            [&](const BoxIssues& box_issues) -> std::optional<ItemParsingIssue> {
+            [&](const BoxIssues& box_issues) -> std::optional<ItemParsingIssueType> {
                 ASSERT(!index);
                 if (box_issues.contains(key)) {
-                    return box_issues.at(key);
+                    return box_issues.at(key).type;
                 }
                 return std::nullopt;
             },
@@ -126,7 +126,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Extra not-loaded values are reported", "
     const auto result{load(json)};
     REQUIRE(result.has_value());
     CHECK(
-        get_issue(result->issues, FDMConfigLocation::Print, "invalid_key") == ItemParsingIssue::ExtraKey
+        get_issue(result->issues, FDMConfigLocation::Print, "invalid_key") == ItemParsingIssueType::ExtraKey
     );
 }
 
@@ -135,10 +135,10 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Missing values are reported", "[ConfigLo
     const auto result{load(json)};
     REQUIRE(result.has_value());
     CHECK(
-        get_issue(result->issues, FDMConfigLocation::Print, "perimeters") == ItemParsingIssue::NotFound
+        get_issue(result->issues, FDMConfigLocation::Print, "perimeters") == ItemParsingIssueType::NotFound
     );
     CHECK(
-        get_issue(result->issues, FDMConfigLocation::Printer, "silent_mode") == ItemParsingIssue::NotFound
+        get_issue(result->issues, FDMConfigLocation::Printer, "silent_mode") == ItemParsingIssueType::NotFound
     );
 }
 
@@ -230,7 +230,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading Percentage fails if is_percent i
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(
         get_issue(result->issues, FDMConfigLocation::Print, "fill_density")
-        == ItemParsingIssue::InvalidFormat
+        == ItemParsingIssueType::InvalidFormat
     );
 }
 
@@ -300,7 +300,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading int from other type reports an i
         == default_config.print.items.opt("perimeters").get<int>()
     );
     const auto issue{get_issue(result->issues, FDMConfigLocation::Print, "perimeters")};
-    CHECK(issue == ItemParsingIssue::InvalidFormat);
+    CHECK(issue == ItemParsingIssueType::InvalidFormat);
 }
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading enum from string works", "[ConfigLoad]")
@@ -338,7 +338,7 @@ TEST_CASE_METHOD(
     );
     CHECK(
         get_issue(result->issues, FDMConfigLocation::Print, "arc_fitting")
-        == ItemParsingIssue::InvalidEnumValue
+        == ItemParsingIssueType::InvalidFormat
     );
 }
 
@@ -381,7 +381,7 @@ TEST_CASE_METHOD(
     );
     CHECK(
         get_issue(result->issues, SLAConfigLocation::Material, "tower_speed")
-        == ItemParsingIssue::InvalidEnumValue
+        == ItemParsingIssueType::InvalidFormat
     );
 }
 
@@ -405,7 +405,7 @@ TEST_CASE_METHOD(
     CHECK(result_config.filament.size() == 3);
     CHECK(
         get_issue(result->issues, FDMConfigLocation::Tool, "nozzle_diameter", 2)
-        == ItemParsingIssue::NotFound
+        == ItemParsingIssueType::NotFound
     );
 
     const ConfigPackFDM default_config;
@@ -426,7 +426,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Per filament not-loaded values are repor
     REQUIRE(result.has_value());
     CHECK(
         get_issue(result->issues, FDMConfigLocation::Filament, "invalid_key", 0)
-        == ItemParsingIssue::ExtraKey
+        == ItemParsingIssueType::ExtraKey
     );
 }
 
@@ -436,11 +436,11 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Per tool missing values are reported per
     REQUIRE(result.has_value());
     CHECK(
         get_issue(result->issues, FDMConfigLocation::Tool, "nozzle_diameter", 0)
-        == ItemParsingIssue::NotFound
+        == ItemParsingIssueType::NotFound
     );
     CHECK(
         get_issue(result->issues, FDMConfigLocation::Tool, "retract_before_travel", 0)
-        == ItemParsingIssue::NotFound
+        == ItemParsingIssueType::NotFound
     );
 }
 
