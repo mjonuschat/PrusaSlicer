@@ -8,31 +8,38 @@
 #include <atomic>
 #include <memory>
 #include <string>
-#include <libslic3r/Emboss.hpp>
-#include <libslic3r/EmbossShape.hpp> // ExPolygonsWithIds
-#include "libslic3r/Point.hpp" // Transform3d
-#include "libslic3r/ObjectID.hpp"
+#include "Slic3r/Biz/Emboss/Emboss.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Domain/TriangleMesh.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp" // ExPolygonsWithIds
 
-#include "slic3r/GUI/Camera.hpp"
-#include "slic3r/GUI/TextLines.hpp"
+//#include "libslic3r/Point.hpp" // Transform3d
+#include "libslic3r/Model.hpp" 
 
-#include "Job.hpp"
+//#include "Slic3r/App/Scene/Camera.hpp"
+//#include "slic3r/GUI/Camera.hpp"
+//#include "slic3r/GUI/TextLines.hpp"
 
 // forward declarations
 namespace Slic3r {
-class TriangleMesh;
-class ModelVolume;
-enum class ModelVolumeType : int;
 class BuildVolume;
-namespace GUI {
-class RaycastManager;
-class Plater;
-class GLCanvas3D;
-class Worker;
-class Selection;
-}}
+}
 
-namespace Slic3r::GUI::Emboss {
+namespace Slic3r::Biz::Emboss {
+
+// temporary interface for start job
+class Job { public:
+    class Ctl {public:
+        virtual ~Ctl() = default;
+        virtual void update_status(int st, const std::string& msg = "") = 0;
+        virtual bool was_canceled() const = 0;
+    };
+    virtual ~Job() = default;
+    virtual void process(Ctl& ctl) = 0;
+    virtual void finalize(bool /*canceled*/, std::exception_ptr&) {}
+};
 
 /// <summary>
 /// Base data hold data for create emboss shape
@@ -40,10 +47,10 @@ namespace Slic3r::GUI::Emboss {
 class DataBase
 {
 public:
-    DataBase(const std::string& volume_name, std::shared_ptr<std::atomic<bool>> cancel) 
-        : volume_name(volume_name), cancel(std::move(cancel)) {}
-    DataBase(const std::string& volume_name, std::shared_ptr<std::atomic<bool>> cancel, EmbossShape&& shape)
-        : volume_name(volume_name), cancel(std::move(cancel)), shape(std::move(shape)){}
+    DataBase(const std::string& volume_name, ProjectInteractor& project_interactor, std::shared_ptr<std::atomic<bool>> cancel)
+        : volume_name(volume_name), project_interactor(project_interactor), cancel(std::move(cancel)) {}
+    DataBase(const std::string& volume_name, ProjectInteractor& project_interactor, std::shared_ptr<std::atomic<bool>> cancel, Domain::EmbossShape&& shape)
+        : volume_name(volume_name), project_interactor(project_interactor), cancel(std::move(cancel)), shape(std::move(shape)){}
     DataBase(DataBase &&) = default;
     virtual ~DataBase() = default;
 
@@ -52,13 +59,13 @@ public:
     /// e.g. Text extract glyphs from font
     /// Not 'const' function because it could modify shape
     /// </summary>
-    virtual EmbossShape& create_shape() { return shape; };
+    virtual Domain::EmbossShape& create_shape() { return shape; };
 
     /// <summary>
     /// Write data how to reconstruct shape to volume
     /// </summary>
     /// <param name="volume">Data object for store emboss params</param>
-    virtual void write(ModelVolume &volume) const;
+    virtual void write(Domain::ModelVolume &volume) const;
 
     // Define projection move
     // True (raised) .. move outside from surface (MODEL_PART)    
@@ -71,11 +78,11 @@ public:
     /// <param name="tr">Embossed volume final transformation in world</param>
     /// <param name="vols">Volumes to be sliced to text lines</param>
     /// <returns>True on succes otherwise False(Per glyph shoud be disabled)</returns>
-    virtual bool create_text_lines(const Transform3d& tr, const ModelVolumePtrs &vols) { return false; }
+    virtual bool create_text_lines(const Domain::Transform3d& tr, const Domain::ModelVolumePtrs &vols) { return false; }
 
     // Define per letter projection on one text line
     // [optional] It is not used when empty
-    Slic3r::Emboss::TextLines text_lines = {};
+    Biz::Emboss::TextLines text_lines = {};
 
     // [optional] Define distance for surface
     // It is used only for flat surface (not cutted)
@@ -85,12 +92,17 @@ public:
     // new volume name
     std::string volume_name;
 
+    // To inform application listener about volume creation
+    // NOTE1: Before access check thread cancel
+    // NOTE2: Current project do not have to be one where add new volume
+    ProjectInteractor& project_interactor;// live longer than TextGizmo (@barzto garanteed)
+
     // flag that job is canceled
     // for time after process.
     std::shared_ptr<std::atomic<bool>> cancel;
 
     // shape to emboss
-    EmbossShape shape;
+    Domain::EmbossShape shape;
 };
 
 /// <summary>
@@ -101,13 +113,13 @@ public:
 struct DataCreateVolume : public DataBase
 {
     // define embossed volume type
-    ModelVolumeType volume_type;
+    Domain::ModelVolumeType volume_type;
 
     // parent ModelObject index where to create volume
-    ObjectID object_id;
+    Domain::ObjectID object_id;
 
     // new created volume transformation
-    Transform3d trmat;
+    Domain::Transform3d trmat;
 };
 using DataBasePtr = std::unique_ptr<DataBase>;
 
@@ -120,14 +132,14 @@ struct DataUpdate
     DataBasePtr base;
 
     // unique identifier of volume to change
-    ObjectID volume_id;
+    Domain::ObjectID volume_id;
 
     // Used for prevent flooding Undo/Redo stack on slider.
     bool make_snapshot;
 
     // Transformation of volume after update volume shape
     // NOTE: Add for style change, because it change rotation and distance from surface
-    std::optional<Transform3d> trmat;
+    std::optional<Domain::Transform3d> trmat;
 };
 
 /// <summary>
@@ -137,7 +149,7 @@ struct DataUpdate
 class UpdateJob : public Job
 {
     DataUpdate   m_input;
-    TriangleMesh m_result;
+    Domain::TriangleMesh m_result;
 
 public:
     // move params to private variable
@@ -164,20 +176,20 @@ public:
     /// <param name="volume">Volume to be updated</param>
     /// <param name="mesh">New Triangle mesh for volume</param>
     /// <param name="base">Data to write into volume</param>
-    static void update_volume(ModelVolume *volume, TriangleMesh &&mesh, const DataBase &base);
+    static void update_volume(Domain::ModelVolume* volume, Domain::TriangleMesh&& mesh, const DataBase& base);
 };
 
 struct SurfaceVolumeData
 {
     // Transformation of volume inside of object
-    Transform3d transform;
+    Domain::Transform3d transform;
 
     struct ModelSource
     {
         // source volumes
-        std::shared_ptr<const TriangleMesh> mesh;
+        std::shared_ptr<const Domain::TriangleMesh> mesh;
         // Transformation of volume inside of object
-        Transform3d tr;
+        Domain::Transform3d tr;
     };
     using ModelSources = std::vector<ModelSource>;
     ModelSources sources;
@@ -194,7 +206,7 @@ struct UpdateSurfaceVolumeData : public DataUpdate, public SurfaceVolumeData{};
 class UpdateSurfaceVolumeJob : public Job
 {
     UpdateSurfaceVolumeData m_input;
-    TriangleMesh            m_result;
+    Domain::TriangleMesh m_result;
 
 public:
     // move params to private variable
@@ -208,7 +220,7 @@ public:
 /// </summary>
 /// <param name="volume">Define embossed volume</param>
 /// <returns>Source data for cut surface from</returns>
-SurfaceVolumeData::ModelSources create_volume_sources(const ModelVolume &volume);
+SurfaceVolumeData::ModelSources create_volume_sources(const Domain::ModelVolume &volume);
 
 /// <summary>
 /// shorten params for start_crate_volume functions
@@ -219,28 +231,23 @@ struct CreateVolumeParams
     // When nullptr there is some issue with creation params ...
     DataBasePtr data;
 
-    GLCanvas3D &canvas;
-
-    // Direction of ray into scene
-    const Camera &camera;
+    // used to get view direction and position
+    //::Slic3r::App::Scene::Camera camera;
 
     // To put new object on the build volume
-    const BuildVolume &build_volume;
+    //const BuildVolume &build_volume;
 
     // used to emplace job for execution
-    Worker &worker;
+    //Worker &worker;
 
     // New created volume type
-    ModelVolumeType volume_type;
+    Domain::ModelVolumeType volume_type;
 
     // Contain AABB trees from scene
-    RaycastManager &raycaster;
+    //RaycastManager &raycaster;
 
     // Define which gizmo open on the success
     unsigned char gizmo; // GLGizmosManager::EType
-
-    // Volume define object to add new volume
-    const GLVolume *gl_volume;
 
     // Wanted additionl move in Z(emboss) direction of new created volume
     std::optional<float> distance = {};
@@ -254,7 +261,7 @@ struct CreateVolumeParams
 /// </summary>
 /// <param name="input">Cantain all needed data for start creation job</param>
 /// <returns>True on success otherwise False</returns>
-bool start_create_volume(CreateVolumeParams &input, const Vec2d &mouse_pos);
+bool start_create_volume(CreateVolumeParams &input, const Domain::Vec2d &mouse_pos);
 
 /// <summary>
 /// Same as previous function but without mouse position
@@ -270,8 +277,8 @@ bool start_create_volume_without_position(CreateVolumeParams &input);
 /// <param name="selection">Keep model and gl_volumes - when start use surface volume must be selected</param>
 /// <param name="raycaster">Could cast ray to scene</param>
 /// <returns>True when start job otherwise false</returns>
-bool start_update_volume(DataUpdate &&data, const ModelVolume &volume, const Selection &selection, RaycastManager &raycaster);
+//bool start_update_volume(DataUpdate &&data, const ModelVolume &volume, const Selection &selection, RaycastManager &raycaster);
 
-} // namespace Slic3r::GUI
+} // namespace Slic3r::Biz::Emboss
 
 #endif // slic3r_EmbossJob_hpp_

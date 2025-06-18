@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Domain/Types.hpp"
+#include <vector>
 
 namespace Slic3r::Domain {
 
@@ -36,6 +37,13 @@ using BoundingBox2f = BoundingBox<float, 2>;
 using BoundingBox3f = BoundingBox<float, 3>;
 using BoundingBox2d = BoundingBox<double, 2>;
 using BoundingBox3d = BoundingBox<double, 3>;
+
+using BoundingBoxes2crd = std::vector<BoundingBox2crd>;
+using BoundingBoxes3crd = std::vector<BoundingBox3crd>;
+using BoundingBoxes2f = std::vector<BoundingBox2f>;
+using BoundingBoxes3f = std::vector<BoundingBox3f>;
+using BoundingBoxes2d = std::vector<BoundingBox2d>;
+using BoundingBoxes3d = std::vector<BoundingBox3d>;
 
 template <typename T>
 concept BoundingBoxConcept = requires(T box) {

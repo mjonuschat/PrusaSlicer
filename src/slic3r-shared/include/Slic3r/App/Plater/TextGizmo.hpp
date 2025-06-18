@@ -44,8 +44,8 @@ public:
     /// Create new text without given position
     /// </summary>
     /// <param name="volume_type">Object part / Negative volume / Modifier</param>
-    bool add_text_by_view_direction(Slic3r::ModelVolumeType volume_type);
-    bool create_volume(Slic3r::ModelVolumeType volume_type, const Scene::Ray& pick_ray, const Scene::NodePickResults& picks);
+    bool add_text_by_view_direction(Domain::ModelVolumeType volume_type);
+    bool create_volume(Domain::ModelVolumeType volume_type, const Scene::Ray& pick_ray, const Scene::NodePickResults& picks);
 
     void update_layout(bool show_for_part);
 
@@ -53,7 +53,7 @@ public:
     void render_imgui();
 private:
     void close();
-    bool init_create(Slic3r::ModelVolumeType volume_type);
+    bool init_create(Domain::ModelVolumeType volume_type);
 
     void update_presets_list();
     void activate_preset(/*preset*/);

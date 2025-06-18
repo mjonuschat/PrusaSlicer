@@ -568,7 +568,6 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::Selectio
     }
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_instance_added(m_selected_project_id, updated);
-        l->on_volume_added(m_selected_project_id, updated_vols);
     });
 
     // TODO: need to send project_id for set selection (for @JanBartipan)
@@ -614,8 +613,8 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
     update_elements_bed_placement(sel.elements, sel.mode == SelectionMode::Volume);
 }
 
-void SceneInteractor::add_volume(const ModelVolume* volume){
-    const ModelObject* obj = volume->get_object();
+void SceneInteractor::add_volume(const Domain::ModelVolume* volume){
+    const Domain::ModelObject* obj = volume->get_object();
     Domain::ElementRefs updated = {Domain::ElementRef(
         obj->id().id,
         obj->instances[0]->id().id,

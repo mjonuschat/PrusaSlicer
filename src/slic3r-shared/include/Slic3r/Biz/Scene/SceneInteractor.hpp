@@ -182,7 +182,10 @@ public:
         const Transform& xform  = Domain::SquareMatrix4d::Identity()
     );
     void new_object_from_mesh(Domain::TriangleMesh&& mesh);
+    void new_object_from_mesh(Domain::TriangleMesh&& mesh, Domain::SelectionId project_id);
     void add_volume_from_mesh(Domain::TriangleMesh&& mesh, Domain::ModelVolumeType volume_type, const Transform& xform = Domain::SquareMatrix4d::Identity());
+    void add_volume(const Domain::ModelVolume* volume);
+
     void add_instance(const Domain::Vec2d& offset);
 
     using RefMesh = std::pair<Domain::ElementRef, Domain::TriangleMesh>;

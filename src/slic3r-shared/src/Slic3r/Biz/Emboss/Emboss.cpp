@@ -68,6 +68,7 @@ using Domain::ExPolygonsWithId;
 using Domain::ExPolygonsWithIds;
 using Domain::ExPolygons;
 using Domain::BoundingBox2crd;
+using Domain::BoundingBoxes2crd;
 
 namespace BB = Biz::Algorithms::BoundingBox;
 namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;

@@ -13,11 +13,13 @@ using namespace Slic3r::App::Yoga;
 #include <imgui/imgui.h>
 
 #include <Slic3r/Domain/TriangleMesh.hpp>
+#include <Slic3r/Domain/ModelObject.hpp> // add volume into object
 #include <Slic3r/Biz/Algorithms/TriangleMesh.hpp>
 #include <Slic3r/Biz/Emboss/Emboss.hpp> // also copy in libslic3r for SurfaceCut
 #include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher
 #include <Slic3r/App/Scene/BedNodeTag.hpp>
 #include <Slic3r/App/Plater/SceneNodeTag.hpp>
+#include "libslic3r/Utils.hpp"
 
 namespace {
 using namespace Slic3r;
@@ -38,14 +40,14 @@ Domain::TriangleMesh create_mesh() {
         .shapes_with_ids = text2vshapes(font_with_cache, text, font_prop)};
 
     auto projectZ = std::make_unique<ProjectZ>(409600);
-    Transform3d tr = Eigen::Translation<double, 3>(0., 0., 1.) * Eigen::Scaling(4.8828125e-06);
+    Domain::Transform3d tr = Eigen::Translation<double, 3>(0., 0., 1.) * Eigen::Scaling(4.8828125e-06);
     ProjectTransform project(std::move(projectZ), tr);
-    ExPolygons text_shape = union_with_delta(emboss_shape, UNION_DELTA, UNION_MAX_ITERATIN);
+    Domain::ExPolygons text_shape = union_with_delta(emboss_shape, UNION_DELTA, UNION_MAX_ITERATIN);
     indexed_triangle_set its = polygons2model(text_shape, project);
     return Biz::Algorithms::TriangleMesh::construct(its);
 }
 
-bool create_object(Biz::ProjectInteractor& project_interactor, const Vec2d& z0_coor)
+bool create_object(Biz::ProjectInteractor& project_interactor, const Domain::Vec2d& z0_coor)
 {
     // To check if the project is same
     Domain::SelectionId project_id = project_interactor.selected_project_id();        
@@ -54,7 +56,7 @@ bool create_object(Biz::ProjectInteractor& project_interactor, const Vec2d& z0_c
 
     Biz::Scene::SceneInteractor& scene_interactor = project_interactor.scene_interactor();
     scene_interactor.new_object_from_mesh(std::move(mesh), project_id);
-    scene_interactor.transform_selection(Transform3d(
+    scene_interactor.transform_selection(Domain::Transform3d(
         Eigen::Translation<double, 3>(z0_coor.x(), z0_coor.y(), z_move)
     ).matrix());
     return true;
@@ -63,8 +65,8 @@ bool create_object(Biz::ProjectInteractor& project_interactor, const Vec2d& z0_c
 bool create_object(Biz::ProjectInteractor& project_interactor, const Ray& ray){
     double d_z = ray.direction.z();
     if (fabs(d_z) - 1e-4 > 0.) { // not parallel to Z axis
-        Vec3d z0 = ray.point_at(-ray.origin.z() / d_z);
-        Vec2d bed_coor(z0.x(), z0.y());
+        Domain::Vec3d z0 = ray.point_at(-ray.origin.z() / d_z);
+        Domain::Vec2d bed_coor(z0.x(), z0.y());
         create_object(project_interactor, bed_coor);
         // m_gizmo_manager.activate_tool(type(), ptAny);
         // const Domain::Bed& bed =
@@ -85,7 +87,7 @@ bool is_selected_object(const Biz::Scene::Selection::ElementRefs& selected_eleme
 //ModelVolume* add_volume_from_mesh(
 //    const Domain::ObjectID& object_id,
 //    Domain::TriangleMesh&& mesh,
-//    ModelVolumeType type = ModelVolumeType::MODEL_PART,
+//    Domain::ModelVolumeType type = Domain::ModelVolumeType::MODEL_PART,
 //    const Transform& trafo = Matrix4d::Identity())
 //{
 //    
@@ -98,9 +100,9 @@ struct CreateVolumeData {
     Biz::ProjectInteractor& project_interactor; // live longer than TextGizmo (@barzto garanteed)
     Domain::SelectionId project_id = Domain::INVALID_ID; // project id, where to create volume
     Domain::ObjectID object_id = Domain::INVALID_ID; // object id, where to create volume    
-    ModelVolumeType volume_type = ModelVolumeType::MODEL_PART; // type of volume to create
+    Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART; // type of volume to create
 
-    Transform3d tr = Transform3d::Identity();
+    Domain::Transform3d tr = Domain::Transform3d::Identity();
     std::string name = "Embossed text"; // default name for volume
 };
 
@@ -120,8 +122,8 @@ bool create_volume(CreateVolumeData& data) {
     /* only add volume without addition data
     scene_interactor.add_volume_from_mesh(std::move(mesh), volume_type, tr.matrix());
     /*/
-    auto& obj = *project.find_object_by_id(data.object_id.id);
-    auto* vol = obj.add_volume(std::move(mesh), data.volume_type);
+    auto obj = project.find_object_by_id(data.object_id.id);
+    auto vol = Biz::Algorithms::ModelObject::add_volume(obj, std::move(mesh), data.volume_type);
     vol->set_transformation(data.tr);
     vol->name = data.name;
 
@@ -134,7 +136,7 @@ bool create_volume(CreateVolumeData& data) {
 // Inspired in Biz::SceneInteractor::add_volume_from_mesh()
 bool create_volume(
     Biz::ProjectInteractor& project_interactor, 
-    Slic3r::ModelVolumeType volume_type){
+    Domain::ModelVolumeType volume_type){
     const Biz::Scene::Selection& sel = project_interactor.scene_interactor().selection();
     if (sel.elements.empty())
         return false; // no object selected
@@ -213,7 +215,7 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
     const MouseEvent& mouse_event = ctx.mouse_event();
     if (mouse_event.type() == MouseEvent::Type::ButtonDown &&
         mouse_event.button() == MouseButton::Right) {
-        if (create_volume(ModelVolumeType::MODEL_PART, ctx.pick_ray(), ctx.pick_results()))
+        if (create_volume(Domain::ModelVolumeType::MODEL_PART, ctx.pick_ray(), ctx.pick_results()))
             return Scene::GizmoActivationState::Active; // create volume at pick ray
     }
     return Scene::GizmoActivationState::Inactive;
@@ -221,21 +223,21 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
 
 void TextGizmo::register_commands(Platform::CommandRegistry& registry) {
     registry.register_command(std::make_unique<Platform::FuncCommand>(
-        "Create/Edit text", [&]() { add_text_by_view_direction(ModelVolumeType::MODEL_PART); }, nullptr,
+        "Create/Edit text", [&]() { add_text_by_view_direction(Domain::ModelVolumeType::MODEL_PART); }, nullptr,
         Platform::KeyboardShortcut{0, Platform::KeyCode::T}
     ));
 }
 
 void TextGizmo::render_imgui()
 {
-    ImGui::TextColored(ImVec4(.1f, .9f, .2f, 1.f), "RClick add negative volume \n or object on plate");
     if (ImGui::Begin("Text Gizmo")) {
+        ImGui::TextColored(ImVec4(.1f, .9f, .2f, 1.f), "RClick add negative volume \n or object on plate");
         ImGui::Text("Emboss text");
         if (ImGui::Button("Add Object on[0,0]")) {
-            create_object(m_project_interactor, Vec2d(0,0));
+            create_object(m_project_interactor, Domain::Vec2d(0,0));
         }
         if (ImGui::Button("Add negative Volume")) {
-            ::create_volume(m_project_interactor, Slic3r::ModelVolumeType::NEGATIVE_VOLUME);
+            ::create_volume(m_project_interactor, Domain::ModelVolumeType::NEGATIVE_VOLUME);
         }
         if (ImGui::Button("Close")) {
             close();
@@ -260,7 +262,7 @@ void TextGizmo::on_activated()
 
 void TextGizmo::on_deactivated() {}
 
-bool TextGizmo::add_text_by_view_direction(Slic3r::ModelVolumeType volume_type) {
+bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type) {
     if (m_gizmo_manager.current_tool_type() == type())
         return false; // already active
 
@@ -281,30 +283,30 @@ bool TextGizmo::add_text_by_view_direction(Slic3r::ModelVolumeType volume_type) 
     return ::create_volume(m_project_interactor, volume_type);
 }
 
-bool TextGizmo::create_volume(Slic3r::ModelVolumeType volume_type, const Scene::Ray& pick_ray, const Scene::NodePickResults& picks) {
+bool TextGizmo::create_volume(Domain::ModelVolumeType volume_type, const Scene::Ray& pick_ray, const Scene::NodePickResults& picks) {
     const Domain::Project& project = m_project_interactor.selected_project();
     for (const Scene::NodePickResult& pick : picks) {
         if (pick.node->has_tag_of_type<App::Plater::SceneNodeTag>()) {
             auto* tag = pick.node->tag_of_type<App::Plater::SceneNodeTag>();
-            const ModelVolume* volume = project.find_volume_by_id(tag->object_id, tag->volume_id);
+            const Domain::ModelVolume* volume = project.find_volume_by_id(tag->object_id, tag->volume_id);
             if (volume == nullptr)
                 continue; // no volume under mouse
             // TODO: What to do with Negative volume
-            if (volume->type() != ModelVolumeType::MODEL_PART)
+            if (volume->type() != Domain::ModelVolumeType::MODEL_PART)
                 continue; // skip modifiers + SupportBlock/Enforce
 
             double UP_LIMIT = 0.9;
-            Vec3d pick_point = pick_ray.point_at(pick.cast.distance);
-            Vec3d pick_normal = pick.cast.normal;
-            const ModelInstance* instance = project.find_instance_by_id(tag->object_id, tag->instance_id);
-            Transform3d surface_trmat = create_transformation_onto_surface(pick_point, pick_normal, UP_LIMIT);
-            Transform3d tr = instance->get_matrix().inverse() * surface_trmat;
+            Domain::Vec3d pick_point = pick_ray.point_at(pick.cast.distance);
+            Domain::Vec3d pick_normal = pick.cast.normal;
+            const Domain::ModelInstance* instance = project.find_instance_by_id(tag->object_id, tag->instance_id);
+            Domain::Transform3d surface_trmat = create_transformation_onto_surface(pick_point, pick_normal, UP_LIMIT);
+            Domain::Transform3d tr = instance->get_matrix().inverse() * surface_trmat;
             
             CreateVolumeData data{
                 .project_interactor = m_project_interactor,
                 .project_id = m_project_interactor.selected_project_id(),
                 .object_id = volume->get_object()->id(),
-                .volume_type = ModelVolumeType::NEGATIVE_VOLUME, //volume_type,
+                .volume_type = Domain::ModelVolumeType::NEGATIVE_VOLUME, //volume_type,
                 .tr = tr,
                 .name = "Embossed text Volume"
             };
@@ -319,10 +321,10 @@ bool TextGizmo::create_volume(Slic3r::ModelVolumeType volume_type, const Scene::
 void TextGizmo::close() { m_gizmo_manager.deactivate_current_tool();}
 
 
-bool TextGizmo::init_create(Slic3r::ModelVolumeType volume_type) { 
-    if (volume_type != ModelVolumeType::MODEL_PART &&
-        volume_type != ModelVolumeType::NEGATIVE_VOLUME &&
-        volume_type != ModelVolumeType::PARAMETER_MODIFIER)
+bool TextGizmo::init_create(Domain::ModelVolumeType volume_type) {
+    if (volume_type != Domain::ModelVolumeType::MODEL_PART &&
+        volume_type != Domain::ModelVolumeType::NEGATIVE_VOLUME &&
+        volume_type != Domain::ModelVolumeType::PARAMETER_MODIFIER)
         return false; // invalid volume type for emboss text
 
     // if (wxGetApp().obj_list()->has_selected_cut_object()) return false;

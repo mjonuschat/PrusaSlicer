@@ -11,7 +11,7 @@ class PickerFrustum;
 
 struct RaycastResult {
   double distance;
-  Vec3d normal; // world normal of the hit
+  Domain::Vec3d normal; // world normal of the hit
   int triangle_index; // index of triangle in the mesh
 };
 
