@@ -7,6 +7,7 @@
 #include "TimerQueue.hpp"
 #include "Slic3r/Biz/Platform/ISecretStore.hpp"
 #include "Slic3r/Biz/Platform/ISingleInstanceChecker.hpp"
+#include "Slic3r/Biz/Platform/IFontManager.hpp"
 
 namespace Slic3r::Biz::Platform {
     
@@ -25,6 +26,7 @@ public:
     void set_render_request_handler(IRenderRequestHandler* render_request_handler);
     void set_main_thread_dispatcher(std::unique_ptr<IMainThreadDispatcher>&& main_thread_dispatcher);
     void set_secret_store(std::unique_ptr<ISecretStore>&& secret_store);
+    void set_font_manager(std::unique_ptr<IFontManager> font_manager) { m_font_manager = std::move(font_manager); };
     void set_app_hash(size_t app_hash) { m_app_hash = app_hash; }
     void set_single_instance_checker(std::unique_ptr<ISingleInstanceChecker>&& single_instance_checker);
     void set_job_manager(std::unique_ptr<JobManager::JobManager>&& job_manager);
@@ -54,6 +56,12 @@ public:
         return *m_secret_store;
     }
 
+    IFontManager& font_manager()
+    {
+        ASSERT(m_font_manager != nullptr);
+        return *m_font_manager;
+    }
+
     size_t app_hash() const 
     { 
         //ASSERT(m_app_hash != 0); 
@@ -75,6 +83,7 @@ private:
     std::unique_ptr<IMainThreadDispatcher> m_main_thread_dispatcher{};
     std::unique_ptr<TimerQueue> m_timer_queue{};
     std::unique_ptr<ISecretStore> m_secret_store{};
+    std::unique_ptr<IFontManager> m_font_manager{};
     size_t m_app_hash {0};
     /**
      * ISingleInstanceChecker is stored here because:

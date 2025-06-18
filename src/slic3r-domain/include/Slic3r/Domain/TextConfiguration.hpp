@@ -124,31 +124,22 @@ struct FontProp
 };
 
 /// <summary>
-/// Style of embossed text
-/// (Path + Type) must define how to open font for using on different OS
-/// NOTE: OnEdit fix serializations: EmbossStylesSerializable, TextConfigurationSerialization
+/// Describe how to access font data
 /// </summary>
-struct EmbossStyle
-{
+struct FontDescriptor {
     // Human readable name of style it is shown in GUI
+    // Hint for user when font is not installed on current OS
     std::string name;
 
     // Define how to open font
     // Meaning depend on type
     std::string path;
 
-    enum class Type;
-    // Define what is stored in path
-    Type type { Type::undefined };
-
-    // User modification of font style
-    FontProp prop;
-
     // when name is empty than Font item was loaded from .3mf file 
     // and potentionaly it is not reproducable
     // define data stored in path
     // when wx change way of storing add new descriptor Type
-    enum class Type { 
+    enum class Type {
         undefined = 0,
 
         // wx font descriptors are platform dependent
@@ -161,11 +152,31 @@ struct EmbossStyle
         // for privacy: only filename is stored into .3mf
         file_path
     };
+    Type type;
+
+    bool operator==(const FontDescriptor& other) const;
+    template<class Archive> void serialize(Archive& ar) { ar(name, path, type); }
+};
+using FontList = std::vector<FontDescriptor>;
+
+/// <summary>
+/// Style of embossed text
+/// (Path + Type) must define how to open font for using on different OS
+/// NOTE: OnEdit fix serializations: EmbossStylesSerializable, TextConfigurationSerialization
+/// </summary>
+struct EmbossStyle
+{
+    // Define where to find font file data
+    // + hint user which font is needed to install
+    FontDescriptor descriptor;
+    
+    // User modification of font style
+    FontProp prop;
 
     bool operator==(const EmbossStyle &other) const;
 
     // undo / redo stack recovery
-    template<class Archive> void serialize(Archive &ar){ ar(name, path, type, prop); }
+    template<class Archive> void serialize(Archive &ar){ ar(descriptor, prop); }
 };
 
 // Emboss style name inside vector is unique

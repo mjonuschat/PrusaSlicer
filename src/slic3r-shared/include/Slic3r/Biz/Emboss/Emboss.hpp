@@ -21,6 +21,7 @@
 #include <cinttypes>
 #include <cstddef>
 
+#include "Slic3r/Domain/FontFile.hpp"
 #include "Slic3r/Domain/ExPolygon.hpp" // also Polygon and Points
 #include "Slic3r/Domain/EmbossShape.hpp" // ExPolygonsWithIds
 #include "Slic3r/Domain/BoundingBox.hpp"
@@ -65,51 +66,6 @@ struct Glyph
 };
 // cache for glyph by unicode
 using Glyphs = std::map<int, Glyph>;
-        
-/// <summary>
-/// keep information from file about font 
-/// (store file data itself)
-/// + cache data readed from buffer
-/// </summary>
-struct FontFile
-{
-    // loaded data from font file
-    // must store data size for imgui rasterization
-    // To not store data on heap and To prevent unneccesary copy
-    // data are stored inside unique_ptr
-    std::unique_ptr<std::vector<unsigned char>> data;
-
-    struct Info
-    {
-        // vertical position is "scale*(ascent - descent + lineGap)"
-        int ascent, descent, linegap;
-
-        // for convert font units to pixel
-        int unit_per_em;
-    };
-    // info for each font in data
-    std::vector<Info> infos;
-
-    FontFile(std::unique_ptr<std::vector<unsigned char>> data,
-                std::vector<Info>                         &&infos)
-        : data(std::move(data)), infos(std::move(infos))
-    {
-        assert(this->data != nullptr);
-        assert(!this->data->empty());
-    }
-
-    bool operator==(const FontFile &other) const {
-        if (data->size() != other.data->size())
-            return false;
-        //if(*data != *other.data) return false;
-        for (size_t i = 0; i < infos.size(); i++) 
-            if (infos[i].ascent != other.infos[i].ascent ||
-                infos[i].descent == other.infos[i].descent ||
-                infos[i].linegap == other.infos[i].linegap)
-                return false;
-        return true;
-    }
-};
 
 /// <summary>
 /// Add caching for shape of glyphs
@@ -117,7 +73,7 @@ struct FontFile
 struct FontFileWithCache
 {
     // Pointer on data of the font file
-    std::shared_ptr<const FontFile> font_file;
+    std::shared_ptr<const Domain::FontFile> font_file;
 
     // Cache for glyph shape
     // IMPORTANT: accessible only in plater job thread !!!
@@ -125,7 +81,7 @@ struct FontFileWithCache
     std::shared_ptr<Emboss::Glyphs> cache;
 
     FontFileWithCache() : font_file(nullptr), cache(nullptr) {}
-    explicit FontFileWithCache(std::unique_ptr<FontFile> font_file)
+    explicit FontFileWithCache(std::unique_ptr<const Domain::FontFile> font_file)
         : font_file(std::move(font_file))
         , cache(std::make_shared<Emboss::Glyphs>())
     {}
@@ -137,13 +93,13 @@ struct FontFileWithCache
 /// </summary>
 /// <param name="file_path">Location of .ttf or .ttc font file</param>
 /// <returns>Font object when loaded.</returns>
-std::unique_ptr<FontFile> create_font_file(const char *file_path);
+std::unique_ptr<Domain::FontFile> create_font_file(const char *file_path);
 // data = raw file data
-std::unique_ptr<FontFile> create_font_file_from_data(std::unique_ptr<std::vector<unsigned char>> data);
+std::unique_ptr<Domain::FontFile> create_font_file_from_data(std::unique_ptr<std::vector<unsigned char>> data);
 #ifdef _WIN32
 // fix for unknown pointer HFONT is replaced with "void *"
 void * can_load(void* hfont);
-std::unique_ptr<FontFile> create_font_file(void * hfont);
+std::unique_ptr<Domain::FontFile> create_font_file(void * hfont);
 #endif // _WIN32
 
 /// <summary>
@@ -154,7 +110,7 @@ std::unique_ptr<FontFile> create_font_file(void * hfont);
 /// <param name="letter">One character defined by unicode codepoint</param>
 /// <param name="flatness">Precision of lettter outline curve in conversion to lines</param>
 /// <returns>inner polygon cw(outer ccw)</returns>
-std::optional<Glyph> letter2glyph(const FontFile &font, unsigned int font_index, int letter, float flatness);
+std::optional<Glyph> letter2glyph(const Domain::FontFile &font, unsigned int font_index, int letter, float flatness);
 
 /// <summary>
 /// Convert text into polygons
@@ -232,7 +188,7 @@ void apply_transformation(const std::optional<float> &angle, const std::optional
 /// <param name="font">Selector of font</param>
 /// <param name="font_index">Index of font in collection</param>
 /// <returns>True when the font description contains italic/obligue otherwise False</returns>
-bool is_italic(const FontFile &font, unsigned int font_index);
+bool is_italic(const Domain::FontFile &font, unsigned int font_index);
 
 /// <summary>
 /// Create unique character set from string with filtered from text with only character from font
@@ -242,7 +198,7 @@ bool is_italic(const FontFile &font, unsigned int font_index);
 /// <param name="font_index">Define font in collection</param>
 /// <param name="exist_unknown">True when text contain glyph unknown in font</param>
 /// <returns>Unique set of character from text contained in font</returns>
-std::string create_range_text(const std::string &text, const FontFile &font, unsigned int font_index, bool* exist_unknown = nullptr);    
+std::string create_range_text(const std::string &text, const Domain::FontFile &font, unsigned int font_index, bool* exist_unknown = nullptr);    
 
 /// <summary>
 /// Calculate scale for glyph shape convert from shape points to mm
@@ -250,7 +206,7 @@ std::string create_range_text(const std::string &text, const FontFile &font, uns
 /// <param name="fp">Property of font</param>
 /// <param name="ff">Font data</param>
 /// <returns>Conversion to mm</returns>
-double get_text_shape_scale(const Domain::FontProp &fp, const FontFile &ff);
+double get_text_shape_scale(const Domain::FontProp &fp, const Domain::FontFile &ff);
 
 /// <summary>
 /// getter of font info by collection defined in prop
@@ -258,7 +214,7 @@ double get_text_shape_scale(const Domain::FontProp &fp, const FontFile &ff);
 /// <param name="font">Contain infos about all fonts(collections) in file</param>
 /// <param name="prop">Index of collection</param>
 /// <returns>Ascent, descent, line gap</returns>
-const FontFile::Info &get_font_info(const FontFile &font, const Domain::FontProp &prop);
+const Domain::FontFile::Info &get_font_info(const Domain::FontFile &font, const Domain::FontProp &prop);
 
 /// <summary>
 /// Read from font file and properties height of line with spacing
@@ -266,7 +222,7 @@ const FontFile::Info &get_font_info(const FontFile &font, const Domain::FontProp
 /// <param name="font">Infos for collections</param>
 /// <param name="prop">Collection index + Additional line gap</param>
 /// <returns>Line height with spacing in scaled font points (same as ExPolygons)</returns>
-int get_line_height(const FontFile &font, const Domain::FontProp &prop);
+int get_line_height(const Domain::FontFile &font, const Domain::FontProp &prop);
 
 /// <summary>
 /// Calculate Vertical align
@@ -274,7 +230,7 @@ int get_line_height(const FontFile &font, const Domain::FontProp &prop);
 /// <param name="align">Top | Center | Bottom</param>
 /// <param name="count_lines"></param>
 /// <returns>Return align Y offset in mm</returns>
-double get_align_y_offset_in_mm(Domain::FontProp::VerticalAlign align, unsigned count_lines, const FontFile &ff, const Domain::FontProp &fp);
+double get_align_y_offset_in_mm(Domain::FontProp::VerticalAlign align, unsigned count_lines, const Domain::FontFile &ff, const Domain::FontProp &fp);
 
 /// <summary>
 /// Project spatial point
@@ -474,7 +430,6 @@ struct TextLine
 };
 using TextLines = std::vector<TextLine>;
 
-using BoundingBoxes2crd = std::vector<Domain::BoundingBox2crd>; // TODO: use Domain::BoundingBoxes2crd
 /// <summary>
 /// Sample slice polygon by bounding boxes centers
 /// slice start point has shape_center_x coor
@@ -483,7 +438,7 @@ using BoundingBoxes2crd = std::vector<Domain::BoundingBox2crd>; // TODO: use Dom
 /// <param name="bbs">Bounding boxes of letter on one line[in font scales]</param>
 /// <param name="scale">Scale for bbs (after multiply bb is in milimeters)</param>
 /// <returns>Sampled polygon by bounding boxes</returns>
-PolygonPoints sample_slice(const TextLine& slice, const BoundingBoxes2crd& bbs, double scale);
+PolygonPoints sample_slice(const TextLine& slice, const Domain::BoundingBoxes2crd& bbs, double scale);
 
 /// <summary>
 /// Calculate angle for polygon point
@@ -494,7 +449,7 @@ PolygonPoints sample_slice(const TextLine& slice, const BoundingBoxes2crd& bbs, 
 /// <returns>angle(atan2) of normal in polygon point</returns>
 double calculate_angle(int32_t distance, PolygonPoint polygon_point, const Domain::Polygon& polygon);
 std::vector<double> calculate_angles(
-    const BoundingBoxes2crd& glyph_sizes,
+    const Domain::BoundingBoxes2crd& glyph_sizes,
     const PolygonPoints &polygon_points,
     const Domain::Polygon &polygon
 );

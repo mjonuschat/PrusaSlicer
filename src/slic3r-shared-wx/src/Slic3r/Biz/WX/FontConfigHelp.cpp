@@ -2,7 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "FontConfigHelp.hpp"
+#include "Slic3r/Biz/WX/FontConfigHelp.hpp"
+#ifdef EXIST_FONT_CONFIG_INCLUDE
 
 #include <wx/buffer.h>
 #include <wx/chartype.h>
@@ -11,15 +12,12 @@
 #include <optional>
 #include <cstddef>
 
-#ifdef EXIST_FONT_CONFIG_INCLUDE
-
 #include <wx/filename.h>
 #include <fontconfig/fontconfig.h>
 
 #include "libslic3r/Utils.hpp"
 
-using namespace Slic3r::GUI;
-
+namespace Slic3r::Biz::WX {
 
 // @Vojta suggest to make static variable global
 // Guard for finalize Font Config
@@ -27,17 +25,17 @@ using namespace Slic3r::GUI;
 // It seams that it NOT work
 static std::optional<Slic3r::ScopeGuard> finalize_guard;
 // cache for Loading of the default configuration file and building information about the available fonts.
-static FcConfig *fc = nullptr;
+static FcConfig* fc = nullptr;
 
-std::string Slic3r::GUI::get_font_path(const wxFont &font, bool reload_fonts)
+std::string get_font_path(const wxFont& font, bool reload_fonts)
 {
     if (!finalize_guard.has_value()) {
         FcInit();
         fc = FcInitLoadConfigAndFonts();
         finalize_guard.emplace([]() {
             // Some internal problem of Font config or other library use FC too(like wxWidget)
-            // fccache.c:795: FcCacheFini: Assertion `fcCacheChains[i] == NULL' failed. 
-            //FcFini(); 
+            // fccache.c:795: FcCacheFini: Assertion `fcCacheChains[i] == NULL' failed.
+            // FcFini();
             FcConfigDestroy(fc);
         });
     } else if (reload_fonts) {
@@ -45,12 +43,13 @@ std::string Slic3r::GUI::get_font_path(const wxFont &font, bool reload_fonts)
         fc = FcInitLoadConfigAndFonts();
     }
 
-    if (fc == nullptr) return "";
+    if (fc == nullptr)
+        return "";
 
-    wxString                 fontDesc = font.GetNativeFontInfoUserDesc();
-    wxString                 faceName = font.GetFaceName();
+    wxString fontDesc = font.GetNativeFontInfoUserDesc();
+    wxString faceName = font.GetFaceName();
     const wxScopedCharBuffer faceNameBuffer = faceName.ToUTF8();
-    const char *             fontFamily     = faceNameBuffer;
+    const char* fontFamily = faceNameBuffer;
 
     // Check font slant
     int slant = FC_SLANT_ROMAN;
@@ -101,9 +100,8 @@ std::string Slic3r::GUI::get_font_path(const wxFont &font, bool reload_fonts)
     else if (fontDesc.Find(wxS("Expanded")) != wxNOT_FOUND)
         width = FC_WIDTH_EXPANDED;
 
-    FcResult   res;
-    FcPattern *matchPattern = FcPatternBuild(NULL, FC_FAMILY, FcTypeString,
-                                             (FcChar8 *) fontFamily, NULL);
+    FcResult res;
+    FcPattern* matchPattern = FcPatternBuild(NULL, FC_FAMILY, FcTypeString, (FcChar8*) fontFamily, NULL);
     ScopeGuard sg_mp([matchPattern]() { FcPatternDestroy(matchPattern); });
 
     FcPatternAddInteger(matchPattern, FC_SLANT, slant);
@@ -113,21 +111,23 @@ std::string Slic3r::GUI::get_font_path(const wxFont &font, bool reload_fonts)
     FcConfigSubstitute(NULL, matchPattern, FcMatchPattern);
     FcDefaultSubstitute(matchPattern);
 
-    FcPattern *resultPattern = FcFontMatch(NULL, matchPattern, &res);
-    if (resultPattern == nullptr) return "";
+    FcPattern* resultPattern = FcFontMatch(NULL, matchPattern, &res);
+    if (resultPattern == nullptr)
+        return "";
     ScopeGuard sg_rp([resultPattern]() { FcPatternDestroy(resultPattern); });
 
-    FcChar8 *fileName;
-    if (FcPatternGetString(resultPattern, FC_FILE, 0, &fileName) !=
-        FcResultMatch)
+    FcChar8* fileName;
+    if (FcPatternGetString(resultPattern, FC_FILE, 0, &fileName) != FcResultMatch)
         return "";
-    wxString fontFileName = wxString::FromUTF8((char *) fileName);
+    wxString fontFileName = wxString::FromUTF8((char*) fileName);
 
-    if (fontFileName.IsEmpty()) return "";
+    if (fontFileName.IsEmpty())
+        return "";
 
     // find full file path
     wxFileName myFileName(fontFileName);
-    if (!myFileName.IsOk()) return "";
+    if (!myFileName.IsOk())
+        return "";
 
     if (myFileName.IsRelative()) {
         // Check whether the file is relative to the current working directory
@@ -137,16 +137,18 @@ std::string Slic3r::GUI::get_font_path(const wxFont &font, bool reload_fonts)
             // wxString foundFileName =
             // m_searchPaths.FindAbsoluteValidPath(fileName); if
             // (!foundFileName.IsEmpty()) {
-            //    myFileName.Assign(foundFileName);
+            // myFileName.Assign(foundFileName);
             //}
         }
     }
 
-    if (!myFileName.FileExists() || !myFileName.IsFileReadable()) return "";
+    if (!myFileName.FileExists() || !myFileName.IsFileReadable())
+        return "";
 
     // File exists and is accessible
     wxString fullFileName = myFileName.GetFullPath();
     return std::string(fullFileName.c_str());
 }
+} // namespace Slic3r::Biz::WX
 
 #endif // EXIST_FONT_CONFIG_INCLUDE

@@ -36,6 +36,7 @@ using namespace Slic3r;
 using EmbossProjection = Domain::EmbossProjection;
 using EmbossShape = Domain::EmbossShape;
 using EmbossStyle = Domain::EmbossStyle;
+using Domain::FontDescriptor;
 using FontProp = Domain::FontProp;
 using TextConfiguration = Domain::TextConfiguration;
 
@@ -348,13 +349,13 @@ const NamesType NAMES = {{TEXT, STYLE_NAME, FONT_DESCRIPTOR, FONT_DESCRIPTOR_TYP
 CHAR_GAP, LINE_GAP, LINE_HEIGHT, BOLDNESS, SKEW, PER_GLYPH, HORIZONTAL_ALIGN, VERTICAL_ALIGN, COLLECTION_NUMBER,
 FONT_FAMILY, FONT_FACE_NAME, FONT_STYLE, FONT_WEIGHT}};
 
-using TypeToName = boost::bimap<EmbossStyle::Type, std::string_view>;
+using TypeToName = boost::bimap<FontDescriptor::Type, std::string_view>;
 const TypeToName type_to_name = 
     boost::assign::list_of<TypeToName::relation>
-    (EmbossStyle::Type::file_path, "file_name")
-    (EmbossStyle::Type::wx_win_font_descr, "wxFontDescriptor_Windows")
-    (EmbossStyle::Type::wx_lin_font_descr, "wxFontDescriptor_Linux")
-    (EmbossStyle::Type::wx_mac_font_descr, "wxFontDescriptor_MacOsX");
+    (FontDescriptor::Type::file_path, "file_name")
+    (FontDescriptor::Type::wx_win_font_descr, "wxFontDescriptor_Windows")
+    (FontDescriptor::Type::wx_lin_font_descr, "wxFontDescriptor_Linux")
+    (FontDescriptor::Type::wx_mac_font_descr, "wxFontDescriptor_MacOsX");
 
 using HorizontalAlignToName = boost::bimap<FontProp::HorizontalAlign, std::string_view>;
 const HorizontalAlignToName horizontal_align_to_name = 
@@ -375,9 +376,9 @@ json to_json(const TextConfiguration &tc) {
     result[TEXT] = tc.text;
     // font item
     const EmbossStyle &style = tc.style;
-    result[STYLE_NAME] = style.name;
-    result[FONT_DESCRIPTOR] = style.path;
-    result[FONT_DESCRIPTOR_TYPE] = ::to_json(style.type, type_to_name);
+    result[STYLE_NAME] = style.descriptor.name;
+    result[FONT_DESCRIPTOR] = style.descriptor.path;
+    result[FONT_DESCRIPTOR_TYPE] = ::to_json(style.descriptor.type, type_to_name);
 
     // font property
     const FontProp &fp = tc.style.prop;
@@ -404,9 +405,9 @@ void load(const json &tc_json, TextConfiguration &tc, Read3mfIssues& collected_i
         return;
     from_json(tc_json, TEXT, tc.text, collected_issues, RT::project_text_configuration_text_issue, true);
     EmbossStyle &style = tc.style;
-    from_json(tc_json, STYLE_NAME,           style.name, collected_issues, RT::project_text_configuration_style_name_issue, true);
-    from_json(tc_json, FONT_DESCRIPTOR,      style.path, collected_issues, RT::project_text_configuration_font_descriptor_issue, true);
-    from_json(tc_json, FONT_DESCRIPTOR_TYPE, style.type, type_to_name, collected_issues, RT::project_text_configuration_font_descriptor_type_issue, true);
+    from_json(tc_json, STYLE_NAME,           style.descriptor.name, collected_issues, RT::project_text_configuration_style_name_issue, true);
+    from_json(tc_json, FONT_DESCRIPTOR,      style.descriptor.path, collected_issues, RT::project_text_configuration_font_descriptor_issue, true);
+    from_json(tc_json, FONT_DESCRIPTOR_TYPE, style.descriptor.type, type_to_name, collected_issues, RT::project_text_configuration_font_descriptor_type_issue, true);
     FontProp &fp = style.prop;
     from_json(tc_json, CHAR_GAP,    fp.char_gap  , collected_issues, RT::project_text_configuration_char_gap_issue);
     from_json(tc_json, LINE_GAP,    fp.line_gap  , collected_issues, RT::project_text_configuration_line_gap_issue);

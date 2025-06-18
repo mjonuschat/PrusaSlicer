@@ -564,9 +564,9 @@ TEST_CASE("UndoRedo TextConfiguration serialization", "[Emboss]")
     TextConfiguration tc;
     tc.text = "Dovede-li se člověk zasmát sám sobě, nevyjde ze smíchu po celý život.";
     EmbossStyle& es = tc.style;
-    es.name      = "Seneca";
-    es.path      = "Simply the best";
-    es.type      = EmbossStyle::Type::file_path;
+    es.descriptor.name = "Seneca";
+    es.descriptor.path = "Simply the best";
+    es.descriptor.type = Domain::FontDescriptor::Type::file_path;
     FontProp &fp = es.prop;
     fp.char_gap  = 3;
     fp.line_gap  = 7;

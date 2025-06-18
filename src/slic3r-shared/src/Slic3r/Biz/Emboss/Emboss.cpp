@@ -25,6 +25,7 @@
 #include "admesh/stl.h" // indexed_triangle_set
 #include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "Slic3r/Domain/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Exception.hpp"
@@ -58,6 +59,7 @@ using namespace Emboss;
 using fontinfo_opt = std::optional<stbtt_fontinfo>;
 using Domain::Index3;
 using Domain::FontProp;
+using Domain::FontFile;
 #ifdef _WIN32
 using Domain::EmbossStyle;
 #endif
@@ -879,7 +881,7 @@ namespace {
 EmbossStyle create_style(const std::wstring& name, const std::wstring& path) {
     return { boost::nowide::narrow(name.c_str()),
              boost::nowide::narrow(path.c_str()),
-             EmbossStyle::Type::file_path, FontProp() };
+             Domain::FontDescriptor::Type::file_path, FontProp() };
 }
 } // namespace
 

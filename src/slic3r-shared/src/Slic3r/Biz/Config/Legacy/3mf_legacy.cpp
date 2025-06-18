@@ -65,6 +65,7 @@ using Slic3r::Domain::SLA::SupportPoint;
 using Slic3r::Domain::SLA::PointsStatus;
 using Slic3r::Domain::SLA::SupportPointType;
 using Slic3r::Domain::EmbossStyle;
+using Slic3r::Domain::FontDescriptor;
 using Slic3r::Domain::FontProp;
 using Slic3r::Domain::TextConfiguration;
 using Slic3r::Domain::EmbossShape;
@@ -2411,7 +2412,7 @@ namespace Slic3rLegacy {
     public:
         TextConfigurationSerialization() = delete;
                 
-        using TypeToName = boost::bimap<EmbossStyle::Type, std::string_view>;
+        using TypeToName = boost::bimap<FontDescriptor::Type, std::string_view>;
         static const TypeToName type_to_name;
 
         using HorizontalAlignToName = boost::bimap<FontProp::HorizontalAlign, std::string_view>;
@@ -2420,15 +2421,15 @@ namespace Slic3rLegacy {
         using VerticalAlignToName = boost::bimap<FontProp::VerticalAlign, std::string_view>;
         static const VerticalAlignToName vertical_align_to_name;
         
-        static EmbossStyle::Type get_type(std::string_view type) {
+        static FontDescriptor::Type get_type(std::string_view type) {
             const auto& to_type = TextConfigurationSerialization::type_to_name.right;
             auto type_item = to_type.find(type);
             assert(type_item != to_type.end());
-            if (type_item == to_type.end()) return EmbossStyle::Type::undefined;
+            if (type_item == to_type.end()) return FontDescriptor::Type::undefined;
             return type_item->second;        
         }
 
-        static std::string_view get_name(EmbossStyle::Type type) {
+        static std::string_view get_name(FontDescriptor::Type type) {
             const auto& to_name = TextConfigurationSerialization::type_to_name.left;
             auto type_name = to_name.find(type);
             assert(type_name != to_name.end());
@@ -4193,10 +4194,10 @@ S bimap_cvt(const boost::bimap<F, S> &bmap, F f, const S &def_value)
 /// </summary>
 const TextConfigurationSerialization::TypeToName TextConfigurationSerialization::type_to_name =
     boost::assign::list_of<TypeToName::relation>
-    (EmbossStyle::Type::file_path, "file_name")
-    (EmbossStyle::Type::wx_win_font_descr, "wxFontDescriptor_Windows")
-    (EmbossStyle::Type::wx_lin_font_descr, "wxFontDescriptor_Linux")
-    (EmbossStyle::Type::wx_mac_font_descr, "wxFontDescriptor_MacOsX");
+    (FontDescriptor::Type::file_path, "file_name")
+    (FontDescriptor::Type::wx_win_font_descr, "wxFontDescriptor_Windows")
+    (FontDescriptor::Type::wx_lin_font_descr, "wxFontDescriptor_Linux")
+    (FontDescriptor::Type::wx_mac_font_descr, "wxFontDescriptor_MacOsX");
 
 const TextConfigurationSerialization::HorizontalAlignToName TextConfigurationSerialization::horizontal_align_to_name =
     boost::assign::list_of<HorizontalAlignToName::relation>
@@ -4218,10 +4219,10 @@ void TextConfigurationSerialization::to_xml(std::stringstream &stream, const Tex
     stream << TEXT_DATA_ATTR << "=\"" << xml_escape_double_quotes_attribute_value(tc.text) << "\" ";
     // font item
     const EmbossStyle &style = tc.style;
-    stream << STYLE_NAME_ATTR <<  "=\"" << xml_escape_double_quotes_attribute_value(style.name) << "\" ";
-    stream << FONT_DESCRIPTOR_ATTR << "=\"" << xml_escape_double_quotes_attribute_value(style.path) << "\" ";
+    stream << STYLE_NAME_ATTR <<  "=\"" << xml_escape_double_quotes_attribute_value(style.descriptor.name) << "\" ";
+    stream << FONT_DESCRIPTOR_ATTR << "=\"" << xml_escape_double_quotes_attribute_value(style.descriptor.path) << "\" ";
     constexpr std::string_view dafault_type{"undefined"};
-    std::string_view style_type = bimap_cvt(type_to_name, style.type, dafault_type);
+    std::string_view style_type = bimap_cvt(type_to_name, style.descriptor.type, dafault_type);
     stream << FONT_DESCRIPTOR_TYPE_ATTR << "=\"" << style_type << "\" ";
 
     // font property
@@ -4334,7 +4335,7 @@ std::optional<TextConfiguration> TextConfigurationSerialization::read(const char
     std::string style_name = get_attribute_value_string(attributes, num_attributes, STYLE_NAME_ATTR);
     std::string font_descriptor = get_attribute_value_string(attributes, num_attributes, FONT_DESCRIPTOR_ATTR);
     std::string type_str = get_attribute_value_string(attributes, num_attributes, FONT_DESCRIPTOR_TYPE_ATTR);
-    EmbossStyle::Type type = bimap_cvt(type_to_name, std::string_view{type_str}, EmbossStyle::Type::undefined);
+    FontDescriptor::Type type = bimap_cvt(type_to_name, std::string_view{type_str}, FontDescriptor::Type::undefined);
 
     std::string text = get_attribute_value_string(attributes, num_attributes, TEXT_DATA_ATTR);
     EmbossStyle es{style_name, std::move(font_descriptor), type, std::move(fp)};

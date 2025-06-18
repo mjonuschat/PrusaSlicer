@@ -53,6 +53,13 @@ set(SLIC3R_SHARED_WX_FILES
         include/Slic3r/App/WX/SavePresetDialog.hpp
         src/Slic3r/App/WX/SavePresetDialog.cpp
 
+        
+        include/Slic3r/Biz/WX/FontManager.hpp
+        include/Slic3r/Biz/WX/FontUtils.hpp
+        include/Slic3r/Biz/WX/FontConfigHelp.hpp
+        src/Slic3r/Biz/WX/FontManager.cpp
+        src/Slic3r/Biz/WX/FontUtils.cpp
+        src/Slic3r/Biz/WX/FontConfigHelp.cpp
 	    # our widgets
         include/Slic3r/App/WX/Widgets/UIColors.hpp
         include/Slic3r/App/WX/Widgets/StateColor.hpp

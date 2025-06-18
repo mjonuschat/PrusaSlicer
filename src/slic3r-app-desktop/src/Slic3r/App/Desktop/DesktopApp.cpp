@@ -34,6 +34,7 @@
 #include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
 
 #include "Slic3r/App/WX/DialogManager.hpp"
+#include "Slic3r/Biz/WX/FontManager.hpp"
 #include "Slic3r/App/WX/WindowMetrics.hpp"
 
 #include "libslic3r/Utils.hpp"
@@ -226,6 +227,7 @@ bool DesktopApp::OnInit()
         Biz::UserAccount::TokenStore::reset();
     }
 
+    platform_services.set_font_manager(std::make_unique<Biz::WX::FontManager>(data_dir()));
     platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
 
     platform_services.set_app_config_provider(std::make_unique<AppConfigProvider>());

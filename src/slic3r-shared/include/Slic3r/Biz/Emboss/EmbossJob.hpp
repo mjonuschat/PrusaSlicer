@@ -8,6 +8,8 @@
 #include <atomic>
 #include <memory>
 #include <string>
+#include "Slic3r/App/Scene/Ray.hpp"
+#include "Slic3r/App/Scene/Scene.hpp" // NodePickResults
 #include "Slic3r/Biz/Emboss/Emboss.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Domain/Point.hpp"
@@ -15,62 +17,30 @@
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp" // ExPolygonsWithIds
 
-//#include "libslic3r/Point.hpp" // Transform3d
-#include "libslic3r/Model.hpp" 
-
-//#include "Slic3r/App/Scene/Camera.hpp"
-//#include "slic3r/GUI/Camera.hpp"
-//#include "slic3r/GUI/TextLines.hpp"
-
-// forward declarations
-namespace Slic3r {
-class BuildVolume;
-}
-
 namespace Slic3r::Biz::Emboss {
 
-// temporary interface for start job
-class Job { public:
-    class Ctl {public:
-        virtual ~Ctl() = default;
-        virtual void update_status(int st, const std::string& msg = "") = 0;
-        virtual bool was_canceled() const = 0;
-    };
-    virtual ~Job() = default;
-    virtual void process(Ctl& ctl) = 0;
-    virtual void finalize(bool /*canceled*/, std::exception_ptr&) {}
-};
-
 /// <summary>
-/// Base data hold data for create emboss shape
+/// Provide ability to lazy create shape for Embossing
+/// Text have to load font file and create shapes for glyphs
+/// SVG have to load SVG file and create shapes for paths
+/// Different store into volume
 /// </summary>
-class DataBase
-{
+class ShapeProvider {
 public:
-    DataBase(const std::string& volume_name, ProjectInteractor& project_interactor, std::shared_ptr<std::atomic<bool>> cancel)
-        : volume_name(volume_name), project_interactor(project_interactor), cancel(std::move(cancel)) {}
-    DataBase(const std::string& volume_name, ProjectInteractor& project_interactor, std::shared_ptr<std::atomic<bool>> cancel, Domain::EmbossShape&& shape)
-        : volume_name(volume_name), project_interactor(project_interactor), cancel(std::move(cancel)), shape(std::move(shape)){}
-    DataBase(DataBase &&) = default;
-    virtual ~DataBase() = default;
+    virtual ~ShapeProvider() = default;
 
     /// <summary>
     /// Create shape
-    /// e.g. Text extract glyphs from font
+    /// e.g. Text extract glyphs from font file
     /// Not 'const' function because it could modify shape
     /// </summary>
-    virtual Domain::EmbossShape& create_shape() { return shape; };
+    virtual Domain::EmbossShape& get_shape() { return shape; }
 
     /// <summary>
     /// Write data how to reconstruct shape to volume
     /// </summary>
     /// <param name="volume">Data object for store emboss params</param>
-    virtual void write(Domain::ModelVolume &volume) const;
-
-    // Define projection move
-    // True (raised) .. move outside from surface (MODEL_PART)    
-    // False (engraved).. move into object (NEGATIVE_VOLUME)
-    bool is_outside = true;
+    virtual void write(Domain::ModelVolume& volume) const { volume.emboss_shape = shape; }
 
     /// <summary>
     /// Used only with text for embossing per glyph
@@ -78,149 +48,43 @@ public:
     /// <param name="tr">Embossed volume final transformation in world</param>
     /// <param name="vols">Volumes to be sliced to text lines</param>
     /// <returns>True on succes otherwise False(Per glyph shoud be disabled)</returns>
-    virtual bool create_text_lines(const Domain::Transform3d& tr, const Domain::ModelVolumePtrs &vols) { return false; }
+    virtual bool create_text_lines(const Domain::Transform3d& tr, const Domain::ModelVolumePtrs& vols) { return false; }
+
+    /// <summary>
+    /// Create text lines when empty
+    /// </summary>
+    /// <returns></returns>
+    virtual const Biz::Emboss::TextLines& get_text_lines() { return text_lines; }
+
+protected:
+    Domain::EmbossShape shape;
 
     // Define per letter projection on one text line
     // [optional] It is not used when empty
     Biz::Emboss::TextLines text_lines = {};
+};
+using ShapeProviderPtr = std::unique_ptr<ShapeProvider>;
+
+struct BaseData {
+    // Create shape
+    ShapeProviderPtr shape_provider;
+
+    // Add volume into project
+    Biz::ProjectInteractor& project_interactor;
+
+    // Define projection move
+    // True (raised) .. move outside from surface (MODEL_PART)    
+    // False (engraved).. move into object (NEGATIVE_VOLUME & MODIFIER)
+    bool is_outside = true;
 
     // [optional] Define distance for surface
     // It is used only for flat surface (not cutted)
     // Position of Zero(not set value) differ for MODEL_PART and NEGATIVE_VOLUME
     std::optional<float> from_surface;
-        
+
     // new volume name
     std::string volume_name;
-
-    // To inform application listener about volume creation
-    // NOTE1: Before access check thread cancel
-    // NOTE2: Current project do not have to be one where add new volume
-    ProjectInteractor& project_interactor;// live longer than TextGizmo (@barzto garanteed)
-
-    // flag that job is canceled
-    // for time after process.
-    std::shared_ptr<std::atomic<bool>> cancel;
-
-    // shape to emboss
-    Domain::EmbossShape shape;
 };
-
-/// <summary>
-/// Hold neccessary data to create ModelVolume in job
-/// Volume is created on the surface of existing volume in object.
-/// NOTE: EmbossDataBase::font_file doesn't have to be valid !!!
-/// </summary>
-struct DataCreateVolume : public DataBase
-{
-    // define embossed volume type
-    Domain::ModelVolumeType volume_type;
-
-    // parent ModelObject index where to create volume
-    Domain::ObjectID object_id;
-
-    // new created volume transformation
-    Domain::Transform3d trmat;
-};
-using DataBasePtr = std::unique_ptr<DataBase>;
-
-/// <summary>
-/// Hold neccessary data to update embossed text object in job
-/// </summary>
-struct DataUpdate
-{
-    // Hold data about shape
-    DataBasePtr base;
-
-    // unique identifier of volume to change
-    Domain::ObjectID volume_id;
-
-    // Used for prevent flooding Undo/Redo stack on slider.
-    bool make_snapshot;
-
-    // Transformation of volume after update volume shape
-    // NOTE: Add for style change, because it change rotation and distance from surface
-    std::optional<Domain::Transform3d> trmat;
-};
-
-/// <summary>
-/// Update text shape in existing text volume
-/// Predict that there is only one runnig(not canceled) instance of it
-/// </summary>
-class UpdateJob : public Job
-{
-    DataUpdate   m_input;
-    Domain::TriangleMesh m_result;
-
-public:
-    // move params to private variable
-    explicit UpdateJob(DataUpdate &&input);
-
-    /// <summary>
-    /// Create new embossed volume by m_input data and store to m_result
-    /// </summary>
-    /// <param name="ctl">Control containing cancel flag</param>
-    void process(Ctl &ctl) override;
-
-    /// <summary>
-    /// Update volume - change object_id
-    /// </summary>
-    /// <param name="canceled">Was process canceled.
-    /// NOTE: Be carefull it doesn't care about
-    /// time between finished process and started finalize part.</param>
-    /// <param name="">unused</param>
-    void finalize(bool canceled, std::exception_ptr &eptr) override;
-
-    /// <summary>
-    /// Update text volume
-    /// </summary>
-    /// <param name="volume">Volume to be updated</param>
-    /// <param name="mesh">New Triangle mesh for volume</param>
-    /// <param name="base">Data to write into volume</param>
-    static void update_volume(Domain::ModelVolume* volume, Domain::TriangleMesh&& mesh, const DataBase& base);
-};
-
-struct SurfaceVolumeData
-{
-    // Transformation of volume inside of object
-    Domain::Transform3d transform;
-
-    struct ModelSource
-    {
-        // source volumes
-        std::shared_ptr<const Domain::TriangleMesh> mesh;
-        // Transformation of volume inside of object
-        Domain::Transform3d tr;
-    };
-    using ModelSources = std::vector<ModelSource>;
-    ModelSources sources;
-};
-
-/// <summary>
-/// Hold neccessary data to update embossed text object in job
-/// </summary>
-struct UpdateSurfaceVolumeData : public DataUpdate, public SurfaceVolumeData{};
-
-/// <summary>
-/// Update text volume to use surface from object
-/// </summary>
-class UpdateSurfaceVolumeJob : public Job
-{
-    UpdateSurfaceVolumeData m_input;
-    Domain::TriangleMesh m_result;
-
-public:
-    // move params to private variable
-    explicit UpdateSurfaceVolumeJob(UpdateSurfaceVolumeData &&input);
-    void process(Ctl &ctl) override;
-    void finalize(bool canceled, std::exception_ptr &eptr) override;
-};
-
-/// <summary>
-/// Copied triangles from object to be able create mesh for cut surface from
-/// </summary>
-/// <param name="volume">Define embossed volume</param>
-/// <returns>Source data for cut surface from</returns>
-SurfaceVolumeData::ModelSources create_volume_sources(const Domain::ModelVolume &volume);
 
 /// <summary>
 /// shorten params for start_crate_volume functions
@@ -228,25 +92,13 @@ SurfaceVolumeData::ModelSources create_volume_sources(const Domain::ModelVolume 
 struct CreateVolumeParams
 {
     // base input data for job
-    // When nullptr there is some issue with creation params ...
-    DataBasePtr data;
-
-    // used to get view direction and position
-    //::Slic3r::App::Scene::Camera camera;
-
-    // To put new object on the build volume
-    //const BuildVolume &build_volume;
-
-    // used to emplace job for execution
-    //Worker &worker;
+    BaseData base;
 
     // New created volume type
     Domain::ModelVolumeType volume_type;
 
-    // Contain AABB trees from scene
-    //RaycastManager &raycaster;
-
     // Define which gizmo open on the success
+    // Used only when create without opened gizmo
     unsigned char gizmo; // GLGizmosManager::EType
 
     // Wanted additionl move in Z(emboss) direction of new created volume
@@ -260,8 +112,13 @@ struct CreateVolumeParams
 /// Create new volume on position of mouse cursor
 /// </summary>
 /// <param name="input">Cantain all needed data for start creation job</param>
+/// <param name="pick_ray">Ray into scene given by coordinate on screen</param>
+/// <param name="picks">Scene Node with intersection of picked ray</param>
 /// <returns>True on success otherwise False</returns>
-bool start_create_volume(CreateVolumeParams &input, const Domain::Vec2d &mouse_pos);
+bool start_create_volume(
+    CreateVolumeParams &input, 
+    const App::Scene::Ray& pick_ray,
+    const App::Scene::NodePickResults& picks);
 
 /// <summary>
 /// Same as previous function but without mouse position
@@ -270,14 +127,47 @@ bool start_create_volume(CreateVolumeParams &input, const Domain::Vec2d &mouse_p
 bool start_create_volume_without_position(CreateVolumeParams &input);
 
 /// <summary>
+/// Parameters for call start_update_volume function
+/// </summary>
+struct UpdateVolumeParams
+{
+    // base input data for job
+    BaseData base;
+
+    // Used for prevent flooding Undo/Redo stack on slider.
+    bool make_snapshot;
+
+    // Transformation of volume after update volume shape
+    // NOTE: Add for style change, because it change rotation and distance from surface
+    std::optional<Domain::Transform3d> trmat;
+};
+
+/// <summary>
 /// Start job for update embossed volume
 /// </summary>
 /// <param name="data">define update data</param>
-/// <param name="volume">Volume to be updated</param>
-/// <param name="selection">Keep model and gl_volumes - when start use surface volume must be selected</param>
-/// <param name="raycaster">Could cast ray to scene</param>
 /// <returns>True when start job otherwise false</returns>
-//bool start_update_volume(DataUpdate &&data, const ModelVolume &volume, const Selection &selection, RaycastManager &raycaster);
+bool start_update_volume(UpdateVolumeParams& data);
+
+/// <summary>
+/// Triangle sources for cut surface from volume
+/// used only with SurfaceVolumeData
+/// </summary>
+struct ModelSource
+{
+    // source volumes
+    std::shared_ptr<const Domain::TriangleMesh> mesh;
+    // Transformation of volume inside of object
+    Domain::Transform3d tr;
+};
+using ModelSources = std::vector<ModelSource>;
+
+/// <summary>
+/// Copied triangles from object to be able create mesh for cut surface from
+/// </summary>
+/// <param name="volume">Define embossed volume</param>
+/// <returns>Source data for cut surface from</returns>
+ModelSources create_volume_sources(const Domain::ModelVolume& volume);
 
 } // namespace Slic3r::Biz::Emboss
 

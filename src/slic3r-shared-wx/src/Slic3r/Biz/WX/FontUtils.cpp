@@ -2,29 +2,27 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "WxFontUtils.hpp"
+#include "Slic3r/Biz/WX/FontUtils.hpp"
 
 #include <boost/log/trivial.hpp>
 #include <wx/string.h>
-#include <boost/assign/list_of.hpp>
 #include <optional>
 #include <vector>
 
-#include "libslic3r/Utils.hpp" // IWYU pragma: keep
-#include "libslic3r/Emboss.hpp"
-#include "libslic3r/Exception.hpp"
+//#include "libslic3r/Utils.hpp" // IWYU pragma: keep
+//#include "libslic3r/Exception.hpp"
 
 #if defined(__APPLE__)
+#include "libslic3r/Utils.hpp" // ScopeGuard
 #include <CoreText/CTFont.h>
 #include <wx/uri.h>
 #include <wx/fontutil.h> // wxNativeFontInfo
 #include <wx/osx/core/cfdictionary.h>
 #elif defined(__linux__)
-#include "slic3r/Utils/FontConfigHelp.hpp"
+#include "Slic3r/Biz/WX/FontConfigHelp.hpp"
 #endif
 
 using namespace Slic3r;
-using namespace Slic3r::GUI;
 
 #ifdef __APPLE__
 namespace {
@@ -74,10 +72,42 @@ std::string get_file_path(const wxFont& font) {
 } // namespace
 #endif // __APPLE__
 
-bool WxFontUtils::can_load(const wxFont &font)
+namespace{    
+wxFont create_wx_font(const wxString& name, const wxFontEncoding encoding)
+{ return wxFont(wxFontInfo().FaceName(name).Encoding(encoding)); }
+bool is_valid_font(const wxString& name, const std::vector<wxString>& bad, const wxFontEncoding encoding, wxFont& out_wx_font) {
+    if (name.empty()) return false;
+
+    // vertical font start with @, we will filter it out
+    // Not sure if it is only in Windows so filtering is on all platforms
+    if (name[0] == '@') return false;
+
+    // previously detected bad font
+    auto it = std::lower_bound(bad.begin(), bad.end(), name);
+    if (it != bad.end() && *it == name) return false;
+
+    out_wx_font = create_wx_font(name, encoding);
+    //*
+    // Faster chech if wx_font is loadable but not 100%
+    // names could contain not loadable font
+    if (!Slic3r::Biz::WX::can_load(out_wx_font)) return false;
+
+    /*/
+    // Slow copy of font files to try load font
+    // After this all files are loadable
+    auto font_file = Slic3r::Biz::WX::create_font_file(out_wx_font);
+    if (font_file == nullptr)
+        return false; // can't create font file
+    // */
+    return true;
+}
+}
+
+namespace Slic3r::Biz::WX {
+
+bool can_load(const wxFont& font)
 {
-    
-    if (!font.IsOk()) return false;    
+    if (!font.IsOk()) return false;
 #ifdef _WIN32
     return Emboss::can_load(font.GetHFONT()) != nullptr;
 #elif defined(__APPLE__)
@@ -86,29 +116,55 @@ bool WxFontUtils::can_load(const wxFont &font)
 #elif defined(__linux__)
     return true;
     // font config check file path take about 4000ms for chech them all
-    //std::string font_path = Slic3r::GUI::get_font_path(font);
+    //std::string font_path = get_font_path(font);
     //return !font_path.empty();
 #endif
     return false;
 }
 
-std::unique_ptr<Emboss::FontFile> WxFontUtils::create_font_file(const wxFont &font)
+std::vector<wxString> validate_fonts(wxArrayString& facenames, Domain::FontList& valid, std::vector<wxString>& bad, const wxFontEncoding encoding) {
+    // NOTE: recreate list of unopenable fonts (bad)
+    // 1. filter out nonlisted bad fonts
+    // 2. append new founded
+    // 3. keep previously founded bad fonts which are still in list
+    std::vector<wxString> bad_;
+    bad_.reserve(bad.size() + 1); // one more for new installed font
+    std::vector<wxString> good;
+    good.reserve(facenames.size());
+    valid.reserve(facenames.size());
+
+    std::sort(facenames.begin(), facenames.end());
+    for (const wxString& name : facenames) {
+        wxFont wx_font;
+        if (!is_valid_font(name, bad, encoding, wx_font)) {
+            bad_.push_back(name);
+            continue;
+        }
+        good.push_back(name);
+        valid.push_back(Biz::WX::create_descriptor(wx_font));
+    }
+    assert(std::is_sorted(bad_.begin(), bad_.end()));
+    bad = bad_;
+    return good;
+}
+
+std::unique_ptr<Domain::FontFile> create_font_file(const wxFont& font)
 {
 #ifdef _WIN32
     return Emboss::create_font_file(font.GetHFONT());
 #elif defined(__APPLE__)
     std::string file_path = get_file_path(font);
-    if (!is_valid_ttf(file_path)) {        
+    if (!is_valid_ttf(file_path)) {
         BOOST_LOG_TRIVIAL(error) << "Can not process font('" << get_human_readable_name(font) << "'), "
-                                 << "file in path('" << file_path << "') is not valid TTF.";
-        return nullptr; 
+            << "file in path('" << file_path << "') is not valid TTF.";
+        return nullptr;
     }
     return Emboss::create_font_file(file_path.c_str());
 #elif defined(__linux__)
-    std::string font_path = Slic3r::GUI::get_font_path(font);
-    if (font_path.empty()){
+    std::string font_path = get_font_path(font);
+    if (font_path.empty()) {
         BOOST_LOG_TRIVIAL(error) << "Can not read font('" << get_human_readable_name(font) << "'), "
-                                 << "file path is empty.";
+            << "file path is empty.";
         return nullptr;
     }
     return Emboss::create_font_file(font_path.c_str());
@@ -119,40 +175,48 @@ std::unique_ptr<Emboss::FontFile> WxFontUtils::create_font_file(const wxFont &fo
 #endif
 }
 
-EmbossStyle::Type WxFontUtils::get_current_type()
+Domain::FontDescriptor::Type get_current_type()
 {
 #ifdef _WIN32
-    return EmbossStyle::Type::wx_win_font_descr;
+    return Domain::FontDescriptor::Type::wx_win_font_descr;
 #elif defined(__APPLE__)
-    return EmbossStyle::Type::wx_mac_font_descr;
+    return Domain::FontDescriptor::Type::wx_mac_font_descr;
 #elif defined(__linux__)
-    return EmbossStyle::Type::wx_lin_font_descr;
+    return Domain::FontDescriptor::Type::wx_lin_font_descr;
 #else
-    return EmbossStyle::Type::undefined;
+    return Domain::FontDescriptor::Type::undefined;
 #endif
 }
 
-EmbossStyle WxFontUtils::create_emboss_style(const wxFont &font, const std::string& name)
+Domain::FontDescriptor create_descriptor(const wxFont& font) {
+    return Domain::FontDescriptor {
+            .name = get_human_readable_name(font),
+            .path = store_wxFont(font),
+            .type = get_current_type()
+    };
+}
+
+Domain::EmbossStyle create_emboss_style(const wxFont& font, const std::string& name)
 {
-    std::string name_item = name.empty()? get_human_readable_name(font) : name;
+    std::string name_item = name.empty() ? get_human_readable_name(font) : name;
     std::string fontDesc = store_wxFont(font);
-    EmbossStyle::Type type = get_current_type();
+    Domain::FontDescriptor::Type type = get_current_type();
 
     // synchronize font property with actual font
-    FontProp font_prop; 
+    Domain::FontProp font_prop;
 
     // The point size is defined as 1/72 of the Anglo-Saxon inch (25.4 mm): it
     // is approximately 0.0139 inch or 352.8 um. But it is too small, so I
     // decide use point size as mm for emboss
     font_prop.size_in_mm = font.GetPointSize(); // *0.3528f;
 
-    WxFontUtils::update_property(font_prop, font);
+    update_property(font_prop, font);
     return { name_item, fontDesc, type, font_prop };
 }
 
 // NOT working on linux GTK2
 // load font used by Operating system as default GUI
-//EmbossStyle WxFontUtils::get_os_font()
+//EmbossStyle get_os_font()
 //{
 //    wxSystemFont system_font = wxSYS_DEFAULT_GUI_FONT;
 //    wxFont       font        = wxSystemSettings::GetFont(system_font);
@@ -161,80 +225,46 @@ EmbossStyle WxFontUtils::create_emboss_style(const wxFont &font, const std::stri
 //    return es;
 //}
 
-std::string WxFontUtils::get_human_readable_name(const wxFont &font)
+std::string get_human_readable_name(const wxFont& font)
 {
     if (!font.IsOk()) return "Font is NOT ok.";
     // Face name is optional in wxFont
-    if (!font.GetFaceName().empty()) {
-        return std::string(font.GetFaceName().ToUTF8().data());
-    } else {
-        return std::string((font.GetFamilyString() + " " +
-                            font.GetStyleString() + " " +
-                            font.GetWeightString())
-                               .ToUTF8().data());
-    }
+    wxString name = (!font.GetFaceName().empty()) ?
+        font.GetFaceName() :
+        (font.GetFamilyString() + wxString::FromUTF8(" ") +
+            font.GetStyleString() + wxString::FromUTF8(" ") +
+            font.GetWeightString());
+    return std::string(name.ToUTF8().data());
 }
 
-std::string WxFontUtils::store_wxFont(const wxFont &font)
+std::string store_wxFont(const wxFont& font)
 {
     // wxString os = wxPlatformInfo::Get().GetOperatingSystemIdName();
     wxString font_descriptor = font.GetNativeFontInfoDesc();
-    BOOST_LOG_TRIVIAL(trace) << "'" << font_descriptor << "' wx string get from GetNativeFontInfoDesc. wxFont " << 
+    BOOST_LOG_TRIVIAL(trace) << "'" << font_descriptor << "' wx string get from GetNativeFontInfoDesc. wxFont " <<
         "IsOk(" << font.IsOk() << "), " <<
         "isNull(" << font.IsNull() << ")" <<
         // "IsFree(" << font.IsFree() << "), " << // on MacOs is no function is free
         "IsFixedWidth(" << font.IsFixedWidth() << "), " <<
         "IsUsingSizeInPixels(" << font.IsUsingSizeInPixels() << "), " <<
-        "Encoding(" << (int)font.GetEncoding() << "), " ;
+        "Encoding(" << (int)font.GetEncoding() << "), ";
     return std::string(font_descriptor.ToUTF8().data());
 }
 
-wxFont WxFontUtils::load_wxFont(const std::string &font_descriptor)
+wxFont load_wxFont(const std::string& font_descriptor)
 {
     BOOST_LOG_TRIVIAL(trace) << "'" << font_descriptor << "'font descriptor string param of load_wxFont()";
-    wxString font_descriptor_wx(font_descriptor);
+    wxString font_descriptor_wx = wxString::FromUTF8(font_descriptor);
     BOOST_LOG_TRIVIAL(trace) << "'" << font_descriptor_wx.ToUTF8().data() << "' wx string descriptor";
     wxFont wx_font(font_descriptor_wx);
     BOOST_LOG_TRIVIAL(trace) << "loaded font is '" << get_human_readable_name(wx_font) << "'.";
     return wx_font;
 }
 
-using TypeToFamily = boost::bimap<wxFontFamily, std::string_view>;
-const TypeToFamily WxFontUtils::type_to_family = 
-    boost::assign::list_of<TypeToFamily::relation>
-        (wxFONTFAMILY_DEFAULT,    "default")
-        (wxFONTFAMILY_DECORATIVE, "decorative")
-        (wxFONTFAMILY_ROMAN,      "roman")
-        (wxFONTFAMILY_SCRIPT,     "script")
-        (wxFONTFAMILY_SWISS,      "swiss")
-        (wxFONTFAMILY_MODERN,     "modern")
-        (wxFONTFAMILY_TELETYPE,   "teletype");
-
-using TypeToStyle = boost::bimap<wxFontStyle, std::string_view>;
-const TypeToStyle WxFontUtils::type_to_style =
-    boost::assign::list_of<TypeToStyle::relation>
-        (wxFONTSTYLE_ITALIC, "italic")
-        (wxFONTSTYLE_SLANT,  "slant")
-        (wxFONTSTYLE_NORMAL, "normal");
-
-using TypeToWeight = boost::bimap<wxFontWeight, std::string_view>;
-const TypeToWeight WxFontUtils::type_to_weight =
-    boost::assign::list_of<TypeToWeight::relation>
-        (wxFONTWEIGHT_THIN,       "thin")
-        (wxFONTWEIGHT_EXTRALIGHT, "extraLight")
-        (wxFONTWEIGHT_LIGHT,      "light")
-        (wxFONTWEIGHT_NORMAL,     "normal")
-        (wxFONTWEIGHT_MEDIUM,     "medium")
-        (wxFONTWEIGHT_SEMIBOLD,   "semibold")
-        (wxFONTWEIGHT_BOLD,       "bold")
-        (wxFONTWEIGHT_EXTRABOLD,  "extraBold")
-        (wxFONTWEIGHT_HEAVY,      "heavy")
-        (wxFONTWEIGHT_EXTRAHEAVY, "extraHeavy");
-
-wxFont WxFontUtils::create_wxFont(const EmbossStyle &style)
+wxFont create_wxFont(const Domain::EmbossStyle& style)
 {
-    const FontProp &fp = style.prop;
-    double  point_size = static_cast<double>(fp.size_in_mm);
+    const Domain::FontProp& fp = style.prop;
+    double point_size = static_cast<double>(fp.size_in_mm);
     wxFontInfo info(point_size);
     if (fp.family.has_value()) {
         auto it = type_to_family.right.find(*fp.family);
@@ -256,26 +286,26 @@ wxFont WxFontUtils::create_wxFont(const EmbossStyle &style)
 
     // Improve: load descriptor instead of store to font property to 3mf
     // switch (es.type) {
-    // case EmbossStyle::Type::wx_lin_font_descr:
-    // case EmbossStyle::Type::wx_win_font_descr:
-    // case EmbossStyle::Type::wx_mac_font_descr:
-    // case EmbossStyle::Type::file_path:
-    // case EmbossStyle::Type::undefined:
+    // case Domain::FontDescriptor::Type::wx_lin_font_descr:
+    // case Domain::FontDescriptor::Type::wx_win_font_descr:
+    // case Domain::FontDescriptor::Type::wx_mac_font_descr:
+    // case Domain::FontDescriptor::Type::file_path:
+    // case Domain::FontDescriptor::Type::undefined:
     // default:
     //}
 
     wxFont wx_font(info);
     // Check if exist font file
-    std::unique_ptr<Emboss::FontFile> ff = create_font_file(wx_font);
+    std::unique_ptr<Domain::FontFile> ff = create_font_file(wx_font);
     if (ff == nullptr) return {};
 
     return wx_font;
 }
 
-void WxFontUtils::update_property(FontProp &font_prop, const wxFont &font)
+void update_property(Domain::FontProp& font_prop, const wxFont& font)
 {
     wxString wx_face_name = font.GetFaceName();
-    std::string face_name((const char *) wx_face_name.ToUTF8());
+    std::string face_name((const char*)wx_face_name.ToUTF8());
     if (!face_name.empty()) font_prop.face_name = face_name;
 
     wxFontFamily wx_family = font.GetFamily();
@@ -297,29 +327,29 @@ void WxFontUtils::update_property(FontProp &font_prop, const wxFont &font)
     }
 }
 
-bool WxFontUtils::is_italic(const wxFont &font) {
+bool is_italic(const wxFont& font) {
     wxFontStyle wx_style = font.GetStyle();
-    return wx_style == wxFONTSTYLE_ITALIC || 
+    return wx_style == wxFONTSTYLE_ITALIC ||
         wx_style == wxFONTSTYLE_SLANT;
 }
 
-bool WxFontUtils::is_bold(const wxFont &font) {
+bool is_bold(const wxFont& font) {
     wxFontWeight wx_weight = font.GetWeight();
     return wx_weight != wxFONTWEIGHT_NORMAL;
 }
 
-std::unique_ptr<Emboss::FontFile> WxFontUtils::set_italic(wxFont &font, const Emboss::FontFile &font_file)
+std::unique_ptr<Domain::FontFile> set_italic(wxFont& font, const Domain::FontFile& font_file)
 {
     static std::vector<wxFontStyle> italic_styles = {
         wxFontStyle::wxFONTSTYLE_ITALIC,
         wxFontStyle::wxFONTSTYLE_SLANT
     };
     wxFontStyle orig_style = font.GetStyle();
-    for (wxFontStyle style : italic_styles) { 
+    for (wxFontStyle style : italic_styles) {
         font.SetStyle(style);
-        std::unique_ptr<Emboss::FontFile> new_font_file =
-            WxFontUtils::create_font_file(font);
-        
+        std::unique_ptr<Domain::FontFile> new_font_file =
+            create_font_file(font);
+
         // can create italic font?
         if (new_font_file == nullptr) continue;
 
@@ -333,7 +363,7 @@ std::unique_ptr<Emboss::FontFile> WxFontUtils::set_italic(wxFont &font, const Em
     return nullptr;
 }
 
-std::unique_ptr<Emboss::FontFile> WxFontUtils::set_bold(wxFont &font, const Emboss::FontFile& font_file)
+std::unique_ptr<Domain::FontFile> set_bold(wxFont& font, const Domain::FontFile& font_file)
 {
     static std::vector<wxFontWeight> bold_weight = {
         wxFontWeight::wxFONTWEIGHT_BOLD,
@@ -342,10 +372,10 @@ std::unique_ptr<Emboss::FontFile> WxFontUtils::set_bold(wxFont &font, const Embo
         wxFontWeight::wxFONTWEIGHT_EXTRAHEAVY
     };
     wxFontWeight orig_weight = font.GetWeight();
-    for (wxFontWeight weight : bold_weight) { 
+    for (wxFontWeight weight : bold_weight) {
         font.SetWeight(weight);
-        std::unique_ptr<Emboss::FontFile> new_font_file =
-            WxFontUtils::create_font_file(font);
+        std::unique_ptr<Domain::FontFile> new_font_file =
+            create_font_file(font);
 
         // can create bold font file?
         if (new_font_file == nullptr) continue;
@@ -359,3 +389,4 @@ std::unique_ptr<Emboss::FontFile> WxFontUtils::set_bold(wxFont &font, const Embo
     font.SetWeight(orig_weight);
     return nullptr;
 }
+} // namespace Slic3r::Biz::WX

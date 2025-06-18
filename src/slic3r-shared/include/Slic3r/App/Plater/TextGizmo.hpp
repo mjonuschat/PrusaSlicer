@@ -45,10 +45,8 @@ public:
     /// </summary>
     /// <param name="volume_type">Object part / Negative volume / Modifier</param>
     bool add_text_by_view_direction(Domain::ModelVolumeType volume_type);
-    bool create_volume(Domain::ModelVolumeType volume_type, const Scene::Ray& pick_ray, const Scene::NodePickResults& picks);
 
     void update_layout(bool show_for_part);
-
     // Only debug 
     void render_imgui();
 private:
@@ -62,6 +60,8 @@ private:
     PlaterScenePresenter& m_scene_presenter;
     Biz::ProjectInteractor& m_project_interactor;
     Scene::GizmoManager& m_gizmo_manager;
+
+    Domain::TextConfiguration m_text_configuration = {};
     Yoga::Passthrough<TextDialog> m_dialog;
     Biz::ProjectInteractor& m_project_interactor;
 };

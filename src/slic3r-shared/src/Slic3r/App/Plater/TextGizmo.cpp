@@ -16,141 +16,81 @@ using namespace Slic3r::App::Yoga;
 #include <Slic3r/Domain/ModelObject.hpp> // add volume into object
 #include <Slic3r/Biz/Algorithms/TriangleMesh.hpp>
 #include <Slic3r/Biz/Emboss/Emboss.hpp> // also copy in libslic3r for SurfaceCut
-#include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher
-#include <Slic3r/App/Scene/BedNodeTag.hpp>
-#include <Slic3r/App/Plater/SceneNodeTag.hpp>
+#include <Slic3r/Biz/Emboss/EmbossJob.hpp> // embossing jobs 
+#include <Slic3r/Biz/Platform/PlatformServices.hpp> // main_thread_dispatcher
 #include "libslic3r/Utils.hpp"
 
-namespace {
-using namespace Slic3r;
-using namespace Slic3r::Biz::Emboss;
+namespace Slic3r::Biz::Emboss {
+// TODO: made shape by current selected style and text
+class TextShapeProvider : public ShapeProvider {
 
-using Slic3r::Biz::Platform::IMainThreadDispatcher;
-using Slic3r::Biz::Platform::PlatformServices; 
-using Slic3r::App::Scene::Ray;
-
-Domain::TriangleMesh create_mesh() {
-
-    std::string font_path = Slic3r::resources_dir() + "/fonts/NotoSans-Regular.ttf";
-    std::unique_ptr<FontFile> font_ptr = create_font_file(font_path.c_str());
-    FontFileWithCache font_with_cache(std::move(font_ptr));
-    std::wstring text = boost::nowide::widen("Emboss text");
-    const Domain::FontProp font_prop; // default font properties
-    Domain::EmbossShape emboss_shape {
-        .shapes_with_ids = text2vshapes(font_with_cache, text, font_prop)};
-
-    auto projectZ = std::make_unique<ProjectZ>(409600);
-    Domain::Transform3d tr = Eigen::Translation<double, 3>(0., 0., 1.) * Eigen::Scaling(4.8828125e-06);
-    ProjectTransform project(std::move(projectZ), tr);
-    Domain::ExPolygons text_shape = union_with_delta(emboss_shape, UNION_DELTA, UNION_MAX_ITERATIN);
-    indexed_triangle_set its = polygons2model(text_shape, project);
-    return Biz::Algorithms::TriangleMesh::construct(its);
-}
-
-bool create_object(Biz::ProjectInteractor& project_interactor, const Domain::Vec2d& z0_coor)
-{
-    // To check if the project is same
-    Domain::SelectionId project_id = project_interactor.selected_project_id();        
-    Domain::TriangleMesh mesh = create_mesh();
-    double z_move = -mesh.bounding_box().min.z();
-
-    Biz::Scene::SceneInteractor& scene_interactor = project_interactor.scene_interactor();
-    scene_interactor.new_object_from_mesh(std::move(mesh), project_id);
-    scene_interactor.transform_selection(Domain::Transform3d(
-        Eigen::Translation<double, 3>(z0_coor.x(), z0_coor.y(), z_move)
-    ).matrix());
-    return true;
-}
-
-bool create_object(Biz::ProjectInteractor& project_interactor, const Ray& ray){
-    double d_z = ray.direction.z();
-    if (fabs(d_z) - 1e-4 > 0.) { // not parallel to Z axis
-        Domain::Vec3d z0 = ray.point_at(-ray.origin.z() / d_z);
-        Domain::Vec2d bed_coor(z0.x(), z0.y());
-        create_object(project_interactor, bed_coor);
-        // m_gizmo_manager.activate_tool(type(), ptAny);
-        // const Domain::Bed& bed =
-        // m_project_interactor.selected_project().config_containers().front()->bed();
-        return true;
+public:
+    TextShapeProvider(const Domain::TextConfiguration& config, const Domain::EmbossProjection& projection)
+        : m_text_configuration(config) // copy current text configuration for embossing
+    {
+        shape.projection = projection; // copy current projection
     }
+    Domain::EmbossShape& get_shape() override {
+        if (!shape.final_shape.expolygons.empty())
+            return shape; // use cached value
 
-    return false;
+        // create cahce
+        //std::string font_path = Slic3r::resources_dir() + "/fonts/NotoSans-Regular.ttf";
+        //std::unique_ptr<Domain::FontFile> font_ptr = create_font_file(font_path.c_str());
+
+        Biz::Platform::IFontManager& font_manager = Biz::Platform::PlatformServices::instance().font_manager();        
+        FontFileWithCache font_with_cache(font_manager.open(m_text_configuration.style.descriptor));
+        std::wstring text = boost::nowide::widen(m_text_configuration.text);
+        const Domain::FontProp font_prop; // default font properties
+        shape = {.shapes_with_ids{text2vshapes(font_with_cache, text, font_prop)}};
+        return shape;
+    }
+    void write(Domain::ModelVolume& volume) const override {
+        ShapeProvider::write(volume);
+        volume.text_configuration = m_text_configuration; // copy
+        assert(volume.emboss_shape.has_value());
+
+        // Fix for object: stored attribute that volume is embossed per glyph when it is object
+        if (m_text_configuration.style.prop.per_glyph && volume.is_the_only_one_part())
+            volume.text_configuration->style.prop.per_glyph = false;
+    }
+private:
+    // font item is not used for create object
+    Domain::TextConfiguration m_text_configuration;
+};
 }
+
+namespace{
+using namespace Slic3r;
 
 bool is_selected_object(const Biz::Scene::Selection::ElementRefs& selected_elements) {
     if (selected_elements.empty()) 
-        return false;
-    
+        return false;   
     return true;
 }
 
-//ModelVolume* add_volume_from_mesh(
-//    const Domain::ObjectID& object_id,
-//    Domain::TriangleMesh&& mesh,
-//    Domain::ModelVolumeType type = Domain::ModelVolumeType::MODEL_PART,
-//    const Transform& trafo = Matrix4d::Identity())
-//{
-//    
-//}
-
-struct CreateVolumeData {
-    // To inform application listener about volume creation
-    // NOTE1: Before access check thread cancel
-    // NOTE2: Current project do not have to be one where add new volume
-    Biz::ProjectInteractor& project_interactor; // live longer than TextGizmo (@barzto garanteed)
-    Domain::SelectionId project_id = Domain::INVALID_ID; // project id, where to create volume
-    Domain::ObjectID object_id = Domain::INVALID_ID; // object id, where to create volume    
-    Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART; // type of volume to create
-
-    Domain::Transform3d tr = Domain::Transform3d::Identity();
-    std::string name = "Embossed text"; // default name for volume
-};
-
-bool create_volume(CreateVolumeData& data) {
-
-    /* TODO: find way to add volume into not selected project
-    auto& project = data.project_interactor.workbench().project(data.project_id);
-    /*/
-    auto& project = data.project_interactor.selected_project();
-    ASSERT(data.project_interactor.selected_project_id() == data.project_id); // project does not match
-    // */
-
-    // create volume
-    Domain::TriangleMesh mesh = create_mesh();
-    
-
-    /* only add volume without addition data
-    scene_interactor.add_volume_from_mesh(std::move(mesh), volume_type, tr.matrix());
-    /*/
-    auto obj = project.find_object_by_id(data.object_id.id);
-    auto vol = Biz::Algorithms::ModelObject::add_volume(obj, std::move(mesh), data.volume_type);
-    vol->set_transformation(data.tr);
-    vol->name = data.name;
-
-    data.project_interactor.scene_interactor().add_volume(vol);
-    // */
-    return true;
-
-}
-
-// Inspired in Biz::SceneInteractor::add_volume_from_mesh()
-bool create_volume(
+Biz::Emboss::CreateVolumeParams create_volume_params(
     Biz::ProjectInteractor& project_interactor, 
-    Domain::ModelVolumeType volume_type){
-    const Biz::Scene::Selection& sel = project_interactor.scene_interactor().selection();
-    if (sel.elements.empty())
-        return false; // no object selected
-
-    CreateVolumeData data{
-        .project_interactor = project_interactor,
-        .project_id = project_interactor.selected_project_id(),
-        .object_id = sel.elements[0].object_id,
-        .volume_type = volume_type
+    Domain::TextConfiguration& configuration,
+    Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART) {
+    Domain::EmbossProjection projection{
+        .depth = 5.f,
+        .use_surface = false
     };
-    return create_volume(data);
+    return Biz::Emboss::CreateVolumeParams{
+        .base{
+            .shape_provider = std::make_unique<Biz::Emboss::TextShapeProvider>(
+                configuration, projection),
+            .project_interactor = project_interactor,
+            .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
+            .volume_name = "Embossed textik"
+        },
+        .volume_type = volume_type,
+        .gizmo = 13
+    };
 }
 
-} // namespace
+}
 
 namespace Slic3r::App::Plater {
 TextGizmo::TextGizmo(
@@ -215,7 +155,8 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
     const MouseEvent& mouse_event = ctx.mouse_event();
     if (mouse_event.type() == MouseEvent::Type::ButtonDown &&
         mouse_event.button() == MouseButton::Right) {
-        if (create_volume(Domain::ModelVolumeType::MODEL_PART, ctx.pick_ray(), ctx.pick_results()))
+        auto params = create_volume_params(m_project_interactor, m_text_configuration, Domain::ModelVolumeType::NEGATIVE_VOLUME);
+        if (Biz::Emboss::start_create_volume(params, ctx.pick_ray(), ctx.pick_results()))
             return Scene::GizmoActivationState::Active; // create volume at pick ray
     }
     return Scene::GizmoActivationState::Inactive;
@@ -232,13 +173,31 @@ void TextGizmo::render_imgui()
 {
     if (ImGui::Begin("Text Gizmo")) {
         ImGui::TextColored(ImVec4(.1f, .9f, .2f, 1.f), "RClick add negative volume \n or object on plate");
+        
+        Biz::Platform::IFontManager& font_manager = Biz::Platform::PlatformServices::instance().font_manager();
+        const Domain::FontList& fonts = font_manager.get_fonts();
+        auto it_font = std::find_if(fonts.begin(), fonts.end(),
+            [&name = m_text_configuration.style.descriptor.name](const Domain::FontDescriptor& fd) {
+                return fd.name == name; });
+
+        std::string selected = (it_font == fonts.end()) ? std::string("Not selected yet") : it_font->name;
+        if (ImGui::BeginCombo("Font", selected.c_str()))
+        {
+            for (const Domain::FontDescriptor &fd: fonts)
+            {
+                const bool is_selected = (it_font == fonts.end())? false : &fd == &(*it_font);
+                if (ImGui::Selectable(fd.name.c_str(), is_selected)) {
+                    m_text_configuration.style.descriptor = fd;
+                }
+
+                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
         ImGui::Text("Emboss text");
-        if (ImGui::Button("Add Object on[0,0]")) {
-            create_object(m_project_interactor, Domain::Vec2d(0,0));
-        }
-        if (ImGui::Button("Add negative Volume")) {
-            ::create_volume(m_project_interactor, Domain::ModelVolumeType::NEGATIVE_VOLUME);
-        }
         if (ImGui::Button("Close")) {
             close();
         }
@@ -269,57 +228,11 @@ bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type) 
     if (!init_create(volume_type))
         return false;
 
-    // is selected object
-    Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
-    const Biz::Scene::Selection& selection = scene_interactor.selection();
-    if (!is_selected_object(selection.elements)) {
-        const Scene::Camera& camera = m_scene_presenter.scene().camera();
-        const Render::Rect& rect = camera.viewport();
-        // TODO: subtract sides menu size
-        Scene::Ray ray = camera.ray_at(rect.width / 2., rect.height / 2.);
-        ::create_object(m_project_interactor, ray); // create object at center of screen
-        m_gizmo_manager.activate_tool(type(), ptFFF);
-    }
-    return ::create_volume(m_project_interactor, volume_type);
-}
-
-bool TextGizmo::create_volume(Domain::ModelVolumeType volume_type, const Scene::Ray& pick_ray, const Scene::NodePickResults& picks) {
-    const Domain::Project& project = m_project_interactor.selected_project();
-    for (const Scene::NodePickResult& pick : picks) {
-        if (pick.node->has_tag_of_type<App::Plater::SceneNodeTag>()) {
-            auto* tag = pick.node->tag_of_type<App::Plater::SceneNodeTag>();
-            const Domain::ModelVolume* volume = project.find_volume_by_id(tag->object_id, tag->volume_id);
-            if (volume == nullptr)
-                continue; // no volume under mouse
-            // TODO: What to do with Negative volume
-            if (volume->type() != Domain::ModelVolumeType::MODEL_PART)
-                continue; // skip modifiers + SupportBlock/Enforce
-
-            double UP_LIMIT = 0.9;
-            Domain::Vec3d pick_point = pick_ray.point_at(pick.cast.distance);
-            Domain::Vec3d pick_normal = pick.cast.normal;
-            const Domain::ModelInstance* instance = project.find_instance_by_id(tag->object_id, tag->instance_id);
-            Domain::Transform3d surface_trmat = create_transformation_onto_surface(pick_point, pick_normal, UP_LIMIT);
-            Domain::Transform3d tr = instance->get_matrix().inverse() * surface_trmat;
-            
-            CreateVolumeData data{
-                .project_interactor = m_project_interactor,
-                .project_id = m_project_interactor.selected_project_id(),
-                .object_id = volume->get_object()->id(),
-                .volume_type = Domain::ModelVolumeType::NEGATIVE_VOLUME, //volume_type,
-                .tr = tr,
-                .name = "Embossed text Volume"
-            };
-            return ::create_volume(data);
-        }
-        if (pick.node->has_tag_of_type<App::Scene::BedNodeTag>())
-            return ::create_object(m_project_interactor, pick_ray);
-    }
-    return add_text_by_view_direction(volume_type); // fall back, do not use pick ray
+    auto params = create_volume_params(m_project_interactor, m_text_configuration, volume_type);
+    return Biz::Emboss::start_create_volume_without_position(params);
 }
 
 void TextGizmo::close() { m_gizmo_manager.deactivate_current_tool();}
-
 
 bool TextGizmo::init_create(Domain::ModelVolumeType volume_type) {
     if (volume_type != Domain::ModelVolumeType::MODEL_PART &&

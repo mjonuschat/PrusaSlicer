@@ -13,7 +13,7 @@
 #ifdef EXIST_FONT_CONFIG_INCLUDE
 #include <wx/font.h>
 
-namespace Slic3r::GUI {   
+namespace Slic3r::Biz::WX {   
 
 /// <summary>
 /// initialize font config
@@ -26,6 +26,6 @@ namespace Slic3r::GUI {
 /// <returns>Font FilePath by FontConfig</returns>
 std::string get_font_path(const wxFont &font, bool reload_fonts = false);
 
-} // namespace Slic3r
+} // namespace Slic3r::Biz::WX
 #endif // EXIST_FONT_CONFIG_INCLUDE
 #endif // slic3r_FontConfigHelp_hpp_
