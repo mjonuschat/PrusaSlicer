@@ -803,25 +803,30 @@ bool get_solid_or_modifier_differ(
     const Domain::ModelObject& model_object,
     const Domain::ModelObject& model_object_new,
     const bool num_extruders_changed
-) {
+)
+{
     const std::initializer_list<Domain::ModelVolumeType> solid_or_modifier_types{
         Domain::ModelVolumeType::MODEL_PART,
         Domain::ModelVolumeType::NEGATIVE_VOLUME,
         Domain::ModelVolumeType::PARAMETER_MODIFIER
     };
-    const bool volumes_changed{
-        model_volume_list_changed(model_object, model_object_new, solid_or_modifier_types)
-    };
-    const bool mmu_segmentation_changed{
-        model_mmu_segmentation_data_changed(model_object, model_object_new)
-    };
-    const bool painting_changed{model_object_new.is_mm_painted() && num_extruders_changed};
-    const bool fuzzy_skin_changed{model_fuzzy_skin_data_changed(model_object, model_object_new)};
+    if (model_volume_list_changed(model_object, model_object_new, solid_or_modifier_types)) {
+        return true;
+    }
 
-    return volumes_changed
-        || mmu_segmentation_changed
-        || painting_changed
-        || fuzzy_skin_changed;
+    if (model_mmu_segmentation_data_changed(model_object, model_object_new)) {
+        return true;
+    }
+
+    const bool painting_changed{model_object_new.is_mm_painted() && num_extruders_changed};
+    if (painting_changed) {
+        return true;
+    }
+
+    if (model_fuzzy_skin_data_changed(model_object, model_object_new)) {
+        return true;
+    }
+    return false;
 }
 
 bool get_layers_or_translation_differ(
@@ -950,6 +955,12 @@ PrintAndObjectSteps get_model_invalidated_steps(
         get_solid_or_modifier_differ(model_object, model_object_new, num_extruders_changed)
     };
 
+    // Check whether a model part volume was added or removed, their transformations or order changed.
+    // Only volume IDs, volume types, transformation matrices and their order are checked, configuration and other parameters are NOT checked.
+    if (solid_or_modifier_differ || get_layers_or_translation_differ(model_object, model_object_new)) {
+        return {AllSteps{}, AllSteps{}};
+    }
+
     const bool supports_differ{
         model_volume_list_changed(model_object, model_object_new, Domain::ModelVolumeType::SUPPORT_BLOCKER)
         || model_volume_list_changed(model_object, model_object_new, Domain::ModelVolumeType::SUPPORT_ENFORCER)
@@ -965,12 +976,6 @@ PrintAndObjectSteps get_model_invalidated_steps(
     }
     if (model_custom_seam_data_changed(model_object, model_object_new)) {
         print_steps.insert(psGCodeExport);
-    }
-
-    // Check whether a model part volume was added or removed, their transformations or order changed.
-    // Only volume IDs, volume types, transformation matrices and their order are checked, configuration and other parameters are NOT checked.
-    if (solid_or_modifier_differ || get_layers_or_translation_differ(model_object, model_object_new)) {
-        return {AllSteps{}, AllSteps{}};
     }
 
     if (!solid_or_modifier_differ) {
