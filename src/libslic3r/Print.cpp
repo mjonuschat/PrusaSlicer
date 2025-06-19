@@ -787,8 +787,7 @@ void Print::process()
     }
     auto conflictRes = ConflictChecker::find_inter_of_lines_in_diff_objs(objects(), m_wipe_tower_data);
 
-    
-    m_on_fdm_result(Biz::Print::get_result_preview(*this));
+
     m_conflict_result = conflictRes;
     if (conflictRes.has_value())
         BOOST_LOG_TRIVIAL(error) << boost::format("gcode path conflicts found between %1% and %2%") % conflictRes->obj_name_1 % conflictRes->obj_name_2;
@@ -819,6 +818,20 @@ Biz::libpgcode::ProcessorResult Print::process_gcode(ThumbnailsGeneratorCallback
     result.sequential_collision_detected = m_sequential_collision_detected;
 
     return result;
+}
+
+void Print::slice()
+{
+    ASSERT(
+        !this->is_step_done(psGCodeExport),
+        "An earlier return should happen, if the whole thing is already finnished!"
+    );
+    this->process();
+    m_on_fdm_result(Biz::Print::get_result_preview(*this));
+    Biz::libpgcode::ProcessorResult result{this->process_gcode(nullptr)};
+    m_on_fdm_result(std::move(result));
+    this->finalize();
+    this->cleanup();
 }
 
 void Print::_make_skirt()

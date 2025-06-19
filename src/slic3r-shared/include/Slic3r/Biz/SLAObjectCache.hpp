@@ -28,7 +28,7 @@ class SLAObjectCache :
     public Slicing::ISLAObjectListener,
     public WithListeners<ISLAObjectCacheChangedListener>
 {
-public:                            
+public:
     using Key = std::pair<Slicing::SlicingId, ::Slic3r::Domain::ObjectID>;
     SLAObjectOptRef get_instance(const Key& key) const;
     // NOTE: instance with id == 0 means bed is removed

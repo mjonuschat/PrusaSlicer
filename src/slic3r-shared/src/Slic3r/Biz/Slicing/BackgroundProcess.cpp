@@ -202,7 +202,7 @@ void BackgroundProcess::slice()
 
         const LoggingScopeLock lock{m_mutex, "background process"};
 
-        if (m_get_status() == Status::Empty) {
+        if (m_get_status() != Status::Modified) {
             return;
         }
         m_on_status(Status::Running);
