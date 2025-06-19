@@ -270,7 +270,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/ProjectButtonBackground.hpp
         src/Slic3r/App/TopBar.cpp
         include/Slic3r/App/TopBar.hpp
-	include/Slic3r/App/Yoga/ScrollArea.hpp
+        include/Slic3r/App/Yoga/ScrollArea.hpp
         src/Slic3r/App/Yoga/ScrollArea.cpp
         include/Slic3r/App/Yoga/InputText.hpp
         src/Slic3r/App/Yoga/InputText.cpp
@@ -293,6 +293,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Imgui/RulerForDoubleSlider.hpp
         src/Slic3r/App/Imgui/ImguiExtension.cpp
         include/Slic3r/App/Imgui/ImguiExtension.hpp
+        src/Slic3r/App/Imgui/NavigationCube.cpp
+        include/Slic3r/App/Imgui/NavigationCube.hpp
 
         src/Slic3r/App/Preview/Types.cpp
         include/Slic3r/App/Preview/Types.hpp

@@ -205,7 +205,14 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
             m_slider_layers->set_visible(m_viewer->has_data());
             m_slider_gcode->set_visible(m_viewer->has_data());
         }
+
+        m_cube_view->set_camera_data(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+
         m_layout->render({ m_screen_info.logical_width(), m_screen_info.logical_height() });
+
+        if (m_cube_view->require_render())
+            request_render();
+
         m_fdm_viewer.set_tool_marker_enabled(gcode_window_enabled);
     }
     else {

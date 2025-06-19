@@ -866,8 +866,12 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
         return;
 
     m_thumbnail_generator->handle_enqueued_requests();
+    m_cube_view->set_camera_data(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 
     m_layout->render(Vec2f(m_screen_info.logical_width(), m_screen_info.logical_height()));
+
+    if (m_cube_view->require_render())
+        request_render();
 
     m_scene_presenter->render_imgui(m_screen_info);
     m_gizmo_manager->render_imgui();
