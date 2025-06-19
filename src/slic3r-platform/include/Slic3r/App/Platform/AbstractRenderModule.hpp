@@ -48,7 +48,6 @@ public:
 
     void set_imgui_render(Render::ImguiRender* imgui_render);
     virtual void set_sidebars_visible(bool visible) {};
-    virtual void synchronize_topbar() {};
 
 protected:
     /**

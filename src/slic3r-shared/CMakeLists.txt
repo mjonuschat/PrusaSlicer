@@ -276,6 +276,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Scaler.cpp
         include/Slic3r/App/Yoga/ComboBox.hpp
         src/Slic3r/App/Yoga/ComboBox.cpp
+        include/Slic3r/App/Yoga/ItemEvents.hpp
+        src/Slic3r/App/Yoga/ItemEvents.cpp
+        include/Slic3r/App/Yoga/RootItem.hpp
+        src/Slic3r/App/Yoga/RootItem.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
@@ -394,6 +398,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ProjectInteractor.hpp
         include/Slic3r/Biz/ProjectScoped.hpp
         include/Slic3r/Biz/LastExportPathStorage.hpp
+        include/Slic3r/Biz/ObservableProjectList.hpp
+        src/Slic3r/Biz/ObservableProjectList.cpp
 
         include/Slic3r/StringUtils.hpp
 
@@ -694,6 +700,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/App/Yoga/ImGuiFixture.hpp
         test/Slic3r/App/Yoga/ButtonGroupTests.cpp
         test/Slic3r/App/Yoga/ValidatorTests.cpp
+        test/Slic3r/App/Yoga/TestRootItem.hpp
 
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp

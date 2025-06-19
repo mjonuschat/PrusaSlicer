@@ -205,6 +205,10 @@ static std::string bed_instance_thumbnail_name(size_t config_container_id, size_
 
 void PlaterScenePresenter::on_selected_project_changed(size_t index)
 {
+    if (index == Domain::INVALID_ID) {
+        return;
+    }
+
     m_selected_project_id = index;
     if (m_projects.count(m_selected_project_id) == 0) {
         m_projects.try_emplace(m_selected_project_id);

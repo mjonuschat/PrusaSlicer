@@ -8,6 +8,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <Slic3r/App/Yoga/Item.hpp>
+#include <Slic3r/App/Yoga/RootItem.hpp>
 
 #include "ImGuiFixture.hpp"
 
@@ -16,9 +17,9 @@ using namespace Slic3r::App::Yoga;
 using Catch::Matchers::WithinRel;
 
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item render")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] render")
 {
-    Item item;
+    RootItem item;
 
     item.render({}, {100, 50});
 
@@ -26,9 +27,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item render")
     REQUIRE_THAT(item.height(), WithinRel(50, 0.0001));
 }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item max_size")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] max_size")
 {
-    Item layout;
+    RootItem layout;
 
     Item* child = layout.emplace_back<Item>();
     child->set_max_size({10, 15});
@@ -40,9 +41,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item max_size")
     REQUIRE_THAT(child->height(), WithinRel(15, 0.0001));
 }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item flex_grow")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] flex_grow")
 {
-    Item layout;
+    RootItem layout;
 
     Item* child_left = layout.emplace_back<Item>();
     child_left->set_min_size({10, 0});
@@ -56,9 +57,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item flex_grow")
     REQUIRE_THAT(child_right->width(), WithinRel(90, 0.0001));
 }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item flex_grow double even")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] flex_grow double even")
 {
-    Item layout;
+    RootItem layout;
     layout.set_orientation(Orientation::Horizontal);
 
     Item* child_left = layout.emplace_back<Item>();
@@ -73,7 +74,7 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item flex_grow double even")
     REQUIRE_THAT(child_right->width(), WithinRel(50, 0.0001));
 }
 
-// TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item flex_grow complex")
+// TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] flex_grow complex")
 // {
 //     Item layout;
 //     layout.set_orientation(Orientation::Horizontal);
@@ -94,9 +95,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item flex_grow double even")
 //     REQUIRE_THAT(child_right->width(), WithinRel(50, 0.0001));
 // }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item gap")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] gap")
 {
-    Item layout;
+    RootItem layout;
     layout.set_orientation(Orientation::Horizontal);
 
     Item* child_left = layout.emplace_back<Item>();
@@ -114,9 +115,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item gap")
     REQUIRE_THAT(child_right->x(), WithinRel(55, 0.0001));
 }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item padding")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] padding")
 {
-    Item layout;
+    RootItem layout;
     layout.set_orientation(Orientation::Horizontal);
 
     Item* child = layout.emplace_back<Item>();
@@ -132,9 +133,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item padding")
     REQUIRE_THAT(child->y(), WithinRel(10, 0.0001));
 }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item padding complex")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] padding complex")
 {
-    Item layout;
+    RootItem layout;
     layout.set_orientation(Orientation::Horizontal);
 
     Item* child = layout.emplace_back<Item>();
@@ -150,9 +151,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item padding complex")
     REQUIRE_THAT(child->y(), WithinRel(10, 0.0001));
 }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item margin")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] margin")
 {
-    Item layout;
+    RootItem layout;
     layout.set_orientation(Orientation::Horizontal);
 
     Item* child = layout.emplace_back<Item>();
@@ -167,9 +168,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item margin")
     REQUIRE_THAT(child->y(), WithinRel(10, 0.0001));
 }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item margin complex")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] margin complex")
 {
-    Item layout;
+    RootItem layout;
     layout.set_orientation(Orientation::Horizontal);
 
     Item* child = layout.emplace_back<Item>();
@@ -184,9 +185,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item margin complex")
     REQUIRE_THAT(child->y(), WithinRel(10, 0.0001));
 }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item aspect ratio")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] aspect ratio")
 {
-    Item layout;
+    RootItem layout;
     layout.set_orientation(Orientation::Horizontal);
 
     Item* child = layout.emplace_back<Item>();
@@ -199,9 +200,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item aspect ratio")
     REQUIRE_THAT(child->height(), WithinRel(50, 0.0001));
 }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item center child")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] center child")
 {
-    Item layout;
+    RootItem layout;
     layout.set_orientation(Orientation::Horizontal);
     layout.set_justify_content(YGJustify::YGJustifyCenter);
     layout.set_align_items(YGAlign::YGAlignCenter);
@@ -217,9 +218,9 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item center child")
     REQUIRE_THAT(child->y(), WithinRel(20, 0.0001));
 }
 
-TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item invisible child")
+TEST_CASE_METHOD(ImGuiFixture, "[Yoga::Item] invisible child")
 {
-    Item layout;
+    RootItem layout;
     layout.set_orientation(Orientation::Horizontal);
 
     Item* child = layout.emplace_back<Item>();

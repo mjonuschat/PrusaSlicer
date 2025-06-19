@@ -3,11 +3,13 @@
 #include <vector>
 #include <memory>
 
+#include <Slic3r/App/Platform/CommandRegistry.hpp>
+#include <Slic3r/Biz/Platform/ListenerScope.hpp>
+
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
-#include "Slic3r/App/Platform/CommandRegistry.hpp"
 #include "libslic3r/Config.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
 
@@ -26,13 +28,13 @@ public:
     virtual void active_tool_changed(IToolGizmo* active_tool) = 0;
 };
 
-class GizmoManager : public WithListeners<IGizmoActiveToolListener>, Biz::ISelectedProjectChangedListener {
+class GizmoManager : public WithListeners<IGizmoActiveToolListener>, public Biz::ISelectedProjectChangedListener, public Biz::IProjectsChangedListener {
 public:
     GizmoManager(Render::Device& device, ISceneProvider& scene_provider, Biz::ProjectInteractor& project_interactor);
-    ~GizmoManager() override;
 
     void on_scene_mouse_event(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
     bool on_scene_keyboard_event(const Platform::KeyboardEvent& e);
+    void on_project_will_be_removed(Domain::SelectionId project_id) override;
 
     template<typename G, typename... ArgsT>
     G& add_base_gizmo(ArgsT&&... args)
@@ -79,6 +81,11 @@ private:
 #endif
 
 private:
+    Biz::ListenerScope<Biz::IProjectsChangedListener, Biz::ProjectInteractor, GizmoManager>
+        m_project_changed_listener_scope;
+    Biz::ListenerScope<Biz::ISelectedProjectChangedListener, Biz::ProjectInteractor, GizmoManager>
+        m_selected_project_changed_listener_scope;
+
     using IGizmoPtr = std::unique_ptr<IGizmo>;
     using IToolGizmoPtr = std::unique_ptr<IToolGizmo>;
 

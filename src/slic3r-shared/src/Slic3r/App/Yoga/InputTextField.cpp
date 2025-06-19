@@ -4,6 +4,8 @@
 ///|/
 #include "Slic3r/App/Yoga/InputTextField.hpp"
 
+#include "Slic3r/App/Yoga/Validator.hpp"
+
 #include <imgui_internal.h>
 
 namespace Slic3r::App::Yoga {

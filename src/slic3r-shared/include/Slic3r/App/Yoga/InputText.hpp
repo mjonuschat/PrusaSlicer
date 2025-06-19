@@ -5,9 +5,10 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Item.hpp"
-#include "Slic3r/App/Yoga/Validator.hpp"
 
 namespace Slic3r::App::Yoga {
+
+class Validator;
 
 /**
  * @brief The InputText class is a text input class which intentionally provides

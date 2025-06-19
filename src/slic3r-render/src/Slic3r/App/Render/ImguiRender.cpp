@@ -57,6 +57,11 @@ void ImguiRender::new_frame()
         init();
 }
 
+void ImguiRender::use_texture(TexturePtr texture)
+{
+    m_in_use_textures.push_back(texture);
+}
+
 void ImguiRender::init()
 {
     m_geom = std::make_unique<Geometry>(m_device, BufferUsage::StreamDraw);
@@ -244,6 +249,8 @@ void ImguiRender::render(CommandBuffer& buffer, const ImDrawData* draw_data)
     buffer.set_blending_enabled(false);
     buffer.set_scissor_enabled(false);
     buffer.set_scissor({0, 0, fb_width, fb_height});
+
+    m_in_use_textures.clear();
 
 }
 

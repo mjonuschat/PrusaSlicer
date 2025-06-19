@@ -182,11 +182,6 @@ void AbstractRenderLayout::set_sidebars_visible(bool visible)
     }
 }
 
-void AbstractRenderLayout::synchronize_topbar()
-{
-    m_top_bar->synchronize();
-}
-
 void AbstractRenderLayout::init()
 {
     m_layout_main.set_padding(0);

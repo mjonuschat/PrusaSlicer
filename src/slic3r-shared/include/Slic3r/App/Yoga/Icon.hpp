@@ -7,10 +7,6 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 
-namespace Slic3r::App::Render {
-class Texture;
-}
-
 namespace Slic3r::App::Yoga {
 
 /**

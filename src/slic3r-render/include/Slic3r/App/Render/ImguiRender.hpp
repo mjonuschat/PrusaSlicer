@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <optional>
+#include <list>
 
 struct ImDrawData;
 
@@ -32,10 +33,20 @@ public:
         const std::optional<float>& font_global_scale = std::nullopt);
 
     ImFont* font(Render::ImguiFontType type);
+    /**
+     * @note do not forget to register texture with use_texture when rendering them
+     */
     TexturePtr icon_texture(Icon icon, int max_size);
 
     void new_frame();
     void render(CommandBuffer& buffer, const ImDrawData* draw_data);
+
+    /**
+     * @brief use_texture - registers TexturePtr which is shared_ptr
+     * to ImGuiRender, who will hold this pointer until end of the render cycle.
+     * @note all textures rendered by Yoga::Item should be registered here
+     */
+    void use_texture(TexturePtr texture);
 private:
     void init();
     void setup_state(CommandBuffer& buffer, const ImDrawData* draw_data);
@@ -45,6 +56,7 @@ private:
     std::unique_ptr<Geometry> m_geom;
     std::unique_ptr<ImguiFontHelper> m_font_helper;
     Shader* m_shader{nullptr};
+    std::list<TexturePtr> m_in_use_textures;
 };
 
 } // namespace Slic3r::App::Render

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Yoga/RootItem.hpp"
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
 #include "Slic3r/App/TopBar.hpp"
 #include "Slic3r/App/ObjectListWindow.hpp"
@@ -101,7 +101,6 @@ public:
     void set_bottom_toolbar_visible(bool visible);
 
     void set_sidebars_visible(bool visible);
-    void synchronize_topbar();
 
 protected:
     virtual void init_left_column();
@@ -116,7 +115,7 @@ private:
     void init_toolbar_column();
 
 protected:
-    Yoga::Item m_layout_main;
+    Yoga::RootItem m_layout_main;
     Yoga::Item* m_layout_main_bottom = nullptr;
     Yoga::Item* m_layout_left_column = nullptr;
     Yoga::Item* m_layout_center_row = nullptr;

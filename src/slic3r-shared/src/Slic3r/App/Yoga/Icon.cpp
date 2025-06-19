@@ -46,7 +46,7 @@ void Icon::render(Vec2f pos, Vec2f size)
         constexpr ImVec2 uv1{1, 1};
 
         ImGui::SetCursorScreenPos(to_im(pos) + m_offset);
-        ImGui::Image((ImTextureID) (intptr_t) m_texture.get(), m_draw_size, uv0, uv1, m_tint);
+        render_image(m_texture, m_draw_size, uv0, uv1, m_tint);
     }
 
     render_item_end(pos, size);

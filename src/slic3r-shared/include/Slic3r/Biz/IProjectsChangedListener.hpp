@@ -8,8 +8,9 @@ class IProjectsChangedListener {
 public:
     virtual ~IProjectsChangedListener() = default;
 
-    virtual void on_project_added(Domain::SelectionId project_id) = 0;
-    virtual void on_project_removed(Domain::SelectionId project_id) = 0;
+    virtual void on_project_added(Domain::SelectionId project_id) {}
+    virtual void on_project_will_be_removed(Domain::SelectionId project_id) {}
+    virtual void on_project_removed(Domain::SelectionId project_id) {}
 };
 
 }

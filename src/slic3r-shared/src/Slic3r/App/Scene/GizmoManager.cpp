@@ -22,18 +22,18 @@ const char* ACTIVATION_STATE_NAMES[] = {
 
 #endif
 
-GizmoManager::GizmoManager(Render::Device& device, ISceneProvider& scene_provider, Biz::ProjectInteractor& project_interactor)
-    : m_projects(project_interactor), m_scene_provider(scene_provider), m_project_interactor(project_interactor), m_data_factory(device)
+GizmoManager::GizmoManager(
+    Render::Device& device, ISceneProvider& scene_provider, Biz::ProjectInteractor& project_interactor
+)
+    : m_project_changed_listener_scope(project_interactor, *this)
+    , m_selected_project_changed_listener_scope(project_interactor, *this)
+    , m_projects(project_interactor)
+    , m_scene_provider(scene_provider)
+    , m_project_interactor(project_interactor)
+    , m_data_factory(device)
 {
-    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
     GizmoManager::on_selected_project_changed(m_project_interactor.selected_project_id());
 }
-
-GizmoManager::~GizmoManager()
-{
-    m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
-}
-
 
 void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Slic3r::App::Render::ScreenInfo& screen_info)
 {
@@ -99,6 +99,19 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
 bool GizmoManager::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
 {
     return m_command_registry.process_keyboard_event(e);
+}
+
+void GizmoManager::on_project_will_be_removed(Domain::SelectionId project_id)
+{
+    if (project_id != m_last_project_id) {
+        return;
+    }
+
+    auto& last_p = m_projects.project(m_last_project_id);
+    if (last_p.active_tool)
+        last_p.active_tool->on_project_deactivated(m_last_project_id);
+
+    m_last_project_id = Domain::INVALID_ID;
 }
 
 void GizmoManager::prepare_cycle()
@@ -210,6 +223,7 @@ void GizmoManager::on_selected_project_changed(size_t index)
         if (last_p.active_tool)
             last_p.active_tool->on_project_deactivated(m_last_project_id);
     }
+
     m_last_project_id = index;
     auto& p = current_context();
     if (p.active_tool)

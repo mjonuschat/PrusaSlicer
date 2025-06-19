@@ -15,12 +15,16 @@
 
 namespace Slic3r::App::Render {
 class ImguiRender;
+class Texture;
+using TexturePtr = std::shared_ptr<Texture>;
 }
 
 namespace Slic3r::App::Yoga {
 
 class Item;
 using ItemPtr = std::unique_ptr<Item>;
+
+class Event;
 
 class Item
 {
@@ -100,7 +104,6 @@ public:
     const Paddings& padding() const;
     float gap() const;
     Orientation orientation() const;
-    bool is_dirty() const;
 
     bool enabled();
     void set_enabled(bool enabled);
@@ -149,7 +152,22 @@ public:
         return item_raw;
     }
 
+    /**
+     * @warning Immediate remove Item from tree, for deffered use remove_later
+     * @param child to remove
+     */
     virtual ItemPtr remove(Item* child);
+    /**
+     * @brief remove_later removes item only after both process_events and render traversal
+     * @param child to remove
+     */
+    void remove_later(Item* child);
+    /**
+     * @brief move_later moves this item only after both process_events and render traversal
+     * @param target to move this item
+     * @param index to move this item
+     */
+    void move_later(Item* target, size_t index);
     std::vector<Item*> items() const;
     size_t item_count() const;
     Item* get_item(size_t index) const;
@@ -167,11 +185,15 @@ protected:
 
     virtual Vec2f get_item_size();
 
+    virtual void set_style_dirty();
+
+    virtual void push_event(std::unique_ptr<Event> event);
+
+    virtual void enabled_updated_internal() {}
+
     void add_child(ItemPtr child, size_t index);
     ItemPtr remove_child(Item* child);
     void update_children_render_order();
-
-    void set_style_dirty();
 
     YGNodeRef get_node(size_t index);
     size_t get_node_count() const;
@@ -182,7 +204,18 @@ protected:
     void render_node(Vec2f pos, Item* child);
     void render_debug(Vec2f pos, Vec2f size);
     void process_events_node(Vec2f pos, Item* child);
-    virtual void enabled_updated_internal() {}
+
+    /**
+     * @brief render_image - replacement for ImGui::Image
+     */
+    void render_image(
+        Render::TexturePtr texture,
+        const ImVec2& image_size,
+        const ImVec2& uv0 = ImVec2(0, 0),
+        const ImVec2& uv1 = ImVec2(1, 1),
+        const ImVec4& tint_col = ImVec4(1, 1, 1, 1),
+        const ImVec4& border_col = ImVec4(0, 0, 0, 0)
+    );
 
     /**
      * Invalidates the initial calculation of the minimal item size, forcing it to be recalculated.
@@ -204,7 +237,6 @@ protected:
     YGNodeRef m_node = nullptr;
     std::string m_item_name;
 
-    bool m_style_dirty = true;
     bool m_min_size_calculated = false;
 
     YGAlign m_self_align = YGAlign::YGAlignAuto;

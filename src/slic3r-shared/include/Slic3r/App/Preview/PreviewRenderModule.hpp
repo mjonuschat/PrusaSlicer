@@ -78,7 +78,6 @@ public:
     /**@}*/
 
     void set_sidebars_visible(bool hide) override;
-    void synchronize_topbar() override;
 
 protected:
     /**

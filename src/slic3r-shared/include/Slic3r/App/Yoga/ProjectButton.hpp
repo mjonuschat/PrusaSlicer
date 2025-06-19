@@ -1,34 +1,55 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
+#include "Slic3r/Biz/DataObserver.hpp"
+#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+
+#include <Slic3r/Domain/SelectionId.hpp>
+#include <Slic3r/Biz/Platform/ListenerScope.hpp>
+
+namespace Slic3r::Biz {
+class ProjectInteractor;
+}
 
 namespace Slic3r::App::Yoga {
-    
+
 class Text;
 class LayoutButton;
 class ProjectButtonBackground;
 
-class ProjectButton : public AbstractButton {
+class ProjectButton
+    : public AbstractButton,
+      public Biz::DataObserver<Domain::SelectionId>,
+      public Biz::ISelectedProjectChangedListener
+{
 public:
-    ProjectButton(const std::string& name, size_t project_id);
-    std::function<void()>& on_cross();
+    ProjectButton(
+        size_t index, const Domain::SelectionId& data, Biz::ProjectInteractor& project_interactor
+    );
 
     size_t project_id() const;
     bool is_cross_hovered() const;
 
     bool is_selected();
-    void set_selected(bool selected);
+
+    void on_selected_project_changed(size_t index) override;
 
 protected:
+    void set_selected(bool selected);
+
     void hovered_updated_internal() override;
 
 private:
-    ProjectButtonBackground* m_background{ nullptr };
-    Text* m_label{ nullptr };
-    LayoutButton* m_cross{ nullptr };
-   
-    size_t m_project_id{0};
-    bool m_selected{ false };
+    Biz::ListenerScope<Biz::ISelectedProjectChangedListener, Biz::ProjectInteractor, ProjectButton>
+        m_selected_project_changed_listener_scope;
+
+    Biz::ProjectInteractor& m_project_interactor;
+    ProjectButtonBackground* m_background{nullptr};
+    Text* m_label{nullptr};
+    LayoutButton* m_cross{nullptr};
+
+    bool m_selected{false};
 };
 
 } // namespace Slic3r::App::Yoga

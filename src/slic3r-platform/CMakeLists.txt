@@ -27,6 +27,7 @@ set(SLIC3R_PLATFORM_FILES
     src/Slic3r/Biz/Platform/TimerQueue.cpp
     include/Slic3r/Biz/Platform/ISecretStore.hpp
     include/Slic3r/Biz/Platform/ISingleInstanceChecker.hpp
+    include/Slic3r/Biz/Platform/ListenerScope.hpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")

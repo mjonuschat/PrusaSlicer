@@ -46,7 +46,6 @@ public:
     ) override;
 
     void set_sidebars_visible(bool visible) override;
-    void synchronize_topbar() override;
 
 protected:
     void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;

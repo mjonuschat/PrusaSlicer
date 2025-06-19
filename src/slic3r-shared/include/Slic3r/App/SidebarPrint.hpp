@@ -1,4 +1,9 @@
+///|/ Copyright (c) Prusa Research 2018 - 2025 Oleksandra Iushchenko @YuSanka, Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #pragma once
+
 #include "Slic3r/App/Yoga/Window.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 

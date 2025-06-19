@@ -5,6 +5,7 @@
 #include "Slic3r/App/Yoga/InputText.hpp"
 
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/App/Yoga/Validator.hpp"
 
 #include <Slic3r/Log.hpp>
 

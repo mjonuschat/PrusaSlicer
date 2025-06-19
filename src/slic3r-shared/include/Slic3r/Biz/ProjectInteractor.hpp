@@ -17,6 +17,7 @@
 #include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
 #include "Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp"
 #include "Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp"
+#include "Slic3r/Biz/ObservableProjectList.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -55,7 +56,7 @@ class ProjectInteractor final :
 public:
     explicit ProjectInteractor(Domain::Workbench& workbench, Platform::IMainThreadDispatcher& dispatcher)
         : m_workbench(workbench), m_preset_interactor(workbench), m_scene_interactor(workbench), m_slicing_interactor(dispatcher), m_print_host_interactor(dispatcher)
-        , m_user_account_interactor(dispatcher), m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher))
+        , m_user_account_interactor(dispatcher), m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)), m_project_list(*this)
     {
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
@@ -318,6 +319,8 @@ public:
 
     void set_last_export_path(const boost::filesystem::path& path, bool is_removable) { m_last_export_path_storage.set_last_export_path(path, is_removable); }
 
+    ObservableProjectList& observable_project_list();
+
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
@@ -348,6 +351,8 @@ private:
     LastExportPathStorage m_last_export_path_storage;
     UserAccount::UserAccountInteractor m_user_account_interactor;
     std::unique_ptr<AppInstance::AbstractAppInstanceMessageHandler> m_app_instance_message_handler;
+
+    ObservableProjectList m_project_list;
 };
 
 } // namespace Slic3r::Biz

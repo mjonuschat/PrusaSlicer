@@ -8,12 +8,13 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <Slic3r/App/Yoga/Item.hpp>
+#include <Slic3r/App/Yoga/RootItem.hpp>
 
 using namespace Slic3r;
 using namespace Slic3r::App::Yoga;
 
 TEST_CASE("Item 1 child Item::add") {
-    Item tree;
+    RootItem tree;
 
     std::unique_ptr<Item> child = std::make_unique<Item>();
     tree.append(std::move(child));
@@ -22,7 +23,7 @@ TEST_CASE("Item 1 child Item::add") {
 }
 
 TEST_CASE("Item 1 child constructor parent") {
-    Item tree;
+    RootItem tree;
 
     Item* child = tree.emplace_back<Item>();
 
@@ -31,7 +32,7 @@ TEST_CASE("Item 1 child constructor parent") {
 }
 
 TEST_CASE("Item 1 child Item::remove") {
-    Item tree;
+    RootItem tree;
 
     Item* child_ptr{tree.emplace_back<Item>()};
 

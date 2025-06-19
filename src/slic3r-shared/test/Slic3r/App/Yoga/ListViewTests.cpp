@@ -7,6 +7,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include "ImGuiFixture.hpp"
+#include "Slic3r/App/Yoga/TestRootItem.hpp"
 
 #include <Slic3r/App/Yoga/ListView.hpp>
 #include <Slic3r/Biz/ObservableList.hpp>
@@ -62,25 +63,27 @@ protected:
 
 namespace {
 void compare_list_view(
-    const Slic3r::Biz::ObservableList<DummyState>& list, const ListView<DummyItem, DummyState>& view
+    const Slic3r::Biz::ObservableList<DummyState>& list, const ListView<DummyItem, DummyState>* view
 )
 {
-    REQUIRE(list.size() == view.item_count());
+    REQUIRE(list.size() == view->item_count());
     for (size_t i = 0; i < list.size(); ++i) {
-        REQUIRE(dynamic_cast<DummyItem*>(view.get_item(i))->foo() == list.at(i).foo);
+        REQUIRE(dynamic_cast<DummyItem*>(view->get_item(i))->foo() == list.at(i).foo);
     }
 }
 } // namespace
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView after ObservableList")
 {
-    Item tree;
+    TestRootItem tree;
 
     Slic3r::Biz::ObservableList<DummyState> list;
     list.reset({{1}, {2}, {3}});
 
-    ListView<DummyItem, DummyState> view;
-    view.set_source_list(&list);
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+    view->set_source_list(&list);
+
+    tree.process_loop_events();
 
     REQUIRE(list.size() == 3);
     compare_list_view(list, view);
@@ -88,14 +91,16 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView after ObservableList")
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView before ObservableList")
 {
-    Item tree;
+    TestRootItem tree;
 
-    ListView<DummyItem, DummyState> view;
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
     Slic3r::Biz::ObservableList<DummyState> list;
-    view.set_source_list(&list);
+    view->set_source_list(&list);
 
     list.reset({{1}, {2}, {3}});
     list.reset({{1}, {2}, {3}});
+
+    tree.process_loop_events();
 
     REQUIRE(list.size() == 3);
     compare_list_view(list, view);
@@ -103,181 +108,188 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView before ObservableList")
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::insert")
 {
-    Item tree;
+    TestRootItem tree;
 
-    ListView<DummyItem, DummyState> view;
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
     Slic3r::Biz::ObservableList<DummyState> list;
-    view.set_source_list(&list);
+    view->set_source_list(&list);
 
-    REQUIRE(view.item_count() == 0);
+    REQUIRE(view->item_count() == 0);
 
     list.insert({0}, 0);
 
-    REQUIRE(view.item_count() == 1);
+    REQUIRE(view->item_count() == 1);
 
     list.insert({1}, 0);
 
-    REQUIRE(view.item_count() == 2);
+    REQUIRE(view->item_count() == 2);
 
     compare_list_view(list, view);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove single")
 {
-    Item tree;
+    TestRootItem tree;
 
-    ListView<DummyItem, DummyState> view;
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
     Slic3r::Biz::ObservableList<DummyState> list;
-    view.set_source_list(&list);
+    view->set_source_list(&list);
 
     list.reset({{1}, {2}, {3}});
 
-    REQUIRE(view.item_count() == 3);
+    REQUIRE(view->item_count() == 3);
 
     list.remove({2});
 
-    REQUIRE(view.item_count() == 2);
+    tree.process_loop_events();
+
+    REQUIRE(view->item_count() == 2);
 
     compare_list_view(list, view);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove multiple")
 {
-    Item tree;
+    TestRootItem tree;
 
-    ListView<DummyItem, DummyState> view;
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
     Slic3r::Biz::ObservableList<DummyState> list;
-    view.set_source_list(&list);
+    view->set_source_list(&list);
 
     list.reset({{1}, {2}, {3}});
 
-    REQUIRE(view.item_count() == 3);
+    REQUIRE(view->item_count() == 3);
 
     list.remove({2});
     list.remove({0});
 
-    REQUIRE(view.item_count() == 1);
+    tree.process_loop_events();
+
+    REQUIRE(view->item_count() == 1);
 
     compare_list_view(list, view);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove range")
 {
-    Item tree;
+    TestRootItem tree;
 
-    ListView<DummyItem, DummyState> view;
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
     Slic3r::Biz::ObservableList<DummyState> list;
-    view.set_source_list(&list);
+    view->set_source_list(&list);
 
     list.reset({{1}, {2}, {3}});
 
-    REQUIRE(view.item_count() == 3);
+    REQUIRE(view->item_count() == 3);
 
     list.remove({1, 2});
 
-    REQUIRE(view.item_count() == 1);
+    tree.process_loop_events();
+
+    REQUIRE(view->item_count() == 1);
 
     compare_list_view(list, view);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove all")
 {
-    Item tree;
+    TestRootItem tree;
 
-    ListView<DummyItem, DummyState> view;
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
     Slic3r::Biz::ObservableList<DummyState> list;
-    view.set_source_list(&list);
+    view->set_source_list(&list);
 
     list.reset({{1}, {2}, {3}});
 
-    REQUIRE(view.item_count() == 3);
+    REQUIRE(view->item_count() == 3);
 
     list.remove({0, 2});
 
-    REQUIRE(view.item_count() == 0);
+    tree.process_loop_events();
+
+    REQUIRE(view->item_count() == 0);
 
     compare_list_view(list, view);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::move begin->end")
 {
-    Item tree;
+    TestRootItem tree;
 
-    ListView<DummyItem, DummyState> view;
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
     Slic3r::Biz::ObservableList<DummyState> list;
-    view.set_source_list(&list);
-
+    view->set_source_list(&list);
     list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
 
-    REQUIRE(view.item_count() == 7);
+    REQUIRE(view->item_count() == 7);
 
     list.move(0, 6);
 
-    REQUIRE(dynamic_cast<DummyItem*>(view.get_item(0))->foo() == 2);
-    REQUIRE(dynamic_cast<DummyItem*>(view.get_item(6))->foo() == 1);
+    REQUIRE(dynamic_cast<DummyItem*>(view->get_item(0))->foo() == 2);
+    REQUIRE(dynamic_cast<DummyItem*>(view->get_item(6))->foo() == 1);
     compare_list_view(list, view);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::move begin<-end")
 {
-    Item tree;
+    TestRootItem tree;
 
-    ListView<DummyItem, DummyState> view;
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
     Slic3r::Biz::ObservableList<DummyState> list;
-    view.set_source_list(&list);
+    view->set_source_list(&list);
 
     list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
 
-    REQUIRE(view.item_count() == 7);
+    REQUIRE(view->item_count() == 7);
 
     list.move(6, 0);
 
-    REQUIRE(dynamic_cast<DummyItem*>(view.get_item(0))->foo() == 7);
-    REQUIRE(dynamic_cast<DummyItem*>(view.get_item(6))->foo() == 6);
+    REQUIRE(dynamic_cast<DummyItem*>(view->get_item(0))->foo() == 7);
+    REQUIRE(dynamic_cast<DummyItem*>(view->get_item(6))->foo() == 6);
     compare_list_view(list, view);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::move same index")
 {
-    Item tree;
+    TestRootItem tree;
 
-    ListView<DummyItem, DummyState> view;
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
     Slic3r::Biz::ObservableList<DummyState> list;
-    view.set_source_list(&list);
+    view->set_source_list(&list);
 
     list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
 
-    REQUIRE(view.item_count() == 7);
+    REQUIRE(view->item_count() == 7);
 
     list.move(3, 3);
 
-    REQUIRE(dynamic_cast<DummyItem*>(view.get_item(3))->foo() == 4);
+    REQUIRE(dynamic_cast<DummyItem*>(view->get_item(3))->foo() == 4);
     compare_list_view(list, view);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::update")
 {
-    Item tree;
+    TestRootItem tree;
 
-    ListView<DummyItem, DummyState> view;
+    ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
     Slic3r::Biz::ObservableList<DummyState> list;
-    view.set_source_list(&list);
+    view->set_source_list(&list);
 
     list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
 
-    REQUIRE(view.item_count() == 7);
+    REQUIRE(view->item_count() == 7);
     compare_list_view(list, view);
 
     list.set({9}, 3);
 
-    REQUIRE(dynamic_cast<DummyItem*>(view.get_item(3))->foo() == 9);
-    REQUIRE(dynamic_cast<DummyItem*>(view.get_item(3))->updated());
+    REQUIRE(dynamic_cast<DummyItem*>(view->get_item(3))->foo() == 9);
+    REQUIRE(dynamic_cast<DummyItem*>(view->get_item(3))->updated());
     compare_list_view(list, view);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "ListView with context")
 {
-    Item tree;
+    TestRootItem tree;
 
     Slic3r::Biz::ObservableList<DummyState> list;
     list.reset({{1}, {2}, {3}});

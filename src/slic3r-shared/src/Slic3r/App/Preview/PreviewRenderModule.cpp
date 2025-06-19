@@ -311,13 +311,6 @@ void PreviewRenderModule::set_sidebars_visible(bool hide)
     request_render();
 }
 
-void PreviewRenderModule::synchronize_topbar()
-{
-    m_layout->synchronize_topbar();
-    // request redraw
-    request_render();
-}
-
 void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
 

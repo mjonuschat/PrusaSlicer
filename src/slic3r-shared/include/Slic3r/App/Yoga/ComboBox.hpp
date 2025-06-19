@@ -38,6 +38,7 @@ public:
         );
         set_current_index(0);
     }
+    ~ComboBox();
 
     void render(Vec2f pos, Vec2f size) override;
 

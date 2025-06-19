@@ -4,10 +4,8 @@
 ///|/
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 
-#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/App/Yoga/Rectangle.hpp"
 
 namespace Slic3r::App::Yoga {
 

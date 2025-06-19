@@ -177,6 +177,8 @@ ComboBox::ComboBox(std::initializer_list<std::string> initializer_list, const st
     set_current_index(0);
 }
 
+ComboBox::~ComboBox() {}
+
 void ComboBox::render(Vec2f pos, Vec2f size)
 {
     render_item_begin(pos, size);

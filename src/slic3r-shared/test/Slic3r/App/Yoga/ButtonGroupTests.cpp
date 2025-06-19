@@ -6,6 +6,7 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
+#include <Slic3r/App/Yoga/RootItem.hpp>
 #include <Slic3r/App/Yoga/ButtonGroup.hpp>
 #include <Slic3r/App/Yoga/AbstractButton.hpp>
 
@@ -17,7 +18,7 @@ using Catch::Matchers::WithinRel;
 
 TEST_CASE_METHOD(ImGuiFixture, "ButtonGroup constructor")
 {
-    Item tree;
+    RootItem tree;
 
     AbstractButton* foo = tree.emplace_back<AbstractButton>();
     AbstractButton* bar = tree.emplace_back<AbstractButton>();
@@ -30,7 +31,7 @@ TEST_CASE_METHOD(ImGuiFixture, "ButtonGroup constructor")
 
 TEST_CASE_METHOD(ImGuiFixture, "ButtonGroup set_buttons")
 {
-    Item tree;
+    RootItem tree;
 
     AbstractButton* foo = tree.emplace_back<AbstractButton>();
     AbstractButton* bar = tree.emplace_back<AbstractButton>();
@@ -48,7 +49,7 @@ TEST_CASE_METHOD(ImGuiFixture, "ButtonGroup set_buttons")
 
 TEST_CASE_METHOD(ImGuiFixture, "ButtonGroup set_checked exclusive")
 {
-    Item tree;
+    RootItem tree;
 
     AbstractButton* foo = tree.emplace_back<AbstractButton>();
     foo->set_checkable(true);

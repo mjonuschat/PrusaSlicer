@@ -74,6 +74,11 @@ void ProjectInteractor::select_project(Domain::SelectionId project_id)
     }
 }
 
+ObservableProjectList& ProjectInteractor::observable_project_list()
+{
+    return m_project_list;
+}
+
 Biz::Slicing::SlicingId ProjectInteractor::selected_bed_slicing_id() const
 {
     return { selected_project_id(), m_scene_interactor.selected_bed_instance().instance_id };
@@ -145,21 +150,33 @@ Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
     return project_id;
 }
 
-
 void ProjectInteractor::remove_project(Domain::SelectionId project_id)
 {
-    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) { l->on_project_removed(project_id); });
-
     auto& projects = m_workbench.projects();
     auto it = projects.find(project_id);
 
+    ASSERT(it != projects.end());
+
+    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) { l->on_project_will_be_removed(project_id); });
+
     it = projects.erase(it);
 
-    if (m_selection.project_id == project_id) {
-        Domain::SelectionId next_selected_project_id = Domain::INVALID_ID;
-        if (it != projects.end())
-            next_selected_project_id = it->first;
-        do_select_project(next_selected_project_id);
+    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) { l->on_project_removed(project_id); });
+
+    // At least one project need to exist at all times
+    if (projects.empty()) {
+        new_project();
+    } else {
+        if (m_selection.project_id == project_id) {
+            Domain::SelectionId next_selected_project_id = Domain::INVALID_ID;
+            if (it != projects.end()) {
+                next_selected_project_id = it->first;
+            } else {
+                next_selected_project_id = projects.begin()->first;
+            }
+
+            do_select_project(next_selected_project_id);
+        }
     }
 }
 

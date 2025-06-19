@@ -63,7 +63,7 @@ public:
         ASSERT(index_range.to <= m_items.size());
 
         for (size_t i = index_range.from; i <= index_range.to; ++i) {
-            remove(get_item(index_range.from));
+            remove_later(get_item(i));
         }
         m_items.erase(m_items.cbegin() + index_range.from, m_items.cbegin() + index_range.to + 1);
 

@@ -7,6 +7,7 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/App/Yoga/ItemEvents.hpp"
 
 #include <imgui_internal.h>
 #include <string>
@@ -159,14 +160,12 @@ void Item::resize(Vec2f size)
     // Make sure we do yoda calculation only on root nodes
     if (m_parent) {
         m_parent->resize(size);
-    } else {
-        YGNodeCalculateLayout(m_node, size.x(), size.y(), YGDirectionLTR);
     }
 }
 
 void Item::process_events(Vec2f pos, Vec2f size)
 {
-    for (const ItemPtr& child : std::as_const(m_children)) {
+    for (const ItemPtr& child : m_children) {
         process_events_node(pos, child.get());
     }
 }
@@ -224,8 +223,6 @@ const Paddings& Item::padding() const { return m_padding; }
 float Item::gap() const { return m_gap; }
 
 Orientation Item::orientation() const { return m_orientation; }
-
-bool Item::is_dirty() const { return m_style_dirty; }
 
 bool Item::enabled()
 {
@@ -291,6 +288,17 @@ void Item::set_top(float top) { YGNodeStyleSetPosition(m_node, YGEdgeTop, top); 
 void Item::set_bottom(float bottom) { YGNodeStyleSetPosition(m_node, YGEdgeBottom, bottom); }
 
 void Item::set_flex(float flex) { YGNodeStyleSetFlex(m_node, flex); }
+
+void Item::remove_later(Item* child) {
+    ASSERT(child);
+    ASSERT(index_of(child).has_value());
+    push_event(std::make_unique<RemoveEvent>(child));
+}
+
+void Item::move_later(Item* target, size_t index)
+{
+    push_event(std::make_unique<MoveEvent>(this, target, index));
+}
 
 std::vector<Item*> Item::items() const
 {
@@ -426,6 +434,12 @@ Vec2f Item::get_item_size()
     ImGui::SetCursorPos(old_pos);
 
     return result;
+}
+
+void Item::push_event(std::unique_ptr<Event> event)
+{
+    ASSERT(m_parent);
+    m_parent->push_event(std::move(event));
 }
 
 void Item::set_imgui_render(Render::ImguiRender* imgui_render) { m_imgui_render = imgui_render; }
@@ -663,8 +677,6 @@ void Item::set_style_dirty()
 {
     if (m_parent) {
         m_parent->set_style_dirty();
-    } else {
-        m_style_dirty = true;
     }
 }
 
@@ -714,19 +726,7 @@ void Item::insert(ItemPtr child, size_t index) { add_child(std::move(child), ind
 
 ItemPtr Item::remove(Item* child) { return remove_child(child); }
 
-void Item::render_item_begin(Vec2f pos, Vec2f size)
-{
-    if (!m_parent && !size.isZero()) {
-        style_node();
-        resize(size);
-        m_style_dirty = false;
-        process_events(pos, size);
-        if (m_style_dirty) {
-            style_node();
-            resize(size);
-        }
-    }
-}
+void Item::render_item_begin(Vec2f pos, Vec2f size) {}
 
 void Item::render_item_end(Vec2f pos, Vec2f size)
 {
@@ -775,6 +775,19 @@ void Item::process_events_node(Vec2f pos, Item* child)
     Vec2f cell_size = Vec2f(YGNodeLayoutGetWidth(child_node), YGNodeLayoutGetHeight(child_node));
 
     child->process_events(cell_pos, cell_size);
+}
+
+void Item::render_image(
+    Render::TexturePtr texture,
+    const ImVec2& image_size,
+    const ImVec2& uv0,
+    const ImVec2& uv1,
+    const ImVec4& tint_col,
+    const ImVec4& border_col
+)
+{
+    ImGui::Image((ImTextureID) (intptr_t) texture.get(), image_size, uv0, uv1, tint_col, border_col);
+    m_imgui_render->use_texture(texture);
 }
 
 Item* Item::get_item(size_t index) const

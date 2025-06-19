@@ -254,13 +254,6 @@ void PlaterRenderModule::set_sidebars_visible(bool visible)
     request_render();
 }
 
-void PlaterRenderModule::synchronize_topbar()
-{
-    m_layout->synchronize_topbar();
-    // request redraw
-    request_render();
-}
-
 void PlaterRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
 {
     Render::ScopedDebugGroup event_imgui_render("Plater Render", cmd_buffer);

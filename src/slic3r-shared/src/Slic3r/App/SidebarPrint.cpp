@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2018 - 2025 Oleksandra Iushchenko @YuSanka, Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "Slic3r/App/SidebarPrint.hpp"
 
 #include "Slic3r/App/Yoga/RectangleButton.hpp"
@@ -6,6 +10,7 @@
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
+#include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/RadioButton.hpp"
 #include "Slic3r/App/Yoga/RadioExtruder.hpp"
 
