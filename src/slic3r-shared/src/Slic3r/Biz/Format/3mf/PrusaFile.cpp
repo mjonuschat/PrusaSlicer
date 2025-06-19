@@ -6,9 +6,6 @@
 #include <boost/bimap.hpp>
 #include <boost/filesystem.hpp>
 #include "nlohmann/json.hpp"
-//#include "libslic3r/Model.hpp" // Model+ModelObject+ModelVolume+ModelVolumeType
-//#include "libslic3r/PrintConfig.hpp" // DynamicPrintConfig + ConfigSubstitutionContext
-//#include "libslic3r/Slicing.hpp" // t_layer_config_ranges
 #include "libslic3r/NSVGUtils.hpp" // open content of svg file
 
 #include "Slic3r/Log.hpp"
@@ -237,10 +234,6 @@ bool from_json(const json &parent_json, std::string_view name, ENUM &value, cons
 
     value = found_item->second;
     return true;
-}
-
-json to_json(const Domain::ConfigBox& box) {
-    return nlohmann::ordered_json(box);
 }
 
 template<typename CONFIG_TYPE> 
@@ -855,7 +848,7 @@ json volumes_to_json(const ModelVolumePtrs &volumes, const VolumeToObjectid &v2i
         if (volume.emboss_shape.has_value())
             add(volume_json, SHAPE, EmbossShapeSerialization::to_json(*volume.emboss_shape));
         add(volume_json, SOURCE, SourceSerialization::to_json(volume.source, volume.mesh().stats()));
-        add(volume_json, CONFIGURATION, to_json(volume.volume_settings));
+        add(volume_json, CONFIGURATION, nlohmann::ordered_json(volume.volume_settings));
         if (volume.is_cut_connector())
             add(volume_json, CUT_INFO, CutSerialization::cut_to_json(volume.cut_info));
         if (!volume_json.empty())
@@ -1034,7 +1027,7 @@ json ranges_to_json(const Domain::LayerConfigRanges &ranges) {
         if (range.first <= range.second)
             continue; // from must be smaller than to
 
-        json config_json = to_json(config);
+        json config_json = nlohmann::ordered_json(config);
         assert(!config_json.empty());
         if (config_json.empty())
             continue;
@@ -1182,9 +1175,8 @@ json object_to_json(const ModelObject &object, const StoredStructure &stored_str
         add(object_json, RANGES, RangesSerialization::ranges_to_json(object.layer_config_ranges));
     if (object.is_cut())
         add(object_json, CUT_OBJECT_ID, CutSerialization::cut_to_json(object.cut_id));
-    // TODO
-    //if (!object.config.empty())
-    //    add(object_json, CONFIGURATION, to_json(object.config.get()));
+    if (!object.object_settings.overrides.empty())
+        add(object_json, CONFIGURATION, object.object_settings);
     if (const std::vector<double> &layer_height_profile = object.layer_height_profile.get();
         !layer_height_profile.empty())
         add(object_json, LAYER_HEIGHT_PROFILE, LayerHeightProfileSerialization::to_json(layer_height_profile));

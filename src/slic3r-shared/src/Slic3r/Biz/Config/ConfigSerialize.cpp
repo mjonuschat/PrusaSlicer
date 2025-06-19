@@ -35,7 +35,7 @@ namespace Slic3r::Domain {
         if (box.overrides.get(item.name())) {
             json_value[item.name()] = item;
         } else {
-            json_value[item.name()] = nullptr;
+            // Unused overrides are not serialized.
         }
     }
 
@@ -59,13 +59,22 @@ namespace Slic3r::Domain {
     for (const auto& box : boxes)
         json_objects.emplace_back(box.get());
 
+    // Prepare list of keys used in this ConfigBox, either as a regular item or an override.
+    std::vector<std::string> keys;
+    for (const ConfigItem& item : boxes.front().get().overrides.all_items())
+        keys.emplace_back(item.name());
+    for (const ConfigItem& item : boxes.front().get().items)
+        keys.emplace_back(item.name());
+    std::ranges::sort(keys);
+
     // Vectorization of the individual json objects. Assumes that the keys are the same.
     json_value = nlohmann::ordered_json::object();
-    for (auto it = json_objects[0].items().begin(); it != json_objects[0].items().end(); ++it) {
-        const std::string& current_key = it.key();
+    for (const std::string& current_key : keys) {
         nlohmann::ordered_json value_array = nlohmann::ordered_json::array();
-        for (const auto& obj : json_objects)
-            value_array.push_back(obj[current_key]);
+        for (const auto& obj : json_objects) {
+            auto it = obj.find(current_key);
+            value_array.push_back(it != obj.end() ? (*it) : nullptr);
+        }
         json_value[current_key] = std::move(value_array);
     }
 
