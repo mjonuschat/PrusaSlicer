@@ -10,6 +10,14 @@ if (SLIC3R_ASAN)
         set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address")
     endif ()
 
+    if (APPLE)
+        # This is an unfortunate reality when using ASAN with dependencies that are not compiled with asan.
+        # See https://stackoverflow.com/questions/38723374/why-does-xcode-define-libcpp-has-no-asan-when-creating-an-address-sanitized-bui
+        # This sadly means that the memory of e.g. std::vector "between" size and capacity is not poisoned
+        # and some issues (e.g. accessing an element past vector size but within its capacity) wont be reported.
+        add_compile_definitions(_LIBCPP_HAS_NO_ASAN)
+    endif ()
+
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lasan")
     endif ()
