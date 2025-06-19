@@ -11,7 +11,6 @@
 #include <optional>
 #include <variant>
 #include "libslic3r/miniz_extension.hpp" // mini zip archivator
-#include "libslic3r/Point.hpp" // Transform3d
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "admesh/stl.h" // indexed_triangle_set
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp" // Error handling
@@ -496,7 +495,7 @@ struct StoredStructure {
 /// <param name="filepath">Path in 3mf where to store</param>
 /// <param name="param">Specify way to store(limit export by filters)</param>
 /// <returns>Structure of stored objects to by able pointed on them in 3mf</returns>
-StoredStructure store_model3mf(mz_zip_archive &archive, const Model &model, 
+StoredStructure store_model3mf(mz_zip_archive &archive, const Domain::Model &model, 
     const char* filepath, const Store3mfParam &param);
 
 } // namespace Slic3r

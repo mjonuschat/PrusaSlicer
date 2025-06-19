@@ -16,10 +16,23 @@
 #include "Relations.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+
+#include "libslic3r/Time.hpp" // utc_timestamp
+#include "LocalesUtils.hpp" // CNumericLocalesSetter
+
+#include <boost/spirit/include/karma.hpp>
 
 namespace Slic3r {
     extern std::unique_ptr<const Persist3mfData> g_load_from_3mf;
 }
+
+using ModelObject = Slic3r::Domain::ModelObject;
+using ModelVolume = Slic3r::Domain::ModelVolume;
+using ModelInstance = Slic3r::Domain::ModelInstance;
+using Model = Slic3r::Domain::Model;
+using ModelVolumeType = Slic3r::Domain::ModelVolumeType;
+using ModelVolumePtrs = Slic3r::Domain::ModelVolumePtrs;
 
 using namespace Slic3r;
 using namespace format_3MF;
@@ -1126,12 +1139,7 @@ LoadedModel Slic3r::read_model3mf(mz_zip_archive &archive, const char * root_fil
 
 // May be move write function into separate file because of include Model.hpp !!!
 
-#include "libslic3r/Time.hpp" // utc_timestamp
-#include "LocalesUtils.hpp" // CNumericLocalesSetter
-#include "libslic3r/Model.hpp"
-#include "libslic3r/PrintConfig.hpp" // DynamicPrintConfig, ConfigSubstitutionContext
 
-#include <boost/spirit/include/karma.hpp>
 
 // write to 3mf - help functions
 namespace{
@@ -1444,13 +1452,13 @@ const TriangleMesh * get_mesh_ptr(const ModelVolume *volume_ptr)
         return nullptr;
 
     const ModelVolume &volume = *volume_ptr;
-    if (volume.get_mesh_shared_ptr() == nullptr)
+    if (volume.mesh_ptr() == nullptr)
         return nullptr;
 
-    return volume.get_mesh_shared_ptr().get();
+    return volume.mesh_ptr().get();
 };
 
-MeshToObjectid store_meshes(mz_zip_writer_staged_context& context, const Slic3r::Model &model, 
+MeshToObjectid store_meshes(mz_zip_writer_staged_context& context, const Slic3r::Domain::Model &model, 
     unsigned &object_id) {
     MeshToObjectid stored_meshes;
     for (const ModelObject *object_ptr : model.objects) {
@@ -1512,7 +1520,7 @@ R""""( </resources>
 )"""");
 
 // function to store meshes into separate file
-MeshToObjectid store_separate_meshes(mz_zip_archive &archive, const Slic3r::Model &model, bool zip64, unsigned &object_id) {
+MeshToObjectid store_separate_meshes(mz_zip_archive &archive, const Slic3r::Domain::Model &model, bool zip64, unsigned &object_id) {
     const std::string filepath_prefix = "3D/Objects/mesh_";
     
     int file_counter = 0;
@@ -1548,7 +1556,7 @@ MeshToObjectid store_separate_meshes(mz_zip_archive &archive, const Slic3r::Mode
     return stored_meshes;
 }
 
-VolumeToObjectid write_volumes(std::stringstream &stream, const Slic3r::Model &model, unsigned &object_id,
+VolumeToObjectid write_volumes(std::stringstream &stream, const Slic3r::Domain::Model &model, unsigned &object_id,
     const MeshToObjectid& stored_mesh) {
     write_xml_commnet(stream, "List of PrusaSlic3r:ModelVolume contian reference on mesh + volume name");        
     VolumeToObjectid stored_volumes;
@@ -1603,7 +1611,7 @@ VolumeToObjectid write_volumes(std::stringstream &stream, const Slic3r::Model &m
     return stored_volumes;
 }
 
-ObjectToObjectid write_objects(std::stringstream &stream, const Slic3r::Model &model, 
+ObjectToObjectid write_objects(std::stringstream &stream, const Slic3r::Domain::Model &model, 
     unsigned &object_id, const VolumeToObjectid &stored_volumes)
 {
     write_xml_commnet(stream, "List of PrusaSlicer:ModelObject(with object name) contain 1+ references on PrusaSlic3r:ModelVolume (with volume transformation)");
@@ -1646,7 +1654,7 @@ ObjectToObjectid write_objects(std::stringstream &stream, const Slic3r::Model &m
         for (const ModelVolume *volume_ptr : object_ptr->volumes) {
             ScopeGuard sg_component_increase([&component_uuid_it]() { ++component_uuid_it; });
             if (volume_ptr == nullptr) continue;
-            if (volume_ptr->get_mesh_shared_ptr() == nullptr) continue;
+            if (volume_ptr->mesh_ptr() == nullptr) continue;
 
             auto it = stored_volumes.find(volume_ptr->id().id);
             assert(it != stored_volumes.end());
@@ -1663,7 +1671,7 @@ ObjectToObjectid write_objects(std::stringstream &stream, const Slic3r::Model &m
     return stored_objects;
 }
 
-InstanceToBuildOrder write_instances(std::stringstream &stream, const Slic3r::Model &model,
+InstanceToBuildOrder write_instances(std::stringstream &stream, const Slic3r::Domain::Model &model,
     const ObjectToObjectid& stored_objects)
 {
     InstanceToBuildOrder stored_instances;
@@ -1713,7 +1721,7 @@ InstanceToBuildOrder write_instances(std::stringstream &stream, const Slic3r::Mo
     return stored_instances;
 }
 
-CT_Metadata_Model &update(CT_Metadata_Model &metadata, const Slic3r::Model &model) {
+CT_Metadata_Model &update(CT_Metadata_Model &metadata, const Slic3r::Domain::Model &model) {
     // Copy permanent Creation Date
     if (g_load_from_3mf != nullptr &&
         !g_load_from_3mf->creation_date.empty())
@@ -1758,7 +1766,7 @@ CT_Metadata_Model &update(CT_Metadata_Model &metadata, const Slic3r::Model &mode
 }
 
 // NOTE: There can be more than one 3D payload in a 3MF Document, but only one primary 3D payload
-StoredStructure Slic3r::store_model3mf(mz_zip_archive &archive, const Model &model, const char* filepath, const Store3mfParam &param) {
+StoredStructure Slic3r::store_model3mf(mz_zip_archive &archive, const Domain::Model &model, const char* filepath, const Store3mfParam &param) {
     StoredStructure result;
 
     // Inside of 3mf model/resources/object id start with 1 is unique and increase every time when use

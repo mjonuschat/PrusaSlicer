@@ -10,8 +10,6 @@
 #include "ModelMap.hpp"
 
 namespace Slic3r {
-class Model;
-class DynamicPrintConfig;
 struct ConfigSubstitutionContext;
 
 /// <summary>
@@ -24,7 +22,7 @@ struct ConfigSubstitutionContext;
 /// <param name="stored_structure">Hierarchy of store model into .model file of 3mf</param>
 void store_prusa_files(
     mz_zip_archive &archive,
-    const Model &model,
+    const Domain::Model &model,
     const DynamicPrintConfig *config,
     const StoredStructure &stored_structure
 );
@@ -60,7 +58,7 @@ PrusaFilesResult load_prusa_files(
 bool process_embossed_svg(
     /*const*/ mz_zip_archive &archive,
     const mz_zip_archive_file_stat &stat,
-    Model &model,
+    Domain::Model &model,
     ResultLoad3mf &result
 );
 

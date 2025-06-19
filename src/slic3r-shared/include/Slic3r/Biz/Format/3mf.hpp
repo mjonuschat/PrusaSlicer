@@ -15,7 +15,7 @@
 namespace Slic3r {
 
     // Forward decalrations
-    class Model;
+    namespace Domain { class Model; }
     struct ConfigSubstitutionContext;
     class DynamicPrintConfig;
     struct ThumbnailData;
@@ -38,7 +38,7 @@ namespace Slic3r {
         std::string_view filepath_3mf,
         DynamicPrintConfig &config,
         ConfigSubstitutionContext &config_substitutions,
-        Model &model,
+        Domain::Model &model,
         bool check_version
     );
 

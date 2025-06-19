@@ -39,9 +39,16 @@ size_t operator()(const Slic3r::PathId &path_id) const {
 
 namespace Slic3r {
 // forward decalaration
-class ModelInstance;
-class ModelObject;
-class ModelVolume;
+
+namespace Domain {
+    class ModelInstance;
+    class ModelObject;
+    class ModelVolume;
+}
+
+using ModelInstance = Domain::ModelInstance;
+using ModelObject = Domain::ModelObject;
+using ModelVolume = Domain::ModelVolume;
 
 //                                    3mf object_id, model objects
 using BuildMap = std::unordered_map<PathId, std::vector<ModelObject *>>;

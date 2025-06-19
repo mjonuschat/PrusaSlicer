@@ -6,9 +6,9 @@
 #include <boost/bimap.hpp>
 #include <boost/filesystem.hpp>
 #include "nlohmann/json.hpp"
-#include "libslic3r/Model.hpp" // Model+ModelObject+ModelVolume+ModelVolumeType
-#include "libslic3r/PrintConfig.hpp" // DynamicPrintConfig + ConfigSubstitutionContext
-#include "libslic3r/Slicing.hpp" // t_layer_config_ranges
+//#include "libslic3r/Model.hpp" // Model+ModelObject+ModelVolume+ModelVolumeType
+//#include "libslic3r/PrintConfig.hpp" // DynamicPrintConfig + ConfigSubstitutionContext
+//#include "libslic3r/Slicing.hpp" // t_layer_config_ranges
 #include "libslic3r/NSVGUtils.hpp" // open content of svg file
 
 #include "Slic3r/Log.hpp"
@@ -16,6 +16,13 @@
 namespace Slic3r {
     extern std::unique_ptr<const Persist3mfData> g_load_from_3mf;
 }
+
+using ModelObject = Slic3r::Domain::ModelObject;
+using ModelVolume = Slic3r::Domain::ModelVolume;
+using ModelInstance = Slic3r::Domain::ModelInstance;
+using Model = Slic3r::Domain::Model;
+using ModelVolumeType = Slic3r::Domain::ModelVolumeType;
+using ModelVolumePtrs = Slic3r::Domain::ModelVolumePtrs;
 
 using json = nlohmann::ordered_json;
 using namespace Slic3r;
@@ -228,11 +235,8 @@ bool from_json(const json &parent_json, std::string_view name, ENUM &value, cons
     return true;
 }
 
-json to_json(const DynamicConfig &config) {
-    json config_json;
-    for (auto it = config.cbegin(); it != config.cend(); ++it) 
-        config_json[it->first] = it->second->serialize();
-    return config_json;
+json to_json(const Domain::ConfigBox& box) {
+    return nlohmann::ordered_json(box);
 }
 
 template<typename CONFIG_TYPE> 
@@ -424,7 +428,7 @@ constexpr std::string_view USE_SURFACE = "use_surface";
 
 const NamesType NAMES = {{SHAPE_SCALE, UNHEALED, SVG_FILE_PATH, SVG_FILE_PATH_IN_3MF, DEPTH, USE_SURFACE}};
 
-void write_svg_files(mz_zip_archive &archive, const Model &model) {
+void write_svg_files(mz_zip_archive &archive, const Domain::Model &model) {
     // write only first appear of svg
     std::set<std::string> paths;
     for (const ModelObject *mo_ptr : model.objects) {
@@ -597,7 +601,7 @@ NamesType FACETS_NAMES{{ID, MM_SEGMENTATION_FACETS, SUPPORT_FACETS, SEAM_FACETS}
 constexpr std::string_view TRIANGLE = "triangle"; // index into mesh(specifiead by ID) triangles
 constexpr std::string_view DIVIDING = "dividing";
 NamesType FACET_NAMES{{TRIANGLE, DIVIDING}};
-void write(mz_zip_archive &archive, const Model &model, const VolumeToObjectid &v2id) {
+void write(mz_zip_archive &archive, const Domain::Model &model, const VolumeToObjectid &v2id) {
     auto facets_to_json = [](const Domain::FacetsAnnotation &facets, int triangle_count) {
         if (facets.empty())
             return json{};
@@ -743,6 +747,9 @@ std::vector<double> load(const json &layer_heights_json, ResultLoad3mf& result) 
 
 namespace CutSerialization {
 
+using CutConnectorType = Domain::CutConnectorType;
+using CutId = Domain::CutId;
+
 constexpr std::string_view CUT_TYPE = "type";
 constexpr std::string_view R_TOLERANCE = "rTolerance";
 constexpr std::string_view H_TOLERANCE = "hTolerance";
@@ -844,7 +851,7 @@ json volumes_to_json(const ModelVolumePtrs &volumes, const VolumeToObjectid &v2i
         if (volume.emboss_shape.has_value())
             add(volume_json, SHAPE, EmbossShapeSerialization::to_json(*volume.emboss_shape));
         add(volume_json, SOURCE, SourceSerialization::to_json(volume.source, volume.mesh().stats()));
-        add(volume_json, CONFIGURATION, to_json(volume.config.get()));
+        add(volume_json, CONFIGURATION, to_json(volume.volume_settings));
         if (volume.is_cut_connector())
             add(volume_json, CUT_INFO, CutSerialization::cut_to_json(volume.cut_info));
         if (!volume_json.empty())
@@ -890,7 +897,7 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, ResultLoa
 
     RT issue = RT::project_volume_config_issue;           
     for (ModelVolume *mv : mvs)
-        load_configuration(volume_json, CONFIGURATION, mv->config, result, issue, config_substitutions);
+        ; // TODO load_configuration(volume_json, CONFIGURATION, mv->config, result, issue, config_substitutions);
        
     if (auto source_json_it = volume_json.find(SOURCE);
         source_json_it != volume_json.end()){
@@ -1013,21 +1020,17 @@ constexpr std::string_view Z_RANGE       = "zRange";        // Range of z values
 constexpr std::string_view CONFIGURATION = "configuration"; // Range configuration
 NamesType RANGES_NAMES{{Z_RANGE, CONFIGURATION}};
 
-json ranges_to_json(const t_layer_config_ranges &ranges) {
+json ranges_to_json(const Domain::LayerConfigRanges &ranges) {
     if (ranges.empty())
         return json{};
 
     json result = json::array();
     for (const auto &[range, config] : ranges) {
-        assert(!config.empty());
-        if (config.empty())
-            continue;
-
         assert(range.first < range.second);
         if (range.first <= range.second)
             continue; // from must be smaller than to
 
-        json config_json = to_json(config.get());
+        json config_json = to_json(config);
         assert(!config_json.empty());
         if (config_json.empty())
             continue;
@@ -1040,7 +1043,7 @@ json ranges_to_json(const t_layer_config_ranges &ranges) {
     return result;
 }
 
-void ranges_from_json(const json &ranges_json, t_layer_config_ranges &ranges,
+void ranges_from_json(const json &ranges_json, Domain::LayerConfigRanges &ranges,
     ResultLoad3mf& result, ConfigSubstitutionContext &config_substitutions) {
     if (!ranges_json.is_array()) {
         result.add(RT::project_object_ranges_must_be_array);
@@ -1059,16 +1062,17 @@ void ranges_from_json(const json &ranges_json, t_layer_config_ranges &ranges,
             result.add(RT::project_object_range_bad_z1, z_range_json.dump());
             continue;
         }
-        t_layer_height_range z_range = range_json.value(Z_RANGE, t_layer_height_range(-1, -1));
+        Domain::LayerHeightRange z_range = range_json.value(Z_RANGE, Domain::LayerHeightRange(-1, -1));
         if (z_range.first > z_range.second || z_range.first < 0) {
             result.add(RT::project_object_range_bad_z2, z_range_json.dump());
             continue;
         }
 
-        ModelConfig model_config;
-        RT issue = RT::project_object_range_config_issue;
-        if(load_configuration(range_json, CONFIGURATION, model_config, result, issue, config_substitutions, true))
-            ranges[z_range] = model_config;
+        // TODO
+        //ModelConfig model_config;
+        //RT issue = RT::project_object_range_config_issue;
+        //if(load_configuration(range_json, CONFIGURATION, model_config, result, issue, config_substitutions, true))
+        //    ranges[z_range] = model_config;
     }
 }
 } // namespace RangesSerialization
@@ -1122,7 +1126,7 @@ void load_instance(const json &instance_json, const InstanceMap& instances, Resu
 }
 
 json instances_to_json(
-    const ModelInstancePtrs &instances,
+    const Domain::ModelInstancePtrs &instances,
     const InstanceToBuildOrder &instances_map,
     const ItemsWithUUID& items_uuid
 ) {
@@ -1174,8 +1178,9 @@ json object_to_json(const ModelObject &object, const StoredStructure &stored_str
         add(object_json, RANGES, RangesSerialization::ranges_to_json(object.layer_config_ranges));
     if (object.is_cut())
         add(object_json, CUT_OBJECT_ID, CutSerialization::cut_to_json(object.cut_id));
-    if (!object.config.empty())
-        add(object_json, CONFIGURATION, to_json(object.config.get()));
+    // TODO
+    //if (!object.config.empty())
+    //    add(object_json, CONFIGURATION, to_json(object.config.get()));
     if (const std::vector<double> &layer_height_profile = object.layer_height_profile.get();
         !layer_height_profile.empty())
         add(object_json, LAYER_HEIGHT_PROFILE, LayerHeightProfileSerialization::to_json(layer_height_profile));
@@ -1248,17 +1253,17 @@ void load_objects(
             result.add(RT::project_object_bad_id, std::to_string(id));
             continue;
         }
-        ModelObjectPtrs mos = it->second;
+        Domain::ModelObjectPtrs mos = it->second;
         assert(!mos.empty());
         if (mos.empty())
             continue;        
 
         for (ModelObject *mo_ptr: mos)
-            load_configuration(object_json, CONFIGURATION, mo_ptr->config, 
-                result, RT::project_object_configuration_issue, config_substitutions);
+            ;// TODO load_configuration(object_json, CONFIGURATION, mo_ptr->config, 
+             //   result, RT::project_object_configuration_issue, config_substitutions);
 
         ModelObject &mo = *mos.front(); // mos is not empty it is checked before
-        ModelObjectPtrs mos_(mos.begin() + 1, mos.end()); // without first model object
+        Domain::ModelObjectPtrs mos_(mos.begin() + 1, mos.end()); // without first model object
         if (auto ranges_json = object_json.find(RANGES);
             ranges_json != object_json.end()) {
             RangesSerialization::ranges_from_json(*ranges_json, mo.layer_config_ranges, result, config_substitutions);
@@ -1422,7 +1427,7 @@ PrusaFilesResult Slic3r::load_prusa_files(
 
 bool Slic3r::process_embossed_svg(
     mz_zip_archive &archive, const mz_zip_archive_file_stat &stat, 
-    Model &model, ResultLoad3mf& result) 
+    Slic3r::Domain::Model &model, ResultLoad3mf& result) 
 {
     std::shared_ptr<std::string> data = nullptr;
     std::string filename(stat.m_filename);

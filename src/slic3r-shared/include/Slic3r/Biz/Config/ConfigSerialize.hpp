@@ -9,6 +9,7 @@
 
 namespace Slic3r::Domain {
 void to_json(nlohmann::ordered_json& json_value, const Domain::BoxOrBoxesVector& box_or_boxes_vector);
+void to_json(nlohmann::ordered_json& json_value, const Domain::ConfigBox& box);
 }
 
 namespace Slic3r::Biz {

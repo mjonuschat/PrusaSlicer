@@ -15,7 +15,9 @@
 #include <boost/uuid/uuid_io.hpp> // to_string(uuid)
 #include <boost/uuid/uuid_generators.hpp> // generators
 
-#include "libslic3r/Model.hpp"
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Utils.hpp" // ScopeGuard
 
@@ -29,6 +31,14 @@
 namespace Slic3r {
     std::unique_ptr<const Slic3r::Persist3mfData> g_load_from_3mf;
 }
+
+using ModelObject = Slic3r::Domain::ModelObject;
+using ModelVolume = Slic3r::Domain::ModelVolume;
+using ModelInstance = Slic3r::Domain::ModelInstance;
+using Model = Slic3r::Domain::Model;
+using ModelVolumeType = Slic3r::Domain::ModelVolumeType;
+using ModelVolumePtrs = Slic3r::Domain::ModelVolumePtrs;
+using ModelInstancePtrs = Slic3r::Domain::ModelInstancePtrs;
 
 namespace {
 using namespace Slic3r;
@@ -127,7 +137,7 @@ bool can_be_instance(const Transform3d &tr1, const Transform3d &tr2)
     return true;
 }
 
-ModelMap add_build_instances(Slic3r::Model &model, const CT_Items &items) {
+ModelMap add_build_instances(Slic3r::Domain::Model &model, const CT_Items &items) {
     ModelMap model_map;
     model_map.instances = InstanceMap(items.size(), {nullptr});
     BuildMap& build_map = model_map.build;
@@ -206,7 +216,7 @@ using ObjectMap = std::unordered_map<Slic3r::PathId, ObjectCompose>;
 bool process_object_with_components(
     const CT_Object &object_3mf,
     ObjectMap &object_map, 
-    Slic3r::Model &temp_model,
+    Domain::Model &temp_model,
     const std::string * filepath = nullptr // set only when it is not root model
 ) {
     // object with mesh SHOULD NOT contain componnents
@@ -298,7 +308,7 @@ bool move_mesh(
     if (!object_3mf.mesh.its.empty()) {
         // Triangle mesh check validity in constructor
         Domain::TriangleMesh tm(std::move(object_3mf.mesh.its), std::move(Domain::TriangleMeshStats()));
-        ModelVolume *vol = temp_object.add_volume(std::move(tm));
+        ModelVolume *vol = Biz::Algorithms::ModelObject::add_volume(&temp_object, std::move(tm), Domain::ModelVolumeType::MODEL_PART);
         // copy name of volume
         vol->name = object_3mf.name;
 
@@ -320,7 +330,7 @@ bool move_mesh(
 /// <param name="object_map">Conversion from object_3mf to Slic3r::ModelObject</param>
 /// <param name="path">For root .model it is null otherwise it contains .model path</param>
 /// <returns>Indices of not moved objects - not core 3mf</returns>
-std::vector<size_t> move_objects(/*const*/ CT_Objects &objects_3mf, Slic3r::Model &temp_model, ObjectMap& object_map, const std::string* path=nullptr) {
+std::vector<size_t> move_objects(/*const*/ CT_Objects &objects_3mf, Domain::Model &temp_model, ObjectMap& object_map, const std::string* path=nullptr) {
     // keep meshes (all from one .model file) inside of temp_object's volumes
     ModelObject &temp_object = *temp_model.add_object();
 
@@ -397,7 +407,7 @@ VolumeMap fill_build_objects(const BuildMap &build_map, ObjectMap &object_map) {
     return volume_map;
 }
 
-void add_nonprintable_objects(Slic3r::Model &to, const ObjectMap &object_map) {
+void add_nonprintable_objects(Slic3r::Domain::Model &to, const ObjectMap &object_map) {
     for (const auto &[id, compose] : object_map) {
         if (!compose.is_top)
             continue; // geometry is already in model
@@ -422,8 +432,8 @@ void add_nonprintable_objects(Slic3r::Model &to, const ObjectMap &object_map) {
     }
 }
 
-bool check_pointer(const ModelMap &mm, const Slic3r::Model &m){
-    ModelObjectPtrs objects;
+bool check_pointer(const ModelMap &mm, const Slic3r::Domain::Model &m){
+    Domain::ModelObjectPtrs objects;
     for (const auto& [id, mos] : mm.build)
         objects.insert(objects.end(), mos.begin(), mos.end());
     std::vector<bool> founded_object(objects.size(), {false});
@@ -493,12 +503,12 @@ bool contain_producution_extension(const format_3MF::Model &model) { return !mod
 /// NOTE: from is not const because mesh(indexed_triangle_set) is moved out of it! </param>
 /// <param name="to">PrusaSlicer model</param>
 /// <returns>Object instances, Index corespond to item in build</returns>
-ModelMap move_model(/*const*/ LoadedModel &from, Slic3r::Model &to) {
+ModelMap move_model(/*const*/ LoadedModel &from, Slic3r::Domain::Model &to) {
     format_3MF::Model &from_root = *from.model;
     // Keep first object as collector for all volumes(3mf object with geometry - without components)
     // [from 0 to N useages of volumes]
     // Other obejcts represents object compose from componenets which must point to volumes
-    Slic3r::Model temp_model;
+    Slic3r::Domain::Model temp_model;
 
     // object map point into temporary model
     ObjectMap object_map;
@@ -528,7 +538,7 @@ ModelMap move_model(/*const*/ LoadedModel &from, Slic3r::Model &to) {
     return model_map;
 }
 
-void set_result(Slic3r::Model &model, std::string_view filepath_3mf, ResultLoad3mf &&result) {
+void set_result(Slic3r::Domain::Model &model, std::string_view filepath_3mf, ResultLoad3mf &&result) {
     Persist3mfData persist_data{FileIssues{ {std::string(filepath_3mf), std::move(result)} }};
     g_load_from_3mf = std::make_unique<const Persist3mfData>(std::move(persist_data));
 }
@@ -654,7 +664,7 @@ void fill_persist_uuid(
         if (is_duplicit_uuid(mesh_object_ptr->uuid))
             continue; // duplicit uuid
         persist.meshes_uuid.push_back(
-            MeshWithUUID{mv.get_mesh_shared_ptr(), mesh_object_ptr->uuid});
+            MeshWithUUID{mv.mesh_ptr(), mesh_object_ptr->uuid});
     }
 
     for (const ModelMetadata &meta : root_model.metadata)
@@ -667,7 +677,7 @@ void load_3mf(
     std::string_view filepath_3mf,
     DynamicPrintConfig &config,
     ConfigSubstitutionContext &config_substitutions,
-    Slic3r::Model &model
+    Slic3r::Domain::Model &model
 ) {
     // Function is not for add into an existing model
     assert(g_load_from_3mf == nullptr);
@@ -761,7 +771,7 @@ void load_3mf(
 /// </summary>
 /// <param name="model">Objects with uuid</param>
 /// <returns>True when model changed otherwise false</returns>
-bool regenerate_uuid(const Slic3r::Model &model){
+bool regenerate_uuid(const Slic3r::Domain::Model &model){
     // Generator of uuid
     std::set<UUID> generated_uuid; // for checking uniqueness
     auto is_uniqueu_uuid = [&generated_uuid](const UUID& uuid) {
@@ -800,9 +810,9 @@ bool regenerate_uuid(const Slic3r::Model &model){
 
                 // exist uuid for mesh?                
                 if (const MeshesWithUUID &mm = new_persist.meshes_uuid;
-                    find_by_ptr(mm, mv->get_mesh_shared_ptr()) != mm.cend()) 
+                    find_by_ptr(mm, mv->mesh_ptr()) != mm.cend()) 
                     continue;
-                new_persist.meshes_uuid.push_back(MeshWithUUID{mv->get_mesh_shared_ptr(), generate_uuid()});
+                new_persist.meshes_uuid.push_back(MeshWithUUID{mv->mesh_ptr(), generate_uuid()});
             }
             new_persist.objects_uuid.push_back(ObjectWithUUID{mo->id().id, generate_uuid(), std::move(components_uuid)});
             generate_items(new_persist.items_uuid, mo->instances);
@@ -818,7 +828,7 @@ bool regenerate_uuid(const Slic3r::Model &model){
     auto add_mesh = [generate_uuid, is_uniqueu_uuid, 
         &new_meshes_uuid = new_persist.meshes_uuid,
         &old_meshes_uuid = old_persist.meshes_uuid](const ModelVolume &mv) -> bool {
-        const std::shared_ptr<const Domain::TriangleMesh> &mesh_ptr = mv.get_mesh_shared_ptr();
+        const std::shared_ptr<const Domain::TriangleMesh> &mesh_ptr = mv.mesh_ptr();
         auto new_mesh_uuid_it = find_by_ptr(new_meshes_uuid, mesh_ptr);
         auto old_mesh_uuid_it = find_by_ptr(old_meshes_uuid, mesh_ptr);
         if (new_mesh_uuid_it == new_meshes_uuid.cend()) {
@@ -973,7 +983,7 @@ bool load_3mf(
     std::string_view filepath_3mf,
     DynamicPrintConfig &config,
     ConfigSubstitutionContext &config_substitutions,
-    Model &model,
+    Domain::Model &model,
     bool check_version) 
 {
     ::load_3mf(filepath_3mf, config, config_substitutions, model);    
