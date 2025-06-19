@@ -11,7 +11,6 @@
 
 using namespace Slic3r;
 using namespace Slic3r::App::Yoga;
-using Catch::Matchers::WithinRel;
 
 TEST_CASE("Item 1 child Item::add") {
     Item tree;
@@ -34,10 +33,12 @@ TEST_CASE("Item 1 child constructor parent") {
 TEST_CASE("Item 1 child Item::remove") {
     Item tree;
 
-    Item* child = tree.emplace_back<Item>();
+    Item* child_ptr{tree.emplace_back<Item>()};
 
-    tree.remove(child);
+    // Result needs to be captured otherwise the child is deallocated.
+    const std::unique_ptr<Item> child{tree.remove(child_ptr)};
 
-    REQUIRE(child->parent() == nullptr);
+    REQUIRE(child_ptr == child.get());
+    REQUIRE(child_ptr->parent() == nullptr);
     REQUIRE(tree.item_count() == 0);
 }
