@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/Config/ConfigJson.hpp" // IWYU pragma: keep
 #include "boost/algorithm/string.hpp"
 
+#include <algorithm>
 #include <set>
 
 static std::vector<std::string> to_strings(const std::vector<std::string_view>& strings)
@@ -148,62 +149,86 @@ std::string beautify_json(const Domain::BoxOrBoxesVector& box_or_boxes_vector, i
 
 
 
+// Recursive helper to traverse the JSON and collect keys.
+static void find_keys_with_many_children_recursive(const nlohmann::ordered_json& j, int min_children, int level, std::vector<std::pair<std::string, int>>& result) {
+    if (j.is_object()) {
+        for (const auto& item : j.items()) {
+            const std::string& key = item.key();
+            const nlohmann::ordered_json& value = item.value();
+            if (value.size() >= min_children)
+                result.emplace_back(key, level);
+            else
+                find_keys_with_many_children_recursive(value, min_children, level + 1, result);
+        }
+    }
+    if (j.is_array()) {
+        for (const auto& el : j)
+            find_keys_with_many_children_recursive(el, min_children, level + 1, result);
+    }
+}
+
+
+
 std::string beautify_json(
     const nlohmann::ordered_json& complete_json,
-    int indent)
+    int indent, int squash_factor)
 {
+    std::vector<std::pair<std::string, int>> keys_with_many_children_and_level;
+    find_keys_with_many_children_recursive(complete_json, squash_factor, 1, keys_with_many_children_and_level);
+
     std::string str = complete_json.dump(indent);
-
-    std::set<std::string> box_names;
-    for (const auto& [key, _] : complete_json.items()) {
-        box_names.insert(key);
-    }
-
-    // Now a little minification to make the result a bit more readable.
-    // Only removes newlines and leading spaces, so the meaning stays the same.
     auto count_indent = [](const std::string& s) -> int { int i=0; while (s[i] == ' ') ++i; return i; };
     std::vector<std::string> lines;
     boost::split(lines, str, boost::is_any_of("\n"));
     for (auto& line : lines)
         line += '\n';
-    std::string tmp;
-    for (const std::string& box_name : box_names) {
-        std::string line_start = std::string("\"") + box_name;
-        for (size_t line_id=0; line_id<lines.size(); ++line_id) {
-            if (lines[line_id].find(line_start) == indent) {
-                int box_indent = count_indent(lines[line_id]);
-                size_t i = line_id + 1;
-                while (true) {
-                    int ind = count_indent(lines[i]);
-                    if (ind <= box_indent)
-                        break;
-                    if (ind > box_indent + indent || (ind == box_indent + indent && lines[i][ind] != '\"')) {
-                        boost::trim_left(lines[i]);
+    std::string start;
+    
+    for (size_t line_id=0; line_id<lines.size(); ++line_id) {
+        start = lines[line_id];
+        boost::trim_left(start);
+        if (! start.empty() && start.front() == '\"')
+            start.erase(start.begin());
+        auto it = std::find_if(keys_with_many_children_and_level.begin(), keys_with_many_children_and_level.end(),
+            [&start](const std::pair<std::string, int> p) {
+                return boost::starts_with(start, p.first);
+        });
+        if (it == keys_with_many_children_and_level.end())
+            continue;
+        std::string line_start = "\"" + it->first;
+        int box_indent_level = it->second;
+
+        if (lines[line_id].find(line_start) == box_indent_level * indent) {
+            int box_indent = box_indent_level * indent;
+            size_t i = line_id + 1;
+            while (true) {
+                int ind = count_indent(lines[i]);
+                if (ind <= box_indent) {
+                    if (std::string s = boost::trim_left_copy(lines[i]); boost::starts_with(s, "]")) {
+                        // Ensure that squashed arrays have terminating ] at the same line.
                         ASSERT(lines[i-1].back() == '\n');
                         lines[i-1].pop_back();
+                        lines[i-1] += s;
+                        lines.erase(lines.begin() + i);
                     }
-                    ++i;
+                    line_id = i-1;
+                    break;
                 }
+                if (ind > box_indent + indent || (ind == box_indent + indent && lines[i][ind] != '\"')) {
+                    // Only removes newlines and leading spaces, so the meaning stays the same.
+                    boost::trim_left(lines[i]);
+                    ASSERT(lines[i-1].back() == '\n');
+                    lines[i-1].pop_back();
+                    if (!lines[i - 1].empty() && lines[i - 1].back() == ',')
+                        lines[i - 1].push_back(' ');
+                }
+                ++i;
             }
         }
     }
 
-    ASSERT(!lines.empty());
-    std::vector<std::string> aggregated_lines{lines.front()};
-    for (std::size_t i{1}; i < lines.size(); ++i) {
-        const std::string& previous_line{lines[i-1]};
-        const std::string& line{lines[i]};
-        if (previous_line.back() == ',') {
-            aggregated_lines.back() += " " + line;
-        } else if (previous_line.back() != '\n') {
-            aggregated_lines.back() += line;
-        } else {
-            aggregated_lines.push_back(line);
-        }
-    }
-
     str = {};
-    for (const std::string& line : aggregated_lines) {
+    for (const std::string& line : lines) {
         str += line;
     }
 

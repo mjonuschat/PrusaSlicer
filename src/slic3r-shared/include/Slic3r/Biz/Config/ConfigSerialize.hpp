@@ -18,7 +18,7 @@ namespace Slic3r::Biz {
 std::variant<std::string, std::vector<std::string>> serialize_to_string(const Domain::ConfigItem& item);
 
 // Serialize given json into a single pretty string.
-std::string beautify_json(const nlohmann::ordered_json& input, int indent);
+std::string beautify_json(const nlohmann::ordered_json& input, int indent, int squash_factor = 10);
 std::string beautify_json(const Domain::BoxOrBoxesVector& box_or_boxes_vector, int indent);
 
 } // namespace Slic3r::Biz

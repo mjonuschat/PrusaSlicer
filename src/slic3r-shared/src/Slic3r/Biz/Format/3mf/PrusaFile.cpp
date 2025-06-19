@@ -45,8 +45,8 @@ void write_file(mz_zip_archive &archive, const json &data, const char *filepath)
     if (data.empty())
         return; // Do not store empty files
 
-    int indention = 2; // two spaces indetion
-    std::string data_str = data.dump(indention);
+    int indentation = 2; // two spaces indentation
+    std::string data_str = Biz::beautify_json(data, indentation);
     if (!mz_zip_writer_add_mem(&archive, filepath, 
         (const void *) data_str.data(), data_str.length(), MZ_DEFAULT_COMPRESSION))
         throw boost::filesystem::filesystem_error( std::string() +
