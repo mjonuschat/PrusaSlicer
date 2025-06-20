@@ -21,6 +21,7 @@ enum class FileDialogType
 class IDialogManager {
 public:
     using FileCallback = std::function<void(bool result, const boost::filesystem::path& file_path)>;
+    using YesNoCallback = std::function<void(bool answer)>;
 
     IDialogManager() = default;
     virtual ~IDialogManager() = default;
@@ -35,6 +36,7 @@ public:
     ) = 0;
 
     virtual void show_webview_dialog(std::unique_ptr<Browser::AbstractBrowserLogic>&& logic, Slic3r::Biz::ProjectInteractor* project_interactor) = 0;
+    virtual void show_yesno_dialog(const std::string& title, const std::string& text, const YesNoCallback& callback) = 0;
 };
 
 /**

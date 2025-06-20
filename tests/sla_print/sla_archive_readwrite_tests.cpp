@@ -51,8 +51,8 @@ TEST_CASE("Archive export test", "[sla_archives]") {
         print.set_status_callback([](const PrintBase::SlicingStatus&) {});
 
         const Biz::Print::SerializedConfig serialized_config{
-            .json = Biz::serialize(Domain::as_boxes(cfg), 2, false),
-            .ini = Biz::serialize_as_legacy_config(cfg, false)
+            .json = Biz::beautify_json(Domain::as_boxes(cfg), 2),
+            .ini = Biz::serialize_as_legacy_config(cfg)
         };
         print.apply(m, cfg, serialized_config);
         print.process();

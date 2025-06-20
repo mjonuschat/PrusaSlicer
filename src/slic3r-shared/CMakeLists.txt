@@ -503,12 +503,26 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/Config/ConfigLoad.hpp
         src/Slic3r/Biz/Config/ConfigLoad.cpp
-
-        include/Slic3r/Biz/Config/ConfigJson.hpp
+        src/Slic3r/Biz/Config/ConfigJson.hpp
         src/Slic3r/Biz/Config/ConfigJson.cpp
 
-        include/Slic3r/Biz/Config/HwConfigJson.hpp
+        src/Slic3r/Biz/Config/HwConfigJson.hpp
         src/Slic3r/Biz/Config/HwConfigJson.cpp
+        include/Slic3r/Biz/Format/3mf.hpp
+        include/Slic3r/Biz/Format/Metadata.hpp
+        include/Slic3r/Biz/Format/ResultLoad3mf.hpp
+        src/Slic3r/Biz/Format/3mf.cpp
+        #src/Slic3r/Biz/Format/3mf/BuildTicket.cpp
+        #src/Slic3r/Biz/Format/3mf/BuildTicket.hpp
+        src/Slic3r/Biz/Format/3mf/Metadata.cpp
+        src/Slic3r/Biz/Format/3mf/Model3mf.cpp
+        src/Slic3r/Biz/Format/3mf/Model3mf.hpp
+        src/Slic3r/Biz/Format/3mf/ModelMap.hpp
+        src/Slic3r/Biz/Format/3mf/PrusaFile.cpp
+        src/Slic3r/Biz/Format/3mf/PrusaFile.hpp
+        src/Slic3r/Biz/Format/3mf/Relations.cpp
+        src/Slic3r/Biz/Format/3mf/Relations.hpp
+        src/Slic3r/Biz/Format/3mf/ResultLoad3mf.cpp
 )
 
 if (WIN32)
@@ -545,6 +559,7 @@ find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(yoga CONFIG REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
 find_package(EXPAT CONFIG REQUIRED)
+find_package(pugixml CONFIG REQUIRED)
 
 
 if ("${SLIC3R_YAML}" STREQUAL "libfyaml")
@@ -572,7 +587,7 @@ endif ()
 
 find_package(magic_enum REQUIRED)
 
-slic3r_remap_configs("yoga::yogacore;${YAML_LIB}" RelWithDebInfo Release)
+slic3r_remap_configs("pugixml::static;yoga::yogacore;${YAML_LIB}" RelWithDebInfo Release)
 
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
 target_link_libraries(slic3r-shared PUBLIC
@@ -592,6 +607,7 @@ target_link_libraries(slic3r-shared PUBLIC
         expat::expat
         TBB::tbb
         TBB::tbbmalloc
+        pugixml::pugixml
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)

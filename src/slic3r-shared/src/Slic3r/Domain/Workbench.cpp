@@ -19,11 +19,4 @@ void Workbench::load_legacy_configs()
     m_preset_bundle_legacy->load_presets(*m_app_config, ForwardCompatibilitySubstitutionRule::EnableSystemSilent);
 }
 
-void Workbench::load_project(const std::string& file_path)
-{
-    Project project;
-    project.load(file_path);
-    m_projects.emplace(m_project_id_generator.next_id(), std::move(project));
-}
-
 }

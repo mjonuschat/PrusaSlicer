@@ -271,7 +271,7 @@ TEST_CASE("Regression test for issue #4486 - files take forever to slice") {
     config.set("nozzle_diameter", 500);
 
     Slic3r::Print print;
-    Slic3r::Model model;
+    Slic3r::Domain::Model model;
     Slic3r::Test::init_print({mesh}, print, model, config);
 
     print.status_cb = [] (int ln, const std::string& msg) { Slic3r::Log::info("Print") << ln << " " << msg << "\n";};
@@ -298,7 +298,7 @@ TEST_CASE("Profile test for issue #4486 - files take forever to slice") {
     config.set("fill_density", "5%");
 
     Slic3r::Print print;
-    Slic3r::Model model;
+    Slic3r::Domain::Model model;
     Slic3r::Test::init_print({mesh}, print, model, config);
 
     print.status_cb = [] (int ln, const std::string& msg) { Slic3r::Log::info("Print") << ln << " " << msg << "\n";};

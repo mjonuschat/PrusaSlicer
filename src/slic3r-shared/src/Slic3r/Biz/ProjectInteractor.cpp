@@ -10,6 +10,8 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
 
+#include "Slic3r/Biz/Format/3mf.hpp"
+
 namespace Slic3r::Biz {
 Domain::SelectionId ProjectInteractor::new_project()
 {
@@ -23,11 +25,15 @@ Domain::SelectionId ProjectInteractor::new_project()
 Domain::SelectionId ProjectInteractor::load_project(const std::string& file_path)
 {
     Domain::Project project;
-    //initialize_new_project_before_inserting(project);
     project.load(file_path);
     Domain::SelectionId project_id = add_project(std::move(project));
 
     return project_id;
+}
+
+void ProjectInteractor::save_project(const std::string& file_path)
+{
+    store_3mf(file_path, this->selected_project());
 }
 
 void ProjectInteractor::initialize_new_project_before_inserting(Domain::Project& p)

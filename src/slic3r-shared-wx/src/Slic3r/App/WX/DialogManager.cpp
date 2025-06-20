@@ -5,6 +5,7 @@
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
+#include <wx/msgdlg.h>
 #include <wx/filedlg.h>
 #include <wx/string.h>
 
@@ -55,6 +56,15 @@ void DialogManager::show_webview_dialog(std::unique_ptr<App::Browser::AbstractBr
     project_interactor->user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(&dlg);
     dlg.ShowModal();
     project_interactor->user_account_interactor().remove_listener<Biz::UserAccount::IUserAccountListener>(&dlg);
+}
+
+void DialogManager::show_yesno_dialog(const std::string& title, const std::string& text, const YesNoCallback& callback)
+{
+    wxMessageDialog dlg(nullptr, from_u8(text), from_u8(title), wxYES_NO);
+    if (dlg.ShowModal() == wxID_YES)
+        callback(true);
+    else
+        callback(false);
 }
 
 }

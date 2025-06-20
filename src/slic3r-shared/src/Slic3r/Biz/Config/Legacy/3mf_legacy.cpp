@@ -3811,9 +3811,9 @@ namespace Slic3rLegacy {
 
         std::string opts;
         if (config.index() == 0)
-            opts += Slic3r::Biz::serialize_as_legacy_config(std::get<ConfigPackFDM>(config), true);
+            opts += std::string("; ") + boost::replace_all_copy(Slic3r::Biz::serialize_as_legacy_config(std::get<ConfigPackFDM>(config)), "\n", "\n; ") + "\n";
         else
-            opts += Slic3r::Biz::serialize_as_legacy_config(std::get<ConfigPackSLA>(config), true);
+            opts += std::string("; ") + boost::replace_all_copy(Slic3r::Biz::serialize_as_legacy_config(std::get<ConfigPackSLA>(config)), "\n", "\n; ") + "\n";
 
         // Wipe tower values were historically stored in the config, but they were moved into
         // Model in PS 2.9.0. Keep saving the old values to maintain forward compatibility.

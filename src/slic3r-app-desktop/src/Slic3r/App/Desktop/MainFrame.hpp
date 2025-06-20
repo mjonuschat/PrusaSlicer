@@ -64,8 +64,6 @@ private:
 
     void on_close(wxCloseEvent& event);
 
-    void load_project();
-
 private:
     Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;

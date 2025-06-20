@@ -1,0 +1,1076 @@
+#include "Slic3r/Biz/Format/3mf.hpp"
+
+#include <memory>
+#include <set>
+
+#include <boost/algorithm/string/predicate.hpp> // iends_with
+#include <boost/filesystem.hpp> // storing exception
+#include "libslic3r/miniz_extension.hpp" // mini zip archivator
+#include "3mf/Relations.hpp"
+#include "3mf/Model3mf.hpp"
+//#include "3mf/BuildTicket.hpp"
+#include "3mf/ModelMap.hpp"
+#include "3mf/PrusaFile.hpp"
+
+#include <boost/uuid/uuid_io.hpp> // to_string(uuid)
+#include <boost/uuid/uuid_generators.hpp> // generators
+
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "libslic3r/GCode/ThumbnailData.hpp"
+#include "libslic3r/Utils.hpp" // ScopeGuard
+
+#ifdef WIN32
+// Boost need to link bcrypt on windows platform
+#pragma comment(lib, "bcrypt.lib") // needed to generate random UUID
+#endif
+
+namespace Slic3r {
+    std::unique_ptr<const Slic3r::Persist3mfData> g_load_from_3mf;
+}
+
+using ModelObject = Slic3r::Domain::ModelObject;
+using ModelVolume = Slic3r::Domain::ModelVolume;
+using ModelInstance = Slic3r::Domain::ModelInstance;
+using Model = Slic3r::Domain::Model;
+using ModelVolumeType = Slic3r::Domain::ModelVolumeType;
+using ModelVolumePtrs = Slic3r::Domain::ModelVolumePtrs;
+using ModelInstancePtrs = Slic3r::Domain::ModelInstancePtrs;
+
+namespace {
+using namespace Slic3r;
+using namespace format_3MF;
+
+// Files in 3mf
+const std::string RELATIONSHIPS_FILE = "_rels/.rels";
+const char * CONTENT_TYPES_FILE = "[Content_Types].xml";
+const std::string THUMBNAIL_FILE = "Metadata/thumbnail.png";
+// name is choosen for back compatibility(Cura + PS)
+const std::string MODEL_FILE = "3D/3dmodel.model";
+const std::string BUILD_TICKET_FILE = "3D/Metadata/BuildTicket.mbt"; // for NX import
+// NOTE: 3mf with build ticket contain also file "3D\_rels\3dmodel.model.rels" where is path to .mbt
+// File looks constant and for now it is not processed
+
+// Keep data from [Content_Types].xml file
+// Knows Stored File Types
+// OPC defined file
+struct ContentTypes {
+    bool contain_svg = false;
+};
+
+void store_content_type(mz_zip_archive &archive, const ContentTypes &ct) {
+    std::stringstream stream;
+    stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    stream << "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\n";
+    stream << " <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n";
+    stream << " <Default Extension=\"model\" ContentType=\"application/vnd.ms-package.3dmanufacturing-3dmodel+xml\"/>\n";
+    stream << " <Default Extension=\"png\" ContentType=\"image/png\"/>\n";    
+    // add description for project file
+    stream << " <Default Extension=\"json\" ContentType=\"application/json\"/>\n";
+    // stream << " <Default Extension=\"gcode\" ContentType=\"text/x.gcode\"/>\n";
+    if (ct.contain_svg)
+        stream << " <Default Extension=\"svg\" ContentType=\"image/svg+xml\"/>\n";
+    stream << "</Types>";
+    std::string out = stream.str();
+
+    if (!mz_zip_writer_add_mem(&archive, CONTENT_TYPES_FILE, (const void *) out.data(), out.length(), MZ_DEFAULT_COMPRESSION))
+        throw boost::filesystem::filesystem_error("Unable to add content types to archive.", {});
+}
+
+void store_thumbnail(mz_zip_archive &archive, const ThumbnailData &thumbnail, const char *filepath) {
+    size_t png_size = 0;
+    void* png_data = tdefl_write_image_to_png_file_in_memory_ex((const void*)thumbnail.pixels.data(), thumbnail.width, thumbnail.height, 4, &png_size, MZ_DEFAULT_LEVEL, 1);
+    if (png_data == nullptr)
+        throw boost::filesystem::filesystem_error("Can't create PNG data for store thumbnail to archive.", {});
+    ScopeGuard sg_png_data([png_data]() { mz_free(png_data); });
+
+    if(!mz_zip_writer_add_mem(&archive, filepath, (const void*)png_data, png_size, MZ_DEFAULT_COMPRESSION))
+        throw boost::filesystem::filesystem_error("Can't add PNG data to archive.", {});
+}
+
+///////////////////////////////////////////////
+///// READER ////////////////////////
+
+/// <summary>
+/// Check that transformation is valid for instances. 
+/// It means that transformation is only rotation around z axis with translation.
+/// Instances are used for speed up slicing(result gcode is for each instance the same)
+/// </summary>
+/// <param name="tr1">First transformation</param>
+/// <param name="tr2">Second transformation</param>
+/// <returns>True for instance transformation otherwise false</returns>
+bool can_be_instance(const Transform3d &tr1, const Transform3d &tr2)
+{
+    // check there is same z offset
+    if (!is_approx(tr1.translation()[2], tr2.translation()[2]))
+        return false;
+
+    // transformation between without offset
+    Matrix3d between = tr1.linear() * tr2.linear().inverse();
+        
+    // only rotation around z axis is allowed
+    //  _____________________
+    // |  cos  | -sin  |  0  | col(0) -> norm = 1
+    // |  sin  |  cos  |  0  | col(1) -> norm = 1
+    // |   0   |   0   |  1  | col(2) -> norm = 1
+    //  ---------------------
+    if (!is_approx(between.coeffRef(0, 2), 0.) ||
+        !is_approx(between.coeffRef(1, 2), 0.) ||
+        !is_approx(between.coeffRef(2, 2), 1.) ||
+        !is_approx(between.coeffRef(2, 1), 0.) ||
+        !is_approx(between.coeffRef(2, 0), 0.) ||
+        !is_approx(between.coeffRef(0, 0), between.coeffRef(1, 1)) || // cos
+        !is_approx(between.coeffRef(1, 0),-between.coeffRef(0, 1)) || // sin
+        !is_approx(between.col(0).norm(), 1.) || // no scale
+        !is_approx(between.col(1).norm(), 1.))
+        return false;
+
+    // check that there is NOT scale between
+    assert(is_approx(between.col(2).norm(), 1.));
+
+    // Found similar implementation - check that it is also positive
+    assert(Slic3r::Biz::Algorithms::Geometry::trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(tr1, tr2));
+    
+    return true;
+}
+
+ModelMap add_build_instances(Slic3r::Domain::Model &model, const CT_Items &items) {
+    ModelMap model_map;
+    model_map.instances = InstanceMap(items.size(), {nullptr});
+    BuildMap& build_map = model_map.build;
+    for (const CT_Item &item : items) {
+        // By 3mf spec obejct_id start from value 1 and increase
+        assert(item.object_id != 0);
+        if (item.object_id == 0)
+            // issue(model_item_require_objectid_attr) is added during read
+            continue; 
+
+        PathId path_id{item.object_id};
+        if (!item.path.empty())
+            // Addresing to another file!
+            path_id.path = item.path; // copy
+
+        ModelObject *model_object = nullptr;
+        auto it = build_map.find(path_id);
+        if (it != build_map.end()) {
+            // same object_id in build could be interpreted as instance
+            // it depends on transformation matrices
+            for (ModelObject * mo : it->second) {
+                const Transform3d& mi_tr = mo->instances.front()->get_matrix();
+                if (can_be_instance(mi_tr, item.transform)){
+                    model_object = mo;
+                    break;
+                }
+            }
+        }
+        // object_id is not in build_map yet 
+        // OR transformation is not compatible to instance 
+        if (model_object == nullptr) { // add new object()
+            model_object = model.add_object();
+            if (it == build_map.end()) {
+                build_map[path_id] = {model_object};
+            } else {
+                it->second.push_back(model_object);
+            }
+        }
+
+        // IMPROVE: keep part number in more reasonable shape
+        // Concatenate name with part number
+        if (!item.part_number.empty()) {
+            if (model_object->name.empty())
+                model_object->name = item.part_number;
+            else
+                model_object->name += "+" + item.part_number;
+        }
+
+        ModelInstance *instance_ptr = model_object->add_instance();
+        instance_ptr->set_transformation(Domain::Transformation(item.transform));
+        model_map.instances[&item - &items.front()] = instance_ptr;
+    }
+    return model_map;
+}
+
+struct ObjectCompose{
+    // for object with mesh
+    // volumes are stored in temp_model.objects.front()
+    const ModelVolume *volume = nullptr;
+    // for object with components
+    // objects are stored in temp_model.objects
+    const ModelObject *object = nullptr;
+
+    // Trace in tree of Object dependecy for volume -> first id is mesh id(object without component)
+    using ObjectTrace = std::vector<PathId>;
+    // same size and order as object::volumes 
+    // keep track tree of .model objectId
+    using ObjectTraces = std::vector<ObjectTrace>;
+    ObjectTraces volume_traces;
+
+    // flag that this is root of object tree(defined by componnents)
+    bool is_top = true;
+};
+
+using ObjectMap = std::unordered_map<Slic3r::PathId, ObjectCompose>;
+bool process_object_with_components(
+    const CT_Object &object_3mf,
+    ObjectMap &object_map, 
+    Domain::Model &temp_model,
+    const std::string * filepath = nullptr // set only when it is not root model
+) {
+    // object with mesh SHOULD NOT contain componnents
+    assert(object_3mf.mesh.its.empty());
+
+    // process Object with componnents
+    assert(!object_3mf.components.empty());
+    if (object_3mf.components.empty())
+        return true;
+
+    PathId path_id{object_3mf.id};
+    if (filepath != nullptr)
+        path_id.path = *filepath;
+
+    // current object can't be in object map yet
+    assert(object_map.find(path_id) == object_map.end());
+    ModelObject* mo = temp_model.add_object();
+    mo->name = object_3mf.name;
+    
+    // helper for source id from 3mf model
+    ObjectCompose::ObjectTraces volume_traces;
+    for (const CT_Component &component : object_3mf.components) {
+        assert(component.object_id != 0);
+        if (component.object_id == 0)
+            continue; // issue(model_component_require_objectid_attr) is added during read
+        
+        // identification of object
+        PathId path_id_c{component.object_id};
+        if (!component.path.empty())
+            path_id_c.path = component.path;
+
+        ObjectMap::iterator it_object = object_map.find(path_id_c);
+        if (it_object == object_map.end()) {
+            // unfinishabled object now
+            temp_model.delete_object(mo);
+            return false;
+        }
+
+        ObjectCompose &compose = it_object->second;
+        compose.is_top = false; // exist addresing
+        if (compose.volume != nullptr) {
+            // component is mesh
+            ModelVolume *mv = mo->add_volume(*compose.volume);
+            volume_traces.push_back({path_id_c});
+            if (mv->type() != ModelVolumeType::MODEL_PART)
+                mv->set_type(ModelVolumeType::MODEL_PART);
+            mv->set_transformation(component.transform);
+            continue;
+        }
+
+        // transform volumes to current object
+        const ModelVolumePtrs component_volumes = compose.object->volumes;
+        for (size_t vi = 0; vi < component_volumes.size(); vi++) {
+            const ModelVolume *component_volume = component_volumes[vi];        
+            ModelVolume *mv = mo->add_volume(*component_volume); // push back
+            // transform by current transformation
+            mv->set_transformation(component_volume->get_matrix() * component.transform);
+            if (!compose.object->name.empty())
+                mv->name = mv->name.empty() ? compose.object->name :
+                                              (compose.object->name + " | " + mv->name);
+
+            // trace source object id path for volume
+            ObjectCompose::ObjectTrace volume_trace = compose.volume_traces[vi]; // copy
+            volume_trace.push_back(path_id_c); // extend with current id
+            volume_traces.push_back(volume_trace);
+        }
+    }
+
+    object_map[path_id] = ObjectCompose{nullptr, mo, volume_traces};
+    return true;
+}
+
+// Return true when processed otherwise false
+bool move_mesh(
+    CT_Object &object_3mf,
+    ModelObject &temp_object,
+    ObjectMap &object_map,
+    const std::string *path
+) {
+    // By 3mf core spec CT_Object should contain mesh OR components
+    assert(object_3mf.mesh.its.empty() != object_3mf.components.empty());
+    if (object_3mf.mesh.its.empty() && object_3mf.components.empty())
+        return true; // Can't be both empty
+
+    if (object_3mf.id == 0)
+        return true; // issue(model_object_require_id_attr) is added during read
+    
+    // is Object with mesh?
+    if (!object_3mf.mesh.its.empty()) {
+        // Triangle mesh check validity in constructor
+        Domain::TriangleMesh tm(std::move(object_3mf.mesh.its), std::move(Domain::TriangleMeshStats()));
+        ModelVolume *vol = Biz::Algorithms::ModelObject::add_volume(&temp_object, std::move(tm), Domain::ModelVolumeType::MODEL_PART);
+        // copy name of volume
+        vol->name = object_3mf.name;
+
+        PathId path_id{object_3mf.id, path? *path : std::string()};
+        // object id should be unique and not rewrite data in map
+        assert(object_map.find(path_id) == object_map.end());
+        object_map[path_id] = ObjectCompose{vol};
+        return true;
+    }
+    return false;
+}
+
+/// <summary>
+/// Move objects triangles from objects_3mf into temp_model
+/// NOTE: objects_3mf is not const because mesh(indexed_triangle_set) is moved into temp_model!
+/// </summary>
+/// <param name="objects_3mf">Source object</param>
+/// <param name="temp_model">Temporary storage for object</param>
+/// <param name="object_map">Conversion from object_3mf to Slic3r::ModelObject</param>
+/// <param name="path">For root .model it is null otherwise it contains .model path</param>
+/// <returns>Indices of not moved objects - not core 3mf</returns>
+std::vector<size_t> move_objects(/*const*/ CT_Objects &objects_3mf, Domain::Model &temp_model, ObjectMap& object_map, const std::string* path=nullptr) {
+    // keep meshes (all from one .model file) inside of temp_object's volumes
+    ModelObject &temp_object = *temp_model.add_object();
+
+    // In case that component is defined before mesh, 
+    // index of CT_Object will be stored to queue to process later.
+    // indices into resource.objects on unproccessabled objects
+    // 3mf Core specification disallowe it!
+    std::vector<size_t> queue_objects;
+
+    for (CT_Object &object_3mf : objects_3mf) {
+        // contain Object mesh?
+        if (move_mesh(object_3mf, temp_object, object_map, path))
+            continue;
+
+        // contain Object componnets?
+        if (!process_object_with_components(object_3mf, object_map, temp_model, path)) {
+            // component with unknown object yet - set to process next loop
+            queue_objects.push_back(&object_3mf - &objects_3mf.front());
+        }
+    }
+    return queue_objects;
+}
+
+void add_unique(VolumeMap &volume_map, const PathId& path_id, ModelVolume *mv) {
+    auto it = volume_map.find(path_id);
+    if (it == volume_map.end()) {
+        // first initial insert
+        volume_map.emplace(path_id, ModelVolumePtrs{mv});
+        return;
+    }
+    ModelVolumePtrs &ptrs = it->second;
+    auto bound = std::upper_bound(ptrs.begin(), ptrs.end(), mv);
+    if (*bound == mv)
+        return; // second insertation
+    // sorted insert
+    ptrs.insert(bound, mv);
+}
+
+VolumeMap fill_build_objects(const BuildMap &build_map, ObjectMap &object_map) {
+    VolumeMap volume_map;
+    for (const auto& [path_id, objects]: build_map){
+        auto it = object_map.find(path_id);
+        if (it == object_map.end())
+            continue; // issue(model_item_unknown_objectid) is set during read
+
+        ObjectCompose &compose = it->second;
+        // flag used object 
+        compose.is_top = false;
+
+        for (ModelObject* object: objects){
+            if (compose.volume != nullptr) { 
+                // direct geometry
+                ModelVolume *mv = object->add_volume(*compose.volume);
+                add_unique(volume_map, path_id, mv);
+                object->name = compose.volume->name;
+                continue;
+            }
+            // compose MUST have volume OR object
+            assert(compose.object != nullptr);
+            if (compose.object == nullptr)
+                continue;
+
+            object->name = compose.object->name;
+            ModelVolumePtrs volumes = compose.object->volumes;
+            // copy volumes
+            for (size_t vi = 0; vi < volumes.size(); vi++) {
+                ModelVolume *mv = object->add_volume(*volumes[vi]);                
+                // whole path will know ModelVolume pointer
+                for (const PathId& source_path_id: compose.volume_traces[vi])
+                    add_unique(volume_map, source_path_id, mv);
+            }
+        }
+    }
+    return volume_map;
+}
+
+void add_nonprintable_objects(Slic3r::Domain::Model &to, const ObjectMap &object_map) {
+    for (const auto &[id, compose] : object_map) {
+        if (!compose.is_top)
+            continue; // geometry is already in model
+
+        if (compose.volume != nullptr) {
+            // direct geometry
+            ModelObject *mo = to.add_object();
+            ModelInstance *mi = mo->add_instance();
+            mi->printable = false;
+            mo->add_volume(*compose.volume);
+            continue;
+        }
+
+        // compose MUST have volume OR object
+        assert(compose.object != nullptr);
+        if (compose.object == nullptr)
+            continue;
+        
+        ModelObject *mo = to.add_object(*compose.object);
+        ModelInstance *mi = mo->add_instance();
+        mi->printable = false;
+    }
+}
+
+bool check_pointer(const ModelMap &mm, const Slic3r::Domain::Model &m){
+    Domain::ModelObjectPtrs objects;
+    for (const auto& [id, mos] : mm.build)
+        objects.insert(objects.end(), mos.begin(), mos.end());
+    std::vector<bool> founded_object(objects.size(), {false});
+
+    ModelVolumePtrs volumes;
+    for (const auto &[id,mvs] : mm.volumes)
+        volumes.insert(volumes.end(), mvs.begin(), mvs.end());
+    std::vector<bool> founded_volume(volumes.size(), {false});
+       
+    auto found_object = [&](const ModelObject *mo) {
+        for (size_t i = 0; i < objects.size(); i++)
+            if (mo == objects[i]) {
+                founded_object[i] = true;
+                return true;
+            }
+        return false;
+    };
+
+    auto found_volume = [&](const ModelVolume *mv) {
+        for (size_t i = 0; i < volumes.size(); i++)
+            if (mv == volumes[i]) {
+                founded_volume[i] = true;
+                return true;
+            }
+        return false;
+    };
+
+    auto found_instance = [&](const ModelInstance *mi) {
+        for (const auto & mi_: mm.instances)
+            if (mi_ == mi)
+                return true;
+        return false;
+    };
+
+    for (const ModelObject *mo : m.objects) {
+        if (!found_object(mo)) {
+            // object is not in model objects map
+            assert(false);
+            return false;
+        }
+
+        for (const ModelVolume *mv : mo->volumes) {
+            if (!found_volume(mv)) {
+                // volume is not in volumes map
+                assert(false);
+                return false;
+            }
+        }
+
+        for (const ModelInstance *mi : mo->instances) {
+            if (!found_instance(mi)) {
+                // instance is not in map
+                assert(false);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool contain_producution_extension(const format_3MF::Model &model) { return !model.prod_ns.empty(); }
+
+/// <summary>
+/// Move geometry from 3mf format model into PrusaSlicer Model data type
+/// </summary>
+/// <param name="from">Model loaded from 3mf, 
+/// NOTE: from is not const because mesh(indexed_triangle_set) is moved out of it! </param>
+/// <param name="to">PrusaSlicer model</param>
+/// <returns>Object instances, Index corespond to item in build</returns>
+ModelMap move_model(/*const*/ LoadedModel &from, Slic3r::Domain::Model &to) {
+    format_3MF::Model &from_root = *from.model;
+    // Keep first object as collector for all volumes(3mf object with geometry - without components)
+    // [from 0 to N useages of volumes]
+    // Other obejcts represents object compose from componenets which must point to volumes
+    Slic3r::Domain::Model temp_model;
+
+    // object map point into temporary model
+    ObjectMap object_map;
+    if (contain_producution_extension(from_root)) {
+        // fill objects from submodels into object_map
+        for (auto &[path, sub_model] : from.sub_models) {
+            std::vector<size_t> not_processed_objects =
+                move_objects(sub_model.resource.objects, temp_model, object_map, &path);
+            if (!not_processed_objects.empty())
+                from.add(Read3mfIssueType::model_object_contain_unknown_componenet, path);
+        }
+    }
+    std::vector<size_t> not_processed_objects = 
+        move_objects(from_root.resource.objects, temp_model, object_map);
+    if (!not_processed_objects.empty())
+        from.add(Read3mfIssueType::model_object_contain_unknown_componenet);
+        
+    // fill build and instances
+    ModelMap model_map = add_build_instances(to, from_root.build.items);
+
+    // fill build objects by object_map from temp_model
+    model_map.volumes = fill_build_objects(model_map.build, object_map);
+
+    // Add top most 3mf::object not referenced in build as invisible object into Slic3r::model
+    add_nonprintable_objects(to, object_map);
+    assert(check_pointer(model_map, to));
+    return model_map;
+}
+
+void set_result(Slic3r::Domain::Model &model, std::string_view filepath_3mf, ResultLoad3mf &&result) {
+    Persist3mfData persist_data{FileIssues{ {std::string(filepath_3mf), std::move(result)} }};
+    g_load_from_3mf = std::make_unique<const Persist3mfData>(std::move(persist_data));
+}
+
+const CT_Object * get_object(const PathId &path_id, const LoadedModel &loaded_model) {
+    const format_3MF::Model *model_3mf_ptr = &(*loaded_model.model);
+    if (!path_id.path.empty()) {
+        auto it_model = loaded_model.sub_models.find(path_id.path);
+        assert(it_model != loaded_model.sub_models.end());
+        if (it_model == loaded_model.sub_models.end())
+            return nullptr;
+        model_3mf_ptr = &it_model->second; // set model to sub model
+    }
+    const CT_Objects &objects_3mf = model_3mf_ptr->resource.objects;
+    auto obj_it = std::find_if(objects_3mf.begin(), objects_3mf.end(), 
+        [id = path_id.id](const CT_Object& obj){ return obj.id == id; });
+
+    assert(obj_it != objects_3mf.end());
+    if (obj_it == objects_3mf.end())
+        return nullptr;
+    return &(*obj_it);
+}
+
+void fill_persist_uuid(
+    Persist3mfData &persist,
+    const LoadedModel& loaded_model,
+    const ModelMap &model_map
+) {
+    assert(loaded_model.model.has_value());
+    if (!loaded_model.model.has_value())
+        return;
+
+    const format_3MF::Model &root_model = *loaded_model.model;
+    if (!contain_producution_extension(root_model))
+        return;
+    
+    // Only current document issues
+    assert(persist.file_issues.size() == 1);
+    if (persist.file_issues.size() != 1)
+        return;
+    ResultLoad3mf &result = persist.file_issues.begin()->second;
+
+    persist.build_uuid = root_model.build.uuid;
+    std::set<UUID> uuids; // to check used uuid is unique
+    uuids.insert(persist.build_uuid);
+    auto is_duplicit_uuid = [&uuids, &result](const UUID& uuid) {
+        if (uuids.insert(uuid).second)
+            return false;
+        // In 3mf is duplicit uuid
+        assert(false);
+        result.add(Read3mfIssueType::archive_contain_non_unique_uuid, boost::uuids::to_string(uuid));
+        return true;
+    };
+
+    // Fill items UUID
+    persist.items_uuid.reserve(root_model.build.items.size());
+    assert(root_model.build.items.size() == model_map.instances.size());
+    for (size_t i = 0; i < model_map.instances.size(); i++) {
+        const ModelInstance *mi = model_map.instances[i];
+        const CT_Item &item = root_model.build.items[i];
+        if (is_duplicit_uuid(item.uuid))
+            continue;
+        persist.items_uuid.push_back(ItemWithUUID{mi->id().id, item.uuid});
+    }
+
+    // Fill object UUID
+    persist.objects_uuid.reserve(model_map.build.size());
+    //                 PathId, ModelObjectPtrs
+    for (const auto & [path_id, mos] : model_map.build) {
+        // UUID could be persistent only one object
+        if (mos.size() != 1)
+            continue;
+        const ModelObject &mo = *mos.front();
+        const CT_Object *object_ptr = get_object(path_id, loaded_model);
+        if (object_ptr == nullptr || is_duplicit_uuid(object_ptr->uuid))
+            continue;
+
+        ComponentsWithUUID components_uuid;
+        components_uuid.reserve(object_ptr->components.size());
+        for (const CT_Component &c : object_ptr->components) {
+            PathId volume_id{c.object_id, c.path.empty() ? std::string() : c.path};
+            auto volume_it = model_map.volumes.find(volume_id);
+            if (volume_it == model_map.volumes.end())
+                continue;
+            if (volume_it->second.size() != 1)
+                continue;            
+            const ModelVolume &mv = *volume_it->second.front();
+            components_uuid.push_back(ComponentWithUUID{mv.id().id, c.uuid});
+        }
+
+        persist.objects_uuid.push_back(ObjectWithUUID{
+            mo.id().id, object_ptr->uuid, components_uuid});
+    }
+
+    // Fill volume UUID
+    persist.volumes_uuid.reserve(model_map.volumes.size());
+    //                 PathId, ModelVolumePtrs
+    for (const auto &[path_id, mvs] : model_map.volumes) {
+        // UUID could be persistent only for one volume
+        if (mvs.size() != 1)
+            continue;
+
+        const ModelVolume &mv = *mvs.front();
+        const CT_Object *volume_object_ptr = get_object(path_id, loaded_model);
+        if (volume_object_ptr == nullptr)
+            continue; // should not apper for prusa 3mf
+        if(volume_object_ptr->components.size() != 1)
+            continue; // not 3mf object representing volume
+        if (is_duplicit_uuid(volume_object_ptr->uuid))
+            continue; // duplicit uuid
+
+        const CT_Component &component = volume_object_ptr->components.front();
+        persist.volumes_uuid.push_back(
+            VolumeWithUUID{mv.id().id, volume_object_ptr->uuid, component.uuid});
+        
+        // Fill mesh uuid
+        const std::string c_path = component.path.empty() ? path_id.path : component.path;
+        PathId c_path_id{component.object_id, c_path};        
+        const CT_Object *mesh_object_ptr = get_object(path_id, loaded_model);
+        if (mesh_object_ptr == nullptr ||
+            !mesh_object_ptr->components.empty())
+            continue; // should not apper for prusa 3mf
+        if (is_duplicit_uuid(mesh_object_ptr->uuid))
+            continue; // duplicit uuid
+        persist.meshes_uuid.push_back(
+            MeshWithUUID{mv.mesh_ptr(), mesh_object_ptr->uuid});
+    }
+
+    for (const ModelMetadata &meta : root_model.metadata)
+        if (std::holds_alternative<ModelMetadataNames>(meta.name) &&
+            std::get<ModelMetadataNames>(meta.name) == ModelMetadataNames::CreationDate)
+            persist.creation_date = meta.value; // copy
+}
+
+void load_3mf(
+    std::string_view filepath_3mf,
+    DynamicPrintConfig &config,
+    ConfigSubstitutionContext &config_substitutions,
+    Slic3r::Domain::Model &model
+) {
+    // Function is not for add into an existing model
+    assert(g_load_from_3mf == nullptr);
+    
+    mz_zip_archive archive;
+    mz_zip_zero_struct(&archive);
+    std::string filepath_str{filepath_3mf};
+    // TODO: change interface to acceppt string_view
+    if (!open_zip_reader(&archive, filepath_str))
+        return set_result(model, filepath_3mf,
+            {Read3mfIssueType::zip_error, MZ_Archive::get_errorstr(archive.m_last_error)});
+    
+    ScopeGuard sg_archive([&archive]() { close_zip_reader(&archive); });
+
+    LoadedRelations relations = load_relations(archive, RELATIONSHIPS_FILE.c_str());
+    // use result from loading relations
+    ResultLoad3mf &result = relations;         
+    LoadedModel loaded_model = read_model3mf(archive, relations.get_main_model_path());
+    result += static_cast<ResultLoad3mf&>(loaded_model); // cumulate issues
+    if (loaded_model.is_old_3mf())
+        throw Old3MFException();
+    if (!loaded_model.model.has_value())
+        // model is not loaded
+        return set_result(model, filepath_3mf, std::move(result));
+    
+    // When not PS 3mf convert model_3mf into model by general rules
+    ModelMap model_map = move_model(loaded_model, model);
+    format_3MF::Model& model_3mf = *loaded_model.model;
+
+    PrusaFilesResult prusa_files_result 
+        = load_prusa_files(archive, model_map, config, config_substitutions);
+    result += static_cast<ResultLoad3mf&>(prusa_files_result);
+
+    std::vector<bool>& used_files = prusa_files_result.used_file_indices;
+    assert(used_files.size() == mz_zip_reader_get_num_files(&archive));
+    assert(used_files.size() == loaded_model.used_files.size());
+    for (size_t i = 0; i < loaded_model.used_files.size(); ++i)
+        if (loaded_model.used_files[i]) {
+            assert(!used_files[i]);
+            used_files[i] = true;
+        }
+    used_files[relations.realtions_file_index] = true;
+    bool found_content_file = false;
+
+    // Loop all files in archive
+    mz_zip_archive_file_stat stat;
+    mz_uint num_entries = static_cast<mz_uint>(used_files.size());
+    for (mz_uint i = 0; i < num_entries; ++i) {
+        if (used_files[i])
+            continue; // already processed
+
+        if (!mz_zip_reader_file_stat(&archive, i, &stat)) {
+            result.add(Read3mfIssueType::cant_read_file_stats, std::to_string(i));
+            continue; // can't read filename
+        }
+
+        std::string name(stat.m_filename);
+
+        // QUESTION: When it appears(OR on which platform??), that miniz change notation of the filepath?
+        // TODO: Next line is unneccessary and SHOULD be removed. (@Filip opinion)
+        std::replace(name.begin(), name.end(), '\\', '/'); 
+
+        if (boost::algorithm::iequals(name, CONTENT_TYPES_FILE)) {
+            // Do not use content types file, so App skip it for now
+            found_content_file = true;
+            continue;
+        } else if (boost::algorithm::iequals(name, THUMBNAIL_FILE)) {
+            // Do not report unprocessed thumbnail file
+            continue;
+        } else if (boost::algorithm::ends_with(name, ".svg") && 
+            process_embossed_svg(archive, stat, model, result)) {
+            continue;
+        //} else if (boost::algorithm::iequals(name, BUILD_TICKET_FILE)) {
+        //    process_build_ticket(archive, stat, model_3mf.build.items, model_map.instances, config, config_substitutions);
+        } else {
+            result.add(Read3mfIssueType::unprocessed_file_in_3mf, name, std::to_string(i));
+        }
+    }
+
+    if (!found_content_file)
+        result.add(Read3mfIssueType::content_types_file_missing, std::string(CONTENT_TYPES_FILE));
+
+    // Set persistent data to model set_result
+    Persist3mfData persist_data{FileIssues{{std::string(filepath_3mf), std::move(result)}}};
+    fill_persist_uuid(persist_data, loaded_model, model_map);
+    g_load_from_3mf = std::make_unique<const Persist3mfData>(std::move(persist_data));
+}
+
+/// <summary>
+/// UUID should be persistent when no modification appear
+/// Generate UUID for staff without UUID
+/// Remove unused persistent staf loaded from 3mf.
+/// </summary>
+/// <param name="model">Objects with uuid</param>
+/// <returns>True when model changed otherwise false</returns>
+bool regenerate_uuid(const Slic3r::Domain::Model &model){
+    // Generator of uuid
+    std::set<UUID> generated_uuid; // for checking uniqueness
+    auto is_uniqueu_uuid = [&generated_uuid](const UUID& uuid) {
+        return generated_uuid.insert(uuid).second;
+    };
+
+    boost::uuids::random_generator generator_uuid;
+    auto generate_uuid = [&generator_uuid, is_uniqueu_uuid]() {
+        UUID result;        
+        do { // QUESTION: limit somehow count of iteration?
+            result = generator_uuid();
+        } while (!is_uniqueu_uuid(result));
+        return result;
+    };
+
+    auto generate_items = [generate_uuid]
+    (ItemsWithUUID &items, const ModelInstancePtrs &instances) {
+        for (const ModelInstance *mi_ptr : instances)
+            items.push_back(ItemWithUUID{mi_ptr->id().id, generate_uuid()});
+    };
+
+    if (g_load_from_3mf == nullptr) {
+        // do not have any persistent uuid, soo generate all
+        Persist3mfData new_persist;
+        new_persist.build_uuid = generate_uuid();        
+        for (const ModelObject *mo : model.objects) {
+            ComponentsWithUUID components_uuid;
+            for (const ModelVolume *mv: mo->volumes) {
+                components_uuid.push_back(ComponentWithUUID{mv->id().id, generate_uuid()});
+
+                // exist uuid for volume?                
+                if (const VolumesWithUUID &vv = new_persist.volumes_uuid;
+                    find_by_id(vv, mv->id().id) != vv.cend()) 
+                    continue;
+                new_persist.volumes_uuid.push_back(VolumeWithUUID{mv->id().id, generate_uuid(), generate_uuid()});
+
+                // exist uuid for mesh?                
+                if (const MeshesWithUUID &mm = new_persist.meshes_uuid;
+                    find_by_ptr(mm, mv->mesh_ptr()) != mm.cend()) 
+                    continue;
+                new_persist.meshes_uuid.push_back(MeshWithUUID{mv->mesh_ptr(), generate_uuid()});
+            }
+            new_persist.objects_uuid.push_back(ObjectWithUUID{mo->id().id, generate_uuid(), std::move(components_uuid)});
+            generate_items(new_persist.items_uuid, mo->instances);
+        }
+        g_load_from_3mf = std::make_unique<const Persist3mfData>(std::move(new_persist));
+        return true;
+    }
+
+    const Persist3mfData &old_persist = *g_load_from_3mf;
+    Persist3mfData new_persist;
+
+    // NOTE: return true when mesh contain change, otherwise false
+    auto add_mesh = [generate_uuid, is_uniqueu_uuid, 
+        &new_meshes_uuid = new_persist.meshes_uuid,
+        &old_meshes_uuid = old_persist.meshes_uuid](const ModelVolume &mv) -> bool {
+        const std::shared_ptr<const Domain::TriangleMesh> &mesh_ptr = mv.mesh_ptr();
+        auto new_mesh_uuid_it = find_by_ptr(new_meshes_uuid, mesh_ptr);
+        auto old_mesh_uuid_it = find_by_ptr(old_meshes_uuid, mesh_ptr);
+        if (new_mesh_uuid_it == new_meshes_uuid.cend()) {
+            // need to add into new volumes uuid
+            if (old_mesh_uuid_it == old_meshes_uuid.cend() || // not in old
+                !is_uniqueu_uuid(old_mesh_uuid_it->object_uuid)) // UUID already exist
+            {
+                new_meshes_uuid.push_back(MeshWithUUID{mesh_ptr, generate_uuid()});
+                return true;
+            }
+            // no change in mesh
+            new_meshes_uuid.push_back(*old_mesh_uuid_it);
+            return false; // no change
+        } else if (old_mesh_uuid_it == old_meshes_uuid.cend()) {
+            return true;
+        }
+
+        // check uuids
+        return old_mesh_uuid_it->object_uuid != new_mesh_uuid_it->object_uuid;
+    };
+
+    // NOTE: return true when volume contain change, otherwise false
+    auto add_volume = [generate_uuid, add_mesh, is_uniqueu_uuid,
+        &new_volumes_uuid = new_persist.volumes_uuid,
+        &old_volumes_uuid = old_persist.volumes_uuid](const ModelVolume &mv)->bool {
+        size_t volume_id = mv.id().id;
+        auto new_volume_uuid_it = find_by_id(new_volumes_uuid, volume_id);
+        auto old_volume_uuid_it = find_by_id(old_volumes_uuid, volume_id);
+        if (new_volume_uuid_it == new_volumes_uuid.cend()) {
+            // need to add into new volumes uuid
+            if (add_mesh(mv) || // mesh contain change
+                old_volume_uuid_it == old_volumes_uuid.cend() || // not in old, generate uuid
+                !is_uniqueu_uuid(old_volume_uuid_it->object_uuid)) // UUID already exist
+            {
+                new_volumes_uuid.push_back(VolumeWithUUID{volume_id, generate_uuid(), generate_uuid()});
+                return true;
+            }
+            // no change in volume
+            new_volumes_uuid.push_back(*old_volume_uuid_it);
+            return false; // it is same
+        } else if (old_volume_uuid_it == old_volumes_uuid.cend()) {
+            return true;
+        }
+
+        // check uuids
+        return old_volume_uuid_it->object_uuid != new_volume_uuid_it->object_uuid;
+    };
+
+    // NOTE: return true when object contain change, otherwise false
+    auto add_object = [generate_uuid, add_volume, is_uniqueu_uuid,
+        &new_objects_uuid = new_persist.objects_uuid,
+        &old_objects_uuid = old_persist.objects_uuid](const ModelObject &mo)->bool{
+        size_t object_id = mo.id().id;
+        auto old_object_uuid_it = find_by_id(old_objects_uuid, object_id);
+        if (old_object_uuid_it == old_objects_uuid.cend()) {
+            // not inside of persist data soo generate new one
+            ComponentsWithUUID components_uuid;
+            components_uuid.reserve(mo.volumes.size());
+            for (const ModelVolume *mv : mo.volumes) {
+                add_volume(*mv);
+                components_uuid.push_back(ComponentWithUUID{mv->id().id, generate_uuid()});
+            }
+            new_objects_uuid.push_back(
+                ObjectWithUUID{object_id, generate_uuid(), std::move(components_uuid)});            
+            return true;
+        }
+
+        // Check old component
+        const ObjectWithUUID &old_object_uuid = *old_object_uuid_it;
+        const ComponentsWithUUID &old_components_uuid = old_object_uuid.components_uuid;
+        bool exist_change_in_volumes = (mo.volumes.size() != old_components_uuid.size());
+        ComponentsWithUUID new_components_uuid;
+        new_components_uuid.reserve(mo.volumes.size());
+        auto generate_component = [&exist_change_in_volumes, generate_uuid, &new_components_uuid](size_t volume_id) {
+            exist_change_in_volumes = true;
+            new_components_uuid.push_back(ComponentWithUUID{volume_id, generate_uuid()});
+        };
+        for (const ModelVolume *mv : mo.volumes) {
+            size_t volume_id = mv->id().id;
+            if (add_volume(*mv)) {
+                // exist_volume_change, so old component is irelevant
+                generate_component(volume_id);
+                continue;
+            }
+            auto old_component_it = find_by_id(old_components_uuid, volume_id);
+            if (old_component_it == old_components_uuid.cend() ||// Old component do not contain UUID for volume
+                !is_uniqueu_uuid(old_component_it->component_uuid)) { // UUID already exist
+                generate_component(volume_id);
+            } else{
+                // Component uuid is persistent
+                new_components_uuid.push_back(*old_component_it);
+            }
+        }
+
+        if (exist_change_in_volumes || 
+            !is_uniqueu_uuid(old_object_uuid.object_uuid)) {
+            new_objects_uuid.push_back(
+                ObjectWithUUID{object_id, generate_uuid(), std::move(new_components_uuid)});
+            return true;
+        }
+
+        // object use same uuid
+        new_objects_uuid.push_back(old_object_uuid);
+        return false;
+    };
+
+    new_persist.objects_uuid.reserve(model.objects.size());
+    bool exist_object_change = false;
+    for (const ModelObject *mo_ptr : model.objects) {
+        if (add_object(*mo_ptr)) {
+            // change in object mean all items pointed on object need to change uuid
+            exist_object_change = true;
+            generate_items(new_persist.items_uuid, mo_ptr->instances);
+            continue;
+        }
+
+        const ItemsWithUUID &old_items_uuid = old_persist.items_uuid;
+        for (const ModelInstance *mi_ptr: mo_ptr->instances){
+            size_t instance_id = mi_ptr->id().id;
+            // find item
+            auto old_item_uuid_it = find_by_id(old_items_uuid, instance_id);
+            if (old_item_uuid_it == old_items_uuid.cend() || 
+                !is_uniqueu_uuid(old_item_uuid_it->item_uuid)) {
+                new_persist.items_uuid.push_back(ItemWithUUID{instance_id, generate_uuid()});
+                exist_object_change = true;
+            } else {
+                // item uuid is persistent
+                new_persist.items_uuid.push_back(*old_item_uuid_it);
+            }
+        }
+    }
+
+    // Need to generate new uuid for build?
+    bool change_build_uuid = exist_object_change;
+    change_build_uuid |= (old_persist.objects_uuid.size() != new_persist.objects_uuid.size());
+    change_build_uuid |= (old_persist.volumes_uuid.size() != new_persist.volumes_uuid.size());
+    change_build_uuid |= (old_persist.meshes_uuid.size() != new_persist.meshes_uuid.size());
+    change_build_uuid |= (old_persist.items_uuid.size() != new_persist.items_uuid.size());
+    change_build_uuid |= old_persist.build_uuid.is_nil() || !is_uniqueu_uuid(old_persist.build_uuid);
+    new_persist.build_uuid = (change_build_uuid) ? generate_uuid() : old_persist.build_uuid;
+
+   g_load_from_3mf = std::make_unique<const Persist3mfData>(std::move(new_persist));
+    return change_build_uuid;
+}
+
+} // namespace
+
+namespace Slic3r {
+
+bool load_3mf(
+    std::string_view filepath_3mf,
+    DynamicPrintConfig &config,
+    ConfigSubstitutionContext &config_substitutions,
+    Domain::Model &model,
+    bool check_version) 
+{
+    ::load_3mf(filepath_3mf, config, config_substitutions, model);    
+
+    // after load the variable SHOULD be setted
+    assert(g_load_from_3mf != nullptr);
+    if (g_load_from_3mf == nullptr)
+        return false;
+
+    const FileIssues& fi = g_load_from_3mf->file_issues;
+    // Issues should contain exactly one file issue
+    assert(fi.size() == 1);
+    if (fi.size() != 1)
+        return false;
+
+    const ResultLoad3mf & file_result = fi.begin()->second;
+    //if(file_result.is_old_3mf()){
+    //    // load old way
+    //    std::string path(filepath_3mf); // copy
+    //    return priv_old_3mf::load_3mf(path.c_str(), config, config_substitutions, &model, check_version);
+    //    // TODO: unify same geometry + transform volumes.    
+    //}
+    return file_result.operator bool();
+}
+
+void store_3mf(const std::string &filepath,
+               const Domain::Project& project,
+               const Store3mfParam &param)
+{
+    // check input 
+    assert(!filepath.empty());
+    if (filepath.empty())
+        throw boost::filesystem::filesystem_error("Empty filepath", {});
+
+    regenerate_uuid(project.model());
+
+    // All export should use "C" locales for number formatting.
+    CNumericLocalesSetter locales_setter;
+
+    // open zip archive
+    mz_zip_archive archive;
+    mz_zip_archive* archive_ptr = &archive;
+    mz_zip_zero_struct(archive_ptr);
+    if (!open_zip_writer(archive_ptr, filepath))
+        throw boost::filesystem::filesystem_error("Unable to open Zip writer to the file.", {});
+    ScopeGuard sg_archive([&archive_ptr]() {
+        if (archive_ptr) close_zip_writer(archive_ptr); });
+
+    // First of all should be in archive stored relations, 
+    // when you read it you need to know where is root model
+    RootRelations relations {
+        // main_model_path
+        (!project.model().objects.empty()) ? MODEL_FILE : std::string(),
+        // thumbnail_path
+        (param.thumbnail_data != nullptr && param.thumbnail_data->is_valid())? THUMBNAIL_FILE : std::string(),
+        // project_file_path
+        // TODO: Fix to use same constant
+        "Metadata/PrusaSlicer3_project.json" // PRUSA_PROJECT_FILEPATH
+    };
+    store(archive, get_relationships(relations), RELATIONSHIPS_FILE.c_str());
+
+    // Adds content types file ("[Content_Types].xml";).
+    // The content of this file is the same for each PrusaSlicer 3mf.
+    ContentTypes content_types; // set default values
+    store_content_type(archive, content_types);
+
+    // Write thumbnail into 3mf file
+    if (!relations.thumbnail_path.empty() && 
+        param.thumbnail_data != nullptr &&
+        param.thumbnail_data->is_valid() ) {
+        // Adds the file Metadata/thumbnail.png.
+        store_thumbnail(archive, *param.thumbnail_data, relations.thumbnail_path.c_str());
+    }
+        
+    // Adds model file ("3D/3dmodel.model").
+    StoredStructure stored_structure = store_model3mf(archive, project.model(), MODEL_FILE.c_str(), param);
+
+    // Add Prusa project files as structured JSONs
+    store_prusa_files(archive, project.model(), project.config_containers(), stored_structure);
+
+    if (!mz_zip_writer_finalize_archive(archive_ptr))
+        throw boost::filesystem::filesystem_error("Unable to finalize the archive.", {});
+
+    // Set off ScopeGuard sg_archive
+    archive_ptr = nullptr;
+    if (!close_zip_writer(&archive))
+        throw boost::filesystem::filesystem_error("Unable to close zip writer.", {});
+
+}
+
+} // namespace Slic3r

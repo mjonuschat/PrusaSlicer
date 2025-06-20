@@ -176,13 +176,9 @@ void BackgroundProcess::update(
 
     const Print::SerializedConfig serialized_config{std::visit(
         [](auto&& config) {
-            constexpr bool preped_semicolons{
-                std::is_same_v<std::remove_cvref_t<decltype(config)>, ConfigPackFDM>
-            };
-
             return Print::SerializedConfig{
-                .json = serialize(Domain::as_boxes(config), 2, preped_semicolons),
-                .ini = Biz::serialize_as_legacy_config(config, preped_semicolons)
+                .json = beautify_json(Domain::as_boxes(config), 2),
+                .ini = Biz::serialize_as_legacy_config(config)
             };
         },
         config

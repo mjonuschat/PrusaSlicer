@@ -281,8 +281,8 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Domain
     }
 
     const Biz::Print::SerializedConfig serialized_config{
-        .json = Biz::serialize(Domain::as_boxes(config_in), 2, true),
-        .ini = Biz::serialize_as_legacy_config(config_in, true)
+        .json = Biz::beautify_json(Domain::as_boxes(config_in), 2),
+        .ini = Biz::serialize_as_legacy_config(config_in)
     };
 	print.apply(model, config, serialized_config, {}, {});
     print.validate();
