@@ -1,5 +1,6 @@
 #pragma once
 #include "Slic3r/App/Yoga/Window.hpp"
+#include "Slic3r/App/Yoga/ButtonGroup.hpp"
 
 namespace Slic3r::App {
 
@@ -20,6 +21,8 @@ private:
 
 private:
     Yoga::LayoutButton* m_settings_set_btn{nullptr};
+    Yoga::ButtonGroup m_group_coordinates;
+    Yoga::ButtonGroup m_group_extruder;
     Yoga::InputTextField* m_input_text_perimeters{nullptr};
     Yoga::ComboBox* m_combo_layer_height{nullptr};
     Yoga::ComboBox* m_combo_density{nullptr};

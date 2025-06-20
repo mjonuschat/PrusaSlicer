@@ -83,6 +83,11 @@ void AbstractButton::set_shortcut(const std::string& shortcut)
 
 void AbstractButton::set_tooltip(const std::string& tooltip) { m_tooltip->set_text(tooltip); }
 
+void AbstractButton::set_tooltip_position(Yoga::Position position)
+{
+    m_tooltip->set_position(position);
+}
+
 bool AbstractButton::has_arrow() const { return m_has_arrow; }
 
 void AbstractButton::set_has_arrow(bool has_arrow) { m_has_arrow = has_arrow; }

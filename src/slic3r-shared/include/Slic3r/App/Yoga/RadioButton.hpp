@@ -11,19 +11,13 @@
 
 namespace Slic3r::App::Yoga {
 
-class Toggler;
+class Circle;
 class Text;
 
-/**
- * @brief The ToggleButton class is a composite button combining a toggler and a text.
- * Use set_direction(YGDirectionLTR) to change the alignment of the internal controls.
- */
-class ToggleButton : public AbstractButton
+class RadioButton : public AbstractButton
 {
 public:
-    explicit ToggleButton(const std::string& label, const std::string& tooltip = {});
-
-    void process_events(Vec2f pos, Vec2f size) override;
+    explicit RadioButton(const std::string& label, const std::string& tooltip = {});
 
     void set_label(const std::string& label);
     const std::string& get_label() const;
@@ -33,8 +27,8 @@ protected:
     void checked_updated_internal() override;
 
 private:
-    Toggler*    m_toggler   { nullptr };
-    Text*       m_label     { nullptr };
+    Circle* m_knob{ nullptr };
+    Text* m_label{ nullptr };
 };
 
 } // namespace Slic3r::App::Yoga

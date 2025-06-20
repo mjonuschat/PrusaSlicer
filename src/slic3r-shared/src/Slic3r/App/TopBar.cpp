@@ -65,8 +65,10 @@ m_render_module(render_module)
                             m_save_btn,
                             m_show_ui_btn,
                             m_new_btn,
-        })
+        }) {
         btn->set_background_color(IM_COL32_BLACK_TRANS);
+        btn->set_tooltip_position(Position::Bottom);
+    }
 
     for (Rectangle* wrapper : std::initializer_list<Rectangle*>{
                             left_wrapper,
@@ -82,7 +84,7 @@ m_render_module(render_module)
 
 void TopBar::add_load_project_btn(Item* parent)
 {
-    m_load_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarLoad);
+    m_load_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarLoad, _u8L("Load"));
     m_load_btn->callbacks().action = [this]() {
         IDialogManager::FileCallback callback = [this](bool success, const boost::filesystem::path& file_path) {
             if (success) {
@@ -98,7 +100,7 @@ void TopBar::add_load_project_btn(Item* parent)
 
 void TopBar::add_save_project_btn(Item* parent)
 {
-    m_save_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarSave);
+    m_save_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarSave, _u8L("Save"));
     m_save_btn->callbacks().action = [this]() {
         auto& dlg_manager = DialogManagerProvider::instance().get();
         dlg_manager.show_yesno_dialog(
@@ -129,7 +131,7 @@ void TopBar::add_save_project_btn(Item* parent)
 
 void TopBar::add_show_ui_btn(Item* parent)
 {
-    m_show_ui_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarShowUI);
+    m_show_ui_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarShowUI, _u8L("Hide sidebars"));
     m_show_ui_btn->set_checkable(true);
 
     m_show_ui_btn->callbacks().action = [this]() {
@@ -153,7 +155,7 @@ void TopBar::init_from_project_interactor()
 
 void TopBar::add_new_project_btn(Item* parent)
 {
-    m_new_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarPlus);
+    m_new_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarPlus, "Add new project");
     m_new_btn->set_background_color(IM_COL32_BLACK_TRANS);
     m_new_btn->callbacks().action = [this]() {
         size_t project_id = m_project_interactor->new_project();
@@ -170,9 +172,11 @@ void TopBar::add_expander_btn(Item* parent)
 
 void TopBar::add_project_button(size_t project_id, bool select)
 {
-    const std::string proj_name = m_project_interactor->get_project_name(project_id);
-    const std::string btn_label = proj_name.empty() ? format("%1% (%2%)", _u8L("New Project"), project_id) : proj_name;
+    const boost::filesystem::path proj_path(m_project_interactor->get_project_name(project_id));
+    const std::string btn_label = proj_path.empty() ? format("%1% (%2%)", _u8L("New Project"), project_id) : proj_path.filename().string();
+    const std::string btn_tooltip = proj_path.empty() ? format("%1% (%2%)", _u8L("New Project"), project_id) : proj_path.string();
     ProjectButton* proj_btn = m_buttons_wrapper->emplace_back<ProjectButton>(btn_label, project_id);
+    proj_btn->set_tooltip(btn_tooltip);
 
     proj_btn->callbacks().action = [this, proj_btn]()
     { 

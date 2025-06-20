@@ -1,6 +1,7 @@
 #include "Slic3r/App/Yoga/ProjectButton.hpp"
 #include "Slic3r/App/Yoga/ProjectButtonBackground.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/App/Yoga/Tooltip.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "imgui/imgui_internal.h"
 
@@ -23,6 +24,8 @@ m_project_id(project_id)
     m_cross->set_max_size({ 20.f, 20.f });
     m_cross->set_self_align(YGAlignCenter);
     m_cross->set_background_color(IM_COL32_BLACK_TRANS);
+
+    set_tooltip_position(Position::Bottom);
 }
 
 std::function<void()>& ProjectButton::on_cross() 

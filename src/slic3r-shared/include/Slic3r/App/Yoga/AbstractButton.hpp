@@ -34,6 +34,7 @@ public:
     void set_shortcut(const std::string& shortcut);
 
     void set_tooltip(const std::string& tooltip);
+    void set_tooltip_position(Yoga::Position position);
 
     bool has_arrow() const;
     void set_has_arrow(bool has_arrow);
