@@ -22,7 +22,7 @@ class LayoutButton;
 class Rectangle;
 } // namespace Yoga
 
-class TopBar : public Yoga::Window
+class TopBar: public Yoga::Window
 {
 public:
     explicit TopBar(

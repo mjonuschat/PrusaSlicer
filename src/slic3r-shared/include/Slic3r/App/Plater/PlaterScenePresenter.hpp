@@ -152,6 +152,11 @@ private:
     Scene::BedRenderUpdater m_bed_render_updater;
 
     bool m_freeze_selection_center{ false };
+
+    void update_scene_graph(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& volumes
+    );
 };
 
 } // namespace Slic3r::App::Plater

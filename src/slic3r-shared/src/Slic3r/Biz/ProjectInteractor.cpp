@@ -22,13 +22,11 @@ Domain::SelectionId ProjectInteractor::new_project()
     return project_id;
 }
 
-Domain::SelectionId ProjectInteractor::load_project(const std::string& file_path)
+void ProjectInteractor::load_project(const std::string& file_path)
 {
-    Domain::Project project;
-    project.load(file_path);
-    Domain::SelectionId project_id = add_project(std::move(project));
-
-    return project_id;
+    Domain::Project::load(file_path, [&](Domain::Project&& project){
+        add_project(std::move(project));
+    });
 }
 
 void ProjectInteractor::save_project(const std::string& file_path)

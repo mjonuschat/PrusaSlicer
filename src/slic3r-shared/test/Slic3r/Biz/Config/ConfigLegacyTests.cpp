@@ -314,7 +314,7 @@ void compare_3mfs(const Zip& a, const Zip& b, const Domain::PrinterTechnology te
     }
 }
 
-constexpr bool debug_files{true};
+constexpr bool debug_files{false};
 
 TEST_CASE("Legacy FDM 3MF roundtrip", "[config]")
 {

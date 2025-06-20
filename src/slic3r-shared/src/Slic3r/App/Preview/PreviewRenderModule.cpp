@@ -631,7 +631,7 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
 
 void PreviewRenderModule::init_scene_layout()
 {
-// >> This code is same for Plater/PreviewRenderModule
+    // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this);
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, false));

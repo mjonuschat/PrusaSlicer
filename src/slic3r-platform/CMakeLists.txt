@@ -18,8 +18,6 @@ set(SLIC3R_PLATFORM_FILES
     include/Slic3r/App/Platform/StdMainThreadDispatcher.hpp
     src/Slic3r/Biz/Platform/PlatformServices.cpp
     include/Slic3r/Biz/Platform/PlatformServices.hpp
-    src/Slic3r/App/Platform/JobManager.cpp
-    include/Slic3r/App/Platform/JobManager.hpp
     include/Slic3r/Biz/Platform/ListenerList.hpp
     include/Slic3r/Biz/Platform/Termination.hpp
     src/Slic3r/Biz/Platform/Termination.cpp
@@ -28,6 +26,10 @@ set(SLIC3R_PLATFORM_FILES
     include/Slic3r/Biz/Platform/ISecretStore.hpp
     include/Slic3r/Biz/Platform/ISingleInstanceChecker.hpp
     include/Slic3r/Biz/Platform/ListenerScope.hpp
+    include/Slic3r/Biz/Platform/JobManager/ProgressTracker.hpp
+    src/Slic3r/Biz/Platform/JobManager/ProgressTracker.cpp
+    include/Slic3r/Biz/Platform/JobManager/Job.hpp
+    include/Slic3r/Biz/Platform/JobManager/JobManager.hpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -47,3 +49,15 @@ target_link_libraries(slic3r-platform PUBLIC slic3r-render)
 add_target_to_doxygen(slic3r-platform)
 
 
+if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+    add_executable(slic3r-platform-tests
+        test/Slic3r/Biz/Platform/JobManager/JobManagerTests.cpp
+    )
+    target_include_directories(slic3r-platform-tests PRIVATE test src)
+    target_link_libraries(slic3r-platform-tests PRIVATE slic3r-platform Catch2::Catch2WithMain)
+
+    add_test(NAME slic3r-platform-tests
+        COMMAND slic3r-platform-tests ${CATCH_ALL_ARGS}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()

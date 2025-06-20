@@ -1,44 +1,56 @@
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
+#include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 
 #include <libslic3r/Model.hpp>
 
 namespace Slic3r::Domain {
 
+using Biz::Platform::PlatformServices;
+using Biz::JThread::StopToken;
+
 Project::Project() : m_model(new Model()) {}
 
-void Project::load(const std::string& file_path)
+void Project::load(const std::string& file_path, std::function<void(Project&&)> after_load)
 {
-    Domain::ConfigPack config;
-    WipeTowersOnBeds wipe_towers;
-    CustomGCodesOnBeds custom_gcodes;
+    PlatformServices::instance().job_manager().create_job("project_load", [](StopToken stop_token, const std::string file_path){
+        Domain::ConfigPack config;
+        WipeTowersOnBeds wipe_towers;
+        CustomGCodesOnBeds custom_gcodes;
+        Model model;
 
-    ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
-    boost::optional<Semver> version;
+        ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
+        boost::optional<Semver> version;
 
-    ASSERT(Slic3rLegacy::load_3mf_legacy(
-        file_path.c_str(),
-        config,
-        m_model.get(),
-        false,
-        version,
-        wipe_towers,
-        custom_gcodes
-    ));
+        ASSERT(Slic3rLegacy::load_3mf_legacy(
+            file_path.c_str(),
+            config,
+            &model,
+            false,
+            version,
+            wipe_towers,
+            custom_gcodes
+        ));
 
-    set_file_name(file_path);
-    // TODO: implement
-    m_config_containers.clear();
-    m_config_containers.emplace_back(std::make_unique<ConfigContainer>());
-    auto& config_container = m_config_containers.back();
-    config_container->set_print_config_new(config);
-    DynamicPrintConfig co;
-    auto full{FullPrintConfig::defaults()};
-    co.apply(full);
-    config_container->set_print_config(co);
-    //config_container->set_bed(m_bed_container.add_bed())
-    //ASSERT(config_container->bed_instances().size() == wipe_towers.size());
+        Project project;
+        project.m_model = std::make_unique<Model>(std::move(model));
+        project.set_file_name(file_path);
+        // TODO: implement
+        project.m_config_containers.clear();
+        project.m_config_containers.emplace_back(std::make_unique<ConfigContainer>());
+        auto& config_container = project.m_config_containers.back();
+        config_container->set_print_config_new(config);
+        DynamicPrintConfig co;
+        auto full{FullPrintConfig::defaults()};
+        co.apply(full);
+        config_container->set_print_config(co);
+        //config_container->set_bed(m_bed_container.add_bed())
+        //ASSERT(config_container->bed_instances().size() == wipe_towers.size());
 
+        return project;
+
+    }, file_path).on_result(after_load).start();
 }
 
 const ConfigContainer* Project::find_config_container(size_t id) const

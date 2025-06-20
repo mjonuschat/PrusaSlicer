@@ -89,9 +89,8 @@ public:
      */
     /**
      * @brief Load project from the file
-     * @return Returns ID of newly created project
      */
-    Domain::SelectionId load_project(const std::string& file_path);
+    void load_project(const std::string& file_path);
 
     /**
      * @name Project manipulation

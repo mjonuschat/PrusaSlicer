@@ -1,4 +1,5 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
+#include <Slic3r/Biz/Platform/JobManager/JobManager.hpp>
 
 namespace Slic3r::Biz::Platform {
 
@@ -7,6 +8,8 @@ PlatformServices& PlatformServices::instance()
     static PlatformServices instance;
     return instance;
 }
+
+PlatformServices::~PlatformServices() = default;
 
 void PlatformServices::set_render_request_handler(
     IRenderRequestHandler* render_request_handler
@@ -37,5 +40,14 @@ void PlatformServices::set_single_instance_checker(std::unique_ptr<ISingleInstan
     m_single_instance_checker = std::move(single_instance_checker);
 }
 
+void PlatformServices::set_job_manager(std::unique_ptr<JobManager::JobManager>&& job_manager) {
+    m_job_manager = std::move(job_manager);
+}
+
+JobManager::JobManager& PlatformServices::job_manager()
+{
+    ASSERT(m_job_manager);
+    return *m_job_manager;
+}
 
 } // namespace Slic3r::Biz::Platform

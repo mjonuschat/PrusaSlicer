@@ -19,6 +19,7 @@
 #include <Slic3r/App/Render/TextureManager.hpp>
 
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
+#include <Slic3r/Biz/Platform/JobManager/JobManager.hpp>
 #include <Slic3r/Biz/Platform/Termination.hpp>
 
 #include "Slic3r/App/WX/DialogManager.hpp"
@@ -75,22 +76,27 @@ bool DesktopApp::OnInit()
     init_logging();
     set_log_level(4);
 
-    
+
     init_translations();
     m_workbench.load_legacy_configs();
 
     using Platform::WX::WXMainThreadDispatcher;
     using Biz::Platform::PlatformServices;
+    using Biz::Platform::JobManager::JobManager;
 
-    PlatformServices::instance().set_main_thread_dispatcher(
+    auto& platform_services{PlatformServices::instance()};
+
+    platform_services.set_main_thread_dispatcher(
         std::make_unique<WXMainThreadDispatcher>()
     );
 
-    PlatformServices::instance().set_secret_store(SecretStoreFactory::create_secret_store());
+    platform_services.set_secret_store(SecretStoreFactory::create_secret_store());
+
+    platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(
         m_workbench,
-        PlatformServices::instance().main_thread_dispatcher()
+        platform_services.main_thread_dispatcher()
     );
 
     auto& preset_interactor = m_project_interactor->preset_interactor();
@@ -118,7 +124,7 @@ bool DesktopApp::OnInit()
     m_project_interactor->init_app_instance_message_handler(m_main_frame->GetHandle());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     m_gl_context = canvas.release_context();
-    Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
+    platform_services.set_render_request_handler(&canvas);
     m_main_frame->update_canvas_ui_settings();
 
     m_navigator.on_init(*m_plater_module, *m_preview_module, canvas);
