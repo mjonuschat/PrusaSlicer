@@ -45,8 +45,8 @@ set(SLIC3R_SOURCES
     AABBTreeLines.hpp
     AABBMesh.hpp
     AABBMesh.cpp
-    ArrangeHelper.cpp
-    ArrangeHelper.hpp
+    #ArrangeHelper.cpp
+    #ArrangeHelper.hpp
     Algorithm/LineSegmentation/LineSegmentation.cpp
     Algorithm/LineSegmentation/LineSegmentation.hpp
     Algorithm/PathSorting.hpp
@@ -634,7 +634,7 @@ target_link_libraries(libslic3r PUBLIC
     agg
     ankerl
     boost_headeronly
-    libseqarrange
+    #libseqarrange
     slic3r-jthread
     slic3r-domain
     slic3r-gcode-reader

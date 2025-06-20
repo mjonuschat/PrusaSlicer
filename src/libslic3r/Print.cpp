@@ -40,7 +40,7 @@
 #include "Utils.hpp"
 #include "BuildVolume.hpp"
 #include "format.hpp"
-#include "ArrangeHelper.hpp"
+//#include "ArrangeHelper.hpp"
 #include "libslic3r/PrePreview.hpp"
 
 #include <float.h>
@@ -792,7 +792,7 @@ void Print::process()
     if (conflictRes.has_value())
         BOOST_LOG_TRIVIAL(error) << boost::format("gcode path conflicts found between %1% and %2%") % conflictRes->obj_name_1 % conflictRes->obj_name_2;
 
-    m_sequential_collision_detected =  config().get<bool>("complete_objects") ? check_seq_conflict(model(), config()) : std::nullopt;
+    m_sequential_collision_detected = config().get<bool>("complete_objects") ? std::nullopt /*check_seq_conflict(model(), config())*/ : std::nullopt;
 
     BOOST_LOG_TRIVIAL(info) << "Slicing process finished." << log_memory_info();
 }

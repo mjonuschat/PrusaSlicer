@@ -19,7 +19,7 @@ add_subdirectory(libslic3r)
 add_subdirectory(libvgcode)
 add_subdirectory(slic3r-arrange)
 add_subdirectory(slic3r-arrange-wrapper)
-add_subdirectory(libseqarrange)
+#add_subdirectory(libseqarrange)
 add_subdirectory(slic3r-app-cli)
 
 if (SLIC3R_ENABLE_FORMAT_STEP)
