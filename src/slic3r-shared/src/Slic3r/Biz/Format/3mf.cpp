@@ -1040,7 +1040,7 @@ void store_3mf(const std::string &filepath,
         (param.thumbnail_data != nullptr && param.thumbnail_data->is_valid())? THUMBNAIL_FILE : std::string(),
         // project_file_path
         // TODO: Fix to use same constant
-        "metadata/Slic3r_project.json" // PRUSA_PROJECT_FILEPATH
+        "Metadata/PrusaSlicer3_project.json" // PRUSA_PROJECT_FILEPATH
     };
     store(archive, get_relationships(relations), RELATIONSHIPS_FILE.c_str());
 

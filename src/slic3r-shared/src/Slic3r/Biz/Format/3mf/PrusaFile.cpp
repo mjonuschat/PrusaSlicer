@@ -837,9 +837,9 @@ json volumes_to_json(const ModelVolumePtrs &volumes, const VolumeToObjectid &v2i
                 continue;
             volume_json[ID] = it->second;
         }
-        if (auto volume_uuid_it = find_by_id(volumes_uuid, volume.id().id);
-            volume_uuid_it != volumes_uuid.cend())
-            volume_json[VOLUME_UUID] = volume_uuid_it->object_uuid;
+        //if (auto volume_uuid_it = find_by_id(volumes_uuid, volume.id().id);
+        //    volume_uuid_it != volumes_uuid.cend())
+        //    volume_json[VOLUME_UUID] = volume_uuid_it->object_uuid;
 
         volume_json[VOLUME_TYPE] = to_json(volume.type(), volume_type_to_name);        
         if (volume.text_configuration.has_value())
@@ -1023,10 +1023,7 @@ json ranges_to_json(const Domain::LayerConfigRanges &ranges) {
 
     json result = json::array();
     for (const auto &[range, config] : ranges) {
-        assert(range.first < range.second);
-        if (range.first <= range.second)
-            continue; // from must be smaller than to
-
+        ASSERT(range.first < range.second);
         json config_json = nlohmann::ordered_json(config);
         assert(!config_json.empty());
         if (config_json.empty())
@@ -1165,10 +1162,11 @@ json object_to_json(const ModelObject &object, const StoredStructure &stored_str
     json object_json = json::object();
     object_json[ID] = it->second;
 
-    const ObjectsWithUUID &objects_uuid = persist.objects_uuid;    
-    if (auto object_uuid_it = find_by_id(objects_uuid, object.id().id);
-        object_uuid_it != objects_uuid.cend())
-        object_json[OBJECT_UUID] = object_uuid_it->object_uuid;
+    // UUIDs are commented out for now.
+    //const ObjectsWithUUID &objects_uuid = persist.objects_uuid;    
+    //if (auto object_uuid_it = find_by_id(objects_uuid, object.id().id);
+    //    object_uuid_it != objects_uuid.cend())
+    //    object_json[OBJECT_UUID] = object_uuid_it->object_uuid;
     add(object_json, VOLUMES, VolumeSerialization::volumes_to_json(object.volumes, stored_structure.volumes, persist.volumes_uuid));
     add(object_json, INSTANCES, InstanceSerialization::instances_to_json(object.instances, stored_structure.instances, persist.items_uuid));
     if (!object.layer_config_ranges.empty())
@@ -1342,7 +1340,7 @@ ResultLoadJson load_json(mz_zip_archive &archive, const char *filename, RT issue
 }
 
 namespace ProjectFileSerialization {
-constexpr const char *PRUSA_PROJECT_FILEPATH = "metadata/Slic3r_project.json";
+constexpr const char *PRUSA_PROJECT_FILEPATH = "Metadata/PrusaSlicer3_project.json";
 constexpr std::string_view CONFIGURATION = "configuration"; // DynamicConfig
 constexpr std::string_view OBJECTS = "objects";
 NamesType PROJECT_NAMES{{CONFIGURATION, OBJECTS}};
