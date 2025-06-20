@@ -37,7 +37,6 @@ values:
   max_print_height: 200
   nozzle_diameter: 0.4
   printer_notes: Don't remove the following keywords! These keywords are used in the "compatible printer" condition of the print and filament profiles to link the particular print and filament profiles to this printer profile.\nPRINTER_VENDOR_PRUSA3D\nPRINTER_MODEL_MK2\n
-  retract_before_travel: 1
   retract_before_wipe: 0%
   retract_layer_change: 1
   retract_length: 0.8
@@ -48,7 +47,6 @@ values:
   retract_restart_extra: 0
   retract_restart_extra_toolchange: 0
   retract_speed: 35
-  serial_speed: 250000
   single_extruder_multi_material: 0
   start_gcode: M862.3 P \"[printer_model]\" ; printer model check\nM862.1 P[nozzle_diameter] ; nozzle diameter check\nM115 U3.2.3 ; tell printer latest fw version\nG90 ; use absolute coordinates\nM83 ; extruder relative mode\nM204 S[machine_max_acceleration_extruding] T[machine_max_acceleration_retracting] ; MK2 firmware only supports the old M204 format\nM104 S[first_layer_temperature] ; set extruder temp\nM140 S[first_layer_bed_temperature] ; set bed temp\nM190 S[first_layer_bed_temperature] ; wait for bed temp\nM109 S[first_layer_temperature] ; wait for extruder temp\nG28 W ; home all without mesh bed level\nG80 ; mesh bed leveling\nG1 Z0.2 F720\nG1 Y-2 F1000 ; go outside print area\nG92 E0\nG1 X60 E9 F1000 ; intro line\nG1 X100 E12.5 F1000 ; intro line\nG92 E0
   use_firmware_retraction: 0

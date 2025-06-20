@@ -31,11 +31,11 @@ void append_printer_values(Expr::ValueMap& values, const Domain::Preset::HwPrint
     }
 }
 
-void append_print_values(Expr::ValueMap& values, const Domain::Preset::EvaluatedPreset& print_preset)
+void append_print_values(Expr::ValueMap& values, const Domain::ConfigBox& print_preset)
 {
-    auto it = print_preset.values.find("layer_height");
-    ASSERT(it != print_preset.values.end());
-    append_value(values, "print.layer_height", it->second);
+    auto it = print_preset.contains("layer_height");
+    if (it.item)
+        append_value(values, "print.layer_height", std::to_string(it.item->value().get<double>()));
 }
 
 void append_tool_values(Expr::ValueMap& values, const Domain::Preset::HwToolConfig& tool)

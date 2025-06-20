@@ -29,15 +29,14 @@ values:
   filament_notes: ''
   filament_purge_multiplier: 100%
   filament_ramming_parameters: 250 100 42.4194 42.4194 42.4194 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-  filament_settings_id: ''
   filament_soluble: 0
   filament_spool_weight: 193
   filament_stamping_distance: 45
   filament_stamping_loading_speed: 26.5
   filament_toolchange_delay: 0
   # filament_retract_lift: 0.15 
-  # filament_travel_max_lift: 1.5
-  # filament_travel_ramping_lift: 1
+  # travel_max_lift: 1.5
+  # travel_ramping_lift: 1
   # filament_travel_slope: 1
   # filament_retract_length: 0.8
   filament_type: PC
@@ -498,9 +497,9 @@ variants:
     filament_purge_multiplier: 100%
     filament_max_volumetric_speed: 8
     filament_retract_lift: 0.2
-    filament_travel_max_lift: 1.5
-    filament_travel_ramping_lift: 0
-    filament_travel_slope: 1
+    travel_max_lift: 1.5
+    travel_ramping_lift: 0
+    travel_slope: 1
   variants:
   # MK3.5 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -572,9 +571,9 @@ variants:
     bed_temperature: 100
     idle_temperature:
     filament_retract_lift:
-    filament_travel_max_lift: 1.5
-    filament_travel_ramping_lift: 0
-    filament_travel_slope: 1
+    travel_max_lift: 1.5
+    travel_ramping_lift: 0
+    travel_slope: 1
     filament_max_volumetric_speed: 7
     # filament_retract_speed: 45
     # filament_deretract_speed: 25
@@ -627,7 +626,7 @@ variants:
     filament_purge_multiplier: 100%
     filament_max_volumetric_speed: 8
     filament_retract_lift: 0.2
-    filament_travel_ramping_lift: 0
+    travel_ramping_lift: 0
     filament_retract_length: 1
   variants:
   # MK3 0.25
@@ -699,7 +698,7 @@ variants:
     idle_temperature:
     filament_max_volumetric_speed: 8
     filament_retract_lift: 0.2
-    filament_travel_ramping_lift: 0
+    travel_ramping_lift: 0
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -738,7 +737,7 @@ variants:
     filament_unloading_speed_start: 100
     idle_temperature:
     filament_retract_lift: 0.2
-    filament_travel_ramping_lift: 0
+    travel_ramping_lift: 0
     filament_max_volumetric_speed: 8
   variants:
   # MK2 0.25

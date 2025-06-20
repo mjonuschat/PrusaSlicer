@@ -84,11 +84,20 @@ void PrintRegion::collect_object_printing_extruders(const Domain::ConfigView& co
     	int i = std::max(0, extruder_id - 1);
         object_extruders.emplace_back((i >= num_extruders) ? 0 : i);
     };
-    if (config.get<int>("perimeters") > 0 || has_brim)
-    	emplace_extruder(config.get<int>("perimeter_extruder"));
-    if (config.get<Domain::Percentage>("fill_density") > Domain::Percentage{0})
-    	emplace_extruder(config.get<int>("infill_extruder"));
-    if (config.get<int>("top_solid_layers") > 0 || config.get<int>("bottom_solid_layers") > 0)
+    const int perimeter_extruder_id = config.get<int>("perimeter_extruder");
+    const int perimeter_exturder_i = std::max(0, perimeter_extruder_id - 1);
+    if (config.get<std::vector<int>>("perimeters")[perimeter_exturder_i] > 0 || has_brim)
+    	emplace_extruder(perimeter_extruder_id);
+
+    const int infill_extruder_id = config.get<int>("infill_extruder");
+    const int infill_extruder_i = std::max(0, infill_extruder_id - 1);
+    if (config.get<std::vector<Domain::Percentage>>("fill_density")[infill_extruder_i] > Domain::Percentage{0})
+    	emplace_extruder(infill_extruder_id);
+
+    const int solid_infill_extruder_id = config.get<int>("solid_infill_extruder");
+    const int solid_infill_extruder_i = std::max(0, solid_infill_extruder_id - 1);
+    if (config.get<std::vector<int>>("top_solid_layers") [solid_infill_extruder_i]> 0
+        || config.get<std::vector<int>>("bottom_solid_layers")[solid_infill_extruder_i] > 0)
     	emplace_extruder(config.get<int>("solid_infill_extruder"));
 }
 

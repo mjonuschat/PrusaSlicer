@@ -156,7 +156,7 @@ TEST_CASE("Slic3r Types", "[yaml]")
     using Slic3r::Domain::Vec2d;
     using Slic3r::Domain::Vec2ds;
     using Slic3r::Domain::Preset::Bools;
-    using Slic3r::Domain::Preset::Floats;
+    using Slic3r::Domain::Preset::Doubles;
     using Slic3r::Domain::Preset::Strings;
     using Slic3r::Domain::Percentage;
     using Slic3r::Domain::Preset::Percentages;
@@ -193,7 +193,7 @@ presets:
             REQUIRE(data.presets.find("bool")->second == PresetValue{true});
             REQUIRE(data.presets.find("bools")->second == PresetValue{Bools{true, false}});
             REQUIRE(data.presets.find("num")->second == PresetValue{42.1});
-            REQUIRE(data.presets.find("nums")->second == PresetValue{Floats{1, 2, 3}});
+            REQUIRE(data.presets.find("nums")->second == PresetValue{Doubles{1, 2, 3}});
             REQUIRE(data.presets.find("str")->second == PresetValue{"Hello"});
             REQUIRE(data.presets.find("strs")->second == PresetValue{Strings{"Hello", "world"}});
             REQUIRE(data.presets.find("mono")->second == PresetValue{std::monostate{}});

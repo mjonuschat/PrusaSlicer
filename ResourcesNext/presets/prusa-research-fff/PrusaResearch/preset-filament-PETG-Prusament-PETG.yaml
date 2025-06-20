@@ -429,9 +429,9 @@ variants:
     filament_purge_multiplier: 100%
     filament_max_volumetric_speed: 8
     filament_retract_lift: 0.2
-    filament_travel_max_lift: 1.5
-    filament_travel_ramping_lift: 0
-    filament_travel_slope: 1
+    travel_max_lift: 1.5
+    travel_ramping_lift: 0
+    travel_slope: 1
   variants:
   # MK3.5 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -497,9 +497,9 @@ variants:
     bed_temperature: 85
     idle_temperature:
     filament_retract_lift:
-    filament_travel_max_lift: 1.5
-    filament_travel_ramping_lift: 0
-    filament_travel_slope: 1
+    travel_max_lift: 1.5
+    travel_ramping_lift: 0
+    travel_slope: 1
     max_fan_speed: 55
     filament_max_volumetric_speed: 9
     filament_retract_speed: 45
@@ -551,7 +551,7 @@ variants:
     filament_purge_multiplier: 100%
     filament_max_volumetric_speed: 8
     filament_retract_lift: 0.2
-    filament_travel_ramping_lift: 0
+    travel_ramping_lift: 0
     filament_retract_length: 1
   variants:
   # MK3 0.25
@@ -622,7 +622,7 @@ variants:
     idle_temperature:
     filament_max_volumetric_speed: 8
     filament_retract_lift: 0.2
-    filament_travel_ramping_lift: 0
+    travel_ramping_lift: 0
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -661,7 +661,7 @@ variants:
     filament_unloading_speed_start: 100
     idle_temperature:
     filament_retract_lift: 0.2
-    filament_travel_ramping_lift: 0
+    travel_ramping_lift: 0
     filament_max_volumetric_speed: 8
   variants:
   # MK2 0.25

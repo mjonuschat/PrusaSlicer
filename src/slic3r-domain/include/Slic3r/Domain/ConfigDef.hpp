@@ -29,6 +29,7 @@ enum class SLAConfigLocation {
     Printer,
     Material,
     Print,
+    Tool,
     Object,
 };
 

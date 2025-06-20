@@ -21,7 +21,24 @@ void append_value(Expr::ValueMap& values, const std::string& name, const std::va
         PANIC("unsupported type");
     }
     values[name] = val;
+}
 
+template <typename T>
+concept StringConvertable = requires(T t)
+{
+    { std::to_string(t) } -> std::same_as<std::string>;
+};
+
+template <StringConvertable T>
+void append_value(Expr::ValueMap& values, const std::string& name, const T& v)
+{
+    values[name] = std::to_string(v);
+}
+
+
+inline void append_value(Expr::ValueMap& values, const std::string& name, const std::string& v)
+{
+    values[name] = v;
 }
 
 
@@ -31,7 +48,7 @@ void append_values(Expr::ValueMap& values, const char* prefix, const Domain::Pre
 
 void append_printer_values(Expr::ValueMap& values, const Domain::Preset::HwPrinterConfig& printer);
 
-void append_print_values(Expr::ValueMap& values, const Domain::Preset::EvaluatedPreset& print_preset);
+void append_print_values(Expr::ValueMap& values, const Domain::ConfigBox& print_preset);
 
 void append_tool_values(Expr::ValueMap& values, const Domain::Preset::HwToolConfig& tool);
 

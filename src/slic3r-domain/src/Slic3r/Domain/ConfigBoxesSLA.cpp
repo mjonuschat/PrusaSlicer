@@ -19,11 +19,12 @@ void sla_config_init_fn(ConfigDefinitions& defs);
 using SLAConfigLocation::Printer;
 using SLAConfigLocation::Material;
 using SLAConfigLocation::Print;
+using SLAConfigLocation::Tool;
 using SLAConfigLocation::Object;
 
 // Define the static object holding all definitions. Provide list of acceptable
 // boxes and the init function.
-ConfigDefinitions s_defs_sla({Printer, Print, Material, Object}, sla_config_init_fn);
+ConfigDefinitions s_defs_sla({Printer, Print, Tool, Material, Object}, sla_config_init_fn);
 
 // JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.
 // Right now, let's just define the constants so the defs compile.

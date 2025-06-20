@@ -135,7 +135,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Missing values are reported", "[ConfigLo
     const auto result{load(json)};
     REQUIRE(result.has_value());
     CHECK(
-        get_issue(result->issues, FDMConfigLocation::Print, "perimeters") == ItemParsingIssueType::NotFound
+        get_issue(result->issues, FDMConfigLocation::Print, "raft_layers") == ItemParsingIssueType::NotFound
     );
     CHECK(
         get_issue(result->issues, FDMConfigLocation::Printer, "silent_mode") == ItemParsingIssueType::NotFound
@@ -144,13 +144,13 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Missing values are reported", "[ConfigLo
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading int works", "[ConfigLoad]")
 {
-    json["print_settings"]["perimeters"] = 10;
+    json["print_settings"]["raft_layers"] = 10;
 
     const auto result{load(json)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
-    CHECK(result_config.print.items.opt("perimeters").get<int>() == 10);
-    CHECK(!get_issue(result->issues, FDMConfigLocation::Print, "perimeters"));
+    CHECK(result_config.print.items.opt("raft_layers").get<int>() == 10);
+    CHECK(!get_issue(result->issues, FDMConfigLocation::Print, "raft_layers"));
 }
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading double works", "[ConfigLoad]")
@@ -177,14 +177,12 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading bool works", "[ConfigLoad]")
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading Vec2d works", "[ConfigLoad]")
 {
-    json["toolprint_settings"]["extruder_offset"] = ordered_json::array(
-        {ordered_json::array({2, 5.1})}
-    );
+    json["printer_settings"]["extruder_offset"] = ordered_json::array({2, 5.1});
 
     const auto result{load(json)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
-    CHECK(result_config.tool.at(0).items.opt("extruder_offset").get<Vec2d>() == Vec2d{2, 5.1});
+    CHECK(result_config.printer.items.opt("extruder_offset").get<Vec2d>() == Vec2d{2, 5.1});
     CHECK(!get_issue(result->issues, FDMConfigLocation::Tool, "extruder_offset", 0));
 }
 
@@ -206,7 +204,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading std::vector<Vec2d> works", "[Con
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading Percentage works", "[ConfigLoad]")
 {
-    json["print_settings"]["fill_density"] = {
+    json["print_settings"]["ironing_flowrate"] = {
         {"value", 10.2},
         {"is_percent", true},
     };
@@ -214,13 +212,13 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading Percentage works", "[ConfigLoad]
     const auto result{load(json)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
-    CHECK(result_config.print.items.opt("fill_density").get<Percentage>() == Percentage{10.2});
-    CHECK(!get_issue(result->issues, FDMConfigLocation::Print, "fill_density"));
+    CHECK(result_config.print.items.opt("ironing_flowrate").get<Percentage>() == Percentage{10.2});
+    CHECK(!get_issue(result->issues, FDMConfigLocation::Print, "ironing_flowrate"));
 }
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading Percentage fails if is_percent is false", "[ConfigLoad]")
 {
-    json["print_settings"]["fill_density"] = {
+    json["print_settings"]["ironing_flowrate"] = {
         {"value", 10.2},
         {"is_percent", false},
     };
@@ -229,7 +227,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading Percentage fails if is_percent i
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
     CHECK(
-        get_issue(result->issues, FDMConfigLocation::Print, "fill_density")
+        get_issue(result->issues, FDMConfigLocation::Print, "ironing_flowrate")
         == ItemParsingIssueType::InvalidFormat
     );
 }
@@ -241,7 +239,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading FloatOrPercentage works", "[Conf
         {"is_percent", false},
     };
 
-    json["print_settings"]["first_layer_infill_speed"] = {
+    json["print_settings"]["seam_gap_distance"] = {
         {"value", 23.1},
         {"is_percent", true},
     };
@@ -252,14 +250,14 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading FloatOrPercentage works", "[Conf
     const auto first_layer_height{
         result_config.print.items.opt("first_layer_height").get<FloatOrPercentage>()
     };
-    const auto first_layer_infill_speed{
-        result_config.print.items.opt("first_layer_infill_speed").get<FloatOrPercentage>()
+    const auto seam_gap_distance{
+        result_config.print.items.opt("seam_gap_distance").get<FloatOrPercentage>()
     };
 
     CHECK(!first_layer_height.is_percentage());
     CHECK(first_layer_height.float_value() == 1.0);
-    CHECK(first_layer_infill_speed.is_percentage());
-    CHECK(first_layer_infill_speed.percentage() == Percentage{23.1});
+    CHECK(seam_gap_distance.is_percentage());
+    CHECK(seam_gap_distance.percentage() == Percentage{23.1});
     CHECK(!get_issue(result->issues, FDMConfigLocation::Print, "first_layer_height"));
     CHECK(!get_issue(result->issues, FDMConfigLocation::Print, "first_layer_infill_speed"));
 }
@@ -288,7 +286,7 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading std::optional<int> from null wor
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading int from other type reports an issue", "[ConfigLoad]")
 {
-    json["print_settings"]["perimeters"] = "invalid";
+    json["print_settings"]["raft_layers"] = "invalid";
 
     const auto result{load(json)};
     REQUIRE(result.has_value());
@@ -296,10 +294,10 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading int from other type reports an i
 
     const ConfigPackFDM default_config;
     CHECK(
-        result_config.print.items.opt("perimeters").get<int>()
-        == default_config.print.items.opt("perimeters").get<int>()
+        result_config.print.items.opt("raft_layers").get<int>()
+        == default_config.print.items.opt("raft_layers").get<int>()
     );
-    const auto issue{get_issue(result->issues, FDMConfigLocation::Print, "perimeters")};
+    const auto issue{get_issue(result->issues, FDMConfigLocation::Print, "raft_layers")};
     CHECK(issue == ItemParsingIssueType::InvalidFormat);
 }
 

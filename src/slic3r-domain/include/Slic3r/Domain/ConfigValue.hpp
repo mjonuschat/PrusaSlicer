@@ -186,8 +186,22 @@ struct ConfigValue {
     template <typename T>
     requires (!std::is_enum_v<T> && !Impl::is_enum_vector<T>())
     void set(const T& value) {
-        ASSERT(std::holds_alternative<T>(m_value));
-        m_value = value;
+        bool value_set = false;
+        if constexpr (std::is_same_v<T, std::string>) {
+            if (holds_alternative<EnumWrapper>()) {
+                std::get<EnumWrapper>(m_value).set_string(value);
+                value_set = true;
+            }
+        } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+            if (holds_alternative<EnumVectorWrapper>()) {
+                std::get<EnumVectorWrapper>(m_value).set_strings(value);
+                value_set = true;
+            }
+        }
+        if (!value_set) {
+            ASSERT(std::holds_alternative<T>(m_value));
+            m_value = value;
+        }
     }
 
     void set(const char* value) {

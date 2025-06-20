@@ -41,13 +41,15 @@ using FeatureValueMap = std::map<std::string, FeatureValue>;
 
 using Bools = std::vector<bool>;
 using Strings = std::vector<std::string>;
-using Floats = std::vector<double>;
+using Doubles = std::vector<double>;
+using Ints = std::vector<int>;
+using OptInts = std::vector<std::optional<int>>;
 using Percentages = std::vector<Percentage>;
 
 using PresetValue = std::variant<
     std::monostate,
-    Bools, Floats, Percentages, Vec2ds, Strings,
-    bool, double, Percentage, Vec2d, std::string
+    Bools, Doubles, Ints, OptInts, Percentages, Vec2ds, Strings,
+    bool, double, int, Percentage, Vec2d, std::string
 >;
 using PresetValueMap = std::map<std::string, PresetValue>;
 

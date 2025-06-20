@@ -13,7 +13,6 @@ class PresetEvaluator
 {
 public:
     using HwPrinterConfig = Domain::Preset::HwPrinterConfig;
-    using EvaluatedPresets = Domain::Preset::EvaluatedPresets;
     using PresetKind = Domain::Preset::PresetKind;
     using Address = Domain::Preset::Address;
     using EvaluatedPrinterPreset = Domain::Preset::EvaluatedPrinterPreset;
@@ -33,14 +32,13 @@ private:
     using PresetNodePath = Domain::Preset::PresetNodePath;
     using NamedPresets = Domain::Preset::NamedPresets;
     using NamedPresetsCollection = Domain::Preset::NamedPresetsCollection;
-    using EvaluatedPreset = Domain::Preset::EvaluatedPreset;
     using SourceLocation = Domain::Preset::SourceLocation;
 
     struct EvalPresetContext
     {
         std::string id;
         std::string name;
-        EvaluatedPreset::Expressions conditions;
+        Domain::Preset::Expressions conditions;
         Domain::Preset::PresetValueMap values;
         Domain::Preset::FeatureValueMap features;
         SourceLocation last_node_location;
@@ -52,7 +50,11 @@ private:
     void collect_named_presets(PresetKind kind, const PresetNode& node, const PresetNodePath& node_path);
     const PresetNode* find_node(PresetKind kind, std::string_view name) const;
 
-    static Domain::Preset::EvaluatedPreset preset_from_context(PresetKind kind, const PresetEvaluator::EvalPresetContext& context);
+    template <typename FdmConfigType, typename SlaConfigType>
+    static Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> preset_from_context(
+        Domain::PrinterTechnology technology,
+        Domain::Preset::PresetKind kind, const EvalPresetContext& context
+    );
 
 private:
     const Domain::Preset::PresetCollection& m_presets;
