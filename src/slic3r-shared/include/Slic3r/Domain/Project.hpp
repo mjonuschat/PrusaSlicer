@@ -24,8 +24,6 @@ public:
 
     Project();
 
-    static void load(const std::string& file_path, std::function<void(Project&&)> after_load);
-
     void set_file_name(const std::string& file_name) { m_file_name = file_name; }
     [[nodiscard]] const std::string& file_name() const { return m_file_name; }
 

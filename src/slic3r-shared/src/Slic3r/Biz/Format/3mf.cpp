@@ -986,6 +986,16 @@ bool regenerate_uuid(const Slic3r::Domain::Model &model){
 
 namespace Slic3r {
 
+    
+    
+bool load_3mf(const std::string& file_path, Domain::Project& project)
+{
+    // Dummy function just to make development easier to follow.
+    return true;
+}
+
+
+
 bool load_3mf(
     std::string_view filepath_3mf,
     DynamicPrintConfig &config,

@@ -12,6 +12,7 @@
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp""
 
 #include "Slic3r/Biz/Format/3mf.hpp"
+#include "Slic3r/Biz/ProjectLoader.hpp"
 
 namespace Slic3r::Biz {
 Domain::SelectionId ProjectInteractor::new_project()
@@ -25,7 +26,7 @@ Domain::SelectionId ProjectInteractor::new_project()
 
 void ProjectInteractor::load_project(const std::string& file_path)
 {
-    Domain::Project::load(file_path, [&](Domain::Project&& project){
+    Biz::load_project(file_path, [&](Domain::Project&& project){
         add_project(std::move(project));
     });
 }
