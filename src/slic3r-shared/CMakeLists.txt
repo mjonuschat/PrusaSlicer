@@ -503,10 +503,10 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/Config/ConfigLoad.hpp
         src/Slic3r/Biz/Config/ConfigLoad.cpp
-        include/Slic3r/Biz/Config/ConfigJson.hpp
+        src/Slic3r/Biz/Config/ConfigJson.hpp
         src/Slic3r/Biz/Config/ConfigJson.cpp
 
-        include/Slic3r/Biz/Config/HwConfigJson.hpp
+        src/Slic3r/Biz/Config/HwConfigJson.hpp
         src/Slic3r/Biz/Config/HwConfigJson.cpp
         include/Slic3r/Biz/Format/3mf.hpp
         include/Slic3r/Biz/Format/Metadata.hpp
