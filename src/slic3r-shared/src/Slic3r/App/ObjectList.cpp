@@ -8,6 +8,7 @@
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/App/Plater/BedThumbnailTexture.hpp"
 
 #include "Slic3r/Assert.hpp"
 
@@ -424,6 +425,12 @@ void ObjectList::init(Biz::ProjectInteractor *project_interactor, Mode mode)
         ImGuiTableFlags_NoPadInnerX;
 }
 
+void ObjectList::set_bed_instance_icons(const Plater::BedThumbnailTextures& icons)
+{
+    auto& ctx = selected_project_context();
+    ctx.bed_instance_icons = icons;
+}
+
 void ObjectList::process_dragging_start()
 {
     const auto& ctx = selected_project_context();
@@ -492,8 +499,13 @@ bool ObjectList::render_list(Domain::Vec2f size)
     return is_changed_selection;
 }
 
-bool ObjectList::tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const std::string& label, bool add_overrides_marker/* = false*/)
+bool ObjectList::tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const std::string& label, bool add_overrides_marker/* = false*/,
+    unsigned long long tex_id/* = 0*/, ImVec2 icon_size/* = {0.0f, 0.0f}*/)
 {
+    DEBUG_ASSERT(tex_id == 0 || (icon_size.x > 0.0f && icon_size.y > 0.0f));
+    if (tex_id == 0)
+        icon_size = ImVec2(0.0f, 0.0f);
+
     // get initial cursor position
     ImVec2 pos_old = ImGui::GetCursorScreenPos();
     // render node as it is
@@ -513,7 +525,7 @@ bool ObjectList::tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const s
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     const ImVec2 padding = ImVec2(style.FramePadding.x, ImMin(window->DC.CurrLineTextBaseOffset, style.FramePadding.y));
 
-    const float text_offset_x = g.FontSize + padding.x * 2;                             // Collapsing arrow width + Spacing
+    const float text_offset_x = g.FontSize + icon_size.x + padding.x * 3; // Collapsing arrow width + icon width + Spacing
     const float text_offset_y = ImMax(padding.y, window->DC.CurrLineTextBaseOffset);    // Latch before ItemSize changes it
 
     ImVec2 text_pos(pos_old.x + text_offset_x, pos_old.y + text_offset_y + style.FramePadding.y);
@@ -546,6 +558,12 @@ bool ObjectList::tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const s
 
     if (add_overrides_marker)
         draw_list->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), icon_str(Render::Icon::OverridesMarker).c_str());
+
+    if (tex_id != 0) {
+        ImVec2 icon_pos = ImVec2(pos_end.x + style.ItemInnerSpacing.x, pos_old.y + style.ItemInnerSpacing.y);
+        ImVec2 icon_pos_end = icon_pos + icon_size;
+        draw_list->AddImage(tex_id, icon_pos, icon_pos_end);
+    }
 
     // revert cursor position
     ImGui::SetCursorScreenPos(pos_new);
@@ -706,18 +724,26 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     const std::string name = "Bed " + std::to_string(bed_id);
     const std::string name_id = "##bed_id" + std::to_string(bed_id);
 
-    wchar_t bed_thumb = static_cast<wchar_t>(Render::Icon::BedThumbnail);
-    const std::string name_with_icon = Slic3r::format("%1%%2%", boost::nowide::narrow(std::wstring(&bed_thumb, 1)), name);
+    const ImGuiStyle& style = ImGui::GetStyle();
 
     const ImVec2 icon_size = ImVec2(40.f, 40.f);
     const ImVec2 text_size = ImGui::CalcTextSize(name.c_str());
-    const ImVec2 padding(5.f, 5.f);
+    const ImVec2 padding = style.ItemInnerSpacing;
 
     RowBackground bg(bed->active && ctx.selected_items.empty());
     new_row(icon_size.y + 2.f*padding.y);
 
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding.y, 0.5f * (icon_size.y - text_size.y) + padding.y));
-    bool is_open = tree_node(name_id.c_str(), m_node_flags | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap, name_with_icon);
+    ImTextureID tex_id = 0;
+    auto it = std::find_if(ctx.bed_instance_icons.begin(), ctx.bed_instance_icons.end(),
+        [&](const Plater::BedThumbnailTexture& tt) {
+            return tt.bed_ref.config_container_id == config_container_id && tt.bed_ref.instance_id == bed_id;
+    });
+    if (it != ctx.bed_instance_icons.end())
+        tex_id = (ImTextureID)(intptr_t)it->thumbnail.get();
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.5f * icon_size.x + padding.x, 0.5f * (icon_size.y - text_size.y) + padding.y));
+    bool is_open = tree_node(name_id.c_str(), m_node_flags | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap,
+        name, false, tex_id, icon_size);
     ImGui::PopStyleVar();
 
     bool is_changed_selection = false;

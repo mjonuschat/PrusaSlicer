@@ -8,6 +8,8 @@
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 
+#include "Slic3r/App/Plater/BedThumbnailTexture.hpp"
+
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "libslic3r/format.hpp"
 #include "libslic3r/Utils.hpp"
@@ -175,6 +177,11 @@ void ObjectListWindow::update_sliced_info()
 
     const std::string estimated_time = Slic3r::get_time_dhms(print_statistics.modes[size_t(Biz::libpgcode::TimeMode::Normal)].time);
     m_estimated_time->set_text(estimated_time);
+}
+
+void ObjectListWindow::set_bed_instance_icons(const Plater::BedThumbnailTextures& icons)
+{
+    m_object_list->set_bed_instance_icons(icons);
 }
 
 } // namespace Slic3r::App

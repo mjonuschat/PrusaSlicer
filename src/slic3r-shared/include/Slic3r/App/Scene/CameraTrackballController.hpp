@@ -10,20 +10,23 @@ static constexpr double DEFAULT_ZENITH = 3.0 * M_PI_4;
 class CameraTrackballController
 {
 public:
-  explicit CameraTrackballController(Camera& camera) : m_camera(camera) { set_camera_orientation(); }
+    explicit CameraTrackballController(Camera& camera) : m_camera(camera) { set_camera_orientation(); }
 
+    const Vec3d& target() const { return m_target; }
     void set_target(const Vec3d& pos)
     {
         m_target = pos;
         m_camera.look_at(m_target - m_distance * m_camera.forward(), m_target, m_camera.up());
     }
 
+    double distance_to_target() const { return m_distance; }
     void set_distance_to_target(double value)
     {
         m_distance = std::max(MIN_FOCAL_DISTANCE, value);
         m_camera.look_at(m_target - m_distance * m_camera.forward(), m_target, m_camera.up());
     }
 
+    const Vec3d& pivot() const { return m_pivot; }
     void set_pivot(const Vec3d& pos) { m_pivot = pos; }
     void synchronize_pivot_with_target() { m_pivot = m_target; }
 
@@ -31,6 +34,8 @@ public:
     void update_zoom(double value) { m_camera.update_zoom(value); }
     void switch_projection_type() { m_camera.switch_projection_type(); }
 
+    double azimuth() const { return m_azimuth; }
+    double zenith() const { return m_zenith; }
     void set_azimuth_and_zenith(double azimuth, double zenith)
     {
         m_azimuth = azimuth;
@@ -41,13 +46,8 @@ public:
 
     void add_azimuth_and_zenith(double delta_azimuth, double delta_zenith, bool apply_limits = false);
 
-    const Vec3d& target() const { return m_target; }
-    double distance_to_target() const { return m_distance; }
-
-    const Vec3d& pivot() const { return m_pivot; }
-
-    double azimuth() const { return m_azimuth; }
-    double zenith() const { return m_zenith; }
+    const Eigen::Quaterniond& view_rotation() const { return m_view_rotation; }
+    void set_view_rotation(const Eigen::Quaterniond& view_rotation) { m_view_rotation = view_rotation; }
 
 private:
     void set_camera_orientation();

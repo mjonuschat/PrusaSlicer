@@ -14,7 +14,7 @@
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/LightSetting.hpp"
-#include "Slic3r/App/BedStore.hpp"
+#include "Slic3r/App/BedThumbnailStore.hpp"
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
@@ -299,6 +299,11 @@ void PreviewRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId 
     request_render();
 }
 
+void PreviewRenderModule::on_selected_project_changed(size_t index)
+{
+    update_bed_instances();
+}
+
 void PreviewRenderModule::set_sidebars_visible(bool hide)
 {
     m_layout->set_sidebars_visible(hide);
@@ -324,6 +329,7 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>( this );
     m_project_interactor.fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>( this );
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>( this );
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
     init_gizmos();
     init_viewers(device);
@@ -344,14 +350,9 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
 void PreviewRenderModule::on_activated()
 {
     if (m_scene_presenter != nullptr)
-        m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
+        m_scene_presenter->scene().set_lights(App::global_lighting());
 
-    m_scene_presenter->remove_all_bed_instances();
-    const App::BedStore& store = Slic3r::App::bed_store();
-    m_scene_presenter->add_bed_instances(store.beds);
-    m_scene_presenter->update_bed_instances();
-    Slic3r::App::clear_bed_store();
-
+    update_bed_instances();
     center_camera_on_selected_bed();
 }
 
@@ -1102,11 +1103,25 @@ void PreviewRenderModule::center_camera_on_selected_bed()
     for (const auto& v : print_volume) {
         bed_aabb.extend(bed_inst_offset + v.cast<double>());
     }
-    m_scene_presenter->scene().set_bed_aabb(bed_aabb);
+    m_scene_presenter->scene().set_shadows_aabb(bed_aabb);
     Scene::CameraTrackballController& trackball = m_scene_presenter->scene().camera_trackball();
 
     trackball.set_target(bed_inst_offset + to_3d(bed.center(), 0.0));
     trackball.synchronize_pivot_with_target();
+}
+
+void PreviewRenderModule::update_bed_instances()
+{
+    m_scene_presenter->remove_all_bed_instances();
+    Plater::BedThumbnailTextures& thumbnails = m_thumbnail_store->projects.selected().thumbnails;
+    Domain::BedRefs beds;
+    beds.reserve(thumbnails.size());
+    for (const auto& t : thumbnails) {
+        beds.emplace_back(t.bed_ref);
+    }
+    m_scene_presenter->add_bed_instances(beds);
+    m_scene_presenter->update_bed_instances();
+    m_object_list->set_bed_instance_icons(thumbnails);
 }
 
 } // namespace Slic3r::App::Preview

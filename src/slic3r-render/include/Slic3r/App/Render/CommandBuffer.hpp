@@ -41,6 +41,8 @@ public:
 
     void set_cull_face_mode(CullFaceMode mode);
 
+    void set_multisampling_enabled(bool enabled);
+
     void bind_shader(const Shader& s);
     void bind_geometry(const Geometry& g, const Shader& s);
     void bind_texture(uint8_t unit, const Texture& t);
@@ -54,7 +56,11 @@ public:
     void bind_material(const Material& material);
     void unbind_material(const Material& material);
 
-    void blit_to_default_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask, BlitFramebufferFilter filter);
+    void blit_framebuffer(const Framebuffer& src_fb, Framebuffer& dst_fb, int x, int y, int width, int height,
+        BlitFramebufferMask mask, BlitFramebufferFilter filter);
+    void blit_to_draw_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask, BlitFramebufferFilter filter);
+
+    void read_pixels(const Framebuffer& fb, int x, int y, int width, int height, PixelFormat format, void* pixels);
 
     void draw(PrimitiveType primitive, size_t offset, size_t count);
     void draw(const DrawCommand& cmd);

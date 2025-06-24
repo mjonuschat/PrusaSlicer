@@ -31,6 +31,13 @@ public:
     virtual void on_scene_selection_transformed(Domain::SelectionId project_id, const Selection& selection) {};
 };
 
+enum class TransformState
+{
+    InProgress, /* Transform is in progress (i.e. user is dragging the mouse) */
+    Completed,  /* Transform was completed (i.e. user released the mouse button) */
+    Canceled    /* Transform was canceled (i.e. user pressed ESC key) */
+};
+
 class ISceneChangedListener
 {
 public:
@@ -38,20 +45,20 @@ public:
 
     virtual void on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances) = 0;
     virtual void on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances) = 0;
-    virtual void on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements) = 0;
+    virtual void on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state) = 0;
 
     virtual void on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) = 0;
     virtual void on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) = 0;
-    virtual void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements) = 0;
+    virtual void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state) = 0;
     virtual void on_volume_mesh_changed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) = 0;
 
     virtual void on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;
     virtual void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;
-    virtual void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;
+    virtual void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, TransformState state) = 0;
 
     virtual void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) = 0;
     virtual void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) = 0;
-    virtual void on_wipe_tower_transformed(Domain::SelectionId project_id, size_t idx) = 0;
+    virtual void on_wipe_tower_transformed(Domain::SelectionId project_id, size_t idx, TransformState state) = 0;
 };
 
 struct TransformMemento;

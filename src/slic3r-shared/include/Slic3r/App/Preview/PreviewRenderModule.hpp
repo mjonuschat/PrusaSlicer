@@ -14,26 +14,29 @@
 #include <Slic3r/App/Preview/GCodeWindow.hpp>
 #include <Slic3r/App/Preview/DoubleSliderForGCode.hpp>
 #include <Slic3r/App/Preview/DoubleSliderForLayers.hpp>
+#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 
 #include <memory>
+
+namespace Slic3r::App {
+struct BedThumbnailStore;
+} // namespace Slic3r::App
 
 namespace Slic3r::App::Preview {
 
 struct ExtrudersSequence;
-} // namespace Slic3r::App::LibvgcodeWrapper
-
-namespace Slic3r::App::Preview {
-
 class SidebarPreviewActionButtons;
 
 class PreviewRenderModule final : public Platform::AbstractRenderModule,
                                   public Biz::ISelectedBedInstanceChangedListener,
                                   public Biz::IFDMResultCacheChangedListener,
-                                  public Biz::IStatusCacheChangedListener
+                                  public Biz::IStatusCacheChangedListener,
+                                  public Biz::ISelectedProjectChangedListener
 {
 public:
-    PreviewRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
-        : m_workbench(workbench), m_project_interactor(project_interactor)
+    PreviewRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
+      std::shared_ptr<BedThumbnailStore> thumbnail_store)
+        : m_workbench(workbench), m_project_interactor(project_interactor), m_thumbnail_store(thumbnail_store)
     {}
 
     /**
@@ -66,6 +69,13 @@ public:
     void on_status_cache_changed(
         const Biz::Slicing::SlicingId id
     ) override;
+
+    /**
+     * @name Implementation of Biz::ISelectedProjectChangedListener public interface
+     * @{
+     */
+    void on_selected_project_changed(size_t index) override;
+    /**@}*/
 
     void set_sidebars_visible(bool hide) override;
     void synchronize_topbar() override;
@@ -125,6 +135,8 @@ private:
     Yoga::ToolbarButton* m_button_legend = nullptr;
     Yoga::ToolbarButton* m_button_gcode = nullptr;
 
+    std::shared_ptr<BedThumbnailStore> m_thumbnail_store;
+
     std::unordered_set<IRenderModuleChangedListener*> m_render_module_changed_listeners;
 
 private:
@@ -151,6 +163,7 @@ private:
     void on_legend_shells_action(bool visible);
 
     void center_camera_on_selected_bed();
+    void update_bed_instances();
 };
 
 } // namespace Slic3r::App::Preview

@@ -190,5 +190,8 @@ vec4 lighting_pbr()
 
 void main()
 {
-    out_color = apply_pbr ? lighting_pbr() : lighting_phong();
+    vec4 color = apply_pbr ? lighting_pbr() : lighting_phong();
+    if (color.w == 0.0)
+        discard;
+    out_color = color;
 }

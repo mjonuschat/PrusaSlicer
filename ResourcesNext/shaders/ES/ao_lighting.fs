@@ -188,5 +188,8 @@ vec4 lighting_pbr()
 
 void main()
 {
-    gl_FragColor = apply_pbr ? lighting_pbr() : lighting_phong();
+    vec4 color = apply_pbr ? lighting_pbr() : lighting_phong();
+    if (color.w == 0.0)
+        discard;
+    gl_FragColor = color;
 }

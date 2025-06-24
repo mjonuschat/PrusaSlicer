@@ -34,6 +34,21 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/PaintOnSupportsGizmo.cpp
         include/Slic3r/App/Plater/PaintOnSupportsDialog.hpp
         src/Slic3r/App/Plater/PaintOnSupportsDialog.cpp
+        include/Slic3r/App/Plater/ThumbnailRenderer.hpp
+        src/Slic3r/App/Plater/ThumbnailRenderer.cpp
+        include/Slic3r/App/Plater/IBedVisuallyChangedListener.hpp
+        include/Slic3r/App/Plater/BedThumbnailTextureGenerator.hpp
+        src/Slic3r/App/Plater/BedThumbnailTextureGenerator.cpp
+        include/Slic3r/App/Plater/BedThumbnailUpdater.hpp
+        src/Slic3r/App/Plater/BedThumbnailUpdater.cpp
+        include/Slic3r/App/Plater/BedThumbnailTextureRequest.hpp
+        include/Slic3r/App/Plater/ScopedBedThumbnailSceneCustomizer.hpp
+        src/Slic3r/App/Plater/ScopedBedThumbnailSceneCustomizer.cpp
+        include/Slic3r/App/Plater/Scoped3mfThumbnailSceneCustomizer.hpp
+        src/Slic3r/App/Plater/Scoped3mfThumbnailSceneCustomizer.cpp
+        include/Slic3r/App/Plater/ScopedGCodeThumbnailSceneCustomizer.hpp
+        src/Slic3r/App/Plater/ScopedGCodeThumbnailSceneCustomizer.cpp
+        include/Slic3r/App/Plater/BedThumbnailTexture.hpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -71,8 +86,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/ExportPathSelect.hpp
         src/Slic3r/App/ExportPathSelect.cpp
         include/Slic3r/App/IDialogManager.hpp
-        src/Slic3r/App/BedStore.cpp
-        include/Slic3r/App/BedStore.hpp
+        include/Slic3r/App/BedThumbnailStore.hpp
+        src/Slic3r/App/BedThumbnailStore.cpp
         include/Slic3r/App/MaterialState.hpp
         
         include/Slic3r/App/Browser/BrowserLogicCommand.hpp
@@ -101,6 +116,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/IRenderNodeComponent.hpp
         include/Slic3r/App/Scene/Camera.hpp
         src/Slic3r/App/Scene/Camera.cpp
+        include/Slic3r/App/Scene/CameraHelper.hpp
+        src/Slic3r/App/Scene/CameraHelper.cpp
         include/Slic3r/App/Scene/Transform.hpp
         src/Slic3r/App/Scene/MeshRenderNodeComponent.cpp
         include/Slic3r/App/Scene/MeshRenderNodeComponent.hpp
@@ -138,6 +155,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/GeometryDataFactory.hpp
         src/Slic3r/App/Scene/GeometryDataFactory.cpp
         include/Slic3r/App/Scene/ISceneProvider.hpp
+        include/Slic3r/App/Scene/IProjectSceneProvider.hpp
         include/Slic3r/App/Scene/ScenePresenterProjectContext.hpp
         src/Slic3r/App/Scene/Lights.cpp
         include/Slic3r/App/Scene/Lights.hpp
@@ -153,6 +171,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/BedRenderUpdater.hpp
         src/Slic3r/App/Scene/BedRenderUpdater.cpp
         include/Slic3r/App/Scene/AuxiliaryElementId.hpp
+        include/Slic3r/App/Scene/ThumbnailHelper.hpp
+        src/Slic3r/App/Scene/ThumbnailHelper.cpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

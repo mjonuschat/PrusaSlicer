@@ -64,13 +64,6 @@ public:
     void on_render_end(Render::CommandBuffer& cmd_buf) override {}
 };
 
-enum class SceneRenderFlag : uint32_t
-{
-    None = 0x0000,
-    Shadows = 0x0001,
-    AmbientOcclusion = 0x0002,
-};
-
 /**
  * @brief Scenegraph entrypoint
  *
@@ -157,12 +150,7 @@ public:
      * @name Rendering
      * @{
      */
-    void render(
-        Render::Device& device,
-        Render::CommandBuffer& cmd_buffer,
-        ISceneRenderCustomizer* customizer = &ms_default_customizer,
-        SceneRenderFlag flags = SceneRenderFlag::None
-    ) const;
+    void render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer = &ms_default_customizer) const;
     void render_imgui(const Render::ScreenInfo& screen_info) const;
     /** @} */
 
@@ -251,6 +239,9 @@ public:
 
     /** @} */
 
+    bool background_enabled() const { return m_background_enabled; }
+    void set_background_enabled(bool enabled) { m_background_enabled = enabled; }
+
     /**
      * @name Lighing-related methods
      * @{
@@ -290,7 +281,8 @@ public:
     float shadows_intensity() const { return m_shadows.intensity; }
     void set_shadows_intensity(float intensity) { m_shadows.intensity = intensity; }
 
-    void set_bed_aabb(const Eigen::AlignedBox3d& aabb) { m_shadows.bed_aabb = aabb; }
+    const Eigen::AlignedBox3d& shadows_aabb() const { return m_shadows.aabb; }
+    void set_shadows_aabb(const Eigen::AlignedBox3d& aabb) { m_shadows.aabb = aabb; }
 
     /** @} */
 
@@ -377,12 +369,8 @@ private:
         Render::Device& device, ISceneRenderCustomizer* customizer, const Domain::Index2& viewport_size
     ) const;
     void render_ao_texture_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
-    void render_ao_texture_blur_pass(
-        Render::Device& device, const Domain::Index2& viewport_size
-    ) const;
-    void render_ao_lighting_pass(
-        Render::CommandBuffer& cmd_buffer, Render::Device& device, bool shadows
-    ) const;
+    void render_ao_texture_blur_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
+    void render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device) const;
 
 private:
     using NodeIdLookUp = std::unordered_map<size_t, Node*>;
@@ -395,14 +383,15 @@ private:
     TriangleMeshManager<std::string> m_trimesh_manager;
 
     Lighting m_lighting;
+    bool m_background_enabled{true};
 
     mutable Render::Geometry* m_screen_quad{nullptr};
 
     struct Shadows
     {
-        bool enabled{true};
-        bool bed_model_cast_shadow{true};
-        Eigen::AlignedBox3d bed_aabb;
+        bool enabled{ true };
+        bool bed_model_cast_shadow{ true };
+        Eigen::AlignedBox3d aabb;
 
         mutable float intensity{DEFAULT_INTENSITY};
 

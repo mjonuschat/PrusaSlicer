@@ -483,7 +483,7 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
         invoke_slicing_input_changed(bed_ref);
 
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
-        l->on_bed_instance_transformed(m_selected_project_id, { instance });
+        l->on_bed_instance_transformed(m_selected_project_id, {instance}, TransformState::Completed);
     });
 }
 
@@ -527,9 +527,9 @@ void SceneInteractor::transform_selection(const Matrix4d& relative_transform, Tr
     update_selection_instance_bed_placement();
     invoke_listeners<ISceneChangedListener>([&](ISceneChangedListener* l) {
         if (instance_mode)
-            l->on_instance_transformed(m_selected_project_id, proj.selection.elements);
+            l->on_instance_transformed(m_selected_project_id, proj.selection.elements, TransformState::InProgress);
         else
-            l->on_volume_transformed(m_selected_project_id, proj.selection.elements);
+            l->on_volume_transformed(m_selected_project_id, proj.selection.elements, TransformState::InProgress);
     });
     invoke_listeners<ISceneSelectionChangedListener>([&](ISceneSelectionChangedListener* l) {
         l->on_scene_selection_transformed(m_selected_project_id, proj.selection);
@@ -538,31 +538,31 @@ void SceneInteractor::transform_selection(const Matrix4d& relative_transform, Tr
 
 void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bool canceled)
 {
-    if (!canceled) {
-        memento.reset();
-        return;
-    }
-
     auto& proj = m_projects.find(m_selected_project_id)->second;
     const bool vol_mode = proj.selection.mode == SelectionMode::Volume;
-    for (const auto& [_, e] : memento.elements) {
-        const Transformation xform{Transform3d {e.original_xform}};
-        if (vol_mode) {
-            auto* vol = proj.project.find_volume_by_id(e.element.object_id, e.element.volume_id);
-            vol->set_transformation(xform);
-        } else {
-            auto* inst = proj.project.find_instance_by_id(e.element.object_id, e.element.instance_id);
-            inst->set_transformation(xform);
-        }
-    }
 
-    update_selection_instance_bed_placement();
+    if (canceled) {
+        for (const auto& [_, e] : memento.elements) {
+            const Transformation xform{Transform3d {e.original_xform}};
+            if (vol_mode) {
+                auto* vol = proj.project.find_volume_by_id(e.element.object_id, e.element.volume_id);
+                vol->set_transformation(xform);
+            } else {
+                auto* inst = proj.project.find_instance_by_id(e.element.object_id, e.element.instance_id);
+                inst->set_transformation(xform);
+            }
+        }
+
+        update_selection_instance_bed_placement();
+    }
 
     invoke_listeners<ISceneChangedListener>([&](ISceneChangedListener* l) {
         if (vol_mode)
-            l->on_volume_transformed(m_selected_project_id, proj.selection.elements);
+            l->on_volume_transformed(m_selected_project_id, proj.selection.elements,
+                canceled ? TransformState::Canceled : TransformState::Completed);
         else
-            l->on_instance_transformed(m_selected_project_id, proj.selection.elements);
+            l->on_instance_transformed(m_selected_project_id, proj.selection.elements,
+                canceled ? TransformState::Canceled : TransformState::Completed);
     });
     memento.reset();
 }

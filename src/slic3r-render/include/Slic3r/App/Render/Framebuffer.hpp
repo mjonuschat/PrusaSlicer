@@ -2,13 +2,13 @@
 
 #include "WithInternal.hpp"
 #include "Types.hpp"
+#include "Renderbuffer.hpp"
 
 #include <vector>
 
 namespace Slic3r::App::Render {
 
 class Device;
-class Texture;
 
 struct FramebufferColorAttachment
 {
@@ -17,14 +17,17 @@ struct FramebufferColorAttachment
     TextureMagFilter mag_filter{ TextureMagFilter::Nearest };
 };
 
+using FramebufferColorAttachments = std::vector<FramebufferColorAttachment>;
+
 struct FramebufferCreationData
 {
     FramebufferTarget target{ FramebufferTarget::Framebuffer };
     size_t width{ 0 };
     size_t height{ 0 };
-    std::vector<FramebufferColorAttachment> color_attachments;
+    FramebufferColorAttachments color_attachments;
     bool depth{ true };
     bool stencil{ false };
+    uint8_t num_samples{ 1 };
 };
 
 class Framebuffer : public WithInternal
@@ -41,7 +44,8 @@ public:
 private:
     Device& m_device;
     FramebufferTarget m_target;
-    std::vector<TexturePtr> m_textures;
+    TexturePtrs m_textures;
+    RenderbufferPtrs m_renderbuffers;
 };
 
 } // namespace Slic3r::App::Render

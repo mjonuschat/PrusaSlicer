@@ -12,6 +12,8 @@
 #include <Slic3r/App/Init.hpp>
 #include <Slic3r/App/Localization.hpp>
 #include <Slic3r/App/ResourceResolver.hpp>
+#include <Slic3r/App/BedThumbnailStore.hpp>
+
 #include <libslic3r/Model.hpp>
 
 #include <Slic3r/App/Render/TextureManager.hpp>
@@ -98,10 +100,12 @@ bool DesktopApp::OnInit()
     fs::path config_dir = fs::path{data_dir()} / "configs";
     preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
+    std::shared_ptr<App::BedThumbnailStore> thumbnail_store = std::make_shared<App::BedThumbnailStore>(*m_project_interactor);
+
     m_plater_module =
-        std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
+        std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor, thumbnail_store);
     m_preview_module =
-        std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor);
+        std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store);
     DialogManagerProvider::instance().set_dialog_manager_implementation(std::make_unique<WX::DialogManager>());
 
     const bool is_dark = true;

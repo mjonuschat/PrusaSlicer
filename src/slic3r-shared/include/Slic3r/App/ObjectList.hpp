@@ -30,6 +30,11 @@ namespace Slic3r::App::Render {
 class ImguiRender;
 } // namespace Slic3r::App::Render
 
+namespace Slic3r::App::Plater {
+struct BedThumbnailTexture;
+using BedThumbnailTextures = std::vector<BedThumbnailTexture>;
+} // namespace Slic3r::App::Plater
+
 namespace Slic3r::App {
 class ObjectListWindow;
 
@@ -44,6 +49,8 @@ public:
 
     ObjectList(Biz::ProjectInteractor* project_interactor, ObjectList::Mode mode);
     void init(Biz::ProjectInteractor* project_interactor, Mode mode);
+
+    void set_bed_instance_icons(const Plater::BedThumbnailTextures& icons);
 
 private:
     void render(Yoga::Vec2f pos, Yoga::Vec2f size) override;
@@ -72,7 +79,8 @@ private:
     void render_slicing_state_marker(size_t bed_instance_id);
     void render_infos_selectable(const std::set<Render::Icon>& infos, const Domain::ModelObject* object, bool force_render);
 
-    bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const std::string& label, bool add_overrides_marker = false);
+    bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const std::string& label, bool add_overrides_marker = false,
+        unsigned long long tex_id = 0, ImVec2 icon_size = {0.0f, 0.0f});
 
     void clear_all_ms();
     void invalidate_bed_selection();
@@ -108,6 +116,7 @@ private:
         size_t                          selected_container_id       { 0 };
         size_t                          selected_bed_instance_id    { 0 };
 
+        Plater::BedThumbnailTextures    bed_instance_icons;
     };
     using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
     using ProjectContextsPtr = std::unique_ptr<ProjectContexts>;

@@ -13,6 +13,7 @@
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/App/Render/FramebufferManager.hpp"
 #include "Slic3r/App/Scene/BedNodeBuilder.hpp"
+#include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
 
 #include "libslic3r/Model.hpp"
 
@@ -118,13 +119,8 @@ void PlaterScenePresenter::load_selected_project()
 
 void PlaterScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 {
-    if (!m_projects.empty()) {
-        Scene::SceneRenderFlag flags = Scene::SceneRenderFlag(
-            uint32_t(Scene::SceneRenderFlag::Shadows) |
-            uint32_t(Scene::SceneRenderFlag::AmbientOcclusion)
-        );
-        project_context().scene().render(m_device, command_buffer, this, flags);
-    }
+    if (!m_projects.empty())
+        project_context().scene().render(m_device, command_buffer, this);
 }
 
 void PlaterScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
@@ -139,11 +135,39 @@ void PlaterScenePresenter::screen_resized(const Render::Rect& viewport)
     update_cameras([&viewport](auto& cam) { cam.set_viewport(viewport); });
 }
 
+void PlaterScenePresenter::force_bed_thumbnails_generation()
+{
+    invoke_bed_visually_changed(m_selected_project_id);
+}
+
 void PlaterScenePresenter::update_cameras(const std::function<void(Scene::Camera&)>& modifier)
 {
     std::for_each(m_projects.begin(), m_projects.end(), [modifier](auto& p) {
         modifier(p.second.scene().camera());
     });
+}
+
+void PlaterScenePresenter::update_camera_frustum()
+{
+    // set scene aabb using bed instances print volumes
+    size_t project_id = m_project_interactor.selected_project_id();
+    const Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    Eigen::AlignedBox3d aabb;
+    for (const auto& cc : scene_interactor.selected_project_config_containers()) {
+        for (const auto& bed_inst : cc->bed_instances()) {
+            std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed_inst->bed);
+            Domain::Vec3d bed_inst_offset = bed_inst->transformation.get_offset();
+            for (const auto& v : print_volume) {
+                aabb.extend(bed_inst_offset + v.cast<double>());
+            }
+        }
+    }
+
+    // set new value for frustum z far
+    Vec3d sizes = aabb.sizes();
+    scene().camera().cam_projection().set_z_far(
+        scene().camera_trackball().distance_to_target() + std::max({sizes.x(), sizes.y(), sizes.z()})
+    );
 }
 
 void PlaterScenePresenter::update_objects_shadows_data()
@@ -172,6 +196,11 @@ void PlaterScenePresenter::update_objects_shadows_data()
 void PlaterScenePresenter::update_beds_shadows_data()
 {
     m_bed_render_updater.update_shadows(project_context().scene().camera());
+}
+
+static std::string bed_instance_thumbnail_name(size_t config_container_id, size_t instance_id)
+{
+    return fmt::format("thumbnail_bed_{}_{}", config_container_id, instance_id);
 }
 
 void PlaterScenePresenter::on_selected_project_changed(size_t index)
@@ -263,22 +292,17 @@ void PlaterScenePresenter::on_selected_bed_instance_changed(Domain::SelectionId 
     m_bed_render_updater.update_all(project_context().scene().camera());
     const Domain::BedInstance& bed_inst = selected_bed_instance();
     Domain::Vec3d bed_inst_offset = bed_inst.transformation.get_offset();
-    const Domain::Bed& bed = bed_inst.bed;
-    std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed);
+    std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed_inst.bed);
     Eigen::AlignedBox3d bed_aabb;
     for (const auto& v : print_volume) {
         bed_aabb.extend(bed_inst_offset + v.cast<double>());
     }
-    scene().set_bed_aabb(bed_aabb);
+    scene().set_shadows_aabb(bed_aabb);
     update_objects_shadows_data();
 }
 
-void PlaterScenePresenter::build_volume_node(
-    Scene::NodeBuilder& builder,
-    Domain::SelectionId project_id,
-    const Domain::ModelInstance* inst,
-    const Domain::ModelVolume* vol
-)
+void PlaterScenePresenter::build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst,
+    const Domain::ModelVolume* vol, std::optional<ColorRGBA> color)
 {
     SPDLOG_DEBUG("build_volume inst: {}  vol: {}", inst->id().id, vol->id().id);
     auto& ctx = m_projects[project_id];
@@ -293,16 +317,21 @@ void PlaterScenePresenter::build_volume_node(
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_triangle_mesh(m_device, trimesh->triangles());
     });
-    ColorRGBA color = ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f};
 
-    auto color_it = VOLUME_COLORS.find(vol->type());
-    if (color_it != VOLUME_COLORS.end())
-        color = color_it->second;
+    ColorRGBA clr = color.has_value() ? *color : ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f};
+    if (!color.has_value()) {
+        auto color_it = VOLUME_COLORS.find(vol->type());
+        if (color_it != VOLUME_COLORS.end())
+            clr = color_it->second;
+    }
+
+    if (!inst->printable)
+        clr = saturate(clr, 0.25f);
 
     auto material = Render::Material{}
         .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-        .set_uniform("uniform_color", color)
-        .set_transparent(color.is_transparent());
+        .set_uniform("uniform_color", clr)
+        .set_transparent(clr.is_transparent());
     builder
         .set_debug_name(fmt::format("vol: {}", vol->id().id))
         .transform([vol](auto& xform) { xform = vol->get_matrix(); })
@@ -328,6 +357,25 @@ const Domain::BedInstance& PlaterScenePresenter::selected_bed_instance() const
         .find_bed_instance(m_project_interactor.scene_interactor().selected_bed_instance().instance_id);
 }
 
+void PlaterScenePresenter::invoke_bed_visually_changed(Domain::SelectionId project_id)
+{
+    Domain::BedRefs bed_refs;
+    const Domain::Project& project = m_workbench.project(project_id);
+    const Domain::Project::ConfigContainerList& ccs = project.config_containers();
+    for (const auto& cc : ccs) {
+        for (const auto& bed_inst : cc->bed_instances()) {
+            bed_refs.emplace_back(cc->id().id, bed_inst->id().id);
+        }
+    }
+
+    if (!bed_refs.empty()) {
+        invoke_listeners<Plater::IBedVisuallyChangedListener>(
+            [&](Plater::IBedVisuallyChangedListener* l) {
+                l->on_bed_changed(project_id, bed_refs);
+            });
+    }
+}
+
 void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
 {
     auto& scn = scene();
@@ -347,6 +395,8 @@ void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, con
             ;
         scn.add_child(builder.build().release());
     }
+
+    invoke_bed_visually_changed(project_id);
 }
 
 void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
@@ -358,9 +408,12 @@ void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, c
             return tag.object_id == el.object_id && tag.instance_id == el.instance_id;
         }
     );
+
+    invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
+void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements,
+    Biz::Scene::TransformState state)
 {
     const Domain::BedInstance& bed_inst = selected_bed_instance();
     const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances;
@@ -393,6 +446,9 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
             }
         }
     });
+
+    if (state != Biz::Scene::TransformState::InProgress)
+        invoke_bed_visually_changed(project_id);
 }
 
 
@@ -430,6 +486,8 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
         }
         return true;
     });
+
+    invoke_bed_visually_changed(project_id);
 }
 
 void PlaterScenePresenter::on_volume_removed(
@@ -443,9 +501,12 @@ void PlaterScenePresenter::on_volume_removed(
             return tag.object_id == el.object_id && tag.volume_id == el.volume_id;
         }
     );
+
+    invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
+void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements,
+    Biz::Scene::TransformState state)
 {
     const Domain::BedInstance& bed_inst = selected_bed_instance();
     const Domain::Model* model = &m_project_interactor.selected_project().model();
@@ -479,6 +540,8 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
         }
     });
 
+    if (state != Biz::Scene::TransformState::InProgress)
+        invoke_bed_visually_changed(project_id);
 }
 
 void PlaterScenePresenter::on_volume_mesh_changed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
@@ -506,6 +569,9 @@ void PlaterScenePresenter::on_bed_instance_added(Domain::SelectionId project_id,
     }
 
     m_bed_render_updater.update_all(scn.camera());
+    update_camera_frustum();
+
+    invoke_bed_visually_changed(project_id);
 }
 
 void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances)
@@ -519,25 +585,33 @@ void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_i
     );
 
     m_bed_render_updater.update_all(scene().camera());
+    update_camera_frustum();
+
+    invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances)
+void PlaterScenePresenter::on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, 
+    Biz::Scene::TransformState state)
 {
+    if (state != Biz::Scene::TransformState::InProgress)
+        invoke_bed_visually_changed(project_id);
 }
 
 void PlaterScenePresenter::on_wipe_tower_added(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id)
 {
-
+    invoke_bed_visually_changed(project_id);
 }
 
 void PlaterScenePresenter::on_wipe_tower_removed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id)
 {
-
+    invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_wipe_tower_transformed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id)
+void PlaterScenePresenter::on_wipe_tower_transformed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id,
+    Biz::Scene::TransformState state)
 {
-
+    if (state != Biz::Scene::TransformState::InProgress)
+        invoke_bed_visually_changed(project_id);
 }
 
 void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx)
@@ -548,6 +622,5 @@ void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, size_t
         // clear depth buffer so all gizmo handles are rendered over document objects
         cmd_buf.clear_buffers(false, true);
 }
-
 
 } // namespace Slic3r::App::Plater

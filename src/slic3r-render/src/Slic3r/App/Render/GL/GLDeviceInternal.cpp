@@ -11,6 +11,7 @@
 #include "Slic3r/App/Render/GL/GLShaderInternal.hpp"
 #include "Slic3r/App/Render/GL/GLTextureInternal.hpp"
 #include "Slic3r/App/Render/GL/GLFramebufferInternal.hpp"
+#include "Slic3r/App/Render/GL/GLRenderbufferInternal.hpp"
 
 #include "Slic3r/Assert.hpp"
 #include "GL/glew.h"
@@ -97,6 +98,33 @@ void GLDeviceInternal::bind_texture_buffer(uint8_t unit, const TextureBuffer& tb
 }
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
+void GLDeviceInternal::bind_renderbuffer(const Renderbuffer& b)
+{
+    GLuint id = b.get_internal_as<GL::GLRenderbufferInternal>().m_id;
+
+#if RENDER_TRACE_LOG
+    SPDLOG_INFO("Binding RB {}", id);
+#endif // RENDER_TRACE_LOG
+    if (m_bound_renderbuffer == id)
+        return;
+#if RENDER_TRACE_LOG
+    SPDLOG_INFO("Bound RB {}", id);
+#endif // RENDER_TRACE_LOG
+    glBindRenderbuffer(GL_RENDERBUFFER, id);
+    glCheck();
+    m_bound_renderbuffer = id;
+#if RENDER_TRACE_LOG
+    SPDLOG_INFO("(bind_renderbuffer) Setting bound RB {}", id);
+#endif // RENDER_TRACE_LOG
+}
+
+void GLDeviceInternal::unbind_renderbuffer(const Renderbuffer& b)
+{
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glCheck();
+    m_bound_renderbuffer = 0;
+}
+
 void* GLDeviceInternal::map_buffer(BufferTarget target, BufferAccess access)
 {
     void* ret = glMapBuffer(type(target), type(access));
@@ -113,6 +141,14 @@ void GLDeviceInternal::unmap_buffer(BufferTarget target)
 void GLDeviceInternal::bind_framebuffer(const Framebuffer& buffer)
 {
     const auto& fb = buffer.get_internal_as<GLFramebufferInternal>();
+
+    if (fb.m_target == GL_FRAMEBUFFER || fb.m_target == GL_DRAW_FRAMEBUFFER) {
+        ResourceId id;
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, reinterpret_cast<GLint*>(&id));
+        glCheck();
+        m_draw_framebuffer_ids.push(id);
+    }
+
     glBindFramebuffer(fb.m_target, fb.m_id);
     glCheck();
 }
@@ -120,7 +156,15 @@ void GLDeviceInternal::bind_framebuffer(const Framebuffer& buffer)
 void GLDeviceInternal::unbind_framebuffer(const Framebuffer& buffer)
 {
     const auto& fb = buffer.get_internal_as<GLFramebufferInternal>();
-    glBindFramebuffer(fb.m_target, 0);
+
+    ResourceId id = 0;
+    if (fb.m_target == GL_FRAMEBUFFER || fb.m_target == GL_DRAW_FRAMEBUFFER) {
+        DEBUG_ASSERT(!m_draw_framebuffer_ids.empty());
+        id = m_draw_framebuffer_ids.top();
+        m_draw_framebuffer_ids.pop();
+    }
+
+    glBindFramebuffer(fb.m_target, id);
     glCheck();
 }
 
@@ -345,21 +389,96 @@ void GLDeviceInternal::unbind_geometry()
 #endif
 }
 
-void GLDeviceInternal::blit_to_default_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask,
+void GLDeviceInternal::blit_framebuffer(const Framebuffer& src_fb, Framebuffer& dst_fb, int x, int y, int width, int height,
+    BlitFramebufferMask mask, BlitFramebufferFilter filter)
+{
+#if SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+    PANIC("Not implemented yet");
+#else
+    ResourceId src_id = src_fb.get_internal_as<GLFramebufferInternal>().m_id;
+
+    ResourceId read_id;
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, reinterpret_cast<GLint*>(&read_id));
+    glCheck();
+
+    if (read_id != src_id) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, src_id);
+        glCheck();
+    }
+
+    ResourceId dst_id = dst_fb.get_internal_as<GLFramebufferInternal>().m_id;
+
+    ResourceId draw_id;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, reinterpret_cast<GLint*>(&draw_id));
+    glCheck();
+
+    if (draw_id != dst_id) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst_id);
+        glCheck();
+    }
+
+    glBlitFramebuffer(x, y, width, height, x, y, width, height, type(mask), type(filter));
+    glCheck();
+
+    if (draw_id != dst_id) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_id);
+        glCheck();
+    }
+
+    if (read_id != src_id) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, read_id);
+        glCheck();
+    }
+#endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+}
+
+void GLDeviceInternal::blit_to_draw_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask,
     BlitFramebufferFilter filter)
 {
 #if SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
     PANIC("Not implemented yet");
 #else
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.get_internal_as<GLFramebufferInternal>().m_id);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    ResourceId src_id = fb.get_internal_as<GLFramebufferInternal>().m_id;
 
-    glBlitFramebuffer(0, 0, width, height,
-                      0, 0, width, height,
-                      type(mask), type(filter));
+    ResourceId read_id;
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, reinterpret_cast<GLint*>(&read_id));
+    glCheck();
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (read_id != src_id) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, src_id);
+        glCheck();
+    }
+
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, type(mask), type(filter));
+    glCheck();
+
+    if (read_id != src_id) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, read_id);
+        glCheck();
+    }
 #endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+}
+
+void GLDeviceInternal::read_pixels(const Framebuffer& fb, int x, int y, int width, int height, PixelFormat format, void* pixels)
+{
+    ResourceId fb_id = fb.get_internal_as<GLFramebufferInternal>().m_id;
+
+    ResourceId read_id;
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, reinterpret_cast<GLint*>(&read_id));
+    glCheck();
+
+    if (read_id != fb_id) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_id);
+        glCheck();
+    }
+
+    glReadPixels(x, y, width, height, texture_format(format), texture_format_type(format), pixels);
+    glCheck();
+
+    if (read_id != fb_id) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, read_id);
+        glCheck();
+    }
 }
 
 void GLDeviceInternal::draw(PrimitiveType primitive, size_t offset, size_t count)
@@ -442,4 +561,4 @@ void GLDeviceInternal::print_buffer_info(const char* action)
 }
 
 
-}
+} // namespace Slic3r::App::Render::GL

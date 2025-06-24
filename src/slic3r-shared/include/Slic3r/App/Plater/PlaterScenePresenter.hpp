@@ -12,7 +12,9 @@
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
+#include "Slic3r/App/Scene/IProjectSceneProvider.hpp"
 #include "Slic3r/App/Scene/BedRenderUpdater.hpp"
+#include "Slic3r/App/Plater/IBedVisuallyChangedListener.hpp"
 
 namespace Slic3r::App::Scene {
 class NodeBuilder;
@@ -21,12 +23,14 @@ struct BedNodeTag;
 
 namespace Slic3r::App::Plater {
 
-class PlaterScenePresenter : public Biz::ISelectedProjectChangedListener,
+class PlaterScenePresenter : public WithListeners<Plater::IBedVisuallyChangedListener>,
+                             public Biz::ISelectedProjectChangedListener,
                              public Biz::Scene::ISceneSelectionChangedListener,
                              public Biz::ISelectedBedInstanceChangedListener,
                              public Biz::Scene::ISceneChangedListener,
                              public Scene::MinimalSceneRenderCustomizer,
-                             public Scene::ISceneProvider
+                             public Scene::ISceneProvider,
+                             public Scene::IProjectSceneProvider
 {
 public:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, Scene::ScenePresenterProjectContext>;
@@ -81,8 +85,28 @@ public:
     void update_objects_shadows_data();
     void update_beds_shadows_data();
 
+    /**
+     * @name Implementation of Scene::IProjectSceneProvider public interface
+     * @{
+     */
+    Scene::Scene& project_scene(Domain::SelectionId project_id) override {
+        return m_projects[project_id].scene();
+    }
+
+    const Scene::Scene& project_scene(Domain::SelectionId project_id) const override {
+        return m_projects.find(project_id)->second.scene();
+    }
+    /**@}*/
+
+    // At startup the scene initialization happens in the constructor, which means before any IBedVisuallyChangedListener
+    // can be registered, see PlaterRenderModule::on_init()
+    // Call this function to force bed thumbnails generation after the listeners are registered, for example to ensure
+    // that the object list is properly updated
+    void force_bed_thumbnails_generation();
+
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
+    void update_camera_frustum();
 
     void on_selected_project_changed(size_t index) override;
 
@@ -93,26 +117,29 @@ private:
 
     void on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;
     void on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;
-    void on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements) override;
+    void on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, Biz::Scene::TransformState state) override;
 
     void on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
     void on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
-    void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements) override;
+    void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, Biz::Scene::TransformState state) override;
     void on_volume_mesh_changed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
 
     void on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
     void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
-    void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
+    void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, Biz::Scene::TransformState state) override;
 
     void on_wipe_tower_added(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id) override;
     void on_wipe_tower_removed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id) override;
-    void on_wipe_tower_transformed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id) override;
+    void on_wipe_tower_transformed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id, Biz::Scene::TransformState state) override;
 
     void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) override;
 
-    void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst, const Domain::ModelVolume* vol);
+    void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst, const Domain::ModelVolume* vol,
+        std::optional<ColorRGBA> color = std::nullopt);
 
     const Domain::BedInstance& selected_bed_instance() const;
+
+    void invoke_bed_visually_changed(Domain::SelectionId project_id);
 
 private:
     const Domain::Workbench& m_workbench;
@@ -127,4 +154,4 @@ private:
     bool m_freeze_selection_center{ false };
 };
 
-}
+} // namespace Slic3r::App::Plater

@@ -13,6 +13,7 @@ struct GLFramebufferInternal : public Framebuffer::Internal
     size_t color_attachments_count{ 0 };
     bool depth{ false };
     bool stencil{ false };
+    uint8_t num_samples{ 1 };
 
     explicit GLFramebufferInternal(FramebufferTarget target) : m_target(type(target)) {}
 };

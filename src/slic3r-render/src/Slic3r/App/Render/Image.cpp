@@ -1,6 +1,7 @@
 #include "Slic3r/App/Render/Image.hpp"
 
 #include <cstring>
+#include <algorithm>
 #include "Slic3r/Assert.hpp"
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -114,6 +115,19 @@ Image Image::rescaled_with_preserved_ratio(const Size& target_size)
     }
 
     return { m_pixel_format, target_size.width, target_size.height, std::move(result) };
+}
+
+void Image::flip_vertical()
+{
+    size_t pixel_bytes = pixel_format_bytes_per_pixel(m_pixel_format);
+    size_t row_size = m_width * pixel_bytes;
+    size_t half_height = m_height / 2;
+    for (size_t y = 0; y < half_height; ++y) {
+        size_t top_index = y * row_size;
+        size_t bottom_index = (m_height - 1 - y) * row_size;
+        std::swap_ranges(m_pixels.begin() + top_index, m_pixels.begin() + top_index + row_size,
+                         m_pixels.begin() + bottom_index);
+    }
 }
 
 }

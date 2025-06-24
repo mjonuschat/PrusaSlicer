@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <memory>
 
 namespace Slic3r::App::Render {
@@ -7,8 +8,10 @@ namespace Slic3r::App::Render {
 class ScreenInfo;
 class Texture;
 using TexturePtr = std::shared_ptr<Texture>;
+using TexturePtrs = std::vector<TexturePtr>;
 
-struct RgbaF {
+struct RgbaF
+{
     float r;
     float g;
     float b;
@@ -254,4 +257,6 @@ struct Size
     int space() const;
 };
 
-}
+using Sizes = std::vector<Size>;
+
+} // namespace Slic3r::App::Render

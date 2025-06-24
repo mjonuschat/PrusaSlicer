@@ -16,6 +16,7 @@ class IndexBuffer;
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 class TextureBuffer;
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+class Renderbuffer;
 class Shader;
 class CommandBuffer;
 class Framebuffer;
@@ -39,6 +40,7 @@ public:
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     std::unique_ptr<TextureBuffer> create_texture_buffer(PixelFormat format);
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    std::unique_ptr<Renderbuffer> create_render_buffer(PixelFormat format);
     std::unique_ptr<CommandBuffer> create_command_buffer();
     std::unique_ptr<Framebuffer> create_framebuffer(const FramebufferCreationData& data);
 
@@ -50,6 +52,9 @@ public:
 
     void bind_framebuffer(const Framebuffer& b);
     void unbind_framebuffer(const Framebuffer& b);
+
+    void bind_renderbuffer(const Renderbuffer& b);
+    void unbind_renderbuffer(const Renderbuffer& b);
 
 private:
     Context& m_context;

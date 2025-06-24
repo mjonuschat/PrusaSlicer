@@ -23,6 +23,10 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/IRenderModuleChangedListener.hpp"
+#include "Slic3r/App/Scene/ThumbnailHelper.hpp"
+#if ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
+#include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
+#endif // ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
 
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/CubeView.hpp"
@@ -30,7 +34,7 @@
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/SidebarActionButtons.hpp"
 #include "Slic3r/App/LightSetting.hpp"
-#include "Slic3r/App/BedStore.hpp"
+#include "Slic3r/App/BedThumbnailStore.hpp"
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
@@ -50,10 +54,9 @@ namespace Slic3r::App::Plater {
 
 namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
-PlaterRenderModule::PlaterRenderModule(
-    const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor
-)
-    : m_workbench(workbench), m_project_interactor(project_interactor)
+PlaterRenderModule::PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
+    std::shared_ptr<BedThumbnailStore> thumbnail_store)
+    : m_workbench(workbench), m_project_interactor(project_interactor), m_thumbnail_store(thumbnail_store)
 {}
 
 PlaterRenderModule::~PlaterRenderModule()
@@ -70,9 +73,15 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_scene_presenter =
         std::make_unique<PlaterScenePresenter>(m_workbench, m_project_interactor, *m_device);
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
+
     init_gizmos();
     init_scene();
     init_scene_layout();
+
+    m_thumbnail_generator = std::make_unique<BedThumbnailTextureGenerator>(*m_device, m_project_interactor, *m_scene_presenter);
+    m_thumbnail_updater = std::make_unique<BedThumbnailUpdater>(*m_device, *m_thumbnail_generator, *m_object_list.get(), *m_thumbnail_store);
+    m_scene_presenter->add_listener<Plater::IBedVisuallyChangedListener>(m_thumbnail_updater.get());
+    m_scene_presenter->force_bed_thumbnails_generation();
 
     m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
 }
@@ -80,7 +89,6 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
 void PlaterRenderModule::add_type_changed_listener(IRenderModuleChangedListener* l)
 {
     m_render_module_changed_listeners.insert(l);
-
 }
 
 void PlaterRenderModule::remove_type_changed_listener(IRenderModuleChangedListener* l)
@@ -788,13 +796,13 @@ static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Azimuth");
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f", Geometry::rad2deg(trackball.azimuth()));
+            ImGui::Text("%.3f", rad2deg(trackball.azimuth()));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Zenith");
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f", Geometry::rad2deg(trackball.zenith()));
+            ImGui::Text("%.3f", rad2deg(trackball.zenith()));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -813,6 +821,13 @@ static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::
             ImGui::Text("Up");
             ImGui::TableSetColumnIndex(1);
             ImGui::Text("%s", to_string(camera.up()).c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("View rotation");
+            ImGui::TableSetColumnIndex(1);
+            const Eigen::Quaterniond& view_rotation = trackball.view_rotation();
+            ImGui::Text("%.3f, %.3f, %.3f, %.3f", view_rotation.x(), view_rotation.y(), view_rotation.z(), view_rotation.w());
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -846,6 +861,8 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
 {
     if (!m_scene_presenter->project_ready())
         return;
+
+    m_thumbnail_generator->handle_enqueued_requests();
 
     m_layout->render(Vec2f(m_screen_info.logical_width(), m_screen_info.logical_height()));
 
@@ -903,27 +920,66 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
 {
     if (!m_gizmo_manager->on_scene_keyboard_event(e))
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
+
+#if ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
+    Scene::CameraProjectionType camera_type = Scene::CameraProjectionType::Orthographic;
+    const Domain::Project& project = m_project_interactor.selected_project();
+    ThumbnailRenderer renderer(*m_device);
+
+    // test code to simulate generation of thumbnails for gallery
+    {
+        if (!project.model().objects.empty()) {
+            Render::Images images = renderer.generate_object_thumbnails(*project.model().objects.front(),
+                { {256, 256} }, camera_type);
+
+            std::string name = fmt::format("thumbnail_object_{}", project.model().objects.front()->id().id);
+            std::string path_prefix = fmt::format("C:/test/{}", name);
+            Scene::export_to_png_file(images, path_prefix);
+        }
+    }
+
+    // test code to simulate generation of thumbnails for export into gcode
+    {
+        const Domain::BedRef& bed_ref = m_project_interactor.scene_interactor().selected_bed_instance();
+        const Domain::BedInstance& bed_inst = m_project_interactor.selected_config_container().find_bed_instance(bed_ref.instance_id);
+
+        ThumbnailRendererParams params{
+            .scene = m_scene_presenter->scene(),
+            .pixel_format = Render::PixelFormat::RGBA8,
+            .sizes = { {160, 120}, {16, 16}, {220, 124}, {200, 240}, {380, 285}, {313, 173}, {480, 240} }
+        };
+        Render::Images images = renderer.generate_gcode_thumbnails(params, project, bed_inst, bed_ref, camera_type);
+
+        std::string name = fmt::format("thumbnail_gcode");
+        std::string path_prefix = fmt::format("C:/test/{}", name);
+        Scene::export_to_png_file(images, path_prefix);
+    }
+
+    // test code to simulate generation of thumbnails for export into 3mf
+    {
+        ThumbnailRendererParams params{
+            .scene = m_scene_presenter->scene(),
+            .pixel_format = Render::PixelFormat::RGBA8,
+            .sizes = { {256, 256} }
+        };
+        Render::Images images = renderer.generate_3mf_thumbnails(params, project, camera_type);
+
+        std::string name = "thumbnail_3mf";
+        std::string path_prefix = fmt::format("C:/test/{}", name);
+        Scene::export_to_png_file(images, path_prefix);
+    }
+#endif // ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
 }
 
 void PlaterRenderModule::on_activated()
 {
     if (m_scene_presenter != nullptr)
-        m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
+        m_scene_presenter->scene().set_lights(App::global_lighting());
 }
 
 void PlaterRenderModule::on_deactivated()
 {
-    Slic3r::App::set_global_lighting(m_scene_presenter->scene().lights());
-
-    App::BedStore store;
-    size_t project_id = m_project_interactor.selected_project_id();
-    const auto& project = m_workbench.project(project_id);
-    for (const auto& cc : project.config_containers()) {
-        for (const auto& bi : cc->bed_instances()) {
-            store.beds.push_back(Domain::BedRef{cc->id().id, bi->id().id});
-        }
-    }
-    Slic3r::App::set_bed_store(store);
+    App::set_global_lighting(m_scene_presenter->scene().lights());
 }
 
 void PlaterRenderModule::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection &selection)

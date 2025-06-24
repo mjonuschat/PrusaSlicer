@@ -39,7 +39,7 @@ GLenum texture_internal_format(PixelFormat format)
     case PixelFormat::RGBA32F:        return GL_RGBA32F;
     case PixelFormat::RGBA16F:        return GL_RGBA16F;
     case PixelFormat::RGB32F:         return GL_RGB32F;
-    case PixelFormat::DepthComponent: return GL_DEPTH_COMPONENT;
+    case PixelFormat::DepthComponent: return GL_DEPTH_COMPONENT24;
     default: {
         // Unsupported format
         throw std::runtime_error{"Unreachable code!"};

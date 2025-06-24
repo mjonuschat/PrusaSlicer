@@ -159,6 +159,7 @@ public:
     Vec3d unproject(const Vec3d& win_pos) const;
 
     const AbstractCameraProjection& cam_projection() const { return *m_projection_getter; }
+    AbstractCameraProjection& cam_projection() { return *m_projection_getter; }
 
     bool pointing_upward() const {
         return (m_projection_getter->type() == CameraProjectionType::Perspective) ? position().z() < 0.0 : forward().z() >= 0.0;
@@ -214,4 +215,4 @@ public:
 
 };
 
-}
+} // namespace Slic3r::App::Scene

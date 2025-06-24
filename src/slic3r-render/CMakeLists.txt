@@ -16,6 +16,8 @@ set(SLIC3R_RENDER_FILES
         src/Slic3r/App/Render/Texture_gl.cpp
         include/Slic3r/App/Render/Buffer.hpp
         src/Slic3r/App/Render/Buffer_gl.cpp
+        include/Slic3r/App/Render/Renderbuffer.hpp
+        src/Slic3r/App/Render/Renderbuffer_gl.cpp
         include/Slic3r/App/Render/Shader.hpp
         src/Slic3r/App/Render/Shader_gl.cpp
         include/Slic3r/App/Render/UniformValue.hpp
@@ -53,6 +55,7 @@ set(SLIC3R_RENDER_FILES
         src/Slic3r/App/Render/GL/commonGL.cpp
         include/Slic3r/App/Render/GL/GLTextureInternal.hpp
         include/Slic3r/App/Render/GL/GLBufferInternal.hpp
+        include/Slic3r/App/Render/GL/GLRenderbufferInternal.hpp
         include/Slic3r/App/Render/GL/GLGeometryInternal.hpp
         include/Slic3r/App/Render/GL/GLShaderInternal.hpp
         include/Slic3r/App/Render/GL/GLDeviceInternal.hpp

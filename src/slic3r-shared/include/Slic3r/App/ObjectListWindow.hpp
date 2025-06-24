@@ -7,6 +7,11 @@ namespace Slic3r::Biz {
 class ProjectInteractor;
 }
 
+namespace Slic3r::App::Plater {
+struct BedThumbnailTexture;
+using BedThumbnailTextures = std::vector<BedThumbnailTexture>;
+} // namespace Slic3r::App::Plater
+
 namespace Slic3r::App {
 
 namespace Yoga {
@@ -22,6 +27,8 @@ public:
 
     ObjectListWindow(Biz::ProjectInteractor* project_interactor, bool for_plater);
     void update_sliced_info();
+
+    void set_bed_instance_icons(const Plater::BedThumbnailTextures& icons);
 
 private:
     Yoga::Text* m_label{ nullptr };

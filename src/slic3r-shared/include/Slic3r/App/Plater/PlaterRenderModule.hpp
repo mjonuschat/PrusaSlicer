@@ -10,6 +10,12 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Plater/PlaterIFDMResultCacheChangedListener.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Plater/BedThumbnailTextureGenerator.hpp"
+#include "Slic3r/App/Plater/BedThumbnailUpdater.hpp"
+
+namespace Slic3r::App {
+struct BedThumbnailStore;
+} // namespace Slic3r::App
 
 namespace Slic3r::App::Plater {
 class TranslationGizmo;
@@ -23,7 +29,8 @@ class PlaterRenderModule final : public Platform::AbstractRenderModule,
                                  private Scene::IGizmoActiveToolListener
 {
 public:
-    PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor);
+    PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
+        std::shared_ptr<BedThumbnailStore> thumbnail_store);
     ~PlaterRenderModule();
 
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
@@ -86,6 +93,10 @@ private:
     RotationGizmo* m_rotation_gizmo = nullptr;
     SimplifyGizmo* m_simplify_gizmo = nullptr;
     PaintOnSupportsGizmo* m_paint_on_supports_gizmo = nullptr;
+
+    std::unique_ptr<BedThumbnailTextureGenerator> m_thumbnail_generator;
+    std::unique_ptr<BedThumbnailUpdater> m_thumbnail_updater;
+    std::shared_ptr<BedThumbnailStore> m_thumbnail_store;
 
     std::unordered_set<IRenderModuleChangedListener*> m_render_module_changed_listeners;
 };

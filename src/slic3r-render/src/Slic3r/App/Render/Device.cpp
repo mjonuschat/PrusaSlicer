@@ -52,6 +52,12 @@ std::unique_ptr<TextureBuffer> Device::create_texture_buffer(PixelFormat format)
 }
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
+
+std::unique_ptr<Renderbuffer> Device::create_render_buffer(PixelFormat format)
+{
+    return std::make_unique<Renderbuffer>(format);
+}
+
 std::unique_ptr<CommandBuffer> Device::create_command_buffer()
 {
     return std::make_unique<CommandBuffer>(*this);
@@ -90,6 +96,16 @@ void Device::bind_framebuffer(const Framebuffer& b)
 void Device::unbind_framebuffer(const Framebuffer& b)
 {
     get_internal_as<GL::GLDeviceInternal>().unbind_framebuffer(b);
+}
+
+void Device::bind_renderbuffer(const Renderbuffer& b)
+{
+    get_internal_as<GL::GLDeviceInternal>().bind_renderbuffer(b);
+}
+
+void Device::unbind_renderbuffer(const Renderbuffer& b)
+{
+    get_internal_as<GL::GLDeviceInternal>().unbind_renderbuffer(b);
 }
 
 } // namespace Slic3r::App::Render

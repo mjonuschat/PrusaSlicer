@@ -334,6 +334,7 @@ void Scene::render_background(Render::CommandBuffer& cmd_buffer, Render::Device&
         .set_uniform("bottom_color", bottom_color);
 
     cmd_buffer.bind_and_draw(*m_screen_quad, material);
+    cmd_buffer.clear_buffers(false, true);
 }
 
 void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomizer* customizer) const
@@ -360,7 +361,7 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
     cmd_buffer->set_cull_face_enabled(true);
     cmd_buffer->clear_buffers(false, true);
 
-    Eigen::AlignedBox3d world_aabb = m_shadows.bed_aabb;
+    Eigen::AlignedBox3d world_aabb = m_shadows.aabb;
 
     NodeMaterials nodes = collect_nodes_with_material([](auto n) {
         return n->has_render_component() && n->render_component()->cast_shadows() && !resolve_material(*n).transparent();
@@ -393,7 +394,6 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
 
         Vec3d eye_min = { DBL_MAX, DBL_MAX, DBL_MAX };
         Vec3d eye_max = { -DBL_MAX, -DBL_MAX, -DBL_MAX };
-        Transform3d view = Transform3d(m_shadows.light_cam.view());
         for (int i = 0; i < 8; ++i) {
             Vec3d eye_c = light_aabb.corner(Eigen::AlignedBox3d::CornerType(i));
             eye_min.x() = std::min(eye_min.x(), eye_c.x());
@@ -763,7 +763,7 @@ void Scene::render_ao_texture_blur_pass(Render::Device& device, const Domain::In
     cmd_buffer->unbind_framebuffer(*m_ao.blur_fb);
 }
 
-void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device, bool shadows) const
+void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device) const
 {
     cmd_buffer.set_depth_test_enabled(false);
     cmd_buffer.set_depth_write_enabled(false);
@@ -778,8 +778,8 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
         .set_shader(device.context().shader_manager().shader("ao_lighting"))
         .set_uniform("apply_pbr", m_pbr.enabled)
         .set_uniform("pbr_intensity", m_pbr.enabled ? m_pbr.intensity : 1.0f)
-        .set_uniform("apply_shadows", shadows)
-        .set_uniform("shadows_intensity", shadows ? m_shadows.intensity : 0.0f)
+        .set_uniform("apply_shadows", m_shadows.enabled)
+        .set_uniform("shadows_intensity", m_shadows.enabled ? m_shadows.intensity : 0.0f)
         .set_uniform("g_eye_position", AmbientOcclusion::EYE_POS_TEX_UNIT)
         .set_uniform("g_light_position", AmbientOcclusion::LIGHT_POS_TEX_UNIT)
         .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
@@ -805,22 +805,20 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
     cmd_buffer.set_depth_test_enabled(true);
 }
 
-void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer,
-    SceneRenderFlag flags) const
+void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
 {
     Render::ScopedDebugGroup event_scene_render("Scene", cmd_buffer);
 
     if (m_screen_quad == nullptr)
         init_screen_quad(device);
 
-    render_background(cmd_buffer, device, false);
+    if (m_background_enabled)
+        render_background(cmd_buffer, device, false);
 
-    bool shadows = m_shadows.enabled && (uint32_t(flags) & uint32_t(SceneRenderFlag::Shadows)) != 0;
-    if (shadows)
+    if (m_shadows.enabled)
         render_shadowsmap_pass(device, customizer);
 
-    bool ao = m_ao.enabled && (uint32_t(flags) & uint32_t(SceneRenderFlag::AmbientOcclusion)) != 0;
-    if (ao) {
+    if (m_ao.enabled) {
         const Render::Rect& viewport = m_camera.viewport();
         Domain::Index2 viewport_size = { viewport.width, viewport.height };
         render_ao_gbuffer_pass(device, customizer, viewport_size);
@@ -828,12 +826,12 @@ void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, IS
         generate_ao_noise(device);
         render_ao_texture_pass(device, viewport_size);
         render_ao_texture_blur_pass(device, viewport_size);
-        render_ao_lighting_pass(cmd_buffer, device, shadows);
-        cmd_buffer.blit_to_default_framebuffer(*m_ao.gbuffer_fb, viewport.width, viewport.height,
+        render_ao_lighting_pass(cmd_buffer, device);
+        cmd_buffer.blit_to_draw_framebuffer(*m_ao.gbuffer_fb, viewport.width, viewport.height,
             Render::BlitFramebufferMask::DepthBufferBit, Render::BlitFramebufferFilter::Nearest);
         m_ao.framebuffer_size = viewport_size;
     }
-    else if (shadows)
+    else if (m_shadows.enabled)
         render_shadows_receivers_pass(device, cmd_buffer, customizer);
 
     render_no_shadows_pass(cmd_buffer, customizer);

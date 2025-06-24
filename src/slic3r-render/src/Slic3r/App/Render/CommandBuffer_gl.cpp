@@ -118,6 +118,11 @@ void CommandBuffer::set_cull_face_mode(CullFaceMode mode)
     glCheck();
 }
 
+void CommandBuffer::set_multisampling_enabled(bool enabled)
+{
+    GL::setEnabled(GL_MULTISAMPLE, enabled);
+}
+
 void CommandBuffer::bind_texture(uint8_t unit, const Texture& t)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
@@ -166,11 +171,21 @@ void CommandBuffer::bind_geometry(const Geometry& g, const Shader& s)
     m_needs_submit = true;
 }
 
-void CommandBuffer::blit_to_default_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask,
+void CommandBuffer::blit_framebuffer(const Framebuffer& src_fb, Framebuffer& dst_fb, int x, int y, int width, int height,
+    BlitFramebufferMask mask, BlitFramebufferFilter filter)
+{
+    m_device.get_internal_as<GL::GLDeviceInternal>().blit_framebuffer(src_fb, dst_fb, x, y, width, height, mask, filter);
+}
+
+void CommandBuffer::blit_to_draw_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask,
     BlitFramebufferFilter filter)
 {
-    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
-    device.blit_to_default_framebuffer(fb, width, height, mask, filter);
+    m_device.get_internal_as<GL::GLDeviceInternal>().blit_to_draw_framebuffer(fb, width, height, mask, filter);
+}
+
+void CommandBuffer::read_pixels(const Framebuffer& fb, int x, int y, int width, int height, PixelFormat format, void* pixels)
+{
+    m_device.get_internal_as<GL::GLDeviceInternal>().read_pixels(fb, x, y, width, height, format, pixels);
 }
 
 void CommandBuffer::draw(PrimitiveType primitive, size_t offset, size_t count)

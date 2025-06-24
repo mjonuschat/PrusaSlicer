@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <unordered_set>
+#include <stack>
+
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/Types.hpp"
 
@@ -15,7 +17,6 @@ namespace Slic3r::App::Render::GL {
 
 using ResourceId = unsigned int;
 using ResourceIds = std::vector<ResourceId>;
-
 
 class GLDeviceInternal : public Device::Internal
 {
@@ -34,6 +35,8 @@ public:
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     void bind_texture_buffer(uint8_t unit, const TextureBuffer& tb);
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    void bind_renderbuffer(const Renderbuffer& b);
+    void unbind_renderbuffer(const Renderbuffer& b);
 
     void* map_buffer(BufferTarget target, BufferAccess access);
     void unmap_buffer(BufferTarget target);
@@ -41,7 +44,11 @@ public:
     void bind_framebuffer(const Framebuffer& buffer);
     void unbind_framebuffer(const Framebuffer& buffer);
 
-    void blit_to_default_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask, BlitFramebufferFilter filter);
+    void blit_framebuffer(const Framebuffer& src_fb, Framebuffer& dst_fb, int x, int y, int width, int height,
+        BlitFramebufferMask mask, BlitFramebufferFilter filter);
+    void blit_to_draw_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask, BlitFramebufferFilter filter);
+
+    void read_pixels(const Framebuffer& fb, int x, int y, int width, int height, PixelFormat format, void* pixels);
 
     void draw(PrimitiveType primitive, size_t offset, size_t count);
     void draw_instanced(PrimitiveType primitive, size_t offset, size_t count, size_t instances_count);
@@ -67,6 +74,7 @@ private:
     // active bound TB
     ResourceId m_bound_texture_buffer{ 0 };
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    ResourceId m_bound_renderbuffer{ 0 };
     IndexType m_bound_index_type{IndexType::UByte};
     ResourceId m_bound_vao{0};
     ResourceId m_bound_shader{0};
@@ -74,5 +82,8 @@ private:
     uint8_t m_active_texture_unit{0};
     // Is index buffer enabled either via bound IB or VAO
     bool m_bound_indices{false};
+
+    std::stack<ResourceId> m_draw_framebuffer_ids;
 };
-}
+
+} // namespace Slic3r::App::Render::GL
