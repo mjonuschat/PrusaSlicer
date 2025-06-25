@@ -863,7 +863,7 @@ Biz::Print::ApplyStatus SLAPrint::update(
         } else {
             Biz::Slicing::Sla::Object slicing_object{};
             slicing_object.object_id = id;
-            // Sending empty object means the object was invalidated.
+            // Sending an object without trafos means the object has been invalidated.
             m_on_sla_object(slicing_object);
         }
     }

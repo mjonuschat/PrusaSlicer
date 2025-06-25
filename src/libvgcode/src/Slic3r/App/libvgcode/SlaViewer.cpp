@@ -237,6 +237,13 @@ void SlaViewer::build_instance_node(
     build_if_needed(object_id, instance_id, SlaMeshType::Object,   sla_object.mesh,              trafo, parent_node);
     build_if_needed(object_id, instance_id, SlaMeshType::Supports, sla_object.support_structure, trafo, parent_node);
     build_if_needed(object_id, instance_id, SlaMeshType::Pad,      sla_object.pad,               trafo, parent_node);
+
+    for (const auto& node : parent_node->children()) {
+        const SlaObjectNodeTag* t = node->tag_of_type<SlaObjectNodeTag>();
+        if (t != nullptr && t->instance_id == instance_id) {
+            node->set_local_transform(trafo.matrix());
+        }
+    }
 }
 
 void SlaViewer::load_object(const Biz::Slicing::Sla::Object& sla_object)
