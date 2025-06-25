@@ -1092,7 +1092,7 @@ void PreviewRenderModule::update_sla_viewer_object_data(const Biz::Slicing::Slic
     if (sla_object_result)
         m_sla_viewer.load_from_object(sla_object_result->get());
     else
-        m_sla_viewer.reset_from_object(sla_object_result->get());
+        m_sla_viewer.reset_object(instance_id);
 }
 
 void PreviewRenderModule::update_sla_viewer_data(const Biz::Slicing::SlicingId id)

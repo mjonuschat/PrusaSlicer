@@ -11,6 +11,7 @@
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 
 namespace Slic3r::Domain {
 class TriangleMesh;
@@ -64,7 +65,7 @@ public:
     void load_object(const Biz::Slicing::Sla::Object& object);
 
     void reset_layers();
-    void reset_object(const Biz::Slicing::Sla::Object& object);
+    void reset_object(const Domain::ObjectID object_id);
     //
     // Render
     //

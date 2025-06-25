@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AbstractViewerWrapper.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "Types.hpp"
 #include "SlaViewerWrapperInputData.hpp"
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
@@ -38,7 +39,7 @@ public:
     void load_from_object(const Biz::Slicing::Sla::Object& object);
 
     void reset_result();
-    void reset_from_object(const Biz::Slicing::Sla::Object& object);
+    void reset_object(const Domain::ObjectID& object_id);
 
     const libvgcode::Interval& view_visible_range() const { return m_viewer.view_visible_range(); }
     const libvgcode::Interval& view_enabled_range() const { return m_viewer.view_enabled_range(); }

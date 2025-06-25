@@ -81,9 +81,9 @@ void SlaViewerWrapper::reset_result()
     m_viewer.reset_layers();
 }
 
-void SlaViewerWrapper::reset_from_object(const Biz::Slicing::Sla::Object& object)
+void SlaViewerWrapper::reset_object(const Domain::ObjectID& object_id)
 {
-    m_viewer.reset_object(object);
+    m_viewer.reset_object(object_id);
 }
 
 // void SlaViewerWrapper::render_legend(Render::ImguiRender* imgui_render)

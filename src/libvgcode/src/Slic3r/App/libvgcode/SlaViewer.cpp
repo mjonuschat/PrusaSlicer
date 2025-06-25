@@ -95,20 +95,19 @@ void SlaViewer::reset_layers()
     AbstractViewer::reset();
 }
 
-void SlaViewer::reset_object(const Biz::Slicing::Sla::Object& object)
+void SlaViewer::reset_object(const Domain::ObjectID object_id)
 {
-    const size_t object_id = object.object_id.id;
     // remove object from the  Scene::Nodes 
     m_scene->remove_children([object_id](const Scene::Node* node) { 
         const SlaObjectNodeTag* t = node->tag_of_type<SlaObjectNodeTag>();
-        return t && t->object_id == object_id;
+        return t && t->object_id == object_id.id;
     }, m_main_node);
 
     for (const Scene::AuxiliaryElementId::Type& aei_type : { Scene::AuxiliaryElementId::Type::SlaMesh,
         Scene::AuxiliaryElementId::Type::SlaSupports,
         Scene::AuxiliaryElementId::Type::SlaPad }) {
 
-        Scene::AuxiliaryElementId id{ aei_type, object_id };
+        Scene::AuxiliaryElementId id{ aei_type, object_id.id };
 
         m_model_geometry_manager.release(id);
         m_model_triangle_mesh_manager.release(id);
