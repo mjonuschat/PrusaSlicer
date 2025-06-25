@@ -22,6 +22,7 @@ class TranslationGizmo;
 class RotationGizmo;
 class PaintOnSupportsGizmo;
 class SimplifyGizmo;
+class MeasureGizmo;
 
 class PlaterRenderModule final : public Platform::AbstractRenderModule,
                                  public Biz::IStatusCacheChangedListener,
@@ -87,11 +88,13 @@ private:
     Yoga::ToolbarButton* m_toolbar_rotate = nullptr;
     Yoga::ToolbarButton* m_toolbar_simplify = nullptr;
     Yoga::ToolbarButton* m_toolbar_paint_on_supports = nullptr;
+    Yoga::ToolbarButton* m_toolbar_measure = nullptr;
 
     TranslationGizmo* m_translation_gizmo = nullptr;
     RotationGizmo* m_rotation_gizmo = nullptr;
     SimplifyGizmo* m_simplify_gizmo = nullptr;
     PaintOnSupportsGizmo* m_paint_on_supports_gizmo = nullptr;
+    MeasureGizmo* m_measure_gizmo = nullptr;
 
     std::unique_ptr<BedThumbnailTextureGenerator> m_thumbnail_generator;
     std::unique_ptr<BedThumbnailUpdater> m_thumbnail_updater;

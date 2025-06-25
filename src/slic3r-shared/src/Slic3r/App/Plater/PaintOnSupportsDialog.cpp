@@ -18,7 +18,7 @@ namespace Slic3r::App::Plater {
 
 constexpr float gap_size = 10;
 
-PaintOnSupportsDialog::PaintOnSupportsDialog() : Dialog("Paint-on supports")
+PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports")
 {
     const Vec2f button_size{50.f, 50.f};
 
@@ -69,7 +69,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : Dialog("Paint-on supports")
     brush_size->set_input_width(slider_text_size);
     add_new_row("Brush size", std::move(brush_size));
 
-    add_separator();
+    Dialog::add_separator();
 
     std::unique_ptr<SliderWithInput> clipping_of_view = std::make_unique<SliderWithInput>(2.5f, 7.5f, 0.25f);
     clipping_of_view->set_input_width(slider_text_size);
@@ -79,23 +79,24 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : Dialog("Paint-on supports")
     show_overhangs->set_input_width(slider_text_size);
     add_new_row("Show overhangs", std::move(show_overhangs));
 
-    add_separator();
+    Dialog::add_separator();
 
     content()->emplace_back<ToggleButton>("Paint on overhangs only");
     content()->emplace_back<ToggleButton>("Split triangles");
 
-    add_separator();
+    Dialog::add_separator();
 
     Item* help_row = content()->emplace_back<Item>();
     help_row->set_min_size({0, 50});
     help_row->set_justify_content(YGJustify::YGJustifySpaceEvenly);
     help_row->set_align_content(YGAlign::YGAlignCenter);
     help_row->set_padding(5);
+    help_row->set_gap(15);
 
-    add_helper({{Render::Icon::MouseLeft, false}}, "Paint", help_row);
-    add_helper({{Render::Icon::MouseRight, false}}, "Block", help_row);
-    add_helper(
-        {{Render::Icon::KeyShift, true}, {Render::Icon::MouseLeft, false}}, "Remove", help_row
+    add_help({{Render::Icon::MouseLeft}}, "Paint", help_row);
+    add_help({{Render::Icon::MouseRight}}, "Block", help_row);
+    add_help(
+        { {Render::Icon::KeyShift, {35.f, 35.f}}, {Render::Icon::MouseLeft} }, "Remove", help_row
     );
 }
 
@@ -110,32 +111,6 @@ void PaintOnSupportsDialog::add_new_row(const std::string& title, std::unique_pt
 
     controls->set_width_percent(65);
     row->append(std::move(controls));
-}
-
-Item* PaintOnSupportsDialog::add_helper(
-    const std::vector<std::pair<Render::Icon, bool>> symbols, const std::string title, Item* help_row
-)
-{
-    ImColor color = ImGui::GetColorU32(ImGuiCol_TextDisabled);
-    Item* help_group = help_row->emplace_back<Item>();
-    help_group->set_justify_content(YGJustifyCenter);
-    help_group->set_align_items(YGAlignCenter);
-    help_group->set_gap(5);
-
-    int index = 0;
-    for (const std::pair<Render::Icon, bool> symbol : std::as_const(symbols)) {
-        Icon* icon = help_group->emplace_back<Icon>(symbol.first);
-        icon->set_min_size(symbol.second ? Vec2f{35, 35} : Vec2f{25, 25});
-        icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
-        if (++index < symbols.size()) {
-            Text* text = help_group->emplace_back<Text>("+");
-            text->set_text_color(color);
-        }
-    }
-    Text* text = help_group->emplace_back<Text>(title);
-    text->set_text_color(color);
-
-    return help_group;
 }
 
 } // namespace Slic3r::App::Plater

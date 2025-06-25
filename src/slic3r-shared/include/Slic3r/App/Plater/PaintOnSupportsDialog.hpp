@@ -4,7 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/Dialog.hpp"
+#include "Slic3r/App/Yoga/GizmoDialog.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 
@@ -12,18 +12,13 @@
 
 namespace Slic3r::App::Plater {
 
-class PaintOnSupportsDialog : public Yoga::Dialog
+class PaintOnSupportsDialog : public Yoga::GizmoDialog
 {
 public:
     PaintOnSupportsDialog();
 
 private:
     void add_new_row(const std::string& title, std::unique_ptr<Item> controls);
-    Item* add_helper(
-        const std::vector<std::pair<Render::Icon, bool>> symbols,
-        const std::string title,
-        Item* help_row
-    );
 
 private:
     Yoga::ButtonGroup m_group_tool;

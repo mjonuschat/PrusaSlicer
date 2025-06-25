@@ -129,6 +129,8 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     { Icon::MouseLeft                    , "mouse_left"                 },
     { Icon::MouseRight                   , "mouse_right"                },
     { Icon::KeyShift                     , "key_shift"                  },
+    { Icon::KeyEsc                       , "key_esc"                    },
+    { Icon::KeyDel                       , "key_del"                    },
 
     { Icon::ClippyMarker         , "notification_clippy"       },
     { Icon::SliceAllBtnIcon      , "slice_all"                 },
@@ -146,6 +148,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     { Icon::ToolbarRotation         , "toolbar_rotation"                 },
     { Icon::ToolbarGCode            , "toolbar_gcode"                    },
     { Icon::ToolbarPaintOnSupports  , "toolbar_paint_on_supports"        },
+    { Icon::ToolbarMeasure          , "toolbar_measure"                  },
     { Icon::PrinterNEXT             , "printer_NEXT"                     },
     { Icon::BedThumbnail            , "bed_thumbnail"                    },
 
@@ -164,6 +167,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     { Icon::WandMagicSparkles     , "wand-magic-sparkles"               },
 
     { Icon::Calculator              , "calculator"                      },
+    { Icon::CopyForGizmo            , "copy_for_gizmo"                  },
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {

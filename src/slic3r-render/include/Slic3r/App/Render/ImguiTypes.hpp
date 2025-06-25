@@ -141,7 +141,10 @@ enum class Icon : wchar_t
     MouseLeft,
     MouseRight,
     KeyShift,
+    KeyEsc,
+    KeyDel,
     Calculator,
+    CopyForGizmo,
 
     // icons for toolbar
     ToolbarObjects,
@@ -154,6 +157,7 @@ enum class Icon : wchar_t
     ToolbarRotation,
     ToolbarGCode,
     ToolbarPaintOnSupports,
+    ToolbarMeasure,
 
     // printer icons (PNGs)
     PrinterNEXT,

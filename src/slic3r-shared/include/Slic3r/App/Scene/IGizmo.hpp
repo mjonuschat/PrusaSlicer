@@ -112,6 +112,7 @@ enum class ToolType : uint8_t
     Simplify,
     Text,
     PaintOnSupportsGizmo,
+    MeasureGizmo,
     // add as needed, no printer type variants (use two distinct IToolGizmos with same type instead)
 };
 

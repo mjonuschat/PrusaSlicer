@@ -20,7 +20,6 @@ public:
 
 protected:
     Item* content() const;
-
     void add_separator();
 
 private:

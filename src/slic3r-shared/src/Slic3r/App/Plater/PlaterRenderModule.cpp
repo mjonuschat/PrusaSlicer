@@ -19,6 +19,8 @@
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
+#include "Slic3r/App/Plater/MeasureGizmo.hpp"
+#include "Slic3r/App/Plater/MeasureDialog.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
@@ -171,6 +173,12 @@ void PlaterRenderModule::init_scene_layout()
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); }},
         m_paint_on_supports_gizmo
     );
+
+    m_toolbar_measure = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle, Render::Icon::ToolbarMeasure, "Measure", "U",
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::MeasureGizmo); }},
+        m_measure_gizmo
+    );
 }
 
 void PlaterRenderModule::update_toolbar_tool_selection(Scene::ToolType current_tool_type)
@@ -180,6 +188,7 @@ void PlaterRenderModule::update_toolbar_tool_selection(Scene::ToolType current_t
     m_toolbar_paint_on_supports->set_checked(
         current_tool_type == Scene::ToolType::PaintOnSupportsGizmo
     );
+    m_toolbar_measure->set_checked(current_tool_type == Scene::ToolType::MeasureGizmo);
 }
 
 void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
@@ -232,6 +241,7 @@ void PlaterRenderModule::init_gizmos()
     m_simplify_gizmo = &m_gizmo_manager->add_tool_gizmo<SimplifyGizmo>(
         *m_device, *m_scene_presenter, m_project_interactor, close_fn);
     m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>();
+    m_measure_gizmo = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>();
 }
 
 void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)

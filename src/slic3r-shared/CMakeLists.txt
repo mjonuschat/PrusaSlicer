@@ -34,6 +34,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/PaintOnSupportsGizmo.cpp
         include/Slic3r/App/Plater/PaintOnSupportsDialog.hpp
         src/Slic3r/App/Plater/PaintOnSupportsDialog.cpp
+        include/Slic3r/App/Plater/MeasureGizmo.hpp
+        src/Slic3r/App/Plater/MeasureGizmo.cpp
+        include/Slic3r/App/Plater/MeasureDialog.hpp
+        src/Slic3r/App/Plater/MeasureDialog.cpp
         include/Slic3r/App/Plater/ThumbnailRenderer.hpp
         src/Slic3r/App/Plater/ThumbnailRenderer.cpp
         include/Slic3r/App/Plater/IBedVisuallyChangedListener.hpp
@@ -227,6 +231,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Text.cpp
         include/Slic3r/App/Yoga/Dialog.hpp
         src/Slic3r/App/Yoga/Dialog.cpp
+        include/Slic3r/App/Yoga/GizmoDialog.hpp
+        src/Slic3r/App/Yoga/GizmoDialog.cpp
         include/Slic3r/App/Yoga/AttachedWindow.hpp
         src/Slic3r/App/Yoga/AttachedWindow.cpp
         src/Slic3r/App/Yoga/Separator.cpp
