@@ -2,8 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_Format_3mf_hpp_
-#define slic3r_Format_3mf_hpp_
+#pragma once
 
 #include <string>
 #include <string_view>
@@ -11,32 +10,17 @@
 #include <limits>
 #include "Slic3r/Biz/Format/Metadata.hpp"
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
-#include "Slic3r/Domain/ConfigPack.hpp"
-#include "Slic3r/Domain/Project.hpp"
 
 namespace Slic3r {
-
-    // Forward decalrations
-    namespace Domain { class Model; }
-    struct ConfigSubstitutionContext;
-    class DynamicPrintConfig;
+    namespace Domain {
+        class Model;
+        class Project;
+    }
     struct ThumbnailData;
 
-    class Old3MFException : public std::exception {};
+    // The following function may throw Loaded3MFException.
+    Loaded3MF load_3mf(const std::string& filepath_3mf);
 
-    bool load_3mf(const std::string& file_path, Domain::Project& project); // Dummy function (temp)
-
-    bool load_3mf(
-        const std::string& filepath_3mf,
-        DynamicPrintConfig &config,
-        ConfigSubstitutionContext &config_substitutions,
-        Domain::Model &model,
-        bool check_version
-    );
-
-    /// <summary>
-    /// Settings and flags parameters for different save into 3mf file
-    /// </summary>
     struct Store3mfParam{
         // Publish option to hide imported local file path
         bool fullpath_sources = true;
@@ -68,5 +52,3 @@ namespace Slic3r {
         const Store3mfParam &param = Store3mfParam{});
 
 } // namespace Slic3r
-
-#endif /* slic3r_Format_3mf_hpp_ */

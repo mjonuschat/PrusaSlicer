@@ -442,7 +442,7 @@ using Models = std::unordered_map<std::string, format_3MF::Model>;
 
 namespace Slic3r {
 
-struct LoadedModel : public ResultLoad3mf {
+struct LoadedModel {
     // loaded root model file
     std::optional<format_3MF::Model> model;
 
@@ -461,7 +461,7 @@ struct LoadedModel : public ResultLoad3mf {
 /// <param name="archive">Zip archive containing model on specified index</param>
 /// <param name="root_file_path">File path in 3mf archive to root .model file</param>
 /// <returns>Loaded data with list of founded issues</returns>
-LoadedModel read_model3mf(mz_zip_archive &archive, const char *root_file_path);
+LoadedModel read_model3mf(mz_zip_archive &archive, const char *root_file_path, Read3mfIssues& collected_issues);
 
 struct ObjectIdWithPath{
     // objectid is index inside of .model file and start from 1 and increase for stream reading

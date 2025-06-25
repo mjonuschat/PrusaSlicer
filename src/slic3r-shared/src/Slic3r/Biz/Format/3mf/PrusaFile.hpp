@@ -28,9 +28,10 @@ void store_prusa_files(
     const StoredStructure &stored_structure
 );
 
-struct PrusaFilesResult: public ResultLoad3mf{
+struct PrusaFilesResult {
     // Flag for each file in 3mf zip archive
     std::vector<bool> used_file_indices; // for detection of unproccessed files
+    Domain::ConfigPack config_pack;
 };
 
 /// <summary>
@@ -42,10 +43,10 @@ struct PrusaFilesResult: public ResultLoad3mf{
 /// <param name="config_substitutions">Help backward compatibility of configuration(not 100% sure)</param>
 /// <returns>Indices of used files </returns>
 PrusaFilesResult load_prusa_files(
-    /*const*/ mz_zip_archive &archive,
+    mz_zip_archive &archive,
     const ModelMap& model_map,
-    DynamicPrintConfig &config,
-    ConfigSubstitutionContext &config_substitutions
+    Domain::Model& model,
+    Read3mfIssues& collected_issues
 );
 
 /// <summary>
@@ -60,7 +61,7 @@ bool process_embossed_svg(
     /*const*/ mz_zip_archive &archive,
     const mz_zip_archive_file_stat &stat,
     Domain::Model &model,
-    ResultLoad3mf &result
+    Read3mfIssues& collected_issues
 );
 
 } // namespace Slic3r

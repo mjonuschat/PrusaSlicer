@@ -17,9 +17,8 @@
 
 using Slic3r::Domain::Vec3d;
 
-namespace Slic3r {
-    extern std::unique_ptr<const Persist3mfData> g_load_from_3mf;
-}
+#include "tl/expected.hpp"
+
 
 using ModelObject = Slic3r::Domain::ModelObject;
 using ModelVolume = Slic3r::Domain::ModelVolume;
@@ -84,7 +83,7 @@ template<typename T, std::enable_if_t<
     || std::is_same_v<T, json::number_float_t> 
     || std::is_same_v<T, json::binary_t> 
     , bool> = true > 
-bool get_value(const json &data_json, T &value, ResultLoad3mf &result, RT issue) {
+bool get_value(const json &data_json, T &value, Read3mfIssues& collected_issues, RT issue) {
     assert(data_json.is_primitive());
     assert(!data_json.is_structured());
     assert(!data_json.is_null());
@@ -92,7 +91,7 @@ bool get_value(const json &data_json, T &value, ResultLoad3mf &result, RT issue)
     // No-throw guarantee: this function never throws exceptions. (cite from documentation)
     const T *value_ptr = data_json.get_ptr<const T*>();
     if (value_ptr == nullptr) {
-        result.add(issue, std::string("Can't get value"), data_json.dump());
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("Can't get value"), data_json.dump()));
         return false;
     }
     value = *value_ptr; // copy value    
@@ -110,69 +109,123 @@ bool get_value(const json &data_json, T &value, ResultLoad3mf &result, RT issue)
 /// <param name="issue"></param>
 /// <returns></returns>
 template<typename T>
-bool value_from_json(const json &data_json, T &value, ResultLoad3mf &r, RT issue) {
+bool value_from_json(const json &data_json, T &value, Read3mfIssues& collected_issues, RT issue) {
     // Do not know the way to template specify only when type alias differ
     // Get an error template function ambiguity
     // NOTE: on R-PI is same type: unsigned = size_t = json::number_unsigned_t
     if constexpr (std::is_floating_point_v<T>){ // float + double
-        if (!data_json.is_number()) { r.add(issue, std::string("Not a number"), data_json.dump()); return false; }
-        json::number_float_t value_dbl; if (!value_from_json(data_json, value_dbl, r, issue)) return false;
-        value = static_cast<T>(value_dbl); return true;
+        if (!data_json.is_number()) {
+            collected_issues.add_issue(Read3mfIssue(issue, std::string("Not a number"), data_json.dump()));
+            return false;
+        }
+        json::number_float_t value_dbl;
+        if (!value_from_json(data_json, value_dbl, collected_issues, issue))
+            return false;
+        value = static_cast<T>(value_dbl);
+        return true;
     } else if constexpr (std::is_signed_v<T>) { // int
-        if (!data_json.is_number_integer()) { r.add(issue, std::string("Not a number integer"), data_json.dump()); return false; }
-        json::number_integer_t value_int64; if (!value_from_json(data_json, value_int64, r, issue)) return false;
-        value = static_cast<T>(value_int64); return true; 
+        if (!data_json.is_number_integer()) {
+            collected_issues.add_issue(Read3mfIssue(issue, std::string("Not a number integer"), data_json.dump()));
+            return false;
+        }
+        json::number_integer_t value_int64;
+        if (!value_from_json(data_json, value_int64, collected_issues, issue))
+            return false;
+        value = static_cast<T>(value_int64);
+        return true; 
     } else if constexpr (std::is_unsigned_v<T>) { // unsigned + size_t
-        if (!data_json.is_number_unsigned()) { r.add(issue, std::string("Not an unsigned number"), data_json.dump()); return false; }
-        json::number_unsigned_t value_uint64; if (!value_from_json(data_json, value_uint64, r, issue)) return false;
-        value = static_cast<T>(value_uint64); return true;
+        if (!data_json.is_number_unsigned()) {
+            collected_issues.add_issue(Read3mfIssue(issue, std::string("Not an unsigned number"), data_json.dump()));
+            return false;
+        }
+        json::number_unsigned_t value_uint64;
+        if (!value_from_json(data_json, value_uint64, collected_issues, issue))
+            return false;
+        value = static_cast<T>(value_uint64);
+        return true;
     }
-    // template specialization is not implemented
-    assert(false);
+    PANIC();// template specialization is not implemented
     return false;
 }
 
-template<> bool value_from_json(const json &data_json, json::number_unsigned_t &value, ResultLoad3mf &r, RT issue) {
-    if (!data_json.is_number_unsigned()) { r.add(issue, std::string("Not an unsigned number"), data_json.dump()); return false; }
-    return get_value(data_json, value, r, issue);}
-template<> bool value_from_json(const json &data_json, json::number_integer_t &value, ResultLoad3mf &r, RT issue) {
-    if (!data_json.is_number())          { r.add(issue, std::string("Not an integer number"), data_json.dump()); return false; }
-    return get_value(data_json, value, r, issue);}
-template<> bool value_from_json(const json &data_json, json::string_t &value, ResultLoad3mf &r, RT issue) {
-    if (!data_json.is_string())          { r.add(issue, std::string("Not a string"), data_json.dump()); return false; }
-    return get_value(data_json, value, r, issue);}
-template<> bool value_from_json(const json &data_json, json::boolean_t &value, ResultLoad3mf &r, RT issue) {
-    if (!data_json.is_boolean())         { r.add(issue, std::string("Not a bool"), data_json.dump()); return false; }
-    return get_value(data_json, value, r, issue);}
-template<> bool value_from_json(const json &data_json, json::number_float_t &value, ResultLoad3mf &r, RT issue) {
-    if (data_json.is_number_float()) return get_value(data_json, value, r, issue);
+template<> bool value_from_json(const json &data_json, json::number_unsigned_t &value, Read3mfIssues& collected_issues, RT issue)
+{
+    if (!data_json.is_number_unsigned()) {
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("Not an unsigned number"), data_json.dump()));
+        return false;
+    }
+    return get_value(data_json, value, collected_issues, issue);
+}
+template<> bool value_from_json(const json &data_json, json::number_integer_t &value, Read3mfIssues& collected_issues, RT issue)
+{
+    if (!data_json.is_number()) {
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("Not an integer number"), data_json.dump()));
+        return false;
+    }
+    return get_value(data_json, value, collected_issues, issue);
+}
+template<> bool value_from_json(const json &data_json, json::string_t &value, Read3mfIssues& collected_issues, RT issue)
+{
+    if (!data_json.is_string()) {
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("Not a string"), data_json.dump()));
+        return false;
+    }
+    return get_value(data_json, value, collected_issues, issue);
+}
+template<> bool value_from_json(const json &data_json, json::boolean_t &value, Read3mfIssues& collected_issues, RT issue)
+{
+    if (!data_json.is_boolean()) {
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("Not a bool"), data_json.dump()));
+        return false;
+    }
+    return get_value(data_json, value, collected_issues, issue);
+}
+template<> bool value_from_json(const json &data_json, json::number_float_t &value, Read3mfIssues& collected_issues, RT issue)
+{
+    if (data_json.is_number_float()) return get_value(data_json, value, collected_issues, issue);
     // Load int value into floating point value without issue
-    if (!data_json.is_number_integer())  { r.add(issue, std::string("Not a number"), data_json.dump()); return false; }
-    json::number_integer_t value_int; if (!value_from_json(data_json, value_int, r, issue)) return false;
-    value = static_cast<json::number_float_t>(value_int); return true;}
+    if (!data_json.is_number_integer()) {
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("Not a number"), data_json.dump()));
+        return false;
+    }
+    json::number_integer_t value_int;
+    if (!value_from_json(data_json, value_int, collected_issues, issue))
+        return false;
+    value = static_cast<json::number_float_t>(value_int);
+    return true;
+}
 
 template<typename T> // Vec3d, Vec3f, Vec3i
-json to_json(const Eigen::Matrix<T, 3, 1, Eigen::DontAlign> &v) { return json{v.x(), v.y(), v.z()}; }
+json to_json(const Eigen::Matrix<T, 3, 1, Eigen::DontAlign> &v)
+{
+    return json{v.x(), v.y(), v.z()};
+}
 template<typename T> // Vec3d, Vec3f, Vec3i
-bool value_from_json(const json &v_json, Eigen::Matrix<T, 3, 1, Eigen::DontAlign> &v, ResultLoad3mf& r, RT issue) {
+bool value_from_json(const json &v_json, Eigen::Matrix<T, 3, 1, Eigen::DontAlign> &v, Read3mfIssues& collected_issues, RT issue)
+{
     if (!v_json.is_array()) {
-        r.add(issue, std::string("not an array"), v_json.dump());
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("not an array"), v_json.dump()));
         return false;
     }
     size_t max_i = 3;
     if (v_json.size() != 3) {
-        r.add(issue, std::string("bad amount of numbers"), std::to_string(v_json.size()), v_json.dump());
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("bad amount of numbers"), std::to_string(v_json.size()), v_json.dump()));
         max_i = std::min(size_t(3), v_json.size());        
     }
     for (size_t i = 0; i < max_i; i++)
-        value_from_json(v_json[i], v[i], r, issue);
+        value_from_json(v_json[i], v[i], collected_issues, issue);
     return (max_i == 3);
 }
 
 // optional as value
-template<typename T> bool value_from_json(const json &data_json, std::optional<T> &value, ResultLoad3mf &r, RT issue){
-    T value_; if (!value_from_json(data_json, value_, r, issue)) return false;
-    value = value_; return true;}
+template<typename T> bool value_from_json(const json &data_json, std::optional<T> &value, Read3mfIssues& collected_issues, RT issue)
+{
+    T value_;
+    if (!value_from_json(data_json, value_, collected_issues, issue))
+        return false;
+    value = value_;
+    return true;
+}
 
 /// <summary>
 /// Get value by name from parent json object 
@@ -186,15 +239,15 @@ template<typename T> bool value_from_json(const json &data_json, std::optional<T
 /// <param name="log_missing">When true than generate issue missing when parent object do not contain name property</param>
 /// <returns>TRUE when succesfully read value from json otherwise FALSE</returns>
 template<typename T>
-inline bool from_json(const json &parent_json, std::string_view name, T& value, ResultLoad3mf& result,
+inline bool from_json(const json &parent_json, std::string_view name, T& value, Read3mfIssues& collected_issues,
     RT issue, bool log_missing = false){
     auto json_ptr = parent_json.find(name);
     if (json_ptr == parent_json.end()) {
         if (log_missing)
-            result.add(issue, std::string("missing"));
+            collected_issues.add_issue(Read3mfIssue(issue, std::string("missing")));
         return false;
     }
-    return value_from_json(*json_ptr, value, result, issue);
+    return value_from_json(*json_ptr, value, collected_issues, issue);
 }
 
 // Convert enum to json by bidirectional map
@@ -214,16 +267,16 @@ json to_json(ENUM value, const boost::bimap<ENUM, std::string_view> &bmap){
 
 template<typename ENUM>
 bool from_json(const json &parent_json, std::string_view name, ENUM &value, const boost::bimap<ENUM, std::string_view> &bmap,
-    ResultLoad3mf &r, RT issue, bool log_missing = false ) {
+    Read3mfIssues& collected_issues, RT issue, bool log_missing = false ) {
     auto json_ptr = parent_json.find(name);
     if (json_ptr == parent_json.end()) {
         if (log_missing)
-            r.add(issue, std::string("missing"));
+            collected_issues.add_issue(Read3mfIssue(issue, std::string("missing")));
         return false;
     }
     const json &data_json = *json_ptr;
     std::string value_str;
-    if (!value_from_json(data_json, value_str, r, issue))
+    if (!value_from_json(data_json, value_str, collected_issues, issue))
         return false;
 
     const auto &map = bmap.right;
@@ -231,7 +284,7 @@ bool from_json(const json &parent_json, std::string_view name, ENUM &value, cons
 
     // not known string
     if (found_item == map.end()) {
-        r.add(issue, std::string("unknown enum value"), value_str);
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("unknown enum value"), value_str));
         return false;
     }
 
@@ -247,41 +300,40 @@ bool load_configuration(
     const json &parent_json,
     std::string_view name,
     CONFIG_TYPE &config,
-    ResultLoad3mf& result,
-    RT issue_type,
-    ConfigSubstitutionContext &config_substitutions // Remove in future - all information should be already in result load 3mf
+    Read3mfIssues& collected_issues,
+    RT issue_type
     , bool log_missing = false
 ) {
     auto config_json_it = parent_json.find(name);
     if (config_json_it == parent_json.end()){
         if (log_missing)
-            result.add(issue_type, std::string("Missing configuration"));
+            collected_issues.add_issue(Read3mfIssue(issue_type, std::string("Missing configuration")));
         return false;
     }
     const json &config_json = *config_json_it;
     if (config_json.empty()) {
-        result.add(issue_type, std::string("Configuration is empty"));
+        collected_issues.add_issue(Read3mfIssue(issue_type, std::string("Configuration is empty")));
         return false;
     }
     if (!config_json.is_object()){
-        result.add(issue_type, std::string("Not an object"), config_json.dump());
+        collected_issues.add_issue(Read3mfIssue(issue_type, std::string("Not an object"), config_json.dump()));
         return false;
     }
     for (const auto &[key, value_json] : config_json.items()) {
         // key ... const std::string &
         if (key.empty()){
-            result.add(issue_type, std::string("Skip empty key"));
+            collected_issues.add_issue(Read3mfIssue(issue_type, std::string("Skip empty key")));
             continue;
         }
         std::string value;
-        if (!value_from_json(value_json, value, result, issue_type))
+        if (!value_from_json(value_json, value, collected_issues, issue_type))
             continue; // NOTE: In configuration is empty string valid value
         
         try {
-            config.set_deserialize(key, value, config_substitutions);
+            config.set_deserialize(key, value);
         } catch (UnknownOptionException& e) {
-            result.add(issue_type, std::string("UnknownOptionException"), key, value,
-                std::string(e.what()));
+            collected_issues.add_issue(Read3mfIssue(issue_type, std::string("UnknownOptionException"), key, value,
+                std::string(e.what())));
         }
     }
     return true;
@@ -297,16 +349,16 @@ bool load_configuration(
 /// <param name="issue">Type of issue added when unknown property name appear</param>
 /// <returns>False when object_json is not an object otherwise True</returns>
 bool is_valid(const json &object_json, NamesType &known_properties, 
-    ResultLoad3mf &result, RT issue) {
+    Read3mfIssues& collected_issues, RT issue) {
     if (!object_json.is_object()){
-        result.add(issue, std::string("Not an object"), object_json.dump());
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("Not an object"), object_json.dump()));
         return false;
     }
     for (const auto &[key, value] : object_json.items()) {
         if (std::any_of(known_properties.begin(), known_properties.end(),
             [&kk = key](std::string_view k) {return k==kk;}))
             continue;
-        result.add(issue, key, value.dump());
+        collected_issues.add_issue(Read3mfIssue(issue, key, value.dump()));
     }
     return true;
 }
@@ -390,28 +442,28 @@ json to_json(const TextConfiguration &tc) {
     return result;
 }
 
-void load(const json &tc_json, TextConfiguration &tc, ResultLoad3mf &result) {
-    if(!is_valid(tc_json, NAMES, result, RT::project_text_configuration_unknown_property))
+void load(const json &tc_json, TextConfiguration &tc, Read3mfIssues& collected_issues) {
+    if(!is_valid(tc_json, NAMES, collected_issues, RT::project_text_configuration_unknown_property))
         return;
-    from_json(tc_json, TEXT, tc.text, result, RT::project_text_configuration_text_issue, true);
+    from_json(tc_json, TEXT, tc.text, collected_issues, RT::project_text_configuration_text_issue, true);
     EmbossStyle &style = tc.style;
-    from_json(tc_json, STYLE_NAME,           style.name, result, RT::project_text_configuration_style_name_issue, true);
-    from_json(tc_json, FONT_DESCRIPTOR,      style.path, result, RT::project_text_configuration_font_descriptor_issue, true);
-    from_json(tc_json, FONT_DESCRIPTOR_TYPE, style.type, type_to_name, result, RT::project_text_configuration_font_descriptor_type_issue, true);
+    from_json(tc_json, STYLE_NAME,           style.name, collected_issues, RT::project_text_configuration_style_name_issue, true);
+    from_json(tc_json, FONT_DESCRIPTOR,      style.path, collected_issues, RT::project_text_configuration_font_descriptor_issue, true);
+    from_json(tc_json, FONT_DESCRIPTOR_TYPE, style.type, type_to_name, collected_issues, RT::project_text_configuration_font_descriptor_type_issue, true);
     FontProp &fp = style.prop;
-    from_json(tc_json, CHAR_GAP,    fp.char_gap  , result, RT::project_text_configuration_char_gap_issue);
-    from_json(tc_json, LINE_GAP,    fp.line_gap  , result, RT::project_text_configuration_line_gap_issue);
-    from_json(tc_json, LINE_HEIGHT, fp.size_in_mm, result, RT::project_text_configuration_line_height_issue, true);
-    from_json(tc_json, BOLDNESS,    fp.boldness  , result, RT::project_text_configuration_boldness_issue);
-    from_json(tc_json, SKEW,        fp.skew      , result, RT::project_text_configuration_skew_issue);
-    from_json(tc_json, PER_GLYPH,   fp.per_glyph , result, RT::project_text_configuration_per_glyph_issue);
-    from_json(tc_json, HORIZONTAL_ALIGN , fp.align.first , horizontal_align_to_name, result, RT::project_text_configuration_horizontal_align_issue, true);
-    from_json(tc_json, VERTICAL_ALIGN   , fp.align.second, vertical_align_to_name  , result, RT::project_text_configuration_vertical_align_issue, true);
-    from_json(tc_json, COLLECTION_NUMBER, fp.collection_number, result, RT::project_text_configuration_collection_number_issue);
-    from_json(tc_json, FONT_FAMILY      , fp.family           , result, RT::project_text_configuration_font_family_issue);
-    from_json(tc_json, FONT_FACE_NAME   , fp.face_name        , result, RT::project_text_configuration_font_face_name_issue);
-    from_json(tc_json, FONT_STYLE       , fp.style            , result, RT::project_text_configuration_font_face_style_issue);
-    from_json(tc_json, FONT_WEIGHT      , fp.weight           , result, RT::project_text_configuration_font_weight_issue);        
+    from_json(tc_json, CHAR_GAP,    fp.char_gap  , collected_issues, RT::project_text_configuration_char_gap_issue);
+    from_json(tc_json, LINE_GAP,    fp.line_gap  , collected_issues, RT::project_text_configuration_line_gap_issue);
+    from_json(tc_json, LINE_HEIGHT, fp.size_in_mm, collected_issues, RT::project_text_configuration_line_height_issue, true);
+    from_json(tc_json, BOLDNESS,    fp.boldness  , collected_issues, RT::project_text_configuration_boldness_issue);
+    from_json(tc_json, SKEW,        fp.skew      , collected_issues, RT::project_text_configuration_skew_issue);
+    from_json(tc_json, PER_GLYPH,   fp.per_glyph , collected_issues, RT::project_text_configuration_per_glyph_issue);
+    from_json(tc_json, HORIZONTAL_ALIGN , fp.align.first , horizontal_align_to_name, collected_issues, RT::project_text_configuration_horizontal_align_issue, true);
+    from_json(tc_json, VERTICAL_ALIGN   , fp.align.second, vertical_align_to_name  , collected_issues, RT::project_text_configuration_vertical_align_issue, true);
+    from_json(tc_json, COLLECTION_NUMBER, fp.collection_number, collected_issues, RT::project_text_configuration_collection_number_issue);
+    from_json(tc_json, FONT_FAMILY      , fp.family           , collected_issues, RT::project_text_configuration_font_family_issue);
+    from_json(tc_json, FONT_FACE_NAME   , fp.face_name        , collected_issues, RT::project_text_configuration_font_face_name_issue);
+    from_json(tc_json, FONT_STYLE       , fp.style            , collected_issues, RT::project_text_configuration_font_face_style_issue);
+    from_json(tc_json, FONT_WEIGHT      , fp.weight           , collected_issues, RT::project_text_configuration_font_weight_issue);        
 }
 } // namespace TextConfigurationSerialization
 
@@ -483,27 +535,27 @@ json to_json(const EmbossShape &es) {
         result[USE_SURFACE] = true;
     return result;
 }
-void load(const json &es_json, EmbossShape &es, ResultLoad3mf &result) {
-    if (!is_valid(es_json, NAMES, result, RT::project_emboss_shape_unknown_property))
+void load(const json &es_json, EmbossShape &es, Read3mfIssues& collected_issues) {
+    if (!is_valid(es_json, NAMES, collected_issues, RT::project_emboss_shape_unknown_property))
         return;
 
     EmbossShape::SvgFile svg;
-    bool is_source = from_json(es_json, SVG_FILE_PATH, svg.path, result, RT::project_emboss_shape_svg_file_path_issue);
-    is_source |= from_json(es_json, SVG_FILE_PATH_IN_3MF, svg.path_in_3mf, result, RT::project_emboss_shape_svg_file_path_in_3mf_issue);
+    bool is_source = from_json(es_json, SVG_FILE_PATH, svg.path, collected_issues, RT::project_emboss_shape_svg_file_path_issue);
+    is_source |= from_json(es_json, SVG_FILE_PATH_IN_3MF, svg.path_in_3mf, collected_issues, RT::project_emboss_shape_svg_file_path_in_3mf_issue);
     if (is_source)
         es.svg_file = std::move(svg);
 
-    from_json(es_json, SHAPE_SCALE, es.scale, result, RT::project_emboss_shape_scale_issue, true);
+    from_json(es_json, SHAPE_SCALE, es.scale, collected_issues, RT::project_emboss_shape_scale_issue, true);
     
     if(bool is_unhealed = false;
-        from_json(es_json, UNHEALED, is_unhealed, result, RT::project_emboss_shape_is_unhealed_issue)) {
+        from_json(es_json, UNHEALED, is_unhealed, collected_issues, RT::project_emboss_shape_is_unhealed_issue)) {
         assert(is_unhealed);
         es.final_shape.is_healed = false;
     }
 
     EmbossProjection &p = es.projection;
-    from_json(es_json, DEPTH, p.depth, result, RT::project_emboss_shape_depth_issue, true);
-    from_json(es_json, USE_SURFACE, p.use_surface, result, RT::project_emboss_shape_use_surface_issue);
+    from_json(es_json, DEPTH, p.depth, collected_issues, RT::project_emboss_shape_depth_issue, true);
+    from_json(es_json, USE_SURFACE, p.use_surface, collected_issues, RT::project_emboss_shape_use_surface_issue);
 }
 } // namespace EmbossShapeSerialization
 
@@ -565,28 +617,28 @@ json to_json(const ModelVolume::Source &source, const Domain::TriangleMeshStats 
     return r;
 }
 
-void load(const json &source_json, ModelVolume::Source &source, Domain::TriangleMeshStats &stats, ResultLoad3mf &result) {
-    if (!is_valid(source_json, SOURCE_NAMES, result, RT::project_source_unknown_property))
+void load(const json &source_json, ModelVolume::Source &source, Domain::TriangleMeshStats &stats, Read3mfIssues& collected_issues) {
+    if (!is_valid(source_json, SOURCE_NAMES, collected_issues, RT::project_source_unknown_property))
         return;
 
-    from_json(source_json, FILEPATH,     source.input_file,  result, RT::project_source_filepath_issue);
-    from_json(source_json, OFFSET,       source.mesh_offset, result, RT::project_source_offset_issue);
-    from_json(source_json, OBJECT_INDEX, source.object_idx,  result, RT::project_source_object_idx_issue);
-    from_json(source_json, VOLUME_INDEX, source.volume_idx,  result, RT::project_source_volume_idx_issue);
-    if(!from_json(source_json, IS_FROM_INCH,   source.is_converted_from_inches, result, RT::project_source_is_from_inch_issue))
-        from_json(source_json, IS_FROM_METERS, source.is_converted_from_inches, result, RT::project_source_is_from_meters_issue);
+    from_json(source_json, FILEPATH,     source.input_file,  collected_issues, RT::project_source_filepath_issue);
+    from_json(source_json, OFFSET,       source.mesh_offset, collected_issues, RT::project_source_offset_issue);
+    from_json(source_json, OBJECT_INDEX, source.object_idx,  collected_issues, RT::project_source_object_idx_issue);
+    from_json(source_json, VOLUME_INDEX, source.volume_idx,  collected_issues, RT::project_source_volume_idx_issue);
+    if(!from_json(source_json, IS_FROM_INCH,   source.is_converted_from_inches, collected_issues, RT::project_source_is_from_inch_issue))
+        from_json(source_json, IS_FROM_METERS, source.is_converted_from_inches, collected_issues, RT::project_source_is_from_meters_issue);
 
     if (auto repair_json_it = source_json.find(REPAIR); repair_json_it != source_json.end()) {
         const json &repair_json = *repair_json_it;
-        if(!is_valid(repair_json, REPAIR_NAMES, result, RT::project_source_repair_issue))
+        if(!is_valid(repair_json, REPAIR_NAMES, collected_issues, RT::project_source_repair_issue))
             return;
 
         Domain::RepairedMeshErrors &rme = stats.repaired_errors;
-        from_json(repair_json, EDGE_FIXED,        rme.edges_fixed,       result, RT::project_repair_edge_fixed_issue);
-        from_json(repair_json, DEGENERATE_FACETS, rme.degenerate_facets, result, RT::project_repair_degenerate_facets_issue);
-        from_json(repair_json, FACETS_REMOVED,    rme.facets_removed,    result, RT::project_repair_facets_removed_issue);
-        from_json(repair_json, FACETS_REVERSED,   rme.facets_reversed,   result, RT::project_repair_facets_reversed_issue);
-        from_json(repair_json, BACKWARDED_EDGES,  rme.backwards_edges,   result, RT::project_repair_backwards_edges_issue);
+        from_json(repair_json, EDGE_FIXED,        rme.edges_fixed,       collected_issues, RT::project_repair_edge_fixed_issue);
+        from_json(repair_json, DEGENERATE_FACETS, rme.degenerate_facets, collected_issues, RT::project_repair_degenerate_facets_issue);
+        from_json(repair_json, FACETS_REMOVED,    rme.facets_removed,    collected_issues, RT::project_repair_facets_removed_issue);
+        from_json(repair_json, FACETS_REVERSED,   rme.facets_reversed,   collected_issues, RT::project_repair_facets_reversed_issue);
+        from_json(repair_json, BACKWARDED_EDGES,  rme.backwards_edges,   collected_issues, RT::project_repair_backwards_edges_issue);
     }
 }
 } // namespace SourceSerialization
@@ -641,25 +693,25 @@ void write(mz_zip_archive &archive, const Domain::Model &model, const VolumeToOb
     write_file(archive, facets_json, FACETS_ANNOTATION_FILE);
 }
 
-void load(const json &facets_json_arr, const VolumeMap &volume_map, ResultLoad3mf& result) {
+void load(const json &facets_json_arr, const VolumeMap &volume_map, Read3mfIssues& collected_issues) {
     if (!facets_json_arr.is_array()) {
-        result.add(RT::facets_must_be_array);
+        collected_issues.add_issue(Read3mfIssue(RT::facets_must_be_array));
         return;
     }
 
-    auto json_to_facets = [&result](const json &facets_json, Domain::FacetsAnnotation &facets) {
+    auto json_to_facets = [&collected_issues](const json &facets_json, Domain::FacetsAnnotation &facets) {
         if (!facets_json.is_array())
             return;
         facets.reserve(static_cast<int>(facets_json.size()));
         for (const auto& facet_json: facets_json){
-            if(!is_valid(facet_json, FACET_NAMES, result, RT::facets_unknown_facet_key))
+            if(!is_valid(facet_json, FACET_NAMES, collected_issues, RT::facets_unknown_facet_key))
                 continue;
 
             unsigned triangle_index = 0;
-            if (!from_json(facet_json, TRIANGLE, triangle_index, result, RT::facets_triangle_id_issue, true))
+            if (!from_json(facet_json, TRIANGLE, triangle_index, collected_issues, RT::facets_triangle_id_issue, true))
                 continue;
             std::string data;
-            if (!from_json(facet_json, DIVIDING, data, result, RT::facets_dividing_data_issue, true))
+            if (!from_json(facet_json, DIVIDING, data, collected_issues, RT::facets_dividing_data_issue, true))
                 continue;
 
             // TODO: check setting invalid data !!!
@@ -669,17 +721,17 @@ void load(const json &facets_json_arr, const VolumeMap &volume_map, ResultLoad3m
     };
 
     for (const auto &volume_facets : facets_json_arr) {
-        if (!is_valid(volume_facets, FACETS_NAMES, result, RT::facets_unknown_type))
+        if (!is_valid(volume_facets, FACETS_NAMES, collected_issues, RT::facets_unknown_type))
             continue;
         int id = volume_facets.value(ID, -1);
         if (id < 0) {
-            result.add(RT::facets_cant_identify_source, volume_facets.dump());
+            collected_issues.add_issue(Read3mfIssue(RT::facets_cant_identify_source, volume_facets.dump()));
             continue;
         }
         PathId path_id{static_cast<format_3MF::ST_ResourceID>(id)};
         auto it = volume_map.find(path_id);
         if (it == volume_map.end()) {
-            result.add(RT::facets_bad_id, std::to_string(id));
+            collected_issues.add_issue(Read3mfIssue(RT::facets_bad_id, std::to_string(id)));
             continue;
         }
         const ModelVolumePtrs &volumes = it->second;
@@ -722,20 +774,20 @@ json to_json(const std::vector<double> &layer_height_profile) {
     return lo_hi_pairs;
 }
 
-std::vector<double> load(const json &layer_heights_json, ResultLoad3mf& result) {
+std::vector<double> load(const json &layer_heights_json, Read3mfIssues& collected_issues) {
     if (!layer_heights_json.is_array()) {
-        result.add(RT::layer_heights_must_be_array);
+        collected_issues.add_issue(Read3mfIssue(RT::layer_heights_must_be_array));
         return {};
     }
     std::vector<double> layer_heights;
     layer_heights.reserve(2 * layer_heights_json.size());
     for (const json &lo_hi_pair : layer_heights_json){
         if (!lo_hi_pair.is_array()) {
-            result.add(RT::layer_heights_must_be_array_of_pairs, "no array");
+           collected_issues.add_issue(Read3mfIssue(RT::layer_heights_must_be_array_of_pairs, "no array"));
             return {};
         }
         if (lo_hi_pair.size() != 2){
-            result.add(RT::layer_heights_must_be_array_of_pairs, std::to_string(lo_hi_pair.size()));
+            collected_issues.add_issue(Read3mfIssue(RT::layer_heights_must_be_array_of_pairs, std::to_string(lo_hi_pair.size())));
             return {};
         }
         layer_heights.push_back(lo_hi_pair[0].get<double>());
@@ -770,12 +822,12 @@ json cut_to_json(const ModelVolume::CutInfo &cut_info) {
     return cut_json;
 }
 
-void load(const json &cut_info_json, ModelVolume::CutInfo &cut_info, ResultLoad3mf &result) {
-    if (!is_valid(cut_info_json, NAMES, result, RT::project_cut_info_unknown_property))
+void load(const json &cut_info_json, ModelVolume::CutInfo &cut_info, Read3mfIssues& collected_issues) {
+    if (!is_valid(cut_info_json, NAMES, collected_issues, RT::project_cut_info_unknown_property))
         return;
-    from_json(cut_info_json, CUT_TYPE, cut_info.connector_type, cut_type_to_name, result, RT::project_cut_info_type_issue, true);
-    from_json(cut_info_json, R_TOLERANCE, cut_info.radius_tolerance, result, RT::project_cut_info_radius_tolerance_issue, true);
-    from_json(cut_info_json, H_TOLERANCE, cut_info.height_tolerance, result, RT::project_cut_info_height_tolerance_issue, true);
+    from_json(cut_info_json, CUT_TYPE, cut_info.connector_type, cut_type_to_name, collected_issues, RT::project_cut_info_type_issue, true);
+    from_json(cut_info_json, R_TOLERANCE, cut_info.radius_tolerance, collected_issues, RT::project_cut_info_radius_tolerance_issue, true);
+    from_json(cut_info_json, H_TOLERANCE, cut_info.height_tolerance, collected_issues, RT::project_cut_info_height_tolerance_issue, true);
 }
 
 constexpr std::string_view CUT_ID = "cutId";
@@ -794,14 +846,14 @@ json cut_to_json(const CutId& cut) {
     return cut_json;
 }
 
-void load(const json &cut_object_json, CutId &cut, ResultLoad3mf &result){
-    if (!is_valid(cut_object_json, NAMES_ID, result, RT::project_cut_info_unknown_property))
+void load(const json &cut_object_json, CutId &cut, Read3mfIssues& collected_issues){
+    if (!is_valid(cut_object_json, NAMES_ID, collected_issues, RT::project_cut_info_unknown_property))
         return;
 
     size_t id, checksum, cnt;
-    if(!from_json(cut_object_json, CUT_ID        , id      , result, RT::project_cut_object_id_issue, true)) return;
-    if(!from_json(cut_object_json, CHECK_SUM     , checksum, result, RT::project_cut_object_checksum_issue, true)) return;
-    if(!from_json(cut_object_json, CONNECTORS_CNT, cnt     , result, RT::project_cut_object_connector_count_issue, true)) return;
+    if(!from_json(cut_object_json, CUT_ID        , id      , collected_issues, RT::project_cut_object_id_issue, true)) return;
+    if(!from_json(cut_object_json, CHECK_SUM     , checksum, collected_issues, RT::project_cut_object_checksum_issue, true)) return;
+    if(!from_json(cut_object_json, CONNECTORS_CNT, cnt     , collected_issues, RT::project_cut_object_connector_count_issue, true)) return;
     cut = CutId(id, checksum, cnt);
 }
 } // namespace CutSerialization
@@ -827,7 +879,7 @@ const VolumeTypeToName volume_type_to_name = boost::assign::list_of<VolumeTypeTo
     (ModelVolumeType::SUPPORT_BLOCKER,    "SupportBlocker")
     (ModelVolumeType::SUPPORT_ENFORCER,   "SupportEnforcer");
 
-json volumes_to_json(const ModelVolumePtrs &volumes, const VolumeToObjectid &v2id, const VolumesWithUUID& volumes_uuid) {
+json volumes_to_json(const ModelVolumePtrs &volumes, const VolumeToObjectid &v2id) {
     json volumes_json = json::array();
     for (const ModelVolume *volume_ptr : volumes) {
         const ModelVolume &volume = *volume_ptr;
@@ -860,20 +912,19 @@ json volumes_to_json(const ModelVolumePtrs &volumes, const VolumeToObjectid &v2i
     return volumes_json;
 }
 
-void load_volume(const json &volume_json, const VolumeMap &volume_map, ResultLoad3mf& result,
-    ConfigSubstitutionContext &config_substitutions) {
-    if(!is_valid(volume_json, VOLUME_NAMES, result, RT::project_volume_unknown_property))
+void load_volume(const json &volume_json, const VolumeMap &volume_map, Read3mfIssues& collected_issues) {
+    if(!is_valid(volume_json, VOLUME_NAMES, collected_issues, RT::project_volume_unknown_property))
         return;
 
     int id = volume_json.value(ID, -1);
     if (id < 0) {
-        result.add(RT::project_volume_missing_id, volume_json.dump());
+        collected_issues.add_issue(Read3mfIssue(RT::project_volume_missing_id, volume_json.dump()));
         return;
     }
     PathId path_id{static_cast<format_3MF::ST_ResourceID>(id)};
     auto it = volume_map.find(path_id);
     if (it == volume_map.end()) {
-        result.add(RT::project_volume_bad_id, std::to_string(id));
+        collected_issues.add_issue(Read3mfIssue(RT::project_volume_bad_id, std::to_string(id)));
         return;
     }
 
@@ -887,7 +938,7 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, ResultLoa
         assert(type_it != m.end());
         if (type_it == m.end()) {
             // use default value
-            result.add(RT::project_volume_unknown_type, volume_type_str);
+            collected_issues.add_issue(Read3mfIssue(RT::project_volume_unknown_type, volume_type_str));
         } else {
             ModelVolumeType type = type_it->second;
             for (ModelVolume *mv : mvs)
@@ -903,7 +954,7 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, ResultLoa
         source_json_it != volume_json.end()){
         for (ModelVolume *mv : mvs) {
             Domain::TriangleMeshStats stats;
-            SourceSerialization::load(*source_json_it, mv->source, stats, result);
+            SourceSerialization::load(*source_json_it, mv->source, stats, collected_issues);
             // Can't set repaired_errors directly so need to re-set the mesh
             auto &its = const_cast<indexed_triangle_set &>(mv->mesh().its);
             mv->set_mesh(Domain::TriangleMesh(std::move(its), std::move(stats)));
@@ -913,7 +964,7 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, ResultLoa
     if (auto tc_json_it = volume_json.find(TEXT_CONFIGURATION);
         tc_json_it != volume_json.end()){
         Domain::TextConfiguration tc;
-        TextConfigurationSerialization::load(*tc_json_it, tc, result);
+        TextConfigurationSerialization::load(*tc_json_it, tc, collected_issues);
         for (ModelVolume *mv : mvs)
             mv->text_configuration = tc;
     }
@@ -921,7 +972,7 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, ResultLoa
     if (auto shape_json_it = volume_json.find(SHAPE);
         shape_json_it != volume_json.end()) {
         Domain::EmbossShape es;
-        EmbossShapeSerialization::load(*shape_json_it, es, result);
+        EmbossShapeSerialization::load(*shape_json_it, es, collected_issues);
         for (ModelVolume *mv : mvs)
             mv->emboss_shape = es;
     }
@@ -929,7 +980,7 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, ResultLoa
     if (auto cut_json_it = volume_json.find(CUT_INFO);
         cut_json_it != volume_json.end()) {
         ModelVolume::CutInfo cut_info;
-        CutSerialization::load(*cut_json_it, cut_info, result);
+        CutSerialization::load(*cut_json_it, cut_info, collected_issues);
         for (ModelVolume *mv : mvs)
             mv->cut_info = cut_info;
     }
@@ -956,20 +1007,20 @@ json to_json(const Domain::SLA::SupportPoints &points) {
     return r;
 }
 
-void load(const json &pts_json, Domain::SLA::SupportPoints &pts, ResultLoad3mf &result) {
+void load(const json &pts_json, Domain::SLA::SupportPoints &pts, Read3mfIssues& collected_issues) {
     if (!pts_json.is_array()) {
-        result.add(RT::project_sla_support_points_must_be_array);
+        collected_issues.add_issue(Read3mfIssue(RT::project_sla_support_points_must_be_array));
         return;
     }
     pts.reserve(pts_json.size());
     for (const json &pt_json : pts_json) {
-        if(!is_valid(pt_json, NAMES, result, RT::project_sla_support_point_unknown_property))
+        if(!is_valid(pt_json, NAMES, collected_issues, RT::project_sla_support_point_unknown_property))
             continue;
         Domain::SLA::SupportPoint pt;
         bool is_island = pt.is_island();
-        from_json(pt_json, POSITION,          pt.pos,               result, RT::project_sla_support_point_position_issue, true);
-        from_json(pt_json, HEAD_FRONT_RADIUS, pt.head_front_radius, result, RT::project_sla_support_point_radius_issue, true);
-        from_json(pt_json, IS_NEW_ISLAND,     is_island,            result, RT::project_sla_support_point_is_new_island_issue);
+        from_json(pt_json, POSITION,          pt.pos,               collected_issues, RT::project_sla_support_point_position_issue, true);
+        from_json(pt_json, HEAD_FRONT_RADIUS, pt.head_front_radius, collected_issues, RT::project_sla_support_point_radius_issue, true);
+        from_json(pt_json, IS_NEW_ISLAND,     is_island,            collected_issues, RT::project_sla_support_point_is_new_island_issue);
         if (is_island)
             pt.type = Domain::SLA::SupportPointType::island;
         pts.push_back(pt);
@@ -995,20 +1046,20 @@ json to_json(const Domain::SLA::DrainHoles &holes) {
     }
     return r;
 }
-void from_json(const json &holes_json, Domain::SLA::DrainHoles &holes, ResultLoad3mf &result) {
+void from_json(const json &holes_json, Domain::SLA::DrainHoles &holes, Read3mfIssues& collected_issues) {
     if (!holes_json.is_array()) {
-        result.add(RT::project_sla_drain_holes_must_be_array);
+        collected_issues.add_issue(Read3mfIssue(RT::project_sla_drain_holes_must_be_array));
         return;
     }
     holes.reserve(holes_json.size());
     for (const json &hole_json : holes_json) {
-        if(!is_valid(hole_json, NAMES, result, RT::project_sla_drain_hole_unknown_property))
+        if(!is_valid(hole_json, NAMES, collected_issues, RT::project_sla_drain_hole_unknown_property))
             continue;
         Domain::SLA::DrainHole hole;
-        ::from_json(hole_json, POSITION, hole.pos,    result, RT::project_sla_drain_hole_position_issue, true);
-        ::from_json(hole_json, NORMAL,   hole.normal, result, RT::project_sla_drain_hole_normal_issue, true);
-        ::from_json(hole_json, RADIUS,   hole.radius, result, RT::project_sla_drain_hole_radius_issue, true);
-        ::from_json(hole_json, HEIGHT,   hole.height, result, RT::project_sla_drain_hole_height_issue, true);
+        ::from_json(hole_json, POSITION, hole.pos,    collected_issues, RT::project_sla_drain_hole_position_issue, true);
+        ::from_json(hole_json, NORMAL,   hole.normal, collected_issues, RT::project_sla_drain_hole_normal_issue, true);
+        ::from_json(hole_json, RADIUS,   hole.radius, collected_issues, RT::project_sla_drain_hole_radius_issue, true);
+        ::from_json(hole_json, HEIGHT,   hole.height, collected_issues, RT::project_sla_drain_hole_height_issue, true);
         holes.push_back(hole);
     }
 }
@@ -1041,27 +1092,27 @@ json ranges_to_json(const Domain::LayerConfigRanges &ranges) {
 }
 
 void ranges_from_json(const json &ranges_json, Domain::LayerConfigRanges &ranges,
-    ResultLoad3mf& result, ConfigSubstitutionContext &config_substitutions) {
+    Read3mfIssues& collected_issues) {
     if (!ranges_json.is_array()) {
-        result.add(RT::project_object_ranges_must_be_array);
+        collected_issues.add_issue(Read3mfIssue(RT::project_object_ranges_must_be_array));
         return;
     }
     if (ranges_json.empty()){
-        result.add(RT::project_object_ranges_must_not_be_empty);
+        collected_issues.add_issue(Read3mfIssue(RT::project_object_ranges_must_not_be_empty));
         return;
     }
     
     for (const json& range_json : ranges_json) {
-        if(!is_valid(range_json, RANGES_NAMES, result, RT::project_object_range_unknown_property))
+        if(!is_valid(range_json, RANGES_NAMES, collected_issues, RT::project_object_range_unknown_property))
             continue;
         const json& z_range_json = range_json[Z_RANGE];
         if (!z_range_json.is_array() || z_range_json.size() != 2 ) {
-            result.add(RT::project_object_range_bad_z1, z_range_json.dump());
+            collected_issues.add_issue(Read3mfIssue(RT::project_object_range_bad_z1, z_range_json.dump()));
             continue;
         }
         Domain::LayerHeightRange z_range = range_json.value(Z_RANGE, Domain::LayerHeightRange(-1, -1));
         if (z_range.first > z_range.second || z_range.first < 0) {
-            result.add(RT::project_object_range_bad_z2, z_range_json.dump());
+            collected_issues.add_issue(Read3mfIssue(RT::project_object_range_bad_z2, z_range_json.dump()));
             continue;
         }
 
@@ -1084,8 +1135,8 @@ const NamesType NAMES{{ORD, ITEM_UUID, PRINTABLE}};
 
 json instance_to_json(
     const ModelInstance &instance,
-    const InstanceToBuildOrder &instances_map,
-    const ItemsWithUUID &items_uuid
+    const InstanceToBuildOrder &instances_map
+    //const ItemsWithUUID &items_uuid
 ) {
     // fast skip til the instance keep only printability state
     if (instance.is_printable())
@@ -1097,42 +1148,42 @@ json instance_to_json(
 
     json instances_json = json::object();
     instances_json[ORD] = it->second;
-    if (auto item_uuid_it = find_by_id(items_uuid, instance.id().id);
-        item_uuid_it != items_uuid.cend())
-        instances_json[ITEM_UUID] = item_uuid_it->item_uuid;
+    //if (auto item_uuid_it = find_by_id(items_uuid, instance.id().id);
+    //    item_uuid_it != items_uuid.cend())
+    //    instances_json[ITEM_UUID] = item_uuid_it->item_uuid;
     assert(!instance.is_printable());
     instances_json[PRINTABLE] = false;
     return instances_json;
 }
 
-void load_instance(const json &instance_json, const InstanceMap& instances, ResultLoad3mf &result) {
-    if (!is_valid(instance_json, NAMES, result, RT::project_instance_unknown_property))
+void load_instance(const json &instance_json, const InstanceMap& instances, Read3mfIssues& collected_issues) {
+    if (!is_valid(instance_json, NAMES, collected_issues, RT::project_instance_unknown_property))
         return;
 
     size_t ord;
-    if (!from_json(instance_json, ORD, ord, result, RT::project_instance_order_issue, true))
+    if (!from_json(instance_json, ORD, ord, collected_issues, RT::project_instance_order_issue, true))
         return;
 
     if (ord >= instances.size()) {
-        result.add(RT::project_instance_order_out_of_range_issue, std::to_string(ord));
+        collected_issues.add_issue(Read3mfIssue(RT::project_instance_order_out_of_range_issue, std::to_string(ord)));
         return;
     }
 
     ModelInstance *mi = instances[ord];
-    from_json(instance_json, PRINTABLE, mi->printable, result, RT::project_instance_order_issue);
+    from_json(instance_json, PRINTABLE, mi->printable, collected_issues, RT::project_instance_order_issue);
 }
 
 json instances_to_json(
     const Domain::ModelInstancePtrs &instances,
-    const InstanceToBuildOrder &instances_map,
-    const ItemsWithUUID& items_uuid
+    const InstanceToBuildOrder &instances_map
+    //const ItemsWithUUID& items_uuid
 ) {
     json instances_json = json::array();
     for (const ModelInstance *instance_ptr : instances) {
         assert(instance_ptr != nullptr);
         if (instance_ptr == nullptr)
             continue;
-        json instance_json = instance_to_json(*instance_ptr, instances_map, items_uuid);
+        json instance_json = instance_to_json(*instance_ptr, instances_map/*, items_uuid*/);
         if (!instance_json.empty())
             instances_json.push_back(std::move(instance_json));
     }
@@ -1155,7 +1206,7 @@ constexpr std::string_view SLA_DRAIN_HOLES    = "slaDrainHoles";
 const NamesType OBJECT_NAMES{{ID, OBJECT_UUID, VOLUMES, INSTANCES, RANGES, CUT_OBJECT_ID, CONFIGURATION, 
                               LAYER_HEIGHT_PROFILE, SLA_SUPPORT_POINTS, SLA_DRAIN_HOLES}};
 
-json object_to_json(const ModelObject &object, const StoredStructure &stored_structure, const Persist3mfData &persist) {
+json object_to_json(const ModelObject &object, const StoredStructure &stored_structure) {
     const ObjectToObjectid &o2id = stored_structure.objects;
     auto it = o2id.find(object.id().id);
     assert(it != o2id.end());
@@ -1170,8 +1221,8 @@ json object_to_json(const ModelObject &object, const StoredStructure &stored_str
     //if (auto object_uuid_it = find_by_id(objects_uuid, object.id().id);
     //    object_uuid_it != objects_uuid.cend())
     //    object_json[OBJECT_UUID] = object_uuid_it->object_uuid;
-    add(object_json, VOLUMES, VolumeSerialization::volumes_to_json(object.volumes, stored_structure.volumes, persist.volumes_uuid));
-    add(object_json, INSTANCES, InstanceSerialization::instances_to_json(object.instances, stored_structure.instances, persist.items_uuid));
+    add(object_json, VOLUMES, VolumeSerialization::volumes_to_json(object.volumes, stored_structure.volumes/*, persist.volumes_uuid*/));
+    add(object_json, INSTANCES, InstanceSerialization::instances_to_json(object.instances, stored_structure.instances/*, persist.items_uuid*/));
     if (!object.layer_config_ranges.empty())
         add(object_json, RANGES, RangesSerialization::ranges_to_json(object.layer_config_ranges));
     if (object.is_cut())
@@ -1188,18 +1239,14 @@ json object_to_json(const ModelObject &object, const StoredStructure &stored_str
     return object_json;
 }
 
-json objects_to_json(const Model &model, const StoredStructure &stored_structure) {
-
-    assert(g_load_from_3mf);
-    if (g_load_from_3mf == nullptr)
-        return {};
-    const Persist3mfData &persist = *g_load_from_3mf;
+json objects_to_json(const Model &model, const StoredStructure &stored_structure)
+{
     json objects_json = json::array();
     for (const ModelObject *object_ptr : model.objects) {
         assert(object_ptr != nullptr);
         if (object_ptr == nullptr)
             continue;
-        json object_json = object_to_json(*object_ptr, stored_structure, persist);
+        json object_json = object_to_json(*object_ptr, stored_structure);
         if (!object_json.empty())
             objects_json.push_back(std::move(object_json));
     }
@@ -1210,19 +1257,18 @@ void load_objects(
     const json &parent_json,
     std::string_view name,
     const ModelMap &model_map,
-    ResultLoad3mf& result,
-    ConfigSubstitutionContext &config_substitutions) {
+    Read3mfIssues& collected_issues) {
     auto object_json_it = parent_json.find(name);
     if (object_json_it == parent_json.end())
         return; // no objects in json
 
     const json &objects_json = *object_json_it;
     if (!objects_json.is_array())
-        result.add(RT::project_objects_must_be_array);
+        collected_issues.add_issue(Read3mfIssue(RT::project_objects_must_be_array));
 
     const BuildMap &object_map = model_map.build;
     for (const json &object_json : objects_json) {
-        if(!is_valid(object_json, OBJECT_NAMES, result, RT::project_object_unknown_property))
+        if(!is_valid(object_json, OBJECT_NAMES, collected_issues, RT::project_object_unknown_property))
             continue;
 
         if(auto volumes_json = object_json.find(VOLUMES);
@@ -1230,24 +1276,24 @@ void load_objects(
             !volumes_json->empty() &&
             volumes_json->is_array())
             for (const json& volume_json: *volumes_json)
-                VolumeSerialization::load_volume(volume_json, model_map.volumes, result, config_substitutions);
+                VolumeSerialization::load_volume(volume_json, model_map.volumes, collected_issues);
 
         if(auto instances_json = object_json.find(INSTANCES);
             instances_json != object_json.end() &&
             !instances_json->empty() &&
             instances_json->is_array())
             for (const json &instance_json : *instances_json)
-                InstanceSerialization::load_instance(instance_json, model_map.instances, result);
+                InstanceSerialization::load_instance(instance_json, model_map.instances, collected_issues);
 
         int id = object_json.value(ID, -1);
         if (id < 0) {
-            result.add(RT::project_object_missing_id, object_json.dump());
+            collected_issues.add_issue(Read3mfIssue(RT::project_object_missing_id, object_json.dump()));
             continue;
         }
         PathId path_id{static_cast<format_3MF::ST_ResourceID>(id)};
         auto it = object_map.find(path_id);
         if (it == object_map.end()) {
-            result.add(RT::project_object_bad_id, std::to_string(id));
+            collected_issues.add_issue(Read3mfIssue(RT::project_object_bad_id, std::to_string(id)));
             continue;
         }
         Domain::ModelObjectPtrs mos = it->second;
@@ -1263,31 +1309,31 @@ void load_objects(
         Domain::ModelObjectPtrs mos_(mos.begin() + 1, mos.end()); // without first model object
         if (auto ranges_json = object_json.find(RANGES);
             ranges_json != object_json.end()) {
-            RangesSerialization::ranges_from_json(*ranges_json, mo.layer_config_ranges, result, config_substitutions);
+            RangesSerialization::ranges_from_json(*ranges_json, mo.layer_config_ranges, collected_issues);
             for (auto mo_ : mos_) // copy into other objects
                 mo_->layer_config_ranges = mo.layer_config_ranges;
         }
         if (auto layer_height_profile_json = object_json.find(LAYER_HEIGHT_PROFILE);
             layer_height_profile_json != object_json.end()) {
-            mo.layer_height_profile.set(LayerHeightProfileSerialization::load(*layer_height_profile_json, result));
+            mo.layer_height_profile.set(LayerHeightProfileSerialization::load(*layer_height_profile_json, collected_issues));
             for (auto mo_ : mos_) // copy into other objects
                 mo_->layer_height_profile.set(mo.layer_height_profile.get());
         }
         if (auto sla_points_json = object_json.find(SLA_SUPPORT_POINTS);
             sla_points_json != object_json.end()) {
-            SlaSupportPointsSerialization::load(*sla_points_json, mo.sla_support_points, result);
+            SlaSupportPointsSerialization::load(*sla_points_json, mo.sla_support_points, collected_issues);
             for (auto mo_ : mos_) // copy into other objects
                 mo_->sla_support_points = mo.sla_support_points;
         }
         if (auto sla_holes_json = object_json.find(SLA_DRAIN_HOLES);
             sla_holes_json != object_json.end()) {
-            SlaDrainHolesSerialization::from_json(*sla_holes_json, mo.sla_drain_holes, result);
+            SlaDrainHolesSerialization::from_json(*sla_holes_json, mo.sla_drain_holes, collected_issues);
             for (auto mo_ : mos_) // copy into other objects
                 mo_->sla_drain_holes = mo.sla_drain_holes;
         }
         if (auto cut_object_json = object_json.find(CUT_OBJECT_ID);
             cut_object_json != object_json.end()) {
-            CutSerialization::load(*cut_object_json, mo.cut_id, result);
+            CutSerialization::load(*cut_object_json, mo.cut_id, collected_issues);
             for (auto mo_ : mos_) // copy into other objects
                 mo_->cut_id = mo.cut_id;
         }
@@ -1295,34 +1341,33 @@ void load_objects(
 }
 } // namespace ObjectsSerialization
 
-struct ResultLoadJson : ResultLoad3mf{
-    using ResultLoad3mf::ResultLoad3mf; // use child constructors
+struct ResultLoadJson {
     // index to file in archive to detect unprocessed files
     int file_index = -1;
     json parsed_json;
 };
 
-ResultLoadJson load_json(mz_zip_archive &archive, const char *filename, RT issue_type) {
+tl::expected<ResultLoadJson, Read3mfIssue> load_json(mz_zip_archive &archive, const char *filename, RT issue_type) {
     int facets_file_index = mz_zip_reader_locate_file(&archive, filename, nullptr, 0);
     if (facets_file_index < 0)
         return {}; // No facets stored in 3mf
 
-    auto create_issue = [&](const std::string &name) -> ResultLoadJson {
-        return {issue_type, name, std::string(filename), std::to_string(facets_file_index)};
+    auto create_issue = [&](const std::string &name) -> Read3mfIssue {
+        return Read3mfIssue(issue_type, name, std::string(filename), facets_file_index);
     };
 
     mz_zip_archive_file_stat stat;
     if (!mz_zip_reader_file_stat(&archive, facets_file_index, &stat))
-        return create_issue("mz_zip_reader_file_stat");
+        return tl::make_unexpected(create_issue("mz_zip_reader_file_stat"));
 
     if (stat.m_uncomp_size == 0)
-        return create_issue("stat.m_uncomp_size == 0");
+        return tl::make_unexpected(create_issue("stat.m_uncomp_size == 0"));
 
     size_t uncomp_size = static_cast<size_t>(stat.m_uncomp_size);
     std::unique_ptr<char[]> buffer(new char[uncomp_size+1]);
     if (mz_zip_reader_extract_to_mem(&archive, facets_file_index, buffer.get(), uncomp_size, 0) !=
         MZ_TRUE)
-        return create_issue("mz_zip_reader_extract_to_mem");
+        return tl::make_unexpected(create_issue("mz_zip_reader_extract_to_mem"));
 
     // json must be null terminated
     buffer[uncomp_size] = '\0';
@@ -1337,7 +1382,7 @@ ResultLoadJson load_json(mz_zip_archive &archive, const char *filename, RT issue
     try {
         result.parsed_json = json::parse(buffer.get());
     } catch (const json::parse_error &e) {
-        create_issue(e.what()); 
+        return tl::make_unexpected(create_issue(e.what()));
     }
     return result;
 }
@@ -1398,15 +1443,14 @@ void write(
 void load(
     const json &project_json,
     const ModelMap &model_map,
-    DynamicPrintConfig &config,
-    ConfigSubstitutionContext &config_substitutions,
-    ResultLoad3mf &result
+    Domain::ConfigPack &config,
+    Read3mfIssues& collected_issues
 ) {    
-    if (!is_valid(project_json, PROJECT_NAMES, result, RT::project_unknown_type))
+    if (!is_valid(project_json, PROJECT_NAMES, collected_issues, RT::project_unknown_type))
         return;
 
-    ObjectsSerialization::load_objects(project_json, OBJECTS, model_map, result, config_substitutions);
-    load_configuration(project_json, CONFIGURATION, config, result, RT::project_config_issue, config_substitutions);
+    ObjectsSerialization::load_objects(project_json, OBJECTS, model_map, collected_issues);
+    //load_configuration(project_json, CONFIGURATION, config, collected_issues, RT::project_config_issue);
 }
 } // namespace ProjectFileSerialization
 } // namespace
@@ -1425,37 +1469,39 @@ void Slic3r::store_prusa_files(
 PrusaFilesResult Slic3r::load_prusa_files(
     mz_zip_archive &archive,
     const ModelMap &model_map,
-    DynamicPrintConfig &config,
-    ConfigSubstitutionContext &config_substitutions
+    Domain::Model& model,
+    Read3mfIssues& collected_issues
 ) {
     PrusaFilesResult result;
     result.used_file_indices = std::vector<bool>(mz_zip_reader_get_num_files(&archive), {false});
 
-    auto get_json = [&archive, &result](const char *filename, RT err_type)->std::optional<json> {
-        ResultLoadJson result_json = load_json(archive, filename, err_type);
-        result += static_cast<ResultLoad3mf &>(result_json); // collect issues
-        if (result_json.file_index < 0)
+    auto get_json = [&archive, &collected_issues, &result](const char *filename, RT err_type)->std::optional<json> {
+        tl::expected<ResultLoadJson, Read3mfIssue> result_json = load_json(archive, filename, err_type);
+        if (! result_json)
+            collected_issues.add_issue(result_json.error());
+
+        if (result_json.value().file_index < 0)
             return {};
-        result.used_file_indices[result_json.file_index] = true;
-        if (result_json.parsed_json.empty())
+        //result.used_file_indices[result_json.file_index] = true;
+        if (result_json.value().parsed_json.empty())
             return {};
-        return result_json.parsed_json;
+        return result_json.value().parsed_json;
     };
 
     if (std::optional<json> project_json = get_json(ProjectFileSerialization::PRUSA_PROJECT_FILEPATH, RT::project_file_is_corrupted);
         project_json.has_value()) 
-        ProjectFileSerialization::load(*project_json, model_map, config, config_substitutions, result);
+        ProjectFileSerialization::load(*project_json, model_map, result.config_pack, collected_issues);
 
     if (std::optional<json> facets_json = get_json(FacetsAnnotationSerialization::FACETS_ANNOTATION_FILE, RT::facets_annotation_file_is_corrupted);
         facets_json.has_value()) 
-        FacetsAnnotationSerialization::load(*facets_json, model_map.volumes, result);
+        FacetsAnnotationSerialization::load(*facets_json, model_map.volumes, collected_issues);
 
     return result;
 }
 
 bool Slic3r::process_embossed_svg(
     mz_zip_archive &archive, const mz_zip_archive_file_stat &stat, 
-    Slic3r::Domain::Model &model, ResultLoad3mf& result) 
+    Slic3r::Domain::Model &model, Read3mfIssues& collected_issues) 
 {
     std::shared_ptr<std::string> data = nullptr;
     std::string filename(stat.m_filename);
@@ -1476,7 +1522,7 @@ bool Slic3r::process_embossed_svg(
             auto file = std::make_unique<std::string>(stat.m_uncomp_size, '\0');
             mz_bool res  = mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void *) file->data(), stat.m_uncomp_size, 0);
             if (res == 0) {
-                result.add(RT::cant_load_zip_file, filename);
+                collected_issues.add_issue(Read3mfIssue(RT::cant_load_zip_file, filename));
                 // it is used svg file but can't be readed from archive.
                 return true; 
             }

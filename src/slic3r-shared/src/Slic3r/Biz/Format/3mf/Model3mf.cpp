@@ -17,6 +17,7 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
 
 #include "Slic3r/Time.hpp" // utc_timestamp
 #include "LocalesUtils.hpp" // CNumericLocalesSetter
@@ -31,9 +32,6 @@ using Slic3r::Domain::Vec3f;
 
 using Slic3r::Domain::is_approx;
 
-namespace Slic3r {
-    extern std::unique_ptr<const Persist3mfData> g_load_from_3mf;
-}
 
 using ModelObject = Slic3r::Domain::ModelObject;
 using ModelVolume = Slic3r::Domain::ModelVolume;
@@ -149,7 +147,7 @@ constexpr const char *PATH_ATTR = "path";
 constexpr const char *UUID_ATTR = "UUID";
 
 // TODO: fill version before merge to master
-const Slic3r::Semver last_old_stored_version = *Semver::parse("2.7.9"); 
+const Slic3r::Semver last_old_stored_version = *Semver::parse("2.9.1"); 
 
 using UnitToName = boost::bimap<ST_Unit, std::string_view>;
 const UnitToName unit_to_name = boost::assign::list_of<UnitToName::relation>
@@ -195,18 +193,25 @@ finished,
 unknown 
 };
 
-struct LoadedModelFile : public ResultLoad3mf{
+struct LoadedModelFile {
     std::optional<format_3MF::Model> model;
-    using ResultLoad3mf::ResultLoad3mf; // use child constructors
+
+    LoadedModelFile() = default;
     LoadedModelFile(format_3MF::Model &&model_) : model{model_} {}
 };
 
 struct LoadContext {
+    LoadContext(XML_Parser* xml_parser, Read3mfIssues& collected_issues) :
+        xml_parser{ xml_parser }, collected_issues{ collected_issues }
+    {}
+
     XML_Parser *xml_parser;
     XmlState state = XmlState::start;
     size_t unknown_depth = 0;
     XmlState unknown_in_state = XmlState::unknown;
     LoadedModelFile model;
+
+    Read3mfIssues& collected_issues;
 
     // keep unfinished characters between tags
     std::string xml_characters;
@@ -232,17 +237,17 @@ Attributes create_attributes(const XML_Char **atts, int num_atts) {
 }
 
 static const fast_float::parse_options po;
-void parse_float(const XML_Char *value, float &v, ResultLoad3mf &result, Read3mfIssueType issue) {
+void parse_float(const XML_Char *value, float &v, Read3mfIssues& collected_issues, Read3mfIssueType issue) {
     assert(value != nullptr);
     if (value == nullptr){
-        result.add(issue, "No value to parse");
+        collected_issues.add_issue(Read3mfIssue(issue, "No value to parse"));
         return;
     }
 
     fast_float::from_chars_result r =
         fast_float::from_chars_advanced(value, value + strlen(value), v, po);
     if (r.ec != std::errc()){
-        result.add(issue, std::to_string(static_cast<int>(r.ec)));
+        collected_issues.add_issue(Read3mfIssue(issue, std::to_string(static_cast<int>(r.ec))));
     }
 }
 
@@ -255,7 +260,7 @@ void parse_float(const XML_Char *value, float &v){
 }
 
 std::array<char, 3> vertex_attrs = {X_ATTR[0], Y_ATTR[0], Z_ATTR[0]};
-void process_vertex_atts(LoadedModelFile &model, const XML_Char **atts, int num_atts){
+void process_vertex_atts(LoadedModelFile &model, const XML_Char **atts, int num_atts, Read3mfIssues& collected_issues){
     std::vector<Vec3f>& vertices = model.model->resource.objects.back().mesh.its.vertices;
     vertices.emplace_back();
     Vec3f& vertex = vertices.back();
@@ -274,8 +279,8 @@ void process_vertex_atts(LoadedModelFile &model, const XML_Char **atts, int num_
             } else if (::strcmp(name, Z_ATTR) == 0) {
                 parse_float(value, vertex.z());
             } else {
-                model.add(Read3mfIssueType::model_vertex_unknown_attr,
-                    std::string(name), std::string(value));
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_vertex_unknown_attr,
+                    std::string(name), std::string(value)));
             }
         }
     }
@@ -302,7 +307,7 @@ bool parse_id(const XML_Char *id_str, ST_ResourceID& id) {
 }
 
 constexpr const char *v123 = "123";
-void process_triangle_atts(LoadedModelFile &model, const XML_Char **atts, int num_atts){
+void process_triangle_atts(LoadedModelFile &model, const XML_Char **atts, int num_atts, Read3mfIssues& collected_issues){
     std::vector<Domain::Index3>& triangles = model.model->resource.objects.back().mesh.its.indices;
     triangles.emplace_back();
     Domain::Index3 &triangle = triangles.back();
@@ -321,8 +326,8 @@ void process_triangle_atts(LoadedModelFile &model, const XML_Char **atts, int nu
             } else if (::strcmp(name, V3_ATTR) == 0) {
                 triangle[2] = parse_int(value);
             } else {
-                model.add(Read3mfIssueType::model_triangle_unknown_attr,
-                    std::string(name), std::string(value));
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_triangle_unknown_attr,
+                    std::string(name), std::string(value)));
             }
         }
     }
@@ -346,18 +351,18 @@ std::vector<std::string> parse_extensions(const char *value) { return split_by_s
 void process_unknown_attr(
     Read3mfIssueType type,
     const Attribute &attribute,
-    LoadedModelFile &model,
+    Read3mfIssues& collected_issues,
     bool is_3mf_allowed = true
 ) {
     std::string name_str(attribute.name);
     if (attribute.value == nullptr) {
-        model.add(type, name_str);
+        collected_issues.add_issue(Read3mfIssue(type, name_str));
     } else {
-        model.add(type, name_str, std::string(attribute.value));
+        collected_issues.add_issue(Read3mfIssue(type, name_str, std::string(attribute.value)));
     }
 }
 
-void process_model_attr(LoadedModelFile &model, const Attributes &attributes) {
+void process_model_attr(LoadedModelFile &model, const Attributes &attributes, Read3mfIssues& collected_issues) {
     // initialize model object
     model.model = format_3MF::Model{}; 
     if (attributes.empty()) return;
@@ -367,7 +372,7 @@ void process_model_attr(LoadedModelFile &model, const Attributes &attributes) {
             const auto& name_to_unit = unit_to_name.right;
             auto it = name_to_unit.find(attr.value);
             if (it == name_to_unit.end()) {
-                model.add(Read3mfIssueType::model_unknown_language, attr.value);
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_unknown_language, attr.value));
                 continue;
             }
             model.model->unit = it->second;        
@@ -390,7 +395,7 @@ void process_model_attr(LoadedModelFile &model, const Attributes &attributes) {
             model.model->recomended_extensions = parse_extensions(attr.value);
         } else if (::strcmp(attr.name, XMLNS_ATTR) == 0) {
             if (::strcmp(attr.value, XMLNS_VALUE) != 0)
-                model.add(Read3mfIssueType::model_bad_xmlns, attr.value);
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_bad_xmlns, attr.value));
         } else if (boost::starts_with(attr.name, XMLNS_PREFIX_ATTR)) {
             size_t prefix_size = std::char_traits<char>::length(XMLNS_PREFIX_ATTR);
             std::string xml_ns(attr.name + prefix_size);
@@ -409,14 +414,14 @@ void process_model_attr(LoadedModelFile &model, const Attributes &attributes) {
                 model.model->mirror_ns = xml_ns;
                 continue;
             }
-            model.add(Read3mfIssueType::model_unknown_namespace, attr.value, xml_ns);
+            collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_unknown_namespace, attr.value, xml_ns));
         } else {
-            process_unknown_attr(Read3mfIssueType::model_unknown_attr, attr, model);
+            process_unknown_attr(Read3mfIssueType::model_unknown_attr, attr, collected_issues);
         }
     }
 }
 
-void process_metadata_attr(LoadedModelFile &model, const Attributes &attributes) {
+void process_metadata_attr(LoadedModelFile &model, const Attributes &attributes, Read3mfIssues& collected_issues) {
     CT_Metadata_Model& metadata = model.model->metadata;
     metadata.emplace_back(); // insert new one
     ModelMetadata& meta = metadata.back();
@@ -429,13 +434,13 @@ void process_metadata_attr(LoadedModelFile &model, const Attributes &attributes)
         } else if (::strcmp(attr.name, TYPE_ATTR) == 0) {
             meta.type = std::string(attr.value);
         } else {
-            process_unknown_attr(Read3mfIssueType::model_metadata_unknown_attr, attr, model);
+            process_unknown_attr(Read3mfIssueType::model_metadata_unknown_attr, attr, collected_issues);
         }
     }
 
     if (!std::holds_alternative<std::string>(meta.name) &&
         !std::holds_alternative<ModelMetadataNames>(meta.name)) {
-        model.add(Read3mfIssueType::model_metadata_require_name);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_metadata_require_name));
     }
 }
 
@@ -473,7 +478,7 @@ bool exists(ST_ResourceID id, const CT_Objects &objects) {
         });
 }
 
-void process_object_attr(LoadedModelFile &model, const Attributes &attributes) {
+void process_object_attr(LoadedModelFile &model, const Attributes &attributes, Read3mfIssues& collected_issues) {
     // invalid object should be threated later
     CT_Objects &objects = model.model->resource.objects;
     objects.emplace_back(); // add new object
@@ -485,17 +490,17 @@ void process_object_attr(LoadedModelFile &model, const Attributes &attributes) {
             has_attribute_id = true;
             ST_ResourceID object_id = 0;
             if (!parse_id(attr.value, object_id))
-                model.add(Read3mfIssueType::model_object_id_is_invalid, 
-                    std::string(attr.value));
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_object_id_is_invalid,
+                    std::string(attr.value)));
             else if (exists(object_id, objects))
-                model.add(Read3mfIssueType::model_object_id_is_not_unique, 
-                    std::string(attr.value));
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_object_id_is_not_unique, 
+                    std::string(attr.value)));
             object.id = object_id;
         } else if (::strcmp(attr.name, TYPE_ATTR) == 0) {
             const auto &name_to_type = object_type_to_name.right;
             auto it = name_to_type.find(attr.value);
             if (it == name_to_type.end()) {
-                model.add(Read3mfIssueType::model_object_unknown_type, attr.value);
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_object_unknown_type, attr.value));
                 object.type = std::string(attr.value);
             } else {
                 object.type = it->second;
@@ -515,25 +520,25 @@ void process_object_attr(LoadedModelFile &model, const Attributes &attributes) {
             boost::uuids::string_generator gen;
             object.uuid = gen(attr.value);
         } else {
-            process_unknown_attr(Read3mfIssueType::model_object_unknown_attr, attr, model);
+            process_unknown_attr(Read3mfIssueType::model_object_unknown_attr, attr, collected_issues);
         }
     }
 
     // Production extension REQUIRE uuid for object
     if (!model.model->prod_ns.empty() && object.uuid.is_nil())
-        model.add(Read3mfIssueType::model_object_missing_uuid);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_object_missing_uuid));
 
     // Object MUST contain mesh or component
     if (object.mesh.its.empty() == object.components.empty())
-        model.add(object.components.empty()?
+        collected_issues.add_issue(Read3mfIssue(object.components.empty()?
             Read3mfIssueType::model_object_need_mesh_or_component:
-            Read3mfIssueType::model_object_cant_contain_mesh_with_component);
+            Read3mfIssueType::model_object_cant_contain_mesh_with_component));
 
     if (!has_attribute_id)
-        model.add(Read3mfIssueType::model_object_require_id_attr);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_object_require_id_attr));
 }
 
-void process_mirror_attr(LoadedModelFile &model, const Attributes &attributes) {
+void process_mirror_attr(LoadedModelFile &model, const Attributes &attributes, Read3mfIssues& collected_issues) {
     CT_Objects &objects = model.model->resource.objects;
     
     assert(!objects.empty());
@@ -546,28 +551,28 @@ void process_mirror_attr(LoadedModelFile &model, const Attributes &attributes) {
         if (::strcmp(attr.name, ORIGINALMESH_ATTR) == 0) {            
             ST_ResourceID object_id = 0;
             if (!parse_id(attr.value, object_id))
-                model.add(Read3mfIssueType::model_mesh_mirror_invalid_id, std::string(attr.value));
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_mesh_mirror_invalid_id, std::string(attr.value)));
             else if (!exists(object_id, objects))
-                model.add(Read3mfIssueType::model_mesh_mirror_unknown_id, std::string(attr.value));
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_mesh_mirror_unknown_id, std::string(attr.value)));
             else {
                 has_original_mesh_id = true;            
                 mirror.original_mesh = object_id;
             }
         } else if (::strcmp(attr.name, N_X_ATTR) == 0) {
-            parse_float(attr.value, mirror.nx, model, Read3mfIssueType::model_mesh_mirror_nx_issue);
+            parse_float(attr.value, mirror.nx, collected_issues, Read3mfIssueType::model_mesh_mirror_nx_issue);
         } else if (::strcmp(attr.name, N_Y_ATTR) == 0) {
-            parse_float(attr.value, mirror.ny, model, Read3mfIssueType::model_mesh_mirror_ny_issue);
+            parse_float(attr.value, mirror.ny, collected_issues, Read3mfIssueType::model_mesh_mirror_ny_issue);
         } else if (::strcmp(attr.name, N_Z_ATTR) == 0) {
-            parse_float(attr.value, mirror.nz, model, Read3mfIssueType::model_mesh_mirror_nz_issue);
+            parse_float(attr.value, mirror.nz, collected_issues, Read3mfIssueType::model_mesh_mirror_nz_issue);
         } else if (::strcmp(attr.name, DISTANCE_ATTR) == 0) {
-            parse_float(attr.value, mirror.d, model, Read3mfIssueType::model_mesh_mirror_d_issue);
+            parse_float(attr.value, mirror.d, collected_issues, Read3mfIssueType::model_mesh_mirror_d_issue);
         } else {
-            process_unknown_attr(Read3mfIssueType::model_mesh_mirror_unknown_attr, attr, model);
+            process_unknown_attr(Read3mfIssueType::model_mesh_mirror_unknown_attr, attr, collected_issues);
         }
     }
 
     if (!has_original_mesh_id) {
-        model.add(Read3mfIssueType::model_mesh_mirror_required_id);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_mesh_mirror_required_id));
         return;
     }
 
@@ -575,22 +580,22 @@ void process_mirror_attr(LoadedModelFile &model, const Attributes &attributes) {
     objects.back().mesh.mirror_mesh = mirror;
 }
 
-void process_build_atts(LoadedModelFile &model, const Attributes &attributes) {
+void process_build_atts(LoadedModelFile &model, const Attributes &attributes, Read3mfIssues& collected_issues) {
     for (const Attribute &attr : attributes) {
         if (!model.model->prod_ns.empty() &&
             ::strcmp(attr.name, (model.model->prod_ns + ':' + UUID_ATTR).c_str()) == 0) {
             boost::uuids::string_generator gen;
             model.model->build.uuid = gen(attr.value);
         } else {
-            process_unknown_attr(Read3mfIssueType::model_build_unknown_attr, attr, model);
+            process_unknown_attr(Read3mfIssueType::model_build_unknown_attr, attr, collected_issues);
         }
     }
 
     if (!model.model->prod_ns.empty() && model.model->build.uuid.is_nil())
-        model.add(Read3mfIssueType::model_build_need_uuid);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_build_need_uuid));
 }
 
-void process_component_attr(LoadedModelFile &model, const Attributes &attributes) {
+void process_component_attr(LoadedModelFile &model, const Attributes &attributes, Read3mfIssues& collected_issues) {
     // current processed object componnets
     CT_Components &components = model.model->resource.objects.back().components;
     components.emplace_back();
@@ -603,16 +608,16 @@ void process_component_attr(LoadedModelFile &model, const Attributes &attributes
         if (::strcmp(attr.name, OBJECTID_ATTR) == 0) {
             has_attribute_objectid = true;
             if (!parse_id(attr.value, component.object_id))
-                model.add(Read3mfIssueType::model_component_bad_objectid, 
-                    std::string(attr.value));
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_component_bad_objectid,
+                    std::string(attr.value)));
             else if (component.object_id == parent_object_id)
                 // Self referencing component - need prevent crash made by recursion !!
-                model.add(Read3mfIssueType::model_component_has_parent_objectid, 
-                    std::to_string(parent_object_id), std::to_string(component.object_id));
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_component_has_parent_objectid, 
+                    std::to_string(parent_object_id), std::to_string(component.object_id)));
             else if (!exists(component.object_id, objects))
                 // TODO: Solve bad order of objects(component is used before definition of object)
-                model.add(Read3mfIssueType::model_component_unknown_objectid, 
-                    std::to_string(parent_object_id), std::to_string(component.object_id));            
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_component_unknown_objectid, 
+                    std::to_string(parent_object_id), std::to_string(component.object_id)));            
         } else if (::strcmp(attr.name, TRANSFORM_ATTR) == 0) {
             component.transform = parse_transformation(attr.value);
         } else if (!model.model->prod_ns.empty()) {
@@ -623,18 +628,18 @@ void process_component_attr(LoadedModelFile &model, const Attributes &attributes
                 component.uuid = gen(attr.value);
             }
         } else {
-            process_unknown_attr(Read3mfIssueType::model_object_unknown_attr, attr, model);
+            process_unknown_attr(Read3mfIssueType::model_object_unknown_attr, attr, collected_issues);
         }
     }
     if (!model.model->prod_ns.empty() && component.uuid.is_nil())
-        model.add(Read3mfIssueType::model_component_require_uuid_attr);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_component_require_uuid_attr));
 
     if (!has_attribute_objectid)
-        model.add(Read3mfIssueType::model_component_require_objectid_attr,
-            std::to_string(parent_object_id));
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_component_require_objectid_attr,
+            std::to_string(parent_object_id)));
 }
 
-void process_item_attr(LoadedModelFile &model, const Attributes &attributes) {
+void process_item_attr(LoadedModelFile &model, const Attributes &attributes, Read3mfIssues& collected_issues) {
     // current processed object componnets
     CT_Items &items = model.model->build.items;
     items.emplace_back();
@@ -645,9 +650,9 @@ void process_item_attr(LoadedModelFile &model, const Attributes &attributes) {
         if (::strcmp(attr.name, OBJECTID_ATTR) == 0) {
             has_attribute_objectid = true;
             if (!parse_id(attr.value, item.object_id))
-                model.add(Read3mfIssueType::model_item_bad_objectid, std::string(attr.value));
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_item_bad_objectid, std::string(attr.value)));
             else if (!exists(item.object_id, model.model->resource.objects))
-                model.add(Read3mfIssueType::model_item_unknown_objectid);            
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_item_unknown_objectid));            
         } else if (::strcmp(attr.name, TRANSFORM_ATTR) == 0) {
             item.transform = parse_transformation(attr.value);
         } else if (::strcmp(attr.name, PARTNUMBER_ATTR) == 0) {
@@ -660,26 +665,26 @@ void process_item_attr(LoadedModelFile &model, const Attributes &attributes) {
                 item.uuid = gen(attr.value);
             }
         } else {
-            process_unknown_attr(Read3mfIssueType::model_item_unknown_attr, attr, model);
+            process_unknown_attr(Read3mfIssueType::model_item_unknown_attr, attr, collected_issues);
         }
     }
 
     if (!model.model->prod_ns.empty() && item.uuid.is_nil())
-        model.add(Read3mfIssueType::model_item_require_uuid_attr);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_item_require_uuid_attr));
 
     if (!has_attribute_objectid)
-        model.add(Read3mfIssueType::model_item_require_objectid_attr);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_item_require_objectid_attr));
 }
 
-void process_unknown_atts(Read3mfIssueType type, LoadedModelFile &model, const Attributes &attributes) {
+void process_unknown_atts(Read3mfIssueType type, LoadedModelFile &model, const Attributes &attributes, Read3mfIssues& collected_issues) {
     if (attributes.empty()) return;
     for (const Attribute& att: attributes)
-        process_unknown_attr(type, att, model);
+        process_unknown_attr(type, att, collected_issues);
 }
 
 void start_unknown_tag(LoadContext &context, Read3mfIssueType type, const XML_Char *name, 
     const Attributes& atts, bool is_3mf_allowed = true){    
-    context.model.add(type, std::string(name));
+    context.collected_issues.add_issue(Read3mfIssue(type, std::string(name)));
     assert(context.unknown_depth == 0);
     context.unknown_depth = 1;
     assert(context.unknown_in_state == XmlState::unknown);
@@ -740,7 +745,7 @@ void XMLCALL start_vertex_handler(void *user_data, const XML_Char *name, const X
 
     state = XmlState::vertex;
     int num_atts = XML_GetSpecifiedAttributeCount(*context.xml_parser);
-    process_vertex_atts(context.model, atts, num_atts);
+    process_vertex_atts(context.model, atts, num_atts, context.collected_issues);
 }
 
 void XMLCALL start_triangle_handler(void *user_data, const XML_Char *name, const XML_Char **atts) {
@@ -758,7 +763,7 @@ void XMLCALL start_triangle_handler(void *user_data, const XML_Char *name, const
 
     state = XmlState::triangle;
     int num_atts = XML_GetSpecifiedAttributeCount(*context.xml_parser);
-    process_triangle_atts(context.model, atts, num_atts);
+    process_triangle_atts(context.model, atts, num_atts, context.collected_issues);
 }
 
 void XMLCALL start_element_handler(void *user_data, const XML_Char *name, const XML_Char **atts) {
@@ -770,6 +775,7 @@ void XMLCALL start_element_handler(void *user_data, const XML_Char *name, const 
     LoadContext &context = *context_ptr;
     XmlState &state = context.state;
     LoadedModelFile &model = context.model;
+    Read3mfIssues& collected_issues = context.collected_issues;
 
     // Q: When it can appear?
     assert(context.xml_parser != nullptr);
@@ -788,7 +794,7 @@ void XMLCALL start_element_handler(void *user_data, const XML_Char *name, const 
     case XmlState::start:
         if (::strcmp(name,    MODEL_TAG) == 0) {
             state = XmlState::model;
-            process_model_attr(model, attributes);
+            process_model_attr(model, attributes, collected_issues);
         } else {
             start_unknown_tag(context, Read3mfIssueType::model_bad_root_tag, name, attributes, false);
         }
@@ -798,19 +804,19 @@ void XMLCALL start_element_handler(void *user_data, const XML_Char *name, const 
             state = XmlState::metadata;
             // Parse character between tags
             XML_SetCharacterDataHandler(*context_ptr->xml_parser, ::xml_characters_handler);
-            process_metadata_attr(model, attributes);
+            process_metadata_attr(model, attributes, collected_issues);
         } else if (::strcmp(  RESOURCES_TAG, name) == 0) {
             state = XmlState::resources;
             if (context.exist_model_resources)
-                model.add(Read3mfIssueType::model_resource_multiple_appear);
+                context.collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_resource_multiple_appear));
             context.exist_model_resources = true;
-            process_unknown_atts(Read3mfIssueType::model_resource_unknown_attr, model, attributes);
+            process_unknown_atts(Read3mfIssueType::model_resource_unknown_attr, model, attributes, collected_issues);
         } else if (::strcmp(  BUILD_TAG, name) == 0) {
             state = XmlState::build;
             if (context.exist_model_build)
-                model.add(Read3mfIssueType::model_build_multiple_appear);
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_build_multiple_appear));
             context.exist_model_build = true;
-            process_build_atts(model, attributes);
+            process_build_atts(model, attributes, collected_issues);
         } else {
             start_unknown_tag(context, Read3mfIssueType::model_unknown_tag, name, attributes);
         }
@@ -818,7 +824,7 @@ void XMLCALL start_element_handler(void *user_data, const XML_Char *name, const 
     case XmlState::resources:
         if (::strcmp(name,    OBJECT_TAG) == 0) {
             state = XmlState::object;
-            process_object_attr(model, attributes);
+            process_object_attr(model, attributes, context.collected_issues);
         //} else if (::strcmp(  BASEMATERIALS_TAG, name) == 0) {
         //    state = XmlState::basematerials;
         } else {
@@ -828,10 +834,10 @@ void XMLCALL start_element_handler(void *user_data, const XML_Char *name, const 
     case XmlState::object:
         if (::strcmp(name,    MESH_TAG) == 0) {
             state = XmlState::mesh;
-            process_unknown_atts(Read3mfIssueType::model_mesh_unknown_attr, model, attributes);
+            process_unknown_atts(Read3mfIssueType::model_mesh_unknown_attr, model, attributes, collected_issues);
         } else if (::strcmp(  COMPONENTS_TAG, name) == 0) {
             state = XmlState::components;
-            process_unknown_atts(Read3mfIssueType::model_components_unknown_attr, model, attributes);
+            process_unknown_atts(Read3mfIssueType::model_components_unknown_attr, model, attributes, collected_issues);
         //} else if (::strcmp(METADATAGROUP_TAG, name) == 0) {
         //    state = XmlState::metadatagroup;
         } else {
@@ -841,19 +847,19 @@ void XMLCALL start_element_handler(void *user_data, const XML_Char *name, const 
     case XmlState::mesh:
         if (::strcmp(name,    VERTICES_TAG) == 0) {
             state = XmlState::vertices;
-            process_unknown_atts(Read3mfIssueType::model_vertices_unknown_attr, model, attributes);
+            process_unknown_atts(Read3mfIssueType::model_vertices_unknown_attr, model, attributes, collected_issues);
             XML_SetStartElementHandler(*context.xml_parser, start_vertex_handler);
             // Note: start element is processed by 'start_vertex_handler' function til </vertices>
         } else if (::strcmp(  TRIANGLES_TAG, name) == 0) {
             state = XmlState::triangles;
-            process_unknown_atts(Read3mfIssueType::model_triangles_unknown_attr, model, attributes);
+            process_unknown_atts(Read3mfIssueType::model_triangles_unknown_attr, model, attributes, collected_issues);
             XML_SetStartElementHandler(*context.xml_parser, start_triangle_handler);
             // Note: start element is processed by 'start_triangle_handler' function til </triangles>
 
         } else if (!model.model->mirror_ns.empty() && 
             ::strcmp((model.model->mirror_ns + ':' + MIRRORMESH_TAG).c_str(), name) == 0) {
             state = XmlState::mirrormesh;
-            process_mirror_attr(model, attributes);
+            process_mirror_attr(model, attributes, collected_issues);
         //} else if (::strcmp(  TRIANGLESETS_TAG, name) == 0) {
         //    state = XmlState::trianglesets;
         } else {
@@ -863,7 +869,7 @@ void XMLCALL start_element_handler(void *user_data, const XML_Char *name, const 
     case XmlState::components:
         if (::strcmp(name,    COMPONENT_TAG) == 0) {
             state = XmlState::component;
-            process_component_attr(model, attributes);
+            process_component_attr(model, attributes, collected_issues);
         } else {
             start_unknown_tag(context, Read3mfIssueType::model_components_unknown_tag, name, attributes, false);
         }
@@ -871,7 +877,7 @@ void XMLCALL start_element_handler(void *user_data, const XML_Char *name, const 
     case XmlState::build:
         if (::strcmp(name,    ITEM_TAG) == 0) {
             state = XmlState::item;
-            process_item_attr(model, attributes);
+            process_item_attr(model, attributes, collected_issues);
         } else {
             start_unknown_tag(context, Read3mfIssueType::model_build_unknown_tag, name, attributes, false);
         }
@@ -918,15 +924,14 @@ void process_xml_characters(LoadContext& context) {
     // Is text whitespaces only?
     if(std::all_of(text.begin(), text.end(), isspace))
         return context.xml_characters.clear();
-    
-    LoadedModelFile &model = context.model;
+
     XmlState state = context.state;
     switch (state) {
     case XmlState::metadata: {   
-        ModelMetadata &metadata = model.model->metadata.back();
+        ModelMetadata &metadata = context.model.model->metadata.back();
         metadata.value = text; // copy
         if (is_old_stored_version(metadata)) {
-            model.set_as_old_3mf();
+            context.collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::legacy_loader_required));
             // Abort parsing after detect old 3mf
             // stop expat xml pareser
             XML_Bool resumable = false;
@@ -936,14 +941,13 @@ void process_xml_characters(LoadContext& context) {
         break;
     }        
     case XmlState::unknown:
-        model.add(Read3mfIssueType::model_unknown_xml_characters, 
+        context.collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_unknown_xml_characters, 
             std::to_string(static_cast<int>(context.unknown_in_state)),
-            std::to_string(context.unknown_depth), 
-            text);
+            text, context.unknown_depth));
         break;
     default:
-        model.add(Read3mfIssueType::model_unexpected_xml_characters,
-            std::to_string(static_cast<int>(state)), text);
+        context.collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_unexpected_xml_characters,
+            std::to_string(static_cast<int>(state)), text));
     }
     // clear temp strig and prepare to next one.
     context.xml_characters.clear();
@@ -991,7 +995,7 @@ void XMLCALL end_element_handler(void *user_data, const XML_Char *name) {
 
 }
 
-LoadedModelFile read_modelfile(mz_zip_archive &archive, int model_file_index) {
+tl::expected<LoadedModelFile, Read3mfIssue> read_modelfile(mz_zip_archive &archive, int model_file_index, Read3mfIssues& collected_issues) {
     // mz_zip_archive_file_stat stat;
     // if (!mz_zip_reader_file_stat(&archive, model_file_index, &stat))
     //     return Read3mfIssueType::cant_read_model_stats;
@@ -999,30 +1003,28 @@ LoadedModelFile read_modelfile(mz_zip_archive &archive, int model_file_index) {
     mz_zip_reader_extract_iter_state *iterator_ptr =
         mz_zip_reader_extract_iter_new(&archive, model_file_index, flags);
     if (iterator_ptr == nullptr)
-        return Read3mfIssueType::cant_extract_iterator;
+        return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::cant_extract_iterator));
 
     // NULL if there is none specified
     const XML_Char *encoding = nullptr;
     XML_Parser xml_parser = XML_ParserCreate(encoding);
     if (xml_parser == nullptr)
-        return Read3mfIssueType::expat_cant_create_parser;
+        return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::expat_cant_create_parser));
 
     ScopeGuard sg_parser([&xml_parser]() { XML_ParserFree(xml_parser); });
     MzIterType file_data_iterator(iterator_ptr);
 
     // Parser data itss
-    LoadContext context{&xml_parser};
+    LoadContext context{&xml_parser, collected_issues};
     XML_SetUserData(xml_parser, (void *) &context);
     XML_SetElementHandler(xml_parser, ::start_element_handler, ::end_element_handler);
-    
-    LoadedModelFile &model = context.model;
 
     bool done = false;
     size_t nbyte = BUFSIZ * BUFSIZ;
     do {
         void *const buf = XML_GetBuffer(xml_parser, (int) nbyte);
         if (buf == nullptr)
-            return Read3mfIssueType::expat_cant_create_buffer;
+            return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::expat_cant_create_buffer));
 
         size_t readed = mz_zip_reader_extract_iter_read(file_data_iterator.get(), buf, nbyte);
 
@@ -1031,27 +1033,26 @@ LoadedModelFile read_modelfile(mz_zip_archive &archive, int model_file_index) {
 
         XML_Status status = XML_ParseBuffer(xml_parser, (int) readed, done);
         if (status == XML_STATUS_ERROR) {
-            if (model.is_old_3mf())
-                return model;
+            if (context.collected_issues.has_issue(Read3mfIssueType::legacy_loader_required))
+                return context.model;
             XML_Size line_number = XML_GetCurrentLineNumber(xml_parser);
-            std::string line_number_str = std::to_string(static_cast<size_t>(line_number));
             XML_Error error_code = XML_GetErrorCode(xml_parser);
             std::string error_code_str = std::to_string(static_cast<int>(error_code));
             std::string error_message = XML_ErrorString(error_code);
-            return {
-                Read3mfIssueType::expat_parse_error, error_code_str, line_number_str, error_message
-            };
+            return tl::make_unexpected(Read3mfIssue(
+                Read3mfIssueType::expat_parse_error, std::nullopt, error_message + " (" + error_code_str + ")", line_number)
+            );
         }
     } while (!done);
 
     if (!context.exist_model_resources)
-        model.add(Read3mfIssueType::model_resource_missing);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_resource_missing));
     // TODO: Should I remove invalid model?
 
     if (!context.exist_model_build)
-        model.add(Read3mfIssueType::model_build_missing);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_build_missing));
 
-    return model;
+    return context.model;
 }
 
 bool is_valid_sub_model(const format_3MF::Model &model_3mf) {
@@ -1071,7 +1072,7 @@ bool is_valid_sub_model(const format_3MF::Model &model_3mf) {
     return true;
 }
 
-void read_sub_model(const std::string &filepath, LoadedModel& result, mz_zip_archive &archive) {
+void append_sub_model(mz_zip_archive &archive, const std::string &filepath, LoadedModel& result, Read3mfIssues& collected_issues) {
     assert(!filepath.empty());
     if (filepath.empty())
         return; // invalid path
@@ -1085,47 +1086,44 @@ void read_sub_model(const std::string &filepath, LoadedModel& result, mz_zip_arc
 
     int file_index = mz_zip_reader_locate_file(&archive, zip_path, nullptr, 0);
     if (file_index < 0) {
-        result.add(Read3mfIssueType::unable_to_locate_model_file, filepath);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::unable_to_locate_model_file, filepath));
         return;
     }
     result.used_files[file_index] = true;
 
-    LoadedModelFile sub_model = read_modelfile(archive, file_index);
-    if (!sub_model.model.has_value())
+    tl::expected<LoadedModelFile, Read3mfIssue> sub_model = read_modelfile(archive, file_index, collected_issues);
+    if (! sub_model || !sub_model.value().model.has_value())
         return;
 
-    if (!is_valid_sub_model(*sub_model.model)) {
-        result.add(Read3mfIssueType::sub_model_issue, filepath);
+    if (!is_valid_sub_model(*sub_model.value().model)) {
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::sub_model_issue, filepath));
         return;
     }
 
     // MUST not contain path
     // MUST be production extension - with UUIDs
     // MUST not contain build
-    result.sub_models.emplace(filepath, *sub_model.model);
-
-    // merge issues
-    // IMPROVE: set issue source file
-    result += static_cast<const ResultLoad3mf &>(sub_model);
+    result.sub_models.emplace(filepath, *sub_model.value().model);
 }
 
 } // namespace
 
-LoadedModel Slic3r::read_model3mf(mz_zip_archive &archive, const char * root_file_path){
+LoadedModel Slic3r::read_model3mf(mz_zip_archive &archive, const char * root_file_path, Read3mfIssues& collected_issues){
     int root_model_file_index = mz_zip_reader_locate_file(&archive, root_file_path, nullptr, 0);
     if (root_model_file_index < 0) {
-        // Throw an exception? 3mf without .model file is invalid and non sence.
-        ResultLoad3mf res{Read3mfIssueType::unable_to_locate_model_file, root_file_path};
-        // Old 3mf parser try to find any .model file in archive !!
-        return LoadedModel{res.set_as_old_3mf()};
+        // 3mf without .model file is invalid.
+        throw Slic3r::Loaded3MFException(Read3mfIssue(Read3mfIssueType::unable_to_locate_model_file, root_file_path));
     }
 
-    LoadedModelFile root_model = read_modelfile(archive, root_model_file_index);
-    LoadedModel result{std::move(static_cast<ResultLoad3mf &>(root_model)), std::move(root_model.model)};
+    tl::expected<LoadedModelFile, Read3mfIssue> root_model = read_modelfile(archive, root_model_file_index, collected_issues);
+
+    LoadedModel result;
+    if (root_model)
+        result.model = std::move(*root_model.value().model);
     result.used_files = std::vector<bool>(mz_zip_reader_get_num_files(&archive), {false});
     result.used_files[root_model_file_index] = true;
 
-    if (!result.model.has_value() || root_model.is_old_3mf())
+    if (!result.model.has_value() || collected_issues.has_issue(Read3mfIssueType::legacy_loader_required))
         return result;
 
     // Read model from .model addresed by path(production extension)
@@ -1134,13 +1132,13 @@ LoadedModel Slic3r::read_model3mf(mz_zip_archive &archive, const char * root_fil
         for (const format_3MF::CT_Component &componnent : object.components) {
             if (componnent.path.empty())
                 continue; // component do not use optional path
-            read_sub_model(componnent.path, result, archive);
+            append_sub_model(archive, componnent.path, result, collected_issues);
         }
     }
     for (const format_3MF::CT_Item &item : root_model_3mf.build.items) {
         if (item.path.empty())
             continue; // item do not use optional path
-        read_sub_model(item.path, result, archive);
+        append_sub_model(archive, item.path, result, collected_issues);
     }
     return result;
 }
@@ -1422,23 +1420,23 @@ void add_transformation_attr(std::stringstream &stream, const Transform3d &tr){
 }
 
 void store_component(std::stringstream& stream, unsigned objectid,
-     const ST_UUID& uuid, const Transform3d* tr = nullptr){
-    assert(!uuid.is_nil());
+     /*const ST_UUID& uuid,*/ const Transform3d* tr = nullptr) {
+    //assert(!uuid.is_nil());
     stream << "    <" << COMPONENT_TAG << " " 
-        << OBJECTID_ATTR << "=\"" << objectid << "\" "
-        << PROD_NS << UUID_ATTR<< "=\"" << uuid << "\" ";
+        << OBJECTID_ATTR << "=\"" << objectid << "\" ";
+    //  << PROD_NS << UUID_ATTR<< "=\"" << uuid << "\" ";
     if (tr != nullptr)
         add_transformation_attr(stream, *tr);
     stream << "/>\n";
 }
 
 void store_component(std::stringstream &stream, unsigned objectid, 
-    const ST_UUID& uuid, const std::string& path) {
-    assert(!uuid.is_nil());
+    /*const ST_UUID& uuid, */const std::string& path) {
+    //assert(!uuid.is_nil());
     stream << "    <" << COMPONENT_TAG << " " << 
         OBJECTID_ATTR << "=\"" << objectid << "\" " <<
-        PROD_NS << PATH_ATTR<< "=\"" << path << "\" " <<
-        PROD_NS << UUID_ATTR<< "=\"" << uuid << "\" " <<
+    //  PROD_NS << PATH_ATTR<< "=\"" << path << "\" " <<
+    //  PROD_NS << UUID_ATTR<< "=\"" << uuid << "\" " <<
         "/>\n";
 }
 
@@ -1581,37 +1579,37 @@ VolumeToObjectid write_volumes(std::stringstream &stream, const Slic3r::Domain::
             const ObjectIdWithPath &id_path = it->second;
             unsigned mesh_id = id_path.id;
             const std::string &mesh_path = id_path.path;
-            assert(g_load_from_3mf);
-            if (g_load_from_3mf == nullptr)
-                continue;
+            //assert(g_load_from_3mf);
+            //if (g_load_from_3mf == nullptr)
+            //    continue;
 
-            const VolumesWithUUID &volumes_uuid = g_load_from_3mf->volumes_uuid;
-            auto volume_uuid_it = std::find_if(volumes_uuid.begin(), volumes_uuid.end(),
-                [id = volume_ptr->id().id](const VolumeWithUUID &v_uuid) {
-                    return v_uuid.volume_id == id;
-                }
-            );
+            //const VolumesWithUUID &volumes_uuid = g_load_from_3mf->volumes_uuid;
+            //auto volume_uuid_it = std::find_if(volumes_uuid.begin(), volumes_uuid.end(),
+            //    [id = volume_ptr->id().id](const VolumeWithUUID &v_uuid) {
+            //        return v_uuid.volume_id == id;
+            //    }
+            //);
 
-            assert(volume_uuid_it != volumes_uuid.end());
-            if (volume_uuid_it == volumes_uuid.end())
-                continue;
+            //assert(volume_uuid_it != volumes_uuid.end());
+            //if (volume_uuid_it == volumes_uuid.end())
+            //    continue;
 
-            assert(!volume_uuid_it->object_uuid.is_nil() && 
-                   !volume_uuid_it->componnent_uuid.is_nil());
-            if (volume_uuid_it->object_uuid.is_nil() ||
-                volume_uuid_it->componnent_uuid.is_nil())
-                continue;
+            //assert(!volume_uuid_it->object_uuid.is_nil() && 
+            //       !volume_uuid_it->componnent_uuid.is_nil());
+            //if (volume_uuid_it->object_uuid.is_nil() ||
+            //    volume_uuid_it->componnent_uuid.is_nil())
+            //    continue;
 
             stream << "  <" << OBJECT_TAG << " "
                 << ID_ATTR << "=\"" << object_id << "\" "
                 << NAME_ATTR << "=\"" << volume_ptr->name + "\" "
-                << PROD_NS << UUID_ATTR<< "=\"" << volume_uuid_it->object_uuid << "\" " 
+            //  << PROD_NS << UUID_ATTR<< "=\"" << volume_uuid_it->object_uuid << "\" " 
                 << ">\n";
             stored_volumes[volume_ptr->id().id] = {object_id};
             ++object_id;
 
             stream << "   <" << COMPONENTS_TAG << ">\n";
-            store_component(stream, mesh_id, volume_uuid_it->componnent_uuid, mesh_path);
+            store_component(stream, mesh_id, /*volume_uuid_it->componnent_uuid,*/ mesh_path);
             stream << "   </" << COMPONENTS_TAG << ">\n";
             stream << "  </" << OBJECT_TAG << ">\n";
         }
@@ -1628,50 +1626,50 @@ ObjectToObjectid write_objects(std::stringstream &stream, const Slic3r::Domain::
         if (!is_valid_object(object_ptr))
             continue;
 
-        assert(g_load_from_3mf);
-        if (g_load_from_3mf == nullptr)
-            continue;
+        //assert(g_load_from_3mf);
+        //if (g_load_from_3mf == nullptr)
+        //    continue;
 
-        const ObjectsWithUUID &objects_uuid = g_load_from_3mf->objects_uuid;
-        auto object_uuid_it = std::find_if(objects_uuid.begin(), objects_uuid.end(),
-            [id = object_ptr->id().id](const ObjectWithUUID &o_uuid) { return o_uuid.object_id == id; }
-        );
+        //const ObjectsWithUUID &objects_uuid = g_load_from_3mf->objects_uuid;
+        //auto object_uuid_it = std::find_if(objects_uuid.begin(), objects_uuid.end(),
+        //    [id = object_ptr->id().id](const ObjectWithUUID &o_uuid) { return o_uuid.object_id == id; }
+        //);
 
-        assert(object_uuid_it != objects_uuid.end());
-        if (object_uuid_it == objects_uuid.end())
-            continue;
+        //assert(object_uuid_it != objects_uuid.end());
+        //if (object_uuid_it == objects_uuid.end())
+        //    continue;
 
-        assert(!object_uuid_it->object_uuid.is_nil());
-        if (object_uuid_it->object_uuid.is_nil())
-            continue;
+        //assert(!object_uuid_it->object_uuid.is_nil());
+        //if (object_uuid_it->object_uuid.is_nil())
+        //    continue;
 
         stream << "  <" << OBJECT_TAG << " " 
             << ID_ATTR << "=\"" << object_id << "\" "
             << NAME_ATTR << "=\"" << object_ptr->name + "\" "
-            << PROD_NS << UUID_ATTR<< "=\"" << object_uuid_it->object_uuid << "\" " 
+        //  << PROD_NS << UUID_ATTR<< "=\"" << object_uuid_it->object_uuid << "\" " 
             << ">\n";
         stored_objects[object_ptr->id().id] = {object_id};
         ++object_id;
 
-        assert(object_uuid_it->components_uuid.size() == object_ptr->volumes.size());
-        if (object_uuid_it->components_uuid.size() != object_ptr->volumes.size())
-            continue;
-        auto component_uuid_it = object_uuid_it->components_uuid.begin();
+        //assert(object_uuid_it->components_uuid.size() == object_ptr->volumes.size());
+        //if (object_uuid_it->components_uuid.size() != object_ptr->volumes.size())
+        //    continue;
+        //auto component_uuid_it = object_uuid_it->components_uuid.begin();
 
         stream << "   <" << COMPONENTS_TAG << ">\n";
         for (const ModelVolume *volume_ptr : object_ptr->volumes) {
-            ScopeGuard sg_component_increase([&component_uuid_it]() { ++component_uuid_it; });
-            if (volume_ptr == nullptr) continue;
-            if (volume_ptr->mesh_ptr() == nullptr) continue;
+        //  ScopeGuard sg_component_increase([&component_uuid_it]() { ++component_uuid_it; });
+            if (volume_ptr == nullptr || volume_ptr->mesh_ptr() == nullptr)
+                continue;
 
             auto it = stored_volumes.find(volume_ptr->id().id);
             assert(it != stored_volumes.end());
             if (it == stored_volumes.end()) continue;
 
-            assert(component_uuid_it->volume_id == volume_ptr->id().id);
+            //assert(component_uuid_it->volume_id == volume_ptr->id().id);
 
             unsigned volume_id = it->second;
-            store_component(stream, volume_id, component_uuid_it->component_uuid, &volume_ptr->get_matrix());
+            store_component(stream, volume_id, /*component_uuid_it->component_uuid,*/ &volume_ptr->get_matrix());
         }
         stream << "   </" << COMPONENTS_TAG << ">\n";
         stream << "  </" << OBJECT_TAG << ">\n";
@@ -1683,14 +1681,15 @@ InstanceToBuildOrder write_instances(std::stringstream &stream, const Slic3r::Do
     const ObjectToObjectid& stored_objects)
 {
     InstanceToBuildOrder stored_instances;
-    assert(g_load_from_3mf != nullptr);
-    if (g_load_from_3mf == nullptr)
-        return stored_instances;
-    assert(!g_load_from_3mf->build_uuid.is_nil());
-    stream << " <" << BUILD_TAG << " " << PROD_NS << UUID_ATTR << "=\"" << g_load_from_3mf->build_uuid << "\" >\n";
+    //assert(g_load_from_3mf != nullptr);
+    //if (g_load_from_3mf == nullptr)
+    //    return stored_instances;
+    //assert(!g_load_from_3mf->build_uuid.is_nil());
+    //stream << " <" << BUILD_TAG  << " " << PROD_NS << UUID_ATTR << "=\"" << g_load_from_3mf->build_uuid << "\" >\n";
+    stream << " <" << BUILD_TAG  << ">\n";
     write_xml_commnet(stream, "List of PrusaSlicer:ModelInstance(with instance transformation)");
     unsigned stored_instance_index = 0;
-    const ItemsWithUUID &items_uuid = g_load_from_3mf->items_uuid;
+    //const ItemsWithUUID &items_uuid = g_load_from_3mf->items_uuid;
     for (const ModelObject *object_ptr : model.objects) {
         if (!is_valid_object(object_ptr))
             continue;
@@ -1701,17 +1700,17 @@ InstanceToBuildOrder write_instances(std::stringstream &stream, const Slic3r::Do
         unsigned instance_id = it->second;
         for (const ModelInstance *instance_ptr : object_ptr->instances) {
             // NOTE: items MUST NOT reference objects of type "other", either directly or recursively
-            auto item_uuid_it = std::find_if(items_uuid.begin(), items_uuid.end(), 
-                [id = instance_ptr->id().id](const ItemWithUUID &item) {
-                    return item.instance_id == id;
-                });
-            assert(item_uuid_it != items_uuid.end());
-            if (item_uuid_it == items_uuid.end())
-                continue;
+            //auto item_uuid_it = std::find_if(items_uuid.begin(), items_uuid.end(), 
+            //    [id = instance_ptr->id().id](const ItemWithUUID &item) {
+            //        return item.instance_id == id;
+            //    });
+            //assert(item_uuid_it != items_uuid.end());
+            //if (item_uuid_it == items_uuid.end())
+            //    continue;
 
             stream << "  <" << ITEM_TAG << " " << 
-                OBJECTID_ATTR << "=\"" << instance_id << "\" " <<
-                PROD_NS << UUID_ATTR << "=\"" << item_uuid_it->item_uuid << "\" ";
+                OBJECTID_ATTR << "=\"" << instance_id << "\" ";
+                //PROD_NS << UUID_ATTR << "=\"" << item_uuid_it->item_uuid << "\" ";
             add_transformation_attr(stream, instance_ptr->get_matrix());
             stream << "/>\n";
             stored_instances[instance_ptr->id().id] = {stored_instance_index};
@@ -1731,12 +1730,12 @@ InstanceToBuildOrder write_instances(std::stringstream &stream, const Slic3r::Do
 
 CT_Metadata_Model &update(CT_Metadata_Model &metadata, const Slic3r::Domain::Model &model) {
     // Copy permanent Creation Date
-    if (g_load_from_3mf != nullptr &&
-        !g_load_from_3mf->creation_date.empty())
-        metadata.insert(
-            metadata.begin(),
-            ModelMetadata{ModelMetadataNames::CreationDate, g_load_from_3mf->creation_date, true}
-        );
+    //if (g_load_from_3mf != nullptr &&
+    //    !g_load_from_3mf->creation_date.empty())
+    //    metadata.insert(
+    //        metadata.begin(),
+    //        ModelMetadata{ModelMetadataNames::CreationDate, g_load_from_3mf->creation_date, true}
+    //    );
 
     // Remove non unique names
     std::set<std::string_view> used;
