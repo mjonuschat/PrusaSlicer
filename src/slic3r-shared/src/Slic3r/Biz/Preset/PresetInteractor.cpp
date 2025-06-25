@@ -4,6 +4,8 @@
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
+#include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 
 #include <vector>
@@ -17,6 +19,27 @@ namespace Slic3r::Biz::Preset {
 void PresetInteractor::load_preset_bundle(const std::string& preset_bundle_path, const std::string& config_path)
 {
     auto preset_bundle = IO::load_bundle(preset_bundle_path, config_path);
+
+    // TODO: remove this when config wizard is ready
+    if (preset_bundle.printer_configs.empty()) {
+        HwConfigEvaluator config_eval;
+
+        auto& prusa_fff = preset_bundle.vendor_bundles["prusa-fff"];
+        for (const auto& hw_printer_template : prusa_fff.vendor_data.printer_configs) {
+            auto printer_config = config_eval.create_printer_config(hw_printer_template, prusa_fff.vendor_data);
+            prusa_fff.printer_configs.emplace_back(std::move(printer_config));
+        }
+    }
+
+    preset_bundle.evaluated_presets.clear();
+    for (const auto& [vendor_id, vendor_bundle] : preset_bundle.vendor_bundles) {
+        PresetEvaluator preset_evaluator{vendor_bundle.presets};
+        for (const auto& p : vendor_bundle.printer_configs) {
+            auto epp = preset_evaluator.evaluate(p);
+            preset_bundle.evaluated_presets.emplace(epp.preset.id, std::move(epp));
+        }
+    }
+
     m_workbench.set_preset_bundle(std::move(preset_bundle));
 }
 

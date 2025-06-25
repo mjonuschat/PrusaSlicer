@@ -125,8 +125,9 @@ private:
 };
 
 
-using HwToolConfigIterator = ConfigIterator<Slic3r::Domain::Preset::HwToolConfigDef>;
-using HwFeederConfigIterator = ConfigIterator<Slic3r::Domain::Preset::HwFeederConfigDef>;
+using HwToolConfigIterator = ConfigIterator<Domain::Preset::HwToolConfigDef>;
+using HwFeederConfigIterator = ConfigIterator<Domain::Preset::HwFeederConfigDef>;
+using HwSheetConfigIterator = ConfigIterator<Domain::Preset::HwSheetConfigDef>;
 
 
 class HwConfigEvaluator
@@ -134,8 +135,11 @@ class HwConfigEvaluator
 public:
     HwToolConfigIterator iterate_tools(const Domain::Preset::HwPrinterConfig& printer, const HwToolConfigIterator::Container& tools) const;
     HwFeederConfigIterator iterate_feeders(const Domain::Preset::HwPrinterConfig& printer, const Domain::Preset::HwToolConfig& tool, const HwFeederConfigIterator::Container& feeders) const;
+    HwSheetConfigIterator iterate_sheets(const Domain::Preset::HwPrinterConfig& printer, const HwSheetConfigIterator::Container& sheets) const;
 
     Domain::Preset::HwPrinterConfig create_printer_config(const Domain::Preset::HwPrinterConfigTemplate& templ, const Domain::Preset::VendorData& vendor_data) const;
+private:
+    const Domain::Preset::HwSheetConfigDef* first_compatible_sheet(const Domain::Preset::HwPrinterConfig& printer, const HwSheetConfigIterator::Container& sheets) const;
 private:
     Expr::Eval m_eval;
 };

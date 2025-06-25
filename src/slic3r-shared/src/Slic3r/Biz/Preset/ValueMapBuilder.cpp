@@ -19,6 +19,7 @@ void append_printer_values(Expr::ValueMap& values, const Domain::Preset::HwPrint
 {
     append_value(values, "printer.", printer.model);
     append_values(values, "printer.", printer.features);
+    append_value(values, "printer.tool_count", printer.tool_count);
 
     if (printer.feeders.empty()) {
         append_value(values, "feeder.", Domain::Preset::HwModel{});
@@ -29,6 +30,8 @@ void append_printer_values(Expr::ValueMap& values, const Domain::Preset::HwPrint
         const auto& feeder = printer.feeders.begin()->second;
         append_value(values, "feeder.", feeder.model);
     }
+
+    append_sheet_values(values, printer.sheet);
 }
 
 void append_print_values(Expr::ValueMap& values, const Domain::ConfigBox& print_preset)
@@ -41,6 +44,12 @@ void append_print_values(Expr::ValueMap& values, const Domain::ConfigBox& print_
 void append_tool_values(Expr::ValueMap& values, const Domain::Preset::HwToolConfig& tool)
 {
     append_values(values, "tool.", tool.features);
+}
+
+void append_sheet_values(Expr::ValueMap& values, const Domain::Preset::HwSheetConfig& sheet)
+{
+    append_values(values, "sheet.", sheet.features);
+    append_value(values, "sheet.type", sheet.type);
 }
 
 }

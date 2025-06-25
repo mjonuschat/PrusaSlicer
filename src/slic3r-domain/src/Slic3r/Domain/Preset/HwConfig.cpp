@@ -100,6 +100,17 @@ const HwFeederConfigDef* VendorData::find_feeder_config_def_by_id(const std::str
     );
 }
 
+const HwSheetConfigDef* VendorData::find_sheet_config_def_by_id(const std::string& id) const
+{
+    return find_element_by_id<HwSheetConfigDef>(
+        *this,
+        id,
+        [](const HwPrinterTechnologyDefs& pt_defs) -> const auto& {
+            return pt_defs.sheets;
+        }
+    );
+}
+
 const HwPrinterConfigTemplate* VendorData::find_printer_config_template_by_id(const std::string& id) const
 {
     auto it = std::find_if(printer_configs.begin(), printer_configs.end(), [&](const auto& pc){ return pc.id == id; });

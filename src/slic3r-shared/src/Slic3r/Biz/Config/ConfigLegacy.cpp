@@ -2,6 +2,7 @@
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Log.hpp"
 
 #include "Legacy/PrintConfig.hpp"
 
@@ -247,6 +248,9 @@ static Slic3rLegacy::DynamicPrintConfig load_legacy_config_from_legacy_file(cons
 
 static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::ConfigItem& item, int filament_id = -1)
 {
+    if (item.name() == "bottom_solid_min_thickness") {
+        SPDLOG_DEBUG("Here");
+    }
     if (opt->type() == Slic3rLegacy::coBool && item.holds_alternative<bool>())
         item.set(opt->getBool());
     else if (opt->type() == Slic3rLegacy::coInt && item.holds_alternative<int>())
@@ -378,7 +382,7 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
         std::vector<Slic3rLegacy::Vec2d> old_vec(new_vec.begin(), new_vec.end());
         static_cast<Slic3rLegacy::ConfigOptionPoints*>(opt)->values = old_vec;
     }
-        else if (opt->type() == Slic3rLegacy::coEnums && item.holds_alternative<EnumVectorWrapper>()) {
+    else if (opt->type() == Slic3rLegacy::coEnums && item.holds_alternative<EnumVectorWrapper>()) {
         const auto& strs = item.get<EnumVectorWrapper>().get_strings();
         std::string serialized;
         for (const auto& str_serialized : strs)
@@ -462,6 +466,8 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
         bool is_filament_override = std::ranges::find(legacy.overrides, old_key) != legacy.overrides.end();
         ASSERT(! is_filament_override || boost::starts_with(old_key, legacy.override_prefix));
         std::string new_key(old_key.begin() + (is_filament_override ? legacy.override_prefix.size() : 0), old_key.end()); // trim prefix
+        if (new_key == "bottom_solid_min_thickness")
+            SPDLOG_DEBUG("Here");
 
         const auto [item_ptr, new_is_override]{box.contains(new_key)};
         if (!item_ptr)
@@ -494,10 +500,10 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
             continue;
         }
 
-        if (filament_id != -1 && ! opt->is_vector()) {
-            // This box exists once per filament, but the old value is not vector.
-            continue;
-        }
+        // if (filament_id != -1 && ! opt->is_vector()) {
+        //     // This box exists once per filament, but the old value is not vector.
+        //     continue;
+        // }
         if (convert_old_to_new(opt, item, filament_id)) {
             if (!opt->is_nil() && new_is_override) {
                 box.overrides.enable(new_key);

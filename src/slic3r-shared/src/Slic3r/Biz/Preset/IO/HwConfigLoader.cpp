@@ -38,8 +38,11 @@ STRUCT_DESC_SIMPLE(HwFeederConfig,
 STRUCT_DESC_SIMPLE(MaterialConfig,
     features
 );
+STRUCT_DESC_SIMPLE(HwSheetConfig,
+    id, name, type, features
+);
 STRUCT_DESC_SIMPLE(HwPrinterConfig,
-    id, printer_id, vendor_id, name, technology, model, tool_count, features, tools, feeders, materials
+    id, printer_id, vendor_id, name, technology, model, tool_count, features, tools, feeders, materials, sheet
 );
 
 STRUCT_DESC(FeatureDef,
@@ -207,7 +210,7 @@ Domain::Preset::HwPrinterConfigs load_vendor_user_configs(const std::string& dir
 
         if (!loading_result.has_value()) {
             SPDLOG_INFO(
-                "Parsing HwPritnerConfig {} failed: {}",
+                "Parsing HwPrinterConfig {} failed: {}",
                 p.string(),
                 loading_result.error()
             );

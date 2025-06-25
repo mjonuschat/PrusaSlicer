@@ -52,4 +52,6 @@ void append_print_values(Expr::ValueMap& values, const Domain::ConfigBox& print_
 
 void append_tool_values(Expr::ValueMap& values, const Domain::Preset::HwToolConfig& tool);
 
+void append_sheet_values(Expr::ValueMap& values, const Domain::Preset::HwSheetConfig& sheet);
+
 }
