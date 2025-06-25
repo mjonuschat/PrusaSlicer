@@ -1077,10 +1077,11 @@ void PreviewRenderModule::update_sla_viewer_result_data(const Biz::Slicing::Slic
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
     const std::optional<Biz::SLAResultRef> sla_result{ m_project_interactor.sla_result_cache().get_result(id) };
-    if (!sla_result)
-        return;
-
-    m_sla_viewer.load_from_result(sla_result->get());
+    if (!sla_result) {
+        m_sla_viewer.reset_result();
+    } else {
+        m_sla_viewer.load_from_result(sla_result->get());
+    }
 }
 
 void PreviewRenderModule::update_sla_viewer_object_data(const Biz::Slicing::SlicingId id, Domain::ObjectID instance_id)
