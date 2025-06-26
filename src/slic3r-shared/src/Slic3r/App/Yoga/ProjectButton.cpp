@@ -28,10 +28,12 @@ ProjectButton::ProjectButton(
     m_background->set_gap(7.f);
     m_background->set_fill(GImGui->Style.Colors[ImGuiCol_WindowBg]);
 
-    const std::string proj_name = m_project_interactor.get_project_name(*m_state);
-    const std::string btn_label = proj_name.empty()
-        ? Slic3r::format("%1% (%2%)", _u8L("New Project"), *m_state)
-        : proj_name;
+    const boost::filesystem::path proj_path(m_project_interactor.get_project_name(*m_state));
+    const std::string btn_label = proj_path.empty() ? format("%1% (%2%)", _u8L("New Project"), *m_state) : proj_path.filename().string();
+    const std::string btn_tooltip = proj_path.empty() ? format("%1% (%2%)", _u8L("New Project"), *m_state) : proj_path.string();
+
+    set_tooltip(btn_tooltip);
+    set_tooltip_position(Position::Bottom);
 
     m_label = m_background->emplace_back<Text>(btn_label);
     m_label->set_self_align(YGAlignCenter);
@@ -41,7 +43,6 @@ ProjectButton::ProjectButton(
     m_cross->set_self_align(YGAlignCenter);
     m_cross->set_background_color(IM_COL32_BLACK_TRANS);
     m_cross->callbacks().action = [this]() { m_project_interactor.remove_project(*m_state); };
-    set_tooltip_position(Position::Bottom);
 
     callbacks().action = [this]() {
         // Ignore action, if cross button was clicked or if button is already selected
