@@ -22,6 +22,7 @@
 ///|/
 #include "Config.hpp"
 #include "Geometry/Circle.hpp"
+#include "Slic3r/Biz/GCodeReader/Utils.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "libslic3r.h"
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
@@ -112,6 +113,7 @@ namespace Slic3r {
     using ParserScalar = Biz::Parser::IO::Scalar;
     using Biz::Parser::IO::is_vector;
     using Biz::Parser::IO::is_scalar;
+    using Biz::GCodeReader::contains_reserved_tags;
 
 // Only add a newline in case the current G-code does not end with a newline.
     static inline void check_add_eol(std::string& gcode)
@@ -521,7 +523,7 @@ namespace DoExport {
 
         auto check = [&ret](const std::string& source, const std::string& gcode) {
             std::vector<std::string> tags;
-            if (contains_reserved_tags(gcode, MAX_TAGS_COUNT, tags)) {
+            if (contains_reserved_tags(gcode, Biz::libpgcode::RESERVED_TAGS, MAX_TAGS_COUNT, tags)) {
                 if (!tags.empty()) {
                     size_t i = 0;
                     while (ret.size() < MAX_TAGS_COUNT && i < tags.size()) {
@@ -3992,35 +3994,6 @@ Point GCodeGenerator::gcode_to_point(const Vec2d &point) const
         // This function may be called at the very start from toolchange G-code when the extruder is not assigned yet.
         pt += m_extruder_offset.at(extruder->id());
     return scaled<coord_t>(pt);
-}
-
-bool contains_reserved_tags(const std::string& gcode, unsigned int max_count, std::vector<std::string>& found_tag)
-{
-    max_count = std::max(max_count, 1U);
-
-    bool ret = false;
-
-    CNumericLocalesSetter locales_setter;
-
-    GCodeReader parser;
-    parser.parse_buffer(gcode, [&ret, &found_tag, max_count](GCodeReader& parser, const GCodeReader::GCodeLine& line) {
-        std::string comment = line.raw();
-        if (comment.length() > 2 && comment.front() == ';') {
-            comment = comment.substr(1);
-            for (std::string_view s : Biz::libpgcode::RESERVED_TAGS) {
-                if (boost::starts_with(comment, s)) {
-                    ret = true;
-                    found_tag.push_back(comment);
-                    if (found_tag.size() == max_count) {
-                        parser.quit_parsing();
-                        return;
-                    }
-                }
-            }
-        }
-    });
-
-    return ret;
 }
 
 }   // namespace Slic3r

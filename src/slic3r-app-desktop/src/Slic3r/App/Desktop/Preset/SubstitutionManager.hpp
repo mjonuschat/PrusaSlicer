@@ -7,7 +7,6 @@
 #include <vector>
 #include <string>
 
-#include "libslic3r/Preset.hpp"
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 
 class wxFlexGridSizer;

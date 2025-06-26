@@ -12,8 +12,6 @@
 #include <wx/utils.h>
 #include <boost/algorithm/string/split.hpp>
 
-//#include "libslic3r/AppConfig.hpp"  // => get_app_config()->get_bool
-
 namespace Slic3r::App::Desktop::Config {
 
 using namespace WX;

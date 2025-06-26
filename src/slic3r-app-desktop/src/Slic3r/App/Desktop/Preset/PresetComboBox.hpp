@@ -9,6 +9,7 @@
 #include <wx/string.h>
 
 #include "Slic3r/App/WX/Widgets/BitmapComboBox.hpp"
+
 #include "libslic3r/Preset.hpp"
 
 namespace Slic3r::App::WX {

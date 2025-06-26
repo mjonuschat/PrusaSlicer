@@ -531,8 +531,6 @@ private:
 
 std::vector<const PrintInstance*> sort_object_instances_by_model_order(const Print& print);
 
-bool contains_reserved_tags(const std::string& gcode, unsigned int max_count, std::vector<std::string>& found_tag);
-
 } // namespacer Slic3r
 
 #endif

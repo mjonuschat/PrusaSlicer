@@ -30,18 +30,12 @@
 #include "Slic3r/App/WX/format.hpp"
 #include "Slic3r/App/WX/I18N.hpp"
 
-//#include "Search.hpp"
-
 #include <wx/button.h>
 #include <wx/sizer.h>
 #include <wx/string.h>
 
 #include <wx/bmpbuttn.h>
 #include <wx/wupdlock.h>
-
-//!#include "Plater.hpp"        for -> SuppressBackgroundProcessingUpdate
-
-//#include "slic3r/GUI/BedShapeDialog.hpp"
 
 namespace Slic3r::App::Desktop::Preset {
 

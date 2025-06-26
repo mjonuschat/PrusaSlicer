@@ -8,10 +8,8 @@
 #include "Slic3r/App/Yoga/MenuItem.hpp"
 
 #include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Biz/GCodeReader/Utils.hpp"
 #include "Slic3r/Domain/Color.hpp"
-
-#include <libslic3r/format.hpp>
-#include <libslic3r/GCode.hpp>
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
 #include <Slic3r/App/libvgcode/Types.hpp>
@@ -24,15 +22,19 @@
 
 #include <algorithm>
 
+#include "libslic3r/format.hpp"
+
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Biz;
 using namespace Slic3r::App::libvgcode;
 
 using Slic3r::Domain::ColorRGB;
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::Vec2f;
 
 using Slic3r::Biz::Algorithms::Color::decode_color;
 using Slic3r::Biz::Algorithms::Color::encode_color;
+using Slic3r::Biz::GCodeReader::contains_reserved_tags;
 
 namespace Slic3r::App::Preview {
 
@@ -1486,7 +1488,7 @@ bool DoubleSliderForLayers::render_custom_gcode_popup(const ImVec2& pos)
         ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - style.WindowPadding.x - style.ItemSpacing.x - 2.0f * btn_width);
 
         std::vector<std::string> reserved_tags;
-        bool invalid = contains_reserved_tags(str, 1, reserved_tags);
+        bool invalid = contains_reserved_tags(str, Biz::libpgcode::RESERVED_TAGS, 1, reserved_tags);
         bool disable_ok = str.empty() || invalid;
 
         if (disable_ok) ImGui::BeginDisabled();

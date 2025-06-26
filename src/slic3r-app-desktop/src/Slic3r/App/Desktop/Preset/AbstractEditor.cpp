@@ -26,10 +26,9 @@
 #include "../Config/OG_CustomCtrl.hpp"
 #include "EditGCodeDialog.hpp"
 
+#include "Slic3r/Biz/GCodeReader/Utils.hpp"
 #include "Slic3r/Biz/Preset/PresetHints.hpp"
-
-#include "libslic3r/GCode.hpp"
-#include "libslic3r/SLAPrint.hpp"
+#include "Slic3r/Biz/libpgcode/Types.hpp"
 
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
@@ -56,19 +55,19 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
-//!#include "GUI_App.hpp"       for -> update_label_colours
-//!#include "MainFrame.hpp"     for -> select_tab()
-//!#include "AppConfig.hpp" 
-
 #include "Slic3r/App/WX/I18N.hpp"
 
 #ifdef WIN32
 	#include <CommCtrl.h>
 #endif // WIN32
 
+#include "libslic3r/SLAPrint.hpp"
+
 using namespace Slic3r::App::Desktop::Config;
 
 namespace Slic3r::App::Desktop::Preset {
+
+using Slic3r::Biz::GCodeReader::contains_reserved_tags;
 
 using WX::from_u8;
 using WX::into_u8;
@@ -1249,7 +1248,7 @@ void AbstractEditor::update_preset_description_line()
 bool AbstractEditor::validate_custom_gcode(const wxString& title, const std::string& gcode)
 {
     std::vector<std::string> tags;
-    bool invalid = contains_reserved_tags(gcode, 5, tags);
+    bool invalid = contains_reserved_tags(gcode, Biz::libpgcode::RESERVED_TAGS, 5, tags);
     if (invalid) {
         std::string lines = ":\n";
         for (const std::string& keyword : tags)

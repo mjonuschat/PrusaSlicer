@@ -8,7 +8,6 @@
 #include <wx/gdicmn.h>
 
 #include "PresetComboBox.hpp"
-#include "libslic3r/Preset.hpp"
 
 class wxString;
 class wxCommandEvent;

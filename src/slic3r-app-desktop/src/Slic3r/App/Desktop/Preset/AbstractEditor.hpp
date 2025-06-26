@@ -46,14 +46,14 @@
 #include "Slic3r/App/WX/ConfigManipulation.hpp"
 #include "Slic3r/App/ILanguageChangedListener.hpp"
 
-#include "libslic3r/Preset.hpp"
-
 class wxKeyEvent;
 class wxTreeCtrl;
 class wxWindow;
 class wxString;
 
 namespace Slic3r::App::Desktop::Preset {
+
+template<class T> using SamePair = std::pair<T, T>;
 
 class EditorPresetComboBox;
 class Manipulators;

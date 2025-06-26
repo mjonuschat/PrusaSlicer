@@ -35,9 +35,6 @@
 #include "Slic3r/Biz/Preset/PresetState.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
-#include "libslic3r/Preset.hpp"
-#include "libslic3r/PresetBundle.hpp"
-
 #include <boost/exception/diagnostic_information.hpp>
 
 #include <wx/window.h>

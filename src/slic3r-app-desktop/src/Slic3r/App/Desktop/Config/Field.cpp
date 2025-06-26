@@ -21,9 +21,8 @@
 #include "Slic3r/App/Localization.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Domain/Color.hpp"
-
-#include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Domain/enum_bitmask.hpp"
+
 #include "libslic3r/GCode/Thumbnails.hpp"
 
 #include <regex>

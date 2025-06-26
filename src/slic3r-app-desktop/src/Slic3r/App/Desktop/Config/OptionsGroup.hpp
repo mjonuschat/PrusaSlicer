@@ -17,7 +17,6 @@
 #include <map>
 #include <functional>
 
-#include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 
 #include "Field.hpp"

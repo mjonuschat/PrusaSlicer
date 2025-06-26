@@ -2,9 +2,8 @@
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
+#include "Slic3r/Biz/GCodeReader/Utils.hpp"
 #include "Slic3r/Domain/Color.hpp"
-
-#include <libslic3r/GCode.hpp>
 
 #include <random>
 
@@ -15,6 +14,7 @@ using Slic3r::Domain::ColorRGB;
 using Slic3r::Biz::Algorithms::Color::decode_color;
 using Slic3r::Biz::Algorithms::Color::encode_color;
 using Slic3r::Biz::Algorithms::Color::opposite;
+using Slic3r::Biz::GCodeReader::contains_reserved_tags;
 
 namespace Slic3r::App::Preview {
 
@@ -73,7 +73,7 @@ bool TickCodeManager::add_color_change_tick(const int tick, const std::string& c
 bool TickCodeManager::add_custom_gcode_tick(const int tick, const std::string& gcode, int extruder, float print_z)
 {
     std::vector<std::string> reserved_tags;
-    assert(!contains_reserved_tags(gcode, 1, reserved_tags));
+    assert(!contains_reserved_tags(gcode, Biz::libpgcode::RESERVED_TAGS, 1, reserved_tags));
     ticks.emplace(TickCode{ tick, CustomGCode::Type::Custom, extruder, "", gcode });
     return true;
 }

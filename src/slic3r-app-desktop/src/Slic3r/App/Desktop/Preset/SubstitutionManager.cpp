@@ -13,6 +13,8 @@
 #include <wx/window.h>
 #include <wx/sizer.h>
 
+#include "libslic3r/PrintConfig.hpp"
+
 namespace Slic3r::App::Desktop::Preset {
 
 using WX::from_u8;

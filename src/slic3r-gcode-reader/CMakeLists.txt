@@ -3,6 +3,8 @@ project(slic3r-gcode-reader)
 add_library(slic3r-gcode-reader
     include/Slic3r/Biz/GCodeReader/GCodeReader.hpp
     src/Slic3r/Biz/GCodeReader/GCodeReader.cpp
+    include/Slic3r/Biz/GCodeReader/Utils.hpp
+    src/Slic3r/Biz/GCodeReader/Utils.cpp
 )
 
 target_include_directories(slic3r-gcode-reader PUBLIC include)

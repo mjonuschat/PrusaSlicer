@@ -6,7 +6,6 @@
 #include "Slic3r/Biz/Platform/ISingleInstanceChecker.hpp"
 #include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
 
-#include "libslic3r/format.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/Config.hpp" // escape_string_cstyle
 

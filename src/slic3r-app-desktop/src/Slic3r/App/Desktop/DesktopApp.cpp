@@ -14,8 +14,6 @@
 #include <Slic3r/App/ResourceResolver.hpp>
 #include <Slic3r/App/BedThumbnailStore.hpp>
 
-#include <libslic3r/Model.hpp>
-
 #include <Slic3r/App/Render/TextureManager.hpp>
 
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
@@ -23,6 +21,8 @@
 #include <Slic3r/Biz/Platform/Termination.hpp>
 
 #include "Slic3r/App/WX/DialogManager.hpp"
+
+#include "libslic3r/Utils.hpp"
 
 // TODO: replace with spdlog
 #include <boost/log/trivial.hpp>

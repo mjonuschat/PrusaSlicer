@@ -18,12 +18,7 @@
 #include <wx/bmpcbox.h>
 #include <wx/clrpicker.h>
 
-#include "libslic3r/libslic3r.h"
 #include "libslic3r/Config.hpp"
-#include "libslic3r/Utils.hpp"
-
-//#include "GUI.hpp"
-//#include "wxExtensions.hpp"
 
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/Scalable.hpp>
@@ -33,6 +28,7 @@
 #include "Slic3r/App/WX/Widgets/SpinInput.hpp"
 #include "Slic3r/App/WX/Widgets/TextInput.hpp"
 #include "Slic3r/App/ILanguageChangedListener.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #ifdef __WXMSW__
 #define wxMSW true
@@ -268,7 +264,7 @@ public:
     template<class T>
     static t_field Create(wxWindow* parent, const ConfigOptionDef& opt, const t_config_option_key& id)// interface for creating shared objects
     {
-        auto p = Slic3r::make_unique<T>(parent, opt, id);
+        auto p = std::make_unique<T>(parent, opt, id);
         p->PostInitialize();
 		return std::move(p); //!p;
     }
@@ -523,7 +519,7 @@ public:
 	bool			value_was_changed(text_ctrl* win);
     // Propagate value from field to the OptionGroupe and Config after kill_focus/ENTER
     void            propagate_value(text_ctrl* win);
-	void			set_value(const Vec2d& value, bool change_event = false);
+	void			set_value(const Domain::Vec2d& value, bool change_event = false);
 	void			set_value(const boost::any& value, bool change_event = false) override;
 	boost::any&		get_value() override;
 

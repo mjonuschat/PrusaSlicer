@@ -18,8 +18,6 @@
 #include <string>
 #include <boost/algorithm/string.hpp>
 
-#include "libslic3r/libslic3r.h"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/PresetBundle.hpp"
 
 // A workaround for a set of issues related to text fitting into gtk widgets:

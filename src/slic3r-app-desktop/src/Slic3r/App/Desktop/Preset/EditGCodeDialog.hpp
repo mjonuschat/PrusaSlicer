@@ -6,7 +6,6 @@
 #include <wx/dataview.h>
 #include <wx/gdicmn.h>
 
-#include "libslic3r/Preset.hpp"
 #include "libslic3r/PrintConfig.hpp"
 
 class wxListBox;

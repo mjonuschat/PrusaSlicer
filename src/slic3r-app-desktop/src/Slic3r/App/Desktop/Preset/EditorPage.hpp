@@ -5,7 +5,6 @@
 #pragma once
 
 #include "../Config/OptionsGroup.hpp"
-#include "libslic3r/Preset.hpp"
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 
 #include <vector>

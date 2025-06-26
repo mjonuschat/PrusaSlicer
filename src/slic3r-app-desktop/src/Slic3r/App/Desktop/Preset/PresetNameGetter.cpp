@@ -180,12 +180,11 @@ std::string PresetNameGetter::get_conflict_name(const std::string& preset_name) 
 {
     if (!m_casei_preset_names.empty()) {
         const std::string lower_name = boost::to_lower_copy<std::string>(preset_name);
-        auto it = Slic3r::lower_bound_by_predicate(m_casei_preset_names.begin(), m_casei_preset_names.end(),
-                                                   [lower_name](const auto& l) { return l.casei_name < lower_name;  });
+        auto it = std::ranges::lower_bound(m_casei_preset_names, lower_name, {}, &PresetName::casei_name);
         if (it != m_casei_preset_names.end() && it->casei_name == lower_name)
             return it->name;
     }
-    return std::string();
+    return {};
 }
 
 std::string PresetNameGetter::preset_name() const

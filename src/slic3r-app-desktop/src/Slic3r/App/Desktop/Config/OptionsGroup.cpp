@@ -22,11 +22,8 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
-#include "libslic3r/Preset.hpp"
-
-//!#include "Search.hpp" // for > searcher().add_key(..)
-//!#include "libslic3r/AppConfig.hpp" // for > get_app_config()->get_bool("suppress_hyperlinks")
-
+#include "libslic3r/Config.hpp"
+#include "libslic3r/PrintConfig.hpp"
 
 namespace Slic3r::App::Desktop::Config {
 

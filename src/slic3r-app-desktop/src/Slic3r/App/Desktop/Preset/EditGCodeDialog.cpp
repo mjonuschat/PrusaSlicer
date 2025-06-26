@@ -24,10 +24,6 @@
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Domain/Color.hpp"
 
-#include "libslic3r/Preset.hpp"
-#include "libslic3r/PresetBundle.hpp" // IWYU pragma: keep
-#include "libslic3r/Print.hpp"
-
 #include "Slic3r/App/WX/I18N.hpp"
 
 using Slic3r::Domain::ColorRGB;
