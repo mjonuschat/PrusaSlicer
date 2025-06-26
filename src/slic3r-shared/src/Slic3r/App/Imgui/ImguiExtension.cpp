@@ -2,8 +2,7 @@
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 #include "Slic3r/Assert.hpp"
-
-#include <libslic3r/Color.hpp>
+#include "Slic3r/Domain/Color.hpp"
 
 #include <boost/nowide/convert.hpp>
 
@@ -316,12 +315,12 @@ void toggle_button(const std::string& label, bool* on, bool right_align)
     ImGui::Text("%s", label.c_str());
 }
 
-ImU32 to_ImU32(const ColorRGBA& color)
+ImU32 to_ImU32(const Domain::ColorRGBA& color)
 {
     return IM_COL32(color.r_uchar(), color.g_uchar(), color.b_uchar(), color.a_uchar());
 }
 
-ImU32 to_ImU32(const ColorRGB& color, uint8_t alpha)
+ImU32 to_ImU32(const Domain::ColorRGB& color, uint8_t alpha)
 {
     return IM_COL32(color.r_uchar(), color.g_uchar(), color.b_uchar(), alpha);
 }

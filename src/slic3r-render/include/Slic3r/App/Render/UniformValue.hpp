@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/App/Render/Types.hpp"
 
 #include "libslic3r/Point.hpp"
-#include "libslic3r/Color.hpp"
 
 #include <array>
 #include <string_view>
@@ -21,8 +21,8 @@ using UniformValue = std::variant<
     , Vec3f
     , Matrix3f
     , Matrix4f
-    , ColorRGB
-    , ColorRGBA
+    , Domain::ColorRGB
+    , Domain::ColorRGBA
 
 >;
 

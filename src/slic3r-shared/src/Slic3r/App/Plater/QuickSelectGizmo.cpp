@@ -5,6 +5,10 @@
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 
+#include "Slic3r/Domain/Color.hpp"
+
+using Slic3r::Domain::ColorRGBA;
+
 namespace Slic3r::App::Plater {
 
 void RectangleSelection::update(const MousePosition& curr_mouse_pos)

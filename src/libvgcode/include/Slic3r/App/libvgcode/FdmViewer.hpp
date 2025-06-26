@@ -18,6 +18,7 @@
 #include "FdmViewerInputData.hpp"
 
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
+#include <Slic3r/Domain/Color.hpp>
 
 #include <Slic3r/App/Render/Buffer.hpp>
 #include <Slic3r/App/Scene/AabbRaycastNodeComponent.hpp>
@@ -150,7 +151,7 @@ public:
     }
     float estimated_time() const override { return m_total_time[size_t(m_settings.time_mode)]; }
     float estimated_time_at(size_t id) const override;
-    ColorRGB vertex_color(const Biz::libpgcode::MoveVertex& vertex) const;
+    Domain::ColorRGB vertex_color(const Biz::libpgcode::MoveVertex& vertex) const;
 
     size_t extrusion_roles_count() const { return m_extrusion_roles.roles_count(); }
     Biz::libpgcode::GCodeExtrusionRoles extrusion_roles() const { return m_extrusion_roles.roles(); }
@@ -185,12 +186,12 @@ public:
     const Palette& color_print_colors() const { return m_color_print_colors; }
     void set_color_print_colors(const Palette& colors);
 
-    const ColorRGB& extrusion_role_color(Domain::GCodeExtrusionRole role) const;
-    void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const ColorRGB& color);
+    const Domain::ColorRGB& extrusion_role_color(Domain::GCodeExtrusionRole role) const;
+    void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const Domain::ColorRGB& color);
     void reset_default_extrusion_roles_colors();
 
-    const ColorRGB& option_color(Biz::libpgcode::OptionType type) const;
-    void set_option_color(Biz::libpgcode::OptionType type, const ColorRGB& color);
+    const Domain::ColorRGB& option_color(Biz::libpgcode::OptionType type) const;
+    void set_option_color(Biz::libpgcode::OptionType type, const Domain::ColorRGB& color);
     void reset_default_options_colors();
 
     const ColorRange& color_range(ViewType type) const;
@@ -212,8 +213,8 @@ public:
     void set_tool_marker_offset_z(float offset_z) { m_tool_marker.set_offset_z(offset_z); }
     float tool_marker_scale_factor() const { return m_tool_marker.scale_factor(); }
     void set_tool_marker_scale_factor(float factor) { m_tool_marker.set_scale_factor(factor); }
-    const ColorRGB& tool_marker_color() const { return m_tool_marker.color(); }
-    void set_tool_marker_color(const ColorRGB& color) { m_tool_marker.set_color(color); }
+    const Domain::ColorRGB& tool_marker_color() const { return m_tool_marker.color(); }
+    void set_tool_marker_color(const Domain::ColorRGB& color) { m_tool_marker.set_color(color); }
     float tool_marker_alpha() const { return m_tool_marker.alpha(); }
     void set_tool_marker_alpha(float alpha) { m_tool_marker.set_alpha(alpha); }
     BoundingBoxf3 tool_marker_bounding_box() const;
@@ -273,11 +274,11 @@ private:
     //
     // Palette used to render extrusion roles
     //
-    std::array<ColorRGB, Biz::libpgcode::GCODE_EXTRUSION_ROLES_COUNT> m_extrusion_roles_colors;
+    std::array<Domain::ColorRGB, Biz::libpgcode::GCODE_EXTRUSION_ROLES_COUNT> m_extrusion_roles_colors;
     //
     // Palette used to render options
     //
-    std::array<ColorRGB, Biz::libpgcode::OPTION_TYPES_COUNT> m_options_colors;
+    std::array<Domain::ColorRGB, Biz::libpgcode::OPTION_TYPES_COUNT> m_options_colors;
 
     //
     // The OpenGL element used to represent all toolpath segments

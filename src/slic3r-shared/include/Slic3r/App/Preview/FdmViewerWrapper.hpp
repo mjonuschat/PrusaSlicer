@@ -7,6 +7,7 @@
 
 #include <Slic3r/App/libvgcode/FdmViewerInputData.hpp>
 #include <Slic3r/App/libvgcode/FdmViewer.hpp>
+#include <Slic3r/Domain/Color.hpp>
 
 #include "FdmViewerWrapperInputData.hpp"
 #include "DoubleSliderForGCode.hpp"
@@ -86,7 +87,7 @@ public:
     void load(FdmViewerWrapperInputData&& wrapper_data, libvgcode::FdmViewerInputData&& data);
     void load_from_result(const Biz::libpgcode::ProcessorResult& result);
 
-    void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const ColorRGB& color) { return m_viewer.set_extrusion_role_color(role, color); }
+    void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const Domain::ColorRGB& color) { return m_viewer.set_extrusion_role_color(role, color); }
     
     libvgcode::ViewType view_type() const { return m_viewer.view_type(); }
     void set_view_type(libvgcode::ViewType type) { m_viewer.set_view_type(type); }

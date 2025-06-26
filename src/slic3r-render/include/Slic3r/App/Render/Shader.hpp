@@ -9,10 +9,10 @@
 
 #include "libslic3r/Point.hpp"
 
-namespace Slic3r {
+namespace Slic3r::Domain {
 class ColorRGB;
 class ColorRGBA;
-}
+} // namespace Slic3r::Domain
 
 namespace Slic3r::App::Render {
 
@@ -59,8 +59,8 @@ public:
     void set_uniform(const char* name, const Vec2d& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const Vec3f& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const Vec3d& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const ColorRGB& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const ColorRGBA& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::ColorRGB& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::ColorRGBA& value) const { set_uniform(get_uniform_location(name), value); }
 
     void set_uniform(int id, int value) const;
     void set_uniform(int id, bool value) const;
@@ -84,8 +84,8 @@ public:
     void set_uniform(int id, const Vec2d& value) const;
     void set_uniform(int id, const Vec3f& value) const;
     void set_uniform(int id, const Vec3d& value) const;
-    void set_uniform(int id, const ColorRGB& value) const;
-    void set_uniform(int id, const ColorRGBA& value) const;
+    void set_uniform(int id, const Domain::ColorRGB& value) const;
+    void set_uniform(int id, const Domain::ColorRGBA& value) const;
 
     // returns -1 if not found
     int get_attrib_location(const char* name) const;

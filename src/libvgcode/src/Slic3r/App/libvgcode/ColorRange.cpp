@@ -4,9 +4,11 @@
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/libvgcode/ColorRange.hpp"
+#include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <cmath>
 
 namespace Slic3r::App::libvgcode {
@@ -53,7 +55,7 @@ void ColorRange::set_palette(const Palette& palette)
         m_palette = palette;
 }
 
-ColorRGB ColorRange::color_at(float value) const
+Domain::ColorRGB ColorRange::color_at(float value) const
 {
     // Input value scaled to the colors range
     float global_t = 0.0f;
@@ -75,7 +77,7 @@ ColorRGB ColorRange::color_at(float value) const
     size_t color_high_idx = std::clamp<size_t>(color_low_idx + 1, 0, color_max_idx);
 
     // Interpolate between the low and high colors to find exactly which color the input value should get
-    return lerp(m_palette[color_low_idx], m_palette[color_high_idx], global_t - float(color_low_idx));
+    return Biz::Algorithms::Color::lerp(m_palette[color_low_idx], m_palette[color_high_idx], global_t - float(color_low_idx));
 }
 
 const std::array<float, 2>& ColorRange::range() const

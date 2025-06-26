@@ -5,9 +5,9 @@
 #include <array>
 #include <vector>
 
-namespace Slic3r {
+namespace Slic3r::Domain {
 class ColorRGB;
-} //  namespace Slic3r
+} // namespace Slic3r::Domain
 
 namespace Slic3r::App::Preview {
 
@@ -21,7 +21,7 @@ struct ActualSpeedPlotDataItem
 struct ActualSpeedPlotData
 {
     std::array<float, 2> y_range = { 0.0f, 0.0f };
-    std::vector<std::pair<float, ColorRGB>> levels;
+    std::vector<std::pair<float, Domain::ColorRGB>> levels;
     std::vector<ActualSpeedPlotDataItem> data;
 };
 

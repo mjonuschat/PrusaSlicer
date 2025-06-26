@@ -3,6 +3,9 @@
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
+#include "Slic3r/Domain/Constants.hpp"
+
+#include <iostream>
 
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::App::libvgcode;
@@ -103,7 +106,7 @@ void SlaViewerWrapper::update_slider_layers()
 
     std::vector<float> layers_zs = m_viewer.layers_zs();
 
-    bool force_sliders_full_range = was_empty || layers_zs.empty() || std::abs(layers_zs.back() - m_slider_layers->max_value()) > EPSILON;
+    bool force_sliders_full_range = was_empty || layers_zs.empty() || std::abs(layers_zs.back() - m_slider_layers->max_value()) > Domain::EPSILON;
     bool snap_to_min = force_sliders_full_range || m_slider_layers->is_lower_at_min();
     bool snap_to_max = force_sliders_full_range || m_slider_layers->is_higher_at_max();
 
@@ -113,12 +116,12 @@ void SlaViewerWrapper::update_slider_layers()
     int idx_high = max_pos;
     if (!layers_zs.empty()) {
         if (!snap_to_min) {
-            int idx_new = DoubleSliderForLayers::find_close_layer_idx(layers_zs, z_low, float(EPSILON));
+            int idx_new = DoubleSliderForLayers::find_close_layer_idx(layers_zs, z_low, float(Domain::EPSILON));
             if (idx_new != -1)
                 idx_low = idx_new;
         }
         if (!snap_to_max) {
-            int idx_new = DoubleSliderForLayers::find_close_layer_idx(layers_zs, z_high, float(EPSILON));
+            int idx_new = DoubleSliderForLayers::find_close_layer_idx(layers_zs, z_high, float(Domain::EPSILON));
             if (idx_new != -1)
                 idx_high = idx_new;
         }

@@ -2,17 +2,15 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_Color_hpp_
-#define slic3r_Color_hpp_
+#pragma once
 
-#include <assert.h>
 #include <array>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <cassert>
 
-namespace Slic3r {
+namespace Slic3r::Domain {
 
 class ColorRGB
 {
@@ -24,10 +22,10 @@ public:
 	ColorRGB(unsigned char r, unsigned char g, unsigned char b);
 	ColorRGB(const ColorRGB& other) = default;
 
-	ColorRGB& operator = (const ColorRGB& other) { m_data = other.m_data; return *this; }
+	ColorRGB& operator = (const ColorRGB& other) = default;
 
-	bool operator == (const ColorRGB& other) const { return m_data == other.m_data; }
-	bool operator != (const ColorRGB& other) const { return !operator==(other); }
+	bool operator == (const ColorRGB& other) const;
+	bool operator != (const ColorRGB& other) const;
 	bool operator < (const ColorRGB& other) const;
 	bool operator > (const ColorRGB& other) const;
 
@@ -44,10 +42,7 @@ public:
 	void g(float g) { m_data[1] = std::clamp(g, 0.0f, 1.0f); }
 	void b(float b) { m_data[2] = std::clamp(b, 0.0f, 1.0f); }
 
-	void set(unsigned int comp, float value) {
-		assert(0 <= comp && comp <= 2);
-		m_data[comp] = std::clamp(value, 0.0f, 1.0f);
-	}
+	void set(unsigned int comp, float value);
 
 	unsigned char r_uchar() const { return static_cast<unsigned char>(m_data[0] * 255.0f); }
 	unsigned char g_uchar() const { return static_cast<unsigned char>(m_data[1] * 255.0f); }
@@ -85,10 +80,10 @@ public:
 	ColorRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 	ColorRGBA(const ColorRGBA& other) = default;
 
-	ColorRGBA& operator = (const ColorRGBA& other) { m_data = other.m_data; return *this; }
+	ColorRGBA& operator = (const ColorRGBA& other) = default;
 
-	bool operator == (const ColorRGBA& other) const { return m_data == other.m_data; }
-	bool operator != (const ColorRGBA& other) const { return !operator==(other); }
+	bool operator == (const ColorRGBA& other) const;
+	bool operator != (const ColorRGBA& other) const;
 	bool operator < (const ColorRGBA& other) const;
 	bool operator > (const ColorRGBA& other) const;
 
@@ -107,10 +102,7 @@ public:
 	void b(float b) { m_data[2] = std::clamp(b, 0.0f, 1.0f); }
 	void a(float a) { m_data[3] = std::clamp(a, 0.0f, 1.0f); }
 
-	void set(unsigned int comp, float value) {
-		assert(0 <= comp && comp <= 3);
-		m_data[comp] = std::clamp(value, 0.0f, 1.0f);
-	}
+	void set(unsigned int comp, float value);
 
 	unsigned char r_uchar() const { return static_cast<unsigned char>(m_data[0] * 255.0f); }
 	unsigned char g_uchar() const { return static_cast<unsigned char>(m_data[1] * 255.0f); }
@@ -141,42 +133,7 @@ public:
 	static const ColorRGBA Z()           { return { 0.0f, 0.0f, 0.75f, 1.0f }; }
 };
 
-ColorRGB operator * (float value, const ColorRGB& other);
-ColorRGBA operator * (float value, const ColorRGBA& other);
+ColorRGB operator*(float value, const ColorRGB& other);
+ColorRGBA operator*(float value, const ColorRGBA& other);
 
-ColorRGB lerp(const ColorRGB& a, const ColorRGB& b, float t);
-ColorRGBA lerp(const ColorRGBA& a, const ColorRGBA& b, float t);
-
-ColorRGB complementary(const ColorRGB& color);
-ColorRGBA complementary(const ColorRGBA& color);
-
-ColorRGB saturate(const ColorRGB& color, float factor);
-ColorRGBA saturate(const ColorRGBA& color, float factor);
-
-ColorRGB opposite(const ColorRGB& color);
-ColorRGB opposite(const ColorRGB& a, const ColorRGB& b);
-
-bool can_decode_color(const std::string& color);
-
-bool decode_color(const std::string& color_in, ColorRGB& color_out);
-bool decode_color(const std::string& color_in, ColorRGBA& color_out);
-
-bool decode_colors(const std::vector<std::string>& colors_in, std::vector<ColorRGB>& colors_out);
-bool decode_colors(const std::vector<std::string>& colors_in, std::vector<ColorRGBA>& colors_out);
-
-std::string encode_color(const ColorRGB& color);
-std::string encode_color(const ColorRGBA& color);
-
-ColorRGB  to_rgb(const ColorRGBA& other_rgba);
-ColorRGBA to_rgba(const ColorRGB& other_rgb);
-ColorRGBA to_rgba(const ColorRGB& other_rgb, float alpha);
-
-ColorRGBA picking_decode(unsigned int id);
-unsigned int picking_encode(unsigned char r, unsigned char g, unsigned char b);
-// Produce an alpha channel checksum for the red green blue components. The alpha channel may then be used to verify, whether the rgb components
-// were not interpolated by alpha blending or multi sampling.
-unsigned char picking_checksum_alpha_channel(unsigned char red, unsigned char green, unsigned char blue);
-
-} // namespace Slic3r
-
-#endif /* slic3r_Color_hpp_ */
+} // namespace Slic3r::Domain

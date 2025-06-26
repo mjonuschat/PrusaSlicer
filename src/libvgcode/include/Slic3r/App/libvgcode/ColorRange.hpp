@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Slic3r/App/libvgcode/Types.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include <cfloat>
 
@@ -64,7 +65,7 @@ public:
     // Return the interpolated color at the given value.
     // Value is clamped to [get_range()[0]..get_range()[1]].
     //
-    ColorRGB color_at(float value) const;
+    Domain::ColorRGB color_at(float value) const;
     //
     // Return the range of this ColorRange.
     // The range is detected during the call to Viewer::load().

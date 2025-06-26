@@ -15,7 +15,6 @@
 
 #include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/Color.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/AABBMesh.hpp"
 

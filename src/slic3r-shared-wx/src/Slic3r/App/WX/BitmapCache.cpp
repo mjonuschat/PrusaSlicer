@@ -5,10 +5,11 @@
 ///|/
 #include "Slic3r/App/WX/BitmapCache.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
-
 #include "Slic3r/App/WX/MacUtils.hpp"
+#include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Domain/Color.hpp"
+
 #include <libslic3r/Utils.hpp>
-#include <libslic3r/Color.hpp>
 
 #include <set>
 
@@ -26,6 +27,10 @@
 
 #include <nanosvg/nanosvg.h>
 #include <nanosvg/nanosvgrast.h>
+
+using Slic3r::Domain::ColorRGB;
+
+using Slic3r::Biz::Algorithms::Color::decode_color;
 
 namespace Slic3r::App::WX {
 

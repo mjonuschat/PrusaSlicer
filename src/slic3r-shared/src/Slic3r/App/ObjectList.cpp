@@ -1,8 +1,10 @@
 #include "Slic3r/App/ObjectList.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
+#include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
@@ -11,9 +13,6 @@
 #include "Slic3r/App/Plater/BedThumbnailTexture.hpp"
 
 #include "Slic3r/Assert.hpp"
-
-#include <libslic3r/Model.hpp>
-#include "libslic3r/Color.hpp"
 
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -25,6 +24,11 @@
 
 //tmp include
 #include "libslic3r/format.hpp"
+
+using Slic3r::Domain::ColorRGB;
+
+using Slic3r::Biz::Algorithms::Color::can_decode_color;
+using Slic3r::Biz::Algorithms::Color::decode_color;
 
 namespace Slic3r::App {
 

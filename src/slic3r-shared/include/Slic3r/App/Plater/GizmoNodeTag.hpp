@@ -1,8 +1,9 @@
 #pragma once
 
+#include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include <cstdint>
-#include <libslic3r/Point.hpp>
-#include <libslic3r/Color.hpp>
 
 namespace Slic3r::App::Plater {
 
@@ -14,7 +15,7 @@ enum class AxisType : uint8_t
     ZAxis = 3
 };
 
-Vec3d axis_type_dir(AxisType at);
+Domain::Vec3d axis_type_dir(AxisType at);
 
 struct GizmoNodeTag
 {
@@ -25,26 +26,26 @@ struct GizmoNodeTag
         : primary_axis(primary_axis), secondary_axis(secondary_axis)
     {}
 
-    Vec3d primary_axis_dir() const { return axis_type_dir(primary_axis); }
-    Vec3d secondary_axis_dir() const { return axis_type_dir(secondary_axis); }
+    Domain::Vec3d primary_axis_dir() const { return axis_type_dir(primary_axis); }
+    Domain::Vec3d secondary_axis_dir() const { return axis_type_dir(secondary_axis); }
 };
 
-inline Vec3d axis_type_dir(AxisType at)
+inline Domain::Vec3d axis_type_dir(AxisType at)
 {
-    Vec3d ret = Vec3d::Zero();
+    Domain::Vec3d ret = Domain::Vec3d::Zero();
     if (at != AxisType::None)
         ret[int(at) - 1] = 1;
     return ret;
 }
 
-inline ColorRGBA axis_color(AxisType axis)
+inline Domain::ColorRGBA axis_color(AxisType axis)
 {
     switch (axis)
     {
-    case AxisType::XAxis: { return ColorRGBA::X(); }
-    case AxisType::YAxis: { return ColorRGBA::Y(); }
-    case AxisType::ZAxis: { return ColorRGBA::Z(); }
-    default:              { return ColorRGBA::BLACK(); }
+    case AxisType::XAxis: { return Domain::ColorRGBA::X(); }
+    case AxisType::YAxis: { return Domain::ColorRGBA::Y(); }
+    case AxisType::ZAxis: { return Domain::ColorRGBA::Z(); }
+    default:              { return Domain::ColorRGBA::BLACK(); }
     }
 }
 

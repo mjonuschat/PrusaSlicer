@@ -9,10 +9,10 @@
 #include <cstdint>
 #include <vector>
 
-namespace Slic3r {
+namespace Slic3r::Domain {
 class ColorRGB;
 class ColorRGBA;
-} //  namespace Slic3r
+} // namespace Slic3r::Domain
 
 namespace Slic3r::App::Imgui {
 
@@ -71,8 +71,8 @@ bool icon_button(Render::Icon icon, const ImVec2& size = { 0.0f, 0.0f }, const s
 
 void toggle_button(const std::string& label, bool* on, bool right_align = false);
 
-ImU32 to_ImU32(const ColorRGBA& color);
-ImU32 to_ImU32(const ColorRGB& color, uint8_t alpha = 255);
+ImU32 to_ImU32(const Domain::ColorRGBA& color);
+ImU32 to_ImU32(const Domain::ColorRGB& color, uint8_t alpha = 255);
 
 // Adjusts the brightness of an ImGui ImColor by the given factor (0 to 2)
 // factor < 1.0f darkens the color, factor > 1.0f brightens it

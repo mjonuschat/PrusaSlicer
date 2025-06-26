@@ -65,8 +65,6 @@ set(SLIC3R_SOURCES
     ClipperUtils.cpp
     ClipperUtils.hpp
     ClipperZUtils.hpp
-    Color.cpp
-    Color.hpp
     Config.cpp
     Config.hpp
     ConfigPackUtils.hpp

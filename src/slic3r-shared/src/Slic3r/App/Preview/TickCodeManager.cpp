@@ -1,14 +1,20 @@
 #include "Slic3r/App/Preview/TickCodeManager.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
-
+#include "Slic3r/Biz/Algorithms/Color.hpp"
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
+#include "Slic3r/Domain/Color.hpp"
 
-#include <libslic3r/Color.hpp>
 #include <libslic3r/GCode.hpp>
 
 #include <random>
 
 using namespace Slic3r;
+
+using Slic3r::Domain::ColorRGB;
+
+using Slic3r::Biz::Algorithms::Color::decode_color;
+using Slic3r::Biz::Algorithms::Color::encode_color;
+using Slic3r::Biz::Algorithms::Color::opposite;
 
 namespace Slic3r::App::Preview {
 

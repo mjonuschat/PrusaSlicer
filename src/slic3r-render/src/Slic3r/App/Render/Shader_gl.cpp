@@ -3,12 +3,12 @@
 #include "Slic3r/App/Render/Shader.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLShaderInternal.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include "libslic3r/libslic3r.h"
 
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/format.hpp"
-#include "libslic3r/Color.hpp"
 #include <Slic3r/Log.hpp>
 #include <Slic3r/Assert.hpp>
 
@@ -395,12 +395,12 @@ void Shader::set_uniform(int id, const Vec3d& value) const
     set_uniform(id, static_cast<Vec3f>(value.cast<float>()));
 }
 
-void Shader::set_uniform(int id, const ColorRGB& value) const
+void Shader::set_uniform(int id, const Domain::ColorRGB& value) const
 {
     set_uniform(id, value.data(), 3);
 }
 
-void Shader::set_uniform(int id, const ColorRGBA& value) const
+void Shader::set_uniform(int id, const Domain::ColorRGBA& value) const
 {
     set_uniform(id, value.data(), 4);
 }

@@ -1,8 +1,7 @@
 #include "Slic3r/App/Preview/ActualSpeedPlotter.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
-
-#include <libslic3r/Color.hpp>
+#include "Slic3r/Domain/Color.hpp"
 
 namespace Slic3r::App::Preview {
 

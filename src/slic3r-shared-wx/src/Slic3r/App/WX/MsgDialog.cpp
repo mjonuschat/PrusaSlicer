@@ -10,9 +10,10 @@
 #include "Slic3r/App/WX/format.hpp"
 
 #include "Slic3r/App/WX/Widgets/CheckBox.hpp"
+#include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include "libslic3r/Utils.hpp"
-#include <libslic3r/Color.hpp>
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -29,6 +30,10 @@
 //!#include "GUIApp.hpp"  // for -> open_browser_with_warning_dialog
  
 #include "Slic3r/App/WX/I18N.hpp"
+
+using Slic3r::Domain::ColorRGB;
+
+using Slic3r::Biz::Algorithms::Color::encode_color;
 
 namespace Slic3r::App::WX {
 

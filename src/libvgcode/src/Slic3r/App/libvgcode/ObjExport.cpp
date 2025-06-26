@@ -6,8 +6,10 @@
 
 #include "Slic3r/App/libvgcode/ObjExport.hpp"
 #include "Slic3r/App/libvgcode/Utils.hpp"
-
 #include "Slic3r/App/libvgcode/FdmViewer.hpp"
+#include "Slic3r/Domain/Color.hpp"
+
+using Slic3r::Domain::ColorRGB;
 
 using namespace Slic3r::Biz::libpgcode;
 

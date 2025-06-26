@@ -4,10 +4,13 @@
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/Domain/Bed.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 
 #include "Slic3r/Assert.hpp"
+
+using Slic3r::Domain::ColorRGBA;
 
 namespace Slic3r::App::Scene {
 

@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 
+#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
@@ -134,7 +135,7 @@ private:
     void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) override;
 
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst, const Domain::ModelVolume* vol,
-        std::optional<ColorRGBA> color = std::nullopt);
+        std::optional<Domain::ColorRGBA> color = std::nullopt);
 
     const Domain::BedInstance& selected_bed_instance() const;
 

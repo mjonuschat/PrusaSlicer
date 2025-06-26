@@ -4,8 +4,11 @@
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
-#include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
+#include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/Project.hpp"
+
+using Slic3r::Domain::ColorRGBA;
 
 namespace Slic3r::App::Plater {
 

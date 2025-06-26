@@ -12,9 +12,14 @@
 #include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/LightSetting.hpp"
 
+#include "Slic3r/Domain/Color.hpp"
+
 #include <imgui/imgui.h>
 
 #include <random>
+
+using Slic3r::Domain::ColorRGBA;
+
 
 namespace Slic3r::App::Scene {
 
@@ -319,10 +324,10 @@ Scene::NodeMaterials Scene::collect_nodes_with_material(const Node::NodePredicat
 
 void Scene::render_background(Render::CommandBuffer& cmd_buffer, Render::Device& device, bool use_error_color) const
 {
-    static const Slic3r::ColorRGBA DEFAULT_BG_DARK_COLOR = {0.478f, 0.478f, 0.478f, 1.0f};
-    static const Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR = {0.753f, 0.753f, 0.753f, 1.0f};
-    static const Slic3r::ColorRGBA ERROR_BG_DARK_COLOR = {0.478f, 0.192f, 0.039f, 1.0f};
-    static const Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR = {0.753f, 0.192f, 0.039f, 1.0f};
+    static const ColorRGBA DEFAULT_BG_DARK_COLOR = {0.478f, 0.478f, 0.478f, 1.0f};
+    static const ColorRGBA DEFAULT_BG_LIGHT_COLOR = {0.753f, 0.753f, 0.753f, 1.0f};
+    static const ColorRGBA ERROR_BG_DARK_COLOR = {0.478f, 0.192f, 0.039f, 1.0f};
+    static const ColorRGBA ERROR_BG_LIGHT_COLOR = {0.753f, 0.192f, 0.039f, 1.0f};
 
     const ColorRGBA top_color = use_error_color ? ERROR_BG_LIGHT_COLOR : DEFAULT_BG_LIGHT_COLOR;
     const ColorRGBA bottom_color = use_error_color ? ERROR_BG_DARK_COLOR : DEFAULT_BG_DARK_COLOR;

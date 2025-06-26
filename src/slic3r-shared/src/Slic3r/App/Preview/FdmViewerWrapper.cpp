@@ -4,14 +4,22 @@
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
+#include <Slic3r/Biz/Algorithms/Color.hpp>
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
+#include <Slic3r/Domain/Color.hpp>
 
 #include <Slic3r/App/libvgcode/ColorRange.hpp>
 
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::Biz;
+
+using Slic3r::Domain::ColorRGB;
 using Slic3r::Domain::GCodeExtrusionRole;
+
+using Slic3r::Biz::Algorithms::Color::encode_color;
+using Slic3r::Biz::Algorithms::Color::decode_color;
+
 namespace CustomGCode = Slic3r::Domain::CustomGCode;
 
 namespace Slic3r::App::Preview {

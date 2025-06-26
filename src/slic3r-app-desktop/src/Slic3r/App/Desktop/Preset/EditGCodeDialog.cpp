@@ -19,15 +19,20 @@
 #include "Slic3r/App/WX/MsgDialog.hpp"
 #include "Slic3r/App/WX/format.hpp"
 
+#include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include "libslic3r/Preset.hpp"
 #include "libslic3r/PresetBundle.hpp" // IWYU pragma: keep
 #include "libslic3r/Print.hpp"
-#include <libslic3r/Color.hpp>
 
 #include "Slic3r/App/WX/I18N.hpp"
+
+using Slic3r::Domain::ColorRGB;
+
+using Slic3r::Biz::Algorithms::Color::encode_color;
 
 namespace Slic3r::App::Desktop::Preset {
 

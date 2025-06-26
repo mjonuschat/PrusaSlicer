@@ -5,9 +5,9 @@
 ///|/
 #pragma once
 
-#include "libslic3r/Color.hpp"
 #include <Slic3r/Biz/libpgcode/Types.hpp>
 #include <Slic3r/App/Render/ImguiTypes.hpp>
+#include <Slic3r/Domain/Color.hpp>
 
 #include <libslic3r/format.hpp>
 #include <imgui.h>
@@ -33,12 +33,12 @@ static constexpr float MAX_WIPES_RADIUS_MM = 1.0f;
 //
 // Predefined colors
 //
-static const ColorRGB DUMMY_COLOR = { 0.25f, 0.25f, 0.25f };
+static const Domain::ColorRGB DUMMY_COLOR = { 0.25f, 0.25f, 0.25f };
 
 //
 // Color palette
 //
-using Palette = std::vector<ColorRGB>;
+using Palette = std::vector<Domain::ColorRGB>;
 
 //
 // One dimensional natural numbers interval

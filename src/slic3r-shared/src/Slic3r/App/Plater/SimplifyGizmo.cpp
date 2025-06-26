@@ -8,6 +8,7 @@
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher + render_request_handler
 #include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include "libslic3r/Model.hpp"
 #include "libslic3r/I18N.hpp" // translation
@@ -33,6 +34,7 @@ using Slic3r::Biz::Scene::Selection;
 using Slic3r::Biz::ProjectInteractor;
 using Slic3r::Biz::Platform::IMainThreadDispatcher;
 using Slic3r::Biz::Platform::PlatformServices;
+using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::ElementRef;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::ObjectID;

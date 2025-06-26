@@ -5,11 +5,13 @@
 #include "Slic3r/App/Render/Device.hpp"
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::App::Plater {
+using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec3d;
 

@@ -119,6 +119,9 @@ add_library(slic3r-domain
     src/Slic3r/Domain/ModelInstance.cpp
 
     include/Slic3r/Domain/Forward.hpp
+
+    include/Slic3r/Domain/Color.hpp
+    src/Slic3r/Domain/Color.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

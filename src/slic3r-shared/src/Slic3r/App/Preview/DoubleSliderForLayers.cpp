@@ -7,8 +7,10 @@
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
 
+#include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Domain/Color.hpp"
+
 #include <libslic3r/format.hpp>
-#include <libslic3r/Color.hpp>
 #include <libslic3r/GCode.hpp>
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
@@ -25,6 +27,12 @@
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Biz;
 using namespace Slic3r::App::libvgcode;
+
+using Slic3r::Domain::ColorRGB;
+using Slic3r::Domain::ColorRGBA;
+
+using Slic3r::Biz::Algorithms::Color::decode_color;
+using Slic3r::Biz::Algorithms::Color::encode_color;
 
 namespace Slic3r::App::Preview {
 

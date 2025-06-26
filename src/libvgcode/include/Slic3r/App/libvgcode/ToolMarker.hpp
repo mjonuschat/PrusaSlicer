@@ -6,9 +6,11 @@
 #pragma once
 
 #include "Slic3r/App/libvgcode/Types.hpp"
+#include "Slic3r/Domain/Color.hpp"
+
 #include "libslic3r/BoundingBox.hpp"
 
-#include <float.h>
+#include <cfloat>
 
 namespace Slic3r::App::Render {
 class Device;
@@ -47,8 +49,8 @@ public:
     float offset_z() const { return m_offset_z; }
     void set_offset_z(float offset_z) { m_offset_z = std::max(offset_z, 0.0f); }
 
-    const ColorRGB& color() const { return m_color; }
-    void set_color(const ColorRGB& color) { m_color = color; }
+    const Domain::ColorRGB& color() const { return m_color; }
+    void set_color(const Domain::ColorRGB& color) { m_color = color; }
 
     float alpha() const { return m_alpha; }
     void set_alpha(float alpha) { m_alpha = std::clamp(alpha, 0.25f, 0.75f); }
@@ -61,7 +63,7 @@ public:
 private:
     bool m_enabled{ false };
     float m_offset_z{ 0.5f };
-    ColorRGB m_color{ ColorRGB::WHITE() };
+    Domain::ColorRGB m_color{ Domain::ColorRGB::WHITE() };
     float m_alpha{ 0.5f };
     BoundingBoxf3 m_bounding_box;
     float m_scale_factor{ DefaultScaleFactor };

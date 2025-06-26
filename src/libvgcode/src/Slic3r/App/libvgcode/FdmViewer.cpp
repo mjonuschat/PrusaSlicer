@@ -20,6 +20,8 @@
 #include <Slic3r/App/Scene/Scene.hpp>
 #include <Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp>
 #include <Slic3r/App/Scene/LightingHelper.hpp>
+#include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include <map>
 #include <assert.h>
@@ -31,8 +33,12 @@
 #include <numeric>
 
 using namespace Slic3r::Biz::libpgcode;
+using Slic3r::Domain::ColorRGB;
+using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::Vec3f;
 using Slic3r::Domain::GCodeExtrusionRole;
+
+using Slic3r::Biz::Algorithms::Color::to_rgba;
 
 namespace Slic3r::App::libvgcode {
 

@@ -3,6 +3,10 @@
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 
+#include "Slic3r/Domain/Color.hpp"
+
+using Slic3r::Domain::ColorRGBA;
+
 namespace Slic3r::App::Plater {
 
 constexpr double HALF_PI = 0.5 * PI;

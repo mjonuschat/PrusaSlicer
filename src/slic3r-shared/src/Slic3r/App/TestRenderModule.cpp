@@ -17,6 +17,10 @@
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.hpp"
 
+#include "Slic3r/Domain/Color.hpp"
+
+using Slic3r::Domain::ColorRGBA;
+
 namespace Slic3r::App {
 
 namespace TriMesh = Biz::Algorithms::TriangleMesh;

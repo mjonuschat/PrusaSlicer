@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Render/Image.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include <optional>
 
@@ -35,7 +36,7 @@ public:
     [[nodiscard]] Render::Images generate_bed_thumbnails(const ThumbnailRendererParams& params, const Domain::BedRef& bed_ref,
         const Domain::BedInstance& bed_instance, Scene::CameraProjectionType camera_type);
     [[nodiscard]] Render::Images generate_object_thumbnails(const Domain::ModelObject& object, const Render::Sizes& sizes,
-        Scene::CameraProjectionType camera_type, std::optional<ColorRGBA> color = std::nullopt);
+        Scene::CameraProjectionType camera_type, std::optional<Domain::ColorRGBA> color = std::nullopt);
     [[nodiscard]] Render::Images generate_3mf_thumbnails(const ThumbnailRendererParams& params, const Domain::Project& project,
         Scene::CameraProjectionType camera_type);
     [[nodiscard]] Render::Images generate_gcode_thumbnails(const ThumbnailRendererParams& params, const Domain::Project& project,

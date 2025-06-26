@@ -7,6 +7,7 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/BedRenderHelper.hpp"
 #include "Slic3r/App/Scene/BedMaterials.hpp"
@@ -14,10 +15,12 @@
 #include "Slic3r/App/Render/FramebufferManager.hpp"
 #include "Slic3r/App/Scene/BedNodeBuilder.hpp"
 #include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
+#include "Slic3r/Biz/Algorithms/Color.hpp"
 
-#include "libslic3r/Model.hpp"
+using Slic3r::Domain::ColorRGBA;
 
 using Slic3r::Biz::Algorithms::BoundingBox::transformed;
+using Slic3r::Biz::Algorithms::Color::saturate;
 
 namespace Slic3r::App::Plater {
 

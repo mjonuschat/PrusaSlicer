@@ -19,11 +19,12 @@
 #include <Slic3r/App/WX/Widgets/BitmapComboBox.hpp>
 
 #include "Slic3r/App/Localization.hpp"
+#include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Domain/Color.hpp"
 
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/enum_bitmask.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
-#include <libslic3r/Color.hpp>
 
 #include <regex>
 #include <wx/tooltip.h>
@@ -37,6 +38,10 @@
 #else
 #define wxOSX false
 #endif
+
+using Slic3r::Domain::ColorRGB;
+
+using Slic3r::Biz::Algorithms::Color::encode_color;
 
 namespace Slic3r::App::Desktop::Config {
 
