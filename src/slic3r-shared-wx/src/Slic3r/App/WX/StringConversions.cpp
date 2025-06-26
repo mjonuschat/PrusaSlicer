@@ -1,10 +1,10 @@
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/StringUtils.hpp"
+#include "Slic3r/Utils.hpp"
 
 #include <wx/numformatter.h>
 
 #include "LocalesUtils.hpp" //!
-#include "libslic3r/Utils.hpp"
 
 
 namespace Slic3r::App::WX {

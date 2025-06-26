@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 
-#include "libslic3r/Model.hpp"
+#include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
@@ -12,6 +12,8 @@
 
 #include "boost/nowide/fstream.hpp"
 #include "boost/filesystem.hpp"
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include "miniz.h"
 
 namespace Slic3r::Tests {

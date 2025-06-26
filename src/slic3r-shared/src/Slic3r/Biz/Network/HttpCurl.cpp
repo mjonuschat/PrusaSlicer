@@ -6,6 +6,7 @@
 
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/format.hpp"
+#include "libslic3r_version.h"
 
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/fstream.hpp>

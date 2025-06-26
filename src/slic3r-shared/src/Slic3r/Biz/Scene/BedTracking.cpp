@@ -3,8 +3,7 @@
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
-
-#include <libslic3r/Model.hpp>
+#include "Slic3r/Domain/Model.hpp"
 
 namespace Slic3r::Biz {
 

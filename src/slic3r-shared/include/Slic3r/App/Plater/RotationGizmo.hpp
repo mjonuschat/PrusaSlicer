@@ -3,6 +3,7 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::App::Scene {
 class GeometryDataFactory;
@@ -59,8 +60,8 @@ private:
         Radii fine;
     };
     Snap m_snap;
-    Vec3d m_pivot_world{ Vec3d::Zero()};
-    Vec3d m_pivot_local{ Vec3d::Zero()};
+    Domain::Vec3d m_pivot_world{ Domain::Vec3d::Zero()};
+    Domain::Vec3d m_pivot_local{ Domain::Vec3d::Zero()};
     Biz::Scene::TransformMemento m_xform_memento;
     Scene::Node::NodeList m_handles;
 };

@@ -8,14 +8,17 @@
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 #include "Slic3r/Log.hpp"
 
-#include <libslic3r/SLA/SLAResult.hpp>
-#include <libslic3r/Print.hpp>
-#include <libslic3r/GCode.hpp>
-#include <libslic3r/SLAPrint.hpp>
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include <libslic3r/Model.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Domain/Model.hpp"
+
+#include "libslic3r/PrintBase.hpp"
 
 #include <jthread/JThread.hpp>
+
+namespace Slic3r::Biz::Slicing::Sla {
+struct Object;
+} // namespace Slic3r::Biz::Slicing::Sla
 
 /*
 struct SlicingProcessOutput {
@@ -39,6 +42,7 @@ struct SlicingProcessOutput {
 */
 
 namespace Slic3r::Biz::Slicing {
+struct SLAResult;
 
 struct LoggingScopeLock {
     LoggingScopeLock(std::mutex &mutex, std::string id);

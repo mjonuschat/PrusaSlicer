@@ -1,6 +1,9 @@
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Assert.hpp"
+
+#include "libslic3r/SLA/SLAResult.hpp"
+
 #include <fmt/core.h>
 #include <fmt/ostream.h>
 

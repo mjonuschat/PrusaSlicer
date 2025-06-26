@@ -5,6 +5,10 @@
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Log.hpp"
 
+#include "libslic3r/Print.hpp"
+#include "libslic3r/SLAPrint.hpp"
+#include "libslic3r/Utils.hpp"
+
 namespace {
 using namespace Slic3r;
 using Biz::Slicing::IProcessCallbacks;

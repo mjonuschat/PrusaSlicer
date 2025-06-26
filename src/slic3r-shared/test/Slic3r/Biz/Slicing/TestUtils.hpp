@@ -3,10 +3,11 @@
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/libpgcode/LineView.hpp"
-#include "libslic3r/Model.hpp"
+#include "Slic3r/Domain/ConfigContainer.hpp"
+#include "Slic3r/Domain/Model.hpp"
+
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>
-#include "Slic3r/Domain/ConfigContainer.hpp"
 #include <memory>
 
 namespace Slic3r::Tests {

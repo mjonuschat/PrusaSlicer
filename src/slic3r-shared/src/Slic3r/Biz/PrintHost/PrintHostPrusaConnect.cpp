@@ -4,11 +4,11 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
-#include "libslic3r/format.hpp"
-
 #include <boost/nowide/convert.hpp>
 #include <boost/filesystem.hpp>
 #include <nlohmann/json.hpp>
+
+#include "libslic3r/format.hpp"
 
 namespace fs = boost::filesystem;
 

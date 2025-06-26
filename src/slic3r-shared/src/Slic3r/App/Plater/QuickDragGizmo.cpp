@@ -1,5 +1,9 @@
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+using Slic3r::Domain::SquareMatrix4d;
+using Slic3r::Domain::Vec3d;
 
 namespace Slic3r::App::Plater {
 
@@ -52,7 +56,7 @@ Scene::GizmoActivationState QuickDragGizmo::on_mouse(Scene::GizmoEventContext& c
             return Scene::GizmoActivationState::Inactive;
         }
 
-        Matrix4d xform = Matrix4d::Identity();
+        SquareMatrix4d xform = SquareMatrix4d::Identity();
         xform.block<3, 1>(0, 3) = p - m_initial_world_pos;
 
         m_scene_interactor.transform_selection(xform, m_xform_memento);

@@ -23,9 +23,9 @@ public:
      * @param[out] t Output ray t of first hit (set only if `true` returned)
      * @return True if any collision hit was detected
      */
-    virtual bool raycast(const Matrix4d& world, const Ray& ray, double& t) const = 0;
+    virtual bool raycast(const Domain::SquareMatrix4d& world, const Ray& ray, double& t) const = 0;
 
-    virtual Eigen::AlignedBox3f world_bounding_box(const Matrix4d& world) const = 0;
+    virtual Eigen::AlignedBox3f world_bounding_box(const Domain::SquareMatrix4d& world) const = 0;
 
     /**
      * @brief intersection test against given frustum.
@@ -33,7 +33,7 @@ public:
      * @param frustum Frustum in world space
      * @return True if associated node and frustum intersect
      */
-    virtual bool intersects(const Matrix4d& world, const Frustum& frustum) const = 0;
+    virtual bool intersects(const Domain::SquareMatrix4d& world, const Frustum& frustum) const = 0;
 };
 
 /**
@@ -46,7 +46,7 @@ public:
  * or too far from camera)
  */
 inline Eigen::AlignedBox<float, 2> projected_bounding_box(
-    const IRaycastNodeComponent& raycast, const Matrix4d& m, const Matrix4f& vp, const Render::Rect& viewport
+    const IRaycastNodeComponent& raycast, const Domain::SquareMatrix4d& m, const Domain::SquareMatrix4f& vp, const Render::Rect& viewport
 )
 {
     auto world_box = raycast.world_bounding_box(m);
@@ -56,9 +56,9 @@ inline Eigen::AlignedBox<float, 2> projected_bounding_box(
     size_t count_z_minus1 = 0;
 
     for (size_t i = 0; i < 8; i++) {
-        Vec3f v = world_box.corner(Eigen::AlignedBox<float, 3>::CornerType(i));
-        Vec4f c4 = vp * Vec4f{v.x(), v.y(), v.z(), 1};
-        Vec3f c3 = Vec3f{
+        Domain::Vec3f v = world_box.corner(Eigen::AlignedBox<float, 3>::CornerType(i));
+        Domain::Vec4f c4 = vp * Domain::Vec4f{v.x(), v.y(), v.z(), 1};
+        Domain::Vec3f c3 = Domain::Vec3f{
             c4.x() / c4.w(),
             c4.y() / c4.w(),
             c4.z() / c4.w()

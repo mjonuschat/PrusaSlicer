@@ -1,8 +1,13 @@
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Render/MathUtils.hpp"
-#include "Slic3r/Log.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Assert.hpp"
-#include "libslic3r/Geometry.hpp"
+#include "Slic3r/Log.hpp"
+#include "Slic3r/Math.hpp"
+
+using Slic3r::Domain::SquareMatrix4d;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec4d;
 
 namespace Slic3r::App::Scene {
 
@@ -90,7 +95,7 @@ Ray Camera::ray_at(double screen_x, double screen_y) const
 
 Vec3d Camera::unproject(const Vec3d& win_pos) const
 {
-    Matrix4d inv_pm = (m_projection * view()).inverse();
+    SquareMatrix4d inv_pm = (m_projection * view()).inverse();
     Vec4d w{
         (2 * win_pos.x() - m_viewport.x) / m_viewport.width - 1,
         (2 * win_pos.y() - m_viewport.y) / m_viewport.height - 1,

@@ -4,6 +4,9 @@
 #include "Slic3r/App/Scene/AabbRaycastNodeComponent.hpp"
 #include "Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+using Slic3r::Domain::Transform3d;
 
 namespace Slic3r::App::Scene {
 

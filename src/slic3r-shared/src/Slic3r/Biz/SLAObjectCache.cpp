@@ -1,4 +1,7 @@
 #include "Slic3r/Biz/SLAObjectCache.hpp"
+
+#include "libslic3r/SLA/SLAResult.hpp"
+
 #include "fmt/ostream.h"
 
 using namespace Slic3r::Biz;

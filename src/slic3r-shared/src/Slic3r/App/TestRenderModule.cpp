@@ -19,7 +19,15 @@
 
 #include "Slic3r/Domain/Color.hpp"
 
+#include "Slic3r/Math.hpp"
+
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::SquareMatrix4f;
+using Slic3r::Domain::Transform3f;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec3f;
+
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::App {
 
@@ -126,7 +134,7 @@ void TestRenderModule::init_scene()
     });
 
     auto shader = device.context().shader_manager().shader("gouraud_light");
-    constexpr float right_angle = float(PI) / 2.0f;
+    constexpr float right_angle = std::numbers::pi_v<float> / 2.f;
     
     node_builder
 //        .transform([](auto& xform){
@@ -223,8 +231,8 @@ void TestRenderModule::render_scene_render()
     SPDLOG_TRACE("TestRenderModule::render_scene() 3");
 
     command_buffer->bind_geometry(*m_geometry, *m_shader);
-    Matrix4f vm = view.matrix();
-    Matrix4f proj = Render::perspective(
+    SquareMatrix4f vm = view.matrix();
+    SquareMatrix4f proj = Render::perspective(
         60,
         float(m_screen_info.physical_width()) / float(m_screen_info.physical_height()),
         0.01f, 10

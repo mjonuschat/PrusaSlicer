@@ -9,6 +9,8 @@
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/Slicing/GCodeUtils.hpp"
 
+#include "libslic3r/ModelUtils.hpp"
+
 using namespace Catch;
 using Catch::Matchers::Equals;
 using Catch::Matchers::Contains;

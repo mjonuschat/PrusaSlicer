@@ -4,8 +4,6 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/App/WX/format.hpp"
 
-#include "libslic3r/libslic3r.h"
-
 #include <wx/webview.h>
 #include <wx/window.h>
 #include <wx/string.h>

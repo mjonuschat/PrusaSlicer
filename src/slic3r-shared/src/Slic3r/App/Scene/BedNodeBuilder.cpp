@@ -3,9 +3,20 @@
 #include "Slic3r/App/Scene/BedMaterials.hpp"
 #include "Slic3r/App/Scene/BedRenderHelper.hpp"
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include <numbers>
+
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec2f;
+using Slic3r::Domain::Vec3f;
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Scene {
 
@@ -199,9 +210,9 @@ static void axis_node(uint8_t axis_id, Render::Device& device, ScenePresenterPro
             .transform([axis_id](Transform3d& xform) {
                 switch (axis_id) {
                 // X axis
-                case 0:  { xform.rotate(Eigen::AngleAxisd(0.5 * PI, Vec3d::UnitY())); break; }
+                    case 0:  { xform.rotate(Eigen::AngleAxisd(0.5 * std::numbers::pi, Vec3d::UnitY())); break; }
                 // Y axis
-                case 1:  { xform.rotate(Eigen::AngleAxisd(-0.5 * PI, Vec3d::UnitX())); break; }
+                    case 1:  { xform.rotate(Eigen::AngleAxisd(-0.5 * std::numbers::pi, Vec3d::UnitX())); break; }
                 default: { break; }
                 }
             });
@@ -215,7 +226,7 @@ static void axes_node(Render::Device& device, ScenePresenterProjectContext& ctx,
         bldr
             .set_debug_name(fmt::format("bed {} axes main", tag.instance_id))
             .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::AxesMain})
-            .transform([&bed](Transform3d& xform) { xform.translate(to_3d(bed.offset(), 0.0)); });
+            .transform([&bed](Transform3d& xform) { xform.translate(Algorithms::Point::to_3d(bed.offset(), 0.0)); });
 
         bldr.child([&](NodeBuilder& in_bldr) {
             in_bldr

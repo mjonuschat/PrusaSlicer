@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Slic3r/App/Scene/Camera.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include <optional>
 
 namespace Slic3r::App::Scene {
 class Scene;
@@ -35,8 +38,8 @@ private:
         Scene::Transform camera_model;
         double camera_zoom;
 
-        Vec3d trackball_target;
-        Vec3d trackball_pivot;
+        Domain::Vec3d trackball_target;
+        Domain::Vec3d trackball_pivot;
         double trackball_azimuth;
         double trackball_zenith;
         double trackball_distance;

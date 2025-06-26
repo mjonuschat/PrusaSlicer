@@ -1,6 +1,12 @@
 #include "Slic3r/App/Scene/AbstractCameraGizmo.hpp"
 #include "Slic3r/App/Scene/Plane.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec3f;
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Scene {
 
@@ -107,7 +113,7 @@ void AbstractCameraGizmo::on_selected_bed_instance_changed(Domain::SelectionId p
     const Domain::ConfigContainer* cc = proj.find_config_container(container_id);
     DEBUG_ASSERT(cc != nullptr);
     const Domain::BedInstance& inst = cc->find_bed_instance(bed_instance_id);
-    m_selected_bed_center = to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset();
+    m_selected_bed_center = Algorithms::Point::to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset();
     m_scene_provider.scene().camera_trackball().set_pivot(m_selected_bed_center);
 }
 

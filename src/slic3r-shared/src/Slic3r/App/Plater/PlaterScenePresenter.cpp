@@ -8,9 +8,12 @@
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/BedRenderHelper.hpp"
 #include "Slic3r/App/Scene/BedMaterials.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/App/Render/FramebufferManager.hpp"
 #include "Slic3r/App/Scene/BedNodeBuilder.hpp"
@@ -18,6 +21,8 @@
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::SquareMatrix4d;
+using Slic3r::Domain::Vec3d;
 
 using Slic3r::Biz::Algorithms::BoundingBox::transformed;
 using Slic3r::Biz::Algorithms::Color::saturate;
@@ -260,12 +265,12 @@ void PlaterScenePresenter::on_scene_selection_changed(Domain::SelectionId projec
     }
     proj.set_selection_bounding_box(bounds);
     if (!m_freeze_selection_center) {
-        Matrix4d xform = Matrix4d::Identity();
+        SquareMatrix4d xform = SquareMatrix4d::Identity();
         if (selection.mode == Biz::Scene::SelectionMode::Instance) {
             const auto* tag = found_nodes.front()->tag_of_type<SceneNodeTag>();
             const Domain::ModelObject* obj = m_project_interactor.selected_project().find_object_by_id(tag->object_id);
             const Domain::ModelInstance* inst = m_project_interactor.selected_project().find_instance_by_id(tag->object_id, tag->instance_id);
-            Geometry::Transformation world_m = inst->get_transformation() * obj->volumes.front()->get_transformation();
+            Domain::Transformation world_m = inst->get_transformation() * obj->volumes.front()->get_transformation();
             xform.col(3).head(3) = world_m.get_offset();
         }
         else {

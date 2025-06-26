@@ -21,7 +21,7 @@ class BedContainer
 {
 public:
     [[nodiscard]] Bed& add_bed(
-        const Pointfs& contour,
+        const Vec2ds& contour,
         float max_print_height,
         const std::string& model_filename,
         const std::string& texture_filename

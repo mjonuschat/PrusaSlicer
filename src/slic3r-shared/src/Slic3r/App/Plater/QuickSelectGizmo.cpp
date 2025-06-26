@@ -4,8 +4,11 @@
 #include "Slic3r/App/Scene/Node.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include "Slic3r/Domain/Color.hpp"
+
+using Slic3r::Domain::SquareMatrix4f;
 
 using Slic3r::Domain::ColorRGBA;
 
@@ -106,7 +109,7 @@ void RectangleSelection::render(Render::CommandBuffer& cmd_buffer)
     }
 
     Render::Material mat;
-    Matrix4f vm = Matrix4f::Identity();
+    SquareMatrix4f vm = SquareMatrix4f::Identity();
     mat
         .set_uniform("view_model_matrix", vm)
         .set_uniform("projection_matrix", vm)

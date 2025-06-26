@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libslic3r/Point.hpp>
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::Domain {
 class BedContainer;
@@ -18,7 +18,7 @@ public:
      * @param project The project containing the bed instances to layout.
      * @param gap The space to leave between two adjacent instances.
      */
-    void layout(Domain::Project& project, const Vec2d& gap);
+    void layout(Domain::Project& project, const Domain::Vec2d& gap);
 
 
 };

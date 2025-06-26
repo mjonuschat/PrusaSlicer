@@ -1,7 +1,15 @@
 #include <cmath>
 
 #include "Slic3r/App/Scene/CameraTrackballController.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Log.hpp"
+
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec3d;
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Scene {
 
@@ -51,8 +59,8 @@ void CameraTrackballController::set_camera_orientation()
 
     Vec3d xyz = { sin_z * cos_a, sin_z * sin_a, cos_z };
     Vec3d off = m_distance * xyz;
-    Vec3d up = (std::abs(to_2d(xyz).norm()) > EPSILON) ? Vec3d::UnitZ() :
-        (std::abs(m_zenith) < EPSILON) ? Vec3d(-cos_a, -sin_a, 0.0f) : Vec3d(cos_a, sin_a, 0.0f);
+    Vec3d up = (std::abs(Algorithms::Point::to_2d(xyz).norm()) > Domain::EPSILON) ? Vec3d::UnitZ() :
+        (std::abs(m_zenith) < Domain::EPSILON) ? Vec3d(-cos_a, -sin_a, 0.0f) : Vec3d(cos_a, sin_a, 0.0f);
     Vec3d pos = m_target - off;
 
     m_camera.look_at(pos, m_target, up);

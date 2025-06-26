@@ -3,9 +3,10 @@
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include "Slic3r/Biz/Network/Jwt.hpp"
 #include "Slic3r/Log.hpp"
-#include "libslic3r/format.hpp"
 
 #include <nlohmann/json.hpp>
+
+#include "libslic3r/format.hpp"
 
 namespace Slic3r::Biz::UserAccount {
 

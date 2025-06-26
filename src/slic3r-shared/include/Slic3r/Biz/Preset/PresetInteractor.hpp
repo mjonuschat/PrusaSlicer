@@ -10,6 +10,8 @@
 #include "Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp"
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 
+#include "libslic3r/PresetBundle.hpp"
+
 namespace Slic3r::Biz::Preset {
 
 class IBedPresetValueChangedListener;

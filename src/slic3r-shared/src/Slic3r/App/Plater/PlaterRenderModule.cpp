@@ -23,6 +23,7 @@
 #include "Slic3r/App/Plater/MeasureDialog.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/IRenderModuleChangedListener.hpp"
 #include "Slic3r/App/Scene/ThumbnailHelper.hpp"
@@ -40,6 +41,7 @@
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -49,6 +51,11 @@
 #define ENABLED_DEBUG_IMGUI_ICONS 0
 #define ENABLED_DEBUG_BEDS 1
 #define ENABLED_DEBUG_CAMERA 0
+
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec4d;
 
 using namespace Slic3r::App::Yoga;
 

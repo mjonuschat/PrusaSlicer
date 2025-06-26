@@ -1,6 +1,7 @@
 #pragma once
 
-#include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Scene/Plane.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
@@ -26,12 +27,12 @@ public:
 private:
     int mouse_dist_sq(int mouse_x, int mouse_y) const
     {
-        const Vec2d initial_position{m_initial_mouse_pos[0], m_initial_mouse_pos[1]};
-        const Vec2d mouse_position{mouse_x, mouse_y};
+        const Domain::Vec2d initial_position{m_initial_mouse_pos[0], m_initial_mouse_pos[1]};
+        const Domain::Vec2d mouse_position{mouse_x, mouse_y};
 
         return static_cast<int>((initial_position - mouse_position).squaredNorm());
     };
-    bool mouse_pos(float screen_x, float screen_y, Vec3d& out_pos);
+    bool mouse_pos(float screen_x, float screen_y, Domain::Vec3d& out_pos);
 
 private:
     enum class State {
@@ -44,9 +45,9 @@ private:
     Scene::ISceneProvider& m_scene_provider;
     SelectionHandler m_selection_handler;
     MousePosition m_initial_mouse_pos;
-    Vec3d m_initial_world_pos;
+    Domain::Vec3d m_initial_world_pos;
     State m_state{State::Inactive};
-    Scene::Plane m_plane{Vec3d::UnitZ(), 0};
+    Scene::Plane m_plane{Domain::Vec3d::UnitZ(), 0};
     Biz::Scene::TransformMemento m_xform_memento;
     static constexpr int THRESHOLD_DIST_SQ = 5 * 5;
 };

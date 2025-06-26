@@ -6,10 +6,15 @@
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
-#include <Slic3r/Biz/Platform/PlatformServices.hpp>
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/Model.hpp"
+#include "libslic3r/Utils.hpp"
+
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec3d;
 
 namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
 

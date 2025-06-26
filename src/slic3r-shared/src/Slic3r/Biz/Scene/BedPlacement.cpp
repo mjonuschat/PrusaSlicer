@@ -2,10 +2,15 @@
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/Domain/BedContainer.hpp"
 #include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
+
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec2d;
 
 namespace Slic3r::Biz::Scene {
 
@@ -27,13 +32,13 @@ void BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
         Vec2d pos = offset_y * Vec2d::UnitY();
         Domain::TriangleMesh model = BedGeometry::model(bed);
         if (!model.empty())
-            size = max(size, to_2d(sizes(model.bounding_box())));
+            size = max(size, Algorithms::Point::to_2d(sizes(model.bounding_box())));
 
         Domain::ConfigContainer::BedInstanceList& instances = cc->bed_instances();
         for (size_t j = 0; j < instances.size(); ++j) {
             if (j > 0)
                 pos.x() += size.x() + gap.x();
-            Transform3d xform = Domain::translation_transform(to_3d(pos, 0.0));
+            Transform3d xform = Domain::translation_transform(Algorithms::Point::to_3d(pos, 0.0));
             instances[j]->transformation = Domain::Transformation(xform);
         }
 

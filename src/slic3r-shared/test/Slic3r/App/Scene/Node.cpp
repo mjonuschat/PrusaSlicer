@@ -3,6 +3,10 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include "Slic3r/App/Scene/Scene.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec3d;
 
 TEST_CASE("Scene basic transform", "[Node]") {
     using namespace Slic3r;
@@ -35,7 +39,7 @@ TEST_CASE("Scene basic transform", "[Node]") {
         REQUIRE_THAT((n2_world.z()), WithinRel(0, 0.0001));
     }
 
-    Transform3d t = Slic3r::Transform3d::Identity();
+    Transform3d t = Transform3d::Identity();
     t.translate(Vec3d{1, 2, 3});
     n1->set_local_transform(t.matrix());
 

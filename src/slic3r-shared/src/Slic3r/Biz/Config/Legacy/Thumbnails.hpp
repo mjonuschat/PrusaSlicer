@@ -16,9 +16,9 @@
 #include <string>
 #include <utility>
 
-#include "Point.hpp"
-#include "PrintConfig.hpp"
+#include "Slic3r/Biz/Config/Legacy/PrintConfig.hpp"
 #include "Slic3r/Domain/enum_bitmask.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3rLegacy {
 class ConfigBase;
@@ -40,7 +40,7 @@ struct CompressedImageBuffer
     virtual std::string_view tag() const = 0;
 };
 
-typedef std::vector<std::pair<GCodeThumbnailsFormat, Vec2d>> GCodeThumbnailDefinitionsList;
+typedef std::vector<std::pair<GCodeThumbnailsFormat, Slic3r::Domain::Vec2d>> GCodeThumbnailDefinitionsList;
 
 using namespace std::literals;
 std::pair<GCodeThumbnailDefinitionsList, Slic3r::Domain::ThumbnailErrors> make_and_check_thumbnail_list(const std::string& thumbnails_string, const std::string_view def_ext = "PNG"sv);

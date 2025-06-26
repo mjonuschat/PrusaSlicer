@@ -4,6 +4,8 @@
 ///|/
 #include "Slic3r/Biz/Preset/AbstractConfigManipulation.hpp"
 #include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Domain/Constants.hpp"
+
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/format.hpp"
 
@@ -47,7 +49,7 @@ void AbstractConfigManipulation::update_print_fff_config(DynamicPrintConfig* con
         return;
 
     // layer_height shouldn't be equal to zero
-    if (config->opt_float("layer_height") < EPSILON)
+    if (config->opt_float("layer_height") < Domain::EPSILON)
     {
         DynamicPrintConfig new_conf = *config;
         is_msg_dlg_already_exist = true;
@@ -59,7 +61,7 @@ void AbstractConfigManipulation::update_print_fff_config(DynamicPrintConfig* con
         is_msg_dlg_already_exist = false;
     }
 
-    if (config->option<ConfigOptionFloatOrPercent>("first_layer_height")->value < EPSILON)
+    if (config->option<ConfigOptionFloatOrPercent>("first_layer_height")->value < Domain::EPSILON)
     {
         DynamicPrintConfig new_conf = *config;
         is_msg_dlg_already_exist = true;

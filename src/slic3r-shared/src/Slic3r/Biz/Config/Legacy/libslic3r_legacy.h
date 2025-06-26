@@ -57,9 +57,6 @@ using IntegerOnly = std::enable_if_t<std::is_integral<T>::value, O>;
 template<class T, class O = T>
 using ArithmeticOnly = std::enable_if_t<std::is_arithmetic<T>::value, O>;
 
-template<class T>
-using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
-
 template<typename I>
 inline IntegerOnly<I, I> fast_round_up(double a)
 {

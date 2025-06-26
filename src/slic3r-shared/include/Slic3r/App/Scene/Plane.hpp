@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libslic3r/Point.hpp>
+#include "Slic3r/Domain/Point.hpp"
 
 namespace Slic3r::App::Scene {
 struct Ray;
@@ -16,7 +16,7 @@ struct Plane
      *
      * In the plane equation: `ax + by + cz + d = 0` the normal is vector of `(a, b, c)`.
      */
-    Vec3d normal;
+    Domain::Vec3d normal;
 
     /**
      * @brief The `d` coeficient as used in plane equation `ax + by + cz + d = 0.`
@@ -42,7 +42,7 @@ struct Plane
      * @return New plane where @p point lays on the plane and @p v0 and @p v1 are vectors
      * also laying on the plane (relatively to @p point).
      */
-    static Plane from_point_and_vectors(const Vec3d& point, const Vec3d& v0, const Vec3d& v1);
+    static Plane from_point_and_vectors(const Domain::Vec3d& point, const Domain::Vec3d& v0, const Domain::Vec3d& v1);
 
     /**
      * @brief Create plane defined by three points laying on it.
@@ -52,7 +52,7 @@ struct Plane
      * @param p2 Third plane point
      * @return Plane containing all three points.
      */
-    static Plane from_three_points(const Vec3d& p0, const Vec3d& p1, const Vec3d& p2)
+    static Plane from_three_points(const Domain::Vec3d& p0, const Domain::Vec3d& p1, const Domain::Vec3d& p2)
     { return from_point_and_vectors(p0, p1 - p0, p2 - p0); }
 
     /**
@@ -61,7 +61,7 @@ struct Plane
      * @param v normal to the plane
      * @return New plane where @p point lays on the plane and @n is the normal.
      */
-    static Plane from_point_and_normal(const Vec3d& p, const Vec3d& n)
+    static Plane from_point_and_normal(const Domain::Vec3d& p, const Domain::Vec3d& n)
     { return { n, -n.dot(p) }; }
 
     /**
@@ -86,7 +86,7 @@ struct Plane
      * @param[in] radius Radius of the sphere to test
      * @return `True` if this plane interstects the sphere, otherwise `false`.
      */
-    bool intersects(const Vec3d& center, double radius) const
+    bool intersects(const Domain::Vec3d& center, double radius) const
     { return distance(center) < radius; }
 
     /**
@@ -94,7 +94,7 @@ struct Plane
       * @param[in] p Point
       * @return The signed distance between @p point and this plane.
       */
-    double signed_distance(const Vec3d& p) const
+    double signed_distance(const Domain::Vec3d& p) const
     { return normal.dot(p) + d; }
 
     /**
@@ -102,7 +102,7 @@ struct Plane
      * @param[in] p Point
      * @return The distance between @p point and this plane.
      */
-    double distance(const Vec3d& p) const
+    double distance(const Domain::Vec3d& p) const
     { return std::abs(signed_distance(p)); }
 
     /**
@@ -110,12 +110,12 @@ struct Plane
      * @param[out] u
      * @param[out] v
      */
-    void vectors_in_plane(Vec3d& u, Vec3d& v) const
+    void vectors_in_plane(Domain::Vec3d& u, Domain::Vec3d& v) const
     {
         size_t max_axis = 5;
         normal.maxCoeff(&max_axis);
 
-        Vec3d v1 = max_axis == 0 ? Vec3d{0, 1, 0} : Vec3d{1, 0, 0};
+        Domain::Vec3d v1 = max_axis == 0 ? Domain::Vec3d{0, 1, 0} : Domain::Vec3d{1, 0, 0};
         u = (v1 - v1.dot(normal) * normal).normalized();
         v = u.cross(normal).normalized();
     }

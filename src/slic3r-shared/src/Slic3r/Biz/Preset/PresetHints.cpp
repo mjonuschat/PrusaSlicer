@@ -6,9 +6,8 @@
 #include <cassert>
 
 #include "libslic3r/Flow.hpp"
-#include "libslic3r/Slicing.hpp"
-#include "libslic3r/libslic3r.h"
 #include "libslic3r/format.hpp"
+#include "libslic3r/Slicing.hpp"
 
 #include "Slic3r/Biz/Preset/PresetHints.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"

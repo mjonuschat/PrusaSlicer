@@ -8,7 +8,6 @@
 #include <set>
 
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
-#include "libslic3r/Utils/DirectoriesUtils.hpp"
 
 #include <charconv>
 #include <nlohmann/json.hpp>

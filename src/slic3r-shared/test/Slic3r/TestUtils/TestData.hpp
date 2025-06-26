@@ -7,10 +7,11 @@
 #include <boost/optional.hpp>
 
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
-#include "libslic3r/Model.hpp"
-#include "libslic3r/Config.hpp"
+#include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/OnBeds.hpp"
+
+#include "libslic3r/Config.hpp"
 
 namespace Tests {
     inline boost::filesystem::path get_datadir() {

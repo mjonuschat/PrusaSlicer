@@ -13,13 +13,19 @@
 #include "Slic3r/App/LightSetting.hpp"
 
 #include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <imgui/imgui.h>
 
+#include <list>
 #include <random>
 
 using Slic3r::Domain::ColorRGBA;
-
+using Slic3r::Domain::SquareMatrix4f;
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec2f;
+using Slic3r::Domain::Vec3f;
 
 namespace Slic3r::App::Scene {
 
@@ -474,7 +480,7 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
 
     Transform light_cam_proj_view_matrix = m_shadows.light_cam.projection() * m_shadows.light_cam.view();
     for (auto& [node, material] : nodes) {
-        Matrix4f light_cam_matrix = (light_cam_proj_view_matrix * node->world_transform()).cast<float>();
+        SquareMatrix4f light_cam_matrix = (light_cam_proj_view_matrix * node->world_transform()).cast<float>();
         std::string shader_name = device.context().shader_manager().shader_name(material.shader());
         shader_name = shader_name_by_shading_pass(shader_name, ShadingPass::ShadowsReceivers);
         material
@@ -662,7 +668,7 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
                 current_layer = layer;
             }
 
-            Matrix4f light_cam_matrix = (light_cam_proj_view_matrix * n->world_transform()).cast<float>();
+            SquareMatrix4f light_cam_matrix = (light_cam_proj_view_matrix * n->world_transform()).cast<float>();
             std::string shader_name = device.context().shader_manager().shader_name(mat.shader());
             shader_name = shader_name_by_shading_pass(shader_name, ShadingPass::AOGBuffer);
             mat
@@ -707,7 +713,7 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2&
     cmd_buffer->clear_buffers(true, false);
 
     Vec2f v_size = { float(viewport_size[0]), float(viewport_size[1]) };
-    Matrix4f projection = m_camera.projection().cast<float>();
+    SquareMatrix4f projection = m_camera.projection().cast<float>();
 
     Render::Material material;
     material
@@ -776,7 +782,7 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
     Render::Blending blending{ {Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha} };
     cmd_buffer.set_blending(blending);
 
-    Matrix4f view = camera().view().cast<float>();
+    SquareMatrix4f view = camera().view().cast<float>();
 
     Render::Material material;
     material

@@ -11,6 +11,8 @@
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Log.hpp"
 
+#include "libslic3r/SLA/SLAResult.hpp"
+
 using namespace Catch;
 using Catch::Matchers::Equals;
 using Catch::Matchers::UnorderedEquals;

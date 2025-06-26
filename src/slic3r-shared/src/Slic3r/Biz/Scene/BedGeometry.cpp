@@ -1,11 +1,16 @@
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
-
-#include <libslic3r/Point.hpp>
-#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
-#include <libslic3r/ClipperUtils.hpp>
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Line.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <Slic3r/Log.hpp>
 #include <Slic3r/Assert.hpp>
@@ -13,6 +18,14 @@
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <cfloat>
+
+using Slic3r::Domain::BoundingBox2crd;
+using Slic3r::Domain::ExPolygon;
+using Slic3r::Domain::Line;
+using Slic3r::Domain::Lines;
+using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec2f;
+using Slic3r::Domain::Vec3f;
 
 using namespace Slic3r::Biz;
 
@@ -32,7 +45,7 @@ TriangleMesh BedGeometry::model(const Domain::Bed& bed)
         return TriangleMesh{};
     }
 
-    mesh->translate(to_3d(bed.center(), 0.0).cast<float>());
+    mesh->translate(Algorithms::Point::to_3d(bed.center(), 0.0).cast<float>());
     return *mesh;
 }
 
@@ -41,7 +54,7 @@ std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::
     std::vector<std::pair<Vec3f, Vec2f>> ret;
 
     ExPolygon contour = ExPolygon(Algorithms::Polygon::scaled(bed.contour()));
-    BoundingBox bbox = Algorithms::Polygon::get_bounding_box(contour.contour);
+    BoundingBox2crd bbox = Algorithms::Polygon::get_extents(contour.contour);
     if (!bbox.defined) {
         SPDLOG_ERROR("Invalid bed contour");
         return ret;
@@ -68,7 +81,7 @@ std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::
     ret.reserve(triangles.size());
     std::transform(triangles.begin(), triangles.end(), std::back_inserter(ret),
         [&min, &size](const Vec2f& v) {
-            return std::make_pair(to_3d(v, 0.0f),
+            return std::make_pair(Algorithms::Point::to_3d(v, 0.0f),
                 Vec2f((v.x() - min.x()) / size.x(), (v.y() - min.y()) / size.y()));
     });
 
@@ -99,7 +112,7 @@ std::vector<Vec3f> BedGeometry::plate_contour(const Domain::Bed& bed)
     std::vector<Vec3f> ret;
 
     ExPolygon contour = ExPolygon(Algorithms::Polygon::scaled(bed.contour()));
-    BoundingBox bbox = Algorithms::Polygon::get_bounding_box(contour.contour);
+    BoundingBox2crd bbox = Algorithms::Polygon::get_extents(contour.contour);
     if (!bbox.defined) {
         SPDLOG_ERROR("Invalid bed contour");
         return ret;
@@ -117,9 +130,9 @@ std::vector<Vec3f> BedGeometry::plate_contour(const Domain::Bed& bed)
 
     Lines lines = Algorithms::ExPolygon::to_lines(contour);
     ret.reserve(2 * lines.size());
-    for (const Slic3r::Line& l : lines) {
-        ret.emplace_back(to_3d(unscale(l.a), 0.0).cast<float>());
-        ret.emplace_back(to_3d(unscale(l.b), 0.0).cast<float>());
+    for (const Line& l : lines) {
+        ret.emplace_back(Algorithms::Point::to_3d(Algorithms::Scaling::unscaled(l.a), 0.0).cast<float>());
+        ret.emplace_back(Algorithms::Point::to_3d(Algorithms::Scaling::unscaled(l.b), 0.0).cast<float>());
     }
     return ret;
 }
@@ -129,7 +142,7 @@ std::vector<Vec3f> BedGeometry::print_volume(const Domain::Bed& bed)
     std::vector<Vec3f> ret;
 
     ExPolygon contour = ExPolygon(Algorithms::Polygon::scaled(bed.contour()));
-    BoundingBox bbox = Algorithms::Polygon::get_bounding_box(contour.contour);
+    BoundingBox2crd bbox = Algorithms::Polygon::get_extents(contour.contour);
     if (!bbox.defined) {
         SPDLOG_ERROR("Invalid bed contour");
         return ret;
@@ -139,13 +152,13 @@ std::vector<Vec3f> BedGeometry::print_volume(const Domain::Bed& bed)
 
     Lines lines = Algorithms::ExPolygon::to_lines(contour);
     ret.reserve(6 * lines.size());
-    for (const Slic3r::Line& l : lines) {
-        ret.emplace_back(to_3d(unscale(l.a), 0.0).cast<float>());
-        ret.emplace_back(to_3d(unscale(l.b), 0.0).cast<float>());
-        ret.emplace_back(to_3d(unscale(l.a), max_print_height).cast<float>());
-        ret.emplace_back(to_3d(unscale(l.b), max_print_height).cast<float>());
-        ret.emplace_back(to_3d(unscale(l.a), 0.0).cast<float>());
-        ret.emplace_back(to_3d(unscale(l.a), max_print_height).cast<float>());
+    for (const Line& l : lines) {
+        ret.emplace_back(Algorithms::Point::to_3d(Algorithms::Scaling::unscaled(l.a), 0.0).cast<float>());
+        ret.emplace_back(Algorithms::Point::to_3d(Algorithms::Scaling::unscaled(l.b), 0.0).cast<float>());
+        ret.emplace_back(Algorithms::Point::to_3d(Algorithms::Scaling::unscaled(l.a), max_print_height).cast<float>());
+        ret.emplace_back(Algorithms::Point::to_3d(Algorithms::Scaling::unscaled(l.b), max_print_height).cast<float>());
+        ret.emplace_back(Algorithms::Point::to_3d(Algorithms::Scaling::unscaled(l.a), 0.0).cast<float>());
+        ret.emplace_back(Algorithms::Point::to_3d(Algorithms::Scaling::unscaled(l.a), max_print_height).cast<float>());
     }
     return ret;
 }

@@ -2,14 +2,20 @@
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include <numbers>
 
 #include "Slic3r/Domain/Color.hpp"
 
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::SquareMatrix4d;
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec3d;
 
 namespace Slic3r::App::Plater {
 
-constexpr double HALF_PI = 0.5 * PI;
+constexpr double HALF_PI = 0.5 * std::numbers::pi;
 static const Vec3d HANDLE_CONE_SIZE = { 10.0, 10.0, 15.0 };
 constexpr double HANDLE_STEM_LENGTH = 50.0;
 static const Vec3d HANDLE_CONE_OFFSET = { 0.0, 0.0, HANDLE_STEM_LENGTH };
@@ -87,7 +93,7 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
 
     Vec3d delta = m_translation_ray.point_at(t) - m_translation_ray.point_at(m_start_t);
 
-    Matrix4d translation_matrix = Matrix4d::Identity();
+    SquareMatrix4d translation_matrix = SquareMatrix4d::Identity();
     translation_matrix.col(3).head(3) = delta;
 
     // SPDLOG_INFO("Translation: ({}, {}, {}) (t0: {}  t1: {})", delta.x(), delta.y(), delta.z(),

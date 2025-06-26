@@ -8,9 +8,6 @@
 #include "Slic3r/Domain/Preset/Bundle.hpp"
 #include "Slic3r/IdGenerator.hpp"
 
-#include <libslic3r/PresetBundle.hpp>
-#include <libslic3r/AppConfig.hpp>
-
 namespace Slic3r::Domain {
 
 class Workbench

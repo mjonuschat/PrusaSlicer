@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <libslic3r/Point.hpp>
+#include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/App/Render/TextureManager.hpp"
 
 namespace Slic3r::Domain {
@@ -38,7 +38,7 @@ public:
      *
      * @note The bed contour is specified into the bed, see Slic3r::Domain::Bed definition.
      */
-    [[nodiscard]] static std::vector<Vec3f> plate_grid(const Domain::Bed& bed);
+    [[nodiscard]] static std::vector<Domain::Vec3f> plate_grid(const Domain::Bed& bed);
 
 private:
     /**

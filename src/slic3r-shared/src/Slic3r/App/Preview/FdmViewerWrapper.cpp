@@ -10,6 +10,8 @@
 
 #include <Slic3r/App/libvgcode/ColorRange.hpp>
 
+#include "Slic3r/Domain/Constants.hpp"
+
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::Biz;
@@ -434,7 +436,7 @@ static void adjust_ticks_values(std::vector<CustomGCode::Item>& gcodes, const st
     // TODO: this should be placed into more appropriate part of code,
     // this function is e.g. not called when the last object is deleted
     gcodes.erase(std::remove_if(gcodes.begin(), gcodes.end(), [zs](const CustomGCode::Item& item) {
-        return std::lower_bound(zs.begin(), zs.end(), item.print_z - EPSILON) == zs.end();
+        return std::lower_bound(zs.begin(), zs.end(), item.print_z - Domain::EPSILON) == zs.end();
     }), gcodes.end());
 }
 
@@ -457,7 +459,7 @@ void FdmViewerWrapper::update_slider_layers()
 
     std::vector<float> layers_zs = m_viewer.layers_zs();
 
-    bool force_sliders_full_range = was_empty || layers_zs.empty() || std::abs(layers_zs.back() - m_slider_layers->max_value()) > EPSILON;
+    bool force_sliders_full_range = was_empty || layers_zs.empty() || std::abs(layers_zs.back() - m_slider_layers->max_value()) > Domain::EPSILON;
     bool snap_to_min = force_sliders_full_range || m_slider_layers->is_lower_at_min();
     bool snap_to_max = force_sliders_full_range || m_slider_layers->is_higher_at_max();
 
@@ -475,12 +477,12 @@ void FdmViewerWrapper::update_slider_layers()
     int idx_high = max_pos;
     if (!layers_zs.empty()) {
         if (!snap_to_min) {
-            int idx_new = DoubleSliderForLayers::find_close_layer_idx(layers_zs, z_low, float(EPSILON));
+            int idx_new = DoubleSliderForLayers::find_close_layer_idx(layers_zs, z_low, float(Domain::EPSILON));
             if (idx_new != -1)
                 idx_low = idx_new;
         }
         if (!snap_to_max) {
-            int idx_new = DoubleSliderForLayers::find_close_layer_idx(layers_zs, z_high, float(EPSILON));
+            int idx_new = DoubleSliderForLayers::find_close_layer_idx(layers_zs, z_high, float(Domain::EPSILON));
             if (idx_new != -1)
                 idx_high = idx_new;
         }
@@ -545,7 +547,7 @@ void FdmViewerWrapper::update_view_visible_range(size_t first, size_t last)
                 const MoveVertex& v = m_viewer.vertex_at(i);
                 float len = (i > start_id) ? (v.position - m_viewer.vertex_at(i - 1).position).norm() : 0.0f;
                 total_len += len;
-                if (i == start_id || len > float(EPSILON))
+                if (i == start_id || len > float(Domain::EPSILON))
                     m_actual_speed_plot_data.data.push_back({ total_len, v.actual_feedrate, v.time[0] == 0.0f });
             }
 

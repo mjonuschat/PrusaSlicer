@@ -1,8 +1,11 @@
 #include "Slic3r/App/Scene/Frustum.hpp"
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <Slic3r/Assert.hpp>
+
+using Slic3r::Domain::Vec3d;
 
 namespace Slic3r::App::Scene {
 

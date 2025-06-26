@@ -6,6 +6,10 @@
 #include "Slic3r/App/Scene/Node.hpp"
 #include "Slic3r/App/Render/Geometry.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+using Slic3r::Domain::SquareMatrix3f;
+using Slic3r::Domain::SquareMatrix4f;
 
 namespace Slic3r::App::Scene {
 
@@ -31,16 +35,16 @@ void MeshRenderNodeComponent::render(
     const Transform& model = node.world_transform();
 
     // update per-node uniforms
-    Matrix4f view_m = view.cast<float>();
+    SquareMatrix4f view_m = view.cast<float>();
     material.set_uniform(UNIFORM_VIEW_MATRIX, view_m);
-    Matrix4f model_view = (view * model).cast<float>();
+    SquareMatrix4f model_view = (view * model).cast<float>();
     material.set_uniform(UNIFORM_VIEW_MODEL_MATRIX, model_view);
-    Matrix4f value = camera.projection().cast<float>();
+    SquareMatrix4f value = camera.projection().cast<float>();
     material.set_uniform(UNIFORM_PROJECTION_MATRIX, value);
-    Matrix3f normal =
+    SquareMatrix3f normal =
         (view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0)).inverse().transpose().cast<float>();
     material.set_uniform(UNIFORM_VIEW_NORMAL_MATRIX, normal);
-    Matrix4f vol_world = node.world_transform().cast<float>();
+    SquareMatrix4f vol_world = node.world_transform().cast<float>();
     material.set_uniform(UNIFORM_VOLUME_WORLD_MATRIX, vol_world);
 
     set_uniforms(lights, material);

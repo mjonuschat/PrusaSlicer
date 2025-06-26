@@ -8,9 +8,9 @@ using namespace Slic3r;
 using namespace Slic3r::App::Scene;
 
 TEST_CASE("Ray closest point", "[Ray]") {
-    Ray r0{ Vec3d{ 0.0, 0.0, 0.0 }, Vec3d{ 0.0, 1.0, 0.0 } };
-    Ray r1{ Vec3d{ 1.0, 0.0, 0.0 }, Vec3d{ 0.0, 1.0, 0.0 } };
-    Ray r2{ Vec3d{ 0.0, 1.0, 1.0 }, Vec3d{ 0.0, 0.0, 1.0 } };
+    Ray r0{ Domain::Vec3d{ 0.0, 0.0, 0.0 }, Domain::Vec3d{ 0.0, 1.0, 0.0 } };
+    Ray r1{ Domain::Vec3d{ 1.0, 0.0, 0.0 }, Domain::Vec3d{ 0.0, 1.0, 0.0 } };
+    Ray r2{ Domain::Vec3d{ 0.0, 1.0, 1.0 }, Domain::Vec3d{ 0.0, 0.0, 1.0 } };
     double t = 0.0;
     REQUIRE(r0.closest_point_from_ray(r1, t) == false);
     REQUIRE(t == 0.0);

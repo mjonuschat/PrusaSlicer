@@ -1,15 +1,21 @@
 #include "Slic3r/App/Scene/AabbRaycastNodeComponent.hpp"
 #include "Slic3r/App/Render/MathUtils.hpp"
 #include "Slic3r/App/Scene/Frustum.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+using Slic3r::Domain::SquareMatrix4d;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec4d;
+using Slic3r::Domain::Vec3f;
 
 namespace Slic3r::App::Scene
 {
 
-bool AabbRaycastNodeComponent::raycast(const Matrix4d& world, const Ray& ray, double& t) const
+bool AabbRaycastNodeComponent::raycast(const SquareMatrix4d& world, const Ray& ray, double& t) const
 {
     ASSERT(m_aabb_mesh != nullptr);
 
-    Matrix4d inv_world = world.inverse();
+    SquareMatrix4d inv_world = world.inverse();
 
     Vec3d local_ray_origin = (inv_world * Vec4d{ray.origin.x(), ray.origin.y(), ray.origin.z(), 1}).head<3>().cast<double>();
     Vec3d local_ray_direction = (inv_world.block<3, 3>(0, 0) * ray.direction).cast<double>().normalized();
@@ -56,7 +62,7 @@ Eigen::AlignedBox<float, 2> AabbRaycastNodeComponent::projected_bounding_box(
 }
 */
 
-Eigen::AlignedBox3f AabbRaycastNodeComponent::world_bounding_box(const Matrix4d& world) const
+Eigen::AlignedBox3f AabbRaycastNodeComponent::world_bounding_box(const SquareMatrix4d& world) const
 {
     ASSERT(m_aabb_mesh != nullptr);
     auto bbox3 = m_aabb_mesh->bounding_box();
@@ -73,7 +79,7 @@ Eigen::AlignedBox3f AabbRaycastNodeComponent::world_bounding_box(const Matrix4d&
     return ret;
 }
 
-bool AabbRaycastNodeComponent::intersects(const Matrix4d& world, const Frustum& frustum) const
+bool AabbRaycastNodeComponent::intersects(const SquareMatrix4d& world, const Frustum& frustum) const
 {
     ASSERT(m_aabb_mesh != nullptr);
     return frustum.intersects(world_bounding_box(world).cast<double>());

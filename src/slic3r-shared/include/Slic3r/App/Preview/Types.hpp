@@ -1,6 +1,5 @@
 #pragma once
 
-#include "libslic3r/CustomGCode.hpp"
 #include <Slic3r/App/libvgcode/Types.hpp>
 
 #include <functional>

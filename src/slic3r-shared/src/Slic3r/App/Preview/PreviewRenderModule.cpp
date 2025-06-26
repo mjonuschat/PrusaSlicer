@@ -15,6 +15,7 @@
 #include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/BedThumbnailStore.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
@@ -32,6 +33,7 @@
 #define ENABLED_DEBUG_LOAD_DATA 0
 #define ENABLED_DEBUG_VIEWER_MODE 0
 
+using namespace Slic3r::Biz;
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::App::Yoga;
@@ -1106,7 +1108,7 @@ void PreviewRenderModule::center_camera_on_selected_bed()
     m_scene_presenter->scene().set_shadows_aabb(bed_aabb);
     Scene::CameraTrackballController& trackball = m_scene_presenter->scene().camera_trackball();
 
-    trackball.set_target(bed_inst_offset + to_3d(bed.center(), 0.0));
+    trackball.set_target(bed_inst_offset + Algorithms::Point::to_3d(bed.center(), 0.0));
     trackball.synchronize_pivot_with_target();
 }
 

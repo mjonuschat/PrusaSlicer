@@ -3,6 +3,7 @@
 #include <exception>
 #include <chrono>
 
+#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
@@ -10,8 +11,8 @@
 #include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
 #include "Slic3r/Domain/Color.hpp"
 
-#include "libslic3r/Model.hpp"
-#include "libslic3r/I18N.hpp" // translation
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include "imgui/imgui.h"
 
@@ -40,6 +41,8 @@ using Slic3r::Domain::Project;
 using Slic3r::Domain::ObjectID;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::SquareMatrix4f;
+using Slic3r::Domain::Transform3d;
 
 using Slic3r::Biz::Algorithms::its_quadric_edge_collapse;
 
@@ -587,7 +590,7 @@ void SimplifyGizmo::init_material(){
         const Render::Rect& viewport = scene.camera().viewport();
         float half_w = 0.5f * float(viewport.width);
         float half_h = 0.5f * float(viewport.height);
-        Matrix4f viewport_matrix;
+        SquareMatrix4f viewport_matrix;
         viewport_matrix << 
             half_w, 0.0f,   0.0f, half_w,
             0.0f,   half_h, 0.0f, half_h, 

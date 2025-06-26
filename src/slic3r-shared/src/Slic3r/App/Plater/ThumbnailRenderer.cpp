@@ -181,7 +181,7 @@ Render::Images ThumbnailRenderer::generate_object_thumbnails(const Domain::Model
     // setup camera trackball
     Scene::CameraTrackballController& trackball = scene.camera_trackball();
     trackball.set_target(world_aabb.center());
-    trackball.set_azimuth_and_zenith(0.25 * PI, 0.75 * PI);
+    trackball.set_azimuth_and_zenith(0.25 * std::numbers::pi, 0.75 * std::numbers::pi);
     trackball.set_distance_to_target(world_aabb.diagonal().norm());
 
     // setup thumbnail generation parameters

@@ -2,12 +2,15 @@
 #include "Slic3r/Biz/Preset/IBedPresetValueChangedListener.hpp"
 #include "Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
+
+using Slic3r::Domain::Vec2d;
 
 namespace Slic3r::Biz::Preset {
 

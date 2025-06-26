@@ -2,8 +2,7 @@
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
-
-#include <libslic3r/Model.hpp>
+#include "Slic3r/Domain/Model.hpp"
 
 namespace Slic3r::Domain {
 

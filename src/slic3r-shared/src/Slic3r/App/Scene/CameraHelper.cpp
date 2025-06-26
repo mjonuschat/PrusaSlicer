@@ -1,7 +1,12 @@
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/App/Scene/Camera.hpp"
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Math.hpp"
 
 #include <cfloat>
+
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec3d;
 
 namespace Slic3r::App::Scene {
 

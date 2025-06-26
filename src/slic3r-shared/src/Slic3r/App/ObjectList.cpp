@@ -4,6 +4,7 @@
 #include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -26,6 +27,7 @@
 #include "libslic3r/format.hpp"
 
 using Slic3r::Domain::ColorRGB;
+using Slic3r::Domain::Vec2f;
 
 using Slic3r::Biz::Algorithms::Color::can_decode_color;
 using Slic3r::Biz::Algorithms::Color::decode_color;

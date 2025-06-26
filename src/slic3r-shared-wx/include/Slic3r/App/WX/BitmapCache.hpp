@@ -13,8 +13,6 @@
     #include <wx/wx.h>
 #endif
 
-//#include "libslic3r/Color.hpp"
-
 struct NSVGimage;
 
 namespace Slic3r::App::WX {

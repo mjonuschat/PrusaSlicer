@@ -3,15 +3,18 @@
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
-#include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
-
-#include <libslic3r/Model.hpp>
+#include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
 #include <vector>
 #include <algorithm>
+
+using Slic3r::Domain::SquareMatrix4d;
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec2d;
 
 using namespace Slic3r::Biz;
 
@@ -505,7 +508,7 @@ void SceneInteractor::transform_selection(const Transform& relative_transform)
 }
 
 
-void SceneInteractor::transform_selection(const Matrix4d& relative_transform, TransformMemento& memento)
+void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transform, TransformMemento& memento)
 {
     auto& proj = m_projects.find(m_selected_project_id)->second;
     const bool instance_mode = proj.selection.mode == SelectionMode::Instance;
@@ -532,7 +535,7 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
 
     if (canceled) {
         for (const auto& [_, e] : memento.elements) {
-            const Transformation xform{Transform3d {e.original_xform}};
+            const Transformation xform{Transform3d{e.original_xform}};
             if (vol_mode) {
                 auto* vol = proj.project.find_volume_by_id(e.element.object_id, e.element.volume_id);
                 vol->set_transformation(xform);

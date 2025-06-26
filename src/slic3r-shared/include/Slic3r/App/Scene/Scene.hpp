@@ -15,8 +15,7 @@
 
 #include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/Geometry.hpp"
-#include "libslic3r/AABBMesh.hpp"
+
 
 namespace Slic3r::App::Scene {
 
@@ -416,7 +415,7 @@ private:
         mutable Render::Framebuffer* blur_fb{nullptr};
 
         mutable std::optional<size_t> pending_kernel_size;
-        mutable std::vector<Vec3f> kernel;
+        mutable std::vector<Domain::Vec3f> kernel;
 
         mutable size_t noise_size{0};
         mutable std::optional<size_t> pending_noise_size;

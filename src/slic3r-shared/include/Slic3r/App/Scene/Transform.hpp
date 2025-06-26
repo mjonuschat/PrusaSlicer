@@ -1,7 +1,7 @@
 #pragma once
-#include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::App::Scene {
 
-using Transform = Matrix4d;
-}
+using Transform = Domain::SquareMatrix4d;
+} // namespace Slic3r::App::Scene

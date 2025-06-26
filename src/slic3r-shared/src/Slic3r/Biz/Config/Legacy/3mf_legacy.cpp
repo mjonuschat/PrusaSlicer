@@ -3,19 +3,16 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "libslic3r/libslic3r.h"
+
+#include "libslic3r_version.h"
 #include "Slic3r/Exception.hpp"
-#include "libslic3r/Model.hpp"
-#include "libslic3r/Utils.hpp"
-#include "libslic3r/GCode.hpp"
-#include "libslic3r/Geometry.hpp"
-#include "libslic3r/GCode/ThumbnailData.hpp"
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "Slic3r/Semver.hpp"
 #include "Slic3r/Time.hpp"
-#include "libslic3r/CustomGCode.hpp"
 
-#include "libslic3r/I18N.hpp"
-
+#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 
 #include <limits>
@@ -33,6 +30,7 @@
 #include <boost/spirit/include/qi_int.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
+#include <boost/regex.hpp>
 
 #include <boost/property_tree/xml_parser.hpp>
 namespace pt = boost::property_tree;
@@ -41,20 +39,23 @@ namespace pt = boost::property_tree;
 #include <Eigen/Dense>
 #include <LocalesUtils.hpp>
 
-#include "libslic3r/miniz_extension.hpp"
-
-#include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
-#include "libslic3r/ExPolygonSerialize.hpp" 
-
-#include "libslic3r/NSVGUtils.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
+#include "Slic3r/Domain/Transformation.hpp"
 
 #include "fast_float.h"
 
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/Legacy/PrintConfig.hpp"
 
+#include "libslic3r/CustomGCode.hpp"
+#include "libslic3r/GCode/ThumbnailData.hpp"
+#include "libslic3r/miniz_extension.hpp"
+#include "libslic3r/NSVGUtils.hpp"
+#include "libslic3r/Utils.hpp"
 
 using Slic3r::Domain::TriangleMesh;
 using Slic3r::Domain::Index3;
@@ -291,11 +292,11 @@ bool get_attribute_value_bool(const char** attributes, unsigned int attributes_s
     return (text != nullptr) ? (bool)::atoi(text) : true;
 }
 
-Slic3r::Transform3d get_transform_from_3mf_specs_string(const std::string& mat_str)
+Slic3r::Domain::Transform3d get_transform_from_3mf_specs_string(const std::string& mat_str)
 {
     // check: https://3mf.io/3d-manufacturing-format/ or https://github.com/3MFConsortium/spec_core/blob/master/3MF%20Core%20Specification.md
     // to see how matrices are stored inside 3mf according to specifications
-    Slic3r::Transform3d ret = Slic3r::Transform3d::Identity();
+    Slic3r::Domain::Transform3d ret = Slic3r::Domain::Transform3d::Identity();
 
     if (mat_str.empty())
         // empty string means default identity matrix
@@ -1114,15 +1115,15 @@ namespace Slic3rLegacy {
             Domain::ModelObject* o = model.objects[obj_id];
             if (o->volumes.size() == 1) {
                 Domain::ModelVolume* v = o->volumes.front();
-                const Slic3r::Geometry::Transformation& first_inst_trafo = o->instances.front()->get_transformation();
+                const Slic3r::Domain::Transformation& first_inst_trafo = o->instances.front()->get_transformation();
                 const Vec3d world_vol_offset = (first_inst_trafo * v->get_transformation()).get_offset();
                 const Vec3d world_inst_offset = first_inst_trafo.get_offset();
 
                 if (!world_vol_offset.isApprox(world_inst_offset)) {
-                    const Slic3r::Geometry::Transformation& vol_trafo = v->get_transformation();
+                    const Slic3r::Domain::Transformation& vol_trafo = v->get_transformation();
                     for (int inst_id = 0; inst_id < int(o->instances.size()); ++inst_id) {
                         Domain::ModelInstance* i = o->instances[inst_id];
-                        const Slic3r::Geometry::Transformation& inst_trafo = i->get_transformation();
+                        const Slic3r::Domain::Transformation& inst_trafo = i->get_transformation();
                         i->set_offset((inst_trafo * vol_trafo).get_offset());
                     }
                     v->set_offset(Vec3d::Zero());
@@ -2540,7 +2541,7 @@ namespace Slic3rLegacy {
 
     void _3MF_Importer::_apply_transform(Domain::ModelInstance& instance, const Transform3d& transform)
     {
-        Slic3r::Geometry::Transformation t(transform);
+        Slic3r::Domain::Transformation t(transform);
         // invalid scale value, return
         if (!t.get_scaling_factor().all())
             return;
@@ -2690,7 +2691,7 @@ namespace Slic3rLegacy {
             // extract the volume transformation from the volume's metadata, if present
             for (const Metadata& metadata : volume_data.metadata) {
                 if (metadata.key == MATRIX_KEY) {
-                    volume_matrix_to_object = Slic3r::Geometry::transform3d_from_string(metadata.value);
+                    volume_matrix_to_object = Slic3r::Biz::Algorithms::Geometry::transform3d_from_string(metadata.value);
                     has_transform 			= ! volume_matrix_to_object.isApprox(Transform3d::Identity(), 1e-10);
                     break;
                 }
@@ -2743,7 +2744,7 @@ namespace Slic3rLegacy {
                 // to work properly
                 if (object.instances.size() == 1) {
                     triangle_mesh.transform(object.instances.front()->get_transformation().get_matrix(), false);
-                    object.instances.front()->set_transformation(Slic3r::Geometry::Transformation());
+                    object.instances.front()->set_transformation(Slic3r::Domain::Transformation());
                     //FIXME do the mesh fixing?
                 }
             }
@@ -2753,7 +2754,7 @@ namespace Slic3rLegacy {
             Domain::ModelVolume* volume = Algorithms::ModelObject::add_volume(&object, std::move(triangle_mesh));
             // stores the volume matrix taken from the metadata, if present
             if (has_transform)
-                volume->source.transform = Slic3r::Geometry::Transformation(volume_matrix_to_object);
+                volume->source.transform = Slic3r::Domain::Transformation(volume_matrix_to_object);
 
             // recreate custom supports, seam, mm segmentation and fuzzy skin from previously loaded attribute
             volume->supported_facets.reserve(triangles_count);

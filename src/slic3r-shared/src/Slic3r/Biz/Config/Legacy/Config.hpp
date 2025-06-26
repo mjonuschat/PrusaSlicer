@@ -377,14 +377,14 @@ template<> struct NilValueTempl<std::string> {
 template<int N, class T> struct NilValueTempl<Vec<N, T>> {
     using NilType = Vec<N, T>;
     // No constexpr for Vec<N, T>
-    static inline const Vec<N, T> value = Vec<N, T>::Ones() * NilValueTempl<remove_cvref_t<T>>::value;
+    static inline const Vec<N, T> value = Vec<N, T>::Ones() * NilValueTempl<std::remove_cvref_t<T>>::value;
 };
 
-template<class T> using NilType = typename NilValueTempl<remove_cvref_t<T>>::NilType;
+template<class T> using NilType = typename NilValueTempl<std::remove_cvref_t<T>>::NilType;
 
 // Define shortcut as a function instead of a static const var so that it can be constexpr
 // even if the NilValueTempl::value is not constexpr.
-template<class T> static constexpr NilType<T> NilValue() noexcept { return NilValueTempl<remove_cvref_t<T>>::value; }
+template<class T> static constexpr NilType<T> NilValue() noexcept { return NilValueTempl<std::remove_cvref_t<T>>::value; }
 
 // Value of a single valued option (bool, int, float, string, point, enum)
 template <class T, bool NULLABLE = false>

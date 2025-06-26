@@ -10,7 +10,6 @@
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
-#include "libslic3r/Config.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
 
 

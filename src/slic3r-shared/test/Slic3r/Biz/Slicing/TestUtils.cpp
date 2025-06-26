@@ -7,6 +7,7 @@
 namespace Slic3r::Tests {
 
 using Domain::ConfigPack;
+using Slic3r::Domain::Vec3f;
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Biz::Algorithms::ModelObject::add_volume;
 

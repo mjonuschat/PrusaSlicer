@@ -4,8 +4,6 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/IdGenerator.hpp"
 
-#include "libslic3r/format.hpp"
-
 namespace Slic3r::Biz::PrintHost {
 
 namespace {

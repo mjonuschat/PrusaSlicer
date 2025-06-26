@@ -3,8 +3,6 @@
 #include "ExtrudersSequence.hpp"
 #include "Types.hpp"
 
-#include <libslic3r/CustomGCode.hpp>
-
 #include <set>
 #include <functional>
 #include <array>

@@ -11,9 +11,9 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/filesystem/exception.hpp"
 #include <expat.h>
-#include "libslic3r/Utils.hpp" // ScopeGuard
 #include "Slic3r/Biz/Format/Metadata.hpp"
 #include "Relations.hpp"
+#include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
@@ -22,6 +22,14 @@
 #include "LocalesUtils.hpp" // CNumericLocalesSetter
 
 #include <boost/spirit/include/karma.hpp>
+
+#include "libslic3r/Utils.hpp" // ScopeGuard
+#include "libslic3r_version.h"
+
+using Slic3r::Domain::SquareMatrix4d;
+using Slic3r::Domain::Vec3f;
+
+using Slic3r::Domain::is_approx;
 
 namespace Slic3r {
     extern std::unique_ptr<const Persist3mfData> g_load_from_3mf;
@@ -1395,7 +1403,7 @@ void add_transformation(std::stringstream &stream, const Transform3d &tr) {
 bool is_identity(const Transform3d &tr){
     // In Eigen 3.4.9 is possible to chekck identity directly by:
     // tr.isIdentity();
-    return (tr.matrix() - Matrix4d::Identity()).cwiseAbs().maxCoeff() < 1e-10;
+    return (tr.matrix() - SquareMatrix4d::Identity()).cwiseAbs().maxCoeff() < 1e-10;
     //return is_approx((Vec3d) (tr * Vec3d::UnitX()), Vec3d::UnitX()) && 
     //       is_approx((Vec3d) (tr * Vec3d::UnitY()), Vec3d::UnitY()) &&
     //       is_approx((Vec3d) (tr * Vec3d::UnitZ()), Vec3d::UnitZ());

@@ -126,7 +126,7 @@ Scoped3mfThumbnailSceneCustomizer::Scoped3mfThumbnailSceneCustomizer(Scene::Scen
     // setup camera trackball
     trackball.set_target(world_aabb.center());
     trackball.set_distance_to_target(world_aabb.diagonal().norm());
-    trackball.set_azimuth_and_zenith(0.25 * PI, 0.75 * PI);
+    trackball.set_azimuth_and_zenith(0.25 * std::numbers::pi, 0.75 * std::numbers::pi);
 
     // setup camera zoom
     Scene::zoom_to_box(camera, world_aabb);

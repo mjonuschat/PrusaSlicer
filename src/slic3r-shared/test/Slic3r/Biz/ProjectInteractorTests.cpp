@@ -6,7 +6,9 @@
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
-#include "libslic3r/Model.hpp"
+#include "Slic3r/Domain/Model.hpp"
+
+#include "libslic3r/Utils.hpp"
 
 #include <boost/filesystem/operations.hpp>
 

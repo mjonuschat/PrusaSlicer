@@ -10,6 +10,7 @@
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/GCodeReader/Utils.hpp"
 #include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
 #include <Slic3r/App/libvgcode/Types.hpp>
@@ -23,6 +24,7 @@
 #include <algorithm>
 
 #include "libslic3r/format.hpp"
+#include "libslic3r/CustomGCode.hpp"
 
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Biz;

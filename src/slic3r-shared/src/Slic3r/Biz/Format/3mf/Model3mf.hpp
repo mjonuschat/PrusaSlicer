@@ -12,12 +12,15 @@
 #include <variant>
 #include "libslic3r/miniz_extension.hpp" // mini zip archivator
 #include "Slic3r/Domain/TriangleMesh.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "admesh/stl.h" // indexed_triangle_set
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp" // Error handling
 #include "Slic3r/Biz/Format/Metadata.hpp"
 #include <boost/uuid/uuid.hpp>
 
 #include "Slic3r/Biz/Format/3mf.hpp" // Store3mfParam
+
+using Slic3r::Domain::Transform3d;
 
 // Unprefixed: Element names
 // CT_ .. prefix of Complex types defined in 3MF specification

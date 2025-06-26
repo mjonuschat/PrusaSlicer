@@ -7,8 +7,11 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include "Slic3r/Assert.hpp"
+
+using Slic3r::Domain::Transform3d;
 
 namespace Slic3r::App::Scene {
 

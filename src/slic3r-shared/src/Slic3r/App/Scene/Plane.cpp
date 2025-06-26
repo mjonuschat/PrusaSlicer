@@ -1,6 +1,8 @@
 #include "Slic3r/App/Scene/Plane.hpp"
 #include "Slic3r/App/Scene/Ray.hpp"
 
+using Slic3r::Domain::Vec3d;
+
 namespace Slic3r::App::Scene {
 
 void Plane::normalize()

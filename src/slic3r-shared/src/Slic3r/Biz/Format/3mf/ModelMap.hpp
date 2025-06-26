@@ -10,7 +10,6 @@
 #include <unordered_map>
 #include "Model3mf.hpp" // format_3MF::ST_ResourceID
 
-// #include "libslic3r/Model.hpp" // ModelInstance ModelObject ModelVolume
 namespace Slic3r {
 
 // Production extension add option to keep object stored in separate .model files.

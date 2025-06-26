@@ -1,10 +1,11 @@
 #pragma once
+
 #include "Slic3r/App/Render/ResourceManager.hpp"
+#include "Slic3r/Domain/TriangleMesh.hpp"
 
 #include "libslic3r/AABBMesh.hpp"
 
-namespace Slic3r::App::Scene
-{
+namespace Slic3r::App::Scene {
 
 class TriangleMesh
 {

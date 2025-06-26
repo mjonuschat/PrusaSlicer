@@ -4,15 +4,14 @@
 #include <regex>
 #include <vector>
 
-#include <libslic3r/Point.hpp>
-#include <libslic3r/Model.hpp>
-
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::Tests {
 
 struct Extrusion {
-    Slic3r::Vec4d start;
-    Slic3r::Vec4d end;
+    Domain::Vec4d start;
+    Domain::Vec4d end;
 };
 
 std::optional<std::string> is_gcode_sane(const std::string& gcode, const Domain::Model &model);

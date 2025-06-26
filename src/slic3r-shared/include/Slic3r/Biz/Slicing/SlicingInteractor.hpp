@@ -11,11 +11,15 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/Domain/ConfigContainer.hpp>
 #include <Slic3r/Biz/Platform/WithListeners.hpp>
-#include <libslic3r/SLA/SLAResult.hpp> // + Sla::Object
 
 #include "BackgroundProcess.hpp"
 
+namespace Slic3r::Biz::Slicing::Sla {
+struct Object;
+} // namespace Slic3r::Biz::Slicing::Sla
+
 namespace Slic3r::Biz::Slicing {
+struct SLAResult;
 
 class ISlicingListener {
 public:

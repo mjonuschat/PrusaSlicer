@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "Slic3r/App/Scene/Node.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Assert.hpp"
 
 namespace Slic3r::App::Render {
@@ -23,8 +24,8 @@ struct PBRParams;
 class NodeBuilder {
 public:
     explicit NodeBuilder(Scene& scene) : m_scene(scene), m_current(std::make_unique<Node>()) {}
-    NodeBuilder& transform(const std::function<void(Transform3d&)>& modifier);
-    NodeBuilder& set_transform(const Transform3d&);
+    NodeBuilder& transform(const std::function<void(Domain::Transform3d&)>& modifier);
+    NodeBuilder& set_transform(const Domain::Transform3d&);
     NodeBuilder& set_transform(const Transform&);
     NodeBuilder& set_mesh(const Render::Geometry* geometry, const Render::Material& material, int layer_index=0);
     NodeBuilder& set_mesh_instanced(const Render::Geometry* geometry, const Render::Material& material,

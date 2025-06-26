@@ -2,7 +2,7 @@
 
 #include <functional>
 
-#include <libslic3r/Point.hpp>
+#include "Slic3r/Domain/Point.hpp"
 
 namespace Slic3r::App::Scene {
 

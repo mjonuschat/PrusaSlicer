@@ -2,9 +2,9 @@
 
 #include "Slic3r/Log.hpp"
 
-#include "libslic3r/format.hpp"
-
 #include <nlohmann/json.hpp>
+
+#include "libslic3r/format.hpp"
 
 namespace fs = boost::filesystem;
 

@@ -7,6 +7,7 @@
 #include "Slic3r/App/Render/Types.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -133,7 +134,7 @@ public:
     const Transform& model() const { return m_model; }
     void set_model(const Transform& m);
 
-    void look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up);
+    void look_at(const Domain::Vec3d& eye, const Domain::Vec3d& center, const Domain::Vec3d& up);
 
     const Transform& projection() const { return m_projection; }
     void set_projection(const Transform& m);
@@ -142,11 +143,11 @@ public:
 
     Transform view() const { return m_model.inverse(); }
 
-    Vec3d position() const { return m_model.block<3, 1>(0, 3); }
+    Domain::Vec3d position() const { return m_model.block<3, 1>(0, 3); }
 
-    Vec3d forward() const { return -m_model.block<3, 1>(0, 2); }
-    Vec3d right() const { return m_model.block<3, 1>(0, 0); }
-    Vec3d up() const { return m_model.block<3, 1>(0, 1); }
+    Domain::Vec3d forward() const { return -m_model.block<3, 1>(0, 2); }
+    Domain::Vec3d right() const { return m_model.block<3, 1>(0, 0); }
+    Domain::Vec3d up() const { return m_model.block<3, 1>(0, 1); }
 
     void set_viewport(const Render::Rect& viewport);
     const Render::Rect& viewport() const { return m_viewport; }
@@ -156,7 +157,7 @@ public:
     double zoom() const { return m_zoom; }
 
     Ray ray_at(double screen_x, double screen_y) const;
-    Vec3d unproject(const Vec3d& win_pos) const;
+    Domain::Vec3d unproject(const Domain::Vec3d& win_pos) const;
 
     const AbstractCameraProjection& cam_projection() const { return *m_projection_getter; }
     AbstractCameraProjection& cam_projection() { return *m_projection_getter; }

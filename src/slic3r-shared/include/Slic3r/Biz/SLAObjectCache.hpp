@@ -4,7 +4,6 @@
 #include <functional>
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
-#include "libslic3r/SLA/SLAResult.hpp" // Sla::Instance
 
 namespace Slic3r::Biz {
 

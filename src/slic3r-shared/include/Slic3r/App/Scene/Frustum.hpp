@@ -30,7 +30,7 @@ public:
      * @param radius The radius of the sphere to test
      * @return True if this frustum and the given sphere interect
      */
-    bool intersects(const Vec3d& center, double radius) const;
+    bool intersects(const Domain::Vec3d& center, double radius) const;
 
     /**
      * @brief Create frustum from a rectangle on screen
@@ -54,7 +54,7 @@ public:
     static Frustum from(const Camera& camera, const Render::ScreenInfo& screen_info);
 
 private:
-    std::vector<Vec3d> m_vertices;
+    std::vector<Domain::Vec3d> m_vertices;
     std::vector<Plane> m_planes;
 };
 

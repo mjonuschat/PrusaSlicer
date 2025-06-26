@@ -14,6 +14,7 @@
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/BedRef.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::Domain { class Bed; }
 
@@ -111,7 +112,7 @@ class SceneInteractor final :
     >
 {
 public:
-    using Transform = Matrix4d;
+    using Transform = Domain::SquareMatrix4d;
 
     explicit SceneInteractor(Domain::Workbench& workbench) : m_workbench(workbench) {}
 
@@ -119,7 +120,7 @@ public:
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id) override;
 
     void new_object_from_mesh(Domain::TriangleMesh&& mesh);
-    void add_volume_from_mesh(Domain::TriangleMesh&& mesh, Domain::ModelVolumeType volume_type, const Transform& xform = Matrix4d::Identity());
+    void add_volume_from_mesh(Domain::TriangleMesh&& mesh, Domain::ModelVolumeType volume_type, const Transform& xform = Domain::SquareMatrix4d::Identity());
     void add_instance(const Transform& xform);
     void notify_listener_on_objects(const std::vector<Domain::ModelObject*>& objects);
     void notify_listener_on_objects();

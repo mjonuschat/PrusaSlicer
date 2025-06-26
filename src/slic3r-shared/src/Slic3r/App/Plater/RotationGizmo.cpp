@@ -5,20 +5,33 @@
 #include "Slic3r/App/Render/Device.hpp"
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Domain/Axis.hpp"
 #include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
-namespace Slic3r::App::Plater {
+#include "Slic3r/Math.hpp"
+
+#include <numbers>
+
 using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::X;
+using Slic3r::Domain::Y;
+
+using Slic3r::Biz::Algorithms::Point::to_2d;
+
+namespace Slic3r::App::Plater {
 
 namespace {
 
-constexpr double HALF_PI = 0.5 * PI;
-constexpr double TWO_PI = 2.0 * PI;
+constexpr double HALF_PI = 0.5 * std::numbers::pi;
+constexpr double TWO_PI = 2.0 * std::numbers::pi;
 constexpr double CIRCLE_RADIUS = 30.0;
 constexpr double CIRCLE_DIAMETER = 2.0 * CIRCLE_RADIUS;
 static const Vec3d HANDLE_CUBE_SIZE = { 10.0, 10.0, 10.0 };
@@ -85,9 +98,9 @@ static Vec3d mouse_position_in_local_plane(AxisType axis, const Transform3d& ori
     m.translate(-center);
 
     const Domain::Line3d local_mouse_ray = Biz::Algorithms::Line::transformed(mouse_ray, m);
-    if (std::abs(local_mouse_ray.vector().dot(Vec3d::UnitZ())) < EPSILON) {
+    if (std::abs(local_mouse_ray.vector().dot(Vec3d::UnitZ())) < Domain::EPSILON) {
         // if the ray is parallel to the plane containing the circle
-        if (std::abs(local_mouse_ray.vector().dot(Vec3d::UnitY())) > 1.0 - EPSILON)
+        if (std::abs(local_mouse_ray.vector().dot(Vec3d::UnitY())) > 1.0 - Domain::EPSILON)
             // if the ray is parallel to handle direction
             return Vec3d::UnitX();
         else {

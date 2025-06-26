@@ -1,15 +1,30 @@
 #include "Slic3r/App/Scene/BedRenderHelper.hpp"
-#include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/App/Render/Context.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
-
-#include <libslic3r/ClipperUtils.hpp>
-#include <libslic3r/Utils.hpp>
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/Bed.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Line.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <Slic3r/Log.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
+
+constexpr auto SCALED_EPSILON = Slic3r::Biz::Algorithms::Scaling::scaled(Slic3r::Domain::EPSILON);
+
+using Slic3r::Domain::BoundingBox2crd;
+using Slic3r::Domain::ExPolygon;
+using Slic3r::Domain::Line;
+using Slic3r::Domain::Lines;
+using Slic3r::Domain::Polyline;
+using Slic3r::Domain::Polylines;
+using Slic3r::Domain::Vec3f;
 
 using namespace Slic3r::Biz;
 
@@ -38,7 +53,7 @@ std::vector<Vec3f> BedRenderHelper::plate_grid(const Domain::Bed& bed)
     std::vector<Vec3f> ret;
 
     ExPolygon contour = ExPolygon(Algorithms::Polygon::scaled(bed.contour()));
-    BoundingBox bbox = Algorithms::Polygon::get_bounding_box(contour.contour);
+    BoundingBox2crd bbox = Algorithms::Polygon::get_extents(contour.contour);
     if (!bbox.defined) {
         SPDLOG_ERROR("Invalid bed contour");
         return ret;
@@ -54,15 +69,15 @@ std::vector<Vec3f> BedRenderHelper::plate_grid(const Domain::Bed& bed)
     }
     
     // clip with a slightly grown expolygon because our lines lay on the contours and may get erroneously clipped
-    Lines lines = Algorithms::Polyline::to_lines(intersection_pl(gridlines, offset(contour, float(SCALED_EPSILON))));
+    Lines lines = Algorithms::Polyline::to_lines(Algorithms::ClipperUtils::intersection_pl(gridlines, Algorithms::ClipperUtils::offset(contour, float(SCALED_EPSILON))));
     // append bed contours
     Lines contour_lines = Algorithms::ExPolygon::to_lines(contour);
     std::copy(contour_lines.begin(), contour_lines.end(), std::back_inserter(lines));
 
     ret.reserve(2 * lines.size());
-    for (const Slic3r::Line& l : lines) {
-        ret.emplace_back(to_3d(unscale(l.a), 0.0).cast<float>());
-        ret.emplace_back(to_3d(unscale(l.b), 0.0).cast<float>());
+    for (const Line& l : lines) {
+        ret.emplace_back(Algorithms::Point::to_3d(Algorithms::Scaling::unscaled(l.a), 0.0).cast<float>());
+        ret.emplace_back(Algorithms::Point::to_3d(Algorithms::Scaling::unscaled(l.b), 0.0).cast<float>());
     }
     return ret;
 }

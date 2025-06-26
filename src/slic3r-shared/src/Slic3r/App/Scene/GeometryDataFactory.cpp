@@ -2,6 +2,11 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include <numbers>
+
+using Slic3r::Domain::Vec3f;
 
 namespace Slic3r::App::Scene {
 
@@ -9,13 +14,13 @@ namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
 namespace {
 
-constexpr double TWO_PI = 2.0 * PI;
-constexpr double HALF_PI = 0.5 * PI;
+constexpr double TWO_PI = 2.0 * std::numbers::pi;
+constexpr double HALF_PI = 0.5 * std::numbers::pi;
 
 constexpr double AXIS_LINE_LENGTH = 30.0;
 constexpr double CONE_RADIUS = 5.0;
 constexpr double CONE_HEIGHT = 10.0;
-constexpr double ANGLE_STEP = 2 * PI / 32; // 32 steps in full circle
+constexpr double ANGLE_STEP = 2 * std::numbers::pi / 32; // 32 steps in full circle
 
 constexpr uint8_t CIRCLE_RES = 64; // 64 steps in full circle
 constexpr float CIRCLE_ANGLE_STEP = float(TWO_PI) / CIRCLE_RES;

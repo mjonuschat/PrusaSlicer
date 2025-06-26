@@ -2,21 +2,23 @@
 #include <regex>
 #include <vector>
 
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
-#include <libslic3r/Point.hpp>
-#include <libslic3r/BoundingBox.hpp>
-#include <libslic3r/Model.hpp>
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Model.hpp"
 
+using namespace Slic3r;
 using namespace Slic3r::Biz;
 
 namespace {
 struct Extrusion {
-    Slic3r::Vec4d start;
-    Slic3r::Vec4d end;
+    Domain::Vec4d start;
+    Domain::Vec4d end;
 };
 
 std::vector<Extrusion> get_first_layer_extrusions(std::istream& gcode) {
-    Slic3r::Vec4d previous_point{Slic3r::Vec4d::Zero()};
+    Domain::Vec4d previous_point{Domain::Vec4d::Zero()};
 
     std::vector<Extrusion> result;
 
@@ -33,7 +35,7 @@ std::vector<Extrusion> get_first_layer_extrusions(std::istream& gcode) {
             continue;
         }
 
-        Slic3r::Vec4d current_point{previous_point};
+        Domain::Vec4d current_point{previous_point};
         for (auto it{begin}; it != end; ++it) {
             std::string value{(*it)[2]};
             if ((*it)[1] == "X") {
@@ -66,11 +68,11 @@ std::vector<Extrusion> get_first_layer_extrusions(std::istream& gcode) {
     throw std::runtime_error{"Did not find the end of the first layer!"};
 }
 
-bool is_within(const Extrusion &extrusion, const Slic3r::BoundingBoxf &bounding_box) {
-    if (!bounding_box.contains(extrusion.start.head<2>())) {
+bool is_within(const Extrusion &extrusion, const Domain::BoundingBox2d &bounding_box) {
+    if (!Algorithms::BoundingBox::contains(bounding_box, extrusion.start.head<2>())) {
         return false;
     }
-    if (!bounding_box.contains(extrusion.end.head<2>())) {
+    if (!Algorithms::BoundingBox::contains(bounding_box, extrusion.end.head<2>())) {
         return false;
     }
     return true;
@@ -78,7 +80,7 @@ bool is_within(const Extrusion &extrusion, const Slic3r::BoundingBoxf &bounding_
 
 std::optional<std::string> are_extrusions_within_bounds(
     const std::vector<Extrusion>& extrusions,
-    const std::vector<Slic3r::BoundingBoxf>& bounding_boxes
+    const std::vector<Domain::BoundingBox2d>& bounding_boxes
 ) {
     if (bounding_boxes.empty()) {
         return "No bounding boxes were provided. There might be a problem with the model.";
@@ -91,7 +93,7 @@ std::optional<std::string> are_extrusions_within_bounds(
     for (const Extrusion &extrusion : extrusions) {
         bool is_within_one{false};
         for (std::size_t i{}; i < bounding_boxes.size(); ++i) {
-            const Slic3r::BoundingBoxf& bounding_box{bounding_boxes[i]};
+            const Domain::BoundingBox2d& bounding_box{bounding_boxes[i]};
             if (is_within(extrusion, bounding_box)) {
                 is_within_one = true;
                 has_extrusions[i] = true;
@@ -120,9 +122,9 @@ std::optional<std::string> is_gcode_sane(const std::string& gcode, const Domain:
 
     std::stringstream buffer{gcode};
     const std::vector<Extrusion> extrusions{get_first_layer_extrusions(buffer)};
-    std::vector<Slic3r::BoundingBoxf> bounding_boxes;
+    std::vector<Domain::BoundingBox2d> bounding_boxes;
     for (const Domain::ModelObject* object : model.objects) {
-        bounding_boxes.push_back(Slic3r::BoundingBoxf{
+        bounding_boxes.push_back(Domain::BoundingBox2d{
             Algorithms::ModelObject::bounding_box_exact(*object).min.head<2>(),
             Algorithms::ModelObject::bounding_box_exact(*object).max.head<2>()
         });

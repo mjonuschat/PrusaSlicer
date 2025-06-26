@@ -11,6 +11,8 @@
 
 #include <boost/nowide/convert.hpp>
 
+#include "libslic3r/format.hpp"
+
 using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Biz;

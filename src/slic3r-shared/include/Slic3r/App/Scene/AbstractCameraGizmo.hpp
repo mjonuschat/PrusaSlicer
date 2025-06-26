@@ -5,6 +5,7 @@
 #include "Slic3r/App/Render/DynamicGeometry.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 
 #ifndef CAMERA_GIZMO_DEBUG
@@ -47,13 +48,13 @@ public:
     /**@}*/
 
 private:
-    void update_pan(const Vec3d& delta, bool synchronize_cam_pivot);
+    void update_pan(const Domain::Vec3d& delta, bool synchronize_cam_pivot);
     void update_rotation(float delta_x, float delta_y);
     void update_zoom(float wheel_delta_y);
 
-    void look_at(const Vec3d& pos, double azimuth, double zenith);
+    void look_at(const Domain::Vec3d& pos, double azimuth, double zenith);
 
-    bool pick_plane(double mouse_x, double mouse_y, const Render::ScreenInfo& screen_info, Vec3d& out_plane_point);
+    bool pick_plane(double mouse_x, double mouse_y, const Render::ScreenInfo& screen_info, Domain::Vec3d& out_plane_point);
 
 private:
     virtual bool any_draggable(GizmoEventContext& ctx) const = 0;
@@ -65,7 +66,7 @@ private:
     State m_state{State::Inactive};
     float m_last_x{0};
     float m_last_y{0};
-    Vec3d m_selected_bed_center{ Vec3d::Zero() };
+    Domain::Vec3d m_selected_bed_center{ Domain::Vec3d::Zero() };
 #if CAMERA_GIZMO_DEBUG
     Render::DynamicGeometry<Render::VertexP3> m_dynamic_geometry;
 #endif

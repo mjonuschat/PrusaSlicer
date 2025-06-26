@@ -3,7 +3,7 @@
 #include <Slic3r/Domain/Workbench.hpp>
 #include <Slic3r/Domain/Project.hpp>
 #include <Slic3r/Domain/Bed.hpp>
-#include <libslic3r/Model.hpp>
+#include "Slic3r/Domain/Model.hpp"
 
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
