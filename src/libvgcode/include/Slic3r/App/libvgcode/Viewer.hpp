@@ -7,7 +7,7 @@
 
 #include "Types.hpp"
 #include "ViewerInputData.hpp"
-#include "libslic3r/BoundingBox.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
 
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 

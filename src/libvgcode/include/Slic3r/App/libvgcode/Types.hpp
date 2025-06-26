@@ -9,7 +9,6 @@
 #include <Slic3r/App/Render/ImguiTypes.hpp>
 #include <Slic3r/Domain/Color.hpp>
 
-#include <libslic3r/format.hpp>
 #include <imgui.h>
 
 namespace Slic3r::App::libvgcode {

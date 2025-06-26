@@ -8,8 +8,10 @@
 #include "Slic3r/App/libvgcode/Utils.hpp"
 #include "Slic3r/App/libvgcode/FdmViewer.hpp"
 #include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 using Slic3r::Domain::ColorRGB;
+using Slic3r::Domain::Vec3f;
 
 using namespace Slic3r::Biz::libpgcode;
 

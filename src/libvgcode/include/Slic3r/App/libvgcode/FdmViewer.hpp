@@ -23,6 +23,8 @@
 #include <Slic3r/App/Render/Buffer.hpp>
 #include <Slic3r/App/Scene/AabbRaycastNodeComponent.hpp>
 
+#include "Slic3r/Domain/Types.hpp"
+
 #define USE_TEXTURE_BUFFER (1 && SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED)
 
 namespace Slic3r::App::libvgcode {
@@ -107,7 +109,7 @@ public:
 
     uint8_t extruders_count() const { return m_extruders_count; }
 
-    BoundingBoxf3 bounding_box(const Biz::libpgcode::MoveTypes& types = {
+    Domain::BoundingBox3d bounding_box(const Biz::libpgcode::MoveTypes& types = {
         Biz::libpgcode::MoveType::Retract,
         Biz::libpgcode::MoveType::Unretract,
         Biz::libpgcode::MoveType::Seam,
@@ -118,7 +120,7 @@ public:
         Biz::libpgcode::MoveType::Travel,
         Biz::libpgcode::MoveType::Wipe,
         Biz::libpgcode::MoveType::Extrude }) const;
-    BoundingBoxf3 extrusion_bounding_box(const Biz::libpgcode::GCodeExtrusionRoles& roles = {
+    Domain::BoundingBox3d extrusion_bounding_box(const Biz::libpgcode::GCodeExtrusionRoles& roles = {
         Domain::GCodeExtrusionRole::Perimeter,
         Domain::GCodeExtrusionRole::ExternalPerimeter,
         Domain::GCodeExtrusionRole::OverhangPerimeter,
@@ -203,7 +205,7 @@ public:
     float wipes_radius() const { return m_wipes_radius; }
     void set_wipes_radius(float radius);
 
-    Vec3f cog_marker_position() const { return m_cog_marker.position(); }
+    Domain::Vec3f cog_marker_position() const { return m_cog_marker.position(); }
     float cog_marker_scale_factor() const { return m_cog_marker.scale_factor(); }
     void set_cog_marker_scale_factor(float factor) { m_cog_marker.set_scale_factor(factor); }
 
@@ -217,7 +219,7 @@ public:
     void set_tool_marker_color(const Domain::ColorRGB& color) { m_tool_marker.set_color(color); }
     float tool_marker_alpha() const { return m_tool_marker.alpha(); }
     void set_tool_marker_alpha(float alpha) { m_tool_marker.set_alpha(alpha); }
-    BoundingBoxf3 tool_marker_bounding_box() const;
+    Domain::BoundingBox3d tool_marker_bounding_box() const;
 
     bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params) const;
     bool has_gcode_events_to_show() const;
@@ -394,7 +396,7 @@ private:
     void update_view_full_range() override;
     void update_color_ranges();
     void update_heights_widths();
-    void render_segments(const Vec3f& camera_position);
+    void render_segments(const Domain::Vec3f& camera_position);
     void render_options();
     void render_cog_marker();
     void render_tool_marker();

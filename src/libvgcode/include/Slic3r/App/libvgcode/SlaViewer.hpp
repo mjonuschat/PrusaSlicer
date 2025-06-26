@@ -64,7 +64,7 @@ private:
     size_t m_enabled_segments_count{ 0 };
 
     void update_view_full_range() override;
-    void render_segments(const Vec3f& camera_position);
+    void render_segments(const Domain::Vec3f& camera_position);
 };
 
 } // namespace Slic3r::App::libvgcode

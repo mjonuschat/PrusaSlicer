@@ -8,7 +8,7 @@
 #include "Slic3r/App/libvgcode/Types.hpp"
 #include "Slic3r/Domain/Color.hpp"
 
-#include "libslic3r/BoundingBox.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
 
 #include <cfloat>
 
@@ -58,14 +58,14 @@ public:
     float scale_factor() const { return m_scale_factor; }
     void set_scale_factor(float factor) { m_scale_factor = std::max(factor, 0.001f); }
 
-    const BoundingBoxf3& bounding_box() const { return m_bounding_box; }
+    const Domain::BoundingBox3d& bounding_box() const { return m_bounding_box; }
 
 private:
     bool m_enabled{ false };
     float m_offset_z{ 0.5f };
     Domain::ColorRGB m_color{ Domain::ColorRGB::WHITE() };
     float m_alpha{ 0.5f };
-    BoundingBoxf3 m_bounding_box;
+    Domain::BoundingBox3d m_bounding_box;
     float m_scale_factor{ DefaultScaleFactor };
     static constexpr float DefaultScaleFactor = 1.0f;
 };

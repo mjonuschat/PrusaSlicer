@@ -13,7 +13,11 @@
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include <Slic3r/App/Preview/PreviewSceneLayer.hpp>
 
-#include <assert.h>
+#include <Slic3r/Domain/Types.hpp>
+
+#include <cassert>
+
+using Slic3r::Domain::Vec3f;
 
 namespace Slic3r::App::libvgcode {
 

@@ -21,6 +21,7 @@
 #include <Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp>
 #include <Slic3r/App/Scene/LightingHelper.hpp>
 #include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Domain/Color.hpp"
 
 #include <map>
@@ -32,10 +33,14 @@
 #include <cmath>
 #include <numeric>
 
+using namespace Slic3r::Biz;
 using namespace Slic3r::Biz::libpgcode;
+using Slic3r::Domain::BoundingBox3d;
 using Slic3r::Domain::ColorRGB;
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec3f;
+using Slic3r::Domain::Vec4f;
 using Slic3r::Domain::GCodeExtrusionRole;
 
 using Slic3r::Biz::Algorithms::Color::to_rgba;
@@ -663,8 +668,8 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data)
     update_enabled_entities();
     update_colors();
 
-    BoundingBoxf3 bbox = bounding_box();
-    Vec3d bbox_size = bbox.size();
+    BoundingBox3d bbox = bounding_box();
+    Vec3d bbox_size = Algorithms::BoundingBox::sizes(bbox);
     m_aabb.first = Biz::Algorithms::TriangleMesh::make_cube(bbox_size.x(), bbox_size.y(), bbox_size.z());
     m_aabb.first.translate(bbox.min.cast<float>());
     m_aabb.second = AABBMesh(m_aabb.first);
@@ -1008,22 +1013,22 @@ void FdmViewer::toggle_top_layer_only_view_range()
     update_colors_texture();
 }
 
-BoundingBoxf3 FdmViewer::bounding_box(const MoveTypes& types) const
+BoundingBox3d FdmViewer::bounding_box(const MoveTypes& types) const
 {
-    BoundingBoxf3 ret;
+    BoundingBox3d ret;
     for (const MoveVertex& v : *m_vertices) {
         if (std::find(types.begin(), types.end(), v.type) != types.end())
-            ret.merge(v.position.cast<double>());
+            ret = Algorithms::BoundingBox::merge(ret, v.position.cast<double>());
     }
     return ret;
 }
 
-BoundingBoxf3 FdmViewer::extrusion_bounding_box(const GCodeExtrusionRoles& roles) const
+BoundingBox3d FdmViewer::extrusion_bounding_box(const GCodeExtrusionRoles& roles) const
 {
-    BoundingBoxf3 ret;
+    BoundingBox3d ret;
     for (const MoveVertex& v : *m_vertices) {
         if (v.is_extrusion() && std::find(roles.begin(), roles.end(), v.extrusion_role) != roles.end())
-            ret.merge(v.position.cast<double>());
+            ret = Algorithms::BoundingBox::merge(ret, v.position.cast<double>());
     }
     return ret;
 }
@@ -1341,13 +1346,11 @@ static bool is_visible(const MoveVertex& v, const Settings& settings)
     }
 }
 
-BoundingBoxf3 FdmViewer::tool_marker_bounding_box() const
+BoundingBox3d FdmViewer::tool_marker_bounding_box() const
 {
-    BoundingBoxf3 ret = m_tool_marker.bounding_box();
     const Vec3f& position = current_vertex().position;
     Vec3f offset = { position.x(), position.y(), position.z() + m_tool_marker.offset_z()};
-    ret.merge(offset.cast<double>());
-    return ret;
+    return Algorithms::BoundingBox::merge(m_tool_marker.bounding_box(), offset.cast<double>());
 }
 
 bool FdmViewer::export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params) const

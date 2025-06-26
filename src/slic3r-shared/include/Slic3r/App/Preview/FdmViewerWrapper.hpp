@@ -3,10 +3,10 @@
 #include "AbstractViewerWrapper.hpp"
 #include "Types.hpp"
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
-#include "libslic3r/BoundingBox.hpp"
 
 #include <Slic3r/App/libvgcode/FdmViewerInputData.hpp>
 #include <Slic3r/App/libvgcode/FdmViewer.hpp>
+#include <Slic3r/Domain/BoundingBox.hpp>
 #include <Slic3r/Domain/Color.hpp>
 
 #include "FdmViewerWrapperInputData.hpp"
@@ -92,7 +92,7 @@ public:
     libvgcode::ViewType view_type() const { return m_viewer.view_type(); }
     void set_view_type(libvgcode::ViewType type) { m_viewer.set_view_type(type); }
 
-    BoundingBoxf3 bounding_box(const Biz::libpgcode::MoveTypes& types = {
+    Domain::BoundingBox3d bounding_box(const Biz::libpgcode::MoveTypes& types = {
         Biz::libpgcode::MoveType::Retract,
         Biz::libpgcode::MoveType::Unretract,
         Biz::libpgcode::MoveType::Seam,

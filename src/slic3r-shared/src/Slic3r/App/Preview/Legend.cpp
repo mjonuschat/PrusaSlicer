@@ -7,6 +7,8 @@
 #include <Slic3r/App/libvgcode/FdmViewer.hpp>
 #include <Slic3r/App/libvgcode/ColorRange.hpp>
 
+#include "libslic3r/format.hpp"
+
 #include <boost/nowide/convert.hpp>
 
 using namespace Slic3r::App::libvgcode;
