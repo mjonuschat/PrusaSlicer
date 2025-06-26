@@ -11,6 +11,11 @@
 #include <cereal/types/vector.hpp> 
 #include <cereal/archives/binary.hpp>
 
+#include "Slic3r/Biz/Algorithms/Types.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+using Slic3r::Domain::Vec2d;
+
 using namespace Slic3r;
 
 TEST_CASE("Dynamic config serialization - tests ConfigBase", "[Config]"){

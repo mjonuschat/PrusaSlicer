@@ -82,9 +82,9 @@ struct GetNLoptAlg_<NLoptAlgComb<g, l>> {
     static constexpr bool IsAUGLAG = false;
 };
 
-template<class M> constexpr nlopt_algorithm GetNLoptAlg_Global = GetNLoptAlg_<remove_cvref_t<M>>::Global;
-template<class M> constexpr nlopt_algorithm GetNLoptAlg_Local = GetNLoptAlg_<remove_cvref_t<M>>::Local;
-template<class M> constexpr bool IsAUGLAG = GetNLoptAlg_<remove_cvref_t<M>>::IsAUGLAG;
+template<class M> constexpr nlopt_algorithm GetNLoptAlg_Global = GetNLoptAlg_<std::remove_cvref_t<M>>::Global;
+template<class M> constexpr nlopt_algorithm GetNLoptAlg_Local = GetNLoptAlg_<std::remove_cvref_t<M>>::Local;
+template<class M> constexpr bool IsAUGLAG = GetNLoptAlg_<std::remove_cvref_t<M>>::IsAUGLAG;
 
 template<class M> struct GetNLoptAlg_<NLoptAUGLAG<M>> {
     static constexpr nlopt_algorithm Local = GetNLoptAlg_Local<M>;
@@ -316,10 +316,10 @@ template<class Alg> struct AlgFeatures_ {
 } // namespace detail;
 
 template<class Alg> constexpr bool SupportsEqualities =
-    detail::AlgFeatures_<remove_cvref_t<Alg>>::SupportsEqualities;
+    detail::AlgFeatures_<std::remove_cvref_t<Alg>>::SupportsEqualities;
 
 template<class Alg> constexpr bool SupportsInequalities =
-    detail::AlgFeatures_<remove_cvref_t<Alg>>::SupportsInequalities;
+    detail::AlgFeatures_<std::remove_cvref_t<Alg>>::SupportsInequalities;
 
 // Optimizers based on NLopt.
 template<class M> class Optimizer<M, detail::NLoptOnly<M>> {

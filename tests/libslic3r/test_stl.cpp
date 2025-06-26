@@ -1,7 +1,14 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "libslic3r/Model.hpp"
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "libslic3r/Format/STL.hpp"
+
+using Slic3r::Domain::Vec3d;
+
+using Slic3r::Domain::is_approx;
 
 using namespace Slic3r;
 

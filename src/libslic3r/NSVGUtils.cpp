@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "NSVGUtils.hpp"
+#include "libslic3r/NSVGUtils.hpp"
 
 #include <boost/nowide/fstream.hpp>
 #include <nanosvg/nanosvg.h>
@@ -13,7 +13,7 @@
 #include <cstring>
 
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
-#include "Emboss.hpp" // heal for shape
+#include "libslic3r/Emboss.hpp" // heal for shape
 #include "libslic3r/ClipperUtils.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
 #include "Slic3r/Exception.hpp"

@@ -3,17 +3,17 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "SLAPrint.hpp"
-#include "SLAPrintSteps.hpp" // IWYU pragma: keep
-#include "CSGMesh/CSGMeshCopy.hpp"
-#include "CSGMesh/PerformCSGMeshBooleans.hpp"
-#include "format.hpp"
-#include "StaticMap.hpp"
+#include "libslic3r/SLAPrint.hpp"
+#include "libslic3r/SLAPrintSteps.hpp" // IWYU pragma: keep
+#include "libslic3r/CSGMesh/CSGMeshCopy.hpp"
+#include "libslic3r/CSGMesh/PerformCSGMeshBooleans.hpp"
+#include "libslic3r/format.hpp"
+#include "libslic3r/StaticMap.hpp"
 
-#include "Format/SLAArchiveFormatRegistry.hpp"
+#include "libslic3r/Format/SLAArchiveFormatRegistry.hpp"
 
 #include "Geometry.hpp"
-#include "Thread.hpp"
+#include "libslic3r/Thread.hpp"
 
 #include <unordered_set>
 #include <numeric>
@@ -24,6 +24,7 @@
 
 #include "libslic3r/ConfigPackUtils.hpp"
 #include "libslic3r/MultipleBeds.hpp"
+#include "libslic3r/ModelUtils.hpp"
 #include "libslic3r/Utils.hpp"
 
 #include <libslic3r/SLA/SLAResult.hpp>
@@ -32,13 +33,15 @@
 #include <boost/algorithm/string.hpp>
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 
+#include "libslic3r/ModelUtils.hpp"
+
 // #define SLAPRINT_DO_BENCHMARK
 
 #ifdef SLAPRINT_DO_BENCHMARK
 #include <libnest2d/tools/benchmark.h>
 #endif
 
-#include "I18N.hpp"
+#include "libslic3r/I18N.hpp"
 
 //! macro used to mark string used at localization,
 //! return same string

@@ -1,19 +1,28 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "libslic3r/Model.hpp"
+#include "libslic3r/Config.hpp"
 #include "libslic3r/Format/STL.hpp"
 
 #include <boost/filesystem/operations.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "Slic3r/Domain/Axis.hpp"
 #include "Slic3r/Domain/OnBeds.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 
+#include "Slic3r/Math.hpp"
+
 using namespace Slic3r;
-using Domain::Transformation;
+using Slic3r::Domain::Point;
+using Slic3r::Domain::Points;
+using Slic3r::Domain::Transformation;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::X;
 
 using Biz::Algorithms::Model::mesh;
 using Biz::Algorithms::ModelObject::center_around_origin;

@@ -16,12 +16,12 @@
 #include <cinttypes>
 #include <cstddef>
 
-#include "ExtrusionJunction.hpp"
-#include "../../Polyline.hpp"
-#include "../../Polygon.hpp"
-#include "../../BoundingBox.hpp"
-#include "../../ExtrusionEntity.hpp"
-#include "../../Flow.hpp"
+#include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
+#include "libslic3r/Polyline.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/Flow.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
 #include "libslic3r/Point.hpp"
 

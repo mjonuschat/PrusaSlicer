@@ -29,9 +29,9 @@
 #include <cstddef>
 
 #include "TreeSupportCommon.hpp"
-#include "../Point.hpp"
-#include "../Polygon.hpp"
-#include "../PrintConfig.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r

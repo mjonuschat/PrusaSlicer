@@ -16,7 +16,7 @@
 #include <boost/system/error_code.hpp>
 #include "Slic3r/Utils.hpp"
 
-#include "libslic3r.h"
+#include <optional>
 
 namespace boost { namespace filesystem { class directory_entry; }}
 

@@ -52,7 +52,7 @@ using namespace Slic3r;
 #include "ExPolygonsIndex.hpp"
 // libslic3r
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp" // its_merge
-#include "Utils.hpp" // next_highest_power_of_2
+#include "libslic3r/Utils.hpp" // next_highest_power_of_2
 #include "admesh/stl.h"
 #include "libslic3r/AABBTreeIndirect.hpp"
 #include "libslic3r/ClipperUtils.hpp"

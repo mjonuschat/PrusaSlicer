@@ -5,12 +5,12 @@
 #ifndef CSGMESH_HPP
 #define CSGMESH_HPP
 
-#include "libslic3r/Point.hpp"
-
-#include <libslic3r/AnyPtr.hpp>
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
-namespace Slic3r { namespace csg {
+#include "libslic3r/AnyPtr.hpp"
+
+namespace Slic3r::csg {
 
 // A CSGPartT should be an object that can provide at least a mesh + trafo and an
 // associated csg operation. A collection of CSGPartT objects can then
@@ -65,7 +65,7 @@ const indexed_triangle_set *get_mesh(const CSGPartT &part)
 // Get the transformation associated with the mesh inside a CSGPartT object.
 // Can be overriden for any type.
 template<class CSGPartT>
-Transform3f get_transform(const CSGPartT &part)
+Domain::Transform3f get_transform(const CSGPartT &part)
 {
     return part.trafo;
 }
@@ -73,13 +73,13 @@ Transform3f get_transform(const CSGPartT &part)
 // Default implementation
 struct CSGPart {
     AnyPtr<const indexed_triangle_set> its_ptr;
-    Transform3f trafo;
+    Domain::Transform3f trafo;
     CSGType operation;
     CSGStackOp stack_operation;
 
     CSGPart(AnyPtr<const indexed_triangle_set> ptr = {},
             CSGType                            op  = CSGType::Union,
-            const Transform3f                 &tr  = Transform3f::Identity())
+            const Domain::Transform3f         &tr  = Domain::Transform3f::Identity())
         : its_ptr{std::move(ptr)}
         , operation{op}
         , stack_operation{CSGStackOp::Continue}
@@ -119,6 +119,6 @@ indexed_triangle_set csgmesh_merge_positive_parts(const Cont &csgmesh)
     return m;
 }
 
-}} // namespace Slic3r::csg
+} // namespace Slic3r::csg
 
 #endif // CSGMESH_HPP

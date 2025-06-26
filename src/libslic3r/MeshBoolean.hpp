@@ -13,11 +13,8 @@
 #include <vector>
 
 #include "admesh/stl.h"
-#include "libslic3r/Point.hpp"
 
-namespace Slic3r {
-
-namespace MeshBoolean {
+namespace Slic3r::MeshBoolean {
 
 using EigenMesh = std::pair<Eigen::MatrixXd, Eigen::MatrixXi>;
 
@@ -74,8 +71,8 @@ bool does_self_intersect(const CGALMesh &mesh);
 bool does_bound_a_volume(const CGALMesh &mesh);
 bool empty(const CGALMesh &mesh);
 
-}
+} // namespace cgal
 
-} // namespace MeshBoolean
-} // namespace Slic3r
+} // namespace Slic3r::MeshBoolean
+
 #endif // libslic3r_MeshBoolean_hpp_

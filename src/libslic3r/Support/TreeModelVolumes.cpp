@@ -27,12 +27,12 @@
 #include <string_view>
 
 #include "TreeSupportCommon.hpp"
-#include "../BuildVolume.hpp"
-#include "../Layer.hpp"
-#include "../Point.hpp"
-#include "../Print.hpp"
-#include "../Utils.hpp"
-#include "../format.hpp"
+#include "libslic3r/BuildVolume.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/Utils.hpp"
+#include "libslic3r/format.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Polygon.hpp"

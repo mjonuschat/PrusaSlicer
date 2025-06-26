@@ -1,5 +1,6 @@
 #include "PrintRequest.hpp"
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/nowide/fstream.hpp>
 #include <boost/log/trivial.hpp>
@@ -7,11 +8,11 @@
 #include <boost/filesystem.hpp>
 #include <fast_float.h>
 
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Exception.hpp"
-#include "libslic3r/Model.hpp"
-#include "libslic3r/Format/STL.hpp"
 
-//#include "slic3r/GUI/format.hpp"
+#include "libslic3r/Format/STL.hpp"
 
 namespace Slic3r {
 namespace pt = boost::property_tree;
@@ -69,11 +70,11 @@ void add_instance(Domain::Model* model, const boost::filesystem::path& model_pat
 			return ret_val;
 		};
 
-		Vec3d offset_vector;
-		Slic3r::Transform3d matrix;
+		Domain::Vec3d offset_vector;
+        Domain::Transform3d matrix;
 		try
 		{
-			offset_vector = Slic3r::Vec3d(string_to_double(transformation_matrix[3]), string_to_double(transformation_matrix[7]), string_to_double(transformation_matrix[11]));
+			offset_vector = Domain::Vec3d(string_to_double(transformation_matrix[3]), string_to_double(transformation_matrix[7]), string_to_double(transformation_matrix[11]));
 			// PrintRequest is row-major 4x4, Slic3r::Transform3d (Eigen) is column-major by default 3x3
 			matrix(0, 0) = string_to_double(transformation_matrix[0]);
 			matrix(1, 0) = string_to_double(transformation_matrix[1]);

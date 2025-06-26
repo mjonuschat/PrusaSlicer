@@ -18,7 +18,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Config.hpp"
+#include "libslic3r/Config.hpp"
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -41,8 +41,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "format.hpp"
-#include "Utils.hpp"
+#include "libslic3r/format.hpp"
+#include "libslic3r/Utils.hpp"
 #include "LocalesUtils.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Point.hpp"

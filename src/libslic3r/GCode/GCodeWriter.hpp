@@ -19,12 +19,11 @@
 #include <vector>
 #include <cstring>
 
-#include "libslic3r/libslic3r.h"
-#include "libslic3r/Extruder.hpp"
-#include "libslic3r/Point.hpp"
-#include "libslic3r/PrintConfig.hpp"
-#include "CoolingBuffer.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Domain/GCodeFlavor.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include "libslic3r/Extruder.hpp"
 
 namespace Slic3r {
 
@@ -89,11 +88,11 @@ public:
      * @param to Where to travel to.
      * @param comment Description of the travel purpose.
      */
-    std::string travel_to_xyz(const Vec3d &to, const std::string_view comment = {});
-    std::string travel_to_xy(const Vec2d &point, const std::string_view comment = {});
+    std::string travel_to_xyz(const Domain::Vec3d &to, const std::string_view comment = {});
+    std::string travel_to_xy(const Domain::Vec2d &point, const std::string_view comment = {});
     std::string travel_to_z(double z, const std::string_view comment = {});
 
-    std::string travel_to_xy_G2G3IJ(const Vec2d &point, const Vec2d &ij, const bool ccw, const std::string_view comment = {});
+    std::string travel_to_xy_G2G3IJ(const Domain::Vec2d &point, const Domain::Vec2d &ij, const bool ccw, const std::string_view comment = {});
 
     /**
      * @brief Generate G-Code to travel to the specified point unconditionally.
@@ -103,8 +102,8 @@ public:
      * @param to The point to travel to.
      * @param comment Description of the travel purpose.
      */
-    std::string travel_to_xyz_force(const Vec3d &to, const std::string_view comment = {});
-    std::string travel_to_xy_force(const Vec2d &point, const std::string_view comment = {});
+    std::string travel_to_xyz_force(const Domain::Vec3d &to, const std::string_view comment = {});
+    std::string travel_to_xy_force(const Domain::Vec2d &point, const std::string_view comment = {});
     std::string travel_to_z_force(double z, const std::string_view comment = {});
 
     /**
@@ -115,10 +114,10 @@ public:
      * @param dE The E-steps to extrude while moving.
      * @param comment Description of the movement purpose.
      */
-    std::string extrude_to_xy(const Vec2d &point, double dE, const std::string_view comment = {});
-    std::string extrude_to_xyz(const Vec3d &point, double dE, const std::string_view comment = {});
+    std::string extrude_to_xy(const Domain::Vec2d &point, double dE, const std::string_view comment = {});
+    std::string extrude_to_xyz(const Domain::Vec3d &point, double dE, const std::string_view comment = {});
 
-    std::string extrude_to_xy_G2G3IJ(const Vec2d &point, const Vec2d &ij, const bool ccw, double dE, const std::string_view comment);
+    std::string extrude_to_xy_G2G3IJ(const Domain::Vec2d &point, const Domain::Vec2d &ij, const bool ccw, double dE, const std::string_view comment);
 
     std::string retract(bool before_wipe = false);
     std::string retract_for_toolchange(bool before_wipe = false);
@@ -127,20 +126,20 @@ public:
     // Current position of the printer, in G-code coordinates.
     // Z coordinate of current position contains zhop. If zhop is applied (this->zhop() > 0),
     // then the print_z = this->get_position().z() - this->zhop().
-    Vec3d       get_position() const { return m_pos; }
+    Domain::Vec3d get_position() const { return m_pos; }
     // Zhop value is obsolete. This is for backwards compability.
     double      get_zhop() const { return 0; }
     // Update position of the print head based on the final position returned by a custom G-code block.
     // The new position Z coordinate contains the Z-hop.
     // GCodeWriter expects the custom script to NOT change print_z, only Z-hop, thus the print_z is maintained
     // by this function while the current Z-hop accumulator is updated.
-    void        update_position(const Vec3d &new_pos);
+    void        update_position(const Domain::Vec3d &new_pos);
 
     // Returns whether this flavor supports separate print and travel acceleration.
-    static bool supports_separate_travel_acceleration(GCodeFlavor flavor);
+    static bool supports_separate_travel_acceleration(Domain::GCodeFlavor flavor);
 
     // To be called by the CoolingBuffer from another thread.
-    static std::string set_fan(const GCodeFlavor gcode_flavor, bool gcode_comments, unsigned int speed);
+    static std::string set_fan(const Domain::GCodeFlavor gcode_flavor, bool gcode_comments, unsigned int speed);
     // To be called by the main thread. It always emits the G-code, it does not remember the previous state.
     // Keeping the state is left to the CoolingBuffer, which runs asynchronously on another thread.
     std::string set_fan(unsigned int speed) const;
@@ -160,7 +159,7 @@ private:
 
     unsigned int    m_last_bed_temperature;
     bool            m_last_bed_temperature_reached;
-    Vec3d           m_pos = Vec3d::Zero();
+    Domain::Vec3d   m_pos = Domain::Vec3d::Zero();
 
     enum class Acceleration {
         Travel,
@@ -208,21 +207,21 @@ public:
     static double                                 quantize(double v, size_t ndigits) { return std::round(v * pow_10[ndigits]) * pow_10_inv[ndigits]; }
     static double                                 quantize_xyzf(double v) { return quantize(v, XYZF_EXPORT_DIGITS); }
     static double                                 quantize_e(double v) { return quantize(v, E_EXPORT_DIGITS); }
-    static Vec2d                                  quantize(const Vec2d &pt)
+    static Domain::Vec2d                          quantize(const Domain::Vec2d &pt)
         { return { quantize(pt.x(), XYZF_EXPORT_DIGITS), quantize(pt.y(), XYZF_EXPORT_DIGITS) }; }
-    static Vec3d                                  quantize(const Vec3d &pt)
+    static Domain::Vec3d                          quantize(const Domain::Vec3d &pt)
         { return { quantize(pt.x(), XYZF_EXPORT_DIGITS), quantize(pt.y(), XYZF_EXPORT_DIGITS), quantize(pt.z(), XYZF_EXPORT_DIGITS) }; }
-    static Vec2d                                  quantize(const Vec2f &pt)
+    static Domain::Vec2d                          quantize(const Domain::Vec2f &pt)
         { return { quantize(double(pt.x()), XYZF_EXPORT_DIGITS), quantize(double(pt.y()), XYZF_EXPORT_DIGITS) }; }
 
     void emit_axis(const char axis, const double v, size_t digits);
 
-    void emit_xy(const Vec2d &point) {
+    void emit_xy(const Domain::Vec2d &point) {
         this->emit_axis('X', point.x(), XYZF_EXPORT_DIGITS);
         this->emit_axis('Y', point.y(), XYZF_EXPORT_DIGITS);
     }
 
-    void emit_xyz(const Vec3d &point) {
+    void emit_xyz(const Domain::Vec3d &point) {
         this->emit_axis('X', point.x(), XYZF_EXPORT_DIGITS);
         this->emit_axis('Y', point.y(), XYZF_EXPORT_DIGITS);
         this->emit_z(point.z());
@@ -232,7 +231,7 @@ public:
         this->emit_axis('Z', z, XYZF_EXPORT_DIGITS);
     }
 
-    void emit_ij(const Vec2d &point) {
+    void emit_ij(const Domain::Vec2d &point) {
         if (point.x() != 0)
             this->emit_axis('I', point.x(), XYZF_EXPORT_DIGITS);
         if (point.y() != 0)

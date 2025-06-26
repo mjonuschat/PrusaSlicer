@@ -20,17 +20,17 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Config.hpp"
-#include "Geometry/Circle.hpp"
+#include "libslic3r/Config.hpp"
+#include "libslic3r/Geometry/Circle.hpp"
 #include "Slic3r/Biz/GCodeReader/Utils.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
-#include "libslic3r.h"
+#include "libslic3r/libslic3r.h"
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
-#include "I18N.hpp"
-#include "GCode.hpp"
+#include "libslic3r/I18N.hpp"
+#include "libslic3r/GCode.hpp"
 #include "Slic3r/Exception.hpp"
-#include "ExtrusionEntity.hpp"
-#include "Geometry/ConvexHull.hpp"
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/GCode/LabelObjects.hpp"
 #include "libslic3r/GCode/PostProcessor.hpp"
 #include "libslic3r/GCode/PrintExtents.hpp"
@@ -38,15 +38,15 @@
 #include "libslic3r/GCode/WipeTower.hpp"
 #include "libslic3r/GCode/WipeTowerIntegration.hpp"
 #include "libslic3r/GCode/Travels.hpp"
-#include "Point.hpp"
-#include "Polygon.hpp"
-#include "PrintConfig.hpp"
-#include "ShortestPath.hpp"
-#include "Print.hpp"
-#include "Thread.hpp"
-#include "Utils.hpp"
-#include "ClipperUtils.hpp"
-#include "libslic3r.h"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/ShortestPath.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/Thread.hpp"
+#include "libslic3r/Utils.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/libslic3r.h"
 #include "LocalesUtils.hpp"
 #include "format.hpp"
 #include "Slic3r/Time.hpp"
@@ -1037,7 +1037,7 @@ void GCodeGenerator::_do_export(
     using Biz::libpgcode::Tags;
 
     if (! print.config().get<std::vector<std::string>>("gcode_substitutions").empty()) {
-        m_find_replace = make_unique<GCodeFindReplace>(print.config());
+        m_find_replace = std::make_unique<GCodeFindReplace>(print.config());
         file.set_find_replace(m_find_replace.get(), false);
     }
 
@@ -1071,11 +1071,11 @@ void GCodeGenerator::_do_export(
     print.throw_if_canceled();
 
     if (print.config().get<bool>("spiral_vase"))
-        m_spiral_vase = make_unique<SpiralVase>(print.config());
+        m_spiral_vase = std::make_unique<SpiralVase>(print.config());
 
     if (print.config().get<double>("max_volumetric_extrusion_rate_slope_positive") > 0 ||
         print.config().get<double>("max_volumetric_extrusion_rate_slope_negative") > 0)
-        m_pressure_equalizer = make_unique<PressureEqualizer>(print.config());
+        m_pressure_equalizer = std::make_unique<PressureEqualizer>(print.config());
     m_enable_extrusion_role_markers = (bool)m_pressure_equalizer;
 
     if (print.config().get<bool>("avoid_crossing_curled_overhangs")){
@@ -1212,7 +1212,7 @@ void GCodeGenerator::_do_export(
     }
     print.throw_if_canceled();
 
-    m_cooling_buffer = make_unique<CoolingBuffer>(*this, print.config());
+    m_cooling_buffer = std::make_unique<CoolingBuffer>(*this, print.config());
     m_cooling_buffer->set_current_extruder(initial_extruder_id);
 
     // Emit machine envelope limits for the Marlin firmware.

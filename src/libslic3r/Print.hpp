@@ -21,33 +21,25 @@
 #ifndef slic3r_Print_hpp_
 #define slic3r_Print_hpp_
 
-#include "Slic3r/Domain/ConfigPack.hpp"
-#include "libslic3r/Fill/FillAdaptive.hpp"
-#include "libslic3r/Fill/FillLightning.hpp"
-#include "PrintBase.hpp"
-
-#include "BoundingBox.hpp"
-#include "ExtrusionEntityCollection.hpp"
-#include "Flow.hpp"
-#include "Point.hpp"
-#include "Slicing.hpp"
-#include "SupportSpotsGenerator.hpp"
-#include "TriangleMeshSlicer.hpp"
-#include "libslic3r/GCode/ToolOrdering.hpp"
-#include "libslic3r/GCode/WipeTower.hpp"
-#include "libslic3r/GCode/ThumbnailData.hpp"
-#include "MultiMaterialSegmentation.hpp"
-
-#include "libslic3r.h"
-
-#include <Eigen/Geometry>
-
 #include <functional>
 #include <optional>
 #include <set>
 #include <tcbspan/span.hpp>
-#include "libslic3r/ConfigViews.hpp"
+#include <Eigen/Geometry>
+
+#include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/ModelObject.hpp"
+
+#include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/Fill/FillAdaptive.hpp"
+#include "libslic3r/Fill/FillLightning.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/GCode/ThumbnailData.hpp"
+#include "libslic3r/GCode/ToolOrdering.hpp"
+#include "libslic3r/GCode/WipeTower.hpp"
+#include "libslic3r/PrintBase.hpp"
+#include "libslic3r/Slicing.hpp"
+#include "libslic3r/SupportSpotsGenerator.hpp"
 
 namespace Slic3r {
 

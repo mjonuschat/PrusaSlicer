@@ -14,10 +14,10 @@
 #include <tuple>
 #include <utility>
 
-#include "Layer.hpp"
-#include "Line.hpp"
-#include "PrintBase.hpp"
-#include "PrintConfig.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/PrintBase.hpp"
+#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"

@@ -25,7 +25,7 @@
 #include <cstddef>
 
 #include "Thread.hpp"
-#include "Utils.hpp"
+#include "libslic3r/Utils.hpp"
 #include "LocalesUtils.hpp"
 
 namespace Slic3r {

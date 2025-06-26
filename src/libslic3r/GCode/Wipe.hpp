@@ -10,9 +10,9 @@
 #include <cmath>
 
 #include "SmoothPath.hpp"
-#include "../Geometry/ArcWelder.hpp"
-#include "../Point.hpp"
-#include "../PrintConfig.hpp"
+#include "libslic3r/Geometry/ArcWelder.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/PrintConfig.hpp"
 
 namespace Slic3r {
 

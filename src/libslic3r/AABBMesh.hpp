@@ -5,8 +5,8 @@
 #ifndef PRUSASLICER_AABBMESH_H
 #define PRUSASLICER_AABBMESH_H
 
-#include <libslic3r/Point.hpp>
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include <assert.h>
 #include <stddef.h>
 #include <memory>
@@ -64,9 +64,9 @@ public:
 
     ~AABBMesh();
 
-    const std::vector<Vec3f>& vertices() const;
+    const std::vector<Domain::Vec3f>& vertices() const;
     const std::vector<Domain::Index3>& indices()  const;
-    const Vec3f& vertices(size_t idx) const;
+    const Domain::Vec3f& vertices(size_t idx) const;
     const Domain::Index3& indices(size_t idx) const;
 
     const Eigen::AlignedBox<float, 3>& bounding_box() const;
@@ -77,9 +77,9 @@ public:
         double m_t = infty();
         int m_face_id = -1;
         const AABBMesh *m_mesh = nullptr;
-        Vec3d m_dir    = Vec3d::Zero();
-        Vec3d m_source = Vec3d::Zero();
-        Vec3d m_normal = Vec3d::Zero();
+        Domain::Vec3d m_dir    = Domain::Vec3d::Zero();
+        Domain::Vec3d m_source = Domain::Vec3d::Zero();
+        Domain::Vec3d m_normal = Domain::Vec3d::Zero();
         friend class AABBMesh;
         
         // A valid object of this class can only be obtained from
@@ -92,14 +92,14 @@ public:
         explicit inline hit_result(double val = infty()) : m_t(val) {}
         
         inline double distance() const { return m_t; }
-        inline const Vec3d& direction() const { return m_dir; }
-        inline const Vec3d& source() const { return m_source; }
-        inline Vec3d position() const { return m_source + m_dir * m_t; }
+        inline const Domain::Vec3d& direction() const { return m_dir; }
+        inline const Domain::Vec3d& source() const { return m_source; }
+        inline Domain::Vec3d position() const { return m_source + m_dir * m_t; }
         inline int face() const { return m_face_id; }
         inline bool is_valid() const { return m_mesh != nullptr; }
         inline bool is_hit() const { return m_face_id >= 0 && !std::isinf(m_t); }
 
-        inline const Vec3d& normal() const {
+        inline const Domain::Vec3d& normal() const {
             assert(is_valid());
             return m_normal;
         }
@@ -125,20 +125,20 @@ public:
 #endif
 
     // Casting a ray on the mesh, returns the distance where the hit occures.
-    hit_result query_ray_hit(const Vec3d &s, const Vec3d &dir) const;
+    hit_result query_ray_hit(const Domain::Vec3d &s, const Domain::Vec3d &dir) const;
     
     // Casts a ray on the mesh and returns all hits
-    std::vector<hit_result> query_ray_hits(const Vec3d &s, const Vec3d &dir) const;
+    std::vector<hit_result> query_ray_hits(const Domain::Vec3d &s, const Domain::Vec3d &dir) const;
 
-    double squared_distance(const Vec3d& p, int& i, Vec3d& c) const;
-    inline double squared_distance(const Vec3d &p) const
+    double squared_distance(const Domain::Vec3d& p, int& i, Domain::Vec3d& c) const;
+    inline double squared_distance(const Domain::Vec3d &p) const
     {
         int   i;
-        Vec3d c;
+        Domain::Vec3d c;
         return squared_distance(p, i, c);
     }
 
-    Vec3d normal_by_face_id(int face_id) const;
+    Domain::Vec3d normal_by_face_id(int face_id) const;
 
     const indexed_triangle_set * get_triangle_mesh() const { return m_tm; }
 

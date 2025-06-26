@@ -13,7 +13,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/property_tree/ptree_fwd.hpp>
 
-#include "PrintConfig.hpp"
+#include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Semver.hpp"
 
 namespace Slic3r {
@@ -573,7 +573,7 @@ private:
     // If a preset does not exist, an iterator is returned indicating where to insert a preset with the same name.
     std::deque<Preset>::iterator find_preset_internal(const std::string &name)
     {
-        auto it = Slic3r::lower_bound_by_predicate(m_presets.begin() + m_num_default_presets, m_presets.end(), [&name](const auto& l) { return l.name < name;  });
+        auto it = std::ranges::lower_bound(m_presets.begin() + m_num_default_presets, m_presets.end(), name, {}, &Preset::name);
         if (it == m_presets.end() || it->name != name) {
             // Preset has not been not found in the sorted list of non-default presets. Try the defaults.
             for (size_t i = 0; i < m_num_default_presets; ++ i)
@@ -936,8 +936,8 @@ private:
     // If a preset does not exist, an iterator is returned indicating where to insert a preset with the same name.
     std::deque<Filament>::iterator find_filament_internal(const std::string& name)
     {
-        return Slic3r::lower_bound_by_predicate(m_extr_filaments.begin(), m_extr_filaments.end(), [&name](const auto& l) {
-            return l.preset->name < name;
+        return std::ranges::lower_bound(m_extr_filaments, name, {}, [](const Filament& f) {
+            return f.preset->name;
         });
     }
     std::deque<Filament>::const_iterator find_filament_internal(const std::string& name) const

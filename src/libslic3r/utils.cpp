@@ -4,8 +4,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Utils.hpp"
-#include "I18N.hpp"
+#include "libslic3r/Utils.hpp"
+#include "libslic3r/I18N.hpp"
 
 #include <atomic>
 #include <locale>
@@ -16,8 +16,8 @@
 
 #include "Slic3r/Platform.hpp"
 #include "Slic3r/Time.hpp"
-#include "format.hpp"
-#include "libslic3r.h"
+#include "libslic3r/format.hpp"
+#include "libslic3r/libslic3r.h"
 
 #include "Slic3r/Log.hpp"
 

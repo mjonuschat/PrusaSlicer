@@ -8,14 +8,14 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Flow.hpp"
+#include "libslic3r/Flow.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/format.hpp>
 #include <cmath>
 
-#include "I18N.hpp"
-#include "Print.hpp"
+#include "libslic3r/I18N.hpp"
+#include "libslic3r/Print.hpp"
 #include "libslic3r/Config.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/PrintConfig.hpp"

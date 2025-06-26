@@ -14,7 +14,7 @@
 #include <utility>
 #include <cstring>
 
-#include "../Utils.hpp"
+#include "libslic3r/Utils.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/ConfigViews.hpp"
 

@@ -14,13 +14,13 @@
 #include <cassert>
 #include <cstddef>
 
-#include "ClipperUtils.hpp"
-#include "ElephantFootCompensation.hpp"
-#include "I18N.hpp"
-#include "Layer.hpp"
-#include "MultiMaterialSegmentation.hpp"
-#include "Print.hpp"
-#include "ShortestPath.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/ElephantFootCompensation.hpp"
+#include "libslic3r/I18N.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/MultiMaterialSegmentation.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/ShortestPath.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Feature/Interlocking/InterlockingGenerator.hpp"
 #include "libslic3r/BoundingBox.hpp"

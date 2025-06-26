@@ -20,9 +20,9 @@
 #include <string>
 #include <utility>
 
-#include "../Point.hpp"
-#include "../PrintConfig.hpp"
-#include "ThumbnailData.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/enum_bitmask.hpp"
 
 namespace Slic3r {

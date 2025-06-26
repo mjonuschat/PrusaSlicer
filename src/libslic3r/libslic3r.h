@@ -187,12 +187,6 @@ inline void sort_remove_duplicates(std::vector<T> &vec)
 	vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
 }
 
-// Older compilers do not provide a std::make_unique template. Provide a simple one.
-template<typename T, typename... Args>
-inline std::unique_ptr<T> make_unique(Args&&... args) {
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
-
 // Variant of std::lower_bound() with compare predicate, but without the key.
 // This variant is very useful in case that the T type is large or it does not even have a public constructor.
 template<class ForwardIt, class LowerThanKeyPredicate>
@@ -315,12 +309,8 @@ IntegerOnly<I, std::vector<T, Args...>> reserve_vector(I capacity)
     return ret;
 }
 
-// Borrowed from C++20
-template<class T>
-using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
-
 namespace detail_strip_ref_wrappers {
-template<class T> struct StripCVRef_ { using type = remove_cvref_t<T>; };
+template<class T> struct StripCVRef_ { using type = std::remove_cvref_t<T>; };
 template<class T> struct StripCVRef_<std::reference_wrapper<T>>
 {
     using type = std::remove_cv_t<T>;
@@ -329,7 +319,7 @@ template<class T> struct StripCVRef_<std::reference_wrapper<T>>
 
 // Removes reference wrappers as well
 template<class T> using  StripCVRef =
-    typename detail_strip_ref_wrappers::StripCVRef_<remove_cvref_t<T>>::type;
+    typename detail_strip_ref_wrappers::StripCVRef_<std::remove_cvref_t<T>>::type;
 
 template<class IntType = int, class = IntegerOnly<IntType, void>>
 class IntIterator {
@@ -392,8 +382,6 @@ inline IntegerOnly<I, I> fast_round_up(double a)
     // https://stackoverflow.com/questions/9902968/why-does-math-round0-49999999999999994-return-1
     return a == 0.49999999999999994 ? I(0) : I(floor(a + 0.5));
 }
-
-template<class T> using SamePair = std::pair<T, T>;
 
 // Helper to be used in static_assert.
 template<class T> struct always_false { enum { value = false }; };

@@ -513,7 +513,7 @@ constexpr bool IsWideningFn = std::is_invocable_r_v</*retval*/ double,
 // A widening function can determine how many ray samples should a beam contain
 // (see in beam_mesh_hit)
 template<class WFn> struct BeamSamples { static constexpr size_t Value = 8; };
-template<class WFn> constexpr size_t BeamSamplesV = BeamSamples<remove_cvref_t<WFn>>::Value;
+template<class WFn> constexpr size_t BeamSamplesV = BeamSamples<std::remove_cvref_t<WFn>>::Value;
 
 // To use with check_ground_route, full will check the bridge and the pillar,
 // PillarOnly checks only the pillar for collisions.

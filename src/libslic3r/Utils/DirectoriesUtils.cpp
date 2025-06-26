@@ -1,4 +1,4 @@
-#include "DirectoriesUtils.hpp"
+#include "libslic3r/Utils/DirectoriesUtils.hpp"
 #include "libslic3r/libslic3r.h"
 
 #include <boost/filesystem/path.hpp>

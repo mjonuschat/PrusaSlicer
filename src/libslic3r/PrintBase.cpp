@@ -3,14 +3,16 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Exception.hpp"
-#include "PrintBase.hpp"
+#include "libslic3r/PrintBase.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
+#include "Slic3r/Domain/Axis.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include "I18N.hpp"
+#include "libslic3r/I18N.hpp"
+#include "libslic3r_version.h"
 
 using namespace Slic3r::Biz;
 
@@ -51,9 +53,9 @@ ParserConfig PrintBase::get_object_placeholders() const
 		if (printable) {
             ++ num_objects;
 	        // CHECK_ME -> Is the following correct ?
-			v_scale.push_back("x:" + boost::lexical_cast<std::string>(printable->get_scaling_factor(X) * 100) +
-				"% y:" + boost::lexical_cast<std::string>(printable->get_scaling_factor(Y) * 100) +
-				"% z:" + boost::lexical_cast<std::string>(printable->get_scaling_factor(Z) * 100) + "%");
+			v_scale.push_back("x:" + boost::lexical_cast<std::string>(printable->get_scaling_factor(Domain::X) * 100) +
+				"% y:" + boost::lexical_cast<std::string>(printable->get_scaling_factor(Domain::Y) * 100) +
+				"% z:" + boost::lexical_cast<std::string>(printable->get_scaling_factor(Domain::Z) * 100) + "%");
 	        if (input_file.empty())
 	            input_file = model_object->name.empty() ? model_object->input_file : model_object->name;
 	    }

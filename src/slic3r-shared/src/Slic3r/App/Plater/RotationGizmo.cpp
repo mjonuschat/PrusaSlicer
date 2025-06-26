@@ -192,7 +192,7 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
 
     if (m_curr_axis != AxisType::None) {
         Vec2d pos = to_2d(mouse_position_in_local_plane(m_curr_axis, Transform3d::Identity(), m_pivot_world,
-          Linef3(pick_ray.origin, pick_ray.point_at(10.0))));
+          Domain::Line3d(pick_ray.origin, pick_ray.point_at(10.0))));
 
         Vec2d orig_dir = Vec2d::UnitX();
         Vec2d new_dir = pos.normalized();

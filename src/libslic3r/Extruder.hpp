@@ -10,10 +10,9 @@
 #ifndef slic3r_Extruder_hpp_
 #define slic3r_Extruder_hpp_
 
+#include <numbers>
 #include <utility>
 
-#include "libslic3r.h"
-#include "Point.hpp"
 #include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
@@ -63,7 +62,7 @@ public:
     void   set_retracted(double retracted, double restart_extra);
     
     double filament_diameter() const;
-    double filament_crossection() const { return this->filament_diameter() * this->filament_diameter() * 0.25 * PI; }
+    double filament_crossection() const { return this->filament_diameter() * this->filament_diameter() * 0.25 * std::numbers::pi; }
     double filament_density() const;
     double filament_cost() const;
     double extrusion_multiplier() const;

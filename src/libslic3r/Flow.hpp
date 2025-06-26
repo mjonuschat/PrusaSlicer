@@ -10,21 +10,17 @@
 #ifndef slic3r_Flow_hpp_
 #define slic3r_Flow_hpp_
 
-#include <assert.h>
 #include <string>
 #include <cassert>
 
-#include "libslic3r.h"
-#include "Config.hpp"
 #include "Slic3r/Exception.hpp"
-#include "ExtrusionRole.hpp"
 #include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r {
 
 class PrintObject;
-class ConfigOptionFloatOrPercent;
-class ConfigOptionResolver;
 
 // Extra spacing of bridge threads, in mm.
 #define BRIDGE_EXTRA_SPACING 0.05
@@ -74,13 +70,13 @@ public:
     // Non bridging flow: Maximum width of an extrusion with semicircles at the ends.
     // Bridging flow: Bridge thread diameter.
     float   width()           const { return m_width; }
-    coord_t scaled_width()    const { return coord_t(scale_(m_width)); }
+    Domain::coord_t scaled_width()    const { return Domain::coord_t(scale_(m_width)); }
     // Non bridging flow: Layer height.
     // Bridging flow: Bridge thread diameter = layer height.
     float   height()          const { return m_height; }
     // Spacing between the extrusion centerlines.
     float   spacing()         const { return m_spacing; }
-    coord_t scaled_spacing()  const { return coord_t(scale_(m_spacing)); }
+    Domain::coord_t scaled_spacing()  const { return Domain::coord_t(scale_(m_spacing)); }
     // Nozzle diameter. 
     float   nozzle_diameter() const { return m_nozzle_diameter; }
     // Is it a bridge?
@@ -92,7 +88,7 @@ public:
     // To be used on frExternalPerimeter only.
     // Enable some perimeter squish (see INSET_OVERLAP_TOLERANCE).
     // Here an overlap of 0.2x external perimeter spacing is allowed for by the elephant foot compensation.
-    coord_t scaled_elephant_foot_spacing() const { return coord_t(0.5f * float(this->scaled_width() + 0.6f * this->scaled_spacing())); }
+    Domain::coord_t scaled_elephant_foot_spacing() const { return Domain::coord_t(0.5f * float(this->scaled_width() + 0.6f * this->scaled_spacing())); }
 
     bool operator==(const Flow &rhs) const { return m_width == rhs.m_width && m_height == rhs.m_height && m_nozzle_diameter == rhs.m_nozzle_diameter && m_bridge == rhs.m_bridge; }
 

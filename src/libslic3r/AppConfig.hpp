@@ -14,6 +14,8 @@
 #include "libslic3r/Config.hpp"
 #include "Slic3r/Semver.hpp"
 
+#include "LocalesUtils.hpp"
+
 namespace Slic3r {
 
 class AppConfig

@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "ThumbnailData.hpp"
+#include "libslic3r/GCode/ThumbnailData.hpp"
 
 namespace Slic3r {
 

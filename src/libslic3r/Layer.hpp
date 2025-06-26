@@ -23,13 +23,13 @@
 #include <cinttypes>
 #include <cstddef>
 
-#include "Line.hpp"
-#include "libslic3r.h"
-#include "BoundingBox.hpp"
-#include "Flow.hpp"
-#include "SurfaceCollection.hpp"
-#include "ExtrusionEntityCollection.hpp"
-#include "LayerRegion.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/SurfaceCollection.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Polyline.hpp"
 

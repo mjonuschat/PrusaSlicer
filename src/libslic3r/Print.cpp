@@ -24,24 +24,24 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Exception.hpp"
-#include "Print.hpp"
-#include "BoundingBox.hpp"
-#include "Brim.hpp"
-#include "ClipperUtils.hpp"
-#include "Extruder.hpp"
-#include "Flow.hpp"
-#include "Geometry/ConvexHull.hpp"
-#include "I18N.hpp"
-#include "ShortestPath.hpp"
-#include "Thread.hpp"
-#include "GCode.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Brim.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Extruder.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/Geometry/ConvexHull.hpp"
+#include "libslic3r/I18N.hpp"
+#include "libslic3r/ShortestPath.hpp"
+#include "libslic3r/Thread.hpp"
+#include "libslic3r/GCode.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"
 #include "libslic3r/GCode/ConflictChecker.hpp"
-#include "Utils.hpp"
-#include "BuildVolume.hpp"
-#include "format.hpp"
-//#include "ArrangeHelper.hpp"
+#include "libslic3r/Utils.hpp"
+#include "libslic3r/BuildVolume.hpp"
+#include "libslic3r/format.hpp"
 #include "libslic3r/PrePreview.hpp"
+#include "libslic3r/ModelUtils.hpp"
 
 #include <float.h>
 
@@ -53,6 +53,8 @@
 #include <boost/format.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/regex.hpp>
+
+#include "libslic3r/ModelUtils.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -1305,7 +1307,7 @@ void Print::_make_wipe_tower()
     for (size_t i = 0; i < m_config.get<std::vector<double>>("nozzle_diameter").size(); ++ i)
         wipe_tower.set_extruder(i, m_config);
 
-    m_wipe_tower_data.priming = Slic3r::make_unique<std::vector<WipeTower::ToolChangeResult>>(
+    m_wipe_tower_data.priming = std::make_unique<std::vector<WipeTower::ToolChangeResult>>(
         wipe_tower.prime((float)this->skirt_first_layer_height(), m_wipe_tower_data.tool_ordering.all_extruders(), false));
 
     // Lets go through the wipe tower layers and determine pairs of extruder changes for each
@@ -1365,7 +1367,7 @@ void Print::_make_wipe_tower()
         assert(m_wipe_tower_data.tool_ordering.back().wipe_tower_partitions == 0);
         wipe_tower.set_layer(float(m_wipe_tower_data.tool_ordering.back().print_z), float(layer_height), 0, false, true);
     }
-    m_wipe_tower_data.final_purge = Slic3r::make_unique<WipeTower::ToolChangeResult>(
+    m_wipe_tower_data.final_purge = std::make_unique<WipeTower::ToolChangeResult>(
         wipe_tower.tool_change((unsigned int)(-1)));
 
     m_wipe_tower_data.used_filament_until_layer = wipe_tower.get_used_filament_until_layer();

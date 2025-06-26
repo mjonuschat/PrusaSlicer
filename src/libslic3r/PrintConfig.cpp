@@ -19,7 +19,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "PrintConfig.hpp"
+#include "libslic3r/PrintConfig.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -35,9 +35,9 @@
 #include <optional>
 #include <string_view>
 
-#include "Config.hpp"
-#include "I18N.hpp"
-#include "format.hpp"
+#include "libslic3r/Config.hpp"
+#include "libslic3r/I18N.hpp"
+#include "libslic3r/format.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
 #include "libslic3r/SLA/SupportTreeStrategies.hpp"
 #include "libslic3r/enum_bitmask.hpp"

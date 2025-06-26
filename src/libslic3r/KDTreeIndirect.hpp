@@ -6,7 +6,7 @@
 #include <limits>
 #include <vector>
 
-#include "Utils.hpp" // for next_highest_power_of_2()
+#include "libslic3r/Utils.hpp" // for next_highest_power_of_2()
 #include "Slic3r/Biz/Algorithms/KDTreeIndirect.hpp"
 
 namespace Slic3r {

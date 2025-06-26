@@ -4,7 +4,7 @@
 ///|/
 #include <cstdio>
 
-#include "miniz_extension.hpp"
+#include "libslic3r/miniz_extension.hpp"
 #include "miniz.h"
 
 #if defined(_MSC_VER) || defined(__MINGW64__)

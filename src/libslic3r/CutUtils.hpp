@@ -5,8 +5,8 @@
 #ifndef slic3r_CutUtils_hpp_
 #define slic3r_CutUtils_hpp_
 
-#include "enum_bitmask.hpp"
-#include "Point.hpp"
+#include "libslic3r/enum_bitmask.hpp"
+#include "libslic3r/Point.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/ModelObject.hpp"
 

@@ -9,12 +9,12 @@
 
 #include <vector>
 
-#include "libslic3r.h"
-#include "ExtrusionEntityCollection.hpp"
-#include "Flow.hpp"
-#include "Polygon.hpp"
-#include "PrintConfig.hpp"
-#include "SurfaceCollection.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/SurfaceCollection.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionRole.hpp"

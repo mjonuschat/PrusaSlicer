@@ -12,6 +12,8 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include "LocalesUtils.hpp"
+
 namespace Slic3r {
 
 namespace {

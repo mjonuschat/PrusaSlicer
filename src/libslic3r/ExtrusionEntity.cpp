@@ -5,16 +5,16 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "ExtrusionEntity.hpp"
+#include "libslic3r/ExtrusionEntity.hpp"
 
 #include <limits>
 #include <iterator>
 
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
-#include "ExtrusionEntityCollection.hpp"
-#include "ClipperUtils.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/ClipperUtils.hpp"
 #include "Slic3r/Exception.hpp"
-#include "Flow.hpp"
+#include "libslic3r/Flow.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"

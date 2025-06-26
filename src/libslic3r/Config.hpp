@@ -57,13 +57,13 @@
 #include <cctype>
 #include <cfloat>
 
-#include "libslic3r.h"
-#include "clonable_ptr.hpp"
+#include "libslic3r/clonable_ptr.hpp"
 #include "Slic3r/Exception.hpp"
-#include "Point.hpp"
-#include "LocalesUtils.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r {
+    template<int N, class T> using LegacyVec = Domain::Advanced::Vec<T, N>;
+
     struct FloatOrPercent
     {
         double  value;
@@ -89,16 +89,16 @@ namespace std {
         }
     };
 
-    template<> struct hash<Slic3r::Vec2d> {
-        std::size_t operator()(const Slic3r::Vec2d& v) const noexcept {
+    template<> struct hash<Slic3r::Domain::Vec2d> {
+        std::size_t operator()(const Slic3r::Domain::Vec2d& v) const noexcept {
             std::size_t seed = std::hash<double>{}(v.x());
             boost::hash_combine(seed, std::hash<double>{}(v.y()));
             return seed;
         }
     };
 
-    template<> struct hash<Slic3r::Vec3d> {
-        std::size_t operator()(const Slic3r::Vec3d& v) const noexcept {
+    template<> struct hash<Slic3r::Domain::Vec3d> {
+        std::size_t operator()(const Slic3r::Domain::Vec3d& v) const noexcept {
             std::size_t seed = std::hash<double>{}(v.x());
             boost::hash_combine(seed, std::hash<double>{}(v.y()));
             boost::hash_combine(seed, std::hash<double>{}(v.z()));
@@ -108,6 +108,11 @@ namespace std {
 }
 
 namespace Slic3r {
+
+namespace Internal {
+// Helper to be used in static_assert.
+template<class T> struct always_false { enum { value = false }; };
+} // namespace Internal
 
 // Name of the configuration option.
 typedef std::string                 t_config_option_key;
@@ -343,7 +348,7 @@ typedef const ConfigOption* ConfigOptionConstPtr;
 template<class T, class En = void> struct NilValueTempl
 {
     using NilType = T;
-    static_assert(always_false<T>::value, "Type has no well defined nil value");
+    static_assert(Internal::always_false<T>::value, "Type has no well defined nil value");
 };
 
 template<class T> struct NilValueTempl<T, std::enable_if_t<std::is_integral_v<T>, void>> {
@@ -378,14 +383,14 @@ template<> struct NilValueTempl<std::string> {
 template<int N, class T> struct NilValueTempl<LegacyVec<N, T>> {
     using NilType = LegacyVec<N, T>;
     // No constexpr for Vec<N, T>
-    static inline const LegacyVec<N, T> value = LegacyVec<N, T>::Ones() * NilValueTempl<remove_cvref_t<T>>::value;
+    static inline const LegacyVec<N, T> value = LegacyVec<N, T>::Ones() * NilValueTempl<std::remove_cvref_t<T>>::value;
 };
 
-template<class T> using NilType = typename NilValueTempl<remove_cvref_t<T>>::NilType;
+template<class T> using NilType = typename NilValueTempl<std::remove_cvref_t<T>>::NilType;
 
 // Define shortcut as a function instead of a static const var so that it can be constexpr
 // even if the NilValueTempl::value is not constexpr.
-template<class T> static constexpr NilType<T> NilValue() noexcept { return NilValueTempl<remove_cvref_t<T>>::value; }
+template<class T> static constexpr NilType<T> NilValue() noexcept { return NilValueTempl<std::remove_cvref_t<T>>::value; }
 
 // Value of a single valued option (bool, int, float, string, point, enum)
 template <class T, bool NULLABLE = false>
@@ -735,9 +740,8 @@ public:
         return ss.str();
     }
     
-    bool deserialize(const std::string &str, bool append = false) override
+    bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        UNUSED(append);
         std::istringstream iss(str);
 
         if (str == "nil") {
@@ -925,9 +929,8 @@ public:
         return ss.str();
     }
     
-    bool deserialize(const std::string &str, bool append = false) override
+    bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        UNUSED(append);
         std::istringstream iss(str);
 
         if (str == "nil") {
@@ -1064,9 +1067,8 @@ public:
         return escape_string_cstyle(this->value); 
     }
 
-    bool deserialize(const std::string &str, bool append = false) override
+    bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        UNUSED(append);
         return unescape_string_cstyle(str, this->value);
     }
 
@@ -1139,9 +1141,8 @@ public:
         return s;
     }
     
-    bool deserialize(const std::string &str, bool append = false) override
+    bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        UNUSED(append);
         // don't try to parse the trailing % since it's optional
         std::istringstream iss(str);
         iss >> this->value;
@@ -1253,9 +1254,8 @@ public:
         return s;
     }
     
-    bool deserialize(const std::string &str, bool append = false) override
+    bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        UNUSED(append);
         this->percent = str.find_first_of("%") != std::string::npos;
         std::istringstream iss(str);
         iss >> this->value;
@@ -1397,11 +1397,11 @@ private:
 using ConfigOptionFloatsOrPercents          = ConfigOptionFloatsOrPercentsTempl<false>;
 using ConfigOptionFloatsOrPercentsNullable  = ConfigOptionFloatsOrPercentsTempl<true>;
 
-class ConfigOptionPoint : public ConfigOptionSingle<Vec2d>
+class ConfigOptionPoint : public ConfigOptionSingle<Slic3r::Domain::Vec2d>
 {
 public:
-    ConfigOptionPoint() : ConfigOptionSingle<Vec2d>(Vec2d(0,0)) {}
-    explicit ConfigOptionPoint(const Vec2d &value) : ConfigOptionSingle<Vec2d>(value) {}
+    ConfigOptionPoint() : ConfigOptionSingle<Slic3r::Domain::Vec2d>(Slic3r::Domain::Vec2d(0,0)) {}
+    explicit ConfigOptionPoint(const Slic3r::Domain::Vec2d &value) : ConfigOptionSingle<Slic3r::Domain::Vec2d>(value) {}
     
     static ConfigOptionType static_type() { return coPoint; }
     ConfigOptionType        type()  const override { return static_type(); }
@@ -1419,9 +1419,8 @@ public:
         return ss.str();
     }
     
-    bool deserialize(const std::string &str, bool append = false) override
+    bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        UNUSED(append);
         char dummy;
         return sscanf(str.data(), " %lf , %lf %c", &this->value(0), &this->value(1), &dummy) == 2 ||
                sscanf(str.data(), " %lf x %lf %c", &this->value(0), &this->value(1), &dummy) == 2;
@@ -1429,16 +1428,16 @@ public:
 
 private:
 	friend class cereal::access;
-	template<class Archive> void serialize(Archive &ar) { ar(cereal::base_class<ConfigOptionSingle<Vec2d>>(this)); }
+	template<class Archive> void serialize(Archive &ar) { ar(cereal::base_class<ConfigOptionSingle<Slic3r::Domain::Vec2d>>(this)); }
 };
 
-class ConfigOptionPoints : public ConfigOptionVector<Vec2d>
+class ConfigOptionPoints : public ConfigOptionVector<Slic3r::Domain::Vec2d>
 {
 public:
-    ConfigOptionPoints() : ConfigOptionVector<Vec2d>() {}
-    explicit ConfigOptionPoints(size_t n, const Vec2d &value) : ConfigOptionVector<Vec2d>(n, value) {}
-    explicit ConfigOptionPoints(std::initializer_list<Vec2d> il) : ConfigOptionVector<Vec2d>(std::move(il)) {}
-    explicit ConfigOptionPoints(const std::vector<Vec2d> &values) : ConfigOptionVector<Vec2d>(values) {}
+    ConfigOptionPoints() : ConfigOptionVector<Slic3r::Domain::Vec2d>() {}
+    explicit ConfigOptionPoints(size_t n, const Slic3r::Domain::Vec2d &value) : ConfigOptionVector<Slic3r::Domain::Vec2d>(n, value) {}
+    explicit ConfigOptionPoints(std::initializer_list<Slic3r::Domain::Vec2d> il) : ConfigOptionVector<Slic3r::Domain::Vec2d>(std::move(il)) {}
+    explicit ConfigOptionPoints(const std::vector<Slic3r::Domain::Vec2d> &values) : ConfigOptionVector<Slic3r::Domain::Vec2d>(values) {}
 
     static ConfigOptionType static_type() { return coPoints; }
     ConfigOptionType        type()  const override { return static_type(); }
@@ -1452,7 +1451,7 @@ public:
     std::string serialize() const override
     {
         std::ostringstream ss;
-        for (Pointfs::const_iterator it = this->values.begin(); it != this->values.end(); ++it) {
+        for (Domain::Vec2ds::const_iterator it = this->values.begin(); it != this->values.end(); ++it) {
             if (it - this->values.begin() != 0) ss << ",";
             ss << (*it)(0);
             ss << "x";
@@ -1464,7 +1463,7 @@ public:
     std::vector<std::string> vserialize() const override
     {
         std::vector<std::string> vv;
-        for (Pointfs::const_iterator it = this->values.begin(); it != this->values.end(); ++it) {
+        for (Domain::Vec2ds::const_iterator it = this->values.begin(); it != this->values.end(); ++it) {
             std::ostringstream ss;
             ss << *it;
             vv.push_back(ss.str());
@@ -1479,7 +1478,7 @@ public:
         std::istringstream is(str);
         std::string point_str;
         while (std::getline(is, point_str, ',')) {
-            Vec2d point(Vec2d::Zero());
+            Slic3r::Domain::Vec2d point(Slic3r::Domain::Vec2d::Zero());
             std::istringstream iss(point_str);
             std::string coord_str;
             if (std::getline(iss, coord_str, 'x')) {
@@ -1498,21 +1497,21 @@ private:
 	template<class Archive> void save(Archive& archive) const {
 		size_t cnt = this->values.size();
 		archive(cnt);
-		archive.saveBinary((const char*)this->values.data(), sizeof(Vec2d) * cnt);
+		archive.saveBinary((const char*)this->values.data(), sizeof(Slic3r::Domain::Vec2d) * cnt);
 	}
 	template<class Archive> void load(Archive& archive) {
 		size_t cnt;
 		archive(cnt);
-		this->values.assign(cnt, Vec2d());
-		archive.loadBinary((char*)this->values.data(), sizeof(Vec2d) * cnt);
+		this->values.assign(cnt, Slic3r::Domain::Vec2d());
+		archive.loadBinary((char*)this->values.data(), sizeof(Slic3r::Domain::Vec2d) * cnt);
 	}
 };
 
-class ConfigOptionPoint3 : public ConfigOptionSingle<Vec3d>
+class ConfigOptionPoint3 : public ConfigOptionSingle<Slic3r::Domain::Vec3d>
 {
 public:
-    ConfigOptionPoint3() : ConfigOptionSingle<Vec3d>(Vec3d(0,0,0)) {}
-    explicit ConfigOptionPoint3(const Vec3d &value) : ConfigOptionSingle<Vec3d>(value) {}
+    ConfigOptionPoint3() : ConfigOptionSingle<Slic3r::Domain::Vec3d>(Slic3r::Domain::Vec3d(0,0,0)) {}
+    explicit ConfigOptionPoint3(const Slic3r::Domain::Vec3d &value) : ConfigOptionSingle<Slic3r::Domain::Vec3d>(value) {}
     
     static ConfigOptionType static_type() { return coPoint3; }
     ConfigOptionType        type()  const override { return static_type(); }
@@ -1533,9 +1532,8 @@ public:
         return ss.str();
     }
     
-    bool deserialize(const std::string &str, bool append = false) override
+    bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        UNUSED(append);
         char dummy;
         return sscanf(str.data(), " %lf , %lf , %lf %c", &this->value(0), &this->value(1), &this->value(2), &dummy) == 3 ||
                sscanf(str.data(), " %lf x %lf x %lf %c", &this->value(0), &this->value(1), &this->value(2), &dummy) == 3;
@@ -1543,7 +1541,7 @@ public:
 
 private:
 	friend class cereal::access;
-	template<class Archive> void serialize(Archive &ar) { ar(cereal::base_class<ConfigOptionSingle<Vec3d>>(this)); }
+	template<class Archive> void serialize(Archive &ar) { ar(cereal::base_class<ConfigOptionSingle<Slic3r::Domain::Vec3d>>(this)); }
 };
 
 class ConfigOptionBool : public ConfigOptionSingle<bool>
@@ -1565,9 +1563,8 @@ public:
         return std::string(this->value ? "1" : "0");
     }
     
-    bool deserialize(const std::string &str, bool append = false) override
+    bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        UNUSED(append);
         if (str == "1") {
             this->value = true;
             return true;
@@ -1736,9 +1733,8 @@ public:
         return names[static_cast<int>(this->value)];
     }
 
-    bool deserialize(const std::string &str, bool append = false) override
+    bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        UNUSED(append);
         return from_string(str, this->value);
     }
 
@@ -1914,9 +1910,8 @@ public:
         return std::string();
     }
 
-    bool deserialize(const std::string &str, bool append = false) override
+    bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        UNUSED(append);
         auto it = this->keys_map->find(str);
         if (it == this->keys_map->end())
             return false;
@@ -2698,10 +2693,6 @@ public:
     	SetDeserializeItem(const std::string &opt_key, const int value, bool append = false) : opt_key(opt_key), opt_value(std::to_string(value)), append(append) {}
         SetDeserializeItem(const char *opt_key, const std::initializer_list<int> values, bool append = false) : opt_key(opt_key), opt_value(format(values)), append(append) {}
         SetDeserializeItem(const std::string &opt_key, const std::initializer_list<int> values, bool append = false) : opt_key(opt_key), opt_value(format(values)), append(append) {}
-        SetDeserializeItem(const char *opt_key, const float value, bool append = false) : opt_key(opt_key), opt_value(float_to_string_decimal_point(value)), append(append) {}
-        SetDeserializeItem(const std::string &opt_key, const float value, bool append = false) : opt_key(opt_key), opt_value(float_to_string_decimal_point(value)), append(append) {}
-        SetDeserializeItem(const char *opt_key, const double value, bool append = false) : opt_key(opt_key), opt_value(float_to_string_decimal_point(value)), append(append) {}
-        SetDeserializeItem(const std::string &opt_key, const double value, bool append = false) : opt_key(opt_key), opt_value(float_to_string_decimal_point(value)), append(append) {}
         SetDeserializeItem(const char *opt_key, const std::initializer_list<float> values, bool append = false) : opt_key(opt_key), opt_value(format(values)), append(append) {}
         SetDeserializeItem(const std::string &opt_key, const std::initializer_list<float> values, bool append = false) : opt_key(opt_key), opt_value(format(values)), append(append) {}
         SetDeserializeItem(const char *opt_key, const std::initializer_list<double> values, bool append = false) : opt_key(opt_key), opt_value(format(values)), append(append) {}

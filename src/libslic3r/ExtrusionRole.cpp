@@ -2,8 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "ExtrusionRole.hpp"
-#include "I18N.hpp"
+#include "libslic3r/ExtrusionRole.hpp"
+#include "libslic3r/I18N.hpp"
 
 #include <string>
 #include <string_view>

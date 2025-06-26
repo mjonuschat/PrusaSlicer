@@ -19,12 +19,29 @@
 #include <cassert>
 #include <cinttypes>
 
+#include "Slic3r/Domain/GCodeFlavor.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ConfigViews.hpp"
 
 #ifdef __APPLE__
     #include <boost/spirit/include/karma.hpp>
 #endif
+
+using Slic3r::Domain::GCodeFlavor;
+using Slic3r::Domain::GCodeFlavor::gcfRepRapSprinter;
+using Slic3r::Domain::GCodeFlavor::gcfRepRapFirmware;
+using Slic3r::Domain::GCodeFlavor::gcfRepetier;
+using Slic3r::Domain::GCodeFlavor::gcfTeacup;
+using Slic3r::Domain::GCodeFlavor::gcfMakerWare;
+using Slic3r::Domain::GCodeFlavor::gcfMarlinLegacy;
+using Slic3r::Domain::GCodeFlavor::gcfMarlinFirmware;
+using Slic3r::Domain::GCodeFlavor::gcfKlipper;
+using Slic3r::Domain::GCodeFlavor::gcfSailfish;
+using Slic3r::Domain::GCodeFlavor::gcfMach3;
+using Slic3r::Domain::GCodeFlavor::gcfMachinekit;
+using Slic3r::Domain::GCodeFlavor::gcfSmoothie;
 
 #define FLAVOR_IS(val) this->config.get<GCodeFlavor>("gcode_flavor") == val
 #define FLAVOR_IS_NOT(val) this->config.get<GCodeFlavor>("gcode_flavor") != val
@@ -282,7 +299,7 @@ std::string GCodeWriter::set_speed(double F, const std::string_view comment, con
     return w.string();
 }
 
-std::string GCodeWriter::travel_to_xy_force(const Vec2d &point, const std::string_view comment)
+std::string GCodeWriter::travel_to_xy_force(const Domain::Vec2d &point, const std::string_view comment)
 {
     GCodeG1Formatter w;
     w.emit_xy(point);
@@ -292,7 +309,7 @@ std::string GCodeWriter::travel_to_xy_force(const Vec2d &point, const std::strin
     return w.string();
 }
 
-std::string GCodeWriter::travel_to_xy(const Vec2d &point, const std::string_view comment)
+std::string GCodeWriter::travel_to_xy(const Domain::Vec2d &point, const std::string_view comment)
 {
     if (std::abs(point.x() - m_pos.x()) < GCodeFormatter::XYZ_EPSILON
         && std::abs(point.y() - m_pos.y()) < GCodeFormatter::XYZ_EPSILON)
@@ -303,7 +320,7 @@ std::string GCodeWriter::travel_to_xy(const Vec2d &point, const std::string_view
     }
 }
 
-std::string GCodeWriter::travel_to_xy_G2G3IJ(const Vec2d &point, const Vec2d &ij, const bool ccw, const std::string_view comment)
+std::string GCodeWriter::travel_to_xy_G2G3IJ(const Domain::Vec2d &point, const Domain::Vec2d &ij, const bool ccw, const std::string_view comment)
 {
     assert(std::abs(point.x()) < 1200.);
     assert(std::abs(point.y()) < 1200.);
@@ -320,7 +337,7 @@ std::string GCodeWriter::travel_to_xy_G2G3IJ(const Vec2d &point, const Vec2d &ij
     return w.string();
 }
 
-std::string GCodeWriter::travel_to_xyz(const Vec3d &to, const std::string_view comment)
+std::string GCodeWriter::travel_to_xyz(const Domain::Vec3d &to, const std::string_view comment)
 {
     if (std::abs(to.x() - m_pos.x()) < GCodeFormatter::XYZ_EPSILON
         && std::abs(to.y() - m_pos.y()) < GCodeFormatter::XYZ_EPSILON
@@ -341,7 +358,7 @@ std::string GCodeWriter::travel_to_xyz(const Vec3d &to, const std::string_view c
     }
 }
 
-std::string GCodeWriter::travel_to_xyz_force(const Vec3d &to, const std::string_view comment) {
+std::string GCodeWriter::travel_to_xyz_force(const Domain::Vec3d &to, const std::string_view comment) {
     GCodeG1Formatter w;
     w.emit_xyz(to);
 
@@ -349,7 +366,7 @@ std::string GCodeWriter::travel_to_xyz_force(const Vec3d &to, const std::string_
     const double speed_z = this->config.get<double>("travel_speed_z");
 
     if (speed_z) {
-        const Vec3d move{to - m_pos};
+        const Domain::Vec3d move{to - m_pos};
         const double distance{move.norm()};
         const double abs_unit_vector_z{std::abs(move.z())/distance};
         // De-compose speed into z vector component according to the movement unit vector.
@@ -389,7 +406,7 @@ std::string GCodeWriter::travel_to_z_force(double z, const std::string_view comm
     return w.string();
 }
 
-std::string GCodeWriter::extrude_to_xy(const Vec2d &point, double dE, const std::string_view comment)
+std::string GCodeWriter::extrude_to_xy(const Domain::Vec2d &point, double dE, const std::string_view comment)
 {
     //assert(dE != 0);
     assert(std::abs(dE) < 1000.0);
@@ -403,7 +420,7 @@ std::string GCodeWriter::extrude_to_xy(const Vec2d &point, double dE, const std:
     return w.string();
 }
 
-std::string GCodeWriter::extrude_to_xyz(const Vec3d &point, double dE, const std::string_view comment)
+std::string GCodeWriter::extrude_to_xyz(const Domain::Vec3d &point, double dE, const std::string_view comment)
 {
     m_pos = point;
 
@@ -414,7 +431,7 @@ std::string GCodeWriter::extrude_to_xyz(const Vec3d &point, double dE, const std
     return w.string();
 }
 
-std::string GCodeWriter::extrude_to_xy_G2G3IJ(const Vec2d &point, const Vec2d &ij, const bool ccw, double dE, const std::string_view comment)
+std::string GCodeWriter::extrude_to_xy_G2G3IJ(const Domain::Vec2d &point, const Domain::Vec2d &ij, const bool ccw, double dE, const std::string_view comment)
 {
     assert(std::abs(dE) < 1000.0);
     assert(dE != 0);
@@ -533,7 +550,7 @@ std::string GCodeWriter::unretract()
     return gcode;
 }
 
-void GCodeWriter::update_position(const Vec3d &new_pos)
+void GCodeWriter::update_position(const Domain::Vec3d &new_pos)
 {
     m_pos = new_pos;
 }

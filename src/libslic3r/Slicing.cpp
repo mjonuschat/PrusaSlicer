@@ -6,10 +6,10 @@
 #include <algorithm>
 #include <cmath>
 
-#include "libslic3r.h"
-#include "Slicing.hpp"
-#include "SlicingAdaptive.hpp"
-#include "PrintConfig.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/Slicing.hpp"
+#include "libslic3r/SlicingAdaptive.hpp"
+#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/ConfigViews.hpp"
 

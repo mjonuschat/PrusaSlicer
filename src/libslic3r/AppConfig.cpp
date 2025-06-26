@@ -4,11 +4,11 @@
 ///|/
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Utils.hpp"
-#include "AppConfig.hpp"
+#include "libslic3r/AppConfig.hpp"
 #include "Slic3r/Exception.hpp"
 #include "LocalesUtils.hpp"
 #include "Thread.hpp"
-#include "format.hpp"
+#include "libslic3r/format.hpp"
 
 #include <utility>
 #include <vector>

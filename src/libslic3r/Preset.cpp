@@ -9,9 +9,9 @@
 #include <cassert>
 
 #include "Slic3r/Exception.hpp"
-#include "Preset.hpp"
-#include "AppConfig.hpp"
-#include "I18N.hpp"
+#include "libslic3r/Preset.hpp"
+#include "libslic3r/AppConfig.hpp"
+#include "libslic3r/I18N.hpp"
 
 #ifdef _MSC_VER
     #define WIN32_LEAN_AND_MEAN
@@ -41,11 +41,11 @@
 #include <boost/locale.hpp>
 #include <boost/log/trivial.hpp>
 
-#include "libslic3r.h"
-#include "Utils.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/Utils.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
 
-#include "PresetBundle.hpp"
+#include "libslic3r/PresetBundle.hpp"
 
 using boost::property_tree::ptree;
 

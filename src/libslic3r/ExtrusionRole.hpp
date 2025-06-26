@@ -7,7 +7,7 @@
 #define slic3r_ExtrusionRole_hpp_
 
 #include "Slic3r/Domain/GCodeExtrusionRole.hpp"
-#include "enum_bitmask.hpp"
+#include "libslic3r/enum_bitmask.hpp"
 
 #include <string>
 #include <string_view>

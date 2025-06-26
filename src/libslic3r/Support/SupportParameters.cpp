@@ -5,9 +5,9 @@
 #include <algorithm>
 #include <cassert>
 
-#include "../Print.hpp"
-#include "../PrintConfig.hpp"
-#include "../Slicing.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/Slicing.hpp"
 #include "SupportParameters.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Point.hpp"

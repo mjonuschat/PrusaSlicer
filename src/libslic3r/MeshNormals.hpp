@@ -9,7 +9,7 @@
 #include <functional>
 #include <vector>
 
-#include "AABBMesh.hpp"
+#include "libslic3r/AABBMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include "libslic3r/Point.hpp"

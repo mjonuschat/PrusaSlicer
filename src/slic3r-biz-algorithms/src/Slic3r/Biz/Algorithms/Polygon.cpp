@@ -118,23 +118,6 @@ Domain::Polygon scaled(const std::vector<Domain::Vec2d>& points)
     return Domain::Polygon(Point::scaled(points));
 }
 
-// TODO: Uncomment after migration to BoundingBox2crd.
-/*
-Domain::BoundingBox2crd get_bounding_box(const Domain::Polygon& polygon)
-{
-    return BoundingBox::construct(polygon.points);
-}
-
-Domain::BoundingBox2crd get_bounding_box(const Domain::Polygons& polygons)
-{
-    Domain::BoundingBox2crd bounding_box;
-    for (const Domain::Polygon& polygon : polygons) {
-        bounding_box = BoundingBox::merge(bounding_box, get_bounding_box(polygon));
-    }
-
-    return bounding_box;
-}*/
-
 bool is_counter_clockwise(const Domain::Polygon& polygon)
 {
     return ClipperLib::Orientation(polygon.points);
@@ -338,22 +321,19 @@ Domain::Lines to_lines(const Domain::Polygons& polygons)
     return lines;
 }
 
-Domain::BoundingBox2crd get_extents(const Domain::Polygon& poly)
+Domain::BoundingBox2crd get_extents(const Domain::Polygon& polygon)
 {
-    return Algorithms::BoundingBox::construct(poly.points);
+    return BoundingBox::construct(polygon.points);
 }
 
 Domain::BoundingBox2crd get_extents(const Domain::Polygons& polygons)
 {
-    Domain::BoundingBox2crd bb;
-    if (!polygons.empty()) {
-        bb = get_extents(polygons.front());
-        for (size_t i = 1; i < polygons.size(); ++i) {
-            bb = BoundingBox::merge(bb, get_extents(polygons[i]));
-        }
+    Domain::BoundingBox2crd bounding_box;
+    for (const Domain::Polygon& polygon : polygons) {
+        bounding_box = BoundingBox::merge(bounding_box, Polygon::get_extents(polygon));
     }
 
-    return bb;
+    return bounding_box;
 }
 
 Domain::ExPolygons to_expolygons(const Domain::Polygons& polygons)

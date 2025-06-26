@@ -24,26 +24,15 @@
 #include <utility>
 #include <vector>
 
-#include "PrintBase.hpp"
-#include "SLA/SupportTree.hpp"
-#include "SLA/SupportPointGenerator.hpp" // SupportPointGeneratorData
-#include "SLA/SLAResult.hpp"
-#include "Point.hpp"
-#include "libslic3r/GCode/ThumbnailData.hpp"
+#include "libslic3r/ConfigViews.hpp"
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
 #include "libslic3r/MeshBoolean.hpp"
-#include "libslic3r/OpenVDBUtils.hpp"
-#include "admesh/stl.h"
-#include "libslic3r/AnyPtr.hpp"
-#include "libslic3r/Config.hpp"
-#include "libslic3r/Model.hpp"
-#include "Slic3r/Domain/ObjectID.hpp"
-#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/PrintBase.hpp"
 #include "libslic3r/SLA/Hollowing.hpp"
 #include "libslic3r/SLA/Pad.hpp"
-#include "Slic3r/Domain/SLA/SupportPoint.hpp"
-#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "libslic3r/libslic3r.h"
+#include "libslic3r/SLA/SLAResult.hpp"
+#include "libslic3r/SLA/SupportTree.hpp"
+#include "libslic3r/SLA/SupportPointGenerator.hpp"
 
 namespace Slic3r {
 namespace sla {
@@ -69,7 +58,6 @@ enum SLAPrintObjectStep : unsigned int {
 };
 
 class SLAPrint;
-class GLCanvas;
 
 using _SLAPrintObjectBase =
     PrintObjectBaseWithState<SLAPrint, SLAPrintObjectStep, slaposCount>;

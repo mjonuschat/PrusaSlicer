@@ -45,8 +45,8 @@
 #include <boost/log/trivial.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
-#include "I18N.hpp"
-#include "format.hpp"
+#include "libslic3r/I18N.hpp"
+#include "libslic3r/format.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
 #include "libslic3r/ExPolygon.hpp"

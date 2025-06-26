@@ -5,9 +5,6 @@
 #ifndef slic3r_PrintBase_hpp_
 #define slic3r_PrintBase_hpp_
 
-#include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
-#include "Slic3r/Domain/BedInstance.hpp"
-#include "libslic3r.h"
 #include <set>
 #include <vector>
 #include <string>
@@ -17,13 +14,13 @@
 
 #include <jthread/JThread.hpp>
 
-#include "Slic3r/Domain/ObjectID.hpp"
-#include "Model.hpp"
-#include "PrintConfig.hpp"
-#include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
-#include "libslic3r/ModelUtils.hpp"
-#include <libslic3r/SLA/SLAResult.hpp>
+#include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
+#include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
+
+#include "libslic3r/Config.hpp"
 #include "libslic3r/SerializedConfig.hpp"
 
 namespace Slic3r {

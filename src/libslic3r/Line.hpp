@@ -47,11 +47,11 @@ template<class L, class En = void> struct Traits {
     static const LegacyVec<Dim, Scalar>& get_b(const L &l) { return l.b; }
 };
 
-template<class L> const constexpr int Dim = Traits<remove_cvref_t<L>>::Dim;
-template<class L> using Scalar = typename Traits<remove_cvref_t<L>>::Scalar;
+template<class L> const constexpr int Dim = Traits<std::remove_cvref_t<L>>::Dim;
+template<class L> using Scalar = typename Traits<std::remove_cvref_t<L>>::Scalar;
 
-template<class L> auto get_a(L &&l) { return Traits<remove_cvref_t<L>>::get_a(l); }
-template<class L> auto get_b(L &&l) { return Traits<remove_cvref_t<L>>::get_b(l); }
+template<class L> auto get_a(L &&l) { return Traits<std::remove_cvref_t<L>>::get_a(l); }
+template<class L> auto get_b(L &&l) { return Traits<std::remove_cvref_t<L>>::get_b(l); }
 
 // Distance to the closest point of line.
 template<class L>

@@ -31,7 +31,7 @@ namespace Slic3r { namespace sla {
 indexed_triangle_set create_support_tree(const SupportableMesh &sm,
                                          const JobController   &ctl)
 {
-    auto builder = make_unique<SupportTreeBuilder>(ctl);
+    auto builder = std::make_unique<SupportTreeBuilder>(ctl);
 
     if (sm.cfg.enabled) {
         using std::chrono::high_resolution_clock;

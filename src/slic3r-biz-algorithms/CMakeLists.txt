@@ -55,6 +55,7 @@ add_library(slic3r-biz-algorithms
     include/Slic3r/Biz/Algorithms/ModelVolume.hpp
     src/Slic3r/Biz/Algorithms/Color.cpp
     include/Slic3r/Biz/Algorithms/Color.hpp
+    include/Slic3r/Biz/Algorithms/Types.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)

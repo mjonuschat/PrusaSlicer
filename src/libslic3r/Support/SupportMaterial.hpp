@@ -8,9 +8,9 @@
 
 #include <vector>
 
-#include "../Flow.hpp"
-#include "../PrintConfig.hpp"
-#include "../Slicing.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/Slicing.hpp"
 #include "SupportLayer.hpp"
 #include "SupportParameters.hpp"
 #include "libslic3r/Polygon.hpp"

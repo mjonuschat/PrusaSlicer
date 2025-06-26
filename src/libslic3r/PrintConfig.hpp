@@ -52,12 +52,10 @@
 #include <utility>
 #include <vector>
 
-#include "libslic3r.h"
-#include "Config.hpp"
-#include "SLA/SupportTreeStrategies.hpp"
-#include "libslic3r/Point.hpp"
 #include "Slic3r/Domain/GCodeFlavor.hpp"
+#include "libslic3r/Config.hpp"
 #include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/SLA/SupportTreeStrategies.hpp"
 
 namespace Slic3r {
 class FullPrintConfig;

@@ -11,11 +11,12 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Model.hpp"
-#include "ModelProcessing.hpp"
+#include "libslic3r/ModelProcessing.hpp"
 
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
@@ -104,7 +105,7 @@ void convert_from_imperial_units(Domain::ModelVolume* volume)
 {
     assert(!volume->source.is_converted_from_meters);
     volume->scale_geometry_after_creation(25.4f);
-    volume->set_offset(Vec3d(0, 0, 0));
+    volume->set_offset(Domain::Vec3d(0, 0, 0));
     volume->source.is_converted_from_inches = true;
 }
 
@@ -125,7 +126,7 @@ void convert_from_meters(Domain::ModelVolume* volume)
 {
     assert(!volume->source.is_converted_from_inches);
     volume->scale_geometry_after_creation(1000.f);
-    volume->set_offset(Vec3d(0, 0, 0));
+    volume->set_offset(Domain::Vec3d(0, 0, 0));
     volume->source.is_converted_from_meters = true;
 }
 
@@ -169,7 +170,7 @@ void convert_units(Domain::Model& model_to, Domain::ModelObject* object_from, Co
                 (volume_idxs.empty() ||
                     std::find(volume_idxs.begin(), volume_idxs.end(), vol_idx) != volume_idxs.end())) {
                 vol->scale_geometry_after_creation(koef);
-                vol->set_offset(Vec3d(koef, koef, koef).cwiseProduct(volume->get_offset()));
+                vol->set_offset(Domain::Vec3d(koef, koef, koef).cwiseProduct(volume->get_offset()));
                 if (conv_type == ConversionType::CONV_FROM_INCH || conv_type == ConversionType::CONV_TO_INCH)
                     vol->source.is_converted_from_inches = conv_type == ConversionType::CONV_FROM_INCH;
                 if (conv_type == ConversionType::CONV_FROM_METER || conv_type == ConversionType::CONV_TO_METER)
@@ -202,7 +203,7 @@ TriangleMeshStats get_object_mesh_stats(const Domain::ModelObject* object)
 
         // another used satistics value
         if (volume->is_model_part()) {
-            Transform3d trans = object->instances.empty() ? volume->get_matrix() : (volume->get_matrix() * object->instances[0]->get_matrix());
+            Domain::Transform3d trans = object->instances.empty() ? volume->get_matrix() : (volume->get_matrix() * object->instances[0]->get_matrix());
             full_stats.volume += stats.volume * std::fabs(trans.matrix().block(0, 0, 3, 3).determinant());
             full_stats.number_of_parts += stats.number_of_parts;
         }
@@ -249,11 +250,11 @@ int get_repaired_errors_count(const Domain::ModelObject* object, const int vol_i
 static bool is_front_up_left(const TriangleMesh &trinagle_mesh1, const TriangleMesh &triangle_mesh2)
 {
     // stats form t1
-    const Vec3f &min1 = trinagle_mesh1.stats().min;
-    const Vec3f &max1 = trinagle_mesh1.stats().max;
+    const Domain::Vec3f &min1 = trinagle_mesh1.stats().min;
+    const Domain::Vec3f &max1 = trinagle_mesh1.stats().max;
     // stats from t2
-    const Vec3f &min2 = triangle_mesh2.stats().min;
-    const Vec3f &max2 = triangle_mesh2.stats().max;
+    const Domain::Vec3f &min2 = triangle_mesh2.stats().min;
+    const Domain::Vec3f &max2 = triangle_mesh2.stats().max;
     // priority Z, Y, X
     for (int axe = 2; axe > 0; --axe) {
         if (max1[axe] < min2[axe])
@@ -286,7 +287,7 @@ size_t split(Domain::ModelVolume* volume, unsigned int max_extruders)
     const std::string& name = volume->name;
 
     unsigned int extruder_counter = 0;
-    const Vec3d offset = volume->get_offset();
+    const Domain::Vec3d offset = volume->get_offset();
 
     for (TriangleMesh &mesh : meshes) {
         if (mesh.empty() || mesh.has_zero_volume())
@@ -304,7 +305,7 @@ size_t split(Domain::ModelVolume* volume, unsigned int max_extruders)
         else
             Algorithms::ModelObject::insert_volume(object, (++ivolume), *volume, std::move(mesh));
 
-        object->volumes[ivolume]->set_offset(Vec3d::Zero());
+        object->volumes[ivolume]->set_offset(Domain::Vec3d::Zero());
         Algorithms::ModelVolume::center_geometry_after_creation(*object->volumes[ivolume]);
         Algorithms::ModelVolume::translate(*object->volumes[ivolume], offset);
         object->volumes[ivolume]->name = name + "_" + std::to_string(idx + 1);
@@ -391,11 +392,11 @@ void split(Domain::ModelObject* object, Domain::ModelObjectPtrs* new_objects)
             }
 
             for (Domain::ModelInstance* model_instance : new_object->instances) {
-                const Vec3d shift = model_instance->get_transformation().get_matrix_no_offset() * new_vol->get_offset();
+                const Domain::Vec3d shift = model_instance->get_transformation().get_matrix_no_offset() * new_vol->get_offset();
                 model_instance->set_offset(model_instance->get_offset() + shift);
             }
 
-            new_vol->set_offset(Vec3d::Zero());
+            new_vol->set_offset(Domain::Vec3d::Zero());
             // reset the source to disable reload from disk
             new_vol->source = Domain::ModelVolume::Source();
             new_objects->emplace_back(new_object);

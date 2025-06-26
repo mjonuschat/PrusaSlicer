@@ -12,10 +12,6 @@
 
 namespace Slic3r { namespace astar {
 
-// Borrowed from C++20
-template<class T>
-using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
-
 // Input interface for the Astar algorithm. Specialize this struct for a
 // particular type and implement all the 4 methods and specify the Node type
 // to register the new type for the astar implementation.
@@ -58,7 +54,7 @@ template<class T> struct TracerTraits_
 
 // Helper definition to get the node type of a tracer
 template<class T>
-using TracerNodeT = typename TracerTraits_<remove_cvref_t<T>>::Node;
+using TracerNodeT = typename TracerTraits_<std::remove_cvref_t<T>>::Node;
 
 constexpr auto Unassigned = std::numeric_limits<size_t>::max();
 
@@ -108,7 +104,7 @@ bool search_route(const Tracer              &tracer,
 {
     using Node         = TracerNodeT<Tracer>;
     using QNode        = QNode<Tracer>;
-    using TracerTraits = TracerTraits_<remove_cvref_t<Tracer>>;
+    using TracerTraits = TracerTraits_<std::remove_cvref_t<Tracer>>;
 
     struct LessPred { // Comparison functor needed by the priority queue
         NodeMap &m;

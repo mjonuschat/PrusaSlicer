@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "AABBMesh.hpp"
+#include "libslic3r/AABBMesh.hpp"
 
 #include <libslic3r/AABBTreeIndirect.hpp>
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"

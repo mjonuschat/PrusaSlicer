@@ -21,11 +21,11 @@
 #include <cstddef>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "libslic3r.h"
-#include "ExtrusionRole.hpp"
-#include "Flow.hpp"
-#include "Polygon.hpp"
-#include "Polyline.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/ExtrusionRole.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/Polyline.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
 

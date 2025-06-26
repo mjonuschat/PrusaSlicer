@@ -58,7 +58,10 @@ inline void model_volumes_sort_by_id(Domain::ModelVolumePtrs &model_volumes)
 
 inline const Domain::ModelVolume* model_volume_find_by_id(const Domain::ModelVolumePtrs &model_volumes, const Domain::ObjectID id)
 {
-    auto it = lower_bound_by_predicate(model_volumes.begin(), model_volumes.end(), [id](const Domain::ModelVolume *mv) { return mv->id() < id; });
+    auto it = std::ranges::lower_bound(model_volumes, id, {}, [](const Domain::ModelVolume* mv) {
+        return mv->id();
+    });
+
     return it != model_volumes.end() && (*it)->id() == id ? *it : nullptr;
 }
 

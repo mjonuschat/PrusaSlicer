@@ -18,7 +18,7 @@
 #include <Eigen/Geometry>
 
 #include "BoundingBox.hpp"
-#include "Utils.hpp" // for next_highest_power_of_2()
+#include "libslic3r/Utils.hpp" // for next_highest_power_of_2()
 
 // Definition of the ray intersection hit structure.
 #include <igl/Hit.h>

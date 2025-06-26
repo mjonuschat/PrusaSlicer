@@ -6,11 +6,12 @@
 ///|/
 #include <cassert>
 
-#include "libslic3r.h"
-#include "PresetBundle.hpp"
-#include "Utils.hpp"
-#include "Model.hpp"
-#include "format.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/PresetBundle.hpp"
+#include "libslic3r/Utils.hpp"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/format.hpp"
+#include "libslic3r/AppConfig.hpp"
 
 #include <algorithm>
 #include <set>
