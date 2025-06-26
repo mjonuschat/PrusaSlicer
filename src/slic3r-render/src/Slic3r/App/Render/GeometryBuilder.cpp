@@ -1,6 +1,10 @@
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+using Slic3r::Domain::Vec3f;
+using Slic3r::Domain::Vec2f;
 
 namespace Slic3r::App::Render {
 

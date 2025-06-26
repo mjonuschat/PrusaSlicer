@@ -5,7 +5,6 @@
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/Context.hpp"
 
-#include "libslic3r/Technologies.hpp"
 #include "Slic3r/PlatformInfo.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"

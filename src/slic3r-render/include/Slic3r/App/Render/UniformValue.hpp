@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/App/Render/Types.hpp"
-
-#include "libslic3r/Point.hpp"
 
 #include <array>
 #include <string_view>
@@ -17,10 +16,10 @@ using UniformValue = std::variant<
     float
     , int
     , bool
-    , Vec2f
-    , Vec3f
-    , Matrix3f
-    , Matrix4f
+    , Domain::Vec2f
+    , Domain::Vec3f
+    , Domain::SquareMatrix3f
+    , Domain::SquareMatrix4f
     , Domain::ColorRGB
     , Domain::ColorRGBA
 

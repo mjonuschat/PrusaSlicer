@@ -1,7 +1,14 @@
 #include "Slic3r/App/Render/MathUtils.hpp"
 
-#include <libslic3r/Geometry.hpp>
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
+using Slic3r::Domain::SquareMatrix4d;
+using Slic3r::Domain::SquareMatrix4f;
+using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec2f;
+using Slic3r::Domain::Vec3f;
 
 namespace Slic3r::App::Render {
 
@@ -26,10 +33,10 @@ Matrix4<T> ortho(T left, T right, T bottom, T top, T near_z, T far_z)
     return ret;
 }
 
-Matrix4d ortho(double left, double right, double bottom, double top, double near_z, double far_z)
+SquareMatrix4d ortho(double left, double right, double bottom, double top, double near_z, double far_z)
 { return ortho<double>(left, right, bottom, top, near_z, far_z); }
 
-Matrix4f ortho(float left, float right, float bottom, float top, float near_z, float far_z)
+SquareMatrix4f ortho(float left, float right, float bottom, float top, float near_z, float far_z)
 { return ortho<float>(left, right, bottom, top, near_z, far_z); }
 
 
@@ -48,10 +55,10 @@ Matrix4<T> frustum(T left, T right, T bottom, T top, T near_z, T far_z)
     return ret;
 }
 
-Matrix4f frustum(float left, float right, float bottom, float top, float near_z, float far_z)
+SquareMatrix4f frustum(float left, float right, float bottom, float top, float near_z, float far_z)
 { return frustum<float>(left, right, bottom, top, near_z, far_z); }
 
-Matrix4d frustum(double left, double right, double bottom, double top, double near_z, double far_z)
+SquareMatrix4d frustum(double left, double right, double bottom, double top, double near_z, double far_z)
 { return frustum<double>(left, right, bottom, top, near_z, far_z); }
 
 
@@ -69,10 +76,10 @@ Matrix4<T> perspective(T fovy, T aspect, T near_z, T far_z)
     return ret;
 }
 
-Matrix4f perspective(float fovy, float aspect, float near_z, float far_z)
+SquareMatrix4f perspective(float fovy, float aspect, float near_z, float far_z)
 { return perspective<float>(fovy, aspect, near_z, far_z); }
 
-Matrix4d perspective(double fovy, double aspect, double near_z, double far_z)
+SquareMatrix4d perspective(double fovy, double aspect, double near_z, double far_z)
 { return perspective<double>(fovy, aspect, near_z, far_z); }
 
 
@@ -103,10 +110,10 @@ Matrix4<T> look_at(const Vec3<T>& eye, const Vec3<T>& center, const Vec3<T>& up)
     return ret;
 }
 
-Matrix4f look_at(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
+SquareMatrix4f look_at(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
 { return look_at<float>(eye, center, up); }
 
-Matrix4d look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up)
+SquareMatrix4d look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up)
 { return look_at<double>(eye, center, up); }
 
 

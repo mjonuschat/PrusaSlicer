@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-#include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::Domain {
 class ColorRGB;
@@ -49,16 +49,16 @@ public:
     void set_uniform(const char* name, const std::array<float, 4>& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const std::array<double, 4>& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const float* value, size_t size) const { set_uniform(get_uniform_location(name), value, size); }
-    void set_uniform(const char* name, const Transform3f& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const Transform3d& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const Matrix3f& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const Matrix3d& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const Matrix4f& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const Matrix4d& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const Vec2f& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const Vec2d& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const Vec3f& value) const { set_uniform(get_uniform_location(name), value); }
-    void set_uniform(const char* name, const Vec3d& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::Transform3f& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::Transform3d& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::SquareMatrix3f& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::SquareMatrix3d& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::SquareMatrix4f& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::SquareMatrix4d& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::Vec2f& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::Vec2d& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::Vec3f& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::Vec3d& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const Domain::ColorRGB& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const Domain::ColorRGBA& value) const { set_uniform(get_uniform_location(name), value); }
 
@@ -74,16 +74,16 @@ public:
     void set_uniform(int id, const std::array<float, 4>& value) const;
     void set_uniform(int id, const std::array<double, 4>& value) const;
     void set_uniform(int id, const float* value, size_t size) const;
-    void set_uniform(int id, const Transform3f& value) const;
-    void set_uniform(int id, const Transform3d& value) const;
-    void set_uniform(int id, const Matrix3f& value) const;
-    void set_uniform(int id, const Matrix3d& value) const;
-    void set_uniform(int id, const Matrix4f& value) const;
-    void set_uniform(int id, const Matrix4d& value) const;
-    void set_uniform(int id, const Vec2f& value) const;
-    void set_uniform(int id, const Vec2d& value) const;
-    void set_uniform(int id, const Vec3f& value) const;
-    void set_uniform(int id, const Vec3d& value) const;
+    void set_uniform(int id, const Domain::Transform3f& value) const;
+    void set_uniform(int id, const Domain::Transform3d& value) const;
+    void set_uniform(int id, const Domain::SquareMatrix3f& value) const;
+    void set_uniform(int id, const Domain::SquareMatrix3d& value) const;
+    void set_uniform(int id, const Domain::SquareMatrix4f& value) const;
+    void set_uniform(int id, const Domain::SquareMatrix4d& value) const;
+    void set_uniform(int id, const Domain::Vec2f& value) const;
+    void set_uniform(int id, const Domain::Vec2d& value) const;
+    void set_uniform(int id, const Domain::Vec3f& value) const;
+    void set_uniform(int id, const Domain::Vec3d& value) const;
     void set_uniform(int id, const Domain::ColorRGB& value) const;
     void set_uniform(int id, const Domain::ColorRGBA& value) const;
 

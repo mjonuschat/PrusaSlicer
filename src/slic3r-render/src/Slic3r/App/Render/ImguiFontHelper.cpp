@@ -15,6 +15,7 @@
 #include <boost/nowide/fstream.hpp>
 
 #include <set>
+#include <unordered_set>
 
 namespace Slic3r::App::Render {
 

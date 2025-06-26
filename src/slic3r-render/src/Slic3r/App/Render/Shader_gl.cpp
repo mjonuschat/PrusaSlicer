@@ -4,11 +4,10 @@
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLShaderInternal.hpp"
 #include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/libslic3r.h"
-
-#include "libslic3r/Utils.hpp"
 #include "libslic3r/format.hpp"
+#include "libslic3r/Utils.hpp"
 #include <Slic3r/Log.hpp>
 #include <Slic3r/Assert.hpp>
 
@@ -17,6 +16,19 @@
 #include <GL/glew.h>
 
 #include <boost/log/trivial.hpp>
+
+using Slic3r::Domain::ColorRGB;
+using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::SquareMatrix3d;
+using Slic3r::Domain::SquareMatrix3f;
+using Slic3r::Domain::SquareMatrix4d;
+using Slic3r::Domain::SquareMatrix4f;
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Transform3f;
+using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec2f;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec3f;
 
 namespace Slic3r::App::Render {
 
@@ -343,7 +355,7 @@ void Shader::set_uniform(int id, const Transform3d& value) const
     set_uniform(id, value.cast<float>());
 }
 
-void Shader::set_uniform(int id, const Matrix3f& value) const
+void Shader::set_uniform(int id, const SquareMatrix3f& value) const
 {
     if (id >= 0) {
         glUniformMatrix3fv(id, 1, GL_FALSE, value.data());
@@ -351,12 +363,12 @@ void Shader::set_uniform(int id, const Matrix3f& value) const
     }
 }
 
-void Shader::set_uniform(int id, const Matrix3d& value) const
+void Shader::set_uniform(int id, const SquareMatrix3d& value) const
 {
-    set_uniform(id, static_cast<Matrix3f>(value.cast<float>()));
+    set_uniform(id, static_cast<SquareMatrix3f>(value.cast<float>()));
 }
 
-void Shader::set_uniform(int id, const Matrix4f& value) const
+void Shader::set_uniform(int id, const SquareMatrix4f& value) const
 {
     if (id >= 0) {
         glUniformMatrix4fv(id, 1, GL_FALSE, value.data());
@@ -364,9 +376,9 @@ void Shader::set_uniform(int id, const Matrix4f& value) const
     }
 }
 
-void Shader::set_uniform(int id, const Matrix4d& value) const
+void Shader::set_uniform(int id, const SquareMatrix4d& value) const
 {
-    set_uniform(id, static_cast<Matrix4f>(value.cast<float>()));
+    set_uniform(id, static_cast<SquareMatrix4f>(value.cast<float>()));
 }
 
 void Shader::set_uniform(int id, const Vec2f& value) const
@@ -395,12 +407,12 @@ void Shader::set_uniform(int id, const Vec3d& value) const
     set_uniform(id, static_cast<Vec3f>(value.cast<float>()));
 }
 
-void Shader::set_uniform(int id, const Domain::ColorRGB& value) const
+void Shader::set_uniform(int id, const ColorRGB& value) const
 {
     set_uniform(id, value.data(), 3);
 }
 
-void Shader::set_uniform(int id, const Domain::ColorRGBA& value) const
+void Shader::set_uniform(int id, const ColorRGBA& value) const
 {
     set_uniform(id, value.data(), 4);
 }

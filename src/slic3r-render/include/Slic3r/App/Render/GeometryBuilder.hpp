@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Slic3r/Domain/Types.hpp"
+
 #include "Geometry.hpp"
 
 struct indexed_triangle_set;
@@ -11,40 +13,40 @@ class Device;
 
 struct VertexP3
 {
-    Vec3f position;
+    Domain::Vec3f position;
 
     static const VertexAttribsDesc& format();
 };
 
 struct VertexP3N3
 {
-    Vec3f position;
-    Vec3f normal;
+    Domain::Vec3f position;
+    Domain::Vec3f normal;
 
     static const VertexAttribsDesc& format();
 };
 
 struct VertexP3T2
 {
-    Vec3f position;
-    Vec2f tex_coord;
+    Domain::Vec3f position;
+    Domain::Vec2f tex_coord;
 
     static const VertexAttribsDesc& format();
 };
 
 struct VertexP3N3T2
 {
-    Vec3f position;
-    Vec3f normal;
-    Vec2f tex_coord;
+    Domain::Vec3f position;
+    Domain::Vec3f normal;
+    Domain::Vec2f tex_coord;
 
     static const VertexAttribsDesc& format();
 };
 
 struct VertexP2T2
 {
-    Vec2f position;
-    Vec2f tex_coord;
+    Domain::Vec2f position;
+    Domain::Vec2f tex_coord;
 
     static const VertexAttribsDesc& format();
 };
@@ -219,13 +221,13 @@ std::unique_ptr<Geometry> geometry_from_triangle_mesh(
     Device& device, const indexed_triangle_set& triangle_mesh, const Material& material = {}
 );
 std::unique_ptr<Geometry> geometry_from_triangles(
-    Device& device, const std::vector<Vec3f>& triangles, const Material& material = {}
+    Device& device, const std::vector<Domain::Vec3f>& triangles, const Material& material = {}
 );
 std::unique_ptr<Geometry> geometry_from_triangles(
-    Device& device, const std::vector<std::pair<Vec3f, Vec2f>>& triangles, const Material& material = {}
+    Device& device, const std::vector<std::pair<Domain::Vec3f, Domain::Vec2f>>& triangles, const Material& material = {}
 );
 std::unique_ptr<Geometry> geometry_from_lines(
-    Device& device, const std::vector<Vec3f>& lines, const Material& material = {}
+    Device& device, const std::vector<Domain::Vec3f>& lines, const Material& material = {}
 );
 
 } // namespace Slic3r::App::Render

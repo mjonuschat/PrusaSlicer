@@ -6,6 +6,7 @@
 
 #include "Slic3r/App/Render/Geometry.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -18,10 +19,10 @@ namespace Internal {
     struct trait<T, std::void_t<decltype(std::declval<T>().attr)>> \
         : std::is_same<decltype(std::declval<T>().attr), attr_type> {};
 
-DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasPosition3, Vec3f, position)
-DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasPosition2, Vec2f, position)
-DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasNormal, Vec3f, normal)
-DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasTexCoord2, Vec2f, color)
+DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasPosition3, Domain::Vec3f, position)
+DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasPosition2, Domain::Vec2f, position)
+DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasNormal, Domain::Vec3f, normal)
+DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasTexCoord2, Domain::Vec2f, color)
 
 template <typename V, typename DerivedT>
 class VertexAttributeBuilder
@@ -37,27 +38,27 @@ public:
     }
 
     template <typename U = V, typename = std::enable_if_t<Internal::HasNormal<U>::value>>
-    DerivedT& normal(const Vec3f& n)
+    DerivedT& normal(const Domain::Vec3f& n)
     {
         m_vertex.normal = n;
         return *this;
     }
 
     template <typename U = V, typename = std::enable_if_t<Internal::HasTexCoord2<U>::value>>
-    DerivedT& tex_coord(const Vec2f& tc)
+    DerivedT& tex_coord(const Domain::Vec2f& tc)
     {
         m_vertex.tex_coord = tc;
         return *this;
     }
 protected:
     template <typename U = V, typename = std::enable_if_t<Internal::HasPosition3<U>::value>>
-    void set_position(const Vec3f& v)
+    void set_position(const Domain::Vec3f& v)
     {
         m_vertex.position = v;
     }
 
     template <typename U = V, typename = std::enable_if_t<Internal::HasPosition2<U>::value>>
-    void set_position(const Vec2f& v)
+    void set_position(const Domain::Vec2f& v)
     {
         m_vertex.position = v;
     }
