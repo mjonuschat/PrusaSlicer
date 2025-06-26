@@ -1,6 +1,6 @@
 #pragma once
 
-#include "libslic3r/Model.hpp"
+#include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
 

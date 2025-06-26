@@ -40,7 +40,6 @@
 
 namespace Slic3r {
 class CurledLine;
-class Linef;
 }  // namespace Slic3r
 
 namespace Slic3r::ExtrusionProcessor {

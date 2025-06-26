@@ -1,6 +1,8 @@
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 
+
 #include "Slic3r/Math.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/Line.hpp"
 
@@ -249,6 +251,40 @@ bool intersection_infinite(const Domain::Line& line, const Domain::Line& other_l
 
     intersection_point_out = result.cast<coord_t>();
     return true;
+}
+
+Domain::BoundingBox2crd get_extents(const Domain::Lines& lines)
+{
+    Domain::BoundingBox2crd bbox;
+    for (const Domain::Line& line : lines) {
+        bbox = BoundingBox::merge(bbox, line.a);
+        bbox = BoundingBox::merge(bbox, line.b);
+    }
+
+    return bbox;
+}
+
+Domain::Vec3d intersect_plane(const Domain::Line3d& line, const double z)
+{
+    const Domain::Vec3d v = line.vector();
+    const double        t = (z - line.a.z()) / v.z();
+    return {line.a.x() + v.x() * t, line.a.y() + v.y() * t, z};
+}
+
+Domain::Line3d transformed(const Domain::Line3d& line, const Domain::Transform3d& t)
+{
+    using LineInMatrixForm = Eigen::Matrix<double, 3, 2>;
+
+    LineInMatrixForm world_line;
+    ::memcpy((void*) world_line.col(0).data(), (const void*) line.a.data(), 3 * sizeof(double));
+    ::memcpy((void*) world_line.col(1).data(), (const void*) line.b.data(), 3 * sizeof(double));
+
+    LineInMatrixForm local_line = t * world_line.colwise().homogeneous();
+
+    return Domain::Line3d(
+        Domain::Vec3d(local_line(0, 0), local_line(1, 0), local_line(2, 0)),
+        Domain::Vec3d(local_line(0, 1), local_line(1, 1), local_line(2, 1))
+    );
 }
 
 } // namespace Slic3r::Biz::Algorithms::Line

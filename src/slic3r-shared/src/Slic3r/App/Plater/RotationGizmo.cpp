@@ -4,7 +4,14 @@
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Domain/Line.hpp"
+#include "Slic3r/Domain/Transformation.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 namespace Slic3r::App::Plater {
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec3d;
 
 namespace {
 
@@ -68,14 +75,14 @@ static Transform3d axis_transform(AxisType axis)
 }
 
 static Vec3d mouse_position_in_local_plane(AxisType axis, const Transform3d& orient_matrix, const Vec3d& center,
-    const Linef3& mouse_ray)
+    const Domain::Line3d& mouse_ray)
 {
     Transform3d m = axis_transform(axis).inverse();
-    m = m * Geometry::Transformation(orient_matrix).get_matrix_no_offset().inverse();
+    m = m * Domain::Transformation(orient_matrix).get_matrix_no_offset().inverse();
 
     m.translate(-center);
 
-    const Linef3 local_mouse_ray = transform(mouse_ray, m);
+    const Domain::Line3d local_mouse_ray = Biz::Algorithms::Line::transformed(mouse_ray, m);
     if (std::abs(local_mouse_ray.vector().dot(Vec3d::UnitZ())) < EPSILON) {
         // if the ray is parallel to the plane containing the circle
         if (std::abs(local_mouse_ray.vector().dot(Vec3d::UnitY())) > 1.0 - EPSILON)
@@ -88,7 +95,7 @@ static Vec3d mouse_position_in_local_plane(AxisType axis, const Transform3d& ori
         }
     }
     else
-        return local_mouse_ray.intersect_plane(0.0);
+        return Biz::Algorithms::Line::intersect_plane(local_mouse_ray, 0.0);
 }
 
 static Vec3d extract_position(const App::Scene::Transform& xform)

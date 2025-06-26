@@ -111,4 +111,20 @@ bool Line::is_perpendicular_to(const Line& line) const
     return Slic3r::sqr(v1.dot(v2)) < Slic3r::sqr(EPSILON) * v1.squaredNorm() * v2.squaredNorm();
 }
 
+Vec3d Line3d::vector() const
+{
+    return this->b - this->a;
+}
+
+double Line3d::length() const
+{
+    return vector().norm();
+}
+
+void Line3d::scale(const double factor)
+{
+    this->a *= factor;
+    this->b *= factor;
+}
+
 } // namespace Slic3r::Domain

@@ -30,8 +30,10 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "AABBTreeLines.hpp"
 #include "ExPolygon.hpp"
@@ -1994,8 +1996,8 @@ void PrintObject::bridge_over_infill()
         {
             Algorithms::Polygon::rotate(bridged_area, aligning_angle);
             lines_rotate(anchors, cos(aligning_angle), sin(aligning_angle));
-            BoundingBox bb_x = get_extents(bridged_area);
-            BoundingBox bb_y = get_extents(anchors);
+            BoundingBox             bb_x = get_extents(bridged_area);
+            Domain::BoundingBox2crd bb_y = Algorithms::Line::get_extents(anchors);
 
             const size_t n_vlines = (bb_x.max.x() - bb_x.min.x() + bridging_flow.scaled_spacing() - 1) / bridging_flow.scaled_spacing();
             std::vector<Line> vertical_lines(n_vlines);

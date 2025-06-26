@@ -24,7 +24,6 @@
 // Forward declarations.
 namespace Slic3r {
 class Layer;
-class Linef;
 class ExtrusionEntity;
 
 } // namespace Slic3r

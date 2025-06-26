@@ -258,7 +258,6 @@ set(SLIC3R_SOURCES
     LayerRegion.cpp
     libslic3r.h
     "${CMAKE_CURRENT_BINARY_DIR}/libslic3r_version.h"
-    Line.cpp
     Line.hpp
     BlacklistedLibraryCheck.cpp
     BlacklistedLibraryCheck.hpp

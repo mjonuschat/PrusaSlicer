@@ -46,4 +46,43 @@ public:
 
 using Lines = std::vector<Line>;
 
+class Line2d
+{
+public:
+    static const constexpr int Dim    = 2;
+    using                      Scalar = Vec2d::Scalar;
+
+    Vec2d a;
+    Vec2d b;
+
+    Line2d(): a(Vec2d::Zero()), b(Vec2d::Zero()) {}
+    Line2d(const Vec2d& a, const Vec2d& b): a(a), b(b) {}
+
+    virtual ~Line2d() = default;
+};
+
+using Line2ds = std::vector<Line2d>;
+
+class Line3d
+{
+public:
+    static const constexpr int Dim    = 3;
+    using                      Scalar = Vec3d::Scalar;
+
+    Vec3d a;
+    Vec3d b;
+
+    Line3d(): a(Vec3d::Zero()), b(Vec3d::Zero()) {}
+    Line3d(const Vec3d& a, const Vec3d& b): a(a), b(b) {}
+
+    virtual ~Line3d() = default;
+
+    Vec3d   vector() const;
+    double  length() const;
+
+    void    scale(double factor);
+};
+
+using Line3ds = std::vector<Line3d>;
+
 } // namespace Slic3r::Domain

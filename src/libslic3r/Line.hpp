@@ -26,14 +26,14 @@ namespace Slic3r {
 
 using Line = Slic3r::Domain::Line;
 using Lines = Slic3r::Domain::Lines;
+using Linef = Slic3r::Domain::Line2d;
+using Linesf = Slic3r::Domain::Line2ds;
+using Linef3 = Slic3r::Domain::Line3d;
 
 class BoundingBox;
-class Linef3;
 class ThickLine;
 
 typedef std::vector<ThickLine> ThickLines;
-
-Linef3 transform(const Linef3& line, const Transform3d& t);
 
 namespace line_alg {
 
@@ -183,41 +183,6 @@ public:
 };
 
 using CurledLines = std::vector<CurledLine>;
-
-class Linef
-{
-public:
-    Linef() : a(Vec2d::Zero()), b(Vec2d::Zero()) {}
-    Linef(const Vec2d& _a, const Vec2d& _b) : a(_a), b(_b) {}
-    virtual ~Linef() = default;
-
-    Vec2d a;
-    Vec2d b;
-
-    static const constexpr int Dim = 2;
-    using Scalar = Vec2d::Scalar;
-};
-using Linesf = std::vector<Linef>;
-
-class Linef3
-{
-public:
-    Linef3() : a(Vec3d::Zero()), b(Vec3d::Zero()) {}
-    Linef3(const Vec3d& _a, const Vec3d& _b) : a(_a), b(_b) {}
-
-    Vec3d   intersect_plane(double z) const;
-    void    scale(double factor) { this->a *= factor; this->b *= factor; }
-    Vec3d   vector() const { return this->b - this->a; }
-    double  length() const { return vector().norm(); }
-
-    Vec3d a;
-    Vec3d b;
-
-    static const constexpr int Dim = 3;
-    using Scalar = Vec3d::Scalar;
-};
-
-BoundingBox get_extents(const Lines &lines);
 
 } // namespace Slic3r
 
