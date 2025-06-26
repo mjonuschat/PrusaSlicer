@@ -5,9 +5,11 @@
 #ifndef PACKINGCONTEXT_HPP
 #define PACKINGCONTEXT_HPP
 
+#include "Slic3r/Utils.hpp"
+
 #include "ArrangeItemTraits.hpp"
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 template<class Ctx, class En = void>
 struct PackingContextTraits_ {
@@ -123,6 +125,6 @@ auto default_context(const Cont &container)
     return DefaultPackingContext<ArrItem>{crange(container)};
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // PACKINGCONTEXT_HPP

@@ -11,19 +11,24 @@
 #include <arrange/NFP/Kernels/KernelTraits.hpp>
 #include <arrange/NFP/NFPArrangeItemTraits.hpp>
 
-#include "libslic3r/Optimize/NLoptOptimizer.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
-namespace Slic3r { namespace arr2 {
+#include "libslic3r/Optimize/NLoptOptimizer.hpp"
+
+namespace Slic3r::arr2 {
 
 struct NFPPackingTag{};
 
 struct DummyArrangeKernel
 {
     template<class ArrItem>
-    double placement_fitness(const ArrItem &itm, const Vec2crd &dest_pos) const
+    double placement_fitness(const ArrItem &itm, const Domain::Vec2crd &dest_pos) const
     {
-        return NaNd;
+        return std::numeric_limits<double>::quiet_NaN();
     }
 
     template<class ArrItem, class Bed, class Context, class RemIt>
@@ -90,22 +95,22 @@ struct PackStrategyTag_<PackStrategyNFP<Args...>>
 
 
 template<class ArrItem, class Bed, class PStrategy>
-double pick_best_spot_on_nfp_verts_only(ArrItem            &item,
-                                        const ExPolygons   &nfp,
-                                        const Bed          &bed,
-                                        const PStrategy    &strategy)
+double pick_best_spot_on_nfp_verts_only(ArrItem                  &item,
+                                        const Domain::ExPolygons &nfp,
+                                        const Bed                &bed,
+                                        const PStrategy          &strategy)
 {
     using KernelT = KernelTraits<decltype(strategy.kernel)>;
 
     auto    score   = -std::numeric_limits<double>::infinity();
-    Vec2crd orig_tr = get_translation(item);
-    Vec2crd translation{0, 0};
+    Domain::Vec2crd orig_tr = get_translation(item);
+    Domain::Vec2crd translation{0, 0};
 
     auto eval_fitness = [&score, &strategy, &item, &translation,
-                         &orig_tr](const Vec2crd &p) {
+                         &orig_tr](const Domain::Vec2crd &p) {
         set_translation(item, orig_tr);
-        Vec2crd ref_v = reference_vertex(item);
-        Vec2crd tr    = p - ref_v;
+        Domain::Vec2crd ref_v = reference_vertex(item);
+        Domain::Vec2crd tr    = p - ref_v;
         double fitness = KernelT::placement_fitness(strategy.kernel, item, tr);
         if (fitness > score) {
             score       = fitness;
@@ -113,13 +118,13 @@ double pick_best_spot_on_nfp_verts_only(ArrItem            &item,
         }
     };
 
-    for (const ExPolygon &expoly : nfp) {
-        for (const Point &p : expoly.contour) {
+    for (const Domain::ExPolygon &expoly : nfp) {
+        for (const Domain::Point &p : expoly.contour) {
             eval_fitness(p);
         }
 
-        for (const Polygon &h : expoly.holes)
-            for (const Point &p : h.points)
+        for (const Domain::Polygon &h : expoly.holes)
+            for (const Domain::Point &p : h.points)
                 eval_fitness(p);
     }
 
@@ -136,7 +141,7 @@ struct CornerResult
 
 template<class ArrItem, class Bed, class... Args>
 double pick_best_spot_on_nfp(ArrItem                        &item,
-                             const ExPolygons               &nfp,
+                             const Domain::ExPolygons       &nfp,
                              const Bed                      &bed,
                              const PackStrategyNFP<Args...> &strategy)
 {
@@ -146,15 +151,16 @@ double pick_best_spot_on_nfp(ArrItem                        &item,
     using KernelT = KernelTraits<decltype(strategy.kernel)>;
 
     auto score = -std::numeric_limits<double>::infinity();
-    Vec2crd orig_tr = get_translation(item);
-    Vec2crd translation{0, 0};
-    Vec2crd ref_v = reference_vertex(item);
+    Domain::Vec2crd orig_tr = get_translation(item);
+    Domain::Vec2crd translation{0, 0};
+    Domain::Vec2crd ref_v = reference_vertex(item);
 
-    auto edge_caches = reserve_vector<EdgeCache>(nfp.size());
-    auto sample_sets = reserve_vector<std::vector<ContourLocation>>(
-        nfp.size());
+    std::vector<EdgeCache>                    edge_caches;
+    std::vector<std::vector<ContourLocation>> sample_sets;
+    edge_caches.reserve(nfp.size());
+    sample_sets.reserve(nfp.size());
 
-    for (const ExPolygon &expoly : nfp) {
+    for (const Domain::ExPolygon &expoly : nfp) {
         edge_caches.emplace_back(EdgeCache{&expoly});
         edge_caches.back().sample_contour(strategy.accuracy,
                                           sample_sets.emplace_back());
@@ -178,8 +184,8 @@ double pick_best_spot_on_nfp(ArrItem                        &item,
             auto cornerfn = [&](size_t i) {
                 ContourLocation cr = corners[i];
                 auto objfn = [&](opt::Input<1> &in) {
-                    Vec2crd p = ec_contour.coords(ContourLocation{cr.contour_id, in[0]});
-                    Vec2crd tr = p - ref_v;
+                    Domain::Vec2crd p = ec_contour.coords(ContourLocation{cr.contour_id, in[0]});
+                    Domain::Vec2crd tr = p - ref_v;
 
                     return KernelT::placement_fitness(strategy.kernel, item, tr);
                 };
@@ -212,8 +218,8 @@ double pick_best_spot_on_nfp(ArrItem                        &item,
         size_t contour_id = it->contour_id;
         double dist = it->oresult.optimum[0];
 
-        Vec2crd pos = edge_caches[path_id].coords(ContourLocation{contour_id, dist});
-        Vec2crd tr = pos - ref_v;
+        Domain::Vec2crd pos = edge_caches[path_id].coords(ContourLocation{contour_id, dist});
+        Domain::Vec2crd tr = pos - ref_v;
 
         set_translation(item, orig_tr + tr);
     }
@@ -238,8 +244,8 @@ bool pack(Strategy &strategy,
     double  orig_rot    = get_rotation(item);
     double  final_rot   = 0.;
     double  final_score = -std::numeric_limits<double>::infinity();
-    Vec2crd orig_tr     = get_translation(item);
-    Vec2crd final_tr    = orig_tr;
+    Domain::Vec2crd orig_tr     = get_translation(item);
+    Domain::Vec2crd final_tr    = orig_tr;
 
     bool cancelled = strategy.stop_condition();
     const auto & rotations = allowed_rotations(item);
@@ -255,7 +261,7 @@ bool pack(Strategy &strategy,
 
         auto nfp = calculate_nfp(item, packing_context, bed,
                                  strategy.stop_condition);
-        double score = NaNd;
+        double score = std::numeric_limits<double>::quiet_NaN();
         if (!nfp.empty()) {
             score = pick_best_spot_on_nfp(item, nfp, bed, strategy);
 
@@ -285,6 +291,6 @@ bool pack(Strategy &strategy,
     return packed;
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // PACKSTRATEGYNFP_HPP

@@ -2,9 +2,10 @@
 #define SLIC3R_TEST_UTILS
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "libslic3r/libslic3r.h"
-#include <libslic3r/Format/OBJ.hpp>
+
 #include <random>
+
+#include "libslic3r/Format/OBJ.hpp"
 
 #if defined(WIN32) || defined(_WIN32)
 #define PATH_SEPARATOR R"(\)"
@@ -21,7 +22,7 @@ inline Slic3r::Domain::TriangleMesh load_model(const std::string &obj_filename)
 }
 
 template<class T>
-Slic3r::FloatingOnly<T> random_value(T minv, T maxv)
+std::enable_if_t<std::is_floating_point<T>::value, T> random_value(T minv, T maxv)
 {
     static std::mt19937 rng(std::random_device{}());
     std::uniform_real_distribution<T> dist(minv, maxv);
@@ -30,7 +31,7 @@ Slic3r::FloatingOnly<T> random_value(T minv, T maxv)
 }
 
 template<class T>
-Slic3r::IntegerOnly<T> random_value(T minv, T maxv)
+std::enable_if_t<std::is_integral<T>::value, T> random_value(T minv, T maxv)
 {
     static std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<T> dist(minv, maxv);

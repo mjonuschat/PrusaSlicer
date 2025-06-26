@@ -5,29 +5,27 @@
 #ifndef EDGECACHE_HPP
 #define EDGECACHE_HPP
 
-#include <libslic3r/ExPolygon.hpp>
-#include <assert.h>
-#include <stddef.h>
 #include <vector>
 #include <algorithm>
 #include <cmath>
 #include <cassert>
 #include <cstddef>
 
+#include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Polygon.hpp"
-#include "libslic3r/libslic3r.h"
+#include "Slic3r/Domain/Types.hpp"
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 // Position on the circumference of an ExPolygon.
 // countour_id:  0th is contour, 1..N are holes
 // dist: position given as a floating point number within <0., 1.>
 struct ContourLocation { size_t contour_id; double dist; };
 
-void fill_distances(const Polygon &poly, std::vector<double> &distances);
+void fill_distances(const Domain::Polygon &poly, std::vector<double> &distances);
 
-Vec2crd coords(const Polygon &poly, const std::vector<double>& distances, double distance);
+Domain::Vec2crd coords(const Domain::Polygon &poly, const std::vector<double>& distances, double distance);
 
 // A class for getting a point on the circumference of the polygon (in log time)
 //
@@ -40,19 +38,19 @@ Vec2crd coords(const Polygon &poly, const std::vector<double>& distances, double
 // We also have to make this work for the holes of the captured polygon.
 class EdgeCache {
     struct ContourCache {
-        const Polygon *poly;
+        const Domain::Polygon *poly;
         std::vector<double> distances;
     } m_contour;
 
     std::vector<ContourCache> m_holes;
 
-    void create_cache(const ExPolygon& sh);
+    void create_cache(const Domain::ExPolygon& sh);
 
-    Vec2crd coords(const ContourCache& cache, double distance) const;
+    Domain::Vec2crd coords(const ContourCache& cache, double distance) const;
 
 public:
 
-    explicit EdgeCache(const ExPolygon *sh)
+    explicit EdgeCache(const Domain::ExPolygon *sh)
     {
         create_cache(*sh);
     }
@@ -62,14 +60,14 @@ public:
     static inline size_t stride(const size_t N, double accuracy)
     {
         size_t n = std::max(size_t{1}, N);
-        return static_cast<coord_t>(
+        return static_cast<Domain::coord_t>(
             std::round(N / std::pow(n, std::pow(accuracy, 1./3.)))
             );
     }
 
     void sample_contour(double accuracy, std::vector<ContourLocation> &samples);
 
-    Vec2crd coords(const ContourLocation &loc) const
+    Domain::Vec2crd coords(const ContourLocation &loc) const
     {
         assert(loc.contour_id <= m_holes.size());
 
@@ -79,6 +77,6 @@ public:
     }
 };
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // EDGECACHE_HPP

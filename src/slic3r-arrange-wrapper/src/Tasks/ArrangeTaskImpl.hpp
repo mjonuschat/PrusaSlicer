@@ -14,7 +14,7 @@
 #include <arrange-wrapper/Tasks/ArrangeTask.hpp>
 #include <arrange-wrapper/Items/ArrangeItem.hpp>
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 // Prepare the selected and unselected items separately. If nothing is
 // selected, behaves as if everything would be selected.
@@ -145,7 +145,7 @@ ArrangeTask<ArrItem>::process_native(Ctl &ctl)
     return result;
 }
 
-} // namespace arr2
-} // namespace Slic3r
+} // namespace Slic3r::arr2
+
 
 #endif //ARRANGETASK_IMPL_HPP

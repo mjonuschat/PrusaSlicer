@@ -5,8 +5,9 @@
 #ifndef CIRCULAR_EDGEITERATOR_HPP
 #define CIRCULAR_EDGEITERATOR_HPP
 
-#include <libslic3r/Polygon.hpp>
-#include <libslic3r/Line.hpp>
+#include "Slic3r/Domain/Line.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Utils.hpp"
 
 namespace Slic3r {
 
@@ -15,7 +16,7 @@ namespace Slic3r {
 // direction of traversal)
 template<bool flip_lines = false>
 class CircularEdgeIterator_ {
-    const Polygon *m_poly = nullptr;
+    const Domain::Polygon *m_poly = nullptr;
     size_t m_i = 0;
     size_t m_c = 0; // counting how many times the iterator has circled over
 
@@ -23,20 +24,20 @@ public:
 
     // i: vertex position of first line's starting vertex
     // poly: target polygon
-    CircularEdgeIterator_(size_t i, const Polygon &poly)
+    CircularEdgeIterator_(size_t i, const Domain::Polygon &poly)
         : m_poly{&poly}
         , m_i{!poly.empty() ? i % poly.size() : 0}
         , m_c{!poly.empty() ? i / poly.size() : 0}
     {}
 
-    explicit CircularEdgeIterator_ (const Polygon &poly)
+    explicit CircularEdgeIterator_ (const Domain::Polygon &poly)
         : CircularEdgeIterator_(0, poly) {}
 
     using iterator_category = std::forward_iterator_tag;
     using difference_type   = std::ptrdiff_t;
-    using value_type        = Line;
-    using pointer           = Line*;
-    using reference         = Line&;
+    using value_type        = Domain::Line;
+    using pointer           = Domain::Line*;
+    using reference         = Domain::Line&;
 
     CircularEdgeIterator_ & operator++()
     {
@@ -55,19 +56,19 @@ public:
         auto cpy = *this; ++(*this); return cpy;
     }
 
-    Line operator*() const
+    Domain::Line operator*() const
     {
         size_t nx = m_i == m_poly->size() - 1 ? 0 : m_i + 1;
-        Line ret;
+        Domain::Line ret;
         if constexpr (flip_lines)
-            ret = Line((*m_poly)[nx], (*m_poly)[m_i]);
+            ret = Domain::Line((*m_poly)[nx], (*m_poly)[m_i]);
         else
-            ret = Line((*m_poly)[m_i], (*m_poly)[nx]);
+            ret = Domain::Line((*m_poly)[m_i], (*m_poly)[nx]);
 
         return ret;
     }
 
-    Line operator->() const { return *(*this); }
+    Domain::Line operator->() const { return *(*this); }
 
     bool operator==(const CircularEdgeIterator_& other) const
     {
@@ -99,12 +100,12 @@ public:
 using CircularEdgeIterator = CircularEdgeIterator_<>;
 using CircularReverseEdgeIterator = CircularEdgeIterator_<true>;
 
-inline Range<CircularEdgeIterator> line_range(const Polygon &poly)
+inline Range<CircularEdgeIterator> line_range(const Domain::Polygon &poly)
 {
     return Range{CircularEdgeIterator{0, poly}, CircularEdgeIterator{poly.size(), poly}};
 }
 
-inline Range<CircularReverseEdgeIterator> line_range_flp(const Polygon &poly)
+inline Range<CircularReverseEdgeIterator> line_range_flp(const Domain::Polygon &poly)
 {
     return Range{CircularReverseEdgeIterator{0, poly}, CircularReverseEdgeIterator{poly.size(), poly}};
 }

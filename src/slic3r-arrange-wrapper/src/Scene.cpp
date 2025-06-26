@@ -7,11 +7,12 @@
 #include <arrange-wrapper/Tasks/ArrangeTask.hpp>
 #include <arrange-wrapper/Tasks/FillBedTask.hpp>
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 std::vector<Domain::ObjectID> Scene::selected_ids() const
 {
-    auto items = reserve_vector<Domain::ObjectID>(model().arrangeable_count());
+    std::vector<Domain::ObjectID> items;
+    items.reserve(model().arrangeable_count());
 
     model().for_each_arrangeable([ &items](auto &arrbl) mutable {
         if (arrbl.is_selected())
@@ -20,8 +21,6 @@ std::vector<Domain::ObjectID> Scene::selected_ids() const
 
     return items;
 }
-
-using DefaultArrangeItem = ArrangeItem;
 
 std::unique_ptr<ArrangeTaskBase> ArrangeTaskBase::create(Tasks task_type, const Scene &sc)
 {
@@ -63,4 +62,4 @@ bool arrange(Scene &scene, ArrangeTaskCtl &ctl)
     return result->apply_on(scene.model());
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2

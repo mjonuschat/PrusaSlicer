@@ -5,16 +5,15 @@
 #ifndef NFPCONCAVE_TESSELATE_HPP
 #define NFPCONCAVE_TESSELATE_HPP
 
-#include <libslic3r/ExPolygon.hpp>
-
+#include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/Polygon.hpp"
 
 namespace Slic3r {
 
-Polygons convex_decomposition_tess(const Polygon &expoly);
-Polygons convex_decomposition_tess(const ExPolygon &expoly);
-Polygons convex_decomposition_tess(const ExPolygons &expolys);
-ExPolygons nfp_concave_concave_tess(const ExPolygon &fixed, const ExPolygon &movable);
+Domain::Polygons convex_decomposition_tess(const Domain::Polygon &expoly);
+Domain::Polygons convex_decomposition_tess(const Domain::ExPolygon &expoly);
+Domain::Polygons convex_decomposition_tess(const Domain::ExPolygons &expolys);
+Domain::ExPolygons nfp_concave_concave_tess(const Domain::ExPolygon &fixed, const Domain::ExPolygon &movable);
 
 } // namespace Slic3r
 

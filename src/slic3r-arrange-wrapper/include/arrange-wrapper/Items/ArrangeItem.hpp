@@ -6,9 +6,6 @@
 #define ARRANGEITEM_HPP
 
 #include <boost/variant.hpp>
-#include <libslic3r/ClipperUtils.hpp>
-#include <assert.h>
-#include <stddef.h>
 #include <optional>
 #include <algorithm>
 #include <initializer_list>
@@ -20,12 +17,15 @@
 #include <cassert>
 #include <cstddef>
 
-#include <libslic3r/ExPolygon.hpp>
-#include <libslic3r/BoundingBox.hpp>
-#include <libslic3r/AnyPtr.hpp>
-#include <libslic3r/Point.hpp>
-#include <libslic3r/Polygon.hpp>
-#include <libslic3r/libslic3r.h>
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include "Slic3r/Utils.hpp"
 
 #include <arrange/PackingContext.hpp>
 #include <arrange/NFP/NFPArrangeItemTraits.hpp>
@@ -42,11 +42,13 @@
 #include <arrange-wrapper/Tasks/MultiplySelectionTask.hpp>
 #include <arrange-wrapper/Items/ArbitraryDataStore.hpp>
 
-namespace Slic3r { namespace arr2 {
+#include "libslic3r/AnyPtr.hpp"
+
+namespace Slic3r::arr2 {
 struct InfiniteBed;
 
-inline bool check_polygons_are_convex(const Polygons &pp) {
-    return std::all_of(pp.begin(), pp.end(), [](const Polygon &p) {
+inline bool check_polygons_are_convex(const Domain::Polygons &pp) {
+    return std::all_of(pp.begin(), pp.end(), [](const Domain::Polygon &p) {
         return Slic3r::Biz::Algorithms::Polygon::is_convex(p);
     });
 }
@@ -62,50 +64,50 @@ inline bool check_polygons_are_convex(const Polygons &pp) {
 // appying a the transformations. The caching is not thread safe!
 class DecomposedShape
 {
-    Polygons m_shape;
+    Domain::Polygons                   m_shape;
 
-    Vec2crd m_translation{0, 0}; // The translation of the poly
-    double  m_rotation{0.0};     // The rotation of the poly in radians
+    Domain::Vec2crd                    m_translation{0, 0}; // The translation of the poly
+    double                             m_rotation{0.0};     // The rotation of the poly in radians
 
-    mutable Polygons m_transformed_outline;
-    mutable bool     m_transformed_outline_valid = false;
+    mutable Domain::Polygons           m_transformed_outline;
+    mutable bool                       m_transformed_outline_valid = false;
 
-    mutable Point              m_reference_vertex;
-    mutable std::vector<Point> m_refs;
-    mutable std::vector<Point> m_mins;
-    mutable bool               m_reference_vertex_valid = false;
+    mutable Domain::Point              m_reference_vertex;
+    mutable std::vector<Domain::Point> m_refs;
+    mutable std::vector<Domain::Point> m_mins;
+    mutable bool                       m_reference_vertex_valid = false;
 
-    mutable Point m_centroid;
-    mutable bool  m_centroid_valid = false;
+    mutable Domain::Point              m_centroid;
+    mutable bool                       m_centroid_valid = false;
 
-    mutable Polygon m_convex_hull;
-    mutable BoundingBox m_bounding_box;
-    mutable double  m_area = 0;
+    mutable Domain::Polygon            m_convex_hull;
+    mutable Domain::BoundingBox2crd    m_bounding_box;
+    mutable double                     m_area = 0;
 
 public:
     DecomposedShape() = default;
 
-    explicit DecomposedShape(Polygon sh)
+    explicit DecomposedShape(Domain::Polygon sh)
     {
         m_shape.emplace_back(std::move(sh));
         assert(check_polygons_are_convex(m_shape));
     }
 
-    explicit DecomposedShape(std::initializer_list<Point> pts)
-        : DecomposedShape(Polygon{pts})
+    explicit DecomposedShape(std::initializer_list<Domain::Point> pts)
+        : DecomposedShape(Domain::Polygon{pts})
     {}
 
-    explicit DecomposedShape(Polygons sh) : m_shape{std::move(sh)}
+    explicit DecomposedShape(Domain::Polygons sh) : m_shape{std::move(sh)}
     {
         assert(check_polygons_are_convex(m_shape));
     }
 
-    const Polygons &contours() const { return m_shape; }
+    const Domain::Polygons &contours() const { return m_shape; }
 
-    const Vec2crd &translation() const { return m_translation; }
-    double         rotation() const { return m_rotation; }
+    const Domain::Vec2crd &translation() const { return m_translation; }
+    double                 rotation() const { return m_rotation; }
 
-    void translation(const Vec2crd &v)
+    void translation(const Domain::Vec2crd &v)
     {
         m_translation               = v;
         m_transformed_outline_valid = false;
@@ -121,17 +123,17 @@ public:
         m_centroid_valid            = false;
     }
 
-    const Polygons &transformed_outline() const;
-    const Polygon  &convex_hull() const;
-    const BoundingBox &bounding_box() const;
+    const Domain::Polygons &transformed_outline() const;
+    const Domain::Polygon  &convex_hull() const;
+    const Domain::BoundingBox2crd &bounding_box() const;
 
     // The cached reference vertex in the context of NFP creation. Always
     // refers to the leftmost upper vertex.
-    const Vec2crd  &reference_vertex() const;
-    const Vec2crd  &reference_vertex(size_t idx) const;
+    const Domain::Vec2crd  &reference_vertex() const;
+    const Domain::Vec2crd  &reference_vertex(size_t idx) const;
 
     // Also for NFP calculations, the rightmost lowest vertex of the shape.
-    const Vec2crd  &min_vertex(size_t idx) const;
+    const Domain::Vec2crd  &min_vertex(size_t idx) const;
 
     double area_unscaled() const
     {
@@ -141,11 +143,11 @@ public:
         return m_area;
     }
 
-    Vec2crd centroid() const;
+    Domain::Vec2crd centroid() const;
 };
 
-DecomposedShape decompose(const ExPolygons &polys);
-DecomposedShape decompose(const Polygon &p);
+DecomposedShape decompose(const Domain::ExPolygons &polys);
+DecomposedShape decompose(const Domain::Polygon &p);
 
 class ArrangeItem
 {
@@ -171,10 +173,10 @@ public:
         , m_envelope{std::make_unique<DecomposedShape>(std::move(envelope))}
     {}
 
-    explicit ArrangeItem(const ExPolygons &shape);
-    explicit ArrangeItem(Polygon shape);
-    explicit ArrangeItem(std::initializer_list<Point> pts)
-        : ArrangeItem(Polygon{pts})
+    explicit ArrangeItem(const Domain::ExPolygons &shape);
+    explicit ArrangeItem(Domain::Polygon shape);
+    explicit ArrangeItem(std::initializer_list<Domain::Point> pts)
+        : ArrangeItem(Domain::Polygon{pts})
     {}
 
     ArrangeItem(const ArrangeItem &);
@@ -199,10 +201,10 @@ public:
     const DecomposedShape & envelope() const { return *m_envelope; }
     void set_envelope(DecomposedShape envelope);
 
-    const Vec2crd &translation() const { return m_shape.translation(); }
-    double         rotation() const { return m_shape.rotation(); }
+    const Domain::Vec2crd &translation() const { return m_shape.translation(); }
+    double                 rotation() const { return m_shape.rotation(); }
 
-    void translation(const Vec2crd &v)
+    void translation(const Domain::Vec2crd &v)
     {
         m_shape.translation(v);
         m_envelope->translation(v);
@@ -225,7 +227,7 @@ public:
 
 template<> struct ArrangeItemTraits_<ArrangeItem>
 {
-    static const Vec2crd &get_translation(const ArrangeItem &itm)
+    static const Domain::Vec2crd &get_translation(const ArrangeItem &itm)
     {
         return itm.translation();
     }
@@ -252,7 +254,7 @@ template<> struct ArrangeItemTraits_<ArrangeItem>
 
     // Setters:
 
-    static void set_translation(ArrangeItem &itm, const Vec2crd &v)
+    static void set_translation(ArrangeItem &itm, const Domain::Vec2crd &v)
     {
         itm.translation(v);
     }
@@ -311,41 +313,42 @@ template<> struct WritableDataStoreTraits_<ArrangeItem>
 };
 
 template<class FixedIt, class StopCond = DefaultStopCondition>
-static Polygons calculate_nfp_unnormalized(const ArrangeItem    &item,
-                                           const Range<FixedIt> &fixed_items,
-                                           StopCond &&stop_cond = {})
+static Domain::Polygons calculate_nfp_unnormalized(const ArrangeItem    &item,
+                                                   const Range<FixedIt> &fixed_items,
+                                                   StopCond &&stop_cond = {})
 {
     size_t cap = 0;
 
     for (const ArrangeItem &fixitem : fixed_items) {
-        const Polygons &outlines = fixitem.shape().transformed_outline();
+        const Domain::Polygons &outlines = fixitem.shape().transformed_outline();
         cap += outlines.size();
     }
 
-    const Polygons &item_outlines = item.envelope().transformed_outline();
+    const Domain::Polygons &item_outlines = item.envelope().transformed_outline();
 
-    auto nfps = reserve_polygons(cap * item_outlines.size());
+    Domain::Polygons nfps;
+    nfps.reserve(cap * item_outlines.size());
 
-    Vec2crd ref_whole = item.envelope().reference_vertex();
-    Polygon subnfp;
+    Domain::Vec2crd ref_whole = item.envelope().reference_vertex();
+    Domain::Polygon subnfp;
 
     for (const ArrangeItem &fixed : fixed_items) {
         // fixed_polys should already be a set of strictly convex polygons,
         // as ArrangeItem stores convex-decomposed polygons
-        const Polygons & fixed_polys = fixed.shape().transformed_outline();
+        const Domain::Polygons & fixed_polys = fixed.shape().transformed_outline();
 
-        for (const Polygon &fixed_poly : fixed_polys) {
-            Point max_fixed = Slic3r::reference_vertex(fixed_poly);
+        for (const Domain::Polygon &fixed_poly : fixed_polys) {
+            Domain::Point max_fixed = Slic3r::reference_vertex(fixed_poly);
             for (size_t mi = 0; mi < item_outlines.size(); ++mi) {
-                const Polygon &movable = item_outlines[mi];
-                const Vec2crd &mref = item.envelope().reference_vertex(mi);
+                const Domain::Polygon &movable = item_outlines[mi];
+                const Domain::Vec2crd &mref = item.envelope().reference_vertex(mi);
                 subnfp = nfp_convex_convex_legacy(fixed_poly, movable);
 
-                Vec2crd min_movable = item.envelope().min_vertex(mi);
+                Domain::Vec2crd min_movable = item.envelope().min_vertex(mi);
 
-                Vec2crd dtouch = max_fixed - min_movable;
-                Vec2crd top_other = mref + dtouch;
-                Vec2crd max_nfp = Slic3r::reference_vertex(subnfp);
+                Domain::Vec2crd dtouch = max_fixed - min_movable;
+                Domain::Vec2crd top_other = mref + dtouch;
+                Domain::Vec2crd max_nfp = Slic3r::reference_vertex(subnfp);
                 auto dnfp = top_other - max_nfp;
 
                 auto d = ref_whole - mref + dnfp;
@@ -356,7 +359,7 @@ static Polygons calculate_nfp_unnormalized(const ArrangeItem    &item,
             if (stop_cond())
                 break;
 
-            nfps = union_(nfps);
+            nfps = Biz::Algorithms::ClipperUtils::union_(nfps);
         }
 
         if (stop_cond()) {
@@ -370,22 +373,22 @@ static Polygons calculate_nfp_unnormalized(const ArrangeItem    &item,
 
 template<> struct NFPArrangeItemTraits_<ArrangeItem> {
     template<class Context, class Bed, class StopCond>
-    static ExPolygons calculate_nfp(const ArrangeItem &item,
-                                    const Context &packing_context,
-                                    const Bed &bed,
-                                    StopCond &&stopcond)
+    static Domain::ExPolygons calculate_nfp(const ArrangeItem &item,
+                                            const Context &packing_context,
+                                            const Bed &bed,
+                                            StopCond &&stopcond)
     {
         auto static_items = all_items_range(packing_context);
-        Polygons nfps = arr2::calculate_nfp_unnormalized(item, static_items, stopcond);
+        Domain::Polygons nfps = arr2::calculate_nfp_unnormalized(item, static_items, stopcond);
 
-        ExPolygons nfp_ex;
+        Domain::ExPolygons nfp_ex;
 
         if (!stopcond()) {
             if constexpr (!std::is_convertible_v<Bed, InfiniteBed>) {
-                ExPolygons ifpbed = ifp_convex(bed, item.envelope().convex_hull());
-                nfp_ex = diff_ex(ifpbed, nfps);
+                Domain::ExPolygons ifpbed = ifp_convex(bed, item.envelope().convex_hull());
+                nfp_ex = Biz::Algorithms::ClipperUtils::diff_ex(ifpbed, nfps);
             } else {
-                nfp_ex = union_ex(nfps);
+                nfp_ex = Biz::Algorithms::ClipperUtils::union_ex(nfps);
             }
         }
 
@@ -394,49 +397,49 @@ template<> struct NFPArrangeItemTraits_<ArrangeItem> {
         return nfp_ex;
     }
 
-    static const Vec2crd& reference_vertex(const ArrangeItem &item)
+    static const Domain::Vec2crd& reference_vertex(const ArrangeItem &item)
     {
         return item.envelope().reference_vertex();
     }
 
-    static BoundingBox envelope_bounding_box(const ArrangeItem &itm)
+    static Domain::BoundingBox2crd envelope_bounding_box(const ArrangeItem &itm)
     {
         return itm.envelope().bounding_box();
     }
 
-    static BoundingBox fixed_bounding_box(const ArrangeItem &itm)
+    static Domain::BoundingBox2crd fixed_bounding_box(const ArrangeItem &itm)
     {
         return itm.shape().bounding_box();
     }
 
     static double envelope_area(const ArrangeItem &itm)
     {
-        return itm.envelope().area_unscaled() * scaled<double>(1.) *
-               scaled<double>(1.);
+        return itm.envelope().area_unscaled() * static_cast<double>(Biz::Algorithms::Scaling::scaled(1.)) *
+               static_cast<double>(Biz::Algorithms::Scaling::scaled(1.));
     }
 
     static double fixed_area(const ArrangeItem &itm)
     {
-        return itm.shape().area_unscaled() * scaled<double>(1.) *
-               scaled<double>(1.);
+        return itm.shape().area_unscaled() * static_cast<double>(Biz::Algorithms::Scaling::scaled(1.)) *
+               static_cast<double>(Biz::Algorithms::Scaling::scaled(1.));
     }
 
-    static const Polygons & envelope_outline(const ArrangeItem &itm)
+    static const Domain::Polygons & envelope_outline(const ArrangeItem &itm)
     {
         return itm.envelope().transformed_outline();
     }
 
-    static const Polygons & fixed_outline(const ArrangeItem &itm)
+    static const Domain::Polygons & fixed_outline(const ArrangeItem &itm)
     {
         return itm.shape().transformed_outline();
     }
 
-    static const Polygon & envelope_convex_hull(const ArrangeItem &itm)
+    static const Domain::Polygon & envelope_convex_hull(const ArrangeItem &itm)
     {
         return itm.envelope().convex_hull();
     }
 
-    static const Polygon & fixed_convex_hull(const ArrangeItem &itm)
+    static const Domain::Polygon & fixed_convex_hull(const ArrangeItem &itm)
     {
         return itm.shape().convex_hull();
     }
@@ -455,12 +458,12 @@ template<> struct NFPArrangeItemTraits_<ArrangeItem> {
         return *ret_ptr;
     }
 
-    static Vec2crd fixed_centroid(const ArrangeItem &itm)
+    static Domain::Vec2crd fixed_centroid(const ArrangeItem &itm)
     {
         return itm.shape().centroid();
     }
 
-    static Vec2crd envelope_centroid(const ArrangeItem &itm)
+    static Domain::Vec2crd envelope_centroid(const ArrangeItem &itm)
     {
         return itm.envelope().centroid();
     }
@@ -472,19 +475,19 @@ template<>
 struct MutableItemTraits_<ArrangeItem> {
 
     static void set_priority(ArrangeItem &itm, int p) { itm.priority(p); }
-    static void set_convex_shape(ArrangeItem &itm, const Polygon &shape)
+    static void set_convex_shape(ArrangeItem &itm, const Domain::Polygon &shape)
     {
         itm.set_shape(DecomposedShape{shape});
     }
-    static void set_shape(ArrangeItem &itm, const ExPolygons &shape)
+    static void set_shape(ArrangeItem &itm, const Domain::ExPolygons &shape)
     {
         itm.set_shape(decompose(shape));
     }
-    static void set_convex_envelope(ArrangeItem &itm, const Polygon &envelope)
+    static void set_convex_envelope(ArrangeItem &itm, const Domain::Polygon &envelope)
     {
         itm.set_envelope(DecomposedShape{envelope});
     }
-    static void set_envelope(ArrangeItem &itm, const ExPolygons &envelope)
+    static void set_envelope(ArrangeItem &itm, const Domain::ExPolygons &envelope)
     {
         itm.set_envelope(decompose(envelope));
     }
@@ -508,6 +511,6 @@ extern template struct FillBedTask<ArrangeItem>;
 extern template struct MultiplySelectionTask<ArrangeItem>;
 extern template class  Arranger<ArrangeItem>;
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // ARRANGEITEM_HPP

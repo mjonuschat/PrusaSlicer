@@ -5,12 +5,16 @@
 #ifndef RECTANGLEOVERFITKERNELWRAPPER_HPP
 #define RECTANGLEOVERFITKERNELWRAPPER_HPP
 
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "KernelTraits.hpp"
 
 #include <arrange/NFP/NFPArrangeItemTraits.hpp>
 #include <arrange/Beds.hpp>
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 // This is a kernel wrapper that will apply a penality to the object function
 // if the result cannot fit into the given rectangular bounds. This can be used
@@ -22,20 +26,19 @@ namespace Slic3r { namespace arr2 {
 template<class Kernel>
 struct RectangleOverfitKernelWrapper {
     Kernel &k;
-    BoundingBox binbb;
-    BoundingBox pilebb;
+    Domain::BoundingBox2crd binbb;
+    Domain::BoundingBox2crd pilebb;
 
-    RectangleOverfitKernelWrapper(Kernel &kern, const BoundingBox &limits)
+    RectangleOverfitKernelWrapper(Kernel &kern, const Domain::BoundingBox2crd &limits)
         : k{kern}
           , binbb{limits}
     {}
 
-    double overfit(const BoundingBox &itmbb) const
+    double overfit(const Domain::BoundingBox2crd &itmbb) const
     {
-        auto fullbb = pilebb;
-        fullbb.merge(itmbb);
-        auto fullbbsz = fullbb.size();
-        auto binbbsz  = binbb.size();
+        const auto fullbb = Biz::Algorithms::BoundingBox::merge(pilebb, itmbb);
+        auto fullbbsz = Biz::Algorithms::BoundingBox::sizes(fullbb);
+        auto binbbsz  = Biz::Algorithms::BoundingBox::sizes(binbb);
 
         auto wdiff = fullbbsz.x() - binbbsz.x() - SCALED_EPSILON;
         auto hdiff = fullbbsz.y() - binbbsz.y() - SCALED_EPSILON;
@@ -51,12 +54,11 @@ struct RectangleOverfitKernelWrapper {
     }
 
     template<class ArrItem>
-    double placement_fitness(const ArrItem &item, const Vec2crd &transl) const
+    double placement_fitness(const ArrItem &item, const Domain::Vec2crd &transl) const
     {
         double score = KernelTraits<Kernel>::placement_fitness(k, item, transl);
 
-        auto itmbb = envelope_bounding_box(item);
-        itmbb.translate(transl);
+        const auto itmbb = Biz::Algorithms::BoundingBox::translated(envelope_bounding_box(item), transl);
         double miss = overfit(itmbb);
         score -= miss * miss;
 
@@ -69,12 +71,13 @@ struct RectangleOverfitKernelWrapper {
                           const Ctx &packing_context,
                           const Range<RemIt> &remaining_items)
     {
-        pilebb = BoundingBox{};
+        pilebb = Domain::BoundingBox2crd{};
 
-        for (auto &fitm : all_items_range(packing_context))
-            pilebb.merge(fixed_bounding_box(fitm));
+        for (auto &fitm : all_items_range(packing_context)) {
+            pilebb = Biz::Algorithms::BoundingBox::merge(pilebb, fixed_bounding_box(fitm));
+        }
 
-        return KernelTraits<Kernel>::on_start_packing(k, itm, RectangleBed{binbb, Vec2crd::Zero()},
+        return KernelTraits<Kernel>::on_start_packing(k, itm, RectangleBed{binbb, Domain::Vec2crd::Zero()},
                                                       packing_context,
                                                       remaining_items);
     }
@@ -93,6 +96,6 @@ struct RectangleOverfitKernelWrapper {
     }
 };
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // RECTANGLEOVERFITKERNELWRAPPER_H

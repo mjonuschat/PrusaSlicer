@@ -7,10 +7,20 @@
 #include <iterator>
 
 #include "CircularEdgeIterator.hpp"
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Line.hpp"
 
-namespace Slic3r { namespace arr2 {
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Line.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+using Slic3r::Domain::coord_t;
+using Slic3r::Domain::ExPolygon;
+using Slic3r::Domain::Line;
+using Slic3r::Domain::Polygon;
+using Slic3r::Domain::Vec2crd;
+using Slic3r::Domain::Vec2d;
+
+namespace Slic3r::arr2 {
 
 void EdgeCache::create_cache(const ExPolygon &sh)
 {
@@ -105,4 +115,4 @@ void fill_distances(const Polygon &poly, std::vector<double> &distances)
     }
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2

@@ -10,7 +10,7 @@
 
 #include <arrange/ArrangeBase.hpp>
 
-namespace Slic3r { namespace arr2 { namespace firstfit {
+namespace Slic3r::arr2 { namespace firstfit {
 
 struct SelectionTag {};
 
@@ -86,7 +86,8 @@ void arrange(
     using ArrItem = typename std::iterator_traits<It>::value_type;
     using ArrItemRef = std::reference_wrapper<ArrItem>;
 
-    auto sorted_items = reserve_vector<ArrItemRef>(items.size());
+    std::vector<ArrItemRef> sorted_items;
+    sorted_items.reserve(items.size());
 
     for (auto &itm : items) {
         set_bed_index(itm, Unarranged);
@@ -175,6 +176,6 @@ void arrange(
     }
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // ARRANGEFIRSTFIT_HPP

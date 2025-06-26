@@ -3,7 +3,9 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include <libslic3r/Model.hpp>
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/ModelObject.hpp"
+
 #include <utility>
 
 #include <arrange-wrapper/ModelArrange.hpp>

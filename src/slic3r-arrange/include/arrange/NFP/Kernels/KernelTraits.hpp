@@ -5,9 +5,11 @@
 #ifndef KERNELTRAITS_HPP
 #define KERNELTRAITS_HPP
 
+#include "Slic3r/Domain/Types.hpp"
+
 #include <arrange/ArrangeItemTraits.hpp>
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 // An arrangement kernel that specifies the object function to the arrangement
 // optimizer and additional callback functions to be able to track the state
@@ -22,7 +24,7 @@ template<class Kernel, class En = void> struct KernelTraits_
     template<class ArrItem>
     static double placement_fitness(const Kernel  &k,
                                     const ArrItem &itm,
-                                    const Vec2crd &transl)
+                                    const Domain::Vec2crd &transl)
     {
         return k.placement_fitness(itm, transl);
     }
@@ -56,6 +58,6 @@ template<class Kernel, class En = void> struct KernelTraits_
 
 template<class K> using KernelTraits = KernelTraits_<StripCVRef<K>>;
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // KERNELTRAITS_HPP

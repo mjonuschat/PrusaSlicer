@@ -5,7 +5,6 @@
 #ifndef ARR2_SCENE_HPP
 #define ARR2_SCENE_HPP
 
-#include <stddef.h>
 #include <boost/variant.hpp>
 #include <boost/variant/variant.hpp>
 #include <any>
@@ -19,20 +18,23 @@
 #include <vector>
 #include <cstddef>
 
-#include <Slic3r/Domain/ObjectID.hpp>
-#include <libslic3r/AnyPtr.hpp>
-#include <libslic3r/BoundingBox.hpp>
-#include <libslic3r/ExPolygon.hpp>
-#include <libslic3r/Point.hpp>
-#include <libslic3r/Polygon.hpp>
-#include <libslic3r/libslic3r.h>
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include "libslic3r/AnyPtr.hpp"
 
 #include <arrange/Beds.hpp>
 
 #include "ArrangeSettingsView.hpp"
 #include "SegmentedRectangleBed.hpp"
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 // This module contains all the necessary high level interfaces for
 // arrangement. No dependency on the rest of libslic3r is intoduced here. (No
@@ -72,8 +74,8 @@ public:
     // It will depend on the arrangement config to choose which one is called.
     // convex_outline might be considerably faster than calling full_outline()
     // and then calculating the convex hull from that.
-    virtual ExPolygons full_outline() const   = 0;
-    virtual Polygon    convex_outline() const = 0;
+    virtual Domain::ExPolygons full_outline() const   = 0;
+    virtual Domain::Polygon    convex_outline() const = 0;
 
     // Envelope is the boundary that an arrangeble object might have which
     // is used when the object is being placed or moved around. Once it is
@@ -83,11 +85,11 @@ public:
     // but never touch the actual object. In this case, full envelope would
     // return the silhouette of the object with supports (pad, brim, etc...) and
     // outline would be the actual object boundary.
-    virtual ExPolygons full_envelope() const { return {}; }
-    virtual Polygon    convex_envelope() const { return {}; }
+    virtual Domain::ExPolygons full_envelope() const { return {}; }
+    virtual Domain::Polygon    convex_envelope() const { return {}; }
 
     // Write the transformations determined by the arrangement into the object
-    virtual void transform(const Vec2d &transl, double rot) = 0;
+    virtual void transform(const Domain::Vec2d &transl, double rot) = 0;
 
     // An arrangeable can be printable or unprintable, they should not be on
     // the same bed. (See arrange tasks)
@@ -186,17 +188,17 @@ template<class BedFn> void visit_bed(BedFn &&fn, ExtendedBed &bed)
     boost::apply_visitor(fn, bed);
 }
 
-inline BoundingBox bounding_box(const ExtendedBed &bed)
+inline Domain::BoundingBox2crd bounding_box(const ExtendedBed &bed)
 {
-    BoundingBox bedbb;
+    Domain::BoundingBox2crd bedbb;
     visit_bed([&bedbb](auto &rawbed) { bedbb = bounding_box(rawbed); }, bed);
 
     return bedbb;
 }
 
-inline Vec2crd bed_gap(const ExtendedBed &bed)
+inline Domain::Vec2crd bed_gap(const ExtendedBed &bed)
 {
-    Vec2crd gap;
+    Domain::Vec2crd gap;
     visit_bed([&gap](auto &rawbed) { gap = bed_gap(rawbed); }, bed);
 
     return gap;
@@ -222,8 +224,8 @@ protected:
 
     ExtendedBed m_bed = arr2::InfiniteBed{};
 
-    coord_t m_brims_offs = 0;
-    coord_t m_skirt_offs = 0;
+    Domain::coord_t m_brims_offs = 0;
+    Domain::coord_t m_skirt_offs = 0;
 
 public:
 
@@ -250,7 +252,7 @@ public:
         return std::move(static_cast<Subclass&>(*this));
     }
 
-    Subclass &&set_bed(const Points &pts, const Vec2crd &gap)
+    Subclass &&set_bed(const Domain::Points &pts, const Domain::Vec2crd &gap)
     {
         m_bed = arr2::to_arrange_bed(pts, gap);
         return std::move(static_cast<Subclass&>(*this));
@@ -341,14 +343,14 @@ void SceneBuilderBase<Subclass>::build_scene(Scene &sc) &&
 
     // Apply the bed minimum distance by making the original bed smaller
     // and arranging on this smaller bed.
-    coord_t inset = std::max(scaled(m_settings->get_distance_from_bed()),
-                             m_skirt_offs + m_brims_offs);
+    Domain::coord_t inset = std::max(Biz::Algorithms::Scaling::scaled(m_settings->get_distance_from_bed()),
+                                     m_skirt_offs + m_brims_offs);
 
     // Objects have also a minimum distance from each other implemented
     // as inflation applied to object outlines. This object distance
     // does not apply to the bed, so the bed is inflated by this amount
     // to compensate.
-    coord_t md = scaled(m_settings->get_distance_from_objects());
+    Domain::coord_t md = Biz::Algorithms::Scaling::scaled(m_settings->get_distance_from_objects());
     md = md / 2 - inset;
 
     // Applying the final bed with the corrected dimensions to account
@@ -438,7 +440,7 @@ bool arrange(SceneBuilderBase<Builder> &&builder, Ctl &&ctl = {})
     return arrange(Scene{std::move(builder)}, ctl);
 }
 
-} // namespace arr2
-} // namespace Slic3r
+} // namespace Slic3r::arr2
+
 
 #endif // ARR2_SCENE_HPP

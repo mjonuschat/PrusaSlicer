@@ -3,19 +3,24 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include <libslic3r/ClipperUtils.hpp>
 #include "Slic3r/Biz/Algorithms/Tesselate.hpp"
-#include <algorithm>
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+
 #include <iterator>
 #include <vector>
 #include <cstddef>
 
-#include <arrange//NFP/NFPConcave_Tesselate.hpp>
+#include <arrange/NFP/NFPConcave_Tesselate.hpp>
 #include <arrange/NFP/NFP.hpp>
 
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Point.hpp"
-#include "libslic3r/libslic3r.h"
+using Slic3r::Domain::ExPolygon;
+using Slic3r::Domain::ExPolygons;
+using Slic3r::Domain::Polygon;
+using Slic3r::Domain::Polygons;
+using Slic3r::Domain::Vec2crd;
+using Slic3r::Domain::Vec2d;
 
 namespace Slic3r {
 
@@ -29,10 +34,11 @@ Polygons convex_decomposition_tess(const ExPolygon &expoly)
     using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygon_2d;
     std::vector<Vec2d> tr = triangulate_expolygon_2d(expoly);
 
-    auto ret = Slic3r::reserve_polygons(tr.size() / 3);
+    Polygons ret;
+    ret.reserve(tr.size() / 3);
     for (size_t i = 0; i < tr.size(); i += 3) {
         ret.emplace_back(
-            Polygon{scaled(tr[i]), scaled(tr[i + 1]), scaled(tr[i + 2])});
+            Polygon{Biz::Algorithms::Scaling::scaled(tr[i]), Biz::Algorithms::Scaling::scaled(tr[i + 1]), Biz::Algorithms::Scaling::scaled(tr[i + 2])});
     }
 
     return ret;
@@ -42,7 +48,8 @@ Polygons convex_decomposition_tess(const ExPolygons &expolys)
 {
     constexpr size_t AvgTriangleCountGuess = 50;
 
-    auto ret = reserve_polygons(AvgTriangleCountGuess * expolys.size());
+    Polygons ret;
+    ret.reserve(AvgTriangleCountGuess * expolys.size());
     for (const ExPolygon &expoly : expolys) {
         Polygons convparts = convex_decomposition_tess(expoly);
         std::move(convparts.begin(), convparts.end(), std::back_inserter(ret));
@@ -57,12 +64,14 @@ ExPolygons nfp_concave_concave_tess(const ExPolygon &fixed,
     Polygons fixed_decomp = convex_decomposition_tess(fixed);
     Polygons movable_decomp = convex_decomposition_tess(movable);
 
-    auto refs_mv = reserve_vector<Vec2crd>(movable_decomp.size());
+    std::vector<Vec2crd> refs_mv;
+    refs_mv.reserve(movable_decomp.size());
 
     for (const Polygon &p : movable_decomp)
         refs_mv.emplace_back(reference_vertex(p));
 
-    auto nfps = reserve_polygons(fixed_decomp.size() * movable_decomp.size());
+    Polygons nfps;
+    nfps.reserve(fixed_decomp.size() * movable_decomp.size());
 
     Vec2crd ref_whole = reference_vertex(movable);
     for (const Polygon &fixed_part : fixed_decomp) {
@@ -77,7 +86,7 @@ ExPolygons nfp_concave_concave_tess(const ExPolygon &fixed,
         }
     }
 
-    return union_ex(nfps);
+    return Biz::Algorithms::ClipperUtils::union_ex(nfps);
 }
 
 } // namespace Slic3r

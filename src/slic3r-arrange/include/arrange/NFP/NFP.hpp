@@ -5,17 +5,19 @@
 #ifndef NFP_HPP
 #define NFP_HPP
 
-#include <stdint.h>
+#include <cstdint>
 #include <boost/variant.hpp>
 #include <cinttypes>
 
-#include <libslic3r/ExPolygon.hpp>
-#include <libslic3r/Point.hpp>
-#include <libslic3r/Polygon.hpp>
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 
 #include <arrange/Beds.hpp>
 
 namespace Slic3r {
+
+template<int N, class T> using LegacyVec = Domain::Advanced::Vec<T, N>;
 
 template<class Unit = int64_t, class T>
 Unit dotperp(const LegacyVec<2, T> &a, const LegacyVec<2, T> &b)
@@ -26,35 +28,35 @@ Unit dotperp(const LegacyVec<2, T> &a, const LegacyVec<2, T> &b)
 // Convex-Convex nfp in linear time (fixed.size() + movable.size()),
 // no memory allocations (if out param is used).
 // FIXME: Currently broken for very sharp triangles.
-Polygon nfp_convex_convex(const Polygon &fixed, const Polygon &movable);
-void nfp_convex_convex(const Polygon &fixed, const Polygon &movable, Polygon &out);
-Polygon nfp_convex_convex_legacy(const Polygon &fixed, const Polygon &movable);
+Domain::Polygon nfp_convex_convex(const Domain::Polygon &fixed, const Domain::Polygon &movable);
+void nfp_convex_convex(const Domain::Polygon &fixed, const Domain::Polygon &movable, Domain::Polygon &out);
+Domain::Polygon nfp_convex_convex_legacy(const Domain::Polygon &fixed, const Domain::Polygon &movable);
 
-Polygon ifp_convex_convex(const Polygon &fixed, const Polygon &movable);
+Domain::Polygon ifp_convex_convex(const Domain::Polygon &fixed, const Domain::Polygon &movable);
 
-ExPolygons ifp_convex(const arr2::RectangleBed &bed, const Polygon &convexpoly);
-ExPolygons ifp_convex(const arr2::CircleBed &bed, const Polygon &convexpoly);
-ExPolygons ifp_convex(const arr2::IrregularBed &bed, const Polygon &convexpoly);
-inline ExPolygons ifp_convex(const arr2::InfiniteBed &bed, const Polygon &convexpoly)
+Domain::ExPolygons ifp_convex(const arr2::RectangleBed &bed, const Domain::Polygon &convexpoly);
+Domain::ExPolygons ifp_convex(const arr2::CircleBed &bed, const Domain::Polygon &convexpoly);
+Domain::ExPolygons ifp_convex(const arr2::IrregularBed &bed, const Domain::Polygon &convexpoly);
+inline Domain::ExPolygons ifp_convex(const arr2::InfiniteBed &bed, const Domain::Polygon &convexpoly)
 {
     return {};
 }
 
-inline ExPolygons ifp_convex(const arr2::ArrangeBed &bed, const Polygon &convexpoly)
+inline Domain::ExPolygons ifp_convex(const arr2::ArrangeBed &bed, const Domain::Polygon &convexpoly)
 {
-    ExPolygons ret;
+    Domain::ExPolygons ret;
     auto visitor = [&ret, &convexpoly](const auto &b) { ret = ifp_convex(b, convexpoly); };
     boost::apply_visitor(visitor, bed);
 
     return ret;
 }
 
-Vec2crd reference_vertex(const Polygon &outline);
-Vec2crd reference_vertex(const ExPolygon &outline);
-Vec2crd reference_vertex(const Polygons &outline);
-Vec2crd reference_vertex(const ExPolygons &outline);
+Domain::Vec2crd reference_vertex(const Domain::Polygon &outline);
+Domain::Vec2crd reference_vertex(const Domain::ExPolygon &outline);
+Domain::Vec2crd reference_vertex(const Domain::Polygons &outline);
+Domain::Vec2crd reference_vertex(const Domain::ExPolygons &outline);
 
-Vec2crd min_vertex(const Polygon &outline);
+Domain::Vec2crd min_vertex(const Domain::Polygon &outline);
 
 } // namespace Slic3r
 

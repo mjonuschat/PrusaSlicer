@@ -8,8 +8,16 @@
 #include <random>
 #include <map>
 
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
-#include <libslic3r/Geometry/ConvexHull.hpp>
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <arrange/ArrangeBase.hpp>
 #include <arrange/ArrangeFirstFit.hpp>
@@ -28,7 +36,7 @@
 #include <arrange/NFP/Kernels/SVGDebugOutputKernelWrapper.hpp>
 #endif
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 // arrange overload for SegmentedRectangleBed which is exactly what is used
 // by XL printers.
@@ -48,13 +56,13 @@ void arrange(SelectionStrategy &&selstrategy,
             RectangleBed{bed.bb, bed.gap}, SelStrategyTag<SelectionStrategy>{});
 
     std::vector<int> bed_indices = get_bed_indices(items, fixed);
-    std::map<int, BoundingBox> pilebb;
+    std::map<int, Domain::BoundingBox2crd> pilebb;
     std::map<int, bool> bed_occupied;
 
     for (auto &itm : items) {
         auto bedidx = get_bed_index(itm);
         if (bedidx >= 0) {
-            pilebb[bedidx].merge(fixed_bounding_box(itm));
+            pilebb[bedidx] = Biz::Algorithms::BoundingBox::merge(pilebb[bedidx], fixed_bounding_box(itm));
             if (is_wipe_tower(itm))
                 bed_occupied[bedidx] = true;
         }
@@ -67,7 +75,7 @@ void arrange(SelectionStrategy &&selstrategy,
     }
 
     auto bedbb = bounding_box(bed);
-    auto piecesz = unscaled(bedbb).size();
+    auto piecesz = Biz::Algorithms::BoundingBox::sizes(Biz::Algorithms::BoundingBox::unscaled<double>(bedbb));
     piecesz.x() /= bed.segments_x();
     piecesz.y() /= bed.segments_y();
 
@@ -80,44 +88,44 @@ void arrange(SelectionStrategy &&selstrategy,
             occup_it != bed_occupied.end() && occup_it->second)
             continue;
 
-        BoundingBox bb;
-        auto pilesz = unscaled(pilebb[bedidx]).size();
-        bb.max.x() = scaled(std::ceil(pilesz.x() / piecesz.x()) * piecesz.x());
-        bb.max.y() = scaled(std::ceil(pilesz.y() / piecesz.y()) * piecesz.y());
+        Domain::BoundingBox2crd bb;
+        auto pilesz = Biz::Algorithms::BoundingBox::sizes(Biz::Algorithms::BoundingBox::unscaled<double>(pilebb[bedidx]));
+
+        bb.max.x() = Biz::Algorithms::Scaling::scaled(std::ceil(pilesz.x() / piecesz.x()) * piecesz.x());
+        bb.max.y() = Biz::Algorithms::Scaling::scaled(std::ceil(pilesz.y() / piecesz.y()) * piecesz.y());
 
         switch (pivot) {
         case Pivots::BottomLeft:
-            bb.translate(bedbb.min - bb.min);
+            bb = Biz::Algorithms::BoundingBox::translated(bb, bedbb.min - bb.min);
             break;
         case Pivots::TopRight:
-            bb.translate(bedbb.max - bb.max);
+            bb = Biz::Algorithms::BoundingBox::translated(bb, bedbb.max - bb.max);
             break;
         case Pivots::BottomRight: {
-            Point bedref{bedbb.max.x(), bedbb.min.y()};
-            Point bbref {bb.max.x(), bb.min.y()};
-            bb.translate(bedref - bbref);
+            Domain::Point bedref{bedbb.max.x(), bedbb.min.y()};
+            Domain::Point bbref {bb.max.x(), bb.min.y()};
+            bb = Biz::Algorithms::BoundingBox::translated(bb, bedref - bbref);
             break;
         }
         case Pivots::TopLeft: {
-            Point bedref{bedbb.min.x(), bedbb.max.y()};
-            Point bbref {bb.min.x(), bb.max.y()};
-            bb.translate(bedref - bbref);
+            Domain::Point bedref{bedbb.min.x(), bedbb.max.y()};
+            Domain::Point bbref {bb.min.x(), bb.max.y()};
+            bb = Biz::Algorithms::BoundingBox::translated(bb, bedref - bbref);
             break;
         }
         case Pivots::Center: {
-            bb.translate(bedbb.center() - bb.center());
+            bb = Biz::Algorithms::BoundingBox::translated(bb, Biz::Algorithms::BoundingBox::center(bedbb) - Biz::Algorithms::BoundingBox::center(bb));
             break;
         }
         default:
             ;
         }
 
-        Vec2crd d = bb.center() - pilebb[bedidx].center();
+        Domain::Vec2crd d = Biz::Algorithms::BoundingBox::center(bb) - Biz::Algorithms::BoundingBox::center(pilebb[bedidx]);
 
-        auto pilebbx = pilebb[bedidx];
-        pilebbx.translate(d);
+        const auto pilebbx = Biz::Algorithms::BoundingBox::translated(pilebb[bedidx], d);
 
-        Point corr{0, 0};
+        Domain::Point corr{0, 0};
         corr.x() = -std::min(0, pilebbx.min.x() - bedbb.min.x())
                    -std::max(0, pilebbx.max.x() - bedbb.max.x());
         corr.y() = -std::min(0, pilebbx.min.y() - bedbb.min.y())
@@ -139,9 +147,9 @@ template<> struct KernelTraits_<VariantKernel> {
     template<class ArrItem>
     static double placement_fitness(const VariantKernel &kernel,
                                     const ArrItem &itm,
-                                    const Vec2crd &transl)
+                                    const Domain::Vec2crd &transl)
     {
-        double ret = NaNd;
+        double ret = std::numeric_limits<double>::quiet_NaN();
         boost::apply_visitor(
             [&](auto &k) { ret = k.placement_fitness(itm, transl); }, kernel);
 
@@ -235,8 +243,8 @@ void fill_rotations(const Range<It>           &items,
         auto minbbr = get_min_area_bounding_box_rotation(itm);
         std::vector<double> rotations =
             {minbbr,
-             minbbr + PI / 4., minbbr + PI / 2.,
-             minbbr + PI,      minbbr + 3 * PI / 4.};
+             minbbr + std::numbers::pi / 4., minbbr + std::numbers::pi / 2.,
+             minbbr + std::numbers::pi,      minbbr + 3 * std::numbers::pi / 4.};
 
         // Add the original rotation of the item if minbbr
         // is not already the original rotation (zero)
@@ -373,22 +381,22 @@ std::unique_ptr<Arranger<ArrItem>> Arranger<ArrItem>::create(
 
 template<class ArrItem>
 ArrItem ConvexItemConverter<ArrItem>::convert(const Arrangeable &arrbl,
-                                              coord_t offs) const
+                                              Domain::coord_t    offs) const
 {
     auto bed_index = arrbl.get_bed_index();
-    Polygon outline = arrbl.convex_outline();
+    Domain::Polygon outline = arrbl.convex_outline();
 
     if (outline.empty())
         throw EmptyItemOutlineError{};
 
-    Polygon envelope = arrbl.convex_envelope();
+    Domain::Polygon envelope = arrbl.convex_envelope();
 
-    coord_t infl = offs + coord_t(std::ceil(this->safety_dist() / 2.));
+    Domain::coord_t infl = offs + Domain::coord_t(std::ceil(this->safety_dist() / 2.));
 
     if (infl != 0) {
-        outline = Geometry::convex_hull(Slic3r::offset(outline, infl));
+        outline = Biz::Algorithms::Geometry::convex_hull(Biz::Algorithms::ClipperUtils::offset(outline, infl));
         if (! envelope.empty())
-            envelope = Geometry::convex_hull(Slic3r::offset(envelope, infl));
+            envelope = Biz::Algorithms::Geometry::convex_hull(Biz::Algorithms::ClipperUtils::offset(envelope, infl));
     }
 
     ArrItem ret;
@@ -409,7 +417,7 @@ ArrItem ConvexItemConverter<ArrItem>::convert(const Arrangeable &arrbl,
 
 template<class ArrItem>
 ArrItem AdvancedItemConverter<ArrItem>::convert(const Arrangeable &arrbl,
-                                                coord_t offs) const
+                                                Domain::coord_t offs) const
 {
     auto bed_index = arrbl.get_bed_index();
     ArrItem ret = get_arritem(arrbl, offs);
@@ -426,9 +434,9 @@ ArrItem AdvancedItemConverter<ArrItem>::convert(const Arrangeable &arrbl,
 
 template<class ArrItem>
 ArrItem AdvancedItemConverter<ArrItem>::get_arritem(const Arrangeable &arrbl,
-                                                    coord_t    offs) const
+                                                    Domain::coord_t    offs) const
 {
-    coord_t infl = offs + coord_t(std::ceil(this->safety_dist() / 2.));
+    Domain::coord_t infl = offs + Domain::coord_t(std::ceil(this->safety_dist() / 2.));
 
     auto outline = arrbl.full_outline();
 
@@ -438,9 +446,9 @@ ArrItem AdvancedItemConverter<ArrItem>::get_arritem(const Arrangeable &arrbl,
     auto envelope = arrbl.full_envelope();
 
     if (infl != 0) {
-        outline = offset_ex(outline, infl);
+        outline = Biz::Algorithms::ClipperUtils::offset_ex(outline, infl);
         if (! envelope.empty())
-            envelope = offset_ex(envelope, infl);
+            envelope = Biz::Algorithms::ClipperUtils::offset_ex(envelope, infl);
     }
 
     auto simpl_tol = static_cast<double>(this->simplification_tolerance());
@@ -462,7 +470,7 @@ ArrItem AdvancedItemConverter<ArrItem>::get_arritem(const Arrangeable &arrbl,
 
 template<class ArrItem>
 ArrItem BalancedItemConverter<ArrItem>::get_arritem(const Arrangeable &arrbl,
-                                                    coord_t    offs) const
+                                                    Domain::coord_t    offs) const
 {
     ArrItem ret = AdvancedItemConverter<ArrItem>::get_arritem(arrbl, offs);
     set_convex_envelope(ret, envelope_convex_hull(ret));
@@ -474,11 +482,11 @@ template<class ArrItem>
 std::unique_ptr<ArrangeableToItemConverter<ArrItem>>
 ArrangeableToItemConverter<ArrItem>::create(
     ArrangeSettingsView::GeometryHandling gh,
-    coord_t safety_d)
+    Domain::coord_t safety_d)
 {
     std::unique_ptr<ArrangeableToItemConverter<ArrItem>> ret;
 
-    constexpr coord_t SimplifyTol = scaled(.2);
+    constexpr Domain::coord_t SimplifyTol = Biz::Algorithms::Scaling::scaled(.2);
 
     switch(gh) {
     case arr2::ArrangeSettingsView::ghConvex:
@@ -497,6 +505,6 @@ ArrangeableToItemConverter<ArrItem>::create(
     return ret;
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // ARRANGEIMPL_HPP

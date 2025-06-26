@@ -8,12 +8,10 @@
 #include <iterator>
 #include <type_traits>
 
-#include <libslic3r/Point.hpp>
-
 #include <arrange/ArrangeItemTraits.hpp>
 #include <arrange/PackingContext.hpp>
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 namespace detail_is_const_it {
 
@@ -34,6 +32,9 @@ struct IsConstIt_ <It, std::enable_if_t<std::is_class_v<iterator_category_t<It>>
 };
 
 } // namespace detail_is_const_it
+
+// Helper to be used in static_assert.
+template<class T> struct always_false { enum { value = false }; };
 
 template<class It>
 static constexpr bool IsConstIterator = detail_is_const_it::IsConstIt_<It>::value;
@@ -56,7 +57,7 @@ template<class PackStrategy> struct PackStrategyTag_ {
 // Helper metafunc to derive packing strategy tag from a strategy object.
 template<class Strategy>
 using PackStrategyTag =
-    typename PackStrategyTag_<remove_cvref_t<Strategy>>::Tag;
+    typename PackStrategyTag_<std::remove_cvref_t<Strategy>>::Tag;
 
 
 template<class PackStrategy, class En = void> struct PackStrategyTraits_ {
@@ -177,7 +178,7 @@ template<class SelStrategy> struct SelStrategyTag_ {
 
 // Helper metafunc to derive the selection strategy tag from a strategy object.
 template<class Strategy>
-using SelStrategyTag = typename SelStrategyTag_<remove_cvref_t<Strategy>>::Tag;
+using SelStrategyTag = typename SelStrategyTag_<std::remove_cvref_t<Strategy>>::Tag;
 
 // Main function to start the arrangement. Takes a selection and a packing
 // strategy object as the first two parameters. An implementation
@@ -240,7 +241,8 @@ void arrange(SelectionStrategy &&selstrategy,
 template<class It>
 std::vector<int> get_bed_indices(const Range<It> &items)
 {
-    auto bed_indices = reserve_vector<int>(items.size());
+    std::vector<int> bed_indices;
+    bed_indices.reserve(items.size());
 
     for (auto &itm : items)
         bed_indices.emplace_back(get_bed_index(itm));
@@ -293,6 +295,6 @@ struct DefaultStopCondition {
     constexpr bool operator()() const noexcept { return false; }
 };
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // ARRANGEBASE_HPP

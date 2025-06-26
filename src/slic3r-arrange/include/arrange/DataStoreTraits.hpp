@@ -7,9 +7,7 @@
 
 #include <string_view>
 
-#include "libslic3r/libslic3r.h"
-
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 // Some items can be containers of arbitrary data stored under string keys.
 template<class ArrItem, class En = void> struct DataStoreTraits_
@@ -77,6 +75,6 @@ void set_data(ArrItem &itm, const std::string &key, T &&data)
 template<class T> constexpr bool IsReadWritableDataStore = IsDataStore<T> && IsWritableDataStore<T>;
 template<class T, class TT = T> using ReadWritableDataStoreOnly = std::enable_if_t<IsReadWritableDataStore<T>, TT>;
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // DATASTORETRAITS_HPP

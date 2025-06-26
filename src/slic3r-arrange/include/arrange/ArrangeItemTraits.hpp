@@ -5,9 +5,17 @@
 #ifndef ARRANGE_ITEM_TRAITS_HPP
 #define ARRANGE_ITEM_TRAITS_HPP
 
-#include <libslic3r/Point.hpp>
+#include "Slic3r/Domain/Types.hpp"
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
+
+namespace detail_strip_ref_wrappers {
+template<class T> struct StripCVRef_ { using type = std::remove_cvref_t<T>; };
+template<class T> struct StripCVRef_<std::reference_wrapper<T>> { using type = std::remove_cv_t<T>; };
+} // namespace detail_strip_ref_wrappers
+
+// Removes reference wrappers as well
+template<class T> using StripCVRef = typename detail_strip_ref_wrappers::StripCVRef_<std::remove_cvref_t<T>>::type;
 
 // A logical bed representing an object not being arranged. Either the arrange
 // has not yet successfully run on this ArrangePolygon or it could not fit the
@@ -19,7 +27,7 @@ const constexpr int PhysicalBedId = 0;
 // Basic interface of an arrange item. This struct can be specialized for any
 // type that is arrangeable.
 template<class ArrItem, class En = void> struct ArrangeItemTraits_ {
-    static Vec2crd get_translation(const ArrItem &ap)
+    static Domain::Vec2crd get_translation(const ArrItem &ap)
     {
         return ap.get_translation();
     }
@@ -40,7 +48,7 @@ template<class ArrItem, class En = void> struct ArrangeItemTraits_ {
 
     // Setters:
 
-    static void set_translation(ArrItem &ap, const Vec2crd &v)
+    static void set_translation(ArrItem &ap, const Domain::Vec2crd &v)
     {
         ap.set_translation(v);
     }
@@ -59,7 +67,7 @@ template<class T> using ArrangeItemTraits = ArrangeItemTraits_<StripCVRef<T>>;
 
 // Getters:
 
-template<class T> Vec2crd get_translation(const T &itm)
+template<class T> Domain::Vec2crd get_translation(const T &itm)
 {
     return ArrangeItemTraits<T>::get_translation(itm);
 }
@@ -86,7 +94,7 @@ template<class T> std::optional<int> get_bed_constraint(const T &itm)
 
 // Setters:
 
-template<class T> void set_translation(T &itm, const Vec2crd &v)
+template<class T> void set_translation(T &itm, const Domain::Vec2crd &v)
 {
     ArrangeItemTraits<T>::set_translation(itm, v);
 }
@@ -122,7 +130,7 @@ template<class ArrItem> bool is_on_physical_bed(const ArrItem &ap)
     return get_bed_index(ap) == PhysicalBedId;
 }
 
-template<class ArrItem> void translate(ArrItem &ap, const Vec2crd &t)
+template<class ArrItem> void translate(ArrItem &ap, const Domain::Vec2crd &t)
 {
     set_translation(ap, get_translation(ap) + t);
 }
@@ -132,6 +140,6 @@ template<class ArrItem> void rotate(ArrItem &ap, double rads)
     set_rotation(ap, get_rotation(ap) + rads);
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // ARRANGE_ITEM_HPP

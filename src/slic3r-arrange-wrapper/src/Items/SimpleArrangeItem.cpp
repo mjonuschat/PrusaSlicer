@@ -8,7 +8,11 @@
 #include "Tasks/FillBedTaskImpl.hpp" // IWYU pragma: keep
 #include "Tasks/MultiplySelectionTaskImpl.hpp" // IWYU pragma: keep
 
-namespace Slic3r { namespace arr2 {
+#include "Slic3r/Domain/Polygon.hpp"
+
+using Slic3r::Domain::Polygon;
+
+namespace Slic3r::arr2 {
 
 Polygon SimpleArrangeItem::outline() const
 {
@@ -25,4 +29,4 @@ template struct FillBedTask<SimpleArrangeItem>;
 template struct MultiplySelectionTask<SimpleArrangeItem>;
 template class  Arranger<SimpleArrangeItem>;
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2

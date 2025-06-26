@@ -5,9 +5,16 @@
 #ifndef SEGMENTEDRECTANGLEBED_HPP
 #define SEGMENTEDRECTANGLEBED_HPP
 
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include <arrange/ArrangeItemTraits.hpp>
 #include <arrange/Beds.hpp>
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 enum class RectPivots {
     Center, BottomLeft, BottomRight, TopLeft, TopRight
@@ -16,18 +23,20 @@ enum class RectPivots {
 template<class T> struct IsSegmentedBed_ : public std::false_type {};
 template<class T> constexpr bool IsSegmentedBed = IsSegmentedBed_<StripCVRef<T>>::value;
 
+template<int N, class T> using LegacyVec = Domain::Advanced::Vec<T, N>;
+
 template<class SegX = void, class SegY = void, class Pivot = void>
 struct SegmentedRectangleBed {
     LegacyVec<2, size_t> segments = LegacyVec<2, size_t>::Ones();
-    BoundingBox bb;
-    Vec2crd gap;
+    Domain::BoundingBox2crd bb;
+    Domain::Vec2crd gap;
     RectPivots pivot = RectPivots::Center;
 
     SegmentedRectangleBed() = default;
-    SegmentedRectangleBed(const BoundingBox &bb,
+    SegmentedRectangleBed(const Domain::BoundingBox2crd &bb,
                           size_t segments_x,
                           size_t segments_y,
-                          const Vec2crd &gap,
+                          const Domain::Vec2crd &gap,
                           const RectPivots pivot = RectPivots::Center)
         : segments{segments_x, segments_y}, bb{bb}, gap{gap}, pivot{pivot}
     {}
@@ -42,14 +51,14 @@ template<size_t SegX, size_t SegY>
 struct SegmentedRectangleBed<std::integral_constant<size_t, SegX>,
                              std::integral_constant<size_t, SegY>>
 {
-    BoundingBox bb;
-    Vec2crd gap;
+    Domain::BoundingBox2crd bb;
+    Domain::Vec2crd gap;
     RectPivots pivot = RectPivots::Center;
 
     SegmentedRectangleBed() = default;
 
-    explicit SegmentedRectangleBed(const BoundingBox &b,
-                                   const Vec2crd &gap,
+    explicit SegmentedRectangleBed(const Domain::BoundingBox2crd &b,
+                                   const Domain::Vec2crd &gap,
                                    const RectPivots pivot = RectPivots::Center)
         : bb{b},
           gap{gap}
@@ -66,12 +75,12 @@ struct SegmentedRectangleBed<std::integral_constant<size_t, SegX>,
                              std::integral_constant<size_t, SegY>,
                              std::integral_constant<RectPivots, pivot>>
 {
-    BoundingBox bb;
-    Vec2crd gap;
+    Domain::BoundingBox2crd bb;
+    Domain::Vec2crd gap;
 
     SegmentedRectangleBed() = default;
 
-    explicit SegmentedRectangleBed(const BoundingBox &b, const Vec2crd &gap) : bb{b}, gap{gap} {}
+    explicit SegmentedRectangleBed(const Domain::BoundingBox2crd &b, const Domain::Vec2crd &gap) : bb{b}, gap{gap} {}
 
     size_t segments_x() const noexcept { return SegX; }
     size_t segments_y() const noexcept { return SegY; }
@@ -84,10 +93,10 @@ struct IsSegmentedBed_<SegmentedRectangleBed<Args...>>
     : public std::true_type {};
 
 template<class... Args>
-auto offset(const SegmentedRectangleBed<Args...> &bed, coord_t val_scaled)
+auto offset(const SegmentedRectangleBed<Args...> &bed, Domain::coord_t val_scaled)
 {
     auto cpy = bed;
-    cpy.bb.offset(val_scaled);
+    cpy.bb = Biz::Algorithms::BoundingBox::inflated(cpy.bb, val_scaled);
 
     return cpy;
 }
@@ -111,7 +120,7 @@ auto area(const SegmentedRectangleBed<Args...> &bed)
 }
 
 template<class...Args>
-ExPolygons to_expolygons(const SegmentedRectangleBed<Args...> &bed)
+Domain::ExPolygons to_expolygons(const SegmentedRectangleBed<Args...> &bed)
 {
     return to_expolygons(RectangleBed{bed.bb});
 }
@@ -120,6 +129,6 @@ template<class SegB>
 struct IsRectangular_<SegB, std::enable_if_t<IsSegmentedBed<SegB>, void>> : public std::true_type
 {};
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // SEGMENTEDRECTANGLEBED_HPP

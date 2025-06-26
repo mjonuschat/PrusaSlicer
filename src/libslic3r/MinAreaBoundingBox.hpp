@@ -5,21 +5,22 @@
 #ifndef MINAREABOUNDINGBOX_HPP
 #define MINAREABOUNDINGBOX_HPP
 
-#include "libslic3r/Point.hpp"
-#include "libslic3r/BoundingBox.hpp"
-#include "libslic3r/ExPolygon.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 
 namespace Slic3r {
 
-void remove_collinear_points(Polygon& p);
-void remove_collinear_points(ExPolygon& p);
+void remove_collinear_points(Domain::Polygon& p);
+void remove_collinear_points(Domain::ExPolygon& p);
 
 /// A class that holds a rotated bounding box. If instantiated with a polygon
 /// type it will hold the minimum area bounding box for the given polygon.
 /// If the input polygon is convex, the complexity is linear to the number of 
 /// points. Otherwise a convex hull of O(n*log(n)) has to be performed.
 class MinAreaBoundigBox {
-    Point m_axis;    
+    Domain::Point m_axis;
     long double m_bottom = 0.0l, m_right = 0.0l;
 public:
     
@@ -31,9 +32,9 @@ public:
     // Constructors with various types of geometry data used in Slic3r.
     // If the convexity is known apriory, pcConvex can be used to skip
     // convex hull calculation.
-    explicit MinAreaBoundigBox(const Polygon&, PolygonLevel = pcSimple);
-    explicit MinAreaBoundigBox(const ExPolygon&, PolygonLevel = pcSimple);
-    explicit MinAreaBoundigBox(const Points&, PolygonLevel = pcSimple);
+    explicit MinAreaBoundigBox(const Domain::Polygon&, PolygonLevel = pcSimple);
+    explicit MinAreaBoundigBox(const Domain::ExPolygon&, PolygonLevel = pcSimple);
+    explicit MinAreaBoundigBox(const Domain::Points&, PolygonLevel = pcSimple);
     
     // Returns the angle in radians needed for the box to be aligned with the 
     // X axis. Rotate the polygon by this angle and it will be aligned.
@@ -50,10 +51,10 @@ public:
     
     // The axis of the rotated box. If the angle_to_X is not sufficiently 
     // precise, use this unnormalized direction vector.
-    const Point& axis()  const { return m_axis; }
+    const Domain::Point& axis()  const { return m_axis; }
 };
 
-double fit_into_box_rotation(const Polygon &shape, const BoundingBox &box);
+double fit_into_box_rotation(const Domain::Polygon &shape, const Domain::BoundingBox2crd &box);
 
 } // namespace Slic3r
 

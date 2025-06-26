@@ -4,9 +4,11 @@
 #include <catch2/catch_approx.hpp>
 #include "test_utils.hpp"
 
-#include "Slic3r/Biz/Algorithms/Polygon.hpp"
-
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 #include <arrange/ArrangeBase.hpp>
 #include <arrange/ArrangeFirstFit.hpp>
@@ -20,30 +22,20 @@
 #include <arrange-wrapper/Items/ArrangeItem.hpp>
 #include <arrange-wrapper/Items/TrafoOnlyArrangeItem.hpp>
 
-#include <libslic3r/Model.hpp>
-
-#include <libslic3r/Optimize/BruteforceOptimizer.hpp>
-
-#include <libslic3r/Geometry/ConvexHull.hpp>
-#include <libslic3r/ClipperUtils.hpp>
-
 #include "../data/prusaparts.hpp"
 
-#include "Slic3r/Biz/Algorithms/SVG.hpp"
-#include <libslic3r/BoostAdapter.hpp>
-
-#include <boost/log/trivial.hpp>
-
-#include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/multi_polygon.hpp>
-#include <boost/geometry/algorithms/convert.hpp>
 
 #include <random>
 
 using namespace Catch;
 using namespace Slic3r::Biz;
-using Algorithms::SVG::SVG;
+
+using Slic3r::Biz::Algorithms::ClipperUtils::diff_ex;
+using Slic3r::Biz::Algorithms::ClipperUtils::intersection_ex;
+using Slic3r::Biz::Algorithms::ClipperUtils::offset_ex;
+using Slic3r::Biz::Algorithms::Geometry::convex_hull;
+using Slic3r::Biz::Algorithms::SVG::SVG;
 
 template<class ArrItem = Slic3r::arr2::ArrangeItem>
 static std::vector<ArrItem> prusa_parts(double infl = 0.) {
@@ -65,7 +57,7 @@ static std::vector<ArrItem> prusa_parts(double infl = 0.) {
             if (infl > 0.)
                 inp_cpy = offset_ex(inp_cpy, scaled(std::ceil(infl / 2.)));
 
-            ArrItem item{Geometry::convex_hull(inp_cpy)};
+            ArrItem item{convex_hull(inp_cpy)};
 
             ret.emplace_back(std::move(item));
         }
@@ -206,7 +198,7 @@ static void check_nfp(const std::string & outfile_prefix,
 
     ExPolygons bed_negative = diff_ex(bedrect, bedpoly);
     ExPolygons orb_ex_r = Algorithms::Polygon::to_expolygons(orbiter);
-    ExPolygons orb_ex_r_ch = {ExPolygon(Geometry::convex_hull(orb_ex_r))};
+    ExPolygons orb_ex_r_ch = {ExPolygon(convex_hull(orb_ex_r))};
     auto orb_ex_offs_pos_r = offset_ex(orb_ex_r,  scaled<float>(EPSILON));
     auto orb_ex_offs_neg_r = offset_ex(orb_ex_r, -scaled<float>(EPSILON));
     auto orb_ex_offs_pos_r_ch = offset_ex(orb_ex_r_ch,  scaled<float>(EPSILON));
@@ -323,7 +315,7 @@ void test_itempairs(const std::vector<PairType> &testdata,
     for(auto td : testdata) {
         Polygons orbiter = td.orbiter.envelope().transformed_outline();
         Polygons stationary = td.stationary.shape().transformed_outline();
-        Point center = bounding_box(bed).center();
+        Point center = Algorithms::BoundingBox::center(bounding_box(bed));
         Point stat_c = get_extents(stationary).center();
         Point d =  center - stat_c;
         arr2::translate(td.stationary, d);
@@ -467,9 +459,6 @@ TEST_CASE("NFP should be empty if item cannot fit into bed", "[arrange2]") {
         REQUIRE(nfp.empty());
     }
 }
-
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem.hpp>
 
 TEMPLATE_TEST_CASE("NFP algorithm test", "[arrange2][Slow]",
                    Slic3r::arr2::InfiniteBed,
@@ -636,7 +625,7 @@ template<int N> struct PackStrategyTag_<RectangleToCenterPackStrategy<N>> {
 // Dummy arrangeitem that is a rectangle
 struct RectangleItem {
     int bed_index = Unarranged;
-    BoundingBox shape = {{0, 0}, scaled(Vec2d{10., 10.})};
+    Domain::BoundingBox2crd shape = {{0, 0}, scaled(Vec2d{10., 10.})};
     Vec2crd translation = {0, 0};
     double rotation = 0;
 
@@ -669,13 +658,13 @@ bool pack(Strategy &&strategy,
     auto bedbb = bounding_box(bed);
     auto itmbb = item.shape;
 
-    Vec2crd tr = bedbb.center() - itmbb.center();
-    itmbb.translate(tr);
+    Vec2crd tr = Algorithms::BoundingBox::center(bedbb) - Algorithms::BoundingBox::center(itmbb);
+    itmbb = Algorithms::BoundingBox::translated(itmbb, tr);
 
     auto fixed_items = all_items_range(packing_context);
 
     if (fixed_items.size() < Slic3r::StripCVRef<Strategy>::Capacity &&
-        bedbb.contains(itmbb))
+        Algorithms::BoundingBox::contains(bedbb, itmbb))
     {
         translate(item, tr);
         ret = true;
@@ -902,7 +891,7 @@ TEST_CASE("First fit selection strategy", "[arrange2]")
 }
 
 template<>
-Slic3r::BoundingBox Slic3r::arr2::NFPArrangeItemTraits_<
+Slic3r::Domain::BoundingBox2crd Slic3r::arr2::NFPArrangeItemTraits_<
     RectangleItem>::envelope_bounding_box(const RectangleItem &itm)
 {
     return itm.shape;
@@ -912,7 +901,7 @@ template<>
 Slic3r::Vec2crd Slic3r::arr2::NFPArrangeItemTraits_<
     RectangleItem>::reference_vertex(const RectangleItem &itm)
 {
-    return itm.shape.center();
+    return Algorithms::BoundingBox::center(itm.shape);
 }
 
 TEST_CASE("Optimal nfp position search with GravityKernel using RectangleItem and InfiniteBed",
@@ -934,7 +923,7 @@ TEST_CASE("Optimal nfp position search with GravityKernel using RectangleItem an
 
                 double score = pick_best_spot_on_nfp_verts_only(item, nfp, bed, strategy);
 
-                Slic3r::Vec2crd D = bed.center - item.shape.center();
+                Slic3r::Vec2crd D = bed.center - Algorithms::BoundingBox::center(item.shape);
                 REQUIRE(item.translation == D);
                 REQUIRE(score == Approx(0.).margin(EPSILON));
             }
@@ -954,8 +943,8 @@ TEMPLATE_TEST_CASE("RectangleOverfitPackingStrategy test", "[arrange2]",
 
     using ArrItem = TestType;
 
-    auto frontleft_align_fn = [](const Slic3r::BoundingBox &bedbb,
-                                 const Slic3r::BoundingBox &pilebb) {
+    auto frontleft_align_fn = [](const Slic3r::Domain::BoundingBox2crd &bedbb,
+                                 const Slic3r::Domain::BoundingBox2crd &pilebb) {
         return bedbb.min - pilebb.min;
     };
 

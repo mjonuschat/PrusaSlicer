@@ -5,7 +5,6 @@
 
 #include <numeric>
 
-#include <libslic3r/Geometry/ConvexHull.hpp>
 #include <arrange/NFP/NFPConcave_Tesselate.hpp>
 
 #include <arrange-wrapper/Items/ArrangeItem.hpp>
@@ -14,13 +13,30 @@
 #include "Tasks/FillBedTaskImpl.hpp" // IWYU pragma: keep
 #include "Tasks/MultiplySelectionTaskImpl.hpp" // IWYU pragma: keep
 
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 using namespace Slic3r::Biz;
 
-namespace Slic3r { namespace arr2 {
+using Slic3r::Domain::BoundingBox2crd;
+using Slic3r::Domain::ExPolygon;
+using Slic3r::Domain::ExPolygons;
+using Slic3r::Domain::Polygon;
+using Slic3r::Domain::Polygons;
+using Slic3r::Domain::Vec2crd;
+using Slic3r::Domain::Vec2d;
+
+namespace Slic3r::arr2 {
 
 const Polygons &DecomposedShape::transformed_outline() const
 {
-    constexpr auto sc = scaled<double>(1.) * scaled<double>(1.);
+    constexpr auto sc = static_cast<double>(Algorithms::Scaling::scaled(1.)) * static_cast<double>(Algorithms::Scaling::scaled(1.));
 
     if (!m_transformed_outline_valid) {
         m_transformed_outline = contours();
@@ -35,8 +51,8 @@ const Polygons &DecomposedShape::transformed_outline() const
                                      return s + p.area() / sc;
                                  });
 
-        m_convex_hull = Geometry::convex_hull(m_transformed_outline);
-        m_bounding_box = get_extents(m_convex_hull);
+        m_convex_hull = Algorithms::Geometry::convex_hull(m_transformed_outline);
+        m_bounding_box = Algorithms::Polygon::get_extents(m_convex_hull);
 
         m_transformed_outline_valid = true;
     }
@@ -52,7 +68,7 @@ const Polygon &DecomposedShape::convex_hull() const
     return m_convex_hull;
 }
 
-const BoundingBox &DecomposedShape::bounding_box() const
+const BoundingBox2crd &DecomposedShape::bounding_box() const
 {
     if (!m_transformed_outline_valid)
         transformed_outline();
@@ -98,7 +114,7 @@ const Vec2crd &DecomposedShape::min_vertex(size_t idx) const
 
 Vec2crd DecomposedShape::centroid() const
 {
-    constexpr double area_sc = scaled<double>(1.) * scaled(1.);
+    constexpr double area_sc = static_cast<double>(Algorithms::Scaling::scaled(1.)) * static_cast<double>(Algorithms::Scaling::scaled(1.));
 
     if (!m_centroid_valid) {
         double total_area = 0.0;
@@ -106,13 +122,13 @@ Vec2crd DecomposedShape::centroid() const
 
         for (const Polygon& poly : transformed_outline()) {
             double parea = poly.area() / area_sc;
-            Vec2d pcntr = unscaled(poly.centroid());
+            Vec2d pcntr = Algorithms::Scaling::unscaled<double>(poly.centroid());
             total_area += parea;
             cntr += pcntr * parea;
         }
 
         cntr /= total_area;
-        m_centroid = scaled(cntr);
+        m_centroid = Algorithms::Scaling::scaled(cntr);
         m_centroid_valid = true;
     }
 
@@ -211,4 +227,4 @@ template struct FillBedTask<ArrangeItem>;
 template struct MultiplySelectionTask<ArrangeItem>;
 template class  Arranger<ArrangeItem>;
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2

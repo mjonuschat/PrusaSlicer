@@ -5,8 +5,6 @@
 #ifndef SCENEBUILDER_HPP
 #define SCENEBUILDER_HPP
 
-#include <assert.h>
-#include <stddef.h>
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
@@ -17,34 +15,33 @@
 #include <cassert>
 #include <cstddef>
 
-#include <libslic3r/AnyPtr.hpp>
-#include <libslic3r/BoundingBox.hpp>
-#include <libslic3r/ExPolygon.hpp>
-#include <libslic3r/Model.hpp>
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
 #include <Slic3r/Domain/ObjectID.hpp>
-#include <libslic3r/Point.hpp>
-#include <libslic3r/Polygon.hpp>
-#include <libslic3r/libslic3r.h>
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <arrange/ArrangeItemTraits.hpp>
 #include <arrange/Beds.hpp>
 
 #include "Scene.hpp"
 
+namespace Slic3r {
+class Print;
+class SLAPrint;
+class SLAPrintObject;
+class PrintObject;
+} // namespace Slic3r
+
 namespace Slic3r::Domain {
 class Model;
 class ModelInstance;
 } // namespace Slic3r::Domain
 
-namespace Slic3r {
-
-class Print;
-class SLAPrint;
-class SLAPrintObject;
-class PrintObject;
-class DynamicPrintConfig;
-
-namespace arr2 {
+namespace Slic3r::arr2 {
 
 using SelectionPredicate = std::function<bool(int)>;
 
@@ -69,8 +66,8 @@ class VBedPlaceable {
 public:
     virtual ~VBedPlaceable() = default;
 
-    virtual BoundingBoxf bounding_box() const = 0;
-    virtual void displace(const Vec2d &transl, double rot) = 0;
+    virtual Domain::BoundingBox2d bounding_box() const = 0;
+    virtual void displace(const Domain::Vec2d &transl, double rot) = 0;
 };
 
 // An interface to handle virtual beds for VBedPlaceable objects. A VBedPlaceable
@@ -92,7 +89,7 @@ public:
     // The returned trafo can be used to displace the VBedPlaceable
     // to the coordinate system of the physical bed, should that differ from
     // the coordinate space of a logical bed.
-    virtual Transform3d get_physical_bed_trafo(int bed_index) const = 0;
+    virtual Domain::Transform3d get_physical_bed_trafo(int bed_index) const = 0;
 
     // Assign the VBedPlaceable to the given bed index. Note that this
     // method can return false, indicating that the given bed is not available
@@ -151,13 +148,13 @@ struct ArrangeableWipeTowerBase: public Arrangeable
 {
     Domain::ObjectID oid;
 
-    Polygon poly;
+    Domain::Polygon poly;
     SelectionPredicate selection_pred;
     int bed_index{0};
 
     ArrangeableWipeTowerBase(
         const Domain::ObjectID &objid,
-        Polygon shape,
+        Domain::Polygon shape,
         int bed_index,
         SelectionPredicate selection_predicate = [](int){ return false; })
         : oid{objid},
@@ -169,13 +166,13 @@ struct ArrangeableWipeTowerBase: public Arrangeable
     Domain::ObjectID id() const override { return oid; }
     Domain::ObjectID geometry_id() const override { return {}; }
 
-    ExPolygons full_outline() const override
+    Domain::ExPolygons full_outline() const override
     {
         auto cpy = poly;
-        return {ExPolygon{std::move(cpy)}};
+        return {Domain::ExPolygon{std::move(cpy)}};
     }
 
-    Polygon convex_outline() const override
+    Domain::Polygon convex_outline() const override
     {
         return poly;
     }
@@ -194,7 +191,7 @@ struct ArrangeableWipeTowerBase: public Arrangeable
         return this->bed_index;
     }
 
-    void transform(const Vec2d &transl, double rot) override {}
+    void transform(const Domain::Vec2d &transl, double rot) override {}
 
     void imbue_data(AnyWritable &datastore) const override
     {
@@ -277,7 +274,7 @@ public:
 
     using SceneBuilderBase<SceneBuilder>::set_bed;
 
-    SceneBuilder &&set_bed(const Points& bedpts, bool is_xl_printer, const Vec2crd &gap);
+    SceneBuilder &&set_bed(const Domain::Points& bedpts, bool is_xl_printer, const Domain::Vec2crd &gap);
 
     SceneBuilder && set_wipe_tower_handlers(std::vector<AnyPtr<WipeTowerHandler>> &&handlers)
     {
@@ -326,9 +323,9 @@ public:
 
     int get_bed_index(const VBedPlaceable &obj) const override { return 0; }
 
-    Transform3d get_physical_bed_trafo(int bed_index) const override
+    Domain::Transform3d get_physical_bed_trafo(int bed_index) const override
     {
-        return Transform3d::Identity();
+        return Domain::Transform3d::Identity();
     }
 
     bool assign_bed(VBedPlaceable &inst, int bed_idx) override;
@@ -338,17 +335,17 @@ public:
 // on the right side of the physical bed along the X axis in a row
 class XStriderVBedHandler final : public VirtualBedHandler
 {
-    coord_t m_stride_scaled;
-    coord_t m_start;
+    Domain::coord_t m_stride_scaled;
+    Domain::coord_t m_start;
 
 public:
-    explicit XStriderVBedHandler(const BoundingBox &bedbb, coord_t xgap)
-        : m_stride_scaled{bedbb.size().x() + 2 * std::max(0, xgap)},
+    explicit XStriderVBedHandler(const Domain::BoundingBox2crd &bedbb, Domain::coord_t xgap)
+        : m_stride_scaled{Biz::Algorithms::BoundingBox::sizes(bedbb).x() + 2 * std::max(0, xgap)},
           m_start{bedbb.min.x() - std::max(0, xgap)}
     {
     }
 
-    coord_t stride_scaled() const { return m_stride_scaled; }
+    Domain::coord_t stride_scaled() const { return m_stride_scaled; }
 
     // Can return negative indices when the instance is to the left of the
     // physical bed
@@ -359,27 +356,27 @@ public:
 
     using VirtualBedHandler::assign_bed;
 
-    Transform3d get_physical_bed_trafo(int bed_index) const override;
+    Domain::Transform3d get_physical_bed_trafo(int bed_index) const override;
 };
 
 // Same as XStriderVBedHandler only that it lays out vbeds on the Y axis
 class YStriderVBedHandler final : public VirtualBedHandler
 {
-    coord_t m_stride_scaled;
-    coord_t m_start;
+    Domain::coord_t m_stride_scaled;
+    Domain::coord_t m_start;
 
 public:
-    coord_t stride_scaled() const { return m_stride_scaled; }
+    Domain::coord_t stride_scaled() const { return m_stride_scaled; }
 
-    explicit YStriderVBedHandler(const BoundingBox &bedbb, coord_t ygap)
-        : m_stride_scaled{bedbb.size().y() + 2 * std::max(0, ygap)}
+    explicit YStriderVBedHandler(const Domain::BoundingBox2crd &bedbb, Domain::coord_t ygap)
+        : m_stride_scaled{Biz::Algorithms::BoundingBox::sizes(bedbb).y() + 2 * std::max(0, ygap)}
         , m_start{bedbb.min.y() - std::max(0, ygap)}
     {}
 
     int get_bed_index(const VBedPlaceable &obj) const override;
     bool assign_bed(VBedPlaceable &inst, int bed_idx) override;
 
-    Transform3d get_physical_bed_trafo(int bed_index) const override;
+    Domain::Transform3d get_physical_bed_trafo(int bed_index) const override;
 };
 
 class GridStriderVBedHandler: public VirtualBedHandler
@@ -388,7 +385,7 @@ class GridStriderVBedHandler: public VirtualBedHandler
     YStriderVBedHandler m_ystrider;
 
 public:
-    GridStriderVBedHandler(const BoundingBox &bedbb, const Vec2crd &gap)
+    GridStriderVBedHandler(const Domain::BoundingBox2crd &bedbb, const Domain::Vec2crd &gap)
         : m_xstrider{bedbb, gap.x()}
         , m_ystrider{bedbb, gap.y()}
     {}
@@ -396,38 +393,38 @@ public:
     int get_bed_index(const VBedPlaceable &obj) const override;
     bool assign_bed(VBedPlaceable &inst, int bed_idx) override;
 
-    Transform3d get_physical_bed_trafo(int bed_index) const override;
+    Domain::Transform3d get_physical_bed_trafo(int bed_index) const override;
 };
 
 std::vector<size_t> selected_object_indices(const SelectionMask &sm);
 std::vector<size_t> selected_instance_indices(int obj_idx, const SelectionMask &sm);
 
-coord_t get_skirt_inset(const Print &fffprint);
+Domain::coord_t get_skirt_inset(const Print &fffprint);
 
-coord_t brim_offset(const PrintObject &po);
+Domain::coord_t brim_offset(const PrintObject &po);
 
 // unscaled coords are necessary to be able to handle bigger coordinate range
 // than what is available with scaled coords. This is useful when working with
 // virtual beds.
-void transform_instance(Domain::ModelInstance &mi,
-                        const Vec2d           &transl_unscaled,
-                        double                 rot,
-                        const Transform3d     &physical_tr = Transform3d::Identity());
+void transform_instance(Domain::ModelInstance&     mi,
+                        const Domain::Vec2d&       transl_unscaled,
+                        double                     rot,
+                        const Domain::Transform3d& physical_tr = Domain::Transform3d::Identity());
 
-BoundingBoxf3 instance_bounding_box(const Domain::ModelInstance &mi,
-                                    bool dont_translate = false);
+Domain::BoundingBox3d instance_bounding_box(const Domain::ModelInstance &mi,
+                                            bool dont_translate = false);
 
-BoundingBoxf3 instance_bounding_box(const Domain::ModelInstance &mi,
-                                    const Transform3d &tr,
-                                    bool dont_translate = false);
+Domain::BoundingBox3d instance_bounding_box(const Domain::ModelInstance &mi,
+                                            const Domain::Transform3d &tr,
+                                            bool dont_translate = false);
 
 constexpr double UnscaledCoordLimit = 1000.;
 
-ExPolygons extract_full_outline(const Domain::ModelInstance &inst,
-                                const Transform3d &tr = Transform3d::Identity());
+Domain::ExPolygons extract_full_outline(const Domain::ModelInstance &inst,
+                                        const Domain::Transform3d &tr = Domain::Transform3d::Identity());
 
-Polygon extract_convex_outline(const Domain::ModelInstance &inst,
-                               const Transform3d &tr = Transform3d::Identity());
+Domain::Polygon extract_convex_outline(const Domain::ModelInstance &inst,
+                                       const Domain::Transform3d &tr = Domain::Transform3d::Identity());
 
 size_t model_instance_count (const Domain::Model &m);
 
@@ -438,8 +435,8 @@ class VBedPlaceableMI : public VBedPlaceable
 public:
     explicit VBedPlaceableMI(Domain::ModelInstance &mi) : m_mi{&mi} {}
 
-    BoundingBoxf bounding_box() const override { return to_2d(instance_bounding_box(*m_mi)); }
-    void         displace(const Vec2d &transl, double rot) override
+    Domain::BoundingBox2d bounding_box() const override { return Biz::Algorithms::BoundingBox::to_2d(instance_bounding_box(*m_mi)); }
+    void                  displace(const Domain::Vec2d &transl, double rot) override
     {
         transform_instance(*m_mi, transl, rot);
     }
@@ -469,11 +466,11 @@ public:
     // Arrangeable:
     Domain::ObjectID id() const override { return m_mi->id(); }
     Domain::ObjectID geometry_id() const override { return m_mi->get_object()->id(); }
-    ExPolygons full_outline() const override;
-    Polygon    convex_outline() const override;
+    Domain::ExPolygons full_outline() const override;
+    Domain::Polygon    convex_outline() const override;
     bool       is_printable() const override { return m_mi->printable; }
     bool       is_selected() const override;
-    void       transform(const Vec2d &tr, double rot) override;
+    void       transform(const Domain::Vec2d &tr, double rot) override;
 
     int        get_bed_index() const override { return m_vbedh->get_bed_index(*this); }
     bool       assign_bed(int bed_idx) override;
@@ -481,8 +478,8 @@ public:
     std::optional<int> bed_constraint() const override { return m_bed_constraint; }
 
     // VBedPlaceable:
-    BoundingBoxf bounding_box() const override { return to_2d(instance_bounding_box(*m_mi)); }
-    void         displace(const Vec2d &transl, double rot) override
+    Domain::BoundingBox2d bounding_box() const override { return Biz::Algorithms::BoundingBox::to_2d(instance_bounding_box(*m_mi)); }
+    void                  displace(const Domain::Vec2d &transl, double rot) override
     {
         if constexpr (!std::is_const_v<InstPtr>)
             transform_instance(*m_mi, transl, rot);
@@ -497,27 +494,27 @@ class ArrangeableSLAPrintObject : public Arrangeable
 {
     const SLAPrintObject *m_po;
     Arrangeable          *m_arrbl;
-    Transform3d           m_inst_trafo;
+    Domain::Transform3d   m_inst_trafo;
     std::optional<int> m_bed_constraint;
 
 public:
     ArrangeableSLAPrintObject(const SLAPrintObject *po,
                               Arrangeable *arrbl,
                               const std::optional<int> bed_constraint,
-                              const Transform3d &inst_tr = Transform3d::Identity())
+                              const Domain::Transform3d &inst_tr = Domain::Transform3d::Identity())
         : m_po{po}, m_arrbl{arrbl}, m_inst_trafo{inst_tr}, m_bed_constraint(bed_constraint)
     {}
 
     Domain::ObjectID id() const override { return m_arrbl->id(); }
     Domain::ObjectID geometry_id() const override { return m_arrbl->geometry_id(); }
 
-    ExPolygons full_outline() const override;
-    ExPolygons full_envelope() const override;
+    Domain::ExPolygons full_outline() const override;
+    Domain::ExPolygons full_envelope() const override;
 
-    Polygon convex_outline() const override;
-    Polygon convex_envelope() const override;
+    Domain::Polygon convex_outline() const override;
+    Domain::Polygon convex_envelope() const override;
 
-    void transform(const Vec2d &transl, double rot) override
+    void transform(const Domain::Vec2d &transl, double rot) override
     {
         m_arrbl->transform(transl, rot);
     }
@@ -598,7 +595,7 @@ auto find_instance_by_id(Mdl &&model, const Domain::ObjectID &id)
 struct ModelDuplicate
 {
     Domain::ObjectID id;
-    Vec2d            tr  = Vec2d::Zero();
+    Domain::Vec2d    tr  = Domain::Vec2d::Zero();
     double           rot = 0.;
     int              bed_idx = Unarranged;
 };
@@ -624,9 +621,9 @@ public:
     Domain::ObjectID id() const override { return m_dup->id.id + 1; }
     Domain::ObjectID geometry_id() const override;
 
-    ExPolygons full_outline() const override;
+    Domain::ExPolygons full_outline() const override;
 
-    Polygon convex_outline() const override;
+    Domain::Polygon convex_outline() const override;
 
     bool is_printable() const override { return true; }
     bool is_selected() const override { return m_dup->id == 0; }
@@ -636,7 +633,7 @@ public:
         return m_vbh->get_bed_index(*this);
     }
 
-    void transform(const Vec2d &tr, double rot) override
+    void transform(const Domain::Vec2d &tr, double rot) override
     {
         if constexpr (!std::is_const_v<Mdl> && !std::is_const_v<Dup>) {
             m_dup->tr += tr;
@@ -656,8 +653,8 @@ public:
         return ret;
     }
 
-    BoundingBoxf bounding_box() const override { return unscaled(get_extents(convex_outline())); }
-    void displace(const Vec2d &transl, double rot) override
+    Domain::BoundingBox2d bounding_box() const override { return Biz::Algorithms::BoundingBox::unscaled<double>(Biz::Algorithms::Polygon::get_extents(convex_outline())); }
+    void displace(const Domain::Vec2d &transl, double rot) override
     {
         transform(transl, rot);
     }
@@ -672,7 +669,7 @@ class DuplicableModel: public ArrangeableModel {
     AnyPtr<Domain::Model> m_model;
     AnyPtr<VirtualBedHandler> m_vbh;
     std::vector<ModelDuplicate> m_duplicates;
-    BoundingBox m_bedbb;
+    Domain::BoundingBox2crd m_bedbb;
 
     template<class Self, class Fn>
     static void visit_arrangeable_(Self &&self, const Domain::ObjectID &id, Fn &&fn)
@@ -690,7 +687,7 @@ class DuplicableModel: public ArrangeableModel {
 public:
     explicit DuplicableModel(AnyPtr<Domain::Model> mdl,
                              AnyPtr<VirtualBedHandler> vbh,
-                             const BoundingBox &bedbb);
+                             const Domain::BoundingBox2crd &bedbb);
     ~DuplicableModel();
 
     void for_each_arrangeable(std::function<void(Arrangeable &)> fn) override
@@ -721,7 +718,6 @@ public:
     void apply_duplicates();
 };
 
-} // namespace arr2
-} // namespace Slic3r
+} // namespace Slic3r::arr2
 
 #endif // SCENEBUILDER_HPP

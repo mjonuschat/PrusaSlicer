@@ -7,33 +7,33 @@
 
 #include <numeric>
 
-#include "libslic3r/Arrange/Core/NFP/NFPArrangeItemTraits.hpp"
-#include "libslic3r/Arrange/Core/Beds.hpp"
-
-#include <libslic3r/Geometry/ConvexHull.hpp>
-#include <libslic3r/ClipperUtils.hpp>
-
 #include "KernelUtils.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Utils.hpp"
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 struct CompactifyKernel {
-    ExPolygons merged_pile;
+    Domain::ExPolygons merged_pile;
 
     template<class ArrItem>
-    double placement_fitness(const ArrItem &itm, const Vec2crd &transl) const
+    double placement_fitness(const ArrItem &itm, const Domain::Vec2crd &transl) const
     {
         auto pile = merged_pile;
 
-        ExPolygons itm_tr = to_expolygons(envelope_outline(itm));
+        Domain::ExPolygons itm_tr = to_expolygons(envelope_outline(itm));
         for (auto &p : itm_tr)
             p.translate(transl);
 
         append(pile, std::move(itm_tr));
 
-        pile = union_ex(pile);
+        pile = Biz::Algorithms::ClipperUtils::union_ex(pile);
 
-        Polygon chull = Geometry::convex_hull(pile);
+        Domain::Polygon chull = Biz::Algorithms::Geometry::convex_hull(pile);
 
         return -(chull.area());
     }
@@ -51,7 +51,7 @@ struct CompactifyKernel {
         for (const auto &gitm : all_items_range(packing_context)) {
             append(merged_pile, to_expolygons(fixed_outline(gitm)));
         }
-        merged_pile = union_ex(merged_pile);
+        merged_pile = Biz::Algorithms::ClipperUtils::union_ex(merged_pile);
 
         return ret;
     }
@@ -60,6 +60,6 @@ struct CompactifyKernel {
     bool on_item_packed(ArrItem &itm) { return true; }
 };
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // COMPACTIFYKERNEL_HPP

@@ -5,17 +5,19 @@
 #ifndef TRAFOONLYARRANGEITEM_HPP
 #define TRAFOONLYARRANGEITEM_HPP
 
+#include "Slic3r/Domain/Types.hpp"
+
 #include <arrange/ArrangeItemTraits.hpp>
 
 #include "ArbitraryDataStore.hpp"
 #include "MutableItemTraits.hpp"
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 class TrafoOnlyArrangeItem {
     int m_bed_idx = Unarranged;
     int m_priority = 0;
-    Vec2crd m_translation = Vec2crd::Zero();
+    Domain::Vec2crd m_translation = Domain::Vec2crd::Zero();
     double  m_rotation = 0.;
     std::optional<int> m_bed_constraint;
 
@@ -33,7 +35,7 @@ public:
           m_bed_constraint{arr2::get_bed_constraint(other)}
     {}
 
-    const Vec2crd& get_translation() const noexcept { return m_translation; }
+    const Domain::Vec2crd& get_translation() const noexcept { return m_translation; }
     double get_rotation() const noexcept { return m_rotation; }
     int get_bed_index() const noexcept { return m_bed_idx; }
     int get_priority() const noexcept { return m_priority; }
@@ -80,7 +82,7 @@ template<> struct WritableDataStoreTraits_<TrafoOnlyArrangeItem>
     }
 };
 
-} // namespace arr2
-} // namespace Slic3r
+} // namespace Slic3r::arr2
+
 
 #endif // TRAFOONLYARRANGEITEM_HPP

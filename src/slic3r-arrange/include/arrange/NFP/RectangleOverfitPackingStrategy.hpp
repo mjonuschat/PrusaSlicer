@@ -5,32 +5,36 @@
 #ifndef RECTANGLEOVERFITPACKINGSTRATEGY_HPP
 #define RECTANGLEOVERFITPACKINGSTRATEGY_HPP
 
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include <arrange/Beds.hpp>
 
 #include "Kernels/RectangleOverfitKernelWrapper.hpp"
 #include "PackStrategyNFP.hpp"
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
-using PostAlignmentFn = std::function<Vec2crd(const BoundingBox &bedbb,
-                                              const BoundingBox &pilebb)>;
+using PostAlignmentFn = std::function<Domain::Vec2crd(const Domain::BoundingBox2crd &bedbb,
+                                                      const Domain::BoundingBox2crd &pilebb)>;
 
 struct CenterAlignmentFn {
-    Vec2crd operator() (const BoundingBox &bedbb,
-                        const BoundingBox &pilebb)
+    Domain::Vec2crd operator() (const Domain::BoundingBox2crd &bedbb,
+                                const Domain::BoundingBox2crd &pilebb)
     {
-        return bedbb.center() - pilebb.center();
+        return Biz::Algorithms::BoundingBox::center(bedbb) - Biz::Algorithms::BoundingBox::center(pilebb);
     }
 };
 
 template<class ArrItem>
 struct RectangleOverfitPackingContext : public DefaultPackingContext<ArrItem>
 {
-    BoundingBox limits;
+    Domain::BoundingBox2crd limits;
     int bed_index;
     PostAlignmentFn post_alignment_fn;
 
-    explicit RectangleOverfitPackingContext(const BoundingBox limits,
+    explicit RectangleOverfitPackingContext(const Domain::BoundingBox2crd limits,
                      int bedidx,
                      PostAlignmentFn alignfn = CenterAlignmentFn{})
         : limits{limits}, bed_index{bedidx}, post_alignment_fn{alignfn}
@@ -130,7 +134,7 @@ bool pack(Strategy &strategy,
             base.ep, base.accuracy};
 
         ret = pack(modded_strategy,
-                   InfiniteBed{packing_context.limits.center()}, item,
+                   InfiniteBed{Biz::Algorithms::BoundingBox::center(packing_context.limits)}, item,
                    packing_context, remaining_items, NFPPackingTag{});
     } else {
         ret = pack(strategy.base_strategy, bed, item, packing_context,
@@ -140,6 +144,6 @@ bool pack(Strategy &strategy,
     return ret;
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // RECTANGLEOVERFITPACKINGSTRATEGY_HPP

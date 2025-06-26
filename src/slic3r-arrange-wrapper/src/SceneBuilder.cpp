@@ -11,18 +11,15 @@
 #include <cstdlib>
 #include <iterator>
 
-#include <libslic3r/Model.hpp>
-#include <libslic3r/MultipleBeds.hpp>
-#include <libslic3r/Print.hpp>
-#include <libslic3r/SLAPrint.hpp>
-#include <libslic3r/Geometry/ConvexHull.hpp>
-#include <libslic3r/ClipperUtils.hpp>
-#include <libslic3r/Geometry.hpp>
-#include <libslic3r/PrintConfig.hpp>
-#include <libslic3r/SLA/Pad.hpp>
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include <libslic3r/TriangleMeshSlicer.hpp>
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Transformation.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <arrange/Beds.hpp>
 #include <arrange/ArrangeItemTraits.hpp>
@@ -30,11 +27,29 @@
 #include <arrange-wrapper/SceneBuilder.hpp>
 #include <arrange-wrapper/Scene.hpp>
 
-namespace Slic3r {
+#include "libslic3r/MultipleBeds.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/SLAPrint.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
 
-using Biz::Algorithms::ModelObject::convex_hull_2d;
+using Slic3r::Domain::coord_t;
+using Slic3r::Domain::ExPolygon;
+using Slic3r::Domain::ExPolygons;
+using Slic3r::Domain::Points;
+using Slic3r::Domain::Polygon;
+using Slic3r::Domain::Polygons;
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec2crd;
+using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec3d;
 
-namespace arr2 {
+using Slic3r::Biz::Algorithms::ClipperUtils::diff_ex;
+using Slic3r::Biz::Algorithms::ClipperUtils::union_ex;
+using Slic3r::Biz::Algorithms::ModelObject::convex_hull_2d;
+
+using namespace Slic3r::Biz;
+
+namespace Slic3r::arr2 {
 namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
 
 coord_t get_skirt_inset(const Print &fffprint)
@@ -84,14 +99,14 @@ void transform_instance(Domain::ModelInstance &mi,
     tr.translate(to_3d(transl_unscaled, 0.));
     trafo = physical_tr.inverse() * tr * Eigen::AngleAxisd(rot, Vec3d::UnitZ()) * physical_tr * trafo;
 
-    mi.set_transformation(Geometry::Transformation{trafo});
+    mi.set_transformation(Domain::Transformation{trafo});
 
     mi.invalidate_object_bounding_box();
 }
 
-BoundingBoxf3 instance_bounding_box(const Domain::ModelInstance &mi,
-                                    const Transform3d &tr,
-                                    bool dont_translate)
+Domain::BoundingBox3d instance_bounding_box(const Domain::ModelInstance &mi,
+                                            const Transform3d &tr,
+                                            bool dont_translate)
 {
     using Slic3r::Biz::Algorithms::BoundingBox::merge;
 
@@ -106,20 +121,15 @@ BoundingBoxf3 instance_bounding_box(const Domain::ModelInstance &mi,
         }
     }
 
-    BoundingBoxf3 result{
-        bb.min,
-        bb.max
-    };
-    result.defined = bb.defined;
-    return result;
+    return bb;
 }
 
-BoundingBoxf3 instance_bounding_box(const Domain::ModelInstance &mi, bool dont_translate)
+Domain::BoundingBox3d instance_bounding_box(const Domain::ModelInstance &mi, bool dont_translate)
 {
     return instance_bounding_box(mi, Transform3d::Identity(), dont_translate);
 }
 
-bool check_coord_bounds(const BoundingBoxf &bb)
+bool check_coord_bounds(const Domain::BoundingBox2d &bb)
 {
     return std::abs(bb.min.x()) < UnscaledCoordLimit &&
            std::abs(bb.min.y()) < UnscaledCoordLimit &&
@@ -131,7 +141,7 @@ ExPolygons extract_full_outline(const Domain::ModelInstance &inst, const Transfo
 {
     ExPolygons outline;
 
-    if (check_coord_bounds(to_2d(instance_bounding_box(inst, tr)))) {
+    if (check_coord_bounds(Algorithms::BoundingBox::to_2d(instance_bounding_box(inst, tr)))) {
         for (const Domain::ModelVolume *v : inst.get_object()->volumes) {
             Polygons vol_outline;
 
@@ -155,7 +165,7 @@ ExPolygons extract_full_outline(const Domain::ModelInstance &inst, const Transfo
 
 Polygon extract_convex_outline(const Domain::ModelInstance &inst, const Transform3d &tr)
 {
-    auto bb = to_2d(instance_bounding_box(inst, tr));
+    auto bb = Algorithms::BoundingBox::to_2d(instance_bounding_box(inst, tr));
     Polygon ret;
 
     if (check_coord_bounds(bb)) {
@@ -855,7 +865,7 @@ Polygon ArrangeableSLAPrintObject::convex_outline() const
             tm::its_convex_hull_2d_above(smesh.its, trafo_instance, zlvl));
     }
 
-    return Geometry::convex_hull(polys);
+    return Biz::Algorithms::Geometry::convex_hull(polys);
 }
 
 Polygon ArrangeableSLAPrintObject::convex_envelope() const
@@ -878,10 +888,10 @@ Polygon ArrangeableSLAPrintObject::convex_envelope() const
         }
     }
 
-    return Geometry::convex_hull(polys);
+    return Biz::Algorithms::Geometry::convex_hull(polys);
 }
 
-DuplicableModel::DuplicableModel(AnyPtr<Domain::Model> mdl, AnyPtr<VirtualBedHandler> vbh, const BoundingBox &bedbb)
+DuplicableModel::DuplicableModel(AnyPtr<Domain::Model> mdl, AnyPtr<VirtualBedHandler> vbh, const Domain::BoundingBox2crd &bedbb)
     : m_model{std::move(mdl)}, m_vbh{std::move(vbh)}, m_duplicates(1), m_bedbb{bedbb}
 {
 }
@@ -963,7 +973,7 @@ Polygon ArrangeableFullModel<Mdl, Dup, VBH>::convex_outline() const
         }
     }
 
-    return Geometry::convex_hull(ret);
+    return Biz::Algorithms::Geometry::convex_hull(ret);
 }
 
 template class ArrangeableFullModel<Domain::Model, ModelDuplicate, VirtualBedHandler>;
@@ -977,7 +987,7 @@ std::unique_ptr<VirtualBedHandler> VirtualBedHandler::create(const ExtendedBed &
     } else {
         Vec2crd gap;
         visit_bed([&gap](auto &rawbed) { gap = bed_gap(rawbed); }, bed);
-        BoundingBox bedbb;
+        Domain::BoundingBox2crd bedbb;
         visit_bed([&bedbb](auto &rawbed) { bedbb = bounding_box(rawbed); }, bed);
 
         ret = std::make_unique<GridStriderVBedHandler>(bedbb, gap);
@@ -986,6 +996,6 @@ std::unique_ptr<VirtualBedHandler> VirtualBedHandler::create(const ExtendedBed &
     return ret;
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // SCENEBUILDER_CPP

@@ -5,41 +5,46 @@
 #ifndef SLA_BOOSTADAPTER_HPP
 #define SLA_BOOSTADAPTER_HPP
 
-#include <libslic3r/Point.hpp>
-#include <libslic3r/BoundingBox.hpp>
-#include <libslic3r/ExPolygon.hpp>
-#include <libslic3r/Polyline.hpp>
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Line.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Polyline.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include "libslic3r/BoundingBox.hpp"
 
 #include <boost/geometry.hpp>
 
 namespace boost {
-namespace geometry {
-namespace traits {
+
+namespace geometry::traits {
 
 /* ************************************************************************** */
 /* Point concept adaptation ************************************************* */
 /* ************************************************************************** */
 
-template<> struct tag<Slic3r::Point> {
+template<> struct tag<Slic3r::Domain::Point> {
     using type = point_tag;
 };
 
-template<> struct coordinate_type<Slic3r::Point> {
-    using type = coord_t;
+template<> struct coordinate_type<Slic3r::Domain::Point> {
+    using type = Slic3r::Domain::coord_t;
 };
 
-template<> struct coordinate_system<Slic3r::Point> {
+template<> struct coordinate_system<Slic3r::Domain::Point> {
     using type = cs::cartesian;
 };
 
-template<> struct dimension<Slic3r::Point>: boost::mpl::int_<2> {};
+template<> struct dimension<Slic3r::Domain::Point>: boost::mpl::int_<2> {};
 
-template<std::size_t d> struct access<Slic3r::Point, d > {
-    static inline coord_t get(Slic3r::Point const& a) {
+template<std::size_t d> struct access<Slic3r::Domain::Point, d > {
+    static inline Slic3r::Domain::coord_t get(Slic3r::Domain::Point const& a) {
         return a(d);
     }
 
-    static inline void set(Slic3r::Point& a, coord_t const& value) {
+    static inline void set(Slic3r::Domain::Point& a, Slic3r::Domain::coord_t const& value) {
         a(d) = value;
     }
 };
@@ -74,30 +79,58 @@ template<int N, class T, std::size_t d> struct access<Slic3r::LegacyVec<N, T>, d
 /* Box concept adaptation *************************************************** */
 /* ************************************************************************** */
 
+template<> struct tag<Slic3r::Domain::BoundingBox2crd> {
+    using type = box_tag;
+};
+
+template<> struct point_type<Slic3r::Domain::BoundingBox2crd> {
+    using type = Slic3r::Domain::Point;
+};
+
+template<std::size_t d>
+struct indexed_access<Slic3r::Domain::BoundingBox2crd, 0, d> {
+    static inline Slic3r::Domain::coord_t get(Slic3r::Domain::BoundingBox2crd const& box) {
+        return box.min(d);
+    }
+    static inline void set(Slic3r::Domain::BoundingBox2crd &box, Slic3r::Domain::coord_t const& coord) {
+        box.min(d) = coord;
+    }
+};
+
+template<std::size_t d>
+struct indexed_access<Slic3r::Domain::BoundingBox2crd, 1, d> {
+    static inline Slic3r::Domain::coord_t get(Slic3r::Domain::BoundingBox2crd const& box) {
+        return box.max(d);
+    }
+    static inline void set(Slic3r::Domain::BoundingBox2crd &box, Slic3r::Domain::coord_t const& coord) {
+        box.max(d) = coord;
+    }
+};
+
 template<> struct tag<Slic3r::BoundingBox> {
     using type = box_tag;
 };
 
 template<> struct point_type<Slic3r::BoundingBox> {
-    using type = Slic3r::Point;
+    using type = Slic3r::Domain::Point;
 };
 
 template<std::size_t d>
 struct indexed_access<Slic3r::BoundingBox, 0, d> {
-    static inline coord_t get(Slic3r::BoundingBox const& box) {
+    static inline Slic3r::Domain::coord_t get(Slic3r::BoundingBox const& box) {
         return box.min(d);
     }
-    static inline void set(Slic3r::BoundingBox &box, coord_t const& coord) {
+    static inline void set(Slic3r::BoundingBox &box, Slic3r::Domain::coord_t const& coord) {
         box.min(d) = coord;
     }
 };
 
 template<std::size_t d>
 struct indexed_access<Slic3r::BoundingBox, 1, d> {
-    static inline coord_t get(Slic3r::BoundingBox const& box) {
+    static inline Slic3r::Domain::coord_t get(Slic3r::BoundingBox const& box) {
         return box.max(d);
     }
-    static inline void set(Slic3r::BoundingBox &box, coord_t const& coord) {
+    static inline void set(Slic3r::BoundingBox &box, Slic3r::Domain::coord_t const& coord) {
         box.max(d) = coord;
     }
 };
@@ -114,20 +147,20 @@ template<class T> struct point_type<BB3<T>> {
 
 template<class T, std::size_t d>
 struct indexed_access<BB3<T>, 0, d> {
-    static inline coord_t get(BB3<T> const& box) {
+    static inline Slic3r::Domain::coord_t get(BB3<T> const& box) {
         return box.min(d);
     }
-    static inline void set(BB3<T> &box, coord_t const& coord) {
+    static inline void set(BB3<T> &box, Slic3r::Domain::coord_t const& coord) {
         box.min(d) = coord;
     }
 };
 
 template<class T, std::size_t d>
 struct indexed_access<BB3<T>, 1, d> {
-    static inline coord_t get(BB3<T> const& box) {
+    static inline Slic3r::Domain::coord_t get(BB3<T> const& box) {
         return box.max(d);
     }
-    static inline void set(BB3<T> &box, coord_t const& coord) {
+    static inline void set(BB3<T> &box, Slic3r::Domain::coord_t const& coord) {
         box.max(d) = coord;
     }
 };
@@ -137,39 +170,39 @@ struct indexed_access<BB3<T>, 1, d> {
 /* Segment concept adaptaion ************************************************ */
 /* ************************************************************************** */
 
-template<> struct tag<Slic3r::Line> {
+template<> struct tag<Slic3r::Domain::Line> {
     using type = segment_tag;
 };
 
-template<> struct point_type<Slic3r::Line> {
-    using type = Slic3r::Point;
+template<> struct point_type<Slic3r::Domain::Line> {
+    using type = Slic3r::Domain::Point;
 };
 
-template<> struct indexed_access<Slic3r::Line, 0, 0> {
-    static inline coord_t get(Slic3r::Line const& l) { return l.a.x(); }
-    static inline void set(Slic3r::Line &l, coord_t c) { l.a.x() = c; }
+template<> struct indexed_access<Slic3r::Domain::Line, 0, 0> {
+    static inline Slic3r::Domain::coord_t get(Slic3r::Domain::Line const& l) { return l.a.x(); }
+    static inline void set(Slic3r::Domain::Line &l, Slic3r::Domain::coord_t c) { l.a.x() = c; }
 };
 
-template<> struct indexed_access<Slic3r::Line, 0, 1> {
-    static inline coord_t get(Slic3r::Line const& l) { return l.a.y(); }
-    static inline void set(Slic3r::Line &l, coord_t c) { l.a.y() = c; }
+template<> struct indexed_access<Slic3r::Domain::Line, 0, 1> {
+    static inline Slic3r::Domain::coord_t get(Slic3r::Domain::Line const& l) { return l.a.y(); }
+    static inline void set(Slic3r::Domain::Line &l, Slic3r::Domain::coord_t c) { l.a.y() = c; }
 };
 
-template<> struct indexed_access<Slic3r::Line, 1, 0> {
-    static inline coord_t get(Slic3r::Line const& l) { return l.b.x(); }
-    static inline void set(Slic3r::Line &l, coord_t c) { l.b.x() = c; }
+template<> struct indexed_access<Slic3r::Domain::Line, 1, 0> {
+    static inline Slic3r::Domain::coord_t get(Slic3r::Domain::Line const& l) { return l.b.x(); }
+    static inline void set(Slic3r::Domain::Line &l, Slic3r::Domain::coord_t c) { l.b.x() = c; }
 };
 
-template<> struct indexed_access<Slic3r::Line, 1, 1> {
-    static inline coord_t get(Slic3r::Line const& l) { return l.b.y(); }
-    static inline void set(Slic3r::Line &l, coord_t c) { l.b.y() = c; }
+template<> struct indexed_access<Slic3r::Domain::Line, 1, 1> {
+    static inline Slic3r::Domain::coord_t get(Slic3r::Domain::Line const& l) { return l.b.y(); }
+    static inline void set(Slic3r::Domain::Line &l, Slic3r::Domain::coord_t c) { l.b.y() = c; }
 };
 
 /* ************************************************************************** */
 /* Polyline concept adaptation ********************************************** */
 /* ************************************************************************** */
 
-template<> struct tag<Slic3r::Polyline> {
+template<> struct tag<Slic3r::Domain::Polyline> {
     using type = linestring_tag;
 };
 
@@ -179,59 +212,59 @@ template<> struct tag<Slic3r::Polyline> {
 
 // Ring implementation /////////////////////////////////////////////////////////
 
-// Boost would refer to ClipperLib::Path (alias Slic3r::ExPolygon) as a ring
-template<> struct tag<Slic3r::Polygon> {
+// Boost would refer to ClipperLib::Path (alias Slic3r::Domain::ExPolygon) as a ring
+template<> struct tag<Slic3r::Domain::Polygon> {
     using type = ring_tag;
 };
 
-template<> struct point_order<Slic3r::Polygon> {
+template<> struct point_order<Slic3r::Domain::Polygon> {
     static const order_selector value = counterclockwise;
 };
 
 // All our Paths should be closed for the bin packing application
-template<> struct closure<Slic3r::Polygon> {
+template<> struct closure<Slic3r::Domain::Polygon> {
     static const constexpr closure_selector value = closure_selector::open;
 };
 
 // Polygon implementation //////////////////////////////////////////////////////
 
-template<> struct tag<Slic3r::ExPolygon> {
+template<> struct tag<Slic3r::Domain::ExPolygon> {
     using type = polygon_tag;
 };
 
-template<> struct exterior_ring<Slic3r::ExPolygon> {
-    static inline Slic3r::Polygon& get(Slic3r::ExPolygon& p)
+template<> struct exterior_ring<Slic3r::Domain::ExPolygon> {
+    static inline Slic3r::Domain::Polygon& get(Slic3r::Domain::ExPolygon& p)
     {
         return p.contour;
     }
-    static inline Slic3r::Polygon const& get(Slic3r::ExPolygon const& p)
+    static inline Slic3r::Domain::Polygon const& get(Slic3r::Domain::ExPolygon const& p)
     {
         return p.contour;
     }
 };
 
-template<> struct ring_const_type<Slic3r::ExPolygon> {
-    using type = const Slic3r::Polygon&;
+template<> struct ring_const_type<Slic3r::Domain::ExPolygon> {
+    using type = const Slic3r::Domain::Polygon&;
 };
 
-template<> struct ring_mutable_type<Slic3r::ExPolygon> {
-    using type = Slic3r::Polygon&;
+template<> struct ring_mutable_type<Slic3r::Domain::ExPolygon> {
+    using type = Slic3r::Domain::Polygon&;
 };
 
-template<> struct interior_const_type<Slic3r::ExPolygon> {
-    using type = const Slic3r::Polygons&;
+template<> struct interior_const_type<Slic3r::Domain::ExPolygon> {
+    using type = const Slic3r::Domain::Polygons&;
 };
 
-template<> struct interior_mutable_type<Slic3r::ExPolygon> {
-    using type = Slic3r::Polygons&;
+template<> struct interior_mutable_type<Slic3r::Domain::ExPolygon> {
+    using type = Slic3r::Domain::Polygons&;
 };
 
 template<>
-struct interior_rings<Slic3r::ExPolygon> {
+struct interior_rings<Slic3r::Domain::ExPolygon> {
 
-    static inline Slic3r::Polygons& get(Slic3r::ExPolygon& p) { return p.holes; }
+    static inline Slic3r::Domain::Polygons& get(Slic3r::Domain::ExPolygon& p) { return p.holes; }
 
-    static inline const Slic3r::Polygons& get(Slic3r::ExPolygon const& p)
+    static inline const Slic3r::Domain::Polygons& get(Slic3r::Domain::ExPolygon const& p)
     {
         return p.holes;
     }
@@ -241,35 +274,35 @@ struct interior_rings<Slic3r::ExPolygon> {
 /* MultiPolygon concept adaptation ****************************************** */
 /* ************************************************************************** */
 
-template<> struct tag<Slic3r::ExPolygons> {
+template<> struct tag<Slic3r::Domain::ExPolygons> {
     using type = multi_polygon_tag;
 };
 
-}} // namespace geometry::traits
+} // namespace geometry::traits
 
-template<> struct range_value<std::vector<Slic3r::Vec2d>> {
-    using type = Slic3r::Vec2d;
+template<> struct range_value<std::vector<Slic3r::Domain::Vec2d>> {
+    using type = Slic3r::Domain::Vec2d;
 };
 
 template<>
-struct range_value<Slic3r::Polyline> {
-    using type = Slic3r::Point;
+struct range_value<Slic3r::Domain::Polyline> {
+    using type = Slic3r::Domain::Point;
 };
 
 // This is an addition to the ring implementation of Polygon concept
 template<>
-struct range_value<Slic3r::Polygon> {
-    using type = Slic3r::Point;
+struct range_value<Slic3r::Domain::Polygon> {
+    using type = Slic3r::Domain::Point;
 };
 
 template<>
-struct range_value<Slic3r::Polygons> {
-    using type = Slic3r::Polygon;
+struct range_value<Slic3r::Domain::Polygons> {
+    using type = Slic3r::Domain::Polygon;
 };
 
 template<>
-struct range_value<Slic3r::ExPolygons> {
-    using type = Slic3r::ExPolygon;
+struct range_value<Slic3r::Domain::ExPolygons> {
+    using type = Slic3r::Domain::ExPolygon;
 };
 
 } // namespace boost

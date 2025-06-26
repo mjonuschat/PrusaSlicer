@@ -12,25 +12,58 @@
 #include <arrange-wrapper/Items/ArrangeItem.hpp>
 #include <arrange-wrapper/Tasks/ArrangeTask.hpp>
 #include <arrange-wrapper/SceneBuilder.hpp>
-#include <arrange-wrapper/ModelArrange.hpp>
 
-#include "libslic3r/Model.hpp"
-#include "libslic3r/Geometry/ConvexHull.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
-#include "Slic3r/Biz/Algorithms/Model.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/ModelInstance.hpp"
 #include "Slic3r/Domain/ModelObject.hpp"
 
-
 using namespace Catch;
+using namespace Slic3r::Biz;
+
+using Slic3r::Domain::BoundingBox2crd;
+using Slic3r::Domain::BoundingBox3d;
+using Slic3r::Domain::coord_t;
+using Slic3r::Domain::ExPolygons;
+using Slic3r::Domain::Point;
+using Slic3r::Domain::Polygon;
+using Slic3r::Domain::Polygons;
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Transformation;
+using Slic3r::Domain::TriangleMesh;
+using Slic3r::Domain::Vec2crd;
+using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec3f;
+
 using Slic3r::Biz::Algorithms::BoundingBox::center;
 using Slic3r::Biz::Algorithms::BoundingBox::contains;
 using Slic3r::Biz::Algorithms::BoundingBox::scaled;
+using Slic3r::Biz::Algorithms::BoundingBox::to_2d;
+using Slic3r::Biz::Algorithms::ClipperUtils::intersection;
+using Slic3r::Biz::Algorithms::ClipperUtils::offset;
 using Slic3r::Biz::Algorithms::ModelObject::add_volume;
-using Slic3r::Domain::Transformation;
-using Slic3r::Domain::TriangleMesh;
+using Slic3r::Biz::Algorithms::Point::to_2d;
+
 namespace triangle_mesh = Slic3r::Biz::Algorithms::TriangleMesh;
+
+constexpr auto SCALED_EPSILON = Slic3r::Biz::Algorithms::Scaling::scaled(Slic3r::Domain::EPSILON);
+
+static BoundingBox2crd get_extents(const Polygon& polygon)
+{
+    return Algorithms::Polygon::get_extents(polygon);
+}
+
+static BoundingBox2crd get_extents(const ExPolygons& expolygons)
+{
+    return Algorithms::ExPolygon::get_extents(expolygons);
+}
 
 static Slic3r::Domain::Model get_example_model_with_20mm_cube()
 {
@@ -71,7 +104,7 @@ static Slic3r::Domain::Model get_example_model_with_random_cube_objects(size_t N
         arr2::transform_instance(*inst,
                                  Vec2d{random_value(-arr2::UnscaledCoordLimit / 10., arr2::UnscaledCoordLimit / 10.),
                                        random_value(-arr2::UnscaledCoordLimit / 10., arr2::UnscaledCoordLimit / 10.)},
-                                 random_value(0., 2 * PI));
+                                 random_value(0., 2 * std::numbers::pi));
     }
 
     return model;
@@ -115,12 +148,12 @@ static Slic3r::Domain::Model get_example_model_with_arranged_primitives()
     return model;
 }
 
-static Slic3r::Points configpack_to_bed_points(const Slic3r::Domain::ConfigPackFDM& pack)
+static Slic3r::Domain::Points configpack_to_bed_points(const Slic3r::Domain::ConfigPackFDM& pack)
 {
     using namespace Slic3r::Domain;
     auto pts = pack.printer.items.opt("bed_shape").get<std::vector<Vec2d>>();
     Points pts_scaled(pts.size());
-    std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) { return Slic3r::scaled(pt); });
+    std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) { return Algorithms::Scaling::scaled(pt); });
     return pts_scaled;
 }
 
@@ -187,8 +220,8 @@ struct XStriderBed
     int bed_idx_min = 0, bed_idx_max = 100;
 
     XStriderBed() :
-        bed{Slic3r::scaled(250.), Slic3r::scaled(210.)},
-        vbedh{bounding_box(bed), bounding_box(bed).size().x() / 10} {}
+        bed{Algorithms::Scaling::scaled(250.), Algorithms::Scaling::scaled(210.)},
+        vbedh{bounding_box(bed), Algorithms::BoundingBox::sizes(bounding_box(bed)).x() / 10} {}
 };
 
 TEMPLATE_TEST_CASE("Writing arrange transformations into ModelInstance should be correct",
@@ -200,7 +233,7 @@ TEMPLATE_TEST_CASE("Writing arrange transformations into ModelInstance should be
         [](int i) {
             return std::make_tuple(-Slic3r::arr2::UnscaledCoordLimit / 2. + i * Slic3r::arr2::UnscaledCoordLimit / 100.,
                                    -Slic3r::arr2::UnscaledCoordLimit / 2. + i * Slic3r::arr2::UnscaledCoordLimit / 100.,
-                                   -PI + i * (2 * PI / 100.));
+                                   -std::numbers::pi + i * (2 * std::numbers::pi / 100.));
         },
         range(0, 100)));
 
@@ -208,16 +241,16 @@ TEMPLATE_TEST_CASE("Writing arrange transformations into ModelInstance should be
 
     Domain::Model model = get_example_model_with_20mm_cube();
 
-    auto transl = scaled(Vec2d(tx, ty));
+    Vec2crd transl = Algorithms::Scaling::scaled(Vec2d(tx, ty));
 
     INFO("Translation = : " << transl.transpose());
-    INFO("Rotation is: " << rot * 180 / PI);
+    INFO("Rotation is: " << rot * 180 / std::numbers::pi);
 
     auto mi = model.objects.front()->instances.front();
 
-    BoundingBoxf3 bb{arr2::instance_bounding_box(*mi)};
+    BoundingBox3d bb{arr2::instance_bounding_box(*mi)};
     namespace bounding_box = Slic3r::Biz::Algorithms::BoundingBox;
-    Domain::BoundingBox2crd bb_before = scaled(bounding_box::to_2d(Domain::BoundingBox3d{bb.min, bb.max}));
+    BoundingBox2crd bb_before = Algorithms::BoundingBox::scaled(bounding_box::to_2d(BoundingBox3d{bb.min, bb.max}));
 
     TestType bed_case;
     auto bed_index = random_value<int>(bed_case.bed_idx_min, bed_case.bed_idx_max);
@@ -243,7 +276,7 @@ TEMPLATE_TEST_CASE("Writing arrange transformations into ModelInstance should be
         itm = cvt->convert(arrbl);
     });
 
-    BoundingBox bb_itm_before = arr2::fixed_bounding_box(itm);
+    BoundingBox2crd bb_itm_before = arr2::fixed_bounding_box(itm);
     REQUIRE((bb_itm_before.min - bb_before.min).norm() < SCALED_EPSILON);
     REQUIRE((bb_itm_before.max - bb_before.max).norm() < SCALED_EPSILON);
 
@@ -253,14 +286,14 @@ TEMPLATE_TEST_CASE("Writing arrange transformations into ModelInstance should be
 
     if (auto id = retrieve_id(itm)) {
         scene.model().visit_arrangeable(*id, [&itm](arr2::Arrangeable &arrbl) {
-            arrbl.transform(unscaled(get_translation(itm)), get_rotation(itm));
+            arrbl.transform(Algorithms::Scaling::unscaled<double>(get_translation(itm)), get_rotation(itm));
         });
     }
 
     auto phys_tr = bed_case.vbedh.get_physical_bed_trafo(bed_index);
     auto outline = arr2::extract_convex_outline(*mi, phys_tr);
-    BoundingBox bb_after = get_extents(outline);
-    BoundingBox bb_itm_after = arr2::fixed_bounding_box(itm);
+    BoundingBox2crd bb_after = Algorithms::Polygon::get_extents(outline);
+    BoundingBox2crd bb_itm_after = arr2::fixed_bounding_box(itm);
     REQUIRE((bb_itm_after.min - bb_after.min).norm() < 2 * SCALED_EPSILON);
     REQUIRE((bb_itm_after.max - bb_after.max).norm() < 2 * SCALED_EPSILON);
 }
@@ -295,7 +328,7 @@ TEMPLATE_TEST_CASE("Outline extraction from ModelInstance",
                        random_value(0.1, 5.),
                        random_value(0.1, 5.)});
 
-    matrix.rotate(Eigen::AngleAxisd(random_value(-PI, PI), Vec3d::UnitZ()));
+    matrix.rotate(Eigen::AngleAxisd(random_value(-std::numbers::pi, std::numbers::pi), Vec3d::UnitZ()));
 
     matrix.translate(Vec3d{random_value(-100., 100.),
                            random_value(-100., 100.),
@@ -325,43 +358,43 @@ TEMPLATE_TEST_CASE("Outline extraction from ModelInstance",
             THEN("the 2D ortho projection of the model bounding box is the "
                  "same as the outline's bb")
             {
-                auto bb = unscaled(get_extents(outline));
+                auto bb = Algorithms::BoundingBox::unscaled<double>(get_extents(outline));
                 namespace bounding_box = Slic3r::Biz::Algorithms::BoundingBox;
                 auto modelbb = bounding_box::to_2d(Slic3r::Biz::Algorithms::Model::bounding_box_exact(model));
 
-                REQUIRE((bb.min - modelbb.min).norm() < EPSILON);
-                REQUIRE((bb.max - modelbb.max).norm() < EPSILON);
+                REQUIRE((bb.min - modelbb.min).norm() < Domain::EPSILON);
+                REQUIRE((bb.max - modelbb.max).norm() < Domain::EPSILON);
             }
         }
     }
 }
 
 template<class VBH>
-auto create_vbed_handler(const Slic3r::BoundingBox &bedbb, coord_t gap)
+auto create_vbed_handler(const Slic3r::Domain::BoundingBox2crd &bedbb, coord_t gap)
 {
     return VBH{};
 }
 
 template<>
-auto create_vbed_handler<Slic3r::arr2::PhysicalOnlyVBedHandler>(const Slic3r::BoundingBox &bedbb, coord_t gap)
+auto create_vbed_handler<Slic3r::arr2::PhysicalOnlyVBedHandler>(const Slic3r::Domain::BoundingBox2crd &bedbb, coord_t gap)
 {
     return Slic3r::arr2::PhysicalOnlyVBedHandler{};
 }
 
 template<>
-auto create_vbed_handler<Slic3r::arr2::XStriderVBedHandler>(const Slic3r::BoundingBox &bedbb, coord_t gap)
+auto create_vbed_handler<Slic3r::arr2::XStriderVBedHandler>(const Slic3r::Domain::BoundingBox2crd &bedbb, coord_t gap)
 {
     return Slic3r::arr2::XStriderVBedHandler{bedbb, gap};
 }
 
 template<>
-auto create_vbed_handler<Slic3r::arr2::YStriderVBedHandler>(const Slic3r::BoundingBox &bedbb, coord_t gap)
+auto create_vbed_handler<Slic3r::arr2::YStriderVBedHandler>(const Slic3r::Domain::BoundingBox2crd &bedbb, coord_t gap)
 {
     return Slic3r::arr2::YStriderVBedHandler{bedbb, gap};
 }
 
 template<>
-auto create_vbed_handler<Slic3r::arr2::GridStriderVBedHandler>(const Slic3r::BoundingBox &bedbb, coord_t gap)
+auto create_vbed_handler<Slic3r::arr2::GridStriderVBedHandler>(const Slic3r::Domain::BoundingBox2crd &bedbb, coord_t gap)
 {
     return Slic3r::arr2::GridStriderVBedHandler{bedbb, {gap, gap}};
 }
@@ -380,24 +413,24 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
 
     const auto bedsize = Vec2d{random_value(21., 500.), random_value(21., 500.)};
 
-    const Vec2crd bed_displace = {random_value(scaled(-100.), scaled(100.)),
-                                  random_value(scaled(-100.), scaled(100.))};
+    const Vec2crd bed_displace = {random_value(Algorithms::Scaling::scaled(-100.), Algorithms::Scaling::scaled(100.)),
+                                  random_value(Algorithms::Scaling::scaled(-100.), Algorithms::Scaling::scaled(100.))};
 
-    const BoundingBox bedbb{bed_displace, scaled(bedsize) + bed_displace};
+    const Domain::BoundingBox2crd bedbb{bed_displace, Algorithms::Scaling::scaled(bedsize) + bed_displace};
 
-    INFO("Bed boundaries bedbb = { {" << unscaled(bedbb.min).transpose() << "}, {"
-                                      << unscaled(bedbb.max).transpose() << "} }" );
+    INFO("Bed boundaries bedbb = { {" << Algorithms::Scaling::unscaled<double>(bedbb.min).transpose() << "}, {"
+                                      << Algorithms::Scaling::unscaled<double>(bedbb.max).transpose() << "} }" );
 
     auto modelbb = Slic3r::Biz::Algorithms::Model::bounding_box_exact(model);
 
     // Center the single instance within the model
     arr2::transform_instance(*model.objects.front()->instances.front(),
-                             unscaled(bedbb.center()) - to_2d(center(modelbb)),
+                             Algorithms::Scaling::unscaled<double>(Algorithms::BoundingBox::center(bedbb)) - to_2d(center(modelbb)),
                              0.);
 
-    const auto vbed_gap = GENERATE(0, random_value(1, scaled(100.)));
+    const auto vbed_gap = GENERATE(0, random_value(1, Algorithms::Scaling::scaled(100.)));
 
-    INFO("vbed_gap = " << unscaled(vbed_gap));
+    INFO("vbed_gap = " << Algorithms::Scaling::unscaled<double>(vbed_gap));
 
     std::unique_ptr<arr2::VirtualBedHandler> vbedh = std::make_unique<TestType>(
         create_vbed_handler<TestType>(bedbb, vbed_gap));
@@ -468,8 +501,8 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
             {
                 auto bbf = arr2::instance_bounding_box(mi_back_to_phys);
                 auto bb = Domain::BoundingBox2crd{scaled(to_2d(bbf))};
-                INFO("bb = { {" << unscaled(bb.min).transpose() << "}, {"
-                                << unscaled(bb.max).transpose() << "} }" );
+                INFO("bb = { {" << Algorithms::Scaling::unscaled<double>(bb.min).transpose() << "}, {"
+                                << Algorithms::Scaling::unscaled<double>(bb.max).transpose() << "} }" );
 
                 REQUIRE(contains(Domain::BoundingBox2crd{bedbb.min, bedbb.max}, bb));
             }
@@ -491,8 +524,8 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
 
             THEN("the bounding box should be inside bed")
             {
-                INFO("bb = { {" << unscaled(bb.min).transpose() << "}, {"
-                                << unscaled(bb.max).transpose() << "} }" );
+                INFO("bb = { {" << Algorithms::Scaling::unscaled<double>(bb.min).transpose() << "}, {"
+                                << Algorithms::Scaling::unscaled<double>(bb.max).transpose() << "} }" );
 
                 REQUIRE(contains(Domain::BoundingBox2crd{bedbb.min, bedbb.max}, bb));
             }
@@ -501,11 +534,11 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
             {
                 auto outline = arr2::extract_convex_outline(mi_to_move,
                                                             physical_bed_trafo);
-                auto bb = get_extents(outline);
+                auto bb = Algorithms::Polygon::get_extents(outline);
                 INFO("bb = { {" << bb.min.transpose() << "}, {"
                                 << bb.max.transpose() << "} }" );
 
-                REQUIRE(bedbb.contains(bb));
+                REQUIRE(Algorithms::BoundingBox::contains(bedbb, bb));
             }
         }
     }
@@ -519,16 +552,16 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
     Domain::Model model = get_example_model_with_20mm_cube();
 
     static const Vec2d bedsize{250., 210.};
-    static const BoundingBox bedbb{{0, 0}, scaled(bedsize)};
+    static const Domain::BoundingBox2crd bedbb{{0, 0}, Algorithms::Scaling::scaled(bedsize)};
     static const auto modelbb = Slic3r::Biz::Algorithms::Model::bounding_box_exact(model);
 
     GIVEN("An instance of StriderVBedHandler with a stride of the bed width"
           " and random non-negative gap")
     {
         auto [instance_pos, instance_displace] = GENERATE(table<std::string, Vec2d>({
-            {"start", unscaled(bedbb.min) - to_2d(modelbb.min) + Vec2d::Ones() * EPSILON},  // at the min edge of vbed
-            {"middle", unscaled(bedbb.center()) - to_2d(center(modelbb))}, // at the center
-            {"end", unscaled(bedbb.max) - to_2d(modelbb.max) - Vec2d::Ones() * EPSILON} // at the max edge of vbed
+            {"start", Algorithms::Scaling::unscaled<double>(bedbb.min) - to_2d(modelbb.min) + Vec2d::Ones() * Domain::EPSILON},  // at the min edge of vbed
+            {"middle", Algorithms::Scaling::unscaled<double>(Algorithms::BoundingBox::center(bedbb)) - to_2d(center(modelbb))}, // at the center
+            {"end", Algorithms::Scaling::unscaled<double>(bedbb.max) - to_2d(modelbb.max) - Vec2d::Ones() * Domain::EPSILON} // at the max edge of vbed
         }));
 
         // Center the single instance within the model
@@ -538,9 +571,9 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
 
         INFO("Instance pos at " << instance_pos << " of bed");
 
-        coord_t gap = GENERATE(0, random_value(1, scaled(100.)));
+        coord_t gap = GENERATE(0, random_value(1, Algorithms::Scaling::scaled(100.)));
 
-        INFO("Gap is " << unscaled(gap));
+        INFO("Gap is " << Algorithms::Scaling::unscaled<double>(gap));
 
         arr2::XStriderVBedHandler vbh{bedbb, gap};
 
@@ -552,7 +585,7 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
             auto bed_index = GENERATE(random_value(-1000, -1), 0, random_value(1, 1000));
             INFO("N is " << bed_index);
 
-            double bed_disp = bed_index * unscaled(vbh.stride_scaled());
+            double bed_disp = bed_index * Algorithms::Scaling::unscaled<double>(vbh.stride_scaled());
             arr2::transform_instance(mi_to_move, Vec2d{bed_disp, 0.}, 0.);
 
             THEN("the bed index of this model instance should be max(0, N)")
@@ -592,7 +625,7 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
                 auto tr = vbh.get_physical_bed_trafo(bed_index);
                 auto ref_pos = tr * Vec3d::Zero();
 
-                auto displace = bed_index * (unscaled(vbh.stride_scaled()));
+                auto displace = bed_index * (Algorithms::Scaling::unscaled<double>(vbh.stride_scaled()));
                 REQUIRE(ref_pos.x() == Approx(-displace));
 
                 auto ref_pos_mi = mi_to_move.get_matrix() * Vec3d::Zero();
@@ -604,7 +637,7 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
     GIVEN("An instance of StriderVBedHandler with a stride of the bed width"
           " and a 100mm gap")
     {
-        coord_t gap = scaled(100.);
+        coord_t gap = Algorithms::Scaling::scaled(100.);
 
         arr2::XStriderVBedHandler vbh{bedbb, gap};
 
@@ -616,14 +649,14 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
             auto bed_index = GENERATE(random_value(-1000, -1), 0, random_value(1, 1000));
             INFO("N is " << bed_index);
 
-            auto bed_disp = Vec2d{bed_index * unscaled(vbh.stride_scaled()), 0.};
+            auto bed_disp = Vec2d{bed_index * Algorithms::Scaling::unscaled<double>(vbh.stride_scaled()), 0.};
             auto instbb_before = to_2d(arr2::instance_bounding_box(mi_to_move));
 
-            auto transl_to_bed_end = Vec2d{bed_disp + unscaled(bedbb.max)
-                                           - instbb_before.min + Vec2d::Ones() * EPSILON};
+            auto transl_to_bed_end = Vec2d{bed_disp + Algorithms::Scaling::unscaled<double>(bedbb.max)
+                                           - instbb_before.min + Vec2d::Ones() * Domain::EPSILON};
 
             arr2::transform_instance(mi_to_move,
-                                     transl_to_bed_end + Vec2d{unscaled(gap / 2), 0.},
+                                     transl_to_bed_end + Vec2d{Algorithms::Scaling::unscaled<double>(gap / 2), 0.},
                                      0.);
 
             THEN("the model instance should reside on the Nth logical bed but "
@@ -678,19 +711,19 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
                                  .set_arrange_settings(settings)
                                  .set_selection(&sel)
                                  .set_bed_constraints(std::move(constraints))
-                                 .set_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10)))};
+                                 .set_bed(configpack_to_bed_points(cfg), Algorithms::Scaling::scaled(Vec2d(10, 10)))};
 
     auto task = arr2::FillBedTask<ArrItem>::create(scene);
     auto result = task->process_native(arr2::DummyCtl{});
     result->apply_on(scene.model());
 
     Slic3rLegacy::store_3mf_legacy("fillbed_10mm_result.3mf", &m, cfg, false, {}, {});
-    arr2::ArrangeBed bed = arr2::to_arrange_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10)));
+    arr2::ArrangeBed bed = arr2::to_arrange_bed(configpack_to_bed_points(cfg), Algorithms::Scaling::scaled(Vec2d(10, 10)));
 
     REQUIRE(bed.which() == 1); // Rectangle bed
 
-    auto bedbb = unscaled(bounding_box(bed));
-    auto bedbbsz = bedbb.size();
+    auto bedbb = Algorithms::BoundingBox::unscaled<double>(bounding_box(bed));
+    auto bedbbsz = Algorithms::BoundingBox::sizes(bedbb);
 
     REQUIRE(m.objects.size() == 1);
     REQUIRE(m.objects.front()->instances.size() ==
@@ -737,28 +770,28 @@ TEST_CASE("Testing minimum area bounding box rotation on simple cubes", "[arrang
 {
     using namespace Slic3r;
 
-    BoundingBox bb{Point::Zero(), scaled(Vec2d(10., 10.))};
+    BoundingBox2crd bb{Point::Zero(), Algorithms::Scaling::scaled(Vec2d(10., 10.))};
     Polygon sh = arr2::to_rectangle(bb);
 
-    auto prot = random_value(0., 2 * PI);
-    sh.translate(Vec2crd{random_value<coord_t>(-scaled(10.), scaled(10.)),
-                         random_value<coord_t>(-scaled(10.), scaled(10.))});
+    auto prot = random_value(0., 2 * std::numbers::pi);
+    sh.translate(Vec2crd{random_value<coord_t>(-Algorithms::Scaling::scaled(10.), Algorithms::Scaling::scaled(10.)),
+                         random_value<coord_t>(-Algorithms::Scaling::scaled(10.), Algorithms::Scaling::scaled(10.))});
     sh.rotate(prot);
 
     INFO("box item is rotated by: " << prot << " rads");
 
     arr2::ArrangeItem itm{sh};
-    arr2::rotate(itm, random_value(0., 2 * PI));
+    arr2::rotate(itm, random_value(0., 2 * std::numbers::pi));
 
     double rot = arr2::get_min_area_bounding_box_rotation(itm);
 
     arr2::translate(itm,
-                    Vec2crd{random_value<coord_t>(-scaled(10.), scaled(10.)),
-                            random_value<coord_t>(-scaled(10.), scaled(10.))});
+                    Vec2crd{random_value<coord_t>(-Algorithms::Scaling::scaled(10.), Algorithms::Scaling::scaled(10.)),
+                            random_value<coord_t>(-Algorithms::Scaling::scaled(10.), Algorithms::Scaling::scaled(10.))});
     arr2::rotate(itm, rot);
 
     auto itmbb = arr2::fixed_bounding_box(itm);
-    REQUIRE(std::abs(itmbb.size().norm() - bb.size().norm()) <
+    REQUIRE(std::abs(Algorithms::BoundingBox::sizes(itmbb).norm() - Algorithms::BoundingBox::sizes(bb).norm()) <
             SCALED_EPSILON * SCALED_EPSILON);
 }
 
@@ -769,8 +802,8 @@ bool is_collision_free(const Slic3r::Range<It> &item_range)
 
     bool collision_free = true;
     foreach_combo(item_range, [&collision_free](auto &itm1, auto &itm2) {
-        auto outline1 = offset(arr2::fixed_outline(itm1), -scaled<float>(EPSILON));
-        auto outline2 = offset(arr2::fixed_outline(itm2), -scaled<float>(EPSILON));
+        auto outline1 = offset(arr2::fixed_outline(itm1), -static_cast<float>(Algorithms::Scaling::scaled(Domain::EPSILON)));
+        auto outline2 = offset(arr2::fixed_outline(itm2), -static_cast<float>(Algorithms::Scaling::scaled(Domain::EPSILON)));
 
         auto inters = intersection(outline1, outline2);
         collision_free = collision_free && inters.empty();
@@ -788,7 +821,7 @@ TEST_CASE("Testing a simple arrange on cubes", "[arrange2][integration]")
     arr2::ArrangeSettings settings;
     settings.set_rotation_enabled(true);
 
-    auto bed = arr2::RectangleBed{scaled(250.), scaled(210.)};
+    auto bed = arr2::RectangleBed{Algorithms::Scaling::scaled(250.), Algorithms::Scaling::scaled(210.)};
 
     arr2::Scene scene{arr2::SceneBuilder{}
                           .set_model(model)
@@ -814,10 +847,10 @@ TEST_CASE("Testing a simple arrange on cubes", "[arrange2][integration]")
                         [](auto &item) { return arr2::is_arranged(item); }));
 
     REQUIRE(std::all_of(task->printable.selected.begin(), task->printable.selected.end(),
-                        [&bed](auto &item) { return bounding_box(bed).contains(arr2::envelope_bounding_box(item)); }));
+                        [&bed](auto &item) { return Algorithms::BoundingBox::contains(bounding_box(bed), arr2::envelope_bounding_box(item)); }));
 
     REQUIRE(std::all_of(task->unprintable.selected.begin(), task->unprintable.selected.end(),
-                        [&bed](auto &item) { return bounding_box(bed).contains(arr2::envelope_bounding_box(item)); }));
+                        [&bed](auto &item) { return Algorithms::BoundingBox::contains(bounding_box(bed), arr2::envelope_bounding_box(item)); }));
 
     REQUIRE(is_collision_free(range(task->printable.selected)));
 }
@@ -828,9 +861,9 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
 
     Domain::Model model = get_example_model_with_arranged_primitives();
     auto cfg = std::get<Domain::ConfigPackFDM>(Biz::load_config_from_legacy_file(std::string(TEST_DATA_DIR PATH_SEPARATOR) + "default_fff.ini"));
-    auto bed = arr2::to_arrange_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10)));
-    auto bedbb = bounding_box(bed);
-    auto bedsz = unscaled(bedbb.size());
+    auto bed = arr2::to_arrange_bed(configpack_to_bed_points(cfg), Algorithms::Scaling::scaled(Vec2d(10, 10)));
+    const BoundingBox2crd bedbb = bounding_box(bed);
+    const Vec2d bedsz = Algorithms::Scaling::unscaled<double>(Algorithms::BoundingBox::sizes(bedbb));
 
     auto strategy = GENERATE(arr2::ArrangeSettingsView::asAuto,
                              arr2::ArrangeSettingsView::asPullToCenter);
@@ -844,7 +877,7 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
     arr2::Scene scene{arr2::SceneBuilder{}
                           .set_model(model)
                           .set_arrange_settings(settings)
-                          .set_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10)))};
+                          .set_bed(configpack_to_bed_points(cfg), Algorithms::Scaling::scaled(Vec2d(10, 10)))};
 
     auto itm_conv = arr2::ArrangeableToItemConverter<arr2::ArrangeItem>::create(scene);
 
@@ -887,7 +920,7 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
     Slic3rLegacy::store_3mf_legacy("vbed_test_result.3mf", &model, std::nullopt, false, {}, {});
 
     REQUIRE(std::all_of(task->printable.selected.begin(), task->printable.selected.end(),
-                        [&bed](auto &item) { return bounding_box(bed).contains(arr2::envelope_bounding_box(item)); }));
+                        [&bed](auto &item) { return Algorithms::BoundingBox::contains(bounding_box(bed), arr2::envelope_bounding_box(item)); }));
 
     REQUIRE(is_collision_free(Range{task->printable.selected.begin(), std::prev(task->printable.selected.end())}));
 }
@@ -1005,9 +1038,9 @@ TEST_CASE("Test SceneBuilder", "[arrange2][integration]")
 
         WHEN("a scene is built with a bed initialized from this DynamicPrintConfig")
         {
-            arr2::Scene scene(arr2::SceneBuilder{}.set_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10))));
+            arr2::Scene scene(arr2::SceneBuilder{}.set_bed(configpack_to_bed_points(cfg), Algorithms::Scaling::scaled(Vec2d(10, 10))));
 
-            auto bedbb = bounding_box(configpack_to_bed_points(cfg));
+            auto bedbb = Algorithms::BoundingBox::construct(configpack_to_bed_points(cfg));
 
             THEN("the bed should be a rectangular bed with the same dimensions as the bed points")
             {
@@ -1018,9 +1051,9 @@ TEST_CASE("Test SceneBuilder", "[arrange2][integration]")
                     REQUIRE(is_rect);
 
                     if constexpr (is_rect) {
-                        bedbb.offset(scaled(scene.settings().get_distance_from_objects() / 2.));
-                        REQUIRE(bedbb.size().x() == bed.width());
-                        REQUIRE(bedbb.size().y() == bed.height());
+                        bedbb = Algorithms::BoundingBox::inflated(bedbb, Algorithms::Scaling::scaled(scene.settings().get_distance_from_objects() / 2.));
+                        REQUIRE(Algorithms::BoundingBox::sizes(bedbb).x() == bed.width());
+                        REQUIRE(Algorithms::BoundingBox::sizes(bedbb).y() == bed.height());
                     }
                 });
             }
@@ -1107,7 +1140,7 @@ TEST_CASE("Testing duplicate function to really duplicate the whole Model",
                         [](auto &item) { return arr2::is_arranged(item); }));
 
     REQUIRE(std::all_of(task->selected.begin(), task->selected.end(),
-                        [&bed](auto &item) { return bounding_box(bed).contains(arr2::envelope_bounding_box(item)); }));
+                        [&bed](auto &item) { return Algorithms::BoundingBox::contains(bounding_box(bed), arr2::envelope_bounding_box(item)); }));
 
     REQUIRE(is_collision_free(range(task->selected)));
 }

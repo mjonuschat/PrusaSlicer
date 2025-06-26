@@ -5,29 +5,33 @@
 #ifndef GRAVITYKERNEL_HPP
 #define GRAVITYKERNEL_HPP
 
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include <arrange/NFP/NFPArrangeItemTraits.hpp>
 #include <arrange/Beds.hpp>
 
 #include "KernelUtils.hpp"
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 struct GravityKernel {
-    std::optional<Vec2crd> sink;
-    std::optional<Vec2crd> item_sink;
-    Vec2d active_sink;
+    std::optional<Domain::Vec2crd> sink;
+    std::optional<Domain::Vec2crd> item_sink;
+    Domain::Vec2d active_sink;
 
-    GravityKernel(Vec2crd gravity_center) :
-        sink{gravity_center}, active_sink{unscaled(gravity_center)} {}
+    GravityKernel(Domain::Vec2crd gravity_center) :
+        sink{gravity_center}, active_sink{Biz::Algorithms::Scaling::unscaled<double>(gravity_center)} {}
 
     GravityKernel() = default;
 
     template<class ArrItem>
-    double placement_fitness(const ArrItem &itm, const Vec2crd &transl) const
+    double placement_fitness(const ArrItem &itm, const Domain::Vec2crd &transl) const
     {
-        Vec2d center = unscaled(envelope_centroid(itm));
+        Domain::Vec2d center = Biz::Algorithms::Scaling::unscaled<double>(envelope_centroid(itm));
 
-        center += unscaled(transl);
+        center += Biz::Algorithms::Scaling::unscaled<double>(transl);
 
         return - (center - active_sink).squaredNorm();
     }
@@ -43,15 +47,15 @@ struct GravityKernel {
         item_sink = get_gravity_sink(itm);
 
         if (!sink) {
-            sink = bounding_box(bed).center();
+            sink = Biz::Algorithms::BoundingBox::center(bounding_box(bed));
         }
 
         if (item_sink)
-            active_sink = unscaled(*item_sink);
+            active_sink = Biz::Algorithms::Scaling::unscaled<double>(*item_sink);
         else
-            active_sink = unscaled(*sink);
+            active_sink = Biz::Algorithms::Scaling::unscaled<double>(*sink);
 
-        ret = find_initial_position(itm, scaled(active_sink), bed, packing_context);
+        ret = find_initial_position(itm, Biz::Algorithms::Scaling::scaled(active_sink), bed, packing_context);
 
         return ret;
     }
@@ -59,6 +63,6 @@ struct GravityKernel {
     template<class ArrItem> bool on_item_packed(ArrItem &itm) { return true; }
 };
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // GRAVITYKERNEL_HPP

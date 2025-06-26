@@ -10,26 +10,34 @@
 #include <arrange/NFP/Kernels/KernelUtils.hpp>
 
 #include <boost/geometry/index/rtree.hpp>
-#include <libslic3r/BoostAdapter.hpp>
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
-namespace Slic3r { namespace arr2 {
+#include "libslic3r/BoostAdapter.hpp"
+
+namespace Slic3r::arr2 {
+
+template<class T, class O = T> using ArithmeticOnly = std::enable_if_t<std::is_arithmetic<T>::value, O>;
 
 // Summon the spatial indexing facilities from boost
 namespace bgi = boost::geometry::index;
-using SpatElement = std::pair<BoundingBox, unsigned>;
+using SpatElement = std::pair<Domain::BoundingBox2crd, unsigned>;
 using SpatIndex = bgi::rtree<SpatElement, bgi::rstar<16, 4> >;
 
 class TMArrangeKernel {
-    SpatIndex   m_rtree;        // spatial index for the normal (bigger) objects
-    SpatIndex   m_smallsrtree;  // spatial index for only the smaller items
-    BoundingBox m_pilebb;
-    double      m_bin_area = NaNd;
-    double      m_norm;
-    size_t      m_rem_cnt = 0;
-    size_t      m_item_cnt = 0;
+    SpatIndex               m_rtree;        // spatial index for the normal (bigger) objects
+    SpatIndex               m_smallsrtree;  // spatial index for only the smaller items
+    Domain::BoundingBox2crd m_pilebb;
+    double                  m_bin_area = std::numeric_limits<double>::quiet_NaN();
+    double                  m_norm;
+    size_t                  m_rem_cnt = 0;
+    size_t                  m_item_cnt = 0;
 
 
-    struct ItemStats { double area = 0.; BoundingBox bb; };
+    struct ItemStats { double area = 0.; Domain::BoundingBox2crd bb; };
     std::vector<ItemStats> m_itemstats;
 
     // A coefficient used in separating bigger items and smaller items.
@@ -44,40 +52,39 @@ class TMArrangeKernel {
     bool is_big(double a) const { return a / m_bin_area > BigItemTreshold; }
 
 protected:
-    std::optional<Point> sink;
-    std::optional<Point> item_sink;
-    Point                active_sink;
+    std::optional<Domain::Point> sink;
+    std::optional<Domain::Point> item_sink;
+    Domain::Point                active_sink;
 
-    const BoundingBox & pilebb() const { return m_pilebb; }
+    const Domain::BoundingBox2crd& pilebb() const { return m_pilebb; }
 
 public:
     TMArrangeKernel() = default;
-    TMArrangeKernel(Vec2crd gravity_center, size_t itm_cnt, double bedarea = NaNd)
+    TMArrangeKernel(Domain::Vec2crd gravity_center, size_t itm_cnt, double bedarea = std::numeric_limits<double>::quiet_NaN())
         : m_bin_area(bedarea)
         , m_item_cnt{itm_cnt}
         , sink{gravity_center}
     {}
 
-    TMArrangeKernel(size_t itm_cnt, double bedarea = NaNd)
+    TMArrangeKernel(size_t itm_cnt, double bedarea = std::numeric_limits<double>::quiet_NaN())
         : m_bin_area(bedarea), m_item_cnt{itm_cnt}
     {}
 
     template<class ArrItem>
-    double placement_fitness(const ArrItem &item, const Vec2crd &transl) const
+    double placement_fitness(const ArrItem &item, const Domain::Vec2crd &transl) const
     {
         // Candidate item bounding box
-        auto ibb = envelope_bounding_box(item);
-        ibb.translate(transl);
+        const auto ibb = Biz::Algorithms::BoundingBox::translated(envelope_bounding_box(item), transl);
+
         auto itmcntr = envelope_centroid(item);
         itmcntr += transl;
 
         // Calculate the full bounding box of the pile with the candidate item
-        auto fullbb = m_pilebb;
-        fullbb.merge(ibb);
+        const auto fullbb = Biz::Algorithms::BoundingBox::merge(m_pilebb, ibb);
 
         // The bounding box of the big items (they will accumulate in the center
         // of the pile
-        BoundingBox bigbb;
+        Domain::BoundingBox2crd bigbb;
         if(m_rtree.empty()) {
             bigbb = fullbb;
         }
@@ -112,19 +119,19 @@ public:
 
         switch (compute_case) {
         case WIPE_TOWER: {
-            score = (unscaled(itmcntr) - unscaled(active_sink)).squaredNorm();
+            score = (Biz::Algorithms::Scaling::unscaled<double>(itmcntr) - Biz::Algorithms::Scaling::unscaled<double>(active_sink)).squaredNorm();
             break;
         }
         case BIG_ITEM: {
-            const Point& minc = ibb.min; // bottom left corner
-            const Point& maxc = ibb.max; // top right corner
+            const Domain::Point& minc = ibb.min; // bottom left corner
+            const Domain::Point& maxc = ibb.max; // top right corner
 
             // top left and bottom right corners
-            Point top_left{minc.x(), maxc.y()};
-            Point bottom_right{maxc.x(), minc.y()};
+            Domain::Point top_left{minc.x(), maxc.y()};
+            Domain::Point bottom_right{maxc.x(), minc.y()};
 
             // The smallest distance from the arranged pile center:
-            double dist = norm((itmcntr - m_pilebb.center()).template cast<double>().norm());
+            double dist = norm((itmcntr - Biz::Algorithms::BoundingBox::center(m_pilebb)).template cast<double>().norm());
 
             // Prepare a variable for the alignment score.
             // This will indicate: how well is the candidate item
@@ -149,8 +156,7 @@ public:
                 const ItemStats& p = m_itemstats[idx];
                 auto parea = p.area;
                 if(std::abs(1.0 - parea / fixed_area(item)) < 1e-6) {
-                    auto bb = p.bb;
-                    bb.merge(ibb);
+                    const auto bb = Biz::Algorithms::BoundingBox::merge(p.bb, ibb);
                     auto bbarea = area(bb);
                     auto ascore = 1.0 - (area(fixed_bounding_box(item)) + area(p.bb)) / bbarea;
 
@@ -176,7 +182,7 @@ public:
             // already processed bigger items.
             // No need to play around with the anchor points, the center will be
             // just fine for small items
-            score = norm((itmcntr - bigbb.center()).template cast<double>().norm());
+            score = norm((itmcntr - Biz::Algorithms::BoundingBox::center(bigbb)).template cast<double>().norm());
             break;
         }
         }
@@ -190,11 +196,11 @@ public:
                           const Context &packing_context,
                           const Range<RemIt> &remaining_items)
     {
-        const std::optional<Vec2crd> gravity_sink{get_gravity_sink(itm)};
-        item_sink = gravity_sink ? std::optional{Point{*gravity_sink}} : std::nullopt;
+        const std::optional<Domain::Vec2crd> gravity_sink{get_gravity_sink(itm)};
+        item_sink = gravity_sink ? std::optional{Domain::Point{*gravity_sink}} : std::nullopt;
 
         if (!sink) {
-            sink = bounding_box(bed).center();
+            sink = Biz::Algorithms::BoundingBox::center(bounding_box(bed));
         }
 
         if (item_sink)
@@ -212,9 +218,9 @@ public:
             m_item_cnt = m_rem_cnt + fixed.size() + 1;
 
         if (std::isnan(m_bin_area)) {
-            auto sz = bounding_box(bed).size();
+            auto sz = Biz::Algorithms::BoundingBox::sizes(bounding_box(bed));
 
-            m_bin_area = scaled<double>(unscaled(sz.x()) * unscaled(sz.y()));
+            m_bin_area = static_cast<double>(Biz::Algorithms::Scaling::scaled<int64_t>(Biz::Algorithms::Scaling::unscaled<double>(sz.x()) * Biz::Algorithms::Scaling::unscaled<double>(sz.y())));
         }
 
         m_norm = std::sqrt(m_bin_area);
@@ -228,7 +234,7 @@ public:
         for (auto &fixitem : fixed) {
             auto fixitmbb = fixed_bounding_box(fixitem);
             m_itemstats.emplace_back(ItemStats{fixed_area(fixitem), fixitmbb});
-            m_pilebb.merge(fixitmbb);
+            m_pilebb = Biz::Algorithms::BoundingBox::merge(m_pilebb, fixitmbb);
 
             if(is_big(fixed_area(fixitem)))
                 m_rtree.insert({fixitmbb, idx});
@@ -244,6 +250,6 @@ public:
     bool on_item_packed(ArrItem &itm) { return true; }
 };
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // TMARRANGEKERNEL_HPP

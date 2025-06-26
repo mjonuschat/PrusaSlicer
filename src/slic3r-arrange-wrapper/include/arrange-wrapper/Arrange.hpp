@@ -5,13 +5,19 @@
 #ifndef ARRANGE2_HPP
 #define ARRANGE2_HPP
 
-#include <libslic3r/MinAreaBoundingBox.hpp>
 #include <arrange/NFP/NFPArrangeItemTraits.hpp>
 
 #include "Scene.hpp"
 #include "Items/MutableItemTraits.hpp"
 
-namespace Slic3r { namespace arr2 {
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include "libslic3r/MinAreaBoundingBox.hpp"
+
+namespace Slic3r::arr2 {
 
 template<class ArrItem> class Arranger
 {
@@ -100,21 +106,21 @@ public:
     virtual ~ArrangeableToItemConverter() = default;
 
     // May throw EmptyItemOutlineError
-    virtual ArrItem convert(const Arrangeable &arrbl, coord_t offs = 0) const = 0;
+    virtual ArrItem convert(const Arrangeable &arrbl, Domain::coord_t offs = 0) const = 0;
 
     // Returns the extent of simplification that the converter utilizes when
     // creating arrange items. Zero shall mean no simplification at all.
-    virtual coord_t simplification_tolerance() const { return 0; }
+    virtual Domain::coord_t simplification_tolerance() const { return 0; }
 
     static std::unique_ptr<ArrangeableToItemConverter> create(
         ArrangeSettingsView::GeometryHandling geometry_handling,
-        coord_t                               safety_d);
+        Domain::coord_t                       safety_d);
 
     static std::unique_ptr<ArrangeableToItemConverter> create(
         const Scene &sc)
     {
         return create(sc.settings().get_geometry_handling(),
-                      scaled(sc.settings().get_distance_from_objects()));
+                      Biz::Algorithms::Scaling::scaled(sc.settings().get_distance_from_objects()));
     }
 };
 
@@ -135,17 +141,17 @@ public:
 template<class ArrItem>
 class BasicItemConverter : public ArrangeableToItemConverter<ArrItem>
 {
-    coord_t m_safety_d;
-    coord_t m_simplify_tol;
+    Domain::coord_t m_safety_d;
+    Domain::coord_t m_simplify_tol;
 
 public:
-    BasicItemConverter(coord_t safety_d = 0, coord_t simpl_tol = 0)
+    BasicItemConverter(Domain::coord_t safety_d = 0, Domain::coord_t simpl_tol = 0)
         : m_safety_d{safety_d}, m_simplify_tol{simpl_tol}
     {}
 
-    coord_t safety_dist() const noexcept { return m_safety_d; }
+    Domain::coord_t safety_dist() const noexcept { return m_safety_d; }
 
-    coord_t simplification_tolerance() const override
+    Domain::coord_t simplification_tolerance() const override
     {
         return m_simplify_tol;
     }
@@ -157,26 +163,26 @@ class ConvexItemConverter : public BasicItemConverter<ArrItem>
 public:
     using BasicItemConverter<ArrItem>::BasicItemConverter;
 
-    ArrItem convert(const Arrangeable &arrbl, coord_t offs) const override;
+    ArrItem convert(const Arrangeable &arrbl, Domain::coord_t offs) const override;
 };
 
 template<class ArrItem>
 class AdvancedItemConverter : public BasicItemConverter<ArrItem>
 {
 protected:
-    virtual ArrItem get_arritem(const Arrangeable &arrbl, coord_t eps) const;
+    virtual ArrItem get_arritem(const Arrangeable &arrbl, Domain::coord_t eps) const;
 
 public:
     using BasicItemConverter<ArrItem>::BasicItemConverter;
 
-    ArrItem convert(const Arrangeable &arrbl, coord_t offs) const override;
+    ArrItem convert(const Arrangeable &arrbl, Domain::coord_t offs) const override;
 };
 
 template<class ArrItem>
 class BalancedItemConverter : public AdvancedItemConverter<ArrItem>
 {
 protected:
-    ArrItem get_arritem(const Arrangeable &arrbl, coord_t offs) const override;
+    ArrItem get_arritem(const Arrangeable &arrbl, Domain::coord_t offs) const override;
 
 public:
     using AdvancedItemConverter<ArrItem>::AdvancedItemConverter;
@@ -225,7 +231,7 @@ bool apply_arrangeitem(const ArrItem &itm, ArrangeableModel &mdl)
     if (auto id = retrieve_id(itm)) {
         mdl.visit_arrangeable(*id, [&itm, &ret](Arrangeable &arrbl) {
             if ((ret = arrbl.assign_bed(get_bed_index(itm))))
-                arrbl.transform(unscaled(get_translation(itm)), get_rotation(itm));
+                arrbl.transform(Biz::Algorithms::Scaling::unscaled<double>(get_translation(itm)), get_rotation(itm));
         });
     }
 
@@ -245,9 +251,9 @@ double get_fit_into_bed_rotation(const ArrItem &itm, const RectangleBed &bed)
 {
     double ret = 0.;
 
-    auto bbsz = envelope_bounding_box(itm).size();
+    auto bbsz = Biz::Algorithms::BoundingBox::sizes(envelope_bounding_box(itm));
     auto binbb = bounding_box(bed);
-    auto binbbsz = binbb.size();
+    auto binbbsz = Biz::Algorithms::BoundingBox::sizes(binbb);
 
     if (bbsz.x() >= binbbsz.x() || bbsz.y() >= binbbsz.y())
         ret = fit_into_box_rotation(envelope_convex_hull(itm), binbb);
@@ -267,6 +273,6 @@ auto get_corrected_bed(const ExtendedBed &bed,
     return bedcpy;
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // ARRANGE2_HPP

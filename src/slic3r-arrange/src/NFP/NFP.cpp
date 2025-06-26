@@ -9,11 +9,14 @@
 #include <arrange/NFP/NFPConcave_Tesselate.hpp>
 
 #include "CircularEdgeIterator.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include <libslic3r/ClipperUtils.hpp>
-#include <libslic3r/ExPolygon.hpp>
-#include <libslic3r/Line.hpp>
-#include <libslic3r/libslic3r.h>
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <arrange/Beds.hpp>
 
@@ -35,6 +38,15 @@ namespace Slic3r { using LargeInt = boost::multiprecision::int128_t; }
 #include <utility>
 #include <vector>
 #include <cassert>
+
+using Slic3r::Domain::coord_t;
+using Slic3r::Domain::ExPolygon;
+using Slic3r::Domain::ExPolygons;
+using Slic3r::Domain::Line;
+using Slic3r::Domain::Point;
+using Slic3r::Domain::Polygon;
+using Slic3r::Domain::Polygons;
+using Slic3r::Domain::Vec2crd;
 
 using namespace Slic3r::Biz;
 
@@ -111,7 +123,7 @@ ExPolygons ifp_convex(const arr2::RectangleBed &obed, const Polygon &convexpoly)
     ExPolygon ret;
 
     auto sbox = bounding_box(convexpoly);
-    auto sboxsize = sbox.size();
+    auto sboxsize = Algorithms::BoundingBox::sizes(sbox);
     coord_t sheight = sboxsize.y();
     coord_t swidth  = sboxsize.x();
     Point   sliding_top = reference_vertex(convexpoly);
@@ -122,7 +134,7 @@ ExPolygons ifp_convex(const arr2::RectangleBed &obed, const Polygon &convexpoly)
 
     auto bedbb = obed.bb;
 //    bedbb.offset(1);
-    auto bedsz = bedbb.size();
+    auto bedsz = Algorithms::BoundingBox::sizes(bedbb);
     auto boxWidth  = bedsz.x();
     auto boxHeight = bedsz.y();
 
@@ -145,7 +157,8 @@ ExPolygons ifp_convex(const arr2::RectangleBed &obed, const Polygon &convexpoly)
 
 Polygon ifp_convex_convex(const Polygon &fixed, const Polygon &movable)
 {
-    auto subnfps = reserve_polygons(fixed.size());
+    Polygons subnfps;
+    subnfps.reserve(fixed.size());
 
     // For each edge of the bed polygon, determine the nfp of convexpoly and
     // the zero area polygon formed by the edge. The union of all these sub-nfps
@@ -158,7 +171,7 @@ Polygon ifp_convex_convex(const Polygon &fixed, const Polygon &movable)
 
     // Do the union and then keep only the holes (should be only one or zero, if
     // the convexpoly cannot fit into the bed)
-    Polygons ifp = union_(subnfps);
+    Polygons ifp = Algorithms::ClipperUtils::union_(subnfps);
     Polygon ret;
 
     // find the first hole
@@ -183,12 +196,12 @@ ExPolygons ifp_convex(const arr2::CircleBed &bed, const Polygon &convexpoly)
 
 ExPolygons ifp_convex(const arr2::IrregularBed &bed, const Polygon &convexpoly)
 {
-    auto bb = get_extents(bed.poly);
-    bb.offset(scaled(1.));
+    auto bb = Algorithms::ExPolygon::get_extents(bed.poly);
+    bb = Algorithms::BoundingBox::inflated(bb, Algorithms::Scaling::scaled(1.));
 
     Polygon rect = arr2::to_rectangle(bb);
 
-    ExPolygons blueprint = diff_ex(rect, bed.poly);
+    ExPolygons blueprint = Algorithms::ClipperUtils::diff_ex(rect, bed.poly);
     Polygons ifp;
     for (const ExPolygon &part : blueprint) {
         Polygons triangles = Slic3r::convex_decomposition_tess(part);
@@ -198,7 +211,7 @@ ExPolygons ifp_convex(const arr2::IrregularBed &bed, const Polygon &convexpoly)
         }
     }
 
-    ifp = union_(ifp);
+    ifp = Algorithms::ClipperUtils::union_(ifp);
 
     Polygons ret;
 

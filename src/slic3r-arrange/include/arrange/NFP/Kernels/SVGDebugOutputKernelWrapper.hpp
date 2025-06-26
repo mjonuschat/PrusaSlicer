@@ -14,17 +14,21 @@
 #include "arrange/Beds.hpp"
 
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Utils.hpp"
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 template<class Kernel>
 struct SVGDebugOutputKernelWrapper {
     Kernel &k;
     std::unique_ptr<Biz::Algorithms::SVG::SVG> svg;
-    BoundingBox drawbounds;
+    Domain::BoundingBox2crd drawbounds;
 
     template<class... Args>
-    SVGDebugOutputKernelWrapper(const BoundingBox &bounds, Kernel &kern)
+    SVGDebugOutputKernelWrapper(const Domain::BoundingBox2crd &bounds, Kernel &kern)
         : k{kern}, drawbounds{bounds}
     {}
 
@@ -53,14 +57,14 @@ struct SVGDebugOutputKernelWrapper {
                                         ".svg",
                                     bounds, 0, false);
 
-        svg->draw(ExPolygon{arr2::to_rectangle(drawbounds)}, "blue", .2f);
+        svg->draw(Domain::ExPolygon{arr2::to_rectangle(drawbounds)}, "blue", .2f);
 
         auto nfp = calculate_nfp(itm, packing_context, bed);
         svg->draw_outline(nfp);
         svg->draw(nfp, "green", 0.2f);
 
         for (const auto &fixeditm : fixed) {
-            ExPolygons fixeditm_outline = Slic3r::Biz::Algorithms::Polygon::to_expolygons(fixed_outline(fixeditm));
+            Domain::ExPolygons fixeditm_outline = Slic3r::Biz::Algorithms::Polygon::to_expolygons(fixed_outline(fixeditm));
             svg->draw_outline(fixeditm_outline);
             svg->draw(fixeditm_outline, "yellow", 0.5f);
         }
@@ -69,7 +73,7 @@ struct SVGDebugOutputKernelWrapper {
     }
 
     template<class ArrItem>
-    double placement_fitness(const ArrItem &item, const Vec2crd &transl) const
+    double placement_fitness(const ArrItem &item, const Domain::Vec2crd &transl) const
     {
         return KernelTraits<Kernel>::placement_fitness(k, item, transl);
     }
@@ -83,7 +87,7 @@ struct SVGDebugOutputKernelWrapper {
         bool ret = KernelTraits<Kernel>::on_item_packed(k, itm);
 
         if (svg) {
-            ExPolygons itm_outline = Slic3r::Biz::Algorithms::Polygon::to_expolygons(fixed_outline(itm));
+            Domain::ExPolygons itm_outline = Slic3r::Biz::Algorithms::Polygon::to_expolygons(fixed_outline(itm));
 
             svg->draw_outline(itm_outline);
             svg->draw(itm_outline, "grey");
@@ -95,6 +99,6 @@ struct SVGDebugOutputKernelWrapper {
     }
 };
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // SVGDEBUGOUTPUTKERNELWRAPPER_HPP

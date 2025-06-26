@@ -10,7 +10,7 @@
 
 #include "libslic3r/StaticMap.hpp"
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 using namespace std::string_view_literals;
 
@@ -233,6 +233,6 @@ public:
     auto & values() { return m_v; }
 };
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // ARRANGESETTINGSVIEW_HPP

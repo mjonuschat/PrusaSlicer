@@ -7,15 +7,32 @@
 
 #include <arrange/Beds.hpp>
 
-#include "libslic3r/BoundingBox.hpp"
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
-namespace Slic3r { namespace arr2 {
+using Slic3r::Domain::BoundingBox2crd;
+using Slic3r::Domain::coord_t;
+using Slic3r::Domain::ExPolygon;
+using Slic3r::Domain::Point;
+using Slic3r::Domain::Points;
+using Slic3r::Domain::Polygon;
+using Slic3r::Domain::Vec2crd;
 
-BoundingBox bounding_box(const InfiniteBed &bed)
+using namespace Slic3r;
+using namespace Slic3r::Biz;
+
+namespace Slic3r::arr2 {
+
+constexpr auto SCALED_EPSILON = Biz::Algorithms::Scaling::scaled(Domain::EPSILON);
+
+BoundingBox2crd bounding_box(const InfiniteBed &bed)
 {
-    BoundingBox ret;
+    BoundingBox2crd ret;
     using C = coord_t;
 
     // It is important for Mx and My to be strictly less than half of the
@@ -29,7 +46,7 @@ BoundingBox bounding_box(const InfiniteBed &bed)
     return ret;
 }
 
-Polygon to_rectangle(const BoundingBox &bb)
+Polygon to_rectangle(const BoundingBox2crd &bb)
 {
     Polygon ret;
     ret.points = {
@@ -65,11 +82,11 @@ Polygon approximate_circle_with_polygon(const arr2::CircleBed &bed, int nedges)
     return ret;
 }
 
-inline coord_t width(const BoundingBox &box)
+inline coord_t width(const BoundingBox2crd &box)
 {
     return box.max.x() - box.min.x();
 }
-inline coord_t height(const BoundingBox &box)
+inline coord_t height(const BoundingBox2crd &box)
 {
     return box.max.y() - box.min.y();
 }
@@ -116,8 +133,8 @@ template<class Fn> auto call_with_bed(const Points &bed, const Vec2crd &gap, Fn 
     else if (bed.size() == 1)
         return fn(InfiniteBed{bed.front()});
     else {
-        auto      bb    = BoundingBox(bed);
-        CircleBed circ  = to_circle(bb.center(), bed, gap);
+        auto      bb    = Algorithms::BoundingBox::construct(bed);
+        CircleBed circ  = to_circle(Algorithms::BoundingBox::center(bb), bed, gap);
         auto      parea = poly_area(bed);
 
         if ((1.0 - parea / area(bb)) < 1e-3) {
@@ -138,4 +155,4 @@ ArrangeBed to_arrange_bed(const Points &bedpts, const Vec2crd &gap)
     return ret;
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2

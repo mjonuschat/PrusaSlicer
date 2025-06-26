@@ -116,15 +116,13 @@ void remove_collinear_points(ExPolygon &p)
     p = libnest2d::removeCollinearPoints<ExPolygon>(p, Unit(0));
 }
 
-double fit_into_box_rotation(const Polygon &shape, const BoundingBox &bb)
+double fit_into_box_rotation(const Domain::Polygon &shape, const Domain::BoundingBox2crd &bb)
 {
     using namespace libnest2d;
 
     _Box<Point> box{{bb.min.x(), bb.min.y()}, {bb.max.x(), bb.max.y()}};
 
-    return fitIntoBoxRotation<Polygon, TCompute<Polygon>, Rational>(shape,
-                                                                    box,
-                                                                    EPSILON);
+    return fitIntoBoxRotation<Domain::Polygon, TCompute<Domain::Polygon>, Rational>(shape, box, Domain::EPSILON);
 }
 
 } // namespace Slic3r

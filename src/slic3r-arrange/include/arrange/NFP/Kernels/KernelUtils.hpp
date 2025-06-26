@@ -5,17 +5,19 @@
 #ifndef ARRANGEKERNELUTILS_HPP
 #define ARRANGEKERNELUTILS_HPP
 
+#include "Slic3r/Domain/Types.hpp"
+
 #include <type_traits>
 
 #include <arrange/NFP/NFPArrangeItemTraits.hpp>
 #include <arrange/Beds.hpp>
 #include <arrange/DataStoreTraits.hpp>
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 template<class Itm, class Bed, class Context>
 bool find_initial_position(Itm &itm,
-                           const Vec2crd &sink,
+                           const Domain::Vec2crd &sink,
                            const Bed &bed,
                            const Context &packing_context)
 {
@@ -35,13 +37,13 @@ bool find_initial_position(Itm &itm,
                 chullcpy.rotate(rot);
                 auto bbitm = Slic3r::bounding_box(chullcpy);
 
-                Vec2crd cb = sink;
-                Vec2crd ci = bbitm.center();
+                Domain::Vec2crd cb = sink;
+                Domain::Vec2crd ci = Biz::Algorithms::BoundingBox::center(bbitm);
 
-                Vec2crd d = cb - ci;
-                bbitm.translate(d);
+                Domain::Vec2crd d = cb - ci;
+                bbitm = Biz::Algorithms::BoundingBox::translated(bbitm, d);
 
-                if (bounding_box(bed).contains(bbitm)) {
+                if (Biz::Algorithms::BoundingBox::contains(bounding_box(bed), bbitm)) {
                     rotate(itm, rot);
                     translate(itm, d);
                     ret = true;
@@ -54,13 +56,13 @@ bool find_initial_position(Itm &itm,
     return ret;
 }
 
-template<class ArrItem> std::optional<Vec2crd> get_gravity_sink(const ArrItem &itm)
+template<class ArrItem> std::optional<Domain::Vec2crd> get_gravity_sink(const ArrItem &itm)
 {
     constexpr const char * SinkKey = "sink";
 
-    std::optional<Vec2crd> ret;
+    std::optional<Domain::Vec2crd> ret;
 
-    auto ptr = get_data<Vec2crd>(itm, SinkKey);
+    auto ptr = get_data<Domain::Vec2crd>(itm, SinkKey);
 
     if (ptr)
         ret = *ptr;
@@ -75,6 +77,6 @@ template<class ArrItem> bool is_wipe_tower(const ArrItem &itm)
     return has_key(itm, Key);
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // ARRANGEKERNELUTILS_HPP

@@ -5,12 +5,13 @@
 #ifndef MutableItemTraits_HPP
 #define MutableItemTraits_HPP
 
-#include <libslic3r/ExPolygon.hpp>
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 
 #include <arrange/ArrangeItemTraits.hpp>
 #include <arrange/DataStoreTraits.hpp>
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 
 template<class Itm> struct IsMutableItem_ : public std::false_type
 {};
@@ -24,22 +25,22 @@ template<class Itm, class En = void> struct MutableItemTraits_
 
     static void set_priority(Itm &itm, int p) { itm.set_priority(p); }
 
-    static void set_convex_shape(Itm &itm, const Polygon &shape)
+    static void set_convex_shape(Itm &itm, const Domain::Polygon &shape)
     {
         itm.set_convex_shape(shape);
     }
 
-    static void set_shape(Itm &itm, const ExPolygons &shape)
+    static void set_shape(Itm &itm, const Domain::ExPolygons &shape)
     {
         itm.set_shape(shape);
     }
 
-    static void set_convex_envelope(Itm &itm, const Polygon &envelope)
+    static void set_convex_envelope(Itm &itm, const Domain::Polygon &envelope)
     {
         itm.set_convex_envelope(envelope);
     }
 
-    static void set_envelope(Itm &itm, const ExPolygons &envelope)
+    static void set_envelope(Itm &itm, const Domain::ExPolygons &envelope)
     {
         itm.set_envelope(envelope);
     }
@@ -70,23 +71,23 @@ template<class Itm> void set_priority(Itm &itm, int p)
     MutableItemTraits<Itm>::set_priority(itm, p);
 }
 
-template<class Itm> void set_convex_shape(Itm &itm, const Polygon &shape)
+template<class Itm> void set_convex_shape(Itm &itm, const Domain::Polygon &shape)
 {
     MutableItemTraits<Itm>::set_convex_shape(itm, shape);
 }
 
-template<class Itm> void set_shape(Itm &itm, const ExPolygons &shape)
+template<class Itm> void set_shape(Itm &itm, const Domain::ExPolygons &shape)
 {
     MutableItemTraits<Itm>::set_shape(itm, shape);
 }
 
 template<class Itm>
-void set_convex_envelope(Itm &itm, const Polygon &envelope)
+void set_convex_envelope(Itm &itm, const Domain::Polygon &envelope)
 {
     MutableItemTraits<Itm>::set_convex_envelope(itm, envelope);
 }
 
-template<class Itm> void set_envelope(Itm &itm, const ExPolygons &envelope)
+template<class Itm> void set_envelope(Itm &itm, const Domain::ExPolygons &envelope)
 {
     MutableItemTraits<Itm>::set_envelope(itm, envelope);
 }
@@ -135,6 +136,6 @@ template<class It> int lowest_priority(const Range<It> &item_range)
     return min_priority;
 }
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // MutableItemTraits_HPP

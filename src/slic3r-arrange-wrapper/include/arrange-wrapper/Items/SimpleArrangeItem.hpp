@@ -11,12 +11,14 @@
 #include <utility>
 #include <vector>
 
-#include <libslic3r/Polygon.hpp>
-#include <libslic3r/Geometry/ConvexHull.hpp>
-#include <libslic3r/BoundingBox.hpp>
-#include <libslic3r/ClipperUtils.hpp>
-#include <Slic3r/Domain/ObjectID.hpp>
-#include <libslic3r/Point.hpp>
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <arrange/ArrangeItemTraits.hpp>
 #include <arrange/PackingContext.hpp>
@@ -29,13 +31,13 @@
 #include <arrange-wrapper/Items/MutableItemTraits.hpp>
 
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r::arr2 {
 struct InfiniteBed;
 
 class SimpleArrangeItem {
-    Polygon m_shape;
+    Domain::Polygon m_shape;
 
-    Vec2crd m_translation = Vec2crd::Zero();
+    Domain::Vec2crd m_translation = Domain::Vec2crd::Zero();
     double  m_rotation = 0.;
     int     m_priority = 0;
     int     m_bed_idx = Unarranged;
@@ -45,11 +47,11 @@ class SimpleArrangeItem {
     Domain::ObjectID m_obj_id;
 
 public:
-    explicit SimpleArrangeItem(Polygon chull = {}): m_shape{std::move(chull)} {}
+    explicit SimpleArrangeItem(Domain::Polygon chull = {}): m_shape{std::move(chull)} {}
 
-    void set_shape(Polygon chull) { m_shape = std::move(chull); }
+    void set_shape(Domain::Polygon chull) { m_shape = std::move(chull); }
 
-    const Vec2crd& get_translation() const noexcept { return m_translation; }
+    const Domain::Vec2crd& get_translation() const noexcept { return m_translation; }
     double get_rotation() const noexcept { return m_rotation; }
     int get_priority() const noexcept { return m_priority; }
     int get_bed_index() const noexcept { return m_bed_idx; }
@@ -57,14 +59,14 @@ public:
         return m_bed_constraint;
     }
 
-    void set_translation(const Vec2crd &v) { m_translation = v; }
+    void set_translation(const Domain::Vec2crd &v) { m_translation = v; }
     void set_rotation(double v) noexcept { m_rotation = v; }
     void set_priority(int v) noexcept { m_priority = v; }
     void set_bed_index(int v) noexcept { m_bed_idx = v; }
     void set_bed_constraint(std::optional<int> v) noexcept { m_bed_constraint = v; }
 
-    const Polygon &shape() const { return m_shape; }
-    Polygon outline() const;
+    const Domain::Polygon &shape() const { return m_shape; }
+    Domain::Polygon outline() const;
 
     const auto &allowed_rotations() const noexcept
     {
@@ -83,15 +85,16 @@ public:
 template<> struct NFPArrangeItemTraits_<SimpleArrangeItem>
 {
     template<class Context, class Bed, class StopCond>
-    static ExPolygons calculate_nfp(const SimpleArrangeItem &item,
-                                    const Context &packing_context,
-                                    const Bed &bed,
-                                    StopCond &&stop_cond)
+    static Domain::ExPolygons calculate_nfp(const SimpleArrangeItem &item,
+                                            const Context &packing_context,
+                                            const Bed &bed,
+                                            StopCond &&stop_cond)
     {
         auto fixed_items = all_items_range(packing_context);
-        auto nfps = reserve_polygons(fixed_items.size());
+        Domain::Polygons nfps;
+        nfps.reserve(fixed_items.size());
         for (const SimpleArrangeItem &fixed_part : fixed_items) {
-            Polygon subnfp = nfp_convex_convex_legacy(fixed_part.outline(),
+            Domain::Polygon subnfp = nfp_convex_convex_legacy(fixed_part.outline(),
                                                       item.outline());
             nfps.emplace_back(subnfp);
 
@@ -102,52 +105,52 @@ template<> struct NFPArrangeItemTraits_<SimpleArrangeItem>
             }
         }
 
-        ExPolygons nfp_ex;
+        Domain::ExPolygons nfp_ex;
         if (!stop_cond()) {
             if constexpr (!std::is_convertible_v<Bed, InfiniteBed>) {
-                ExPolygons ifpbed = ifp_convex(bed, item.outline());
-                nfp_ex = diff_ex(ifpbed, nfps);
+                Domain::ExPolygons ifpbed = ifp_convex(bed, item.outline());
+                nfp_ex = Biz::Algorithms::ClipperUtils::diff_ex(ifpbed, nfps);
             } else {
-                nfp_ex = union_ex(nfps);
+                nfp_ex = Biz::Algorithms::ClipperUtils::union_ex(nfps);
             }
         }
 
         return nfp_ex;
     }
 
-    static Vec2crd reference_vertex(const SimpleArrangeItem &item)
+    static Domain::Vec2crd reference_vertex(const SimpleArrangeItem &item)
     {
         return Slic3r::reference_vertex(item.outline());
     }
 
-    static BoundingBox envelope_bounding_box(const SimpleArrangeItem &itm)
+    static Domain::BoundingBox2crd envelope_bounding_box(const SimpleArrangeItem &itm)
     {
-        return get_extents(itm.outline());
+        return Biz::Algorithms::Polygon::get_extents(itm.outline());
     }
 
-    static BoundingBox fixed_bounding_box(const SimpleArrangeItem &itm)
+    static Domain::BoundingBox2crd fixed_bounding_box(const SimpleArrangeItem &itm)
     {
-        return get_extents(itm.outline());
+        return Biz::Algorithms::Polygon::get_extents(itm.outline());
     }
 
-    static Polygons envelope_outline(const SimpleArrangeItem &itm)
+    static Domain::Polygons envelope_outline(const SimpleArrangeItem &itm)
     {
         return {itm.outline()};
     }
 
-    static Polygons fixed_outline(const SimpleArrangeItem &itm)
+    static Domain::Polygons fixed_outline(const SimpleArrangeItem &itm)
     {
         return {itm.outline()};
     }
 
-    static Polygon envelope_convex_hull(const SimpleArrangeItem &itm)
+    static Domain::Polygon envelope_convex_hull(const SimpleArrangeItem &itm)
     {
-        return Geometry::convex_hull(itm.outline());
+        return Biz::Algorithms::Geometry::convex_hull(itm.outline());
     }
 
-    static Polygon fixed_convex_hull(const SimpleArrangeItem &itm)
+    static Domain::Polygon fixed_convex_hull(const SimpleArrangeItem &itm)
     {
-        return Geometry::convex_hull(itm.outline());
+        return Biz::Algorithms::Geometry::convex_hull(itm.outline());
     }
 
     static double envelope_area(const SimpleArrangeItem &itm)
@@ -165,12 +168,12 @@ template<> struct NFPArrangeItemTraits_<SimpleArrangeItem>
         return itm.allowed_rotations();
     }
 
-    static Vec2crd fixed_centroid(const SimpleArrangeItem &itm) noexcept
+    static Domain::Vec2crd fixed_centroid(const SimpleArrangeItem &itm) noexcept
     {
         return itm.outline().centroid();
     }
 
-    static Vec2crd envelope_centroid(const SimpleArrangeItem &itm) noexcept
+    static Domain::Vec2crd envelope_centroid(const SimpleArrangeItem &itm) noexcept
     {
         return itm.outline().centroid();
     }
@@ -182,21 +185,21 @@ template<>
 struct MutableItemTraits_<SimpleArrangeItem> {
 
     static void set_priority(SimpleArrangeItem &itm, int p) { itm.set_priority(p); }
-    static void set_convex_shape(SimpleArrangeItem &itm, const Polygon &shape)
+    static void set_convex_shape(SimpleArrangeItem &itm, const Domain::Polygon &shape)
     {
         itm.set_shape(shape);
     }
-    static void set_shape(SimpleArrangeItem &itm, const ExPolygons &shape)
+    static void set_shape(SimpleArrangeItem &itm, const Domain::ExPolygons &shape)
     {
-        itm.set_shape(Geometry::convex_hull(shape));
+        itm.set_shape(Biz::Algorithms::Geometry::convex_hull(shape));
     }
-    static void set_convex_envelope(SimpleArrangeItem &itm, const Polygon &envelope)
+    static void set_convex_envelope(SimpleArrangeItem &itm, const Domain::Polygon &envelope)
     {
         itm.set_shape(envelope);
     }
-    static void set_envelope(SimpleArrangeItem &itm, const ExPolygons &envelope)
+    static void set_envelope(SimpleArrangeItem &itm, const Domain::ExPolygons &envelope)
     {
-        itm.set_shape(Geometry::convex_hull(envelope));
+        itm.set_shape(Biz::Algorithms::Geometry::convex_hull(envelope));
     }
 
     template<class T>
@@ -232,6 +235,6 @@ extern template struct FillBedTask<SimpleArrangeItem>;
 extern template struct MultiplySelectionTask<SimpleArrangeItem>;
 extern template class  Arranger<SimpleArrangeItem>;
 
-}} // namespace Slic3r::arr2
+} // namespace Slic3r::arr2
 
 #endif // SIMPLEARRANGEITEM_HPP
