@@ -100,6 +100,8 @@ using SquareMatrix2f = Advanced::SquareMatrix<float, 2>;
 using SquareMatrix2d = Advanced::SquareMatrix<double, 2>;
 using SquareMatrix3f = Advanced::SquareMatrix<float, 3>;
 using SquareMatrix3d = Advanced::SquareMatrix<double, 3>;
+using SquareMatrix4f = Advanced::SquareMatrix<float, 4>;
+using SquareMatrix4d = Advanced::SquareMatrix<double, 4>;
 
 template<typename T>
 concept ScaledScalar = (
