@@ -1,11 +1,6 @@
-///|/ Copyright (c) Prusa Research 2023 Vojtěch Bubník @bubnikv
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
-#ifndef libslic3r_Timer_hpp_
-#define libslic3r_Timer_hpp_
+#pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 #include <chrono>
 #include <string_view>
@@ -92,8 +87,6 @@ namespace Timing {
         std::string_view    m_limit_exceeded_message;
     };
 
-} // namespace Catch
+} // namespace Timing
 
 } // namespace Slic3r
-
-#endif // libslic3r_Timer_hpp_

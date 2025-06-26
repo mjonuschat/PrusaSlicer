@@ -48,7 +48,7 @@
 #include "libslic3r.h"
 #include "LocalesUtils.hpp"
 #include "format.hpp"
-#include "Time.hpp"
+#include "Slic3r/Time.hpp"
 
 #include <algorithm>
 #include <cstdlib>

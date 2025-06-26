@@ -11,7 +11,7 @@
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "Slic3r/Semver.hpp"
-#include "libslic3r/Time.hpp"
+#include "Slic3r/Time.hpp"
 #include "libslic3r/CustomGCode.hpp"
 
 #include "libslic3r/I18N.hpp"

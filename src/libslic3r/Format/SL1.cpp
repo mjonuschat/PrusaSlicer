@@ -9,7 +9,7 @@
 
 #include <sstream>
 
-#include "libslic3r/Time.hpp"
+#include "Slic3r/Time.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/Zipper.hpp"
 #include "libslic3r/SLAPrint.hpp"

@@ -364,10 +364,6 @@ set(SLIC3R_SOURCES
     TriangulateWall.hpp
     utils.cpp
     Utils.hpp
-    Time.cpp
-    Time.hpp
-    Timer.cpp
-    Timer.hpp
     Thread.cpp
     Thread.hpp
     TriangleSetSampling.cpp

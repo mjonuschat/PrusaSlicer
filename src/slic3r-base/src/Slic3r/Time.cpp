@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Time.hpp"
+#include "Slic3r/Time.hpp"
 
 #include <sstream>
 #include <chrono>
@@ -14,10 +14,7 @@
 #include <map>
 #endif
 
-// #include "libslic3r/Utils.hpp"
-
-namespace Slic3r {
-namespace Utils {
+namespace Slic3r::Utils {
 
 // "YYYY-MM-DD at HH:MM::SS [UTC]"
 // If TimeZone::utc is used with the conversion functions, it will append the
@@ -233,5 +230,4 @@ time_t str2time(const std::string &str, TimeZone zone, TimeFormat fmt)
     return str2time(ss, zone, fmtstr.c_str());
 }
 
-}; // namespace Utils
-}; // namespace Slic3r
+} // namespace Slic3r::Utils

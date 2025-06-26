@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Timer.hpp"
+#include "Slic3r/Timer.hpp"
 #include <boost/log/trivial.hpp>
 
 using namespace std::chrono;
@@ -22,4 +22,4 @@ void TimeLimitAlarm::report_time_exceeded() const {
     BOOST_LOG_TRIVIAL(error) << "Time limit exceeded for " << m_limit_exceeded_message << ": " << m_timer.elapsed_seconds() << "s";
 }
 
-}
+} // namespace Slic3r::Timing
