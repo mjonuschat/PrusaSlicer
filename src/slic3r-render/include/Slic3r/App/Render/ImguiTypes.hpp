@@ -149,6 +149,7 @@ enum class Icon : wchar_t
     // icons for toolbar
     ToolbarObjects,
     ToolbarAdd,
+    ToolbarAddInstance,
     ToolbarArrange,
     ToolbarHistory,
     ToolbarEllipsis,

@@ -83,6 +83,7 @@ private:
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<History> m_history;
 
+    Yoga::ToolbarButton* m_toolbar_add_instance = nullptr;
     Yoga::ToolbarButton* m_toolbar_move = nullptr;
     Yoga::ToolbarButton* m_toolbar_rotate = nullptr;
     Yoga::ToolbarButton* m_toolbar_simplify = nullptr;

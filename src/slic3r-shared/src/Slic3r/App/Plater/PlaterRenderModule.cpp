@@ -82,6 +82,7 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_scene_presenter =
         std::make_unique<PlaterScenePresenter>(m_workbench, m_project_interactor, *m_device);
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
+    m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(this);
 
     init_gizmos();
     init_scene();
@@ -150,16 +151,38 @@ void PlaterRenderModule::init_scene_layout()
                  auto& scene_interactor = m_project_interactor.scene_interactor();
                  const auto& bed =
                      m_project_interactor.selected_project().config_containers().front()->bed();
+                 // Set the default size for newly added objects to one tenth of the maximum print height.
+                 const float def_side = 0.1f * bed.max_print_height();
 
-                 scene_interactor.new_object_from_mesh(TriMesh::make_cube(10, 15, 20));
+                 scene_interactor.new_object_from_mesh(TriMesh::make_cube(def_side, def_side, def_side));
 
                  Transform3d xform = Transform3d::Identity();
-                 xform.translate(Vec3d{bed.center().x(), bed.center().y(), 0});
+                 xform.translate(Vec3d{ 2.f * def_side, 2.f * def_side, 0 });
                  scene_interactor.transform_selection(xform.matrix());
 
                  m_scene_presenter->scene().log_nodes();
              }}
     );
+
+    m_toolbar_add_instance = m_layout->add_toolbar_item(
+        ToolbarID::Middle, Render::Icon::ToolbarAddInstance, "Add instance", "+",
+        { .action = [this]() {
+                 const size_t obj_id = m_project_interactor.scene_interactor()
+                     .selection().elements[0].object_id;
+
+                 const Domain::ModelObject& obj = *m_project_interactor.selected_project()
+                     .find_object_by_id(obj_id);
+
+                 Transform3d xform = Transform3d::Identity();
+                 Vec3d last_instance_offset = obj.instances[obj.instances.size() - 1]->get_offset();
+                 xform.translate(Vec3d{ last_instance_offset.x() + 10.f, last_instance_offset.y() + 5.f, 0 });
+
+                 m_project_interactor.scene_interactor().add_instance(xform.matrix());
+                 m_scene_presenter->scene().log_nodes();
+             } }
+    );
+    m_toolbar_add_instance->set_enabled(false);
+
     //    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarArrange, "Arrange", "A", { []() {} });
     m_toolbar_move = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle, Render::Icon::ToolbarMove, "Move", "M",
@@ -998,8 +1021,22 @@ void PlaterRenderModule::on_deactivated()
 
 void PlaterRenderModule::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection &selection)
 {
-    m_toolbar_move->set_enabled(selection.empty());
-    m_toolbar_rotate->set_enabled(selection.empty());
+    const bool empty_selection = selection.empty();
+    m_toolbar_move->set_enabled(!empty_selection);
+    m_toolbar_rotate->set_enabled(!empty_selection);
+
+    bool can_add_instance = !empty_selection;
+    if (can_add_instance) {
+        const size_t obj_id = selection.elements[0].object_id;
+        for (const Domain::ElementRef& el : selection.elements) {
+            if (el.object_id != obj_id) {
+                // We can’t add instances for multiple objects simultaneously.
+                can_add_instance = false;
+                break;
+            }
+        }
+    }
+    m_toolbar_add_instance->set_enabled(can_add_instance);
 }
 
 void PlaterRenderModule::on_screen_resized()

@@ -140,6 +140,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     // toolbar icons
     { Icon::ToolbarObjects          , "toolbar_objects"                  },
     { Icon::ToolbarAdd              , "toolbar_add"                      },
+    { Icon::ToolbarAddInstance      , "toolbar_add_instance"             },
     { Icon::ToolbarArrange          , "toolbar_arrange"                  },
     { Icon::ToolbarHistory          , "toolbar_history"                  },
     { Icon::ToolbarEllipsis         , "toolbar_ellipsis"                 },
