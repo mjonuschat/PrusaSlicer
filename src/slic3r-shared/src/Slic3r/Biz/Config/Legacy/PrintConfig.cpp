@@ -37,10 +37,13 @@
 // LEGACY HEADERS:
 #include "Config.hpp"
 #include "Thumbnails.hpp"
-#include "enum_bitmask.hpp"
+#include "Slic3r/Domain/enum_bitmask.hpp"
 
 #define L(s) (s)
 #define L_CONTEXT(s,d) (s)
+
+using Slic3r::Domain::enum_bitmask;
+using Slic3r::Domain::ThumbnailError;
 
 namespace Slic3rLegacy {
 

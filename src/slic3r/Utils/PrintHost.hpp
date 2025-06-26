@@ -14,7 +14,7 @@
 
 #include <wx/string.h>
 
-#include <libslic3r/enum_bitmask.hpp>
+#include "Slic3r/Domain/enum_bitmask.hpp>
 #include "Http.hpp"
 
 class wxArrayString;

@@ -15,6 +15,10 @@
 #include "Point.hpp"
 #include "PrintConfig.hpp"
 
+using Slic3r::Domain::enum_bitmask;
+using Slic3r::Domain::ThumbnailError;
+using Slic3r::Domain::ThumbnailErrors;
+
 namespace Slic3rLegacy::GCodeThumbnails {
 
 using namespace std::literals;

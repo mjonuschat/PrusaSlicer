@@ -23,7 +23,7 @@
 #include "Slic3r/Domain/Color.hpp"
 
 #include "libslic3r/PrintConfig.hpp"
-#include "libslic3r/enum_bitmask.hpp"
+#include "Slic3r/Domain/enum_bitmask.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
 
 #include <regex>

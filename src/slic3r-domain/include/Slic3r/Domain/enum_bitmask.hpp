@@ -1,5 +1,4 @@
-#ifndef slic3r_enum_bitmasklegacy_hpp_
-#define slic3r_enum_bitmasklegacy_hpp_
+#pragma once
 
 // enum_bitmask for passing a set of attributes to a function in a type safe way.
 // Adapted from https://gpfault.net/posts/typesafe-bitmasks.txt.html
@@ -7,7 +6,7 @@
 
 #include <type_traits>
 
-namespace Slic3rLegacy {
+namespace Slic3r::Domain {
 
 // enum_bitmasks can only be used with enums.
 template<class option_type, typename = typename std::enable_if<std::is_enum<option_type>::value>::type>
@@ -86,6 +85,4 @@ constexpr std::enable_if_t<is_enum_bitmask_type_v<option_type>, enum_bitmask<opt
     return condition ? opt : enum_bitmask<option_type>{};
 }
 
-} // namespace Slic3r
-
-#endif // slic3r_enum_bitmask_hpp_
+} // namespace Slic3r::Domain

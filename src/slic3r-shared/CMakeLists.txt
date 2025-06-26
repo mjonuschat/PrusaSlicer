@@ -538,7 +538,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Config/Legacy/clonable_ptr.hpp
         src/Slic3r/Biz/Config/Legacy/Thumbnails.hpp
         src/Slic3r/Biz/Config/Legacy/Thumbnails.cpp
-        src/Slic3r/Biz/Config/Legacy/enum_bitmask.hpp
         src/Slic3r/Biz/Config/ConfigLegacy.cpp
         src/Slic3r/Biz/Config/Legacy/3mf_legacy.cpp
         include/Slic3r/Biz/Config/3mf_legacy.hpp

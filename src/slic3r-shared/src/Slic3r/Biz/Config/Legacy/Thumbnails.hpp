@@ -18,15 +18,17 @@
 
 #include "Point.hpp"
 #include "PrintConfig.hpp"
-#include "enum_bitmask.hpp"
+#include "Slic3r/Domain/enum_bitmask.hpp"
 
 namespace Slic3rLegacy {
 class ConfigBase;
+} // namespace Slic3rLegacy
 
+namespace Slic3r::Domain {
     enum class ThumbnailError : int { InvalidVal, OutOfRange, InvalidExt };
     using ThumbnailErrors = enum_bitmask<ThumbnailError>;
     ENABLE_ENUM_BITMASK_OPERATORS(ThumbnailError);
-}
+} // namespace Slic3r::Domain
 
 namespace Slic3rLegacy::GCodeThumbnails {
 
@@ -41,10 +43,10 @@ struct CompressedImageBuffer
 typedef std::vector<std::pair<GCodeThumbnailsFormat, Vec2d>> GCodeThumbnailDefinitionsList;
 
 using namespace std::literals;
-std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbnail_list(const std::string& thumbnails_string, const std::string_view def_ext = "PNG"sv);
-std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbnail_list(const ConfigBase &config);
+std::pair<GCodeThumbnailDefinitionsList, Slic3r::Domain::ThumbnailErrors> make_and_check_thumbnail_list(const std::string& thumbnails_string, const std::string_view def_ext = "PNG"sv);
+std::pair<GCodeThumbnailDefinitionsList, Slic3r::Domain::ThumbnailErrors> make_and_check_thumbnail_list(const ConfigBase &config);
 
-std::string get_error_string(const ThumbnailErrors& errors);
+std::string get_error_string(const Slic3r::Domain::ThumbnailErrors& errors);
 
 
 } // namespace Slic3r::GCodeThumbnails
