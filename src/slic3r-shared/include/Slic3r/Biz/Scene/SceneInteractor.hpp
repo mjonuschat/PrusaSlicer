@@ -43,14 +43,51 @@ class ISceneChangedListener
 public:
     virtual ~ISceneChangedListener() = default;
 
+    /**
+     * @brief Called whenever new instances are added.
+     * @remark The callee is responsible to create all volume representations for given instances.
+     * @param project_id Project the new instances belong to
+     * @param instances List of instances to add
+     */
     virtual void on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances) = 0;
+    /**
+     * @brief Called whenever instances are removed.
+     * @param project_id Project the instances belong to
+     * @param instances List of instances to remove
+     */
     virtual void on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances) = 0;
+
+    /**
+     * @brief Called whenever instances are transformed.
+     * @param project_id Project the instances belong to
+     * @param elements List of instances to transform
+     * @param state Indicates whether the transform state is final (interactive incremental transform)
+     */
     virtual void on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state) = 0;
 
+    /**
+     * @brief Called whenever volumes are added
+     * @remark The callee is responsible to create volume representations of @p volumes for all existing instances.
+     * @param project_id Project the volumes belong to
+     * @param volumes Set of volumes to add.
+     */
     virtual void on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) = 0;
+
+    /**
+     * @brief Called whenever volumes are removed
+     * @remark The callee is responsible to remove volume representations of @p volumes from all existing instances.
+     * @param project_id Project the volumes belong to
+     * @param volumes Set of volumes to add.
+     */
     virtual void on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) = 0;
+
+    /**
+     * @brief Called whenever volumes are tranformed.
+     * @param project_id Project the instances belong to
+     * @param elements List of instances to transform
+     * @param state Indicates whether the transform state is final (interactive incremental transform)
+     */
     virtual void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state) = 0;
-    virtual void on_volume_mesh_changed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) = 0;
 
     virtual void on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;
     virtual void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;

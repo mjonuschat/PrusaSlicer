@@ -1,5 +1,4 @@
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
-#include <boost/algorithm/string/join.hpp>
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
@@ -15,7 +14,6 @@
 #include "Slic3r/App/Render/FramebufferManager.hpp"
 #include "Slic3r/App/Scene/BedNodeBuilder.hpp"
 #include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
-#include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 
 #include "libslic3r/Model.hpp"
 
@@ -100,22 +98,9 @@ void PlaterScenePresenter::load_selected_project()
         updated_obj_instances.emplace_back(mi->get_object()->id().id, mi->id().id, 0);
     }
 
-    Domain::ElementRefs updated_obj_volumes;
-    for (const auto* obj : p.model().objects) {
-        ASSERT(!obj->instances.empty());
-        auto obj_id = obj->id().id;
-        auto inst_id = obj->instances.front()->id().id;
-        for (const auto* vol : obj->volumes) {
-            updated_obj_volumes.emplace_back(obj_id, inst_id, vol->id().id);
-        }
-    }
-
-    ASSERT(updated_obj_instances.empty() == updated_obj_volumes.empty());
-
     PlaterScenePresenter::on_bed_instance_added(project_id, updated_beds);
     if (!updated_obj_instances.empty()) {
         on_instance_added(project_id, updated_obj_instances);
-        on_volume_added(project_id, updated_obj_volumes);
     }
 }
 
@@ -395,10 +380,9 @@ void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, con
             .set_debug_name(fmt::format("obj: {} inst: {}", obj->id().id, inst->id().id))
             .transform([inst](auto& t) { t = inst->get_matrix(); })
             .set_tag(SceneNodeTag{obj->id().id, 0, inst->id().id, Domain::ModelVolumeType::INVALID})
-            // .child_for_each(obj->volumes, [&](Scene::NodeBuilder& builder, const ModelVolume* vol) {
-            //     build_volume_node(builder, project_id, inst, vol);
-            // })
-            ;
+            .child_for_each(obj->volumes, [&](Scene::NodeBuilder& builder, const Domain::ModelVolume* vol) {
+                build_volume_node(builder, project_id, inst, vol);
+            });
         scn.add_child(builder.build().release());
     }
 
@@ -457,25 +441,8 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
         invoke_bed_visually_changed(project_id);
 }
 
-using SceneMeshPtr = std::unique_ptr<Scene::TriangleMesh>;
-using SceneMeshPtrAndId = std::pair<Scene::AuxiliaryElementId, SceneMeshPtr>;
 
-using TriangleMeshPtr = std::shared_ptr<const Domain::TriangleMesh>;
-using TriangleMeshPtrAndId = std::pair<Scene::AuxiliaryElementId, TriangleMeshPtr>;
-
-static std::vector<SceneMeshPtrAndId> init_scene_meshes(const std::vector<TriangleMeshPtrAndId>& meshes)
-{
-    std::vector<SceneMeshPtrAndId> result;
-    for (const auto& [id, mesh] : meshes) {
-        result.push_back({id, std::make_unique<Scene::TriangleMesh>(mesh)});
-    }
-    return result;
-}
-
-void PlaterScenePresenter::update_scene_graph(
-    Domain::SelectionId project_id,
-    const Domain::ElementRefs& volumes
-)
+void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
 {
     // find all instances of given object id and insert the volume node as child
     DEBUG_ASSERT(volumes.size() > 0);
@@ -483,12 +450,6 @@ void PlaterScenePresenter::update_scene_graph(
     std::set<size_t> object_ids;
     for (const auto& v : volumes)
         object_ids.insert(v.object_id);
-    // const auto obj_id = volumes.front().object_id;
-    // DEBUG_ASSERT(std::all_of(volumes.begin(), volumes.end(), [=](const Domain::ElementRef& vol) {
-    //     return vol.object_id == obj_id;
-    // }));
-    // const auto* obj = m_workbench.project(project_id).find_object_by_id(obj_id);
-
     auto& scene = m_projects[project_id].scene();
 
     Scene::visit_conditional(scene.root(), [&](Scene::Node& n) {
@@ -512,40 +473,6 @@ void PlaterScenePresenter::update_scene_graph(
     });
 
     invoke_bed_visually_changed(project_id);
-}
-
-void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
-{
-    std::vector<TriangleMeshPtrAndId> meshes;
-    std::vector<std::string> ids{std::to_string(project_id)};
-    for (const auto& volume_ref : volumes) {
-        const auto* object = m_workbench.project(project_id).find_object_by_id(volume_ref.object_id);
-        const auto* volume = Domain::find_by_id<Domain::ModelVolume>(
-            object->volumes,
-            volume_ref.volume_id
-        );
-        Scene::AuxiliaryElementId id{Scene::AuxiliaryElementId::Type::Volume, volume->id().id};
-        meshes.push_back({id, volume->mesh_ptr()});
-        ids.push_back(std::to_string(volume_ref.volume_id));
-    }
-
-    const std::string job_id{boost::algorithm::join(ids, ":")};
-
-    using Biz::JThread::StopToken;
-    Biz::Platform::PlatformServices::instance()
-        .job_manager()
-        .create_job("scene_mesh_init_" + job_id, [](StopToken stop_token, const std::vector<TriangleMeshPtrAndId> meshes) {
-            return init_scene_meshes(meshes);
-        }, meshes)
-        .on_result([this, project_id, volumes](std::vector<SceneMeshPtrAndId>&& scene_meshes) {
-            auto& ctx = m_projects[project_id];
-            auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
-            for (auto& [id, mesh] : scene_meshes) {
-                trimesh_mgr.set(id, std::move(mesh));
-            }
-            update_scene_graph(project_id, volumes);
-        })
-        .start();
 }
 
 void PlaterScenePresenter::on_volume_removed(
@@ -600,11 +527,6 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
 
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
-}
-
-void PlaterScenePresenter::on_volume_mesh_changed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
-{
-
 }
 
 void PlaterScenePresenter::on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances)

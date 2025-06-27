@@ -163,14 +163,13 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh)
     auto& vol = *Algorithms::ModelObject::add_volume(&obj, std::move(mesh));
     auto& inst = *obj.add_instance();
     const Domain::ElementRefs updated {{obj.id().id, inst.id().id}};
-    const Domain::ElementRefs updated_vols{{obj.id().id, inst.id().id, vol.id().id}};
+    //const Domain::ElementRefs updated_vols{{obj.id().id, inst.id().id, vol.id().id}};
     auto changes = update_instances_bed_placement(project, updated);
 
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_instance_added(m_selected_project_id, updated);
-        l->on_volume_added(m_selected_project_id, updated_vols);
     });
 
 
@@ -181,7 +180,6 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
 {
     auto& project = m_workbench.project(m_selected_project_id);
     const Selection& sel = selection();
-    //DEBUG_ASSERT(sel.mode == SelectionMode::Instance);
     DEBUG_ASSERT(sel.elements.size() == 1);
     size_t obj_id = sel.elements[0].object_id;
     Domain::ElementRefs updated;
@@ -203,7 +201,6 @@ void SceneInteractor::add_instance(const Transform& xform)
 {
     auto& project = m_workbench.project(m_selected_project_id);
     const Selection& sel = selection();
-    //DEBUG_ASSERT(sel.mode == SelectionMode::Instance);
     DEBUG_ASSERT(sel.elements.size() == 1);
     size_t obj_id = sel.elements[0].object_id;
     Domain::ElementRefs updated;
@@ -241,14 +238,6 @@ void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& 
         SPDLOG_DEBUG("- on_instance_added: {}", fmt::join(updated, ", "));
         invoke_listeners<ISceneChangedListener>([&](auto* l) {
             l->on_instance_added(m_selected_project_id, updated);
-        });
-
-        Domain::ElementRefs updated_vols;
-        for (const Domain::ModelVolume* vol : object->volumes)
-            updated_vols.emplace_back(object->id().id, object->instances[0]->id().id, vol->id().id);
-        SPDLOG_DEBUG("- on_volume_added: {}", fmt::join(updated_vols, ", "));
-        invoke_listeners<ISceneChangedListener>([&](auto* l) {
-            l->on_volume_added(m_selected_project_id, updated_vols);
         });
     }
 }
@@ -373,7 +362,7 @@ void SceneInteractor::extract_selected_instances()
     size_t                  sel_object_id = old_object->id().id;
 
     if (old_object->instances.size() == to_remove.size()) {
-        // splite old_object instances into separate object
+        // split old_object instances into separate object
         
         for (int inst_cnt = int(old_object->instances.size()) - 1; inst_cnt > 0; inst_cnt--) {
             // make a copy of the active object
@@ -393,7 +382,7 @@ void SceneInteractor::extract_selected_instances()
         to_remove.erase(std::remove_if(to_remove.begin(), to_remove.end(), [stay_el](const Domain::ElementRef& el) { return el == stay_el; }), to_remove.end());
     }
     else {
-        //extract selected instances into separate object
+        // extract selected instances into separate object
 
         // make a copy of the active object
         Domain::ModelObject* new_object = model.add_object(*old_object);

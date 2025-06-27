@@ -122,7 +122,6 @@ private:
     void on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
     void on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
     void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, Biz::Scene::TransformState state) override;
-    void on_volume_mesh_changed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
 
     void on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
     void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
@@ -152,11 +151,6 @@ private:
     Scene::BedRenderUpdater m_bed_render_updater;
 
     bool m_freeze_selection_center{ false };
-
-    void update_scene_graph(
-        Domain::SelectionId project_id,
-        const Domain::ElementRefs& volumes
-    );
 };
 
 } // namespace Slic3r::App::Plater
