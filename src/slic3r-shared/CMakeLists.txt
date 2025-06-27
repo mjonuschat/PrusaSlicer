@@ -425,8 +425,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ThumbnailImageRequest.hpp
         include/Slic3r/Biz/ThumbnailImageResult.hpp
         include/Slic3r/Biz/ThumbnailType.hpp
-        include/Slic3r/Biz/CopyFile.hpp
-        src/Slic3r/Biz/CopyFile.cpp
+        src/Slic3r/Biz/Utils/CopyFile.cpp
+        include/Slic3r/Biz/Utils/CopyFile.hpp
         include/Slic3r/Biz/Directories.hpp
         src/Slic3r/Biz/Directories.cpp
 
@@ -656,7 +656,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Format/3mf/Relations.cpp
         src/Slic3r/Biz/Format/3mf/Relations.hpp
         src/Slic3r/Biz/Format/3mf/ResultLoad3mf.cpp
-        src/Slic3r/Biz/ProjectLoader.cpp
 
         include/Slic3r/Biz/FileLoadingLogic.hpp
         src/Slic3r/Biz/FileLoadingLogic.cpp
@@ -666,28 +665,27 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ArrangeInteractor.hpp
         src/Slic3r/Biz/ArrangeInteractor.cpp
         
-        include/Slic3r/Biz/PresetUpdater/PresetUpdaterArchiveSync.hpp
         include/Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp
-        include/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositorySync.hpp
-        include/Slic3r/Biz/PresetUpdater/PresetUpdaterIndex.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp
-        include/Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp
-        include/Slic3r/Biz/PresetUpdater/PresetUpdaterRepository.hpp
-        include/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryCredentials.hpp
-        include/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDatabase.hpp
-        include/Slic3r/Biz/PresetUpdater/PresetUpdaterVendorProfile.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDescriptor.hpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.hpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepository.hpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepository.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositorySync.hpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositorySync.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDatabase.hpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDatabase.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterIndex.hpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterIndex.cpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.cpp
-        src/Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.cpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.cpp
-        src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepository.cpp
-        src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDatabase.cpp
-        src/Slic3r/Biz/PresetUpdater/PresetUpdaterVendorProfile.cpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterUtils.hpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterUtils.cpp
-
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterFileHash.hpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterFileHash.cpp
+        
         include/Slic3r/App/PresetUpdaterUI.hpp
         src/Slic3r/App/PresetUpdaterUI.cpp
 )
@@ -709,6 +707,8 @@ elseif (APPLE)
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryMac.cpp
         include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
         src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
+        include/Slic3r/Biz/DirectoriesMacUtils.hpp
+        src/Slic3r/Biz/DirectoriesMacUtils.mm
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND SLIC3R_SHARED_FILES

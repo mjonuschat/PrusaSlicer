@@ -1,9 +1,9 @@
 #include "Slic3r/Biz/AppInstance/AppInstanceUtils.hpp"
 
 #ifdef WIN32
-#include <windows.h> 
+#include <windows.h>
 #else
-#include <unistd.h> 
+#include <unistd.h>
 #include <atomic>
 #include <random>
 #endif
@@ -34,4 +34,4 @@ unsigned get_current_pid()
     return instance_uuid.load();
 #endif
 }
-}
+} // namespace Slic3r::Biz::AppInstance

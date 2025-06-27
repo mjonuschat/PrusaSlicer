@@ -26,7 +26,8 @@ void init_paths()
 #ifdef __APPLE__
     // The application is packed in the .dmg archive as 'Slic3r.app/Contents/MacOS/Slic3r'
     // The resources are packed to 'Slic3r.app/Contents/Resources'
-    boost::filesystem::path path_resources = boost::filesystem::canonical(path_to_binary).parent_path() / "../Resources";
+    boost::filesystem::path path_resources = boost::filesystem::canonical(path_to_binary).parent_path()
+        / "../Resources";
 #elif defined _WIN32
     // The application is packed in the .zip archive in the root,
     // The resources are packed to 'resources'
@@ -40,22 +41,23 @@ void init_paths()
     // The application is packed in the .tar.bz archive (or in AppImage) as 'bin/slic3r',
     // The resources are packed to 'resources'
     // Path from Slic3r binary to resources:
-    boost::filesystem::path path_resources = boost::filesystem::canonical(path_to_binary).parent_path() / "../resources";
+    boost::filesystem::path path_resources = boost::filesystem::canonical(path_to_binary).parent_path()
+        / "../resources";
 #endif
 
 #endif // __EMSCRIPTEN__
 
     // Resource dirs
-    Biz::Utils::set_resources_dir(path_resources.string());
-    Biz::Utils::set_var_dir((path_resources / "icons").string());
-    Biz::Utils::set_local_dir((path_resources / "localization").string());
-    Biz::Utils::set_sys_shapes_dir((path_resources / "shapes").string());
-    Biz::Utils::set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
+    Biz::set_resources_dir(path_resources.string());
+    Biz::set_var_dir((path_resources / "icons").string());
+    Biz::set_local_dir((path_resources / "localization").string());
+    Biz::set_sys_shapes_dir((path_resources / "shapes").string());
+    Biz::set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
 
     // Old libslic3r variables
 
     // Data/config dir
-    Biz::Utils::set_data_dir(Biz::Utils::get_default_datadir());
+    Biz::set_data_dir(Biz::get_default_datadir());
 
     set_resources_dir(path_resources.string());
     set_var_dir((path_resources / "icons").string());
@@ -64,19 +66,25 @@ void init_paths()
     set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
 
     // Data/config dir
-    set_data_dir(Biz::Utils::get_default_datadir());
+    set_data_dir(Biz::get_default_datadir());
 
     boost::filesystem::path data_dir_path(data_dir());
-    if (!boost::filesystem::exists(data_dir_path) || !boost::filesystem::is_directory(data_dir_path)) {
+    if (!boost::filesystem::exists(data_dir_path) || !boost::filesystem::is_directory(data_dir_path))
+    {
         boost::filesystem::create_directory(data_dir_path);
     }
-    std::initializer_list<boost::filesystem::path> sub_datadirs = {   
-        data_dir_path / "update_sync", // Data prepared for installation, all that config wizard needs. (also pid subs?)
-        data_dir_path / "shared_runtime", // all data needed for run of slicer, shared among all instances, App config, archive repo manifest, 
-        data_dir_path / "local_repositories", // Where local repositories are unzipped, each in own unique directory
+    std::initializer_list<boost::filesystem::path> sub_datadirs = {
+        data_dir_path
+            / "update_sync", // Data prepared for installation, all that config wizard needs. (also pid subs?)
+        data_dir_path
+            / "shared_runtime", // all data needed for run of slicer, shared among all instances, App config, archive repo manifest,
+        data_dir_path
+            / "local_repositories", // Where local repositories are unzipped, each in own unique directory
         data_dir_path / "snapshots",
         data_dir_path / "profiles", // subs are local or userid
-        data_dir_path / "profiles" / "local", // All profiles that slicer reads on startup, vendor profiles gets here only from wizard, user profiles by user creation
+        data_dir_path
+            / "profiles"
+            / "local", // All profiles that slicer reads on startup, vendor profiles gets here only from wizard, user profiles by user creation
         data_dir_path / "profiles" / "local" / "vendor",
         data_dir_path / "profiles" / "local" / "shapes",
         data_dir_path / "profiles" / "local" / "print",
@@ -92,7 +100,6 @@ void init_paths()
             boost::filesystem::create_directory(sub);
         }
     }
-
 }
 
-}
+} // namespace Slic3r::App

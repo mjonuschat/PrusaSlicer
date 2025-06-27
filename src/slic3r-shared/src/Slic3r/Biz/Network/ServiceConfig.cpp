@@ -5,7 +5,7 @@
 
 namespace Slic3r::Biz::Network {
 
-void update_from_env(std::string& dest, const char* env_name, bool remove_trailing_slash=false)
+void update_from_env(std::string& dest, const char* env_name, bool remove_trailing_slash = false)
 {
     const char* env_val = std::getenv(env_name);
     if (env_val == nullptr || std::strlen(env_val) == 0)
@@ -19,13 +19,13 @@ void update_from_env(std::string& dest, const char* env_name, bool remove_traili
     }
 }
 
-ServiceConfig::ServiceConfig()
-    : m_connect_url("https://connect.prusa3d.com")
-    , m_account_url("https://account.prusa3d.com")
-    , m_account_client_id("oamhmhZez7opFosnwzElIgE2oGgI2iJORSkw587O")
-    , m_media_url("https://media.printables.com")
-    , m_preset_repo_url(/*"https://preset-repo-api.prusa3d.com"*/"http://localhost:8000") 
-    , m_printables_url("https://www.printables.com")
+ServiceConfig::ServiceConfig() :
+    m_connect_url("https://connect.prusa3d.com"),
+    m_account_url("https://account.prusa3d.com"),
+    m_account_client_id("oamhmhZez7opFosnwzElIgE2oGgI2iJORSkw587O"),
+    m_media_url("https://media.printables.com"),
+    m_preset_repo_url(/*"https://preset-repo-api.prusa3d.com"*/ "http://localhost:8000"),
+    m_printables_url("https://www.printables.com")
 {
 #ifdef SLIC3R_REPO_URL
     m_preset_repo_url = SLIC3R_REPO_URL;
@@ -41,8 +41,8 @@ ServiceConfig::ServiceConfig()
 
 ServiceConfig& ServiceConfig::instance()
 {
-     static ServiceConfig inst;
-     return inst;
+    static ServiceConfig inst;
+    return inst;
 }
 
-}
+} // namespace Slic3r::Biz::Network

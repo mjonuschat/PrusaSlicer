@@ -5,7 +5,8 @@
 
 namespace Slic3r::Biz::Utils {
 
-enum CopyFileResult {
+enum CopyFileResult
+{
     Success = 0,
     FailCopyFile,
     FailFilesDifferent,
@@ -20,7 +21,12 @@ enum CopyFileResult {
  * of the source file before renaming.
  * Additional error info is passed in error message.
  */
-CopyFileResult copy_file(const std::string &from, const std::string &to, std::string& error_message, const bool with_check = false);
+CopyFileResult copy_file(
+    const std::string& from,
+    const std::string& to,
+    std::string& error_message,
+    const bool with_check = false
+);
 
 /**
  * @brief Compares two files if identical.
@@ -32,5 +38,5 @@ CopyFileResult check_copy(const std::string& origin, const std::string& copy);
  * On Windows, the file explorer (or anti-virus or whatever else) often locks the file
  * for a short while, so the file may not be movable. Retry while we see recoverable errors.
  */
-std::error_code rename_file(const std::string &from, const std::string &to);
-}
+std::error_code rename_file(const std::string& from, const std::string& to);
+} // namespace Slic3r::Biz::Utils

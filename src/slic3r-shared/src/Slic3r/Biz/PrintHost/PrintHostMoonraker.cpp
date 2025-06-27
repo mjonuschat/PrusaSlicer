@@ -16,8 +16,8 @@ bool PrintHostMoonraker::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
 {
     // POST /server/files/upload
 
-    const char* name = get_name();
-    const auto upload_filename = m_upload_data.dest_path.filename();
+    const char* name              = get_name();
+    const auto upload_filename    = m_upload_data.dest_path.filename();
     const auto upload_parent_path = m_upload_data.dest_path.parent_path();
 
     // If test fails, test_msg_or_host_ip contains the error message.
@@ -40,25 +40,28 @@ bool PrintHostMoonraker::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
         url = make_url("server/files/upload");
     }
 #ifdef WIN32
-    else {
+    else
+    {
         // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
         // Curl uses easy_getinfo to get ip address of last successful transaction.
         // If it got the address use it instead of the stored in "host" variable.
         // This new address returns in "test_msg_or_host_ip" variable.
         // Solves troubles of uploads failing with name address.
-        // in original address (m_host) replace host for resolved ip 
+        // in original address (m_host) replace host for resolved ip
         info_fn("resolve", test_msg_or_host_ip);
         url = Network::IHttp::substitute_host(make_url("server/files/upload"), test_msg_or_host_ip);
         SPDLOG_INFO("Upload address after ip resolve: " + url);
     }
 #endif // _WIN32
 
-    SPDLOG_INFO("{}: Uploading file at {}, filename: {}, path: {}, print: {}"
-        , name
-        , url
-        , upload_filename.string()
-        , upload_parent_path.string()
-        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false"));
+    SPDLOG_INFO(
+        "{}: Uploading file at {}, filename: {}, path: {}, print: {}",
+        name,
+        url,
+        upload_filename.string(),
+        upload_parent_path.string(),
+        (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
+    );
     /*
     The file must be uploaded in the request's body multipart/form-data (ie: <input type="file">). The following arguments may also be added to the form-data:
     root: The root location in which to upload the file.Currently this may be gcodes or config.If not specified the default is gcodes.
@@ -67,21 +70,25 @@ bool PrintHostMoonraker::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
     Arguments available only for the gcodes root :
     print: If set to "true", Klippy will attempt to start the print after uploading.Note that this value should be a string type, not boolean.This provides compatibility with OctoPrint's upload API.
     */
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+        Network::IHttp::RequestMethod::Post,
+        std::move(url),
+        retry_fn
+    );
     set_auth(http.get());
-    
+
     http->form_add("root", "gcodes");
     if (!upload_parent_path.empty())
         http->form_add("path", upload_parent_path.string());
     if (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint)
         http->form_add("print", "true");
-   
+
     http->form_add_file("file", m_upload_data.source_path, upload_filename.string())
         .on_complete([&](std::string body, unsigned status) {
-            SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name , status , body);
+            SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name, status, body);
         })
         .on_error([&](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR("{}: Error uploading file: {}, HTTP {}, body: `{}`", name , error , status ,body);
+            SPDLOG_ERROR("{}: Error uploading file: {}, HTTP {}, body: `{}`", name, error, status, body);
             error_fn(format_error(body, error, status));
             res = false;
         })
@@ -112,61 +119,69 @@ bool PrintHostMoonraker::test(std::string& msg, RetryFn retry_fn) const
     bool res = true;
     auto url = make_url("server/info");
 
-    SPDLOG_INFO("{}: Get version at: {}", name , url);
+    SPDLOG_INFO("{}: Get version at: {}", name, url);
 
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+        Network::IHttp::RequestMethod::Get,
+        std::move(url),
+        retry_fn
+    );
     set_auth(http.get());
     http->on_error([&](std::string body, std::string error, unsigned status) {
-        SPDLOG_ERROR("{}: Error getting version: {}, HTTP {}, body: `{}`", name , error , status , body);
-        res = false;
-        msg = format_error(body, error, status);
-    })
-    .on_complete([&](std::string body, unsigned) {
-        SPDLOG_INFO("{}: Got server/info: {}", name , body);
-            
-        try {
-            // All successful HTTP requests will return a json encoded object in the form of :
-            // {result: <response data>}
-            nlohmann::json json = nlohmann::json::parse(body);
-            if (!json.contains("result") || !json["result"].is_structured()) {
-                msg = "Could not parse server response";
-                res = false;
-                return;
-            }
-            if (!json["result"].contains("moonraker_version") || !json["result"]["moonraker_version"].is_string()) {
-                msg = "Could not parse server response";
-                res = false;
-                return;
-            }
-            SPDLOG_INFO("{}: Got version: {}", name, json["result"]["moonraker_version"].dump());
-        } catch (const std::exception&) {
+            SPDLOG_ERROR("{}: Error getting version: {}, HTTP {}, body: `{}`", name, error, status, body);
             res = false;
-            msg = "Could not parse server response";
-        }
-    })
+            msg = format_error(body, error, status);
+        })
+        .on_complete([&](std::string body, unsigned) {
+            SPDLOG_INFO("{}: Got server/info: {}", name, body);
+
+            try {
+                // All successful HTTP requests will return a json encoded object in the form of :
+                // {result: <response data>}
+                nlohmann::json json = nlohmann::json::parse(body);
+                if (!json.contains("result") || !json["result"].is_structured()) {
+                    msg = "Could not parse server response";
+                    res = false;
+                    return;
+                }
+                if (!json["result"].contains("moonraker_version")
+                    || !json["result"]["moonraker_version"].is_string())
+                {
+                    msg = "Could not parse server response";
+                    res = false;
+                    return;
+                }
+                SPDLOG_INFO("{}: Got version: {}", name, json["result"]["moonraker_version"].dump());
+            } catch (const std::exception&) {
+                res = false;
+                msg = "Could not parse server response";
+            }
+        })
 #ifdef _WIN32
-    .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
-    .on_ip_resolve([&](std::string address) {
-        // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
-        // Remember resolved address to be reused at successive REST API call.
-        msg =address;
-    })
+        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .on_ip_resolve([&](std::string address) {
+            // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
+            // Remember resolved address to be reused at successive REST API call.
+            msg = address;
+        })
 #endif // _WIN32
-    .perform_sync();
+        .perform_sync();
 
     return res;
 }
 
 std::string PrintHostMoonraker::make_url(const std::string& path) const
 {
-    if (m_print_host_config.host.find("http://") == 0 || m_print_host_config.host.find("https://") == 0) {
+    if (m_print_host_config.host.find("http://") == 0
+        || m_print_host_config.host.find("https://") == 0)
+    {
         if (m_print_host_config.host.back() == '/') {
-            return fmt::format("{}{}", m_print_host_config.host , path);
+            return fmt::format("{}{}", m_print_host_config.host, path);
         } else {
-            return fmt::format("{}/{}", m_print_host_config.host , path);
+            return fmt::format("{}/{}", m_print_host_config.host, path);
         }
     } else {
-        return fmt::format("http://{}/{}", m_print_host_config.host , path);
+        return fmt::format("http://{}/{}", m_print_host_config.host, path);
     }
 }
 

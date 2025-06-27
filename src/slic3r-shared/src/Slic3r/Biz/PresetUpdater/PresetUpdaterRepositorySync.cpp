@@ -1,11 +1,11 @@
-#include "Slic3r/Biz/PresetUpdater/PresetUpdaterRepositorySync.hpp"
-#include "Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.hpp"
-#include "Slic3r/Biz/PresetUpdater/PresetUpdaterRepository.hpp"
-#include "Slic3r/Biz/PresetUpdater/PresetUpdaterUtils.hpp"
-#include "Slic3r/Biz/PresetUpdater/PresetUpdaterVendorProfile.hpp"
-#include "Slic3r/Biz/PresetUpdater/PresetUpdaterIndex.hpp"
+#include "PresetUpdaterRepositorySync.hpp"
+
+#include "PresetUpdaterProcessStatus.hpp"
+#include "PresetUpdaterRepository.hpp"
+#include "PresetUpdaterIndex.hpp"
+#include "PresetUpdaterFileHash.hpp"
+#include "PresetUpdaterUtils.hpp"
 #include "Slic3r/Biz/Directories.hpp"
-#include "Slic3r/Biz/SHA256.hpp"
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
 
 #include "Slic3r/Exception.hpp"
@@ -31,28 +31,34 @@ namespace Slic3r::Biz::PresetUpdater {
 namespace {
 void create_temp_dir(fs::path& temp_dir /* = fs::path()*/)
 {
-    
     boost::uuids::random_generator generator;
-	const std::string dirname = boost::uuids::to_string(generator());
-    temp_dir = boost::filesystem::temp_directory_path() / dirname;
+    const std::string dirname = boost::uuids::to_string(generator());
+    temp_dir                  = boost::filesystem::temp_directory_path() / dirname;
 
     boost::system::error_code ec;
 
     if (fs::exists(temp_dir, ec) && !ec && fs::is_directory(temp_dir, ec) && !ec) {
-        SPDLOG_ERROR("Temp directory {} already exists.", temp_dir.string()); // Something is off. This should never happen.
-        throw Slic3r::RuntimeError("Failed to create temp directory " + temp_dir.string() + ". " + ec.message());
+        SPDLOG_ERROR(
+            "Temp directory {} already exists.",
+            temp_dir.string()
+        ); // Something is off. This should never happen.
+        throw Slic3r::RuntimeError(
+            "Failed to create temp directory " + temp_dir.string() + ". " + ec.message()
+        );
     }
     ec.clear();
 
     if (!fs::create_directory(temp_dir, ec)) {
-        throw Slic3r::RuntimeError("Failed to create temp directory " + temp_dir.string() + ". " + ec.message());
+        throw Slic3r::RuntimeError(
+            "Failed to create temp directory " + temp_dir.string() + ". " + ec.message()
+        );
     }
 }
 
 bool is_vendor_installed(const std::string& vendor_id, const std::string& repo_id)
 {
-    const fs::path installed_vendors_dir = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor";
-    const fs::path vendor_folder_path = installed_vendors_dir / repo_id / vendor_id;
+    const fs::path installed_vendors_dir = fs::path(data_dir()) / "profiles" / "local" / "vendor";
+    const fs::path vendor_folder_path    = installed_vendors_dir / repo_id / vendor_id;
     boost::system::error_code ec;
 
     ASSERT(fs::exists(installed_vendors_dir) && fs::is_directory(installed_vendors_dir));
@@ -71,78 +77,48 @@ bool is_vendor_installed(const std::string& vendor_id, const std::string& repo_i
     return true;
 }
 
-
-std::string file_hash(const fs::path& path)
-{
-    ASSERT(fs::exists(path) && fs::is_regular_file(path));
-    boost::nowide::ifstream file(path, std::ios::in | std::ios::binary);
-    if (!file.is_open()) {
-        SPDLOG_ERROR("Failed to open file {} when calculating file hash.", path.string());
-        return {};
-    }
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string content = buffer.str();
-    std::string hash;
-    try
-    {
-        hash = sha256(content);
-    }
-    catch (const std::exception& e)
-    {
-        SPDLOG_ERROR("Failed to calculate file hash of {}: {}", path.string(), e.what());
-    }
-    // format output
-    std::stringstream ss;
-    ss << std::hex << std::uppercase << std::setfill('0');
-    for (const unsigned char c : hash) {
-        ss << std::setw(2) << static_cast<int>(c);
-    }
-    return ss.str();
-}
-
 } // namespace
 
 void PresetUpdaterRepositorySync::sync(
-	const SharedRepositoryVector& repositories,
-	PresetUpdaterProcessStatus* process_status) const
+    const SharedRepositoryVector& repositories,
+    PresetUpdaterProcessStatus* process_status
+) const
 {
     ASSERT(process_status);
 
     // Create workspace in OS temp folder.
     fs::path temp_dir;
-    const fs::path resources_dir = fs::path(Utils::resources_dir()) / "profiles";
-    
-    try
-    {
+    const fs::path resources_dir = fs::path(Biz::resources_dir()) / "presets";
+
+    try {
         create_temp_dir(temp_dir);
-    }
-    catch (const  Slic3r::RuntimeError& e)
-    {
+    } catch (const Slic3r::RuntimeError& e) {
         process_status->set_error(std::string("Preset Archive Sync has failed. ") + e.what());
         return;
     }
 
-   
     for (const AbstractPresetUpdaterRepository* repo : repositories) {
         if (process_status->get_canceled()) {
             return;
         }
-        stage_rencofigurations_from_resources(resources_dir / repo->get_descriptor().id, repo, process_status);
-
-	}
+        stage_rencofigurations_from_resources(resources_dir / repo->descriptor().id, repo, process_status);
+    }
 
     // perform sync on every repository
     for (const AbstractPresetUpdaterRepository* repo : repositories) {
         if (process_status->get_canceled()) {
             break;
         }
-	    this->sync_repository(temp_dir / repo->get_descriptor().id, repo, process_status);
-	}
-    
+        this->sync_repository(temp_dir / repo->descriptor().id, repo, process_status);
+    }
+
     boost::system::error_code ec;
     if (!fs::remove_all(temp_dir, ec) || ec) {
-        std::string msg = fmt::format("{}: Failed to delete directory {}.", std::string(__FUNCTION__), temp_dir.string());
+        std::string msg = fmt::format(
+            "{}: Failed to delete directory {}.",
+            std::string(__FUNCTION__),
+            temp_dir.string()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
     }
@@ -150,81 +126,105 @@ void PresetUpdaterRepositorySync::sync(
 
 void PresetUpdaterRepositorySync::stage_rencofigurations_from_resources(
     const boost::filesystem::path& source_dir,
-    const AbstractPresetUpdaterRepository* repo, 
-    PresetUpdaterProcessStatus* process_status) const
+    const AbstractPresetUpdaterRepository* repo,
+    PresetUpdaterProcessStatus* process_status
+) const
 {
     boost::system::error_code ec;
     // Each repo has its own subdir. It does not have to be in resouces.
-    if(!fs::exists(source_dir) || ec) {
-        SPDLOG_INFO("{} Directory does not exists {}: {}. Skipping.", std::string(__FUNCTION__), source_dir.string(), ec.message());
+    if (!fs::exists(source_dir) || ec) {
+        SPDLOG_INFO(
+            "{} Directory does not exists {}: {}. Skipping.",
+            std::string(__FUNCTION__),
+            source_dir.string(),
+            ec.message()
+        );
         return;
     }
-    
-    const fs::path update_sync_repo_dir = fs::path(Utils::data_dir()) / "update_sync" / repo->get_descriptor().id;
+
+    const fs::path update_sync_repo_dir = fs::path(data_dir()) / "update_sync" / repo->descriptor().id;
     ec.clear();
     if (!fs::create_directory(update_sync_repo_dir, ec) && ec) {
-        process_status->set_error("Failed to create repo dir " + update_sync_repo_dir.string() + ". " + ec.message());
+        process_status->set_error(
+            "Failed to create repo dir " + update_sync_repo_dir.string() + ". " + ec.message()
+        );
         return;
     }
 
     std::vector<PresetUpdaterIndex> index_db;
-    try
-    {
+    try {
         index_db = load_vendors_db(source_dir);
-    }
-    catch (const std::exception& e)
-    {
-        std::string msg = fmt::format("Loading index db of {} has failed {}", source_dir.string(), e.what());
+    } catch (const std::exception& e) {
+        std::string msg = fmt::format(
+            "Loading index db of {} has failed {}",
+            source_dir.string(),
+            e.what()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
         return;
     }
-    
-    for (const PresetUpdaterIndex& source_index: index_db) {
 
-        if (process_status->get_canceled()) { 
-			return; 
-		}
-        if (!is_vendor_installed(source_index.vendor(), repo->get_descriptor().id)) {
+    for (const PresetUpdaterIndex& source_index : index_db) {
+        process_status->set_warning_target(repo->descriptor().id, source_index.vendor());
+        if (process_status->get_canceled()) {
+            return;
+        }
+        if (!is_vendor_installed(source_index.vendor(), repo->descriptor().id)) {
             stage_not_installed_vendor_from_resources(source_dir, repo, process_status, source_index);
             continue;
         }
         stage_installed_vendor_from_resources(source_dir, repo, process_status, source_index);
     }
+    process_status->clear_warning_target();
 }
 
 void PresetUpdaterRepositorySync::stage_not_installed_vendor_from_resources(
     const boost::filesystem::path& source_dir,
     const AbstractPresetUpdaterRepository* repo,
-	PresetUpdaterProcessStatus* process_status,
-    const PresetUpdaterIndex& source_index) const
+    PresetUpdaterProcessStatus* process_status,
+    const PresetUpdaterIndex& source_index
+) const
 {
-    const fs::path update_sync_vendor_dir = fs::path(Utils::data_dir()) / "update_sync" / repo->get_descriptor().id / source_index.vendor();
-    const fs::path update_sync_index_path = fs::path(Utils::data_dir()) / "update_sync" / repo->get_descriptor().id / (source_index.vendor() + ".idx"); // index is outside vendor folder.
+    const fs::path update_sync_vendor_dir = fs::path(data_dir())
+        / "update_sync"
+        / repo->descriptor().id
+        / source_index.vendor();
+    const fs::path update_sync_index_path = fs::path(data_dir())
+        / "update_sync"
+        / repo->descriptor().id
+        / (source_index.vendor() + ".idx"); // index is outside vendor folder.
     const fs::path update_sync_vendor_yaml = update_sync_vendor_dir / "vendor.yaml";
-    
-    const fs::path source_vendor_dir = source_dir / source_index.vendor();
-    const fs::path source_vendor_yaml = source_vendor_dir  / "vendor.yaml";
-    
+
+    const fs::path source_vendor_dir  = source_dir / source_index.vendor();
+    const fs::path source_vendor_yaml = source_vendor_dir / "vendor.yaml";
+
     boost::system::error_code ec;
-    
+
     ASSERT(fs::exists(source_index.path()));
     ASSERT(fs::exists(source_vendor_dir) && fs::is_directory(source_vendor_dir));
     ASSERT(fs::exists(source_vendor_yaml) && fs::is_regular_file(source_vendor_yaml));
 
     // Recommended version of vendor
-    PresetUpdaterIndex::const_iterator recommended = source_index.recommended(); 
+    PresetUpdaterIndex::const_iterator recommended = source_index.recommended();
     PresetUpdaterIndex update_sync_index; // recommneded is an iterator - once its index object stops existing it ivalidates.
     if (recommended == source_index.end()) {
-    	process_status->set_error(fmt::format("No recommended version for vendor: {}, Index file might be corrupted.", source_index.vendor()));
+        process_status->set_error(
+            fmt::format(
+                "No recommended version for vendor: {}, Index file might be corrupted.",
+                source_index.vendor()
+            )
+        );
         return;
     }
 
     // Check version staged in update_sync
-    if (fs::exists(update_sync_index_path, ec) && !ec && fs::exists(update_sync_vendor_yaml, ec) && !ec) {
+    if (fs::exists(update_sync_index_path, ec) && !ec && fs::exists(update_sync_vendor_yaml, ec) && !ec)
+    {
         PresetUpdaterIndex update_sync_index;
         update_sync_index.load(update_sync_index_path);
-        const PresetUpdaterIndex::const_iterator update_sync_recommended = update_sync_index.recommended();
+        const PresetUpdaterIndex::const_iterator update_sync_recommended = update_sync_index
+                                                                               .recommended();
         if (update_sync_recommended->config_version > recommended->config_version) {
             recommended = update_sync_recommended;
         }
@@ -233,19 +233,19 @@ void PresetUpdaterRepositorySync::stage_not_installed_vendor_from_resources(
         Preset::IO::HwConfigLoader hw_config_loader;
         Domain::Preset::VendorData update_sync_vendor_data;
         bool loaded = false;
-        try
-        {
+        try {
             update_sync_vendor_data = hw_config_loader.load(update_sync_vendor_yaml.string());
-            loaded = true;
-        }
-        catch (const std::exception& e)
-        {
-            std::string msg = fmt::format("Failed to load vendor file {}: {}", update_sync_vendor_yaml.string(), e.what());
+            loaded                  = true;
+        } catch (const std::exception& e) {
+            std::string msg = fmt::format(
+                "Failed to load vendor file {}: {}",
+                update_sync_vendor_yaml.string(),
+                e.what()
+            );
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
         }
-        if (loaded)
-        {
+        if (loaded) {
             Semver update_sync_version = Semver(update_sync_vendor_data.info.version);
 
             if (update_sync_version == recommended->config_version) {
@@ -259,50 +259,107 @@ void PresetUpdaterRepositorySync::stage_not_installed_vendor_from_resources(
 
             ec.clear();
             if (!fs::remove(update_sync_index_path, ec)) {
-                process_status->set_warning(fmt::format("Failed to remove file {}: {}", update_sync_index_path.string(), ec.message()));
+                process_status->set_warning(
+                    fmt::format(
+                        "Failed to remove file {}: {}",
+                        update_sync_index_path.string(),
+                        ec.message()
+                    )
+                );
             }
             ec.clear();
             if (!fs::remove_all(update_sync_vendor_dir, ec)) {
-                process_status->set_warning(fmt::format("Failed to remove file {}: {}", update_sync_index_path.string(), ec.message()));
+                process_status->set_warning(
+                    fmt::format(
+                        "Failed to remove file {}: {}",
+                        update_sync_index_path.string(),
+                        ec.message()
+                    )
+                );
             }
         }
         // Continue to copy data from source.
     }
-    
+
     // Copy source to update_sync
 
     if (!fs::create_directory(update_sync_vendor_dir, ec) && ec) {
-        process_status->set_error("Failed to create vendor dir " + update_sync_vendor_dir.string() + ". " + ec.message());
+        process_status->set_error(
+            "Failed to create vendor dir " + update_sync_vendor_dir.string() + ". " + ec.message()
+        );
         return;
     }
 
-    copy_file_fix(source_index.path(), update_sync_index_path);
-    for (fs::directory_iterator it(source_vendor_dir); it != fs::directory_iterator(); ++it) {
-        const fs::path source = it->path();
-        const fs::path target = update_sync_vendor_dir / source.filename();
-        copy_file_fix(source, target);
+    if (!copy_file_wrapper(source_index.path(), update_sync_index_path, process_status)) {
+        return;
     }
-
-    // TODO: Should ve create manifest in update_sync_vendor_dir? or will it be mandatory content of resources?
+    for (const auto& entry : fs::recursive_directory_iterator(source_vendor_dir, ec)) {
+        if (!entry.is_regular_file(ec) || ec) {
+            continue;
+        }
+        const fs::path source  = entry.path();
+        fs::path relative_path = fs::relative(source, source_vendor_dir);
+        const fs::path target  = update_sync_vendor_dir / relative_path;
+        if (!fs::create_directories(target.parent_path(), ec) && ec) {
+            std::string msg = fmt::format(
+                "Failed to create target directory {}: {}. Staging update has failed.",
+                target.parent_path().string(),
+                ec.message()
+            );
+            SPDLOG_ERROR(msg);
+            process_status->set_warning(msg);
+            return;
+        }
+        if (!copy_file_wrapper(source, target, process_status)) {
+            return;
+        }
+    }
+    if (ec) {
+        std::string msg = fmt::format(
+            "{}: Error traversing directory {}: {}",
+            std::string(__FUNCTION__),
+            source_vendor_dir.string(),
+            ec.message()
+        );
+        SPDLOG_ERROR(msg);
+        process_status->set_warning(msg);
+    }
 }
 
 void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
     const boost::filesystem::path& source_dir,
     const AbstractPresetUpdaterRepository* repo,
-	PresetUpdaterProcessStatus* process_status,
-    const PresetUpdaterIndex& source_index) const
+    PresetUpdaterProcessStatus* process_status,
+    const PresetUpdaterIndex& source_index
+) const
 {
-    const fs::path installed_vendor_dir = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor" / repo->get_descriptor().id / source_index.vendor();
-    const fs::path installed_index_path = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor" / repo->get_descriptor().id / (source_index.vendor() + ".idx"); // index is outside vendor folder.
+    const fs::path installed_vendor_dir = fs::path(data_dir())
+        / "profiles"
+        / "local"
+        / "vendor"
+        / repo->descriptor().id
+        / source_index.vendor();
+    const fs::path installed_index_path = fs::path(data_dir())
+        / "profiles"
+        / "local"
+        / "vendor"
+        / repo->descriptor().id
+        / (source_index.vendor() + ".idx"); // index is outside vendor folder.
     const fs::path installed_vendor_yaml = installed_vendor_dir / "vendor.yaml";
 
-    const fs::path update_sync_vendor_dir = fs::path(Utils::data_dir()) / "update_sync" / repo->get_descriptor().id / source_index.vendor();
-    const fs::path update_sync_index_path = fs::path(Utils::data_dir()) / "update_sync" / repo->get_descriptor().id / (source_index.vendor() + ".idx"); // index is outside vendor folder.
+    const fs::path update_sync_vendor_dir = fs::path(data_dir())
+        / "update_sync"
+        / repo->descriptor().id
+        / source_index.vendor();
+    const fs::path update_sync_index_path = fs::path(data_dir())
+        / "update_sync"
+        / repo->descriptor().id
+        / (source_index.vendor() + ".idx"); // index is outside vendor folder.
     const fs::path update_sync_vendor_yaml = update_sync_vendor_dir / "vendor.yaml";
-    
-    const fs::path source_vendor_dir = source_dir / source_index.vendor();
-    const fs::path source_vendor_yaml = source_vendor_dir  / "vendor.yaml";
-    
+
+    const fs::path source_vendor_dir  = source_dir / source_index.vendor();
+    const fs::path source_vendor_yaml = source_vendor_dir / "vendor.yaml";
+
     boost::system::error_code ec;
     Preset::IO::HwConfigLoader hw_config_loader;
 
@@ -315,12 +372,18 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
     PresetUpdaterIndex installed_index; // recommneded is an iterator - once its index object stops existing it ivalidates.
     PresetUpdaterIndex update_sync_index;
     if (recommended == source_index.end()) {
-    	process_status->set_error(fmt::format("No recommended version for vendor: {}, Index file might be corrupted.", source_index.vendor()));
+        process_status->set_error(
+            fmt::format(
+                "No recommended version for vendor: {}, Index file might be corrupted.",
+                source_index.vendor()
+            )
+        );
         return;
     }
 
     // Check if installed version is recommended
-    if (fs::exists(installed_index_path, ec) && !ec && fs::exists(installed_vendor_yaml, ec) && !ec) {
+    if (fs::exists(installed_index_path, ec) && !ec && fs::exists(installed_vendor_yaml, ec) && !ec)
+    {
         installed_index.load(installed_index_path);
         const PresetUpdaterIndex::const_iterator installed_recommended = installed_index.recommended();
         if (installed_recommended->config_version > recommended->config_version) {
@@ -330,14 +393,15 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
         // read version of staged
         Domain::Preset::VendorData installed_vendor_data;
         bool loaded = false;
-        try
-        {
+        try {
             installed_vendor_data = hw_config_loader.load(installed_vendor_yaml.string());
-            loaded = true;
-        }
-        catch (const std::exception& e)
-        {
-            std::string msg = fmt::format("Failed to load vendor file {}: {}", installed_vendor_yaml.string(), e.what());
+            loaded                = true;
+        } catch (const std::exception& e) {
+            std::string msg = fmt::format(
+                "Failed to load vendor file {}: {}",
+                installed_vendor_yaml.string(),
+                e.what()
+            );
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
         }
@@ -349,14 +413,14 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
                 return;
             }
         }
-        
     }
 
     // Check version staged in update_sync
-    if (fs::exists(update_sync_index_path, ec) && !ec && fs::exists(update_sync_vendor_yaml, ec) && !ec) {
-        
+    if (fs::exists(update_sync_index_path, ec) && !ec && fs::exists(update_sync_vendor_yaml, ec) && !ec)
+    {
         update_sync_index.load(update_sync_index_path);
-        const PresetUpdaterIndex::const_iterator update_sync_recommended = update_sync_index.recommended();
+        const PresetUpdaterIndex::const_iterator update_sync_recommended = update_sync_index
+                                                                               .recommended();
         if (update_sync_recommended->config_version > recommended->config_version) {
             recommended = update_sync_recommended;
         }
@@ -364,17 +428,18 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
         // read version of staged
         bool loaded = false;
         Domain::Preset::VendorData update_sync_vendor_data;
-        try
-        {
+        try {
             update_sync_vendor_data = hw_config_loader.load(update_sync_vendor_yaml.string());
-            loaded = true;
-        }
-        catch (const std::exception& e)
-        {
-            SPDLOG_ERROR("Failed to load vendor file {}: {}", update_sync_vendor_yaml.string(), e.what());
+            loaded                  = true;
+        } catch (const std::exception& e) {
+            SPDLOG_ERROR(
+                "Failed to load vendor file {}: {}",
+                update_sync_vendor_yaml.string(),
+                e.what()
+            );
         }
         if (loaded) {
-             Semver update_sync_version = Semver(update_sync_vendor_data.info.version);
+            Semver update_sync_version = Semver(update_sync_vendor_data.info.version);
 
             if (update_sync_version == recommended->config_version) {
                 // staged version is recommended - nothing to do here
@@ -387,79 +452,123 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
 
             ec.clear();
             if (!fs::remove(update_sync_index_path, ec)) {
-                process_status->set_warning(fmt::format("Failed to remove file {}: {}", update_sync_index_path.string(), ec.message()));
+                process_status->set_warning(
+                    fmt::format(
+                        "Failed to remove file {}: {}",
+                        update_sync_index_path.string(),
+                        ec.message()
+                    )
+                );
             }
         }
         // Continue to copy data from source.
     }
-    
+
     // delete previous content of update_sync_vendor_dir
     ec.clear();
     fs::remove_all(update_sync_vendor_dir, ec);
 
     // Copy source to update_sync
 
-    if (!fs::create_directory(update_sync_vendor_dir, ec) && ec) {
-        process_status->set_error("Failed to create vendor dir " + update_sync_vendor_dir.string() + ". " + ec.message());
+    if (!fs::create_directories(update_sync_vendor_dir, ec) && ec) {
+        process_status->set_error(
+            "Failed to create vendor dir " + update_sync_vendor_dir.string() + ". " + ec.message()
+        );
         return;
     }
 
-    copy_file_fix(source_index.path(), update_sync_index_path);
-    for (fs::directory_iterator it(source_vendor_dir); it != fs::directory_iterator(); ++it) {
-        const fs::path source = it->path();
-        const fs::path target = update_sync_vendor_dir / source.filename();
-        copy_file_fix(source, target);
+    if (!copy_file_wrapper(source_index.path(), update_sync_index_path, process_status)) {
+        return;
+    }
+    for (const auto& entry : fs::recursive_directory_iterator(source_vendor_dir, ec)) {
+        if (!entry.is_regular_file(ec) || ec) {
+            continue;
+        }
+        const fs::path source  = entry.path();
+        fs::path relative_path = fs::relative(source, source_vendor_dir);
+        const fs::path target  = update_sync_vendor_dir / relative_path;
+        if (!fs::create_directories(target.parent_path(), ec) && ec) {
+            std::string msg = fmt::format(
+                "Failed to create target directory {}: {}. Staging update has failed.",
+                target.parent_path().string(),
+                ec.message()
+            );
+            SPDLOG_ERROR(msg);
+            process_status->set_warning(msg);
+            return;
+        }
+        if (!copy_file_wrapper(source, target, process_status)) {
+            return;
+        }
+    }
+    if (ec) {
+        std::string msg = fmt::format(
+            "{}: Error traversing directory {}: {}",
+            std::string(__FUNCTION__),
+            source_vendor_dir.string(),
+            ec.message()
+        );
+        SPDLOG_ERROR(msg);
+        process_status->set_warning(msg);
     }
 }
 
 void PresetUpdaterRepositorySync::sync_repository(
     const boost::filesystem::path& temp_dir,
-	const AbstractPresetUpdaterRepository* repo,
-	PresetUpdaterProcessStatus* process_status) const
+    const AbstractPresetUpdaterRepository* repo,
+    PresetUpdaterProcessStatus* process_status
+) const
 {
-    //SPDLOG_INFO(__FUNCTION__);
-    process_status->set_target(repo->get_descriptor().id + " repository");
+    // SPDLOG_INFO(__FUNCTION__);
+    process_status->set_target(repo->descriptor().id + " repository");
 
     boost::system::error_code ec;
 
     // Each repo has its own subdir.
     ec.clear();
     if (!fs::create_directory(temp_dir, ec) && ec) {
-        std::string msg = fmt::format("Failed to check updates for source {}. Failed to create temp directory {}: {}.", repo->get_descriptor().id, temp_dir.string(), ec.message());
+        std::string msg = fmt::format(
+            "Failed to check updates for source {}. Failed to create temp directory {}: {}.",
+            repo->descriptor().id,
+            temp_dir.string(),
+            ec.message()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
         DEBUG_ASSERT(false);
         return;
     }
-    
-	fs::path archive_path(temp_dir / "vendor_indices.zip");
+
+    fs::path archive_path(temp_dir / "vendor_indices.zip");
     // Download profiles repo zip
-	if (!repo->get_archive(archive_path, process_status)) {
-        std::string msg = fmt::format("Failed to check updates for source {}. Failed to download vendor profiles archive zip.", repo->get_descriptor().id);
+    if (!repo->get_archive(archive_path, process_status)) {
+        std::string msg = fmt::format(
+            "Failed to check updates for source {}. Failed to download vendor profiles archive zip.",
+            repo->descriptor().id
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
-        DEBUG_ASSERT(false);
-		return;
-	}
-	if (process_status->get_canceled()) { 
-		return;
-	}
+        return;
+    }
+    if (process_status->get_canceled()) {
+        return;
+    }
     /*
     enum class VendorStatus
-	{
+    {
         Unknown, // default state after unzipping index
-		InTemp, // Vendor not installed and its recommended version is to be downloaded.
+        InTemp, // Vendor not installed and its recommended version is to be downloaded.
         //IN_RESOURCES, // Vendor not installed and its recommended version is in resources.
-		Installed, // Vendor is installed and it is its recommended version.
-		NewVersion, // Vendor is installed, but recommended version is different, it is to be downloaded.
-	};
+        Installed, // Vendor is installed and it is its recommended version.
+        NewVersion, // Vendor is installed, but recommended version is different, it is to be downloaded.
+    };
     */
     std::vector<std::string> vendors_list;
 
     // desired temp_dir appearance
     // temp_dir
     // |- vendor1 # directory of vendor1 if needed
-    //    |- data # all data needed
+    // |- data # all data needed
     // |- vendor3 # directory of vendor3 if needed (vendor2 apparently needs nothing to download)
     // |-vendor_indices.zip # zip file that changes for each repository
     // |-vendor1.idx
@@ -468,114 +577,145 @@ void PresetUpdaterRepositorySync::sync_repository(
     //
 
     // Unzip archive to temp_dir
-	mz_zip_archive archive;
-	mz_zip_zero_struct(&archive);
-	if (!Slic3r::open_zip_reader(&archive, archive_path.string())) {
-        std::string msg = fmt::format("Failed to check updates for source {}. Couldn't open zipped bundle.", repo->get_descriptor().id);
+    mz_zip_archive archive;
+    mz_zip_zero_struct(&archive);
+    if (!Slic3r::open_zip_reader(&archive, archive_path.string())) {
+        std::string msg = fmt::format(
+            "Failed to check updates for source {}. Couldn't open zipped bundle.",
+            repo->descriptor().id
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
         DEBUG_ASSERT(false);
-		return;
-	} else {
-		mz_uint num_entries = mz_zip_reader_get_num_files(&archive);
-		// loop the entries 
-		mz_zip_archive_file_stat stat;
-		for (mz_uint i = 0; i < num_entries; ++i) {
-			if (mz_zip_reader_file_stat(&archive, i, &stat)) {
-				std::string name(stat.m_filename);
+        return;
+    } else {
+        mz_uint num_entries = mz_zip_reader_get_num_files(&archive);
+        // loop the entries
+        mz_zip_archive_file_stat stat;
+        for (mz_uint i = 0; i < num_entries; ++i) {
+            if (mz_zip_reader_file_stat(&archive, i, &stat)) {
+                std::string name(stat.m_filename);
 
                 if (mz_zip_reader_is_file_a_directory(&archive, i)) {
                     std::string msg = fmt::format("Skipping directory entry: {}", name);
                     SPDLOG_INFO(msg);
-                    continue; 
+                    continue;
                 }
 
-				if (stat.m_uncomp_size > 0) {
-					std::string buffer((size_t)stat.m_uncomp_size, 0);
-					mz_bool res = mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)buffer.data(), (size_t)stat.m_uncomp_size, 0);
-					if (res == 0) {
+                if (stat.m_uncomp_size > 0) {
+                    std::string buffer((size_t) stat.m_uncomp_size, 0);
+                    mz_bool res = mz_zip_reader_extract_to_mem(
+                        &archive,
+                        stat.m_file_index,
+                        (void*) buffer.data(),
+                        (size_t) stat.m_uncomp_size,
+                        0
+                    );
+                    if (res == 0) {
                         std::string msg = fmt::format("Failed to unzip {}", stat.m_filename);
                         SPDLOG_ERROR(msg);
                         process_status->set_warning(msg);
-						continue;
-					}
-					// create file from buffer
-					fs::path tmp_path(temp_dir / (name + ".tmp"));
+                        continue;
+                    }
+                    // create file from buffer
+                    fs::path tmp_path(temp_dir / (name + ".tmp"));
                     ec.clear();
-					if (!fs::exists(tmp_path.parent_path(), ec) || ec) {
-                        std::string msg = fmt::format("Failed to unzip file {}. Directories are not supported. Skipping file.", name);
+                    if (!fs::exists(tmp_path.parent_path(), ec) || ec) {
+                        std::string msg = fmt::format(
+                            "Failed to unzip file {}. Directories are not supported. Skipping file.",
+                            name
+                        );
                         SPDLOG_ERROR(msg);
                         process_status->set_warning(msg);
-						continue;
-					}
-					fs::path target_path(temp_dir / name);
-					boost::nowide::fstream file(tmp_path, std::ios::out | std::ios::binary | std::ios::trunc);
-					file.write(buffer.c_str(), buffer.size());
-					file.close();
-					boost::system::error_code ec;
-					bool exists = fs::exists(tmp_path, ec);
-					if(!exists || ec) {
-                        std::string msg = fmt::format("Failed to find unzipped file at {}. Terminating Preset updater synchronization.", tmp_path.string());
+                        continue;
+                    }
+                    fs::path target_path(temp_dir / name);
+                    boost::nowide::fstream file(
+                        tmp_path,
+                        std::ios::out | std::ios::binary | std::ios::trunc
+                    );
+                    file.write(buffer.c_str(), buffer.size());
+                    file.close();
+                    boost::system::error_code ec;
+                    bool exists = fs::exists(tmp_path, ec);
+                    if (!exists || ec) {
+                        std::string msg = fmt::format(
+                            "Failed to find unzipped file at {}. Terminating Preset updater synchronization.",
+                            tmp_path.string()
+                        );
                         SPDLOG_ERROR(msg);
                         process_status->set_warning(msg);
-						Slic3r::close_zip_reader(&archive);
-						return;
-					}
-					fs::rename(tmp_path, target_path, ec);
-					if (ec) {
-                        std::string msg = fmt::format("Failed to rename unzipped file at {}. Terminating Preset updater synchorinzation. Error message: {}", tmp_path.string(), ec.message());
+                        Slic3r::close_zip_reader(&archive);
+                        return;
+                    }
+                    fs::rename(tmp_path, target_path, ec);
+                    if (ec) {
+                        std::string msg = fmt::format(
+                            "Failed to rename unzipped file at {}. Terminating Preset updater synchorinzation. Error message: {}",
+                            tmp_path.string(),
+                            ec.message()
+                        );
                         SPDLOG_ERROR(msg);
                         process_status->set_warning(msg);
-						Slic3r::close_zip_reader(&archive);
-						return;
-					}
+                        Slic3r::close_zip_reader(&archive);
+                        return;
+                    }
 
-					if (name.substr(name.size() - 3) == "idx") {
+                    if (name.substr(name.size() - 3) == "idx") {
                         vendors_list.emplace_back(name);
                     }
-				}
-			}
-		}
-		Slic3r::close_zip_reader(&archive);
-	}
-    
+                }
+            }
+        }
+        Slic3r::close_zip_reader(&archive);
+    }
+
     // Now we have vendors_list, but we need index_db.
     std::vector<PresetUpdaterIndex> index_db;
-    try
-    {
+    try {
         index_db = load_vendors_db_filtered(temp_dir, vendors_list);
-    }
-    catch (const std::exception& e)
-    {
-        std::string msg = fmt::format("Loading index db of {} has failed {}", repo->get_descriptor().id, e.what());
+    } catch (const std::exception& e) {
+        std::string msg = fmt::format(
+            "Loading index db of {} has failed {}",
+            repo->descriptor().id,
+            e.what()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
         return;
     }
 
-    for (const auto& index: index_db) {
-        if (process_status->get_canceled()) { 
-			return; 
-		}
-        if (!is_vendor_installed(index.vendor(), repo->get_descriptor().id)) {
-                // For not installed vendor we need to download its recommended version.
-                sync_not_installed_vendor(temp_dir, repo, process_status, index);
-                continue;
+    for (const auto& index : index_db) {
+        if (process_status->get_canceled()) {
+            return;
+        }
+        process_status->set_warning_target(repo->descriptor().id, index.vendor());
+        if (!is_vendor_installed(index.vendor(), repo->descriptor().id)) {
+            // For not installed vendor we need to download its recommended version.
+            sync_not_installed_vendor(temp_dir, repo, process_status, index);
+            continue;
         }
         // if installed, it can still mean there is different recommended version.
         sync_installed_vendor(temp_dir, repo, process_status, index);
     }
+    process_status->clear_warning_target();
 }
 
 void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     const boost::filesystem::path& temp_path,
     const AbstractPresetUpdaterRepository* repo,
-	PresetUpdaterProcessStatus* process_status,
-    const PresetUpdaterIndex& index) const
+    PresetUpdaterProcessStatus* process_status,
+    const PresetUpdaterIndex& index
+) const
 {
-    const fs::path temp_vendor_dir_path = temp_path / index.vendor();
-    const fs::path target_manifest_path =temp_vendor_dir_path/ (index.vendor() + ".manifest");
-    const fs::path update_sync_vendor_dir_path = fs::path(Utils::data_dir()) / "update_sync" / repo->get_descriptor().id / index.vendor();
+    const fs::path temp_vendor_dir_path        = temp_path / index.vendor();
+    const fs::path update_sync_vendor_dir_path = fs::path(data_dir())
+        / "update_sync"
+        / repo->descriptor().id
+        / index.vendor();
+    const fs::path temp_manifest_path = temp_vendor_dir_path / (index.vendor() + ".manifest");
+    const fs::path update_sync_manifest_path = update_sync_vendor_dir_path
+        / (index.vendor() + ".manifest");
     boost::system::error_code ec;
 
     ASSERT(fs::exists(index.path()));
@@ -583,88 +723,115 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     // Recommended version of vendor
     const PresetUpdaterIndex::const_iterator recommended = index.recommended();
     if (recommended == index.end()) {
-        std::string msg = fmt::format("No recommended version for vendor: {}, Index file might be corrupted.", index.vendor());
+        std::string msg = fmt::format(
+            "No recommended version for vendor: {}, Index file might be corrupted.",
+            index.vendor()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
-        DEBUG_ASSERT(false);
+        // DEBUG_ASSERT(false);
         return;
     }
 
     // Create directory in temp. Delete all previous content if already extists.
     ec.clear();
-    if (fs::create_directory(temp_vendor_dir_path, ec) || !ec) {
+    if (fs::create_directories(temp_vendor_dir_path, ec) || !ec) {
         for (fs::directory_iterator it(temp_vendor_dir_path); it != fs::directory_iterator(); ++it) {
             fs::remove_all(it->path());
         }
     } else {
-        std::string msg = fmt::format("Failed to create target directory {} for vendor {}: {}. Staging update has failed.", 
-                     temp_vendor_dir_path.string(), index.vendor(), ec.message());
+        std::string msg = fmt::format(
+            "Failed to create target directory {} for vendor {}: {}. Staging update has failed.",
+            temp_vendor_dir_path.string(),
+            index.vendor(),
+            ec.message()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
         return;
     }
 
     // Get version manifest
-    const std::string source_subpath = fmt::format("{}/{}/manifest.json", index.vendor(), recommended->config_version.to_string());
-    if (!repo->get_file_no_id(source_subpath, target_manifest_path, process_status)) {
-        std::string msg = fmt::format("{}: Failed to get file {}. Staging update has failed.", std::string(__FUNCTION__), source_subpath);
+    const std::string source_subpath = fmt::format(
+        "{}/{}/manifest.json",
+        index.vendor(),
+        recommended->config_version.to_string()
+    );
+    if (!repo->get_version_manifest(source_subpath, temp_manifest_path, process_status)) {
+        std::string msg = fmt::format(
+            "{}: Failed to get file {}. Staging update has failed.",
+            std::string(__FUNCTION__),
+            source_subpath
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
         return;
     }
 
     // read the version manifest
-    std::map<std::string, std::string> files_in_version_manifest = read_version_manifest(target_manifest_path);
-    SPDLOG_INFO("{}/{}: {} files", repo->get_descriptor().id, index.vendor(), std::to_string(files_in_version_manifest.size()));
+    std::map<std::string, std::string> files_in_version_manifest = read_version_manifest(
+        temp_manifest_path,
+        process_status
+    );
+    SPDLOG_INFO(
+        "{}/{}: {} files",
+        repo->descriptor().id,
+        index.vendor(),
+        std::to_string(files_in_version_manifest.size())
+    );
 
     // Create vendor dir in update_sync (leave files in it if already exists)
-    ec.clear();
-    if (!fs::create_directory(update_sync_vendor_dir_path.parent_path(), ec) && ec) {
-        std::string msg = fmt::format("Failed to create target directory {} for vendor {}: {}. Staging update has failed.", update_sync_vendor_dir_path.parent_path().string(), index.vendor(), ec.message());
-        SPDLOG_ERROR(msg);
-        process_status->set_warning(msg);
-        return;
-    }
-    ec.clear();
-    if (!fs::create_directory(update_sync_vendor_dir_path, ec) && ec) {
-        std::string msg = fmt::format("Failed to create target directory {} for vendor {}: {}. Staging update has failed.", update_sync_vendor_dir_path.string(), index.vendor(), ec.message());
+    if (!fs::create_directories(update_sync_vendor_dir_path, ec) && ec) {
+        std::string msg = fmt::format(
+            "Failed to create target directory {} for vendor {}: {}. Staging update has failed.",
+            update_sync_vendor_dir_path.string(),
+            index.vendor(),
+            ec.message()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
         return;
     }
 
     // Create list of files in update_sync
-    std::map<std::string, std::string> files_in_update_sync;
-    for (fs::directory_iterator it(update_sync_vendor_dir_path); it != fs::directory_iterator(); ++it) {
-        const fs::path entry = it->path();
-        ec.clear();
-        if (!fs::is_regular_file(entry, ec) || ec) {
-            std::string msg = fmt::format("{}: Skiping file {}, reason: {}", std::string(__FUNCTION__), entry.string(), ec.message());
-            SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
+    std::map<std::string, PresetUpdaterFileHash> files_in_update_sync;
+    for (const auto& entry : fs::recursive_directory_iterator(update_sync_vendor_dir_path, ec)) {
+        if (!entry.is_regular_file(ec) || ec) {
             continue;
         }
-        files_in_update_sync[entry.filename().string()] = file_hash(entry);
+        const fs::path& path   = entry.path();
+        fs::path relative_path = fs::relative(path, update_sync_vendor_dir_path);
+        files_in_update_sync.emplace(relative_path.string(), file_hash(path, process_status));
     }
-    
+    if (ec) {
+        std::string msg = fmt::format(
+            "{}: Error traversing directory {}: {}",
+            std::string(__FUNCTION__),
+            update_sync_vendor_dir_path.string(),
+            ec.message()
+        );
+        SPDLOG_ERROR(msg);
+        process_status->set_warning(msg);
+    }
+
     // Compare files_in_version_manifest and files_in_update_sync
     std::vector<std::string> files_to_delete;
-    std::vector<std::string> files_to_download;
+    std::map<std::string, std::string> files_to_download;
     for (const auto& [name, hash] : files_in_version_manifest) {
         auto it = files_in_update_sync.find(name);
         if (it == files_in_update_sync.end()) {
             // Only in files_in_version_manifest -> download
-            files_to_download.push_back(name);
+            files_to_download.emplace(name, hash);
         } else if (it->second != hash) {
             // In both files_in_version_manifest and files_in_update_sync and different hash -> delete and download
             files_to_delete.push_back(name);
-            files_to_download.push_back(name);
+            files_to_download.emplace(name, hash);
         }
         // In both files_in_version_manifest and files_in_update_sync and same hash = do nothing
     }
     for (const auto& [name, hash] : files_in_update_sync) {
         if (!files_in_version_manifest.contains(name)) {
-            //Only in files_in_update_sync -> delete
+            // Only in files_in_update_sync -> delete
             files_to_delete.push_back(name);
         }
     }
@@ -675,42 +842,97 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
         ASSERT(fs::exists(path) && fs::is_regular_file(path));
         ec.clear();
         if (!fs::remove(path, ec) || ec) {
-            std::string msg = fmt::format("{}: Failed to remove file {}", std::string(__FUNCTION__), path.string());
+            std::string msg = fmt::format(
+                "{}: Failed to remove file {}",
+                std::string(__FUNCTION__),
+                path.string()
+            );
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
         }
     }
 
-    // Download selected files to temp
-    for (const std::string& filename : files_to_download) {
-        const fs::path target_path(temp_vendor_dir_path / filename);
-        const std::string source_subpath = fmt::format("{}/{}/{}", index.vendor(), recommended->config_version.to_string(), filename);
-        if (!repo->get_file_no_id(source_subpath, target_path, process_status)) {
-            std::string msg = fmt::format("{}: Failed to get file {}. Staging update has failed.", std::string(__FUNCTION__), source_subpath);
+    // Download selected files to temp and move to update_sync
+    for (const auto& [name, hash] : files_to_download) {
+        const fs::path target_path(temp_vendor_dir_path / name);
+        if (!fs::create_directories(target_path.parent_path(), ec) && ec) {
+            std::string msg = fmt::format(
+                "Failed to create target directory {} for vendor {}: {}. Staging update has failed.",
+                target_path.parent_path().string(),
+                index.vendor(),
+                ec.message()
+            );
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
             return;
         }
-    }
-
-    // Move downloaded files to update_sync_vendor_dir_path
-    for (fs::directory_iterator it(temp_vendor_dir_path); it != fs::directory_iterator(); ++it) {
-        fs::path dest_path = update_sync_vendor_dir_path / it->path().filename();
-        ASSERT(!fs::exists(dest_path));
-        ec.clear();
-        fs::rename(it->path(), dest_path, ec);
+        const std::string source_subpath = fmt::format(
+            "{}/{}/{}",
+            index.vendor(),
+            recommended->config_version.to_string(),
+            name
+        );
+        if (!repo->get_file(source_subpath, target_path, hash, process_status)) {
+            std::string msg = fmt::format(
+                "{}: Failed to get file {}. Staging update has failed.",
+                std::string(__FUNCTION__),
+                source_subpath
+            );
+            SPDLOG_ERROR(msg);
+            process_status->set_warning(msg);
+            return;
+        }
+        // move to update_sync
+        const fs::path dest_path(update_sync_vendor_dir_path / name);
+        if (!fs::create_directories(dest_path.parent_path(), ec) && ec) {
+            std::string msg = fmt::format(
+                "Failed to create target directory {} for vendor {}: {}. Staging update has failed.",
+                dest_path.parent_path().string(),
+                index.vendor(),
+                ec.message()
+            );
+            SPDLOG_ERROR(msg);
+            process_status->set_warning(msg);
+            return;
+        }
+        fs::rename(target_path, dest_path, ec);
         if (ec) {
-            std::string msg = fmt::format("{}: Failed to move file {}: {}", std::string(__FUNCTION__), it->path().string(), ec.message());
+            std::string msg = fmt::format(
+                "{}: Failed to move file {} to {}: {}",
+                std::string(__FUNCTION__),
+                target_path.string(),
+                dest_path.string(),
+                ec.message()
+            );
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
         }
     }
 
     // Move index to stage_sync
-    fs::path index_update_sync_path = update_sync_vendor_dir_path.parent_path() / index.path().filename();
+    fs::path index_update_sync_path = update_sync_vendor_dir_path.parent_path()
+        / index.path().filename();
     fs::rename(index.path(), index_update_sync_path, ec);
     if (ec) {
-        std::string msg = fmt::format("{}: Failed to move file {}: {}", std::string(__FUNCTION__), index.path().string(), ec.message());
+        std::string msg = fmt::format(
+            "{}: Failed to move file {}: {}",
+            std::string(__FUNCTION__),
+            index.path().string(),
+            ec.message()
+        );
+        SPDLOG_ERROR(msg);
+        process_status->set_warning(msg);
+    }
+
+    // Move manifest file to update_sync
+    fs::rename(temp_manifest_path, update_sync_manifest_path, ec);
+    if (ec) {
+        std::string msg = fmt::format(
+            "{}: Failed to move file {}: {}",
+            std::string(__FUNCTION__),
+            index.path().string(),
+            ec.message()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
     }
@@ -718,22 +940,38 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     // Cleanup temp
     ec.clear();
     if (!fs::remove_all(temp_vendor_dir_path, ec) || ec) {
-        std::string msg = fmt::format("{}: Failed to delete directory {}.", std::string(__FUNCTION__), temp_vendor_dir_path.string());
+        std::string msg = fmt::format(
+            "{}: Failed to delete directory {}.",
+            std::string(__FUNCTION__),
+            temp_vendor_dir_path.string()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
     }
 }
+
 void PresetUpdaterRepositorySync::sync_installed_vendor(
     const boost::filesystem::path& temp_path,
     const AbstractPresetUpdaterRepository* repo,
-	PresetUpdaterProcessStatus* process_status,
-    const PresetUpdaterIndex& index) const
+    PresetUpdaterProcessStatus* process_status,
+    const PresetUpdaterIndex& index
+) const
 {
-    const fs::path installed_vendor_dir_path = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor" / repo->get_descriptor().id / index.vendor();
-    const fs::path update_sync_vendor_dir_path = fs::path(Utils::data_dir()) / "update_sync" / repo->get_descriptor().id / index.vendor();
+    const fs::path installed_vendor_dir_path = fs::path(data_dir())
+        / "profiles"
+        / "local"
+        / "vendor"
+        / repo->descriptor().id
+        / index.vendor();
+    const fs::path update_sync_vendor_dir_path = fs::path(data_dir())
+        / "update_sync"
+        / repo->descriptor().id
+        / index.vendor();
     const fs::path temp_vendor_dir_path = temp_path / index.vendor();
-    const fs::path temp_manifest_path =temp_vendor_dir_path/ (index.vendor() + ".manifest");
-    const fs::path installed_vendor_yaml_path =installed_vendor_dir_path/ "vendor.yaml";
+    const fs::path temp_manifest_path   = temp_vendor_dir_path / (index.vendor() + ".manifest");
+    const fs::path update_sync_manifest_path = update_sync_vendor_dir_path
+        / (index.vendor() + ".manifest");
+    const fs::path installed_vendor_yaml_path = installed_vendor_dir_path / "vendor.yaml";
     boost::system::error_code ec;
 
     ASSERT(fs::exists(index.path()));
@@ -743,13 +981,12 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     // Current version
     Preset::IO::HwConfigLoader hw_config_loader;
     Domain::Preset::VendorData vendor_data;
-    try
-    {
+    try {
         vendor_data = hw_config_loader.load(installed_vendor_yaml_path.string());
-    }
-    catch (const std::exception& e)
-    {
-        process_status->set_error(fmt::format("Failed to read vendor file {}: {}",installed_vendor_yaml_path.string(), e.what()));
+    } catch (const std::exception& e) {
+        process_status->set_error(
+            fmt::format("Failed to read vendor file {}: {}", installed_vendor_yaml_path.string(), e.what())
+        );
         return;
     }
     Semver installed_version = Semver(vendor_data.info.version);
@@ -757,58 +994,91 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     // Recommended version of vendor
     const PresetUpdaterIndex::const_iterator recommended = index.recommended();
     if (recommended == index.end()) {
-        process_status->set_warning(fmt::format("No recommended version for vendor: {}, Index file might be corrupted.", index.vendor()));
+        process_status->set_warning(
+            fmt::format(
+                "No recommended version for vendor: {}, Index file might be corrupted.",
+                index.vendor()
+            )
+        );
         DEBUG_ASSERT(false);
         return;
     }
     const PresetUpdaterIndex::const_iterator vendor_current_version_it = index.find(installed_version);
-    //const bool ver_current_found = vendor_current_version_it != index.end();
-    if (recommended == vendor_current_version_it)
-    {
-        SPDLOG_INFO("Vendor {}/{} has installed recommended version.", repo->get_descriptor().id, index.vendor());
+    if (recommended == vendor_current_version_it) {
+        SPDLOG_INFO(
+            "Vendor {}/{} has installed recommended version.",
+            repo->descriptor().id,
+            index.vendor()
+        );
         return;
     }
 
-
     // Create directory in temp. Delete all previous content if already extists.
     ec.clear();
-    if (fs::create_directory(temp_vendor_dir_path, ec) || !ec) {
+    if (fs::create_directories(temp_vendor_dir_path, ec) || !ec) {
         for (fs::directory_iterator it(temp_vendor_dir_path); it != fs::directory_iterator(); ++it) {
             fs::remove_all(it->path());
         }
     } else {
-        std::string msg = fmt::format("Failed to create target directory {} for vendor {}: {}. Staging update has failed.", 
-                     temp_vendor_dir_path.string(), index.vendor(), ec.message());
+        std::string msg = fmt::format(
+            "Failed to create target directory {} for vendor {}: {}. Staging update has failed.",
+            temp_vendor_dir_path.string(),
+            index.vendor(),
+            ec.message()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
         return;
     }
 
     // Get version manifest
-    const std::string source_subpath = fmt::format("{}/{}/manifest.json", index.vendor(), recommended->config_version.to_string());
-    if (!repo->get_file_no_id(source_subpath, temp_manifest_path, process_status)) {
-        std::string msg = fmt::format("{}: Failed to get file {}. Staging update has failed.", std::string(__FUNCTION__), source_subpath);
+    const std::string source_subpath = fmt::format(
+        "{}/{}/manifest.json",
+        index.vendor(),
+        recommended->config_version.to_string()
+    );
+    if (!repo->get_version_manifest(source_subpath, temp_manifest_path, process_status)) {
+        std::string msg = fmt::format(
+            "{}: Failed to get file {}. Staging update has failed.",
+            std::string(__FUNCTION__),
+            source_subpath
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
         return;
     }
 
     // read the version manifest
-    std::map<std::string, std::string> files_in_version_manifest = read_version_manifest(temp_manifest_path);
-    SPDLOG_INFO("{}/{}: {} files", repo->get_descriptor().id, index.vendor(), std::to_string(files_in_version_manifest.size()));
+    std::map<std::string, std::string> files_in_version_manifest = read_version_manifest(
+        temp_manifest_path,
+        process_status
+    );
+    SPDLOG_INFO(
+        "{}/{}: {} files",
+        repo->descriptor().id,
+        index.vendor(),
+        std::to_string(files_in_version_manifest.size())
+    );
 
-    // Create list of files in installed_vendor_dir_path
-    std::map<std::string, std::string> files_in_installed;
-    for (fs::directory_iterator it(installed_vendor_dir_path); it != fs::directory_iterator(); ++it) {
-        const fs::path entry = it->path();
-        ec.clear();
-        if (!fs::is_regular_file(entry, ec) || ec) {
-            std::string msg = fmt::format("{}: Skiping file {}, reason: {}", std::string(__FUNCTION__), entry.string(), ec.message());
-            SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
+    // Create list of files in installed_vendor_dir_path and subdirectories
+    std::map<std::string, PresetUpdaterFileHash> files_in_installed;
+    for (const auto& entry : fs::recursive_directory_iterator(installed_vendor_dir_path, ec)) {
+        if (!entry.is_regular_file(ec) || ec) {
             continue;
         }
-        files_in_installed[entry.filename().string()] = file_hash(entry);
+        const fs::path& path   = entry.path();
+        fs::path relative_path = fs::relative(path, installed_vendor_dir_path);
+        files_in_installed.emplace(relative_path.string(), file_hash(path, process_status));
+    }
+    if (ec) {
+        std::string msg = fmt::format(
+            "{}: Error traversing directory {}: {}",
+            std::string(__FUNCTION__),
+            installed_vendor_dir_path.string(),
+            ec.message()
+        );
+        SPDLOG_ERROR(msg);
+        process_status->set_warning(msg);
     }
 
     // Compare files_in_version_manifest and files_in_update_sync
@@ -823,46 +1093,57 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     }
 
     // Create vendor dir in update_sync (leave files in it if already exists)
-    ec.clear();
-    if (!fs::create_directory(update_sync_vendor_dir_path, ec) && ec) {
-        std::string msg = fmt::format("Failed to create target directory {} for vendor {}: {}. Staging update has failed.", update_sync_vendor_dir_path.string(), index.vendor(), ec.message());
+    if (!fs::create_directories(update_sync_vendor_dir_path, ec) && ec) {
+        std::string msg = fmt::format(
+            "Failed to create target directory {} for vendor {}: {}. Staging update has failed.",
+            update_sync_vendor_dir_path.string(),
+            index.vendor(),
+            ec.message()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
         return;
     }
 
     // Create list of files in update_sync
-    std::map<std::string, std::string> files_in_update_sync;
-    for (fs::directory_iterator it(update_sync_vendor_dir_path); it != fs::directory_iterator(); ++it) {
-        const fs::path entry = it->path();
-        ec.clear();
-        if (!fs::is_regular_file(entry, ec) || ec) {
-            std::string msg = fmt::format("{}: Skiping file {}, reason: {}", std::string(__FUNCTION__), entry.string(), ec.message());
-            SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
+    std::map<std::string, PresetUpdaterFileHash> files_in_update_sync;
+    for (const auto& entry : fs::recursive_directory_iterator(update_sync_vendor_dir_path, ec)) {
+        if (!entry.is_regular_file(ec) || ec) {
             continue;
         }
-        files_in_update_sync[entry.filename().string()] = file_hash(entry);
+        const fs::path& path   = entry.path();
+        fs::path relative_path = fs::relative(path, update_sync_vendor_dir_path);
+        files_in_update_sync.emplace(relative_path.string(), file_hash(path, process_status));
     }
-    
+    if (ec) {
+        std::string msg = fmt::format(
+            "{}: Error traversing directory {}: {}",
+            std::string(__FUNCTION__),
+            installed_vendor_dir_path.string(),
+            ec.message()
+        );
+        SPDLOG_ERROR(msg);
+        process_status->set_warning(msg);
+    }
+
     // Compare files_to_download_against_installed and files_in_update_sync
     std::vector<std::string> files_to_delete;
-    std::vector<std::string> files_to_download;
+    std::map<std::string, std::string> files_to_download;
     for (const auto& [name, hash] : files_to_download_against_installed) {
         auto it = files_in_update_sync.find(name);
         if (it == files_in_update_sync.end()) {
             // Only in files_to_download_against_installed -> download
-            files_to_download.push_back(name);
+            files_to_download.emplace(name, hash);
         } else if (it->second != hash) {
             // In both files_to_download_against_installed and files_in_update_sync and different hash -> delete and download
             files_to_delete.push_back(name);
-            files_to_download.push_back(name);
+            files_to_download.emplace(name, hash);
         }
         // In both files_to_download_against_installed and files_in_update_sync and same hash = do nothing
     }
     for (const auto& [name, hash] : files_in_update_sync) {
         if (!files_to_download_against_installed.contains(name)) {
-            //Only in files_in_update_sync -> delete
+            // Only in files_in_update_sync -> delete
             files_to_delete.push_back(name);
         }
     }
@@ -873,42 +1154,97 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
         ASSERT(fs::exists(path) && fs::is_regular_file(path));
         ec.clear();
         if (!fs::remove(path, ec) || ec) {
-            std::string msg = fmt::format("{}: Failed to remove file {}", std::string(__FUNCTION__), path.string());
+            std::string msg = fmt::format(
+                "{}: Failed to remove file {}",
+                std::string(__FUNCTION__),
+                path.string()
+            );
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
         }
     }
 
-    // Download selected files to temp
-    for (const std::string& filename : files_to_download) {
-        const fs::path target_path(temp_vendor_dir_path / filename);
-        const std::string source_subpath = fmt::format("{}/{}/{}", index.vendor(), recommended->config_version.to_string(), filename);
-        if (!repo->get_file_no_id(source_subpath, target_path, process_status)) {
-            std::string msg = fmt::format("{}: Failed to get file {}. Staging update has failed.", std::string(__FUNCTION__), source_subpath);
+    // Download selected files to temp and move to update_sync
+    for (const auto& [name, hash] : files_to_download) {
+        const fs::path target_path(temp_vendor_dir_path / name);
+        if (!fs::create_directories(target_path.parent_path(), ec) && ec) {
+            std::string msg = fmt::format(
+                "Failed to create target directory {} for vendor {}: {}. Staging update has failed.",
+                target_path.parent_path().string(),
+                index.vendor(),
+                ec.message()
+            );
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
             return;
         }
-    }
-
-    // Move downloaded files to update_sync_vendor_dir_path
-    for (fs::directory_iterator it(temp_vendor_dir_path); it != fs::directory_iterator(); ++it) {
-        fs::path dest_path = update_sync_vendor_dir_path / it->path().filename();
-        ASSERT(!fs::exists(dest_path));
-        ec.clear();
-        fs::rename(it->path(), dest_path, ec);
+        const std::string source_subpath = fmt::format(
+            "{}/{}/{}",
+            index.vendor(),
+            recommended->config_version.to_string(),
+            name
+        );
+        if (!repo->get_file(source_subpath, target_path, hash, process_status)) {
+            std::string msg = fmt::format(
+                "{}: Failed to get file {}. Staging update has failed.",
+                std::string(__FUNCTION__),
+                source_subpath
+            );
+            SPDLOG_ERROR(msg);
+            process_status->set_warning(msg);
+            return;
+        }
+        // move to update_sync
+        const fs::path dest_path(update_sync_vendor_dir_path / name);
+        if (!fs::create_directories(dest_path.parent_path(), ec) && ec) {
+            std::string msg = fmt::format(
+                "Failed to create target directory {} for vendor {}: {}. Staging update has failed.",
+                dest_path.parent_path().string(),
+                index.vendor(),
+                ec.message()
+            );
+            SPDLOG_ERROR(msg);
+            process_status->set_warning(msg);
+            return;
+        }
+        fs::rename(target_path, dest_path, ec);
         if (ec) {
-            std::string msg = fmt::format("{}: Failed to move file {}: {}", std::string(__FUNCTION__), it->path().string(), ec.message());
+            std::string msg = fmt::format(
+                "{}: Failed to move file {} to {}: {}",
+                std::string(__FUNCTION__),
+                target_path.string(),
+                dest_path.string(),
+                ec.message()
+            );
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
         }
     }
 
-    // Move index to stage_sync
-    fs::path index_update_sync_path = update_sync_vendor_dir_path.parent_path() / index.path().filename();
+    // Move index to update_sync
+    fs::path index_update_sync_path = update_sync_vendor_dir_path.parent_path()
+        / index.path().filename();
     fs::rename(index.path(), index_update_sync_path, ec);
     if (ec) {
-        std::string msg = fmt::format("{}: Failed to move file {}: {}", std::string(__FUNCTION__), index.path().string(), ec.message());
+        std::string msg = fmt::format(
+            "{}: Failed to move file {}: {}",
+            std::string(__FUNCTION__),
+            index.path().string(),
+            ec.message()
+        );
+        SPDLOG_ERROR(msg);
+        process_status->set_warning(msg);
+    }
+
+    // Move manifest file to update_sync
+    fs::rename(temp_manifest_path, update_sync_manifest_path, ec);
+    if (ec) {
+        std::string msg = fmt::format(
+            "{}: Failed to move file {}: {}",
+            std::string(__FUNCTION__),
+            index.path().string(),
+            ec.message()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
     }
@@ -916,7 +1252,11 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     // Cleanup temp
     ec.clear();
     if (!fs::remove_all(temp_vendor_dir_path, ec) || ec) {
-        std::string msg = fmt::format("{}: Failed to delete directory {}.", std::string(__FUNCTION__), temp_vendor_dir_path.string());
+        std::string msg = fmt::format(
+            "{}: Failed to delete directory {}.",
+            std::string(__FUNCTION__),
+            temp_vendor_dir_path.string()
+        );
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
     }

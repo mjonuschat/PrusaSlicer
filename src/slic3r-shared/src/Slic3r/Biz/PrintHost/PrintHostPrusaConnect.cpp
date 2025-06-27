@@ -15,14 +15,12 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-namespace
-{
+namespace {
 
 boost::optional<std::string> get_error_message_from_response_body(const std::string& body)
 {
     boost::optional<std::string> message;
-    try
-    {
+    try {
         nlohmann::json json = nlohmann::json::parse(body);
         if (json.contains("message") && json["message"].is_string()) {
             message = json["message"].get<std::string>();
@@ -30,11 +28,11 @@ boost::optional<std::string> get_error_message_from_response_body(const std::str
     }
     // ignore possible errors if body is not valid JSON
     catch (std::exception&)
-    {
-    }
+    {}
 
     return message;
 }
+
 // This is not needed anymore, but might come handy when implementing User Account later. If 3.0 is released, this can be removed.
 #if 0
 std::string parse_json_for_param(const nlohmann::json& json_obj, const std::string& param) {
@@ -68,7 +66,8 @@ std::string get_keyword_from_json(const std::string& body, const std::string& ke
 #endif
 
 // Finds exactly 2 placehodlers %1% and %2% and replaces with v1, v2.
-std::string replace_placeholders(const std::string& text, const std::string& v1, const std::string& v2) {
+std::string replace_placeholders(const std::string& text, const std::string& v1, const std::string& v2)
+{
     constexpr std::string_view p1 = "%1%";
     constexpr std::string_view p2 = "%2%";
 
@@ -79,8 +78,8 @@ std::string replace_placeholders(const std::string& text, const std::string& v1,
 
     size_t current_pos = 0;
     while (current_pos < text.length()) {
-        size_t p1_pos = text.find(p1, current_pos);
-        size_t p2_pos = text.find(p2, current_pos);
+        size_t p1_pos               = text.find(p1, current_pos);
+        size_t p2_pos               = text.find(p2, current_pos);
         size_t next_placeholder_pos = std::min(p1_pos, p2_pos);
         if (next_placeholder_pos == std::string::npos) {
             result.append(text, current_pos, text.length() - current_pos);
@@ -97,35 +96,47 @@ std::string replace_placeholders(const std::string& text, const std::string& v1,
     }
     return result;
 }
-}
+} // namespace
 
 bool PrintHostPrusaConnect::test(std::string& curl_msg, RetryFn retry_fn) const
 {
-    // Test is not used by upload and gets list of files on a device.   
+    // Test is not used by upload and gets list of files on a device.
     const std::string name = get_name();
-    std::string url = fmt::format("{}/{}/files?printer_uuid={}", Network::ServiceConfig::instance().connect_teams_url(), m_print_host_config.team_id, m_print_host_config.printer_uuid);
+    std::string url        = fmt::format(
+        "{}/{}/files?printer_uuid={}",
+        Network::ServiceConfig::instance().connect_teams_url(),
+        m_print_host_config.team_id,
+        m_print_host_config.printer_uuid
+    );
     SPDLOG_INFO("{}: Get files/raw at: {}", name, url);
     bool res = true;
-  
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
+
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+        Network::IHttp::RequestMethod::Get,
+        std::move(url),
+        retry_fn
+    );
     http->header("Authorization", "Bearer " + m_print_host_config.access_token);
     http->on_error([&](std::string body, std::string error, unsigned status) {
-        SPDLOG_ERROR("{}: Error getting version: {}, HTTP {}, body: `{}`", name , error , status , body);
-        res = false;
-        curl_msg = format_error(body, error, status);
-    })
-    .on_complete([&](std::string body, unsigned) {
-         SPDLOG_INFO("{}: Got files/raw: {}", name , body);
-    })
-    .perform_sync();
+            SPDLOG_ERROR("{}: Error getting version: {}, HTTP {}, body: `{}`", name, error, status, body);
+            res      = false;
+            curl_msg = format_error(body, error, status);
+        })
+        .on_complete([&](std::string body, unsigned) {
+            SPDLOG_INFO("{}: Got files/raw: {}", name, body);
+        })
+        .perform_sync();
 
     return res;
-    
 }
 
-bool PrintHostPrusaConnect::init_upload(const PrintHostJobData& upload_data, std::string& out, RetryFn retry_fn) const
+bool PrintHostPrusaConnect::init_upload(
+    const PrintHostJobData& upload_data,
+    std::string& out,
+    RetryFn retry_fn
+) const
 {
-    // Register upload. Then upload must be performed immediately with returned "id" 
+    // Register upload. Then upload must be performed immediately with returned "id"
     bool res = true;
     boost::system::error_code ec;
     boost::uintmax_t size = boost::filesystem::file_size(upload_data.source_path, ec);
@@ -133,15 +144,19 @@ bool PrintHostPrusaConnect::init_upload(const PrintHostJobData& upload_data, std
         SPDLOG_ERROR("Failed to read file size of {}", upload_data.source_path.string());
         return false;
     }
-    const std::string name = get_name();
+    const std::string name            = get_name();
     const std::string upload_filename = upload_data.dest_path.filename().string();
-    std::string url = fmt::format("{}/app/users/teams/{}/uploads", m_print_host_config.host, m_print_host_config.team_id);
-    
+    std::string url                   = fmt::format(
+        "{}/app/users/teams/{}/uploads",
+        m_print_host_config.host,
+        m_print_host_config.team_id
+    );
+
     std::string request_body_json;
     try {
-        nlohmann::json j = nlohmann::json::parse(upload_data.request_body_json);
-        j["filename"] = upload_filename;
-        j["size"] = size;
+        nlohmann::json j  = nlohmann::json::parse(upload_data.request_body_json);
+        j["filename"]     = upload_filename;
+        j["size"]         = size;
         request_body_json = j.dump();
     } catch (const nlohmann::json::parse_error& e) {
         SPDLOG_ERROR("Could not parse request_body_json: {}", e.what());
@@ -149,18 +164,22 @@ bool PrintHostPrusaConnect::init_upload(const PrintHostJobData& upload_data, std
     }
 
     SPDLOG_INFO("Register upload to " + name + ". Url: " + url + "\nBody: " + request_body_json);
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+        Network::IHttp::RequestMethod::Post,
+        std::move(url),
+        retry_fn
+    );
     http->header("Authorization", "Bearer " + m_print_host_config.access_token)
         .header("Content-Type", "application/json")
         .set_post_body(std::move(request_body_json))
         .on_complete([&](std::string body, unsigned status) {
-            SPDLOG_INFO("{}: File upload registered: HTTP {}: {}", name , status , body);
+            SPDLOG_INFO("{}: File upload registered: HTTP {}: {}", name, status, body);
             out = body;
         })
         .on_error([&](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR("{}: Error registering file: {}, HTTP {}, body: `{}`", name , error , status ,body);
+            SPDLOG_ERROR("{}: Error registering file: {}, HTTP {}, body: `{}`", name, error, status, body);
             res = false;
-            out = get_error_message_from_response_body(body).value_or_eval([&](){
+            out = get_error_message_from_response_body(body).value_or_eval([&]() {
                 return format_error(body, error, status);
             });
         })
@@ -168,58 +187,71 @@ bool PrintHostPrusaConnect::init_upload(const PrintHostJobData& upload_data, std
     return res;
 }
 
-bool PrintHostPrusaConnect::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostPrusaConnect::perform(
+    ProgressFn progress_fn,
+    RetryFn retry_fn,
+    ErrorFn error_fn,
+    InfoFn info_fn
+) const
 {
-    std::string printer_page_url = fmt::format("{}/printer/{}/dashboard", Network::ServiceConfig::instance().connect_url(), m_print_host_config.printer_uuid);
+    std::string printer_page_url = fmt::format(
+        "{}/printer/{}/dashboard",
+        Network::ServiceConfig::instance().connect_url(),
+        m_print_host_config.printer_uuid
+    );
     info_fn("prusaconnect_printer_address", printer_page_url);
 
     std::string init_out;
-    if (!init_upload(m_upload_data, init_out, retry_fn))
-    {
+    if (!init_upload(m_upload_data, init_out, retry_fn)) {
         error_fn(init_out);
         return false;
     }
- 
+
     // init reply format: {"id": 1234, "team_id": 12345, "name": "filename.gcode", "size": 123, "hash": "QhE0LD76vihC-F11Jfx9rEqGsk4.", "state": "INITIATED", "source": "CONNECT_USER", "path": "/usb/filename.bgcode"}
     size_t upload_id;
-    try
-    {
+    try {
         nlohmann::json json = nlohmann::json::parse(init_out);
         if (!json.contains("id") || !json["id"].is_number_unsigned()) {
             error_fn(_u8L("Failed to extract upload id from server reply."));
             return false;
         }
         upload_id = json["id"].get<std::size_t>();
-    }
-    catch (const std::exception&)
-    {
+    } catch (const std::exception&) {
         error_fn(_u8L("Failed to extract upload id from server reply."));
         return false;
     }
     const std::string name = get_name();
-    std::string url = fmt::format(
+    std::string url        = fmt::format(
         "{}/app/teams/{}/files/raw"
-        "?upload_id={}"
-        , Network::ServiceConfig::instance().connect_url(), m_print_host_config.team_id, upload_id);
+               "?upload_id={}",
+        Network::ServiceConfig::instance().connect_url(),
+        m_print_host_config.team_id,
+        upload_id
+    );
     bool res = true;
 
+    SPDLOG_INFO(
+        "{}: Uploading file at {}, filename: {}, path: {}, print: {}",
+        name,
+        url,
+        m_upload_data.dest_path.filename().string(),
+        m_upload_data.dest_path.parent_path().string(),
+        (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
+    );
 
-    SPDLOG_INFO("{}: Uploading file at {}, filename: {}, path: {}, print: {}"
-        , name
-        , url
-        , m_upload_data.dest_path.filename().string()
-        , m_upload_data.dest_path.parent_path().string()
-        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false"));
-     
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Put, std::move(url), retry_fn);
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+        Network::IHttp::RequestMethod::Put,
+        std::move(url),
+        retry_fn
+    );
     http->set_put_body(m_upload_data.source_path)
         .header("Content-Type", "text/x.gcode")
         .header("Authorization", "Bearer " + m_print_host_config.access_token)
         .on_complete([&](std::string body, unsigned status) {
-            SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name , status , body);
+            SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name, status, body);
         })
         .on_error([&](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR("{}: Error uploading file: {}, HTTP {}, body: `{}`", name , error , status , body);
+            SPDLOG_ERROR("{}: Error uploading file: {}, HTTP {}, body: `{}`", name, error, status, body);
             error_fn(format_error(body, error, status));
             res = false;
         })

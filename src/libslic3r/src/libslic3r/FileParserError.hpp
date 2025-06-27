@@ -7,8 +7,6 @@
 
 #include "libslic3r.h"
 
-#include "Slic3r/Exception.hpp"
-
 #include <string>
 #include <boost/filesystem/path.hpp>
 #include <stdexcept>

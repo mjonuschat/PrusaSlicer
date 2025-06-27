@@ -21,10 +21,15 @@ class MainFrame;
 
 int run(const InitParams& init_params);
 
-class DesktopApp : public wxApp {
+class DesktopApp : public wxApp
+{
 public:
     bool OnInit() override;
-    void set_init_params(const InitParams& init_params) { m_init_params = init_params; }
+
+    void set_init_params(const InitParams& init_params)
+    {
+        m_init_params = init_params;
+    }
 
     // TODO: Any recoverable exception should be handled here.
     bool OnExceptionInMainLoop() override;
@@ -54,8 +59,6 @@ private:
     Domain::Workbench m_workbench;
     InitParams m_init_params;
     Navigator m_navigator;
-    
 };
 
 } // namespace Slic3r::App::Desktop
-
