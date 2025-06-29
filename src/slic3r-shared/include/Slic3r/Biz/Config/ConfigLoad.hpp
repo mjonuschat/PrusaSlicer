@@ -41,4 +41,21 @@ struct LoadResult {
 };
 
 tl::expected<LoadResult, GlobalParsingIssue> load(const nlohmann::ordered_json&);
+
+template<typename Settings>
+struct BoxLoadResult
+{
+    Settings settings;
+    BoxIssues issues;
+};
+
+template<typename Settings>
+BoxLoadResult<Settings> load_box(const nlohmann::ordered_json& json);
+
+extern template BoxLoadResult<Domain::VolumeSettings> load_box(const nlohmann::ordered_json&);
+extern template BoxLoadResult<Domain::ObjectSettings> load_box(const nlohmann::ordered_json&);
+extern template BoxLoadResult<Domain::SLAObjectSettings> load_box(const nlohmann::ordered_json&);
+
+
+
 }

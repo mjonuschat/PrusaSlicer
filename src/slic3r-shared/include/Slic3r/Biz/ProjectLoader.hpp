@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <string>
+#include <exception>
 
 namespace Slic3r {
 

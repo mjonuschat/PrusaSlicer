@@ -10,6 +10,7 @@
 
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
+#include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
@@ -195,13 +196,14 @@ template<> bool value_from_json(const json &data_json, json::number_float_t &val
     return true;
 }
 
-template<typename T> // Vec3d, Vec3f, Vec3i
-json to_json(const Eigen::Matrix<T, 3, 1, Eigen::DontAlign> &v)
+template<typename T>
+json to_json(const Domain::Advanced::Vec<T, 3>& v)
 {
     return json{v.x(), v.y(), v.z()};
 }
-template<typename T> // Vec3d, Vec3f, Vec3i
-bool value_from_json(const json &v_json, Eigen::Matrix<T, 3, 1, Eigen::DontAlign> &v, Read3mfIssues& collected_issues, RT issue)
+
+template<typename T>
+bool value_from_json(const json &v_json, Domain::Advanced::Vec<T, 3>& v, Read3mfIssues& collected_issues, RT issue)
 {
     if (!v_json.is_array()) {
         collected_issues.add_issue(Read3mfIssue(issue, std::string("not an array"), v_json.dump()));
@@ -209,7 +211,7 @@ bool value_from_json(const json &v_json, Eigen::Matrix<T, 3, 1, Eigen::DontAlign
     }
     size_t max_i = 3;
     if (v_json.size() != 3) {
-        collected_issues.add_issue(Read3mfIssue(issue, std::string("bad amount of numbers"), std::to_string(v_json.size()), v_json.dump()));
+        collected_issues.add_issue(Read3mfIssue(issue, std::string("bad amount of numbers"), std::to_string(v_json.size()) + v_json.dump()));
         max_i = std::min(size_t(3), v_json.size());        
     }
     for (size_t i = 0; i < max_i; i++)
@@ -289,53 +291,6 @@ bool from_json(const json &parent_json, std::string_view name, ENUM &value, cons
     }
 
     value = found_item->second;
-    return true;
-}
-
-template<typename CONFIG_TYPE> 
-// CONFIG_TYPE has method set_deserialize 
-// (IMRPOVE: there should be interface)
-// DynamicConfig + ModelConfigObject
-bool load_configuration(
-    const json &parent_json,
-    std::string_view name,
-    CONFIG_TYPE &config,
-    Read3mfIssues& collected_issues,
-    RT issue_type
-    , bool log_missing = false
-) {
-    auto config_json_it = parent_json.find(name);
-    if (config_json_it == parent_json.end()){
-        if (log_missing)
-            collected_issues.add_issue(Read3mfIssue(issue_type, std::string("Missing configuration")));
-        return false;
-    }
-    const json &config_json = *config_json_it;
-    if (config_json.empty()) {
-        collected_issues.add_issue(Read3mfIssue(issue_type, std::string("Configuration is empty")));
-        return false;
-    }
-    if (!config_json.is_object()){
-        collected_issues.add_issue(Read3mfIssue(issue_type, std::string("Not an object"), config_json.dump()));
-        return false;
-    }
-    for (const auto &[key, value_json] : config_json.items()) {
-        // key ... const std::string &
-        if (key.empty()){
-            collected_issues.add_issue(Read3mfIssue(issue_type, std::string("Skip empty key")));
-            continue;
-        }
-        std::string value;
-        if (!value_from_json(value_json, value, collected_issues, issue_type))
-            continue; // NOTE: In configuration is empty string valid value
-        
-        try {
-            config.set_deserialize(key, value);
-        } catch (UnknownOptionException& e) {
-            collected_issues.add_issue(Read3mfIssue(issue_type, std::string("UnknownOptionException"), key, value,
-                std::string(e.what())));
-        }
-    }
     return true;
 }
 
@@ -862,13 +817,13 @@ namespace VolumeSerialization {
 constexpr std::string_view ID                 = "id";                // Object_id from 3mf
 constexpr std::string_view VOLUME_UUID        = "object_uuid";       // 3mf Object uuid
 constexpr std::string_view VOLUME_TYPE        = "type";              // Slic3r specification of volume type
-constexpr std::string_view CONFIGURATION      = "configuration";     // volume specific configuration
+constexpr std::string_view VOLUME_SETTINGS    = "volume_settings";   // volume specific configuration
 constexpr std::string_view TEXT_CONFIGURATION = "textConfiguration"; // more in TextConfigurationSerialization
 constexpr std::string_view SHAPE              = "shape";             // more in EmbossShapeSerialization
 constexpr std::string_view SOURCE             = "source";            // more in SourceSerialization
 constexpr std::string_view CUT_INFO           = "cutInfo";           // more in CutSerialization
 
-NamesType VOLUME_NAMES{{ID, VOLUME_UUID, VOLUME_TYPE, CONFIGURATION, SOURCE, 
+NamesType VOLUME_NAMES{{ID, VOLUME_UUID, VOLUME_TYPE, VOLUME_SETTINGS, SOURCE, 
                         TEXT_CONFIGURATION, SHAPE, CUT_INFO}};
 
 using VolumeTypeToName = boost::bimap<ModelVolumeType, std::string_view>;
@@ -903,7 +858,7 @@ json volumes_to_json(const ModelVolumePtrs &volumes, const VolumeToObjectid &v2i
         if (volume.emboss_shape.has_value())
             add(volume_json, SHAPE, EmbossShapeSerialization::to_json(*volume.emboss_shape));
         add(volume_json, SOURCE, SourceSerialization::to_json(volume.source, volume.mesh().stats()));
-        add(volume_json, CONFIGURATION, nlohmann::ordered_json(volume.volume_settings));
+        add(volume_json, VOLUME_SETTINGS, nlohmann::ordered_json(volume.volume_settings));
         if (volume.is_cut_connector())
             add(volume_json, CUT_INFO, CutSerialization::cut_to_json(volume.cut_info));
         if (!volume_json.empty())
@@ -946,10 +901,16 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, Read3mfIs
         }
     }
 
-    RT issue = RT::project_volume_config_issue;           
-    for (ModelVolume *mv : mvs)
-        ; // TODO load_configuration(volume_json, CONFIGURATION, mv->config, result, issue, config_substitutions);
-       
+    
+    for (ModelVolume* mv : mvs) {
+        auto res = Biz::Config::load_box<Domain::VolumeSettings>(volume_json[VOLUME_SETTINGS]);
+        mv->volume_settings = res.settings;
+        if (! res.issues.empty()) {
+            // TODO Handle errors.
+            // RT issue = RT::project_volume_config_issue;
+        }
+    }
+  
     if (auto source_json_it = volume_json.find(SOURCE);
         source_json_it != volume_json.end()){
         for (ModelVolume *mv : mvs) {
@@ -1116,11 +1077,13 @@ void ranges_from_json(const json &ranges_json, Domain::LayerConfigRanges &ranges
             continue;
         }
 
-        // TODO
-        //ModelConfig model_config;
-        //RT issue = RT::project_object_range_config_issue;
-        //if(load_configuration(range_json, CONFIGURATION, model_config, result, issue, config_substitutions, true))
-        //    ranges[z_range] = model_config;
+        ASSERT(range_json.contains(CONFIGURATION));
+        auto res = Biz::Config::load_box<Domain::VolumeSettings>(range_json[CONFIGURATION]);
+        ranges[z_range] = res.settings;
+        if (! res.issues.empty()) {
+            // TODO Handle errors.
+            // RT issue = RT::project_object_range_config_issue;
+        }
     }
 }
 } // namespace RangesSerialization
@@ -1196,14 +1159,14 @@ constexpr std::string_view ID                 = "id";             // Object_id f
 constexpr std::string_view OBJECT_UUID        = "object_uuid";    // Universally Unique Identifier of object
 constexpr std::string_view VOLUMES            = "volumes";        // List of volume settings
 constexpr std::string_view INSTANCES          = "instances";      
-constexpr std::string_view CONFIGURATION      = "configuration";  // Object specific DynamicConfig 
+constexpr std::string_view OBJECT_SETTINGS    = "object_settings";
 constexpr std::string_view LAYER_HEIGHT_PROFILE="layerHeightProfile";
 constexpr std::string_view RANGES             = "ranges";         // layer ranges configurations
 constexpr std::string_view CUT_OBJECT_ID      = "cutId";          // more in CutSerialization
 constexpr std::string_view SLA_SUPPORT_POINTS = "slaSupportPoints";
 constexpr std::string_view SLA_DRAIN_HOLES    = "slaDrainHoles";
 
-const NamesType OBJECT_NAMES{{ID, OBJECT_UUID, VOLUMES, INSTANCES, RANGES, CUT_OBJECT_ID, CONFIGURATION, 
+const NamesType OBJECT_NAMES{{ID, OBJECT_UUID, VOLUMES, INSTANCES, RANGES, CUT_OBJECT_ID, OBJECT_SETTINGS, 
                               LAYER_HEIGHT_PROFILE, SLA_SUPPORT_POINTS, SLA_DRAIN_HOLES}};
 
 json object_to_json(const ModelObject &object, const StoredStructure &stored_structure) {
@@ -1228,7 +1191,7 @@ json object_to_json(const ModelObject &object, const StoredStructure &stored_str
     if (object.is_cut())
         add(object_json, CUT_OBJECT_ID, CutSerialization::cut_to_json(object.cut_id));
     if (!object.object_settings.overrides.empty())
-        add(object_json, CONFIGURATION, object.object_settings);
+        add(object_json, OBJECT_SETTINGS, object.object_settings);
     if (const std::vector<double> &layer_height_profile = object.layer_height_profile.get();
         !layer_height_profile.empty())
         add(object_json, LAYER_HEIGHT_PROFILE, LayerHeightProfileSerialization::to_json(layer_height_profile));
@@ -1301,9 +1264,16 @@ void load_objects(
         if (mos.empty())
             continue;        
 
-        for (ModelObject *mo_ptr: mos)
-            ;// TODO load_configuration(object_json, CONFIGURATION, mo_ptr->config, 
-             //   result, RT::project_object_configuration_issue, config_substitutions);
+        for (ModelObject* mo_ptr : mos) {
+            if (! object_json.contains(OBJECT_SETTINGS) || ! object_json[OBJECT_SETTINGS].is_object())
+                continue;
+            auto res = Biz::Config::load_box<Domain::ObjectSettings>(object_json[OBJECT_SETTINGS]);
+            mo_ptr->object_settings = res.settings;
+            if (! res.issues.empty()) {
+                // TODO Handle errors.
+                // RT issue = RT::project_object_configuration_issue;
+            }
+        }
 
         ModelObject &mo = *mos.front(); // mos is not empty it is checked before
         Domain::ModelObjectPtrs mos_(mos.begin() + 1, mos.end()); // without first model object
@@ -1450,7 +1420,14 @@ void load(
         return;
 
     ObjectsSerialization::load_objects(project_json, OBJECTS, model_map, collected_issues);
-    //load_configuration(project_json, CONFIGURATION, config, collected_issues, RT::project_config_issue);
+
+    // TODO: handle multiple config containers, add check that the keys exist in the JSON.
+    tl::expected<Biz::Config::LoadResult, Biz::Config::GlobalParsingIssue> res = Biz::Config::load(project_json["config_containers"][0][CONFIGURATION]);
+    if (! res)
+        collected_issues.add_issue(RT::project_config_issue);
+    else
+        config = res.value().config;
+    
 }
 } // namespace ProjectFileSerialization
 } // namespace

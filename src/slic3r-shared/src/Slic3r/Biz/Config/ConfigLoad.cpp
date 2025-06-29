@@ -78,12 +78,6 @@ tl::expected<std::vector<std::string>, std::string> parse_enum_vector(
     return json_value.get<std::vector<std::string>>();
 }
 
-template<typename Settings>
-struct BoxLoadResult
-{
-    Settings settings;
-    BoxIssues issues;
-};
 
 tl::expected<void, ItemParsingIssue> fill_item(ConfigItem& item, const ordered_json& json_value)
 {
@@ -111,52 +105,6 @@ tl::expected<void, ItemParsingIssue> fill_item(ConfigItem& item, const ordered_j
                 .map_error(map_error);
         }
     ));
-}
-
-template<typename Settings>
-BoxLoadResult<Settings> load_box(const ordered_json& json)
-{
-    BoxLoadResult<Settings> result;
-
-    ASSERT(json.is_object());
-
-    BoxIssues& issues{result.issues};
-
-    std::set<std::string> json_keys;
-    for (const auto& [key, _] : json.items()) {
-        json_keys.insert(key);
-    }
-
-    for (ConfigItem& item : result.settings.items) {
-        const auto it{json.find(item.name())};
-        if (it != json.end()) {
-            fill_item(item, *it).or_else([&](const ItemParsingIssue& issue) {
-                issues[item.name()] = issue;
-            });
-            json_keys.erase(item.name());
-        } else {
-            issues[item.name()] = {ItemParsingIssueType::NotFound};
-        }
-    }
-
-    Domain::ConfigOverrides& overrides{result.settings.overrides};
-    for (ConfigItem& item : overrides.all_items()) {
-        const auto it{json.find(item.name())};
-        if (it != json.end()) {
-            if (!it->is_null()) {
-                fill_item(item, *it) //
-                    .map([&]() { overrides.enable(item.name()); })
-                    .or_else([&](const ItemParsingIssue& issue) { issues[item.name()] = issue; });
-            }
-            json_keys.erase(item.name());
-        }
-    }
-
-    for (const std::string& key : json_keys) {
-        issues[key] = {ItemParsingIssueType::ExtraKey};
-    }
-
-    return result;
 }
 
 std::size_t get_most_common_size(const ordered_json& json)
@@ -232,6 +180,52 @@ bool is_empty(const std::vector<BoxIssues>& issues)
     return true;
 }
 } // namespace
+
+template<typename Settings>
+BoxLoadResult<Settings> load_box(const ordered_json& json)
+{
+    BoxLoadResult<Settings> result;
+
+    ASSERT(json.is_object());
+
+    BoxIssues& issues{result.issues};
+
+    std::set<std::string> json_keys;
+    for (const auto& [key, _] : json.items()) {
+        json_keys.insert(key);
+    }
+
+    for (ConfigItem& item : result.settings.items) {
+        const auto it{json.find(item.name())};
+        if (it != json.end()) {
+            fill_item(item, *it).or_else([&](const ItemParsingIssue& issue) {
+                issues[item.name()] = issue;
+            });
+            json_keys.erase(item.name());
+        } else {
+            issues[item.name()] = {ItemParsingIssueType::NotFound};
+        }
+    }
+
+    Domain::ConfigOverrides& overrides{result.settings.overrides};
+    for (ConfigItem& item : overrides.all_items()) {
+        const auto it{json.find(item.name())};
+        if (it != json.end()) {
+            if (!it->is_null()) {
+                fill_item(item, *it) //
+                    .map([&]() { overrides.enable(item.name()); })
+                    .or_else([&](const ItemParsingIssue& issue) { issues[item.name()] = issue; });
+            }
+            json_keys.erase(item.name());
+        }
+    }
+
+    for (const std::string& key : json_keys) {
+        issues[key] = {ItemParsingIssueType::ExtraKey};
+    }
+
+    return result;
+}
 
 tl::expected<LoadResult, GlobalParsingIssue> load_fdm(const ordered_json& json)
 {
@@ -391,4 +385,9 @@ tl::expected<LoadResult, GlobalParsingIssue> load(const ordered_json& json)
         return tl::unexpected{GlobalParsingIssue::UnableToDeducePrinterTechnology};
     }
 }
+
+template BoxLoadResult<Domain::VolumeSettings> load_box(const nlohmann::ordered_json&);
+template BoxLoadResult<Domain::ObjectSettings> load_box(const nlohmann::ordered_json&);
+template BoxLoadResult<Domain::SLAObjectSettings> load_box(const nlohmann::ordered_json&);
+
 } // namespace Slic3r::Biz::Config
