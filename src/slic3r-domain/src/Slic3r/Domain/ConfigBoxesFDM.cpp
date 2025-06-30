@@ -795,7 +795,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::color;
     def->init_fn = init_with(""); // Empty string means no color assigned yet.
 
-    def = defs.add("extruder_offset", typeid(Vec2d));
+    def = defs.add("extruder_offset", typeid(std::vector<Vec2d>));
     def->location = Printer;
     def->label = L("Extruder offset");
     def->tooltip = L("If your firmware doesn't handle the extruder displacement you need the G-code "
@@ -804,7 +804,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "from the XY coordinate).");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
-    def->init_fn = init_with(Vec2d(0,0));
+    def->init_fn = init_with(std::vector{Vec2d(0,0)});
 
     /* TODO: shouldn't we remove this crap?
     def = defs.add("extrusion_axis", typeid(std::string));

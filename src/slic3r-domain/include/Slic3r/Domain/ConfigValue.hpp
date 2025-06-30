@@ -115,6 +115,10 @@ struct EnumWrapper
         : m_value{static_cast<int>(value)}, m_type{&typeid(T)}, m_def{check_enum_def(def)}
     {}
 
+    EnumWrapper(int value, const std::type_info* type, const EnumValueDefs& def)
+        : m_value{value}, m_type{type}, m_def{&def}
+    {}
+
     template<typename T>
     T get() const
     {
