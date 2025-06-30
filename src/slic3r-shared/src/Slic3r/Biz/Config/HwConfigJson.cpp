@@ -223,6 +223,7 @@ void to_json(ordered_json& j, const HwPrinterConfig& v)
         {"tools", v.tools},
         {"feeders", v.feeders},
         {"materials", v.materials},
+        {"sheet", v.sheet},
     };
 }
 
@@ -259,6 +260,7 @@ tl::expected<void, std::string> is_valid<HwPrinterConfig>(const nlohmann::ordere
              "tools",
              "feeders",
              "materials",
+             "sheet",
          }) {
         if (!json_value.contains(key)) {
             return tl::unexpected{"'" + key + "' not present!"};
@@ -410,8 +412,9 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
 {
     HwPrinterConfig result;
 
-    if (!is_valid<HwPrinterConfig>(json)) {
-        return tl::unexpected{"Invalid config structure!"};
+    const auto valid{is_valid<HwPrinterConfig>(json)};
+    if (!valid) {
+        return tl::unexpected{"Invalid config structure: " + valid.error()};
     }
 
     const auto id{parse<std::string>(json.at("id"))};

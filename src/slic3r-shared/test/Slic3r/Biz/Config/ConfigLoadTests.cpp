@@ -177,13 +177,13 @@ TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading bool works", "[ConfigLoad]")
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading Vec2d works", "[ConfigLoad]")
 {
-    json["printer_settings"]["extruder_offset"] = ordered_json::array({2, 5.1});
+    json["printer_settings"]["extruder_offset"] = ordered_json::array({ordered_json::array({2, 5.1})});
 
     const auto result{load(json)};
     REQUIRE(result.has_value());
     const auto result_config{std::get<ConfigPackFDM>(result->config)};
-    CHECK(result_config.printer.items.opt("extruder_offset").get<Vec2d>() == Vec2d{2, 5.1});
-    CHECK(!get_issue(result->issues, FDMConfigLocation::Tool, "extruder_offset", 0));
+    CHECK(result_config.printer.items.opt("extruder_offset").get<std::vector<Vec2d>>() == std::vector{Vec2d{2, 5.1}});
+    CHECK(!get_issue(result->issues, FDMConfigLocation::Printer, "extruder_offset"));
 }
 
 TEST_CASE_METHOD(ConfigLoadFDMFixture, "Loading std::vector<Vec2d> works", "[ConfigLoad]")

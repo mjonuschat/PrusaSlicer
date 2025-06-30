@@ -39,12 +39,6 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
             : ConfigLocation{SLAConfigLocation::Print}
     };
 
-    const ConfigLocation tool{
-        technology == FFF
-            ? ConfigLocation{FDMConfigLocation::Tool}
-        : ConfigLocation{SLAConfigLocation::Tool}
-    };
-
     ConfigItemDef* def = nullptr;
 
     def = defs.add("printer_technology", typeid(EnumWrapper));
@@ -81,11 +75,14 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->init_fn = init_with("");
 
     def = defs.add("elefant_foot_compensation", typeid(double));
-    def->location = tool;
-    if (technology == SLA)
+    if (technology == SLA) {
+        def->location = print;
         def->overrides_in = Locations{ sla_material, sla_object};
-    if (technology == FFF)
+    }
+    if (technology == FFF) {
+        def->location = FDMConfigLocation::Tool;
         def->overrides_in = Locations{ fdm_object, fdm_volume };
+    }
     def->label = L("Elephant foot compensation");
     def->category = L("Advanced");
     def->tooltip = L("The first layer will be shrunk in the XY plane by the configured value "

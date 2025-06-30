@@ -2513,8 +2513,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("travel_max_lift", typeid(double));
-    def->location = Printer;
-    def->overrides_in = Locations{ Tool, Filament };
+    def->location = Tool;
+    def->overrides_in = Locations{ Filament };
     def->label = L("Maximum ramping lift");
     def->tooltip = L("Maximum lift height of the ramping lift. It may not be reached if the next position "
                      "is close to the old one.");

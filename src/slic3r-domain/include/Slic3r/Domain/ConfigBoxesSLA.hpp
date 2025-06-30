@@ -66,11 +66,6 @@ class SLAPrintSettings : public ConfigBox
 public:
     SLAPrintSettings() : ConfigBox(s_defs_sla, SLAConfigLocation::Print) {}
 };
-class SLAToolSettings : public ConfigBox
-{
-public:
-    SLAToolSettings() : ConfigBox(s_defs_sla, SLAConfigLocation::Tool) {}
-};
 class SLAMaterialSettings : public ConfigBox
 {
 public:
