@@ -8,7 +8,8 @@
 #include <string>
 #include <vector>
 
-#include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Semver.hpp"
 
 
@@ -273,11 +274,16 @@ struct Read3mfIssues {
 };
 
 struct Loaded3MF {
-    Domain::Project project;
-    Read3mfIssues issues_map;
-    std::optional<Slic3r::Semver> version;
+    struct ConfigContainerData {
+        Domain::ConfigPack config_pack;
+        std::vector<Domain::Vec2d> bed_offsets;
+    };
 
-    
+    Domain::Model model;
+    std::string filepath_3mf;
+    std::vector<Loaded3MF::ConfigContainerData> config_containers_data;
+    Read3mfIssues issues_map;
+    boost::optional<Slic3r::Semver> version;
 };
 
 

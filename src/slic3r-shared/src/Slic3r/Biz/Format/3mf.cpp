@@ -653,13 +653,9 @@ Loaded3MF load_3mf(const std::string& filepath_3mf)
     //    collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::content_types_file_missing, std::string(CONTENT_TYPES_FILE)));
 
     Loaded3MF loaded_3mf;
-    loaded_3mf.project.model() = std::move(model);
-    loaded_3mf.project.set_file_name(filepath_3mf);
-    loaded_3mf.project.config_containers().clear();
-    loaded_3mf.project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
-    auto& config_container = loaded_3mf.project.config_containers().back();
-    config_container->set_print_config_new(prusa_files_result.config_pack);
-
+    loaded_3mf.model = std::move(model);
+    loaded_3mf.filepath_3mf = filepath_3mf;
+    loaded_3mf.config_containers_data = prusa_files_result.config_containers_data;
     loaded_3mf.issues_map = std::move(collected_issues);
 
     if (loaded_model.model) {
@@ -676,11 +672,6 @@ Loaded3MF load_3mf(const std::string& filepath_3mf)
                 loaded_3mf.version = version;
         }
     }
-
-    DynamicPrintConfig co;
-    auto full{FullPrintConfig::defaults()};
-    co.apply(full);
-    config_container->set_print_config(co);
 
     return loaded_3mf;
 

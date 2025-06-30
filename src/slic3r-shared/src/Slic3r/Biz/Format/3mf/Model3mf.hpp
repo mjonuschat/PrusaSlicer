@@ -19,6 +19,7 @@
 #include <boost/uuid/uuid.hpp>
 
 #include "Slic3r/Biz/Format/3mf.hpp" // Store3mfParam
+#include "Slic3r/Domain/Types.hpp"
 
 using Slic3r::Domain::Transform3d;
 
@@ -198,7 +199,7 @@ struct CT_Mesh {
     std::optional<CT_MirrorMesh> mirror_mesh; // <mm:mirrormesh>
 };
 
-using ST_Matrix3d = Transform3d;
+using ST_Matrix3d = Domain::Transform3d;
 using ST_UUID = boost::uuids::uuid;
 using ST_Path = std::string;
 
@@ -214,7 +215,7 @@ struct CT_Component {
     // References an object resource with a matching id attribute value.
     // NOTE: valid value start from value 1
     ST_ResourceID object_id = 0;
-    ST_Matrix3d transform = Transform3d::Identity();
+    ST_Matrix3d transform = Domain::Transform3d::Identity();
 
     // [Production extension]
     // A file path to the model file being referenced.
@@ -320,7 +321,7 @@ struct CT_Item {
     // NOTE: valid value start from value 1
     ST_ResourceID object_id = 0; // required
 
-    ST_Matrix3d transform = Transform3d::Identity();
+    ST_Matrix3d transform = Domain::Transform3d::Identity();
 
     // A unique identifier for the item. SHOULD be maintained by an editor if only the transformation is changed
     std::string part_number;

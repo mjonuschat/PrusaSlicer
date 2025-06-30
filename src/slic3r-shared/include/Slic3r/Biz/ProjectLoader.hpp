@@ -13,7 +13,7 @@ namespace Domain
 
 namespace Biz
 {
-    void load_project(const std::string& file_path, std::function<void(Slic3r::Domain::Project&&)> after_load);
+    void load_project(const std::string& file_path, std::function<void(Domain::Project&&)> after_load);
 }
 
 } // namespace Slic3r

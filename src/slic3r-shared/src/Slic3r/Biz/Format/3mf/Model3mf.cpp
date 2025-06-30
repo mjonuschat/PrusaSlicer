@@ -261,9 +261,9 @@ void parse_float(const XML_Char *value, float &v){
 
 std::array<char, 3> vertex_attrs = {X_ATTR[0], Y_ATTR[0], Z_ATTR[0]};
 void process_vertex_atts(LoadedModelFile &model, const XML_Char **atts, int num_atts, Read3mfIssues& collected_issues){
-    std::vector<Vec3f>& vertices = model.model->resource.objects.back().mesh.its.vertices;
+    std::vector<Domain::Vec3f>& vertices = model.model->resource.objects.back().mesh.its.vertices;
     vertices.emplace_back();
-    Vec3f& vertex = vertices.back();
+    Domain::Vec3f& vertex = vertices.back();
     for (int a = 0, i = 0; a < num_atts; a += 2,++i) {
         const XML_Char *name = atts[a];
         const XML_Char *value = atts[a+1];
@@ -444,21 +444,21 @@ void process_metadata_attr(LoadedModelFile &model, const Attributes &attributes,
     }
 }
 
-Transform3d parse_transformation(const XML_Char *data) {
+Domain::Transform3d parse_transformation(const XML_Char *data) {
     // check: https://3mf.io/3d-manufacturing-format/ 
     // or https://github.com/3MFConsortium/spec_core/blob/master/3MF%20Core%20Specification.md 
     // to see how matrices are stored inside 3mf according to specifications
     
     if (data == nullptr)
         // empty string means default identity matrix
-        return Transform3d::Identity();
+        return Domain::Transform3d::Identity();
 
     std::vector<std::string> mat_elements_str = split_by_space(data);
     if (mat_elements_str.size() != 12)
         // invalid data, return identity matrix
-        return Transform3d::Identity();
+        return Domain::Transform3d::Identity();
 
-    Transform3d ret = Transform3d::Identity();
+    auto ret = Domain::Transform3d::Identity();
     unsigned int i = 0;
     // matrices are stored into 3mf files as 4x3
     // we need to transpose them
@@ -1230,7 +1230,7 @@ void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangl
         return; // 3mf define minimal 3 vertices
 
     char buf[256];
-    for (const Vec3f &v : its.vertices) {
+    for (const Domain::Vec3f &v : its.vertices) {
         char *ptr = buf;
         boost::spirit::karma::generate(ptr, boost::spirit::lit("     <") << VERTEX_TAG << " x=\"");
         ptr = format_coordinate(v.x(), ptr);
@@ -1374,7 +1374,7 @@ void write_xml_commnet(std::stringstream &stream, std::string_view message,
     stream << indent << "<!-- " << message << " -->\n";
 }
 
-void add_transformation(std::stringstream &stream, const Transform3d &tr) {
+void add_transformation(std::stringstream &stream, const Domain::Transform3d &tr) {
     // https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10
     // Conversion of a floating-point value to text and back is exact as long as at least
     // max_digits10 were used (9 for float, 17 for double). It is guaranteed to produce the same
@@ -1398,7 +1398,7 @@ void add_transformation(std::stringstream &stream, const Transform3d &tr) {
     // and SHOULD be located in the positive octant of the coordinate space.
 }
 
-bool is_identity(const Transform3d &tr){
+bool is_identity(const Domain::Transform3d &tr){
     // In Eigen 3.4.9 is possible to chekck identity directly by:
     // tr.isIdentity();
     return (tr.matrix() - SquareMatrix4d::Identity()).cwiseAbs().maxCoeff() < 1e-10;
@@ -1411,7 +1411,7 @@ bool is_identity(const Transform3d &tr){
 }
 
 // When transformation is close to identity than do not write anything
-void add_transformation_attr(std::stringstream &stream, const Transform3d &tr){
+void add_transformation_attr(std::stringstream &stream, const Domain::Transform3d &tr){
     if (is_identity(tr))
         return; // not necessary to storre identity
     stream << TRANSFORM_ATTR << "=\"";
@@ -1420,7 +1420,7 @@ void add_transformation_attr(std::stringstream &stream, const Transform3d &tr){
 }
 
 void store_component(std::stringstream& stream, unsigned objectid,
-     /*const ST_UUID& uuid,*/ const Transform3d* tr = nullptr) {
+     /*const ST_UUID& uuid,*/ const Domain::Transform3d* tr = nullptr) {
     //assert(!uuid.is_nil());
     stream << "    <" << COMPONENT_TAG << " " 
         << OBJECTID_ATTR << "=\"" << objectid << "\" ";

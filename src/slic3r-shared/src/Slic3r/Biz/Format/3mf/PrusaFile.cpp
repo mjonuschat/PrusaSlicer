@@ -242,7 +242,7 @@ template<typename T> bool value_from_json(const json &data_json, std::optional<T
 /// <returns>TRUE when succesfully read value from json otherwise FALSE</returns>
 template<typename T>
 inline bool from_json(const json &parent_json, std::string_view name, T& value, Read3mfIssues& collected_issues,
-    RT issue, bool log_missing = false){
+    RT issue = RT::unknown, bool log_missing = false){
     auto json_ptr = parent_json.find(name);
     if (json_ptr == parent_json.end()) {
         if (log_missing)
@@ -1413,20 +1413,36 @@ void write(
 void load(
     const json &project_json,
     const ModelMap &model_map,
-    Domain::ConfigPack &config,
+    std::vector<Loaded3MF::ConfigContainerData>& config_containers_data,
     Read3mfIssues& collected_issues
-) {    
+) {
+    config_containers_data.clear();
+
     if (!is_valid(project_json, PROJECT_NAMES, collected_issues, RT::project_unknown_type))
         return;
 
     ObjectsSerialization::load_objects(project_json, OBJECTS, model_map, collected_issues);
 
     // TODO: handle multiple config containers, add check that the keys exist in the JSON.
-    tl::expected<Biz::Config::LoadResult, Biz::Config::GlobalParsingIssue> res = Biz::Config::load(project_json["config_containers"][0][CONFIGURATION]);
-    if (! res)
-        collected_issues.add_issue(RT::project_config_issue);
-    else
-        config = res.value().config;
+    for (const nlohmann::ordered_json& config_container : project_json["config_containers"]) {
+        config_containers_data.emplace_back();
+        if (config_container.contains(CONFIGURATION)) {
+            tl::expected<Biz::Config::LoadResult, Biz::Config::GlobalParsingIssue> res = Biz::Config::load(config_container[CONFIGURATION]);
+            if (! res)
+                collected_issues.add_issue(RT::project_config_issue);
+            else
+                config_containers_data.back().config_pack = res.value().config;
+        }
+        if (config_container.contains("beds")) {
+            for (const nlohmann::ordered_json& bed : config_container["beds"]) {
+                double x = 0.;
+                double y = 0.;
+                from_json(bed, "position_x", x, collected_issues);
+                from_json(bed, "position_y", y, collected_issues);
+                config_containers_data.back().bed_offsets.emplace_back(x, y);
+            }
+        }
+    }    
     
 }
 } // namespace ProjectFileSerialization
@@ -1466,8 +1482,8 @@ PrusaFilesResult Slic3r::load_prusa_files(
     };
 
     if (std::optional<json> project_json = get_json(ProjectFileSerialization::PRUSA_PROJECT_FILEPATH, RT::project_file_is_corrupted);
-        project_json.has_value()) 
-        ProjectFileSerialization::load(*project_json, model_map, result.config_pack, collected_issues);
+        project_json.has_value())
+        ProjectFileSerialization::load(*project_json, model_map, result.config_containers_data, collected_issues);
 
     if (std::optional<json> facets_json = get_json(FacetsAnnotationSerialization::FACETS_ANNOTATION_FILE, RT::facets_annotation_file_is_corrupted);
         facets_json.has_value()) 
