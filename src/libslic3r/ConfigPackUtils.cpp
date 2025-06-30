@@ -42,18 +42,20 @@ void copy(const std::string& name, const ConfigValue& value, ParserConfig& confi
 }
 } // namespace
 
-Parser::IO::Config get_parser_config(const ConfigPack& config_pack)
+Parser::IO::Config get_parser_config(const FullConfigFDM& full_config)
 {
     ParserConfig result;
-    const std::unique_ptr<FullConfig> full_config{std::visit(overloaded{
-        [](const ConfigPackFDM& pack) -> std::unique_ptr<FullConfig> {
-            return std::make_unique<FullConfigFDM>(pack);
-        },
-        [](const ConfigPackSLA& pack) -> std::unique_ptr<FullConfig> {
-            return std::make_unique<FullConfigSLA>(pack);
-        },
-    }, config_pack)};
-    for (const auto& [key, value] : full_config->values()) {
+    for (const auto& [key, value] : full_config.values()) {
+        copy(key, value, result);
+    }
+
+    return result;
+}
+
+Parser::IO::Config get_parser_config(const FullConfigSLA& full_config)
+{
+    ParserConfig result;
+    for (const auto& [key, value] : full_config.values()) {
         copy(key, value, result);
     }
 

@@ -284,7 +284,14 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Domain
         .json = Biz::beautify_json(Domain::as_boxes(config_in), 2),
         .ini = Biz::serialize_as_legacy_config(config_in)
     };
-	print.apply(model, config, serialized_config, {}, {});
+    Domain::Bed model_bed;
+    Domain::BedInstance bed_instance{model_bed};
+    for (const Domain::ModelObject* object : model.objects) {
+        for (Domain::ModelInstance* instance : object->instances) {
+            bed_instance.model_instances.push_back(instance);
+        }
+    }
+	print.update(model, config, bed_instance, serialized_config);
     print.validate();
     print.set_status_silent();
 }

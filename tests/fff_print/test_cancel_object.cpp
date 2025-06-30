@@ -16,6 +16,7 @@ using Biz::GCodeReader::GCodeReader;
 using Biz::Algorithms::ModelObject::add_volume;
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Biz::Algorithms::ModelVolume::translate;
+using Biz::Print::SerializedConfig;
 
 constexpr bool debug_files{false};
 
@@ -132,9 +133,12 @@ public:
         retract_length = config.tool.at(0).items.opt("retract_length").get<double>();
         retract_length_toolchange =
             config.tool.at(0).items.opt("retract_length_toolchange").get<double>();
+
     }
 
     TestConfig config;
+    Domain::Bed model_bed;
+    Domain::BedInstance bed_instance{model_bed};
 
     Domain::Model two_cubes;
     Domain::Model multimaterial_cubes;
@@ -144,8 +148,14 @@ public:
 };
 
 TEST_CASE_METHOD(CancelObjectFixture, "Single extruder", "[CancelObject]") {
+    for (const Domain::ModelObject* object : two_cubes.objects) {
+        for (Domain::ModelInstance* instance : object->instances) {
+            bed_instance.model_instances.push_back(instance);
+        }
+    }
+
     Print print;
-    print.apply(two_cubes, config, {}, {}, {});
+	print.update(two_cubes, config, bed_instance, SerializedConfig{});
     print.validate();
     const std::string gcode{Test::gcode(print)};
 
@@ -175,8 +185,15 @@ TEST_CASE_METHOD(CancelObjectFixture, "Single extruder", "[CancelObject]") {
 
 TEST_CASE_METHOD(CancelObjectFixture, "Sequential print", "[CancelObject]") {
     config.print.items.opt("complete_objects").set(true);
+
+    for (const Domain::ModelObject* object : two_cubes.objects) {
+        for (Domain::ModelInstance* instance : object->instances) {
+            bed_instance.model_instances.push_back(instance);
+        }
+    }
+
     Print print;
-    print.apply(two_cubes, config, {}, {}, {});
+    print.update(two_cubes, config, bed_instance, SerializedConfig{});
     print.validate();
     const std::string gcode{Test::gcode(print)};
 

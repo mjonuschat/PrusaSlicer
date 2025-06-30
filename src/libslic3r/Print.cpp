@@ -42,6 +42,7 @@
 #include "libslic3r/format.hpp"
 #include "libslic3r/PrePreview.hpp"
 #include "libslic3r/ModelUtils.hpp"
+#include "libslic3r/SlicingInput.hpp"
 
 #include <float.h>
 
@@ -92,6 +93,9 @@ void Print::clear()
     m_model.clear_objects();
 }
 
+using Domain::FullConfigFDM;
+using Domain::FullConfigFDMPtr;
+
 Biz::Print::ApplyStatus Print::update(
     Domain::Model& model,
     const ConfigPack& config,
@@ -103,7 +107,7 @@ Biz::Print::ApplyStatus Print::update(
     Biz::Slicing::with_limited_instances(model, bed.model_instances, [&]() {
         const ApplyStatus status{this->apply(
             model,
-            std::get<ConfigPackFDM>(config),
+            prepare_slicing_input(std::get<ConfigPackFDM>(config)),
             serialized_config,
             bed.wipe_tower,
             bed.custom_gcode

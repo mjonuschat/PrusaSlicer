@@ -15,6 +15,7 @@ using namespace Slic3r::Test;
 
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Biz::Algorithms::ModelObject::add_volume;
+using Biz::Print::SerializedConfig;
 
 SCENARIO("Model construction", "[Model]") {
     GIVEN("A Slic3r Model") {
@@ -60,7 +61,17 @@ SCENARIO("Model construction", "[Model]") {
             ensure_on_bed(*model_object);
 			THEN("Print works?") {
 				print.set_status_silent();
-				print.apply(model, config, {}, {}, {});
+
+                Domain::Bed model_bed;
+                Domain::BedInstance bed_instance{model_bed};
+
+                for (const Domain::ModelObject* object : model.objects) {
+                    for (Domain::ModelInstance* instance : object->instances) {
+                        bed_instance.model_instances.push_back(instance);
+                    }
+                }
+
+                print.update(model, config, bed_instance, SerializedConfig{});
 				print.process();
                 const Biz::libpgcode::ProcessorResult result{print.process_gcode(nullptr)};
                 CHECK(result.const_gcode()->str().size() > 0);

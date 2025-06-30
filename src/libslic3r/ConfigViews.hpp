@@ -58,8 +58,8 @@ public:
         ConfigView{full_config, {object_settings}}
     {}
 
-    const Domain::PartialObjectConfigFDM& object_settings() const {
-        return *std::dynamic_pointer_cast<const Domain::PartialObjectConfigFDM>(m_partial_configs.front());
+    const Domain::PartialObjectConfigFDMPtr object_settings() const {
+        return std::dynamic_pointer_cast<const Domain::PartialObjectConfigFDM>(m_partial_configs.front());
     }
 };
 

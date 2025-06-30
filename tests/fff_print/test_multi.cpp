@@ -25,6 +25,7 @@ using Domain::Percentage;
 using Biz::Algorithms::ModelObject::add_volume;
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Biz::Algorithms::ModelVolume::translate;
+using Biz::Print::SerializedConfig;
 
 SCENARIO("Basic tests", "[Multi]")
 {
@@ -186,8 +187,15 @@ std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &
     v2->volume_settings = volume2config;
     object->add_instance();
     ensure_on_bed(*object);
+    Domain::Bed model_bed;
+    Domain::BedInstance bed_instance{model_bed};
+    for (const Domain::ModelObject* object : model.objects) {
+        for (Domain::ModelInstance* instance : object->instances) {
+            bed_instance.model_instances.push_back(instance);
+        }
+    }
     Print print;
-    print.apply(model, config, {}, {}, {});
+    print.update(model, config, bed_instance, SerializedConfig{});
     print.validate();
     return Test::gcode(print);
 }

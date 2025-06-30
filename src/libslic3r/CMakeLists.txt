@@ -330,6 +330,8 @@ set(SLIC3R_SOURCES
     SlicesToTriangleMesh.cpp
     SlicingAdaptive.cpp
     SlicingAdaptive.hpp
+    SlicingInput.hpp
+    SlicingInput.cpp
     StepsInvalidation.hpp
     StepsInvalidation.cpp
     Subdivide.cpp

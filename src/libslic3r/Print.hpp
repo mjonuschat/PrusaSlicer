@@ -578,7 +578,7 @@ public:
 
     ApplyStatus apply(
         const Domain::Model& model,
-        const Domain::ConfigPackFDM& config_pack,
+        const Domain::FullConfigFDMPtr& new_full_config_ptr,
         const Biz::Print::SerializedConfig& serialized_config,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
         const std::optional<Domain::CustomGCode::Info>& custom_gcode,

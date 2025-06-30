@@ -188,6 +188,15 @@ public:
 
     const std::map<std::string, ConfigValue>& values() const;
 
+    /* This is an extremelly dangerous operation, possibly modifying the slicing input.
+     * Use with caution, and not that it is up to you to ensure the type of the
+     * value is correct. */
+    template<typename T>
+    void set(const std::string& key, const T& value) {
+        // extremelly dangerous, anything can be set...
+        m_values.insert_or_assign(key, ConfigValue{value});
+    }
+
 protected:
     std::size_t hash() const;
     std::map<std::string, ConfigValue> m_values;
@@ -225,13 +234,6 @@ public:
             return value->get<T>();
         }
         return std::nullopt;
-    }
-
-    // TODO: Remove this once possible!!! it allows changing the slicing input!
-    template<typename T>
-    void set(const std::string& key, const T& value) {
-        // extremelly dangerous, anything can be set...
-        m_values.insert_or_assign(key, ConfigValue{value});
     }
 
     virtual ~PartialConfig() = default;
