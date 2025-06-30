@@ -124,6 +124,9 @@ add_library(slic3r-domain
     src/Slic3r/Domain/Color.cpp
 
     include/Slic3r/Domain/enum_bitmask.hpp
+
+    include/Slic3r/Domain/ConfigPack.hpp
+    src/Slic3r/Domain/ConfigPack.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

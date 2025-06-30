@@ -137,7 +137,11 @@ void replace_impl(const ConfigValue value, const std::string& key, SquashedConfi
         using ValueType = std::remove_cvref_t<decltype(value)>;
         if constexpr (Domain::is_std_vector_v<ValueType>) {
             ASSERT(!value.empty());
-            config.set(key, value.front());
+            if constexpr (std::is_same_v<typename ValueType::value_type, bool>) {
+                config.set(key, bool{value.front()});
+            } else {
+                config.set(key, value.front());
+            }
         } else if constexpr (std::is_same_v<ValueType, EnumVectorWrapper>) {
             ASSERT(!value.values().empty());
             const EnumWrapper enum_value{value.values().front(), value.type(), value.def()};

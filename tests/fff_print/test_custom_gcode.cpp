@@ -23,7 +23,7 @@ TEST_CASE("Output file format", "[CustomGCode]")
     WHEN("output_file_format set") {
         TestConfig config;
 
-        config.print.items.opt("travel_speed").set(130.0);
+        config.tool.at(0).items.opt("travel_speed").set(130.0);
         config.print.items.opt("layer_height").set(0.4);
 
         config.print.items.opt("output_filename_format").set("ts_[travel_speed]_lh_[layer_height].gcode");
@@ -149,7 +149,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         TestConfig config;
         config.printer.items.opt("before_layer_gcode").set(";BEFORE [layer_num]" );
         config.printer.items.opt("layer_gcode").set(";CHANGE [layer_num]" );
-        config.print.items.opt("support_material").set(true);
+        config.tool.at(0).items.opt("support_material").set(true);
         config.print.items.opt("layer_height").set(0.2);
         WHEN("before and after layer change G-codes set") {
             std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::overhang }, config);

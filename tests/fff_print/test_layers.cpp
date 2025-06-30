@@ -72,7 +72,7 @@ TEST_CASE("Layer heights are correct", "[Layers]") {
 
 TEST_CASE("GCode has reasonable height", "[Layers]") {
     TestConfig config;
-    config.print.items.opt("fill_density").set(Percentage{0});
+    config.tool.at(0).items.opt("fill_density").set(Percentage{0});
 
     Print print;
     Domain::Model model;

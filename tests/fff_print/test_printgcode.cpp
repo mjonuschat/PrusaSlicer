@@ -29,7 +29,7 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
             TestConfig config;
             config.print.items.opt("layer_height").set(0.2);
             config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
-            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
+            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
             config.print.items.opt("gcode_comments").set(true);
             config.printer.items.opt("start_gcode").set("");
 
@@ -97,10 +97,10 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
             Slic3r::Domain::Model model;
 
             TestConfig config;
-            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
+            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
             config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.3});
             config.print.items.opt("layer_height").set(0.2);
-            config.print.items.opt("support_material").set(false);
+            config.tool.at(0).items.opt("support_material").set(false);
             config.print.items.opt("raft_layers").set(0);
             config.print.items.opt("complete_objects").set(true);
             config.print.items.opt("gcode_comments").set(true);
@@ -172,8 +172,8 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
         }
         WHEN("the output is executed with support material") {
             TestConfig config;
-            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
-            config.print.items.opt("support_material").set(true);
+            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
+            config.tool.at(0).items.opt("support_material").set(true);
             config.print.items.opt("raft_layers").set(3);
             config.print.items.opt("gcode_comments").set(true);
 
@@ -196,7 +196,7 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
         }
         WHEN("the output is executed with a separate first layer extrusion width") {
             TestConfig config;
-            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
+            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
 			std::string gcode = ::Test::slice({ TestMesh::cube_20x20x20 }, config);
             THEN("Some text output is generated.") {
                 REQUIRE(gcode.size() > 0);
@@ -249,8 +249,8 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
                 config.print.items.opt("infill_extruder").set(2);
                 config.print.items.opt("solid_infill_extruder").set(2);
                 config.print.items.opt("perimeter_extruder").set(2);
-                config.print.items.opt("support_material_extruder").set(2);
-                config.print.items.opt("support_material_interface_extruder").set(2);
+                config.tool.at(0).items.opt("support_material_extruder").set(2);
+                config.tool.at(0).items.opt("support_material_interface_extruder").set(2);
 
                 std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
                 THEN("current_extruder is processed in the start gcode and set for second extruder") {

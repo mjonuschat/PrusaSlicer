@@ -24,11 +24,24 @@ using FDMConfigLocation::Project;
 using FDMConfigLocation::Object;
 using FDMConfigLocation::Volume;
 
+namespace {
 // Define the static object holding all definitions. Provide list of acceptable
 // boxes and the init function.
-ConfigDefinitions s_defs_fdm(
-    {Printer, Filament, Print, Tool, Object, Volume, Project}, fdm_config_init_fn
-);
+const ConfigDefinitions& get_defs_fdm() {
+    static ConfigDefinitions defs_fdm(
+        {Printer, Filament, Print, Tool, Object, Volume, Project}, fdm_config_init_fn
+    );
+    return defs_fdm;
+}
+}
+
+PrintSettings::PrintSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Print) {}
+FilamentSettings::FilamentSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Filament) {}
+PrinterSettings::PrinterSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Printer) {}
+ToolPrintSettings::ToolPrintSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Tool) {}
+ObjectSettings::ObjectSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Object) {}
+VolumeSettings::VolumeSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Volume) {}
+ProjectSettings::ProjectSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Project) {}
 
 // JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.
 // Right now, let's just define the constants so the defs compile.

@@ -62,12 +62,4 @@ Parser::IO::Config get_parser_config(const FullConfigSLA& full_config)
     return result;
 }
 
-PrintConfigView get_view(const ConfigPackFDM& config_pack) {
-    return {std::make_shared<FullConfigFDM>(config_pack)};
-}
-
-SLAPrintConfigView get_view(const ConfigPackSLA& config_pack) {
-    return {std::make_shared<FullConfigSLA>(config_pack)};
-}
-
 } // namespace Slic3r::Biz::Slicing

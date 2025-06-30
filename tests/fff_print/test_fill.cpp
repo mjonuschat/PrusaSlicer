@@ -211,12 +211,12 @@ TEST_CASE("Infill does not exceed perimeters", "[Fill]")
             tool_settings.items.opt("nozzle_diameter").set(0.4);
         }
 
-        config.print.items.opt("fill_pattern").set(pattern);
+        config.tool.at(0).items.opt("fill_pattern").set(pattern);
         config.print.items.opt("top_fill_pattern").set(top_bottom_pattern);
         config.print.items.opt("bottom_fill_pattern").set(top_bottom_pattern);
-        config.print.items.opt("perimeters").set(1 );
+        config.tool.at(0).items.opt("perimeters").set(1 );
         config.print.items.opt("skirts").set(0);
-        config.print.items.opt("fill_density").set(Percentage{20.0});
+        config.tool.at(0).items.opt("fill_density").set(Percentage{20.0});
         config.print.items.opt("layer_height").set(0.05);
         config.print.items.opt("perimeter_extruder").set(1);
         config.print.items.opt("infill_extruder").set(2);
@@ -355,7 +355,7 @@ SCENARIO("Combine infill", "[Fill]")
             std::set<coord_t> layers; // layer_z => 1
             std::map<coord_t, bool> layer_infill; // layer_z => has_infill
             const auto infill_extruder           = config.print.items.opt("infill_extruder").get<int>();;
-            const auto support_material_extruder = config.print.items.opt("support_material_extruder").get<int>();
+            const auto support_material_extruder = config.tool.at(0).items.opt("support_material_extruder").get<int>();
             parser.parse_buffer(gcode,
                 [&tool, &layers, &layer_infill, infill_extruder, support_material_extruder](GCodeReader &self, const GCodeReader::GCodeLine &line)
             {
@@ -395,7 +395,7 @@ SCENARIO("Combine infill", "[Fill]")
             // we expect that infill is generated for half the number of combined layers
             // plus for each single layer that was not combined (remainder)
             THEN("infill is only present in correct number of layers") {
-                int infill_every = config.print.items.opt("infill_every_layers").get<int>();
+                int infill_every = config.tool.at(0).items.opt("infill_every_layers").get<int>();
                 REQUIRE(layers_with_infill == int(layers_with_perimeters / infill_every) + (layers_with_perimeters % infill_every));
             }
         };
@@ -407,13 +407,13 @@ SCENARIO("Combine infill", "[Fill]")
         }
         config.print.items.opt("layer_height").set(0.2);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
-        config.print.items.opt("infill_every_layers").set(2);
+        config.tool.at(0).items.opt("infill_every_layers").set(2);
         config.print.items.opt("perimeter_extruder").set(1);
         config.print.items.opt("infill_extruder").set(2);
-        config.print.items.opt("support_material_extruder").set(3);
-        config.print.items.opt("support_material_interface_extruder").set(3);
-        config.print.items.opt("top_solid_layers").set(0);
-        config.print.items.opt("bottom_solid_layers").set(0);
+        config.tool.at(0).items.opt("support_material_extruder").set(3);
+        config.tool.at(0).items.opt("support_material_interface_extruder").set(3);
+        config.tool.at(0).items.opt("top_solid_layers").set(0);
+        config.tool.at(0).items.opt("bottom_solid_layers").set(0);
 
         test(config);
 
@@ -430,7 +430,7 @@ SCENARIO("Combine infill", "[Fill]")
         config.tool[0].items.opt("nozzle_diameter").set(0.5);
         config.print.items.opt("layer_height").set(0.2);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
-        config.print.items.opt("infill_every_layers").set(2);
+        config.tool.at(0).items.opt("infill_every_layers").set(2);
 
         Slic3r::Test::init_and_process_print({ Test::TestMesh::cube_20x20x20 }, print, config);
         THEN("infill combination produces internal void surfaces") {
@@ -452,7 +452,7 @@ SCENARIO("Combine infill", "[Fill]")
         config.tool[0].items.opt("nozzle_diameter").set(0.5);
         config.print.items.opt("layer_height").set(0.2);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
-        config.print.items.opt("infill_every_layers").set(1);
+        config.tool.at(0).items.opt("infill_every_layers").set(1);
 
         Slic3r::Test::init_and_process_print({ Test::TestMesh::cube_20x20x20 }, print, config);
 
@@ -474,16 +474,16 @@ SCENARIO("Infill density zero", "[Fill]")
         TestConfig config;
 
         config.print.items.opt("skirts").set(0);
-        config.print.items.opt("perimeters").set(1);
-        config.print.items.opt("fill_density").set(Percentage{0});
-        config.print.items.opt("top_solid_layers").set(0);
-        config.print.items.opt("bottom_solid_layers").set(0);
+        config.tool.at(0).items.opt("perimeters").set(1);
+        config.tool.at(0).items.opt("fill_density").set(Percentage{0});
+        config.tool.at(0).items.opt("top_solid_layers").set(0);
+        config.tool.at(0).items.opt("bottom_solid_layers").set(0);
         config.print.items.opt("solid_infill_below_area").set(20000000.0);
         config.print.items.opt("solid_infill_every_layers").set(2);
-        config.print.items.opt("perimeter_speed").set(99.0);
-        config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{99.0});
+        config.tool.at(0).items.opt("perimeter_speed").set(99.0);
+        config.tool.at(0).items.opt("external_perimeter_speed").set(FloatOrPercentage{99.0});
         config.filament[0].items.opt("cooling").set(false);
-        config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+        config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
 
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("gcode not empty") {
@@ -492,7 +492,7 @@ SCENARIO("Infill density zero", "[Fill]")
 
         THEN("solid_infill_below_area and solid_infill_every_layers are ignored when fill_density is 0") {
             GCodeReader  parser;
-            const auto perimeter_speed = config.print.items.opt("perimeter_speed").get<double>();
+            const auto perimeter_speed = config.tool.at(0).items.opt("perimeter_speed").get<double>();
             std::map<double, double> layers_with_extrusion;
             parser.parse_buffer(gcode, [&layers_with_extrusion, perimeter_speed](GCodeReader &self, const GCodeReader::GCodeLine &line) {
                 if (line.cmd() == "G1" && line.extruding(self) && line.dist_XY(self) > 0) {
@@ -513,15 +513,15 @@ SCENARIO("Infill density zero", "[Fill]")
         }
 
         config.print.items.opt("skirts").set(0);
-        config.print.items.opt("perimeters").set(3);
-        config.print.items.opt("fill_density").set(Percentage{0});
+        config.tool.at(0).items.opt("perimeters").set(3);
+        config.tool.at(0).items.opt("fill_density").set(Percentage{0});
         config.print.items.opt("layer_height").set(0.2);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
         config.print.items.opt("infill_extruder").set(2);
         config.print.items.opt("solid_infill_extruder").set(2);
-        config.print.items.opt("infill_extrusion_width").set(FloatOrPercentage{0.52});
-        config.print.items.opt("solid_infill_extrusion_width").set(FloatOrPercentage{0.52});
-        config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
+        config.tool.at(0).items.opt("infill_extrusion_width").set(FloatOrPercentage{0.52});
+        config.tool.at(0).items.opt("solid_infill_extrusion_width").set(FloatOrPercentage{0.52});
+        config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
 
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::A }, config);
         THEN("gcode not empty") {
@@ -541,7 +541,7 @@ SCENARIO("Infill density zero", "[Fill]")
                         infill[scaled<coord_t>(self.z())].emplace_back(self.xy_scaled(), line.new_XY_scaled(self));
                 }
             });
-            auto opt_width = config.print.items.opt("infill_extrusion_width").get<FloatOrPercentage>();
+            auto opt_width = config.tool.at(0).items.opt("infill_extrusion_width").get<FloatOrPercentage>();
             REQUIRE(! opt_width.is_percentage());
             auto grow_d = scaled<float>(opt_width.float_value() / 2);
             auto inflate_lines = [grow_d](const Lines &lines) {
