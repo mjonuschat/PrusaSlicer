@@ -79,6 +79,7 @@ private:
      */
     DynamicPrintConfig m_print_config;
     Domain::ConfigPack m_new_config;
+    // TODO: add hw printer config
 
     const Bed* m_bed{ nullptr };
     BedInstanceList m_bed_instances;

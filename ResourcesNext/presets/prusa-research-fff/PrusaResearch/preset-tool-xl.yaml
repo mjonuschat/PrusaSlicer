@@ -322,7 +322,6 @@ variants:
     infill_extrusion_width: 0.45
     infill_overlap: 15%
     infill_speed: 200
-    layer_height: 0.2
     max_print_speed: 200
     max_volumetric_extrusion_rate_slope_negative: 0
     max_volumetric_extrusion_rate_slope_positive: 0
@@ -391,9 +390,9 @@ variants:
     thick_bridges: 0
     top_solid_min_thickness: 0.7
     bottom_solid_min_thickness: 0.5
-    standby_temperature_delta: -110
+    #standby_temperature_delta: -110
     wipe_tower_rotation_angle: 90
-    wipe_tower_brim_width: 3
+    #wipe_tower_brim_width: 3
     wipe_tower_bridging: 8
     wipe_tower_extra_spacing: 150
   variants:

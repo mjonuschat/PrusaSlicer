@@ -40,7 +40,7 @@ using WX::_L;
 EditorSLAMaterial::EditorSLAMaterial(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
     AbstractEditor(parent, _L("Materials"), Slic3r::Preset::TYPE_SLA_MATERIAL, preset_interactor)
 {
-    m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_SLA_MATERIAL, 0);
+    m_config_interactor = std::make_unique<Biz::Preset::LegacyPresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_SLA_MATERIAL, 0);
 }
 
 void EditorSLAMaterial::build()

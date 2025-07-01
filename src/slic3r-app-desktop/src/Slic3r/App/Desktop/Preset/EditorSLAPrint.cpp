@@ -74,7 +74,7 @@ void EditorSLAPrint::build_sla_support_params(const std::vector<SamePair<std::st
 EditorSLAPrint::EditorSLAPrint(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
     AbstractEditor(parent, _L("Print Settings"), Slic3r::Preset::TYPE_SLA_PRINT, preset_interactor)
 {
-    m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_SLA_PRINT, 0);
+    m_config_interactor = std::make_unique<Biz::Preset::LegacyPresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_SLA_PRINT, 0);
 }
 
 void EditorSLAPrint::build()

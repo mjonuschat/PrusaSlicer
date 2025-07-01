@@ -29,7 +29,7 @@ variants:
       M572 S0 ; reset PA
       M84 X Y E ; disable motors
       ; max_layer_z = [max_layer_z]
-    extruder_offset: '0x0'
+    extruder_offset: ['0x0']
     gcode_flavor: marlin2
     high_current_on_filament_swap: 0
     layer_gcode: |

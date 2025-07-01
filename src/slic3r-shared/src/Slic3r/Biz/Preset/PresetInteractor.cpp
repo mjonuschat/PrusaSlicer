@@ -70,7 +70,7 @@ void PresetInteractor::on_selected_config_container_changed(Domain::SelectionId 
     });
 }
 
-void PresetInteractor::set_preset_state_value(
+void PresetInteractor::set_legacy_preset_state_value(
     Slic3r::Preset::Type preset_type,
     size_t preset_index,
     const std::string& name,
@@ -96,7 +96,7 @@ void PresetInteractor::set_preset_state_value(
     }
 }
 
-void PresetInteractor::set_preset_state_config_num_extruders(
+void PresetInteractor::set_legacy_preset_state_config_num_extruders(
     Slic3r::Preset::Type preset_type, size_t preset_index, size_t num_extruders
 )
 {
@@ -111,7 +111,7 @@ void PresetInteractor::set_preset_state_config_num_extruders(
     });
 }
 
-void PresetInteractor::set_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, const DynamicPrintConfig& config)
+void PresetInteractor::set_legacy_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, const DynamicPrintConfig& config)
 {
     auto& ccc = mutable_selected_config_container_context();
     auto& preset_state = ccc.preset_state(preset_type, preset_index);
@@ -125,7 +125,7 @@ void PresetInteractor::set_preset_state(Slic3r::Preset::Type preset_type, size_t
         l->on_bed_preset_value_changed(preset_type, preset_state); });
 }
 
-void PresetInteractor::modify_preset_state(
+void PresetInteractor::modify_legacy_preset_state(
     Slic3r::Preset::Type preset_type, size_t preset_index, IConfigInteractor::ModifyFunc modify_fn
 )
 {
@@ -374,38 +374,38 @@ PresetState PresetInteractor::create_preset_state(PresetCollection& source_with_
 }
 
 
-const DynamicPrintConfig& PresetConfigInteractor::config() const
+const DynamicPrintConfig& LegacyPresetConfigInteractor::config() const
 {
     return m_parent.selected_config_container_context()
         .preset_state(m_preset_type, m_preset_index)
         .edited_preset.config;
 }
 
-const PresetState& PresetConfigInteractor::preset_state() const
+const PresetState& LegacyPresetConfigInteractor::legacy_preset_state() const
 {
     return m_parent.selected_config_container_context().preset_state(m_preset_type, m_preset_index);
 }
 
-void PresetConfigInteractor::set_config_value(
+void LegacyPresetConfigInteractor::set_config_value(
     const std::string& name, const boost::any& value, int opt_index
 )
 {
-    m_parent.set_preset_state_value(m_preset_type, m_preset_index, name, value, opt_index);
+    m_parent.set_legacy_preset_state_value(m_preset_type, m_preset_index, name, value, opt_index);
 }
 
-void PresetConfigInteractor::set_config_num_extruders(size_t num_extruders)
+void LegacyPresetConfigInteractor::set_config_num_extruders(size_t num_extruders)
 {
-    m_parent.set_preset_state_config_num_extruders(m_preset_type, m_preset_index, num_extruders);
+    m_parent.set_legacy_preset_state_config_num_extruders(m_preset_type, m_preset_index, num_extruders);
 }
 
-void PresetConfigInteractor::set_config(const Slic3r::DynamicPrintConfig& config)
+void LegacyPresetConfigInteractor::set_config(const Slic3r::DynamicPrintConfig& config)
 {
-    m_parent.set_preset_state(m_preset_type, m_preset_index, config);
+    m_parent.set_legacy_preset_state(m_preset_type, m_preset_index, config);
 }
 
-void PresetConfigInteractor::modify_config(IConfigInteractor::ModifyFunc mod_fn)
+void LegacyPresetConfigInteractor::modify_config(IConfigInteractor::ModifyFunc mod_fn)
 {
-    m_parent.modify_preset_state(m_preset_type, m_preset_index, mod_fn);
+    m_parent.modify_legacy_preset_state(m_preset_type, m_preset_index, mod_fn);
 }
 
 }

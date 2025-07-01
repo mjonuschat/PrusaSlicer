@@ -10,7 +10,7 @@ values:
   before_layer_gcode: ;BEFORE_LAYER_CHANGE\nG92 E0.0\n;[layer_z]\n\n
   deretract_speed: 0
   end_gcode: '{if max_layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+1, max_print_height)} F720 ; Move print head up{endif}\nG1 X0 Y200 F3600 ; park\n{if max_layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+49, max_print_height)} F720 ; Move print head further up{endif}\nG4 ; wait\nM104 S0 ; turn off temperature\nM140 S0 ; turn off heatbed\nM107 ; turn off fan\nM900 K0 ; reset LA\nM84 ; disable motors'
-  extruder_offset: '0x0'
+  extruder_offset: ['0x0']
   gcode_flavor: marlin
   silent_mode: 0
   remaining_times: 1

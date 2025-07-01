@@ -22,10 +22,10 @@ class PresetInteractor;
 /**
  * Implements interaction with Preset underlying DynamicPrintConfig
  */
-class PresetConfigInteractor : public IConfigInteractor
+class LegacyPresetConfigInteractor : public IConfigInteractor
 {
 public:
-    PresetConfigInteractor(PresetInteractor& parent, Slic3r::Preset::Type preset_type, size_t preset_index = 0)
+    LegacyPresetConfigInteractor(PresetInteractor& parent, Slic3r::Preset::Type preset_type, size_t preset_index = 0)
         : m_parent(parent), m_preset_type(preset_type), m_preset_index(preset_index)
     {}
     const DynamicPrintConfig& config() const override;
@@ -34,11 +34,20 @@ public:
     void set_config_num_extruders(size_t num_extruders) override;
     void modify_config(ModifyFunc mod_fn) override;
 
-    const PresetState& preset_state() const;
+    const PresetState& legacy_preset_state() const;
 private:
     PresetInteractor& m_parent;
     Slic3r::Preset::Type m_preset_type;
     size_t m_preset_index;
+};
+
+class PresetConfigInteractor
+{
+public:
+    explicit PresetConfigInteractor(PresetInteractor& parent) : m_parent(parent) {}
+
+private:
+    PresetInteractor& m_parent;
 };
 
 /**
@@ -75,10 +84,10 @@ public:
 
     void prepare_config_container_preset(Domain::SelectionId project_id, Domain::SelectionId config_container_id);
 
-    void set_preset_state_value(Slic3r::Preset::Type preset_type, size_t preset_index, const std::string& name, const boost::any& value, int opt_index = 0);
-    void set_preset_state_config_num_extruders(Slic3r::Preset::Type preset_type, size_t preset_index, size_t num_extruders);
-    void set_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, const DynamicPrintConfig& config);
-    void modify_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, IConfigInteractor::ModifyFunc modify_fn);
+    void set_legacy_preset_state_value(Slic3r::Preset::Type preset_type, size_t preset_index, const std::string& name, const boost::any& value, int opt_index = 0);
+    void set_legacy_preset_state_config_num_extruders(Slic3r::Preset::Type preset_type, size_t preset_index, size_t num_extruders);
+    void set_legacy_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, const DynamicPrintConfig& config);
+    void modify_legacy_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, IConfigInteractor::ModifyFunc modify_fn);
 
     const PresetCollection& preset_collection(Slic3r::Preset::Type preset_type) const
     {
@@ -103,7 +112,7 @@ public:
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId bed_id) override;
 
 private:
-    friend class PresetConfigInteractor;
+    friend class LegacyPresetConfigInteractor;
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
 
     PresetInteractorConfigContainerContext& mutable_selected_config_container_context()

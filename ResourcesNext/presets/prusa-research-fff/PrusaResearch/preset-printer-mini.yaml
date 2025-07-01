@@ -27,7 +27,7 @@ variants:
       M569 S1 X Y ; reset to stealthchop for X Y
       M84 ; disable motors
       ; max_layer_z = [max_layer_z]
-    extruder_offset: '0x0'
+    extruder_offset: ['0x0']
     gcode_flavor: marlin2
     high_current_on_filament_swap: 0
     layer_gcode: |

@@ -248,9 +248,6 @@ static Slic3rLegacy::DynamicPrintConfig load_legacy_config_from_legacy_file(cons
 
 static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::ConfigItem& item, int filament_id = -1)
 {
-    if (item.name() == "bottom_solid_min_thickness") {
-        SPDLOG_DEBUG("Here");
-    }
     if (opt->type() == Slic3rLegacy::coBool && item.holds_alternative<bool>())
         item.set(opt->getBool());
     else if (opt->type() == Slic3rLegacy::coInt && item.holds_alternative<int>())
@@ -466,8 +463,6 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
         bool is_filament_override = std::ranges::find(legacy.overrides, old_key) != legacy.overrides.end();
         ASSERT(! is_filament_override || boost::starts_with(old_key, legacy.override_prefix));
         std::string new_key(old_key.begin() + (is_filament_override ? legacy.override_prefix.size() : 0), old_key.end()); // trim prefix
-        if (new_key == "bottom_solid_min_thickness")
-            SPDLOG_DEBUG("Here");
 
         const auto [item_ptr, new_is_override]{box.contains(new_key)};
         if (!item_ptr)

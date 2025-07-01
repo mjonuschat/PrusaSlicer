@@ -131,15 +131,15 @@ ConfigOptionsGroupShp Page::new_optgroup(const wxString& title, int noncommon_la
     };
 
     optgroup->get_initial_config = [editor]() {
-        return editor->config_interactor().preset_state().edited_preset.config;
+        return editor->config_interactor().legacy_preset_state().edited_preset.config;
     };
 
     optgroup->get_sys_config = [editor]() {
-        return editor->config_interactor().preset_state().selected_preset_parent->config;
+        return editor->config_interactor().legacy_preset_state().selected_preset_parent->config;
     };
 
     optgroup->have_sys_config = [editor]() {
-        return editor->config_interactor().preset_state().selected_preset_parent != nullptr;
+        return editor->config_interactor().legacy_preset_state().selected_preset_parent != nullptr;
     };
 
     optgroup->rescale_extra_column_item = [](wxWindow* win) {

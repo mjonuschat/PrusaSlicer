@@ -343,7 +343,7 @@ void AbstractEditor::add_scaled_bitmap(wxWindow* parent,
 
 void AbstractEditor::load_initial_data()
 {
-    bool has_parent = m_config_interactor->preset_state().selected_preset_parent != nullptr;
+    bool has_parent = m_config_interactor->legacy_preset_state().selected_preset_parent != nullptr;
     m_bmp_non_system = has_parent ? &m_bmp_value_unlock : &m_bmp_white_bullet;
     m_ttg_non_system = has_parent ? &m_ttg_value_unlock : &m_ttg_white_bullet_ns;
     m_tt_non_system  = has_parent ? &m_tt_value_unlock  : &m_ttg_white_bullet_ns;
@@ -592,7 +592,7 @@ void AbstractEditor::update_changed_ui()
         return;
 
     const bool deep_compare = m_type != Slic3r::Preset::TYPE_FILAMENT;
-    const auto& preset_state = m_config_interactor->preset_state();
+    const auto& preset_state = m_config_interactor->legacy_preset_state();
     auto dirty_options = preset_state.current_dirty_options(deep_compare);
     auto nonsys_options = preset_state.current_different_from_parent_options(deep_compare);
     if (m_type == Slic3r::Preset::TYPE_PRINTER) {
@@ -712,7 +712,7 @@ void AbstractEditor::update_changed_tree_ui()
             }
             if (page->title() == from_u8("Dependencies")) {
                 if (m_type == Slic3r::Preset::TYPE_PRINTER) {
-                    sys_page = m_config_interactor->preset_state().selected_preset_parent != nullptr;
+                    sys_page = m_config_interactor->legacy_preset_state().selected_preset_parent != nullptr;
                     modified_page = false;
                 } else {
                     if (m_type == Slic3r::Preset::TYPE_FILAMENT || m_type == Slic3r::Preset::TYPE_SLA_MATERIAL)
@@ -1125,7 +1125,7 @@ void AbstractEditor::activate_option(const std::string& opt_key, const wxString&
 //!
 void AbstractEditor::cache_config_diff(const std::vector<std::string>& selected_options, const DynamicPrintConfig* config/* = nullptr*/)
 {
-    const auto& preset_state = m_config_interactor->preset_state();
+    const auto& preset_state = m_config_interactor->legacy_preset_state();
     m_cache_config.apply_only(config ? *config : preset_state.edited_preset.config, selected_options);
 }
 //!
@@ -1165,7 +1165,7 @@ void AbstractEditor::build_preset_description_line(ConfigOptionsGroup* optgroup)
 
 void AbstractEditor::update_preset_description_line()
 {
-    const auto& state = m_config_interactor->preset_state();
+    const auto& state = m_config_interactor->legacy_preset_state();
     const Slic3r::Preset* parent = state.selected_preset_parent;
     const Slic3r::Preset& preset = state.edited_preset;
 
@@ -1378,7 +1378,7 @@ void AbstractEditor::update_ui_items_related_on_parent_preset(const Slic3r::Pres
 // Initialize the UI from the current preset
 void AbstractEditor::load_current_preset()
 {
-    const auto& state = m_config_interactor->preset_state();
+    const auto& state = m_config_interactor->legacy_preset_state();
     const auto& preset = state.edited_preset;
 
     update();

@@ -53,7 +53,6 @@ struct ValueCast<Domain::Percentage, Domain::FloatOrPercentage>
     static Domain::FloatOrPercentage cast(Domain::Percentage v) { return Domain::FloatOrPercentage{v}; }
 };
 
-
 #undef VALUE_CAST_DEF_STATIC
 
 template <typename FromType>
@@ -90,6 +89,12 @@ struct CastingGetterVisitor
 struct ConfigValueSetterVisitor
 {
     Domain::ConfigItem& item;
+    const bool is_override;
+
+    explicit ConfigValueSetterVisitor(const Domain::ContainsResult& result)
+        : item(*result.item)
+        , is_override(result.is_override)
+    {}
 
     /*
     std::monostate,
@@ -98,7 +103,8 @@ struct ConfigValueSetterVisitor
      */
     void operator()(const std::monostate& v)
     {
-        item.set<std::optional<int>>(std::nullopt);
+        if (!is_override)
+            item.set<std::optional<int>>(std::nullopt);
     }
 
     template <typename ValueType>
@@ -134,7 +140,9 @@ struct ConfigValueSetterVisitor
     >::value
     void operator()(const ValueType& v)
     {
-        if (!item.holds_alternative<ValueType>() && !item.holds_alternative<Domain::EnumVectorWrapper>()) {
+        if (item.holds_alternative<std::string>()) {
+            item.set(fmt::format("{}", fmt::join(v, ",")));
+        } else if (!item.holds_alternative<ValueType>() && !item.holds_alternative<Domain::EnumVectorWrapper>()) {
             std::string dest_type_name = item.value().visit([](const auto& v) { return type_name(v); });
             SPDLOG_ERROR("Type mismatched for item {}: source type: {}  dest type: {}", item.name(), type_name(v), dest_type_name);
         } else
@@ -172,7 +180,7 @@ ConfigType config_values(const Domain::Preset::PresetValueMap& values)
             SPDLOG_ERROR("Invalid key {} for {}", k, type_name(config));
             continue;
         }
-        std::visit(ConfigValueSetterVisitor{*q.item}, v);
+        std::visit(ConfigValueSetterVisitor{q}, v);
     }
     return config;
 }

@@ -159,7 +159,7 @@ variants:
     filament_multitool_ramming: '1'
     filament_multitool_ramming_flow: '40'
     filament_multitool_ramming_volume: '10'
-    filament_retract_length_toolchange: '20'
+    retract_length_toolchange: '20'
     first_layer_temperature: '230'
     idle_temperature: '70'
     min_fan_speed: '100'

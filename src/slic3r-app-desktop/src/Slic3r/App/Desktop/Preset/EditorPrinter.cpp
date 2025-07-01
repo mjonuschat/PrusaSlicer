@@ -44,7 +44,7 @@ using WX::_L;
 EditorPrinter::EditorPrinter(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
     AbstractEditor(parent, _L("Printers"), Slic3r::Preset::TYPE_PRINTER, preset_interactor)
 {
-    m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_PRINTER, 0);
+    m_config_interactor = std::make_unique<Biz::Preset::LegacyPresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_PRINTER, 0);
 }
 
 void EditorPrinter::init_options_list()
@@ -80,7 +80,7 @@ void EditorPrinter::build_print_host_upload_group(Page* page) //! maybe it's a t
     Line line = {{}, {} };
     line.full_width = 1;
     line.widget = [this](wxWindow* parent) {
-        return description_line_widget(parent, m_config_interactor->preset_state().selected_preset->printer_technology() == ptFFF ?
+        return description_line_widget(parent, m_config_interactor->legacy_preset_state().selected_preset->printer_technology() == ptFFF ?
                                        &m_fff_print_host_upload_description_line : &m_sla_print_host_upload_description_line, {});
     };
     optgroup->append_line(line);
@@ -91,7 +91,7 @@ void EditorPrinter::update_description_lines()
     AbstractEditor::update_description_lines();
 
     if (m_active_page && m_active_page->title() == WX::from_u8("General")) {
-        ogStaticText* print_host_upload_description_line = m_config_interactor->preset_state().selected_preset->printer_technology() == ptFFF ?
+        ogStaticText* print_host_upload_description_line = m_config_interactor->legacy_preset_state().selected_preset->printer_technology() == ptFFF ?
                                                            m_fff_print_host_upload_description_line : m_sla_print_host_upload_description_line;
         if (print_host_upload_description_line)
             print_host_upload_description_line->SetText(_L(""
@@ -121,7 +121,7 @@ void EditorPrinter::build_fff()
 //!    wxGetApp().sidebar().update_objects_list_extruder_column(m_initial_extruders_count);
 
     const Slic3r::Preset* parent_preset = printer_technology == ptSLA ? nullptr // just for first build, if SLA printer preset is selected 
-                                  : m_config_interactor->preset_state().selected_preset_parent;
+                                  : m_config_interactor->legacy_preset_state().selected_preset_parent;
     m_sys_extruders_count = parent_preset == nullptr ? 0 :
             static_cast<const ConfigOptionFloats*>(parent_preset->config.option("nozzle_diameter"))->values.size();
 
@@ -787,7 +787,7 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
             });
 
             auto has_changes = [this]() {
-                auto dirty_options = m_config_interactor->preset_state().current_dirty_options(true);
+                auto dirty_options = m_config_interactor->legacy_preset_state().current_dirty_options(true);
 #if 1
                 dirty_options.erase(std::remove_if(dirty_options.begin(), dirty_options.end(), 
                     [](const std::string& opt) { return opt.find("extruder_colour") != std::string::npos || opt.find("nozzle_diameter") != std::string::npos; }), dirty_options.end());
@@ -949,7 +949,7 @@ void EditorPrinter::on_preset_loaded()
 void EditorPrinter::update_pages()
 {
     // update m_pages ONLY if printer technology is changed
-    const PrinterTechnology new_printer_technology = m_config_interactor->preset_state().edited_preset.printer_technology();
+    const PrinterTechnology new_printer_technology = m_config_interactor->legacy_preset_state().edited_preset.printer_technology();
     if (new_printer_technology == printer_technology)
         return;
 
@@ -1016,7 +1016,7 @@ void EditorPrinter::clear_pages()
 
 void EditorPrinter::toggle_options()
 {
-    if (!m_active_page || m_config_interactor->preset_state().edited_preset.printer_technology() == ptSLA)
+    if (!m_active_page || m_config_interactor->legacy_preset_state().edited_preset.printer_technology() == ptSLA)
         return;
 
     const GCodeFlavor flavor = config().option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
@@ -1212,7 +1212,7 @@ void EditorPrinter::cache_extruder_cnt(const DynamicPrintConfig* config/* = null
 
 bool EditorPrinter::apply_extruder_cnt_from_cache()
 {
-    if (m_config_interactor->preset_state().edited_preset.printer_technology() == ptSLA)
+    if (m_config_interactor->legacy_preset_state().edited_preset.printer_technology() == ptSLA)
         return false;
 
     if (m_cache_extruder_count > 0) {
