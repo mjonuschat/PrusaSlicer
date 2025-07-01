@@ -30,10 +30,10 @@ class SLAObjectCache :
 public:
     using Key = std::pair<Slicing::SlicingId, ::Slic3r::Domain::ObjectID>;
     SLAObjectOptRef get_instance(const Key& key) const;
+    std::vector<Domain::ObjectID> get_object_ids(const Slicing::SlicingId slicing_id) const;
     // NOTE: instance with id == 0 means bed is removed
     void on_sla_object_changed(const Slicing::SlicingId& id, Slicing::Sla::Object&& object) override;
     // remove object for bed which are not in object_ids
-    void on_model_update(const Slicing::SlicingId& id, const std::vector<Domain::ObjectID>& object_ids) override;
     void on_remove_bed(const Slicing::SlicingId& id) override;
     using Cache = std::map<Key, Slicing::Sla::Object>;
 private:

@@ -117,6 +117,11 @@ Biz::Print::ApplyStatus Print::update(
         }
         result = Biz::Print::ApplyStatus::changed;
     });
+
+    if (result == Biz::Print::ApplyStatus::changed) {
+        m_on_fdm_result({});
+    }
+
     return result;
 }
 

@@ -498,10 +498,10 @@ void SLAPrint::Steps::generate_preview(SLAPrintObject& po, SLAPrintObjectStep st
     TriangleMeshStats stats = Biz::Algorithms::TriangleMesh::calculate_stats(m);
     po.m_preview = Biz::Slicing::Sla::Object {
         .object_id = po.m_model_object->id(),
+        .instance_trafos = get_instance_trafos(po),
         .mesh = std::make_shared<const TriangleMesh>(std::move(m), std::move(stats)),
         .issues = std::move(issues)
     };
-    m_print->m_on_sla_object(*po.m_preview);
 }
 
 void SLAPrint::Steps::mesh_assembly(SLAPrintObject &po)
@@ -786,10 +786,7 @@ void SLAPrint::Steps::support_points(SLAPrintObject &po)
 
     // If supports are disabled, we can skip the model scan.
     if (!po.m_config.get<bool>("supports_enable")) {
-        bool exist = po.m_preview->support_points != nullptr;
         po.m_preview->support_points = nullptr;
-        if (exist)
-            m_print->m_on_sla_object(*po.m_preview);
         po.m_supportable_mesh->pts.reset();
         return; // support points are unwanted
     }
@@ -900,7 +897,6 @@ void SLAPrint::Steps::support_points(SLAPrintObject &po)
     BOOST_LOG_TRIVIAL(debug) << "Automatic support points: " << support_points.size();
     po.m_preview->support_points = std::make_shared<const SupportPoints>(std::move(support_points));
     po.m_supportable_mesh->pts = po.m_preview->support_points;
-    m_print->m_on_sla_object(*po.m_preview);
 }
 
 void SLAPrint::Steps::support_tree(SLAPrintObject &po)
@@ -911,10 +907,7 @@ void SLAPrint::Steps::support_tree(SLAPrintObject &po)
         return;
 
     if (!po.m_config.get<bool>("supports_enable")){
-        bool exist = po.m_preview->support_structure != nullptr;
         po.m_preview->support_structure = nullptr;
-        if (exist)
-            m_print->m_on_sla_object(*po.m_preview);
         return; // support tree is unwanted
     }
 
@@ -938,7 +931,6 @@ void SLAPrint::Steps::support_tree(SLAPrintObject &po)
     indexed_triangle_set tree_its = sla::create_support_tree(*po.m_supportable_mesh, ctl);
     TriangleMeshStats stats = Biz::Algorithms::TriangleMesh::calculate_stats(tree_its);
     po.m_preview->support_structure = std::make_shared<TriangleMesh>(std::move(tree_its), std::move(stats));
-    m_print->m_on_sla_object(*po.m_preview);
     throw_if_canceled();
 }
 
@@ -954,10 +946,7 @@ void SLAPrint::Steps::generate_pad(SLAPrintObject& po)
     // repeated)
     using Slic3r::Biz::Slicing::Sla::Object;
     if (!po.m_config.get<bool>("pad_enable")) {
-        bool exist = po.m_preview->pad != nullptr;
         po.m_preview->pad = nullptr;
-        if (exist)
-            m_print->m_on_sla_object(*po.m_preview);
         return; // pad is unwanted
     }
 
@@ -981,7 +970,6 @@ void SLAPrint::Steps::generate_pad(SLAPrintObject& po)
 
     TriangleMeshStats stats = Biz::Algorithms::TriangleMesh::calculate_stats(its);
     po.m_preview->pad = std::make_shared<TriangleMesh>(std::move(its), std::move(stats));
-    m_print->m_on_sla_object(*po.m_preview);
     throw_if_canceled();
 }
 

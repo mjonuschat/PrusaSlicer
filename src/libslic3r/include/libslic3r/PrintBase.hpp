@@ -854,6 +854,10 @@ public:
     PrintStateBase::StateWithTimeStamp step_state_with_timestamp(PrintObjectStepEnum step) const { return m_state.state_with_timestamp(step, PrintObjectBase::state_mutex(m_print)); }
     PrintStateBase::StateWithWarnings  step_state_with_warnings(PrintObjectStepEnum step) const { return m_state.state_with_warnings(step, PrintObjectBase::state_mutex(m_print)); }
 
+    bool all_steps_done() const {
+        return is_step_done(PrintObjectStepEnum(int(COUNT) - 1));
+    }
+
     auto last_completed_step() const
     {
         static_assert(COUNT > 0, "Step count should be > 0");

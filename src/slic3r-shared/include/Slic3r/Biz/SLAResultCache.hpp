@@ -27,12 +27,11 @@ class SLAResultCache :
     public Slicing::ISLAResultListener,
     public WithListeners<ISLAResultCacheChangedListener>
 {
-public:    
+public:
     SLAResultOptRef get_result(const Slicing::SlicingId& id) const;
     void on_sla_result_changed(const Slicing::SlicingId& id, Slicing::SLAResult&& result) override;
-    void on_remove_bed(const Slicing::SlicingId&) override;
-    using Cache = std::map<Slicing::SlicingId, Slicing::SLAResult>;
 private:
+    using Cache = std::map<Slicing::SlicingId, Slicing::SLAResult>;
     Cache m_results;
 };
 } // namespace Slic2r::Biz

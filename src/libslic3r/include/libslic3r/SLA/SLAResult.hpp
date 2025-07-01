@@ -48,6 +48,7 @@ struct OutputFiles
 // MUST be in order of creation backend
 enum class ResultType
 {
+    None,
     Slices,   // with configs
     Files     // Last steps prepared files for store
 };
@@ -77,6 +78,8 @@ struct Object{
 
     // Identify source object in the model
     ObjectID object_id; // Model::Objects[N]::id
+                        //
+    std::vector<Domain::Transform3d> instance_trafos;
 
     // Holds the preview of the object to be printed
     // (holes, cavities, negatives and positive volumes unified)

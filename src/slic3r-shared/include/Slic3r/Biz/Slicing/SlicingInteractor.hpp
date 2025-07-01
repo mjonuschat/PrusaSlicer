@@ -36,11 +36,9 @@ public:
 
 class ISLAResultListener : public ISlicingListener { public: 
     virtual void on_sla_result_changed(const SlicingId&, SLAResult&&) = 0;
-    virtual void on_remove_bed(const SlicingId&) = 0;
 };
 class ISLAObjectListener : public ISlicingListener { public: 
     virtual void on_sla_object_changed(const SlicingId&, Sla::Object&&) = 0;
-    virtual void on_model_update(const SlicingId&, const std::vector<Domain::ObjectID>&) = 0;
     virtual void on_remove_bed(const SlicingId&) = 0;
 };
 

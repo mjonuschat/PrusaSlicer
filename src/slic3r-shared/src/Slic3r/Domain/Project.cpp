@@ -39,11 +39,11 @@ void Project::load(const std::string& file_path, std::function<void(Project&&)> 
         project.m_config_containers.clear();
         project.m_config_containers.emplace_back(std::make_unique<ConfigContainer>());
         auto& config_container = project.m_config_containers.back();
-        config_container->set_print_config_new(config);
         DynamicPrintConfig co;
         auto full{FullPrintConfig::defaults()};
         co.apply(full);
         config_container->set_print_config(co);
+        config_container->set_print_config_new(config);
         //config_container->set_bed(m_bed_container.add_bed())
         //ASSERT(config_container->bed_instances().size() == wipe_towers.size());
 
