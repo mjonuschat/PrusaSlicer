@@ -501,7 +501,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/LastExportPathStorage.hpp
         include/Slic3r/Biz/ObservableProjectList.hpp
         src/Slic3r/Biz/ObservableProjectList.cpp
-
         src/Slic3r/Biz/Units.cpp
         include/Slic3r/Biz/Units.hpp
         src/Slic3r/Biz/Units.cpp
