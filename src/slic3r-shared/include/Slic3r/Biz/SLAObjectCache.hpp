@@ -4,6 +4,7 @@
 #include <functional>
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
+#include "libslic3r/SLA/SLAResult.hpp"
 
 namespace Slic3r::Biz {
 
@@ -11,7 +12,7 @@ class ISLAObjectCacheChangedListener
 {
 public:
     virtual ~ISLAObjectCacheChangedListener() = default;
-    virtual void on_sla_object_cache_changed(const Slicing::SlicingId& id) = 0;
+    virtual void on_sla_object_cache_changed(const Slicing::SlicingId& id, ::Slic3r::Domain::ObjectID instance_id) = 0;
 };
 
 using SLAObjectRef = std::reference_wrapper<const Slicing::Sla::Object>;

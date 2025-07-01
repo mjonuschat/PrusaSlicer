@@ -4,6 +4,7 @@ project(libvgcode)
 add_library(libvgcode
     include/Slic3r/App/libvgcode/ColorRange.hpp
     include/Slic3r/App/libvgcode/GCodeNodeTag.hpp
+    include/Slic3r/App/libvgcode/SlaObjectNodeTag.hpp
     include/Slic3r/App/libvgcode/Types.hpp
     include/Slic3r/App/libvgcode/AbstractViewer.hpp
     include/Slic3r/App/libvgcode/FdmViewer.hpp

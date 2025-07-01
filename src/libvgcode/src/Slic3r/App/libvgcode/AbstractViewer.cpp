@@ -35,6 +35,14 @@ void AbstractViewer::set_view_visible_range(Interval::value_type min, Interval::
     m_view_range.set_visible(min, max);
 }
 
+float AbstractViewer::encoded_color(const Domain::ColorRGB& color) {
+    int r = int(color.r_uchar());
+    int g = int(color.g_uchar());
+    int b = int(color.b_uchar());
+    int i_color = r << 16 | g << 8 | b;
+    return float(i_color);
+}
+
 void AbstractViewer::set_lights(const Scene::Lighting& lights)
 {
     m_lights.ambient_intensity = lights.ambient_intensity;

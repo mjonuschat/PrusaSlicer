@@ -28,7 +28,17 @@ public:
     libvgcode::AbstractViewer& viewer() override {
         return *static_cast<libvgcode::AbstractViewer*>(&m_viewer); }
 
-    void load(SlaViewerWrapperInputData&& wrapper_data, const std::vector<float>& layers_zs, const std::vector<float>& layers_times);
+    //
+    // Load data from the SLAResult structure.
+    //
+    void load_from_result(const Biz::Slicing::SLAResult& result);
+    //
+    // Load data from the sliced Object.
+    //
+    void load_from_object(const Biz::Slicing::Sla::Object& object);
+
+    void reset_result();
+    void reset_from_object(const Biz::Slicing::Sla::Object& object);
 
     const libvgcode::Interval& view_visible_range() const { return m_viewer.view_visible_range(); }
     const libvgcode::Interval& view_enabled_range() const { return m_viewer.view_enabled_range(); }

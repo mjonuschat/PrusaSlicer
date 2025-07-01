@@ -6,7 +6,6 @@
 #include "Slic3r/App/libvgcode/FdmViewer.hpp"
 #include "Slic3r/App/libvgcode/Utils.hpp"
 #include "Slic3r/App/libvgcode/ObjExport.hpp"
-//#include "Slic3r/App/libvgcode/FdmViewerInputData.hpp"
 #include "Slic3r/App/libvgcode/GCodeNodeTag.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
@@ -683,26 +682,6 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data)
     node->set_raycast_component(new Scene::AabbRaycastNodeComponent(&m_aabb.second));
 }
 
-void FdmViewer::load_as_sla(const std::vector<float>& layers_zs, const std::vector<float>& layers_times)
-{
-    if (!m_initialized)
-        return;
-
-    if (layers_zs.empty() || layers_times.empty())
-        return;
-
-    reset();
-
-    assert(layers_zs.size() == layers_times.size());
-
-    for (size_t i = 0; i < layers_zs.size(); ++i) {
-        m_layers.update_as_sla(layers_zs[i], layers_times[i]);
-    }
-
-    if (!m_layers.empty())
-        m_layers.set_view_range(0, uint32_t(m_layers.count()) - 1);
-}
-
 void FdmViewer::update_enabled_entities()
 {
     if (m_vertices->empty())
@@ -786,14 +765,6 @@ void FdmViewer::update_enabled_entities()
 #endif // !USE_TEXTURE_BUFFER
 
     m_settings.update_enabled_entities = false;
-}
-
-static float encoded_color(const ColorRGB& color) {
-    int r = int(color.r_uchar());
-    int g = int(color.g_uchar());
-    int b = int(color.b_uchar());
-    int i_color = r << 16 | g << 8 | b;
-    return float(i_color);
 }
 
 void FdmViewer::update_colors_texture()

@@ -75,11 +75,12 @@ struct Object{
     using TriangleMesh  = ::Slic3r::Domain::TriangleMesh;
     using ObjectID      = ::Slic3r::Domain::ObjectID;
     using SupportPoints = ::Slic3r::Domain::SLA::SupportPoints;
+    using InstanceTrafos = std::vector<std::pair<ObjectID, Domain::Transform3d>>;
 
     // Identify source object in the model
     ObjectID object_id; // Model::Objects[N]::id
                         //
-    std::vector<Domain::Transform3d> instance_trafos;
+    InstanceTrafos instance_trafos;
 
     // Holds the preview of the object to be printed
     // (holes, cavities, negatives and positive volumes unified)

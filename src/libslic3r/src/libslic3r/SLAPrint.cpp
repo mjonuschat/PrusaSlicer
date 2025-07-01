@@ -71,6 +71,7 @@ using Domain::Percentage;
 using Domain::PartialObjectConfigSLA;
 using Biz::Algorithms::Scaling::unscaled;
 using Domain::Transform3d;
+using InstanceTrafos = Biz::Slicing::Sla::Object::InstanceTrafos;
 
 
 bool is_zero_elevation(const SLAPrintObjectConfigView &c)
@@ -804,15 +805,15 @@ ModelSyncResult sync_model(
     };
 }
 
-std::vector<Transform3d> get_instance_trafos(const SLAPrintObject& object) {
+InstanceTrafos get_instance_trafos(const SLAPrintObject& object) {
     const double z{object.get_current_elevation()};
-    std::vector<Transform3d> instance_trafos;
+    InstanceTrafos instance_trafos;
     for (const SLAPrintObject::Instance& instance : object.instances()) {
         Transform3d trafo{Transform3d::Identity()};
 
         trafo.translate(to_3d(unscaled<double>(instance.shift), z));
         trafo.rotate(Eigen::AngleAxis<double>(instance.rotation, Vec3d::UnitZ()));
-        instance_trafos.push_back(trafo);
+        instance_trafos.emplace_back(instance.instance_id, trafo);
     }
     return instance_trafos;
 }

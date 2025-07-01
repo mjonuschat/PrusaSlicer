@@ -8,7 +8,6 @@
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/App/Plater/PlaterIFDMResultCacheChangedListener.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Plater/BedThumbnailTextureGenerator.hpp"
 #include "Slic3r/App/Plater/BedThumbnailUpdater.hpp"

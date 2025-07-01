@@ -30,8 +30,10 @@ class SidebarPreviewActionButtons;
 class PreviewRenderModule final : public Platform::AbstractRenderModule,
                                   public Biz::ISelectedBedInstanceChangedListener,
                                   public Biz::IFDMResultCacheChangedListener,
-                                  public Biz::IStatusCacheChangedListener,
-                                  public Biz::ISelectedProjectChangedListener
+                                  public Biz::ISelectedProjectChangedListener,
+                                  public Biz::ISLAResultCacheChangedListener,
+                                  public Biz::ISLAObjectCacheChangedListener,
+                                  public Biz::IStatusCacheChangedListener
 {
 public:
     PreviewRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
@@ -60,11 +62,15 @@ public:
     void on_fdm_result_cache_changed(
         const Biz::Slicing::SlicingId id
     ) override { update_fdm_viewer_data(id); }
-/*
+
     void on_sla_result_cache_changed(
-        const Biz::Slicing::SlicingId id
-    ) override { update_sla_viewer_data(id); }
-*/
+        const Biz::Slicing::SlicingId& id
+    ) override { update_sla_viewer_result_data(id); }
+
+    void on_sla_object_cache_changed(
+        const Biz::Slicing::SlicingId& id,
+        Domain::ObjectID instance_id
+    ) override { update_sla_viewer_object_data(id, instance_id); }
 
     void on_status_cache_changed(
         const Biz::Slicing::SlicingId id
@@ -116,6 +122,7 @@ private:
     Yoga::Passthrough<LegendWindow> m_legend;
     Yoga::Passthrough<DoubleSliderForGcode> m_slider_gcode;
     Yoga::Passthrough<DoubleSliderForLayers> m_slider_layers;
+    Yoga::Passthrough<DoubleSliderForLayers> m_sla_slider_layers;
     Yoga::Passthrough<SidebarAutoReslice> m_sidebar_auto_reslice;
     // temporary variable to allow to switch yoga layout on/off
 
@@ -142,6 +149,9 @@ private:
     void init_gizmos();
     void init_viewers(Render::Device& device);
     void update_fdm_viewer_data(const Biz::Slicing::SlicingId id);
+    void update_sla_viewer_result_data(const Biz::Slicing::SlicingId id);
+    void update_sla_viewer_object_data(const Biz::Slicing::SlicingId id, Domain::ObjectID instance_id);
+    void update_sla_viewer_data(const Biz::Slicing::SlicingId id);
     void init_scene_layout();
     void update_toolbar_visibility();
 

@@ -50,8 +50,8 @@ void SLAObjectCache::on_sla_object_changed(const SlicingId& id, Object&& object)
             m_objects[key] = std::move(object);
         }
     }
-    invoke_listeners<ISLAObjectCacheChangedListener>([&id](auto* listener) {
-        listener->on_sla_object_cache_changed(id);
+    invoke_listeners<ISLAObjectCacheChangedListener>([key](auto* listener) {
+        listener->on_sla_object_cache_changed(key.first, key.second);
     });
 }
 

@@ -288,7 +288,7 @@ private:
     sla::InteriorPtr m_hollowing_data;
 };
 
-std::vector<Transform3d> get_instance_trafos(const SLAPrintObject& object);
+Biz::Slicing::Sla::Object::InstanceTrafos get_instance_trafos(const SLAPrintObject& object);
 
 using PrintObjects = std::vector<SLAPrintObject*>;
 
