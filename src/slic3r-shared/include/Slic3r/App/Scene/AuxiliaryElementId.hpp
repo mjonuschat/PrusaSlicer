@@ -13,7 +13,9 @@ struct AuxiliaryElementId
         WipeTower,
         SlaMesh,
         SlaSupports,
-        SlaPad
+        SlaPad,
+        SlaTopClip,
+        SlaBottomClip,
     };
 
     Type type;

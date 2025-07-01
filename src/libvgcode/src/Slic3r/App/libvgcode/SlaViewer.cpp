@@ -1,6 +1,7 @@
 #include "Slic3r/App/libvgcode/SlaViewer.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
+#include <Slic3r/Biz/Algorithms/Tesselate.hpp>
 #include <Slic3r/App/Render/GL/commonGL.hpp>
 #include <Slic3r/App/Render/Device.hpp>
 #include <Slic3r/App/Render/Context.hpp>
@@ -10,7 +11,9 @@
 #include <Slic3r/App/Render/GeometryBuilder.hpp>
 #include <Slic3r/App/Scene/NodeBuilder.hpp>
 #include <Slic3r/App/Scene/Scene.hpp>
+#include <Slic3r/App/Scene/NodeVisitor.hpp>
 #include "Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp"
+#include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
 
 #include "Slic3r/Domain/ObjectID.hpp"
@@ -50,42 +53,39 @@ void SlaViewer::init(Render::Device& device, Scene::Scene& scene, Scene::Geometr
 
     AbstractViewer::init(device, scene, data_factory);
 
+    /* Create a tree
+    * -> "main_sla"             {SlaObjectNodeTag{ object_id = 0, instance_id = 0, SlaMeshType::Undefined }}
+    *       -> "top_clip_mesh"      {SlaObjectNodeTag{ object_id = 0, instance_id=0, SlaMeshType::TopClip }}
+    *       -> "bottom_clip_mesh"   {SlaObjectNodeTag{ object_id = 0, instance_id=0, SlaMeshType::BottomClip }}
+    *       -> "sla_object_node"    {SlaObjectNodeTag{ object_id, instance_id = 0, SlaMeshType::Undefined }}
+    *           -> "sla_instanceN_node" {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Undefined }}
+    *               -> "object_mesh"        {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Object }}
+    *               -> "supports_mesh"      {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Supports }}
+    *               -> "pad_mesh"           {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Pad }}
+    * -> "segment node"
+    */
+
     Scene::NodeBuilder builder{ *m_scene };
     builder.set_debug_name("sla_main");
     builder.set_tag(SlaObjectNodeTag());
     m_scene->add_child(builder.build().release(), &m_scene->root());
     m_main_node = m_scene->root().children().back().get();
 
-    /* Create a tree
-    * -> "main_sla"             {SlaObjectNodeTag{ object_id = 0, instance_id = 0, SlaMeshType::Undefined }}
-    *       -> "sla_object_node"    {SlaObjectNodeTag{ object_id, instance_id = 0, SlaMeshType::Undefined }}
-    *           -> "sla_instanceN_node" {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Undefined }}
-    *               -> "object_mesh"        {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Object }}
-    *               -> "supports_mesh"      {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Supports }}
-    *               -> "pad_mesh"           {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Pad }}  
-    * -> "segment node"
-    */
-
+    build_clipping_plane_node(SlaMeshType::TopClip);
+    build_clipping_plane_node(SlaMeshType::BottomClip);
 
     m_initialized = true;
 }
 
 void SlaViewer::reset()
 {
-    AbstractViewer::reset();
+    reset_layers();
 
-    // Reset other attributes, if needed
-
-    if (m_positions_buffer != nullptr) m_positions_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
-    if (m_heights_widths_angles_buffer != nullptr) m_heights_widths_angles_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
-    if (m_colors_buffer != nullptr) m_colors_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
-    if (m_enabled_segments_buffer != nullptr) m_enabled_segments_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
-
-    m_enabled_segments_count = 0;
-    m_result = nullptr;
-
-    // remove all object Scene::Nodes 
-    m_scene->remove_children([](const Scene::Node*) { return true; }, m_main_node);
+    // Remove all object Scene::Nodes 
+    m_scene->remove_children([](const Scene::Node* node) {
+        const SlaObjectNodeTag* t = node->tag_of_type<SlaObjectNodeTag>();
+        return t && !t->is_clip(); 
+    }, m_main_node);
     m_model_geometry_manager.release_all();
     m_model_triangle_mesh_manager.release_all();
 }
@@ -93,6 +93,16 @@ void SlaViewer::reset()
 void SlaViewer::reset_layers()
 {
     AbstractViewer::reset();
+
+    // reset clipping planes
+
+    // Make default mesh as small as possible.
+    // Its geometry will be updated on layers move
+    indexed_triangle_set mesh_its = Biz::Algorithms::TriangleMesh::its_make_cube(0.1f, 0.1f, 0.1f);
+    update_clipping_plane(SlaMeshType::TopClip, mesh_its);
+    update_clipping_plane(SlaMeshType::BottomClip, mesh_its);
+
+    m_result = nullptr;
 }
 
 void SlaViewer::reset_object(const Domain::ObjectID object_id)
@@ -186,14 +196,59 @@ void SlaViewer::build_sla_object_mesh(
         .set_transparent(color.is_transparent());
 
     builder
-        .set_debug_name(Slic3r::format("sla_obj: %1% : %2%", object_id, type_str))
+        .set_debug_name(Slic3r::format("sla_obj: %1%, inst: %2%, %3%", object_id, instance_id, type_str))
         .set_tag(SlaObjectNodeTag{ object_id, instance_id, type })
         .set_mesh(geom, material, int(0))
         .transform([trafo](auto& xform) { xform = trafo; })
         .set_aabb(trimesh->aabb_mesh())
-        .set_shadows(Render::Shadows{ true, true });
+        .set_shadows(Render::Shadows{ true, true })
+        .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
 }
 
+void SlaViewer::build_clipping_plane_node(SlaMeshType plane_type)
+{
+    ASSERT(plane_type == SlaMeshType::TopClip || plane_type == SlaMeshType::BottomClip);
+
+    Scene::NodeBuilder builder{ *m_scene };
+
+    const std::string type_str = plane_type == SlaMeshType::TopClip ? "Clip top" : "Clip bottom";
+    SPDLOG_DEBUG("build_volume type:{}", type_str);
+
+    auto& geom_mgr = m_model_geometry_manager;
+    auto& trimesh_mgr = m_model_triangle_mesh_manager;
+
+    // Make default mesh as small as possible.
+    // Its geometry will be updated on layers move
+    indexed_triangle_set mesh_its = Biz::Algorithms::TriangleMesh::its_make_cube(0.1f, 0.1f, 0.1f);
+
+    Scene::AuxiliaryElementId::Type aei_type = plane_type == SlaMeshType::TopClip ? 
+        Scene::AuxiliaryElementId::Type::SlaTopClip : 
+        Scene::AuxiliaryElementId::Type::SlaBottomClip;
+
+    Scene::AuxiliaryElementId id{ aei_type, 0};
+
+    const auto& trimesh =
+        trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
+        return std::make_unique<Scene::TriangleMesh>(std::move(mesh_its));
+            });
+    const auto* geom = geom_mgr.get_or_create(id, [&]() {
+        return Render::geometry_from_triangle_mesh(*m_device, trimesh->triangles());
+        });
+
+    ColorRGBA color = ColorRGBA{ 1.0f, 0.0f, 0.37f, 1.0f };
+    auto material = Render::Material{}
+        .set_shader(m_device->context().shader_manager().shader("gouraud_light"))
+        .set_uniform("uniform_color", color)
+        .set_transparent(color.is_transparent());
+
+    builder
+        .set_debug_name(Slic3r::format("sla_obj: clipping plane: %1%", type_str))
+        .set_tag(SlaObjectNodeTag{ 0, 0, plane_type })
+        .set_mesh(geom, material, int(0))
+        .set_shadows(Render::Shadows{ false, false });
+
+    m_scene->add_child(builder.build().release(), m_main_node);
+}
 
 void SlaViewer::build_if_needed(
     size_t object_id,
@@ -209,7 +264,6 @@ void SlaViewer::build_if_needed(
 
     for (auto& node : parent_node->children()) {
         const SlaObjectNodeTag* t = node->tag_of_type<SlaObjectNodeTag>();
-        ASSERT(t && t->object_id == object_id && t->instance_id == instance_id);
         if (t->type == type) {
             // node for this mesh type already exists
             return;
@@ -302,146 +356,129 @@ void SlaViewer::load_object(const Biz::Slicing::Sla::Object& sla_object)
 
 void SlaViewer::render()
 {
-    if (m_layers.empty())
-        return;
-
-    render_segments(m_scene->camera().position().cast<float>());
 }
 
-static Vec3f get_vec3(const Slic3r::Domain::Point& v, const float z)
+void SlaViewer::update_clipping_plane(SlaMeshType plane_type, indexed_triangle_set& its)
 {
-    return { static_cast<float>(Slic3r::Domain::SCALING_FACTOR * v.x()), static_cast<float>(Slic3r::Domain::SCALING_FACTOR * v.y()), z };
+    Scene::visit(*m_main_node, [&](Scene::Node& n) {
+        SlaObjectNodeTag* tag = n.tag_of_type<SlaObjectNodeTag>();
+        if (tag != nullptr) {
+            if (tag->type == plane_type) {
+                Scene::AuxiliaryElementId::Type aei_type = plane_type == SlaMeshType::TopClip ?
+                    Scene::AuxiliaryElementId::Type::SlaTopClip :
+                    Scene::AuxiliaryElementId::Type::SlaBottomClip;
+
+                Scene::AuxiliaryElementId id{ aei_type, tag->object_id };
+
+                m_model_triangle_mesh_manager.release(id);
+                m_model_geometry_manager.release(id);
+
+                const auto& trimesh =
+                    m_model_triangle_mesh_manager.get_or_create(id, [&, this]() -> std::unique_ptr<Scene::TriangleMesh> {
+                    return std::make_unique<Scene::TriangleMesh>(std::move(its));
+                        });
+                const auto* geom = m_model_geometry_manager.get_or_create(id, [&]() {
+                    return Render::geometry_from_triangle_mesh(*m_device, trimesh->triangles());
+                    });
+
+                static_cast<Scene::MeshRenderNodeComponent*>(n.render_component())->set_geometry(geom);
+            }
+        }
+    });
 }
 
-static void extract_pos_and_or_hwa(const Slic3r::Domain::ExPolygon& vertices, float z, float height,
-    std::vector<Vec4f>& positions, std::vector<Vec4f>& heights_widths_angles)
+static indexed_triangle_set create_clipping_plane_its(const ExPolygons& polygons, float z, bool flip)
 {
-    if (vertices.empty())
-        return;
+    using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygons_3d;
+    auto triangles = triangulate_expolygons_3d(polygons, z, flip);
 
-    const Slic3r::Domain::Polygon& contour = vertices.contour;
-    size_t contour_size = contour.size();
+    indexed_triangle_set its;
+    its.vertices.reserve(triangles.size());
+    its.indices.reserve(triangles.size());
 
-    const float width{ 0.5f };
+    for (size_t i = 0; i < triangles.size(); i += 3) {
+        its.vertices.emplace_back(triangles[i].cast<float>());
+        its.vertices.emplace_back(triangles[i + 1].cast<float>());
+        its.vertices.emplace_back(triangles[i + 2].cast<float>());
 
-    Vec4f pos_first = Vec4f::Zero();
-    Vec4f hwa_first = Vec4f::Zero();
-
-    for (size_t i = 0; i < contour_size; ++i) {
-        const Slic3r::Domain::Point& v = contour.points[i];
-        const Slic3r::Domain::Point& v_prev = contour.points[i > 0 ? i - 1 : contour_size - 1];
-        const Slic3r::Domain::Point& v_next = contour.points[i + 1 < contour_size ? i + 1 : 0];
-
-        Vec3f pos = get_vec3(v, z);
-        Vec3f pos_prev = get_vec3(v_prev, z);
-        Vec3f pos_next = get_vec3(v_next, z);
-
-        Vec3f prev_line = pos - pos_prev;
-        Vec3f this_line = pos_next - pos;
-
-        Vec4f position = { pos.x(), pos.y(), pos.z(), 0.0f };
-        // the last component is a dummy float to comply with GL_RGBA32F format
-        position.z() -= 0.5f * height;
-        positions.emplace_back(position);
-
-        if (i == 0) {
-            // Add 'phantom' position and zero heights_widths_angle
-            heights_widths_angles.push_back(Vec4f::Zero());
-            positions.emplace_back(position);
-        }
-
-        // the last component is a dummy float to comply with GL_RGBA32F format
-        heights_widths_angles.push_back({ height, width,
-            std::atan2(prev_line.x() * this_line.y() - prev_line.y() * this_line.x(), prev_line.dot(this_line)), 0.0f });
-
-        if (i == 0) {
-            pos_first = position;
-            hwa_first = heights_widths_angles.back();
-        }
+        its.indices.emplace_back(Domain::Index3{
+            static_cast<int>(i),
+            static_cast<int>(i + 1),
+            static_cast<int>(i + 2)
+            });
     }
-
-    // Add 'phantom' position and heights_widths_angle of the first vertex of the contoure
-    positions.emplace_back(pos_first);
-    heights_widths_angles.push_back(hwa_first);
-
-    // Add 'phantom' position and zero heights_widths_angle
-    positions.emplace_back(pos_first);
-    heights_widths_angles.push_back(Vec4f::Zero());
+    return its;
 }
 
-void SlaViewer::update_layer_preview_contour(const size_t layer_id)
+void SlaViewer::update_preview_range(size_t min_layer_id, size_t max_layer_id)
 {
     if (m_layers.empty() || !m_result) {
+        reset_layers();
         return;
     }
 
-    float color = encoded_color({ 0.5f, 0.7f, 0.3f });
-    m_layers.set_view_range(0, uint32_t(m_layers.count()) - 1);
+    // msToCheck! 
+    // It looks like the sliced polygons are calculated for the middle of the height range
+    // instead of the top of the range. 
+    // That means m_result->slices[id] refers to 0.5 * (m_result->heights[id] - m_result->heights[id-1]) 
+    // rather than just m_result->heights[id].
+    // That's why magic_shift is used here!!!
+    const float magic_shift = 0.5f * m_result->heights[0];
 
-    const float layer_z = m_result->heights[layer_id];
-    const float layer_height = layer_id == 0 ? m_result->heights[layer_id] : m_result->heights[layer_id]-m_result->heights[layer_id-1];
+    float min_layer_z = min_layer_id == 0 ? 0.f :m_result->heights[min_layer_id - 1];
+    if (min_layer_id > 0)
+        min_layer_z -= magic_shift;
+    float max_layer_z = m_result->heights[max_layer_id];
+    if (max_layer_id + 1 < m_result->heights.size())
+        max_layer_z -= magic_shift;
 
-    const ExPolygons& layer_polygons = m_result->slices[layer_id];
+    // Add a small Z shifts to prevent top/bottom face flickering.
+    min_layer_z -= EPSILON;
+    max_layer_z += EPSILON;
 
-    // For each polygon we need to add 3 'phantom' positions and heights_widths_angles to properly preview of it's start/end.
-    size_t vertex_cnt{ 3 * layer_polygons.size() };
+    // update Z clipping
 
-    for (const auto& polygon : layer_polygons)
-        vertex_cnt += polygon.contour.size();
+    Vec2f z_range = { min_layer_z, max_layer_z };
 
-    // buffers to send to gpu
-    // the last component is a dummy float to comply with GL_RGBA32F format
-    std::vector<Vec4f> positions;
-    std::vector<Vec4f> heights_widths_angles;
-    positions.reserve(vertex_cnt);
-    heights_widths_angles.reserve(vertex_cnt);
+    Scene::visit(*m_main_node, [&](Scene::Node& n) {
+        SlaObjectNodeTag* tag = n.tag_of_type<SlaObjectNodeTag>();
+        if (tag != nullptr) {
+            if (tag->type != SlaMeshType::Undefined && !tag->is_clip()) {
+                ColorRGBA color = SLA_MESH_COLORS.find(tag->type)->second;
 
-    for (const auto& polygon : layer_polygons) {
-        extract_pos_and_or_hwa(polygon, layer_z, layer_height, positions, heights_widths_angles);
-    }
-
-    if (!positions.empty()) {
-
-        // create and fill positions buffer
-        m_positions_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_positions", Render::PixelFormat::RGBA32F);
-        m_positions_buffer->set_data(positions.data(), positions.size() * sizeof(Vec4f), Render::BufferUsage::StaticDraw);
-
-        // create and fill height, width and angles buffer
-        m_heights_widths_angles_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_heights_widths_angles", Render::PixelFormat::RGBA32F);
-        m_heights_widths_angles_buffer->set_data(heights_widths_angles.data(), heights_widths_angles.size() * sizeof(Vec4f), Render::BufferUsage::DynamicDraw);
-
-        // create (but do not fill) colors buffer (data is set in update_colors())
-        m_colors_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_colors", Render::PixelFormat::R32F);
-        // Based on current settings and slider position, we might want to render some
-        // vertices as dark grey. Use either that or the normal color (from the cache).
-        std::vector<float> colors(vertex_cnt, color);
-        m_colors_buffer->set_data(colors.data(), colors.size() * sizeof(float), Render::BufferUsage::StaticDraw);
-
-        // create (but do not fill) enabled segments buffer (data is set in update_enabled_entities())
-        m_enabled_segments_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_enabled_segments", Render::PixelFormat::R32UI);
-
-        std::vector<uint32_t> enabled_segments;
-        for (size_t i = 0; i < positions.size(); ++i) {
-            enabled_segments.push_back(uint32_t(i));
+                auto material = Render::Material{}
+                    .set_shader(m_device->context().shader_manager().shader("gouraud_light_double_z_clip"))
+                    .set_uniform("uniform_color", color)
+                    .set_uniform("z_range", z_range)
+                    .set_transparent(color.is_transparent());
+                n.render_component()->replace_material(material);
+            }
         }
-        m_enabled_segments_count = enabled_segments.size();
+    });
 
-        // update buffer for enabled segments
-        assert(m_enabled_segments_buffer != nullptr);
-        m_enabled_segments_buffer->set_data(enabled_segments.data(), enabled_segments.size() * sizeof(uint32_t), Render::BufferUsage::StaticDraw);
+    // update clipping planes
+
+    for (const SlaMeshType& type : {SlaMeshType::TopClip, SlaMeshType::BottomClip})
+    {
+        const size_t layer_id = type == SlaMeshType::TopClip ? max_layer_id : min_layer_id == 0 ? 0 : min_layer_id-1;
+        const float mesh_z = type == SlaMeshType::TopClip ? max_layer_z : min_layer_z;
+
+        indexed_triangle_set its = create_clipping_plane_its(m_result->slices[layer_id], mesh_z, type == SlaMeshType::BottomClip);
+
+        update_clipping_plane(type, its);
     }
 }
 
 void SlaViewer::set_layers_range(Interval::value_type min, Interval::value_type max)
 {
     AbstractViewer::set_layers_range(min, max);
-    update_layer_preview_contour(max);
+    update_preview_range(min, max);
 }
 
 void SlaViewer::set_view_visible_range(Interval::value_type min, Interval::value_type max)
 {
     AbstractViewer::set_view_visible_range(min, max);
-    update_layer_preview_contour(max);    
+    update_preview_range(min, max);
 }
 
 void SlaViewer::update_view_full_range()
@@ -462,46 +499,6 @@ float SlaViewer::estimated_time_at(size_t id) const
 std::vector<float> SlaViewer::layers_estimated_times() const
 {
     return m_layers.times(Biz::libpgcode::TimeMode::Normal);
-}
-
-static constexpr int POSITION_TEX_ID = 0;
-static constexpr int HEIGHT_WIDTH_ANGLE_TEX_ID = 1;
-static constexpr int COLOR_TEX_ID = 2;
-static constexpr int ENABLED_SEGMENTS_TEX_ID = 3;
-static constexpr int ENABLED_OPTIONS_TEX_ID = 3;
-
-void SlaViewer::render_segments(const Vec3f& camera_position)
-{
-    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
-        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
-        return tag != nullptr && tag->type == GCodeElementType::Toolpaths;
-        }, true);
-
-    assert(node != nullptr);
-    node->set_enabled(m_enabled_segments_count > 0);
-
-    if (m_enabled_segments_count == 0)
-        return;
-
-    Render::Material material{};
-    material
-        .set_shader(m_device->context().shader_manager().shader("segments"));
-    Scene::set_uniforms(m_lights, material);
-
-    material
-        .set_uniform("position_tex", POSITION_TEX_ID)
-        .set_uniform("height_width_angle_tex", HEIGHT_WIDTH_ANGLE_TEX_ID)
-        .set_uniform("color_tex", COLOR_TEX_ID)
-        .set_uniform("segment_index_tex", ENABLED_SEGMENTS_TEX_ID)
-        .set_uniform("camera_position", camera_position)
-        .set_texture_buffer(POSITION_TEX_ID, m_positions_buffer)
-        .set_texture_buffer(HEIGHT_WIDTH_ANGLE_TEX_ID, m_heights_widths_angles_buffer)
-        .set_texture_buffer(COLOR_TEX_ID, m_colors_buffer)
-        .set_texture_buffer(ENABLED_SEGMENTS_TEX_ID, m_enabled_segments_buffer);
-
-    node->set_material_override(material);
-    Scene::InstancedMeshRenderNodeComponent* r_comp = dynamic_cast<Scene::InstancedMeshRenderNodeComponent*>(node->render_component());
-    r_comp->set_instances_count(m_enabled_segments_count);
 }
 
 } // namespace Slic3r::App::libvgcode

@@ -17,6 +17,8 @@ namespace Slic3r::Domain {
 class TriangleMesh;
 }
 
+struct indexed_triangle_set;
+
 namespace Slic3r::Biz::Slicing::Sla {
 struct Object;
 }
@@ -79,22 +81,12 @@ public:
     std::vector<float> layers_estimated_times() const override;
 
 private:
-    //
-    // The OpenGL element used to represent all toolpath segments
-    //
-
-    size_t m_enabled_segments_count{ 0 };
 
     ModelGeometryManager m_model_geometry_manager;
     ModelTriangleMeshManager m_model_triangle_mesh_manager;
 
     Scene::Node* m_main_node{nullptr};
     const Biz::Slicing::SLAResult* m_result{ nullptr };
-
-    Render::TextureBuffer* m_positions_buffer{ nullptr };
-    Render::TextureBuffer* m_heights_widths_angles_buffer{ nullptr };
-    Render::TextureBuffer* m_colors_buffer{ nullptr };
-    Render::TextureBuffer* m_enabled_segments_buffer{ nullptr };
 
 private:
 
@@ -120,10 +112,12 @@ private:
         const Domain::Transform3d& trafo,
         Scene::NodeBuilder& builder);
 
-    void update_layer_preview_contour(const size_t layer_id);
+    void build_clipping_plane_node(SlaMeshType plane_type);
+    void update_clipping_plane(SlaMeshType plane_type, indexed_triangle_set& plane_its);
+
+    void update_preview_range(size_t min_layer_id, size_t max_layer_id);
 
     void update_view_full_range() override;
-    void render_segments(const Domain::Vec3f& camera_position);
 };
 
 } // namespace Slic3r::App::libvgcode

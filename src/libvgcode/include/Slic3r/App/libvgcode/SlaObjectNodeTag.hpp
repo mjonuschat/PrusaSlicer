@@ -13,6 +13,8 @@ enum class SlaMeshType : int8_t
     Object,
     Supports,
     Pad,
+    TopClip,
+    BottomClip
 };
 
 /**
@@ -23,6 +25,7 @@ struct SlaObjectNodeTag
     size_t object_id{ 0 };
     size_t instance_id{ 0 };
     const SlaMeshType type{ SlaMeshType::Undefined };
+    bool is_clip() const { return type == SlaMeshType::TopClip || type == SlaMeshType::BottomClip; }
 };
 
 } // namespace Slic3r::App::libvgcode
