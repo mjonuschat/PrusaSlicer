@@ -31,6 +31,7 @@
 #include "libslic3r/Geometry/ArcWelder.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/ConfigUtils.hpp"
 
 #if 0
     #define DEBUG
