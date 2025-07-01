@@ -82,7 +82,7 @@ DoubleSliderForLayers::DoubleSliderForLayers()
     m_ctrl->set_extra_draw_cb([this](const ImRect& draw_rc) { return draw_ticks(draw_rc); });
 
     m_ctrl->callbacks().value_changed = [this]() { process_thumb_move(); };
-
+    m_ctrl->callbacks().request_extra_frame = [this]() { process_request_extra_frames(); };
     m_ctrl->callbacks().extra_render = [this]() { extra_render(); };
 
     m_ticks.set_values(&m_values);

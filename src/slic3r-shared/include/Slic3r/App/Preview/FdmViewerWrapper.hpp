@@ -43,7 +43,6 @@ struct FdmViewerWrapperSettings : public ViewerWrapperBaseSettings
     // wrapper callbacks
     //
     InvalidateSliceCallback                         cb_invalidate_slice{ nullptr };
-    Imgui::DoubleSlider::RequestExtraFramesCallback cb_request_extra_frames{ nullptr };
     UpdateLayersSlider                              cb_update_layers_slider{ nullptr };
     GCodeViewTypeChangedCallback                    cb_gcode_view_type_changed{ nullptr };
 

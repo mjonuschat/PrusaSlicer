@@ -59,8 +59,6 @@ private:
 
 private:
     void update_slider_layers();
-    void update_view_visible_range(size_t first, size_t last);
-
     void on_slider_layers_scroll_changed();
 };
 

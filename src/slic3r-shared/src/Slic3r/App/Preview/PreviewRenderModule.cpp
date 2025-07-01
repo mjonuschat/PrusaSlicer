@@ -676,6 +676,7 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     base_settings.slider_layers_show_estimated_times = show_estimated_times_in_dbl_slider;
     // set layers slider callbacks
     base_settings.cb_slider_layers_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
+    base_settings.cb_request_extra_frames = std::bind(&PreviewRenderModule::on_request_extra_frames, this, std::placeholders::_1);
 
     if (m_sla_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory()) &&
         m_sla_viewer.set_settings(base_settings)) {
@@ -700,7 +701,6 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     // set wrapper callbacks
     settings.cb_invalidate_slice = std::bind(&PreviewRenderModule::on_invalidate_slice, this);
     settings.cb_update_layers_slider = std::bind(&PreviewRenderModule::on_update_layers_slider, this, std::placeholders::_1);
-    settings.cb_request_extra_frames = std::bind(&PreviewRenderModule::on_request_extra_frames, this, std::placeholders::_1);
     settings.cb_gcode_view_type_changed = std::bind(&PreviewRenderModule::on_gcode_view_type_changed, this);
     // set layers slider callbacks
     settings.cb_slider_layers_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
