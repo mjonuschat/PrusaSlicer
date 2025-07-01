@@ -204,7 +204,7 @@ VendorProfile VendorProfile::from_ini(const ptree &tree, const boost::filesystem
             section.second.get<std::string>("variants", "");
             const auto variants_field = section.second.get<std::string>("variants", "");
             std::vector<std::string> variants;
-            if (Slic3r::unescape_strings_cstyle(variants_field, variants)) {
+            if (Biz::Algorithms::unescape_strings_cstyle(variants_field, variants)) {
                 for (const std::string &variant_name : variants) {
                     if (model.variant(variant_name) == nullptr)
                         model.variants.emplace_back(VendorProfile::PrinterVariant(variant_name));
@@ -215,7 +215,7 @@ VendorProfile VendorProfile::from_ini(const ptree &tree, const boost::filesystem
             auto default_materials_field = section.second.get<std::string>("default_materials", "");
             if (default_materials_field.empty())
             	default_materials_field = section.second.get<std::string>("default_filaments", "");
-            if (Slic3r::unescape_strings_cstyle(default_materials_field, model.default_materials)) {
+            if (Biz::Algorithms::unescape_strings_cstyle(default_materials_field, model.default_materials)) {
             	Slic3r::sort_remove_duplicates(model.default_materials);
             	if (! model.default_materials.empty() && model.default_materials.front().empty())
             		// An empty material was inserted into the list of default materials. Remove it.

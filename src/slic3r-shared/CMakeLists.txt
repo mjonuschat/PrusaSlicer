@@ -408,8 +408,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ObservableProjectList.hpp
         src/Slic3r/Biz/ObservableProjectList.cpp
 
-        include/Slic3r/StringUtils.hpp
-
         src/Slic3r/Domain/Project.cpp
         include/Slic3r/Domain/Project.hpp
         include/Slic3r/Domain/BedContainer.hpp

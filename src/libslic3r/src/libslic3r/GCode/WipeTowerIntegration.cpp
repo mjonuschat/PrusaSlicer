@@ -18,6 +18,7 @@
 #include "libslic3r/GCode/Wipe.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"
 #include "libslic3r/Geometry/ArcWelder.hpp"
+#include "Slic3r/Biz/Algorithms/StringUtils.hpp"
 
 namespace Slic3r::GCode {
 
@@ -117,7 +118,7 @@ std::string WipeTowerIntegration::append_tcr(
     boost::replace_first(tcr_rotated_gcode, "[toolchange_gcode_from_wipe_tower_generator]", toolchange_gcode_str);
     boost::replace_first(tcr_rotated_gcode, "[deretraction_from_wipe_tower_generator]", deretraction_str);
     std::string tcr_gcode;
-    unescape_string_cstyle(tcr_rotated_gcode, tcr_gcode);
+    Biz::Algorithms::unescape_string_cstyle(tcr_rotated_gcode, tcr_gcode);
 
     if (config.get<double>("default_acceleration") > 0)
         gcode += gcodegen.writer().set_print_acceleration(fast_round_up<unsigned int>(config.get<double>("wipe_tower_acceleration")));

@@ -57,6 +57,7 @@
 #include <cctype>
 #include <cfloat>
 
+#include "Slic3r/Biz/Algorithms/StringUtils.hpp"
 #include "libslic3r/clonable_ptr.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Domain/Types.hpp"
@@ -117,11 +118,6 @@ template<class T> struct always_false { enum { value = false }; };
 // Name of the configuration option.
 typedef std::string                 t_config_option_key;
 typedef std::vector<std::string>    t_config_option_keys;
-
-extern std::string  escape_string_cstyle(const std::string &str);
-extern std::string  escape_strings_cstyle(const std::vector<std::string> &strs);
-extern bool         unescape_string_cstyle(const std::string &str, std::string &out);
-extern bool         unescape_strings_cstyle(const std::string &str, std::vector<std::string> &out);
 
 extern std::string  escape_ampersand(const std::string& str);
 
@@ -1064,12 +1060,12 @@ public:
 
     std::string serialize() const override
     { 
-        return escape_string_cstyle(this->value); 
+        return Biz::Algorithms::escape_string_cstyle(this->value); 
     }
 
     bool deserialize(const std::string &str, [[maybe_unused]] bool append = false) override
     {
-        return unescape_string_cstyle(str, this->value);
+        return Biz::Algorithms::unescape_string_cstyle(str, this->value);
     }
 
 private:
@@ -1097,7 +1093,7 @@ public:
 
     std::string serialize() const override
     {
-        return escape_strings_cstyle(this->values);
+        return Biz::Algorithms::escape_strings_cstyle(this->values);
     }
     
     std::vector<std::string> vserialize() const override
@@ -1109,7 +1105,7 @@ public:
     {
         if (! append)
             this->values.clear();
-        return unescape_strings_cstyle(str, this->values);
+        return Biz::Algorithms::unescape_strings_cstyle(str, this->values);
     }
 
 private:

@@ -1,5 +1,5 @@
 #include "Slic3r/App/WX/StringConversions.hpp"
-#include "Slic3r/StringUtils.hpp"
+#include "Slic3r/Biz/Algorithms/StringUtils.hpp"
 #include "Slic3r/Utils.hpp"
 
 #include <wx/numformatter.h>
@@ -124,7 +124,7 @@ wxString get_wraped_wxString(const wxString& in, size_t line_len /*=80*/)
 bool has_illegal_characters(const wxString& wx_string)
 {
     const std::string str = into_u8(wx_string);
-    return Slic3r::has_illegal_characters(str);
+    return Biz::Algorithms::has_illegal_characters(str);
 }
 
 }

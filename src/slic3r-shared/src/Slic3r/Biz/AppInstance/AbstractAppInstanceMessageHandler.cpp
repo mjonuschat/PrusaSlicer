@@ -91,7 +91,7 @@ void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::strin
         return;
     }
     std::vector<std::string> args;
-	bool parsed = unescape_strings_cstyle(data, args);
+	bool parsed = Algorithms::unescape_strings_cstyle(data, args);
 	assert(parsed);
 	if (! parsed) {
 		SPDLOG_ERROR("message from other instance is incorrectly formatted: {}", data);
