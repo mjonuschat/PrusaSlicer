@@ -60,7 +60,6 @@ set(SLIC3R_APP_DESKTOP_FILES
 #    src/Slic3r/App/Desktop/Preset/Manipulators.cpp
 #    src/Slic3r/App/Desktop/Preset/Manipulators.hpp
 
-	
 )
 
 if(WIN32)
