@@ -604,9 +604,9 @@ endif ()
 
 target_compile_definitions(libslic3r PUBLIC -DUSE_TBB -DTBB_USE_CAPTURED_EXCEPTION=0)
 
-target_include_directories(libslic3r PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(libslic3r PUBLIC include)
 target_include_directories(libslic3r PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/include) # For libslic3r_version.h
-target_include_directories(libslic3r PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(libslic3r PRIVATE src)
 
 find_package(JPEG REQUIRED)
 
