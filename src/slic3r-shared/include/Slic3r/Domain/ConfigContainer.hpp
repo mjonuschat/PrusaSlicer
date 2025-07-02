@@ -15,6 +15,7 @@ namespace Slic3r::Domain {
 
 class Bed;
 
+
 class ConfigContainer : public ObjectBase
 {
 public:

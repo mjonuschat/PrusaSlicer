@@ -4,6 +4,8 @@
 #include "boost/filesystem.hpp"
 #include "libslic3r/Utils.hpp"
 
+#include "tl/expected.hpp"
+
 namespace{
 using namespace Slic3r;
 
@@ -22,7 +24,8 @@ constexpr const char *PROJECT_TYPE =   "http://schemas.prusa3d.cz/package/2024/r
 
 constexpr const char *MODEL_DEFAULT_PATH = "3D/3dmodel.model";
 
-void load_realationship(const pugi::xml_node &node, LoadedRelations& result) {
+static void append_realationship(const pugi::xml_node &node, std::optional<RootRelations>& relations, Read3mfIssues& collected_issues)
+{
     struct{
         const char *type = nullptr;
         const char *id = nullptr;
@@ -36,79 +39,82 @@ void load_realationship(const pugi::xml_node &node, LoadedRelations& result) {
         } else if (std::strcmp(attr.name(), TARGET_ATTR) == 0) {
             r.target = attr.value();
         } else {
-            result.add(Read3mfIssueType::relation_unknown_attr,
-                std::string(attr.name()), + attr.as_string() );
+            collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relation_unknown_attr,
+                std::string(attr.name()), + attr.as_string() ));
         }
     }
     if (r.type == nullptr) {
-        result.add(Read3mfIssueType::relation_should_have_type);
+        auto issue = Read3mfIssue(Read3mfIssueType::relation_should_have_type);
+        collected_issues.add_issue(issue);
         return;
     }
 
     if (r.id == nullptr)
-        result.add(Read3mfIssueType::relation_should_have_id);
-    
-    auto get_relations = [&result]() -> RootRelations & {
-        if (!result.relations.has_value())
-            result.relations = RootRelations{{}, {}}; // Initiazlize on empty
-        return *result.relations;
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relation_should_have_id));
+
+    auto get_relations = [&relations]() -> RootRelations & {
+        if (! relations.has_value())
+            relations = RootRelations{{}, {}}; // Initiazlize on empty
+        return *relations;
     };
 
     if (std::strcmp(r.type, MODEL_TYPE) == 0) {
         if (r.target != nullptr)
             get_relations().main_model_path = std::string(r.target);
         else
-            result.add(Read3mfIssueType::relation_model_without_target);
+            collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relation_model_without_target));
     } else if (std::strcmp(r.type, THUMBNAIL_TYPE) == 0) {
         if (r.target != nullptr)
             get_relations().thumbnail_path = std::string(r.target);
         else
-            result.add(Read3mfIssueType::relation_thumbnail_without_target);
+            collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relation_thumbnail_without_target));
     } else if (std::strcmp(r.type, PROJECT_TYPE) == 0) {
         if (r.target != nullptr)
             get_relations().project_file_path = std::string(r.target);
         else
-            result.add(Read3mfIssueType::relation_project_without_target);
+            collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relation_project_without_target));
     } else {
         BOOST_LOG_TRIVIAL(info) << "Not known realtions (Type=" << r.type << 
             ", Target=" << r.target <<
             ", Id=" << r.id << ")";
-        result.add(Read3mfIssueType::relation_unexpected_type, 
-            std::string(r.type), std::string(r.target), std::string(r.id));
-    }    
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relation_unexpected_type, 
+            std::nullopt, std::string(r.type) + " " + std::string(r.target) + " " + std::string(r.id)));
+    }
 }
 
-LoadedRelations load(const pugi::xml_document& doc) {
+tl::expected<LoadedRelations, Read3mfIssue> load(const pugi::xml_document& doc, Read3mfIssues& collected_issues) {
     const pugi::xml_node root = doc.child(RELATIONSHIPS);
     if (root.empty()) {
         std::string name{doc.first_child().name()};
-        return {Read3mfIssueType::relations_missing_root, name};
+        return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::relations_missing_root, name));
     }    
 
-    LoadedRelations result;
+    
     for (const pugi::xml_attribute &attr : root.attributes()) {
         if (std::strcmp(attr.name(), XMLNS_ATTR) == 0) {
             if (std::strcmp(attr.value(), XMLNS_VAL) != 0)
-                result.add(Read3mfIssueType::relations_unexpected_xmlns, attr.as_string());        
+                collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relations_unexpected_xmlns, attr.as_string()));
         } else {
-            result.add(Read3mfIssueType::relations_unknown_attr,
-                std::string(attr.name()), attr.as_string());
+            collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relations_unknown_attr,
+                std::string(attr.name()), attr.as_string()));
         }
     }
     
+    LoadedRelations result;
+
     for (const pugi::xml_node &node : root.children()) {
         if (std::strcmp(node.name(), RELATIONSHIP) == 0) {
-            load_realationship(node, result);
+            append_realationship(node, result.relations, collected_issues);
         } else {
-            result.add(Read3mfIssueType::relations_unknown_node, std::string(node.name()));
+            collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relations_unknown_node, std::string(node.name())));
         }
     }
     
     if (!result.relations.has_value() || result.relations->main_model_path.empty())
-        result.add(Read3mfIssueType::relation_missing_main_model);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relation_missing_main_model));
     
     if (!result.relations.has_value() || result.relations->thumbnail_path.empty())
-        result.add(Read3mfIssueType::relation_missing_thumbnail);
+        collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::relation_missing_thumbnail));
 
     return result;
 }
@@ -159,26 +165,26 @@ void store(mz_zip_archive &archive, const Relationships &relationships, const ch
         throw boost::filesystem::filesystem_error("Unable to add relationships file to archive.", {});
 }
 
-LoadedRelations load_relations(mz_zip_archive &archive, const char * filepath) {
+tl::expected<LoadedRelations, Read3mfIssue> load_relations(mz_zip_archive &archive, const char * filepath, Read3mfIssues& collected_issues) {
     int index = mz_zip_reader_locate_file(&archive, filepath, nullptr, 0);
     if (index < 0)
-        return Read3mfIssueType::relations_missing;
+        return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::relations_missing));
 
     mz_zip_archive_file_stat stat;
     if (!mz_zip_reader_file_stat(&archive, index, &stat))
-        return Read3mfIssueType::relations_unreadable;
+        return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::relations_unreadable));
 
     if (stat.m_uncomp_size == 0)
-        return Read3mfIssueType::relations_bad_size;
+        return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::relations_bad_size));
 
     size_t uncomp_size = static_cast<size_t>(stat.m_uncomp_size);
     char *buffer = static_cast<char *>(pugi::get_memory_allocation_function()(uncomp_size));
     if (buffer == nullptr)
-        return Read3mfIssueType::relations_no_memmory;
+        return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::relations_no_memmory));
     ScopeGuard sc_buffer([buffer]() { pugi::get_memory_deallocation_function()(buffer); });
 
     if (mz_zip_reader_extract_to_mem(&archive, index, buffer, uncomp_size, 0) != MZ_TRUE)
-        return Read3mfIssueType::relations_cant_extract;
+        return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::relations_cant_extract));
 
     pugi::xml_document doc;
     pugi::xml_parse_result parse_result = doc.load_buffer_inplace(buffer, uncomp_size);
@@ -186,11 +192,12 @@ LoadedRelations load_relations(mz_zip_archive &archive, const char * filepath) {
         BOOST_LOG_TRIVIAL(error) << "Pugi can't load Relations xml from given data for Relations: "
                                  << parse_result.description();
         std::string description = parse_result.description();
-        return {Read3mfIssueType::relations_pugi_error, description};
+        return tl::make_unexpected(Read3mfIssue(Read3mfIssueType::relations_pugi_error, description));
     }
 
-    LoadedRelations result = load(doc);
-    result.realtions_file_index = index;
+    auto result = load(doc, collected_issues);
+    if (result.has_value())
+        result.value().realtions_file_index = index;
     return result;
 }
 

@@ -563,6 +563,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Format/3mf/Relations.cpp
         src/Slic3r/Biz/Format/3mf/Relations.hpp
         src/Slic3r/Biz/Format/3mf/ResultLoad3mf.cpp
+
+        include/Slic3r/Biz/ProjectLoader.hpp
+        src/Slic3r/Biz/ProjectLoader.cpp
 )
 
 if (WIN32)

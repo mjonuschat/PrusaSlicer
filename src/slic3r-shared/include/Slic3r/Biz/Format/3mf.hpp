@@ -2,8 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_Format_3mf_hpp_
-#define slic3r_Format_3mf_hpp_
+#pragma once
 
 #include <string>
 #include <string_view>
@@ -11,40 +10,17 @@
 #include <limits>
 #include "Slic3r/Biz/Format/Metadata.hpp"
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
-#include "Slic3r/Domain/ConfigPack.hpp"
-#include "Slic3r/Domain/Project.hpp"
 
 namespace Slic3r {
-
-    // Forward decalrations
-    namespace Domain { class Model; }
-    struct ConfigSubstitutionContext;
-    class DynamicPrintConfig;
+    namespace Domain {
+        class Model;
+        class Project;
+    }
     struct ThumbnailData;
 
-    class Old3MFException : public std::exception {};
+    // The following function may throw Loaded3MFException.
+    Loaded3MF load_3mf(const std::string& filepath_3mf);
 
-    /// <summary>
-    /// Load 3mf file into the given model and preset bundle.
-    /// </summary>
-    /// <param name="path">Filepath to 3mf file(or zip archive) in UTF8</param>
-    /// <param name="config">Configuration for printing</param>
-    /// <param name="config_substitutions">Helper class for forward/backward
-    /// configuration compatibility</param>
-    /// <param name="model">[Output] write loaded model</param>
-    /// <param name="check_version"> ??? </param>
-    /// <returns>True on success otherwise false</returns>
-    extern bool load_3mf(
-        std::string_view filepath_3mf,
-        DynamicPrintConfig &config,
-        ConfigSubstitutionContext &config_substitutions,
-        Domain::Model &model,
-        bool check_version
-    );
-
-    /// <summary>
-    /// Settings and flags parameters for different save into 3mf file
-    /// </summary>
     struct Store3mfParam{
         // Publish option to hide imported local file path
         bool fullpath_sources = true;
@@ -69,18 +45,10 @@ namespace Slic3r {
         CT_Metadata_Model metadata;
     };
 
-    /// <summary>
-    /// Save model geometry and configuration into 3mf file.
-    /// NOTE: COULD throw exception boost::filesystem::filesystem_error
-    /// </summary>
-    /// <param name="filepath">Filename with path for store 3mf file in UTF8</param>
-    /// <param name="model">Model of scene geometry and orientation
-    /// <param name="config">Configuration for printing</param>
-    extern void store_3mf(
+
+    void store_3mf(
         const std::string &filepath,
         const Domain::Project& project,
         const Store3mfParam &param = Store3mfParam{});
 
 } // namespace Slic3r
-
-#endif /* slic3r_Format_3mf_hpp_ */

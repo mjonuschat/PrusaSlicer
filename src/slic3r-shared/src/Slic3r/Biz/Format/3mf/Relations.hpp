@@ -2,13 +2,14 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_Format_3mf_Relations_hpp_
-#define slic3r_Format_3mf_Relations_hpp_
+#pragma once
 
 #include <string>
 #include <optional>
 #include <miniz.h> // mz_zip_archive
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
+
+#include "tl/expected.hpp"
 
 namespace Slic3r {
 
@@ -28,12 +29,12 @@ struct RootRelations
 Relationships get_relationships(const RootRelations &root_relations);
 Relationships get_relationships(const std::vector<std::string>& model_paths);
 
-struct LoadedRelations: public ResultLoad3mf {
+struct LoadedRelations {
     std::optional<RootRelations> relations;
     int realtions_file_index = 0;
     const char *get_main_model_path() const;
-public:
-    using ResultLoad3mf::ResultLoad3mf; // use child constructors
+
+    LoadedRelations() = default;
     LoadedRelations(RootRelations &&relations) : relations{relations} {}
 };
 
@@ -41,7 +42,6 @@ public:
 void store(mz_zip_archive &archive, const Relationships &relationships, const char *filepath);
 
 // Read relations XML from "_rels/.rels" get index of root model
-LoadedRelations load_relations(mz_zip_archive &archive, const char *filepath);
+tl::expected<LoadedRelations, Read3mfIssue> load_relations(mz_zip_archive &archive, const char *filepath, Read3mfIssues& collected_issues);
 
 } // namespace Slic3r
-#endif // slic3r_Format_3mf_Relations_hpp_

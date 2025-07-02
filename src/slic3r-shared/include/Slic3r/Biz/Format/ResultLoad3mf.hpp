@@ -1,16 +1,21 @@
-///|/ Copyright (c) Prusa Research 2023 Filip Sykala @Jony01
+﻿///|/ Copyright (c) Prusa Research 2023 Filip Sykala @Jony01
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_Format_3mf_ResultLoad3mf_hpp_
-#define slic3r_Format_3mf_ResultLoad3mf_hpp_
+#pragma once
+
+#include <map>
 #include <string>
 #include <vector>
-#include <unordered_map>
-#include <boost/uuid/uuid.hpp>
-#include <memory>
+
+#include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Semver.hpp"
+
 
 namespace Slic3r {
+
+
 
 enum class Read3mfIssueType: unsigned short {
     zip_error, // miniz: MZ_ZIP errors, source is MZ_Archive::get_errorstr()
@@ -239,183 +244,64 @@ enum class Read3mfIssueType: unsigned short {
     archive_contain_non_unique_uuid, // next param is first found non unique uuid (Not a stopper for import)
 
     cant_load_zip_file, // embossed svg in 3mf archive( mz_zip_reader_extract_to_mem)
+    legacy_loader_required, // project identified as produced by PrusaSlicer 2.x. Should be readable by legacy loader.
+    legacy_loader_failed, // Legacy loader tried to read the file but failed for unknown reason.
 
     unknown
 }; // Read3mfIssueType
 
-/// <summary>
-/// Describe an issue (or loading warning)
-/// Use this shape to be able add forward compatibility message in future
-/// </summary>
-struct Read3mfIssue
-{
-    // type of issue
+
+using Read3mfIssueData = std::pair<std::string, int>;
+
+struct Read3mfIssue {
+    Read3mfIssue() : type{ Read3mfIssueType::unknown } {}
+    Read3mfIssue(
+        Read3mfIssueType type,
+        std::optional<std::string> msg = std::nullopt, 
+        std::optional<std::string> source_str = std::nullopt,
+        std::optional<int> = std::nullopt
+    );
+
     Read3mfIssueType type;
-
-    // some type need additional data describing change
-    // like unknown tag or attribute in XML
-    std::string source;
-
-    // For better understand what is wrong with 3mf model
-    unsigned line = std::numeric_limits<unsigned>::max();
+    std::string msg; // user-readable description 
+    std::vector<Read3mfIssueData> sources; // additional data describing problems (e.g. unknown tag or attribute in XML) + line number
 };
-using Read3mfIssues = std::vector<Read3mfIssue>;
 
-// Read3mfIssue::source delimiter of values
-constexpr const char *SOURCE_DELIMITER = "|";
+struct Read3mfIssues {
+    void add_issue(const Read3mfIssue& issue);
+    bool has_issue(Read3mfIssueType type) const;
+    std::vector<Read3mfIssue> issues;
+};
 
-/// <summary>
-/// Return value for loading function
-/// Keep data about compatibility issues appeard during load of the 3mf file
-/// </summary>
-class ResultLoad3mf
+struct Loaded3MF {
+    struct ConfigContainerData {
+        Domain::ConfigPack config_pack;
+        std::vector<Domain::Vec2d> bed_offsets;
+    };
+
+    Domain::Model model;
+    std::string filepath_3mf;
+    std::vector<Loaded3MF::ConfigContainerData> config_containers_data;
+    Read3mfIssues issues_map;
+    boost::optional<Slic3r::Semver> version;
+};
+
+
+
+class Loaded3MFException : std::runtime_error
 {
-    Read3mfIssues m_issues;
-    // When true than 3mf should load by old 3mf
-    bool m_is_old_3mf = false;
-    // When false, load of 3mf file finish with error.
-    bool m_is_valid = true;
 public:
-    ResultLoad3mf() = default;
-    explicit ResultLoad3mf(bool is_model_loaded);
-    // Implicit for more readeable model load function
-    ResultLoad3mf(Read3mfIssueType type);
-    template<class... Types>
-    ResultLoad3mf(Read3mfIssueType type, Types... args)
-        : m_issues({Read3mfIssue{type, concat(args...)}})
-        , m_is_valid(!break_compatibility(m_issues.back())){}
-
-    operator bool() const;
-    void operator+=(const ResultLoad3mf &r);
-    void operator+=(ResultLoad3mf &&r);
-
-    ResultLoad3mf &add(const Read3mfIssue &issue);
-    ResultLoad3mf &add(Read3mfIssueType type) { return add(Read3mfIssue{type}); }
-    template<class... Types> ResultLoad3mf &add(Read3mfIssueType type, Types... args) {
-        return add(Read3mfIssue{type, concat(args...)}); }
-
-    bool is_old_3mf() const { return m_is_old_3mf; }
-    ResultLoad3mf &set_as_old_3mf() { m_is_old_3mf = true; return *this; }    
-    const Read3mfIssues &get_issues() const { return m_issues; };
-
-private:
-    // concatenating of sources
-    static std::string concat(const std::string &data) { return data; }
-    template<class... Types>
-    static std::string concat(const std::string &data, Types... args) {
-        return data + SOURCE_DELIMITER + concat(args...); // recursive call
+    Loaded3MFException(const Read3mfIssue& fatal_issue)
+    : std::runtime_error("Error when loading 3mf.")
+    {
+        issue = fatal_issue;
     }
-    static bool break_compatibility(const Read3mfIssue &issue);
+
+    Read3mfIssue issue;
 };
 
-// forward declaration
-namespace Domain { class TriangleMesh; }
 
-// NOTE: Must be same as format_3MF::ST_UUID
-using UUID = boost::uuids::uuid;
 
-//                                  <3mf filepath, list of read issues>
-using FileIssues = std::unordered_map<std::string, ResultLoad3mf>;
 
-/// <summary>
-/// Connection between Slic3r::Volume::TriangleMesh and UUID from 3mf
-/// </summary>
-struct MeshWithUUID { 
-    // Pointer into Slic3r::Model
-    std::weak_ptr<const Domain::TriangleMesh> mesh; 
-    // 3mf/3D/3dmodel.model->model/resources/object
-    UUID object_uuid;
-};
-using MeshesWithUUID = std::vector<MeshWithUUID>;
-MeshesWithUUID::const_iterator find_by_ptr(const MeshesWithUUID &meshes, 
-    const std::shared_ptr<const Domain::TriangleMesh> &mesh_ptr);
-
-/// <summary>
-/// Connection between Slic3r::Volume and UUID from 3mf
-/// </summary>
-struct VolumeWithUUID {
-    // ModelVolume::id().id
-    size_t volume_id;
-
-    // 3mf/3D/3dmodel.model->model/resources/object
-    UUID object_uuid;
-
-    // volume object has only one component
-    // 3mf/3D/3dmodel.model->model/resources/object/components/component
-    UUID componnent_uuid; // mesh UUID
-};
-using VolumesWithUUID = std::vector<VolumeWithUUID>;
-VolumesWithUUID::const_iterator find_by_id(const VolumesWithUUID &volumes, size_t volume_id);
-
-/// <summary>
-/// Connection between 3mf::component with UUID and Slic3r::Volume
-/// </summary>
-struct ComponentWithUUID {
-    // ModelVolume::id().id 
-    size_t volume_id; 
-    // 3mf/3D/3dmodel.model->model/resources/object/components/component
-    UUID component_uuid;
-};
-using ComponentsWithUUID = std::vector<ComponentWithUUID>;
-ComponentsWithUUID::const_iterator find_by_id(const ComponentsWithUUID &components, size_t volume_id);
-
-/// <summary>
-/// Connection between Slic3r::Object and UUID from 3mf
-/// Need also keep track components(Slic3r::Volume) UUID
-/// </summary>
-struct ObjectWithUUID{
-    // ModelObject::id().id
-    size_t object_id;
-
-    // 3mf/3D/3dmodel.model->model/resources/object
-    UUID object_uuid;
-
-    // uuid for components - volumes from object
-    ComponentsWithUUID components_uuid;
-};
-using ObjectsWithUUID = std::vector<ObjectWithUUID>;
-ObjectsWithUUID::const_iterator find_by_id(const ObjectsWithUUID &objects, size_t object_id);
-
-/// <summary>
-/// Connection between Slic3r::Instance and Item UUID from 3mf
-/// </summary>
-struct ItemWithUUID {
-    // ModelInstance::id().id
-    size_t instance_id;
-    // 3mf/3D/3dmodel.model->model/buidld/item
-    UUID item_uuid;
-};
-using ItemsWithUUID = std::vector<ItemWithUUID>;
-ItemsWithUUID::const_iterator find_by_id(const ItemsWithUUID &items, size_t instance_id);
-
-// Persistent data loaded from 3mf, keep inside Slic3r::Model
-// Persistency is only for similar stored model as Prusa do(volume/object/instance).
-struct Persist3mfData {
-    // issues in loaded 3mf
-    // Note: multiple 3mf can be loaded into one Slic3r::Model
-    FileIssues file_issues;
-
-    // Depends on .3mf file, but when merge 2 model build uuid lose persistency
-    UUID build_uuid;
-        
-    // Keep UUID for meshes - 3mf object with triangles
-    MeshesWithUUID meshes_uuid;
-
-    // Keep UUID for Volumes - 3mf object with one component
-    VolumesWithUUID volumes_uuid;
-    
-    // Keep UUID for Objects - 3mf object with volumes as components
-    ObjectsWithUUID objects_uuid;
-
-    // Keep UUID for instances
-    ItemsWithUUID items_uuid;
-
-    // PERSISTENT metadata - for now only creation date
-    // 3mf document birth day
-    std::string creation_date;
-};
-
-std::string create_message(const Read3mfIssues &issues);
 
 } // namespace Slic3r
-#endif // slic3r_Format_3mf_ResultLoad3mf_hpp_
