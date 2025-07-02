@@ -417,20 +417,8 @@ void SlaViewer::update_preview_range(size_t min_layer_id, size_t max_layer_id)
         return;
     }
 
-    // msToCheck! 
-    // It looks like the sliced polygons are calculated for the middle of the height range
-    // instead of the top of the range. 
-    // That means m_result->slices[id] refers to 0.5 * (m_result->heights[id] - m_result->heights[id-1]) 
-    // rather than just m_result->heights[id].
-    // That's why magic_shift is used here!!!
-    const float magic_shift = 0.5f * m_result->heights[0];
-
     float min_layer_z = min_layer_id == 0 ? 0.f :m_result->heights[min_layer_id - 1];
-    if (min_layer_id > 0)
-        min_layer_z -= magic_shift;
     float max_layer_z = m_result->heights[max_layer_id];
-    if (max_layer_id + 1 < m_result->heights.size())
-        max_layer_z -= magic_shift;
 
     // Add a small Z shifts to prevent top/bottom face flickering.
     min_layer_z -= EPSILON;
