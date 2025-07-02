@@ -56,7 +56,10 @@ static Loaded3MF load_legacy_project(const std::string& file_path)
     return loaded_3mf;
 }
 
-void load_project(const std::string& file_path, std::function<void(Domain::Project&&)> after_load)
+void load_project(
+    const std::string& file_path,
+    std::function<void(Domain::Project&&)> after_load,
+    std::function<void(std::exception_ptr)> after_exception)
 {
     Platform::PlatformServices::instance().job_manager().create_job("project_load",
         [](Biz::JThread::StopToken stop_token, const std::string file_path) -> Domain::Project {
@@ -76,7 +79,7 @@ void load_project(const std::string& file_path, std::function<void(Domain::Proje
             return convert_to_project(load_legacy_project(file_path));
         },
         file_path
-    ).on_result(after_load).start();
+    ).on_result(after_load).on_exception(after_exception).start();
 }
 
 } // namespace Slic3r::Biz

@@ -25,8 +25,12 @@ Domain::SelectionId ProjectInteractor::new_project()
 
 void ProjectInteractor::load_project(const std::string& file_path)
 {
-    Biz::load_project(file_path, [&](Domain::Project&& project){
+    Biz::load_project(file_path,
+    [&](Domain::Project&& project) {
         add_project(std::move(project));
+    },
+    [](std::exception_ptr eptr) {
+        std::rethrow_exception(eptr);
     });
 }
 
