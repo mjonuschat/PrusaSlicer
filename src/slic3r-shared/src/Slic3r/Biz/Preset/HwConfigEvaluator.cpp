@@ -1,8 +1,8 @@
 #include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
 #include "Slic3r/Biz/Preset/ValueMapBuilder.hpp"
 #include "libslic3r/Config.hpp"
-namespace Slic3r::Biz::Preset {
 
+namespace Slic3r::Biz::Preset {
 
 HwToolConfigIterator HwConfigEvaluator::iterate_tools(const Domain::Preset::HwPrinterConfig& printer, const HwToolConfigIterator::Container& tools) const
 {
@@ -17,6 +17,13 @@ HwFeederConfigIterator HwConfigEvaluator::iterate_feeders(const Domain::Preset::
     append_printer_values(values, printer);
     append_tool_values(values, tool);
     return HwFeederConfigIterator{feeders, m_eval, std::move(values)};
+}
+
+HwSheetConfigIterator HwConfigEvaluator::iterate_sheets(const Domain::Preset::HwPrinterConfig& printer, const HwSheetConfigIterator::Container& sheets) const
+{
+    Expr::ValueMap values;
+    append_printer_values(values, printer);
+    return HwSheetConfigIterator{sheets, m_eval, std::move(values)};
 }
 
 Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
@@ -78,7 +85,29 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
         printer_config.feeders.emplace(std::make_pair(feeder_templ.address, std::move(feeder_config)));
     }
 
+    if (printer_config.technology == Domain::PrinterTechnology::FFF) {
+        const auto* sheet_def = templ.sheet.has_value()
+            ? vendor_data.find_sheet_config_def_by_id(*templ.sheet)
+            : first_compatible_sheet(printer_config, vendor_data.defs.find(Domain::PrinterTechnology::FFF)->second.sheets);
+        ASSERT(sheet_def != nullptr, sheet_def->id);
+        auto& sheet = printer_config.sheet;
+        sheet.id = sheet_def->id;
+        sheet.name = sheet_def->name;
+        sheet.type = sheet_def->type;
+        sheet.features = Domain::Preset::build_features(vendor_data.info.features.sheet);
+        Domain::Preset::override_features(sheet.features, sheet_def->features);
+    }
+
     return printer_config;
+}
+
+const Domain::Preset::HwSheetConfigDef* HwConfigEvaluator::first_compatible_sheet(
+    const Domain::Preset::HwPrinterConfig& printer,
+    const HwSheetConfigIterator::Container& sheets
+) const
+{
+    auto it = iterate_sheets(printer, sheets);
+    return it == std::end(it) ? nullptr : &*it;
 }
 
 }

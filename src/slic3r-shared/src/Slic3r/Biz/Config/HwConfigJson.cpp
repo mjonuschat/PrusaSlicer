@@ -191,6 +191,24 @@ void from_json(const ordered_json& j, MaterialConfig& v)
     j.at("features").get_to(v.features);
 }
 
+void to_json(ordered_json& j, const HwSheetConfig& v)
+{
+    j = ordered_json{
+        {"id", v.id},
+        {"name", v.name},
+        {"type", v.type},
+        {"features", v.features},
+    };
+}
+
+void from_json(const ordered_json& j, HwSheetConfig& v)
+{
+    j.at("id").get_to(v.id);
+    j.at("name").get_to(v.name);
+    j.at("type").get_to(v.type);
+    j.at("features").get_to(v.features);
+}
+
 void to_json(ordered_json& j, const HwPrinterConfig& v)
 {
     j = ordered_json{
@@ -205,6 +223,7 @@ void to_json(ordered_json& j, const HwPrinterConfig& v)
         {"tools", v.tools},
         {"feeders", v.feeders},
         {"materials", v.materials},
+        {"sheet", v.sheet},
     };
 }
 
@@ -224,6 +243,7 @@ using Domain::Preset::HwPrinterConfig;
 using Domain::Preset::HwToolConfig;
 using Domain::Preset::HwToolConfigs;
 using Domain::Preset::MaterialConfig;
+using Domain::Preset::HwSheetConfig;
 
 template<>
 tl::expected<void, std::string> is_valid<HwPrinterConfig>(const nlohmann::ordered_json& json_value)
@@ -240,6 +260,7 @@ tl::expected<void, std::string> is_valid<HwPrinterConfig>(const nlohmann::ordere
              "tools",
              "feeders",
              "materials",
+             "sheet",
          }) {
         if (!json_value.contains(key)) {
             return tl::unexpected{"'" + key + "' not present!"};
@@ -370,12 +391,30 @@ tl::expected<void, std::string> is_valid<MaterialConfig>(const nlohmann::ordered
     return tl::expected<void, std::string>{};
 }
 
+template<>
+tl::expected<void, std::string> is_valid<HwSheetConfig>(const nlohmann::ordered_json& json_value)
+{
+    for (const auto& key : {"id", "name", "type", "features"}) {
+        if (!json_value.contains(key)) {
+            return tl::unexpected{fmt::format("'{}' not present", key)};
+        }
+    }
+    const auto features_valid{is_valid_map<FeatureValueMap>(json_value.at("features"))};
+    if (!features_valid) {
+        return features_valid;
+    }
+
+    return tl::expected<void, std::string>{};
+}
+
+
 tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& json)
 {
     HwPrinterConfig result;
 
-    if (!is_valid<HwPrinterConfig>(json)) {
-        return tl::unexpected{"Invalid config structure!"};
+    const auto valid{is_valid<HwPrinterConfig>(json)};
+    if (!valid) {
+        return tl::unexpected{"Invalid config structure: " + valid.error()};
     }
 
     const auto id{parse<std::string>(json.at("id"))};
@@ -463,6 +502,12 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
         materials.insert({*address, value});
     }
     result.materials = materials;
+
+    const auto sheet{parse<HwSheetConfig>(json.at("sheet"))};
+    if (!sheet) {
+        return tl::unexpected{"Invalid sheet: " + sheet.error()};
+    }
+    result.sheet = sheet.value();
 
     return result;
 }

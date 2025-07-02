@@ -3,7 +3,7 @@
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
 
-TEST_CASE("Load HW Config")
+TEST_CASE("Load HW Config", "[preset]")
 {
     using namespace Slic3r::Domain;
     using namespace Slic3r::Biz::Preset;

@@ -102,14 +102,14 @@ SCENARIO("Bridge detector", "[Bridging]")
 SCENARIO("Bridging integration", "[Bridging]") {
 
     Test::TestConfig config;
-    config.print.items.opt("top_solid_layers").set(0);
+    config.tool.at(0).items.opt("top_solid_layers").set(0);
             // to prevent bridging on sparse infill
-    config.print.items.opt("bridge_speed").set(99.0);
+    config.tool.at(0).items.opt("bridge_speed").set(99.0);
 
     std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::bridge }, config);
 
     GCodeReader                 parser;
-    const double                bridge_speed = config.print.items.opt("bridge_speed").get<double>() * 60.;
+    const double                bridge_speed = config.tool.at(0).items.opt("bridge_speed").get<double>() * 60.;
     // angle => length
     std::map<coord_t, double>   extrusions;
     parser.parse_buffer(gcode, [&extrusions, bridge_speed](GCodeReader &self, const GCodeReader::GCodeLine &line)

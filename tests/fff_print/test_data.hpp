@@ -1,7 +1,6 @@
 #ifndef SLIC3R_TEST_DATA_HPP
 #define SLIC3R_TEST_DATA_HPP
 
-#include "libslic3r/Config.hpp"
 #include "libslic3r/ConfigPackUtils.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
@@ -13,6 +12,7 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/GCode/SeamPlacer.hpp"
 #include "libslic3r/GCode/SeamAligned.hpp"
+#include "libslic3r/SlicingInput.hpp"
 #include "slic3r-shared/include/Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "Slic3r/Domain/OnBeds.hpp"
 
@@ -51,9 +51,14 @@ struct TestConfig : public Domain::ConfigPackFDM
 {
     using ConfigPackFDM::ConfigPackFDM;
 
-    Biz::Parser::IO::Config get_parser_config() const { return Biz::Slicing::get_parser_config(*this); };
-    Domain::FullConfigFDM get_full_config() const { return Domain::FullConfigFDM{*this}; };
-    PrintConfigView get_view() const { return Biz::Slicing::get_view(*this); };
+    Biz::Parser::IO::Config get_parser_config() const {
+        Domain::FullConfigFDMPtr config{prepare_slicing_input(*this)};
+        return Biz::Slicing::get_parser_config(*config); 
+    };
+    Domain::FullConfigFDM get_full_config() const { return *prepare_slicing_input(*this); };
+    PrintConfigView get_view() const {
+        return PrintConfigView{prepare_slicing_input(*this)};
+    };
 };
 
 // Neccessary for <c++17

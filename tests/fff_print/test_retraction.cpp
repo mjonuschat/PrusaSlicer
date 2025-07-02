@@ -66,7 +66,7 @@ void check_gcode(std::initializer_list<TestMesh> meshes, const TestConfig& confi
         const double retract_restart_extra = config.tool.at(tool).items.opt("retract_restart_extra").get<double>();
         const double retract_restart_extra_toolchange = config.tool.at(tool).items.opt("retract_restart_extra_toolchange").get<double>();
 
-        const double travel_speed = config.print.items.opt("travel_speed").get<double>();
+        const double travel_speed = config.tool.at(0).items.opt("travel_speed").get<double>();
 
         const double feedrate = line.has_f() ? line.f() : self.f();
 
@@ -98,7 +98,7 @@ void check_gcode(std::initializer_list<TestMesh> meshes, const TestConfig& confi
                 lift_dist = 0;
                 lifted = false;
             }
-            const double travel_speed_z = config.print.items.opt("travel_speed_z").get<double>();
+            const double travel_speed_z = config.tool.at(0).items.opt("travel_speed_z").get<double>();
             if (travel_speed_z) {
                 Vec3d move{line.dist_X(self), line.dist_Y(self), line.dist_Z(self)};
                 const double move_u_z = move.z() / move.norm();
@@ -180,7 +180,7 @@ TEST_CASE("Slicing with retraction and lifting", "[retraction]") {
     }
 
     config.print.items.opt("first_layer_height").set(FloatOrPercentage{Percentage{100}});
-    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+    config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
     config.printer.items.opt("start_gcode").set("");
 
     for (auto& tool : config.tool) {
@@ -188,7 +188,7 @@ TEST_CASE("Slicing with retraction and lifting", "[retraction]") {
         tool.items.opt("retract_before_travel").set(3.0);
         tool.items.opt("retract_layer_change").set(true);
     }
-    config.print.items.opt("only_retract_when_crossing_perimeters").set(false);
+    config.tool.at(0).items.opt("only_retract_when_crossing_perimeters").set(false);
 
     SECTION("Standard run") {
         test_slicing({TestMesh::cube_20x20x20}, config);
@@ -212,7 +212,7 @@ TEST_CASE("Slicing with retraction and lifting with travel_speed_z=10", "[retrac
     }
 
     config.print.items.opt("first_layer_height").set(FloatOrPercentage{Percentage{100}});
-    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+    config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
     config.printer.items.opt("start_gcode").set("");
 
     for (auto& tool : config.tool) {
@@ -221,9 +221,9 @@ TEST_CASE("Slicing with retraction and lifting with travel_speed_z=10", "[retrac
         tool.items.opt("retract_layer_change").set(true);
     }
 
-    config.print.items.opt("only_retract_when_crossing_perimeters").set(false);
-    config.print.items.opt("travel_speed").set(600.0);
-    config.print.items.opt("travel_speed_z").set(10.0);
+    config.tool.at(0).items.opt("only_retract_when_crossing_perimeters").set(false);
+    config.tool.at(0).items.opt("travel_speed").set(600.0);
+    config.tool.at(0).items.opt("travel_speed_z").set(10.0);
 
     SECTION("Standard run") {
         test_slicing({TestMesh::cube_20x20x20}, config);

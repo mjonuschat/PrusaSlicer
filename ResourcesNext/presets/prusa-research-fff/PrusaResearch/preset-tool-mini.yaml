@@ -3,6 +3,7 @@ id: '*common MINI*'
 variants:
 - condition: printer.model == "MINI"
   values:
+    retract_before_travel: 1.5
     retract_layer_change: 1
     retract_length_toolchange: 0
     retract_lift_above: 0
@@ -70,55 +71,39 @@ variants:
     external_perimeter_acceleration: 2000
     external_perimeter_extrusion_width: 0.45
     external_perimeter_speed: 140
-    external_perimeters_first: 0
-    extra_perimeters: 0
     extrusion_width: 0.45
-    fill_angle: 45
     fill_density: 15%
     fill_pattern: grid
     first_layer_acceleration: 500
     first_layer_acceleration_over_raft: 0
     first_layer_extrusion_width: 0.5
-    first_layer_height: 0.2
     first_layer_speed: 30
     first_layer_infill_speed: 45
     first_layer_speed_over_raft: 30
     gap_fill_enabled: 1
     gap_fill_speed: 80
-    gcode_comments: 0
-    gcode_label_objects: firmware
     gcode_resolution: 0.008
     infill_acceleration: 4000
     infill_anchor: 2.5
     infill_anchor_max: 12
     infill_every_layers: 1
-    infill_extruder: 1
     infill_extrusion_width: 0.45
-    infill_first: 0
     infill_overlap: 15%
     infill_speed: 140
-    interface_shells: 0
-    ironing_type: top
     max_print_speed: 200
     max_volumetric_extrusion_rate_slope_negative: 0
     max_volumetric_extrusion_rate_slope_positive: 0
     max_volumetric_speed: 0
     min_bead_width: 85%
     min_feature_size: 25%
-    min_skirt_length: 4
-    mmu_segmented_region_max_width: 0
     only_retract_when_crossing_perimeters: 0
-    ooze_prevention: 0
-    output_filename_format: '{input_filename_base}_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
     overhang_speed_0: 15
     overhang_speed_1: 20
     overhang_speed_2: 25
     overhang_speed_3: 60
     overhangs: 1
     perimeter_acceleration: 2500
-    perimeter_extruder: 1
     perimeter_extrusion_width: 0.45
-    perimeter_generator: arachne
     perimeter_speed: 140
     perimeters: 2
     raft_contact_distance: 0.15
@@ -126,16 +111,11 @@ variants:
     raft_first_layer_density: 80%
     raft_first_layer_expansion: 3.5
     seam_position: aligned
-    slice_closing_radius: 0.049
     small_perimeter_speed: 140
     solid_infill_acceleration: 4000
-    solid_infill_below_area: 0
-    solid_infill_every_layers: 0
-    solid_infill_extruder: 1
     solid_infill_extrusion_width: 0.45
     solid_infill_speed: 140
     over_bridge_speed: 50%
-    skirts: 0
     support_material: 0
     support_material_angle: 0
     support_material_auto: 1
@@ -169,7 +149,6 @@ variants:
     support_tree_branch_distance: 1
     support_tree_tip_diameter: 0.8
     support_tree_top_rate: 30%
-    top_fill_pattern: monotoniclines
     top_infill_extrusion_width: 0.42
     top_solid_infill_acceleration: 1200
     top_solid_infill_speed: 80
@@ -178,15 +157,10 @@ variants:
     travel_speed: 400
     travel_speed_z: 12
     thick_bridges: 0
-    thin_walls: 0
     top_solid_min_thickness: 0.7
     bottom_solid_min_thickness: 0.5
-    arc_fitting: emit_center
-    wipe_tower: 1
     wipe_tower_extra_spacing: 110%
     wipe_tower_extra_flow: 250%
-    wipe_tower_cone_angle: 25
-    single_extruder_multi_material_priming: 0
   variants:
   - name: non-MMU branch
     variants:
@@ -230,9 +204,6 @@ variants:
         raft_contact_distance: 0.15
         raft_first_layer_density: 95%
         gap_fill_speed: 50
-        single_extruder_multi_material_priming: 0
-        wipe_tower: 1
-        output_filename_format: '{input_filename_base}_0.25n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
 # 0.25n/0.05mm layer
       variants:
       - condition: print.layer_height == 0.05
@@ -448,7 +419,6 @@ variants:
         support_tree_tip_diameter: 1.2
         raft_contact_distance: 0.25
         gap_fill_speed: 60
-        output_filename_format: '{input_filename_base}_0.6n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
         overhang_speed_0: 15
         overhang_speed_1: 20
         overhang_speed_2: 25
@@ -633,7 +603,6 @@ variants:
         gap_fill_speed: 35
         top_solid_min_thickness: 1.2
         bottom_solid_min_thickness: 0.8
-        output_filename_format: '{input_filename_base}_0.8n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
         seam_position: nearest
         infill_anchor: 3
         infill_anchor_max: 20

@@ -26,7 +26,7 @@ variants:
       M221 S100 ; reset flow percentage
       M84 ; disable motors
       ; max_layer_z = [max_layer_z]
-    extruder_offset: '0x0'
+    extruder_offset: ['0x0']
     gcode_flavor: marlin2
     high_current_on_filament_swap: 0
     layer_gcode: ";AFTER_LAYER_CHANGE\n;[layer_z]"
@@ -47,12 +47,9 @@ variants:
     max_print_height: 360
     printer_technology: FFF
     remaining_times: 1
-    retract_before_travel: 1.5
-    serial_speed: 250000
     silent_mode: 1
     single_extruder_multi_material: 0
     thumbnails: [16x16/QOI, ' 313x173/QOI', ' 440x240/QOI', ' 480x240/QOI', ' 640x480/PNG']
-    travel_max_lift: 1.5
     use_firmware_retraction: 0
     use_relative_e_distances: 1
     use_volumetric_e: 0

@@ -9,6 +9,7 @@
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp""
 
 #include "Slic3r/Biz/Format/3mf.hpp"
 

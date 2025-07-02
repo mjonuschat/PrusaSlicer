@@ -75,11 +75,14 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->init_fn = init_with("");
 
     def = defs.add("elefant_foot_compensation", typeid(double));
-    def->location = print;
-    if (technology == SLA)
+    if (technology == SLA) {
+        def->location = print;
         def->overrides_in = Locations{ sla_material, sla_object};
-    if (technology == FFF)
+    }
+    if (technology == FFF) {
+        def->location = FDMConfigLocation::Tool;
         def->overrides_in = Locations{ fdm_object, fdm_volume };
+    }
     def->label = L("Elephant foot compensation");
     def->category = L("Advanced");
     def->tooltip = L("The first layer will be shrunk in the XY plane by the configured value "
@@ -123,7 +126,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->init_fn = init_with(0.3);
 
     def = defs.add("max_print_height", typeid(double));
-    def->location = print;
+    def->location = printer;
     def->label = L("Max print height");
     def->tooltip = L("Set this to the maximum height that can be reached by your extruder while printing.");
     def->sidetext = L("mm");

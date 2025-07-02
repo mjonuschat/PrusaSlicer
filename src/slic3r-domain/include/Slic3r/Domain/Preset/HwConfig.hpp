@@ -77,10 +77,17 @@ struct MaterialConfig
     FeatureValueMap features;
 };
 
+struct HwSheetConfig
+{
+    std::string id;
+    std::string name;
+    std::string type;
+    FeatureValueMap features;
+};
+
 using HwToolConfigs = std::vector<HwToolConfig>;
 using HwFeederConfigs = std::map<Address, HwFeederConfig>;
 using HwMaterialConfigs = std::map<Address, MaterialConfig>;
-
 
 struct HwPrinterConfig
 {
@@ -96,6 +103,7 @@ struct HwPrinterConfig
     HwToolConfigs tools;
     HwFeederConfigs feeders;
     HwMaterialConfigs materials;
+    HwSheetConfig sheet;
 };
 using HwPrinterConfigs = std::vector<HwPrinterConfig>;
 
@@ -223,6 +231,7 @@ struct VendorData {
     const HwPrinterConfigDef* find_printer_config_def_by_id(const std::string& id) const;
     const HwToolConfigDef* find_tool_config_def_by_id(const std::string& id) const;
     const HwFeederConfigDef* find_feeder_config_def_by_id(const std::string& id) const;
+    const HwSheetConfigDef* find_sheet_config_def_by_id(const std::string& id) const;
     const HwPrinterConfigTemplate* find_printer_config_template_by_id(const std::string& id) const;
 };
 

@@ -8,6 +8,7 @@
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <catch2/matchers/catch_matchers_templated.hpp>
+#include <tl/expected.hpp>
 
 namespace Tests {
 struct Ver
@@ -77,7 +78,7 @@ TEST_CASE("Load Yaml from file into MyData", "[yaml]")
     Tests::MyData data;
     try {
         Yaml::YamlAdapter::Document doc = Yaml::parse_file(filename.c_str());
-        data  = Yaml::parse_struct<Tests::MyData>(doc);
+        data  = Yaml::parse_struct_unwrap<Tests::MyData>(doc);
         REQUIRE(data.a == 42);
         REQUIRE(data.b == "answer");
         REQUIRE(data.version.major == 1);
@@ -110,7 +111,7 @@ patch: 321
     Yaml::YamlAdapter::Document doc = Yaml::parse_string(yaml_ver_no_minor);
 
     REQUIRE_THROWS_MATCHES(
-        Yaml::parse_struct<Tests::Ver>(doc),
+        Yaml::parse_struct_unwrap<Tests::Ver>(doc),
         Yaml::ParseError,
         //Catch::Matchers::ContainsSubstring("Required field 'minor' not found")
         Catch::Matchers::MessageMatches(Catch::Matchers::ContainsSubstring("Required field 'minor' not found"))
@@ -118,7 +119,7 @@ patch: 321
 
     doc = Yaml::parse_string(yaml_ver_ok);
     Tests::Ver ver;
-    REQUIRE_NOTHROW(ver = Yaml::parse_struct<Tests::Ver>(doc));
+    REQUIRE_NOTHROW(ver = Yaml::parse_struct_unwrap<Tests::Ver>(doc));
     REQUIRE(ver.major == 3);
     REQUIRE(ver.minor == 2);
     REQUIRE(ver.patch == 321);
@@ -132,7 +133,7 @@ condition: 'tool.nozzle_diameter >= 0.2'
 )";
 
     Yaml::YamlAdapter::Document doc = Yaml::parse_string(yaml);
-    Tests::Condition condition = Yaml::parse_struct<Tests::Condition>(doc);
+    Tests::Condition condition = Yaml::parse_struct_unwrap<Tests::Condition>(doc);
     REQUIRE(boost::get<Slic3r::Domain::Expr::Binary>(condition.condition).op == Slic3r::Domain::Expr::BinaryOp::GtEq);
 
 }
@@ -144,7 +145,7 @@ data: [0]
 )";
 
     Yaml::YamlAdapter::Document doc = Yaml::parse_string(yaml);
-    Tests::VecData vec = Yaml::parse_struct<Tests::VecData>(doc);
+    Tests::VecData vec = Yaml::parse_struct_unwrap<Tests::VecData>(doc);
     REQUIRE(vec.data.size() == 1);
 }
 
@@ -155,8 +156,10 @@ TEST_CASE("Slic3r Types", "[yaml]")
     using Slic3r::Domain::Vec2d;
     using Slic3r::Domain::Vec2ds;
     using Slic3r::Domain::Preset::Bools;
-    using Slic3r::Domain::Preset::Floats;
+    using Slic3r::Domain::Preset::Doubles;
     using Slic3r::Domain::Preset::Strings;
+    using Slic3r::Domain::Percentage;
+    using Slic3r::Domain::Preset::Percentages;
     SECTION("PresetValue and FeatureValue")
     {
         std::string yaml = R"(
@@ -174,10 +177,12 @@ presets:
   str: Hello
   strs: ['Hello', 'world']
   mono: null
+  percent: '12%'
+  percents: ['12%']
 )";
         try {
             auto doc = Yaml::parse_string(yaml);
-            Tests::ValueData data = Yaml::parse_struct<Tests::ValueData>(doc);
+            Tests::ValueData data = Yaml::parse_struct_unwrap<Tests::ValueData>(doc);
             REQUIRE(data.features.find("bool")->second == FeatureValue{true});
             REQUIRE(data.features.find("num")->second == FeatureValue{42.1});
             REQUIRE(data.features.find("str")->second == FeatureValue{"Hello world"});
@@ -188,10 +193,14 @@ presets:
             REQUIRE(data.presets.find("bool")->second == PresetValue{true});
             REQUIRE(data.presets.find("bools")->second == PresetValue{Bools{true, false}});
             REQUIRE(data.presets.find("num")->second == PresetValue{42.1});
-            REQUIRE(data.presets.find("nums")->second == PresetValue{Floats{1, 2, 3}});
+            REQUIRE(data.presets.find("nums")->second == PresetValue{Doubles{1, 2, 3}});
             REQUIRE(data.presets.find("str")->second == PresetValue{"Hello"});
             REQUIRE(data.presets.find("strs")->second == PresetValue{Strings{"Hello", "world"}});
             REQUIRE(data.presets.find("mono")->second == PresetValue{std::monostate{}});
+            REQUIRE(data.presets.find("percent")->second == PresetValue{Percentage{12}});
+            REQUIRE(data.presets.find("percents")->second == PresetValue{Percentages{Percentage{12}}
+        });
+
         } catch (Yaml::ParseError& e) {
             std::cerr << e.what() << std::endl;
             FAIL(e.what());
@@ -208,7 +217,7 @@ name: 'Abc'
 )";
         try {
             auto doc = Yaml::parse_string(yaml);
-            auto data = Yaml::parse_struct<Tests::SourceLocatedData>(doc);
+            auto data = Yaml::parse_struct_unwrap<Tests::SourceLocatedData>(doc);
             REQUIRE(data.name.value == "Abc");
             REQUIRE(data.name.source_location.column == 7);
             REQUIRE(data.name.source_location.line == 3);

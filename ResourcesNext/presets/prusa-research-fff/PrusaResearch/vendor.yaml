@@ -20,13 +20,13 @@ features:
     nozzle_diameter:
       default: 0.4
       user_editable: false
+    # Not used now, we take info about filament being abrasive
+    #nozzle_hardened:
+    #  default: false
   sheet:
     cold:
       default: false
       user_editable: false
-    # Not used now, we take info about filament being abrasive
-    #nozzle_hardened:
-    #  default: false
 ---
 kind: printer
 technology: FFF

@@ -192,7 +192,7 @@ std::string beautify_json(
     for (auto& line : lines)
         line += '\n';
     std::string start;
-    
+
     for (size_t line_id=0; line_id<lines.size(); ++line_id) {
         start = lines[line_id];
         boost::trim_left(start);

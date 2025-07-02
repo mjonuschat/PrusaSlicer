@@ -19,7 +19,7 @@ SCENARIO("PrintObject: Perimeter generation", "[PrintObject]") {
         WHEN("make_perimeters() is called")  {
             Slic3r::Print print;
             TestConfig config;
-            config.print.items.opt("fill_density").set(Percentage{0});
+            config.tool.at(0).items.opt("fill_density").set(Percentage{0});
             Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
 			const PrintObject &object = *print.objects().front();
 			THEN("67 layers exist in the model") {
@@ -71,8 +71,8 @@ void update(Print& print, Domain::Model& model, const TestConfig& config)
 SCENARIO("Print: Changing number of solid surfaces does not cause all surfaces to become internal.", "[Print]") {
     GIVEN("sliced 20mm cube and config with top_solid_surfaces = 2 and bottom_solid_surfaces = 1") {
         TestConfig config;
-        config.print.items.opt("top_solid_layers").set(2);
-        config.print.items.opt("bottom_solid_layers").set(1);
+        config.tool.at(0).items.opt("top_solid_layers").set(2);
+        config.tool.at(0).items.opt("bottom_solid_layers").set(1);
         config.print.items.opt("layer_height").set(0.25);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.25});
         Slic3r::Print print;
@@ -94,7 +94,7 @@ SCENARIO("Print: Changing number of solid surfaces does not cause all surfaces t
         test_is_solid_infill(0, 79); // should be solid
         test_is_solid_infill(0, 78); // should be solid
         WHEN("Model is re-sliced with top_solid_layers == 3") {
-			config.print.items.opt("top_solid_layers").set(3);
+			config.tool.at(0).items.opt("top_solid_layers").set(3);
             update(print, model, config);
             print.process();
             THEN("Print object does not have 0 solid bottom layers.") {
@@ -114,7 +114,7 @@ SCENARIO("Print: Brim generation", "[Print]") {
         WHEN("Brim is set to 3mm")  {
 	        Slic3r::Print print;
             TestConfig config;
-            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
+            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
             config.print.items.opt("brim_width").set(3.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             THEN("Brim Extrusion collection has 3 loops in it") {
@@ -124,7 +124,7 @@ SCENARIO("Print: Brim generation", "[Print]") {
         WHEN("Brim is set to 6mm")  {
 	        Slic3r::Print print;
             TestConfig config;
-            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
+            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
             config.print.items.opt("brim_width").set(6.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             THEN("Brim Extrusion collection has 6 loops in it") {
@@ -134,7 +134,7 @@ SCENARIO("Print: Brim generation", "[Print]") {
         WHEN("Brim is set to 6mm, extrusion width 0.5mm")  {
 	        Slic3r::Print print;
             TestConfig config;
-            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
+            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
             config.print.items.opt("brim_width").set(6.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
 			print.process();

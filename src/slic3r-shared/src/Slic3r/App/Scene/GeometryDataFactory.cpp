@@ -125,7 +125,7 @@ void GeometryDataFactory::create_circle()
     Render::GeometryBuilder<Render::VertexP3> builder;
     for (uint8_t i = 0; i < CIRCLE_RES; ++i) {
         float angle = i * CIRCLE_ANGLE_STEP;
-        builder.add_vertex({{ 0.5f * cos(angle), 0.5f * sin(angle), 0.0f }});
+        builder.add_vertex({{ 0.5f * cosf(angle), 0.5f * sinf(angle), 0.0f }});
     }
     builder
         .add_draw_command({ Render::PrimitiveType::LineLoop, 0, CIRCLE_RES,  Render::Material{} });
@@ -138,21 +138,21 @@ void GeometryDataFactory::create_graded_circle()
     for (uint8_t i = 0; i < CIRCLE_RES; ++i) {
         float angle_i = i * CIRCLE_ANGLE_STEP;
         float angle_j = (i + 1) * CIRCLE_ANGLE_STEP;
-        builder.add_vertex({ { 0.5f * cos(angle_i), 0.5f * sin(angle_i), 0.0f } });
-        builder.add_vertex({ { 0.5f * cos(angle_j), 0.5f * sin(angle_j), 0.0f } });
+        builder.add_vertex({ { 0.5f * cosf(angle_i), 0.5f * sinf(angle_i), 0.0f } });
+        builder.add_vertex({ { 0.5f * cosf(angle_j), 0.5f * sinf(angle_j), 0.0f } });
     }
     float grade_step = float(TWO_PI) / CIRCLE_FINE_GRADE_SECONDARY_STEPS;
     for (uint8_t i = 0; i < CIRCLE_FINE_GRADE_SECONDARY_STEPS; ++i) {
         float angle_i = i * grade_step;
         float out_radius = (i % 2 == 0) ? 0.5f * CIRCLE_FINE_GRADE_PRIMARY_OUT_RADIUS : 0.5f * CIRCLE_FINE_GRADE_SECONDARY_OUT_RADIUS;
-        builder.add_vertex({ { 0.5f * cos(angle_i), 0.5f * sin(angle_i), 0.0f } });
-        builder.add_vertex({ { out_radius * cos(angle_i), out_radius * sin(angle_i), 0.0f } });
+        builder.add_vertex({ { 0.5f * cosf(angle_i), 0.5f * sinf(angle_i), 0.0f } });
+        builder.add_vertex({ { out_radius * cosf(angle_i), out_radius * sinf(angle_i), 0.0f } });
     }
     grade_step = float(TWO_PI) / CIRCLE_COARSE_GRADE_STEPS;
     for (uint8_t i = 0; i < CIRCLE_COARSE_GRADE_STEPS; ++i) {
         float angle_i = i * grade_step;
-        builder.add_vertex({ { 0.5f * CIRCLE_COARSE_GRADE_IN_RADIUS * cos(angle_i), 0.5f * CIRCLE_COARSE_GRADE_IN_RADIUS * sin(angle_i), 0.0f } });
-        builder.add_vertex({ { 0.5f * CIRCLE_COARSE_GRADE_OUT_RADIUS * cos(angle_i), 0.5f * CIRCLE_COARSE_GRADE_OUT_RADIUS * sin(angle_i), 0.0f } });
+        builder.add_vertex({ { 0.5f * CIRCLE_COARSE_GRADE_IN_RADIUS * cosf(angle_i), 0.5f * CIRCLE_COARSE_GRADE_IN_RADIUS * sinf(angle_i), 0.0f } });
+        builder.add_vertex({ { 0.5f * CIRCLE_COARSE_GRADE_OUT_RADIUS * cosf(angle_i), 0.5f * CIRCLE_COARSE_GRADE_OUT_RADIUS * sinf(angle_i), 0.0f } });
     }
     builder
         .add_draw_command({ Render::PrimitiveType::Lines, 0, builder.vertex_count(),  Render::Material{}});

@@ -24,8 +24,10 @@ using Biz::GCodeReader::GCodeReader;
 
 constexpr bool debug_files = false;
 
-SCENARIO("Origin manipulation", "[GCode]") {
+TEST_CASE("Origin manipulation", "[GCode]") {
     Print print;
+    TestConfig test_config;
+    print.set_config(test_config.get_view());
 	Slic3r::GCodeGenerator gcodegen{&print};
 	WHEN("set_origin to (10,0)") {
     	gcodegen.set_origin(Vec2d(10,0));
@@ -305,7 +307,7 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
 TEST_CASE("M201 for acceleation reset", "[GCode]") {
     TestConfig config;
     config.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfRepetier);
-    config.print.items.opt("default_acceleration").set(1337.0);
+    config.tool.at(0).items.opt("default_acceleration").set(1337.0);
 
 	GCodeReader parser;
     std::string gcode = Slic3r::Test::slice({TestMesh::cube_with_hole}, config);

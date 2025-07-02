@@ -21,9 +21,15 @@ using SLAConfigLocation::Material;
 using SLAConfigLocation::Print;
 using SLAConfigLocation::Object;
 
-// Define the static object holding all definitions. Provide list of acceptable
-// boxes and the init function.
-ConfigDefinitions s_defs_sla({Printer, Print, Material, Object}, sla_config_init_fn);
+const ConfigDefinitions& get_defs_sla() {
+    static ConfigDefinitions defs_sla({Printer, Print, Material, Object}, sla_config_init_fn);
+    return defs_sla;
+}
+
+SLAPrintSettings::SLAPrintSettings() : ConfigBox(get_defs_sla(), SLAConfigLocation::Print) {}
+SLAMaterialSettings::SLAMaterialSettings() : ConfigBox(get_defs_sla(), SLAConfigLocation::Material) {}
+SLAPrinterSettings::SLAPrinterSettings() : ConfigBox(get_defs_sla(), SLAConfigLocation::Printer) {}
+SLAObjectSettings::SLAObjectSettings() : ConfigBox(get_defs_sla(), SLAConfigLocation::Object) {}
 
 // JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.
 // Right now, let's just define the constants so the defs compile.

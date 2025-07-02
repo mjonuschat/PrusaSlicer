@@ -36,7 +36,7 @@ PresetCollectionEvaluator create_evaluator(const IO::PresetLoader& loader, Prese
 }
 
 
-TEST_CASE("Preset Collection Evaluator")
+TEST_CASE("Preset Collection Evaluator", "[preset]")
 {
     SECTION("simplest")
     {

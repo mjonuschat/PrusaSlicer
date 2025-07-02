@@ -16,21 +16,21 @@ SCENARIO("Gaps", "[Gaps]") {
     GIVEN("Two hollow squares") {
         TestConfig config;
         config.print.items.opt("skirts").set(0);
-        config.print.items.opt("perimeter_speed").set(66.0);
-        config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{66.0});
-        config.print.items.opt("small_perimeter_speed").set(FloatOrPercentage{66.0});
-        config.print.items.opt("gap_fill_speed").set(99.0);
-        config.print.items.opt("perimeters").set(1);
+        config.tool.at(0).items.opt("perimeter_speed").set(66.0);
+        config.tool.at(0).items.opt("external_perimeter_speed").set(FloatOrPercentage{66.0});
+        config.tool.at(0).items.opt("small_perimeter_speed").set(FloatOrPercentage{66.0});
+        config.tool.at(0).items.opt("gap_fill_speed").set(99.0);
+        config.tool.at(0).items.opt("perimeters").set(1);
                     // to prevent speeds from being altered
         config.filament[0].items.opt("cooling").set(false);
                     // to prevent speeds from being altered
-        config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
-        config.print.items.opt("perimeter_extrusion_width").set(FloatOrPercentage{0.35});
-        config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.35});
+        config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+        config.tool.at(0).items.opt("perimeter_extrusion_width").set(FloatOrPercentage{0.35});
+        config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.35});
 
         GCodeReader parser;
-        const double perimeter_speed = config.print.items.opt("perimeter_speed").get<double>() * 60;
-        const double gap_fill_speed  = config.print.items.opt("gap_fill_speed").get<double>() * 60;
+        const double perimeter_speed = config.tool.at(0).items.opt("perimeter_speed").get<double>() * 60;
+        const double gap_fill_speed  = config.tool.at(0).items.opt("gap_fill_speed").get<double>() * 60;
         std::string  last; // perimeter or gap
         Points       perimeter_points;
         int          gap_fills_outside_last_perimeters = 0;

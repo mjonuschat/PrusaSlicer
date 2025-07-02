@@ -4,33 +4,40 @@
 #include <set>
 #include <string>
 #include "Slic3r/Domain/Preset/PresetTree.hpp"
+#include "Slic3r/Domain/ConfigBoxesFDM.hpp"
+#include "Slic3r/Domain/ConfigBoxesSLA.hpp"
 
 namespace Slic3r::Domain::Preset {
 
+
+using Expressions = std::vector<Expr::ExprAst>;
+
+template <typename ConfigFdmType, typename ConfigSlaType>
 struct EvaluatedPreset
 {
-    using Expressions = std::vector<Expr::ExprAst>;
+    using PresetValues = std::variant<ConfigFdmType, ConfigSlaType>;
 
     PresetKind kind{PresetKind::FdmPrinter};
     std::string id;
     std::string name;
-    PresetValueMap values;
+    PresetValues values;
     FeatureValueMap features;
     Expressions conditions;
     SourceLocation last_node_location;
 };
 
-using EvaluatedPresets = std::vector<EvaluatedPreset>;
+//using EvaluatedPresets = std::vector<EvaluatedPreset>;
 
 struct EvaluatedToolPrintPreset
 {
-    EvaluatedPreset preset;
+    using Presets = EvaluatedPreset<ToolPrintSettings, std::monostate>;
+    Presets preset;
 
     EvaluatedToolPrintPreset() = default;
     EvaluatedToolPrintPreset(const EvaluatedToolPrintPreset&) = default;
     EvaluatedToolPrintPreset(EvaluatedToolPrintPreset&&) = default;
 
-    explicit EvaluatedToolPrintPreset(EvaluatedPreset&& preset)
+    explicit EvaluatedToolPrintPreset(Presets&& preset)
         : preset(std::move(preset))
     {}
 };
@@ -46,14 +53,15 @@ using EvaluatedToolPrintPresets = std::vector<EvaluatedToolPrintPresetVariants>;
 
 struct EvaluatedPrintPreset
 {
-    EvaluatedPreset preset;
+    using Presets = EvaluatedPreset<PrintSettings, SLAPrintSettings>;
+    Presets preset;
     EvaluatedToolPrintPresets tools;
 
     EvaluatedPrintPreset() = default;
     EvaluatedPrintPreset(const EvaluatedPrintPreset&) = default;
     EvaluatedPrintPreset(EvaluatedPrintPreset&&) = default;
 
-    EvaluatedPrintPreset(EvaluatedPreset&& preset, EvaluatedToolPrintPresets&& tools)
+    EvaluatedPrintPreset(Presets&& preset, EvaluatedToolPrintPresets&& tools)
         : preset(std::move(preset)), tools(std::move(tools))
     {}
 };
@@ -62,14 +70,15 @@ using EvaluatedPrintPresets = std::vector<EvaluatedPrintPreset>;
 
 struct EvaluatedMaterialPreset
 {
-    EvaluatedPreset preset;
+    using Presets = EvaluatedPreset<FilamentSettings, SLAMaterialSettings>;
+    Presets preset;
     std::set<std::string> incompatible_tool_print_ids;
 
     EvaluatedMaterialPreset() = default;
     EvaluatedMaterialPreset(const EvaluatedMaterialPreset&) = default;
     EvaluatedMaterialPreset(EvaluatedMaterialPreset&&) = default;
 
-    explicit EvaluatedMaterialPreset(EvaluatedPreset&& preset)
+    explicit EvaluatedMaterialPreset(Presets&& preset)
         : preset(std::move(preset))
     {}
 };
@@ -78,7 +87,8 @@ using EvaluatedMaterialPresets = std::vector<EvaluatedMaterialPreset>;
 
 struct EvaluatedPrinterPreset
 {
-    EvaluatedPreset preset;
+    using Presets = EvaluatedPreset<PrinterSettings, SLAPrinterSettings>;
+    Presets preset;
     EvaluatedPrintPresets prints;
     EvaluatedMaterialPresets materials;
 };

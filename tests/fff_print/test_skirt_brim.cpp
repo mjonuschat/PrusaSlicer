@@ -38,12 +38,12 @@ TEST_CASE("Skirt height is honored", "[Skirt]") {
     TestConfig config;
     config.print.items.opt("skirts").set(1);
     config.print.items.opt("skirt_height").set(5);
-    config.print.items.opt("perimeters").set(0);
-    config.print.items.opt("support_material_speed").set(99.0);
+    config.tool.at(0).items.opt("perimeters").set(0);
+    config.tool.at(0).items.opt("support_material_speed").set(99.0);
     // avoid altering speeds unexpectedly
     config.filament[0].items.opt("cooling").set(false);
     // avoid altering speeds unexpectedly
-    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+    config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
 
 	std::string gcode;
     SECTION("printing a single object") {
@@ -54,7 +54,7 @@ TEST_CASE("Skirt height is honored", "[Skirt]") {
     }
 
     std::map<double, bool> layers_with_skirt;
-    double support_speed = config.print.items.opt("support_material_speed").get<double>() * MM_PER_MIN;
+    double support_speed = config.tool.at(0).items.opt("support_material_speed").get<double>() * MM_PER_MIN;
 	GCodeReader parser;
     parser.parse_buffer(gcode, [&layers_with_skirt, &support_speed] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.extruding(self) && self.f() == Approx(support_speed)) {
@@ -68,7 +68,7 @@ SCENARIO("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
     GIVEN("A default configuration") {
 	    TestConfig config{4};
 
-        config.print.items.opt("support_material_speed").set(99.0);
+        config.tool.at(0).items.opt("support_material_speed").set(99.0);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.3});
         config.print.items.opt("gcode_comments").set(true);
 
@@ -76,20 +76,20 @@ SCENARIO("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
         for (auto& filament_settings : config.filament) {
             filament_settings.items.opt("cooling").set(false);
         }
-        config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+        config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
         // remove noise from top/solid layers
-        config.print.items.opt("top_solid_layers").set(0);
-        config.print.items.opt("bottom_solid_layers").set(1);
+        config.tool.at(0).items.opt("top_solid_layers").set(0);
+        config.tool.at(0).items.opt("bottom_solid_layers").set(1);
         config.printer.items.opt("start_gcode").set("T[initial_tool]\n" );
 
         WHEN("Brim width is set to 5") {
-            config.print.items.opt("perimeters").set(0);
+            config.tool.at(0).items.opt("perimeters").set(0);
             config.print.items.opt("skirts").set(0);
             config.print.items.opt("brim_width").set(5.0);
 			THEN("Brim is generated") {
 		        std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
                 bool brim_generated = false;
-                double support_speed = config.print.items.opt("support_material_speed").get<double>() * MM_PER_MIN;
+                double support_speed = config.tool.at(0).items.opt("support_material_speed").get<double>() * MM_PER_MIN;
 			    GCodeReader parser;
                 parser.parse_buffer(gcode, [&brim_generated, support_speed] (GCodeReader& self, const GCodeReader::GCodeLine& line) {
                     if (self.z() == Approx(0.3) || line.new_Z(self) == Approx(0.3)) {
@@ -153,7 +153,7 @@ SCENARIO("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
 
         WHEN("brim width to 1 with layer_width of 0.5") {
             config.print.items.opt("skirts").set(0);
-            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
+            config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
             config.print.items.opt("brim_width").set(1.0);
             THEN("2 brim lines") {
 		        Slic3r::Print print;
@@ -199,14 +199,14 @@ SCENARIO("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
             config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.4});
             config.print.items.opt("skirts").set(1);
             config.print.items.opt("skirt_distance").set(0.0);
-            config.print.items.opt("support_material_speed").set(99.0);
+            config.tool.at(0).items.opt("support_material_speed").set(99.0);
             config.print.items.opt("perimeter_extruder").set(1 );
-            config.print.items.opt("support_material_extruder").set(2);
+            config.tool.at(0).items.opt("support_material_extruder").set(2);
             config.print.items.opt("infill_extruder").set(3);
             for (auto& filament_settings : config.filament) {
                 filament_settings.items.opt("cooling").set(false);
             }
-            config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100.0}});
+            config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100.0}});
             config.printer.items.opt("start_gcode").set("T[initial_tool]\n");
 
             THEN("overhang generates?") {

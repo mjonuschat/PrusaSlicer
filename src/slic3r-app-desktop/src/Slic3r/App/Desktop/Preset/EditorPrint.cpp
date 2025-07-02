@@ -40,7 +40,7 @@ using WX::_L;
 EditorPrint::EditorPrint(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
     AbstractEditor(parent, _L("Print Settings"), Slic3r::Preset::TYPE_PRINT, preset_interactor)
 {
-    m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_PRINT, 0);
+    m_config_interactor = std::make_unique<Biz::Preset::LegacyPresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_PRINT, 0);
 }
 
 void EditorPrint::build()
@@ -432,7 +432,7 @@ void EditorPrint::update()
     // NOTE: Initialization of the support_material_overhangs_queried value have to be processed just ones
     if (!m_config_manipulation.is_initialized_support_material_overhangs_queried())
     {
-        const Slic3r::Preset& selected_preset = *m_config_interactor->preset_state().selected_preset;
+        const Slic3r::Preset& selected_preset = *m_config_interactor->legacy_preset_state().selected_preset;
         bool is_user_and_saved_preset = !selected_preset.is_system && !selected_preset.is_dirty;
         bool support_material_overhangs_queried = config().opt_bool("support_material") && !config().opt_bool("overhangs");
         m_config_manipulation.initialize_support_material_overhangs_queried(is_user_and_saved_preset && support_material_overhangs_queried);

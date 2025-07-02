@@ -227,7 +227,7 @@ void EditorFilament::update_filament_overrides_page()
 EditorFilament::EditorFilament(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
     AbstractEditor(parent, _L("Filaments"), Slic3r::Preset::TYPE_FILAMENT, preset_interactor)
 {
-    m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(m_preset_interactor, Slic3r::Preset::TYPE_FILAMENT, 0);
+    m_config_interactor = std::make_unique<Biz::Preset::LegacyPresetConfigInteractor>(m_preset_interactor, Slic3r::Preset::TYPE_FILAMENT, 0);
 }
 
 void EditorFilament::build()
@@ -458,7 +458,7 @@ void EditorFilament::update_description_lines()
         return;
 
     if (m_active_page->title() == WX::from_u8("Cooling") && m_cooling_description_line)
-        m_cooling_description_line->SetText(WX::from_u8(Biz::Preset::PresetHints::cooling_description(m_config_interactor->preset_state().edited_preset)));
+        m_cooling_description_line->SetText(WX::from_u8(Biz::Preset::PresetHints::cooling_description(m_config_interactor->legacy_preset_state().edited_preset)));
     if (m_active_page->title() == WX::from_u8("Advanced") && m_volumetric_speed_description_line)
         this->update_volumetric_flow_preset_hints();
 }

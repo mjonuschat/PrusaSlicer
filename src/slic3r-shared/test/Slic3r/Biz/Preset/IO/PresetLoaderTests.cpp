@@ -5,7 +5,7 @@
 
 #include <mutex>
 
-TEST_CASE("PresetLoader preset-filament-common.yaml")
+TEST_CASE("PresetLoader preset-filament-common.yaml", "[preset]")
 {
     using namespace Slic3r::Biz::Preset::IO;
     using namespace Slic3r::Domain::Preset;

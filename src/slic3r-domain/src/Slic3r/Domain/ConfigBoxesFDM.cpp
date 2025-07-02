@@ -24,11 +24,24 @@ using FDMConfigLocation::Project;
 using FDMConfigLocation::Object;
 using FDMConfigLocation::Volume;
 
+namespace {
 // Define the static object holding all definitions. Provide list of acceptable
 // boxes and the init function.
-ConfigDefinitions s_defs_fdm(
-    {Printer, Filament, Print, Tool, Object, Volume, Project}, fdm_config_init_fn
-);
+const ConfigDefinitions& get_defs_fdm() {
+    static ConfigDefinitions defs_fdm(
+        {Printer, Filament, Print, Tool, Object, Volume, Project}, fdm_config_init_fn
+    );
+    return defs_fdm;
+}
+}
+
+PrintSettings::PrintSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Print) {}
+FilamentSettings::FilamentSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Filament) {}
+PrinterSettings::PrinterSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Printer) {}
+ToolPrintSettings::ToolPrintSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Tool) {}
+ObjectSettings::ObjectSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Object) {}
+VolumeSettings::VolumeSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Volume) {}
+ProjectSettings::ProjectSettings() : ConfigBox(get_defs_fdm(), FDMConfigLocation::Project) {}
 
 // JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.
 // Right now, let's just define the constants so the defs compile.
@@ -216,7 +229,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with("");
 
     def = defs.add("bottom_solid_layers", typeid(int));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     //TRN Print Settings: "Bottom solid layers"
     def->label = L_CONTEXT("Bottom", "Layers");
@@ -227,7 +240,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(3);
 
     def = defs.add("bottom_solid_min_thickness", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L_CONTEXT("Bottom", "Layers");
     def->category = L("Layers and Perimeters");
@@ -239,7 +252,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("bridge_acceleration", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Bridge");
     def->tooltip = L("This is the acceleration your printer will use for bridges. "
                    "Set zero to disable acceleration control for bridges.");
@@ -272,7 +285,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with( 100 );
 
     def = defs.add("bridge_flow_ratio", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Bridge flow ratio");
     def->category = L("Advanced");
@@ -309,7 +322,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("bridge_speed", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Bridges");
     def->category = L("Speed");
@@ -321,7 +334,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(60.);
 
     def = defs.add("over_bridge_speed", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     // TRN: Label for speed used to print infill above bridges.
     def->label = L("Over bridges");
@@ -334,7 +347,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def             = defs.add("enable_dynamic_overhang_speeds", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label      = L("Enable dynamic overhang speeds");
     def->category   = L("Speed");
@@ -350,7 +363,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                         "Note that the speeds generated to gcode will never exceed the max volumetric speed value.");
 
     def             = defs.add("overhang_speed_0", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label      = L("speed for 0% overlap (bridge)");
     def->category   = L("Speed");
@@ -361,7 +374,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{15.});
 
     def             = defs.add("overhang_speed_1", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label      = L("speed for 25% overlap");
     def->category   = L("Speed");
@@ -372,7 +385,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{15.});
 
     def             = defs.add("overhang_speed_2", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label      = L("speed for 50% overlap");
     def->category   = L("Speed");
@@ -383,7 +396,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{20.});
 
     def             = defs.add("overhang_speed_3", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label      = L("speed for 75% overlap");
     def->category   = L("Speed");
@@ -474,7 +487,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     );
 
     def = defs.add("brim_separation", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Brim separation gap");
     def->category = L("Skirt and brim");
@@ -568,7 +581,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(5.);
 
     def = defs.add("default_acceleration", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Default");
     def->tooltip = L("This is the acceleration your printer will be reset to after "
                    "the role-specific acceleration values are used (perimeter/infill). "
@@ -605,7 +618,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(3);
 
     def = defs.add("dont_support_bridges", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Don't support bridges");
     def->category = L("Support material");
@@ -711,7 +724,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     );
 
     def = defs.add("external_perimeter_extrusion_width", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("External perimeters");
     def->category = L("Extrusion Width");
@@ -726,7 +739,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("external_perimeter_speed", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("External perimeters");
     def->category = L("Speed");
@@ -795,8 +808,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::color;
     def->init_fn = init_with(""); // Empty string means no color assigned yet.
 
-    def = defs.add("extruder_offset", typeid(Vec2d));
-    def->location = Tool;
+    def = defs.add("extruder_offset", typeid(std::vector<Vec2d>));
+    def->location = Printer;
     def->label = L("Extruder offset");
     def->tooltip = L("If your firmware doesn't handle the extruder displacement you need the G-code "
                    "to take it into account. This option lets you specify the displacement of each extruder "
@@ -804,7 +817,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "from the XY coordinate).");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
-    def->init_fn = init_with(Vec2d(0,0));
+    def->init_fn = init_with(std::vector{Vec2d(0,0)});
 
     /* TODO: shouldn't we remove this crap?
     def = defs.add("extrusion_axis", typeid(std::string));
@@ -814,7 +827,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = SET_DEFAULT("E"));*/
 
     def = defs.add("extruder_clearance_height", typeid(double));
-    def->location = Print;
+    def->location = Printer;
     def->label = L("Height");
     def->tooltip = L("Only used when 'Print Settings -> Complete individual objects' is active. Set this to the vertical "
                    "distance between your nozzle tip and (usually) the X carriage rods. Used to check for collisions "
@@ -826,7 +839,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(20.);
 
     def = defs.add("extruder_clearance_radius", typeid(double));
-    def->location = Print;
+    def->location = Printer;
     def->label = L("Radius");
     def->tooltip = L("Only used when 'Print Settings -> Complete individual objects' is active. Set this to a radius "
                      "of a nozzle-centered cylinder big enough to enclose the extruder assembly. Used to check for collisions "
@@ -849,7 +862,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("extrusion_width", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Default extrusion width");
     def->category = L("Extrusion Width");
@@ -1235,7 +1248,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(45.);
 
     def = defs.add("fill_density", typeid(Percentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->gui_flags = "show_value";
     def->label = L("Fill density");
@@ -1263,7 +1276,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(Percentage{20.});
 
     def = defs.add("fill_pattern", typeid(EnumWrapper));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Fill pattern");
     def->category = L("Infill");
@@ -1291,7 +1304,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     );
 
     def = defs.add("first_layer_acceleration", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("First layer");
     def->tooltip = L("This is the acceleration your printer will use for first layer. Set zero "
                    "to disable acceleration control for first layer.");
@@ -1301,7 +1314,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("first_layer_acceleration_over_raft", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("First object layer over raft interface");
     def->tooltip = L("This is the acceleration your printer will use for first layer of object above raft interface. Set zero "
@@ -1323,7 +1336,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0);
 
     def = defs.add("first_layer_extrusion_width", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("First layer");
     def->category = L("Extrusion Width");
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for first layer. "
@@ -1350,7 +1363,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{0.35});
 
     def = defs.add("first_layer_speed", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("First layer speed");
     def->tooltip = L("If expressed as absolute value in mm/s, this speed will be applied to all the print moves "
                    "of the first layer, regardless of their type. If expressed as a percentage "
@@ -1362,7 +1375,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{30.});
 
     def = defs.add("first_layer_infill_speed", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("First layer solid infill speed");
     def->tooltip = L("If expressed as absolute value in mm/s, this speed will be applied to the solid infill print moves "
                    "of the first layer. If expressed as a percentage "
@@ -1375,7 +1388,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("first_layer_speed_over_raft", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Speed of object first layer over raft interface");
     def->tooltip = L("If expressed as absolute value in mm/s, this speed will be applied to all the print moves "
@@ -1448,7 +1461,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.8);
 
     def = defs.add("gap_fill_enabled", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Fill gaps");
     def->category = L("Layers and Perimeters");
@@ -1457,7 +1470,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(true);
 
     def = defs.add("gap_fill_speed", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Gap fill");
     def->category = L("Speed");
@@ -1533,7 +1546,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("infill_acceleration", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Infill");
     def->tooltip = L("This is the acceleration your printer will use for infill. Set zero to disable "
                      "acceleration control for infill.");
@@ -1543,7 +1556,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("solid_infill_acceleration", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Solid infill");
     def->tooltip = L("This is the acceleration your printer will use for solid infill. Set zero to use "
                      "the value for infill.");
@@ -1553,7 +1566,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("top_solid_infill_acceleration", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Top solid infill");
     def->tooltip = L("This is the acceleration your printer will use for top solid infill. Set zero to use "
                      "the value for solid infill.");
@@ -1573,7 +1586,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("travel_acceleration", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Travel");
     def->tooltip = L("This is the acceleration your printer will use for travel moves. Set zero to disable "
                      "acceleration control for travel.");
@@ -1583,7 +1596,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("infill_every_layers", typeid(int));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Combine infill every");
     def->category = L("Infill");
@@ -1596,7 +1609,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1);
 
     def = defs.add("infill_anchor", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Length of the infill anchor");
     def->category = L("Advanced");
@@ -1622,7 +1635,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     const ConfigItemDef* def_infill_anchor_min = def;
 
     def = defs.add("infill_anchor_max", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Maximum length of the infill anchor");
     def->category    = def_infill_anchor_min->category;
@@ -1657,7 +1670,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1);
 
     def = defs.add("infill_extrusion_width", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Infill");
     def->category = L("Extrusion Width");
@@ -1680,7 +1693,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("infill_overlap", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Infill/perimeters overlap");
     def->category = L("Advanced");
@@ -1693,7 +1706,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage(Percentage{25.}));
 
     def = defs.add("infill_speed", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Infill");
     def->category = L("Speed");
@@ -2083,7 +2096,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("max_print_speed", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Max print speed");
     def->tooltip = L("When setting other speed settings to 0 Slic3r will autocalculate the optimal speed "
                    "in order to keep constant extruder pressure. This experimental setting is used "
@@ -2094,7 +2107,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(80.);
 
     def = defs.add("max_volumetric_speed", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Max volumetric speed");
     def->tooltip = L("This experimental setting is used to set the maximum volumetric speed your "
                    "extruder supports.");
@@ -2104,7 +2117,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("max_volumetric_extrusion_rate_slope_positive", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Max volumetric slope positive");
     def->tooltip = L("This experimental setting is used to limit the speed of change in extrusion rate "
                        "for a transition from lower speed to higher speed. "
@@ -2117,7 +2130,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("max_volumetric_extrusion_rate_slope_negative", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Max volumetric slope negative");
     def->tooltip = L("This experimental setting is used to limit the speed of change in extrusion rate "
                        "for a transition from higher speed to lower speed. "
@@ -2188,7 +2201,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.4);
 
     def = defs.add("only_retract_when_crossing_perimeters", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Only retract when crossing perimeters");
     def->tooltip = L("Disables retraction when the travel path does not exceed the upper layer's perimeters "
                    "(and thus any ooze will be probably invisible).");
@@ -2204,7 +2217,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("overhangs", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Detect bridging perimeters");
     def->category = L("Layers and Perimeters");
@@ -2243,7 +2256,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(140.);
 
     def = defs.add("perimeter_acceleration", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Perimeters");
     def->tooltip = L("This is the acceleration your printer will use for perimeters. "
                      "Set zero to disable acceleration control for perimeters.");
@@ -2252,7 +2265,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("external_perimeter_acceleration", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("External perimeters");
     def->tooltip = L("This is the acceleration your printer will use for external perimeters. "
                      "Set zero to use the value for perimeters.");
@@ -2272,7 +2285,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1);
 
     def = defs.add("perimeter_extrusion_width", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Perimeters");
     def->category = L("Extrusion Width");
@@ -2289,7 +2302,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("perimeter_speed", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Perimeters");
     def->category = L("Speed");
@@ -2301,7 +2314,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(60.);
 
     def = defs.add("perimeters", typeid(int));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Perimeters");
     def->category = L("Layers and Perimeters");
@@ -2361,7 +2374,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->cli = ConfigOptionDef::nocli;*/
 
     def = defs.add("raft_contact_distance", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Raft contact Z distance");
     def->category = L("Support material");
@@ -2372,7 +2385,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.1);
 
     def = defs.add("raft_expansion", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Raft expansion");
     def->category = L("Support material");
@@ -2383,7 +2396,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.5);
 
     def = defs.add("raft_first_layer_density", typeid(Percentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("First layer density");
     def->category = L("Support material");
@@ -2395,7 +2408,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(Percentage{90.});
 
     def = defs.add("raft_first_layer_expansion", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("First layer expansion");
     def->category = L("Support material");
@@ -2430,7 +2443,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("gcode_resolution", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("G-code resolution");
     def->tooltip = L("Maximum deviation of exported G-code paths from their full resolution counterparts. "
                      "Very high resolution G-code requires huge amount of RAM to slice and preview, "
@@ -2629,7 +2642,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage(Percentage{15.}));
 
     def = defs.add("seam_position", typeid(EnumWrapper));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Seam position");
     def->category = L("Layers and Perimeters");
@@ -2784,7 +2797,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(5);
 
     def = defs.add("small_perimeter_speed", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Small perimeters");
     def->category = L("Speed");
@@ -2833,7 +2846,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0);
 
     def = defs.add("solid_infill_extrusion_width", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Solid infill");
     def->category = L("Extrusion Width");
@@ -2848,7 +2861,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("solid_infill_speed", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Solid infill");
     def->category = L("Speed");
@@ -2984,7 +2997,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("single_extruder_multi_material_priming", typeid(bool));
-    def->location = Printer;
+    def->location = Print;
     def->label = L("Prime all printing extruders");
     def->tooltip = L("If enabled, all printing extruders will be primed at the front edge of the print bed at the start of the print.");
     def->mode = comAdvanced;
@@ -3000,7 +3013,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("support_material", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Generate support material");
     def->category = L("Support material");
@@ -3008,7 +3021,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("support_material_auto", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Auto generated supports");
     def->category = L("Support material");
@@ -3018,7 +3031,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(true);
 
     def = defs.add("support_material_xy_spacing", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("XY separation between an object and its support");
     def->category = L("Support material");
@@ -3033,7 +3046,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage(Percentage{50.}));
 
     def = defs.add("support_material_angle", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Pattern angle");
     def->category = L("Support material");
@@ -3045,7 +3058,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("support_material_buildplate_only", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support on build plate only");
     def->category = L("Support material");
@@ -3054,7 +3067,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("support_material_contact_distance", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Top contact Z distance");
     def->category = L("Support material");
@@ -3071,7 +3084,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.2);
 
     def = defs.add("support_material_bottom_contact_distance", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Bottom contact Z distance");
     def->category = L("Support material");
@@ -3088,7 +3101,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("support_material_enforce_layers", typeid(int));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Enforce support for the first");
     def->category = L("Support material");
@@ -3103,7 +3116,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0);
 
     def = defs.add("support_material_extruder", typeid(int));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support material/raft/skirt extruder");
     def->category = L("Extruders");
@@ -3114,7 +3127,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1);
 
     def = defs.add("support_material_extrusion_width", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support material");
     def->category = L("Extrusion Width");
@@ -3129,7 +3142,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("support_material_interface_contact_loops", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Interface loops");
     def->category = L("Support material");
@@ -3138,7 +3151,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("support_material_interface_extruder", typeid(int));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support material/raft interface extruder");
     def->category = L("Extruders");
@@ -3149,7 +3162,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1);
 
     def = defs.add("support_material_interface_layers", typeid(int));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Top interface layers");
     def->category = L("Support material");
@@ -3166,7 +3179,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(3);
 
     def = defs.add("support_material_bottom_interface_layers", typeid(int));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Bottom interface layers");
     def->category = L("Support material");
@@ -3186,7 +3199,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(-1); 
 
     def = defs.add("support_material_closing_radius", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Closing radius");
     def->category = L("Support material");
@@ -3198,7 +3211,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(2.);
 
     def = defs.add("support_material_interface_spacing", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Interface pattern spacing");
     def->category = L("Support material");
@@ -3209,7 +3222,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("support_material_interface_speed", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support material interface");
     def->category = L("Support material");
@@ -3222,7 +3235,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage(Percentage{100.}));
 
     def = defs.add("support_material_pattern", typeid(EnumWrapper));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Pattern");
     def->category = L("Support material");
@@ -3236,7 +3249,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     );
 
     def = defs.add("support_material_interface_pattern", typeid(EnumWrapper));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Interface pattern");
     def->category = L("Support material");
@@ -3252,7 +3265,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     );
 
     def = defs.add("support_material_spacing", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Pattern spacing");
     def->category = L("Support material");
@@ -3263,7 +3276,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(2.5);
 
     def = defs.add("support_material_speed", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support material");
     def->category = L("Support material");
@@ -3274,7 +3287,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(60.);
 
     def = defs.add("support_material_style", typeid(EnumWrapper));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Style");
     def->category = L("Support material");
@@ -3290,7 +3303,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     );
 
     def = defs.add("support_material_synchronize_layers", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Synchronize with object layers");
     def->category = L("Support material");
@@ -3302,7 +3315,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("support_material_threshold", typeid(int));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Overhang threshold");
     def->category = L("Support material");
@@ -3318,7 +3331,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0);
 
     def = defs.add("support_material_with_sheath", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("With sheath around the support");
     def->category = L("Support material");
@@ -3328,7 +3341,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(true);
 
     def = defs.add("support_tree_angle", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Maximum Branch Angle");
     def->category = L("Support material");
@@ -3342,7 +3355,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(40.);
 
     def = defs.add("support_tree_angle_slow", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Preferred Branch Angle");
     def->category = L("Support material");
@@ -3356,7 +3369,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(25.);
 
     def = defs.add("support_tree_tip_diameter", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Tip Diameter");
     def->category = L("Support material");
@@ -3369,7 +3382,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.8);
 
     def = defs.add("support_tree_branch_diameter", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Branch Diameter");
     def->category = L("Support material");
@@ -3383,7 +3396,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(2.);
 
     def = defs.add("support_tree_branch_diameter_angle", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Branch Diameter Angle");
     def->category = L("Support material");
@@ -3398,7 +3411,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(5.);
 
     def = defs.add("support_tree_branch_diameter_double_wall", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Branch Diameter with double walls");
     def->category = L("Support material");
@@ -3415,7 +3428,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     // How far apart the branches need to be when they touch the model. Making this distance small will cause 
     // the tree support to touch the model at more points, causing better overhang but making support harder to remove.
     def = defs.add("support_tree_branch_distance", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Branch Distance");
     def->category = L("Support material");
@@ -3427,7 +3440,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("support_tree_top_rate", typeid(Percentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Branch Density");
     def->category = L("Support material");
@@ -3454,7 +3467,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(200);
 
     def = defs.add("thick_bridges", typeid(bool));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Thick bridges");
     def->category = L("Layers and Perimeters");
@@ -3487,7 +3500,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with("");
 
     def = defs.add("top_infill_extrusion_width", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Top solid infill");
     def->category = L("Extrusion Width");
@@ -3503,7 +3516,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("top_solid_infill_speed", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Top solid infill");
     def->category = L("Speed");
@@ -3519,7 +3532,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{15.});
 
     def = defs.add("top_solid_layers", typeid(int));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     //TRN Print Settings: "Top solid layers"
     def->label = L_CONTEXT("Top", "Layers");
@@ -3530,7 +3543,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(3);
 
     def = defs.add("top_solid_min_thickness", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L_CONTEXT("Top", "Layers");
     def->category = L("Layers and Perimeters");
@@ -3543,7 +3556,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("travel_speed", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Travel");
     def->tooltip = L("Speed for travel moves (jumps between distant extrusion points).");
     def->sidetext = L("mm/s");
@@ -3553,7 +3566,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(130.);
 
     def = defs.add("travel_speed_z", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Z travel");
     def->tooltip = L("Speed for movements along the Z axis.\nWhen set to zero, the value "
                      "is ignored and regular travel speed is used instead.");
@@ -3669,7 +3682,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("wipe_tower_extra_spacing", typeid(Percentage));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Wipe tower purge lines spacing");
     def->tooltip = L("Spacing of purge lines on the wipe tower.");
     def->sidetext = L("%");
@@ -3679,7 +3692,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(Percentage{100.});
 
     def = defs.add("wipe_tower_extra_flow", typeid(Percentage));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Extra flow for purging");
     def->tooltip = L("Extra flow used for the purging lines on the wipe tower. This makes the purging lines thicker or narrower "
                      "than they normally would be. The spacing is adjusted automatically.");
@@ -3822,7 +3835,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1);
 
     def = defs.add("min_feature_size", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Minimum feature size");
     def->category = L("Advanced");
@@ -3836,7 +3849,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage(Percentage{25.}));
 
     def = defs.add("min_bead_width", typeid(FloatOrPercentage));
-    def->location = Print;
+    def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Minimum perimeter width");
     def->category = L("Advanced");

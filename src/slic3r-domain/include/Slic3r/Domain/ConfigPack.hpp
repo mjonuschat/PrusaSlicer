@@ -7,11 +7,8 @@ namespace Slic3r::Domain {
 
 struct ConfigPackFDM
 {
-    explicit ConfigPackFDM(const int extruder_count)
-        : tool{std::vector<Domain::ToolPrintSettings>(extruder_count)}
-        , filament{std::vector<Domain::FilamentSettings>(extruder_count)}
-    {}
-    ConfigPackFDM() : ConfigPackFDM{1} {}
+    explicit ConfigPackFDM(const int extruder_count);
+    ConfigPackFDM();
 
     Domain::PrinterSettings printer;
     Domain::PrintSettings print;

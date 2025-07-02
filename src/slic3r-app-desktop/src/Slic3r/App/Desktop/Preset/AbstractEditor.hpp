@@ -86,8 +86,8 @@ public:
     wxWindow*                   parent() const   { return m_parent; }
     wxString                    title()  const   { return m_title; }
     Slic3r::Preset::Type        type()   const   { return m_type; }
-    Biz::Preset::PresetConfigInteractor& config_interactor() { return *m_config_interactor;}
-    const Biz::Preset::PresetConfigInteractor& config_interactor() const { return *m_config_interactor;}
+    Biz::Preset::LegacyPresetConfigInteractor& config_interactor() { return *m_config_interactor;}
+    const Biz::Preset::LegacyPresetConfigInteractor& config_interactor() const { return *m_config_interactor;}
 
     // The tab is already constructed.
     bool    completed() const { return m_completed; }
@@ -207,7 +207,7 @@ protected:
     const wxString          m_title;
 
     Biz::Preset::PresetInteractor& m_preset_interactor;
-    std::unique_ptr<Biz::Preset::PresetConfigInteractor> m_config_interactor;
+    std::unique_ptr<Biz::Preset::LegacyPresetConfigInteractor> m_config_interactor;
 
     ConfigOptionMode        m_mode                  { comExpert }; // to correct first Tab update_visibility() set mode to Expert
     WX::ConfigManipulation  m_config_manipulation;

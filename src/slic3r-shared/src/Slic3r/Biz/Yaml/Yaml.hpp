@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <utility>
 #include <variant>
 #include <vector>
 #include <optional>
@@ -23,6 +24,8 @@
 #include <fmt/ranges.h>
 #include <magic_enum/magic_enum.hpp>
 
+#include "Slic3r/expected.hpp"
+
 #if defined(SLIC3R_YAML_LIBFYAML)
 #include "YamlAdapterLibfyaml.hpp"
 #elif defined(SLIC3R_YAML_YAMLCPP)
@@ -41,19 +44,71 @@ using YamlAdapter = YamlCpp::YamlAdapterYamlCpp;
 #error "No YAML library selected"
 #endif
 
-
-
+/**
+ * @brief Parse YAML from file
+ * @param file_name A file to parse
+ * @return A parsed YAML document
+ */
 YamlAdapter::Document parse_file(const char* file_name);
+
+/**
+ * @brief Parse YAML from string
+ * @param yaml YAML source as std::string_view
+ * @return A parsed YAML document
+ */
 YamlAdapter::Document parse_string(std::string_view yaml);
 
+/**
+ * @brief Parse all YAML documents from file
+ * @param file_name A file to parse
+ * @param parse_doc A parse function to be called for parsed each document
+ */
 void parse_all_documents_in_file(const char* file_name, const std::function<void(const YamlAdapter::Document&)>& parse_doc);
+
+/**
+ * @brief Parse all YAML documents from file
+ * @param yaml YAML source as std::string_view
+ * @param parse_doc A parse function to be called for parsed each document
+ */
 void parse_all_documents_in_string(std::string_view yaml, const std::function<void(const YamlAdapter::Document&)>& parse_doc);
+
+namespace Details {
+
+inline std::string describe_node(const YamlAdapter::NodeRef& node)
+{
+    auto mark = YamlAdapter::mark(node);
+    return fmt::format("[file: {}:{}:{}]", node.file, mark.line, mark.column);
+}
+
+} // namespace (Slic3r::Biz::Yaml::)Details
+
+struct ParseErrorDesc
+{
+    const Details::Mark mark;
+    const std::string node_description;
+    const std::string message;
+
+    ParseErrorDesc(const YamlAdapter::NodeRef& node, std::string message)
+        : mark(YamlAdapter::mark(node))
+        , node_description(Details::describe_node(node))
+        , message(std::move(message))
+    {}
+};
+
+template<typename T>
+using Result = expected<T, ParseErrorDesc>;
+using ResultError = unexpected<ParseErrorDesc>;
 
 struct ParseError : std::runtime_error
 {
     ParseError(const YamlAdapter::NodeRef& node, const std::string& msg)
-        : std::runtime_error(describe(node) + ": " + msg)
+        : std::runtime_error(Details::describe_node(node) + ": " + msg)
     {}
+
+    explicit ParseError(const ParseErrorDesc& desc)
+        : std::runtime_error(desc.node_description + ": " + desc.message)
+    {}
+
 
     ParseError(const ParseError&) = default;
     ParseError(ParseError&&) = default;
@@ -69,12 +124,6 @@ struct ParseError : std::runtime_error
 private:
     explicit ParseError(const std::string& msg) : std::runtime_error(msg) {}
     explicit ParseError(const char* msg) : std::runtime_error(msg) {}
-
-    static std::string describe(const YamlAdapter::NodeRef& node)
-    {
-        auto mark = YamlAdapter::mark(node);
-        return fmt::format("[file: {}:{}:{}]", node.file, mark.line, mark.column);
-    }
 };
 
 /**
@@ -88,7 +137,7 @@ struct StructTraits{};
 }
 
 template <typename T>
-typename Details::StructTraits<T>::Type parse_struct(const YamlAdapter::NodeRef& node);
+Result<typename Details::StructTraits<T>::Type> parse_struct(const YamlAdapter::NodeRef& node);
 
 namespace Details {
 inline std::string node_type_value(const NodeType type)
@@ -104,30 +153,34 @@ inline std::string node_type_value(const NodeType type)
     return "unknown";
 }
 
-inline void ensure_node_not_null(const YamlAdapter::NodeRef& node)
+#define YAML_HANDLE_ENSURE(opt) if ((opt).has_value()) return ResultError{(opt).value()};
+
+inline std::optional<ParseErrorDesc> ensure_node_not_null(const YamlAdapter::NodeRef& node)
 {
     if (node.is_null())
-        throw ParseError(
+        return ParseErrorDesc(
             node,
             "Null is not allowed here"
         );
+    return std::nullopt;
 }
 
-inline void ensure_node_type(const YamlAdapter::NodeRef& node, NodeType type)
+inline std::optional<ParseErrorDesc> ensure_node_type(const YamlAdapter::NodeRef& node, NodeType type)
 {
     auto node_type = YamlAdapter::node_type(node);
     if (node_type != type)
-        throw ParseError(
+        return ParseErrorDesc(
             node,
             std::string("Node type mismatch, expecting '") + node_type_value(type) +
                 "' but got '" + node_type_value(node_type) + "'"
         );
+    return std::nullopt;
 }
 
-inline std::string_view get_node_scalar(const YamlAdapter::NodeRef& node)
+inline Result<std::string_view> get_node_scalar(const YamlAdapter::NodeRef& node)
 {
-    ensure_node_type(node, NodeType::Scalar);
-    ensure_node_not_null(node);
+    YAML_HANDLE_ENSURE(ensure_node_type(node, NodeType::Scalar));
+    YAML_HANDLE_ENSURE(ensure_node_not_null(node));
     return YamlAdapter::scalar_value(node);
 }
 
@@ -137,39 +190,44 @@ struct TypeTraits {};
 template <>
 struct TypeTraits<bool>
 {
-    static bool parse(const YamlAdapter::NodeRef& node)
+    static Result<bool> parse(const YamlAdapter::NodeRef& node) noexcept
     {
         auto value = get_node_scalar(node);
-        if (value == "true")
-            return true;
-        if (value == "false")
-            return false;
+        if (value.has_value()) {
+            if (*value == "true")
+                return true;
+            if (*value == "false")
+                return false;
+        } else
+            return ResultError{value.error()};
 
-        throw ParseError(node, fmt::format("Invalid bool value: '{}', allowed values are 'true' and 'false'", value));
+        return ResultError{{node, fmt::format("Invalid bool value: '{}', allowed values are 'true' and 'false'", *value)}};
     }
 };
 
 template <typename T, typename P>
-T parse_with_spirit(const YamlAdapter::NodeRef& node, P parser)
+Result<T> parse_with_spirit(const YamlAdapter::NodeRef& node, P parser)
 {
     auto value = get_node_scalar(node);
+    if (!value.has_value())
+        return ResultError{value.error()};
     T ret;
     namespace qi = boost::spirit::qi;
-    auto it = std::cbegin(value);
-    if (!qi::parse(it, std::cend(value), parser, ret) || it != std::cend(value))
-        throw ParseError(node, fmt::format("Invalid {} value: '{}'", typeid(T).name(),value));
+    auto it = std::cbegin(*value);
+    if (!qi::parse(it, std::cend(*value), parser, ret) || it != std::cend(*value))
+        return ResultError{{node, fmt::format("Invalid {} value: '{}'", typeid(T).name(),*value)}};
     return ret;
 }
 
 
-#define TYPE_TRAITS_WITH_SPIRIT_PARSE(T, P)         \
-template <>                                         \
-struct TypeTraits<T>                                \
-{                                                   \
-    static T parse(const YamlAdapter::NodeRef& node)             \
-    {                                               \
-        return parse_with_spirit<T>(node, P);       \
-    }                                               \
+#define TYPE_TRAITS_WITH_SPIRIT_PARSE(T, P)                     \
+template <>                                                     \
+struct TypeTraits<T>                                            \
+{                                                               \
+    static Result<T> parse(const YamlAdapter::NodeRef& node)    \
+    {                                                           \
+        return parse_with_spirit<T>(node, P);                   \
+    }                                                           \
 };
 
 
@@ -188,10 +246,10 @@ TYPE_TRAITS_WITH_SPIRIT_PARSE(int32_t, boost::spirit::qi::int_);
 template <>
 struct TypeTraits<std::string>
 {
-    static std::string parse(const YamlAdapter::NodeRef& node)
+    static Result<std::string> parse(const YamlAdapter::NodeRef& node)
     {
         auto value = get_node_scalar(node);
-        return std::string{value};
+        return value.transform([] (auto&& v) { return std::string(v); });
     }
 };
 
@@ -205,10 +263,15 @@ struct HasTypeTraits<T, std::void_t<decltype(TypeTraits<T>::parse(std::declval<c
 template <typename T>
 struct TypeTraits<std::optional<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 {
-    static std::optional<T> parse(const YamlAdapter::NodeRef& node)
+    static Result<std::optional<T>> parse(const YamlAdapter::NodeRef& node)
     {
-        if (node && !node.is_null())
-            return TypeTraits<T>::parse(node);
+        if (node && !node.is_null()) {
+            auto val = TypeTraits<T>::parse(node);
+            if (val.has_value())
+                return *val;
+
+            return ResultError{val.error()};
+        }
         return std::nullopt;
     }
 };
@@ -216,14 +279,18 @@ struct TypeTraits<std::optional<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 template <typename T>
 struct TypeTraits<std::vector<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 {
-    static std::vector<T> parse(const YamlAdapter::NodeRef& node)
+    static Result<std::vector<T>> parse(const YamlAdapter::NodeRef& node)
     {
-        ensure_node_type(node, NodeType::Sequence);
+        YAML_HANDLE_ENSURE(ensure_node_type(node, NodeType::Sequence));
         const size_t n = YamlAdapter::sequence_item_count(node);
         std::vector<T> ret;
         ret.reserve(n);
-        for (size_t i = 0; i < n; ++i)
-            ret.push_back(TypeTraits<T>::parse(YamlAdapter::sequence_item_at(node, i)));
+        for (size_t i = 0; i < n; ++i) {
+            Result<T> element = TypeTraits<T>::parse(YamlAdapter::sequence_item_at(node, i));
+            if (!element.has_value())
+                return ResultError{element.error()};
+            ret.push_back(*element);
+        }
         return ret;
     }
 };
@@ -231,18 +298,22 @@ struct TypeTraits<std::vector<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 template <typename K, typename V>
 struct TypeTraits<std::map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && HasTypeTraits<V>::value>>
 {
-    static std::map<K, V> parse(const YamlAdapter::NodeRef& node)
+    static Result<std::map<K, V>> parse(const YamlAdapter::NodeRef& node)
     {
-        ensure_node_type(node, NodeType::Mapping);
+        YAML_HANDLE_ENSURE(ensure_node_type(node, NodeType::Mapping));
         const size_t n = YamlAdapter::mapping_item_count(node);
         std::map<K, V> ret;
         for (size_t i = 0; i < n; ++i) {
             auto kv_pair = YamlAdapter::mapping_key_value_at(node, i);
             auto key_node = YamlAdapter::key(kv_pair, node);
             auto value_node = YamlAdapter::value(kv_pair, node);;
-            K key = TypeTraits<K>::parse(key_node);
-            V value = TypeTraits<V>::parse(value_node);
-            ret.emplace(std::move(key), std::move(value));
+            Result<K> key = TypeTraits<K>::parse(key_node);
+            if (!key.has_value())
+                return ResultError{key.error()};
+            Result<V> value = TypeTraits<V>::parse(value_node);
+            if (!value.has_value())
+                return ResultError{value.error()};
+            ret.emplace(std::move(*key), std::move(*value));
         }
         return ret;
     }
@@ -250,19 +321,18 @@ struct TypeTraits<std::map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && Ha
 
 
 template <typename V, typename T>
-V parse_variant(const YamlAdapter::NodeRef& node)
+Result<V> parse_variant(const YamlAdapter::NodeRef& node)
 {
     return TypeTraits<T>::parse(node);
 }
 
 template <typename V, typename T, typename ...Ts, std::enable_if_t<(sizeof...(Ts) > 0), int> = 0>
-V parse_variant(const YamlAdapter::NodeRef& node)
+Result<V> parse_variant(const YamlAdapter::NodeRef& node)
 {
-    try {
-        return TypeTraits<T>::parse(node);
-    } catch (const ParseError&) {
-        return parse_variant<V, Ts...>(node);
-    }
+    Result<T> val = TypeTraits<T>::parse(node);
+    if (val.has_value())
+        return val;
+    return parse_variant<V, Ts...>(node);
 }
 
 template <typename ... Ts>
@@ -275,7 +345,7 @@ struct TypeTraits<
 >
 {
     using ValueType = std::variant<Ts...>;
-    static ValueType parse(const YamlAdapter::NodeRef& node)
+    static Result<ValueType> parse(const YamlAdapter::NodeRef& node)
     {
         return parse_variant<ValueType, Ts...>(node);
     }
@@ -285,11 +355,11 @@ template <>
 struct TypeTraits<std::monostate>
 {
     using ValueType = std::monostate;
-    static ValueType parse(const YamlAdapter::NodeRef& node)
+    static Result<ValueType> parse(const YamlAdapter::NodeRef& node)
     {
         if (node.is_null())
             return {};
-        throw ParseError(node, "Node must be null");
+        return ResultError{ParseErrorDesc(node, "Node must be null")};
     }
 };
 
@@ -320,18 +390,18 @@ struct TypeList {};
 
 
 template <typename Field, std::enable_if_t<!FieldHasImplicitValue<Field>::value, int> = 0>
-void parse_field(typename Field::Type& dest, const YamlAdapter::NodeRef& node)
+Result<typename Field::Type>  parse_field(const YamlAdapter::NodeRef& node)
 {
-    dest = TypeTraits<typename Field::Type>::parse(node);
+    return TypeTraits<typename Field::Type>::parse(node);
 }
 
 template <typename Field, std::enable_if_t<FieldHasImplicitValue<Field>::value, int> = 0>
-void parse_field(typename Field::Type& dest, const YamlAdapter::NodeRef& node)
+Result<typename Field::Type> parse_field(const YamlAdapter::NodeRef& node)
 {
     if (!node)
-        dest = Field::implicit_value();
+        return Field::implicit_value();
     else
-        dest = TypeTraits<typename Field::Type>::parse(node);
+        return TypeTraits<typename Field::Type>::parse(node);
 }
 
 template <typename Field, typename = void>
@@ -339,38 +409,42 @@ void validate_field(const typename Field::Type& type)
 {}
 
 template <typename Field, std::enable_if_t<FieldHasValidation<Field>::value>>
-void validate_field(const typename Field::Type& type)
+void validate_field(const typename Field::Type& field_value)
 {
-    Field::validate(type);
+    Field::validate(field_value);
 }
 
 
 template <typename S, typename Field, typename = void>
-void parse_field(S& s, const YamlAdapter::NodeRef& node)
+std::optional<ParseErrorDesc> parse_field(S& s, const YamlAdapter::NodeRef& node)
 {
     using FT = typename Field::Type;
     auto* raw_storage = reinterpret_cast<char*>(&s) + Field::offset;
     FT& typed_storage = *reinterpret_cast<FT*>(raw_storage);
-    parse_field<Field>(typed_storage, node);
+    auto val = parse_field<Field>(node);
+    if (!val.has_value())
+        return val.error();
+    typed_storage = std::move(val.value());
     validate_field<Field>(typed_storage);
+    return std::nullopt;
 }
 
 
 template <typename Field, std::enable_if_t<
     !(FieldHasImplicitValue<Field>::value || FieldIsOptional<Field>::value),
 int> = 0>
-YamlAdapter::NodeRef get_mapping_node_with_key(const YamlAdapter::NodeRef& node, const char* key)
+Result<YamlAdapter::NodeRef> get_mapping_node_with_key(const YamlAdapter::NodeRef& node, const char* key)
 {
     auto value_node = YamlAdapter::mapping_value_at(node, key);
     if (!value_node)
-        throw ParseError(node, fmt::format("Required field '{}' not found", key));
+        return ResultError{ParseErrorDesc(node, fmt::format("Required field '{}' not found", key))};
     return value_node;
 }
 
 template <typename Field, std::enable_if_t<
     FieldHasImplicitValue<Field>::value || FieldIsOptional<Field>::value,
 int> = 0>
-YamlAdapter::NodeRef get_mapping_node_with_key(const YamlAdapter::NodeRef& node, const char* key)
+Result<YamlAdapter::NodeRef> get_mapping_node_with_key(const YamlAdapter::NodeRef& node, const char* key)
 {
     return YamlAdapter::mapping_value_at(node, key);
 }
@@ -381,21 +455,54 @@ struct ParseFieldTypeList;
 template <typename S, typename ... Fs>
 struct ParseFieldTypeList<S, TypeList<Fs...>>
 {
-    static void parse(S& s, const YamlAdapter::NodeRef& node)
+    static std::optional<ParseErrorDesc> parse(S& s, const YamlAdapter::NodeRef& node)
     {
-        (parse_field<S, Fs>(s, Fs::name == nullptr ? node : get_mapping_node_with_key<Fs>(node, Fs::name)), ...);
+        if constexpr (sizeof...(Fs) == 0) {
+            return std::nullopt;
+        } else {
+            return parse_fields<Fs...>(s, node);
+        }
+    }
+
+private:
+    template <typename F, typename... Rest>
+    static std::optional<ParseErrorDesc> parse_fields(S& s, const YamlAdapter::NodeRef& node)
+    {
+        if constexpr  (F::name == nullptr)
+            return parse_fields_node<F, Rest...>(s, node, node);
+        else {
+            auto n = get_mapping_node_with_key<F>(node, F::name);
+            if (!n.has_value())
+                return n.error();
+            return parse_fields_node<F, Rest...>(s, node, *n);
+        }
+    }
+
+    template <typename F, typename... Rest>
+    static std::optional<ParseErrorDesc> parse_fields_node(S& s, const YamlAdapter::NodeRef& node, const YamlAdapter::NodeRef& selected_node)
+    {
+        if (auto err = parse_field<S, F>(s, selected_node)) {
+            return err;
+        }
+        if constexpr (sizeof...(Rest) > 0) {
+            return parse_fields<Rest...>(s, node);
+        }
+        return std::nullopt;
     }
 };
 
 template <typename S>
-typename S::Type parse_struct_helper(const YamlAdapter::NodeRef& node)
+Result<typename S::Type> parse_struct_helper(const YamlAdapter::NodeRef& node)
 {
     typename S::Type ret;
 
-    ParseFieldTypeList<
+    auto opt_err = ParseFieldTypeList<
         typename S::Type,
         typename S::Fields
     >::parse(ret, node);
+
+    if (opt_err.has_value())
+        return ResultError{opt_err.value()};
 
     return ret;
 }
@@ -404,8 +511,10 @@ template <typename T>
 bool try_parse_discriminated_struct(const YamlAdapter::NodeRef& node, std::string_view value, std::tuple<const char*, std::function<void(T&&)>> loader)
 {
     if (value == std::get<0>(loader)) {
-        T s = parse_struct<T>(node);
-        std::get<1>(loader)(std::move(s));
+        Result<T> s = parse_struct<T>(node);
+        if (!s.has_value())
+            return false;
+        std::get<1>(loader)(std::move(*s));
         return true;
     }
     return false;
@@ -421,7 +530,7 @@ struct HasStructTraits<T, std::void_t<typename StructTraits<T>::Type>> : std::tr
 template <typename T>
 struct TypeTraits<T, std::enable_if_t<HasStructTraits<T>::value>>
 {
-    static T parse(const YamlAdapter::NodeRef& node)
+    static Result<T> parse(const YamlAdapter::NodeRef& node)
     {
         return parse_struct<T>(node);
     }
@@ -449,17 +558,19 @@ struct HasEnumTraits<T, std::void_t<typename EnumTraits<T>::Type>> : std::true_t
 template <typename T>
 struct TypeTraits<T, std::enable_if_t<std::is_enum_v<T> && !HasEnumTraits<T>::value>>
 {
-    static T parse(const YamlAdapter::NodeRef& node)
+    static Result<T> parse(const YamlAdapter::NodeRef& node)
     {
         auto value = get_node_scalar(node);
-        auto ret = magic_enum::enum_cast<T>(value, magic_enum::case_insensitive);
+        if (!value.has_value())
+            return ResultError{value.error()};
+        auto ret = magic_enum::enum_cast<T>(*value, magic_enum::case_insensitive);
         if (!ret.has_value()) {
             auto allowed_values = magic_enum::enum_names<T>();
-            throw ParseError(node, fmt::format(
+            return ResultError{ParseErrorDesc{node, fmt::format(
                 "Invalid enum value: '{}', allowed values: {}",
-                value,
+                *value,
                 fmt::join(allowed_values.begin(), allowed_values.end(), ", ")
-            ));
+            )}};
         }
         return ret.value();
     }
@@ -469,7 +580,7 @@ struct TypeTraits<T, std::enable_if_t<std::is_enum_v<T> && !HasEnumTraits<T>::va
 template <typename T>
 struct TypeTraits<T, std::enable_if_t<HasEnumTraits<T>::value>>
 {
-    static T parse(const YamlAdapter::NodeRef& node)
+    static Result<T> parse(const YamlAdapter::NodeRef& node)
     {
         auto value = TypeTraits<std::string>::parse(node);
         const auto& values = EnumTraits<T>::values;
@@ -480,11 +591,11 @@ struct TypeTraits<T, std::enable_if_t<HasEnumTraits<T>::value>>
             auto keys = values | std::views::transform([](const EnumValue<T>& ev) -> const char* {
                 return ev.name;
             });
-            throw ParseError(node, fmt::format(
+            return ResultError{ParseErrorDesc{node, fmt::format(
                 "Invalid enum value: '{}', allowed values: {}",
-                value,
+                *value,
                 fmt::join(keys, ",")
-            ));
+            )}};
         }
         return it->value;
     }
@@ -499,27 +610,42 @@ struct TypeTraits<T, std::enable_if_t<HasEnumTraits<T>::value>>
  */
 
 /**
- * @brief Parse structure from libfyaml node
+ * @brief Parse structure from yaml node
  * @tparam T Type of structure. Note that this structure needs STRUCT_DESC(...) definition.
  * @param node Yaml node representing the structure to load.
- * @return Loaded structure or ParseError exception is thrown.
+ * @return Loaded structure or ParseErrorDesc in `tl::expected`.
  */
 template <typename T>
-typename Details::StructTraits<T>::Type parse_struct(const YamlAdapter::NodeRef& node)
+Result<typename Details::StructTraits<T>::Type> parse_struct(const YamlAdapter::NodeRef& node)
 {
     return Details::parse_struct_helper<Details::StructTraits<T>>(node);
 }
 
 /**
- * @brief Parse structure from libfyaml node
+ * @brief Parse structure from yaml node
  * @tparam T Type of structure. Note that this structure needs STRUCT_DESC(...) definition.
  * @param doc Yaml YamlAdapter::Document containing the structure to load.
- * @return Loaded structure or ParseError exception is thrown.
+ * @return Loaded structure or ParseErrorDesc in `tl::expected`.
  */
 template <typename T>
-typename Details::StructTraits<T>::Type parse_struct(const YamlAdapter::Document& doc)
+Result<typename Details::StructTraits<T>::Type> parse_struct(const YamlAdapter::Document& doc)
 {
     return parse_struct<T>(doc.root());
+}
+
+/**
+ * @brief Parse structure from yaml node
+ * @tparam T Type of structure. Note that this structure needs STRUCT_DESC(...) definition.
+ * @param doc Yaml YamlAdapter::Document containing the structure to load.
+ * @return Loaded structure or ParseErrorDesc in `tl::expected`.
+ */
+template <typename T>
+typename Details::StructTraits<T>::Type parse_struct_unwrap(const YamlAdapter::Document& doc)
+{
+    auto ret = parse_struct<T>(doc);
+    if (!ret.has_value())
+        throw ParseError(ret.error());
+    return ret.value();
 }
 
 /**
@@ -538,12 +664,16 @@ void parse_structs_by_discriminant(
 {
     auto discr_node = YamlAdapter::mapping_value_at(node, discriminator_field_name);
     auto discr_value = Details::get_node_scalar(discr_node);
-    if (!(Details::try_parse_discriminated_struct(node, discr_value, loaders) || ...)) {
+
+    if (!discr_value.has_value())
+        throw ParseError(discr_value.error());
+
+    if (!(Details::try_parse_discriminated_struct(node, *discr_value, loaders) || ...)) {
         std::vector<const char*> discr_field_values;
         (discr_field_values.push_back(std::get<0>(loaders)), ...);
         throw ParseError(node, fmt::format(
             "Cannot parse any structure identified by field (discriminator) '{}' with value '{}'. Allowed values are: {}",
-            discriminator_field_name, discr_value,
+            discriminator_field_name, *discr_value,
             fmt::join(discr_field_values.begin(), discr_field_values.end(), ", ")
         ));
     }

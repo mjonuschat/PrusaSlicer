@@ -2,6 +2,7 @@
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Log.hpp"
 
 #include "Legacy/PrintConfig.hpp"
 
@@ -378,7 +379,7 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
         std::vector<Slic3rLegacy::Vec2d> old_vec(new_vec.begin(), new_vec.end());
         static_cast<Slic3rLegacy::ConfigOptionPoints*>(opt)->values = old_vec;
     }
-        else if (opt->type() == Slic3rLegacy::coEnums && item.holds_alternative<EnumVectorWrapper>()) {
+    else if (opt->type() == Slic3rLegacy::coEnums && item.holds_alternative<EnumVectorWrapper>()) {
         const auto& strs = item.get<EnumVectorWrapper>().get_strings();
         std::string serialized;
         for (const auto& str_serialized : strs)
@@ -494,10 +495,10 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
             continue;
         }
 
-        if (filament_id != -1 && ! opt->is_vector()) {
-            // This box exists once per filament, but the old value is not vector.
-            continue;
-        }
+        // if (filament_id != -1 && ! opt->is_vector()) {
+        //     // This box exists once per filament, but the old value is not vector.
+        //     continue;
+        // }
         if (convert_old_to_new(opt, item, filament_id)) {
             if (!opt->is_nil() && new_is_override) {
                 box.overrides.enable(new_key);

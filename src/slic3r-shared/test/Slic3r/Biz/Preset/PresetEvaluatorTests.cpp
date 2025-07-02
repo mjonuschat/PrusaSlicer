@@ -6,7 +6,7 @@
 #include "Slic3r/TestUtils/TestData.hpp"
 
 
-TEST_CASE("Preset Evaluator")
+TEST_CASE("Preset Evaluator", "[preset]")
 {
     using namespace Slic3r::Domain::Preset;
     using namespace Slic3r::Biz::Preset;
@@ -42,8 +42,9 @@ TEST_CASE("Preset Evaluator")
     };
 
     auto printer_preset = eval.evaluate(hw_config);
-    REQUIRE(printer_preset.preset.values.empty() == false);
-    REQUIRE(std::get<double>(printer_preset.preset.values["single_extruder_multi_material"]) == 0);
+    //REQUIRE(printer_preset.preset.values.empty() == false);
+    auto values = std::get<Slic3r::Domain::PrinterSettings>(printer_preset.preset.values);
+    REQUIRE(values.contains("single_extruder_multi_material").item->value().get<bool>() == false);
 
     REQUIRE(printer_preset.prints.empty() == false);
 

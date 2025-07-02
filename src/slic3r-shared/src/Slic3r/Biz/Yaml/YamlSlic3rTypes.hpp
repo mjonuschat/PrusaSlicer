@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Domain/Percentage.hpp"
 #include "Slic3r/Domain/Expr/ExprAst.hpp"
 #include "Slic3r/Domain/Preset/PresetTree.hpp"
 #include "Slic3r/Biz/Expr/Parser.hpp"
@@ -12,13 +13,16 @@ struct TypeTraits<Slic3r::Domain::Expr::ExprAst>
 {
     using ExprAst = Slic3r::Domain::Expr::ExprAst;
     using Parser = Slic3r::Biz::Expr::Parser;
-    static ExprAst parse(const YamlAdapter::NodeRef& node)
+    static Result<ExprAst> parse(const YamlAdapter::NodeRef& node)
     {
         static Parser parser;
         try {
-            return parser.parse(get_node_scalar(node));
+            auto node_value = get_node_scalar(node);
+            if (!node_value.has_value())
+                return ResultError(node_value.error());
+            return parser.parse(*node_value);
         } catch (Slic3r::Biz::Expr::ParseError& e) {
-            throw ParseError(node, e.what());
+            return ResultError(ParseErrorDesc(node, e.what()));
         }
     }
 };
@@ -27,7 +31,7 @@ template <>
 struct TypeTraits<Slic3r::Domain::Preset::SourceLocation>
 {
     using SourceLocation = Slic3r::Domain::Preset::SourceLocation;
-    static SourceLocation parse(const YamlAdapter::NodeRef& node)
+    static Result<SourceLocation> parse(const YamlAdapter::NodeRef& node)
     {
         auto mark = YamlAdapter::mark(node);
         return Slic3r::Domain::Preset::SourceLocation{
@@ -42,9 +46,17 @@ struct TypeTraits<Slic3r::Domain::Preset::SourceLocated<T>>
     using SourceLocated = Slic3r::Domain::Preset::SourceLocated<T>;
     using SourceLocation = Slic3r::Domain::Preset::SourceLocation;
 
-    static SourceLocated parse(const YamlAdapter::NodeRef& node)
+    static Result<Slic3r::Domain::Preset::SourceLocated<T>> parse(const YamlAdapter::NodeRef& node)
     {
-        SourceLocated ret{TypeTraits<T>::parse(node), TypeTraits<SourceLocation>::parse(node)};
+        auto data = TypeTraits<T>::parse(node);
+        if (!data.has_value())
+            return ResultError(data.error());
+
+        auto source_location = TypeTraits<SourceLocation>::parse(node);
+        if (!source_location.has_value())
+            return ResultError(source_location.error());
+
+        SourceLocated ret{*data, *source_location};
         return ret;
     }
 };
@@ -53,39 +65,54 @@ template <>
 struct TypeTraits<Slic3r::Domain::Vec2d>
 {
     using Vec2d = Slic3r::Domain::Vec2d;
-    static Vec2d parse(const YamlAdapter::NodeRef& node)
+    static Result<Vec2d> parse(const YamlAdapter::NodeRef& node)
     {
         namespace qi = boost::spirit::qi;
 
         Vec2d ret;
 
-        // if (YamlAdapter::node_type(node) == NodeType::Sequence) {
-        //     if (auto n = YamlAdapter::sequence_item_count(node); n != 2)
-        //         throw ParseError(
-        //             node,
-        //             fmt::format(
-        //                 "Invalid Vec2d value: Expecting seqeunce with two items, but have sequence "
-        //                 "with {} items",
-        //                 n
-        //             )
-        //         );
-        //     ret.x() = TypeTraits<double>::parse(YamlAdapter::sequence_item_at(node, 0));
-        //     ret.y() = TypeTraits<double>::parse(YamlAdapter::sequence_item_at(node, 1));
-        // } else {
-            auto value = get_node_scalar(node);
-            auto pos = value.find('x');
-            if (pos == std::string::npos)
-                throw ParseError(node, fmt::format("Invalid Vec2d '{}'", value));
+        auto node_value = get_node_scalar(node);
+        if (!node_value.has_value())
+            return ResultError(node_value.error());
+        auto value = *node_value;
+        auto pos = value.find('x');
+        if (pos == std::string::npos)
+            return ResultError(ParseErrorDesc(node, fmt::format("Invalid Vec2d value '{}'", value)));
 
-            if (!qi::parse(std::cbegin(value), std::cbegin(value) + pos, qi::double_, ret.x()))
-                throw ParseError(node, fmt::format("Invalid Vec2d value: '{}'", value));
-            if (!qi::parse(std::cbegin(value) + pos + 1, std::cend(value), qi::double_, ret.y()))
-                throw ParseError(node, fmt::format("Invalid Vec2d value: '{}'", value));
-        // }
+        if (!qi::parse(std::cbegin(value), std::cbegin(value) + pos, qi::double_, ret.x()))
+            return ResultError(ParseErrorDesc(node, fmt::format("Invalid Vec2d value: '{}'", value)));
+        if (!qi::parse(std::cbegin(value) + pos + 1, std::cend(value), qi::double_, ret.y()))
+            return ResultError(ParseErrorDesc(node, fmt::format("Invalid Vec2d value: '{}'", value)));
+
         return ret;
     }
-
 };
 
+template <>
+struct TypeTraits<Slic3r::Domain::Percentage>
+{
+    using Percentage = Slic3r::Domain::Percentage;
+    static Result<Percentage> parse(const YamlAdapter::NodeRef& node)
+    {
+        namespace qi = boost::spirit::qi;
+
+        Percentage ret;
+
+        auto node_value = get_node_scalar(node);
+        if (!node_value.has_value())
+            return ResultError(node_value.error());
+        auto value = *node_value;
+        auto pos = value.find('%');
+        bool valid = pos != std::string::npos && std::all_of(value.cbegin() + pos + 1, value.cend(), [](char c) { return std::isspace(c); });
+        if (valid) {
+            valid = qi::parse(value.cbegin(), value.cbegin() + pos, qi::double_, ret.value);
+        }
+
+        if (!valid)
+            return ResultError(ParseErrorDesc(node, fmt::format("Invalid Percentage value '{}'", value)));
+
+        return ret;
+    }
+};
 
 }

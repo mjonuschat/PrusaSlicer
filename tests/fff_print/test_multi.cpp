@@ -39,7 +39,7 @@ SCENARIO("Basic tests", "[Multi]")
         config.print.items.opt("perimeter_extruder").set(2);
         config.print.items.opt("solid_infill_extruder").set(2);
         config.print.items.opt("infill_extruder").set(4);
-        config.print.items.opt("support_material_extruder").set(0);
+        config.tool.at(0).items.opt("support_material_extruder").set(0);
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("Sliced successfully") {
             REQUIRE(! gcode.empty());
@@ -58,8 +58,8 @@ SCENARIO("Basic tests", "[Multi]")
         config.print.items.opt("perimeter_extruder").set(2);
         config.print.items.opt("solid_infill_extruder").set(2);
         config.print.items.opt("infill_extruder").set(4);
-        config.print.items.opt("support_material_extruder").set(0);
-        config.print.items.opt("support_material_interface_extruder").set(2);
+        config.tool.at(0).items.opt("support_material_extruder").set(0);
+        config.tool.at(0).items.opt("support_material_interface_extruder").set(2);
 
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("Sliced successfully") {
@@ -68,7 +68,7 @@ SCENARIO("Basic tests", "[Multi]")
     }
 }
 
-SCENARIO("Ooze prevention", "[Multi]")
+TEST_CASE("Ooze prevention", "[Multi]")
 {
     TestConfig config{4};
 
@@ -78,13 +78,11 @@ SCENARIO("Ooze prevention", "[Multi]")
     config.print.items.opt("raft_layers").set(2);
     config.print.items.opt("infill_extruder").set(2);
     config.print.items.opt("solid_infill_extruder").set(3);
-    config.print.items.opt("support_material_extruder").set(4);
+    config.tool.at(0).items.opt("support_material_extruder").set(4);
     config.print.items.opt("ooze_prevention").set(true);
 
-    config.tool.at(0).items.opt("extruder_offset").set(Vec2d{0, 0});
-    config.tool.at(1).items.opt("extruder_offset").set(Vec2d{20, 0});
-    config.tool.at(2).items.opt("extruder_offset").set(Vec2d{0, 20});
-    config.tool.at(3).items.opt("extruder_offset").set(Vec2d{20, 20});
+    config.printer.items.opt("extruder_offset")
+        .set(std::vector{Vec2d{0, 0}, Vec2d{20, 0}, Vec2d{0, 20}, Vec2d{20, 20}});
     config.filament.at(0).items.opt("temperature").set(200);
     config.filament.at(1).items.opt("temperature").set(180);
     config.filament.at(2).items.opt("temperature").set(170);
@@ -136,7 +134,12 @@ SCENARIO("Ooze prevention", "[Multi]")
 
             tool_temp[t] = s;
         } else if (line.cmd_is("G1") && line.extruding(self) && line.dist_XY(self) > 0) {
-            extrusion_points.emplace_back(line.new_XY_scaled(self) + scaled<coord_t>(config.tool.at(tool).items.opt("extruder_offset").get<Vec2d>()));
+            extrusion_points.emplace_back(
+                line.new_XY_scaled(self)
+                + scaled<coord_t>(
+                    config.printer.items.opt("extruder_offset").get<std::vector<Vec2d>>().at(tool)
+                )
+            );
         }
     });
 
@@ -220,9 +223,9 @@ SCENARIO("Stacked cubes", "[Multi]")
     for (auto& tool_settings : config.tool) {
         tool_settings.items.opt("nozzle_diameter").set(0.6);
     }
-    config.print.items.opt("fill_density").set(Percentage{0});
-    config.print.items.opt("solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
-    config.print.items.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
+    config.tool.at(0).items.opt("fill_density").set(Percentage{0});
+    config.tool.at(0).items.opt("solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
+    config.tool.at(0).items.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
 
     // for preventing speeds from being altered
     for (auto& filament_settings : config.filament) {
@@ -230,7 +233,7 @@ SCENARIO("Stacked cubes", "[Multi]")
     }
 
     // for preventing speeds from being altered
-    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+    config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
 
     auto test_shells = [](const std::string &gcode) {
         GCodeReader       parser;

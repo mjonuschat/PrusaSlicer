@@ -3,6 +3,7 @@
 #include "libslic3r/Arachne/WallToolPaths.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
+#include "libslic3r/SlicingInput.hpp"
 #include "libslic3r/Utils.hpp"
 
 using namespace Slic3r;
@@ -38,14 +39,12 @@ static void export_perimeters_to_svg(const std::string &path, const Polygons &co
 namespace {
 PrintRegionConfigView get_region_config_view(const ObjectSettings& object_settings)
 {
-    const auto full_config{std::make_shared<const FullConfigFDM>(FullConfigFDM::defaults())};
-    Domain::PartialObjectConfigFDM object_config{object_settings, 1, 1};
-    Domain::PartialVolumeConfigFDM volume_config{VolumeSettings{}, 1, 1};
+    const auto full_config{prepare_slicing_input(Domain::ConfigPackFDM{})};
 
     return {
         full_config,
-        std::make_shared<const Domain::PartialObjectConfigFDM>(std::move(object_config)),
-        {std::make_shared<const Domain::PartialVolumeConfigFDM>(std::move(volume_config))}
+        prepare_slicing_object_input(object_settings, 1, 1),
+        {prepare_slicing_volume_input(VolumeSettings{}, 1, 1)}
     };
 }
 }

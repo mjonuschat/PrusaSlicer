@@ -9,10 +9,6 @@ namespace Slic3r::Domain {
 
 // This is an example of using Config infrastructure.
 
-// First, define a static object of ConfigDefinitions. This object will hold all
-// the definitions of the config items.
-extern ConfigDefinitions s_defs_fdm;
-
 // Next, define all enums that should be used in the config.
 
 enum class ArcFittingType {
@@ -101,37 +97,37 @@ enum class PerimeterGeneratorType
 class PrintSettings : public ConfigBox
 {
 public:
-    PrintSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Print) {}
+    PrintSettings();
 };
 class FilamentSettings : public ConfigBox
 {
 public:
-    FilamentSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Filament) {}
+    FilamentSettings();
 };
 class PrinterSettings : public ConfigBox
 {
 public:
-    PrinterSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Printer) {}
+    PrinterSettings();
 };
 class ToolPrintSettings : public ConfigBox
 {
 public:
-    ToolPrintSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Tool) {}
+    ToolPrintSettings();
 };
 class ObjectSettings : public ConfigBox
 {
 public:
-    ObjectSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Object) {}
+    ObjectSettings();
 };
 class VolumeSettings : public ConfigBox
 {
 public:
-    VolumeSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Volume) {}
+    VolumeSettings();
 };
 class ProjectSettings : public ConfigBox
 {
 public:
-    ProjectSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Project) {}
+    ProjectSettings();
 };
 
 } // namespace Slic3r::Domain

@@ -1,359 +1,359 @@
 kind: print
 inherits:
-  - '*common*'
+- '*common*'
 # C1
 variants:
-  - condition: 'printer.base_model == "COREONE" or printer.base_model == "MK4" or printer.base_model == "XL" or printer.base_model == "MK3.5"'
+- condition: printer.base_model == "COREONE" or printer.base_model == "MK4" or printer.base_model == "XL" or printer.base_model == "MK3.5"
+  variants:
+  - condition: tool.nozzle_high_flow
     variants:
-      - condition: 'tool.nozzle_high_flow'
-        variants:
 # C1 0.4HF
-          - condition: 'tool.nozzle_diameter == 0.4'
-            variants:
-              - name: '0.10mm'
-                values:
-                  layer_height: 0.10
-              - name: '0.15mm'
-                values:      
-                  layer_height: 0.15
-              - name: '0.20mm'
-                values:     
-                  layer_height: 0.20
-              - name: '0.25mm'
-                values:      
-                  layer_height: 0.25
-              - name: '0.28mm'
-                values:     
-                  layer_height: 0.28
+    - condition: tool.nozzle_diameter == 0.4
+      variants:
+      - name: 0.10mm
+        values:
+          layer_height: 0.10
+      - name: 0.15mm
+        values:
+          layer_height: 0.15
+      - name: 0.20mm
+        values:
+          layer_height: 0.20
+      - name: 0.25mm
+        values:
+          layer_height: 0.25
+      - name: 0.28mm
+        values:
+          layer_height: 0.28
 # C1 0.5HF
-          - condition: 'tool.nozzle_diameter == 0.5'
-            variants:
-              - name: '0.10mm'
-                values:
-                  layer_height: 0.10
-              - name: '0.15mm'
-                values:      
-                  layer_height: 0.15
-              - name: '0.20mm'
-                values:     
-                  layer_height: 0.20
-              - name: '0.25mm'
-                values:     
-                  layer_height: 0.25
-              - name: '0.32mm'
-                values:     
-                  layer_height: 0.32
+    - condition: tool.nozzle_diameter == 0.5
+      variants:
+      - name: 0.10mm
+        values:
+          layer_height: 0.10
+      - name: 0.15mm
+        values:
+          layer_height: 0.15
+      - name: 0.20mm
+        values:
+          layer_height: 0.20
+      - name: 0.25mm
+        values:
+          layer_height: 0.25
+      - name: 0.32mm
+        values:
+          layer_height: 0.32
 # C1 0.6HF
-          - condition: 'tool.nozzle_diameter == 0.6'
-            variants:
-              - name: '0.15mm'
-                values:
-                  layer_height: 0.15
-              - name: '0.20mm'
-                values:      
-                  layer_height: 0.20
-              - name: '0.25mm'
-                values:     
-                  layer_height: 0.25
-              - name: '0.32mm'
-                values:     
-                  layer_height: 0.32
-              - name: '0.40mm'
-                values:     
-                  layer_height: 0.40
+    - condition: tool.nozzle_diameter == 0.6
+      variants:
+      - name: 0.15mm
+        values:
+          layer_height: 0.15
+      - name: 0.20mm
+        values:
+          layer_height: 0.20
+      - name: 0.25mm
+        values:
+          layer_height: 0.25
+      - name: 0.32mm
+        values:
+          layer_height: 0.32
+      - name: 0.40mm
+        values:
+          layer_height: 0.40
 # C1 0.8HF
-          - condition: 'tool.nozzle_diameter == 0.8'
-            variants:
-            - name: '0.30mm'
-              values:
-                layer_height: 0.30
-            - name: '0.40mm'
-              values:      
-                 layer_height: 0.40
-            - name: '0.55mm'
-              values:     
-                layer_height: 0.55
+    - condition: tool.nozzle_diameter == 0.8
+      variants:
+      - name: 0.30mm
+        values:
+          layer_height: 0.30
+      - name: 0.40mm
+        values:
+          layer_height: 0.40
+      - name: 0.55mm
+        values:
+          layer_height: 0.55
 # C1 0.25
-      - condition: 'tool.nozzle_diameter == 0.25'
-        variants:
-          - name: '0.05mm'
-            values:
-              layer_height: 0.05
-          - name: '0.07mm'
-            values:      
-              layer_height: 0.07
-          - name: '0.10mm'
-            values:     
-              layer_height: 0.10
-          - name: '0.12mm'
-            values:
-              layer_height: 0.12
-          - name: '0.15mm'
-            values:     
-              layer_height: 0.15
+  - condition: tool.nozzle_diameter == 0.25
+    variants:
+    - name: 0.05mm
+      values:
+        layer_height: 0.05
+    - name: 0.07mm
+      values:
+        layer_height: 0.07
+    - name: 0.10mm
+      values:
+        layer_height: 0.10
+    - name: 0.12mm
+      values:
+        layer_height: 0.12
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
 # C1 0.3
-      - condition: 'tool.nozzle_diameter == 0.3'
-        variants:
-          - name: '0.12mm'
-            values:
-              layer_height: 0.12
-          - name: '0.16mm'
-            values:      
-              layer_height: 0.16
-          - name: '0.20mm'
-            values:     
-              layer_height: 0.20
+  - condition: tool.nozzle_diameter == 0.3
+    variants:
+    - name: 0.12mm
+      values:
+        layer_height: 0.12
+    - name: 0.16mm
+      values:
+        layer_height: 0.16
+    - name: 0.20mm
+      values:
+        layer_height: 0.20
 # C1 0.4
-      - condition: 'tool.nozzle_diameter == 0.4'
-        variants:
-          - name: '0.10mm'
-            values:
-              layer_height: 0.10
-          - name: '0.15mm'
-            values:      
-              layer_height: 0.15
-          - name: '0.20mm'
-            values:     
-              layer_height: 0.20         
+  - condition: tool.nozzle_diameter == 0.4
+    variants:
+    - name: 0.10mm
+      values:
+        layer_height: 0.10
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
+    - name: 0.20mm
+      values:
+        layer_height: 0.20
 # C1 0.5
-      - condition: 'tool.nozzle_diameter == 0.5'
-        variants:
-          - name: '0.10mm'
-            values:
-              layer_height: 0.10
-          - name: '0.15mm'
-            values:      
-              layer_height: 0.15
-          - name: '0.20mm'
-            values:     
-              layer_height: 0.20
-          - name: '0.25mm'
-            values:     
-              layer_height: 0.25
+  - condition: tool.nozzle_diameter == 0.5
+    variants:
+    - name: 0.10mm
+      values:
+        layer_height: 0.10
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
+    - name: 0.20mm
+      values:
+        layer_height: 0.20
+    - name: 0.25mm
+      values:
+        layer_height: 0.25
 # C1 0.6
-      - condition: 'tool.nozzle_diameter == 0.6'
-        variants:
-          - name: '0.15mm'
-            values:
-              layer_height: 0.15
-          - name: '0.20mm'
-            values:      
-              layer_height: 0.20
-          - name: '0.25mm'
-            values:     
-              layer_height: 0.25
-          - name: '0.32mm'
-            values:     
-              layer_height: 0.32
+  - condition: tool.nozzle_diameter == 0.6
+    variants:
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
+    - name: 0.20mm
+      values:
+        layer_height: 0.20
+    - name: 0.25mm
+      values:
+        layer_height: 0.25
+    - name: 0.32mm
+      values:
+        layer_height: 0.32
 # C1 0.8
-      - condition: 'tool.nozzle_diameter == 0.8'
-        variants:
-          - name: '0.30mm'
-            values:
-              layer_height: 0.30
-          - name: '0.40mm'
-            values:      
-              layer_height: 0.40
-          - name: '0.55mm'
-            values:     
-              layer_height: 0.55
+  - condition: tool.nozzle_diameter == 0.8
+    variants:
+    - name: 0.30mm
+      values:
+        layer_height: 0.30
+    - name: 0.40mm
+      values:
+        layer_height: 0.40
+    - name: 0.55mm
+      values:
+        layer_height: 0.55
 # MK3             
-  - condition: 'printer.base_model == "MK3"'
-    variants:
+- condition: printer.base_model == "MK3"
+  variants:
 # MK3 0.25
-      - condition: 'tool.nozzle_diameter == 0.25'
-        variants:
-          - name: '0.05mm'
-            values:
-              layer_height: 0.05
-          - name: '0.07mm'
-            values:      
-              layer_height: 0.07
-          - name: '0.10mm'
-            values:     
-              layer_height: 0.10
-          - name: '0.15mm'
-            values:     
-              layer_height: 0.15
+  - condition: tool.nozzle_diameter == 0.25
+    variants:
+    - name: 0.05mm
+      values:
+        layer_height: 0.05
+    - name: 0.07mm
+      values:
+        layer_height: 0.07
+    - name: 0.10mm
+      values:
+        layer_height: 0.10
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
 # MK3 0.4
-      - condition: 'tool.nozzle_diameter == 0.4'
-        variants:
-          - name: '0.05mm'
-            values:
-              layer_height: 0.05
-          - name: '0.07mm'
-            values:
-              layer_height: 0.07
-          - name: '0.10mm'
-            values:
-              layer_height: 0.10
-          - name: '0.15mm'
-            values:      
-              layer_height: 0.15
-          - name: '0.20mm'
-            values:     
-              layer_height: 0.20
-          - name: '0.30mm'
-            values:     
-              layer_height: 0.30              
+  - condition: tool.nozzle_diameter == 0.4
+    variants:
+    - name: 0.05mm
+      values:
+        layer_height: 0.05
+    - name: 0.07mm
+      values:
+        layer_height: 0.07
+    - name: 0.10mm
+      values:
+        layer_height: 0.10
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
+    - name: 0.20mm
+      values:
+        layer_height: 0.20
+    - name: 0.30mm
+      values:
+        layer_height: 0.30
 # MK3 0.6
-      - condition: 'tool.nozzle_diameter == 0.6'
-        variants:
-          - name: '0.15mm'
-            values:
-              layer_height: 0.15
-          - name: '0.20mm'
-            values:      
-              layer_height: 0.20
-          - name: '0.30mm'
-            values:     
-              layer_height: 0.30
-          - name: '0.35mm'
-            values:     
-              layer_height: 0.35
-          - name: '0.40mm'
-            values:     
-              layer_height: 0.40
+  - condition: tool.nozzle_diameter == 0.6
+    variants:
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
+    - name: 0.20mm
+      values:
+        layer_height: 0.20
+    - name: 0.30mm
+      values:
+        layer_height: 0.30
+    - name: 0.35mm
+      values:
+        layer_height: 0.35
+    - name: 0.40mm
+      values:
+        layer_height: 0.40
 # MK3 0.8
-      - condition: 'tool.nozzle_diameter == 0.8'
-        variants:
-          - name: '0.30mm'
-            values:
-              layer_height: 0.30
-          - name: '0.40mm'
-            values:      
-              layer_height: 0.40
-          - name: '0.55mm'
-            values:     
-              layer_height: 0.55
+  - condition: tool.nozzle_diameter == 0.8
+    variants:
+    - name: 0.30mm
+      values:
+        layer_height: 0.30
+    - name: 0.40mm
+      values:
+        layer_height: 0.40
+    - name: 0.55mm
+      values:
+        layer_height: 0.55
 # MINI            
-  - condition: 'printer.base_model == "MINI"'
-    variants:
+- condition: printer.base_model == "MINI"
+  variants:
 # MINI 0.25
-      - condition: 'tool.nozzle_diameter == 0.25'
-        variants:
-          - name: '0.05mm'
-            values:
-              layer_height: 0.05
-          - name: '0.07mm'
-            values:      
-              layer_height: 0.07
-          - name: '0.10mm'
-            values:     
-              layer_height: 0.12
-          - name: '0.12mm'
-            values:     
-              layer_height: 0.15
-# MINI 0.4
-      - condition: 'tool.nozzle_diameter == 0.4'
-        variants:
-          - name: '0.10mm'
-            values:
-              layer_height: 0.10
-          - name: '0.15mm'
-            values:      
-              layer_height: 0.15
-          - name: '0.20mm'
-            values:     
-              layer_height: 0.20       
-# MINI 0.6
-      - condition: 'tool.nozzle_diameter == 0.6'
-        variants:
-          - name: '0.15mm'
-            values:
-              layer_height: 0.15
-          - name: '0.20mm'
-            values:      
-              layer_height: 0.20
-          - name: '0.25mm'
-            values:     
-              layer_height: 0.25
-          - name: '0.35mm'
-            values:     
-              layer_height: 0.35
-# MINI 0.8
-      - condition: 'tool.nozzle_diameter == 0.8'
-        variants:
-          - name: '0.30mm'
-            values:
-              layer_height: 0.30
-          - name: '0.40mm'
-            values:      
-              layer_height: 0.40
-          - name: '0.50mm'
-            values:     
-              layer_height: 0.50
-              
-# MK2 and MK2.5             
-  - condition: 'printer.base_model == "MK2" or printer.base_model == "MK2.5"'
+  - condition: tool.nozzle_diameter == 0.25
     variants:
+    - name: 0.05mm
+      values:
+        layer_height: 0.05
+    - name: 0.07mm
+      values:
+        layer_height: 0.07
+    - name: 0.10mm
+      values:
+        layer_height: 0.12
+    - name: 0.12mm
+      values:
+        layer_height: 0.15
+# MINI 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    variants:
+    - name: 0.10mm
+      values:
+        layer_height: 0.10
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
+    - name: 0.20mm
+      values:
+        layer_height: 0.20
+# MINI 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    variants:
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
+    - name: 0.20mm
+      values:
+        layer_height: 0.20
+    - name: 0.25mm
+      values:
+        layer_height: 0.25
+    - name: 0.35mm
+      values:
+        layer_height: 0.35
+# MINI 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    variants:
+    - name: 0.30mm
+      values:
+        layer_height: 0.30
+    - name: 0.40mm
+      values:
+        layer_height: 0.40
+    - name: 0.50mm
+      values:
+        layer_height: 0.50
+
+# MK2 and MK2.5             
+- condition: printer.base_model == "MK2" or printer.base_model == "MK2.5"
+  variants:
 # MK2 and MK2.5 0.25
-      - condition: 'tool.nozzle_diameter == 0.25'
-        variants:
-          - name: '0.05mm'
-            values:
-              layer_height: 0.05
-          - name: '0.10mm'
-            values:     
-              layer_height: 0.10
-          - name: '0.15mm'
-            values:     
-              layer_height: 0.15
+  - condition: tool.nozzle_diameter == 0.25
+    variants:
+    - name: 0.05mm
+      values:
+        layer_height: 0.05
+    - name: 0.10mm
+      values:
+        layer_height: 0.10
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
 # MK2 and MK2.5 0.4
-      - condition: 'tool.nozzle_diameter == 0.4'
-        variants:
-          - name: '0.05mm'
-            values:
-              layer_height: 0.05
-          - name: '0.10mm'
-            values:
-              layer_height: 0.10
-          - name: '0.15mm'
-            values:      
-              layer_height: 0.15
-          - name: '0.20mm'
-            values:     
-              layer_height: 0.20
-          - name: '0.35mm'
-            values:     
-              layer_height: 0.35              
+  - condition: tool.nozzle_diameter == 0.4
+    variants:
+    - name: 0.05mm
+      values:
+        layer_height: 0.05
+    - name: 0.10mm
+      values:
+        layer_height: 0.10
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
+    - name: 0.20mm
+      values:
+        layer_height: 0.20
+    - name: 0.35mm
+      values:
+        layer_height: 0.35
 # MK2 and MK2.5 0.6
-      - condition: 'tool.nozzle_diameter == 0.6'
-        variants:
-          - name: '0.15mm'
-            values:
-              layer_height: 0.15
-          - name: '0.20mm'
-            values:      
-              layer_height: 0.20
-          - name: '0.35mm'
-            values:     
-              layer_height: 0.35
+  - condition: tool.nozzle_diameter == 0.6
+    variants:
+    - name: 0.15mm
+      values:
+        layer_height: 0.15
+    - name: 0.20mm
+      values:
+        layer_height: 0.20
+    - name: 0.35mm
+      values:
+        layer_height: 0.35
 # MK2 and MK2.5 0.8
-      - condition: 'tool.nozzle_diameter == 0.8'
-        variants:
-          - name: '0.30mm'
-            values:
-              layer_height: 0.30
-          - name: '0.40mm'
-            values:      
-              layer_height: 0.40
-          - name: '0.55mm'
-            values:     
-              layer_height: 0.55
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
+  - condition: tool.nozzle_diameter == 0.8
+    variants:
+    - name: 0.30mm
+      values:
+        layer_height: 0.30
+    - name: 0.40mm
+      values:
+        layer_height: 0.40
+    - name: 0.55mm
+      values:
+        layer_height: 0.55
+
+
+
+
+
+
+
+
+
+
+
+
+
 # ---
 # kind: print
 # variants:
@@ -362,16 +362,9 @@ variants:
     # values:
       # arc_fitting: emit_center
       # extra_perimeters: 0
-      # fill_angle: 45
-      # gcode_comments: 0
-      # gcode_label_objects: firmware
-      # infill_extruder: 1
       # interface_shells: 0
       # layer_height: 0.2
-      # max_volumetric_extrusion_rate_slope_negative: 0
-      # max_volumetric_extrusion_rate_slope_positive: 0
       # min_skirt_length: 4
-      # only_retract_when_crossing_perimeters: 0
       # ooze_prevention: 1
       # perimeter_extruder: 1
       # seam_position: aligned
@@ -379,18 +372,9 @@ variants:
       # skirts: 0
       # solid_infill_below_area: 0
       # solid_infill_every_layers: 0
-      # solid_infill_extruder: 1
       # standby_temperature_delta: '-110'
-      # support_material_angle: 0
-      # support_material_buildplate_only: 0
-      # support_material_enforce_layers: 0
-      # support_material_interface_contact_loops: 0
-      # support_material_pattern: rectilinear
-      # support_tree_top_rate: '30%'
       # thin_walls: 0
-      # travel_speed: 350
       # wipe_tower: 1
       # wipe_tower_brim_width: 3
       # wipe_tower_cone_angle: 25
-      # wipe_tower_extra_spacing: 150
       # # wipe_tower_rotation_angle: 90

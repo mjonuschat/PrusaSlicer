@@ -45,10 +45,10 @@ SCENARIO("Extrusion width specifics", "[Flow]") {
         TestConfig config;
         config.print.items.opt("skirts").set(1);
         config.print.items.opt("brim_width").set(2.0);
-        config.print.items.opt("perimeters").set(3);
-        config.print.items.opt("fill_density").set(Percentage{40});
+        config.tool.at(0).items.opt("perimeters").set(3);
+        config.tool.at(0).items.opt("fill_density").set(Percentage{40});
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.3});
-        config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{2.0});
+        config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{2.0});
         WHEN("Slicing a 20mm cube") {
             test(config);
         }
@@ -57,12 +57,12 @@ SCENARIO("Extrusion width specifics", "[Flow]") {
         TestConfig config;
         config.print.items.opt("skirts").set(1);
         config.print.items.opt("brim_width").set(2.0);
-        config.print.items.opt("perimeters").set(3);
-        config.print.items.opt("fill_density").set(Percentage{40});
+        config.tool.at(0).items.opt("perimeters").set(3);
+        config.tool.at(0).items.opt("fill_density").set(Percentage{40});
         config.print.items.opt("layer_height").set(0.35);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.35});
-        config.print.items.opt("bottom_solid_layers").set(1);
-        config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{2.0});
+        config.tool.at(0).items.opt("bottom_solid_layers").set(1);
+        config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{2.0});
         config.filament.at(0).items.opt("filament_diameter").set(3.0);
         config.tool.at(0).items.opt("nozzle_diameter").set(0.5);
         WHEN("Slicing a 20mm cube") {
@@ -73,16 +73,16 @@ SCENARIO("Extrusion width specifics", "[Flow]") {
 
 SCENARIO(" Bridge flow specifics.", "[Flow]") {
     TestConfig config;
-    config.print.items.opt("bridge_speed").set(99.0);
-    config.print.items.opt("bridge_flow_ratio").set(1.0);
+    config.tool.at(0).items.opt("bridge_speed").set(99.0);
+    config.tool.at(0).items.opt("bridge_flow_ratio").set(1.0);
     // to prevent speeds from being altered
     config.filament.at(0).items.opt("cooling").set(false);
     // to prevent speeds from being altered
-    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+    config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
 
     auto test = [](const TestConfig &config) {
         GCodeReader         parser;
-        const double        bridge_speed = config.print.items.opt("bridge_speed").get<double>() * 60.;
+        const double        bridge_speed = config.tool.at(0).items.opt("bridge_speed").get<double>() * 60.;
         std::vector<double> E_per_mm;
         parser.parse_buffer(Slic3r::Test::slice({ Slic3r::Test::TestMesh::overhang }, config), 
             [&E_per_mm, bridge_speed](GCodeReader &self, const GCodeReader::GCodeLine &line) {
@@ -93,7 +93,7 @@ SCENARIO(" Bridge flow specifics.", "[Flow]") {
         });
         const double nozzle_dmr                 = config.tool.at(0).items.opt("nozzle_diameter").get<double>();
         const double filament_dmr               = config.filament.at(0).items.opt("filament_diameter").get<double>();
-        const double bridge_mm_per_mm           = sqr(nozzle_dmr / filament_dmr) * config.print.items.opt("bridge_flow_ratio").get<double>();
+        const double bridge_mm_per_mm           = sqr(nozzle_dmr / filament_dmr) * config.tool.at(0).items.opt("bridge_flow_ratio").get<double>();
         size_t num_errors = std::count_if(E_per_mm.begin(), E_per_mm.end(), 
             [bridge_mm_per_mm](double v){ return std::abs(v - bridge_mm_per_mm) > 0.01; });
         return num_errors == 0;
@@ -101,36 +101,36 @@ SCENARIO(" Bridge flow specifics.", "[Flow]") {
 
     GIVEN("A default config with no cooling and a fixed bridge speed, flow ratio and an overhang mesh.") {
         WHEN("bridge_flow_ratio is set to 0.5 and extrusion width to default") {
-            config.print.items.opt("bridge_flow_ratio").set(0.5);
-            config.print.items.opt("extrusion_width").set(FloatOrPercentage{0});
+            config.tool.at(0).items.opt("bridge_flow_ratio").set(0.5);
+            config.tool.at(0).items.opt("extrusion_width").set(FloatOrPercentage{0});
             THEN("Output flow is as expected.") {
                 REQUIRE(test(config));
             }
         }
         WHEN("bridge_flow_ratio is set to 2.0 and extrusion width to default") {
-            config.print.items.opt("bridge_flow_ratio").set(2.0);
-            config.print.items.opt("extrusion_width").set(FloatOrPercentage{0});
+            config.tool.at(0).items.opt("bridge_flow_ratio").set(2.0);
+            config.tool.at(0).items.opt("extrusion_width").set(FloatOrPercentage{0});
             THEN("Output flow is as expected.") {
                 REQUIRE(test(config));
             }
         }
         WHEN("bridge_flow_ratio is set to 0.5 and extrusion_width to 0.4") {
-            config.print.items.opt("bridge_flow_ratio").set(0.5);
-            config.print.items.opt("extrusion_width").set(FloatOrPercentage{0.4});
+            config.tool.at(0).items.opt("bridge_flow_ratio").set(0.5);
+            config.tool.at(0).items.opt("extrusion_width").set(FloatOrPercentage{0.4});
             THEN("Output flow is as expected.") {
                 REQUIRE(test(config));
             }
         }
         WHEN("bridge_flow_ratio is set to 1.0 and extrusion_width to 0.4") {
-            config.print.items.opt("bridge_flow_ratio").set(1.0);
-            config.print.items.opt("extrusion_width").set(FloatOrPercentage{0.4});
+            config.tool.at(0).items.opt("bridge_flow_ratio").set(1.0);
+            config.tool.at(0).items.opt("extrusion_width").set(FloatOrPercentage{0.4});
             THEN("Output flow is as expected.") {
                 REQUIRE(test(config));
             }
         }
         WHEN("bridge_flow_ratio is set to 2 and extrusion_width to 0.4") {
-            config.print.items.opt("bridge_flow_ratio").set(2.0);
-            config.print.items.opt("extrusion_width").set(FloatOrPercentage{0.4});
+            config.tool.at(0).items.opt("bridge_flow_ratio").set(2.0);
+            config.tool.at(0).items.opt("extrusion_width").set(FloatOrPercentage{0.4});
             THEN("Output flow is as expected.") {
                 REQUIRE(test(config));
             }
