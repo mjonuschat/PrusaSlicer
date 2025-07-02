@@ -32,6 +32,7 @@ struct ViewerWrapperBaseSettings
     // layers slider callbacks
     //
     std::function<void(void)>   cb_slider_layers_on_thumb_move{ nullptr };
+    std::function<void(unsigned int)> cb_request_extra_frames{ nullptr };
 };
 
 struct WrapperLayoutData

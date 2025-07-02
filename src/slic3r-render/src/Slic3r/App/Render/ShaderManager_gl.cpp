@@ -61,6 +61,8 @@ std::pair<bool, std::string> ShaderManager::init()
 #endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
     // used to render bed axes and model, selection hints, gcode sequential view marker model, preview shells, options in gcode preview
     valid &= append_shader("gouraud_light", { prefix + "gouraud_light.vs", prefix + "gouraud_light.fs" });
+    // extend "gouraud_light" by adding two clipping planes at different world z, used in sla preview
+    valid &= append_shader("gouraud_light_double_z_clip", { prefix + "gouraud_light_double_z_clip.vs", prefix + "gouraud_light_double_z_clip.fs" });
     // extend "gouraud_light" by adding clipping, used in sla gizmos
     valid &= append_shader("gouraud_light_clip", { prefix + "gouraud_light_clip.vs", prefix + "gouraud_light_clip.fs" });
     // used to render printbed
@@ -97,7 +99,9 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("tool_marker", { prefix + "tool_marker.vs", prefix + "tool_marker.fs" });
     // used to render models' shadowsmap
     valid &= append_shader("shadowsmap", { prefix + "shadowsmap.vs", prefix + "shadowsmap.fs" });
-    // used to render gcode options' shadowsmap
+    // extend "shadowsmap" by adding two clipping planes at different world z, used in sla preview
+    valid &= append_shader("shadowsmap_double_z_clip", { prefix + "shadowsmap_double_z_clip.vs", prefix + "shadowsmap_double_z_clip.fs" });
+   // used to render gcode options' shadowsmap
     valid &= append_shader("options_shadowsmap", { prefix + "options_shadowsmap.vs", prefix + "shadowsmap.fs" });
     // used to render gcode segments' shadowsmap
     valid &= append_shader("segments_shadowsmap", { prefix + "segments_shadowsmap.vs", prefix + "shadowsmap.fs" });
@@ -109,6 +113,8 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("ao_lighting", { prefix + "ao_lighting.vs", prefix + "ao_lighting.fs" });
     // used to render ao g-buffer for models
     valid &= append_shader("gbuffer_ao", { prefix + "gbuffer_ao.vs", prefix + "gbuffer_ao.fs" });
+    // extend "gbuffer_ao" by adding two clipping planes at different world z, used in sla preview
+    valid &= append_shader("gbuffer_ao_double_z_clip", { prefix + "gbuffer_ao_double_z_clip.vs", prefix + "gbuffer_ao_double_z_clip.fs" });
     // used to render ao g-buffer for printbed
     valid &= append_shader("printbed_ao", { prefix + "printbed_ao.vs", prefix + "printbed_ao.fs" });
     // used to render ao g-buffer for gcode options
@@ -117,6 +123,8 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("segments_ao", { prefix + "segments_ao.vs", prefix + "segments_ao.fs" });
     // used to render shadowed models with phong shading
     valid &= append_shader("phong_shadows", { prefix + "phong_shadows.vs", prefix + "phong_shadows.fs" });
+    // extend "phong_shadows" by adding two clipping planes at different world z, used in sla preview
+    valid &= append_shader("phong_shadows_double_z_clip", { prefix + "phong_shadows_double_z_clip.vs", prefix + "phong_shadows_double_z_clip.fs" });
     // used to render shadowed printbed with phong shading
     valid &= append_shader("printbed_phong_shadows", { prefix + "printbed_phong_shadows.vs", prefix + "printbed_phong_shadows.fs" });
     // used to render shadowed gcode options with phong shading

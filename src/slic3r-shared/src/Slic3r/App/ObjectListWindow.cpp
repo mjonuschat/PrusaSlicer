@@ -2,6 +2,7 @@
 #include "Slic3r/App/ObjectList.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/SLAResultCache.hpp"
 
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
@@ -147,35 +148,53 @@ void ObjectListWindow::update_sliced_info()
     }
 
     const std::optional<Biz::FDMResultRef> fdm_result{ m_project_interactor->fdm_result_cache().get_result(id) };
-    if (!fdm_result) {
+    if (fdm_result) {
+        const Biz::libpgcode::PrintEstimatedStatistics& print_statistics = fdm_result->get().print_statistics;
+
+        float volume{ 0.f };
+        for (const auto& [_, vol] : print_statistics.volumes_per_extruder)
+            volume += vol;
+
+        const double filament_density = 1.25e-3f; // g/mm^3  ; Common filaments are very lightweight, so precise number is not that important
+        float weight = volume * filament_density;
+
+        float length{ 0.f };
+        for (const auto& [_, len] : print_statistics.used_filaments_per_role)
+            length += len.first;
+
+        const std::string used_material = format("%1$.2f g  %2$.2f m  %3$.0f mm3", weight, length, volume);
+        m_used_material->set_text(used_material);
+
+        float cost{ 0.f };
+        for (const auto& [_, c] : print_statistics.cost_per_extruder)
+            cost += c;
+        m_material_cost->set_text(format("%1%", cost));
+
+        const std::string first_layer_time = "? seconds";
+        m_first_layer_time->set_text(first_layer_time);
+
+        const std::string estimated_time = Slic3r::get_time_dhms(print_statistics.modes[size_t(Biz::libpgcode::TimeMode::Normal)].time);
+        m_estimated_time->set_text(estimated_time);
+
         return;
     }
 
-    const Biz::libpgcode::PrintEstimatedStatistics& print_statistics = fdm_result->get().print_statistics; 
+    const std::optional<Biz::SLAResultRef> sla_result{ m_project_interactor->sla_result_cache().get_result(id) };
+    if (!sla_result || !sla_result->get().print_statistics)
+        return;
 
-    float volume {0.f};
-    for (const auto& [_, vol] : print_statistics.volumes_per_extruder)
-        volume += vol;
+    const Biz::Slicing::Sla::PrintStatistics& print_statistics = *sla_result->get().print_statistics;
 
-    const double filament_density = 1.25e-3f; // g/mm^3  ; Common filaments are very lightweight, so precise number is not that important
-    float weight = volume * filament_density;
+    float used_material_total = print_statistics.objects_used_material + print_statistics.support_used_material;
 
-    float length {0.f};
-    for (const auto& [_, len] : print_statistics.used_filaments_per_role)
-        length += len.first;
-
-    const std::string used_material = format("%1$.2f g  %2$.2f m  %3$.0f mm3", weight, length, volume);
+    const std::string used_material = format("%1$.2f g  %2$.0f mm3", print_statistics.total_weight, used_material_total);
     m_used_material->set_text(used_material);
 
-    float cost { 0.f };
-    for (const auto& [_, c] : print_statistics.cost_per_extruder)
-        cost += c;
-    m_material_cost->set_text(format("%1%", cost));
+    m_material_cost->set_text(format("%1%", print_statistics.total_cost));
 
-    const std::string first_layer_time = "? seconds";
-    m_first_layer_time->set_text(first_layer_time);
+    m_first_layer_time->set_text(format("%1% seconds", print_statistics.layers_times_running_total[0]));
 
-    const std::string estimated_time = Slic3r::get_time_dhms(print_statistics.modes[size_t(Biz::libpgcode::TimeMode::Normal)].time);
+    const std::string estimated_time = Slic3r::get_time_dhms(print_statistics.estimated_print_time);
     m_estimated_time->set_text(estimated_time);
 }
 

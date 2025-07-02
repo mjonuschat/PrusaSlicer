@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AbstractViewerWrapper.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "Types.hpp"
 #include "SlaViewerWrapperInputData.hpp"
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
@@ -28,7 +29,17 @@ public:
     libvgcode::AbstractViewer& viewer() override {
         return *static_cast<libvgcode::AbstractViewer*>(&m_viewer); }
 
-    void load(SlaViewerWrapperInputData&& wrapper_data, const std::vector<float>& layers_zs, const std::vector<float>& layers_times);
+    //
+    // Load data from the SLAResult structure.
+    //
+    void load_from_result(const Biz::Slicing::SLAResult& result);
+    //
+    // Load data from the sliced Object.
+    //
+    void load_from_object(const Biz::Slicing::Sla::Object& object);
+
+    void reset_result();
+    void reset_object(const Domain::ObjectID& object_id);
 
     const libvgcode::Interval& view_visible_range() const { return m_viewer.view_visible_range(); }
     const libvgcode::Interval& view_enabled_range() const { return m_viewer.view_enabled_range(); }
@@ -48,8 +59,6 @@ private:
 
 private:
     void update_slider_layers();
-    void update_view_visible_range(size_t first, size_t last);
-
     void on_slider_layers_scroll_changed();
 };
 

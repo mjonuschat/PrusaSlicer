@@ -58,10 +58,6 @@ public:
     // from the given gcode data.
     //
     void load(FdmViewerInputData&& gcode_data);
-    //
-    // Setup the viewer content from the given data (support for SLA printers).
-    //
-    void load_as_sla(const std::vector<float>& layers_zs, const std::vector<float>& layers_times);
 
     //
     // Update the visibility property of toolpaths in dependence

@@ -33,6 +33,7 @@
 #include <libslic3r/Format/SL1.hpp>
 #include <boost/algorithm/string.hpp>
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
 
 #include "libslic3r/ModelUtils.hpp"
 
@@ -68,6 +69,9 @@ using Domain::FullConfigSLAPtr;
 using Domain::SLAObjectSettings;
 using Domain::Percentage;
 using Domain::PartialObjectConfigSLA;
+using Biz::Algorithms::Scaling::unscaled;
+using Domain::Transform3d;
+using InstanceTrafos = Biz::Slicing::Sla::Object::InstanceTrafos;
 
 
 bool is_zero_elevation(const SLAPrintObjectConfigView &c)
@@ -697,22 +701,18 @@ PrintObjectsSyncResult sync_print_objects(
 
 } // namespace
 
-bool SLAPrint::invalidate_object_steps(
+void SLAPrint::invalidate_object_steps(
     const InvalidatedSteps& steps
 ) {
-    bool invalidated{false};
+    std::set<Domain::ObjectID> result;
 
     if (std::holds_alternative<PrintSteps>(steps.print)) {
         const auto print_steps{std::get<PrintSteps>(steps.print)};
         for (const SLAPrintStep& step : print_steps) {
-            if (this->invalidate_step(step)) {
-                invalidated = true;
-            }
+            this->invalidate_step(step);
         }
     } else {
-        if (this->invalidate_all_steps()) {
-            invalidated = true;
-        }
+        this->invalidate_all_steps();
     }
 
     for (const auto& [print_object, invalidated_steps] : steps.object) {
@@ -720,17 +720,15 @@ bool SLAPrint::invalidate_object_steps(
             const auto object_steps{std::get<PrintObjectSteps>(invalidated_steps)};
             for (const SLAPrintObjectStep& step : object_steps) {
                 if (print_object->invalidate_step(step)) {
-                    invalidated = true;
+                    result.insert(print_object->model_object()->id());
                 }
             }
         } else {
             if (print_object->invalidate_all_steps()) {
-                invalidated = true;
+                result.insert(print_object->model_object()->id());
             }
         }
     }
-
-    return invalidated;
 }
 
 bool InvalidatedSteps::empty() const {
@@ -807,6 +805,19 @@ ModelSyncResult sync_model(
     };
 }
 
+InstanceTrafos get_instance_trafos(const SLAPrintObject& object) {
+    const double z{object.get_current_elevation()};
+    InstanceTrafos instance_trafos;
+    for (const SLAPrintObject::Instance& instance : object.instances()) {
+        Transform3d trafo{Transform3d::Identity()};
+
+        trafo.translate(to_3d(unscaled<double>(instance.shift), z));
+        trafo.rotate(Eigen::AngleAxis<double>(instance.rotation, Vec3d::UnitZ()));
+        instance_trafos.emplace_back(instance.instance_id, trafo);
+    }
+    return instance_trafos;
+}
+
 Biz::Print::ApplyStatus SLAPrint::update(
     Domain::Model& model,
     const ConfigPack& config,
@@ -814,18 +825,53 @@ Biz::Print::ApplyStatus SLAPrint::update(
     const Biz::Print::SerializedConfig& serialized_config
 )
 {
-    Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
+    std::set<ObjectID> old_ids{};
+    for (const SLAPrintObject* object : m_objects) {
+        old_ids.insert(object->model_object()->id());
+    }
+
+    InvalidatedSteps invalidated_steps;
     Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
-        const ApplyStatus status{this->apply(model, std::get<ConfigPackSLA>(config), serialized_config)};
-        if (status == APPLY_STATUS_UNCHANGED) {
-            return;
-        }
-        result = Biz::Print::ApplyStatus::changed;
+        invalidated_steps = this->apply(model, std::get<ConfigPackSLA>(config), serialized_config);
     });
-    return result;
+    const bool changed{!invalidated_steps.empty()};
+    if (!changed) {
+        return Biz::Print::ApplyStatus::unchanged;
+    }
+
+    m_on_sla_result({});
+
+    this->invalidate_object_steps(invalidated_steps);
+
+    std::vector<const SLAPrintObject*> objects_to_keep;
+    for (const SLAPrintObject* object : m_objects) {
+        if (object->all_steps_done()) {
+            objects_to_keep.push_back(object);
+        }
+    }
+
+    for (const ObjectID id: old_ids) {
+        const auto it{std::ranges::find_if(objects_to_keep, [&](const SLAPrintObject* object) {
+            return object->model_object()->id() == id;
+        })};
+        if (it != objects_to_keep.end()) {
+            Biz::Slicing::Sla::Object slicing_object{};
+            slicing_object.object_id = id;
+            slicing_object.instance_trafos = get_instance_trafos(**it);
+            // Sending just trafos means the object was not invalidated.
+            m_on_sla_object(slicing_object);
+        } else {
+            Biz::Slicing::Sla::Object slicing_object{};
+            slicing_object.object_id = id;
+            // Sending an object without trafos means the object has been invalidated.
+            m_on_sla_object(slicing_object);
+        }
+    }
+
+    return Biz::Print::ApplyStatus::changed;
 }
 
-SLAPrint::ApplyStatus SLAPrint::apply(
+InvalidatedSteps SLAPrint::apply(
     const Domain::Model& model,
     const Domain::ConfigPackSLA& config_pack,
     const Biz::Print::SerializedConfig& serialized_config,
@@ -894,16 +940,7 @@ SLAPrint::ApplyStatus SLAPrint::apply(
         m_printer_input = {};
     }
 
-    const bool changed{!invalidated_steps.empty()};
-    const bool invalidated{this->invalidate_object_steps(invalidated_steps)};
-
-    if (invalidated) {
-        return APPLY_STATUS_INVALIDATED;
-    }
-    if (changed) {
-        return APPLY_STATUS_CHANGED;
-    }
-    return APPLY_STATUS_UNCHANGED;
+    return invalidated_steps;
 }
 
 namespace {
@@ -1114,8 +1151,10 @@ void SLAPrint::process()
                     step_times[step] += bench.getElapsedSec();
                     throw_if_canceled();
                     po->set_done(step);
+                    po->m_preview->instance_trafos = get_instance_trafos(*po);
+                    m_on_sla_object(*po->m_preview);
                 }
-                
+
                 incr = printsteps.progressrange(step);
             }
         }

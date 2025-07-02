@@ -68,7 +68,9 @@ void Control::render(Domain::Vec2f pos, Domain::Vec2f size)
 
     m_draw_opts.text_size = m_draw_opts.calc_text_size(label(m_max_pos));
 
+    bool processed_mouse_wheel{ false };
     if (draw_slider(&higher_pos, &lower_pos, higher_label, lower_label, m_pos, m_size)) {
+        processed_mouse_wheel =ImGui::GetIO().MouseWheel != 0.0f;
         if (temp_higher_pos != higher_pos) {
             m_higher_pos = higher_pos;
             if (m_combine_thumbs)
@@ -81,6 +83,9 @@ void Control::render(Domain::Vec2f pos, Domain::Vec2f size)
 
     if (callbacks().extra_render)
         callbacks().extra_render();
+
+    if (processed_mouse_wheel && callbacks().request_extra_frame)
+        callbacks().request_extra_frame();
 
     render_item_end(pos, size);
 }

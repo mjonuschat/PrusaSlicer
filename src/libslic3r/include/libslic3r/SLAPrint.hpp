@@ -288,6 +288,8 @@ private:
     sla::InteriorPtr m_hollowing_data;
 };
 
+Biz::Slicing::Sla::Object::InstanceTrafos get_instance_trafos(const SLAPrintObject& object);
+
 using PrintObjects = std::vector<SLAPrintObject*>;
 
 using SliceRecord  = SLAPrintObject::SliceRecord;
@@ -346,14 +348,14 @@ public:
         const Biz::Print::SerializedConfig& serialized_config
     ) override;
 
-    ApplyStatus apply(
+    SLASlicingSync::InvalidatedSteps apply(
         const Domain::Model& model,
         const Domain::ConfigPackSLA& config_pack,
         const Biz::Print::SerializedConfig& serialized_config,
         std::vector<std::string>* warnings = nullptr
     );
 
-    bool invalidate_object_steps(
+    void invalidate_object_steps(
         const SLASlicingSync::InvalidatedSteps& steps
     );
 

@@ -82,7 +82,7 @@ DoubleSliderForLayers::DoubleSliderForLayers()
     m_ctrl->set_extra_draw_cb([this](const ImRect& draw_rc) { return draw_ticks(draw_rc); });
 
     m_ctrl->callbacks().value_changed = [this]() { process_thumb_move(); };
-
+    m_ctrl->callbacks().request_extra_frame = [this]() { process_request_extra_frames(); };
     m_ctrl->callbacks().extra_render = [this]() { extra_render(); };
 
     m_ticks.set_values(&m_values);
@@ -129,8 +129,8 @@ void DoubleSliderForLayers::create_cog_menu()
             process_ticks_changed();
     };
 
-    Yoga::MenuItem* seq_top_layer_only_item = m_cog_menu->append_item(_u8L("Sequential slider applied only to top layer"), &m_seq_top_layer_only);
-    seq_top_layer_only_item->callbacks().action = [this, seq_top_layer_only_item]() {
+    m_seq_top_layer_only_item = m_cog_menu->append_item(_u8L("Sequential slider applied only to top layer"), &m_seq_top_layer_only);
+    m_seq_top_layer_only_item->callbacks().action = [this]() {
         m_seq_top_layer_only = !m_seq_top_layer_only;
         if (m_cb_app_config_changed)
             m_cb_app_config_changed("seq_top_layer_only", m_seq_top_layer_only ? "1" : "0");
@@ -150,6 +150,7 @@ void DoubleSliderForLayers::create_cog_menu()
 void DoubleSliderForLayers::update_visibility_cog_menu_items()
 {
     m_edit_extruder_sequence_menu_item->set_visible(m_mode == CustomGCode::Mode::MultiAsSingle && m_draw_mode == DrawMode::Regular);
+    m_seq_top_layer_only_item->set_visible(m_draw_mode != DrawMode::SlaPrint);
     m_use_default_colors_menu_item->set_visible(can_edit());
     m_auto_color_change_menu_item->set_visible(can_edit() && m_mode != CustomGCode::Mode::MultiExtruder && m_draw_mode == DrawMode::Regular);
 }
@@ -238,8 +239,8 @@ void DoubleSliderForLayers::set_draw_mode(bool is_sla_print, bool is_sequential_
 
     update_draw_scroll_line_cb();
 
-    m_use_default_colors_menu_item->set_visible(can_edit());
-    m_auto_color_change_menu_item->set_visible(can_edit());
+    update_visibility_cog_menu_items();
+    m_revert_btn->set_visible(can_edit());
 }
 
 void DoubleSliderForLayers::set_mode_and_only_extruder(const bool is_one_extruder_printed_model, const int only_extruder)

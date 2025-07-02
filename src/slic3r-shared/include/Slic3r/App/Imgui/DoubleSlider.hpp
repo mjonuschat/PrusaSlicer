@@ -33,6 +33,7 @@ public:
     struct Callbacks
     {
         std::function<void()> value_changed{ nullptr };
+        std::function<void()> request_extra_frame{ nullptr };
         std::function<void()> extra_render{ nullptr };
     };
 

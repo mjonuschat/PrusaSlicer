@@ -158,13 +158,13 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
 }
 
 struct SLAResultListener : public ISLAResultListener {
-    void on_sla_result_changed(const SlicingId& id, SLAResult && result) override{        
+    void on_sla_result_changed(const SlicingId& id, SLAResult && result) override{
         switch (result.type) {
+        case ResultType::None: [[fallthrough]];
         case ResultType::Slices: this->result = std::move(result); break;
         case ResultType::Files: this->result.files = std::move(result.files); break;}
         this->result_recieved = true;
     }
-    void on_remove_bed(const SlicingId&) override {}
     SLAResult result;
     bool result_recieved{false};
 };
@@ -175,7 +175,6 @@ struct SLAObjectListener : public ISLAObjectListener{
         this->object_recieved = true;
     }
     void on_remove_bed(const SlicingId&) override {}
-    void on_model_update(const SlicingId&, const std::vector<ObjectID>&) override{}
     bool object_recieved{false};
 };
 

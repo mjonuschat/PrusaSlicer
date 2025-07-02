@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/SLAResultCache.hpp"
+#include "Slic3r/Biz/SLAObjectCache.hpp"
 #include "Slic3r/Biz/StatusCache.hpp"
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
@@ -10,7 +12,6 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostInteractor.hpp"
-#include "Slic3r/Biz/FDMResultCache.hpp"
 #include "Slic3r/Biz/LastExportPathStorage.hpp"
 #include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
@@ -66,6 +67,8 @@ public:
         m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_slicing_interactor.set_listener<Slicing::IFDMResultListener>(&m_fdm_result_cache);
+        m_slicing_interactor.set_listener<Slicing::ISLAResultListener>(&m_sla_result_cache);
+        m_slicing_interactor.set_listener<Slicing::ISLAObjectListener>(&m_sla_object_cache);
         m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
         m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
         m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
@@ -208,6 +211,8 @@ public:
     Slicing::SlicingInteractor& slicing_interactor() { return m_slicing_interactor; }
 
     FDMResultCache& fdm_result_cache() { return m_fdm_result_cache; }
+    SLAResultCache& sla_result_cache() { return m_sla_result_cache; }
+    SLAObjectCache& sla_object_cache() { return m_sla_object_cache; }
     StatusCache& status_cache() { return m_status_cache; }
     Biz::Slicing::SlicingId selected_bed_slicing_id() const;
 
@@ -345,6 +350,8 @@ private:
     Scene::SceneInteractor m_scene_interactor;
     Slicing::SlicingInteractor m_slicing_interactor;
     FDMResultCache m_fdm_result_cache;
+    SLAResultCache m_sla_result_cache;
+    SLAObjectCache m_sla_object_cache;
     StatusCache m_status_cache;
     PrintHost::PrintHostInteractor m_print_host_interactor;
     LastExportPathStorage m_last_export_path_storage;

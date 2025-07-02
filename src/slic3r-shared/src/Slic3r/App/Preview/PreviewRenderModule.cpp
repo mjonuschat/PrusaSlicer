@@ -38,6 +38,11 @@ using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::App::Yoga;
 
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec4d;
+
 namespace Slic3r::App::Preview {
 
 using Domain::TriangleMesh;
@@ -194,6 +199,90 @@ static void render_imgui_debug_viewer_mode(Wrapper& viewer)
 }
 #endif // ENABLED_DEBUG_VIEWER_MODE
 
+
+class ImguiVecRender
+{
+public:
+    void operator()(const char* label, const Vec2f& v)
+    {
+        fill_data<2>(v);
+        ImGui::InputFloat2(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec2d& v)
+    {
+        fill_data<2>(v);
+        ImGui::InputFloat2(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec3d& v)
+    {
+        fill_data<3>(v);
+        ImGui::InputFloat3(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec4f& v)
+    {
+        fill_data<4>(v);
+        ImGui::InputFloat4(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec4d& v)
+    {
+        fill_data<4>(v);
+        ImGui::InputFloat4(label, m_data);
+    }
+
+private:
+    template<size_t N, typename VecT>
+    void fill_data(const VecT& data)
+    {
+        for (size_t i = 0; i < N; i++)
+            m_data[i] = static_cast<float>(data[i]);
+    }
+
+private:
+    float m_data[4];
+};
+
+void imgui_scenegraph_node_info(const Scene::Node& node)
+{
+    ImGuiTreeNodeFlags node_flags = 0; // ImGuiTreeNodeFlags_DefaultOpen;
+    if (node.children().empty())
+        node_flags |= ImGuiTreeNodeFlags_Leaf;
+    const std::string& name = node.debug_name();
+    if (ImGui::TreeNodeEx(
+            &node, node_flags, "%s %s%s%s%s", name.empty() ? "Node" : name.c_str(),
+            node.has_render_component() ? "(R)" : "", node.has_material_override() ? "(M)" : "",
+            node.has_imgui_render_component() ? "(I)" : "", node.has_raycast_component() ? "(C)" : ""
+        )) {
+
+        static const Scene::Node* opened_node = nullptr;
+
+        ImGui::SameLine();
+        if (ImGui::SmallButton("info")) {
+            opened_node = (opened_node == &node) ? nullptr : &node;
+        }
+
+        if (opened_node == &node) {
+            auto transform{node.world_transform()};
+
+            ImguiVecRender vec_render;
+            for (size_t i = 0; i < 4; i++) {
+                ImGui::PushID(i);
+                vec_render("##", Vec4d{transform.row(i)});
+                ImGui::PopID();
+            }
+        }
+
+        for (const auto& ch : node.children()) {
+            imgui_scenegraph_node_info(*ch);
+        }
+        ImGui::TreePop();
+    }
+}
+
+
 void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {
     // temporary to allow to switch yoga layout on/off
@@ -202,10 +291,10 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
             m_gcode_window->is_visible();
 
         if (m_layout) {
-            //m_layout->show_left(1, m_viewer->has_data() && m_viewer.is_legend_shown());
             m_gcode_window->set_visible(gcode_window_enabled);
-            m_slider_layers->set_visible(m_viewer->has_data());
-            m_slider_gcode->set_visible(m_viewer->has_data());
+            m_slider_layers->set_visible(m_fdm_viewer.has_data());
+            m_sla_slider_layers->set_visible(m_sla_viewer.has_data());
+            m_slider_gcode->set_visible(m_fdm_viewer.has_data());
         }
 
         m_cube_view->set_camera_data(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
@@ -227,6 +316,11 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         // TODO: setup layout if needed
         m_fdm_viewer.render_gui(layout);
     }
+
+if (ImGui::Begin("Outline", nullptr)) {
+        imgui_scenegraph_node_info(m_scene_presenter->scene().root());
+    }
+    ImGui::End();
 
 #if ENABLED_DEBUG_VIEWER
     render_imgui_debug_viewer(m_fdm_viewer);
@@ -281,7 +375,7 @@ void PreviewRenderModule::on_selected_bed_instance_changed(
     DEBUG_ASSERT(cc != nullptr);
     if (cc->print_technology() == Domain::PrinterTechnology::SLA) {
         m_viewer = &m_sla_viewer;
- //       update_sla_viewer_data({ project_id, bed_instance_id });
+        update_sla_viewer_data({ project_id, bed_instance_id });
     }
     else {
         m_viewer = &m_fdm_viewer;
@@ -296,12 +390,12 @@ void PreviewRenderModule::on_selected_bed_instance_changed(
 
 void PreviewRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
 {
-    if (m_project_interactor.selected_project_id() == id.project_id && m_viewer->has_data()) {
+/*    if (m_project_interactor.selected_project_id() == id.project_id && m_viewer->has_data()) {
         const std::optional<Biz::Slicing::Status> status {
             m_project_interactor.status_cache().get_status(id) };
         if (status && status == Biz::Slicing::Status::Modified)
             m_viewer->reset();
-    }
+    }*/
     m_object_list->update_sliced_info();
 
     // request redraw
@@ -330,6 +424,8 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
 
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>( this );
     m_project_interactor.fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>( this );
+    m_project_interactor.sla_result_cache().add_listener<Biz::ISLAResultCacheChangedListener>( this );
+    m_project_interactor.sla_object_cache().add_listener<Biz::ISLAObjectCacheChangedListener>( this );
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>( this );
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
@@ -580,10 +676,13 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     base_settings.slider_layers_show_estimated_times = show_estimated_times_in_dbl_slider;
     // set layers slider callbacks
     base_settings.cb_slider_layers_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
+    base_settings.cb_request_extra_frames = std::bind(&PreviewRenderModule::on_request_extra_frames, this, std::placeholders::_1);
 
     if (m_sla_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory()) &&
         m_sla_viewer.set_settings(base_settings)) {
         m_sla_viewer.set_lights(Slic3r::App::global_lighting());
+
+        m_sla_slider_layers = Passthrough(m_sla_viewer.unload_double_slider_layers());
     }
     else {
         // log some error message
@@ -602,7 +701,6 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     // set wrapper callbacks
     settings.cb_invalidate_slice = std::bind(&PreviewRenderModule::on_invalidate_slice, this);
     settings.cb_update_layers_slider = std::bind(&PreviewRenderModule::on_update_layers_slider, this, std::placeholders::_1);
-    settings.cb_request_extra_frames = std::bind(&PreviewRenderModule::on_request_extra_frames, this, std::placeholders::_1);
     settings.cb_gcode_view_type_changed = std::bind(&PreviewRenderModule::on_gcode_view_type_changed, this);
     // set layers slider callbacks
     settings.cb_slider_layers_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
@@ -665,6 +763,7 @@ void PreviewRenderModule::init_scene_layout()
                                            m_gcode_window.release(),
                                            m_legend.release(),
                                            m_slider_layers.release(),
+                                           m_sla_slider_layers.release(),
                                            m_slider_gcode.release(),
                                            m_sidebar_auto_reslice.release()));
     m_layout->init();
@@ -934,7 +1033,8 @@ void PreviewRenderModule::update_toolbar_visibility()
     m_button_custom_gcodes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::CustomGCodes));
     m_button_center_of_gravity->set_visible(fdm_has_gcode);
     m_button_tool_marker->set_visible(fdm_has_gcode);
-    m_button_shells->set_visible(m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer);
+    m_button_shells->set_visible(fdm_has_gcode/*m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer*/);
+    m_button_wipes->set_visible(fdm_has_gcode);
 
     m_button_legend->set_visible(m_fdm_viewer.has_data() && m_fdm_viewer.mode() == FdmViewerWrapperMode::EditorGCode);
     m_button_gcode->set_visible(fdm_has_gcode);
@@ -971,21 +1071,45 @@ void PreviewRenderModule::update_fdm_viewer_data(const Biz::Slicing::SlicingId i
 
     center_camera_on_selected_bed();
 }
-/*
+
+void PreviewRenderModule::update_sla_viewer_result_data(const Biz::Slicing::SlicingId id)
+{
+    if (m_project_interactor.selected_bed_slicing_id() != id)
+        return;
+    const std::optional<Biz::SLAResultRef> sla_result{ m_project_interactor.sla_result_cache().get_result(id) };
+    if (!sla_result) {
+        m_sla_viewer.reset_result();
+    } else {
+        m_sla_viewer.load_from_result(sla_result->get());
+    }
+}
+
+void PreviewRenderModule::update_sla_viewer_object_data(const Biz::Slicing::SlicingId id, Domain::ObjectID instance_id)
+{
+    if (m_project_interactor.selected_bed_slicing_id() != id)
+        return;
+
+    const std::optional<Biz::SLAObjectRef> sla_object_result{ m_project_interactor.sla_object_cache().get_instance({id, instance_id}) };
+    if (sla_object_result)
+        m_sla_viewer.load_from_object(sla_object_result->get());
+    else
+        m_sla_viewer.reset_object(instance_id);
+}
+
 void PreviewRenderModule::update_sla_viewer_data(const Biz::Slicing::SlicingId id)
 {
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
 
-    const std::optional<Biz::SLAResultRef> sla_result{ m_project_interactor.sla_result_cache().get_result(id) };
-    if (!sla_result) {
-        m_sla_viewer.reset();
-        return;
-    }
+    m_sla_viewer.reset();
+    update_sla_viewer_result_data(id);
 
-    // send data to m_sla_viewer;
+    const std::vector<Slic3r::Domain::ObjectID> object_ids = m_project_interactor.sla_object_cache().get_object_ids(id);
+
+    for (const Slic3r::Domain::ObjectID& obj_id : object_ids) {
+        update_sla_viewer_object_data(id, obj_id);
+    }
 }
-*/
 
 void PreviewRenderModule::on_invalidate_slice()
 {

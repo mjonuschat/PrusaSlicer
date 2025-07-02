@@ -21,6 +21,7 @@ PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<GCodeWindow> m_gcode_window,
     std::unique_ptr<LegendWindow> legend,
     std::unique_ptr<DoubleSliderForLayers> double_slider_layers,
+    std::unique_ptr<DoubleSliderForLayers> sla_double_slider_layers,
     std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
     std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
 )
@@ -30,6 +31,7 @@ PreviewRenderLayout::PreviewRenderLayout(
     , m_gcode_window(std::move(m_gcode_window))
     , m_legend(std::move(legend))
     , m_double_slider_layers(std::move(double_slider_layers))
+    , m_sla_double_slider_layers(std::move(sla_double_slider_layers))
     , m_double_slider_gcode(std::move(double_slider_gcode))
     , m_sidebar_auto_reslice(std::move(sidebar_auto_reslice))
     , m_sidebar_action_buttons(std::move(sidebar_action_buttons))
@@ -59,6 +61,7 @@ void PreviewRenderLayout::init_middle_column()
     m_layout_middle_column->append(m_double_slider_gcode.release());
 
     m_layout_center_row->append(m_double_slider_layers.release());
+    m_layout_center_row->append(m_sla_double_slider_layers.release());
 }
 
 void PreviewRenderLayout::init_right_column()

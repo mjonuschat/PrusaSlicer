@@ -24,6 +24,7 @@ public:
         std::unique_ptr<GCodeWindow> m_gcode_window,
         std::unique_ptr<LegendWindow> legend,
         std::unique_ptr<DoubleSliderForLayers> double_slider_layers,
+        std::unique_ptr<DoubleSliderForLayers> sla_double_slider_layers,
         std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
         std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
     );
@@ -38,6 +39,7 @@ private:
     Yoga::Passthrough<GCodeWindow> m_gcode_window;
     Yoga::Passthrough<LegendWindow> m_legend;
     Yoga::Passthrough<DoubleSliderForLayers> m_double_slider_layers;
+    Yoga::Passthrough<DoubleSliderForLayers> m_sla_double_slider_layers;
     Yoga::Passthrough<DoubleSliderForGcode> m_double_slider_gcode;
 
     Yoga::Passthrough<SidebarAutoReslice> m_sidebar_auto_reslice;

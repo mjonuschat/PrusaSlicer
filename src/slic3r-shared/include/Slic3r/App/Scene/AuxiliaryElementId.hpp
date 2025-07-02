@@ -10,7 +10,12 @@ struct AuxiliaryElementId
     {
         Volume = 0,
         Bed,
-        WipeTower
+        WipeTower,
+        SlaMesh,
+        SlaSupports,
+        SlaPad,
+        SlaTopClip,
+        SlaBottomClip,
     };
 
     Type type;

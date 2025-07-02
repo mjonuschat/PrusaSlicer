@@ -192,6 +192,7 @@ private:
     Yoga::Menu* m_cog_menu{ nullptr };
 
     Yoga::MenuItem* m_edit_extruder_sequence_menu_item{ nullptr };
+    Yoga::MenuItem* m_seq_top_layer_only_item{ nullptr };
     Yoga::MenuItem* m_use_default_colors_menu_item{ nullptr };
     Yoga::MenuItem* m_auto_color_change_menu_item{ nullptr };
 

@@ -1,0 +1,36 @@
+#version 100
+
+struct Material
+{
+    float metal;
+    float roughness;
+    float ior;
+};
+
+uniform vec4 uniform_color;
+uniform Material material;
+// Clipping planes, x = min z, y = max z. Used by the SLA preview to clip with a top / bottom plane.
+uniform vec2 z_range;
+
+varying vec3 eye_position;
+varying vec4 light_position;
+varying vec3 eye_normal;
+varying float world_z;
+
+layout (location = 0) out vec3 g_eye_position;
+layout (location = 1) out vec4 g_light_position;
+layout (location = 2) out vec3 g_eye_normal;
+layout (location = 3) out vec4 g_color;
+layout (location = 4) out vec3 g_material;
+
+void main()
+{
+    if (world_z < z_range.x || z_range.y < world_z)
+        discard;
+
+    g_eye_normal = normalize(eye_normal);
+    g_eye_position = eye_position;
+    g_light_position = light_position;
+    g_color = uniform_color;
+    g_material = vec3(material.metal, material.roughness, material.ior);
+}

@@ -17,9 +17,6 @@ void FDMResultCache::on_fdm_result_changed(
 )
 {
     m_results[id] = std::move(result);
-    invoke_listeners<IFDMResultCacheChangedListener>([&](auto* listener) {
-        listener->on_fdm_result_cache_changed(id);
-    });
 
     if (m_results[id].const_moves()->empty()) {
         m_results.erase(id);
@@ -27,6 +24,10 @@ void FDMResultCache::on_fdm_result_changed(
     } else {
         SPDLOG_INFO("{}: updated", fmt::streamed(id));
     }
+
+    invoke_listeners<IFDMResultCacheChangedListener>([&](auto* listener) {
+        listener->on_fdm_result_cache_changed(id);
+    });
 }
 
 } // namespace Slic2r::Biz::FDMResultCache

@@ -40,6 +40,11 @@ void ProjectInteractor::initialize_new_project_before_inserting(Domain::Project&
     auto& cc_ptr = p.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
     // upload config from selected preset
     cc_ptr->set_print_config(m_workbench.preset_bundle_legacy().full_config());
+
+    if (cc_ptr->print_technology() == Domain::PrinterTechnology::SLA)
+        cc_ptr->set_print_config_new(Domain::ConfigPackSLA());
+    else
+        cc_ptr->set_print_config_new(Domain::ConfigPackFDM());
 }
 
 void ProjectInteractor::initialize_inserted_project(size_t project_id)

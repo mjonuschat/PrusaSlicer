@@ -42,9 +42,12 @@ bool SlaViewerWrapper::set_settings(const ViewerWrapperBaseSettings& settings)
     try {
         m_slider_layers = Yoga::Passthrough(std::make_unique<DoubleSliderForLayers>());
         m_slider_layers->show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
+
+        m_slider_layers->set_draw_mode(true, false);
         m_slider_layers->show_estimated_times(m_settings.slider_layers_show_estimated_times);
         // set layers slider callbacks
         m_slider_layers->set_on_thumb_move_callback(std::bind(&SlaViewerWrapper::on_slider_layers_scroll_changed, this));
+        m_slider_layers->set_request_extra_frames_callback(m_settings.cb_request_extra_frames);
 
         return true;
     }
@@ -59,17 +62,29 @@ void SlaViewerWrapper::reset()
     m_viewer.reset();
 }
 
-void SlaViewerWrapper::load(SlaViewerWrapperInputData&& wrapper_data, const std::vector<float>& layers_zs, const std::vector<float>& layers_times)
+void SlaViewerWrapper::load_from_result(const Biz::Slicing::SLAResult& result)
 {
     m_loading = true;
 
-    m_data = std::move(wrapper_data);
-
-    m_viewer.load(layers_zs, layers_times);
-
+    m_viewer.load(result);
     update_slider_layers();
 
     m_loading = false;
+}
+
+void SlaViewerWrapper::load_from_object(const Biz::Slicing::Sla::Object& object)
+{
+    m_viewer.load_object(object);
+}
+
+void SlaViewerWrapper::reset_result()
+{
+    m_viewer.reset_layers();
+}
+
+void SlaViewerWrapper::reset_object(const Domain::ObjectID& object_id)
+{
+    m_viewer.reset_object(object_id);
 }
 
 // void SlaViewerWrapper::render_legend(Render::ImguiRender* imgui_render)
@@ -137,11 +152,6 @@ void SlaViewerWrapper::update_slider_layers()
         m_slider_layers->set_layers_times(m_viewer.layers_estimated_times(), m_viewer.estimated_time());
 
     m_slider_layers->thaw();
-}
-
-void SlaViewerWrapper::update_view_visible_range(size_t first, size_t last)
-{
-    m_viewer.set_view_visible_range(first, last);
 }
 
 void SlaViewerWrapper::on_slider_layers_scroll_changed()

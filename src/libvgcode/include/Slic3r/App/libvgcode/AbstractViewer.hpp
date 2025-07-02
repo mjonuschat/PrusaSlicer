@@ -6,6 +6,10 @@
 
 #include <Slic3r/App/Scene/Lights.hpp>
 
+namespace Slic3r::Domain {
+class ColorRGB;
+}
+
 namespace Slic3r::App::Render {
 class Device;
 } // namespace Slic3r::App::Render
@@ -69,6 +73,7 @@ public:
 
 protected:
     virtual void update_view_full_range() = 0;
+    float encoded_color(const Domain::ColorRGB& color);
 
 protected:
     //
