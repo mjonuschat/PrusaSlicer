@@ -9,10 +9,10 @@
 #include <memory>
 #include <utility>
 
-#include "FillBase.hpp"
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Polyline.hpp"
-#include "libslic3r/libslic3r.h"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Polyline.hpp"
+
+#include "libslic3r/Fill/FillBase.hpp"
 
 namespace Slic3r {
 
@@ -39,11 +39,11 @@ public:
 protected:
     Fill* clone() const override { return new Filler(*this); }
 
-    void _fill_surface_single(const FillParams              &params,
-                              unsigned int                   thickness_layers,
-                              const std::pair<float, Point> &direction,
-                              ExPolygon                      expolygon,
-                              Polylines &polylines_out) override;
+    void _fill_surface_single(const FillParams&                       params,
+                              unsigned int                            thickness_layers,
+                               const std::pair<float, Domain::Point>& direction,
+                                Domain::ExPolygon                     expolygon,
+                                Domain::Polylines&                    polylines_out) override;
 
     // Let the G-code export reoder the infill lines.
 	bool no_sort() const override { return false; }

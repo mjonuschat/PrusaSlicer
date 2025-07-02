@@ -30,7 +30,7 @@
 #include <wx/sizer.h>
 #include <wx/string.h>
 
-#include "libslic3r_version.h"
+#include "libslic3r/libslic3r_version.h"
 
 
 namespace Slic3r::App::Desktop::Preset {

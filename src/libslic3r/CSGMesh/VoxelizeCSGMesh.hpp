@@ -8,11 +8,12 @@
 #include <functional>
 #include <stack>
 
-#include "CSGMesh.hpp"
-#include "libslic3r/OpenVDBUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 
-namespace Slic3r { namespace csg {
+#include "libslic3r/CSGMesh/CSGMesh.hpp"
+#include "libslic3r/OpenVDBUtils.hpp"
+
+namespace Slic3r::csg {
 
 using VoxelizeParams = MeshToGridParams;
 
@@ -117,6 +118,6 @@ VoxelGridPtr voxelize_csgmesh(const Range<It>      &csgrange,
     return ret;
 }
 
-}} // namespace Slic3r::csg
+} // namespace Slic3r::csg
 
 #endif // VOXELIZECSGMESH_HPP

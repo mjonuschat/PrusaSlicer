@@ -8,8 +8,6 @@
 #ifndef slic3r_ExtrusionEntity_hpp_
 #define slic3r_ExtrusionEntity_hpp_
 
-#include <assert.h>
-#include <stddef.h>
 #include <optional>
 #include <string_view>
 #include <numeric>
@@ -21,13 +19,30 @@
 #include <cstddef>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Polyline.hpp"
+
+#include "Slic3r/Utils.hpp"
+
 #include "libslic3r/ExtrusionRole.hpp"
 #include "libslic3r/Flow.hpp"
-#include "libslic3r/Polygon.hpp"
-#include "libslic3r/Polyline.hpp"
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Point.hpp"
+
+namespace Slic3r::Internal {
+
+constexpr double scaled(const double& val)
+{
+    return val / Domain::SCALING_FACTOR;
+}
+
+constexpr double unscaled(const double& val)
+{
+    return val * Domain::SCALING_FACTOR;
+}
+
+} // namespace Slic3r::Internal
 
 namespace Slic3r {
 
@@ -46,28 +61,28 @@ public:
     virtual ExtrusionEntity* clone_move() = 0;
     virtual ~ExtrusionEntity() = default;
     virtual void reverse() = 0;
-    virtual const Point& first_point() const = 0;
-    virtual const Point& last_point() const = 0;
+    virtual const Domain::Point& first_point() const = 0;
+    virtual const Domain::Point& last_point() const = 0;
     // Returns an approximately middle point of a path, loop or an extrusion collection.
     // Used to get a sample point of an extrusion or extrusion collection, which is possibly deep inside its island.
-    virtual const Point& middle_point() const = 0;
+    virtual const Domain::Point& middle_point() const = 0;
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion width.
     // Increase the offset by scaled_epsilon to achieve an overlap, so a union will produce no gaps.
-    virtual void polygons_covered_by_width(Polygons &out, const float scaled_epsilon) const = 0;
+    virtual void polygons_covered_by_width(Domain::Polygons &out, const float scaled_epsilon) const = 0;
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion spacing.
     // Increase the offset by scaled_epsilon to achieve an overlap, so a union will produce no gaps.
     // Useful to calculate area of an infill, which has been really filled in by a 100% rectilinear infill.
-    virtual void polygons_covered_by_spacing(Polygons &out, const float scaled_epsilon) const = 0;
-    Polygons polygons_covered_by_width(const float scaled_epsilon = 0.f) const
-        { Polygons out; this->polygons_covered_by_width(out, scaled_epsilon); return out; }
-    Polygons polygons_covered_by_spacing(const float scaled_epsilon = 0.f) const
-        { Polygons out; this->polygons_covered_by_spacing(out, scaled_epsilon); return out; }
+    virtual void polygons_covered_by_spacing(Domain::Polygons &out, const float scaled_epsilon) const = 0;
+    Domain::Polygons polygons_covered_by_width(const float scaled_epsilon = 0.f) const
+        { Domain::Polygons out; this->polygons_covered_by_width(out, scaled_epsilon); return out; }
+        Domain::Polygons polygons_covered_by_spacing(const float scaled_epsilon = 0.f) const
+        { Domain::Polygons out; this->polygons_covered_by_spacing(out, scaled_epsilon); return out; }
     // Minimum volumetric velocity of this extrusion entity. Used by the constant nozzle pressure algorithm.
     virtual double min_mm3_per_mm() const = 0;
-    virtual Polyline as_polyline() const = 0;
-    virtual void   collect_polylines(Polylines &dst) const = 0;
-    virtual void   collect_points(Points &dst) const = 0;
-    virtual Polylines as_polylines() const { Polylines dst; this->collect_polylines(dst); return dst; }
+    virtual Domain::Polyline as_polyline() const = 0;
+    virtual void   collect_polylines(Domain::Polylines &dst) const = 0;
+    virtual void   collect_points(Domain::Points &dst) const = 0;
+    virtual Domain::Polylines as_polylines() const { Domain::Polylines dst; this->collect_polylines(dst); return dst; }
     virtual double length() const = 0;
     virtual double total_volume() const = 0;
 };
@@ -162,14 +177,14 @@ inline bool operator==(const ExtrusionAttributes &lhs, const ExtrusionAttributes
 class ExtrusionPath : public ExtrusionEntity
 {
 public:
-    Polyline polyline;
+    Domain::Polyline polyline;
 
     ExtrusionPath(ExtrusionRole role) : m_attributes{ role } {}
     ExtrusionPath(const ExtrusionAttributes &attributes) : m_attributes(attributes) {}
     ExtrusionPath(const ExtrusionPath &rhs) : polyline(rhs.polyline), m_attributes(rhs.m_attributes) {}
     ExtrusionPath(ExtrusionPath &&rhs) : polyline(std::move(rhs.polyline)), m_attributes(rhs.m_attributes) {}
-    ExtrusionPath(const Polyline &polyline, const ExtrusionAttributes &attribs) : polyline(polyline), m_attributes(attribs) {}
-    ExtrusionPath(Polyline &&polyline, const ExtrusionAttributes &attribs) : polyline(std::move(polyline)), m_attributes(attribs) {}
+    ExtrusionPath(const Domain::Polyline &polyline, const ExtrusionAttributes &attribs) : polyline(polyline), m_attributes(attribs) {}
+    ExtrusionPath(Domain::Polyline &&polyline, const ExtrusionAttributes &attribs) : polyline(std::move(polyline)), m_attributes(attribs) {}
 
     ExtrusionPath& operator=(const ExtrusionPath &rhs) { this->polyline = rhs.polyline; m_attributes = rhs.m_attributes; return *this; }
     ExtrusionPath& operator=(ExtrusionPath &&rhs) { this->polyline = std::move(rhs.polyline); m_attributes = rhs.m_attributes; return *this; }
@@ -178,9 +193,9 @@ public:
     // Create a new object, initialize it with this object using the move semantics.
 	ExtrusionEntity* clone_move() override { return new ExtrusionPath(std::move(*this)); }
     void reverse() override { this->polyline.reverse(); }
-    const Point& first_point() const override { return this->polyline.points.front(); }
-    const Point& last_point() const override { return this->polyline.points.back(); }
-    const Point& middle_point() const override { return this->polyline.points[this->polyline.size() / 2]; }
+    const Domain::Point& first_point() const override { return this->polyline.points.front(); }
+    const Domain::Point& last_point() const override { return this->polyline.points.back(); }
+    const Domain::Point& middle_point() const override { return this->polyline.points[this->polyline.size() / 2]; }
     size_t size() const { return this->polyline.size(); }
     bool empty() const { return this->polyline.empty(); }
     bool is_closed() const { return ! this->empty() && this->polyline.points.front() == this->polyline.points.back(); }
@@ -199,20 +214,20 @@ public:
 
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion width.
     // Increase the offset by scaled_epsilon to achieve an overlap, so a union will produce no gaps.
-    void        polygons_covered_by_width(Polygons &out, const float scaled_epsilon) const override;
+    void        polygons_covered_by_width(Domain::Polygons &out, const float scaled_epsilon) const override;
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion spacing.
     // Increase the offset by scaled_epsilon to achieve an overlap, so a union will produce no gaps.
     // Useful to calculate area of an infill, which has been really filled in by a 100% rectilinear infill.
-    void        polygons_covered_by_spacing(Polygons &out, const float scaled_epsilon) const override;
-    Polygons    polygons_covered_by_width(const float scaled_epsilon = 0.f) const
-        { Polygons out; this->polygons_covered_by_width(out, scaled_epsilon); return out; }
-    Polygons    polygons_covered_by_spacing(const float scaled_epsilon = 0.f) const
-        { Polygons out; this->polygons_covered_by_spacing(out, scaled_epsilon); return out; }
+    void        polygons_covered_by_spacing(Domain::Polygons &out, const float scaled_epsilon) const override;
+    Domain::Polygons polygons_covered_by_width(const float scaled_epsilon = 0.f) const
+        { Domain::Polygons out; this->polygons_covered_by_width(out, scaled_epsilon); return out; }
+    Domain::Polygons polygons_covered_by_spacing(const float scaled_epsilon = 0.f) const
+        { Domain::Polygons out; this->polygons_covered_by_spacing(out, scaled_epsilon); return out; }
 
-    Polyline    as_polyline() const override { return this->polyline; }
-    void        collect_polylines(Polylines &dst) const override { if (! this->polyline.empty()) dst.emplace_back(this->polyline); }
-    void        collect_points(Points &dst) const override { append(dst, this->polyline.points); }
-    double      total_volume() const override { return m_attributes.mm3_per_mm * unscale<double>(length()); }
+    Domain::Polyline as_polyline() const override { return this->polyline; }
+    void        collect_polylines(Domain::Polylines &dst) const override { if (! this->polyline.empty()) dst.emplace_back(this->polyline); }
+    void        collect_points(Domain::Points &dst) const override { append(dst, this->polyline.points); }
+    double      total_volume() const override { return m_attributes.mm3_per_mm * Internal::unscaled(length()); }
 
 private:
     ExtrusionAttributes     m_attributes;
@@ -222,8 +237,8 @@ class ExtrusionPathOriented : public ExtrusionPath
 {
 public:
     ExtrusionPathOriented(const ExtrusionAttributes &attribs) : ExtrusionPath(attribs) {}
-    ExtrusionPathOriented(const Polyline &polyline, const ExtrusionAttributes &attribs) : ExtrusionPath(polyline, attribs) {}
-    ExtrusionPathOriented(Polyline &&polyline, const ExtrusionAttributes &attribs) : ExtrusionPath(std::move(polyline), attribs) {}
+    ExtrusionPathOriented(const Domain::Polyline &polyline, const ExtrusionAttributes &attribs) : ExtrusionPath(polyline, attribs) {}
+    ExtrusionPathOriented(Domain::Polyline &&polyline, const ExtrusionAttributes &attribs) : ExtrusionPath(std::move(polyline), attribs) {}
 
     ExtrusionEntity* clone() const override { return new ExtrusionPathOriented(*this); }
     // Create a new object, initialize it with this object using the move semantics.
@@ -254,29 +269,29 @@ public:
     // Create a new object, initialize it with this object using the move semantics.
 	ExtrusionEntity* clone_move() override { return new ExtrusionMultiPath(std::move(*this)); }
     void reverse() override;
-    const Point& first_point() const override { return this->paths.front().polyline.points.front(); }
-    const Point& last_point() const override { return this->paths.back().polyline.points.back(); }
-    const Point& middle_point() const override { auto &path = this->paths[this->paths.size() / 2]; return path.polyline.points[path.polyline.size() / 2]; }
+    const Domain::Point& first_point() const override { return this->paths.front().polyline.points.front(); }
+    const Domain::Point& last_point() const override { return this->paths.back().polyline.points.back(); }
+    const Domain::Point& middle_point() const override { auto &path = this->paths[this->paths.size() / 2]; return path.polyline.points[path.polyline.size() / 2]; }
     size_t size() const { return this->paths.size(); }
     bool empty() const { return this->paths.empty(); }
     double length() const override;
     ExtrusionRole role() const override { return this->paths.empty() ? ExtrusionRole::None : this->paths.front().role(); }
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion width.
     // Increase the offset by scaled_epsilon to achieve an overlap, so a union will produce no gaps.
-    void polygons_covered_by_width(Polygons &out, const float scaled_epsilon) const override;
+    void polygons_covered_by_width(Domain::Polygons &out, const float scaled_epsilon) const override;
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion spacing.
     // Increase the offset by scaled_epsilon to achieve an overlap, so a union will produce no gaps.
     // Useful to calculate area of an infill, which has been really filled in by a 100% rectilinear infill.
-    void polygons_covered_by_spacing(Polygons &out, const float scaled_epsilon) const override;
-    Polygons polygons_covered_by_width(const float scaled_epsilon = 0.f) const
-        { Polygons out; this->polygons_covered_by_width(out, scaled_epsilon); return out; }
-    Polygons polygons_covered_by_spacing(const float scaled_epsilon = 0.f) const
-        { Polygons out; this->polygons_covered_by_spacing(out, scaled_epsilon); return out; }
+    void polygons_covered_by_spacing(Domain::Polygons &out, const float scaled_epsilon) const override;
+    Domain::Polygons polygons_covered_by_width(const float scaled_epsilon = 0.f) const
+        { Domain::Polygons out; this->polygons_covered_by_width(out, scaled_epsilon); return out; }
+    Domain::Polygons polygons_covered_by_spacing(const float scaled_epsilon = 0.f) const
+        { Domain::Polygons out; this->polygons_covered_by_spacing(out, scaled_epsilon); return out; }
     // Minimum volumetric velocity of this extrusion entity. Used by the constant nozzle pressure algorithm.
     double min_mm3_per_mm() const override;
-    Polyline as_polyline() const override;
-    void   collect_polylines(Polylines &dst) const override { Polyline pl = this->as_polyline(); if (! pl.empty()) dst.emplace_back(std::move(pl)); }
-    void   collect_points(Points &dst) const override { 
+    Domain::Polyline as_polyline() const override;
+    void   collect_polylines(Domain::Polylines &dst) const override { Domain::Polyline pl = this->as_polyline(); if (! pl.empty()) dst.emplace_back(std::move(pl)); }
+    void   collect_points(Domain::Points &dst) const override {
         size_t n = std::accumulate(paths.begin(), paths.end(), 0, [](const size_t n, const ExtrusionPath &p){ return n + p.polyline.size(); });
         dst.reserve(dst.size() + n);
         for (const ExtrusionPath &p : this->paths)
@@ -312,38 +327,38 @@ public:
     void            reverse() override;
     // Used by PerimeterGenerator to reorient extrusion loops.
     void            reverse_loop();
-    const Point&    first_point() const override { return this->paths.front().polyline.points.front(); }
-    const Point&    last_point() const override { assert(this->first_point() == this->paths.back().polyline.points.back()); return this->first_point(); }
-    const Point&    middle_point() const override { auto& path = this->paths[this->paths.size() / 2]; return path.polyline.points[path.polyline.size() / 2]; }
-    Polygon         polygon() const;
+    const Domain::Point& first_point() const override { return this->paths.front().polyline.points.front(); }
+    const Domain::Point& last_point() const override { assert(this->first_point() == this->paths.back().polyline.points.back()); return this->first_point(); }
+    const Domain::Point& middle_point() const override { auto& path = this->paths[this->paths.size() / 2]; return path.polyline.points[path.polyline.size() / 2]; }
+    Domain::Polygon polygon() const;
     double          length() const override;
-    bool            split_at_vertex(const Point &point, const double scaled_epsilon = scaled<double>(0.001));
-    void            split_at(const Point &point, bool prefer_non_overhang, const double scaled_epsilon = scaled<double>(0.001));
+    bool            split_at_vertex(const Domain::Point &point, const double scaled_epsilon = Internal::scaled(0.001));
+    void            split_at(const Domain::Point &point, bool prefer_non_overhang, const double scaled_epsilon = Internal::scaled(0.001));
     struct ClosestPathPoint {
         size_t path_idx;
         size_t segment_idx;
-        Point  foot_pt;
+        Domain::Point foot_pt;
     };
-    ClosestPathPoint get_closest_path_and_point(const Point& point, bool prefer_non_overhang) const;
+    ClosestPathPoint get_closest_path_and_point(const Domain::Point& point, bool prefer_non_overhang) const;
     void clip_end(double distance, ExtrusionPaths* paths) const;
     ExtrusionRole role() const override { return this->paths.empty() ? ExtrusionRole::None : this->paths.front().role(); }
     ExtrusionLoopRole loop_role() const { return m_loop_role; }
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion width.
     // Increase the offset by scaled_epsilon to achieve an overlap, so a union will produce no gaps.
-    void polygons_covered_by_width(Polygons &out, const float scaled_epsilon) const override;
+    void polygons_covered_by_width(Domain::Polygons &out, const float scaled_epsilon) const override;
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion spacing.
     // Increase the offset by scaled_epsilon to achieve an overlap, so a union will produce no gaps.
     // Useful to calculate area of an infill, which has been really filled in by a 100% rectilinear infill.
-    void polygons_covered_by_spacing(Polygons &out, const float scaled_epsilon) const  override;
-    Polygons polygons_covered_by_width(const float scaled_epsilon = 0.f) const
-        { Polygons out; this->polygons_covered_by_width(out, scaled_epsilon); return out; }
-    Polygons polygons_covered_by_spacing(const float scaled_epsilon = 0.f) const
-        { Polygons out; this->polygons_covered_by_spacing(out, scaled_epsilon); return out; }
+    void polygons_covered_by_spacing(Domain::Polygons &out, const float scaled_epsilon) const  override;
+    Domain::Polygons polygons_covered_by_width(const float scaled_epsilon = 0.f) const
+        { Domain::Polygons out; this->polygons_covered_by_width(out, scaled_epsilon); return out; }
+    Domain::Polygons polygons_covered_by_spacing(const float scaled_epsilon = 0.f) const
+        { Domain::Polygons out; this->polygons_covered_by_spacing(out, scaled_epsilon); return out; }
     // Minimum volumetric velocity of this extrusion entity. Used by the constant nozzle pressure algorithm.
     double min_mm3_per_mm() const override;
-    Polyline as_polyline() const override { return Slic3r::Biz::Algorithms::Polygon::split_at_first_point(this->polygon()); }
-    void   collect_polylines(Polylines &dst) const override { Polyline pl = this->as_polyline(); if (! pl.empty()) dst.emplace_back(std::move(pl)); }
-    void   collect_points(Points &dst) const override { 
+    Domain::Polyline as_polyline() const override { return Slic3r::Biz::Algorithms::Polygon::split_at_first_point(this->polygon()); }
+    void   collect_polylines(Domain::Polylines &dst) const override { Domain::Polyline pl = this->as_polyline(); if (! pl.empty()) dst.emplace_back(std::move(pl)); }
+    void   collect_points(Domain::Points &dst) const override {
         size_t n = std::accumulate(paths.begin(), paths.end(), 0, [](const size_t n, const ExtrusionPath &p){ return n + p.polyline.size(); });
         dst.reserve(dst.size() + n);
         for (const ExtrusionPath &p : this->paths)
@@ -364,35 +379,35 @@ private:
     ExtrusionLoopRole m_loop_role{ elrDefault };
 };
 
-inline void extrusion_paths_append(ExtrusionPaths &dst, Polylines &polylines, const ExtrusionAttributes &attributes)
+inline void extrusion_paths_append(ExtrusionPaths &dst, Domain::Polylines &polylines, const ExtrusionAttributes &attributes)
 {
     dst.reserve(dst.size() + polylines.size());
-    for (Polyline &polyline : polylines)
+    for (Domain::Polyline &polyline : polylines)
         if (polyline.is_valid())
             dst.emplace_back(polyline, attributes);
 }
 
-inline void extrusion_paths_append(ExtrusionPaths &dst, Polylines &&polylines, const ExtrusionAttributes &attributes)
+inline void extrusion_paths_append(ExtrusionPaths &dst, Domain::Polylines &&polylines, const ExtrusionAttributes &attributes)
 {
     dst.reserve(dst.size() + polylines.size());
-    for (Polyline &polyline : polylines)
+    for (Domain::Polyline &polyline : polylines)
         if (polyline.is_valid())
             dst.emplace_back(std::move(polyline), attributes);
     polylines.clear();
 }
 
-inline void extrusion_entities_append_paths(ExtrusionEntitiesPtr &dst, const Polylines &polylines, const ExtrusionAttributes &attributes, bool can_reverse = true)
+inline void extrusion_entities_append_paths(ExtrusionEntitiesPtr &dst, const Domain::Polylines &polylines, const ExtrusionAttributes &attributes, bool can_reverse = true)
 {
     dst.reserve(dst.size() + polylines.size());
-    for (const Polyline &polyline : polylines)
+    for (const Domain::Polyline &polyline : polylines)
         if (polyline.is_valid())
             dst.emplace_back(can_reverse ? new ExtrusionPath(polyline, attributes) : new ExtrusionPathOriented(polyline, attributes));
 }
 
-inline void extrusion_entities_append_paths(ExtrusionEntitiesPtr &dst, Polylines &&polylines, const ExtrusionAttributes &attributes, bool can_reverse = true)
+inline void extrusion_entities_append_paths(ExtrusionEntitiesPtr &dst, Domain::Polylines &&polylines, const ExtrusionAttributes &attributes, bool can_reverse = true)
 {
     dst.reserve(dst.size() + polylines.size());
-    for (Polyline &polyline : polylines)
+    for (Domain::Polyline &polyline : polylines)
         if (polyline.is_valid())
             dst.emplace_back(can_reverse ?
                 new ExtrusionPath(std::move(polyline), attributes) :
@@ -400,10 +415,10 @@ inline void extrusion_entities_append_paths(ExtrusionEntitiesPtr &dst, Polylines
     polylines.clear();
 }
 
-inline void extrusion_entities_append_loops(ExtrusionEntitiesPtr &dst, Polygons &&loops, const ExtrusionAttributes &attributes)
+inline void extrusion_entities_append_loops(ExtrusionEntitiesPtr &dst, Domain::Polygons &&loops, const ExtrusionAttributes &attributes)
 {
     dst.reserve(dst.size() + loops.size());
-    for (Polygon &poly : loops) {
+    for (Domain::Polygon &poly : loops) {
         if (poly.is_valid()) {
             ExtrusionPath path(attributes);
             path.polyline.points = std::move(poly.points);
@@ -414,10 +429,10 @@ inline void extrusion_entities_append_loops(ExtrusionEntitiesPtr &dst, Polygons 
     loops.clear();
 }
 
-inline void extrusion_entities_append_loops_and_paths(ExtrusionEntitiesPtr &dst, Polylines &&polylines, const ExtrusionAttributes &attributes)
+inline void extrusion_entities_append_loops_and_paths(ExtrusionEntitiesPtr &dst, Domain::Polylines &&polylines, const ExtrusionAttributes &attributes)
 {
     dst.reserve(dst.size() + polylines.size());
-    for (Polyline &polyline : polylines)
+    for (Domain::Polyline &polyline : polylines)
         if (polyline.is_valid())
             dst.emplace_back(polyline.is_closed() ?
                 static_cast<ExtrusionEntity*>(new ExtrusionLoop(ExtrusionPath{ std::move(polyline), attributes })) :

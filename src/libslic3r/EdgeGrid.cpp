@@ -9,12 +9,12 @@
 #include <set>
 #include <cfloat>
 
-#include "libslic3r.h"
-#include "ClipperUtils.hpp"
-#include "EdgeGrid.hpp"
-#include "Geometry.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/EdgeGrid.hpp"
+#include "libslic3r/Geometry.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
-#include "PNGReadWrite.hpp"
+#include "libslic3r/PNGReadWrite.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"

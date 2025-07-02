@@ -14,15 +14,14 @@
 #include <tuple>
 #include <utility>
 
-#include "libslic3r/Layer.hpp"
-#include "libslic3r/Line.hpp"
+#include "Slic3r/Domain/ConfigBoxesFDM.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Line.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Polyline.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "libslic3r/PrintBase.hpp"
-#include "libslic3r/PrintConfig.hpp"
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Point.hpp"
-#include "libslic3r/Polygon.hpp"
-#include "libslic3r/Polyline.hpp"
-#include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 class ExtrusionEntity;
@@ -120,7 +119,7 @@ enum class SupportPointCause {
 //    Note that the force is only the difference - the amount needed to stabilize the object again.
 struct SupportPoint
 {
-    SupportPoint(SupportPointCause cause, const Vec3f &position, float spot_radius)
+    SupportPoint(SupportPointCause cause, const Domain::Vec3f &position, float spot_radius)
         : cause(cause), position(position), spot_radius(spot_radius)
     {}
 
@@ -132,7 +131,7 @@ struct SupportPoint
 
     SupportPointCause cause; // reason why this support point was generated. Used for the user alerts
     // position is in unscaled coords. The z coordinate is aligned with the layers bottom_z coordiantes
-    Vec3f position;
+    Domain::Vec3f position;
     // Expected spot size. The support point strength is calculated from the area defined by this value.
     // Currently equal to the support_points_interface_radius parameter above
     float spot_radius;
@@ -141,16 +140,16 @@ struct SupportPoint
 using SupportPoints = std::vector<SupportPoint>;
 
 struct Malformations {
-    std::vector<Lines> layers; //for each layer
+    std::vector<Domain::Lines> layers; //for each layer
 };
 
 struct PartialObject
 {
-    PartialObject(Vec3f centroid, float volume, bool connected_to_bed)
+    PartialObject(Domain::Vec3f centroid, float volume, bool connected_to_bed)
         : centroid(centroid), volume(volume), connected_to_bed(connected_to_bed)
     {}
 
-    Vec3f centroid;
+    Domain::Vec3f centroid;
     float volume;
     bool  connected_to_bed;
 };
@@ -166,21 +165,21 @@ class Integrals{
      *
      * @param polygons List of polygons specifing the domain.
      */
-    explicit Integrals(const Polygons& polygons);
-    explicit Integrals(const Polygon& polygon);
+    explicit Integrals(const Domain::Polygons& polygons);
+    explicit Integrals(const Domain::Polygon& polygon);
     /**
      * Construct integral x_i int x_i^2 (i=1,2), xy and integral 1 (area) over
      * a set of rectangles defined by a "thick" polyline.
      */
-    explicit Integrals(const Polylines& polylines, const std::vector<float>& widths);
+    explicit Integrals(const Domain::Polylines& polylines, const std::vector<float>& widths);
 
     // TODO refactor and delete the default constructor
     Integrals() = default;
-    Integrals(float area, Vec2f x_i, Vec2f x_i_squared, float xy);
+    Integrals(float area, Domain::Vec2f x_i, Domain::Vec2f x_i_squared, float xy);
 
     float area{};
-    Vec2f x_i{Vec2f::Zero()};
-    Vec2f x_i_squared{Vec2f::Zero()};
+    Domain::Vec2f x_i{Domain::Vec2f::Zero()};
+    Domain::Vec2f x_i_squared{Domain::Vec2f::Zero()};
     float xy{};
 
 private:
@@ -191,20 +190,20 @@ Integrals operator+(const Integrals& a, const Integrals& b);
 
 float compute_second_moment(
     const Integrals& integrals,
-    const Vec2f& axis_direction
+    const Domain::Vec2f& axis_direction
 );
 
 class ExtrusionLine
 {
 public:
     ExtrusionLine();
-    ExtrusionLine(const Vec2f &a, const Vec2f &b, float len, const ExtrusionEntity *origin_entity);
-    ExtrusionLine(const Vec2f &a, const Vec2f &b);
+    ExtrusionLine(const Domain::Vec2f &a, const Domain::Vec2f &b, float len, const ExtrusionEntity *origin_entity);
+    ExtrusionLine(const Domain::Vec2f &a, const Domain::Vec2f &b);
 
     bool is_external_perimeter() const;
 
-    Vec2f                  a;
-    Vec2f                  b;
+    Domain::Vec2f          a;
+    Domain::Vec2f          b;
     float                  len;
     const ExtrusionEntity *origin_entity;
 
@@ -213,14 +212,14 @@ public:
     float curled_up_height        = 0.0f;
 
     static const constexpr int Dim = 2;
-    using Scalar                   = Vec2f::Scalar;
+    using Scalar                   = Domain::Vec2f::Scalar;
 };
 
 struct SliceConnection
 {
     float area{};
-    Vec3f centroid_accumulator              = Vec3f::Zero();
-    Vec2f second_moment_of_area_accumulator = Vec2f::Zero();
+    Domain::Vec3f centroid_accumulator              = Domain::Vec3f::Zero();
+    Domain::Vec2f second_moment_of_area_accumulator = Domain::Vec2f::Zero();
     float second_moment_of_area_covariance_accumulator{};
 
     void add(const SliceConnection &other);
@@ -228,16 +227,16 @@ struct SliceConnection
     void print_info(const std::string &tag) const;
 };
 
-Polygons get_brim(const ExPolygon& slice_polygon, const Domain::BrimType brim_type, const float brim_width);
+Domain::Polygons get_brim(const Domain::ExPolygon& slice_polygon, const Domain::BrimType brim_type, const float brim_width);
 
 class ObjectPart
 {
 public:
     float volume{};
-    Vec3f volume_centroid_accumulator = Vec3f::Zero();
+    Domain::Vec3f volume_centroid_accumulator = Domain::Vec3f::Zero();
     float sticking_area{};
-    Vec3f sticking_centroid_accumulator              = Vec3f::Zero();
-    Vec2f sticking_second_moment_of_area_accumulator = Vec2f::Zero();
+    Domain::Vec3f sticking_centroid_accumulator              = Domain::Vec3f::Zero();
+    Domain::Vec2f sticking_second_moment_of_area_accumulator = Domain::Vec2f::Zero();
     float sticking_second_moment_of_area_covariance_accumulator{};
     bool  connected_to_bed = false;
 
@@ -246,23 +245,23 @@ public:
         const bool connected_to_bed,
         const double print_head_z,
         const double layer_height,
-        const std::optional<Polygons>& brim
+        const std::optional<Domain::Polygons>& brim
     );
 
     void add(const ObjectPart &other);
 
-    void add_support_point(const Vec3f &position, float sticking_area);
+    void add_support_point(const Domain::Vec3f &position, float sticking_area);
 
 
     float compute_elastic_section_modulus(
-        const Vec2f &line_dir,
-        const Vec3f &extreme_point,
+        const Domain::Vec2f &line_dir,
+        const Domain::Vec3f &extreme_point,
         const Integrals& integrals
     ) const;
 
     std::tuple<float, SupportPointCause> is_stable_while_extruding(const SliceConnection &connection,
                                     const ExtrusionLine   &extruded_line,
-                                    const Vec3f           &extreme_point,
+                                    const Domain::Vec3f   &extreme_point,
                                     float                  layer_z,
                                     const Params          &params) const;
 };

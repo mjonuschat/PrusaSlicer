@@ -1,7 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+
+#include "Slic3r/Domain/Polyline.hpp"
+
 #include <libslic3r/GCode/SeamScarf.hpp>
 #include <libslic3r/GCode/SmoothPath.hpp>
+
+using Slic3r::Domain::Polyline;
 
 using namespace Slic3r;
 using Seams::Scarf::Impl::PathPoint;

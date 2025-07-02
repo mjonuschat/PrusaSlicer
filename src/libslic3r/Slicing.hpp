@@ -7,7 +7,6 @@
 #ifndef slic3r_Slicing_hpp_
 #define slic3r_Slicing_hpp_
 
-#include <assert.h>
 #include <cstring>
 #include <map>
 #include <set>
@@ -16,11 +15,10 @@
 #include <utility>
 #include <cassert>
 
-#include "Point.hpp"
-#include "libslic3r.h"
-#include "Utils.hpp"
-#include "libslic3r/Model.hpp"
-#include "libslic3r/PrintConfig.hpp"
+#include "Slic3r/Domain/LayerHeightProfile.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include "libslic3r/Utils.hpp"
 
 namespace Slic3r
 {
@@ -38,9 +36,9 @@ struct SlicingParameters
 
     static SlicingParameters create_from_config(
         const Domain::ConfigView        &config,
-        double                         object_height,
+        double                           object_height,
         const std::vector<unsigned int> &object_extruders,
-        const Vec3d                     &object_shrinkage_compensation);
+        const Domain::Vec3d             &object_shrinkage_compensation);
 
     // Has any raft layers?
     bool        has_raft() const { return raft_layers() > 0; }

@@ -135,6 +135,6 @@
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 #include "libslic3r/libslic3r.h"
-#include "libslic3r_version.h"
+#include "libslic3r/libslic3r_version.h"
 
 #include <admesh/stl.h>

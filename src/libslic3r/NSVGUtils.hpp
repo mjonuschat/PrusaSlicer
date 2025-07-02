@@ -12,12 +12,10 @@
 #include <cmath>
 #include <cstddef>
 
-#include "Polygon.hpp"
-#include "ExPolygon.hpp"
-#include "Slic3r/Domain/EmbossShape.hpp" // ExPolygonsWithIds
-#include "nanosvg/nanosvg.h"    // load SVG file
-#include "libslic3r/Point.hpp"
-#include "libslic3r/libslic3r.h"
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 // Helper function to work with nano svg
 namespace Slic3r {
@@ -36,7 +34,7 @@ struct NSVGLineParams
 
     // Multiplicator of point coors
     // NOTE: Every point coor from image(float) is multiplied by scale and rounded to integer --> Slic3r::Point
-    double scale = 1. / SCALING_FACTOR;
+    double scale = 1. / Domain::SCALING_FACTOR;
 
     // Flag wether y is negative, when true than y coor is multiplied by -1
     bool is_y_negative = true;
@@ -67,9 +65,9 @@ Domain::ExPolygonsWithIds create_shape_with_ids(const NSVGimage &image, const NS
 
 // help functions - prepare to be tested
 /// <param name="is_y_negative">Flag is y negative, when true than y coor is multiplied by -1</param>
-Polygons to_polygons(const NSVGimage &image, const NSVGLineParams &param);
+Domain::Polygons to_polygons(const NSVGimage &image, const NSVGLineParams &param);
 
-void bounds(const NSVGimage &image, Vec2f &min, Vec2f &max);
+void bounds(const NSVGimage &image, Domain::Vec2f &min, Domain::Vec2f &max);
 
 // read text data from file
 std::unique_ptr<std::string> read_from_disk(const std::string &path);

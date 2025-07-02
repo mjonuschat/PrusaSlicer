@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "libslic3r/libslic3r.h"
-#include "FillBase.hpp"
+#include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Polyline.hpp"
 

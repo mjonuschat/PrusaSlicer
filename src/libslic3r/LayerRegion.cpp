@@ -22,7 +22,7 @@
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/BridgeDetector.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "Geometry.hpp"
+#include "libslic3r/Geometry.hpp"
 #include "libslic3r/PerimeterGenerator.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Surface.hpp"

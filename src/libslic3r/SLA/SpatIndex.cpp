@@ -16,13 +16,16 @@
 #pragma warning(disable: 4267)
 #endif
 
-#include "libslic3r/BoundingBox.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 
-namespace Slic3r { namespace sla {
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::BoundingBox2crd;
+
+namespace Slic3r::sla {
 
 /* **************************************************************************
  * PointIndex implementation
@@ -74,7 +77,7 @@ PointIndex::query(std::function<bool(const PointIndexEl &)> fn) const
     return ret;
 }
 
-std::vector<PointIndexEl> PointIndex::nearest(const Vec3d &el, unsigned k = 1) const
+std::vector<PointIndexEl> PointIndex::nearest(const Domain::Vec3d &el, unsigned k = 1) const
 {
     namespace bgi = boost::geometry::index;
     std::vector<PointIndexEl> ret; ret.reserve(k);
@@ -137,8 +140,7 @@ bool BoxIndex::remove(const BoxIndexEl& el)
     return m_impl->m_store.remove(el) == 1;
 }
 
-std::vector<BoxIndexEl> BoxIndex::query(const BoundingBox &qrbb,
-                                        BoxIndex::QueryType qt)
+std::vector<BoxIndexEl> BoxIndex::query(const BoundingBox2crd& qrbb, BoxIndex::QueryType qt)
 {
     namespace bgi = boost::geometry::index;
 
@@ -165,4 +167,4 @@ void BoxIndex::foreach(std::function<void (const BoxIndexEl &)> fn)
     for(auto& el : m_impl->m_store) fn(el);
 }
 
-}} // namespace Slic3r::sla
+} // namespace Slic3r::sla

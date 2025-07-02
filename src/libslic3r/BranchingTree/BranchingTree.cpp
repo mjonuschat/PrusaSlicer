@@ -9,12 +9,15 @@
 #include <cstddef>
 
 #include "PointCloud.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "libslic3r/BoundingBox.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
 
 struct indexed_triangle_set;
 
-namespace Slic3r { namespace branchingtree {
+using namespace Slic3r::Biz;
+
+namespace Slic3r::branchingtree {
 
 void build_tree(PointCloud &nodes, Builder &builder)
 {
@@ -189,8 +192,8 @@ ExPolygon make_bed_poly(const indexed_triangle_set &its)
 {
     auto bb = Domain::bounding_box(its);
 
-    BoundingBox bbcrd{scaled(to_2d(bb.min)), scaled(to_2d(bb.max))};
-    bbcrd.offset(scaled(10.));
+    Domain::BoundingBox2crd bbcrd{scaled(to_2d(bb.min)), scaled(to_2d(bb.max))};
+    bbcrd = Algorithms::BoundingBox::inflated(bbcrd, scaled(10.));
     Point     min = bbcrd.min, max = bbcrd.max;
     ExPolygon ret = {{min.x(), min.y()},
                      {max.x(), min.y()},
@@ -200,4 +203,4 @@ ExPolygon make_bed_poly(const indexed_triangle_set &its)
     return ret;
 }
 
-}} // namespace Slic3r::branchingtree
+} // namespace Slic3r::branchingtree

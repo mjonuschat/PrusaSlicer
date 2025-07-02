@@ -7,6 +7,7 @@
 
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 #include "KernelTraits.hpp"
@@ -15,6 +16,8 @@
 #include <arrange/Beds.hpp>
 
 namespace Slic3r::arr2 {
+
+constexpr auto SCALED_EPSILON = Biz::Algorithms::Scaling::scaled(Domain::EPSILON);
 
 // This is a kernel wrapper that will apply a penality to the object function
 // if the result cannot fit into the given rectangular bounds. This can be used

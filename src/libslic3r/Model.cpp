@@ -18,8 +18,8 @@
 
 #include "Geometry/ConvexHull.hpp"
 #include "MTUtils.hpp"
-#include "TriangleMeshSlicer.hpp"
-#include "MultipleBeds.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
+#include "libslic3r/MultipleBeds.hpp"
 
 #include <float.h>
 

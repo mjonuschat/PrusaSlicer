@@ -27,10 +27,17 @@
 #include <tcbspan/span.hpp>
 #include <Eigen/Geometry>
 
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+
+#include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/ModelObject.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/Fill/FillAdaptive.hpp"
 #include "libslic3r/Fill/FillLightning.hpp"
 #include "libslic3r/Flow.hpp"
@@ -175,7 +182,7 @@ struct PrintInstance
 	Domain::ModelInstance model_instance;
     std::size_t          model_instance_index;
 	// Shift of this instance's center into the world coordinates.
-	Point 				 shift;
+    Domain::Point 		 shift;
 };
 
 typedef std::vector<PrintInstance> PrintInstances;
@@ -250,13 +257,15 @@ public:
         std::vector<FuzzySkinPaintedRegion> fuzzy_skin_painted_regions;
 
         bool has_volume(const Domain::ObjectID id) const {
-            auto it = lower_bound_by_predicate(this->volumes.begin(), this->volumes.end(), [id](const VolumeExtents &l) { return l.volume_id < id; });
+            const auto it = std::ranges::lower_bound(this->volumes, id, {}, [](const VolumeExtents& l) {
+                return l.volume_id;
+            });
             return it != this->volumes.end() && it->volume_id == id;
         }
     };
 
     struct GeneratedSupportPoints{
-        Transform3d object_transform; // for frontend object mapping
+        Domain::Transform3d object_transform; // for frontend object mapping
         SupportSpotsGenerator::SupportPoints support_points;
         SupportSpotsGenerator::PartialObjects partial_objects;
     };
@@ -265,7 +274,7 @@ public:
     std::vector<LayerRangeRegions>              layer_ranges;
     // Transformation of this ModelObject into one of the associated PrintObjects (all PrintObjects derived from a single modelObject differ by a Z rotation only).
     // This transformation is used to calculate VolumeExtents.
-    Transform3d                                 trafo_bboxes;
+    Domain::Transform3d                         trafo_bboxes;
     std::vector<Domain::ObjectID>               cached_volume_ids;
 
     std::optional<GeneratedSupportPoints> generated_support_points;
@@ -287,15 +296,15 @@ private: // Prevents erroneous use by other classes.
 
 public:
     // Size of an object: XYZ in scaled coordinates. The size might not be quite snug in XY plane.
-    const Vec3crd&               size() const			{ return m_size; }
+    const Domain::Vec3crd&       size() const			{ return m_size; }
     const PrintObjectConfigView&     config() const         { return m_config; }
     void                         set_config(const PrintObjectConfigView& config) { m_config = config; }
     auto                         layers() const         { return SpanOfConstPtrs<Layer>(const_cast<const Layer* const* const>(m_layers.data()), m_layers.size()); }
     auto                         support_layers() const { return SpanOfConstPtrs<SupportLayer>(const_cast<const SupportLayer* const* const>(m_support_layers.data()), m_support_layers.size()); }
-    const Transform3d&           trafo() const          { return m_trafo; }
+    const Domain::Transform3d&   trafo() const          { return m_trafo; }
     // Trafo with the center_offset() applied after the transformation, to center the object in XY before slicing.
-    Transform3d                  trafo_centered() const 
-        { Transform3d t = this->trafo(); t.pretranslate(Vec3d(- unscale<double>(m_center_offset.x()), - unscale<double>(m_center_offset.y()), 0)); return t; }
+    Domain::Transform3d          trafo_centered() const
+        { Domain::Transform3d t = this->trafo(); t.pretranslate(Domain::Vec3d(- Biz::Algorithms::Scaling::unscaled<double>(m_center_offset.x()), - Biz::Algorithms::Scaling::unscaled<double>(m_center_offset.y()), 0)); return t; }
     const PrintInstances&        instances() const      { return m_instances; }
 
     // Whoever will get a non-const pointer to PrintObject will be able to modify its layers.
@@ -304,12 +313,12 @@ public:
 
     // Bounding box is used to align the object infill patterns, and to calculate attractor for the rear seam.
     // The bounding box may not be quite snug.
-    BoundingBox                  bounding_box() const   { return BoundingBox(Point(- m_size.x() / 2, - m_size.y() / 2), Point(m_size.x() / 2, m_size.y() / 2)); }
+    Domain::BoundingBox2crd      bounding_box() const   { return Domain::BoundingBox2crd(Domain::Point(- m_size.x() / 2, - m_size.y() / 2), Domain::Point(m_size.x() / 2, m_size.y() / 2)); }
     // Height is used for slicing, for sorting the objects by height for sequential printing and for checking vertical clearence in sequential print mode.
     // The height is snug.
-    coord_t 				     height() const         { return m_size.z(); }
+    Domain::coord_t 			 height() const         { return m_size.z(); }
     // Centering offset of the sliced mesh from the scaled and rotated mesh of the model.
-    const Point& 			     center_offset() const  { return m_center_offset; }
+    const Domain::Point& 		 center_offset() const  { return m_center_offset; }
 
     bool                         has_brim() const       {
         return this->config().get<Domain::BrimType>("brim_type") != Domain::BrimType::NoBrim
@@ -357,7 +366,7 @@ public:
         const PrintObjectConfigView& full_config,
         const Domain::ModelObject& model_object,
         float object_max_z,
-        const Vec3d& object_shrinkage_compensation
+        const Domain::Vec3d& object_shrinkage_compensation
     );
 
     size_t                      num_printing_regions() const throw() { return m_shared_regions->all_regions.size(); }
@@ -381,12 +390,12 @@ public:
     void slice();
 
     // Helpers to slice support enforcer / blocker meshes by the support generator.
-    std::vector<Polygons>       slice_support_volumes(const Domain::ModelVolumeType model_volume_type) const;
-    std::vector<Polygons>       slice_support_blockers() const { return this->slice_support_volumes(Domain::ModelVolumeType::SUPPORT_BLOCKER); }
-    std::vector<Polygons>       slice_support_enforcers() const { return this->slice_support_volumes(Domain::ModelVolumeType::SUPPORT_ENFORCER); }
+    std::vector<Domain::Polygons> slice_support_volumes(const Domain::ModelVolumeType model_volume_type) const;
+    std::vector<Domain::Polygons> slice_support_blockers() const { return this->slice_support_volumes(Domain::ModelVolumeType::SUPPORT_BLOCKER); }
+    std::vector<Domain::Polygons> slice_support_enforcers() const { return this->slice_support_volumes(Domain::ModelVolumeType::SUPPORT_ENFORCER); }
 
     // Helpers to project custom facets on slices
-    void project_and_append_custom_facets(bool seam, Domain::TriangleSelector::TriangleStateType type, std::vector<Polygons>& expolys) const;
+    void project_and_append_custom_facets(bool seam, Domain::TriangleSelector::TriangleStateType type, std::vector<Domain::Polygons>& expolys) const;
 
 private:
     // to be called from Print only.
@@ -394,7 +403,7 @@ private:
     friend class PrintBaseWithState<PrintStep, psCount>;
 
 public:
-	PrintObject(Print* print, Domain::ModelObject* model_object, const PrintObjectConfigView& config, const Transform3d& trafo, PrintInstances&& instances);
+	PrintObject(Print* print, Domain::ModelObject* model_object, const PrintObjectConfigView& config, const Domain::Transform3d& trafo, PrintInstances&& instances);
 
     ~PrintObject() override {
         clear_layers();
@@ -441,15 +450,15 @@ private:
     FillLightning::GeneratorPtr prepare_lightning_infill_data();
 
     // XYZ in scaled coordinates
-    Vec3crd									m_size;
-    PrintObjectConfigView                       m_config;
+    Domain::Vec3crd							m_size;
+    PrintObjectConfigView                   m_config;
     // Translation in Z + Rotation + Scaling / Mirroring.
-    Transform3d                             m_trafo = Transform3d::Identity();
+    Domain::Transform3d                     m_trafo = Domain::Transform3d::Identity();
     // Slic3r::Point objects in scaled G-code coordinates
     std::vector<PrintInstance>              m_instances;
     // The mesh is being centered before thrown to Clipper, so that the Clipper's fixed coordinates require less bits.
     // This is the adjustment of the  the Object's coordinate system towards PrintObject's coordinate system.
-    Point                                   m_center_offset;
+    Domain::Point                           m_center_offset;
 
     // Object split into layer ranges and regions with their associated configurations.
     // Shared among PrintObjects created for the same ModelObject.
@@ -492,7 +501,7 @@ struct WipeTowerData
     float                                                 width;
     float                                                 first_layer_height;
     float                                                 cone_angle;
-    Vec2d                                                 position;
+    Domain::Vec2d                                         position;
     float                                                 rotation_angle;
 
     void clear() {
@@ -508,7 +517,7 @@ struct WipeTowerData
         width = 0.f;
         first_layer_height = 0.f;
         cone_angle = 0.f;
-        position = Vec2d::Zero();
+        position = Domain::Vec2d::Zero();
         rotation_angle = 0.f;
     }
 
@@ -660,7 +669,7 @@ public:
     // It does NOT encompass user extrusions generated by custom G-code,
     // therefore it does NOT encompass the initial purge line.
     // It does NOT encompass MMU/MMU2 starting (wipe) areas.
-    const Polygon&                   first_layer_convex_hull() const { return m_first_layer_convex_hull; }
+    const Domain::Polygon&      first_layer_convex_hull() const { return m_first_layer_convex_hull; }
 
     const PrintStatistics&      print_statistics() const { return m_print_statistics; }
     PrintStatistics&            print_statistics() { return m_print_statistics; }
@@ -680,7 +689,7 @@ public:
     bool has_same_shrinkage_compensations() const;
 
     // Returns scaling for each axis representing shrinkage compensations in each axis.
-    Vec3d shrinkage_compensation() const;
+    Domain::Vec3d shrinkage_compensation() const;
 
     // Invalidates the step, and its depending steps in Print.
     bool                invalidate_step(PrintStep step);
@@ -691,9 +700,9 @@ public:
     void                alert_when_supports_needed();
 
     // Islands of objects and their supports extruded at the 1st layer.
-    Polygons            first_layer_islands() const;
+    Domain::Polygons    first_layer_islands() const;
     // Return 4 wipe tower corners in the world coordinates (shifted and rotated), including the wipe tower brim.
-    Points              first_layer_wipe_tower_corners() const;
+    Domain::Points      first_layer_wipe_tower_corners() const;
 
     // Returns true if any of the print_objects has print_object_step valid.
     // That means data shared by all print objects of the print_objects span may still use the shared data.
@@ -718,8 +727,8 @@ public:
     // It does NOT encompass user extrusions generated by custom G-code,
     // therefore it does NOT encompass the initial purge line.
     // It does NOT encompass MMU/MMU2 starting (wipe) areas.
-    Polygon                                 m_first_layer_convex_hull;
-    Points                                  m_skirt_convex_hull;
+    Domain::Polygon                         m_first_layer_convex_hull;
+    Domain::Points                          m_skirt_convex_hull;
 
     // Following section will be consumed by the GCodeGenerator.
     ToolOrdering 							m_tool_ordering;

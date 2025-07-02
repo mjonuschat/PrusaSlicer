@@ -15,7 +15,7 @@
 #define _libslic3r_h_
 
 #include "Slic3r/Domain/Constants.hpp"
-#include "libslic3r_version.h"
+#include "libslic3r/libslic3r_version.h"
 #include "Slic3r/Domain/Axis.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Point.hpp"
@@ -111,8 +111,6 @@ using deque =
 
 template<typename T, typename Q>
 inline T unscale(Q v) { return T(v) * T(SCALING_FACTOR); }
-
-constexpr size_t MAX_NUMBER_OF_BEDS = 9;
 
 // Temporary measure.
 using Domain::Axis;

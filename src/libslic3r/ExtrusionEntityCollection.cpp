@@ -6,12 +6,13 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "ExtrusionEntityCollection.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
 
 #include <algorithm>
 #include <limits>
 
 #include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/Polygon.hpp"
 
 namespace Slic3r {
 

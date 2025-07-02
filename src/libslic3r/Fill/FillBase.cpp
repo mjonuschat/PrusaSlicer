@@ -16,6 +16,7 @@
 #include <cinttypes>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/EdgeGrid.hpp"
@@ -25,17 +26,17 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/libslic3r.h"
-#include "FillBase.hpp"
-#include "FillConcentric.hpp"
-#include "FillHoneycomb.hpp"
-#include "Fill3DHoneycomb.hpp"
-#include "FillGyroid.hpp"
-#include "FillPlanePath.hpp"
-#include "FillLine.hpp"
-#include "FillRectilinear.hpp"
-#include "FillAdaptive.hpp"
-#include "FillLightning.hpp"
-#include "FillEnsuring.hpp"
+#include "libslic3r/Fill/FillBase.hpp"
+#include "libslic3r/Fill/FillConcentric.hpp"
+#include "libslic3r/Fill/FillHoneycomb.hpp"
+#include "libslic3r/Fill/Fill3DHoneycomb.hpp"
+#include "libslic3r/Fill/FillGyroid.hpp"
+#include "libslic3r/Fill/FillPlanePath.hpp"
+#include "libslic3r/Fill/FillLine.hpp"
+#include "libslic3r/Fill/FillRectilinear.hpp"
+#include "libslic3r/Fill/FillAdaptive.hpp"
+#include "libslic3r/Fill/FillLightning.hpp"
+#include "libslic3r/Fill/FillEnsuring.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/ShortestPath.hpp"
@@ -160,9 +161,9 @@ std::pair<float, Point> Fill::_infill_direction(const Surface *surface) const
 
     // Bounding box is the bounding box of a perl object Slic3r::Print::Object (c++ object Slic3r::PrintObject)
     // The bounding box is only undefined in unit tests.
-    Point out_shift = empty(this->bounding_box) ? 
+    Point out_shift = Algorithms::BoundingBox::empty(this->bounding_box) ?
         Algorithms::Polygon::get_bounding_box(surface->expolygon.contour).center() :
-        this->bounding_box.center();
+        Algorithms::BoundingBox::center(this->bounding_box);
 
 #if 0
     if (empty(this->bounding_box)) {
@@ -867,15 +868,15 @@ bool validate_boundary_intersections(const std::vector<std::vector<ContourInters
 // Mark the segments of split boundary as consumed if they are very close to some of the infill line.
 void mark_boundary_segments_touching_infill(
     // Boundary contour, along which the perimeter extrusions will be drawn.
-	const std::vector<Points>                              &boundary,
+	const std::vector<Domain::Points>                      &boundary,
     // Parametrization of boundary with Euclidian length.
 	const std::vector<std::vector<double>>                 &boundary_parameters,
     // Intersections (T-joints) of the infill lines with the boundary.
     std::vector<std::vector<ContourIntersectionPoint*>>    &boundary_intersections,
     // Bounding box around the boundary.
-	const BoundingBox 		                               &boundary_bbox,
+	const Domain::BoundingBox2crd                          &boundary_bbox,
     // Infill lines, either completely inside the boundary, or touching the boundary.
-	const Polylines 		                               &infill,
+	const Domain::Polylines 	                           &infill,
     // How much of the infill ends should be ignored when marking the boundary segments?
 	const double			                                clip_distance,
     // Roughly width of the infill line.
@@ -898,7 +899,7 @@ void mark_boundary_segments_touching_infill(
 
 	EdgeGrid::Grid grid;
     // Make sure that the the grid is big enough for queries against the thick segment.
-	grid.set_bbox(boundary_bbox.inflated(distance_colliding * 1.43));
+	grid.set_bbox(Algorithms::BoundingBox::inflated(boundary_bbox, distance_colliding * 1.43));
 	// Inflate the bounding box by a thick line width.
 	grid.create(boundary, coord_t(std::max(clip_distance, distance_colliding) + scale_(10.)));
 
@@ -1117,7 +1118,7 @@ void Fill::connect_infill(Polylines &&infill_ordered, const ExPolygon &boundary_
     connect_infill(std::move(infill_ordered), polygons_src, get_extents(boundary_src.contour), polylines_out, spacing, params);
 }
 
-void Fill::connect_infill(Polylines &&infill_ordered, const Polygons &boundary_src, const BoundingBox &bbox, Polylines &polylines_out, const double spacing, const FillParams &params)
+void Fill::connect_infill(Domain::Polylines &&infill_ordered, const Domain::Polygons &boundary_src, const Domain::BoundingBox2crd &bbox, Domain::Polylines &polylines_out, const double spacing, const FillParams &params)
 {
     auto polygons_src = reserve_vector<const Polygon*>(boundary_src.size());
     for (const Polygon &polygon : boundary_src)
@@ -1295,7 +1296,7 @@ static inline void mark_boundary_segments_overlapping_infill(
     }
 }
 
-BoundaryInfillGraph create_boundary_infill_graph(const Polylines &infill_ordered, const std::vector<const Polygon*> &boundary_src, const BoundingBox &bbox, const double spacing)
+BoundaryInfillGraph create_boundary_infill_graph(const Domain::Polylines &infill_ordered, const std::vector<const Domain::Polygon*> &boundary_src, const Domain::BoundingBox2crd &bbox, const double spacing)
 {
     BoundaryInfillGraph out;
     out.boundary.assign(boundary_src.size(), Points());
@@ -1306,7 +1307,7 @@ BoundaryInfillGraph create_boundary_infill_graph(const Polylines &infill_ordered
         std::vector<std::pair<EdgeGrid::Grid::ClosestPointResult, size_t>> intersection_points;
         {
             EdgeGrid::Grid grid;
-            grid.set_bbox(bbox.inflated(SCALED_EPSILON));
+            grid.set_bbox(Algorithms::BoundingBox::inflated(bbox, SCALED_EPSILON));
             grid.create(boundary_src, coord_t(scale_(10.)));
             intersection_points.reserve(infill_ordered.size() * 2);
             for (const Polyline &pl : infill_ordered)
@@ -1431,7 +1432,7 @@ BoundaryInfillGraph create_boundary_infill_graph(const Polylines &infill_ordered
     return out;
 }
 
-void Fill::connect_infill(Polylines &&infill_ordered, const std::vector<const Polygon*> &boundary_src, const BoundingBox &bbox, Polylines &polylines_out, const double spacing, const FillParams &params)
+void Fill::connect_infill(Domain::Polylines &&infill_ordered, const std::vector<const Domain::Polygon*> &boundary_src, const Domain::BoundingBox2crd &bbox, Domain::Polylines &polylines_out, const double spacing, const FillParams &params)
 {
 	assert(! infill_ordered.empty());
     assert(params.anchor_length     >= 0.);
@@ -2078,7 +2079,7 @@ static inline std::vector<SupportArcCost> evaluate_support_arches(Polylines &inf
 }
 
 // Both the poly_with_offset and polylines_out are rotated, so the infill lines are strictly vertical.
-void Fill::connect_base_support(Polylines &&infill_ordered, const std::vector<const Polygon*> &boundary_src, const BoundingBox &bbox, Polylines &polylines_out, const double spacing, const FillParams &params)
+void Fill::connect_base_support(Domain::Polylines &&infill_ordered, const std::vector<const Domain::Polygon*> &boundary_src, const Domain::BoundingBox2crd &bbox, Domain::Polylines &polylines_out, const double spacing, const FillParams &params)
 {
 //    assert(! infill_ordered.empty());
     assert(params.anchor_length     >= 0.);
@@ -2533,7 +2534,7 @@ void Fill::connect_base_support(Polylines &&infill_ordered, const std::vector<co
             polylines_out.emplace_back(std::move(pl));
 }
 
-void Fill::connect_base_support(Polylines &&infill_ordered, const Polygons &boundary_src, const BoundingBox &bbox, Polylines &polylines_out, const double spacing, const FillParams &params)
+void Fill::connect_base_support(Domain::Polylines &&infill_ordered, const Domain::Polygons &boundary_src, const Domain::BoundingBox2crd &bbox, Domain::Polylines &polylines_out, const double spacing, const FillParams &params)
 {
     auto polygons_src = reserve_vector<const Polygon*>(boundary_src.size());
     for (const Polygon &polygon : boundary_src)

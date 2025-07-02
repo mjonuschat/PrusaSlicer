@@ -13,7 +13,7 @@
 #include "libslic3r/GCode/SeamPlacer.hpp"
 #include "libslic3r/GCode/SeamAligned.hpp"
 #include "libslic3r/SlicingInput.hpp"
-#include "slic3r-shared/include/Slic3r/Biz/Config/3mf_legacy.hpp"
+#include "Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "Slic3r/Domain/OnBeds.hpp"
 
 #include <boost/filesystem.hpp>
@@ -53,7 +53,7 @@ struct TestConfig : public Domain::ConfigPackFDM
 
     Biz::Parser::IO::Config get_parser_config() const {
         Domain::FullConfigFDMPtr config{prepare_slicing_input(*this)};
-        return Biz::Slicing::get_parser_config(*config); 
+        return Biz::Slicing::get_parser_config(*config);
     };
     Domain::FullConfigFDM get_full_config() const { return *prepare_slicing_input(*this); };
     PrintConfigView get_view() const {

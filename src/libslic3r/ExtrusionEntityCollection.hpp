@@ -7,19 +7,17 @@
 #ifndef slic3r_ExtrusionEntityCollection_hpp_
 #define slic3r_ExtrusionEntityCollection_hpp_
 
-#include <stddef.h>
 #include <iterator>
 #include <utility>
 #include <vector>
 #include <cstddef>
 
-#include "libslic3r.h"
+#include "libslic3r/ExtrusionEntity.hpp"
+
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Polyline.hpp"
 #include "Slic3r/Exception.hpp"
-#include "ExtrusionEntity.hpp"
-#include "libslic3r/ExtrusionRole.hpp"
-#include "libslic3r/Point.hpp"
-#include "libslic3r/Polygon.hpp"
-#include "libslic3r/Polyline.hpp"
 
 namespace Slic3r {
 
@@ -115,20 +113,20 @@ public:
     void replace(size_t i, const ExtrusionEntity &entity);
     void remove(size_t i);
     void reverse() override;
-    const Point& first_point() const override { return this->entities.front()->first_point(); }
-    const Point& last_point() const override { return this->entities.back()->last_point(); }
-    const Point& middle_point() const override { return this->entities[this->entities.size() / 2]->middle_point(); }
+    const Domain::Point& first_point() const override { return this->entities.front()->first_point(); }
+    const Domain::Point& last_point() const override { return this->entities.back()->last_point(); }
+    const Domain::Point& middle_point() const override { return this->entities[this->entities.size() / 2]->middle_point(); }
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion width.
     // Increase the offset by scaled_epsilon to achieve an overlap, so a union will produce no gaps.
-    void polygons_covered_by_width(Polygons &out, const float scaled_epsilon) const override;
+    void polygons_covered_by_width(Domain::Polygons &out, const float scaled_epsilon) const override;
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion spacing.
     // Increase the offset by scaled_epsilon to achieve an overlap, so a union will produce no gaps.
     // Useful to calculate area of an infill, which has been really filled in by a 100% rectilinear infill.
-    void polygons_covered_by_spacing(Polygons &out, const float scaled_epsilon) const override;
-    Polygons polygons_covered_by_width(const float scaled_epsilon = 0.f) const
-        { Polygons out; this->polygons_covered_by_width(out, scaled_epsilon); return out; }
-    Polygons polygons_covered_by_spacing(const float scaled_epsilon = 0.f) const
-        { Polygons out; this->polygons_covered_by_spacing(out, scaled_epsilon); return out; }
+    void polygons_covered_by_spacing(Domain::Polygons &out, const float scaled_epsilon) const override;
+    Domain::Polygons polygons_covered_by_width(const float scaled_epsilon = 0.f) const
+        { Domain::Polygons out; this->polygons_covered_by_width(out, scaled_epsilon); return out; }
+    Domain::Polygons polygons_covered_by_spacing(const float scaled_epsilon = 0.f) const
+        { Domain::Polygons out; this->polygons_covered_by_spacing(out, scaled_epsilon); return out; }
     size_t size() const { return entities.size(); }
     // Recursively count paths and loops contained in this collection. 
     // this->items_count() >= this->size()
@@ -141,17 +139,17 @@ public:
     double total_volume() const override { double volume=0.; for (const auto& ent : entities) volume+=ent->total_volume(); return volume; }
 
     // Following methods shall never be called on an ExtrusionEntityCollection.
-    Polyline as_polyline() const override {
+    Domain::Polyline as_polyline() const override {
         throw Slic3r::RuntimeError("Calling as_polyline() on a ExtrusionEntityCollection");
-        return Polyline();
+        return Domain::Polyline();
     };
 
-    void collect_polylines(Polylines &dst) const override {
+    void collect_polylines(Domain::Polylines &dst) const override {
         for (const ExtrusionEntity *extrusion_entity : this->entities)
             extrusion_entity->collect_polylines(dst);
     }
 
-    void   collect_points(Points &dst) const override {
+    void   collect_points(Domain::Points &dst) const override {
         for (const ExtrusionEntity *extrusion_entity : this->entities)
             extrusion_entity->collect_points(dst);
     }

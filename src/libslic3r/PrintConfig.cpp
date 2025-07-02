@@ -40,9 +40,13 @@
 #include "libslic3r/format.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
 #include "libslic3r/SLA/SupportTreeStrategies.hpp"
-#include "libslic3r/enum_bitmask.hpp"
 #include "libslic3r/libslic3r.h"
 #include "Slic3r/Domain/ConfigCommon.hpp"
+#include "Slic3r/Domain/enum_bitmask.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec3d;
 
 namespace Slic3r {
 
@@ -5105,7 +5109,7 @@ void PrintConfigDef::handle_legacy_composite(DynamicPrintConfig &config)
         std::string thumbnails_str = config.opt_string("thumbnails");
         auto [thumbnails_list, errors] = GCodeThumbnails::make_and_check_thumbnail_list(thumbnails_str, extention);
 
-        if (errors != enum_bitmask<ThumbnailError>()) {
+        if (errors != Domain::enum_bitmask<ThumbnailError>()) {
             std::string error_str = "\n" + format("Invalid value provided for parameter %1%: %2%", "thumbnails", thumbnails_str);
             error_str += GCodeThumbnails::get_error_string(errors);
             throw BadOptionValueException(error_str);

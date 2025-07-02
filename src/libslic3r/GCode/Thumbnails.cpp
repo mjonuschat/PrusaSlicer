@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Thumbnails.hpp"
+#include "libslic3r/GCode/Thumbnails.hpp"
 
 #include <qoi.h>
 #include <jpeglib.h>
@@ -13,6 +13,8 @@
 #include <boost/format.hpp>
 #include <string>
 #include <cstdint>
+
+#include "Slic3r/Domain/enum_bitmask.hpp"
 
 #include "libslic3r/miniz_extension.hpp" // IWYU pragma: keep
 #include "libslic3r/Config.hpp"
@@ -166,17 +168,17 @@ std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbna
                     boost::to_upper(ext_str);
                     if (!ConfigOptionEnum<GCodeThumbnailsFormat>::from_string(ext_str, format)) {
                         format = GCodeThumbnailsFormat::PNG;
-                        errors = enum_bitmask(errors | ThumbnailError::InvalidExt);
+                        errors = Domain::enum_bitmask(errors | ThumbnailError::InvalidExt);
                     }
 
                     thumbnails_list.emplace_back(std::make_pair(format, point));
                 }
                 else
-                    errors = enum_bitmask(errors | ThumbnailError::OutOfRange);
+                    errors = Domain::enum_bitmask(errors | ThumbnailError::OutOfRange);
                 continue;
             }
         }
-        errors = enum_bitmask(errors | ThumbnailError::InvalidVal);
+        errors = Domain::enum_bitmask(errors | ThumbnailError::InvalidVal);
     }
 
     return std::make_pair(std::move(thumbnails_list), errors);

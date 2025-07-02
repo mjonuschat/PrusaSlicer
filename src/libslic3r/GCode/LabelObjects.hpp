@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "Slic3r/Domain/GCodeFlavor.hpp"
+
 #include "libslic3r/Print.hpp"
 
 namespace Slic3r {
@@ -17,7 +19,7 @@ namespace GCode {
 class LabelObjects
 {
 public:
-    void init(const SpanOfConstPtrs<PrintObject>& objects, Domain::LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor);
+    void init(const SpanOfConstPtrs<PrintObject>& objects, Domain::LabelObjectsStyle label_object_style, Domain::GCodeFlavor gcode_flavor);
     std::string all_objects_header() const;
     std::string all_objects_header_singleline_json() const;
 
@@ -53,7 +55,7 @@ private:
     const PrintInstance* last_operation_instance{nullptr};
 
     Domain::LabelObjectsStyle m_label_objects_style;
-    GCodeFlavor       m_flavor;
+    Domain::GCodeFlavor       m_flavor;
     std::vector<LabelData> m_label_data;
 };
 } // namespace GCode

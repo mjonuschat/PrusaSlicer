@@ -20,7 +20,7 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "TriangleMeshSlicer.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/Utils.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/ClipperUtils.hpp"

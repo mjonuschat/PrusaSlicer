@@ -22,13 +22,15 @@
 #include "EditorPrinter.hpp"
 #include "../Config/OptionsGroup.hpp"
 
-#include "libslic3r/GCode/GCodeWriter.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
 
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/MsgDialog.hpp"
 #include "Slic3r/App/WX/format.hpp"
 #include "Slic3r/App/WX/I18N.hpp"
+#include "Slic3r/Biz/libpgcode/Utils.hpp"
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/enum_bitmask.hpp"
 
 #include <wx/button.h>
 #include <wx/sizer.h>
@@ -173,7 +175,7 @@ void EditorPrinter::build_fff()
 
                             for (size_t i = 1; i < nozzle_diameters.size(); ++i) {
                                 // if value is differs from first nozzle diameter value
-                                if (fabs(nozzle_diameters[i] - nozzle_diameters[0]) > EPSILON || high_flow_nozzles[i] != high_flow_nozzles[0]) {
+                                if (fabs(nozzle_diameters[i] - nozzle_diameters[0]) > Domain::EPSILON || high_flow_nozzles[i] != high_flow_nozzles[0]) {
                                     const wxString msg_text = _L("This is a single extruder multimaterial printer, \n"
                                         "all extruders must have the same nozzle diameter and 'High flow' state.\n"
                                         "Do you want to change these values for all extruders to first extruder values?");
@@ -236,7 +238,7 @@ void EditorPrinter::build_fff()
                     if (const std::string val = boost::any_cast<std::string>(value); !value.empty()) {
                         auto [thumbnails_list, errors] = GCodeThumbnails::make_and_check_thumbnail_list(val);
 
-                        if (errors != enum_bitmask<ThumbnailError>()) {
+                        if (errors != Domain::enum_bitmask<ThumbnailError>()) {
                             // TRN: First argument is parameter name, the second one is the value.
                             std::string error_str = format(_u8L("Invalid value provided for parameter %1%: %2%"), "thumbnails", val);
                             error_str += GCodeThumbnails::get_error_string(errors);
@@ -267,7 +269,7 @@ void EditorPrinter::build_fff()
                 }
                 if (opt_key == "gcode_flavor") {
                     const GCodeFlavor flavor = static_cast<GCodeFlavor>(boost::any_cast<int>(value));
-                    bool supports_travel_acceleration = GCodeWriter::supports_separate_travel_acceleration(flavor);
+                    bool supports_travel_acceleration = Biz::libpgcode::supports_separate_travel_acceleration(flavor);
                     bool supports_min_feedrates       = (flavor == gcfMarlinFirmware || flavor == gcfMarlinLegacy);
                     if (supports_travel_acceleration != m_supports_travel_acceleration || supports_min_feedrates != m_supports_min_feedrates) {
                         m_rebuild_kinematics_page = true;
@@ -659,7 +661,7 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
                 std::vector<double> nozzle_diameters = static_cast<const ConfigOptionFloats*>(config().option("nozzle_diameter"))->values;
 
                 // if value was changed
-                if (fabs(nozzle_diameters[extruder_idx == 0 ? 1 : 0] - new_nd) > EPSILON)
+                if (fabs(nozzle_diameters[extruder_idx == 0 ? 1 : 0] - new_nd) > Domain::EPSILON)
                 {
                     const wxString msg_text = _L("This is a single extruder multimaterial printer, diameters of all extruders "
                                                  "will be set to the new value. Do you want to proceed?");

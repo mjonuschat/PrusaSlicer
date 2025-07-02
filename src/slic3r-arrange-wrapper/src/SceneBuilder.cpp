@@ -15,9 +15,12 @@
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
@@ -29,16 +32,19 @@
 
 #include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/Print.hpp"
+#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 
 using Slic3r::Domain::coord_t;
 using Slic3r::Domain::ExPolygon;
 using Slic3r::Domain::ExPolygons;
+using Slic3r::Domain::Point;
 using Slic3r::Domain::Points;
 using Slic3r::Domain::Polygon;
 using Slic3r::Domain::Polygons;
 using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Transform3f;
 using Slic3r::Domain::Vec2crd;
 using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Vec3d;
@@ -46,6 +52,9 @@ using Slic3r::Domain::Vec3d;
 using Slic3r::Biz::Algorithms::ClipperUtils::diff_ex;
 using Slic3r::Biz::Algorithms::ClipperUtils::union_ex;
 using Slic3r::Biz::Algorithms::ModelObject::convex_hull_2d;
+using Slic3r::Biz::Algorithms::Point::to_3d;
+using Slic3r::Biz::Algorithms::Scaling::scaled;
+using Slic3r::Biz::Algorithms::Scaling::unscaled;
 
 using namespace Slic3r::Biz;
 
@@ -278,10 +287,10 @@ int XStriderVBedHandler::get_bed_index(const VBedPlaceable &obj) const
     int bedidx = 0;
     auto stride_s = stride_scaled();
     if (stride_s > 0) {
-        double bedx = unscaled(m_start);
+        double bedx = unscaled<double>(m_start);
         auto instance_bb = obj.bounding_box();
         auto reference_pos_x = (instance_bb.min.x() - bedx);
-        auto stride = unscaled(stride_s);
+        auto stride = unscaled<double>(stride_s);
 
         auto bedidx_d = std::floor(reference_pos_x / stride);
 
@@ -302,7 +311,7 @@ bool XStriderVBedHandler::assign_bed(VBedPlaceable &obj, int bed_index)
     auto stride_s = stride_scaled();
     if (bed_index == 0 || (bed_index > 0 && stride_s > 0)) {
         auto current_bed_index = get_bed_index(obj);
-        auto stride = unscaled(stride_s);
+        auto stride = unscaled<double>(stride_s);
         auto transl = Vec2d{(bed_index - current_bed_index) * stride, 0.};
         obj.displace(transl, 0.);
 
@@ -316,7 +325,7 @@ Transform3d XStriderVBedHandler::get_physical_bed_trafo(int bed_index) const
 {
     auto stride_s = stride_scaled();
     auto tr = Transform3d::Identity();
-    tr.translate(Vec3d{-bed_index * unscaled(stride_s), 0., 0.});
+    tr.translate(Vec3d{-bed_index * unscaled<double>(stride_s), 0., 0.});
 
     return tr;
 }
@@ -326,10 +335,10 @@ int YStriderVBedHandler::get_bed_index(const VBedPlaceable &obj) const
     int bedidx = 0;
     auto stride_s = stride_scaled();
     if (stride_s > 0) {
-        double ystart = unscaled(m_start);
+        double ystart = unscaled<double>(m_start);
         auto instance_bb = obj.bounding_box();
         auto reference_pos_y = (instance_bb.min.y() - ystart);
-        auto stride = unscaled(stride_s);
+        auto stride = unscaled<double>(stride_s);
 
         auto bedidx_d = std::floor(reference_pos_y / stride);
 
@@ -350,7 +359,7 @@ bool YStriderVBedHandler::assign_bed(VBedPlaceable &obj, int bed_index)
     auto stride_s = stride_scaled();
     if (bed_index == 0 || (bed_index > 0 && stride_s > 0)) {
         auto current_bed_index = get_bed_index(obj);
-        auto stride = unscaled(stride_s);
+        auto stride = unscaled<double>(stride_s);
         auto transl = Vec2d{0., (bed_index - current_bed_index) * stride};
         obj.displace(transl, 0.);
 
@@ -364,7 +373,7 @@ Transform3d YStriderVBedHandler::get_physical_bed_trafo(int bed_index) const
 {
     auto stride_s = stride_scaled();
     auto tr = Transform3d::Identity();
-    tr.translate(Vec3d{0., -bed_index * unscaled(stride_s), 0.});
+    tr.translate(Vec3d{0., -bed_index * unscaled<double>(stride_s), 0.});
 
     return tr;
 }
@@ -417,7 +426,8 @@ FixedSelection::FixedSelection(const SelectionMask &other)
 
 std::vector<bool> FixedSelection::selected_objects() const
 {
-    auto ret = Slic3r::reserve_vector<bool>(m_seldata.size());
+    std::vector<bool> ret;
+    ret.reserve(m_seldata.size());
     std::transform(m_seldata.begin(),
                    m_seldata.end(),
                    std::back_inserter(ret),
@@ -431,8 +441,8 @@ std::vector<bool> FixedSelection::selected_objects() const
 
 static std::vector<size_t> find_true_indices(const std::vector<bool> &v)
 {
-    auto ret = reserve_vector<size_t>(v.size());
-
+    std::vector<size_t> ret;
+    ret.reserve(v.size());
     for (size_t i = 0; i < v.size(); ++i)
         if (v[i])
             ret.emplace_back(i);
@@ -486,7 +496,7 @@ SceneBuilder &&SceneBuilder::set_bed(const Points& bedpts, bool is_xl_printer, c
 {
     m_xl_printer = is_xl_printer;
     if (m_xl_printer) {
-        m_bed = XLBed{get_extents(bedpts), gap};
+        m_bed = XLBed{Algorithms::BoundingBox::construct(bedpts), gap};
     } else {
         m_bed = arr2::to_arrange_bed(bedpts, gap);
     }
@@ -942,7 +952,8 @@ Domain::ObjectID ArrangeableFullModel<Mdl, Dup, VBH>::geometry_id() const { retu
 template<class Mdl, class Dup, class VBH>
 ExPolygons ArrangeableFullModel<Mdl, Dup, VBH>::full_outline() const
 {
-    auto ret = reserve_vector<ExPolygon>(arr2::model_instance_count(*m_mdl));
+    ExPolygons ret;
+    ret.reserve(arr2::model_instance_count(*m_mdl));
 
     auto transl = Transform3d::Identity();
     transl.translate(to_3d(m_dup->tr, 0.));
@@ -961,7 +972,8 @@ ExPolygons ArrangeableFullModel<Mdl, Dup, VBH>::full_outline() const
 template<class Mdl, class Dup, class VBH>
 Polygon ArrangeableFullModel<Mdl, Dup, VBH>::convex_outline() const
 {
-    auto ret = reserve_polygons(arr2::model_instance_count(*m_mdl));
+    Polygons ret;
+    ret.reserve(arr2::model_instance_count(*m_mdl));
 
     auto transl = Transform3d::Identity();
     transl.translate(to_3d(m_dup->tr, 0.));

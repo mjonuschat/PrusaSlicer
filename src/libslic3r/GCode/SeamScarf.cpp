@@ -1,5 +1,6 @@
 #include "libslic3r/GCode/SeamScarf.hpp"
 #include "libslic3r/GCode/SmoothPath.hpp"
+#include "libslic3r/Polyline.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 
 using namespace Slic3r::Biz;

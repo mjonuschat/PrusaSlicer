@@ -24,10 +24,16 @@
 #include <utility>
 #include <vector>
 
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/PrintBase.hpp"
+
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
 #include "libslic3r/MeshBoolean.hpp"
-#include "libslic3r/PrintBase.hpp"
+
 #include "libslic3r/SLA/Hollowing.hpp"
 #include "libslic3r/SLA/Pad.hpp"
 #include "libslic3r/SLA/SLAResult.hpp"
@@ -116,16 +122,16 @@ public:
     SLAPrintObject& operator=(const SLAPrintObject&) = delete;
 
     const SLAPrintObjectConfigView& config() const { return m_config; }
-    const Transform3d&          trafo()  const { return m_trafo; }
+    const Domain::Transform3d&      trafo()  const { return m_trafo; }
     bool                        is_left_handed() const { return m_left_handed; }
 
     struct Instance {
-        Instance(Domain::ObjectID inst_id, const Point &shft, float rot) : instance_id(inst_id), shift(shft), rotation(rot) {}
+        Instance(Domain::ObjectID inst_id, const Domain::Point &shft, float rot) : instance_id(inst_id), shift(shft), rotation(rot) {}
         bool operator==(const Instance &rhs) const { return this->instance_id == rhs.instance_id && this->shift == rhs.shift && this->rotation == rhs.rotation; }
         // ID of the corresponding ModelInstance.
         Domain::ObjectID instance_id;
         // Slic3r::Point objects in scaled G-code coordinates
-        Point 	shift;
+        Domain::Point shift;
         // Rotation along the Z axis, in radians.
         float 	rotation;
     };
@@ -169,9 +175,9 @@ public:
         static const SliceRecord EMPTY;
 
     private:
-        coord_t   m_print_z = 0;      // Top of the layer
-        float     m_slice_z = 0.f;    // Exact level of the slice
-        float     m_height  = 0.f;     // Height of the sliced layer
+        Domain::coord_t m_print_z = 0;      // Top of the layer
+        float           m_slice_z = 0.f;    // Exact level of the slice
+        float           m_height  = 0.f;     // Height of the sliced layer
 
         size_t m_model_slices_idx = NONE;
         size_t m_support_slices_idx = NONE;
@@ -179,11 +185,11 @@ public:
 
     public:
 
-        SliceRecord(coord_t key, float slicez, float height):
+        SliceRecord(Domain::coord_t key, float slicez, float height):
             m_print_z(key), m_slice_z(slicez), m_height(height) {}
 
         // The key will be the integer height level of the top of the layer.
-        coord_t print_level() const { return m_print_z; }
+        Domain::coord_t print_level() const { return m_print_z; }
 
         // Returns the exact floating point Z coordinate of the slice
         float slice_level() const { return m_slice_z; }
@@ -204,7 +210,7 @@ public:
             m_po = &po; m_support_slices_idx = id;
         }
 
-        const ExPolygons& get_slice(SliceOrigin o) const;
+        const Domain::ExPolygons& get_slice(SliceOrigin o) const;
         size_t            get_slice_idx(SliceOrigin o) const
         {
             return o == soModel ? m_model_slices_idx : m_support_slices_idx;
@@ -213,8 +219,8 @@ public:
 
 private:
 
-    const std::vector<ExPolygons>& get_model_slices() const { return m_model_slices; }
-    const std::vector<ExPolygons>& get_support_slices() const;
+    const std::vector<Domain::ExPolygons>& get_model_slices() const { return m_model_slices; }
+    const std::vector<Domain::ExPolygons>& get_support_slices() const;
 protected:
     // to be called from SLAPrint only.
     friend class SLAPrint;
@@ -223,7 +229,7 @@ protected:
 public:
 	SLAPrintObject(SLAPrint* print, Domain::ModelObject* model_object, const SLAPrintObjectConfigView& config);
 
-    void                    set_trafo(const Transform3d& trafo, bool left_handed) {
+    void                    set_trafo(const Domain::Transform3d& trafo, bool left_handed) {
         m_trafo = trafo;
         m_left_handed = left_handed;
     }
@@ -244,14 +250,14 @@ private:
     SLAPrintObjectConfigView                m_config;
 
     // Translation in Z + Rotation by Y and Z + Scaling / Mirroring.
-    Transform3d                             m_trafo = Transform3d::Identity();
+    Domain::Transform3d                     m_trafo = Domain::Transform3d::Identity();
     // m_trafo is left handed -> 3x3 affine transformation has negative determinant.
     bool                                    m_left_handed = false;
 
     Instances            					m_instances;
 
     // Individual 2d slice polygons from lower z to higher z levels
-    std::vector<ExPolygons>                 m_model_slices;
+    std::vector<Domain::ExPolygons>         m_model_slices;
 
     // Exact (float) height levels mapped to the slices. Each record contains
     // the index to the model and the support slice vectors.
@@ -263,7 +269,7 @@ private:
     sla::SupportPointGeneratorData          m_support_point_generator_data;
 
     std::optional<sla::SupportableMesh> m_supportable_mesh;
-    std::vector<ExPolygons> m_support_slices;
+    std::vector<Domain::ExPolygons> m_support_slices;
 
     // Holds CSG operations for the printed object, prioritized by print steps.
     CSGContainer                  m_mesh_to_slice;
@@ -381,10 +387,10 @@ public:
     const Biz::Print::SerializedConfig& serialized_config() const { return m_serialized_config; }
 
     // Extracted value from the configuration objects
-    Vec3d                       relative_correction() const;
+    Domain::Vec3d               relative_correction() const;
 
     // Return sla tansformation for a given model_object
-    Transform3d sla_trafo(const Domain::ModelObject &model_object) const;
+    Domain::Transform3d sla_trafo(const Domain::ModelObject &model_object) const;
 
 	std::string                 output_filename(const std::string &filename_base = std::string()) const override;
 
@@ -394,12 +400,12 @@ public:
     // occupied layer. Slice record levels dont have to match exactly.
     // They are unified if the level difference is within +/- SCALED_EPSILON
     class PrintLayer {
-        coord_t m_level;
+        Domain::coord_t m_level;
 
         // The collection of slice records for the current level.
         std::vector<std::reference_wrapper<const SliceRecord>> m_slices;
 
-        ExPolygons m_transformed_slices;
+        Domain::ExPolygons m_transformed_slices;
 
         template<class Container> void transformed_slices(Container&& c)
         {
@@ -410,7 +416,7 @@ public:
 
     public:
         
-        explicit PrintLayer(coord_t lvl) : m_level(lvl) {}
+        explicit PrintLayer(Domain::coord_t lvl) : m_level(lvl) {}
 
         // for being sorted in their container (see m_printer_input)
         bool operator<(const PrintLayer& other) const {
@@ -419,11 +425,11 @@ public:
 
         void add(const SliceRecord& sr) { m_slices.emplace_back(sr); }
 
-        coord_t level() const { return m_level; }
+        Domain::coord_t level() const { return m_level; }
 
         auto slices() const -> const decltype (m_slices)& { return m_slices; }
 
-        const ExPolygons & transformed_slices() const {
+        const Domain::ExPolygons & transformed_slices() const {
             return m_transformed_slices;
         }
     };

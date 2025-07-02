@@ -7,16 +7,17 @@
 #define slic3r_ExtrusionRole_hpp_
 
 #include "Slic3r/Domain/GCodeExtrusionRole.hpp"
-#include "libslic3r/enum_bitmask.hpp"
+#include "Slic3r/Domain/enum_bitmask.hpp"
 
 #include <string>
 #include <string_view>
 #include <cstdint>
 
-namespace Slic3r {
+namespace Slic3r::Domain {
 
-enum class ExtrusionRoleModifier : uint16_t {
-// 1) Extrusion types
+enum class ExtrusionRoleModifier : uint16_t
+{
+    // 1) Extrusion types
     // Perimeter (external, inner, ...)
     Perimeter,
     // Infill (top / bottom / solid inner / sparse inner / bridging inner ...)
@@ -27,24 +28,31 @@ enum class ExtrusionRoleModifier : uint16_t {
     Support,
     Skirt,
     Wipe,
-// 2) Extrusion modifiers
+    // 2) Extrusion modifiers
     External,
     Solid,
     Ironing,
     Bridge,
     OverBridge,
-// 3) Special types
+    // 3) Special types
     // Indicator that the extrusion role was mixed from multiple differing extrusion roles,
     // for example from Support and SupportInterface.
     Mixed,
     // Stopper, there should be maximum 16 modifiers defined for uint16_t bit mask.
     Count
 };
+
+} // namespace Slic3r::Domain
+
+namespace Slic3r {
+
+using ExtrusionRoleModifier = Domain::ExtrusionRoleModifier;
+
 // There should be maximum 16 modifiers defined for uint16_t bit mask.
 static_assert(int(ExtrusionRoleModifier::Count) <= 16, "ExtrusionRoleModifier: there must be maximum 16 modifiers defined to fit a 16 bit bitmask");
 
-using ExtrusionRoleModifiers = enum_bitmask<ExtrusionRoleModifier>;
-ENABLE_ENUM_BITMASK_OPERATORS(ExtrusionRoleModifier);
+using ExtrusionRoleModifiers = Domain::enum_bitmask<ExtrusionRoleModifier>;
+template<> struct Domain::is_enum_bitmask_type<ExtrusionRoleModifier> { static constexpr const bool enable = true; };
 
 struct ExtrusionRole : public ExtrusionRoleModifiers
 {
@@ -53,9 +61,9 @@ struct ExtrusionRole : public ExtrusionRoleModifiers
 
     static constexpr const ExtrusionRoleModifiers None{};
     // Internal perimeter, not bridging.
-    static constexpr const ExtrusionRoleModifiers Perimeter{ ExtrusionRoleModifier::Perimeter };
+    static constexpr const ExtrusionRoleModifiers Perimeter{ Domain::ExtrusionRoleModifier::Perimeter };
     // External perimeter, not bridging.
-    static constexpr const ExtrusionRoleModifiers ExternalPerimeter{ ExtrusionRoleModifier::Perimeter | ExtrusionRoleModifier::External };
+    static constexpr const ExtrusionRoleModifiers ExternalPerimeter{ Domain::ExtrusionRoleModifier::Perimeter | Domain::ExtrusionRoleModifier::External };
     // Perimeter, bridging. To be or'ed with ExtrusionRoleModifier::External for external bridging perimeter.
     static constexpr const ExtrusionRoleModifiers OverhangPerimeter{ ExtrusionRoleModifier::Perimeter | ExtrusionRoleModifier::Bridge };
     // Sparse internal infill.

@@ -5,7 +5,7 @@
 #ifndef SLICECSGMESH_HPP
 #define SLICECSGMESH_HPP
 
-#include "CSGMesh.hpp"
+#include "libslic3r/CSGMesh/CSGMesh.hpp"
 
 #include <stack>
 

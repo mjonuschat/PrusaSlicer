@@ -18,6 +18,7 @@
 #include "libslic3r/GCode/SeamRandom.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
+#include "libslic3r/Layer.hpp"
 
 using namespace Slic3r::Biz;
 

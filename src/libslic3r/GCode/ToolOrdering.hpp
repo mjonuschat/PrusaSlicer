@@ -19,8 +19,8 @@
 #include <cinttypes>
 
 #include "Slic3r/Domain/CustomGCode.hpp"
-#include "libslic3r/libslic3r.h"
-#include "libslic3r/PrintConfig.hpp"
+
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
 

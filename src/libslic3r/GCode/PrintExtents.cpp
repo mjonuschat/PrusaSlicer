@@ -12,13 +12,13 @@
 #include <vector>
 #include <cstddef>
 
-#include "../BoundingBox.hpp"
-#include "../ExtrusionEntity.hpp"
-#include "../ExtrusionEntityCollection.hpp"
-#include "../Layer.hpp"
-#include "../Print.hpp"
-#include "PrintExtents.hpp"
-#include "WipeTower.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/GCode/PrintExtents.hpp"
+#include "libslic3r/GCode/WipeTower.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/LayerRegion.hpp"

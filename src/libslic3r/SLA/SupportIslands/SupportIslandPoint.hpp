@@ -5,7 +5,7 @@
 #include <memory>
 #include <libslic3r/Point.hpp>
 #include "VoronoiGraph.hpp"
-#include "SampleConfig.hpp"
+#include "libslic3r/SLA/SupportIslands/SampleConfig.hpp"
 
 namespace Slic3r::sla {
 

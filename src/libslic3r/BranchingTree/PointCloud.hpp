@@ -5,8 +5,6 @@
 #ifndef POINTCLOUD_HPP
 #define POINTCLOUD_HPP
 
-#include <assert.h>
-#include <stddef.h>
 #include <boost/geometry.hpp>
 #include <optional>
 #include <Eigen/Geometry>
@@ -17,20 +15,22 @@
 #include <vector>
 #include <cassert>
 #include <cstdlib>
+#include <cstddef>
 
 #include "BranchingTree.hpp"
 //#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/MutablePriorityQueue.hpp"
 #include "libslic3r/BoostAdapter.hpp"
 #include "boost/geometry/index/rtree.hpp"
-#include "libslic3r/BoundingBox.hpp"
+
+#include "Slic3r/Domain/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/libslic3r.h"
 
 struct indexed_triangle_set;
 
-namespace Slic3r { namespace branchingtree {
+namespace Slic3r::branchingtree {
 
 std::optional<Vec3f> find_merge_pt(const Vec3f &A,
                                    const Vec3f &B,
@@ -48,15 +48,15 @@ std::vector<Node> sample_bed(const ExPolygons &bed,
 
 enum PtType { LEAF, MESH, BED, JUNCTION, NONE };
 
-inline BoundingBox3Base<Vec3f> get_support_cone_bb(const Vec3f &p, const Properties &props)
+inline Domain::BoundingBox3f get_support_cone_bb(const Domain::Vec3f &p, const Properties &props)
 {
     double gnd = props.ground_level() - EPSILON;
     double h   = p.z() - gnd;
     double phi = PI / 2 - props.max_slope();
     auto   r   = float(std::min(h * std::tan(phi), props.max_branch_length() * std::sin(phi)));
 
-    Vec3f bb_min = {p.x() - r, p.y() - r, float(gnd)};
-    Vec3f bb_max = {p.x() + r, p.y() + r, p.z()};
+    Domain::Vec3f bb_min = {p.x() - r, p.y() - r, float(gnd)};
+    Domain::Vec3f bb_max = {p.x() + r, p.y() + r, p.z()};
 
     return {bb_min, bb_max};
 }
@@ -239,10 +239,10 @@ public:
 
         namespace bgi = boost::geometry::index;
         float brln = 2 * m_props.max_branch_length();
-        BoundingBox3Base<Vec3f> bb{{pos.x() - brln, pos.y() - brln,
-                                    float(m_props.ground_level() - EPSILON)},
-                                   {pos.x() + brln, pos.y() + brln,
-                                    m_ktree.bounds().max_corner().get<Z>()}};
+        Domain::BoundingBox3f bb{{pos.x() - brln, pos.y() - brln,
+                                  float(m_props.ground_level() - EPSILON)},
+                                 {pos.x() + brln, pos.y() + brln,
+                                  m_ktree.bounds().max_corner().get<Z>()}};
 
         // Extend upwards to find mergable junctions and support points
         bb.max.z() = m_ktree.bounds().max_corner().get<Z>();
@@ -310,6 +310,6 @@ inline void build_tree(PointCloud &&pc, Builder &builder)
     build_tree(pc, builder);
 }
 
-}} // namespace Slic3r::branchingtree
+} // namespace Slic3r::branchingtree
 
 #endif // POINTCLOUD_HPP

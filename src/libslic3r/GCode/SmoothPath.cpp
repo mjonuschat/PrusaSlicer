@@ -6,8 +6,8 @@
 #include <utility>
 #include <cassert>
 
-#include "../ExtrusionEntity.hpp"
-#include "../ExtrusionEntityCollection.hpp"
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/Geometry/ArcWelder.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polyline.hpp"

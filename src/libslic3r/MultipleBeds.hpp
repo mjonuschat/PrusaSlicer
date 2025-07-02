@@ -1,10 +1,12 @@
 #ifndef libslic3r_MultipleBeds_hpp_
 #define libslic3r_MultipleBeds_hpp_
 
-#include "libslic3r/Model.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
-#include "libslic3r/Point.hpp"
-#include "libslic3r/BoundingBox.hpp"
+
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
 #include <map>
@@ -14,6 +16,8 @@ class Model;
 } // namespace Slic3r::Domain
 
 namespace Slic3r {
+
+constexpr size_t MAX_NUMBER_OF_BEDS = 9;
 
 class BuildVolume;
 class PrintBase;
@@ -53,7 +57,7 @@ public:
 	MultipleBeds() = default;
 
 	static constexpr int get_max_beds() { return MAX_NUMBER_OF_BEDS; };
-	Vec3d get_bed_translation(int id) const;
+	Domain::Vec3d get_bed_translation(int id) const;
 
 	void   clear_inst_map();
 	void   set_instance_bed(Domain::ObjectID id, bool printable, int bed_idx);
@@ -87,21 +91,21 @@ public:
 	void   set_loading_project_flag(bool project) { m_loading_project = project; }
 	bool   get_loading_project_flag() const { return m_loading_project; }
 
-	void   update_build_volume(const BoundingBoxf& build_volume_bb) {
+	void   update_build_volume(const Domain::BoundingBox2d& build_volume_bb) {
         m_build_volume_bb = build_volume_bb;
     }
-	Vec2d   get_bed_size() const { return m_build_volume_bb.size(); }
-	BoundingBoxf get_build_volume_box() const { return m_build_volume_bb; }
-    BoundingBox get_bed_box() const
+    Domain::Vec2d get_bed_size() const { return Biz::Algorithms::BoundingBox::sizes(m_build_volume_bb); }
+    Domain::BoundingBox2d get_build_volume_box() const { return m_build_volume_bb; }
+    Domain::BoundingBox2crd get_bed_box() const
     {
         using Slic3r::Biz::Algorithms::Point::round;
-        return BoundingBox(
-            round(Vec2d{m_build_volume_bb.min.x(), m_build_volume_bb.min.y()}).cast<coord_t>(),
-            round(Vec2d{m_build_volume_bb.max.x(), m_build_volume_bb.max.y()}).cast<coord_t>()
+        return Domain::BoundingBox2crd(
+            round(Domain::Vec2d{m_build_volume_bb.min.x(), m_build_volume_bb.min.y()}).cast<Domain::coord_t>(),
+            round(Domain::Vec2d{m_build_volume_bb.max.x(), m_build_volume_bb.max.y()}).cast<Domain::coord_t>()
         );
     }
-    Vec2d   bed_gap() const;
-	Vec2crd get_bed_gap() const;
+    Domain::Vec2d bed_gap() const;
+    Domain::Vec2crd get_bed_gap() const;
 
 	void   start_autoslice(std::function<void(int,bool)>);
 	bool   stop_autoslice(bool restore_original);
@@ -119,7 +123,7 @@ private:
 	std::map<PrintBase*, size_t> m_printbase_to_texture;
 	std::array<int, MAX_NUMBER_OF_BEDS> m_occupied_beds_cache;
 	int m_last_hovered_bed = -1;
-	BoundingBoxf m_build_volume_bb;
+	Domain::BoundingBox2d m_build_volume_bb;
 	bool m_legacy_layout = false;
 	bool m_loading_project = false;
 
@@ -132,7 +136,7 @@ extern MultipleBeds s_multiple_beds;
 
 namespace MultipleBedsUtils {
 
-using InstanceOffsets = std::vector<Vec3d>;
+using InstanceOffsets = std::vector<Domain::Vec3d>;
 // The bool is true if the instance is printable.
 // The order is from 'for o in objects; for i in o.instances.
 InstanceOffsets get_instance_offsets(Domain::Model& model);

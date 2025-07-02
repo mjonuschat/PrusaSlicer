@@ -10,7 +10,7 @@
 #include <cstddef>
 
 #include "Slic3r/Exception.hpp"
-#include "Print.hpp"
+#include "libslic3r/Print.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/PrintConfig.hpp"

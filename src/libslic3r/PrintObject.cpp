@@ -44,7 +44,7 @@
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/BoundingBox.hpp"
-#include "Geometry.hpp"
+#include "libslic3r/Geometry.hpp"
 #include "libslic3r/I18N.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/PrintBase.hpp"

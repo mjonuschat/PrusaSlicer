@@ -8,9 +8,6 @@
 #include "Field.hpp"
 #include "OG_CustomCtrl.hpp"
 
-//#include "Plater.hpp"
-//#include "MainFrame.hpp"
-
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/MsgDialog.hpp>
@@ -22,8 +19,13 @@
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/enum_bitmask.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include "libslic3r/GCode/Thumbnails.hpp"
+
+#include "LocalesUtils.hpp"
+
+#include "libslic3r/libslic3r_version.h"
 
 #include <regex>
 #include <wx/tooltip.h>
@@ -39,6 +41,8 @@
 #endif
 
 using Slic3r::Domain::ColorRGB;
+using Slic3r::Domain::enum_bitmask;
+using Slic3r::Domain::Vec2d;
 
 using Slic3r::Biz::Algorithms::Color::encode_color;
 

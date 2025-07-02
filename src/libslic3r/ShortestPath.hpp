@@ -10,9 +10,9 @@
 #include <vector>
 #include <cstddef>
 
-#include "libslic3r.h"
-#include "ExtrusionEntity.hpp"
-#include "Point.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/Point.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Polyline.hpp"
 

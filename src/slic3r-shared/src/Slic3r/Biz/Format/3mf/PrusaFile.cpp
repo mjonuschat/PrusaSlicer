@@ -13,6 +13,9 @@
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+using Slic3r::Domain::Vec3d;
 
 namespace Slic3r {
     extern std::unique_ptr<const Persist3mfData> g_load_from_3mf;

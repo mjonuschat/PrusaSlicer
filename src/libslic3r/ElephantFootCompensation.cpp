@@ -18,7 +18,7 @@
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/ElephantFootCompensation.hpp"
 #include "libslic3r/Flow.hpp"
-#include "Geometry.hpp"
+#include "libslic3r/Geometry.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"

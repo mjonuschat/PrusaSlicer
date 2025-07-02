@@ -20,8 +20,8 @@
 #include <boost/filesystem/operations.hpp>
 
 #include "Slic3r/Domain/TriangleSelector.hpp"
-#include "Model.hpp"
-#include "Print.hpp"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/Print.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/CustomGCode.hpp"

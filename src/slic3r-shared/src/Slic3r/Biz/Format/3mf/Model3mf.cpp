@@ -24,7 +24,7 @@
 #include <boost/spirit/include/karma.hpp>
 
 #include "libslic3r/Utils.hpp" // ScopeGuard
-#include "libslic3r_version.h"
+#include "libslic3r/libslic3r_version.h"
 
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Vec3f;

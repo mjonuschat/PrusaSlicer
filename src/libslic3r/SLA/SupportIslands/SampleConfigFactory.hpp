@@ -2,7 +2,7 @@
 #define slic3r_SLA_SuppotstIslands_SampleConfigFactory_hpp_
 
 #include <optional>
-#include "SampleConfig.hpp"
+#include "libslic3r/SLA/SupportIslands/SampleConfig.hpp"
 #include "libslic3r/PrintConfig.hpp"
 
 //#define USE_ISLAND_GUI_FOR_SETTINGS

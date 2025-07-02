@@ -12,9 +12,9 @@
 #include <cstddef>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "ClipperUtils.hpp"
-#include "Geometry/ConvexHull.hpp"
-#include "Point.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Geometry/ConvexHull.hpp"
+#include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/libpgcode/Types.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/BoundingBox.hpp"
@@ -23,7 +23,7 @@
 #include "libslic3r/Geometry/Circle.hpp"
 #include "libslic3r/Polygon.hpp"
 
-#include "MultipleBeds.hpp"
+#include "libslic3r/MultipleBeds.hpp"
 
 using namespace Slic3r::Biz;
 

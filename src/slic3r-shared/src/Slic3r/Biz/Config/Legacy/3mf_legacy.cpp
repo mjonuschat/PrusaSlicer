@@ -4,7 +4,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include "libslic3r_version.h"
+#include "libslic3r/libslic3r_version.h"
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Types.hpp"

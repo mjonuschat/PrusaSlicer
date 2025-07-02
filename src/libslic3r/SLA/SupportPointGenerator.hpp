@@ -10,14 +10,17 @@
 
 #include <boost/container/small_vector.hpp>
 
-#include "libslic3r/Point.hpp"
-#include "libslic3r/ExPolygon.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "libslic3r/SLA/SupportIslands/SampleConfig.hpp"
 
 namespace Slic3r::sla {
 
-std::vector<Vec2f> create_default_support_curve();
+std::vector<Domain::Vec2f> create_default_support_curve();
 SampleConfig create_default_island_configuration(float head_diameter_in_mm);
 
 /// <summary>
@@ -41,7 +44,7 @@ struct SupportPointGeneratorConfig{
     // x axis .. mean distance on layer(XY)
     // y axis .. mean difference of height(Z)
     // Points of lines [in mm]
-    std::vector<Vec2f> support_curve = create_default_support_curve();
+    std::vector<Domain::Vec2f> support_curve = create_default_support_curve();
 
     // Configuration for sampling island
     SampleConfig island_configuration = create_default_island_configuration(head_diameter);
@@ -70,7 +73,7 @@ struct Peninsula{
 
     // Prev layer is extended by self support const and subtracted from current one.
     // This part of layer is supported as island
-    ExPolygon unsuported_area;
+    Domain::ExPolygon unsuported_area;
 
     // Flag for unsuported_area line about source
     // Same size as Slic3r::to_lines(unsuported_area)
@@ -83,16 +86,16 @@ using Peninsulas = std::vector<Peninsula>;
 // Part on layer is defined by its shape 
 struct LayerPart {
     // Pointer to expolygon stored in input
-    const ExPolygon *shape;
+    const Domain::ExPolygon *shape;
 
     // To detect irelevant support poinst for part
-    ExPolygons extend_shape;
+    Domain::ExPolygons extend_shape;
 
     // rectangular bounding box of shape
-    BoundingBox shape_extent;
+    Domain::BoundingBox2crd shape_extent;
 
     // uniformly sampled shape contour
-    Points samples;
+    Domain::Points samples;
 
     // Parts from previous printed layer, which is connected to current part
     PartLinks prev_parts;
@@ -109,11 +112,11 @@ struct LayerSupportPoint: public Domain::SLA::SupportPoint
 {
     // 2d coordinate on layer
     // use only when part is not nullptr
-    Point position_on_layer; // [scaled_ unit]
+    Domain::Point position_on_layer; // [scaled_ unit]
 
     // index into curve to faster found radius for current layer
     size_t radius_curve_index = 0;
-    coord_t current_radius = 0; // [in scaled mm]
+    Domain::coord_t current_radius = 0; // [in scaled mm]
 
     // information whether support point is active in current investigated layer
     // Flagged false when no part on layer in Radius 'r' around support point
@@ -146,7 +149,7 @@ using Layers = std::vector<Layer>;
 struct SupportPointGeneratorData
 {
     // Input slices of mesh
-    std::vector<ExPolygons> slices;
+    std::vector<Domain::ExPolygons> slices;
 
     // Keep information about layer and its height
     // and connection between layers for its part
@@ -170,7 +173,7 @@ struct PrepareGeneratorDataConfig
 
     // Define minimal width of overhang to be considered as peninsula
     // (partialy island - sampled not on edge)
-    coord_t peninsula_width = scale_(2.); // [in scaled mm]
+    Domain::coord_t peninsula_width = scale_(2.); // [in scaled mm]
 };
 
 /// <summary>
@@ -186,7 +189,7 @@ struct PrepareGeneratorDataConfig
 /// <param name="statusfn">Say progress of generation into gui</param>
 /// <returns>Data prepared for generate support points</returns>
 SupportPointGeneratorData prepare_generator_data(
-    std::vector<ExPolygons> &&slices,
+    std::vector<Domain::ExPolygons> &&slices,
     const std::vector<float> &heights,
     const PrepareSupportConfig &config = {},
     ThrowOnCancel throw_on_cancel = []() {},

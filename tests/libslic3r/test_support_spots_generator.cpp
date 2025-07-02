@@ -1,9 +1,22 @@
-#include "libslic3r/Point.hpp"
-#include "libslic3r/libslic3r.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <libslic3r/SupportSpotsGenerator.hpp>
+
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/SupportSpotsGenerator.hpp"
+
+using Slic3r::Domain::ExPolygon;
+using Slic3r::Domain::Point;
+using Slic3r::Domain::Polygon;
+using Slic3r::Domain::Polygons;
+using Slic3r::Domain::Polyline;
+using Slic3r::Domain::Vec2f;
+using Slic3r::Domain::Vec3f;
+
+using Slic3r::Biz::Algorithms::Scaling::scaled;
 
 using namespace Slic3r;
 using namespace SupportSpotsGenerator;

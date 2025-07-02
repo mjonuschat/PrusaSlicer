@@ -20,11 +20,11 @@
 #include <cstddef>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "../AABBTreeLines.hpp"
-#include "../ClipperUtils.hpp"
-#include "../Polygon.hpp"
-#include "../MutablePolygon.hpp"
-#include "../TriangleMeshSlicer.hpp"
+#include "libslic3r/AABBTreeLines.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/MutablePolygon.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/AABBTreeIndirect.hpp"
 #include "libslic3r/Line.hpp"

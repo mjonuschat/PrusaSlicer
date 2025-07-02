@@ -1,9 +1,10 @@
 #include <span>
 
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
-#include "libpgcode/include/Slic3r/Biz/libpgcode/Types.hpp"
+#include "Slic3r/Biz/libpgcode/Types.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/PrePreview.hpp"
+#include "libslic3r/Layer.hpp"
 
 using namespace Slic3r::Biz;
 

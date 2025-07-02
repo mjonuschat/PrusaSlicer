@@ -13,9 +13,11 @@
 #include "Slic3r/Domain/Polyline.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/BoundingBox.hpp"
-
 #include <boost/geometry.hpp>
+
+namespace Slic3r {
+template<int N, class T> using LegacyVec = Slic3r::Domain::Advanced::Vec<T, N>;
+} // namespace Slic3r
 
 namespace boost {
 
@@ -107,60 +109,30 @@ struct indexed_access<Slic3r::Domain::BoundingBox2crd, 1, d> {
     }
 };
 
-template<> struct tag<Slic3r::BoundingBox> {
+template<> struct tag<Slic3r::Domain::BoundingBox3f> {
     using type = box_tag;
 };
 
-template<> struct point_type<Slic3r::BoundingBox> {
-    using type = Slic3r::Domain::Point;
+template<> struct point_type<Slic3r::Domain::BoundingBox3f> {
+    using type = Slic3r::Domain::Vec3f;
 };
 
 template<std::size_t d>
-struct indexed_access<Slic3r::BoundingBox, 0, d> {
-    static inline Slic3r::Domain::coord_t get(Slic3r::BoundingBox const& box) {
+struct indexed_access<Slic3r::Domain::BoundingBox3f, 0, d> {
+    static inline Slic3r::Domain::coord_t get(Slic3r::Domain::BoundingBox3f const& box) {
         return box.min(d);
     }
-    static inline void set(Slic3r::BoundingBox &box, Slic3r::Domain::coord_t const& coord) {
+    static inline void set(Slic3r::Domain::BoundingBox3f &box, Slic3r::Domain::coord_t const& coord) {
         box.min(d) = coord;
     }
 };
 
 template<std::size_t d>
-struct indexed_access<Slic3r::BoundingBox, 1, d> {
-    static inline Slic3r::Domain::coord_t get(Slic3r::BoundingBox const& box) {
+struct indexed_access<Slic3r::Domain::BoundingBox3f, 1, d> {
+    static inline Slic3r::Domain::coord_t get(Slic3r::Domain::BoundingBox3f const& box) {
         return box.max(d);
     }
-    static inline void set(Slic3r::BoundingBox &box, Slic3r::Domain::coord_t const& coord) {
-        box.max(d) = coord;
-    }
-};
-
-template <class T> using BB3 = Slic3r::BoundingBox3Base<Slic3r::LegacyVec<3, T>>;
-
-template<class T> struct tag<BB3<T>> {
-    using type = box_tag;
-};
-
-template<class T> struct point_type<BB3<T>> {
-    using type = Slic3r::LegacyVec<3, T>;
-};
-
-template<class T, std::size_t d>
-struct indexed_access<BB3<T>, 0, d> {
-    static inline Slic3r::Domain::coord_t get(BB3<T> const& box) {
-        return box.min(d);
-    }
-    static inline void set(BB3<T> &box, Slic3r::Domain::coord_t const& coord) {
-        box.min(d) = coord;
-    }
-};
-
-template<class T, std::size_t d>
-struct indexed_access<BB3<T>, 1, d> {
-    static inline Slic3r::Domain::coord_t get(BB3<T> const& box) {
-        return box.max(d);
-    }
-    static inline void set(BB3<T> &box, Slic3r::Domain::coord_t const& coord) {
+    static inline void set(Slic3r::Domain::BoundingBox3f &box, Slic3r::Domain::coord_t const& coord) {
         box.max(d) = coord;
     }
 };

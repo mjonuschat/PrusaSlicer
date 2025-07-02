@@ -5,7 +5,7 @@
 #ifndef MODELTOCSGMESH_HPP
 #define MODELTOCSGMESH_HPP
 
-#include "CSGMesh.hpp"
+#include "libslic3r/CSGMesh/CSGMesh.hpp"
 
 #include "libslic3r/Model.hpp"
 #include "libslic3r/SLA/Hollowing.hpp"

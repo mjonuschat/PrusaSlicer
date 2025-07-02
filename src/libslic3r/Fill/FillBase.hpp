@@ -10,12 +10,7 @@
 #ifndef slic3r_FillBase_hpp_
 #define slic3r_FillBase_hpp_
 
-#include <assert.h>
 #include <memory.h>
-#include <float.h>
-#include <stdint.h>
-#include <math.h>
-#include <stddef.h>
 #include <stdexcept>
 #include <type_traits>
 #include <string>
@@ -24,22 +19,27 @@
 #include <cfloat>
 #include <cmath>
 #include <cstddef>
+#include <cassert>
+#include <cstdint>
 
-#include "libslic3r/libslic3r.h"
-#include "libslic3r/BoundingBox.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Polyline.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Exception.hpp"
+
 #include "libslic3r/Utils.hpp"
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/PrintConfig.hpp"
-#include "libslic3r/Point.hpp"
-#include "libslic3r/Polygon.hpp"
-#include "libslic3r/Polyline.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
 
 class Surface;
 class PrintConfigView;
 class PrintObjectConfigView;
+struct ThickPolyline;
+using ThickPolylines = std::vector<ThickPolyline>;
 
 namespace FillAdaptive {
     struct Octree;
@@ -105,11 +105,11 @@ public:
     // In scaled coordinates. Maximum lenght of a perimeter segment connecting two infill lines.
     // Used by the FillRectilinear2, FillGrid2, FillTriangles, FillStars and FillCubic.
     // If left to zero, the links will not be limited.
-    coord_t     link_max_length;
+    Domain::coord_t link_max_length;
     // In scaled coordinates. Used by the concentric infill pattern to clip the loops to create extrusion paths.
-    coord_t     loop_clipping;
+    Domain::coord_t loop_clipping;
     // In scaled coordinates. Bounding box of the 2D projection of the object.
-    BoundingBox bounding_box;
+    Domain::BoundingBox2crd bounding_box;
 
     // Octree builds on mesh for usage in the adaptive cubic infill
     FillAdaptive::Octree* adapt_fill_octree = nullptr;
@@ -125,7 +125,7 @@ public:
     static Fill* new_from_type(const std::string &type);
     static bool  use_bridge_flow(const Domain::InfillPattern type);
 
-    void         set_bounding_box(const Slic3r::BoundingBox &bbox) { bounding_box = bbox; }
+    void         set_bounding_box(const Domain::BoundingBox2crd &bbox) { bounding_box = bbox; }
 
     // Use bridge flow for the fill?
     virtual bool use_bridge_flow() const { return false; }
@@ -139,7 +139,7 @@ public:
     virtual bool has_consistent_pattern() const { return false; }
 
     // Perform the fill.
-    virtual Polylines fill_surface(const Surface *surface, const FillParams &params);
+    virtual Domain::Polylines fill_surface(const Surface *surface, const FillParams &params);
     virtual ThickPolylines fill_surface_arachne(const Surface *surface, const FillParams &params);
 
 protected:
@@ -154,37 +154,37 @@ protected:
         link_max_length(0),
         loop_clipping(0),
         // The initial bounding box is empty, therefore undefined.
-        bounding_box(Point(0, 0), Point(-1, -1))
+        bounding_box(Domain::Point(0, 0), Domain::Point(-1, -1))
         {}
 
     // The expolygon may be modified by the method to avoid a copy.
     virtual void    _fill_surface_single(
         const FillParams                & /* params */,
         unsigned int                      /* thickness_layers */,
-        const std::pair<float, Point>   & /* direction */,
-        ExPolygon                         /* expolygon */,
-        Polylines                       & /* polylines_out */) {}
+        const std::pair<float, Domain::Point>   & /* direction */,
+        Domain::ExPolygon                         /* expolygon */,
+        Domain::Polylines                       & /* polylines_out */) {}
 
     // Used for concentric infill to generate ThickPolylines using Arachne.
     virtual void _fill_surface_single(const FillParams              &params,
                                       unsigned int                   thickness_layers,
-                                      const std::pair<float, Point> &direction,
-                                      ExPolygon                      expolygon,
+                                      const std::pair<float, Domain::Point> &direction,
+                                      Domain::ExPolygon              expolygon,
                                       ThickPolylines                &thick_polylines_out) {}
 
     virtual float _layer_angle(size_t idx) const { return (idx & 1) ? float(M_PI/2.) : 0; }
 
 
 public:
-    virtual std::pair<float, Point> _infill_direction(const Surface *surface) const;
-    static void connect_infill(Polylines &&infill_ordered, const ExPolygon &boundary, Polylines &polylines_out, const double spacing, const FillParams &params);
-    static void connect_infill(Polylines &&infill_ordered, const Polygons &boundary, const BoundingBox& bbox, Polylines &polylines_out, const double spacing, const FillParams &params);
-    static void connect_infill(Polylines &&infill_ordered, const std::vector<const Polygon*> &boundary, const BoundingBox &bbox, Polylines &polylines_out, double spacing, const FillParams &params);
+    virtual std::pair<float, Domain::Point> _infill_direction(const Surface *surface) const;
+    static void connect_infill(Domain::Polylines &&infill_ordered, const Domain::ExPolygon &boundary, Domain::Polylines &polylines_out, const double spacing, const FillParams &params);
+    static void connect_infill(Domain::Polylines &&infill_ordered, const Domain::Polygons &boundary, const Domain::BoundingBox2crd& bbox, Domain::Polylines &polylines_out, const double spacing, const FillParams &params);
+    static void connect_infill(Domain::Polylines &&infill_ordered, const std::vector<const Domain::Polygon*> &boundary, const Domain::BoundingBox2crd &bbox, Domain::Polylines &polylines_out, double spacing, const FillParams &params);
 
-    static void connect_base_support(Polylines &&infill_ordered, const std::vector<const Polygon*> &boundary_src, const BoundingBox &bbox, Polylines &polylines_out, const double spacing, const FillParams &params);
-    static void connect_base_support(Polylines &&infill_ordered, const Polygons &boundary_src, const BoundingBox &bbox, Polylines &polylines_out, const double spacing, const FillParams &params);
+    static void connect_base_support(Domain::Polylines &&infill_ordered, const std::vector<const Domain::Polygon*> &boundary_src, const Domain::BoundingBox2crd &bbox, Domain::Polylines &polylines_out, const double spacing, const FillParams &params);
+    static void connect_base_support(Domain::Polylines &&infill_ordered, const Domain::Polygons &boundary_src, const Domain::BoundingBox2crd &bbox, Domain::Polylines &polylines_out, const double spacing, const FillParams &params);
 
-    static coord_t  _adjust_solid_spacing(const coord_t width, const coord_t distance);
+    static Domain::coord_t _adjust_solid_spacing(const Domain::coord_t width, const Domain::coord_t distance);
 };
 
 } // namespace Slic3r

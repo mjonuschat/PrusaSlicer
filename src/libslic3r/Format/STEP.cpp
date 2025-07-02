@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "STEP.hpp"
-#include "occt_wrapper/OCCTWrapper.hpp"
+#include "../../occt_wrapper/OCCTWrapper.hpp"
 
 #include "libslic3r/Model.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
@@ -20,7 +20,7 @@
 #ifdef _WIN32
     #include<windows.h>
 #else
-    #include<occt_wrapper/OCCTWrapper.hpp>
+    #include "../../occt_wrapper/OCCTWrapper.hpp"
     #include <dlfcn.h>
 #endif
 

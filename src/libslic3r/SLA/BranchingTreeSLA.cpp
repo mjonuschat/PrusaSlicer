@@ -19,7 +19,7 @@
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "SupportTreeUtils.hpp"
 #include "libslic3r/BranchingTree/PointCloud.hpp"
-#include "Pad.hpp"
+#include "libslic3r/SLA/Pad.hpp"
 #include "libslic3r/BranchingTree/BranchingTree.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"

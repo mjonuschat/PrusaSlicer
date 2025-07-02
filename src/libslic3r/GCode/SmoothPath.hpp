@@ -6,8 +6,11 @@
 #include <vector>
 #include <tcbspan/span.hpp>
 
-#include "../ExtrusionEntity.hpp"
-#include "../Geometry/ArcWelder.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polyline.hpp"
+
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/Geometry/ArcWelder.hpp"
 
 namespace Slic3r {
 
@@ -28,8 +31,8 @@ double length(const SmoothPath &path);
 // Returns true if the smooth path is longer than a threshold.
 bool longer_than(const SmoothPath &path, const double length);
 
-std::optional<Point> sample_path_point_at_distance_from_start(const SmoothPath &path, double distance);
-std::optional<Point> sample_path_point_at_distance_from_end(const SmoothPath &path, double distance);
+std::optional<Domain::Point> sample_path_point_at_distance_from_start(const SmoothPath &path, double distance);
+std::optional<Domain::Point> sample_path_point_at_distance_from_end(const SmoothPath &path, double distance);
 
 // Clip end of a smooth path, for seam hiding.
 // When clipping the end of a path, don't create segments shorter than min_point_distance_threshold, 
@@ -51,7 +54,7 @@ public:
     void interpolate_add(const ExtrusionLoop             &ee,  const InterpolationParameters &params);
     void interpolate_add(const ExtrusionEntityCollection &eec, const InterpolationParameters &params);
 
-    const Geometry::ArcWelder::Path* resolve(const Polyline      *pl) const;
+    const Geometry::ArcWelder::Path* resolve(const Domain::Polyline *pl) const;
     const Geometry::ArcWelder::Path* resolve(const ExtrusionPath &path) const;
 
     // Look-up a smooth representation of path in the cache. If it does not exist, produce a simplified polyline.
@@ -64,10 +67,10 @@ public:
     // Look-up a smooth representation of path in the cache. If it does not exist, produce a simplified polyline.
     SmoothPath                       resolve_or_fit_split_with_seam(
         const ExtrusionLoop &path, const bool reverse, const double resolution,
-        const Point &seam_point, const double seam_point_merge_distance_threshold) const;
+        const Domain::Point &seam_point, const double seam_point_merge_distance_threshold) const;
 
 private:
-    ankerl::unordered_dense::map<const Polyline*, Geometry::ArcWelder::Path>    m_cache;
+    ankerl::unordered_dense::map<const Domain::Polyline*, Geometry::ArcWelder::Path>    m_cache;
 };
 
 // Encapsulates references to global and layer local caches of smooth extrusion paths.

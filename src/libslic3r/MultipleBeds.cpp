@@ -1,11 +1,16 @@
-#include "MultipleBeds.hpp"
+#include "libslic3r/MultipleBeds.hpp"
 
-#include "BuildVolume.hpp"
-#include "Model.hpp"
-#include "Print.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+
+#include "libslic3r/BuildVolume.hpp"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/Print.hpp"
 
 #include <cassert>
 #include <algorithm>
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -121,9 +126,9 @@ Vec3d MultipleBeds::get_bed_translation(int id) const
 
     // As for the m_legacy_layout switch, see comments at definition of bed_gap_relative.
     Vec2d  gap = bed_gap();
-    double gap_x = (m_legacy_layout ? m_build_volume_bb.size().x() * (2./10.) : gap.x());
-    return Vec3d(x * (m_build_volume_bb.size().x() + gap_x),
-                 y * (m_build_volume_bb.size().y() + gap.y()), // When using legacy layout, y is zero anyway.
+    double gap_x = (m_legacy_layout ? Algorithms::BoundingBox::sizes(m_build_volume_bb).x() * (2./10.) : gap.x());
+    return Vec3d(x * (Algorithms::BoundingBox::sizes(m_build_volume_bb).x() + gap_x),
+                 y * (Algorithms::BoundingBox::sizes(m_build_volume_bb).y() + gap.y()), // When using legacy layout, y is zero anyway.
                  0.);
 }
 
@@ -445,7 +450,7 @@ Vec2d MultipleBeds::bed_gap() const
     
     // TOUCHING THIS WILL BREAK LOADING OF EXISTING PROJECTS !!!
 
-    double gap = std::min(100., m_build_volume_bb.size().norm() * (3./10.));
+    double gap = std::min(100., Algorithms::BoundingBox::sizes(m_build_volume_bb).norm() * (3./10.));
     return Vec2d::Ones() * gap;
 }
 

@@ -5,11 +5,6 @@
 #ifndef SLA_HOLLOWING_HPP
 #define SLA_HOLLOWING_HPP
 
-#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include <libslic3r/OpenVDBUtils.hpp>
-#include <libslic3r/SLA/JobController.hpp>
-#include <libslic3r/CSGMesh/VoxelizeCSGMesh.hpp>
-#include <stddef.h>
 #include <memory>
 #include <algorithm>
 #include <array>
@@ -18,12 +13,13 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/SLA/DrainHole.hpp"
-#include "admesh/stl.h"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Point.hpp"
-#include "libslic3r/libslic3r.h"
+#include "libslic3r/CSGMesh/VoxelizeCSGMesh.hpp"
+#include "libslic3r/SLA/JobController.hpp"
 
 namespace Slic3r {
 
@@ -160,13 +156,13 @@ void remove_inside_triangles(Domain::TriangleMesh &mesh, const Interior &interio
 void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interior,
                              const std::vector<bool> &exclude_mask = {});
 
-void transform_drainhole_points(Domain::SLA::DrainHoles& drain_holes, const Transform3d &trafo);
+void transform_drainhole_points(Domain::SLA::DrainHoles& drain_holes, const Domain::Transform3d &trafo);
 
-void cut_drainholes(std::vector<ExPolygons> & obj_slices,
-                    const std::vector<float> &slicegrid,
-                    float                     closing_radius,
-                    const Domain::SLA::DrainHoles &   holes,
-                    std::function<void(void)> thr);
+void cut_drainholes(std::vector<Domain::ExPolygons>& obj_slices,
+                    const std::vector<float>&        slicegrid,
+                    float                            closing_radius,
+                    const Domain::SLA::DrainHoles&   holes,
+                    std::function<void(void)>        thr);
 
 inline void swap_normals(indexed_triangle_set &its)
 {

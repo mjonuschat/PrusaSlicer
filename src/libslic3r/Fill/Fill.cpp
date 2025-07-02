@@ -22,18 +22,20 @@
 
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+
 #include "libslic3r/ClipperUtils.hpp"
-#include "../Geometry.hpp"
+#include "libslic3r/Geometry.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Surface.hpp"
 // for Arachne based infills
 #include "libslic3r/PerimeterGenerator.hpp"
-#include "FillBase.hpp"
-#include "FillRectilinear.hpp"
-#include "FillLightning.hpp"
-#include "FillEnsuring.hpp"
+#include "libslic3r/Fill/FillBase.hpp"
+#include "libslic3r/Fill/FillRectilinear.hpp"
+#include "libslic3r/Fill/FillLightning.hpp"
+#include "libslic3r/Fill/FillEnsuring.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -481,10 +483,10 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 {
 	this->clear_fills();
 
-    std::vector<SurfaceFill>  surface_fills       = group_fills(*this);
-    const Slic3r::BoundingBox bbox                = this->object()->bounding_box();
-    const auto                resolution          = this->object()->print()->config().get<double>("gcode_resolution");
-    const auto                perimeter_generator = this->object()->config().get<Domain::PerimeterGeneratorType>("perimeter_generator");
+    std::vector<SurfaceFill>      surface_fills       = group_fills(*this);
+    const Domain::BoundingBox2crd bbox                = this->object()->bounding_box();
+    const auto                    resolution          = this->object()->print()->config().get<double>("gcode_resolution");
+    const auto                    perimeter_generator = this->object()->config().get<Domain::PerimeterGeneratorType>("perimeter_generator");
 
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
 	{
@@ -656,9 +658,9 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 
 Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive::Octree* support_fill_octree,  FillLightning::Generator* lightning_generator) const
 {
-    std::vector<SurfaceFill>  surface_fills = group_fills(*this);
-    const Slic3r::BoundingBox bbox          = this->object()->bounding_box();
-    const auto                resolution    = this->object()->print()->config().get<double>("gcode_resolution");
+    std::vector<SurfaceFill>      surface_fills = group_fills(*this);
+    const Domain::BoundingBox2crd bbox          = this->object()->bounding_box();
+    const auto                    resolution    = this->object()->print()->config().get<double>("gcode_resolution");
 
     Polylines sparse_infill_polylines{};
 

@@ -14,10 +14,10 @@
 #include <limits>
 #include <algorithm>
 
-#include "ShortestPath.hpp"
-#include "KDTreeIndirect.hpp"
-#include "MutablePriorityQueue.hpp"
-#include "Print.hpp"
+#include "libslic3r/ShortestPath.hpp"
+#include "libslic3r/KDTreeIndirect.hpp"
+#include "libslic3r/MutablePriorityQueue.hpp"
+#include "libslic3r/Print.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/Line.hpp"
@@ -25,6 +25,7 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/Layer.hpp"
 #include "tcbspan/span.hpp"
 
 namespace Slic3r {

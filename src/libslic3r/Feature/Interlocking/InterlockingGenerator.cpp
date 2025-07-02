@@ -4,6 +4,7 @@
 #include "InterlockingGenerator.hpp"
 
 #include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Layer.hpp"
 
 using namespace Slic3r::Biz;
 

@@ -1,4 +1,4 @@
-#import "Utils/DirectoriesUtils.hpp"
+#import "libslic3r/Utils/DirectoriesUtils.hpp"
 
 #import <Foundation/Foundation.h>
 

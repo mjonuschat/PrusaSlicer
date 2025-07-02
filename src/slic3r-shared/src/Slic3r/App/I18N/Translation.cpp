@@ -13,7 +13,7 @@
 #include <boost/log/trivial.hpp>
 #include <iostream>
 
-#include "libslic3r_version.h"
+#include "libslic3r/libslic3r_version.h"
 
 #ifdef __linux__
 #include <cstdlib>

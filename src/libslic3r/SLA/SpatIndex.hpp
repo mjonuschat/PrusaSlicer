@@ -5,7 +5,6 @@
 #ifndef SLA_SPATINDEX_HPP
 #define SLA_SPATINDEX_HPP
 
-#include <libslic3r/BoundingBox.hpp>
 #include <stddef.h>
 #include <memory>
 #include <utility>
@@ -13,12 +12,12 @@
 #include <functional>
 #include <cstddef>
 
-#include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
-namespace Slic3r {
-namespace sla {
+namespace Slic3r::sla {
 
-using PointIndexEl = std::pair<Vec3d, unsigned>;
+using PointIndexEl = std::pair<Domain::Vec3d, unsigned>;
 
 class PointIndex {
     class Impl;
@@ -39,14 +38,14 @@ public:
     void insert(const PointIndexEl&);
     bool remove(const PointIndexEl&);
 
-    inline void insert(const Vec3d& v, unsigned idx)
+    inline void insert(const Domain::Vec3d& v, unsigned idx)
     {
         insert(std::make_pair(v, unsigned(idx)));
     }
 
     std::vector<PointIndexEl> query(std::function<bool(const PointIndexEl&)>) const;
-    std::vector<PointIndexEl> nearest(const Vec3d&, unsigned k) const;
-    std::vector<PointIndexEl> query(const Vec3d &v, unsigned k) const // wrapper
+    std::vector<PointIndexEl> nearest(const Domain::Vec3d&, unsigned k) const;
+    std::vector<PointIndexEl> query(const Domain::Vec3d &v, unsigned k) const // wrapper
     {
         return nearest(v, k);
     }
@@ -59,7 +58,7 @@ public:
     void foreach(std::function<void(const PointIndexEl& el)> fn) const;
 };
 
-using BoxIndexEl = std::pair<Slic3r::BoundingBox, unsigned>;
+using BoxIndexEl = std::pair<Slic3r::Domain::BoundingBox2crd, unsigned>;
 
 class BoxIndex {
     class Impl;
@@ -78,7 +77,7 @@ public:
     BoxIndex& operator=(BoxIndex&&);
     
     void insert(const BoxIndexEl&);
-    void insert(const BoundingBox& bb, unsigned idx)
+    void insert(const Domain::BoundingBox2crd & bb, unsigned idx)
     {
         insert(std::make_pair(bb, unsigned(idx)));
     }
@@ -87,7 +86,7 @@ public:
 
     enum QueryType { qtIntersects, qtWithin };
 
-    std::vector<BoxIndexEl> query(const BoundingBox&, QueryType qt);
+    std::vector<BoxIndexEl> query(const Domain::BoundingBox2crd&, QueryType qt);
     
     // For testing
     size_t size() const;
@@ -96,7 +95,6 @@ public:
     void foreach(std::function<void(const BoxIndexEl& el)> fn);
 };
 
-}
-}
+} // namespace Slic3r::sla
 
 #endif // SPATINDEX_HPP

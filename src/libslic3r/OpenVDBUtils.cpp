@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "OpenVDBUtils.hpp"
+#include "libslic3r/OpenVDBUtils.hpp"
 
 #ifdef _MSC_VER
 // Suppress warning C4146 in OpenVDB: unary minus operator applied to unsigned type, result still unsigned 
@@ -33,7 +33,14 @@
 #include <cstddef>
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "libslic3r/libslic3r.h"
+
+using Slic3r::Domain::Transform3d;
+using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec3f;
 
 namespace Slic3r {
 
@@ -84,7 +91,7 @@ public:
     void getIndexSpacePoint(size_t n, size_t v, openvdb::Vec3d& pos) const
     {
         auto vidx = size_t(its.indices[n][v]);
-        Slic3r::Vec3d p = trafo * its.vertices[vidx].cast<double>();
+        Vec3d p = trafo * its.vertices[vidx].cast<double>();
         pos = {p.x(), p.y(), p.z()};
     }
 

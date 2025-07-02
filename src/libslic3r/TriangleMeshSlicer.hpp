@@ -5,21 +5,23 @@
 #ifndef slic3r_TriangleMeshSlicer_hpp_
 #define slic3r_TriangleMeshSlicer_hpp_
 
-#include <stddef.h>
-#include <stdint.h>
 #include <functional>
 #include <vector>
 #include <cinttypes>
 #include <cstddef>
+#include <cstdint>
 
-#include "Polygon.hpp"
-#include "ExPolygon.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
-#include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 struct indexed_triangle_set;
 
 namespace Slic3r {
+
+class ColorPolygon;
+using ColorPolygons = std::vector<ColorPolygon>;
 
 struct MeshSlicingParams
 {
@@ -39,7 +41,7 @@ struct MeshSlicingParams
     };
 
     MeshSlicingParams() = default;
-    explicit MeshSlicingParams(const Transform3d &trafo) : trafo(trafo) {}
+    explicit MeshSlicingParams(const Domain::Transform3d &trafo) : trafo(trafo) {}
 
     SlicingMode   mode { SlicingMode::Regular };
     // For vase mode: below this layer a different slicing mode will be used to produce a single contour.
@@ -48,7 +50,7 @@ struct MeshSlicingParams
     // Mode to apply below slicing_mode_normal_below_layer. Ignored if slicing_mode_nromal_below_layer == 0.
     SlicingMode   mode_below { SlicingMode::Regular };
     // Transforming faces during the slicing.
-    Transform3d   trafo { Transform3d::Identity() };
+    Domain::Transform3d trafo { Domain::Transform3d::Identity() };
 };
 
 struct MeshSlicingParamsEx : public MeshSlicingParams
@@ -73,7 +75,7 @@ struct MeshSlicingParamsEx : public MeshSlicingParams
 // slice_mesh_slabs() thus projects an upward facing horizontal slice to the slicing plane,
 // while slice_mesh_slabs() projects a downward facing horizontal slice to the slicing plane above if it exists.
 
-std::vector<Polygons>           slice_mesh(
+std::vector<Domain::Polygons>   slice_mesh(
     const indexed_triangle_set       &mesh,
     const std::vector<float>         &zs,
     const MeshSlicingParams          &params,
@@ -86,7 +88,7 @@ std::vector<ColorPolygons>      slice_mesh(
     std::function<void()>                  throw_on_cancel = []{});
 
 // Specialized version for a single slicing plane only, running on a single thread.
-Polygons                        slice_mesh(
+Domain::Polygons                slice_mesh(
     const indexed_triangle_set       &mesh,
     float                             plane_z,
     const MeshSlicingParams          &params);
@@ -96,13 +98,13 @@ ColorPolygons                   slice_mesh(
     float                                  plane_z,
     const MeshSlicingParams               &params);
 
-std::vector<ExPolygons>         slice_mesh_ex(
+std::vector<Domain::ExPolygons> slice_mesh_ex(
     const indexed_triangle_set       &mesh,
     const std::vector<float>         &zs,
     const MeshSlicingParamsEx        &params,
     std::function<void()>             throw_on_cancel = []{});
 
-inline std::vector<ExPolygons>  slice_mesh_ex(
+inline std::vector<Domain::ExPolygons> slice_mesh_ex(
     const indexed_triangle_set       &mesh,
     const std::vector<float>         &zs,
     std::function<void()>             throw_on_cancel = []{})
@@ -110,7 +112,7 @@ inline std::vector<ExPolygons>  slice_mesh_ex(
     return slice_mesh_ex(mesh, zs, MeshSlicingParamsEx{}, throw_on_cancel);
 }
 
-inline std::vector<ExPolygons>  slice_mesh_ex(
+inline std::vector<Domain::ExPolygons> slice_mesh_ex(
     const indexed_triangle_set       &mesh,
     const std::vector<float>         &zs,
     float                             closing_radius,
@@ -131,23 +133,23 @@ void slice_mesh_slabs(
     const indexed_triangle_set       &mesh,
     // Unscaled Zs
     const std::vector<float>         &zs,
-    const Transform3d                &trafo,
-    std::vector<Polygons>            *out_top,
-    std::vector<Polygons>            *out_bottom,
+    const Domain::Transform3d        &trafo,
+    std::vector<Domain::Polygons>    *out_top,
+    std::vector<Domain::Polygons>    *out_bottom,
     std::function<void()>             throw_on_cancel);
 
 // Project mesh upwards pointing surfaces / downwards pointing surfaces into 2D polygons.
 void project_mesh(
     const indexed_triangle_set       &mesh,
-    const Transform3d                &trafo,
-    Polygons                         *out_top,
-    Polygons                         *out_bottom,
+    const Domain::Transform3d        &trafo,
+    Domain::Polygons                 *out_top,
+    Domain::Polygons                 *out_bottom,
     std::function<void()>             throw_on_cancel);
 
 // Project mesh into 2D polygons.
-Polygons project_mesh(
+Domain::Polygons project_mesh(
     const indexed_triangle_set       &mesh,
-    const Transform3d                &trafo,
+    const Domain::Transform3d        &trafo,
     std::function<void()>             throw_on_cancel);
 
 void cut_mesh(

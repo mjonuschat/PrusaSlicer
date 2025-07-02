@@ -5,21 +5,18 @@
 #ifndef SLA_SUPPORTTREE_HPP
 #define SLA_SUPPORTTREE_HPP
 
-#include <libslic3r/Polygon.hpp>
-#include <libslic3r/ExPolygon.hpp>
-#include <libslic3r/AABBMesh.hpp>
-#include <libslic3r/SLA/Pad.hpp>
-#include "Slic3r/Domain/SLA/SupportPoint.hpp"
-#include <libslic3r/SLA/JobController.hpp>
-#include <libslic3r/SLA/SupportTreeStrategies.hpp>
 #include <math.h>
 #include <vector>
 #include <memory>
 #include <algorithm>
 #include <cmath>
 
-#include "Slic3r/Domain/SLA/SupportPoint.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
+#include "Slic3r/Domain/SLA/SupportPoint.hpp"
+
+#include "libslic3r/AABBMesh.hpp"
+#include "libslic3r/SLA/Pad.hpp"
 
 #include "admesh/stl.h"
 
@@ -146,11 +143,11 @@ indexed_triangle_set create_pad(const SupportableMesh      &model_mesh,
                                 const indexed_triangle_set &support_mesh,
                                 const JobController        &ctl);
 
-std::vector<ExPolygons> slice(const indexed_triangle_set &support_mesh,
-                              const indexed_triangle_set &pad_mesh,
-                              const std::vector<float>   &grid,
-                              float                       closing_radius,
-                              const JobController        &ctl);
+std::vector<Domain::ExPolygons> slice(const indexed_triangle_set &support_mesh,
+                                      const indexed_triangle_set &pad_mesh,
+                                      const std::vector<float>   &grid,
+                                      float                       closing_radius,
+                                      const JobController        &ctl);
 
 } // namespace sla
 } // namespace Slic3r

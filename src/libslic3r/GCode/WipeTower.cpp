@@ -5,7 +5,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "WipeTower.hpp"
+#include "libslic3r/GCode/WipeTower.hpp"
 
 #include <LocalesUtils.hpp>
 #include <boost/algorithm/string/predicate.hpp>

@@ -13,7 +13,7 @@
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Domain/Color.hpp"
 
-#include "libslic3r_version.h"
+#include "libslic3r/libslic3r_version.h"
 #include "libslic3r/Utils.hpp"
 
 #include <wx/sizer.h>

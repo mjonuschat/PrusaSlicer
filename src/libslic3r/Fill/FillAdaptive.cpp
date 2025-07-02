@@ -18,12 +18,12 @@
 #include <complex>
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
-#include "../ClipperUtils.hpp"
-#include "../ExPolygon.hpp"
-#include "../Geometry.hpp"
-#include "../Layer.hpp"
-#include "../Print.hpp"
-#include "../ShortestPath.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/Geometry.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/Fill/FillAdaptive.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"

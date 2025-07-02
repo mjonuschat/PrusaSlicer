@@ -8,7 +8,7 @@
 #include <vector>
 #include <functional>
 
-#include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/Point.hpp"
 
 namespace Slic3r {
 
@@ -29,7 +29,7 @@ using ThumbnailsList = std::vector<ThumbnailData>;
 
 struct ThumbnailsParams
 {
-	Vec2ds 	sizes;
+	Domain::Vec2ds  sizes;
 	bool 			printable_only;
 	bool 			parts_only;
 	bool 			show_bed;

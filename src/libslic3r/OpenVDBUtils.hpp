@@ -5,12 +5,13 @@
 #ifndef OPENVDBUTILS_HPP
 #define OPENVDBUTILS_HPP
 
-#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <functional>
 #include <memory>
 
 #include "admesh/stl.h"
-#include "libslic3r/Point.hpp"
+
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r {
 
@@ -27,28 +28,28 @@ extern template VoxelGridPtr make_voxelgrid<>();
 
 void reset_accessor(const VoxelGrid &vgrid);
 
-double get_distance_raw(const Vec3f &p, const VoxelGrid &interior);
+double get_distance_raw(const Domain::Vec3f &p, const VoxelGrid &interior);
 
 float get_voxel_scale(const VoxelGrid &grid);
 
 VoxelGridPtr clone(const VoxelGrid &grid);
 
 class MeshToGridParams {
-    Transform3f        m_tr                = Transform3f::Identity();
-    float              m_voxel_scale       = 1.f;
-    float              m_exteriorBandWidth = 3.0f;
-    float              m_interiorBandWidth = 3.0f;
+    Domain::Transform3f m_tr                = Domain::Transform3f::Identity();
+    float               m_voxel_scale       = 1.f;
+    float               m_exteriorBandWidth = 3.0f;
+    float               m_interiorBandWidth = 3.0f;
 
     std::function<bool(int)> m_statusfn;
 
 public:
-    MeshToGridParams & trafo(const Transform3f &v) { m_tr = v; return *this; }
+    MeshToGridParams & trafo(const Domain::Transform3f &v) { m_tr = v; return *this; }
     MeshToGridParams & voxel_scale(float v) { m_voxel_scale = v; return *this; }
     MeshToGridParams & exterior_bandwidth(float v) { m_exteriorBandWidth = v; return *this; }
     MeshToGridParams & interior_bandwidth(float v) { m_interiorBandWidth = v; return *this; }
     MeshToGridParams & statusfn(std::function<bool(int)> fn) { m_statusfn = fn; return *this; }
 
-    const Transform3f& trafo() const noexcept { return m_tr; }
+    const Domain::Transform3f& trafo() const noexcept { return m_tr; }
     float voxel_scale() const noexcept { return m_voxel_scale; }
     float exterior_bandwidth() const noexcept { return m_exteriorBandWidth; }
     float interior_bandwidth() const noexcept { return m_interiorBandWidth; }

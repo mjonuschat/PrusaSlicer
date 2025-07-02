@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <clipper/clipper_z.hpp>
+#include <libslic3r/ExPolygon.hpp>
 #include <libslic3r/Point.hpp>
 
 namespace Slic3r {

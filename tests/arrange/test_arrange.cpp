@@ -4,11 +4,21 @@
 #include <catch2/catch_approx.hpp>
 #include "test_utils.hpp"
 
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
+
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <arrange/ArrangeBase.hpp>
 #include <arrange/ArrangeFirstFit.hpp>
@@ -31,11 +41,25 @@
 using namespace Catch;
 using namespace Slic3r::Biz;
 
+using Slic3r::Domain::BoundingBox2crd;
+using Slic3r::Domain::BoundingBox2d;
+using Slic3r::Domain::ExPolygon;
+using Slic3r::Domain::ExPolygons;
+using Slic3r::Domain::Point;
+using Slic3r::Domain::Polygon;
+using Slic3r::Domain::Polygons;
+using Slic3r::Domain::Vec2f;
+using Slic3r::Domain::Vec2crd;
+using Slic3r::Domain::Vec2d;
+
 using Slic3r::Biz::Algorithms::ClipperUtils::diff_ex;
 using Slic3r::Biz::Algorithms::ClipperUtils::intersection_ex;
 using Slic3r::Biz::Algorithms::ClipperUtils::offset_ex;
 using Slic3r::Biz::Algorithms::Geometry::convex_hull;
+using Slic3r::Biz::Algorithms::Scaling::scaled;
 using Slic3r::Biz::Algorithms::SVG::SVG;
+
+constexpr auto SCALED_EPSILON = Slic3r::Biz::Algorithms::Scaling::scaled(Slic3r::Domain::EPSILON);
 
 template<class ArrItem = Slic3r::arr2::ArrangeItem>
 static std::vector<ArrItem> prusa_parts(double infl = 0.) {
@@ -85,7 +109,7 @@ static std::vector<Slic3r::arr2::ArrangeItem> prusa_parts_ex(double infl = 0.)
             if (infl > 0.)
                 inp_cpy = offset_ex(inp_cpy, scaled(std::ceil(infl / 2.)));
 
-            Point c = get_extents(inp_cpy).center();
+            Point c = Algorithms::BoundingBox::center(Algorithms::ExPolygon::get_extents(inp_cpy));
             for (auto &p : inp_cpy)
                 p.translate(-c);
 
@@ -105,9 +129,6 @@ struct ItemPair {
     ArrangeItem orbiter;
     ArrangeItem stationary;
 };
-
-using Slic3r::scaled;
-using Slic3r::Vec2f;
 
 std::vector<ItemPair> nfp_testdata = {
     {
@@ -141,7 +162,7 @@ std::vector<ItemPair> nfp_testdata = {
     },
 };
 
-struct PolyPair { Slic3r::ExPolygon orbiter; Slic3r::ExPolygon stationary; };
+struct PolyPair { ExPolygon orbiter; ExPolygon stationary; };
 
 std::vector<PolyPair> nfp_concave_testdata = {
     { // ItemPair
@@ -184,25 +205,24 @@ std::vector<PolyPair> nfp_concave_testdata = {
 };
 
 static void check_nfp(const std::string & outfile_prefix,
-                      const Slic3r::Polygons &stationary,
-                      const Slic3r::Polygons &orbiter,
-                      const Slic3r::ExPolygons &bedpoly,
-                      const Slic3r::ExPolygons &nfp)
+                      const Polygons &stationary,
+                      const Polygons &orbiter,
+                      const ExPolygons &bedpoly,
+                      const ExPolygons &nfp)
 {
     using namespace Slic3r;
 
     auto stationary_ex = Algorithms::Polygon::to_expolygons(stationary);
-    auto bedbb = get_extents(bedpoly);
-    bedbb.offset(scaled(1.));
+    const BoundingBox2crd bedbb = Algorithms::BoundingBox::inflated(Algorithms::ExPolygon::get_extents(bedpoly), scaled(1.));
     auto bedrect = arr2::to_rectangle(bedbb);
 
     ExPolygons bed_negative = diff_ex(bedrect, bedpoly);
     ExPolygons orb_ex_r = Algorithms::Polygon::to_expolygons(orbiter);
     ExPolygons orb_ex_r_ch = {ExPolygon(convex_hull(orb_ex_r))};
-    auto orb_ex_offs_pos_r = offset_ex(orb_ex_r,  scaled<float>(EPSILON));
-    auto orb_ex_offs_neg_r = offset_ex(orb_ex_r, -scaled<float>(EPSILON));
-    auto orb_ex_offs_pos_r_ch = offset_ex(orb_ex_r_ch,  scaled<float>(EPSILON));
-    auto orb_ex_offs_neg_r_ch = offset_ex(orb_ex_r_ch, -scaled<float>(EPSILON));
+    auto orb_ex_offs_pos_r = offset_ex(orb_ex_r,  static_cast<float>(SCALED_EPSILON));
+    auto orb_ex_offs_neg_r = offset_ex(orb_ex_r, -static_cast<float>(SCALED_EPSILON));
+    auto orb_ex_offs_pos_r_ch = offset_ex(orb_ex_r_ch,  static_cast<float>(SCALED_EPSILON));
+    auto orb_ex_offs_neg_r_ch = offset_ex(orb_ex_r_ch, -static_cast<float>(SCALED_EPSILON));
 
     auto bedpoly_offs = offset_ex(bedpoly, static_cast<float>(SCALED_EPSILON));
 
@@ -263,7 +283,7 @@ static void check_nfp(const std::string & outfile_prefix,
 #ifndef NDEBUG
         if (!touching || check_failed) {
 
-            auto bb = get_extents(bedpoly);
+            auto bb = Algorithms::ExPolygon::get_extents(bedpoly);
             SVG svg(outfile_prefix + ".svg", bb, 0, true);
             svg.draw(orbiter, "orange");
             svg.draw(stationary, "yellow");
@@ -279,7 +299,7 @@ static void check_nfp(const std::string & outfile_prefix,
     };
 
     if (nfp.empty()) {
-        auto bb = get_extents(bedpoly);
+        auto bb = Algorithms::ExPolygon::get_extents(bedpoly);
         SVG svg(outfile_prefix + ".svg", bb, 0, true);
         svg.draw(orbiter, "orange");
         svg.draw(stationary, "yellow");
@@ -316,7 +336,7 @@ void test_itempairs(const std::vector<PairType> &testdata,
         Polygons orbiter = td.orbiter.envelope().transformed_outline();
         Polygons stationary = td.stationary.shape().transformed_outline();
         Point center = Algorithms::BoundingBox::center(bounding_box(bed));
-        Point stat_c = get_extents(stationary).center();
+        Point stat_c = Algorithms::BoundingBox::center(Algorithms::Polygon::get_extents(stationary));
         Point d =  center - stat_c;
         arr2::translate(td.stationary, d);
         stationary = td.stationary.shape().transformed_outline();
@@ -383,24 +403,26 @@ template<> inline Slic3r::arr2::RectangleBed init_bed<Slic3r::arr2::RectangleBed
 
 template<> inline Slic3r::arr2::CircleBed init_bed<Slic3r::arr2::CircleBed>()
 {
-    return Slic3r::arr2::CircleBed{Slic3r::Point::Zero(), scaled(300.), Slic3r::Vec2crd{0, 0}};
+    return Slic3r::arr2::CircleBed{Point::Zero(), scaled(300.), Vec2crd{0, 0}};
 }
 
 template<> inline Slic3r::arr2::IrregularBed init_bed<Slic3r::arr2::IrregularBed>()
 {
     using namespace Slic3r;
-    BoundingBox bb_outer{Point::Zero(), {scaled(500.), scaled(500.)}};
-    BoundingBox corner{Point::Zero(), {scaled(50.), scaled(50.)}};
+    BoundingBox2crd bb_outer{Point::Zero(), {scaled(500.), scaled(500.)}};
+    BoundingBox2crd corner{Point::Zero(), {scaled(50.), scaled(50.)}};
 
-    auto transl = [](BoundingBox bb, Point t) { bb.translate(t); return bb; };
+    auto transl = [](BoundingBox2crd bb, Point t) {
+        return Algorithms::BoundingBox::translated(bb, t);
+    };
 
     Polygons rect_outer = {arr2::to_rectangle(bb_outer)};
     Polygons corners = {arr2::to_rectangle(transl(corner, {scaled(10.), scaled(10.)})),
                         arr2::to_rectangle(transl(corner, {scaled(440.), scaled(10.)})),
                         arr2::to_rectangle(transl(corner, {scaled(440.), scaled(440.)})),
                         arr2::to_rectangle(transl(corner, {scaled(10.), scaled(440.)})),
-                        arr2::to_rectangle(BoundingBox({scaled(80.), scaled(450.)}, {scaled(420.), scaled(510.)})),
-                        arr2::to_rectangle(BoundingBox({scaled(80.), scaled(-10.)}, {scaled(420.), scaled(50.)}))};
+                        arr2::to_rectangle(BoundingBox2crd({scaled(80.), scaled(450.)}, {scaled(420.), scaled(510.)})),
+                        arr2::to_rectangle(BoundingBox2crd({scaled(80.), scaled(-10.)}, {scaled(420.), scaled(50.)}))};
 
     ExPolygons bedshape = diff_ex(rect_outer, corners);
 
@@ -578,7 +600,7 @@ TEST_CASE("EdgeCache tests", "[arrange2]") {
         REQUIRE(ep.coords({0, 0.75}) == Vec2crd{0, 0});
 
         // Multiple edges on the int range boundary
-        ExPolygon squ{arr2::to_rectangle(scaled(BoundingBoxf{{0., 0.}, {2000., 2000.}}))};
+        ExPolygon squ{arr2::to_rectangle(Algorithms::BoundingBox::scaled(BoundingBox2d{{0., 0.}, {2000., 2000.}}))};
 
         arr2::EdgeCache ep2{&squ};
         REQUIRE(ep2.coords({0, 0.})   == Vec2crd{0, 0});
@@ -589,7 +611,7 @@ TEST_CASE("EdgeCache tests", "[arrange2]") {
     }
 
     SECTION("Accuracy argument should skip corners correctly") {
-        ExPolygon poly{arr2::to_rectangle(scaled(BoundingBoxf{{0., 0.}, {10., 10.}}))};
+        ExPolygon poly{arr2::to_rectangle(Algorithms::BoundingBox::scaled(BoundingBox2d{{0., 0.}, {10., 10.}}))};
 
         double accuracy = 1.;
         arr2::EdgeCache ep{&poly};
@@ -663,7 +685,7 @@ bool pack(Strategy &&strategy,
 
     auto fixed_items = all_items_range(packing_context);
 
-    if (fixed_items.size() < Slic3r::StripCVRef<Strategy>::Capacity &&
+    if (fixed_items.size() < Slic3r::arr2::StripCVRef<Strategy>::Capacity &&
         Algorithms::BoundingBox::contains(bedbb, itmbb))
     {
         translate(item, tr);
@@ -685,7 +707,8 @@ TEST_CASE("First fit selection strategy", "[arrange2]")
     auto create_items_n = [](size_t count) {
         INFO ("Item count = " << count);
 
-        auto items = Slic3r::reserve_vector<ArrItem>(count);
+        std::vector<ArrItem> items;
+        items.reserve(count);
         std::generate_n(std::back_inserter(items), count, [] { return ArrItem{}; });
 
         return items;
@@ -898,7 +921,7 @@ Slic3r::Domain::BoundingBox2crd Slic3r::arr2::NFPArrangeItemTraits_<
 }
 
 template<>
-Slic3r::Vec2crd Slic3r::arr2::NFPArrangeItemTraits_<
+Vec2crd Slic3r::arr2::NFPArrangeItemTraits_<
     RectangleItem>::reference_vertex(const RectangleItem &itm)
 {
     return Algorithms::BoundingBox::center(itm.shape);
@@ -916,16 +939,16 @@ TEST_CASE("Optimal nfp position search with GravityKernel using RectangleItem an
         {
             THEN ("the optimum should be at the single nfp point")
             {
-                Slic3r::ExPolygons nfp;
-                nfp.emplace_back(Slic3r::ExPolygon{{bed.center}});
+                ExPolygons nfp;
+                nfp.emplace_back(ExPolygon{{bed.center}});
 
                 auto item = RectangleItem{};
 
                 double score = pick_best_spot_on_nfp_verts_only(item, nfp, bed, strategy);
 
-                Slic3r::Vec2crd D = bed.center - Algorithms::BoundingBox::center(item.shape);
+                Vec2crd D = bed.center - Algorithms::BoundingBox::center(item.shape);
                 REQUIRE(item.translation == D);
-                REQUIRE(score == Approx(0.).margin(EPSILON));
+                REQUIRE(score == Approx(0.).margin(Slic3r::Domain::EPSILON));
             }
         }
     }
@@ -953,7 +976,7 @@ TEMPLATE_TEST_CASE("RectangleOverfitPackingStrategy test", "[arrange2]",
 
     auto bed = Slic3r::arr2::RectangleBed{scaled(100.), scaled(100.)};
     auto item_blueprint = Slic3r::arr2::to_rectangle(
-        Slic3r::BoundingBox{{0, 0}, {scaled(20.), scaled(20.)}});
+        BoundingBox2crd{{0, 0}, {scaled(20.), scaled(20.)}});
 
     auto item_gen_fn = [&item_blueprint] { return ArrItem{item_blueprint}; };
 
@@ -961,7 +984,8 @@ TEMPLATE_TEST_CASE("RectangleOverfitPackingStrategy test", "[arrange2]",
 
         WHEN("attempting to pack one rectangle") {
             constexpr auto count = size_t{1};
-            auto items = Slic3r::reserve_vector<ArrItem>(count);
+            std::vector<ArrItem> items;
+            items.reserve(count);
 
             std::generate_n(std::back_inserter(items), count, item_gen_fn);
 
@@ -971,7 +995,7 @@ TEMPLATE_TEST_CASE("RectangleOverfitPackingStrategy test", "[arrange2]",
             THEN ("Overfit kernel should take over and align the single item") {
                 auto pilebb = bounding_box(Slic3r::range(items));
 
-                Slic3r::Vec2crd D = frontleft_align_fn(bounding_box(bed), pilebb);
+                Vec2crd D = frontleft_align_fn(bounding_box(bed), pilebb);
                 REQUIRE(D.squaredNorm() == 0);
             }
         }
@@ -979,7 +1003,8 @@ TEMPLATE_TEST_CASE("RectangleOverfitPackingStrategy test", "[arrange2]",
         WHEN("attempting to pack two rectangles") {
 
             constexpr auto count = size_t{2};
-            auto items = Slic3r::reserve_vector<ArrItem>(count);
+            std::vector<ArrItem> items;
+            items.reserve(count);
 
             std::generate_n(std::back_inserter(items), count, item_gen_fn);
 
@@ -990,7 +1015,7 @@ TEMPLATE_TEST_CASE("RectangleOverfitPackingStrategy test", "[arrange2]",
             {
                 auto pilebb = bounding_box(Slic3r::range(items));
 
-                Slic3r::Vec2crd D = frontleft_align_fn(bounding_box(bed), pilebb);
+                Vec2crd D = frontleft_align_fn(bounding_box(bed), pilebb);
                 REQUIRE(D.squaredNorm() == 0);
             }
         }
@@ -998,20 +1023,20 @@ TEMPLATE_TEST_CASE("RectangleOverfitPackingStrategy test", "[arrange2]",
 
     GIVEN("Two logical rectangular beds, the second having fixed items") {
 
-        auto fixed_item_bb = Slic3r::BoundingBox{{0, 0}, {scaled(20.), scaled(20.)}};
+        auto fixed_item_bb = BoundingBox2crd{{0, 0}, {scaled(20.), scaled(20.)}};
         std::vector<ArrItem> fixed = {
             ArrItem{Slic3r::arr2::to_rectangle(fixed_item_bb)}};
 
         Slic3r::arr2::set_bed_index(fixed.front(), 1);
 
         WHEN("attempting to pack 3 rectangles, 1 filling the first bed") {
-
-            auto items = Slic3r::reserve_vector<ArrItem>(3);
+            std::vector<ArrItem> items;
+            items.reserve(3);
 
             // Add a big rectangle this will fill the first bed so that
             // smaller rectangles will fit only into the next bed
             items.emplace_back(ArrItem{Slic3r::arr2::to_rectangle(
-                Slic3r::BoundingBox{{0, 0}, {scaled(90.), scaled(90.)}})});
+                BoundingBox2crd{{0, 0}, {scaled(90.), scaled(90.)}})});
 
             std::generate_n(std::back_inserter(items), 2, item_gen_fn);
 
@@ -1024,7 +1049,7 @@ TEMPLATE_TEST_CASE("RectangleOverfitPackingStrategy test", "[arrange2]",
                 REQUIRE(get_bed_index(items.front()) == 0);
 
                 auto pilebb = bounding_box_on_bedidx(Slic3r::range(items), 0);
-                Slic3r::Vec2crd D = frontleft_align_fn(bounding_box(bed), pilebb);
+                Vec2crd D = frontleft_align_fn(bounding_box(bed), pilebb);
                 REQUIRE(D.squaredNorm() == 0);
 
                 REQUIRE((get_bed_index(items[1]) == get_bed_index(items[2]) == 1));
@@ -1032,7 +1057,7 @@ TEMPLATE_TEST_CASE("RectangleOverfitPackingStrategy test", "[arrange2]",
                 auto pilebb1 = bounding_box_on_bedidx(Slic3r::range(items), 1);
                 REQUIRE(pilebb1.overlap(fixed_item_bb));
 
-                Slic3r::Vec2crd D1 = frontleft_align_fn(bounding_box(bed), pilebb1);
+                Vec2crd D1 = frontleft_align_fn(bounding_box(bed), pilebb1);
                 REQUIRE(D1.squaredNorm() != 0);
             }
         }
@@ -1045,19 +1070,19 @@ TEMPLATE_TEST_CASE("Test if allowed item rotations are considered", "[arrange2]"
     using ArrItem = TestType;
 
     auto item_blueprint = Slic3r::arr2::to_rectangle(
-        Slic3r::BoundingBox{{0, 0}, {scaled(20.), scaled(20.)}});
+        BoundingBox2crd{{0, 0}, {scaled(20.), scaled(20.)}});
 
     ArrItem itm{item_blueprint};
 
     auto bed = Slic3r::arr2::RectangleBed{scaled(100.), scaled(100.)};
 
-    set_allowed_rotations(itm, {PI});
+    set_allowed_rotations(itm, {std::numbers::pi});
 
     Slic3r::arr2::PackStrategyNFP strategy{Slic3r::arr2::GravityKernel{}};
 
     bool packed = pack(strategy, bed, itm);
 
     REQUIRE(packed);
-    REQUIRE(get_rotation(itm) == Approx(PI));
+    REQUIRE(get_rotation(itm) == Approx(std::numbers::pi));
 }
 

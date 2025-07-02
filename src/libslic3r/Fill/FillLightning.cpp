@@ -2,9 +2,9 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "../Print.hpp"
-#include "../ShortestPath.hpp"
-#include "Lightning/Generator.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/ShortestPath.hpp"
+#include "libslic3r/Fill/Lightning/Generator.hpp"
 #include "libslic3r/Fill/FillLightning.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Fill/Lightning/Layer.hpp"

@@ -2,12 +2,14 @@
 #include <memory>
 #include <vector>
 #include <optional>
-#include <libslic3r/ExPolygon.hpp>
-#include <libslic3r/GCode/ThumbnailData.hpp>
-#include <libslic3r/PrintConfig.hpp> // DynamicPrintConfig
+
+#include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
+
+#include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/SerializedConfig.hpp"
 
 namespace Slic3r::Biz::Slicing {
@@ -114,7 +116,7 @@ struct SLAResult
     // NOTE: SLAPrint::print_statistics();
 
     // m_print->m_printer_input[idx].transformed_slices()
-    std::vector<ExPolygons> slices; // shape of merged models 
+    std::vector<Domain::ExPolygons> slices; // shape of merged models
     std::vector<float> heights; // heights of the slices
 
     // at the moment also instances and support structure - want to change it

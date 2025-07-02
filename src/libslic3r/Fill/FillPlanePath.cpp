@@ -9,11 +9,15 @@
 ///|/
 #include <cmath>
 
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+
 #include "../ClipperUtils.hpp"
 #include "../ShortestPath.hpp"
 #include "FillPlanePath.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -95,7 +99,8 @@ void FillPlanePath::_fill_surface_single(
     // Rotated bounding box of the area to fill in with the pattern.
     BoundingBox bounding_box = align ?
         // Sparse infill needs to be aligned across layers. Align infill across layers using the object's bounding box.
-        this->bounding_box.rotated(-direction.first) :
+        // TODO: This unnecessary copy will remain until the old BoundingBox is replaced with Domain::BoundingBox2crd.
+        BoundingBox{this->bounding_box.min, this->bounding_box.max}.rotated(-direction.first) :
         // Solid infill does not need to be aligned across layers, generate the infill pattern
         // around the clipping expolygon only.
         snug_bounding_box;

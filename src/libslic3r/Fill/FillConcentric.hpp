@@ -13,7 +13,7 @@
 
 #include <utility>
 
-#include "FillBase.hpp"
+#include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Polyline.hpp"
 

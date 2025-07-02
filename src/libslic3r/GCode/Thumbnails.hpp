@@ -20,18 +20,19 @@
 #include <string>
 #include <utility>
 
-#include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/enum_bitmask.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
-#include "libslic3r/enum_bitmask.hpp"
 
 namespace Slic3r {
-class ConfigBase;
+    class ConfigBase;
 
     enum class ThumbnailError : int { InvalidVal, OutOfRange, InvalidExt };
-    using ThumbnailErrors = enum_bitmask<ThumbnailError>;
-    ENABLE_ENUM_BITMASK_OPERATORS(ThumbnailError);
-}
+    using ThumbnailErrors = Domain::enum_bitmask<ThumbnailError>;
+    template<> struct Domain::is_enum_bitmask_type<ThumbnailError> { static constexpr const bool enable = true; };
+} // namespace Slic3r
 
 namespace Slic3r::GCodeThumbnails {
 
@@ -45,7 +46,7 @@ struct CompressedImageBuffer
 
 std::unique_ptr<CompressedImageBuffer> compress_thumbnail(const ThumbnailData &data, GCodeThumbnailsFormat format);
 
-typedef std::vector<std::pair<GCodeThumbnailsFormat, Vec2d>> GCodeThumbnailDefinitionsList;
+typedef std::vector<std::pair<GCodeThumbnailsFormat, Domain::Vec2d>> GCodeThumbnailDefinitionsList;
 
 using namespace std::literals;
 std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbnail_list(const std::string& thumbnails_string, const std::string_view def_ext = "PNG"sv);
@@ -54,7 +55,7 @@ std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbna
 std::string get_error_string(const ThumbnailErrors& errors);
 
 template<typename WriteToOutput, typename ThrowIfCanceledCallback>
-inline void export_thumbnails_to_file(ThumbnailsGeneratorCallback &thumbnail_cb, const std::vector<std::pair<GCodeThumbnailsFormat, Vec2d>>& thumbnails_list, WriteToOutput output, ThrowIfCanceledCallback throw_if_canceled)
+inline void export_thumbnails_to_file(ThumbnailsGeneratorCallback &thumbnail_cb, const std::vector<std::pair<GCodeThumbnailsFormat, Domain::Vec2d>>& thumbnails_list, WriteToOutput output, ThrowIfCanceledCallback throw_if_canceled)
 {
     // Write thumbnails using base64 encoding
     if (thumbnail_cb != nullptr) {
@@ -89,7 +90,7 @@ inline void export_thumbnails_to_file(ThumbnailsGeneratorCallback &thumbnail_cb,
 
 template<typename ThrowIfCanceledCallback>
 inline void generate_binary_thumbnails(ThumbnailsGeneratorCallback& thumbnail_cb, std::vector<bgcode::binarize::ThumbnailBlock>& out_thumbnails,
-    const std::vector<std::pair<GCodeThumbnailsFormat, Vec2d>> &thumbnails_list, ThrowIfCanceledCallback throw_if_canceled)
+    const std::vector<std::pair<GCodeThumbnailsFormat, Domain::Vec2d>> &thumbnails_list, ThrowIfCanceledCallback throw_if_canceled)
 {
     using namespace bgcode::core;
     using namespace bgcode::binarize;

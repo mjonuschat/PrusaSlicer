@@ -10,7 +10,7 @@
 
 #include "VoronoiGraph.hpp"
 #include "Parabola.hpp"
-#include "SampleConfig.hpp"
+#include "libslic3r/SLA/SupportIslands/SampleConfig.hpp"
 #include "SupportIslandPoint.hpp"
 
 namespace Slic3r::sla {

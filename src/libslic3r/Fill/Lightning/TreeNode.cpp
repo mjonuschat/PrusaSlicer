@@ -10,7 +10,7 @@
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "../../Geometry.hpp"
+#include "libslic3r/Geometry.hpp"
 #include "libslic3r/Line.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 

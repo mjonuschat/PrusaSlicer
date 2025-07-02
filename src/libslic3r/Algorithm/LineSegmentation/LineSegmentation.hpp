@@ -5,6 +5,7 @@
 
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
 #include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/ExPolygon.hpp"
 
 namespace Slic3r {
 struct PerimeterRegion;

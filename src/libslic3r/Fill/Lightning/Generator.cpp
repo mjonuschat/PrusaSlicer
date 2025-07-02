@@ -9,9 +9,9 @@
 #include <cassert>
 
 #include "TreeNode.hpp"
-#include "../../ClipperUtils.hpp"
-#include "../../Layer.hpp"
-#include "../../Print.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/Print.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/EdgeGrid.hpp"
 #include "libslic3r/ExPolygon.hpp"

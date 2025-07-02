@@ -5,33 +5,29 @@
 #ifndef SLA_PAD_HPP
 #define SLA_PAD_HPP
 
-#include <libslic3r/Point.hpp>
 #include <vector>
 #include <functional>
 #include <cmath>
 #include <string>
 
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Polygon.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
 
 struct indexed_triangle_set;
 
-namespace Slic3r {
-
-namespace sla {
+namespace Slic3r::sla {
 
 using ThrowOnCancel = std::function<void(void)>;
 
 /// Calculate the polygon representing the silhouette.
 void pad_blueprint(
     const indexed_triangle_set &mesh,       // input mesh
-    ExPolygons &        output,     // Output will be merged with
+    Domain::ExPolygons&        output,     // Output will be merged with
     const std::vector<float> &,     // Exact Z levels to sample
     ThrowOnCancel thrfn = [] {}); // Function that throws if cancel was requested
 
 void pad_blueprint(
     const indexed_triangle_set &mesh,
-    ExPolygons &                output,
+    Domain::ExPolygons&         output,
     float         samplingheight = 0.1f,  // The height range to sample
     float         layerheight    = 0.05f, // The sampling height
     ThrowOnCancel thrfn          = [] {});
@@ -86,13 +82,12 @@ struct PadConfig {
 };
 
 void create_pad(
-    const ExPolygons &    support_contours,
-    const ExPolygons &    model_contours,
+    const Domain::ExPolygons& support_contours,
+    const Domain::ExPolygons& model_contours,
     indexed_triangle_set &output_mesh,
     const PadConfig &             = PadConfig(),
     ThrowOnCancel throw_on_cancel = [] {});
 
-} // namespace sla
-} // namespace Slic3r
+} // namespace Slic3r::sla
 
 #endif // SLABASEPOOL_HPP

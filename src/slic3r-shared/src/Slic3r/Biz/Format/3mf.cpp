@@ -15,11 +15,15 @@
 #include <boost/uuid/uuid_io.hpp> // to_string(uuid)
 #include <boost/uuid/uuid_generators.hpp> // generators
 
+#include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Utils.hpp" // ScopeGuard
+
+#include "LocalesUtils.hpp"
 
 #ifdef WIN32
 // Boost need to link bcrypt on windows platform
@@ -29,6 +33,10 @@
 namespace Slic3r {
     std::unique_ptr<const Slic3r::Persist3mfData> g_load_from_3mf;
 }
+
+using Slic3r::Domain::SquareMatrix3d;
+
+using Slic3r::Domain::is_approx;
 
 using ModelObject = Slic3r::Domain::ModelObject;
 using ModelVolume = Slic3r::Domain::ModelVolume;
@@ -107,7 +115,7 @@ bool can_be_instance(const Transform3d &tr1, const Transform3d &tr2)
         return false;
 
     // transformation between without offset
-    Matrix3d between = tr1.linear() * tr2.linear().inverse();
+    SquareMatrix3d between = tr1.linear() * tr2.linear().inverse();
         
     // only rotation around z axis is allowed
     //  _____________________

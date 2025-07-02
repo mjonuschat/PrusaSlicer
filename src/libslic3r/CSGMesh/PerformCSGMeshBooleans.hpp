@@ -8,10 +8,9 @@
 #include <stack>
 #include <vector>
 
-#include "CSGMesh.hpp"
-
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
-//#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
+
+#include "libslic3r/CSGMesh/CSGMesh.hpp"
 #include "libslic3r/MeshBoolean.hpp"
 
 namespace Slic3r { namespace csg {

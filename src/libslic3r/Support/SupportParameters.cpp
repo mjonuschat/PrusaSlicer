@@ -11,6 +11,7 @@
 #include "SupportParameters.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Point.hpp"
+#include "libslic3r/Layer.hpp"
 
 namespace Slic3r::FFFSupport {
 

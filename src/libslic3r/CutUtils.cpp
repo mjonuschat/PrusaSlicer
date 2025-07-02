@@ -12,10 +12,10 @@
 #include <cassert>
 #include <cstddef>
 
-#include "Geometry.hpp"
-#include "libslic3r.h"
-#include "Model.hpp"
-#include "TriangleMeshSlicer.hpp"
+#include "libslic3r/Geometry.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"

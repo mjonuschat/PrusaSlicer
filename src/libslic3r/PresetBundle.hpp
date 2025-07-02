@@ -8,7 +8,7 @@
 
 #include "Preset.hpp"
 #include "AppConfig.hpp"
-#include "enum_bitmask.hpp"
+#include "Slic3r/Domain/enum_bitmask.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -147,7 +147,7 @@ public:
         LoadSystem,
         LoadVendorOnly,
     };
-    using LoadConfigBundleAttributes = enum_bitmask<LoadConfigBundleAttribute>;
+    using LoadConfigBundleAttributes = Domain::enum_bitmask<LoadConfigBundleAttribute>;
     // Load the config bundle based on the flags.
     // Don't do any config substitutions when loading a system profile, perform and report substitutions otherwise.
     std::pair<PresetsConfigSubstitutions, size_t> load_configbundle(
@@ -230,7 +230,7 @@ private:
     DynamicPrintConfig          full_sla_config() const;
 };
 
-ENABLE_ENUM_BITMASK_OPERATORS(PresetBundle::LoadConfigBundleAttribute)
+template<> struct Domain::is_enum_bitmask_type<Slic3r::PresetBundle::LoadConfigBundleAttribute> { static constexpr const bool enable = true; };
 
 // Copies bed texture and model files to 'data_dir()\printer' folder, if needed
 // and updates the config accordingly

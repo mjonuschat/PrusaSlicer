@@ -5,6 +5,8 @@
 
 #include <libslic3r/Optimize/NLoptOptimizer.hpp>
 
+#include <numbers>
+
 void check_opt_result(double score, double ref, double abs_err, double rel_err)
 {
     double abs_diff = std::abs(score - ref);
@@ -26,8 +28,8 @@ template<class Opt> void test_sin(Opt &&opt)
         return std::sin(phi);
     };
 
-    auto init = initvals({PI});
-    auto optbounds = bounds({ {0., 2 * PI}});
+    auto init = initvals({std::numbers::pi});
+    auto optbounds = bounds({ {0., 2 * std::numbers::pi}});
 
     Result result_min = opt.to_min().optimize(optfunc, init, optbounds);
     Result result_max = opt.to_max().optimize(optfunc, init, optbounds);

@@ -77,14 +77,14 @@ struct Node
 
     int id = ID_NONE, left = ID_NONE, right = ID_NONE;
 
-    Vec3f pos;
+    Domain::Vec3f pos;
     float Rmin = 0.f;
 
     // Tracking the weight of each junction, which is essentially the sum of
     // the lenghts of all branches emanating from this junction.
     float weight = 0.f;
 
-    Node(const Vec3f &p, float r_min = .0f) : pos{p}, Rmin{r_min}, weight{0.f}
+    Node(const Domain::Vec3f &p, float r_min = .0f) : pos{p}, Rmin{r_min}, weight{0.f}
     {}
 };
 

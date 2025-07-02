@@ -20,11 +20,12 @@
 #include <utility>
 #include <vector>
 
-#include "FillBase.hpp"
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Point.hpp"
-#include "libslic3r/Polyline.hpp"
-#include "libslic3r/libslic3r.h"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polyline.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
+#include "libslic3r/Fill/FillBase.hpp"
 
 struct indexed_triangle_set;
 
@@ -57,7 +58,7 @@ FillAdaptive::OctreePtr         build_octree(
     const indexed_triangle_set  &triangle_mesh,
     // Overhang triangles extracted from fill surfaces with stInternalBridge type, 
     // rotated to the coordinate system of the octree.
-    const std::vector<Vec3d>    &overhang_triangles, 
+    const std::vector<Domain::Vec3d> &overhang_triangles,
     double                     line_spacing, 
     // If true, octree is densified below internal overhangs only.
     bool                         support_overhangs_only);
@@ -75,11 +76,12 @@ public:
 protected:
     Fill* clone() const override { return new Filler(*this); }
 	void _fill_surface_single(
-	    const FillParams                &params,
-	    unsigned int                     thickness_layers,
-	    const std::pair<float, Point>   &direction,
-	    ExPolygon                        expolygon,
-	    Polylines                       &polylines_out) override;
+        const FillParams&                      params,
+        unsigned int                           thickness_layers,
+        const std::pair<float, Domain::Point>& direction,
+        Domain::ExPolygon                      expolygon,
+        Domain::Polylines&                     polylines_out) override;
+
     // Let the G-code export reoder the infill lines.
     //FIXME letting the G-code exporter to reorder infill lines of Adaptive Cubic Infill
     // may not be optimal as the internal infill lines may get extruded before the long infill

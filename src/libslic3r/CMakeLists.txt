@@ -10,7 +10,7 @@ project(libslic3r)
 
 include(PrecompiledHeader)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libslic3r_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/libslic3r_version.h @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libslic3r_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/libslic3r/libslic3r_version.h @ONLY)
 
 if(SLIC3R_STATIC)
     set(OPENVDB_USE_STATIC_LIBS ON)
@@ -255,7 +255,7 @@ set(SLIC3R_SOURCES
     LayerRegion.hpp
     LayerRegion.cpp
     libslic3r.h
-    "${CMAKE_CURRENT_BINARY_DIR}/libslic3r_version.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/libslic3r/libslic3r_version.h"
     Line.hpp
     BlacklistedLibraryCheck.cpp
     BlacklistedLibraryCheck.hpp
@@ -585,6 +585,7 @@ endif ()
 
 target_compile_definitions(libslic3r PUBLIC -DUSE_TBB -DTBB_USE_CAPTURED_EXCEPTION=0)
 target_include_directories(libslic3r PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/.. ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(libslic3r PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/include) # For libslic3r_version.h
 target_include_directories(libslic3r PUBLIC ${EXPAT_INCLUDE_DIRS})
 
 find_package(JPEG REQUIRED)

@@ -19,6 +19,8 @@
 #include <cinttypes>
 #include <cstdlib>
 
+#include "Slic3r/Domain/BoundingBox.hpp"
+
 #include "Point.hpp"
 #include "BoundingBox.hpp"
 #include "ExPolygon.hpp"
@@ -113,7 +115,13 @@ public:
 	Grid() = default;
 	Grid(const BoundingBox &bbox) : m_bbox(bbox) {}
 
-	void set_bbox(const BoundingBox &bbox) { m_bbox = bbox; }
+    void set_bbox(const BoundingBox &bbox) { m_bbox = bbox; }
+
+    // TODO: This is a temporary method until the old BoundingBox is replaced with Domain::BoundingBox2crd.
+    void set_bbox(const Domain::BoundingBox2crd& bbox)
+    {
+        m_bbox = BoundingBox{bbox.min, bbox.max};
+    }
 
 	// Fill in the grid with open polylines or closed contours.
 	// If open flag is indicated, then polylines_or_polygons are considered to be open by default.

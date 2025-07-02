@@ -5,7 +5,7 @@
 #ifndef CSGMESHCOPY_HPP
 #define CSGMESHCOPY_HPP
 
-#include "CSGMesh.hpp"
+#include "libslic3r/CSGMesh/CSGMesh.hpp"
 
 namespace Slic3r { namespace csg {
 

@@ -2,7 +2,7 @@
 #define slic3r_SLA_SuppotstIslands_UniformSupportIsland_hpp_
 
 #include <libslic3r/ExPolygon.hpp>
-#include "SampleConfig.hpp"
+#include "libslic3r/SLA/SupportIslands/SampleConfig.hpp"
 #include "SupportIslandPoint.hpp"
 #include "libslic3r/SLA/SupportPointGenerator.hpp" // Peninsula
 

@@ -2756,7 +2756,8 @@ static void polylines_from_paths(const std::vector<MonotonicRegionLink> &path, c
 
 // The extended bounding box of the whole object that covers any rotation of every layer.
 BoundingBox FillRectilinear::extended_object_bounding_box() const {
-    BoundingBox out = this->bounding_box;
+    // TODO: This unnecessary copy will remain until the old BoundingBox is replaced with Domain::BoundingBox2crd.
+    BoundingBox out = BoundingBox{this->bounding_box.min, this->bounding_box.max};
     out.merge(Point(out.min.y(), out.min.x()));
     out.merge(Point(out.max.y(), out.max.x()));
 

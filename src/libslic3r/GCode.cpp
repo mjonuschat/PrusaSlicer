@@ -20,10 +20,9 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "libslic3r/Config.hpp"
-#include "libslic3r/Geometry/Circle.hpp"
 #include "Slic3r/Biz/GCodeReader/Utils.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
+#include "Slic3r/Domain/enum_bitmask.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
 #include "libslic3r/I18N.hpp"
@@ -31,7 +30,6 @@
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
-#include "libslic3r/GCode/LabelObjects.hpp"
 #include "libslic3r/GCode/PostProcessor.hpp"
 #include "libslic3r/GCode/PrintExtents.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
@@ -46,9 +44,8 @@
 #include "libslic3r/Thread.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/libslic3r.h"
 #include "LocalesUtils.hpp"
-#include "format.hpp"
+#include "libslic3r/format.hpp"
 #include "Slic3r/Time.hpp"
 
 #include <algorithm>
@@ -1094,7 +1091,7 @@ void GCodeGenerator::_do_export(
     // if exporting gcode in ascii format, generate the thumbnails here
     auto [thumbnails, errors] = GCodeThumbnails::make_and_check_thumbnail_list(print.config());
 
-    if (errors != enum_bitmask<ThumbnailError>()) {
+    if (errors != Domain::enum_bitmask<ThumbnailError>()) {
         std::string error_str = format("Invalid thumbnails value:");
         error_str += GCodeThumbnails::get_error_string(errors);
         throw Slic3r::ExportError(error_str);

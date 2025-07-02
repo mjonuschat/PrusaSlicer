@@ -21,12 +21,12 @@
 #include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
-#include "BoundingBox.hpp"
-#include "ClipperUtils.hpp"
-#include "Layer.hpp"
-#include "Print.hpp"
-#include "Geometry/VoronoiUtils.hpp"
-#include "MutablePolygon.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/Geometry/VoronoiUtils.hpp"
+#include "libslic3r/MutablePolygon.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -44,7 +44,7 @@
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
-#include "MultiMaterialSegmentation.hpp"
+#include "libslic3r/MultiMaterialSegmentation.hpp"
 
 using namespace Slic3r::Biz;
 

@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include "SupportPointGenerator.hpp"
+#include "libslic3r/SLA/SupportPointGenerator.hpp"
 
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp" // parallel preparation of data for sampling
 #include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
@@ -14,6 +14,7 @@
 // SupportIslands
 #include "libslic3r/SLA/SupportIslands/UniformSupportIsland.hpp"
 #include "libslic3r/SLA/SupportIslands/SampleConfigFactory.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
@@ -715,11 +716,11 @@ std::optional<SmallPart> create_small_part(
     // only island part could be source of small part
     assert(part.prev_parts.empty()); 
     // Island bounding box Should be already checked out of function
-    assert(part.shape_extent.size().x() <= 2*radius &&
-           part.shape_extent.size().y() <= 2*radius );
+    assert(Algorithms::BoundingBox::sizes(part.shape_extent).x() <= 2*radius &&
+           Algorithms::BoundingBox::sizes(part.shape_extent).y() <= 2*radius );
     
     Point range{radius, radius};
-    Point center = part.shape_extent.center();
+    Point center = Algorithms::BoundingBox::center(part.shape_extent);
     BoundingBox range_bb{center - range,center + range};
     // BoundingBox range_bb{ // check exist sphere with radius to overlap model part
     //    part.shape_extent.min - range,
@@ -887,7 +888,7 @@ SmallParts get_small_parts(const Layers &layers, float radius_in_mm) {
             const LayerPart &part = layer.parts[part_i];
             if (!part.prev_parts.empty())
                 continue; // not island
-            if (const Point size = part.shape_extent.size();
+            if (const Point size = Algorithms::BoundingBox::sizes(part.shape_extent);
                 size.x() > diameter || size.y() > diameter)
                 continue; // big island
             islands.push_back({layer_i, part_i});
@@ -1197,7 +1198,7 @@ size_t get_index_of_layer_part(const Point& coor, const LayerParts& parts, doubl
     size_t part_index = parts.size();
     // find part for support point
     for (const LayerPart &part : parts) {
-        if (part.shape_extent.contains(coor) && Algorithms::ExPolygon::contains(*part.shape, coor)) {
+        if (Algorithms::BoundingBox::contains(part.shape_extent, coor) && Algorithms::ExPolygon::contains(*part.shape, coor)) {
             // parts do not overlap each other
             assert(part_index >= parts.size());
             part_index = &part - &parts.front();
@@ -1218,7 +1219,7 @@ LayerParts::const_iterator get_closest_part(const PartLinks &links, Vec2d &coor)
     // Note: layer part MUST not overlap each other
     for (const PartLink &link : links) {
         LayerParts::const_iterator part_it = link;
-        if (part_it->shape_extent.contains(coor_p) && 
+        if (Algorithms::BoundingBox::contains(part_it->shape_extent, coor_p) &&
             Algorithms::ExPolygon::contains(*part_it->shape, coor_p)) {
             return part_it;
         }

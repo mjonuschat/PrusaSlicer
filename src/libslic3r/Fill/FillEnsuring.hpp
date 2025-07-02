@@ -5,8 +5,8 @@
 #ifndef slic3r_FillEnsuring_hpp_
 #define slic3r_FillEnsuring_hpp_
 
-#include "FillBase.hpp"
-#include "FillRectilinear.hpp"
+#include "libslic3r/Fill/FillBase.hpp"
+#include "libslic3r/Fill/FillRectilinear.hpp"
 #include "libslic3r/Polyline.hpp"
 
 namespace Slic3r {

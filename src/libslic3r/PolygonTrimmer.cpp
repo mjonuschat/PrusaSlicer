@@ -6,8 +6,8 @@
 
 #include <cassert>
 
-#include "EdgeGrid.hpp"
-#include "Geometry.hpp"
+#include "libslic3r/EdgeGrid.hpp"
+#include "libslic3r/Geometry.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
 

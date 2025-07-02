@@ -9,11 +9,11 @@
 #include <utility>
 #include <vector>
 
-#include "../Layer.hpp"
-#include "../Polygon.hpp"
-#include "../Print.hpp"
-#include "SupportLayer.hpp"
-#include "SupportParameters.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/Support/SupportLayer.hpp"
+#include "libslic3r/Support/SupportParameters.hpp"
 #include "libslic3r/PrintConfig.hpp"
 
 namespace Slic3r {

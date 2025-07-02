@@ -1,6 +1,8 @@
 #ifndef libslic3r_SeamScarf_hpp_
 #define libslic3r_SeamScarf_hpp_
 
+#include "Slic3r/Domain/Point.hpp"
+
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "tcbspan/span.hpp"
 
@@ -13,8 +15,8 @@ namespace Slic3r::Seams::Scarf {
 
 struct Scarf
 {
-    Point start_point;
-    Point end_point;
+    Domain::Point start_point;
+    Domain::Point end_point;
     std::size_t end_point_previous_index{};
     double max_segment_length{};
     bool entire_loop{};
@@ -26,17 +28,17 @@ using SmoothingFunction = std::function<GCode::SmoothPath(tcb::span<const Extrus
 namespace Impl {
 struct PathPoint
 {
-    Point point;
+    Domain::Point point;
     std::size_t path_index{};
     std::size_t previous_point_on_path_index{};
 };
 
 PathPoint get_path_point(
-    const ExtrusionPaths &paths, const Point &point, const std::size_t global_index
+    const ExtrusionPaths &paths, const Domain::Point &point, const std::size_t global_index
 );
 
 std::pair<ExtrusionPath, ExtrusionPath> split_path(
-    const ExtrusionPath &path, const Point &point, const std::size_t point_previous_index
+    const ExtrusionPath &path, const Domain::Point &point, const std::size_t point_previous_index
 );
 
 ExtrusionPaths split_paths(ExtrusionPaths &&paths, const PathPoint &path_point);
@@ -48,9 +50,9 @@ GCode::SmoothPath convert_to_smooth(tcb::span<const ExtrusionPath> paths);
 /**
  * @param count: Points count including the first and last point.
  */
-Points linspace(const Point &from, const Point &to, const std::size_t count);
+Domain::Points linspace(const Domain::Point &from, const Domain::Point &to, const std::size_t count);
 
-Points ensure_max_distance(const Points &points, const double max_distance);
+Domain::Points ensure_max_distance(const Domain::Points &points, const double max_distance);
 
 ExtrusionPaths ensure_scarf_resolution(
     ExtrusionPaths &&paths, const std::size_t scarf_paths_count, const double max_distance
@@ -75,7 +77,7 @@ std::optional<PathPoint> get_point_offset_from_end(const ExtrusionPaths &paths, 
 
 std::optional<PathPoint> find_path_point_from_end(
     const ExtrusionPaths &paths,
-    const Point &point,
+    const Domain::Point &point,
     const double tolerance
 );
 } // namespace Impl

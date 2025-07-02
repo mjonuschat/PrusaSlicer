@@ -10,9 +10,9 @@
 #include <cassert>
 #include <cinttypes>
 
-#include "BoundingBox.hpp"
-#include "ExtrusionEntityCollection.hpp"
-#include "SurfaceCollection.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/SurfaceCollection.hpp"
 #include "libslic3r/Algorithm/RegionExpansion.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/Flow.hpp"

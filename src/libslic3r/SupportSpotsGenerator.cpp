@@ -3,7 +3,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "SupportSpotsGenerator.hpp"
+#include "libslic3r/SupportSpotsGenerator.hpp"
 
 #include <boost/log/trivial.hpp>
 #include <oneapi/tbb/concurrent_vector.h>

@@ -17,8 +17,6 @@
 
 #include <utility>
 
-#include <libslic3r/libslic3r.h>
-
 #include "Optimizer.hpp"
 
 namespace Slic3r { namespace opt {
@@ -226,10 +224,10 @@ class NLoptOpt {
         };
 
         auto eq_data = wrap_tup<OptData>(equalities);
-        for_each_in_tuple(do_for_each_eq, eq_data);
+        std::apply([&](auto&... args) { (do_for_each_eq(args), ...); }, eq_data);
 
         auto ineq_data = wrap_tup<OptData>(inequalities);
-        for_each_in_tuple(do_for_each_ineq, ineq_data);
+        std::apply([&](auto&... args) { (do_for_each_ineq(args), ...); }, ineq_data);
 
         switch(m_dir) {
         case OptDir::MIN:

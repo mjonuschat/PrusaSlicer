@@ -1,5 +1,12 @@
 #include "SampleConfigFactory.hpp"
 
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Math.hpp"
+
+using Slic3r::Domain::coord_t;
+using Slic3r::Domain::is_approx;
+
 using namespace Slic3r::sla;
 
 bool SampleConfigFactory::verify(SampleConfig &cfg) {
@@ -62,7 +69,7 @@ SampleConfig SampleConfigFactory::create(float support_head_diameter_in_mm) {
     // head 0.4mm cca 1.65 mm
     // head 0.5mm cca 1.85 mm
     // This values are used for solvig equation(to find 2.9 and 1.3)
-    double head_area = M_PI * sqr(support_head_diameter_in_mm / 2); // Pi r^2
+    double head_area = M_PI * Slic3r::sqr(support_head_diameter_in_mm / 2); // Pi r^2
     result.max_length_for_one_support_point = static_cast<coord_t>(scale_(head_area * 2.9 + 1.3));
 
     // https://cfl.prusa3d.com/display/SLA/Double+Supports+-+Rectangles
@@ -107,7 +114,7 @@ SampleConfig SampleConfigFactory::apply_density(const SampleConfig &current, flo
     SampleConfig result = current;                                                        // copy
     result.thin_max_distance = static_cast<coord_t>(current.thin_max_distance / density); // linear
     result.thick_inner_max_distance = static_cast<coord_t>( // controll radius - quadratic
-        std::sqrt(sqr((double) current.thick_inner_max_distance) / density)
+        std::sqrt(Slic3r::sqr((double) current.thick_inner_max_distance) / density)
     );
     result.thick_outline_max_distance = static_cast<coord_t>(
         current.thick_outline_max_distance / density
