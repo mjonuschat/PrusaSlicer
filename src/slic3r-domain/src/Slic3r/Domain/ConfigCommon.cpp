@@ -45,16 +45,16 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->location = printer;
     def->label = L("Printer technology");
     def->tooltip = L("Printer technology");
-    s_enum_defs.push_back(std::make_unique<EnumValueDefs>(
+    get_enum_defs().push_back(std::make_unique<EnumValueDefs>(
         EnumValueDefs{
             {int(PrinterTechnology::FFF), "FFF", L("FFF")},
             {int(PrinterTechnology::SLA), "SLA", L("SLA")}
         }
     ));
     if (technology == SLA)
-        def->init_fn = init_with(PrinterTechnology::SLA, s_enum_defs.back().get());
+        def->init_fn = init_with(PrinterTechnology::SLA, get_enum_defs().back().get());
     else
-        def->init_fn = init_with(PrinterTechnology::FFF, s_enum_defs.back().get());
+        def->init_fn = init_with(PrinterTechnology::FFF, get_enum_defs().back().get());
 
     def = defs.add("bed_shape", typeid(std::vector<Vec2d>));
     def->location = printer;

@@ -757,7 +757,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
          {int(TowerSpeeds::tsLayer24), "layer24", "24"}}
     );
 
-    s_enum_defs.push_back(std::make_unique<EnumValueDefs>(
+    get_enum_defs().push_back(std::make_unique<EnumValueDefs>(
         EnumValueDefs{
             {int(TiltSpeeds::tsMove120), "move120", "120"},
             {int(TiltSpeeds::tsLayer200), "layer200", "200"},
@@ -775,7 +775,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
             {int(TiltSpeeds::tsMove8000), "move8000", "8000"},
         }
     ));
-    const EnumValueDefs* tilt_speeds_enum_def{s_enum_defs.back().get()};
+    const EnumValueDefs* tilt_speeds_enum_def{get_enum_defs().back().get()};
 
     def = defs.add("tilt_down_initial_speed", typeid(EnumVectorWrapper));
     def->location = Material;

@@ -5,7 +5,10 @@
 #include <vector>
 
 namespace Slic3r::Domain {
-inline std::vector<EnumValueDefsPtr> s_enum_defs{};
+inline std::vector<EnumValueDefsPtr>& get_enum_defs() {
+    static std::vector<EnumValueDefsPtr> result;
+    return result;
+}
 
 template <typename T>
 requires std::is_enum_v<typename T::value_type>
@@ -24,8 +27,8 @@ static auto init_with(const T& value, const EnumValueDefs* def) {
 template <typename T>
 requires std::is_enum_v<typename T::value_type>
 auto init_with(const T& values, const EnumValueDefs& enum_values) {
-    s_enum_defs.push_back(std::make_unique<EnumValueDefs>(enum_values));
-    const EnumVectorWrapper enum_wrappers{values, s_enum_defs.back().get()};
+    get_enum_defs().push_back(std::make_unique<EnumValueDefs>(enum_values));
+    const EnumVectorWrapper enum_wrappers{values, get_enum_defs().back().get()};
 
     return [enum_wrappers](){return ConfigValue{enum_wrappers};};
 }
@@ -33,8 +36,8 @@ auto init_with(const T& values, const EnumValueDefs& enum_values) {
 template <typename T>
 requires std::is_enum_v<T>
 auto init_with(const T& value, const EnumValueDefs& enum_values) {
-    s_enum_defs.push_back(std::make_unique<EnumValueDefs>(enum_values));
-    return [value, enum_def{s_enum_defs.back().get()}](){return ConfigValue{EnumWrapper{value, enum_def}};};
+    get_enum_defs().push_back(std::make_unique<EnumValueDefs>(enum_values));
+    return [value, enum_def{get_enum_defs().back().get()}](){return ConfigValue{EnumWrapper{value, enum_def}};};
 }
 
 template <typename T>
