@@ -18,6 +18,7 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/ConfigUtils.hpp"
 
 namespace Slic3r {
 

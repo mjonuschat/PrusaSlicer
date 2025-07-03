@@ -1,13 +1,13 @@
 #include "AppInstanceCheck.hpp"
 
 #include "SingleInstanceCheckerFactory.hpp"
+#include "Slic3r/Biz/Algorithms/StringUtils.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp"
 #include "Slic3r/Biz/Platform/ISingleInstanceChecker.hpp"
 #include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
 
 #include "libslic3r/Utils.hpp"
-#include "libslic3r/Config.hpp" // escape_string_cstyle
 
 #include <string>
 #include <boost/filesystem.hpp>
@@ -22,7 +22,7 @@ std::string get_init_params_in_string(int argc, char** argv)
 		const std::string token = argv[i];
         // We do now want escape_strings_cstyle that quotes strings
         // It would not be possible to use inside json
-        result += escape_string_cstyle(token);
+        result += Biz::Algorithms::escape_string_cstyle(token);
         result += ";";
 	} 
     return result;

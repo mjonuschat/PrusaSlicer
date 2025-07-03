@@ -113,6 +113,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/Config.cpp
     src/libslic3r/ConfigPackUtils.cpp
     src/libslic3r/ConfigPackUtils.hpp
+    src/libslic3r/ConfigUtils.cpp
     src/libslic3r/CSGMesh/CSGMeshCopy.hpp
     src/libslic3r/CSGMesh/ModelToCSGMesh.hpp
     src/libslic3r/CSGMesh/PerformCSGMeshBooleans.hpp
@@ -185,18 +186,12 @@ set(SLIC3R_SOURCES
     src/libslic3r/Format/SL1.hpp
     src/libslic3r/Format/SL1_SVG.cpp
     src/libslic3r/Format/SL1_SVG.hpp
-    src/libslic3r/Format/SLAArchiveFormatRegistry.cpp
-    src/libslic3r/Format/SLAArchiveFormatRegistry.hpp
-    src/libslic3r/Format/SLAArchiveReader.cpp
-    src/libslic3r/Format/SLAArchiveReader.hpp
     src/libslic3r/Format/STEP.cpp
     src/libslic3r/Format/STEP.hpp
     src/libslic3r/Format/STL.cpp
     src/libslic3r/Format/STL.hpp
     src/libslic3r/Format/SVG.cpp
     src/libslic3r/Format/SVG.hpp
-    src/libslic3r/Format/ZipperArchiveImport.cpp
-    src/libslic3r/Format/ZipperArchiveImport.hpp
     src/libslic3r/GCode.cpp
     src/libslic3r/GCode.hpp
     src/libslic3r/GCode/AvoidCrossingPerimeters.cpp
@@ -475,6 +470,7 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/BoostAdapter.hpp
     include/libslic3r/clonable_ptr.hpp
     include/libslic3r/Config.hpp
+    include/libslic3r/ConfigUtils.hpp
     include/libslic3r/ConfigViews.hpp
     include/libslic3r/CSGMesh/CSGMesh.hpp
     include/libslic3r/CSGMesh/VoxelizeCSGMesh.hpp

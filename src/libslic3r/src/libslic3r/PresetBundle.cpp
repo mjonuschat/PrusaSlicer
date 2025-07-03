@@ -12,6 +12,7 @@
 #include "libslic3r/Model.hpp"
 #include "libslic3r/format.hpp"
 #include "libslic3r/AppConfig.hpp"
+#include "Slic3r/Biz/Algorithms/StringUtils.hpp"
 
 #include <algorithm>
 #include <set>
@@ -1307,7 +1308,7 @@ static void flatten_configbundle_hierarchy(boost::property_tree::ptree &tree, co
         // Parse the list of comma separated values, possibly enclosed in quotes.
         std::vector<std::string> inherits_names;
         std::vector<std::string> inherits_system;
-        if (Slic3r::unescape_strings_cstyle(prst.node->get<std::string>("inherits", ""), inherits_names)) {
+        if (Biz::Algorithms::unescape_strings_cstyle(prst.node->get<std::string>("inherits", ""), inherits_names)) {
             // Resolve the inheritance by name.
             std::vector<Prst*> &inherits_nodes = const_cast<Prst&>(prst).inherits;
             for (const std::string &node_name : inherits_names) {
@@ -1336,7 +1337,7 @@ static void flatten_configbundle_hierarchy(boost::property_tree::ptree &tree, co
 			assert(inherits_system.size() == 1);
 			if (inherits_system.size() > 1)
 				BOOST_LOG_TRIVIAL(error) << "flatten_configbundle_hierarchy: The preset " << prst.name << " inherits from more than single system preset";
-			prst.node->put("inherits", Slic3r::escape_string_cstyle(inherits_system.front()));
+			prst.node->put("inherits", Biz::Algorithms::escape_string_cstyle(inherits_system.front()));
         }
     }
 
@@ -1533,7 +1534,7 @@ std::pair<PresetsConfigSubstitutions, size_t> PresetBundle::load_configbundle(
                 else if (kvp.first == "printer")
                     dst = &this->obsolete_presets.printers;
                 if (dst)
-                    unescape_strings_cstyle(kvp.second.data(), *dst);
+                    Biz::Algorithms::unescape_strings_cstyle(kvp.second.data(), *dst);
             }
         } else
             // Ignore an unknown section.
@@ -1551,7 +1552,7 @@ std::pair<PresetsConfigSubstitutions, size_t> PresetBundle::load_configbundle(
                     	if (kvp.first == "alias")
                     		alias_name = kvp.second.data();
                     	else if (kvp.first == "renamed_from") {
-                    		if (! unescape_strings_cstyle(kvp.second.data(), renamed_from)) {
+                    		if (! Biz::Algorithms::unescape_strings_cstyle(kvp.second.data(), renamed_from)) {
     			                BOOST_LOG_TRIVIAL(error) << "Error in a Vendor Config Bundle \"" << path << "\": The preset \"" << 
     			                    section.first << "\" contains invalid \"renamed_from\" key, which is being ignored.";
                        		}

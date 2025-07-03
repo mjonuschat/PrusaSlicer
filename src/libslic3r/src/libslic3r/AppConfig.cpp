@@ -392,7 +392,7 @@ std::string AppConfig::load(const std::string &path)
                 if (! boost::starts_with(kvp.first, MODEL_PREFIX)) { continue; }
                 const auto model_name = kvp.first.substr(MODEL_PREFIX.size());
                 std::vector<std::string> variants;
-                if (! unescape_strings_cstyle(kvp.second.data(), variants)) { continue; }
+                if (! Biz::Algorithms::unescape_strings_cstyle(kvp.second.data(), variants)) { continue; }
                 for (const auto &variant : variants) {
                     vendor[model_name].insert(variant);
                 }
@@ -478,7 +478,7 @@ void AppConfig::save()
         for (const auto &model : vendor.second) {
             if (model.second.empty()) { continue; }
             const std::vector<std::string> variants(model.second.begin(), model.second.end());
-            const auto escaped = escape_strings_cstyle(variants);
+            const auto escaped = Biz::Algorithms::escape_strings_cstyle(variants);
             config_ss << MODEL_PREFIX << model.first << " = " << escaped << std::endl;
         }
     }

@@ -10,8 +10,6 @@
 #include "libslic3r/format.hpp"
 #include "libslic3r/StaticMap.hpp"
 
-#include "libslic3r/Format/SLAArchiveFormatRegistry.hpp"
-
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Thread.hpp"
@@ -974,14 +972,9 @@ ParserConfig create_stats_placeholders()
 std::string SLAPrint::output_filename(const std::string &filename_base) const
 {
     ParserConfig config = this->finished() ? to_config(m_print_statistics) : create_stats_placeholders();
-    std::string default_ext = get_default_extension(m_print_config.get<std::string>("sla_archive_format").c_str());
-    if (default_ext.empty())
-        default_ext = "sl1";
-
-    default_ext.insert(default_ext.begin(), '.');
+    std::string default_ext = ".sl1";
 
     config.set("default_output_extension", default_ext);
-
     return this->PrintBase::output_filename(m_print_config.get<std::string>("output_filename_format"), default_ext, filename_base, &config);
 }
 

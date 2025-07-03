@@ -10,7 +10,6 @@
 #include "libslic3r/SLA/RasterBase.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/BoundingBox.hpp"
-#include "libslic3r/Format/ZipperArchiveImport.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintConfig.hpp"

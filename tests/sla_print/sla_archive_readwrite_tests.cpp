@@ -4,10 +4,6 @@
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "libslic3r/SLAPrint.hpp"
-#include "Slic3r/Biz/Algorithms/Model.hpp"
-#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "libslic3r/Format/SLAArchiveReader.hpp"
-#include "libslic3r/Format/SL1.hpp"
 
 #include "Slic3r/Domain/ConfigPack.hpp"
 
@@ -15,8 +11,6 @@
 
 using namespace Slic3r;
 using namespace Slic3r::Biz::Slicing; // SLAResult
-
-using Biz::Algorithms::Model::mesh;
 
 TEST_CASE("Archive export test", "[sla_archives]") {
     SLAResult sla_result;
@@ -64,30 +58,5 @@ TEST_CASE("Archive export test", "[sla_archives]") {
 
         // Not much can be checked about the archives...
         REQUIRE(boost::filesystem::exists(outputfname));
-
-        double vol_written = mesh(m).volume();
-
-        if (false) {
-            INFO("Testing archive type: SL1 -- reading back...");
-            indexed_triangle_set its;
-            DynamicPrintConfig cfg;
-
-            try {
-                // Leave format_id deliberetaly empty, guessing should always
-                // work here.
-                import_sla_archive(outputfname, "", its, cfg);
-            } catch (...) {
-                REQUIRE(false);
-            }
-
-            // its_write_obj(its, (outputfname + ".obj").c_str());
-
-            REQUIRE(!cfg.empty());
-            REQUIRE(!its.empty());
-
-            double vol_read = Domain::its_volume(its);
-            double rel_err  = std::abs(vol_written - vol_read) / vol_written;
-            REQUIRE(rel_err < 0.1);
-        }
     }
 }

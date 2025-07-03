@@ -919,13 +919,6 @@ static inline std::string get_extrusion_axis(const GCodeConfig &cfg)
 }
 
 
-inline std::string get_extrusion_axis(const PrintConfigView &cfg)
-{
-    return
-        ((cfg.get<GCodeFlavor>("gcode_flavor") == gcfMach3) || (cfg.get<GCodeFlavor>("gcode_flavor") == gcfMachinekit)) ? "A" :
-        (cfg.get<GCodeFlavor>("gcode_flavor") == gcfNoExtrusion) ? "" : "E";
-}
-
 PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     PrintConfig, 
     (MachineEnvelopeConfig, GCodeConfig),
