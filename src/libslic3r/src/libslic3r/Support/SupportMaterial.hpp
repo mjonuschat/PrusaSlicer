@@ -8,8 +8,8 @@
 
 #include <vector>
 
+#include "libslic3r/ConfigViews.hpp"
 #include "libslic3r/Flow.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Slicing.hpp"
 #include "SupportLayer.hpp"
 #include "SupportParameters.hpp"

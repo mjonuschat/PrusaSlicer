@@ -11,7 +11,6 @@
 
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Print.hpp"
 #include "../GCode.hpp"
@@ -334,7 +333,7 @@ SmoothingParams get_smoothing_params(
     // so machine_mode_idx should always be 0 (normal mode).
     assert(machine_mode_idx == 0);
 
-    if (config.get<GCodeFlavor>("gcode_flavor") != gcfMarlinFirmware)
+    if (config.get<Domain::GCodeFlavor>("gcode_flavor") != Domain::GCodeFlavor::gcfMarlinFirmware)
         // Smoothing is supported only on Marlin.
         return {0, 1};
 

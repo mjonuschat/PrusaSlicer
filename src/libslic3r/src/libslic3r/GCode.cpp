@@ -38,7 +38,6 @@
 #include "libslic3r/GCode/Travels.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Thread.hpp"
@@ -112,6 +111,7 @@ namespace Slic3r {
     using Biz::Parser::IO::is_vector;
     using Biz::Parser::IO::is_scalar;
     using Biz::GCodeReader::contains_reserved_tags;
+    using Domain::GCodeFlavor;
 
     namespace BB = Biz::Algorithms::BoundingBox;
 

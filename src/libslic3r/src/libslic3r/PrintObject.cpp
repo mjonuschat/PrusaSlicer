@@ -47,7 +47,6 @@
 #include "libslic3r/I18N.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/PrintBase.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Support/SupportMaterial.hpp"
 #include "libslic3r/Support/TreeSupport.hpp"
 #include "libslic3r/Surface.hpp"
@@ -62,7 +61,6 @@
 #include "libslic3r/libslic3r.h"
 #include "admesh/stl.h"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/Config.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/MultiMaterialSegmentation.hpp"
@@ -117,6 +115,8 @@ using Domain::BoundingBox3d;
 using Biz::Algorithms::BoundingBox::center;
 using Biz::Algorithms::BoundingBox::sizes;
 using Biz::Algorithms::BoundingBox::transformed;
+using Domain::InfillPattern;
+using Domain::EnsureVerticalShellThickness;
 
 // Constructor is called from the main thread, therefore all Model / ModelObject / ModelIntance data are valid.
 PrintObject::PrintObject(Print* print, Domain::ModelObject* model_object, const PrintObjectConfigView& config, const Transform3d& trafo, PrintInstances&& instances) :
@@ -685,7 +685,9 @@ FillLightning::GeneratorPtr PrintObject::prepare_lightning_infill_data()
     double lightning_density    = 0.;
     size_t   lightning_cnt        = 0;
     for (size_t region_id = 0; region_id < this->num_printing_regions(); ++region_id)
-        if (const PrintRegionConfigView &config = this->printing_region(region_id).config(); config.get<Domain::Percentage>("fill_density") > Domain::Percentage{0} && config.get<InfillPattern>("fill_pattern") == ipLightning) {
+        if (const PrintRegionConfigView& config = this->printing_region(region_id).config();
+            config.get<Domain::Percentage>("fill_density") > Domain::Percentage{0}
+            && config.get<InfillPattern>("fill_pattern") == InfillPattern::ipLightning) {
             has_lightning_infill = true;
             lightning_density   += config.get<Domain::Percentage>("fill_density").value;
             ++lightning_cnt;
@@ -1109,7 +1111,10 @@ void PrintObject::discover_vertical_shells()
         bool has_extra_layers = false;
         for (size_t region_id = 0; region_id < this->num_printing_regions(); ++region_id) {
             const PrintRegionConfigView &config = this->printing_region(region_id).config();
-            if (config.get<Domain::EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") == Domain::EnsureVerticalShellThickness::Enabled || config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") == EnsureVerticalShellThickness::Partial) {
+            if (config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness")
+                    == EnsureVerticalShellThickness::Enabled
+                || config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness")
+                    == EnsureVerticalShellThickness::Partial) {
                 has_extra_layers = true;
                 break;
             }
@@ -2390,13 +2395,6 @@ void PrintObject::bridge_over_infill()
     BOOST_LOG_TRIVIAL(info) << "Bridge over infill - End" << log_memory_info();
 
 } // void PrintObject::bridge_over_infill()
-
-static void clamp_exturder_to_default(ConfigOptionInt &opt, size_t num_extruders)
-{
-    if (opt.value > (int)num_extruders)
-        // assign the default extruder
-        opt.value = 1;
-}
 
 namespace {
 /**

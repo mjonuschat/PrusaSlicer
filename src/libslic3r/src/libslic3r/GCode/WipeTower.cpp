@@ -27,12 +27,13 @@
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ConfigViews.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "libslic3r/ConfigUtils.hpp"
 
 using namespace Slic3r::Biz;
+using Slic3r::Domain::GCodeFlavor;
 
 namespace Slic3r
 {
@@ -109,9 +110,9 @@ public:
     }
 
     WipeTowerWriter&            disable_linear_advance() {
-        if (m_gcode_flavor == gcfRepRapSprinter || m_gcode_flavor == gcfRepRapFirmware)
+        if (m_gcode_flavor == Domain::GCodeFlavor::gcfRepRapSprinter || m_gcode_flavor == Domain::GCodeFlavor::gcfRepRapFirmware)
             m_gcode += (std::string("M572 D") + std::to_string(m_current_tool) + " S0\n");
-        else if (m_gcode_flavor == gcfKlipper)
+        else if (m_gcode_flavor == Domain::GCodeFlavor::gcfKlipper)
             m_gcode += "SET_PRESSURE_ADVANCE ADVANCE=0\n";
         else
             m_gcode += "M900 K0\n";
@@ -383,7 +384,8 @@ public:
 	WipeTowerWriter& speed_override_backup()
     {
         // This is only supported by Prusa at this point (https://github.com/prusa3d/PrusaSlicer/issues/3114)
-        if (m_gcode_flavor == gcfMarlinLegacy || m_gcode_flavor == gcfMarlinFirmware)
+        if (m_gcode_flavor == GCodeFlavor::gcfMarlinLegacy
+            || m_gcode_flavor == GCodeFlavor::gcfMarlinFirmware)
             m_gcode += "M220 B\n";
 		return *this;
     }
@@ -391,7 +393,7 @@ public:
 	// Let the firmware restore the active speed override value.
 	WipeTowerWriter& speed_override_restore()
 	{
-        if (m_gcode_flavor == gcfMarlinLegacy || m_gcode_flavor == gcfMarlinFirmware)
+        if (m_gcode_flavor == GCodeFlavor::gcfMarlinLegacy || m_gcode_flavor == GCodeFlavor::gcfMarlinFirmware)
             m_gcode += "M220 R\n";
 		return *this;
     }
@@ -399,9 +401,9 @@ public:
 	// Set digital trimpot motor
 	WipeTowerWriter& set_extruder_trimpot(int current)
 	{
-        if (m_gcode_flavor == gcfKlipper)
+        if (m_gcode_flavor == GCodeFlavor::gcfKlipper)
             return *this;
-        if (m_gcode_flavor == gcfRepRapSprinter || m_gcode_flavor == gcfRepRapFirmware)
+        if (m_gcode_flavor == GCodeFlavor::gcfRepRapSprinter || m_gcode_flavor == GCodeFlavor::gcfRepRapFirmware)
             m_gcode += "M906 E";
         else
             m_gcode += "M907 E";

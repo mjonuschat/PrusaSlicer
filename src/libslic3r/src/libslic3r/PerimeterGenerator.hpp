@@ -13,7 +13,6 @@
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/SurfaceCollection.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"

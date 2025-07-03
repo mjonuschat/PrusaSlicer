@@ -38,7 +38,6 @@
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Surface.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"

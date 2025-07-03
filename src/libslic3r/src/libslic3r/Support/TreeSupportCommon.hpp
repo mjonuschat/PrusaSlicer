@@ -30,7 +30,6 @@
 #include "libslic3r/Polygon.hpp"
 #include "SupportCommon.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Slicing.hpp"
 #include "libslic3r/Support/SupportLayer.hpp"
 #include "libslic3r/Support/SupportParameters.hpp"

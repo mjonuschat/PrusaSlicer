@@ -30,7 +30,6 @@
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/PerimeterGenerator.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/SurfaceCollection.hpp"
 #include "libslic3r/Utils.hpp"

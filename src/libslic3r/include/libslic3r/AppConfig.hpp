@@ -11,7 +11,6 @@
 
 #include <boost/algorithm/string/trim_all.hpp>
 
-#include "libslic3r/Config.hpp"
 #include "Slic3r/Semver.hpp"
 
 #include "LocalesUtils.hpp"

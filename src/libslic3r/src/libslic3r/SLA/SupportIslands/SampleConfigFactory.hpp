@@ -3,7 +3,6 @@
 
 #include <optional>
 #include "libslic3r/SLA/SupportIslands/SampleConfig.hpp"
-#include "libslic3r/PrintConfig.hpp"
 
 //#define USE_ISLAND_GUI_FOR_SETTINGS
 

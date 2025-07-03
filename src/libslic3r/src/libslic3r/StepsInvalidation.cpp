@@ -4,7 +4,6 @@
 
 #include "Slic3r/Domain/Constants.hpp"
 
-#include "libslic3r/Config.hpp"
 #include "libslic3r/Print.hpp"
 
 using Slic3r::Domain::is_approx;

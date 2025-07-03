@@ -14,7 +14,6 @@
 #include <cmath>
 
 #include "libslic3r/GCode/GCodeWriter.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/libslic3r.h"
 

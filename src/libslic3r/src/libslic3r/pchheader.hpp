@@ -123,7 +123,6 @@
 #include <clipper/clipper_z.hpp>
 #include "clipper/clipper.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/Config.hpp"
 #include "libslic3r/enum_bitmask.hpp"
 #include "libslic3r/format.hpp"
 #include "libslic3r/I18N.hpp"

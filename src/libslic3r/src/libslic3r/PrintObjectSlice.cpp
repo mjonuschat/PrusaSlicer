@@ -32,7 +32,6 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintBase.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Slicing.hpp"
 #include "libslic3r/Surface.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"

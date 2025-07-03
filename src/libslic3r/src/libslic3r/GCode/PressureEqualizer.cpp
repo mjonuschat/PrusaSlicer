@@ -13,7 +13,6 @@
 #include <cctype>
 #include <cstdlib>
 
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/GCode.hpp"
 #include "GCodeWriter.hpp"
 #include "libslic3r/GCode/PressureEqualizer.hpp"

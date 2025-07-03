@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {

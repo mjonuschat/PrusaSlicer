@@ -4,6 +4,7 @@
 ///|/
 #include "libslic3r/GCode/Thumbnails.hpp"
 
+#include <magic_enum/magic_enum.hpp>
 #include <qoi.h>
 #include <jpeglib.h>
 #include <jmorecfg.h>
@@ -18,11 +19,13 @@
 #include "Slic3r/Domain/enum_bitmask.hpp"
 
 #include "libslic3r/miniz_extension.hpp" // IWYU pragma: keep
+#include "libslic3r/Point.hpp"
 #include "miniz.h"
 
 namespace Slic3r::GCodeThumbnails {
 
 using namespace std::literals;
+using Domain::GCodeThumbnailsFormat;
 
 struct CompressedPNG : CompressedImageBuffer 
 {

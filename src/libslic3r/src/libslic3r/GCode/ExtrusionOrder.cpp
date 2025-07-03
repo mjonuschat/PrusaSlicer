@@ -6,7 +6,6 @@
 
 #include "libslic3r/GCode/SmoothPath.hpp"
 #include "libslic3r/ShortestPath.hpp"
-#include "libslic3r/Config.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/ExtrusionRole.hpp"

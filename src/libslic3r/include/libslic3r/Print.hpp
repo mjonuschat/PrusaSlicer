@@ -569,7 +569,7 @@ public:
     Print(const OnFdmResult& on_fdm_result, const OnWipeTowerGeometry& on_wipe_tower_geometry);
 	virtual ~Print() { this->clear(); }
 
-	PrinterTechnology	technology() const noexcept override { return ptFFF; }
+    Domain::PrinterTechnology	technology() const noexcept override { return Domain::PrinterTechnology::FFF; }
 
     // Methods, which change the state of Print / PrintObject / PrintRegion.
     // The following methods are synchronized with process() and export_gcode(),

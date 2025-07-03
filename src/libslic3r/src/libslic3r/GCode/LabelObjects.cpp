@@ -15,11 +15,12 @@
 #include "libslic3r/MultiMaterialSegmentation.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
 using namespace Slic3r::Biz;
+using Slic3r::Domain::GCodeFlavor;
+using Slic3r::Domain::GCodeFlavor::gcfKlipper;
 
 namespace Slic3r::GCode {
 

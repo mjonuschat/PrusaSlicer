@@ -241,7 +241,7 @@ public:
     bool                    invalidate_step(SLAPrintObjectStep step);
     bool                    invalidate_all_steps();
     // Invalidate steps based on a set of parameters changed.
-    bool                    invalidate_state_by_config_options(const std::vector<t_config_option_key> &opt_keys);
+    bool                    invalidate_state_by_config_options(const std::vector<std::string> &opt_keys);
 
     void set_config(const SLAPrintObjectConfigView& config) { m_config = config; }
 
@@ -334,7 +334,7 @@ public:
 
     ~SLAPrint() override { this->clear(); }
 
-    PrinterTechnology	technology() const noexcept override { return ptSLA; }
+    Domain::PrinterTechnology	technology() const noexcept override { return Domain::PrinterTechnology::SLA; }
 
     void                clear() override;
     bool                empty() const override { return m_objects.empty(); }
@@ -449,7 +449,7 @@ public:
     bool invalidate_step(SLAPrintStep st);
 
     // Invalidate steps based on a set of parameters changed.
-    bool invalidate_state_by_config_options(const std::vector<t_config_option_key> &opt_keys, bool &invalidate_all_model_objects);
+    bool invalidate_state_by_config_options(const std::vector<std::string> &opt_keys, bool &invalidate_all_model_objects);
 
     OnSlaResult                     m_on_sla_result;
     OnSlaObject                     m_on_sla_object;

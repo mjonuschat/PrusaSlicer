@@ -29,7 +29,6 @@
 #include "libslic3r/Extruder.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"
 #include "libslic3r/Geometry/ArcWelder.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ConfigUtils.hpp"
 
@@ -42,6 +41,8 @@
 #include <fast_float.h>
 
 namespace Slic3r {
+
+using Domain::GCodeFlavor;
 
 CoolingBuffer::CoolingBuffer(GCodeGenerator &gcodegen, const PrintConfigView& config) : m_toolchange_prefix(gcodegen.writer().toolchange_prefix()), m_config(config), m_current_extruder(0)
 {

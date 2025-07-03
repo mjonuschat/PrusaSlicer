@@ -10,6 +10,7 @@
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/format.hpp"
 #include "libslic3r/I18N.hpp"
@@ -819,13 +820,10 @@ ProcessorResult post_process(const PostProcessorConfig& config, ProcessorResult&
 // output_name is the final name of the G-code on SD card or when uploaded to PrusaLink or OctoPrint.
 // If uploading to PrusaLink or OctoPrint, then the file will be renamed to output_name first on the target host.
 // The post-processing script may change the output_name.
-bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::string &host, std::string &output_name, const DynamicPrintConfig &config)
+bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::string &host, std::string &output_name, const PrintConfigView &config)
 {
-    const auto *post_process = config.opt<ConfigOptionStrings>("post_process");
-    if (// likely running in SLA mode
-        post_process == nullptr || 
-        // no post-processing script
-        post_process->values.empty())
+    const auto post_process = config.get<std::vector<std::string>>("post_process");
+    if (post_process.empty())
         return false;
 
     std::string path;
@@ -864,7 +862,10 @@ bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::
         throw Slic3r::RuntimeError(std::string("Post-processor can't find exported gcode file"));
 
     // Store print configuration into environment variables.
-    config.setenv_();
+
+    //config.setenv_();
+    PANIC("config.setenv_() not implemented");
+
     // Let the post-processing script know the target host ("File", "PrusaLink", "Repetier", "SL1Host", "OctoPrint", "FlashAir", "Duet", "AstroBox" ...)
     boost::nowide::setenv("SLIC3R_PP_HOST", host.c_str(), 1);
     // Let the post-processing script know the final file name. For "File" host, it is a full path of the target file name and its location, for example pointing to an SD card.
@@ -885,7 +886,7 @@ bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::
     remove_output_name_file();
 
     try {
-        for (const std::string &scripts : post_process->values) {
+        for (const std::string &scripts : post_process) {
     		std::vector<std::string> lines;
     		boost::split(lines, scripts, boost::is_any_of("\r\n"));
             for (std::string script : lines) {

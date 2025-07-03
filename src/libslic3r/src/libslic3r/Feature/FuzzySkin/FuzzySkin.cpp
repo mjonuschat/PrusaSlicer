@@ -6,7 +6,6 @@
 #include "libslic3r/PerimeterGenerator.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/PrintConfig.hpp"
 
 #include "FuzzySkin.hpp"
 #include "libslic3r/ConfigViews.hpp"

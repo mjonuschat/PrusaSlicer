@@ -29,7 +29,6 @@
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "tcbspan/span.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
