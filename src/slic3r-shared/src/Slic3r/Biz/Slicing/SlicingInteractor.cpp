@@ -146,7 +146,7 @@ void SlicingInteractor::on_status(const Status status, const SlicingId id) {
         }
     }
 
-    if(!m_dispatcher.dispatch_on_main_thread([=](){
+    if(!m_dispatcher.dispatch_on_main_thread([this, status, id](){
         process_slicing_queue();
         invoke_listeners<IStatusListener>([&](auto* listener){
             listener->on_status_changed(status, id);
