@@ -185,15 +185,17 @@ void PlaterRenderModule::init_scene_layout()
         IDialogManager::FileCallback callback =
                  [this](bool success, const boost::filesystem::path& file_path) {
                      if (success) {
-                         Domain::TriangleMesh mesh;
-                         if (! Biz::load_stl(file_path.string(), mesh))
+                         auto mesh = Biz::load_stl(file_path.string());
+                         if (! mesh) {
+                             // TODO: do something with the error
                              return;
+                         }
 
                          auto& scene_interactor = m_project_interactor.scene_interactor();
                          const auto& bed =
                              m_project_interactor.selected_project().config_containers().front()->bed();
 
-                         scene_interactor.new_object_from_mesh(std::move(mesh));
+                         scene_interactor.new_object_from_mesh(std::move(mesh.value()));
 
                          const Domain::BoundingBox3d& bbox = mesh->bounding_box();
                          Transform3d xform = Transform3d::Identity();

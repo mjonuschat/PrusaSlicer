@@ -89,11 +89,11 @@ static bool its_write_stl_binary(const std::string& file, const std::string& lab
     return true;
 }
 
-static std::optional<TriangleMesh> read_stl_file(const char* input_file, bool repair)
+static tl::expected<TriangleMesh, std::string> read_stl_file(const char* input_file, bool repair)
 {
     stl_file stl;
     if (!stl_open(&stl, input_file))
-        return std::nullopt;
+        return tl::make_unexpected("Unable to load STL file.");
     if (repair)
         Algorithms::TriangleMesh::trianglemesh_repair_on_import(stl);
 
@@ -121,19 +121,16 @@ static std::optional<TriangleMesh> read_stl_file(const char* input_file, bool re
     return TriangleMesh{std::move(its), std::move(stats)};
 }
 
-bool load_stl(const std::string& path, TriangleMesh& mesh)
+tl::expected<Domain::TriangleMesh, std::string> load_stl(const std::string& path)
 {
-    std::optional<TriangleMesh> mesh_opt{read_stl_file(path.c_str(), true)};
-    if (!mesh_opt) {
-        return false;
+    auto mesh = read_stl_file(path.c_str(), true);
+    if (! mesh) {
+        return mesh;
     }
-    if (mesh_opt->empty()) {
-        // die "This STL file couldn't be read because it's empty.\n"
-        return false;
+    if (mesh.value().empty()) {
+        return tl::make_unexpected("This STL file couldn't be read because it's empty.");
     }
-
-    mesh = std::move(*mesh_opt);
-    return true;
+    return mesh;
 }
 
 bool store_stl(const std::string& path, const Domain::TriangleMesh& mesh, bool binary, const std::string& label)

@@ -49,10 +49,9 @@ SCENARIO("Reading 3mf file", "[3mf]") {
 TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
     GIVEN("world vertices coordinates before save") {
         // load a model from stl file
-        Domain::TriangleMesh mesh;
         Domain::Model src_model;
         std::string src_file = std::string(TEST_DATA_DIR) + "/test_3mf/Prusa.stl";
-        Slic3r::Biz::load_stl(src_file, mesh);
+        Domain::TriangleMesh mesh = Slic3r::Biz::load_stl(src_file).value();
 
         Slic3r::Biz::Algorithms::Model::add_object(&src_model, "", src_file.c_str(), std::move(mesh));
         src_model.add_default_instances();
@@ -137,10 +136,9 @@ TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
 SCENARIO("2D convex hull of sinking object", "[3mf]") {
     GIVEN("model") {
         // load a model
-        Domain::TriangleMesh mesh;
         Domain::Model model;
         std::string src_file = std::string(TEST_DATA_DIR) + "/test_3mf/Prusa.stl";
-        Biz::load_stl(src_file.c_str(), mesh);
+        Domain::TriangleMesh mesh = Biz::load_stl(src_file.c_str()).value();
 
         Slic3r::Biz::Algorithms::Model::add_object(&model, "", src_file.c_str(), std::move(mesh));
         model.add_default_instances();

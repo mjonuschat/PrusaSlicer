@@ -22,8 +22,9 @@ SCENARIO("Reading an STL file", "[stl]") {
         WHEN("STL file is read") {
 			Slic3r::Domain::TriangleMesh mesh;
 			THEN("load should succeed") {
-                REQUIRE(Biz::load_stl(stl_path("Geräte/20mmbox-čřšřěá.stl").c_str(), mesh));
-				REQUIRE(is_approx(mesh.size(), Vec3d(20, 20, 20)));
+				auto mesh = Biz::load_stl(stl_path("Geräte/20mmbox-čřšřěá.stl"));
+                REQUIRE(mesh);
+				REQUIRE(is_approx(mesh->size(), Vec3d(20, 20, 20)));
             }
         }
     }
@@ -31,23 +32,26 @@ SCENARIO("Reading an STL file", "[stl]") {
 		WHEN("line endings LF") {
 			Slic3r::Domain::TriangleMesh mesh;
 			THEN("load should succeed") {
-				REQUIRE(Biz::load_stl(stl_path("ASCII/20mmbox-LF.stl").c_str(), mesh));
-				REQUIRE(is_approx(mesh.size(), Vec3d(20, 20, 20)));
+				auto mesh = Biz::load_stl(stl_path("ASCII/20mmbox-LF.stl"));
+				REQUIRE(mesh);
+				REQUIRE(is_approx(mesh->size(), Vec3d(20, 20, 20)));
 			}
 		}
 		WHEN("line endings CRLF") {
 			Slic3r::Domain::TriangleMesh mesh;
 			THEN("load should succeed") {
-				REQUIRE(Biz::load_stl(stl_path("ASCII/20mmbox-CRLF.stl").c_str(), mesh));
-				REQUIRE(is_approx(mesh.size(), Vec3d(20, 20, 20)));
+				auto mesh = Biz::load_stl(stl_path("ASCII/20mmbox-CRLF.stl"));
+				REQUIRE(mesh);
+				REQUIRE(is_approx(mesh->size(), Vec3d(20, 20, 20)));
 			}
 		}
 
 		WHEN("nonstandard STL file (text after ending tags, invalid normals, for example infinities)") {
 			Slic3r::Domain::TriangleMesh mesh;
 			THEN("load should succeed") {
-				REQUIRE(Biz::load_stl(stl_path("ASCII/20mmbox-nonstandard.stl"), mesh));
-				REQUIRE(is_approx(mesh.size(), Vec3d(20, 20, 20)));
+				auto mesh = Biz::load_stl(stl_path("ASCII/20mmbox-nonstandard.stl"));
+				REQUIRE(mesh);
+				REQUIRE(is_approx(mesh->size(), Vec3d(20, 20, 20)));
 			}
 		}
 	}
