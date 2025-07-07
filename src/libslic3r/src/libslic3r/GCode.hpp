@@ -344,7 +344,8 @@ private:
         const std::string& comment,
         const std::function<std::string()>& insert_gcode,
         const Domain::ConfigView& config,
-        const EnforceFirstZ enforce_first_z = EnforceFirstZ::False
+        const EnforceFirstZ enforce_first_z = EnforceFirstZ::False,
+        const std::function<bool()>& use_short_distance_acceleration = []() { return false; }
     );
     Polyline generate_travel_xy_path(
         const Point& start,

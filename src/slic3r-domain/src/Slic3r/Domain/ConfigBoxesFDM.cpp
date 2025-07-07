@@ -1919,6 +1919,20 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     def->init_fn = init_with(0.);
 
+    def               = defs.add("travel_short_distance_acceleration", typeid(double));
+    def->location     = Tool;
+    def->label        = L("Travel short distance acceleration");
+    def->option_group = L("Acceleration control (advanced)");
+    def->category     = ConfigItemDef::Category::Speed;
+    def->gui_type     = ConfigItemDef::GUIType::textfield;
+    def->tooltip      = L(
+        "Acceleration used for short travel moves. Short travel distance is determined by the retract_before_travel setting."
+    );
+    def->sidetext = L("mm/s²");
+    def->min      = 0;
+    def->mode     = comExpert;
+    def->init_fn  = init_with(0.);
+
     def = defs.add("infill_every_layers", typeid(int));
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };

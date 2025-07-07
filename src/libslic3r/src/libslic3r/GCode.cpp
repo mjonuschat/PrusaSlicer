@@ -706,7 +706,7 @@ GCodeGenerator::GCodeGenerator(const Print* print) :
     m_enable_loop_clipping(true),
     m_enable_cooling_markers(false),
     m_enable_extrusion_role_markers(false),
-    m_last_processor_extrusion_role(GCodeExtrusionRole::None), 
+    m_last_processor_extrusion_role(GCodeExtrusionRole::None),
     m_layer_count(0),
     m_layer_index(-1),
     m_layer(nullptr),
@@ -3655,19 +3655,20 @@ std::string GCodeGenerator::generate_travel_gcode(
     const std::string& comment,
     const std::function<std::string()>& insert_gcode,
     const Domain::ConfigView& config,
-    const EnforceFirstZ enforce_first_z
+    const EnforceFirstZ enforce_first_z,
+    const std::function<bool()>& use_short_distance_acceleration
 ) {
-    std::string gcode;
-
-    const unsigned acceleration =(unsigned)(config.get<double>("travel_acceleration") + 0.5);
-
     if (travel.empty()) {
         return "";
     }
 
-    // generate G-code for the travel move
-    // use G1 because we rely on paths being straight (G0 may make round paths)
-    gcode += this->m_writer.set_travel_acceleration(acceleration);
+    const unsigned travel_acceleration                = static_cast<unsigned>(config.get<double>("travel_acceleration") + 0.5);
+    const unsigned travel_short_distance_acceleration = static_cast<unsigned>(config.get<double>("travel_short_distance_acceleration") + 0.5);
+
+    std::string gcode;
+    // Generate G-code for the travel move.
+    // Use G1 because we rely on paths being straight (G0 may make round paths).
+    gcode += this->m_writer.set_travel_acceleration(use_short_distance_acceleration() ? travel_short_distance_acceleration : travel_acceleration);
 
     bool already_inserted{false};
     for (std::size_t i{0}; i < travel.size(); ++i) {
@@ -3691,13 +3692,21 @@ std::string GCodeGenerator::generate_travel_gcode(
         } else {
             gcode += this->m_writer.travel_to_xyz(gcode_point, comment);
         }
+
         this->last_position = point.head<2>();
     }
 
-    if (! GCodeWriter::supports_separate_travel_acceleration(config.get<GCodeFlavor>("gcode_flavor"))) {
+    // This is mainly for parts of the G-code export that don't take into account that travel acceleration could change during printing.
+    // Those parts of the G-code export always use the travel acceleration that was set last.
+    if (use_short_distance_acceleration() && travel_short_distance_acceleration != travel_acceleration) {
+        gcode += this->m_writer.set_travel_acceleration(travel_acceleration);
+    }
+
+    if (!GCodeWriter::supports_separate_travel_acceleration(config.get<GCodeFlavor>("gcode_flavor"))) {
         // In case that this flavor does not support separate print and travel acceleration,
         // reset acceleration to default.
-        gcode += this->m_writer.set_travel_acceleration(acceleration);
+        // TODO: This doesn't seem to perform what the comment describes.
+        gcode += this->m_writer.set_travel_acceleration(travel_acceleration);
     }
 
     return gcode;
@@ -3859,6 +3868,12 @@ std::string GCodeGenerator::travel_to(
         travel.pop_back();
     }
     travel.emplace_back(end_point);
+
+    if (config.get<double>("travel_short_distance_acceleration") > 0.) {
+        return wipe_retract_gcode + generate_travel_gcode(travel, comment, insert_gcode, config, enforce_first_z, [&]() {
+                   return role.is_external_perimeter() && xy_path.length() < scaled<double>(config.get<std::vector<double>>("retract_before_travel").at(m_writer.extruder()->id()));
+               });
+    }
 
     return wipe_retract_gcode + generate_travel_gcode(travel, comment, insert_gcode, config, enforce_first_z);
 }

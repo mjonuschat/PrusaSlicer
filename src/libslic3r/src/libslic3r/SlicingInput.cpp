@@ -129,6 +129,7 @@ namespace ToolSettings {
         "travel_acceleration",
         "travel_speed",
         "travel_speed_z",
+        "travel_short_distance_acceleration",
         "wipe_tower_bridging",
         "wipe_tower_extra_flow",
         "wipe_tower_extra_spacing",

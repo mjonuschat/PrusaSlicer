@@ -1861,6 +1861,14 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
+    def = this->add("travel_short_distance_acceleration", coFloat);
+    def->label = L("Travel short distance acceleration");
+    def->tooltip = L("Acceleration used for short travel moves. Short travel distance is determined by the retract_before_travel setting.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
     def = this->add("infill_every_layers", coInt);
     def->label = L("Combine infill every");
     def->category = L("Infill");

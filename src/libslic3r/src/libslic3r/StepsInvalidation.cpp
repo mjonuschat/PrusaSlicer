@@ -492,6 +492,7 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"top_solid_layers", steps({propagate(posPrepareInfill)})},
     {"top_solid_min_thickness", steps({propagate(posPrepareInfill)})},
     {"travel_acceleration", steps({propagate(psGCodeExport)})},
+    {"travel_short_distance_acceleration", steps({propagate(psGCodeExport)})},
     {"travel_lift_before_obstacle", steps({propagate(psGCodeExport)})},
     {"travel_max_lift", steps({propagate(psGCodeExport)})},
     {"travel_ramping_lift", steps({propagate(psGCodeExport)})},
