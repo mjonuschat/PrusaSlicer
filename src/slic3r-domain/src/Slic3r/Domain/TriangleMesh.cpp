@@ -14,6 +14,10 @@ void update_bounding_box(const indexed_triangle_set &its, TriangleMeshStats &out
 }
 
 
+TriangleMesh::TriangleMesh(indexed_triangle_set&& its)
+    : its{std::move(its)}
+{}
+
 TriangleMesh::TriangleMesh(indexed_triangle_set&& its, TriangleMeshStats&& stats)
     : its{std::move(its)}, m_stats{std::move(stats)}
 {}

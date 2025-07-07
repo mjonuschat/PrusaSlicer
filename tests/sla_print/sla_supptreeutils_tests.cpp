@@ -4,6 +4,7 @@
 
 #include <unordered_set>
 
+#include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include "libslic3r/SLA/SupportTreeUtils.hpp"
 #include "libslic3r/SLA/SupportTreeUtilsLegacy.hpp"
@@ -91,7 +92,7 @@ static void eval_ground_conn(const Slic3r::sla::GroundConnection &conn,
     indexed_triangle_set mesh = *sm.emesh.get_triangle_mesh();
     Domain::its_merge(mesh, builder.merged_mesh());
 
-    triangle_mesh::its_write_stl_ascii(stl_fname.c_str(), "stl_fname", mesh);
+    Biz::store_stl(stl_fname, Slic3r::Domain::TriangleMesh(std::move(mesh)), false);
 //#endif
 
     REQUIRE(bool(conn));

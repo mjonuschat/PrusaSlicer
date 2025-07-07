@@ -149,7 +149,7 @@ bool store_obj(const char *path, Domain::ModelObject *model_object)
 
 bool store_obj(const char *path, Domain::Model *model)
 {
-    TriangleMesh mesh = Algorithms::Model::mesh(*model);
+    TriangleMesh mesh = Algorithms::Model::flatten_to_mesh(*model);
     return store_obj(path, &mesh);
 }
 

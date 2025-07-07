@@ -4,6 +4,8 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Biz/Algorithms/Tesselate.hpp"
+#include "Slic3r/Biz/Format/STL.hpp"
+
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
@@ -11,6 +13,7 @@
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Types.hpp"
+
 
 #include <Slic3r/Log.hpp>
 #include <Slic3r/Assert.hpp>
@@ -37,16 +40,16 @@ TriangleMesh BedGeometry::model(const Domain::Bed& bed)
 {
     namespace TriMesh = Biz::Algorithms::TriangleMesh;
     const std::string& model_filename = bed.model_filename();
-    std::optional<TriangleMesh> mesh{TriMesh::read_stl_file(model_filename.c_str())};
 
-    const bool res = !model_filename.empty() && mesh;
+    TriangleMesh mesh;
+    const bool res = !model_filename.empty() && Biz::load_stl(model_filename, mesh);
     if (!res) {
         SPDLOG_ERROR("Unable to load bed model from file: {}", model_filename);
         return TriangleMesh{};
     }
 
-    mesh->translate(Algorithms::Point::to_3d(bed.center(), 0.0).cast<float>());
-    return *mesh;
+    mesh.translate(Algorithms::Point::to_3d(bed.center(), 0.0).cast<float>());
+    return mesh;
 }
 
 std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::Bed& bed)

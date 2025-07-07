@@ -57,10 +57,9 @@ std::vector<Domain::TriangleMesh> split(const Domain::TriangleMesh& mesh);
 // Returns the bbox of this TriangleMesh transformed by the given transformation
 Domain::BoundingBox3d transformed_bounding_box(const Domain::TriangleMesh& mesh, const Domain::Transform3d &trafo);
 
-std::optional<Domain::TriangleMesh> read_stl_file(const char* input_file, bool repair = true);
-bool write_ascii(const Domain::TriangleMesh& mesh, const char* output_file);
-bool write_binary(const Domain::TriangleMesh& mesh, const char* output_file);
 void write_obj_file(const Domain::TriangleMesh& mesh, const char* output_file);
+
+void trianglemesh_repair_on_import(stl_file &stl);
 
 // Index of face indices incident with a vertex index.
 struct VertexFaceIndex
@@ -234,12 +233,6 @@ inline Domain::TriangleMesh make_sphere(double rho, double fa = (2 * std::number
     using Biz::Algorithms::TriangleMesh::construct;
     return construct(its_make_sphere(rho, fa));
 }
-
-bool        its_write_stl_ascii(const char *file, const char *label, const std::vector<stl_triangle_vertex_indices> &indices, const std::vector<stl_vertex> &vertices);
-inline bool its_write_stl_ascii(const char *file, const char *label, const indexed_triangle_set &its) { return its_write_stl_ascii(file, label, its.indices, its.vertices); }
-bool        its_write_stl_binary(const char *file, const char *label, const std::vector<stl_triangle_vertex_indices> &indices, const std::vector<stl_vertex> &vertices);
-inline bool its_write_stl_binary(const char *file, const char *label, const indexed_triangle_set &its) { return its_write_stl_binary(file, label, its.indices, its.vertices); }
-
 
 } // namespace Slic3r
 

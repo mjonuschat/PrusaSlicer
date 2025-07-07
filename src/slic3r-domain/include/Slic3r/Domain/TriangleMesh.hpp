@@ -107,6 +107,7 @@ class TriangleMesh
 {
 public:
     TriangleMesh() = default;
+    TriangleMesh(indexed_triangle_set&& its);
     TriangleMesh(indexed_triangle_set&& its, TriangleMeshStats&& stats);
     TriangleMesh(const indexed_triangle_set& its, const TriangleMeshStats& stats);
 

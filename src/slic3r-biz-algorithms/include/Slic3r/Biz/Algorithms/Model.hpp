@@ -46,7 +46,7 @@ void duplicate_objects_grid(Domain::Model& model, size_t x, size_t y, double dis
  */
 void adjust_min_z(Domain::Model& model);
 
-Domain::TriangleMesh mesh(const Domain::Model& model);
+Domain::TriangleMesh flatten_to_mesh(const Domain::Model& model);
 
 void print_info(const Domain::Model& model);
 

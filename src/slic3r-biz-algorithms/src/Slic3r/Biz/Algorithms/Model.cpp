@@ -159,7 +159,7 @@ void adjust_min_z(Domain::Model& model)
 }
 
 // Flattens everything to a single mesh.
-Domain::TriangleMesh mesh(const Domain::Model& model)
+Domain::TriangleMesh flatten_to_mesh(const Domain::Model& model)
 {
     Domain::TriangleMesh mesh;
     for (const Domain::ModelObject* o : model.objects) {
