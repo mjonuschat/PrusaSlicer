@@ -19,6 +19,7 @@ SidebarActionButtons::SidebarActionButtons(const std::string& name, Render::Modu
     m_navigate_to_type = m_type == RMType::Plater ? RMType::Preview : RMType::Plater;
 
     set_min_size({220, 0});
+    set_flex_shrink(0);
 }
 
 void SidebarActionButtons::on_init(Biz::ProjectInteractor* project_interactor)

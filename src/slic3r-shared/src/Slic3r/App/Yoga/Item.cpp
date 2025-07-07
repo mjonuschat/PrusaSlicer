@@ -6,7 +6,6 @@
 
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
-#include "Slic3r/Log.hpp"
 #include "Slic3r/App/Yoga/ItemEvents.hpp"
 
 #include <imgui_internal.h>
@@ -155,14 +154,6 @@ void Item::render(Vec2f pos, Vec2f size)
     render_item_end(pos, size);
 }
 
-void Item::resize(Vec2f size)
-{
-    // Make sure we do yoda calculation only on root nodes
-    if (m_parent) {
-        m_parent->resize(size);
-    }
-}
-
 void Item::process_events(Vec2f pos, Vec2f size)
 {
     for (const ItemPtr& child : m_children) {
@@ -223,6 +214,8 @@ const Paddings& Item::padding() const { return m_padding; }
 float Item::gap() const { return m_gap; }
 
 Orientation Item::orientation() const { return m_orientation; }
+
+YGWrap Item::flex_wrap() const { return YGNodeStyleGetFlexWrap(m_node); }
 
 bool Item::enabled()
 {
@@ -289,7 +282,10 @@ void Item::set_bottom(float bottom) { YGNodeStyleSetPosition(m_node, YGEdgeBotto
 
 void Item::set_flex(float flex) { YGNodeStyleSetFlex(m_node, flex); }
 
-void Item::remove_later(Item* child) {
+void Item::set_flex_wrap(YGWrap wrap) { YGNodeStyleSetFlexWrap(m_node, wrap); }
+
+void Item::remove_later(Item* child)
+{
     ASSERT(child);
     ASSERT(index_of(child).has_value());
     push_event(std::make_unique<RemoveEvent>(child));
@@ -335,7 +331,7 @@ std::string Item::debug_dump_tree() const
     dump += "minWidth: " + std::to_string(YGNodeStyleGetMinWidth(m_node).value) + ", ";
     dump += "minHeight: " + std::to_string(YGNodeStyleGetMinHeight(m_node).value) + ", ";
     // if (m_max_size.x() != YGUndefined) {
-    //     dump += "maxWidth: " + std::to_string(YGNodeStyleGetMaxWidth(m_node).value) + ", ";
+    //     dump += "maxWidth: " + std::to_string(YGNodeStyleGetMaxWidth(m_node).value) + ", "
     // }
     // if (m_max_size.y() != YGUndefined) {
     //     dump += "maxHeight: " + std::to_string(YGNodeStyleGetMaxHeight(m_node).value) + ", ";
@@ -441,6 +437,19 @@ void Item::push_event(std::unique_ptr<Event> event)
     ASSERT(m_parent);
     m_parent->push_event(std::move(event));
 }
+
+void Item::enabled_updated_internal() {}
+
+Vec2f Item::get_available_size() const { return m_parent->get_available_size(); }
+
+void Item::on_resized() {}
+
+Vec2f Item::get_global_pos() const
+{
+    const Vec2f pos{left(), top()};
+
+    return m_parent ? pos + m_parent->get_global_pos() : pos;
+};
 
 void Item::set_imgui_render(Render::ImguiRender* imgui_render) { m_imgui_render = imgui_render; }
 
@@ -796,5 +805,20 @@ Item* Item::get_item(size_t index) const
 }
 
 size_t Item::item_count() const { return m_children.size(); }
+
+void Item::check_resized()
+{
+    float w = width();
+    float h = height();
+    if (!Domain::fuzzy_compare(w, m_last_width) || !Domain::fuzzy_compare(h, m_last_height)) {
+        m_last_width = w;
+        m_last_height = h;
+        on_resized();
+    }
+
+    for (const ItemPtr& child : std::as_const(m_children)) {
+        child->check_resized();
+    }
+}
 
 } // namespace Slic3r::App::Yoga

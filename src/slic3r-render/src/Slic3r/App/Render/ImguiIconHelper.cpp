@@ -169,6 +169,19 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
 
     { Icon::Calculator              , "calculator"                      },
     { Icon::CopyForGizmo            , "copy_for_gizmo"                  },
+
+    { Icon::Layers            , "layers"                              },
+    { Icon::Infill            , "infill"                              },
+    { Icon::SkirtBrim         , "skirt_brim"                          },
+    { Icon::Support           , "support"                             },
+    { Icon::Time              , "time"                                },
+    { Icon::Funnel            , "funnel"                              },
+    { Icon::Cog               , "cog"                                 },
+    { Icon::Cogs              , "cogs"                                },
+    { Icon::Output            , "output"                              },
+    { Icon::Notes             , "notes"                               },
+    { Icon::CaretLeft         , "caret_left"                          },
+    { Icon::Search            , "search_gray"                         },
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {

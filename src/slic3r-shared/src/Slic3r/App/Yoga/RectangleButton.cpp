@@ -23,20 +23,14 @@ RectangleButton::RectangleButton(const std::string& tooltip) : AbstractButton(to
     update_fill();
 }
 
-void RectangleButton::append(ItemPtr child)
-{
-    m_background->append(std::move(child));
-}
+void RectangleButton::append(ItemPtr child) { m_background->append(std::move(child)); }
 
 void RectangleButton::insert(ItemPtr child, size_t index)
 {
     m_background->insert(std::move(child), index);
 }
 
-ItemPtr RectangleButton::remove(Item* child)
-{
-    return m_background->remove(child);
-}
+ItemPtr RectangleButton::remove(Item* child) { return m_background->remove(child); }
 
 const ImColor& RectangleButton::background_color() const { return m_background->fill(); }
 
@@ -57,7 +51,29 @@ void RectangleButton::set_content_padding(const Paddings& padding)
     m_background->set_padding(padding);
 }
 
-const ImColor& RectangleButton::background_color_checked() const { return m_background_color_checked; }
+Orientation RectangleButton::content_orientation() const { return m_background->orientation(); }
+
+void RectangleButton::set_content_orientation(Orientation orientation)
+{
+    m_background->set_orientation(orientation);
+}
+
+YGJustify RectangleButton::content_justify_content() const
+{
+    return m_background->justify_content();
+}
+
+YGAlign RectangleButton::content_align_item() const { return m_background->align_items(); }
+
+void RectangleButton::set_content_align_items(YGAlign align)
+{
+    m_background->set_align_items(align);
+}
+
+const ImColor& RectangleButton::background_color_checked() const
+{
+    return m_background_color_checked;
+}
 
 void RectangleButton::set_background_color_checked(const ImColor& background_color_checked)
 {
@@ -66,21 +82,20 @@ void RectangleButton::set_background_color_checked(const ImColor& background_col
     update_fill();
 }
 
-void RectangleButton::align_content(Align align)
+void RectangleButton::set_content_justify_content(YGJustify justify)
 {
-    switch (align) {
-    case Align::Left:
-        m_background->set_justify_content(YGJustifyFlexStart);
-        break;
-    case Align::Center:
-        m_background->set_justify_content(YGJustifyCenter);
-        break;
-    case Align::Right:
-        m_background->set_justify_content(YGJustifyFlexEnd);
-        break;
-    default:
-        break;
-    }
+    m_background->set_justify_content(justify);
+}
+
+float RectangleButton::rounding() const { return m_background->rounding(); }
+
+void RectangleButton::set_rounding(float rounding) { m_background->set_rounding(rounding); }
+
+ImDrawFlags RectangleButton::draw_flags() const { return m_background->flags(); }
+
+void RectangleButton::set_draw_flags(ImDrawFlags draw_flags)
+{
+    m_background->set_flags(draw_flags);
 }
 
 void RectangleButton::checked_updated_internal() { update_fill(); }
@@ -92,13 +107,10 @@ void RectangleButton::update_fill()
     ImColor color = m_background_color;
     if (checked()) {
         color = hovered() ? m_background_color_checked_hover : m_background_color_checked;
-    }
-    else {
+    } else {
         color = hovered() ? m_background_color_hover : m_background_color;
     }
     m_background->set_fill(color);
 }
 
-
-
-} //namespace Slic3r::App::Yoga 
+} // namespace Slic3r::App::Yoga

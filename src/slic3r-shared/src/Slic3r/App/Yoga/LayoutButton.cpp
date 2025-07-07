@@ -27,6 +27,7 @@ Slic3r::App::Yoga::LayoutButton::LayoutButton(
     m_icon = emplace_back<Icon>(icon);
     m_icon->set_visible(icon != Render::Icon::None);
     m_icon->set_aspect_ratio(1);
+    m_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
 
     m_text = emplace_back<Text>(label);
     m_text->set_self_align(YGAlign::YGAlignCenter);
@@ -51,15 +52,9 @@ void LayoutButton::set_label_font_type(Render::ImguiFontType label_font_type)
     m_text->set_font_type(label_font_type);
 }
 
-void LayoutButton::expand_label(bool expand)
-{
-    m_text->set_flex_grow(expand ? 1.f : 0.f);
-}
+void LayoutButton::expand_label(bool expand) { m_text->set_flex_grow(expand ? 1.f : 0.f); }
 
-Render::Icon LayoutButton::icon() const
-{
-    return m_icon->icon();
-}
+Render::Icon LayoutButton::icon() const { return m_icon->icon(); }
 
 void LayoutButton::set_icon(Render::Icon icon)
 {

@@ -12,7 +12,7 @@ namespace Slic3r::App::Yoga {
 class Text : public Item
 {
 public:
-    Text(const std::string& text);
+    Text(const std::string& text, Render::ImguiFontType font_type = Render::ImguiFontType::Regular);
 
     void render(Vec2f pos, Vec2f size) override;
 
@@ -25,13 +25,19 @@ public:
     Render::ImguiFontType font_type() const;
     void set_font_type(Render::ImguiFontType font_type);
 
+    bool wrap() const;
+    void set_wrap(bool wrap);
+
 protected:
     Vec2f get_item_size() override;
+
+    void on_resized() override;
 
 private:
     std::string m_text;
     ImColor m_text_color = IM_COL32_WHITE;
     Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
+    bool m_wrap = false;
 };
 
 } // namespace Slic3r::App::Yoga

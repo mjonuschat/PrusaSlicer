@@ -45,6 +45,8 @@ float Rectangle::border_width() const { return m_border_width; }
 
 float Rectangle::rounding() const { return m_rounding; }
 
+ImDrawFlags Rectangle::flags() const { return m_flags; }
+
 void Rectangle::set_fill(const ImColor& fill) { m_fill = fill; }
 
 void Rectangle::set_border_color(const ImColor& border_color) { m_border_color = border_color; }

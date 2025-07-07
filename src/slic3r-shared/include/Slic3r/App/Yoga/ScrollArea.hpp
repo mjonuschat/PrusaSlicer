@@ -11,9 +11,11 @@ namespace Slic3r::App::Yoga {
 class ScrollArea : public Item
 {
 public:
-    explicit ScrollArea(const std::string& name = {});
+    explicit ScrollArea(const std::string& name = "ScrollArea");
 
     void render(Vec2f pos, Vec2f size) override;
+
+    void process_events(Vec2f pos, Vec2f size) override;
 
     ImGuiChildFlags child_flags() const;
     void set_child_flags(ImGuiChildFlags child_flags);
@@ -24,6 +26,7 @@ public:
 private:
     ImGuiChildFlags m_child_flags = 0;
     ImGuiWindowFlags m_window_flags = 0;
+    Vec2f m_last_scroll;
 };
 
 } // namespace Slic3r::App::Yoga

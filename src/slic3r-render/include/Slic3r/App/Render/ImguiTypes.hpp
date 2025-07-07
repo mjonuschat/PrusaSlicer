@@ -184,6 +184,19 @@ enum class Icon : wchar_t
     Sphere,
     WandMagicSparkles,
     PaintBrush,
+
+    Layers,
+    Infill,
+    SkirtBrim,
+    Support,
+    Time,
+    Funnel,
+    Cog,
+    Cogs,
+    Output,
+    Notes,
+    CaretLeft,
+    Search
 };
 
 } // namespace Slic3r::App::Render

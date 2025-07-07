@@ -13,7 +13,7 @@ namespace Slic3r::App::Plater {
 
 MeasureGizmo::MeasureGizmo()
 {
-    m_dialog = Passthrough(std::make_unique<MeasureDialog>());
+    m_dialog = std::make_unique<MeasureDialog>();
 
     m_dialog->on_copy() = [this]() {
         // just for test
@@ -39,9 +39,9 @@ Scene::ToolType MeasureGizmo::type() const
     return Scene::ToolType::MeasureGizmo;
 }
 
-std::unique_ptr<Yoga::Dialog> MeasureGizmo::unload_ui_dialog()
+Yoga::Dialog* MeasureGizmo::unload_ui_dialog()
 {
-    return m_dialog.release();
+    return m_dialog.get();
 }
 
 Scene::GizmoActivationState MeasureGizmo::on_mouse(Scene::GizmoEventContext &ctx, bool only_active)

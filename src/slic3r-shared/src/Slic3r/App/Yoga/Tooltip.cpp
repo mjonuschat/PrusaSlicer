@@ -11,23 +11,30 @@
 
 namespace Slic3r::App::Yoga {
 
-Tooltip::Tooltip(const std::string& window_name, const std::string& text, const std::string& shortcut)
-    : AttachedWindow(window_name, Position::Right)
+Tooltip::Tooltip(
+    Item* parent, const std::string& text, const std::string& shortcut, const std::string& window_name
+)
 {
-    set_orientation(Orientation::Horizontal);
-    set_flags(
+    WindowPtr window = std::make_unique<Window>(window_name);
+
+    window->set_orientation(Orientation::Horizontal);
+    window->set_flags(
         ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
         ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing |
         ImGuiWindowFlags_NoMove
     );
 
-    set_gap(5);
-    set_padding(4);
-    m_text = emplace_back<Text>(text);
+    window->set_gap(5);
+    window->set_padding(4);
+    m_text = window->emplace_back<Text>(text);
     m_text->set_visible(!text.empty());
-    m_shortcut = emplace_back<Text>(shortcut);
+    m_shortcut = window->emplace_back<Text>(shortcut);
     m_shortcut->set_visible(!shortcut.empty());
     m_shortcut->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
+
+    set_content_item(std::move(window));
+
+    attach_to_item(parent);
 }
 
 const std::string& Tooltip::text() const { return m_text->text(); }

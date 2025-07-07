@@ -47,6 +47,8 @@ public:
     bool remove_button(AbstractButton* button);
     size_t button_count() const;
 
+    const std::set<AbstractButton*>& buttons() const;
+
 private:
     void on_button_action(AbstractButton* button);
     void on_button_checked(AbstractButton* button);

@@ -165,7 +165,7 @@ public:
     virtual bool enabled() const;
     /**@}*/
 
-    virtual std::unique_ptr<Yoga::Dialog> unload_ui_dialog();
+    virtual Yoga::Dialog* unload_ui_dialog();
 };
 
 } // namespace Slic3r::App::Scene

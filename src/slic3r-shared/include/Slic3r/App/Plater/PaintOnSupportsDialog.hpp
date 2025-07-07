@@ -5,10 +5,7 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/GizmoDialog.hpp"
-#include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
-
-#include <memory>
 
 namespace Slic3r::App::Plater {
 
@@ -18,7 +15,7 @@ public:
     PaintOnSupportsDialog();
 
 private:
-    void add_new_row(const std::string& title, std::unique_ptr<Item> controls);
+    void add_new_row(const std::string& title, Yoga::ItemPtr controls);
 
 private:
     Yoga::ButtonGroup m_group_tool;

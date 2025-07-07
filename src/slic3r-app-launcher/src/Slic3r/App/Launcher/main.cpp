@@ -12,6 +12,24 @@
 #include "boost/nowide/args.hpp"
 #include "boost/nowide/convert.hpp"
 
+#if !defined(__has_feature)
+#define __has_feature(x) 0
+#endif
+
+#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+
+extern "C" {
+
+    const char* __lsan_default_suppressions();
+    const char* __lsan_default_suppressions() {
+        return "leak:libfontconfig\n"              // FontConfig looks like it leaks, but it doesn't.
+            ;
+    }
+
+}
+
+#endif
+
 
 int main(int argc, char* argv[])
 {

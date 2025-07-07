@@ -7,14 +7,13 @@
 
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 
 namespace Slic3r::App::Yoga {
 constexpr float dialog_padding = 10;
 
-GizmoDialog::GizmoDialog(const std::string title)
+GizmoDialog::GizmoDialog(const std::string& title)
     : Dialog(title)
 {
 }

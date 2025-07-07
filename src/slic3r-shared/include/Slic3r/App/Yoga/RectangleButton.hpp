@@ -5,15 +5,16 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
-#include "Slic3r/App/Render/ImguiTypes.hpp"
 
 namespace Slic3r::App::Yoga {
 
 class Rectangle;
 
-class RectangleButton : public AbstractButton {
+class RectangleButton : public AbstractButton
+{
 public:
-    enum class Align {
+    enum class Align
+    {
         Left,
         Center,
         Right
@@ -34,7 +35,20 @@ public:
     const Paddings& content_padding();
     void set_content_padding(const Paddings& padding);
 
-    void align_content(Align align);
+    Orientation content_orientation() const;
+    void set_content_orientation(Orientation orientation);
+
+    YGJustify content_justify_content() const;
+    void set_content_justify_content(YGJustify justify);
+
+    YGAlign content_align_item() const;
+    void set_content_align_items(YGAlign align);
+
+    float rounding() const;
+    void set_rounding(float rounding);
+
+    ImDrawFlags draw_flags() const;
+    void set_draw_flags(ImDrawFlags draw_flags);
 
 protected:
     void checked_updated_internal() override;
@@ -52,4 +66,4 @@ private:
     ImColor m_background_color_checked_hover = IM_COL32_WHITE;
 };
 
-} //namespace Slic3r::App::Yoga 
+} // namespace Slic3r::App::Yoga

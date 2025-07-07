@@ -72,13 +72,11 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
     ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
     ASSERT(button);
 
-    std::unique_ptr<Dialog> dialog_uniq = tool->unload_ui_dialog();
-    Dialog* dialog = dialog_uniq.get();
+    Dialog* dialog = tool->unload_ui_dialog();
     if (dialog) {
-        button->append(std::move(dialog_uniq));
-        dialog->set_visible(false);
+        dialog->attach_to_item(button);
         button->callbacks().checked_changed = [dialog](bool checked) {
-            dialog->set_visible(checked);
+            checked ? dialog->open() : dialog->close();
         };
     }
 

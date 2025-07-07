@@ -6,9 +6,13 @@
 
 #include "Slic3r/App/Render/ImguiRender.hpp"
 
+#include <cmath>
+
 namespace Slic3r::App::Yoga {
 
-Text::Text(const std::string& text) : Item(), m_text(text) {}
+Text::Text(const std::string& text, Render::ImguiFontType font_type)
+    : Item(), m_text(text), m_font_type(font_type)
+{}
 
 void Text::render(Vec2f pos, Vec2f size)
 {
@@ -19,7 +23,12 @@ void Text::render(Vec2f pos, Vec2f size)
     ImGui::PushFont(m_imgui_render->font(m_font_type));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(m_text_color));
 
-    ImGui::TextUnformatted(m_text.c_str());
+    // TODO: Resolve elipsis/elide
+    if (m_wrap) {
+        ImGui::TextWrapped("%s", m_text.c_str());
+    } else {
+        ImGui::TextUnformatted(m_text.c_str());
+    }
 
     ImGui::PopStyleColor();
     ImGui::PopFont();
@@ -31,7 +40,39 @@ const std::string& Text::text() const { return m_text; }
 
 void Text::set_text(const std::string& text) { m_text = text; }
 
-Vec2f Text::get_item_size() { return from_im(ImGui::CalcTextSize(m_text.c_str())); }
+Vec2f Text::get_item_size()
+{
+    if (m_wrap) {
+        // While wrapping enforce ONLY Y axis, let as assume the width that is set by parent or
+        // external sources
+        if (std::isnan(width())) {
+            return {0, ImGui::CalcTextSize(m_text.c_str()).y};
+        } else {
+            return {0, from_im(ImGui::CalcTextSize(m_text.c_str(), nullptr, false, width())).y()};
+        }
+    } else {
+        return from_im(ImGui::CalcTextSize(m_text.c_str()));
+    }
+}
+
+void Text::on_resized()
+{
+    if (m_wrap) {
+        set_min_size(get_item_size());
+    }
+}
+
+bool Text::wrap() const { return m_wrap; }
+
+void Text::set_wrap(bool wrap)
+{
+    if (m_wrap != wrap) {
+        m_wrap = wrap;
+        if (m_min_size_calculated) {
+            set_min_size(get_item_size());
+        }
+    }
+}
 
 const ImColor& Text::text_color() const { return m_text_color; }
 

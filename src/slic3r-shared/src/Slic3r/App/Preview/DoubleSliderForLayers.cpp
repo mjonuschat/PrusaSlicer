@@ -1,4 +1,5 @@
 #include "Slic3r/App/Preview/DoubleSliderForLayers.hpp"
+
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Assert.hpp"
@@ -12,6 +13,7 @@
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
+#include "Slic3r/Biz/Units.hpp"
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
 #include <Slic3r/App/libvgcode/Types.hpp>
 
@@ -64,7 +66,13 @@ DoubleSliderForLayers::DoubleSliderForLayers()
     };
 
     m_cog_btn = btns->emplace_back<Yoga::LayoutButton>("", Render::Icon::DSSettings);
-    m_cog_btn->callbacks().action = [this]() { m_cog_menu->set_visible(true); };
+    m_cog_btn->callbacks().action = [this]() {
+        if (m_cog_menu->opened()) {
+            m_cog_menu->close();
+        } else {
+            m_cog_menu->open();
+        }
+    };
     create_cog_menu();
 
     Vec2f btns_size = { 22.f, 22.f };
@@ -90,7 +98,7 @@ DoubleSliderForLayers::DoubleSliderForLayers()
 
 void DoubleSliderForLayers::create_cog_menu()
 {
-    m_cog_menu = m_cog_btn->emplace_back<Yoga::Menu>("cog_menu", Yoga::Position::Top);
+    m_cog_menu = std::make_unique<Yoga::Menu>(m_cog_btn, "cog_menu", Yoga::Position::Top);
 
     Yoga::MenuItem* jump_to_value_item = m_cog_menu->append_item(_u8L("Jump to height"), nullptr, Render::Icon::None, "Shift + G");
     jump_to_value_item->callbacks().action = [this]() { jump_to_value(); };

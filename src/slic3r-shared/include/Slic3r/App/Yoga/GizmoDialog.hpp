@@ -14,7 +14,7 @@ class LayoutButton;
 
 class GizmoDialog : public Dialog {
 public:
-    explicit GizmoDialog(const std::string title);
+    explicit GizmoDialog(const std::string& title);
 
     struct HelpIcon {
         Render::Icon    icon        {Render::Icon::None};

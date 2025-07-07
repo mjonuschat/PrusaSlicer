@@ -5,10 +5,9 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Yoga/Tooltip.hpp"
 
 namespace Slic3r::App::Yoga {
-
-class Tooltip;
 
 class AbstractButton : public Item
 {
@@ -23,8 +22,6 @@ public:
     };
 
     AbstractButton(const std::string& tooltip = {}, const std::string& name = "Button");
-
-    void process_events(Vec2f pos, Vec2f size) override;
 
     void render(Vec2f pos, Vec2f size) override;
 
@@ -52,17 +49,18 @@ public:
     ImGuiButtonFlags flags() const;
 
 protected:
-    virtual void checked_updated_internal() {}
-    virtual void hovered_updated_internal() {}
-    virtual void pressed_updated_internal() {}
-    void enabled_updated_internal() override;
+    virtual void checked_updated_internal();
+    virtual void hovered_updated_internal();
+    virtual void pressed_updated_internal();
 
-protected:
-    Tooltip* m_tooltip = nullptr;
+    void enabled_updated_internal() override;
 
 private:
     void set_hovered(bool hovered);
     void set_pressed(bool pressed);
+
+protected:
+    Tooltip m_tooltip;
 
 private:
     bool m_has_arrow = false;

@@ -19,8 +19,8 @@ std::string IntValidator::process(const std::string& input)
     double value = 0;
     try {
         value = boost::get<double>(m_eval.eval(m_parser.parse(input)));
-    } catch (const Biz::Expr::ParseError& error) {
-    } catch (const Biz::Expr::EvalError& error) {
+    } catch ([[maybe_unused]] const Biz::Expr::ParseError& error) {
+    } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
     }
 
     return std::to_string(std::clamp(static_cast<int>(std::round(value)), m_from, m_to));
@@ -54,8 +54,8 @@ std::string DoubleValidator::process(const std::string& input)
     double value = 0;
     try {
         value = boost::get<double>(m_eval.eval(m_parser.parse(input)));
-    } catch (const Biz::Expr::ParseError& error) {
-    } catch (const Biz::Expr::EvalError& error) {
+    } catch ([[maybe_unused]] const Biz::Expr::ParseError& error) {
+    } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
     }
 
     return std::to_string(std::clamp(value, m_from, m_to));

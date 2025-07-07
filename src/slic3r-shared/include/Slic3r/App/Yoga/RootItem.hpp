@@ -9,6 +9,8 @@
 
 namespace Slic3r::App::Yoga {
 
+class Popup;
+
 class RootItem : public Item
 {
 public:
@@ -16,15 +18,33 @@ public:
 
     void set_style_dirty() override;
 
-    void resize(Vec2f size) override;
+    void style_node() override;
+
+    void process_events(Vec2f pos, Vec2f size) override;
+
+    void open_popup(Popup* popup);
+    void close_popup(Popup* popup);
+
+    /**
+     * @brief Yoga recalculate whole tree
+     * @note should be called only top-level item
+     */
+    void resize(Vec2f size);
 
 protected:
     void push_event(EventPtr event) override;
+
+    Vec2f get_available_size() const override;
 
 protected:
     LoopEvents m_loop_events;
 
     bool m_style_dirty = true;
+
+    Vec2f m_size;
+
+    using Popups = std::vector<Popup*>;
+    Popups m_popups;
 };
 
 } // namespace Slic3r::App::Yoga

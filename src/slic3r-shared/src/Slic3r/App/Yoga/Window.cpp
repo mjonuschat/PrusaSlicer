@@ -10,8 +10,7 @@
 
 namespace Slic3r::App::Yoga {
 
-Window::Window(const std::string& window_name) : Item()
-, m_alpha(GImGui->Style.Alpha)
+Window::Window(const std::string& window_name) : Item(), m_alpha(GImGui->Style.Alpha)
 {
     set_item_name(window_name);
     set_padding(10);
@@ -25,15 +24,9 @@ int Window::flags() const { return m_flags; }
 
 void Window::set_flags(int flags) { m_flags = flags; }
 
-float Window::alpha() const
-{
-    return m_alpha;
-}
+float Window::alpha() const { return m_alpha; }
 
-void Window::set_alpha(float alpha)
-{
-    m_alpha = alpha;
-}
+void Window::set_alpha(float alpha) { m_alpha = alpha; }
 
 void Window::render(Vec2f pos, Vec2f size)
 {
@@ -41,7 +34,12 @@ void Window::render(Vec2f pos, Vec2f size)
 
     render_debug(pos, size);
 
-    ImGui::SetNextWindowPos(to_im(pos));
+    if (m_position_by_yoga) {
+        ImGui::SetNextWindowPos(to_im(pos));
+    } else if (m_requested_position.has_value()) {
+        ImGui::SetNextWindowPos(to_im(m_requested_position.value()));
+        m_requested_position = {};
+    }
     ImGui::SetNextWindowSize(to_im(size));
     ImGui::SetNextWindowBgAlpha(m_alpha);
 
@@ -53,10 +51,23 @@ void Window::render(Vec2f pos, Vec2f size)
 
     ImGui::Begin(m_item_name.c_str(), nullptr, m_flags);
 
-    render_body(pos, size);
+    ImVec2 pos_to_render = ImGui::GetWindowPos();
+
+    if (!m_position_by_yoga) {
+        ImVec2 xy = pos_to_render;
+        m_last_pos = from_im(xy);
+        ImVec2 sz = ImGui::GetWindowSize();
+        ImVec2 max = ImGui::GetMainViewport()->Size - sz;
+        ImVec2 pos = {std::clamp(xy.x, 0.f, max.x), std::clamp(xy.y, 0.f, max.y)};
+        ImGui::SetWindowPos(pos);
+    }
+
+    Vec2f window_pos = from_im(pos_to_render);
+
+    render_body(window_pos, size);
 
     for (const ItemPtr& child : std::as_const(m_children)) {
-        render_node(pos, child.get());
+        render_node(window_pos, child.get());
     }
 
     ImGui::End();
@@ -65,6 +76,11 @@ void Window::render(Vec2f pos, Vec2f size)
 }
 
 void Window::render_body(Vec2f pos, Vec2f size) {}
+
+void Window::process_events(Vec2f pos, Vec2f size)
+{
+    Item::process_events(m_position_by_yoga ? pos : m_last_pos, size);
+}
 
 Vec2f Window::get_item_size()
 {
@@ -85,5 +101,11 @@ Vec2f Window::get_item_size()
 
     return result;
 }
+
+bool Window::position_by_yoga() const { return m_position_by_yoga; }
+
+void Window::set_position_by_yoga(bool position_by_yoga) { m_position_by_yoga = position_by_yoga; }
+
+void Window::request_position(Vec2f position) { m_requested_position = position; }
 
 } // namespace Slic3r::App::Yoga

@@ -28,6 +28,8 @@ public:
 
 private:
     Toolbar* m_subtoolbar = nullptr;
+
+    bool m_tooltip_open = false;
 };
 
 } // namespace Slic3r::App::Yoga

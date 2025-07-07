@@ -13,7 +13,7 @@ namespace Slic3r::App::Plater {
 
 PaintOnSupportsGizmo::PaintOnSupportsGizmo()
 {
-    m_dialog = Passthrough(std::make_unique<PaintOnSupportsDialog>());
+    m_dialog = std::make_unique<PaintOnSupportsDialog>();
 }
 
 void PaintOnSupportsGizmo::on_activated()
@@ -31,9 +31,9 @@ Scene::ToolType PaintOnSupportsGizmo::type() const
     return Scene::ToolType::PaintOnSupportsGizmo;
 }
 
-std::unique_ptr<Yoga::Dialog> PaintOnSupportsGizmo::unload_ui_dialog()
+Yoga::Dialog* PaintOnSupportsGizmo::unload_ui_dialog()
 {
-    return m_dialog.release();
+    return m_dialog.get();
 }
 
 Scene::GizmoActivationState PaintOnSupportsGizmo::on_mouse(Scene::GizmoEventContext &ctx, bool only_active)

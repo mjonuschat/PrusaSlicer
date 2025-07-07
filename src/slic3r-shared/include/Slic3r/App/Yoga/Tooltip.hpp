@@ -4,19 +4,20 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/AttachedWindow.hpp"
+#include "Slic3r/App/Yoga/Popup.hpp"
 
 namespace Slic3r::App::Yoga {
 
 class Text;
 
-class Tooltip : public AttachedWindow
+class Tooltip : public Popup
 {
 public:
     Tooltip(
-        const std::string& window_name,
+        Item* parent,
         const std::string& text,
-        const std::string& shortcut
+        const std::string& shortcut,
+        const std::string& window_name = "Tooltip"
     );
 
     const std::string& text() const;

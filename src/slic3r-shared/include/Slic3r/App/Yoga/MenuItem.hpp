@@ -1,5 +1,7 @@
 #pragma once
+
 #include "Slic3r/App/Yoga/RectangleButton.hpp"
+#include "Slic3r/App/Render/ImguiTypes.hpp"
 
 namespace Slic3r::App::Yoga {
 
@@ -21,7 +23,7 @@ private:
 
     Icon* m_icon{ nullptr };
     Text* m_label{ nullptr };
-    Menu* m_sub_menu{ nullptr };
+    std::unique_ptr<Menu> m_sub_menu;
 };
 
 } //namespace Slic3r::App::Yoga 

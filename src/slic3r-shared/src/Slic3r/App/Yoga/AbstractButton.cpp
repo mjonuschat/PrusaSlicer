@@ -12,37 +12,10 @@ namespace Slic3r::App::Yoga {
 
 AbstractButton::Callbacks& AbstractButton::callbacks() { return m_callbacks; }
 
-AbstractButton::AbstractButton(const std::string& tooltip, const std::string& name) : Item()
+AbstractButton::AbstractButton(const std::string& tooltip, const std::string& name)
+    : Item(), m_tooltip(this, tooltip, "")
 {
     set_item_name(name);
-    static size_t button_tooltip_number = 0;
-
-    m_tooltip = emplace_back<
-        Tooltip>("button_tooltip_" + std::to_string(button_tooltip_number++), tooltip, "");
-    m_tooltip->set_visible(false);
-}
-
-void AbstractButton::process_events(Vec2f pos, Vec2f size)
-{
-    ImRect button_bb(to_im(pos), to_im(pos + size));
-
-    // Check if the button is clicked or hovered
-    bool hovered = ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max, false);
-    bool pressed = m_enabled && hovered && ImGui::IsMouseClicked(0);
-
-    set_hovered(hovered);
-
-    if (pressed) {
-        if (m_checkable) {
-            set_checked(!m_checked);
-        }
-        if (m_callbacks.action) {
-            m_callbacks.action();
-        }
-        pressed_updated_internal();
-    }
-
-    Item::process_events(pos, size);
 }
 
 void AbstractButton::render(Vec2f pos, Vec2f size)
@@ -60,15 +33,30 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
         return;
     }
 
+    bool pressed = false;
+    bool hovered = false;
+    bool released = false;
+
     if (m_enabled) {
-        bool pressed = false;
         // We ignore pressed and hovered here, we already catched them before
-        ImGui::ButtonBehavior(button_bb, id, nullptr, &pressed, m_flags);
+        released = ImGui::ButtonBehavior(button_bb, id, &hovered, &pressed, m_flags);
 
         ImGui::RenderNavCursor(button_bb, id);
-
-        set_pressed(pressed);
     }
+
+    set_hovered(hovered);
+
+    if (released) {
+        if (m_checkable) {
+            set_checked(!m_checked);
+        }
+        if (m_callbacks.action) {
+            m_callbacks.action();
+        }
+        pressed_updated_internal();
+    }
+
+    set_pressed(pressed);
 
     render_item_end(pos, size);
 }
@@ -78,14 +66,14 @@ const std::string& AbstractButton::shortcut() const { return m_shortcut; }
 void AbstractButton::set_shortcut(const std::string& shortcut)
 {
     m_shortcut = shortcut;
-    m_tooltip->set_shortcut(m_shortcut);
+    m_tooltip.set_shortcut(m_shortcut);
 }
 
-void AbstractButton::set_tooltip(const std::string& tooltip) { m_tooltip->set_text(tooltip); }
+void AbstractButton::set_tooltip(const std::string& tooltip) { m_tooltip.set_text(tooltip); }
 
 void AbstractButton::set_tooltip_position(Yoga::Position position)
 {
-    m_tooltip->set_position(position);
+    m_tooltip.set_preferred_position(position);
 }
 
 bool AbstractButton::has_arrow() const { return m_has_arrow; }
@@ -116,11 +104,12 @@ void AbstractButton::set_hovered(bool hovered)
     if (m_hovered != hovered) {
         m_hovered = hovered;
         hovered_updated_internal();
+        if (!m_tooltip.text().empty()) {
+            m_hovered ? m_tooltip.open() : m_tooltip.close();
+        }
         if (m_callbacks.hovered_changed) {
             m_callbacks.hovered_changed(m_hovered);
         }
-        if (!m_tooltip->text().empty())
-            m_tooltip->set_visible(m_hovered);
     }
 }
 
@@ -136,12 +125,19 @@ void AbstractButton::set_pressed(bool pressed)
 
 ImGuiButtonFlags AbstractButton::flags() const { return m_flags; }
 
+void AbstractButton::checked_updated_internal() {}
+
+void AbstractButton::hovered_updated_internal() {}
+
+void AbstractButton::pressed_updated_internal() {}
+
 bool AbstractButton::pressed() const { return m_pressed; }
 
 void AbstractButton::enabled_updated_internal()
 {
-    if (!m_enabled)
-        m_tooltip->set_visible(false);
+    if (!m_enabled) {
+        m_tooltip.close();
+    }
 }
 
 } // namespace Slic3r::App::Yoga

@@ -47,12 +47,6 @@ public:
     virtual void style_node();
 
     /**
-     * @brief Yoga recalculate whole tree
-     * @note should be called only top-level item
-     */
-    virtual void resize(Vec2f size);
-
-    /**
      * @brief process_events processes input events and calls callbacks
      * @note You have to call process_events() of your children as well
      */
@@ -104,6 +98,7 @@ public:
     const Paddings& padding() const;
     float gap() const;
     Orientation orientation() const;
+    YGWrap flex_wrap() const;
 
     bool enabled();
     void set_enabled(bool enabled);
@@ -134,6 +129,7 @@ public:
     void set_top(float top);
     void set_bottom(float bottom);
     void set_flex(float flex);
+    void set_flex_wrap(YGWrap wrap);
     /**
      * @note z layer only works between siblings
      */
@@ -178,6 +174,10 @@ public:
     void set_debug_border(bool show_debug_border);
     virtual std::string debug_dump_tree() const;
 
+    Vec2f get_global_pos() const;
+
+    void check_resized();
+
 protected:
     static ImVec2 to_im(const Vec2f& val);
     static Vec2f from_im(const ImVec2& val);
@@ -189,7 +189,11 @@ protected:
 
     virtual void push_event(std::unique_ptr<Event> event);
 
-    virtual void enabled_updated_internal() {}
+    virtual void enabled_updated_internal();
+
+    virtual Vec2f get_available_size() const;
+
+    virtual void on_resized();
 
     void add_child(ItemPtr child, size_t index);
     ItemPtr remove_child(Item* child);
@@ -261,6 +265,10 @@ protected:
 
     std::vector<ItemPtr> m_children;
     std::vector<Item*> m_children_render_order;
+
+private:
+    float m_last_width = 0;
+    float m_last_height = 0;
 };
 
 /**

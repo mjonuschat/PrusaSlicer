@@ -5,9 +5,6 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/GizmoDialog.hpp"
-#include "Slic3r/App/Render/ImguiTypes.hpp"
-
-#include <memory>
 
 namespace Slic3rc::App::Yoga {
 class Text;
@@ -45,9 +42,8 @@ public:
     std::function<void()>& on_copy();
 
 private:
-
     void add_measure_row();
-    void add_spot_row(const ImColor& marker, const std::string& title, std::unique_ptr<Item> controls);
+    void add_spot_row(const ImColor& marker, const std::string& title, Yoga::ItemPtr controls);
 
 private:
     Yoga::Text* m_measure_name = nullptr;

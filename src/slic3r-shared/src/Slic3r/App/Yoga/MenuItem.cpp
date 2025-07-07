@@ -1,8 +1,8 @@
-#include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
+
+#include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
-#include "Slic3r/App/Yoga/Rectangle.hpp"
 
 #include "imgui/imgui_internal.h"
 
@@ -23,7 +23,7 @@ MenuItem::MenuItem(const std::string& label, ImColor color_icon_rect, const std:
 void MenuItem::create(const std::string& label, Render::Icon icon, ImColor color_icon_rect, const std::string& shortcut, bool has_sub_menu)
 {
     if (has_sub_menu) {
-        m_sub_menu = emplace_back<Menu>(label, Position::Right);
+        m_sub_menu = std::make_unique<Menu>(this, label, Position::Right);
         m_sub_menu->set_offset(3.f);
     }
     set_background_color(IM_COL32_BLACK_TRANS);
@@ -36,7 +36,7 @@ void MenuItem::create(const std::string& label, Render::Icon icon, ImColor color
     m_label = emplace_back<Text>(label);
     m_label->set_flex_grow(1.f);
 
-    float icon_size = 16;// ! for check
+    float icon_size = 16; // ! for check
 
     Text* shortcut_text = emplace_back<Text>(shortcut);
     shortcut_text->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
@@ -57,14 +57,16 @@ MenuItem* MenuItem::append_sub_menu_item(const std::string& label, bool* init_ch
 void MenuItem::clear_submenu()
 {
     // !!? add this as a clear() method fo rthe Item !!?
-    for (Item* child : items())
-        m_sub_menu->remove(child);
+    // No :))
+    for (Item* child : items()) {
+        m_sub_menu->content_item()->remove(child);
+    }
 }
 
 void MenuItem::pressed_updated_internal()
 {
     if (m_sub_menu)
-        m_sub_menu->set_visible(true);
+        m_sub_menu->close();
     else {
         Item* parent = this->parent();
         Menu* parent_menu = dynamic_cast<Menu*>(parent);

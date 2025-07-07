@@ -11,7 +11,6 @@ namespace Slic3r::App::Yoga {
 
 class Icon;
 class Text;
-class Icon;
 
 class LayoutButton : public RectangleButton
 {

@@ -30,6 +30,7 @@ TopBar::TopBar(
     set_alpha(0.f);
     set_rounding(0.f);
     set_gap(0.f);
+    set_flex_shrink(0);
 
     Rectangle* left_wrapper = emplace_back<Rectangle>();
 

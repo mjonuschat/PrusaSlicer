@@ -5,11 +5,11 @@
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
 
 #include "Slic3r/App/Yoga/Tooltip.hpp"
-#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/Yoga/Dialog.hpp"
 #include "Slic3r/Assert.hpp"
-#include "Slic3r/Log.hpp"
+
+#include <imgui_internal.h>
 
 namespace Slic3r::App::Yoga {
 
@@ -22,8 +22,14 @@ ToolbarButton::ToolbarButton(Render::Icon icon, const std::string& tooltip)
 
 void ToolbarButton::render(Vec2f pos, Vec2f size)
 {
-    render_item_begin(pos, size);
-    render_item_end(pos, size);
+    // render_item_begin(pos, size);
+    // render_item_end(pos, size);
+    LayoutButton::render(pos, size);
+
+    // Abstract button may have closed the Tooltip
+    if (m_tooltip_open && !m_tooltip.opened()) {
+        m_tooltip.open();
+    }
 
     // render arrow on top of the children
     if (has_arrow()) {
@@ -74,7 +80,16 @@ void ToolbarButton::style_node()
     }
 
     Toolbar* parent_toolbar = dynamic_cast<Toolbar*>(m_parent);
-    m_tooltip->set_visible(parent_toolbar && parent_toolbar->show_tooltips());
+    bool new_tooltip_open = parent_toolbar && parent_toolbar->show_tooltips() && is_visible();
+    if (new_tooltip_open != m_tooltip_open) {
+        m_tooltip_open = new_tooltip_open;
+        set_style_dirty();
+    }
+    if (m_tooltip_open) {
+        m_tooltip.open();
+    } else {
+        m_tooltip.close();
+    }
 
     AbstractButton::style_node();
 }

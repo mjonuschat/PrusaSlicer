@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/RectangleButton.hpp"
+#include "Slic3r/App/Render/ImguiTypes.hpp"
 
 namespace Slic3r::App::Yoga {
 

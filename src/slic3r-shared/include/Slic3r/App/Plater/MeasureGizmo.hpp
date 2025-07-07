@@ -20,12 +20,12 @@ public:
     void on_deactivated() override;
 
     Scene::ToolType type() const override;
-    std::unique_ptr<Yoga::Dialog> unload_ui_dialog() override;
+    Yoga::Dialog* unload_ui_dialog() override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
 
 private:
-    Yoga::Passthrough<MeasureDialog> m_dialog;
+    std::unique_ptr<MeasureDialog> m_dialog;
 };
 
 } // namespace Slic3r::App::Plater

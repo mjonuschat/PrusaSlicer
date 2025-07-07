@@ -29,6 +29,12 @@ public:
      */
     virtual void render_body(Vec2f pos, Vec2f size);
 
+    void process_events(Vec2f pos, Vec2f size) override;
+
+    bool position_by_yoga() const;
+    void set_position_by_yoga(bool position_by_yoga);
+    void request_position(Vec2f position);
+
 protected:
     Vec2f get_item_size() override;
 
@@ -40,6 +46,9 @@ private:
 
     float m_alpha = 1.f;
 
+    bool m_position_by_yoga = true;
+    std::optional<Vec2f> m_requested_position;
+    Vec2f m_last_pos;
 };
 
 } // namespace Slic3r::App::Yoga

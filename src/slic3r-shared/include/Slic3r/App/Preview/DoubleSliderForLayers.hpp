@@ -2,9 +2,10 @@
 
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 #include "Slic3r/App/Imgui/RulerForDoubleSlider.hpp"
+#include "Slic3r/App/Yoga/Menu.hpp"
+
 #include "TickCodeManager.hpp"
 #include "Types.hpp"
-#include "Slic3r/Biz/Units.hpp"
 
 namespace Slic3r::App::Yoga {
 class LayoutButton;
@@ -189,7 +190,7 @@ private:
     Yoga::LayoutButton* m_lock_btn{ nullptr };
     Yoga::LayoutButton* m_cog_btn{ nullptr };
 
-    Yoga::Menu* m_cog_menu{ nullptr };
+    std::unique_ptr<Yoga::Menu> m_cog_menu;
 
     Yoga::MenuItem* m_edit_extruder_sequence_menu_item{ nullptr };
     Yoga::MenuItem* m_seq_top_layer_only_item{ nullptr };

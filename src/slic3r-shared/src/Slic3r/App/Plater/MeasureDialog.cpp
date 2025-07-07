@@ -8,7 +8,6 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/Yoga/Icon.hpp"
 
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "libslic3r/format.hpp"
@@ -23,7 +22,7 @@ MeasureDialog::MeasureDialog() : GizmoDialog(_u8L("Measure"))
 {
     const Vec2f shortcut_button_size{30.f, 30.f};
 
-    set_min_size({325.f, 0});
+    content_item()->set_width(325);
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(gap_size);
 

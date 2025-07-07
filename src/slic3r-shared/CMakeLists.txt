@@ -92,6 +92,26 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/BedThumbnailStore.hpp
         src/Slic3r/App/BedThumbnailStore.cpp
         include/Slic3r/App/MaterialState.hpp
+        include/Slic3r/App/PrintSettingsDialog.hpp
+        src/Slic3r/App/PrintSettingsDialog.cpp
+        include/Slic3r/App/FilamentSettingsDialog.hpp
+        src/Slic3r/App/FilamentSettingsDialog.cpp
+        include/Slic3r/App/PrinterSettingsDialog.hpp
+        src/Slic3r/App/PrinterSettingsDialog.cpp
+        include/Slic3r/App/PrinterAdvancedSettingsDialog.hpp
+        src/Slic3r/App/PrinterAdvancedSettingsDialog.cpp
+        include/Slic3r/App/PhysicalPrinterSettingsDialog.hpp
+        src/Slic3r/App/PhysicalPrinterSettingsDialog.cpp
+        include/Slic3r/App/PhysicalPrinterSettingsButton.hpp
+        src/Slic3r/App/PhysicalPrinterSettingsButton.cpp
+        include/Slic3r/App/LogicalPrinterSettingsButton.hpp
+        src/Slic3r/App/LogicalPrinterSettingsButton.cpp
+        include/Slic3r/App/LogicalPrinter.hpp
+        src/Slic3r/App/LogicalPrinter.cpp
+        include/Slic3r/App/PhysicalPrinter.hpp
+        src/Slic3r/App/PhysicalPrinter.cpp
+        include/Slic3r/App/PrinterAddDialog.hpp
+        src/Slic3r/App/PrinterAddDialog.cpp
         
         include/Slic3r/App/Browser/BrowserLogicCommand.hpp
         include/Slic3r/App/Browser/AbstractBrowserLogicCommandHandler.hpp
@@ -232,8 +252,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Dialog.cpp
         include/Slic3r/App/Yoga/GizmoDialog.hpp
         src/Slic3r/App/Yoga/GizmoDialog.cpp
-        include/Slic3r/App/Yoga/AttachedWindow.hpp
-        src/Slic3r/App/Yoga/AttachedWindow.cpp
         src/Slic3r/App/Yoga/Separator.cpp
         include/Slic3r/App/Yoga/Separator.hpp
         src/Slic3r/App/Yoga/Oval.cpp
@@ -285,6 +303,14 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/ItemEvents.cpp
         include/Slic3r/App/Yoga/RootItem.hpp
         src/Slic3r/App/Yoga/RootItem.cpp
+        include/Slic3r/App/Yoga/StackLayout.hpp
+        src/Slic3r/App/Yoga/StackLayout.cpp
+        include/Slic3r/App/PageEntryButton.hpp
+        src/Slic3r/App/PageEntryButton.cpp
+        include/Slic3r/App/Yoga/Popup.hpp
+        src/Slic3r/App/Yoga/Popup.cpp
+        include/Slic3r/App/Yoga/AbstractSettingsDialog.hpp
+        src/Slic3r/App/Yoga/AbstractSettingsDialog.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp

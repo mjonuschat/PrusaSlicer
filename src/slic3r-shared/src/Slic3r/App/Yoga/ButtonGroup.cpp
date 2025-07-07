@@ -58,6 +58,8 @@ bool ButtonGroup::remove_button(AbstractButton* button)
 
 size_t ButtonGroup::button_count() const { return m_buttons.size(); }
 
+const ButtonGroup::Buttons& ButtonGroup::buttons() const { return m_buttons; }
+
 void ButtonGroup::on_button_action(AbstractButton* button)
 {
     if (m_callbacks.action) {
@@ -92,13 +94,11 @@ void ButtonGroup::set_button_callbacks(AbstractButton* button)
 {
     button->callbacks().action = [this, button]() { on_button_action(button); };
     button->callbacks().checked_changed = [this, button](bool checked) {
-        if (checked) {
-            on_button_checked(button);
-        }
+        on_button_checked(checked ? button : nullptr);
     };
 }
 
-void ButtonGroup::unset_button_callbacks(AbstractButton *button)
+void ButtonGroup::unset_button_callbacks(AbstractButton* button)
 {
     button->callbacks().action = nullptr;
     button->callbacks().checked_changed = nullptr;

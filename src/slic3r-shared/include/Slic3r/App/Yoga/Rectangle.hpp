@@ -19,6 +19,7 @@ public:
     const ImColor& border_color() const;
     float border_width() const;
     float rounding() const;
+    ImDrawFlags flags() const;
 
     void set_fill(const ImColor& fill);
     void set_border_color(const ImColor& border_color);

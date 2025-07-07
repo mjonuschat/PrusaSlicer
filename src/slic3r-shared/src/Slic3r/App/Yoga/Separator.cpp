@@ -16,7 +16,7 @@ Separator::Separator(Orientation orientation) : Rectangle()
     set_max_size(
         orientation == Orientation::Horizontal ? Vec2f{YGUndefined, 1} : Vec2f{1, YGUndefined}
     );
-    set_fill(ImColor(105, 105, 105));
+    set_fill(ImColor(41, 41, 41));
     set_rounding(0);
 }
 

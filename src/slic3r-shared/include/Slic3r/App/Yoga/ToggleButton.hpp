@@ -21,7 +21,7 @@ class Text;
 class ToggleButton : public AbstractButton
 {
 public:
-    explicit ToggleButton(const std::string& label, const std::string& tooltip = {});
+    explicit ToggleButton(const std::string& label = {}, const std::string& tooltip = {});
 
     void process_events(Vec2f pos, Vec2f size) override;
 
@@ -33,8 +33,8 @@ protected:
     void checked_updated_internal() override;
 
 private:
-    Toggler*    m_toggler   { nullptr };
-    Text*       m_label     { nullptr };
+    Toggler* m_toggler{nullptr};
+    Text* m_label{nullptr};
 };
 
 } // namespace Slic3r::App::Yoga

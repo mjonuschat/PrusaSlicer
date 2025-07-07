@@ -7,8 +7,6 @@
 
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/Yoga/Rectangle.hpp"
-#include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 
@@ -22,7 +20,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
 {
     const Vec2f button_size{50.f, 50.f};
 
-    set_min_size({325.f, 0});
+    content_item()->set_width(325.f);
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(gap_size);
 
@@ -100,7 +98,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
     );
 }
 
-void PaintOnSupportsDialog::add_new_row(const std::string& title, std::unique_ptr<Item> controls)
+void PaintOnSupportsDialog::add_new_row(const std::string& title, Yoga::ItemPtr controls)
 {
     Item* row = content()->emplace_back<Item>();
     row->set_gap(gap_size);
