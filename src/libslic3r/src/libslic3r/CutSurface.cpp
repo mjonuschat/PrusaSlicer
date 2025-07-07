@@ -62,8 +62,11 @@ using namespace Slic3r;
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 namespace priv {
 
@@ -634,7 +637,7 @@ SurfaceCut Slic3r::cut_surface(const ExPolygons &shapes,
     // for each point collect all projection distances
     priv::VDistances distances = priv::calc_distances(patches, cgal_models, cgal_shape, shapes_points, projection_ratio);
         
-    Point start = shapes_bb.center(); // only align center
+    Point start = BB::center(shapes_bb); // only align center
 
     // Use only outline points
     // for each point select best projection
@@ -3280,7 +3283,7 @@ std::vector<bool> priv::select_patches(const ProjectionDistances &best_distances
 {
     // extension to cover numerical mistake made by back projection patch from 3d to 2d
     // Calculated as one percent of average size(width and height)
-    Point s = shapes_bb.size();
+    Point s = BB::sizes(shapes_bb);
     const float extend_delta = (s.x() + s.y())/ float(2 * 100);
         
     // vector of patches for shape

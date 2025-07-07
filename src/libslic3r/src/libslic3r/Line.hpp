@@ -30,7 +30,6 @@ using Linef = Slic3r::Domain::Line2d;
 using Linesf = Slic3r::Domain::Line2ds;
 using Linef3 = Slic3r::Domain::Line3d;
 
-class BoundingBox;
 class ThickLine;
 
 typedef std::vector<ThickLine> ThickLines;

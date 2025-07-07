@@ -9,13 +9,13 @@
 #ifndef slic3r_PrintExtents_hpp_
 #define slic3r_PrintExtents_hpp_
 
+#include "Slic3r/Domain/BoundingBox.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 
 class Print;
 class PrintObject;
-class BoundingBoxf;
 
 // Returns a bounding box of a projection of the brim and skirt.
 BoundingBoxf get_print_extrusions_extents(const Print &print);

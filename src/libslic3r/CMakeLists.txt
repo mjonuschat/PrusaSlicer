@@ -95,8 +95,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/AStar.hpp
     src/libslic3r/BlacklistedLibraryCheck.cpp
     src/libslic3r/BlacklistedLibraryCheck.hpp
-    src/libslic3r/BoundingBox.cpp
-    src/libslic3r/BoundingBox.hpp
     src/libslic3r/BranchingTree/BranchingTree.cpp
     src/libslic3r/BranchingTree/BranchingTree.hpp
     src/libslic3r/BranchingTree/PointCloud.cpp

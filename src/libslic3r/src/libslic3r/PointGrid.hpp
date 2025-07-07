@@ -7,7 +7,6 @@
 
 #include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include <libslic3r/Point.hpp>
-#include <libslic3r/BoundingBox.hpp>
 
 namespace Slic3r {
 
@@ -49,9 +48,11 @@ public:
 };
 
 template<class Ex, class CoordT>
-PointGrid<CoordT> point_grid(Ex                                      policy,
-                             const BoundingBox3Base<LegacyVec<3, CoordT>> &bounds,
-                             const LegacyVec<3, CoordT>                   &stride)
+PointGrid<CoordT> point_grid(
+    Ex policy,
+    const Domain::BoundingBox<CoordT, 3>& bounds,
+    const LegacyVec<3, CoordT>& stride
+)
 {
     namespace execution = Slic3r::Biz::Algorithms::Execution;
 

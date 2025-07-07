@@ -39,8 +39,8 @@
 #include "libslic3r/ExPolygonsIndex.hpp"
 #include "libslic3r/AABBTreeLines.hpp" // search structure for found close points
 #include "libslic3r/Line.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -66,6 +66,8 @@ using Domain::EmbossShape;
 using Domain::HealedExPolygons;
 using Domain::ExPolygonsWithId;
 using Domain::ExPolygonsWithIds;
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 // NOTE: approach to heal shape by Clipper::Closing is not working
 
@@ -279,7 +281,7 @@ void remove_spikes_in_duplicates(ExPolygons &expolygons, const Points &duplicate
 
     bool exist_remove = false;
     for (ExPolygon &expolygon : expolygons) {
-        BoundingBox bb(Algorithms::Polygon::to_points(expolygon.contour));
+        BoundingBox bb(BB::construct(Algorithms::Polygon::to_points(expolygon.contour)));
         for (const Point &d : duplicates) {
             if (!bb.contains(d))
                 continue;
@@ -679,7 +681,7 @@ bool heal_dupl_inter(ExPolygons &shape, unsigned max_iteration)
 
 ExPolygon create_bounding_rect(const ExPolygons &shape) {
     BoundingBox bb   = get_extents(shape);
-    Point       size = bb.size();
+    Point       size = BB::sizes(bb);
     if (size.x() < 10)
         bb.max.x() += 10;
     if (size.y() < 10)
@@ -691,7 +693,7 @@ ExPolygon create_bounding_rect(const ExPolygons &shape) {
         bb.max,
         {bb.min.x(), bb.max.y()}});
 
-    Point   offset = bb.size() * 0.1;
+    Point   offset = BB::sizes(bb) * 0.1;
     Polygon hole({// CW
         bb.min + offset,
         {bb.min.x() + offset.x(), bb.max.y() - offset.y()},
@@ -1315,14 +1317,14 @@ BoundingBox Slic3r::get_extents(const ExPolygonsWithIds &expolygons_with_ids)
 {
     BoundingBox bb;
     for (const ExPolygonsWithId &expolygons_with_id : expolygons_with_ids)        
-        bb.merge(get_extents(expolygons_with_id.expoly));
+        bb = BB::merge(bb, get_extents(expolygons_with_id.expoly));
     return bb;
 }
 
 void Slic3r::center(ExPolygonsWithIds &e)
 {
     BoundingBox bb = get_extents(e);
-    translate(e, -bb.center());
+    translate(e, -BB::center(bb));
 }
 
 HealedExPolygons Emboss::text2shapes(FontFileWithCache &font_with_cache, const char *text, const FontProp &font_prop, const std::function<bool()>& was_canceled)
@@ -1945,7 +1947,7 @@ std::vector<double> Emboss::calculate_angles(const BoundingBoxes &glyph_sizes, c
     }
 
     for (size_t i = 0; i < polygon_points.size(); i++) {
-        int32_t distance = glyph_sizes[i].size().x() / 2;
+        int32_t distance = BB::sizes(glyph_sizes[i]).x() / 2;
         if (distance < min_distance) // too small could lead to false angle
             distance = default_distance;
         result.emplace_back(calculate_angle(distance, polygon_points[i], polygon));
@@ -1974,7 +1976,7 @@ PolygonPoints Emboss::sample_slice(const TextLine &slice, const BoundingBoxes &b
     (const BoundingBox &bb, bool is_reverse) {
         if (!bb.defined)
             return cursor;
-        Point   letter_center  = bb.center();
+        Point   letter_center  = BB::center(bb);
         int32_t shape_distance = shapes_x_cursor - letter_center.x();
         shapes_x_cursor        = letter_center.x();
         double  distance_mm    = shape_distance * scale;
@@ -1993,7 +1995,7 @@ PolygonPoints Emboss::sample_slice(const TextLine &slice, const BoundingBoxes &b
 
     // calc transformation for letters on the Left side from center
     if (first_right_index < bbs.size()) {
-        shapes_x_cursor = bbs[first_right_index].center().x();
+        shapes_x_cursor = BB::center(bbs[first_right_index]).x();
         cursor          = samples[first_right_index];
     }else{
         // only left side exists
@@ -2030,8 +2032,8 @@ float get_align_y_offset(FontProp::VerticalAlign align, unsigned count_lines, co
 int32_t get_align_x_offset(FontProp::HorizontalAlign align, const BoundingBox &shape_bb, const BoundingBox &line_bb)
 {
     switch (align) {
-    case FontProp::HorizontalAlign::right: return -shape_bb.max.x() + (shape_bb.size().x() - line_bb.size().x());
-    case FontProp::HorizontalAlign::center: return -shape_bb.center().x() + (shape_bb.size().x() - line_bb.size().x()) / 2;
+        case FontProp::HorizontalAlign::right: return -shape_bb.max.x() + (BB::sizes(shape_bb).x() - BB::sizes(line_bb).x());
+        case FontProp::HorizontalAlign::center: return -BB::center(shape_bb).x() + (BB::sizes(shape_bb).x() - BB::sizes(line_bb).x()) / 2;
     case FontProp::HorizontalAlign::left: // no change
     default: break;
     }
@@ -2057,12 +2059,12 @@ void align_shape(ExPolygonsWithIds &shapes, const std::wstring &text, const Font
 
     BoundingBox shape_bb;
     for (const ExPolygonsWithId& shape: shapes)
-        shape_bb.merge(get_extents(shape.expoly));
+        shape_bb = BB::merge(shape_bb, get_extents(shape.expoly));
 
     auto get_line_bb = [&](size_t j) {
         BoundingBox line_bb;
         for (; j < text.length() && text[j] != '\n'; ++j)
-            line_bb.merge(get_extents(shapes[j].expoly));
+            line_bb = BB::merge(line_bb, get_extents(shapes[j].expoly));
         return line_bb;
     };
 

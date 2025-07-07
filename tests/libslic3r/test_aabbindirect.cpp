@@ -11,6 +11,7 @@
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using namespace Catch;
+using Domain::Polygon;
 using Domain::ExPolygon;
 using Domain::ExPolygons;
 

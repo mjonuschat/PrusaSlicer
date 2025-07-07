@@ -30,6 +30,7 @@
 #include <utility>
 #include <cassert>
 
+#include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
@@ -38,9 +39,6 @@
 #include "LocalesUtils.hpp"
 
 namespace Slic3r {
-
-class BoundingBox;
-class BoundingBoxf;
 
 using Vector = Domain::Point;
 

@@ -32,6 +32,7 @@
 #include "FillRectilinear.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Utils.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 // #define SLIC3R_DEBUG
 // #define INFILL_DEBUG_OUTPUT
@@ -54,6 +55,8 @@
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 // Having a segment of a closed polygon, calculate its Euclidian length.
 // The segment indices seg1 and seg2 signify an end point of an edge in the forward direction of the loop,
@@ -2758,12 +2761,16 @@ static void polylines_from_paths(const std::vector<MonotonicRegionLink> &path, c
 BoundingBox FillRectilinear::extended_object_bounding_box() const {
     // TODO: This unnecessary copy will remain until the old BoundingBox is replaced with Domain::BoundingBox2crd.
     BoundingBox out = BoundingBox{this->bounding_box.min, this->bounding_box.max};
-    out.merge(Point(out.min.y(), out.min.x()));
-    out.merge(Point(out.max.y(), out.max.x()));
+    out = BB::merge(out, Point(out.min.y(), out.min.x()));
+    out = BB::merge(out, Point(out.max.y(), out.max.x()));
 
     // The bounding box is scaled by sqrt(2.) to ensure that the bounding box
     // covers any possible rotations.
-    return out.scaled(sqrt(2.));
+
+    const double factor{sqrt(2.)};
+    out.min *= factor;
+    out.max *= factor;
+    return out;
 }
 
 bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillParams &params, float angleBase, float pattern_shift, Polylines &polylines_out)
@@ -2802,7 +2809,7 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
 
     // define flow spacing according to requested density
     if (params.full_infill() && !params.dont_adjust) {
-        line_spacing = this->_adjust_solid_spacing(bounding_box_src.size().x(), line_spacing);
+        line_spacing = this->_adjust_solid_spacing(BB::sizes(bounding_box_src).x(), line_spacing);
         this->spacing = unscale<double>(line_spacing);
     } else {
         // extend bounding box so that our pattern will be aligned with other layers
@@ -2811,7 +2818,7 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
         // align_to_grid will not work correctly with positive pattern_shift.
         coord_t pattern_shift_scaled = coord_t(scale_(pattern_shift)) % line_spacing;
         refpt.x() -= (pattern_shift_scaled >= 0) ? pattern_shift_scaled : (line_spacing + pattern_shift_scaled);
-        bounding_box.merge(align_to_grid(
+        bounding_box = BB::merge(bounding_box, align_to_grid(
             bounding_box.min, 
             Point(line_spacing, line_spacing), 
             refpt));
@@ -2930,7 +2937,7 @@ void make_fill_lines(const ExPolygonWithOffset &poly_with_offset, Point refpt, d
     // align_to_grid will not work correctly with positive pattern_shift.
     coord_t pattern_shift_scaled = pattern_shift % line_spacing;
     refpt.x() -= (pattern_shift_scaled >= 0) ? pattern_shift_scaled : (line_spacing + pattern_shift_scaled);
-    bounding_box.merge(Slic3r::align_to_grid(bounding_box.min, Point(line_spacing, line_spacing), refpt));
+    bounding_box = BB::merge(bounding_box, Slic3r::align_to_grid(bounding_box.min, Point(line_spacing, line_spacing), refpt));
 
     // Intersect a set of euqally spaced vertical lines wiht expolygon.
     // n_vlines = ceil(bbox_width / line_spacing)

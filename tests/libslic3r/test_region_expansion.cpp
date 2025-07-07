@@ -21,7 +21,7 @@ SCENARIO("Region expansion basics", "[RegionExpansion]") {
         Polygon square2{ { 2 * ten, 1 * ten }, { 3 * ten, 1 * ten }, { 3 * ten, 2 * ten }, { 2 * ten, 2 * ten } };
         Polygon square3{ { 1 * ten, 2 * ten }, { 2 * ten, 2 * ten }, { 2 * ten, 3 * ten }, { 1 * ten, 3 * ten } };
         static constexpr const float expansion = scaled<float>(1.);
-        auto test_expansion = [](const Polygon &src, const Polygon &boundary) {
+        auto test_expansion = [&](const Polygon &src, const Polygon &boundary) {
             std::vector<Polygons> expanded = Algorithm::expand_expolygons({ ExPolygon{src} }, { ExPolygon{boundary} },
                 expansion,
                 scaled<float>(0.3), // expansion step

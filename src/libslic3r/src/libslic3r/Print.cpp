@@ -25,7 +25,6 @@
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Brim.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Extruder.hpp"

@@ -20,7 +20,7 @@
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "ExPolygon.hpp"
 #include "Geometry/MedialAxis.hpp"
 #include "Polygon.hpp"
@@ -34,6 +34,8 @@
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 bool on_boundary(const ExPolygon &expolygon, const Point &point, double eps)
 {
@@ -234,7 +236,7 @@ BoundingBox get_extents_rotated(const ExPolygons &expolygons, double angle)
     if (! expolygons.empty()) {
         bbox = get_extents_rotated(expolygons.front().contour, angle);
         for (size_t i = 1; i < expolygons.size(); ++ i)
-            bbox.merge(get_extents_rotated(expolygons[i].contour, angle));
+            bbox = BB::merge(bbox, get_extents_rotated(expolygons[i].contour, angle));
     }
     return bbox;
 }

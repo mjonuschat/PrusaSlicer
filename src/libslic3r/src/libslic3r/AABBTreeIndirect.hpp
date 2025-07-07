@@ -16,9 +16,12 @@
 #include <vector>
 
 #include <Eigen/Geometry>
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Point.hpp"
 
-#include "BoundingBox.hpp"
 #include "libslic3r/Utils.hpp" // for next_highest_power_of_2()
+#include "libslic3r/libslic3r.h"
 
 // Definition of the ray intersection hit structure.
 #include <igl/Hit.h>
@@ -226,17 +229,17 @@ using Tree3d = Tree<3, double>;
 // to build an AABBTree over coord_t 2D bounding boxes.
 class BoundingBoxWrapper {
 public:
-	using BoundingBox = Eigen::AlignedBox<coord_t, 2>;
-	BoundingBoxWrapper(const size_t idx, const Slic3r::BoundingBox &bbox) :
+	using BoundingBox = Eigen::AlignedBox<Domain::coord_t, 2>;
+	BoundingBoxWrapper(const size_t idx, const Domain::BoundingBox2crd &bbox) :
         m_idx(idx),
         // Inflate the bounding box a bit to account for numerical issues.
         m_bbox(
-            bbox.min - Point(static_cast<coord_t>(SCALED_EPSILON), static_cast<coord_t>(SCALED_EPSILON)),
-            bbox.max + Point(static_cast<coord_t>(SCALED_EPSILON), static_cast<coord_t>(SCALED_EPSILON))
+            bbox.min - Domain::Point(static_cast<Domain::coord_t>(SCALED_EPSILON), static_cast<Domain::coord_t>(SCALED_EPSILON)),
+            bbox.max + Domain::Point(static_cast<Domain::coord_t>(SCALED_EPSILON), static_cast<Domain::coord_t>(SCALED_EPSILON))
         ) {}
     size_t             idx() const { return m_idx; }
     const BoundingBox& bbox() const { return m_bbox; }
-    Point              centroid() const { return ((m_bbox.min().cast<int64_t>() + m_bbox.max().cast<int64_t>()) / 2).cast<int32_t>(); }
+    Domain::Point              centroid() const { return ((m_bbox.min().cast<int64_t>() + m_bbox.max().cast<int64_t>()) / 2).cast<int32_t>(); }
 private:
     size_t             m_idx;
     BoundingBox		   m_bbox;

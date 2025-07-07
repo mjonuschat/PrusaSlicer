@@ -38,7 +38,6 @@
 
 namespace Slic3rLegacy {
 
-class BoundingBox;
 class BoundingBoxf;
 class Point;
 

@@ -8,13 +8,15 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "BoundingBox.hpp"
 #include "Surface.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 BoundingBox get_extents(const Surface &surface)
 {
@@ -27,7 +29,7 @@ BoundingBox get_extents(const Surfaces &surfaces)
     if (! surfaces.empty()) {
         bbox = get_extents(surfaces.front());
         for (size_t i = 1; i < surfaces.size(); ++ i)
-            bbox.merge(get_extents(surfaces[i]));
+            bbox = BB::merge(bbox, get_extents(surfaces[i]));
     }
     return bbox;
 }
@@ -38,7 +40,7 @@ BoundingBox get_extents(const SurfacesPtr &surfaces)
     if (! surfaces.empty()) {
         bbox = get_extents(*surfaces.front());
         for (size_t i = 1; i < surfaces.size(); ++ i)
-            bbox.merge(get_extents(*surfaces[i]));
+            bbox = BB::merge(bbox, get_extents(*surfaces[i]));
     }
     return bbox;
 }
@@ -98,7 +100,7 @@ bool export_to_svg(const char *path, const Surfaces &surfaces, const float trans
 {
     BoundingBox bbox;
     for (Surfaces::const_iterator surface = surfaces.begin(); surface != surfaces.end(); ++surface)
-        bbox.merge(get_extents(surface->expolygon));
+        bbox = BB::merge(bbox, get_extents(surface->expolygon));
 
     Biz::Algorithms::SVG::SVG svg(path, bbox);
     for (Surfaces::const_iterator surface = surfaces.begin(); surface != surfaces.end(); ++surface)

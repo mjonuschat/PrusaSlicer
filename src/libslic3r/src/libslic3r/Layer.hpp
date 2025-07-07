@@ -25,7 +25,6 @@
 
 #include "libslic3r/Line.hpp"
 #include "libslic3r/libslic3r.h"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/SurfaceCollection.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"

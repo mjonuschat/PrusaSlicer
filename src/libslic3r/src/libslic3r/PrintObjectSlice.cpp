@@ -23,7 +23,6 @@
 #include "libslic3r/ShortestPath.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Feature/Interlocking/InterlockingGenerator.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Flow.hpp"

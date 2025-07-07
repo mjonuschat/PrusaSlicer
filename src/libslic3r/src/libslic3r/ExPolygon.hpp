@@ -30,7 +30,6 @@
 #include "libslic3r.h"
 #include "Polygon.hpp"
 #include "Polyline.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Line.hpp"
 
 namespace Slic3r {

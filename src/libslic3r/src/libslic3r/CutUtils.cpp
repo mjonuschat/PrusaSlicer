@@ -17,7 +17,6 @@
 #include "libslic3r/Model.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"

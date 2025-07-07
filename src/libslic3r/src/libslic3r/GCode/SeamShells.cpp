@@ -4,7 +4,6 @@
 #include <optional>
 #include <utility>
 
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
 
 namespace Slic3r::Seams::Shells::Impl {

@@ -13,15 +13,17 @@
 #include "../ClipperUtils.hpp"
 #include "../ShortestPath.hpp"
 #include "Fill3DHoneycomb.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 /*
 Creates a contiguous sequence of points at a specified height that make
@@ -164,14 +166,14 @@ void Fill3DHoneycomb::_fill_surface_single(
     // align bounding box to a multiple of our honeycomb grid module
     // (a module is 2*$distance since one $distance half-module is 
     // growing while the other $distance half-module is shrinking)
-    bb.merge(align_to_grid(bb.min, Point(2*distance, 2*distance)));
+    bb = BB::merge(bb, align_to_grid(bb.min, Point(2*distance, 2*distance)));
     
     // generate pattern
     Polylines   polylines = makeGrid(
         scale_(this->z),
         distance,
-        ceil(bb.size()(0) / distance) + 1,
-        ceil(bb.size()(1) / distance) + 1,
+        ceil(BB::sizes(bb)(0) / distance) + 1,
+        ceil(BB::sizes(bb)(1) / distance) + 1,
         ((this->layer_id/thickness_layers) % 2) + 1);
     
     // move pattern in place

@@ -686,7 +686,7 @@ bool pack(Strategy &&strategy,
     auto fixed_items = all_items_range(packing_context);
 
     if (fixed_items.size() < Slic3r::arr2::StripCVRef<Strategy>::Capacity &&
-        Algorithms::BoundingBox::contains(bedbb, itmbb))
+        bedbb.contains(itmbb))
     {
         translate(item, tr);
         ret = true;

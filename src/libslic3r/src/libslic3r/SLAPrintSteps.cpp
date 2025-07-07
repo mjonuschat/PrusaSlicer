@@ -47,7 +47,6 @@
 
 #include "libslic3r/I18N.hpp"
 #include "libslic3r/format.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Model.hpp"
@@ -64,6 +63,7 @@
 
 #include "libslic3r/Format/SL1.hpp"
 #include "libslic3r/Format/SL1_SVG.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 using namespace Slic3r::Biz::Slicing;

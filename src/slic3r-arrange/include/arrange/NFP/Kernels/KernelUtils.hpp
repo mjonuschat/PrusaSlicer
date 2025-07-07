@@ -43,7 +43,7 @@ bool find_initial_position(Itm &itm,
                 Domain::Vec2crd d = cb - ci;
                 bbitm = Biz::Algorithms::BoundingBox::translated(bbitm, d);
 
-                if (Biz::Algorithms::BoundingBox::contains(bounding_box(bed), bbitm)) {
+                if (bounding_box(bed).contains(bbitm)) {
                     rotate(itm, rot);
                     translate(itm, d);
                     ret = true;

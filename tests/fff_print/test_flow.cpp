@@ -20,7 +20,7 @@ using Domain::FloatOrPercentage;
 
 SCENARIO("Extrusion width specifics", "[Flow]") {
 
-    auto test = [](const TestConfig &config) {
+    auto test = [=](const TestConfig &config) {
         GCodeReader parser;
         const double        layer_height = config.print.items.opt("layer_height").get<double>();
         std::vector<double> E_per_mm_bottom;

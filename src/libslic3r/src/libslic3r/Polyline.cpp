@@ -16,19 +16,21 @@
 #include <cassert>
 
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
-#include "BoundingBox.hpp"
 #include "Polyline.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Line.hpp"
 #include "libslic3r/MultiPoint.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
+namespace BB = Biz::Algorithms::BoundingBox;
+
 BoundingBox ThickPolyline::bounding_box() const {
-    return BoundingBox(this->points);
+    return BB::construct(this->points);
 }
 
 // Temporary proxy function.
@@ -119,7 +121,7 @@ BoundingBox get_extents(const ThickPolylines &thick_polylines) {
     if (!thick_polylines.empty()) {
         bbox = thick_polylines.front().bounding_box();
         for (size_t i = 1; i < thick_polylines.size(); ++i) {
-            bbox.merge(thick_polylines[i].points);
+            bbox = BB::merge(bbox, BB::construct(thick_polylines[i].points));
         }
     }
 

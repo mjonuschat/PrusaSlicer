@@ -12,7 +12,6 @@
 #include <vector>
 #include <cstddef>
 
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/Layer.hpp"
@@ -24,14 +23,17 @@
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polyline.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 static inline BoundingBox extrusion_polyline_extents(const Polyline &polyline, const coord_t radius)
 {
     BoundingBox bbox;
     if (! polyline.points.empty())
-        bbox.merge(polyline.points.front());
+        bbox = BB::merge(bbox, polyline.points.front());
     for (const Point &pt : polyline.points) {
         bbox.min(0) = std::min(bbox.min(0), pt(0) - radius);
         bbox.min(1) = std::min(bbox.min(1), pt(1) - radius);
@@ -45,7 +47,7 @@ static inline BoundingBoxf extrusionentity_extents(const ExtrusionPath &extrusio
 {
     BoundingBox bbox = extrusion_polyline_extents(extrusion_path.polyline, coord_t(scale_(0.5 * extrusion_path.width())));
     BoundingBoxf bboxf;
-    if (! empty(bbox)) {
+    if (! BB::empty(bbox)) {
         bboxf.min = unscale(bbox.min);
         bboxf.max = unscale(bbox.max);
 		bboxf.defined = true;
@@ -57,9 +59,9 @@ static inline BoundingBoxf extrusionentity_extents(const ExtrusionLoop &extrusio
 {
     BoundingBox bbox;
     for (const ExtrusionPath &extrusion_path : extrusion_loop.paths)
-        bbox.merge(extrusion_polyline_extents(extrusion_path.polyline, coord_t(scale_(0.5 * extrusion_path.width()))));
+        bbox = BB::merge(bbox, extrusion_polyline_extents(extrusion_path.polyline, coord_t(scale_(0.5 * extrusion_path.width()))));
     BoundingBoxf bboxf;
-    if (! empty(bbox)) {
+    if (! BB::empty(bbox)) {
         bboxf.min = unscale(bbox.min);
         bboxf.max = unscale(bbox.max);
 		bboxf.defined = true;
@@ -71,9 +73,9 @@ static inline BoundingBoxf extrusionentity_extents(const ExtrusionMultiPath &ext
 {
     BoundingBox bbox;
     for (const ExtrusionPath &extrusion_path : extrusion_multi_path.paths)
-        bbox.merge(extrusion_polyline_extents(extrusion_path.polyline, coord_t(scale_(0.5 * extrusion_path.width()))));
+        bbox = BB::merge(bbox, extrusion_polyline_extents(extrusion_path.polyline, coord_t(scale_(0.5 * extrusion_path.width()))));
     BoundingBoxf bboxf;
-    if (! empty(bbox)) {
+    if (! BB::empty(bbox)) {
         bboxf.min = unscale(bbox.min);
         bboxf.max = unscale(bbox.max);
 		bboxf.defined = true;
@@ -87,7 +89,7 @@ static inline BoundingBoxf extrusionentity_extents(const ExtrusionEntityCollecti
 {
     BoundingBoxf bbox;
     for (const ExtrusionEntity *extrusion_entity : extrusion_entity_collection.entities)
-        bbox.merge(extrusionentity_extents(extrusion_entity));
+        bbox = BB::merge(bbox, extrusionentity_extents(extrusion_entity));
     return bbox;
 }
 
@@ -114,7 +116,7 @@ static BoundingBoxf extrusionentity_extents(const ExtrusionEntity *extrusion_ent
 BoundingBoxf get_print_extrusions_extents(const Print &print)
 {
     BoundingBoxf bbox(extrusionentity_extents(print.brim()));
-    bbox.merge(extrusionentity_extents(print.skirt()));
+    bbox = BB::merge(bbox, extrusionentity_extents(print.skirt()));
     return bbox;
 }
 
@@ -126,19 +128,19 @@ BoundingBoxf get_print_object_extrusions_extents(const PrintObject &print_object
             break;
         BoundingBoxf bbox_this;
         for (const LayerRegion *layerm : layer->regions()) {
-            bbox_this.merge(extrusionentity_extents(layerm->perimeters()));
+            bbox_this = BB::merge(bbox_this, extrusionentity_extents(layerm->perimeters()));
             for (const ExtrusionEntity *ee : layerm->fills())
                 // fill represents infill extrusions of a single island.
-                bbox_this.merge(extrusionentity_extents(*dynamic_cast<const ExtrusionEntityCollection*>(ee)));
+                bbox_this = BB::merge(bbox_this, extrusionentity_extents(*dynamic_cast<const ExtrusionEntityCollection*>(ee)));
         }
         const SupportLayer *support_layer = dynamic_cast<const SupportLayer*>(layer);
         if (support_layer)
             for (const ExtrusionEntity *extrusion_entity : support_layer->support_fills.entities)
-                bbox_this.merge(extrusionentity_extents(extrusion_entity));
+                bbox_this = BB::merge(bbox_this, extrusionentity_extents(extrusion_entity));
         for (const PrintInstance &instance : print_object.instances()) {
             BoundingBoxf bbox_translated(bbox_this);
-            bbox_translated.translate(unscale(instance.shift));
-            bbox.merge(bbox_translated);
+            bbox_translated = BB::translated(bbox_translated, unscale(instance.shift));
+            bbox = BB::merge(bbox, bbox_translated);
         }
     }
     return bbox;
@@ -166,8 +168,8 @@ BoundingBoxf get_wipe_tower_extrusions_extents(const Print &print, const double 
                     Vec2d delta = 0.5 * Vec2d(e.width, e.width);
                     Vec2d p1 = trafo * (&e - 1)->pos.cast<double>();
                     Vec2d p2 = trafo * e.pos.cast<double>();
-                    bbox.merge(p1.cwiseMin(p2) - delta);
-                    bbox.merge(p1.cwiseMax(p2) + delta);
+                    bbox = BB::merge(bbox, (p1.cwiseMin(p2) - delta).eval());
+                    bbox = BB::merge(bbox, (p1.cwiseMax(p2) + delta).eval());
                 }
             }
         }
@@ -186,7 +188,7 @@ BoundingBoxf get_wipe_tower_priming_extrusions_extents(const Print &print)
                 if (e.width > 0) {
                     const Vec2d& p1 = (&e - 1)->pos.cast<double>();
                     const Vec2d& p2 = e.pos.cast<double>();
-                    bbox.merge(p1);
+                    bbox = BB::merge(bbox, p1);
                     double radius = 0.5 * e.width;
                     bbox.min(0) = std::min(bbox.min(0), std::min(p1(0), p2(0)) - radius);
                     bbox.min(1) = std::min(bbox.min(1), std::min(p1(1), p2(1)) - radius);

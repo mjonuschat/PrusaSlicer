@@ -47,7 +47,6 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/MutablePolygon.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
@@ -62,6 +61,7 @@
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/Utils.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 // #define TREESUPPORT_DEBUG_SVG
 
@@ -70,6 +70,8 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r
 {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 namespace FFFTreeSupport
 {
@@ -728,7 +730,7 @@ static std::optional<std::pair<Point, size_t>> polyline_sample_next_point_at_dis
         Surface surface(stInternal, std::move(expoly));
         try {
             Polylines pl = filler->fill_surface(&surface, fill_params);
-            assert(pl.empty() || get_extents(surface.expolygon).inflated(SCALED_EPSILON).contains(get_extents(pl)));
+            assert(pl.empty() || BB::inflated(get_extents(surface.expolygon), SCALED_EPSILON).contains(get_extents(pl)));
 #ifdef TREE_SUPPORT_SHOW_ERRORS_WIN32
             if (! pl.empty() && ! get_extents(surface.expolygon).inflated(SCALED_EPSILON).contains(get_extents(pl)))
                 ::MessageBoxA(nullptr, "TreeSupport infill failure", "Bug detected!", MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND | MB_ICONWARNING);
@@ -800,7 +802,7 @@ static std::optional<std::pair<Point, size_t>> polyline_sample_next_point_at_dis
     Polygons collision_trimmed_buffer;
     auto collision_trimmed = [&collision_trimmed_buffer, &collision, &ret, distance]() -> const Polygons& {
         if (collision_trimmed_buffer.empty() && ! collision.empty())
-            collision_trimmed_buffer = ClipperUtils::clip_clipper_polygons_with_subject_bbox(collision, get_extents(ret).inflated(std::max(0, distance) + SCALED_EPSILON));
+            collision_trimmed_buffer = ClipperUtils::clip_clipper_polygons_with_subject_bbox(collision, BB::inflated(get_extents(ret), std::max(0, distance) + SCALED_EPSILON));
         return collision_trimmed_buffer;
     };
 
@@ -1045,7 +1047,7 @@ void finalize_raft_contact(
         if (raft_contact_layer_idx >= 0 && print_object.config().get<double>("raft_expansion") > 0) {
             // If any tips at first_tree_layer now are completely inside the expanded raft layer, remove them as well before they are propagated to the ground.
             Polygons &raft_polygons = top_contacts[raft_contact_layer_idx]->polygons;
-            EdgeGrid::Grid grid(get_extents(raft_polygons).inflated(SCALED_EPSILON));
+            EdgeGrid::Grid grid(BB::inflated(get_extents(raft_polygons), SCALED_EPSILON));
             grid.create(raft_polygons, Polylines{}, coord_t(scale_(10.)));
             SupportElements &first_layer_move_bounds = move_bounds[first_tree_layer];
             double threshold = scaled<double>(print_object.config().get<double>("raft_expansion")) * 2.;
@@ -2230,8 +2232,8 @@ static bool merge_influence_areas_two_elements(
         dst.areas.to_model_areas = std::move(intersect);
     // Update the bounding box.
     BoundingBox bbox(get_extents(dst.areas.influence_areas));
-    bbox.merge(get_extents(dst.areas.to_bp_areas));
-    bbox.merge(get_extents(dst.areas.to_model_areas));
+    bbox = BB::merge(bbox, get_extents(dst.areas.to_bp_areas));
+    bbox = BB::merge(bbox, get_extents(dst.areas.to_model_areas));
     dst.set_bbox(bbox);
     // Clear the source data.
     src.areas.clear();

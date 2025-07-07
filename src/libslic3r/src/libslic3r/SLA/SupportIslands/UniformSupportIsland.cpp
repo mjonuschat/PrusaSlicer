@@ -10,6 +10,7 @@
 
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include <libslic3r/ClipperUtils.hpp> // allign
 #include <libslic3r/KDTreeIndirect.hpp> // closest point
 #include <libslic3r/Geometry.hpp>
@@ -48,6 +49,8 @@ namespace {
 using namespace Slic3r;
 using namespace Slic3r::sla;
 using namespace Slic3r::Biz;
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 /// <summary>
 /// Replace first occurence of string
@@ -190,7 +193,7 @@ using Slic3r::Biz::Algorithms::SVG::SVG;
 
 #ifdef OPTION_TO_STORE_ISLAND
 SVG draw_island(const std::string &path, const ExPolygon &island, const ExPolygon &simplified_island) {
-    Biz::Algorithms::SVG::SVG svg(path, BoundingBox{island.contour.points});
+    Biz::Algorithms::SVG::SVG svg(path, BB::construct(island.contour.points));
     svg.draw_original(island);
     svg.draw(island, "lightgray");
     svg.draw(simplified_island, "gray");
@@ -861,11 +864,11 @@ std::vector<size_t> get_line_indices(const Neighbor* input, const Positions& end
 /// <param name="ids">[OUT] source indices of island contour line creating field</param>
 /// <returns>True when contour is changed</returns>
 bool set_biggest_hole_as_contour(ExPolygon &shape, std::vector<size_t> &ids) {
-    Point contour_size = BoundingBox(shape.contour.points).size();
+    Point contour_size = BB::sizes(BB::construct(shape.contour.points));
     Polygons &holes = shape.holes;
     size_t contour_index = holes.size();
     for (size_t hole_index = 0; hole_index < holes.size(); ++hole_index) {
-        Point hole_size = BoundingBox(holes[hole_index].points).size();
+        Point hole_size = BB::sizes(BB::construct(holes[hole_index].points));
         if (hole_size.x() < contour_size.x()) // X size should be enough
             continue;                         // size is smaller it is really hole
         contour_size = hole_size;
@@ -2679,7 +2682,7 @@ SupportIslandPoints uniform_support_island(
     assert(vd.get_issue_type() == Geometry::VoronoiDiagram::IssueType::NO_ISSUE_DETECTED);
     if (vd.get_issue_type() != Geometry::VoronoiDiagram::IssueType::NO_ISSUE_DETECTED) {
         // error state suppport island by one point
-        Point center = BoundingBox{island.contour.points}.center();
+        Point center = BB::center(BB::construct(island.contour.points));
         SupportIslandPoints supports;
         supports.push_back(std::make_unique<SupportIslandNoMovePoint>(
             center, SupportIslandInnerPoint::Type::bad_shape_for_vd));

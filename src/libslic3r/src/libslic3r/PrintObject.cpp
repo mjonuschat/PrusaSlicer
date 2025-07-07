@@ -43,7 +43,6 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/I18N.hpp"
 #include "libslic3r/Layer.hpp"
@@ -70,6 +69,7 @@
 #include "tcbspan/span.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/InfillAboveBridges.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace std::literals;
 
@@ -110,6 +110,8 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
+namespace BB = Biz::Algorithms::BoundingBox;
+
 using Domain::BoundingBox3d;
 using Biz::Algorithms::BoundingBox::center;
 using Biz::Algorithms::BoundingBox::sizes;
@@ -129,7 +131,7 @@ PrintObject::PrintObject(Print* print, Domain::ModelObject* model_object, const 
 	// therefore a bounding box from 1st instance of a ModelObject is good enough for calculating the object center,
 	// snug height and an approximate bounding box in XY.
     BoundingBox3d  bbox        = Algorithms::ModelObject::raw_bounding_box(*model_object);
-    Vec3d 		   bbox_center = center(bbox);
+    Vec3d 		   bbox_center = BB::center(bbox);
 	// We may need to rotate the bbox / bbox_center from the original instance to the current instance.
     double z_diff = Geometry::rotation_diff_z(model_object->instances.front()->get_matrix(), instances.front().model_instance.get_matrix());
     if (std::abs(z_diff) > EPSILON) {
@@ -141,7 +143,7 @@ PrintObject::PrintObject(Print* print, Domain::ModelObject* model_object, const 
     // Center of the transformed mesh (without translation).
     m_center_offset = scaled(Vec2d(bbox_center.x(), bbox_center.y()));
     // Size of the transformed mesh. This bounding may not be snug in XY plane, but it is snug in Z.
-    m_size = (sizes(bbox) * (1. / SCALING_FACTOR)).cast<coord_t>();
+    m_size = (BB::sizes(bbox) * (1. / SCALING_FACTOR)).cast<coord_t>();
     m_size.z() = coord_t(model_object->max_z() * (1. / SCALING_FACTOR));
 
     this->set_instances(std::move(instances));
@@ -1827,7 +1829,13 @@ void PrintObject::bridge_over_infill()
             for (size_t job_idx = r.begin(); job_idx < r.end(); job_idx++) {
                 size_t lidx = layers_with_candidates[job_idx];
                 for (const auto &candidate : surfaces_by_layer.at(lidx)) {
-                    Polygon candiate_inflated_aabb = get_extents(candidate.new_polys).inflated(scale_(7)).polygon();
+                    const BoundingBox box{BB::inflated(get_extents(candidate.new_polys), scale_(7))};
+                    const Polygon candiate_inflated_aabb{
+                        box.min,
+                        { box.max.x(), box.min.y() },
+                        box.max,
+                        { box.min.x(), box.max.y() }
+                    };
                     layer_area_covered_by_candidates.at(lidx) = union_(layer_area_covered_by_candidates.at(lidx),
                                                                        Polygons{candiate_inflated_aabb});
                 }
@@ -2501,7 +2509,7 @@ SlicingParameters PrintObject::slicing_parameters(
     //FIXME add painting extruders
 
     if (object_max_z <= 0.f)
-        object_max_z = (float)sizes(Algorithms::ModelObject::raw_bounding_box(model_object)).z();
+        object_max_z = (float)BB::sizes(Algorithms::ModelObject::raw_bounding_box(model_object)).z();
 
     return SlicingParameters::create_from_config(object_config, object_max_z, object_extruders, object_shrinkage_compensation);
 }

@@ -15,9 +15,9 @@
 #include "libslic3r/Geometry.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/PNGReadWrite.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 // #define EDGE_GRID_DEBUG_OUTPUT
 
@@ -29,6 +29,8 @@
 #endif
 
 namespace Slic3r {
+
+namespace BB = Slic3r::Biz::Algorithms::BoundingBox;
 
 void EdgeGrid::Grid::create(const Polygons &polygons, coord_t resolution)
 {
@@ -150,7 +152,7 @@ void EdgeGrid::Grid::create_from_m_contours(coord_t resolution)
 		assert(contour.num_segments() > 0);
 		assert(*contour.begin() != contour.end()[-1]);
 		for (const Slic3r::Point &pt : contour) 
-			m_bbox.merge(pt);
+			m_bbox = BB::merge(m_bbox, pt);
 	}
 
 	coord_t eps = 16;
@@ -1579,7 +1581,7 @@ std::vector<std::pair<EdgeGrid::Grid::ContourEdge, EdgeGrid::Grid::ContourEdge>>
 		if (poly.points.size() < 2)
 			continue;
 		for (size_t i = 0; i < poly.points.size(); ++ i) {
-			bbox.merge(poly.points[i]);
+			bbox = BB::merge(bbox, poly.points[i]);
 			size_t j = (i == 0) ? (poly.points.size() - 1) : i - 1;
 			len += (poly.points[j] - poly.points[i]).cast<double>().norm();
 			++ cnt;
@@ -1589,7 +1591,7 @@ std::vector<std::pair<EdgeGrid::Grid::ContourEdge, EdgeGrid::Grid::ContourEdge>>
     std::vector<std::pair<EdgeGrid::Grid::ContourEdge, EdgeGrid::Grid::ContourEdge>> out;
     if (cnt > 0) {
         len /= double(cnt);
-        bbox.offset(20);
+        bbox = BB::inflated(bbox, 20);
         EdgeGrid::Grid grid;
         grid.set_bbox(bbox);
         grid.create(polygons, len);

@@ -3,7 +3,6 @@
 
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include <libslic3r/ExPolygon.hpp>
-#include <libslic3r/BoundingBox.hpp>
 #include <libslic3r/SLA/SpatIndex.hpp>
 #include <libslic3r/ClipperUtils.hpp>
 #include <libslic3r/TriangleMeshSlicer.hpp>
@@ -17,6 +16,7 @@
 #include "nanosvg/nanosvg.h"    // load SVG file
 #include "sla_test_utils.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
@@ -26,7 +26,7 @@ using Domain::SLA::SupportPoints;
 using Domain::SLA::SupportPoint;
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
 
-using Biz::Algorithms::BoundingBox::center;
+namespace BB = Biz::Algorithms::BoundingBox;
 
 //#define STORE_SAMPLE_INTO_SVG_FILES "C:/data/temp/test_islands/sample_"
 //#define STORE_ISLAND_ISSUES "C:/data/temp/issues/"
@@ -86,7 +86,7 @@ TEST_CASE("Overhanging horizontal surface should be supported", "[SupGen]") {
 template<class M> auto&& center_around_bb(M &&mesh)
 {
     auto bb = mesh.bounding_box();
-    mesh.translate(-center(bb).template cast<float>());
+    mesh.translate(-BB::center(bb).template cast<float>());
 
     return std::forward<M>(mesh);
 }
@@ -124,7 +124,7 @@ TEST_CASE("Hollowed cube should be supported from the inside", "[SupGen][Hollowe
 
     auto bb = mesh.bounding_box();
     auto h  = float(bb.max.z() - bb.min.z());
-    Vec3f mv = center(bb).cast<float>() - Vec3f{0.f, 0.f, 0.5f * h};
+    Vec3f mv = BB::center(bb).cast<float>() - Vec3f{0.f, 0.f, 0.5f * h};
     mesh.translate(-mv);
 
     SupportPoints pts = calc_support_pts(mesh);
@@ -419,7 +419,7 @@ ExPolygons createTestIslands(double size)
 
 Points createNet(const BoundingBox& bounding_box, double distance)
 { 
-    Point  size       = bounding_box.size();
+    Point  size       = BB::sizes(bounding_box);
     double distance_2 = distance / 2;
     int    cols1 = static_cast<int>(floor(size.x() / distance))+1;
     int    cols2 = static_cast<int>(floor((size.x() - distance_2) / distance))+1;
@@ -450,7 +450,7 @@ Points createNet(const BoundingBox& bounding_box, double distance)
 // create uniform triangle net and return points laying inside island
 Points rasterize(const ExPolygon &island, double distance) {
     BoundingBox bb;
-    for (const Point &pt : island.contour.points) bb.merge(pt);
+    for (const Point &pt : island.contour.points) bb = BB::merge(bb, pt);
     Points      fullNet = createNet(bb, distance);
     Points result;
     result.reserve(fullNet.size());

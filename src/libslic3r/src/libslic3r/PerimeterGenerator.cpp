@@ -24,7 +24,6 @@
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/AABBTreeLines.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/BridgeDetector.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -48,6 +47,7 @@
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Print.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 //#define ARACHNE_DEBUG
 
@@ -59,6 +59,8 @@
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 ExtrusionMultiPath PerimeterGenerator::thick_polyline_to_multi_path(const ThickPolyline &thick_polyline, ExtrusionRole role, const Flow &flow, const float tolerance, const float merge_tolerance)
 {
@@ -235,8 +237,8 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
             !((params.config.get<bool>("support_material") || params.config.get<int>("support_material_enforce_layers") > 0) &&
               params.config.get<double>("support_material_contact_distance") == 0)) {
             // Detect overhanging/bridging perimeters.
-            BoundingBox bbox(polygon.points);
-            bbox.offset(SCALED_EPSILON);
+            BoundingBox bbox(BB::construct(polygon.points));
+            bbox = BB::inflated(bbox, SCALED_EPSILON);
             Polygons lower_slices_polygons_clipped = ClipperUtils::clip_clipper_polygons_with_subject_bbox(lower_slices_polygons_cache, bbox);
             // get non-overhang paths by intersecting this loop with the grown lower slices
             extrusion_paths_append(
@@ -447,14 +449,14 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::P
             BoundingBox extrusion_path_bbox;
             for (const Arachne::ExtrusionJunction &ej : extrusion.junctions) {
                 extrusion_path.emplace_back(ej.p.x(), ej.p.y(), ej.w);
-                extrusion_path_bbox.merge(Point{ej.p.x(), ej.p.y()});
+                extrusion_path_bbox = BB::merge(extrusion_path_bbox, Point{ej.p.x(), ej.p.y()});
             }
 
             ClipperLib_Z::Paths lower_slices_paths;
             lower_slices_paths.reserve(lower_slices_polygons_cache.size());
             {
                 Points clipped;
-                extrusion_path_bbox.offset(SCALED_EPSILON);
+                extrusion_path_bbox = BB::inflated(extrusion_path_bbox, SCALED_EPSILON);
                 for (const Polygon &poly : lower_slices_polygons_cache) {
                     clipped.clear();
                     ClipperUtils::clip_clipper_polygon_with_subject_bbox(poly.points, extrusion_path_bbox, clipped);
@@ -798,7 +800,7 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
 {
     coord_t anchors_size = std::min(coord_t(scale_(EXTERNAL_INFILL_MARGIN)), overhang_flow.scaled_spacing() * (perimeter_count + 1));
 
-    BoundingBox infill_area_bb = get_extents(infill_area).inflated(SCALED_EPSILON);
+    BoundingBox infill_area_bb = BB::inflated(get_extents(infill_area), SCALED_EPSILON);
     Polygons optimized_lower_slices = ClipperUtils::clip_clipper_polygons_with_subject_bbox(lower_slices_polygons, infill_area_bb);
     Polygons overhangs  = diff(infill_area, optimized_lower_slices);
 
@@ -1050,7 +1052,7 @@ void PerimeterGenerator::process_arachne(
 
         // Infill contour bounding box.
         BoundingBox infill_contour_bbox = get_extents(infill_contour);
-        infill_contour_bbox.offset(SCALED_EPSILON);
+        infill_contour_bbox = BB::inflated(infill_contour_bbox, SCALED_EPSILON);
 
         // Get top ExPolygons from current infill contour.
         const Polygons upper_slices_clipped = ClipperUtils::clip_clipper_polygons_with_subject_bbox(*upper_slices, infill_contour_bbox);
@@ -1350,7 +1352,7 @@ void PerimeterGenerator::process_classic(
 
                 // Current slices bounding box.
                 BoundingBox current_perimeters_bbox = get_extents(last);
-                current_perimeters_bbox.offset(SCALED_EPSILON);
+                current_perimeters_bbox = BB::inflated(current_perimeters_bbox, SCALED_EPSILON);
 
                 ExPolygons current_slices_without_bridges;
                 if (lower_slices != nullptr) {
@@ -1573,7 +1575,7 @@ void PerimeterRegion::merge_compatible_perimeter_regions(PerimeterRegions &perim
         auto            it_next_region = std::next(it_curr_region);
         for (; it_next_region != perimeter_regions.end() && has_compatible_perimeter_regions(it_next_region->region->config(), it_curr_region->region->config()); ++it_next_region) {
             Slic3r::append(current_merge.expolygons, std::move(it_next_region->expolygons));
-            current_merge.bbox.merge(it_next_region->bbox);
+            current_merge.bbox = BB::merge(current_merge.bbox, it_next_region->bbox);
         }
 
         if (std::distance(it_curr_region, it_next_region) > 1) {

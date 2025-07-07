@@ -75,15 +75,6 @@ template<Domain::BoundingBoxConcept BoxType>
 template<Domain::BoundingBoxConcept BoxType>
 [[nodiscard]] typename BoxType::VecType center(const BoxType& box);
 
-template<Domain::BoundingBoxConcept BoxType>
-[[nodiscard]] bool contains(
-    const BoxType& box, const typename BoxType::VecType& point
-);
-
-[[nodiscard]] bool contains(
-    const Domain::BoundingBoxConcept auto& box, const Domain::BoundingBoxConcept auto& other
-);
-
 template<Domain::ScaledScalar OutputScalarType = Domain::coord_t, Domain::BoundingBoxConcept InputBoxType>
 [[nodiscard]] Domain::BoundingBox<OutputScalarType, InputBoxType::Dim> scaled(const InputBoxType& box);
 

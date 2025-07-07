@@ -4,6 +4,7 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Layer.hpp"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include "test_data.hpp"
 
@@ -13,6 +14,7 @@ using Biz::GCodeReader::GCodeReader;
 using Domain::Percentage;
 using Domain::FloatOrPercentage;
 using Biz::Print::SerializedConfig;
+namespace BB = Biz::Algorithms::BoundingBox;
 
 SCENARIO("PrintObject: Perimeter generation", "[PrintObject]") {
     GIVEN("20mm cube and default config") {
@@ -156,7 +158,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
                 if (line.cmd_is("G1") && line.extruding(self) && line.dist_XY(self) > 0)
                     extrusion_points.emplace_back(line.new_XY_scaled(self));
             });
-            Vec2d center = unscaled<double>(BoundingBox(extrusion_points).center());
+            Vec2d center = unscaled<double>(BB::center(BB::construct(extrusion_points)));
             THEN("print is centered around print_center") {
                 REQUIRE(is_approx(center.x(), 100.));
                 REQUIRE(is_approx(center.y(), 100.));

@@ -281,7 +281,7 @@ SCENARIO("Generic config validation performs as expected.", "[Config]") {
 }
 
 SCENARIO("Config accessor functions perform as expected.", "[Config]") {
-    auto test = [](ConfigBase &config) {
+    auto test = [&](ConfigBase &config) {
         WHEN("A boolean option is set to a boolean value") {
             REQUIRE_NOTHROW(config.set("gcode_comments", true));
             THEN("The underlying value is set correctly.") {

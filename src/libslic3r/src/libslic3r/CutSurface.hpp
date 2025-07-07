@@ -11,7 +11,6 @@
 
 #include "ExPolygon.hpp"
 #include "Emboss.hpp" // IProjection
-#include "libslic3r/BoundingBox.hpp"
 
 namespace Slic3r{
 namespace Emboss {

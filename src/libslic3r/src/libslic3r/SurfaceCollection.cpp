@@ -10,14 +10,16 @@
 #include <cstdio>
 
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
-#include "BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Surface.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 void SurfaceCollection::simplify(double tolerance)
 {
@@ -154,10 +156,10 @@ void SurfaceCollection::export_to_svg(const char *path, bool show_labels)
 {
     BoundingBox bbox;
     for (Surfaces::const_iterator surface = this->surfaces.begin(); surface != this->surfaces.end(); ++surface)
-        bbox.merge(get_extents(surface->expolygon));
+        bbox = BB::merge(bbox, get_extents(surface->expolygon));
     Point legend_size = export_surface_type_legend_to_svg_box_size();
     Point legend_pos(bbox.min(0), bbox.max(1));
-    bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
+    bbox = BB::merge(bbox, Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
     Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;

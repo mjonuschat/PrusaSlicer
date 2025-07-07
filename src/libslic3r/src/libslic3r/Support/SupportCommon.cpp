@@ -28,7 +28,6 @@
 #include "SupportCommon.hpp"
 #include "SupportLayer.hpp"
 #include "SupportParameters.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
@@ -42,6 +41,7 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 // #define SLIC3R_DEBUG
 
@@ -59,6 +59,8 @@
 using namespace Slic3r::Biz;
 
 namespace Slic3r::FFFSupport {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 // how much we extend support around the actual contact area
 //FIXME this should be dependent on the nozzle diameter!
@@ -1883,7 +1885,7 @@ void generate_support_toolpaths(
                 support_layer.support_islands = union_ex(polys);
                 support_layer.support_islands_bboxes.reserve(support_layer.support_islands.size());
                 for (const ExPolygon &expoly : support_layer.support_islands)
-                    support_layer.support_islands_bboxes.emplace_back(get_extents(expoly).inflated(SCALED_EPSILON));
+                    support_layer.support_islands_bboxes.emplace_back(BB::inflated(get_extents(expoly), SCALED_EPSILON));
             }
         } // for each support_layer_id
     });

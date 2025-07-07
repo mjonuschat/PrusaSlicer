@@ -8,7 +8,9 @@
 #include <libslic3r/TriangleMeshSlicer.hpp>
 #include <libslic3r/SLA/SupportTreeMesher.hpp>
 #include <libslic3r/BranchingTree/PointCloud.hpp>
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
+namespace BB = Slic3r::Biz::Algorithms::BoundingBox;
 namespace {
 
 const char *const BELOW_PAD_TEST_OBJECTS[] = {
@@ -177,7 +179,7 @@ TEST_CASE("RasterizedPolygonAreaShouldMatch", "[SLARasterOutput]") {
     auto bb = BoundingBox({0, 0}, {scaled(disp_w), scaled(disp_h)});
     
     ExPolygon poly = square_with_hole(10.);
-    poly.translate(bb.center().x(), bb.center().y());
+    poly.translate(BB::center(bb).x(), BB::center(bb).y());
     raster.draw(poly);
     
     double a = poly.area() / (scaled<double>(1.) * scaled(1.));
@@ -188,7 +190,7 @@ TEST_CASE("RasterizedPolygonAreaShouldMatch", "[SLARasterOutput]") {
     
     raster.clear();
     poly = square_with_hole(60.);
-    poly.translate(bb.center().x(), bb.center().y());
+    poly.translate(BB::center(bb).x(), BB::center(bb).y());
     raster.draw(poly);
     
     a = poly.area() / (scaled<double>(1.) * scaled(1.));

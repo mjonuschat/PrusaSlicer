@@ -28,7 +28,6 @@
 #include "SupportLayer.hpp"
 #include "TreeModelVolumes.hpp"
 #include "TreeSupportCommon.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/Polygon.hpp"

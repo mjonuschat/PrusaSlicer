@@ -26,7 +26,6 @@
 #include "libslic3r/PerimeterGenerator.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Surface.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/Algorithm/RegionExpansion.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
@@ -40,10 +39,13 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/LayerRegion.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 Flow LayerRegion::flow(FlowRole role) const
 {
@@ -935,10 +937,10 @@ void LayerRegion::export_region_slices_to_svg(const char *path) const
 {
     BoundingBox bbox;
     for (const Surface &surface : this->slices())
-        bbox.merge(get_extents(surface.expolygon));
+        bbox = BB::merge(bbox, get_extents(surface.expolygon));
     Point legend_size = export_surface_type_legend_to_svg_box_size();
     Point legend_pos(bbox.min(0), bbox.max(1));
-    bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
+    bbox = BB::merge(bbox, Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
     Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
@@ -962,10 +964,10 @@ void LayerRegion::export_region_fill_surfaces_to_svg(const char *path) const
 {
     BoundingBox bbox;
     for (const Surface &surface : this->fill_surfaces())
-        bbox.merge(get_extents(surface.expolygon));
+        bbox = BB::merge(bbox, get_extents(surface.expolygon));
     Point legend_size = export_surface_type_legend_to_svg_box_size();
     Point legend_pos(bbox.min(0), bbox.max(1));
-    bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
+    bbox = BB::merge(bbox, Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
     Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;

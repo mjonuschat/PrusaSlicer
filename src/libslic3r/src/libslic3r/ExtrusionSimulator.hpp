@@ -7,7 +7,6 @@
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ExtrusionEntity.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 
 namespace Slic3r {

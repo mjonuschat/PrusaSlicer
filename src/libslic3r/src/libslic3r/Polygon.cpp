@@ -18,7 +18,6 @@
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "BoundingBox.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Polygon.hpp"
 #include "Polyline.hpp"
@@ -27,10 +26,13 @@
 #include "libslic3r/MultiPoint.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 // Filter points from poly to the output with the help of FilterFn.
 // filter function receives two vectors:
@@ -388,7 +390,7 @@ Polygon make_circle_num_segments(double radius, size_t num_segments)
 
 BoundingBox ColorPolygon::bounding_box() const
 {
-    return BoundingBox(this->points);
+    return BB::construct(this->points);
 }
 
 } // namespace Slic3r

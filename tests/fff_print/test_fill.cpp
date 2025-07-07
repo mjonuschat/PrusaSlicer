@@ -205,7 +205,7 @@ TEST_CASE("Fill: Pattern Path Length", "[Fill]") {
 
 TEST_CASE("Infill does not exceed perimeters", "[Fill]") 
 {
-    auto test = [](const Domain::InfillPattern pattern, const Domain::InfillPattern top_bottom_pattern) {
+    auto test = [&](const Domain::InfillPattern pattern, const Domain::InfillPattern top_bottom_pattern) {
         TestConfig config{4};
         for (auto& tool_settings : config.tool) {
             tool_settings.items.opt("nozzle_diameter").set(0.4);
@@ -344,7 +344,7 @@ TEST_CASE("Infill does not exceed perimeters", "[Fill]")
 SCENARIO("Combine infill", "[Fill]")
 {
     {
-        auto test = [](const Test::TestConfig &config) {
+        auto test = [&](const Test::TestConfig &config) {
             std::string gcode = Test::slice({ Test::TestMesh::cube_20x20x20 }, config);
             THEN("infill_every_layers does not crash") {
                 REQUIRE(! gcode.empty());

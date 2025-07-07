@@ -30,8 +30,6 @@
 
 namespace Slic3r {
 
-class BoundingBox;
-
 // Reduces polyline in the <begin, end) range, outputs into the output iterator.
 // Output iterator may be equal to input iterator as long as the iterator value type move operator supports move at the same input / output address.
 template<typename SquareLengthType, typename InputIterator, typename OutputIterator, typename TakeFloaterPredicate, typename PointGetter>

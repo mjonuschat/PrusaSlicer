@@ -17,10 +17,10 @@
 #include "libslic3r/EdgeGrid.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 //#define LIGHTNING_TREE_NODE_DEBUG_OUTPUT
 
@@ -294,8 +294,8 @@ inline BoundingBox get_extents(const NodeSPtr &root_node)
 {
     BoundingBox bbox;
     for (const NodeSPtr &children : root_node->m_children)
-        bbox.merge(get_extents(children));
-    bbox.merge(root_node->getLocation());
+        bbox = Biz::Algorithms::BoundingBox::merge(bbox, get_extents(children));
+    bbox = Biz::Algorithms::BoundingBox::merge(bbox, root_node->getLocation());
     return bbox;
 }
 
@@ -303,7 +303,7 @@ inline BoundingBox get_extents(const std::vector<NodeSPtr> &tree_roots)
 {
     BoundingBox bbox;
     for (const NodeSPtr &root_node : tree_roots)
-        bbox.merge(get_extents(root_node));
+        bbox = Biz::Algorithms::BoundingBox::merge(bbox, get_extents(root_node));
     return bbox;
 }
 

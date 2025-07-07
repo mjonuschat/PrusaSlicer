@@ -20,7 +20,6 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -31,11 +30,14 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ConfigViews.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r
 {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 // Calculates length of extrusion line to extrude given volume
 static float volume_to_length(float volume, float line_width, float layer_height)
@@ -597,15 +599,15 @@ WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfigVie
 
     // Calculate where the priming lines should be - very naive test not detecting parallelograms etc.
     const std::vector<Vec2d>& bed_points = config.get<std::vector<Vec2d>>("bed_shape");
-    BoundingBoxf bb(bed_points);
-    m_bed_width = float(bb.size().x());
+    BoundingBoxf bb(BB::construct(bed_points));
+    m_bed_width = float(BB::sizes(bb).x());
     m_bed_shape = (bed_points.size() == 4 ? RectangularBed : CircularBed);
 
     if (m_bed_shape == CircularBed) {
         // this may still be a custom bed, check that the points are roughly on a circle
         double r2 = std::pow(m_bed_width/2., 2.);
         double lim2 = std::pow(m_bed_width/10., 2.);
-        Vec2d center = bb.center();
+        Vec2d center = BB::center(bb);
         for (const Vec2d& pt : bed_points)
             if (std::abs(std::pow(pt.x()-center.x(), 2.) + std::pow(pt.y()-center.y(), 2.) - r2) > lim2) {
                 m_bed_shape = CustomBed;

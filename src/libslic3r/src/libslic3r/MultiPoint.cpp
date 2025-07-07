@@ -10,7 +10,6 @@
 #include <queue>
 #include <cstdlib>
 
-#include "BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/libslic3r.h"
 

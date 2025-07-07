@@ -14,13 +14,15 @@
 #include "../ClipperUtils.hpp"
 #include "../ShortestPath.hpp"
 #include "FillHoneycomb.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 void FillHoneycomb::_fill_surface_single(
     const FillParams                &params, 
@@ -56,14 +58,20 @@ void FillHoneycomb::_fill_surface_single(
         BoundingBox bounding_box = Algorithms::Polygon::get_bounding_box(expolygon.contour);
         {
             // rotate bounding box according to infill direction
-            Polygon bb_polygon = bounding_box.polygon();
+            Polygon bb_polygon{
+                bounding_box.min,
+                { bounding_box.max.x(), bounding_box.min.y() },
+                bounding_box.max,
+                { bounding_box.min.x(), bounding_box.max.y() }
+            };
+
             bb_polygon.rotate(direction.first, m.hex_center);
             bounding_box = Algorithms::Polygon::get_bounding_box(bb_polygon);
             
             // extend bounding box so that our pattern will be aligned with other layers
             // $bounding_box->[X1] and [Y1] represent the displacement between new bounding box offset and old one
             // The infill is not aligned to the object bounding box, but to a world coordinate system. Supposedly good enough.
-            bounding_box.merge(align_to_grid(bounding_box.min, Point(m.hex_width, m.pattern_height)));
+            bounding_box = BB::merge(bounding_box, align_to_grid(bounding_box.min, Point(m.hex_width, m.pattern_height)));
         }
 
         coord_t x = bounding_box.min(0);

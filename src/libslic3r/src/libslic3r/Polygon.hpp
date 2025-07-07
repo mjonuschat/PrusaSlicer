@@ -39,7 +39,6 @@ namespace Slic3r {
 using Polygon = Slic3r::Domain::Polygon;
 using Polygons = Slic3r::Domain::Polygons;
 
-class BoundingBox;
 class ColorPolygon;
 
 using ColorPolygons = std::vector<ColorPolygon>;

@@ -4,9 +4,11 @@
 #include <functional>
 #include "VectorUtils.hpp"
 #include "PointUtils.hpp"
-#include "libslic3r/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::sla;
+
+namespace BB = Slic3r::Biz::Algorithms::BoundingBox;
 
 // sort counter clock wise lines
 void LineUtils::sort_CCW(Lines &lines, const Point& center)
@@ -392,7 +394,7 @@ Slic3r::BoundingBox LineUtils::create_bounding_box(const Lines &lines) {
         pts.push_back(line.a);
         pts.push_back(line.b);
     }
-    return BoundingBox(pts);
+    return BB::construct(pts);
 }
 
 std::map<size_t, size_t> LineUtils::create_line_connection_over_b(const Lines &lines)

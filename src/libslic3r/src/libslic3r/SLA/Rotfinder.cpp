@@ -18,17 +18,19 @@
 
 #include "libslic3r/PrintConfig.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Optimize/Optimizer.hpp"
 #include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r { namespace sla {
 namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
 using Domain::TriangleMesh;
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 namespace {
 
@@ -487,7 +489,7 @@ Vec2d find_min_z_height_rotation(const Domain::ModelObject &mo,
     auto objfn = [&bp, &chull](const XYRotation &rot) {
         bp.statusfn();
         Transform3f tr = to_transform3f(rot);
-        return bounding_box_with_tr(chull.its, tr).size().z();
+        return BB::sizes(bounding_box_with_tr(chull.its, tr)).z();
     };
 
     XYRotation rot = find_min_score<2>(objfn, inputs.begin(), inputs.end(), [&bp] {

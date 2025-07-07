@@ -24,21 +24,19 @@
 #include <cassert>
 #include <cinttypes>
 
-#include "libslic3r/BoundingBox.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/SLA/JobController.hpp"
 #include "libslic3r/SLA/Pad.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r {
 struct VoxelGrid;
 namespace execution = Slic3r::Biz::Algorithms::Execution;
+namespace BB = Biz::Algorithms::BoundingBox;
 
-using Biz::Algorithms::BoundingBox::cast;
-using Biz::Algorithms::BoundingBox::center;
-using Biz::Algorithms::BoundingBox::construct;
 using Biz::Algorithms::TriangleMesh::VertexFaceIndex;
 using Domain::Index3;
 using Domain::TriangleMesh;
@@ -355,15 +353,15 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
 
     // Must return true if further division of the face is needed.
     auto divfn = [&interior, bb, &mesh_mods](const DivFace &f) {
-        const Domain::BoundingBox3f facebb_float{construct(f.verts.begin(), f.verts.end())};
-        Domain::BoundingBox3d facebb{cast<double>(facebb_float)};
+        const Domain::BoundingBox3f facebb_float{BB::construct(f.verts.begin(), f.verts.end())};
+        Domain::BoundingBox3d facebb{BB::cast<double>(facebb_float)};
 
         // Face is certainly outside the cavity
         if (! facebb.overlap(bb) && f.faceid != NEW_FACE) {
             return false;
         }
         const auto facebb_radius{0.5 * (facebb.max - facebb.min).template cast<double>().norm()};
-        TriangleBubble bubble{center(facebb).cast<float>(), facebb_radius};
+        TriangleBubble bubble{BB::center(facebb).cast<float>(), facebb_radius};
 
         double D = get_distance(bubble, interior);
         double R = bubble.R;
@@ -412,8 +410,8 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
             std::array<Vec3f, 3> pts = {vertices[face[0]], vertices[face[1]],
                                         vertices[face[2]]};
 
-            const Domain::BoundingBox3f facebb_float{construct(pts.begin(), pts.end())};
-            Domain::BoundingBox3d facebb{cast<double>(facebb_float)};
+            const Domain::BoundingBox3f facebb_float{BB::construct(pts.begin(), pts.end())};
+            Domain::BoundingBox3d facebb{BB::cast<double>(facebb_float)};
 
             // Face is certainly outside the cavity
             if (!facebb.overlap(bb))

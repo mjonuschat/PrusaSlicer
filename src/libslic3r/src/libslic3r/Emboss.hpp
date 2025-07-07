@@ -25,7 +25,6 @@
 #include "Polygon.hpp"
 #include "ExPolygon.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp" // ExPolygonsWithIds
-#include "BoundingBox.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "libslic3r/Point.hpp"
 

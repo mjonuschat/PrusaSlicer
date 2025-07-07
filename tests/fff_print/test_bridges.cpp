@@ -13,7 +13,7 @@ SCENARIO("Bridge detector", "[Bridging]")
 {
     using namespace Slic3r::Biz;
 
-    auto check_angle = [](const ExPolygons &lower, const ExPolygon &bridge, double expected, double tolerance = -1, double expected_coverage = -1) 
+    auto check_angle = [&](const ExPolygons &lower, const ExPolygon &bridge, double expected, double tolerance = -1, double expected_coverage = -1) 
     {
         if (expected_coverage < 0)
             expected_coverage = bridge.area();
@@ -37,7 +37,7 @@ SCENARIO("Bridge detector", "[Bridging]")
         return result >= 0. && std::abs(delta) < tolerance;
     };
     GIVEN("O-shaped overhang") {
-        auto test = [&check_angle](const Point &size, double rotate, double expected_angle, double tolerance = -1) {
+        auto test = [&](const Point &size, double rotate, double expected_angle, double tolerance = -1) {
             ExPolygon lower{
                 Algorithms::Polygon::scaled({ {-2,-2}, {size.x()+2,-2}, {size.x()+2,size.y()+2}, {-2,size.y()+2} }),
                 Algorithms::Polygon::scaled({ {0,0}, {0,size.y()}, {size.x(),size.y()}, {size.x(),0} } )
@@ -112,7 +112,7 @@ SCENARIO("Bridging integration", "[Bridging]") {
     const double                bridge_speed = config.tool.at(0).items.opt("bridge_speed").get<double>() * 60.;
     // angle => length
     std::map<coord_t, double>   extrusions;
-    parser.parse_buffer(gcode, [&extrusions, bridge_speed](GCodeReader &self, const GCodeReader::GCodeLine &line)
+    parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line)
     {
         // if the command is a T command, set the the current tool
         if (line.cmd() == "G1" && is_approx<double>(bridge_speed, line.new_F(self))) {

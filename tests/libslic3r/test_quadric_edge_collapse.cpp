@@ -8,6 +8,8 @@
 
 using namespace Slic3r;
 using Domain::Index3;
+using Domain::Vec3f;
+using Domain::Vec3d;
 using Domain::TriangleMesh;
 using Slic3r::Biz::Algorithms::its_quadric_edge_collapse;
 

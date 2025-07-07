@@ -35,7 +35,6 @@ using Polyline = Slic3r::Domain::Polyline;
 using Polylines = Slic3r::Domain::Polylines;
 
 struct ThickPolyline;
-class BoundingBox;
 
 typedef std::vector<ThickPolyline> ThickPolylines;
 

@@ -21,7 +21,6 @@
 #include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Print.hpp"
@@ -45,6 +44,7 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/MultiMaterialSegmentation.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -57,6 +57,8 @@ constexpr bool MM_SEGMENTATION_DEBUG_COLORIZED_POLYGONS   = false;
 constexpr bool MM_SEGMENTATION_DEBUG_TOP_BOTTOM           = false;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 const constexpr double POLYGON_FILTER_MIN_AREA_SCALED                 = scaled<double>(0.1f);
 const constexpr double POLYGON_FILTER_MIN_OFFSET_SCALED               = scaled<double>(0.01f);
@@ -251,7 +253,7 @@ using Slic3r::Biz::Algorithms::SVG::SVG;
 [[maybe_unused]] void export_processed_input_expolygons_to_svg(const std::string &path, const LayerRegionPtrs &regions, const ExPolygons &processed_input_expolygons) {
     const double stroke_width = scaled<double>(0.05);
     BoundingBox    bbox         = get_extents(regions);
-    bbox.merge(get_extents(processed_input_expolygons));
+    bbox = BB::merge(bbox, get_extents(processed_input_expolygons));
 
     ::Slic3r::Biz::Algorithms::SVG::SVG svg(path.c_str(), bbox);
 
@@ -389,8 +391,8 @@ BoundingBox get_extents(const std::vector<ColoredLines> &colored_polygons) {
     BoundingBox bbox;
     for (const ColoredLines &colored_lines : colored_polygons) {
         for (const ColoredLine &colored_line : colored_lines) {
-            bbox.merge(colored_line.line.a);
-            bbox.merge(colored_line.line.b);
+            bbox = BB::merge(bbox, colored_line.line.a);
+            bbox = BB::merge(bbox, colored_line.line.b);
         }
     }
     return bbox;
@@ -1178,7 +1180,7 @@ BoundingBox get_extents(const ColorPolygons &c_polygons) {
     if (!c_polygons.empty()) {
         bb = get_extents(c_polygons.front());
         for (size_t i = 1; i < c_polygons.size(); ++i) {
-            bb.merge(get_extents(c_polygons[i]));
+            bb = BB::merge(bb, get_extents(c_polygons[i]));
         }
     }
 

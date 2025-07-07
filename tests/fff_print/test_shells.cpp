@@ -12,7 +12,7 @@ using Domain::Percentage;
 
 SCENARIO("Shells", "[Shells]") {
     GIVEN("20mm box") {
-        auto test = [](const TestConfig &config){
+        auto test = [&](const TestConfig &config){
             std::vector<coord_t> zs;
             std::set<coord_t> layers_with_solid_infill;
             std::set<coord_t> layers_with_bridge_infill;
@@ -223,7 +223,7 @@ SCENARIO("Shells (from Perl)", "[Shells]") {
         // points of each layer are not aligned - in that case we would test that no
         // travel moves are left to move to the new starting point - in a cube, end
         // points coincide with next layer starting points (provided there's no clipping)
-        auto test = [layer_height](const TestConfig &config) {
+        auto test = [&](const TestConfig &config) {
             size_t              travel_moves_after_first_extrusion  = 0;
             bool                started_extruding                   = false;
             bool                first_layer_temperature_set         = false;

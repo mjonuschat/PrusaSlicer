@@ -4,7 +4,6 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/Line.hpp"
@@ -14,6 +13,7 @@
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 //#include <random>
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
@@ -25,6 +25,8 @@
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using Slic3r::Biz::Algorithms::SVG::SVG;
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 TEST_CASE("Line::parallel_to", "[Geometry]"){
     Line l{ { 100000, 0 }, { 0, 0 } };
@@ -175,13 +177,15 @@ TEST_CASE("Splitting a Polygon generates a polyline correctly", "[Geometry]"){
 
 SCENARIO("BoundingBox", "[Geometry]") {
     WHEN("Bounding boxes are scaled") {
-        BoundingBox bb(Points({Point(0, 1), Point(10, 2), Point(20, 2)}));
-        bb.scale(2);
+        BoundingBox bb(BB::construct(Points({Point(0, 1), Point(10, 2), Point(20, 2)})));
+        const double factor{2};
+        bb.min *= factor;
+        bb.max *= factor;
         REQUIRE(bb.min == Point(0,2));
         REQUIRE(bb.max == Point(40,4));
     }
     WHEN("BoundingBox constructed from points") {
-        BoundingBox bb(Points{ {100,200}, {100, 200}, {500, -600} });
+        BoundingBox bb(BB::construct(Points{ {100,200}, {100, 200}, {500, -600} }));
         THEN("minimum is correct") {
             REQUIRE(bb.min == Point{100,-600});
         }
@@ -191,7 +195,7 @@ SCENARIO("BoundingBox", "[Geometry]") {
     }
     WHEN("BoundingBox constructed from a single point") {
         BoundingBox bb;
-        bb.merge({10, 10});
+        bb = BB::merge(bb, {10, 10});
         THEN("minimum equals to the only defined point") {
             REQUIRE(bb.min == Point{10,10});
         }
@@ -335,7 +339,7 @@ SCENARIO("Circle Fit, TaubinFit with Newton's method", "[Geometry]") {
 }
 
 SCENARIO("Circle Fit, least squares by decomposition or by solving normal equation", "[Geometry]") {
-    auto test_circle_fit = [](const Geometry::Circled &circle, const Vec2d &center, const double radius) {
+    auto test_circle_fit = [&](const Geometry::Circled &circle, const Vec2d &center, const double radius) {
         THEN("A center point matches.") {
             REQUIRE(is_approx(circle.center, center));
         }
@@ -816,10 +820,10 @@ TEST_CASE("Convex polygon intersection test prusa polygons", "[Geometry][Rotcali
         auto bba = Algorithms::Polygon::get_bounding_box(A);
         auto bbb = Algorithms::Polygon::get_bounding_box(B);
 
-        A.translate(-bba.center());
-        B.translate(-bbb.center());
+        A.translate(-BB::center(bba));
+        B.translate(-BB::center(bbb));
 
-        B.translate(bba.size() + bbb.size());
+        B.translate(BB::sizes(bba) + BB::sizes(bbb));
 
         bool res = Geometry::convex_polygons_intersect(A, B);
         bool ref = !intersection(A, B).empty();
@@ -843,8 +847,8 @@ TEST_CASE("Convex polygon intersection test prusa polygons", "[Geometry][Rotcali
         auto bba = Algorithms::Polygon::get_bounding_box(A);
         auto bbb = Algorithms::Polygon::get_bounding_box(B);
 
-        A.translate(-bba.center());
-        B.translate(-bbb.center());
+        A.translate(-BB::center(bba));
+        B.translate(-BB::center(bbb));
 
         bool res = Geometry::convex_polygons_intersect(A, B);
         bool ref = !intersection(A, B).empty();

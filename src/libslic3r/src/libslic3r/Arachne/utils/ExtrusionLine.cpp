@@ -10,15 +10,18 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../../PerimeterGenerator.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
+
 class Flow;
 }  // namespace Slic3r
 
@@ -272,7 +275,7 @@ Points to_points(const ExtrusionLine &extrusion_line) {
 BoundingBox get_extents(const ExtrusionLine &extrusion_line) {
     BoundingBox bbox;
     for (const ExtrusionJunction &junction : extrusion_line.junctions)
-        bbox.merge(junction.p);
+        bbox = BB::merge(bbox, junction.p);
     return bbox;
 }
 

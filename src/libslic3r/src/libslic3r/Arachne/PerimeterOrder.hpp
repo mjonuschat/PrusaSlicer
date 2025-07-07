@@ -7,7 +7,6 @@
 #include <cstddef>
 
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Polygon.hpp"
 
 namespace Slic3r::Arachne::PerimeterOrder {

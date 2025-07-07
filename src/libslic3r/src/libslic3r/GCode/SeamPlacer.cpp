@@ -19,10 +19,13 @@
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
 #include "libslic3r/Layer.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r::Seams {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 using ObjectPainting = std::map<const PrintObject*, ModelInfo::Painting>;
 
@@ -60,7 +63,7 @@ Perimeters::LayerPerimeters sort_to_layers(Shells::Shells<> &&shells) {
 
     for (Shells::Shell<> &shell : shells) {
         for (Shells::Slice<> &slice : shell) {
-            const BoundingBox bounding_box{Geometry::scaled(slice.boundary.positions)};
+            const BoundingBox bounding_box{BB::construct(Geometry::scaled(slice.boundary.positions))};
             result[slice.layer_index].push_back(
                 Perimeters::BoundedPerimeter{std::move(slice.boundary), bounding_box}
             );

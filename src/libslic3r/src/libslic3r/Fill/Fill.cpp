@@ -37,7 +37,6 @@
 #include "libslic3r/Fill/FillLightning.hpp"
 #include "libslic3r/Fill/FillEnsuring.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
@@ -48,10 +47,13 @@
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ShortestPath.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+namespace BB = Biz::Algorithms::BoundingBox;
+
 namespace FillAdaptive {
 struct Octree;
 }  // namespace FillAdaptive
@@ -441,7 +443,7 @@ static void insert_fills_into_islands(Layer &layer, uint32_t fill_region_id, uin
 	    					layer.get_region(li.perimeters.region())->fill_expolygons_composite_bboxes() :
 	    					layer.get_region(li.fill_region_id)->fill_expolygons_bboxes();
 	    				for (uint32_t fill_expolygon_id : li.fill_expolygons)
-							islands_sorted.push_back({ island_idx, fill_expolygon_id, bbox_point_distance_squared(bboxes[fill_expolygon_id], point) });
+							islands_sorted.push_back({ island_idx, fill_expolygon_id, BB::distance_squared(bboxes[fill_expolygon_id], point) });
 	    			}
 	    			std::sort(islands_sorted.begin(), islands_sorted.end(), [](auto &l, auto &r){ return l.distance2 < r.distance2; });
 	    			auto dist_min2 = std::numeric_limits<double>::max();

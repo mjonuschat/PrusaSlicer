@@ -26,7 +26,6 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/LayerRegion.hpp"
@@ -36,10 +35,13 @@
 #include "libslic3r/SurfaceCollection.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 Layer::~Layer()
 {
@@ -469,7 +471,7 @@ static void connect_layer_slices(
             // note that first point is not identical, and the check above picks (-24877897,-11100524) as the first contour point (polynode.Contour.front()).
             // that point is sadly slightly outisde of the layer A, so no link is detected, eventhough they are overlaping "completely"
             Polygons contour_poly{ Polygon{ClipperZUtils::from_zpath(polynode.Contour)} };
-            BoundingBox contour_aabb{contour_poly.front().points};
+            BoundingBox contour_aabb{BB::construct(contour_poly.front().points)};
             int32_t i_largest = -1;
             double  a_largest = 0;
             for (int i = int(other_layer.lslices_ex.size()) - 1; i >= 0; -- i)
@@ -1130,10 +1132,10 @@ void Layer::export_region_slices_to_svg(const char *path) const
     BoundingBox bbox;
     for (const auto *region : m_regions)
         for (const auto &surface : region->slices())
-            bbox.merge(get_extents(surface.expolygon));
+            bbox = BB::merge(bbox, get_extents(surface.expolygon));
     Point legend_size = export_surface_type_legend_to_svg_box_size();
     Point legend_pos(bbox.min(0), bbox.max(1));
-    bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
+    bbox = BB::merge(bbox, Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
     Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
@@ -1156,10 +1158,10 @@ void Layer::export_region_fill_surfaces_to_svg(const char *path) const
     BoundingBox bbox;
     for (const auto *region : m_regions)
         for (const auto &surface : region->slices())
-            bbox.merge(get_extents(surface.expolygon));
+            bbox = BB::merge(bbox, get_extents(surface.expolygon));
     Point legend_size = export_surface_type_legend_to_svg_box_size();
     Point legend_pos(bbox.min(0), bbox.max(1));
-    bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
+    bbox = BB::merge(bbox, Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
     Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
@@ -1183,7 +1185,7 @@ BoundingBox get_extents(const LayerRegion &layer_region)
     if (! layer_region.slices().empty()) {
         bbox = get_extents(layer_region.slices().surfaces.front());
         for (auto it = layer_region.slices().surfaces.cbegin() + 1; it != layer_region.slices().surfaces.cend(); ++ it)
-            bbox.merge(get_extents(*it));
+            bbox = BB::merge(bbox, get_extents(*it));
     }
     return bbox;
 }
@@ -1194,7 +1196,7 @@ BoundingBox get_extents(const LayerRegionPtrs &layer_regions)
     if (!layer_regions.empty()) {
         bbox = get_extents(*layer_regions.front());
         for (auto it = layer_regions.begin() + 1; it != layer_regions.end(); ++it)
-            bbox.merge(get_extents(**it));
+            bbox = BB::merge(bbox, get_extents(**it));
     }
     return bbox;
 }

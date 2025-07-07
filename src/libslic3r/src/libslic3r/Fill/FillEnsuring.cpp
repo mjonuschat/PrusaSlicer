@@ -21,7 +21,6 @@
 #include "libslic3r/Arachne/WallToolPaths.hpp"
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/Algorithm/PathSorting.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "libslic3r/Line.hpp"
@@ -33,10 +32,13 @@
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Surface.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 const constexpr coord_t MAX_LINE_LENGTH_TO_FILTER   = scaled<coord_t>(4.); // 4 mm.
 const constexpr size_t  MAX_SKIPS_ALLOWED           = 2; // Skip means propagation through long line.
@@ -461,7 +463,7 @@ ThickPolylines make_fill_polylines(
 
         for (ExPolygon &ex_poly : gaps_for_additional_filling) {
             BoundingBox            ex_bb       = Algorithms::Polygon::get_bounding_box(ex_poly.contour);
-            coord_t                loops_count = (std::max(ex_bb.size().x(), ex_bb.size().y()) + scaled_spacing - 1) / scaled_spacing;
+            coord_t                loops_count = (std::max(BB::sizes(ex_bb).x(), BB::sizes(ex_bb).y()) + scaled_spacing - 1) / scaled_spacing;
             Polygons               polygons    = Algorithms::ExPolygon::to_polygons(ex_poly);
             Arachne::WallToolPaths wall_tool_paths(polygons, scaled_spacing, scaled_spacing, loops_count, 0, params.layer_height,
                                                    fill->region_config);
@@ -497,8 +499,8 @@ ThickPolylines make_fill_polylines(
         }
 
         std::sort(thick_polylines.begin(), thick_polylines.end(), [](const ThickPolyline &left, const ThickPolyline &right) {
-            BoundingBox lbb(left.points);
-            BoundingBox rbb(right.points);
+            BoundingBox lbb(BB::construct(left.points));
+            BoundingBox rbb(BB::construct(right.points));
             if (lbb.min.x() == rbb.min.x())
                 return lbb.min.y() < rbb.min.y();
             else

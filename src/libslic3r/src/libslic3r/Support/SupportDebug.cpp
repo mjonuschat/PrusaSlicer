@@ -10,14 +10,16 @@
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "../Layer.hpp"
 #include "SupportLayer.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r::FFFSupport {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 const char* support_surface_type_to_color_name(const SupporLayerType surface_type)
 {
@@ -71,10 +73,10 @@ void export_print_z_polygons_to_svg(const char *path, SupportGeneratorLayer ** c
 {
     BoundingBox bbox;
     for (int i = 0; i < n_layers; ++ i)
-        bbox.merge(get_extents(layers[i]->polygons));
+        bbox = BB::merge(bbox, get_extents(layers[i]->polygons));
     Point legend_size = export_support_surface_type_legend_to_svg_box_size();
     Point legend_pos(bbox.min(0), bbox.max(1));
-    bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
+    bbox = BB::merge(bbox, Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
     Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
     for (int i = 0; i < n_layers; ++ i)
@@ -93,10 +95,10 @@ void export_print_z_polygons_and_extrusions_to_svg(
 {
     BoundingBox bbox;
     for (int i = 0; i < n_layers; ++ i)
-        bbox.merge(get_extents(layers[i]->polygons));
+        bbox = BB::merge(bbox, get_extents(layers[i]->polygons));
     Point legend_size = export_support_surface_type_legend_to_svg_box_size();
     Point legend_pos(bbox.min(0), bbox.max(1));
-    bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
+    bbox = BB::merge(bbox, Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
     Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
     for (int i = 0; i < n_layers; ++ i)

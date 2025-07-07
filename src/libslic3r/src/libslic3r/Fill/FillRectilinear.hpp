@@ -17,7 +17,6 @@
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Fill/FillBase.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"

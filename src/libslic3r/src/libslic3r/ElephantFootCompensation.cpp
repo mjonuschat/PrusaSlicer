@@ -20,16 +20,18 @@
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Utils.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 // #define CONTOUR_DISTANCE_DEBUG_SVG
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 struct ResampledPoint {
 	ResampledPoint(size_t idx_src, bool interpolated, double curve_parameter) : idx_src(idx_src), interpolated(interpolated), curve_parameter(curve_parameter) {}
@@ -567,7 +569,7 @@ ExPolygon elephant_foot_compensation(const ExPolygon &input_expoly, double min_c
 	double search_radius = min_contour_width_compensated + min_contour_width * 0.5;
 
 	BoundingBox bbox = get_extents(input_expoly.contour);
-	Point 		bbox_size = bbox.size();
+	Point 		bbox_size = BB::sizes(bbox);
 	ExPolygon   out;
 	if (bbox_size.x() < min_contour_width_compensated + SCALED_EPSILON ||
 		bbox_size.y() < min_contour_width_compensated + SCALED_EPSILON ||
@@ -582,7 +584,7 @@ ExPolygon elephant_foot_compensation(const ExPolygon &input_expoly, double min_c
 		ExPolygon simplified = Algorithms::ExPolygon::simplify(input_expoly, SCALED_EPSILON).front();
 		assert(validate_expoly_orientation(simplified));
 		BoundingBox bbox = get_extents(simplified.contour);
-		bbox.offset(SCALED_EPSILON);
+		bbox = BB::inflated(bbox, SCALED_EPSILON);
 		grid.set_bbox(bbox);
 		grid.create(simplified, coord_t(0.7 * search_radius));
 		std::vector<std::vector<float>> deltas;

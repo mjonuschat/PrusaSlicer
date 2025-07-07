@@ -12,7 +12,6 @@
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/EdgeGrid.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Fill/Lightning/Layer.hpp"
@@ -22,6 +21,7 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Surface.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 /* Possible future tasks/optimizations,etc.:
  * - Improve connecting heuristic to favor connecting to shorter trees
@@ -40,6 +40,8 @@
 using namespace Slic3r::Biz;
 
 namespace Slic3r::FillLightning {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 Generator::Generator(const PrintObject &print_object, const double fill_density, const std::function<void()> &throw_on_cancel_callback)
 {
@@ -121,7 +123,7 @@ void Generator::generateTrees(const PrintObject &print_object, const std::functi
 
     // For various operations its beneficial to quickly locate nearby features on the polygon:
     const size_t top_layer_id = print_object.layers().size() - 1;
-    EdgeGrid::Grid outlines_locator(Slic3r::get_extents(infill_outlines[top_layer_id]).inflated(SCALED_EPSILON));
+    EdgeGrid::Grid outlines_locator(BB::inflated(Slic3r::get_extents(infill_outlines[top_layer_id]), SCALED_EPSILON));
     outlines_locator.create(infill_outlines[top_layer_id], locator_cell_size);
 
     // For-each layer from top to bottom:
@@ -142,12 +144,12 @@ void Generator::generateTrees(const PrintObject &print_object, const std::functi
             return;
 
         const Polygons &below_outlines      = infill_outlines[layer_id - 1];
-        BoundingBox     below_outlines_bbox = Slic3r::get_extents(below_outlines).inflated(SCALED_EPSILON);
+        BoundingBox     below_outlines_bbox = BB::inflated(Slic3r::get_extents(below_outlines), SCALED_EPSILON);
         if (const BoundingBox &outlines_locator_bbox = outlines_locator.bbox(); outlines_locator_bbox.defined)
-            below_outlines_bbox.merge(outlines_locator_bbox);
+            below_outlines_bbox = BB::merge(below_outlines_bbox, outlines_locator_bbox);
 
         if (!current_lightning_layer.tree_roots.empty())
-            below_outlines_bbox.merge(get_extents(current_lightning_layer.tree_roots).inflated(SCALED_EPSILON));
+            below_outlines_bbox = BB::merge(below_outlines_bbox, BB::inflated(get_extents(current_lightning_layer.tree_roots), SCALED_EPSILON));
 
         outlines_locator.set_bbox(below_outlines_bbox);
         outlines_locator.create(below_outlines, locator_cell_size);

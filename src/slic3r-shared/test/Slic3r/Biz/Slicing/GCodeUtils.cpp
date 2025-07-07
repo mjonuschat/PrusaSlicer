@@ -69,10 +69,10 @@ std::vector<Extrusion> get_first_layer_extrusions(std::istream& gcode) {
 }
 
 bool is_within(const Extrusion &extrusion, const Domain::BoundingBox2d &bounding_box) {
-    if (!Algorithms::BoundingBox::contains(bounding_box, extrusion.start.head<2>())) {
+    if (!bounding_box.contains(extrusion.start.head<2>())) {
         return false;
     }
-    if (!Algorithms::BoundingBox::contains(bounding_box, extrusion.end.head<2>())) {
+    if (!bounding_box.contains(extrusion.end.head<2>())) {
         return false;
     }
     return true;

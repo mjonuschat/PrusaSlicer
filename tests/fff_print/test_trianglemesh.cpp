@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Config.hpp"

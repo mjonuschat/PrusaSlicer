@@ -35,12 +35,15 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 //#define AVOID_CROSSING_PERIMETERS_DEBUG_OUTPUT
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 struct TravelPoint
 {
@@ -1014,10 +1017,10 @@ static ExPolygons inner_offset(const ExPolygons &ex_polygons, double offset)
 
     for (ExPolygon &ex_poly : ex_poly_result) {
         BoundingBox bbox(get_extents(ex_poly));
-        bbox.offset(SCALED_EPSILON);
+        bbox = BB::inflated(bbox, SCALED_EPSILON);
 
         // Filter out expolygons smaller than 0.1mm^2
-        if (Vec2d bbox_size = bbox.size().cast<double>(); bbox_size.x() * bbox_size.y() < Slic3r::sqr(scale_(0.1f)))
+        if (Vec2d bbox_size = BB::sizes(bbox).cast<double>(); bbox_size.x() * bbox_size.y() < Slic3r::sqr(scale_(0.1f)))
             continue;
 
         for (const double &min_contour_width : min_contour_width_values) {
@@ -1188,7 +1191,7 @@ static void init_boundary(AvoidCrossingPerimeters::Boundary *boundary, Polygons 
     boundary->boundaries = std::move(boundary_polygons);
 
     BoundingBox bbox(get_extents(boundary->boundaries));
-    bbox.offset(SCALED_EPSILON);
+    bbox = BB::inflated(bbox, SCALED_EPSILON);
     boundary->bbox = BoundingBoxf(bbox.min.cast<double>(), bbox.max.cast<double>());
     boundary->grid.set_bbox(bbox);
     // FIXME 1mm grid?
@@ -1290,7 +1293,7 @@ void AvoidCrossingPerimeters::init_layer(const Layer &layer)
         m_lslices_offset_bboxes.emplace_back(get_extents(ex_poly));
 
     BoundingBox bbox_slice(get_extents(layer.lslices));
-    bbox_slice.offset(SCALED_EPSILON);
+    bbox_slice = BB::inflated(bbox_slice, SCALED_EPSILON);
 
     m_grid_lslices_offset.set_bbox(bbox_slice);
     m_grid_lslices_offset.create(m_lslices_offset, coord_t(scale_(1.)));

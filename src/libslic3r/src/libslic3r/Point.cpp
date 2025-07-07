@@ -16,10 +16,12 @@
 #include <cstring>
 
 #include "Int128.hpp"
-#include "BoundingBox.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 std::vector<Vec3f> transform(const std::vector<Vec3f>& points, const Transform3f& t)
 {
@@ -107,7 +109,7 @@ BoundingBox get_extents(const VecOfPoints &pts)
 {
     BoundingBox bbox;
     for (const Points &p : pts)
-        bbox.merge(get_extents<IncludeBoundary>(p));
+        bbox = BB::merge(bbox, get_extents<IncludeBoundary>(p));
     return bbox;
 }
 template BoundingBox get_extents<false>(const VecOfPoints &pts);
@@ -117,7 +119,7 @@ BoundingBoxf get_extents(const std::vector<Vec2d> &pts)
 {
     BoundingBoxf bbox;
     for (const Vec2d &p : pts)
-        bbox.merge(p);
+        bbox = BB::merge(bbox, p);
     return bbox;
 }
 

@@ -9,7 +9,6 @@
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "libslic3r/SLA/RasterBase.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintConfig.hpp"
@@ -26,6 +25,7 @@
 #include <type_traits>
 #include <utility>
 #include <cstddef>
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include "nanosvg/nanosvg.h"
 
@@ -36,6 +36,8 @@ using namespace Slic3r::Biz::Slicing;
 using namespace std::literals;
 
 namespace {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 size_t constexpr coord_t_bufsize = 40;
 
@@ -141,15 +143,15 @@ public:
         : m_bb{svgarea}
         , m_res{res}
         , m_trafo{tr}
-        , m_sc{double(m_res.width_px) / m_bb.size().x(), double(m_res.height_px) / m_bb.size().y()}
+        , m_sc{double(m_res.width_px) / BB::sizes(m_bb).x(), double(m_res.height_px) / BB::sizes(m_bb).y()}
     {
         // Inside the svg header, the boundaries will be defined in mm to
         // the actual bed size. The viewport is then defined to work with our
         // scaled coordinates. All the exported polygons will be in these scaled
         // coordinates but svg rendering software will interpret them correctly
         // in mm due to the header's definition.
-        std::string wf = float_to_string_decimal_point(unscaled<float>(m_bb.size().x()));
-        std::string hf = float_to_string_decimal_point(unscaled<float>(m_bb.size().y()));
+        std::string wf = float_to_string_decimal_point(unscaled<float>(BB::sizes(m_bb).x()));
+        std::string hf = float_to_string_decimal_point(unscaled<float>(BB::sizes(m_bb).y()));
         std::string w  = coord2str(coord_t(m_res.width_px));
         std::string h  = coord2str(coord_t(m_res.height_px));
 
@@ -169,8 +171,8 @@ public:
     {
         auto cpoly = poly;
 
-        double tol = std::min(m_bb.size().x() / double(m_res.width_px),
-                              m_bb.size().y() / double(m_res.height_px));
+        double tol = std::min(BB::sizes(m_bb).x() / double(m_res.width_px),
+                              BB::sizes(m_bb).y() / double(m_res.height_px));
 
         ExPolygons cpolys = Algorithms::ExPolygon::simplify(poly, tol);
 

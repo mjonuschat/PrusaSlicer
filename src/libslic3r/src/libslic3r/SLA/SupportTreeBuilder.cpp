@@ -5,7 +5,6 @@
 #include <libslic3r/SLA/SupportTreeBuilder.hpp>
 #include <libslic3r/SLA/SupportTreeMesher.hpp>
 
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/SLA/SupportTree.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 

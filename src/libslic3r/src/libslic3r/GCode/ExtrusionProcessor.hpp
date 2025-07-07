@@ -28,7 +28,6 @@
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Flow.hpp"

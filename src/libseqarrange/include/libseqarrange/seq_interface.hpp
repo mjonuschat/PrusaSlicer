@@ -18,7 +18,6 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
-#include "libslic3r/BoundingBox.hpp"
 
 /*----------------------------------------------------------------*/
 

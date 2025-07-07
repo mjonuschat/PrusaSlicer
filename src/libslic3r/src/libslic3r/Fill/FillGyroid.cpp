@@ -12,16 +12,18 @@
 #include "../ClipperUtils.hpp"
 #include "../ShortestPath.hpp"
 #include "FillGyroid.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 static inline double f(double x, double z_sin, double z_cos, bool vertical, bool flip)
 {
@@ -181,15 +183,15 @@ void FillGyroid::_fill_surface_single(
 
     using Slic3r::Biz::Algorithms::Point::round;
     // align bounding box to a multiple of our grid module
-    bb.merge(align_to_grid(bb.min, Point(round(Vec2d{2*M_PI*distance, 2*M_PI*distance}).cast<coord_t>())));
+    bb = BB::merge(bb, align_to_grid(bb.min, Point(round(Vec2d{2*M_PI*distance, 2*M_PI*distance}).cast<coord_t>())));
 
     // generate pattern
     Polylines polylines = make_gyroid_waves(
         scale_(this->z),
         density_adjusted,
         this->spacing,
-        ceil(bb.size()(0) / distance) + 1.,
-        ceil(bb.size()(1) / distance) + 1.);
+        ceil(BB::sizes(bb)(0) / distance) + 1.,
+        ceil(BB::sizes(bb)(1) / distance) + 1.);
 
 	// shift the polyline to the grid origin
 	for (Polyline &pl : polylines)

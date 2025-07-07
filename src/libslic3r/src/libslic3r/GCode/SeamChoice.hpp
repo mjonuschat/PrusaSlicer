@@ -9,7 +9,6 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/GCode/SeamShells.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
 #include "libslic3r/GCode/SeamPerimeters.hpp"
 #include "libslic3r/Point.hpp"

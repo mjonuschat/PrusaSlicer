@@ -9,7 +9,6 @@
 #include <tuple>
 
 #include "AABBTreeLines.hpp"
-#include "BoundingBox.hpp"
 #include "libslic3r.h"
 #include "Polygon.hpp"
 #include "libslic3r/Point.hpp"

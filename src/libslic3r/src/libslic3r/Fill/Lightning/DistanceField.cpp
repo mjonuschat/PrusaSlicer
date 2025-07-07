@@ -12,7 +12,6 @@
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "../FillRectilinear.hpp"
 #include "../../ClipperUtils.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
@@ -26,6 +25,8 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::FillLightning
 {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 constexpr coord_t radius_per_cell_size = 6;  // The cell-size should be small compared to the radius, but not so small as to be inefficient.
 
@@ -116,10 +117,10 @@ void DistanceField::update(const Point& to_node, const Point& added_leaf)
         Point diagonal(m_supporting_radius, m_supporting_radius);
         Point iextent(extent.cast<coord_t>());
         grid = BoundingBox(added_leaf - diagonal, added_leaf + diagonal);
-        grid.merge(to_node - iextent);
-        grid.merge(to_node + iextent);
-        grid.merge(added_leaf - iextent);
-        grid.merge(added_leaf + iextent);
+        grid = BB::merge(grid, (to_node - iextent).eval());
+        grid = BB::merge(grid, (to_node + iextent).eval());
+        grid = BB::merge(grid, (added_leaf - iextent).eval());
+        grid = BB::merge(grid, (added_leaf + iextent).eval());
 
         // Clip grid by m_unsupported_points_bbox. Mainly to ensure that grid.min is a non-negative value.
         grid.min.x() = std::max(grid.min.x(), m_unsupported_points_bbox.min.x());

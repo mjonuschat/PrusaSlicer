@@ -23,6 +23,10 @@ struct BoundingBox {
     VecType max;
     bool defined{false};
 
+    [[nodiscard]] bool contains(const VecType& point) const;
+
+    [[nodiscard]] bool contains(const BoundingBox& box) const;
+
     [[nodiscard]] bool overlap(const BoundingBox& other) const;
 };
 
@@ -48,3 +52,11 @@ concept BoundingBoxConcept = requires(T box) {
 [[nodiscard]] bool operator==(const BoundingBox3crd& a, const BoundingBox3crd& b);
 
 } // namespace Slic3r::Domain
+
+namespace Slic3r {
+    // Legacy migration.
+    using BoundingBox = Domain::BoundingBox2crd;
+    using BoundingBoxf = Domain::BoundingBox2d;
+    using BoundingBoxf3 = Domain::BoundingBox3d;
+    using  BoundingBoxes = std::vector<Domain::BoundingBox2crd>;
+}

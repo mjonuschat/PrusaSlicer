@@ -101,7 +101,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         };
     }
 
-    auto test = [](TestConfig &config) {
+    auto test = [=](TestConfig &config) {
         // we use the [infill_extruder] placeholder to make sure this test doesn't
         // catch a false positive caused by the unparsed start G-code option itself
         // being embedded in the G-code
@@ -197,7 +197,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         );
 
         std::string returned[] = { "" /* indexed by one based extruder ID */, "if block", "elsif block 1", "elsif block 2", "elsif block 3", "endif block" };
-        auto test = [&config, &returned](int i) {
+        auto test = [&](int i) {
             config.print.items.opt("infill_extruder").set(i);
             std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
             int found_error = 0;
@@ -230,7 +230,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
             "{else}{if perimeter_extruder==1}block31{else}block32{endif}{endif}:end"
         );
 
-        auto test = [&config](int i) {
+        auto test = [&](int i) {
             config.print.items.opt("infill_extruder").set(i);
             int failed = 0;
             for (int j = 1; j <= 2; ++ j) {
@@ -251,7 +251,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         config.printer.items.opt("start_gcode").set(
               ";substitution:{if notes==\"MK2\"}MK2{elsif notes==\"MK3\"}MK3{else}MK1{endif}:end"
         );
-        auto test = [&config](const std::string &printer_name) {
+        auto test = [&](const std::string &printer_name) {
             config.print.items.opt("notes").set(printer_name);
             std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
             THEN(std::string("printer name ") + printer_name + " matched") {

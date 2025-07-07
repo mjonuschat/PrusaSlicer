@@ -12,6 +12,7 @@
 #include "LineUtils.hpp"
 #include "PointUtils.hpp"
 #include "PolygonUtils.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include <libslic3r/Geometry/VoronoiVisualUtils.hpp>
 

@@ -67,6 +67,7 @@
 #include <boost/nowide/cstdlib.hpp>
 
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Log.hpp"
 #include "LocalesUtils.hpp"
 
@@ -111,6 +112,8 @@ namespace Slic3r {
     using Biz::Parser::IO::is_vector;
     using Biz::Parser::IO::is_scalar;
     using Biz::GCodeReader::contains_reserved_tags;
+
+    namespace BB = Biz::Algorithms::BoundingBox;
 
 // Only add a newline in case the current G-code does not end with a newline.
     static inline void check_add_eol(std::string& gcode)
@@ -1234,14 +1237,14 @@ void GCodeGenerator::_do_export(
     this->placeholder_parser().set("has_single_extruder_multi_material_priming", has_wipe_tower && print.config().get<bool>("single_extruder_multi_material_priming"));
     this->placeholder_parser().set("total_toolchanges", tool_ordering.toolchanges_count());
     {
-        BoundingBoxf bbox(print.config().get<std::vector<Vec2d>>("bed_shape"));
+        BoundingBoxf bbox(BB::construct(print.config().get<std::vector<Vec2d>>("bed_shape")));
         assert(bbox.defined);
         if (! bbox.defined)
             // This should not happen, but let's make the compiler happy.
             bbox.min = bbox.max = Vec2d::Zero();
         this->placeholder_parser().set("print_bed_min",  std::vector<double>{ bbox.min.x(), bbox.min.y() });
         this->placeholder_parser().set("print_bed_max",  std::vector<double>{ bbox.max.x(), bbox.max.y() });
-        this->placeholder_parser().set("print_bed_size", std::vector<double>{ bbox.size().x(), bbox.size().y() });
+        this->placeholder_parser().set("print_bed_size", std::vector<double>{ BB::sizes(bbox).x(), BB::sizes(bbox).y() });
     }
     {
         // Convex hull of the 1st layer extrusions, for bed leveling and placing the initial purge line.
@@ -1253,11 +1256,11 @@ void GCodeGenerator::_do_export(
         pts.reserve(print.first_layer_convex_hull().size());
         for (const Point &pt : print.first_layer_convex_hull().points)
             pts.emplace_back(unscale(pt));
-        BoundingBoxf bbox(pts);
+        BoundingBoxf bbox(BB::construct(pts));
         this->placeholder_parser().set("first_layer_print_convex_hull", pts);
         this->placeholder_parser().set("first_layer_print_min",  std::vector<double>{ bbox.min.x(), bbox.min.y() });
         this->placeholder_parser().set("first_layer_print_max",  std::vector<double>{ bbox.max.x(), bbox.max.y() });
-        this->placeholder_parser().set("first_layer_print_size", std::vector<double>{ bbox.size().x(), bbox.size().y() });
+        this->placeholder_parser().set("first_layer_print_size", std::vector<double>{ BB::sizes(bbox).x(), BB::sizes(bbox).y() });
         this->placeholder_parser().set("num_extruders", int(print.config().get<std::vector<double>>("nozzle_diameter").size()));
         // PlaceholderParser currently substitues non-existent vector values with the zero'th value, which is harmful in the case of "is_extruder_used[]"
         // as Slicer may lie about availability of such non-existent extruder.
@@ -1390,10 +1393,10 @@ void GCodeGenerator::_do_export(
                 BoundingBoxf bbox_print(get_print_extrusions_extents(print));
                 double twolayers_printz = ((layers_to_print.size() == 1) ? layers_to_print.front() : layers_to_print[1]).first + EPSILON;
                 for (const PrintObject *print_object : print.objects())
-                    bbox_print.merge(get_print_object_extrusions_extents(*print_object, twolayers_printz));
-                bbox_print.merge(get_wipe_tower_extrusions_extents(print, twolayers_printz));
+                    bbox_print = BB::merge(bbox_print, get_print_object_extrusions_extents(*print_object, twolayers_printz));
+                bbox_print = BB::merge(bbox_print, get_wipe_tower_extrusions_extents(print, twolayers_printz));
                 BoundingBoxf bbox_prime(get_wipe_tower_priming_extrusions_extents(print));
-                bbox_prime.offset(0.5f);
+                bbox_prime = BB::inflated(bbox_prime, 0.5f);
                 bool overlap = bbox_prime.overlap(bbox_print);
 
                 if (print.config().get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinLegacy || print.config().get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinFirmware) {

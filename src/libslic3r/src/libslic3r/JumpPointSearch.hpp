@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "BoundingBox.hpp"
 #include "Polygon.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Point.hpp"

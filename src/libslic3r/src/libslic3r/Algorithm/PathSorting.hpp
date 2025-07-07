@@ -6,7 +6,6 @@
 #define SRC_LIBSLIC3R_PATH_SORTING_HPP_
 
 #include "libslic3r/AABBTreeLines.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Line.hpp"
 #include "ankerl/unordered_dense.h"
 #include <algorithm>
@@ -17,8 +16,11 @@
 #include <limits>
 #include <type_traits>
 #include <unordered_set>
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r::Algorithm {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 bool is_first_path_touching_second_path(const AABBTreeLines::LinesDistancer<Line> &first_distancer,
                                         const AABBTreeLines::LinesDistancer<Line> &second_distancer,
@@ -26,13 +28,13 @@ bool is_first_path_touching_second_path(const AABBTreeLines::LinesDistancer<Line
                                         const double                               touch_distance_threshold)
 {
     for (const Line &line : first_distancer.get_lines()) {
-        if (bbox_point_distance(second_distancer_bbox, line.a) < touch_distance_threshold && second_distancer.distance_from_lines<false>(line.a) < touch_distance_threshold) {
+        if (BB::distance(second_distancer_bbox, line.a) < touch_distance_threshold && second_distancer.distance_from_lines<false>(line.a) < touch_distance_threshold) {
             return true;
         }
     }
 
     const Point first_distancer_last_pt = first_distancer.get_lines().back().b;
-    if (bbox_point_distance(second_distancer_bbox, first_distancer_last_pt) && second_distancer.distance_from_lines<false>(first_distancer_last_pt) < touch_distance_threshold) {
+    if (BB::distance(second_distancer_bbox, first_distancer_last_pt) && second_distancer.distance_from_lines<false>(first_distancer_last_pt) < touch_distance_threshold) {
         return true;
     }
 
@@ -82,7 +84,7 @@ void sort_paths(RandomAccessIterator begin, RandomAccessIterator end, Point star
             const BoundingBox &curr_path_bbox = bboxes[curr_path_idx];
             const BoundingBox &next_path_bbox = bboxes[next_path_idx];
 
-            if (bbox_bbox_distance(curr_path_bbox, next_path_bbox) >= touch_distance_threshold)
+            if (BB::distance(curr_path_bbox, next_path_bbox) >= touch_distance_threshold)
                 continue;
 
             if (are_paths_touching(distancers[curr_path_idx], curr_path_bbox, distancers[next_path_idx], next_path_bbox, touch_distance_threshold)) {

@@ -13,13 +13,15 @@
 #include "../ExPolygon.hpp"
 #include "../ShortestPath.hpp"
 #include "FillLine.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 void FillLine::_fill_surface_single(
     const FillParams                &params,
@@ -40,12 +42,12 @@ void FillLine::_fill_surface_single(
     
     // define flow spacing according to requested density
     if (params.density > 0.9999f && !params.dont_adjust) {
-        this->_line_spacing = this->_adjust_solid_spacing(bounding_box.size()(0), this->_line_spacing);
+        this->_line_spacing = this->_adjust_solid_spacing(BB::sizes(bounding_box)(0), this->_line_spacing);
         this->spacing = unscale<double>(this->_line_spacing);
     } else {
         // extend bounding box so that our pattern will be aligned with other layers
         // Transform the reference point to the rotated coordinate system.
-        bounding_box.merge(align_to_grid(
+        bounding_box = BB::merge(bounding_box, align_to_grid(
             bounding_box.min, 
             Point(this->_line_spacing, this->_line_spacing), 
             Domain::rotated(direction.second, - direction.first)));

@@ -5,21 +5,23 @@
 #include <utility>
 
 #include "libslic3r/AABBTreeLines.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/GCode/SeamChoice.hpp"
 #include "libslic3r/GCode/SeamPerimeters.hpp"
 #include "libslic3r/GCode/SeamShells.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r::Seams::Rear {
 using Perimeters::PointType;
 using Perimeters::PointClassification;
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 namespace Impl {
 
 BoundingBoxf get_bounding_box(const Shells::Shell<> &shell) {
     BoundingBoxf result;
     for (const Shells::Slice<> &slice : shell) {
-        result.merge(BoundingBoxf{slice.boundary.positions});
+        result = BB::merge(result, BB::construct(slice.boundary.positions));
     }
     return result;
 }
@@ -134,7 +136,7 @@ struct RearestPointCalculator {
             return *clear_max_y_corner;
         }
 
-        const BoundingBoxf bounding_box{perimeter.positions};
+        const BoundingBoxf bounding_box{BB::construct(perimeter.positions)};
         const AABBTreeLines::LinesDistancer<PerimeterLine> possible_distancer{possible_lines};
         const double center_x{(bounding_box.max.x() + bounding_box.min.x()) / 2.0};
         const Vec2d prefered_position{center_x, bounding_box.max.y() + rear_y_offset};

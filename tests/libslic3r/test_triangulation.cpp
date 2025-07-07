@@ -3,11 +3,14 @@
 #include <libslic3r/Triangulation.hpp>
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp" // only debug visualization
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using Domain::Index3;
 using Biz::Algorithms::SVG::SVG;
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 namespace Private{
 void store_trinagulation(const ExPolygons &shape,
@@ -16,8 +19,9 @@ void store_trinagulation(const ExPolygons &shape,
                          double scale = 1e5)
 {
     BoundingBox bb;
-    for (const auto &expoly : shape) bb.merge(expoly.contour.points);
-    bb.scale(scale);
+    for (const auto &expoly : shape) bb = BB::merge(bb, BB::construct(expoly.contour.points));
+    bb.min *= scale;
+    bb.max *= scale;
     SVG svg_vis(file_name, bb);
     svg_vis.draw(shape, "gray", .7f);
     Points pts = Algorithms::ExPolygon::to_points(shape);

@@ -22,7 +22,6 @@
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polyline.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 
 namespace Slic3r {

@@ -14,13 +14,13 @@
 #include <vector>
 #include <utility>
 
-#include "BoundingBox.hpp"
 #include "Point.hpp"
 #include "libslic3r/AStar.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Layer.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 //#define DEBUG_FILES
 #ifdef DEBUG_FILES
@@ -28,6 +28,8 @@
 #endif
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 // execute fn for each pixel on the line. If fn returns false, terminate the iteration
 template<typename PointFn> void dda(coord_t x0, coord_t y0, coord_t x1, coord_t y1, const PointFn &fn)
@@ -249,14 +251,14 @@ Polyline JPSPathFinder::find_path(const Point &p0, const Point &p1)
     search_box.max -= Pixel(1, 1);
     search_box.min += Pixel(1, 1);
 
-    BoundingBox bounding_square(Points{start, end});
+    BoundingBox bounding_square(BB::construct(Points{start, end}));
     bounding_square.max += Pixel(5, 5);
     bounding_square.min -= Pixel(5, 5);
-    coord_t bounding_square_size = 2 * std::max(bounding_square.size().x(), bounding_square.size().y());
-    bounding_square.max.x() += (bounding_square_size - bounding_square.size().x()) / 2;
-    bounding_square.min.x() -= (bounding_square_size - bounding_square.size().x()) / 2;
-    bounding_square.max.y() += (bounding_square_size - bounding_square.size().y()) / 2;
-    bounding_square.min.y() -= (bounding_square_size - bounding_square.size().y()) / 2;
+    coord_t bounding_square_size = 2 * std::max(BB::sizes(bounding_square).x(), BB::sizes(bounding_square).y());
+    bounding_square.max.x() += (bounding_square_size - BB::sizes(bounding_square).x()) / 2;
+    bounding_square.min.x() -= (bounding_square_size - BB::sizes(bounding_square).x()) / 2;
+    bounding_square.max.y() += (bounding_square_size - BB::sizes(bounding_square).y()) / 2;
+    bounding_square.min.y() -= (bounding_square_size - BB::sizes(bounding_square).y()) / 2;
 
     // Intersection - limit the search box to a square area around the start and end, to fasten the path searching
     search_box.max = search_box.max.cwiseMin(bounding_square.max);

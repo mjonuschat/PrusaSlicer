@@ -14,12 +14,13 @@
 #include "../ClipperUtils.hpp"
 #include "../ShortestPath.hpp"
 #include "FillPlanePath.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 class InfillPolylineClipper : public FillPlanePath::InfillPolylineOutput {
 public:
@@ -94,22 +95,29 @@ void FillPlanePath::_fill_surface_single(
     // One may align for this->centered() to align the patterns for Archimedean Chords and Octagram Spiral patterns.
     const bool align = params.density < 0.995;
 
-    BoundingBox snug_bounding_box = get_extents(expolygon).inflated(SCALED_EPSILON);
+    BoundingBox snug_bounding_box = BB::inflated(get_extents(expolygon), SCALED_EPSILON);
+
+
+    BoundingBox rotated_box;
+    rotated_box = BB::merge(rotated_box, Domain::rotated(this->bounding_box.min, -direction.first));
+    rotated_box = BB::merge(rotated_box, Domain::rotated(this->bounding_box.max, -direction.first));
+    rotated_box = BB::merge(rotated_box, Domain::rotated(Point(this->bounding_box.min.x(), this->bounding_box.max.y()), -direction.first));
+    rotated_box = BB::merge(rotated_box, Domain::rotated(Point(this->bounding_box.max.x(), this->bounding_box.min.y()), -direction.first));
 
     // Rotated bounding box of the area to fill in with the pattern.
     BoundingBox bounding_box = align ?
         // Sparse infill needs to be aligned across layers. Align infill across layers using the object's bounding box.
         // TODO: This unnecessary copy will remain until the old BoundingBox is replaced with Domain::BoundingBox2crd.
-        BoundingBox{this->bounding_box.min, this->bounding_box.max}.rotated(-direction.first) :
+        rotated_box :
         // Solid infill does not need to be aligned across layers, generate the infill pattern
         // around the clipping expolygon only.
         snug_bounding_box;
 
     Point shift = this->centered() ? 
-        bounding_box.center() :
+        BB::center(bounding_box) :
         bounding_box.min;
     expolygon.translate(-shift.x(), -shift.y());
-    bounding_box.translate(-shift.x(), -shift.y());
+    bounding_box = BB::translated(bounding_box, Point{-shift.x(), -shift.y()});
 
     Polyline polyline;
     {
@@ -121,7 +129,7 @@ void FillPlanePath::_fill_surface_single(
         auto resolution = scaled<double>(params.resolution) / distance_between_lines;
         if (align) {
             // Filling in a bounding box over the whole object, clip generated polyline against the snug bounding box.
-            snug_bounding_box.translate(-shift.x(), -shift.y());
+            snug_bounding_box = BB::translated(snug_bounding_box, Point{-shift.x(), -shift.y()});
             InfillPolylineClipper output(snug_bounding_box, distance_between_lines);
             this->generate(min_x, min_y, max_x, max_y, resolution, output);
             polyline.points = std::move(output.result());

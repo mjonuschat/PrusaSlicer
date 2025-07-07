@@ -1,5 +1,4 @@
 #include <catch2/catch_test_macros.hpp>
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/JumpPointSearch.hpp"
 
 using namespace Slic3r;

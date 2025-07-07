@@ -9,12 +9,12 @@
 #include "libslic3r/SLA/ZCorrection.hpp"
 #include "libslic3r/MTUtils.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 using Catch::Approx;
 using Slic3r::Biz::Algorithms::SVG::SVG;
-using Slic3r::Biz::Algorithms::BoundingBox::inflated;
 using Slic3r::Biz::Algorithms::BoundingBox::to_2d;
 using Slic3r::Biz::Algorithms::BoundingBox::scaled;
 using Slic3r::Domain::TriangleMesh;
@@ -58,7 +58,7 @@ TEST_CASE("Testing DepthMap for a cube", "[ZCorr]")
 
     TriangleMesh mesh = load_model("20mm_cube.obj");
     auto bb = bounding_box(mesh);
-    bb = inflated(bb, -0.1);
+    bb = Slic3r::Biz::Algorithms::BoundingBox::inflated(bb, -0.1);
 
     std::vector<float> hgrid = grid<float>(bb.min.z(), bb.max.z(), 1.f);
 
@@ -87,7 +87,7 @@ TEST_CASE("Testing DepthMap for arbitrary shapes", "[ZCorr]")
 
     TriangleMesh mesh = load_model(modelname);
     auto bb = bounding_box(mesh);
-    bb = inflated(bb, -0.1);
+    bb = Slic3r::Biz::Algorithms::BoundingBox::inflated(bb, -0.1);
 
     std::vector<float> hgrid = grid<float>(bb.min.z(), bb.max.z(), 0.5f);
 

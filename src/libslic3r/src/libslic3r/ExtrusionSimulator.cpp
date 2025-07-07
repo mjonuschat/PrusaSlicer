@@ -22,14 +22,16 @@
 
 #include "libslic3r.h"
 #include "ExtrusionSimulator.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #ifndef M_PI
 #define M_PI 3.1415926535897932384626433832795
 #endif
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 // Replacement for a template alias.
 // Shorthand for the point_xy.
@@ -942,7 +944,7 @@ void ExtrusionSimulator::set_viewport(const BoundingBox &viewport)
 	// printf("ExtrusionSimulator::set_viewport(%d, %d, %d, %d)\n", viewport.min.x, viewport.min.y, viewport.max.x, viewport.max.y);
 	if (this->viewport != viewport) {
 		this->viewport = viewport;
-		Point sz = viewport.size();
+		Point sz = BB::sizes(viewport);
 		pimpl->accumulator.resize(boost::extents[sz.y()][sz.x()]);
 		pimpl->bitmap.resize(boost::extents[sz.y()*pimpl->bitmap_oversampled][sz.x()*pimpl->bitmap_oversampled]);
 		// printf("Accumulator size: %d, %d\n", sz.y, sz.x);
@@ -962,7 +964,7 @@ const void* ExtrusionSimulator::image_ptr() const
 void ExtrusionSimulator::reset_accumulator()
 {
 	// printf("ExtrusionSimulator::reset_accumulator()\n");
-	Point sz = viewport.size();
+	Point sz = BB::sizes(viewport);
 	// printf("Reset accumulator, Accumulator size: %d, %d\n", sz.y, sz.x);
 	memset(&pimpl->accumulator[0][0], 0, sizeof(float) * sz.x() * sz.y());
 	memset(&pimpl->bitmap[0][0], 0, sz.x() * sz.y() * pimpl->bitmap_oversampled * pimpl->bitmap_oversampled);
@@ -976,8 +978,8 @@ void ExtrusionSimulator::extrude_to_accumulator(const ExtrusionPath &path, const
 	// Convert the path to V2f points, shift and scale them to the viewport.
 	std::vector<V2f> polyline;
 	polyline.reserve(path.polyline.points.size());
-	float scalex  = float(viewport.size().x()) / float(bbox.size().x());
-	float scaley  = float(viewport.size().y()) / float(bbox.size().y());
+	float scalex  = float(BB::sizes(viewport).x()) / float(BB::sizes(bbox).x());
+	float scaley  = float(BB::sizes(viewport).y()) / float(BB::sizes(bbox).y());
 	float w = scale_(path.width()) * scalex;
 	//float h = scale_(path.height) * scalex;
 	w = scale_(path.mm3_per_mm() / path.height()) * scalex;
@@ -1006,7 +1008,7 @@ void ExtrusionSimulator::extrude_to_accumulator(const ExtrusionPath &path, const
 void ExtrusionSimulator::evaluate_accumulator(ExtrusionSimulationType simulationType)
 {
 	// printf("ExtrusionSimulator::evaluate_accumulator()\n");
-	Point sz = viewport.size();
+	Point sz = BB::sizes(viewport);
 
 	if (simulationType > ExtrusionSimulationDontSpread) {
 		// Average the cells of a bitmap into a lower resolution floating point mask.

@@ -15,8 +15,8 @@
 #include <cinttypes>
 #include <cstddef>
 
-#include "../../BoundingBox.hpp"
 #include "../../Point.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "../../Polygon.hpp"
 #include "libslic3r/libslic3r.h"
 
@@ -24,6 +24,8 @@
 
 namespace Slic3r::FillLightning
 {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 /*!
  * 2D field that maintains locations which need to be supported for Lightning
@@ -130,11 +132,11 @@ protected:
 
             BoundingBox unsupported_points_bbox;
             for (const UnsupportedCell &cell : unsupported_points)
-                unsupported_points_bbox.merge(cell.loc);
+                unsupported_points_bbox = Biz::Algorithms::BoundingBox::merge(unsupported_points_bbox, cell.loc);
 
             m_size        = unsupported_points.size();
             m_grid_range  = BoundingBox(map_cell_to_grid(unsupported_points_bbox.min), map_cell_to_grid(unsupported_points_bbox.max));
-            m_grid_size   = m_grid_range.size() + Point::Ones();
+            m_grid_size   = Biz::Algorithms::BoundingBox::sizes(m_grid_range) + Point::Ones();
 
             m_data.assign(m_grid_size.y() * m_grid_size.x(), std::numeric_limits<size_t>::max());
             m_data_erased.assign(m_grid_size.y() * m_grid_size.x(), true);

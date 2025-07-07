@@ -25,13 +25,13 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/Fill/FillAdaptive.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "tcbspan/span.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 // Boost pool: Don't use mutexes to synchronize memory allocation.
 #define BOOST_POOL_NO_MT
@@ -43,6 +43,10 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r {
 namespace FillAdaptive {
+using Domain::Vec3d;
+using Domain::BoundingBox3d;
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 // Derived from https://github.com/juj/MathGeoLib/blob/master/src/Geometry/Triangle.cpp
 // The AABB-Triangle test implementation is based on the pseudo-code in
@@ -53,36 +57,33 @@ namespace FillAdaptive {
 //    Best: 17.282 nsecs / 46.496 ticks, Avg: 17.804 nsecs, Worst: 18.434 nsecs
 //
 //FIXME Vojtech: The MathGeoLib contains a vectorized implementation.
-template<typename Vector> 
-bool triangle_AABB_intersects(const Vector &a, const Vector &b, const Vector &c, const BoundingBoxBase<Vector> &aabb)
+bool triangle_AABB_intersects(const Vec3d &a, const Vec3d &b, const Vec3d &c, const BoundingBox3d &aabb)
 {
-    using Scalar = typename Vector::Scalar;
-
-    Vector tMin = a.cwiseMin(b.cwiseMin(c));
-    Vector tMax = a.cwiseMax(b.cwiseMax(c));
+    Vec3d tMin = a.cwiseMin(b.cwiseMin(c));
+    Vec3d tMax = a.cwiseMax(b.cwiseMax(c));
 
     if (tMin.x() >= aabb.max.x() || tMax.x() <= aabb.min.x()
         || tMin.y() >= aabb.max.y() || tMax.y() <= aabb.min.y()
         || tMin.z() >= aabb.max.z() || tMax.z() <= aabb.min.z())
         return false;
 
-    Vector center = (aabb.min + aabb.max) * 0.5f;
-    Vector h = aabb.max - center;
+    Vec3d center = (aabb.min + aabb.max) * 0.5f;
+    Vec3d h = aabb.max - center;
 
-    const Vector t[3] { b-a, c-a, c-b };
+    const Vec3d t[3] { b-a, c-a, c-b };
 
-    Vector ac = a - center;
+    Vec3d ac = a - center;
 
-    Vector n = t[0].cross(t[1]);
-    Scalar s = n.dot(ac);
-    Scalar r = std::abs(h.dot(n.cwiseAbs()));
+    Vec3d n = t[0].cross(t[1]);
+    double s = n.dot(ac);
+    double r = std::abs(h.dot(n.cwiseAbs()));
     if (abs(s) >= r)
         return false;
 
-    const Vector at[3] = { t[0].cwiseAbs(), t[1].cwiseAbs(), t[2].cwiseAbs() };
+    const Vec3d at[3] = { t[0].cwiseAbs(), t[1].cwiseAbs(), t[2].cwiseAbs() };
 
-    Vector bc = b - center;
-    Vector cc = c - center;
+    Vec3d bc = b - center;
+    Vec3d cc = c - center;
 
     // SAT test all cross-axes.
     // The following is a fully unrolled loop of this code, stored here for reference:
@@ -100,9 +101,9 @@ bool triangle_AABB_intersects(const Vector &a, const Vector &b, const Vector &c,
     */
 
     // eX <cross> t[0]
-    Scalar d1 = t[0].y() * ac.z() - t[0].z() * ac.y();
-    Scalar d2 = t[0].y() * cc.z() - t[0].z() * cc.y();
-    Scalar tc = (d1 + d2) * 0.5f;
+    double d1 = t[0].y() * ac.z() - t[0].z() * ac.y();
+    double d2 = t[0].y() * cc.z() - t[0].z() * cc.y();
+    double tc = (d1 + d2) * 0.5f;
     r = std::abs(h.y() * at[0].z() + h.z() * at[0].y());
     if (r + std::abs(tc - d1) < std::abs(tc))
         return false;
@@ -1485,9 +1486,9 @@ OctreePtr build_octree(
     assert(line_spacing > 0);
     assert(! std::isnan(line_spacing));
 
-    BoundingBox3Base<Vec3f>     bbox(triangle_mesh.vertices);
-    Vec3d                       cube_center      = bbox.center().cast<double>();
-    std::vector<CubeProperties> cubes_properties = make_cubes_properties(double(bbox.size().maxCoeff()), line_spacing);
+    Domain::BoundingBox3f       bbox(BB::construct(triangle_mesh.vertices));
+    Vec3d                       cube_center      = BB::center(bbox).cast<double>();
+    std::vector<CubeProperties> cubes_properties = make_cubes_properties(double(BB::sizes(bbox).maxCoeff()), line_spacing);
     auto                        octree           = OctreePtr(new Octree(cube_center, cubes_properties));
 
     if (cubes_properties.size() > 1) {

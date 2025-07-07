@@ -47,6 +47,8 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
+namespace BB = Biz::Algorithms::BoundingBox;
+
 Fill* Fill::new_from_type(const Domain::InfillPattern type)
 {
     switch (type) {
@@ -162,7 +164,7 @@ std::pair<float, Point> Fill::_infill_direction(const Surface *surface) const
     // Bounding box is the bounding box of a perl object Slic3r::Print::Object (c++ object Slic3r::PrintObject)
     // The bounding box is only undefined in unit tests.
     Point out_shift = Algorithms::BoundingBox::empty(this->bounding_box) ?
-        Algorithms::Polygon::get_bounding_box(surface->expolygon.contour).center() :
+        BB::center(Algorithms::Polygon::get_bounding_box(surface->expolygon.contour)) :
         Algorithms::BoundingBox::center(this->bounding_box);
 
 #if 0
@@ -914,10 +916,10 @@ void mark_boundary_segments_touching_infill(
 		void init(const Vec2d &infill_pt1, const Vec2d &infill_pt2) {
 			this->infill_pt1 = &infill_pt1;
 			this->infill_pt2 = &infill_pt2;
-            this->infill_bbox.reset();
-            this->infill_bbox.merge(infill_pt1);
-            this->infill_bbox.merge(infill_pt2);
-            this->infill_bbox.offset(this->radius + SCALED_EPSILON);
+            this->infill_bbox = {};
+            this->infill_bbox = BB::merge(this->infill_bbox, infill_pt1);
+            this->infill_bbox = BB::merge(this->infill_bbox, infill_pt2);
+            this->infill_bbox = BB::inflated(this->infill_bbox, this->radius + SCALED_EPSILON);
         }
 
 		bool operator()(coord_t iy, coord_t ix) {
@@ -934,8 +936,8 @@ void mark_boundary_segments_touching_infill(
 				const Vec2d seg_pt2 = segment.second.cast<double>();
                 std::pair<double, double> interval;
                 BoundingBoxf bbox_seg;
-                bbox_seg.merge(seg_pt1);
-                bbox_seg.merge(seg_pt2);
+                bbox_seg = BB::merge(bbox_seg, seg_pt1);
+                bbox_seg = BB::merge(bbox_seg, seg_pt2);
                 if (this->infill_bbox.overlap(bbox_seg) && line_rounded_thick_segment_collision(seg_pt1, seg_pt2, *this->infill_pt1, *this->infill_pt2, this->radius, interval)) {
                     // The boundary segment intersects with the infill segment thickened by radius.
                     // Interval is specified in Euclidian length from seg_pt1 to seg_pt2.

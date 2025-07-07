@@ -10,13 +10,15 @@
 #include "../Polyline.hpp"
 #include "RetractWhenCrossingPerimeters.hpp"
 #include "libslic3r/AABBTreeIndirect.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Surface.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 bool RetractWhenCrossingPerimeters::travel_inside_internal_regions(const Layer &layer, const Polyline &travel)
 {
@@ -42,7 +44,7 @@ bool RetractWhenCrossingPerimeters::travel_inside_internal_regions(const Layer &
     BoundingBox           bbox_travel = get_extents(travel);
     AABBTree::BoundingBox bbox_travel_eigen{ bbox_travel.min, bbox_travel.max };
     int result = -1;
-    bbox_travel.offset(SCALED_EPSILON);
+    bbox_travel = BB::inflated(bbox_travel, SCALED_EPSILON);
     AABBTreeIndirect::traverse(m_aabbtree_internal_islands, 
         [&bbox_travel_eigen](const AABBTree::Node &node) {
             return bbox_travel_eigen.intersects(node.bbox);

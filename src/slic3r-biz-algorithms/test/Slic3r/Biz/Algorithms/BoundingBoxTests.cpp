@@ -108,12 +108,12 @@ TEST_CASE("Bounding box translation", "[algorithms][algorithms-bounding-box]") {
 
 TEST_CASE("Bounding box contains", "[algorithms][algorithms-bounding-box]") {
     const BoundingBox2d box{{0, 0}, {1, 1}};
-    CHECK(bb::contains(box, {0.8, 0.8}));
-    CHECK(!bb::contains(box, {-1.1, 0.8}));
+    CHECK(box.contains({0.8, 0.8}));
+    CHECK(!box.contains({-1.1, 0.8}));
     const BoundingBox2d smaller_box{{0.1, 0.1}, {0.9, 0.9}};
-    CHECK(bb::contains(box, smaller_box));
+    CHECK(box.contains(smaller_box));
     const BoundingBox2d bigger_box{{0.1, -0.1}, {0.9, 0.9}};
-    CHECK(!bb::contains(box, bigger_box));
+    CHECK(!box.contains(bigger_box));
 }
 
 TEST_CASE("Bounding box overlap", "[algorithms][algorithms-bounding-box]") {

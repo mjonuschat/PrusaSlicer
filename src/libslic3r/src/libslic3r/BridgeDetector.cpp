@@ -13,17 +13,19 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Geometry.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 BridgeDetector::BridgeDetector(
     ExPolygon         _expolygon,
@@ -254,7 +256,7 @@ static void get_trapezoids2(const ExPolygon& expoly, Polygons* polygons)
     const Points pp = Algorithms::Polygon::to_points(src_polygons);
 
     // build our bounding box
-    BoundingBox bb(pp);
+    BoundingBox bb(BB::construct(pp));
 
     // get all x coordinates
     std::vector<coord_t> xx;

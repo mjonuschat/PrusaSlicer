@@ -37,7 +37,6 @@
 #include "SupportMaterial.hpp"
 #include "agg/agg_renderer_base.h"
 #include "agg/agg_rendering_buffer.h"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
@@ -51,6 +50,7 @@
 #include "libslic3r/Support/SupportParameters.hpp"
 #include "libslic3r/Surface.hpp"
 #include "tcbspan/span.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #define SUPPORT_USE_AGG_RASTERIZER
 
@@ -81,6 +81,8 @@ using namespace Slic3r::Biz;
 using namespace Slic3r::FFFSupport;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 // how much we extend support around the actual contact area
 //FIXME this should be dependent on the nozzle diameter!
@@ -522,6 +524,15 @@ struct SupportGridParams {
     coord_t                 expansion_to_propagate;
 };
 
+void align_to_grid(BoundingBox& box, const coord_t cell_size)
+{
+    if (!box.defined) {
+        return;
+    }
+    box.min.x() = Slic3r::align_to_grid(box.min.x(), cell_size);
+    box.min.y() = Slic3r::align_to_grid(box.min.y(), cell_size);
+}
+
 class SupportGridPattern
 {
 public:
@@ -554,9 +565,9 @@ public:
             // Resolution of the sparse support grid.
             coord_t grid_resolution = coord_t(scale_(m_support_spacing));
             BoundingBox bbox = get_extents(*m_support_polygons);
-            bbox.offset(20);
+            bbox = BB::inflated(bbox, 20);
             // Align the bounding box with the sparse support grid.
-            bbox.align_to_grid(grid_resolution);
+            align_to_grid(bbox, grid_resolution);
 
     #ifdef SUPPORT_USE_AGG_RASTERIZER
             m_bbox       = bbox;
@@ -565,7 +576,7 @@ public:
             int oversampling = std::clamp(int(scale_(m_support_spacing) / (extrusion_width_scaled + 100)), 1, 8);
             m_pixel_size = std::max<double>(extrusion_width_scaled + 21, scale_(m_support_spacing / oversampling));
             // Add one empty column / row boundaries.
-            m_bbox.offset(m_pixel_size);
+            m_bbox = BB::inflated(m_bbox, m_pixel_size);
             // Grid size fitting the support polygons plus one pixel boundary around the polygons.
             std::array<int, 2> grid_size_raw{int(ceil((m_bbox.max.x() - m_bbox.min.x()) / m_pixel_size)),
                                 int(ceil((m_bbox.max.y() - m_bbox.min.y()) / m_pixel_size))};

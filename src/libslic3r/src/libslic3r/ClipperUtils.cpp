@@ -15,7 +15,6 @@
 #include <cmath>
 
 #include "ShortestPath.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Surface.hpp"

@@ -17,7 +17,6 @@
 #include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/libpgcode/Types.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "libslic3r/Geometry/Circle.hpp"
@@ -28,6 +27,8 @@
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 BuildVolume::BuildVolume(const std::vector<Vec2d> &bed_shape, const double max_print_height) : m_bed_shape(bed_shape), m_max_print_height(max_print_height)
 {
@@ -43,11 +44,11 @@ BuildVolume::BuildVolume(const std::vector<Vec2d> &bed_shape, const double max_p
     BoundingBoxf bboxf = get_extents(bed_shape);
     m_bboxf = BoundingBoxf3{ to_3d(bboxf.min, 0.), to_3d(bboxf.max, max_print_height) };
 
-    if (bed_shape.size() >= 4 && std::abs((m_area - double(m_bbox.size().x()) * double(m_bbox.size().y()))) < sqr(SCALED_EPSILON)) {
+    if (bed_shape.size() >= 4 && std::abs((m_area - double(BB::sizes(m_bbox).x()) * double(BB::sizes(m_bbox).y()))) < sqr(SCALED_EPSILON)) {
         // Square print bed, use the bounding box for collision detection.
         m_type = Type::Rectangle;
         m_circle.center = 0.5 * (m_bbox.min.cast<double>() + m_bbox.max.cast<double>());
-        m_circle.radius = 0.5 * m_bbox.size().cast<double>().norm();
+        m_circle.radius = 0.5 * BB::sizes(m_bbox).cast<double>().norm();
     } else if (bed_shape.size() > 3) {
         // Circle was discretized, formatted into text with limited accuracy, thus the circle was deformed.
         // RANSAC is slightly more accurate than the iterative Taubin / Newton method with such an input.
@@ -312,12 +313,12 @@ BuildVolume::ObjectState BuildVolume::object_state(const indexed_triangle_set& i
     switch (m_type) {
     case Type::Rectangle:
     {
-        BoundingBoxBase<Vec3d> build_volume = this->bounding_volume().inflated(SceneEpsilon);
+        Domain::BoundingBox3d build_volume = BB::inflated(this->bounding_volume(), SceneEpsilon);
         if (m_max_print_height == 0.0)
             build_volume.max.z() = std::numeric_limits<double>::max();
         if (ignore_bottom)
             build_volume.min.z() = -std::numeric_limits<double>::max();
-        BoundingBox3Base<Vec3f> build_volumef(build_volume.min.cast<float>(), build_volume.max.cast<float>());
+        Domain::BoundingBox3f build_volumef(build_volume.min.cast<float>(), build_volume.max.cast<float>());
         // The following test correctly interprets intersection of a non-convex object with a rectangular build volume.
         //return rectangle_test(its, trafo, to_2d(build_volume.min), to_2d(build_volume.max), build_volume.max.z());
         //FIXME This test does NOT correctly interprets intersection of a non-convex object with a rectangular build volume.
@@ -361,7 +362,7 @@ BuildVolume::ObjectState BuildVolume::object_state(const indexed_triangle_set& i
 BuildVolume::ObjectState BuildVolume::volume_state_bbox(const BoundingBoxf3 volume_bbox_orig, bool ignore_bottom, int* bed_idx) const
 {
     assert(m_type == Type::Rectangle);
-    BoundingBoxBase<Vec3d> build_volume = this->bounding_volume().inflated(SceneEpsilon);
+    Domain::BoundingBox3d build_volume = BB::inflated(this->bounding_volume(), SceneEpsilon);
     if (m_max_print_height == 0.0)
         build_volume.max.z() = std::numeric_limits<double>::max();
     if (ignore_bottom)
@@ -371,7 +372,7 @@ BuildVolume::ObjectState BuildVolume::volume_state_bbox(const BoundingBoxf3 volu
     int obj_bed_id = -1;
     for (int bed_id = 0; bed_id <= std::min(s_multiple_beds.get_number_of_beds(), s_multiple_beds.get_max_beds() - 1); ++bed_id) {
         BoundingBoxf3 volume_bbox = volume_bbox_orig;
-        volume_bbox.translate(-s_multiple_beds.get_bed_translation(bed_id));
+        volume_bbox = BB::translated(volume_bbox, Vec3d{-s_multiple_beds.get_bed_translation(bed_id)});
 
         state = build_volume.max.z() <= -SceneEpsilon ? ObjectState::Below :
             build_volume.contains(volume_bbox) ? ObjectState::Inside :
@@ -399,7 +400,7 @@ bool BuildVolume::all_paths_inside(const Biz::libpgcode::ProcessorResult& paths,
     switch (m_type) {
     case Type::Rectangle:
     {
-        BoundingBoxBase<Vec3d> build_volume = this->bounding_volume().inflated(epsilon);
+        Domain::BoundingBox3d build_volume = BB::inflated(this->bounding_volume(), epsilon);
         if (m_max_print_height == 0.0)
             build_volume.max.z() = std::numeric_limits<double>::max();
         if (ignore_bottom)

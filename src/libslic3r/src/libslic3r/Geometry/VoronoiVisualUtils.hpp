@@ -14,7 +14,7 @@
 
 #include "VoronoiOffset.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
-#include "libslic3r/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace boost { namespace polygon {
 
@@ -313,25 +313,27 @@ static inline void dump_voronoi_to_svg(
 {
     const bool          internalEdgesOnly           = false;
 
+    namespace BB = Biz::Algorithms::BoundingBox;
+
     BoundingBox bbox;
-    bbox.merge(get_extents(points));
-    bbox.merge(get_extents(lines));
-    bbox.merge(get_extents(offset_curves));
-    bbox.merge(get_extents(helper_lines));
+    bbox = BB::merge(bbox, get_extents(points));
+    bbox = BB::merge(bbox, get_extents(lines));
+    bbox = BB::merge(bbox, get_extents(offset_curves));
+    bbox = BB::merge(bbox, get_extents(helper_lines));
 
     using Slic3r::Biz::Algorithms::Point::round;
 
     for (boost::polygon::voronoi_diagram<double>::const_vertex_iterator it = vd.vertices().begin(); it != vd.vertices().end(); ++it)
         if (! internalEdgesOnly || it->color() != Voronoi::Internal::EXTERNAL_COLOR)
-            bbox.merge(Point(round(Vec2d{it->x(), it->y()}).cast<coord_t>()));
-    bbox.min -= (0.01 * bbox.size().cast<double>()).cast<coord_t>();
-    bbox.max += (0.01 * bbox.size().cast<double>()).cast<coord_t>();
+            bbox = BB::merge(bbox, Point(round(Vec2d{it->x(), it->y()}).cast<coord_t>()));
+    bbox.min -= (0.01 * BB::sizes(bbox).cast<double>()).cast<coord_t>();
+    bbox.max += (0.01 * BB::sizes(bbox).cast<double>()).cast<coord_t>();
 
     if (scale == 0)
         scale =
 //                0.1
                 0.01
-                * std::min(bbox.size().x(), bbox.size().y());
+                * std::min(BB::sizes(bbox).x(), BB::sizes(bbox).y());
     else
         scale *= SCALING_FACTOR;
 
@@ -361,7 +363,7 @@ static inline void dump_voronoi_to_svg(
 
     // For clipping of half-lines to some reasonable value.
     // The line will then be clipped by the SVG viewer anyway.
-    const double bbox_dim_max = double(std::max(bbox.size().x(), bbox.size().y()));
+    const double bbox_dim_max = double(std::max(BB::sizes(bbox).x(), BB::sizes(bbox).y()));
     // For the discretization of the Voronoi parabolic segments.
     const double discretization_step = 0.0002 * bbox_dim_max;
 
@@ -444,7 +446,7 @@ static inline void dump_voronoi_to_svg(
                 // One fit, the other does not. Try to clip.
                 Vec2d v = b - a;
                 v.normalize();
-                v *= bbox.size().cast<double>().norm();
+                v *= BB::sizes(bbox).cast<double>().norm();
                 auto p = a_in_range ? Vec2d(a + v) : Vec2d(b - v);
                 Point ip = p.cast<coord_t>();
                 if (! in_range(ip, p))

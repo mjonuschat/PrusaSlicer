@@ -1198,7 +1198,7 @@ size_t get_index_of_layer_part(const Point& coor, const LayerParts& parts, doubl
     size_t part_index = parts.size();
     // find part for support point
     for (const LayerPart &part : parts) {
-        if (Algorithms::BoundingBox::contains(part.shape_extent, coor) && Algorithms::ExPolygon::contains(*part.shape, coor)) {
+        if (part.shape_extent.contains(coor) && Algorithms::ExPolygon::contains(*part.shape, coor)) {
             // parts do not overlap each other
             assert(part_index >= parts.size());
             part_index = &part - &parts.front();
@@ -1219,7 +1219,7 @@ LayerParts::const_iterator get_closest_part(const PartLinks &links, Vec2d &coor)
     // Note: layer part MUST not overlap each other
     for (const PartLink &link : links) {
         LayerParts::const_iterator part_it = link;
-        if (Algorithms::BoundingBox::contains(part_it->shape_extent, coor_p) &&
+        if (part_it->shape_extent.contains(coor_p) &&
             Algorithms::ExPolygon::contains(*part_it->shape, coor_p)) {
             return part_it;
         }

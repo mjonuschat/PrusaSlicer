@@ -5,6 +5,7 @@
 #include "RegionExpansion.hpp"
 
 #include <Slic3r/Biz/Algorithms/ExPolygon.hpp>
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include <libslic3r/AABBTreeIndirect.hpp>
 #include <libslic3r/ClipperZUtils.hpp>
 #include <libslic3r/ClipperUtils.hpp>
@@ -17,7 +18,6 @@
 #include <algorithm>
 #include <cassert>
 
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
@@ -28,6 +28,8 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r {
 namespace Algorithm {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 // Calculating radius discretization according to ClipperLib offsetter code, see void ClipperOffset::DoOffset(double delta)
 inline double clipper_round_offset_error(double offset, double arc_tolerance)
@@ -413,7 +415,7 @@ static Polygons propagate_wave_from_boundary(
     const float                  max_inflation)
 {
     assert(! seed.empty() && seed.front().size() >= 2);
-    Polygons clipping = ClipperUtils::clip_clipper_polygons_with_subject_bbox(boundary, get_extents<true>(seed).inflated(max_inflation));
+    Polygons clipping = ClipperUtils::clip_clipper_polygons_with_subject_bbox(boundary, BB::inflated(get_extents<true>(seed), max_inflation));
     ClipperLib::Paths polygons = wavefront_clip(wavefront_initial(co, seed, initial_step), clipping);
     // Now offset the remaining 
     for (size_t ioffset = 0; ioffset < num_other_steps; ++ ioffset)

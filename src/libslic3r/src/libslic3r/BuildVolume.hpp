@@ -13,9 +13,9 @@
 #include "Point.hpp"
 #include "Geometry/Circle.hpp"
 #include "Polygon.hpp"
-#include "BoundingBox.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 struct indexed_triangle_set;
 
@@ -65,7 +65,7 @@ public:
     BoundingBoxf                bounding_volume2d() const { return { to_2d(m_bboxf.min), to_2d(m_bboxf.max) }; }
 
     // Center of the print bed, unscaled.
-    Vec2d                       bed_center()        const { return to_2d(m_bboxf.center()); }
+    Vec2d                       bed_center()        const { return to_2d(Biz::Algorithms::BoundingBox::center(m_bboxf)); }
     // Convex hull of polygon(), scaled.
     const Polygon&              convex_hull()       const { return m_convex_hull; }
     // Smallest enclosing circle of polygon(), scaled.

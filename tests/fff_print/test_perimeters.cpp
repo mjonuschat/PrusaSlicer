@@ -49,7 +49,7 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
 
     TestConfig config;
 
-    auto test = [](const TestData &data, const TestConfig& config) {
+    auto test = [&](const TestData &data, const TestConfig& config) {
         const auto full_config{std::make_shared<const FullConfigFDM>(config.get_full_config())};
         Domain::PartialObjectConfigFDM object_config{ObjectSettings{}, full_config->tools_count(), full_config->filaments_count()};
         Domain::PartialVolumeConfigFDM volume_config{VolumeSettings{}, full_config->tools_count(), full_config->filaments_count()};
@@ -240,7 +240,7 @@ SCENARIO("Perimeters", "[Perimeters]")
         }
     }
     
-    auto test = [&config](Test::TestMesh model) {    
+    auto test = [&](Test::TestMesh model) {    
         // we test two copies to make sure ExtrusionLoop objects are not modified in-place (the second object would not detect cw loops and thus would calculate wrong)
         std::string gcode = Slic3r::Test::slice({ model, model }, config);
         GCodeReader parser;
@@ -596,7 +596,7 @@ SCENARIO("Perimeters4", "[Perimeters]")
 
 SCENARIO("Seam alignment", "[Perimeters]")
 {
-    auto test = [](Test::TestMesh model) {
+    auto test = [&](Test::TestMesh model) {
         TestConfig config;
         config.tool.at(0).items.opt("seam_position").set(Domain::SeamPosition::spAligned);
         config.print.items.opt("skirts").set(0);

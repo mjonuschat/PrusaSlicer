@@ -18,16 +18,18 @@
 #include "libslic3r/Arachne/WallToolPaths.hpp"
 #include "FillConcentric.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 void FillConcentric::_fill_surface_single(
     const FillParams                &params,
@@ -43,7 +45,7 @@ void FillConcentric::_fill_surface_single(
     coord_t distance    = coord_t(min_spacing / params.density);
 
     if (params.density > 0.9999f && !params.dont_adjust) {
-        distance      = Slic3r::FillConcentric::_adjust_solid_spacing(bounding_box.size()(0), distance);
+        distance      = Slic3r::FillConcentric::_adjust_solid_spacing(BB::sizes(bounding_box)(0), distance);
         this->spacing = unscale<double>(distance);
     }
 
@@ -98,7 +100,7 @@ void FillConcentric::_fill_surface_single(const FillParams              &params,
     assert(params.use_arachne);
 
     // no rotation is supported for this infill pattern
-    Point   bbox_size   = Algorithms::Polygon::get_bounding_box(expolygon.contour).size();
+    Point   bbox_size   = BB::sizes(Algorithms::Polygon::get_bounding_box(expolygon.contour));
     coord_t min_spacing = scaled<coord_t>(this->spacing);
 
     if (params.density > 0.9999f && !params.dont_adjust) {

@@ -26,7 +26,6 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/libslic3r.h"
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
@@ -40,6 +39,7 @@
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/PrintBase.hpp"
 #include "libslic3r/PrintConfig.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #if defined(BRIM_DEBUG_TO_SVG)
     #include "Slic3r/Biz/Algorithms/SVG.hpp"
@@ -48,6 +48,8 @@
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace BB = Biz::Algorithms::BoundingBox;
 
 static void append_and_translate(ExPolygons &dst, const ExPolygons &src, const PrintInstance &instance) {
     size_t dst_idx = dst.size();
@@ -411,9 +413,9 @@ static Polylines connect_brim_lines(Polylines &&polylines, const Polygons &brim_
         return {};
 
     BoundingBox bbox = get_extents(polylines);
-    bbox.merge(get_extents(brim_area));
+    bbox = BB::merge(bbox, get_extents(brim_area));
 
-    EdgeGrid::Grid grid(bbox.inflated(SCALED_EPSILON));
+    EdgeGrid::Grid grid(BB::inflated(bbox, SCALED_EPSILON));
     grid.create(brim_area, polylines, coord_t(scale_(10.)));
 
     struct Visitor

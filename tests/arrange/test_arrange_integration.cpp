@@ -43,7 +43,6 @@ using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec3f;
 
 using Slic3r::Biz::Algorithms::BoundingBox::center;
-using Slic3r::Biz::Algorithms::BoundingBox::contains;
 using Slic3r::Biz::Algorithms::BoundingBox::scaled;
 using Slic3r::Biz::Algorithms::BoundingBox::to_2d;
 using Slic3r::Biz::Algorithms::ClipperUtils::intersection;
@@ -504,7 +503,7 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
                 INFO("bb = { {" << Algorithms::Scaling::unscaled<double>(bb.min).transpose() << "}, {"
                                 << Algorithms::Scaling::unscaled<double>(bb.max).transpose() << "} }" );
 
-                REQUIRE(contains(Domain::BoundingBox2crd{bedbb.min, bedbb.max}, bb));
+                REQUIRE(Domain::BoundingBox2crd{bedbb.min, bedbb.max}.contains(bb));
             }
         }
 
@@ -527,7 +526,7 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
                 INFO("bb = { {" << Algorithms::Scaling::unscaled<double>(bb.min).transpose() << "}, {"
                                 << Algorithms::Scaling::unscaled<double>(bb.max).transpose() << "} }" );
 
-                REQUIRE(contains(Domain::BoundingBox2crd{bedbb.min, bedbb.max}, bb));
+                REQUIRE(Domain::BoundingBox2crd{bedbb.min, bedbb.max}.contains(bb));
             }
 
             THEN("the outline should be inside the physical bed")
@@ -538,7 +537,7 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
                 INFO("bb = { {" << bb.min.transpose() << "}, {"
                                 << bb.max.transpose() << "} }" );
 
-                REQUIRE(Algorithms::BoundingBox::contains(bedbb, bb));
+                REQUIRE(bedbb.contains(bb));
             }
         }
     }
@@ -603,7 +602,7 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
                 INFO("bedbb = { {" << bedbb.min.transpose() << "}, {" << bedbb.max.transpose() << "} }" );
                 INFO("instbb = { {" << instbb.min.transpose() << "}, {" << instbb.max.transpose() << "} }" );
 
-                REQUIRE(contains(Domain::BoundingBox2crd{bedbb.min, bedbb.max}, instbb));
+                REQUIRE(Domain::BoundingBox2crd{bedbb.min, bedbb.max}.contains(instbb));
             }
         }
 
@@ -668,7 +667,7 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
                 INFO("bedbb = { {" << bedbb.min.transpose() << "}, {" << bedbb.max.transpose() << "} }" );
                 INFO("instbb = { {" << instbb.min.transpose() << "}, {" << instbb.max.transpose() << "} }" );
 
-                REQUIRE(!contains(Domain::BoundingBox2crd{bedbb.min, bedbb.max}, instbb));
+                REQUIRE(!Domain::BoundingBox2crd{bedbb.min, bedbb.max}.contains(instbb));
             }
         }
     }
@@ -847,10 +846,10 @@ TEST_CASE("Testing a simple arrange on cubes", "[arrange2][integration]")
                         [](auto &item) { return arr2::is_arranged(item); }));
 
     REQUIRE(std::all_of(task->printable.selected.begin(), task->printable.selected.end(),
-                        [&bed](auto &item) { return Algorithms::BoundingBox::contains(bounding_box(bed), arr2::envelope_bounding_box(item)); }));
+                        [&bed](auto &item) { return bounding_box(bed).contains(arr2::envelope_bounding_box(item)); }));
 
     REQUIRE(std::all_of(task->unprintable.selected.begin(), task->unprintable.selected.end(),
-                        [&bed](auto &item) { return Algorithms::BoundingBox::contains(bounding_box(bed), arr2::envelope_bounding_box(item)); }));
+                        [&bed](auto &item) { return bounding_box(bed).contains(arr2::envelope_bounding_box(item)); }));
 
     REQUIRE(is_collision_free(range(task->printable.selected)));
 }
@@ -920,7 +919,7 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
     Slic3rLegacy::store_3mf_legacy("vbed_test_result.3mf", &model, std::nullopt, false, {}, {});
 
     REQUIRE(std::all_of(task->printable.selected.begin(), task->printable.selected.end(),
-                        [&bed](auto &item) { return Algorithms::BoundingBox::contains(bounding_box(bed), arr2::envelope_bounding_box(item)); }));
+                        [&bed](auto &item) { return bounding_box(bed).contains(arr2::envelope_bounding_box(item)); }));
 
     REQUIRE(is_collision_free(Range{task->printable.selected.begin(), std::prev(task->printable.selected.end())}));
 }
@@ -1140,7 +1139,7 @@ TEST_CASE("Testing duplicate function to really duplicate the whole Model",
                         [](auto &item) { return arr2::is_arranged(item); }));
 
     REQUIRE(std::all_of(task->selected.begin(), task->selected.end(),
-                        [&bed](auto &item) { return Algorithms::BoundingBox::contains(bounding_box(bed), arr2::envelope_bounding_box(item)); }));
+                        [&bed](auto &item) { return bounding_box(bed).contains(arr2::envelope_bounding_box(item)); }));
 
     REQUIRE(is_collision_free(range(task->selected)));
 }

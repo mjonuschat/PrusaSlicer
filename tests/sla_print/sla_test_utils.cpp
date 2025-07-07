@@ -6,6 +6,7 @@
 #include "libslic3r/SLA/DefaultSupportTree.hpp"
 #include "libslic3r/SLA/BranchingTreeSLA.hpp"
 #include "libslic3r/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include <iomanip>
 
@@ -13,6 +14,7 @@ using namespace Slic3r::Biz;
 using Algorithms::SVG::SVG;
 using Biz::Algorithms::TriangleMesh::construct;
 using Domain::TriangleMesh;
+namespace BB = Biz::Algorithms::BoundingBox;
 
 void test_support_model_collision(
     const std::string            &obj_filename,
@@ -369,8 +371,8 @@ void check_raster_transformations(sla::RasterBase::Orientation o, sla::RasterBas
     
     auto bb = BoundingBox({0, 0}, {scaled(disp_w), scaled(disp_h)});
     sla::RasterBase::Trafo trafo{o, mirroring};
-    trafo.center_x = bb.center().x();
-    trafo.center_y = bb.center().y();
+    trafo.center_x = BB::center(bb).x();
+    trafo.center_y = BB::center(bb).y();
     double gamma = 1.;
     
     sla::RasterGrayscaleAAGammaPower raster{res, pixdim, trafo, gamma};
@@ -398,9 +400,9 @@ void check_raster_transformations(sla::RasterBase::Orientation o, sla::RasterBas
     
     raster.draw(box);
     
-    Point expected_coords = Algorithms::Polygon::get_bounding_box(expected_box.contour).center();
-    double rx = unscaled(expected_coords.x() + bb.center().x()) / pixdim.w_mm;
-    double ry = unscaled(expected_coords.y() + bb.center().y()) / pixdim.h_mm;
+    Point expected_coords = BB::center(Algorithms::Polygon::get_bounding_box(expected_box.contour));
+    double rx = unscaled(expected_coords.x() + BB::center(bb).x()) / pixdim.w_mm;
+    double ry = unscaled(expected_coords.y() + BB::center(bb).y()) / pixdim.h_mm;
     auto w = size_t(std::floor(rx));
     auto h = res.height_px - size_t(std::floor(ry));
     

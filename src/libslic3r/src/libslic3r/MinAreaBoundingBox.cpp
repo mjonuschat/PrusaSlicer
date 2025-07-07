@@ -5,7 +5,6 @@
 #include "libslic3r/MinAreaBoundingBox.hpp"
 
 #include <libslic3r/ExPolygon.hpp>
-#include <libslic3r/BoundingBox.hpp>
 
 #if defined(_MSC_VER) && defined(__clang__)
 #define BOOST_NO_CXX17_HDR_STRING_VIEW
@@ -28,6 +27,7 @@
 #include "libnest2d/geometry_traits.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r {
 

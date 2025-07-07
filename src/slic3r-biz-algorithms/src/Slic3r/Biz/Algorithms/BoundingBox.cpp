@@ -166,32 +166,6 @@ template Vec3f center<BoundingBox3f>(const BoundingBox3f&);
 template Vec2d center<BoundingBox2d>(const BoundingBox2d&);
 template Vec3d center<BoundingBox3d>(const BoundingBox3d&);
 
-template<Domain::BoundingBoxConcept BoxType>
-[[nodiscard]] bool contains(
-    const BoxType& box, const typename BoxType::VecType& point
-)
-{
-    return (point.array() >= box.min.array()).all() && (point.array() <= box.max.array()).all();
-}
-template bool contains<BoundingBox2crd>(const BoundingBox2crd&, const Vec2crd&);
-template bool contains<BoundingBox3crd>(const BoundingBox3crd&, const Vec3crd&);
-template bool contains<BoundingBox2f>(const BoundingBox2f&, const Vec2f&);
-template bool contains<BoundingBox3f>(const BoundingBox3f&, const Vec3f&);
-template bool contains<BoundingBox2d>(const BoundingBox2d&, const Vec2d&);
-template bool contains<BoundingBox3d>(const BoundingBox3d&, const Vec3d&);
-
-[[nodiscard]] bool contains(
-    const Domain::BoundingBoxConcept auto& box, const Domain::BoundingBoxConcept auto& other
-)
-{
-    return contains(box, other.min) && contains(box, other.max);
-}
-template bool contains<BoundingBox2crd>(const BoundingBox2crd&, const BoundingBox2crd&);
-template bool contains<BoundingBox3crd>(const BoundingBox3crd&, const BoundingBox3crd&);
-template bool contains<BoundingBox2f>(const BoundingBox2f&, const BoundingBox2f&);
-template bool contains<BoundingBox3f>(const BoundingBox3f&, const BoundingBox3f&);
-template bool contains<BoundingBox2d>(const BoundingBox2d&, const BoundingBox2d&);
-template bool contains<BoundingBox3d>(const BoundingBox3d&, const BoundingBox3d&);
 
 template<Domain::ScaledScalar OutputScalarType, Domain::BoundingBoxConcept InputBoxType>
 [[nodiscard]] Domain::BoundingBox<OutputScalarType, InputBoxType::Dim> scaled(const InputBoxType& box)

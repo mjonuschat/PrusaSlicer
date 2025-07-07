@@ -9,9 +9,11 @@
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
+namespace BB = Biz::Algorithms::BoundingBox;
 
 SCENARIO("Medial Axis", "[ThinWalls]") {
     GIVEN("Square with hole") {
@@ -168,7 +170,7 @@ SCENARIO("Medial Axis", "[ThinWalls]") {
             }
             Polyline &polyline = res.front();
             THEN("medial axis is horizontal and is centered") {
-                double expected_y = Algorithms::Polygon::get_bounding_box(expolygon.contour).center().y();
+                double expected_y = BB::center(Algorithms::Polygon::get_bounding_box(expolygon.contour)).y();
                 double center_y   = 0.;
                 for (auto &p : polyline.points)
                     center_y += double(p.y());

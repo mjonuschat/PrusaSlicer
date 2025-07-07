@@ -257,8 +257,8 @@ TEST_CASE("least squares arc fitting, interpolating end points", "[ArcWelder]") 
     std::uniform_real_distribution<double>  angle_sampler(0.001, 2. * M_PI - 0.001);
     std::uniform_real_distribution<double>  radius_sampler(min_radius, max_radius);
     std::uniform_int_distribution<int>      num_samples_sampler(1, 100);
-    auto test_arc_fitting = [&rng, &coord_sampler, &num_samples_sampler, &angle_sampler, &radius_sampler]() {
-        auto sample_point = [&rng, &coord_sampler]() {
+    auto test_arc_fitting = [&]() {
+        auto sample_point = [&]() {
             return Vec2d(coord_sampler(rng), coord_sampler(rng));
         };
         // Start and end point of the arc:
