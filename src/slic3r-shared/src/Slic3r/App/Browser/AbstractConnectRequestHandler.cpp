@@ -2,9 +2,9 @@
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 #include "libslic3r/format.hpp"
 
-#include <libassert/assert.hpp>
 #include <nlohmann/json.hpp>
 
 namespace Slic3r::App::Browser {

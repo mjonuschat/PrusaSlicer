@@ -38,10 +38,13 @@
 #include "Slic3r/App/SidebarActionButtons.hpp"
 #include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/BedThumbnailStore.hpp"
-#include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
-#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
+
+#include "Slic3r/Biz/Format/STL.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -179,19 +182,35 @@ void PlaterRenderModule::init_scene_layout()
         "Add...",
         "Ctrl + I",
         {.action = [this]() {
-        auto& scene_interactor = m_project_interactor.scene_interactor();
-        const auto& bed = m_project_interactor.selected_project().config_containers().front()->bed();
-        // Set the default size for newly added objects to one tenth of the maximum print height.
-        const float def_side = 0.1f * bed.max_print_height();
+        IDialogManager::FileCallback callback =
+                 [this](bool success, const boost::filesystem::path& file_path) {
+                     if (success) {
+                         Domain::TriangleMesh mesh;
+                         if (! Biz::load_stl(file_path.string(), mesh))
+                             return;
 
-        scene_interactor.new_object_from_mesh(TriMesh::make_cube(def_side, def_side, def_side));
+                         auto& scene_interactor = m_project_interactor.scene_interactor();
+                         const auto& bed =
+                             m_project_interactor.selected_project().config_containers().front()->bed();
 
-        Transform3d xform = Transform3d::Identity();
-        xform.translate(Vec3d{2.f * def_side, 2.f * def_side, 0});
-        scene_interactor.transform_selection(xform.matrix());
+                         scene_interactor.new_object_from_mesh(std::move(mesh));
 
-        m_scene_presenter->scene().log_nodes();
-    }}
+                         const Domain::BoundingBox3d& bbox = mesh->bounding_box();
+                         Transform3d xform = Transform3d::Identity();
+                         using namespace Biz::Algorithms::BoundingBox;
+                         xform.translate(- center(bbox));
+                         xform.translate(Vec3d(0., 0., sizes(bbox).z() /2.));
+                         xform.translate(Vec3d{bed.center().x(), bed.center().y(), 0});
+                         scene_interactor.transform_selection(xform.matrix());
+
+                         m_scene_presenter->scene().log_nodes();
+                     }
+                 };
+
+                 auto& dlg_manager = DialogManagerProvider::instance().get();
+                 dlg_manager
+                    .show_file_dialog(FileDialogType::Open, _u8L("Import STL"), "", "", "*.stl", callback);
+             }}
     );
 
     m_toolbar_add_instance = m_layout->add_toolbar_item(
@@ -208,7 +227,7 @@ void PlaterRenderModule::init_scene_layout()
 
         Transform3d xform          = Transform3d::Identity();
         Vec3d last_instance_offset = obj.instances[obj.instances.size() - 1]->get_offset();
-        xform.translate(Vec3d{last_instance_offset.x() + 10.f, last_instance_offset.y() + 5.f, 0});
+        xform.translate(Vec3d{last_instance_offset.x() + 10.f, last_instance_offset.y() + 5.f, last_instance_offset.z()});
 
         m_project_interactor.scene_interactor().add_instance(xform.matrix());
         m_scene_presenter->scene().log_nodes();
