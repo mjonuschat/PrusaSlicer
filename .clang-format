@@ -5,14 +5,10 @@ Language: Cpp
 AccessModifierOffset: -4
 AlignAfterOpenBracket: BlockIndent
 AlignArrayOfStructures: None
-AlignConsecutiveAssignments:
-  Enabled: false
-AlignConsecutiveBitFields:
-  Enabled: false
-AlignConsecutiveDeclarations:
-  Enabled: false
-AlignConsecutiveMacros:
-  Enabled: false
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
 AlignConsecutiveShortCaseStatements:
   Enabled: false
 AlignEscapedNewlines: DontAlign
@@ -36,7 +32,6 @@ AlwaysBreakBeforeMultilineStrings: true
 BinPackArguments: false
 BinPackParameters: OnePerLine
 BitFieldColonSpacing: After
-
 BraceWrapping:
   AfterCaseLabel: false
   AfterClass: true
@@ -56,7 +51,6 @@ BraceWrapping:
   SplitEmptyFunction: false
   SplitEmptyRecord: false
   SplitEmptyNamespace: false
-
 BreakAdjacentStringLiterals: true
 BreakAfterAttributes: Never
 BreakAfterReturnType: Automatic
@@ -129,7 +123,6 @@ ObjCSpaceAfterProperty: false
 ObjCSpaceBeforeProtocolList: true
 PPIndentWidth: -1
 PackConstructorInitializers: CurrentLine
-
 PenaltyBreakAssignment: 1000
 PenaltyBreakBeforeFirstCallParameter: 0
 PenaltyBreakBeforeMemberAccess: 100
@@ -142,7 +135,6 @@ PenaltyBreakTemplateDeclaration: 0
 PenaltyExcessCharacter: 10
 PenaltyIndentedWhitespace: 0
 PenaltyReturnTypeOnItsOwnLine: 1000
-
 PointerAlignment: Left
 QualifierAlignment: Leave
 ReferenceAlignment: Left
@@ -156,10 +148,8 @@ RequiresExpressionIndentation: OuterScope
 SeparateDefinitionBlocks: Always
 ShortNamespaceLines: 0
 SkipMacroDefinitionBody: true
-
 # Sadly, currently macros can depend on this. Hopefully we can get rid of it.
 SortIncludes: false
-
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false
@@ -168,8 +158,8 @@ SpaceAroundPointerQualifiers: Default
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeCaseColon: false
 SpaceBeforeCpp11BracedList: false
-SpaceBeforeCtorInitializerColon: false
-SpaceBeforeInheritanceColon: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
 SpaceBeforeJsonColon: false
 SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
