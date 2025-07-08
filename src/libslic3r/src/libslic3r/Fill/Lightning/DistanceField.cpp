@@ -86,7 +86,7 @@ DistanceField::DistanceField(const coord_t& radius, const Polygons& current_outl
         constexpr coord_t prime_for_hash = 191;
         return std::abs(b.dist_to_boundary - a.dist_to_boundary) > radius ?
                a.dist_to_boundary < b.dist_to_boundary :
-               (PointHash{}(a.loc) % prime_for_hash) < (PointHash{}(b.loc) % prime_for_hash);
+               (Domain::PointHash{}(a.loc) % prime_for_hash) < (Domain::PointHash{}(b.loc) % prime_for_hash);
         });
 
     m_unsupported_points_erased.resize(m_unsupported_points.size());

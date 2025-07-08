@@ -6,7 +6,7 @@
 
 #include <Slic3r/Biz/Algorithms/ExPolygon.hpp>
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
-#include <libslic3r/AABBTreeIndirect.hpp>
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include <libslic3r/ClipperZUtils.hpp>
 #include <libslic3r/ClipperUtils.hpp>
 #include <libslic3r/Utils.hpp>
@@ -30,6 +30,7 @@ namespace Slic3r {
 namespace Algorithm {
 
 namespace BB = Biz::Algorithms::BoundingBox;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 // Calculating radius discretization according to ClipperLib offsetter code, see void ClipperOffset::DoOffset(double delta)
 inline double clipper_round_offset_error(double offset, double arc_tolerance)

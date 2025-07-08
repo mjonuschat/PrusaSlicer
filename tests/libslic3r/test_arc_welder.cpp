@@ -9,7 +9,7 @@
 #include <libslic3r/GCode/ExtrusionOrder.hpp>
 #include <libslic3r/GCode/SmoothPath.hpp>
 #include <libslic3r/Geometry/ArcWelder.hpp>
-#include <libslic3r/Geometry/Circle.hpp>
+#include <Slic3r/Biz/Algorithms/Geometry/Circle.hpp>
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include <libslic3r/libslic3r.h>
 

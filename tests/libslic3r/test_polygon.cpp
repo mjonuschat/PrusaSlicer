@@ -3,6 +3,8 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygonsIndex.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
@@ -182,8 +184,10 @@ SCENARIO("Simplify polygon", "[Polygon]")
     }
 }
 
-#include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/ExPolygonsIndex.hpp"
+
+using Slic3r::Biz::Algorithms::ExPolygonsIndices;
+using Slic3r::Biz::Algorithms::ExPolygonsIndex;
+
 TEST_CASE("Indexing expolygons", "[ExPolygon]")
 {
     ExPolygons expolys{

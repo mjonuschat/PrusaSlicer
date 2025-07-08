@@ -70,23 +70,6 @@ bool has_duplicate_points(Points &&pts)
     return false;
 }
 
-Points collect_duplicates(Points pts /* Copy */)
-{
-    std::sort(pts.begin(), pts.end());
-    Points duplicits;
-    const Point *prev = &pts.front();
-    for (size_t i = 1; i < pts.size(); ++i) {
-        const Point *act = &pts[i];
-        if (*prev == *act) {
-            // duplicit point
-            if (!duplicits.empty() && duplicits.back() == *act)
-                continue; // only unique duplicits
-            duplicits.push_back(*act);
-        }
-        prev = act;
-    }
-    return duplicits;
-}
 
 template<bool IncludeBoundary>
 BoundingBox get_extents(const Points &pts)

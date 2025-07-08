@@ -11,7 +11,7 @@
 
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
-#include "VoronoiOffset.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/VoronoiOffset.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
@@ -194,6 +194,8 @@ class voronoi_visual_utils {
 using namespace Slic3r::Biz;
 
 namespace Slic3r { namespace Geometry {
+
+namespace Voronoi = Slic3r::Biz::CGAL::Algorithms::Voronoi;
 
 
 #ifdef SLIC3R_DEBUG
@@ -494,7 +496,7 @@ void MedialAxis::build(ThickPolylines* polylines)
             BOOST_LOG_TRIVIAL(error) << "MedialAxis - Invalid Voronoi diagram even after morphological closing.";
     }
 
-    Slic3r::Voronoi::annotate_inside_outside(m_vd, m_lines);
+    Voronoi::annotate_inside_outside(m_vd, m_lines);
 //    static constexpr double threshold_alpha = M_PI / 12.; // 30 degrees
 //    std::vector<Vec2d> skeleton_edges = Slic3r::Voronoi::skeleton_edges_rough(vd, lines, threshold_alpha);
     

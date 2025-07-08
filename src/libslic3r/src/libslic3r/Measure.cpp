@@ -15,7 +15,7 @@
 #include "libslic3r/libslic3r.h"
 #include "Measure.hpp"
 #include "MeasureUtils.hpp"
-#include "libslic3r/Geometry/Circle.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Circle.hpp"
 #include "libslic3r/SurfaceMesh.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Point.hpp"
@@ -45,7 +45,7 @@ static std::tuple<Vec3d, double, double> get_center_and_radius(const std::vector
                      6;
 
     double error = std::numeric_limits<double>::max();
-    auto circle = Geometry::circle_ransac(out, iter, &error);
+    auto circle = Biz::Algorithms::Geometry::circle_ransac(out, iter, &error);
     
     return std::make_tuple(trafo.inverse() * Vec3d(circle.center.x(), circle.center.y(), z), circle.radius, error);
 }

@@ -19,7 +19,7 @@
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/Arachne/WallToolPaths.hpp"
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/Algorithm/PathSorting.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
@@ -39,6 +39,7 @@ using namespace Slic3r::Biz;
 namespace Slic3r {
 
 namespace BB = Biz::Algorithms::BoundingBox;
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
 
 const constexpr coord_t MAX_LINE_LENGTH_TO_FILTER   = scaled<coord_t>(4.); // 4 mm.
 const constexpr size_t  MAX_SKIPS_ALLOWED           = 2; // Skip means propagation through long line.

@@ -19,7 +19,7 @@
 #include "admesh/stl.h"
 #include "libslic3r/ExtrusionRole.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
-#include "libslic3r/Geometry/Circle.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Circle.hpp"
 #include "libslic3r/Polygon.hpp"
 
 #include "libslic3r/MultipleBeds.hpp"
@@ -53,7 +53,7 @@ BuildVolume::BuildVolume(const std::vector<Vec2d> &bed_shape, const double max_p
         // Circle was discretized, formatted into text with limited accuracy, thus the circle was deformed.
         // RANSAC is slightly more accurate than the iterative Taubin / Newton method with such an input.
 //        m_circle = Geometry::circle_taubin_newton(bed_shape);
-        m_circle = Geometry::circle_ransac(bed_shape);
+        m_circle = Biz::Algorithms::Geometry::circle_ransac(bed_shape);
         bool is_circle = true;
 #ifndef NDEBUG
         // Measuring maximum absolute error of interpolating an input polygon with circle.
@@ -82,7 +82,7 @@ BuildVolume::BuildVolume(const std::vector<Vec2d> &bed_shape, const double max_p
 
     if (bed_shape.size() >= 3 && m_type == Type::Invalid) {
         // Circle check is not used for Convex / Custom shapes, fill it with something reasonable.
-        m_circle = Geometry::smallest_enclosing_circle_welzl(m_convex_hull.points);
+        m_circle = Biz::Algorithms::Geometry::smallest_enclosing_circle_welzl(m_convex_hull.points);
         m_type   = (m_convex_hull.area() - m_area) < sqr(SCALED_EPSILON) ? Type::Convex : Type::Custom;
         // Initialize the top / bottom decomposition for inside convex polygon check. Do it with two different epsilons applied.
         auto convex_decomposition = [](const Polygon &in, double epsilon) {
@@ -327,7 +327,7 @@ BuildVolume::ObjectState BuildVolume::object_state(const indexed_triangle_set& i
     }
     case Type::Circle:
     {
-        Geometry::Circlef circle { unscaled<float>(m_circle.center), unscaled<float>(m_circle.radius + SceneEpsilon) };
+        Biz::Algorithms::Geometry::Circlef circle { unscaled<float>(m_circle.center), unscaled<float>(m_circle.radius + SceneEpsilon) };
         out = m_max_print_height == 0.0 ?
             object_state_templ(its, trafo, may_be_below_bed, [circle](const Vec3f& pt) { return circle.contains(to_2d(pt)); }) :
             object_state_templ(its, trafo, may_be_below_bed, [circle, z = m_max_print_height + SceneEpsilon](const Vec3f& pt) { return pt.z() < z && circle.contains(to_2d(pt)); });

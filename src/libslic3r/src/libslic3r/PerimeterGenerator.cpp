@@ -23,7 +23,7 @@
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/BridgeDetector.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -61,6 +61,7 @@ using namespace Slic3r::Biz;
 namespace Slic3r {
 
 namespace BB = Biz::Algorithms::BoundingBox;
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
 
 ExtrusionMultiPath PerimeterGenerator::thick_polyline_to_multi_path(const ThickPolyline &thick_polyline, ExtrusionRole role, const Flow &flow, const float tolerance, const float merge_tolerance)
 {
@@ -494,7 +495,7 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::P
                         size_t occurrence  = 0;
                         bool   is_overhang = false;
                     };
-                    ankerl::unordered_dense::map<Point, PointInfo, PointHash> point_occurrence;
+                    ankerl::unordered_dense::map<Point, PointInfo, Domain::PointHash> point_occurrence;
                     for (const ExtrusionPath &path : paths) {
                         ++point_occurrence[path.polyline.first_point()].occurrence;
                         ++point_occurrence[path.polyline.last_point()].occurrence;

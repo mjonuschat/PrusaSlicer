@@ -5,11 +5,13 @@
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/Point.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 
 using namespace Slic3r;
 using Domain::TriangleMesh;
 using Domain::Index3;
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 TEST_CASE("Split empty mesh", "[its_split][its]") {
     using namespace Slic3r;
@@ -171,7 +173,6 @@ std::vector<Vec3f> its_sample_surface(const indexed_triangle_set &its,
 }
 
 
-#include "libslic3r/AABBTreeIndirect.hpp"
 
 struct CompareConfig
 {

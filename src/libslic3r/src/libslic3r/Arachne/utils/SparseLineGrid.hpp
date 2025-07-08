@@ -54,7 +54,7 @@ SparseLineGrid<ElemT, Locator>::SparseLineGrid(coord_t cell_size, size_t elem_re
 template<class ElemT, class Locator> void SparseLineGrid<ElemT, Locator>::insert(const Elem &elem)
 {
     const std::pair<Point, Point> line = m_locator(elem);
-    using GridMap                      = std::unordered_multimap<GridPoint, Elem, PointHash>;
+    using GridMap                      = std::unordered_multimap<GridPoint, Elem, Domain::PointHash>;
     // below is a workaround for the fact that lambda functions cannot access private or protected members
     // first we define a lambda which works on any GridMap and then we bind it to the actual protected GridMap of the parent class
     std::function<bool(GridMap *, const GridPoint)> process_cell_func_ = [&elem](GridMap *m_grid, const GridPoint grid_loc) {

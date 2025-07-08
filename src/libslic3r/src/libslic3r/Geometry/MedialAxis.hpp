@@ -10,7 +10,7 @@
 #include <vector>
 #include <cstddef>
 
-#include "Voronoi.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/Voronoi.hpp"
 #include "../ExPolygon.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polyline.hpp"
@@ -32,7 +32,7 @@ private:
     double               m_max_width;
 
     // Voronoi Diagram.
-    using VD = VoronoiDiagram;
+    using VD = Biz::CGAL::Algorithms::VoronoiDiagram;
     VD                   m_vd;
 
     // Annotations of the VD skeleton edges.

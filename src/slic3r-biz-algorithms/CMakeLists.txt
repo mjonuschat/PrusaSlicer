@@ -1,6 +1,6 @@
 project(slic3r-biz-algorithms)
 
-add_library(slic3r-biz-algorithms
+add_library(slic3r-biz-algorithms STATIC
     include/Slic3r/Biz/Algorithms/BoundingBox.hpp
     src/Slic3r/Biz/Algorithms/BoundingBox.cpp
     include/Slic3r/Biz/Algorithms/DouglasPeucker.hpp
@@ -58,6 +58,24 @@ add_library(slic3r-biz-algorithms
     include/Slic3r/Biz/Algorithms/Types.hpp
     include/Slic3r/Biz/Algorithms/StringUtils.hpp
     src/Slic3r/Biz/Algorithms/StringUtils.cpp
+    include/Slic3r/Biz/Algorithms/ExPolygonsIndex.hpp
+    src/Slic3r/Biz/Algorithms/ExPolygonsIndex.cpp
+    include/Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp
+    include/Slic3r/Biz/Algorithms/IntersectionPoints.hpp
+    src/Slic3r/Biz/Algorithms/IntersectionPoints.cpp
+    include/Slic3r/Biz/Algorithms/LineUtils.hpp
+    src/Slic3r/Biz/Algorithms/LineUtils.cpp
+    include/Slic3r/Biz/Algorithms/PointUtils.hpp
+    src/Slic3r/Biz/Algorithms/PointUtils.cpp
+    include/Slic3r/Biz/Algorithms/Geometry/Circle.hpp
+    src/Slic3r/Biz/Algorithms/Geometry/Circle.cpp
+    include/Slic3r/Biz/Algorithms/PolygonsPointIndex.hpp
+    include/Slic3r/Biz/Algorithms/PolygonsSegmentIndex.hpp
+    include/Slic3r/Biz/Algorithms/Parabola.hpp
+    include/Slic3r/Biz/Algorithms/PolygonUtils.hpp
+    src/Slic3r/Biz/Algorithms/PolygonUtils.cpp
+    include/Slic3r/Biz/Algorithms/IStackFunction.hpp
+    include/Slic3r/Biz/Algorithms/Projection.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
@@ -77,6 +95,8 @@ target_link_libraries(slic3r-biz-algorithms PUBLIC
     slic3r-domain
     clipper
     admesh
+    libigl
+    boost_libs
 )
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)

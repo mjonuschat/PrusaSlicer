@@ -26,6 +26,7 @@ using namespace Slic3r::Biz;
 namespace Slic3r::Seams {
 
 namespace BB = Biz::Algorithms::BoundingBox;
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
 
 using ObjectPainting = std::map<const PrintObject*, ModelInfo::Painting>;
 

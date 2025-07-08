@@ -6,11 +6,15 @@
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
 #include <optional>
-#include <libslic3r/AABBTreeIndirect.hpp>
+#include <Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp>
 #include <libslic3r/Utils.hpp> // for next_highest_power_of_2()
-#include <libslic3r/IntersectionPoints.hpp>
+#include <Slic3r/Biz/Algorithms/IntersectionPoints.hpp>
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <libslic3r/ExPolygonSerialize.hpp>
+#include <CGAL/Polygon_mesh_processing/corefinement.h>
+#include <CGAL/Exact_integer.h>
+#include <CGAL/Surface_mesh.h>
+#include <CGAL/Cartesian_converter.h>
 
 
 using namespace Slic3r;
@@ -18,6 +22,7 @@ using namespace Slic3r::Biz;
 using Domain::Index3;
 using Domain::its_merge;
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 using Domain::TextConfiguration;
 using Domain::EmbossStyle;
 using Domain::FontProp;
@@ -215,7 +220,11 @@ TEST_CASE("Visualize glyph from font", "[Emboss]")
 #include "test_utils.hpp"
 #include <nanosvg/nanosvg.h>    // load SVG file
 #include <libslic3r/NSVGUtils.hpp>
-#include <libslic3r/IntersectionPoints.hpp>
+#include <Slic3r/Biz/Algorithms/IntersectionPoints.hpp>
+
+using Slic3r::Biz::Algorithms::IntersectionsLines;
+using Slic3r::Biz::Algorithms::get_intersections;
+
 ExPolygons heal_and_check(const Polygons &polygons)
 {
     IntersectionsLines intersections_prev = get_intersections(polygons);
@@ -498,7 +507,7 @@ TEST_CASE("Italic check", "[Emboss]")
 }
 #endif // FONT_DIR_PATH
 
-#include "libslic3r/CutSurface.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/CutSurface.hpp"
 TEST_CASE("Cut surface", "[its]")
 {
     std::string  font_path  = get_font_filepath();
@@ -531,7 +540,7 @@ TEST_CASE("Cut surface", "[its]")
     its_translate(cube2, Vec3f(100, -40, 7.5));
     its_merge(object, std::move(cube2));
 
-    auto surfaces = cut_surface(shape, {object}, cut_projection, 0);
+    auto surfaces = Biz::CGAL::Algorithms::cut_surface(shape, {object}, cut_projection, 0);
     CHECK(!surfaces.empty());
 
     Emboss::OrthoProject projection(Transform3d::Identity(), Vec3d(0., 0., 10.));
@@ -616,11 +625,6 @@ TEST_CASE("UndoRedo EmbossShape serialization", "[Emboss]")
 }
 
 
-#include <CGAL/Polygon_mesh_processing/corefinement.h>
-#include <CGAL/Exact_integer.h>
-#include <CGAL/Surface_mesh.h>
-#include <CGAL/Cartesian_converter.h>
-
 /// <summary>
 /// Distiguish point made by shape(Expolygon)
 /// Referencing an ExPolygon contour plus a vertex base of the contour.
@@ -697,11 +701,11 @@ struct IntersectingElemnt
 
 namespace Slic3r::MeshBoolean::cgal2 {
 
-    namespace CGALProc = CGAL::Polygon_mesh_processing;
-    namespace CGALParams = CGAL::Polygon_mesh_processing::parameters;
+    namespace CGALProc = ::CGAL::Polygon_mesh_processing;
+    namespace CGALParams = ::CGAL::Polygon_mesh_processing::parameters;
 
-    using EpicKernel = CGAL::Exact_predicates_inexact_constructions_kernel;
-    using _EpicMesh = CGAL::Surface_mesh<EpicKernel::Point_3>;
+    using EpicKernel = ::CGAL::Exact_predicates_inexact_constructions_kernel;
+    using _EpicMesh = ::CGAL::Surface_mesh<EpicKernel::Point_3>;
 //    using EpecKernel = CGAL::Exact_predicates_exact_constructions_kernel;
 //    using _EpecMesh = CGAL::Surface_mesh<EpecKernel::Point_3>;
 
@@ -757,7 +761,7 @@ namespace Slic3r::MeshBoolean::cgal2 {
     /// <param name="contour_indices">Identify point on shape contour</param>
     /// <returns>CGAL model of extruded shape</returns>
     CGALMesh to_cgal(const ExPolygons                  &shape,
-                     const Slic3r::Emboss::IProjection &projection,
+                     const Slic3r::Biz::Algorithms::IProjection &projection,
                      int32_t                            shape_id,
                      const std::string                 &edge_shape_map_name,
                      const std::string                 &face_shape_map_name,
@@ -842,7 +846,7 @@ namespace Slic3r::MeshBoolean::cgal2 {
 /// <returns>Cutted surface, Its do not represent Volume</returns>
 indexed_triangle_set cut_shape(const indexed_triangle_set &source,
                                const ExPolygon            &shape,
-                               const Emboss::IProjection  &projection)
+                               const Biz::Algorithms::IProjection  &projection)
 {
     // NOT implemented yet
     return {};
@@ -857,7 +861,7 @@ indexed_triangle_set cut_shape(const indexed_triangle_set &source,
 /// <returns>Cutted surface, Its do not represent Volume</returns>
 indexed_triangle_set cut_shape(const indexed_triangle_set &source,
                                const ExPolygons           &shapes,
-                               const Emboss::IProjection  &projection)
+                               const Biz::Algorithms::IProjection  &projection)
 {
     indexed_triangle_set result;
     for (const ExPolygon &shape : shapes)
@@ -935,17 +939,17 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
     auto face_shape_map = cgal_shape.property_map<MyMesh::Face_index, IntersectingElemnt>(face_shape_map_name).first;
 
     // bool map for affected edge
-    using d_prop_bool = CGAL::dynamic_edge_property_t<bool>;
+    using d_prop_bool = ::CGAL::dynamic_edge_property_t<bool>;
     using ecm_it = boost::property_map<MyMesh, d_prop_bool>::SMPM;
-    using EcmType = CGAL::internal::Dynamic<MyMesh, ecm_it>;
+    using EcmType = ::CGAL::internal::Dynamic<MyMesh, ecm_it>;
     EcmType ecm = get(d_prop_bool(), cgal_object);
     
-    struct Visitor : public CGAL::Polygon_mesh_processing::Corefinement::Default_visitor<MyMesh> {
+    struct Visitor : public ::CGAL::Polygon_mesh_processing::Corefinement::Default_visitor<MyMesh> {
         Visitor(const MyMesh &object, const MyMesh &shape,
-                MyMesh::Property_map<CGAL::SM_Edge_index, IntersectingElemnt> edge_shape_map,
-                MyMesh::Property_map<CGAL::SM_Face_index, IntersectingElemnt> face_shape_map,
-                MyMesh::Property_map<CGAL::SM_Face_index, int32_t> face_map,
-                MyMesh::Property_map<CGAL::SM_Vertex_index, IntersectingElemnt> vert_shape_map) :
+                MyMesh::Property_map<::CGAL::SM_Edge_index, IntersectingElemnt> edge_shape_map,
+                MyMesh::Property_map<::CGAL::SM_Face_index, IntersectingElemnt> face_shape_map,
+                MyMesh::Property_map<::CGAL::SM_Face_index, int32_t> face_map,
+                MyMesh::Property_map<::CGAL::SM_Vertex_index, IntersectingElemnt> vert_shape_map) :
             object(object), shape(shape), edge_shape_map(edge_shape_map), face_shape_map(face_shape_map),
             face_map(face_map), vert_shape_map(vert_shape_map)
         {}
@@ -953,11 +957,11 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
         const MyMesh &object;
         const MyMesh &shape;
         // Properties of the shape mesh:
-        MyMesh::Property_map<CGAL::SM_Edge_index, IntersectingElemnt> edge_shape_map;
-        MyMesh::Property_map<CGAL::SM_Face_index, IntersectingElemnt> face_shape_map;
+        MyMesh::Property_map<::CGAL::SM_Edge_index, IntersectingElemnt> edge_shape_map;
+        MyMesh::Property_map<::CGAL::SM_Face_index, IntersectingElemnt> face_shape_map;
         // Properties of the object mesh.
-        MyMesh::Property_map<CGAL::SM_Face_index, int32_t> face_map;
-        MyMesh::Property_map<CGAL::SM_Vertex_index, IntersectingElemnt> vert_shape_map;
+        MyMesh::Property_map<::CGAL::SM_Face_index, int32_t> face_map;
+        MyMesh::Property_map<::CGAL::SM_Vertex_index, IntersectingElemnt> vert_shape_map;
 
         typedef boost::graph_traits<MyMesh> GT;
         typedef typename GT::face_descriptor face_descriptor;
@@ -1050,11 +1054,11 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
     } visitor{cgal_object, cgal_shape, edge_shape_map, face_shape_map,
               face_map, vert_shape_map};
 
-    const auto& p = CGAL::Polygon_mesh_processing::parameters::throw_on_self_intersection(false).visitor(visitor).edge_is_constrained_map(ecm);
-    const auto& q = CGAL::Polygon_mesh_processing::parameters::do_not_modify(true);
+    const auto& p = ::CGAL::Polygon_mesh_processing::parameters::throw_on_self_intersection(false).visitor(visitor).edge_is_constrained_map(ecm);
+    const auto& q = ::CGAL::Polygon_mesh_processing::parameters::do_not_modify(true);
     //    CGAL::Polygon_mesh_processing::corefine(cgal_object, cgalcube2, p, p);
 
-    CGAL::Polygon_mesh_processing::corefine(cgal_object, cgal_shape, p, q);
+    ::CGAL::Polygon_mesh_processing::corefine(cgal_object, cgal_shape, p, q);
 
     enum class SideType {
         // face inside of the cutted shape
@@ -1070,7 +1074,7 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
         auto hi_end = cgal_object.halfedge(fi);
         auto hi = hi_end;
         do {
-            CGAL::SM_Edge_index edge_index = cgal_object.edge(hi);
+            ::CGAL::SM_Edge_index edge_index = cgal_object.edge(hi);
             // is edge new created - constrained?
             if (get(ecm, edge_index)) {
                 // This face has a constrained edge.
@@ -1102,17 +1106,17 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
 
                     auto abcp =
                         shape_from.type == IntersectingElemnt::Type::face_1 ?
-                            CGAL::orientation(
-                                cgal_shape.point(CGAL::SM_Vertex_index(i)),
-                                cgal_shape.point(CGAL::SM_Vertex_index(i + 1)),
-                                cgal_shape.point(CGAL::SM_Vertex_index(j)), p) :
+                            ::CGAL::orientation(
+                                cgal_shape.point(::CGAL::SM_Vertex_index(i)),
+                                cgal_shape.point(::CGAL::SM_Vertex_index(i + 1)),
+                                cgal_shape.point(::CGAL::SM_Vertex_index(j)), p) :
                             // shape_from.type == IntersectingElemnt::Type::face_2
-                            CGAL::orientation(
-                                cgal_shape.point(CGAL::SM_Vertex_index(j)),
-                                cgal_shape.point(CGAL::SM_Vertex_index(i + 1)),
-                                cgal_shape.point(CGAL::SM_Vertex_index(j + 1)),
+                            ::CGAL::orientation(
+                                cgal_shape.point(::CGAL::SM_Vertex_index(j)),
+                                cgal_shape.point(::CGAL::SM_Vertex_index(i + 1)),
+                                cgal_shape.point(::CGAL::SM_Vertex_index(j + 1)),
                                 p);
-                    is_inside = abcp == CGAL::POSITIVE;
+                    is_inside = abcp == ::CGAL::POSITIVE;
                 } else if (i_from < i_to || (i_from == i_to && shape_from.type < shape_to.type)) {
                     bool is_last = i_from == 0 && static_cast<size_t>(i_to + 1) == contour.size();
                     if (!is_last) is_inside = true;
@@ -1129,8 +1133,8 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
                     //FIXME prosim nahrad skutecnou projekci.
                     //projection.project()
                     const auto  p = a + MeshBoolean::cgal2::EpicKernel::Vector_3(0, 0, 10);
-                    auto abcp = CGAL::orientation(a, b, c, p);
-                    if (abcp == CGAL::POSITIVE)
+                    auto abcp = ::CGAL::orientation(a, b, c, p);
+                    if (abcp == ::CGAL::POSITIVE)
                         side_type = SideType::inside;
                     else
                         is_inside = false;
@@ -1145,16 +1149,16 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
     }
     
     // debug output
-    auto face_colors = cgal_object.add_property_map<MyMesh::Face_index, CGAL::Color>("f:color").first;    
+    auto face_colors = cgal_object.add_property_map<MyMesh::Face_index, ::CGAL::Color>("f:color").first;    
     for (auto fi : cgal_object.faces()) { 
         auto &color = face_colors[fi];
         switch (side_type_map[fi]) {
-        case SideType::inside: color = CGAL::Color{255, 0, 0}; break;
-        case SideType::outside: color = CGAL::Color{255, 0, 255}; break;
-        case SideType::not_constrained: color = CGAL::Color{0, 255, 0}; break;
+        case SideType::inside: color = ::CGAL::Color{255, 0, 0}; break;
+        case SideType::outside: color = ::CGAL::Color{255, 0, 255}; break;
+        case SideType::not_constrained: color = ::CGAL::Color{0, 255, 0}; break;
         }
     }
-    CGAL::IO::write_OFF("c:\\data\\temp\\constrained.off", cgal_object);
+    ::CGAL::IO::write_OFF("c:\\data\\temp\\constrained.off", cgal_object);
     
     // Seed fill the other faces inside the region.
     for (Visitor::face_descriptor fi : cgal_object.faces()) {
@@ -1202,12 +1206,12 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
     for (auto fi : cgal_object.faces()) { 
         auto &color = face_colors[fi];
         switch (side_type_map[fi]) {
-        case SideType::inside: color = CGAL::Color{255, 0, 0}; break;
-        case SideType::outside: color = CGAL::Color{255, 0, 255}; break;
-        case SideType::not_constrained: color = CGAL::Color{0, 255, 0}; break;
+        case SideType::inside: color = ::CGAL::Color{255, 0, 0}; break;
+        case SideType::outside: color = ::CGAL::Color{255, 0, 255}; break;
+        case SideType::not_constrained: color = ::CGAL::Color{0, 255, 0}; break;
         }
     }
-    CGAL::IO::write_OFF("c:\\data\\temp\\filled.off", cgal_object);
+    ::CGAL::IO::write_OFF("c:\\data\\temp\\filled.off", cgal_object);
 
     // Mapping of its_extruded faces to source faces.
     enum class FaceState : int8_t {

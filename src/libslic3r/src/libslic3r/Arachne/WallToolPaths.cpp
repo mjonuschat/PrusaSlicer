@@ -20,7 +20,7 @@
 #include "libslic3r/Arachne/BeadingStrategy/BeadingStrategyFactory.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
-#include "libslic3r/Arachne/utils/PolygonsPointIndex.hpp"
+#include "Slic3r/Biz/Algorithms/PolygonsPointIndex.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
@@ -33,6 +33,8 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::Arachne
 {
+using Biz::Algorithms::PolygonsPointIndex;
+using Biz::Algorithms::PolygonsPointIndexSegmentLocator;
 
 WallToolPaths::WallToolPaths(
     const Polygons& outline,

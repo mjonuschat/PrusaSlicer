@@ -8,7 +8,7 @@
 #include <vector>
 #include <tuple>
 
-#include "AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r.h"
 #include "Polygon.hpp"
 #include "libslic3r/Point.hpp"

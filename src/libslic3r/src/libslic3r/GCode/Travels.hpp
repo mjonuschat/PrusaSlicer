@@ -16,7 +16,7 @@
 #include <cstddef>
 #include <unordered_set>
 
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/GCode/ExtrusionOrder.hpp"
@@ -83,17 +83,17 @@ public:
 
     bool is_extruded(const ObjectOrExtrusionLinef &line) const;
 
-    const AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef> &previous_layer_distancer() const { return m_previous_layer_distancer; }
+    const Biz::Algorithms::AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef> &previous_layer_distancer() const { return m_previous_layer_distancer; }
 
-    const AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef> &current_layer_distancer() const { return m_current_layer_distancer; }
+    const Biz::Algorithms::AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef> &current_layer_distancer() const { return m_current_layer_distancer; }
 
     const ObjectsLayerToPrint &objects_to_print() const { return m_objects_to_print; }
 
 private:
     ObjectsLayerToPrint                                                      m_objects_to_print;
-    AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef>                    m_previous_layer_distancer;
+    Biz::Algorithms::AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef>                    m_previous_layer_distancer;
 
-    AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef>                    m_current_layer_distancer;
+    Biz::Algorithms::AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef>                    m_current_layer_distancer;
     std::unordered_set<ExtrudedExtrusionEntity, ExtrudedExtrusionEntityHash> m_extruded_extrusion;
 };
 } // namespace Slic3r::GCode
@@ -220,7 +220,7 @@ Points3 generate_elevated_travel(
  */
 double get_first_crossed_line_distance(
     tcb::span<const Line> xy_path,
-    const AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef> &distancer,
+    const Biz::Algorithms::AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef> &distancer,
     const ObjectsLayerToPrint &objects_to_print = {},
     const std::function<bool(const ObjectOrExtrusionLinef &)> &predicate = [](const ObjectOrExtrusionLinef &) { return true; },
     bool ignore_starting_object_intersection = true);

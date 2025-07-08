@@ -9,7 +9,7 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Layer.hpp"
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/LayerRegion.hpp"
@@ -101,7 +101,7 @@ Vec2d get_polygon_normal(
 
 std::pair<Vec2d, double> distance_to_segment_squared(const Linef &segment, const Vec2d &point) {
     Vec2d segment_point;
-    const double distance{line_alg::distance_to_squared(segment, point, &segment_point)};
+    const double distance{Biz::Algorithms::Line::line_alg::distance_to_squared(segment, point, &segment_point)};
     return {segment_point, distance};
 }
 

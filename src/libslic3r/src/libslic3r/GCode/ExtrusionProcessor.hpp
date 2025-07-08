@@ -21,7 +21,7 @@
 #include <functional>
 #include <cstdlib>
 
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/SupportSpotsGenerator.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ExtrusionEntity.hpp"
@@ -42,6 +42,8 @@ class CurledLine;
 }  // namespace Slic3r
 
 namespace Slic3r::ExtrusionProcessor {
+
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
 
 // Minimum decrease of the fan speed in percents that will be emitted into g-code.
 // Decreases below this limit will be omitted to not overflow the g-code with fan speed changes.

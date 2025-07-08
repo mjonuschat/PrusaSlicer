@@ -23,7 +23,7 @@ namespace Slic3r::FillLightning
 class Node;
 
 using NodeSPtr = std::shared_ptr<Node>;
-using SparseNodeGrid = std::unordered_multimap<Point, std::weak_ptr<Node>, PointHash>;
+using SparseNodeGrid = std::unordered_multimap<Point, std::weak_ptr<Node>, Domain::PointHash>;
 
 struct GroundingLocation
 {

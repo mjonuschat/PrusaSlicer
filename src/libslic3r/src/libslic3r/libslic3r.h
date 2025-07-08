@@ -86,7 +86,7 @@ static constexpr double INSET_OVERLAP_TOLERANCE = 0.4;
 //FIXME This is quite a lot.
 static constexpr double EXTERNAL_INFILL_MARGIN = 3.;
 
-#define SCALED_EPSILON scale_(EPSILON)
+constexpr auto SCALED_EPSILON{scale_(Slic3r::Domain::EPSILON)};
 
 #ifndef UNUSED
 #define UNUSED(x) (void)(x)

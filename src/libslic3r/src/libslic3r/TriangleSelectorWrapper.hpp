@@ -7,7 +7,7 @@
 
 #include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 #include "Model.hpp"
-#include "AABBTreeIndirect.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "libslic3r/Point.hpp"
 
 namespace Slic3r {
@@ -23,7 +23,7 @@ public:
     const Domain::TriangleMesh &mesh;
     const Transform3d& mesh_transform;
     Biz::Algorithms::TriangleSelector selector;
-    AABBTreeIndirect::Tree<3, float> triangles_tree;
+    Biz::Algorithms::AABBTreeIndirect::Tree<3, float> triangles_tree;
 
     TriangleSelectorWrapper(const Domain::TriangleMesh &mesh, const Transform3d& mesh_transform);
 

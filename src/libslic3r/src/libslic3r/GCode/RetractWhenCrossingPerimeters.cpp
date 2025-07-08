@@ -9,7 +9,7 @@
 #include "../Layer.hpp"
 #include "../Polyline.hpp"
 #include "RetractWhenCrossingPerimeters.hpp"
-#include "libslic3r/AABBTreeIndirect.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Polygon.hpp"
@@ -19,6 +19,7 @@
 namespace Slic3r {
 
 namespace BB = Biz::Algorithms::BoundingBox;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 bool RetractWhenCrossingPerimeters::travel_inside_internal_regions(const Layer &layer, const Polyline &travel)
 {

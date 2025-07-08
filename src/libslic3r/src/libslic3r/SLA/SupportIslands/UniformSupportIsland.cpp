@@ -8,33 +8,34 @@
 
 #include <boost/log/trivial.hpp>
 
+#include "Slic3r/Assert.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include <libslic3r/ClipperUtils.hpp> // allign
 #include <libslic3r/KDTreeIndirect.hpp> // closest point
 #include <libslic3r/Geometry.hpp>
-#include "libslic3r/Geometry/Voronoi.hpp"
-#include <libslic3r/Geometry/VoronoiOffset.hpp>
-#include <libslic3r/Geometry/VoronoiVisualUtils.hpp>
+#include "Slic3r/Biz/CGAL/Algorithms/Voronoi.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/VoronoiOffset.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/VoronoiVisualUtils.hpp"
 #include <libslic3r/Point.hpp>
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
-#include <libslic3r/ExPolygonsIndex.hpp>
-#include <libslic3r/IntersectionPoints.hpp>
+#include "Slic3r/Biz/Algorithms/ExPolygonsIndex.hpp"
+#include "Slic3r/Biz/Algorithms/IntersectionPoints.hpp"
 #include "Slic3r/Exception.hpp"
 
-#include "VoronoiGraph.hpp"
-#include "Parabola.hpp"
-#include "IStackFunction.hpp"
-#include "EvaluateNeighbor.hpp"
-#include "ParabolaUtils.hpp"
-#include "VoronoiGraphUtils.hpp"
-#include "VectorUtils.hpp"
-#include "LineUtils.hpp"
-#include "PointUtils.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/VoronoiGraph.hpp"
+#include "Slic3r/Biz/Algorithms/Parabola.hpp"
+#include "Slic3r/Biz/Algorithms/IStackFunction.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/EvaluateNeighbor.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/ParabolaUtils.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/VoronoiGraphUtils.hpp"
+#include "Slic3r/Biz/Algorithms/VectorUtils.hpp"
+#include "Slic3r/Biz/Algorithms/LineUtils.hpp"
+#include "Slic3r/Biz/Algorithms/PointUtils.hpp"
 
-#include "VoronoiDiagramCGAL.hpp" // aligning of points
+#include "Slic3r/Biz/CGAL/Algorithms/VoronoiDiagramCGAL.hpp" // aligning of points
 
 // comment definition of NDEBUG to enable assert()
 //#define NDEBUG
@@ -49,6 +50,15 @@ namespace {
 using namespace Slic3r;
 using namespace Slic3r::sla;
 using namespace Slic3r::Biz;
+using Slic3r::Biz::CGAL::Algorithms::VoronoiGraphUtils;
+using Slic3r::Biz::Algorithms::LineUtils;
+using Slic3r::Biz::Algorithms::VectorUtils;
+using Slic3r::Biz::CGAL::Algorithms::VoronoiGraph;
+using Slic3r::Biz::CGAL::Algorithms::create_voronoi_cells_cgal;
+using Slic3r::Biz::Algorithms::ExPolygonsIndices;
+using Slic3r::Biz::Algorithms::PointUtils;
+using Slic3r::Biz::CGAL::Algorithms::VoronoiDiagram;
+namespace Voronoi = Slic3r::Biz::CGAL::Algorithms::Voronoi;
 
 namespace BB = Biz::Algorithms::BoundingBox;
 
@@ -203,7 +213,8 @@ SVG draw_island_graph(const std::string &path, const ExPolygon &island,
     const ExPolygon &simplified_island, const VoronoiGraph& skeleton,
     const VoronoiGraph::ExPath& longest_path, const Lines& lines, const SampleConfig &config) {
     Biz::Algorithms::SVG::SVG svg = draw_island(path, island, simplified_island);
-    VoronoiGraphUtils::draw(svg, skeleton, lines, config, true /*print Pointer address*/);
+    PANIC("draw not implemented");
+    //VoronoiGraphUtils::draw(svg, skeleton, lines, config, true /*print Pointer address*/);
     coord_t width = config.head_radius / 10;
     VoronoiGraphUtils::draw(svg, longest_path.nodes, width, "orange");
     return svg;
@@ -623,7 +634,7 @@ void align_samples_with_permanent(
 /// Separation of thin and thick part of island
 /// </summary>
     
-using VD = Slic3r::Geometry::VoronoiDiagram;
+using VD = Slic3r::Biz::CGAL::Algorithms::VoronoiDiagram;
 using Position = VoronoiGraph::Position;
 using Positions = std::vector<Position>;
 using Neighbor = VoronoiGraph::Node::Neighbor;
@@ -2676,11 +2687,11 @@ SupportIslandPoints uniform_support_island(
         return supports;
     }
 
-    Geometry::VoronoiDiagram vd;
+    VoronoiDiagram vd;
     Lines lines = Algorithms::ExPolygon::to_lines(simplified_island);
     vd.construct_voronoi(lines.begin(), lines.end());
-    assert(vd.get_issue_type() == Geometry::VoronoiDiagram::IssueType::NO_ISSUE_DETECTED);
-    if (vd.get_issue_type() != Geometry::VoronoiDiagram::IssueType::NO_ISSUE_DETECTED) {
+    assert(vd.get_issue_type() == VoronoiDiagram::IssueType::NO_ISSUE_DETECTED);
+    if (vd.get_issue_type() != VoronoiDiagram::IssueType::NO_ISSUE_DETECTED) {
         // error state suppport island by one point
         Point center = BB::center(BB::construct(island.contour.points));
         SupportIslandPoints supports;
@@ -2778,8 +2789,9 @@ SupportIslandPoints uniform_support_island(
         Biz::Algorithms::SVG::SVG svg = draw_island(path, island, simplified_island);
         coord_t width = config.head_radius / 5;
         VoronoiGraphUtils::draw(svg, longest_path.nodes, width, "darkorange");
-        VoronoiGraphUtils::draw(svg, skeleton, lines, config, false /*print Pointer address*/);
-        
+        PANIC("Not implemented!");
+        //VoronoiGraphUtils::draw(svg, skeleton, lines, config, false /*print Pointer address*/);
+
         Lines align_moves;
         align_moves.reserve(supports.size());
         for (size_t i = 0; i < supports.size(); ++i)

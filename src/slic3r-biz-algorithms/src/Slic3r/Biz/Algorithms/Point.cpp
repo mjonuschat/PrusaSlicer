@@ -37,4 +37,22 @@ Domain::Points scaled(const std::vector<Domain::Vec2d>& points)
 
     return scaled_points;
 }
+
+Domain::Points collect_duplicates(Domain::Points pts /* Copy */)
+{
+    std::sort(pts.begin(), pts.end());
+    Domain::Points duplicits;
+    const Domain::Point *prev = &pts.front();
+    for (size_t i = 1; i < pts.size(); ++i) {
+        const Domain::Point *act = &pts[i];
+        if (*prev == *act) {
+            // duplicit point
+            if (!duplicits.empty() && duplicits.back() == *act)
+                continue; // only unique duplicits
+            duplicits.push_back(*act);
+        }
+        prev = act;
+    }
+    return duplicits;
+}
 } // namespace Slic3r::Biz::Algorithms::Point

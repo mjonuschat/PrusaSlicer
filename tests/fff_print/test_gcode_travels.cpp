@@ -13,6 +13,7 @@ using namespace Slic3r;
 using namespace Slic3r::Biz;
 using namespace Slic3r::GCode::Impl::Travels;
 using namespace Catch;
+namespace AABBTreeLines = Slic3r::Biz::Algorithms::AABBTreeLines;
 
 struct ApproxEqualsPoints : public Catch::Matchers::MatcherBase<Points> {
     ApproxEqualsPoints(const Points& expected, unsigned tolerance): expected(expected), tolerance(tolerance) {}
@@ -176,6 +177,7 @@ TEST_CASE("Get first crossed line distance", "[GCode]") {
             lines.emplace_back(unscale(line.a), unscale(line.b));
         }
     }
+
     // Try different cases by skipping lines in the travel.
     AABBTreeLines::LinesDistancer<GCode::ObjectOrExtrusionLinef> distancer{std::move(lines)};
 

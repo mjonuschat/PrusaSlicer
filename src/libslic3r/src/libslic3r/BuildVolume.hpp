@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "Point.hpp"
-#include "Geometry/Circle.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Circle.hpp"
 #include "Polygon.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "libslic3r/libslic3r.h"
@@ -69,7 +69,7 @@ public:
     // Convex hull of polygon(), scaled.
     const Polygon&              convex_hull()       const { return m_convex_hull; }
     // Smallest enclosing circle of polygon(), scaled.
-    const Geometry::Circled&    circle()            const { return m_circle; }
+    const Biz::Algorithms::Geometry::Circled&    circle()            const { return m_circle; }
 
     enum class ObjectState : unsigned char
     {
@@ -129,7 +129,7 @@ private:
     // Variant with BedEpsilon applied.
     std::pair<std::vector<Vec2d>, std::vector<Vec2d>>   m_top_bottom_convex_hull_decomposition_bed;
     // Smallest enclosing circle of m_polygon, scaled.
-    Geometry::Circled   m_circle { Vec2d::Zero(), 0 };
+    Biz::Algorithms::Geometry::Circled   m_circle { Vec2d::Zero(), 0 };
 };
 
 } // namespace Slic3r

@@ -7,7 +7,7 @@
 
 #include "libslic3r/ShortEdgeCollapse.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
-#include "libslic3r/AABBTreeIndirect.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "admesh/stl.h"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
@@ -15,6 +15,7 @@
 namespace Slic3r::ModelInfo {
 
 using Domain::its_merge;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 namespace Impl {
 

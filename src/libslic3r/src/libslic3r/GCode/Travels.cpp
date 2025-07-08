@@ -28,7 +28,10 @@
 
 using namespace Slic3r::Biz;
 
+
 namespace Slic3r::GCode {
+
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
 
 static Lines extrusion_entity_to_lines(const ExtrusionEntity &e_entity)
 {

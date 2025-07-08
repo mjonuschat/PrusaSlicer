@@ -32,7 +32,7 @@
 #include "libslic3r/PrintBase.hpp"
 
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
-#include "libslic3r/MeshBoolean.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/MeshBoolean.hpp"
 
 #include "libslic3r/SLA/Hollowing.hpp"
 #include "libslic3r/SLA/Pad.hpp"
@@ -87,7 +87,7 @@ namespace Slic3r {
 struct CSGPartForStep : public csg::CSGPart
 {
     SLAPrintObjectStep key;
-    mutable MeshBoolean::cgal::CGALMeshPtr cgalcache;
+    mutable Biz::CGAL::Algorithms::MeshBoolean::cgal::CGALMeshPtr cgalcache;
 
     CSGPartForStep(SLAPrintObjectStep k, CSGPart &&p = {})
         : key{k}, CSGPart{std::move(p)}
@@ -106,7 +106,7 @@ struct CSGPartForStep : public csg::CSGPart
 
 namespace csg {
 
-MeshBoolean::cgal::CGALMeshPtr get_cgalmesh(const CSGPartForStep &part);
+Biz::CGAL::Algorithms::MeshBoolean::cgal::CGALMeshPtr get_cgalmesh(const CSGPartForStep &part);
 
 } // namespace csg
 

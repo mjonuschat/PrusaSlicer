@@ -8,7 +8,7 @@
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Geometry.hpp"
-#include "libslic3r/Geometry/Circle.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Circle.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ShortestPath.hpp"
@@ -215,20 +215,20 @@ SCENARIO("Circle Fit, 3 points", "[Geometry]") {
     WHEN("Three points make a circle") {
         double s1 = scaled<double>(1.);
         THEN("circle_center(): A center point { 0, 0 } is returned") {
-            Vec2d center = Geometry::circle_center(Vec2d{ s1, 0. }, Vec2d{ 0, s1 }, Vec2d{ -s1, 0. }, SCALED_EPSILON);
+            Vec2d center = Biz::Algorithms::Geometry::circle_center(Vec2d{ s1, 0. }, Vec2d{ 0, s1 }, Vec2d{ -s1, 0. }, SCALED_EPSILON);
             REQUIRE(is_approx(center, Vec2d(0, 0)));
         }
         THEN("circle_center(): A center point { 0, 0 } is returned for points in reverse") {
-            Vec2d center = Geometry::circle_center(Vec2d{ -s1, 0. }, Vec2d{ 0, s1 }, Vec2d{ s1, 0. }, SCALED_EPSILON);
+            Vec2d center = Biz::Algorithms::Geometry::circle_center(Vec2d{ -s1, 0. }, Vec2d{ 0, s1 }, Vec2d{ s1, 0. }, SCALED_EPSILON);
             REQUIRE(is_approx(center, Vec2d(0, 0)));
         }
         THEN("try_circle_center(): A center point { 0, 0 } is returned") {
-            std::optional<Vec2d> center = Geometry::try_circle_center(Vec2d{ s1, 0. }, Vec2d{ 0, s1 }, Vec2d{ -s1, 0. }, SCALED_EPSILON);
+            std::optional<Vec2d> center = Biz::Algorithms::Geometry::try_circle_center(Vec2d{ s1, 0. }, Vec2d{ 0, s1 }, Vec2d{ -s1, 0. }, SCALED_EPSILON);
             REQUIRE(center);
             REQUIRE(is_approx(*center, Vec2d(0, 0)));
         }
         THEN("try_circle_center(): A center point { 0, 0 } is returned for points in reverse") {
-            std::optional<Vec2d> center = Geometry::try_circle_center(Vec2d{ -s1, 0. }, Vec2d{ 0, s1 }, Vec2d{ s1, 0. }, SCALED_EPSILON);
+            std::optional<Vec2d> center = Biz::Algorithms::Geometry::try_circle_center(Vec2d{ -s1, 0. }, Vec2d{ 0, s1 }, Vec2d{ s1, 0. }, SCALED_EPSILON);
             REQUIRE(center);
             REQUIRE(is_approx(*center, Vec2d(0, 0)));
         }
@@ -236,11 +236,11 @@ SCENARIO("Circle Fit, 3 points", "[Geometry]") {
     WHEN("Three points are collinear") {
         double s1 = scaled<double>(1.);
         THEN("circle_center(): A center point { 2, 0 } is returned") {
-            Vec2d center = Geometry::circle_center(Vec2d{ s1, 0. }, Vec2d{ 2. * s1, 0. }, Vec2d{ 3. * s1, 0. }, SCALED_EPSILON);
+            Vec2d center = Biz::Algorithms::Geometry::circle_center(Vec2d{ s1, 0. }, Vec2d{ 2. * s1, 0. }, Vec2d{ 3. * s1, 0. }, SCALED_EPSILON);
             REQUIRE(is_approx(center, Vec2d(2. * s1, 0)));
         }
         THEN("try_circle_center(): Fails for collinear points") {
-            std::optional<Vec2d> center = Geometry::try_circle_center(Vec2d{ s1, 0. }, Vec2d{ 2. * s1, 0. }, Vec2d{ 3. * s1, 0. }, SCALED_EPSILON);
+            std::optional<Vec2d> center = Biz::Algorithms::Geometry::try_circle_center(Vec2d{ s1, 0. }, Vec2d{ 2. * s1, 0. }, Vec2d{ 3. * s1, 0. }, SCALED_EPSILON);
             REQUIRE(! center);
         }
     }
@@ -254,21 +254,21 @@ SCENARIO("Circle Fit, TaubinFit with Newton's method", "[Geometry]") {
 
         WHEN("Circle fit is called on the entire array") {
             Vec2d result_center(0,0);
-            result_center = Geometry::circle_center_taubin_newton(sample);
+            result_center = Biz::Algorithms::Geometry::circle_center_taubin_newton(sample);
             THEN("A center point of -6,0 is returned.") {
                 REQUIRE(is_approx(result_center, expected_center));
             }
         }
         WHEN("Circle fit is called on the first four points") {
             Vec2d result_center(0,0);
-            result_center = Geometry::circle_center_taubin_newton(sample.cbegin(), sample.cbegin()+4);
+            result_center = Biz::Algorithms::Geometry::circle_center_taubin_newton(sample.cbegin(), sample.cbegin()+4);
             THEN("A center point of -6,0 is returned.") {
                 REQUIRE(is_approx(result_center, expected_center));
             }
         }
         WHEN("Circle fit is called on the middle four points") {
             Vec2d result_center(0,0);
-            result_center = Geometry::circle_center_taubin_newton(sample.cbegin()+2, sample.cbegin()+6);
+            result_center = Biz::Algorithms::Geometry::circle_center_taubin_newton(sample.cbegin()+2, sample.cbegin()+6);
             THEN("A center point of -6,0 is returned.") {
                 REQUIRE(is_approx(result_center, expected_center));
             }
@@ -285,21 +285,21 @@ SCENARIO("Circle Fit, TaubinFit with Newton's method", "[Geometry]") {
 
         WHEN("Circle fit is called on the entire array") {
             Vec2d result_center(0,0);
-            result_center = Geometry::circle_center_taubin_newton(sample);
+            result_center = Biz::Algorithms::Geometry::circle_center_taubin_newton(sample);
             THEN("A center point of 3,9 is returned.") {
                 REQUIRE(is_approx(result_center, expected_center));
             }
         }
         WHEN("Circle fit is called on the first four points") {
             Vec2d result_center(0,0);
-            result_center = Geometry::circle_center_taubin_newton(sample.cbegin(), sample.cbegin()+4);
+            result_center = Biz::Algorithms::Geometry::circle_center_taubin_newton(sample.cbegin(), sample.cbegin()+4);
             THEN("A center point of 3,9 is returned.") {
                 REQUIRE(is_approx(result_center, expected_center));
             }
         }
         WHEN("Circle fit is called on the middle four points") {
             Vec2d result_center(0,0);
-            result_center = Geometry::circle_center_taubin_newton(sample.cbegin()+2, sample.cbegin()+6);
+            result_center = Biz::Algorithms::Geometry::circle_center_taubin_newton(sample.cbegin()+2, sample.cbegin()+6);
             THEN("A center point of 3,9 is returned.") {
                 REQUIRE(is_approx(result_center, expected_center));
             }
@@ -316,21 +316,21 @@ SCENARIO("Circle Fit, TaubinFit with Newton's method", "[Geometry]") {
 
         WHEN("Circle fit is called on the entire array") {
             Point result_center(0,0);
-            result_center = Geometry::circle_center_taubin_newton(sample);
+            result_center = Biz::Algorithms::Geometry::circle_center_taubin_newton(sample);
             THEN("A center point of scaled 3,9 is returned.") {
                 REQUIRE(is_approx(result_center, expected_center));
             }
         }
         WHEN("Circle fit is called on the first four points") {
             Point result_center(0,0);
-            result_center = Geometry::circle_center_taubin_newton(sample.cbegin(), sample.cbegin()+4);
+            result_center = Biz::Algorithms::Geometry::circle_center_taubin_newton(sample.cbegin(), sample.cbegin()+4);
             THEN("A center point of scaled 3,9 is returned.") {
                 REQUIRE(is_approx(result_center, expected_center));
             }
         }
         WHEN("Circle fit is called on the middle four points") {
             Point result_center(0,0);
-            result_center = Geometry::circle_center_taubin_newton(sample.cbegin()+2, sample.cbegin()+6);
+            result_center = Biz::Algorithms::Geometry::circle_center_taubin_newton(sample.cbegin()+2, sample.cbegin()+6);
             THEN("A center point of scaled 3,9 is returned.") {
                 REQUIRE(is_approx(result_center, expected_center));
             }
@@ -339,7 +339,7 @@ SCENARIO("Circle Fit, TaubinFit with Newton's method", "[Geometry]") {
 }
 
 SCENARIO("Circle Fit, least squares by decomposition or by solving normal equation", "[Geometry]") {
-    auto test_circle_fit = [&](const Geometry::Circled &circle, const Vec2d &center, const double radius) {
+    auto test_circle_fit = [&](const Biz::Algorithms::Geometry::Circled &circle, const Vec2d &center, const double radius) {
         THEN("A center point matches.") {
             REQUIRE(is_approx(circle.center, center));
         }
@@ -355,33 +355,33 @@ SCENARIO("Circle Fit, least squares by decomposition or by solving normal equati
         std::transform(sample.begin(), sample.end(), sample.begin(), [expected_center] (const Vec2d &a) { return a + expected_center; });
 
         WHEN("Circle fit is called on the entire array, least squares SVD") {
-            test_circle_fit(Geometry::circle_linear_least_squares_svd(sample), expected_center, expected_radius);
+            test_circle_fit(Biz::Algorithms::Geometry::circle_linear_least_squares_svd(sample), expected_center, expected_radius);
         }
         WHEN("Circle fit is called on the first four points, least squares SVD") {
-            test_circle_fit(Geometry::circle_linear_least_squares_svd(Vec2ds(sample.cbegin(), sample.cbegin() + 4)), expected_center, expected_radius);
+            test_circle_fit(Biz::Algorithms::Geometry::circle_linear_least_squares_svd(Vec2ds(sample.cbegin(), sample.cbegin() + 4)), expected_center, expected_radius);
         }
         WHEN("Circle fit is called on the middle four points, least squares SVD") {
-            test_circle_fit(Geometry::circle_linear_least_squares_svd(Vec2ds(sample.cbegin() + 2, sample.cbegin() + 6)), expected_center, expected_radius);
+            test_circle_fit(Biz::Algorithms::Geometry::circle_linear_least_squares_svd(Vec2ds(sample.cbegin() + 2, sample.cbegin() + 6)), expected_center, expected_radius);
         }
 
         WHEN("Circle fit is called on the entire array, least squares QR decomposition") {
-            test_circle_fit(Geometry::circle_linear_least_squares_qr(sample), expected_center, expected_radius);
+            test_circle_fit(Biz::Algorithms::Geometry::circle_linear_least_squares_qr(sample), expected_center, expected_radius);
         }
         WHEN("Circle fit is called on the first four points, least squares QR decomposition") {
-            test_circle_fit(Geometry::circle_linear_least_squares_qr(Vec2ds(sample.cbegin(), sample.cbegin() + 4)), expected_center, expected_radius);
+            test_circle_fit(Biz::Algorithms::Geometry::circle_linear_least_squares_qr(Vec2ds(sample.cbegin(), sample.cbegin() + 4)), expected_center, expected_radius);
         }
         WHEN("Circle fit is called on the middle four points, least squares QR decomposition") {
-            test_circle_fit(Geometry::circle_linear_least_squares_qr(Vec2ds(sample.cbegin() + 2, sample.cbegin() + 6)), expected_center, expected_radius);
+            test_circle_fit(Biz::Algorithms::Geometry::circle_linear_least_squares_qr(Vec2ds(sample.cbegin() + 2, sample.cbegin() + 6)), expected_center, expected_radius);
         }
 
         WHEN("Circle fit is called on the entire array, least squares by normal equations") {
-            test_circle_fit(Geometry::circle_linear_least_squares_normal(sample), expected_center, expected_radius);
+            test_circle_fit(Biz::Algorithms::Geometry::circle_linear_least_squares_normal(sample), expected_center, expected_radius);
         }
         WHEN("Circle fit is called on the first four points, least squares by normal equations") {
-            test_circle_fit(Geometry::circle_linear_least_squares_normal(Vec2ds(sample.cbegin(), sample.cbegin() + 4)), expected_center, expected_radius);
+            test_circle_fit(Biz::Algorithms::Geometry::circle_linear_least_squares_normal(Vec2ds(sample.cbegin(), sample.cbegin() + 4)), expected_center, expected_radius);
         }
         WHEN("Circle fit is called on the middle four points, least squares by normal equations") {
-            test_circle_fit(Geometry::circle_linear_least_squares_normal(Vec2ds(sample.cbegin() + 2, sample.cbegin() + 6)), expected_center, expected_radius);
+            test_circle_fit(Biz::Algorithms::Geometry::circle_linear_least_squares_normal(Vec2ds(sample.cbegin() + 2, sample.cbegin() + 6)), expected_center, expected_radius);
         }
     }
 }
@@ -393,7 +393,7 @@ TEST_CASE("smallest_enclosing_circle_welzl", "[Geometry]") {
         { 65874456, 2987546 }, { 98234524, 657654873 }, { 786243598, 287934765 }, { 824356, 734265 }, { 82576449, 7864534 }, { 7826345, 3984765 }
     };
 
-    const auto c = Slic3r::Geometry::smallest_enclosing_circle_welzl(pts);
+    const auto c = Biz::Algorithms::Geometry::smallest_enclosing_circle_welzl(pts);
     // The radius returned is inflated by SCALED_EPSILON, thus all points should be inside.
     bool all_inside = std::all_of(pts.begin(), pts.end(), [c](const Point &pt){ return c.contains(pt.cast<double>()); });
     auto c2(c);

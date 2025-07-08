@@ -1289,7 +1289,7 @@ Polygons EdgeGrid::Grid::contours_simplified(coord_t offset, bool fill_holes) co
 {
 	assert(std::abs(2 * offset) < m_resolution);
 
-	typedef std::unordered_multimap<Point, int, PointHash> EndPointMapType;
+	typedef std::unordered_multimap<Point, int, Domain::PointHash> EndPointMapType;
 	// 0) Prepare a binary grid.
 	size_t cell_rows = m_rows + 2;
 	size_t cell_cols = m_cols + 2;

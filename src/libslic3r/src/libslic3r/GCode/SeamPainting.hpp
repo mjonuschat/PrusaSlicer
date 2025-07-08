@@ -1,7 +1,7 @@
 #ifndef libslic3r_GlobalModelInfo_hpp_
 #define libslic3r_GlobalModelInfo_hpp_
 
-#include "libslic3r/AABBTreeIndirect.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Model.hpp"
 #include "admesh/stl.h"
@@ -18,8 +18,8 @@ public:
 private:
     indexed_triangle_set enforcers;
     indexed_triangle_set blockers;
-    AABBTreeIndirect::Tree<3, float> enforcers_tree;
-    AABBTreeIndirect::Tree<3, float> blockers_tree;
+    Biz::Algorithms::AABBTreeIndirect::Tree<3, float> enforcers_tree;
+    Biz::Algorithms::AABBTreeIndirect::Tree<3, float> blockers_tree;
 };
 } // namespace Slic3r::Seams::ModelInfo
 #endif // libslic3r_GlobalModelInfo_hpp_

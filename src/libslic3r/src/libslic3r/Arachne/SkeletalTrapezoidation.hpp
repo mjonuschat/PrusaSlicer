@@ -11,15 +11,15 @@
 #include <list>
 #include <vector>
 
+#include "Slic3r/Biz/CGAL/Algorithms/Voronoi.hpp"
 #include "utils/HalfEdgeGraph.hpp"
-#include "utils/PolygonsSegmentIndex.hpp"
+#include "Slic3r/Biz/Algorithms/PolygonsSegmentIndex.hpp"
 #include "utils/ExtrusionJunction.hpp"
 #include "utils/ExtrusionLine.hpp"
 #include "SkeletalTrapezoidationEdge.hpp"
 #include "SkeletalTrapezoidationJoint.hpp"
 #include "libslic3r/Arachne/BeadingStrategy/BeadingStrategy.hpp"
 #include "SkeletalTrapezoidationGraph.hpp"
-#include "../Geometry/Voronoi.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
@@ -30,7 +30,7 @@
 
 namespace Slic3r::Arachne {
 
-using VD = Slic3r::Geometry::VoronoiDiagram;
+using VD = Slic3r::Biz::CGAL::Algorithms::VoronoiDiagram;
 
 /*!
  * Main class of the dynamic beading strategies.
@@ -83,7 +83,7 @@ class SkeletalTrapezoidation
     const BeadingStrategy& beading_strategy;
 
 public:
-    using Segment  = PolygonsSegmentIndex;
+    using Segment  = Biz::Algorithms::PolygonsSegmentIndex;
     using NodeSet  = ankerl::unordered_dense::set<node_t*>;
 
     /*!

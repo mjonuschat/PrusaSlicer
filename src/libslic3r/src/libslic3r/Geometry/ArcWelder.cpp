@@ -35,7 +35,7 @@
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
-#include "Circle.hpp"
+#include "Slic3r//Biz//Algorithms/Geometry/Circle.hpp"
 #include "../MultiPoint.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
@@ -75,7 +75,7 @@ struct Circle
 // Returns false if the three points are collinear or if the radius is bigger than maximum allowed radius.
 static std::optional<Circle> try_create_circle(const Point &p1, const Point &p2, const Point &p3, const double max_radius)
 {
-    if (auto center = Slic3r::Geometry::try_circle_center(p1.cast<double>(), p2.cast<double>(), p3.cast<double>(), SCALED_EPSILON); center) {
+    if (auto center = Biz::Algorithms::Geometry::try_circle_center(p1.cast<double>(), p2.cast<double>(), p3.cast<double>(), SCALED_EPSILON); center) {
         Point c = center->cast<coord_t>();
         if (double r = sqrt(double((c - p1).cast<int64_t>().squaredNorm())); r <= max_radius)
             return std::make_optional<Circle>({ c, float(r) });

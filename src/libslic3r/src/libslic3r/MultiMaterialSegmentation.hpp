@@ -15,20 +15,11 @@
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/ColoredLine.hpp"
 
 namespace Slic3r {
 
 class PrintObject;
-
-struct ColoredLine
-{
-    Line line;
-    int  color;
-    int  poly_idx       = -1;
-    int  local_line_idx = -1;
-};
-
-using ColoredLines = std::vector<ColoredLine>;
 
 enum class IncludeTopAndBottomLayers {
     Yes,
@@ -43,7 +34,7 @@ struct ModelVolumeFacetsInfo {
     const bool                      replace_default_extruder;
 };
 
-BoundingBox get_extents(const std::vector<ColoredLines> &colored_polygons);
+BoundingBox get_extents(const std::vector<Biz::Algorithms::ColoredLines> &colored_polygons);
 
 // Returns segmentation based on painting in segmentation gizmos.
 std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject                                                       &print_object,
@@ -61,23 +52,5 @@ std::vector<std::vector<ExPolygons>> multi_material_segmentation_by_painting(con
 std::vector<std::vector<ExPolygons>> fuzzy_skin_segmentation_by_painting(const PrintObject &print_object, const std::function<void()> &throw_on_cancel_callback);
 
 } // namespace Slic3r
-
-namespace boost::polygon {
-template<> struct geometry_concept<Slic3r::ColoredLine>
-{
-    typedef segment_concept type;
-};
-
-template<> struct segment_traits<Slic3r::ColoredLine>
-{
-    typedef coord_t       coordinate_type;
-    typedef Slic3r::Point point_type;
-
-    static inline point_type get(const Slic3r::ColoredLine &line, const direction_1d &dir)
-    {
-        return dir.to_int() ? line.line.b : line.line.a;
-    }
-};
-} // namespace boost::polygon
 
 #endif // slic3r_MultiMaterialSegmentation_hpp_

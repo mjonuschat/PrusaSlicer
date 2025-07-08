@@ -21,7 +21,7 @@
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/EdgeGrid.hpp"
 #include "libslic3r/Geometry.hpp"
-#include "libslic3r/Geometry/Circle.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Circle.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Surface.hpp"
@@ -46,6 +46,8 @@
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace line_alg = Biz::Algorithms::Line::line_alg;
 
 namespace BB = Biz::Algorithms::BoundingBox;
 
@@ -654,7 +656,7 @@ static inline bool line_rounded_thick_segment_collision(
             std::pair<Vec2d, Vec2d> pts;
             Vec2d  p0 = line_pt - segment_pt;
             double lv2 = line_vec.squaredNorm();
-            if (Geometry::ray_circle_intersections_r2_lv2_c(offset2, line_vec.y(), - line_vec.x(), lv2, - line_vec.y() * p0.x() + line_vec.x() * p0.y(), pts)) {
+            if (Biz::Algorithms::Geometry::ray_circle_intersections_r2_lv2_c(offset2, line_vec.y(), - line_vec.x(), lv2, - line_vec.y() * p0.x() + line_vec.x() * p0.y(), pts)) {
                 double tmin = (pts.first  - p0).dot(line_vec) / lv2;
                 double tmax = (pts.second - p0).dot(line_vec) / lv2;
                 if (tmin > tmax)

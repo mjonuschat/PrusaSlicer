@@ -637,7 +637,6 @@ target_link_libraries(slic3r-shared PUBLIC
         libvgcode
         libslic3r
         libpgcode
-        Boost::filesystem
         fmt::fmt
         yoga::yogacore
         slic3r-biz-algorithms

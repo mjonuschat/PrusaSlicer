@@ -11,7 +11,7 @@
 
 #include "libslic3r/GCode/SeamPainting.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
@@ -49,8 +49,8 @@ struct LayerInfo
         const Slic3r::Layer &object_layer, std::size_t index, const double elephant_foot_compensation
     );
 
-    AABBTreeLines::LinesDistancer<Linef> distancer;
-    std::optional<AABBTreeLines::LinesDistancer<Linef>> previous_distancer;
+    Biz::Algorithms::AABBTreeLines::LinesDistancer<Linef> distancer;
+    std::optional<Biz::Algorithms::AABBTreeLines::LinesDistancer<Linef>> previous_distancer;
     std::size_t index;
     double height{};
     double slice_z{};

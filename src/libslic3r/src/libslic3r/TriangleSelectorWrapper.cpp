@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "admesh/stl.h"
-#include "libslic3r/AABBTreeIndirect.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
@@ -18,6 +18,7 @@
 namespace Slic3r {
 
 using Biz::Algorithms::TriangleSelector;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 TriangleSelectorWrapper::TriangleSelectorWrapper(const Domain::TriangleMesh &mesh, const Transform3d& mesh_transform) :
         mesh(mesh), mesh_transform(mesh_transform), selector(mesh), triangles_tree(

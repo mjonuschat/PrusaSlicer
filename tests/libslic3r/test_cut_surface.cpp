@@ -1,7 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <libslic3r/CutSurface.hpp>
+#include <Slic3r/Biz/CGAL/Algorithms/CutSurface.hpp>
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp" // its_make_cube + its_merge
+#include "libslic3r/Emboss.hpp"
 
 using namespace Slic3r;
 TEST_CASE("Cut character from surface", "[Emboss]")
@@ -36,7 +37,7 @@ TEST_CASE("Cut character from surface", "[Emboss]")
 
     std::vector<indexed_triangle_set> objects{object};
     // Call core function for cut surface
-    auto surfaces = cut_surface(shapes, objects, cut_projection, 0.5);
+    auto surfaces = Biz::CGAL::Algorithms::cut_surface(shapes, objects, cut_projection, 0.5);
     CHECK(!surfaces.empty());
 
     Emboss::OrthoProject projection(Transform3d::Identity(),

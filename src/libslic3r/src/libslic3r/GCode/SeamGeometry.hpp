@@ -15,7 +15,7 @@
 
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/Point.hpp"
 #include "tcbspan/span.hpp"
 #include "libslic3r/Line.hpp"
@@ -24,7 +24,7 @@
 namespace Slic3r {
 class Layer;
 
-namespace AABBTreeLines {
+namespace Biz::Algorithms::AABBTreeLines {
 template <typename LineType> class LinesDistancer;
 }  // namespace AABBTreeLines
 }
@@ -184,7 +184,7 @@ Points scaled(const std::vector<Vec2d> &points);
  */
 std::vector<double> get_overhangs(
     const std::vector<Vec2d> &points,
-    const AABBTreeLines::LinesDistancer<Linef> &previous_layer_perimeter_distancer,
+    const Biz::Algorithms::AABBTreeLines::LinesDistancer<Linef> &previous_layer_perimeter_distancer,
     const double layer_height
 );
 

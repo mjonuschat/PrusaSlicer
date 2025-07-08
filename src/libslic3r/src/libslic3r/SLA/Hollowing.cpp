@@ -6,12 +6,12 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <libslic3r/TriangleMeshSlicer.hpp>
 #include <libslic3r/SLA/Hollowing.hpp>
-#include <libslic3r/AABBTreeIndirect.hpp>
+#include <Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp>
 #include <libslic3r/AABBMesh.hpp>
 #include <libslic3r/ClipperUtils.hpp>
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include <libslic3r/Model.hpp>
-#include <libslic3r/MeshBoolean.hpp>
+#include "Slic3r/Biz/CGAL/Algorithms/MeshBoolean.hpp"
 #include <boost/log/trivial.hpp>
 #include <libslic3r/I18N.hpp>
 #include <functional>
@@ -41,6 +41,8 @@ using Biz::Algorithms::TriangleMesh::VertexFaceIndex;
 using Domain::Index3;
 using Domain::TriangleMesh;
 namespace TriMesh = Biz::Algorithms::TriangleMesh;
+namespace MeshBoolean = Biz::CGAL::Algorithms::MeshBoolean;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 namespace sla {
 
@@ -600,7 +602,7 @@ std::vector<bool> create_exclude_mask(const indexed_triangle_set   &its,
 
             Linef3 holeaxis{dhpos, dhend};
 
-            double D_hole_center = line_alg::distance_to(holeaxis, tr_center);
+            double D_hole_center = Biz::Algorithms::Line::line_alg::distance_to(holeaxis, tr_center);
             double D_hole        = std::abs(D_hole_center - dh.radius);
             float dot            = dh.normal.dot(face_normal);
 

@@ -20,13 +20,13 @@
 #include <cstddef>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/MutablePolygon.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/AABBTreeIndirect.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Print.hpp"
@@ -50,6 +50,8 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r
 {
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 namespace FFFTreeSupport
 {

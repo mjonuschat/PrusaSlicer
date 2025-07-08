@@ -38,7 +38,7 @@
 #include "libslic3r/Support/TreeSupportCommon.hpp"
 #include "libslic3r/Support/SupportCommon.hpp"
 #include "libslic3r/Support/OrganicSupport.hpp"
-#include "libslic3r/AABBTreeIndirect.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "libslic3r/BuildVolume.hpp"
 #include "libslic3r/EdgeGrid.hpp"
 #include "libslic3r/Layer.hpp"
@@ -72,6 +72,7 @@ namespace Slic3r
 {
 
 namespace BB = Biz::Algorithms::BoundingBox;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 namespace FFFTreeSupport
 {
@@ -1006,7 +1007,7 @@ private:
     
     // Mutexes, guards
     std::mutex                                          m_mutex_movebounds;
-    std::vector<std::unordered_set<Point, PointHash>>   m_already_inserted;
+    std::vector<std::unordered_set<Point, Domain::PointHash>>   m_already_inserted;
 };
 
 int generate_raft_contact(

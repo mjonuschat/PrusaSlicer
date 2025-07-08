@@ -4,7 +4,7 @@
 #include <optional>
 #include <utility>
 
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/GCode/SeamChoice.hpp"
 #include "libslic3r/GCode/SeamPerimeters.hpp"
 #include "libslic3r/GCode/SeamShells.hpp"
@@ -13,6 +13,7 @@
 namespace Slic3r::Seams::Rear {
 using Perimeters::PointType;
 using Perimeters::PointClassification;
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
 
 namespace BB = Biz::Algorithms::BoundingBox;
 

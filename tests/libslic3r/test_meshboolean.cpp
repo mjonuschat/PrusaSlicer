@@ -5,7 +5,7 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/MeshBoolean.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/MeshBoolean.hpp"
 
 using namespace Slic3r;
 using namespace Catch;
@@ -13,6 +13,7 @@ using Domain::Index3;
 using Domain::TriangleMesh;
 using Domain::Vec3d;
 using Domain::Vec3f;
+namespace MeshBoolean = Biz::CGAL::Algorithms::MeshBoolean;
 
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
 

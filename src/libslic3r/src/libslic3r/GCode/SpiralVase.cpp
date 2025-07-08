@@ -11,7 +11,7 @@
 #include <utility>
 #include <cstddef>
 
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/libslic3r.h"
@@ -19,6 +19,7 @@
 namespace Slic3r {
 
 using Biz::GCodeReader::GCodeReader;
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
 
 static AABBTreeLines::LinesDistancer<Linef> get_layer_distancer(const std::vector<Vec2f> &layer_points)
 {

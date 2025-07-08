@@ -9,6 +9,7 @@ using namespace Slic3r::Biz;
 namespace Slic3r::Seams::ModelInfo {
 
 using Domain::its_merge;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 Painting::Painting(const Transform3d &obj_transform, const Domain::ModelVolumePtrs &volumes) {
     for (const Domain::ModelVolume *mv : volumes) {

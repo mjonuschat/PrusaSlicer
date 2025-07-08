@@ -5,7 +5,7 @@
 #ifndef SRC_LIBSLIC3R_PATH_SORTING_HPP_
 #define SRC_LIBSLIC3R_PATH_SORTING_HPP_
 
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/Line.hpp"
 #include "ankerl/unordered_dense.h"
 #include <algorithm>
@@ -22,8 +22,8 @@ namespace Slic3r::Algorithm {
 
 namespace BB = Biz::Algorithms::BoundingBox;
 
-bool is_first_path_touching_second_path(const AABBTreeLines::LinesDistancer<Line> &first_distancer,
-                                        const AABBTreeLines::LinesDistancer<Line> &second_distancer,
+bool is_first_path_touching_second_path(const Biz::Algorithms::AABBTreeLines::LinesDistancer<Line> &first_distancer,
+                                        const Biz::Algorithms::AABBTreeLines::LinesDistancer<Line> &second_distancer,
                                         const BoundingBox                         &second_distancer_bbox,
                                         const double                               touch_distance_threshold)
 {
@@ -41,8 +41,8 @@ bool is_first_path_touching_second_path(const AABBTreeLines::LinesDistancer<Line
     return false;
 }
 
-bool are_paths_touching(const AABBTreeLines::LinesDistancer<Line> &first_distancer,  const BoundingBox &first_distancer_bbox,
-                        const AABBTreeLines::LinesDistancer<Line> &second_distancer, const BoundingBox &second_distancer_bbox,
+bool are_paths_touching(const Biz::Algorithms::AABBTreeLines::LinesDistancer<Line> &first_distancer,  const BoundingBox &first_distancer_bbox,
+                        const Biz::Algorithms::AABBTreeLines::LinesDistancer<Line> &second_distancer, const BoundingBox &second_distancer_bbox,
                         const double touch_distance_threshold)
 {
     if (is_first_path_touching_second_path(first_distancer, second_distancer, second_distancer_bbox, touch_distance_threshold)) {
@@ -67,9 +67,9 @@ void sort_paths(RandomAccessIterator begin, RandomAccessIterator end, Point star
     if (paths_count <= 1)
         return;
 
-    std::vector<AABBTreeLines::LinesDistancer<Line>> distancers(paths_count);
+    std::vector<Biz::Algorithms::AABBTreeLines::LinesDistancer<Line>> distancers(paths_count);
     for (size_t path_idx = 0; path_idx < paths_count; path_idx++) {
-        distancers[path_idx] = AABBTreeLines::LinesDistancer<Line>{convert_to_lines(*std::next(begin, path_idx))};
+        distancers[path_idx] = Biz::Algorithms::AABBTreeLines::LinesDistancer<Line>{convert_to_lines(*std::next(begin, path_idx))};
     }
 
     BoundingBoxes bboxes;

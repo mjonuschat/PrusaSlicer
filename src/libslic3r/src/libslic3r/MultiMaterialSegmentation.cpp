@@ -24,14 +24,15 @@
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/Geometry/VoronoiUtils.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/Voronoi.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/VoronoiUtils.hpp"
 #include "libslic3r/MutablePolygon.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/format.hpp"
-#include "libslic3r/Geometry/VoronoiOffset.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/VoronoiOffset.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Model.hpp"
@@ -59,6 +60,14 @@ constexpr bool MM_SEGMENTATION_DEBUG_TOP_BOTTOM           = false;
 namespace Slic3r {
 
 namespace BB = Biz::Algorithms::BoundingBox;
+namespace Voronoi = Biz::CGAL::Algorithms::Voronoi;
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
+using Biz::Algorithms::ColoredLine;
+using Biz::Algorithms::ColoredLines;
+using Biz::CGAL::Algorithms::VoronoiUtils;
+using Biz::CGAL::Algorithms::SegmentCellRange;
+using Biz::CGAL::Algorithms::PointCellRange;
+using VD = Biz::CGAL::Algorithms::VoronoiDiagram;
 
 const constexpr double POLYGON_FILTER_MIN_AREA_SCALED                 = scaled<double>(0.1f);
 const constexpr double POLYGON_FILTER_MIN_OFFSET_SCALED               = scaled<double>(0.01f);
@@ -212,8 +221,8 @@ using Slic3r::Biz::Algorithms::SVG::SVG;
             svg.draw(colored_line.line, "black", stroke_width);
 
     for (const Voronoi::VD::vertex_type &vertex : vd.vertices()) {
-        if (Geometry::VoronoiUtils::is_in_range<coord_t>(vertex)) {
-            if (const Point pt = Geometry::VoronoiUtils::to_point(&vertex).cast<coord_t>(); vertex.color() == VD_ANNOTATION::VERTEX_ON_CONTOUR) {
+        if (VoronoiUtils::is_in_range<coord_t>(vertex)) {
+            if (const Point pt = VoronoiUtils::to_point(&vertex).cast<coord_t>(); vertex.color() == VD_ANNOTATION::VERTEX_ON_CONTOUR) {
                 svg.draw(pt, "blue", coord_t(stroke_width));
             } else if (vertex.color() != VD_ANNOTATION::DELETED) {
                 svg.draw(pt, "green", coord_t(stroke_width));
@@ -222,11 +231,11 @@ using Slic3r::Biz::Algorithms::SVG::SVG;
     }
 
     for (const Voronoi::VD::edge_type &edge : vd.edges()) {
-        if (edge.is_infinite() || !Geometry::VoronoiUtils::is_in_range<coord_t>(edge))
+        if (edge.is_infinite() || !VoronoiUtils::is_in_range<coord_t>(edge))
             continue;
 
-        const Point from = Geometry::VoronoiUtils::to_point(edge.vertex0()).cast<coord_t>();
-        const Point to   = Geometry::VoronoiUtils::to_point(edge.vertex1()).cast<coord_t>();
+        const Point from = VoronoiUtils::to_point(edge.vertex0()).cast<coord_t>();
+        const Point to   = VoronoiUtils::to_point(edge.vertex1()).cast<coord_t>();
 
         if (edge.color() != VD_ANNOTATION::DELETED)
             svg.draw(Line(from, to), "red", stroke_width);
@@ -521,7 +530,7 @@ static const VD::edge_type *get_cw_first_non_deleted_edge(const VD::edge_type *e
 // During processing a Voronoi cell, it marks its edges as deleted.
 template<typename CellRange>
 static typename std::enable_if<
-    std::is_same<CellRange, Geometry::SegmentCellRange<Point>>::value || std::is_same<CellRange, Geometry::PointCellRange<Point>>::value,
+    std::is_same<CellRange, SegmentCellRange<Point>>::value || std::is_same<CellRange, PointCellRange<Point>>::value,
     std::optional<Polygon>>::type
 cell_range_to_polygon(const CellRange &cell_range)
 {
@@ -533,7 +542,7 @@ cell_range_to_polygon(const CellRange &cell_range)
     }
 
     Polygon cell_polygon;
-    cell_polygon.points.emplace_back(Geometry::VoronoiUtils::to_point(cell_range.edge_begin->vertex0()).template cast<coord_t>());
+    cell_polygon.points.emplace_back(VoronoiUtils::to_point(cell_range.edge_begin->vertex0()).template cast<coord_t>());
 
     // We have ensured that each cell_polygon have to start at edge_begin->vertex0() and end at edge_end->vertex1().
     const VD::edge_type *edge = cell_range.edge_begin;
@@ -543,7 +552,7 @@ cell_range_to_polygon(const CellRange &cell_range)
         }
 
         const VD::vertex_type &next_vertex = *edge->vertex1();
-        cell_polygon.points.emplace_back(Geometry::VoronoiUtils::to_point(next_vertex).cast<coord_t>());
+        cell_polygon.points.emplace_back(VoronoiUtils::to_point(next_vertex).cast<coord_t>());
         edge->color(VD_ANNOTATION::DELETED);
 
         if (next_vertex.color() == VD_ANNOTATION::VERTEX_ON_CONTOUR || next_vertex.color() == VD_ANNOTATION::DELETED) {
@@ -564,12 +573,12 @@ cell_range_to_polygon(const CellRange &cell_range)
     return cell_polygon;
 }
 
-static std::optional<Polygon> segment_cell_range_to_polygon(const Geometry::SegmentCellRange<Point> &cell_range)
+static std::optional<Polygon> segment_cell_range_to_polygon(const SegmentCellRange<Point> &cell_range)
 {
     return cell_range_to_polygon(cell_range);
 }
 
-static std::optional<Polygon> point_cell_range_to_polygon(const Geometry::PointCellRange<Point> &cell_range)
+static std::optional<Polygon> point_cell_range_to_polygon(const PointCellRange<Point> &cell_range)
 {
     return cell_range_to_polygon(cell_range);
 }
@@ -653,7 +662,7 @@ static std::vector<ExPolygons> extract_colored_segments(const std::vector<Colore
         if (cell.is_degenerate() || !cell.contains_segment())
             continue;
 
-        if (const Geometry::SegmentCellRange<Point> cell_range = Geometry::VoronoiUtils::compute_segment_cell_range(cell, colored_lines.begin(), colored_lines.end()); cell_range.is_valid())
+        if (const SegmentCellRange<Point> cell_range = VoronoiUtils::compute_segment_cell_range(cell, colored_lines.begin(), colored_lines.end()); cell_range.is_valid())
             cell_range.edge_begin->vertex0()->color(VD_ANNOTATION::VERTEX_ON_CONTOUR);
     }
 
@@ -663,7 +672,7 @@ static std::vector<ExPolygons> extract_colored_segments(const std::vector<Colore
         if (vertex.color() == VD_ANNOTATION::DELETED || vertex.color() == VD_ANNOTATION::VERTEX_ON_CONTOUR)
             continue;
 
-        if (!Geometry::VoronoiUtils::is_in_range<coord_t>(vertex) || !bbox.contains(Geometry::VoronoiUtils::to_point(vertex).cast<coord_t>()))
+        if (!VoronoiUtils::is_in_range<coord_t>(vertex) || !bbox.contains(VoronoiUtils::to_point(vertex).cast<coord_t>()))
             delete_vertex_deep(vertex);
     }
 
@@ -686,8 +695,8 @@ static std::vector<ExPolygons> extract_colored_segments(const std::vector<Colore
         if (cell.is_degenerate() || !cell.contains_segment())
             continue;
 
-        if (const Geometry::SegmentCellRange<Point> cell_range = Geometry::VoronoiUtils::compute_segment_cell_range(cell, colored_lines.begin(), colored_lines.end()); cell_range.is_valid()) {
-            const ColoredLine &current_line = Geometry::VoronoiUtils::get_source_segment(cell, colored_lines.begin(), colored_lines.end());
+        if (const SegmentCellRange<Point> cell_range = VoronoiUtils::compute_segment_cell_range(cell, colored_lines.begin(), colored_lines.end()); cell_range.is_valid()) {
+            const ColoredLine &current_line = VoronoiUtils::get_source_segment(cell, colored_lines.begin(), colored_lines.end());
             const ColoredLine &next_line = get_next_contour_line(current_line);
 
             const VD::edge_type *edge = cell_range.edge_begin;
@@ -695,7 +704,7 @@ static std::vector<ExPolygons> extract_colored_segments(const std::vector<Colore
                 if (edge->color() == VD_ANNOTATION::DELETED)
                     continue;
 
-                if (!points_inside(current_line.line, next_line.line, Geometry::VoronoiUtils::to_point(edge->vertex1()).cast<coord_t>())) {
+                if (!points_inside(current_line.line, next_line.line, VoronoiUtils::to_point(edge->vertex1()).cast<coord_t>())) {
                     edge->color(VD_ANNOTATION::DELETED);
                     edge->twin()->color(VD_ANNOTATION::DELETED);
                     delete_vertex_deep(*edge->vertex1());
@@ -711,13 +720,13 @@ static std::vector<ExPolygons> extract_colored_segments(const std::vector<Colore
             continue;
         }
 
-        const ColoredLine &curr_line = Geometry::VoronoiUtils::get_source_segment(cell, colored_lines.begin(), colored_lines.end());
+        const ColoredLine &curr_line = VoronoiUtils::get_source_segment(cell, colored_lines.begin(), colored_lines.end());
         const ColoredLine &next_line = get_next_contour_line(curr_line);
         if (curr_line.color != next_line.color) {
             continue;
         }
 
-        if (const Geometry::SegmentCellRange<Point> cell_range = Geometry::VoronoiUtils::compute_segment_cell_range(cell, colored_lines.begin(), colored_lines.end());
+        if (const SegmentCellRange<Point> cell_range = VoronoiUtils::compute_segment_cell_range(cell, colored_lines.begin(), colored_lines.end());
             cell_range.is_valid()) {
             const VD::vertex_type &vertex = *cell_range.edge_begin->vertex0();
             assert(vertex.color() == VD_ANNOTATION::VERTEX_ON_CONTOUR);
@@ -735,11 +744,11 @@ static std::vector<ExPolygons> extract_colored_segments(const std::vector<Colore
         if (cell.is_degenerate() || !cell.contains_segment())
             continue;
 
-        if (const Geometry::SegmentCellRange<Point> cell_range = Geometry::VoronoiUtils::compute_segment_cell_range(cell, colored_lines.begin(), colored_lines.end()); cell_range.is_valid()) {
+        if (const SegmentCellRange<Point> cell_range = VoronoiUtils::compute_segment_cell_range(cell, colored_lines.begin(), colored_lines.end()); cell_range.is_valid()) {
             if (cell_range.edge_begin->vertex0()->color() != VD_ANNOTATION::VERTEX_ON_CONTOUR)
                 continue;
 
-            const ColoredLine           &curr_line            = Geometry::VoronoiUtils::get_source_segment(cell, colored_lines.begin(), colored_lines.end());
+            const ColoredLine           &curr_line            = VoronoiUtils::get_source_segment(cell, colored_lines.begin(), colored_lines.end());
             const std::optional<Polygon> segment_cell_polygon = segment_cell_range_to_polygon(cell_range);
             if (!segment_cell_polygon.has_value())
                 continue;
@@ -759,7 +768,7 @@ static std::vector<ExPolygons> extract_colored_segments(const std::vector<Colore
                 assert(point_cell_begin_edge->color() != VD_ANNOTATION::DELETED && point_cell_end_edge->color() != VD_ANNOTATION::DELETED);
                 assert(point_cell_begin_edge->vertex0() == point_cell_end_edge->vertex1());
 
-                const Geometry::PointCellRange<Point> point_cell_range(Geometry::VoronoiUtils::to_point(point_cell_begin_edge->vertex0()).cast<coord_t>(), point_cell_begin_edge, point_cell_end_edge);
+                const PointCellRange<Point> point_cell_range(VoronoiUtils::to_point(point_cell_begin_edge->vertex0()).cast<coord_t>(), point_cell_begin_edge, point_cell_end_edge);
                 const std::optional<Polygon>          point_cell_polygon = point_cell_range_to_polygon(point_cell_range);
                 if (!point_cell_polygon.has_value())
                     continue;
@@ -1931,7 +1940,7 @@ inline void update_color_changes_using_color_projection_ranges(ColorProjectionLi
             }
 
             Vec2d intersect_pt;
-            if (line_alg::intersection(make_linef(*curr_range_it), make_linef(*next_range_it), &intersect_pt)) {
+            if (Biz::Algorithms::Line::line_alg::intersection(make_linef(*curr_range_it), make_linef(*next_range_it), &intersect_pt)) {
                 event_points.emplace_back(intersect_pt.x());
             }
         }

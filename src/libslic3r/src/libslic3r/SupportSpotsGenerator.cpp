@@ -35,7 +35,7 @@
 #include "libslic3r/PrintBase.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/ClipperUtils.hpp"
@@ -68,6 +68,8 @@ constexpr bool debug_files = false;
 using namespace Slic3r::Biz;
 
 namespace Slic3r::SupportSpotsGenerator {
+
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
 
 ExtrusionLine::ExtrusionLine() : a(Vec2f::Zero()), b(Vec2f::Zero()), len(0.0), origin_entity(nullptr) {}
 ExtrusionLine::ExtrusionLine(const Vec2f &a, const Vec2f &b, float len, const ExtrusionEntity *origin_entity)
@@ -510,7 +512,7 @@ float compute_second_moment(
     const float moment_at_0_0 = axis_direction.transpose() * moment_tensor * axis_direction;
 
     // Apply parallel axis theorem to move the moment to centroid
-    using line_alg::distance_to_infinite_squared;
+    using Biz::Algorithms::Line::line_alg::distance_to_infinite_squared;
 
     const Linef axis_at_0_0 = {{0, 0}, axis_direction.cast<double>()};
 
@@ -623,7 +625,7 @@ float ObjectPart::compute_elastic_section_modulus(
     if (second_moment_of_area < EPSILON) { return 0.0f; }
 
     Vec2f centroid                = integrals.x_i / integrals.area;
-    float extreme_fiber_dist      = line_alg::distance_to(Linef(centroid.head<2>().cast<double>(),
+    float extreme_fiber_dist      = Biz::Algorithms::Line::line_alg::distance_to(Linef(centroid.head<2>().cast<double>(),
                                                                 (centroid.head<2>() + Vec2f(line_dir.y(), -line_dir.x())).cast<double>()),
                                                           extreme_point.head<2>().cast<double>());
 

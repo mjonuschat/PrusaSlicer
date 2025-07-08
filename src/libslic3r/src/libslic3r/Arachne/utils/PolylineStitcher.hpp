@@ -14,7 +14,7 @@
 #include <cstddef>
 
 #include "SparsePointGrid.hpp"
-#include "PolygonsPointIndex.hpp"
+#include "Slic3r/Biz/Algorithms/PolygonsPointIndex.hpp"
 #include "../../Polygon.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/libslic3r.h"
@@ -64,14 +64,14 @@ public:
         if (lines.empty())
             return;
 
-        SparsePointGrid<PathsPointIndex<Paths>, PathsPointIndexLocator<Paths>> grid(max_stitch_distance, lines.size() * 2);
+        SparsePointGrid<Biz::Algorithms::PathsPointIndex<Paths>, Biz::Algorithms::PathsPointIndexLocator<Paths>> grid(max_stitch_distance, lines.size() * 2);
 
         // populate grid
         for (size_t line_idx = 0; line_idx < lines.size(); line_idx++)
         {
             const auto line = lines[line_idx];
-            grid.insert(PathsPointIndex<Paths>(&lines, line_idx, 0));
-            grid.insert(PathsPointIndex<Paths>(&lines, line_idx, line.size() - 1));
+            grid.insert(Biz::Algorithms::PathsPointIndex<Paths>(&lines, line_idx, 0));
+            grid.insert(Biz::Algorithms::PathsPointIndex<Paths>(&lines, line_idx, line.size() - 1));
         }
 
         std::vector<bool> processed(lines.size(), false);
@@ -100,12 +100,12 @@ public:
                 {
                     Point from = make_point(chain.back());
 
-                    PathsPointIndex<Paths> closest;
+                    Biz::Algorithms::PathsPointIndex<Paths> closest;
                     coord_t closest_distance = std::numeric_limits<coord_t>::max();
                     grid.processNearby(from, max_stitch_distance,
-                                       std::function<bool (const PathsPointIndex<Paths>&)> (
+                                       std::function<bool (const Biz::Algorithms::PathsPointIndex<Paths>&)> (
                                            [from, &chain, &closest, &closest_is_closing_polygon, &closest_distance, &processed, &chain_length, go_in_reverse_direction, max_stitch_distance, snap_distance, should_close]
-                                           (const PathsPointIndex<Paths>& nearby)->bool
+                                           (const Biz::Algorithms::PathsPointIndex<Paths>& nearby)->bool
                                            {
                                                bool is_closing_segment = false;
                                                coord_t dist = (nearby.p().template cast<int64_t>() - from.template cast<int64_t>()).norm();
@@ -214,7 +214,7 @@ public:
             }
             else
             {
-                PathsPointIndex<Paths> ppi_here(&lines, line_idx, 0);
+                Biz::Algorithms::PathsPointIndex<Paths> ppi_here(&lines, line_idx, 0);
                 if ( ! canReverse(ppi_here))
                 { // Since closest_is_closing_polygon is false we went through the second iterations of the for-loop, where go_in_reverse_direction is true
                     // the polyline isn't allowed to be reversed, so we re-reverse it.
@@ -228,7 +228,7 @@ public:
     /*!
      * Whether a polyline is allowed to be reversed. (Not true for wall polylines which are not odd)
      */
-    static bool canReverse(const PathsPointIndex<Paths> &polyline);
+    static bool canReverse(const Biz::Algorithms::PathsPointIndex<Paths> &polyline);
 
     /*!
      * Whether two paths are allowed to be connected.

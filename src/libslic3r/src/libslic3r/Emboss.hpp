@@ -27,6 +27,7 @@
 #include "Slic3r/Domain/EmbossShape.hpp" // ExPolygonsWithIds
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "libslic3r/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Projection.hpp"
 
 namespace Slic3r {
 
@@ -271,55 +272,12 @@ namespace Emboss
     double get_align_y_offset_in_mm(Domain::FontProp::VerticalAlign align, unsigned count_lines, const FontFile &ff, const Domain::FontProp &fp);
 
     /// <summary>
-    /// Project spatial point
-    /// </summary>
-    class IProject3d
-    {
-    public:
-        virtual ~IProject3d() = default;
-        /// <summary>
-        /// Move point with respect to projection direction
-        /// e.g. Orthogonal projection will move with point by direction
-        /// e.g. Spherical projection need to use center of projection
-        /// </summary>
-        /// <param name="point">Spatial point coordinate</param>
-        /// <returns>Projected spatial point</returns>
-        virtual Vec3d project(const Vec3d &point) const = 0;
-    };
-
-    /// <summary>
-    /// Project 2d point into space
-    /// Could be plane, sphere, cylindric, ...
-    /// </summary>
-    class IProjection : public IProject3d
-    {
-    public:
-        /// <summary>
-        /// convert 2d point to 3d points
-        /// </summary>
-        /// <param name="p">2d coordinate</param>
-        /// <returns>
-        /// first - front spatial point
-        /// second - back spatial point
-        /// </returns>
-        virtual std::pair<Vec3d, Vec3d> create_front_back(const Point &p) const = 0;
-
-        /// <summary>
-        /// Back projection
-        /// </summary>
-        /// <param name="p">Point to project</param>
-        /// <param name="depth">[optional] Depth of 2d projected point. Be careful number is in 2d scale</param>
-        /// <returns>Uprojected point when it is possible</returns>
-        virtual std::optional<Vec2d> unproject(const Vec3d &p, double * depth = nullptr) const = 0;
-    };
-
-    /// <summary>
     /// Create triangle model for text
     /// </summary>
     /// <param name="shape2d">text or image</param>
     /// <param name="projection">Define transformation from 2d to 3d(orientation, position, scale, ...)</param>
     /// <returns>Projected shape into space</returns>
-    indexed_triangle_set polygons2model(const ExPolygons &shape2d, const IProjection& projection);
+    indexed_triangle_set polygons2model(const ExPolygons &shape2d, const Biz::Algorithms::IProjection& projection);
     
     /// <summary>
     /// Suggest wanted up vector of embossed text by emboss direction
@@ -347,7 +305,7 @@ namespace Emboss
     Transform3d create_transformation_onto_surface(
         const Vec3d &position, const Vec3d &normal, double up_limit = 0.9);
 
-    class ProjectZ : public IProjection
+    class ProjectZ : public Slic3r::Biz::Algorithms::IProjection
     {
     public:
         explicit ProjectZ(double depth) : m_depth(depth) {}
@@ -358,7 +316,7 @@ namespace Emboss
         double m_depth;
     };
 
-    class ProjectScale : public IProjection
+    class ProjectScale : public Slic3r::Biz::Algorithms::IProjection
     {
         std::unique_ptr<IProjection> core;
         double m_scale;
@@ -383,7 +341,7 @@ namespace Emboss
         }
     };
 
-    class ProjectTransform : public IProjection
+    class ProjectTransform : public Slic3r::Biz::Algorithms::IProjection
     {
         std::unique_ptr<IProjection> m_core;
         Transform3d m_tr;
@@ -413,7 +371,7 @@ namespace Emboss
         }
     };
 
-    class OrthoProject3d : public Emboss::IProject3d
+    class OrthoProject3d : public Biz::Algorithms::IProject3d
     {
         // size and direction of emboss for ortho projection
         Vec3d m_direction;
@@ -422,7 +380,7 @@ namespace Emboss
         Vec3d project(const Vec3d &point) const override{ return point + m_direction;}
     };
 
-    class OrthoProject: public Emboss::IProjection {
+    class OrthoProject: public Biz::Algorithms::IProjection {
         Transform3d m_matrix;
         // size and direction of emboss for ortho projection
         Vec3d       m_direction;

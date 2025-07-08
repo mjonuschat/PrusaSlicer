@@ -17,9 +17,9 @@
 
 #include "Emboss.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "IntersectionPoints.hpp"
+#include "Slic3r/Biz/Algorithms/IntersectionPoints.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/AABBTreeIndirect.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "Slic3r/Exception.hpp"
@@ -28,7 +28,7 @@
 
 #define STB_TRUETYPE_IMPLEMENTATION // force following include to generate implementation
 
-#include <libslic3r/Triangulation.hpp> // CGAL project
+#include "Slic3r/Biz/CGAL/Algorithms/Triangulation.hpp" // CGAL project
 
 // Explicit horror include (used to be implicit) - libslic3r "officialy" does not depend on imgui.
 #include "../../bundled_deps/imgui/imgui/imstb_truetype.h" // stbtt_fontinfo
@@ -36,11 +36,12 @@
 #include "libslic3r.h"
 // to heal shape
 #include "libslic3r/ClipperUtils.hpp" // union_ex + for boldness(polygon extend(offset))
-#include "libslic3r/ExPolygonsIndex.hpp"
-#include "libslic3r/AABBTreeLines.hpp" // search structure for found close points
+#include "Slic3r/Biz/Algorithms/ExPolygonsIndex.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp" // search structure for found close points
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Projection.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -66,8 +67,17 @@ using Domain::EmbossShape;
 using Domain::HealedExPolygons;
 using Domain::ExPolygonsWithId;
 using Domain::ExPolygonsWithIds;
+using Slic3r::Biz::Algorithms::ExPolygonsIndices;
+using Slic3r::Biz::Algorithms::ExPolygonsIndex;
+using Slic3r::Biz::Algorithms::IntersectionLines;
+using Slic3r::Biz::Algorithms::IntersectionsLines;
+using Slic3r::Biz::Algorithms::get_intersections;
+using Slic3r::Biz::Algorithms::IProjection;
+using Slic3r::Biz::CGAL::Algorithms::Triangulation;
 
 namespace BB = Biz::Algorithms::BoundingBox;
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 // NOTE: approach to heal shape by Clipper::Closing is not working
 
@@ -483,7 +493,7 @@ bool Emboss::heal_expolygons(ExPolygons &shape, unsigned max_iteration)
 
 namespace {
 
-Points get_unique_intersections(const Slic3r::IntersectionsLines &intersections)
+Points get_unique_intersections(const IntersectionsLines &intersections)
 {
     Points result;
     if (intersections.empty())
@@ -492,7 +502,7 @@ Points get_unique_intersections(const Slic3r::IntersectionsLines &intersections)
     // convert intersections into Points
     result.reserve(intersections.size());
     std::transform(intersections.begin(), intersections.end(), std::back_inserter(result),
-        [](const Slic3r::IntersectionLines &i) { return Point(
+        [](const IntersectionLines &i) { return Point(
             static_cast<coord_t>(std::floor(i.intersection.x())),
             static_cast<coord_t>(std::floor(i.intersection.y())));
         });

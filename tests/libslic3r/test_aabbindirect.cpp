@@ -5,8 +5,8 @@
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include <libslic3r/AABBTreeIndirect.hpp>
-#include <libslic3r/AABBTreeLines.hpp>
+#include <Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp>
+#include <Slic3r/Biz/Algorithms/AABBTreeLines.hpp>
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
@@ -14,6 +14,11 @@ using namespace Catch;
 using Domain::Polygon;
 using Domain::ExPolygon;
 using Domain::ExPolygons;
+using Domain::Line2d;
+using Domain::Vec2d;
+using Domain::Vec3d;
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 TEST_CASE("Building a tree over a box, ray caster and closest query", "[AABBIndirect]")
 {
@@ -71,11 +76,11 @@ TEST_CASE("Building a tree over a box, ray caster and closest query", "[AABBIndi
 
 TEST_CASE("Creating a several 2d lines, testing closest point query", "[AABBIndirect]")
 {
-    std::vector<Linef> lines { };
-    lines.push_back(Linef(Vec2d(0.0, 0.0), Vec2d(1.0, 0.0)));
-    lines.push_back(Linef(Vec2d(1.0, 0.0), Vec2d(1.0, 1.0)));
-    lines.push_back(Linef(Vec2d(1.0, 1.0), Vec2d(0.0, 1.0)));
-    lines.push_back(Linef(Vec2d(0.0, 1.0), Vec2d(0.0, 0.0)));
+    std::vector<Line2d> lines { };
+    lines.push_back(Line2d(Vec2d(0.0, 0.0), Vec2d(1.0, 0.0)));
+    lines.push_back(Line2d(Vec2d(1.0, 0.0), Vec2d(1.0, 1.0)));
+    lines.push_back(Line2d(Vec2d(1.0, 1.0), Vec2d(0.0, 1.0)));
+    lines.push_back(Line2d(Vec2d(0.0, 1.0), Vec2d(0.0, 0.0)));
 
     auto tree = AABBTreeLines::build_aabb_tree_over_indexed_lines(lines);
 
@@ -98,12 +103,12 @@ TEST_CASE("Creating a several 2d lines, testing closest point query", "[AABBIndi
 
 TEST_CASE("Creating a several 2d lines, testing all lines in radius query", "[AABBIndirect]")
 {
-    std::vector<Linef> lines { };
-    lines.push_back(Linef(Vec2d(0.0, 0.0), Vec2d(10.0, 0.0)));
-    lines.push_back(Linef(Vec2d(-10.0, 10.0), Vec2d(10.0, -10.0)));
-    lines.push_back(Linef(Vec2d(-2.0, -1.0), Vec2d(-2.0, 1.0)));
-    lines.push_back(Linef(Vec2d(-1.0, -1.0), Vec2d(-1.0, -1.0)));
-    lines.push_back(Linef(Vec2d(1.0, 1.0), Vec2d(1.0, 1.0)));
+    std::vector<Line2d> lines { };
+    lines.push_back(Line2d(Vec2d(0.0, 0.0), Vec2d(10.0, 0.0)));
+    lines.push_back(Line2d(Vec2d(-10.0, 10.0), Vec2d(10.0, -10.0)));
+    lines.push_back(Line2d(Vec2d(-2.0, -1.0), Vec2d(-2.0, 1.0)));
+    lines.push_back(Line2d(Vec2d(-1.0, -1.0), Vec2d(-1.0, -1.0)));
+    lines.push_back(Line2d(Vec2d(1.0, 1.0), Vec2d(1.0, 1.0)));
 
     auto tree = AABBTreeLines::build_aabb_tree_over_indexed_lines(lines);
 
@@ -130,7 +135,7 @@ TEST_CASE("Find the closest point from ExPolys", "[ClosestPoint]") {
     };
     Vec2d p{2.5, 3.5};
 
-    std::vector<Linef> lines;
+    std::vector<Line2d> lines;
     auto add_lines = [&lines](const Polygon& poly) {
         for (const auto &line : Algorithms::Polygon::to_lines(poly))
             lines.emplace_back(
@@ -156,7 +161,7 @@ TEST_CASE("Find the closest point from ExPolys", "[ClosestPoint]") {
     CHECK(hit_idx_out != std::numeric_limits<size_t>::max());
 
     //double distance = sqrt(distance_sq);
-    //const Linef &line = lines[hit_idx_out];
+    //const Line2d &line = lines[hit_idx_out];
 }
 
 #if 0
@@ -168,7 +173,7 @@ TEST_CASE("Find the closest point from ExPolys", "[ClosestPoint]") {
 TEST_CASE("AABBTreeLines vs SignedDistanceGrid time Benchmark", "[AABBIndirect]")
 {
     std::vector<Points> lines { Points { } };
-    std::vector<Linef> linesf { };
+    std::vector<Line2d> linesf { };
     Vec2d prevf { };
 
     // NOTE: max coord value of the lines is approx 83 mm
@@ -280,7 +285,7 @@ TEST_CASE("AABBTreeLines vs SignedDistanceGrid time Benchmark", "[AABBIndirect]"
     for (auto count : point_counts) {
 
         std::vector<Points> lines { Points { } };
-        std::vector<Linef> linesf { };
+        std::vector<Line2d> linesf { };
         Vec2d prevf { };
         Points query_points { };
         std::vector<Vec2d> query_pointsf { };
@@ -349,7 +354,7 @@ TEST_CASE("AABBTreeLines vs SignedDistanceGrid time Benchmark", "[AABBIndirect]"
       for (auto count : point_counts) {
 
           std::vector<Points> lines { Points { } };
-          std::vector<Linef> linesf { };
+          std::vector<Line2d> linesf { };
           Vec2d prevf { };
           Points query_points { };
           std::vector<Vec2d> query_pointsf { };

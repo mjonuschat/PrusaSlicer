@@ -28,7 +28,7 @@ public:
 
     using GridPoint    = SquareGrid::GridPoint;
     using grid_coord_t = SquareGrid::grid_coord_t;
-    using GridMap       = std::unordered_multimap<GridPoint, Elem, PointHash>;
+    using GridMap       = std::unordered_multimap<GridPoint, Elem, Domain::PointHash>;
 
     using iterator       = typename GridMap::iterator;
     using const_iterator = typename GridMap::const_iterator;

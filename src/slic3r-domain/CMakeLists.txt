@@ -2,7 +2,7 @@ project(slic3r-domain)
 
 find_package(NanoSVG REQUIRED)
 
-add_library(slic3r-domain
+add_library(slic3r-domain STATIC
     include/Slic3r/Domain/CustomGCode.hpp
     include/Slic3r/Domain/Line.hpp
     include/Slic3r/Domain/MultiPoint.hpp
@@ -137,6 +137,7 @@ target_link_libraries(slic3r-domain PUBLIC
     admesh # TODO, remove dependency on admesh by refactoring triangle mesh
     NanoSVG::nanosvg # TODO remove dependency on nanosvg by refactoring EmbossShape
     NanoSVG::nanosvgrast
+    boost_headeronly # TODO remove boost voronoi traits
 )
 
 target_link_libraries(slic3r-domain PUBLIC slic3r-base TBB::tbbmalloc)

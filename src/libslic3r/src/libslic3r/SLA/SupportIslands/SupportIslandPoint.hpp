@@ -4,7 +4,7 @@
 #include <set>
 #include <memory>
 #include <libslic3r/Point.hpp>
-#include "VoronoiGraph.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/VoronoiGraph.hpp"
 #include "libslic3r/SLA/SupportIslands/SampleConfig.hpp"
 
 namespace Slic3r::sla {
@@ -114,13 +114,13 @@ class SupportCenterIslandPoint : public SupportIslandPoint
 public:
     // Define position on voronoi graph
     // FYI: Lose data when voronoi graph does NOT exist
-    VoronoiGraph::Position position;
+    Biz::CGAL::Algorithms::VoronoiGraph::Position position;
 
     // hold pointer to configuration
     // FYI: Lose data when configuration destruct
     const SampleConfig *configuration;
 public:
-    SupportCenterIslandPoint(VoronoiGraph::Position position,
+    SupportCenterIslandPoint(Biz::CGAL::Algorithms::VoronoiGraph::Position position,
                              const SampleConfig *configuration,
                              Type                   type = Type::thin_part);
     
@@ -193,7 +193,7 @@ public:
     public:
         // line restriction
         // must be connected line.a == prev_line.b && line.b == next_line.a
-        Lines lines;
+        Domain::Lines lines;
 
         // keep stored line lengths
         // same size as lines
@@ -202,7 +202,7 @@ public:
         // maximal distance for search nearest line to destination point during aligning
         coord_t max_align_distance;
 
-        Restriction(Lines               lines,
+        Restriction(Domain::Lines               lines,
                     std::vector<double> lengths,
                     coord_t             max_align_distance)
             : lines(lines)

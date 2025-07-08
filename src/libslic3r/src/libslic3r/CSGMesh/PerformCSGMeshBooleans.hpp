@@ -11,9 +11,11 @@
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
-#include "libslic3r/MeshBoolean.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/MeshBoolean.hpp"
 
 namespace Slic3r { namespace csg {
+
+namespace MeshBoolean = Biz::CGAL::Algorithms::MeshBoolean;
 
 // This method can be overriden when a specific CSGPart type supports caching
 // of the voxel grid

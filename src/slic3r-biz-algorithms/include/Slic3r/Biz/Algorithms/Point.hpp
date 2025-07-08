@@ -42,4 +42,6 @@ inline Domain::Advanced::Vec<typename Derived::Scalar, 3> to_3d(const Eigen::Mat
     return { pt.x(), pt.y(), z };
 }
 
+Domain::Points collect_duplicates(Domain::Points pts /* Copy */);
+
 } // namespace Slic3r::Biz::Algorithms::Point

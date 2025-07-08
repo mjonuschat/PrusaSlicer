@@ -4,7 +4,7 @@
 ///|/
 #include "libslic3r/AABBMesh.hpp"
 
-#include <libslic3r/AABBTreeIndirect.hpp>
+#include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <igl/Hit.h>
 #include <algorithm>
@@ -17,6 +17,7 @@
 #endif
 
 namespace Slic3r {
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 using Domain::TriangleMesh;
 using Domain::Index3;

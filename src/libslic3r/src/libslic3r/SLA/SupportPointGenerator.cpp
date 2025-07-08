@@ -9,7 +9,7 @@
 #include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/AABBTreeLines.hpp" // closest point to layer part
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp" // closest point to layer part
 #include "libslic3r/AABBMesh.hpp" // move_on_mesh_surface Should be in another file
 // SupportIslands
 #include "libslic3r/SLA/SupportIslands/UniformSupportIsland.hpp"
@@ -25,6 +25,8 @@ using namespace Slic3r::sla;
 using Domain::SLA::SupportPoint;
 using Domain::SLA::SupportPoints;
 using Domain::SLA::SupportPointType;
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
+namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
 
 namespace execution = Slic3r::Biz::Algorithms::Execution;
 

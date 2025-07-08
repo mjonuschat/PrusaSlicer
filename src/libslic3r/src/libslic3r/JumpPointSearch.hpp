@@ -21,7 +21,7 @@ class Layer;
 class JPSPathFinder
 {
     using Pixel = Point;
-    std::unordered_set<Pixel, PointHash> inpassable;
+    std::unordered_set<Pixel, Domain::PointHash> inpassable;
     double print_z;
     BoundingBox max_search_box;
     Lines bed_shape;

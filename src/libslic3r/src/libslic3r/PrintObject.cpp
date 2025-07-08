@@ -35,7 +35,7 @@
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
-#include "libslic3r/AABBTreeLines.hpp"
+#include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
@@ -111,6 +111,7 @@ using namespace Slic3r::Biz;
 namespace Slic3r {
 
 namespace BB = Biz::Algorithms::BoundingBox;
+namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
 
 using Domain::BoundingBox3d;
 using Biz::Algorithms::BoundingBox::center;

@@ -1078,7 +1078,7 @@ void LoopInterfaceProcessor::generate(SupportGeneratorLayerExtruded &top_contact
         // Collect split points, so they will be recognized after the clipping.
         // At the split points the clipped pieces will be stitched back together.
         loop_lines.reserve(loop_polygons.size());
-        std::unordered_map<Point, int, PointHash> map_split_points;
+        std::unordered_map<Point, int, Domain::PointHash> map_split_points;
         for (Polygons::const_iterator it = loop_polygons.begin(); it != loop_polygons.end(); ++ it) {
             assert(map_split_points.find(it->first_point()) == map_split_points.end());
             map_split_points[it->first_point()] = -1;

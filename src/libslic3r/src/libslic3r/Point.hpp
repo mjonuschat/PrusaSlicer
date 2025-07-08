@@ -250,8 +250,7 @@ inline bool has_duplicate_successive_points_closed(const Points &pts)
     return has_duplicate_successive_points(pts) || (pts.size() >= 2 && pts.front() == pts.back());
 }
 
-// Collect adjecent(duplicit points)
-Points collect_duplicates(Points pts /* Copy */);
+using Slic3r::Biz::Algorithms::Point::collect_duplicates;
 
 inline bool shorter_then(const Point& p0, const coord_t len)
 {
@@ -270,13 +269,6 @@ namespace int128 {
     // returns +1: CCW, 0: collinear, -1: CW.
     int cross(const Vec2crd &v1, const Vec2crd &v2);
 }
-
-// To be used by std::unordered_map, std::unordered_multimap and friends.
-struct PointHash {
-    size_t operator()(const Vec2crd &pt) const noexcept {
-        return coord_t((89 * 31 + int64_t(pt.x())) * 31 + pt.y());
-    }
-};
 
 // A generic class to search for a closest Point in a given radius.
 // It uses std::unordered_multimap to implement an efficient 2D spatial hashing.
@@ -407,7 +399,7 @@ public:
     }
 
 private:
-    using map_type = typename std::unordered_multimap<Vec2crd, ValueType, PointHash>;
+    using map_type = typename std::unordered_multimap<Vec2crd, ValueType, Domain::PointHash>;
     PointAccessor m_point_accessor;
     map_type m_map;
     coord_t  m_search_radius;
@@ -525,35 +517,6 @@ static bool apply(T &val, const MinMax<T> &limit)
 
 } // namespace Slic3r
 
-// start Boost
-#include <boost/version.hpp>
-#include <boost/polygon/polygon.hpp>
-
-namespace boost { namespace polygon {
-    template <>
-    struct geometry_concept<Slic3r::Point> { using type = point_concept; };
-   
-    template <>
-    struct point_traits<Slic3r::Point> {
-        using coordinate_type = coord_t;
-    
-        static inline coordinate_type get(const Slic3r::Point& point, orientation_2d orient) {
-            return static_cast<coordinate_type>(point((orient == HORIZONTAL) ? 0 : 1));
-        }
-    };
-    
-    template <>
-    struct point_mutable_traits<Slic3r::Point> {
-        using coordinate_type = coord_t;
-        static inline void set(Slic3r::Point& point, orientation_2d orient, coord_t value) {
-            point((orient == HORIZONTAL) ? 0 : 1) = value;
-        }
-        static inline Slic3r::Point construct(coord_t x_value, coord_t y_value) {
-            return Slic3r::Point(x_value, y_value);
-        }
-    };
-} }
-// end Boost
 
 #include <cereal/cereal.hpp>
 

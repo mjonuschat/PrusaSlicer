@@ -73,7 +73,7 @@ ExtrusionPaths calculate_and_split_overhanging_extrusions(const ExtrusionPath   
 
                 for (size_t idx : line_indices) {
                     const CurledLine &line                 = prev_layer_curled_lines.get_line(idx);
-                    float             distance_from_curled = unscaled(line_alg::distance_to(line, scaled(middle)));
+                    float             distance_from_curled = unscaled(Biz::Algorithms::Line::line_alg::distance_to(line, scaled(middle)));
                     float proximity = (1.0 - (distance_from_curled / dist_limit)) * (1.0 - (distance_from_curled / dist_limit)) *
                                       (line.curled_height / (path.height() * 10.0f)); // max_curled_height_factor from SupportSpotGenerator
                     proximity_to_curled_lines = std::max(proximity_to_curled_lines, proximity);

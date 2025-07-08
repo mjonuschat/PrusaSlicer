@@ -26,7 +26,7 @@
 #include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include <libslic3r/SLAPrintSteps.hpp>
-#include <libslic3r/MeshBoolean.hpp>
+#include "Slic3r/Biz/CGAL/Algorithms/MeshBoolean.hpp"
 #include <libslic3r/TriangleMeshSlicer.hpp>
 #include <libslic3r/SLA/Pad.hpp>
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
@@ -77,9 +77,9 @@ namespace execution = Slic3r::Biz::Algorithms::Execution;
 using Domain::SLA::SupportPoint;
 using Domain::SLA::SupportPoints;
 using Domain::SLA::SupportPointType;
-using Domain::SLA::PointsStatus;
 using Domain::TriangleMesh;
 using Domain::TriangleMeshStats;
+namespace MeshBoolean = Biz::CGAL::Algorithms::MeshBoolean;
 
 namespace {
 

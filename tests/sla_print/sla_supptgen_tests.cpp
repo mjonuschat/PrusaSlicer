@@ -9,9 +9,9 @@
 
 #include <libslic3r/SLA/SupportIslands/SampleConfigFactory.hpp>
 #include <libslic3r/SLA/SupportIslands/SampleConfig.hpp>
-#include <libslic3r/SLA/SupportIslands/VoronoiGraphUtils.hpp>
+#include <Slic3r/Biz/CGAL/Algorithms/VoronoiGraphUtils.hpp>
 #include <libslic3r/SLA/SupportIslands/UniformSupportIsland.hpp>
-#include <libslic3r/SLA/SupportIslands/PolygonUtils.hpp>
+#include <Slic3r/Biz/Algorithms/PolygonUtils.hpp>
 #include "libslic3r/Utils.hpp"
 #include "nanosvg/nanosvg.h"    // load SVG file
 #include "sla_test_utils.hpp"
@@ -24,6 +24,7 @@ using namespace Slic3r::sla;
 using Domain::TriangleMesh;
 using Domain::SLA::SupportPoints;
 using Domain::SLA::SupportPoint;
+using Slic3r::Biz::Algorithms::PolygonUtils;
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
 
 namespace BB = Biz::Algorithms::BoundingBox;
@@ -108,7 +109,7 @@ TEST_CASE("Overhanging edge should be supported", "[SupGen]") {
 
     std::copy_if(pts.begin(), pts.end(), std::back_inserter(overh_pts),
                  [&overh](const SupportPoint &pt){
-                     return line_alg::distance_to(overh, Vec3d{pt.pos.cast<double>()}) < 1.;
+                     return Biz::Algorithms::Line::line_alg::distance_to(overh, Vec3d{pt.pos.cast<double>()}) < 1.;
                  });
 
     //double ddiff = min_point_distance(pts) - cfg.minimal_distance;

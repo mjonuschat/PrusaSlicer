@@ -19,7 +19,10 @@
 
 using namespace Slic3r::Biz;
 
+namespace AABBTreeLines = Slic3r::Biz::Algorithms::AABBTreeLines;
+
 namespace Slic3r::Seams::Perimeters::Impl {
+
 PerimeterPoints oversample_painted(
     PerimeterPoints &points,
     const std::function<bool(Vec3f, double)> &is_painted,

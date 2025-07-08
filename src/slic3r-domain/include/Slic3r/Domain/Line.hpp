@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Domain/Point.hpp"
+#include <boost/polygon/segment_concept.hpp>
 
 namespace Slic3r::Domain {
 
@@ -85,4 +86,21 @@ public:
 
 using Line3ds = std::vector<Line3d>;
 
+
+
 } // namespace Slic3r::Domain
+
+namespace boost { namespace polygon {
+    template <>
+    struct geometry_concept<Slic3r::Domain::Line> { typedef segment_concept type; };
+
+    template <>
+    struct segment_traits<Slic3r::Domain::Line> {
+        typedef Slic3r::Domain::coord_t coordinate_type;
+        typedef Slic3r::Domain::Point point_type;
+
+        static inline point_type get(const Slic3r::Domain::Line& line, direction_1d dir) {
+            return dir.to_int() ? line.b : line.a;
+        }
+    };
+} }

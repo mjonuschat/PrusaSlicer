@@ -4,7 +4,7 @@
 #include "PolylineStitcher.hpp"
 
 #include "ExtrusionLine.hpp"
-#include "libslic3r/Arachne/utils/PolygonsPointIndex.hpp"
+#include "Slic3r/Biz/Algorithms/PolygonsPointIndex.hpp"
 #include "libslic3r/Polygon.hpp"
 
 namespace Slic3r {
@@ -14,6 +14,8 @@ struct ExtrusionJunction;
 }  // namespace Slic3r
 
 namespace Slic3r::Arachne {
+
+using Slic3r::Biz::Algorithms::PathsPointIndex;
 
 template<> bool PolylineStitcher<VariableWidthLines, ExtrusionLine, ExtrusionJunction>::canReverse(const PathsPointIndex<VariableWidthLines> &ppi)
 {

@@ -1,14 +1,22 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <libslic3r/Triangulation.hpp>
+#include "Slic3r/Biz/CGAL/Algorithms/Triangulation.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp" // only debug visualization
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using Domain::Index3;
 using Biz::Algorithms::SVG::SVG;
+using Domain::ExPolygon;
+using Domain::ExPolygons;
+using Domain::Point;
+using Domain::Points;
+using Domain::Polygon;
+using Domain::Polygons;
+using Slic3r::Biz::CGAL::Algorithms::Triangulation;
 
 namespace BB = Biz::Algorithms::BoundingBox;
 
@@ -28,7 +36,7 @@ void store_trinagulation(const ExPolygons &shape,
     svg_vis.draw(pts, "black", 4 * scale);
 
     for (const Index3 &t : triangles) {
-        Slic3r::Polygon triangle({pts[t[0]], pts[t[1]], pts[t[2]]});
+        Polygon triangle({pts[t[0]], pts[t[1]], pts[t[2]]});
         triangle.scale(scale);
         svg_vis.draw(triangle, "green");
     }
@@ -119,12 +127,12 @@ TEST_CASE("Triangulation M shape polygon", "[triangulation]")
 // same point in triangulation are not Supported
 TEST_CASE("Triangulation 2 polygons with same point", "[triangulation]") 
 {
-    Slic3r::Polygon polygon1 = {
+    Polygon polygon1 = {
         Point(416, 346), Point(445, 362),
         Point(463, 389), Point(469, 427) /* This point */,
         Point(445, 491)
     };
-    Slic3r::Polygon polygon2 = {
+    Polygon polygon2 = {
         Point(495, 488), Point(469, 427) /* This point */,
         Point(495, 364)
     };

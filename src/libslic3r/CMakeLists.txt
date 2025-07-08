@@ -43,8 +43,6 @@ slic3r_remap_configs(LibBGCode::bgcode_convert RelWithDebInfo Release)
 
 set(SLIC3R_SOURCES
     src/libslic3r/AABBMesh.cpp
-    src/libslic3r/AABBTreeIndirect.hpp
-    src/libslic3r/AABBTreeLines.hpp
     src/libslic3r/Algorithm/LineSegmentation/LineSegmentation.cpp
     src/libslic3r/Algorithm/LineSegmentation/LineSegmentation.hpp
     src/libslic3r/Algorithm/PathSorting.hpp
@@ -79,8 +77,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/Arachne/utils/HalfEdge.hpp
     src/libslic3r/Arachne/utils/HalfEdgeGraph.hpp
     src/libslic3r/Arachne/utils/HalfEdgeNode.hpp
-    src/libslic3r/Arachne/utils/PolygonsPointIndex.hpp
-    src/libslic3r/Arachne/utils/PolygonsSegmentIndex.hpp
     src/libslic3r/Arachne/utils/PolylineStitcher.cpp
     src/libslic3r/Arachne/utils/PolylineStitcher.hpp
     src/libslic3r/Arachne/utils/SparseGrid.hpp
@@ -129,8 +125,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/ExPolygon.cpp
     src/libslic3r/ExPolygon.hpp
     src/libslic3r/ExPolygonSerialize.hpp
-    src/libslic3r/ExPolygonsIndex.cpp
-    src/libslic3r/ExPolygonsIndex.hpp
     src/libslic3r/Extruder.cpp
     src/libslic3r/Extruder.hpp
     src/libslic3r/ExtrusionEntity.cpp
@@ -255,21 +249,10 @@ set(SLIC3R_SOURCES
     src/libslic3r/Geometry/ArcWelder.cpp
     src/libslic3r/Geometry/ArcWelder.hpp
     src/libslic3r/Geometry/Bicubic.hpp
-    src/libslic3r/Geometry/Circle.cpp
-    src/libslic3r/Geometry/Circle.hpp
     src/libslic3r/Geometry/ConvexHull.hpp
     src/libslic3r/Geometry/Curves.hpp
     src/libslic3r/Geometry/MedialAxis.cpp
     src/libslic3r/Geometry/MedialAxis.hpp
-    src/libslic3r/Geometry/Voronoi.cpp
-    src/libslic3r/Geometry/Voronoi.hpp
-    src/libslic3r/Geometry/VoronoiOffset.cpp
-    src/libslic3r/Geometry/VoronoiOffset.hpp
-    src/libslic3r/Geometry/VoronoiUtils.cpp
-    src/libslic3r/Geometry/VoronoiUtils.cpp
-    src/libslic3r/Geometry/VoronoiUtils.hpp
-    src/libslic3r/Geometry/VoronoiUtils.hpp
-    src/libslic3r/Geometry/VoronoiVisualUtils.hpp
     src/libslic3r/InfillAboveBridges.cpp
     src/libslic3r/InfillAboveBridges.hpp
     src/libslic3r/JumpPointSearch.cpp
@@ -356,35 +339,12 @@ set(SLIC3R_SOURCES
     src/libslic3r/SLA/Rotfinder.hpp
     src/libslic3r/SLA/SpatIndex.cpp
     src/libslic3r/SLA/SpatIndex.hpp
-    src/libslic3r/SLA/SupportIslands/EvaluateNeighbor.cpp
-    src/libslic3r/SLA/SupportIslands/EvaluateNeighbor.hpp
-    src/libslic3r/SLA/SupportIslands/ExpandNeighbor.cpp
-    src/libslic3r/SLA/SupportIslands/ExpandNeighbor.hpp
-    src/libslic3r/SLA/SupportIslands/IStackFunction.hpp
-    src/libslic3r/SLA/SupportIslands/LineUtils.cpp
-    src/libslic3r/SLA/SupportIslands/LineUtils.hpp
-    src/libslic3r/SLA/SupportIslands/NodeDataWithResult.hpp
-    src/libslic3r/SLA/SupportIslands/Parabola.hpp
-    src/libslic3r/SLA/SupportIslands/ParabolaUtils.cpp
-    src/libslic3r/SLA/SupportIslands/ParabolaUtils.hpp
-    src/libslic3r/SLA/SupportIslands/PointUtils.cpp
-    src/libslic3r/SLA/SupportIslands/PointUtils.hpp
-    src/libslic3r/SLA/SupportIslands/PolygonUtils.cpp
-    src/libslic3r/SLA/SupportIslands/PolygonUtils.hpp
-    src/libslic3r/SLA/SupportIslands/PostProcessNeighbor.cpp
-    src/libslic3r/SLA/SupportIslands/PostProcessNeighbor.hpp
-    src/libslic3r/SLA/SupportIslands/PostProcessNeighbors.cpp
-    src/libslic3r/SLA/SupportIslands/PostProcessNeighbors.hpp
     src/libslic3r/SLA/SupportIslands/SampleConfigFactory.cpp
     src/libslic3r/SLA/SupportIslands/SampleConfigFactory.hpp
     src/libslic3r/SLA/SupportIslands/SupportIslandPoint.cpp
     src/libslic3r/SLA/SupportIslands/SupportIslandPoint.hpp
     src/libslic3r/SLA/SupportIslands/UniformSupportIsland.cpp
     src/libslic3r/SLA/SupportIslands/UniformSupportIsland.hpp
-    src/libslic3r/SLA/SupportIslands/VectorUtils.hpp
-    src/libslic3r/SLA/SupportIslands/VoronoiGraph.hpp
-    src/libslic3r/SLA/SupportIslands/VoronoiGraphUtils.cpp
-    src/libslic3r/SLA/SupportIslands/VoronoiGraphUtils.hpp
     src/libslic3r/SLA/SupportPointGenerator.cpp
     src/libslic3r/SLA/SupportTree.cpp
     src/libslic3r/SLA/SupportTreeBuilder.cpp
@@ -486,7 +446,6 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/GCode/ToolOrdering.hpp
     include/libslic3r/GCode/WipeTower.hpp
     include/libslic3r/Geometry.hpp
-    include/libslic3r/MeshBoolean.hpp
     include/libslic3r/MinAreaBoundingBox.hpp
     include/libslic3r/miniz_extension.hpp
     include/libslic3r/ModelUtils.hpp
@@ -535,67 +494,6 @@ endforeach()
 # Create the source groups for source tree with root at CMAKE_CURRENT_SOURCE_DIR.
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_LIST_SLA})
 
-if (SLIC3R_STATIC)
-    set(CGAL_Boost_USE_STATIC_LIBS ON CACHE BOOL "" FORCE)
-endif ()
-set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE ON CACHE BOOL "" FORCE)
-
-cmake_policy(PUSH)
-cmake_policy(SET CMP0011 NEW)
-find_package(CGAL REQUIRED)
-cmake_policy(POP)
-
-add_library(libslic3r_cgal STATIC
-    src/libslic3r/CutSurface.hpp
-    src/libslic3r/CutSurface.cpp
-    src/libslic3r/Geometry/VoronoiUtilsCgal.hpp
-    src/libslic3r/Geometry/VoronoiUtilsCgal.cpp
-    src/libslic3r/IntersectionPoints.hpp
-    src/libslic3r/IntersectionPoints.cpp
-    src/libslic3r/MeshBoolean.cpp
-    src/libslic3r/TryCatchSignal.hpp
-    src/libslic3r/TryCatchSignal.cpp
-    src/libslic3r/Triangulation.hpp
-    src/libslic3r/Triangulation.cpp
-    src/libslic3r/SLA/SupportIslands/VoronoiDiagramCGAL.hpp
-    src/libslic3r/SLA/SupportIslands/VoronoiDiagramCGAL.cpp
-
-    include/libslic3r/MeshBoolean.hpp
-)
-
-target_include_directories(libslic3r_cgal PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-# Reset compile options of libslic3r_cgal. Despite it being linked privately, CGAL options
-# (-frounding-math) still propagate to dependent libs which is not desired.
-get_target_property(_cgal_tgt CGAL::CGAL ALIASED_TARGET)
-if (NOT TARGET ${_cgal_tgt})
-    set (_cgal_tgt CGAL::CGAL)
-endif ()
-get_target_property(_opts ${_cgal_tgt} INTERFACE_COMPILE_OPTIONS)
-if (_opts)
-    set(_opts_bad "${_opts}")
-    set(_opts_good "${_opts}")
-    list(FILTER _opts_bad INCLUDE REGEX frounding-math)
-    list(FILTER _opts_good EXCLUDE REGEX frounding-math)
-    set_target_properties(${_cgal_tgt} PROPERTIES INTERFACE_COMPILE_OPTIONS "${_opts_good}")
-    target_compile_options(libslic3r_cgal PRIVATE "${_opts_bad}")
-endif()
-
-target_link_libraries(libslic3r_cgal PRIVATE ${_cgal_tgt} libigl)
-target_link_libraries(libslic3r_cgal PUBLIC
-    admesh
-    localesutils
-    slic3r-domain
-    slic3r-biz-algorithms
-    clipper
-    clipper_z
-    libslic3r
-)
-
-if (MSVC AND "${CMAKE_SIZEOF_VOID_P}" STREQUAL "4") # 32 bit MSVC workaround
-    target_compile_definitions(libslic3r_cgal PRIVATE CGAL_DO_NOT_USE_MPZF)
-endif ()
-
 target_compile_definitions(libslic3r PUBLIC -DUSE_TBB -DTBB_USE_CAPTURED_EXCEPTION=0)
 
 target_include_directories(libslic3r PUBLIC include)
@@ -607,12 +505,10 @@ find_package(JPEG REQUIRED)
 target_link_libraries(libslic3r PRIVATE
     libnest2d
     libcereal
-    boost_libs
     libexpat
     qhull
     TBB::tbb
     TBB::tbbmalloc
-    libslic3r_cgal
     ${CMAKE_DL_LIBS}
     JPEG::JPEG
     qoi
@@ -638,15 +534,13 @@ target_link_libraries(libslic3r PUBLIC
     LibBGCode::bgcode_convert
     tcbspan
     miniz
-    libigl
     agg
     ankerl
-    boost_headeronly
     #libseqarrange
     slic3r-jthread
     slic3r-domain
     slic3r-gcode-reader
-    slic3r-biz-algorithms
+    slic3r-biz-cgal-algorithms
     libpgcode
     clipper
     clipper_z
@@ -670,15 +564,6 @@ if (APPLE)
     # This flag prevents the need for minimum SDK version 10.14
     # currently, PS targets v10.12
     target_compile_options(libslic3r PUBLIC "-fno-aligned-allocation")
-    target_compile_options(libslic3r_cgal PUBLIC "-fno-aligned-allocation")
-endif ()
-
-if (EMSCRIPTEN)
-    # Emscripten has no support for rounding FP env
-    # For discussion see:
-    # https://github.com/emscripten-core/emscripten/issues/11086
-    # https://github.com/WebAssembly/relaxed-simd/issues/19
-    target_compile_definitions(libslic3r_cgal PUBLIC -DCGAL_ALWAYS_ROUND_TO_NEAREST)
 endif ()
 
 if (SLIC3R_PCH AND NOT SLIC3R_SYNTAXONLY)

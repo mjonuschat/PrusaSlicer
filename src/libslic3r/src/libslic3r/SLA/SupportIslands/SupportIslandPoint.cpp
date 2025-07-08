@@ -1,11 +1,14 @@
 #include "SupportIslandPoint.hpp"
-#include "VoronoiGraphUtils.hpp"
-#include "LineUtils.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/VoronoiGraphUtils.hpp"
+#include "Slic3r/Biz/Algorithms/LineUtils.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "libslic3r/ExPolygon.hpp"
 
 using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
+using Slic3r::Biz::CGAL::Algorithms::VoronoiGraphUtils;
+using Slic3r::Biz::CGAL::Algorithms::VoronoiGraph;
+using Slic3r::Biz::Algorithms::LineUtils;
 
 SupportIslandPoint::SupportIslandPoint(Slic3r::Point point, Type type)
     : point(std::move(point)), type(type)

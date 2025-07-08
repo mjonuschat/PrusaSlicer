@@ -1298,7 +1298,7 @@ bool handle_color_at_gap_between_open_polylines(OpenPolyline              &opl,
         } else {
             // Endpoints around the gap have different colors, so we split the gap into two pieces,
             // each with a different color.
-            opl.points.emplace_back(line_alg::midpoint(opl.points.back(), next_polyline_first_pt));
+            opl.points.emplace_back(Biz::Algorithms::Line::line_alg::midpoint(opl.points.back(), next_polyline_first_pt));
             opl.colors.emplace_back(opl.colors.back());
             opl.colors.emplace_back(next_polyline_first_color);
             midpoint_inserted = true;

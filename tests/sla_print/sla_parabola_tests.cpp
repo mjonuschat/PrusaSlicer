@@ -1,10 +1,14 @@
 #include "sla_test_utils.hpp"
 
-#include <libslic3r/SLA/SupportIslands/ParabolaUtils.hpp>
+#include "Slic3r/Biz/Algorithms/Parabola.hpp"
+#include "Slic3r/Biz/CGAL/Algorithms/ParabolaUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
 using namespace Slic3r;
-using namespace Slic3r::sla;
+
+using Slic3r::Biz::CGAL::Algorithms::ParabolaUtils;
+using Slic3r::Biz::Algorithms::ParabolaSegment;
+using Slic3r::Biz::Algorithms::Parabola;
 
 void parabola_check_length(const ParabolaSegment &parabola)
 {
