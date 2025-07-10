@@ -9,6 +9,7 @@
 
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
+#include <fmt/ranges.h>
 #include <vector>
 #include <algorithm>
 

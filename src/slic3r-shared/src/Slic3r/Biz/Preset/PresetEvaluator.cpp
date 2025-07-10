@@ -1,4 +1,5 @@
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
+#include <fmt/ranges.h>
 #include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
 #include "Slic3r/Biz/Preset/ValueMapBuilder.hpp"
 #include "Slic3r/TypeInfo.hpp"

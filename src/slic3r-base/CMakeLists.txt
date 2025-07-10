@@ -53,11 +53,12 @@ if ((NOT UNIX) OR APPLE)
 endif ()
 
 find_package(tl-expected REQUIRED)
+find_package(spdlog REQUIRED)
 
 target_include_directories(slic3r-base PUBLIC include)
 target_include_directories(slic3r-base PRIVATE src)
 target_link_libraries(slic3r-base PUBLIC
-    spdlog
+    spdlog::spdlog
     semver
     boost_headeronly
 	tl::expected

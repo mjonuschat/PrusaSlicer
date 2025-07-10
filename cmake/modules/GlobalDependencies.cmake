@@ -64,3 +64,5 @@ if (NOT TARGET cereal::cereal)
 else()
     target_link_libraries(libcereal INTERFACE cereal::cereal)
 endif()
+
+find_package(fmt REQUIRED)

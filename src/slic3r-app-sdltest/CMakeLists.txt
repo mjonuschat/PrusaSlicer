@@ -10,7 +10,8 @@ endif()
 
 add_executable(slic3r-app-sdltest WIN32 ${SLIC3R_APP_SDLTEST_FILES})
 
-target_link_libraries(slic3r-app-sdltest PUBLIC slic3r-platform-sdl fmt)
+find_package(fmt REQUIRED)
+target_link_libraries(slic3r-app-sdltest PUBLIC slic3r-platform-sdl fmt::fmt)
 
 slic3r_link_resources(slic3r-app-sdltest ${SLIC3R_RESOURCES_DIR})
 

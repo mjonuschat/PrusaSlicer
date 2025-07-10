@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Config/HwConfigJson.hpp"
 #include <charconv>
+#include <fmt/ranges.h>
 #include <tl/expected.hpp>
 #include <variant>
 #include "Slic3r/Biz/Config/ConfigJson.hpp"

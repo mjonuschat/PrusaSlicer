@@ -514,7 +514,6 @@ target_link_libraries(libslic3r PRIVATE
     qoi
     fastfloat
     int128
-    spdlog
 )
 
 if (NOT EMSCRIPTEN)
