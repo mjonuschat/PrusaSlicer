@@ -10,9 +10,6 @@ add_subdirectory(hints)
 add_subdirectory(libnest2d)
 add_subdirectory(clipper)
 
-add_subdirectory(fmt)
-add_subdirectory(spdlog)
-
 add_library(semver STATIC
     semver/semver.c
     semver/semver.h
