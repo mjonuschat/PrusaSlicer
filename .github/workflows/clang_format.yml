@@ -1,55 +1,13 @@
-name: Run static analysis
+name: Run clang-format
 
 on:
   push:
   workflow_dispatch:
 
 jobs:
-  formatting-check:
-    name: Formatting Check
-    runs-on:
-      - self-hosted
-      - Linux
-      - X64
-      - docker-registry
-    container:
-      image: localhost:5000/clang-format:latest
-      options: --user root
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - name: Check format
-      shell: bash
-      run: |
-        set +e
-        git config --global --add safe.directory "$(pwd)"
-        raw_diff=$(git diff -U0 --no-color origin/master -- '*.cpp' '*.hpp' | clang-format-diff-20 -p1)
+  formatting_check:
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/clang_format.yml@slic3r3_prototype
+    secrets: inherit
+    with:
+      actions_branch: slic3r3_prototype
 
-        if [[ -z "$raw_diff" ]]; then
-            echo "All checked files are properly formatted."
-            exit 0
-        fi
-
-        echo "$raw_diff" | colordiff
-
-        # Extract filenames (lines starting with +++)
-        files_to_fix=$(echo "$raw_diff" | grep -E '^\+\+\+ ' | sed -E 's/^\+\+\+ ([^[:space:]]+).*/\1/' | sort -u)
-
-        echo ""
-        echo "Summary: Please run clang-format on these files:"
-        echo -e "\033[1;33mclang-format -i \\ \033[0m"
-
-        count=$(echo "$files_to_fix" | wc -l)
-        i=0
-        for file in $files_to_fix; do
-            ((i++))
-            if [ $i -eq $count ]; then
-                # Last file, no trailing backslash
-                echo -e "\033[1;33m    $file\033[0m"
-            else
-                echo -e "\033[1;33m    $file \\ \033[0m"
-            fi
-        done
-
-        exit 1
