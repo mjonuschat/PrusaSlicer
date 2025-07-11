@@ -30,7 +30,7 @@ void CubeView::render_body(Domain::Vec2f pos, Domain::Vec2f size)
 
     Imgui::NavCube::set_draw_list(ImGui::GetWindowDrawList());
     Imgui::NavCube::set_orthographic(m_camera->cam_projection().type() == Scene::CameraProjectionType::Orthographic);
-    Imgui::NavCube::view_manipulate(view.data(), proj.data(), cam_distance, im_pos, im_size, 0);
+    Imgui::NavCube::view_manipulate(view, proj, cam_distance, im_pos, im_size, 0);
     if (Imgui::NavCube::is_animation_running()) {
         auto [azimuth, zenith] = Imgui::NavCube::get_azimuth_and_zenith();
         m_trackball->set_azimuth_and_zenith(azimuth, zenith);

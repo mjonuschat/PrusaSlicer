@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include "Slic3r/Domain/Types.hpp"
+
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
 
@@ -60,7 +62,8 @@ namespace Slic3r::App::Imgui::NavCube {
     /**
       * @brief Draw the view manipulator
       */
-    void view_manipulate(float* view, const float* projection, float length, const ImVec2& position, const ImVec2& size, ImU32 backgroundColor);
+    void view_manipulate(const Domain::SquareMatrix4f& view, const Domain::SquareMatrix4f& projection, float length,
+        const ImVec2& position, const ImVec2& size, ImU32 backgroundColor);
 
     /**
       * @brief Return current azimuth and zenith
