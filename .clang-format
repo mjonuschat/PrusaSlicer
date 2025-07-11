@@ -19,8 +19,8 @@ AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowBreakBeforeNoexceptSpecifier: Never
 AllowShortBlocksOnASingleLine: false
-AllowShortCaseExpressionOnASingleLine: true
-AllowShortCaseLabelsOnASingleLine: true
+AllowShortCaseExpressionOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
 AllowShortCompoundRequirementOnASingleLine: true
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
@@ -35,7 +35,7 @@ BitFieldColonSpacing: After
 BraceWrapping:
   AfterCaseLabel: false
   AfterClass: true
-  AfterControlStatement: Never
+  AfterControlStatement: MultiLine
   AfterEnum: true
   AfterFunction: true
   AfterNamespace:  false
@@ -91,7 +91,7 @@ IncludeCategories:
 IncludeIsMainRegex: '(Test)?$'
 IndentAccessModifiers: false
 IndentCaseBlocks: false
-IndentCaseLabels: true
+IndentCaseLabels: false
 IndentExportBlock: false
 IndentExternBlock: Indent
 IndentGotoLabels: false
@@ -110,7 +110,7 @@ KeepEmptyLines:
   AtStartOfBlock: false
   AtStartOfFile: false
 KeepFormFeed: false
-LambdaBodyIndentation: Signature
+LambdaBodyIndentation: OuterScope
 LineEnding: LF
 MacroBlockBegin: ''
 MacroBlockEnd:   ''
