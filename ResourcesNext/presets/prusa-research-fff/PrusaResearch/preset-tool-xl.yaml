@@ -390,7 +390,7 @@ variants:
     thick_bridges: 0
     top_solid_min_thickness: 0.7
     bottom_solid_min_thickness: 0.5
-    #standby_temperature_delta: -110
+    standby_temperature_delta: -110
     wipe_tower_rotation_angle: 90
     #wipe_tower_brim_width: 3
     wipe_tower_bridging: 8
@@ -1674,7 +1674,7 @@ variants:
             external_perimeter_extrusion_width: 1
 
 # MMU branch
-  - name: multi-tool branch
+  - name: '*multi-tool branch*'
     variants:
     - condition: printer.tool_count > 1
       variants:

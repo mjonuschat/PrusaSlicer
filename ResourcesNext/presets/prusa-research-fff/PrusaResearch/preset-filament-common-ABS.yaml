@@ -37,7 +37,7 @@ values:
   # retract_lift: 0.15 
   # travel_max_lift: 1.5
   # travel_ramping_lift: 1
-  # filament_travel_slope: 1
+  # travel_slope: 1
   # retract_length: 0.8
   filament_type: ABS
   filament_unload_time: 8.5

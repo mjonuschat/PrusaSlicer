@@ -73,7 +73,9 @@ TEST_CASE("Expression eval")
         e.set_var("name", "abcd");
         v = eval("name == \"abc\"");
         REQUIRE(boost::get<bool>(v) == false);
-
+        e.set_var("printer.tool_count", double{1});
+        v = eval("printer.tool_count == 1");
+        REQUIRE(boost::get<bool>(v) == true);
         e.set_var("tool.nozzle_diameter", 0.4);
         e.set_var("tool.high_flow_nozzle", true);
         v = eval("tool.nozzle_diameter == 0.4");

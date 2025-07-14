@@ -2,7 +2,7 @@ kind: printer
 variants:
 - condition: printer.base_model == "COREONE"
   name: Prusa CORE One
-  val ues:
+  values:
     bed_shape:
     - '0x0'
     - 250x0
@@ -19,12 +19,11 @@ variants:
     color_change_gcode: "M600\nG1 E0.3 F1500 ; prime after color change"
     end_gcode: |-
       {if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+1, max_print_height)} F720 ; Move print head up{endif}
-      G1 E-1 F2400 ; additional retraction
       M104 S0 ; turn off temperature
       M140 S0 ; turn off heatbed
       M141 S0 ; disable chamber control
       M107 ; turn off fan
-      G1 X242 Y-9 F10200 ; park
+      G1 X242 Y211 F10200 ; park
       G4 ; wait
       M572 S0 ; reset PA
       M84 X Y E ; disable motors
@@ -35,7 +34,6 @@ variants:
     layer_gcode: |
       ;AFTER_LAYER_CHANGE
       ;[layer_z]
-      {if ! spiral_vase}M74 W[extruded_weight_total]{endif}
     machine_limits_usage: emit_to_gcode
     machine_max_acceleration_e: [5000.0, 2500.0]
     machine_max_acceleration_extruding: [7000.0, 2500.0]
@@ -59,7 +57,7 @@ variants:
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
-    thumbnails: [16x16/QOI, ' 313x173/QOI', ' 440x240/QOI', ' 480x240/QOI', ' 640x480/PNG']
+    thumbnails: [16x16/QOI, ' 313x173/QOI', ' 480x240/QOI', ' 380x285/PNG']
     use_firmware_retraction: 0
     use_relative_e_distances: 1
     use_volumetric_e: 0
@@ -78,7 +76,7 @@ variants:
       M862.3 P "COREONE" ; printer model check
       M862.5 P2 ; g-code level check
       M862.6 P"Input shaper" ; FW feature check
-      M115 U6.3.0+10073
+      M115 U6.3.3+10442
 
       M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
@@ -91,7 +89,7 @@ variants:
       M140 S[first_layer_bed_temperature] ; set bed temp
       {endif}
 
-      M109 R{((filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : 170)} ; wait for temp
+      M109 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : 170)} ; wait for temp
 
       M84 E ; turn off E motor
 
@@ -118,9 +116,9 @@ variants:
 
       G29 G ; absorb heat
 
-      M109 R{((filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : 170)} ; wait for MBL temp
+      M109 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : 170)} ; wait for MBL temp
 
-      M302 S160 ; lower cold extrusion limit to 160C
+      M302 S155 ; lower cold extrusion limit to 155C
 
       {if filament_type[initial_tool]=="FLEX"}
       G1 E-4 F2400 ; retraction
@@ -175,7 +173,7 @@ variants:
         M862.5 P2 ; g-code level check
         M862.6 P "Input shaper" ; FW feature check
         M862.6 P "MMU3" ; FW feature check
-        M115 U6.3.0+10073
+        M115 U6.3.3+10442
 
         ; setup MMU
         M708 A0x0b X5   ; extra load distance
@@ -197,7 +195,7 @@ variants:
         M140 S[first_layer_bed_temperature] ; set bed temp
         {endif}
 
-        M109 R{((filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : 170)} ; wait for temp
+        M109 R{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : 170)} ; wait for temp
 
         M84 E ; turn off E motor
 
@@ -229,9 +227,9 @@ variants:
 
         G29 G ; absorb heat
 
-        M109 T{initial_tool} R{((filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : 170)} ; wait for MBL temp
+        M109 T{initial_tool} R{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : 170)} ; wait for MBL temp
 
-        M302 S160 ; lower cold extrusion limit to 160C
+        M302 S155 ; lower cold extrusion limit to 155C
 
         {if filament_type[initial_tool]=="FLEX"}
         G1 E-4 F2400 ; retraction
@@ -268,7 +266,7 @@ variants:
         ; Extrude purge line
         ;
         G92 E0 ; reset extruder position
-        G1 E{(filament_type[0] == "FLEX" ? 4 : 2)} F2400 ; deretraction after the initial one before nozzle cleaning
+        G1 E{(filament_type[initial_tool] == "FLEX" ? 4 : 2)} F2400 ; deretraction after the initial one before nozzle cleaning
         G0 E5 X235 Z0.2 F500 ; purge
         G0 X145 E36 F500 ; purge
         G0 X135 E4 F500 ; purge
@@ -279,11 +277,11 @@ variants:
         G92 E0
         M221 S100 ; set flow to 100%
       end_gcode: |-
-        end_gcode = {if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+1, max_print_height)} F720 ; Move print head up{endif}
+        {if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+1, max_print_height)} F720 ; Move print head up{endif}
         M140 S0 ; turn off heatbed
         M141 S0 ; disable chamber control
         M107 ; turn off fan
-        G1 X242 Y-9 F10200 ; park
+        G1 X242 Y211 F10200 ; park
         {if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+50, max_print_height)} F720 ; Move bed down{endif}
         M702 ; unload the current filament
         M104 S0 ; turn off temperature

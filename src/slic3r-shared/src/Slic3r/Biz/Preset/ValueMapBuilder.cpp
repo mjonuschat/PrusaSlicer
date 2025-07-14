@@ -38,7 +38,7 @@ void append_print_values(Expr::ValueMap& values, const Domain::ConfigBox& print_
 {
     auto it = print_preset.contains("layer_height");
     if (it.item)
-        append_value(values, "print.layer_height", std::to_string(it.item->value().get<double>()));
+        append_value(values, "print.layer_height", it.item->value().get<double>());
 }
 
 void append_tool_values(Expr::ValueMap& values, const Domain::Preset::HwToolConfig& tool)

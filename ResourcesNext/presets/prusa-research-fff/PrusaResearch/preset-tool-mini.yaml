@@ -3,7 +3,6 @@ id: '*common MINI*'
 variants:
 - condition: printer.model == "MINI"
   values:
-    retract_before_travel: 1.5
     retract_layer_change: 1
     retract_length_toolchange: 0
     retract_lift_above: 0
@@ -162,7 +161,7 @@ variants:
     wipe_tower_extra_spacing: 110%
     wipe_tower_extra_flow: 250%
   variants:
-  - name: non-MMU branch
+  - name: '*non-MMU branch*'
     variants:
 # 0.25 nozzle
     - condition: tool.nozzle_diameter == 0.25

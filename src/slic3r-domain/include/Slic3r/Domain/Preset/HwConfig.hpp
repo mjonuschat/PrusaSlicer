@@ -15,7 +15,6 @@
 
 namespace Slic3r::Domain::Preset {
 
-
 /**
  * @brief Address of feeder or material slot.
  *
@@ -85,8 +84,8 @@ struct HwSheetConfig
     FeatureValueMap features;
 };
 
-using HwToolConfigs = std::vector<HwToolConfig>;
-using HwFeederConfigs = std::map<Address, HwFeederConfig>;
+using HwToolConfigs     = std::vector<HwToolConfig>;
+using HwFeederConfigs   = std::map<Address, HwFeederConfig>;
 using HwMaterialConfigs = std::map<Address, MaterialConfig>;
 
 struct HwPrinterConfig
@@ -105,6 +104,7 @@ struct HwPrinterConfig
     HwMaterialConfigs materials;
     HwSheetConfig sheet;
 };
+
 using HwPrinterConfigs = std::vector<HwPrinterConfig>;
 
 struct FeatureDef
@@ -192,7 +192,6 @@ struct HwFeederConfigTemplate
 
 using HwFeederConfigTemplates = std::vector<HwFeederConfigTemplate>;
 
-
 struct HwPrinterConfigTemplate
 {
     std::string id;
@@ -223,7 +222,8 @@ struct VendorInfo
     VendorFeatures features;
 };
 
-struct VendorData {
+struct VendorData
+{
     VendorInfo info;
     HwPrinterConfigTemplates printer_configs;
     HwDefs defs;
@@ -239,16 +239,16 @@ class MaterialIterator
 {
 public:
     using iterator_category = std::forward_iterator_tag;
-    using difference_type = std::ptrdiff_t;
-    using value_type = MaterialIterator;
-    using pointer = value_type*;
-    using reference = value_type&;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = MaterialIterator;
+    using pointer           = value_type*;
+    using reference         = value_type&;
 
     explicit MaterialIterator(const HwPrinterConfig& config);
-    MaterialIterator(const MaterialIterator&)=default;
-
+    MaterialIterator(const MaterialIterator&) = default;
 
     MaterialIterator& operator++();
+
     MaterialIterator operator++(int)
     {
         MaterialIterator tmp = *this;
@@ -256,15 +256,36 @@ public:
         return tmp;
     }
 
-    reference operator*() { return *this; }
-    pointer operator->() { return this; }
+    reference operator*()
+    {
+        return *this;
+    }
 
-    bool operator==(const MaterialIterator& rhs) const { return m_current_address == rhs.m_current_address; }
-    bool operator!=(const MaterialIterator& rhs) const { return m_current_address != rhs.m_current_address; }
+    pointer operator->()
+    {
+        return this;
+    }
 
-    bool is_valid() const { return !m_current_address.empty(); }
+    bool operator==(const MaterialIterator& rhs) const
+    {
+        return m_current_address == rhs.m_current_address;
+    }
 
-    const Address& address() const { return m_current_address; }
+    bool operator!=(const MaterialIterator& rhs) const
+    {
+        return m_current_address != rhs.m_current_address;
+    }
+
+    bool is_valid() const
+    {
+        return !m_current_address.empty();
+    }
+
+    const Address& address() const
+    {
+        return m_current_address;
+    }
+
     const HwToolConfig& tool_config() const
     {
         ASSERT(is_valid());
@@ -289,14 +310,20 @@ public:
         ASSERT(it != m_config.feeders.end());
         return it->second;
     }
+
 private:
     friend MaterialIterator begin(const MaterialIterator& it);
     friend MaterialIterator end(const MaterialIterator& it);
 
-    MaterialIterator(const HwPrinterConfig& config, const Address& addr)
-        : m_config(config), m_current_address(addr)
+    MaterialIterator(const HwPrinterConfig& config, const Address& addr) :
+        m_config(config),
+        m_current_address(addr)
     {}
-    MaterialIterator invalid() const { return MaterialIterator{m_config, {}}; }
+
+    MaterialIterator invalid() const
+    {
+        return MaterialIterator{m_config, {}};
+    }
 
     size_t current_slot_count() const;
     void descent_to_material_slot();
@@ -306,12 +333,24 @@ private:
     Address m_current_address;
 };
 
-inline MaterialIterator begin(const MaterialIterator& it) { return it; }
-inline MaterialIterator end(const MaterialIterator& it) { return it.invalid(); }
+inline MaterialIterator begin(const MaterialIterator& it)
+{
+    return it;
+}
+
+inline MaterialIterator end(const MaterialIterator& it)
+{
+    return it.invalid();
+}
 
 void fill_missing_features_with_default(HwPrinterConfig& printer_config, const VendorData& vendor_data);
-HwPrinterConfig remove_features_with_default(const HwPrinterConfig& printer_config, const VendorData& vendor_data);
+HwPrinterConfig remove_features_with_default(
+    const HwPrinterConfig& printer_config,
+    const VendorData& vendor_data
+);
 
 std::string generate_id();
 
-} // namespace Slic3r::Domain::Presets
+std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_data);
+
+} // namespace Slic3r::Domain::Preset

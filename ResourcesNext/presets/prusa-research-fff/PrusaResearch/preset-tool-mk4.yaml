@@ -4,7 +4,6 @@ id: '*common MK4*'
 variants:
 - condition: printer.model == "MK4"
   values:
-    retract_before_travel: 1.5
     retract_layer_change: 1
     retract_length_toolchange: 0
     retract_lift_above: 0
@@ -208,7 +207,7 @@ variants:
     wipe_tower_extra_spacing: 110%
     wipe_tower_extra_flow: 250%
   variants:
-  - name: non-MMU branch
+  - name: '*non-MMU branch*'
     variants:
     - condition: tool.nozzle_high_flow
       values:
@@ -1829,7 +1828,7 @@ variants:
             external_perimeter_extrusion_width: 1
 
 # MMU branch
-  - name: MMU branch
+  - name: '*MMU branch*'
     variants:
     - condition: feeder.base_model == "MMU"
       variants:

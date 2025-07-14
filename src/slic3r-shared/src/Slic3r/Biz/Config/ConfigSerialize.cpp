@@ -176,8 +176,6 @@ static void find_keys_with_many_children_recursive(const nlohmann::ordered_json&
     }
 }
 
-
-
 std::string beautify_json(
     const nlohmann::ordered_json& complete_json,
     int indent, int squash_factor)

@@ -55,13 +55,11 @@ struct SourceLocatedData
     Slic3r::Domain::Preset::SourceLocated<std::string> name;
 };
 
-}
+} // namespace Tests
 
 STRUCT_DESC_SIMPLE(Tests::Ver, major, minor, patch);
 STRUCT_DESC_SIMPLE(Tests::Item, id);
 STRUCT_DESC_SIMPLE(Tests::MyData, version, a, b, items, opt_int, param);
-
-
 
 STRUCT_DESC_SIMPLE(Tests::Condition, condition);
 STRUCT_DESC_SIMPLE(Tests::VecData, data);
@@ -72,13 +70,11 @@ namespace Yaml = Slic3r::Biz::Yaml;
 
 TEST_CASE("Load Yaml from file into MyData", "[yaml]")
 {
-
-
-    const std::string filename = Tests::get_datadir().string() + "/preset/test.yaml";
+    const std::string filename = Tests::get_datadir().string() + "/presets/test.yaml";
     Tests::MyData data;
     try {
         Yaml::YamlAdapter::Document doc = Yaml::parse_file(filename.c_str());
-        data  = Yaml::parse_struct_unwrap<Tests::MyData>(doc);
+        data                            = Yaml::parse_struct_unwrap<Tests::MyData>(doc);
         REQUIRE(data.a == 42);
         REQUIRE(data.b == "answer");
         REQUIRE(data.version.major == 1);
@@ -94,7 +90,6 @@ TEST_CASE("Load Yaml from file into MyData", "[yaml]")
     } catch (const Yaml::ParseError& e) {
         std::cerr << e.what() << std::endl;
     }
-
 }
 
 TEST_CASE("Load Yaml from string", "[yaml]")
@@ -102,7 +97,7 @@ TEST_CASE("Load Yaml from string", "[yaml]")
     std::string yaml_ver_no_minor = R"(
 major: 1
 )";
-    std::string yaml_ver_ok = R"(
+    std::string yaml_ver_ok       = R"(
 major: 3
 minor: 2
 patch: 321
@@ -113,8 +108,10 @@ patch: 321
     REQUIRE_THROWS_MATCHES(
         Yaml::parse_struct_unwrap<Tests::Ver>(doc),
         Yaml::ParseError,
-        //Catch::Matchers::ContainsSubstring("Required field 'minor' not found")
-        Catch::Matchers::MessageMatches(Catch::Matchers::ContainsSubstring("Required field 'minor' not found"))
+        // Catch::Matchers::ContainsSubstring("Required field 'minor' not found")
+        Catch::Matchers::MessageMatches(
+            Catch::Matchers::ContainsSubstring("Required field 'minor' not found")
+        )
     );
 
     doc = Yaml::parse_string(yaml_ver_ok);
@@ -125,7 +122,6 @@ patch: 321
     REQUIRE(ver.patch == 321);
 }
 
-
 TEST_CASE("ExprAst parsing", "[yaml]")
 {
     std::string yaml = R"(
@@ -133,9 +129,11 @@ condition: 'tool.nozzle_diameter >= 0.2'
 )";
 
     Yaml::YamlAdapter::Document doc = Yaml::parse_string(yaml);
-    Tests::Condition condition = Yaml::parse_struct_unwrap<Tests::Condition>(doc);
-    REQUIRE(boost::get<Slic3r::Domain::Expr::Binary>(condition.condition).op == Slic3r::Domain::Expr::BinaryOp::GtEq);
-
+    Tests::Condition condition      = Yaml::parse_struct_unwrap<Tests::Condition>(doc);
+    REQUIRE(
+        boost::get<Slic3r::Domain::Expr::Binary>(condition.condition).op
+        == Slic3r::Domain::Expr::BinaryOp::GtEq
+    );
 }
 
 TEST_CASE("Vector parsing", "[yaml]")
@@ -145,21 +143,21 @@ data: [0]
 )";
 
     Yaml::YamlAdapter::Document doc = Yaml::parse_string(yaml);
-    Tests::VecData vec = Yaml::parse_struct_unwrap<Tests::VecData>(doc);
+    Tests::VecData vec              = Yaml::parse_struct_unwrap<Tests::VecData>(doc);
     REQUIRE(vec.data.size() == 1);
 }
 
 TEST_CASE("Slic3r Types", "[yaml]")
 {
-    using Slic3r::Domain::Preset::FeatureValue;
-    using Slic3r::Domain::Preset::PresetValue;
+    using Slic3r::Domain::Percentage;
     using Slic3r::Domain::Vec2d;
     using Slic3r::Domain::Vec2ds;
     using Slic3r::Domain::Preset::Bools;
     using Slic3r::Domain::Preset::Doubles;
-    using Slic3r::Domain::Preset::Strings;
-    using Slic3r::Domain::Percentage;
+    using Slic3r::Domain::Preset::FeatureValue;
     using Slic3r::Domain::Preset::Percentages;
+    using Slic3r::Domain::Preset::PresetValue;
+    using Slic3r::Domain::Preset::Strings;
     SECTION("PresetValue and FeatureValue")
     {
         std::string yaml = R"(
@@ -181,12 +179,11 @@ presets:
   percents: ['12%']
 )";
         try {
-            auto doc = Yaml::parse_string(yaml);
+            auto doc              = Yaml::parse_string(yaml);
             Tests::ValueData data = Yaml::parse_struct_unwrap<Tests::ValueData>(doc);
             REQUIRE(data.features.find("bool")->second == FeatureValue{true});
             REQUIRE(data.features.find("num")->second == FeatureValue{42.1});
             REQUIRE(data.features.find("str")->second == FeatureValue{"Hello world"});
-
 
             REQUIRE(data.presets.find("vec2")->second == PresetValue{Vec2d{0, 0}});
             REQUIRE(data.presets.find("vec2s")->second == PresetValue{Vec2ds{Vec2d{0, 0}}});
@@ -198,8 +195,7 @@ presets:
             REQUIRE(data.presets.find("strs")->second == PresetValue{Strings{"Hello", "world"}});
             REQUIRE(data.presets.find("mono")->second == PresetValue{std::monostate{}});
             REQUIRE(data.presets.find("percent")->second == PresetValue{Percentage{12}});
-            REQUIRE(data.presets.find("percents")->second == PresetValue{Percentages{Percentage{12}}
-        });
+            REQUIRE(data.presets.find("percents")->second == PresetValue{Percentages{Percentage{12}}});
 
         } catch (Yaml::ParseError& e) {
             std::cerr << e.what() << std::endl;
@@ -216,7 +212,7 @@ presets:
 name: 'Abc'
 )";
         try {
-            auto doc = Yaml::parse_string(yaml);
+            auto doc  = Yaml::parse_string(yaml);
             auto data = Yaml::parse_struct_unwrap<Tests::SourceLocatedData>(doc);
             REQUIRE(data.name.value == "Abc");
             REQUIRE(data.name.source_location.column == 7);

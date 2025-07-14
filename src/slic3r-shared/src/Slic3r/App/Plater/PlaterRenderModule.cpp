@@ -63,10 +63,32 @@ namespace Slic3r::App::Plater {
 
 namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
-PlaterRenderModule::PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
-    std::shared_ptr<BedThumbnailStore> thumbnail_store)
-    : m_workbench(workbench), m_project_interactor(project_interactor), m_thumbnail_store(thumbnail_store)
-{}
+PlaterRenderModule::PlaterRenderModule(
+    const Domain::Workbench& workbench,
+    Biz::ProjectInteractor& project_interactor,
+    std::shared_ptr<BedThumbnailStore> thumbnail_store
+) :
+    m_workbench(workbench),
+    m_project_interactor(project_interactor),
+    m_thumbnail_store(std::move(thumbnail_store))
+{
+    m_command_registry.register_command(
+        std::make_unique<Platform::FuncCommand>(
+            "select-next-printer",
+            [this]() {
+        auto& preset_interactor        = m_project_interactor.preset_interactor();
+        const auto& available_printers = preset_interactor.printer_presets().items();
+        auto printer_id                = available_printers.at(2).id;
+        preset_interactor.select_printer_preset(printer_id);
+    },
+            nullptr,
+            Platform::KeyboardShortcut{
+                static_cast<Platform::KeyModifiers>(Platform::KeyModifier::Ctrl),
+                Platform::KeyCode::P
+            }
+        )
+    );
+}
 
 PlaterRenderModule::~PlaterRenderModule()
 {
@@ -77,10 +99,12 @@ PlaterRenderModule::~PlaterRenderModule()
 void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
     AbstractRenderModule::on_init(device, imgui_render);
-    Yoga::Item::set_imgui_render(&imgui_render
-    ); // Todo: move this somewhere where it is invoked once
-    m_scene_presenter =
-        std::make_unique<PlaterScenePresenter>(m_workbench, m_project_interactor, *m_device);
+    Yoga::Item::set_imgui_render(&imgui_render); // Todo: move this somewhere where it is invoked once
+    m_scene_presenter = std::make_unique<PlaterScenePresenter>(
+        m_workbench,
+        m_project_interactor,
+        *m_device
+    );
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(this);
 
@@ -88,8 +112,17 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     init_scene();
     init_scene_layout();
 
-    m_thumbnail_generator = std::make_unique<BedThumbnailTextureGenerator>(*m_device, m_project_interactor, *m_scene_presenter);
-    m_thumbnail_updater = std::make_unique<BedThumbnailUpdater>(*m_device, *m_thumbnail_generator, *m_object_list.get(), *m_thumbnail_store);
+    m_thumbnail_generator = std::make_unique<BedThumbnailTextureGenerator>(
+        *m_device,
+        m_project_interactor,
+        *m_scene_presenter
+    );
+    m_thumbnail_updater = std::make_unique<BedThumbnailUpdater>(
+        *m_device,
+        *m_thumbnail_generator,
+        *m_object_list.get(),
+        *m_thumbnail_store
+    );
     m_scene_presenter->add_listener<Plater::IBedVisuallyChangedListener>(m_thumbnail_updater.get());
     m_scene_presenter->force_bed_thumbnails_generation();
 
@@ -115,10 +148,10 @@ void PlaterRenderModule::init_scene_layout()
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, true));
 
-    m_cube_view = Passthrough{std::make_unique<CubeView>()};
-    m_sidebar_bed = Passthrough(std::make_unique<SidebarBed>());
+    m_cube_view     = Passthrough{std::make_unique<CubeView>()};
+    m_sidebar_bed   = Passthrough(std::make_unique<SidebarBed>());
     m_sidebar_print = Passthrough(std::make_unique<SidebarPrint>());
-    m_history = Passthrough(std::make_unique<History>());
+    m_history       = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
 
     m_sidebar_action_buttons = Passthrough{std::make_unique<SidebarPlaterActionButtons>()};
@@ -128,85 +161,133 @@ void PlaterRenderModule::init_scene_layout()
     }
 
     m_layout.reset(new PlaterRenderLayout(
-        m_top_bar.release(), m_object_list.release(), m_cube_view.release(), m_sidebar_bed.release(),
-        m_sidebar_print.release(), m_sidebar_action_buttons.release(), m_history.release()
+        m_top_bar.release(),
+        m_object_list.release(),
+        m_cube_view.release(),
+        m_sidebar_bed.release(),
+        m_sidebar_print.release(),
+        m_sidebar_action_buttons.release(),
+        m_history.release()
     ));
     m_layout->init();
 
     // init toolbars
     m_layout->add_toolbar_item_panel(
-        ToolbarID::Top, Render::Icon::ToolbarObjects, "Object List", "Ctrl + Alt + O", {},
+        ToolbarID::Top,
+        Render::Icon::ToolbarObjects,
+        "Object List",
+        "Ctrl + Alt + O",
+        {},
         m_object_list.get()
     );
 
     m_layout->add_toolbar_item_panel(
-        ToolbarID::Bottom, Render::Icon::ToolbarHistory, "Actions History", "Shift + Alt + H", {},
+        ToolbarID::Bottom,
+        Render::Icon::ToolbarHistory,
+        "Actions History",
+        "Shift + Alt + H",
+        {},
         m_history.get()
     );
 
     m_layout->add_toolbar_item(
-        ToolbarID::Middle, Render::Icon::ToolbarAdd, "Add...", "Ctrl + I",
-        {.action =
-             [this]() {
-                 auto& scene_interactor = m_project_interactor.scene_interactor();
-                 const auto& bed =
-                     m_project_interactor.selected_project().config_containers().front()->bed();
-                 // Set the default size for newly added objects to one tenth of the maximum print height.
-                 const float def_side = 0.1f * bed.max_print_height();
+        ToolbarID::Middle,
+        Render::Icon::ToolbarAdd,
+        "Add...",
+        "Ctrl + I",
+        {.action = [this]() {
+        auto& scene_interactor = m_project_interactor.scene_interactor();
+        const auto& bed = m_project_interactor.selected_project().config_containers().front()->bed();
+        // Set the default size for newly added objects to one tenth of the maximum print height.
+        const float def_side = 0.1f * bed.max_print_height();
 
-                 scene_interactor.new_object_from_mesh(TriMesh::make_cube(def_side, def_side, def_side));
+        scene_interactor.new_object_from_mesh(TriMesh::make_cube(def_side, def_side, def_side));
 
-                 Transform3d xform = Transform3d::Identity();
-                 xform.translate(Vec3d{ 2.f * def_side, 2.f * def_side, 0 });
-                 scene_interactor.transform_selection(xform.matrix());
+        Transform3d xform = Transform3d::Identity();
+        xform.translate(Vec3d{2.f * def_side, 2.f * def_side, 0});
+        scene_interactor.transform_selection(xform.matrix());
 
-                 m_scene_presenter->scene().log_nodes();
-             }}
+        m_scene_presenter->scene().log_nodes();
+    }}
     );
 
     m_toolbar_add_instance = m_layout->add_toolbar_item(
-        ToolbarID::Middle, Render::Icon::ToolbarAddInstance, "Add instance", "+",
-        { .action = [this]() {
-                 const size_t obj_id = m_project_interactor.scene_interactor()
-                     .selection().elements[0].object_id;
+        ToolbarID::Middle,
+        Render::Icon::ToolbarAddInstance,
+        "Add instance",
+        "+",
+        {.action = [this]() {
+        const size_t obj_id = m_project_interactor.scene_interactor().selection().elements[0].object_id;
 
-                 const Domain::ModelObject& obj = *m_project_interactor.selected_project()
-                     .find_object_by_id(obj_id);
+        const Domain::ModelObject& obj = *m_project_interactor.selected_project().find_object_by_id(
+            obj_id
+        );
 
-                 Transform3d xform = Transform3d::Identity();
-                 Vec3d last_instance_offset = obj.instances[obj.instances.size() - 1]->get_offset();
-                 xform.translate(Vec3d{ last_instance_offset.x() + 10.f, last_instance_offset.y() + 5.f, 0 });
+        Transform3d xform          = Transform3d::Identity();
+        Vec3d last_instance_offset = obj.instances[obj.instances.size() - 1]->get_offset();
+        xform.translate(Vec3d{last_instance_offset.x() + 10.f, last_instance_offset.y() + 5.f, 0});
 
-                 m_project_interactor.scene_interactor().add_instance(xform.matrix());
-                 m_scene_presenter->scene().log_nodes();
-             } }
+        m_project_interactor.scene_interactor().add_instance(xform.matrix());
+        m_scene_presenter->scene().log_nodes();
+    }}
     );
     m_toolbar_add_instance->set_enabled(false);
 
-    //    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarArrange, "Arrange", "A", { []() {} });
+    // m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarArrange, "Arrange", "A", { []() {} });
     m_toolbar_move = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle, Render::Icon::ToolbarMove, "Move", "M",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Translation); }},
+        ToolbarID::Middle,
+        Render::Icon::ToolbarMove,
+        "Move",
+        "M",
+        {.action =
+             [this]() {
+        toggle_activate_tool(Scene::ToolType::Translation);
+    }},
         m_translation_gizmo
     );
     m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle, Render::Icon::ToolbarRotation, "Rotate", "R",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }}, m_rotation_gizmo
+        ToolbarID::Middle,
+        Render::Icon::ToolbarRotation,
+        "Rotate",
+        "R",
+        {.action =
+             [this]() {
+        toggle_activate_tool(Scene::ToolType::Rotation);
+    }},
+        m_rotation_gizmo
     );
     m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle, Render::Icon::ToolbarGraph, "Simplify", "B", 
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Simplify); }},
+        ToolbarID::Middle,
+        Render::Icon::ToolbarGraph,
+        "Simplify",
+        "B",
+        {.action =
+             [this]() {
+        toggle_activate_tool(Scene::ToolType::Simplify);
+    }},
         m_simplify_gizmo
     );
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle, Render::Icon::ToolbarPaintOnSupports, "Paint-on supports", "L",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); }},
+        ToolbarID::Middle,
+        Render::Icon::ToolbarPaintOnSupports,
+        "Paint-on supports",
+        "L",
+        {.action =
+             [this]() {
+        toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo);
+    }},
         m_paint_on_supports_gizmo
     );
 
     m_toolbar_measure = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle, Render::Icon::ToolbarMeasure, "Measure", "U",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::MeasureGizmo); }},
+        ToolbarID::Middle,
+        Render::Icon::ToolbarMeasure,
+        "Measure",
+        "U",
+        {.action =
+             [this]() {
+        toggle_activate_tool(Scene::ToolType::MeasureGizmo);
+    }},
         m_measure_gizmo
     );
 }
@@ -245,40 +326,62 @@ void PlaterRenderModule::init_scene()
 
 void PlaterRenderModule::init_gizmos()
 {
-    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter, m_project_interactor);
+    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(
+        *m_device,
+        *m_scene_presenter,
+        m_project_interactor
+    );
     m_gizmo_manager->add_listener<IGizmoActiveToolListener>(this);
-    PlaterCameraGizmo* camera_gizmo =
-        &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(m_workbench, *m_scene_presenter);
+    PlaterCameraGizmo* camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(
+        m_workbench,
+        *m_scene_presenter
+    );
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>(
         camera_gizmo
     );
     m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(
-        m_project_interactor.scene_interactor(), *m_device, *m_scene_presenter, m_screen_info
+        m_project_interactor.scene_interactor(),
+        *m_device,
+        *m_scene_presenter,
+        m_screen_info
     );
-    m_gizmo_manager
-        ->add_base_gizmo<BedSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
-    m_gizmo_manager
-        ->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
+    m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(
+        m_project_interactor.scene_interactor(),
+        *m_scene_presenter
+    );
+    m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(
+        m_project_interactor.scene_interactor(),
+        *m_scene_presenter
+    );
     m_translation_gizmo = &m_gizmo_manager->add_tool_gizmo<TranslationGizmo>(
-        *m_device, m_gizmo_manager->data_factory(), *m_scene_presenter,
+        *m_device,
+        m_gizmo_manager->data_factory(),
+        *m_scene_presenter,
         m_project_interactor.scene_interactor()
     );
     m_rotation_gizmo = &m_gizmo_manager->add_tool_gizmo<RotationGizmo>(
-        *m_device, m_gizmo_manager->data_factory(), *m_scene_presenter,
+        *m_device,
+        m_gizmo_manager->data_factory(),
+        *m_scene_presenter,
         m_project_interactor.scene_interactor()
     );
-    SimplifyGizmo::CloseFn close_fn = [mng = m_gizmo_manager.get()]() { mng->deactivate_current_tool(); };
+    SimplifyGizmo::CloseFn close_fn = [mng = m_gizmo_manager.get()]() {
+        mng->deactivate_current_tool();
+    };
     m_simplify_gizmo = &m_gizmo_manager->add_tool_gizmo<SimplifyGizmo>(
-        *m_device, *m_scene_presenter, m_project_interactor, close_fn);
+        *m_device,
+        *m_scene_presenter,
+        m_project_interactor,
+        close_fn
+    );
     m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>();
-    m_measure_gizmo = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>();
+    m_measure_gizmo           = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>();
 }
 
 void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)
 {
     update_toolbar_tool_selection(active_tool ? active_tool->type() : Scene::ToolType::None);
 }
-
 
 void PlaterRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
 {
@@ -324,11 +427,12 @@ public:
         fill_data<2>(v);
         ImGui::InputFloat2(label, m_data);
     }
+
     //
     // void operator()(const char* label, const Vec3f& v)
     // {
-    //     fill_data<3>(v);
-    //     ImGui::InputFloat3(label, m_data);
+    // fill_data<3>(v);
+    // ImGui::InputFloat3(label, m_data);
     // }
     //
     void operator()(const char* label, const Vec3d& v)
@@ -350,7 +454,7 @@ public:
     }
 
 private:
-    template<size_t N, typename VecT>
+    template <size_t N, typename VecT>
     void fill_data(const VecT& data)
     {
         for (size_t i = 0; i < N; i++)
@@ -368,11 +472,16 @@ void imgui_scenegraph_node_info(const Scene::Node& node)
         node_flags |= ImGuiTreeNodeFlags_Leaf;
     const std::string& name = node.debug_name();
     if (ImGui::TreeNodeEx(
-            &node, node_flags, "%s %s%s%s%s", name.empty() ? "Node" : name.c_str(),
-            node.has_render_component() ? "(R)" : "", node.has_material_override() ? "(M)" : "",
-            node.has_imgui_render_component() ? "(I)" : "", node.has_raycast_component() ? "(C)" : ""
-        )) {
-
+            &node,
+            node_flags,
+            "%s %s%s%s%s",
+            name.empty() ? "Node" : name.c_str(),
+            node.has_render_component() ? "(R)" : "",
+            node.has_material_override() ? "(M)" : "",
+            node.has_imgui_render_component() ? "(I)" : "",
+            node.has_raycast_component() ? "(C)" : ""
+        ))
+    {
         static const Scene::Node* opened_node = nullptr;
 
         ImGui::SameLine();
@@ -404,7 +513,6 @@ static void render_imgui_debug_input_font()
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("Fonts test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::BeginTable("Fonts", 2, ImGuiTableFlags_Borders)) {
-
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Czech");
@@ -437,7 +545,7 @@ static void render_imgui_debug_icons()
     if (ImGui::Begin("ImGui icons test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::BeginTable("Icons", 2, ImGuiTableFlags_Borders)) {
             float font_scale = ImGui::GetTextLineHeight() / 15.0f;
-            int icon_sz = lround(16 * font_scale);
+            int icon_sz      = lround(16 * font_scale);
 
             int px = icon_sz;
             ImGui::TableNextRow();
@@ -481,7 +589,8 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
                     Imgui::icon_button(
-                        ICONS[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f
+                        ICONS[i].first,
+                        ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f
                     );
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
@@ -526,7 +635,8 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
                     Imgui::icon_button(
-                        ICONS_MEDIUM[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f
+                        ICONS_MEDIUM[i].first,
+                        ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f
                     );
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
@@ -565,11 +675,11 @@ static void render_imgui_debug_icons()
                 {ImGui::ErrorMarker, "notification_error"},
                 {ImGui::CancelButton, "notification_cancel"},
                 {ImGui::CancelHoverButton, "notification_cancel_hover"},
-                //                { ImGui::SinkingObjectMarker,     "move" }, {
-                //                ImGui::CustomSupportsMarker,    "fdm_supports" }, {
-                //                ImGui::CustomSeamMarker,        "seam" }, {
-                //                ImGui::MmuSegmentationMarker,   "mmu_segmentation" }, {
-                //                ImGui::VarLayerHeightMarker,    "layers" },
+                // { ImGui::SinkingObjectMarker,     "move" }, {
+                // ImGui::CustomSupportsMarker,    "fdm_supports" }, {
+                // ImGui::CustomSeamMarker,        "seam" }, {
+                // ImGui::MmuSegmentationMarker,   "mmu_segmentation" }, {
+                // ImGui::VarLayerHeightMarker,    "layers" },
                 {ImGui::DocumentationButton, "notification_documentation"},
                 {ImGui::DocumentationHoverButton, "notification_documentation_hover"},
                 {ImGui::InfoMarker, "notification_info"},
@@ -590,7 +700,8 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
                     Imgui::icon_button(
-                        ICONS_LARGE[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f
+                        ICONS_LARGE[i].first,
+                        ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f
                     );
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
@@ -643,16 +754,19 @@ static void render_imgui_debug_icons()
 #endif // ENABLED_DEBUG_IMGUI_ICONS
 
 #if ENABLED_DEBUG_BEDS
-static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, PlaterScenePresenter& scene_presenter, Render::Device& device)
+static void render_imgui_debug_bed(
+    Biz::ProjectInteractor& project_interactor,
+    PlaterScenePresenter& scene_presenter,
+    Render::Device& device
+)
 {
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("Bed test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-
-        auto& proj = project_interactor.selected_project();
-        auto& scene_interactor = project_interactor.scene_interactor();
+        auto& proj                       = project_interactor.selected_project();
+        auto& scene_interactor           = project_interactor.scene_interactor();
         const Domain::BedRef& active_tag = scene_interactor.selected_bed_instance();
 
-        size_t total_instances_count = 0;
+        size_t total_instances_count                    = 0;
         const Domain::Project::ConfigContainerList& ccs = proj.config_containers();
         for (auto& cc : ccs) {
             total_instances_count += cc->bed_instances().size();
@@ -660,7 +774,8 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, P
 
         Domain::BedRef remove_tag{Domain::INVALID_ID, Domain::INVALID_ID};
 
-        if (ImGui::BeginTable("Beds", (total_instances_count > 1) ? 6 : 5, ImGuiTableFlags_Borders)) {
+        if (ImGui::BeginTable("Beds", (total_instances_count > 1) ? 6 : 5, ImGuiTableFlags_Borders))
+        {
             ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
             ImGui::TableSetupColumn("Container ID");
             ImGui::TableSetupColumn("Instance ID");
@@ -676,13 +791,15 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, P
                     DEBUG_ASSERT(cc != nullptr);
                     Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
                     if (tag->type == Scene::BedElementType::Undefined) {
-
-                        bool active = active_tag.config_container_id == tag->config_container_id &&
-                            active_tag.instance_id == tag->instance_id;
+                        bool active = active_tag.config_container_id == tag->config_container_id
+                            && active_tag.instance_id == tag->instance_id;
 
                         ImGui::TableNextRow();
                         if (active)
-                            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_TableHeaderBg));
+                            ImGui::TableSetBgColor(
+                                ImGuiTableBgTarget_RowBg0,
+                                ImGui::GetColorU32(ImGuiCol_TableHeaderBg)
+                            );
 
                         ImGui::TableSetColumnIndex(0);
                         ImGui::AlignTextToFramePadding();
@@ -696,23 +813,34 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, P
 
                         ImGui::TableSetColumnIndex(3);
                         bool contour = inst.contour_enabled;
-                        if (ImGui::Checkbox(fmt::format("##contour{}/{}", tag->config_container_id, tag->instance_id).c_str(),
-                                &contour)) {
+                        if (ImGui::Checkbox(
+                                fmt::format("##contour{}/{}", tag->config_container_id, tag->instance_id)
+                                    .c_str(),
+                                &contour
+                            ))
+                        {
                             inst.contour_enabled = contour;
                             scene_presenter.update_beds();
                         }
 
                         ImGui::TableSetColumnIndex(4);
                         bool print_volume = inst.print_volume_enabled;
-                        if (ImGui::Checkbox(fmt::format("##print_volume{}/{}", tag->config_container_id, tag->instance_id).c_str(),
-                                &print_volume)) {
+                        if (ImGui::Checkbox(
+                                fmt::format("##print_volume{}/{}", tag->config_container_id, tag->instance_id)
+                                    .c_str(),
+                                &print_volume
+                            ))
+                        {
                             inst.print_volume_enabled = print_volume;
                             scene_presenter.update_beds();
                         }
 
                         if (total_instances_count > 1) {
                             ImGui::TableSetColumnIndex(5);
-                            if (ImGui::Button(fmt::format("Remove##{}/{}", tag->config_container_id, tag->instance_id).c_str()))
+                            if (ImGui::Button(
+                                    fmt::format("Remove##{}/{}", tag->config_container_id, tag->instance_id)
+                                        .c_str()
+                                ))
                                 remove_tag = {tag->config_container_id, tag->instance_id};
                         }
                     }
@@ -732,7 +860,9 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, P
 
         if (total_instances_count < 9) {
             if (ImGui::Button("Add instance"))
-                scene_interactor.add_bed_instance(project_interactor.selected_config_container().id().id);
+                scene_interactor.add_bed_instance(
+                    project_interactor.selected_config_container().id().id
+                );
         }
 
         ImGui::Separator();
@@ -744,10 +874,10 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, P
             ImGui::SameLine();
 
             std::vector<size_t> sizes;
-            for (size_t i = 512; i <= Render::Context::instance().max_texture_size(); i *= 2){
+            for (size_t i = 512; i <= Render::Context::instance().max_texture_size(); i *= 2) {
                 sizes.push_back(i);
             }
-            
+
             std::vector<std::string> sizes_str;
             std::transform(sizes.begin(), sizes.end(), std::back_inserter(sizes_str), [](size_t size) {
                 return std::to_string(size) + "x" + std::to_string(size);
@@ -779,11 +909,19 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, P
                     Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
                     if (tag != nullptr) {
                         if (tag->type == Scene::BedElementType::PlateTextured) {
-                            Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id);
+                            Domain::ConfigContainer* cc = proj.find_config_container(
+                                tag->config_container_id
+                            );
                             Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
-                            n.render_component()->replace_material(Scene::BedMaterials::plate_textured_material(device, inst.bed));
+                            n.render_component()->replace_material(
+                                Scene::BedMaterials::plate_textured_material(device, inst.bed)
+                            );
                             if (n.has_material_override())
-                                n.set_material_override(Scene::BedMaterials::plate_textured_override_material(n.render_component()->material()));
+                                n.set_material_override(
+                                    Scene::BedMaterials::plate_textured_override_material(
+                                        n.render_component()->material()
+                                    )
+                                );
                         }
                     }
                 });
@@ -792,15 +930,17 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, P
     }
     ImGui::End();
 }
-#endif //ENABLED_DEBUG_BEDS
+#endif // ENABLED_DEBUG_BEDS
 
 #if ENABLED_DEBUG_CAMERA
-static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::CameraTrackballController& trackball)
+static void render_imgui_debug_camera(
+    const Scene::Camera& camera,
+    const Scene::CameraTrackballController& trackball
+)
 {
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("Camera debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::BeginTable("Camera", 2, ImGuiTableFlags_Borders)) {
-
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Position");
@@ -860,7 +1000,13 @@ static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::
             ImGui::Text("View rotation");
             ImGui::TableSetColumnIndex(1);
             const Eigen::Quaterniond& view_rotation = trackball.view_rotation();
-            ImGui::Text("%.3f, %.3f, %.3f, %.3f", view_rotation.x(), view_rotation.y(), view_rotation.z(), view_rotation.w());
+            ImGui::Text(
+                "%.3f, %.3f, %.3f, %.3f",
+                view_rotation.x(),
+                view_rotation.y(),
+                view_rotation.z(),
+                view_rotation.w()
+            );
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -874,13 +1020,20 @@ static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::
                 ImGui::TableSetColumnIndex(0);
                 ImGui::Text("FOVy");
                 ImGui::TableSetColumnIndex(1);
-                ImGui::Text("%.3f", dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy());
+                ImGui::Text(
+                    "%.3f",
+                    dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy()
+                );
 
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 ImGui::Text("FOVy/Zoom");
                 ImGui::TableSetColumnIndex(1);
-                ImGui::Text("%.3f", dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy() / camera.zoom());
+                ImGui::Text(
+                    "%.3f",
+                    dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy()
+                        / camera.zoom()
+                );
             }
 
             ImGui::EndTable();
@@ -890,13 +1043,16 @@ static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::
 }
 #endif // ENABLED_DEBUG_CAMERA
 
-void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
+void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {
     if (!m_scene_presenter->project_ready())
         return;
 
     m_thumbnail_generator->handle_enqueued_requests();
-    m_cube_view->set_camera_data(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+    m_cube_view->set_camera_data(
+        m_scene_presenter->scene().camera(),
+        m_scene_presenter->scene().camera_trackball()
+    );
 
     m_layout->render(Vec2f(m_screen_info.logical_width(), m_screen_info.logical_height()));
 
@@ -919,30 +1075,40 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
 #endif // ENABLED_DEBUG_IMGUI_ICONS
 
 #if ENABLED_DEBUG_BEDS
-    //ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 50.f), ImGuiCond_Always);
+    // ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 50.f), ImGuiCond_Always);
     render_imgui_debug_bed(m_project_interactor, *m_scene_presenter, *m_device);
 #endif // ENABLED_DEBUG_BEDS
 
 #if ENABLED_DEBUG_CAMERA
-    render_imgui_debug_camera(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+    render_imgui_debug_camera(
+        m_scene_presenter->scene().camera(),
+        m_scene_presenter->scene().camera_trackball()
+    );
 #endif // ENABLED_DEBUG_CAMERA
 #if ENABLED_SCENE_SHADING_CUSTOMIZATION
-    render_imgui_scene_shading_customization(*m_scene_presenter, [this]() { m_scene_presenter->update_beds_shadows_data(); });
+    render_imgui_scene_shading_customization(*m_scene_presenter, [this]() {
+        m_scene_presenter->update_beds_shadows_data();
+    });
 #endif // ENABLED_SCENE_SHADING_CUSTOMIZATION
 #if ENABLED_LIGHTS_CUSTOMIZATION
     render_imgui_lights_customization(*m_scene_presenter);
 #endif // ENABLED_LIGHTS_CUSTOMIZATION
 }
 
-void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)
+void PlaterRenderModule::render_object_hud(
+    const Scene::Node& n,
+    const Eigen::AlignedBox<float, 2>& screen_bounding_box
+)
 {
     std::string node_name = "##node_hud_" + std::to_string(reinterpret_cast<size_t>(&n));
 
-    ImGui::SetNextWindowPos({
-        screen_bounding_box.max().x(),
-        screen_bounding_box.min().y()
-    });
-    if (ImGui::Begin(node_name.c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground)) {
+    ImGui::SetNextWindowPos({screen_bounding_box.max().x(), screen_bounding_box.min().y()});
+    if (ImGui::Begin(
+            node_name.c_str(),
+            nullptr,
+            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground
+        ))
+    {
         if (ImGui::SmallButton("Foc"))
             m_scene_presenter->scene().camera_trackball().set_target(Vec3d::Zero());
     }
@@ -953,6 +1119,7 @@ void PlaterRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
 {
     m_gizmo_manager->on_scene_mouse_event(e, m_screen_info);
 }
+
 void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
 {
     if (!m_gizmo_manager->on_scene_keyboard_event(e))
@@ -960,16 +1127,22 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
 
 #if ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
     Scene::CameraProjectionType camera_type = Scene::CameraProjectionType::Orthographic;
-    const Domain::Project& project = m_project_interactor.selected_project();
+    const Domain::Project& project          = m_project_interactor.selected_project();
     ThumbnailRenderer renderer(*m_device);
 
     // test code to simulate generation of thumbnails for gallery
     {
         if (!project.model().objects.empty()) {
-            Render::Images images = renderer.generate_object_thumbnails(*project.model().objects.front(),
-                { {256, 256} }, camera_type);
+            Render::Images images = renderer.generate_object_thumbnails(
+                *project.model().objects.front(),
+                {{256, 256}},
+                camera_type
+            );
 
-            std::string name = fmt::format("thumbnail_object_{}", project.model().objects.front()->id().id);
+            std::string name = fmt::format(
+                "thumbnail_object_{}",
+                project.model().objects.front()->id().id
+            );
             std::string path_prefix = fmt::format("C:/test/{}", name);
             Scene::export_to_png_file(images, path_prefix);
         }
@@ -978,16 +1151,23 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
     // test code to simulate generation of thumbnails for export into gcode
     {
         const Domain::BedRef& bed_ref = m_project_interactor.scene_interactor().selected_bed_instance();
-        const Domain::BedInstance& bed_inst = m_project_interactor.selected_config_container().find_bed_instance(bed_ref.instance_id);
+        const Domain::BedInstance& bed_inst = m_project_interactor.selected_config_container()
+                                                  .find_bed_instance(bed_ref.instance_id);
 
         ThumbnailRendererParams params{
-            .scene = m_scene_presenter->scene(),
+            .scene        = m_scene_presenter->scene(),
             .pixel_format = Render::PixelFormat::RGBA8,
-            .sizes = { {160, 120}, {16, 16}, {220, 124}, {200, 240}, {380, 285}, {313, 173}, {480, 240} }
+            .sizes = {{160, 120}, {16, 16}, {220, 124}, {200, 240}, {380, 285}, {313, 173}, {480, 240}}
         };
-        Render::Images images = renderer.generate_gcode_thumbnails(params, project, bed_inst, bed_ref, camera_type);
+        Render::Images images = renderer.generate_gcode_thumbnails(
+            params,
+            project,
+            bed_inst,
+            bed_ref,
+            camera_type
+        );
 
-        std::string name = fmt::format("thumbnail_gcode");
+        std::string name        = fmt::format("thumbnail_gcode");
         std::string path_prefix = fmt::format("C:/test/{}", name);
         Scene::export_to_png_file(images, path_prefix);
     }
@@ -995,13 +1175,13 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
     // test code to simulate generation of thumbnails for export into 3mf
     {
         ThumbnailRendererParams params{
-            .scene = m_scene_presenter->scene(),
+            .scene        = m_scene_presenter->scene(),
             .pixel_format = Render::PixelFormat::RGBA8,
-            .sizes = { {256, 256} }
+            .sizes        = {{256, 256}}
         };
         Render::Images images = renderer.generate_3mf_thumbnails(params, project, camera_type);
 
-        std::string name = "thumbnail_3mf";
+        std::string name        = "thumbnail_3mf";
         std::string path_prefix = fmt::format("C:/test/{}", name);
         Scene::export_to_png_file(images, path_prefix);
     }
@@ -1019,7 +1199,10 @@ void PlaterRenderModule::on_deactivated()
     App::set_global_lighting(m_scene_presenter->scene().lights());
 }
 
-void PlaterRenderModule::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection &selection)
+void PlaterRenderModule::on_scene_selection_changed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::Selection& selection
+)
 {
     const bool empty_selection = selection.empty();
     m_toolbar_move->set_enabled(!empty_selection);

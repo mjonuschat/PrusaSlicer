@@ -1,0 +1,8 @@
+kind: filament
+id: Generic FLEX
+inherits:
+- '*FLEX*'
+name: Generic FLEX
+values:
+  filament_cost: '40'
+  filament_vendor: Generic

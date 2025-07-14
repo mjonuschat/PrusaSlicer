@@ -16,6 +16,7 @@ public:
     using PresetKind = Domain::Preset::PresetKind;
     using Address = Domain::Preset::Address;
     using EvaluatedPrinterPreset = Domain::Preset::EvaluatedPrinterPreset;
+    using EvaluatedPrinterPresets = std::vector<EvaluatedPrinterPreset>;
 
     explicit PresetEvaluator(const Domain::Preset::PresetCollection& presets)
         : m_presets(presets)
@@ -23,7 +24,7 @@ public:
         build_named_presets();
     }
 
-    EvaluatedPrinterPreset evaluate(const HwPrinterConfig& hw_config) const;
+    EvaluatedPrinterPresets evaluate(const HwPrinterConfig& hw_config) const;
 
 private:
     friend class PresetCollectionEvaluator;

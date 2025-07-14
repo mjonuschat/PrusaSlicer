@@ -27,7 +27,7 @@ public:
         const std::string& texture_filename
     );
 
-    Bed& add_bed(const Preset& selected_preset, const PresetBundle& preset_bundle);
+    Bed& add_bed(const Slic3r::Preset& selected_preset, const PresetBundle& preset_bundle);
 
     size_t beds_count() const { return m_beds.size(); }
     std::vector<size_t> beds_indices() const;

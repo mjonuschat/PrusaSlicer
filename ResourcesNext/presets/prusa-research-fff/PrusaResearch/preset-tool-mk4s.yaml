@@ -108,7 +108,7 @@ variants:
     wipe_tower_extra_spacing: 110%
     wipe_tower_extra_flow: 250%
   variants:
-  - name: non-MMU branch
+  - name: '*non-MMU branch*'
     variants:
     - condition: tool.nozzle_high_flow
       values:
@@ -1776,7 +1776,7 @@ variants:
             external_perimeter_extrusion_width: 1
 
 # MMU branch
-  - name: MMU branch
+  - name: '*MMU branch*'
     variants:
     - condition: feeder.base_model == "MMU"
       variants:

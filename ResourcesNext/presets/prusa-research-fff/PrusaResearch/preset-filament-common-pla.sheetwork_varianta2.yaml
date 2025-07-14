@@ -1,5 +1,5 @@
 kind: filament
-id: '*_PLA_*'
+id: '*PLA*'
 values:
   bed_temperature: 60
   bridge_fan_speed: 100
@@ -108,7 +108,7 @@ variants:
         id: C1 HF0.4
         name: '*_PLA_* @COREONE HF0.4'
         values:
-          filament_max_volumetric_speed: 24
+          filament_max_volumetric_speed: 22
           filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
           start_filament_gcode: M142 S36 ; set heatbreak target temp
           pressure_advance: 0.036

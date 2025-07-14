@@ -54,7 +54,8 @@ void ProjectInteractor::initialize_new_project_before_inserting(Domain::Project&
 void ProjectInteractor::initialize_inserted_project(size_t project_id)
 {
     auto& p = m_workbench.project(project_id);
-    for (const auto& cc_ptr : m_workbench.project(project_id).config_containers()) {
+    for (auto& cc_ptr : m_workbench.project(project_id).config_containers()) {
+        m_preset_interactor.initialize_config_container(*cc_ptr);
         size_t cc_id = cc_ptr->id().id;
         const auto& selected_printer_preset =
             m_preset_interactor.config_container_context(project_id, cc_id).printer.edited_preset;
@@ -145,13 +146,16 @@ Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
     invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
         l->on_project_added(project_id);
     });
+    // select project
     do_select_project(project_id);
+
+    // prepare container's supporting data
+    m_preset_interactor.prepare_config_container_preset(project_id, config_container.id().id);
+    initialize_inserted_project(project_id);
+
+    // select the container
     do_select_config_container(first_container_id);
 
-    if (!config_container.bed_instances().empty()) {
-        m_preset_interactor.prepare_config_container_preset(project_id, config_container.id().id);
-    }
-    initialize_inserted_project(project_id);
     const Domain::SelectionId first_bed_instance_id = config_container.bed_instances().front()->id().id;
     m_scene_interactor.select_bed_instance({ first_container_id, first_bed_instance_id });
 

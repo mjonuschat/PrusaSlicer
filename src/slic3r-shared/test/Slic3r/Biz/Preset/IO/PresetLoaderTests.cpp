@@ -14,7 +14,7 @@ TEST_CASE("PresetLoader preset-filament-common.yaml", "[preset]")
     PresetLoader loader;
     try {
         for (auto filename : std::array{"preset-filament-common.yaml", "preset-filament-prusament-pla.yaml"}) {
-            const std::string path = Tests::get_datadir().string() + "/preset/" + filename;
+            const std::string path = Tests::get_datadir().string() + "/presets/" + filename;
             std::mutex mutex;
             loader.load(path, mutex);
         }

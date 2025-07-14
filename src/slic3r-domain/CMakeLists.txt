@@ -33,6 +33,7 @@ add_library(slic3r-domain STATIC
     src/Slic3r/Domain/Preset/HwConfig.cpp
     src/Slic3r/Domain/Preset/PresetTree.cpp
     src/Slic3r/Domain/Preset/EvaluatedPreset.cpp
+    src/Slic3r/Domain/Preset/Bundle.cpp
 
     include/Slic3r/Domain/FacetsAnnotation.hpp
     src/Slic3r/Domain/FacetsAnnotation.cpp

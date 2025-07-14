@@ -48,6 +48,8 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
         .features = features,
     };
 
+    printer_config.name = Domain::Preset::suggest_name(printer_config, vendor_data);
+
     ASSERT(templ.tools.size() == templ.tool_count || templ.tools.size() == 1, templ.id);
     for (const auto& tool_templ : templ.tools) {
         const auto* tool_def = vendor_data.find_tool_config_def_by_id(tool_templ.id);

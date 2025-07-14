@@ -17,15 +17,12 @@ enum class ExprCombine
 
 class PresetCollectionEvaluator {
 public:
-
-
-    PresetCollectionEvaluator(const Domain::Preset::Presets& presets, const PresetEvaluator::NamedPresets& named_presets, Expr::Eval  eval, const Expr::ValueMap& overrides)
-        : m_presets(presets)
-        , m_named_presets(named_presets)
-        , m_eval(std::move(eval))
-    {
-        m_eval.set_vars(overrides);
-    }
+    PresetCollectionEvaluator(
+        const Domain::Preset::Presets& presets,
+        const PresetEvaluator::NamedPresets& named_presets,
+        Expr::Eval eval,
+        const Expr::ValueMap& overrides
+    );
 
     PresetEvaluator::EvalPresetContexts eval_preset(const ValueMaps& overrides, bool only_public = true, ExprCombine expr_combine = ExprCombine::Or) const;
 

@@ -7,8 +7,6 @@ namespace Slic3r::Biz::Preset::IO {
 class HwConfigLoader
 {
 public:
-
-
     HwConfigLoader();
     Domain::Preset::VendorData& load(const std::string& filename);
 

@@ -134,6 +134,7 @@ variants:
           M593 Y T2 F0 ; disable IS
           M84 X Y E ; disable motors
           ; max_layer_z = [max_layer_z]
+    - values: {}
   - condition: printer.model == "MK3"
     name: Original Prusa i3 MK3
 ---

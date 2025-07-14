@@ -11,7 +11,7 @@ struct SourceLocation
 
     std::string to_string() const
     {
-        return file + " line:" + std::to_string(line) + " column: " + std::to_string(column);
+        return file + " line: " + std::to_string(line) + " column: " + std::to_string(column);
     }
 };
 

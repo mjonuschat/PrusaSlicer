@@ -364,6 +364,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ObservableList.hpp
         include/Slic3r/Biz/IListObserver.hpp
         include/Slic3r/Biz/DataObserver.hpp
+        include/Slic3r/Biz/BatchObservableList.hpp
+        include/Slic3r/Biz/ObservableListWithSelection.hpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp

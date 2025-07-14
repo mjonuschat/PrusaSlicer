@@ -8,7 +8,7 @@ using namespace Slic3r::Biz::Preset;
 
 TEST_CASE("HwConfigEvaluator", "[preset]")
 {
-    const std::string filename = Tests::get_datadir().string() + "/preset/hw-config.yaml";
+    const std::string filename = Tests::get_datadir().string() + "/presets/hw-config.yaml";
     IO::HwConfigLoader loader;
     try {
         loader.load(filename);

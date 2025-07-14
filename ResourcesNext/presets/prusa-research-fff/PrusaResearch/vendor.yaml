@@ -13,6 +13,12 @@ features:
     planetary_gearbox:
       default: true
       user_editable: false
+    supports_03_nozzle: # temporary
+      default: true
+    supports_05_nozzle: # temporary
+      default: true
+    supports_08_nozzle: # temporary
+      default: true
   tool:
     nozzle_high_flow:
       default: false
@@ -20,9 +26,6 @@ features:
     nozzle_diameter:
       default: 0.4
       user_editable: false
-    # Not used now, we take info about filament being abrasive
-    #nozzle_hardened:
-    #  default: false
   sheet:
     cold:
       default: false
@@ -119,9 +122,13 @@ model:
 tool_count: 1
 features:
   supports_high_flow_nozzle:
-    default: true
+    default: false
     user_editable: false
   input_shaper:
+    default: false
+  supports_03_nozzle:
+    default: false
+  supports_05_nozzle:
     default: false
 ---
 kind: printer
@@ -133,7 +140,13 @@ model:
   model: MK3S
 tool_count: 1
 features:
+  supports_high_flow_nozzle:
+    default: false
   input_shaper:
+    default: false
+  supports_03_nozzle:
+    default: false
+  supports_05_nozzle:
     default: false
 ---
 kind: printer
@@ -148,6 +161,12 @@ features:
   input_shaper:
     default: true
   planetary_gearbox:
+    default: false
+  supports_high_flow_nozzle:
+    default: false
+  supports_03_nozzle:
+    default: false
+  supports_05_nozzle:
     default: false
 ---
 kind: tool
@@ -170,6 +189,7 @@ kind: tool
 technology: FFF
 id: '0.3'
 name: '0.3'
+condition: printer.supports_03_nozzle
 features:
   nozzle_diameter:
     default: 0.3
@@ -178,6 +198,7 @@ kind: tool
 technology: FFF
 id: '0.5'
 name: '0.5'
+condition: printer.supports_05_nozzle
 features:
   nozzle_diameter:
     default: 0.5
@@ -194,6 +215,7 @@ kind: tool
 technology: FFF
 id: '0.8'
 name: '0.8'
+condition: printer.supports_08_nozzle
 features:
   nozzle_diameter:
     default: 0.8
@@ -297,7 +319,7 @@ name: XL 1T
 printer: xl
 tool_count: 1
 tools:
-- tool: 0.4HF
+- tool: '0.4'
 sheet: satin
 ---
 kind: printer_config
@@ -306,7 +328,7 @@ name: XL 2T
 printer: xl
 tool_count: 2
 tools:
-- tool: 0.4HF
+- tool: '0.4'
 sheet: satin
 ---
 kind: printer_config
@@ -315,7 +337,7 @@ name: XL 5T
 printer: xl
 tool_count: 5
 tools:
-- tool: 0.4HF
+- tool: '0.4'
 sheet: satin
 ---
 kind: printer_config
@@ -323,7 +345,7 @@ id: c1
 name: CORE One
 printer: COREONE
 tools:
-- tool: 0.4HF
+- tool: '0.4HF'
 sheet: satin
 ---
 kind: printer_config
@@ -331,7 +353,7 @@ id: mk4
 name: MK4
 printer: MK4
 tools:
-- tool: 0.4HF
+- tool: '0.4'
 sheet: satin
 ---
 kind: printer_config
@@ -339,7 +361,7 @@ id: mk4s
 name: MK4S
 printer: MK4S
 tools:
-- tool: 0.4HF
+- tool: '0.4HF'
 sheet: satin
 ---
 kind: printer_config
@@ -355,7 +377,7 @@ id: mini
 name: MINI
 printer: MINI
 tools:
-- tool: 0.4HF
+- tool: '0.4'
 sheet: satin
 
 
