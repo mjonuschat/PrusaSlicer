@@ -71,24 +71,7 @@ PlaterRenderModule::PlaterRenderModule(
     m_workbench(workbench),
     m_project_interactor(project_interactor),
     m_thumbnail_store(std::move(thumbnail_store))
-{
-    m_command_registry.register_command(
-        std::make_unique<Platform::FuncCommand>(
-            "select-next-printer",
-            [this]() {
-        auto& preset_interactor        = m_project_interactor.preset_interactor();
-        const auto& available_printers = preset_interactor.printer_presets().items();
-        auto printer_id                = available_printers.at(2).id;
-        preset_interactor.select_printer_preset(printer_id);
-    },
-            nullptr,
-            Platform::KeyboardShortcut{
-                static_cast<Platform::KeyModifiers>(Platform::KeyModifier::Ctrl),
-                Platform::KeyCode::P
-            }
-        )
-    );
-}
+{}
 
 PlaterRenderModule::~PlaterRenderModule()
 {
@@ -428,13 +411,6 @@ public:
         ImGui::InputFloat2(label, m_data);
     }
 
-    //
-    // void operator()(const char* label, const Vec3f& v)
-    // {
-    // fill_data<3>(v);
-    // ImGui::InputFloat3(label, m_data);
-    // }
-    //
     void operator()(const char* label, const Vec3d& v)
     {
         fill_data<3>(v);
