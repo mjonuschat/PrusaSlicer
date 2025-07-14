@@ -10,7 +10,9 @@
 
 using namespace Slic3r::App::Yoga;
 #include <boost/nowide/convert.hpp>
+
 #include <imgui/imgui.h>
+#include <imgui/imgui_stdlib.h> // using std::string for inputs
 
 #include <Slic3r/Domain/TriangleMesh.hpp>
 #include <Slic3r/Domain/ModelObject.hpp> // add volume into object
@@ -178,11 +180,16 @@ void TextGizmo::render_imgui()
 {
     if (ImGui::Begin("Text Gizmo")) {
         ImGui::TextColored(ImVec4(.1f, .9f, .2f, 1.f), "RClick add negative volume \n or object on plate");
+
+        ImVec2 input_size(-FLT_MIN, ImGui::GetTextLineHeightWithSpacing() * 3);
+        const ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_AutoSelectAll;
+        std::string& text = m_text_configuration.text;
+        ImGui::InputTextMultiline("##emboss_text_input", &text, input_size, flags);
+
         const Domain::FontList& fonts = m_font_manager.get_fonts();
         auto it_font = std::find_if(fonts.begin(), fonts.end(),
             [&name = m_text_configuration.style.descriptor.name](const Domain::FontDescriptor& fd) {
                 return fd.name == name; });
-
         std::string selected = (it_font == fonts.end()) ? std::string("Not selected yet") : it_font->name;
         if (ImGui::BeginCombo("Font", selected.c_str()))
         {
