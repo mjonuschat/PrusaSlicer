@@ -110,13 +110,15 @@ PlaterRenderModule::PlaterRenderModule(
     Biz::ProjectInteractor& project_interactor,
     std::shared_ptr<ThumbnailStore> thumbnail_store,
     std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
-    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator
+    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator,
+    std::unique_ptr<Biz::Emboss::IFontManager> font_manager
 ) :
     m_workbench(workbench),
     m_project_interactor(project_interactor),
     m_thumbnail_store(thumbnail_store),
     m_thumbnail_store_updater(thumbnail_store_updater),
     m_thumbnail_image_generator(thumbnail_image_generator),
+    m_font_manager(std::move(font_manager)),
     m_menu_manager(m_command_registry),
     m_command_binding_manager(m_command_registry)
 {}
@@ -859,8 +861,9 @@ void PlaterRenderModule::init_gizmos()
     );
     m_text_gizmo = &m_gizmo_manager->add_tool_gizmo<TextGizmo>(
         *m_device,
-        *m_scene_presenter, 
-        m_project_interactor, 
+        *m_scene_presenter,
+        m_project_interactor,
+        *m_font_manager,
         *m_gizmo_manager
     );
     m_measure_gizmo = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(

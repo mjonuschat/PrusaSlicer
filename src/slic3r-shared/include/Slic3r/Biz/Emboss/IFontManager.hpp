@@ -3,7 +3,7 @@
 #include "Slic3r/Domain/TextConfiguration.hpp" // FontList + FontDescriptor
 #include "Slic3r/Domain/FontFile.hpp" 
 
-namespace Slic3r::Biz::Platform {
+namespace Slic3r::Biz::Emboss {
 /// <summary>
 /// Provide access to font
 /// </summary>
@@ -27,4 +27,4 @@ public:
     /// <returns>Opened file</returns>
     virtual std::unique_ptr<const Domain::FontFile> open(const Domain::FontDescriptor& descriptor) = 0;
 };
-} // namespace Slic3r::Biz::Platform
+} // namespace Slic3r::Biz::Emboss

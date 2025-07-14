@@ -1,5 +1,5 @@
 #pragma once
-#include "Slic3r/Biz/Platform/IFontManager.hpp"
+#include "Slic3r/Biz/Emboss/IFontManager.hpp"
 #include <optional>
 #include <memory>
 
@@ -12,7 +12,7 @@ namespace Slic3r::Biz::WX {
 /// Use Wx library to enumerate OS installed fonts
 /// and acceess to file data by wxFont
 /// </summary>
-class FontManager: public Platform::IFontManager
+class FontManager: public Emboss::IFontManager
 {
 public:
     /// <summary>

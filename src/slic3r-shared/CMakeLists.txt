@@ -804,6 +804,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PrintHost/PrintHostRepetier.cpp
         src/Slic3r/Biz/PrintHost/PrintHostMKS.cpp
 
+        include/Slic3r/Domain/FontFile.hpp
+        include/Slic3r/Biz/Emboss/IFontManager.hpp
         include/Slic3r/Biz/Emboss/Emboss.hpp
         include/Slic3r/Biz/Emboss/EmbossJob.hpp
         include/Slic3r/Biz/Emboss/stbtt_FlattenCurves.hpp

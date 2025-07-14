@@ -178,7 +178,11 @@ const Domain::FontList& FontManager::get_fonts()
 
 std::unique_ptr<const Domain::FontFile> FontManager::open(const Domain::FontDescriptor& descriptor)
 {
-    if (descriptor.type != get_current_type())
+    if (descriptor.type == Domain::FontDescriptor::Type::file_path) {
+        return Biz::Emboss::create_font_file(descriptor.path.c_str());
+    }
+
+    if (descriptor.type != get_current_type()) // TODO: try find similar font?
         return nullptr;
     auto result = create_font_file(load_wxFont(descriptor.path));
     if (m_hash.has_value() && result == nullptr) { // extend m_bad and store it

@@ -25,21 +25,16 @@ namespace Slic3r::Biz::Emboss {
 class TextShapeProvider : public ShapeProvider {
 
 public:
-    TextShapeProvider(const Domain::TextConfiguration& config, const Domain::EmbossProjection& projection)
+    TextShapeProvider(const Domain::TextConfiguration& config, const Domain::EmbossProjection& projection, Biz::Emboss::IFontManager& font_manager)
         : m_text_configuration(config) // copy current text configuration for embossing
+        , m_font_manager(font_manager)
     {
         shape.projection = projection; // copy current projection
     }
     Domain::EmbossShape& get_shape() override {
         if (!shape.final_shape.expolygons.empty())
-            return shape; // use cached value
-
-        // create cahce
-        //std::string font_path = Slic3r::resources_dir() + "/fonts/NotoSans-Regular.ttf";
-        //std::unique_ptr<Domain::FontFile> font_ptr = create_font_file(font_path.c_str());
-
-        Biz::Platform::IFontManager& font_manager = Biz::Platform::PlatformServices::instance().font_manager();        
-        FontFileWithCache font_with_cache(font_manager.open(m_text_configuration.style.descriptor));
+            return shape; // use cached value       
+        FontFileWithCache font_with_cache(m_font_manager.open(m_text_configuration.style.descriptor));
         std::wstring text = boost::nowide::widen(m_text_configuration.text);
         const Domain::FontProp font_prop; // default font properties
         shape = {.shapes_with_ids{text2vshapes(font_with_cache, text, font_prop)}};
@@ -57,6 +52,7 @@ public:
 private:
     // font item is not used for create object
     Domain::TextConfiguration m_text_configuration;
+    Biz::Emboss::IFontManager& m_font_manager;
 };
 }
 
@@ -71,6 +67,7 @@ bool is_selected_object(const Biz::Scene::Selection::ElementRefs& selected_eleme
 
 Biz::Emboss::CreateVolumeParams create_volume_params(
     Biz::ProjectInteractor& project_interactor, 
+    Biz::Emboss::IFontManager& font_manager,
     Domain::TextConfiguration& configuration,
     Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART) {
     Domain::EmbossProjection projection{
@@ -80,7 +77,7 @@ Biz::Emboss::CreateVolumeParams create_volume_params(
     return Biz::Emboss::CreateVolumeParams{
         .base{
             .shape_provider = std::make_unique<Biz::Emboss::TextShapeProvider>(
-                configuration, projection),
+                configuration, projection, font_manager),
             .project_interactor = project_interactor,
             .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
             .volume_name = "Embossed textik"
@@ -97,13 +94,21 @@ TextGizmo::TextGizmo(
     Render::Device& device,
     PlaterScenePresenter& scene_presenter,
     Biz::ProjectInteractor& project_interactor,
+    Biz::Emboss::IFontManager& font_manager,
     Scene::GizmoManager& gizmo_manager
 )
     : m_device(device)
     , m_scene_presenter(scene_presenter)
     , m_project_interactor(project_interactor)
+    , m_font_manager(font_manager)
     , m_gizmo_manager(gizmo_manager)
 {
+    // Initialize font descriptor to font copied with application
+    m_text_configuration.style.descriptor = Domain::FontDescriptor{
+        .name = "Prusa-slic3r font",
+        .path = Slic3r::resources_dir() + "/fonts/NotoSans-Regular.ttf",
+        .type = Domain::FontDescriptor::Type::file_path
+    };
     m_dialog = std::make_unique<TextDialog>();
 
     m_dialog->callbacks().editor_text_changed = [](const std::string& new_text) {
@@ -155,7 +160,7 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
     const MouseEvent& mouse_event = ctx.mouse_event();
     if (mouse_event.type() == MouseEvent::Type::ButtonDown &&
         mouse_event.button() == MouseButton::Right) {
-        auto params = create_volume_params(m_project_interactor, m_text_configuration, Domain::ModelVolumeType::NEGATIVE_VOLUME);
+        auto params = create_volume_params(m_project_interactor, m_font_manager, m_text_configuration, Domain::ModelVolumeType::NEGATIVE_VOLUME);
         if (Biz::Emboss::start_create_volume(params, ctx.pick_ray(), ctx.pick_results()))
             return Scene::GizmoActivationState::Active; // create volume at pick ray
     }
@@ -173,9 +178,7 @@ void TextGizmo::render_imgui()
 {
     if (ImGui::Begin("Text Gizmo")) {
         ImGui::TextColored(ImVec4(.1f, .9f, .2f, 1.f), "RClick add negative volume \n or object on plate");
-        
-        Biz::Platform::IFontManager& font_manager = Biz::Platform::PlatformServices::instance().font_manager();
-        const Domain::FontList& fonts = font_manager.get_fonts();
+        const Domain::FontList& fonts = m_font_manager.get_fonts();
         auto it_font = std::find_if(fonts.begin(), fonts.end(),
             [&name = m_text_configuration.style.descriptor.name](const Domain::FontDescriptor& fd) {
                 return fd.name == name; });
@@ -228,7 +231,7 @@ bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type) 
     if (!init_create(volume_type))
         return false;
 
-    auto params = create_volume_params(m_project_interactor, m_text_configuration, volume_type);
+    auto params = create_volume_params(m_project_interactor, m_font_manager, m_text_configuration, volume_type);
     return Biz::Emboss::start_create_volume_without_position(params);
 }
 

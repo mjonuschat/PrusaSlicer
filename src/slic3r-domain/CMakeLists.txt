@@ -70,7 +70,6 @@ add_library(slic3r-domain STATIC
 
     include/Slic3r/Domain/TextConfiguration.hpp
     src/Slic3r/Domain/TextConfiguration.cpp
-    include/Slic3r/Domain/FontFile.hpp
 
     include/Slic3r/Domain/EmbossShape.hpp
 

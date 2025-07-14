@@ -6,6 +6,7 @@
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
+#include "Slic3r/Biz/Emboss/IFontManager.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/DialogNavigation.hpp"
 #include "Slic3r/App/MenuManager.hpp"
@@ -77,7 +78,8 @@ public:
         Biz::ProjectInteractor& project_interactor,
         std::shared_ptr<ThumbnailStore> thumbnail_store,
         std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
-        std::shared_ptr<ThumbnailImageGenerator> thumbnail_image_generator
+        std::shared_ptr<ThumbnailImageGenerator> thumbnail_image_generator,
+        std::unique_ptr<Biz::Emboss::IFontManager> font_manager
     );
     ~PlaterRenderModule();
 
@@ -206,6 +208,8 @@ private:
     Yoga::ToolbarButton* m_toolbar_measure                 = nullptr;
     Yoga::ToolbarButton* m_toolbar_cut                     = nullptr;
     Yoga::ToolbarSwitchButton* m_toolbar_preview_switch    = nullptr;
+
+    std::unique_ptr<Biz::Emboss::IFontManager> m_font_manager = nullptr;
 
     TranslationGizmo* m_translation_gizmo                       = nullptr;
     RotationGizmo* m_rotation_gizmo                             = nullptr;

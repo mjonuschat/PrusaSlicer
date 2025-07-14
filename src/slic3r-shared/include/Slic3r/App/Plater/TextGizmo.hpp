@@ -7,6 +7,7 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Emboss/IFontManager.hpp"
 
 namespace Slic3r::App::Yoga {
 class Dialog;
@@ -23,6 +24,7 @@ public:
         Render::Device& device,
         PlaterScenePresenter& scene_presenter,
         Biz::ProjectInteractor& project_interactor,
+        Biz::Emboss::IFontManager& font_manager,
         Scene::GizmoManager& gizmo_manager
     );
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
@@ -59,6 +61,7 @@ private:
     Render::Device& m_device;
     PlaterScenePresenter& m_scene_presenter;
     Biz::ProjectInteractor& m_project_interactor;
+    Biz::Emboss::IFontManager& m_font_manager;
     Scene::GizmoManager& m_gizmo_manager;
 
     Domain::TextConfiguration m_text_configuration = {};

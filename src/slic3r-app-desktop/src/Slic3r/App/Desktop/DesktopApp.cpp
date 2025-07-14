@@ -258,8 +258,16 @@ bool DesktopApp::OnInit()
     if (scrn && is_editor)
         scrn->SetText(WX::_L("Preparing Plater") + dots);
 
-    m_plater_module = std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor, thumbnail_store,
-        thumbnail_store_updater, thumbnail_image_generator);
+    auto font_manager = std::make_unique<Biz::WX::FontManager>(data_dir());
+
+    m_plater_module = std::make_unique<Plater::PlaterRenderModule>(
+        m_workbench,
+        *m_project_interactor,
+        thumbnail_store,
+        thumbnail_store_updater,
+        thumbnail_image_generator,
+        std::move(font_manager)
+    );
 
     if (scrn && is_editor)
         scrn->SetText(WX::_L("Preparing Preview") + dots);
