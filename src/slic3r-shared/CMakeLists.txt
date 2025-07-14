@@ -293,6 +293,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/InputText.cpp
         src/Slic3r/App/Yoga/InputTextField.cpp
         include/Slic3r/App/Yoga/InputTextField.hpp
+        include/Slic3r/App/Yoga/ImGuiUtils.hpp
+        src/Slic3r/App/Yoga/ImGuiUtils.cpp
+        include/Slic3r/App/Yoga/SpinButton.hpp
+        src/Slic3r/App/Yoga/SpinButton.cpp
+        include/Slic3r/App/Yoga/InputTextWithSpin.hpp
+        src/Slic3r/App/Yoga/InputTextWithSpin.cpp
         include/Slic3r/App/Yoga/Validator.hpp
         src/Slic3r/App/Yoga/Validator.cpp
         include/Slic3r/App/Yoga/Scaler.hpp

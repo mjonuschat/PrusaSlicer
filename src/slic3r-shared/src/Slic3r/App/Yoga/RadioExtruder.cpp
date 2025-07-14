@@ -6,7 +6,7 @@
 
 namespace Slic3r::App::Yoga {
 
-RadioExtruder::RadioExtruder(size_t number, ImColor fill) : 
+RadioExtruder::RadioExtruder(size_t number, ImColor fill) :
     AbstractButton(),
     m_number_text(number),
     m_fill(fill)
@@ -25,6 +25,7 @@ RadioExtruder::RadioExtruder(size_t number, ImColor fill) :
 
     m_text = m_knob->emplace_back<Text>(std::to_string(number));
     m_text->set_font_type(Render::ImguiFontType::Bold);
+    m_text->set_margin({0, -1, 0, 0});
     m_text->set_text_color(GImGui->Style.Colors[ImGuiCol_WindowBg]);
 }
 
@@ -56,7 +57,7 @@ float RadioExtruder::border_width() const
 void RadioExtruder::set_border_width(float border)
 {
     m_border_width = border;
-    m_marker->set_padding(m_border_width+1);
+    m_marker->set_padding(m_border_width + 1);
     m_knob->set_border_width(checked() ? m_border_width : 0);
 }
 
@@ -65,8 +66,7 @@ void RadioExtruder::checked_updated_internal()
     AbstractButton::checked_updated_internal();
     if (checked()) {
         m_marker->set_fill(GImGui->Style.Colors[ImGuiCol_ButtonActive]);
-    }
-    else {
+    } else {
         m_marker->set_fill(IM_COL32_BLACK_TRANS);
     }
 

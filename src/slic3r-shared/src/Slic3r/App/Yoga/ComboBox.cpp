@@ -5,54 +5,12 @@
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/App/Yoga/ImGuiUtils.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 
 #include <imgui_internal.h>
 
 namespace Slic3r::App::Yoga {
-
-/**
- * @note copied from imgui internals, we need our custom styling
- */
-static void YGRenderArrow(ImDrawList* draw_list, ImVec2 pos, ImU32 col, ImGuiDir dir, float scale)
-{
-    // clang-format off
-    const float h = draw_list->_Data->FontSize * 1.00f;
-    float r = h * 0.40f * scale;
-    ImVec2 center = pos + ImVec2(h * 0.50f, h * 0.35f * scale);
-
-    ImVec2 a, b, c;
-    switch (dir)
-    {
-    case ImGuiDir_Up:
-    case ImGuiDir_Down:
-        if (dir == ImGuiDir_Up) r = -r;
-        b = ImVec2(+0.000f,+0.750f) * r;
-        a = ImVec2(-0.750f,-0.00f) * r;
-        c = ImVec2(+0.750f,-0.00f) * r;
-        break;
-    case ImGuiDir_Left:
-    case ImGuiDir_Right:
-        if (dir == ImGuiDir_Left) r = -r;
-        b = ImVec2(+0.750f,+0.000f) * r;
-        c = ImVec2(-0.000f,+0.750f) * r;
-        a = ImVec2(-0.000f,-0.750f) * r;
-        break;
-    case ImGuiDir_None:
-    case ImGuiDir_COUNT:
-        IM_ASSERT(0);
-        break;
-    }
-
-    if ((col & IM_COL32_A_MASK) == 0)
-        return;
-
-    draw_list->PathLineTo(center + a);
-    draw_list->PathLineTo(center + b);
-    draw_list->PathLineTo(center + c);
-    draw_list->PathStroke(col, false, 2.);
-    // clang-format on
-}
 
 /**
  * @note copied from imgui internals, we need our custom styling
@@ -119,9 +77,11 @@ static bool YGBeginCombo(
         window->DrawList->AddRectFilled(bb.Min, bb.Max, frame_col, style.FrameRounding, ImDrawFlags_RoundCornersAll);
     if (!(flags & ImGuiComboFlags_NoArrowButton))
     {
-        ImU32 text_col = ImGui::GetColorU32(ImGuiCol_Text);
+        ImU32 text_col = ImGui::GetColorU32(hovered ? ImGuiCol_Text : ImGuiCol_TextDisabled);
         if (value_x2 + arrow_size - style.FramePadding.x <= bb.Max.x) {
-            YGRenderArrow(window->DrawList, ImVec2(value_x2 + style.FramePadding.x, bb.Min.y + style.FramePadding.y), text_col, ImGuiDir_Down, 1.0f);
+            const float w = arrow_size - 2.f * style.FramePadding.x;
+            const float h = g.FontSize;
+            YGRenderArrow(window->DrawList, ImVec2(value_x2 + style.FramePadding.x, bb.Min.y + style.FramePadding.y), ImVec2(w, h), text_col, ImGuiDir_Down, 1.0f);
         }
     }
     ImGui::RenderFrameBorder(bb.Min, bb.Max, style.FrameRounding);

@@ -100,7 +100,14 @@ InputText::Callbacks& InputText::callbacks() { return m_callbacks; }
 
 const std::string& InputText::text() const { return m_text; }
 
-void InputText::set_text(const std::string& text) { m_text = text; }
+void InputText::set_text(const std::string& text)
+{
+    if (validator()) {
+        m_text = validator()->process(text);
+    } else {
+        m_text = text;
+    }
+}
 
 ImGuiInputTextFlags InputText::flags() const { return m_flags; }
 
