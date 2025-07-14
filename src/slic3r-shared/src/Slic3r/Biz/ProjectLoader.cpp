@@ -30,8 +30,17 @@ static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
         project.config_containers().back()->set_print_config(co);
     }
 
-    if (project.config_containers().empty())
-        project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
+    if (project.config_containers().empty()) {
+        auto cc = std::make_unique<Domain::ConfigContainer>();
+
+        // Legacy config - remove when possible.
+        DynamicPrintConfig co;
+        auto full{FullPrintConfig::defaults()};
+        co.apply(full);
+        cc->set_print_config(co);
+
+        project.config_containers().emplace_back(std::move(cc));
+    }
     return project;
 }
 
