@@ -1,23 +1,24 @@
 #include <boost/iostreams/stream.hpp>
 #include "Slic3r/Biz/Yaml/YamlAdapterYamlCpp.hpp"
 
+#include <boost/nowide/config.hpp>
+#include <boost/nowide/fstream.hpp>
+
 namespace Slic3r::Biz::Yaml::YamlCpp {
 
 YamlAdapterYamlCpp::Parser YamlAdapterYamlCpp::create_file_parser(const char* file_name)
 {
-    return {
-        .nodes = YAML::LoadAllFromFile(file_name),
-        .file=file_name
-    };
+    boost::nowide::ifstream fs;
+    fs.open(file_name, std::ios::in | std::ios::binary);
+    if (!fs.good())
+        throw std::runtime_error(std::string{"Bad file: "} + file_name);
+    return {.nodes = YAML::LoadAll(fs), .file = file_name};
 }
 
 YamlAdapterYamlCpp::Parser YamlAdapterYamlCpp::create_string_parser(std::string_view data)
 {
     boost::iostreams::stream<boost::iostreams::array_source> stream{data.data(), data.size()};
-    return {
-        .nodes = YAML::LoadAll(stream),
-        .file="<string>"
-    };
+    return {.nodes = YAML::LoadAll(stream), .file = "<string>"};
 }
 
 YamlAdapterYamlCpp::Document YamlAdapterYamlCpp::load(const Parser& parser)
@@ -26,7 +27,7 @@ YamlAdapterYamlCpp::Document YamlAdapterYamlCpp::load(const Parser& parser)
         const auto node = parser.nodes[parser.current++];
         return {.node = node, .file = parser.file};
     }
-    return {.node=std::nullopt, .file=parser.file};
+    return {.node = std::nullopt, .file = parser.file};
 }
 
 Yaml::Details::NodeType YamlAdapterYamlCpp::node_type(const NodeRef& node)
@@ -54,7 +55,7 @@ size_t YamlAdapterYamlCpp::sequence_item_count(const NodeRef& node)
 
 YamlAdapterYamlCpp::NodeRef YamlAdapterYamlCpp::sequence_item_at(const NodeRef& node, size_t index)
 {
-    return {.node=(*node.node)[index], .file=node.file};
+    return {.node = (*node.node)[index], .file = node.file};
 }
 
 size_t YamlAdapterYamlCpp::mapping_item_count(const NodeRef& node)
@@ -71,9 +72,8 @@ YamlAdapterYamlCpp::NodeRef YamlAdapterYamlCpp::mapping_value_at(const NodeRef& 
 #else
         auto key = name;
 #endif
-        return {.node=(*node.node)[key], .file=node.file};
-    }
-    catch (YAML::KeyNotFound& e) {
+        return {.node = (*node.node)[key], .file = node.file};
+    } catch (YAML::KeyNotFound& e) {
         return {.node = std::nullopt, .file = node.file};
     }
 }
@@ -87,19 +87,19 @@ YamlAdapterYamlCpp::KeyValuePair YamlAdapterYamlCpp::mapping_key_value_at(const 
 
 YamlAdapterYamlCpp::NodeRef YamlAdapterYamlCpp::key(const KeyValuePair& pair, const NodeRef& parent)
 {
-    return {.node=pair->first, .file=parent.file};
+    return {.node = pair->first, .file = parent.file};
 }
 
 YamlAdapterYamlCpp::NodeRef YamlAdapterYamlCpp::value(const KeyValuePair& pair, const NodeRef& parent)
 {
-    return {.node=pair->second, .file=parent.file};
+    return {.node = pair->second, .file = parent.file};
 }
 
 Yaml::Details::Mark YamlAdapterYamlCpp::mark(const NodeRef& node)
 {
     if (!node.node.has_value())
-        return {.file=node.file};
+        return {.file = node.file};
     auto mark = node.node->Mark();
-    return {.file=node.file, .line=size_t(mark.line + 1), .column=size_t(mark.column + 1)};
+    return {.file = node.file, .line = size_t(mark.line + 1), .column = size_t(mark.column + 1)};
 }
-}
+} // namespace Slic3r::Biz::Yaml::YamlCpp

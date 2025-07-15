@@ -11,6 +11,7 @@
 #include "libslic3r/Utils.hpp"
 
 #include <boost/filesystem/operations.hpp>
+#include <boost/nowide/filesystem.hpp>
 
 namespace Slic3r::Biz::Mock {
 
@@ -50,6 +51,8 @@ TEST_CASE("Project Interactor Listeners")
     using namespace Slic3r::Biz;
     using namespace trompeloeil;
     namespace fs = boost::filesystem;
+
+    boost::nowide::nowide_filesystem();
 
     std::unique_ptr<SecretStoreDummy> store_dummy = std::make_unique<SecretStoreDummy>();
     Platform::PlatformServices::instance().set_secret_store(std::move(store_dummy));

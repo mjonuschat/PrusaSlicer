@@ -1,3 +1,4 @@
+#include <boost/nowide/filesystem.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
@@ -90,6 +91,38 @@ TEST_CASE("Load Yaml from file into MyData", "[yaml]")
     } catch (const Yaml::ParseError& e) {
         std::cerr << e.what() << std::endl;
     }
+}
+
+TEST_CASE("Load Yaml from file into Version", "[yaml]")
+{
+    boost::nowide::nowide_filesystem();
+
+    size_t files_processed           = 0;
+    boost::filesystem::path yaml_dir = Tests::get_datadir() / "yaml";
+    for (auto it : boost::filesystem::directory_iterator{yaml_dir}) {
+        if (!it.is_regular_file())
+            continue;
+        const auto filename = it.path().string();
+        Tests::Item data;
+        try {
+            Yaml::YamlAdapter::Document doc = Yaml::parse_file(filename.c_str());
+            INFO("File loaded");
+            INFO(filename.c_str());
+            REQUIRE(doc == true);
+            auto result = Yaml::parse_struct<Tests::Item>(doc);
+            REQUIRE(result.has_value() == true);
+            INFO("has result");
+            data = result.value<Tests::Item>();
+            REQUIRE(data.id == "x");
+            files_processed++;
+
+        } catch (const Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+    }
+
+    REQUIRE(files_processed == 2);
 }
 
 TEST_CASE("Load Yaml from string", "[yaml]")
