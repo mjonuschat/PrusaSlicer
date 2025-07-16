@@ -33,7 +33,7 @@ std::unique_ptr<Domain::FontFile> create_font_file(const wxFont &font);
 
 Domain::FontDescriptor::Type get_current_type();
 Domain::FontDescriptor create_descriptor(const wxFont& font);
-Domain::EmbossStyle create_emboss_style(const wxFont &font, const std::string& name = "");
+Domain::FontDescriptor create_descriptor(const wxFont& font, const std::string& name);
 
 std::string get_human_readable_name(const wxFont &font);
 

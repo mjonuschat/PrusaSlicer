@@ -189,30 +189,18 @@ Domain::FontDescriptor::Type get_current_type()
 }
 
 Domain::FontDescriptor create_descriptor(const wxFont& font) {
+    return create_descriptor(font, get_human_readable_name(font));
+}
+
+Domain::FontDescriptor create_descriptor(const wxFont& font, const std::string& name) {
     return Domain::FontDescriptor {
-            .name = get_human_readable_name(font),
+            .name = name,
             .path = store_wxFont(font),
             .type = get_current_type()
     };
 }
 
-Domain::EmbossStyle create_emboss_style(const wxFont& font, const std::string& name)
-{
-    std::string name_item = name.empty() ? get_human_readable_name(font) : name;
-    std::string fontDesc = store_wxFont(font);
-    Domain::FontDescriptor::Type type = get_current_type();
 
-    // synchronize font property with actual font
-    Domain::FontProp font_prop;
-
-    // The point size is defined as 1/72 of the Anglo-Saxon inch (25.4 mm): it
-    // is approximately 0.0139 inch or 352.8 um. But it is too small, so I
-    // decide use point size as mm for emboss
-    font_prop.size_in_mm = font.GetPointSize(); // *0.3528f;
-
-    update_property(font_prop, font);
-    return { name_item, fontDesc, type, font_prop };
-}
 
 // NOT working on linux GTK2
 // load font used by Operating system as default GUI

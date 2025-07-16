@@ -26,5 +26,18 @@ public:
     /// <param name="descriptor">Define font (glyph shapes)</param>
     /// <returns>Opened file</returns>
     virtual std::unique_ptr<const Domain::FontFile> open(const Domain::FontDescriptor& descriptor) = 0;
+
+    /// <summary>
+    /// Getter on current font descriptor type
+    /// To be able distiquish wheather descriptor was created on system with same creator
+    /// </summary>
+    /// <returns>Current type</returns>
+    virtual Domain::FontDescriptor::Type get_current_type() const = 0;
+
+    /// <summary>
+    /// create cca 5 descriptors for OS favorit fonts
+    /// </summary>
+    /// <returns>Favorit fonts</returns>
+    virtual Domain::FontList create_favorit() const = 0;
 };
 } // namespace Slic3r::Biz::Emboss

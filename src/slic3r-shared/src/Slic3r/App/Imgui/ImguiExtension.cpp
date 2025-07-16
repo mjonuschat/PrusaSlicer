@@ -603,4 +603,59 @@ ScopedStyleColors::~ScopedStyleColors()
     ImGui::PopStyleColor(m_count);
 }
 
+ImVec2 calc_text_size(std::string_view text, bool hide_text_after_double_hash=false, float wrap_width=-1.f){
+    return ImGui::CalcTextSize(text.data(), text.data() + text.length(), hide_text_after_double_hash, wrap_width);
+}
+
+std::string trunc(const std::string& text, float width, const char* tail)
+{
+    float text_width = ImGui::CalcTextSize(text.c_str()).x;
+    if (text_width < width)
+        return text;
+    float tail_width = ImGui::CalcTextSize(tail).x;
+    assert(width > tail_width);
+    if (width <= tail_width)
+        return "Error: Can't add tail and not be under wanted width.";
+    float allowed_width = width - tail_width;
+
+    // guess approx count of letter
+    float average_letter_width = calc_text_size(std::string_view("n")).x; // average letter width
+    unsigned count_letter = static_cast<unsigned>(allowed_width / average_letter_width);
+
+    std::string_view text_ = text;
+    std::string_view result_text = text_.substr(0, count_letter);
+    text_width = calc_text_size(result_text).x;
+    if (text_width < allowed_width) {
+        // increase letter count
+        while (count_letter < text.length()) {
+            ++count_letter;
+            std::string_view act_text = text_.substr(0, count_letter);
+            text_width = calc_text_size(act_text).x;
+            if (text_width > allowed_width)
+                break;
+            result_text = act_text;
+        }
+    } else {
+        // decrease letter count
+        while (count_letter > 1) {
+            --count_letter;
+            result_text = text_.substr(0, count_letter);
+            text_width = calc_text_size(result_text).x;
+            if (text_width < allowed_width)
+                break;
+        }
+    }
+    return std::string(result_text) + tail;
+}
+
+void escape_double_hash(std::string& text)
+{
+    // add space between hashes
+    const std::string search = "##";
+    const std::string replace = "# #";
+    size_t pos = 0;
+    while ((pos = text.find(search, pos)) != std::string::npos)
+        text.replace(pos, search.length(), replace);
+}
+
 } // namespace Slic3r::App::Imgui

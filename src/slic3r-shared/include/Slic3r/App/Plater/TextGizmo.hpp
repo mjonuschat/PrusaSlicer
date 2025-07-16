@@ -8,6 +8,7 @@
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
+#include "Slic3r/Biz/Emboss/StyleManager.hpp"
 
 namespace Slic3r::App::Yoga {
 class Dialog;
@@ -63,6 +64,8 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     Biz::Emboss::IFontManager& m_font_manager;
     Scene::GizmoManager& m_gizmo_manager;
+
+    Biz::Emboss::StyleManager m_style_manager;
 
     Domain::TextConfiguration m_text_configuration = {};
     Yoga::Passthrough<TextDialog> m_dialog;

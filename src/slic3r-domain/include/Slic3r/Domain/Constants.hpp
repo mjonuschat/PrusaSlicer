@@ -3,6 +3,7 @@
 #include "Slic3r/Domain/Types.hpp"
 
 #include <cmath>
+#include <optional>
 
 namespace Slic3r::Domain {
 
@@ -18,6 +19,12 @@ template <typename Number>
 constexpr inline bool is_approx(Number value, Number test_value, Number precision = EPSILON)
 {
     return std::fabs(double(value) - double(test_value)) < double(precision);
+}
+
+template <typename Number>
+constexpr inline bool is_approx(const std::optional<Number>& value, const std::optional<Number>& test_value, Number precision = EPSILON)
+{
+    return value.has_value() && test_value.has_value() && is_approx(*value, *test_value);
 }
 
 inline bool is_approx(const Vec3d& p1, const Vec3d& p2, double epsilon = EPSILON)

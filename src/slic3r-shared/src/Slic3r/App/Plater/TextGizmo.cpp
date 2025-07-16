@@ -88,7 +88,6 @@ Biz::Emboss::CreateVolumeParams create_volume_params(
         .gizmo = 13
     };
 }
-
 }
 
 namespace Slic3r::App::Plater {
@@ -104,6 +103,7 @@ TextGizmo::TextGizmo(
     , m_project_interactor(project_interactor)
     , m_font_manager(font_manager)
     , m_gizmo_manager(gizmo_manager)
+    , m_style_manager(font_manager, ImGui::GetIO().Fonts->GetGlyphRangesDefault(), data_dir() + "/cache/emboss_presets.cereal")
 {
     // Initialize font descriptor to font copied with application
     m_text_configuration.style.descriptor = Domain::FontDescriptor{
@@ -207,6 +207,25 @@ void TextGizmo::render_imgui()
             ImGui::EndCombo();
         }
 
+        // pressets
+        
+        if (ImGui::BeginCombo("Pressets", m_style_manager.get_style().emboss_style.descriptor.name.c_str()))
+        {
+            const auto& styles = m_style_manager.get_styles();
+            for (const Biz::Emboss::StyleManager::Style& style: styles)
+            {
+                const bool is_selected = (&style - &styles.front()) == m_style_manager.get_style_index();
+                if (ImGui::Selectable(style.emboss_style.descriptor.name.c_str(), is_selected)) {
+                    m_style_manager.load_style(style);
+                }
+
+                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
         ImGui::Text("Emboss text");
         if (ImGui::Button("Close")) {
             close();
@@ -217,6 +236,9 @@ void TextGizmo::render_imgui()
 
 void TextGizmo::on_activated()
 {
+    if (m_style_manager.get_styles().empty())
+        m_style_manager.init();
+
     std::vector<std::string> presets = { "NORMAL", "SMALL", "ITALIC", "SWISS" };
     int selected_preset_id = 2;
     m_dialog->set_presets(presets, selected_preset_id);

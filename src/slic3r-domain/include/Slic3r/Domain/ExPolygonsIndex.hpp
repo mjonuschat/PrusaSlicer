@@ -6,7 +6,7 @@
 
 #include "Slic3r/Domain/ExPolygon.hpp"
 
-namespace Slic3r::Biz::Algorithms {
+namespace Slic3r::Domain {
 
 /// <summary>
 /// Index into ExPolygons

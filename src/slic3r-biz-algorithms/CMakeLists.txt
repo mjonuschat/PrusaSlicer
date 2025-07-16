@@ -57,7 +57,6 @@ add_library(slic3r-biz-algorithms STATIC
     include/Slic3r/Biz/Algorithms/Color.hpp
     include/Slic3r/Biz/Algorithms/StringUtils.hpp
     src/Slic3r/Biz/Algorithms/StringUtils.cpp
-    include/Slic3r/Biz/Algorithms/ExPolygonsIndex.hpp
     src/Slic3r/Biz/Algorithms/ExPolygonsIndex.cpp
     include/Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp
     include/Slic3r/Biz/Algorithms/IntersectionPoints.hpp

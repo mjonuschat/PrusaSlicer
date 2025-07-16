@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/WX/FontManager.hpp"
 #include "Slic3r/Biz/WX/FontUtils.hpp"
+#include "Slic3r/App/WX/I18N.hpp" // translation for name of favorit fonts
 
 #include <wx/fontenum.h>
 #include <boost/functional/hash.hpp>
@@ -135,8 +136,9 @@ static std::size_t hash_value(wxString const& s)
 
 namespace Slic3r::Biz::WX {
 
-FontManager::FontManager(const std::string& data_dir):
-    m_cache_path(boost::filesystem::path(data_dir) / "cache" / "fonts.cereal")
+FontManager::FontManager(const std::string& data_dir)
+    : m_cache_path(boost::filesystem::path(data_dir) / "cache" / "fonts.cereal")
+    , m_data_dir(data_dir)
 {}
 
 const Domain::FontList& FontManager::get_fonts()
@@ -204,6 +206,75 @@ std::unique_ptr<const Domain::FontFile> FontManager::open(const Domain::FontDesc
         }
     }
     return result;
+}
+
+Domain::FontDescriptor::Type FontManager::get_current_type() const{
+    return WX::get_current_type();
+}
+
+Domain::FontList FontManager::create_favorit() const {
+    wxFont wx_font_normal = *wxNORMAL_FONT;
+    const wxFontEncoding encoding = wxFontEncoding::wxFONTENCODING_SYSTEM;
+    wxArrayString facenames;
+#ifdef __APPLE__
+    wxFontEnumerator::InvalidateCache();
+    facenames = wxFontEnumerator::GetFacenames(encoding);
+    // Set normal font to helvetica when possible
+    for (const wxString& facename : facenames) {
+        if (facename.IsSameAs("Helvetica")) {
+            wx_font_normal = wxFont(wxFontInfo().FaceName(facename).Encoding(encoding));
+            break;
+        }
+    }
+#endif // __APPLE__
+
+    // https://docs.wxwidgets.org/3.0/classwx_font.html
+    // Predefined objects/pointers: wxNullFont, wxNORMAL_FONT, wxSMALL_FONT, wxITALIC_FONT, wxSWISS_FONT
+    Domain::FontList favorits = {
+        create_descriptor(wx_font_normal, _u8L("NORMAL")), // wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT)
+        create_descriptor(*wxSMALL_FONT, _u8L("SMALL")),  // A font using the wxFONTFAMILY_SWISS family and 2 points smaller than wxNORMAL_FONT.
+        create_descriptor(*wxITALIC_FONT, _u8L("ITALIC")), // A font using the wxFONTFAMILY_ROMAN family and wxFONTSTYLE_ITALIC style and of the same size of wxNORMAL_FONT.
+        create_descriptor(*wxSWISS_FONT, _u8L("SWISS")),  // A font identic to wxNORMAL_FONT except for the family used which is wxFONTFAMILY_SWISS.
+        create_descriptor(wxFont(10, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD), _u8L("MODERN")),
+    };
+
+    auto is_invalid = [](const Domain::FontDescriptor& descriptor) {
+        // TODO: check that translated text "Emboss text" has shape
+
+        // Check that exsit valid TrueType Font for wx font
+        return  create_font_file(load_wxFont(descriptor.path)) == nullptr;
+    };
+
+    // Not all predefined font for wx must be valid TTF, but at least one style must be loadable
+    favorits.erase(std::remove_if(favorits.begin(), favorits.end(), is_invalid), favorits.end());
+
+    // exist some valid style?
+    if (!favorits.empty())
+        return favorits;
+
+    // No valid style in defult list
+    // at least one style must contain loadable font
+    if(facenames.empty())
+        facenames = wxFontEnumerator::GetFacenames(encoding);
+    for (const wxString& face : facenames) {
+        wxFont wx_font(face);
+        Domain::FontDescriptor descriptor = create_descriptor(wx_font);
+        if (!is_invalid(descriptor)) {        
+            descriptor.name = _u8L("First font");
+            favorits.push_back(descriptor);
+            break;
+        }
+    }
+    if (favorits.empty()) {
+        // On current OS is not installed any correct TTF font
+        // use font packed with Slic3r
+        favorits.push_back(Domain::FontDescriptor{
+            .name = _u8L("Default font"),
+            .path = m_data_dir + "/fonts/NotoSans-Regular.ttf",
+            .type = Domain::FontDescriptor::Type::file_path
+        });
+    }
+    return favorits;
 }
 
 } // namespace Slic3r::Biz::WX

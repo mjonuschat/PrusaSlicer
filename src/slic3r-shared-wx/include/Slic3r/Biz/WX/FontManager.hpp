@@ -35,6 +35,23 @@ public:
     /// <returns>Font file on succcess otherwise nullptr</returns>
     std::unique_ptr<const Domain::FontFile> open(const Domain::FontDescriptor& descriptor) override;
 
+    /// <summary>
+    /// Retrieves the current font descriptor type.
+    /// Distiquish Win/Lin/Mac
+    /// </summary>
+    /// <returns>The current font descriptor type as a value of Domain::FontDescriptor::Type.</returns>
+    Domain::FontDescriptor::Type get_current_type() const override;
+
+    /// <summary>
+    /// Create descriptors from static defined wxFont for curren
+    ///  * wxNORMAL_FONT
+    ///  * wxSMALL_FONT
+    ///  * wxITALIC_FONT
+    ///  * wxSWISS_FONT
+    ///  * from wxFONTFAMILY_MODERN
+    /// </summary>
+    /// <returns>List of favorits font descriptors in current OS</returns>
+    Domain::FontList create_favorit() const override;
 private:
     // data of can_load() faces
     Domain::FontList m_openable;
@@ -46,5 +63,7 @@ private:
     std::optional<size_t> m_hash;
 
     boost::filesystem::path m_cache_path;
+
+    std::string m_data_dir;
 };
 } // namespace Slic3r::Biz::WX

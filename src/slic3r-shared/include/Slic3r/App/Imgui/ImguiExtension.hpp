@@ -101,4 +101,24 @@ bool button_aligned(float align_x, const std::string& label, const ImVec2& size_
 bool colored_circle_button_aligned(float align_x, const std::string& label_str, ImVec4 color, const ImVec2& size_arg = ImVec2(0, 0));
 void colored_circle_marker_aligned(float align_x, const std::string& label_str, const std::vector<ImVec4>& colors, const ImVec2& size_arg = ImVec2(0, 0));
 
+/// <summary>
+/// Truncate text by ImGui draw function to specific width
+/// NOTE 1: ImGui must be initialized
+/// NOTE 2: Calculation for actual acive imgui font
+/// </summary>
+/// <param name="text">Text to be truncated</param>
+/// <param name="width">Maximal width before truncate</param>
+/// <param name="tail">String puted on end of text to be visible truncation</param>
+/// <returns>Truncated text</returns>
+std::string trunc(const std::string& text,
+    float              width,
+    const char* tail = " ..");
+
+/// <summary>
+/// Escape ## in data by add space between hashes
+/// Needed when user written text is visualized by ImGui.
+/// </summary>
+/// <param name="text">In/Out text to be escaped</param>
+void escape_double_hash(std::string& text);
+
 } // namespace Slic3r::App::Imgui
