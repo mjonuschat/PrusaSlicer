@@ -53,7 +53,8 @@ namespace {
                 "bottom_solid_layers", "bottom_solid_min_thickness", "bridge_acceleration", "bridge_angle", "bridge_fan_speed",
                 "bridge_flow_ratio", "bridge_speed", "brim_separation", "brim_type", "brim_width", "chamber_minimal_temperature",
                 "chamber_temperature", "color_change_gcode", "colorprint_heights", "compatible_printers_condition_cummulative",
-                "complete_objects", "cooling", "cooling_tube_length", "cooling_tube_retraction", "default_acceleration",
+                "complete_objects", "cooling", "cooling_perimeter_transition_distance", "cooling_slowdown_logic",
+                "cooling_tube_length", "cooling_tube_retraction", "default_acceleration",
                 "default_filament_profile", "default_print_profile", "deretract_speed", "disable_fan_first_layers",
                 "dont_support_bridges", "draft_shield", "duplicate_distance", "elefant_foot_compensation",
                 "enable_dynamic_fan_speeds", "enable_dynamic_overhang_speeds", "end_filament_gcode", "end_gcode",
@@ -313,8 +314,13 @@ static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::Co
         }
         else if (opt->type() == Slic3rLegacy::coPoints && item.holds_alternative<Domain::Vec2d>()) {
             item.set(Domain::Vec2d(static_cast<const Slic3rLegacy::ConfigOptionPoints*>(opt)->values[filament_id]));
-        }
-        else {
+        } else if (opt->type() == Slic3rLegacy::coEnums && item.holds_alternative<EnumWrapper>()) {
+            EnumWrapper enum_wrapper{item.get<EnumWrapper>()};
+            enum_wrapper.set_index(
+                static_cast<const Slic3rLegacy::ConfigOptionInts*>(opt)->values[filament_id]
+            );
+            item.set(enum_wrapper);
+        } else {
             // Old and new types do not match.
             return false;
         }
@@ -440,6 +446,10 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
         else if (opt->type() == Slic3rLegacy::coPoints && item.holds_alternative<Domain::Vec2d>()) {
             static_cast<Slic3rLegacy::ConfigOptionPoints*>(opt)->values.resize(filament_id + 1);
             static_cast<Slic3rLegacy::ConfigOptionPoints*>(opt)->values[filament_id] = Slic3rLegacy::Vec2d(item.get<Domain::Vec2d>());
+        }
+        else if (opt->type() == Slic3rLegacy::coEnums && item.holds_alternative<EnumWrapper>()) {
+            static_cast<Slic3rLegacy::ConfigOptionInts*>(opt)->values.resize(filament_id + 1);
+            static_cast<Slic3rLegacy::ConfigOptionInts*>(opt)->values[filament_id] = item.get<EnumWrapper>().value();
         }
         else {
             // Old and new types do not match.

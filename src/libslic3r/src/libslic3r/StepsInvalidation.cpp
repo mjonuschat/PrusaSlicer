@@ -175,6 +175,8 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"colorprint_heights", steps({propagate(psGCodeExport)})},
     {"complete_objects", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
     {"cooling", steps({propagate(psGCodeExport)})},
+    {"cooling_perimeter_transition_distance", steps({propagate(psGCodeExport)})},
+    {"cooling_slowdown_logic", steps({propagate(psGCodeExport)})},
     {"cooling_tube_length", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
     {"cooling_tube_retraction", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
     {"default_acceleration", steps({propagate(psGCodeExport)})},

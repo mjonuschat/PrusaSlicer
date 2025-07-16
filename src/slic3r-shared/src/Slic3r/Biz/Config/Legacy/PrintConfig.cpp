@@ -344,6 +344,12 @@ static const t_config_enum_values s_keys_map_EnsureVerticalShellThickness {
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(EnsureVerticalShellThickness)
 
+static const t_config_enum_values s_keys_map_CoolingSlowdownLogicType {
+    { "all_features",        int(CoolingSlowdownLogicType::AllFeatures)        },
+    { "preserve_perimeters", int(CoolingSlowdownLogicType::PreservePerimeters) },
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CoolingSlowdownLogicType)
+
 static void assign_printer_technology_to_unknown(t_optiondef_map &options, PrinterTechnology printer_technology)
 {
     for (std::pair<const t_config_option_key, ConfigOptionDef> &kvp : options)
@@ -959,6 +965,26 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("This flag enables the automatic cooling logic that adjusts print speed "
                    "and fan speed according to layer printing time.");
     def->set_default_value(new ConfigOptionBools { true });
+
+    def = this->add("cooling_slowdown_logic", coEnums);
+    def->label = L("Cooling slowdown logic");
+    def->tooltip = L("Determines how the printer slows down layer printing when the minimum layer time isn't reached. "
+                     "'Preserve perimeters' first tries to preserve the print speeds of the first two perimeters by slowing all other features. "
+                     "Only if this isn't sufficient, it also slows down those first two perimeters. "
+                     "'All features' slows down all print features, including the first two perimeters.");
+    def->set_enum<CoolingSlowdownLogicType>({
+        { std::make_pair("all_features",        L("All features"))        },
+        { std::make_pair("preserve_perimeters", L("Preserve perimeters")) },
+    });
+    def->set_default_value(new ConfigOptionEnums<CoolingSlowdownLogicType>{ CoolingSlowdownLogicType::AllFeatures });
+
+    def = this->add("cooling_perimeter_transition_distance", coFloats);
+    def->label = L("Perimeter transition distance");
+    def->tooltip = L("Distance in millimeters before non-slowed perimeters where the original unslowed print speed is restored. "
+                     "This reduces print quality issues when transitioning from heavily slowed feature to fast perimeter printing.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloats { 0.0 });
 
     def = this->add("cooling_tube_retraction", coFloat);
     def->label = L("Cooling tube position");

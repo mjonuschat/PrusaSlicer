@@ -14,6 +14,12 @@ enum class ArcFittingType {
     Disabled,
     EmitCenter
 };
+enum class CoolingSlowdownLogicType
+{
+    Proportional,
+    AllFeatures,
+    PreservePerimeters,
+};
 enum class TopOnePerimeterType
 {
     None,

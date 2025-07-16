@@ -2229,6 +2229,8 @@ void TabFilament::build()
         optgroup = page->new_optgroup(L("Enable"));
         optgroup->append_single_option_line("fan_always_on");
         optgroup->append_single_option_line("cooling");
+        optgroup->append_single_option_line("cooling_slowdown_logic");
+        optgroup->append_single_option_line("cooling_perimeter_transition_distance");
 
         line = { "", "" };
         line.full_width = 1;
@@ -2422,7 +2424,7 @@ void TabFilament::toggle_options()
         bool cooling = m_config->opt_bool("cooling", 0);
         bool fan_always_on = cooling || m_config->opt_bool("fan_always_on", 0);
 
-        for (auto el : { "max_fan_speed", "fan_below_layer_time", "slowdown_below_layer_time", "min_print_speed" })
+        for (auto el : { "max_fan_speed", "fan_below_layer_time", "slowdown_below_layer_time", "min_print_speed", "cooling_slowdown_logic" })
             toggle_option(el, cooling);
 
         for (auto el : { "min_fan_speed", "disable_fan_first_layers", "full_fan_speed_layer" })
@@ -2432,6 +2434,9 @@ void TabFilament::toggle_options()
         for (int i = 0; i < 4; i++) {
             toggle_option("overhang_fan_speed_"+std::to_string(i),dynamic_fan_speeds);
         }
+
+        bool cooling_preserve_perimeters = cooling && static_cast<CoolingSlowdownLogicType>(m_config->option("cooling_slowdown_logic")->getInts().at(0)) == CoolingSlowdownLogicType::PreservePerimeters;
+        toggle_option("cooling_perimeter_transition_distance", cooling_preserve_perimeters);
     }
 
     if (m_active_page->title() == "Advanced")

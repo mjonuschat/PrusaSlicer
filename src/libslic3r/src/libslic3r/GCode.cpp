@@ -3559,8 +3559,13 @@ std::string GCodeGenerator::_extrude(
             cooling_marker_setspeed_comments = ";_EXTRUDE_SET_SPEED";
         }
 
-        if (path_attr.role == ExtrusionRole::ExternalPerimeter) {
+        if (path_attr.role.is_external_perimeter()) {
             cooling_marker_setspeed_comments += ";_EXTERNAL_PERIMETER";
+        } else if (path_attr.role.is_perimeter()) {
+            assert(path_attr.perimeter_index.has_value());
+            if (path_attr.perimeter_index.has_value()) {
+                cooling_marker_setspeed_comments += ";_INTERNAL_PERIMETER" + std::to_string(*path_attr.perimeter_index);
+            }
         }
     }
 

@@ -648,15 +648,50 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comAdvanced;
     def->init_fn = init_with(false);
 
-    def = defs.add("cooling", typeid(bool));
-    def->location = Filament;
-    def->label = L("Enable auto cooling");
-    def->option_group = L("Enable");
-    def->category = ConfigItemDef::Category::Material;
-    def->gui_type = ConfigItemDef::GUIType::checkbox;
-    def->tooltip = L("This flag enables the automatic cooling logic that adjusts print speed "
-                   "and fan speed according to layer printing time.");
+    def               = defs.add("cooling", typeid(bool));
+    def->location     = Filament;
+    def->label        = L("Enable auto cooling");
+    def->option_group = L("Cooling logic");
+    def->category     = ConfigItemDef::Category::Cooling;
+    def->gui_type     = ConfigItemDef::GUIType::checkbox;
+    def->tooltip =
+        L("This flag enables the automatic cooling logic that adjusts print speed "
+          "and fan speed according to layer printing time.");
     def->init_fn = init_with(true);
+
+    def               = defs.add("cooling_slowdown_logic", typeid(EnumWrapper));
+    def->location     = Filament;
+    def->label        = L("Cooling slowdown logic");
+    def->option_group = L("Cooling logic");
+    def->category     = ConfigItemDef::Category::Cooling;
+    def->gui_type     = ConfigItemDef::GUIType::combobox;
+    def->tooltip      = L(
+        "Determines how the printer slows down layer printing when the minimum layer time isn't reached. "
+             "'Preserve perimeters' first tries to preserve the print speeds of the first two perimeters by slowing all other features. "
+             "Only if this isn't sufficient, it also slows down those first two perimeters. "
+             "'All features' slows down all print features, including the first two perimeters."
+    );
+    def->init_fn = init_with(
+        CoolingSlowdownLogicType::AllFeatures,
+        {{int(CoolingSlowdownLogicType::AllFeatures), "all_features", L("All features")},
+         {int(CoolingSlowdownLogicType::PreservePerimeters),
+          "preserve_perimeters",
+          L("Preserve perimeters")}}
+    );
+
+    def               = defs.add("cooling_perimeter_transition_distance", typeid(double));
+    def->location     = Filament;
+    def->label        = L("Perimeter transition distance");
+    def->option_group = L("Cooling logic");
+    def->category     = ConfigItemDef::Category::Cooling;
+    def->gui_type     = ConfigItemDef::GUIType::textfield;
+    def->tooltip      = L(
+        "Distance in millimeters before non-slowed perimeters where the original unslowed print speed is restored. "
+             "This reduces print quality issues when transitioning from heavily slowed feature to fast perimeter printing."
+    );
+    def->sidetext = L("mm");
+    def->min      = 0;
+    def->init_fn  = init_with(0.);
 
     def = defs.add("cooling_tube_retraction", typeid(double));
     def->location = Printer;
