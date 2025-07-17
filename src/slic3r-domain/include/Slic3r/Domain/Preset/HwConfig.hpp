@@ -88,6 +88,13 @@ using HwToolConfigs     = std::vector<HwToolConfig>;
 using HwFeederConfigs   = std::map<Address, HwFeederConfig>;
 using HwMaterialConfigs = std::map<Address, MaterialConfig>;
 
+struct VisualRepresentation
+{
+    std::optional<std::string> bed_model;
+    std::optional<std::string> bed_texture;
+    std::optional<std::string> thumbnail;
+};
+
 struct HwPrinterConfig
 {
     std::string id;
@@ -98,6 +105,9 @@ struct HwPrinterConfig
     HwModel model;
     uint8_t tool_count;
     FeatureValueMap features;
+
+    // visual representation
+    VisualRepresentation visual;
 
     HwToolConfigs tools;
     HwFeederConfigs feeders;
@@ -120,6 +130,7 @@ FeatureValueMap build_features(const FeatureDefs& feature_defs);
 
 void override_features(FeatureValueMap& dest, const FeatureDefs& overrides);
 void override_features(FeatureValueMap& dest, const FeatureValueMap& overrides);
+void override_visual(VisualRepresentation& dest, const VisualRepresentation& overrides);
 
 void fill_missing_features_with_default(FeatureValueMap& dest, const FeatureDefs& def);
 void remove_features_with_default(FeatureValueMap& features, const FeatureDefs& def_features);
@@ -132,6 +143,7 @@ struct HwPrinterConfigDef
     HwModel model;
     FeatureDefs features;
     uint8_t tool_count;
+    VisualRepresentation visual;
 };
 
 struct HwToolConfigDef
@@ -202,6 +214,7 @@ struct HwPrinterConfigTemplate
     FeatureValueMap features;
     HwToolConfigTemplates tools;
     HwFeederConfigTemplates feeders;
+    VisualRepresentation visual;
 };
 
 using HwPrinterConfigTemplates = std::vector<HwPrinterConfigTemplate>;

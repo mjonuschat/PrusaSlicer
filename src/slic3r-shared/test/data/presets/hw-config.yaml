@@ -26,6 +26,10 @@ name: Core ONE
 model:
   base_model: 'C1'
   model: 'C1'
+visual:
+  bed_model: coreone_bed.stl
+  bed_texture: coreone.svg
+  thumbnail: COREONE_thumbnail.png
 ---
 kind: printer
 technology: fff
@@ -37,6 +41,10 @@ model:
 features:
   input_shaper:
     default: true
+visual:
+  bed_model: mk4s_bed.stl
+  bed_texture: mk4s.svg
+  thumbnail: MK4S_thumbnail.png
 ---
 kind: tool
 technology: fff
@@ -89,7 +97,7 @@ name: MK4S
 tool_count: 1
 tools:
   - tool: '0.4'
-default_sheet: 'pei_smooth'
+sheet: 'pei_smooth'
 ---
 kind: printer_config
 id: MK4S MMU3S
@@ -101,7 +109,9 @@ tools:
 feeders:
   - feeder: 'MMU3S @ MK4'
     address: [0]
-default_sheet: 'pei_smooth'
+sheet: 'pei_smooth'
+visual:
+  thumbnail: MK4S_MMU_thumbnail.png
 ---
 kind: printer_config
 id: C1
@@ -110,7 +120,9 @@ name: Core One
 tool_count: 1
 tools:
   - tool: '0.4HF'
-default_sheet: 'pei_smooth'
+sheet: 'pei_smooth'
+visual:
+  bed_texture: my_coreone.svg
 ---
 kind: printer_config
 id: C1 MMU3S
@@ -122,6 +134,6 @@ tools:
 feeders:
   - feeder: 'MMU3S @ C1'
     address: [0]
-default_sheet: 'pei_smooth'
+sheet: 'pei_smooth'
 
 

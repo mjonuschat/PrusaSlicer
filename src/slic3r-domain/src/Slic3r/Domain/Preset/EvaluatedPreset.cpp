@@ -41,6 +41,26 @@ bool EvaluatedPrinterPreset::is_valid() const
     });
 }
 
+namespace {
+const std::string EMPTY;
+} // namespace
+
+std::string SelectedPreset::bed_model() const
+{
+    auto it = printer.config_box().contains("bed_custom_model");
+    if (it.item)
+        return it.item->get<std::string>();
+    return hw_config.visual.bed_model.value_or(EMPTY);
+}
+
+std::string SelectedPreset::bed_texture() const
+{
+    auto it = printer.config_box().contains("bed_custom_texture");
+    if (it.item)
+        return it.item->get<std::string>();
+    return hw_config.visual.bed_texture.value_or(EMPTY);
+}
+
 ConfigPack SelectedPreset::config() const
 {
     if (printer.kind == PresetKind::FdmPrinter) {

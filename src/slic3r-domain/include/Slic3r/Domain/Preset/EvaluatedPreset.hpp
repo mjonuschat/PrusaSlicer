@@ -14,7 +14,14 @@ namespace Slic3r::Domain::Preset {
 
 using Expressions = std::vector<Expr::ExprAst>;
 
-template <typename ConfigFdmType, typename ConfigSlaType>
+template <typename T>
+concept ConfigBoxLike = std::is_base_of_v<ConfigBox, T>;
+
+template <typename T>
+concept ConfigBoxLikeOrMonostate = std::is_base_of_v<ConfigBox, T>
+    || std::is_same_v<std::monostate, T>;
+
+template <ConfigBoxLike ConfigFdmType, ConfigBoxLikeOrMonostate ConfigSlaType>
 struct EvaluatedPreset
 {
     using PresetValues = std::variant<ConfigFdmType, ConfigSlaType>;
@@ -26,6 +33,28 @@ struct EvaluatedPreset
     FeatureValueMap features;
     Expressions conditions;
     SourceLocation last_node_location;
+
+    [[nodiscard]] const ConfigBox& config_box() const
+    {
+        return std::visit(
+            overloaded{
+                [](const auto& c) -> const ConfigBox& { return c; },
+                [](const std::monostate& c) -> const ConfigBox& { PANIC("Unsupported"); },
+            },
+            values
+        );
+    }
+
+    [[nodiscard]] ConfigBox& config_box()
+    {
+        return std::visit(
+            overloaded{
+                [](const auto& c) -> ConfigBox& { return c; },
+                [](const std::monostate& c) -> ConfigBox& { PANIC("Unsupported"); },
+            },
+            values
+        );
+    }
 };
 
 // using EvaluatedPresets = std::vector<EvaluatedPreset>;
@@ -118,6 +147,9 @@ struct SelectedPreset
     {
         return hw_config.technology;
     }
+
+    [[nodiscard]] std::string bed_model() const;
+    [[nodiscard]] std::string bed_texture() const;
 
     ConfigPack config() const;
 };

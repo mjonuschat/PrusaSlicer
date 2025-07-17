@@ -27,6 +27,20 @@ void override_features(FeatureValueMap& dest, const FeatureValueMap& overrides)
         dest[k] = v;
 }
 
+template <typename T>
+void override_value(std::optional<T>& dest, const std::optional<T>& override)
+{
+    if (override.has_value())
+        dest = override.value();
+}
+
+void override_visual(VisualRepresentation& dest, const VisualRepresentation& overrides)
+{
+    override_value(dest.bed_model, overrides.bed_model);
+    override_value(dest.bed_texture, overrides.bed_texture);
+    override_value(dest.thumbnail, overrides.thumbnail);
+}
+
 void fill_missing_features_with_default(FeatureValueMap& dest, const FeatureDefs& def)
 {
     for (const auto& [k, v] : def) {

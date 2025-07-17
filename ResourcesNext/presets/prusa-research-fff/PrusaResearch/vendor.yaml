@@ -42,6 +42,10 @@ tool_count: 1
 features:
   input_shaper:
     default: true
+visual:
+  bed_model: xl_bed.stl
+  bed_texture: xl.svg
+  thumbnail: XL_thumbnail.png
 ---
 #kind: printer
 #technology: FFF
@@ -87,6 +91,10 @@ tool_count: 1
 features:
   input_shaper:
     default: true
+visual:
+  bed_model: coreone_bed.stl
+  bed_texture: coreone.svg
+  thumbnail: COREONE_thumbnail.png
 ---
 kind: printer
 technology: FFF
@@ -99,6 +107,10 @@ tool_count: 1
 features:
   input_shaper:
     default: true
+visual:
+  bed_model: mk4_bed.stl
+  bed_texture: mk4.svg
+  thumbnail: MK4_thumbnail.png
 ---
 kind: printer
 technology: FFF
@@ -111,6 +123,10 @@ tool_count: 1
 features:
   input_shaper:
     default: true
+visual:
+  bed_model: mk4s_bed.stl
+  bed_texture: mk4s.svg
+  thumbnail: MK4S_thumbnail.png
 ---
 kind: printer
 technology: FFF
@@ -130,6 +146,10 @@ features:
     default: false
   supports_05_nozzle:
     default: false
+visual:
+  bed_model: mk3_bed.stl
+  bed_texture: mk3.svg
+  thumbnail: MK3_thumbnail.png
 ---
 kind: printer
 technology: FFF
@@ -148,6 +168,10 @@ features:
     default: false
   supports_05_nozzle:
     default: false
+visual:
+  bed_model: mk3_bed.stl
+  bed_texture: mk3.svg
+  thumbnail: MK3_thumbnail.png
 ---
 kind: printer
 technology: FFF
@@ -168,6 +192,10 @@ features:
     default: false
   supports_05_nozzle:
     default: false
+visual:
+  bed_model: mini_bed.stl
+  bed_texture: mini.svg
+  thumbnail: MINI_thumbnail.png
 ---
 kind: tool
 technology: FFF
@@ -330,6 +358,8 @@ tool_count: 2
 tools:
 - tool: '0.4'
 sheet: satin
+visual:
+  thumbnail: XL2IS_thumbnail.png
 ---
 kind: printer_config
 id: xl-5t
@@ -339,6 +369,8 @@ tool_count: 5
 tools:
 - tool: '0.4'
 sheet: satin
+visual:
+  thumbnail: XL5IS_thumbnail.png
 ---
 kind: printer_config
 id: c1

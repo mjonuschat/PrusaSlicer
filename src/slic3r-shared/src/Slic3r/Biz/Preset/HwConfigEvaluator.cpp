@@ -4,14 +4,21 @@
 
 namespace Slic3r::Biz::Preset {
 
-HwToolConfigIterator HwConfigEvaluator::iterate_tools(const Domain::Preset::HwPrinterConfig& printer, const HwToolConfigIterator::Container& tools) const
+HwToolConfigIterator HwConfigEvaluator::iterate_tools(
+    const Domain::Preset::HwPrinterConfig& printer,
+    const HwToolConfigIterator::Container& tools
+) const
 {
     Expr::ValueMap values;
     append_printer_values(values, printer);
     return HwToolConfigIterator{tools, m_eval, std::move(values)};
 }
 
-HwFeederConfigIterator HwConfigEvaluator::iterate_feeders(const Domain::Preset::HwPrinterConfig& printer, const Domain::Preset::HwToolConfig& tool, const HwFeederConfigIterator::Container& feeders) const
+HwFeederConfigIterator HwConfigEvaluator::iterate_feeders(
+    const Domain::Preset::HwPrinterConfig& printer,
+    const Domain::Preset::HwToolConfig& tool,
+    const HwFeederConfigIterator::Container& feeders
+) const
 {
     Expr::ValueMap values;
     append_printer_values(values, printer);
@@ -19,7 +26,10 @@ HwFeederConfigIterator HwConfigEvaluator::iterate_feeders(const Domain::Preset::
     return HwFeederConfigIterator{feeders, m_eval, std::move(values)};
 }
 
-HwSheetConfigIterator HwConfigEvaluator::iterate_sheets(const Domain::Preset::HwPrinterConfig& printer, const HwSheetConfigIterator::Container& sheets) const
+HwSheetConfigIterator HwConfigEvaluator::iterate_sheets(
+    const Domain::Preset::HwPrinterConfig& printer,
+    const HwSheetConfigIterator::Container& sheets
+) const
 {
     Expr::ValueMap values;
     append_printer_values(values, printer);
@@ -38,14 +48,19 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
     Domain::Preset::override_features(features, printer_def->features);
     Domain::Preset::override_features(features, templ.features);
 
+    Domain::Preset::VisualRepresentation visual = printer_def->visual;
+    Domain::Preset::override_visual(visual, templ.visual);
+
     Domain::Preset::HwPrinterConfig printer_config{
-        .id = Domain::Preset::generate_id(),
+        .id         = Domain::Preset::generate_id(),
         .printer_id = printer_def->id,
-        .vendor_id = vendor_data.info.id,
+        .vendor_id  = vendor_data.info.id,
         .technology = printer_def->technology,
-        .model = printer_def->model,
-        .tool_count = templ.tool_count.has_value() ? templ.tool_count.value() : printer_def->tool_count,
-        .features = features,
+        .model      = printer_def->model,
+        .tool_count = templ.tool_count.has_value() ? templ.tool_count.value() :
+                                                     printer_def->tool_count,
+        .features   = features,
+        .visual     = visual
     };
 
     printer_config.name = Domain::Preset::suggest_name(printer_config, vendor_data);
@@ -59,8 +74,8 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
         auto tool_features = build_features(vendor_data.info.features.tool);
         Domain::Preset::override_features(tool_features, tool_def->features);
         Domain::Preset::override_features(tool_features, tool_templ.features);
-        Domain::Preset::HwToolConfig tool_config {
-            .id = tool_def->id,
+        Domain::Preset::HwToolConfig tool_config{
+            .id       = tool_def->id,
             .features = tool_features,
         };
         printer_config.tools.emplace_back(std::move(tool_config));
@@ -77,25 +92,28 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
         auto feeder_features = build_features(vendor_data.info.features.feeder);
         Domain::Preset::override_features(feeder_features, feeder_def->features);
         Domain::Preset::override_features(feeder_features, feeder_templ.features);
-        Domain::Preset::HwFeederConfig feeder_config {
-            .id = feeder_def->id,
-            .type = feeder_def->type,
-            .model = feeder_def->model,
+        Domain::Preset::HwFeederConfig feeder_config{
+            .id         = feeder_def->id,
+            .type       = feeder_def->type,
+            .model      = feeder_def->model,
             .slot_count = feeder_def->slot_count,
-            .features = feeder_features,
+            .features   = feeder_features,
         };
         printer_config.feeders.emplace(std::make_pair(feeder_templ.address, std::move(feeder_config)));
     }
 
     if (printer_config.technology == Domain::PrinterTechnology::FFF) {
-        const auto* sheet_def = templ.sheet.has_value()
-            ? vendor_data.find_sheet_config_def_by_id(*templ.sheet)
-            : first_compatible_sheet(printer_config, vendor_data.defs.find(Domain::PrinterTechnology::FFF)->second.sheets);
+        const auto* sheet_def = templ.sheet.has_value() ?
+            vendor_data.find_sheet_config_def_by_id(*templ.sheet) :
+            first_compatible_sheet(
+                printer_config,
+                vendor_data.defs.find(Domain::PrinterTechnology::FFF)->second.sheets
+            );
         ASSERT(sheet_def != nullptr, sheet_def->id);
-        auto& sheet = printer_config.sheet;
-        sheet.id = sheet_def->id;
-        sheet.name = sheet_def->name;
-        sheet.type = sheet_def->type;
+        auto& sheet    = printer_config.sheet;
+        sheet.id       = sheet_def->id;
+        sheet.name     = sheet_def->name;
+        sheet.type     = sheet_def->type;
         sheet.features = Domain::Preset::build_features(vendor_data.info.features.sheet);
         Domain::Preset::override_features(sheet.features, sheet_def->features);
     }
@@ -112,4 +130,4 @@ const Domain::Preset::HwSheetConfigDef* HwConfigEvaluator::first_compatible_shee
     return it == std::end(it) ? nullptr : &*it;
 }
 
-}
+} // namespace Slic3r::Biz::Preset
