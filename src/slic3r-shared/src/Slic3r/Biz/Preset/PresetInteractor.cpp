@@ -64,7 +64,7 @@ void PresetInteractor::load_preset_bundle(const std::string& preset_bundle_path,
     if (preset_bundle.printer_configs.empty()) {
         HwConfigEvaluator config_eval;
 
-        auto& prusa_fff = preset_bundle.vendor_bundles["prusa-fff"];
+        auto& prusa_fff = preset_bundle.vendor_bundles["PrusaResearch"];
         for (const auto& hw_printer_template : prusa_fff.vendor_data.printer_configs) {
             auto printer_config = config_eval.create_printer_config(
                 hw_printer_template,
