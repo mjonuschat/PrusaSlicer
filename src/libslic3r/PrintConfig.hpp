@@ -1092,6 +1092,8 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloat,              init_z_rotate))
     ((ConfigOptionFloat,              preheat_time))
     ((ConfigOptionInt,                preheat_steps))
+    // BOSS
+    ((ConfigOptionFloat,              wipe_tower_max_purge_speed))
 )
 
 PRINT_CONFIG_CLASS_DERIVED_DEFINE0(
