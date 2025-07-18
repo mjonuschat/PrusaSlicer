@@ -182,37 +182,39 @@ void PlaterRenderModule::init_scene_layout()
         "Add...",
         "Ctrl + I",
         {.action = [this]() {
-        IDialogManager::FileCallback callback =
-                 [this](bool success, const boost::filesystem::path& file_path) {
-                     if (success) {
-                         auto mesh = Biz::load_stl(file_path.string());
-                         if (! mesh) {
-                             // TODO: do something with the error
-                             return;
-                         }
+            IDialogManager::FileCallback callback =
+                [this](bool success, const boost::filesystem::path& file_path) {
+                    if (success) {
+                        auto mesh = Biz::load_stl(file_path.string());
+                        if (!mesh) {
+                            // TODO: do something with the error
+                            return;
+                        }
 
-                         auto& scene_interactor = m_project_interactor.scene_interactor();
-                         const auto& bed =
-                             m_project_interactor.selected_project().config_containers().front()->bed();
+                        auto& scene_interactor = m_project_interactor.scene_interactor();
+                        const auto& bed        = m_project_interactor.selected_project()
+                                              .config_containers()
+                                              .front()
+                                              ->bed();
 
-                         scene_interactor.new_object_from_mesh(std::move(mesh.value()));
+                        scene_interactor.new_object_from_mesh(std::move(mesh.value()));
 
-                         const Domain::BoundingBox3d& bbox = mesh->bounding_box();
-                         Transform3d xform = Transform3d::Identity();
-                         using namespace Biz::Algorithms::BoundingBox;
-                         xform.translate(- center(bbox));
-                         xform.translate(Vec3d(0., 0., sizes(bbox).z() /2.));
-                         xform.translate(Vec3d{bed.center().x(), bed.center().y(), 0});
-                         scene_interactor.transform_selection(xform.matrix());
+                        const Domain::BoundingBox3d& bbox = mesh->bounding_box();
+                        Transform3d xform                 = Transform3d::Identity();
+                        using namespace Biz::Algorithms::BoundingBox;
+                        xform.translate(-center(bbox));
+                        xform.translate(Vec3d(0., 0., sizes(bbox).z() / 2.));
+                        xform.translate(Vec3d{bed.center().x(), bed.center().y(), 0});
+                        scene_interactor.transform_selection(xform.matrix());
 
-                         m_scene_presenter->scene().log_nodes();
-                     }
-                 };
+                        m_scene_presenter->scene().log_nodes();
+                    }
+                };
 
-                 auto& dlg_manager = DialogManagerProvider::instance().get();
-                 dlg_manager
-                    .show_file_dialog(FileDialogType::Open, _u8L("Import STL"), "", "", "*.stl", callback);
-             }}
+            auto& dlg_manager = DialogManagerProvider::instance().get();
+            dlg_manager
+                .show_file_dialog(FileDialogType::Open, _u8L("Import STL"), "", "", "*.stl", callback);
+        }}
     );
 
     m_toolbar_add_instance = m_layout->add_toolbar_item(
@@ -221,19 +223,24 @@ void PlaterRenderModule::init_scene_layout()
         "Add instance",
         "+",
         {.action = [this]() {
-        const size_t obj_id = m_project_interactor.scene_interactor().selection().elements[0].object_id;
+            const size_t obj_id = m_project_interactor.scene_interactor().selection().elements[0].object_id;
 
-        const Domain::ModelObject& obj = *m_project_interactor.selected_project().find_object_by_id(
-            obj_id
-        );
+            const Domain::ModelObject& obj = *m_project_interactor.selected_project()
+                                                  .find_object_by_id(obj_id);
 
-        Transform3d xform          = Transform3d::Identity();
-        Vec3d last_instance_offset = obj.instances[obj.instances.size() - 1]->get_offset();
-        xform.translate(Vec3d{last_instance_offset.x() + 10.f, last_instance_offset.y() + 5.f, last_instance_offset.z()});
+            Transform3d xform          = Transform3d::Identity();
+            Vec3d last_instance_offset = obj.instances[obj.instances.size() - 1]->get_offset();
+            xform.translate(
+                Vec3d{
+                    last_instance_offset.x() + 10.f,
+                    last_instance_offset.y() + 5.f,
+                    last_instance_offset.z()
+                }
+            );
 
-        m_project_interactor.scene_interactor().add_instance(xform.matrix());
-        m_scene_presenter->scene().log_nodes();
-    }}
+            m_project_interactor.scene_interactor().add_instance(xform.matrix());
+            m_scene_presenter->scene().log_nodes();
+        }}
     );
     m_toolbar_add_instance->set_enabled(false);
 
@@ -245,8 +252,8 @@ void PlaterRenderModule::init_scene_layout()
         "M",
         {.action =
              [this]() {
-        toggle_activate_tool(Scene::ToolType::Translation);
-    }},
+                 toggle_activate_tool(Scene::ToolType::Translation);
+             }},
         m_translation_gizmo
     );
     m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
@@ -256,8 +263,8 @@ void PlaterRenderModule::init_scene_layout()
         "R",
         {.action =
              [this]() {
-        toggle_activate_tool(Scene::ToolType::Rotation);
-    }},
+                 toggle_activate_tool(Scene::ToolType::Rotation);
+             }},
         m_rotation_gizmo
     );
     m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
@@ -267,8 +274,8 @@ void PlaterRenderModule::init_scene_layout()
         "B",
         {.action =
              [this]() {
-        toggle_activate_tool(Scene::ToolType::Simplify);
-    }},
+                 toggle_activate_tool(Scene::ToolType::Simplify);
+             }},
         m_simplify_gizmo
     );
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
@@ -278,8 +285,8 @@ void PlaterRenderModule::init_scene_layout()
         "L",
         {.action =
              [this]() {
-        toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo);
-    }},
+                 toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo);
+             }},
         m_paint_on_supports_gizmo
     );
 
@@ -290,8 +297,8 @@ void PlaterRenderModule::init_scene_layout()
         "U",
         {.action =
              [this]() {
-        toggle_activate_tool(Scene::ToolType::MeasureGizmo);
-    }},
+                 toggle_activate_tool(Scene::ToolType::MeasureGizmo);
+             }},
         m_measure_gizmo
     );
 }
