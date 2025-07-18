@@ -5,6 +5,7 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/App/Render/Image.hpp"
 #include "Slic3r/App/Plater/PlaterCameraGizmo.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
@@ -26,10 +27,9 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/IRenderModuleChangedListener.hpp"
-#include "Slic3r/App/Scene/ThumbnailHelper.hpp"
-#if ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
+#if ENABLE_DEBUG_EXPORT_TO_PNG
 #include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
-#endif // ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
+#endif // ENABLE_DEBUG_EXPORT_TO_PNG
 
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/CubeView.hpp"
@@ -843,7 +843,7 @@ static void render_imgui_debug_bed(
 
         ImGui::Separator();
 
-        size_t texture_size = Scene::BedRenderHelper::texture_size();
+        size_t texture_size = Scene::BedRenderHelper::bed_texture_size();
         if (texture_size > 0) {
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Texture size");
@@ -880,7 +880,7 @@ static void render_imgui_debug_bed(
 
             // force bed textures reload with the new size
             if (sizes[sel_size] != texture_size) {
-                Scene::BedRenderHelper::set_texture_size(sizes[sel_size]);
+                Scene::BedRenderHelper::set_bed_texture_size(sizes[sel_size]);
                 Scene::visit(scene_presenter.scene().root(), [&](Scene::Node& n) {
                     Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
                     if (tag != nullptr) {
@@ -1101,7 +1101,7 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
     if (!m_gizmo_manager->on_scene_keyboard_event(e))
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 
-#if ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
+#if ENABLE_DEBUG_EXPORT_TO_PNG
     Scene::CameraProjectionType camera_type = Scene::CameraProjectionType::Orthographic;
     const Domain::Project& project          = m_project_interactor.selected_project();
     ThumbnailRenderer renderer(*m_device);
@@ -1120,7 +1120,7 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
                 project.model().objects.front()->id().id
             );
             std::string path_prefix = fmt::format("C:/test/{}", name);
-            Scene::export_to_png_file(images, path_prefix);
+            Render::export_to_png_file(images, path_prefix);
         }
     }
 
@@ -1145,7 +1145,7 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
 
         std::string name        = fmt::format("thumbnail_gcode");
         std::string path_prefix = fmt::format("C:/test/{}", name);
-        Scene::export_to_png_file(images, path_prefix);
+        Render::export_to_png_file(images, path_prefix);
     }
 
     // test code to simulate generation of thumbnails for export into 3mf
@@ -1159,9 +1159,9 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
 
         std::string name        = "thumbnail_3mf";
         std::string path_prefix = fmt::format("C:/test/{}", name);
-        Scene::export_to_png_file(images, path_prefix);
+        Render::export_to_png_file(images, path_prefix);
     }
-#endif // ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
+#endif // ENABLE_DEBUG_EXPORT_TO_PNG
 }
 
 void PlaterRenderModule::on_activated()

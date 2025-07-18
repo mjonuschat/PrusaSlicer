@@ -19,6 +19,7 @@ enum class BedElementType : int8_t
     Axis,
     AxesMain,
     AxesScaler,
+    Label,
 };
 
 /**

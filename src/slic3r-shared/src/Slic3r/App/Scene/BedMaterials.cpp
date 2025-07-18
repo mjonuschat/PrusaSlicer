@@ -100,6 +100,16 @@ Render::Material BedMaterials::axis_material(const Render::Device& device, uint8
     return ret;
 }
 
+Render::Material BedMaterials::label_material(const Render::Device& device, const std::string& label)
+{
+    Render::Material ret;
+    ret
+        .set_shader(device.context().shader_manager().shader("flat_texture"))
+        .set_texture(0, BedRenderHelper::texture(label, device.context().texture_manager(), Domain::ColorRGB::ORANGE()))
+        .set_transparent(true);
+    return ret;
+}
+
 Render::Material BedMaterials::plate_default_override_material(const Render::Device& device)
 {
     ColorRGBA color = DISABLED_BED_PLATE_COLOR;
@@ -161,6 +171,16 @@ Render::Material BedMaterials::model_override_material(const Render::Device& dev
         .set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
+    return ret;
+}
+
+Render::Material BedMaterials::label_override_material(const Render::Device& device, const std::string& label)
+{
+    Render::Material ret;
+    ret
+        .set_shader(device.context().shader_manager().shader("flat_texture"))
+        .set_texture(0, BedRenderHelper::texture(label, device.context().texture_manager()))
+        .set_transparent(true);
     return ret;
 }
 

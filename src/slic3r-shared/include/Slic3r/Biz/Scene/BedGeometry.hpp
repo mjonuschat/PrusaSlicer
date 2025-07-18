@@ -76,6 +76,19 @@ public:
      * @note The generated arrow is pointing in the positive Z axis direction.
      */
     [[nodiscard]] static Domain::TriangleMesh axis(const Domain::Bed& bed);
+
+    /**
+     * @brief Return the geometry of the bed label.
+     *
+     * @param bed The bed whose label is required.
+     * @param width The desired width of the label.
+     * @param height The desired height of the label.
+     *
+     * @return the geometry of the bed label as a std::vector of pairs vertex-uvs, three pairs for each triangle.
+     * 
+     * @note The geometry is a rectangle width x height (with origin in its bottom-left corner) made by two triangles.
+     */
+    [[nodiscard]] static std::vector<std::pair<Domain::Vec3f, Domain::Vec2f>> label(const Domain::Bed& bed, float width, float height);
 };
 
 } // namespace Slic3r::Biz::Scene

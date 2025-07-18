@@ -5,6 +5,9 @@
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
+#if ENABLED_LIGHTS_CUSTOMIZATION
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#endif // ENABLED_LIGHTS_CUSTOMIZATION
 
 #include <Slic3r/App/libvgcode/GCodeNodeTag.hpp>
 
@@ -429,16 +432,16 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
 #endif // ENABLED_SCENE_SHADING_CUSTOMIZATION
 
 #if ENABLED_LIGHTS_CUSTOMIZATION
-static std::pair<float, float> xyz_to_az(const Vec3f& xyz)
+static std::pair<float, float> xyz_to_az(const Domain::Vec3f& xyz)
 {
-    if (xyz.isApprox(Vec3f::UnitZ()))
+    if (xyz.isApprox(Domain::Vec3f::UnitZ()))
         return { 0.0f, 0.0f };
-    else if (xyz.isApprox(-Vec3f::UnitZ()))
-        return { 0.0f, float(PI) };
+    else if (xyz.isApprox(-Domain::Vec3f::UnitZ()))
+        return { 0.0f, float(M_PI) };
 
-    std::pair<float, float> za = Geometry::dir_to_spheric(xyz);
+    std::pair<float, float> za = Biz::Algorithms::Geometry::dir_to_spheric(xyz);
     if (za.second < 0.0f)
-        za.second += 2.0f * float(PI);
+        za.second += 2.0f * float(M_PI);
     return { za.second, za.first };
 }
 
@@ -601,12 +604,12 @@ void render_imgui_lights_customization(ISceneProvider& scene_provider)
                             if (systems[sel] == "World") {
                                 l.direction = scene.camera().model().block<3, 3>(0,0).cast<float>() * l.direction;
                                 float nn = l.direction.norm();
-                                DEBUG_ASSERT(std::abs(l.direction.norm() - 1.0f) < EPSILON);
+                                DEBUG_ASSERT(std::abs(l.direction.norm() - 1.0f) < FLT_EPSILON);
                             }
                             else if (systems[sel] == "Camera") {
                                 l.direction = scene.camera().view().block<3, 3>(0, 0).cast<float>() * l.direction;
                                 float nn = l.direction.norm();
-                                DEBUG_ASSERT(std::abs(l.direction.norm() - 1.0f) < EPSILON);
+                                DEBUG_ASSERT(std::abs(l.direction.norm() - 1.0f) < FLT_EPSILON);
                             }
                         }
 
@@ -654,7 +657,7 @@ void render_imgui_lights_customization(ISceneProvider& scene_provider)
                 ImGui::Text("180°");
 
                 if (az_modified) {
-                    l.direction = Geometry::spheric_to_dir(deg2rad(zenith), deg2rad(azimuth)).cast<float>();
+                    l.direction = Biz::Algorithms::Geometry::spheric_to_dir(deg2rad(zenith), deg2rad(azimuth)).cast<float>();
                     modified = true;
                 }
 

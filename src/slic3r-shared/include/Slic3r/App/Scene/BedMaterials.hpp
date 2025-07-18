@@ -39,6 +39,7 @@ struct BedMaterials
     static Render::Material print_volume_material(const Render::Device& device);
     static Render::Material model_material(const Render::Device& device);
     static Render::Material axis_material(const Render::Device& device, uint8_t axis);
+    static Render::Material label_material(const Render::Device& device, const std::string& label);
 
     static Render::Material plate_default_override_material(const Render::Device& device);
     static Render::Material plate_textured_override_material(const Render::Material& primary_material);
@@ -46,6 +47,7 @@ struct BedMaterials
     static Render::Material contour_override_material(const Render::Device& device);
     static Render::Material print_volume_override_material(const Render::Device& device);
     static Render::Material model_override_material(const Render::Device& device);
+    static Render::Material label_override_material(const Render::Device& device, const std::string& label);
 };
 
 } // namespace Slic3r::App::Scene

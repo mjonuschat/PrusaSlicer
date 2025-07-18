@@ -27,7 +27,9 @@ void BedRenderUpdater::update_materials()
             if (inst == nullptr)
                 return;
 
-            if (inst->active)
+            // when creating a new project the bed instance is not marked as active yet
+            // when this method is called, so check also if it is the only instance present
+            if (inst->active || cc->bed_instances().size() == 1)
                 n.remove_material_override();
             else {
                 Render::Material material;
@@ -39,6 +41,7 @@ void BedRenderUpdater::update_materials()
                 case BedElementType::Grid:          { material = BedMaterials::grid_override_material(m_device); break; }
                 case BedElementType::PrintVolume:   { material = BedMaterials::print_volume_override_material(m_device); break; }
                 case BedElementType::Model:         { material = BedMaterials::model_override_material(m_device); break; }
+                case BedElementType::Label:         { material = BedMaterials::label_override_material(m_device, inst->label()); break; }
                 default:                            { break; }
                 }
                 n.set_material_override(material);
@@ -98,12 +101,16 @@ void BedRenderUpdater::update_positions()
 
 void BedRenderUpdater::update_elements_state()
 {
+    size_t bed_instances_count = 0;
+
     visit(m_scene_provider.scene().root(), [&](Node& n) {
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr) {
-            if (tag->type == BedElementType::Contour ||
-                tag->type == BedElementType::PrintVolume ||
-                tag->type == BedElementType::AxesMain) {
+            if (tag->type == BedElementType::Undefined)
+                ++bed_instances_count;
+            else if (tag->type == BedElementType::Contour ||
+                     tag->type == BedElementType::PrintVolume ||
+                     tag->type == BedElementType::AxesMain) {
                 DEBUG_ASSERT(m_project != nullptr);
                 const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
                 DEBUG_ASSERT(cc != nullptr);
@@ -117,6 +124,14 @@ void BedRenderUpdater::update_elements_state()
                 case BedElementType::AxesMain:    { n.set_enabled(inst->active); break; }
                 }
             }
+        }
+    }, true);
+
+    visit(m_scene_provider.scene().root(), [&](Node& n) {
+        BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
+        if (tag != nullptr) {
+            if (tag->type == BedElementType::Label)
+                n.set_enabled(bed_instances_count > 1);
         }
     }, true);
 }

@@ -74,6 +74,8 @@ set(SLIC3R_RENDER_FILES
         src/Slic3r/App/Render/FramebufferManager.cpp
         include/Slic3r/App/Render/FramebufferManager.hpp
         include/Slic3r/App/Render/IResourceResolver.hpp
+        src/Slic3r/App/Render/TextImageGenerator.cpp
+        include/Slic3r/App/Render/TextImageGenerator.hpp
 
         include/Slic3r/Memory.hpp
 )

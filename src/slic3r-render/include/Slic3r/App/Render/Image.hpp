@@ -88,4 +88,10 @@ private:
 
 using Images = std::vector<Image>;
 
+#define ENABLE_DEBUG_EXPORT_TO_PNG 0
+#if ENABLE_DEBUG_EXPORT_TO_PNG
+void export_to_png_file(const Render::Image& image, const std::string& path_prefix);
+void export_to_png_file(const Render::Images& images, const std::string& path_prefix);
+#endif // ENABLE_DEBUG_EXPORT_TO_PNG
+
 } // namespace Slic3r::App::Render

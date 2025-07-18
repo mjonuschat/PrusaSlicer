@@ -1,20 +1,27 @@
 #pragma once
 
-#include <vector>
+#include "Slic3r/App/Render/TextImageGenerator.hpp"
+
 #include "Slic3r/Domain/Point.hpp"
-#include "Slic3r/App/Render/TextureManager.hpp"
+
+#include <memory>
 
 namespace Slic3r::Domain {
 class Bed;
 } // namespace Slic3r::Domain
+
+namespace Slic3r::App::Render {
+class Texture;
+class TextureManager;
+} // namespace Slic3r::App::Render
 
 namespace Slic3r::App::Scene {
 
 class BedRenderHelper
 {
 public:
-    static size_t texture_size() { return s_texture_size; }
-    static void set_texture_size(size_t size) { s_texture_size = size; }
+    static size_t bed_texture_size() { return s_bed_texture_size; }
+    static void set_bed_texture_size(size_t size) { s_bed_texture_size = size; }
 
     /**
      * @brief Load the bed texture and return it.
@@ -28,6 +35,18 @@ public:
      * @note The texture size is equal to half of the max texture size supported by the graphic card.
      */
     [[nodiscard]] static std::shared_ptr<Render::Texture> texture(const Domain::Bed& bed, Render::TextureManager& manager);
+
+    /**
+     * @brief Render the bed label texture and return it.
+     *
+     * @param label The label to render.
+     * @param manager The TextureManager instance to create texture within
+     * @param color The color to assign to the renderer text
+     *
+     * @return bed label texture instance.
+     */
+    [[nodiscard]] static std::shared_ptr<Render::Texture> texture(const std::string& label, Render::TextureManager& manager,
+        const std::optional<Domain::ColorRGB>& color = std::nullopt);
 
     /**
      * @brief Return the geometry of the bed grid.
@@ -44,7 +63,12 @@ private:
     /**
      * @brief Size of the bed texture in pixels.
      */
-    static size_t s_texture_size;
+    static size_t s_bed_texture_size;
+
+    /**
+      * @brief Renderer of text into Render::Image.
+      */
+    static std::unique_ptr<Render::TextImageGenerator> s_text_to_image;
 };
 
 } // namespace Slic3r::App::Scene

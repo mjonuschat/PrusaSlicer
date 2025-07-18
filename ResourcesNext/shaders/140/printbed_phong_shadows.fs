@@ -105,5 +105,9 @@ vec4 lighting_phong()
 
 void main()
 {
-    out_color = lighting_phong();
+    vec4 color = lighting_phong();
+    if (color.a == 0)
+        discard;
+
+    out_color = color;
 }

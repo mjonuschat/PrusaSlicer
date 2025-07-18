@@ -2,7 +2,6 @@
 #include "Slic3r/App/Plater/ScopedBedThumbnailSceneCustomizer.hpp"
 #include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
 #include "Slic3r/App/Scene/IProjectSceneProvider.hpp"
-#include "Slic3r/App/Scene/ThumbnailHelper.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/Context.hpp"
@@ -60,12 +59,11 @@ void BedThumbnailTextureGenerator::handle_enqueued_requests()
                 tex.thumbnail->set_data(image.format(), 0, image.width(), image.height(), image.data());
             }
 
-#if ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
+#if ENABLE_DEBUG_EXPORT_TO_PNG
             std::string name = fmt::format("thumbnail_bed_{}_{}", request.bed_ref.config_container_id, request.bed_ref.instance_id);
             std::string path_prefix = fmt::format("C:/test/{}", name);
-            Scene::export_to_png_file(images, path_prefix);
-#endif // ENABLE_THUMBNAILS_DEBUG_EXPORT_TO_PNG
-
+            Render::export_to_png_file(images, path_prefix);
+#endif // ENABLE_DEBUG_EXPORT_TO_PNG
         }
         callback(results);
         m_queue.pop_front();

@@ -46,8 +46,10 @@ void Texture::set_data(PixelFormat format, int level, int w, int h, const void* 
     glTexParameteri(gl_target, GL_TEXTURE_MAX_LEVEL, level);
     glCheck();
 
-    m_width = w;
-    m_height = h;
+    if (level == 0) {
+        m_width = w;
+        m_height = h;
+    }
 }
 
 void Texture::set_sub_data(PixelFormat format, int level, int offset_x, int offset_y, int w, int h, const void* data)
@@ -59,9 +61,6 @@ void Texture::set_sub_data(PixelFormat format, int level, int offset_x, int offs
     GLenum gl_type = GL::texture_format_type(format);
     glTexSubImage2D(gl_target, 0, offset_x, offset_y, w, h, gl_format, gl_type, data);
     glCheck();
-
-    m_width = w;
-    m_height = h;
 }
 
 void Texture::set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_filter)

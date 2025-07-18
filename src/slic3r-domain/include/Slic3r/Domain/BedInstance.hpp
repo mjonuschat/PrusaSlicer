@@ -26,6 +26,8 @@ struct BedInstance : public ObjectBase
         return bed.contains(Vec2d{pos.x(), pos.y()}, bounds);
     }
 
+    std::string label() const { return std::to_string(id().id); }
+
     const Bed& bed;
     Transformation transformation;
     ModelInstanceList model_instances;

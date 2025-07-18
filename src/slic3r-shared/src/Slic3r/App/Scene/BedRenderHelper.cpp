@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/App/Render/TextureManager.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Domain/Constants.hpp"
@@ -13,6 +14,8 @@
 #include "Slic3r/Domain/Types.hpp"
 
 #include <Slic3r/Log.hpp>
+
+#include <libslic3r/Utils.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -30,7 +33,8 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Scene {
 
-size_t BedRenderHelper::s_texture_size = 2048;
+size_t BedRenderHelper::s_bed_texture_size = 2048;
+std::unique_ptr<Render::TextImageGenerator> BedRenderHelper::s_text_to_image = nullptr;
 
 std::shared_ptr<Render::Texture> BedRenderHelper::texture(const Domain::Bed& bed, Render::TextureManager& manager)
 {
@@ -39,12 +43,54 @@ std::shared_ptr<Render::Texture> BedRenderHelper::texture(const Domain::Bed& bed
         return nullptr;
 
     Render::ImageLoadOptions opts;
-    opts.max_size_px = s_texture_size;
+    opts.max_size_px = s_bed_texture_size;
     opts.flip_y = true;
     opts.gen_mipmaps = true;
 
     std::shared_ptr<Render::Texture> tex = manager.get_or_create_image(texture_filename, opts);
     tex->set_filtering(Render::TextureMinFilter::MipMapLinearLinear, Render::TextureMagFilter::Linear);
+    return tex;
+}
+
+std::shared_ptr<Render::Texture> BedRenderHelper::texture(const std::string& label, Render::TextureManager& manager,
+    const std::optional<Domain::ColorRGB>& color)
+{
+    if (s_text_to_image == nullptr) {
+        std::string font_path = Slic3r::resources_dir() + "/fonts/NotoSans-Regular.ttf";
+        s_text_to_image = std::make_unique<Render::TextImageGenerator>(font_path, 128);
+    }
+
+    Render::Image img = s_text_to_image->to_image(label, 2, 2, color);
+    size_t width = img.width();
+    size_t height = img.height();
+
+    std::vector<Render::Image> mipmaps;
+    mipmaps.emplace_back(std::move(img));
+    while (mipmaps.back().width() > 1 || mipmaps.back().height() > 1) {
+        mipmaps.emplace_back(mipmaps.back().half_sampled());
+    }
+
+#if ENABLE_DEBUG_EXPORT_TO_PNG
+    std::string name = fmt::format("bed_label_{}", label);
+    std::string path_prefix = fmt::format("C:/test/{}", name);
+    Render::export_to_png_file(mipmaps, path_prefix);
+#endif // ENABLE_DEBUG_EXPORT_TO_PNG
+
+    std::string texture_name = "bed_label_" + label;
+    if (color.has_value()) {
+        texture_name += "_" + std::to_string(color->r_uchar());
+        texture_name += "_" + std::to_string(color->g_uchar());
+        texture_name += "_" + std::to_string(color->b_uchar());
+    }
+    else
+        texture_name += "_255_255_255";
+    std::shared_ptr<Render::Texture> tex = manager.get_or_create_dynamic(texture_name, Render::PixelFormat::RGBA8, width, height);
+    tex->set_filtering(Render::TextureMinFilter::MipMapLinearLinear, Render::TextureMagFilter::Linear);
+    for (size_t i = 0; i < mipmaps.size(); ++i) {
+        Render::Image& image = mipmaps[i];
+        image.flip_vertical();
+        tex->set_data(Render::PixelFormat::RGBA8, int(i), image.width(), image.height(), image.data());
+    }
     return tex;
 }
 

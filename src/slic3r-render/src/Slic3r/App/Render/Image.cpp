@@ -1,11 +1,15 @@
 #include "Slic3r/App/Render/Image.hpp"
 
+#include "Slic3r/Assert.hpp"
+
 #include <cstring>
 #include <algorithm>
-#include "Slic3r/Assert.hpp"
+#include <filesystem>
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_resize2.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 
 namespace Slic3r::App::Render {
 
@@ -63,8 +67,8 @@ Image Image::half_sampled() const
 {
     Image::Data half_pixels;
 
-    const int half_w = m_width / 2;
-    const int half_h = m_height / 2;
+    const int half_w = std::max(1, m_width / 2);
+    const int half_h = std::max(1, m_height / 2);
     const size_t channels = channel_count();
     half_pixels.reserve(half_w * half_h * channels);
 
@@ -130,4 +134,30 @@ void Image::flip_vertical()
     }
 }
 
+#if ENABLE_DEBUG_EXPORT_TO_PNG
+void export_to_png_file(const Render::Image& image, const std::string& path_prefix)
+{
+    int w = image.width();
+    int h = image.height();
+    int comp = int(image.channel_count());
+    int stride_bytes = int(w * image.pixel_size());
+    std::string filename = path_prefix + "_" + std::to_string(w) + "_" + std::to_string(h) + ".png";
+
+    std::filesystem::path out(filename);
+    out.remove_filename();
+    if (!std::filesystem::exists(out))
+        std::filesystem::create_directories(out);
+
+    if (stbi_write_png(filename.c_str(), w, h, comp, image.data(), stride_bytes) == 0)
+        PANIC("Unable to save thumbnail to file: " + filename);
 }
+
+void export_to_png_file(const Render::Images& images, const std::string& path_prefix)
+{
+    for (const auto& image : images) {
+        export_to_png_file(image, path_prefix);
+    }
+}
+#endif // ENABLE_DEBUG_EXPORT_TO_PNG
+
+} // namespace Slic3r::App::Render

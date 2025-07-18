@@ -103,5 +103,9 @@ vec4 lighting_phong()
 
 void main()
 {
-    gl_FragColor = lighting_phong();
+    vec4 color = lighting_phong();
+    if (color.a == 0.0)
+        discard;
+
+    gl_FragColor = color;
 }

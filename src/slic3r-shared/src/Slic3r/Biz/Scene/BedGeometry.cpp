@@ -184,4 +184,18 @@ TriangleMesh BedGeometry::axis(const Domain::Bed& bed)
     return ret;
 }
 
+std::vector<std::pair<Domain::Vec3f, Domain::Vec2f>> BedGeometry::label(const Domain::Bed& bed, float width, float height)
+{
+    std::vector<std::pair<Vec3f, Vec2f>> ret;
+    ret = {
+        { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+        { { width, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+        { { width, height, 0.0f }, { 1.0f, 1.0f } },
+        { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+        { { width, height, 0.0f }, { 1.0f, 1.0f } },
+        { { 0.0f, height, 0.0f }, { 0.0f, 1.0f } }
+    };
+    return ret;
+}
+
 } // namespace Slic3r::Biz::Scene

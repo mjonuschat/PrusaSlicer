@@ -89,7 +89,8 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(Scene::Scen
         if (tag != nullptr) {
             if (tag->type == Scene::BedElementType::AxesMain ||
                 tag->type == Scene::BedElementType::Contour ||
-                tag->type == Scene::BedElementType::PrintVolume) {
+                tag->type == Scene::BedElementType::PrintVolume ||
+                tag->type == Scene::BedElementType::Label) {
                 n.set_enabled(false);
                 m_cache.hidden_nodes.push_back(&n);
             }

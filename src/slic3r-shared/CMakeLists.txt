@@ -194,8 +194,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/BedRenderUpdater.hpp
         src/Slic3r/App/Scene/BedRenderUpdater.cpp
         include/Slic3r/App/Scene/AuxiliaryElementId.hpp
-        include/Slic3r/App/Scene/ThumbnailHelper.hpp
-        src/Slic3r/App/Scene/ThumbnailHelper.cpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

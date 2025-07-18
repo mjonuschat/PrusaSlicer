@@ -50,6 +50,9 @@ void main()
     vec4 color = svg_source ? svg_color() : non_svg_color();
     color.a = transparent_background ? color.a * 0.5 : color.a;
 
+    if (color.a == 0.0)
+        discard;
+
     g_eye_normal = normalize(eye_normal);
     g_eye_position = eye_position;
     g_light_position = light_position;
