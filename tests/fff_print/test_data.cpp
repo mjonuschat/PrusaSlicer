@@ -6,10 +6,10 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
+#include "Slic3r/Biz/Format/STL.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Format/OBJ.hpp"
-#include "libslic3r/Format/STL.hpp"
 
 #include <arrange-wrapper/ModelArrange.hpp>
 

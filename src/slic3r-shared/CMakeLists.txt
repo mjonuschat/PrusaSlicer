@@ -596,6 +596,8 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/ProjectLoader.hpp
         src/Slic3r/Biz/ProjectLoader.cpp
+        include/Slic3r/Biz/Format/STL.hpp
+        src/Slic3r/Biz/Format/STL.cpp
 )
 
 if (WIN32)

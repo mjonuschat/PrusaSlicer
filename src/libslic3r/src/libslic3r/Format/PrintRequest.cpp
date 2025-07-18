@@ -12,7 +12,7 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Exception.hpp"
 
-#include "libslic3r/Format/STL.hpp"
+#include "Slic3r/Biz/Format/STL.hpp"
 
 namespace Slic3r {
 namespace pt = boost::property_tree;

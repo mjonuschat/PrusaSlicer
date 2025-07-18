@@ -172,16 +172,14 @@ set(SLIC3R_SOURCES
     src/libslic3r/Format/OBJ.hpp
     src/libslic3r/Format/objparser.cpp
     src/libslic3r/Format/objparser.hpp
-    src/libslic3r/Format/PrintRequest.cpp
-    src/libslic3r/Format/PrintRequest.cpp
+    #src/libslic3r/Format/PrintRequest.cpp
+    #src/libslic3r/Format/PrintRequest.cpp
     src/libslic3r/Format/SL1.cpp
     src/libslic3r/Format/SL1.hpp
     src/libslic3r/Format/SL1_SVG.cpp
     src/libslic3r/Format/SL1_SVG.hpp
     src/libslic3r/Format/STEP.cpp
     src/libslic3r/Format/STEP.hpp
-    src/libslic3r/Format/STL.cpp
-    src/libslic3r/Format/STL.hpp
     src/libslic3r/Format/SVG.cpp
     src/libslic3r/Format/SVG.hpp
     src/libslic3r/GCode.cpp
