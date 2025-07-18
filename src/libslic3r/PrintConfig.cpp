@@ -4416,6 +4416,15 @@ void PrintConfigDef::init_fff_params()
     def->max = 90.;
     def->set_default_value(new ConfigOptionFloat(0.));
 
+    def = this->add("wipe_tower_max_purge_speed", coFloat);
+    def->label = L("Maximum wipe tower print speed");
+    def->tooltip = L("The maximum print speed when purging in the wipe tower and printing the wipe tower sparse layers. "
+                     "For the wipe tower external perimeters the internal perimeter speed is used regardless of this setting.");
+    def->sidetext = "mm/s";     // milimeters per second, don't need translation
+    def->mode = comAdvanced;
+    def->min = 10;
+    def->set_default_value(new ConfigOptionFloat(90.));
+
     def = this->add("wipe_tower_extra_spacing", coPercent);
     def->label = L("Wipe tower purge lines spacing");
     def->tooltip = L("Spacing of purge lines on the wipe tower.");
