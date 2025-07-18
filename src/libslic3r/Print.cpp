@@ -289,6 +289,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             || opt_key == "wipe_tower_extra_flow"
             || opt_key == "wipe_tower_no_sparse_layers"
             || opt_key == "wipe_tower_extruder"
+            || opt_key == "wipe_tower_max_purge_speed"
             || opt_key == "wiping_volumes_matrix"
             || opt_key == "wiping_volumes_use_custom_matrix"
             || opt_key == "parking_pos_retraction"
