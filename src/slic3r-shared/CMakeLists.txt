@@ -253,6 +253,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/TestRenderModule.cpp
         src/Slic3r/App/Init.cpp
         include/Slic3r/App/Init.hpp
+        include/Slic3r/App/AppServices.hpp
+        src/Slic3r/App/AppServices.cpp
 
         src/Slic3r/App/I18N/LanguageInfo.cpp
         include/Slic3r/App/I18N/LanguageInfo.hpp
@@ -423,6 +425,16 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/AbstractRenderLayout.hpp
         include/Slic3r/App/ResourceResolver.hpp
         src/Slic3r/App/ResourceResolver.cpp
+
+        include/Slic3r/App/PopNotification/PopNotificationCenter.hpp
+        include/Slic3r/App/PopNotification/PopNotificationData.hpp
+        include/Slic3r/App/PopNotification/PopNotificationFactory.hpp
+        include/Slic3r/App/PopNotification/PopNotificationView.hpp
+        include/Slic3r/App/PopNotification/PopNotificationListView.hpp
+        include/Slic3r/App/PopNotification/PopNotificationDataVariant.hpp
+        include/Slic3r/App/PopNotification/PopNotificationLayout.hpp
+        src/Slic3r/App/PopNotification/PopNotificationCenter.cpp
+        src/Slic3r/App/PopNotification/PopNotificationView.cpp
 
         include/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
@@ -694,6 +706,11 @@ set(SLIC3R_SHARED_FILES
         
         include/Slic3r/App/PresetUpdaterUI.hpp
         src/Slic3r/App/PresetUpdaterUI.cpp
+
+        include/Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp
+        include/Slic3r/Biz/RemovableDrive/IRemovableDriveMonitor.hpp
+        include/Slic3r/Biz/RemovableDrive/RemovableDriveData.hpp
+        include/Slic3r/Biz/RemovableDrive/IRemovableDriveStatusListener.hpp
 )
 
 if (WIN32)
@@ -702,7 +719,9 @@ if (WIN32)
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerWin32.hpp
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerWin32.cpp
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryWin32.cpp
-
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveServiceWin32.cpp
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorWin32.hpp
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorWin32.cpp
     )
 elseif (APPLE)
     list(APPEND SLIC3R_SHARED_FILES
@@ -713,6 +732,13 @@ elseif (APPLE)
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryMac.cpp
         include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
         src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
+        include/Slic3r/Biz/DirectoriesMacUtils.hpp
+        src/Slic3r/Biz/DirectoriesMacUtils.mm
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveServiceMac.cpp
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorMac.hpp
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorMac.cpp
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorInnerMac.h
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorInnerMac.mm
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND SLIC3R_SHARED_FILES
@@ -722,6 +748,9 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryLinux.cpp
         include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
         src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveServiceLinux.cpp
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorLinux.hpp
+        src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorLinux.cpp
     )
 endif ()
 
@@ -814,6 +843,14 @@ else()
 
     target_link_libraries(slic3r-shared PUBLIC PNG::PNG libvgcode libcurl)
 endif ()
+if (WIN32)
+        target_link_libraries(slic3r-shared PUBLIC shlwapi)
+endif ()
+if (APPLE)
+    FIND_LIBRARY(DISKARBITRATION_LIBRARY DiskArbitration)
+    target_link_libraries(slic3r-shared PUBLIC ${DISKARBITRATION_LIBRARY})
+endif()
+
 target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")

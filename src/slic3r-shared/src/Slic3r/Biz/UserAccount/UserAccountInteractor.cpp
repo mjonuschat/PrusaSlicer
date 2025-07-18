@@ -29,7 +29,6 @@ void UserAccountInteractor::do_log_out(bool notify_owner)
     {
         update_menu_callback(true);
     }
-    //on_logged_out();
 }
 
 std::string UserAccountInteractor::on_log_in_request(const std::string& lang_code, bool generate_code_verifier, const std::string& service/* = std::string()*/)
@@ -71,9 +70,12 @@ std::string UserAccountInteractor::access_token() const
     return m_communication.access_token();
 }
 
-void UserAccountInteractor::on_action_retry(Network::IHttp::Retry retry)
+void UserAccountInteractor::on_action_retry(const Network::IHttp::Retry& retry)
 {
     SPDLOG_INFO("UserAccountInteractor: Retry attempt {}: {} ms to next attempt",  retry.attempt, retry.ms_to_next_attempt); 
+    invoke_listeners<IUserAccountListener>([this, retry](auto* listener){
+        listener->on_user_account_action_retry(retry, [this](){cancel_ongoing_session_action();});
+    });
 }
 
 void UserAccountInteractor::on_action_success(ActionSuccessType success_type, std::string body) 
@@ -123,10 +125,6 @@ void UserAccountInteractor::on_action_fail(ActionFailType fail_type, std::string
         break;
     case Slic3r::Biz::UserAccount::ActionFailType::Reset:
         do_log_out(true);
-        if (update_menu_callback)
-        {
-            update_menu_callback(true);
-        }
         break;
     case Slic3r::Biz::UserAccount::ActionFailType::PrinterData:
         break;
@@ -195,8 +193,8 @@ void UserAccountInteractor::on_user_id(const std::string& body)
     // enqueue_connect_printer_models_action();
     
 
-    invoke_listeners<IUserAccountListener>([was_logged](auto* listener){
-        listener->on_user_account_id_success(was_logged);
+    invoke_listeners<IUserAccountListener>([was_logged, public_username](auto* listener){
+        listener->on_user_account_id_success(was_logged, public_username);
     });
 
     if (!was_logged && on_logged_in_callback) {

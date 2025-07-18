@@ -25,9 +25,13 @@ public:
     ~WebViewPanel() = default;
 
     // IUserAccountListener;
-    void on_user_account_id_success(bool is_refresh) override;
+    void on_user_account_id_success(bool is_refresh, const std::string& username) override;
     void on_user_account_logged_out() override;
     void on_user_account_will_refresh() override;
+
+    void on_user_account_action_retry(const Biz::Network::IHttp::Retry& retry, std::function<void(void)> cancel_callback) override
+    { /*unused*/
+    }
 
 private:
     std::unique_ptr<App::Browser::AbstractBrowserLogic> m_logic;

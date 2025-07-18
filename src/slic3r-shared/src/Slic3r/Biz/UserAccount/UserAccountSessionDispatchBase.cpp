@@ -16,9 +16,9 @@ UserAccountSessionDispatchBase::~UserAccountSessionDispatchBase()
     );
 }
 
-void UserAccountSessionDispatchBase::on_action_retry(Network::IHttp::Retry retry)
+void UserAccountSessionDispatchBase::on_action_retry(const Network::IHttp::Retry& retry)
 {
-    dispatch_action_retry(std::move(retry));
+    dispatch_action_retry(retry);
 }
 
 void UserAccountSessionDispatchBase::on_action_success(ActionSuccessType success_type, std::string body)
@@ -31,11 +31,11 @@ void UserAccountSessionDispatchBase::on_action_fail(ActionFailType fail_type, st
     dispatch_action_fail(fail_type, std::move(body));
 }
 
-void UserAccountSessionDispatchBase::dispatch_action_retry(Network::IHttp::Retry retry)
+void UserAccountSessionDispatchBase::dispatch_action_retry(const Network::IHttp::Retry& retry)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, retry = std::move(retry)]() mutable {
-        this->invoke_listeners<IUserAccountSessionListener>([retry = std::move(retry)](auto* listener) mutable {
-            listener->on_action_retry(std::move(retry));
+    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, retry]() {
+        this->invoke_listeners<IUserAccountSessionListener>([retry](auto* listener) {
+            listener->on_action_retry(retry);
         });
     });
 }

@@ -12,7 +12,8 @@ namespace Slic3r::Biz::PrintHost {
 
 class PrintHostJobManager;
 
-class PrintHostInteractor : public IPrintHostListener, public IPrintHostBinarizeListener {
+class PrintHostInteractor : public IPrintHostListener, public IPrintHostBinarizeListener
+{
 public:
     PrintHostInteractor(Platform::IMainThreadDispatcher& dispatcher);
 
@@ -23,25 +24,25 @@ public:
      * Should Pass data to listeners via ProjectInteractor to UI.
      */
     void on_print_host_progress(size_t id, int progress) override;
-    
+
     /**
      * @brief Callback from PrintHostJobManager with progress from PrintHostJob worker thread.
      * Should Pass data to listeners via ProjectInteractor to UI.
      */
     void on_print_host_error(size_t id, const std::string& msg) override;
-    
+
     /**
      * @brief Callback from PrintHostJobManager with progress from PrintHostJob worker thread.
      * Should Pass data to listeners via ProjectInteractor to UI.
      */
     void on_print_host_cancel(size_t id) override;
-    
+
     /**
      * @brief Callback from PrintHostJobManager with progress from PrintHostJob worker thread.
      * Should Pass data to listeners via ProjectInteractor to UI.
      */
     void on_print_host_done(size_t id) override;
-    
+
     /**
      * @brief Callback from PrintHostJobManager with progress from PrintHostJob worker thread.
      * Should Pass data to listeners via ProjectInteractor to UI.
@@ -57,14 +58,17 @@ public:
      * @brief Accepts data from PrintHostJobManager and passes it to PrintHostDataFinalizer and process_gcode_inner.
      */
     void upload_gcode(PrintHostConfig config, PrintHostJobData data);
-    
+
     void on_print_host_binarize_success(PrintHostConfig config, PrintHostJobData data) override;
     void on_print_host_binarize_fail(const std::string& msg) override;
+
+    void add_print_host_listener(IPrintHostListener* listener);
+
 private:
     PrintHostJobManager m_print_host_job_manager;
     PrintHostDataFinalizer m_print_host_data_finalizer;
     std::map<size_t, StorageInfoFn> m_storage_callbacks_map;
-    
+
     /**
      * @brief Passes data to PrintHostJobManager to first start storage resolve job and stages upload job data to m_storage_callbacks_map.
      */

@@ -11,7 +11,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <Slic3r/App/IDialogManager.hpp>
+#include <Slic3r/App/AppServices.hpp>
 
 #include "Slic3r/App/I18N/I18N.hpp"
 #include <fmt/format.h>
@@ -166,7 +166,7 @@ static void process_mesh(
     if (looks_like_saved_in_meters(stats)) {
         Answer answer = answer_convert_from_meters ? *answer_convert_from_meters : Answer::Default;
         if (answer_convert_from_meters && *answer_convert_from_meters == Answer::Default) {
-            auto& dlg_manager = App::DialogManagerProvider::instance().get();
+            auto& dlg_manager = App::AppServices::instance().dialog_manager();
             dlg_manager.show_rich_yesno_dialog(
                 _u8L("The object is too small"),
                 fmt::vformat(
@@ -196,7 +196,7 @@ static void process_mesh(
         if (answer_convert_from_imperial_units
             && *answer_convert_from_imperial_units == Answer::Default)
         {
-            auto& dlg_manager = App::DialogManagerProvider::instance().get();
+            auto& dlg_manager = App::AppServices::instance().dialog_manager();
             dlg_manager.show_rich_yesno_dialog(
                 _u8L("The object is too small"),
                 fmt::vformat(
@@ -235,7 +235,7 @@ static void remove_objects_with_zero_volume(Model& model, const std::string& fil
             removed++;
         }
     if (removed > 0) {
-        auto& dlg_manager = App::DialogManagerProvider::instance().get();
+        auto& dlg_manager = App::AppServices::instance().dialog_manager();
         dlg_manager.show_info_dialog(
             fmt::vformat(
                 _L_PLURAL_u8(
@@ -419,7 +419,7 @@ std::vector<ReturnData> import_files(
             extra_model->add_default_instances();
 
             // Check if the user actually wants to apply the conversion.
-            auto& dlg_manager = App::DialogManagerProvider::instance().get();
+            auto& dlg_manager = App::AppServices::instance().dialog_manager();
             dlg_manager.show_yesno_dialog(
                 _u8L("Multi-part object detected"),
                 _u8L(
@@ -451,7 +451,7 @@ std::vector<ReturnData> import_files(
     }
 
     if (!errors.empty()) {
-        auto& dlg_manager = App::DialogManagerProvider::instance().get();
+        auto& dlg_manager = App::AppServices::instance().dialog_manager();
         dlg_manager.show_error_dialog(errors, _u8L("Files import") + ":");
     }
 
@@ -525,8 +525,6 @@ void import_files_and_add_to_scene(
     }
 }
 
-
-
 /**
  * Load meshes from multiple source files and add them into selected object
  */
@@ -542,11 +540,11 @@ void import_volumes_into_selected_object(
         Domain::BoundingBox3d bbox;
         if (file_data.mesh) {
             auto mesh = file_data.mesh;
-            scene_interactor.add_volume_from_mesh(std::move(mesh.value()), volume_type, file_data.file_name);
+            scene_interactor
+                .add_volume_from_mesh(std::move(mesh.value()), volume_type, file_data.file_name);
 
             bbox = mesh->bounding_box();
-        }
-        else if (file_data.model) {
+        } else if (file_data.model) {
             Domain::Model& model = file_data.model.value();
             // Convert objects from the model into separate meshes and add them for selected object
             TriangleMesh mesh;

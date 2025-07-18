@@ -23,9 +23,10 @@ public:
 
     std::unique_ptr<View> create(size_t index, const Data& data)
     {
-        return std::apply([&](auto&&... args) {
-            return std::make_unique<View>(index, data, args...);
-        }, m_args);
+        return std::apply(
+            [&](auto&&... args) { return std::make_unique<View>(index, data, args...); },
+            m_args
+        );
     }
 
 private:
@@ -79,6 +80,9 @@ public:
         }
     }
 
+    /**
+     * @warning Must be called only after the Data object is already removed.
+     */
     void on_removed(const Biz::IndexRange& index_range) override
     {
         ASSERT(index_range.to <= m_items.size());

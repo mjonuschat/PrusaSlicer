@@ -19,11 +19,11 @@ void UserAccountActionPost::perform(
     std::string url = m_url;
     // SPDLOG_INFO("{}: {}", __FUNCTION__, url);
 
-    // TODO: callbacks pointer does not look safe
-    auto retry_fn = [&global_cancel, &callbacks](Network::IHttp::Retry retry, bool& cancel) {
+    auto retry_fn = [&global_cancel, &callbacks](Network::IHttp::Retry retry, bool& cancel)
+    {
         SPDLOG_INFO("Retry attempt {}:{} ms to next attempt", retry.attempt, retry.ms_to_next_attempt);
         if (retry.attempt > 1 && retry.just_tried) {
-            callbacks->on_action_retry(std::move(retry));
+            callbacks->on_action_retry(retry);
         }
         cancel = global_cancel;
     };
@@ -36,16 +36,30 @@ void UserAccountActionPost::perform(
     if (!input.empty())
         http->set_post_body(input);
     http->header("Content-type", "application/x-www-form-urlencoded")
-        .on_error([fail_callback](std::string body, std::string error, unsigned status) {
-            // SPDLOG_INFO("UserActionPost::perform on_error");
-            if (fail_callback)
-                fail_callback(body);
-        })
-        .on_complete([success_callback](std::string body, unsigned status) {
-            // SPDLOG_INFO("UserActionPost::perform on_complete");
-            if (success_callback)
-                success_callback(body);
-        })
+        .on_progress(
+            [fail_callback](Network::IHttp::Progress progress, bool& cancel)
+            {
+                if (cancel && fail_callback) {
+                    fail_callback({});
+                }
+            }
+        )
+        .on_error(
+            [fail_callback](std::string body, std::string error, unsigned status)
+            {
+                // SPDLOG_INFO("UserActionPost::perform on_error");
+                if (fail_callback)
+                    fail_callback(body);
+            }
+        )
+        .on_complete(
+            [success_callback](std::string body, unsigned status)
+            {
+                // SPDLOG_INFO("UserActionPost::perform on_complete");
+                if (success_callback)
+                    success_callback(body);
+            }
+        )
         .perform_sync(Network::HttpRetryOpt::default_retry());
 }
 
@@ -68,11 +82,11 @@ void UserAccountActionGetWithEvent::perform(
 
     // SPDLOG_INFO("{}: {}", __FUNCTION__, url);
 
-    // TODO: callbacks pointer does not look safe
-    auto retry_fn = [&global_cancel, &callbacks](Network::IHttp::Retry retry, bool& cancel) {
+    auto retry_fn = [&global_cancel, &callbacks](Network::IHttp::Retry retry, bool& cancel)
+    {
         SPDLOG_INFO("Retry attempt {}:{} ms to next attempt", retry.attempt, retry.ms_to_next_attempt);
         if (retry.attempt > 1 && retry.just_tried) {
-            callbacks->on_action_retry(std::move(retry));
+            callbacks->on_action_retry(retry);
         }
         cancel = global_cancel;
     };
@@ -97,33 +111,56 @@ void UserAccountActionGetWithEvent::perform(
         */
 #endif
     }
-    http->on_error([fail_callback,
-                    action_name = &m_action_name,
-                    &callbacks,
-                    fail_type = m_fail_type](std::string body, std::string error, unsigned status) {
-            // SPDLOG_INFO("UserActionGetWithEvent::perform on_error");
-            if (fail_callback)
-                fail_callback(body);
-            std::string message = fmt::format(
-                "{} action failed ({}): {}",
-                *action_name,
-                std::to_string(status),
-                body
-            );
-            if (fail_type != ActionFailType::None) {
-                callbacks->on_action_fail(fail_type, std::move(message));
+    http->on_error(
+            [fail_callback,
+             action_name = &m_action_name,
+             &callbacks,
+             fail_type = m_fail_type](std::string body, std::string error, unsigned status)
+            {
+                // SPDLOG_INFO("UserActionGetWithEvent::perform on_error");
+                if (fail_callback)
+                    fail_callback(body);
+                std::string message = fmt::format(
+                    "{} action failed ({}): {}",
+                    *action_name,
+                    std::to_string(status),
+                    body
+                );
+                if (fail_type != ActionFailType::None) {
+                    callbacks->on_action_fail(fail_type, std::move(message));
+                }
             }
-        })
-        .on_complete([success_callback,
-                      &callbacks,
-                      success_type = m_success_type](std::string body, unsigned status) {
-            // SPDLOG_INFO("UserActionGetWithEvent::perform on_complete");
-            if (success_callback)
-                success_callback(body);
-            if (success_type != ActionSuccessType::None) {
-                callbacks->on_action_success(success_type, std::move(body));
+    )
+        .on_progress(
+            [fail_callback,
+             action_name = &m_action_name,
+             &callbacks,
+             fail_type = m_fail_type](Network::IHttp::Progress progress, bool& cancel)
+            {
+                if (cancel) {
+                    if (fail_callback) {
+                        fail_callback({});
+                    }
+                    std::string message = fmt::format("{} action canceled", *action_name);
+                    if (fail_type != ActionFailType::None) {
+                        callbacks->on_action_fail(fail_type, std::move(message));
+                    }
+                }
             }
-        })
+        )
+        .on_complete(
+            [success_callback,
+             &callbacks,
+             success_type = m_success_type](std::string body, unsigned status)
+            {
+                // SPDLOG_INFO("UserActionGetWithEvent::perform on_complete");
+                if (success_callback)
+                    success_callback(body);
+                if (success_type != ActionSuccessType::None) {
+                    callbacks->on_action_success(success_type, std::move(body));
+                }
+            }
+        )
         .perform_sync(Network::HttpRetryOpt::default_retry());
 }
 

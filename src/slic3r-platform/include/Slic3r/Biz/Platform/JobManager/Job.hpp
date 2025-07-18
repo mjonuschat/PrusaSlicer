@@ -72,7 +72,7 @@ public:
                 SPDLOG_WARN("{}: job result not emitted!", m_name);
             }};
 
-            m_progress_tracker.set_status(JobStatus::Started);
+            m_progress_tracker.set_status(Domain::JobStatus::Started);
             CPPTRACE_TRY
             {
                 if constexpr (!std::is_void_v<Result>) {
@@ -83,7 +83,7 @@ public:
                              call_after       = m_call_after,
                              result           = std::move(result_in_thread)]() mutable {
                                 on_result(std::move(result));
-                                progress_tracker.set_status_unsafe(JobStatus::Finished);
+                                progress_tracker.set_status_unsafe(Domain::JobStatus::Finished);
                                 call_after();
                             }
                         ))
@@ -97,7 +97,7 @@ public:
                                                        progress_tracker = m_progress_tracker,
                                                        call_after       = m_call_after]() mutable {
                                  on_result();
-                                 progress_tracker.set_status_unsafe(JobStatus::Finished);
+                                 progress_tracker.set_status_unsafe(Domain::JobStatus::Finished);
                                  call_after();
                              }))
                     {
@@ -115,7 +115,7 @@ public:
                                                                  exception,
                                                                  stacktrace]() mutable {
                         on_exception(exception, stacktrace);
-                        progress_tracker.set_status_unsafe(JobStatus::Failed);
+                        progress_tracker.set_status_unsafe(Domain::JobStatus::Failed);
                         call_after();
                     }))
                 {

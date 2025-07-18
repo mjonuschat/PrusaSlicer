@@ -281,15 +281,12 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
     }
 }
 
-void ProjectInteractor::do_export(
-    const Domain::SlicingId id,
-    const boost::filesystem::path& dest_path,
-    bool to_removable
-)
+void ProjectInteractor::do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
 {
     const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
     if (!fdm_result)
         return;
+    bool to_removable = m_removable_drive_service.is_path_on_removable_drive(dest_path);
     m_last_export_path_storage.set_last_export_path(dest_path, to_removable);
     PrintHost::PrintHostConfig config{Domain::PrintHostType::Local, ""};
     PrintHost::PrintHostJobData data{

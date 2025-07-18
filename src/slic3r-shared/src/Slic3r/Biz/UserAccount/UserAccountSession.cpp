@@ -42,8 +42,11 @@ void UserAccountSession::set_tokens(
         m_shared_session_key = shared_session_key;
         m_next_token_timeout = /*std::time(nullptr) +*/ expires_in;
     }
-    long long exp = expires_in - std::time(nullptr);
-    dispatch_new_refresh_time(exp);
+    if (!access_token.empty())
+    {
+        long long exp = expires_in - std::time(nullptr);
+        dispatch_new_refresh_time(exp);
+    }
 }
 
 void UserAccountSession::do_clear(bool notify_owner)

@@ -1,7 +1,7 @@
 #include "Slic3r/App/PresetUpdaterUI.hpp"
 
 #include "Slic3r/Log.hpp"
-#include <Slic3r/App/IDialogManager.hpp>
+#include <Slic3r/App/AppServices.hpp>
 
 #include <fmt/format.h>
 
@@ -67,13 +67,14 @@ void PresetUpdaterUI::on_preset_updater_reconfigurations_list(
         dialog_msg += fmt::format("forced downgrade: {}\n", reconf.vendor_id);
     }
 
-    auto after_dialog = [this, reconfigurations](bool answer) {
+    auto after_dialog = [this, reconfigurations](bool answer)
+    {
         if (answer) {
             m_preset_updater_interactor.perform_reconfigurations(reconfigurations);
         }
     };
-    DialogManagerProvider::instance()
-        .get()
+    AppServices::instance()
+        .dialog_manager()
         .show_yesno_dialog("Preset Updater reconfigurations", dialog_msg, after_dialog);
 }
 
@@ -107,8 +108,8 @@ void PresetUpdaterUI::on_preset_updater_repository_info_vector(
         );
     }
 
-    DialogManagerProvider::instance()
-        .get()
+    AppServices::instance()
+        .dialog_manager()
         .show_yesno_dialog("Preset Updater Sources", dialog_msg, nullptr);
 }
 } // namespace Slic3r::App

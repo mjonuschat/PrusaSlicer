@@ -7,7 +7,7 @@ ProgressTracker::ProgressTracker(IMainThreadDispatcher& dispatcher, std::functio
     m_on_change{on_change}
 {}
 
-void ProgressTracker::set_status(const JobStatus status)
+void ProgressTracker::set_status(const Domain::JobStatus status)
 {
     if (!m_dispatcher.get()
              .dispatch_on_main_thread([on_change = m_on_change, progress = m_progress, status]() {
@@ -18,7 +18,7 @@ void ProgressTracker::set_status(const JobStatus status)
     }
 }
 
-void ProgressTracker::set_status_unsafe(const JobStatus status)
+void ProgressTracker::set_status_unsafe(const Domain::JobStatus status)
 {
     m_progress->status = status;
     m_on_change(*m_progress);
@@ -28,7 +28,7 @@ void ProgressTracker::set(Domain::Percentage percentage)
 {
     if (!m_dispatcher.get().dispatch_on_main_thread(
             [on_change = m_on_change, progress = m_progress, percentage]() {
-                ASSERT(progress->status == JobStatus::Started);
+                ASSERT(progress->status == Domain::JobStatus::Started);
                 ASSERT(Domain::Percentage{0} <= percentage && percentage <= Domain::Percentage{100});
                 if (progress->percent) {
                     ASSERT(percentage >= progress->percent);

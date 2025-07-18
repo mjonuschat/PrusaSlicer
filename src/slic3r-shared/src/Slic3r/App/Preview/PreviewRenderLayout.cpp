@@ -15,6 +15,7 @@ PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<TopBar> top_bar,
     std::unique_ptr<ObjectListWindow> object_list,
     std::unique_ptr<CubeView> cube_view,
+    std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
     std::unique_ptr<SidebarBed> sidebar_bed,
     std::unique_ptr<SidebarPrint> sidebar_print,
     std::unique_ptr<SidebarPreviewActionButtons> sidebar_action_buttons,
@@ -24,9 +25,13 @@ PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<DoubleSliderForLayers> sla_double_slider_layers,
     std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
     std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
-)
     : AbstractRenderLayout(
-        std::move(top_bar), std::move(object_list), std::move(cube_view), std::move(sidebar_bed), std::move(sidebar_print)
+        std::move(top_bar),
+        std::move(object_list),
+        std::move(cube_view),
+        std::move(pop_notification_list_view),
+        std::move(sidebar_bed),
+        std::move(sidebar_print)
     )
     , m_gcode_window(std::move(m_gcode_window))
     , m_legend(std::move(legend))
@@ -56,8 +61,8 @@ void PreviewRenderLayout::init_middle_column()
     AbstractRenderLayout::init_middle_column();
 
     // flexbox doesnt support justify-self, spacer is needed
-    Yoga::Item* column_spacer = m_layout_middle_column->emplace_back<Yoga::Item>();
-    column_spacer->set_flex_grow(1);
+    //Yoga::Item* column_spacer = m_layout_middle_column->emplace_back<Yoga::Item>();
+    //column_spacer->set_flex_grow(1);
     m_layout_middle_column->append(m_double_slider_gcode.release());
 
     m_layout_center_row->append(m_double_slider_layers.release());

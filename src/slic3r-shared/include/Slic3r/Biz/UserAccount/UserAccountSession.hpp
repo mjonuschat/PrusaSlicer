@@ -70,7 +70,10 @@ public:
         return m_next_token_timeout;
     }
 
-
+    void cancel_ongoing_session_action() 
+    {
+        m_global_cancel = true;
+    }
 private:
 	mutable std::mutex m_session_mutex;
     // guarded by m_session_mutex

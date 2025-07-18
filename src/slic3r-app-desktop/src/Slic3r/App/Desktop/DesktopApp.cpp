@@ -17,6 +17,10 @@
 #include <Slic3r/App/SharedThumbnailImageGenerator.hpp>
 #include <Slic3r/App/ThumbnailStore.hpp>
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
+#include <Slic3r/App/PopNotification/PopNotificationCenter.hpp>
+#include <Slic3r/App/AppServices.hpp>
+#include <Slic3r/App/PopNotification/PopNotificationFactory.hpp>
+#include <Slic3r/App/WX/FileExplorerHandler.hpp>
 
 #include "Slic3r/Directories.hpp"
 #include <Slic3r/App/Render/TextureManager.hpp>
@@ -24,6 +28,9 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/Biz/Platform/JobManager/JobManager.hpp>
 #include <Slic3r/Biz/Platform/Termination.hpp>
+#include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
+#include <Slic3r/Biz/PrintHost/PrintHostInteractor.hpp>
+#include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
 
 #include "Slic3r/App/WX/DialogManager.hpp"
 
@@ -34,6 +41,13 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
 
+#ifdef WIN32
+#include <dbt.h>
+#include <shlobj.h>
+static GUID GUID_DEVINTERFACE_HID =
+    {0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30};
+#endif // WIN32
+
 wxIMPLEMENT_APP_NO_MAIN(Slic3r::App::Desktop::DesktopApp);
 
 namespace fs = boost::filesystem;
@@ -41,12 +55,15 @@ namespace fs = boost::filesystem;
 namespace Slic3r::App::Desktop {
 
 namespace {
+
 #ifdef WIN32
+
 void register_win32_device_notification_event()
 {
     wxWindow::MSWRegisterMessageHandler(
         WM_COPYDATA,
-        [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam) {
+        [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam)
+        {
             auto* app_instance = dynamic_cast<Slic3r::App::Desktop::DesktopApp*>(wxTheApp);
             COPYDATASTRUCT* copy_data_structure = {0};
             copy_data_structure                 = (COPYDATASTRUCT*) lParam;
@@ -55,6 +72,68 @@ void register_win32_device_notification_event()
                 std::string args  = WX::into_u8(arguments);
                 SPDLOG_INFO("MSG {}", args);
                 app_instance->handle_app_instance_message(args);
+            }
+            return true;
+        }
+    );
+
+    wxWindow::MSWRegisterMessageHandler(
+        WM_DEVICECHANGE,
+        [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam)
+        {
+            auto* app_instance      = dynamic_cast<Slic3r::App::Desktop::DesktopApp*>(wxTheApp);
+            PDEV_BROADCAST_HDR lpdb = (PDEV_BROADCAST_HDR) lParam;
+            switch (wParam) {
+            case DBT_DEVICEARRIVAL:
+                if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME) {
+                    app_instance->handle_volumes_changed_event();
+                } else if (lpdb->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE) {
+                    PDEV_BROADCAST_DEVICEINTERFACE lpdbi = (PDEV_BROADCAST_DEVICEINTERFACE) lpdb;
+                    if (lpdbi->dbcc_classguid == GUID_DEVINTERFACE_HID) {
+                        app_instance->handle_HID_device_attached_event(WX::into_u8(lpdbi->dbcc_name));
+                    }
+                }
+                break;
+            case DBT_DEVICEREMOVECOMPLETE:
+                if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME) {
+                    app_instance->handle_volumes_changed_event();
+                } else if (lpdb->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE) {
+                    PDEV_BROADCAST_DEVICEINTERFACE lpdbi = (PDEV_BROADCAST_DEVICEINTERFACE) lpdb;
+                    if (lpdbi->dbcc_classguid == GUID_DEVINTERFACE_HID) {
+                        app_instance->handle_HID_device_detached_event(WX::into_u8(lpdbi->dbcc_name));
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+            return true;
+        }
+    );
+
+    wxWindow::MSWRegisterMessageHandler(
+        MainFrame::WM_USER_MEDIACHANGED,
+        [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam)
+        {
+            auto* app_instance = dynamic_cast<Slic3r::App::Desktop::DesktopApp*>(wxTheApp);
+            wchar_t sPath[MAX_PATH];
+            if (lParam == SHCNE_MEDIAINSERTED || lParam == SHCNE_MEDIAREMOVED) {
+                struct _ITEMIDLIST* pidl = *reinterpret_cast<struct _ITEMIDLIST**>(wParam);
+                if (!SHGetPathFromIDList(pidl, sPath)) {
+                    return false;
+                }
+            }
+            switch (lParam) {
+            case SHCNE_MEDIAINSERTED: {
+                app_instance->handle_volumes_changed_event();
+                break;
+            }
+            case SHCNE_MEDIAREMOVED: {
+                app_instance->handle_volumes_changed_event();
+                break;
+            }
+            default:
+                break;
             }
             return true;
         }
@@ -136,6 +215,7 @@ bool DesktopApp::OnInit()
     using Platform::WX::WXMainThreadDispatcher;
 
     auto& platform_services{PlatformServices::instance()};
+    auto& app_services{AppServices::instance()};
 
     platform_services.set_main_thread_dispatcher(std::make_unique<WXMainThreadDispatcher>());
 
@@ -145,7 +225,9 @@ bool DesktopApp::OnInit()
         std::make_unique<JobManager>(platform_services.main_thread_dispatcher())
     );
 
-    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{std::make_shared<Plater::ThumbnailImageGenerator>()};
+    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{
+        std::make_shared<Plater::ThumbnailImageGenerator>()
+    };
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(
         m_workbench,
@@ -167,6 +249,21 @@ bool DesktopApp::OnInit()
     fs::path config_dir        = fs::path{data_dir()} / "configs";
     preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
+    std::shared_ptr<App::SharedThumbnailImageGenerator>
+        shared_thumbnail_image_generator = std::make_shared<App::SharedThumbnailImageGenerator>();
+    app_services.set_dialog_manager(std::make_unique<WX::DialogManager>());
+    app_services.set_pop_notification_center(
+        std::make_unique<PopNotification::PopNotificationCenter>(
+            m_project_interactor->removable_drive_service()
+        )
+    );
+    app_services.set_file_explorer_handler(std::make_unique<WX::FileExplorerHandler>());
+    platform_services.job_manager()
+        .add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
+            &app_services.pop_notification_center()
+        );
+    m_project_interactor->user_account_interactor()
+        .add_listener<Biz::UserAccount::IUserAccountListener>(&app_services.pop_notification_center());
     if (scrn && is_editor)
         scrn->SetText(L("Preparing Plater") + "...");
 
@@ -189,9 +286,18 @@ bool DesktopApp::OnInit()
         thumbnail_image_generator
     );
 
-    DialogManagerProvider::instance().set_dialog_manager_implementation(
-        std::make_unique<WX::DialogManager>()
+    const bool is_dark     = true;
+    const bool is_sys_menu = true;
+    m_project_interactor->slicing_interactor().add_listener<Biz::Slicing::IStatusListener>(
+        &app_services.pop_notification_center()
     );
+    m_project_interactor->print_host_interactor().add_print_host_listener(
+        &app_services.pop_notification_center()
+    );
+    m_project_interactor->removable_drive_service().add_status_listener(
+        &app_services.pop_notification_center()
+    );
+    WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
 
     m_project_interactor->new_project();
 
@@ -211,6 +317,33 @@ bool DesktopApp::OnInit()
     m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(
         m_project_interactor->preset_updater_interactor()
     );
+
+#ifdef WIN32
+    m_main_frame->register_win32_callbacks();
+#endif
+
+
+    platform_services.instance()
+    .job_manager()
+    .create_job(
+        "countdown",
+        [](Biz::JThread::StopToken stop_token, Biz::Platform::IMainThreadDispatcher& dis, Biz::Platform::JobManager::ProgressTracker progress) {
+            for (size_t i = 0; i < 100; i++) {
+                std::this_thread::sleep_for(1000ms);
+                Slic3r::Domain::Percentage p;
+                p.value = (double)i /100.;
+                progress.set(p);
+                AppServices::instance().pop_notification_center().add_notification(
+                    PopNotification::PopNotificationFactory::create_custom(
+                        PopNotification::PopNotificationLevel::Important,
+                        0,
+                        "test " + std::to_string(i)
+                    )
+                );
+            }
+        }
+    )
+    .start();
 
 #if !defined(__linux)
     // Initial repaint
@@ -288,6 +421,21 @@ void DesktopApp::init_translations()
 void DesktopApp::handle_app_instance_message(const std::string& message)
 {
     m_project_interactor->handle_app_instance_message(message);
+}
+
+void DesktopApp::handle_HID_device_detached_event(const std::string& message)
+{
+    // TODO: Add 3d mouse control
+}
+
+void DesktopApp::handle_HID_device_attached_event(const std::string& message)
+{
+    // TODO: Add 3d mouse control
+}
+
+void DesktopApp::handle_volumes_changed_event()
+{
+    m_project_interactor->handle_volumes_changed_event();
 }
 
 #ifdef __APPLE__

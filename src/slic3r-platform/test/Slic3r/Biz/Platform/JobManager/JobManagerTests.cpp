@@ -14,7 +14,7 @@ using std::chrono::seconds;
 using namespace std::chrono_literals;
 using Slic3r::Biz::Platform::JobManager::IJobManagerStatusChangedListener;
 using Slic3r::Biz::Platform::JobManager::JobManagerStatus;
-using Slic3r::Biz::Platform::JobManager::JobStatus;
+using Slic3r::Domain::JobStatus;
 using Slic3r::Biz::Platform::JobManager::Progress;
 using Slic3r::Biz::Platform::JobManager::ProgressTracker;
 using Slic3r::Domain::Percentage;

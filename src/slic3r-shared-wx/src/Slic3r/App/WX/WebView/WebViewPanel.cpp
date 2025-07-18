@@ -168,7 +168,7 @@ void WebViewPanel::late_create()
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
 }
 
-void WebViewPanel::on_user_account_id_success(bool is_refresh)
+void WebViewPanel::on_user_account_id_success(bool is_refresh, const std::string& username)
 {
     bool b = process_logic_command_vector(m_logic->on_user_account_id_success(is_refresh));
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");

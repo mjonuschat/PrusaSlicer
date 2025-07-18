@@ -1,7 +1,7 @@
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
 
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/App/AppServices.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -147,7 +147,7 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
         }
 
         m_button_slice->callbacks().action = [error_mesage]() {
-            DialogManagerProvider::instance().get().show_error_dialog(error_mesage, "Invalid settings");
+            AppServices::instance().dialog_manager().show_error_dialog(error_mesage, "Invalid settings");
         };
     } else if (any_modified) {
         std::string warning_tooltip;

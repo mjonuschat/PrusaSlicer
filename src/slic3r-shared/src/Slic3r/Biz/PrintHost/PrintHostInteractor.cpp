@@ -161,4 +161,9 @@ void PrintHostInteractor::on_print_host_binarize_fail(const std::string& msg)
     SPDLOG_ERROR("PrintHostDataFinalizer has failed: {}", msg);
 }
 
+void PrintHostInteractor::add_print_host_listener(IPrintHostListener* listener)
+{
+    m_print_host_job_manager.add_listener<IPrintHostListener>(listener);
+}
+
 } // namespace Slic3r::Biz::PrintHost

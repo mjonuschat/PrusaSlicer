@@ -57,12 +57,13 @@ public:
     void render_imgui(Render::CommandBuffer& cmd_buffer) override;
     void on_scene_mouse_event(const Platform::MouseEvent& e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent& e) override;
-    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection &selection) override;
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
     void set_navigator(Navigator* navigator) override;
 
-    void on_status_cache_changed(
-        const Domain::SlicingId id
-    ) override;
+    void on_status_cache_changed(const Domain::SlicingId id) override;
 
     void set_sidebars_visible(bool visible) override;
 
@@ -99,6 +100,7 @@ private:
     Yoga::Passthrough<TopBar> m_top_bar;
     Yoga::Passthrough<ObjectListWindow> m_object_list;
     Yoga::Passthrough<CubeView> m_cube_view;
+    Yoga::Passthrough<PopNotification::PopNotificationListView> m_pop_notification_list_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
@@ -128,7 +130,7 @@ private:
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;
     std::shared_ptr<Plater::ThumbnailImageGenerator> m_thumbnail_image_generator;
 
-    Navigator* m_render_module_navigator{ nullptr };
+    Navigator* m_render_module_navigator{nullptr};
 };
 
 } // namespace Slic3r::App::Plater

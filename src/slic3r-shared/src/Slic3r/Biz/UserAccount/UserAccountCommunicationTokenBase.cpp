@@ -276,13 +276,13 @@ void UserAccountCommunicationTokenBase::on_username_changed(const std::string& u
     if (!at_print.empty())
         at_print = at_print.substr(0, 5) + "..." + at_print.substr(at_print.size() - 5);
     SPDLOG_INFO("{} access_token: {}", __FUNCTION__, (username.empty() ? "" : at_print));
-
+    
     TokenStore::StoreData stored_data{
         m_session.get_access_token(),
         m_session.get_refresh_token(),
         m_session.get_shared_session_key(),
-        std::to_string(m_session.get_next_token_timeout()),
-        std::to_string(AppInstance::get_current_pid())
+        username.empty() ? std::string() : std::to_string(m_session.get_next_token_timeout()),
+        username.empty() ? std::string() : std::to_string(AppInstance::get_current_pid())
     };
     if (!TokenStore::save_tokens(stored_data)) {
         SPDLOG_INFO("Failed to write tokens to the secret store.");

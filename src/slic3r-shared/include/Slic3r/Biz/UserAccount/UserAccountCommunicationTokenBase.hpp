@@ -56,6 +56,10 @@ public:
 
     std::string username() const { return m_username; }
 
+    void cancel_ongoing_session_action() 
+    {
+        m_session.cancel_ongoing_session_action();
+    }
 protected:
     UserAccountSession 		m_session;
 

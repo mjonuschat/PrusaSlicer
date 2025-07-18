@@ -34,6 +34,7 @@
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
 
+#include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
@@ -144,7 +145,12 @@ void PlaterRenderModule::init_scene_layout()
     m_cube_view     = Passthrough{std::make_unique<CubeView>()};
     m_sidebar_bed   = Passthrough(std::make_unique<SidebarBed>(m_project_interactor));
     m_sidebar_print = Passthrough(std::make_unique<SidebarPrint>(m_project_interactor));
-    m_history       = Passthrough(std::make_unique<History>());
+    m_pop_notification_list_view = Passthrough{
+        std::make_unique<PopNotification::PopNotificationListView>(
+            AppServices::instance().pop_notification_center()
+        )
+    };
+    m_history = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
 
     m_sidebar_action_buttons = Passthrough{
@@ -156,6 +162,7 @@ void PlaterRenderModule::init_scene_layout()
         m_top_bar.release(),
         m_object_list.release(),
         m_cube_view.release(),
+        m_pop_notification_list_view.release(),
         m_sidebar_bed.release(),
         m_sidebar_print.release(),
         m_sidebar_action_buttons.release(),
@@ -187,37 +194,36 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarAdd,
         "Add...",
         "Ctrl + I",
-        {.action =
-             [this]() {
-                 IDialogManager::FileCallback callback =
-                     [this](bool success, const std::vector<boost::filesystem::path>& file_paths) {
-                         if (success) {
-                             const auto& cc = m_project_interactor.selected_project()
-                                                  .config_containers()
-                                                  .front();
-                             const auto& bed     = cc->bed();
-                             int nozzle_dmrs_cnt = cc->selected_preset().hw_config.tool_count;
-                             Biz::FileLoadingLogic::import_files_and_add_to_scene(
-                                 file_paths,
-                                 nozzle_dmrs_cnt,
-                                 m_project_interactor.scene_interactor(),
-                                 bed.center()
-                             );
+        {.action = [this]() {
+            IDialogManager::FileCallback callback =
+                [this](bool success, const std::vector<boost::filesystem::path>& file_paths) {
+                    if (success) {
+                        const auto& cc = m_project_interactor.selected_project()
+                                             .config_containers()
+                                             .front();
+                        const auto& bed     = cc->bed();
+                        int nozzle_dmrs_cnt = cc->selected_preset().hw_config.tool_count;
+                        Biz::FileLoadingLogic::import_files_and_add_to_scene(
+                            file_paths,
+                            nozzle_dmrs_cnt,
+                            m_project_interactor.scene_interactor(),
+                            bed.center()
+                        );
 
-                             m_scene_presenter->scene().log_nodes();
-                         }
-                     };
+                        m_scene_presenter->scene().log_nodes();
+                    }
+                };
 
-                 auto& dlg_manager = DialogManagerProvider::instance().get();
-                 dlg_manager.show_file_dialog(
-                     FileDialogType::OpenMultiple,
-                     _u8L("Import File"),
-                     "",
-                     "",
-                     "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf",
-                     callback
-                 );
-             }}
+            auto& dlg_manager = App::AppServices::instance().dialog_manager();
+            dlg_manager.show_file_dialog(
+                FileDialogType::OpenMultiple,
+                _u8L("Import File"),
+                "",
+                "",
+                "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf",
+                callback
+            );
+        }}
     );
 
     m_toolbar_add_volume = m_layout->add_toolbar_item(
@@ -225,10 +231,9 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::AddVolume,
         "Add Volume",
         "",
-        {.action =
-             [this]() {
-                 m_add_volumes_menu->open();
-             }}
+        {.action = [this]() {
+            m_add_volumes_menu->open();
+        }}
     );
     m_toolbar_add_volume->set_enabled(false);
     init_add_volume_menu();
@@ -238,27 +243,26 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::DeleteBtnIcon,
         "Delete selection",
         "",
-        {.action =
-             [this]() {
-                 std::optional<std::string> last_solid_part_name = m_project_interactor
-                                                                       .scene_interactor()
-                                                                       .delete_selected_elements();
+        {.action = [this]() {
+            std::optional<std::string> last_solid_part_name = m_project_interactor
+                                                                  .scene_interactor()
+                                                                  .delete_selected_elements();
 
-                 if (last_solid_part_name) {
-                     // Show warning dialog
-                     auto& dlg_manager = App::DialogManagerProvider::instance().get();
-                     dlg_manager.show_warning_dialog(
-                         fmt::vformat(
-                             _u8L(
-                                 "Part {} could not be deleted from the object,\n"
-                                 "as removing the last solid part is not permitted."
-                             ),
-                             fmt::make_format_args(last_solid_part_name.value())
-                         ) + "\n",
-                         _u8L("Delete selection")
-                     );
-                 }
-             }}
+            if (last_solid_part_name) {
+                // Show warning dialog
+                auto& dlg_manager = App::AppServices::instance().dialog_manager();
+                dlg_manager.show_warning_dialog(
+                    fmt::vformat(
+                        _u8L(
+                            "Part {} could not be deleted from the object,\n"
+                            "as removing the last solid part is not permitted."
+                        ),
+                        fmt::make_format_args(last_solid_part_name.value())
+                    ) + "\n",
+                    _u8L("Delete selection")
+                );
+            }
+        }}
     );
     m_toolbar_delete->set_enabled(false);
 
@@ -267,11 +271,10 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarAddInstance,
         "Add instance",
         "+",
-        {.action =
-             [this]() {
-                 m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
-                 m_scene_presenter->scene().log_nodes();
-             }}
+        {.action = [this]() {
+            m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
+            m_scene_presenter->scene().log_nodes();
+        }}
     );
     m_toolbar_add_instance->set_enabled(false);
 
@@ -302,7 +305,10 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarArrange,
         "Arrange",
         "A",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::ArrangeGizmo); }},
+        {.action =
+             [this]() {
+                 toggle_activate_tool(Scene::ToolType::ArrangeGizmo);
+             }},
         m_arrange_gizmo
     );
     m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
@@ -514,7 +520,7 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
             }
         };
 
-    auto& dlg_manager = DialogManagerProvider::instance().get();
+    auto& dlg_manager = AppServices::instance().dialog_manager();
     dlg_manager.show_file_dialog(
         FileDialogType::OpenMultiple,
         _u8L("Import File"),

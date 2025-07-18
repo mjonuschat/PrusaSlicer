@@ -3,7 +3,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/ExportPathSelect.hpp"
-#include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/Browser/BrowserLogicConnectSelect.hpp"
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 
@@ -11,7 +11,7 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Preview {
 
-constexpr float navig_btn_width = 40.f;
+constexpr float navig_btn_width    = 40.f;
 constexpr float export_button_size = 25;
 
 SidebarPreviewActionButtons::SidebarPreviewActionButtons(Navigator* render_module_navigator) :
@@ -30,13 +30,23 @@ SidebarPreviewActionButtons::SidebarPreviewActionButtons(Navigator* render_modul
     m_layout_top->set_justify_content(YGJustify::YGJustifySpaceAround);
     m_layout_top->set_max_size({YGUndefined, export_button_size});
 
-    m_button_save_print = m_layout_top->emplace_back<LayoutButton>("", Render::Icon::SavePrint, "Export");
-    m_button_save_print_to_flash =
-        m_layout_top->emplace_back<LayoutButton>("", Render::Icon::SavePrintToFlash, "Export to flash");
-    m_button_save_print_to_local =
-        m_layout_top->emplace_back<LayoutButton>("", Render::Icon::SavePrintToLocal, "Export to local");
-    m_button_save_print_add_bookmark =
-        m_layout_top->emplace_back<LayoutButton>("", Render::Icon::SavePrintAddBookmark, "Upload");
+    m_button_save_print = m_layout_top
+                              ->emplace_back<LayoutButton>("", Render::Icon::SavePrint, "Export");
+    m_button_save_print_to_flash = m_layout_top->emplace_back<LayoutButton>(
+        "",
+        Render::Icon::SavePrintToFlash,
+        "Export to flash"
+    );
+    m_button_save_print_to_local = m_layout_top->emplace_back<LayoutButton>(
+        "",
+        Render::Icon::SavePrintToLocal,
+        "Export to local"
+    );
+    m_button_save_print_add_bookmark = m_layout_top->emplace_back<LayoutButton>(
+        "",
+        Render::Icon::SavePrintAddBookmark,
+        "Upload"
+    );
 
     m_button_save_print->set_background_color(IM_COL32_BLACK_TRANS);
     m_button_save_print_to_flash->set_background_color(IM_COL32_BLACK_TRANS);
@@ -55,8 +65,7 @@ SidebarPreviewActionButtons::SidebarPreviewActionButtons(Navigator* render_modul
                         if (result) {
                             m_project_interactor->do_export(
                                 m_project_interactor->selected_bed_slicing_id(),
-                                file_paths.front(),
-                                false
+                                file_paths.front()
                             );
                         }
                     }
@@ -75,8 +84,7 @@ SidebarPreviewActionButtons::SidebarPreviewActionButtons(Navigator* render_modul
                         if (result) {
                             m_project_interactor->do_export(
                                 m_project_interactor->selected_bed_slicing_id(),
-                                file_paths.front(),
-                                true
+                                file_paths.front()
                             );
                         }
                     }
@@ -95,8 +103,7 @@ SidebarPreviewActionButtons::SidebarPreviewActionButtons(Navigator* render_modul
                         if (result) {
                             m_project_interactor->do_export(
                                 m_project_interactor->selected_bed_slicing_id(),
-                                file_paths.front(),
-                                true
+                                file_paths.front()
                             );
                         }
                     }
@@ -105,25 +112,36 @@ SidebarPreviewActionButtons::SidebarPreviewActionButtons(Navigator* render_modul
     };
 
     m_button_save_print_add_bookmark->callbacks().action = [this]() {
-        Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread_after([this](){
-            DialogManagerProvider::instance().get().show_webview_dialog(std::make_unique<Browser::BrowserLogicConnectSelect>(*m_project_interactor), m_project_interactor);
-            //m_project_interactor->do_upload(m_project_interactor->selected_bed_slicing_id(), "filename.gcode");
-        });
+        Biz::Platform::PlatformServices::instance()
+            .main_thread_dispatcher()
+            .dispatch_on_main_thread_after([this]() {
+                AppServices::instance().dialog_manager().show_webview_dialog(
+                    std::make_unique<Browser::BrowserLogicConnectSelect>(*m_project_interactor),
+                    m_project_interactor
+                );
+                // m_project_interactor->do_upload(m_project_interactor->selected_bed_slicing_id(), "filename.gcode");
+            });
     };
 
     m_layout_bottom = emplace_back<Item>();
     m_layout_bottom->set_orientation(Orientation::Horizontal);
     m_layout_bottom->set_gap(5);
 
-    m_button_navigation =
-        m_layout_bottom->emplace_back<LayoutButton>(m_navigator_name, Render::Icon::None, m_navigator_tooltip);
+    m_button_navigation = m_layout_bottom->emplace_back<LayoutButton>(
+        m_navigator_name,
+        Render::Icon::None,
+        m_navigator_tooltip
+    );
     m_button_navigation->set_background_color(color_secondary);
     m_button_navigation->set_label_font_type(Render::ImguiFontType::Bold);
     m_button_navigation->set_min_size({navig_btn_width, button_height});
 
-    m_button_navigation->callbacks().action = [this]() { navigate_to_other(); };
+    m_button_navigation->callbacks().action = [this]() {
+        navigate_to_other();
+    };
 
-    m_button_print = m_layout_bottom->emplace_back<LayoutButton>("Print", Render::Icon::None, "Print results");
+    m_button_print = m_layout_bottom
+                         ->emplace_back<LayoutButton>("Print", Render::Icon::None, "Print results");
     m_button_print->set_label_font_type(Render::ImguiFontType::Bold);
     m_button_print->set_background_color(color_primary);
     m_button_print->set_min_size({0, button_height});

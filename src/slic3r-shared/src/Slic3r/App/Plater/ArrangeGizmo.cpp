@@ -24,7 +24,7 @@ using NodeList = Scene::Node::NodeList;
 using Biz::Arrange::Mode;
 using Biz::Platform::PlatformServices;
 using Biz::Platform::JobManager::JobManagerStatus;
-using Biz::Platform::JobManager::JobStatus;
+using Domain::JobStatus;
 using Biz::Platform::JobManager::Progress;
 using Biz::Scene::BedSelectionMode;
 using Biz::Scene::SceneInteractor;

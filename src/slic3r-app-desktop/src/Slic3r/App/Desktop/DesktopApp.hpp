@@ -40,6 +40,10 @@ public:
      */
     void handle_app_instance_message(const std::string& message);
 
+    void handle_HID_device_detached_event(const std::string& message);
+    void handle_HID_device_attached_event(const std::string& message);
+    void handle_volumes_changed_event();
+
 #ifdef __APPLE__
     void MacOpenURL(const wxString& url) override;
 #endif /* __APPLE */

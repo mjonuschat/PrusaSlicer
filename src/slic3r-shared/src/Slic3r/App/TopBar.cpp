@@ -8,7 +8,7 @@
 
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#include <Slic3r/App/IDialogManager.hpp>
+#include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/ThumbnailStore.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
@@ -103,12 +103,12 @@ void TopBar::add_load_project_btn(Item* parent)
     m_load_btn->callbacks().action = [this]() {
         IDialogManager::FileCallback callback =
             [this](bool success, const std::vector<boost::filesystem::path>& file_paths) {
-            if (success) {
-                m_project_interactor->load_project(file_paths.front());
-            }
-        };
+                if (success) {
+                    m_project_interactor->load_project(file_paths.front());
+                }
+            };
 
-        auto& dlg_manager = DialogManagerProvider::instance().get();
+        auto& dlg_manager = AppServices::instance().dialog_manager();
         dlg_manager
             .show_file_dialog(FileDialogType::Open, _u8L("Open Project"), "", "", "*.3mf", callback);
     };
@@ -118,7 +118,7 @@ void TopBar::add_save_project_btn(Item* parent)
 {
     m_save_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarSave, _u8L("Save"));
     m_save_btn->callbacks().action = [this]() {
-        auto& dlg_manager = DialogManagerProvider::instance().get();
+        auto& dlg_manager = AppServices::instance().dialog_manager();
         dlg_manager.show_yesno_dialog(
             "DEVELOPER WARNING",
             "EXPORT TO 3MF IS NOT FINALIZED YET.\n\nThe exported project MUST NOT be shared publicly, "
@@ -150,20 +150,31 @@ void TopBar::add_save_project_btn(Item* parent)
                         m_project_interactor->save_project(file_path, params);
                     }
                 };
-                auto& dlg_manager = DialogManagerProvider::instance().get();
-                dlg_manager.show_file_dialog(
-                    FileDialogType::Save,
-                    _u8L("Save Project"),
-                    "",
-                    "",
-                    "*.3mf",
-                    callback
-                );
-            } else {
-                // Saving an existing project - just save.
-                m_project_interactor->save_project(project_name, params);
+                if (true || project_name.empty())
+                { // The 'true' is here for the development phase - effectively it always "Saves as".
+                    // Saving a new project - show file save dialog.
+                    IDialogManager::FileCallback callback =
+                        [this, &params](
+                            bool success,
+                            const std::vector<boost::filesystem::path>& file_paths
+                        ) {
+                            if (success)
+                                m_project_interactor->save_project(file_paths.front().string(), params);
+                        };
+                    auto& dlg_manager = AppServices::instance().dialog_manager();
+                    dlg_manager.show_file_dialog(
+                        FileDialogType::Save,
+                        _u8L("Save Project"),
+                        "",
+                        "",
+                        "*.3mf",
+                        callback
+                    );
+                } else {
+                    // Saving an existing project - just save.
+                    m_project_interactor->save_project(project_name, params);
+                }
             }
-        }
         );
     };
 }

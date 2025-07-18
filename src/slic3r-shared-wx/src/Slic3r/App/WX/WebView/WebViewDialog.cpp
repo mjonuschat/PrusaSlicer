@@ -444,7 +444,7 @@ void WebViewDialog::do_reload()
     m_web_view->LoadURL(from_u8(m_logic->url()));
 }
 
-void WebViewDialog::on_user_account_id_success(bool is_refresh)
+void WebViewDialog::on_user_account_id_success(bool is_refresh, const std::string& username)
 {
     bool r = process_logic_command_vector(m_logic->on_user_account_id_success(is_refresh));
     DEBUG_ASSERT(r, "False return value signals Veto which cannot be done here.");
