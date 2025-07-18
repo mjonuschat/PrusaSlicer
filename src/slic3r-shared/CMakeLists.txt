@@ -60,6 +60,10 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/BedThumbnailTexture.hpp
         include/Slic3r/App/Plater/ThumbnailImageGenerator.hpp
         src/Slic3r/App/Plater/ThumbnailImageGenerator.cpp
+        include/Slic3r/App/Plater/SurfaceMesh.hpp
+        include/Slic3r/App/Plater/MeasureUtils.hpp
+        include/Slic3r/App/Plater/Measure.hpp
+        src/Slic3r/App/Plater/Measure.cpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
