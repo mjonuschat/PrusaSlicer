@@ -645,6 +645,7 @@ Plater::priv::priv(Plater* q, MainFrame* main_frame)
         "alternate_extra_perimeter",
         "wipe_tower_disable_filament_ramming",
         "wipe_tower_disable_cooling_moves",
+        "wipe_tower_max_purge_speed",
         }))
     , sidebar(new Sidebar(q))
     , notification_manager(std::make_unique<NotificationManager>(q))

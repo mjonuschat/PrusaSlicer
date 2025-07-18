@@ -561,6 +561,7 @@ WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfig& c
     m_bridging(float(config.wipe_tower_bridging)),
     m_no_sparse_layers(config.wipe_tower_no_sparse_layers),
     m_gcode_flavor(config.gcode_flavor),
+    m_wipe_tower_max_purge_speed(float(config.wipe_tower_max_purge_speed)),
     m_travel_speed(config.travel_speed),
     m_infill_speed(default_region_config.infill_speed),
     m_perimeter_speed(default_region_config.perimeter_speed),
@@ -1183,11 +1184,16 @@ void WipeTower::toolchange_Wipe(
         x_to_wipe = std::max(x_to_wipe, x_to_fill_cleaning_box);
     }
 
-    float max_speed = std::numeric_limits<float>::max();
+    float max_speed = std::max(m_first_layer_speed, m_infill_speed);
     if (m_config->filament_max_speed.get_at(m_current_tool) > 0) {
-        max_speed = float(m_config->filament_max_speed.get_at(m_current_tool));
+        max_speed = std::min(max_speed, float(m_config->filament_max_speed.get_at(m_current_tool)));
     }
-    const float target_speed = std::min(max_speed, (is_first_layer() ? m_first_layer_speed * 60.f : m_infill_speed * 60.f));
+    const float target_speed = std::min(
+        std::min(
+            max_speed * 60.f, (is_first_layer() ? m_first_layer_speed * 60.f : m_infill_speed * 60.f)
+        ),
+        m_wipe_tower_max_purge_speed * 60.f
+    );
     float wipe_speed = 0.33f * target_speed;
 
     // if there is less than 2.5*line_width to the edge, advance straightaway (there is likely a blob anyway)
