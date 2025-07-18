@@ -1,4 +1,6 @@
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
+
+#include <ranges>
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
@@ -39,7 +41,7 @@ static const std::unordered_map<Domain::ModelVolumeType, ColorRGBA> VOLUME_COLOR
 };
 
 namespace {
-template <typename TagT, typename  RefT>
+template <typename TagT, typename RefT>
 void remove_children(
     Scene::Scene& scn,
     const std::vector<RefT>& elements,
@@ -48,33 +50,40 @@ void remove_children(
 {
     // find all instances of given object id and remove the volume node there
     Scene::Node::NodeList nodes;
-    scn.root().query([&](const Scene::Node* n) {
-        const auto* tag = n->tag_of_type<TagT>();
-        if (tag != nullptr) {
-            auto it = std::find_if(elements.begin(), elements.end(),
-                [tag, predicate](const RefT& el) {
-                    return predicate(*tag, el);
-                });
-            if (it != elements.end())
-                return true;
-        }
-        return false;
+    scn.root().query(
+        [&](const Scene::Node* n) {
+            const auto* tag = n->tag_of_type<TagT>();
+            if (tag != nullptr) {
+                auto it = std::find_if(
+                    elements.begin(),
+                    elements.end(),
+                    [tag, predicate](const RefT& el) { return predicate(*tag, el); }
+                );
+                if (it != elements.end())
+                    return true;
+            }
+            return false;
+        },
+        nodes,
+        true
+    );
 
-    }, nodes, true);
-    for (auto* n : nodes)
-        scn.remove_child(n);
-
+    // go through the nodes in reverse order, so the children is removed before parent
+    for (auto& node : std::ranges::reverse_view(nodes))
+        scn.remove_child(node);
 }
 
-} // namespace (anonymous)
-
-
+} // namespace
 
 PlaterScenePresenter::PlaterScenePresenter(
-    const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor, Render::Device& device
-)
-    : m_workbench(workbench), m_project_interactor(project_interactor), m_device(device)
-    , m_bed_render_updater(*this, workbench, device)
+    const Domain::Workbench& workbench,
+    Biz::ProjectInteractor& project_interactor,
+    Render::Device& device
+) :
+    m_workbench(workbench),
+    m_project_interactor(project_interactor),
+    m_device(device),
+    m_bed_render_updater(*this, workbench, device)
 {
     load_selected_project();
 
@@ -150,7 +159,9 @@ void PlaterScenePresenter::update_camera_frustum()
     Eigen::AlignedBox3d aabb;
     for (const auto& cc : scene_interactor.selected_project_config_containers()) {
         for (const auto& bed_inst : cc->bed_instances()) {
-            std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed_inst->bed);
+            std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(
+                bed_inst->bed
+            );
             Domain::Vec3d bed_inst_offset = bed_inst->transformation.get_offset();
             for (const auto& v : print_volume) {
                 aabb.extend(bed_inst_offset + v.cast<double>());
@@ -167,25 +178,34 @@ void PlaterScenePresenter::update_camera_frustum()
 
 void PlaterScenePresenter::update_objects_shadows_data()
 {
-    const Domain::BedInstance& bed_inst = selected_bed_instance();
+    const Domain::BedInstance& bed_inst           = selected_bed_instance();
     const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances;
     const Domain::Model* model = &m_project_interactor.selected_project().model();
 
     auto& scene = m_projects[m_project_interactor.selected_project_id()].scene();
-    Scene::visit(scene.root(), [&](Scene::Node& n) {
-        const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
-        if (tag != nullptr && n.has_render_component()) {
-            const auto* obj = Domain::find_by_id<Domain::ModelObject>(model->objects, tag->object_id);
-            const auto* vol = Domain::find_by_id<Domain::ModelVolume>(obj->volumes, tag->volume_id);
-            if (vol->is_model_part()) {
-                const auto* inst = Domain::find_by_id<Domain::ModelInstance>(obj->instances, tag->instance_id);
-                bool shadows = std::find(insts_on_bed.begin(), insts_on_bed.end(), inst) != insts_on_bed.end();
-                n.render_component()->set_shadows(shadows ? Render::Shadows{ true, true } : Render::Shadows{ false, false });
+    Scene::visit(
+        scene.root(),
+        [&](Scene::Node& n) {
+            const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
+            if (tag != nullptr && n.has_render_component()) {
+                const auto* obj = Domain::find_by_id<Domain::ModelObject>(model->objects, tag->object_id);
+                const auto* vol = Domain::find_by_id<Domain::ModelVolume>(obj->volumes, tag->volume_id);
+                if (vol->is_model_part()) {
+                    const auto* inst = Domain::find_by_id<Domain::ModelInstance>(
+                        obj->instances,
+                        tag->instance_id
+                    );
+                    bool shadows = std::find(insts_on_bed.begin(), insts_on_bed.end(), inst)
+                        != insts_on_bed.end();
+                    n.render_component()->set_shadows(
+                        shadows ? Render::Shadows{true, true} : Render::Shadows{false, false}
+                    );
+                } else
+                    n.render_component()->set_shadows(Render::Shadows{false, false});
             }
-            else
-                n.render_component()->set_shadows(Render::Shadows{ false, false });
-        }
-    }, true);
+        },
+        true
+    );
 }
 
 void PlaterScenePresenter::update_beds_shadows_data()
@@ -215,11 +235,14 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
     }
 }
 
-void PlaterScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection)
+void PlaterScenePresenter::on_scene_selection_changed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::Selection& selection
+)
 {
-    auto& proj = m_projects[project_id];
+    auto& proj              = m_projects[project_id];
     auto& selection_changes = proj.selection_scene_changes();
-    auto& scene = proj.scene();
+    auto& scene             = proj.scene();
 
     selection_changes.roll_back();
 
@@ -232,20 +255,22 @@ void PlaterScenePresenter::on_scene_selection_changed(Domain::SelectionId projec
     Scene::Node::NodeList found_nodes;
     found_nodes.reserve(selection.elements.size());
     for (const auto& e : selection.elements) {
-        scene.root().query([&](const Scene::Node* n) {
-            const auto* tag = n->tag_of_type<SceneNodeTag>();
-            if (tag == nullptr)
-                return false;
-            return tag->matches_element(e);
-        }, found_nodes);
+        scene.root().query(
+            [&](const Scene::Node* n) {
+                const auto* tag = n->tag_of_type<SceneNodeTag>();
+                if (tag == nullptr)
+                    return false;
+                return tag->matches_element(e);
+            },
+            found_nodes
+        );
     }
 
     auto selection_mat = Render::Material{}
-        .set_uniform("uniform_color", ColorRGBA::WHITE())
-        .set_transparent(false);
+                             .set_uniform("uniform_color", ColorRGBA::WHITE())
+                             .set_transparent(false);
     for (auto* n : found_nodes)
-        selection_changes.change(*n)
-            .set_material_override(selection_mat);
+        selection_changes.change(*n).set_material_override(selection_mat);
 
     // update selection root, so it is in the center of all selected objects
 
@@ -267,30 +292,42 @@ void PlaterScenePresenter::on_scene_selection_changed(Domain::SelectionId projec
     if (!m_freeze_selection_center) {
         SquareMatrix4d xform = SquareMatrix4d::Identity();
         if (selection.mode == Biz::Scene::SelectionMode::Instance) {
-            const auto* tag = found_nodes.front()->tag_of_type<SceneNodeTag>();
-            const Domain::ModelObject* obj = m_project_interactor.selected_project().find_object_by_id(tag->object_id);
-            const Domain::ModelInstance* inst = m_project_interactor.selected_project().find_instance_by_id(tag->object_id, tag->instance_id);
-            Domain::Transformation world_m = inst->get_transformation() * obj->volumes.front()->get_transformation();
+            const auto* tag                = found_nodes.front()->tag_of_type<SceneNodeTag>();
+            const Domain::ModelObject* obj = m_project_interactor.selected_project()
+                                                 .find_object_by_id(tag->object_id);
+            const Domain::ModelInstance* inst = m_project_interactor.selected_project()
+                                                    .find_instance_by_id(
+                                                        tag->object_id,
+                                                        tag->instance_id
+                                                    );
+            Domain::Transformation world_m = inst->get_transformation()
+                * obj->volumes.front()->get_transformation();
             xform.col(3).head(3) = world_m.get_offset();
-        }
-        else {
-            //xform.block<1, 3>(0, 3) = bounds.center().cast<double>();
+        } else {
+            // xform.block<1, 3>(0, 3) = bounds.center().cast<double>();
             xform.col(3).head(3) = bounds.center().cast<double>();
         }
         proj.selection_root().set_world_transform(xform);
     }
 }
 
-void PlaterScenePresenter::on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection)
+void PlaterScenePresenter::on_scene_selection_transformed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::Selection& selection
+)
 {
     on_scene_selection_changed(project_id, selection);
 }
 
-void PlaterScenePresenter::on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id)
+void PlaterScenePresenter::on_selected_bed_instance_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId container_id,
+    Domain::SelectionId bed_instance_id
+)
 {
     m_bed_render_updater.update_all(project_context().scene().camera());
-    const Domain::BedInstance& bed_inst = selected_bed_instance();
-    Domain::Vec3d bed_inst_offset = bed_inst.transformation.get_offset();
+    const Domain::BedInstance& bed_inst     = selected_bed_instance();
+    Domain::Vec3d bed_inst_offset           = bed_inst.transformation.get_offset();
     std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed_inst.bed);
     Eigen::AlignedBox3d bed_aabb;
     for (const auto& v : print_volume) {
@@ -300,19 +337,23 @@ void PlaterScenePresenter::on_selected_bed_instance_changed(Domain::SelectionId 
     update_objects_shadows_data();
 }
 
-void PlaterScenePresenter::build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst,
-    const Domain::ModelVolume* vol, std::optional<ColorRGBA> color)
+void PlaterScenePresenter::build_volume_node(
+    Scene::NodeBuilder& builder,
+    Domain::SelectionId project_id,
+    const Domain::ModelInstance* inst,
+    const Domain::ModelVolume* vol,
+    std::optional<ColorRGBA> color
+)
 {
     SPDLOG_DEBUG("build_volume inst: {}  vol: {}", inst->id().id, vol->id().id);
-    auto& ctx = m_projects[project_id];
-    auto& geom_mgr = ctx.model_geometry_manager();
+    auto& ctx         = m_projects[project_id];
+    auto& geom_mgr    = ctx.model_geometry_manager();
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
 
     Scene::AuxiliaryElementId id{Scene::AuxiliaryElementId::Type::Volume, vol->id().id};
-    const auto& trimesh =
-        trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
-            return std::make_unique<Scene::TriangleMesh>(vol->mesh_ptr());
-        });
+    const auto& trimesh = trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
+        return std::make_unique<Scene::TriangleMesh>(vol->mesh_ptr());
+    });
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_triangle_mesh(m_device, trimesh->triangles());
     });
@@ -328,38 +369,36 @@ void PlaterScenePresenter::build_volume_node(Scene::NodeBuilder& builder, Domain
         clr = saturate(clr, 0.25f);
 
     auto material = Render::Material{}
-        .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-        .set_uniform("uniform_color", clr)
-        .set_transparent(clr.is_transparent());
-    builder
-        .set_debug_name(fmt::format("vol: {}", vol->id().id))
+                        .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
+                        .set_uniform("uniform_color", clr)
+                        .set_transparent(clr.is_transparent());
+    builder.set_debug_name(fmt::format("vol: {}", vol->id().id))
         .transform([vol](auto& xform) { xform = vol->get_matrix(); })
         .set_tag(SceneNodeTag{vol->get_object()->id().id, vol->id().id, inst->id().id, vol->type()})
         .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
         .set_aabb(trimesh->aabb_mesh());
     if (vol->type() == Domain::ModelVolumeType::MODEL_PART) {
         builder
-            .set_shadows(Render::Shadows{ true, true })
-            // FIXME: the pbr data should be set in dependence of the volume filament 
-            // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type' 
+            .set_shadows(Render::Shadows{true, true})
+            // FIXME: the pbr data should be set in dependence of the volume filament
+            // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type'
             .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
-    }
-    else {
-        builder
-            .set_shadows(Render::Shadows{ false, false });
+    } else {
+        builder.set_shadows(Render::Shadows{false, false});
     }
 }
 
 const Domain::BedInstance& PlaterScenePresenter::selected_bed_instance() const
 {
-    return m_project_interactor.selected_config_container()
-        .find_bed_instance(m_project_interactor.scene_interactor().selected_bed_instance().instance_id);
+    return m_project_interactor.selected_config_container().find_bed_instance(
+        m_project_interactor.scene_interactor().selected_bed_instance().instance_id
+    );
 }
 
 void PlaterScenePresenter::invoke_bed_visually_changed(Domain::SelectionId project_id)
 {
     Domain::BedRefs bed_refs;
-    const Domain::Project& project = m_workbench.project(project_id);
+    const Domain::Project& project                  = m_workbench.project(project_id);
     const Domain::Project::ConfigContainerList& ccs = project.config_containers();
     for (const auto& cc : ccs) {
         for (const auto& bed_inst : cc->bed_instances()) {
@@ -369,35 +408,45 @@ void PlaterScenePresenter::invoke_bed_visually_changed(Domain::SelectionId proje
 
     if (!bed_refs.empty()) {
         invoke_listeners<Plater::IBedVisuallyChangedListener>(
-            [&](Plater::IBedVisuallyChangedListener* l) {
-                l->on_bed_changed(project_id, bed_refs);
-            });
+            [&](Plater::IBedVisuallyChangedListener* l) { l->on_bed_changed(project_id, bed_refs); }
+        );
     }
 }
 
-void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
+void PlaterScenePresenter::on_instance_added(
+    Domain::SelectionId project_id,
+    const Domain::ElementRefs& instances
+)
 {
-    auto& scn = scene();
+    auto& scn                      = scene();
     const Domain::Project& project = m_workbench.project(project_id);
 
     Scene::NodeBuilder builder(scn);
     for (const auto& element : instances) {
-        const Domain::ModelObject* obj = project.find_object_by_id(element.object_id);
-        const Domain::ModelInstance* inst = Domain::find_by_id<Domain::ModelInstance>(obj->instances, element.instance_id);
-        builder
-            .set_debug_name(fmt::format("obj: {} inst: {}", obj->id().id, inst->id().id))
+        const Domain::ModelObject* obj    = project.find_object_by_id(element.object_id);
+        const Domain::ModelInstance* inst = Domain::find_by_id<Domain::ModelInstance>(
+            obj->instances,
+            element.instance_id
+        );
+        builder.set_debug_name(fmt::format("obj: {} inst: {}", obj->id().id, inst->id().id))
             .transform([inst](auto& t) { t = inst->get_matrix(); })
             .set_tag(SceneNodeTag{obj->id().id, 0, inst->id().id, Domain::ModelVolumeType::INVALID})
-            .child_for_each(obj->volumes, [&](Scene::NodeBuilder& builder, const Domain::ModelVolume* vol) {
-                build_volume_node(builder, project_id, inst, vol);
-            });
+            .child_for_each(
+                obj->volumes,
+                [&](Scene::NodeBuilder& builder, const Domain::ModelVolume* vol) {
+                    build_volume_node(builder, project_id, inst, vol);
+                }
+            );
         scn.add_child(builder.build().release());
     }
 
     invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
+void PlaterScenePresenter::on_instance_removed(
+    Domain::SelectionId project_id,
+    const Domain::ElementRefs& instances
+)
 {
     remove_children<SceneNodeTag, Domain::ElementRef>(
         scene(),
@@ -410,13 +459,16 @@ void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, c
     invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements,
-    Biz::Scene::TransformState state)
+void PlaterScenePresenter::on_instance_transformed(
+    Domain::SelectionId project_id,
+    const Domain::ElementRefs& elements,
+    Biz::Scene::TransformState state
+)
 {
-    const Domain::BedInstance& bed_inst = selected_bed_instance();
+    const Domain::BedInstance& bed_inst           = selected_bed_instance();
     const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances;
 
-    auto& scene = m_projects[m_selected_project_id].scene();
+    auto& scene      = m_projects[m_selected_project_id].scene();
     const auto& proj = m_workbench.project(project_id);
     Scene::visit(scene.root(), [&](Scene::Node& n) {
         const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
@@ -429,18 +481,27 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
                     n.set_local_transform(inst->get_matrix().matrix());
                 }
             }
-        }
-        else {
-            if (std::find_if(elements.begin(), elements.end(),
-                [t](auto e) { return t->instance_id == e.instance_id; }) != elements.end()) {
+        } else {
+            if (std::find_if(
+                    elements.begin(),
+                    elements.end(),
+                    [t](auto e) { return t->instance_id == e.instance_id; }
+                )
+                != elements.end())
+            {
                 const auto* vol = proj.find_volume_by_id(t->object_id, t->volume_id);
                 if (vol->is_model_part()) {
-                    bool shadows = std::find_if(insts_on_bed.begin(), insts_on_bed.end(),
-                        [t](auto i) { return i->id().id == t->instance_id; }) != insts_on_bed.end();
-                        n.render_component()->set_shadows(shadows ? Render::Shadows{ true, true } : Render::Shadows{ false, false });
-                }
-                else
-                    n.render_component()->set_shadows(Render::Shadows{ false, false });
+                    bool shadows = std::find_if(
+                                       insts_on_bed.begin(),
+                                       insts_on_bed.end(),
+                                       [t](auto i) { return i->id().id == t->instance_id; }
+                                   )
+                        != insts_on_bed.end();
+                    n.render_component()->set_shadows(
+                        shadows ? Render::Shadows{true, true} : Render::Shadows{false, false}
+                    );
+                } else
+                    n.render_component()->set_shadows(Render::Shadows{false, false});
             }
         }
     });
@@ -448,7 +509,6 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
 }
-
 
 void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
 {
@@ -484,7 +544,8 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
 }
 
 void PlaterScenePresenter::on_volume_removed(
-    Domain::SelectionId project_id, const Domain::ElementRefs& volumes
+    Domain::SelectionId project_id,
+    const Domain::ElementRefs& volumes
 )
 {
     remove_children<SceneNodeTag, Domain::ElementRef>(
@@ -498,13 +559,16 @@ void PlaterScenePresenter::on_volume_removed(
     invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements,
-    Biz::Scene::TransformState state)
+void PlaterScenePresenter::on_volume_transformed(
+    Domain::SelectionId project_id,
+    const Domain::ElementRefs& elements,
+    Biz::Scene::TransformState state
+)
 {
     const Domain::BedInstance& bed_inst = selected_bed_instance();
-    const Domain::Model* model = &m_project_interactor.selected_project().model();
+    const Domain::Model* model          = &m_project_interactor.selected_project().model();
 
-    auto& scene = m_projects[m_selected_project_id].scene();
+    auto& scene      = m_projects[m_selected_project_id].scene();
     const auto& proj = m_workbench.project(project_id);
     Scene::visit(scene.root(), [&](Scene::Node& n) {
         const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
@@ -519,16 +583,29 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
                         const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
                         if (tag != nullptr && n.has_render_component()) {
                             if (tag->object_id == t->object_id && tag->volume_id == t->volume_id) {
-                                const auto* obj = Domain::find_by_id<Domain::ModelObject>(model->objects, tag->object_id);
-                                const auto* inst = Domain::find_by_id<Domain::ModelInstance>(obj->instances, tag->instance_id);
-                                bool shadows = bed_inst.contains(Biz::Algorithms::BoundingBox::to_2d(transformed(vol->mesh().bounding_box(), inst->get_matrix() * vol->get_matrix())));
-                                n.render_component()->set_shadows(shadows ? Render::Shadows{ true, true } : Render::Shadows{ false, false });
+                                const auto* obj = Domain::find_by_id<Domain::ModelObject>(
+                                    model->objects,
+                                    tag->object_id
+                                );
+                                const auto* inst = Domain::find_by_id<Domain::ModelInstance>(
+                                    obj->instances,
+                                    tag->instance_id
+                                );
+                                bool shadows = bed_inst.contains(
+                                    Biz::Algorithms::BoundingBox::to_2d(transformed(
+                                        vol->mesh().bounding_box(),
+                                        inst->get_matrix() * vol->get_matrix()
+                                    ))
+                                );
+                                n.render_component()->set_shadows(
+                                    shadows ? Render::Shadows{true, true} :
+                                              Render::Shadows{false, false}
+                                );
                             }
                         }
                     });
-                }
-                else
-                    n.render_component()->set_shadows(Render::Shadows{ false, false });
+                } else
+                    n.render_component()->set_shadows(Render::Shadows{false, false});
             }
         }
     });
@@ -537,9 +614,12 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
         invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances)
+void PlaterScenePresenter::on_bed_instance_added(
+    Domain::SelectionId project_id,
+    const Domain::BedRefs& instances
+)
 {
-    auto& scn = scene();
+    auto& scn        = scene();
     const auto& proj = m_workbench.project(project_id);
 
     for (auto& instance : instances) {
@@ -550,8 +630,14 @@ void PlaterScenePresenter::on_bed_instance_added(Domain::SelectionId project_id,
         Scene::BedNodeTag tag = {instance.config_container_id, instance.instance_id};
 
         Scene::NodeBuilder builder(scn);
-        Scene::BedNodeBuilder::bed_node(builder, inst, tag, m_device, m_projects[project_id],
-            int(PlaterSceneLayer::DocumentObjects));
+        Scene::BedNodeBuilder::bed_node(
+            builder,
+            inst,
+            tag,
+            m_device,
+            m_projects[project_id],
+            int(PlaterSceneLayer::DocumentObjects)
+        );
 
         scn.add_child(builder.build().release());
     }
@@ -562,13 +648,17 @@ void PlaterScenePresenter::on_bed_instance_added(Domain::SelectionId project_id,
     invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances)
+void PlaterScenePresenter::on_bed_instance_removed(
+    Domain::SelectionId project_id,
+    const Domain::BedRefs& instances
+)
 {
     remove_children<Scene::BedNodeTag, Domain::BedRef>(
         scene(),
         instances,
         [](const Scene::BedNodeTag& tag, const Domain::BedRef& br) {
-            return tag.config_container_id == br.config_container_id && tag.instance_id == br.instance_id;
+            return tag.config_container_id == br.config_container_id
+                && tag.instance_id == br.instance_id;
         }
     );
 
@@ -578,25 +668,34 @@ void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_i
     invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, 
-    Biz::Scene::TransformState state)
+void PlaterScenePresenter::on_bed_instance_transformed(
+    Domain::SelectionId project_id,
+    const Domain::BedRefs& instances,
+    Biz::Scene::TransformState state
+)
 {
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_wipe_tower_added(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id)
+void PlaterScenePresenter::on_wipe_tower_added(Domain::SelectionId project_id, Domain::SelectionId wipe_tower_id)
 {
     invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_wipe_tower_removed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id)
+void PlaterScenePresenter::on_wipe_tower_removed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId wipe_tower_id
+)
 {
     invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_wipe_tower_transformed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id,
-    Biz::Scene::TransformState state)
+void PlaterScenePresenter::on_wipe_tower_transformed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId wipe_tower_id,
+    Biz::Scene::TransformState state
+)
 {
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);

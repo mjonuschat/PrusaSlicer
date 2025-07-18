@@ -14,11 +14,15 @@ namespace Slic3r::Domain {
 using ModelInstanceList = std::vector<ModelInstance*>;
 
 class Bed;
+
 struct BedInstance : public ObjectBase
 {
     explicit BedInstance(const Bed& bed) : bed(bed) {}
 
-    const Transform3d& matrix() const { return transformation.get_matrix(); }
+    const Transform3d& matrix() const
+    {
+        return transformation.get_matrix();
+    }
 
     bool contains(const BoundingBox2d& bounds) const
     {
@@ -26,14 +30,18 @@ struct BedInstance : public ObjectBase
         return bed.contains(Vec2d{pos.x(), pos.y()}, bounds);
     }
 
-    std::string label() const { return std::to_string(id().id); }
+    std::string label() const
+    {
+        return std::to_string(index);
+    }
 
     const Bed& bed;
+    size_t index{0};
     Transformation transformation;
     ModelInstanceList model_instances;
-    bool active{ false };
-    bool contour_enabled{ false };
-    bool print_volume_enabled{ false };
+    bool active{false};
+    bool contour_enabled{false};
+    bool print_volume_enabled{false};
     std::optional<ModelWipeTower> wipe_tower;
     std::optional<CustomGCode::Info> custom_gcode;
 };

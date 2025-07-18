@@ -110,7 +110,7 @@ KeepEmptyLines:
   AtStartOfBlock: false
   AtStartOfFile: false
 KeepFormFeed: false
-LambdaBodyIndentation: OuterScope
+LambdaBodyIndentation: Signature
 LineEnding: LF
 MacroBlockBegin: ''
 MacroBlockEnd:   ''
