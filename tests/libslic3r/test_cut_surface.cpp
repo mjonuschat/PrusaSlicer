@@ -2,9 +2,11 @@
 
 #include <Slic3r/Biz/CGAL/Algorithms/CutSurface.hpp>
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp" // its_make_cube + its_merge
-#include "libslic3r/Emboss.hpp"
+#include "Slic3r/Biz/Emboss/Emboss.hpp"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
+using namespace Slic3r::Domain;
 TEST_CASE("Cut character from surface", "[Emboss]")
 {
     std::string font_path = std::string(TEST_DATA_DIR) +

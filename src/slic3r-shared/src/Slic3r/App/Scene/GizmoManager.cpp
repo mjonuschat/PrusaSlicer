@@ -231,11 +231,7 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
 
 // TODO: remove this when gizmo rendering will be fully implemented
 void GizmoManager::render_imgui() {
-    if (current_tool_type() == ToolType::Simplify) {        
-        if (auto simplify_gizmo = dynamic_cast<Plater::SimplifyGizmo*>(current_context().active_tool);
-            simplify_gizmo!=nullptr) 
-            simplify_gizmo->render_imgui();
-    } else if (current_tool_type() == ToolType::Text) {
+    if (current_tool_type() == ToolType::Text) {
         if (auto* text_gizmo = dynamic_cast<Plater::TextGizmo*>(current_context().active_tool);
             text_gizmo != nullptr)
             text_gizmo->render_imgui();

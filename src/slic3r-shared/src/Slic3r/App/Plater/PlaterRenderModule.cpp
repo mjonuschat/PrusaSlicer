@@ -565,8 +565,14 @@ void PlaterRenderModule::init_scene_layout()
     );
 
     m_toolbar_text = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle, Render::Icon::ToolbarEllipsis, "Text", "T",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Text); }}, 
+        ToolbarID::Middle,
+        Render::Icon::ToolbarText,
+        "Text",
+        "T",
+        {.action =
+             [this]() {
+                 toggle_activate_tool(Scene::ToolType::Text);
+             }},
         m_text_gizmo
     );
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
@@ -866,6 +872,7 @@ void PlaterRenderModule::init_gizmos()
         *m_font_manager,
         *m_gizmo_manager
     );
+    m_text_gizmo = &m_gizmo_manager->add_tool_gizmo<TextGizmo>();
     m_measure_gizmo = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(
         *m_device,
         m_project_interactor,

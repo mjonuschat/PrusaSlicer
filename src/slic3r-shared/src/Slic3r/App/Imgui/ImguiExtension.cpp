@@ -603,8 +603,18 @@ ScopedStyleColors::~ScopedStyleColors()
     ImGui::PopStyleColor(m_count);
 }
 
-ImVec2 calc_text_size(std::string_view text, bool hide_text_after_double_hash=false, float wrap_width=-1.f){
-    return ImGui::CalcTextSize(text.data(), text.data() + text.length(), hide_text_after_double_hash, wrap_width);
+ImVec2 calc_text_size(
+    std::string_view text,
+    bool hide_text_after_double_hash = false,
+    float wrap_width                 = -1.f
+)
+{
+    return ImGui::CalcTextSize(
+        text.data(),
+        text.data() + text.length(),
+        hide_text_after_double_hash,
+        wrap_width
+    );
 }
 
 std::string trunc(const std::string& text, float width, const char* tail)

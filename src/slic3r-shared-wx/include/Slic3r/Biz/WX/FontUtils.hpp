@@ -21,33 +21,34 @@ namespace Slic3r::Biz::WX {
 
 // check if exist file for wxFont
 // return pointer on data or nullptr when can't load
-bool can_load(const wxFont &font);
+bool can_load(const wxFont& font);
 std::vector<wxString> validate_fonts(
     wxArrayString& facenames,
     Domain::FontList& valid,
     std::vector<wxString>& bad,
-    const wxFontEncoding encoding);
+    const wxFontEncoding encoding
+);
 
 // os specific load of wxFont
-std::unique_ptr<Domain::FontFile> create_font_file(const wxFont &font);
+std::unique_ptr<Domain::FontFile> create_font_file(const wxFont& font);
 
 Domain::FontDescriptor::Type get_current_type();
 Domain::FontDescriptor create_descriptor(const wxFont& font);
 Domain::FontDescriptor create_descriptor(const wxFont& font, const std::string& name);
 
-std::string get_human_readable_name(const wxFont &font);
+std::string get_human_readable_name(const wxFont& font);
 
 // serialize / deserialize font
-std::string store_wxFont(const wxFont &font);
-wxFont load_wxFont(const std::string &font_descriptor);
+std::string store_wxFont(const wxFont& font);
+wxFont load_wxFont(const std::string& font_descriptor);
 
 // Try to create similar font, loaded from 3mf from different Computer
-wxFont create_wxFont(const Domain::EmbossStyle &style);
+wxFont create_wxFont(const Domain::EmbossStyle& style);
 // update font property by wxFont - without emboss depth and font size
-void update_property(Domain::FontProp &font_prop, const wxFont &font);
+void update_property(Domain::FontProp& font_prop, const wxFont& font);
 
-bool is_italic(const wxFont &font);
-bool is_bold(const wxFont &font);
+bool is_italic(const wxFont& font);
+bool is_bold(const wxFont& font);
 
 /// <summary>
 /// Set italic into wx font
@@ -55,9 +56,9 @@ bool is_bold(const wxFont &font);
 /// To not load font file twice on success is font_file returned.
 /// </summary>
 /// <param name="font">wx descriptor of font</param>
-/// <param name="font_file">file described in wx font</param> 
+/// <param name="font_file">file described in wx font</param>
 /// <returns>New created font fileon success otherwise nullptr</returns>
-std::unique_ptr<Domain::FontFile> set_italic(wxFont &font, const Domain::FontFile &prev_font_file);
+std::unique_ptr<Domain::FontFile> set_italic(wxFont& font, const Domain::FontFile& prev_font_file);
 
 /// <summary>
 /// Set boldness into wx font
@@ -65,10 +66,11 @@ std::unique_ptr<Domain::FontFile> set_italic(wxFont &font, const Domain::FontFil
 /// To not load font file twice on success is font_file returned.
 /// </summary>
 /// <param name="font">wx descriptor of font</param>
-/// <param name="font_file">file described in wx font</param> 
+/// <param name="font_file">file described in wx font</param>
 /// <returns>New created font fileon success otherwise nullptr</returns>
-std::unique_ptr<Domain::FontFile> set_bold(wxFont &font, const Domain::FontFile &font_file);
+std::unique_ptr<Domain::FontFile> set_bold(wxFont& font, const Domain::FontFile& font_file);
 
+// clang-format off
 // convert wxFont types to string and vice versa
 using TypeToFamily = boost::bimap<wxFontFamily, std::string_view>;
 const TypeToFamily type_to_family =
@@ -101,6 +103,7 @@ const TypeToWeight type_to_weight =
     (wxFONTWEIGHT_EXTRABOLD, "extraBold")
     (wxFONTWEIGHT_HEAVY, "heavy")
     (wxFONTWEIGHT_EXTRAHEAVY, "extraHeavy");
+// clang-format on
 
 } // namespace Slic3r::Biz::WX
 #endif // slic3r_WxFontUtils_hpp_

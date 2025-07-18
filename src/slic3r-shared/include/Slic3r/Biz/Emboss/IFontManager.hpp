@@ -1,13 +1,14 @@
 #pragma once
 #include <memory>
 #include "Slic3r/Domain/TextConfiguration.hpp" // FontList + FontDescriptor
-#include "Slic3r/Domain/FontFile.hpp" 
+#include "Slic3r/Domain/FontFile.hpp"
 
 namespace Slic3r::Biz::Emboss {
 /// <summary>
 /// Provide access to font
 /// </summary>
-class IFontManager {
+class IFontManager
+{
 public:
     virtual ~IFontManager() = default;
 
@@ -36,8 +37,9 @@ public:
 
     /// <summary>
     /// create cca 5 descriptors for OS favorit fonts
+    /// NOTE: (not CONST) internaly call get_fonts()
     /// </summary>
     /// <returns>Favorit fonts</returns>
-    virtual Domain::FontList create_favorit() const = 0;
+    virtual Domain::FontList create_favorit() = 0;
 };
 } // namespace Slic3r::Biz::Emboss

@@ -35,10 +35,9 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
     m_editor = content()->emplace_back<InputTextField>();
     m_editor->set_height(100); // set multi-line mode
     m_editor->set_flags(m_editor->flags() | ImGuiInputTextFlags_Multiline);
-    m_editor->callbacks().text_changed = [this]() {
-        if (m_callbacks.editor_text_changed) {
-            m_callbacks.editor_text_changed(m_editor->text());
-        }
+    m_editor->callbacks().text_edited = [this]() {
+        if (m_callbacks.text_changed)
+            m_callbacks.text_changed(m_editor->text());        
     };
 
     m_editor_warning = m_editor->emplace_back<LayoutButton>(
@@ -182,7 +181,7 @@ otherwise, the whole text has the same orthogonal projection.")
     add_row("", m_per_glyph.release(), m_advanced_panel, _u8L("Revert Transformation per glyph."));
 
     m_align                            = Passthrough{std::make_unique<AlignmentButtons>()};
-    m_align->callbacks().align_changed = [this](const Domain::TextAlign& align) {
+    m_align->callbacks().align_changed = [this](const Domain::FontProp::Align& align) {
         if (m_callbacks.align_changed)
             m_callbacks.align_changed(align);
     };
@@ -382,6 +381,11 @@ void TextDialog::update_units(bool use_inches)
     }
 }
 
+void TextDialog::set_editor(const std::string& text)
+{
+    m_editor->set_text(text);
+}
+
 void TextDialog::set_presets(const std::vector<std::string>& presets, int selected_preset_id)
 {
     m_preset->set_items(presets);
@@ -449,9 +453,10 @@ void TextDialog::set_per_glyph(bool checked, bool default_checked)
     m_per_glyph->set_default(default_checked);
 }
 
-void TextDialog::set_align(const Domain::TextAlign& align)
+void TextDialog::set_align(const Domain::FontProp::Align& align, const Domain::FontProp::Align& align_default)
 {
     m_align->set_align(align);
+    m_align->set_default(align_default);
 }
 
 static void set_slider(SliderWithInput* slider, double max_val, double step, double value, double default_value)

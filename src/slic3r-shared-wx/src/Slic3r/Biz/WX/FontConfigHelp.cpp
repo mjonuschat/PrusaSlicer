@@ -46,10 +46,10 @@ std::string get_font_path(const wxFont& font, bool reload_fonts)
     if (fc == nullptr)
         return "";
 
-    wxString fontDesc = font.GetNativeFontInfoUserDesc();
-    wxString faceName = font.GetFaceName();
+    wxString fontDesc                       = font.GetNativeFontInfoUserDesc();
+    wxString faceName                       = font.GetFaceName();
     const wxScopedCharBuffer faceNameBuffer = faceName.ToUTF8();
-    const char* fontFamily = faceNameBuffer;
+    const char* fontFamily                  = faceNameBuffer;
 
     // Check font slant
     int slant = FC_SLANT_ROMAN;

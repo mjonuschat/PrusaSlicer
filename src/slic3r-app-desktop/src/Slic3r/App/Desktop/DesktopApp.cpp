@@ -238,6 +238,7 @@ bool DesktopApp::OnInit()
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench, platform_services.main_thread_dispatcher(), *thumbnail_image_generator);
 
     std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(*m_project_interactor);
+    platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
     std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
 
     auto& preset_interactor = m_project_interactor->preset_interactor();

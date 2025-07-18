@@ -35,7 +35,7 @@ public:
      */
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void register_commands(Platform::CommandRegistry& registry) override;
-    
+
     /**
      * @name Implementation of IToolGizmo interface
      */
@@ -68,6 +68,8 @@ private:
     Biz::Emboss::StyleManager m_style_manager;
 
     Domain::TextConfiguration m_text_configuration = {};
+    Domain::EmbossProjection m_projection = {};
+    
     Yoga::Passthrough<TextDialog> m_dialog;
     Biz::ProjectInteractor& m_project_interactor;
 };

@@ -114,8 +114,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/EdgeGrid.hpp
     src/libslic3r/ElephantFootCompensation.cpp
     src/libslic3r/ElephantFootCompensation.hpp
-    src/libslic3r/Emboss.cpp
-    src/libslic3r/Emboss.hpp
     src/libslic3r/ExPolygon.cpp
     src/libslic3r/ExPolygon.hpp
     src/libslic3r/ExPolygonSerialize.hpp

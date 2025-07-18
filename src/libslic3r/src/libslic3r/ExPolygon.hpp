@@ -46,38 +46,6 @@ void medial_axis(const ExPolygon& expolygon, double min_width, double max_width,
 void medial_axis(const ExPolygon& expolygon, double min_width, double max_width, Polylines* polylines);
 Polylines medial_axis(const ExPolygon& expolygon, double min_width, double max_width);
 
-// Line is from point index(see to_points) to next point.
-// Next point of last point in polygon is first polygon point.
-inline Linesf to_linesf(const ExPolygons &src, uint32_t count_lines = 0)
-{
-    using namespace Slic3r::Biz;
-
-    assert(count_lines == 0 || count_lines == Algorithms::ExPolygon::count_points(src));
-    if (count_lines == 0) count_lines = Algorithms::ExPolygon::count_points(src);
-    Linesf lines;
-    lines.reserve(count_lines);
-    Vec2d prev_pd;
-    auto to_lines = [&lines, &prev_pd](const Points &pts) {
-        assert(pts.size() >= 3);
-        if (pts.size() < 2) return;
-        bool is_first = true;
-        for (const Point &p : pts) { 
-            Vec2d pd = p.cast<double>();
-            if (is_first) is_first = false;
-            else lines.emplace_back(prev_pd, pd);
-            prev_pd = pd;
-        }
-        lines.emplace_back(prev_pd, pts.front().cast<double>());
-    };
-    for (const ExPolygon& expoly: src) {
-        to_lines(expoly.contour.points);
-        for (const Polygon &hole : expoly.holes) 
-            to_lines(hole.points);
-    }
-    assert(lines.size() == count_lines);
-    return lines;
-}
-
 inline Linesf to_unscaled_linesf(const ExPolygons &src)
 {
     using namespace Slic3r::Biz;

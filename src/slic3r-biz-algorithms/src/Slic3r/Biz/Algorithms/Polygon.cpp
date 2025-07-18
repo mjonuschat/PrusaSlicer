@@ -321,6 +321,24 @@ Domain::Lines to_lines(const Domain::Polygons& polygons)
     return lines;
 }
 
+Domain::Polygons to_polygons(const Domain::VecOfPoints& paths)
+{
+    Domain::Polygons out;
+    out.reserve(paths.size());
+    for (const Domain::Points& path : paths)
+        out.emplace_back(path);
+    return out;
+}
+
+Domain::Polygons to_polygons(Domain::VecOfPoints&& paths)
+{
+    Domain::Polygons out;
+    out.reserve(paths.size());
+    for (Domain::Points& path : paths)
+        out.emplace_back(std::move(path));
+    return out;
+}
+
 Domain::BoundingBox2crd get_extents(const Domain::Polygon& polygon)
 {
     return BoundingBox::construct(polygon.points);

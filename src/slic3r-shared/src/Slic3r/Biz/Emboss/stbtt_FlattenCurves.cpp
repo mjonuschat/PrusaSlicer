@@ -7,6 +7,9 @@
 #define STBTT_malloc(x, u) ((void) (u), malloc(x))
 #define STBTT_free(x, u) ((void) (u), free(x))
 
+// Code is copied(see .hpp file)
+// clang-format off
+
 namespace Slic3r::Biz::Emboss {
 namespace {
 // next 146 lines are copied from line 3561 to line 3707
@@ -196,3 +199,5 @@ error:
    return NULL;
 }
 } // namespace Slic3r::Biz::Emboss
+
+// clang-format on

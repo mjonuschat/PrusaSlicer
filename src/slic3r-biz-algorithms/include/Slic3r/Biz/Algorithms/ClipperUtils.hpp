@@ -62,206 +62,205 @@ enum class ApplySafetyOffset {
     Yes
 };
 
-namespace ClipperUtils {
-    class PathsProviderIteratorBase {
+class PathsProviderIteratorBase {
+public:
+    using value_type        = Domain::Points;
+    using difference_type   = std::ptrdiff_t;
+    using pointer           = const Domain::Points*;
+    using reference         = const Domain::Points&;
+    using iterator_category = std::input_iterator_tag;
+};
+
+class EmptyPathsProvider {
+public:
+    struct iterator : public PathsProviderIteratorBase {
     public:
-        using value_type        = Domain::Points;
-        using difference_type   = std::ptrdiff_t;
-        using pointer           = const Domain::Points*;
-        using reference         = const Domain::Points&;
-        using iterator_category = std::input_iterator_tag;
+        const Domain::Points& operator*() { assert(false); return s_empty_points; }
+        // all iterators point to end.
+        constexpr bool operator==(const iterator &rhs) const { return true; }
+        constexpr bool operator!=(const iterator &rhs) const { return false; }
+        const Domain::Points& operator++(int) { assert(false); return s_empty_points; }
+        const iterator& operator++() { assert(false); return *this; }
     };
 
-    class EmptyPathsProvider {
+    constexpr EmptyPathsProvider() {}
+    static constexpr iterator cend()   throw() { return iterator{}; }
+    static constexpr iterator end()    throw() { return cend(); }
+    static constexpr iterator cbegin() throw() { return cend(); }
+    static constexpr iterator begin()  throw() { return cend(); }
+    static constexpr size_t   size()   throw() { return 0; }
+
+    static Domain::Points s_empty_points;
+};
+
+class SinglePathProvider {
+public:
+    SinglePathProvider(const Domain::Points &points) : m_points(points) {}
+
+    struct iterator : public PathsProviderIteratorBase {
     public:
-        struct iterator : public PathsProviderIteratorBase {
-        public:
-            const Domain::Points& operator*() { assert(false); return s_empty_points; }
-            // all iterators point to end.
-            constexpr bool operator==(const iterator &rhs) const { return true; }
-            constexpr bool operator!=(const iterator &rhs) const { return false; }
-            const Domain::Points& operator++(int) { assert(false); return s_empty_points; }
-            const iterator& operator++() { assert(false); return *this; }
-        };
-
-        constexpr EmptyPathsProvider() {}
-        static constexpr iterator cend()   throw() { return iterator{}; }
-        static constexpr iterator end()    throw() { return cend(); }
-        static constexpr iterator cbegin() throw() { return cend(); }
-        static constexpr iterator begin()  throw() { return cend(); }
-        static constexpr size_t   size()   throw() { return 0; }
-
-        static Domain::Points s_empty_points;
-    };
-
-    class SinglePathProvider {
-    public:
-        SinglePathProvider(const Domain::Points &points) : m_points(points) {}
-
-        struct iterator : public PathsProviderIteratorBase {
-        public:
-            explicit iterator(const Domain::Points &points) : m_ptr(&points) {}
-            const Domain::Points& operator*() const { return *m_ptr; }
-            bool operator==(const iterator &rhs) const { return m_ptr == rhs.m_ptr; }
-            bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
-            const Domain::Points& operator++(int) { auto out = m_ptr; m_ptr = &s_end; return *out; }
-            iterator& operator++() { m_ptr = &s_end; return *this; }
-        private:
-            const Domain::Points *m_ptr;
-        };
-
-        iterator cbegin() const { return iterator(m_points); }
-        iterator begin()  const { return this->cbegin(); }
-        iterator cend()   const { return iterator(s_end); }
-        iterator end()    const { return this->cend(); }
-        size_t   size()   const { return 1; }
-
+        explicit iterator(const Domain::Points &points) : m_ptr(&points) {}
+        const Domain::Points& operator*() const { return *m_ptr; }
+        bool operator==(const iterator &rhs) const { return m_ptr == rhs.m_ptr; }
+        bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
+        const Domain::Points& operator++(int) { auto out = m_ptr; m_ptr = &s_end; return *out; }
+        iterator& operator++() { m_ptr = &s_end; return *this; }
     private:
-        const  Domain::Points &m_points;
-        static Domain::Points  s_end;
+        const Domain::Points *m_ptr;
     };
 
-    template<typename PathType>
-    class PathsProvider {
+    iterator cbegin() const { return iterator(m_points); }
+    iterator begin()  const { return this->cbegin(); }
+    iterator cend()   const { return iterator(s_end); }
+    iterator end()    const { return this->cend(); }
+    size_t   size()   const { return 1; }
+
+private:
+    const  Domain::Points &m_points;
+    static Domain::Points  s_end;
+};
+
+template<typename PathType>
+class PathsProvider {
+public:
+    PathsProvider(const std::vector<PathType> &paths) : m_paths(paths) {}
+
+    struct iterator : public PathsProviderIteratorBase {
     public:
-        PathsProvider(const std::vector<PathType> &paths) : m_paths(paths) {}
-
-        struct iterator : public PathsProviderIteratorBase {
-        public:
-            explicit iterator(typename std::vector<PathType>::const_iterator it) : m_it(it) {}
-            const Domain::Points& operator*() const { return *m_it; }
-            bool operator==(const iterator &rhs) const { return m_it == rhs.m_it; }
-            bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
-            const Domain::Points& operator++(int) { return *(m_it ++); }
-            iterator& operator++() { ++ m_it; return *this; }
-        private:
-            typename std::vector<PathType>::const_iterator m_it;
-        };
-
-        iterator cbegin() const { return iterator(m_paths.begin()); }
-        iterator begin()  const { return this->cbegin(); }
-        iterator cend()   const { return iterator(m_paths.end()); }
-        iterator end()    const { return this->cend(); }
-        size_t   size()   const { return m_paths.size(); }
-
+        explicit iterator(typename std::vector<PathType>::const_iterator it) : m_it(it) {}
+        const Domain::Points& operator*() const { return *m_it; }
+        bool operator==(const iterator &rhs) const { return m_it == rhs.m_it; }
+        bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
+        const Domain::Points& operator++(int) { return *(m_it ++); }
+        iterator& operator++() { ++ m_it; return *this; }
     private:
-        const std::vector<PathType> &m_paths;
+        typename std::vector<PathType>::const_iterator m_it;
     };
 
-    template<typename MultiPointsType>
-    class MultiPointsProvider {
+    iterator cbegin() const { return iterator(m_paths.begin()); }
+    iterator begin()  const { return this->cbegin(); }
+    iterator cend()   const { return iterator(m_paths.end()); }
+    iterator end()    const { return this->cend(); }
+    size_t   size()   const { return m_paths.size(); }
+
+private:
+    const std::vector<PathType> &m_paths;
+};
+
+template<typename MultiPointsType>
+class MultiPointsProvider {
+public:
+    MultiPointsProvider(const MultiPointsType &multipoints) : m_multipoints(multipoints) {}
+
+    struct iterator : public PathsProviderIteratorBase {
     public:
-        MultiPointsProvider(const MultiPointsType &multipoints) : m_multipoints(multipoints) {}
-
-        struct iterator : public PathsProviderIteratorBase {
-        public:
-            explicit iterator(typename MultiPointsType::const_iterator it) : m_it(it) {}
-            const Domain::Points& operator*() const { return m_it->points; }
-            bool operator==(const iterator &rhs) const { return m_it == rhs.m_it; }
-            bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
-            const Domain::Points& operator++(int) { return (m_it ++)->points; }
-            iterator& operator++() { ++ m_it; return *this; }
-        private:
-            typename MultiPointsType::const_iterator m_it;
-        };
-
-        iterator cbegin() const { return iterator(m_multipoints.begin()); }
-        iterator begin()  const { return this->cbegin(); }
-        iterator cend()   const { return iterator(m_multipoints.end()); }
-        iterator end()    const { return this->cend(); }
-        size_t   size()   const { return m_multipoints.size(); }
-
+        explicit iterator(typename MultiPointsType::const_iterator it) : m_it(it) {}
+        const Domain::Points& operator*() const { return m_it->points; }
+        bool operator==(const iterator &rhs) const { return m_it == rhs.m_it; }
+        bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
+        const Domain::Points& operator++(int) { return (m_it ++)->points; }
+        iterator& operator++() { ++ m_it; return *this; }
     private:
-        const MultiPointsType &m_multipoints;
+        typename MultiPointsType::const_iterator m_it;
     };
 
-    using PolygonsProvider  = MultiPointsProvider<Domain::Polygons>;
-    using PolylinesProvider = MultiPointsProvider<Domain::Polylines>;
+    iterator cbegin() const { return iterator(m_multipoints.begin()); }
+    iterator begin()  const { return this->cbegin(); }
+    iterator cend()   const { return iterator(m_multipoints.end()); }
+    iterator end()    const { return this->cend(); }
+    size_t   size()   const { return m_multipoints.size(); }
 
-    struct ExPolygonProvider {
-        ExPolygonProvider(const Domain::ExPolygon &expoly) : m_expoly(expoly) {}
+private:
+    const MultiPointsType &m_multipoints;
+};
 
-        struct iterator : public PathsProviderIteratorBase {
-        public:
-            explicit iterator(const Domain::ExPolygon &expoly, int idx) : m_expoly(expoly), m_idx(idx) {}
-            const Domain::Points& operator*() const { return (m_idx == 0) ? m_expoly.contour.points : m_expoly.holes[m_idx - 1].points; }
-            bool operator==(const iterator &rhs) const { assert(m_expoly == rhs.m_expoly); return m_idx == rhs.m_idx; }
-            bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
-            const Domain::Points& operator++(int) { const Domain::Points &out = **this; ++ m_idx; return out; }
-            iterator& operator++() { ++ m_idx; return *this; }
-        private:
-            const Domain::ExPolygon &m_expoly;
-            int              m_idx;
-        };
+using PolygonsProvider  = MultiPointsProvider<Domain::Polygons>;
+using PolylinesProvider = MultiPointsProvider<Domain::Polylines>;
 
-        iterator cbegin() const { return iterator(m_expoly, 0); }
-        iterator begin()  const { return this->cbegin(); }
-        iterator cend()   const { return iterator(m_expoly, m_expoly.holes.size() + 1); }
-        iterator end()    const { return this->cend(); }
-        size_t   size()   const { return m_expoly.holes.size() + 1; }
+struct ExPolygonProvider {
+    ExPolygonProvider(const Domain::ExPolygon &expoly) : m_expoly(expoly) {}
 
+    struct iterator : public PathsProviderIteratorBase {
+    public:
+        explicit iterator(const Domain::ExPolygon &expoly, int idx) : m_expoly(expoly), m_idx(idx) {}
+        const Domain::Points& operator*() const { return (m_idx == 0) ? m_expoly.contour.points : m_expoly.holes[m_idx - 1].points; }
+        bool operator==(const iterator &rhs) const { assert(m_expoly == rhs.m_expoly); return m_idx == rhs.m_idx; }
+        bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
+        const Domain::Points& operator++(int) { const Domain::Points &out = **this; ++ m_idx; return out; }
+        iterator& operator++() { ++ m_idx; return *this; }
     private:
         const Domain::ExPolygon &m_expoly;
+        int              m_idx;
     };
 
-    struct ExPolygonsProvider {
-        ExPolygonsProvider(const Domain::ExPolygons &expolygons) : m_expolygons(expolygons) {
-            m_size = 0;
-            for (const Domain::ExPolygon &expoly : expolygons)
-                m_size += expoly.holes.size() + 1;
+    iterator cbegin() const { return iterator(m_expoly, 0); }
+    iterator begin()  const { return this->cbegin(); }
+    iterator cend()   const { return iterator(m_expoly, m_expoly.holes.size() + 1); }
+    iterator end()    const { return this->cend(); }
+    size_t   size()   const { return m_expoly.holes.size() + 1; }
+
+private:
+    const Domain::ExPolygon &m_expoly;
+};
+
+struct ExPolygonsProvider {
+    ExPolygonsProvider(const Domain::ExPolygons &expolygons) : m_expolygons(expolygons) {
+        m_size = 0;
+        for (const Domain::ExPolygon &expoly : expolygons)
+            m_size += expoly.holes.size() + 1;
+    }
+
+    struct iterator : public PathsProviderIteratorBase {
+    public:
+        explicit iterator(Domain::ExPolygons::const_iterator it) : m_it_expolygon(it), m_idx_contour(0) {}
+        const Domain::Points& operator*() const { return (m_idx_contour == 0) ? m_it_expolygon->contour.points : m_it_expolygon->holes[m_idx_contour - 1].points; }
+        bool operator==(const iterator &rhs) const { return m_it_expolygon == rhs.m_it_expolygon && m_idx_contour == rhs.m_idx_contour; }
+        bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
+        iterator& operator++() { 
+            if (++ m_idx_contour == m_it_expolygon->holes.size() + 1) {
+                ++ m_it_expolygon;
+                m_idx_contour = 0;
+            }
+            return *this;
         }
-
-        struct iterator : public PathsProviderIteratorBase {
-        public:
-            explicit iterator(Domain::ExPolygons::const_iterator it) : m_it_expolygon(it), m_idx_contour(0) {}
-            const Domain::Points& operator*() const { return (m_idx_contour == 0) ? m_it_expolygon->contour.points : m_it_expolygon->holes[m_idx_contour - 1].points; }
-            bool operator==(const iterator &rhs) const { return m_it_expolygon == rhs.m_it_expolygon && m_idx_contour == rhs.m_idx_contour; }
-            bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
-            iterator& operator++() { 
-                if (++ m_idx_contour == m_it_expolygon->holes.size() + 1) {
-                    ++ m_it_expolygon;
-                    m_idx_contour = 0;
-                }
-                return *this;
-            }
-            const Domain::Points& operator++(int) { 
-                const Domain::Points &out = **this;
-                ++ (*this);
-                return out;
-            }
-        private:
-            Domain::ExPolygons::const_iterator  m_it_expolygon;
-            size_t                      m_idx_contour;
-        };
-
-        iterator cbegin() const { return iterator(m_expolygons.cbegin()); }
-        iterator begin()  const { return this->cbegin(); }
-        iterator cend()   const { return iterator(m_expolygons.cend()); }
-        iterator end()    const { return this->cend(); }
-        size_t   size()   const { return m_size; }
-
+        const Domain::Points& operator++(int) { 
+            const Domain::Points &out = **this;
+            ++ (*this);
+            return out;
+        }
     private:
-        const Domain::ExPolygons &m_expolygons;
-        size_t            m_size;
+        Domain::ExPolygons::const_iterator  m_it_expolygon;
+        size_t                      m_idx_contour;
     };
 
-    // For ClipperLib with Z coordinates.
-    using ZPoint = Domain::Vec3crd;
-    using ZPoints = std::vector<ZPoint>;
+    iterator cbegin() const { return iterator(m_expolygons.cbegin()); }
+    iterator begin()  const { return this->cbegin(); }
+    iterator cend()   const { return iterator(m_expolygons.cend()); }
+    iterator end()    const { return this->cend(); }
+    size_t   size()   const { return m_size; }
 
-    // Clip source polygon to be used as a clipping polygon with a bouding box around the source (to be clipped) polygon.
-    // Useful as an optimization for expensive ClipperLib operations, for example when clipping source polygons one by one
-    // with a set of polygons covering the whole layer below.
-    void                    clip_clipper_polygon_with_subject_bbox(const Domain::Points &src, const Domain::BoundingBox2crd &bbox, Domain::Points &out);
-    void                    clip_clipper_polygon_with_subject_bbox(const ZPoints &src, const Domain::BoundingBox2crd &bbox, ZPoints &out);
-    [[nodiscard]] Domain::Points    clip_clipper_polygon_with_subject_bbox(const Domain::Points &src, const Domain::BoundingBox2crd &bbox);
-    [[nodiscard]] ZPoints   clip_clipper_polygon_with_subject_bbox(const ZPoints &src, const Domain::BoundingBox2crd &bbox);
-    void                    clip_clipper_polygon_with_subject_bbox(const Domain::Polygon &src, const Domain::BoundingBox2crd &bbox, Domain::Polygon &out);
-    [[nodiscard]] Domain::Polygon   clip_clipper_polygon_with_subject_bbox(const Domain::Polygon &src, const Domain::BoundingBox2crd &bbox);
-    [[nodiscard]] Domain::Polygons  clip_clipper_polygons_with_subject_bbox(const Domain::Polygons &src, const Domain::BoundingBox2crd &bbox);
-    [[nodiscard]] Domain::Polygons  clip_clipper_polygons_with_subject_bbox(const Domain::ExPolygon &src, const Domain::BoundingBox2crd &bbox);
-    [[nodiscard]] Domain::Polygons  clip_clipper_polygons_with_subject_bbox(const Domain::ExPolygons &src, const Domain::BoundingBox2crd &bbox);
-}
+private:
+    const Domain::ExPolygons &m_expolygons;
+    size_t            m_size;
+};
+
+// For ClipperLib with Z coordinates.
+using ZPoint = Domain::Vec3crd;
+using ZPoints = std::vector<ZPoint>;
+
+// Clip source polygon to be used as a clipping polygon with a bouding box around the source (to be clipped) polygon.
+// Useful as an optimization for expensive ClipperLib operations, for example when clipping source polygons one by one
+// with a set of polygons covering the whole layer below.
+void                    clip_clipper_polygon_with_subject_bbox(const Domain::Points &src, const Domain::BoundingBox2crd &bbox, Domain::Points &out);
+void                    clip_clipper_polygon_with_subject_bbox(const ZPoints &src, const Domain::BoundingBox2crd &bbox, ZPoints &out);
+[[nodiscard]] Domain::Points    clip_clipper_polygon_with_subject_bbox(const Domain::Points &src, const Domain::BoundingBox2crd &bbox);
+[[nodiscard]] ZPoints   clip_clipper_polygon_with_subject_bbox(const ZPoints &src, const Domain::BoundingBox2crd &bbox);
+void                    clip_clipper_polygon_with_subject_bbox(const Domain::Polygon &src, const Domain::BoundingBox2crd &bbox, Domain::Polygon &out);
+[[nodiscard]] Domain::Polygon   clip_clipper_polygon_with_subject_bbox(const Domain::Polygon &src, const Domain::BoundingBox2crd &bbox);
+[[nodiscard]] Domain::Polygons  clip_clipper_polygons_with_subject_bbox(const Domain::Polygons &src, const Domain::BoundingBox2crd &bbox);
+[[nodiscard]] Domain::Polygons  clip_clipper_polygons_with_subject_bbox(const Domain::ExPolygon &src, const Domain::BoundingBox2crd &bbox);
+[[nodiscard]] Domain::Polygons  clip_clipper_polygons_with_subject_bbox(const Domain::ExPolygons &src, const Domain::BoundingBox2crd &bbox);
+
 
 // offset Polygons
 // Wherever applicable, please use the expand() / shrink() variants instead, they convey their purpose better.

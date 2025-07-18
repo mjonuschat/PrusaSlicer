@@ -4239,8 +4239,8 @@ void TextConfigurationSerialization::to_xml(std::stringstream &stream, const Tex
         stream << SKEW_ATTR << "=\"" << *fp.skew << "\" ";
     if (fp.per_glyph)
         stream << PER_GLYPH_ATTR << "=\"" << 1 << "\" ";
-    stream << HORIZONTAL_ALIGN_ATTR << "=\"" << bimap_cvt(horizontal_align_to_name, fp.align.first, dafault_type) << "\" ";
-    stream << VERTICAL_ALIGN_ATTR   << "=\"" << bimap_cvt(vertical_align_to_name,  fp.align.second, dafault_type) << "\" ";
+    stream << HORIZONTAL_ALIGN_ATTR << "=\"" << bimap_cvt(horizontal_align_to_name, fp.align.horizontal, dafault_type) << "\" ";
+    stream << VERTICAL_ALIGN_ATTR   << "=\"" << bimap_cvt(vertical_align_to_name,  fp.align.vertical, dafault_type) << "\" ";
     if (fp.collection_number.has_value())
         stream << COLLECTION_NUMBER_ATTR << "=\"" << *fp.collection_number << "\" ";
     // font descriptor

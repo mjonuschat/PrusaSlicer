@@ -21,7 +21,7 @@
 #include <libslic3r/Point.hpp>
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
-#include "Slic3r/Biz/Algorithms/ExPolygonsIndex.hpp"
+#include "Slic3r/Domain/ExPolygonsIndex.hpp"
 #include "Slic3r/Biz/Algorithms/IntersectionPoints.hpp"
 #include "Slic3r/Exception.hpp"
 
@@ -55,7 +55,6 @@ using Slic3r::Biz::Algorithms::LineUtils;
 using Slic3r::Biz::Algorithms::VectorUtils;
 using Slic3r::Biz::CGAL::Algorithms::VoronoiGraph;
 using Slic3r::Biz::CGAL::Algorithms::create_voronoi_cells_cgal;
-using Slic3r::Biz::Algorithms::ExPolygonsIndices;
 using Slic3r::Biz::Algorithms::PointUtils;
 using Slic3r::Biz::CGAL::Algorithms::VoronoiDiagram;
 namespace Voronoi = Slic3r::Biz::CGAL::Algorithms::Voronoi;
@@ -1009,7 +1008,7 @@ Field create_field(const Slic3r::ExPolygon &island, float offset_delta, const st
     }
 
     // limit unknown state
-    ExPolygonsIndices border_indices(ExPolygons{island});
+    Domain::ExPolygonsIndices border_indices(ExPolygons{island});
 
     size_t inner_offset = 0; // offset of current inner polygon inside of the lambda
     auto remove_unknown = [&inner_offset, &inner_outline, &inner_2_island, &border_indices, invalid_conversion]

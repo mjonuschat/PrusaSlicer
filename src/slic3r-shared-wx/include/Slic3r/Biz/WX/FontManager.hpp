@@ -12,7 +12,7 @@ namespace Slic3r::Biz::WX {
 /// Use Wx library to enumerate OS installed fonts
 /// and acceess to file data by wxFont
 /// </summary>
-class FontManager: public Emboss::IFontManager
+class FontManager : public Emboss::IFontManager
 {
 public:
     /// <summary>
@@ -44,14 +44,15 @@ public:
 
     /// <summary>
     /// Create descriptors from static defined wxFont for curren
-    ///  * wxNORMAL_FONT
-    ///  * wxSMALL_FONT
-    ///  * wxITALIC_FONT
-    ///  * wxSWISS_FONT
-    ///  * from wxFONTFAMILY_MODERN
+    /// * wxNORMAL_FONT
+    /// * wxSMALL_FONT
+    /// * wxITALIC_FONT
+    /// * wxSWISS_FONT
+    /// * from wxFONTFAMILY_MODERN
     /// </summary>
     /// <returns>List of favorits font descriptors in current OS</returns>
-    Domain::FontList create_favorit() const override;
+    Domain::FontList create_favorit() override;
+
 private:
     // data of can_load() faces
     Domain::FontList m_openable;

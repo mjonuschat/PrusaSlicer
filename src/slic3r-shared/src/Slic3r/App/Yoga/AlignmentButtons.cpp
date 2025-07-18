@@ -31,9 +31,9 @@ AlignmentButtons::AlignmentButtons()
 
     m_group_horizontal_align.set_buttons({m_left_align_btn, m_center_align_btn, m_right_align_btn});
     m_group_horizontal_align.callbacks().action = [this](AbstractButton* btn) {
-        m_align.horizontal = btn == m_left_align_btn ? Domain::HorizontalAlign::left :
-            btn == m_right_align_btn                 ? Domain::HorizontalAlign::right :
-                                                       Domain::HorizontalAlign::center;
+        m_align.horizontal = btn == m_left_align_btn ? Domain::FontProp::HorizontalAlign::left :
+            btn == m_right_align_btn                 ? Domain::FontProp::HorizontalAlign::right :
+                                                       Domain::FontProp::HorizontalAlign::center;
         if (m_callbacks.align_changed)
             m_callbacks.align_changed(m_align);
         update_revert_button();
@@ -45,9 +45,9 @@ AlignmentButtons::AlignmentButtons()
 
     m_group_vertical_align.set_buttons({m_top_align_btn, m_middle_align_btn, m_bottom_align_btn});
     m_group_vertical_align.callbacks().action = [this](AbstractButton* btn) {
-        m_align.vertical = btn == m_top_align_btn ? Domain::VerticalAlign::top :
-            btn == m_bottom_align_btn             ? Domain::VerticalAlign::bottom :
-                                                    Domain::VerticalAlign::center;
+        m_align.vertical = btn == m_top_align_btn ? Domain::FontProp::VerticalAlign::top :
+            btn == m_bottom_align_btn             ? Domain::FontProp::VerticalAlign::bottom :
+                                                    Domain::FontProp::VerticalAlign::center;
         if (m_callbacks.align_changed)
             m_callbacks.align_changed(m_align);
         update_revert_button();
@@ -61,42 +61,42 @@ AlignmentButtons::Callbacks& AlignmentButtons::callbacks()
     return m_callbacks;
 }
 
-const Domain::TextAlign& AlignmentButtons::align() const
+const Domain::FontProp::Align& AlignmentButtons::align() const
 {
     return m_align;
 }
 
-void AlignmentButtons::set_align(const Domain::TextAlign& align)
+void AlignmentButtons::set_align(const Domain::FontProp::Align& align)
 {
     m_align = align;
     update_revert_button();
 
     switch (m_align.horizontal) {
-    case Domain::HorizontalAlign::left:
+    case Domain::FontProp::HorizontalAlign::left:
         m_left_align_btn->set_checked(true);
         break;
-    case Domain::HorizontalAlign::center:
+    case Domain::FontProp::HorizontalAlign::center:
         m_center_align_btn->set_checked(true);
         break;
-    case Domain::HorizontalAlign::right:
+    case Domain::FontProp::HorizontalAlign::right:
         m_right_align_btn->set_checked(true);
         break;
     }
 
     switch (m_align.vertical) {
-    case Domain::VerticalAlign::top:
+    case Domain::FontProp::VerticalAlign::top:
         m_top_align_btn->set_checked(true);
         break;
-    case Domain::VerticalAlign::center:
+    case Domain::FontProp::VerticalAlign::center:
         m_middle_align_btn->set_checked(true);
         break;
-    case Domain::VerticalAlign::bottom:
+    case Domain::FontProp::VerticalAlign::bottom:
         m_bottom_align_btn->set_checked(true);
         break;
     }
 }
 
-void AlignmentButtons::set_default(const Domain::TextAlign& default_align)
+void AlignmentButtons::set_default(const Domain::FontProp::Align& default_align)
 {
     m_default_align = default_align;
     update_revert_button();

@@ -5,11 +5,10 @@
 
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Vec3d;
-using Slic3r::Domain::Vec4d;
 using Slic3r::Domain::Vec3f;
+using Slic3r::Domain::Vec4d;
 
-namespace Slic3r::App::Scene
-{
+namespace Slic3r::App::Scene {
 
 bool AabbRaycastNodeComponent::raycast(const SquareMatrix4d& world, const Ray& ray, RaycastResult& res) const
 {
@@ -87,13 +86,12 @@ Eigen::AlignedBox3f AabbRaycastNodeComponent::world_bounding_box(const SquareMat
     ASSERT(m_aabb_mesh != nullptr);
     auto bbox3 = m_aabb_mesh->bounding_box();
 
-
     // TODO: use convex hull to get tight AABB in world space
 
     Eigen::AlignedBox<float, 3> ret;
     for (size_t i = 0; i < 8; i++) {
         Vec3f v = bbox3.corner(Eigen::AlignedBox<float, 3>::CornerType(i));
-        Vec3f w = (world * Vec4d{v.x(), v.y(), v.z(), 1}).block<3,1>(0,0).cast<float>();
+        Vec3f w = (world * Vec4d{v.x(), v.y(), v.z(), 1}).block<3, 1>(0, 0).cast<float>();
         ret.extend(w);
     }
     return ret;

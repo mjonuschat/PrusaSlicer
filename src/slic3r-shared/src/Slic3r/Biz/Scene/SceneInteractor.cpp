@@ -571,7 +571,7 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::Selectio
     });
 
     // TODO: need to send project_id for set selection (for @JanBartipan)
-    set_selection({SelectionMode::Instance, {updated}});
+    set_object_selection({ SelectionMode::Instance, updated });
 }
 
 void SceneInteractor::add_new_objects(const std::vector<Domain::ModelObject*>& objects)
@@ -613,18 +613,18 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
     update_elements_bed_placement(sel.elements, sel.mode == SelectionMode::Volume);
 }
 
-void SceneInteractor::add_volume(const Domain::ModelVolume* volume){
+void SceneInteractor::add_volume(const Domain::ModelVolume* volume)
+{
     const Domain::ModelObject* obj = volume->get_object();
-    Domain::ElementRefs updated = {Domain::ElementRef(
-        obj->id().id,
-        obj->instances[0]->id().id,
-        volume->id().id)};
+    Domain::ElementRefs updated    = {
+        Domain::ElementRef(obj->id().id, obj->instances[0]->id().id, volume->id().id)
+    };
 
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_volume_added(m_selected_project_id, updated);
     });
 
-    set_selection({SelectionMode::Volume, updated});
+    set_object_selection({ SelectionMode::Volume, updated});
     update_selection_instance_bed_placement();
 }
 

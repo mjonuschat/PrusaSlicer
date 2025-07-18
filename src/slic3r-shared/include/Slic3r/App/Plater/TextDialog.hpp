@@ -10,12 +10,8 @@
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/InputTextWithSpin.hpp"
 #include "Slic3r/App/Yoga/AlignmentButtons.hpp"
-
+#include "Slic3r/Domain/TextConfiguration.hpp"
 #include <vector>
-
-namespace Slic3r::Domain {
-struct TextAlign;
-} // namespace Slic3r::Domain
 
 namespace Slic3r::App::Yoga {
 class LayoutButton;
@@ -31,8 +27,7 @@ public:
 
     struct Callbacks
     {
-        std::function<void(const std::string& text)> editor_text_changed{nullptr};
-
+        std::function<void(const std::string&)> text_changed{ nullptr };
         std::function<void(int index)> font_selection_changed{nullptr};
         std::function<void(int index)> style_selection_changed{nullptr};
 
@@ -41,7 +36,7 @@ public:
 
         std::function<void(bool checked)> use_surface_checked{nullptr};
         std::function<void(bool checked)> per_glyph_checked{nullptr};
-        std::function<void(const Domain::TextAlign& align)> align_changed{nullptr};
+        std::function<void(const Domain::FontProp::Align& align)> align_changed{nullptr};
         std::function<void(double value)> char_gap_changed{nullptr};
         std::function<void(double value)> line_gap_changed{nullptr};
         std::function<void(double value)> boldness_changed{nullptr};
@@ -65,6 +60,7 @@ public:
     void show_part_specific_panel(bool show);
     void update_units(bool use_inches);
 
+    void set_editor(const std::string& text);
     void set_presets(const std::vector<std::string>& presets, int selected_preset_id);
     void set_fonts(const std::vector<std::string>& fonts, int selected_font_id, int default_font_id);
     void set_styles(const std::vector<std::string>& styles, int selected_style_id, int default_style_id);
@@ -74,7 +70,7 @@ public:
     void set_use_surface(bool checked, bool default_checked);
     void set_per_glyph(bool checked, bool default_checked);
 
-    void set_align(const Domain::TextAlign& align);
+    void set_align(const Domain::FontProp::Align& align, const Domain::FontProp::Align& align_default);
 
     void set_char_gap(double max_val, double step, double value, double default_value = 0.);
     void set_line_gap(double max_val, double step, double value, double default_value = 0.);

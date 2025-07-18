@@ -2,10 +2,10 @@
 #include <vector>
 #include <memory>
 
-namespace Slic3r::Domain{
+namespace Slic3r::Domain {
 
 /// <summary>
-/// keep information from file about font 
+/// keep information from file about font
 /// (store file data itself)
 /// + cache data readed from buffer
 /// </summary>
@@ -25,25 +25,27 @@ struct FontFile
         // for convert font units to pixel
         int unit_per_em;
     };
+
     // info for each font in data
     std::vector<Info> infos;
 
-    FontFile(std::unique_ptr<std::vector<unsigned char>> data,
-                std::vector<Info>                         &&infos)
-        : data(std::move(data)), infos(std::move(infos))
+    FontFile(std::unique_ptr<std::vector<unsigned char>> data, std::vector<Info>&& infos) :
+        data(std::move(data)),
+        infos(std::move(infos))
     {
         assert(this->data != nullptr);
         assert(!this->data->empty());
     }
 
-    bool operator==(const FontFile &other) const {
+    bool operator==(const FontFile& other) const
+    {
         if (data->size() != other.data->size())
             return false;
-        //if(*data != *other.data) return false;
-        for (size_t i = 0; i < infos.size(); i++) 
-            if (infos[i].ascent != other.infos[i].ascent ||
-                infos[i].descent == other.infos[i].descent ||
-                infos[i].linegap == other.infos[i].linegap)
+        // if(*data != *other.data) return false;
+        for (size_t i = 0; i < infos.size(); i++)
+            if (infos[i].ascent != other.infos[i].ascent
+                || infos[i].descent == other.infos[i].descent
+                || infos[i].linegap == other.infos[i].linegap)
                 return false;
         return true;
     }

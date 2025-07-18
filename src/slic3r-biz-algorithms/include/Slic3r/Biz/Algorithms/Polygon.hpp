@@ -2,6 +2,7 @@
 
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/Polygon.hpp"
 #include "Slic3r/Domain/Polyline.hpp"
@@ -127,6 +128,9 @@ Domain::Points to_points(const Domain::Polygons& polygons);
 
 Domain::Lines to_lines(const Domain::Polygon& polygon);
 Domain::Lines to_lines(const Domain::Polygons& polygons);
+
+Domain::Polygons to_polygons(const Domain::VecOfPoints& paths);
+Domain::Polygons to_polygons(Domain::VecOfPoints&& paths);
 
 Domain::BoundingBox2crd get_extents(const Domain::Polygon& poly);
 

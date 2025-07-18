@@ -25,7 +25,8 @@ namespace Slic3r::Biz::Emboss {
 /// SVG have to load SVG file and create shapes for paths
 /// Different store into volume
 /// </summary>
-class ShapeProvider {
+class ShapeProvider
+{
 public:
     virtual ~ShapeProvider() = default;
 
@@ -34,13 +35,19 @@ public:
     /// e.g. Text extract glyphs from font file
     /// Not 'const' function because it could modify shape
     /// </summary>
-    virtual Domain::EmbossShape& get_shape() { return shape; }
+    virtual Domain::EmbossShape& get_shape()
+    {
+        return shape;
+    }
 
     /// <summary>
     /// Write data how to reconstruct shape to volume
     /// </summary>
     /// <param name="volume">Data object for store emboss params</param>
-    virtual void write(Domain::ModelVolume& volume) const { volume.emboss_shape = shape; }
+    virtual void write(Domain::ModelVolume& volume) const
+    {
+        volume.emboss_shape = shape;
+    }
 
     /// <summary>
     /// Used only with text for embossing per glyph
@@ -48,13 +55,19 @@ public:
     /// <param name="tr">Embossed volume final transformation in world</param>
     /// <param name="vols">Volumes to be sliced to text lines</param>
     /// <returns>True on succes otherwise False(Per glyph shoud be disabled)</returns>
-    virtual bool create_text_lines(const Domain::Transform3d& tr, const Domain::ModelVolumePtrs& vols) { return false; }
+    virtual bool create_text_lines(const Domain::Transform3d& tr, const Domain::ModelVolumePtrs& vols)
+    {
+        return false;
+    }
 
     /// <summary>
     /// Create text lines when empty
     /// </summary>
     /// <returns></returns>
-    virtual const Biz::Emboss::TextLines& get_text_lines() { return text_lines; }
+    virtual const Biz::Emboss::TextLines& get_text_lines()
+    {
+        return text_lines;
+    }
 
 protected:
     Domain::EmbossShape shape;
@@ -63,9 +76,11 @@ protected:
     // [optional] It is not used when empty
     Biz::Emboss::TextLines text_lines = {};
 };
+
 using ShapeProviderPtr = std::unique_ptr<ShapeProvider>;
 
-struct BaseData {
+struct BaseData
+{
     // Create shape
     ShapeProviderPtr shape_provider;
 
@@ -73,7 +88,7 @@ struct BaseData {
     Biz::ProjectInteractor& project_interactor;
 
     // Define projection move
-    // True (raised) .. move outside from surface (MODEL_PART)    
+    // True (raised) .. move outside from surface (MODEL_PART)
     // False (engraved).. move into object (NEGATIVE_VOLUME & MODIFIER)
     bool is_outside = true;
 
@@ -116,15 +131,16 @@ struct CreateVolumeParams
 /// <param name="picks">Scene Node with intersection of picked ray</param>
 /// <returns>True on success otherwise False</returns>
 bool start_create_volume(
-    CreateVolumeParams &input, 
+    CreateVolumeParams& input,
     const App::Scene::Ray& pick_ray,
-    const App::Scene::NodePickResults& picks);
+    const App::Scene::NodePickResults& picks
+);
 
 /// <summary>
 /// Same as previous function but without mouse position
 /// Need to suggest position or put near the selection
 /// </summary>
-bool start_create_volume_without_position(CreateVolumeParams &input);
+bool start_create_volume_without_position(CreateVolumeParams& input);
 
 /// <summary>
 /// Parameters for call start_update_volume function
@@ -160,6 +176,7 @@ struct ModelSource
     // Transformation of volume inside of object
     Domain::Transform3d tr;
 };
+
 using ModelSources = std::vector<ModelSource>;
 
 /// <summary>

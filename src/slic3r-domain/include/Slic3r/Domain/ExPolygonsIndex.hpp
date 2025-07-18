@@ -25,17 +25,28 @@ struct ExPolygonsIndex
     // index of point in polygon
     uint32_t point_index;
 
-    bool is_contour() const { return polygon_index == 0; }
-    bool is_hole() const { return polygon_index != 0; }
-    uint32_t hole_index() const { return polygon_index - 1; }
+    bool is_contour() const
+    {
+        return polygon_index == 0;
+    }
+
+    bool is_hole() const
+    {
+        return polygon_index != 0;
+    }
+
+    uint32_t hole_index() const
+    {
+        return polygon_index - 1;
+    }
 };
 
 /// <summary>
 /// Keep conversion from ExPolygonsIndex to Index and vice versa
 /// ExPolygonsIndex .. contour(or hole) point from ExPolygons
 /// Index           .. continous number
-/// 
-/// index is used to address lines and points as result from function 
+///
+/// index is used to address lines and points as result from function
 /// Slic3r::to_lines, Slic3r::to_points
 /// </summary>
 class ExPolygonsIndices
@@ -44,14 +55,14 @@ class ExPolygonsIndices
     // for check range of index
     uint32_t m_count; // count of points
 public:
-    ExPolygonsIndices(const Domain::ExPolygons &shapes);
+    ExPolygonsIndices(const ExPolygons& shapes);
 
     /// <summary>
     /// Convert to one index number
     /// </summary>
     /// <param name="id">Compose of adress into expolygons</param>
     /// <returns>Index</returns>
-    uint32_t cvt(const ExPolygonsIndex &id) const;
+    uint32_t cvt(const ExPolygonsIndex& id) const;
 
     /// <summary>
     /// Separate to multi index
@@ -65,7 +76,7 @@ public:
     /// </summary>
     /// <param name="id">Identify point in expolygon</param>
     /// <returns>True when id is last point in polygon otherwise false</returns>
-    bool is_last_point(const ExPolygonsIndex &id) const;
+    bool is_last_point(const ExPolygonsIndex& id) const;
 
     /// <summary>
     /// Count of points in expolygons
@@ -74,5 +85,5 @@ public:
     uint32_t get_count() const;
 };
 
-} // namespace Slic3r
+} // namespace Slic3r::Domain
 #endif // slic3r_ExPolygonsIndex_hpp_

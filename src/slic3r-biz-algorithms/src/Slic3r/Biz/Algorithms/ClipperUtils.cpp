@@ -108,7 +108,6 @@ Domain::Polygons to_polygons(VecOfPoints&& paths)
     return out;
 }
 
-namespace ClipperUtils {
 Domain::Points EmptyPathsProvider::s_empty_points;
 Domain::Points SinglePathProvider::s_end;
 
@@ -286,7 +285,6 @@ size_t count_polygons(const Domain::ExPolygons& expolys)
     );
     return out;
 }
-} // namespace ClipperUtils
 
 Domain::ExPolygons PolyTreeToExPolygons(ClipperLib::PolyTree&& polytree)
 {

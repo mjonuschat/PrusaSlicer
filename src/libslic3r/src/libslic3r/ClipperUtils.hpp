@@ -36,21 +36,21 @@ using Slic3r::Biz::Algorithms::ClipperUtils::ClipperOffsetShortestEdgeFactor;
 using Slic3r::Biz::Algorithms::ClipperUtils::ApplySafetyOffset;
 
 namespace ClipperUtils {
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::PathsProviderIteratorBase;
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::EmptyPathsProvider;
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::SinglePathProvider;
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::PathsProvider;
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::MultiPointsProvider;
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::PolygonsProvider;
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::PolylinesProvider;
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::ExPolygonProvider;
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::ExPolygonsProvider;
+using Slic3r::Biz::Algorithms::ClipperUtils::EmptyPathsProvider;
+using Slic3r::Biz::Algorithms::ClipperUtils::ExPolygonProvider;
+using Slic3r::Biz::Algorithms::ClipperUtils::ExPolygonsProvider;
+using Slic3r::Biz::Algorithms::ClipperUtils::MultiPointsProvider;
+using Slic3r::Biz::Algorithms::ClipperUtils::PathsProvider;
+using Slic3r::Biz::Algorithms::ClipperUtils::PathsProviderIteratorBase;
+using Slic3r::Biz::Algorithms::ClipperUtils::PolygonsProvider;
+using Slic3r::Biz::Algorithms::ClipperUtils::PolylinesProvider;
+using Slic3r::Biz::Algorithms::ClipperUtils::SinglePathProvider;
 
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::ZPoint;
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::ZPoints;
+using Slic3r::Biz::Algorithms::ClipperUtils::ZPoint;
+using Slic3r::Biz::Algorithms::ClipperUtils::ZPoints;
 
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::clip_clipper_polygon_with_subject_bbox;
-    using Slic3r::Biz::Algorithms::ClipperUtils::ClipperUtils::clip_clipper_polygons_with_subject_bbox;
+using Slic3r::Biz::Algorithms::ClipperUtils::clip_clipper_polygon_with_subject_bbox;
+using Slic3r::Biz::Algorithms::ClipperUtils::clip_clipper_polygons_with_subject_bbox;
 }
 
 using Slic3r::Biz::Algorithms::ClipperUtils::offset;

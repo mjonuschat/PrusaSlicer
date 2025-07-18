@@ -57,6 +57,10 @@ bool overlaps(const Domain::ExPolygon& expolygon, const Domain::ExPolygon &other
 Domain::Lines to_lines(const Domain::ExPolygon& expolygon);
 Domain::Lines to_lines(const Domain::ExPolygons& expolygons);
 
+// Line is from point index(see to_points) to next point.
+// Next point of last point in polygon is first polygon point.
+Domain::Line2ds to_linesf(const Domain::ExPolygons& src, uint32_t count_lines = 0);
+
 Domain::ExPolygons simplify(const Domain::ExPolygon& expolygon, double tolerance);
 Domain::ExPolygons simplify(const Domain::ExPolygons& expolygons, double tolerance);
 Domain::Polygons simplify_to_polygons(const Domain::ExPolygon& expolygon, double tolerance);

@@ -23,6 +23,7 @@ Point rotated(const Point& point, const double cos_a, const double sin_a);
 template<typename BaseType>
 using PointsAllocator = tbb::scalable_allocator<BaseType>;
 using Points = std::vector<Point, PointsAllocator<Point>>;
+using VecOfPoints = std::vector<Points, PointsAllocator<Points>>;
 
 // To be used by std::unordered_map, std::unordered_multimap and friends.
 struct PointHash {

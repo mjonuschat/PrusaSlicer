@@ -9,10 +9,11 @@ namespace Slic3r::App::Scene {
 class Frustum;
 class PickerFrustum;
 
-struct RaycastResult {
-  double distance;
-  Domain::Vec3d normal; // world normal of the hit
-  int triangle_index; // index of triangle in the mesh
+struct RaycastResult
+{
+    double distance;
+    Domain::Vec3d normal; // world normal of the hit
+    int triangle_index; // index of triangle in the mesh
 };
 
 /**

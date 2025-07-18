@@ -4,7 +4,11 @@
 // create public interface for private function from imstb_truetype.h
 // Implementation with dependencies is copied
 namespace Slic3r::Biz::Emboss {
-struct stbtt__point{ float x, y; };
+struct stbtt__point
+{
+    float x, y;
+};
+
 stbtt__point* stbtt_FlattenCurves(
     stbtt_vertex* vertices,
     int num_verts,

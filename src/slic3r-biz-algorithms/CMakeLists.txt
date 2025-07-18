@@ -7,8 +7,12 @@ add_library(slic3r-biz-algorithms STATIC
     src/Slic3r/Biz/Algorithms/DouglasPeucker.cpp
     include/Slic3r/Biz/Algorithms/ExPolygon.hpp
     src/Slic3r/Biz/Algorithms/ExPolygon.cpp
+    include/Slic3r/Biz/Algorithms/ExPolygonsWithId.hpp
+    src/Slic3r/Biz/Algorithms/ExPolygonsWithId.cpp
     include/Slic3r/Biz/Algorithms/FacetsAnnotation.hpp
     src/Slic3r/Biz/Algorithms/FacetsAnnotation.cpp
+    include/Slic3r/Biz/Algorithms/HealPolygon.hpp
+    src/Slic3r/Biz/Algorithms/HealPolygon.cpp
     src/Slic3r/Biz/Algorithms/Scaling.cpp
     include/Slic3r/Biz/Algorithms/Line.hpp
     src/Slic3r/Biz/Algorithms/Line.cpp
@@ -57,7 +61,6 @@ add_library(slic3r-biz-algorithms STATIC
     include/Slic3r/Biz/Algorithms/Color.hpp
     include/Slic3r/Biz/Algorithms/StringUtils.hpp
     src/Slic3r/Biz/Algorithms/StringUtils.cpp
-    src/Slic3r/Biz/Algorithms/ExPolygonsIndex.cpp
     include/Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp
     include/Slic3r/Biz/Algorithms/IntersectionPoints.hpp
     src/Slic3r/Biz/Algorithms/IntersectionPoints.cpp

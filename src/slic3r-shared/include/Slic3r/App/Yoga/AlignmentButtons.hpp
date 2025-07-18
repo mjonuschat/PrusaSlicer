@@ -6,8 +6,8 @@
 
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/RevertableControl.hpp"
-#include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
 
 namespace Slic3r::App::Yoga {
 
@@ -19,15 +19,15 @@ public:
 
     struct Callbacks
     {
-        std::function<void(const Domain::TextAlign& align)> align_changed{nullptr};
+        std::function<void(const Domain::FontProp::Align& align)> align_changed{nullptr};
     };
 
     Callbacks& callbacks();
 
-    const Domain::TextAlign& align() const;
-    void set_align(const Domain::TextAlign& align);
+    const Domain::FontProp::Align& align() const;
+    void set_align(const Domain::FontProp::Align& align);
 
-    void set_default(const Domain::TextAlign& default_align);
+    void set_default(const Domain::FontProp::Align& default_align);
     bool is_changed_value() const override;
     void reset() override;
 
@@ -42,8 +42,8 @@ private:
     Yoga::ButtonGroup m_group_vertical_align;
 
     Callbacks m_callbacks;
-    Domain::TextAlign m_align;
-    Domain::TextAlign m_default_align = {Domain::HorizontalAlign::center, Domain::VerticalAlign::center};
+    Domain::FontProp::Align m_align;
+    Domain::FontProp::Align m_default_align;
 };
 
 } // namespace Slic3r::App::Yoga

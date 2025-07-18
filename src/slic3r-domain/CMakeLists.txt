@@ -72,6 +72,8 @@ add_library(slic3r-domain STATIC
     src/Slic3r/Domain/TextConfiguration.cpp
 
     include/Slic3r/Domain/ExPolygonsIndex.hpp
+    src/Slic3r/Domain/ExPolygonsIndex.cpp
+
     include/Slic3r/Domain/EmbossShape.hpp
 
     include/Slic3r/Domain/SelectionId.hpp

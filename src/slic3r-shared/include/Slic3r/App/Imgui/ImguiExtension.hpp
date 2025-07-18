@@ -110,9 +110,7 @@ void colored_circle_marker_aligned(float align_x, const std::string& label_str, 
 /// <param name="width">Maximal width before truncate</param>
 /// <param name="tail">String puted on end of text to be visible truncation</param>
 /// <returns>Truncated text</returns>
-std::string trunc(const std::string& text,
-    float              width,
-    const char* tail = " ..");
+std::string trunc(const std::string& text, float width, const char* tail = " ..");
 
 /// <summary>
 /// Escape ## in data by add space between hashes

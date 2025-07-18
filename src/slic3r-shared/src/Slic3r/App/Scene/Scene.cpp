@@ -1043,7 +1043,9 @@ bool Scene::pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results,
     });
     results.reserve(results.size() + ret.size());
     std::transform(
-        ret.begin(), ret.end(), std::back_inserter(results),
+        ret.begin(),
+        ret.end(),
+        std::back_inserter(results),
         [](const auto& p) -> ConstNodePickResult { return {p.first, std::move(p.second)}; }
     );
     std::sort(ret.begin(), ret.end(), [](auto a, auto b) {
@@ -1058,7 +1060,7 @@ bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results, Ray*
     auto ray = m_camera.ray_at(mouse_x, mouse_y);
     if (out_ray != nullptr)
         *out_ray = ray;
-    Node& n = m_root;
+    Node& n  = m_root;
     auto ret = visit_conditional_transform<RaycastResult>(n, [&ray](Node& n, RaycastResult& t) {
         if (!n.has_raycast_component())
             return false;
@@ -1069,7 +1071,9 @@ bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results, Ray*
     });
     results.reserve(results.size() + ret.size());
     std::transform(
-        ret.begin(), ret.end(), std::back_inserter(results),
+        ret.begin(),
+        ret.end(),
+        std::back_inserter(results),
         [](const auto& p) -> NodePickResult { return {p.first, std::move(p.second)}; }
     );
 

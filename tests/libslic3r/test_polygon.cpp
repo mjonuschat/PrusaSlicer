@@ -4,7 +4,7 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/ExPolygon.hpp"
-#include "Slic3r/Biz/Algorithms/ExPolygonsIndex.hpp"
+#include "Slic3r/Domain/ExPolygonsIndex.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
@@ -184,9 +184,8 @@ SCENARIO("Simplify polygon", "[Polygon]")
     }
 }
 
-
-using Slic3r::Biz::Algorithms::ExPolygonsIndices;
-using Slic3r::Biz::Algorithms::ExPolygonsIndex;
+using Slic3r::Domain::ExPolygonsIndex;
+using Slic3r::Domain::ExPolygonsIndices;
 
 TEST_CASE("Indexing expolygons", "[ExPolygon]")
 {
@@ -196,7 +195,7 @@ TEST_CASE("Indexing expolygons", "[ExPolygon]")
     };
     Points points = Algorithms::ExPolygon::to_points(expolys);
     Lines lines = Algorithms::ExPolygon::to_lines(expolys);
-    Linesf linesf = to_linesf(expolys);
+    Linesf linesf = Algorithms::ExPolygon::to_linesf(expolys);
     ExPolygonsIndices ids(expolys);
     REQUIRE(points.size() == lines.size());
     REQUIRE(points.size() == linesf.size());

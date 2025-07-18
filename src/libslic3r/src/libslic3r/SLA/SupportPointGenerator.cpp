@@ -1148,7 +1148,7 @@ size_t get_index_of_closest_part(const Point &coor, const LayerParts &parts, dou
     Linesf lines;
     lines.reserve(count_lines);
     for (const LayerPart &part : parts)
-        append(lines, to_linesf({*part.shape}));
+        append(lines, Algorithms::ExPolygon::to_linesf({*part.shape}));
     AABBTreeIndirect::Tree<2, double> tree = 
         AABBTreeLines::build_aabb_tree_over_indexed_lines(lines);
 
@@ -1237,7 +1237,7 @@ LayerParts::const_iterator get_closest_part(const PartLinks &links, Vec2d &coor)
     Linesf lines;
     lines.reserve(count_lines);
     for (const PartLink &link : links)
-        append(lines, to_linesf({*link->shape}));
+        append(lines, Algorithms::ExPolygon::to_linesf({*link->shape}));
     AABBTreeIndirect::Tree<2, double> tree = 
         AABBTreeLines::build_aabb_tree_over_indexed_lines(lines);
 

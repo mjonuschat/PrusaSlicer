@@ -389,8 +389,8 @@ json to_json(const TextConfiguration &tc) {
     if (fp.boldness.has_value()) result[BOLDNESS] = *fp.boldness;
     if (fp.skew.has_value())     result[SKEW] = *fp.skew;
     if (fp.per_glyph)            result[PER_GLYPH] = 1;
-    result[HORIZONTAL_ALIGN] = ::to_json(fp.align.first, horizontal_align_to_name);
-    result[VERTICAL_ALIGN] = ::to_json(fp.align.second, vertical_align_to_name);
+    result[HORIZONTAL_ALIGN] = ::to_json(fp.align.horizontal, horizontal_align_to_name);
+    result[VERTICAL_ALIGN] = ::to_json(fp.align.vertical, vertical_align_to_name);
     if (fp.collection_number.has_value()) result[COLLECTION_NUMBER] = *fp.collection_number;
     // font descriptor
     if (fp.family.has_value())   result[FONT_FAMILY] = *fp.family;
@@ -415,8 +415,8 @@ void load(const json &tc_json, TextConfiguration &tc, Read3mfIssues& collected_i
     from_json(tc_json, BOLDNESS,    fp.boldness  , collected_issues, RT::project_text_configuration_boldness_issue);
     from_json(tc_json, SKEW,        fp.skew      , collected_issues, RT::project_text_configuration_skew_issue);
     from_json(tc_json, PER_GLYPH,   fp.per_glyph , collected_issues, RT::project_text_configuration_per_glyph_issue);
-    from_json(tc_json, HORIZONTAL_ALIGN , fp.align.first , horizontal_align_to_name, collected_issues, RT::project_text_configuration_horizontal_align_issue, true);
-    from_json(tc_json, VERTICAL_ALIGN   , fp.align.second, vertical_align_to_name  , collected_issues, RT::project_text_configuration_vertical_align_issue, true);
+    from_json(tc_json, HORIZONTAL_ALIGN , fp.align.horizontal , horizontal_align_to_name, collected_issues, RT::project_text_configuration_horizontal_align_issue, true);
+    from_json(tc_json, VERTICAL_ALIGN   , fp.align.vertical, vertical_align_to_name  , collected_issues, RT::project_text_configuration_vertical_align_issue, true);
     from_json(tc_json, COLLECTION_NUMBER, fp.collection_number, collected_issues, RT::project_text_configuration_collection_number_issue);
     from_json(tc_json, FONT_FAMILY      , fp.family           , collected_issues, RT::project_text_configuration_font_family_issue);
     from_json(tc_json, FONT_FACE_NAME   , fp.face_name        , collected_issues, RT::project_text_configuration_font_face_name_issue);
