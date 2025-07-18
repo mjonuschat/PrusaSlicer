@@ -1193,6 +1193,56 @@ indexed_triangle_set its_make_snap(double r, double h, float space_proportion, f
     return mesh;
 }
 
+// Generates mesh for a torus centered about the origin, laying in the XY plane, with the given radius
+// and tickness and using the generated angles to determine the granularity. 
+// Default angles are 1 degree.
+indexed_triangle_set its_make_torus(double r, double t, double ra, double ta)
+{
+    indexed_triangle_set mesh;
+
+    size_t n_main_steps   = (size_t) ceil(2.0 * std::numbers::pi / ra);
+    float main_angle_step = 2.0f * std::numbers::pi / n_main_steps;
+
+    size_t n_secondary_steps   = (size_t) ceil(2.0 * std::numbers::pi / ta);
+    float secondary_angle_step = 2.0f * std::numbers::pi / n_secondary_steps;
+
+    mesh.vertices.reserve(n_main_steps * n_secondary_steps);
+    mesh.indices.reserve(2 * n_main_steps * n_secondary_steps);
+
+    // vertices
+    for (size_t i = 0; i < n_main_steps; ++i) {
+        float section_angle = main_angle_step * i;
+        Vec3f radius_dir(cosf(section_angle), sinf(section_angle), 0.0f);
+        Vec3f section_center = r * radius_dir;
+        Vec3f section_normal = section_center.normalized().cross(Vec3f::UnitZ()).normalized();
+        Vec3f base_v         = t * radius_dir;
+        for (size_t j = 0; j < n_secondary_steps; ++j) {
+            mesh.vertices.emplace_back(
+                section_center + Eigen::AngleAxisf(secondary_angle_step * j, section_normal) * base_v
+            );
+        }
+    }
+
+    // indices
+    for (size_t i = 0; i < n_main_steps; ++i) {
+        size_t ii      = i * n_secondary_steps;
+        size_t ii_next = ((i + 1) % n_main_steps) * n_secondary_steps;
+        for (size_t j = 0; j < n_secondary_steps; ++j) {
+            size_t j_next   = (j + 1) % n_secondary_steps;
+            size_t i0       = ii + j;
+            size_t i1       = ii_next + j;
+            size_t i2       = ii_next + j_next;
+            size_t i3       = ii + j_next;
+            Index3 triangle = {int(i0), int(i1), int(i2)};
+            mesh.indices.emplace_back(triangle);
+            triangle = {int(i0), int(i2), int(i3)};
+            mesh.indices.emplace_back(triangle);
+        }
+    }
+
+    return mesh;
+}
+
 indexed_triangle_set its_convex_hull(const std::vector<Vec3f> &pts)
 {
     std::vector<Vec3f>  dst_vertices;

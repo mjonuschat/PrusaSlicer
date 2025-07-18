@@ -45,6 +45,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/TextDialog.cpp
         include/Slic3r/App/Plater/MeasureGizmo.hpp
         src/Slic3r/App/Plater/MeasureGizmo.cpp
+        include/Slic3r/App/Plater/MeasureGizmoHelper.hpp
+        src/Slic3r/App/Plater/MeasureGizmoHelper.cpp
         include/Slic3r/App/Plater/MeasureDialog.hpp
         src/Slic3r/App/Plater/MeasureDialog.cpp
         include/Slic3r/App/Plater/ThumbnailRenderer.hpp
@@ -210,6 +212,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/IGizmo.hpp
         src/Slic3r/App/Scene/IGizmo.cpp
         include/Slic3r/App/Scene/GizmoEventContext.hpp
+        include/Slic3r/App/Scene/GizmoKeyEventContext.hpp
         include/Slic3r/App/Scene/AbstractCameraGizmo.hpp
         src/Slic3r/App/Scene/AbstractCameraGizmo.cpp
         include/Slic3r/App/Scene/GizmoManager.hpp

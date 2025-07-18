@@ -2,6 +2,8 @@
 
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
+// DEBUG ONLY
+#include "Slic3r/App/Plater/MeasureGizmo.hpp"
 
 #if DEBUG_GIZMO_MANAGER
 #include "Slic3r/TypeInfo.hpp"
@@ -124,6 +126,13 @@ bool GizmoManager::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
 {
     if (m_mouse_drag_detector && e.code() == Platform::KeyCode::Escape)
         m_mouse_drag_detector->cancel_drag_event();
+
+    GizmoKeyEventContext ctx{ e };
+    for (auto& g : m_base_gizmos)
+        g->on_keyboard(ctx);
+    for (auto& g : m_tool_gizmos)
+        g->on_keyboard(ctx);
+
     return m_command_registry.process_keyboard_event(e);
 }
 
@@ -164,12 +173,24 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
     Render::ScopedDebugGroup event_gizmo_manager("Gizmo Manager", cmd_buffer);
     // Most gizmos will render on top of scene, so disable depth test here so gizmos shouldn't care
     cmd_buffer.set_depth_test_enabled(false);
-    for (auto* g : p.in_cycle_gizmos)
-        g->render_scene(cmd_buffer);
+    for (auto* g : p.in_cycle_gizmos) {
+        if (g != p.active_tool)
+            g->render_scene(cmd_buffer);
+    }
+    if (p.active_tool != nullptr)
+        p.active_tool->render_scene(cmd_buffer);
+
     //m_scene_provider.scene().log_nodes();
 }
 
-void GizmoManager::render_imgui() {}
+void GizmoManager::render_imgui() {
+    // DEBUG ONLY
+    if (current_tool_type() == ToolType::MeasureGizmo) {
+        auto measure_gizmo = dynamic_cast<Slic3r::App::Plater::MeasureGizmo*>(current_context().active_tool);
+        if (measure_gizmo!=nullptr)
+            measure_gizmo->render_imgui();
+    }
+}
 
 //void GizmoManager::render_imgui()
 //{

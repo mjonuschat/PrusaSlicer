@@ -485,7 +485,8 @@ void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
         const auto code = KeyCode(key.keysym.sym);
         update_key_modifiers(type, code);
 
-        KeyboardEvent platform_event{type, code, m_key_modifiers};
+        KeyboardEvent platform_event{type, code, m_key_modifiers,
+            type == KeyboardEvent::Type::KeyDown && key.repeat > 0};
         enqueue_keyboard(platform_event);
     }
     else if (event.type == SDL_MOUSEMOTION) {

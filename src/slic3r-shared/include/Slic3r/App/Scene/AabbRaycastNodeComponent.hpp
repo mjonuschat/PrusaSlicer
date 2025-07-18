@@ -17,6 +17,8 @@ public:
     bool raycast(const Domain::SquareMatrix4d& world, const Ray& ray, double& t) const override;
     Eigen::AlignedBox3f world_bounding_box(const Domain::SquareMatrix4d& world) const override;
 
+    AABBMesh::hit_result hit_result(const Domain::SquareMatrix4d& world, const Ray& ray) const;
+
     bool intersects(const Domain::SquareMatrix4d& world, const Frustum& frustum) const override;
 
     // Eigen::AlignedBox<float, 2> projected_bounding_box(

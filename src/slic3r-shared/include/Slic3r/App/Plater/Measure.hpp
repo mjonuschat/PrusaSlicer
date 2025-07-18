@@ -7,7 +7,7 @@
 
 struct indexed_triangle_set;
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App::Plater::Measure {
 
 enum class SurfaceFeatureType : uint8_t
 {
@@ -212,7 +212,7 @@ struct MeasurementResult
 };
 
 // Returns distance/angle between two SurfaceFeatures.
-MeasurementResult get_measurement(
+MeasurementResult measurement(
     const SurfaceFeature& a,
     const SurfaceFeature& b,
     const Measuring* measuring = nullptr
@@ -278,4 +278,4 @@ inline bool are_perpendicular(const SurfaceFeature& f1, const SurfaceFeature& f2
         return false;
 }
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App::Plater::Measure

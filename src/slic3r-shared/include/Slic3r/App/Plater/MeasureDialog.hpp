@@ -5,6 +5,8 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/GizmoDialog.hpp"
+#include "Slic3r/App/Plater/Measure.hpp"
+#include "Slic3r/App/Plater/MeasureGizmoHelper.hpp"
 
 namespace Slic3rc::App::Yoga {
 class Text;
@@ -12,6 +14,7 @@ class LayoutButton;
 }
 
 namespace Slic3r::App::Plater {
+
 class MeasureDialog : public Yoga::GizmoDialog
 {
 public:
@@ -25,8 +28,8 @@ public:
     struct SpotDescription : public Yoga::Item {
         SpotDescription();
 
-        void set_as_plane();
-        void set_as_edge(float lenth);
+        void reset();
+        void set_from(const Measure::FeatureItem& feature);
 
     private:
         Yoga::Text* m_name = nullptr;
@@ -35,20 +38,24 @@ public:
 
     SpotDescription& spot1();
     SpotDescription& spot2();
-    void set_measure(MeasureType type, float value);
 
+    void set_measure(const Measure::MeasurementResult& result);
     void show_measure(bool show);
 
-    std::function<void()>& on_copy();
-
 private:
-    void add_measure_row();
+    void add_measure_row(const std::string& name, const std::string& value, const std::string& units);
     void add_spot_row(const ImColor& marker, const std::string& title, Yoga::ItemPtr controls);
 
 private:
-    Yoga::Text* m_measure_name = nullptr;
-    Yoga::Text* m_measure_value = nullptr;
-    Yoga::LayoutButton* m_copy_btn = nullptr;
+    struct MeasureRowItem
+    {
+        Yoga::Text* name{nullptr};
+        Yoga::Text* value{ nullptr };
+        std::string clipboard_text;
+        Yoga::LayoutButton* copy_btn{ nullptr };
+    };
+    std::vector<Yoga::Item*> m_measure_rows;
+    std::vector<MeasureRowItem> m_measure_row_items;
 
     SpotDescription* m_spot1 = nullptr;
     SpotDescription* m_spot2 = nullptr;
@@ -56,6 +63,8 @@ private:
     Yoga::Item* m_helper_panel = nullptr;
     Yoga::Item* m_main_panel = nullptr;
     Yoga::GizmoDialogHelp m_extra_help;
+
+    Yoga::Item* m_measures_item{ nullptr };
 };
 
 } // namespace Slic3r::App::Plater

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Scene/GizmoEventContext.hpp"
+#include "Slic3r/App/Scene/GizmoKeyEventContext.hpp"
 #include "Slic3r/App/Platform/CommandRegistry.hpp"
 #include "libslic3r/Config.hpp"
 
@@ -84,6 +85,7 @@ public:
      * @name Keyboard invoked commands
      * @{
      */
+    virtual void on_keyboard(GizmoKeyEventContext& ctx) {}
     /**
      *
      */

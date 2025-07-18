@@ -444,7 +444,14 @@ void PlaterRenderModule::init_gizmos()
     );
     m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>();
     m_text_gizmo              = &m_gizmo_manager->add_tool_gizmo<TextGizmo>();
-    m_measure_gizmo           = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>();
+    m_measure_gizmo           = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(
+        *m_device,
+        m_project_interactor,
+        *m_scene_presenter
+    );
+    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(
+        m_measure_gizmo
+    );
 }
 
 void PlaterRenderModule::init_add_volume_menu()

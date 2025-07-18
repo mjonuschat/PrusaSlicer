@@ -79,6 +79,24 @@ Eigen::AlignedBox3f AabbRaycastNodeComponent::world_bounding_box(const SquareMat
     return ret;
 }
 
+AABBMesh::hit_result AabbRaycastNodeComponent::hit_result(
+    const Domain::SquareMatrix4d& world,
+    const Ray& ray
+) const
+{
+    ASSERT(m_aabb_mesh != nullptr);
+
+    SquareMatrix4d inv_world = world.inverse();
+
+    Vec3d local_ray_origin = (inv_world * Vec4d{ray.origin.x(), ray.origin.y(), ray.origin.z(), 1.0})
+                                 .head<3>()
+                                 .cast<double>();
+    Vec3d local_ray_direction = (inv_world.block<3, 3>(0, 0) * ray.direction).cast<double>().normalized();
+
+    AABBMesh::hit_result ret = m_aabb_mesh->query_ray_hit(local_ray_origin, local_ray_direction);
+    return ret;
+}
+
 bool AabbRaycastNodeComponent::intersects(const SquareMatrix4d& world, const Frustum& frustum) const
 {
     ASSERT(m_aabb_mesh != nullptr);

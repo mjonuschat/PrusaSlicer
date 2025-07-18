@@ -12,7 +12,7 @@
 
 #define DEBUG_EXTRACT_ALL_FEATURES_AT_ONCE 0
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App::Plater::Measure {
 
 namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
@@ -190,100 +190,100 @@ void MeasuringImpl::update_planes()
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, m_planes.size()),
         [&planes, &face_to_plane, &face_neighbors, &sm](const tbb::blocked_range<size_t>& range) {
-        for (size_t plane_id = range.begin(); plane_id != range.end(); ++plane_id) {
-            const auto& facets = planes[plane_id].facets;
-            planes[plane_id].borders.clear();
-            std::vector<std::array<bool, 3>> visited(facets.size(), {false, false, false});
+            for (size_t plane_id = range.begin(); plane_id != range.end(); ++plane_id) {
+                const auto& facets = planes[plane_id].facets;
+                planes[plane_id].borders.clear();
+                std::vector<std::array<bool, 3>> visited(facets.size(), {false, false, false});
 
-            for (int face_id = 0; face_id < int(facets.size()); ++face_id) {
-                DEBUG_ASSERT(face_to_plane[facets[face_id]] == plane_id);
+                for (int face_id = 0; face_id < int(facets.size()); ++face_id) {
+                    DEBUG_ASSERT(face_to_plane[facets[face_id]] == plane_id);
 
-                for (int edge_id = 0; edge_id < 3; ++edge_id) {
-                    // Every facet's edge which has a neighbor from a different plane is
-                    // part of an edge that we want to walk around. Skip the others.
-                    int neighbor_idx = face_neighbors[facets[face_id]][edge_id];
-                    if (neighbor_idx == -1)
-                        goto PLANE_FAILURE;
-                    if (visited[face_id][edge_id] || face_to_plane[neighbor_idx] == plane_id) {
-                        visited[face_id][edge_id] = true;
-                        continue;
-                    }
-
-                    Halfedge_index he = sm.halfedge(Face_index(facets[face_id]));
-                    while (he.side() != edge_id)
-                        he = sm.next(he);
-
-                    // he is the first halfedge on the border. Now walk around and append the points.
-                    // const Halfedge_index he_orig = he;
-                    planes[plane_id].borders.emplace_back();
-                    std::vector<Domain::Vec3d>& last_border = planes[plane_id].borders.back();
-                    last_border.reserve(4);
-                    last_border.emplace_back(sm.point(sm.source(he)).cast<double>());
-                    // Vertex_index target = sm.target(he);
-                    const Halfedge_index he_start = he;
-
-                    Face_index fi = he.face();
-                    auto face_it  = std::lower_bound(facets.begin(), facets.end(), int(fi));
-                    DEBUG_ASSERT(face_it != facets.end());
-                    DEBUG_ASSERT(*face_it == int(fi));
-                    visited[face_it - facets.begin()][he.side()] = true;
-
-                    do {
-                        const Halfedge_index he_orig = he;
-                        he                           = sm.next_around_target(he);
-                        if (he.is_invalid())
+                    for (int edge_id = 0; edge_id < 3; ++edge_id) {
+                        // Every facet's edge which has a neighbor from a different plane is
+                        // part of an edge that we want to walk around. Skip the others.
+                        int neighbor_idx = face_neighbors[facets[face_id]][edge_id];
+                        if (neighbor_idx == -1)
                             goto PLANE_FAILURE;
-
-                        // For broken meshes, the iteration might never get back to he_orig.
-                        // Remember all halfedges we saw to break out of such infinite loops.
-                        boost::container::small_vector<Halfedge_index, 10> he_seen;
-
-                        while (face_to_plane[sm.face(he)] == plane_id && he != he_orig) {
-                            he_seen.emplace_back(he);
-                            he = sm.next_around_target(he);
-                            if (he.is_invalid()
-                                || std::find(he_seen.begin(), he_seen.end(), he) != he_seen.end())
-                                goto PLANE_FAILURE;
+                        if (visited[face_id][edge_id] || face_to_plane[neighbor_idx] == plane_id) {
+                            visited[face_id][edge_id] = true;
+                            continue;
                         }
-                        he = sm.opposite(he);
-                        if (he.is_invalid())
-                            goto PLANE_FAILURE;
+
+                        Halfedge_index he = sm.halfedge(Face_index(facets[face_id]));
+                        while (he.side() != edge_id)
+                            he = sm.next(he);
+
+                        // he is the first halfedge on the border. Now walk around and append the points.
+                        // const Halfedge_index he_orig = he;
+                        planes[plane_id].borders.emplace_back();
+                        std::vector<Domain::Vec3d>& last_border = planes[plane_id].borders.back();
+                        last_border.reserve(4);
+                        last_border.emplace_back(sm.point(sm.source(he)).cast<double>());
+                        // Vertex_index target = sm.target(he);
+                        const Halfedge_index he_start = he;
 
                         Face_index fi = he.face();
                         auto face_it  = std::lower_bound(facets.begin(), facets.end(), int(fi));
-                        if (face_it == facets.end()
-                            || *face_it != int(fi)) // This indicates a broken mesh.
-                            goto PLANE_FAILURE;
-
-                        if (visited[face_it - facets.begin()][he.side()] && he != he_start) {
-                            last_border.resize(1);
-                            break;
-                        }
+                        DEBUG_ASSERT(face_it != facets.end());
+                        DEBUG_ASSERT(*face_it == int(fi));
                         visited[face_it - facets.begin()][he.side()] = true;
 
-                        last_border.emplace_back(sm.point(sm.source(he)).cast<double>());
+                        do {
+                            const Halfedge_index he_orig = he;
+                            he                           = sm.next_around_target(he);
+                            if (he.is_invalid())
+                                goto PLANE_FAILURE;
 
-                        // In case of broken meshes, this loop might be infinite. Break
-                        // out in case it is clearly going bad.
-                        if (last_border.size() > 3 * facets.size() + 1)
-                            goto PLANE_FAILURE;
+                            // For broken meshes, the iteration might never get back to he_orig.
+                            // Remember all halfedges we saw to break out of such infinite loops.
+                            boost::container::small_vector<Halfedge_index, 10> he_seen;
 
-                    } while (he != he_start);
+                            while (face_to_plane[sm.face(he)] == plane_id && he != he_orig) {
+                                he_seen.emplace_back(he);
+                                he = sm.next_around_target(he);
+                                if (he.is_invalid()
+                                    || std::find(he_seen.begin(), he_seen.end(), he) != he_seen.end())
+                                    goto PLANE_FAILURE;
+                            }
+                            he = sm.opposite(he);
+                            if (he.is_invalid())
+                                goto PLANE_FAILURE;
 
-                    if (last_border.size() == 1)
-                        planes[plane_id].borders.pop_back();
-                    else {
-                        DEBUG_ASSERT(last_border.front() == last_border.back());
-                        last_border.pop_back();
+                            Face_index fi = he.face();
+                            auto face_it  = std::lower_bound(facets.begin(), facets.end(), int(fi));
+                            if (face_it == facets.end()
+                                || *face_it != int(fi)) // This indicates a broken mesh.
+                                goto PLANE_FAILURE;
+
+                            if (visited[face_it - facets.begin()][he.side()] && he != he_start) {
+                                last_border.resize(1);
+                                break;
+                            }
+                            visited[face_it - facets.begin()][he.side()] = true;
+
+                            last_border.emplace_back(sm.point(sm.source(he)).cast<double>());
+
+                            // In case of broken meshes, this loop might be infinite. Break
+                            // out in case it is clearly going bad.
+                            if (last_border.size() > 3 * facets.size() + 1)
+                                goto PLANE_FAILURE;
+
+                        } while (he != he_start);
+
+                        if (last_border.size() == 1)
+                            planes[plane_id].borders.pop_back();
+                        else {
+                            DEBUG_ASSERT(last_border.front() == last_border.back());
+                            last_border.pop_back();
+                        }
                     }
                 }
-            }
-            continue; // There was no failure.
+                continue; // There was no failure.
 
-PLANE_FAILURE:
-            planes[plane_id].borders.clear();
+    PLANE_FAILURE:
+                planes[plane_id].borders.clear();
+            }
         }
-    }
     );
     m_planes.shrink_to_fit();
 }
@@ -323,12 +323,12 @@ void MeasuringImpl::extract_features(int plane_idx)
                     border.begin() + 2,
                     border.end(),
                     [is_polygon](const Domain::Vec3d& pt) {
-                    return Domain::is_approx(
-                        (pt - *((&pt) - 1)).squaredNorm(),
-                        (*((&pt) - 1) - *((&pt) - 2)).squaredNorm(),
-                        is_polygon ? 0.01 : 0.01
-                    );
-                }
+                        return Domain::is_approx(
+                            (pt - *((&pt) - 1)).squaredNorm(),
+                            (*((&pt) - 1) - *((&pt) - 2)).squaredNorm(),
+                            is_polygon ? 0.01 : 0.01
+                        );
+                    }
                 );
 
                 if (lengths_match && (is_polygon || border.size() > 8)) {
@@ -613,7 +613,7 @@ std::optional<SurfaceFeature> MeasuringImpl::feature(size_t face_idx, const Doma
     for (size_t i = 0; i < plane.surface_features.size() - 1; ++i) {
         // The -1 is there to prevent measuring distance to the plane itself,
         // which is needless and relatively expensive.
-        res = get_measurement(plane.surface_features[i], point_sf);
+        res = measurement(plane.surface_features[i], point_sf);
         if (res.distance_strict)
         { // TODO: this should become an assert after all combinations are implemented.
             double dist = res.distance_strict->dist;
@@ -917,9 +917,11 @@ static AngleAndEdges angle_plane_plane(
     return ret;
 }
 
-MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature& b, const Measuring* measuring)
+MeasurementResult measurement(const SurfaceFeature& a, const SurfaceFeature& b, const Measuring* measuring)
 {
-    DEBUG_ASSERT(a.type() != SurfaceFeatureType::Undefined && b.type() != SurfaceFeatureType::Undefined);
+    DEBUG_ASSERT(
+        a.type() != SurfaceFeatureType::Undefined && b.type() != SurfaceFeatureType::Undefined
+    );
 
     const bool swap          = int(a.type()) > int(b.type());
     const SurfaceFeature& f1 = swap ? b : a;
@@ -1000,18 +1002,18 @@ MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature&
 
             auto add_point_edge_distance =
                 [&distances](const Domain::Vec3d& v, const std::pair<Domain::Vec3d, Domain::Vec3d>& e) {
-                const MeasurementResult res = get_measurement(
-                    SurfaceFeature(v),
-                    SurfaceFeature(SurfaceFeatureType::Edge, e.first, e.second)
-                );
-                double distance  = res.distance_strict->dist;
-                Domain::Vec3d v2 = res.distance_strict->to;
+                    const MeasurementResult res = measurement(
+                        SurfaceFeature(v),
+                        SurfaceFeature(SurfaceFeatureType::Edge, e.first, e.second)
+                    );
+                    double distance  = res.distance_strict->dist;
+                    Domain::Vec3d v2 = res.distance_strict->to;
 
-                const Domain::Vec3d e1e2 = e.second - e.first;
-                const Domain::Vec3d e1v2 = v2 - e.first;
-                if (e1v2.dot(e1e2) >= 0.0 && e1v2.norm() < e1e2.norm())
-                    distances.emplace_back(distance, v, v2);
-            };
+                    const Domain::Vec3d e1e2 = e.second - e.first;
+                    const Domain::Vec3d e1v2 = v2 - e.first;
+                    if (e1v2.dot(e1e2) >= 0.0 && e1v2.norm() < e1e2.norm())
+                        distances.emplace_back(distance, v, v2);
+                };
 
             std::pair<Domain::Vec3d, Domain::Vec3d> e1 = f1.edge();
             std::pair<Domain::Vec3d, Domain::Vec3d> e2 = f2.edge();
@@ -1028,8 +1030,8 @@ MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature&
                 distances.begin(),
                 distances.end(),
                 [](const DistAndPoints& item1, const DistAndPoints& item2) {
-                return item1.dist < item2.dist;
-            }
+                    return item1.dist < item2.dist;
+                }
             );
             result.distance_infinite = std::make_optional(*it);
 
@@ -1042,8 +1044,8 @@ MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature&
             const Domain::Vec3d e1e2_unit                   = e1e2.normalized();
 
             std::vector<DistAndPoints> distances;
-            distances.emplace_back(*get_measurement(SurfaceFeature(e.first), f2).distance_strict);
-            distances.emplace_back(*get_measurement(SurfaceFeature(e.second), f2).distance_strict);
+            distances.emplace_back(*measurement(SurfaceFeature(e.first), f2).distance_strict);
+            distances.emplace_back(*measurement(SurfaceFeature(e.second), f2).distance_strict);
 
             const Eigen::Hyperplane<double, 3> plane(e1e2_unit, center);
             const Eigen::ParametrizedLine<double, 3> line = Eigen::ParametrizedLine<double, 3>::Through(
@@ -1053,14 +1055,14 @@ MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature&
             const Domain::Vec3d inter   = line.intersectionPoint(plane);
             const Domain::Vec3d e1inter = inter - e.first;
             if (e1inter.dot(e1e2) >= 0.0 && e1inter.norm() < e1e2.norm())
-                distances.emplace_back(*get_measurement(SurfaceFeature(inter), f2).distance_strict);
+                distances.emplace_back(*measurement(SurfaceFeature(inter), f2).distance_strict);
 
             auto it = std::min_element(
                 distances.begin(),
                 distances.end(),
                 [](const DistAndPoints& item1, const DistAndPoints& item2) {
-                return item1.dist < item2.dist;
-            }
+                    return item1.dist < item2.dist;
+                }
             );
             result.distance_infinite = std::make_optional(DistAndPoints{it->dist, it->from, it->to});
             ///////////////////////////////////////////////////////////////////////////
@@ -1082,8 +1084,8 @@ MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature&
                     distances.begin(),
                     distances.end(),
                     [](const DistAndPoints& item1, const DistAndPoints& item2) {
-                    return item1.dist < item2.dist;
-                }
+                        return item1.dist < item2.dist;
+                    }
                 );
                 result.distance_infinite = std::make_optional(
                     DistAndPoints{it->dist, it->from, it->to}
@@ -1093,7 +1095,7 @@ MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature&
                 std::vector<DistAndPoints> distances;
                 for (const SurfaceFeature& sf : plane_features) {
                     if (sf.type() == SurfaceFeatureType::Edge) {
-                        const auto m = get_measurement(sf, f1);
+                        const auto m = measurement(sf, f1);
                         if (!m.distance_infinite.has_value()) {
                             distances.clear();
                             break;
@@ -1106,8 +1108,8 @@ MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature&
                         distances.begin(),
                         distances.end(),
                         [](const DistAndPoints& item1, const DistAndPoints& item2) {
-                        return item1.dist < item2.dist;
-                    }
+                            return item1.dist < item2.dist;
+                        }
                     );
                     result.distance_infinite = std::make_optional(
                         DistAndPoints{it->dist, it->from, it->to}
@@ -1355,7 +1357,7 @@ MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature&
                 std::vector<DistAndPoints> distances;
                 for (const SurfaceFeature& sf : plane_features) {
                     if (sf.type() == SurfaceFeatureType::Edge) {
-                        const auto m = get_measurement(sf, f1);
+                        const auto m = measurement(sf, f1);
                         if (!m.distance_infinite.has_value()) {
                             distances.clear();
                             break;
@@ -1368,8 +1370,8 @@ MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature&
                         distances.begin(),
                         distances.end(),
                         [](const DistAndPoints& item1, const DistAndPoints& item2) {
-                        return item1.dist < item2.dist;
-                    }
+                            return item1.dist < item2.dist;
+                        }
                     );
                     result.distance_infinite = std::make_optional(
                         DistAndPoints{it->dist, it->from, it->to}
@@ -1397,4 +1399,4 @@ MeasurementResult get_measurement(const SurfaceFeature& a, const SurfaceFeature&
     return result;
 }
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App::Plater::Measure

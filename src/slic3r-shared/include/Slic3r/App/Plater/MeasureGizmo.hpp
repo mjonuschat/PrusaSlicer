@@ -6,15 +6,34 @@
 
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Plater/MeasureGizmoHelper.hpp"
+#include "Slic3r/Biz/ProjectScoped.hpp"
+
+namespace Slic3r::Biz::Scene {
+struct ObjectSelection;
+class SceneInteractor;
+} // namespace Slic3r::Biz::Scene
+
+namespace Slic3r::App::Scene {
+class NodeBuilder;
+} // namespace Slic3r::App::Scene
+
+namespace Slic3r::App::Render {
+class Device;
+} // namespace Slic3r::App::Render
 
 namespace Slic3r::App::Plater {
 class MeasureDialog;
+class PlaterScenePresenter;
 
-// Please implement me!
-class MeasureGizmo : public Scene::IToolGizmo
+class MeasureGizmo : public Scene::IToolGizmo, public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
-    MeasureGizmo();
+    MeasureGizmo(
+        Render::Device& device,
+        Biz::ProjectInteractor& project_interactor,
+        PlaterScenePresenter& scene_presenter
+    );
 
     void on_activated() override;
     void on_deactivated() override;
@@ -23,8 +42,136 @@ public:
     Yoga::Dialog* unload_ui_dialog() override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
+    void on_transient_mouse(Scene::GizmoEventContext& ctx) override;
+    void on_keyboard(Scene::GizmoKeyEventContext& ctx) override;
+
+    void on_project_activated(size_t new_project_id) override;
+    void render_scene(Render::CommandBuffer& cmd_buffer) override;
+
+    void register_commands(Platform::CommandRegistry& registry) override;
+
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
+    void on_scene_selection_transformed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
+
+    // DEBUG ONLY
+    void render_imgui();
 
 private:
+    void reset();
+    void update_scene_selection_cache_state(
+        const Domain::ElementRefs& removed_volumes,
+        const Domain::ElementRefs& added_volumes
+    );
+    void update_scene_selection_cache_measuring_geometry();
+    void update_feature_detection_data(const Scene::Node* scene_node, const Scene::GizmoEventContext& ctx);
+    std::optional<Measure::FeatureItem> detect_current_feature();
+    void update_current_feature_on_scene();
+    void update_measurement_result();
+    void update_ui_dialog();
+    void highlight_node(Scene::Node& node);
+    void clear_scene();
+
+    void handle_left_click_on_current_feature(Scene::Node& feature_node);
+    void handle_left_click_on_first_selected_feature(Scene::Node& feature_node);
+    void handle_left_click_on_second_selected_feature(Scene::Node& feature_node);
+
+    void add_feature_to_scene(
+        const Measure::FeatureItem& feature,
+        Measure::MeasureGizmoElementType type,
+        const std::string& debug_name,
+        const Domain::ColorRGBA& color,
+        const Measure::Measuring& measuring
+    );
+    void remove_feature_from_scene(Measure::MeasureGizmoElementType type);
+
+    void build_point_feature(
+        Scene::NodeBuilder& builder,
+        const Measure::FeatureItem& feature,
+        const Domain::ColorRGBA& color
+    );
+    void build_edge_feature(
+        Scene::NodeBuilder& builder,
+        const Measure::FeatureItem& feature,
+        const Domain::ColorRGBA& color
+    );
+    void build_circle_feature(
+        Scene::NodeBuilder& builder,
+        const Measure::FeatureItem& feature,
+        const Domain::ColorRGBA& color
+    );
+    void build_plane_feature(
+        Scene::NodeBuilder& builder,
+        const Measure::FeatureItem& feature,
+        const Measure::Measuring& measuring,
+        const Domain::ColorRGBA& color
+    );
+
+    void build_distance_dimensioning(
+        Scene::NodeBuilder& builder,
+        const Domain::Vec3d& v1,
+        const Domain::Vec3d& v2,
+        double distance
+    );
+    void build_arc_edge_edge_dimensioning(
+        Scene::NodeBuilder& builder,
+        const Measure::SurfaceFeature& f1,
+        const Measure::SurfaceFeature& f2
+    );
+    void build_arc_edge_plane_dimensioning(
+        Scene::NodeBuilder& builder,
+        const Measure::SurfaceFeature& f1,
+        const Measure::SurfaceFeature& f2
+    );
+    void build_arc_plane_plane_dimensioning(
+        Scene::NodeBuilder& builder,
+        const Measure::SurfaceFeature& f1,
+        const Measure::SurfaceFeature& f2
+    );
+    void render_dimensioning();
+
+private:
+    enum class SelectionMode : uint8_t
+    {
+        Feature,
+        Point
+    };
+
+    Render::Device& m_device;
+    Biz::ProjectInteractor& m_project_interactor;
+    Biz::Scene::SceneInteractor& m_scene_interactor;
+    PlaterScenePresenter& m_scene_presenter;
+
+    using GeometryManager     = Render::GeometryManager<std::string>;
+    using TriangleMeshManager = Scene::TriangleMeshManager<std::string>;
+    GeometryManager m_geometry_manager;
+    TriangleMeshManager m_triangle_mesh_manager;
+
+    Scene::Node* m_main_node{nullptr};
+    Scene::Node* m_dimensioning_node{nullptr};
+    SelectionMode m_selection_mode{SelectionMode::Feature};
+    bool m_mouse_left_down{false};
+    std::optional<Measure::FeatureDetectionData> m_feature_detection_data;
+
+    struct ProjectContext
+    {
+        size_t id{Domain::INVALID_ID}; // DEBUG ONLY
+        Measure::SceneSelectionCache scene_selection_cache;
+        Measure::FeatureCache feature_cache;
+    };
+
+    using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
+
+    ProjectContexts m_projects;
+    ProjectContext* m_current_project{nullptr};
+
+    Measure::MeasurementResult m_measurement_result;
+
     std::unique_ptr<MeasureDialog> m_dialog;
 };
 
