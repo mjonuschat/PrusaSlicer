@@ -100,6 +100,7 @@ struct HwPrinterConfig
     std::string id;
     std::string printer_id;
     std::string vendor_id;
+    std::string repo_id;
     std::string name;
     PrinterTechnology technology;
     HwModel model;
@@ -230,6 +231,7 @@ struct VendorFeatures
 struct VendorInfo
 {
     std::string id;
+    std::string repo_id;
     std::string name;
     std::string version;
     VendorFeatures features;

@@ -38,6 +38,7 @@ Domain::Preset::Bundle load_bundle(const std::string& bundle_path, const std::st
 
                 config_loader.load(vendor_yaml_path.string());
                 vendor_bundle.vendor_data = config_loader.release();
+                vendor_bundle.vendor_data.info.repo_id = repo_entry.path().filename().string();
 
                 preset_loader.load_dir(vendor_entry.path().string());
                 vendor_bundle.presets = preset_loader.release();

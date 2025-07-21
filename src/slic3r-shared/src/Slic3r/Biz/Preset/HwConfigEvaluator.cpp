@@ -55,6 +55,7 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
         .id         = Domain::Preset::generate_id(),
         .printer_id = printer_def->id,
         .vendor_id  = vendor_data.info.id,
+        .repo_id    = vendor_data.info.repo_id,
         .technology = printer_def->technology,
         .model      = printer_def->model,
         .tool_count = templ.tool_count.has_value() ? templ.tool_count.value() :
