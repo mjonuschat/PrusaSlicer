@@ -25,11 +25,11 @@ struct SelectedConfigContainerChangedListener : public ISelectedConfigContainerC
     MAKE_MOCK2(on_selected_config_container_changed, void(Domain::SelectionId, Domain::SelectionId));
 };
 
-struct SelectedBedInstanceChangedListener : public ISelectedBedInstanceChangedListener
+struct SelectedBedInstancesChangedListener : public ISelectedBedInstancesChangedListener
 {
-    MAKE_MOCK3(
-        on_selected_bed_instance_changed,
-        void(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id)
+    MAKE_MOCK2(
+        on_selected_bed_instances_changed,
+        void(Domain::SelectionId project_id, const Scene::BedSelection& selection)
     );
 };
 } // namespace Slic3r::Biz::Mock
@@ -81,18 +81,23 @@ TEST_CASE("Project Interactor Listeners")
     );
 
     Scene::SceneInteractor& scene_interactor = project_interactor.scene_interactor();
-    Mock::SelectedBedInstanceChangedListener selected_bed_instance_changed_listener;
-    scene_interactor.add_listener<ISelectedBedInstanceChangedListener>(
-        &selected_bed_instance_changed_listener
+    Mock::SelectedBedInstancesChangedListener selected_bed_instances_changed_listener;
+    scene_interactor.add_listener<ISelectedBedInstancesChangedListener>(
+        &selected_bed_instances_changed_listener
     );
+
+    const auto is_selection_valid{[](const Scene::BedSelection& selection) {
+        const auto bed_ref{selection.last_selected_bed()};
+        return bed_ref.config_container_id > 0 && bed_ref.instance_id > 0;
+    }};
 
     {
         REQUIRE_CALL(selected_project_changed_listener, on_selected_project_changed(0));
         REQUIRE_CALL(selected_config_container_listener, on_selected_config_container_changed(0, gt(0)));
         REQUIRE_CALL(
-            selected_bed_instance_changed_listener,
-            on_selected_bed_instance_changed(0, gt(0), gt(0))
-        );
+            selected_bed_instances_changed_listener,
+            on_selected_bed_instances_changed(0, _)
+        ).WITH(is_selection_valid(_2));
         project_interactor.new_project();
     }
 
@@ -103,12 +108,12 @@ TEST_CASE("Project Interactor Listeners")
                 auto capStr = std::string("selected_config_container( cc: ") + std::to_string(_2) + " )";
                 UNSCOPED_INFO(capStr);
             );
-        REQUIRE_CALL(
-            selected_bed_instance_changed_listener,
-            on_selected_bed_instance_changed(1, gt(0), gt(0))
-        )
+        REQUIRE_CALL(selected_bed_instances_changed_listener, on_selected_bed_instances_changed(1, _))
+            .WITH(is_selection_valid(_2))
             .SIDE_EFFECT(
-                auto capStr = std::string("selected_bed_instance( cc: ") + std::to_string(_2) + " )";
+                auto capStr = std::string("selected_bed_instance( cc: ")
+                    + std::to_string(_2.last_selected_bed().config_container_id)
+                    + " )";
                 UNSCOPED_INFO(capStr);
             );
         project_interactor.new_project();
@@ -125,14 +130,7 @@ TEST_CASE("Project Interactor Listeners")
                 auto capStr = std::string("selected_config_container( cc: ") + std::to_string(_2) + " )";
                 UNSCOPED_INFO(capStr);
             );
-        REQUIRE_CALL(
-            selected_bed_instance_changed_listener,
-            on_selected_bed_instance_changed(0, gt(0), gt(0))
-        )
-            .SIDE_EFFECT(
-                auto capStr = std::string("selected_bed_instance( cc: ") + std::to_string(_2) + " )";
-                UNSCOPED_INFO(capStr);
-            );
+        // on_selected_bed_instances_changed is not called as it is selected during new_project()
         project_interactor.select_project(0);
     }
 

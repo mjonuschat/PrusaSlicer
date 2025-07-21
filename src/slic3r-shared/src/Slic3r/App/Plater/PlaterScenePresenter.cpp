@@ -83,7 +83,7 @@ PlaterScenePresenter::PlaterScenePresenter(
     m_workbench(workbench),
     m_project_interactor(project_interactor),
     m_device(device),
-    m_bed_render_updater(*this, workbench, device)
+    m_bed_render_updater(*this, workbench, device, project_interactor.scene_interactor())
 {
     load_selected_project();
 
@@ -93,7 +93,7 @@ PlaterScenePresenter::PlaterScenePresenter(
     auto& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.add_listener<ISceneChangedListener>(this);
     scene_interactor.add_listener<ISceneSelectionChangedListener>(this);
-    scene_interactor.add_listener<ISelectedBedInstanceChangedListener>(this);
+    scene_interactor.add_listener<ISelectedBedInstancesChangedListener>(this);
 }
 
 void PlaterScenePresenter::load_selected_project()
@@ -181,10 +181,22 @@ void PlaterScenePresenter::update_camera_frustum()
     scene().camera().cam_projection().set_z_far(std::max(1000.0, z_far));
 }
 
+namespace {
+Domain::ModelInstanceList get_instances_on_beds(const PlaterScenePresenter::BedInstances& bed_instances) {
+    Domain::ModelInstanceList result;
+    for (const auto& bed_instance : bed_instances) {
+        const Domain::ModelInstanceList& instances_on_bed{bed_instance.get().model_instances};
+        result.insert(result.end(), instances_on_bed.begin(), instances_on_bed.end());
+    }
+    return result;
+}
+} // namespace
+
 void PlaterScenePresenter::update_objects_shadows_data()
 {
-    const Domain::BedInstance& bed_inst           = selected_bed_instance();
-    const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances;
+    const BedInstances bed_instances{selected_bed_instances()};
+
+    const Domain::ModelInstanceList instances{get_instances_on_beds(bed_instances)};
     const Domain::Model* model = &m_project_interactor.selected_project().model();
 
     auto& scene = m_projects[m_project_interactor.selected_project_id()].scene();
@@ -200,8 +212,8 @@ void PlaterScenePresenter::update_objects_shadows_data()
                         obj->instances,
                         tag->instance_id
                     );
-                    bool shadows = std::find(insts_on_bed.begin(), insts_on_bed.end(), inst)
-                        != insts_on_bed.end();
+                    bool shadows = std::find(instances.begin(), instances.end(), inst)
+                        != instances.end();
                     n.render_component()->set_shadows(
                         shadows ? Render::Shadows{true, true} : Render::Shadows{false, false}
                     );
@@ -242,7 +254,7 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
 
 void PlaterScenePresenter::on_scene_selection_changed(
     Domain::SelectionId project_id,
-    const Biz::Scene::Selection& selection
+    const Biz::Scene::ObjectSelection& selection
 )
 {
     auto& proj              = m_projects[project_id];
@@ -318,25 +330,28 @@ void PlaterScenePresenter::on_scene_selection_changed(
 
 void PlaterScenePresenter::on_scene_selection_transformed(
     Domain::SelectionId project_id,
-    const Biz::Scene::Selection& selection
+    const Biz::Scene::ObjectSelection& selection
 )
 {
     on_scene_selection_changed(project_id, selection);
 }
 
-void PlaterScenePresenter::on_selected_bed_instance_changed(
+void PlaterScenePresenter::on_selected_bed_instances_changed(
     Domain::SelectionId project_id,
-    Domain::SelectionId container_id,
-    Domain::SelectionId bed_instance_id
+    const Biz::Scene::BedSelection& selection
 )
 {
     m_bed_render_updater.update_all(project_context().scene().camera());
-    const Domain::BedInstance& bed_inst     = selected_bed_instance();
-    Domain::Vec3d bed_inst_offset           = bed_inst.transformation.get_offset();
-    std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed_inst.bed);
+
     Eigen::AlignedBox3d bed_aabb;
-    for (const auto& v : print_volume) {
-        bed_aabb.extend(bed_inst_offset + v.cast<double>());
+    for (const auto& bed_instance : selected_bed_instances()) {
+        const Domain::Vec3d bed_inst_offset{bed_instance.get().transformation.get_offset()};
+        const std::vector<Domain::Vec3f> print_volume{
+            Biz::Scene::BedGeometry::print_volume(bed_instance.get().bed)
+        };
+        for (const auto& v : print_volume) {
+            bed_aabb.extend(bed_inst_offset + v.cast<double>());
+        }
     }
     scene().set_shadows_aabb(bed_aabb);
     update_objects_shadows_data();
@@ -393,11 +408,19 @@ void PlaterScenePresenter::build_volume_node(
     }
 }
 
-const Domain::BedInstance& PlaterScenePresenter::selected_bed_instance() const
+PlaterScenePresenter::BedInstances PlaterScenePresenter::selected_bed_instances() const
 {
-    return m_project_interactor.selected_config_container().find_bed_instance(
-        m_project_interactor.scene_interactor().selected_bed_instance().instance_id
-    );
+    BedInstances result;
+    const Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
+    for (const Domain::BedRef& bed_ref : scene_interactor.bed_selection().all()) {
+        const Domain::BedInstance* bed_instance{
+            m_project_interactor.selected_project().find_bed_instance_by_id(bed_ref.instance_id)
+        };
+        if (bed_instance != nullptr) {
+            result.push_back(*bed_instance);
+        }
+    }
+    return result;
 }
 
 void PlaterScenePresenter::invoke_bed_visually_changed(Domain::SelectionId project_id)
@@ -470,8 +493,8 @@ void PlaterScenePresenter::on_instance_transformed(
     Biz::Scene::TransformState state
 )
 {
-    const Domain::BedInstance& bed_inst           = selected_bed_instance();
-    const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances;
+    const BedInstances bed_instances{selected_bed_instances()};
+    const Domain::ModelInstanceList instance{get_instances_on_beds(bed_instances)};
 
     auto& scene      = m_projects[m_selected_project_id].scene();
     const auto& proj = m_workbench.project(project_id);
@@ -497,11 +520,11 @@ void PlaterScenePresenter::on_instance_transformed(
                 const auto* vol = proj.find_volume_by_id(t->object_id, t->volume_id);
                 if (vol->is_model_part()) {
                     bool shadows = std::find_if(
-                                       insts_on_bed.begin(),
-                                       insts_on_bed.end(),
+                                       instance.begin(),
+                                       instance.end(),
                                        [t](auto i) { return i->id().id == t->instance_id; }
                                    )
-                        != insts_on_bed.end();
+                        != instance.end();
                     n.render_component()->set_shadows(
                         shadows ? Render::Shadows{true, true} : Render::Shadows{false, false}
                     );
@@ -570,11 +593,12 @@ void PlaterScenePresenter::on_volume_transformed(
     Biz::Scene::TransformState state
 )
 {
-    const Domain::BedInstance& bed_inst = selected_bed_instance();
+    const BedInstances& bed_instances{selected_bed_instances()};
     const Domain::Model* model          = &m_project_interactor.selected_project().model();
 
     auto& scene      = m_projects[m_selected_project_id].scene();
     const auto& proj = m_workbench.project(project_id);
+
     Scene::visit(scene.root(), [&](Scene::Node& n) {
         const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
         if (t == nullptr || t->volume_id == 0)
@@ -596,12 +620,14 @@ void PlaterScenePresenter::on_volume_transformed(
                                     obj->instances,
                                     tag->instance_id
                                 );
-                                bool shadows = bed_inst.contains(
-                                    Biz::Algorithms::BoundingBox::to_2d(transformed(
-                                        vol->mesh().bounding_box(),
-                                        inst->get_matrix() * vol->get_matrix()
-                                    ))
-                                );
+                                const bool shadows = std::ranges::any_of(bed_instances, [&](const auto& instance) {
+                                    return instance.get().contains(
+                                        Biz::Algorithms::BoundingBox::to_2d(transformed(
+                                            vol->mesh().bounding_box(),
+                                            inst->get_matrix() * vol->get_matrix()
+                                        ))
+                                    );
+                                });
                                 n.render_component()->set_shadows(
                                     shadows ? Render::Shadows{true, true} :
                                               Render::Shadows{false, false}

@@ -28,7 +28,7 @@ struct ExtrudersSequence;
 class SidebarPreviewActionButtons;
 
 class PreviewRenderModule final : public Platform::AbstractRenderModule,
-                                  public Biz::ISelectedBedInstanceChangedListener,
+                                  public Biz::ISelectedBedInstancesChangedListener,
                                   public Biz::IFDMResultCacheChangedListener,
                                   public Biz::ISelectedProjectChangedListener,
                                   public Biz::ISLAResultCacheChangedListener,
@@ -53,10 +53,9 @@ public:
     void remove_type_changed_listener(IRenderModuleChangedListener* l) override;
     /**@}*/
 
-    void on_selected_bed_instance_changed(
+    void on_selected_bed_instances_changed(
         Domain::SelectionId project_id,
-        Domain::SelectionId container_id,
-        Domain::SelectionId bed_instance_id
+        const Biz::Scene::BedSelection& selection
     ) override;
 
     void on_fdm_result_cache_changed(

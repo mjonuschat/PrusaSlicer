@@ -75,9 +75,6 @@ void ProjectInteractor::select_project(Domain::SelectionId project_id)
         const auto& config_container = projects.at(project_id).config_containers().front();
         const Domain::SelectionId first_container_id = config_container->id().id;
         do_select_config_container(first_container_id);
-
-        const Domain::SelectionId first_bed_instance_id = config_container->bed_instances().front()->id().id;
-        m_scene_interactor.select_bed_instance({ first_container_id, first_bed_instance_id });
     }
 }
 
@@ -88,11 +85,14 @@ ObservableProjectList& ProjectInteractor::observable_project_list()
 
 Biz::Slicing::SlicingId ProjectInteractor::selected_bed_slicing_id() const
 {
-    return { selected_project_id(), m_scene_interactor.selected_bed_instance().instance_id };
+    return {selected_project_id(), m_scene_interactor.bed_selection().last_selected_bed().instance_id};
 }
 
-void ProjectInteractor::on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id)
+void ProjectInteractor::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Scene::BedSelection& selection)
 {
+    const Domain::BedRef last_selected_bed{selection.last_selected_bed()};
+    const Domain::SelectionId container_id{last_selected_bed.config_container_id};
+
     if (container_id != m_selection.config_container_id)
         do_select_config_container(container_id);
 }
@@ -138,7 +138,6 @@ Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
 {
     auto& projects = m_workbench.projects();
     const auto& config_container = *p.config_containers().front();
-    const Domain::SelectionId first_container_id = config_container.id().id;
     Domain::SelectionId project_id = m_workbench.next_project_id();
     projects.emplace(project_id, std::move(p));
     invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
@@ -150,12 +149,6 @@ Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
     // prepare container's supporting data
     m_preset_interactor.prepare_config_container_preset(project_id, config_container.id().id);
     initialize_inserted_project(project_id);
-
-    // select the container
-    do_select_config_container(first_container_id);
-
-    const Domain::SelectionId first_bed_instance_id = config_container.bed_instances().front()->id().id;
-    m_scene_interactor.select_bed_instance({ first_container_id, first_bed_instance_id });
 
     return project_id;
 }

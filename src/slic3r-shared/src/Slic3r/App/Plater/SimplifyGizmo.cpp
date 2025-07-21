@@ -31,7 +31,7 @@ using Slic3r::App::Scene::GizmoEventContext;
 using Slic3r::App::Scene::Node;
 using Slic3r::App::Scene::NodeBuilder;
 using Slic3r::Biz::Scene::SceneInteractor;
-using Slic3r::Biz::Scene::Selection;
+using Slic3r::Biz::Scene::ObjectSelection;
 using Slic3r::Biz::ProjectInteractor;
 using Slic3r::Biz::Platform::IMainThreadDispatcher;
 using Slic3r::Biz::Platform::PlatformServices;
@@ -66,7 +66,7 @@ public: const char* what() const throw() { return _u8L("Model simplification has
 static std::chrono::duration<long int, std::milli> prcess_delay = std::chrono::milliseconds(250);
 
 using SelectedVolumes = std::vector<const ModelVolume*>;
-SelectedVolumes get_selected_volumes(const Selection& selection, const Project& project)
+SelectedVolumes get_selected_volumes(const ObjectSelection& selection, const Project& project)
 {
     SelectedVolumes volumes;
     for (const ElementRef& element : selection.elements) {
@@ -88,7 +88,7 @@ SelectedVolumes get_selected_volumes(const Selection& selection, const Project& 
 }
 
 using SelectedVolumeIds = std::set<ObjectID>;
-SelectedVolumeIds get_volume_ids(const Selection& selection, const Project& project)
+SelectedVolumeIds get_volume_ids(const ObjectSelection& selection, const Project& project)
 {
     SelectedVolumeIds ids;
     for (const ElementRef& element : selection.elements) {
@@ -158,7 +158,7 @@ void SimplifyGizmo::on_cycle_prepare()
 void SimplifyGizmo::render_imgui() 
 {
     const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
-    const Selection& selection = scene_interactor.selection();
+    const ObjectSelection& selection = scene_interactor.object_selection();
     if (selection.elements.empty())
         close(); // gizmo should not be open with empty selection
 

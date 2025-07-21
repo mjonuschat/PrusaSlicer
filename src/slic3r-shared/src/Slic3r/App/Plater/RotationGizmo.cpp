@@ -165,7 +165,7 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         m_dragging = true;
         m_pivot_world = extract_position(m_scene_presenter.selection_root().world_transform());
-        const auto& selection = m_scene_interactor.selection();
+        const auto& selection = m_scene_interactor.object_selection();
         if (selection.mode == Biz::Scene::SelectionMode::Instance) {
             m_pivot_local = m_pivot_world;
         } else {

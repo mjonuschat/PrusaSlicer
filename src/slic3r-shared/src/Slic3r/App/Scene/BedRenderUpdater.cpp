@@ -15,6 +15,8 @@ using Slic3r::Domain::Transform3d;
 
 namespace Slic3r::App::Scene {
 
+using Domain::BedRef;
+
 void BedRenderUpdater::update_materials()
 {
     visit(m_scene_provider.scene().root(), [&](Node& n) {
@@ -27,11 +29,15 @@ void BedRenderUpdater::update_materials()
             if (inst == nullptr)
                 return;
 
-            // when creating a new project the bed instance is not marked as active yet
-            // when this method is called, so check also if it is the only instance present
-            if (inst->active || cc->bed_instances().size() == 1)
+            const BedRef bed_ref{cc->id().id, inst->id().id};
+            if (m_scene_interactor.bed_selection().is_selected(bed_ref)) {
                 n.remove_material_override();
-            else {
+                if (tag->type == BedElementType::Label && m_scene_interactor.bed_selection().last_selected_bed() != bed_ref) {
+                    n.set_material_override(
+                        BedMaterials::label_secondary_selection_material(m_device, inst->label())
+                    );
+                }
+            } else {
                 Render::Material material;
                 switch (tag->type)
                 {
@@ -67,7 +73,9 @@ void BedRenderUpdater::update_shadows(const Camera& cam)
                 const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
                 if (inst == nullptr)
                     return;
-                if (!cam_pointing_upward && inst->active) {
+
+                const bool is_active{m_scene_interactor.bed_selection().is_selected(BedRef{cc->id().id, inst->id().id})};
+                if (!cam_pointing_upward && is_active) {
                     if (tag->type == BedElementType::Model && m_scene_provider.scene().bed_model_cast_shadow())
                         n.render_component()->set_shadows(Render::Shadows{ true, true });
                     else
@@ -103,37 +111,67 @@ void BedRenderUpdater::update_elements_state()
 {
     size_t bed_instances_count = 0;
 
-    visit(m_scene_provider.scene().root(), [&](Node& n) {
-        BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
-        if (tag != nullptr) {
-            if (tag->type == BedElementType::Undefined)
-                ++bed_instances_count;
-            else if (tag->type == BedElementType::Contour ||
-                     tag->type == BedElementType::PrintVolume ||
-                     tag->type == BedElementType::AxesMain) {
-                DEBUG_ASSERT(m_project != nullptr);
-                const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
-                DEBUG_ASSERT(cc != nullptr);
-                const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
-                if (inst == nullptr)
-                    return;
-                // update elements' visibility
-                switch (tag->type) {
-                case BedElementType::Contour:     { n.set_enabled(inst->contour_enabled); break; }
-                case BedElementType::PrintVolume: { n.set_enabled(inst->print_volume_enabled); break; }
-                case BedElementType::AxesMain:    { n.set_enabled(inst->active); break; }
-                }
+    visit(
+        m_scene_provider.scene().root(),
+        [&](Node& n) {
+            BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
+            if (tag == nullptr) {
+                return;
             }
-        }
-    }, true);
+            if (tag->type == BedElementType::Undefined) {
+                ++bed_instances_count;
+                return;
+            }
+            if (tag->type != BedElementType::Contour
+                && tag->type != BedElementType::PrintVolume
+                && tag->type != BedElementType::AxesMain)
+            {
+                return;
+            }
 
-    visit(m_scene_provider.scene().root(), [&](Node& n) {
-        BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
-        if (tag != nullptr) {
-            if (tag->type == BedElementType::Label)
+            ASSERT(m_project != nullptr);
+            const Domain::ConfigContainer* cc = m_project->find_config_container(
+                tag->config_container_id
+            );
+            ASSERT(cc != nullptr);
+            const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
+            if (inst == nullptr) {
+                return;
+            }
+
+            const BedRef bed_ref{cc->id().id, inst->id().id};
+            const bool is_active{m_scene_interactor.bed_selection().is_selected(bed_ref)};
+            // update elements' visibility
+            switch (tag->type) {
+            case BedElementType::Contour: {
+                n.set_enabled(bed_ref == m_scene_interactor.bed_selection().last_selected_bed());
+                break;
+            }
+            case BedElementType::PrintVolume: {
+                n.set_enabled(inst->print_volume_enabled);
+                break;
+            }
+            case BedElementType::AxesMain: {
+                n.set_enabled(is_active);
+                break;
+            }
+            default:
+                break;
+            }
+        },
+        true
+    );
+
+    visit(
+        m_scene_provider.scene().root(),
+        [&](Node& n) {
+            BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
+            if (tag != nullptr && tag->type == BedElementType::Label) {
                 n.set_enabled(bed_instances_count > 1);
-        }
-    }, true);
+            }
+        },
+        true
+    );
 }
 
 void BedRenderUpdater::camera_updated(const Camera& cam)
@@ -155,7 +193,9 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
                 const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
                 if (inst == nullptr)
                     return;
-                if (inst->active) {
+
+                const bool is_active{m_scene_interactor.bed_selection().is_selected(BedRef{cc->id().id, inst->id().id})};
+                if (is_active) {
                     if (cam_pointing_upward)
                         n.set_material_override(BedMaterials::plate_textured_override_material(n.render_component()->material()));
                     else
@@ -170,7 +210,9 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
                 const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
                 if (inst == nullptr)
                     return;
-                if (inst->active) {
+
+                const bool is_active{m_scene_interactor.bed_selection().is_selected(BedRef{cc->id().id, inst->id().id})};
+                if (is_active) {
                     Transform3d scale = Transform3d::Identity();
                     scale.scale(std::min(1.0, 1.0 / cam.zoom() * 10.0));
                     n.set_local_transform(scale.matrix());
@@ -182,9 +224,10 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
     update_shadows(cam);
 }
 
-void BedRenderUpdater::on_selected_project_changed(size_t index)
+void BedRenderUpdater::on_selected_project_changed(Domain::SelectionId project_id)
 {
-    m_project = &m_workbench.project(index);
+    m_project = &m_workbench.project(project_id);
+    m_project_id = project_id;
 }
 
 } // namespace Slic3r::App::Scene

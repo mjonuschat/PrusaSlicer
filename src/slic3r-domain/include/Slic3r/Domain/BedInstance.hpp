@@ -39,8 +39,6 @@ struct BedInstance : public ObjectBase
     size_t index{0};
     Transformation transformation;
     ModelInstanceList model_instances;
-    bool active{false};
-    bool contour_enabled{false};
     bool print_volume_enabled{false};
     std::optional<ModelWipeTower> wipe_tower;
     std::optional<CustomGCode::Info> custom_gcode;

@@ -1,13 +1,14 @@
 #pragma once
 
+#include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::Biz {
-class ISelectedBedInstanceChangedListener
+class ISelectedBedInstancesChangedListener
 {
 public:
-    virtual ~ISelectedBedInstanceChangedListener() = default;
+    virtual ~ISelectedBedInstancesChangedListener() = default;
 
-    virtual void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) = 0;
+    virtual void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Scene::BedSelection& bed_selection) = 0;
 };
 }

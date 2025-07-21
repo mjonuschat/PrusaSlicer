@@ -332,7 +332,7 @@ void PlaterRenderModule::init_gizmos()
         m_workbench,
         *m_scene_presenter
     );
-    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>(
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
         camera_gizmo
     );
     m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(
@@ -753,7 +753,7 @@ static void render_imgui_debug_bed(
     if (ImGui::Begin("Bed test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         auto& proj                       = project_interactor.selected_project();
         auto& scene_interactor           = project_interactor.scene_interactor();
-        const Domain::BedRef& active_tag = scene_interactor.selected_bed_instance();
+        const Domain::BedRef& active_tag = scene_interactor.bed_selection().last_selected_bed();
 
         size_t total_instances_count                    = 0;
         const Domain::Project::ConfigContainerList& ccs = proj.config_containers();
@@ -763,13 +763,12 @@ static void render_imgui_debug_bed(
 
         Domain::BedRef remove_tag{Domain::INVALID_ID, Domain::INVALID_ID};
 
-        if (ImGui::BeginTable("Beds", (total_instances_count > 1) ? 6 : 5, ImGuiTableFlags_Borders))
+        if (ImGui::BeginTable("Beds", (total_instances_count > 1) ? 5 : 4, ImGuiTableFlags_Borders))
         {
             ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
             ImGui::TableSetupColumn("Container ID");
             ImGui::TableSetupColumn("Instance ID");
             ImGui::TableSetupColumn("Model Insts");
-            ImGui::TableSetupColumn("Contour");
             ImGui::TableSetupColumn("Print Volume");
             ImGui::TableHeadersRow();
 
@@ -801,18 +800,6 @@ static void render_imgui_debug_bed(
                         ImGui::Text("%zu", inst.model_instances.size());
 
                         ImGui::TableSetColumnIndex(3);
-                        bool contour = inst.contour_enabled;
-                        if (ImGui::Checkbox(
-                                fmt::format("##contour{}/{}", tag->config_container_id, tag->instance_id)
-                                    .c_str(),
-                                &contour
-                            ))
-                        {
-                            inst.contour_enabled = contour;
-                            scene_presenter.update_beds();
-                        }
-
-                        ImGui::TableSetColumnIndex(4);
                         bool print_volume = inst.print_volume_enabled;
                         if (ImGui::Checkbox(
                                 fmt::format("##print_volume{}/{}", tag->config_container_id, tag->instance_id)
@@ -825,7 +812,7 @@ static void render_imgui_debug_bed(
                         }
 
                         if (total_instances_count > 1) {
-                            ImGui::TableSetColumnIndex(5);
+                            ImGui::TableSetColumnIndex(4);
                             if (ImGui::Button(
                                     fmt::format("Remove##{}/{}", tag->config_container_id, tag->instance_id)
                                         .c_str()
@@ -840,10 +827,13 @@ static void render_imgui_debug_bed(
         }
 
         if (remove_tag.config_container_id != Domain::INVALID_ID) {
-            const Domain::BedRef& active = scene_interactor.selected_bed_instance();
+            const Domain::BedRef& active = scene_interactor.bed_selection().last_selected_bed();
             scene_interactor.remove_bed_instance(remove_tag);
-            if (active == remove_tag)
-                scene_interactor.select_first_bed_instance();
+            if (active == remove_tag) {
+                auto& cc{project_interactor.selected_config_container()};
+                auto& inst{cc.bed_instances().front()};
+                scene_interactor.select_one_bed_instance(Domain::BedRef{cc.id().id, inst->id().id});
+            }
             --total_instances_count;
         }
 
@@ -1190,7 +1180,7 @@ void PlaterRenderModule::on_deactivated()
 
 void PlaterRenderModule::on_scene_selection_changed(
     Domain::SelectionId project_id,
-    const Biz::Scene::Selection& selection
+    const Biz::Scene::ObjectSelection& selection
 )
 {
     const bool empty_selection = selection.empty();

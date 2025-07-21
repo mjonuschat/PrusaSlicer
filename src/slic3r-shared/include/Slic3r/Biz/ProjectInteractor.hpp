@@ -44,7 +44,7 @@ class IProjectsChangedListener;
 
 
 class ProjectInteractor final : 
-    public ISelectedBedInstanceChangedListener,
+    public ISelectedBedInstancesChangedListener,
     public ISlicingInputChangedListener,
     public UserAccount::IUserAccountListener,
     public AppInstance::IAppInstanceMessageContentListener,
@@ -62,7 +62,7 @@ public:
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
         add_listener<ISelectedProjectChangedListener>(&m_scene_interactor);
-        m_scene_interactor.add_listener<ISelectedBedInstanceChangedListener>(this);
+        m_scene_interactor.add_listener<ISelectedBedInstancesChangedListener>(this);
         add_listener<ISelectedProjectChangedListener>(&m_slicing_interactor);
         m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
@@ -217,10 +217,10 @@ public:
     Biz::Slicing::SlicingId selected_bed_slicing_id() const;
 
     /**
-     * @name ISelectedBedInstanceChangedListener interface implementation
+     * @name ISelectedBedInstancesChangedListener interface implementation
      * @{
      */
-    void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) override;
+    void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Scene::BedSelection& selection) override;
     /** @} */
 
     /**

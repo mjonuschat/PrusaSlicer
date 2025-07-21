@@ -176,10 +176,22 @@ Render::Material BedMaterials::model_override_material(const Render::Device& dev
 
 Render::Material BedMaterials::label_override_material(const Render::Device& device, const std::string& label)
 {
+    const Slic3r::Domain::ColorRGB color{0.8f, 0.8f, 0.8f};
     Render::Material ret;
     ret
         .set_shader(device.context().shader_manager().shader("flat_texture"))
-        .set_texture(0, BedRenderHelper::texture(label, device.context().texture_manager()))
+        .set_texture(0, BedRenderHelper::texture(label, device.context().texture_manager(), color))
+        .set_transparent(true);
+    return ret;
+}
+
+Render::Material BedMaterials::label_secondary_selection_material(const Render::Device& device, const std::string& label)
+{
+    const Slic3r::Domain::ColorRGB color{0.6f, 0.6f, 0.6f};
+    Render::Material ret;
+    ret
+        .set_shader(device.context().shader_manager().shader("flat_texture"))
+        .set_texture(0, BedRenderHelper::texture(label, device.context().texture_manager(), color))
         .set_transparent(true);
     return ret;
 }

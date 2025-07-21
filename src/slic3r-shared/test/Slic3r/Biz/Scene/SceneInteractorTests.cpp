@@ -6,15 +6,18 @@
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
-#include "Slic3r/Biz/Platform/PlatformServices.hpp"
-#include "Slic3r/Biz/SecretStoreDummy.hpp"
-#include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 #include "libslic3r/Utils.hpp"
 
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::BedRef;
+using Slic3r::Domain::BedRefs;
+using Slic3r::Domain::BedInstance;
+using Slic3r::Domain::SelectionId;
+using Slic3r::Domain::Project;
+using Slic3r::Domain::ConfigContainer;
 
 namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
 
@@ -39,47 +42,50 @@ private:
     Slic3r::Biz::Platform::IMainThreadDispatcher& m_dispatcher;
 };
 
-TEST_CASE("Scene Interactor Bed Tracking")
+using namespace Slic3r;
+using namespace Slic3r::Biz;
+using namespace trompeloeil;
+namespace fs = boost::filesystem;
+
+struct SceneInteractorFixture
 {
-    using namespace Slic3r;
-    using namespace Slic3r::Biz;
-    using namespace trompeloeil;
-    namespace fs = boost::filesystem;
+    SceneInteractorFixture()
+    {
+        set_data_dir(Tests::get_datadir().string());
+        workbench.load_legacy_configs();
+
+        project_interactor.preset_interactor()
+            .load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
+
+        project_interactor.scene_interactor().add_listener<ISlicingInputChangedListener>(
+            &slicing_input_changed_listener
+        );
+
+        {
+            ALLOW_CALL(slicing_input_changed_listener, on_slicing_input_changed(_));
+            project_interactor.new_project();
+        }
+    }
 
     SlicingInputChangedListener slicing_input_changed_listener;
     Domain::Workbench workbench;
-    set_data_dir(Tests::get_datadir().string());
-    workbench.load_legacy_configs();
-
-    std::unique_ptr<SecretStoreDummy> store_dummy = std::make_unique<SecretStoreDummy>();
-    Platform::PlatformServices::instance().set_secret_store(std::move(store_dummy));
 
     App::Platform::StdMainThreadDispatcher dispatcher;
     ProjectInteractor project_interactor{workbench, dispatcher};
+    Scene::SceneInteractor& scene_interactor{project_interactor.scene_interactor()};
     ScopedThreadDispatcher thread_dispatcher{dispatcher};
 
-    auto data_dir              = Tests::get_datadir();
-    fs::path preset_bundle_dir = data_dir / "presets";
-    fs::path config_dir        = data_dir / "configs";
+    fs::path data_dir{Tests::get_datadir()};
+    fs::path preset_bundle_dir{data_dir / "presets"};
+    fs::path config_dir{data_dir / "configs"};
+};
 
-    project_interactor.preset_interactor()
-        .load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
-
-    project_interactor.scene_interactor().add_listener<ISlicingInputChangedListener>(
-        &slicing_input_changed_listener
-    );
-    {
-        ALLOW_CALL(slicing_input_changed_listener, on_slicing_input_changed(trompeloeil::_));
-        project_interactor.new_project();
-        // REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(gt(0)))
-        // .SIDE_EFFECT({ std::cout << _1 << std::endl; });
-    }
-
+TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[SceneInteractor]")
+{
     const auto& p          = project_interactor.selected_project();
     const auto& bed        = *project_interactor.selected_project().bed_container().beds().front();
     const auto& bed_center = bed.center();
     const auto& bed_size   = bed.contour_aabb_extent();
-    auto& scene_interactor = project_interactor.scene_interactor();
 
     auto& cc                  = p.config_containers().front();
     const auto& bed_instances = cc->bed_instances();
@@ -102,7 +108,7 @@ TEST_CASE("Scene Interactor Bed Tracking")
         scene_interactor.transform_selection(xform.matrix());
     }
 
-    const auto first_el_ref = scene_interactor.selection().elements.front();
+    const auto first_el_ref = scene_interactor.object_selection().elements.front();
 
     {
         REQUIRE_CALL(
@@ -280,7 +286,7 @@ TEST_CASE("Scene Interactor Bed Tracking")
         scene_interactor.add_instance(
             Domain::Vec2d(bed_center.x() - cube_side / 2 + bed_pitch.x(), bed_center.y() - cube_side / 2)
         );
-        second_el_ref = scene_interactor.selection().elements.front();
+        second_el_ref = scene_interactor.object_selection().elements.front();
         // selection: instance mode
         // +y A +-<1>-+
         // | | [1] |   (2)
@@ -375,4 +381,65 @@ TEST_CASE("Scene Interactor Bed Tracking")
     }
     // Queue must be clear before ProjectInteractor can be destroyed.
     // dispatcher.close();
+}
+
+TEST_CASE_METHOD(SceneInteractorFixture, "Bed selection", "[SceneInteractor]") {
+    const Project& project{project_interactor.selected_project()};
+    const SelectionId project_id{project_interactor.selected_project_id()};
+    const Domain::ConfigContainer& config_container{*project.config_containers().front()};
+
+    REQUIRE(config_container.bed_instances().size() == 1);
+
+    const BedRef initialy_selected_instance{
+        config_container.id().id,
+        config_container.bed_instances().front()->id().id
+    };
+    BedRefs beds;
+    {
+        ALLOW_CALL(slicing_input_changed_listener, on_slicing_input_changed(_));
+        for (std::size_t count{}; count < 4; ++count) {
+            const BedInstance instance{scene_interactor.add_bed_instance(config_container.id().id)};
+            beds.push_back(BedRef{config_container.id().id, instance.id().id});
+        }
+    }
+
+    REQUIRE(!scene_interactor.bed_selection().empty());
+    CHECK(scene_interactor.bed_selection().all() == BedRefs{initialy_selected_instance});
+
+    CHECK(scene_interactor.select_one_bed_instance(beds[2]));
+    CHECK(scene_interactor.bed_selection().all() == BedRefs{beds[2]});
+    CHECK(scene_interactor.toggle_bed_instance(beds[3]));
+    CHECK(scene_interactor.bed_selection().all() == BedRefs{beds[2], beds[3]});
+    CHECK(scene_interactor.bed_selection().last_selected_bed() == beds[3]);
+
+    CHECK(scene_interactor.toggle_bed_instance(beds[2]));
+    CHECK(scene_interactor.bed_selection().all() == BedRefs{beds[3]});
+    CHECK(!scene_interactor.toggle_bed_instance(beds[3]));
+    CHECK(!scene_interactor.select_one_bed_instance(beds[3]));
+
+    // After this the selection should be 0, 3.
+    CHECK(scene_interactor.toggle_bed_instance(beds[0]));
+
+    {
+        ALLOW_CALL(slicing_input_changed_listener, on_slicing_input_changed(_));
+        project_interactor.new_project();
+    }
+
+    const Domain::Project& another_project{project_interactor.selected_project()};
+    const Domain::ConfigContainer& another_config_container{*another_project.config_containers().front()};
+
+    REQUIRE(another_config_container.bed_instances().size() == 1);
+
+    const BedRef another_project_instance{
+        another_config_container.id().id,
+        another_config_container.bed_instances().front()->id().id
+    };
+
+    REQUIRE(!scene_interactor.bed_selection().empty());
+    CHECK(scene_interactor.bed_selection().all() == BedRefs{another_project_instance});
+
+    project_interactor.select_project(project_id);
+
+    // The original project selection is remembered.
+    CHECK(scene_interactor.bed_selection().all() == BedRefs{beds[3], beds[0]});
 }

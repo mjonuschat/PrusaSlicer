@@ -5,13 +5,19 @@
 
 namespace Slic3r::App::Preview {
 
-PreviewScenePresenter::PreviewScenePresenter(const Domain::Workbench& workbench,
-    Biz::ProjectInteractor& project_interactor, Render::Device& device)
-    : m_workbench(workbench), m_project_interactor(project_interactor), m_device(device)
-    , m_bed_render_updater(*this, workbench, device)
+PreviewScenePresenter::PreviewScenePresenter(
+    const Domain::Workbench& workbench,
+    Biz::ProjectInteractor& project_interactor,
+    Render::Device& device
+) :
+    m_workbench(workbench),
+    m_project_interactor(project_interactor),
+    m_device(device),
+    m_bed_render_updater(*this, workbench, device, project_interactor.scene_interactor())
 {
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(&m_bed_render_updater);
+
     size_t project_id = m_project_interactor.selected_project_id();
     on_selected_project_changed(project_id);
 }
@@ -76,20 +82,33 @@ void PreviewScenePresenter::add_bed_instances(const Domain::BedRefs& instances)
 
 void PreviewScenePresenter::update_bed_instances()
 {
+    const auto& scene_interactor = m_project_interactor.scene_interactor();
     m_bed_render_updater.update_all(scene().camera());
+    const Biz::Scene::BedSelection selection{scene_interactor.bed_selection()};
 
     // update visibility of bed instances
-    visit(scene().root(), [&](Scene::Node& n) {
-        Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
-        if (tag != nullptr && tag->type == Scene::BedElementType::Undefined) {
-            const auto& proj = m_workbench.project(m_selected_project_id);
-            const Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id);
-            const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
-            if (inst == nullptr)
-                return;
-            n.set_enabled(inst->active);
-        }
-    }, true);
+    visit(
+        scene().root(),
+        [&](Scene::Node& n) {
+            Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
+            if (tag != nullptr && tag->type == Scene::BedElementType::Undefined) {
+                const auto& proj                  = m_workbench.project(m_selected_project_id);
+                const Domain::ConfigContainer* cc = proj.find_config_container(
+                    tag->config_container_id
+                );
+                const Domain::BedInstance* inst = Domain::find_by_id(
+                    cc->bed_instances(),
+                    tag->instance_id
+                );
+                if (inst == nullptr)
+                    return;
+
+                const Domain::BedRef bed_ref{cc->id().id, inst->id().id};
+                n.set_enabled(selection.last_selected_bed() == bed_ref);
+            }
+        },
+        true
+    );
 }
 
 void PreviewScenePresenter::update_cameras(const std::function<void(Scene::Camera&)>& modifier)

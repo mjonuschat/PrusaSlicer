@@ -138,9 +138,6 @@ bool DesktopApp::OnInit()
     canvas.render();
 #endif
 
-    // force bed selection to update bed changed listeners
-    m_project_interactor->scene_interactor().select_first_bed_instance();
-
 #ifdef WIN32
     register_win32_device_notification_event();
 #endif // WIN32

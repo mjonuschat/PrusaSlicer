@@ -107,8 +107,11 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
     ;
 }
 
-void AbstractCameraGizmo::on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id)
+void AbstractCameraGizmo::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
 {
+    const Domain::BedRef last_selected_bed{selection.last_selected_bed()};
+    const Domain::SelectionId container_id{last_selected_bed.config_container_id};
+    const Domain::SelectionId bed_instance_id{last_selected_bed.instance_id};
     const auto& proj = m_workbench.project(project_id);
     const Domain::ConfigContainer* cc = proj.find_config_container(container_id);
     DEBUG_ASSERT(cc != nullptr);

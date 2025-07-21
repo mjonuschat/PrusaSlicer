@@ -19,7 +19,7 @@
 namespace Slic3r::Domain { class Bed; }
 
 namespace Slic3r::Biz {
-class ISelectedBedInstanceChangedListener;
+class ISelectedBedInstancesChangedListener;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::Biz::Scene {
@@ -28,8 +28,8 @@ class ISceneSelectionChangedListener
 {
 public:
     virtual ~ISceneSelectionChangedListener() = default;
-    virtual void on_scene_selection_changed(Domain::SelectionId project_id, const Selection& selection) = 0;
-    virtual void on_scene_selection_transformed(Domain::SelectionId project_id, const Selection& selection) {};
+    virtual void on_scene_selection_changed(Domain::SelectionId project_id, const ObjectSelection& selection) = 0;
+    virtual void on_scene_selection_transformed(Domain::SelectionId project_id, const ObjectSelection& selection) {};
 };
 
 enum class TransformState
@@ -107,7 +107,7 @@ class SceneInteractor final :
     public WithListeners<
     ISceneSelectionChangedListener,
         ISceneChangedListener,
-        ISelectedBedInstanceChangedListener,
+        ISelectedBedInstancesChangedListener,
         ISlicingInputChangedListener
     >
 {
@@ -138,9 +138,8 @@ public:
     void remove_bed_instance(const Domain::BedRef& instance);
     void transform_bed_instance(const Domain::BedRef& instance, const Transform& xform);
 
-    void select_bed_instance(const Domain::BedRef& instance);
-    void select_first_bed_instance();
-    const Domain::BedRef& selected_bed_instance() const { return m_selected_bed_instance; }
+    bool select_one_bed_instance(const Domain::BedRef& instance);
+    bool toggle_bed_instance(const Domain::BedRef& instance);
 
     const Domain::Project::ConfigContainerList& selected_project_config_containers() const;
     const Domain::ModelInstanceList& selected_project_unplaced_model_instances() const;
@@ -151,10 +150,12 @@ public:
      * @name Scene selection
      * @{
      */
-    const Selection& selection() const;
-    void set_selection(const Selection& selection);
-    void modify_selection(const std::function<void(Selection&)>& modifier);
+    const ObjectSelection& object_selection() const;
+    void set_object_selection(const ObjectSelection& selection);
+    void modify_selection(const std::function<void(ObjectSelection&)>& modifier);
     /** @} */
+
+    const BedSelection& bed_selection() const;
 
     /**
      * @name Transforming selection
@@ -196,7 +197,6 @@ public:
 private:
     void update_selection_instance_bed_placement();
     void invoke_slicing_input_changed(const Domain::BedRef& bed_instance);
-    void select_bed_instance_internal(const Domain::BedRef& bed_instance, bool force_update);
 
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, SceneInteractorProjectContext>;
@@ -206,7 +206,6 @@ private:
     ProjectContexts m_projects;
     Domain::SelectionId m_selected_project_id {Domain::INVALID_ID};
     Domain::SelectionId m_selected_config_container_id {Domain::INVALID_ID};
-    Domain::BedRef m_selected_bed_instance{ Domain::INVALID_ID, Domain::INVALID_ID };
     BedPlacement m_bed_placement;
 };
 

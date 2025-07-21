@@ -13,10 +13,10 @@ void SelectionHandler::mark_selected(Scene::Node& n, bool replace)
 
     Domain::ElementRef element = {tag->object_id, tag->instance_id, tag->volume_id};
 
-    if (m_scene_interactor.selection().is_selected(element))
+    if (m_scene_interactor.object_selection().is_selected(element))
         return;
 
-    auto selection_mode = m_scene_interactor.selection().mode;
+    auto selection_mode = m_scene_interactor.object_selection().mode;
 
     auto new_selection_mode = tag->volume_type == Domain::ModelVolumeType::MODEL_PART ?
         Biz::Scene::SelectionMode::Instance :
@@ -24,19 +24,19 @@ void SelectionHandler::mark_selected(Scene::Node& n, bool replace)
 
     if (new_selection_mode == Biz::Scene::SelectionMode::Instance)
         element.volume_id = 0;
-    Biz::Scene::Selection selection = replace
-        ? Biz::Scene::Selection{new_selection_mode}
-        : m_scene_interactor.selection();
+    Biz::Scene::ObjectSelection selection = replace
+        ? Biz::Scene::ObjectSelection{new_selection_mode}
+        : m_scene_interactor.object_selection();
     if (!selection.remove(element)) {
         selection.elements.push_back(element);
         selection.normalize();
     }
-    m_scene_interactor.set_selection(selection);
+    m_scene_interactor.set_object_selection(selection);
 }
 
 void SelectionHandler::mark_unselected(Scene::Node& n)
 {
-    Biz::Scene::Selection selection = m_scene_interactor.selection();
+    Biz::Scene::ObjectSelection selection = m_scene_interactor.object_selection();
     const auto* tag = n.tag_of_type<SceneNodeTag>();
     if (tag == nullptr)
         return;
@@ -48,12 +48,12 @@ void SelectionHandler::mark_unselected(Scene::Node& n)
         selection.elements.end()
     );
 
-    m_scene_interactor.set_selection(selection);
+    m_scene_interactor.set_object_selection(selection);
 }
 
 void SelectionHandler::clear_selection()
 {
-    m_scene_interactor.set_selection({Biz::Scene::SelectionMode::Volume});
+    m_scene_interactor.set_object_selection({Biz::Scene::SelectionMode::Volume});
 }
 
 }

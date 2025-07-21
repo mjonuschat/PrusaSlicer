@@ -24,7 +24,8 @@ static const Slic3r::Domain::ColorRGBA DEFAULT_BED_PLATE_COLOR  = { 0.225f, 0.22
 static const Slic3r::Domain::ColorRGBA DISABLED_BED_PLATE_COLOR = { 0.425f, 0.425f, 0.425f, 1.0f };
 static const Slic3r::Domain::ColorRGBA DEFAULT_BED_GRID_COLOR  = { 0.75f, 0.75f, 0.75f, 0.75f };
 static const Slic3r::Domain::ColorRGBA DISABLED_BED_GRID_COLOR = { 0.65f, 0.65f, 0.65f, 0.75f };
-static const Slic3r::Domain::ColorRGBA DEFAULT_BED_CONTOUR_COLOR  = { 0.9f, 0.9f, 0.9f, 1.0f };
+static const Slic3r::Domain::ColorRGB ORANGE = Domain::ColorRGB::ORANGE();
+static const Slic3r::Domain::ColorRGBA DEFAULT_BED_CONTOUR_COLOR  = {ORANGE.r(), ORANGE.g(), ORANGE.b(), 1.0};
 static const Slic3r::Domain::ColorRGBA DISABLED_BED_CONTOUR_COLOR = { 0.75f, 0.75f, 0.75f, 1.0f };
 static const Slic3r::Domain::ColorRGBA DEFAULT_BED_X_AXIS_COLOR = { 0.75f, 0.0f, 0.0f, 1.0f };
 static const Slic3r::Domain::ColorRGBA DEFAULT_BED_Y_AXIS_COLOR = { 0.0f, 0.75f, 0.0f, 1.0f };
@@ -48,6 +49,7 @@ struct BedMaterials
     static Render::Material print_volume_override_material(const Render::Device& device);
     static Render::Material model_override_material(const Render::Device& device);
     static Render::Material label_override_material(const Render::Device& device, const std::string& label);
+    static Render::Material label_secondary_selection_material(const Render::Device& device, const std::string& label);
 };
 
 } // namespace Slic3r::App::Scene

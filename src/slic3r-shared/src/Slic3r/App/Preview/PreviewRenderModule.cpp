@@ -364,14 +364,19 @@ void PreviewRenderModule::remove_type_changed_listener(IRenderModuleChangedListe
     m_render_module_changed_listeners.erase(l);
 }
 
-void PreviewRenderModule::on_selected_bed_instance_changed(
+void PreviewRenderModule::on_selected_bed_instances_changed(
     Domain::SelectionId project_id,
-    Domain::SelectionId container_id,
-    Domain::SelectionId bed_instance_id)
+    const Biz::Scene::BedSelection& selection
+)
 {
     DEBUG_ASSERT(m_project_interactor.selected_project_id() == project_id);
 
-    const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(container_id);
+    const Domain::BedRef bed_instance{selection.last_selected_bed()};
+    const Domain::Project& project{m_project_interactor.selected_project()};
+    const Domain::SelectionId config_container_id{bed_instance.config_container_id};
+    const Domain::SelectionId bed_instance_id{bed_instance.instance_id};
+    const Domain::ConfigContainer* cc{project.find_config_container(config_container_id)};
+
     DEBUG_ASSERT(cc != nullptr);
     if (cc->print_technology() == Domain::PrinterTechnology::SLA) {
         m_viewer = &m_sla_viewer;
@@ -422,7 +427,7 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
     m_scene_presenter =
         std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device);
 
-    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>( this );
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>( this );
     m_project_interactor.fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>( this );
     m_project_interactor.sla_result_cache().add_listener<Biz::ISLAResultCacheChangedListener>( this );
     m_project_interactor.sla_object_cache().add_listener<Biz::ISLAObjectCacheChangedListener>( this );
@@ -1217,7 +1222,7 @@ void PreviewRenderModule::center_camera_on_selected_bed()
 {
     const Domain::BedInstance* bed_inst = Domain::find_by_id(
         m_project_interactor.selected_config_container().bed_instances(),
-        m_project_interactor.scene_interactor().selected_bed_instance().instance_id
+        m_project_interactor.scene_interactor().bed_selection().last_selected_bed().instance_id
     );
     if (bed_inst == nullptr)
         return;

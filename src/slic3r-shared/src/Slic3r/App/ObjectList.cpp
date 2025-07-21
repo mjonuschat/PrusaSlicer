@@ -282,7 +282,7 @@ static std::set<size_t> get_object_instance_ids_on_bed(
 
 static bool is_whole_object_selected(
     const Domain::ModelObject* object,
-    const Slic3r::Biz::Scene::Selection& selection
+    const Slic3r::Biz::Scene::ObjectSelection& selection
 )
 {
     if (selection.mode == Biz::Scene::SelectionMode::Instance) {
@@ -298,7 +298,7 @@ static bool is_whole_object_selected(
 
 static bool is_volume_selected(
     const Domain::ElementRef& sel_element,
-    const Slic3r::Biz::Scene::Selection& selection
+    const Slic3r::Biz::Scene::ObjectSelection& selection
 )
 {
     if (selection.mode == Biz::Scene::SelectionMode::Volume) {
@@ -528,7 +528,7 @@ void ObjectList::process_dragging_start()
 void ObjectList::update_selection_from_scene()
 {
     auto& ctx                                    = selected_project_context();
-    const Biz::Scene::Selection& scene_selection = m_scene_interactor->selection();
+    const Biz::Scene::ObjectSelection& scene_selection = m_scene_interactor->object_selection();
     for (const Domain::ModelObject* object : ctx.model->objects) {
         size_t object_id = object->id().id;
 
@@ -849,7 +849,10 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     const ImVec2 text_size = ImGui::CalcTextSize(name.c_str());
     const ImVec2 padding   = style.ItemInnerSpacing;
 
-    RowBackground bg(bed->active && ctx.selected_items.empty());
+    const bool is_active{
+        m_scene_interactor->bed_selection().is_selected(Domain::BedRef{config_container_id, bed_id})
+    };
+    RowBackground bg(is_active);
     new_row(icon_size.y + 2.f * padding.y);
 
     ImTextureID tex_id = 0;
@@ -911,7 +914,7 @@ bool ObjectList::render_object_node(
     size_t object_id = object->id().id;
     Domain::ElementRef sel_element{object_id};
 
-    bool is_selected = is_whole_object_selected(object, m_scene_interactor->selection());
+    bool is_selected = is_whole_object_selected(object, m_scene_interactor->object_selection());
     if (ctx.edited_node_id == object_id && !is_selected)
         ctx.edited_node_id = 0; // Exit edit mode
 
@@ -1422,19 +1425,19 @@ void ObjectList::propagate_selection()
 {
     const auto& ctx = selected_project_context();
     if (ctx.selected_bed_instance_id != 0) {
-        m_scene_interactor->select_bed_instance(
+        m_scene_interactor->select_one_bed_instance(
             {ctx.selected_container_id, ctx.selected_bed_instance_id}
         );
         return;
     }
 
-    Biz::Scene::Selection sels;
+    Biz::Scene::ObjectSelection sels;
     sels.elements = std::vector<Domain::ElementRef>(
         ctx.selected_items.begin(),
         ctx.selected_items.end()
     );
     sels.normalize();
-    m_scene_interactor->set_selection(sels);
+    m_scene_interactor->set_object_selection(sels);
 }
 
 void ObjectList::propagate_name_editing(const Domain::ElementRef& id, const std::string& new_name)

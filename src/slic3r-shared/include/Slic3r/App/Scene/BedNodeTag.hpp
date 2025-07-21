@@ -27,8 +27,8 @@ enum class BedElementType : int8_t
   */
 struct BedNodeTag
 {
-    const size_t config_container_id{ 0 };
-    const size_t instance_id{ 0 };
+    const std::size_t config_container_id{ 0 };
+    const std::size_t instance_id{ 0 };
     const BedElementType type{ BedElementType::Undefined };
 };
 

@@ -31,7 +31,7 @@ Biz::Slicing::SlicingId SidebarActionButtons::active_bed_slicing_id() const
 {
     return {
         m_project_interactor->selected_project_id(),
-        m_project_interactor->scene_interactor().selected_bed_instance().instance_id
+        m_project_interactor->scene_interactor().bed_selection().last_selected_bed().instance_id
     };
 }
 

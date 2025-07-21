@@ -23,7 +23,7 @@ class ProjectInteractor;
 
 namespace Slic3r::Biz::Scene {
 class SceneInteractor;
-struct Selection;
+struct ObjectSelection;
 }
 
 namespace Slic3r::App::Render {

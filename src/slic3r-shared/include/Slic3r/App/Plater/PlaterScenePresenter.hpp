@@ -27,7 +27,7 @@ namespace Slic3r::App::Plater {
 class PlaterScenePresenter : public WithListeners<Plater::IBedVisuallyChangedListener>,
                              public Biz::ISelectedProjectChangedListener,
                              public Biz::Scene::ISceneSelectionChangedListener,
-                             public Biz::ISelectedBedInstanceChangedListener,
+                             public Biz::ISelectedBedInstancesChangedListener,
                              public Biz::Scene::ISceneChangedListener,
                              public Scene::MinimalSceneRenderCustomizer,
                              public Scene::ISceneProvider,
@@ -67,7 +67,10 @@ public:
         return project_context().selection_scene_changes();
     }
 
-    void update_beds() { m_bed_render_updater.update_all(scene().camera()); }
+    void update_beds()
+    {
+        m_bed_render_updater.update_all(scene().camera());
+    }
 
     Scene::Node& selection_root() override { return project_context().selection_root(); }
 
@@ -105,16 +108,17 @@ public:
     // that the object list is properly updated
     void force_bed_thumbnails_generation();
 
+    using BedInstances = std::vector<std::reference_wrapper<const Domain::BedInstance>>;
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
     void update_camera_frustum();
 
     void on_selected_project_changed(size_t index) override;
 
-    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection) override;
-    void on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection) override;
+    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
+    void on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
 
-    void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) override;
+    void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection) override;
 
     void on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;
     void on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;
@@ -137,7 +141,7 @@ private:
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst, const Domain::ModelVolume* vol,
         std::optional<Domain::ColorRGBA> color = std::nullopt);
 
-    const Domain::BedInstance& selected_bed_instance() const;
+    BedInstances selected_bed_instances() const;
 
     void invoke_bed_visually_changed(Domain::SelectionId project_id);
 

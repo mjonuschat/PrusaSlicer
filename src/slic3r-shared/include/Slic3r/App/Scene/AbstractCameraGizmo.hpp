@@ -15,7 +15,7 @@
 namespace Slic3r::App::Scene {
 
 class AbstractCameraGizmo : public IGizmo,
-                            public Biz::ISelectedBedInstanceChangedListener
+                            public Biz::ISelectedBedInstancesChangedListener
 {
 public:
     enum class State : uint8_t {
@@ -41,10 +41,10 @@ public:
 #endif
 
     /**
-     * @name Implementation of Slic3r::Biz::ISelectedBedInstanceChangedListener public interface
+     * @name Implementation of Slic3r::Biz::ISelectedBedInstancesChangedListener public interface
      * @{
      */
-    void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) override;
+    void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection) override;
     /**@}*/
 
 private:

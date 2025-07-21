@@ -37,7 +37,7 @@ public:
     void render_imgui(Render::CommandBuffer& cmd_buffer) override;
     void on_scene_mouse_event(const Platform::MouseEvent& e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent& e) override;
-    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection &selection) override;
+    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection &selection) override;
     void add_type_changed_listener(IRenderModuleChangedListener *l) override;
     void remove_type_changed_listener(IRenderModuleChangedListener *l) override;
 

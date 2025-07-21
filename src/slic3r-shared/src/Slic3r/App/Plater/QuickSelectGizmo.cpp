@@ -69,7 +69,7 @@ bool RectangleSelection::update_selection(SelectionHandler& selection_handler)
     Scene::Node::NodeList nodes = collect_contained_nodes();
 
     if (m_type == Type::Remove) {
-        if (m_scene_interactor.selection().mode == Biz::Scene::SelectionMode::Instance)
+        if (m_scene_interactor.object_selection().mode == Biz::Scene::SelectionMode::Instance)
             nodes = extract_instance_nodes(nodes);
     }
     else if (m_type == Type::Replace) {
@@ -200,7 +200,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
         }
 
         const bool additive = shift_down;
-        const auto& selection = m_scene_interactor.selection();
+        const auto& selection = m_scene_interactor.object_selection();
         if (selection.empty()) {
             if (it == ctx.pick_results().end())
                 return Scene::GizmoActivationState::Inactive;
