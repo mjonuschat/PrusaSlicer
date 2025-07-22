@@ -166,14 +166,19 @@ void PlaterScenePresenter::update_camera_frustum()
             for (const auto& v : print_volume) {
                 aabb.extend(bed_inst_offset + v.cast<double>());
             }
+            Eigen::AlignedBox3d model_aabb = Biz::Scene::BedGeometry::model_aabb(bed_inst->bed);
+            if (!model_aabb.isEmpty()) {
+                aabb.extend(bed_inst_offset + model_aabb.min());
+                aabb.extend(bed_inst_offset + model_aabb.max());
+            }
         }
     }
 
     // set new value for frustum z far
-    Vec3d sizes = aabb.sizes();
-    scene().camera().cam_projection().set_z_far(
-        scene().camera_trackball().distance_to_target() + std::max({sizes.x(), sizes.y(), sizes.z()})
-    );
+    Vec3d sizes  = aabb.sizes();
+    double z_far = scene().camera_trackball().distance_to_target()
+        + 2.0 * std::max({sizes.x(), sizes.y(), sizes.z()});
+    scene().camera().cam_projection().set_z_far(std::max(1000.0, z_far));
 }
 
 void PlaterScenePresenter::update_objects_shadows_data()

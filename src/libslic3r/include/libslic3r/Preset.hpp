@@ -655,8 +655,6 @@ private:
 namespace PresetUtils {
 	// PrinterModel of a system profile, from which this preset is derived, or null if it is not derived from a system profile.
 	const VendorProfile::PrinterModel* system_printer_model(const Preset &preset);
-    std::string system_printer_bed_model(const Preset& preset);
-    std::string system_printer_bed_texture(const Preset& preset);
     bool        vendor_profile_has_all_resources(const VendorProfile& vp);
     bool        compare_vendor_profile_printers(const VendorProfile& vp_old, const VendorProfile& vp_new, std::vector<std::string>& new_printers);
 } // namespace PresetUtils

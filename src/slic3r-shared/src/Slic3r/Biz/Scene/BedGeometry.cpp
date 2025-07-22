@@ -52,6 +52,18 @@ TriangleMesh BedGeometry::model(const Domain::Bed& bed)
     return TriangleMesh{};
 }
 
+Eigen::AlignedBox3d BedGeometry::model_aabb(const Domain::Bed& bed)
+{
+    Eigen::AlignedBox3d ret;
+    TriangleMesh mesh = model(bed);
+    if (!mesh.empty()) {
+        Domain::BoundingBox3d aabb = mesh.bounding_box();
+        ret.min()                  = aabb.min;
+        ret.max()                  = aabb.max;
+    }
+    return ret;
+}
+
 std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::Bed& bed)
 {
     std::vector<std::pair<Vec3f, Vec2f>> ret;

@@ -1,8 +1,8 @@
 #include "Slic3r/Domain/BedContainer.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
 
-#include <libslic3r/PrintConfig.hpp>
-#include <libslic3r/PresetBundle.hpp>
+#include <libslic3r/Utils.hpp>
 
 namespace Slic3r::Domain {
 
@@ -29,30 +29,52 @@ Bed& BedContainer::add_bed(
     return *m_beds.back();
 }
 
-Bed& BedContainer::add_bed(const Preset& selected_preset, const PresetBundle& preset_bundle)
+Bed& BedContainer::add_bed(const Preset::SelectedPreset& preset, const PresetBundle& preset_bundle)
 {
+    const auto& printer_preset_var                = preset.printer.values;
+    const Domain::PrinterSettings& printer_preset = std::get<Domain::PrinterSettings>(
+        printer_preset_var
+    );
+
+    auto shape_item = printer_preset.contains("bed_shape");
+    std::vector<Vec2d> shape;
+    if (shape_item.item != nullptr)
+        shape = shape_item.item->value().get<std::vector<Vec2d>>();
+
+    auto max_print_height_item = printer_preset.contains("max_print_height");
+    double max_print_height    = 0.0;
+    if (max_print_height_item.item != nullptr)
+        max_print_height = max_print_height_item.item->value().get<double>();
+
+    std::string assets_path = Slic3r::resources_dir()
+        + "/presets/"
+        + preset.hw_config.repo_id
+        + "/"
+        + preset.hw_config.vendor_id
+        + "/assets/";
     std::string model_filename;
+    if (!preset.bed_model().empty())
+        model_filename = assets_path + preset.bed_model();
     std::string texture_filename;
+    if (!preset.bed_texture().empty())
+        texture_filename = assets_path + preset.bed_texture();
 
-    const Slic3r::Preset* curr_preset = &selected_preset;
-    while (curr_preset != nullptr) {
-        if (curr_preset->config.has("bed_shape")) {
-            model_filename   = PresetUtils::system_printer_bed_model(*curr_preset);
-            texture_filename = PresetUtils::system_printer_bed_texture(*curr_preset);
-            if (!model_filename.empty() && !texture_filename.empty())
-                break;
-        }
-        curr_preset = preset_bundle.printers.get_preset_parent(*curr_preset);
-    }
+    auto custom_model_filename_item = printer_preset.contains("bed_custom_model");
+    std::string custom_model_filename;
+    if (custom_model_filename_item.item != nullptr)
+        custom_model_filename = custom_model_filename_item.item->value().get<std::string>();
 
-    std::string custom_model_filename   = selected_preset.config.option<ConfigOptionString>("bed_custom_model")->value;
-    std::string custom_texture_filename = selected_preset.config.option<ConfigOptionString>("bed_custom_texture")->value;
+    auto custom_texture_filename_item = printer_preset.contains("bed_custom_texture");
+    std::string custom_texture_filename;
+    if (custom_texture_filename_item.item != nullptr)
+        custom_texture_filename = custom_texture_filename_item.item->value().get<std::string>();
 
     return add_bed(
-        selected_preset.config.option<ConfigOptionPoints>("bed_shape")->values,
-        selected_preset.config.option<ConfigOptionFloat>("max_print_height")->value,
+        shape,
+        float(max_print_height),
         custom_model_filename.empty() ? model_filename : custom_model_filename,
-        custom_texture_filename.empty() ? texture_filename : custom_texture_filename);
+        custom_texture_filename.empty() ? texture_filename : custom_texture_filename
+    );
 }
 
 Bed* BedContainer::bed(size_t idx)

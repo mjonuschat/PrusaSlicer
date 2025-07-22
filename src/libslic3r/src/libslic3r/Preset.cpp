@@ -2462,30 +2462,6 @@ namespace PresetUtils {
 		return out;
 	}
 
-    std::string system_printer_bed_model(const Preset& preset)
-    {
-        std::string out;
-        const VendorProfile::PrinterModel* pm = PresetUtils::system_printer_model(preset);
-        if (pm != nullptr && !pm->bed_model.empty()) {
-            out = Slic3r::data_dir() + "/vendor/" + preset.vendor->id + "/" + pm->bed_model;
-            if (!boost::filesystem::exists(boost::filesystem::path(out)))
-                out = Slic3r::resources_dir() + "/profiles/" + preset.vendor->id + "/" + pm->bed_model;
-        }
-        return out;
-    }
-
-    std::string system_printer_bed_texture(const Preset& preset)
-    {
-        std::string out;
-        const VendorProfile::PrinterModel* pm = PresetUtils::system_printer_model(preset);
-        if (pm != nullptr && !pm->bed_texture.empty()) {
-            out = Slic3r::data_dir() + "/vendor/" + preset.vendor->id + "/" + pm->bed_texture;
-            if (!boost::filesystem::exists(boost::filesystem::path(out)))
-                out = Slic3r::resources_dir() + "/profiles/" + preset.vendor->id + "/" + pm->bed_texture;
-        }
-        return out;
-    }
-
     bool vendor_profile_has_all_resources(const VendorProfile& vp)
     {
         namespace fs = boost::filesystem;

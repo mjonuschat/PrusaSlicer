@@ -57,9 +57,7 @@ void ProjectInteractor::initialize_inserted_project(size_t project_id)
     for (auto& cc_ptr : m_workbench.project(project_id).config_containers()) {
         m_preset_interactor.initialize_config_container(*cc_ptr);
         size_t cc_id = cc_ptr->id().id;
-        const auto& selected_printer_preset =
-            m_preset_interactor.config_container_context(project_id, cc_id).printer.edited_preset;
-
+        const auto& selected_printer_preset = cc_ptr->selected_preset();
         Domain::Bed& bed =
             p.bed_container().add_bed(selected_printer_preset, m_workbench.preset_bundle_legacy());
         cc_ptr->set_bed(bed);

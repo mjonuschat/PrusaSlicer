@@ -8,9 +8,12 @@
 #include "libslic3r/Preset.hpp"
 
 namespace Slic3r {
-class DynamicPrintConfig;
 class PresetBundle;
 } // namespace Slic3r
+
+namespace Slic3r::Domain::Preset {
+struct SelectedPreset;
+} // namespace Slic3r::Domain::Preset
 
 namespace Slic3r::Domain {
 
@@ -27,7 +30,7 @@ public:
         const std::string& texture_filename
     );
 
-    Bed& add_bed(const Slic3r::Preset& selected_preset, const PresetBundle& preset_bundle);
+    [[nodiscard]] Bed& add_bed(const Preset::SelectedPreset& preset, const PresetBundle& preset_bundle);
 
     size_t beds_count() const { return m_beds.size(); }
     std::vector<size_t> beds_indices() const;

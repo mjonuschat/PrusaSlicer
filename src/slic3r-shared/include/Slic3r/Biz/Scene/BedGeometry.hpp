@@ -23,6 +23,17 @@ public:
     [[nodiscard]] static Domain::TriangleMesh model(const Domain::Bed& bed);
 
     /**
+     * @brief Load the bed model and return its axis aligned bounding box.
+     *
+     * @param bed The bed whose aabb is required.
+     *
+     * @return the axis aligned bounding box of the bed model.
+     *
+     * @note The filename of the model is specified into the bed, see Slic3r::Domain::Bed definition.
+     */
+    [[nodiscard]] static Eigen::AlignedBox3d model_aabb(const Domain::Bed& bed);
+
+    /**
      * @brief Return the geometry (triangulated contour) of the bed plate.
      *
      * @param bed The bed whose plate is required.
