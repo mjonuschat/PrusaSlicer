@@ -220,7 +220,7 @@ void SceneInteractor::add_volume_from_mesh(
     update_selection_instance_bed_placement();
 }
 
-void SceneInteractor::add_instance(const Transform& xform)
+void SceneInteractor::add_instance(const Vec2d& offset)
 {
     auto& project        = m_workbench.project(m_selected_project_id);
     const Selection& sel = selection();
@@ -229,8 +229,10 @@ void SceneInteractor::add_instance(const Transform& xform)
     Domain::ElementRefs updated;
 
     auto& obj  = *project.find_object_by_id(obj_id);
+    Transform3d trafo = obj.instances.back()->get_matrix();
+    trafo.pretranslate(Domain::Vec3d(offset.x(), offset.y(), 0.));
     auto& inst = *obj.add_instance();
-    inst.set_transformation(Transformation{Transform3d{xform}});
+    inst.set_transformation(Transformation{trafo});
     updated.emplace_back(obj.id().id, inst.id().id);
 
     auto changes = update_instances_bed_placement(project, updated);

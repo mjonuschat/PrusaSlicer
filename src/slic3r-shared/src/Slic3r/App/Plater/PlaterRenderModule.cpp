@@ -223,22 +223,7 @@ void PlaterRenderModule::init_scene_layout()
         "Add instance",
         "+",
         {.action = [this]() {
-            const size_t obj_id = m_project_interactor.scene_interactor().selection().elements[0].object_id;
-
-            const Domain::ModelObject& obj = *m_project_interactor.selected_project()
-                                                  .find_object_by_id(obj_id);
-
-            Transform3d xform          = Transform3d::Identity();
-            Vec3d last_instance_offset = obj.instances[obj.instances.size() - 1]->get_offset();
-            xform.translate(
-                Vec3d{
-                    last_instance_offset.x() + 10.f,
-                    last_instance_offset.y() + 5.f,
-                    last_instance_offset.z()
-                }
-            );
-
-            m_project_interactor.scene_interactor().add_instance(xform.matrix());
+            m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
             m_scene_presenter->scene().log_nodes();
         }}
     );

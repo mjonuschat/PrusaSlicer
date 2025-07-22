@@ -277,11 +277,9 @@ TEST_CASE("Scene Interactor Bed Tracking")
     Domain::ElementRef second_el_ref;
     {
         // back to object amid first (and only) bed
-        xform = Transform3d::Identity();
-        xform.translate(
-            Vec3d{bed_center.x() - cube_side / 2 + bed_pitch.x(), bed_center.y() - cube_side / 2, 0}
+        scene_interactor.add_instance(
+            Domain::Vec2d(bed_center.x() - cube_side / 2 + bed_pitch.x(), bed_center.y() - cube_side / 2)
         );
-        scene_interactor.add_instance(xform.matrix());
         second_el_ref = scene_interactor.selection().elements.front();
         // selection: instance mode
         // +y A +-<1>-+
