@@ -1,6 +1,6 @@
 #include "Slic3r/Domain/BedContainer.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
+#include "Slic3r/Domain/Preset/SelectedPreset.hpp"
 
 #include <libslic3r/Utils.hpp>
 
@@ -32,12 +32,8 @@ Bed& BedContainer::add_bed(
 
 Bed& BedContainer::add_bed(const Preset::SelectedPreset& preset, const PresetBundle& preset_bundle)
 {
-    const auto& printer_preset_var                = preset.printer.values;
-    const Domain::PrinterSettings& printer_preset = std::get<Domain::PrinterSettings>(
-        printer_preset_var
-    );
-
-    auto shape_item = printer_preset.contains("bed_shape");
+    const auto& printer_preset = preset.printer.config_box();
+    auto shape_item            = printer_preset.contains("bed_shape");
     std::vector<Vec2d> shape;
     if (shape_item.item != nullptr)
         shape = shape_item.item->value().get<std::vector<Vec2d>>();

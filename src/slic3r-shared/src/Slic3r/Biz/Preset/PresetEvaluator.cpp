@@ -174,12 +174,37 @@ struct ConfigValueSetterVisitor
     template <typename ValueType>
         requires AnyTypeOf<
             ValueType,
+            Domain::Vec2ds
+        >::value
+    void operator()(const ValueType& v)
+    {
+        if (item.holds_alternative<std::string>()) {
+            std::vector<std::string> values;
+            for (const auto& vi : v)
+                values.emplace_back(fmt::format("{}x{}", vi[0], vi[1]));
+            item.set(fmt::format("{}", fmt::join(values, ",")));
+        } else if (!item.holds_alternative<ValueType>()) {
+            std::string dest_type_name = item.value().visit([](const auto& v) {
+                return type_name(v);
+            });
+            SPDLOG_ERROR(
+                "Type mismatched for item {}: source type: {}  dest type: {}",
+                item.name(),
+                type_name(v),
+                dest_type_name
+            );
+        } else
+            item.set(v);
+    }
+
+    template <typename ValueType>
+        requires AnyTypeOf<
+            ValueType,
             Domain::Preset::Bools,
             Domain::Preset::Doubles,
             Domain::Preset::Ints,
             Domain::Preset::OptInts,
             Domain::Preset::Percentages,
-            Domain::Vec2ds,
             bool,
             int,
             Domain::Vec2d>::value
@@ -248,6 +273,7 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
 {
     return {
         .kind       = kind,
+        .root_id   = context.root_id,
         .id         = context.id.empty() ? Domain::Preset::generate_id() : context.id,
         .name       = context.name,
         .values     = config_values<FdmConfigType, SlaConfigType>(technology, context.values),
@@ -335,31 +361,6 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             printer_preset
         );
 
-        // 2. Material
-        PresetKind mat_kind = Domain::Preset::material_kind(hw_config.technology);
-        auto mats_it        = m_presets.find(mat_kind);
-        auto mat_names_it   = m_named_presets.find(mat_kind);
-        ASSERT(mats_it != m_presets.end() && mat_names_it != m_named_presets.end());
-
-        for (const auto& tool : hw_config.tools) {
-            Expr::ValueMap tool_values = printer_values;
-            append_tool_values(tool_values, tool);
-            Domain::Preset::EvaluatedMaterialVariants variants;
-
-            PresetCollectionEvaluator material_eval(mats_it->second, mat_names_it->second, m_eval, {});
-            auto mat_presets = material_eval.eval_preset(printer_tools_values);
-            for (const auto& mat : mat_presets) {
-                variants.emplace_back(
-                    preset_from_context<Domain::FilamentSettings, Domain::SLAMaterialSettings>(
-                        hw_config.technology,
-                        mat_kind,
-                        mat
-                    )
-                );
-            }
-            ep.materials.emplace_back(std::move(variants));
-        }
-
         // 3. Print preset
         PresetKind print_kind = Domain::Preset::print_kind(hw_config.technology);
         auto prints_it        = m_presets.find(print_kind);
@@ -374,9 +375,8 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
         PresetKind tool_kind = Domain::Preset::tool_print_kind(hw_config.technology);
         auto tool_it         = m_presets.find(tool_kind);
         auto tool_names_it   = m_named_presets.find(tool_kind);
-        ASSERT(tool_it != m_presets.end() && tool_names_it != m_named_presets.end());
+        ASSERT(hw_config.technology == Domain::PrinterTechnology::SLA || (tool_it != m_presets.end() && tool_names_it != m_named_presets.end()));
 
-        PresetCollectionEvaluator tool_eval(tool_it->second, tool_names_it->second, m_eval, {});
         for (const auto& print_preset : print_presets) {
             auto evaluated_print_preset = preset_from_context<Domain::PrintSettings, Domain::SLAPrintSettings>(
                 hw_config.technology,
@@ -391,6 +391,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             }, evaluated_print_preset.values);
 
             if (hw_config.technology == Domain::PrinterTechnology::FFF) {
+                PresetCollectionEvaluator tool_eval(tool_it->second, tool_names_it->second, m_eval, {});
                 for (const auto& tool : hw_config.tools) {
                     Expr::ValueMap tool_values = print_values;
                     append_tool_values(tool_values, tool);
@@ -410,9 +411,35 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                 }
             }
 
+            // 2. Material
+            PresetKind mat_kind = Domain::Preset::material_kind(hw_config.technology);
+            auto mats_it        = m_presets.find(mat_kind);
+            auto mat_names_it   = m_named_presets.find(mat_kind);
+            ASSERT(mats_it != m_presets.end() && mat_names_it != m_named_presets.end());
+
+            Domain::Preset::EvaluatedMaterialPresets materials;
+            for (const auto& tool : hw_config.tools) {
+                Expr::ValueMap tool_values = print_values;
+                append_tool_values(tool_values, tool);
+                Domain::Preset::EvaluatedMaterialVariants variants;
+
+                PresetCollectionEvaluator material_eval(mats_it->second, mat_names_it->second, m_eval, {});
+                auto mat_presets = material_eval.eval_preset({tool_values});
+                for (const auto& mat : mat_presets) {
+                    variants.emplace_back(
+                        preset_from_context<Domain::FilamentSettings, Domain::SLAMaterialSettings>(
+                            hw_config.technology,
+                            mat_kind,
+                            mat
+                        )
+                    );
+                }
+                materials.emplace_back(std::move(variants));
+            }
+
             // For FFF add only prints with tools filled
             if (hw_config.technology != Domain::PrinterTechnology::FFF || !tools.empty())
-                ep.prints.emplace_back(std::move(evaluated_print_preset), std::move(tools));
+                ep.prints.emplace_back(std::move(evaluated_print_preset), std::move(tools), std::move(materials));
         }
         ret.emplace_back(std::move(ep));
     }

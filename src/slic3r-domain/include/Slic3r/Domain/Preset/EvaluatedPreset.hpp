@@ -1,10 +1,10 @@
 #pragma once
 
-#include "HwConfig.hpp"
 
 #include <vector>
 #include <set>
 #include <string>
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Domain/Preset/PresetTree.hpp"
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
@@ -27,12 +27,22 @@ struct EvaluatedPreset
     using PresetValues = std::variant<ConfigFdmType, ConfigSlaType>;
 
     PresetKind kind{PresetKind::FdmPrinter};
+    std::string root_id;
     std::string id;
     std::string name;
     PresetValues values;
     FeatureValueMap features;
     Expressions conditions;
     SourceLocation last_node_location;
+
+    [[nodiscard]] std::string_view short_name() const
+    {
+        size_t idx = name.find('@');
+        if (idx == 0 || idx == std::string_view::npos)
+            return name;
+        while (idx > 0 && name[idx] != ' ') idx--;
+        return std::string_view{name.data(), idx};
+    }
 
     [[nodiscard]] const ConfigBox& config_box() const
     {
@@ -80,26 +90,6 @@ using EvaluatedToolPrintPresetVariants = std::vector<EvaluatedToolPrintPreset>;
  */
 using EvaluatedToolPrintPresets = std::vector<EvaluatedToolPrintPresetVariants>;
 
-struct EvaluatedPrintPreset
-{
-    using Preset = EvaluatedPreset<PrintSettings, SLAPrintSettings>;
-    Preset preset;
-    EvaluatedToolPrintPresets tools;
-
-    EvaluatedPrintPreset()                                = default;
-    EvaluatedPrintPreset(const EvaluatedPrintPreset&)     = default;
-    EvaluatedPrintPreset(EvaluatedPrintPreset&&) noexcept = default;
-
-    EvaluatedPrintPreset(Preset&& preset, EvaluatedToolPrintPresets&& tools) :
-        preset(std::move(preset)),
-        tools(std::move(tools))
-    {}
-
-    const EvaluatedToolPrintPreset* find_tool_preset_by_id(size_t tool_idx, const std::string& id) const;
-};
-
-using EvaluatedPrintPresets = std::vector<EvaluatedPrintPreset>;
-
 struct EvaluatedMaterialPreset
 {
     using Preset = EvaluatedPreset<FilamentSettings, SLAMaterialSettings>;
@@ -115,16 +105,39 @@ struct EvaluatedMaterialPreset
 using EvaluatedMaterialVariants = std::vector<EvaluatedMaterialPreset>;
 using EvaluatedMaterialPresets  = std::vector<EvaluatedMaterialVariants>;
 
+
+struct EvaluatedPrintPreset
+{
+    using Preset = EvaluatedPreset<PrintSettings, SLAPrintSettings>;
+    Preset preset;
+    EvaluatedToolPrintPresets tools;
+    EvaluatedMaterialPresets materials;
+
+    EvaluatedPrintPreset()                                = default;
+    EvaluatedPrintPreset(const EvaluatedPrintPreset&)     = default;
+    EvaluatedPrintPreset(EvaluatedPrintPreset&&) noexcept = default;
+
+    EvaluatedPrintPreset(Preset&& preset, EvaluatedToolPrintPresets&& tools, EvaluatedMaterialPresets&& materials) :
+        preset(std::move(preset)),
+        tools(std::move(tools)),
+        materials(std::move(materials))
+    {}
+
+    const EvaluatedToolPrintPreset* find_tool_preset_by_id(size_t tool_idx, const std::string& id) const;
+    const EvaluatedMaterialPreset* find_material_preset_by_id(size_t tool_idx, const std::string& id) const;
+};
+
+using EvaluatedPrintPresets = std::vector<EvaluatedPrintPreset>;
+
+
 struct EvaluatedPrinterPreset
 {
     using Preset = EvaluatedPreset<PrinterSettings, SLAPrinterSettings>;
     HwPrinterConfig hw_config;
     Preset preset;
     EvaluatedPrintPresets prints;
-    EvaluatedMaterialPresets materials;
 
     const EvaluatedPrintPreset* find_print_preset_by_id(const std::string& id) const;
-    const EvaluatedMaterialPreset* find_material_preset_by_id(size_t tool_idx, const std::string& id) const;
 
     PrinterTechnology technology() const
     {
@@ -133,25 +146,6 @@ struct EvaluatedPrinterPreset
     }
 
     bool is_valid() const;
-};
-
-struct SelectedPreset
-{
-    HwPrinterConfig hw_config;
-    EvaluatedPrinterPreset::Preset printer;
-    EvaluatedPrintPreset::Preset print;
-    std::vector<EvaluatedToolPrintPreset::Preset> tools;
-    std::vector<EvaluatedMaterialPreset::Preset> materials;
-
-    PrinterTechnology technology() const
-    {
-        return hw_config.technology;
-    }
-
-    [[nodiscard]] std::string bed_model() const;
-    [[nodiscard]] std::string bed_texture() const;
-
-    ConfigPack config() const;
 };
 
 } // namespace Slic3r::Domain::Preset

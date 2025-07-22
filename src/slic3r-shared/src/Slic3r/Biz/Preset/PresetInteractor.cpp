@@ -35,22 +35,23 @@ void dump_ep_info(const Domain::Preset::EvaluatedPrinterPreset& preset)
             for (const auto& t : tvs) {
                 SPDLOG_INFO("- {} ({})", t.preset.name, t.preset.id);
             }
+
+            size_t tool_idx = 0;
+            SPDLOG_INFO("-------------------------------------------------");
+            SPDLOG_INFO("Materials:");
+            SPDLOG_INFO("-------------------------------------------------");
+            for (const auto& tool_mats : p.materials) {
+                if (tool_idx > 0)
+                    SPDLOG_INFO("................................................");
+                tool_idx++;
+                SPDLOG_INFO("Tool {}", tool_idx);
+                for (const auto& mat : tool_mats) {
+                    SPDLOG_INFO("- {} ({})", mat.preset.name, mat.preset.id);
+                }
+            }
+            SPDLOG_INFO("-------------------------------------------------");
         }
     }
-    size_t tool_idx = 0;
-    SPDLOG_INFO("-------------------------------------------------");
-    SPDLOG_INFO("Materials:");
-    SPDLOG_INFO("-------------------------------------------------");
-    for (const auto& tool_mats : preset.materials) {
-        if (tool_idx > 0)
-            SPDLOG_INFO("................................................");
-        tool_idx++;
-        SPDLOG_INFO("Tool {}", tool_idx);
-        for (const auto& mat : tool_mats) {
-            SPDLOG_INFO("- {} ({})", mat.preset.name, mat.preset.id);
-        }
-    }
-    SPDLOG_INFO("-------------------------------------------------");
 }
 
 } // namespace
@@ -111,15 +112,18 @@ void PresetInteractor::load_preset_bundle(const std::string& preset_bundle_path,
     // TODO: remove this when config wizard is ready
     if (preset_bundle.printer_configs.empty()) {
         HwConfigEvaluator config_eval;
-
-        auto& prusa_fff = preset_bundle.vendor_bundles["PrusaResearch"];
-        for (const auto& hw_printer_template : prusa_fff.vendor_data.printer_configs) {
-            auto printer_config = config_eval.create_printer_config(
-                hw_printer_template,
-                prusa_fff.vendor_data
-            );
-            preset_bundle.printer_configs.emplace(printer_config.id, printer_config);
-            prusa_fff.printer_configs.emplace_back(std::move(printer_config));
+        for (const auto& vendor : {"PrusaResearch", "PrusaResearchSLA"}) {
+            auto vendor_bundle_it = preset_bundle.vendor_bundles.find(vendor);
+            ASSERT(vendor_bundle_it != preset_bundle.vendor_bundles.end());
+            auto& vendor_bundle = vendor_bundle_it->second;
+            for (const auto& hw_printer_template : vendor_bundle.vendor_data.printer_configs) {
+                auto printer_config = config_eval.create_printer_config(
+                    hw_printer_template,
+                    vendor_bundle.vendor_data
+                );
+                preset_bundle.printer_configs.emplace(printer_config.id, printer_config);
+                vendor_bundle.printer_configs.emplace_back(std::move(printer_config));
+            }
         }
     }
 
@@ -127,10 +131,14 @@ void PresetInteractor::load_preset_bundle(const std::string& preset_bundle_path,
     for (const auto& [vendor_id, vendor_bundle] : preset_bundle.vendor_bundles) {
         PresetEvaluator preset_evaluator{vendor_bundle.presets};
         for (const auto& p : vendor_bundle.printer_configs) {
-            auto epps = preset_evaluator.evaluate(p);
-            for (auto& epp : epps) {
-                dump_ep_info(epp);
-                preset_bundle.evaluated_presets[epp.hw_config.id].emplace_back(std::move(epp));
+            try {
+                auto epps = preset_evaluator.evaluate(p);
+                for (auto& epp : epps) {
+                    dump_ep_info(epp);
+                    preset_bundle.evaluated_presets[epp.hw_config.id].emplace_back(std::move(epp));
+                }
+            } catch (const std::exception& e) {
+                SPDLOG_ERROR("{}", e.what());
             }
         }
     }
@@ -169,11 +177,12 @@ void PresetInteractor::prepare_config_container_preset(
 
 void PresetInteractor::initialize_config_container(Domain::ConfigContainer& cc)
 {
+    const static std::string selected_printer_name = "CORE One";//"SL1S SPEED";//"Prusa MK4S";
     const auto& preset_bundle     = m_workbench.preset_bundle();
     const auto& evaluated_presets = preset_bundle.evaluated_presets;
     auto config_it                = preset_bundle.printer_configs.begin();
     while (config_it != preset_bundle.printer_configs.end()) {
-        if (evaluated_presets.contains(config_it->second.id))
+        if (evaluated_presets.contains(config_it->second.id) && config_it->second.name == selected_printer_name)
             break;
         ++config_it;
     }
@@ -215,7 +224,7 @@ void PresetInteractor::on_selected_config_container_changed(
 
     fill_print_presets(printer_preset, selected_preset);
     fill_tools_presets(printer_preset, *print, selected_preset);
-    fill_materials_presets(printer_preset, selected_preset);
+    fill_materials_presets(*print, selected_preset);
 
     // notify listeners on changes
     m_bed_preset_value_changed_listeners.invoke([&ccc](auto* l) {
@@ -295,7 +304,7 @@ void PresetInteractor::fill_config_container_with_selected_preset(
     }
 
     std::vector<Domain::Preset::EvaluatedMaterialPreset::Preset> materials;
-    for (const auto& m : printer_preset->materials) {
+    for (const auto& m : print.materials) {
         // TODO: better choose tool-print preset + ask for config values transfer
         materials.emplace_back(m[0].preset);
     }
@@ -340,7 +349,7 @@ void append_items(
         dest.emplace_back(
             PresetItem{
                 .id                     = p.preset.id,
-                .name                   = p.preset.name,
+                .name                   = std::string{p.preset.short_name()},
                 .hw_printer_config_id   = cfg.id,
                 .hw_pritner_config_name = cfg.name
             }
@@ -351,7 +360,7 @@ void append_items(
     }
 }
 
-void set_items(PresetItemObservableList& dest, std::vector<PresetItem> items, size_t selected_index)
+void set_items(PresetItemObservableList& dest, std::vector<PresetItem>&& items, size_t selected_index)
 {
     dest.items().set_items(std::move(items));
     dest.set_selected_index(selected_index);
@@ -369,7 +378,7 @@ void set_items(
     size_t idx = 0;
     size_t selected_index;
     append_items<T>(items, source, cfg, selected_id, idx, selected_index);
-    set_items(dest, items, selected_index);
+    set_items(dest, std::move(items), selected_index);
 }
 
 } // namespace
@@ -387,7 +396,7 @@ void PresetInteractor::fill_printer_presets()
         const auto& hw_config = ps.front().hw_config;
         append_items(printers, ps, hw_config, printer_preset_id, idx, selected_index);
     }
-    set_items(m_printer_presets, printers, selected_index);
+    set_items(m_printer_presets, std::move(printers), selected_index);
 }
 
 void PresetInteractor::fill_print_presets(
@@ -407,7 +416,7 @@ void PresetInteractor::fill_tools_presets(
     std::vector<PresetItemObservableList> tools;
 
     const size_t tool_count = selected_print_ep.tools.size();
-    ASSERT(tool_count > 0, s.print.id);
+    ASSERT(selected_printer_ep.hw_config.technology != Domain::PrinterTechnology::FFF || tool_count > 0, s.print.id);
     ASSERT(tool_count == s.tools.size());
     for (auto [t, st] = std::tuple(selected_print_ep.tools.cbegin(), s.tools.cbegin());
          t != selected_print_ep.tools.cend();
@@ -421,18 +430,18 @@ void PresetInteractor::fill_tools_presets(
 }
 
 void PresetInteractor::fill_materials_presets(
-    const Domain::Preset::EvaluatedPrinterPreset& selected_printer_ep,
+    const Domain::Preset::EvaluatedPrintPreset& selected_print_ep,
     const Domain::Preset::SelectedPreset& s
 )
 {
-    ASSERT(selected_printer_ep.materials.size() == s.materials.size());
+    ASSERT(selected_print_ep.materials.size() == s.materials.size());
     std::vector<PresetItemObservableList> materials;
-    for (auto [m, sm] = std::tuple(selected_printer_ep.materials.begin(), s.materials.cbegin());
-         m != selected_printer_ep.materials.cend();
+    for (auto [m, sm] = std::tuple(selected_print_ep.materials.begin(), s.materials.cbegin());
+         m != selected_print_ep.materials.cend();
          ++m, ++sm)
     {
         PresetItemObservableList items;
-        set_items(items, *m, selected_printer_ep.hw_config, sm->id);
+        set_items(items, *m, s.hw_config, sm->id);
         materials.emplace_back(std::move(items));
     }
     m_material_presets.set_items(std::move(materials));
@@ -459,7 +468,7 @@ void PresetInteractor::select_printer_preset(const std::string& printer_preset_i
     const auto* print = p.find_print_preset_by_id(s.print.id);
     ASSERT(print != nullptr, s.print.id);
     fill_tools_presets(p, *print, s);
-    fill_materials_presets(p, s);
+    fill_materials_presets(*print, s);
 }
 
 void PresetInteractor::select_print_preset(const std::string& id)
@@ -482,7 +491,7 @@ void PresetInteractor::select_print_preset(const std::string& id)
     const auto* print = printer.find_print_preset_by_id(s.print.id);
     ASSERT(print != nullptr, s.print.id);
     fill_tools_presets(*ep, *print, s);
-    fill_materials_presets(*ep, s);
+    fill_materials_presets(*print, s);
 }
 
 void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::string& id)
@@ -491,7 +500,7 @@ void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::st
     const auto* ep = m_workbench.preset_bundle().find_printer_preset_by_id(selected_preset.printer.id);
     ASSERT(ep != nullptr, selected_preset.printer.id);
 
-    const auto* p = ep->find_print_preset_by_id(id);
+    const auto* p = ep->find_print_preset_by_id(selected_preset.print.id);
     ASSERT(p != nullptr, id);
 
     ASSERT(tool_index < p->tools.size());
@@ -509,13 +518,15 @@ void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::st
 void PresetInteractor::select_material_preset(size_t material_index, const std::string& id)
 {
     auto& selected_preset = mutable_selected_printer_presets();
-    const auto* ep = m_workbench.preset_bundle().find_printer_preset_by_id(selected_preset.printer.id);
+    const auto* ep = m_workbench.preset_bundle().find_printer_preset_by_id(selected_preset.print.id);
     ASSERT(ep != nullptr, selected_preset.printer.id);
 
-    ASSERT(material_index < ep->materials.size());
+    const auto* p = ep->find_print_preset_by_id(selected_preset.print.id);
+
+    ASSERT(material_index < p->materials.size());
     ASSERT(material_index < selected_preset.materials.size());
 
-    const auto* m = ep->find_material_preset_by_id(material_index, id);
+    const auto* m = p->find_material_preset_by_id(material_index, id);
     ASSERT(m, id);
 
     selected_preset.materials[material_index] = m->preset;

@@ -87,7 +87,7 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
     const auto& p          = project_interactor.selected_project();
     const auto& bed        = *project_interactor.selected_project().bed_container().beds().front();
     const auto& bed_center = bed.center();
-    const auto& bed_size   = bed.contour_aabb_extent();
+    const auto bed_size   = bed.contour_aabb_extent();
 
     auto& cc                  = p.config_containers().front();
     const auto& bed_instances = cc->bed_instances();
@@ -119,18 +119,20 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
         );
         scene_interactor.add_bed_instance(cc->id().id);
 
-        // selection: instance mode
-        // +y A +-<1>-+ +-<2>-+
-        // | | (1) | |     |
-        // | +-----+ +-----+
-        // o----->
-        // +x
-        // Legend:
-        // +-<1>-+
-        // |     |     Bed (with ID symbol <1> --- i.e. id is stored in bi1_id)
-        // +-----+
-        // (1)        Selected instance
-        // [1]        Unselected instance
+        /*
+        selection: instance mode
+        +y A +-<1>-+ +-<2>-+
+           | | (1) | |     |
+           | +-----+ +-----+
+           o----->
+                 +x
+        Legend:
+        +-<1>-+
+        |     |     Bed (with ID symbol <1> --- i.e. id is stored in bi1_id)
+        +-----+
+        (1)        Selected instance
+        [1]        Unselected instance
+        */
         REQUIRE(bed_instances.size() == 2);
         REQUIRE(p.unplaced_model_instances().empty());
         REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
@@ -140,6 +142,7 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
 
     Vec3d bed_pitch = bed_instances[1]->transformation.get_offset()
         - bed_instances[0]->transformation.get_offset();
+    bed_pitch.y() += bed_size.y() * 2;
     const auto bi2_id = bed_instances[1]->id().id;
 
     {
@@ -154,12 +157,14 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
 
         scene_interactor.transform_selection(xform.matrix());
 
-        // selection: instance mode
-        // +y A +-<1>-+ +-<2>-+
-        // | |     | | (1) |
-        // | +-----+ +-----+
-        // o----->
-        // +x
+        /*
+        selection: instance mode
+        +y A +-<1>-+ +-<2>-+
+           | |     | | (1) |
+           | +-----+ +-----+
+           o----->
+                  +x
+        */
         REQUIRE(p.unplaced_model_instances().empty());
         REQUIRE(bed_instances[0]->model_instances.empty());
         REQUIRE(bed_instances[1]->model_instances.size() == 1);
@@ -168,19 +173,21 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
     {
         // Outside of second bed
         xform = Transform3d::Identity();
-        xform.translate(Vec3d{0, bed_size.y(), 0});
+        xform.translate(Vec3d{0, bed_pitch.y(), 0});
 
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi2_id);
 
         scene_interactor.transform_selection(xform.matrix());
-        // selection: instance mode
-        // (1)
-        // +y A +-<1>-+ +-<2>-+
-        // | |     | |     |
-        // | +-----+ +-----+
-        // o----->
-        // +x
+        /*
+        selection: instance mode
+                       (1)
+        +y A +-<1>-+ +-<2>-+
+           | |     | |     |
+           | +-----+ +-----+
+           o----->
+                +x
+        */
         REQUIRE(p.unplaced_model_instances().size() == 1);
         REQUIRE(p.unplaced_model_instances()[0]->id().id == first_el_ref.instance_id);
         REQUIRE(bed_instances[0]->model_instances.empty());
@@ -194,30 +201,34 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
             on_slicing_input_changed(ANY(const Domain::BedRef&))
         );
         scene_interactor.add_bed_instance(cc->id().id);
-        // selection: instance mode
-        // (1)
-        // +y A +-<1>-+ +-<2>-+ +-<3>-+
-        // | |     | |     | |     |
-        // | +-----+ +-----+ +-----+
-        // o----->
-        // +x
+        /*
+        selection: instance mode
+                       (1)
+        +y A +-<1>-+ +-<2>-+ +-<3>-+
+           | |     | |     | |     |
+           | +-----+ +-----+ +-----+
+           o----->
+                 +x
+        */
         REQUIRE(bed_instances.size() == 3);
     }
 
     const auto bi3_id = bed_instances[2]->id().id;
     {
         xform = Transform3d::Identity();
-        xform.translate(Vec3d{0, -bed_size.y(), 0});
+        xform.translate(Vec3d{0, -bed_pitch.y(), 0});
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi2_id);
         scene_interactor.transform_selection(xform.matrix());
 
-        // selection: instance mode
-        // +y A +-<1>-+ +-<2>-+ +-<3>-+
-        // | |     | | (1) | |     |
-        // | +-----+ +-----+ +-----+
-        // o----->
-        // +x
+        /*
+        selection: instance mode
+        +y A +-<1>-+ +-<2>-+ +-<3>-+
+           | |     | | (1) | |     |
+           | +-----+ +-----+ +-----+
+           o----->
+                +x
+        */
     }
 
     auto old_bed_two_id = bed_instances[1]->id().id;
@@ -230,12 +241,14 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
             .WITH(_1.instance_id == bi2_id);
         scene_interactor.remove_bed_instance({cc->id().id, old_bed_two_id});
 
-        // selection: instance mode
-        // +y A +-<1>-+ +-<3>-+
-        // | |     | | (1) |
-        // | +-----+ +-----+
-        // o----->
-        // +x
+        /*
+        selection: instance mode
+        +y A +-<1>-+ +-<3>-+
+           | |     | | (1) |
+           | +-----+ +-----+
+           o----->
+                +x
+        */
         REQUIRE(bed_instances.size() == 2);
         REQUIRE(bed_instances[1]->id().id != old_bed_two_id);
         REQUIRE(bed_instances[1]->transformation.get_matrix().isApprox(bed_xform));
@@ -252,12 +265,14 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
             .WITH(_1.instance_id == bi3_id);
         scene_interactor.remove_bed_instance({cc->id().id, old_bed_two_id});
 
-        // selection: instance mode
-        // +y A +-<1>-+
-        // | |     |   (1)
-        // | +-----+
-        // o----->
-        // +x
+        /*
+        selection: instance mode
+        +y A +-<1>-+
+           | |     |   (1)
+           | +-----+
+           o----->
+                +x
+        */
         REQUIRE(bed_instances.size() == 1);
         REQUIRE(p.unplaced_model_instances().size() == 1);
         REQUIRE(p.unplaced_model_instances()[0]->id().id == first_el_ref.instance_id);
@@ -271,12 +286,14 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
             .WITH(_1.instance_id == bi1_id);
         scene_interactor.transform_selection(xform.matrix());
 
-        // selection: instance mode
-        // +y A +-<1>-+
-        // | | (1) |
-        // | +-----+
-        // o----->
-        // +x
+        /*
+        selection: instance mode
+        +y A +-<1>-+
+           | | (1) |
+           | +-----+
+           o----->
+                +x
+        */
         REQUIRE(bed_instances.size() == 1);
         REQUIRE(p.unplaced_model_instances().empty());
         REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
@@ -289,12 +306,14 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
             Domain::Vec2d(bed_center.x() - cube_side / 2 + bed_pitch.x(), bed_center.y() - cube_side / 2)
         );
         second_el_ref = scene_interactor.object_selection().elements.front();
-        // selection: instance mode
-        // +y A +-<1>-+
-        // | | [1] |   (2)
-        // | +-----+
-        // o----->
-        // +x
+        /*
+        selection: instance mode
+        +y A +-<1>-+
+           | | [1] |   (2)
+           | +-----+
+           o----->
+                 +x
+        */
         REQUIRE(p.unplaced_model_instances().size() == 1);
         REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
         REQUIRE(bed_instances[0]->model_instances.size() == 1);
@@ -303,12 +322,14 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
     {
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_));
         scene_interactor.add_bed_instance(cc->id().id);
-        // selection: instance mode
-        // +y a +-<1>-+ +-<4>-+
-        // | | [1] | | (2) |
-        // | +-----+ +-----+
-        // o----->
-        // +x
+        /*
+        selection: instance mode
+        +y a +-<1>-+ +-<4>-+
+           | | [1] | | (2) |
+           | +-----+ +-----+
+           o----->
+                +x
+        */
         REQUIRE(p.unplaced_model_instances().empty());
         REQUIRE(bed_instances[0]->model_instances.size() == 1);
         REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
@@ -323,12 +344,14 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
             .WITH(_1.instance_id == bi4_id);
         scene_interactor.transform_selection(xform.matrix());
 
-        // selection: instance mode
-        // +y a   +-<1>-+ +-<4>-+
-        // |   | [1] | |     |  (2)
-        // |   +-----+ +-----+
-        // o----->
-        // +x
+        /*
+        selection: instance mode
+        +y A   +-<1>-+ +-<4>-+
+           |   | [1] | |     |  (2)
+           |   +-----+ +-----+
+           o----->
+                +x
+        */
         REQUIRE(p.unplaced_model_instances().size() == 1);
         REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
         REQUIRE(bed_instances[0]->model_instances.size() == 1);
@@ -349,12 +372,14 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
             xform.matrix()
         );
 
-        // selection: volume mode
-        // +y a   +-<1>-+ +-<4>-+
-        // | [ |  1] | |  [  |   2]
-        // |   +-----+ +-----+
-        // o----->
-        // +x
+        /*
+        selection: volume mode
+        +y A   +-<1>-+ +-<4>-+
+           | [ |  1] | |  [  |   2]
+           |   +-----+ +-----+
+           o----->
+                +x
+        */
         REQUIRE(p.unplaced_model_instances().empty());
         REQUIRE(bed_instances[0]->model_instances.size() == 1);
         REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
@@ -370,12 +395,14 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
             .WITH(_1.instance_id == bi4_id);
         scene_interactor.transform_selection(xform.matrix());
 
-        // selection: volume mode
-        // +y a   +-<1>-+ +-<4>-+
-        // |   | [1] | |     |  [2]
-        // |   +-----+ +-----+
-        // o----->
-        // +x
+        /*
+        selection: volume mode
+        +y A   +-<1>-+ +-<4>-+
+           |   | [1] | |     |  [2]
+           |   +-----+ +-----+
+           o----->
+                +x
+        */
         REQUIRE(p.unplaced_model_instances().size() == 1);
         REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
         REQUIRE(bed_instances[0]->model_instances.size() == 1);

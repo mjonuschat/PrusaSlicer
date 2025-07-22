@@ -149,7 +149,8 @@ variants:
         }) {
 
             const auto& p = evals[index];
-            REQUIRE(p.id == "*common*");
+            REQUIRE(p.root_id == "*common*");
+            REQUIRE(p.id == expected_name);
             REQUIRE(p.name == expected_name);
             REQUIRE(p.conditions.empty() == true);
             REQUIRE(std::get<double>(p.values.find("a")->second) == 1);
@@ -273,7 +274,8 @@ variants:
             auto it = std::find_if(evals.begin(), evals.end(), [&name](const auto& p){ return p.name == name; });
             REQUIRE(it != evals.end());
             const auto& p = *it;
-            REQUIRE(p.id == "Printer");
+            REQUIRE(p.id == name);
+            REQUIRE(p.root_id == "Printer");
             REQUIRE(p.conditions.empty() == true);
             REQUIRE(p.values.size() == 6);
             REQUIRE(std::get<double>(p.values.find("a")->second) == 1);

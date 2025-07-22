@@ -48,10 +48,11 @@ TEST_CASE("Preset Evaluator", "[preset]")
 
     for (const auto& print_preset : printer_preset.prints) {
         REQUIRE(print_preset.tools.size() == hw_config.tool_count);
+        REQUIRE(print_preset.materials.empty() == false);
         for (const auto& tool : print_preset.tools) {
             REQUIRE(tool.empty() == false);
         }
     }
 
-    REQUIRE(printer_preset.materials.empty() == false);
+
 }

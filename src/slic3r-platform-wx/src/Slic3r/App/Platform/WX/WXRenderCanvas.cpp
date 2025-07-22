@@ -804,7 +804,6 @@ void WXRenderCanvas::on_mouse_leave(wxMouseEvent& event)
 
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
-    SPDLOG_INFO("on_mouse: button: {}", evt.IsButton());
     // Dirty hack, which will shift focus onto ImGui and let it pass keyboard events
     SetFocus();
 

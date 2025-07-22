@@ -44,7 +44,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
 #if !HAS_RANGES_VIEWS
     PresetEvaluator::EvalPresetContexts ret;
     for (const auto& preset : m_presets) {
-        auto eval_presets = eval_preset(preset, {{}}, overrides);
+        auto eval_presets = eval_preset(preset, preset.id, {{preset.id}}, overrides);
         auto it           = only_public ?
                       std::remove_if(
                 eval_presets.begin(),
@@ -58,7 +58,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     return ret;
 #else
     auto joined_view = m_presets | std::views::transform([&](const auto& preset) {
-        return eval_preset(preset, {{}}, overrides.empty() ? ValueMaps{{}} : overrides, expr_combine)
+        return eval_preset(preset, preset.id, {{preset.id}}, overrides.empty() ? ValueMaps{{}} : overrides, expr_combine)
             | std::views::filter([only_public](const auto& ep) {
             return !only_public || Domain::Preset::is_public_name(ep.name);
         });
@@ -73,6 +73,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
 
 PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     const Domain::Preset::PresetNode& node,
+    const std::string& root_id,
     const PresetEvaluator::EvalPresetContexts& parent_contexts,
     const ValueMaps& overrides,
     ExprCombine expr_combine,
@@ -92,7 +93,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         for (const auto& inh : node.inherits) {
             const auto& node_path = named_preset(inh);
             ASSERT(node_path.size() == 1);
-            ret = eval_preset(*node_path.front(), ret, overrides, expr_combine, skip_condition_eval);
+            ret = eval_preset(*node_path.front(), root_id, ret, overrides, expr_combine, skip_condition_eval);
         }
     }
 
@@ -112,6 +113,16 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             context.id = Domain::Preset::derive_name(node.id, context.id);
         if (node.name.has_value())
             context.name = Domain::Preset::derive_name(node.name.value(), context.name);
+        if (node.name.has_value() && node.id.empty()) {
+            context.id = Domain::Preset::derive_name(node.name.value(), context.id);
+            SPDLOG_WARN(
+                "{}: Preset node has defined name ({}) but not id! "
+                "The id is derived from the name ({}) and MAY NOT BE UNIQUE.",
+                node.source_location.to_string(),
+                node.name.value(),
+                context.id
+            );
+        }
         if (node.condition.has_value())
             context.conditions.push_back(*node.condition.value());
         context.last_node_location = node.source_location;
@@ -142,7 +153,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             ASSERT(unconditional_variants == 1);
         }
 
-        auto var_ctx = eval_preset(var, {{}}, overrides, expr_combine, true);
+        auto var_ctx = eval_preset(var, root_id, {{root_id}}, overrides, expr_combine, true);
         var_contexts.insert(
             var_contexts.end(),
             std::make_move_iterator(var_ctx.begin()),
@@ -182,17 +193,17 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
 
 struct BoolCaster
 {
-    bool operator()(const std::string&)
+    bool operator()(const std::string&) const
     {
         return false;
     }
 
-    bool operator()(const Domain::Expr::RegEx&)
+    bool operator()(const Domain::Expr::RegEx&) const
     {
         return false;
     }
 
-    bool operator()(const auto& v)
+    bool operator()(const auto& v) const
     {
         return static_cast<bool>(v);
     }
