@@ -49,7 +49,15 @@ public:
 
 private:
     void update_pan(const Domain::Vec3d& delta, bool synchronize_cam_pivot);
-    void update_rotation(float delta_x, float delta_y);
+
+    /**
+     * @param delta_x percentage of screen traversed in x direction
+     * @param delta_y percentage of screen traversed in y direction
+     * @param delta_for_180_rotation The percentage of the screen that
+     * must be traversed to rotate the camera by 180 degrees (PI radians).
+     * This effectively adjusts the camera sensitivity.
+     */
+    void update_rotation(float delta_x, float delta_y, float delta_for_180_rotation);
     void update_zoom(float wheel_delta_y);
 
     void look_at(const Domain::Vec3d& pos, double azimuth, double zenith);

@@ -227,7 +227,7 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
         float delta_y = (event.y() - m_last_y) / ctx.screen_info().logical_height();
 
         if (m_state == State::Rotating)
-            update_rotation(delta_x, delta_y);
+            update_rotation(delta_x, delta_y, 0.25);
         else if (m_state == State::Panning) {
             Vec3d current_mouse_world_pos;
             Vec3d last_mouse_world_pos;
@@ -298,11 +298,17 @@ void AbstractCameraGizmo::update_zoom(float wheel_delta_y)
         );
 }
 
-void AbstractCameraGizmo::update_rotation(float delta_x, float delta_y)
+void AbstractCameraGizmo::update_rotation(float delta_x, float delta_y, float delta_for_180_rotation)
 {
     auto& scene = m_scene_provider.scene();
     auto& trackball = scene.camera_trackball();
-    trackball.add_azimuth_and_zenith(delta_x * M_PI, delta_y * M_PI, true);
+
+    const double delta_to_angle_factor{1.0 / delta_for_180_rotation * M_PI};
+    trackball.add_azimuth_and_zenith(
+        delta_x * delta_to_angle_factor,
+        delta_y * delta_to_angle_factor,
+        true
+    );
 }
 
 void AbstractCameraGizmo::look_at(const Vec3d& pos, double azimuth, double zenith)
