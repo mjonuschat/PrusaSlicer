@@ -31,9 +31,9 @@ public:
      */
     void resize(Vec2f size);
 
-protected:
     void push_event(EventPtr event) override;
 
+protected:
     Vec2f get_available_size() const override;
 
 protected:

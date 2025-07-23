@@ -15,9 +15,8 @@
 #include "Slic3r/App/Yoga/RadioButton.hpp"
 #include "Slic3r/App/Yoga/RadioExtruder.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
-#include "Slic3r/App/Yoga/StackLayout.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <Slic3r/Log.hpp>
 
@@ -28,13 +27,16 @@ using namespace Slic3r::App::Render;
 
 namespace Slic3r::App {
 
-SidebarPrint::SidebarPrint() : Window("sidebar_print")
+SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor) :
+    Window("sidebar_print"),
+    m_project_interactor(project_interactor),
+    m_print_settings_dialog(project_interactor)
 {
     set_orientation(Orientation::Vertical);
     set_gap(5);
 
     Paddings pad = padding();
-    pad.right = 0;
+    pad.right    = 0;
     set_padding(pad);
 
     set_flex_grow(1);
@@ -47,8 +49,15 @@ SidebarPrint::SidebarPrint() : Window("sidebar_print")
 
     m_print_settings_dialog.attach_to_item(this, Position::Left, 20);
     m_print_settings_dialog.callbacks().closed = [this]() {
-        for (AbstractButton* button : m_group_print_tools.buttons()) {
+        for (AbstractButton* button : m_group_print_tools->buttons()) {
             button->set_checked(false);
+        }
+    };
+    m_print_settings_dialog.dialog_callbacks().tab_selected = [this](size_t tab_index) {
+        if (tab_index == 0) {
+            m_settings_set_btn->set_checked(true);
+        } else {
+            m_tool_head_list_view->item_at(tab_index - 1)->cog_button()->set_checked(true);
         }
     };
 
@@ -60,32 +69,50 @@ SidebarPrint::SidebarPrint() : Window("sidebar_print")
     text_rect->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersBottomLeft);
     text_rect->set_padding(Paddings(5, 0));
     text_rect->emplace_back<Text>("Print");
-    ComboBox* layer_height_combo = layer_height_row->emplace_back<ComboBox>(
-        std::initializer_list<std::string>{"0.1 mm", "0.15 mm", "0.2 mm", "0.25 mm"}
+
+    m_combo_print = layer_height_row
+                        ->emplace_back<ComboBoxListViewSelection<Biz::Preset::PresetItem>>();
+    m_combo_print->set_get_name_fn([](const Biz::Preset::PresetItem* item) -> std::string {
+        return item->name;
+    });
+    m_combo_print->set_source_list(&m_project_interactor.preset_interactor().print_presets().items());
+    m_combo_print->set_flex_grow(1);
+    m_combo_print->callbacks().selection_changed = [this](int print_index) {
+        if (print_index >= 0) {
+            m_project_interactor.preset_interactor().select_print_preset(
+                m_project_interactor.preset_interactor().print_presets().items().at(print_index).id
+            );
+        }
+    };
+    m_project_interactor.preset_interactor()
+        .print_presets()
+        .add_listener<Biz::IListSelectionChangedListener>(m_combo_print);
+
+    m_settings_set_btn = layer_height_row->emplace_back<LayoutButton>("", Render::Icon::Cog);
+    m_settings_set_btn->set_checkable(true);
+    m_group_print_tools = std::make_shared<ButtonGroup>();
+    m_group_print_tools->insert_button(m_settings_set_btn);
+
+    m_tool_head_list_view = m_content_area->emplace_back<ToolHeadListView>(
+        Yoga::ViewFactory<
+            SidebarToolHeadRow,
+            Biz::Preset::PresetItemObservableList,
+            std::weak_ptr<Yoga::ButtonGroup>,
+            Biz::ProjectInteractor&>{m_group_print_tools, m_project_interactor}
     );
-    layer_height_combo->set_flex_grow(1);
-    LayoutButton* layer_height_cog =
-        layer_height_row->emplace_back<LayoutButton>("", Render::Icon::Cog);
-    layer_height_cog->set_checkable(true);
-    m_group_print_tools.insert_button(layer_height_cog);
+    m_tool_head_list_view->set_orientation(Orientation::Vertical);
+    m_tool_head_list_view->set_gap(5);
+    m_tool_head_list_view->set_flex_shrink(0);
+    m_tool_head_list_view->set_source_list(&m_project_interactor.preset_interactor().tool_presets());
 
-    m_tool_container = m_content_area->emplace_back<Item>();
-    m_tool_container->set_orientation(Orientation::Vertical);
-    m_tool_container->set_gap(5);
-    m_tool_container->set_flex_shrink(0);
-
-    for (int i = 1; i <= 4; ++i) {
-        emplace_tool(std::to_string(i));
-    }
-
-    m_group_print_tools.callbacks().checked_changed =
+    m_group_print_tools->callbacks().checked_changed =
         [this](AbstractButton* current_checked, AbstractButton* last_checked) {
-            if (current_checked) {
-                m_print_settings_dialog.open();
-            } else {
-                m_print_settings_dialog.close();
-            }
-        };
+        if (current_checked) {
+            m_print_settings_dialog.open();
+        } else {
+            m_print_settings_dialog.close();
+        }
+    };
 
     const Vec2f button_size{24.f, 24.f};
     constexpr float gap_size = 10;
@@ -97,10 +124,13 @@ SidebarPrint::SidebarPrint() : Window("sidebar_print")
 
     size_t extruer_id = 0;
     for (const ImColor& color : std::initializer_list<ImColor>{
-             ImColor{250, 100, 24}, ImColor{189, 1, 60}, ImColor{112, 193, 64}, ImColor{225, 249, 104}
-         }) {
-        RadioExtruder* radio_btn =
-            extruders_selector->emplace_back<RadioExtruder>(++extruer_id, color);
+             ImColor{250, 100, 24},
+             ImColor{189, 1, 60},
+             ImColor{112, 193, 64},
+             ImColor{225, 249, 104}
+         })
+    {
+        RadioExtruder* radio_btn = extruders_selector->emplace_back<RadioExtruder>(++extruer_id, color);
         radio_btn->set_checkable(true);
         if (extruer_id == 1)
             radio_btn->set_checked(true);
@@ -119,30 +149,6 @@ void SidebarPrint::add_separator()
 {
     Separator* separator = m_content_area->emplace_back<Separator>();
     separator->set_margin(Margins(-m_padding.left, gap(), -m_padding.right, gap()));
-}
-
-void SidebarPrint::emplace_tool(const std::string& id)
-{
-    ASSERT(!id.empty());
-
-    Item* row = m_tool_container->emplace_back<Item>();
-    row->set_flex_shrink(0);
-    Rectangle* rect = row->emplace_back<Rectangle>();
-    rect->set_fill(ImColor(41, 41, 41));
-    rect->set_justify_content(YGJustifyCenter);
-    rect->set_align_items(YGAlignCenter);
-    rect->set_width(25);
-    rect->emplace_back<Text>(id);
-    rect->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersBottomLeft);
-
-    ComboBox* tool_combo = row->emplace_back<ComboBox>(std::initializer_list<std::string>{
-        "Balanced settings", "Structural settings", "Speed settings"
-    });
-    tool_combo->set_flex_grow(1);
-
-    LayoutButton* settings_button = row->emplace_back<LayoutButton>("", Render::Icon::Cog);
-    settings_button->set_checkable(true);
-    m_group_print_tools.insert_button(settings_button);
 }
 
 void SidebarPrint::add_row(Item* container, const std::string& label, std::unique_ptr<Item> control)
@@ -165,32 +171,11 @@ void SidebarPrint::create_favorite_params()
     m_combo_tools = m_content_area->emplace_back<ComboBox>(
         std::initializer_list<std::string>{"All tools", "Tool 1", "Tool 2", "Tool 3", "Tool 4"}
     );
-    m_combo_tools->callbacks().selection_changed = [this](int current_selected) {
-        m_favorite_params_layout->set_current_index(current_selected);
-    };
 
-    m_favorite_params_layout = m_content_area->emplace_back<StackLayout>();
+    m_favorite_params_layout = m_content_area->emplace_back<Item>();
     m_favorite_params_layout->set_flex_shrink(0);
     m_favorite_params_layout->set_orientation(Orientation::Vertical);
 
-    // All tools
-    Item* page = m_favorite_params_layout->emplace_back<Item>();
-    page->set_orientation(Orientation::Vertical);
-    page->set_gap(5);
-
-    for (int i = 1; i <= 4; ++i) {
-        page->emplace_back<Text>("Tool " + std::to_string(i), Render::ImguiFontType::Bold);
-        Rectangle* tool_rect = page->emplace_back<Rectangle>();
-        tool_rect->set_padding(5);
-        tool_rect->set_fill(IM_COL32_BLACK_TRANS);
-        tool_rect->set_border_color(ImColor(61, 61, 61));
-        tool_rect->set_border_width(1);
-        create_favorite_params_page(tool_rect);
-    }
-
-    create_favorite_params_page(m_favorite_params_layout); // Tool 1
-    create_favorite_params_page(m_favorite_params_layout); // Tool 2
-    create_favorite_params_page(m_favorite_params_layout); // Tool 3
     create_favorite_params_page(m_favorite_params_layout); // Tool 4
 }
 
@@ -201,7 +186,7 @@ void SidebarPrint::create_favorite_params_page(Item* container)
     page->set_gap(5);
 
     std::unique_ptr<InputTextField> input_text = std::make_unique<InputTextField>();
-    m_input_text_perimeters = input_text.get();
+    m_input_text_perimeters                    = input_text.get();
     m_input_text_perimeters->set_validator(std::make_unique<IntValidator>());
     m_input_text_perimeters->set_flags(ImGuiInputTextFlags_CharsDecimal);
     add_row(page, "Perimeters", std::move(input_text));
@@ -211,8 +196,9 @@ void SidebarPrint::create_favorite_params_page(Item* container)
     add_row(page, "Infill", std::make_unique<Item>());
 
     std::unique_ptr<ComboBox> combo_density = std::make_unique<ComboBox>(
-        std::initializer_list<std::string>{{"15%"}}
+        std::initializer_list<std::string>{"0%", "5%", "10%", "15%", "20%", "30%"}
     );
+    combo_density->set_editable(true);
     m_combo_density = combo_density.get();
     add_row(page, "Density", std::move(combo_density));
 

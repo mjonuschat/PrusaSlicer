@@ -23,8 +23,6 @@ class ToggleButton : public AbstractButton
 public:
     explicit ToggleButton(const std::string& label = {}, const std::string& tooltip = {});
 
-    void process_events(Vec2f pos, Vec2f size) override;
-
     void set_label(const std::string& label);
     const std::string& get_label() const;
     void set_font_type(Render::ImguiFontType font_type);

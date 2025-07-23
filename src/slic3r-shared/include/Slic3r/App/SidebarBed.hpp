@@ -6,14 +6,16 @@
 
 #include "Slic3r/App/Yoga/Window.hpp"
 
-#include "Slic3r/Biz/ObservableList.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
-#include "Slic3r/App/MaterialState.hpp"
 #include "Slic3r/App/PrinterSettingsDialog.hpp"
 #include "Slic3r/App/FilamentSettingsDialog.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 #include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
+
+namespace Slic3r::Biz {
+class ProjectInteractor;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App {
 
@@ -23,12 +25,16 @@ class PrinterSettingsButton;
 class MaterialSettingsButton;
 } // namespace Yoga
 
-class SidebarBed : public Yoga::Window
+class SidebarBed : public Yoga::Window, public Biz::IListSelectionChangedListener
 {
 public:
-    explicit SidebarBed();
+    explicit SidebarBed(Biz::ProjectInteractor& project_interactor);
+
+    void on_list_selection_changed(Domain::SelectionId new_selection) override;
 
 private:
+    Biz::ProjectInteractor& m_project_interactor;
+
     Yoga::Text* m_bed_name{nullptr};
     Yoga::PrinterSettingsButton* m_physical_printer_button{nullptr};
     Yoga::PrinterSettingsButton* m_logical_printer_button{nullptr};
@@ -36,10 +42,11 @@ private:
     std::shared_ptr<Yoga::ButtonGroup> m_filament_button_group;
     using MaterialListView = Yoga::ListView<
         Yoga::MaterialSettingsButton,
-        MaterialState,
-        Yoga::ViewFactory<Yoga::MaterialSettingsButton, MaterialState, std::weak_ptr<Yoga::ButtonGroup>>>;
-    Biz::ObservableList<MaterialState>
-        m_observable_list; ///< this will be moved to more appropriate place
+        Biz::Preset::PresetItemObservableList,
+        Yoga::ViewFactory<
+            Yoga::MaterialSettingsButton,
+            Biz::Preset::PresetItemObservableList,
+            std::weak_ptr<Yoga::ButtonGroup>>>;
 
     MaterialListView* m_list_view{nullptr};
     PrinterSettingsDialog m_printer_settings_dialog;

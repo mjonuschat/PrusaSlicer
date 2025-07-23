@@ -4,91 +4,37 @@
 ///|/
 #include "Slic3r/App/PrinterAdvancedSettingsDialog.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
-#include "Slic3r/App/Yoga/ScrollArea.hpp"
-#include "Slic3r/App/Yoga/InputTextField.hpp"
-#include "Slic3r/App/Yoga/ComboBox.hpp"
-#include "Slic3r/App/Yoga/ToggleButton.hpp"
-#include "Slic3r/App/Yoga/LayoutButton.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/ConfigBoxInteractor.hpp"
+#include "Slic3r/App/Yoga/StackLayout.hpp"
+#include "Slic3r/App/ConfigSubcategoryListView.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog() : AbstractSettingsDialog("Printer")
+PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(Biz::ProjectInteractor& project_interactor) :
+    AbstractSettingsDialog({"Printer"}),
+    m_project_interactor(project_interactor),
+    m_cbi(project_interactor.preset_interactor().printer_cbi())
 {
+    m_category_page_transformer.set_source_model(&m_observable_categorizer);
+    m_observable_categorizer.set_source_model(&m_cbi.config_box_list());
+
+    m_current_tab->page_list_view->set_source_list(&m_category_page_transformer);
+
     content_item()->set_width(650);
     content_item()->set_height(700);
 
-    m_list_pages.reset(
-        {{_u8L("General")},
-         {_u8L("Custom G-code")},
-         {_u8L("Machine limits")},
-         {_u8L("Extruder 1")},
-         {_u8L("Extruder 2")},
-         {_u8L("Extruder 3")},
-         {_u8L("Extruder 4")},
-         {_u8L("Notes")},
-         {_u8L("Dependencies")}}
-    );
-    m_page_list_view->set_source_list(&m_list_pages);
-
-    dynamic_cast<PageEntryButton*>(m_page_list_view->get_item(0))->set_checked(true);
-
-    // This is stub, needs to be implemented dynamically
-    ScrollArea* general = emplace_stack_page();
-
-    {
-        std::vector<RowItem> fields;
-        fields.emplace_back(std::make_unique<LayoutButton>("Set bed shape"), "Bed shape", "");
-        fields.emplace_back(std::make_unique<InputTextField>(), "Max print height", "mm");
-        fields.emplace_back(std::make_unique<InputTextField>(), "Z offset", "mm");
-        emplace_subcategory(general, "Size and coordinates", "", std::move(fields));
-    }
-
-    {
-        std::vector<RowItem> fields;
-        fields.emplace_back(std::make_unique<InputTextField>(), "Extruders", "");
-        fields.emplace_back(std::make_unique<ToggleButton>(), "Single extruder Multi Material", "");
-        emplace_subcategory(general, "Capabilities", "", std::move(fields));
-    }
-
-    {
-        std::vector<RowItem> fields;
-        fields.emplace_back(
-            std::make_unique<ComboBox>(std::initializer_list<std::string>{"Marlin 2"}),
-            "G-code flavour", ""
+    // m_pages_stack_layout->set_orientation(Orientation::Vertical);
+    for (size_t i = 0; i < m_category_page_transformer.size(); ++i) {
+        m_current_tab->pages_stack_layout->emplace_back<ConfigSubcategoryListView>(
+            m_observable_categorizer.at(i).def().category,
+            m_cbi
         );
-        fields.emplace_back(std::make_unique<InputTextField>(), "G-code thumbnails", "");
-        fields.emplace_back(std::make_unique<ToggleButton>(), "Supports stealth mode", "");
-        fields.emplace_back(std::make_unique<ToggleButton>(), "Supports remaining times", "");
-        fields.emplace_back(std::make_unique<ToggleButton>(), "Supports binary G-code", "");
-        emplace_subcategory(general, "Firmware", "", std::move(fields));
     }
 
-    {
-        std::vector<RowItem> fields;
-        fields.emplace_back(
-            std::make_unique<ComboBox>(std::initializer_list<std::string>{"Aligned"}),
-            "Seam position", ""
-        );
-        fields.emplace_back(std::make_unique<ToggleButton>(), "Staggered inner seams", "");
-        fields.emplace_back(std::make_unique<ToggleButton>(), "Fill gaps", "");
-        fields.emplace_back(
-            std::make_unique<ComboBox>(std::initializer_list<std::string>{"Arachne"}),
-            "Parameter generator", ""
-        );
-        emplace_subcategory(general, "Advanced", "", std::move(fields));
-    }
-
-    emplace_stack_page(); // Custom G-code
-    emplace_stack_page(); // Machine limits
-    emplace_stack_page(); // Extruder 1
-    emplace_stack_page(); // Extruder 2
-    emplace_stack_page(); // Extruder 3
-    emplace_stack_page(); // Extruder 4
-    emplace_stack_page(); // Notes
-    emplace_stack_page(); // Dependencies
+    // dynamic_cast<PageEntryButton*>(m_page_list_view->get_item(0))->set_checked(true);
 }
 
 } // namespace Slic3r::App

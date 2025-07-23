@@ -209,7 +209,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("elefant_foot_min_width", typeid(double));
     def->location = Printer;
     def->label = L("Elephant foot minimum width");
-    def->category = L("Advanced");
+    def->category = ConfigItemDef::Category::Advanced;;
     def->tooltip = L("Minimum width of features to maintain when doing elephant foot compensation.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -219,7 +219,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("zcorrection_layers", typeid(int));
     def->location = Material;
     def->label = L("Z compensation");
-    def->category = L("Advanced");
+    def->category = ConfigItemDef::Category::Advanced;;
     def->tooltip = L("Number of layers to Z correct to avoid cross layer bleed");
     def->min = 0;
     def->mode = comAdvanced;
@@ -251,6 +251,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->label = L("SLA material type");
     def->tooltip = L("SLA material type");
     def->gui_flags = "show_value";
+    def->gui_type = ConfigItemDef::GUIType::select_open;
     def->choices = {
         { std::string("Tough"),  std::string("Tough")   },
         { std::string("Flexible"),  std::string("Flexible")   },
@@ -436,7 +437,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Generate supports");
-    def->category = L("Supports");
+    def->category = ConfigItemDef::Category::Supports;
     def->tooltip = L("Generate supports for the models");
     def->mode = comSimple;
     def->init_fn = init_with(true);
@@ -461,7 +462,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Support only in enforced regions");
-    def->category = L("Supports");
+    def->category = ConfigItemDef::Category::Supports;
     def->tooltip = L("Only create support if it lies in a support enforcer.");
     def->mode = comSimple;
     def->init_fn = init_with(false);
@@ -470,7 +471,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Material, Object};
     def->label = L("Support points density");
-    def->category = L("Supports");
+    def->category = ConfigItemDef::Category::Supports;
     def->tooltip = L("This is a relative measure of support points density.");
     def->sidetext = L("%");
     def->min = 0;
@@ -480,7 +481,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Use pad");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
     def->tooltip = L("Add a pad underneath the supported model");
     def->mode = comSimple;
     def->init_fn = init_with(true);
@@ -489,7 +490,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad wall thickness");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
      def->tooltip = L("The thickness of the pad and its optional cavity walls.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -505,7 +506,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
                      "Be careful when enabling this feature, as some resins may "
                      "produce an extreme suction effect inside the cavity, "
                      "which makes peeling the print off the vat foil difficult.");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
 //     def->tooltip = L("");
     def->sidetext = L("mm");
     def->min = 0;
@@ -518,7 +519,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Object };
     def->label = L("Pad brim size");
     def->tooltip = L("How far should the pad extend around the contained geometry");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
     //     def->tooltip = L("");
     def->sidetext = L("mm");
     def->min = 0;
@@ -530,7 +531,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Max merge distance");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
      def->tooltip = L("Some objects can get along with a few smaller pads "
                       "instead of a single big one. This parameter defines "
                       "how far the center of two smaller pads should be. If they"
@@ -543,7 +544,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     // This is disabled on the UI. I hope it will never be enabled.
 //    def = defs.add("pad_edge_radius", typeid(double));
 //    def->label = L("Pad edge radius");
-//    def->category = L("Pad");
+//    def->category = ConfigItemDef::Category::Pad;
 ////     def->tooltip = L("");
 //    def->sidetext = L("mm");
 //    def->min = 0;
@@ -554,7 +555,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad wall slope");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
     def->tooltip = L("The slope of the pad wall relative to the bed plane. "
                      "90 degrees means straight walls.");
     def->sidetext = L("°");
@@ -567,7 +568,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad around object");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
     def->tooltip = L("Create pad around object and ignore the support elevation");
     def->mode = comSimple;
     def->init_fn = init_with(false);
@@ -576,7 +577,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad around object everywhere");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
     def->tooltip = L("Force pad around object everywhere");
     def->mode = comSimple;
     def->init_fn = init_with(false);
@@ -585,7 +586,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad object gap");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
     def->tooltip  = L("The gap between the object bottom and the generated "
                       "pad in zero elevation mode.");
     def->sidetext = L("mm");
@@ -598,7 +599,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad object connector stride");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
     def->tooltip = L("Distance between two connector sticks which connect the object and the generated pad.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -609,7 +610,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad object connector width");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
     def->tooltip  = L("Width of the connector sticks which connect the object and the generated pad.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -620,7 +621,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad object connector penetration");
-    def->category = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
     def->tooltip  = L(
         "How much should the tiny connectors penetrate into the model body.");
     def->sidetext = L("mm");
@@ -632,7 +633,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Enable hollowing");
-    def->category = L("Hollowing");
+    def->category = ConfigItemDef::Category::Hollowing;
     def->tooltip = L("Hollow out a model to have an empty interior");
     def->mode = comSimple;
     def->init_fn = init_with(false);
@@ -641,7 +642,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Wall thickness");
-    def->category = L("Hollowing");
+    def->category = ConfigItemDef::Category::Hollowing;
     def->tooltip  = L("Minimum wall thickness of a hollowed model.");
     def->sidetext = L("mm");
     def->min = 1;
@@ -653,7 +654,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Accuracy");
-    def->category = L("Hollowing");
+    def->category = ConfigItemDef::Category::Hollowing;
     def->tooltip  = L("Performance vs accuracy of calculation. Lower values may produce unwanted artifacts.");
     def->min = 0;
     def->max = 1;
@@ -664,7 +665,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Closing distance");
-    def->category = L("Hollowing");
+    def->category = ConfigItemDef::Category::Hollowing;
     def->tooltip  = L(
         "Hollowing is done in two steps: first, an imaginary interior is "
         "calculated deeper (offset plus the closing distance) in the object and "
@@ -899,7 +900,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
         def->label = L("Pinhead front diameter");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("Diameter of the pointing side of the head");
         def->sidetext = L("mm");
         def->min = 0;
@@ -910,7 +911,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
         def->label = L("Head penetration");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("How much the pinhead has to penetrate the model surface");
         def->sidetext = L("mm");
         def->mode = comAdvanced;
@@ -921,7 +922,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
         def->label = L("Pinhead width");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("Width from the back sphere center to the front sphere center");
         def->sidetext = L("mm");
         def->min = 0;
@@ -933,7 +934,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
         def->label = L("Pillar diameter");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("Diameter in mm of the support pillars");
         def->sidetext = L("mm");
         def->min = 0;
@@ -945,7 +946,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Small pillar diameter percent");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("The percentage of smaller pillars compared to the normal pillar diameter "
             "which are used in problematic areas where a normal pilla cannot fit.");
         def->sidetext = L("%");
@@ -973,7 +974,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Max weight on model");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L(
             "Maximum weight of sub-trees that terminate on the model instead of the print bed. The weight is the sum of the lenghts of all "
             "branches emanating from the endpoint.");
@@ -1002,7 +1003,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Support on build plate only");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("Only create support if it lies on a build plate. Don't create support on a print.");
         def->mode = comSimple;
         def->init_fn = init_with(false);
@@ -1011,7 +1012,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Pillar widening factor");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip =
             L("Merging bridges or pillars into another pillars can "
                 "increase the radius. Zero means no increase, one means "
@@ -1026,7 +1027,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Support base diameter");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("Diameter in mm of the pillar base");
         def->sidetext = L("mm");
         def->min = 0;
@@ -1038,7 +1039,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Support base height");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("The height of the pillar base cone");
         def->sidetext = L("mm");
         def->min = 0;
@@ -1049,7 +1050,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Support base safety distance");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L(
             "The minimum distance of the pillar base from the model in mm. "
             "Makes sense in zero elevation mode where a gap according "
@@ -1064,7 +1065,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Critical angle");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("The default angle for connecting support sticks and junctions.");
         def->sidetext = L("°");
         def->min = 0;
@@ -1076,7 +1077,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Max bridge length");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("The max length of a bridge");
         def->sidetext = L("mm");
         def->min = 0;
@@ -1090,7 +1091,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Max pillar linking distance");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("The max distance of two pillars to get linked with each other."
             " A zero value will prohibit pillar cascading.");
         def->sidetext = L("mm");
@@ -1102,7 +1103,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Object elevation");
-        def->category = L("Supports");
+        def->category = ConfigItemDef::Category::Supports;
         def->tooltip = L("How much the supports should lift up the supported object. "
             "If \"Pad around object\" is enabled, this value is ignored.");
         def->sidetext = L("mm");

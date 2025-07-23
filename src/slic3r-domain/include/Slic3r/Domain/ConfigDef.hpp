@@ -63,9 +63,38 @@ struct ConfigItemDef
     std::string label;
     std::string full_label;
 
+    enum class Category : uint8_t
+    {
+        Unkown              = 0, ///< Default category, throws an error
+        Hidden              = 1, ///< Hidden from user, not visible in GUI
+        General             = 2,
+        Filament            = 3,
+        Cooling             = 4,
+        CustomGcode         = 5,
+        MachineLimits       = 6,
+        LayersAndPerimeters = 7,
+        Infill              = 8,
+        SkirtAndBrim        = 9,
+        SupportMaterial     = 10,
+        Speed               = 11,
+        Extruders           = 12,
+        MultipleExtruders   = 13,
+        Advanced            = 14,
+        WipeOptions,
+        OutputOptions,
+        SingleExtruderMMSetup,
+        Pad,
+        Supports,
+        Hollowing,
+        Notes,
+    };
+
+    static std::string translate_category(Category category);
+
     // Category of a configuration field, from the GUI perspective. One of: "Layers and Perimeters",
     // "Infill", "Support material", "Speed", "Extruders", "Advanced", "Extrusion Width"
-    std::string category;
+    Category category = Category::Unkown;
+    std::string option_group;
     std::string tooltip; // A tooltip text shown in the GUI.
     std::string sidetext; // Text right from the input field.
     std::string cli; // Format of this parameter on a command line.
@@ -80,8 +109,8 @@ struct ConfigItemDef
     bool is_code    = false; // GUI formats text as code (fixed-width).
     int height          = -1; // Height of a multiline GUI text box.
 
-    float min = -FLT_MAX; // <min, max> limit of a numeric input.
-    float max =  FLT_MAX; // If not set, the <min, max> is set to <INT_MIN, INT_MAX>
+    std::optional<double> min; // <min, max> limit of a numeric input.
+    std::optional<double> max; // If not set, the <min, max> is set to <INT_MIN, INT_MAX>
 
     static constexpr const char* nocli = "~~nocli";
 
@@ -114,6 +143,12 @@ struct ConfigItemDef
         one_string,   // Vector value, but edited as a single string.
         select_close, // Close parameter, string value could be one of the list values.
         password,     // Password, string vaule is hidden by asterisk.
+        textfield,
+        textfields,
+        checkbox,
+        spinbox,
+        combobox,
+        points
     };
     GUIType gui_type = GUIType::undefined;
 };

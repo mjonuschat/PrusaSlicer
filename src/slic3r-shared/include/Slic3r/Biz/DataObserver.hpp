@@ -15,6 +15,10 @@ public:
     DataObserver(size_t index, const Data& data) : m_index(index), m_state(&data) {}
     virtual ~DataObserver() {}
 
+    const Data* state() const {
+        return m_state;
+    }
+
     void set_state(const Data& state)
     {
         m_state = &state;

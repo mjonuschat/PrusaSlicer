@@ -25,7 +25,8 @@ static bool YGBeginCombo(
     int buf_size,
     bool& edited,
     Validator* validator,
-    ComboBox::Callbacks& callbacks
+    ComboBox::Callbacks& callbacks,
+    bool& hovered
 )
 {
     ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
@@ -59,7 +60,7 @@ static bool YGBeginCombo(
         return false;
 
     // Open on click
-    bool hovered, held;
+    bool held;
     bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
     const ImGuiID popup_id = ImHashStr("##ComboPopup", 0, id);
     bool popup_open = ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
@@ -128,10 +129,13 @@ static bool YGBeginCombo(
     // clang-format on
 }
 
-ComboBox::ComboBox(const std::string& name) { set_item_name(name); }
+ComboBox::ComboBox(const std::string& name) : m_tooltip(this, "", "")
+{
+    set_item_name(name);
+}
 
-ComboBox::ComboBox(std::initializer_list<std::string> initializer_list, const std::string& name)
-    : ComboBox(name)
+ComboBox::ComboBox(std::initializer_list<std::string> initializer_list, const std::string& name) :
+    ComboBox(name)
 {
     m_items = initializer_list;
     set_current_index(0);
@@ -153,21 +157,45 @@ void ComboBox::render(Vec2f pos, Vec2f size)
         ImGui::SetCursorScreenPos(to_im(pos));
 
         const std::string id = "###" + m_item_name;
+        bool new_hovered     = false;
         if (YGBeginCombo(
-                id.c_str(), m_current_label.c_str(), to_im(size), m_flags, m_editable,
-                m_buffer.data(), m_buffer.size(), m_updated, m_validator.get(), m_callbacks
-            )) {
-            int index = 0;
-            for (const std::string& item : std::as_const(m_items)) {
-                if (ImGui::Selectable(item.c_str(), index == m_current_index)) {
+                id.c_str(),
+                m_current_label.c_str(),
+                to_im(size),
+                m_flags,
+                m_editable,
+                m_buffer.data(),
+                m_buffer.size(),
+                m_updated,
+                m_validator.get(),
+                m_callbacks,
+                new_hovered
+            ))
+        {
+            const ImVec2 im_size = to_im(size);
+            for (size_t index = 0; index < m_items.size(); ++index) {
+                if (ImGui::Selectable(
+                        m_items.at(index).c_str(),
+                        index == m_current_index,
+                        0,
+                        im_size
+                    ))
+                {
                     set_current_index(index);
-                    if (m_callbacks.selection_changed)
+                    if (m_callbacks.selection_changed) {
                         m_callbacks.selection_changed(index);
+                    }
                 }
-                index++;
             }
 
             ImGui::EndCombo();
+        }
+
+        if (m_hovered != new_hovered) {
+            m_hovered = new_hovered;
+            if (!m_tooltip.text().empty()) {
+                m_hovered ? m_tooltip.open() : m_tooltip.close();
+            }
         }
     }
     render_item_end(pos, size);
@@ -178,7 +206,10 @@ ComboBox::Callbacks& ComboBox::callbacks()
     return m_callbacks;
 }
 
-const std::vector<std::string>& ComboBox::items() const { return m_items; }
+const std::vector<std::string>& ComboBox::items() const
+{
+    return m_items;
+}
 
 void ComboBox::set_items(const std::vector<std::string>& items)
 {
@@ -193,33 +224,51 @@ Vec2f ComboBox::get_item_size()
     return {50, ImGui::GetTextLineHeight() + GImGui->Style.FramePadding.y * 2.0f};
 }
 
-Validator* ComboBox::validator() const { return m_validator.get(); }
+Validator* ComboBox::validator() const
+{
+    return m_validator.get();
+}
 
 void ComboBox::set_validator(std::unique_ptr<Validator> validator)
 {
     m_validator = std::move(validator);
 }
 
-ImGuiComboFlags ComboBox::flags() const { return m_flags; }
+ImGuiComboFlags ComboBox::flags() const
+{
+    return m_flags;
+}
 
-void ComboBox::set_flags(ImGuiComboFlags flags) { m_flags = flags; }
+void ComboBox::set_flags(ImGuiComboFlags flags)
+{
+    m_flags = flags;
+}
 
-bool ComboBox::editable() const { return m_editable; }
+bool ComboBox::editable() const
+{
+    return m_editable;
+}
 
-void ComboBox::set_editable(bool editable) { m_editable = editable; }
+void ComboBox::set_editable(bool editable)
+{
+    m_editable = editable;
+}
 
 std::string ComboBox::current_label() const
 {
     return m_editable ? std::string(m_buffer.data()) : m_current_label;
 }
 
-int ComboBox::current_index() const { return m_current_index; }
+int ComboBox::current_index() const
+{
+    return m_current_index;
+}
 
 void ComboBox::set_current_index(int current_index)
 {
     if (m_items.empty()) {
         m_current_index = -1;
-        m_current_label = "";
+        m_current_label.clear();
         std::fill(m_buffer.begin(), m_buffer.end(), 0);
     } else {
         m_current_index = std::clamp(current_index, 0, static_cast<int>(m_items.size()) - 1);

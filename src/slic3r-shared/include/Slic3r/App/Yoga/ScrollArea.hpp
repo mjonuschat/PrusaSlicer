@@ -23,6 +23,8 @@ public:
     ImGuiWindowFlags window_flags() const;
     void set_window_flags(ImGuiWindowFlags window_flags);
 
+    const Vec2f& content_pos() const;
+
 private:
     ImGuiChildFlags m_child_flags = 0;
     ImGuiWindowFlags m_window_flags = 0;

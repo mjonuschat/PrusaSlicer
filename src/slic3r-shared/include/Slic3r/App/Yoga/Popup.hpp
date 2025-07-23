@@ -60,7 +60,7 @@ public:
     Position preferred_position() const;
     void set_preferred_position(Position preferred_position);
 
-    RootItem* root_item() const;
+    RootItem* get_or_find_root_item();
     void set_root_item(RootItem* root_item);
 
     Callbacks& callbacks();
@@ -70,6 +70,8 @@ protected:
 
 private:
     void find_root_item();
+
+    virtual void on_about_to_show();
 
 private:
     Callbacks m_callbacks;

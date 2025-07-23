@@ -10,19 +10,22 @@
 namespace Slic3r::App::Yoga {
 
 MaterialSettingsButton::MaterialSettingsButton(
-    size_t index, const MaterialState& state, std::weak_ptr<ButtonGroup> button_group
-)
-    : RectangleButton("Filament " + std::to_string(index) + " TT")
-    , Biz::DataObserver<MaterialState>(index, state)
-    , m_button_group(button_group)
+    size_t index,
+    const Biz::Preset::PresetItemObservableList& state,
+    std::weak_ptr<ButtonGroup> button_group
+) :
+    RectangleButton("Filament " + std::to_string(index + 1) + " TT"),
+    Biz::DataObserver<Biz::Preset::PresetItemObservableList>(index, state),
+    m_button_group(button_group)
 {
     set_checkable(true);
     set_max_size({YGUndefined, 40.f});
+    set_flex_shrink(0);
 
     // invalidate vertical padding to use whole button height for separators
     set_content_padding({5.f, 0.f});
 
-    Item* text_index = emplace_back<Text>(std::to_string(index));
+    Item* text_index = emplace_back<Text>(std::to_string(index + 1));
     text_index->set_self_align(YGAlignCenter);
 
     emplace_back<Separator>(Orientation::Vertical)
@@ -56,15 +59,31 @@ MaterialSettingsButton::~MaterialSettingsButton()
     }
 }
 
-void MaterialSettingsButton::set_color(const ImColor& color) { m_color_marker->set_fill(color); }
+void MaterialSettingsButton::set_color(const ImColor& color)
+{
+    m_color_marker->set_fill(color);
+}
 
-void MaterialSettingsButton::set_nozzle(float nozzle) { m_nozzle->set_text(format("%1%", nozzle)); }
+void MaterialSettingsButton::set_nozzle(float nozzle)
+{
+    m_nozzle->set_text(format("%1%", nozzle));
+}
 
 void MaterialSettingsButton::on_data_update()
 {
-    set_material_name(m_state->name);
-    set_color(m_state->color);
-    set_nozzle(m_state->nozzle);
+    on_list_selection_changed(m_state->selected_index());
+}
+
+void MaterialSettingsButton::on_list_selection_changed(Domain::SelectionId new_selection)
+{
+    const_cast<Biz::Preset::PresetItemObservableList*>(m_state)
+        ->add_listener<Biz::IListSelectionChangedListener>(this);
+
+    const Biz::Preset::PresetItem& preset_item = m_state->items().at(new_selection);
+
+    set_material_name(preset_item.name);
+    set_color(ImColor(250, 104, 48));
+    set_nozzle(0.4);
 }
 
 void MaterialSettingsButton::set_material_name(const std::string& name)

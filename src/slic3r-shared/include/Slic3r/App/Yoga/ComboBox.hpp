@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Yoga/Tooltip.hpp"
 
 namespace Slic3r::App::Yoga {
 
@@ -63,6 +64,11 @@ public:
 protected:
     Vec2f get_item_size() override;
 
+protected:
+    std::vector<std::string> m_items;
+
+    Tooltip m_tooltip;
+
 private:
     Callbacks m_callbacks;
 
@@ -72,13 +78,13 @@ private:
      * in order to use std::string
      */
     std::array<char, 2048> m_buffer = {0};
-    std::vector<std::string> m_items;
     int m_current_index = 0;
     std::string m_current_label;
     ImGuiComboFlags m_flags = 0;
     bool m_editable = false;
     std::unique_ptr<Validator> m_validator;
     bool m_updated = false;
+    bool m_hovered = false;
 };
 
 } // namespace Slic3r::App::Yoga

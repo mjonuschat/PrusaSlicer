@@ -6,19 +6,19 @@
 
 #include "Slic3r/App/Yoga/PrinterSettingsButton.hpp"
 #include "Slic3r/Biz/DataObserver.hpp"
-#include "Slic3r/App/LogicalPrinter.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
 namespace Slic3r::App {
 
 class LogicalPrinterSettingsButton
     : public Yoga::PrinterSettingsButton,
-      public Biz::DataObserver<LogicalPrinter>
+      public Biz::DataObserver<Biz::Preset::PresetItem>
 {
 public:
     using FnIndexClicked = std::function<void(size_t)>;
 
     LogicalPrinterSettingsButton(
-        size_t index, const LogicalPrinter& physical_printer, FnIndexClicked on_clicked
+        size_t index, const Biz::Preset::PresetItem& logical_printer_preset, FnIndexClicked on_clicked
     );
 
 protected:

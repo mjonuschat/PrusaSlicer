@@ -9,9 +9,9 @@ using namespace Slic3r::App::Yoga;
 namespace Slic3r::App {
 
 LogicalPrinterSettingsButton::LogicalPrinterSettingsButton(
-    size_t index, const LogicalPrinter& logical_printer, FnIndexClicked on_clicked
+    size_t index, const Biz::Preset::PresetItem& logical_printer, FnIndexClicked on_clicked
 )
-    : Biz::DataObserver<LogicalPrinter>(index, logical_printer), m_on_clicked(on_clicked)
+    : Biz::DataObserver<Biz::Preset::PresetItem>(index, logical_printer), m_on_clicked(on_clicked)
 {
     on_data_update();
     set_flex_shrink(0);
@@ -21,7 +21,8 @@ LogicalPrinterSettingsButton::LogicalPrinterSettingsButton(
 
 void LogicalPrinterSettingsButton::on_data_update()
 {
-    set_printer_name(m_state->m_family + " / " + m_state->m_name);
+    set_printer_name(m_state->name);
+    set_preset_name(m_state->hw_pritner_config_name);
     set_icon(Render::Icon::PrinterNEXT);
 }
 

@@ -195,7 +195,7 @@ BoxLoadResult<Settings> load_box(const ordered_json& json)
         json_keys.insert(key);
     }
 
-    for (ConfigItem& item : result.settings.items) {
+    for (ConfigItem& item : result.settings.items.all_items()) {
         const auto it{json.find(item.name())};
         if (it != json.end()) {
             fill_item(item, *it).or_else([&](const ItemParsingIssue& issue) {

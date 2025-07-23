@@ -27,11 +27,6 @@ ToggleButton::ToggleButton(const std::string& label, const std::string& tooltip)
     set_tooltip_position(Position::Bottom);
 }
 
-void ToggleButton::process_events(Vec2f pos, Vec2f size)
-{
-    AbstractButton::process_events(pos, size);
-}
-
 void ToggleButton::set_label(const std::string& label)
 {
     m_label->set_text(label);

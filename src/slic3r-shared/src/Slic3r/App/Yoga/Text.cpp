@@ -25,7 +25,9 @@ void Text::render(Vec2f pos, Vec2f size)
 
     // TODO: Resolve elipsis/elide
     if (m_wrap) {
-        ImGui::TextWrapped("%s", m_text.c_str());
+        ImGui::PushTextWrapPos(width());
+        ImGui::TextUnformatted(m_text.c_str());
+        ImGui::PopTextWrapPos();
     } else {
         ImGui::TextUnformatted(m_text.c_str());
     }

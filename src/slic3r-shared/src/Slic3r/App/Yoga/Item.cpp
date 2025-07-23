@@ -7,6 +7,9 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
 #include "Slic3r/App/Yoga/ItemEvents.hpp"
+#include "Slic3r/App/Yoga/Popup.hpp"
+#include "Slic3r/App/Yoga/RootItem.hpp"
+#include "Slic3r/App/Yoga/ScrollArea.hpp"
 
 #include <imgui_internal.h>
 #include <string>
@@ -434,8 +437,12 @@ Vec2f Item::get_item_size()
 
 void Item::push_event(std::unique_ptr<Event> event)
 {
-    ASSERT(m_parent);
-    m_parent->push_event(std::move(event));
+    if (m_parent_popup) {
+        m_parent_popup->get_or_find_root_item()->push_event(std::move(event));
+    } else {
+        ASSERT(m_parent);
+        m_parent->push_event(std::move(event));
+    }
 }
 
 void Item::enabled_updated_internal() {}
@@ -446,9 +453,17 @@ void Item::on_resized() {}
 
 Vec2f Item::get_global_pos() const
 {
-    const Vec2f pos{left(), top()};
+    Vec2f pos{left(), top()};
 
-    return m_parent ? pos + m_parent->get_global_pos() : pos;
+    if (m_parent) {
+        ScrollArea* scroll_area = dynamic_cast<ScrollArea*>(m_parent);
+        if (scroll_area) {
+            pos -= scroll_area->content_pos();
+        }
+        pos += m_parent->get_global_pos();
+    }
+
+    return pos;
 };
 
 void Item::set_imgui_render(Render::ImguiRender* imgui_render) { m_imgui_render = imgui_render; }
@@ -819,6 +834,16 @@ void Item::check_resized()
     for (const ItemPtr& child : std::as_const(m_children)) {
         child->check_resized();
     }
+}
+
+Popup *Item::parent_popup() const
+{
+    return m_parent_popup;
+}
+
+void Item::set_parent_popup(Popup *parent_popup)
+{
+    m_parent_popup = parent_popup;
 }
 
 } // namespace Slic3r::App::Yoga

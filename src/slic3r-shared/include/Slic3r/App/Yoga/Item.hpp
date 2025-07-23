@@ -25,6 +25,7 @@ class Item;
 using ItemPtr = std::unique_ptr<Item>;
 
 class Event;
+class Popup;
 
 class Item
 {
@@ -49,12 +50,16 @@ public:
     /**
      * @brief process_events processes input events and calls callbacks
      * @note You have to call process_events() of your children as well
+     * @deprecated Unfortunately ImGUI does not fit this paradigm, please
+     * refrain to override this method.
      */
     virtual void process_events(Vec2f pos, Vec2f size);
 
     YGNodeRef node() const;
 
     Item* parent() const;
+    Popup* parent_popup() const;
+    void set_parent_popup(Popup* parent_popup);
     /**
      * @return position that is relative to Item parent
      * @note resize has to be called for parent Item
@@ -238,6 +243,7 @@ protected:
     Vec2f m_min_size = {};
     Vec2f m_max_size = {YGUndefined, YGUndefined};
     Item* m_parent = nullptr;
+    Popup* m_parent_popup = nullptr;
     YGNodeRef m_node = nullptr;
     std::string m_item_name;
 

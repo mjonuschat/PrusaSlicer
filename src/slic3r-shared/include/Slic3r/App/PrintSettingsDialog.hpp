@@ -5,21 +5,32 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/AbstractSettingsDialog.hpp"
-#include "Slic3r/Biz/ObservableList.hpp"
+#include "Slic3r/App/Config/ObservableCategorizer.hpp"
+#include "Slic3r/App/Config/CategoryPageTransformer.hpp"
+
+namespace Slic3r::Biz {
+class ProjectInteractor;
+class ConfigBoxInteractor;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App {
 
 class PrintSettingsDialog : public Yoga::AbstractSettingsDialog
 {
+    struct PrintSettingsTab
+    {
+        Biz::ConfigBoxInteractor& cbi;
+        Tab* tab{nullptr};
+        ObservableCategorizer observable_categorizer;
+        CategoryPageTransformer category_page_transformer;
+    };
 public:
-    PrintSettingsDialog();
-
-protected:
-    void on_tab_selected(int current_index) override;
+    explicit PrintSettingsDialog(Biz::ProjectInteractor& project_interactor);
 
 private:
-    Biz::ObservableList<PageEntry> m_list_pages_print;
-    Biz::ObservableList<PageEntry> m_list_pages_tool;
+    Biz::ProjectInteractor& m_project_interactor;
+
+    std::vector<PrintSettingsTab> m_tabs;
 };
 
 } // namespace Slic3r::App

@@ -23,6 +23,7 @@ InputTextWithSpin::InputTextWithSpin(
     m_step_fast(step_fast)
 {
     set_validator(std::move(validator_in));
+    set_orientation(Orientation::Horizontal);
 
     InputTextField::callbacks().text_edited = [this]() {
         try {
@@ -37,21 +38,24 @@ InputTextWithSpin::InputTextWithSpin(
 
     set_padding(0);
     Item* spins = emplace_back<Item>();
-    spins->set_aspect_ratio(1.f);
+    spins->set_gap(2);
     spins->set_orientation(Orientation::Vertical);
     spins->set_justify_content(YGJustifyCenter);
+    spins->set_padding(Paddings(0, 0, 4, 0));
 
-    m_increase_button = spins->emplace_back<SpinButton>(ImGuiDir_Up);
-    m_increase_button->set_height_percent(35.f);
+    m_increase_button                     = spins->emplace_back<SpinButton>(ImGuiDir_Up);
     m_increase_button->callbacks().action = [this]() -> void {
         increase_value();
     };
+    m_increase_button->set_width(10);
+    m_increase_button->set_height(10);
 
-    m_decrease_button = spins->emplace_back<SpinButton>(ImGuiDir_Down);
-    m_decrease_button->set_height_percent(35.f);
+    m_decrease_button                     = spins->emplace_back<SpinButton>(ImGuiDir_Down);
     m_decrease_button->callbacks().action = [this]() -> void {
         decrease_value();
     };
+    m_decrease_button->set_width(10);
+    m_decrease_button->set_height(10);
 }
 
 InputTextWithSpin::Callbacks& InputTextWithSpin::callbacks()

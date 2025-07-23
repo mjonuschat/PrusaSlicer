@@ -6,6 +6,7 @@
 
 #include <Slic3r/Assert.hpp>
 
+#include <fmt/format.h>
 #include <cmath>
 
 namespace Slic3r::App::Yoga {
@@ -58,7 +59,7 @@ std::string DoubleValidator::process(const std::string& input)
     } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
     }
 
-    return std::to_string(std::clamp(value, m_from, m_to));
+    return fmt::format("{}", std::clamp(value, m_from, m_to));
 }
 
 } // namespace Slic3r::App::Yoga

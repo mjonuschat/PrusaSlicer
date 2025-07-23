@@ -6,6 +6,7 @@
 
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/InputText.hpp"
+#include "Slic3r/App/Yoga/Tooltip.hpp"
 
 namespace Slic3r::App::Yoga {
 
@@ -33,10 +34,16 @@ public:
     Validator* validator() const;
     void set_validator(std::unique_ptr<Validator> validator);
 
+    void set_tooltip(const std::string& tooltip);
+    void set_tooltip_position(Yoga::Position position);
+
     bool hovered() const;
 
 protected:
     InputText* input_text() const;
+
+protected:
+    Tooltip m_tooltip;
 
 private:
     InputText* m_input_text{nullptr};

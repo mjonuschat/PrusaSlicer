@@ -39,7 +39,7 @@ namespace Slic3r::Domain {
         }
     }
 
-    for (const ConfigItem& item : box.items) {
+    for (const ConfigItem& item : box.items.all_items()) {
         json_value[item.name()] = item;
     }
 }
@@ -63,7 +63,7 @@ namespace Slic3r::Domain {
     std::vector<std::string> keys;
     for (const ConfigItem& item : boxes.front().get().overrides.all_items())
         keys.emplace_back(item.name());
-    for (const ConfigItem& item : boxes.front().get().items)
+    for (const ConfigItem& item : boxes.front().get().items.all_items())
         keys.emplace_back(item.name());
     std::ranges::sort(keys);
 

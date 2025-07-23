@@ -15,7 +15,7 @@ namespace Slic3r::App::Yoga {
  * "global" like attributes that are same for every View/Data, most probably you will supply here
  * pointer/references to interactors
  */
-template<class View, class Data, typename... Args>
+template <class View, class Data, typename... Args>
 class ViewFactory
 {
 public:
@@ -23,9 +23,9 @@ public:
 
     std::unique_ptr<View> create(size_t index, const Data& data)
     {
-        return std::apply(
-            [&](auto&&... args) { return std::make_unique<View>(index, data, args...); }, m_args
-        );
+        return std::apply([&](auto&&... args) {
+            return std::make_unique<View>(index, data, args...);
+        }, m_args);
     }
 
 private:
@@ -39,20 +39,25 @@ private:
  * handled already. If you need to supply some global attributes to your Views, simply define a
  * ViewFactory and pass it in the constructor.
  */
-template<class View, class Data, class ViewFactoryT = ViewFactory<View, Data>>
-class ListView : public Biz::IListObserver<Data>, public Item
+template <class View, class Data, class ViewFactoryT = ViewFactory<View, Data>, class BaseItem = Item>
+class ListView : public Biz::IListObserver<Data>, public BaseItem
 {
     using Items = std::vector<View*>;
 
 public:
     ListView(ViewFactoryT factory = {}) : m_factory(factory) {}
 
+    View* item_at(size_t index) const
+    {
+        return m_items.at(index);
+    }
+
     void on_inserted(const Data& data, size_t index) override
     {
         ASSERT(index <= m_items.size());
 
         Passthrough<View> item_view(m_factory.create(index, data));
-        insert(item_view.release(), index);
+        this->insert(item_view.release(), index);
         m_items.emplace(m_items.cbegin() + index, item_view.get());
 
         update_indexes(++index);
@@ -63,7 +68,7 @@ public:
         ASSERT(index_range.to <= m_items.size());
 
         for (size_t i = index_range.from; i <= index_range.to; ++i) {
-            remove_later(get_item(i));
+            this->remove_later(this->get_item(i));
         }
         m_items.erase(m_items.cbegin() + index_range.from, m_items.cbegin() + index_range.to + 1);
 

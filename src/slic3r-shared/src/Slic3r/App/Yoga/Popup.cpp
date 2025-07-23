@@ -40,7 +40,7 @@ void move_window_to_bounds(const Slic3r::Domain::Vec2f& available_size, ImRect& 
         window.TranslateY(abs(window.Min.y));
     }
     // bottom
-    if (window.Max.y > available_size.x()) {
+    if (window.Max.y > available_size.y()) {
         window.TranslateY(available_size.y() - window.Max.y);
     }
 }
@@ -82,7 +82,10 @@ void move_window_to_bounds(const Slic3r::Domain::Vec2f& available_size, ImRect& 
 
 namespace Slic3r::App::Yoga {
 
-Popup::Popup() { m_popup_node = YGNodeNew(); }
+Popup::Popup()
+{
+    m_popup_node = YGNodeNew();
+}
 
 Popup::~Popup()
 {
@@ -93,36 +96,54 @@ Popup::~Popup()
     YGNodeFree(m_popup_node);
 }
 
-Position Popup::preferred_position() const { return m_preferred_position; }
+Position Popup::preferred_position() const
+{
+    return m_preferred_position;
+}
 
 void Popup::set_preferred_position(Position preferred_position)
 {
     m_preferred_position = preferred_position;
 }
 
-RootItem* Popup::root_item() const { return m_root_item; }
+RootItem* Popup::get_or_find_root_item()
+{
+    if (!m_root_item) {
+        find_root_item();
+    }
 
-void Popup::set_root_item(RootItem* root_item) { m_root_item = root_item; }
+    return m_root_item;
+}
 
-Popup::Callbacks& Popup::callbacks() { return m_callbacks; }
+void Popup::set_root_item(RootItem* root_item)
+{
+    m_root_item = root_item;
+}
+
+void Popup::on_about_to_show() {}
+
+Popup::Callbacks& Popup::callbacks()
+{
+    return m_callbacks;
+}
 
 void Popup::attach_to_item(Item* item, Position prefered_position, float offset)
 {
     ASSERT(item);
-    m_parent = item;
-    m_attached_type = AttachedType::Item;
-    m_attached_to = item;
+    m_parent             = item;
+    m_attached_type      = AttachedType::Item;
+    m_attached_to        = item;
     m_preferred_position = prefered_position;
-    m_offset = offset;
+    m_offset             = offset;
     m_content_item->set_position_by_yoga(true);
 }
 
 void Popup::attach_to_center(Item* item)
 {
     ASSERT(item);
-    m_parent = item;
+    m_parent        = item;
     m_attached_type = AttachedType::Center;
-    m_attached_to = nullptr;
+    m_attached_to   = nullptr;
     m_content_item->set_position_by_yoga(true);
 
     YGNodeStyleSetJustifyContent(m_popup_node, YGJustifyCenter);
@@ -132,13 +153,16 @@ void Popup::attach_to_center(Item* item)
 void Popup::detach(Item* item)
 {
     ASSERT(item);
-    m_parent = item;
+    m_parent        = item;
     m_attached_type = AttachedType::FreeStanding;
-    m_attached_to = nullptr;
+    m_attached_to   = nullptr;
     m_content_item->set_position_by_yoga(false);
 }
 
-bool Popup::opened() const { return m_opened; }
+bool Popup::opened() const
+{
+    return m_opened;
+}
 
 void Popup::open()
 {
@@ -149,6 +173,8 @@ void Popup::open()
     }
 
     if (m_root_item && !m_opened) {
+        on_about_to_show();
+
         m_root_item->open_popup(this);
         m_opened = true;
 
@@ -161,12 +187,15 @@ void Popup::open()
 void Popup::close()
 {
     ASSERT(m_content_item.get());
+    if (!m_opened) {
+        return;
+    }
 
     if (!m_root_item) {
         find_root_item();
     }
 
-    if (m_root_item && m_opened) {
+    if (m_root_item) {
         m_root_item->close_popup(this);
         m_opened = false;
 
@@ -176,7 +205,10 @@ void Popup::close()
     }
 }
 
-Window* Popup::content_item() const { return m_content_item.get(); }
+Window* Popup::content_item() const
+{
+    return m_content_item.get();
+}
 
 void Popup::render(const Vec2f& size)
 {
@@ -191,9 +223,15 @@ void Popup::render(const Vec2f& size)
     );
 }
 
-void Popup::check_resized() { m_content_item->check_resized(); }
+void Popup::check_resized()
+{
+    m_content_item->check_resized();
+}
 
-void Popup::style_node() { m_content_item->style_node(); }
+void Popup::style_node()
+{
+    m_content_item->style_node();
+}
 
 void Popup::resize(const Vec2f& size)
 {
@@ -210,21 +248,33 @@ void Popup::resize(const Vec2f& size)
         const Vec2f attachee_global_pos = m_parent->get_global_pos();
         const ImRect size_rect(0, 0, size.x(), size.y());
         const ImVec2 target_pos{attachee_global_pos.x(), attachee_global_pos.y()};
-        const ImRect
-            target_rect{target_pos, target_pos + ImVec2{m_parent->width(), m_parent->height()}};
+        const ImRect target_rect{target_pos, target_pos + ImVec2{m_parent->width(), m_parent->height()}};
         const ImVec2 attachee_size(m_content_item->width(), m_content_item->height());
 
-        std::list<Position>
-            available_positions{Position::Left, Position::Right, Position::Top, Position::Bottom};
+        std::list<Position> available_positions{
+            Position::Left,
+            Position::Right,
+            Position::Top,
+            Position::Bottom
+        };
         std::erase(available_positions, m_preferred_position);
 
-        std::pair<bool, ImRect> placed =
-            try_to_place_popup(size_rect, target_rect, attachee_size, m_offset, m_preferred_position);
+        std::pair<bool, ImRect> placed = try_to_place_popup(
+            size_rect,
+            target_rect,
+            attachee_size,
+            m_offset,
+            m_preferred_position
+        );
         ImRect preferred_rect = placed.second;
         // fallback to all other positions
         while (!placed.first && !available_positions.empty()) {
             placed = try_to_place_popup(
-                size_rect, target_rect, attachee_size, m_offset, available_positions.front()
+                size_rect,
+                target_rect,
+                attachee_size,
+                m_offset,
+                available_positions.front()
             );
             available_positions.pop_front();
         }
@@ -262,6 +312,7 @@ void Popup::set_content_item(WindowPtr content_item)
     if (m_content_item) {
         YGNodeInsertChild(m_popup_node, m_content_item.get()->node(), 0);
         m_content_item->set_position_type(YGPositionTypeAbsolute);
+        m_content_item->set_parent_popup(this);
     }
 }
 
@@ -274,15 +325,31 @@ void Popup::find_root_item()
             m_root_item = root_item;
             break;
         }
+        if (parent->parent_popup()) {
+            m_root_item = parent->parent_popup()->get_or_find_root_item();
+            break;
+        }
+
         parent = parent->parent();
     }
+    ASSERT(m_root_item, "RootItem was not found");
 }
 
-float Popup::offset() const { return m_offset; }
+float Popup::offset() const
+{
+    return m_offset;
+}
 
-void Popup::set_offset(float offset) { m_offset = offset; }
+void Popup::set_offset(float offset)
+{
+    m_offset = offset;
+}
 
-void Popup::open_at(const Vec2f& pos) { m_content_item->request_position(pos); }
+void Popup::open_at(const Vec2f& pos)
+{
+    m_content_item->request_position(pos);
+    open();
+}
 
 void Popup::open_at(Item* item, Position prefered_position, float offset) {}
 

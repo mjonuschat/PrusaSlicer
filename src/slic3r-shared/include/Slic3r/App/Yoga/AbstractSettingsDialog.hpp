@@ -18,10 +18,14 @@ namespace Slic3r::App::Yoga {
 class AbstractSettingsDialog : public Dialog
 {
 public:
-    explicit AbstractSettingsDialog(const std::string& tab);
     explicit AbstractSettingsDialog(const std::initializer_list<std::string>& tabs);
 
 protected:
+    using PageListView = Yoga::ListView<
+        PageEntryButton,
+        PageEntry,
+        Yoga::ViewFactory<PageEntryButton, PageEntry, PageEntryButton::FnIndexClicked>>;
+
     struct RowItem
     {
         ItemPtr input;
@@ -36,17 +40,23 @@ protected:
         std::vector<RowItem>&& row_items
     );
 
+    struct Tab
+    {
+        PageListView* page_list_view          = nullptr;
+        Yoga::StackLayout* pages_stack_layout = nullptr;
+    };
+
     ScrollArea* emplace_stack_page();
 
-protected:
-    using PageListView = Yoga::ListView<
-        PageEntryButton,
-        PageEntry,
-        Yoga::ViewFactory<PageEntryButton, PageEntry, PageEntryButton::FnIndexClicked>>;
+    void on_tab_selected(int current_index) override;
 
-    PageListView* m_page_list_view = nullptr;
-    Yoga::StackLayout* m_pages_stack_layout = nullptr;
-    Item* m_footer = nullptr;
+    Tab* append_tab(const std::string& tab);
+
+protected:
+    std::vector<std::unique_ptr<Tab>> m_tabs;
+    Item* m_footer                  = nullptr;
+    Tab* m_current_tab              = nullptr;
+    Yoga::StackLayout* m_stack_tabs = nullptr;
 };
 
 } // namespace Slic3r::App::Yoga

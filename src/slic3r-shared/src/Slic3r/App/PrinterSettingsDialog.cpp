@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/PrinterSettingsDialog.hpp"
 
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
@@ -45,8 +46,14 @@ void emplace_nozzle(Item* container, const std::string& id)
 
 } // namespace
 
-Slic3r::App::PrinterSettingsDialog::PrinterSettingsDialog(PrinterAddDialog* printer_add_dialog)
-    : Dialog("Printers"), m_printer_add_dialog(printer_add_dialog)
+Slic3r::App::PrinterSettingsDialog::PrinterSettingsDialog(
+    Biz::ProjectInteractor& project_interactor,
+    PrinterAddDialog* printer_add_dialog
+) :
+    Dialog("Printers"),
+    m_project_interactor(project_interactor),
+    m_advanced_dialog(project_interactor),
+    m_printer_add_dialog(printer_add_dialog)
 {
     content_item()->set_width(350);
 
@@ -86,37 +93,33 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
     ScrollArea* scroll_area = m_page_list->emplace_back<ScrollArea>();
     scroll_area->set_max_size({YGUndefined, 200});
 
-    m_list_logical_printers.reset(
-        {{"Prusa", "Next"},
-         {"Prusa", "Core one"},
-         {"Prusa", "Mk4S"},
-         {"Prusa", "Mk3"},
-         {"Prusa", "Mini+"},
-         {"Creality", "Ender 3"}}
-    );
-
     // Create the ViewFactory explicitly:
     auto factory = Yoga::ViewFactory<
-        LogicalPrinterSettingsButton, LogicalPrinter, LogicalPrinterSettingsButton::FnIndexClicked>(
-        [this](size_t index) {
-            m_stack_layout->set_current_index(1);
-            for (size_t button_index = 0; button_index < m_printer_list_view->item_count();
-                 ++button_index) {
-                LogicalPrinterSettingsButton* button = dynamic_cast<LogicalPrinterSettingsButton*>(
-                    m_printer_list_view->get_item(button_index)
-                );
-                ASSERT(button);
-                button->set_checked(index == button_index);
-            }
+        LogicalPrinterSettingsButton,
+        Biz::Preset::PresetItem,
+        LogicalPrinterSettingsButton::FnIndexClicked>([this](size_t index) {
+        m_stack_layout->set_current_index(1);
+        for (size_t button_index = 0; button_index < m_printer_list_view->item_count(); ++button_index)
+        {
+            LogicalPrinterSettingsButton* button = dynamic_cast<LogicalPrinterSettingsButton*>(
+                m_printer_list_view->get_item(button_index)
+            );
+            ASSERT(button);
+            button->set_checked(index == button_index);
         }
-    );
+        m_project_interactor.preset_interactor().select_printer_preset(
+            m_project_interactor.preset_interactor().printer_presets().items().at(index).id
+        );
+    });
     m_printer_list_view = scroll_area->emplace_back<PrinterListView>(std::move(factory));
     m_printer_list_view->set_flex_grow(1);
     m_printer_list_view->set_padding(Paddings(0, 0, 10, 0));
     m_printer_list_view->set_margin(Margins(0, 0, -10, 0));
     m_printer_list_view->set_gap(8);
     m_printer_list_view->set_orientation(Orientation::Vertical);
-    m_printer_list_view->set_source_list(&m_list_logical_printers);
+    m_printer_list_view->set_source_list(
+        &m_project_interactor.preset_interactor().printer_presets().items()
+    );
 
     m_page_list->emplace_back<Separator>(Orientation::Horizontal);
 
@@ -124,7 +127,7 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
     add_printer_button->set_self_align(YGAlignFlexEnd);
     add_printer_button->callbacks().action = [this] {
         m_printer_add_dialog->attach_to_item(content_item(), Position::Left);
-        m_printer_add_dialog->set_root_item(root_item());
+        m_printer_add_dialog->set_root_item(get_or_find_root_item());
         m_printer_add_dialog->set_current_tab(0);
         m_printer_add_dialog->open();
     };
@@ -137,9 +140,11 @@ void Slic3r::App::PrinterSettingsDialog::create_page_settings()
     m_page_settings->set_gap(5);
     m_page_settings->set_padding(10);
 
-    Item* title_row = m_page_settings->emplace_back<Item>();
+    Item* title_row           = m_page_settings->emplace_back<Item>();
     LayoutButton* back_button = title_row->emplace_back<LayoutButton>("", Render::Icon::CaretLeft);
-    back_button->callbacks().action = [this]() { m_stack_layout->set_current_index(0); };
+    back_button->callbacks().action = [this]() {
+        m_stack_layout->set_current_index(0);
+    };
     title_row->emplace_back<Text>("NEXT / Elsa");
 
     m_page_settings->emplace_back<Separator>(Orientation::Horizontal);
@@ -170,10 +175,15 @@ void Slic3r::App::PrinterSettingsDialog::create_page_settings()
     button_advanced_setting->set_checkable(true);
     button_advanced_setting->callbacks().checked_changed = [this](bool checked) {
         if (checked) {
-            m_advanced_dialog.set_root_item(root_item());
+            m_advanced_dialog.set_root_item(get_or_find_root_item());
             m_advanced_dialog.open();
         } else {
             m_advanced_dialog.close();
         }
     };
+}
+
+void Slic3r::App::PrinterSettingsDialog::on_about_to_show()
+{
+    m_stack_layout->set_current_index(0);
 }

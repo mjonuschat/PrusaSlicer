@@ -98,7 +98,7 @@ void PhysicalPrinterSettingsDialog::create_page_list()
     add_printer_button->set_self_align(YGAlignFlexEnd);
     add_printer_button->callbacks().action = [this]{
         m_printer_add_dialog->attach_to_item(content_item(), Position::Left);
-        m_printer_add_dialog->set_root_item(root_item());
+        m_printer_add_dialog->set_root_item(get_or_find_root_item());
         m_printer_add_dialog->set_current_tab(1);
         m_printer_add_dialog->open();
     };

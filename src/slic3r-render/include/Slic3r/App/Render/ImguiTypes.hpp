@@ -196,7 +196,8 @@ enum class Icon : wchar_t
     Output,
     Notes,
     CaretLeft,
-    Search
+    Search,
+    Fan
 };
 
 } // namespace Slic3r::App::Render

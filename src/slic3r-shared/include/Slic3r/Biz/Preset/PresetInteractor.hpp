@@ -9,6 +9,7 @@
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp"
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
+#include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 
@@ -78,7 +79,7 @@ class PresetInteractor final :
     public WithListeners<IBedPresetValueChangedListener, IBedPresetSwitchedListener, ISlicingInputChangedListener>
 {
 public:
-    explicit PresetInteractor(Domain::Workbench& workbench) : m_workbench(workbench) {}
+    explicit PresetInteractor(Domain::Workbench& workbench);
 
     PresetInteractor(PresetInteractor&&) = default;
 
@@ -87,19 +88,9 @@ public:
     const PresetInteractorConfigContainerContext& config_container_context(
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id
-    ) const
-    {
-        const auto& project_ctx = get_project_context(project_id)->second;
-        const auto& cccs        = project_ctx.config_containers;
-        return cccs.find(config_container_id)->second;
-    }
+    ) const;
 
-    const PresetInteractorConfigContainerContext& selected_config_container_context() const
-    {
-        const auto& project_ctx = get_project_context(m_selected_project_id)->second;
-        const auto& cccs        = project_ctx.config_containers;
-        return cccs.find(project_ctx.selected_config_container_id)->second;
-    }
+    const PresetInteractorConfigContainerContext& selected_config_container_context() const;
 
     void prepare_config_container_preset(
         Domain::SelectionId project_id,
@@ -110,43 +101,35 @@ public:
     const Domain::Preset::EvaluatedPrinterPreset& current_printer_preset() const;
     const Domain::Preset::SelectedPreset& selected_printer_preset() const;
 
-    PresetItemObservableList& printer_presets()
-    {
+    PresetItemObservableList& printer_presets() {
         return m_printer_presets;
     }
 
-    const PresetItemObservableList& printer_presets() const
-    {
+    const PresetItemObservableList& printer_presets() const {
         return m_printer_presets;
     }
 
-    PresetItemObservableList& print_presets()
-    {
+    PresetItemObservableList& print_presets() {
         return m_print_presets;
     }
 
-    const PresetItemObservableList& print_presets() const
-    {
+    const PresetItemObservableList& print_presets() const {
         return m_print_presets;
     }
 
-    PresetItemCompoundObservableList& tool_presets()
-    {
+    PresetItemCompoundObservableList& tool_presets() {
         return m_tool_print_presets;
     }
 
-    const PresetItemCompoundObservableList& tool_presets() const
-    {
+    const PresetItemCompoundObservableList& tool_presets() const {
         return m_tool_print_presets;
     }
 
-    PresetItemCompoundObservableList& material_presets()
-    {
+    PresetItemCompoundObservableList& material_presets() {
         return m_material_presets;
     }
 
-    const PresetItemCompoundObservableList& material_presets() const
-    {
+    const PresetItemCompoundObservableList& material_presets() const {
         return m_material_presets;
     }
 
@@ -186,41 +169,29 @@ public:
         IConfigInteractor::ModifyFunc modify_fn
     );
 
-    const PresetCollection& preset_collection(Slic3r::Preset::Type preset_type) const
-    {
-        const auto& pb = m_workbench.preset_bundle_legacy();
-        return pb.get_presets(preset_type);
-    }
+    const PresetCollection& preset_collection(Slic3r::Preset::Type preset_type) const;
 
-    const PresetBundle& preset_bundle_legacy() const
-    {
-        return m_workbench.preset_bundle_legacy();
-    }
+    const PresetBundle& preset_bundle_legacy() const;
 
-    void select_legacy_preset(Slic3r::Preset::Type preset_type, size_t preset_index, size_t collection_index)
-    {
-        auto& ccc                                   = mutable_selected_config_container_context();
-        auto& collection                            = legacy_preset_collection(preset_type);
-        auto it                                     = collection.begin() + collection_index;
-        auto& preset                                = *it;
-        ccc.preset_state(preset_type, preset_index) = create_preset_state(&preset);
-    }
+    void select_legacy_preset(Slic3r::Preset::Type preset_type, size_t preset_index, size_t collection_index);
 
     void on_selected_config_container_changed(
         Domain::SelectionId project_id,
         Domain::SelectionId bed_id
     ) override;
 
+    ConfigBoxInteractor& printer_cbi();
+    ConfigBoxInteractor& print_cbi();
+    BatchObservableList<ConfigBoxInteractor>& material_cbi_list();
+    BatchObservableList<ConfigBoxInteractor>& tool_cbi_list();
+
+    void set_item_value(const Domain::ConfigItem& item, const Domain::ConfigValue& value, size_t index = 0);
+
 private:
     friend class LegacyPresetConfigInteractor;
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
 
-    PresetInteractorConfigContainerContext& mutable_selected_config_container_context()
-    {
-        auto& project_ctx = get_project_context(m_selected_project_id)->second;
-        auto& cccs        = project_ctx.config_containers;
-        return cccs.find(project_ctx.selected_config_container_id)->second;
-    }
+    PresetInteractorConfigContainerContext& mutable_selected_config_container_context();
 
     Domain::Preset::SelectedPreset& mutable_selected_printer_presets();
 
@@ -265,11 +236,7 @@ private:
     void select_legacy_extruder_preset(size_t extruder_idx, size_t preset_idx);
     void select_legacy_material_preset(size_t extruder_idx, size_t preset_idx);
 
-    PresetCollection& legacy_preset_collection(Slic3r::Preset::Type preset_type)
-    {
-        auto& pb = m_workbench.preset_bundle_legacy();
-        return pb.get_presets(preset_type);
-    }
+    PresetCollection& legacy_preset_collection(Slic3r::Preset::Type preset_type);
 
     static PresetState create_preset_state(PresetCollection& source_with_selected);
     PresetState create_preset_state(Slic3r::Preset* selected_preset);
@@ -295,6 +262,17 @@ private:
     PresetItemCompoundObservableList m_material_presets{m_material_presets_writer};
 
     ProjectContexts m_project_contexts;
+
+    // All dummy config boxes are here only temporarily
+    Domain::ConfigBox m_dummy_printer_cb;
+    Domain::ConfigBox m_dummy_print_cb;
+    std::vector<Domain::ConfigBox> m_dummy_material_cb;
+    std::vector<Domain::ConfigBox> m_dummy_tool_cb;
+
+    ConfigBoxInteractor m_printer_cbi;
+    ConfigBoxInteractor m_print_cbi;
+    BatchObservableList<ConfigBoxInteractor> m_material_cbi_list;
+    BatchObservableList<ConfigBoxInteractor> m_tool_cbi_list;
 
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
 };

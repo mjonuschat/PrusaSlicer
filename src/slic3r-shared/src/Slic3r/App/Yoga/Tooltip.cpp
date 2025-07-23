@@ -5,7 +5,6 @@
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 
 #include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/Assert.hpp"
 
 #include "imgui_internal.h"
 
@@ -43,6 +42,12 @@ void Tooltip::set_text(const std::string& text)
 {
     m_text->set_text(text);
     m_text->set_visible(!text.empty());
+}
+
+void Tooltip::set_text_wrap(bool wrap)
+{
+    m_text->set_wrap(wrap);
+    m_text->set_flex_grow(wrap ? 1 : 0);
 }
 
 const std::string& Tooltip::shortcut() const { return m_shortcut->text(); }

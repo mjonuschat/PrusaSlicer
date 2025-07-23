@@ -87,7 +87,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/ExportPathSelect.hpp
         src/Slic3r/App/ExportPathSelect.cpp
         include/Slic3r/App/IDialogManager.hpp
-        include/Slic3r/App/MaterialState.hpp
         include/Slic3r/App/PrintSettingsDialog.hpp
         src/Slic3r/App/PrintSettingsDialog.cpp
         include/Slic3r/App/FilamentSettingsDialog.hpp
@@ -102,12 +101,37 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PhysicalPrinterSettingsButton.cpp
         include/Slic3r/App/LogicalPrinterSettingsButton.hpp
         src/Slic3r/App/LogicalPrinterSettingsButton.cpp
-        include/Slic3r/App/LogicalPrinter.hpp
-        src/Slic3r/App/LogicalPrinter.cpp
         include/Slic3r/App/PhysicalPrinter.hpp
         src/Slic3r/App/PhysicalPrinter.cpp
         include/Slic3r/App/PrinterAddDialog.hpp
         src/Slic3r/App/PrinterAddDialog.cpp
+        include/Slic3r/App/ConfigSubcategoryListView.hpp
+        src/Slic3r/App/ConfigSubcategoryListView.cpp
+        include/Slic3r/App/ConfigSubcategoryItem.hpp
+        src/Slic3r/App/ConfigSubcategoryItem.cpp
+        include/Slic3r/App/ConfigRowItem.hpp
+        src/Slic3r/App/ConfigRowItem.cpp
+        include/Slic3r/App/SidebarToolHeadRow.hpp
+        src/Slic3r/App/SidebarToolHeadRow.cpp
+
+        include/Slic3r/App/Config/ConfigItemTextField.hpp
+        src/Slic3r/App/Config/ConfigItemTextField.cpp
+        include/Slic3r/App/Config/ConfigItemCheckBox.hpp
+        src/Slic3r/App/Config/ConfigItemCheckBox.cpp
+        include/Slic3r/App/Config/ConfigItemComboBox.hpp
+        src/Slic3r/App/Config/ConfigItemComboBox.cpp
+        include/Slic3r/App/Config/ConfigItemColorPicker.hpp
+        include/Slic3r/App/Config/ConfigItemPoints.hpp
+        src/Slic3r/App/Config/ConfigItemColorPicker.cpp
+        src/Slic3r/App/Config/ConfigItemPoints.cpp
+        src/Slic3r/App/Config/ConfigItemTextFields.cpp
+        include/Slic3r/App/Config/ConfigItemTextFields.hpp
+        include/Slic3r/App/Config/ConfigItemSpinBox.hpp
+        src/Slic3r/App/Config/ConfigItemSpinBox.cpp
+        include/Slic3r/App/Config/ObservableCategorizer.hpp
+        include/Slic3r/App/Config/CategoryPageTransformer.hpp
+        src/Slic3r/App/Config/CategoryPageTransformer.cpp
+        src/Slic3r/App/Config/ObservableCategorizer.cpp
         include/Slic3r/App/SharedThumbnailImageGenerator.hpp
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp
@@ -316,6 +340,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Popup.cpp
         include/Slic3r/App/Yoga/AbstractSettingsDialog.hpp
         src/Slic3r/App/Yoga/AbstractSettingsDialog.cpp
+        include/Slic3r/App/Yoga/ComboBoxListView.hpp
+        include/Slic3r/App/Yoga/ComboBoxListViewSelection.hpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
@@ -369,7 +395,13 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ObservableList.hpp
         include/Slic3r/Biz/IListObserver.hpp
         include/Slic3r/Biz/DataObserver.hpp
-        include/Slic3r/Biz/BatchObservableList.hpp
+        include/Slic3r/Biz/ConfigBoxObservableList.hpp
+        src/Slic3r/Biz/ConfigBoxObservableList.cpp
+        include/Slic3r/Biz/ConfigBoxInteractor.hpp
+        src/Slic3r/Biz/ConfigBoxInteractor.cpp
+        include/Slic3r/Biz/ObservableListSortFilter.hpp
+        include/Slic3r/Biz/ObservableListTransformer.hpp
+	include/Slic3r/Biz/BatchObservableList.hpp
         include/Slic3r/Biz/ObservableListWithSelection.hpp
         include/Slic3r/Biz/ThumbnailImageProvider.hpp
         src/Slic3r/Biz/ThumbnailImageProvider.cpp

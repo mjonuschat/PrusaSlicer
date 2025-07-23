@@ -182,6 +182,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     { Icon::Notes             , "notes"                               },
     { Icon::CaretLeft         , "caret_left"                          },
     { Icon::Search            , "search_gray"                         },
+    { Icon::Fan               , "cooling"                             },
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {

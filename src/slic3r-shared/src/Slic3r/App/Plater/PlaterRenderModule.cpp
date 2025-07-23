@@ -142,8 +142,8 @@ void PlaterRenderModule::init_scene_layout()
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, true));
 
     m_cube_view     = Passthrough{std::make_unique<CubeView>()};
-    m_sidebar_bed   = Passthrough(std::make_unique<SidebarBed>());
-    m_sidebar_print = Passthrough(std::make_unique<SidebarPrint>());
+    m_sidebar_bed   = Passthrough(std::make_unique<SidebarBed>(m_project_interactor));
+    m_sidebar_print = Passthrough(std::make_unique<SidebarPrint>(m_project_interactor));
     m_history       = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
 

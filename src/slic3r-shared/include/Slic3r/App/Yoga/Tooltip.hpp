@@ -23,6 +23,8 @@ public:
     const std::string& text() const;
     void set_text(const std::string& text);
 
+    void set_text_wrap(bool wrap);
+
     const std::string& shortcut() const;
     void set_shortcut(const std::string& shortcut);
 

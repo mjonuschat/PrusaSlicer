@@ -883,8 +883,8 @@ void PreviewRenderModule::init_scene_layout()
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, false));
 
     m_cube_view            = std::make_unique<CubeView>();
-    m_sidebar_bed          = std::make_unique<SidebarBed>();
-    m_sidebar_print        = std::make_unique<SidebarPrint>();
+    m_sidebar_bed          = std::make_unique<SidebarBed>(m_project_interactor);
+    m_sidebar_print        = std::make_unique<SidebarPrint>(m_project_interactor);
     m_sidebar_auto_reslice = std::make_unique<SidebarAutoReslice>();
 
     m_sidebar_action_buttons = std::make_unique<SidebarPreviewActionButtons>();

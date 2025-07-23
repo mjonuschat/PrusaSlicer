@@ -333,7 +333,7 @@ template <typename ObjectSettingsType>
 static ObjectSettingsType create_object_settings_from_volume_settings(const Domain::VolumeSettings &volume_settings)
 {
     ObjectSettingsType object_settings;
-    for (const Domain::ConfigItem& item : volume_settings.items) {
+    for (const Domain::ConfigItem& item : volume_settings.items.all_items()) {
         if (!volume_settings.overrides.get(item.name()).has_value() || object_settings.items.contains(item.name()) == nullptr)
             continue;
 

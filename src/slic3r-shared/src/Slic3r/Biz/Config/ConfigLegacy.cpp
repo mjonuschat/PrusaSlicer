@@ -665,7 +665,7 @@ Slic3rLegacy::DynamicPrintConfig convert_box_to_dynamic_print_config(const Domai
     }
 
     std::vector<std::string> items_keys_to_convert;
-    for (const Domain::ConfigItem& item : box.items) {
+    for (const Domain::ConfigItem& item : box.items.all_items()) {
         const std::string& name{item.def().name};
         if (std::ranges::find(acceptable_keys, name) == acceptable_keys.end())
             continue;

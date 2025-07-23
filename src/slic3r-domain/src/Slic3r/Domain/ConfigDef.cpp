@@ -1,6 +1,60 @@
 #include "Slic3r/Domain/ConfigDef.hpp"
 
+static const std::string& L(const std::string& s) { return s; }
+
 namespace Slic3r::Domain {
+
+std::string ConfigItemDef::translate_category(Category category)
+{
+    switch (category) {
+    case Domain::ConfigItemDef::Category::General:
+        return L("General");
+    case Domain::ConfigItemDef::Category::Advanced:
+        return L("Advanced");
+    case Domain::ConfigItemDef::Category::Cooling:
+        return L("Cooling");
+    case Domain::ConfigItemDef::Category::CustomGcode:
+        return L("Custom Gcode");
+    case Domain::ConfigItemDef::Category::Extruders:
+        return L("Extruders");
+    case Domain::ConfigItemDef::Category::Filament:
+        return L("Filament");
+    case Domain::ConfigItemDef::Category::Hollowing:
+        return L("Hollowing");
+    case Domain::ConfigItemDef::Category::Infill:
+        return L("Infill");
+    case Domain::ConfigItemDef::Category::LayersAndPerimeters:
+        return L("Layers and perimeters");
+    case Domain::ConfigItemDef::Category::MachineLimits:
+        return L("Machine limits");
+    case Domain::ConfigItemDef::Category::Notes:
+        return L("Notes");
+    case Domain::ConfigItemDef::Category::OutputOptions:
+        return L("Output options");
+    case Domain::ConfigItemDef::Category::Pad:
+        return L("Pad");
+    case Domain::ConfigItemDef::Category::SkirtAndBrim:
+        return L("Skirt and brim");
+    case Domain::ConfigItemDef::Category::Speed:
+        return L("Speed");
+    case Domain::ConfigItemDef::Category::SupportMaterial:
+        return L("Support material");
+    case Domain::ConfigItemDef::Category::Supports:
+        return L("Supports");
+    case Domain::ConfigItemDef::Category::WipeOptions:
+        return L("Wipe options");
+    case Domain::ConfigItemDef::Category::MultipleExtruders:
+        return L("Multiple extruders");
+    case Domain::ConfigItemDef::Category::Unkown:
+        return L("Unkown");
+    case Domain::ConfigItemDef::Category::Hidden:
+        return L("Hidden");
+    case Domain::ConfigItemDef::Category::SingleExtruderMMSetup:
+        return L("Single extruder MM setup");
+    }
+
+    return "";
+}
 
 std::string get_location_name(const ConfigLocation& location) {
     return std::visit(overloaded{

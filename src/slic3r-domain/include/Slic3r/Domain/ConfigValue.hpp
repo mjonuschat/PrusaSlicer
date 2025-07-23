@@ -27,8 +27,8 @@ consteval bool is_enum_vector() {
 struct EnumValueDef
 {
     int enum_value;
-    std::string_view str_serialized;
-    std::string_view str_ui;
+    std::string str_serialized;
+    std::string str_ui;
     bool operator<(const EnumValueDef& other) const { return enum_value < other.enum_value; }
 };
 
@@ -206,6 +206,10 @@ struct ConfigValue {
             ASSERT(std::holds_alternative<T>(m_value));
             m_value = value;
         }
+    }
+
+    void set(const ConfigValue& value) {
+        *this = value;
     }
 
     void set(const char* value) {

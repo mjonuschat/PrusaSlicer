@@ -5,18 +5,33 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/AbstractSettingsDialog.hpp"
-#include "Slic3r/Biz/ObservableList.hpp"
+#include "Slic3r/App/Config/ObservableCategorizer.hpp"
+#include "Slic3r/App/Config/CategoryPageTransformer.hpp"
+
+namespace Slic3r::Biz {
+class ProjectInteractor;
+class ConfigBoxInteractor;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App {
 
+class FilamentSettingsDialog : public Yoga::AbstractSettingsDialog
+{
+    struct FilamentTab
+    {
+        Biz::ConfigBoxInteractor& cbi;
+        Tab* tab{nullptr};
+        ObservableCategorizer observable_categorizer;
+        CategoryPageTransformer category_page_transformer;
+    };
 
-class FilamentSettingsDialog : public Yoga::AbstractSettingsDialog {
 public:
-    FilamentSettingsDialog();
-
+    explicit FilamentSettingsDialog(Biz::ProjectInteractor& project_interactor);
 
 private:
-    Biz::ObservableList<PageEntry> m_list_pages;
+    Biz::ProjectInteractor& m_project_interactor;
+
+    std::vector<FilamentTab> m_filaments;
 };
 
-}
+} // namespace Slic3r::App

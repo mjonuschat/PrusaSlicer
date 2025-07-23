@@ -1,0 +1,76 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+#include "Slic3r/App/SidebarToolHeadRow.hpp"
+
+#include "Slic3r/App/Yoga/Rectangle.hpp"
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
+#include "Slic3r/App/Yoga/ButtonGroup.hpp"
+#include "Slic3r/App/Yoga/Text.hpp"
+
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+
+using namespace Slic3r::App::Yoga;
+
+namespace Slic3r::App {
+
+SidebarToolHeadRow::SidebarToolHeadRow(
+    size_t index,
+    const Biz::Preset::PresetItemObservableList& data,
+    std::weak_ptr<Yoga::ButtonGroup> button_group,
+    Biz::ProjectInteractor& project_interactor
+) :
+    Biz::DataObserver<Biz::Preset::PresetItemObservableList>(index, data),
+    m_project_interactor(project_interactor),
+    m_button_group(button_group)
+{
+    set_flex_shrink(0);
+    Rectangle* rect = emplace_back<Rectangle>();
+    rect->set_fill(ImColor(41, 41, 41));
+    rect->set_justify_content(YGJustifyCenter);
+    rect->set_align_items(YGAlignCenter);
+    rect->set_width(25);
+    rect->emplace_back<Text>(std::to_string(index + 1));
+    rect->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersBottomLeft);
+
+    m_combo_box = emplace_back<ComboBoxListViewSelection<Biz::Preset::PresetItem>>();
+    m_combo_box->set_get_name_fn([](const Biz::Preset::PresetItem* item) -> std::string {
+        return item->name;
+    });
+    m_combo_box->set_flex_grow(1);
+    m_combo_box->set_source_list(&const_cast<Biz::Preset::PresetItemObservableList&>(data).items());
+    m_combo_box->callbacks().selection_changed = [this](int index) {
+        if (index >= 0) {
+            m_project_interactor.preset_interactor().select_tool_print_preset(
+                m_index,
+                m_state->items().at(static_cast<size_t>(index)).id
+            );
+        }
+    };
+    const_cast<Biz::Preset::PresetItemObservableList*>(m_state)
+        ->add_listener<Biz::IListSelectionChangedListener>(m_combo_box);
+
+    m_cog_button = emplace_back<LayoutButton>("", Render::Icon::Cog);
+    m_cog_button->set_checkable(true);
+    m_button_group.lock()->insert_button(m_cog_button);
+}
+
+SidebarToolHeadRow::~SidebarToolHeadRow()
+{
+    if (!m_button_group.expired()) {
+        m_button_group.lock()->remove_button(m_cog_button);
+    }
+}
+
+LayoutButton* SidebarToolHeadRow::cog_button() const
+{
+    return m_cog_button;
+}
+
+void SidebarToolHeadRow::on_data_update()
+{
+    // m_combo_box.set_source_list(&m_state->items());
+}
+
+} // namespace Slic3r::App

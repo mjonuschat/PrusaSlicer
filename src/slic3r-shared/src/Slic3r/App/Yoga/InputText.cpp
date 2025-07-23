@@ -62,7 +62,7 @@ static bool YInputText(
     cb_user_data.ChainCallback = callback;
     cb_user_data.ChainCallbackUserData = user_data;
     return ImGui::InputTextEx(
-        label, hint, str->data(), str->capacity(), size, flags, InputTextCallback, &cb_user_data
+        label, hint, str->data(), str->capacity() + 1, size, flags, InputTextCallback, &cb_user_data
     );
 }
 

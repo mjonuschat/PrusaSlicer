@@ -92,10 +92,15 @@ const ConfigItem* ConfigItems::contains(const std::string& key) const {
     return find_item(m_items, key);
 }
 
-std::vector<ConfigItem>::iterator ConfigItems::begin() { return m_items.begin(); }
-std::vector<ConfigItem>::iterator ConfigItems::end() { return m_items.end(); }
-std::vector<ConfigItem>::const_iterator ConfigItems::begin() const { return m_items.cbegin(); }
-std::vector<ConfigItem>::const_iterator ConfigItems::end() const { return m_items.cend(); }
+const std::vector<ConfigItem> &ConfigItems::all_items() const
+{
+    return m_items;
+}
+
+std::vector<ConfigItem> &ConfigItems::all_items()
+{
+    return m_items;
+}
 
 ConfigOverrides::ConfigOverrides(const ConfigDefinitions& defs, const ConfigLocation location) {
     for (const ConfigItemDef& def : defs.defs()) {
@@ -278,7 +283,7 @@ ConfigValue spread_values(const ConfigItem& item, const std::size_t size) {
 
 void SquashedConfig::add(const ConfigBox& box, const ConfigLocationSizes& location_sizes)
 {
-    for (const ConfigItem& item : box.items) {
+    for (const ConfigItem& item : box.items.all_items()) {
         const LocationSize location_size{get_max_location_size(item.def(), location_sizes)};
         m_values.insert({item.name(), location_size ? spread_values(item, *location_size) : item.value()});
     }
@@ -328,8 +333,8 @@ void SquashedConfig::add(const BoxRefs& boxes, const ConfigLocationSizes& locati
     std::vector<It> begins;
     std::vector<It> ends;
     for (const auto& box : boxes) {
-        begins.push_back(box.get().items.begin());
-        ends.push_back(box.get().items.end());
+        begins.push_back(box.get().items.all_items().begin());
+        ends.push_back(box.get().items.all_items().end());
     }
 
     const auto location_size_it{location_sizes.find(boxes.front().get().location)};

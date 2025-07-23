@@ -15,8 +15,16 @@ class LayoutButton;
 class Dialog : public Popup
 {
 public:
+    struct DialogCallbacks
+    {
+        std::function<void(size_t current_tab)> tab_selected{nullptr};
+    };
+
+    Dialog();
     explicit Dialog(const std::string& tab);
     explicit Dialog(std::initializer_list<std::string> tabs);
+
+    DialogCallbacks& dialog_callbacks();
 
     bool closable() const;
     void set_closable(bool closable);
@@ -26,16 +34,21 @@ public:
 protected:
     Item* content() const;
     void add_separator();
+    LayoutButton* append_tab(const std::string& tab);
 
     virtual void on_tab_selected(int current_index);
 
 private:
     bool m_closable = true;
 
-    LayoutButton* m_close_button = nullptr;
-    Item* m_content = nullptr;
+    DialogCallbacks m_callbacks;
 
-    ImColor m_color_bg = ImColor(27, 27, 27);
+    LayoutButton* m_close_button = nullptr;
+    Item* m_content              = nullptr;
+    Item* m_top_row              = nullptr;
+    Item* m_tab_container        = nullptr;
+
+    ImColor m_color_bg           = ImColor(27, 27, 27);
     ImColor m_color_bg_alternate = ImColor(41, 41, 41);
     std::vector<LayoutButton*> m_tab_buttons;
     ButtonGroup m_tab_button_group;

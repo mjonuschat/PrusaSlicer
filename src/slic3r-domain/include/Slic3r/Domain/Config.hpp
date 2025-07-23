@@ -19,7 +19,7 @@ namespace Slic3r::Domain {
 class ConfigItem
 {
 public:
-    ConfigItem(const ConfigItemDef& def, const ConfigLocation locaiton);
+    ConfigItem(const ConfigItemDef& def, const ConfigLocation location);
 
     bool operator==(const ConfigItem&) const = default;
 
@@ -81,10 +81,8 @@ public:
     ConfigItem* contains(const std::string& key);
     const ConfigItem* contains(const std::string& key) const;
 
-    std::vector<ConfigItem>::iterator begin();
-    std::vector<ConfigItem>::iterator end();
-    std::vector<ConfigItem>::const_iterator begin() const;
-    std::vector<ConfigItem>::const_iterator end() const;
+    const std::vector<ConfigItem>& all_items() const;
+    std::vector<ConfigItem>& all_items();
 
     virtual ~ConfigItems() = default;
 
@@ -100,6 +98,12 @@ public:
 
     template <typename T>
     void set(const std::string& key, const T& value) {
+        const auto item_index{find(key)};
+        m_items.at(item_index).set(value);
+        m_used_overrides.insert({key, item_index});
+    }
+
+    void set(const std::string& key, const ConfigValue& value) {
         const auto item_index{find(key)};
         m_items.at(item_index).set(value);
         m_used_overrides.insert({key, item_index});

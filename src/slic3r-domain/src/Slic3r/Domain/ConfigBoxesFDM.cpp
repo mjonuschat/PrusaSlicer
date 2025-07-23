@@ -11,8 +11,8 @@ namespace Slic3r::Domain {
 // Implementation of FDM configs is done in this file.
 
 // Define our own marking functions, the regular ones are not accessible in Domain.
-static const std::string& L(const std::string& s) { return s; }
-static const std::string& L_CONTEXT(const std::string& s, const std::string& ctx) { return s; }
+static const std::string L(const std::string& s) { return s; }
+static const std::string L_CONTEXT(const std::string& s, const std::string& ctx) { return s; }
 
 void fdm_config_init_fn(ConfigDefinitions& defs);
 
@@ -84,6 +84,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("arc_fitting", typeid(EnumWrapper));
     def->location = Print;
     def->label = L("Arc fitting");
+    def->option_group = L("Slicing");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Enable to get a G-code file which has G2 and G3 moves. "
                      "G-code resolution will be used as the fitting tolerance.");
     def->mode = comAdvanced;
@@ -95,7 +98,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("automatic_extrusion_widths", typeid(bool));
     def->location = Print;
     def->label = L("Automatic extrusion widths calculation");
-    def->category = L("Extrusion Width");
+    def->option_group = L("Extrusion width");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Automatically calculates extrusion widths based on the nozzle diameter of the currently used extruder. "
                      "This setting is essential for printing with different nozzle diameters.");
     def->mode = comAdvanced;
@@ -105,7 +110,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Automatic infill combination");
-    def->category = L("Infill");
+    def->option_group = L("Reducing printing time");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This feature automatically combines infill of several layers and speeds up your print by extruding thicker "
                      "infill layers while preserving thin perimeters, thus maintaining accuracy.");
     def->mode = comAdvanced;
@@ -115,7 +122,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Automatic infill combination - Max layer height");
-    def->category = L("Infill");
+    def->option_group = L("Reducing printing time");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum layer height for combining infill when automatic infill combining is enabled. "
                      "Maximum layer height could be specified either as an absolute in millimeters value or as a percentage of nozzle diameter. "
                      "For printing with different nozzle diameters, it is recommended to use percentage value over absolute value.");
@@ -128,6 +137,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("avoid_crossing_curled_overhangs", typeid(bool));
     def->location = Print;
     def->label = L("Avoid crossing curled overhangs (Experimental)");
+    def->option_group = L("Quality (slower slicing");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     // TRN PrintSettings: "Avoid crossing curled overhangs (Experimental)"
     def->tooltip = L("Plan travel moves such that the extruder avoids areas where the filament may be curled up. "
                    "This is mostly happening on steeper rounded overhangs and may cause a crash with the nozzle. "
@@ -138,6 +150,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("avoid_crossing_perimeters", typeid(bool));
     def->location = Print;
     def->label = L("Avoid crossing perimeters");
+    def->option_group = L("Quality (slower slicing");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Optimize travel moves in order to minimize the crossing of perimeters. "
                    "This is mostly useful with Bowden extruders which suffer from oozing. "
                    "This feature slows down both the print and the G-code generation.");
@@ -147,7 +162,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("avoid_crossing_perimeters_max_detour", typeid(FloatOrPercentage));
     def->location = Print;
     def->label = L("Avoid crossing perimeters - Max detour length");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Quality (slower slicing");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The maximum detour length for avoid crossing perimeters. "
                      "If the detour is longer than this value, avoid crossing perimeters is not applied for this travel path. "
                      "Detour length could be specified either as an absolute value or as percentage (for example 50%) of a direct travel path.");
@@ -160,6 +177,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("bed_temperature", typeid(int));
     def->location = Filament;
     def->label = L("Other layers");
+    def->option_group = L("Temperature");
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
+    def->category = ConfigItemDef::Category::Filament;
+    def->option_group = L("Filament");
     def->tooltip = L("Bed temperature for layers after the first one. "
                    "Set this to zero to disable bed temperature control commands in the output.");
     def->sidetext = L("°C");
@@ -172,6 +193,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Filament;
     // TRN: Label of a configuration parameter: Nominal chamber temperature.
     def->label = L("Nominal");
+    def->option_group = L("Temperature");
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
+    def->category = ConfigItemDef::Category::Filament;
     def->full_label = L("Chamber temperature");
     def->tooltip = L("Required chamber temperature for the print.\nWhen set to zero, "
                      "the nominal chamber temperature is not set in the G-code.");
@@ -185,6 +209,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Filament;
     // TRN: Label of a configuration parameter: Minimal chamber temperature
     def->label = L("Minimal");
+    def->option_group = L("Temperature");
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
+    def->category = ConfigItemDef::Category::Filament;
     def->full_label = L("Chamber minimal temperature");
     def->tooltip = L("Minimal chamber temperature that the printer waits for before the print starts. This allows "
                      "to start the print before the nominal chamber temperature is reached.\nWhen set to zero, "
@@ -198,7 +225,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("bed_temperature_extruder", typeid(int));
     def->location = Print;
     def->label = L("Bed temperature by extruder");
-    def->category = L("Extruders");
+    def->option_group = L("Extruders");
+    def->category = ConfigItemDef::Category::Extruders;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("The extruder which determines bed temperatures. "
                      "Set to 0 to determine temperatures based on the first printing extruder "
                      "of the first and the second layers.");
@@ -209,6 +238,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("before_layer_gcode", typeid(std::string));
     def->location = Printer;
     def->label = L("Before layer change G-code");
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This custom code is inserted at every layer change, right before the Z move. "
                    "Note that you can use placeholder variables for all Slic3r settings as well "
                    "as [layer_num] and [layer_z].");
@@ -221,6 +252,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("between_objects_gcode", typeid(std::string));
     def->location = Printer;
     def->label = L("Between objects G-code");
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This code is inserted between objects when using sequential printing. By default extruder and bed temperature are reset using non-wait command; however if M104, M109, M140 or M190 are detected in this custom code, Slic3r will not add temperature commands. Note that you can use placeholder variables for all Slic3r settings, so you can put a \"M109 S[first_layer_temperature]\" command wherever you want.");
     def->multiline = true;
     def->full_width = true;
@@ -233,7 +266,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Object, Volume };
     //TRN Print Settings: "Bottom solid layers"
     def->label = L_CONTEXT("Bottom", "Layers");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Horizontal shells");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of solid layers to generate on bottom surfaces.");
     def->full_label = L("Bottom solid layers");
     def->min = 0;
@@ -243,7 +278,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L_CONTEXT("Bottom", "Layers");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Horizontal shells");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The number of bottom solid layers is increased above bottom_solid_layers if necessary to satisfy "
     				 "minimum thickness of bottom shell.");
     def->full_label = L("Minimum bottom shell thickness");
@@ -254,6 +291,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("bridge_acceleration", typeid(double));
     def->location = Tool;
     def->label = L("Bridge");
+    def->option_group = L("Acceleration control (advanced");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for bridges. "
                    "Set zero to disable acceleration control for bridges.");
     def->sidetext = L("mm/s²");
@@ -265,7 +305,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Bridging angle");
-    def->category = L("Infill");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Bridging angle override. If left to zero, the bridging angle will be calculated "
                    "automatically. Otherwise the provided angle will be used for all bridges. "
                    "Use 180° for zero angle.");
@@ -277,6 +318,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("bridge_fan_speed", typeid(int));
     def->location = Filament;
     def->label = L("Bridges fan speed");
+    def->option_group = L("Fan settings");
+    def->category = ConfigItemDef::Category::Cooling;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("This fan speed is enforced during all bridges and overhangs.");
     def->sidetext = L("%");
     def->min = 0;
@@ -288,7 +332,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Bridge flow ratio");
-    def->category = L("Advanced");
+    def->option_group = L("Flow");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This factor affects the amount of plastic for bridging. "
                    "You can decrease it slightly to pull the extrudates and prevent sagging, "
                    "although default settings are usually good and you should experiment "
@@ -302,7 +348,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Single perimeter on top surfaces");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Only one perimeter");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Use only one perimeter on flat top surface, to give more space to the top infill pattern. Could be applied on topmost surface or all top surfaces.");
     def->mode = comExpert;
     def->init_fn = init_with(
@@ -316,7 +364,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Only one perimeter on first layer");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Only one perimeter");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Use only one perimeter on the first layer.");
     def->mode = comExpert;
     def->init_fn = init_with(false);
@@ -325,7 +375,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Bridges");
-    def->category = L("Speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed for printing bridges.");
     def->sidetext = L("mm/s");
     def->aliases = { "bridge_feed_rate" };
@@ -338,7 +389,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Object, Volume };
     // TRN: Label for speed used to print infill above bridges.
     def->label = L("Over bridges");
-    def->category = L("Speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed for printing solid infill above bridges. Set to 0 to use solid infill speed. "
                     "If set as percentage, the speed is calculated over solid infill speed. ");
     def->sidetext = L("mm/s or %");;
@@ -350,7 +402,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label      = L("Enable dynamic overhang speeds");
-    def->category   = L("Speed");
+    def->category   = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip    = L("This setting enables dynamic speed control on overhangs.");
     def->mode       = comExpert;
     def->init_fn = init_with(false);
@@ -366,7 +419,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label      = L("speed for 0% overlap (bridge)");
-    def->category   = L("Speed");
+    def->category   = ConfigItemDef::Category::Speed;
+    def->gui_type   = ConfigItemDef::GUIType::textfield;
     def->tooltip    = overhang_speed_setting_description;
     def->sidetext   = L("mm/s or %");
     def->min        = 0;
@@ -377,7 +431,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label      = L("speed for 25% overlap");
-    def->category   = L("Speed");
+    def->category   = ConfigItemDef::Category::Speed;
+    def->gui_type   = ConfigItemDef::GUIType::textfield;
     def->tooltip    = overhang_speed_setting_description;
     def->sidetext   = L("mm/s or %");
     def->min        = 0;
@@ -388,7 +443,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label      = L("speed for 50% overlap");
-    def->category   = L("Speed");
+    def->category   = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip    = overhang_speed_setting_description;
     def->sidetext   = L("mm/s or %");
     def->min        = 0;
@@ -399,7 +455,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label      = L("speed for 75% overlap");
-    def->category   = L("Speed");
+    def->category   = ConfigItemDef::Category::Speed;
+    def->gui_type   = ConfigItemDef::GUIType::textfield;
     def->tooltip    = overhang_speed_setting_description;
     def->sidetext   = L("mm/s or %");
     def->min        = 0;
@@ -409,6 +466,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def          = defs.add("enable_dynamic_fan_speeds", typeid(bool));
     def->location = Filament;
     def->label   = L("Enable dynamic fan speeds");
+    def->option_group = L("Dynamic overhang speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This setting enables dynamic fan speed control on overhangs.");
     def->mode    = comExpert;
     def->init_fn = init_with(false);
@@ -421,16 +481,23 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def           = defs.add("overhang_fan_speed_0", typeid(int));
     def->location = Filament;
     def->label    = L("speed for 0% overlap (bridge)");
+    def->option_group = L("Dynamic overhang speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip  = fan_speed_setting_description;
     def->sidetext = L("%");
     def->min      = 0;
     def->max      = 100;
-    def->mode     = comExpert;
+    def->mode     = comExpert;    def->option_group = L("Dynamic overhang speed");
+    def->category = ConfigItemDef::Category::Speed;
     def->init_fn = init_with(0);
 
     def           = defs.add("overhang_fan_speed_1", typeid(int));
     def->location = Filament;
     def->label    = L("speed for 25% overlap");
+    def->option_group = L("Dynamic overhang speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip  = fan_speed_setting_description;
     def->sidetext = L("%");
     def->min      = 0;
@@ -441,6 +508,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def           = defs.add("overhang_fan_speed_2", typeid(int));
     def->location = Filament;
     def->label    = L("speed for 50% overlap");
+    def->option_group = L("Dynamic overhang speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip  = fan_speed_setting_description;
     def->sidetext = L("%");
     def->min      = 0;
@@ -451,6 +521,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def           = defs.add("overhang_fan_speed_3", typeid(int));
     def->location = Filament;
     def->label    = L("speed for 75% overlap");
+    def->option_group = L("Dynamic overhang speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip  = fan_speed_setting_description;
     def->sidetext = L("%");
     def->min      = 0;
@@ -462,7 +535,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Brim width");
-    def->category = L("Skirt and brim");
+    def->option_group = L("Brim");
+    def->category = ConfigItemDef::Category::SkirtAndBrim;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The horizontal width of the brim that will be printed around each object on the first layer. "
                      "When raft is used, no brim is generated (use raft_first_layer_expansion).");
     def->sidetext = L("mm");
@@ -475,7 +550,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Brim type");
-    def->category = L("Skirt and brim");
+    def->option_group = L("Brim");
+    def->category = ConfigItemDef::Category::SkirtAndBrim;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("The places where the brim will be printed around each object on the first layer.");
     def->mode = comSimple;
     def->init_fn = init_with(
@@ -490,7 +567,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Brim separation gap");
-    def->category = L("Skirt and brim");
+    def->option_group = L("Brim");
+    def->category = ConfigItemDef::Category::SkirtAndBrim;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Offset of brim from the printed object. The offset is applied after the elephant foot compensation.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -548,6 +627,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("complete_objects", typeid(bool));
     def->location = Print;
     def->label = L("Complete individual objects");
+    def->option_group = L("Sequential printing");
+    def->category = ConfigItemDef::Category::OutputOptions;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("When printing multiple objects or copies, this feature will complete "
                    "each object before moving onto next one (and starting it from its bottom layer). "
                    "This feature is useful to avoid the risk of ruined prints. "
@@ -558,6 +640,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("cooling", typeid(bool));
     def->location = Filament;
     def->label = L("Enable auto cooling");
+    def->option_group = L("Enable");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This flag enables the automatic cooling logic that adjusts print speed "
                    "and fan speed according to layer printing time.");
     def->init_fn = init_with(true);
@@ -565,6 +650,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("cooling_tube_retraction", typeid(double));
     def->location = Printer;
     def->label = L("Cooling tube position");
+    def->option_group = L("Single extruder multimaterial parameters");
+    def->category = ConfigItemDef::Category::SingleExtruderMMSetup;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Distance of the center-point of the cooling tube from the extruder tip.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -574,6 +662,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("cooling_tube_length", typeid(double));
     def->location = Printer;
     def->label = L("Cooling tube length");
+    def->option_group = L("Single extruder multimaterial parameters");
+    def->category = ConfigItemDef::Category::SingleExtruderMMSetup;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Length of the cooling tube to limit space for cooling moves inside it.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -582,6 +673,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("default_acceleration", typeid(double));
     def->location = Tool;
+    def->option_group = L("Acceleration control (advanced)");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Default");
     def->tooltip = L("This is the acceleration your printer will be reset to after "
                    "the role-specific acceleration values are used (perimeter/infill). "
@@ -609,6 +703,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("disable_fan_first_layers", typeid(int));
     def->location = Filament;
     def->label = L("Disable fan for the first");
+    def->option_group = L("Fan settings");
+    def->category = ConfigItemDef::Category::Cooling;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("You can set this to a positive value to disable fan at all "
                    "during the first layers, so that it does not make adhesion worse.");
     def->sidetext = L("layers");
@@ -621,7 +718,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Don't support bridges");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Experimental option for preventing support material from being generated "
                    "under bridged areas.");
     def->mode = comAdvanced;
@@ -638,6 +736,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("end_gcode", typeid(std::string));
     def->location = Printer;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->category = ConfigItemDef::Category::CustomGcode;
     def->label = L("End G-code");
     def->tooltip = L("This end procedure is inserted at the end of the output file. "
                    "Note that you can use placeholder variables for all PrusaSlicer settings.");
@@ -657,6 +757,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("end_filament_gcode", typeid(std::string));
     def->location = Filament;
     def->label = L("End G-code");
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This end procedure is inserted at the end of the output file, before the printer end gcode (and "
                    "before any toolchange from this filament in case of multimaterial printers). "
                    "Note that you can use placeholder variables for all PrusaSlicer settings. "
@@ -671,7 +773,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Ensure vertical shell thickness");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Quality (slower slicing");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Add solid infill near sloping surfaces to guarantee the vertical shell thickness "
                    "(top+bottom solid layers).");
     def->mode = comAdvanced;
@@ -686,7 +790,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Top fill pattern");
-    def->category = L("Infill");
+    def->option_group = L("Infill");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Fill pattern for top infill. This only affects the top visible layer, and not its adjacent solid shells.");
     def->cli = "top-fill-pattern|external-fill-pattern|solid-fill-pattern";
     // solid_fill_pattern is an obsolete equivalent to top_fill_pattern/bottom_fill_pattern.
@@ -707,7 +813,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Bottom fill pattern");
-    def->category = L("Infill");
+    def->option_group = L("Infill");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Fill pattern for bottom infill. This only affects the bottom external visible layer, and not its adjacent solid shells.");
     def->cli = "bottom-fill-pattern|external-fill-pattern|solid-fill-pattern";
     def->aliases = def_top_fill_pattern->aliases;
@@ -727,7 +835,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("External perimeters");
-    def->category = L("Extrusion Width");
+    def->option_group = L("Extrusion width");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for external perimeters. "
                    "If left zero, default extrusion width will be used if set, otherwise 1.125 x nozzle diameter will be used. "
                    "If expressed as percentage (for example 200%), it will be computed over layer height.");
@@ -742,7 +852,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("External perimeters");
-    def->category = L("Speed");
+    def->option_group = L("Extrusion width");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This separate setting will affect the speed of external perimeters (the visible ones). "
                    "If expressed as percentage (for example: 80%) it will be calculated "
                    "on the perimeters speed setting above. Set to zero for auto.");
@@ -756,7 +868,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("External perimeters first");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Print contour perimeters from the outermost one to the innermost one "
                    "instead of the default inverse order.");
     def->mode = comExpert;
@@ -766,7 +880,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Extra perimeters if needed");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Quality (slower slicing");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Add more perimeters when needed for avoiding gaps in sloping walls. "
                    "Slic3r keeps adding perimeters, until more than 70% of the loop immediately above "
                    "is supported.");
@@ -777,7 +893,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Extra perimeters on overhangs (Experimental)");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Quality (slower slicing");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Detect overhang areas where bridges cannot be anchored, and fill them with "
                     "extra perimeter paths. These paths are anchored to the nearby non-overhang area when possible.");
     def->mode = comExpert;
@@ -787,7 +905,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Object;
     def->overrides_in = Locations{ Volume };
     def->label = L("Extruder");
-    def->category = L("Extruders");
+    def->category = ConfigItemDef::Category::Extruders;
+    def->gui_type = ConfigItemDef::GUIType::i_enum_open;
     def->tooltip = L("The extruder to use (unless more specific extruder settings are specified). "
                    "This value overrides perimeter and infill extruders, but not the support extruders.");
     def->min = 0;  // 0 = inherit defaults
@@ -803,6 +922,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
         
     def = defs.add("extruder_colour", typeid(std::string));
     def->location = Tool;
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Extruder Color");
     def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
     def->gui_type = ConfigItemDef::GUIType::color;
@@ -810,6 +931,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("extruder_offset", typeid(std::vector<Vec2d>));
     def->location = Printer;
+    def->gui_type = ConfigItemDef::GUIType::points;
+    def->option_group = L("Position (for multi-extruder printers)");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
     def->label = L("Extruder offset");
     def->tooltip = L("If your firmware doesn't handle the extruder displacement you need the G-code "
                    "to take it into account. This option lets you specify the displacement of each extruder "
@@ -828,6 +952,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("extruder_clearance_height", typeid(double));
     def->location = Printer;
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->option_group = L("Sequential printing limits");
     def->label = L("Height");
     def->tooltip = L("Only used when 'Print Settings -> Complete individual objects' is active. Set this to the vertical "
                    "distance between your nozzle tip and (usually) the X carriage rods. Used to check for collisions "
@@ -840,6 +967,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("extruder_clearance_radius", typeid(double));
     def->location = Printer;
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->option_group = L("Sequential printing limits");
     def->label = L("Radius");
     def->tooltip = L("Only used when 'Print Settings -> Complete individual objects' is active. Set this to a radius "
                      "of a nozzle-centered cylinder big enough to enclose the extruder assembly. Used to check for collisions "
@@ -853,6 +983,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("extrusion_multiplier", typeid(double));
     def->location = Filament;
     def->label = L("Extrusion multiplier");
+    def->option_group = L("Filament");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This factor changes the amount of flow proportionally. You may need to tweak "
                    "this setting to get nice surface finish and correct single wall widths. "
                    "Usual values are between 0.9 and 1.1. If you think you need to change this more, "
@@ -865,7 +998,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Default extrusion width");
-    def->category = L("Extrusion Width");
+    def->option_group = L("Extrusion width");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to allow a manual extrusion width. "
                    "If left to zero, Slic3r derives extrusion widths from the nozzle diameter "
                    "(see the tooltips for perimeter extrusion width, infill extrusion width etc). "
@@ -881,6 +1016,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("fan_always_on", typeid(bool));
     def->location = Filament;
     def->label = L("Keep fan always on");
+    def->option_group = L("Enable");
+    def->category = ConfigItemDef::Category::Cooling;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If this is enabled, fan will never be disabled and will be kept running at least "
                    "at its minimum speed. Useful for PLA, harmful for ABS.");
     def->init_fn = init_with(false);
@@ -888,6 +1026,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("fan_below_layer_time", typeid(int));
     def->location = Filament;
     def->label = L("Enable fan if layer print time is below");
+    def->option_group = L("Cooling thresholds");
+    def->category = ConfigItemDef::Category::Cooling;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("If layer print time is estimated below this number of seconds, fan will be enabled "
                    "and its speed will be calculated by interpolating the minimum and maximum speeds.");
     def->sidetext = L("approximate seconds");
@@ -899,6 +1040,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_colour", typeid(std::string));
     def->location = Filament;
     def->label = L("Color");
+    def->option_group = L("Filament");
+    def->category = ConfigItemDef::Category::Filament;
     def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
     def->gui_type = ConfigItemDef::GUIType::color;
     def->init_fn = init_with("#29B2B2");
@@ -906,6 +1049,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_notes", typeid(std::string));
     def->location = Filament;
     def->label = L("Filament notes");
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->category = ConfigItemDef::Category::Notes;
     def->tooltip = L("You can put your notes regarding the filament here.");
     def->multiline = true;
     def->full_width = true;
@@ -916,6 +1061,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_max_volumetric_speed", typeid(double));
     def->location = Filament;
     def->label = L("Max volumetric speed");
+    def->option_group = L("Print speed override");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum volumetric speed allowed for this filament. Limits the maximum volumetric "
                    "speed of a print to the minimum of print and filament volumetric speed. "
                    "Set to zero for no limit.");
@@ -927,6 +1075,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_infill_max_speed", typeid(double));
     def->location = Filament;
     def->label = L("Max non-crossing infill speed");
+    def->option_group = L("Print speed override");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum speed allowed for this filament while printing infill without "
                      "any self intersections in a single layer. "
                      "Set to zero for no limit.");
@@ -938,6 +1089,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_infill_max_crossing_speed", typeid(double));
     def->location = Filament;
     def->label = L("Max crossing infill speed");
+    def->option_group = L("Print speed override");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum speed allowed for this filament while printing infill with "
                      "self intersections in a single layer. "
                      "Set to zero for no limit.");
@@ -949,6 +1103,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_loading_speed", typeid(double));
     def->location = Filament;
     def->label = L("Loading speed");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed used for loading the filament on the wipe tower.");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -958,6 +1115,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_loading_speed_start", typeid(double));
     def->location = Filament;
     def->label = L("Loading speed at the start");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed used at the very beginning of loading phase.");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -967,6 +1127,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_unloading_speed", typeid(double));
     def->location = Filament;
     def->label = L("Unloading speed");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed used for unloading the filament on the wipe tower (does not affect "
                       " initial part of unloading just after ramming).");
     def->sidetext = L("mm/s");
@@ -977,6 +1140,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_unloading_speed_start", typeid(double));
     def->location = Filament;
     def->label = L("Unloading speed at the start");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed used for unloading the tip of the filament immediately after ramming.");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -986,6 +1152,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_toolchange_delay", typeid(double));
     def->location = Filament;
     def->label = L("Delay after unloading");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Time to wait after the filament is unloaded. "
                    "May help to get reliable toolchanges with flexible materials "
                    "that may need more time to shrink to original dimensions.");
@@ -997,6 +1166,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_stamping_loading_speed", typeid(double));
     def->location = Filament;
     def->label = L("Stamping loading speed");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed used for stamping.");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -1006,6 +1178,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_stamping_distance", typeid(double));
     def->location = Filament;
     def->label = L("Stamping distance measured from the center of the cooling tube");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("If set to nonzero value, filament is moved toward the nozzle between the individual cooling moves (\"stamping\"). "
                      "This option configures how long this movement should be before the filament is retracted again.");
     def->sidetext = L("mm");
@@ -1016,6 +1191,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_cooling_moves", typeid(int));
     def->location = Filament;
     def->label = L("Number of cooling moves");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Filament is cooled by being moved back and forth in the "
                    "cooling tubes. Specify desired number of these moves.");
     def->max = 0;
@@ -1026,6 +1204,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_cooling_initial_speed", typeid(double));
     def->location = Filament;
     def->label = L("Speed of the first cooling move");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Cooling moves are gradually accelerating beginning at this speed.");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -1035,6 +1216,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_minimal_purge_on_wipe_tower", typeid(double));
     def->location = Filament;
     def->label = L("Minimal purge on wipe tower");
+    def->option_group = L("Wipe tower parameters");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("After a tool change, the exact position of the newly loaded filament inside "
                      "the nozzle may not be known, and the filament pressure is likely not yet stable. "
                      "Before purging the print head into an infill or a sacrificial object, Slic3r will always prime "
@@ -1047,6 +1231,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_cooling_final_speed", typeid(double));
     def->location = Filament;
     def->label = L("Speed of the last cooling move");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Cooling moves are gradually accelerating towards this speed.");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -1056,6 +1243,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_purge_multiplier", typeid(Percentage));
     def->location = Filament;
     def->label = L("Purge volume multiplier");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Purging volume on the wipe tower is determined by 'multimaterial_purging' in Printer Settings. "
                      "This option allows to modify the volume on filament level. "
                      "Note that the project can override this by setting project-specific values.");
@@ -1067,6 +1257,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_load_time", typeid(double));
     def->location = Filament;
     def->label = L("Filament load time");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Time for the printer firmware (or the Multi Material Unit 2.0) to load a new filament during a tool change (when executing the T code). This time is added to the total print time by the G-code time estimator.");
     def->sidetext = L("s");
     def->min = 0;
@@ -1076,6 +1269,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_ramming_parameters", typeid(std::string));
     def->location = Filament;
     def->label = L("Ramming parameters");
+    def->option_group = L("Toolchange parameters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This string is edited by RammingDialog and contains ramming specific parameters.");
     def->mode = comExpert;
     def->init_fn = init_with("120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0|"
@@ -1084,6 +1280,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_unload_time", typeid(double));
     def->location = Filament;
     def->label = L("Filament unload time");
+    def->option_group = L("Toolchange paramters with single extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Time for the printer firmware (or the Multi Material Unit 2.0) to unload a filament during a tool change (when executing the T code). This time is added to the total print time by the G-code time estimator.");
     def->sidetext = L("s");
     def->min = 0;
@@ -1093,6 +1292,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_multitool_ramming", typeid(bool));
     def->location = Filament;
     def->label = L("Enable ramming for multitool setups");
+    def->option_group = L("Toolchange parameters with multi extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Perform ramming when using multitool printer (i.e. when the 'Single Extruder Multimaterial' in Printer Settings is unchecked). "
                      "When checked, a small amount of filament is rapidly extruded on the wipe tower just before the toolchange. "
                      "This option is only used when the wipe tower is enabled.");
@@ -1102,6 +1304,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_multitool_ramming_volume", typeid(double));
     def->location = Filament;
     def->label = L("Multitool ramming volume");
+    def->option_group = L("Toolchange parameters with multi extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The volume to be rammed before the toolchange.");
     def->sidetext = L("mm³");
     def->min = 0;
@@ -1111,6 +1316,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_multitool_ramming_flow", typeid(double));
     def->location = Filament;
     def->label = L("Multitool ramming flow");
+    def->option_group = L("Toolchange parameters with multi extruder MM printers");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Flow used for ramming the filament before the toolchange.");
     def->sidetext = L("mm³/s");
     def->min = 0;
@@ -1120,6 +1328,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_diameter", typeid(double));
     def->location = Filament;
     def->label = L("Diameter");
+    def->option_group = L("Filament");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Enter your filament diameter here. Good precision is required, so use a caliper "
                    "and do multiple measurements along the filament, then compute the average.");
     def->sidetext = L("mm");
@@ -1129,6 +1340,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_density", typeid(double));
     def->location = Filament;
     def->label = L("Density");
+    def->option_group = L("Filament");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Enter your filament density here. This is only for statistical information. "
                    "A decent way is to weigh a known length of filament and compute the ratio "
                    "of the length to volume. Better is to calculate the volume directly through displacement.");
@@ -1139,6 +1353,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_type", typeid(std::string));
     def->location = Filament;
     def->label = L("Filament type");
+    def->option_group = L("Filament properties");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::one_string;
     def->tooltip = L("The filament material type for use in custom G-codes.");
     def->gui_flags = "show_value";
     def->choices = {
@@ -1169,6 +1386,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_soluble", typeid(bool));
     def->location = Filament;
     def->label = L("Soluble material");
+    def->option_group = L("Filament properties");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Soluble material is most likely used for a soluble support.");
     def->mode = comAdvanced;
     def->init_fn = init_with(false);
@@ -1176,6 +1396,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_abrasive", typeid(bool));
     def->location = Filament;
     def->label = L("Abrasive material");
+    def->option_group = L("Filament properties");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This flag means that the material is abrasive and requires a hardened nozzle. The value is used by the printer to check it.");
     def->mode = comExpert;
     def->init_fn = init_with(false);
@@ -1183,6 +1406,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_cost", typeid(double));
     def->location = Filament;
     def->label = L("Cost");
+    def->option_group = L("Filament");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Enter your filament cost per kg here. This is only for statistical information.");
     def->sidetext = L("money/kg");
     def->min = 0;
@@ -1191,6 +1417,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("filament_spool_weight", typeid(double));
     def->location = Filament;
     def->label = L("Spool weight");
+    def->option_group = L("Filament");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Enter weight of the empty filament spool. "
                      "One may weigh a partially consumed filament spool before printing and one may compare the measured weight "
                      "with the calculated weight of the filament with the spool to find out whether the amount "
@@ -1206,11 +1435,15 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("filament_vendor", typeid(std::string));
     def->location = Filament;
+    def->category = ConfigItemDef::Category::Hidden;
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with(L("(Unknown)"));
 
     def = defs.add("filament_shrinkage_compensation_xy", typeid(Percentage));
     def->location = Filament;
+    def->option_group = L("Shrinkage compensation");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Shrinkage compensation XY");
     def->tooltip = L("Enter your filament shrinkage percentages for the X and Y axes here to apply scaling of the object to "
                      "compensate for shrinkage in the X and Y axes. For example, if you measured 99mm instead of 100mm, "
@@ -1223,6 +1456,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("filament_shrinkage_compensation_z", typeid(Percentage));
     def->location = Filament;
+    def->option_group = L("Shrinkage compensation");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Shrinkage compensation Z");
     def->tooltip = L("Enter your filament shrinkage percentages for the Z axis here to apply scaling of the object to "
                      "compensate for shrinkage in the Z axis. For example, if you measured 99mm instead of 100mm, "
@@ -1237,7 +1473,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Fill angle");
-    def->category = L("Infill");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Default base angle for infill orientation. Cross-hatching will be applied to this. "
                    "Bridges will be infilled using the best direction Slic3r can detect, so this setting "
                    "does not affect them.");
@@ -1252,7 +1489,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Object, Volume };
     def->gui_flags = "show_value";
     def->label = L("Fill density");
-    def->category = L("Infill");
+    def->option_group = L("Infill");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::f_enum_open;
     def->tooltip = L("Density of internal infill, expressed in the range 0% - 100%.");
     def->sidetext = L("%");
     def->min = 0;
@@ -1279,7 +1518,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Fill pattern");
-    def->category = L("Infill");
+    def->option_group = L("Infill");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Fill pattern for general low-density infill.");
     def->init_fn = init_with(
         InfillPattern::ipStars,
@@ -1306,6 +1547,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("first_layer_acceleration", typeid(double));
     def->location = Tool;
     def->label = L("First layer");
+    def->option_group = L("Acceleration control (advanced)");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for first layer. Set zero "
                    "to disable acceleration control for first layer.");
     def->sidetext = L("mm/s²");
@@ -1317,6 +1561,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("First object layer over raft interface");
+    def->option_group = L("Acceleration control (advanced)");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for first layer of object above raft interface. Set zero "
                    "to disable acceleration control for first layer of object above raft interface.");
     def->sidetext = L("mm/s²");
@@ -1327,6 +1574,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("first_layer_bed_temperature", typeid(int));
     def->location = Filament;
     def->label = L("First layer");
+    def->option_group = L("Temperature");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->full_label = L("First layer bed temperature");
     def->tooltip = L("Heated build plate temperature for the first layer. Set this to zero to disable "
                    "bed temperature control commands in the output.");
@@ -1338,7 +1588,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("first_layer_extrusion_width", typeid(FloatOrPercentage));
     def->location = Tool;
     def->label = L("First layer");
-    def->category = L("Extrusion Width");
+    def->option_group = L("Extrusion width");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for first layer. "
                    "You can use this to force fatter extrudates for better adhesion. If expressed "
                    "as percentage (for example 120%) it will be computed over first layer height. "
@@ -1354,7 +1606,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("first_layer_height", typeid(FloatOrPercentage));
     def->location = Print;
     def->label = L("First layer height");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Layer height");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("When printing with very low layer heights, you might still want to print a thicker "
                    "bottom layer to improve adhesion and tolerance for non perfect build plates.");
     def->sidetext = L("mm");
@@ -1365,6 +1619,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("first_layer_speed", typeid(FloatOrPercentage));
     def->location = Tool;
     def->label = L("First layer speed");
+    def->option_group = L("Modifiers");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("If expressed as absolute value in mm/s, this speed will be applied to all the print moves "
                    "of the first layer, regardless of their type. If expressed as a percentage "
                    "(for example: 40%) it will scale the default speeds.");
@@ -1377,6 +1634,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("first_layer_infill_speed", typeid(FloatOrPercentage));
     def->location = Tool;
     def->label = L("First layer solid infill speed");
+    def->option_group = L("Modifiers");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("If expressed as absolute value in mm/s, this speed will be applied to the solid infill print moves "
                    "of the first layer. If expressed as a percentage "
                    "(for example: 40%) it will be a percantage of the solid infill speed "
@@ -1391,6 +1651,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Speed of object first layer over raft interface");
+    def->option_group = L("Modifiers");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("If expressed as absolute value in mm/s, this speed will be applied to all the print moves "
                    "of the first object layer above raft interface, regardless of their type. If expressed as a percentage "
                    "(for example: 40%) it will scale the default speeds.");
@@ -1402,6 +1665,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("first_layer_temperature", typeid(int));
     def->location = Filament;
     def->label = L("First layer");
+    def->option_group = L("Temperature");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->full_label = L("First layer nozzle temperature");
     def->tooltip = L("Nozzle temperature for the first layer. If you want to control temperature manually "
                      "during print, set this to zero to disable temperature control commands in the output G-code.");
@@ -1413,6 +1679,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("full_fan_speed_layer", typeid(int));
     def->location = Filament;
     def->label = L("Full fan speed at layer");
+    def->option_group = L("Fan settings");
+    def->category = ConfigItemDef::Category::Cooling;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Fan speed will be ramped up linearly from zero at layer \"disable_fan_first_layers\" "
                    "to maximum at layer \"full_fan_speed_layer\". "
                    "\"full_fan_speed_layer\" will be ignored if lower than \"disable_fan_first_layers\", in which case "
@@ -1426,7 +1695,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Fuzzy Skin");
-    def->category = L("Fuzzy Skin");
+    def->option_group = L("Fuzzy skin (experimental");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Fuzzy skin type.");
     def->mode = comSimple;
     def->init_fn = init_with(
@@ -1440,7 +1711,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Fuzzy skin thickness");
-    def->category = L("Fuzzy Skin");
+    def->option_group = L("Fuzzy skin (experimental");
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
     def->tooltip = L("The maximum distance that each skin point can be offset (both ways), "
                      "measured perpendicular to the perimeter wall.");
     def->sidetext = L("mm");
@@ -1452,7 +1725,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Fuzzy skin point distance");
-    def->category = L("Fuzzy Skin");
+    def->option_group = L("Fuzzy skin (experimental");
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
     def->tooltip = L("Perimeters will be split into multiple segments by inserting Fuzzy skin points. "
                      "Lowering the Fuzzy skin point distance will increase the number of randomly offset points on the perimeter wall.");
     def->sidetext = L("mm");
@@ -1464,7 +1739,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Fill gaps");
-    def->category = L("Layers and Perimeters");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Enables filling of gaps between perimeters and between the inner most perimeters and infill.");
     def->mode = comAdvanced;
     def->init_fn = init_with(true);
@@ -1473,7 +1749,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Gap fill");
-    def->category = L("Speed");
+    def->option_group = L("Speed for print moves");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed for filling small gaps using short zigzag moves. Keep this reasonably low "
                    "to avoid too much shaking and resonance issues. Set zero to disable gaps filling.");
     def->sidetext = L("mm/s");
@@ -1483,6 +1761,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("gcode_comments", typeid(bool));
     def->location = Print;
+    def->option_group = L("Output file");
+    def->category = ConfigItemDef::Category::OutputOptions;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->label = L("Verbose G-code");
     def->tooltip = L("Enable this to get a commented G-code file, with each line explained by a descriptive text. "
                    "If you print from SD card, the additional weight of the file could make your firmware "
@@ -1492,6 +1773,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("gcode_flavor", typeid(EnumWrapper));
     def->location = Printer;
+    def->option_group = L("Firmware");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->label = L("G-code flavor");
     def->tooltip = L("Some G/M-code commands, including temperature control and others, are not universal. "
                    "Set this option to your printer's firmware to get a compatible output. "
@@ -1517,6 +1801,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("gcode_label_objects", typeid(EnumWrapper));
     def->location = Print;
     def->label = L("Label objects");
+    def->option_group = L("Output file");
+    def->category = ConfigItemDef::Category::OutputOptions;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Selects whether labels should be exported at object boundaries and in what format.\n"
                      "OctoPrint = comments to be consumed by OctoPrint CancelObject plugin.\n"
                      "Firmware = firmware specific G-code (it will be chosen based on firmware flavor and it can end up to be empty).\n\n"
@@ -1532,6 +1819,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("gcode_substitutions", typeid(std::vector<std::string>));
     def->location = Print;
     def->label = L("G-code substitutions");
+    def->option_group = L("Other");
+    def->category = ConfigItemDef::Category::OutputOptions;
     def->tooltip = L("Find / replace patterns in G-code lines and substitute them.");
     def->mode = comExpert;
     def->init_fn = init_with(std::vector<std::string>{});
@@ -1539,6 +1828,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("high_current_on_filament_swap", typeid(bool));
     def->location = Printer;
     def->label = L("High extruder current on filament swap");
+    def->option_group = L("Single extruder multimaterial parameters");
+    def->category = ConfigItemDef::Category::SingleExtruderMMSetup;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("It may be beneficial to increase the extruder motor current during the filament exchange"
                    " sequence to allow for rapid ramming feed rates and to overcome resistance when loading"
                    " a filament with an ugly shaped tip.");
@@ -1548,6 +1840,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("infill_acceleration", typeid(double));
     def->location = Tool;
     def->label = L("Infill");
+    def->option_group = L("Speed for print moves");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for infill. Set zero to disable "
                      "acceleration control for infill.");
     def->sidetext = L("mm/s²");
@@ -1558,6 +1853,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("solid_infill_acceleration", typeid(double));
     def->location = Tool;
     def->label = L("Solid infill");
+    def->option_group = L("Speed for print moves");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for solid infill. Set zero to use "
                      "the value for infill.");
     def->sidetext = L("mm/s²");
@@ -1568,6 +1866,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("top_solid_infill_acceleration", typeid(double));
     def->location = Tool;
     def->label = L("Top solid infill");
+    def->option_group = L("Speed for print moves");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for top solid infill. Set zero to use "
                      "the value for solid infill.");
     def->sidetext = L("mm/s²");
@@ -1578,6 +1879,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("wipe_tower_acceleration", typeid(double));
     def->location = Print;
     def->label = L("Wipe tower");
+    def->option_group = L("Acceleration control (advanced)");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for wipe tower. Set zero to disable "
                      "acceleration control for the wipe tower.");
     def->sidetext = L("mm/s²");
@@ -1588,6 +1892,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("travel_acceleration", typeid(double));
     def->location = Tool;
     def->label = L("Travel");
+    def->option_group = L("Acceleration control (advanced)");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for travel moves. Set zero to disable "
                      "acceleration control for travel.");
     def->sidetext = L("mm/s²");
@@ -1599,7 +1906,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Combine infill every");
-    def->category = L("Infill");
+    def->option_group = L("Reducing printing time");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("This feature allows to combine infill and speed up your print by extruding thicker "
                    "infill layers while preserving thin perimeters, thus accuracy.");
     def->sidetext = L("layers");
@@ -1612,7 +1921,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Length of the infill anchor");
-    def->category = L("Advanced");
+    def->option_group = L("Infill");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::f_enum_open;
     def->tooltip = L("Connect an infill line to an internal perimeter with a short segment of an additional perimeter. "
                      "If expressed as percentage (example: 15%) it is calculated over infill extrusion width. "
                      "PrusaSlicer tries to connect two close infill lines to a short perimeter segment. If no such perimeter segment "
@@ -1638,6 +1949,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Maximum length of the infill anchor");
+    def->option_group = L("Infill");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::f_enum_open;
     def->category    = def_infill_anchor_min->category;
     def->tooltip = L("Connect an infill line to an internal perimeter with a short segment of an additional perimeter. "
                      "If expressed as percentage (example: 15%) it is calculated over infill extrusion width. "
@@ -1663,7 +1977,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Infill extruder");
-    def->category = L("Extruders");
+    def->category = ConfigItemDef::Category::Extruders;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("The extruder to use when printing infill.");
     def->min = 1;
     def->mode = comAdvanced;
@@ -1673,7 +1988,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Infill");
-    def->category = L("Extrusion Width");
+    def->option_group = L("Extrusion width");
+    def->category = ConfigItemDef::Category::Advanced;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for infill. "
                    "If left zero, default extrusion width will be used if set, otherwise 1.125 x nozzle diameter will be used. "
                    "You may want to use fatter extrudates to speed up the infill and make your parts stronger. "
@@ -1688,6 +2004,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("infill_first", typeid(bool));
     def->location = Print;
     def->label = L("Infill before perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This option will switch the print order of perimeters and infill, making the latter first.");
     def->mode = comExpert;
     def->init_fn = init_with(false);
@@ -1696,7 +2015,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Infill/perimeters overlap");
-    def->category = L("Advanced");
+    def->option_group = L("Overlap");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This setting applies an additional overlap between infill and perimeters for better bonding. "
                    "Theoretically this shouldn't be needed, but backlash might cause gaps. If expressed "
                    "as percentage (example: 15%) it is calculated over perimeter extrusion width.");
@@ -1709,7 +2030,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Infill");
-    def->category = L("Speed");
+    def->category = ConfigItemDef::Category::Speed;
     def->tooltip = L("Speed for printing the internal fill. Set to zero for auto.");
     def->sidetext = L("mm/s");
     def->aliases = { "print_feed_rate", "infill_feed_rate" };
@@ -1736,10 +2057,12 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Interface shells");
+    def->option_group = L("Advanced");
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Force the generation of solid shells between adjacent materials/volumes. "
                    "Useful for multi-extruder prints with translucent materials or manual soluble "
                    "support material.");
-    def->category = L("Layers and Perimeters");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
     def->mode = comExpert;
     def->init_fn = init_with(false);
 
@@ -1750,7 +2073,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("Maximum width of a segmented region. Zero disables this feature.");
     def->sidetext = L("mm (zero to disable)");
     def->min = 0;
-    def->category = L("Advanced");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->mode = comExpert;
     def->init_fn = init_with(0.);
 
@@ -1763,7 +2087,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                        "is bigger then \"mmu_segmented_region_max_width\". Zero disables this feature.");
     def->sidetext = L("mm (zero to disable)");
     def->min = 0;
-    def->category = L("Advanced");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->mode = comExpert;
     def->init_fn = init_with(0.);
 
@@ -1771,8 +2096,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Enable ironing");
+    def->option_group = L("Ironing");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Enable ironing of the top layers with the hot print head for smooth surface");
-    def->category = L("Ironing");
     def->mode = comAdvanced;
     def->init_fn = init_with(false);
 
@@ -1781,7 +2108,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Object };
     def->label    = L("Use beam interlocking");
     def->tooltip  = L("Generate interlocking beam structure at the locations where different filaments touch. This improves the adhesion between filaments, especially models printed in different materials.");
-    def->category = L("Advanced");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->mode     = comAdvanced;
     def->init_fn = init_with(false);
 
@@ -1792,7 +2120,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip  = L("The width of the interlocking structure beams.");
     def->sidetext = L("mm");
     def->min      = 0.1f;
-    def->category = L("Advanced");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->mode     = comAdvanced;
     def->init_fn = init_with(0.8);
 
@@ -1804,7 +2133,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("°");
     def->min      = 0;
     def->max      = 360;
-    def->category = L("Advanced");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->mode     = comAdvanced;
     def->init_fn = init_with(22.5);
 
@@ -1812,9 +2142,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label    = L("Interlocking beam layers");
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip  = L("The height of the beams of the interlocking structure, measured in number of layers. Less layers is stronger, but more prone to defects.");
     def->min      = 1;
-    def->category = L("Advanced");
+    def->category = ConfigItemDef::Category::Advanced;
     def->mode     = comAdvanced;
     def->init_fn = init_with(2);
 
@@ -1824,7 +2155,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label    = L("Interlocking depth");
     def->tooltip  = L("The distance from the boundary between filaments to generate interlocking structure, measured in cells. Too few cells will result in poor adhesion.");
     def->min      = 1;
-    def->category = L("Advanced");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->mode     = comAdvanced;
     def->init_fn = init_with(2);
 
@@ -1834,7 +2166,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label    = L("Interlocking boundary avoidance");
     def->tooltip  = L("The distance from the outside of a model where interlocking structures will not be generated, measured in cells.");
     def->min      = 0;
-    def->category = L("Advanced");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->mode     = comAdvanced;
     def->init_fn = init_with(2);
 
@@ -1842,7 +2175,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Ironing Type");
-    def->category = L("Ironing");
+    def->option_group = L("Ironing");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Ironing Type");
     def->mode = comAdvanced;
     def->init_fn = init_with(
@@ -1856,7 +2191,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Flow rate");
-    def->category = L("Ironing");
+    def->option_group = L("Ironing");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Percent of a flow rate relative to object's normal layer height.");
     def->sidetext = L("%");
     def->ratio_over = "layer_height";
@@ -1868,7 +2205,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Spacing between ironing passes");
-    def->category = L("Ironing");
+    def->option_group = L("Ironing");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Distance between ironing lines");
     def->sidetext = L("mm");
     def->min = 0;
@@ -1879,7 +2218,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Ironing");
-    def->category = L("Speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Ironing");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -1889,6 +2229,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("layer_gcode", typeid(std::string));
     def->location = Printer;
     def->label = L("After layer change G-code");
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This custom code is inserted at every layer change, right after the Z move "
                    "and before the extruder moves to the first layer point. Note that you can use "
                    "placeholder variables for all Slic3r settings as well as [layer_num] and [layer_z].");
@@ -1902,6 +2244,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("remaining_times", typeid(bool));
     def->location = Printer;
     def->label = L("Supports remaining times");
+    def->option_group = L("Firmware");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Emit M73 P[percent printed] R[remaining time in minutes] at 1 minute"
                      " intervals into the G-code to let the firmware show accurate remaining time."
                      " As of now only the Prusa i3 MK3 firmware recognizes M73."
@@ -1912,6 +2257,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("silent_mode", typeid(bool));
     def->location = Printer;
     def->label = L("Supports stealth mode");
+    def->option_group = L("Firmware");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("The firmware supports stealth mode");
     def->mode = comExpert;
     def->init_fn = init_with(true);
@@ -1919,6 +2267,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("binary_gcode", typeid(bool));
     def->location = Printer;
     def->label = L("Supports binary G-code");
+    def->option_group = L("Firmware");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Enable, if the firmware supports binary G-code format (bgcode). "
                      "To generate .bgcode files, make sure you have binary G-code enabled in Configuration->Preferences->Other.");
     def->mode = comExpert;
@@ -1928,7 +2279,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->label = L("How to apply limits");
     def->full_label = L("Purpose of Machine Limits");
-    def->category = L("Machine limits");
+    def->category = ConfigItemDef::Category::MachineLimits;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("How to apply the Machine Limits");
     def->mode = comAdvanced;
     def->init_fn = init_with(
@@ -1963,7 +2315,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
             (void)L("Maximum feedrate Y");
             (void)L("Maximum feedrate Z");
             (void)L("Maximum feedrate E");
-            def->category = L("Machine limits");
+            def->option_group = L("Maximum feedrates");
+            def->category = ConfigItemDef::Category::MachineLimits;
+            def->gui_type = ConfigItemDef::GUIType::textfields;
             def->tooltip  = (boost::format("Maximum feedrate of the %1% axis") % axis_upper).str();
             (void)L("Maximum feedrate of the X axis");
             (void)L("Maximum feedrate of the Y axis");
@@ -1983,7 +2337,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
             (void)L("Maximum acceleration Y");
             (void)L("Maximum acceleration Z");
             (void)L("Maximum acceleration E");
-            def->category = L("Machine limits");
+            def->option_group = L("Maximum accelerations");
+            def->category = ConfigItemDef::Category::MachineLimits;
+            def->gui_type = ConfigItemDef::GUIType::textfields;
             def->tooltip  = (boost::format("Maximum acceleration of the %1% axis") % axis_upper).str();
             (void)L("Maximum acceleration of the X axis");
             (void)L("Maximum acceleration of the Y axis");
@@ -2003,7 +2359,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
             (void)L("Maximum jerk Y");
             (void)L("Maximum jerk Z");
             (void)L("Maximum jerk E");
-            def->category = L("Machine limits");
+            def->option_group = L("Jerk limits");
+            def->category = ConfigItemDef::Category::MachineLimits;
+            def->gui_type = ConfigItemDef::GUIType::textfields;
             def->tooltip  = (boost::format("Maximum jerk of the %1% axis") % axis_upper).str();
             (void)L("Maximum jerk of the X axis");
             (void)L("Maximum jerk of the Y axis");
@@ -2021,7 +2379,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("machine_min_extruding_rate", typeid(std::vector<double>));
     def->location = Printer;
     def->full_label = L("Minimum feedrate when extruding");
-    def->category = L("Machine limits");
+    def->option_group = L("Minimum feedrates");
+    def->category = ConfigItemDef::Category::MachineLimits;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Minimum feedrate when extruding (M205 S)");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -2032,7 +2392,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("machine_min_travel_rate", typeid(std::vector<double>));
     def->location = Printer;
     def->full_label = L("Minimum travel feedrate");
-    def->category = L("Machine limits");
+    def->option_group = L("Minimum accelerations");
+    def->category = ConfigItemDef::Category::MachineLimits;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Minimum travel feedrate (M205 T)");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -2042,8 +2404,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     // M204 P... [mm/sec^2]
     def = defs.add("machine_max_acceleration_extruding", typeid(std::vector<double>));
     def->location = Printer;
+    def->option_group = L("Maximum accelerations");
     def->full_label = L("Maximum acceleration when extruding");
-    def->category = L("Machine limits");
+    def->category = ConfigItemDef::Category::MachineLimits;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Maximum acceleration when extruding");
     def->sidetext = L("mm/s²");
     def->min = 0;
@@ -2054,7 +2418,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("machine_max_acceleration_retracting", typeid(std::vector<double>));
     def->location = Printer;
     def->full_label = L("Maximum acceleration when retracting");
-    def->category = L("Machine limits");
+    def->option_group = L("Maximum accelerations");
+    def->category = ConfigItemDef::Category::MachineLimits;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Maximum acceleration when retracting.\n\n"
                      "Not used for RepRapFirmware, which does not support it.");
     def->sidetext = L("mm/s²");
@@ -2065,8 +2431,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     // M204 T... [mm/sec^2]
     def = defs.add("machine_max_acceleration_travel", typeid(std::vector<double>));
     def->location = Printer;
+    def->option_group = L("Maximum accelerations");
     def->full_label = L("Maximum acceleration for travel moves");
-    def->category = L("Machine limits");
+    def->category = ConfigItemDef::Category::MachineLimits;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Maximum acceleration for travel moves.");
     def->sidetext = L("mm/s²");
     def->min = 0;
@@ -2076,6 +2444,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("max_fan_speed", typeid(int));
     def->location = Filament;
     def->label = L("Max");
+    def->option_group = L("Fan settings");
+    def->category = ConfigItemDef::Category::Cooling;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("This setting represents the maximum speed of your fan.");
     def->sidetext = L("%");
     def->min = 0;
@@ -2086,6 +2457,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("max_layer_height", typeid(double));
     def->location = Tool;
     def->label = L("Max");
+    def->option_group = L("Layer height limits");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the highest printable layer height for this extruder, used to cap "
                    "the variable layer height and support layer height. Maximum recommended layer height "
                    "is 75% of the extrusion width to achieve reasonable inter-layer adhesion. "
@@ -2098,6 +2472,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("max_print_speed", typeid(double));
     def->location = Tool;
     def->label = L("Max print speed");
+    def->category = ConfigItemDef::Category::Cooling;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("When setting other speed settings to 0 Slic3r will autocalculate the optimal speed "
                    "in order to keep constant extruder pressure. This experimental setting is used "
                    "to set the highest print speed you want to allow.");
@@ -2109,6 +2485,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("max_volumetric_speed", typeid(double));
     def->location = Tool;
     def->label = L("Max volumetric speed");
+    def->option_group = L("Auto Speed (advanced)");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This experimental setting is used to set the maximum volumetric speed your "
                    "extruder supports.");
     def->sidetext = L("mm³/s");
@@ -2119,6 +2498,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("max_volumetric_extrusion_rate_slope_positive", typeid(double));
     def->location = Tool;
     def->label = L("Max volumetric slope positive");
+    def->option_group = L("Pressure equalizer (experimental)");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This experimental setting is used to limit the speed of change in extrusion rate "
                        "for a transition from lower speed to higher speed. "
                    "A value of 1.8 mm³/s² ensures, that a change from the extrusion rate "
@@ -2132,6 +2514,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("max_volumetric_extrusion_rate_slope_negative", typeid(double));
     def->location = Tool;
     def->label = L("Max volumetric slope negative");
+    def->option_group = L("Pressure equalizer (experimental)");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This experimental setting is used to limit the speed of change in extrusion rate "
                        "for a transition from higher speed to lower speed. "
                    "A value of 1.8 mm³/s² ensures, that a change from the extrusion rate "
@@ -2145,6 +2530,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("min_fan_speed", typeid(int));
     def->location = Filament;
     def->label = L("Min");
+    def->option_group = L("Fan settings");
+    def->category = ConfigItemDef::Category::Cooling;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("This setting represents the minimum PWM your fan needs to work.");
     def->sidetext = L("%");
     def->min = 0;
@@ -2155,6 +2543,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("min_layer_height", typeid(double));
     def->location = Tool;
     def->label = L("Min");
+    def->option_group = L("Layer height limits");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the lowest printable layer height for this extruder and limits "
                    "the resolution for variable layer height. Typical values are between 0.05 mm and 0.1 mm.");
     def->sidetext = L("mm");
@@ -2165,6 +2556,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("min_print_speed", typeid(double));
     def->location = Filament;
     def->label = L("Min print speed");
+    def->option_group = L("Cooling tresholds");
+    def->category = ConfigItemDef::Category::Cooling;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Slic3r will not scale speed down below this speed.");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -2174,6 +2568,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("min_skirt_length", typeid(double));
     def->location = Print;
     def->label = L("Minimal filament extrusion length");
+    def->option_group = L("Skirt");
+    def->category = ConfigItemDef::Category::SkirtAndBrim;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Generate no less than the number of skirt loops required to consume "
                    "the specified amount of filament on the bottom layer. For multi-extruder machines, "
                    "this minimum applies to each extruder.");
@@ -2185,6 +2582,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("notes", typeid(std::string));
     def->location = Print;
     def->label = L("Configuration notes");
+    def->category = ConfigItemDef::Category::Notes;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("You can put here your personal notes. This text will be added to the G-code "
                    "header comments.");
     def->multiline = true;
@@ -2196,6 +2595,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("nozzle_diameter", typeid(double));
     def->location = Tool;
     def->label = L("Nozzle diameter");
+    def->option_group = L("Size");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the diameter of your extruder nozzle (for example: 0.5, 0.35 etc.)");
     def->sidetext = L("mm");
     def->init_fn = init_with(0.4);
@@ -2203,6 +2605,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("only_retract_when_crossing_perimeters", typeid(bool));
     def->location = Tool;
     def->label = L("Only retract when crossing perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Disables retraction when the travel path does not exceed the upper layer's perimeters "
                    "(and thus any ooze will be probably invisible).");
     def->mode = comExpert;
@@ -2211,6 +2616,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("ooze_prevention", typeid(bool));
     def->location = Print;
     def->label = L("Enable");
+    def->option_group = L("Ooze prevention");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     // TRN PrintSettings: Enable ooze prevention
     def->tooltip = L("This option will drop the temperature of the inactive extruders to prevent oozing.");
     def->mode = comExpert;
@@ -2220,7 +2628,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Detect bridging perimeters");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Quality (slower slicing");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Experimental option to adjust flow for overhangs (bridge flow will be used), "
                    "to apply bridge speed to them and enable fan.");
     def->mode = comAdvanced;
@@ -2229,6 +2639,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("parking_pos_retraction", typeid(double));
     def->location = Printer;
     def->label = L("Filament parking position");
+    def->option_group = L("Single extruder multimaterial parameters");
+    def->category = ConfigItemDef::Category::SingleExtruderMMSetup;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Distance of the extruder tip from the position where the filament is parked "
                       "when unloaded. This should match the value in printer firmware.");
     def->sidetext = L("mm");
@@ -2239,6 +2652,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("extra_loading_move", typeid(double));
     def->location = Printer;
     def->label = L("Extra loading distance");
+    def->option_group = L("Single extruder multimaterial parameters");
+    def->category = ConfigItemDef::Category::SingleExtruderMMSetup;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("When set to zero, the distance the filament is moved from parking position during load "
                       "is exactly the same as it was moved back during unload. When positive, it is loaded further, "
                       " if negative, the loading move is shorter than unloading.");
@@ -2249,6 +2665,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("multimaterial_purging", typeid(double));
     def->location = Printer;
     def->label = L("Purging volume");
+    def->option_group = L("Single extruder multimaterial parameters");
+    def->category = ConfigItemDef::Category::SingleExtruderMMSetup;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Determines purging volume on the wipe tower. This can be modified in Filament Settings "
                      "('filament_purge_multiplier') or overridden using project-specific settings.");
     def->sidetext = L("mm³");
@@ -2258,6 +2677,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("perimeter_acceleration", typeid(double));
     def->location = Tool;
     def->label = L("Perimeters");
+    def->option_group = L("Speed for print moves");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for perimeters. "
                      "Set zero to disable acceleration control for perimeters.");
     def->sidetext = L("mm/s²");
@@ -2267,6 +2689,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("external_perimeter_acceleration", typeid(double));
     def->location = Tool;
     def->label = L("External perimeters");
+    def->option_group = L("Speed for print moves");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for external perimeters. "
                      "Set zero to use the value for perimeters.");
     def->sidetext = L("mm/s²");
@@ -2277,7 +2702,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Perimeter extruder");
-    def->category = L("Extruders");
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
+    def->category = ConfigItemDef::Category::Extruders;
     def->tooltip = L("The extruder to use when printing perimeters and brim. First extruder is 1.");
     def->aliases = { "perimeters_extruder" };
     def->min = 1;
@@ -2288,7 +2714,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Perimeters");
-    def->category = L("Extrusion Width");
+    def->option_group = L("Extrusion width");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for perimeters. "
                    "You may want to use thinner extrudates to get more accurate surfaces. "
                    "If left zero, default extrusion width will be used if set, otherwise 1.125 x nozzle diameter will be used. "
@@ -2305,7 +2733,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Perimeters");
-    def->category = L("Speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed for perimeters (contours, aka vertical shells). Set to zero for auto.");
     def->sidetext = L("mm/s");
     def->aliases = { "perimeter_feed_rate" };
@@ -2317,7 +2746,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Perimeters");
-    def->category = L("Layers and Perimeters");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("This option sets the number of perimeters to generate for each layer. "
                    "Note that Slic3r may increase this number automatically when it detects "
                    "sloping surfaces which benefit from a higher number of perimeters "
@@ -2331,6 +2761,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("post_process", typeid(std::vector<std::string>));
     def->location = Print;
     def->label = L("Post-processing scripts");
+    def->category = ConfigItemDef::Category::OutputOptions;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("If you want to process the output G-code through custom scripts, "
                    "just list their absolute paths here. Separate multiple scripts with a semicolon. "
                    "Scripts will be passed the absolute path to the G-code file as the first argument, "
@@ -2345,6 +2777,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("printer_notes", typeid(std::string));
     def->location = Printer;
     def->label = L("Printer notes");
+    def->category = ConfigItemDef::Category::Notes;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("You can put your notes regarding the printer here.");
     def->multiline = true;
     def->full_width = true;
@@ -2355,6 +2789,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("printer_vendor", typeid(std::string));
     def->location = Printer;
     def->label = L("Printer vendor");
+    def->category = ConfigItemDef::Category::Hidden;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Name of the printer vendor.");
     def->cli = ConfigItemDef::nocli;
     def->init_fn = init_with("");
@@ -2377,7 +2813,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Raft contact Z distance");
-    def->category = L("Support material");
+    def->option_group = L("Raft");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The vertical distance between object and raft. Ignored for soluble interface.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -2388,7 +2826,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Raft expansion");
-    def->category = L("Support material");
+    def->option_group = L("Raft");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Expansion of the raft in XY plane for better stability.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -2399,7 +2839,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("First layer density");
-    def->category = L("Support material");
+    def->option_group = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Density of the first raft or support layer.");
     def->sidetext = L("%");
     def->min = 10;
@@ -2411,7 +2853,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("First layer expansion");
-    def->category = L("Support material");
+    def->option_group = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Expansion of the first raft or support layer to improve adhesion to print bed.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -2422,7 +2866,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Raft layers");
-    def->category = L("Support material");
+    def->option_group = L("Raft");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("The object will be raised by this number of layers, and support material "
                    "will be generated under it.");
     def->sidetext = L("layers");
@@ -2433,6 +2879,10 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("resolution", typeid(double));
     def->location = Print;
     def->label = L("Slice resolution");
+    def->option_group = L("Slicing");
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->category = ConfigItemDef::Category::Advanced;
+    def->option_group = L("Slicing");
     def->tooltip = L("Minimum detail resolution, used to simplify the input file for speeding up "
                    "the slicing job and reducing memory usage. High-resolution models often carry "
                    "more detail than printers can render. Set to zero to disable any simplification "
@@ -2445,6 +2895,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("gcode_resolution", typeid(double));
     def->location = Tool;
     def->label = L("G-code resolution");
+    def->option_group = L("Slicing");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum deviation of exported G-code paths from their full resolution counterparts. "
                      "Very high resolution G-code requires huge amount of RAM to slice and preview, "
                      "also a 3D printer may stutter not being able to process a high resolution G-code in a timely manner. "
@@ -2459,6 +2912,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Minimum travel after retraction");
+    def->option_group = L("Retraction");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Retraction is not triggered when travel moves are shorter than this length.");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
@@ -2468,6 +2924,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Retract amount before wipe");
+    def->option_group = L("Retraction");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("With bowden extruders, it may be wise to do some amount of quick retract "
                    "before doing the wipe movement.");
     def->sidetext = L("%");
@@ -2478,6 +2937,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Retract on layer change");
+    def->option_group = L("Retraction");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This flag enforces a retraction whenever a Z move is done.");
     def->mode = comAdvanced;
     def->init_fn = init_with(false);
@@ -2486,6 +2948,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Retraction length");
+    def->option_group = L("Retraction");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Retraction Length");
     def->tooltip = L("When retraction is triggered, filament is pulled back by the specified amount "
                    "(the length is measured on raw filament, before it enters the extruder).");
@@ -2496,6 +2961,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Length");
+    def->option_group = L("Retraction when tool is disabled (advanced settings for multi-extruder setups");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Retraction Length (Toolchange)");
     def->tooltip = L("When retraction is triggered before changing tool, filament is pulled back "
                    "by the specified amount (the length is measured on raw filament, before it enters "
@@ -2508,6 +2976,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Ramping slope angle");
+    def->option_group = L("Travel lift");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Slope of the ramp in the initial phase of the travel.");
     def->sidetext = L("°");
     def->min = 0;
@@ -2519,6 +2990,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Use ramping lift");
+    def->option_group = L("Travel lift");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Generates a ramping lift instead of lifting the extruder directly upwards. "
                      "The travel is split into two phases: the ramp and the standard horizontal travel. "
                      "This option helps reduce stringing.");
@@ -2529,6 +3003,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Maximum ramping lift");
+    def->option_group = L("Travel lift");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum lift height of the ramping lift. It may not be reached if the next position "
                      "is close to the old one.");
     def->sidetext = L("mm");
@@ -2541,6 +3018,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Steeper ramp before obstacles");
+    def->option_group = L("Travel lift");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If enabled, PrusaSlicer detects obstacles along the travel path and makes the slope steeper "
                      "in case an obstacle might be hit during the initial phase of the travel.");
     def->mode = comExpert;
@@ -2549,6 +3029,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("nozzle_high_flow", typeid(bool));
     def->location = Tool;
     def->label = L("High flow nozzle");
+    def->option_group = L("Size");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("High flow nozzles allow higher print speeds.");
     def->mode = comExpert;
     def->init_fn = init_with(false);
@@ -2557,6 +3040,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Lift height");
+    def->option_group = L("Travel lift");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Lift height applied before travel.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -2568,6 +3054,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Above Z");
+    def->option_group = L("Travel lift");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Only lift Z above");
     def->tooltip = L("If you set this to a positive value, Z lift will only take place above the specified "
                    "absolute Z. You can tune this setting for skipping lift on the first layers.");
@@ -2579,6 +3068,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Below Z");
+    def->option_group = L("Travel lift");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Only lift Z below");
     def->tooltip = L("If you set this to a positive value, Z lift will only take place below "
                    "the specified absolute Z. You can tune this setting for limiting lift "
@@ -2591,6 +3083,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Deretraction extra length");
+    def->option_group = L("Retraction");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("When the retraction is compensated after the travel move, the extruder will push "
                    "this additional amount of filament. This setting is rarely needed.");
     def->sidetext = L("mm");
@@ -2601,6 +3096,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Extra length on restart");
+    def->option_group = L("Retraction when tool is disabled (advanced settings for multi-extruder setups");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("When the retraction is compensated after changing tool, the extruder will push "
                    "this additional amount of filament.");
     def->sidetext = L("mm");
@@ -2611,6 +3109,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Retraction Speed");
+    def->option_group = L("Retraction");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Retraction Speed");
     def->tooltip = L("The speed for retractions (it only applies to the extruder motor).");
     def->sidetext = L("mm/s");
@@ -2621,6 +3122,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Deretraction Speed");
+    def->option_group = L("Retraction");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Deretraction Speed");
     def->tooltip = L("The speed for loading of a filament into extruder after retraction "
                    "(it only applies to the extruder motor). If left to zero, the retraction speed is used.");
@@ -2632,6 +3136,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Filament };
     def->label = L("Seam gap distance");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The distance between the endpoints of a closed loop perimeter. "
                    "Positive values will shorten and interrupt the loop slightly to reduce the seam. "
                    "Negative values will extend the loop, causing the endpoints to overlap slightly. "
@@ -2645,7 +3152,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Seam position");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Position of perimeters starting points.");
     def->mode = comSimple;
     def->init_fn = init_with(
@@ -2660,6 +3169,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Staggered inner seams");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     // TRN PrintSettings: "Staggered inner seams"
     def->tooltip = L("This option causes the inner seams to be shifted backwards based on their depth, forming a zigzag pattern.");
     def->mode = comAdvanced;
@@ -2669,7 +3181,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Scarf joint placement");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Where to place scarf joint seam.");
     def->mode = comAdvanced;
     def->init_fn = init_with(
@@ -2686,7 +3200,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Scarf joint only on smooth perimeters");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Only use the scarf joint when the perimeter is smooth.");
     def->mode = comAdvanced;
     def->init_fn = init_with(true);
@@ -2695,7 +3211,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Scarf start height");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Start height of the scarf joint specified as fraction of the current layer height.");
     def->sidetext = L("%");
     def->min = 0;
@@ -2707,7 +3225,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Scarf joint around entire perimeter");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Extend the scarf around entire length of the perimeter.");
     def->mode = comAdvanced;
     def->init_fn = init_with(false);
@@ -2716,7 +3236,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Scarf joint length");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Length of the scarf joint.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -2727,7 +3249,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Max scarf joint segment length");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum length of any scarf joint segment.");
     def->sidetext = L("mm");
     def->min = 0.15f;
@@ -2738,7 +3262,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Scarf joint on inner perimeters");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Use scarf joint on inner perimeters.");
     def->mode = comAdvanced;
     def->init_fn = init_with(false);
@@ -2746,6 +3272,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("skirt_distance", typeid(double));
     def->location = Print;
     def->label = L("Distance from brim/object");
+    def->option_group = L("Skirt");
+    def->category = ConfigItemDef::Category::SkirtAndBrim;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Distance between skirt and brim (when draft shield is not used) or objects.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -2754,6 +3283,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("skirt_height", typeid(int));
     def->location = Print;
     def->label = L("Skirt height");
+    def->option_group = L("Skirt");
+    def->category = ConfigItemDef::Category::SkirtAndBrim;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Height of skirt expressed in layers.");
     def->sidetext = L("layers");
     def->mode = comAdvanced;
@@ -2762,6 +3294,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("draft_shield", typeid(EnumWrapper));
     def->location = Print;
     def->label = L("Draft shield");
+    def->option_group = L("Skirt");
+    def->category = ConfigItemDef::Category::SkirtAndBrim;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("With draft shield active, the skirt will be printed skirt_distance from the object, possibly intersecting brim.\n"
                      "Enabled = skirt is as tall as the highest printed object.\n"
                      "Limited = skirt is as tall as specified by skirt_height.\n"
@@ -2777,6 +3312,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("skirts", typeid(int));
     def->location = Print;
     def->label = L("Loops (minimum)");
+    def->option_group = L("Skirt");
+    def->category = ConfigItemDef::Category::SkirtAndBrim;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->full_label = L("Skirt Loops");
     def->tooltip = L("Number of loops for the skirt. If the Minimum Extrusion Length option is set, "
                    "the number of loops might be greater than the one configured here. Set this to zero "
@@ -2788,6 +3326,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("slowdown_below_layer_time", typeid(int));
     def->location = Filament;
     def->label = L("Slow down if layer print time is below");
+    def->option_group = L("Cooling thresholds");
+    def->category = ConfigItemDef::Category::Cooling;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("If layer print time is estimated below this number of seconds, print moves "
                    "speed will be scaled down to extend duration to this value.");
     def->sidetext = L("approximate seconds");
@@ -2800,7 +3341,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Small perimeters");
-    def->category = L("Speed");
+    def->option_group = L("Speed for print moves");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This separate setting will affect the speed of perimeters having radius <= 6.5mm "
                    "(usually holes). If expressed as percentage (for example: 80%) it will be calculated "
                    "on the perimeters speed setting above. Set to zero for auto.");
@@ -2814,7 +3357,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Solid infill threshold area");
-    def->category = L("Infill");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Force solid infill for regions having a smaller area than the specified threshold.");
     def->sidetext = L("mm²");
     def->min = 0;
@@ -2825,7 +3369,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Solid infill extruder");
-    def->category = L("Extruders");
+    def->category = ConfigItemDef::Category::Extruders;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("The extruder to use when printing solid infill.");
     def->min = 1;
     def->mode = comAdvanced;
@@ -2835,7 +3380,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Solid infill every");
-    def->category = L("Infill");
+    def->category = ConfigItemDef::Category::Infill;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("This feature allows to force a solid layer every given number of layers. "
                    "Zero to disable. You can set this to any value (for example 9999); "
                    "Slic3r will automatically choose the maximum possible number of layers "
@@ -2849,7 +3395,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Solid infill");
-    def->category = L("Extrusion Width");
+    def->option_group = L("Extrusion width");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for infill for solid surfaces. "
                    "If left zero, default extrusion width will be used if set, otherwise 1.125 x nozzle diameter will be used. "
                    "If expressed as percentage (for example 90%) it will be computed over layer height.");
@@ -2864,7 +3412,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Solid infill");
-    def->category = L("Speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed for printing solid regions (top/bottom/internal horizontal shells). "
                    "This can be expressed as a percentage (for example: 80%) over the default "
                    "infill speed above. Set to zero for auto.");
@@ -2893,6 +3442,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("spiral_vase", typeid(bool));
     def->location = Print;
     def->label = L("Spiral vase");
+    def->option_group = L("Vertical shells");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This feature will raise Z gradually while printing a single-walled object "
                    "in order to remove any visible seam. This option requires a single perimeter, "
                    "no infill, no top solid layers and no support material. You can still set "
@@ -2903,6 +3455,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("standby_temperature_delta", typeid(int));
     def->location = Print;
     def->label = L("Temperature variation");
+    def->option_group = L("Ooze prevention");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     // TRN PrintSettings : "Ooze prevention" > "Temperature variation"
     def->tooltip = L("Temperature difference to be applied when an extruder is not active. "
                      "The value is not used when 'idle_temperature' in filament settings "
@@ -2915,6 +3470,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("autoemit_temperature_commands", typeid(bool));
     def->location = Printer;
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->label = L("Emit temperature commands automatically");
     def->tooltip = L("When enabled, PrusaSlicer will check whether your custom Start G-Code contains G-codes to set "
                      "extruder, bed or chamber temperature (M104, M109, M140, M190, M141 and M191). "
@@ -2932,6 +3489,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("start_gcode", typeid(std::string));
     def->location = Printer;
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Start G-code");
     def->tooltip = L("This start procedure is inserted at the beginning, possibly prepended by "
                      "temperature-changing commands. See 'autoemit_temperature_commands'.");
@@ -2944,6 +3503,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("start_filament_gcode", typeid(std::string));
     def->location = Filament;
     def->label = L("Start G-code");
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This start procedure is inserted at the beginning, after any printer start gcode (and "
                    "after any toolchange to this filament in case of multi-material printers). "
                    "This is used to override settings for a specific filament. If PrusaSlicer detects "
@@ -2962,6 +3523,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("color_change_gcode", typeid(std::string));
     def->location = Printer;
     def->label = L("Color change G-code");
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This G-code will be used as a code for the color change");
     def->multiline = true;
     def->full_width = true;
@@ -2971,6 +3534,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pause_print_gcode", typeid(std::string));
     def->location = Printer;
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Pause Print G-code");
     def->tooltip = L("This G-code will be used as a code for the pause print");
     def->multiline = true;
@@ -2982,6 +3547,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("template_custom_gcode", typeid(std::string));
     def->location = Printer;
     def->label = L("Custom G-code");
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This G-code will be used as a custom code");
     def->multiline = true;
     def->full_width = true;
@@ -2991,6 +3558,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("single_extruder_multi_material", typeid(bool));
     def->location = Printer;
+    def->option_group = L("Capabilities");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->label = L("Single Extruder Multi Material");
     def->tooltip = L("The printer multiplexes filaments into a single hot end.");
     def->mode = comExpert;
@@ -2999,6 +3569,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("single_extruder_multi_material_priming", typeid(bool));
     def->location = Print;
     def->label = L("Prime all printing extruders");
+    def->option_group = L("Wipe tower");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If enabled, all printing extruders will be primed at the front edge of the print bed at the start of the print.");
     def->mode = comAdvanced;
     def->init_fn = init_with(true);
@@ -3006,6 +3579,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("wipe_tower_no_sparse_layers", typeid(bool));
     def->location = Print;
     def->label = L("No sparse layers (EXPERIMENTAL)");
+    def->option_group = L("Wipe tower");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If enabled, the wipe tower will not be printed on layers with no toolchanges. "
                      "On layers with a toolchange, extruder will travel downward to print the wipe tower. "
                      "User is responsible for ensuring there is no collision with the print.");
@@ -3016,7 +3592,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Generate support material");
-    def->category = L("Support material");
+    def->option_group = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Enable support material generation.");
     def->init_fn = init_with(false);
 
@@ -3024,7 +3602,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Auto generated supports");
-    def->category = L("Support material");
+    def->option_group = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If checked, supports will be generated automatically based on the overhang threshold value."\
                      " If unchecked, supports will be generated inside the \"Support Enforcer\" volumes only.");
     def->mode = comSimple;
@@ -3034,7 +3614,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("XY separation between an object and its support");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("XY separation between an object and its support. If expressed as percentage "
                    "(for example 50%), it will be calculated over external perimeter width.");
     def->sidetext = L("mm or %");
@@ -3049,7 +3630,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Pattern angle");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Use this setting to rotate the support material pattern on the horizontal plane.");
     def->sidetext = L("°");
     def->min = 0;
@@ -3061,7 +3643,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support on build plate only");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Only create support if it lies on a build plate. Don't create support on a print.");
     def->mode = comSimple;
     def->init_fn = init_with(false);
@@ -3070,7 +3653,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Top contact Z distance");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::f_enum_open;
     def->tooltip = L("The vertical distance between object and support material interface. "
                    "Setting this to 0 will also prevent Slic3r from using bridge flow and speed "
                    "for the first object layer.");
@@ -3087,7 +3671,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Bottom contact Z distance");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::f_enum_open;
     def->tooltip = L("The vertical distance between the object top surface and the support material interface. "
                    "If set to zero, support_material_contact_distance will be used for both top and bottom contact Z distances.");
     def->sidetext = L("mm");
@@ -3104,7 +3689,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Enforce support for the first");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Generate support material for the specified number of layers counting from bottom, "
                    "regardless of whether normal support material is enabled or not and regardless "
                    "of any angle threshold. This is useful for getting more adhesion of objects "
@@ -3119,7 +3705,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support material/raft/skirt extruder");
-    def->category = L("Extruders");
+    def->category = ConfigItemDef::Category::Extruders;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("The extruder to use when printing support material, raft and skirt "
                    "(1+, 0 to use the current extruder to minimize tool changes).");
     def->min = 0;
@@ -3130,7 +3717,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support material");
-    def->category = L("Extrusion Width");
+    def->option_group = L("Extrusion width");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for support material. "
                    "If left zero, default extrusion width will be used if set, otherwise nozzle diameter will be used. "
                    "If expressed as percentage (for example 90%) it will be computed over layer height.");
@@ -3145,7 +3734,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Interface loops");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Cover the top contact layer of the supports with loops. Disabled by default.");
     def->mode = comExpert;
     def->init_fn = init_with(false);
@@ -3154,7 +3744,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support material/raft interface extruder");
-    def->category = L("Extruders");
+    def->category = ConfigItemDef::Category::Extruders;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("The extruder to use when printing support material interface "
                    "(1+, 0 to use the current extruder to minimize tool changes). This affects raft too.");
     def->min = 0;
@@ -3165,7 +3756,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Top interface layers");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::i_enum_open;
     def->tooltip = L("Number of interface layers to insert between the object(s) and support material.");
     def->sidetext = L("layers");
     def->min = 0;
@@ -3182,7 +3774,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Bottom interface layers");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::i_enum_open;
     def->tooltip = L("Number of interface layers to insert between the object(s) and support material. "
                      "Set to -1 to use support_material_interface_layers");
     def->sidetext = L("layers");
@@ -3202,7 +3795,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Closing radius");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("For snug supports, the support regions will be merged using morphological closing operation."
                      " Gaps smaller than the closing radius will be filled in.");
     def->sidetext = L("mm");
@@ -3214,7 +3808,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Interface pattern spacing");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Spacing between interface lines. Set zero to get a solid interface.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -3225,7 +3820,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support material interface");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed for printing support material interface layers. If expressed as percentage "
                    "(for example 50%) it will be calculated over support material speed.");
     def->sidetext = L("mm/s or %");
@@ -3238,7 +3834,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Pattern");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Pattern used to generate support material.");
     def->mode = comAdvanced;
     def->init_fn = init_with(
@@ -3252,7 +3849,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Interface pattern");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Pattern used to generate support material interface. "
                      "Default pattern for non-soluble support interface is Rectilinear, "
                      "while default pattern for soluble support interface is Concentric.");
@@ -3268,7 +3866,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Pattern spacing");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Spacing between support material lines.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -3279,7 +3878,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Support material");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed for printing support material.");
     def->sidetext = L("mm/s");
     def->min = 0;
@@ -3290,7 +3890,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Style");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Style and shape of the support towers. Projecting the supports into a regular grid "
                      "will create more stable supports, while snug support towers will save material and reduce "
                      "object scarring.");
@@ -3306,7 +3907,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Synchronize with object layers");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     // TRN PrintSettings : "Synchronize with object layers"
     def->tooltip = L("Synchronize support layers with the object print layers. This is useful "
                    "with multi-material printers, where the extruder switch is expensive. "
@@ -3318,7 +3920,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Overhang threshold");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Support material will not be generated for overhangs whose slope angle "
                    "(90° = vertical) is above the given threshold. In other words, this value "
                    "represent the most horizontal slope (measured from the horizontal plane) "
@@ -3334,7 +3937,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("With sheath around the support");
-    def->category = L("Support material");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Add a sheath (a single perimeter line) around the base support. This makes "
                    "the support more reliable, but also more difficult to remove.");
     def->mode = comExpert;
@@ -3344,7 +3948,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Maximum Branch Angle");
-    def->category = L("Support material");
+    def->option_group = L("Organic supports");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     // TRN PrintSettings: "Organic supports" > "Maximum Branch Angle"
     def->tooltip = L("The maximum angle of the branches, when the branches have to avoid the model. "
                      "Use a lower angle to make them more vertical and more stable. Use a higher angle to be able to have more reach.");
@@ -3358,7 +3964,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Preferred Branch Angle");
-    def->category = L("Support material");
+    def->option_group = L("Organic supports");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     // TRN PrintSettings: "Organic supports" > "Preferred Branch Angle"
     def->tooltip = L("The preferred angle of the branches, when they do not have to avoid the model. "
                      "Use a lower angle to make them more vertical and more stable. Use a higher angle for branches to merge faster.");
@@ -3372,7 +3980,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Tip Diameter");
-    def->category = L("Support material");
+    def->option_group = L("Organic supports");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     // TRN PrintSettings: "Organic supports" > "Tip Diameter"
     def->tooltip = L("Branch tip diameter for organic supports.");
     def->sidetext = L("mm");
@@ -3385,7 +3995,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Branch Diameter");
-    def->category = L("Support material");
+    def->option_group = L("Organic supports");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     // TRN PrintSettings: "Organic supports" > "Branch Diameter"
     def->tooltip = L("The diameter of the thinnest branches of organic support. Thicker branches are more sturdy. "
                      "Branches towards the base will be thicker than this.");
@@ -3399,7 +4011,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Branch Diameter Angle");
-    def->category = L("Support material");
+    def->option_group = L("Organic supports");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     // TRN PrintSettings: "Organic supports" > "Branch Diameter Angle"
     def->tooltip = L("The angle of the branches' diameter as they gradually become thicker towards the bottom. "
                      "An angle of 0 will cause the branches to have uniform thickness over their length. "
@@ -3414,7 +4028,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Branch Diameter with double walls");
-    def->category = L("Support material");
+    def->option_group = L("Organic supports");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     // TRN PrintSettings: "Organic supports" > "Branch Diameter"
     def->tooltip = L("Branches with area larger than the area of a circle of this diameter will be printed with double walls for stability. "
                      "Set this value to zero for no double walls.");
@@ -3431,7 +4047,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Branch Distance");
-    def->category = L("Support material");
+    def->option_group = L("Organic supports");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     // TRN PrintSettings: "Organic supports" > "Branch Distance"
     def->tooltip = L("How far apart the branches need to be when they touch the model. "
                      "Making this distance small will cause the tree support to touch the model at more points, "
@@ -3443,7 +4061,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Branch Density");
-    def->category = L("Support material");
+    def->option_group = L("Organic supports");
+    def->category = ConfigItemDef::Category::SupportMaterial;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     // TRN PrintSettings: "Organic supports" > "Branch Density"
     def->tooltip = L("Adjusts the density of the support structure used to generate the tips of the branches. "
                      "A higher value results in better overhangs but the supports are harder to remove, "
@@ -3458,6 +4078,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("temperature", typeid(int));
     def->location = Filament;
     def->label = L("Other layers");
+    def->option_group = L("Temperature");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Nozzle temperature for layers after the first one. Set this to zero to disable "
                      "temperature control commands in the output G-code.");
     def->sidetext = L("°C");
@@ -3470,7 +4093,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Thick bridges");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Quality (slower slicing");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If enabled, bridges are more reliable, can bridge longer distances, but may look worse. "
                      "If disabled, bridges look better but are reliable just for shorter bridged distances.");
     def->mode = comAdvanced;
@@ -3480,7 +4105,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Detect thin walls");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Quality (slower slicing");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Detect single-width walls (parts where two extrusions don't fit and we need "
                    "to collapse them into a single trace).");
     def->mode = comAdvanced;
@@ -3488,6 +4115,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("toolchange_gcode", typeid(std::string));
     def->location = Printer;
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Tool change G-code");
     def->tooltip = L("This custom code is inserted before every toolchange. Placeholder variables for all PrusaSlicer settings "
                      "as well as {toolchange_z}, {previous_extruder} and {next_extruder} can be used. When a tool-changing command "
@@ -3503,7 +4132,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Top solid infill");
-    def->category = L("Extrusion Width");
+    def->option_group = L("Extrusion width");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for infill for top surfaces. "
                    "You may want to use thinner extrudates to fill all narrow regions and get a smoother finish. "
                    "If left zero, default extrusion width will be used if set, otherwise nozzle diameter will be used. "
@@ -3519,7 +4150,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Top solid infill");
-    def->category = L("Speed");
+    def->category = ConfigItemDef::Category::Speed;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed for printing top solid layers (it only applies to the uppermost "
                    "external layers and not to their internal solid layers). You may want "
                    "to slow down this to get a nicer surface finish. This can be expressed "
@@ -3536,7 +4168,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Object, Volume };
     //TRN Print Settings: "Top solid layers"
     def->label = L_CONTEXT("Top", "Layers");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Horizontal shells");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of solid layers to generate on top surfaces.");
     def->full_label = L("Top solid layers");
     def->min = 0;
@@ -3546,7 +4180,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L_CONTEXT("Top", "Layers");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Horizontal shells");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The number of top solid layers is increased above top_solid_layers if necessary to satisfy "
     				 "minimum thickness of top shell."
     				 " This is useful to prevent pillowing effect when printing with variable layer height.");
@@ -3558,6 +4194,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("travel_speed", typeid(double));
     def->location = Tool;
     def->label = L("Travel");
+    def->option_group = L("Speed for non-print moves");
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->category = ConfigItemDef::Category::Speed;
     def->tooltip = L("Speed for travel moves (jumps between distant extrusion points).");
     def->sidetext = L("mm/s");
     def->aliases = { "travel_feed_rate" };
@@ -3568,6 +4207,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("travel_speed_z", typeid(double));
     def->location = Tool;
     def->label = L("Z travel");
+    def->option_group = L("Speed for non-print moves");
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->category = ConfigItemDef::Category::Speed;
     def->tooltip = L("Speed for movements along the Z axis.\nWhen set to zero, the value "
                      "is ignored and regular travel speed is used instead.");
     def->sidetext = L("mm/s");
@@ -3578,6 +4220,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("use_firmware_retraction", typeid(bool));
     def->location = Printer;
     def->label = L("Use firmware retraction");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This setting uses G10 and G11 commands to have the firmware "
                    "handle the retraction. Note that this has to be supported by firmware.");
     def->mode = comExpert;
@@ -3586,6 +4231,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("use_relative_e_distances", typeid(bool));
     def->location = Printer;
     def->label = L("Use relative E distances");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If your firmware requires relative E values, check this, "
                    "otherwise leave it unchecked. Most firmwares use absolute values.");
     def->mode = comExpert;
@@ -3594,6 +4242,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("use_volumetric_e", typeid(bool));
     def->location = Printer;
     def->label = L("Use volumetric E");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This experimental setting uses outputs the E values in cubic millimeters "
                    "instead of linear millimeters. If your firmware doesn't already know "
                    "filament diameter(s), you can put commands like 'M200 D[filament_diameter_0] T0' "
@@ -3605,6 +4256,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("variable_layer_height", typeid(bool));
     def->location = Printer;
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
+    def->option_group = L("Advanced");
     def->label = L("Enable variable layer height feature");
     def->tooltip = L("Some printers or printer setups may have difficulties printing "
                    "with a variable layer height. Enabled by default.");
@@ -3613,6 +4267,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("prefer_clockwise_movements", typeid(bool));
     def->location = Printer;
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
+    def->option_group = L("Advanced");
     def->label = L("Prefer clockwise movements");
     def->tooltip = L("This setting makes the printer print loops clockwise instead of counterclockwise.");
     def->mode = comExpert;
@@ -3622,6 +4279,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Wipe while retracting");
+    def->option_group = L("Retraction");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("This flag will move the nozzle while retracting to minimize the possible blob "
                    "on leaky extruders.");
     def->mode = comAdvanced;
@@ -3630,6 +4290,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("wipe_tower", typeid(bool));
     def->location = Print;
     def->label = L("Enable");
+    def->option_group = L("Wipe tower");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Multi material printers may need to prime or purge extruders on tool changes. "
                    "Extrude the excess material into the wipe tower.");
     def->mode = comAdvanced;
@@ -3656,6 +4319,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("wipe_tower_width", typeid(double));
     def->location = Print;
     def->label = L("Width");
+    def->option_group = L("Wipe tower");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Width of a wipe tower");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
@@ -3664,6 +4330,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("wipe_tower_brim_width", typeid(double));
     def->location = Print;
     def->label = L("Wipe tower brim width");
+    def->option_group = L("Wipe tower");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Wipe tower brim width");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
@@ -3673,6 +4342,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("wipe_tower_cone_angle", typeid(double));
     def->location = Print;
     def->label = L("Stabilization cone apex angle");
+    def->option_group = L("Wipe tower");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Angle at the apex of the cone that is used to stabilize the wipe tower. "
                      "Larger angle means wider base.");
     def->sidetext = L("°");
@@ -3684,6 +4356,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("wipe_tower_extra_spacing", typeid(Percentage));
     def->location = Tool;
     def->label = L("Wipe tower purge lines spacing");
+    def->option_group = L("Wipe tower");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Spacing of purge lines on the wipe tower.");
     def->sidetext = L("%");
     def->mode = comExpert;
@@ -3694,6 +4369,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("wipe_tower_extra_flow", typeid(Percentage));
     def->location = Tool;
     def->label = L("Extra flow for purging");
+    def->option_group = L("Wipe tower");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Extra flow used for the purging lines on the wipe tower. This makes the purging lines thicker or narrower "
                      "than they normally would be. The spacing is adjusted automatically.");
     def->sidetext = L("%");
@@ -3704,7 +4382,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("wipe_into_infill", typeid(bool));
     def->location = Volume;
-    def->category = L("Wipe options");
+    def->category = ConfigItemDef::Category::WipeOptions;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->label = L("Wipe into this object's infill");
     def->tooltip = L("Purging after toolchange will be done inside this object's infills. "
                      "This lowers the amount of waste but may result in longer print time "
@@ -3713,7 +4392,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("wipe_into_objects", typeid(bool));
     def->location = Object;
-    def->category = L("Wipe options");
+    def->category = ConfigItemDef::Category::WipeOptions;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->label = L("Wipe into this object");
     def->tooltip = L("Object will be used to purge the nozzle after a toolchange to save material "
                      "that would otherwise end up in the wipe tower and decrease print time. "
@@ -3723,6 +4403,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("wipe_tower_bridging", typeid(double));
     def->location = Print;
     def->label = L("Maximal bridging distance");
+    def->option_group = L("Wipe tower");
+    def->category = ConfigItemDef::Category::MultipleExtruders;
     def->tooltip = L("Maximal distance between supports on sparse infill sections.");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
@@ -3731,7 +4413,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("wipe_tower_extruder", typeid(int));
     def->location = Print;
     def->label = L("Wipe tower extruder");
-    def->category = L("Extruders");
+    def->option_group = L("Extruders");
+    def->category = ConfigItemDef::Category::Extruders;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("The extruder to use when printing perimeter of the wipe tower. "
                      "Set to 0 to use the one that is available (non-soluble would be preferred).");
     def->min = 0;
@@ -3742,7 +4426,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("XY Size Compensation");
-    def->category = L("Advanced");
+    def->option_group = L("Slicing");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The object will be grown/shrunk in the XY plane by the configured value "
                    "(negative = inwards, positive = outwards). This might be useful "
                    "for fine-tuning hole sizes.");
@@ -3753,6 +4439,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("z_offset", typeid(double));
     def->location = Printer;
     def->label = L("Z offset");
+    def->option_group = L("Size and coordinates");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This value will be added (or subtracted) from all the Z coordinates "
                    "in the output G-code. It is used to compensate for bad Z endstop position: "
                    "for example, if your endstop zero actually leaves the nozzle 0.3mm far "
@@ -3765,7 +4454,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Perimeter generator");
-    def->category = L("Layers and Perimeters");
+    def->option_group = L("Advanced");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Classic perimeter generator produces perimeters with constant extrusion width and for "
                       "very thin areas is used gap-fill. "
                       "Arachne engine produces perimeters with variable extrusion width. "
@@ -3782,7 +4473,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Perimeter transition length");
-    def->category = L("Advanced");
+    def->option_group = L("Arachne perimeter generator");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("When transitioning between different numbers of perimeters as the part becomes "
                        "thinner, a certain amount of space is allotted to split or join the perimeter segments. "
                        "If expressed as a percentage (for example 100%), it will be computed based on the nozzle diameter.");
@@ -3795,7 +4488,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Perimeter transitioning filter margin");
-    def->category = L("Advanced");
+    def->option_group = L("Arachne perimeter generator");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("Prevent transitioning back and forth between one extra perimeter and one less. This "
                        "margin extends the range of extrusion widths which follow to [Minimum perimeter width "
                        "- margin, 2 * Minimum perimeter width + margin]. Increasing this margin "
@@ -3812,7 +4507,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Perimeter transitioning threshold angle");
-    def->category = L("Advanced");
+    def->option_group = L("Arachne perimeter generator");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("When to create transitions between even and odd numbers of perimeters. A wedge shape with"
                        " an angle greater than this setting will not have transitions and no perimeters will be "
                        "printed in the center to fill the remaining space. Reducing this setting reduces "
@@ -3827,7 +4524,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Perimeter distribution count");
-    def->category = L("Advanced");
+    def->option_group = L("Arachne perimeter generator");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip  = L("The number of perimeters, counted from the center, over which the variation needs to be "
                        "spread. Lower values mean that the outer perimeters don't change in width.");
     def->mode = comExpert;
@@ -3838,7 +4537,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Minimum feature size");
-    def->category = L("Advanced");
+    def->option_group = L("Arachne perimeter generator");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("Minimum thickness of thin features. Model features that are thinner than this value will "
                        "not be printed, while features thicker than the Minimum feature size will be widened to "
                        "the Minimum perimeter width. "
@@ -3852,7 +4553,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Object };
     def->label = L("Minimum perimeter width");
-    def->category = L("Advanced");
+    def->option_group = L("Arachne perimeter generator");
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("Width of the perimeter that will replace thin features (according to the Minimum feature size) "
                        "of the model. If the Minimum perimeter width is thinner than the thickness of the feature,"
                        " the perimeter will become as thick as the feature itself. "
@@ -3865,6 +4568,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("idle_temperature", typeid(std::optional<int>));
     def->location = Filament;
     def->label = L("Idle temperature");
+    def->option_group = L("Temperature");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Nozzle temperature when the tool is currently not used in multi-tool setups."
                      "This is only used when 'Ooze prevention' is active in Print Settings.");
     def->sidetext = L("°C");

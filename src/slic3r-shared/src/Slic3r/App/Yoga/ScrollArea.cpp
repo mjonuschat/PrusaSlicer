@@ -8,7 +8,10 @@
 
 namespace Slic3r::App::Yoga {
 
-ScrollArea::ScrollArea(const std::string& name) : Item() { set_item_name(name); }
+ScrollArea::ScrollArea(const std::string& name) : Item()
+{
+    set_item_name(name);
+}
 
 void ScrollArea::render(Vec2f pos, Vec2f size)
 {
@@ -37,12 +40,29 @@ void ScrollArea::process_events(Vec2f pos, Vec2f size)
     }
 }
 
-ImGuiChildFlags ScrollArea::child_flags() const { return m_child_flags; }
+ImGuiChildFlags ScrollArea::child_flags() const
+{
+    return m_child_flags;
+}
 
-void ScrollArea::set_child_flags(ImGuiChildFlags child_flags) { m_child_flags = child_flags; }
+void ScrollArea::set_child_flags(ImGuiChildFlags child_flags)
+{
+    m_child_flags = child_flags;
+}
 
-ImGuiWindowFlags ScrollArea::window_flags() const { return m_window_flags; }
+ImGuiWindowFlags ScrollArea::window_flags() const
+{
+    return m_window_flags;
+}
 
-void ScrollArea::set_window_flags(ImGuiWindowFlags window_flags) { m_window_flags = window_flags; }
+void ScrollArea::set_window_flags(ImGuiWindowFlags window_flags)
+{
+    m_window_flags = window_flags;
+}
+
+const Vec2f& ScrollArea::content_pos() const
+{
+    return m_last_scroll;
+}
 
 } // namespace Slic3r::App::Yoga
