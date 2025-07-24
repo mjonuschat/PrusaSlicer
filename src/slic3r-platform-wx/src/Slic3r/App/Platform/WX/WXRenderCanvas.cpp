@@ -278,9 +278,9 @@ struct ImGui_ImplWX_Data
 
 static ImGui_ImplWX_Data* ImGui_ImplWX_GetBackendData()
 {
-    return ImGui::GetCurrentContext()
-        ? (ImGui_ImplWX_Data*) ImGui::GetIO().BackendPlatformUserData
-        : nullptr;
+    return ImGui::GetCurrentContext() ?
+        static_cast<ImGui_ImplWX_Data*>(ImGui::GetIO().BackendPlatformUserData) :
+        nullptr;
 }
 
 static void ImGui_ImplWX_InitMouseCursor()
@@ -289,28 +289,29 @@ static void ImGui_ImplWX_InitMouseCursor()
 
     IM_ASSERT(io.BackendPlatformUserData == nullptr && "Already initialized a platform backend!");
 
-    ImGui_ImplWX_Data* bd = IM_NEW(ImGui_ImplWX_Data)();
+    ImGui_ImplWX_Data* bd      = IM_NEW(ImGui_ImplWX_Data)();
     io.BackendPlatformUserData = (void*) bd;
-    io.BackendPlatformName = "imgui_impl_wx";
+    io.BackendPlatformName     = "imgui_impl_wx";
 
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
     io.MouseDrawCursor = false;
 
-    bd->MouseCursors[ImGuiMouseCursor_Arrow] = wxCursor(wxCURSOR_ARROW);
+    bd->MouseCursors[ImGuiMouseCursor_Arrow]     = wxCursor(wxCURSOR_ARROW);
     bd->MouseCursors[ImGuiMouseCursor_TextInput] = wxCursor(wxCURSOR_IBEAM);
-    bd->MouseCursors[ImGuiMouseCursor_ResizeAll] = wxCursor(wxCURSOR_SIZENWSE
+    bd->MouseCursors[ImGuiMouseCursor_ResizeAll] = wxCursor(
+        wxCURSOR_SIZENWSE
     ); // Used for corner resizing, so need NWSE, not SIZING, which is moving
-    bd->MouseCursors[ImGuiMouseCursor_ResizeNS] = wxCursor(wxCURSOR_SIZENS);
-    bd->MouseCursors[ImGuiMouseCursor_ResizeEW] = wxCursor(wxCURSOR_SIZEWE);
+    bd->MouseCursors[ImGuiMouseCursor_ResizeNS]   = wxCursor(wxCURSOR_SIZENS);
+    bd->MouseCursors[ImGuiMouseCursor_ResizeEW]   = wxCursor(wxCURSOR_SIZEWE);
     bd->MouseCursors[ImGuiMouseCursor_ResizeNESW] = wxCursor(wxCURSOR_SIZENESW);
     bd->MouseCursors[ImGuiMouseCursor_ResizeNWSE] = wxCursor(wxCURSOR_SIZENWSE);
-    bd->MouseCursors[ImGuiMouseCursor_Hand] = wxCursor(wxCURSOR_HAND);
+    bd->MouseCursors[ImGuiMouseCursor_Hand]       = wxCursor(wxCURSOR_HAND);
     bd->MouseCursors[ImGuiMouseCursor_NotAllowed] = wxCursor(wxCURSOR_NO_ENTRY);
 }
 
 static void ImGui_ImplWX_UpdateMouseCursor()
 {
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io           = ImGui::GetIO();
     ImGui_ImplWX_Data* bd = ImGui_ImplWX_GetBackendData();
     if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange))
         return;
@@ -333,11 +334,11 @@ static void ImGui_ImplWX_UpdateMouseCursor()
 
 static void ImGui_ImplWX_Shutdown()
 {
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io           = ImGui::GetIO();
     ImGui_ImplWX_Data* bd = ImGui_ImplWX_GetBackendData();
     IM_ASSERT(bd != nullptr && "No platform backend to shutdown, or already shutdown?");
 
-    io.BackendPlatformName = nullptr;
+    io.BackendPlatformName     = nullptr;
     io.BackendPlatformUserData = nullptr;
     io.BackendFlags &= ~(ImGuiBackendFlags_HasMouseCursors);
     IM_DELETE(bd);
@@ -347,11 +348,14 @@ static void ImGui_ImplWX_Shutdown()
  * WxWidgests swallow exception backtraces. Wrap all wx event handlers in
  * this, to print the backtrace before letting wxWidgets handle the exception.
  */
-template<typename Class, typename EventType>
+template <typename Class, typename EventType>
 auto catching_handler(Class* instance, void (Class::*handler)(EventType&))
 {
     return [=](wxEvent& evt) {
-        CPPTRACE_TRY { (instance->*handler)(static_cast<EventType&>(evt)); }
+        CPPTRACE_TRY
+        {
+            (instance->*handler)(static_cast<EventType&>(evt));
+        }
         CPPTRACE_CATCH(const std::exception& e)
         {
             SPDLOG_ERROR("unhandled exception: '{}'", e.what());
@@ -361,22 +365,20 @@ auto catching_handler(Class* instance, void (Class::*handler)(EventType&))
     };
 }
 
-WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
-    : wxGLCanvas(
-          parent, create_wxglattributes(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS
-      )
-    , m_start_time(Clock::now())
+WXRenderCanvas::WXRenderCanvas(wxWindow* parent) :
+    wxGLCanvas(parent, create_wxglattributes(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS),
+    m_start_time(Clock::now())
 {
     wxGLContextAttrs attrs;
     attrs.PlatformDefaults().CoreProfile();
 
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
-//    m_glsl_version = "#version 150";
+    // m_glsl_version = "#version 150";
     attrs.MajorVersion(3).MinorVersion(2);
 #else
     // GL 3.1 + GLSL 140
-//    m_glsl_version = "#version 140";
+    // m_glsl_version = "#version 140";
     attrs.MajorVersion(3).MinorVersion(1);
 #endif
     attrs.EndList();
@@ -404,6 +406,9 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     Bind(wxEVT_RIGHT_UP, catching_handler(this, &WXRenderCanvas::on_mouse));
     Bind(wxEVT_MIDDLE_DOWN, catching_handler(this, &WXRenderCanvas::on_mouse));
     Bind(wxEVT_MIDDLE_UP, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_LEFT_DCLICK, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_RIGHT_DCLICK, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_MIDDLE_DCLICK, catching_handler(this, &WXRenderCanvas::on_mouse));
     Bind(wxEVT_LEAVE_WINDOW, catching_handler(this, &WXRenderCanvas::on_mouse_leave));
 }
 
@@ -441,8 +446,10 @@ void WXRenderCanvas::init()
 
     // Setup Platform/Renderer backends
     init_wx_imgui();
-    Slic3r::Semver glsl_version = Render::Context::instance().glsl_version();
-    std::string glsl_version_str = "#version " + std::to_string(glsl_version.maj()) + std::to_string(glsl_version.min());
+    Slic3r::Semver glsl_version  = Render::Context::instance().glsl_version();
+    std::string glsl_version_str = "#version "
+        + std::to_string(glsl_version.maj())
+        + std::to_string(glsl_version.min());
     ImGui_ImplOpenGL3_Init(glsl_version_str.c_str());
 }
 
@@ -639,7 +646,7 @@ void WXRenderCanvas::init_wx_imgui()
     ImGui_ImplWX_InitMouseCursor();
 
     // Set ImGui copy to clipboard function through WxWidgets
-    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+    ImGuiPlatformIO& platform_io            = ImGui::GetPlatformIO();
     platform_io.Platform_SetClipboardTextFn = [](ImGuiContext*, const char* text) {
         if (wxTheClipboard->Open()) {
             wxTheClipboard->SetData(new wxTextDataObject(wxString::FromUTF8(text)));
@@ -655,12 +662,15 @@ public:
     {
         m_flag = true;
     }
-    ~ScopedGuard() { m_flag = false; }
+
+    ~ScopedGuard()
+    {
+        m_flag = false;
+    }
 
 private:
     bool& m_flag;
 };
-
 
 void WXRenderCanvas::render()
 {
@@ -687,7 +697,7 @@ void WXRenderCanvas::on_paint(wxPaintEvent& event)
 
 void WXRenderCanvas::on_size(wxSizeEvent& event)
 {
-    //    render();
+    // render();
 }
 
 KeyModifiers WXRenderCanvas::modifiers(const wxKeyboardState& event)
@@ -709,7 +719,7 @@ KeyModifiers WXRenderCanvas::modifiers(const wxKeyboardState& event)
 void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 {
     wxEventType type = evt.GetEventType();
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io      = ImGui::GetIO();
 
     if (type == wxEVT_CHAR) {
         // Char event
@@ -719,7 +729,7 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
         // Already Fixed at begining of new frame
         // unsigned int key_u = static_cast<unsigned int>(key);
         // if (key_u >= 0 && key_u < IM_ARRAYSIZE(io.KeysDown) && io.KeysDown[key_u]) {
-        //    io.KeysDown[key_u] = false;
+        // io.KeysDown[key_u] = false;
         //}
 
         if (key != 0) {
@@ -738,16 +748,15 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
         io.AddKeyEvent(ImGuiMod_Alt, evt.AltDown());
         io.AddKeyEvent(ImGuiMod_Super, evt.MetaDown());
 
-        if (key != WXK_TAB && key != WXK_LEFT && key != WXK_UP && key != WXK_RIGHT &&
-            key != WXK_DOWN) {
+        if (key != WXK_TAB && key != WXK_LEFT && key != WXK_UP && key != WXK_RIGHT && key != WXK_DOWN)
+        {
             evt.Skip(); // Needed to have EVT_CHAR generated as well
         }
 
         KeyCode key_code = get_key_code_from_event(evt);
         if (key_code != KeyCode::None) {
-            KeyboardEvent::Type event_type = type == wxEVT_KEY_DOWN
-                ? KeyboardEvent::Type::KeyDown
-                : KeyboardEvent::Type::KeyUp;
+            KeyboardEvent::Type event_type = type == wxEVT_KEY_DOWN ? KeyboardEvent::Type::KeyDown :
+                                                                      KeyboardEvent::Type::KeyUp;
 
             update_key_modifiers(event_type, key_code);
 
@@ -765,7 +774,13 @@ void WXRenderCanvas::on_mouse_enter(wxMouseEvent& event)
     int mouse_y = ToDIP(event.GetY());
 
     MouseEvent platform_event{
-        MouseEvent::Type::Enter, MouseButton::NoButton, mouse_x, mouse_y, 0, 0, modifiers(event)
+        MouseEvent::Type::Enter,
+        MouseButton::NoButton,
+        mouse_x,
+        mouse_y,
+        0,
+        0,
+        modifiers(event)
     };
     enqueue_mouse(platform_event);
 }
@@ -776,62 +791,69 @@ void WXRenderCanvas::on_mouse_leave(wxMouseEvent& event)
     int mouse_y = ToDIP(event.GetY());
 
     MouseEvent platform_event{
-        MouseEvent::Type::Leave, MouseButton::NoButton, mouse_x, mouse_y, 0, 0, modifiers(event)
+        MouseEvent::Type::Leave,
+        MouseButton::NoButton,
+        mouse_x,
+        mouse_y,
+        0,
+        0,
+        modifiers(event)
     };
     enqueue_mouse(platform_event);
 }
 
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
+    SPDLOG_INFO("on_mouse: button: {}", evt.IsButton());
     // Dirty hack, which will shift focus onto ImGui and let it pass keyboard events
     SetFocus();
 
     ImGuiIO& io = ImGui::GetIO();
     int mouse_x = ToDIP(evt.GetX());
     int mouse_y = ToDIP(evt.GetY());
-    m_mouse_x = mouse_x;
-    m_mouse_y = mouse_y;
+    m_mouse_x   = mouse_x;
+    m_mouse_y   = mouse_y;
     // int mouse_x = evt.GetX();
     // int mouse_y = evt.GetY();
 
     // SPDLOG_DEBUG("Mouse event {} {}", mouse_x, mouse_y);
 
-    io.MousePos = ImVec2((float) mouse_x, (float) mouse_y);
-    io.MouseDown[0] = evt.LeftIsDown();
-    io.MouseDown[1] = evt.RightIsDown();
-    io.MouseDown[2] = evt.MiddleIsDown();
+    io.MousePos              = ImVec2((float) mouse_x, (float) mouse_y);
+    io.MouseDown[0]          = evt.LeftIsDown();
+    io.MouseDown[1]          = evt.RightIsDown();
+    io.MouseDown[2]          = evt.MiddleIsDown();
     io.MouseDoubleClicked[0] = evt.LeftDClick();
     io.MouseDoubleClicked[1] = evt.RightDClick();
     io.MouseDoubleClicked[2] = evt.MiddleDClick();
-    float wheel_delta = static_cast<float>(evt.GetWheelDelta());
+    float wheel_delta        = static_cast<float>(evt.GetWheelDelta());
     if (wheel_delta != 0.0f)
         io.MouseWheel = static_cast<float>(evt.GetWheelRotation()) / wheel_delta;
 
     wxEventType event_type = evt.GetEventType();
 
     MouseEvent::Type platform_event_type = MouseEvent::Type::Move;
-    MouseButton button = MouseButton::NoButton;
+    MouseButton button                   = MouseButton::NoButton;
 
     if (event_type == wxEVT_MOUSEWHEEL)
         platform_event_type = MouseEvent::Type::Wheel;
     else if (event_type == wxEVT_LEFT_DOWN) {
         platform_event_type = MouseEvent::Type::ButtonDown;
-        button = MouseButton::Left;
+        button              = MouseButton::Left;
     } else if (event_type == wxEVT_LEFT_UP) {
         platform_event_type = MouseEvent::Type::ButtonUp;
-        button = MouseButton::Left;
+        button              = MouseButton::Left;
     } else if (event_type == wxEVT_RIGHT_DOWN) {
         platform_event_type = MouseEvent::Type::ButtonDown;
-        button = MouseButton::Right;
+        button              = MouseButton::Right;
     } else if (event_type == wxEVT_RIGHT_UP) {
         platform_event_type = MouseEvent::Type::ButtonUp;
-        button = MouseButton::Right;
+        button              = MouseButton::Right;
     } else if (event_type == wxEVT_MIDDLE_DOWN) {
         platform_event_type = MouseEvent::Type::ButtonDown;
-        button = MouseButton::Middle;
+        button              = MouseButton::Middle;
     } else if (event_type == wxEVT_MIDDLE_UP) {
         platform_event_type = MouseEvent::Type::ButtonUp;
-        button = MouseButton::Middle;
+        button              = MouseButton::Middle;
     }
 
     float wheel_x = 0;
@@ -845,8 +867,8 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
         break;
     }
 
-    MouseEvent platform_event{platform_event_type, button, mouse_x, mouse_y, wheel_x, wheel_y,
-                              modifiers(evt)};
+    MouseEvent
+        platform_event{platform_event_type, button, mouse_x, mouse_y, wheel_x, wheel_y, modifiers(evt)};
     enqueue_mouse(platform_event);
 
     render();
@@ -861,7 +883,10 @@ void WXRenderCanvas::on_idle(wxIdleEvent& event)
         render();
 }
 
-void WXRenderCanvas::on_render_requested() { wxWakeUpIdle(); }
+void WXRenderCanvas::on_render_requested()
+{
+    wxWakeUpIdle();
+}
 
 void WXRenderCanvas::begin_frame_platform()
 {
@@ -879,7 +904,7 @@ void WXRenderCanvas::begin_frame_platform()
     size_t display_w = ToPhys(w);
     size_t display_h = ToPhys(h);
 #endif
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io    = ImGui::GetIO();
     io.DisplaySize = ImVec2((float) w, (float) h);
     // SPDLOG_DEBUG("Setting screen resolution {} {} @ scale {} (phys {} {})", w, h, scale_factor,
     // display_w, display_h);
@@ -905,7 +930,10 @@ double WXRenderCanvas::platform_time()
     return double(delta.count()) * 0.000001;
 }
 
-Render::Device& WXRenderCanvas::device() { return Render::Context::instance().device(); }
+Render::Device& WXRenderCanvas::device()
+{
+    return Render::Context::instance().device();
+}
 
 void WXRenderCanvas::dispatch_on_main_thread(Biz::Platform::IMainThreadDispatcher::Function func)
 {

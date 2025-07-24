@@ -9,16 +9,18 @@ using coord_t = int32_t;
 
 namespace Advanced {
 
-template<typename Scalar, int Dim>
+template <typename Scalar, int Dim>
 using SquareMatrix = Eigen::Matrix<Scalar, Dim, Dim, Eigen::DontAlign>;
 
-template<typename Scalar, int Dim>
+template <typename Scalar, int Dim>
 class Vec : public Eigen::Matrix<Scalar, Dim, 1, Eigen::DontAlign>
 {
     using Parent = Eigen::Matrix<Scalar, Dim, 1, Eigen::DontAlign>;
+
 public:
     // Eigen vectors are not 0 initialized. Fix that.
     Vec() : Parent{Parent::Zero()} {}
+
     using Parent::Parent;
     using Parent::operator=;
 
@@ -35,6 +37,7 @@ public:
         }
         return *this;
     }
+
     Vec operator*(const double& scalar) const
     {
         Vec result{*this};
@@ -42,7 +45,8 @@ public:
         return result;
     }
 
-    bool operator<(const Vec& other) const {
+    bool operator<(const Vec& other) const
+    {
         for (std::size_t i{}; i < Dim; ++i) {
             if ((*this)[i] == other[i]) {
                 continue;
@@ -53,10 +57,10 @@ public:
     }
 };
 
-template<typename Scalar, int Dim>
+template <typename Scalar, int Dim>
 using Transform = Eigen::Transform<Scalar, Dim, Eigen::Affine, Eigen::DontAlign>;
 
-template<typename Scalar, int Dim>
+template <typename Scalar, int Dim>
 using Translation = Eigen::Translation<Scalar, Dim>;
 } // namespace Advanced
 
@@ -103,36 +107,37 @@ using SquareMatrix3d = Advanced::SquareMatrix<double, 3>;
 using SquareMatrix4f = Advanced::SquareMatrix<float, 4>;
 using SquareMatrix4d = Advanced::SquareMatrix<double, 4>;
 
-template<typename T>
-concept ScaledScalar = (
-    std::is_same_v<T, coord_t> || std::is_same_v<T, int64_t>
-);
+template <typename T>
+concept ScaledScalar = (std::is_same_v<T, coord_t> || std::is_same_v<T, int64_t>);
 
-template<typename T>
-concept UnscaledScalar = (
-    std::is_same_v<T, float> || std::is_same_v<T, double>
-);
+template <typename T>
+concept UnscaledScalar = (std::is_same_v<T, float> || std::is_same_v<T, double>);
 
-template<typename T>
-concept ScaledVector = (
-    std::is_same_v<typename T::Scalar, coord_t> || std::is_same_v<typename T::Scalar, int64_t>
-);
+template <typename T>
+concept ScaledVector = (std::is_same_v<typename T::Scalar, coord_t> || std::is_same_v<typename T::Scalar, int64_t>);
 
-template<typename T>
-concept UnscaledVector = (
-    std::is_same_v<typename T::Scalar, float> || std::is_same_v<typename T::Scalar, double>
-);
+template <typename T>
+concept UnscaledVector = (std::is_same_v<typename T::Scalar, float> || std::is_same_v<typename T::Scalar, double>);
 
 /**
- * @brief fuzzy_compare two numbers using relative comparison
+ * @brief Compare two numbers if there are (almost) same (with respect to epsilon).
+ * @note This function uses both relative (w.r.t @p a and @p b) epsilon and absolute epsilon,
+ * taking into account the bigger one. This makes this comparison robust even for numbers close
+ * to zero.
  * @return true if two numbers are assumed same, false otherwise
  * @note is not the same as is_approx which only does absolute comparison
  */
-template<typename T>
-requires std::floating_point<T>
-bool fuzzy_compare(T a, T b, T epsilon = std::numeric_limits<T>::epsilon() * 100)
+template <typename T>
+    requires std::floating_point<T>
+bool fuzzy_compare(
+    T a,
+    T b,
+    T rel_epsilon = std::numeric_limits<T>::epsilon() * 100,
+    T abs_epsilon = std::numeric_limits<T>::epsilon()
+)
 {
-    return std::fabs(a - b) <= epsilon * std::fmax(std::fabs(a), std::fabs(b));
+    return std::fabs(a - b)
+        <= std::fmax(abs_epsilon, rel_epsilon * std::fmax(std::fabs(a), std::fabs(b)));
 }
 
-} // Slic3r::Domain
+} // namespace Slic3r::Domain
