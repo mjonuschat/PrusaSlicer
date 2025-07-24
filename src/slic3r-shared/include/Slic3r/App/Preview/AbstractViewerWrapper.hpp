@@ -65,6 +65,9 @@ public:
     virtual const libvgcode::AbstractViewer& viewer() const = 0;
     virtual libvgcode::AbstractViewer& viewer() = 0;
 
+    virtual void set_scene(Scene::Scene& scene) = 0;
+    virtual void clear_scene()                  = 0;
+
     virtual void render_scene() = 0;
     virtual void render_imgui() = 0;
 

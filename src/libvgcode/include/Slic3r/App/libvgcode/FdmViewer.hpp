@@ -27,6 +27,10 @@
 
 #define USE_TEXTURE_BUFFER (1 && SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED)
 
+namespace Slic3r::App::Scene {
+class Node;
+} // namespace Slic3r::App::Scene
+
 namespace Slic3r::App::libvgcode {
 
 struct GCodeInputData;
@@ -49,6 +53,10 @@ public:
      * @param data_factory The geometry factory.
      */
     void init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory) override;
+
+    void set_scene(Scene::Scene& scene) override;
+    void clear_scene() override;
+
     //
     // Reset all caches and free gpu memory.
     //
@@ -388,6 +396,8 @@ private:
     size_t m_enabled_options_count{ 0 };
 
     std::pair<Domain::TriangleMesh, AABBMesh> m_aabb;
+
+    Scene::Node* m_main_node{nullptr};
 
     void update_view_full_range() override;
     void update_color_ranges();

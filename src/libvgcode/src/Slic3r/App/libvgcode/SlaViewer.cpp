@@ -42,52 +42,99 @@ using Slic3r::Domain::Vec2f;
 
 namespace Slic3r::App::libvgcode {
 
-SlaViewer::SlaViewer()
-{
-}
+SlaViewer::SlaViewer() {}
 
 void SlaViewer::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
 {
-    if (m_initialized)
-        return;
-
     AbstractViewer::init(device, scene, data_factory);
+    set_scene(scene);
 
     /* Create a tree
-    * -> "main_sla"             {SlaObjectNodeTag{ object_id = 0, instance_id = 0, SlaMeshType::Undefined }}
-    *       -> "top_clip_mesh"      {SlaObjectNodeTag{ object_id = 0, instance_id=0, SlaMeshType::TopClip }}
-    *       -> "bottom_clip_mesh"   {SlaObjectNodeTag{ object_id = 0, instance_id=0, SlaMeshType::BottomClip }}
-    *       -> "sla_object_node"    {SlaObjectNodeTag{ object_id, instance_id = 0, SlaMeshType::Undefined }}
-    *           -> "sla_instanceN_node" {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Undefined }}
-    *               -> "object_mesh"        {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Object }}
-    *               -> "supports_mesh"      {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Supports }}
-    *               -> "pad_mesh"           {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Pad }}
-    * -> "segment node"
-    */
+     * -> "main_sla"             {SlaObjectNodeTag{ object_id = 0, instance_id = 0, SlaMeshType::Undefined }}
+     *       -> "top_clip_mesh"      {SlaObjectNodeTag{ object_id = 0, instance_id=0, SlaMeshType::TopClip }}
+     *       -> "bottom_clip_mesh"   {SlaObjectNodeTag{ object_id = 0, instance_id=0, SlaMeshType::BottomClip }}
+     *       -> "sla_object_node"    {SlaObjectNodeTag{ object_id, instance_id = 0, SlaMeshType::Undefined }}
+     *           -> "sla_instanceN_node" {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Undefined }}
+     *               -> "object_mesh"        {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Object }}
+     *               -> "supports_mesh"      {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Supports }}
+     *               -> "pad_mesh"           {SlaObjectNodeTag{ object_id, instance_id, SlaMeshType::Pad }}
+     * -> "segment node"
+     */
+}
+
+void SlaViewer::set_scene(Scene::Scene& scene)
+{
+    AbstractViewer::set_scene(scene);
+
+    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n) -> bool {
+        const SlaObjectNodeTag* tag = n->tag_of_type<SlaObjectNodeTag>();
+        return tag != nullptr && tag->type == SlaMeshType::Undefined;
+    }, true);
+
+    if (node != nullptr) {
+        m_main_node = node;
+        return;
+    }
 
     Scene::NodeBuilder builder{ *m_scene };
     builder.set_debug_name("sla_main");
     builder.set_tag(SlaObjectNodeTag());
+
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        build_clipping_plane_node(SlaMeshType::TopClip, bldr);
+    });
+
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        build_clipping_plane_node(SlaMeshType::BottomClip, bldr);
+    });
+
     m_scene->add_child(builder.build().release(), &m_scene->root());
     m_main_node = m_scene->root().children().back().get();
+}
 
-    build_clipping_plane_node(SlaMeshType::TopClip);
-    build_clipping_plane_node(SlaMeshType::BottomClip);
-
-    m_initialized = true;
+void SlaViewer::clear_scene()
+{
+    if (m_scene != nullptr) {
+        m_scene->remove_children([&](const Scene::Node* node) { return true; }, m_main_node);
+        m_main_node = nullptr;
+    }
 }
 
 void SlaViewer::reset()
 {
     reset_layers();
 
-    // Remove all object Scene::Nodes 
-    m_scene->remove_children([](const Scene::Node* node) {
+    // Remove all object Scene::Nodes
+    std::vector<Scene::AuxiliaryElementId> geometry_ids;
+    m_scene->remove_children([&](const Scene::Node* node) {
         const SlaObjectNodeTag* t = node->tag_of_type<SlaObjectNodeTag>();
-        return t && !t->is_clip(); 
+        bool ret                  = t && !t->is_clip();
+        if (ret) {
+            Scene::AuxiliaryElementId id;
+            id.id = t->object_id;
+            switch (t->type) {
+            case SlaMeshType::Object: {
+                id.type = Scene::AuxiliaryElementId::Type::SlaMesh;
+                break;
+            }
+            case SlaMeshType::Pad: {
+                id.type = Scene::AuxiliaryElementId::Type::SlaPad;
+                break;
+            }
+            case SlaMeshType::Supports: {
+                id.type = Scene::AuxiliaryElementId::Type::SlaSupports;
+                break;
+            }
+            }
+            geometry_ids.push_back(id);
+        }
+        return ret;
     }, m_main_node);
-    m_model_geometry_manager.release_all();
-    m_model_triangle_mesh_manager.release_all();
+
+    for (const Scene::AuxiliaryElementId& id : geometry_ids) {
+        m_model_geometry_manager.release(id);
+        m_model_triangle_mesh_manager.release(id);
+    }
 }
 
 void SlaViewer::reset_layers()
@@ -134,9 +181,6 @@ void SlaViewer::load(const Biz::Slicing::SLAResult& result)
 
 void SlaViewer::load_layers(const std::vector<float>& layers_zs, const std::vector<double>& layers_times)
 {
-    if (!m_initialized)
-        return;
-
     if (layers_zs.empty() || layers_times.empty())
         return;
 
@@ -205,11 +249,9 @@ void SlaViewer::build_sla_object_mesh(
         .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
 }
 
-void SlaViewer::build_clipping_plane_node(SlaMeshType plane_type)
+void SlaViewer::build_clipping_plane_node(SlaMeshType plane_type, Scene::NodeBuilder& builder)
 {
     ASSERT(plane_type == SlaMeshType::TopClip || plane_type == SlaMeshType::BottomClip);
-
-    Scene::NodeBuilder builder{ *m_scene };
 
     const std::string type_str = plane_type == SlaMeshType::TopClip ? "Clip top" : "Clip bottom";
     SPDLOG_DEBUG("build_volume type:{}", type_str);
@@ -241,13 +283,10 @@ void SlaViewer::build_clipping_plane_node(SlaMeshType plane_type)
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
 
-    builder
-        .set_debug_name(Slic3r::format("sla_obj: clipping plane: %1%", type_str))
-        .set_tag(SlaObjectNodeTag{ 0, 0, plane_type })
+    builder.set_debug_name(Slic3r::format("sla_obj: clipping plane: %1%", type_str))
+        .set_tag(SlaObjectNodeTag{0, 0, plane_type})
         .set_mesh(geom, material, int(0))
-        .set_shadows(Render::Shadows{ false, false });
-
-    m_scene->add_child(builder.build().release(), m_main_node);
+        .set_shadows(Render::Shadows{true, true});
 }
 
 void SlaViewer::build_if_needed(
@@ -421,8 +460,8 @@ void SlaViewer::update_preview_range(size_t min_layer_id, size_t max_layer_id)
     float max_layer_z = m_result->heights[max_layer_id];
 
     // Add a small Z shifts to prevent top/bottom face flickering.
-    min_layer_z -= EPSILON;
-    max_layer_z += EPSILON;
+    min_layer_z -= float(EPSILON);
+    max_layer_z += float(EPSILON);
 
     // update Z clipping
 

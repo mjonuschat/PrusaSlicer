@@ -39,6 +39,19 @@ public:
      * @param data_factory The geometry factory.
      */
     virtual void init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory);
+
+    /**
+     * @brief Set the current scene for the viewer.
+     *
+     * @param scene The scene to set.
+     */
+    virtual void set_scene(Scene::Scene& scene)
+    {
+        m_scene = &scene;
+    }
+
+    virtual void clear_scene() = 0;
+
     //
     // Reset the contents of the viewer.
     // Automatically called by load() method.
@@ -89,10 +102,9 @@ protected:
     //
     ViewRange m_view_range;
 
-    bool m_initialized{ false };
-
-    Render::Device* m_device{ nullptr };
-    Scene::Scene*   m_scene{ nullptr };
+    Render::Device* m_device{nullptr};
+    Scene::Scene* m_scene{nullptr};
+    Scene::GeometryDataFactory* m_data_factory{nullptr};
 };
 
 } //namespace Slic3r::App::libvgcode

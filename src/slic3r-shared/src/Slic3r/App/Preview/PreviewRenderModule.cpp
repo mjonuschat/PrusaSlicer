@@ -379,11 +379,17 @@ void PreviewRenderModule::on_selected_bed_instances_changed(
 
     DEBUG_ASSERT(cc != nullptr);
     if (cc->print_technology() == Domain::PrinterTechnology::SLA) {
+        if (m_viewer != &m_sla_viewer)
+            m_viewer->clear_scene();
         m_viewer = &m_sla_viewer;
+        m_viewer->set_scene(m_scene_presenter->scene());
         update_sla_viewer_data({ project_id, bed_instance_id });
     }
     else {
+        if (m_viewer != &m_fdm_viewer)
+            m_viewer->clear_scene();
         m_viewer = &m_fdm_viewer;
+        m_viewer->set_scene(m_scene_presenter->scene());
         update_fdm_viewer_data({ project_id, bed_instance_id });
     }
 
@@ -410,6 +416,10 @@ void PreviewRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId 
 void PreviewRenderModule::on_selected_project_changed(size_t index)
 {
     update_bed_instances();
+    if (m_viewer == &m_fdm_viewer)
+        m_fdm_viewer.set_scene(m_scene_presenter->scene());
+    else if (m_viewer == &m_sla_viewer)
+        m_sla_viewer.set_scene(m_scene_presenter->scene());
 }
 
 void PreviewRenderModule::set_sidebars_visible(bool hide)
@@ -457,6 +467,11 @@ void PreviewRenderModule::on_activated()
 
     update_bed_instances();
     center_camera_on_selected_bed();
+
+    if (m_viewer == &m_fdm_viewer)
+        m_fdm_viewer.set_scene(m_scene_presenter->scene());
+    else if (m_viewer == &m_sla_viewer)
+        m_sla_viewer.set_scene(m_scene_presenter->scene());
 }
 
 void PreviewRenderModule::on_deactivated()

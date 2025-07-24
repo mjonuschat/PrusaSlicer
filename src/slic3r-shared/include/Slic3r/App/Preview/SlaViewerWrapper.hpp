@@ -18,6 +18,17 @@ public:
 
     bool init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory) override;
     bool set_settings(const ViewerWrapperBaseSettings& settings);
+
+    void set_scene(Scene::Scene& scene) override
+    {
+        m_viewer.set_scene(scene);
+    }
+
+    void clear_scene() override
+    {
+        m_viewer.clear_scene();
+    }
+
     void render_scene() override;
     void render_imgui() override;
 

@@ -6,8 +6,9 @@ namespace Slic3r::App::libvgcode {
 
 void AbstractViewer::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
 {
-    m_device = &device;
-    m_scene = &scene;
+    m_device       = &device;
+    m_scene        = &scene;
+    m_data_factory = &data_factory;
 }
 
 void AbstractViewer::reset()
@@ -15,7 +16,6 @@ void AbstractViewer::reset()
     m_layers.reset();
     m_view_range.reset();
 }
-
 
 void AbstractViewer::set_layers_range(Interval::value_type min, Interval::value_type max)
 {

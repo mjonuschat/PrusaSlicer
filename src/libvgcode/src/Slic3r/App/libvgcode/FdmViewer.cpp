@@ -416,32 +416,49 @@ FdmViewer::FdmViewer()
 
 void FdmViewer::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
 {
-    if (m_initialized)
-        return;
-
     AbstractViewer::init(device, scene, data_factory);
+    set_scene(scene);
+}
 
-    Scene::NodeBuilder builder{ *m_scene };
+void FdmViewer::set_scene(Scene::Scene& scene)
+{
+    AbstractViewer::set_scene(scene);
+
+    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n) -> bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr;
+    }, true);
+
+    if (node != nullptr) {
+        m_main_node = node;
+        return;
+    }
+
+    Scene::NodeBuilder builder{*m_scene};
     builder.set_debug_name("gcode_main");
-    builder.set_tag(GCodeNodeTag{ GCodeElementType::Undefined });
+    builder.set_tag(GCodeNodeTag{GCodeElementType::Undefined});
 
     builder.child([&](Scene::NodeBuilder& bldr) {
-        m_cog_marker.init(*m_device, bldr, data_factory);
+        m_cog_marker.init(*m_device, bldr, *m_data_factory);
     });
     builder.child([&](Scene::NodeBuilder& bldr) {
-        m_tool_marker.init(*m_device, bldr, data_factory);
+        m_tool_marker.init(*m_device, bldr, *m_data_factory);
     });
+    builder.child([&](Scene::NodeBuilder& bldr) { m_segment_template.init(*m_device, bldr); });
     builder.child([&](Scene::NodeBuilder& bldr) {
-        m_segment_template.init(*m_device, bldr);
-    });
-    builder.child([&](Scene::NodeBuilder& bldr) {
-        m_option_template.init(*m_device, bldr, data_factory);
+        m_option_template.init(*m_device, bldr, *m_data_factory);
     });
 
-    auto main_node = builder.build();
-    m_scene->add_child(main_node.release(), &m_scene->root());
+    m_scene->add_child(builder.build().release(), &m_scene->root());
+    m_main_node = m_scene->root().children().back().get();
+}
 
-    m_initialized = true;
+void FdmViewer::clear_scene()
+{
+    if (m_scene != nullptr) {
+        m_scene->remove_children([&](const Scene::Node* node) { return true; }, m_main_node);
+        m_main_node = nullptr;
+    }
 }
 
 void FdmViewer::reset()
@@ -542,9 +559,6 @@ static void extract_pos_and_or_hwa(const MoveVertices& vertices, float travels_r
 
 void FdmViewer::load(FdmViewerInputData&& gcode_data)
 {
-    if (!m_initialized)
-        return;
-
     if (! gcode_data.vertices || gcode_data.vertices->empty())
         return;
 

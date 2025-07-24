@@ -37,27 +37,39 @@ void SegmentTemplate::init(Render::Device& device, Scene::NodeBuilder& builder)
 {
     Render::VertexAttribDesc v_attr;
     v_attr.attrib_type = Render::VertexAttribType::Vertex;
-    v_attr.components = 1;
-    v_attr.data_type = Render::DataType::UByte;
-    v_attr.normalize = false;
-    v_attr.offset = 0;
+    v_attr.components  = 1;
+    v_attr.data_type   = Render::DataType::UByte;
+    v_attr.normalize   = false;
+    v_attr.offset      = 0;
 
-    m_geometry = std::make_unique<Render::Geometry>(device);
-    m_geometry->upload(VERTEX_DATA.data(), VERTEX_DATA.size(), { v_attr });
+    // this method is called every time a new project is sliced
+    // ensure m_geometry is defined only the first time or the render components using it
+    // will contain a dangling pointer
+    if (m_geometry == nullptr) {
+        m_geometry = std::make_unique<Render::Geometry>(device);
+        m_geometry->upload(VERTEX_DATA.data(), VERTEX_DATA.size(), {v_attr});
+    }
 
-    Render::Material material = Render::Material{}
-        .set_shader(device.context().shader_manager().shader("segments"));
+    Render::Material material = Render::Material{}.set_shader(
+        device.context().shader_manager().shader("segments")
+    );
 
     Render::DrawCommands draw_commands;
-    draw_commands.push_back({ Render::PrimitiveType::Triangles, 0, m_geometry->vertex_count(), material});
+    draw_commands.push_back(
+        {Render::PrimitiveType::Triangles, 0, m_geometry->vertex_count(), material}
+    );
     m_geometry->draw_commands() = draw_commands;
 
-    builder
-        .set_debug_name("gcode_toolpaths")
-        .set_tag(GCodeNodeTag{ GCodeElementType::Toolpaths })
-        .set_mesh_instanced(m_geometry.get(), material, 0, Render::PrimitiveType::Triangles,
-            int(Preview::PreviewSceneLayer::Toolpaths))
-        .set_shadows(Render::Shadows{ true, true })
+    builder.set_debug_name("gcode_toolpaths")
+        .set_tag(GCodeNodeTag{GCodeElementType::Toolpaths})
+        .set_mesh_instanced(
+            m_geometry.get(),
+            material,
+            0,
+            Render::PrimitiveType::Triangles,
+            int(Preview::PreviewSceneLayer::Toolpaths)
+        )
+        .set_shadows(Render::Shadows{true, true})
         .set_pbr(Scene::DEFAULT_GCODE_OPTIONS_PBRPARAMS);
 }
 

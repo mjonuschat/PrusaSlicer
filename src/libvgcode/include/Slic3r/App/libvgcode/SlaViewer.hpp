@@ -57,6 +57,10 @@ public:
      * @param data_factory The geometry factory.
      */
     void init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory) override;
+
+    void set_scene(Scene::Scene& scene) override;
+    void clear_scene() override;
+
     //
     // Reset all caches and free gpu memory.
     //
@@ -112,7 +116,7 @@ private:
         const Domain::Transform3d& trafo,
         Scene::NodeBuilder& builder);
 
-    void build_clipping_plane_node(SlaMeshType plane_type);
+    void build_clipping_plane_node(SlaMeshType plane_type, Scene::NodeBuilder& builder);
     void update_clipping_plane(SlaMeshType plane_type, indexed_triangle_set& plane_its);
 
     void update_preview_range(size_t min_layer_id, size_t max_layer_id);
