@@ -33,6 +33,7 @@ public:
 
 protected:
     Item* content() const;
+    LayoutButton* close_button() const;
     void add_separator();
     LayoutButton* append_tab(const std::string& tab);
 

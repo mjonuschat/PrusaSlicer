@@ -1,4 +1,5 @@
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
+#include "Slic3r/App/Plater/SimplifyDialog.hpp"
 
 #include <exception>
 #include <chrono>
@@ -131,12 +132,73 @@ SimplifyGizmo::SimplifyGizmo(
     PlaterScenePresenter& scene_presenter,
     ProjectInteractor& project_interactor,
     CloseFn close_fn
-)
-    : m_device(device)
-    , m_scene_presenter(scene_presenter)
-    , m_project_interactor(project_interactor)
-    , m_close_fn(close_fn)
+) :
+    m_device(device),
+    m_scene_presenter(scene_presenter),
+    m_project_interactor(project_interactor),
+    m_close_fn(close_fn)
 {
+    m_dialog = std::make_unique<SimplifyDialog>();
+    m_dialog->callbacks().close = [this]() {
+        close();
+        };
+
+    m_dialog->callbacks().use_count_changed = [this](bool use_count) {
+        bool is_multipart = (m_volume_ids.size() > 1);
+        if (!is_multipart) {
+            m_configuration.use_count = use_count;
+            process();
+        }
+        m_dialog->set_enabled_by_use_count(m_configuration.use_count);
+        update_configuration_on_count_change();
+    };
+
+    m_dialog->callbacks().detail_level_changed = [this](int reduction) {
+        m_reduction = reduction;
+        switch (m_reduction) {
+        case 0:
+            m_configuration.max_error = 1e-3f;
+            break;
+        case 1:
+            m_configuration.max_error = 1e-2f;
+            break;
+        case 2:
+            m_configuration.max_error = 0.1f;
+            break;
+        case 3:
+            m_configuration.max_error = 0.5f;
+            break;
+        case 4:
+            m_configuration.max_error = 1.f;
+            break;
+        }
+        process();
+    };
+
+    m_dialog->callbacks().decimate_ratio_changed = [this](double value) {
+        m_configuration.decimate_ratio = value;
+        m_configuration.fix_count_by_ratio(m_original_triangle_count);
+        m_dialog->set_info_line(m_configuration.wanted_count);
+        if (m_configuration.use_count) {
+            process();
+        }
+    };
+
+    m_dialog->callbacks().show_wireframe_checked = [this](bool checked) {
+        m_show_wireframe = checked;
+
+        init_material();
+        Scene::Scene& scene = m_scene_presenter.scene();
+        Node::NodeList simplify_nodes;
+        scene.root().query(is_simplify_node, simplify_nodes);
+        for (Node* node : simplify_nodes)
+            node->set_material_override(m_material);
+    };
+
+    m_dialog->callbacks().apply = [this]() {
+        apply_simplify();
+    };
+
     init_material();
 }
 
@@ -151,18 +213,16 @@ GizmoActivationState SimplifyGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
     return GizmoActivationState::Inactive;
 }
 
-void SimplifyGizmo::on_cycle_prepare()
-{ 
-}
+void SimplifyGizmo::on_cycle_prepare() {}
 
-void SimplifyGizmo::render_imgui() 
+void SimplifyGizmo::update_dialog_data()
 {
     const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
-    const ObjectSelection& selection = scene_interactor.object_selection();
+    const ObjectSelection& selection        = scene_interactor.object_selection();
     if (selection.elements.empty())
         close(); // gizmo should not be open with empty selection
 
-    const Project& project = m_project_interactor.selected_project();
+    const Project& project            = m_project_interactor.selected_project();
     std::set<ObjectID> act_volume_ids = get_volume_ids(selection, project);
     // Check selection of new volume (or change)
     // Do not reselect object when processing
@@ -172,149 +232,43 @@ void SimplifyGizmo::render_imgui()
         // Start processing. If we switched from another object, process will
         // stop the background thread and it will restart itself later.
         process();
-        return;
     }
 
-    //ASSERT(m_activated, "Draw only activated window");
-    int flag = ImGuiWindowFlags_AlwaysAutoResize | 
-               ImGuiWindowFlags_NoResize |
-               ImGuiWindowFlags_NoCollapse;
-    
-    ImGui::Begin(_u8L("Simplify").c_str(), NULL, flag);
-    draw_tool();
-    ImGui::End();
+    m_dialog->set_mesh_name(m_mesh_name);
+    m_dialog->set_triangles(m_original_triangle_count);
+    m_dialog->set_use_count(m_configuration.use_count);
+    m_dialog->set_detail_level(m_reduction);
+    m_dialog->set_decimate_ratio_step(100. / m_original_triangle_count);
+    m_dialog->set_decimate_ratio(m_configuration.decimate_ratio);
+    m_dialog->set_info_line(m_configuration.wanted_count);
 }
 
-void SimplifyGizmo::draw_tool()
+void SimplifyGizmo::update_configuration_on_count_change()
 {
-    bool is_cancelling = false;
-    bool is_worker_running = false;
-    bool is_result_ready = false;
-    int progress = 0;
-    {
-        std::lock_guard lk(m_state_mutex);
-        is_cancelling = m_state.status == State::cancelling;
-        is_worker_running = m_state.status == State::running;
-        is_result_ready = !m_state.result.empty();
-        progress = m_state.progress;
-    }
-
-    bool is_multipart = (m_volume_ids.size() > 1);
-
-    ImGui::Text("%s", (_u8L("mesh name") + ":").c_str());
-    ImGui::SameLine();
-    ImGui::Text("%s", m_mesh_name.c_str());
-
-    ImGui::Text("%s", (_u8L("triangles") + ":").c_str());
-    ImGui::SameLine();
-    ImGui::Text("%zu", m_original_triangle_count);
-
-    ImGui::Separator();
-        
-    // Whether to trigger calculation after rendering is done.
-    bool start_process = false;
-    if (ImGui::RadioButton("##use_error", !m_configuration.use_count) && !is_multipart) {
-        m_configuration.use_count = !m_configuration.use_count;
-        start_process = true;
-    }
-    ImGui::SameLine();
-
-    //m_imgui->disabled_begin(m_configuration.use_count);
-    ImGui::Text("%s", _u8L("detail_level").c_str());
-    static std::vector<std::string> reduce_captions = {
-        _u8L("Extra high"),
-        _u8L("High"),
-        _u8L("Medium"),
-        _u8L("Low"),
-        _u8L("Extra low")
-    };
-    ImGui::SameLine();
-    static int reduction = 2;
-    if(ImGui::SliderInt("##ReductionLevel", &reduction, 0, 4, reduce_captions[reduction].c_str())) {
-        if (reduction < 0) reduction = 0;
-        if (reduction > 4) reduction = 4;
-        switch (reduction) {
-        case 0: m_configuration.max_error = 1e-3f; break;
-        case 1: m_configuration.max_error = 1e-2f; break;
-        case 2: m_configuration.max_error = 0.1f; break;
-        case 3: m_configuration.max_error = 0.5f; break;
-        case 4: m_configuration.max_error = 1.f; break;
-        }
-        start_process = true;
-    }
-    //m_imgui->disabled_end(); // !use_count
-
-    if (ImGui::RadioButton("##use_count", m_configuration.use_count) && !is_multipart) {
-        m_configuration.use_count = !m_configuration.use_count;
-        start_process = true;
-    } else if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && is_multipart)
-        ImGui::SetTooltip("%s", "A multipart object can be simplified using only a Level of detail. "
-                                     "If you want to enter a Decimate ratio, do the simplification separately.");
-    ImGui::SameLine();
-
     // show preview result triangle count (percent)
     if (!m_configuration.use_count) {
         m_configuration.wanted_count = static_cast<uint32_t>(m_triangle_count);
-        m_configuration.decimate_ratio = 
-            (1.0f - (m_configuration.wanted_count / (float) m_original_triangle_count)) * 100.f;
+        m_configuration.decimate_ratio = 100.f
+            * (1.0f - (m_configuration.wanted_count / (float)m_original_triangle_count));
+        m_dialog->set_decimate_ratio(m_configuration.decimate_ratio);
     }
-
-    //m_imgui->disabled_begin(!m_configuration.use_count);
-    ImGui::Text("decimate_ratio");
-    ImGui::SameLine();
-    const char * format = (m_configuration.decimate_ratio > 10)? "%.0f %%": 
-        ((m_configuration.decimate_ratio > 1)? "%.1f %%":"%.2f %%");
-    if (ImGui::SliderFloat("##decimate_ratio", &m_configuration.decimate_ratio, 0.f, 100.f, format)) {
-        if (m_configuration.decimate_ratio < 0.f)
-            m_configuration.decimate_ratio = 0.01f;
-        if (m_configuration.decimate_ratio > 100.f)
-            m_configuration.decimate_ratio = 100.f;
-        m_configuration.fix_count_by_ratio(m_original_triangle_count);
-        start_process = true;
-    }
-
-    ImGui::Text(_u8L("%d triangles").c_str(), m_configuration.wanted_count);
-    //m_imgui->disabled_end(); // use_count
-
-    if (ImGui::Checkbox(_u8L("Show wireframe").c_str(), &m_show_wireframe)) {
-        init_material();
-        
-        Scene::Scene& scene = m_scene_presenter.scene();
-        Node::NodeList simplify_nodes;
-        scene.root().query(is_simplify_node, simplify_nodes);
-        for (Node* node : simplify_nodes)
-            node->set_material_override(m_material);
-    }
-
-    //m_imgui->disabled_begin(is_cancelling);
-    if (ImGui::Button(_u8L("Close").c_str())) {
-        close();
-    } else if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && is_cancelling)
-        ImGui::SetTooltip("%s", _u8L("Operation already cancelling. Please wait few seconds.").c_str());
-    //m_imgui->disabled_end(); // state cancelling
-
-    ImGui::SameLine();
-
-    //m_imgui->disabled_begin(is_worker_running || ! is_result_ready);
-    if (ImGui::Button(_u8L("Apply").c_str())) {
-        apply_simplify();
-    } else if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && is_worker_running)
-        ImGui::SetTooltip("%s", _u8L("Can't apply when proccess preview.").c_str());
-    //m_imgui->disabled_end(); // state !settings 
-
-    // draw progress bar
-    if (is_worker_running) { // apply or preview
-        ImGui::SameLine();
-        // draw progress bar
-        std::string progress_text = (boost::format(_u8L("Process %1% / 100")) % std::to_string(progress)).str();
-        ImGui::ProgressBar(progress / 100., {}, progress_text.c_str());
-    }
-
-    if (start_process)
-        process();
 }
 
-void SimplifyGizmo::on_activated() { }
+void SimplifyGizmo::update_buttons_on_state_changed()
+{
+    bool is_cancelling     = m_state.status == State::cancelling;
+    bool is_worker_running = m_state.status == State::running;
+    bool is_result_ready   = !m_state.result.empty();
+
+    m_dialog->set_enable_apply_button(!is_worker_running && is_result_ready);
+    m_dialog->set_enable_close_button(!is_cancelling);
+}
+
+void SimplifyGizmo::on_activated() 
+{
+    update_dialog_data();
+}
+
 void SimplifyGizmo::on_deactivated() {
     stop_worker_thread_request();
 
@@ -335,6 +289,11 @@ void SimplifyGizmo::on_deactivated() {
     // Free geometries
     m_phantoms.clear();
     m_volume_ids.clear();
+}
+
+Yoga::Dialog* SimplifyGizmo::unload_ui_dialog()
+{
+    return m_dialog.get();
 }
 
 void SimplifyGizmo::close(){ m_close_fn(); }
@@ -410,6 +369,7 @@ void SimplifyGizmo::process()
     m_state.config = m_configuration;
     m_state.volume_ids = m_volume_ids;
     m_state.status = State::running;
+    update_buttons_on_state_changed();
 
     // Create a copy of current meshes to pass to the worker thread.
     // Using unique_ptr instead of pass-by-value to avoid an extra
@@ -434,6 +394,7 @@ void SimplifyGizmo::process()
         std::function<void(int)> statusfn = [this](int percent) {
             std::lock_guard lk(m_state_mutex);
             m_state.progress = percent;
+            m_dialog->set_progress(m_state.progress);
             // Redraw the UI to show progress bar.
             PlatformServices::instance().render_request_handler().request_render();
         };
@@ -448,8 +409,10 @@ void SimplifyGizmo::process()
             if (!m_state.config.use_count)
                 max_error = m_state.config.max_error;
             m_state.progress = 0;
+            m_dialog->set_progress(m_state.progress);
             m_state.result.clear();
             m_state.status = State::Status::running;
+            update_buttons_on_state_changed();
         }
 
         // Start the actual calculation.
@@ -463,6 +426,7 @@ void SimplifyGizmo::process()
         } catch (SimplifyCanceledException&) {
             std::lock_guard lk(m_state_mutex);
             m_state.status = State::idle;
+            update_buttons_on_state_changed();
         }
 
         std::lock_guard lk(m_state_mutex);
@@ -470,6 +434,7 @@ void SimplifyGizmo::process()
             // We were not cancelled, the result is valid.
             m_state.status = State::Status::idle;
             m_state.result = std::move(its);
+            update_buttons_on_state_changed();
         }
 
         // Update UI. Use CallAfter so the function is run on UI thread.
@@ -485,6 +450,7 @@ bool SimplifyGizmo::stop_worker_thread_request()
         return false;
 
     m_state.status = State::Status::cancelling;
+    update_buttons_on_state_changed();
     return true;
 }
 
@@ -509,6 +475,7 @@ void SimplifyGizmo::worker_finished()
 
     // rerender the UI to show result.
     PlatformServices::instance().render_request_handler().request_render();
+    m_dialog->set_progress(100.);
 
     if (m_state.config != m_configuration || m_state.volume_ids != m_volume_ids) {
         // Settings were changed, restart the worker immediately.
@@ -582,6 +549,8 @@ void SimplifyGizmo::set_nodes(const NodeInputs& node_inputs)
     m_triangle_count = 0;
     for (const NodeInput& node_input : node_inputs)
         m_triangle_count += node_input.its->indices.size();
+
+    update_configuration_on_count_change();
 }
 
 void SimplifyGizmo::init_material(){

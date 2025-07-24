@@ -59,7 +59,19 @@ std::string DoubleValidator::process(const std::string& input)
     } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
     }
 
-    return fmt::format("{}", std::clamp(value, m_from, m_to));
+    value = std::clamp(value, m_from, m_to);
+    return m_precision.has_value() ? fmt::format("{1:.{0}f}", m_precision.value(), value) :
+                                     fmt::format("{}", value);
+}
+
+std::optional<int> DoubleValidator::precision() const
+{
+    return m_precision;
+}
+
+void DoubleValidator::set_precision(int precision)
+{
+    m_precision = precision;
 }
 
 } // namespace Slic3r::App::Yoga

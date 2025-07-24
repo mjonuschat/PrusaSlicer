@@ -274,6 +274,8 @@ void PlaterRenderModule::init_scene_layout()
     }},
         m_simplify_gizmo
     );
+    m_toolbar_simplify->set_enabled(false);
+
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::ToolbarPaintOnSupports,
@@ -315,6 +317,7 @@ void PlaterRenderModule::update_toolbar_tool_selection(Scene::ToolType current_t
 {
     m_toolbar_move->set_checked(current_tool_type == Scene::ToolType::Translation);
     m_toolbar_rotate->set_checked(current_tool_type == Scene::ToolType::Rotation);
+    m_toolbar_simplify->set_checked(current_tool_type == Scene::ToolType::Simplify);
     m_toolbar_paint_on_supports->set_checked(
         current_tool_type == Scene::ToolType::PaintOnSupportsGizmo
     );
@@ -1181,6 +1184,7 @@ void PlaterRenderModule::on_scene_selection_changed(
     const bool empty_selection = selection.empty();
     m_toolbar_move->set_enabled(!empty_selection);
     m_toolbar_rotate->set_enabled(!empty_selection);
+    m_toolbar_simplify->set_enabled(!empty_selection);
 
     m_text_gizmo->update_layout(
         !empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume

@@ -22,6 +22,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/RotationGizmo.cpp
         include/Slic3r/App/Plater/SimplifyGizmo.hpp
         src/Slic3r/App/Plater/SimplifyGizmo.cpp
+        include/Slic3r/App/Plater/SimplifyDialog.hpp
+        src/Slic3r/App/Plater/SimplifyDialog.cpp
         include/Slic3r/App/Plater/PlaterSceneLayer.hpp
         include/Slic3r/App/Plater/PlaterRenderLayout.hpp
         src/Slic3r/App/Plater/PlaterRenderLayout.cpp
@@ -291,6 +293,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/ToggleButton.hpp
         src/Slic3r/App/Yoga/Slider.cpp
         include/Slic3r/App/Yoga/Slider.hpp
+        src/Slic3r/App/Yoga/ProgressBar.cpp
+        include/Slic3r/App/Yoga/ProgressBar.hpp
         src/Slic3r/App/Yoga/SliderWithInput.cpp
         include/Slic3r/App/Yoga/SliderWithInput.hpp
         src/Slic3r/App/Yoga/RadioButton.cpp

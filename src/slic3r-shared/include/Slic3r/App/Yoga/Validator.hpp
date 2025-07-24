@@ -51,11 +51,16 @@ public:
     double to() const;
     void set_to(double to);
 
+    std::optional<int> precision() const;
+    void set_precision(int precision);
+
 private:
     Slic3r::Biz::Expr::Parser m_parser;
     Slic3r::Biz::Expr::Eval m_eval;
 
     double m_from = 0;
     double m_to = 0;
+    std::optional<int> m_precision;
+
 };
 }

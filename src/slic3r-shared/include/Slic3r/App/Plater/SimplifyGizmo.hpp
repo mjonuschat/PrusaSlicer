@@ -12,7 +12,13 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 
+namespace Slic3r::App::Yoga {
+class Dialog;
+} // namespace Slic3r::App::Yoga
+
 namespace Slic3r::App::Plater {
+class SimplifyDialog;
+
 // Continue development for GLGizmoSimplify permanent link: 
 // https://github.com/prusa3d/PrusaSlicer/blob/6fd9846df131c671ac9f944c836536f04d354a53/src/slic3r/GUI/Gizmos/GLGizmoSimplify.hpp
 // https://github.com/prusa3d/PrusaSlicer/blob/6fd9846df131c671ac9f944c836536f04d354a53/src/slic3r/GUI/Gizmos/GLGizmoSimplify.cpp
@@ -33,7 +39,6 @@ public:
      */
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void on_cycle_prepare() override;
-    void render_imgui();// override;
     /**@}*/
 
     /**
@@ -44,6 +49,8 @@ public:
     void on_deactivated() override;
     Scene::ToolType type() const override { return Scene::ToolType::Simplify; }
     /**@}*/
+    Yoga::Dialog* unload_ui_dialog() override;
+    void update_dialog_data();
 
 private:
     struct Configuration
@@ -76,6 +83,8 @@ private:
         std::set<Domain::ObjectID> volume_ids; // is same as result keys - store separate for faster check
     };
 
+    void update_configuration_on_count_change();
+    void update_buttons_on_state_changed();
     void draw_tool();
     void close();
 
@@ -110,6 +119,7 @@ private:
     bool m_show_wireframe = false;
     size_t m_original_triangle_count = 0;
     size_t m_triangle_count = 0;
+    int m_reduction                  = 2;
     std::string m_mesh_name; // name of the mesh we are working on
 
     struct Phantom{
@@ -121,6 +131,8 @@ private:
     Render::Material m_material;
 
     std::vector<Scene::Node*> m_to_enable;
+
+    std::unique_ptr<SimplifyDialog> m_dialog;
 };
 
 } // namespace Slic3r::App::Plater

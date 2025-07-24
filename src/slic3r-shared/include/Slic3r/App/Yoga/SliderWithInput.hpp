@@ -50,6 +50,9 @@ public:
     Validator* validator() const;
     void set_validator(std::unique_ptr<Validator> validator);
 
+    /* @note this function do nothing for the IntValidator */
+    void set_validator_precision(int precision);
+
     void set_default(double def_value);
     bool is_changed_value() const override;
     void reset() override;

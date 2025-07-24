@@ -90,6 +90,11 @@ Item* Dialog::content() const
     return m_content;
 }
 
+LayoutButton* Dialog::close_button() const
+{
+    return m_close_button;
+}
+
 void Dialog::add_separator()
 {
     Separator* separator = m_content->emplace_back<Separator>(Orientation::Horizontal);

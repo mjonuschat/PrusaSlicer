@@ -23,16 +23,34 @@ SliderWithInput::SliderWithInput() : Item()
     m_input = emplace_back<InputTextField>("SliderInputTextField");
     m_input->set_flags(ImGuiInputTextFlags_CharsDecimal);
     m_input->callbacks().text_edited = [this]() {
-        m_slider->set_value(std::stod(m_input->text()));
+        const std::string& input_value = m_input->text();
+
+        if (DoubleValidator* double_validator = dynamic_cast<DoubleValidator*>(m_input->validator());
+            double_validator && double_validator->precision())
+        {
+            std::string slider_value = fmt::format("{1:.{0}f}", double_validator->precision().value(), m_slider->value());
+            if (input_value == slider_value) {
+                return;
+            }
+        }
+        m_slider->set_value(std::stod(input_value));
     };
 
     // By default we use DefaultValidator for the slider
-    m_input->set_validator(std::make_unique<DoubleValidator>());
+    std::unique_ptr<DoubleValidator> validator = std::make_unique<DoubleValidator>();
+    validator->set_precision(2);
+    m_input->set_validator(std::move(validator));
 
     m_slider = emplace_back<Slider>();
     m_slider->set_flex_grow(1);
     m_slider->callbacks().value_changed = [this](double value) {
-        m_input->set_text(fmt::format("{}", value));
+        if (DoubleValidator* double_validator = dynamic_cast<DoubleValidator*>(m_input->validator());
+            double_validator && double_validator->precision())
+        {
+            m_input->set_text(fmt::format("{1:.{0}f}", double_validator->precision().value(), value));
+        } else {
+            m_input->set_text(fmt::format("{}", value));
+        }
         if (callbacks().value_changed)
             callbacks().value_changed(value);
     };
@@ -126,6 +144,15 @@ void SliderWithInput::set_validator(std::unique_ptr<Validator> validator_in)
     } else if (IntValidator* int_validator = dynamic_cast<IntValidator*>(validator())) {
         m_slider->set_begin_value(int_validator->from());
         m_slider->set_end_value(int_validator->to());
+    }
+}
+
+void SliderWithInput::set_validator_precision(int precision)
+{
+    if (DoubleValidator* double_validator = dynamic_cast<DoubleValidator*>(validator())) {
+        double_validator->set_precision(precision);
+    } else {
+        // do nothing
     }
 }
 
