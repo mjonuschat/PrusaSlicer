@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+#include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/libpgcode/LineView.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
@@ -73,7 +74,8 @@ struct SlicingFixture {
     ~SlicingFixture();
 public:
     App::Platform::StdMainThreadDispatcher dispatcher;
-    Biz::Slicing::SlicingInteractor slicing{dispatcher};
+    Biz::ThumbnailImageProvider thumbnail_image_provider;
+    Biz::Slicing::SlicingInteractor slicing{dispatcher, thumbnail_image_provider};
     StatusListener status_listener;
 };
 

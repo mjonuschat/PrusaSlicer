@@ -15,11 +15,13 @@
 #include <Slic3r/App/Preview/DoubleSliderForGCode.hpp>
 #include <Slic3r/App/Preview/DoubleSliderForLayers.hpp>
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/App/SharedThumbnailImageGenerator.hpp"
 
 #include <memory>
 
 namespace Slic3r::App {
-struct BedThumbnailStore;
+struct ThumbnailStore;
+class ThumbnailStoreUpdater;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Preview {
@@ -36,9 +38,18 @@ class PreviewRenderModule final : public Platform::AbstractRenderModule,
                                   public Biz::IStatusCacheChangedListener
 {
 public:
-    PreviewRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
-      std::shared_ptr<BedThumbnailStore> thumbnail_store)
-        : m_workbench(workbench), m_project_interactor(project_interactor), m_thumbnail_store(thumbnail_store)
+    PreviewRenderModule(
+        const Domain::Workbench& workbench,
+        Biz::ProjectInteractor& project_interactor,
+        std::shared_ptr<ThumbnailStore> thumbnail_store,
+        std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
+        std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator
+    ) :
+        m_workbench(workbench),
+        m_project_interactor(project_interactor),
+        m_thumbnail_store(thumbnail_store),
+        m_thumbnail_store_updater(thumbnail_store_updater),
+        m_shared_thumbnail_image_generator(shared_thumbnail_image_generator)
     {}
 
     /**
@@ -58,22 +69,22 @@ public:
         const Biz::Scene::BedSelection& selection
     ) override;
 
-    void on_fdm_result_cache_changed(
-        const Biz::Slicing::SlicingId id
-    ) override { update_fdm_viewer_data(id); }
+    void on_fdm_result_cache_changed(const Biz::Slicing::SlicingId id) override
+    {
+        update_fdm_viewer_data(id);
+    }
 
-    void on_sla_result_cache_changed(
-        const Biz::Slicing::SlicingId& id
-    ) override { update_sla_viewer_result_data(id); }
+    void on_sla_result_cache_changed(const Biz::Slicing::SlicingId& id) override
+    {
+        update_sla_viewer_result_data(id);
+    }
 
-    void on_sla_object_cache_changed(
-        const Biz::Slicing::SlicingId& id,
-        Domain::ObjectID instance_id
-    ) override { update_sla_viewer_object_data(id, instance_id); }
+    void on_sla_object_cache_changed(const Biz::Slicing::SlicingId& id, Domain::ObjectID instance_id) override
+    {
+        update_sla_viewer_object_data(id, instance_id);
+    }
 
-    void on_status_cache_changed(
-        const Biz::Slicing::SlicingId id
-    ) override;
+    void on_status_cache_changed(const Biz::Slicing::SlicingId id) override;
 
     /**
      * @name Implementation of Biz::ISelectedProjectChangedListener public interface
@@ -125,22 +136,24 @@ private:
     Yoga::Passthrough<SidebarAutoReslice> m_sidebar_auto_reslice;
     // temporary variable to allow to switch yoga layout on/off
 
-    Yoga::ToolbarButton* m_button_travels = nullptr;
-    Yoga::ToolbarButton* m_button_wipes = nullptr;
-    Yoga::ToolbarButton* m_button_retractions = nullptr;
-    Yoga::ToolbarButton* m_button_unretractions = nullptr;
-    Yoga::ToolbarButton* m_button_seams = nullptr;
-    Yoga::ToolbarButton* m_button_tool_changes = nullptr;
-    Yoga::ToolbarButton* m_button_color_changes = nullptr;
-    Yoga::ToolbarButton* m_button_pause_prints = nullptr;
-    Yoga::ToolbarButton* m_button_custom_gcodes = nullptr;
+    Yoga::ToolbarButton* m_button_travels           = nullptr;
+    Yoga::ToolbarButton* m_button_wipes             = nullptr;
+    Yoga::ToolbarButton* m_button_retractions       = nullptr;
+    Yoga::ToolbarButton* m_button_unretractions     = nullptr;
+    Yoga::ToolbarButton* m_button_seams             = nullptr;
+    Yoga::ToolbarButton* m_button_tool_changes      = nullptr;
+    Yoga::ToolbarButton* m_button_color_changes     = nullptr;
+    Yoga::ToolbarButton* m_button_pause_prints      = nullptr;
+    Yoga::ToolbarButton* m_button_custom_gcodes     = nullptr;
     Yoga::ToolbarButton* m_button_center_of_gravity = nullptr;
-    Yoga::ToolbarButton* m_button_tool_marker = nullptr;
-    Yoga::ToolbarButton* m_button_shells = nullptr;
-    Yoga::ToolbarButton* m_button_legend = nullptr;
-    Yoga::ToolbarButton* m_button_gcode = nullptr;
+    Yoga::ToolbarButton* m_button_tool_marker       = nullptr;
+    Yoga::ToolbarButton* m_button_shells            = nullptr;
+    Yoga::ToolbarButton* m_button_legend            = nullptr;
+    Yoga::ToolbarButton* m_button_gcode             = nullptr;
 
-    std::shared_ptr<BedThumbnailStore> m_thumbnail_store;
+    std::shared_ptr<App::SharedThumbnailImageGenerator> m_shared_thumbnail_image_generator;
+    std::shared_ptr<ThumbnailStore> m_thumbnail_store;
+    std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;
 
     std::unordered_set<IRenderModuleChangedListener*> m_render_module_changed_listeners;
 

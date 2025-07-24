@@ -4,6 +4,7 @@
 
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
+#include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Domain/Types.hpp"
@@ -71,8 +72,9 @@ struct SceneInteractorFixture
     Domain::Workbench workbench;
 
     App::Platform::StdMainThreadDispatcher dispatcher;
-    ProjectInteractor project_interactor{workbench, dispatcher};
-    Scene::SceneInteractor& scene_interactor{project_interactor.scene_interactor()};
+    Biz::ThumbnailImageProvider thumbnail_image_provider;
+    ProjectInteractor project_interactor{ workbench, dispatcher, thumbnail_image_provider };
+    Scene::SceneInteractor& scene_interactor{ project_interactor.scene_interactor() };
     ScopedThreadDispatcher thread_dispatcher{dispatcher};
 
     fs::path data_dir{Tests::get_datadir()};

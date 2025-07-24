@@ -10,7 +10,6 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
 
-#include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/ProjectLoader.hpp"
 
 namespace Slic3r::Biz {
@@ -34,9 +33,9 @@ void ProjectInteractor::load_project(const std::string& file_path)
     });
 }
 
-void ProjectInteractor::save_project(const std::string& file_path)
+void ProjectInteractor::save_project(const std::string& file_path, const Store3mfParam& params)
 {
-    store_3mf(file_path, this->selected_project());
+    store_3mf(file_path, this->selected_project(), params);
 }
 
 void ProjectInteractor::initialize_new_project_before_inserting(Domain::Project& p)

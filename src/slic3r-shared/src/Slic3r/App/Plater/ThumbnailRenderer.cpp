@@ -9,8 +9,8 @@
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 
 #include "Slic3r/Assert.hpp"
@@ -21,8 +21,10 @@ namespace Slic3r::App::Plater {
 
 Render::Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererParams& params)
 {
-    if (params.sizes.empty()) PANIC("No thumbnail sizes specified");
-    if (params.scene.root().children().empty()) PANIC("Empty scene");
+    if (params.sizes.empty())
+        PANIC("No thumbnail sizes specified");
+    if (params.scene.root().children().empty())
+        PANIC("Empty scene");
 
     Render::Images ret;
     ret.reserve(params.sizes.size());
@@ -36,7 +38,7 @@ Render::Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererPar
     //
     Scene::Camera& camera = scene->camera();
     Render::Rect viewport = camera.viewport();
-    double camera_zoom = camera.zoom();
+    double camera_zoom    = camera.zoom();
 
     for (const auto& size : params.sizes) {
         if (size.width * size.height > 0) {
@@ -48,11 +50,11 @@ Render::Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererPar
 
             // create target framebuffer
             Render::FramebufferCreationData fb_data;
-            fb_data.width = size_t(size.width);
-            fb_data.height = size_t(size.height);
+            fb_data.width       = size_t(size.width);
+            fb_data.height      = size_t(size.height);
             fb_data.num_samples = 4;
             fb_data.color_attachments.resize(1);
-            fb_data.color_attachments[0].format = params.pixel_format;
+            fb_data.color_attachments[0].format     = params.pixel_format;
             fb_data.color_attachments[0].mag_filter = Render::TextureMagFilter::Linear;
             fb_data.color_attachments[0].min_filter = Render::TextureMinFilter::Linear;
             Render::Framebuffer* fb = m_device.context().framebuffer_manager().create(fb_data);
@@ -72,30 +74,47 @@ Render::Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererPar
             if (fb_data.num_samples > 1) {
                 // resolve framebuffer if multisampling is enabled
                 Render::FramebufferCreationData resolve_fb_data;
-                resolve_fb_data.width = size_t(size.width);
+                resolve_fb_data.width  = size_t(size.width);
                 resolve_fb_data.height = size_t(size.height);
                 resolve_fb_data.color_attachments.resize(1);
-                resolve_fb_data.color_attachments[0].format = params.pixel_format;
+                resolve_fb_data.color_attachments[0].format     = params.pixel_format;
                 resolve_fb_data.color_attachments[0].mag_filter = Render::TextureMagFilter::Linear;
                 resolve_fb_data.color_attachments[0].min_filter = Render::TextureMinFilter::Linear;
-                Render::Framebuffer* resolve_fb = m_device.context().framebuffer_manager().create(resolve_fb_data);
+                Render::Framebuffer* resolve_fb = m_device.context().framebuffer_manager().create(
+                    resolve_fb_data
+                );
 
-                cmd_buffer->blit_framebuffer(*fb, *resolve_fb, 0, 0, size.width, size.height,
-                    Render::BlitFramebufferMask::ColorBufferBit, Render::BlitFramebufferFilter::Linear);
+                cmd_buffer->blit_framebuffer(
+                    *fb,
+                    *resolve_fb,
+                    0,
+                    0,
+                    size.width,
+                    size.height,
+                    Render::BlitFramebufferMask::ColorBufferBit,
+                    Render::BlitFramebufferFilter::Linear
+                );
                 // extract image from framebuffer
-                cmd_buffer->read_pixels(*resolve_fb, 0, 0, size.width, size.height, params.pixel_format, image.data());
+                cmd_buffer->read_pixels(
+                    *resolve_fb,
+                    0,
+                    0,
+                    size.width,
+                    size.height,
+                    params.pixel_format,
+                    image.data()
+                );
                 m_device.context().framebuffer_manager().destroy(resolve_fb);
-            }
-            else {
+            } else {
                 // extract image from framebuffer
-                cmd_buffer->read_pixels(*fb, 0, 0, size.width, size.height, params.pixel_format, image.data());
+                cmd_buffer
+                    ->read_pixels(*fb, 0, 0, size.width, size.height, params.pixel_format, image.data());
             }
             image.flip_vertical();
 
             cmd_buffer->unbind_framebuffer(*fb);
             m_device.context().framebuffer_manager().destroy(fb);
-        }
-        else
+        } else
             PANIC("Found invalid thumbnail size");
     }
 
@@ -108,61 +127,83 @@ Render::Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererPar
     return ret;
 }
 
-Render::Images ThumbnailRenderer::generate_bed_thumbnails(const ThumbnailRendererParams& params,
-    const Domain::BedRef& bed_ref, const Domain::BedInstance& bed_instance, Scene::CameraProjectionType camera_type)
+Render::Images ThumbnailRenderer::generate_bed_thumbnails(
+    const ThumbnailRendererParams& params,
+    const Domain::Project& project,
+    Domain::SelectionId bed_instance_id,
+    Scene::CameraProjectionType camera_type
+)
 {
+    const Domain::BedInstance* bed_instance = project.find_bed_instance_by_id(bed_instance_id);
+    if (bed_instance == nullptr) {
+        SPDLOG_ERROR("Invalid bed instance id {}. Skipping thumbnail generation.", bed_instance_id);
+        return Render::Images();
+    }
+
     Scene::Scene& scene = *const_cast<Scene::Scene*>(&params.scene);
-    ScopedBedThumbnailSceneCustomizer customizer(scene, bed_ref, bed_instance, camera_type);
+    ScopedBedThumbnailSceneCustomizer customizer(scene, project, bed_instance_id, camera_type);
 
     // aabb for auto zoom
     Eigen::AlignedBox3d world_aabb;
     Scene::visit(scene.root(), [&](const Scene::Node& n) {
         if (n.has_raycast_component())
-            world_aabb.extend(n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>());
+            world_aabb.extend(
+                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+            );
     });
 
     ThumbnailRendererParams mod_params = params;
-    mod_params.zoom_aabb = world_aabb;
+    mod_params.zoom_aabb               = world_aabb;
 
     return generate_thumbnails(mod_params);
 }
 
-Render::Images ThumbnailRenderer::generate_object_thumbnails(const Domain::ModelObject& object, const Render::Sizes& sizes,
-    Scene::CameraProjectionType camera_type, std::optional<ColorRGBA> color)
+Render::Images ThumbnailRenderer::generate_object_thumbnails(
+    const Domain::ModelObject& object,
+    const Render::Sizes& sizes,
+    Scene::CameraProjectionType camera_type,
+    std::optional<ColorRGBA> color
+)
 {
     Render::Images ret;
 
-    auto it = std::find_if(object.volumes.begin(), object.volumes.end(), [](const Domain::ModelVolume* vol) {
+    auto it = std::find_if(
+        object.volumes.begin(),
+        object.volumes.end(),
+        [](const Domain::ModelVolume* vol) {
         return vol->type() == Domain::ModelVolumeType::MODEL_PART;
-    });
-    
+    }
+    );
+
     if (it == object.volumes.end()) {
         SPDLOG_ERROR("Object {} has no model part volumes", object.name);
         return ret;
     }
-    
+
     const Domain::ModelVolume* vol = *it;
 
     // setup scene for thumbnail generation
     Scene::Scene scene;
     Scene::NodeBuilder builder(scene);
-    
+
     // add volume
     Scene::TriangleMesh mesh(vol->mesh_ptr());
-    std::unique_ptr<Render::Geometry> geom = Render::geometry_from_triangle_mesh(m_device, mesh.triangles());
+    std::unique_ptr<Render::Geometry> geom = Render::geometry_from_triangle_mesh(
+        m_device,
+        mesh.triangles()
+    );
     ColorRGBA clr = color.has_value() ? *color : ColorRGBA(1.0f, 0.5f, 0.0f, 1.0f);
     auto material = Render::Material{}
-        .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-        .set_uniform("uniform_color", clr)
-        .set_transparent(clr.is_transparent());
-    builder
-        .transform([vol](auto& xform) { xform = vol->get_matrix(); })
+                        .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
+                        .set_uniform("uniform_color", clr)
+                        .set_transparent(clr.is_transparent());
+    builder.transform([vol](auto& xform) { xform = vol->get_matrix(); })
         .set_mesh(geom.get(), material, 0)
         .set_aabb(mesh.aabb_mesh())
-        .set_shadows(Render::Shadows{ true, true })
+        .set_shadows(Render::Shadows{true, true})
         .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
     scene.add_child(builder.build().release());
-    
+
     // setup shading
     scene.set_background_enabled(false);
     scene.set_pbr_enabled(true);
@@ -171,7 +212,9 @@ Render::Images ThumbnailRenderer::generate_object_thumbnails(const Domain::Model
     Eigen::AlignedBox3d world_aabb;
     Scene::visit(scene.root(), [&](const Scene::Node& n) {
         if (n.has_raycast_component())
-            world_aabb.extend(n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>());
+            world_aabb.extend(
+                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+            );
     });
 
     Scene::Camera& camera = scene.camera();
@@ -186,18 +229,21 @@ Render::Images ThumbnailRenderer::generate_object_thumbnails(const Domain::Model
 
     // setup thumbnail generation parameters
     ThumbnailRendererParams params{
-        .scene = scene,
-        .zoom_aabb = world_aabb,
+        .scene        = scene,
+        .zoom_aabb    = world_aabb,
         .pixel_format = Render::PixelFormat::RGBA8,
-        .sizes = sizes
+        .sizes        = sizes
     };
 
     // generate thumbnails
     return generate_thumbnails(params);
 }
 
-Render::Images ThumbnailRenderer::generate_3mf_thumbnails(const ThumbnailRendererParams& params,
-    const Domain::Project& project, Scene::CameraProjectionType camera_type)
+Render::Images ThumbnailRenderer::generate_3mf_thumbnails(
+    const ThumbnailRendererParams& params,
+    const Domain::Project& project,
+    Scene::CameraProjectionType camera_type
+)
 {
     Scene::Scene& scene = *const_cast<Scene::Scene*>(&params.scene);
     Scoped3mfThumbnailSceneCustomizer customizer(scene, project, camera_type);
@@ -206,44 +252,65 @@ Render::Images ThumbnailRenderer::generate_3mf_thumbnails(const ThumbnailRendere
     Eigen::AlignedBox3d world_aabb;
     Scene::visit(scene.root(), [&](const Scene::Node& n) {
         const auto* tag = n.tag_of_type<SceneNodeTag>();
-        if (tag != nullptr && tag->volume_type == Domain::ModelVolumeType::MODEL_PART && n.has_raycast_component())
-            world_aabb.extend(n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>());
+        if (tag != nullptr
+            && tag->volume_type == Domain::ModelVolumeType::MODEL_PART
+            && n.has_raycast_component())
+            world_aabb.extend(
+                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+            );
     });
 
     ThumbnailRendererParams mod_params = params;
-    mod_params.zoom_aabb = world_aabb;
+    mod_params.zoom_aabb               = world_aabb;
 
     return generate_thumbnails(mod_params);
 }
 
-Render::Images ThumbnailRenderer::generate_gcode_thumbnails(const ThumbnailRendererParams& params,
-    const Domain::Project& project, const Domain::BedInstance& bed_inst, const Domain::BedRef& bed_ref, Scene::CameraProjectionType camera_type)
+Render::Images ThumbnailRenderer::generate_gcode_thumbnails(
+    const ThumbnailRendererParams& params,
+    const Domain::Project& project,
+    Domain::SelectionId bed_instance_id,
+    Scene::CameraProjectionType camera_type
+)
 {
+    const Domain::BedInstance* bed_instance = project.find_bed_instance_by_id(bed_instance_id);
+    if (bed_instance == nullptr) {
+        SPDLOG_ERROR("Invalid bed instance id {}. Skipping thumbnail generation.", bed_instance_id);
+        return Render::Images();
+    }
+
     bool printable = false;
-    for (const auto& model_instance : bed_inst.model_instances) {
+    for (const auto& model_instance : bed_instance->model_instances) {
         if (model_instance->printable) {
             printable = true;
             break;
         }
     }
     if (!printable) {
-        SPDLOG_ERROR("No printable model instances found for bed instance {}. Skipping thumbnail generation.", bed_inst.id().id);
+        SPDLOG_ERROR(
+            "No printable model instances found for bed instance {}. Skipping thumbnail generation.",
+            bed_instance_id
+        );
         return Render::Images();
     }
 
     Scene::Scene& scene = *const_cast<Scene::Scene*>(&params.scene);
-    ScopedGCodeThumbnailSceneCustomizer customizer(scene, project, bed_inst, bed_ref, camera_type);
+    ScopedGCodeThumbnailSceneCustomizer customizer(scene, project, bed_instance_id, camera_type);
 
     // aabb for auto zoom
     Eigen::AlignedBox3d world_aabb;
     Scene::visit(scene.root(), [&](const Scene::Node& n) {
         const auto* tag = n.tag_of_type<SceneNodeTag>();
-        if (tag != nullptr && tag->volume_type == Domain::ModelVolumeType::MODEL_PART && n.has_raycast_component())
-            world_aabb.extend(n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>());
+        if (tag != nullptr
+            && tag->volume_type == Domain::ModelVolumeType::MODEL_PART
+            && n.has_raycast_component())
+            world_aabb.extend(
+                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+            );
     });
 
     ThumbnailRendererParams mod_params = params;
-    mod_params.zoom_aabb = world_aabb;
+    mod_params.zoom_aabb               = world_aabb;
 
     return generate_thumbnails(mod_params);
 }

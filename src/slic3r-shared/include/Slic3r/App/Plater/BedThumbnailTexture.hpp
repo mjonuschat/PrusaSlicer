@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Slic3r/App/Render/Texture.hpp"
-#include "Slic3r/Domain/BedRef.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::App::Plater {
@@ -9,7 +8,7 @@ namespace Slic3r::App::Plater {
 struct BedThumbnailTexture
 {
     Domain::SelectionId project_id;
-    Domain::BedRef bed_ref;
+    Domain::SelectionId bed_instance_id;
     Render::TexturePtr thumbnail;
 };
 

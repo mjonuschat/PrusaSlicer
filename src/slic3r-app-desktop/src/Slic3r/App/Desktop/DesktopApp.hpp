@@ -11,6 +11,7 @@
 #include <Slic3r/App/Preview/PreviewRenderModule.hpp>
 #include <Slic3r/App/Init.hpp>
 
+#include <Slic3r/Biz/ThumbnailImageProvider.hpp>
 #include <Slic3r/Biz/ProjectInteractor.hpp>
 #include "Slic3r/App/Navigator.hpp"
 
@@ -42,6 +43,7 @@ private:
     void init_translations();
 
     std::unique_ptr<wxGLContext> m_gl_context; // do NOT change order of this attribute
+    std::unique_ptr<Biz::ThumbnailImageProvider> m_thumbnail_image_provider;
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;
 
     MainFrame* m_main_frame{nullptr};

@@ -860,10 +860,8 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
         ctx.bed_instance_icons.begin(),
         ctx.bed_instance_icons.end(),
         [&](const Plater::BedThumbnailTexture& tt) {
-            return tt.bed_ref.config_container_id == config_container_id
-                && tt.bed_ref.instance_id == bed_id;
-        }
-    );
+            return tt.bed_instance_id == bed_id;
+    });
     if (it != ctx.bed_instance_icons.end())
         tex_id = (ImTextureID) (intptr_t) it->thumbnail.get();
 
@@ -983,8 +981,8 @@ bool ObjectList::render_connectors_node(const Domain::ModelObject* object, size_
     if (!object->is_cut() || object->volumes.size() == 1)
         return false;
 
-    auto& ctx          = selected_project_context();
-    size_t object_id   = object->id().id;
+    auto& ctx                 = selected_project_context();
+    size_t object_id          = object->id().id;
     size_t instance_id = object->instances[0]->id().id;
     const std::string name_id = "##connectors_id" + std::to_string(bed_id) + std::to_string(object_id);
 

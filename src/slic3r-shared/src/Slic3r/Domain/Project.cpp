@@ -15,6 +15,24 @@ ConfigContainer* Project::find_config_container(size_t id)
     return find_by_id<ConfigContainer>(m_config_containers, id);
 }
 
+const ConfigContainer* Project::find_config_container_by_bed_instance_id(size_t id) const
+{
+    for (const auto& cc : m_config_containers) {
+        if (auto* bed_inst = find_by_id(cc->bed_instances(), id))
+            return cc.get();
+    }
+    return nullptr;
+}
+
+ConfigContainer* Project::find_config_container_by_bed_instance_id(size_t id)
+{
+    for (auto& cc : m_config_containers) {
+        if (auto* bed_inst = find_by_id(cc->bed_instances(), id))
+            return cc.get();
+    }
+    return nullptr;
+}
+
 const Domain::ModelObject* Project::find_object_by_id(size_t id) const
 {
     return find_by_id<Domain::ModelObject>(m_model->objects, id);

@@ -40,10 +40,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/ThumbnailRenderer.hpp
         src/Slic3r/App/Plater/ThumbnailRenderer.cpp
         include/Slic3r/App/Plater/IBedVisuallyChangedListener.hpp
-        include/Slic3r/App/Plater/BedThumbnailTextureGenerator.hpp
-        src/Slic3r/App/Plater/BedThumbnailTextureGenerator.cpp
-        include/Slic3r/App/Plater/BedThumbnailUpdater.hpp
-        src/Slic3r/App/Plater/BedThumbnailUpdater.cpp
         include/Slic3r/App/Plater/BedThumbnailTextureRequest.hpp
         include/Slic3r/App/Plater/ScopedBedThumbnailSceneCustomizer.hpp
         src/Slic3r/App/Plater/ScopedBedThumbnailSceneCustomizer.cpp
@@ -52,6 +48,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/ScopedGCodeThumbnailSceneCustomizer.hpp
         src/Slic3r/App/Plater/ScopedGCodeThumbnailSceneCustomizer.cpp
         include/Slic3r/App/Plater/BedThumbnailTexture.hpp
+        include/Slic3r/App/Plater/ThumbnailImageGenerator.hpp
+        src/Slic3r/App/Plater/ThumbnailImageGenerator.cpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -89,8 +87,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/ExportPathSelect.hpp
         src/Slic3r/App/ExportPathSelect.cpp
         include/Slic3r/App/IDialogManager.hpp
-        include/Slic3r/App/BedThumbnailStore.hpp
-        src/Slic3r/App/BedThumbnailStore.cpp
         include/Slic3r/App/MaterialState.hpp
         include/Slic3r/App/PrintSettingsDialog.hpp
         src/Slic3r/App/PrintSettingsDialog.cpp
@@ -112,6 +108,11 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PhysicalPrinter.cpp
         include/Slic3r/App/PrinterAddDialog.hpp
         src/Slic3r/App/PrinterAddDialog.cpp
+        include/Slic3r/App/SharedThumbnailImageGenerator.hpp
+        include/Slic3r/App/ThumbnailStore.hpp
+        src/Slic3r/App/ThumbnailStore.cpp
+        include/Slic3r/App/ThumbnailStoreUpdater.hpp
+        src/Slic3r/App/ThumbnailStoreUpdater.cpp
         
         include/Slic3r/App/Browser/BrowserLogicCommand.hpp
         include/Slic3r/App/Browser/AbstractBrowserLogicCommandHandler.hpp
@@ -370,6 +371,12 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/DataObserver.hpp
         include/Slic3r/Biz/BatchObservableList.hpp
         include/Slic3r/Biz/ObservableListWithSelection.hpp
+        include/Slic3r/Biz/ThumbnailImageProvider.hpp
+        src/Slic3r/Biz/ThumbnailImageProvider.cpp
+        include/Slic3r/Biz/IThumbnailImageGenerator.hpp
+        include/Slic3r/Biz/ThumbnailImageRequest.hpp
+        include/Slic3r/Biz/ThumbnailImageResult.hpp
+        include/Slic3r/Biz/ThumbnailType.hpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp

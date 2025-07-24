@@ -12,43 +12,47 @@
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
 
 namespace Slic3r {
-    namespace Domain {
-        class Model;
-        class Project;
-    }
-    struct ThumbnailData;
+namespace Domain {
+class Model;
+class Project;
+} // namespace Domain
 
-    // The following function may throw Loaded3MFException.
-    Loaded3MF load_3mf(const std::string& filepath_3mf);
+namespace App::Render {
+class Image;
+} // namespace App::Render
 
-    struct Store3mfParam{
-        // Publish option to hide imported local file path
-        bool fullpath_sources = true;
+// The following function may throw Loaded3MFException.
+Loaded3MF load_3mf(const std::string& filepath_3mf);
 
-        // Preview for stored geometry 
-        // Used as file icon of the 3mf file by OPC
-        // NOTE: In future it will be generated inside of store function 
-        const ThumbnailData *thumbnail_data = nullptr;
+struct Store3mfParam
+{
+    // Publish option to hide imported local file path
+    bool fullpath_sources = true;
 
-        // Flag to force using of the zip64 compression function
-        bool zip64 = true;
+    // Preview for stored geometry
+    // Used as file icon of the 3mf file by OPC
+    // NOTE: In future it will be generated inside of store function
+    const App::Render::Image* thumbnail{nullptr};
 
-        // Use https://github.com/3MFConsortium/spec_production/releases/tag/1.2.0
-        // to store huge model geometries into separated files (faster store/load)
-        bool use_production_extension = false;
+    // Flag to force using of the zip64 compression function
+    bool zip64 = true;
 
-        // stored uncompressed 3mf - better versioning of uncompressed data
-        // "0 - The file is stored (no compression)" in accordance with the OPC specification
-        // ("Annex C, (normative) ZIP Appnote.txt Clarifications
-        bool use_uncompressed_version = false; // Not implemented yet
+    // Use https://github.com/3MFConsortium/spec_production/releases/tag/1.2.0
+    // to store huge model geometries into separated files (faster store/load)
+    bool use_production_extension = false;
 
-        CT_Metadata_Model metadata;
-    };
+    // stored uncompressed 3mf - better versioning of uncompressed data
+    // "0 - The file is stored (no compression)" in accordance with the OPC specification
+    // ("Annex C, (normative) ZIP Appnote.txt Clarifications
+    bool use_uncompressed_version = false; // Not implemented yet
 
+    CT_Metadata_Model metadata;
+};
 
-    void store_3mf(
-        const std::string &filepath,
-        const Domain::Project& project,
-        const Store3mfParam &param = Store3mfParam{});
+void store_3mf(
+    const std::string& filepath,
+    const Domain::Project& project,
+    const Store3mfParam& param = Store3mfParam{}
+);
 
 } // namespace Slic3r

@@ -35,6 +35,8 @@ public:
 
     [[nodiscard]] const ConfigContainer* find_config_container(size_t id) const;
     [[nodiscard]] ConfigContainer* find_config_container(size_t id);
+    [[nodiscard]] const ConfigContainer* find_config_container_by_bed_instance_id(size_t id) const;
+    [[nodiscard]] ConfigContainer* find_config_container_by_bed_instance_id(size_t id);
 
     [[nodiscard]] const Domain::ModelObject* find_object_by_id(size_t id) const;
     [[nodiscard]] const Domain::ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id) const;

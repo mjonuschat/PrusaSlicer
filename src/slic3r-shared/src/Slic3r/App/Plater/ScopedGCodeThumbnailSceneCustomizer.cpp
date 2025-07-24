@@ -11,42 +11,53 @@
 
 namespace Slic3r::App::Plater {
 
-ScopedGCodeThumbnailSceneCustomizer::ScopedGCodeThumbnailSceneCustomizer(Scene::Scene& scene, const Domain::Project& project,
-    const Domain::BedInstance& bed_inst, const Domain::BedRef& bed_ref, Scene::CameraProjectionType camera_type)
-    : m_scene(scene)
+ScopedGCodeThumbnailSceneCustomizer::ScopedGCodeThumbnailSceneCustomizer(
+    Scene::Scene& scene,
+    const Domain::Project& project,
+    Domain::SelectionId bed_instance_id,
+    Scene::CameraProjectionType camera_type
+) :
+    m_scene(scene)
 {
+    const auto* cc = project.find_config_container_by_bed_instance_id(bed_instance_id);
+    DEBUG_ASSERT(cc != nullptr);
+    const Domain::BedInstance* bed_instance = project.find_bed_instance_by_id(bed_instance_id);
+    DEBUG_ASSERT(bed_instance != nullptr);
+    Domain::BedRef bed_ref{cc->id().id, bed_instance_id};
+
     //
     // store values that are going to be changed
     //
 
     // shading
     m_cache.shadows_enabled = m_scene.shadows_enabled();
-    m_cache.ao_enabled = m_scene.ao_enabled();
-    m_cache.pbr_enabled = m_scene.pbr_enabled();
+    m_cache.ao_enabled      = m_scene.ao_enabled();
+    m_cache.pbr_enabled     = m_scene.pbr_enabled();
 
     // camera
-    Scene::Camera& camera = m_scene.camera();
-    m_cache.camera_model = camera.model();
-    m_cache.camera_zoom = camera.zoom();
+    Scene::Camera& camera                 = m_scene.camera();
+    m_cache.camera_model                  = camera.model();
+    m_cache.camera_zoom                   = camera.zoom();
     m_cache.switch_camera_projection_type = camera_type != camera.cam_projection().type();
 
     // camera trackball
     Scene::CameraTrackballController& trackball = m_scene.camera_trackball();
-    m_cache.trackball_target = trackball.target();
-    m_cache.trackball_pivot = trackball.pivot();
-    m_cache.trackball_azimuth = trackball.azimuth();
-    m_cache.trackball_zenith = trackball.zenith();
-    m_cache.trackball_distance = trackball.distance_to_target();
-    m_cache.trackball_view_rotation = trackball.view_rotation();
+    m_cache.trackball_target                    = trackball.target();
+    m_cache.trackball_pivot                     = trackball.pivot();
+    m_cache.trackball_azimuth                   = trackball.azimuth();
+    m_cache.trackball_zenith                    = trackball.zenith();
+    m_cache.trackball_distance                  = trackball.distance_to_target();
+    m_cache.trackball_view_rotation             = trackball.view_rotation();
 
     // scene
-    m_cache.shadows_aabb = m_scene.shadows_aabb();
+    m_cache.shadows_aabb       = m_scene.shadows_aabb();
     m_cache.background_enabled = m_scene.background_enabled();
 
     // hide gizmos
     Scene::visit(m_scene.root(), [&](Scene::Node& n) {
-        if (n.has_render_component() &&
-            n.render_component()->layer_index() == int(PlaterSceneLayer::GizmoHandles)) {
+        if (n.has_render_component()
+            && n.render_component()->layer_index() == int(PlaterSceneLayer::GizmoHandles))
+        {
             n.set_enabled(false);
             m_cache.hidden_nodes.push_back(&n);
         }
@@ -55,8 +66,11 @@ ScopedGCodeThumbnailSceneCustomizer::ScopedGCodeThumbnailSceneCustomizer(Scene::
     // hide all non selected bed instances
     Scene::visit(m_scene.root(), [&](Scene::Node& n) {
         Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
-        if (tag != nullptr && tag->type == Scene::BedElementType::Undefined &&
-           (tag->config_container_id != bed_ref.config_container_id || tag->instance_id != bed_ref.instance_id)) {
+        if (tag != nullptr
+            && tag->type == Scene::BedElementType::Undefined
+            && (tag->config_container_id != bed_ref.config_container_id
+                || tag->instance_id != bed_ref.instance_id))
+        {
             n.set_enabled(false);
             m_cache.hidden_nodes.push_back(&n);
         }
@@ -80,20 +94,26 @@ ScopedGCodeThumbnailSceneCustomizer::ScopedGCodeThumbnailSceneCustomizer(Scene::
     Scene::visit(m_scene.root(), [&](Scene::Node& n) {
         const auto* tag = n.tag_of_type<SceneNodeTag>();
         if (tag != nullptr) {
-            auto it = std::find_if(bed_inst.model_instances.begin(), bed_inst.model_instances.end(),
-                [&](Domain::ModelInstance* inst) { return inst->id().id == tag->instance_id; });
-            if (it == bed_inst.model_instances.end()) {
+            auto it = std::find_if(
+                bed_instance->model_instances.begin(),
+                bed_instance->model_instances.end(),
+                [&](Domain::ModelInstance* inst) { return inst->id().id == tag->instance_id; }
+            );
+            if (it == bed_instance->model_instances.end()) {
                 n.set_enabled(false);
                 m_cache.hidden_nodes.push_back(&n);
             }
         }
-     });
+    });
 
     // hide non-printable volumes
     Scene::visit(m_scene.root(), [&](Scene::Node& n) {
         const auto* tag = n.tag_of_type<SceneNodeTag>();
         if (tag != nullptr) {
-            const Domain::ModelInstance* model_inst = project.find_instance_by_id(tag->object_id, tag->instance_id);
+            const Domain::ModelInstance* model_inst = project.find_instance_by_id(
+                tag->object_id,
+                tag->instance_id
+            );
             if (!model_inst->printable) {
                 n.set_enabled(false);
                 m_cache.hidden_nodes.push_back(&n);
@@ -104,7 +124,10 @@ ScopedGCodeThumbnailSceneCustomizer::ScopedGCodeThumbnailSceneCustomizer(Scene::
     // hide modifier volumes
     Scene::visit(m_scene.root(), [&](Scene::Node& n) {
         const auto* tag = n.tag_of_type<SceneNodeTag>();
-        if (tag != nullptr && tag->volume_id > 0 && tag->volume_type != Domain::ModelVolumeType::MODEL_PART) {
+        if (tag != nullptr
+            && tag->volume_id > 0
+            && tag->volume_type != Domain::ModelVolumeType::MODEL_PART)
+        {
             n.set_enabled(false);
             m_cache.hidden_nodes.push_back(&n);
         }
@@ -132,8 +155,12 @@ ScopedGCodeThumbnailSceneCustomizer::ScopedGCodeThumbnailSceneCustomizer(Scene::
     Eigen::AlignedBox3d world_aabb;
     Scene::visit(m_scene.root(), [&](const Scene::Node& n) {
         const auto* tag = n.tag_of_type<SceneNodeTag>();
-        if (tag != nullptr && tag->volume_type == Domain::ModelVolumeType::MODEL_PART && n.has_raycast_component())
-            world_aabb.extend(n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>());
+        if (tag != nullptr
+            && tag->volume_type == Domain::ModelVolumeType::MODEL_PART
+            && n.has_raycast_component())
+            world_aabb.extend(
+                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+            );
     });
     m_scene.set_shadows_aabb(world_aabb);
 

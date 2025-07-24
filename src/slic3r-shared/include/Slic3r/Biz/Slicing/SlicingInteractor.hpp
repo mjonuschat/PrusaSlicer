@@ -11,6 +11,7 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/Domain/ConfigContainer.hpp>
 #include <Slic3r/Biz/Platform/WithListeners.hpp>
+#include <Slic3r/Biz/ThumbnailImageProvider.hpp>
 
 #include "BackgroundProcess.hpp"
 
@@ -21,7 +22,8 @@ struct Object;
 namespace Slic3r::Biz::Slicing {
 struct SLAResult;
 
-class ISlicingListener {
+class ISlicingListener
+{
 public:
     virtual ~ISlicingListener() = default;
 };
@@ -29,17 +31,20 @@ public:
 class IFDMResultListener : public ISlicingListener
 {
 public:
-    virtual void on_fdm_result_changed(
-        FDMResult&&, const SlicingId
-    ) = 0;
+    virtual void on_fdm_result_changed(FDMResult&&, const SlicingId) = 0;
 };
 
-class ISLAResultListener : public ISlicingListener { public: 
+class ISLAResultListener : public ISlicingListener
+{
+public:
     virtual void on_sla_result_changed(const SlicingId&, SLAResult&&) = 0;
 };
-class ISLAObjectListener : public ISlicingListener { public: 
+
+class ISLAObjectListener : public ISlicingListener
+{
+public:
     virtual void on_sla_object_changed(const SlicingId&, Sla::Object&&) = 0;
-    virtual void on_remove_bed(const SlicingId&) = 0;
+    virtual void on_remove_bed(const SlicingId&)                        = 0;
 };
 
 struct IStatusListener : ISlicingListener
@@ -52,7 +57,8 @@ struct IWipeTowerGeometryListener : ISlicingListener
     virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry, const SlicingId) = 0;
 };
 
-struct UpdateRequest {
+struct UpdateRequest
+{
     std::reference_wrapper<Domain::Model> model;
     std::reference_wrapper<const Domain::ConfigPack> config;
     std::reference_wrapper<const Domain::BedInstance> bed;
@@ -61,16 +67,14 @@ struct UpdateRequest {
 class SlicingInteractor :
     public ISelectedProjectChangedListener,
     public IProcessCallbacks,
-    public WithListeners<
-        IStatusListener,
-        IWipeTowerGeometryListener>,
-    public WithListener<
-        IFDMResultListener,
-        ISLAResultListener, 
-        ISLAObjectListener>
+    public WithListeners<IStatusListener, IWipeTowerGeometryListener>,
+    public WithListener<IFDMResultListener, ISLAResultListener, ISLAObjectListener>
 {
 public:
-    SlicingInteractor(Platform::IMainThreadDispatcher& dispatcher);
+    SlicingInteractor(
+        Platform::IMainThreadDispatcher& dispatcher,
+        ThumbnailImageProvider& thumbnail_image_provider
+    );
     ~SlicingInteractor();
 
     /* WARNING!
@@ -78,7 +82,11 @@ public:
      * process will be signaled to stop and the update scheduled after the stop happens. This means
      * that model and config references must be valid as long as the process exists! After the process
      * is removed (using remove_process) the validity of the references is no longer required.*/
-    void update_process(Domain::Model& model, const Domain::ConfigPack& config, const Domain::BedInstance& bed);
+    void update_process(
+        Domain::Model& model,
+        const Domain::ConfigPack& config,
+        const Domain::BedInstance& bed
+    );
 
     /* Blocks the UI thread if the process is running! */
     void remove_bed(const Domain::SelectionId bed_instance_id);
@@ -89,13 +97,11 @@ public:
 
     void on_selected_project_changed(size_t index) override;
 
-    void on_fdm_result(FDMResult &&, SlicingId) override;
+    void on_fdm_result(FDMResult&&, SlicingId) override;
     void on_sla_result(const SlicingId&, SLAResult&&) override;
     void on_sla_object(const SlicingId&, Sla::Object&&) override;
     void on_status(const Status, SlicingId) override;
-    void on_wipe_tower_geometry(
-        Print::WipeTowerGeometry&& wipe_tower_geometry, const SlicingId id
-    ) override;
+    void on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_tower_geometry, const SlicingId id) override;
     Status get_status(const SlicingId id) const override;
 
 private:
@@ -121,7 +127,10 @@ private:
     std::deque<SlicingId> m_slicing_queue;
     std::map<SlicingId, UpdateRequest> m_update_requests;
     Domain::SelectionId m_current_project_id{Domain::INVALID_ID};
-    Platform::IMainThreadDispatcher &m_dispatcher;
+    Platform::IMainThreadDispatcher& m_dispatcher;
+
+    ThumbnailImageProvider& m_thumbnail_image_provider;
+    std::future<ThumbnailImageResults> m_thumbnail_results;
 
     // Keep the threads last to be destroyed first.
     std::map<SlicingId, BackgroundProcess> m_processes;

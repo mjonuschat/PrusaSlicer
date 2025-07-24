@@ -10,6 +10,8 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/IDialogManager.hpp>
 #include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/App/ThumbnailStore.hpp"
+#include "Slic3r/Biz/Format/3mf.hpp"
 
 #include <imgui/imgui_internal.h>
 
@@ -18,11 +20,14 @@ namespace Slic3r::App {
 using namespace Yoga;
 
 TopBar::TopBar(
-    Biz::ProjectInteractor* project_interactor, Platform::AbstractRenderModule* render_module
-)
-    : Window("top_bar")
-    , m_project_interactor(project_interactor)
-    , m_render_module(render_module)
+    Biz::ProjectInteractor* project_interactor,
+    Platform::AbstractRenderModule* render_module,
+    ThumbnailStore& thumbnail_store
+) :
+    Window("top_bar"),
+    m_project_interactor(project_interactor),
+    m_render_module(render_module),
+    m_thumbnail_store(thumbnail_store)
 {
     Paddings paddings = padding();
 
@@ -48,7 +53,7 @@ TopBar::TopBar(
     add_expander_btn(project_actions_wrapper);
 
     Rectangle* right_wrapper = emplace_back<Rectangle>();
-    m_search = right_wrapper->emplace_back<Rectangle>();
+    m_search                 = right_wrapper->emplace_back<Rectangle>();
     m_search->set_min_size({200.f, YGUndefined});
     m_search->set_rounding(0.f);
 
@@ -61,7 +66,8 @@ TopBar::TopBar(
              m_save_btn,
              m_show_ui_btn,
              m_new_btn,
-         }) {
+         })
+    {
         btn->set_background_color(IM_COL32_BLACK_TRANS);
         btn->set_tooltip_position(Position::Bottom);
     }
@@ -70,7 +76,8 @@ TopBar::TopBar(
              left_wrapper,
              right_wrapper,
              project_actions_wrapper,
-         }) {
+         })
+    {
         wrapper->set_fill(GImGui->Style.Colors[ImGuiCol_WindowBg]);
         wrapper->set_rounding(0.f);
         wrapper->set_gap(15.f);
@@ -84,10 +91,10 @@ void TopBar::add_load_project_btn(Item* parent)
     m_load_btn->callbacks().action = [this]() {
         IDialogManager::FileCallback callback =
             [this](bool success, const boost::filesystem::path& file_path) {
-                if (success) {
-                    m_project_interactor->load_project(file_path.string());
-                }
-            };
+            if (success) {
+                m_project_interactor->load_project(file_path.string());
+            }
+        };
 
         auto& dlg_manager = DialogManagerProvider::instance().get();
         dlg_manager
@@ -106,29 +113,48 @@ void TopBar::add_save_project_btn(Item* parent)
             "it will not be compatible with both old PrusaSlicer and the finalized 3.0.0.\n\n"
             "Do you really want to export it?",
             [this](bool answer) {
-                if (! answer)
-                    return;
-                const std::string& project_name = m_project_interactor->get_project_name(m_project_interactor->selected_project_id());
-                if (true || project_name.empty()) { // The 'true' is here for the development phase - effectively it always "Saves as".
-                    // Saving a new project - show file save dialog.
-                    IDialogManager::FileCallback callback = [this](bool success, const boost::filesystem::path& file_path) {
-                        if (success)
-                            m_project_interactor->save_project(file_path.string());
-                    };
-                    auto& dlg_manager = DialogManagerProvider::instance().get();            
-                    dlg_manager.show_file_dialog(FileDialogType::Save, _u8L("Save Project"), "", "", "*.3mf", callback);
-                } else {
-                    // Saving an existing project - just save.
-                    m_project_interactor->save_project(project_name);
-                }
+            if (!answer)
+                return;
+            Domain::SelectionId selected_project_id = m_project_interactor->selected_project_id();
+            const std::string& project_name         = m_project_interactor->get_project_name(
+                selected_project_id
+            );
+            Store3mfParam params{
+                .thumbnail = m_thumbnail_store.projects.selected().thumbnail_3mf.get()
+            };
+            if (true || project_name.empty())
+            { // The 'true' is here for the development phase - effectively it always "Saves as".
+                // Saving a new project - show file save dialog.
+                IDialogManager::FileCallback callback =
+                    [this, &params](bool success, const boost::filesystem::path& file_path) {
+                    if (success)
+                        m_project_interactor->save_project(file_path.string(), params);
+                };
+                auto& dlg_manager = DialogManagerProvider::instance().get();
+                dlg_manager.show_file_dialog(
+                    FileDialogType::Save,
+                    _u8L("Save Project"),
+                    "",
+                    "",
+                    "*.3mf",
+                    callback
+                );
+            } else {
+                // Saving an existing project - just save.
+                m_project_interactor->save_project(project_name, params);
             }
+        }
         );
     };
 }
 
 void TopBar::add_show_ui_btn(Item* parent)
 {
-    m_show_ui_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarShowUI, _u8L("Hide sidebars"));
+    m_show_ui_btn = parent->emplace_back<LayoutButton>(
+        "",
+        Render::Icon::TobBarShowUI,
+        _u8L("Hide sidebars")
+    );
     m_show_ui_btn->set_checkable(true);
 
     m_show_ui_btn->callbacks().action = [this]() {
@@ -146,7 +172,9 @@ void TopBar::add_new_project_btn(Item* parent)
 {
     m_new_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarPlus, "Add new project");
     m_new_btn->set_background_color(IM_COL32_BLACK_TRANS);
-    m_new_btn->callbacks().action = [this]() { m_project_interactor->new_project(); };
+    m_new_btn->callbacks().action = [this]() {
+        m_project_interactor->new_project();
+    };
 }
 
 void TopBar::add_expander_btn(Item* parent)

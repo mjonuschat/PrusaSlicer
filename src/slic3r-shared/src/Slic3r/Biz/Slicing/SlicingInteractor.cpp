@@ -2,6 +2,9 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Assert.hpp"
 
+// for debug only (to get ENABLE_DEBUG_EXPORT_TO_PNG)
+#include "Slic3r/App/Render/Image.hpp"
+
 #include "libslic3r/SLA/SLAResult.hpp"
 
 #include <fmt/core.h>
@@ -11,11 +14,16 @@ namespace Slic3r::Biz::Slicing {
 
 using Domain::ConfigPack;
 
-SlicingInteractor::SlicingInteractor(Platform::IMainThreadDispatcher& dispatcher)
-    : m_dispatcher(dispatcher)
+SlicingInteractor::SlicingInteractor(
+    Platform::IMainThreadDispatcher& dispatcher,
+    ThumbnailImageProvider& thumbnail_image_provider
+) :
+    m_dispatcher(dispatcher),
+    m_thumbnail_image_provider(thumbnail_image_provider)
 {}
 
-SlicingInteractor::~SlicingInteractor() {
+SlicingInteractor::~SlicingInteractor()
+{
     ASSERT(
         m_dispatcher.is_closed(),
         "There must be no queued events (not even in the future),"
@@ -28,23 +36,21 @@ void SlicingInteractor::create_process(
     const ConfigPack& config,
     const Domain::BedInstance& bed,
     const SlicingId id
-) {
+)
+{
     SPDLOG_INFO("{}: create process", fmt::streamed(id));
     update_status(id, Status::Modified);
     m_processes.emplace(
-        std::piecewise_construct, std::forward_as_tuple(id),
-        std::forward_as_tuple(
-            *this,
-            model,
-            ConfigPack{config},
-            bed,
-            id
-        )
+        std::piecewise_construct,
+        std::forward_as_tuple(id),
+        std::forward_as_tuple(*this, model, ConfigPack{config}, bed, id)
     );
 }
 
 void SlicingInteractor::update_process(
-    Domain::Model& model, const ConfigPack& config, const Domain::BedInstance& bed
+    Domain::Model& model,
+    const ConfigPack& config,
+    const Domain::BedInstance& bed
 )
 {
     const Domain::SelectionId bed_instance_id{bed.id().id};
@@ -61,7 +67,8 @@ void SlicingInteractor::update_process(
     create_process(model, config, bed, id);
 }
 
-void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id) {
+void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
+{
     const SlicingId id{get_process_id(bed_instance_id)};
 
     stop_slicing_bed(bed_instance_id);
@@ -72,26 +79,43 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id) {
     }
     process_slicing_queue();
 
-    invoke_listener<IFDMResultListener>([&id](auto* listener){
+    invoke_listener<IFDMResultListener>([&id](auto* listener) {
         listener->on_fdm_result_changed({}, id);
     });
     invoke_listener<ISLAResultListener>([&id](auto* listener) {
         listener->on_sla_result_changed(id, {});
     });
-    invoke_listener<ISLAObjectListener>([&id](auto* listener) { 
-        listener->on_remove_bed(id);
-    });
+    invoke_listener<ISLAObjectListener>([&id](auto* listener) { listener->on_remove_bed(id); });
 }
 
-void SlicingInteractor::slice_bed(const Domain::SelectionId bed_instance_id) {
+void SlicingInteractor::slice_bed(const Domain::SelectionId bed_instance_id)
+{
     const SlicingId id{get_process_id(bed_instance_id)};
     ASSERT(m_processes.contains(id));
     SPDLOG_INFO("{}: slicing request", fmt::streamed(id));
+
+    /* ====================== */
+    /* test thumbnail request */
+    /* ====================== */
+    {
+        ThumbnailImageRequests requests;
+        ThumbnailImageRequest& request = requests.emplace_back(ThumbnailImageRequest());
+        request.type                   = ThumbnailType::SlicingBed;
+        request.params.project_id      = m_current_project_id;
+        request.params.bed_instance_id = bed_instance_id;
+        request.params.pixel_format    = App::Render::PixelFormat::RGBA8;
+        request.params.sizes =
+            {{160, 120}, {16, 16}, {220, 124}, {200, 240}, {380, 285}, {313, 173}, {480, 240}};
+
+        m_thumbnail_results = m_thumbnail_image_provider.generate_thumbnails(requests);
+    }
+
     m_slicing_queue.push_back(id);
     process_slicing_queue();
 }
 
-void SlicingInteractor::stop_slicing_bed(const Domain::SelectionId bed_instance_id) {
+void SlicingInteractor::stop_slicing_bed(const Domain::SelectionId bed_instance_id)
+{
     const SlicingId id{get_process_id(bed_instance_id)};
     ASSERT(m_processes.contains(id));
 
@@ -104,7 +128,8 @@ void SlicingInteractor::stop_slicing_bed(const Domain::SelectionId bed_instance_
     m_processes.at(id).stop();
 }
 
-void SlicingInteractor::slice_all() {
+void SlicingInteractor::slice_all()
+{
     m_slicing_queue = {};
     for (const auto& pair : m_processes) {
         const SlicingId id{pair.first};
@@ -118,25 +143,28 @@ void SlicingInteractor::slice_all() {
     process_slicing_queue();
 }
 
-void SlicingInteractor::stop_all() {
+void SlicingInteractor::stop_all()
+{
     m_slicing_queue = {};
     for (auto& pair : m_processes) {
-        BackgroundProcess &process{pair.second};
+        BackgroundProcess& process{pair.second};
         process.stop();
     }
 }
 
-
-void SlicingInteractor::on_selected_project_changed(size_t index) {
+void SlicingInteractor::on_selected_project_changed(size_t index)
+{
     m_current_project_id = index;
 }
 
-SlicingId SlicingInteractor::get_process_id(const Domain::SelectionId bed_instance_id) const {
+SlicingId SlicingInteractor::get_process_id(const Domain::SelectionId bed_instance_id) const
+{
     ASSERT(m_current_project_id != Domain::INVALID_ID);
     return {m_current_project_id, bed_instance_id};
 }
 
-void SlicingInteractor::on_status(const Status status, const SlicingId id) {
+void SlicingInteractor::on_status(const Status status, const SlicingId id)
+{
     SPDLOG_INFO("{}: status: {}", fmt::streamed(id), fmt::streamed(status));
 
     {
@@ -146,39 +174,54 @@ void SlicingInteractor::on_status(const Status status, const SlicingId id) {
         }
     }
 
-    if(!m_dispatcher.dispatch_on_main_thread([this, status, id](){
+    if (!m_dispatcher.dispatch_on_main_thread([this, status, id]() {
         process_slicing_queue();
-        invoke_listeners<IStatusListener>([&](auto* listener){
+        invoke_listeners<IStatusListener>([&](auto* listener) {
             listener->on_status_changed(status, id);
         });
-    })) {
+    }))
+    {
         SPDLOG_INFO("{}: status not dispatched", fmt::streamed(id), fmt::streamed(status));
     }
 }
 
-void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id) {
+void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id)
+{
     SPDLOG_INFO("{}: FDMResult{{moves_count: {}}}", fmt::streamed(id), result.const_moves()->size());
+
+    /* ===================== */
+    /* test thumbnail answer */
+    /* ===================== */
+    {
+        if (m_thumbnail_results.valid()) {
+            ThumbnailImageResults thumbnail_results = m_thumbnail_results.get();
+            // debug only: export the received thumbnails to PNG files
+#if ENABLE_DEBUG_EXPORT_TO_PNG
+            std::string name = fmt::format("thumbnail_gcode");
+            std::string path_prefix = fmt::format("C:/test/{}", name);
+            for (const auto& t : thumbnail_results) {
+                App::Scene::export_to_png_file(t.images, path_prefix);
+            }
+#endif // ENABLE_DEBUG_EXPORT_TO_PNG
+        }
+    }
 
     using Platform::MoveOnlyFunction;
 
-    if(!m_dispatcher.dispatch_on_main_thread(
-        [
-            this,
-            id,
-            _result = std::move(result)
-        ]() mutable {
-            bool already_called{false};
-            invoke_listener<IFDMResultListener>([&](auto* listener){
-                listener->on_fdm_result_changed(std::move(_result), id);
-                already_called = true;
-            });
-        }
-    )) {
+    if (!m_dispatcher.dispatch_on_main_thread([this, id, _result = std::move(result)]() mutable {
+        bool already_called{false};
+        invoke_listener<IFDMResultListener>([&](auto* listener) {
+            listener->on_fdm_result_changed(std::move(_result), id);
+            already_called = true;
+        });
+    }))
+    {
         SPDLOG_INFO("{}: fdm result not dispatched", fmt::streamed(id), result.const_moves()->size());
     }
 }
 
-void SlicingInteractor::on_sla_result(const SlicingId& id, SLAResult&& result) {
+void SlicingInteractor::on_sla_result(const SlicingId& id, SLAResult&& result)
+{
     SPDLOG_INFO("{}: SLAResult{{}}", fmt::streamed(id));
     auto changed = [id, _result = std::move(result)](auto* listener) mutable {
         listener->on_sla_result_changed(id, std::move(_result));
@@ -191,7 +234,8 @@ void SlicingInteractor::on_sla_result(const SlicingId& id, SLAResult&& result) {
     }
 }
 
-void SlicingInteractor::on_sla_object(const SlicingId& id, Sla::Object&& instance) {
+void SlicingInteractor::on_sla_object(const SlicingId& id, Sla::Object&& instance)
+{
     SPDLOG_INFO("{}: SLAInstance{{}}", fmt::streamed(id));
     auto changed = [id, _instance = std::move(instance)](auto* listener) mutable {
         listener->on_sla_object_changed(id, std::move(_instance));
@@ -204,28 +248,30 @@ void SlicingInteractor::on_sla_object(const SlicingId& id, Sla::Object&& instanc
     }
 }
 
-void SlicingInteractor::on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_tower_geometry, const SlicingId id) {
-    SPDLOG_INFO(
-        "{}: WipeTowerGeometry{{size: {}}}",
-        fmt::streamed(id),
-        wipe_tower_geometry.size()
-    );
+void SlicingInteractor::on_wipe_tower_geometry(
+    Print::WipeTowerGeometry&& wipe_tower_geometry,
+    const SlicingId id
+)
+{
+    SPDLOG_INFO("{}: WipeTowerGeometry{{size: {}}}", fmt::streamed(id), wipe_tower_geometry.size());
 
     if (!m_dispatcher.dispatch_on_main_thread(
-        [this, id, geometry=std::move(wipe_tower_geometry)]() mutable {
-            invoke_listeners<IWipeTowerGeometryListener>([&](auto* listener){
-                listener->on_wipe_tower_geometry(geometry, id);
-            });
-        }
-    )) {
+            [this, id, geometry = std::move(wipe_tower_geometry)]() mutable {
+        invoke_listeners<IWipeTowerGeometryListener>([&](auto* listener) {
+            listener->on_wipe_tower_geometry(geometry, id);
+        });
+    }
+        ))
+    {
         SPDLOG_INFO("{}: wipe tower geometry not dispatched", fmt::streamed(id));
     }
 }
 
-void SlicingInteractor::process_slicing_queue() {
+void SlicingInteractor::process_slicing_queue()
+{
     process_update_requests();
 
-    if(m_slicing_queue.empty()) {
+    if (m_slicing_queue.empty()) {
         return;
     }
 
@@ -246,7 +292,8 @@ void SlicingInteractor::process_slicing_queue() {
     m_processes.at(to_slice).slice();
 }
 
-void SlicingInteractor::process_update_requests() {
+void SlicingInteractor::process_update_requests()
+{
     if (m_update_requests.empty()) {
         return;
     }
@@ -273,11 +320,7 @@ void SlicingInteractor::process_update_requests() {
             continue;
         }
 
-        process.update(
-            request.model.get(),
-            config,
-            bed
-        );
+        process.update(request.model.get(), config, bed);
         to_remove.insert(id);
     }
 
@@ -287,20 +330,23 @@ void SlicingInteractor::process_update_requests() {
     });
 }
 
-void SlicingInteractor::update_status(const SlicingId id, const Status status) {
+void SlicingInteractor::update_status(const SlicingId id, const Status status)
+{
     const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
     m_statuses[id] = status;
 }
 
-int64_t SlicingInteractor::get_active_processes_count() const {
+int64_t SlicingInteractor::get_active_processes_count() const
+{
     const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
-    return std::ranges::count_if(m_statuses, [](const auto& pair){
+    return std::ranges::count_if(m_statuses, [](const auto& pair) {
         const Status status{pair.second};
         return is_thread_active(status);
     });
 }
 
-Status SlicingInteractor::get_status(const SlicingId id) const {
+Status SlicingInteractor::get_status(const SlicingId id) const
+{
     const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
     ASSERT(m_statuses.contains(id));
 

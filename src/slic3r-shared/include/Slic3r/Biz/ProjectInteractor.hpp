@@ -19,6 +19,8 @@
 #include "Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp"
 #include "Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp"
 #include "Slic3r/Biz/ObservableProjectList.hpp"
+#include "Slic3r/Biz/ThumbnailImageProvider.hpp"
+#include "Slic3r/Biz/Format/3mf.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -48,16 +50,22 @@ class ProjectInteractor final :
     public ISlicingInputChangedListener,
     public UserAccount::IUserAccountListener,
     public AppInstance::IAppInstanceMessageContentListener,
-    public WithListeners<
-        ISelectedProjectChangedListener,
-        IProjectsChangedListener,
-        ISelectedConfigContainerChangedListener
-    >
+    public WithListeners<ISelectedProjectChangedListener, IProjectsChangedListener, ISelectedConfigContainerChangedListener>
 {
 public:
-    explicit ProjectInteractor(Domain::Workbench& workbench, Platform::IMainThreadDispatcher& dispatcher)
-        : m_workbench(workbench), m_preset_interactor(workbench), m_scene_interactor(workbench), m_slicing_interactor(dispatcher), m_print_host_interactor(dispatcher)
-        , m_user_account_interactor(dispatcher), m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)), m_project_list(*this)
+    ProjectInteractor(
+        Domain::Workbench& workbench,
+        Platform::IMainThreadDispatcher& dispatcher,
+        ThumbnailImageProvider& thumbnail_image_provider
+    ) :
+        m_workbench(workbench),
+        m_preset_interactor(workbench),
+        m_scene_interactor(workbench),
+        m_slicing_interactor(dispatcher, thumbnail_image_provider),
+        m_print_host_interactor(dispatcher),
+        m_user_account_interactor(dispatcher),
+        m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)),
+        m_project_list(*this)
     {
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
@@ -71,10 +79,14 @@ public:
         m_slicing_interactor.set_listener<Slicing::ISLAObjectListener>(&m_sla_object_cache);
         m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
         m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
-        m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
+        m_app_instance_message_handler
+            ->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
     }
 
-    const Domain::Workbench& workbench() const { return m_workbench; }
+    const Domain::Workbench& workbench() const
+    {
+        return m_workbench;
+    }
 
     /**
      * @name Project manipulation
@@ -84,7 +96,7 @@ public:
      * @brief Create new project
      * @return Returns ID of newly created project
      */
-    Domain::SelectionId new_project();      
+    Domain::SelectionId new_project();
 
     /**
      * @name Project manipulation
@@ -102,7 +114,7 @@ public:
     /**
      * @brief Save project into the file
      */
-    void save_project(const std::string& file_path);
+    void save_project(const std::string& file_path, const Store3mfParam& params);
 
     /**
      * Select already opened project. If the project is already selected, do nothing.
@@ -143,12 +155,18 @@ public:
     /**
      * @brief Get selected project ID
      */
-    Domain::SelectionId selected_project_id() const { return m_selection.project_id; }
+    Domain::SelectionId selected_project_id() const
+    {
+        return m_selection.project_id;
+    }
 
     /**
      * @brief Get selected config container ID
      */
-    Domain::SelectionId selected_config_container_id() const { return m_selection.config_container_id; }
+    Domain::SelectionId selected_config_container_id() const
+    {
+        return m_selection.config_container_id;
+    }
 
     /** @} */
     /**
@@ -182,38 +200,70 @@ public:
             selected_project().find_config_container(m_selection.config_container_id)
         );
     }
+
     /** @} */
 
     /**
      * @brief Get immutable preset interactor
      * @return Immutable preset interactor instance
      */
-    const Preset::PresetInteractor& preset_interactor() const { return m_preset_interactor; }
+    const Preset::PresetInteractor& preset_interactor() const
+    {
+        return m_preset_interactor;
+    }
 
     /**
      * @brief Get mutable preset interactor
      * @return Mutable preset interactor instance
      */
-    Preset::PresetInteractor& preset_interactor() { return m_preset_interactor; }
+    Preset::PresetInteractor& preset_interactor()
+    {
+        return m_preset_interactor;
+    }
 
     /**
      * @brief Get immutable scene interactor
      * @return Immutable scene interactor instance
      */
-    const Scene::SceneInteractor& scene_interactor() const { return m_scene_interactor; }
+    const Scene::SceneInteractor& scene_interactor() const
+    {
+        return m_scene_interactor;
+    }
 
     /**
      * @brief Get mutable scene interactor
      * @return Mutable scene interactor instance
      */
-    Scene::SceneInteractor& scene_interactor() { return m_scene_interactor; }
+    Scene::SceneInteractor& scene_interactor()
+    {
+        return m_scene_interactor;
+    }
 
-    Slicing::SlicingInteractor& slicing_interactor() { return m_slicing_interactor; }
+    Slicing::SlicingInteractor& slicing_interactor()
+    {
+        return m_slicing_interactor;
+    }
 
-    FDMResultCache& fdm_result_cache() { return m_fdm_result_cache; }
-    SLAResultCache& sla_result_cache() { return m_sla_result_cache; }
-    SLAObjectCache& sla_object_cache() { return m_sla_object_cache; }
-    StatusCache& status_cache() { return m_status_cache; }
+    FDMResultCache& fdm_result_cache()
+    {
+        return m_fdm_result_cache;
+    }
+
+    SLAResultCache& sla_result_cache()
+    {
+        return m_sla_result_cache;
+    }
+
+    SLAObjectCache& sla_object_cache()
+    {
+        return m_sla_object_cache;
+    }
+
+    StatusCache& status_cache()
+    {
+        return m_status_cache;
+    }
+
     Biz::Slicing::SlicingId selected_bed_slicing_id() const;
 
     /**
@@ -231,7 +281,7 @@ public:
      */
     void do_export(const Slicing::SlicingId id, const boost::filesystem::path& dest_path, bool to_removable);
 
-     /**
+    /**
      * @brief Creates PrintHostConfig and PrintHostData and passes it to PrintHostInteractor to start upload.
      * PrintHostData copies gcode data from m_fdm_result_cache.
      * PrintHostConfig origin is yet to be decided.
@@ -252,7 +302,7 @@ public:
         m_app_instance_message_handler->init(window_handle);
     }
 
-     /**
+    /**
      * @brief Passes message to AppInstanceMessageHandler.
      */
     void handle_app_instance_message(const std::string& message)
@@ -266,7 +316,11 @@ public:
      */
     void on_user_account_id_success(bool is_refresh) override
     {
-        m_app_instance_message_handler->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
+        m_app_instance_message_handler->multicast_message(
+            "STORE_READ",
+            {},
+            Biz::Platform::PlatformServices::instance().app_hash()
+        );
     }
 
     /**
@@ -274,27 +328,33 @@ public:
      * Notifies all other running apps to read token store.
      * This function should be called only when logout was NOT caused by accepted STORE_READ.
      */
-    void  on_user_account_logged_out() override
+    void on_user_account_logged_out() override
     {
-        m_app_instance_message_handler->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
+        m_app_instance_message_handler->multicast_message(
+            "STORE_READ",
+            {},
+            Biz::Platform::PlatformServices::instance().app_hash()
+        );
     }
-   
-    void on_user_account_will_refresh() override { /*unused*/}
+
+    void on_user_account_will_refresh() override
+    { /*unused*/
+    }
 
     /**
-    * @brief Callback from AppInstanceMessageHandler.
-    */
+     * @brief Callback from AppInstanceMessageHandler.
+     */
     void on_open_models(std::vector<boost::filesystem::path> message) override {}
-    
+
     /**
      * @brief Callback from AppInstanceMessageHandler.
      */
     void on_download_models(std::vector<std::string> message) override {}
-    
+
     /**
      * @brief Callback from AppInstanceMessageHandler.
      */
-    void on_read_token_store_message() override 
+    void on_read_token_store_message() override
     {
         m_user_account_interactor.on_read_token_store_message();
     }
@@ -302,7 +362,7 @@ public:
     /**
      * @brief Callback from AppInstanceMessageHandler.
      */
-    void on_login_data(const std::string& message) override 
+    void on_login_data(const std::string& message) override
     {
         m_user_account_interactor.on_log_in_code_response(message);
     }
@@ -315,20 +375,28 @@ public:
     /**
      * @brief Getter for user account.
      */
-    UserAccount::UserAccountInteractor& user_account_interactor() { return m_user_account_interactor; }
+    UserAccount::UserAccountInteractor& user_account_interactor()
+    {
+        return m_user_account_interactor;
+    }
 
     std::string get_project_name(Domain::SelectionId project_id) const;
 
-    boost::filesystem::path last_export_path(bool only_removable) const { return m_last_export_path_storage.get_last_export_path(only_removable); }
+    boost::filesystem::path last_export_path(bool only_removable) const
+    {
+        return m_last_export_path_storage.get_last_export_path(only_removable);
+    }
 
-    void set_last_export_path(const boost::filesystem::path& path, bool is_removable) { m_last_export_path_storage.set_last_export_path(path, is_removable); }
+    void set_last_export_path(const boost::filesystem::path& path, bool is_removable)
+    {
+        m_last_export_path_storage.set_last_export_path(path, is_removable);
+    }
 
     ObservableProjectList& observable_project_list();
 
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
-
 
     void do_select_project(Domain::SelectionId project_id);
     void do_select_config_container(Domain::SelectionId container_id);

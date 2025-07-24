@@ -3,6 +3,7 @@
 #include "Slic3r/App/Render/Image.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
 
 #include <optional>
 
@@ -23,7 +24,7 @@ struct ThumbnailRendererParams
 {
     const Scene::Scene& scene;
     std::optional<Eigen::AlignedBox3d> zoom_aabb;
-    Render::PixelFormat pixel_format{ Render::PixelFormat::RGBA8 };
+    Render::PixelFormat pixel_format{Render::PixelFormat::RGBA8};
     Render::Sizes sizes;
 };
 
@@ -33,14 +34,29 @@ public:
     explicit ThumbnailRenderer(Render::Device& device) : m_device(device) {}
 
     [[nodiscard]] Render::Images generate_thumbnails(const ThumbnailRendererParams& params);
-    [[nodiscard]] Render::Images generate_bed_thumbnails(const ThumbnailRendererParams& params, const Domain::BedRef& bed_ref,
-        const Domain::BedInstance& bed_instance, Scene::CameraProjectionType camera_type);
-    [[nodiscard]] Render::Images generate_object_thumbnails(const Domain::ModelObject& object, const Render::Sizes& sizes,
-        Scene::CameraProjectionType camera_type, std::optional<Domain::ColorRGBA> color = std::nullopt);
-    [[nodiscard]] Render::Images generate_3mf_thumbnails(const ThumbnailRendererParams& params, const Domain::Project& project,
-        Scene::CameraProjectionType camera_type);
-    [[nodiscard]] Render::Images generate_gcode_thumbnails(const ThumbnailRendererParams& params, const Domain::Project& project,
-        const Domain::BedInstance& bed_inst, const Domain::BedRef& bed_ref, Scene::CameraProjectionType camera_type);
+    [[nodiscard]] Render::Images generate_bed_thumbnails(
+        const ThumbnailRendererParams& params,
+        const Domain::Project& project,
+        Domain::SelectionId bed_instance_id,
+        Scene::CameraProjectionType camera_type
+    );
+    [[nodiscard]] Render::Images generate_object_thumbnails(
+        const Domain::ModelObject& object,
+        const Render::Sizes& sizes,
+        Scene::CameraProjectionType camera_type,
+        std::optional<Domain::ColorRGBA> color = std::nullopt
+    );
+    [[nodiscard]] Render::Images generate_3mf_thumbnails(
+        const ThumbnailRendererParams& params,
+        const Domain::Project& project,
+        Scene::CameraProjectionType camera_type
+    );
+    [[nodiscard]] Render::Images generate_gcode_thumbnails(
+        const ThumbnailRendererParams& params,
+        const Domain::Project& project,
+        Domain::SelectionId bed_instance_id,
+        Scene::CameraProjectionType camera_type
+    );
 
 private:
     Render::Device& m_device;

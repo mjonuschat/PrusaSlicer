@@ -2,6 +2,7 @@
 #include <catch2/trompeloeil.hpp>
 
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+#include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
@@ -62,7 +63,8 @@ TEST_CASE("Project Interactor Listeners")
     workbench.load_legacy_configs();
 
     Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
-    ProjectInteractor project_interactor{workbench, dispatcher};
+    Slic3r::Biz::ThumbnailImageProvider thumbnail_image_provider;
+    ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_provider};
 
     auto data_dir              = Tests::get_datadir();
     fs::path preset_bundle_dir = data_dir / "presets";

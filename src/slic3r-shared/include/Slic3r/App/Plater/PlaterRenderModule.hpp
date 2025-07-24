@@ -7,13 +7,17 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
+#include "Slic3r/App/SharedThumbnailImageGenerator.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
-#include "Slic3r/App/Plater/BedThumbnailTextureGenerator.hpp"
-#include "Slic3r/App/Plater/BedThumbnailUpdater.hpp"
+
+namespace Slic3r::Biz {
+class ThumbnailImageProvider;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App {
-struct BedThumbnailStore;
+struct ThumbnailStore;
+class ThumbnailStoreUpdater;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Plater {
@@ -23,14 +27,21 @@ class PaintOnSupportsGizmo;
 class SimplifyGizmo;
 class MeasureGizmo;
 
-class PlaterRenderModule final : public Platform::AbstractRenderModule,
-                                 public Biz::IStatusCacheChangedListener,
-                                 public Biz::Scene::ISceneSelectionChangedListener,
-                                 private Scene::IGizmoActiveToolListener
+class PlaterRenderModule final :
+    public Platform::AbstractRenderModule,
+    public Biz::IStatusCacheChangedListener,
+    public Biz::Scene::ISceneSelectionChangedListener,
+    private Scene::IGizmoActiveToolListener
 {
 public:
-    PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
-        std::shared_ptr<BedThumbnailStore> thumbnail_store);
+    PlaterRenderModule(
+        const Domain::Workbench& workbench,
+        Biz::ProjectInteractor& project_interactor,
+        Biz::ThumbnailImageProvider& thumbnail_image_provider,
+        std::shared_ptr<ThumbnailStore> thumbnail_store,
+        std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
+        std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator
+    );
     ~PlaterRenderModule();
 
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
@@ -83,22 +94,24 @@ private:
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<History> m_history;
 
-    Yoga::ToolbarButton* m_toolbar_add_instance = nullptr;
-    Yoga::ToolbarButton* m_toolbar_move = nullptr;
-    Yoga::ToolbarButton* m_toolbar_rotate = nullptr;
-    Yoga::ToolbarButton* m_toolbar_simplify = nullptr;
+    Yoga::ToolbarButton* m_toolbar_add_instance      = nullptr;
+    Yoga::ToolbarButton* m_toolbar_move              = nullptr;
+    Yoga::ToolbarButton* m_toolbar_rotate            = nullptr;
+    Yoga::ToolbarButton* m_toolbar_simplify          = nullptr;
     Yoga::ToolbarButton* m_toolbar_paint_on_supports = nullptr;
-    Yoga::ToolbarButton* m_toolbar_measure = nullptr;
+    Yoga::ToolbarButton* m_toolbar_measure           = nullptr;
 
-    TranslationGizmo* m_translation_gizmo = nullptr;
-    RotationGizmo* m_rotation_gizmo = nullptr;
-    SimplifyGizmo* m_simplify_gizmo = nullptr;
+    TranslationGizmo* m_translation_gizmo           = nullptr;
+    RotationGizmo* m_rotation_gizmo                 = nullptr;
+    SimplifyGizmo* m_simplify_gizmo                 = nullptr;
     PaintOnSupportsGizmo* m_paint_on_supports_gizmo = nullptr;
-    MeasureGizmo* m_measure_gizmo = nullptr;
+    MeasureGizmo* m_measure_gizmo                   = nullptr;
 
-    std::unique_ptr<BedThumbnailTextureGenerator> m_thumbnail_generator;
-    std::unique_ptr<BedThumbnailUpdater> m_thumbnail_updater;
-    std::shared_ptr<BedThumbnailStore> m_thumbnail_store;
+    std::shared_ptr<App::SharedThumbnailImageGenerator> m_shared_thumbnail_image_generator;
+    Biz::ThumbnailImageProvider& m_thumbnail_image_provider;
+
+    std::shared_ptr<ThumbnailStore> m_thumbnail_store;
+    std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;
 
     std::unordered_set<IRenderModuleChangedListener*> m_render_module_changed_listeners;
 };

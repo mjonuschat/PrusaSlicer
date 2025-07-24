@@ -8,11 +8,11 @@
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
-}
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App::Platform {
 class AbstractRenderModule;
-}
+} // namespace Slic3r::App::Platform
 
 namespace Slic3r::App {
 
@@ -22,11 +22,15 @@ class LayoutButton;
 class Rectangle;
 } // namespace Yoga
 
-class TopBar: public Yoga::Window
+struct ThumbnailStore;
+
+class TopBar : public Yoga::Window
 {
 public:
-    explicit TopBar(
-        Biz::ProjectInteractor* project_interactor, Platform::AbstractRenderModule* render_module
+    TopBar(
+        Biz::ProjectInteractor* project_interactor,
+        Platform::AbstractRenderModule* render_module,
+        ThumbnailStore& thumbnail_store
     );
 
 private:
@@ -56,6 +60,7 @@ private:
 
     Biz::ProjectInteractor* m_project_interactor{nullptr};
     Platform::AbstractRenderModule* m_render_module{nullptr};
+    ThumbnailStore& m_thumbnail_store;
 };
 
 } // namespace Slic3r::App

@@ -1,0 +1,40 @@
+#pragma once
+
+#include "Slic3r/Domain/SelectionId.hpp"
+#include "Slic3r/App/Render/Types.hpp"
+#include "Slic3r/Biz/ThumbnailType.hpp"
+
+#include <vector>
+
+namespace Slic3r::Biz {
+
+struct ThumbnailParams
+{
+    Domain::SelectionId project_id;
+    Domain::SelectionId bed_instance_id;
+    App::Render::PixelFormat pixel_format{App::Render::PixelFormat::RGBA8};
+    App::Render::Sizes sizes;
+
+    bool operator==(const ThumbnailParams& other) const
+    {
+        return project_id == other.project_id
+            && bed_instance_id == other.bed_instance_id
+            && pixel_format == other.pixel_format
+            && sizes == other.sizes;
+    }
+};
+
+struct ThumbnailImageRequest
+{
+    ThumbnailType type;
+    ThumbnailParams params;
+
+    bool operator==(const ThumbnailImageRequest& other) const
+    {
+        return type == other.type && params == other.params;
+    }
+};
+
+using ThumbnailImageRequests = std::vector<ThumbnailImageRequest>;
+
+} // namespace Slic3r::Biz

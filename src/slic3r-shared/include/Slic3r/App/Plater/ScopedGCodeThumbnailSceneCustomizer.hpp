@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::App::Scene {
 class Scene;
@@ -13,8 +14,6 @@ class Material;
 } // namespace Slic3r::App::Render
 
 namespace Slic3r::Domain {
-struct BedInstance;
-struct BedRef;
 class Project;
 } // namespace Slic3r::Domain
 
@@ -23,17 +22,23 @@ namespace Slic3r::App::Plater {
 class ScopedGCodeThumbnailSceneCustomizer
 {
 public:
-    ScopedGCodeThumbnailSceneCustomizer(Scene::Scene& scene, const Domain::Project& project, const Domain::BedInstance& bed_inst,
-        const Domain::BedRef& bed_ref, Scene::CameraProjectionType camera_type);
+    ScopedGCodeThumbnailSceneCustomizer(
+        Scene::Scene& scene,
+        const Domain::Project& project,
+        Domain::SelectionId bed_instance_id,
+        Scene::CameraProjectionType camera_type
+    );
     ~ScopedGCodeThumbnailSceneCustomizer();
 
     ScopedGCodeThumbnailSceneCustomizer(const ScopedGCodeThumbnailSceneCustomizer& other) = delete;
-    ScopedGCodeThumbnailSceneCustomizer(ScopedGCodeThumbnailSceneCustomizer&& other) = delete;
-    ScopedGCodeThumbnailSceneCustomizer& operator = (const ScopedGCodeThumbnailSceneCustomizer& other) = delete;
-    ScopedGCodeThumbnailSceneCustomizer& operator = (ScopedGCodeThumbnailSceneCustomizer&& other) = delete;
+    ScopedGCodeThumbnailSceneCustomizer(ScopedGCodeThumbnailSceneCustomizer&& other)      = delete;
+    ScopedGCodeThumbnailSceneCustomizer& operator=(const ScopedGCodeThumbnailSceneCustomizer& other) =
+        delete;
+    ScopedGCodeThumbnailSceneCustomizer& operator=(ScopedGCodeThumbnailSceneCustomizer&& other) = delete;
 
 private:
     Scene::Scene& m_scene;
+
     struct Cache
     {
         Scene::Transform camera_model;
@@ -58,6 +63,7 @@ private:
         std::vector<Scene::Node*> hidden_nodes;
         std::vector<std::pair<Scene::Node*, Render::Material>> materials;
     };
+
     Cache m_cache;
 };
 

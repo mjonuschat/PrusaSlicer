@@ -39,7 +39,10 @@ void Toolbar::process_events(Vec2f pos, Vec2f size)
     Window::process_events(pos, size);
 }
 
-Toolbar::Callbacks& Toolbar::callbacks() { return m_callbacks; }
+Toolbar::Callbacks& Toolbar::callbacks()
+{
+    return m_callbacks;
+}
 
 void Toolbar::append(std::unique_ptr<ToolbarButton> button)
 {
@@ -64,13 +67,25 @@ std::unique_ptr<ToolbarButton> Toolbar::remove(ToolbarButton* button)
     }
 }
 
-ToolbarButton* Toolbar::button_at(int index) const { return m_buttons.at(index); }
+ToolbarButton* Toolbar::button_at(int index) const
+{
+    return m_buttons.at(index);
+}
 
-int Toolbar::button_count() const { return m_buttons.size(); }
+int Toolbar::button_count() const
+{
+    return m_buttons.size();
+}
 
-bool Toolbar::contains(ToolbarButton* button) const { return index_of(button).has_value(); }
+bool Toolbar::contains(ToolbarButton* button) const
+{
+    return index_of(button).has_value();
+}
 
-const Vec2f& Toolbar::button_min_size() const { return m_button_min_size; }
+const Vec2f& Toolbar::button_min_size() const
+{
+    return m_button_min_size;
+}
 
 void Toolbar::set_button_min_size(const Vec2f& button_min_size)
 {
@@ -83,7 +98,10 @@ void Toolbar::set_button_min_size(const Vec2f& button_min_size)
     }
 }
 
-const Vec2f& Toolbar::button_max_size() const { return m_button_max_size; }
+const Vec2f& Toolbar::button_max_size() const
+{
+    return m_button_max_size;
+}
 
 void Toolbar::set_button_max_size(const Vec2f& button_max_size)
 {
@@ -96,7 +114,10 @@ void Toolbar::set_button_max_size(const Vec2f& button_max_size)
     }
 }
 
-float Toolbar::button_aspect_ratio() const { return m_button_aspect_ratio; }
+float Toolbar::button_aspect_ratio() const
+{
+    return m_button_aspect_ratio;
+}
 
 void Toolbar::set_button_aspect_ratio(float button_aspect_ratio)
 {
@@ -109,33 +130,63 @@ void Toolbar::set_button_aspect_ratio(float button_aspect_ratio)
     }
 }
 
-void Toolbar::append(ItemPtr child) { Item::append(std::move(child)); }
+void Toolbar::append(ItemPtr child)
+{
+    Item::append(std::move(child));
+}
 
-void Toolbar::insert(ItemPtr child, size_t index) { Item::insert(std::move(child), index); }
+void Toolbar::insert(ItemPtr child, size_t index)
+{
+    Item::insert(std::move(child), index);
+}
 
-ItemPtr Toolbar::remove(Item* child) { return Item::remove(child); }
+ItemPtr Toolbar::remove(Item* child)
+{
+    return Item::remove(child);
+}
 
-bool Toolbar::hovered() const { return m_hovered; }
+bool Toolbar::hovered() const
+{
+    return m_hovered;
+}
 
-bool Toolbar::show_tooltips() const { return m_show_tooltips; }
+bool Toolbar::show_tooltips() const
+{
+    return m_show_tooltips;
+}
 
-void Toolbar::set_show_tooltips(bool show_tooltips) { m_show_tooltips = show_tooltips; }
+void Toolbar::set_show_tooltips(bool show_tooltips)
+{
+    m_show_tooltips = show_tooltips;
+}
 
 bool Toolbar::any_subtoolbar_opened() const
 {
-    return (m_button_more->get_subtoolbar() && m_button_more->get_subtoolbar()->is_visible()) ||
-        std::any_of(m_buttons.cbegin(), m_buttons.cend(), [](ToolbarButton* button) {
-               return button->get_subtoolbar() && button->get_subtoolbar()->is_visible();
-           });
+    return (m_button_more->get_subtoolbar() && m_button_more->get_subtoolbar()->is_visible())
+        || std::any_of(m_buttons.cbegin(), m_buttons.cend(), [](ToolbarButton* button) {
+        return button->get_subtoolbar() && button->get_subtoolbar()->is_visible();
+    });
 }
 
-bool Toolbar::collapsible() const { return m_collapsible; }
+bool Toolbar::collapsible() const
+{
+    return m_collapsible;
+}
 
-void Toolbar::set_collapsible(bool collapsible) { m_collapsible = collapsible; }
+void Toolbar::set_collapsible(bool collapsible)
+{
+    m_collapsible = collapsible;
+}
 
-float Toolbar::available_size() const { return m_available_size; }
+float Toolbar::available_size() const
+{
+    return m_available_size;
+}
 
-void Toolbar::set_available_size(float available_size) { m_available_size = available_size; }
+void Toolbar::set_available_size(float available_size)
+{
+    m_available_size = available_size;
+}
 
 void Toolbar::style_node()
 {
@@ -144,22 +195,20 @@ void Toolbar::style_node()
     if (m_collapsible && m_parent && !m_button_min_size.isZero() && width() > 0 && height() > 0) {
         // Compute available size
         float available_size = 0;
-        available_size = m_orientation == Orientation::Horizontal
-            ? m_parent->width()
-            : m_parent->height();
+        available_size       = m_orientation == Orientation::Horizontal ? m_parent->width() :
+                                                                          m_parent->height();
         for (Item* node : m_parent->items()) {
             if (node != this) {
-                available_size -= m_orientation == Orientation::Horizontal
-                    ? node->width()
-                    : node->height();
+                available_size -= m_orientation == Orientation::Horizontal ? node->width() :
+                                                                             node->height();
             }
             if (node != *m_parent->items().rbegin()) {
                 available_size -= m_parent->gap();
             }
         }
-        available_size -= m_orientation == Orientation::Horizontal
-            ? (m_margin.left + m_margin.right)
-            : (m_margin.top + m_margin.bottom);
+        available_size -= m_orientation == Orientation::Horizontal ?
+            (m_margin.left + m_margin.right) :
+            (m_margin.top + m_margin.bottom);
 
         // Decide which buttons will be included
 
@@ -223,10 +272,11 @@ void Toolbar::style_node()
 
 std::optional<size_t> Toolbar::index_of(ToolbarButton* button) const
 {
-    std::vector<ToolbarButton*>::const_iterator it =
-        std::find_if(m_buttons.cbegin(), m_buttons.cend(), [button](ToolbarButton* child_button) {
-            return button == child_button;
-        });
+    std::vector<ToolbarButton*>::const_iterator it = std::find_if(
+        m_buttons.cbegin(),
+        m_buttons.cend(),
+        [button](ToolbarButton* child_button) { return button == child_button; }
+    );
 
     return it != m_buttons.cend() ? std::distance(m_buttons.cbegin(), it) : std::optional<size_t>();
 }
