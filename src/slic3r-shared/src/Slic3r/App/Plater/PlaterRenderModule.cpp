@@ -3,6 +3,7 @@
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
+#include "Slic3r/App/Scene/MouseDragDetector.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
@@ -394,10 +395,17 @@ void PlaterRenderModule::init_scene()
 
 void PlaterRenderModule::init_gizmos()
 {
+    // TODO: It shoud be OS dependent by maximal time betweem clic to be double click
+    int min_drag_time_span = 500; // [in ms]
+    // TODO: Load constant from OS
+    int min_drag_offset = 500; // [in um]
+    auto drag_detector = std::make_unique<Scene::MouseDragDetector>(min_drag_time_span, min_drag_offset);
+    const Scene::MouseDragDetector* drag_detector_ptr = drag_detector.get();
     m_gizmo_manager = std::make_unique<Scene::GizmoManager>(
         *m_device,
         *m_scene_presenter,
-        m_project_interactor
+        m_project_interactor,
+        std::move(drag_detector)
     );
     m_gizmo_manager->add_listener<IGizmoActiveToolListener>(this);
     PlaterCameraGizmo* camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(
@@ -419,7 +427,8 @@ void PlaterRenderModule::init_gizmos()
     );
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(
         m_project_interactor.scene_interactor(),
-        *m_scene_presenter
+        *m_scene_presenter,
+        *drag_detector_ptr
     );
     m_translation_gizmo = &m_gizmo_manager->add_tool_gizmo<TranslationGizmo>(
         *m_device,

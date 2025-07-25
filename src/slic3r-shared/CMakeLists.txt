@@ -210,6 +210,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/AbstractCameraGizmo.cpp
         include/Slic3r/App/Scene/GizmoManager.hpp
         src/Slic3r/App/Scene/GizmoManager.cpp
+        include/Slic3r/App/Scene/MouseDragDetector.hpp
+        src/Slic3r/App/Scene/MouseDragDetector.cpp
         include/Slic3r/App/Scene/GeometryDataFactory.hpp
         src/Slic3r/App/Scene/GeometryDataFactory.cpp
         include/Slic3r/App/Scene/ISceneProvider.hpp

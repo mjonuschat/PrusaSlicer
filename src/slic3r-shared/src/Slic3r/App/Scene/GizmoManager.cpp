@@ -23,14 +23,18 @@ const char* ACTIVATION_STATE_NAMES[] = {
 #endif
 
 GizmoManager::GizmoManager(
-    Render::Device& device, ISceneProvider& scene_provider, Biz::ProjectInteractor& project_interactor
-)
-    : m_project_changed_listener_scope(project_interactor, *this)
-    , m_selected_project_changed_listener_scope(project_interactor, *this)
-    , m_projects(project_interactor)
-    , m_scene_provider(scene_provider)
-    , m_project_interactor(project_interactor)
-    , m_data_factory(device)
+    Render::Device& device,
+    ISceneProvider& scene_provider,
+    Biz::ProjectInteractor& project_interactor,
+    std::unique_ptr<MouseDragDetector> mouse_drag_detector
+) :
+    m_project_changed_listener_scope(project_interactor, *this),
+    m_selected_project_changed_listener_scope(project_interactor, *this),
+    m_projects(project_interactor),
+    m_scene_provider(scene_provider),
+    m_project_interactor(project_interactor),
+    m_data_factory(device),
+    m_mouse_drag_detector(std::move(mouse_drag_detector))
 {
     GizmoManager::on_selected_project_changed(m_project_interactor.selected_project_id());
 }
@@ -54,8 +58,9 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         pick_results, &pick_ray
 
     );
-
     GizmoEventContext ctx{e, pick_ray, pick_results, screen_info};
+    if (m_mouse_drag_detector)
+        m_mouse_drag_detector->mouse_event(ctx);
     const bool single_active = p.in_cycle_gizmos.size() == 1;
 #if DEBUG_GIZMO_MANAGER
     SPDLOG_INFO("process event {} ---in-cycle: {}", int(e.type()), p.in_cycle);
@@ -98,6 +103,8 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
 
 bool GizmoManager::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
 {
+    if (m_mouse_drag_detector && e.code() == Platform::KeyCode::Escape)
+        m_mouse_drag_detector->cancel_drag_event();
     return m_command_registry.process_keyboard_event(e);
 }
 

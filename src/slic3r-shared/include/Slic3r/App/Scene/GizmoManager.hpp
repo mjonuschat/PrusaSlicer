@@ -10,6 +10,7 @@
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
+#include "Slic3r/App/Scene/MouseDragDetector.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
 
 
@@ -29,7 +30,12 @@ public:
 
 class GizmoManager : public WithListeners<IGizmoActiveToolListener>, public Biz::ISelectedProjectChangedListener, public Biz::IProjectsChangedListener {
 public:
-    GizmoManager(Render::Device& device, ISceneProvider& scene_provider, Biz::ProjectInteractor& project_interactor);
+    GizmoManager(
+        Render::Device& device,
+        ISceneProvider& scene_provider,
+        Biz::ProjectInteractor& project_interactor,
+        std::unique_ptr<MouseDragDetector> m_mouse_drag_detector
+    );
 
     void on_scene_mouse_event(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
     bool on_scene_keyboard_event(const Platform::KeyboardEvent& e);
@@ -107,6 +113,8 @@ private:
 
     GeometryDataFactory m_data_factory;
     Domain::SelectionId m_last_project_id{Domain::INVALID_ID};
+
+    std::unique_ptr<MouseDragDetector> m_mouse_drag_detector;
 
     GizmoList m_base_gizmos;
     ToolGizmoList m_tool_gizmos;
