@@ -4,6 +4,7 @@
 #include <optional>
 #include "Slic3r/Biz/Arrange/Bed.hpp"
 #include "Slic3r/Biz/Arrange/Settings.hpp"
+#include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/Polygon.hpp"
 #include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/Types.hpp"
@@ -72,13 +73,20 @@ public:
     Domain::Vec2crd centroid() const;
 };
 
+struct InputShape {
+    Domain::ElementRef element_ref;
+    ArbitraryShape shape;
+};
+
 class ArrangeItem
 {
 public:
     std::optional<Domain::Vec2crd> gravity_sink;
     bool is_wipe_tower{false};
 
-    ArrangeItem(const ArbitraryShape& shape, const Settings& settings);
+    ArrangeItem(const InputShape& shape, const Settings& settings);
+
+    void allow_rotations(const IBed& bed);
 
     const DecomposedShape& fixed_shape() const;
 
@@ -89,6 +97,8 @@ public:
     const Domain::Vec2crd& get_translation() const;
 
     double get_rotation() const;
+
+    Domain::ElementRef get_element_ref() const;
 
     void set_translation(const Domain::Vec2crd& v);
 
@@ -105,6 +115,7 @@ public:
 private:
     std::shared_ptr<DecomposedShape> m_fixed_shape;
     std::shared_ptr<DecomposedShape> m_movable_shape;
-    std::vector<double> m_allowed_rotations;
+    std::vector<double> m_allowed_rotations{0.0};
+    Domain::ElementRef m_element_ref;
 };
 } // namespace Slic3r::Biz::Arrange

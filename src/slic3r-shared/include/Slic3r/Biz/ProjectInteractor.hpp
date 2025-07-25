@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Biz/ArrangeInteractor.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
 #include "Slic3r/Biz/SLAResultCache.hpp"
 #include "Slic3r/Biz/SLAObjectCache.hpp"
@@ -61,6 +62,7 @@ public:
         m_workbench(workbench),
         m_preset_interactor(workbench),
         m_scene_interactor(workbench),
+        m_arrange_interactor(m_scene_interactor, workbench),
         m_slicing_interactor(dispatcher, thumbnail_image_provider),
         m_print_host_interactor(dispatcher),
         m_user_account_interactor(dispatcher),
@@ -70,8 +72,10 @@ public:
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
         add_listener<ISelectedProjectChangedListener>(&m_scene_interactor);
+        add_listener<ISelectedProjectChangedListener>(&m_arrange_interactor);
         m_scene_interactor.add_listener<ISelectedBedInstancesChangedListener>(this);
         add_listener<ISelectedProjectChangedListener>(&m_slicing_interactor);
+        m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_slicing_interactor.set_listener<Slicing::IFDMResultListener>(&m_fdm_result_cache);
@@ -264,6 +268,8 @@ public:
         return m_status_cache;
     }
 
+    Biz::ArrangeInteractor& arrange_interactor() { return m_arrange_interactor; }
+
     Biz::Slicing::SlicingId selected_bed_slicing_id() const;
 
     /**
@@ -416,6 +422,7 @@ private:
 
     Preset::PresetInteractor m_preset_interactor;
     Scene::SceneInteractor m_scene_interactor;
+    ArrangeInteractor m_arrange_interactor;
     Slicing::SlicingInteractor m_slicing_interactor;
     FDMResultCache m_fdm_result_cache;
     SLAResultCache m_sla_result_cache;

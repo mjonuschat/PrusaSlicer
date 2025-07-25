@@ -14,7 +14,6 @@
 
 using namespace Slic3r;
 using namespace Slic3r::App::Yoga;
-using Catch::Matchers::WithinRel;
 
 TEST_CASE_METHOD(ImGuiFixture, "ButtonGroup constructor")
 {
@@ -23,6 +22,9 @@ TEST_CASE_METHOD(ImGuiFixture, "ButtonGroup constructor")
     AbstractButton* foo = tree.emplace_back<AbstractButton>();
     AbstractButton* bar = tree.emplace_back<AbstractButton>();
     AbstractButton* foobar = tree.emplace_back<AbstractButton>();
+    foo->set_checkable(true);
+    bar->set_checkable(true);
+    foobar->set_checkable(true);
 
     ButtonGroup group({foo, bar, foobar});
 
@@ -36,6 +38,9 @@ TEST_CASE_METHOD(ImGuiFixture, "ButtonGroup set_buttons")
     AbstractButton* foo = tree.emplace_back<AbstractButton>();
     AbstractButton* bar = tree.emplace_back<AbstractButton>();
     AbstractButton* foobar = tree.emplace_back<AbstractButton>();
+    foo->set_checkable(true);
+    bar->set_checkable(true);
+    foobar->set_checkable(true);
 
     ButtonGroup group;
     group.set_buttons({foo, bar, foobar});
@@ -45,6 +50,7 @@ TEST_CASE_METHOD(ImGuiFixture, "ButtonGroup set_buttons")
     group.set_buttons({});
 
     REQUIRE(group.button_count() == 0);
+    REQUIRE(group.checked_button() == nullptr);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "ButtonGroup set_checked exclusive")

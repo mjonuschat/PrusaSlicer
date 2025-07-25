@@ -3,6 +3,7 @@
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/Polygon.hpp"
 #include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Bed.hpp"
 
 namespace Slic3r::Biz::Arrange {
 struct IBed
@@ -24,12 +25,6 @@ private:
     Domain::Point m_center;
 };
 
-struct Segments
-{
-    std::size_t x_count{1};
-    std::size_t y_count{1};
-};
-
 enum class PivotPoint
 {
     Center,
@@ -44,19 +39,19 @@ struct RectangleBed : public IBed
     RectangleBed(
         const Domain::BoundingBox2crd& bb,
         const PivotPoint pivot_point = {},
-        const Segments segments      = {}
+        const Domain::Bed::Segments segments = {}
     );
 
     Domain::BoundingBox2crd bounding_box() const final;
     Domain::ExPolygons ifp_convex(const Domain::Polygon& convexpoly) const final;
     double area() const final;
     PivotPoint pivot_point() const;
-    Segments segments() const;
+    Domain::Bed::Segments segments() const;
 
 private:
     Domain::BoundingBox2crd m_bb;
     PivotPoint m_pivot_point;
-    Segments m_segments;
+    Domain::Bed::Segments m_segments;
 };
 
 struct CircleBed : public IBed

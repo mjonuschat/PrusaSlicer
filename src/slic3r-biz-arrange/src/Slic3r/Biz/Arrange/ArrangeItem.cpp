@@ -203,49 +203,15 @@ std::optional<double> get_fit_box_rotation(const ArrangeItem& itm, const Boundin
 
     return std::nullopt;
 }
-
-std::vector<double> get_allowed_rotations(const ArrangeItem& item, const Settings& settings)
-{
-    if (!settings.allow_rotations) {
-        return {0.0};
-    }
-
-    // Use the minimum bounding box rotation as a starting point.
-    const double minbbr = get_min_area_bounding_box_rotation(item);
-    std::vector<double> result{
-        {minbbr,
-         minbbr + std::numbers::pi / 4.,
-         minbbr + std::numbers::pi / 2.,
-         minbbr + std::numbers::pi,
-         minbbr + 3 * std::numbers::pi / 4.}
-    };
-
-    // Add the original rotation of the item if minbbr
-    // is not already the original rotation (zero)
-    if (std::abs(minbbr) > 0.) {
-        result.emplace_back(0.);
-    }
-
-    // Also try to find the rotation that fits the item
-    // into a rectangular bed, given that it cannot fit,
-    // and there exists a rotation which can fit.
-    if (settings.arrangment_limits) {
-        if (const auto rotation{get_fit_box_rotation(item, *settings.arrangment_limits)}) {
-            result.emplace_back(*rotation);
-        }
-    }
-
-    return result;
-}
 } // namespace
 
-ArrangeItem::ArrangeItem(const ArbitraryShape& shape, const Settings& settings)
+ArrangeItem::ArrangeItem(const InputShape& shape, const Settings& settings)
 {
     using GeometryHandling::Arbitrary;
     using GeometryHandling::Convex;
 
     const ArbitraryShape offset_shape{
-        settings.scaled_offset != 0.0 ? offset_ex(shape, settings.scaled_offset) : shape
+        settings.scaled_offset != 0.0 ? offset_ex(shape.shape, settings.scaled_offset) : shape.shape
     };
 
     if (settings.fixed_geometry == Convex && settings.movable_geometry == Convex) {
@@ -263,7 +229,36 @@ ArrangeItem::ArrangeItem(const ArbitraryShape& shape, const Settings& settings)
         PANIC("Arbitrary movable shaped geometry with convex fixed shape makes no sense!");
     }
 
-    m_allowed_rotations = get_allowed_rotations(*this, settings);
+    m_element_ref = shape.element_ref;
+}
+
+void ArrangeItem::allow_rotations(const IBed& bed) {
+
+    // Use the minimum bounding box rotation as a starting point.
+    const double minbbr = get_min_area_bounding_box_rotation(*this);
+    m_allowed_rotations = {
+        {minbbr,
+         minbbr + std::numbers::pi / 4.,
+         minbbr + std::numbers::pi / 2.,
+         minbbr + std::numbers::pi,
+         minbbr + 3 * std::numbers::pi / 4.}
+    };
+
+    // Add the original rotation of the item if minbbr
+    // is not already the original rotation (zero)
+    if (std::abs(minbbr) > 0.) {
+        m_allowed_rotations.emplace_back(0.);
+    }
+
+    // Also try to find the rotation that fits the item
+    // into a rectangular bed, given that it cannot fit,
+    // and there exists a rotation which can fit.
+    auto rectangle_bed{dynamic_cast<const RectangleBed*>(&bed)};
+    if (rectangle_bed != nullptr) {
+        if (const auto rotation{get_fit_box_rotation(*this, rectangle_bed->bounding_box())}) {
+            m_allowed_rotations.emplace_back(*rotation);
+        }
+    }
 }
 
 const DecomposedShape& ArrangeItem::fixed_shape() const
@@ -289,6 +284,10 @@ const Domain::Vec2crd& ArrangeItem::get_translation() const
 double ArrangeItem::get_rotation() const
 {
     return m_fixed_shape->get_rotation();
+}
+
+Domain::ElementRef ArrangeItem::get_element_ref() const {
+    return m_element_ref;
 }
 
 void ArrangeItem::set_translation(const Domain::Vec2crd& v)

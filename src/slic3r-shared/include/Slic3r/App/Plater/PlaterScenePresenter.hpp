@@ -24,14 +24,16 @@ struct BedNodeTag;
 
 namespace Slic3r::App::Plater {
 
-class PlaterScenePresenter : public WithListeners<Plater::IBedVisuallyChangedListener>,
-                             public Biz::ISelectedProjectChangedListener,
-                             public Biz::Scene::ISceneSelectionChangedListener,
-                             public Biz::ISelectedBedInstancesChangedListener,
-                             public Biz::Scene::ISceneChangedListener,
-                             public Scene::MinimalSceneRenderCustomizer,
-                             public Scene::ISceneProvider,
-                             public Scene::IProjectSceneProvider
+class PlaterScenePresenter :
+    public WithListeners<Plater::IBedVisuallyChangedListener>,
+    public Biz::ISelectedProjectChangedListener,
+    public Biz::Scene::ISceneSelectionChangedListener,
+    public Biz::ISelectedBedInstancesChangedListener,
+    public Biz::Scene::ISceneChangedListener,
+    public Biz::Scene::ISceneBedInstanceChangedListener,
+    public Scene::MinimalSceneRenderCustomizer,
+    public Scene::ISceneProvider,
+    public Scene::IProjectSceneProvider
 {
 public:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, Scene::ScenePresenterProjectContext>;

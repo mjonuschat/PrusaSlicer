@@ -95,10 +95,11 @@ LayoutButton* Dialog::close_button() const
     return m_close_button;
 }
 
-void Dialog::add_separator()
+Separator* Dialog::add_separator()
 {
     Separator* separator = m_content->emplace_back<Separator>(Orientation::Horizontal);
     separator->set_margin(Margins(-dialog_padding, 0.f));
+    return separator;
 }
 
 LayoutButton* Dialog::append_tab(const std::string& tab)

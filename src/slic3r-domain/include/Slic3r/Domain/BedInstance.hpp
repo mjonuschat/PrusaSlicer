@@ -12,6 +12,7 @@ namespace Slic3r::Domain {
 
 // TODO: move this to better place
 using ModelInstanceList = std::vector<ModelInstance*>;
+using ConstModelInstanceList = std::vector<const ModelInstance*>;
 
 class Bed;
 

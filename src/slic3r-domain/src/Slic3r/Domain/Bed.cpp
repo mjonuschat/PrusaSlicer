@@ -29,6 +29,7 @@ static bool check_model(const std::string& filename)
 Bed Bed::from(
     const Vec2ds& contour,
     float max_print_height,
+    const std::optional<Bed::Segments>& bed_segments,
     const std::string& model_filename,
     const std::string& texture_filename
 )
@@ -36,6 +37,7 @@ Bed Bed::from(
     Bed ret;
     ret.m_contour = contour;
     ret.m_max_print_height = max_print_height;
+    ret.m_segments = bed_segments;
     ret.m_model_filename = model_filename;
     ret.m_texture_filename = texture_filename;
 
@@ -73,6 +75,10 @@ bool Bed::contains(const Vec2d& bed_inst_position, const BoundingBox2d& object_b
     Vec2d center = Vec2d{m_center.x(), m_center.y()} + bed_inst_position;
     BoundingBox2d bed_bounds{center - half_extent, center + half_extent};
     return bed_bounds.overlap(object_bb);
+}
+
+bool operator==(const Bed::Segments& a, const Bed::Segments& b) {
+    return a.x_count == b.x_count && a.y_count == b.y_count;
 }
 
 

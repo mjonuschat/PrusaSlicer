@@ -33,6 +33,7 @@ protected:
                    bool is_grayed = true);
 
     float gap_size() const;
+    Item* add_new_row(const std::string& title, Yoga::ItemPtr controls, YGAlign label_align = YGAlignCenter);
 };
 
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <optional>
-#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Biz/Arrange/Bed.hpp"
 
 namespace Slic3r::Biz::Arrange {
 
@@ -20,14 +20,12 @@ enum class GeometryHandling
 struct Settings
 {
     Strategy strategy{Strategy::Auto};
-    bool allow_rotations{false};
-
-    // Used to align rotations if provided. Only useful with rectengular bed.
-    std::optional<Domain::BoundingBox2crd> arrangment_limits;
-
     double scaled_offset{0.0};
-
+    double unscaled_bed_offset{0.0};
+    bool allow_rotations{false};
     GeometryHandling fixed_geometry{GeometryHandling::Convex};
     GeometryHandling movable_geometry{GeometryHandling::Convex};
+    std::optional<PivotPoint> bed_pivot_point;
+    std::optional<Domain::Bed::Segments> bed_segments;
 };
 } // namespace Slic3r::Biz::Arrange

@@ -15,9 +15,6 @@ public:
     PaintOnSupportsDialog();
 
 private:
-    void add_new_row(const std::string& title, Yoga::ItemPtr controls);
-
-private:
     Yoga::ButtonGroup m_group_tool;
     Yoga::ButtonGroup m_group_shape;
 };

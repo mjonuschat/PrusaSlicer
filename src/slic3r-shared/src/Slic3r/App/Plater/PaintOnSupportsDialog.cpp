@@ -106,18 +106,4 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
         { {Render::Icon::KeyShift, {35.f, 35.f}}, {Render::Icon::MouseLeft} }, "Remove", help_row
     );
 }
-
-void PaintOnSupportsDialog::add_new_row(const std::string& title, Yoga::ItemPtr controls)
-{
-    Item* row = content()->emplace_back<Item>();
-    row->set_gap(gap_size());
-    row->set_padding({10, 0});
-    Text* text = row->emplace_back<Text>(title);
-    text->set_self_align(YGAlignCenter);
-    text->set_width_percent(35);
-
-    controls->set_width_percent(65);
-    row->append(std::move(controls));
-}
-
 } // namespace Slic3r::App::Plater

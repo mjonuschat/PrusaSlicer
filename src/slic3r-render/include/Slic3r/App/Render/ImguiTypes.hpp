@@ -196,6 +196,13 @@ enum class Icon : wchar_t
     AlignVCenterBtn,
     AlignVBottomBtn,
 
+    // Gizmo Arrange
+    ArrangeTopLeft,
+    ArrangeTopRight,
+    ArrangeBottomLeft,
+    ArrangeBottomRight,
+    ArrangeCenter,
+
     Layers,
     Infill,
     SkirtBrim,

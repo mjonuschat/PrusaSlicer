@@ -24,6 +24,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/SimplifyGizmo.cpp
         include/Slic3r/App/Plater/SimplifyDialog.hpp
         src/Slic3r/App/Plater/SimplifyDialog.cpp
+        include/Slic3r/App/Plater/ArrangeDialog.hpp
+        src/Slic3r/App/Plater/ArrangeDialog.cpp
+        include/Slic3r/App/Plater/ArrangeGizmo.hpp
+        src/Slic3r/App/Plater/ArrangeGizmo.cpp
         include/Slic3r/App/Plater/PlaterSceneLayer.hpp
         include/Slic3r/App/Plater/PlaterRenderLayout.hpp
         src/Slic3r/App/Plater/PlaterRenderLayout.cpp
@@ -649,6 +653,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/ProjectLoader.cpp
         include/Slic3r/Biz/Format/STL.hpp
         src/Slic3r/Biz/Format/STL.cpp
+
+        include/Slic3r/Biz/ArrangeInteractor.hpp
+        src/Slic3r/Biz/ArrangeInteractor.cpp
 )
 
 if (WIN32)
@@ -716,6 +723,7 @@ find_package(magic_enum REQUIRED)
 slic3r_remap_configs("pugixml::static;yoga::yogacore;${YAML_LIB}" RelWithDebInfo Release)
 
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
+
 target_link_libraries(slic3r-shared PUBLIC
         slic3r-platform
         slic3r-render
@@ -725,6 +733,7 @@ target_link_libraries(slic3r-shared PUBLIC
         fmt::fmt
         yoga::yogacore
         slic3r-biz-algorithms
+        slic3r-biz-arrange
         nlohmann_json::nlohmann_json
         ${YAML_LIB}
         magic_enum::magic_enum
@@ -817,6 +826,8 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Config/ConfigRoundtripTests.cpp
 
         test/Slic3r/Biz/Config/HwConfigJsonTests.cpp
+
+        test/Slic3r/Biz/ArrangeInteractorTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 
