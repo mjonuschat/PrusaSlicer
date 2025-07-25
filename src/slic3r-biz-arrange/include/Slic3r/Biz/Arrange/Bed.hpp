@@ -38,7 +38,7 @@ struct RectangleBed : public IBed
 {
     RectangleBed(
         const Domain::BoundingBox2crd& bb,
-        const PivotPoint pivot_point = {},
+        const PivotPoint pivot_point         = {},
         const Domain::Bed::Segments segments = {}
     );
 

@@ -73,7 +73,8 @@ public:
     Domain::Vec2crd centroid() const;
 };
 
-struct InputShape {
+struct InputShape
+{
     Domain::ElementRef element_ref;
     ArbitraryShape shape;
 };

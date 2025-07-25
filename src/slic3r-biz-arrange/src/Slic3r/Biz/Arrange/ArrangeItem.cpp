@@ -232,8 +232,8 @@ ArrangeItem::ArrangeItem(const InputShape& shape, const Settings& settings)
     m_element_ref = shape.element_ref;
 }
 
-void ArrangeItem::allow_rotations(const IBed& bed) {
-
+void ArrangeItem::allow_rotations(const IBed& bed)
+{
     // Use the minimum bounding box rotation as a starting point.
     const double minbbr = get_min_area_bounding_box_rotation(*this);
     m_allowed_rotations = {
@@ -286,7 +286,8 @@ double ArrangeItem::get_rotation() const
     return m_fixed_shape->get_rotation();
 }
 
-Domain::ElementRef ArrangeItem::get_element_ref() const {
+Domain::ElementRef ArrangeItem::get_element_ref() const
+{
     return m_element_ref;
 }
 

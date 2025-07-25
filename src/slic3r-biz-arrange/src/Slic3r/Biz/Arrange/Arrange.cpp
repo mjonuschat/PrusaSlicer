@@ -224,7 +224,8 @@ ArrangeResult arrange(
     }
 
     std::unique_ptr<Kernels::IKernel> base_kernel;
-    if (dynamic_cast<const CircleBed*>(bed.get()) != nullptr || settings.strategy == Strategy::PullToCenter)
+    if (dynamic_cast<const CircleBed*>(bed.get()) != nullptr
+        || settings.strategy == Strategy::PullToCenter)
     {
         base_kernel = std::make_unique<Kernels::GravityKernel>();
     } else {
@@ -266,17 +267,15 @@ ArrangeResult arrange(
 
     constexpr double accuracy{1.0};
     Packer packer{std::move(final_kernel), accuracy, opt::Optimizer<opt::AlgNLoptSubplex>{}, []() {
-        return false;
-    }};
+                      return false;
+                  }};
 
     ArrangeResult result;
     PackingContext context;
     context.add_fixed_items(fixed_items);
     for (std::size_t i{}; i < items.size(); ++i) {
         ArrangeItem& item{items[i]};
-        const bool packed{
-            packer.pack(*final_bed, item, context, std::span{items}.subspan(i + 1))
-        };
+        const bool packed{packer.pack(*final_bed, item, context, std::span{items}.subspan(i + 1))};
         if (packed) {
             context.add_packed_item(item);
             result.packed.push_back(item);

@@ -40,34 +40,40 @@ double Packer::pick_best_spot_on_nfp(ArrangeItem& item, const Domain::ExPolygons
         return a.oresult.score < b.oresult.score;
     };
 
-    execution::for_each(ex_policy, size_t(0), edge_caches.size(), [&](size_t edge_cache_idx) {
-        auto& ec_contour = edge_caches[edge_cache_idx];
-        auto& corners    = sample_sets[edge_cache_idx];
-        std::vector<CornerResult> results(corners.size());
+    execution::for_each(
+        ex_policy,
+        size_t(0),
+        edge_caches.size(),
+        [&](size_t edge_cache_idx) {
+            auto& ec_contour = edge_caches[edge_cache_idx];
+            auto& corners    = sample_sets[edge_cache_idx];
+            std::vector<CornerResult> results(corners.size());
 
-        auto cornerfn = [&](size_t i) {
-            ContourLocation cr = corners[i];
-            auto objfn         = [&](opt::Input<1>& in) {
-                Domain::Vec2crd p  = ec_contour.coords(ContourLocation{cr.contour_id, in[0]});
-                Domain::Vec2crd tr = p - ref_v;
+            auto cornerfn = [&](size_t i) {
+                ContourLocation cr = corners[i];
+                auto objfn         = [&](opt::Input<1>& in) {
+                    Domain::Vec2crd p  = ec_contour.coords(ContourLocation{cr.contour_id, in[0]});
+                    Domain::Vec2crd tr = p - ref_v;
 
-                return kernel->placement_fitness(item, tr);
+                    return kernel->placement_fitness(item, tr);
+                };
+
+                // Assuming that solver is a lightweight object
+                solver.to_max();
+                auto oresult = solver.optimize(objfn, opt::initvals({cr.dist}), opt::bounds({{0., 1.}}));
+
+                results[i] = CornerResult{cr.contour_id, oresult};
             };
 
-            // Assuming that solver is a lightweight object
-            solver.to_max();
-            auto oresult = solver.optimize(objfn, opt::initvals({cr.dist}), opt::bounds({{0., 1.}}));
+            execution::for_each(ex_policy, size_t(0), results.size(), cornerfn, nthreads);
 
-            results[i] = CornerResult{cr.contour_id, oresult};
-        };
+            auto it = std::max_element(results.begin(), results.end(), resultcmp);
 
-        execution::for_each(ex_policy, size_t(0), results.size(), cornerfn, nthreads);
-
-        auto it = std::max_element(results.begin(), results.end(), resultcmp);
-
-        if (it != results.end())
-            gresults[edge_cache_idx] = *it;
-    }, nthreads);
+            if (it != results.end())
+                gresults[edge_cache_idx] = *it;
+        },
+        nthreads
+    );
 
     auto it = std::max_element(gresults.begin(), gresults.end(), resultcmp);
     if (it != gresults.end()) {

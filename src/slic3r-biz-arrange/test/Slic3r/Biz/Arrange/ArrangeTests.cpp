@@ -10,30 +10,30 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
+using Slic3r::Biz::Algorithms::BoundingBox::to_polygon;
 using Slic3r::Biz::Algorithms::ClipperUtils::intersection;
 using Slic3r::Biz::Algorithms::ClipperUtils::offset;
 using Slic3r::Biz::Algorithms::Geometry::Circle;
 using Slic3r::Biz::Algorithms::Scaling::scaled;
-using Slic3r::Biz::Algorithms::BoundingBox::to_polygon;
 using Slic3r::Biz::Arrange::ArbitraryShape;
 using Slic3r::Biz::Arrange::arrange;
 using Slic3r::Biz::Arrange::ArrangeItem;
 using Slic3r::Biz::Arrange::ArrangeResult;
 using Slic3r::Biz::Arrange::ConvexShape;
 using Slic3r::Biz::Arrange::ConvexShapes;
+using Slic3r::Biz::Arrange::InputShape;
 using Slic3r::Biz::Arrange::PivotPoint;
 using Slic3r::Biz::Arrange::Settings;
-using Slic3r::Biz::Arrange::InputShape;
 using Slic3r::Biz::Arrange::to_arrange_items;
 using Slic3r::Domain::BoundingBox2crd;
 using Slic3r::Domain::coord_t;
+using Slic3r::Domain::ElementRef;
 using Slic3r::Domain::ExPolygon;
 using Slic3r::Domain::Points;
 using Slic3r::Domain::Polygon;
 using Slic3r::Domain::Polygons;
 using Slic3r::Domain::Vec2crd;
 using Slic3r::Domain::Vec2d;
-using Slic3r::Domain::ElementRef;
 using BedSegments = Slic3r::Domain::Bed::Segments;
 
 #ifndef NDEBUG
@@ -79,7 +79,11 @@ double area(const ArbitraryShape& shape)
     });
 }
 
-std::vector<ArrangeItem> get_random_squares(const std::size_t cube_count, const Settings& settings, const unsigned seed)
+std::vector<ArrangeItem> get_random_squares(
+    const std::size_t cube_count,
+    const Settings& settings,
+    const unsigned seed
+)
 {
     std::mt19937 gen{seed};
     const BoundingBox2crd inital_limits{scaled(Vec2d{0.0, 0.0}), scaled(Vec2d{100.0, 100.0})};
@@ -157,7 +161,8 @@ void draw(std::string_view filename, const std::vector<ArrangeItem>& items, cons
     }
 }
 
-Points get_rectangle_bed(const BoundingBox2crd& bounding_box) {
+Points get_rectangle_bed(const BoundingBox2crd& bounding_box)
+{
     return to_polygon(bounding_box).points;
 }
 
@@ -306,7 +311,7 @@ TEST_CASE("Arrange works with segmented bed and pivot", "[Arrange][Integration]"
 {
     Settings settings;
     settings.bed_pivot_point = PivotPoint::BottomRight;
-    settings.bed_segments = BedSegments{4, 4};
+    settings.bed_segments    = BedSegments{4, 4};
 
     const std::vector<InputShape> squares{get_square(scaled(40.0))};
     std::vector<ArrangeItem> arrange_items{to_arrange_items(squares, settings)};
