@@ -22,6 +22,8 @@
 #include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
 #include "Slic3r/App/Plater/MeasureGizmo.hpp"
 #include "Slic3r/App/Plater/MeasureDialog.hpp"
+#include "Slic3r/App/Plater/TextGizmo.hpp"
+#include "Slic3r/App/Plater/TextDialog.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Types.hpp"
@@ -102,6 +104,10 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(this);
 
+    // Set our color styles before gizmos initialization
+    // to use them during GiymoDialogs creation
+    AbstractRenderLayout::set_our_style_colors();
+
     init_gizmos();
     init_scene();
     init_scene_layout();
@@ -134,8 +140,6 @@ void PlaterRenderModule::remove_type_changed_listener(IRenderModuleChangedListen
 
 void PlaterRenderModule::init_scene_layout()
 {
-    AbstractRenderLayout::set_our_style_colors();
-
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this, *m_thumbnail_store);
 
@@ -282,6 +286,18 @@ void PlaterRenderModule::init_scene_layout()
         m_paint_on_supports_gizmo
     );
 
+    m_toolbar_text = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle,
+        Render::Icon::ToolbarText,
+        "Text",
+        "T",
+        {.action =
+             [this]() {
+                 toggle_activate_tool(Scene::ToolType::TextGizmo);
+             }},
+        m_text_gizmo
+    );
+
     m_toolbar_measure = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::ToolbarMeasure,
@@ -302,6 +318,7 @@ void PlaterRenderModule::update_toolbar_tool_selection(Scene::ToolType current_t
     m_toolbar_paint_on_supports->set_checked(
         current_tool_type == Scene::ToolType::PaintOnSupportsGizmo
     );
+    m_toolbar_text->set_checked(current_tool_type == Scene::ToolType::TextGizmo);
     m_toolbar_measure->set_checked(current_tool_type == Scene::ToolType::MeasureGizmo);
 }
 
@@ -378,6 +395,7 @@ void PlaterRenderModule::init_gizmos()
         close_fn
     );
     m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>();
+    m_text_gizmo              = &m_gizmo_manager->add_tool_gizmo<TextGizmo>();
     m_measure_gizmo           = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>();
 }
 
@@ -1163,6 +1181,10 @@ void PlaterRenderModule::on_scene_selection_changed(
     const bool empty_selection = selection.empty();
     m_toolbar_move->set_enabled(!empty_selection);
     m_toolbar_rotate->set_enabled(!empty_selection);
+
+    m_text_gizmo->update_layout(
+        !empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume
+    );
 
     bool can_add_instance = !empty_selection;
     if (can_add_instance) {

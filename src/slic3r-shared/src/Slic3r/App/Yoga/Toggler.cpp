@@ -9,6 +9,7 @@ namespace Slic3r::App::Yoga {
 Toggler::Toggler()
 {
     set_align_items(YGAlignCenter);
+    set_disabled_fill(ImColor(95, 95, 95));
 
     set_width(20);
     set_height(14);
@@ -16,6 +17,7 @@ Toggler::Toggler()
 
     m_knob = this->emplace_back<Circle>();
     m_knob->set_height_percent(100);
+    m_knob->set_disabled_fill(ImColor(20, 20, 20));
 }
 
 static ImVec4 bg_color(bool checked, bool hovered)

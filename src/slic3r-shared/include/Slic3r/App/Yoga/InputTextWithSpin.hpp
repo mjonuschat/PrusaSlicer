@@ -40,6 +40,8 @@ public:
     void set_step(double step);
     void set_step_fast(double step_fast);
 
+    void set_default(double default_value);
+
 private:
     void increase_value();
     void decrease_value();

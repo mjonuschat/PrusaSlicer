@@ -16,12 +16,14 @@ public:
     void render(Vec2f pos, Vec2f size) override;
 
     const ImColor& fill() const;
+    std::optional<ImColor> disabled_fill() const;
     const ImColor& border_color() const;
     float border_width() const;
     float rounding() const;
     ImDrawFlags flags() const;
 
     void set_fill(const ImColor& fill);
+    void set_disabled_fill(const ImColor& fill);
     void set_border_color(const ImColor& border_color);
     void set_border_width(float border_width);
     void set_rounding(float rounding);
@@ -32,6 +34,7 @@ protected:
 
 private:
     ImColor m_fill = IM_COL32_WHITE;
+    std::optional<ImColor> m_disabled_fill;
     ImColor m_border_color = IM_COL32_WHITE;
     float m_border_width = 0;
     float m_rounding = 5.f;

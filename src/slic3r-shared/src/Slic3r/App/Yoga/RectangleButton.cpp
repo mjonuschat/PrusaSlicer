@@ -18,6 +18,7 @@ RectangleButton::RectangleButton(const std::string& tooltip) : AbstractButton(to
     m_background->set_justify_content(YGJustifyCenter);
     m_background->set_gap(5);
     m_background->set_flex_grow(1);
+    m_background->set_disabled_fill(IM_COL32_DISABLE);
 
     set_background_color_checked(ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
     update_fill();

@@ -21,7 +21,10 @@ void Text::render(Vec2f pos, Vec2f size)
     ImGui::SetCursorScreenPos(to_im(pos));
 
     ImGui::PushFont(m_imgui_render->font(m_font_type));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(m_text_color));
+    ImGui::PushStyleColor(
+        ImGuiCol_Text,
+        enabled() ? ImVec4(m_text_color) : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled)
+    );
 
     // TODO: Resolve elipsis/elide
     if (m_wrap) {

@@ -9,12 +9,11 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
+#include "Slic3r/App/Yoga/Validator.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Plater {
-
-constexpr float gap_size = 10;
 
 PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports")
 {
@@ -22,10 +21,10 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
 
     content_item()->set_width(325.f);
     content()->set_orientation(Orientation::Vertical);
-    content()->set_gap(gap_size);
+    content()->set_gap(gap_size());
 
     std::unique_ptr<Item> tool_buttons = std::make_unique<Item>();
-    tool_buttons->set_gap(gap_size);
+    tool_buttons->set_gap(gap_size());
     LayoutButton* brush_button =
         tool_buttons->emplace_back<LayoutButton>("", Render::Icon::PaintBrush);
     brush_button->set_checkable(true);
@@ -41,7 +40,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
     m_group_tool.set_buttons({brush_button, magic_wand_button});
 
     std::unique_ptr<Item> brush_shape_buttons = std::make_unique<Item>();
-    brush_shape_buttons->set_gap(gap_size);
+    brush_shape_buttons->set_gap(gap_size());
     LayoutButton* sphere_button =
         brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::Sphere);
     sphere_button->set_checkable(true);
@@ -63,17 +62,27 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
 
     constexpr float slider_text_size = 50;
 
-    std::unique_ptr<SliderWithInput> brush_size = std::make_unique<SliderWithInput>(7.5f, 2.5f, 0.5f);
+    std::unique_ptr<SliderWithInput> brush_size = std::make_unique<SliderWithInput>();
+    brush_size->set_begin_value(7.5);
+    brush_size->set_end_value(2.5);
+    brush_size->set_step(0.5);
+    brush_size->set_value(4.);
     brush_size->set_input_width(slider_text_size);
     add_new_row("Brush size", std::move(brush_size));
 
     Dialog::add_separator();
 
-    std::unique_ptr<SliderWithInput> clipping_of_view = std::make_unique<SliderWithInput>(2.5f, 7.5f, 0.25f);
+    std::unique_ptr<SliderWithInput> clipping_of_view = std::make_unique<SliderWithInput>();
+    clipping_of_view->set_begin_value(2.5);
+    clipping_of_view->set_end_value(7.5);
+    clipping_of_view->set_step(0.25);
+    clipping_of_view->set_value(3.);
     clipping_of_view->set_input_width(slider_text_size);
     add_new_row("Clipping of view", std::move(clipping_of_view));
 
-    std::unique_ptr<SliderWithInput> show_overhangs = std::make_unique<SliderWithInput>(0.f, 3.f);
+    std::unique_ptr<SliderWithInput> show_overhangs = std::make_unique<SliderWithInput>();
+    show_overhangs->set_validator(std::make_unique<IntValidator>(0, 3));
+    show_overhangs->set_value(1);
     show_overhangs->set_input_width(slider_text_size);
     add_new_row("Show overhangs", std::move(show_overhangs));
 
@@ -101,7 +110,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
 void PaintOnSupportsDialog::add_new_row(const std::string& title, Yoga::ItemPtr controls)
 {
     Item* row = content()->emplace_back<Item>();
-    row->set_gap(gap_size);
+    row->set_gap(gap_size());
     row->set_padding({10, 0});
     Text* text = row->emplace_back<Text>(title);
     text->set_self_align(YGAlignCenter);

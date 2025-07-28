@@ -9,6 +9,7 @@
 namespace Slic3r::App::Yoga {
 
 class Validator;
+class InputTextField;
 
 /**
  * @brief The InputText class is a text input class which intentionally provides
@@ -27,6 +28,14 @@ public:
          * it's focus) This is due to optional validator which is invoked just before this callback
          */
         std::function<void()> text_edited{nullptr};
+
+    protected:
+        /**
+         * @brief update_revert_button is used only by fiend InputTextField class to prodagate update_revert_button here
+         */
+        std::function<void()> update_revert_button{nullptr};
+        friend class InputText;
+        friend class InputTextField;
     };
 
     explicit InputText(const std::string& name = "InputText");

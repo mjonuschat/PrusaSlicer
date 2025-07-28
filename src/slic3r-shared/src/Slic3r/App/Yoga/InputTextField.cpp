@@ -5,6 +5,7 @@
 #include "Slic3r/App/Yoga/InputTextField.hpp"
 
 #include "Slic3r/App/Yoga/Validator.hpp"
+#include <fmt/format.h>
 
 #include <imgui_internal.h>
 
@@ -13,8 +14,13 @@ namespace Slic3r::App::Yoga {
 InputTextField::InputTextField(const std::string& name) : m_tooltip(this, "", "")
 {
     set_padding(1);
+    set_disabled_fill(ImColor(32, 32, 32));
     m_input_text = emplace_back<InputText>(name);
     m_input_text->set_flex_grow(1);
+
+    callbacks().update_revert_button = [this]() {
+        update_revert_button();
+    };
 }
 
 void InputTextField::process_events(Vec2f pos, Vec2f size)
@@ -97,5 +103,27 @@ bool InputTextField::hovered() const
 InputText* InputTextField::input_text() const
 {
     return m_input_text;
+}
+
+void InputTextField::set_default(double default_value)
+{
+    m_default_text = fmt::format("{}", default_value);
+    update_revert_button();
+}
+
+void InputTextField::set_default(const std::string& default_text)
+{
+    m_default_text = default_text;
+    update_revert_button();
+}
+
+bool InputTextField::is_changed_value() const
+{
+    return m_input_text->text() != m_default_text;
+}
+
+void InputTextField::reset()
+{
+    m_input_text->set_text(m_default_text);
 }
 } // namespace Slic3r::App::Yoga

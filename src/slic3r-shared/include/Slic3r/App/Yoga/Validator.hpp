@@ -58,6 +58,4 @@ private:
     double m_from = 0;
     double m_to = 0;
 };
-
-
 }

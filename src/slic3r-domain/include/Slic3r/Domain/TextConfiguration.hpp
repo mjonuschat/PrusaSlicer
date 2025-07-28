@@ -17,6 +17,27 @@
 
 namespace Slic3r::Domain {
 
+// Align types declaration is extracted from FontProp to allow forward declaration
+enum class HorizontalAlign
+{
+    left = 0,
+    center,
+    right
+};
+enum class VerticalAlign
+{
+    top = 0,
+    center,
+    bottom
+};
+
+// This struct closely mirrors FontProp::Align, but is more self-explanatory in its usage.
+struct TextAlign
+{
+    HorizontalAlign horizontal;
+    VerticalAlign vertical;
+};
+
 /// <summary>
 /// User modifiable property of text style
 /// NOTE: OnEdit fix serializations: EmbossStylesSerializable, TextConfigurationSerialization

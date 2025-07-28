@@ -159,6 +159,7 @@ enum class Icon : wchar_t
     ToolbarGCode,
     ToolbarPaintOnSupports,
     ToolbarMeasure,
+    ToolbarText,
 
     // printer icons (PNGs)
     PrinterNEXT,
@@ -184,6 +185,16 @@ enum class Icon : wchar_t
     Sphere,
     WandMagicSparkles,
     PaintBrush,
+
+    // Gizmo Emboss
+    NewBtnIcon,
+    DeleteBtnIcon,
+    AlignHLeftBtn,
+    AlignHCenterBtn,
+    AlignHRightBtn,
+    AlignVTopBtn,
+    AlignVCenterBtn,
+    AlignVBottomBtn,
 
     Layers,
     Infill,

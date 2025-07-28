@@ -31,6 +31,8 @@ protected:
                    const std::string title,
                    Item* help_container,
                    bool is_grayed = true);
+
+    float gap_size() const;
 };
 
 }

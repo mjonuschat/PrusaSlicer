@@ -15,19 +15,14 @@ void Rectangle::render(Vec2f pos, Vec2f size)
 {
     render_item_begin(pos, size);
 
-    const bool is_enabled = enabled();
-
     ImRect rect(to_im(pos), to_im(pos + size));
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ASSERT(draw_list);
 
-    ImColor fill_color;
-    if (!is_enabled) {
-        fill_color = IM_COL32_DISABLE;
-    } else {
-        fill_color = m_fill;
-    }
+    ImColor fill_color = enabled() ?
+        m_fill :
+        (m_disabled_fill.has_value() ? m_disabled_fill.value() : m_fill);
 
     draw_list->AddRectFilled(rect.Min, rect.Max, fill_color, m_rounding, m_flags);
     if (m_border_width > 0) {
@@ -39,6 +34,11 @@ void Rectangle::render(Vec2f pos, Vec2f size)
 
 const ImColor& Rectangle::fill() const { return m_fill; }
 
+std::optional<ImColor> Rectangle::disabled_fill() const
+{
+    return m_disabled_fill;
+}
+
 const ImColor& Rectangle::border_color() const { return m_border_color; }
 
 float Rectangle::border_width() const { return m_border_width; }
@@ -48,6 +48,11 @@ float Rectangle::rounding() const { return m_rounding; }
 ImDrawFlags Rectangle::flags() const { return m_flags; }
 
 void Rectangle::set_fill(const ImColor& fill) { m_fill = fill; }
+
+void Rectangle::set_disabled_fill(const ImColor& fill)
+{
+    m_disabled_fill = fill;
+}
 
 void Rectangle::set_border_color(const ImColor& border_color) { m_border_color = border_color; }
 

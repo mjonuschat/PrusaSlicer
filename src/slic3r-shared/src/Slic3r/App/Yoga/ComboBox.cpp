@@ -21,6 +21,7 @@ static bool YGBeginCombo(
     ImVec2 size_arg,
     ImGuiComboFlags flags,
     bool editable,
+    bool enabled,
     char* buffer,
     int buf_size,
     bool& edited,
@@ -61,7 +62,7 @@ static bool YGBeginCombo(
 
     // Open on click
     bool held;
-    bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+    bool pressed = enabled && ImGui::ButtonBehavior(bb, id, &hovered, &held);
     const ImGuiID popup_id = ImHashStr("##ComboPopup", 0, id);
     bool popup_open = ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
     if (pressed && !popup_open)
@@ -156,6 +157,10 @@ void ComboBox::render(Vec2f pos, Vec2f size)
 
         ImGui::SetCursorScreenPos(to_im(pos));
 
+        ImGui::PushStyleColor(
+            ImGuiCol_Text,
+            ImGui::GetColorU32(enabled() ? ImGuiCol_Text : ImGuiCol_TextDisabled)
+        );
         const std::string id = "###" + m_item_name;
         bool new_hovered     = false;
         if (YGBeginCombo(
@@ -164,6 +169,7 @@ void ComboBox::render(Vec2f pos, Vec2f size)
                 to_im(size),
                 m_flags,
                 m_editable,
+                enabled(),
                 m_buffer.data(),
                 m_buffer.size(),
                 m_updated,
@@ -190,6 +196,7 @@ void ComboBox::render(Vec2f pos, Vec2f size)
 
             ImGui::EndCombo();
         }
+        ImGui::PopStyleColor();
 
         if (m_hovered != new_hovered) {
             m_hovered = new_hovered;
@@ -234,10 +241,23 @@ void ComboBox::set_validator(std::unique_ptr<Validator> validator)
     m_validator = std::move(validator);
 }
 
-ImGuiComboFlags ComboBox::flags() const
+void ComboBox::set_default(int default_index)
 {
-    return m_flags;
+    m_default_index = default_index;
+    update_revert_button();
 }
+
+bool ComboBox::is_changed_value() const
+{
+    return m_current_index != m_default_index;
+}
+
+void ComboBox::reset()
+{
+    set_current_index(m_default_index);
+}
+
+ImGuiComboFlags ComboBox::flags() const { return m_flags; }
 
 void ComboBox::set_flags(ImGuiComboFlags flags)
 {
@@ -275,6 +295,7 @@ void ComboBox::set_current_index(int current_index)
         m_current_label = m_items.at(m_current_index);
         strcpy(m_buffer.data(), m_current_label.c_str());
     }
+    update_revert_button();
 }
 
 } // namespace Slic3r::App::Yoga

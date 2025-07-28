@@ -5,53 +5,147 @@
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/Slider.hpp"
 #include "Slic3r/App/Yoga/InputTextField.hpp"
-#include "libslic3r/format.hpp"
+#include "Slic3r/App/Yoga/Validator.hpp"
+#include <fmt/format.h>
 
 namespace Slic3r::App::Yoga {
 
-SliderWithInput::Callbacks& SliderWithInput::callbacks() { return m_callbacks; }
+SliderWithInput::Callbacks& SliderWithInput::callbacks()
+{
+    return m_callbacks;
+}
 
-SliderWithInput::SliderWithInput(float begin, float end, float step) : Item()
+SliderWithInput::SliderWithInput() : Item()
 {
     set_gap(10.f);
     set_align_items(YGAlignCenter);
 
-    m_input = emplace_back<InputTextField>(Slic3r::format("%1%", begin));
+    m_input = emplace_back<InputTextField>("SliderInputTextField");
     m_input->set_flags(ImGuiInputTextFlags_CharsDecimal);
     m_input->callbacks().text_edited = [this]() {
-        m_slider->set_value(std::stof(m_input->text())); };
+        m_slider->set_value(std::stod(m_input->text()));
+    };
 
-    m_slider = emplace_back<Slider>(begin, end, step);
+    // By default we use DefaultValidator for the slider
+    m_input->set_validator(std::make_unique<DoubleValidator>());
+
+    m_slider = emplace_back<Slider>();
     m_slider->set_flex_grow(1);
-    m_slider->callbacks().value_changed = [this](float value) {
-        m_input->set_text(Slic3r::format("%1%", value));
+    m_slider->callbacks().value_changed = [this](double value) {
+        m_input->set_text(fmt::format("{}", value));
         if (callbacks().value_changed)
             callbacks().value_changed(value);
     };
-
-    m_input->set_text(Slic3r::format("%1%", m_slider->begin()));
 }
 
-void SliderWithInput::set_input_width(float width)
+void SliderWithInput::set_input_width(double width)
 {
     m_input->set_width(width);
 }
 
-void SliderWithInput::set_input_width_percent(float width_percent)
+void SliderWithInput::set_input_width_percent(double width_percent)
 {
     m_input->set_width_percent(width_percent);
 }
 
-float SliderWithInput::value() const { return m_slider->value(); }
-void SliderWithInput::set_value(const float value) { m_slider->set_value(value); }
+double SliderWithInput::value() const
+{
+    return m_slider->value();
+}
 
-float SliderWithInput::begin() const { return m_slider->begin(); }
-void SliderWithInput::set_begin_value(float begin) { m_slider->set_begin_value(begin); }
+void SliderWithInput::set_value(const double value)
+{
+    m_slider->set_value(value);
+}
 
-float SliderWithInput::end() const { return m_slider->end(); }
-void SliderWithInput::set_end_value(float end) { m_slider->set_end_value(end); }
+double SliderWithInput::begin() const
+{
+    return m_slider->begin();
+}
 
-float SliderWithInput::step() const { return m_slider->step(); }
-void SliderWithInput::set_step(float step) { m_slider->set_step(step); }
+void SliderWithInput::set_begin_value(double begin)
+{
+    m_slider->set_begin_value(begin);
+    if (IntValidator* int_validator = dynamic_cast<IntValidator*>(validator())) {
+        int_validator->set_from(static_cast<int>(begin));
+    } else {
+        dynamic_cast<DoubleValidator*>(validator())->set_from(begin);
+    }
+}
+
+double SliderWithInput::end() const
+{
+    return m_slider->end();
+}
+
+void SliderWithInput::set_end_value(double end)
+{
+    m_slider->set_end_value(end);
+
+    // The Validator needs to process the 'from' and 'to' values in the condition: from < to.
+    const bool need_to_revert = m_slider->begin() > m_slider->end();
+
+    if (IntValidator* int_validator = dynamic_cast<IntValidator*>(validator())) {
+        if (need_to_revert) {
+            int_validator->set_to(int_validator->from());
+            int_validator->set_from(static_cast<int>(end));
+        } else {
+            int_validator->set_to(static_cast<int>(end));
+        }
+    } else if (DoubleValidator* double_validator = dynamic_cast<DoubleValidator*>(validator())) {
+        if (need_to_revert) {
+            double_validator->set_to(double_validator->from());
+            double_validator->set_from(end);
+        } else {
+            double_validator->set_to(end);
+        }
+    }
+}
+
+double SliderWithInput::step() const
+{
+    return m_slider->step();
+}
+
+void SliderWithInput::set_step(double step)
+{
+    m_slider->set_step(step);
+}
+
+Validator* SliderWithInput::validator() const
+{
+    return m_input->validator();
+}
+
+void SliderWithInput::set_validator(std::unique_ptr<Validator> validator_in)
+{
+    m_input->set_validator(std::move(validator_in));
+    if (DoubleValidator* double_validator = dynamic_cast<DoubleValidator*>(validator())) {
+        m_slider->set_begin_value(double_validator->from());
+        m_slider->set_end_value(double_validator->to());
+    } else if (IntValidator* int_validator = dynamic_cast<IntValidator*>(validator())) {
+        m_slider->set_begin_value(int_validator->from());
+        m_slider->set_end_value(int_validator->to());
+    }
+}
+
+void SliderWithInput::set_default(double def_value)
+{
+    // propagate revert button into m_input
+    if (revert_button() && !m_input->revert_button()) {
+        m_input->set_revert_button(revert_button());
+    }
+    m_input->set_default(def_value);
+}
+
+bool SliderWithInput::is_changed_value() const
+{
+    return m_input->is_changed_value();
+}
+
+void SliderWithInput::reset()
+{
+    m_input->reset();
+}
 
 } // namespace Slic3r::App::Yoga

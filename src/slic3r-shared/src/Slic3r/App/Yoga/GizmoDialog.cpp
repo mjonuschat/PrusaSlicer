@@ -11,7 +11,6 @@
 #include "Slic3r/App/Yoga/Separator.hpp"
 
 namespace Slic3r::App::Yoga {
-constexpr float dialog_padding = 10;
 
 GizmoDialog::GizmoDialog(const std::string& title)
     : Dialog(title)
@@ -21,7 +20,7 @@ GizmoDialog::GizmoDialog(const std::string& title)
 void GizmoDialog::add_separator(Item* item)
 {
     Separator* separator = item->emplace_back<Separator>(Orientation::Horizontal);
-    separator->set_margin(Margins(-dialog_padding, 0.f));
+    separator->set_margin(Margins(-content()->padding().left, 0.f));
 }
 
 Item* GizmoDialog::add_help(const std::vector<HelpIcon> symbols, const std::string title, Item* help_container, bool is_grayed)
@@ -51,6 +50,11 @@ Item* GizmoDialog::add_help(const std::vector<HelpIcon> symbols, const std::stri
     text->set_text_color(color);
 
     return help_group;
+}
+
+float GizmoDialog::gap_size() const
+{
+    return 5.0f;
 }
 
 } // namespace Slic3r::App::Yoga

@@ -6,6 +6,7 @@
 
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
+#include "Slic3r/App/Yoga/RevertableControl.hpp"
 
 #include <string>
 
@@ -13,42 +14,49 @@ namespace Slic3r::App::Yoga {
 
 class Slider;
 class InputTextField;
+class Validator;
 
 /**
  * @brief The SliderWithInput class is a composite control combining an input field and a slider.
  * Use set_direction(YGDirectionLTR) to change the alignment of the internal controls.
  */
-class SliderWithInput : public Item
+class SliderWithInput : public Item, public Yoga::RevertableControl
 {
 public:
     struct Callbacks
     {
-        std::function<void(float value)> value_changed{ nullptr };
+        std::function<void(double value)> value_changed{nullptr};
     };
 
-    explicit SliderWithInput(float begin, float end, float step = 1.f);
+    explicit SliderWithInput();
 
     Callbacks& callbacks();
 
-    void set_input_width(float width);
-    void set_input_width_percent(float width_percent);
+    void set_input_width(double width);
+    void set_input_width_percent(double width_percent);
 
-    float value() const;
-    void set_value(float value);
+    double value() const;
+    void set_value(double value);
 
-    float begin() const;
-    void set_begin_value(float begin);
+    double begin() const;
+    void set_begin_value(double begin);
 
-    float end() const;
-    void set_end_value(float end);
+    double end() const;
+    void set_end_value(double end);
 
-    float step() const;
-    void set_step(float step);
+    double step() const;
+    void set_step(double step);
+
+    Validator* validator() const;
+    void set_validator(std::unique_ptr<Validator> validator);
+
+    void set_default(double def_value);
+    bool is_changed_value() const override;
+    void reset() override;
 
 private:
     Slider* m_slider = nullptr;
     InputTextField* m_input = nullptr;
-
     Callbacks m_callbacks;
 };
 

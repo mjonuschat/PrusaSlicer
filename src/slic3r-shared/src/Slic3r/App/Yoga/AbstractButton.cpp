@@ -37,7 +37,7 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
     bool hovered = false;
     bool released = false;
 
-    if (m_enabled) {
+    if (enabled()) {
         // We ignore pressed and hovered here, we already catched them before
         released = ImGui::ButtonBehavior(button_bb, id, &hovered, &pressed, m_flags);
 
@@ -135,7 +135,14 @@ bool AbstractButton::pressed() const { return m_pressed; }
 
 void AbstractButton::enabled_updated_internal()
 {
-    if (!m_enabled) {
+    if (!enabled()) {
+        m_tooltip.close();
+    }
+}
+
+void AbstractButton::visible_updated_internal()
+{
+    if (!is_visible()) {
         m_tooltip.close();
     }
 }

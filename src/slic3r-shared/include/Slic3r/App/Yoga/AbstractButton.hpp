@@ -54,6 +54,7 @@ protected:
     virtual void pressed_updated_internal();
 
     void enabled_updated_internal() override;
+    void visible_updated_internal() override;
 
 private:
     void set_hovered(bool hovered);

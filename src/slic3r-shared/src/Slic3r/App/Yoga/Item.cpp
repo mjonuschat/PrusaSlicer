@@ -258,6 +258,7 @@ void Item::set_visible(bool visible)
         m_visible = visible;
         YGNodeStyleSetDisplay(m_node, visible ? YGDisplayFlex : YGDisplayNone);
         set_style_dirty();
+        visible_updated_internal();
     }
 }
 
@@ -446,6 +447,8 @@ void Item::push_event(std::unique_ptr<Event> event)
 }
 
 void Item::enabled_updated_internal() {}
+
+void Item::visible_updated_internal() {}
 
 Vec2f Item::get_available_size() const { return m_parent->get_available_size(); }
 
@@ -783,7 +786,12 @@ void Item::render_debug(Vec2f pos, Vec2f size)
         //     "debug {}:{} -> {}:{} pos {}:{} size {}:{}", rect.Min.x, rect.Min.y, rect.Max.x,
         //     rect.Max.y, pos.x(), pos.y(), size.x(), size.y()
         // );
-        draw_list->AddRectFilled(rect.Min, rect.Max, IM_COL32(255, 0, 0, 128), false);
+        draw_list->AddRectFilled(
+            rect.Min,
+            rect.Max,
+            enabled() ? IM_COL32(255, 0, 0, 128) : IM_COL32(0, 0, 255, 128),
+            false
+        );
         // ImGui::RenderFrame(to_im(pos), to_im(pos + size), IM_COL32(20, 220, 200, 25), false);
     }
 }

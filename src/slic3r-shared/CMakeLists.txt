@@ -33,6 +33,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/PaintOnSupportsGizmo.cpp
         include/Slic3r/App/Plater/PaintOnSupportsDialog.hpp
         src/Slic3r/App/Plater/PaintOnSupportsDialog.cpp
+        include/Slic3r/App/Plater/TextGizmo.hpp
+        src/Slic3r/App/Plater/TextGizmo.cpp
+        include/Slic3r/App/Plater/TextDialog.hpp
+        src/Slic3r/App/Plater/TextDialog.cpp
         include/Slic3r/App/Plater/MeasureGizmo.hpp
         src/Slic3r/App/Plater/MeasureGizmo.cpp
         include/Slic3r/App/Plater/MeasureDialog.hpp
@@ -338,8 +342,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PageEntryButton.cpp
         include/Slic3r/App/Yoga/Popup.hpp
         src/Slic3r/App/Yoga/Popup.cpp
+        include/Slic3r/App/Yoga/AlignmentButtons.hpp
+        src/Slic3r/App/Yoga/AlignmentButtons.cpp
         include/Slic3r/App/Yoga/AbstractSettingsDialog.hpp
         src/Slic3r/App/Yoga/AbstractSettingsDialog.cpp
+        include/Slic3r/App/Yoga/RevertableControl.hpp
+        src/Slic3r/App/Yoga/RevertableControl.cpp
         include/Slic3r/App/Yoga/ComboBoxListView.hpp
         include/Slic3r/App/Yoga/ComboBoxListViewSelection.hpp
 

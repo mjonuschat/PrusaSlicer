@@ -1,0 +1,40 @@
+///|/ Copyright (c) Prusa Research 2025
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+#pragma once
+
+#include "Slic3r/App/Scene/IGizmo.hpp"
+
+namespace Slic3r::App::Yoga {
+class Dialog;
+} // namespace Slic3r::App::Yoga
+
+namespace Slic3r::App::Plater {
+class TextDialog;
+
+// Please implement me!
+class TextGizmo : public Scene::IToolGizmo
+{
+public:
+    TextGizmo();
+
+    void on_activated() override;
+    void on_deactivated() override;
+
+    Scene::ToolType type() const override;
+    Yoga::Dialog* unload_ui_dialog() override;
+
+    Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
+
+    void update_layout(bool show_for_part);
+
+private:
+    void update_presets_list();
+    void activate_preset(/*preset*/);
+
+private:
+    std::unique_ptr<TextDialog> m_dialog;
+};
+
+} // namespace Slic3r::App::Plater

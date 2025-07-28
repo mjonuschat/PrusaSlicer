@@ -195,6 +195,7 @@ protected:
     virtual void push_event(std::unique_ptr<Event> event);
 
     virtual void enabled_updated_internal();
+    virtual void visible_updated_internal();
 
     virtual Vec2f get_available_size() const;
 
@@ -262,7 +263,6 @@ protected:
     YGPositionType m_position_type = YGPositionType::YGPositionTypeRelative;
     bool m_debug_border = false;
     float m_z = 0;
-    bool m_enabled = true;
     bool m_visible = true;
 
     Orientation m_orientation = Orientation::Horizontal;
@@ -273,7 +273,8 @@ protected:
     std::vector<Item*> m_children_render_order;
 
 private:
-    float m_last_width = 0;
+    bool m_enabled      = true;
+    float m_last_width  = 0;
     float m_last_height = 0;
 };
 

@@ -1,0 +1,143 @@
+///|/ Copyright (c) Prusa Research 2025
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+#pragma once
+
+#include "Slic3r/App/Yoga/GizmoDialog.hpp"
+#include "Slic3r/App/Yoga/ToggleButton.hpp"
+#include "Slic3r/App/Yoga/ComboBox.hpp"
+#include "Slic3r/App/Yoga/SliderWithInput.hpp"
+#include "Slic3r/App/Yoga/InputTextWithSpin.hpp"
+#include "Slic3r/App/Yoga/AlignmentButtons.hpp"
+
+#include <vector>
+
+namespace Slic3r::Domain {
+struct TextAlign;
+} // namespace Slic3r::Domain
+
+namespace Slic3r::App::Yoga {
+class LayoutButton;
+class InputTextField;
+} // namespace Slic3r::App::Yoga
+
+namespace Slic3r::App::Plater {
+
+class TextDialog : public Yoga::GizmoDialog
+{
+public:
+    TextDialog();
+
+    struct Callbacks
+    {
+        std::function<void(int index)> font_selection_changed{nullptr};
+        std::function<void(int index)> style_selection_changed{nullptr};
+
+        std::function<void(double value)> height_changed{nullptr};
+        std::function<void(double value)> depth_changed{nullptr};
+
+        std::function<void(bool checked)> use_surface_checked{nullptr};
+        std::function<void(bool checked)> per_glyph_checked{nullptr};
+        std::function<void(const Domain::TextAlign& align)> align_changed{nullptr};
+        std::function<void(double value)> char_gap_changed{nullptr};
+        std::function<void(double value)> line_gap_changed{nullptr};
+        std::function<void(double value)> boldness_changed{nullptr};
+        std::function<void(double value)> skew_ratio_changed{nullptr};
+        std::function<void(double value)> surface_distance_changed{nullptr};
+        std::function<void(double value)> rotation_changed{nullptr};
+        std::function<void(bool unlocked)> unlock_rotation{nullptr};
+        std::function<void()> set_on_face_camera{nullptr};
+
+        std::function<void(int index)> preset_selection_changed{nullptr};
+        std::function<void()> save_preset_as{nullptr};
+        std::function<void()> save_preset{nullptr};
+        std::function<void()> rename_preset{nullptr};
+        std::function<void()> delete_preset{nullptr};
+
+        std::function<void(int index)> operation_selection_changed{nullptr};
+    };
+
+    Callbacks& callbacks();
+
+    void show_part_specific_panel(bool show);
+    void update_units(bool use_inches);
+
+    void set_presets(const std::vector<std::string>& presets, int selected_preset_id);
+    void set_fonts(const std::vector<std::string>& fonts, int selected_font_id, int default_font_id);
+    void set_styles(const std::vector<std::string>& styles, int selected_style_id, int default_style_id);
+    void set_height(double from, double to, double step, double step_fast, double height, double default_height);
+    void set_depth(double from, double to, double step, double step_fast, double depth, double default_depth);
+
+    void set_use_surface(bool checked, bool default_checked);
+    void set_per_glyph(bool checked, bool default_checked);
+
+    void set_align(const Domain::TextAlign& align);
+
+    void set_char_gap(double max_val, double step, double value, double default_value = 0.);
+    void set_line_gap(double max_val, double step, double value, double default_value = 0.);
+    void set_boldness(double max_val, double step, double value, double default_value = 0.);
+    void set_skew_ratio(double max_val, double step, double value, double default_value = 0.);
+    void set_surface_distance(double max_val, double step, double value, double default_value = 0.);
+    void set_rotation(double max_val, double step, double value, double default_value = 0.);
+
+    void set_enable_all_except_font(bool enable);
+    void set_enable_use_surface(bool enable);
+    void set_enable_per_glyph(bool enable);
+    void set_enable_line_gap(bool enable);
+    void set_enable_surface_distance(bool enable);
+
+private:
+    void add_advanced_panel();
+    void add_part_specific_panel();
+
+    Yoga::Item* add_row(
+        const std::string& title,
+        Yoga::ItemPtr control,
+        Yoga::Item* parent,
+        const std::string& revert_button_tooltip = std::string(),
+        const std::string& unit                  = std::string()
+    );
+
+private:
+    Yoga::InputTextField* m_editor{nullptr};
+
+    Yoga::Passthrough<Yoga::ComboBox> m_font;
+    Yoga::Passthrough<Yoga::ComboBox> m_style;
+
+    Yoga::Passthrough<Yoga::InputTextWithSpin> m_height;
+    Yoga::Passthrough<Yoga::InputTextWithSpin> m_depth;
+
+    // vector of Text items used for mm/inch units
+    // Will be updated on units sweetching
+    std::vector<Yoga::Text*> m_units;
+
+    Yoga::ToggleButton* m_advanced{nullptr};
+
+    Yoga::Item* m_advanced_panel{nullptr};
+    Yoga::Passthrough<Yoga::ToggleButton> m_use_surface;
+    Yoga::Passthrough<Yoga::ToggleButton> m_per_glyph;
+    Yoga::Passthrough<Yoga::AlignmentButtons> m_align;
+    Yoga::Passthrough<Yoga::SliderWithInput> m_char_gap;
+    Yoga::Passthrough<Yoga::SliderWithInput> m_line_gap;
+    Yoga::Passthrough<Yoga::SliderWithInput> m_boldness;
+    Yoga::Passthrough<Yoga::SliderWithInput> m_skew_ratio;
+    Yoga::Passthrough<Yoga::SliderWithInput> m_surface_distance;
+    Yoga::Passthrough<Yoga::SliderWithInput> m_rotation;
+    Yoga::LayoutButton* m_lock_offset_btn{nullptr};
+
+    Yoga::LayoutButton* m_set_on_face_camera_btn{nullptr};
+
+    Yoga::Passthrough<Yoga::ComboBox> m_preset;
+    Yoga::LayoutButton* m_save_as_new_btn{nullptr};
+    Yoga::LayoutButton* m_save_btn{nullptr};
+    Yoga::LayoutButton* m_rename_btn{nullptr};
+    Yoga::LayoutButton* m_delete_btn{nullptr};
+
+    Yoga::Item* m_part_specific_panel{nullptr};
+    Yoga::Passthrough<Yoga::ComboBox> m_operation;
+
+    Callbacks m_callbacks;
+};
+
+} // namespace Slic3r::App::Plater

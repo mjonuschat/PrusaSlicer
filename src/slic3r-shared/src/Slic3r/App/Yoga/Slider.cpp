@@ -7,13 +7,17 @@
 
 namespace Slic3r::App::Yoga {
 
-Slider::Callbacks& Slider::callbacks() { return m_callbacks; }
+Slider::Callbacks& Slider::callbacks()
+{
+    return m_callbacks;
+}
 
-Slider::Slider(float begin, float end, float step) : Oval()
-,m_begin_value(begin)
-,m_end_value(end)
-,m_value(m_begin_value)
-,m_step(step)
+Slider::Slider(double begin, double end, double step) :
+    Oval(),
+    m_begin_value(begin),
+    m_end_value(end),
+    m_value(m_begin_value),
+    m_step(step)
 {
     set_fill(IM_COL32_BLACK_TRANS);
     set_border_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
@@ -21,24 +25,37 @@ Slider::Slider(float begin, float end, float step) : Oval()
 
     m_area = emplace_back<Oval>();
     m_area->set_fill(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
+    m_area->set_disabled_fill(ImColor(95, 95, 95));
     m_area->set_justify_content(YGJustifyFlexEnd);
 
     m_thumb = m_area->emplace_back<Circle>();
+    m_thumb->set_disabled_fill(ImColor(105, 105, 105));
     m_thumb->set_padding(4.f);
-    m_thumb->set_min_size({ 14, 14 });
+    m_thumb->set_min_size({14, 14});
     Circle* knob = m_thumb->emplace_back<Circle>();
     knob->set_fill(GImGui->Style.Colors[ImGuiCol_ButtonActive]);
+    knob->set_disabled_fill(ImColor(20, 20, 20));
 }
+
+Slider::Slider() :
+    Slider(std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), 1.f)
+{}
 
 void Slider::process_events(Vec2f pos, Vec2f size)
 {
-    ImRect ctrl_rc(to_im(pos), to_im(pos+size));
+    // Fix for thumb position after firts show
+    if (!m_is_set_thumb_size && m_thumb->width() > 0) {
+        m_is_set_thumb_size = true;
+        update_area_width();
+    }
+
+    ImRect ctrl_rc(to_im(pos), to_im(pos + size));
     set_hovered(ImGui::IsMouseHoveringRect(ctrl_rc.Min, ctrl_rc.Max, false));
 
     // Process interacting with the slider
-    float step = m_step;
+    double step = m_step;
     if (m_begin_value > m_end_value)
-        step *= -1;
+        step *= -1.;
 
     if (m_hovered && ImGui::IsMouseClicked(0)) {
         m_dragging = true;
@@ -49,24 +66,26 @@ void Slider::process_events(Vec2f pos, Vec2f size)
     if (m_dragging) {
         if (!io.MouseDown[0] || io.MouseReleased[0]) {
             m_dragging = false;
-        }
-        else {
-            const float proc_pos = pos.x() + 0.5f * m_thumb->width();
-            const float proc_width = std::max(0.f, width() - m_thumb->width());
+        } else {
+            const double proc_pos = pos.x() + 0.5 * m_thumb->width();
+            const double proc_width = static_cast<double>(std::max(0.f, width() - m_thumb->width()));
 
-            float mouse_abs_pos = io.MousePos[ImGuiAxis_X];
-            float mouse_pos_ratio = proc_width == 0.0f ? 0.f : ImClamp((mouse_abs_pos - proc_pos) / proc_width, 0.0f, 1.0f);
+            double mouse_abs_pos   = io.MousePos[ImGuiAxis_X];
+            double mouse_pos_ratio = Domain::fuzzy_compare(proc_width, 0.) ?
+                0. :
+                ImClamp((mouse_abs_pos - proc_pos) / proc_width, 0., 1.);
 
-            float values_cnt = (m_end_value - m_begin_value) / step;
-            float value = m_begin_value + step * std::round(values_cnt * mouse_pos_ratio);
+            double values_cnt = (m_end_value - m_begin_value) / step;
+            double value      = m_begin_value + step * std::round(values_cnt * mouse_pos_ratio);
             set_value(value);
         }
     }
     // wheel behavior
-    else if (m_hovered) {
-        float mw = sign(io.MouseWheel);
-        float accer = io.KeyCtrl || io.KeyShift ? 5.0f : 1.0f;
-        float value = clamp(m_value + static_cast<float>(mw * accer * step));
+    else if (m_hovered)
+    {
+        double mw    = sign(io.MouseWheel);
+        double accer = io.KeyCtrl || io.KeyShift ? 5. : 1.;
+        double value = clamp(m_value + mw * accer * step);
 
         if (!Domain::fuzzy_compare(m_value, value)) {
             set_style_dirty(); // to ask for redraw
@@ -83,12 +102,14 @@ void Slider::set_hovered(bool hovered)
         m_hovered = hovered;
 
         // updated fill on hovering change
-        m_area->set_fill(GImGui->Style.Colors[m_hovered ? ImGuiCol_ButtonHovered : ImGuiCol_TextDisabled]);
-        m_thumb->set_fill(m_hovered ? GImGui->Style.Colors[ImGuiCol_ButtonActive] : ImGui::ColorConvertU32ToFloat4(IM_COL32_WHITE));
+        m_area->set_fill(
+            GImGui->Style.Colors[m_hovered ? ImGuiCol_ButtonHovered : ImGuiCol_TextDisabled]
+        );
+        m_thumb->set_padding(m_hovered ? 2.f : 4.f);
     }
 }
 
-float Slider::clamp(float value)
+double Slider::clamp(double value)
 {
     if (m_begin_value < m_end_value)
         return std::clamp(value, m_begin_value, m_end_value);
@@ -96,9 +117,9 @@ float Slider::clamp(float value)
     return std::clamp(value, m_end_value, m_begin_value);
 }
 
-float Slider::snap_to_nearest(float value)
+double Slider::snap_to_nearest(double value)
 {
-    float step = m_step;
+    double step = m_step;
     if (m_begin_value > m_end_value)
         step *= -1;
 
@@ -106,30 +127,60 @@ float Slider::snap_to_nearest(float value)
     return m_begin_value + pos * step;
 }
 
-void Slider::set_value(float value)
+void Slider::update_area_width()
+{
+    if (!Domain::fuzzy_compare(m_end_value, m_begin_value)) {
+        float ratio = static_cast<float>(
+            fabs(m_value - m_begin_value) / fabs(m_end_value - m_begin_value)
+        );
+        m_area->set_width(std::lerp(m_thumb->width(), width(), ratio));
+    }
+}
+
+void Slider::set_value(double value)
 {
     if (!Domain::fuzzy_compare(m_value, value)) {
         // update value
         m_value = snap_to_nearest(clamp(value));
-
-        if (!Domain::fuzzy_compare(m_end_value, m_begin_value)) {
-            float ratio = fabs(m_value - m_begin_value) / fabs(m_end_value - m_begin_value);
-            m_area->set_width(std::lerp(m_thumb->width(), width(), ratio));
-        }
-
+        update_area_width();
         if (m_callbacks.value_changed)
             m_callbacks.value_changed(m_value);
     }
 }
-float Slider::value() const { return m_value; }
 
-float Slider::begin() const { return m_begin_value; }
-void Slider::set_begin_value(float begin) { m_begin_value = begin; }
+double Slider::value() const
+{
+    return m_value;
+}
 
-float Slider::end() const { return m_end_value; }
-void Slider::set_end_value(float end) { m_end_value = end; }
+double Slider::begin() const
+{
+    return m_begin_value;
+}
 
-float Slider::step() const { return m_step; }
-void Slider::set_step(float step) { m_step = std::max(step, 0.f); }
+void Slider::set_begin_value(double begin)
+{
+    m_begin_value = begin;
+}
+
+double Slider::end() const
+{
+    return m_end_value;
+}
+
+void Slider::set_end_value(double end)
+{
+    m_end_value = end;
+}
+
+double Slider::step() const
+{
+    return m_step;
+}
+
+void Slider::set_step(double step)
+{
+    m_step = std::max(step, 0.);
+}
 
 } // namespace Slic3r::App::Yoga

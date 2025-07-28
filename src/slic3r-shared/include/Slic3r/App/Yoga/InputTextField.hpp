@@ -6,11 +6,12 @@
 
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/InputText.hpp"
+#include "Slic3r/App/Yoga/RevertableControl.hpp"
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 
 namespace Slic3r::App::Yoga {
 
-class InputTextField : public Rectangle
+class InputTextField : public Rectangle, public Yoga::RevertableControl
 {
 public:
     explicit InputTextField(const std::string& name = "InputText");
@@ -39,6 +40,11 @@ public:
 
     bool hovered() const;
 
+    void set_default(double default_value);
+    void set_default(const std::string& default_text);
+    bool is_changed_value() const override;
+    void reset() override;
+
 protected:
     InputText* input_text() const;
 
@@ -47,6 +53,7 @@ protected:
 
 private:
     InputText* m_input_text{nullptr};
+    std::string m_default_text;
 
     bool m_hovered = false;
 };

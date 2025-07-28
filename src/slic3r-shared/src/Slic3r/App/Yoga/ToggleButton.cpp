@@ -48,6 +48,23 @@ void ToggleButton::checked_updated_internal()
 {
     AbstractButton::checked_updated_internal();
     m_toggler->set_checked(checked());
+    update_revert_button();
+}
+
+void ToggleButton::set_default(bool default_checked)
+{
+    m_default_checked = default_checked;
+    update_revert_button();
+}
+
+bool ToggleButton::is_changed_value() const
+{
+    return m_default_checked != checked();
+}
+
+void ToggleButton::reset()
+{
+    set_checked(m_default_checked);
 }
 
 } // namespace Slic3r::App::Yoga

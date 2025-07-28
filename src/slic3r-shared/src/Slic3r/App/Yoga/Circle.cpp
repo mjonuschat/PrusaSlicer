@@ -15,13 +15,9 @@ void Circle::render(Vec2f pos, Vec2f size)
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ASSERT(draw_list);
 
-    ImColor fill_color;
-    if (!enabled()) {
-        fill_color = IM_COL32_DISABLE;
-    }
-    else {
-        fill_color = fill();
-    }
+    ImColor fill_color = enabled() ?
+        fill() :
+        (disabled_fill().has_value() ? disabled_fill().value() : fill());
 
     draw_list->AddCircleFilled(rect.GetCenter(), 0.5f*rect.GetHeight(), fill_color, 36);
     if (border_width() > 0) {

@@ -9,45 +9,48 @@ class Slider : public Oval {
 public:
     struct Callbacks
     {
-        std::function<void(float value)> value_changed{ nullptr };
+        std::function<void(double value)> value_changed{nullptr};
     };
 
-    explicit Slider(float begin, float end, float step = 1.f);
+    explicit Slider(double begin, double end, double step = 1.f);
+    explicit Slider();
 
     Callbacks& callbacks();
 
-    float value() const;
-    void set_value(float value);
+    double value() const;
+    void set_value(double value);
 
-    float begin() const;
-    void set_begin_value(float begin);
+    double begin() const;
+    void set_begin_value(double begin);
 
-    float end() const;
-    void set_end_value(float end);
+    double end() const;
+    void set_end_value(double end);
 
-    float step() const;
+    double step() const;
     /**
      * @warning The step value must not be zero.
      */
-    void set_step(float step);
+    void set_step(double step);
 
 private:
     void process_events(Vec2f pos, Vec2f size) override;
     void set_hovered(bool hovered);
-    float clamp(float value);
-    float snap_to_nearest(float value);
+    double clamp(double value);
+    double snap_to_nearest(double value);
+    void update_area_width();
 
 private:
     Oval* m_area{ nullptr };
     Circle* m_thumb{ nullptr };
 
-    float m_begin_value{ 0.f };
-    float m_end_value{ 0.f };
-    float m_step{ 0.f };
-    float m_value{ 0.f };
+    double m_begin_value{0.f};
+    double m_end_value{0.f};
+    double m_step{0.f};
+    double m_value{0.f};
 
     bool m_dragging{ false };
     bool m_hovered{ false };
+    bool m_is_set_thumb_size{false};
 
     Callbacks m_callbacks;
 };

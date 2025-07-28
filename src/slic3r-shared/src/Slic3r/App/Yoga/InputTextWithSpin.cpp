@@ -6,6 +6,7 @@
 #include "Slic3r/App/Yoga/SpinButton.hpp"
 
 #include "Slic3r/App/Yoga/Validator.hpp"
+#include <fmt/format.h>
 
 #include <imgui_internal.h>
 #include <cmath>
@@ -83,16 +84,21 @@ void InputTextWithSpin::set_step_fast(double step_fast)
     m_step_fast = step_fast;
 }
 
+void InputTextWithSpin::set_default(double default_value)
+{
+    InputTextField::set_default(default_value);
+}
+
 void InputTextWithSpin::increase_value()
 {
     m_last_value += GImGui->IO.KeyCtrl ? m_step_fast : m_step;
-    set_text(std::to_string(m_last_value));
+    set_text(fmt::format("{}", m_last_value));
 }
 
 void InputTextWithSpin::decrease_value()
 {
     m_last_value -= GImGui->IO.KeyCtrl ? m_step_fast : m_step;
-    set_text(std::to_string(m_last_value));
+    set_text(fmt::format("{}", m_last_value));
 }
 
 } // namespace Slic3r::App::Yoga

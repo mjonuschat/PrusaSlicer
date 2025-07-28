@@ -5,13 +5,14 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Yoga/RevertableControl.hpp"
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 
 namespace Slic3r::App::Yoga {
 
 class Validator;
 
-class ComboBox : public Yoga::Item
+class ComboBox : public Yoga::Item, public Yoga::RevertableControl
 {
 public:
     struct Callbacks
@@ -61,6 +62,10 @@ public:
     Validator* validator() const;
     void set_validator(std::unique_ptr<Validator> validator);
 
+    void set_default(int default_index);
+    bool is_changed_value() const override;
+    void reset() override;
+
 protected:
     Vec2f get_item_size() override;
 
@@ -79,6 +84,7 @@ private:
      */
     std::array<char, 2048> m_buffer = {0};
     int m_current_index = 0;
+    int m_default_index = 0;
     std::string m_current_label;
     ImGuiComboFlags m_flags = 0;
     bool m_editable = false;

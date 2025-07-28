@@ -76,13 +76,29 @@ void InputText::render(Vec2f pos, Vec2f size)
         Imgui::ScopedStyleColors colors({{ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS}});
         ImGui::SetCursorScreenPos(to_im(pos));
         const std::string id = "###" + m_item_name;
-        m_updated |=
-            YInputText(id.c_str(), m_hint.c_str(), &m_text, to_im(size), m_flags, {}, nullptr);
+
+        ImGui::PushStyleColor(
+            ImGuiCol_Text,
+            ImGui::GetColorU32(enabled() ? ImGuiCol_Text : ImGuiCol_TextDisabled)
+        );
+        m_updated |= YInputText(
+            id.c_str(),
+            m_hint.c_str(),
+            &m_text,
+            to_im(size),
+            (m_flags | (enabled() ? 0 : ImGuiInputTextFlags_ReadOnly)),
+            {},
+            nullptr
+        );
+        ImGui::PopStyleColor();
 
         if (m_updated && ImGui::IsItemDeactivatedAfterEdit()) {
             m_updated = false;
             if (m_validator) {
                 m_text = m_validator->process(m_text);
+            }
+            if (m_callbacks.update_revert_button) {
+                m_callbacks.update_revert_button();
             }
             if (m_callbacks.text_edited) {
                 m_callbacks.text_edited();
@@ -106,6 +122,12 @@ void InputText::set_text(const std::string& text)
         m_text = validator()->process(text);
     } else {
         m_text = text;
+    }
+    if (m_callbacks.update_revert_button) {
+        m_callbacks.update_revert_button();
+        if (m_callbacks.text_edited) {
+            m_callbacks.text_edited();
+        }
     }
 }
 

@@ -1,0 +1,49 @@
+///|/ Copyright (c) Prusa Research 2025 Oleksandra Iushchenko @YuSanka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+#pragma once
+
+#include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Yoga/RevertableControl.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
+#include "Slic3r/App/Yoga/ButtonGroup.hpp"
+
+namespace Slic3r::App::Yoga {
+
+class AlignmentButtons : public Item, public RevertableControl
+{
+public:
+    explicit AlignmentButtons();
+    virtual ~AlignmentButtons();
+
+    struct Callbacks
+    {
+        std::function<void(const Domain::TextAlign& align)> align_changed{nullptr};
+    };
+
+    Callbacks& callbacks();
+
+    const Domain::TextAlign& align() const;
+    void set_align(const Domain::TextAlign& align);
+
+    void set_default(const Domain::TextAlign& default_align);
+    bool is_changed_value() const override;
+    void reset() override;
+
+private:
+    Yoga::LayoutButton* m_left_align_btn{nullptr};
+    Yoga::LayoutButton* m_right_align_btn{nullptr};
+    Yoga::LayoutButton* m_center_align_btn{nullptr};
+    Yoga::ButtonGroup m_group_horizontal_align;
+    Yoga::LayoutButton* m_top_align_btn{nullptr};
+    Yoga::LayoutButton* m_bottom_align_btn{nullptr};
+    Yoga::LayoutButton* m_middle_align_btn{nullptr};
+    Yoga::ButtonGroup m_group_vertical_align;
+
+    Callbacks m_callbacks;
+    Domain::TextAlign m_align;
+    Domain::TextAlign m_default_align = {Domain::HorizontalAlign::center, Domain::VerticalAlign::center};
+};
+
+} // namespace Slic3r::App::Yoga
