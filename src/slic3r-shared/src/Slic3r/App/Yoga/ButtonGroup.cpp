@@ -62,16 +62,23 @@ void ButtonGroup::insert_button(AbstractButton* button)
 
 bool ButtonGroup::remove_button(AbstractButton* button)
 {
-    ASSERT(!button->checked(), "New checked button wont be implicitly picked!");
-
     if (!m_buttons.contains(button)) {
         return false;
     }
+
+    const bool last_button{m_buttons.size() == 1 && *m_buttons.begin() == button};
 
     button->callbacks().action = nullptr;
     button->callbacks().checked_changed = nullptr;
 
     m_buttons.erase(button);
+
+    if (last_button) {
+        m_checked_button = nullptr;
+    } else if (button == m_checked_button) {
+        ASSERT(button->checked());
+        check_one_button(*m_buttons.begin());
+    }
 
     return true;
 }
@@ -87,9 +94,14 @@ void ButtonGroup::on_button_action(AbstractButton* button)
     }
 }
 
-void ButtonGroup::check_one_button(AbstractButton* button) {
+void ButtonGroup::check_one_button(AbstractButton* button)
+{
+    if (m_checked_button == button && button->checked()) {
+        return;
+    }
+
     m_checked_blocker = true;
-    m_checked_button = button;
+    m_checked_button  = button;
     for (AbstractButton* owned_button : std::as_const(m_buttons)) {
         if (owned_button != button) {
             owned_button->set_checked(false);

@@ -166,10 +166,8 @@ ArrangeDialog::ArrangeDialog(OnArrange on_arrange, const Settings& settings) :
     Dialog::add_separator();
 
     LayoutButton* button{content()->emplace_back<LayoutButton>(_u8L("Arrange"))};
-    button->callbacks().pressed_changed = [this](bool pressed) {
-        if (!pressed) { // On mouse release.
-            m_on_arrange(get_settings());
-        }
+    button->callbacks().action = [this]() {
+        m_on_arrange(get_settings());
     };
 
     button->set_flex_grow(1);
