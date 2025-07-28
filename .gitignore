@@ -25,3 +25,4 @@ CMakeUserPresets.json
 # These are generated and shouldn't be commit to git# These are generated and shouldn't be commit to git
 /doc/doxy/
 
+.aider*

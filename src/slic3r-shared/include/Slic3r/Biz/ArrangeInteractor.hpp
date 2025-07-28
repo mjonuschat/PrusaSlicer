@@ -13,20 +13,50 @@ struct ArrangeBed
 
 using ArrangeBeds = std::vector<ArrangeBed>;
 
-class ArrangeInteractor : public Biz::ISelectedProjectChangedListener
+struct ArrangeFatalError : public Exception
+{
+    using Exception::Exception;
+};
+
+struct Pack
+{
+    Scene::SceneInteractor::Trafos trafos;
+    Domain::BoundingBox2d bounding_box;
+};
+
+using Packs = std::vector<Pack>;
+
+class ArrangeInteractor
 {
 public:
     ArrangeInteractor(Scene::SceneInteractor& scene_interactor, const Domain::Workbench& workbench);
 
-    void arrange(const Biz::Arrange::Settings& settings);
-
-    void on_selected_project_changed(size_t index) override;
+    void arrange(const Domain::SelectionId project_id, const Biz::Arrange::Settings& settings);
 
 private:
     Scene::SceneInteractor& m_scene_interactor;
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
     const Domain::Workbench& m_workbench;
 
-    ArrangeBeds get_beds(const double min_offset, const Biz::Arrange::Settings& settings) const;
+    Domain::ConstModelInstanceList get_model_instances(
+        const Domain::SelectionId project_id,
+        const Scene::BedSelection& selection,
+        const bool include_unplaced
+    ) const;
+
+    enum class OverflowMode
+    {
+        AddBeds,
+        MoveNextToFirstBed
+    };
+
+    double apply_arrange_result(
+        const Domain::SelectionId project_id,
+        const Scene::BedSelection& selection,
+        const OverflowMode& overflow_mode,
+        const double scaled_offset,
+        const std::vector<Pack>& packs,
+        const double initial_offset
+    );
 };
 } // namespace Slic3r::Biz

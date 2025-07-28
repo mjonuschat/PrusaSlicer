@@ -100,9 +100,9 @@ class ISceneBedInstanceChangedListener
 public:
     virtual ~ISceneBedInstanceChangedListener() = default;
 
-    virtual void on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;
-    virtual void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;
-    virtual void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, TransformState state) = 0;
+    virtual void on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances) {};
+    virtual void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) {};
+    virtual void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, TransformState state) {};
 };
 
 struct TransformMemento;
@@ -157,13 +157,10 @@ public:
     void remove_bed_instance(const Domain::BedRef& instance);
     void transform_bed_instance(const Domain::BedRef& instance, const Transform& xform);
 
-    bool select_one_bed_instance(const Domain::BedRef& instance);
-    bool toggle_bed_instance(const Domain::BedRef& instance);
-
     const Domain::Project::ConfigContainerList& selected_project_config_containers() const;
+    const Domain::ModelInstanceList& unplaced_model_instances(const Domain::SelectionId project_id) const;
     const Domain::ModelInstanceList& selected_project_unplaced_model_instances() const;
     const Domain::BedContainer::BedList& selected_project_beds() const;
-    const Domain::ConstModelInstanceList selected_project_instances() const;
 
 
     Domain::SelectionId selected_config_container_id() const
@@ -179,6 +176,9 @@ public:
     /** @} */
 
     const BedSelection& bed_selection() const;
+    BedSelection& bed_selection();
+    const BedSelection* bed_selection(const Domain::SelectionId project_id) const;
+    BedSelection* bed_selection(const Domain::SelectionId project_id);
 
     /**
      * @name Transforming selection
@@ -209,8 +209,14 @@ public:
      */
     void transform_selection(const Transform& relative_transform);
 
-    using InstanceTransformations = std::vector<std::pair<Domain::ElementRef, Transform>>;
-    void transform_instances(const InstanceTransformations& transformations);
+    struct Trafo {
+        Domain::ElementRef instance_ref;
+        Domain::Vec2d absolute_offset;
+        double rotation_delta;
+    };
+
+    using Trafos = std::vector<Trafo>;
+    void transform_instances(const Trafos& transformations);
 
     /**
      * @brief Finalize or cancel selection transform.

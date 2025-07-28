@@ -1,9 +1,11 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 
 #include "Slic3r/Domain/BedRef.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::Biz::Scene {
 
@@ -29,24 +31,40 @@ struct ObjectSelection
     void normalize();
 };
 
+enum class BedSelectionMode
+{
+    SingleBed,
+    ConfigContainer
+};
+
 struct BedSelection
 {
-    Domain::BedRef last_selected_bed() const;
+    std::function<void(const BedSelection&)> on_change{[](const BedSelection&) {
+    }};
 
-    Domain::BedRefs all() const;
+    Domain::BedRef last_selected_bed() const;
 
     bool is_selected(const Domain::BedRef bed_ref) const;
 
+    Domain::SelectionId config_container_id() const;
+
     bool empty() const;
 
+    /** @brief Replace the selection with one. */
     bool select_one(const Domain::BedRef& bed_ref);
 
+    /** @brief Add or remove from active selection. */
     bool toggle(const Domain::BedRef& bed_ref);
 
-    bool remove(const Domain::BedRef& bed_ref);
+    bool set_mode(const BedSelectionMode mode);
 
 private:
     Domain::BedRefs m_selected_beds;
+    Domain::SelectionId m_selected_config_container{Domain::INVALID_ID};
+    Domain::BedRef m_last_selected_bed{Domain::INVALID_ID, Domain::INVALID_ID};
+    BedSelectionMode m_mode{BedSelectionMode::SingleBed};
+
+    bool remove(const Domain::BedRef& bed_ref);
 };
 
 } // namespace Slic3r::Biz::Scene

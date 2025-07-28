@@ -107,16 +107,20 @@ void align_pile(std::vector<ArrangeItem>& items, const RectangleBed& bed)
     }
 
     const BoundingBox2d bed_bounding_box{unscaled<double>(bed.bounding_box())};
-    const BoundingBox2d pile_bounding_box{unscaled<double>(get_extents(items))};
+    BoundingBox2d pile_bounding_box{unscaled<double>(get_extents(items))};
     const Vec2d segment_size{
         sizes(bed_bounding_box).array() / Vec2d{bed.segments().x_count, bed.segments().y_count}.array()
     };
 
-    ASSERT((sizes(pile_bounding_box).array() <= sizes(bed_bounding_box).array()).all());
-
     const Domain::Index2 occupied_segments_count{
-        static_cast<int>(std::ceil(sizes(pile_bounding_box).x() / segment_size.x())),
-        static_cast<int>(std::ceil(sizes(pile_bounding_box).y() / segment_size.y()))
+        std::min(
+            static_cast<int>(std::ceil(sizes(pile_bounding_box).x() / segment_size.x())),
+            static_cast<int>(bed.segments().x_count)
+        ),
+        std::min(
+            static_cast<int>(std::ceil(sizes(pile_bounding_box).y() / segment_size.y())),
+            static_cast<int>(bed.segments().y_count)
+        )
     };
 
     const Vec2d occupied_segments_bb_sizes{
@@ -209,11 +213,12 @@ std::vector<ArrangeItem> to_arrange_items(const std::vector<InputShape>& items, 
     return result;
 }
 
-ArrangeResult arrange(
+std::optional<ArrangeResult> arrange(
     const Domain::Points& bed_contour,
     std::vector<ArrangeItem>& items,
     const std::vector<ArrangeItem>& fixed_items,
-    const Settings& settings
+    const Settings& settings,
+    StopCondition stop_condition
 )
 {
     const std::unique_ptr<IBed> bed{guess_bed(bed_contour, settings)};
@@ -266,9 +271,12 @@ ArrangeResult arrange(
     }
 
     constexpr double accuracy{1.0};
-    Packer packer{std::move(final_kernel), accuracy, opt::Optimizer<opt::AlgNLoptSubplex>{}, []() {
-                      return false;
-                  }};
+    Packer packer{
+        std::move(final_kernel),
+        accuracy,
+        opt::Optimizer<opt::AlgNLoptSubplex>{},
+        stop_condition
+    };
 
     ArrangeResult result;
     PackingContext context;
@@ -280,6 +288,9 @@ ArrangeResult arrange(
             context.add_packed_item(item);
             result.packed.push_back(item);
         } else {
+            if (stop_condition()) {
+                return std::nullopt;
+            }
             result.not_packed.push_back(item);
         }
     }

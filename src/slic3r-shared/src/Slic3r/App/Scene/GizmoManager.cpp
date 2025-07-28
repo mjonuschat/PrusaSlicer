@@ -145,12 +145,12 @@ void GizmoManager::prepare_cycle()
     auto& p = current_context();
     p.in_cycle = true;
     p.in_cycle_gizmos.reserve(m_base_gizmos.size() + (p.active_tool != nullptr ? 1 : 0));
+    if (p.active_tool)
+        p.in_cycle_gizmos.push_back(p.active_tool);
     for (const auto& g : m_base_gizmos) {
         g->on_cycle_prepare();
         p.in_cycle_gizmos.push_back(g.get());
     }
-    if (p.active_tool)
-        p.in_cycle_gizmos.push_back(p.active_tool);
 #if DEBUG_GIZMO_MANAGER
     SPDLOG_INFO("New cycle, active gizmos:");
     for (const auto& g : p.in_cycle_gizmos)

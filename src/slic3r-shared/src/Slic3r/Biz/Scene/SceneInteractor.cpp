@@ -123,9 +123,23 @@ void transform_selection_volume_mode(
 
 void SceneInteractor::on_selected_project_changed(size_t index)
 {
+
+    BedSelection selection{};
+    selection.on_change = [this, index](const BedSelection& bed_selection) {
+        invoke_listeners<ISelectedBedInstancesChangedListener>([&](auto* l) {
+            l->on_selected_bed_instances_changed(index, bed_selection);
+        });
+    };
+
     auto& project = m_workbench.project(index);
     if (m_projects.count(index) == 0)
-        m_projects.emplace(index, SceneInteractorProjectContext{project});
+        m_projects.emplace(
+            index,
+            SceneInteractorProjectContext{
+                project,
+                selection
+            }
+        );
     m_selected_project_id = index;
 }
 
@@ -183,10 +197,30 @@ void SceneInteractor::modify_selection(const std::function<void(ObjectSelection&
 }
 
 const BedSelection& SceneInteractor::bed_selection() const {
-    ASSERT(m_selected_project_id != Domain::INVALID_ID);
-    const auto it{m_projects.find(m_selected_project_id)};
-    ASSERT(it != m_projects.end());
-    return it->second.bed_selection;
+    const BedSelection* result{bed_selection(m_selected_project_id)};
+    return *ASSERT_VAL(result);
+}
+
+BedSelection& SceneInteractor::bed_selection()
+{
+    BedSelection* result{bed_selection(m_selected_project_id)};
+    return *ASSERT_VAL(result);
+}
+
+const BedSelection* SceneInteractor::bed_selection(const Domain::SelectionId project_id) const {
+    ASSERT(project_id != Domain::INVALID_ID);
+    const auto it{m_projects.find(project_id)};
+    if (it == m_projects.end()) {
+        return nullptr;
+    }
+    return &it->second.bed_selection;
+}
+
+BedSelection* SceneInteractor::bed_selection(const Domain::SelectionId project_id)
+{
+    return const_cast<BedSelection*>(
+        static_cast<const SceneInteractor*>(this)->bed_selection(project_id)
+    );
 }
 
 void SceneInteractor::new_object_from_mesh(Domain::TriangleMesh&& mesh, const std::string& name)
@@ -598,7 +632,7 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     changes.updated_beds.insert(updated);
 
     if (project_context.bed_selection.empty()) {
-        select_one_bed_instance(Domain::BedRef{cc->id().id, ret.id().id});
+        project_context.bed_selection.select_one(Domain::BedRef{cc->id().id, ret.id().id});
     }
 
     for (const auto& bed_ref : changes.updated_beds)
@@ -658,66 +692,27 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
     });
 }
 
-bool SceneInteractor::select_one_bed_instance(const Domain::BedRef& instance)
-{
-    SceneInteractorProjectContext& project_context{m_projects.find(m_selected_project_id)->second};
-    if (!project_context.bed_selection.select_one(instance)) {
-        return false;
-    }
-
-    invoke_listeners<ISelectedBedInstancesChangedListener>([&](auto* l) {
-        l->on_selected_bed_instances_changed(
-            m_selected_project_id,
-            project_context.bed_selection
-        );
-    });
-    return true;
-}
-
-bool SceneInteractor::toggle_bed_instance(const Domain::BedRef& instance)
-{
-    SceneInteractorProjectContext& project_context{m_projects.find(m_selected_project_id)->second};
-    if (!project_context.bed_selection.toggle(instance)) {
-        return false;
-    }
-
-    invoke_listeners<ISelectedBedInstancesChangedListener>([&](auto* l) {
-        l->on_selected_bed_instances_changed(
-            m_selected_project_id,
-            project_context.bed_selection
-        );
-    });
-    return true;
-}
-
 const Domain::Project::ConfigContainerList& SceneInteractor::selected_project_config_containers() const
 {
     return m_projects.find(m_selected_project_id)->second.project.config_containers();
 }
 
+const Domain::ModelInstanceList& SceneInteractor::unplaced_model_instances(
+    const Domain::SelectionId project_id
+) const
+{
+    return m_projects.find(project_id)->second.project.unplaced_model_instances();
+}
+
 const Domain::ModelInstanceList& SceneInteractor::selected_project_unplaced_model_instances() const
 {
-    return m_projects.find(m_selected_project_id)->second.project.unplaced_model_instances();
+    return unplaced_model_instances(m_selected_project_id);
 }
 
 const BedContainer::BedList& SceneInteractor::selected_project_beds() const
 {
     const Project& project{m_projects.find(m_selected_project_id)->second.project};
     return project.bed_container().beds();
-}
-
-const ConstModelInstanceList SceneInteractor::selected_project_instances() const
-{
-    const Project& project{m_projects.find(m_selected_project_id)->second.project};
-    const Model& model{project.model()};
-
-    ConstModelInstanceList result;
-    for (const ModelObject* object : model.objects) {
-        for (const ModelInstance* instance : object->instances) {
-            result.push_back(instance);
-        }
-    }
-    return result;
 }
 
 void SceneInteractor::transform_selection(const Transform& relative_transform)
@@ -755,17 +750,27 @@ void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transfo
     });
 }
 
-void SceneInteractor::transform_instances(const InstanceTransformations& transformations)
+void SceneInteractor::transform_instances(const Trafos& transformations)
 {
     Project& project{m_projects.find(m_selected_project_id)->second.project};
 
     std::vector<Domain::ElementRef> elements;
-    for (const auto& [element, trafo] : transformations) {
-        ModelInstance* instance{project.find_instance_by_id(element.object_id, element.instance_id)};
-        const SquareMatrix4d initial_trafo{instance->get_transformation().get_matrix().matrix()};
-        const SquareMatrix4d new_trafo{trafo * initial_trafo};
-        instance->set_transformation(Transformation{Transform3d{new_trafo}});
-        elements.push_back(element);
+    for (const Trafo& trafo : transformations) {
+        ModelInstance* instance{
+            project.find_instance_by_id(trafo.instance_ref.object_id, trafo.instance_ref.instance_id)
+        };
+        if (instance == nullptr) {
+            continue;
+        }
+        Domain::Transform3d offset_trafo{instance->get_transformation().get_matrix()};
+        offset_trafo.translation().x() = trafo.absolute_offset.x();
+        offset_trafo.translation().y() = trafo.absolute_offset.y();
+
+        auto rotation_trafo{Transform3d::Identity()};
+        rotation_trafo.rotate(Eigen::AngleAxisd(trafo.rotation_delta, Eigen::Vector3d::UnitZ()));
+
+        instance->set_transformation(Transformation{offset_trafo * rotation_trafo});
+        elements.push_back(trafo.instance_ref);
     }
 
     const BedTrackingChanges changes{update_instances_bed_placement(project, elements)};

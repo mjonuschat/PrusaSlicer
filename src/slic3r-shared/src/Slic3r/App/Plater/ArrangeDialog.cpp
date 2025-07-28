@@ -1,3 +1,4 @@
+#include "Slic3r/App/Yoga/SegmentedControl.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
@@ -17,6 +18,7 @@ namespace Slic3r::App::Plater {
 using Biz::Algorithms::Scaling::scaled;
 using Biz::Algorithms::Scaling::unscaled;
 using Biz::Arrange::GeometryHandling;
+using Biz::Arrange::Mode;
 using Biz::Arrange::PivotPoint;
 using Biz::Arrange::Settings;
 using Domain::BedRefs;
@@ -29,6 +31,7 @@ using Yoga::Item;
 using Yoga::ItemPtr;
 using Yoga::LayoutButton;
 using Yoga::Orientation;
+using Yoga::SegmentedControl;
 using Yoga::Slider;
 using Yoga::SliderWithInput;
 using Yoga::Text;
@@ -117,13 +120,44 @@ private:
     std::map<AbstractButton*, PivotPoint> m_pivot_buttons;
 };
 
-ArrangeDialog::ArrangeDialog(OnArrange on_arrange, const Settings& settings) :
+ArrangeDialog::ArrangeDialog(
+    OnArrange on_arrange,
+    OnCancel on_cancel,
+    OnModeSelected on_mode_selected,
+    const Settings& settings
+) :
     Yoga::GizmoDialog{_u8L("Arrange")},
-    m_on_arrange{on_arrange}
+    m_on_arrange{on_arrange},
+    m_on_cancel{on_cancel}
 {
     content_item()->set_width(325.f);
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(gap_size());
+
+    using Segment = SegmentedControl::Segment;
+    using Icon    = Render::Icon;
+    auto segments = {
+        Segment{
+            .icon               = Icon::Circle,
+            .tooltip            = _u8L("All beds"),
+            .initially_selected = settings.mode == Mode::Global,
+        },
+        Segment{
+            .icon               = Icon::Sphere,
+            .tooltip            = _u8L("Selected beds"),
+            .initially_selected = settings.mode == Mode::Local,
+        },
+    };
+
+    auto mode{
+        std::make_unique<SegmentedControl>(segments, gap_size(), [on_mode_selected](std::size_t index) {
+            on_mode_selected(static_cast<Biz::Arrange::Mode>(index));
+        })
+    };
+    m_mode = mode.get();
+    GizmoDialog::add_new_row(_u8L("Mode"), std::move(mode));
+
+    Dialog::add_separator();
 
     auto offset_slider{std::make_unique<SliderWithInput>()};
     offset_slider->set_begin_value(0.0);
@@ -150,7 +184,7 @@ ArrangeDialog::ArrangeDialog(OnArrange on_arrange, const Settings& settings) :
     m_mode_slider = geometry_handling_control->emplace_back<Slider>(0.0, 2.0, 1.0);
     m_mode_slider->set_flex_grow(1.0);
     geometry_handling_control->emplace_back<Text>("accurate");
-    add_new_row("Mode", std::move(geometry_handling_control));
+    add_new_row("Performance", std::move(geometry_handling_control));
 
     Dialog::add_separator();
 
@@ -165,16 +199,16 @@ ArrangeDialog::ArrangeDialog(OnArrange on_arrange, const Settings& settings) :
 
     Dialog::add_separator();
 
-    LayoutButton* button{content()->emplace_back<LayoutButton>(_u8L("Arrange"))};
-    button->callbacks().action = [this]() {
+    m_arrange_button                     = content()->emplace_back<LayoutButton>(_u8L("Arrange"));
+    m_arrange_button->callbacks().action = [this]() {
         m_on_arrange(get_settings());
     };
 
-    button->set_flex_grow(1);
+    m_arrange_button->set_flex_grow(1);
 
     constexpr ImColor color_primary{223, 93, 45};
-    button->set_background_color(color_primary);
-    button->set_label_font_type(Render::ImguiFontType::Bold);
+    m_arrange_button->set_background_color(color_primary);
+    m_arrange_button->set_label_font_type(Render::ImguiFontType::Bold);
 }
 
 void ArrangeDialog::set_bed_segments(const std::optional<Domain::Bed::Segments>& bed_segments)
@@ -190,9 +224,38 @@ void ArrangeDialog::set_bed_segments(const std::optional<Domain::Bed::Segments>&
     }
 }
 
+void ArrangeDialog::update_status(const ArrangeTaskStatus status)
+{
+    if (status == ArrangeTaskStatus::Running) {
+        m_arrange_button->set_label(_u8L("Cancel"));
+        m_arrange_button->callbacks().action = [this]() {
+            m_on_cancel();
+        };
+    } else if (status == ArrangeTaskStatus::Idle) {
+        m_arrange_button->set_label(_u8L("Arrange"));
+        m_arrange_button->callbacks().action = [this]() {
+            m_on_arrange(get_settings());
+        };
+    } else {
+        PANIC("Unknown arrange task status!");
+    }
+}
+
+Biz::Arrange::Mode ArrangeDialog::get_arrange_mode() const
+{
+    return static_cast<Biz::Arrange::Mode>(m_mode->selected_index());
+}
+
+void ArrangeDialog::set_arrange_mode(Biz::Arrange::Mode mode)
+{
+    m_mode->select_index(static_cast<int>(mode));
+}
+
 Settings ArrangeDialog::get_settings() const
 {
     Settings result;
+    result.mode = get_arrange_mode();
+
     result.scaled_offset       = scaled(m_offset_slider->value() / 2.0);
     result.unscaled_bed_offset = m_bed_offset_slider->value();
 

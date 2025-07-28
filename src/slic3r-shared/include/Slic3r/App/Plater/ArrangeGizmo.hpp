@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Slic3r/App/Plater/BedSelectGizmo.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/Biz/Arrange/Settings.hpp"
 #include "Slic3r/App/Plater/ArrangeDialog.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+#include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 
 namespace Slic3r::App::Scene {
 class GeometryDataFactory;
@@ -20,7 +22,10 @@ class ArrangeInteractor;
 
 namespace Slic3r::App::Plater {
 
-class ArrangeGizmo final : public Scene::IToolGizmo, public Biz::ISelectedBedInstancesChangedListener
+class ArrangeGizmo final :
+    public Scene::IToolGizmo,
+    public Biz::ISelectedBedInstancesChangedListener,
+    public Biz::Platform::JobManager::IJobManagerStatusChangedListener
 {
 public:
     ArrangeGizmo(
@@ -41,6 +46,8 @@ public:
         const Biz::Scene::BedSelection& bed_selection
     ) override;
 
+    void on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status) override;
+
     void on_activated() override;
     void on_deactivated() override;
 
@@ -56,6 +63,7 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     const Domain::Workbench& m_workbench;
     ArrangeDialog m_dialog;
+    bool m_active{false};
 
     Biz::Arrange::Settings default_settings() const;
 };

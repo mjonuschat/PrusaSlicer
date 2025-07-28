@@ -123,7 +123,6 @@ public:
     void flip_triangles();
     void align_to_origin();
     void merge(const TriangleMesh &mesh);
-    // 2D convex hull of a 3D mesh projected into the Z=0 plane.
     Domain::BoundingBox3d bounding_box() const;
     // Return the size of the mesh in coordinates.
     Domain::Vec3d size() const { return m_stats.size.cast<double>(); }

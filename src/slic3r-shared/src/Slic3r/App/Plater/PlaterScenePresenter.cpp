@@ -413,11 +413,14 @@ PlaterScenePresenter::BedInstances PlaterScenePresenter::selected_bed_instances(
 {
     BedInstances result;
     const Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
-    for (const Domain::BedRef& bed_ref : scene_interactor.bed_selection().all()) {
-        const Domain::BedInstance* bed_instance{
-            m_project_interactor.selected_project().find_bed_instance_by_id(bed_ref.instance_id)
-        };
-        if (bed_instance != nullptr) {
+    const Biz::Scene::BedSelection& selection{scene_interactor.bed_selection()};
+    const Domain::Project& project{m_workbench.project(m_project_interactor.selected_project_id())};
+    const Domain::ConfigContainer& config_container{
+        *ASSERT_VAL(project.find_config_container(selection.config_container_id()))
+    };
+    for (const auto& bed_instance : config_container.bed_instances()) {
+        if (selection.is_selected(Domain::BedRef{config_container.id().id, bed_instance->id().id}))
+        {
             result.push_back(*bed_instance);
         }
     }

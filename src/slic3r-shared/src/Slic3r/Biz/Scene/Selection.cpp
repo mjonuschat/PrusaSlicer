@@ -66,54 +66,122 @@ void ObjectSelection::normalize()
 
 Domain::BedRef BedSelection::last_selected_bed() const
 {
-    ASSERT(!m_selected_beds.empty(), "No selected beds! Did you forget calling add()?");
-    return m_selected_beds.back();
-}
-
-Domain::BedRefs BedSelection::all() const
-{
-    ASSERT(!m_selected_beds.empty());
-    return m_selected_beds;
+    ASSERT(
+        m_last_selected_bed.config_container_id != Domain::INVALID_ID
+        && m_last_selected_bed.instance_id != Domain::INVALID_ID
+    );
+    return m_last_selected_bed;
 }
 
 bool BedSelection::is_selected(const Domain::BedRef bed_ref) const
 {
-    ASSERT(!m_selected_beds.empty());
-    const auto it{std::ranges::find(m_selected_beds, bed_ref)};
-    return it != m_selected_beds.end();
+    if (m_mode == BedSelectionMode::SingleBed) {
+        ASSERT(!m_selected_beds.empty());
+        const auto it{std::ranges::find(m_selected_beds, bed_ref)};
+        return it != m_selected_beds.end();
+    } else if (m_mode == BedSelectionMode::ConfigContainer) {
+        ASSERT(m_selected_config_container != Domain::INVALID_ID);
+        return bed_ref.config_container_id == m_selected_config_container;
+    }
+    PANIC("Unknown mode!");
 }
 
-bool BedSelection::empty() const {
+Domain::SelectionId BedSelection::config_container_id() const
+{
+    if (m_mode == BedSelectionMode::SingleBed) {
+        ASSERT(!m_selected_beds.empty());
+        return m_selected_beds.front().config_container_id;
+    } else if (m_mode == BedSelectionMode::ConfigContainer) {
+        return m_selected_config_container;
+    }
+    PANIC("Unknown mode!");
+}
+
+bool BedSelection::empty() const
+{
     return m_selected_beds.empty();
 }
 
 bool BedSelection::select_one(const Domain::BedRef& bed_ref)
 {
-    if (m_selected_beds.size() == 1 && m_selected_beds.front() == bed_ref) {
-        return false;
+    if (m_mode == BedSelectionMode::SingleBed) {
+        if (m_selected_beds.size() == 1 && m_selected_beds.front() == bed_ref) {
+            return false;
+        }
+        m_selected_beds     = {bed_ref};
+        m_last_selected_bed = bed_ref;
+        on_change(*this);
+        return true;
+    } else if (m_mode == BedSelectionMode::ConfigContainer) {
+        ASSERT(bed_ref.config_container_id != Domain::INVALID_ID);
+        if (m_selected_config_container == bed_ref.config_container_id
+            && m_last_selected_bed == bed_ref)
+        {
+            return false;
+        }
+        m_selected_config_container = bed_ref.config_container_id;
+        m_last_selected_bed         = bed_ref;
+        on_change(*this);
+        return true;
     }
-    m_selected_beds = {bed_ref};
-    return true;
+    PANIC("Unknown mode!");
 }
 
 bool BedSelection::toggle(const Domain::BedRef& bed_ref)
 {
+    if (m_mode == BedSelectionMode::ConfigContainer) {
+        return false;
+    }
+
     if (m_selected_beds.size() == 1 && m_selected_beds.front() == bed_ref) {
         return false;
     }
     if (remove(bed_ref)) {
+        on_change(*this);
         return true;
     }
     m_selected_beds.push_back(bed_ref);
+    m_last_selected_bed = bed_ref;
+    on_change(*this);
+    return true;
+}
+
+bool BedSelection::set_mode(const BedSelectionMode mode)
+{
+    if (m_mode == mode) {
+        return false;
+    }
+
+    m_mode = mode;
+    if (m_mode == BedSelectionMode::ConfigContainer) {
+        m_selected_config_container = last_selected_bed().config_container_id;
+    } else if (m_mode == BedSelectionMode::SingleBed) {
+        m_selected_config_container = Domain::INVALID_ID;
+        const auto it{std::ranges::find(m_selected_beds, m_last_selected_bed)};
+        if (it == m_selected_beds.end() && !m_selected_beds.empty()) {
+            m_last_selected_bed = m_selected_beds.back();
+        }
+    }
+
+    on_change(*this);
     return true;
 }
 
 bool BedSelection::remove(const Domain::BedRef& bed_ref)
 {
+    ASSERT(m_mode == BedSelectionMode::SingleBed);
+
     if (m_selected_beds.size() <= 1) {
         return false;
     }
-    return std::erase(m_selected_beds, bed_ref) != 0;
+
+    const std::size_t erased_count{std::erase(m_selected_beds, bed_ref)};
+    if (m_last_selected_bed == bed_ref) {
+        ASSERT(erased_count == 1);
+        m_last_selected_bed = m_selected_beds.back();
+    }
+
+    return erased_count != 0;
 }
 
 } // namespace Slic3r::Biz::Scene

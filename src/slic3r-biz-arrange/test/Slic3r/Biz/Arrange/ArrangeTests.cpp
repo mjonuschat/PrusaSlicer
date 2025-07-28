@@ -173,13 +173,16 @@ TEST_CASE("Arrange without rotation works on random squares on a rectangular bed
     std::vector<ArrangeItem> squares{get_random_squares(20, Settings{}, 0)};
     const BoundingBox2crd bed_bb{scaled(Vec2d{0.0, 0.0}), scaled(Vec2d{100, 100})};
     const Points bed{get_rectangle_bed(bed_bb)};
-    const ArrangeResult result{arrange(bed, squares, {}, Settings{})};
+    const std::optional<ArrangeResult> result{arrange(bed, squares, {}, Settings{}, []() {
+        return false;
+    })};
+    REQUIRE(result);
 
     if constexpr (output_result_svgs) {
-        draw("rectangular_bed_no_rotation.svg", result.packed, bed_bb);
+        draw("rectangular_bed_no_rotation.svg", result->packed, bed_bb);
     }
 
-    CHECK(std::ranges::all_of(result.packed, [&bed_bb](const ArrangeItem& item) {
+    CHECK(std::ranges::all_of(result->packed, [&bed_bb](const ArrangeItem& item) {
         return bed_bb.contains(item.movable_shape().bounding_box());
     }));
 }
@@ -225,16 +228,18 @@ TEST_CASE("Arrange without rotation works on random squares on a circular bed", 
     const Circle<Vec2d> circle{center.cast<double>(), scaled(50.0)};
     const Points bed{get_circle_bed(circle)};
 
-    const ArrangeResult result{arrange(bed, squares, {}, Settings{})};
+    const std::optional<ArrangeResult> result{arrange(bed, squares, {}, Settings{}, []() {
+        return false;
+    })};
 
     namespace BB = Slic3r::Biz::Algorithms::BoundingBox;
     if constexpr (output_result_svgs) {
-        draw("circle_bed_no_rotation.svg", result.packed, BB::construct(bed));
+        draw("circle_bed_no_rotation.svg", result->packed, BB::construct(bed));
     }
 
-    check_arrange_result(result, squares.size());
+    check_arrange_result(*result, squares.size());
 
-    CHECK(std::ranges::all_of(result.packed, [&circle](const ArrangeItem& item) {
+    CHECK(std::ranges::all_of(result->packed, [&circle](const ArrangeItem& item) {
         return circle_contains(circle, item);
     }));
 }
@@ -247,15 +252,17 @@ TEST_CASE("Arrange with rotation works on random squares on a rectangular bed", 
     const BoundingBox2crd bed_bb{scaled(Vec2d{0.0, 0.0}), scaled(Vec2d{60, 60})};
     const Points bed{get_rectangle_bed(bed_bb)};
 
-    const ArrangeResult result{arrange(bed, squares, {}, settings)};
+    const std::optional<ArrangeResult> result{arrange(bed, squares, {}, settings, []() {
+        return false;
+    })};
 
     if constexpr (output_result_svgs) {
-        draw("rectangular_bed_with_rotation.svg", result.packed, bed_bb);
+        draw("rectangular_bed_with_rotation.svg", result->packed, bed_bb);
     }
 
-    check_arrange_result(result, squares.size());
+    check_arrange_result(*result, squares.size());
 
-    CHECK(std::ranges::all_of(result.packed, [&bed_bb](const ArrangeItem& item) {
+    CHECK(std::ranges::all_of(result->packed, [&bed_bb](const ArrangeItem& item) {
         return bed_bb.contains(item.movable_shape().bounding_box());
     }));
 }
@@ -270,16 +277,16 @@ TEST_CASE("Arrange with rotation works on random squares on a circular bed", "[A
     const Circle<Vec2d> circle{center.cast<double>(), scaled(30.0)};
     const Points bed{get_circle_bed(circle)};
 
-    ArrangeResult result{arrange(bed, squares, {}, settings)};
+    std::optional<ArrangeResult> result{arrange(bed, squares, {}, settings, []() { return false; })};
 
     namespace BB = Slic3r::Biz::Algorithms::BoundingBox;
     if constexpr (output_result_svgs) {
-        draw("circle_bed_with_rotation.svg", result.packed, BB::construct(bed));
+        draw("circle_bed_with_rotation.svg", result->packed, BB::construct(bed));
     }
 
-    check_arrange_result(result, squares.size());
+    check_arrange_result(*result, squares.size());
 
-    CHECK(std::ranges::all_of(result.packed, [&circle](const ArrangeItem& item) {
+    CHECK(std::ranges::all_of(result->packed, [&circle](const ArrangeItem& item) {
         return circle_contains(circle, item);
     }));
 }
@@ -295,16 +302,18 @@ TEST_CASE("Arrange works with offset", "[Arrange][Integration]")
     const BoundingBox2crd bed_bb{scaled(Vec2d{0.0, 0.0}), scaled(Vec2d{50.0, 30.0})};
     const Points bed{get_rectangle_bed(bed_bb)};
 
-    const ArrangeResult result{arrange(bed, arrange_items, {}, settings)};
+    const std::optional<ArrangeResult> result{arrange(bed, arrange_items, {}, settings, []() {
+        return false;
+    })};
 
     if constexpr (output_result_svgs) {
-        draw("offset.svg", result.packed, bed_bb);
+        draw("offset.svg", result->packed, bed_bb);
     }
 
-    check_arrange_result(result, squares.size());
+    check_arrange_result(*result, squares.size());
 
-    CHECK(result.packed.at(0).get_translation() == Vec2crd{scaled(30.0), scaled(10.0)});
-    CHECK(result.packed.at(1).get_translation() == Vec2crd{scaled(10.0), scaled(10.0)});
+    CHECK(result->packed.at(0).get_translation() == Vec2crd{scaled(30.0), scaled(10.0)});
+    CHECK(result->packed.at(1).get_translation() == Vec2crd{scaled(10.0), scaled(10.0)});
 }
 
 TEST_CASE("Arrange works with segmented bed and pivot", "[Arrange][Integration]")
@@ -319,13 +328,16 @@ TEST_CASE("Arrange works with segmented bed and pivot", "[Arrange][Integration]"
     const BoundingBox2crd bed_bb{scaled(Vec2d{0.0, 0.0}), scaled(Vec2d{100.0, 100.0})};
     const Points bed{get_rectangle_bed(bed_bb)};
 
-    const ArrangeResult result{arrange(bed, arrange_items, {}, settings)};
+    const std::optional<ArrangeResult> result{arrange(bed, arrange_items, {}, settings, []() {
+        return false;
+    })};
+    REQUIRE(result);
 
     if constexpr (output_result_svgs) {
-        draw("segmented_bed.svg", result.packed, bed_bb);
+        draw("segmented_bed.svg", result->packed, bed_bb);
     }
 
-    check_arrange_result(result, squares.size());
+    check_arrange_result(*result, squares.size());
 
-    CHECK(result.packed.at(0).get_translation() == Vec2crd{scaled(55.0), scaled(5.0)});
+    CHECK(result->packed.at(0).get_translation() == Vec2crd{scaled(55.0), scaled(5.0)});
 }

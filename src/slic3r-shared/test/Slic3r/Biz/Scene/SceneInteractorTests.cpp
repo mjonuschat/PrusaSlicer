@@ -434,21 +434,23 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Bed selection", "[SceneInteractor]") {
     }
 
     REQUIRE(!scene_interactor.bed_selection().empty());
-    CHECK(scene_interactor.bed_selection().all() == BedRefs{initialy_selected_instance});
+    CHECK(scene_interactor.bed_selection().is_selected(initialy_selected_instance));
 
-    CHECK(scene_interactor.select_one_bed_instance(beds[2]));
-    CHECK(scene_interactor.bed_selection().all() == BedRefs{beds[2]});
-    CHECK(scene_interactor.toggle_bed_instance(beds[3]));
-    CHECK(scene_interactor.bed_selection().all() == BedRefs{beds[2], beds[3]});
+    CHECK(scene_interactor.bed_selection().select_one(beds[2]));
+    CHECK(scene_interactor.bed_selection().is_selected(beds[2]));
+    CHECK(scene_interactor.bed_selection().toggle(beds[3]));
+
+    CHECK(scene_interactor.bed_selection().is_selected(beds[2]));
+    CHECK(scene_interactor.bed_selection().is_selected(beds[3]));
     CHECK(scene_interactor.bed_selection().last_selected_bed() == beds[3]);
 
-    CHECK(scene_interactor.toggle_bed_instance(beds[2]));
-    CHECK(scene_interactor.bed_selection().all() == BedRefs{beds[3]});
-    CHECK(!scene_interactor.toggle_bed_instance(beds[3]));
-    CHECK(!scene_interactor.select_one_bed_instance(beds[3]));
+    CHECK(scene_interactor.bed_selection().toggle(beds[2]));
+    CHECK(!scene_interactor.bed_selection().is_selected(beds[2]));
+    CHECK(!scene_interactor.bed_selection().toggle(beds[3]));
+    CHECK(!scene_interactor.bed_selection().select_one(beds[3]));
 
     // After this the selection should be 0, 3.
-    CHECK(scene_interactor.toggle_bed_instance(beds[0]));
+    CHECK(scene_interactor.bed_selection().toggle(beds[0]));
 
     {
         ALLOW_CALL(slicing_input_changed_listener, on_slicing_input_changed(_));
@@ -466,10 +468,12 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Bed selection", "[SceneInteractor]") {
     };
 
     REQUIRE(!scene_interactor.bed_selection().empty());
-    CHECK(scene_interactor.bed_selection().all() == BedRefs{another_project_instance});
+    CHECK(scene_interactor.bed_selection().is_selected(another_project_instance));
 
     project_interactor.select_project(project_id);
 
     // The original project selection is remembered.
-    CHECK(scene_interactor.bed_selection().all() == BedRefs{beds[3], beds[0]});
+    CHECK(scene_interactor.bed_selection().is_selected(beds[3]));
+    CHECK(scene_interactor.bed_selection().is_selected(beds[0]));
+    CHECK(scene_interactor.bed_selection().last_selected_bed() == beds[0]);
 }

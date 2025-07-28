@@ -1,5 +1,5 @@
 #include "Slic3r/Biz/Arrange/Packer.hpp"
-#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include "Slic3r/Biz/Arrange/EdgeCache.hpp"
 
 namespace Slic3r::Biz::Arrange {
@@ -15,7 +15,7 @@ struct CornerResult
 double Packer::pick_best_spot_on_nfp(ArrangeItem& item, const Domain::ExPolygons& nfp, const IBed& bed)
 {
     namespace execution = Algorithms::Execution;
-    execution::ExecutionSeq ex_policy{};
+    execution::ExecutionTBB ex_policy{};
 
     auto score              = -std::numeric_limits<double>::infinity();
     Domain::Vec2crd orig_tr = item.get_translation();

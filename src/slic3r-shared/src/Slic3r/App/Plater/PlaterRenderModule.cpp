@@ -404,15 +404,15 @@ void PlaterRenderModule::init_gizmos()
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
         camera_gizmo
     );
+    BedSelectGizmo& bed_select_gizmo{m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(
+        m_project_interactor.scene_interactor(),
+        *m_scene_presenter
+    )};
     m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(
         m_project_interactor.scene_interactor(),
         *m_device,
         *m_scene_presenter,
         m_screen_info
-    );
-    m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(
-        m_project_interactor.scene_interactor(),
-        *m_scene_presenter
     );
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(
         m_project_interactor.scene_interactor(),
@@ -982,7 +982,7 @@ static void render_imgui_debug_bed(
             if (active == remove_tag) {
                 auto& cc{project_interactor.selected_config_container()};
                 auto& inst{cc.bed_instances().front()};
-                scene_interactor.select_one_bed_instance(Domain::BedRef{cc.id().id, inst->id().id});
+                scene_interactor.bed_selection().select_one(Domain::BedRef{cc.id().id, inst->id().id});
             }
             --total_instances_count;
         }

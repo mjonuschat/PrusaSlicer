@@ -1,5 +1,3 @@
-#include <span>
-
 #include "Slic3r/App/Plater/ArrangeGizmo.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
@@ -16,7 +14,6 @@ using Biz::Algorithms::Scaling::scaled;
 using Biz::Arrange::Settings;
 using Biz::Scene::BedSelection;
 using Domain::Bed;
-using Domain::BedRef;
 using Domain::BedRefs;
 using Domain::coord_t;
 using Domain::Project;
@@ -24,29 +21,26 @@ using Domain::SelectionId;
 using Domain::Vec2f;
 using Yoga::ItemPtr;
 using NodeList = Scene::Node::NodeList;
+using Biz::Arrange::Mode;
+using Biz::Platform::PlatformServices;
+using Biz::Platform::JobManager::JobManagerStatus;
+using Biz::Platform::JobManager::JobStatus;
+using Biz::Platform::JobManager::Progress;
+using Biz::Scene::BedSelectionMode;
+using Biz::Scene::SceneInteractor;
+using Domain::ConfigContainer;
 
 namespace {
-std::optional<Bed::Segments> get_bed_segments(const Project& project, const BedRefs& bed_refs)
+std::optional<Bed::Segments> get_bed_segments(const Project& project, const BedSelection& selection)
 {
-    if (bed_refs.empty()) {
+    const ConfigContainer* config_container{
+        project.find_config_container(selection.config_container_id())
+    };
+    if (!config_container) {
         return std::nullopt;
     }
-
-    const Bed& first_bed{project.find_config_container(bed_refs.front().config_container_id)->bed()};
-
-    const std::optional<Bed::Segments> first_bed_segments{first_bed.segments()};
-    if (!first_bed_segments) {
-        return std::nullopt;
-    }
-
-    for (const BedRef& bed_ref : std::span{bed_refs}.subspan(1)) {
-        const Bed& bed{project.find_config_container(bed_ref.config_container_id)->bed()};
-        if (bed.segments() != first_bed_segments) {
-            return std::nullopt;
-        }
-    }
-
-    return first_bed_segments;
+    const Bed& bed{config_container->bed()};
+    return bed.segments();
 }
 } // namespace
 
@@ -65,19 +59,38 @@ ArrangeGizmo::ArrangeGizmo(
     m_project_interactor{project_interactor},
     m_workbench{workbench},
     m_dialog{
-        [this](const Settings settings) { m_arrange_interactor.arrange(settings); },
+        [this](const Settings& settings) {
+            m_arrange_interactor.arrange(m_project_interactor.selected_project_id(), settings);
+        },
+        []() { PlatformServices::instance().job_manager().cancel_job("arrange"); },
+        [this](const Mode mode) {
+            SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
+            BedSelection& selection{scene_interactor.bed_selection()};
+            if (mode == Mode::Local) {
+                selection.set_mode(BedSelectionMode::SingleBed);
+            } else if (mode == Mode::Global) {
+                selection.set_mode(BedSelectionMode::ConfigContainer);
+            }
+        },
         default_settings()
     }
 {
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
         this
     );
+
+    PlatformServices::instance()
+        .job_manager()
+        .add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(this);
 }
 
 ArrangeGizmo::~ArrangeGizmo()
 {
     m_project_interactor.scene_interactor()
         .remove_listener<Biz::ISelectedBedInstancesChangedListener>(this);
+    PlatformServices::instance()
+        .job_manager()
+        .remove_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(this);
 }
 
 Scene::GizmoActivationState ArrangeGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
@@ -88,13 +101,41 @@ Scene::GizmoActivationState ArrangeGizmo::on_mouse(Scene::GizmoEventContext& ctx
 void ArrangeGizmo::on_selected_bed_instances_changed(SelectionId project_id, const BedSelection& bed_selection)
 {
     const Project& project{m_workbench.project(project_id)};
-    const std::optional<Bed::Segments> bed_segments{get_bed_segments(project, bed_selection.all())};
+    const std::optional<Bed::Segments> bed_segments{get_bed_segments(project, bed_selection)};
     m_dialog.set_bed_segments(bed_segments);
 };
 
-void ArrangeGizmo::on_activated() {};
+void ArrangeGizmo::on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status)
+{
+    const auto it{status.find("arrange")};
+    if (it == status.end()) {
+        m_dialog.update_status(ArrangeTaskStatus::Idle);
+        return;
+    }
 
-void ArrangeGizmo::on_deactivated() {};
+    const Progress progress{it->second};
+    if (progress.status == JobStatus::Started) {
+        m_dialog.update_status(ArrangeTaskStatus::Running);
+        return;
+    }
+    m_dialog.update_status(ArrangeTaskStatus::Idle);
+}
+
+void ArrangeGizmo::on_activated()
+{
+    m_active = true;
+    if (m_dialog.get_arrange_mode() == Mode::Global) {
+        SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
+        scene_interactor.bed_selection().set_mode(BedSelectionMode::ConfigContainer);
+    }
+};
+
+void ArrangeGizmo::on_deactivated()
+{
+    m_active = false;
+    SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
+    scene_interactor.bed_selection().set_mode(BedSelectionMode::SingleBed);
+};
 
 Scene::ToolType ArrangeGizmo::type() const
 {
@@ -113,7 +154,7 @@ Settings ArrangeGizmo::default_settings() const
 
     const Project& project{m_project_interactor.selected_project()};
     const BedSelection& bed_selection{m_project_interactor.scene_interactor().bed_selection()};
-    const std::optional<Bed::Segments> bed_segments{get_bed_segments(project, bed_selection.all())};
+    const std::optional<Bed::Segments> bed_segments{get_bed_segments(project, bed_selection)};
 
     settings.bed_segments = bed_segments;
     return settings;

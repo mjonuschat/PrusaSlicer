@@ -12,6 +12,7 @@
 #include "Slic3r/Biz/Arrange/Tesselate.hpp"
 #include "libslic3r/MinAreaBoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 
 namespace Slic3r::Biz::Arrange {
 
@@ -19,6 +20,7 @@ using Algorithms::BoundingBox::sizes;
 using Algorithms::ClipperUtils::diff_ex;
 using Algorithms::ClipperUtils::offset_ex;
 using Algorithms::ClipperUtils::union_ex;
+using Algorithms::ExPolygon::simplify;
 using Algorithms::Polygon::is_convex;
 using Algorithms::Scaling::scaled;
 using Domain::BoundingBox2crd;
@@ -210,9 +212,11 @@ ArrangeItem::ArrangeItem(const InputShape& shape, const Settings& settings)
     using GeometryHandling::Arbitrary;
     using GeometryHandling::Convex;
 
-    const ArbitraryShape offset_shape{
+    ArbitraryShape offset_shape{
         settings.scaled_offset != 0.0 ? offset_ex(shape.shape, settings.scaled_offset) : shape.shape
     };
+
+    offset_shape = simplify(offset_shape, settings.scaled_simplification_tolerance);
 
     if (settings.fixed_geometry == Convex && settings.movable_geometry == Convex) {
         ConvexShape convex_shape{Algorithms::Geometry::convex_hull(offset_shape)};

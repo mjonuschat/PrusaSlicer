@@ -3,6 +3,21 @@
 
 namespace Slic3r::App::Plater {
 
+BedSelectGizmo::BedSelectGizmo(
+    Biz::Scene::SceneInteractor& scene_interactor,
+    Scene::ISceneProvider& scene_provider
+) :
+    m_scene_interactor(scene_interactor),
+    m_scene_provider(scene_provider)
+{
+    m_scene_interactor.add_listener<Biz::Scene::ISceneBedInstanceChangedListener>(this);
+}
+
+BedSelectGizmo::~BedSelectGizmo()
+{
+    m_scene_interactor.remove_listener<Biz::Scene::ISceneBedInstanceChangedListener>(this);
+}
+
 Scene::GizmoActivationState BedSelectGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
     // ignore bed picking when the camera is below the bed
@@ -23,28 +38,35 @@ Scene::GizmoActivationState BedSelectGizmo::on_mouse(Scene::GizmoEventContext& c
         return Scene::GizmoActivationState::Inactive;
     }
 
-    if (evt.button() != Platform::MouseButton::Left || ctx.pick_results().empty()) {
+    if (evt.button() != Platform::MouseButton::Left) {
         return Scene::GizmoActivationState::Inactive;
     }
 
-    const Scene::BedNodeTag* tag{ctx.pick_results().front().node->tag_of_type<Scene::BedNodeTag>()};
+    const Scene::BedNodeTag* tag{
+        ctx.pick_results().empty() ? nullptr :
+                                     ctx.pick_results().front().node->tag_of_type<Scene::BedNodeTag>()
+    };
 
-    if (!tag) {
+    if (tag == nullptr) {
+        Biz::Scene::BedSelection& selection{m_scene_interactor.bed_selection()};
+        if (selection.select_one(selection.last_selected_bed())) {
+            return Scene::GizmoActivationState::Done;
+        }
         return Scene::GizmoActivationState::Inactive;
     }
 
     const Domain::BedRef instance{tag->config_container_id, tag->instance_id};
 
-    const bool ctrl_down{
-        (evt.key_modifiers() & Platform::KeyModifiers(Platform::KeyModifier::Ctrl)) != 0
+    const bool shift_down{
+        (evt.key_modifiers() & Platform::KeyModifiers(Platform::KeyModifier::Shift)) != 0
     };
 
-    if (ctrl_down) {
-        if (m_scene_interactor.toggle_bed_instance(instance)) {
+    if (shift_down) {
+        if (m_scene_interactor.bed_selection().toggle(instance)) {
             return Scene::GizmoActivationState::Done;
         }
     } else {
-        if (m_scene_interactor.select_one_bed_instance(instance)) {
+        if (m_scene_interactor.bed_selection().select_one(instance)) {
             return Scene::GizmoActivationState::Done;
         }
     }

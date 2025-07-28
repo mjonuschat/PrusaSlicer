@@ -361,6 +361,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/RevertableControl.cpp
         include/Slic3r/App/Yoga/ComboBoxListView.hpp
         include/Slic3r/App/Yoga/ComboBoxListViewSelection.hpp
+        include/Slic3r/App/Yoga/SegmentedControl.hpp
+        src/Slic3r/App/Yoga/SegmentedControl.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
@@ -840,6 +842,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/App/Yoga/ButtonGroupTests.cpp
         test/Slic3r/App/Yoga/ValidatorTests.cpp
         test/Slic3r/App/Yoga/TestRootItem.hpp
+        test/Slic3r/App/Yoga/SegmentedControlTests.cpp
 
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
