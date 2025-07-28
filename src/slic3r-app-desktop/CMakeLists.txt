@@ -93,7 +93,7 @@ target_link_libraries(slic3r-app-desktop PUBLIC
     slic3r-shared-wx
 )
 
-target_include_directories(slic3r-app-desktop PUBLIC include)
+target_include_directories(slic3r-app-desktop PUBLIC include PRIVATE src)
 
 # See https://github.com/prusa3d/PrusaSlicer/issues/4584.
 if (UNIX AND NOT APPLE)

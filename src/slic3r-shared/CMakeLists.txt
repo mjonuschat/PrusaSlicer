@@ -646,7 +646,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/ResultExport/ExportActions.cpp
         include/Slic3r/Biz/ResultExport/ExportNameParser.hpp
         src/Slic3r/Biz/ResultExport/ExportNameParser.cpp
-        
+
+        include/Slic3r/App/ConfigModelDump.hpp
+        src/Slic3r/App/ConfigModelDump.cpp
+
         include/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
         include/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
@@ -850,7 +853,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Network/Bonjour.hpp
         include/Slic3r/Biz/Network/TCPConsole.hpp
         include/Slic3r/Biz/Network/ServiceConfig.hpp
-        include/Slic3r/Biz/Network/Jwt.hpp  
+        include/Slic3r/Biz/Network/Jwt.hpp
         include/Slic3r/Biz/Network/HttpCurlFactory.hpp
         src/Slic3r/Biz/Network/IHttp.cpp
         src/Slic3r/Biz/Network/HttpCurl.cpp
@@ -1068,7 +1071,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Network/MockHttp.hpp
         test/Slic3r/Biz/Network/MockHttpFactory.cpp
         test/Slic3r/Biz/Network/MockHttpFactory.hpp
-    )  
+    )
 endif()
 
 find_package(NanoSVG REQUIRED)
@@ -1180,7 +1183,7 @@ if (SLIC3R_REPO_URL)
 endif()
 
 if (SLIC3R_ENABLE_WEBKIT)
-   target_compile_definitions(slic3r-shared PRIVATE SLIC3R_HAS_WEBKIT) 
+   target_compile_definitions(slic3r-shared PRIVATE SLIC3R_HAS_WEBKIT)
 endif()
 
 if (SLIC3R_ENABLE_FORMAT_STEP)

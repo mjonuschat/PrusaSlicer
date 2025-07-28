@@ -8,6 +8,7 @@
 #include "Slic3r/App/Init.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/App/PresetUpdaterCLI.hpp"
+#include "Slic3r/App/ConfigModelDump.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
@@ -593,6 +594,10 @@ bool process_actions(
             model.add_default_instances();
             Algorithms::Model::print_info(model);
         }
+    }
+
+    if (action.dump_json_model) {
+        dump_config_model(misc.config_model_json_file.value_or("config-model.json"));
     }
 
     if (action.configuration_save) {

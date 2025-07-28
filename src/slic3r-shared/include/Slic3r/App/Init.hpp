@@ -34,6 +34,7 @@ struct ActionParams
     bool preset_updater_list_repos          = false;
     bool preset_updater_switch_repo         = false;
     bool preset_updater_cleanup             = false;
+    bool dump_json_model                    = false;
 
     bool has_any_action() const
     {
@@ -56,7 +57,8 @@ struct ActionParams
             || preset_updater_remove_local
             || preset_updater_list_repos
             || preset_updater_switch_repo
-            || preset_updater_cleanup;
+            || preset_updater_cleanup
+            || dump_json_model;
     }
 
     bool has_preset_updater_action() const
@@ -108,6 +110,7 @@ struct MiscParams
     std::optional<std::string> datadir;
     std::optional<uint8_t> loglevel;
     std::optional<std::string> output;
+    std::optional<std::string> config_model_json_file;
 
     std::optional<bool> delete_after_load;
     std::optional<bool> ignore_nonexistent_config;

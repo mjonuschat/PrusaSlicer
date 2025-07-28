@@ -528,6 +528,18 @@ void add_action_options(CLI::App& app, App::InitParams& params)
         params.action.preset_updater_cleanup,
         "Deletes all files previously staged for update by preset-update-list."
     );
+    app.add_option_function<std::string>(
+           "--export-config-schema",
+           [&params](const std::string& file)
+           {
+               params.action.dump_json_model = true;
+               if (!params.misc.config_model_json_file.has_value()) {
+                   params.misc.config_model_json_file = file;
+               }
+           },
+           "Save preset/config data model description into a JSON file."
+    )
+        ->option_text("FILE");
 }
 
 void add_config_item_override(
