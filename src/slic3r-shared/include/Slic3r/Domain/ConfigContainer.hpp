@@ -24,11 +24,6 @@ public:
         return m_preset.technology();
     }
 
-    const DynamicPrintConfig& print_config() const
-    {
-        return m_print_config;
-    }
-
     const Preset::SelectedPreset& selected_preset() const
     {
         return m_preset;
@@ -39,14 +34,9 @@ public:
         return m_preset;
     }
 
-    ConfigPack new_config() const
+    ConfigPack print_config() const
     {
         return m_preset.config();
-    }
-
-    void set_print_config(const DynamicPrintConfig& config)
-    {
-        m_print_config = config;
     }
 
     void set_bed(const Bed& bed)
@@ -91,14 +81,7 @@ public:
     }
 
 private:
-    /**
-     * @brief Full config as loaded from 3MF.
-     *
-     * During editing this config gets parsed and decomposed into Preset stored in
-     * Slic3r::Biz::Preset::PresetInteractorConfigContainerContext.
-     */
-    DynamicPrintConfig m_print_config;
-    Domain::Preset::SelectedPreset m_preset{};
+    Preset::SelectedPreset m_preset{};
 
     const Bed* m_bed{nullptr};
     BedInstanceList m_bed_instances;

@@ -114,11 +114,11 @@ struct EvaluatedToolPrintPreset
 /**
  * @brief Single tool `tool_print` presets variants (e.g. quality vs. speed variants).
  */
-using EvaluatedToolPrintPresetVariants = std::vector<EvaluatedToolPrintPreset>;
+using SingleToolEvaluatedToolPrintPresets = std::vector<EvaluatedToolPrintPreset>;
 /**
  * @brief `tool_print` variants for all tools.
  */
-using EvaluatedToolPrintPresets = std::vector<EvaluatedToolPrintPresetVariants>;
+using AllToolsEvaluatedToolPrintPresets = std::vector<SingleToolEvaluatedToolPrintPresets>;
 
 struct EvaluatedMaterialPreset
 {
@@ -132,22 +132,26 @@ struct EvaluatedMaterialPreset
     explicit EvaluatedMaterialPreset(Preset&& preset) : preset(std::move(preset)) {}
 };
 
-using EvaluatedMaterialVariants = std::vector<EvaluatedMaterialPreset>;
-using EvaluatedMaterialPresets  = std::vector<EvaluatedMaterialVariants>;
+using SingleToolEvaluatedMaterialPresets = std::vector<EvaluatedMaterialPreset>;
+using AllToolsEvaluatedMaterialPresets  = std::vector<SingleToolEvaluatedMaterialPresets>;
 
 
 struct EvaluatedPrintPreset
 {
     using Preset = EvaluatedPreset<PrintSettings, SLAPrintSettings>;
     Preset preset;
-    EvaluatedToolPrintPresets tools;
-    EvaluatedMaterialPresets materials;
+    AllToolsEvaluatedToolPrintPresets tools;
+    AllToolsEvaluatedMaterialPresets materials;
 
     EvaluatedPrintPreset()                                = default;
     EvaluatedPrintPreset(const EvaluatedPrintPreset&)     = default;
     EvaluatedPrintPreset(EvaluatedPrintPreset&&) noexcept = default;
 
-    EvaluatedPrintPreset(Preset&& preset, EvaluatedToolPrintPresets&& tools, EvaluatedMaterialPresets&& materials) :
+    EvaluatedPrintPreset(
+        Preset&& preset,
+        AllToolsEvaluatedToolPrintPresets&& tools,
+        AllToolsEvaluatedMaterialPresets&& materials
+    ) :
         preset(std::move(preset)),
         tools(std::move(tools)),
         materials(std::move(materials))

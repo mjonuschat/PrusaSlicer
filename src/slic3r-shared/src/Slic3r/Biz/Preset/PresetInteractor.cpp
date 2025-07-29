@@ -518,7 +518,7 @@ void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::st
 void PresetInteractor::select_material_preset(size_t material_index, const std::string& id)
 {
     auto& selected_preset = mutable_selected_printer_presets();
-    const auto* ep = m_workbench.preset_bundle().find_printer_preset_by_id(selected_preset.print.id);
+    const auto* ep = m_workbench.preset_bundle().find_printer_preset_by_id(selected_preset.printer.id);
     ASSERT(ep != nullptr, selected_preset.printer.id);
 
     const auto* p = ep->find_print_preset_by_id(selected_preset.print.id);
@@ -1007,7 +1007,9 @@ PresetInteractorConfigContainerContext& PresetInteractor::get_or_create_config_c
     // fill ccc presets from cc.print_config
     PresetBundle& preset_bundle = m_workbench.preset_bundle_legacy();
     auto pt                     = preset_bundle.printers.get_selected_preset().printer_technology();
-    preset_bundle.load_config_model(project.file_name(), cc.print_config());
+    // Legacy, remove when possilbe
+    DynamicPrintConfig config;
+    preset_bundle.load_config_model(project.file_name(), config.full_print_config());
     ccc.printer = create_preset_state(preset_bundle.printers);
     ccc.print   = create_preset_state(
         pt == PrinterTechnology::ptFFF ? preset_bundle.prints : preset_bundle.sla_prints

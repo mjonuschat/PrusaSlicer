@@ -383,7 +383,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                 print_kind,
                 print_preset
             );
-            Domain::Preset::EvaluatedToolPrintPresets tools;
+            Domain::Preset::AllToolsEvaluatedToolPrintPresets tools;
 
             Expr::ValueMap print_values = printer_values;
             std::visit([&print_values](const auto& v) {
@@ -397,7 +397,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                     append_tool_values(tool_values, tool);
 
                     // evaluate all variants
-                    Domain::Preset::EvaluatedToolPrintPresetVariants eval_variants;
+                    Domain::Preset::SingleToolEvaluatedToolPrintPresets eval_variants;
                     auto tool_preset_variants = tool_eval.eval_preset({tool_values});
                     for (const auto& tool_variant : tool_preset_variants)
                         eval_variants.emplace_back(
@@ -417,11 +417,11 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             auto mat_names_it   = m_named_presets.find(mat_kind);
             ASSERT(mats_it != m_presets.end() && mat_names_it != m_named_presets.end());
 
-            Domain::Preset::EvaluatedMaterialPresets materials;
+            Domain::Preset::AllToolsEvaluatedMaterialPresets materials;
             for (const auto& tool : hw_config.tools) {
                 Expr::ValueMap tool_values = print_values;
                 append_tool_values(tool_values, tool);
-                Domain::Preset::EvaluatedMaterialVariants variants;
+                Domain::Preset::SingleToolEvaluatedMaterialPresets variants;
 
                 PresetCollectionEvaluator material_eval(mats_it->second, mat_names_it->second, m_eval, {});
                 auto mat_presets = material_eval.eval_preset({tool_values});

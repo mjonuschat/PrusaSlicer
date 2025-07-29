@@ -184,7 +184,7 @@ ArrangeBeds ArrangeInteractor::get_beds(const double instances_brim, const Setti
         };
 
         double brim_width{0.0};
-        const ConfigPack& config{config_container->new_config()};
+        const ConfigPack& config{config_container->print_config()};
         if (std::holds_alternative<ConfigPackFDM>(config)) {
             const ConfigPackFDM& fdm_config{std::get<ConfigPackFDM>(config)};
             brim_width = fdm_config.print.items.opt("brim_width").get<double>();
