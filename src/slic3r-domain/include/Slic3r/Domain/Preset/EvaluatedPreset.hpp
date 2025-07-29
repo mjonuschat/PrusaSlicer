@@ -21,6 +21,14 @@ template <typename T>
 concept ConfigBoxLikeOrMonostate = std::is_base_of_v<ConfigBox, T>
     || std::is_same_v<std::monostate, T>;
 
+struct EvaluatedPresetMetadata
+{
+    std::string root_id;
+    std::string id;
+    std::string name;
+    Expressions conditions;
+};
+
 template <ConfigBoxLike ConfigFdmType, ConfigBoxLikeOrMonostate ConfigSlaType>
 struct EvaluatedPreset
 {
@@ -34,6 +42,28 @@ struct EvaluatedPreset
     FeatureValueMap features;
     Expressions conditions;
     SourceLocation last_node_location;
+
+    static EvaluatedPreset make(PresetKind kind, const EvaluatedPresetMetadata& metadata, PresetValues values)
+    {
+        return {
+            .kind = kind,
+            .root_id = metadata.root_id,
+            .id = metadata.id,
+            .name = metadata.name,
+            .values = values,
+            .conditions = metadata.conditions,
+        };
+    }
+
+    [[nodiscard]] EvaluatedPresetMetadata metadata() const
+    {
+        return {
+            .root_id = root_id,
+            .id = id,
+            .name = name,
+            .conditions = conditions,
+        };
+    }
 
     [[nodiscard]] std::string_view short_name() const
     {

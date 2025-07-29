@@ -10,6 +10,7 @@
 
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Preset/SelectedPreset.hpp"
 #include "Slic3r/Semver.hpp"
 
 
@@ -134,7 +135,7 @@ enum class Read3mfIssueType: unsigned short {
     unprocessed_file_in_3mf, // in 3mf archive is unknown
 
 //////////////////////////////////
-//  Loading PRUSA projcet files //
+//  Loading PRUSA project files //
 //////////////////////////////////
     project_file_is_corrupted,
     project_unknown_type,
@@ -275,6 +276,7 @@ struct Read3mfIssues {
 
 struct Loaded3MF {
     struct ConfigContainerData {
+        Domain::Preset::SelectedPresetMetadata preset;
         Domain::ConfigPack config_pack;
         std::vector<Domain::Vec2d> bed_offsets;
     };

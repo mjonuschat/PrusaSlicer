@@ -1,8 +1,19 @@
 #pragma once
-
+#include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
 
 namespace Slic3r::Domain::Preset {
+
+using EvaluatedPresetMetadatas = std::vector<EvaluatedPresetMetadata>;
+struct SelectedPresetMetadata
+{
+    HwPrinterConfig hw_config;
+    EvaluatedPresetMetadata printer;
+    EvaluatedPresetMetadata print;
+    EvaluatedPresetMetadatas tools;
+    EvaluatedPresetMetadatas materials;
+};
+
 struct SelectedPreset
 {
     HwPrinterConfig hw_config;
@@ -20,6 +31,9 @@ struct SelectedPreset
     [[nodiscard]] std::string bed_texture() const;
 
     ConfigPack config() const;
+
+    static SelectedPreset make(const SelectedPresetMetadata& metadata, const ConfigPack& config);
+    SelectedPresetMetadata metadata() const;
 };
 
 }
