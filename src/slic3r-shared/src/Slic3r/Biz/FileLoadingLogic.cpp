@@ -6,6 +6,7 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Scene/Selection.hpp"
 #include "tl/expected.hpp"
 
 #include <boost/filesystem.hpp>
@@ -523,6 +524,39 @@ void import_files_and_add_to_scene(
             xform.translate(Vec3d(0., 0., sizes(bbox).z() / 2.));
             xform.translate(Vec3d{bed_center.x(), bed_center.y(), 0});
             scene_interactor.transform_selection(xform.matrix());
+        }
+    }
+}
+
+
+
+/**
+ * Load meshes from multiple source files and add them into selected object
+ */
+void import_files_as_volumes_for_selected_object(
+    const std::vector<boost::filesystem::path>& file_paths,
+    const Domain::ModelVolumeType& volume_type,
+    Scene::SceneInteractor& scene_interactor
+)
+{
+    auto data = Biz::FileLoadingLogic::import_files(file_paths);
+
+    for (Biz::FileLoadingLogic::ReturnData& file_data : data) {
+        Domain::BoundingBox3d bbox;
+        if (file_data.mesh.has_value()) {
+            auto mesh = file_data.mesh;
+            scene_interactor.add_volume_from_mesh(std::move(mesh.value()), volume_type, file_data.file_name);
+
+            bbox = mesh->bounding_box();
+        }
+        else if (file_data.model.has_value()) {
+            Domain::Model& model = file_data.model.value();
+            // Convert objects from the model into separate meshes and add them for selected object
+            TriangleMesh mesh;
+            for (const ModelObject* object : model.objects) {
+                mesh.merge(Biz::Algorithms::ModelObject::mesh(*object));
+            }
+            scene_interactor.add_volume_from_mesh(std::move(mesh), volume_type, file_data.file_name);
         }
     }
 }

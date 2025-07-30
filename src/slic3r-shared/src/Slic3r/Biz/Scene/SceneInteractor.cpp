@@ -193,12 +193,13 @@ void SceneInteractor::new_object_from_mesh(Domain::TriangleMesh&& mesh, const st
 {
     auto& project = m_workbench.project(m_selected_project_id);
     auto& obj     = *project.model().add_object();
-    obj.name      = name;
     auto& vol     = *Algorithms::ModelObject::add_volume(&obj, std::move(mesh));
     auto& inst    = *obj.add_instance();
     const Domain::ElementRefs updated{{obj.id().id, inst.id().id}};
     // const Domain::ElementRefs updated_vols{{obj.id().id, inst.id().id, vol.id().id}};
     auto changes = update_instances_bed_placement(project, updated);
+
+    obj.name      = vol.name = name;
 
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
@@ -224,10 +225,11 @@ void SceneInteractor::add_new_objects(const std::vector<Domain::ModelObject*>& o
 void SceneInteractor::add_volume_from_mesh(
     TriangleMesh&& mesh,
     Domain::ModelVolumeType volume_type,
+    const std::string& name,
     const Transform& xform
 )
 {
-    auto& project        = m_workbench.project(m_selected_project_id);
+    auto& project              = m_workbench.project(m_selected_project_id);
     const ObjectSelection& sel = object_selection();
     DEBUG_ASSERT(sel.elements.size() == 1);
     size_t obj_id = sel.elements[0].object_id;
@@ -235,7 +237,12 @@ void SceneInteractor::add_volume_from_mesh(
 
     auto& obj = *project.find_object_by_id(obj_id);
     auto& vol = *Algorithms::ModelObject::add_volume(&obj, std::move(mesh), volume_type);
-    vol.set_transformation(Transform3d{xform});
+    vol.name  = name;
+    if (xform != Domain::SquareMatrix4d::Identity()) {
+        // Apply transformations only if explicitly set.
+        // By default, the object controls the transformation of the volume added to it.
+        vol.set_transformation(Transform3d{xform});
+    }
     updated.push_back({obj.id().id, obj.instances[0]->id().id, vol.id().id});
 
     invoke_listeners<ISceneChangedListener>([&](auto* l) {

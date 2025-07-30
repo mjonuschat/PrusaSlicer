@@ -199,6 +199,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::CaretLeft, "caret_left"},
     {Icon::Search, "search_gray"},
     {Icon::Fan, "cooling"},
+    {Icon::AddVolume, "add_volume"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {

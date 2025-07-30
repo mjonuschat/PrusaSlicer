@@ -45,6 +45,8 @@
 #include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
+#include "Slic3r/App/Yoga/Menu.hpp"
+#include "Slic3r/App/Yoga/MenuItem.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
@@ -228,15 +230,29 @@ void PlaterRenderModule::init_scene_layout()
              }}
     );
 
+    m_toolbar_add_volume = m_layout->add_toolbar_item(
+        ToolbarID::Middle,
+        Render::Icon::AddVolume,
+        "Add Part",
+        "",
+        {.action =
+             [this]() {
+                 m_add_volumes_menu->open();
+             }}
+    );
+    m_toolbar_add_volume->set_enabled(false);
+    init_add_volume_menu();
+
     m_toolbar_add_instance = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::ToolbarAddInstance,
         "Add instance",
         "+",
-        {.action = [this]() {
-            m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
-            m_scene_presenter->scene().log_nodes();
-        }}
+        {.action =
+             [this]() {
+                 m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
+                 m_scene_presenter->scene().log_nodes();
+             }}
     );
     m_toolbar_add_instance->set_enabled(false);
 
@@ -247,8 +263,8 @@ void PlaterRenderModule::init_scene_layout()
         "M",
         {.action =
              [this]() {
-        toggle_activate_tool(Scene::ToolType::Translation);
-    }},
+                 toggle_activate_tool(Scene::ToolType::Translation);
+             }},
         m_translation_gizmo
     );
     m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
@@ -258,8 +274,8 @@ void PlaterRenderModule::init_scene_layout()
         "R",
         {.action =
              [this]() {
-        toggle_activate_tool(Scene::ToolType::Rotation);
-    }},
+                 toggle_activate_tool(Scene::ToolType::Rotation);
+             }},
         m_rotation_gizmo
     );
     m_toolbar_arrange = m_layout->add_toolbar_item_gizmo(
@@ -277,8 +293,8 @@ void PlaterRenderModule::init_scene_layout()
         "B",
         {.action =
              [this]() {
-        toggle_activate_tool(Scene::ToolType::Simplify);
-    }},
+                 toggle_activate_tool(Scene::ToolType::Simplify);
+             }},
         m_simplify_gizmo
     );
     m_toolbar_simplify->set_enabled(false);
@@ -290,8 +306,8 @@ void PlaterRenderModule::init_scene_layout()
         "L",
         {.action =
              [this]() {
-        toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo);
-    }},
+                 toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo);
+             }},
         m_paint_on_supports_gizmo
     );
 
@@ -314,8 +330,8 @@ void PlaterRenderModule::init_scene_layout()
         "U",
         {.action =
              [this]() {
-        toggle_activate_tool(Scene::ToolType::MeasureGizmo);
-    }},
+                 toggle_activate_tool(Scene::ToolType::MeasureGizmo);
+             }},
         m_measure_gizmo
     );
 }
@@ -409,6 +425,72 @@ void PlaterRenderModule::init_gizmos()
     m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>();
     m_text_gizmo              = &m_gizmo_manager->add_tool_gizmo<TextGizmo>();
     m_measure_gizmo           = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>();
+}
+
+void PlaterRenderModule::init_add_volume_menu()
+{
+    m_add_volumes_menu = std::make_unique<Yoga::Menu>(
+        m_toolbar_add_volume,
+        "add_volume_menu",
+        Yoga::Position::Right
+    );
+
+    m_add_volumes_menu
+        ->append_item(_u8L("Solid Part Volume"), nullptr, Render::Icon::SolidPartVolume)
+        ->callbacks()
+        .action = [this]() {
+        add_volume(Domain::ModelVolumeType::MODEL_PART);
+    };
+    m_add_volumes_menu->append_item(_u8L("Negative Volume"), nullptr, Render::Icon::NegativeVolume)
+        ->callbacks()
+        .action = [this]() {
+        add_volume(Domain::ModelVolumeType::NEGATIVE_VOLUME);
+    };
+    m_add_volumes_menu->append_item(_u8L("Modifier Volume"), nullptr, Render::Icon::ModifierVolume)
+        ->callbacks()
+        .action = [this]() {
+        add_volume(Domain::ModelVolumeType::PARAMETER_MODIFIER);
+    };
+    m_add_volumes_menu->append_item(_u8L("Support Blocker"), nullptr, Render::Icon::SupportBlocker)
+        ->callbacks()
+        .action = [this]() {
+        add_volume(Domain::ModelVolumeType::SUPPORT_BLOCKER);
+    };
+    m_add_volumes_menu
+        ->append_item(_u8L("Support Modifier"), nullptr, Render::Icon::SupportModifier)
+        ->callbacks()
+        .action = [this]() {
+        add_volume(Domain::ModelVolumeType::SUPPORT_ENFORCER);
+    };
+}
+
+void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
+{
+    assert(m_add_volumes_menu->opened());
+    m_add_volumes_menu->close();
+
+    IDialogManager::FileCallback callback =
+        [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths) {
+            if (success) {
+                Biz::FileLoadingLogic::import_files_as_volumes_for_selected_object(
+                    file_paths,
+                    type,
+                    m_project_interactor.scene_interactor()
+                );
+
+                m_scene_presenter->scene().log_nodes();
+            }
+        };
+
+    auto& dlg_manager = DialogManagerProvider::instance().get();
+    dlg_manager.show_file_dialog(
+        FileDialogType::OpenMultiple,
+        _u8L("Import File"),
+        "",
+        "",
+        "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf",
+        callback
+    );
 }
 
 void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)
@@ -1210,6 +1292,7 @@ void PlaterRenderModule::on_scene_selection_changed(
             }
         }
     }
+    m_toolbar_add_volume->set_enabled(can_add_instance);
     m_toolbar_add_instance->set_enabled(can_add_instance);
 }
 

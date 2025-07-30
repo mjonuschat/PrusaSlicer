@@ -369,6 +369,7 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
         scene_interactor.add_volume_from_mesh(
             Domain::TriangleMesh{TriMesh::make_cube(cube_side, cube_side, cube_side)},
             Domain::ModelVolumeType::MODEL_PART,
+            "Test volume",
             xform.matrix()
         );
 

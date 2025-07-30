@@ -127,7 +127,12 @@ public:
 
     void new_object_from_mesh(Domain::TriangleMesh&& mesh, const std::string& name = std::string());
     void add_new_objects(const std::vector<Domain::ModelObject*>& objects);
-    void add_volume_from_mesh(Domain::TriangleMesh&& mesh, Domain::ModelVolumeType volume_type, const Transform& xform = Domain::SquareMatrix4d::Identity());
+    void add_volume_from_mesh(
+        Domain::TriangleMesh&& mesh,
+        Domain::ModelVolumeType volume_type,
+        const std::string& name = std::string(),
+        const Transform& xform  = Domain::SquareMatrix4d::Identity()
+    );
     void add_instance(const Domain::Vec2d& offset);
     void notify_listener_on_objects(const std::vector<Domain::ModelObject*>& objects);
     void notify_listener_on_objects();

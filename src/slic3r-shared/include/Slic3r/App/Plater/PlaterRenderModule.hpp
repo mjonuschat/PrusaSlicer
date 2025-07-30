@@ -19,6 +19,11 @@ class ThumbnailImageProvider;
 namespace Slic3r::App {
 struct ThumbnailStore;
 class ThumbnailStoreUpdater;
+
+namespace Yoga {
+class Menu;
+} // namespace Yoga
+
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Plater {
@@ -76,6 +81,8 @@ private:
     void active_tool_changed(Scene::IToolGizmo* active_tool) override;
 
     void init_gizmos();
+    void init_add_volume_menu();
+    void add_volume(const Domain::ModelVolumeType& type);
 
 private:
     const Domain::Workbench& m_workbench;
@@ -85,6 +92,8 @@ private:
 
     bool m_gui_win_open{true};
 
+    // tmp menu for add volume
+    std::unique_ptr<Yoga::Menu> m_add_volumes_menu;
     // main window layout
     std::unique_ptr<PlaterRenderLayout> m_layout;
     // Layout objects
@@ -96,6 +105,7 @@ private:
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<History> m_history;
 
+    Yoga::ToolbarButton* m_toolbar_add_volume        = nullptr;
     Yoga::ToolbarButton* m_toolbar_add_instance      = nullptr;
     Yoga::ToolbarButton* m_toolbar_move              = nullptr;
     Yoga::ToolbarButton* m_toolbar_rotate            = nullptr;
