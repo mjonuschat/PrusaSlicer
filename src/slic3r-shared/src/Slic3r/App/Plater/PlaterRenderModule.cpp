@@ -400,7 +400,7 @@ void PlaterRenderModule::init_gizmos()
     // TODO: Load constant from OS
     int min_drag_offset = 500; // [in um]
     auto drag_detector = std::make_unique<Scene::MouseDragDetector>(min_drag_time_span, min_drag_offset);
-    const Scene::MouseDragDetector* drag_detector_ptr = drag_detector.get();
+    Scene::IMouseDragCallbacks& drag_callbacks = *drag_detector.get();
     m_gizmo_manager = std::make_unique<Scene::GizmoManager>(
         *m_device,
         *m_scene_presenter,
@@ -428,7 +428,7 @@ void PlaterRenderModule::init_gizmos()
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(
         m_project_interactor.scene_interactor(),
         *m_scene_presenter,
-        *drag_detector_ptr
+        drag_callbacks
     );
     m_translation_gizmo = &m_gizmo_manager->add_tool_gizmo<TranslationGizmo>(
         *m_device,

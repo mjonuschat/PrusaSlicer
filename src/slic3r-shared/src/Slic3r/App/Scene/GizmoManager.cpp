@@ -39,6 +39,23 @@ GizmoManager::GizmoManager(
     GizmoManager::on_selected_project_changed(m_project_interactor.selected_project_id());
 }
 
+namespace {
+std::vector<IGizmo*> get_gizmos(const std::vector<std::unique_ptr<IGizmo>> &base_gizmos, IGizmo* active_tool) {
+    std::vector<IGizmo*> gizmos;
+    gizmos.reserve(base_gizmos.size() + (active_tool==nullptr)? 0:1);
+    if (active_tool == nullptr) {
+        gizmos.reserve(base_gizmos.size());
+    } else {
+        gizmos.reserve(base_gizmos.size()+1);
+        gizmos.push_back(active_tool);
+    }
+    for (const auto& g : base_gizmos) {
+        gizmos.push_back(g.get());
+    }
+    return gizmos;
+}
+}
+
 void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Slic3r::App::Render::ScreenInfo& screen_info)
 {
     auto& p = current_context();
@@ -59,8 +76,10 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
 
     );
     GizmoEventContext ctx{e, pick_ray, pick_results, screen_info};
-    if (m_mouse_drag_detector)
-        m_mouse_drag_detector->mouse_event(ctx);
+    if (m_mouse_drag_detector && 
+        m_mouse_drag_detector->mouse_event(ctx, get_gizmos(m_base_gizmos, p.active_tool)))
+        return;
+        
     const bool single_active = p.in_cycle_gizmos.size() == 1;
 #if DEBUG_GIZMO_MANAGER
     SPDLOG_INFO("process event {} ---in-cycle: {}", int(e.type()), p.in_cycle);
