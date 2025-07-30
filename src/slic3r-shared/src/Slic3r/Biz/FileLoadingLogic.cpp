@@ -298,7 +298,7 @@ tl::expected<ReturnData, std::string> read_data_from_file(const boost::filesyste
     bool result = false;
     if (boost::algorithm::iends_with(input_file_path.string(), ".stl")) {
         auto loaded_mesh = Biz::load_stl(input_file_path.string());
-        if (loaded_mesh && loaded_mesh.has_value()) {
+        if (loaded_mesh) {
             Domain::TriangleMesh mesh = loaded_mesh.value();
             ret.mesh                  = mesh;
             return ret;
@@ -337,10 +337,10 @@ static tl::expected<ReturnData, std::string> read_and_process_file(
     }
 
     const std::string file_name = input_file_path.filename().string();
-    if (data.value().model.has_value()) {
+    if (data.value().model) {
         Model& model = data.value().model.value();
         remove_objects_with_zero_volume(model, file_name);
-    } else if (data.value().mesh.has_value()) {
+    } else if (data.value().mesh) {
         TriangleMesh& mesh = data.value().mesh.value();
         if (has_zero_volume(mesh.stats())) {
             return tl::make_unexpected(
@@ -401,7 +401,7 @@ std::vector<ReturnData> import_files(
         if (!data) {
             errors += data.error() + "\n";
         } else {
-            if (extra_model && data.value().mesh.has_value()) {
+            if (extra_model && data.value().mesh) {
                 ModelObject* new_object = extra_model->add_object();
                 new_object->name        = path.filename().string();
                 new_object->input_file  = path.string();
@@ -500,12 +500,12 @@ void import_files_and_add_to_scene(
 
     for (Biz::FileLoadingLogic::ReturnData& file_data : data) {
         Domain::BoundingBox3d bbox;
-        if (file_data.mesh.has_value()) {
+        if (file_data.mesh) {
             auto mesh = file_data.mesh;
             scene_interactor.new_object_from_mesh(std::move(mesh.value()), file_data.file_name);
 
             bbox = mesh->bounding_box();
-        } else if (file_data.model.has_value()) {
+        } else if (file_data.model) {
             Domain::Model& model = file_data.model.value();
             if (model.objects.size() == 1 && model.objects.front()->instances.empty()) {
                 Domain::ModelObject* multi_part_object = model.objects.front();
@@ -533,7 +533,7 @@ void import_files_and_add_to_scene(
 /**
  * Load meshes from multiple source files and add them into selected object
  */
-void import_files_as_volumes_for_selected_object(
+void import_volumes_into_selected_object(
     const std::vector<boost::filesystem::path>& file_paths,
     const Domain::ModelVolumeType& volume_type,
     Scene::SceneInteractor& scene_interactor
@@ -543,13 +543,13 @@ void import_files_as_volumes_for_selected_object(
 
     for (Biz::FileLoadingLogic::ReturnData& file_data : data) {
         Domain::BoundingBox3d bbox;
-        if (file_data.mesh.has_value()) {
+        if (file_data.mesh) {
             auto mesh = file_data.mesh;
             scene_interactor.add_volume_from_mesh(std::move(mesh.value()), volume_type, file_data.file_name);
 
             bbox = mesh->bounding_box();
         }
-        else if (file_data.model.has_value()) {
+        else if (file_data.model) {
             Domain::Model& model = file_data.model.value();
             // Convert objects from the model into separate meshes and add them for selected object
             TriangleMesh mesh;

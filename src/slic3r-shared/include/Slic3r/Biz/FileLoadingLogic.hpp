@@ -34,7 +34,7 @@ void import_files_and_add_to_scene(
 /**
  * Load meshes from multiple source files and add them into selected object
  */
-void import_files_as_volumes_for_selected_object(
+void import_volumes_into_selected_object(
     const std::vector<boost::filesystem::path>& input_file_paths,
     const Domain::ModelVolumeType& type,
     Scene::SceneInteractor& scene_interactor

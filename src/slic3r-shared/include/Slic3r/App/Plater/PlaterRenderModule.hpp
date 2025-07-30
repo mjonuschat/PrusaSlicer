@@ -106,6 +106,7 @@ private:
     Yoga::Passthrough<History> m_history;
 
     Yoga::ToolbarButton* m_toolbar_add_volume        = nullptr;
+    Yoga::ToolbarButton* m_toolbar_delete            = nullptr;
     Yoga::ToolbarButton* m_toolbar_add_instance      = nullptr;
     Yoga::ToolbarButton* m_toolbar_move              = nullptr;
     Yoga::ToolbarButton* m_toolbar_rotate            = nullptr;

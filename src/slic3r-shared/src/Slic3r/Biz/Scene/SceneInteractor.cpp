@@ -231,7 +231,7 @@ void SceneInteractor::add_volume_from_mesh(
 {
     auto& project              = m_workbench.project(m_selected_project_id);
     const ObjectSelection& sel = object_selection();
-    DEBUG_ASSERT(sel.elements.size() == 1);
+    DEBUG_ASSERT(sel.elements.size() == 1 || sel.mode == SelectionMode::Volume);
     size_t obj_id = sel.elements[0].object_id;
     Domain::ElementRefs updated;
 
@@ -462,12 +462,117 @@ void SceneInteractor::extract_selected_instances()
         }
     }
 
-    // notify listener on chnages
+    // notify listener on changes
 
     notify_listener_on_objects(new_objects);
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_instance_removed(m_selected_project_id, to_remove);
     });
+}
+
+std::optional<std::string> SceneInteractor::delete_selected_elements()
+{
+    Domain::Project& project               = m_workbench.project(m_selected_project_id);
+    Domain::Model& model                   = project.model();
+    const ObjectSelection& scene_selection = object_selection();
+    ObjectSelection::ElementRefs to_remove = scene_selection.elements;
+
+    std::optional<std::string> last_solid_part_name;
+    ObjectSelection new_selection = {};
+
+    // Remove selected elements from the model
+
+    if (scene_selection.mode == SelectionMode::Instance) {
+        // Delete selected instances from its objects
+        for (const auto& el : to_remove) {
+            Domain::ModelObject* object = project.find_object_by_id(el.object_id);
+            for (size_t idx = object->instances.size() - 1; idx != size_t(-1); idx--) {
+                if (object->instances[idx]->id().id == el.instance_id) {
+                    object->delete_instance(idx);
+                    break;
+                }
+            }
+        }
+
+        // Identify objects with no associated instances.
+        // Delete such objects if any are found.
+        for (size_t idx = model.objects.size() - 1; idx != size_t(-1); idx--) {
+            if (model.objects[idx]->instances.size() == 0) {
+                model.delete_object(idx);
+            }
+        }
+
+        // There is nothing to select
+
+    } else if (scene_selection.mode == SelectionMode::Volume) {
+        // Delete selected volumes from the object.
+        Domain::ModelObject* object = project.find_object_by_id(to_remove.front().object_id);
+
+        // We must track the number of "solid part" volumes in the object
+        // and prevent deletion of the last remaining one.
+        int solid_cnt = 0;
+        for (auto vol : object->volumes)
+            if (vol->is_model_part())
+                ++solid_cnt;
+
+        Domain::ElementRef last_solid_part_el;
+        for (const auto& el : to_remove) {
+            for (size_t idx = object->volumes.size() - 1; idx != size_t(-1); idx--) {
+                const Domain::ModelVolume* volume = object->volumes[idx];
+                if (volume->id().id == el.volume_id) {
+                    if (volume->is_model_part()) {
+                        if (solid_cnt == 1) {
+                            // If the user attempts to delete the last solid part, 
+                            // store its name and related element in selection.
+                            // And display an error dialog afterward.
+                            last_solid_part_name = volume->name;
+                            last_solid_part_el   = el;
+                            continue;
+                        }
+                        --solid_cnt;
+                    }
+                    object->delete_volume(idx);
+                    break;
+                }
+            }
+        }
+
+        if (last_solid_part_name && last_solid_part_name.has_value()) {
+            // Don't remove last_solid_part_el from the scene graph
+            to_remove.erase(
+                std::remove_if(
+                    to_remove.begin(),
+                    to_remove.end(),
+                    [last_solid_part_el](const Domain::ElementRef& el) {
+                        return el == last_solid_part_el;
+                    }
+                ),
+                to_remove.end()
+            );
+        }
+
+        // Select the object from which volumes were deleted.
+        new_selection.mode = SelectionMode::Instance;
+        for (const Domain::ModelInstance* instance : object->instances) {
+            new_selection.elements.emplace_back(Domain::ElementRef(object->id().id, instance->id().id));
+        }
+    }
+
+    // Notify listeners on changes
+
+    invoke_listeners<ISceneChangedListener>([&](auto* l) {
+        if (scene_selection.mode == SelectionMode::Instance) {
+            l->on_instance_removed(m_selected_project_id, to_remove);
+        } else if (scene_selection.mode == SelectionMode::Volume) {
+            l->on_volume_removed(m_selected_project_id, to_remove);
+        }
+    });
+
+    invoke_listeners<ISceneSelectionChangedListener>([&](auto* l) {
+        l->on_scene_selection_changed(m_selected_project_id, new_selection);
+    });
+
+    return last_solid_part_name;
 }
 
 void SceneInteractor::prepare_loaded_project(Domain::Project& project)

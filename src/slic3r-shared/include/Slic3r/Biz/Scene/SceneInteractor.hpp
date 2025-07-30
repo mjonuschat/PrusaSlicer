@@ -143,6 +143,13 @@ public:
     void edit_name(const Domain::ElementRef& id, const std::string& new_name);
     void set_printable(const Domain::ElementRef& id, bool is_printable);
     void extract_selected_instances();
+    /**
+     * Delete elements (volumes or instances) from the current scene selection.
+     *
+     * @return An optional string containing the name of the last solid part that was attempted to be deleted.
+     *         Deleting the last solid part is not permitted, and the user will be informed about it later.
+     */
+    std::optional<std::string> delete_selected_elements();
 
     void prepare_loaded_project(Domain::Project& project);
 

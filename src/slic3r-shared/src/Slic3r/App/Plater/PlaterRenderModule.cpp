@@ -233,7 +233,7 @@ void PlaterRenderModule::init_scene_layout()
     m_toolbar_add_volume = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::AddVolume,
-        "Add Part",
+        "Add Volume",
         "",
         {.action =
              [this]() {
@@ -242,6 +242,35 @@ void PlaterRenderModule::init_scene_layout()
     );
     m_toolbar_add_volume->set_enabled(false);
     init_add_volume_menu();
+
+    m_toolbar_delete = m_layout->add_toolbar_item(
+        ToolbarID::Middle,
+        Render::Icon::DeleteBtnIcon,
+        "Delete selection",
+        "",
+        {.action =
+             [this]() {
+                 std::optional<std::string> last_solid_part_name = m_project_interactor
+                                                                       .scene_interactor()
+                                                                       .delete_selected_elements();
+
+                 if (last_solid_part_name) {
+                     // Show warning dialog
+                     auto& dlg_manager = App::DialogManagerProvider::instance().get();
+                     dlg_manager.show_warning_dialog(
+                         fmt::vformat(
+                             _u8L(
+                                 "Part {} could not be deleted from the object,\n"
+                                 "as removing the last solid part is not permitted."
+                             ),
+                             fmt::make_format_args(last_solid_part_name.value())
+                         ) + "\n",
+                         _u8L("Delete selection")
+                     );
+                 }
+             }}
+    );
+    m_toolbar_delete->set_enabled(false);
 
     m_toolbar_add_instance = m_layout->add_toolbar_item(
         ToolbarID::Middle,
@@ -472,7 +501,7 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
     IDialogManager::FileCallback callback =
         [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths) {
             if (success) {
-                Biz::FileLoadingLogic::import_files_as_volumes_for_selected_object(
+                Biz::FileLoadingLogic::import_volumes_into_selected_object(
                     file_paths,
                     type,
                     m_project_interactor.scene_interactor()
@@ -1276,6 +1305,7 @@ void PlaterRenderModule::on_scene_selection_changed(
     m_toolbar_move->set_enabled(!empty_selection);
     m_toolbar_rotate->set_enabled(!empty_selection);
     m_toolbar_simplify->set_enabled(!empty_selection);
+    m_toolbar_delete->set_enabled(!empty_selection);
 
     m_text_gizmo->update_layout(
         !empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume
