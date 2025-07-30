@@ -13,9 +13,15 @@
 #include <vector>
 #include <algorithm>
 
+using Slic3r::Domain::BedContainer;
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Model;
+using Slic3r::Domain::Project;
+using Slic3r::Domain::ModelInstance;
+using Slic3r::Domain::ConstModelInstanceList;
+using Slic3r::Domain::ModelObject;
 
 using namespace Slic3r::Biz;
 
@@ -472,8 +478,8 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
 
-    invoke_listeners<ISceneChangedListener>([&](auto* l) {
-        l->on_bed_instance_added(m_selected_project_id, {updated});
+    invoke_listeners<ISceneBedInstanceChangedListener>([&](auto* l) {
+        l->on_bed_instance_added(m_selected_project_id, { updated });
     });
     return ret;
 }
@@ -502,8 +508,8 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
     invoke_listeners<ISlicingInputChangedListener>([&](auto* l) {
         l->on_slicing_input_removed(instance);
     });
-    invoke_listeners<ISceneChangedListener>([&](auto* l) {
-        l->on_bed_instance_removed(m_selected_project_id, {instance});
+    invoke_listeners<ISceneBedInstanceChangedListener>([&](auto* l) {
+        l->on_bed_instance_removed(m_selected_project_id, { instance });
     });
 }
 
@@ -520,7 +526,7 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
 
-    invoke_listeners<ISceneChangedListener>([&](auto* l) {
+    invoke_listeners<ISceneBedInstanceChangedListener>([&](auto* l) {
         l->on_bed_instance_transformed(m_selected_project_id, {instance}, TransformState::Completed);
     });
 }
@@ -567,6 +573,26 @@ const Domain::ModelInstanceList& SceneInteractor::selected_project_unplaced_mode
     return m_projects.find(m_selected_project_id)->second.project.unplaced_model_instances();
 }
 
+const BedContainer::BedList& SceneInteractor::selected_project_beds() const
+{
+    const Project& project{m_projects.find(m_selected_project_id)->second.project};
+    return project.bed_container().beds();
+}
+
+const ConstModelInstanceList SceneInteractor::selected_project_instances() const
+{
+    const Project& project{m_projects.find(m_selected_project_id)->second.project};
+    const Model& model{project.model()};
+
+    ConstModelInstanceList result;
+    for (const ModelObject* object : model.objects) {
+        for (const ModelInstance* instance : object->instances) {
+            result.push_back(instance);
+        }
+    }
+    return result;
+}
+
 void SceneInteractor::transform_selection(const Transform& relative_transform)
 {
     TransformMemento memento;
@@ -599,6 +625,29 @@ void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transfo
     });
     invoke_listeners<ISceneSelectionChangedListener>([&](ISceneSelectionChangedListener* l) {
         l->on_scene_selection_transformed(m_selected_project_id, proj.object_selection);
+    });
+}
+
+void SceneInteractor::transform_instances(const InstanceTransformations& transformations)
+{
+    Project& project{m_projects.find(m_selected_project_id)->second.project};
+
+    std::vector<Domain::ElementRef> elements;
+    for (const auto& [element, trafo] : transformations) {
+        ModelInstance* instance{project.find_instance_by_id(element.object_id, element.instance_id)};
+        const SquareMatrix4d initial_trafo{instance->get_transformation().get_matrix().matrix()};
+        const SquareMatrix4d new_trafo{trafo * initial_trafo};
+        instance->set_transformation(Transformation{Transform3d{new_trafo}});
+        elements.push_back(element);
+    }
+
+    const BedTrackingChanges changes{update_instances_bed_placement(project, elements)};
+    for (const auto& bed_ref : changes.updated_beds) {
+        invoke_slicing_input_changed(bed_ref);
+    }
+
+    invoke_listeners<ISceneChangedListener>([&](ISceneChangedListener* l) {
+        l->on_instance_transformed(m_selected_project_id, elements, TransformState::Completed);
     });
 }
 

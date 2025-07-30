@@ -52,6 +52,8 @@ public:
 private:
     void on_button_action(AbstractButton* button);
     void on_button_checked(AbstractButton* button);
+    void check_one_button(AbstractButton* button);
+    void invoke_checked_callbacks(AbstractButton* button);
 
     void set_button_callbacks(AbstractButton* button);
     void unset_button_callbacks(AbstractButton* button);

@@ -19,12 +19,13 @@ std::vector<size_t> BedContainer::beds_indices() const
 Bed& BedContainer::add_bed(
     const Vec2ds& contour,
     float max_print_height,
+    const std::optional<Bed::Segments>& bed_segments,
     const std::string& model_filename,
     const std::string& texture_filename
 )
 {
     m_beds.emplace_back(
-        std::make_unique<Bed>(Bed::from(contour, max_print_height, model_filename, texture_filename))
+        std::make_unique<Bed>(Bed::from(contour, max_print_height, bed_segments, model_filename, texture_filename))
     );
     return *m_beds.back();
 }
@@ -69,9 +70,18 @@ Bed& BedContainer::add_bed(const Preset::SelectedPreset& preset, const PresetBun
     if (custom_texture_filename_item.item != nullptr)
         custom_texture_filename = custom_texture_filename_item.item->value().get<std::string>();
 
+    // TODO uncoment once selecting a preset is possible!
+    const bool is_single_tool_XL{
+        true
+        //preset.hw_config.model.model == "XL" && preset.hw_config.tool_count == 1
+    };
+    const std::optional<Bed::Segments> segments{
+        is_single_tool_XL ? std::optional{Bed::Segments{4, 4}} : std::nullopt
+    };
     return add_bed(
         shape,
         float(max_print_height),
+        segments,
         custom_model_filename.empty() ? model_filename : custom_model_filename,
         custom_texture_filename.empty() ? texture_filename : custom_texture_filename
     );

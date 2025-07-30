@@ -57,4 +57,18 @@ float GizmoDialog::gap_size() const
     return 5.0f;
 }
 
+Item* GizmoDialog::add_new_row(const std::string& title, Yoga::ItemPtr controls, YGAlign label_align)
+{
+    Item* row = content()->emplace_back<Item>();
+    row->set_gap(gap_size());
+    row->set_padding({10, 0});
+    Text* text = row->emplace_back<Text>(title);
+    text->set_self_align(label_align);
+    text->set_width_percent(35);
+
+    controls->set_width_percent(65);
+    row->append(std::move(controls));
+    return row;
+}
+
 } // namespace Slic3r::App::Yoga

@@ -172,6 +172,13 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::NewBtnIcon, "new_button"},
     {Icon::DeleteBtnIcon, "delete_button"},
 
+    // Gizmo Arrange
+    {Icon::ArrangeTopLeft, "arrange_top_left"},
+    {Icon::ArrangeTopRight, "arrange_top_right"},
+    {Icon::ArrangeBottomLeft, "arrange_bottom_left"},
+    {Icon::ArrangeBottomRight, "arrange_bottom_right"},
+    {Icon::ArrangeCenter, "arrange_center"},
+
     {Icon::AlignHLeftBtn, "align_horizontal_left"},
     {Icon::AlignHCenterBtn, "align_horizontal_center"},
     {Icon::AlignHRightBtn, "align_horizontal_right"},
@@ -191,7 +198,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Notes, "notes"},
     {Icon::CaretLeft, "caret_left"},
     {Icon::Search, "search_gray"},
-    { Icon::Fan               , "cooling"                             },
+    {Icon::Fan, "cooling"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {

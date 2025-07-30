@@ -78,8 +78,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     }*/
 
 
-
-
 // Defs from void PrintConfigDef::init_fff_params() follow:
     def = defs.add("arc_fitting", typeid(EnumWrapper));
     def->location = Print;

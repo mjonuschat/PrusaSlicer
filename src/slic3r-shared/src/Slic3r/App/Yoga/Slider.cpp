@@ -182,5 +182,4 @@ void Slider::set_step(double step)
 {
     m_step = std::max(step, 0.);
 }
-
 } // namespace Slic3r::App::Yoga

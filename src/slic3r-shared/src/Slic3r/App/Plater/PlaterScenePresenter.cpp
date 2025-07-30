@@ -92,6 +92,7 @@ PlaterScenePresenter::PlaterScenePresenter(
 
     auto& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.add_listener<ISceneChangedListener>(this);
+    scene_interactor.add_listener<ISceneBedInstanceChangedListener>(this);
     scene_interactor.add_listener<ISceneSelectionChangedListener>(this);
     scene_interactor.add_listener<ISelectedBedInstancesChangedListener>(this);
 }

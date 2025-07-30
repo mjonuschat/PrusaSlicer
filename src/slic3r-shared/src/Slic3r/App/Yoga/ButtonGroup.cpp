@@ -17,6 +17,7 @@ ButtonGroup::Callbacks& ButtonGroup::callbacks() { return m_callbacks; }
 
 void ButtonGroup::set_buttons(std::initializer_list<AbstractButton*> initializer_list)
 {
+    m_checked_button = nullptr;
     for (AbstractButton* button : std::as_const(m_buttons)) {
         unset_button_callbacks(button);
     }
@@ -24,7 +25,18 @@ void ButtonGroup::set_buttons(std::initializer_list<AbstractButton*> initializer
     m_buttons = initializer_list;
 
     for (AbstractButton* button : std::as_const(m_buttons)) {
+        ASSERT(button);
+        ASSERT(button->checkable());
+
         set_button_callbacks(button);
+        if (button->checked()) {
+            ASSERT(m_checked_button == nullptr, "Multiple checked buttons provided!");
+            button->set_checked(true);
+        }
+    }
+
+    if (!m_buttons.empty() && m_checked_button == nullptr) {
+        (*initializer_list.begin())->set_checked(true);
     }
 }
 
@@ -33,6 +45,7 @@ AbstractButton* ButtonGroup::checked_button() const { return m_checked_button; }
 void ButtonGroup::insert_button(AbstractButton* button)
 {
     ASSERT(button);
+    ASSERT(button->checkable());
     if (m_buttons.contains(button)) {
         return;
     }
@@ -40,6 +53,11 @@ void ButtonGroup::insert_button(AbstractButton* button)
     m_buttons.insert(button);
 
     set_button_callbacks(button);
+
+
+    if (m_checked_button == nullptr || button->checked()) {
+        check_one_button(button);
+    }
 }
 
 bool ButtonGroup::remove_button(AbstractButton* button)
@@ -48,10 +66,19 @@ bool ButtonGroup::remove_button(AbstractButton* button)
         return false;
     }
 
+    const bool last_button{m_buttons.size() == 1 && *m_buttons.begin() == button};
+
     button->callbacks().action = nullptr;
     button->callbacks().checked_changed = nullptr;
 
     m_buttons.erase(button);
+
+    if (last_button) {
+        m_checked_button = nullptr;
+    } else if (button == m_checked_button) {
+        ASSERT(button->checked());
+        check_one_button(*m_buttons.begin());
+    }
 
     return true;
 }
@@ -67,34 +94,44 @@ void ButtonGroup::on_button_action(AbstractButton* button)
     }
 }
 
+void ButtonGroup::check_one_button(AbstractButton* button)
+{
+    if (m_checked_button == button && button->checked()) {
+        return;
+    }
+
+    m_checked_blocker = true;
+    m_checked_button  = button;
+    for (AbstractButton* owned_button : std::as_const(m_buttons)) {
+        if (owned_button != button) {
+            owned_button->set_checked(false);
+        } else {
+            owned_button->set_checked(true);
+        }
+    }
+    m_checked_blocker = false;
+}
+
 void ButtonGroup::on_button_checked(AbstractButton* button)
 {
     if (m_checked_blocker) {
         return;
     }
 
-    m_checked_blocker = true;
-
     AbstractButton* last = m_checked_button;
-    m_checked_button = button;
     if (m_callbacks.checked_changed) {
         m_callbacks.checked_changed(button, last);
     }
-
-    for (AbstractButton* owned_button : std::as_const(m_buttons)) {
-        if (owned_button != button) {
-            owned_button->set_checked(false);
-        }
-    }
-
-    m_checked_blocker = false;
+    check_one_button(button);
 }
 
 void ButtonGroup::set_button_callbacks(AbstractButton* button)
 {
     button->callbacks().action = [this, button]() { on_button_action(button); };
-    button->callbacks().checked_changed = [this, button](bool checked) {
-        on_button_checked(checked ? button : nullptr);
+    button->callbacks().checked_changed = [this, button](bool) {
+        // Intentionally ignored checked state.
+        // The button cannot be unchecked if it is already checked.
+        on_button_checked(button);
     };
 }
 

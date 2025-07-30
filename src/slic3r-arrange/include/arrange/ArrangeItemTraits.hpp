@@ -5,6 +5,7 @@
 #ifndef ARRANGE_ITEM_TRAITS_HPP
 #define ARRANGE_ITEM_TRAITS_HPP
 
+#include <optional>
 #include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::arr2 {

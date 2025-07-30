@@ -90,13 +90,19 @@ public:
      */
     virtual void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state) = 0;
 
-    virtual void on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;
-    virtual void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;
-    virtual void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, TransformState state) = 0;
-
     virtual void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) = 0;
     virtual void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) = 0;
     virtual void on_wipe_tower_transformed(Domain::SelectionId project_id, size_t idx, TransformState state) = 0;
+};
+
+class ISceneBedInstanceChangedListener
+{
+public:
+    virtual ~ISceneBedInstanceChangedListener() = default;
+
+    virtual void on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;
+    virtual void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) = 0;
+    virtual void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, TransformState state) = 0;
 };
 
 struct TransformMemento;
@@ -105,11 +111,11 @@ class SceneInteractor final :
     public ISelectedProjectChangedListener,
     public ISelectedConfigContainerChangedListener,
     public WithListeners<
-    ISceneSelectionChangedListener,
+        ISceneSelectionChangedListener,
         ISceneChangedListener,
+        ISceneBedInstanceChangedListener,
         ISelectedBedInstancesChangedListener,
-        ISlicingInputChangedListener
-    >
+        ISlicingInputChangedListener>
 {
 public:
     using Transform = Domain::SquareMatrix4d;
@@ -143,6 +149,10 @@ public:
 
     const Domain::Project::ConfigContainerList& selected_project_config_containers() const;
     const Domain::ModelInstanceList& selected_project_unplaced_model_instances() const;
+    const Domain::BedContainer::BedList& selected_project_beds() const;
+    const Domain::ConstModelInstanceList selected_project_instances() const;
+
+
     Domain::SelectionId selected_config_container_id() const
     { return m_selected_config_container_id; }
 
@@ -185,6 +195,9 @@ public:
      * and then finalize_transform_selection()
      */
     void transform_selection(const Transform& relative_transform);
+
+    using InstanceTransformations = std::vector<std::pair<Domain::ElementRef, Transform>>;
+    void transform_instances(const InstanceTransformations& transformations);
 
     /**
      * @brief Finalize or cancel selection transform.

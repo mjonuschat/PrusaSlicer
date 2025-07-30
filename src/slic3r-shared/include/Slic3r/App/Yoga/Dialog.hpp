@@ -11,6 +11,7 @@ namespace Slic3r::App::Yoga {
 
 class Text;
 class LayoutButton;
+class Separator;
 
 class Dialog : public Popup
 {
@@ -34,7 +35,7 @@ public:
 protected:
     Item* content() const;
     LayoutButton* close_button() const;
-    void add_separator();
+    Separator* add_separator();
     LayoutButton* append_tab(const std::string& tab);
 
     virtual void on_tab_selected(int current_index);

@@ -1,4 +1,5 @@
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
+#include "Slic3r/App/Plater/ArrangeGizmo.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
@@ -240,7 +241,6 @@ void PlaterRenderModule::init_scene_layout()
     );
     m_toolbar_add_instance->set_enabled(false);
 
-    // m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarArrange, "Arrange", "A", { []() {} });
     m_toolbar_move = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::ToolbarMove,
@@ -262,6 +262,14 @@ void PlaterRenderModule::init_scene_layout()
         toggle_activate_tool(Scene::ToolType::Rotation);
     }},
         m_rotation_gizmo
+    );
+    m_toolbar_arrange = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle,
+        Render::Icon::ToolbarArrange,
+        "Arrange",
+        "A",
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::ArrangeGizmo); }},
+        m_arrange_gizmo
     );
     m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
@@ -318,6 +326,7 @@ void PlaterRenderModule::update_toolbar_tool_selection(Scene::ToolType current_t
     m_toolbar_move->set_checked(current_tool_type == Scene::ToolType::Translation);
     m_toolbar_rotate->set_checked(current_tool_type == Scene::ToolType::Rotation);
     m_toolbar_simplify->set_checked(current_tool_type == Scene::ToolType::Simplify);
+    m_toolbar_arrange->set_checked(current_tool_type == Scene::ToolType::ArrangeGizmo);
     m_toolbar_paint_on_supports->set_checked(
         current_tool_type == Scene::ToolType::PaintOnSupportsGizmo
     );
@@ -388,6 +397,15 @@ void PlaterRenderModule::init_gizmos()
         *m_scene_presenter,
         m_project_interactor.scene_interactor()
     );
+    m_arrange_gizmo = &m_gizmo_manager->add_tool_gizmo<ArrangeGizmo>(
+        m_project_interactor.arrange_interactor(),
+        *m_device,
+        *m_scene_presenter,
+        m_gizmo_manager->data_factory(),
+        m_project_interactor,
+        m_workbench
+    );
+
     SimplifyGizmo::CloseFn close_fn = [mng = m_gizmo_manager.get()]() {
         mng->deactivate_current_tool();
     };
