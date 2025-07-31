@@ -8,7 +8,7 @@
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
-#include "Slic3r/Biz/Emboss/StyleManager.hpp"
+#include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
 
 namespace Slic3r::App::Yoga {
 class Dialog;
@@ -65,9 +65,9 @@ private:
     Biz::Emboss::IFontManager& m_font_manager;
     Scene::GizmoManager& m_gizmo_manager;
 
-    Biz::Emboss::StyleManager m_style_manager;
+    Biz::Emboss::TextPresetManager m_preset_manager;
 
-    Domain::TextConfiguration m_text_configuration = {};
+    std::string m_text; // embossed text
     Domain::EmbossProjection m_projection = {};
     
     Yoga::Passthrough<TextDialog> m_dialog;
