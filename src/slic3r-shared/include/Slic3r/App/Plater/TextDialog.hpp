@@ -31,6 +31,8 @@ public:
 
     struct Callbacks
     {
+        std::function<void(const std::string& text)> editor_text_changed{nullptr};
+
         std::function<void(int index)> font_selection_changed{nullptr};
         std::function<void(int index)> style_selection_changed{nullptr};
 
@@ -86,6 +88,8 @@ public:
     void set_enable_per_glyph(bool enable);
     void set_enable_line_gap(bool enable);
     void set_enable_surface_distance(bool enable);
+    void set_warning(const std::string& warning);
+    void show_revert_buttons(bool show);
 
 private:
     void add_advanced_panel();
@@ -101,6 +105,7 @@ private:
 
 private:
     Yoga::InputTextField* m_editor{nullptr};
+    Yoga::LayoutButton* m_editor_warning{nullptr};
 
     Yoga::Passthrough<Yoga::ComboBox> m_font;
     Yoga::Passthrough<Yoga::ComboBox> m_style;

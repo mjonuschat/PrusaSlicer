@@ -37,6 +37,19 @@ TextDialog::TextDialog() : GizmoDialog(_u8L("Text"))
     m_editor = content()->emplace_back<InputTextField>();
     m_editor->set_height(100); // set multi-line mode
     m_editor->set_flags(m_editor->flags() | ImGuiInputTextFlags_Multiline);
+    m_editor->callbacks().text_changed = [this]() {
+        if (m_callbacks.editor_text_changed) {
+            m_callbacks.editor_text_changed(m_editor->text());
+        }
+    };
+
+    m_editor_warning = m_editor->emplace_back<LayoutButton>(
+        "",
+        Render::Icon::WarningMarker,
+        "Some warning tooltips"
+    );
+    m_editor_warning->set_self_align(YGAlignFlexEnd);
+    m_editor_warning->set_visible(false);
 
     m_font                                = Passthrough{std::make_unique<ComboBox>("Font name")};
     m_font->callbacks().selection_changed = [this](int index) {
@@ -514,6 +527,33 @@ void TextDialog::set_enable_line_gap(bool enable)
 void TextDialog::set_enable_surface_distance(bool enable)
 {
     enable_row_with_control(m_surface_distance.get(), enable);
+}
+
+void TextDialog::set_warning(const std::string& warning)
+{
+    m_editor_warning->set_visible(!warning.empty());
+    m_editor_warning->set_tooltip(warning);
+}
+
+void TextDialog::show_revert_buttons(bool show)
+{
+    if (m_font->has_valid_default() != show) {
+        m_font->validate_default(show);
+        m_style->validate_default(show);
+
+        m_height->validate_default(show);
+        m_depth->validate_default(show);
+
+        m_use_surface->validate_default(show);
+        m_per_glyph->validate_default(show);
+        m_align->validate_default(show);
+        m_char_gap->validate_default(show);
+        m_line_gap->validate_default(show);
+        m_boldness->validate_default(show);
+        m_skew_ratio->validate_default(show);
+        m_surface_distance->validate_default(show);
+        m_rotation->validate_default(show);
+    }
 }
 
 } // namespace Slic3r::App::Plater

@@ -107,7 +107,13 @@ InputText* InputTextField::input_text() const
 
 void InputTextField::set_default(double default_value)
 {
-    m_default_text = fmt::format("{}", default_value);
+    if (DoubleValidator* double_validator = dynamic_cast<DoubleValidator*>(validator());
+        double_validator && double_validator->precision())
+    {
+        m_default_text = fmt::format("{1:.{0}f}", double_validator->precision().value(), default_value);
+    } else {
+        m_default_text = fmt::format("{}", default_value);
+    }
     update_revert_button();
 }
 

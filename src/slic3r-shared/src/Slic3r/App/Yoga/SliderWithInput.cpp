@@ -165,9 +165,9 @@ void SliderWithInput::set_default(double def_value)
     m_input->set_default(def_value);
 }
 
-bool SliderWithInput::is_changed_value() const
+void SliderWithInput::validate_default(bool is_valid)
 {
-    return m_input->is_changed_value();
+    m_input->validate_default(is_valid);
 }
 
 void SliderWithInput::reset()

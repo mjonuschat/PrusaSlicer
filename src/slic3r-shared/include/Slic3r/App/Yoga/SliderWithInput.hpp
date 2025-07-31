@@ -54,7 +54,7 @@ public:
     void set_validator_precision(int precision);
 
     void set_default(double def_value);
-    bool is_changed_value() const override;
+    void validate_default(bool is_valid) override;
     void reset() override;
 
 private:

@@ -81,7 +81,8 @@ void InputText::render(Vec2f pos, Vec2f size)
             ImGuiCol_Text,
             ImGui::GetColorU32(enabled() ? ImGuiCol_Text : ImGuiCol_TextDisabled)
         );
-        m_updated |= YInputText(
+
+        bool changed = YInputText(
             id.c_str(),
             m_hint.c_str(),
             &m_text,
@@ -92,16 +93,23 @@ void InputText::render(Vec2f pos, Vec2f size)
         );
         ImGui::PopStyleColor();
 
-        if (m_updated && ImGui::IsItemDeactivatedAfterEdit()) {
-            m_updated = false;
-            if (m_validator) {
-                m_text = m_validator->process(m_text);
+        m_updated |= changed;
+
+        if (m_updated) {
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                m_updated = false;
+                if (m_validator) {
+                    m_text = m_validator->process(m_text);
+                }
+                if (m_callbacks.update_revert_button) {
+                    m_callbacks.update_revert_button();
+                }
+                if (m_callbacks.text_edited) {
+                    m_callbacks.text_edited();
+                }
             }
-            if (m_callbacks.update_revert_button) {
-                m_callbacks.update_revert_button();
-            }
-            if (m_callbacks.text_edited) {
-                m_callbacks.text_edited();
+            if (changed && m_callbacks.text_changed) {
+                m_callbacks.text_changed();
             }
         }
 
@@ -118,6 +126,10 @@ const std::string& InputText::text() const { return m_text; }
 
 void InputText::set_text(const std::string& text)
 {
+    if (m_text == text) {
+        return;
+    }
+
     if (validator()) {
         m_text = validator()->process(text);
     } else {
@@ -128,6 +140,9 @@ void InputText::set_text(const std::string& text)
         if (m_callbacks.text_edited) {
             m_callbacks.text_edited();
         }
+    }
+    if (m_callbacks.text_changed) {
+        m_callbacks.text_changed();
     }
 }
 

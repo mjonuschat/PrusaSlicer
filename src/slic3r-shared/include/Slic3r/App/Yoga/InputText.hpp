@@ -29,6 +29,11 @@ public:
          */
         std::function<void()> text_edited{nullptr};
 
+        /**
+         * @brief text_changed is fired on every changes
+         */
+        std::function<void()> text_changed{nullptr};
+
     protected:
         /**
          * @brief update_revert_button is used only by fiend InputTextField class to prodagate update_revert_button here

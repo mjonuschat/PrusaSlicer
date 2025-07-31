@@ -15,21 +15,25 @@ TextGizmo::TextGizmo()
 {
     m_dialog = std::make_unique<TextDialog>();
 
+    m_dialog->callbacks().editor_text_changed = [](const std::string& new_text) {
+        // do something with new text
+    };
+
     m_dialog->callbacks().save_preset_as = [this]() {
         m_dialog->set_enable_line_gap(true); // test
         m_dialog->update_units(false); // test
     };
     m_dialog->callbacks().save_preset = [this]() {
-        m_dialog->set_enable_all_except_font(false); // test
+        m_dialog->set_warning("There is something wrong!!!\ndfghjkl"); // test
     };
     m_dialog->callbacks().rename_preset = [this]() {
-        m_dialog->set_enable_use_surface(false); // test
+        m_dialog->set_warning(""); // test
     };
     m_dialog->callbacks().delete_preset = [this]() {
-        m_dialog->set_enable_use_surface(true); // test
+        m_dialog->show_revert_buttons(true); // test
     };
     m_dialog->callbacks().set_on_face_camera = [this]() {
-        m_dialog->set_enable_line_gap(false); // test
+        m_dialog->show_revert_buttons(false); // test
     };
 
     m_dialog->callbacks().preset_selection_changed = [this](int id) {
