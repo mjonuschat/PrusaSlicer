@@ -40,14 +40,7 @@ void ProjectInteractor::save_project(const std::string& file_path, const Store3m
 
 void ProjectInteractor::initialize_new_project_before_inserting(Domain::Project& p)
 {
-    auto& cc_ptr = p.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
-    // upload config from selected preset
-    cc_ptr->set_print_config(m_workbench.preset_bundle_legacy().full_config());
-
-    if (cc_ptr->print_technology() == Domain::PrinterTechnology::SLA)
-        cc_ptr->set_print_config_new(Domain::ConfigPackSLA());
-    else
-        cc_ptr->set_print_config_new(Domain::ConfigPackFDM());
+    p.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
 }
 
 void ProjectInteractor::initialize_inserted_project(size_t project_id)
@@ -105,7 +98,7 @@ void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_insta
 
     m_slicing_interactor.update_process(
         selected_project().model(),
-        config_container->new_config(),
+        config_container->print_config(),
         *instance
     );
 }

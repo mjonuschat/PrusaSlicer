@@ -29,6 +29,7 @@ public:
 private:
     PresetEvaluator::EvalPresetContexts eval_preset(
         const Domain::Preset::PresetNode& node,
+        const std::string& root_id,
         const PresetEvaluator::EvalPresetContexts& parent_contexts,
         const ValueMaps& overrides,
         ExprCombine expr_combine = ExprCombine::Or,

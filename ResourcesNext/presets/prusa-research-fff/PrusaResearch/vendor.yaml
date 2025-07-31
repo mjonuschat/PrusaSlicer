@@ -124,7 +124,7 @@ features:
   input_shaper:
     default: true
 visual:
-  bed_model: mk4s_bed.stl
+  bed_model: mk4_bed.stl
   bed_texture: mk4s.svg
   thumbnail: MK4S_thumbnail.png
 ---

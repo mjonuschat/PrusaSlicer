@@ -242,16 +242,16 @@ static std::string volume_icon_tooltip(const Domain::ModelVolume* volume)
     }
 }
 
-static std::string get_cc_name(const Slic3r::DynamicPrintConfig& print_config)
+static std::string get_cc_name(const Domain::Preset::SelectedPreset& preset)
 {
-    return icon_str(Render::Icon::ConfigContainer) + print_config.opt_string("printer_model");
+    return icon_str(Render::Icon::ConfigContainer) + preset.hw_config.name;
 
     return icon_str(
-               Slic3r::Preset::printer_technology(print_config) == ptSLA ?
+               preset.technology() == Domain::PrinterTechnology::SLA ?
                    Render::Icon::PrinterSlaIconMarker :
                    Render::Icon::PrinterIconMarker
            )
-        + print_config.opt_string("printer_model");
+        + preset.hw_config.name;
 }
 
 static bool bed_has_object(
@@ -702,7 +702,7 @@ bool ObjectList::render_config_containers()
 
     size_t beds_cnt{0};
     for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
-        render_group_name(get_cc_name(cc->print_config()));
+        render_group_name(get_cc_name(cc->selected_preset()));
 
         BedsTable table;
         if (table.begin(cc->id().id, m_table_flags)) {

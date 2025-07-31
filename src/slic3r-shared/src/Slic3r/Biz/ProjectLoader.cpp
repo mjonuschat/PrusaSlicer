@@ -21,23 +21,15 @@ static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
 
     for (const Loaded3MF::ConfigContainerData& cc_data : loaded_3mf.config_containers_data) {
         project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
-        project.config_containers().back()->set_print_config_new(cc_data.config_pack);
-
-        // Legacy config - remove when possible.
-        DynamicPrintConfig co;
-        auto full{FullPrintConfig::defaults()};
-        co.apply(full);
-        project.config_containers().back()->set_print_config(co);
+        auto& mutable_selected_preset = project.config_containers().back()->mutable_selected_preset();
+        mutable_selected_preset = Domain::Preset::SelectedPreset::make(
+            cc_data.preset,
+            cc_data.config_pack
+        );
     }
 
     if (project.config_containers().empty()) {
         auto cc = std::make_unique<Domain::ConfigContainer>();
-
-        // Legacy config - remove when possible.
-        DynamicPrintConfig co;
-        auto full{FullPrintConfig::defaults()};
-        co.apply(full);
-        cc->set_print_config(co);
 
         project.config_containers().emplace_back(std::move(cc));
     }

@@ -4,7 +4,7 @@
 #include "Slic3r/Domain/FindById.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
+#include "Slic3r/Domain/Preset/SelectedPreset.hpp"
 
 #include <memory>
 #include <vector>
@@ -21,12 +21,7 @@ class ConfigContainer : public ObjectBase
 public:
     Domain::PrinterTechnology print_technology() const
     {
-        return m_print_technology;
-    }
-
-    const DynamicPrintConfig& print_config() const
-    {
-        return m_print_config;
+        return m_preset.technology();
     }
 
     const Preset::SelectedPreset& selected_preset() const
@@ -39,35 +34,9 @@ public:
         return m_preset;
     }
 
-    const ConfigPack& new_config() const
+    ConfigPack print_config() const
     {
-        return m_new_config;
-    }
-
-    void set_print_config_new(const Domain::ConfigPack& config)
-    {
-        m_new_config = config;
-        if (std::holds_alternative<ConfigPackFDM>(config)) {
-            m_print_technology = PrinterTechnology::FFF;
-        } else if (std::holds_alternative<ConfigPackSLA>(config)) {
-            m_print_technology = PrinterTechnology::SLA;
-        } else {
-            PANIC("Unexpected config type!");
-        }
-    }
-
-    void set_print_config(const DynamicPrintConfig& config)
-    {
-        m_print_config = config;
-
-        // The following is temporary until we get rid od old configs completely.
-        Slic3r::PrinterTechnology tech_old = Slic3r::Preset::printer_technology(m_print_config);
-        if (tech_old == ptFFF)
-            m_print_technology = PrinterTechnology::FFF;
-        else if (tech_old == ptSLA)
-            m_print_technology = PrinterTechnology::SLA;
-        else
-            PANIC();
+        return m_preset.config();
     }
 
     void set_bed(const Bed& bed)
@@ -112,16 +81,7 @@ public:
     }
 
 private:
-    Slic3r::Domain::PrinterTechnology m_print_technology{PrinterTechnology::FFF};
-    /**
-     * @brief Full config as loaded from 3MF.
-     *
-     * During editing this config gets parsed and decomposed into Preset stored in
-     * Slic3r::Biz::Preset::PresetInteractorConfigContainerContext.
-     */
-    DynamicPrintConfig m_print_config;
-    Domain::ConfigPack m_new_config;
-    Domain::Preset::SelectedPreset m_preset{};
+    Preset::SelectedPreset m_preset{};
 
     const Bed* m_bed{nullptr};
     BedInstanceList m_bed_instances;

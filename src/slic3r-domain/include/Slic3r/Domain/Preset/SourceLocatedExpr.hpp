@@ -9,9 +9,9 @@ struct SourceLocation
     size_t line{0};
     size_t column{0};
 
-    std::string to_string() const
+    [[nodiscard]] std::string to_string() const
     {
-        return file + " line: " + std::to_string(line) + " column: " + std::to_string(column);
+        return file + ": " + std::to_string(line) + ":" + std::to_string(column);
     }
 };
 

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "HwConfig.hpp"
 
 #include <vector>
 #include <set>
 #include <string>
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Domain/Preset/PresetTree.hpp"
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
@@ -21,18 +21,58 @@ template <typename T>
 concept ConfigBoxLikeOrMonostate = std::is_base_of_v<ConfigBox, T>
     || std::is_same_v<std::monostate, T>;
 
+struct EvaluatedPresetMetadata
+{
+    std::string root_id;
+    std::string id;
+    std::string name;
+    Expressions conditions;
+};
+
 template <ConfigBoxLike ConfigFdmType, ConfigBoxLikeOrMonostate ConfigSlaType>
 struct EvaluatedPreset
 {
     using PresetValues = std::variant<ConfigFdmType, ConfigSlaType>;
 
     PresetKind kind{PresetKind::FdmPrinter};
+    std::string root_id;
     std::string id;
     std::string name;
     PresetValues values;
     FeatureValueMap features;
     Expressions conditions;
     SourceLocation last_node_location;
+
+    static EvaluatedPreset make(PresetKind kind, const EvaluatedPresetMetadata& metadata, PresetValues values)
+    {
+        return {
+            .kind = kind,
+            .root_id = metadata.root_id,
+            .id = metadata.id,
+            .name = metadata.name,
+            .values = values,
+            .conditions = metadata.conditions,
+        };
+    }
+
+    [[nodiscard]] EvaluatedPresetMetadata metadata() const
+    {
+        return {
+            .root_id = root_id,
+            .id = id,
+            .name = name,
+            .conditions = conditions,
+        };
+    }
+
+    [[nodiscard]] std::string_view short_name() const
+    {
+        size_t idx = name.find('@');
+        if (idx == 0 || idx == std::string_view::npos)
+            return name;
+        while (idx > 0 && name[idx] != ' ') idx--;
+        return std::string_view{name.data(), idx};
+    }
 
     [[nodiscard]] const ConfigBox& config_box() const
     {
@@ -74,31 +114,11 @@ struct EvaluatedToolPrintPreset
 /**
  * @brief Single tool `tool_print` presets variants (e.g. quality vs. speed variants).
  */
-using EvaluatedToolPrintPresetVariants = std::vector<EvaluatedToolPrintPreset>;
+using SingleToolEvaluatedToolPrintPresets = std::vector<EvaluatedToolPrintPreset>;
 /**
  * @brief `tool_print` variants for all tools.
  */
-using EvaluatedToolPrintPresets = std::vector<EvaluatedToolPrintPresetVariants>;
-
-struct EvaluatedPrintPreset
-{
-    using Preset = EvaluatedPreset<PrintSettings, SLAPrintSettings>;
-    Preset preset;
-    EvaluatedToolPrintPresets tools;
-
-    EvaluatedPrintPreset()                                = default;
-    EvaluatedPrintPreset(const EvaluatedPrintPreset&)     = default;
-    EvaluatedPrintPreset(EvaluatedPrintPreset&&) noexcept = default;
-
-    EvaluatedPrintPreset(Preset&& preset, EvaluatedToolPrintPresets&& tools) :
-        preset(std::move(preset)),
-        tools(std::move(tools))
-    {}
-
-    const EvaluatedToolPrintPreset* find_tool_preset_by_id(size_t tool_idx, const std::string& id) const;
-};
-
-using EvaluatedPrintPresets = std::vector<EvaluatedPrintPreset>;
+using AllToolsEvaluatedToolPrintPresets = std::vector<SingleToolEvaluatedToolPrintPresets>;
 
 struct EvaluatedMaterialPreset
 {
@@ -112,8 +132,37 @@ struct EvaluatedMaterialPreset
     explicit EvaluatedMaterialPreset(Preset&& preset) : preset(std::move(preset)) {}
 };
 
-using EvaluatedMaterialVariants = std::vector<EvaluatedMaterialPreset>;
-using EvaluatedMaterialPresets  = std::vector<EvaluatedMaterialVariants>;
+using SingleToolEvaluatedMaterialPresets = std::vector<EvaluatedMaterialPreset>;
+using AllToolsEvaluatedMaterialPresets  = std::vector<SingleToolEvaluatedMaterialPresets>;
+
+
+struct EvaluatedPrintPreset
+{
+    using Preset = EvaluatedPreset<PrintSettings, SLAPrintSettings>;
+    Preset preset;
+    AllToolsEvaluatedToolPrintPresets tools;
+    AllToolsEvaluatedMaterialPresets materials;
+
+    EvaluatedPrintPreset()                                = default;
+    EvaluatedPrintPreset(const EvaluatedPrintPreset&)     = default;
+    EvaluatedPrintPreset(EvaluatedPrintPreset&&) noexcept = default;
+
+    EvaluatedPrintPreset(
+        Preset&& preset,
+        AllToolsEvaluatedToolPrintPresets&& tools,
+        AllToolsEvaluatedMaterialPresets&& materials
+    ) :
+        preset(std::move(preset)),
+        tools(std::move(tools)),
+        materials(std::move(materials))
+    {}
+
+    const EvaluatedToolPrintPreset* find_tool_preset_by_id(size_t tool_idx, const std::string& id) const;
+    const EvaluatedMaterialPreset* find_material_preset_by_id(size_t tool_idx, const std::string& id) const;
+};
+
+using EvaluatedPrintPresets = std::vector<EvaluatedPrintPreset>;
+
 
 struct EvaluatedPrinterPreset
 {
@@ -121,10 +170,8 @@ struct EvaluatedPrinterPreset
     HwPrinterConfig hw_config;
     Preset preset;
     EvaluatedPrintPresets prints;
-    EvaluatedMaterialPresets materials;
 
     const EvaluatedPrintPreset* find_print_preset_by_id(const std::string& id) const;
-    const EvaluatedMaterialPreset* find_material_preset_by_id(size_t tool_idx, const std::string& id) const;
 
     PrinterTechnology technology() const
     {
@@ -133,25 +180,6 @@ struct EvaluatedPrinterPreset
     }
 
     bool is_valid() const;
-};
-
-struct SelectedPreset
-{
-    HwPrinterConfig hw_config;
-    EvaluatedPrinterPreset::Preset printer;
-    EvaluatedPrintPreset::Preset print;
-    std::vector<EvaluatedToolPrintPreset::Preset> tools;
-    std::vector<EvaluatedMaterialPreset::Preset> materials;
-
-    PrinterTechnology technology() const
-    {
-        return hw_config.technology;
-    }
-
-    [[nodiscard]] std::string bed_model() const;
-    [[nodiscard]] std::string bed_texture() const;
-
-    ConfigPack config() const;
 };
 
 } // namespace Slic3r::Domain::Preset

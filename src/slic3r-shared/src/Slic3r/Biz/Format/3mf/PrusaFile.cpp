@@ -11,6 +11,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
+#include "Slic3r/Biz/Config/SelectedPresetJson.hpp"
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
@@ -1360,8 +1361,9 @@ tl::expected<ResultLoadJson, Read3mfIssue> load_json(mz_zip_archive &archive, co
 namespace ProjectFileSerialization {
 constexpr const char *PRUSA_PROJECT_FILEPATH = "Metadata/PrusaSlicer3_project.json";
 constexpr std::string_view CONFIGURATION = "configuration"; // DynamicConfig
+constexpr std::string_view PRESET_METADATA = "preset";
 constexpr std::string_view OBJECTS = "objects";
-NamesType PROJECT_NAMES{{CONFIGURATION, OBJECTS}};
+NamesType PROJECT_NAMES{{CONFIGURATION, PRESET_METADATA, OBJECTS}};
 constexpr std::string_view CONFIG_CONTAINERS = "config_containers";
 
 void write(
@@ -1393,7 +1395,8 @@ void write(
         }
         cc_json["beds"] = beds_json;
 
-        const auto& cfg_var = config_container->new_config();
+        cc_json[PRESET_METADATA] = nlohmann::ordered_json(config_container->selected_preset().metadata());
+        const auto& cfg_var = config_container->print_config();
         if (std::holds_alternative<Domain::ConfigPackFDM>(cfg_var))
             cc_json[CONFIGURATION] = nlohmann::ordered_json(Domain::as_boxes(std::get<Domain::ConfigPackFDM>(cfg_var)));
         else if (std::holds_alternative<Domain::ConfigPackSLA>(cfg_var))
@@ -1432,6 +1435,13 @@ void load(
                 collected_issues.add_issue(RT::project_config_issue);
             else
                 config_containers_data.back().config_pack = res.value().config;
+        }
+        if (config_container.contains(PRESET_METADATA)) {
+            auto res = Biz::Config::load_preset_metadata(config_container[PRESET_METADATA]);
+            if (! res)
+                collected_issues.add_issue(RT::project_config_issue);
+            else
+                config_containers_data.back().preset = res.value();
         }
         if (config_container.contains("beds")) {
             for (const nlohmann::ordered_json& bed : config_container["beds"]) {

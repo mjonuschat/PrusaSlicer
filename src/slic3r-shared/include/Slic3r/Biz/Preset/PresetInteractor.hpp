@@ -227,7 +227,7 @@ private:
         const Domain::Preset::SelectedPreset& s
     );
     void fill_materials_presets(
-        const Domain::Preset::EvaluatedPrinterPreset& selected_printer_ep,
+        const Domain::Preset::EvaluatedPrintPreset& selected_print_ep,
         const Domain::Preset::SelectedPreset& s
     );
 

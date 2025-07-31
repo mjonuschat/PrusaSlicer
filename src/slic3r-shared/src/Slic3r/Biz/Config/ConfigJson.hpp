@@ -90,7 +90,7 @@ tl::expected<void, std::string> is_valid_optional(const nlohmann::ordered_json& 
 template<typename T>
 tl::expected<void, std::string> is_valid_map(const nlohmann::ordered_json& json_value)
 {
-    if (!json_value.is_object()) {
+    if (!json_value.is_object() && !json_value.is_null()) {
         return tl::unexpected{"Not an object!"};
     }
 

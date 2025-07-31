@@ -37,6 +37,7 @@ private:
 
     struct EvalPresetContext
     {
+        std::string root_id;
         std::string id;
         std::string name;
         Domain::Preset::Expressions conditions;
