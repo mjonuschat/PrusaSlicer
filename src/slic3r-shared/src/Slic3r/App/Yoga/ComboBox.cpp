@@ -188,9 +188,10 @@ void ComboBox::render(Vec2f pos, Vec2f size)
         {
             const ImVec2 im_size = to_im(size);
             for (size_t index = 0; index < m_items.size(); ++index) {
+                bool is_selected = index == m_current_index;
                 if (ImGui::Selectable(
                         m_items.at(index).c_str(),
-                        m_override_label.empty() ? index == m_current_index : false,
+                        m_override_label.empty() ? is_selected : false,
                         0,
                         im_size
                     ))
@@ -200,6 +201,8 @@ void ComboBox::render(Vec2f pos, Vec2f size)
                         m_callbacks.selection_changed(index);
                     }
                 }
+                if (is_selected) 
+                    ImGui::SetScrollHereY();
             }
 
             ImGui::EndCombo();
@@ -288,6 +291,9 @@ bool ComboBox::is_changed_value() const
 void ComboBox::reset()
 {
     set_current_index(m_default_index);
+    if (m_callbacks.selection_changed) {
+        m_callbacks.selection_changed(m_default_index);
+    }
 }
 
 ImGuiComboFlags ComboBox::flags() const

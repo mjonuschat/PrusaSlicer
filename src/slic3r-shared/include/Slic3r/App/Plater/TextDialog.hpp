@@ -28,7 +28,7 @@ public:
     struct Callbacks
     {
         std::function<void(const std::string&)> text_changed{ nullptr };
-        std::function<void(int index)> font_selection_changed{nullptr};
+        std::function<void(const Domain::FontDescriptor& font_descriptor)> font_selection_changed{nullptr};
         std::function<void(int index)> style_selection_changed{nullptr};
 
         std::function<void(double value)> height_changed{nullptr};
@@ -62,7 +62,7 @@ public:
 
     void set_editor(const std::string& text);
     void set_presets(const std::vector<std::string>& presets, int selected_preset_id);
-    void set_fonts(const std::vector<std::string>& fonts, int selected_font_id, int default_font_id);
+    void set_fonts(const Domain::FontList& fonts, int selected_font_id, int default_font_id);
     void set_styles(const std::vector<std::string>& styles, int selected_style_id, int default_style_id);
     void set_height(double from, double to, double step, double step_fast, double height, double default_height);
     void set_depth(double from, double to, double step, double step_fast, double depth, double default_depth);
@@ -104,6 +104,7 @@ private:
     Yoga::LayoutButton* m_editor_warning{nullptr};
 
     Yoga::Passthrough<Yoga::ComboBox> m_font;
+    Domain::FontList m_fonts;
     Yoga::Passthrough<Yoga::ComboBox> m_style;
 
     Yoga::Passthrough<Yoga::InputTextWithSpin> m_height;

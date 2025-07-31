@@ -166,7 +166,7 @@ struct FontDescriptor
 using FontList = std::vector<FontDescriptor>;
 
 /// <summary>
-/// Style of embossed text
+/// Preset of embossed text
 /// (Path + Type) must define how to open font for using on different OS
 /// NOTE: OnEdit fix serializations: EmbossStylesSerializable, TextConfigurationSerialization
 /// </summary>
@@ -201,7 +201,7 @@ using EmbossStyles = std::vector<EmbossStyle>;
 /// </summary>
 struct TextConfiguration
 {
-    // Style of embossed text
+    // Preset of embossed text
     EmbossStyle style;
 
     // Embossed text value

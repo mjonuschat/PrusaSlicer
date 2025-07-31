@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Slic3r/Biz/Emboss/StyleManager.hpp"
+#include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include <optional>
 #include <GL/glew.h> // Imgui texture
@@ -25,16 +25,16 @@ using namespace Slic3r;
 /// </summary>
 namespace {
 constexpr std::uint32_t STYLE_OBJ_VERSION = 1;
-using StylesObj                           = Biz::Emboss::StyleManager::StylesObj;
-void store_styles_obj(const std::string& path, /*const */ StylesObj& data);
-bool load_styles_obj(const std::string& path, StylesObj& data);
-using Styles = Biz::Emboss::StyleManager::Styles;
-void make_unique_name(const Styles& styles, std::string& name);
-Styles create_default_styles(Biz::Emboss::IFontManager&);
+using PresetsObj                           = Biz::Emboss::TextPresetManager::PresetsObj;
+void store_styles_obj(const std::string& path, /*const */ PresetsObj& data);
+bool load_styles_obj(const std::string& path, PresetsObj& data);
+using Presets = Biz::Emboss::TextPresetManager::Presets;
+void make_unique_name(const Presets& presets, std::string& name);
+Presets create_default_styles(Biz::Emboss::IFontManager&);
 } // namespace
 
 namespace Slic3r::Biz::Emboss {
-StyleManager::StyleManager(
+TextPresetManager::TextPresetManager(
     IFontManager& font_manager,
     const ImWchar* language_glyph_range,
     const ::std::string& cache_path
@@ -44,142 +44,135 @@ StyleManager::StyleManager(
     m_cache_path(cache_path)
 {}
 
-StyleManager::~StyleManager()
-{
-    clear_imgui_font();
-    free_style_images();
-}
-
-void StyleManager::init()
+void TextPresetManager::init()
 {
     if (!load_styles_obj(m_cache_path, m_data)) {
         // No styles loaded from ini file so use default
-        m_data.styles        = create_default_styles(m_font_manager);
+        m_data.presets        = create_default_styles(m_font_manager);
         m_data.current_index = 0;
     }
 
     // find valid font item
-    if (load_style(m_data.current_index))
+    if (load_preset(m_data.current_index))
         return; // style is loaded
 
     // Try to fix that style can't be loaded
-    m_data.styles.erase(m_data.styles.begin() + m_data.current_index);
-    load_valid_style();
+    m_data.presets.erase(m_data.presets.begin() + m_data.current_index);
+    load_valid_preset();
 }
 
-bool StyleManager::store_styles_to_app_config(bool use_modification, bool store_active_index)
+bool TextPresetManager::store_presets(bool use_modification, bool store_active_index)
 {
-    if (m_data.styles.empty())
+    if (m_data.presets.empty())
         return false;
     if (use_modification) {
         if (exist_stored_style()) {
             // update stored item
-            m_data.styles[m_style_cache.style_index] = m_style_cache.style;
+            m_data.presets[m_preset_cache.preset_index] = m_preset_cache.preset;
         } else {
             // add new into stored list
-            Domain::EmbossStyle& style = m_style_cache.style.emboss_style;
-            ::make_unique_name(m_data.styles, style.descriptor.name);
-            m_style_cache.truncated_name.clear();
-            m_style_cache.style_index = m_data.styles.size();
-            m_data.styles.push_back({style});
+            Domain::EmbossStyle& style = m_preset_cache.preset.emboss_style;
+            ::make_unique_name(m_data.presets, style.descriptor.name);
+            m_preset_cache.truncated_name.clear();
+            m_preset_cache.preset_index = m_data.presets.size();
+            m_data.presets.push_back({style});
         }
     }
     if (store_active_index && exist_stored_style()) {
-        m_data.current_index = m_style_cache.style_index;
+        m_data.current_index = m_preset_cache.preset_index;
     }
     store_styles_obj(m_cache_path, m_data);
     return true;
 }
 
-void StyleManager::add_style(const std::string& name)
+void TextPresetManager::add_preset(const std::string& name)
 {
-    Domain::EmbossStyle& style = m_style_cache.style.emboss_style;
+    Domain::EmbossStyle& style = m_preset_cache.preset.emboss_style;
     style.descriptor.name      = name;
-    ::make_unique_name(m_data.styles, style.descriptor.name);
-    m_style_cache.style_index = m_data.styles.size();
-    m_style_cache.truncated_name.clear();
-    m_data.styles.push_back({style});
+    ::make_unique_name(m_data.presets, style.descriptor.name);
+    m_preset_cache.preset_index = m_data.presets.size();
+    m_preset_cache.truncated_name.clear();
+    m_data.presets.push_back({style});
 }
 
-void StyleManager::swap(size_t i1, size_t i2)
+void TextPresetManager::swap(size_t i1, size_t i2)
 {
-    if (i1 >= m_data.styles.size() || i2 >= m_data.styles.size())
+    if (i1 >= m_data.presets.size() || i2 >= m_data.presets.size())
         return;
-    std::swap(m_data.styles[i1], m_data.styles[i2]);
+    std::swap(m_data.presets[i1], m_data.presets[i2]);
     // fix selected index
     if (!exist_stored_style())
         return;
-    if (m_style_cache.style_index == i1) {
-        m_style_cache.style_index = i2;
-    } else if (m_style_cache.style_index == i2) {
-        m_style_cache.style_index = i1;
+    if (m_preset_cache.preset_index == i1) {
+        m_preset_cache.preset_index = i2;
+    } else if (m_preset_cache.preset_index == i2) {
+        m_preset_cache.preset_index = i1;
     }
 }
 
-void StyleManager::discard_style_changes()
+void TextPresetManager::discard_preset_changes()
 {
     if (exist_stored_style()) {
-        if (load_style(m_style_cache.style_index))
+        if (load_preset(m_preset_cache.preset_index))
             return; // correct reload style
     } else {
-        if (load_style(m_data.current_index))
+        if (load_preset(m_data.current_index))
             return; // correct load last used style
     }
 
     // try to save situation by load some font
-    load_valid_style();
+    load_valid_preset();
 }
 
-void StyleManager::erase(size_t index)
+void TextPresetManager::erase(size_t index)
 {
-    if (index >= m_data.styles.size())
+    if (index >= m_data.presets.size())
         return;
 
     // fix selected index
     if (exist_stored_style()) {
-        size_t& i = m_style_cache.style_index;
+        size_t& i = m_preset_cache.preset_index;
         if (index < i)
             --i;
         else if (index == i)
             i = std::numeric_limits<size_t>::max();
     }
 
-    m_data.styles.erase(m_data.styles.begin() + index);
+    m_data.presets.erase(m_data.presets.begin() + index);
 }
 
-void StyleManager::rename(const std::string& name)
+void TextPresetManager::rename(const std::string& name)
 {
-    m_style_cache.style.emboss_style.descriptor.name = name;
-    m_style_cache.truncated_name.clear();
+    m_preset_cache.preset.emboss_style.descriptor.name = name;
+    m_preset_cache.truncated_name.clear();
     if (exist_stored_style()) {
-        Style& it                       = m_data.styles[m_style_cache.style_index];
+        Preset& it                       = m_data.presets[m_preset_cache.preset_index];
         it.emboss_style.descriptor.name = name;
-        it.truncated_name.clear();
     }
 }
 
-void StyleManager::load_valid_style()
+void TextPresetManager::load_valid_preset()
 {
     // iterate over all known styles
-    while (!m_data.styles.empty()) {
-        if (load_style(0))
+    while (!m_data.presets.empty()) {
+        if (load_preset(0))
             return;
         // can't load so erase it from list
-        m_data.styles.erase(m_data.styles.begin());
+        m_data.presets.erase(m_data.presets.begin());
     }
 
     // no one style is loadable
     // set up default font list
-    m_data.styles        = create_default_styles(m_font_manager);
+    m_data.presets        = create_default_styles(m_font_manager);
     m_data.current_index = 0;
 
     // iterate over default styles
     // There have to be option to use build in font
-    while (!m_data.styles.empty()) {
-        if (load_style(0))
+    while (!m_data.presets.empty()) {
+        if (load_preset(0))
             return;
         // can't load so erase it from list
-        m_data.styles.erase(m_data.styles.begin());
+        m_data.presets.erase(m_data.presets.begin());
     }
 
     // This OS doesn't have TTF as default font,
@@ -187,18 +180,18 @@ void StyleManager::load_valid_style()
     assert(false);
 }
 
-bool StyleManager::load_style(size_t style_index)
+bool TextPresetManager::load_preset(size_t style_index)
 {
-    if (style_index >= m_data.styles.size())
+    if (style_index >= m_data.presets.size())
         return false;
-    if (!load_style(m_data.styles[style_index]))
+    if (!load_preset(m_data.presets[style_index]))
         return false;
-    m_style_cache.style_index = style_index;
+    m_preset_cache.preset_index = style_index;
     m_data.current_index      = style_index;
     return true;
 }
 
-bool StyleManager::load_style(const Style& style)
+bool TextPresetManager::load_preset(const Preset& style)
 {
     if (style.emboss_style.descriptor.type == Domain::FontDescriptor::Type::file_path) {
         std::unique_ptr<Domain::FontFile> font_ptr = create_font_file(
@@ -206,28 +199,28 @@ bool StyleManager::load_style(const Style& style)
         );
         if (font_ptr == nullptr)
             return false;
-        m_style_cache.font_file   = FontFileWithCache(std::move(font_ptr));
-        m_style_cache.style       = style; // copy
-        m_style_cache.style_index = std::numeric_limits<size_t>::max();
+        m_preset_cache.font_file   = FontFileWithCache(std::move(font_ptr));
+        m_preset_cache.preset       = style; // copy
+        m_preset_cache.preset_index = std::numeric_limits<size_t>::max();
         return true;
     }
 
-    m_style_cache.style       = style; // copy
-    m_style_cache.style_index = std::numeric_limits<size_t>::max();
-    m_style_cache.truncated_name.clear();
+    m_preset_cache.preset       = style; // copy
+    m_preset_cache.preset_index = std::numeric_limits<size_t>::max();
+    m_preset_cache.truncated_name.clear();
 
     return true;
 }
 
-bool StyleManager::is_font_changed() const
+bool TextPresetManager::is_font_changed() const
 {
     if (!exist_stored_style())
         return false;
-    const Style* stored_style = get_stored_style();
+    const Preset* stored_style = get_stored_preset();
     if (stored_style == nullptr)
         return false;
 
-    const Domain::FontProp& prop        = get_style().emboss_style.prop;
+    const Domain::FontProp& prop        = get_preset().emboss_style.prop;
     const Domain::FontProp& prop_stored = stored_style->emboss_style.prop;
 
     // Exist change in face name?
@@ -249,45 +242,45 @@ bool StyleManager::is_font_changed() const
     return is_bold != is_stored_bold;
 }
 
-bool StyleManager::is_unique_style_name(const std::string& name) const
+bool TextPresetManager::is_unique_style_name(const std::string& name) const
 {
-    for (const StyleManager::Style& style : m_data.styles)
+    for (const TextPresetManager::Preset& style : m_data.presets)
         if (style.emboss_style.descriptor.name == name)
             return false;
     return true;
 }
 
-bool StyleManager::is_active_font()
+bool TextPresetManager::is_active_font()
 {
-    return m_style_cache.font_file.has_value();
+    return m_preset_cache.font_file.has_value();
 }
 
-const StyleManager::Style* StyleManager::get_stored_style() const
+const TextPresetManager::Preset* TextPresetManager::get_stored_preset() const
 {
-    if (m_style_cache.style_index >= m_data.styles.size())
+    if (m_preset_cache.preset_index >= m_data.presets.size())
         return nullptr;
-    return &m_data.styles[m_style_cache.style_index];
+    return &m_data.presets[m_preset_cache.preset_index];
 }
 
-void StyleManager::clear_glyphs_cache()
+void TextPresetManager::clear_glyphs_cache()
 {
-    FontFileWithCache& ff = m_style_cache.font_file;
+    FontFileWithCache& ff = m_preset_cache.font_file;
     if (!ff.has_value())
         return;
     ff.cache = std::make_shared<Glyphs>();
 }
 
-void StyleManager::clear_imgui_font()
+void TextPresetManager::clear_imgui_font()
 {
-    m_style_cache.atlas.Clear();
+    m_preset_cache.atlas.Clear();
 }
 
-ImFont* StyleManager::get_imgui_font()
+ImFont* TextPresetManager::get_imgui_font()
 {
     if (!is_active_font())
         return nullptr;
 
-    ImVector<ImFont*>& fonts = m_style_cache.atlas.Fonts;
+    ImVector<ImFont*>& fonts = m_preset_cache.atlas.Fonts;
     if (fonts.empty())
         return nullptr;
 
@@ -302,31 +295,21 @@ ImFont* StyleManager::get_imgui_font()
     return font;
 }
 
-const StyleManager::Styles& StyleManager::get_styles() const
+const TextPresetManager::Presets& TextPresetManager::get_styles() const
 {
-    return m_data.styles;
+    return m_data.presets;
 }
 
-std::vector<std::string> StyleManager::get_style_names() const 
+std::vector<std::string> TextPresetManager::get_style_names() const 
 {
     std::vector<std::string> names;
-    names.reserve(m_data.styles.size());
-    for (const Biz::Emboss::StyleManager::Style& style : m_data.styles)
+    names.reserve(m_data.presets.size());
+    for (const Biz::Emboss::TextPresetManager::Preset& style : m_data.presets)
         names.push_back(style.emboss_style.descriptor.name);
     return names;
 }
 
-void StyleManager::init_trunc_names(float max_width)
-{
-    for (auto& s : m_data.styles)
-        if (s.truncated_name.empty()) {
-            std::string name = s.emboss_style.descriptor.name;
-            App::Imgui::escape_double_hash(name);
-            s.truncated_name = App::Imgui::trunc(name, max_width);
-        }
-}
-
-void StyleManager::init_style_images(const Domain::Index2& max_size, const std::string& text)
+void TextPresetManager::init_style_images(const Domain::Index2& max_size, const std::string& text)
 {
     // check already initialized
     if (m_exist_style_images)
@@ -338,12 +321,12 @@ void StyleManager::init_style_images(const Domain::Index2& max_size, const std::
         if (!m_temp_style_images->styles.empty()) {
             assert(m_temp_style_images->images.size() == m_temp_style_images->styles.size());
             // copy images into styles
-            for (StyleManager::StyleImage& image : m_temp_style_images->images) {
+            for (TextPresetManager::StyleImage& image : m_temp_style_images->images) {
                 size_t index                 = &image - &m_temp_style_images->images.front();
                 StyleImagesData::Item& style = m_temp_style_images->styles[index];
 
                 // find style in font list and copy to it
-                for (auto& it : m_data.styles) {
+                for (auto& it : m_data.presets) {
                     if (it.emboss_style.descriptor.name != style.text
                         || !(it.emboss_style.prop == style.prop))
                         continue;
@@ -361,15 +344,15 @@ void StyleManager::init_style_images(const Domain::Index2& max_size, const std::
 
     // create job for init images
     m_temp_style_images = std::make_shared<StyleImagesData::StyleImages>();
-    StyleImagesData::Items styles;
-    styles.reserve(m_data.styles.size());
-    for (const Style& style : m_data.styles) {
+    StyleImagesData::Items presets;
+    presets.reserve(m_data.presets.size());
+    for (const Preset& style : m_data.presets) {
         std::unique_ptr<const Domain::FontFile> font_file = m_font_manager.open(
             style.emboss_style.descriptor
         );
         if (font_file == nullptr)
             continue;
-        styles.push_back(
+        presets.push_back(
             {FontFileWithCache(std::move(font_file)),
              style.emboss_style.descriptor.name,
              style.emboss_style.prop}
@@ -388,12 +371,12 @@ void StyleManager::init_style_images(const Domain::Index2& max_size, const std::
     // queue_job(worker, std::make_unique<CreateFontStyleImagesJob>(std::move(data)));
 }
 
-void StyleManager::free_style_images()
+void TextPresetManager::free_style_images()
 {
     if (!m_exist_style_images)
         return;
     GLuint tex_id = 0;
-    for (Style& it : m_data.styles) {
+    for (Preset& it : m_data.presets) {
         if (tex_id == 0 && it.image.has_value())
             tex_id = (GLuint) (intptr_t) it.image->texture_id;
         it.image.reset();
@@ -403,10 +386,10 @@ void StyleManager::free_style_images()
     m_exist_style_images = false;
 }
 
-float StyleManager::min_imgui_font_size = 18.f;
-float StyleManager::max_imgui_font_size = 60.f;
+float TextPresetManager::min_imgui_font_size = 18.f;
+float TextPresetManager::max_imgui_font_size = 60.f;
 
-float StyleManager::get_imgui_font_size(
+float TextPresetManager::get_imgui_font_size(
     const Domain::FontProp& prop,
     const Domain::FontFile& file,
     double scale
@@ -421,10 +404,10 @@ float StyleManager::get_imgui_font_size(
     return c1 * std::abs(prop.size_in_mm) / 0.3528f * scale;
 }
 
-ImFont* StyleManager::create_imgui_font(const std::string& text, double scale)
+ImFont* TextPresetManager::create_imgui_font(const std::string& text, double scale)
 {
     // inspiration inside of ImGuiWrapper::init_font
-    auto& ff = m_style_cache.font_file;
+    auto& ff = m_preset_cache.font_file;
     if (!ff.has_value())
         return nullptr;
     const Domain::FontFile& font_file = *ff.font_file;
@@ -434,14 +417,14 @@ ImFont* StyleManager::create_imgui_font(const std::string& text, double scale)
     if (!text.empty())
         builder.AddText(text.c_str());
 
-    ImVector<ImWchar>& ranges = m_style_cache.ranges;
+    ImVector<ImWchar>& ranges = m_preset_cache.ranges;
     ranges.clear();
     builder.BuildRanges(&ranges);
 
-    m_style_cache.atlas.Flags |= ImFontAtlasFlags_NoMouseCursors
+    m_preset_cache.atlas.Flags |= ImFontAtlasFlags_NoMouseCursors
         | ImFontAtlasFlags_NoPowerOfTwoHeight;
 
-    const Domain::FontProp& font_prop = m_style_cache.style.emboss_style.prop;
+    const Domain::FontProp& font_prop = m_preset_cache.preset.emboss_style.prop;
     float font_size                   = get_imgui_font_size(font_prop, font_file, scale);
     if (font_size < min_imgui_font_size)
         font_size = min_imgui_font_size;
@@ -461,17 +444,17 @@ ImFont* StyleManager::create_imgui_font(const std::string& text, double scale)
     font_config.FontDataOwnedByAtlas = false;
 
     const std::vector<unsigned char>& buffer = *font_file.data;
-    ImFont* font                             = m_style_cache.atlas.AddFontFromMemoryTTF(
+    ImFont* font                             = m_preset_cache.atlas.AddFontFromMemoryTTF(
         (void*) buffer.data(),
         buffer.size(),
         font_size,
         &font_config,
-        m_style_cache.ranges.Data
+        m_preset_cache.ranges.Data
     );
 
     unsigned char* pixels;
     int width, height;
-    m_style_cache.atlas.GetTexDataAsRGBA32(&pixels, &width, &height);
+    m_preset_cache.atlas.GetTexDataAsRGBA32(&pixels, &width, &height);
 
     // Upload texture to graphics system
     GLint last_texture;
@@ -494,11 +477,11 @@ ImFont* StyleManager::create_imgui_font(const std::string& text, double scale)
     // glsafe(::glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
 
     // Store our identifier
-    m_style_cache.atlas.TexID = (ImTextureID) (intptr_t) font_texture;
-    assert(!m_style_cache.atlas.Fonts.empty());
-    if (m_style_cache.atlas.Fonts.empty())
+    m_preset_cache.atlas.TexID = (ImTextureID) (intptr_t) font_texture;
+    assert(!m_preset_cache.atlas.Fonts.empty());
+    if (m_preset_cache.atlas.Fonts.empty())
         return nullptr;
-    assert(font == m_style_cache.atlas.Fonts.back());
+    assert(font == m_preset_cache.atlas.Fonts.back());
     if (!font->IsLoaded())
         return nullptr;
     assert(font->IsLoaded());
@@ -516,27 +499,27 @@ ImFont* StyleManager::create_imgui_font(const std::string& text, double scale)
 
 namespace cereal {
 template <class Archive>
-void serialize(Archive& ar, Biz::Emboss::StyleManager::Style& s)
+void serialize(Archive& ar, Biz::Emboss::TextPresetManager::Preset& s)
 {
     // ignore truncated_name and image(which are created on demand)
     ar((Domain::EmbossStyle&) s, s.projection, s.distance, s.angle);
 }
 
 template <class Archive>
-void serialize(Archive& ar, Biz::Emboss::StyleManager::StylesObj& data, const std::uint32_t version)
+void serialize(Archive& ar, Biz::Emboss::TextPresetManager::PresetsObj& data, const std::uint32_t version)
 {
     // When performing a load, the version associated with the class
     // is whatever it was when that data was originally serialized
     // When we save, we'll use the version that is defined in the macro
     if (version != ::STYLE_OBJ_VERSION)
         return;
-    ar(data.styles, data.current_index);
+    ar(data.presets, data.current_index);
 }
 } // namespace cereal
 
 // StylesSerializable
 namespace {
-void store_styles_obj(const std::string& path, StylesObj& data)
+void store_styles_obj(const std::string& path, PresetsObj& data)
 {
     std::ofstream file(path, std::ios::binary);
     if (!file.is_open()) {
@@ -555,7 +538,7 @@ void store_styles_obj(const std::string& path, StylesObj& data)
     }
 }
 
-bool load_styles_obj(const std::string& path, StylesObj& data)
+bool load_styles_obj(const std::string& path, PresetsObj& data)
 {
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open()) // Cache File not found (not created yet)
@@ -570,16 +553,16 @@ bool load_styles_obj(const std::string& path, StylesObj& data)
     return true;
 }
 
-void make_unique_name(const Biz::Emboss::StyleManager::Styles& styles, std::string& name)
+void make_unique_name(const Biz::Emboss::TextPresetManager::Presets& presets, std::string& name)
 {
-    auto is_unique = [&styles](const std::string& name) {
-        for (const Biz::Emboss::StyleManager::Style& it : styles)
+    auto is_unique = [&presets](const std::string& name) {
+        for (const Biz::Emboss::TextPresetManager::Preset& it : presets)
             if (it.emboss_style.descriptor.name == name)
                 return false;
         return true;
     };
 
-    // Style name can't be empty so default name is set
+    // Preset name can't be empty so default name is set
     if (name.empty())
         name = "Text style";
 
@@ -604,19 +587,19 @@ void make_unique_name(const Biz::Emboss::StyleManager::Styles& styles, std::stri
     name = new_name;
 }
 
-Styles create_default_styles(Biz::Emboss::IFontManager& font_manager)
+Presets create_default_styles(Biz::Emboss::IFontManager& font_manager)
 {
-    Styles styles;
+    Presets presets;
     Domain::FontList favorits = font_manager.create_favorit();
     for (Domain::FontDescriptor& favorit : favorits) {
-        ::make_unique_name(styles, favorit.name);
-        styles.push_back(
-            Biz::Emboss::StyleManager::Style{.emboss_style = Domain::EmbossStyle{.descriptor = favorit}}
+        ::make_unique_name(presets, favorit.name);
+        presets.push_back(
+            Biz::Emboss::TextPresetManager::Preset{.emboss_style = Domain::EmbossStyle{.descriptor = favorit}}
         );
     }
-    return styles;
+    return presets;
 }
 
 } // namespace
 
-CEREAL_CLASS_VERSION(Slic3r::Biz::Emboss::StyleManager::StylesObj, ::STYLE_OBJ_VERSION); // register class version
+CEREAL_CLASS_VERSION(Slic3r::Biz::Emboss::TextPresetManager::PresetsObj, ::STYLE_OBJ_VERSION); // register class version

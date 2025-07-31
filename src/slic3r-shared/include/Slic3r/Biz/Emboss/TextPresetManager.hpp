@@ -2,8 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_EmbossStyleManager_hpp_
-#define slic3r_EmbossStyleManager_hpp_
+#ifndef slic3r_EmbossTextPresetManager_hpp_
+#define slic3r_EmbossTextPresetManager_hpp_
 
 #include <memory>
 #include <optional>
@@ -20,32 +20,24 @@
 
 namespace Slic3r::Biz::Emboss {
 /// <summary>
-/// Manage Emboss text styles
-/// Cache actual state of style
-/// + imgui font
-/// + wx font
+/// Manage Emboss text preset(style of the embossing)
+/// Cache current state of preset
 /// </summary>
-class StyleManager
+class TextPresetManager
 {
-    // friend class CreateFontStyleImagesJob; // access to StyleImagesData
 public:
     /// <param name="font_manager">Accessor to font file data via Domain::FontDescriptor</param>
     /// <param name="language_glyph_range">Character to load for imgui when initialize imgui font</param>
-    /// <param name="cache_path">File path for store cache with current user Emboss styles.
+    /// <param name="cache_path">File path for store cache with current user Emboss presets.
     /// data_dir() + "/cache/emboss_presets.cereal"</param>
-    StyleManager(
+    TextPresetManager(
         IFontManager& font_manager,
         const ImWchar* language_glyph_range,
         const std::string& cache_path = ""
     );
 
     /// <summary>
-    /// Release imgui font and style images from GPU
-    /// </summary>
-    ~StyleManager();
-
-    /// <summary>
-    /// Load font styles from file
+    /// Load font presets from file
     /// Also select actual activ font
     /// </summary>
     /// <param name="app_config">Application configuration loaded from file "PrusaSlicer.ini"
@@ -59,56 +51,56 @@ public:
     /// <param name="use_modification">When true cache state will be used for store</param>
     /// <param name="store_active_index">When treu also store current activ index</param>
     /// <returns>True on succes otherwise False.</returns>
-    bool store_styles_to_app_config(bool use_modification = true, bool store_active_index = true);
+    bool store_presets(bool use_modification = true, bool store_active_index = true);
 
     /// <summary>
-    /// Append actual style to style list
+    /// Append current preset to list with given name
     /// </summary>
-    /// <param name="name">New name for style</param>
-    void add_style(const std::string& name);
+    /// <param name="name">New name for preset</param>
+    void add_preset(const std::string& name);
 
     /// <summary>
-    /// Change order of style item in m_styles.
+    /// Change order of preset item in m_presets.
     /// Fix selected font index when (i1 || i2) == m_font_selected
     /// </summary>
-    /// <param name="i1">First index to m_styles</param>
-    /// <param name="i2">Second index to m_styles</param>
+    /// <param name="i1">First index to m_presets</param>
+    /// <param name="i2">Second index to m_presets</param>
     void swap(size_t i1, size_t i2);
 
     /// <summary>
-    /// Discard changes in activ style
-    /// When no activ style use last used OR first loadable
+    /// Discard changes in current preset
+    /// When no activ preset use last used OR first loadable
     /// </summary>
-    void discard_style_changes();
+    void discard_preset_changes();
 
     /// <summary>
-    /// Remove style from m_styles.
-    /// Fix selected font index when index is under m_font_selected
+    /// Remove preset
+    /// Fix selected index when index is under m_font_selected
     /// </summary>
-    /// <param name="index">Index of style to be removed</param>
+    /// <param name="index">Index of preset to be removed</param>
     void erase(size_t index);
 
     /// <summary>
-    /// Rename actual selected font item
+    /// Rename current presset name
     /// </summary>
     /// <param name="name">New name</param>
     void rename(const std::string& name);
 
     /// <summary>
-    /// load some valid style
+    /// load some valid preset
     /// </summary>
-    void load_valid_style();
+    void load_valid_preset();
 
     /// <summary>
-    /// Change active font
-    /// When font not loaded roll back activ font
+    /// Change current preset
+    /// When font can't load, roll back current preset
     /// </summary>
-    /// <param name="font_index">New font index(from m_styles range)</param>
+    /// <param name="preset_index">New preset index(from m_presets range)</param>
     /// <returns>True on succes. False on fail load font</returns>
-    bool load_style(size_t font_index);
-    // load font style not stored in list
-    struct Style;
-    bool load_style(const Style& style);
+    bool load_preset(size_t preset_index);
+    // load font preset not stored in list
+    struct Preset;
+    bool load_preset(const Preset& preset);
 
     // clear actual selected glyphs cache
     void clear_glyphs_cache();
@@ -117,58 +109,48 @@ public:
     void clear_imgui_font();
 
     // getters for private data
-    const Style* get_stored_style() const;
+    const Preset* get_stored_preset() const;
 
-    const Style& get_style() const
+    const Preset& get_preset() const
     {
-        return m_style_cache.style;
+        return m_preset_cache.preset;
     }
 
-    Style& get_style()
+    Preset& get_preset()
     {
-        return m_style_cache.style;
+        return m_preset_cache.preset;
     }
 
-    size_t get_style_index() const
+    size_t get_preset_index() const
     {
-        return m_style_cache.style_index;
-    }
-
-    std::string& get_truncated_name()
-    {
-        return m_style_cache.truncated_name;
-    }
-
-    const ImFontAtlas& get_atlas() const
-    {
-        return m_style_cache.atlas;
+        return m_preset_cache.preset_index;
     }
 
     const Domain::FontProp& get_font_prop() const
     {
-        return get_style().emboss_style.prop;
+        return get_preset().emboss_style.prop;
     }
 
     Domain::FontProp& get_font_prop()
     {
-        return get_style().emboss_style.prop;
+        return get_preset().emboss_style.prop;
     }
 
     FontFileWithCache& get_font_file_with_cache()
     {
-        return m_style_cache.font_file;
+        return m_preset_cache.font_file;
     }
 
     bool has_collections() const
     {
-        return m_style_cache.font_file.font_file != nullptr
-            && m_style_cache.font_file.font_file->infos.size() > 1;
+        return m_preset_cache.font_file.font_file != nullptr
+            && m_preset_cache.font_file.font_file->infos.size() > 1;
     }
 
     // True when activ style has same name as some of stored style
     bool exist_stored_style() const
     {
-        return m_style_cache.style_index != std::numeric_limits<size_t>::max();
+        return m_preset_cache.preset_index != std::numeric_limits<size_t>::max();
     }
 
     /// <summary>
@@ -186,9 +168,6 @@ public:
     // initialize font range by unique symbols in text
     ImFont* create_imgui_font(const std::string& text, double scale);
 
-    // init truncated names of styles
-    void init_trunc_names(float max_width);
-
     /// <summary>
     /// Initialization texture with rendered font style
     /// </summary>
@@ -198,7 +177,7 @@ public:
     void free_style_images();
 
     // access to all managed font styles
-    const std::vector<Style>& get_styles() const;
+    const std::vector<Preset>& get_styles() const;
 
     std::vector<std::string> get_style_names() const;
 
@@ -219,7 +198,7 @@ public:
     /// All connected with one style
     /// keep temporary data and caches for style
     /// </summary>
-    struct Style
+    struct Preset
     {
         Domain::EmbossStyle emboss_style;
 
@@ -233,11 +212,11 @@ public:
 
         // Angle of rotation around emboss direction (Z axis)
         // It is calculate on the fly from volume world transformation
-        // only StyleManager keep actual value for comparision with style
+        // only TextPresetManager keep actual value for comparision with style
         // When not set value is zero and is not stored
         std::optional<float> angle; // [in radians] form -Pi to Pi
 
-        bool operator==(const Style& other) const
+        bool operator==(const Preset& other) const
         {
             return emboss_style == other.emboss_style
                 && projection == other.projection
@@ -245,18 +224,15 @@ public:
                 && Domain::is_approx(angle, other.angle);
         }
 
-        // cache for view font name with maximal width in imgui
-        std::string truncated_name;
-
         // visualization of style
         std::optional<StyleImage> image;
     };
 
-    using Styles = std::vector<Style>;
+    using Presets = std::vector<Preset>;
 
-    struct StylesObj
+    struct PresetsObj
     {
-        Styles styles;
+        Presets presets;
         size_t current_index;
     };
 
@@ -285,7 +261,7 @@ private:
     /// 2) Create atlas of symbols for imgui
     /// 3) Keep loaded(and modified by style) glyphs from font
     /// </summary>
-    struct StyleCache
+    struct PresetCache
     {
         // share font file data with emboss job thread
         FontFileWithCache font_file = {};
@@ -300,17 +276,17 @@ private:
         std::string truncated_name;
 
         // actual used font item
-        Style style = {};
+        Preset preset = {};
 
-        // index into m_styles
-        size_t style_index = std::numeric_limits<size_t>::max();
-    } m_style_cache;
+        // index into m_presets
+        size_t preset_index = std::numeric_limits<size_t>::max();
+    } m_preset_cache;
 
     // Privat member
-    StylesObj m_data;
+    PresetsObj m_data;
 
     /// <summary>
-    /// Keep data needed to create Font Style Images in Job
+    /// Keep data needed to create Font Preset Images in Job
     /// </summary>
     struct StyleImagesData
     {
@@ -354,4 +330,4 @@ private:
 
 } // namespace Slic3r::Biz::Emboss
 
-#endif // slic3r_EmbossStyleManager_hpp_
+#endif // slic3r_EmbossTextPresetManager_hpp_

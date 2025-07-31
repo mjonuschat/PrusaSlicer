@@ -23,18 +23,17 @@
 
 using namespace Slic3r::App::Yoga;
 namespace Slic3r::Biz::Emboss {
-// TODO: made shape by current selected style and text
+// TODO: made shape by current selected preset and text
 class TextShapeProvider : public ShapeProvider
 {
 public:
     TextShapeProvider(
-        const Domain::TextConfiguration& config,
+        const Domain::TextConfiguration& text_configuration,
         const Domain::EmbossProjection& projection,
         Biz::Emboss::IFontManager& font_manager
-    ) :
-        m_text_configuration(config) // copy current text configuration for embossing
-        ,
-        m_font_manager(font_manager)
+    ) 
+        : m_text_configuration(text_configuration)
+        , m_font_manager(font_manager)
     {
         shape.projection = projection; // copy current projection
     }
@@ -74,7 +73,7 @@ using namespace Slic3r;
 Biz::Emboss::CreateVolumeParams create_volume_params(
     Biz::ProjectInteractor& project_interactor,
     Biz::Emboss::IFontManager& font_manager,
-    Domain::TextConfiguration& configuration,
+    Domain::TextConfiguration&& configuration,
     Domain::EmbossProjection& projection,
     Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART
 )
@@ -83,7 +82,7 @@ Biz::Emboss::CreateVolumeParams create_volume_params(
     return Biz::Emboss::CreateVolumeParams{
         .base{
             .shape_provider = std::make_unique<Biz::Emboss::TextShapeProvider>(
-                configuration,
+                std::move(configuration),
                 projection,
                 font_manager
             ),
@@ -110,79 +109,90 @@ TextGizmo::TextGizmo(
     m_project_interactor(project_interactor),
     m_font_manager(font_manager),
     m_gizmo_manager(gizmo_manager),
-    m_style_manager(
+    m_preset_manager(
         font_manager,
         ImGui::GetIO().Fonts->GetGlyphRangesDefault(),
         data_dir() + "/cache/emboss_presets.cereal"
     )
 {
     // Initialize font descriptor to font copied with application
-    m_text_configuration.style.descriptor = Domain::FontDescriptor{
+    m_preset_manager.get_preset().emboss_style.descriptor = Domain::FontDescriptor{
         .name = "Prusa-slic3r font",
         .path = Slic3r::resources_dir() + "/fonts/NotoSans-Regular.ttf",
         .type = Domain::FontDescriptor::Type::file_path
     };
-    m_dialog = std::make_unique<TextDialog>();
 
-    m_dialog->callbacks().save_preset_as = [this]() { m_style_manager.store_styles_to_app_config(); };
-    m_dialog->callbacks().save_preset = [this]() { m_style_manager.store_styles_to_app_config(); };
-    m_dialog->callbacks().rename_preset = [this]() { m_style_manager.store_styles_to_app_config(); };
+    // Dialog callback settings (order follow UI)
+    m_dialog = std::make_unique<TextDialog>();
+    m_dialog->callbacks().text_changed = [this](const std::string& text) {
+        m_text = text;
+    };
+    m_dialog->callbacks().font_selection_changed =
+        [this](const Domain::FontDescriptor& font_descriptor) {
+            m_preset_manager.get_preset().emboss_style.descriptor = font_descriptor;
+        };    
+    m_dialog->callbacks().style_selection_changed = [this](int id) {
+
+        // TODO: implement
+        };
+
+    m_dialog->callbacks().save_preset_as = [this]() { m_preset_manager.store_presets(); };
+    m_dialog->callbacks().save_preset = [this]() { m_preset_manager.store_presets(); };
+    m_dialog->callbacks().rename_preset = [this]() { m_preset_manager.store_presets(); };
     m_dialog->callbacks().delete_preset = [this]() { 
-        std::string style_name = m_style_manager.get_style().emboss_style.descriptor.name; // copy
+        std::string style_name = m_preset_manager.get_preset().emboss_style.descriptor.name; // copy
         size_t next_style_index = std::numeric_limits<size_t>::max();
         bool exist_change = false;
         while (true) {
             // NOTE: can't use previous loaded activ index -> erase could change index
-            size_t active_index = m_style_manager.get_style_index();
+            size_t active_index = m_preset_manager.get_preset_index();
             next_style_index = (active_index > 0) ? active_index - 1 :
                 active_index + 1;
 
-            if (next_style_index >= m_style_manager.get_styles().size()) {
-                //MessageDialog msg(plater, _L("Can't remove the last existing style."), dialog_title, wxICON_ERROR | wxOK);
+            if (next_style_index >= m_preset_manager.get_styles().size()) {
+                //MessageDialog msg(plater, _L("Can't remove the last existing preset."), dialog_title, wxICON_ERROR | wxOK);
                 //msg.ShowModal();
                 break;
             }
 
             // IMPROVE: add function can_load?
             // clean unactivable styles
-            if (!m_style_manager.load_style(next_style_index)) {
-                m_style_manager.erase(next_style_index);
+            if (!m_preset_manager.load_preset(next_style_index)) {
+                m_preset_manager.erase(next_style_index);
                 exist_change = true;
                 continue;
             }
 
-            //wxString message = GUI::format_wxstr(_L("Are you sure you want to permanently remove the \"%1%\" style?"), style_name);
+            //wxString message = GUI::format_wxstr(_L("Are you sure you want to permanently remove the \"%1%\" preset?"), style_name);
             //MessageDialog msg(plater, message, dialog_title, wxICON_WARNING | wxYES | wxNO);
             //if (msg.ShowModal() == wxID_YES) {
-                // delete style
-                m_style_manager.erase(active_index);
+                // delete preset
+                m_preset_manager.erase(active_index);
                 exist_change = true;
                 //process();
             //}
             //else {
-            //    // load back style
-            //    m_style_manager.load_style(active_index);
+            //    // load back preset
+            //    m_preset_manager.load_preset(active_index);
             //}
             break;
         }
         if (exist_change) {
-            m_style_manager.store_styles_to_app_config(false);
+            m_preset_manager.store_presets(false);
             activate_preset();
         }
     };
     m_dialog->callbacks().text_changed = [this](const std::string& text) {
-        m_text_configuration.text = text;
+        m_text = text;
     };
     m_dialog->callbacks().set_on_face_camera = [this]() {
         m_dialog->show_revert_buttons(false); // test
     };
 
     m_dialog->callbacks().preset_selection_changed = [this](int id) {
-        m_style_manager.load_style(static_cast<size_t>(id));
+        m_preset_manager.load_preset(static_cast<size_t>(id));
         activate_preset();
     };
-    m_dialog->callbacks().font_selection_changed = [this](int id) {};
-    m_dialog->callbacks().style_selection_changed = [this](int id) {};
     m_dialog->callbacks().operation_selection_changed = [this](int id) {};
 }
 
@@ -207,10 +217,14 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
     if (mouse_event.type() == MouseEvent::Type::ButtonDown
         && mouse_event.button() == MouseButton::Right)
     {
+        Domain::TextConfiguration text_config{
+            .style = m_preset_manager.get_preset().emboss_style,
+            .text = m_text
+        };
         auto params = create_volume_params(
             m_project_interactor,
             m_font_manager,
-            m_text_configuration,
+            std::move(text_config),
             m_projection,
             Domain::ModelVolumeType::NEGATIVE_VOLUME
         );
@@ -243,15 +257,14 @@ void TextGizmo::render_imgui()
         ImVec2 input_size(-FLT_MIN, ImGui::GetTextLineHeightWithSpacing() * 3);
         const ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput
             | ImGuiInputTextFlags_AutoSelectAll;
-        std::string& text = m_text_configuration.text;
-        ImGui::InputTextMultiline("##emboss_text_input", &text, input_size, flags);
+        ImGui::InputTextMultiline("##emboss_text_input", &m_text, input_size, flags);
 
         const Domain::FontList& fonts = m_font_manager.get_fonts();
         auto it_font                  = std::find_if(
             fonts.begin(),
             fonts.end(),
-            [&name = m_text_configuration.style.descriptor.name](const Domain::FontDescriptor& fd) {
-                return fd.name == name;
+            [&path = m_preset_manager.get_preset().emboss_style.descriptor.path](const Domain::FontDescriptor& fd) {
+                return fd.path == path;
             }
         );
         std::string selected = (it_font == fonts.end()) ? std::string("Not selected yet") :
@@ -260,7 +273,7 @@ void TextGizmo::render_imgui()
             for (const Domain::FontDescriptor& fd : fonts) {
                 const bool is_selected = (it_font == fonts.end()) ? false : &fd == &(*it_font);
                 if (ImGui::Selectable(fd.name.c_str(), is_selected)) {
-                    m_text_configuration.style.descriptor = fd;
+                    m_preset_manager.get_preset().emboss_style.descriptor = fd;
                 }
 
                 // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
@@ -274,15 +287,15 @@ void TextGizmo::render_imgui()
 
         if (ImGui::BeginCombo(
                 "Pressets",
-                m_style_manager.get_style().emboss_style.descriptor.name.c_str()
+                m_preset_manager.get_preset().emboss_style.descriptor.name.c_str()
             ))
         {
-            const auto& styles = m_style_manager.get_styles();
-            for (const Biz::Emboss::StyleManager::Style& style : styles) {
+            const auto& styles = m_preset_manager.get_styles();
+            for (const Biz::Emboss::TextPresetManager::Preset& style : styles) {
                 const bool is_selected = (&style - &styles.front())
-                    == m_style_manager.get_style_index();
+                    == m_preset_manager.get_preset_index();
                 if (ImGui::Selectable(style.emboss_style.descriptor.name.c_str(), is_selected)) {
-                    m_style_manager.load_style(style);
+                    m_preset_manager.load_preset(style);
                 }
 
                 // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
@@ -300,14 +313,27 @@ void TextGizmo::render_imgui()
     ImGui::End();
 }
 
+namespace {
+size_t get_index(const Domain::FontList& fonts, const std::string& path)
+{
+    auto it_font = std::find_if(
+        fonts.begin(),
+        fonts.end(),
+        [&path](const Domain::FontDescriptor& fd) {
+            return fd.path == path;
+        }
+    );
+    return (it_font == fonts.end()) ? 0 : (it_font - fonts.begin());
+}
+}
+
 void TextGizmo::on_activated()
 {
-    if (m_style_manager.get_styles().empty())
-        m_style_manager.init();
-    m_text_configuration.text = "Emmmbosss text";
-    m_text_configuration.style = m_style_manager.get_style().emboss_style;
+    if (m_preset_manager.get_styles().empty())
+        m_preset_manager.init();
+    m_text = "Emmmbosss text";
 
-    m_dialog->set_presets(m_style_manager.get_style_names(), m_style_manager.get_style_index());
+    m_dialog->set_presets(m_preset_manager.get_style_names(), m_preset_manager.get_preset_index());
 
     // load current font_preset
     activate_preset(/*font_preset*/);
@@ -317,6 +343,17 @@ void TextGizmo::on_activated()
 
     // unknown font, so only font selection is enabled
     m_dialog->set_enable_all_except_font(true);
+
+    // Propadate reloaded installed font into the dialog
+    // NOTE: reload fonts from OS, 2.9.2 do it on dialog open, now it is on gizmo activation
+    const Domain::FontList& fonts = m_font_manager.get_fonts(); // Re-Load Os fonts
+    const Domain::EmbossStyle& es = m_preset_manager.get_preset().emboss_style;
+    const Domain::EmbossStyle& es_ = m_preset_manager.exist_stored_style()?
+        m_preset_manager.get_stored_preset()->emboss_style : es;
+    int selected_font_id = (es.descriptor.type == m_font_manager.get_current_type()) ?
+        get_index(fonts, es.descriptor.path) : 0;
+    int default_font_id = get_index(fonts, es_.descriptor.path);
+    m_dialog->set_fonts(fonts, selected_font_id, default_font_id);
 }
 
 void TextGizmo::on_deactivated() {}
@@ -333,10 +370,14 @@ bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
     if (!init_create(volume_type))
         return false;
 
+    Domain::TextConfiguration text_config{
+        .style = m_preset_manager.get_preset().emboss_style,
+        .text  = m_text
+    };
     auto params = create_volume_params(
         m_project_interactor,
         m_font_manager,
-        m_text_configuration,
+        std::move(text_config),
         m_projection,
         volume_type
     );
@@ -361,54 +402,22 @@ bool TextGizmo::init_create(Domain::ModelVolumeType volume_type)
 
 void TextGizmo::update_presets_list() {}
 
-namespace {
-std::vector<std::string> get_names(const Domain::FontList &fonts) 
-{
-    std::vector<std::string> names;
-    names.reserve(fonts.size());
-    for (const Domain::FontDescriptor& font : fonts) {
-        names.push_back(font.name);
-    }
-    return names;
-}
-
-size_t get_index(const Domain::FontList& fonts, const std::string& path) 
-{
-    auto it_font = std::find_if(
-        fonts.begin(),
-        fonts.end(),
-        [&path](const Domain::FontDescriptor& fd) {
-            return fd.path == path;
-        }
-    );
-    return (it_font == fonts.end()) ? 0 : (it_font - fonts.begin());
-}
-
-}
-
 void TextGizmo::activate_preset(/*preset*/)
-{
-    // Propadate data to the dialog    
-    const Domain::FontList& fonts = m_font_manager.get_fonts();
-    std::vector<std::string> font_names = get_names(fonts);
-    
-    const Biz::Emboss::StyleManager::Style& style_ = m_style_manager.get_style();
-    
-    const Domain::EmbossStyle& es = m_text_configuration.style;
-    const Domain::EmbossStyle& es_ = style_.emboss_style;
+{    
+    bool exist_stored = m_preset_manager.exist_stored_style();
+    const Biz::Emboss::TextPresetManager::Preset& preset = m_preset_manager.get_preset();
+    const Biz::Emboss::TextPresetManager::Preset& preset_ = exist_stored ?
+        *m_preset_manager.get_stored_preset() : preset;
 
-    int selected_font_id = (es.descriptor.type == m_font_manager.get_current_type()) ?
-        get_index(fonts, es.descriptor.path) : 0;
-    int default_font_id = get_index(fonts, es_.descriptor.path);
-    // TODO: reload fonts from OS, 2.9.2 do it on dialog open
-    m_dialog->set_fonts(font_names, selected_font_id, default_font_id);
+    const Domain::EmbossStyle& es = preset.emboss_style;
+    const Domain::EmbossStyle& es_ = preset_.emboss_style;
 
     // TODO: solve conversion from font name
     std::vector<std::string> styles = { "Regular", "Bold", "Italic", "ItalicBold" };
     int selected_style_id = 0;
     int default_style_id = 0;
     m_dialog->set_styles(styles, selected_style_id, default_style_id);    
-    m_dialog->set_editor(m_text_configuration.text);
+    m_dialog->set_editor(m_text);
 
     const Domain::FontProp& prop = es.prop;
     const Domain::FontProp& prop_ = es_.prop;
@@ -421,7 +430,7 @@ void TextGizmo::activate_preset(/*preset*/)
     m_dialog->set_height(height_from, height_to, height_step, height_step_fast, height, height_default);
 
     const Domain::EmbossProjection& ep = m_projection;
-    const Domain::EmbossProjection& ep_ = style_.projection;
+    const Domain::EmbossProjection& ep_ = preset_.projection;
 
     double depth_from = 0.1;
     double depth_to = 100.;
@@ -432,37 +441,44 @@ void TextGizmo::activate_preset(/*preset*/)
     m_dialog->set_per_glyph(prop.per_glyph, prop_.per_glyph);
     m_dialog->set_align(prop.align, prop_.align);
 
+    double scale = 1e-3; // font points to mm
     double char_gap_max = 3.62;
     double char_gap_step = 0.01;
-    double char_gap = 0.25;
-    m_dialog->set_char_gap(char_gap_max, char_gap_step, char_gap);
+    double char_gap_in_mm = prop.char_gap.value_or(0) * scale;
+    double char_gap_in_mm_ = prop_.char_gap.value_or(0) * scale;
+    m_dialog->set_char_gap(char_gap_max, char_gap_step, char_gap_in_mm, char_gap_in_mm_);
 
     double line_gap_max = 3.62;
     double line_gap_step = 0.01;
-    double line_gap = 0.25;
-    m_dialog->set_line_gap(line_gap_max, line_gap_step, line_gap);
+    double line_gap_in_mm = prop.line_gap.value_or(0) * scale;
+    double line_gap_in_mm_ = prop_.line_gap.value_or(0) * scale;
+    m_dialog->set_line_gap(line_gap_max, line_gap_step, line_gap_in_mm, line_gap_in_mm_);
 
     double boldness_max = 0.8;
     double boldness_step = 0.1;
-    double boldness = 0.34;
-    m_dialog->set_boldness(boldness_max, boldness_step, boldness);
+    double boldness_in_mm = prop.boldness.value_or(0) * scale;
+    double boldness_in_mm_ = prop_.boldness.value_or(0) * scale;
+    m_dialog->set_boldness(boldness_max, boldness_step, boldness_in_mm, boldness_in_mm_);
 
     double skew_ratio_max = 1.;
     double skew_ratio_step = 0.01;
-    double skew_ratio = -0.72;
-    m_dialog->set_skew_ratio(skew_ratio_max, skew_ratio_step, skew_ratio);
+    double skew_ratio = prop.skew.value_or(0.f);
+    double skew_ratio_ = prop_.skew.value_or(0.f);
+    m_dialog->set_skew_ratio(skew_ratio_max, skew_ratio_step, skew_ratio, skew_ratio_);
 
     double surface_distance_max = 2.;
     double surface_distance_step = 0.01;
     double surface_distance = 0.;
-    m_dialog->set_surface_distance(surface_distance_max, surface_distance_step, surface_distance, 0.);
+    double surface_distance_ = preset_.distance.value_or(0.f);
+    m_dialog->set_surface_distance(surface_distance_max, surface_distance_step, surface_distance, surface_distance_);
+    bool allowe_surface_distance = !m_projection.use_surface;// && !m_volume->is_the_only_one_part();
+    m_dialog->set_enable_surface_distance(allowe_surface_distance);
 
     double rotation_max = 180.;
     double rotation_step = 0.1;
     double rotation = 92.;
-    m_dialog->set_rotation(rotation_max, rotation_step, rotation);
-
-    
+    double rotation_ = preset_.angle.value_or(0.f);
+    m_dialog->set_rotation(rotation_max, rotation_step, rotation, rotation_);    
 }
 
 } // namespace Slic3r::App::Plater

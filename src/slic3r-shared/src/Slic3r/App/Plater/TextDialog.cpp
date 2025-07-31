@@ -37,7 +37,7 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
     m_editor->set_flags(m_editor->flags() | ImGuiInputTextFlags_Multiline);
     m_editor->callbacks().text_edited = [this]() {
         if (m_callbacks.text_changed)
-            m_callbacks.text_changed(m_editor->text());        
+            m_callbacks.text_changed(m_editor->text());
     };
 
     m_editor_warning = m_editor->emplace_back<LayoutButton>(
@@ -51,7 +51,7 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
     m_font                                = Passthrough{std::make_unique<ComboBox>("Font name")};
     m_font->callbacks().selection_changed = [this](int index) {
         if (m_callbacks.font_selection_changed)
-            m_callbacks.font_selection_changed(index);
+            m_callbacks.font_selection_changed(m_fonts[index]);
     };
     add_row(_u8L("Font"), m_font.release(), content(), _u8L("Revert font changes."));
 
@@ -392,9 +392,22 @@ void TextDialog::set_presets(const std::vector<std::string>& presets, int select
     m_preset->set_current_index(selected_preset_id);
 }
 
-void TextDialog::set_fonts(const std::vector<std::string>& fonts, int selected_font_id, int default_font_id)
+namespace {
+std::vector<std::string> get_names(const Domain::FontList& fonts)
 {
-    m_font->set_items(fonts);
+    std::vector<std::string> names;
+    names.reserve(fonts.size());
+    for (const Domain::FontDescriptor& font : fonts) {
+        names.push_back(font.name);
+    }
+    return names;
+}
+}
+
+void TextDialog::set_fonts(const Domain::FontList& fonts, int selected_font_id, int default_font_id)
+{
+    m_fonts = fonts;
+    m_font->set_items(get_names(fonts));
     m_font->set_default(default_font_id);
     m_font->set_current_index(selected_font_id);
 }
@@ -420,7 +433,8 @@ static void set_double_spin(
     validator->set_to(to);
     spin->set_step(step);
     spin->set_step_fast(step_fast);
-    spin->set_text(std::to_string(value));
+    spin->set_text(fmt::format("{}", value));
+//    spin->set_text(std::to_string(value));
     spin->set_default(default_value);
 }
 
