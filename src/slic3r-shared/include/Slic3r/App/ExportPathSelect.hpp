@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/filesystem/path.hpp>
+#include <vector>
 
 namespace Slic3r::App {
 
@@ -17,7 +18,11 @@ public:
     /**
      * @brief Shows modal dialog "Save file as". Returns true if user confirmed selection.
      */
-    void show_modal_dialog(const boost::filesystem::path& default_folder, const std::string& default_filename, const std::function<void(bool result, const boost::filesystem::path& file_path)>& callback);
+    void show_modal_dialog(
+        const boost::filesystem::path& default_folder,
+        const std::string& default_filename,
+        const std::function<void(bool result, const std::vector<boost::filesystem::path>& file_paths)>& callback
+    );
 
 private:
     std::string m_wildcards;

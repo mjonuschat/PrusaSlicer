@@ -50,6 +50,8 @@
 
 #include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/FileLoadingLogic.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -193,40 +195,37 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarAdd,
         "Add...",
         "Ctrl + I",
-        {.action = [this]() {
-            IDialogManager::FileCallback callback =
-                [this](bool success, const boost::filesystem::path& file_path) {
-                    if (success) {
-                        auto mesh = Biz::load_stl(file_path.string());
-                        if (!mesh) {
-                            // TODO: do something with the error
-                            return;
-                        }
+        {.action =
+             [this]() {
+                 IDialogManager::FileCallback callback =
+                     [this](bool success, const std::vector<boost::filesystem::path>& file_paths) {
+                         if (success) {
+                             const auto& cc = m_project_interactor.selected_project()
+                                                  .config_containers()
+                                                  .front();
+                             const auto& bed     = cc->bed();
+                             int nozzle_dmrs_cnt = cc->selected_preset().hw_config.tool_count;
+                             Biz::FileLoadingLogic::import_files_and_add_to_scene(
+                                 file_paths,
+                                 nozzle_dmrs_cnt,
+                                 m_project_interactor.scene_interactor(),
+                                 bed.center()
+                             );
 
-                        auto& scene_interactor = m_project_interactor.scene_interactor();
-                        const auto& bed        = m_project_interactor.selected_project()
-                                              .config_containers()
-                                              .front()
-                                              ->bed();
+                             m_scene_presenter->scene().log_nodes();
+                         }
+                     };
 
-                        scene_interactor.new_object_from_mesh(std::move(mesh.value()));
-
-                        const Domain::BoundingBox3d& bbox = mesh->bounding_box();
-                        Transform3d xform                 = Transform3d::Identity();
-                        using namespace Biz::Algorithms::BoundingBox;
-                        xform.translate(-center(bbox));
-                        xform.translate(Vec3d(0., 0., sizes(bbox).z() / 2.));
-                        xform.translate(Vec3d{bed.center().x(), bed.center().y(), 0});
-                        scene_interactor.transform_selection(xform.matrix());
-
-                        m_scene_presenter->scene().log_nodes();
-                    }
-                };
-
-            auto& dlg_manager = DialogManagerProvider::instance().get();
-            dlg_manager
-                .show_file_dialog(FileDialogType::Open, _u8L("Import STL"), "", "", "*.stl", callback);
-        }}
+                 auto& dlg_manager = DialogManagerProvider::instance().get();
+                 dlg_manager.show_file_dialog(
+                     FileDialogType::OpenMultiple,
+                     _u8L("Import File"),
+                     "",
+                     "",
+                     "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf",
+                     callback
+                 );
+             }}
     );
 
     m_toolbar_add_instance = m_layout->add_toolbar_item(
@@ -341,14 +340,6 @@ void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
     Scene::ToolType current_tool_type = m_gizmo_manager->current_tool_type();
     update_toolbar_tool_selection(current_tool_type);
 }
-
-#if 0
-void override_config(ModelConfigObject& config)
-{
-    config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipHoneycomb));
-    config.set_key_value("extruder", new ConfigOptionInt(3));
-}
-#endif
 
 void PlaterRenderModule::init_scene()
 {

@@ -9,7 +9,7 @@ void ExportPathSelect::set_wildcards(const std::string wildcard)
     m_wildcards = wildcard;
 }
 
-void ExportPathSelect::show_modal_dialog(const boost::filesystem::path& default_folder, const std::string& default_filename, const std::function<void(bool result, const boost::filesystem::path& file_path)>& callback)
+void ExportPathSelect::show_modal_dialog(const boost::filesystem::path& default_folder, const std::string& default_filename, const IDialogManager::FileCallback& callback)
 {
     DialogManagerProvider::instance().get().show_file_dialog(
         FileDialogType::Save,

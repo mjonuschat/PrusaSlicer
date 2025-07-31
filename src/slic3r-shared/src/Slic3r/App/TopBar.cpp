@@ -90,9 +90,9 @@ void TopBar::add_load_project_btn(Item* parent)
     m_load_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarLoad, _u8L("Load"));
     m_load_btn->callbacks().action = [this]() {
         IDialogManager::FileCallback callback =
-            [this](bool success, const boost::filesystem::path& file_path) {
+            [this](bool success, const std::vector<boost::filesystem::path>& file_paths) {
             if (success) {
-                m_project_interactor->load_project(file_path.string());
+                m_project_interactor->load_project(file_paths.front());
             }
         };
 
@@ -126,9 +126,9 @@ void TopBar::add_save_project_btn(Item* parent)
             { // The 'true' is here for the development phase - effectively it always "Saves as".
                 // Saving a new project - show file save dialog.
                 IDialogManager::FileCallback callback =
-                    [this, &params](bool success, const boost::filesystem::path& file_path) {
+                    [this, &params](bool success, const std::vector<boost::filesystem::path>& file_paths) {
                     if (success)
-                        m_project_interactor->save_project(file_path.string(), params);
+                        m_project_interactor->save_project(file_paths.front().string(), params);
                 };
                 auto& dlg_manager = DialogManagerProvider::instance().get();
                 dlg_manager.show_file_dialog(

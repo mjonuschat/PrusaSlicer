@@ -189,10 +189,11 @@ const BedSelection& SceneInteractor::bed_selection() const {
     return it->second.bed_selection;
 }
 
-void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh)
+void SceneInteractor::new_object_from_mesh(Domain::TriangleMesh&& mesh, const std::string& name)
 {
     auto& project = m_workbench.project(m_selected_project_id);
     auto& obj     = *project.model().add_object();
+    obj.name      = name;
     auto& vol     = *Algorithms::ModelObject::add_volume(&obj, std::move(mesh));
     auto& inst    = *obj.add_instance();
     const Domain::ElementRefs updated{{obj.id().id, inst.id().id}};
@@ -206,6 +207,18 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh)
     });
 
     set_object_selection({SelectionMode::Instance, {updated}});
+}
+
+void SceneInteractor::add_new_objects(const std::vector<Domain::ModelObject*>& objects)
+{
+    auto& project = m_workbench.project(m_selected_project_id);
+
+    Domain::ModelObjectPtrs new_objects;
+    for (Domain::ModelObject* object : objects) {
+        new_objects.emplace_back(project.model().add_object(*object));
+    }
+
+    notify_listener_on_objects(new_objects);
 }
 
 void SceneInteractor::add_volume_from_mesh(
@@ -262,8 +275,8 @@ void SceneInteractor::add_instance(const Vec2d& offset)
 void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& objects)
 {
     auto& project = m_workbench.project(m_selected_project_id);
+    Domain::ElementRefs updated;
     for (const Domain::ModelObject* object : objects) {
-        Domain::ElementRefs updated;
         SPDLOG_DEBUG("Notify listner obj {}", object->id().id);
 
         for (const Domain::ModelInstance* inst : object->instances)
@@ -278,6 +291,7 @@ void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& 
             l->on_instance_added(m_selected_project_id, updated);
         });
     }
+    set_object_selection({ SelectionMode::Instance, {updated} });
 }
 
 void SceneInteractor::notify_listener_on_objects()

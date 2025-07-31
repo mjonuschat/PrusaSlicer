@@ -40,40 +40,66 @@ SidebarPreviewActionButtons::SidebarPreviewActionButtons()
     m_button_save_print_add_bookmark->set_background_color(IM_COL32_BLACK_TRANS);
 
     m_button_save_print->callbacks().action = [this]() {
-        Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread_after([this](){
-            GCodeExportPathSelect export_path_select(true);
-            export_path_select.show_modal_dialog(m_project_interactor->last_export_path(false), m_project_interactor->get_project_name(m_project_interactor->selected_project_id()), 
-                [this](bool result, const boost::filesystem::path& file_path) {
-                if (result) {
-                    m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(),file_path, false);
-                }
-            
+        Biz::Platform::PlatformServices::instance()
+            .main_thread_dispatcher()
+            .dispatch_on_main_thread_after([this]() {
+                GCodeExportPathSelect export_path_select(true);
+                export_path_select.show_modal_dialog(
+                    m_project_interactor->last_export_path(false),
+                    m_project_interactor->get_project_name(m_project_interactor->selected_project_id()),
+                    [this](bool result, const std::vector<boost::filesystem::path>& file_paths) {
+                        if (result) {
+                            m_project_interactor->do_export(
+                                m_project_interactor->selected_bed_slicing_id(),
+                                file_paths.front(),
+                                false
+                            );
+                        }
+                    }
+                );
             });
-        });
     };
     m_button_save_print_to_flash->callbacks().action = [this]() {
-        Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread_after([this](){
-            GCodeExportPathSelect export_path_select(true);
-            export_path_select.show_modal_dialog(m_project_interactor->last_export_path(true), m_project_interactor->get_project_name(m_project_interactor->selected_project_id()), 
-                [this](bool result, const boost::filesystem::path& file_path) {
-                if (result) {
-                    m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(), file_path, true);
-                }
+        Biz::Platform::PlatformServices::instance()
+            .main_thread_dispatcher()
+            .dispatch_on_main_thread_after([this]() {
+                GCodeExportPathSelect export_path_select(true);
+                export_path_select.show_modal_dialog(
+                    m_project_interactor->last_export_path(true),
+                    m_project_interactor->get_project_name(m_project_interactor->selected_project_id()),
+                    [this](bool result, const std::vector<boost::filesystem::path>& file_paths) {
+                        if (result) {
+                            m_project_interactor->do_export(
+                                m_project_interactor->selected_bed_slicing_id(),
+                                file_paths.front(),
+                                true
+                            );
+                        }
+                    }
+                );
             });
-        });
     };
     m_button_save_print_to_local->callbacks().action = [this]() {
-        Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread_after([this](){
-            GCodeExportPathSelect export_path_select(true);
-            export_path_select.show_modal_dialog(m_project_interactor->last_export_path(false), m_project_interactor->get_project_name(m_project_interactor->selected_project_id()), 
-                [this](bool result, const boost::filesystem::path& file_path) {
-                if (result) {
-                    m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(), file_path, true);
-                }
+        Biz::Platform::PlatformServices::instance()
+            .main_thread_dispatcher()
+            .dispatch_on_main_thread_after([this]() {
+                GCodeExportPathSelect export_path_select(true);
+                export_path_select.show_modal_dialog(
+                    m_project_interactor->last_export_path(false),
+                    m_project_interactor->get_project_name(m_project_interactor->selected_project_id()),
+                    [this](bool result, const std::vector<boost::filesystem::path>& file_paths) {
+                        if (result) {
+                            m_project_interactor->do_export(
+                                m_project_interactor->selected_bed_slicing_id(),
+                                file_paths.front(),
+                                true
+                            );
+                        }
+                    }
+                );
             });
-        });
     };
-        
+
     m_button_save_print_add_bookmark->callbacks().action = [this]() {
         Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread_after([this](){
             DialogManagerProvider::instance().get().show_webview_dialog(std::make_unique<Browser::BrowserLogicConnectSelect>(*m_project_interactor), m_project_interactor);

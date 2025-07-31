@@ -10,7 +10,8 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
 
-#include "Slic3r/Biz/ProjectLoader.hpp"
+#include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
+#include "Slic3r/Biz/FileLoadingLogic.hpp"
 
 namespace Slic3r::Biz {
 Domain::SelectionId ProjectInteractor::new_project()
@@ -22,15 +23,19 @@ Domain::SelectionId ProjectInteractor::new_project()
     return project_id;
 }
 
-void ProjectInteractor::load_project(const std::string& file_path)
+void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
 {
-    Biz::load_project(file_path,
-    [&](Domain::Project&& project) {
-        add_project(std::move(project));
-    },
-    [](std::exception_ptr eptr) {
-        std::rethrow_exception(eptr);
-    });
+    Platform::PlatformServices::instance()
+        .job_manager()
+        .create_job(
+            "project_load",
+            [](Biz::JThread::StopToken stop_token, const boost::filesystem::path file_path
+            ) -> Domain::Project { return FileLoadingLogic::load_file_as_project(file_path); },
+            file_path
+        )
+        .on_result([&](Domain::Project&& project) { add_project(std::move(project)); })
+        .on_exception([](std::exception_ptr eptr) { std::rethrow_exception(eptr); })
+        .start();
 }
 
 void ProjectInteractor::save_project(const std::string& file_path, const Store3mfParam& params)

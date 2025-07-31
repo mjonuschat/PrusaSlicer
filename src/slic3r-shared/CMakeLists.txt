@@ -651,8 +651,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Format/3mf/Relations.hpp
         src/Slic3r/Biz/Format/3mf/ResultLoad3mf.cpp
 
-        include/Slic3r/Biz/ProjectLoader.hpp
-        src/Slic3r/Biz/ProjectLoader.cpp
+        include/Slic3r/Biz/FileLoadingLogic.hpp
+        src/Slic3r/Biz/FileLoadingLogic.cpp
         include/Slic3r/Biz/Format/STL.hpp
         src/Slic3r/Biz/Format/STL.cpp
 

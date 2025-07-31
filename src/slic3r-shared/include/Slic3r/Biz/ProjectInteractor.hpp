@@ -109,7 +109,7 @@ public:
     /**
      * @brief Load project from the file
      */
-    void load_project(const std::string& file_path);
+    void load_project(const boost::filesystem::path& file_path);
 
     /**
      * @name Project manipulation

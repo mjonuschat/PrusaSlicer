@@ -1,9 +1,11 @@
 #include "Slic3r/App/WX/DialogManager.hpp"
 
 #include "Slic3r/App/WX/WebView/WebViewDialog.hpp"
+#include "Slic3r/App/WX/MsgDialog.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include <Slic3r/App/WX/I18N.hpp>
 
 #include <wx/msgdlg.h>
 #include <wx/filedlg.h>
@@ -17,7 +19,7 @@ void DialogManager::show_file_dialog(
         const boost::filesystem::path& default_folder,  
         const std::string& default_file_name, 
         const std::string& wildcards,
-        const std::function<void(bool result, const boost::filesystem::path& file_path)>& callback
+        const FileCallback& callback
     )
 {
     ASSERT(callback);
@@ -28,8 +30,10 @@ void DialogManager::show_file_dialog(
     case FileDialogType::Open:
         flags |= wxFD_OPEN;
         break;
-
-        case FileDialogType::Save:
+    case FileDialogType::OpenMultiple:
+        flags |= wxFD_OPEN | wxFD_MULTIPLE;
+        break;
+    case FileDialogType::Save:
         flags |= wxFD_SAVE | wxFD_OVERWRITE_PROMPT;
         break;
     }
@@ -46,8 +50,16 @@ void DialogManager::show_file_dialog(
         callback(false, {});
        return;
     }
-    wxString out_path = dlg.GetPath();
-    callback(true, into_path(out_path));
+
+    wxArrayString paths;
+    dlg.GetPaths(paths);
+
+    std::vector<boost::filesystem::path> out_paths;
+    for (const wxString& path : paths) {
+        out_paths.emplace_back(into_path(path));
+    }
+
+    callback(true, out_paths);
 }
 
 void DialogManager::show_webview_dialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, Biz::ProjectInteractor* project_interactor)
@@ -67,4 +79,55 @@ void DialogManager::show_yesno_dialog(const std::string& title, const std::strin
         callback(false);
 }
 
+void DialogManager::show_rich_yesno_dialog(
+    const std::string& title,
+    const std::string& text,
+    const std::string& check_text,
+    const YesNoCallback& callback,
+    const CheckBoxCheckedCallback& cbc_callback
+)
+{
+    RichMessageDialog dlg(nullptr, from_u8(text), from_u8(title), wxICON_QUESTION | wxYES_NO);
+    dlg.ShowCheckBox(from_u8(check_text));
+    if (dlg.ShowModal() == wxID_YES)
+        callback(true);
+    else
+        callback(false);
+
+    if (dlg.IsCheckBoxChecked())
+        cbc_callback(true);
+}
+
+void DialogManager::show_info_dialog(const std::string& text, const std::string& title)
+{
+    MessageDialog(
+        nullptr,
+        from_u8(text),
+        title.empty() ? _L("Information") : from_u8(title),
+        wxICON_INFORMATION | wxOK
+    )
+        .ShowModal();
+}
+
+void DialogManager::show_warning_dialog(const std::string& text, const std::string& title)
+{
+    MessageDialog(
+        nullptr,
+        from_u8(text),
+        title.empty() ? _L("Warning") : from_u8(title),
+        wxICON_WARNING | wxOK
+    )
+        .ShowModal();
+}
+
+void DialogManager::show_error_dialog(const std::string& text, const std::string& title)
+{
+    MessageDialog(
+        nullptr,
+        from_u8(text),
+        title.empty() ? _L("Error") : from_u8(title),
+        wxICON_ERROR | wxOK
+    )
+        .ShowModal();
+}
 }
