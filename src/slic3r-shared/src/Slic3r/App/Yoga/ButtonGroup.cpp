@@ -8,12 +8,22 @@
 
 namespace Slic3r::App::Yoga {
 
+ButtonGroup::~ButtonGroup()
+{
+    for (AbstractButton* button : std::as_const(m_buttons)) {
+        button->callbacks().checked_changed = nullptr;
+    }
+}
+
 ButtonGroup::ButtonGroup(std::initializer_list<AbstractButton*> initializer_list)
 {
     set_buttons(initializer_list);
 }
 
-ButtonGroup::Callbacks& ButtonGroup::callbacks() { return m_callbacks; }
+ButtonGroup::Callbacks& ButtonGroup::callbacks()
+{
+    return m_callbacks;
+}
 
 void ButtonGroup::set_buttons(std::initializer_list<AbstractButton*> initializer_list)
 {
@@ -35,12 +45,15 @@ void ButtonGroup::set_buttons(std::initializer_list<AbstractButton*> initializer
         }
     }
 
-    if (!m_buttons.empty() && m_checked_button == nullptr) {
+    if (!m_buttons.empty() && (m_checked_button == nullptr && m_always_checked)) {
         (*initializer_list.begin())->set_checked(true);
     }
 }
 
-AbstractButton* ButtonGroup::checked_button() const { return m_checked_button; }
+AbstractButton* ButtonGroup::checked_button() const
+{
+    return m_checked_button;
+}
 
 void ButtonGroup::insert_button(AbstractButton* button)
 {
@@ -54,8 +67,7 @@ void ButtonGroup::insert_button(AbstractButton* button)
 
     set_button_callbacks(button);
 
-
-    if (m_checked_button == nullptr || button->checked()) {
+    if ((m_checked_button == nullptr && m_always_checked) || button->checked()) {
         check_one_button(button);
     }
 }
@@ -68,7 +80,7 @@ bool ButtonGroup::remove_button(AbstractButton* button)
 
     const bool last_button{m_buttons.size() == 1 && *m_buttons.begin() == button};
 
-    button->callbacks().action = nullptr;
+    button->callbacks().action          = nullptr;
     button->callbacks().checked_changed = nullptr;
 
     m_buttons.erase(button);
@@ -77,15 +89,21 @@ bool ButtonGroup::remove_button(AbstractButton* button)
         m_checked_button = nullptr;
     } else if (button == m_checked_button) {
         ASSERT(button->checked());
-        check_one_button(*m_buttons.begin());
+        check_one_button(m_always_checked ? *m_buttons.begin() : nullptr);
     }
 
     return true;
 }
 
-size_t ButtonGroup::button_count() const { return m_buttons.size(); }
+size_t ButtonGroup::button_count() const
+{
+    return m_buttons.size();
+}
 
-const ButtonGroup::Buttons& ButtonGroup::buttons() const { return m_buttons; }
+const ButtonGroup::Buttons& ButtonGroup::buttons() const
+{
+    return m_buttons;
+}
 
 void ButtonGroup::on_button_action(AbstractButton* button)
 {
@@ -96,12 +114,20 @@ void ButtonGroup::on_button_action(AbstractButton* button)
 
 void ButtonGroup::check_one_button(AbstractButton* button)
 {
-    if (m_checked_button == button && button->checked()) {
+    // If state is not changed, do not go further
+    if (m_always_checked && m_checked_button == button && button->checked()) {
         return;
     }
 
+    // Special unchecked state
+    if (!m_always_checked && button->checked() == false) {
+        button = nullptr;
+    }
+
     m_checked_blocker = true;
-    m_checked_button  = button;
+
+    AbstractButton* last = m_checked_button;
+    m_checked_button     = button;
     for (AbstractButton* owned_button : std::as_const(m_buttons)) {
         if (owned_button != button) {
             owned_button->set_checked(false);
@@ -110,6 +136,10 @@ void ButtonGroup::check_one_button(AbstractButton* button)
         }
     }
     m_checked_blocker = false;
+
+    if (m_callbacks.checked_changed) {
+        m_callbacks.checked_changed(button, last);
+    }
 }
 
 void ButtonGroup::on_button_checked(AbstractButton* button)
@@ -118,17 +148,15 @@ void ButtonGroup::on_button_checked(AbstractButton* button)
         return;
     }
 
-    AbstractButton* last = m_checked_button;
-    if (m_callbacks.checked_changed) {
-        m_callbacks.checked_changed(button, last);
-    }
     check_one_button(button);
 }
 
 void ButtonGroup::set_button_callbacks(AbstractButton* button)
 {
-    button->callbacks().action = [this, button]() { on_button_action(button); };
-    button->callbacks().checked_changed = [this, button](bool) {
+    button->callbacks().action = [this, button]() {
+        on_button_action(button);
+    };
+    button->callbacks().checked_changed = [this, button](bool checked) {
         // Intentionally ignored checked state.
         // The button cannot be unchecked if it is already checked.
         on_button_checked(button);
@@ -137,8 +165,18 @@ void ButtonGroup::set_button_callbacks(AbstractButton* button)
 
 void ButtonGroup::unset_button_callbacks(AbstractButton* button)
 {
-    button->callbacks().action = nullptr;
+    button->callbacks().action          = nullptr;
     button->callbacks().checked_changed = nullptr;
+}
+
+bool ButtonGroup::always_checked() const
+{
+    return m_always_checked;
+}
+
+void ButtonGroup::set_always_checked(bool always_checked)
+{
+    m_always_checked = always_checked;
 }
 
 } // namespace Slic3r::App::Yoga

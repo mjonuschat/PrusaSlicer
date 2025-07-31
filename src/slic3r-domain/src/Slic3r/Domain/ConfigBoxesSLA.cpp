@@ -63,6 +63,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("display_width", typeid(double));
     def->location = Printer;
     def->label = L("Display width");
+    def->option_group = L("Display");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Width of the display");
     def->min = 1;
     def->init_fn = init_with(120.);
@@ -70,6 +73,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("display_height", typeid(double));
     def->location = Printer;
     def->label = L("Display height");
+    def->option_group = L("Display");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Height of the display");
     def->min = 1;
     def->init_fn = init_with(68.);
@@ -78,6 +84,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->full_label = L("Number of pixels in");
     def->label = ("X");
+    def->option_group = L("Display");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of pixels in X");
     def->min = 100;
     def->init_fn = init_with(2560);
@@ -85,6 +94,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("display_pixels_y", typeid(int));
     def->location = Printer;
     def->label = ("Y");
+    def->option_group = L("Display");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of pixels in Y");
     def->min = 100;
     def->init_fn = init_with(1440);
@@ -93,6 +105,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->full_label = L("Display horizontal mirroring");
     def->label = L("Mirror horizontally");
+    def->option_group = L("Display");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Enable horizontal mirroring of output images");
     def->mode = comExpert;
     def->init_fn = init_with(true);
@@ -101,6 +116,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->full_label = L("Display vertical mirroring");
     def->label = L("Mirror vertically");
+    def->option_group = L("Display");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Enable vertical mirroring of output images");
     def->mode = comExpert;
     def->init_fn = init_with(false);
@@ -108,6 +126,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("display_orientation", typeid(EnumWrapper));
     def->location = Printer;
     def->label = L("Display orientation");
+    def->option_group = L("Display");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Set the actual LCD display orientation inside the SLA printer."
                      " Portrait mode will flip the meaning of display width and height parameters"
                      " and the output images will be rotated by 90 degrees.");
@@ -151,6 +172,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("area_fill", typeid(double));
     def->location = Material;
     def->label = L("Area fill threshold");
+    def->option_group = L("Tilt");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The value is expressed as a percentage of the bed area. If the area of a particular layer "
                      "is smaller than 'area_fill', then 'Below area fill threshold' parameters are used to determine the "
                      "layer separation (tearing) procedure. Otherwise 'Above area fill threshold' parameters are used.");
@@ -162,6 +186,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("relative_correction", typeid(std::vector<double>));
     def->location = Printer;
     def->label = L("Printer scaling correction");
+    def->option_group = L("Corrections");
+    def->category = ConfigItemDef::Category::Hidden;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->full_label = L("Printer scaling correction");
     def->tooltip  = L("Printer scaling correction");
     def->min = 0;
@@ -171,6 +198,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("relative_correction_x", typeid(double));
     def->location = Printer;
     def->label = L("Printer scaling correction in X axis");
+    def->option_group = L("Corrections");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Printer scaling X axis correction");
     def->tooltip  = L("Printer scaling correction in X axis");
     def->min = 0;
@@ -180,6 +210,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("relative_correction_y", typeid(double));
     def->location = Printer;
     def->label = L("Printer scaling correction in Y axis");
+    def->option_group = L("Corrections");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Printer scaling Y axis correction");
     def->tooltip  = L("Printer scaling correction in Y axis");
     def->min = 0;
@@ -189,6 +222,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("relative_correction_z", typeid(double));
     def->location = Printer;
     def->label = L("Printer scaling correction in Z axis");
+    def->option_group = L("Corrections");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Printer scaling Z axis correction");
     def->tooltip  = L("Printer scaling correction in Z axis");
     def->min = 0;
@@ -199,6 +235,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Printer;
     def->overrides_in = Locations{ Material };
     def->label = L("Printer absolute correction");
+    def->option_group = L("Corrections");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Printer absolute correction");
     def->tooltip  = L("Will inflate or deflate the sliced 2D polygons according "
                       "to the sign of the correction.");
@@ -209,7 +248,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("elefant_foot_min_width", typeid(double));
     def->location = Printer;
     def->label = L("Elephant foot minimum width");
-    def->category = ConfigItemDef::Category::Advanced;;
+    def->option_group = L("Corrections");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Minimum width of features to maintain when doing elephant foot compensation.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -304,6 +345,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Faded layers");
+    def->option_group = L("Layers");
+    def->category = ConfigItemDef::Category::LayersAndPerimeters;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Number of the layers needed for the exposure time fade from initial exposure time to the exposure time");
     def->min = 3;
     def->max = 20;
@@ -364,6 +408,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("material_correction", typeid(std::vector<double>));
     def->location = Material;
+    def->category = ConfigItemDef::Category::Hidden;
     def->full_label = L("Correction for expansion");
     def->tooltip  = L("Correction for expansion");
     def->min = 0;
@@ -372,6 +417,10 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("material_correction_x", typeid(double));
     def->location = Material;
+    def->option_group = L("Corrections");
+    def->label = L("X");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Correction for expansion in X axis");
     def->tooltip  = L("Correction for expansion in X axis");
     def->min = 0;
@@ -380,6 +429,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("material_correction_y", typeid(double));
     def->location = Material;
+    def->label = L("Y");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Correction for expansion in Y axis");
     def->tooltip  = L("Correction for expansion in Y axis");
     def->min = 0;
@@ -388,6 +440,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("material_correction_z", typeid(double));
     def->location = Material;
+    def->label = L("Z");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Correction for expansion in Z axis");
     def->tooltip  = L("Correction for expansion in Z axis");
     def->min = 0;
@@ -437,7 +492,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Generate supports");
+    def->option_group = L("Supports");
     def->category = ConfigItemDef::Category::Supports;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Generate supports for the models");
     def->mode = comSimple;
     def->init_fn = init_with(true);
@@ -446,6 +503,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Support tree type");
+    def->option_group = L("Supports");
+    def->category = ConfigItemDef::Category::Supports;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Support tree building strategy");
     def->mode = comSimple;
     def->init_fn = init_with(
@@ -462,7 +522,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Support only in enforced regions");
+    def->option_group = L("Supports");
     def->category = ConfigItemDef::Category::Supports;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Only create support if it lies in a support enforcer.");
     def->mode = comSimple;
     def->init_fn = init_with(false);
@@ -471,7 +533,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Material, Object};
     def->label = L("Support points density");
+    def->option_group = L("Automatic generation");
     def->category = ConfigItemDef::Category::Supports;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("This is a relative measure of support points density.");
     def->sidetext = L("%");
     def->min = 0;
@@ -481,7 +545,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Use pad");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Add a pad underneath the supported model");
     def->mode = comSimple;
     def->init_fn = init_with(true);
@@ -490,7 +556,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad wall thickness");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
      def->tooltip = L("The thickness of the pad and its optional cavity walls.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -502,11 +570,13 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad wall height");
+    def->option_group = L("Pad");
+    def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Defines the pad cavity depth. Set to zero to disable the cavity. "
                      "Be careful when enabling this feature, as some resins may "
                      "produce an extreme suction effect inside the cavity, "
                      "which makes peeling the print off the vat foil difficult.");
-    def->category = ConfigItemDef::Category::Pad;
 //     def->tooltip = L("");
     def->sidetext = L("mm");
     def->min = 0;
@@ -518,8 +588,10 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad brim size");
-    def->tooltip = L("How far should the pad extend around the contained geometry");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->tooltip = L("How far should the pad extend around the contained geometry");
     //     def->tooltip = L("");
     def->sidetext = L("mm");
     def->min = 0;
@@ -531,7 +603,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Max merge distance");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
      def->tooltip = L("Some objects can get along with a few smaller pads "
                       "instead of a single big one. This parameter defines "
                       "how far the center of two smaller pads should be. If they"
@@ -555,7 +629,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad wall slope");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The slope of the pad wall relative to the bed plane. "
                      "90 degrees means straight walls.");
     def->sidetext = L("°");
@@ -568,7 +644,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad around object");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Create pad around object and ignore the support elevation");
     def->mode = comSimple;
     def->init_fn = init_with(false);
@@ -577,7 +655,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad around object everywhere");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Force pad around object everywhere");
     def->mode = comSimple;
     def->init_fn = init_with(false);
@@ -586,7 +666,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad object gap");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("The gap between the object bottom and the generated "
                       "pad in zero elevation mode.");
     def->sidetext = L("mm");
@@ -599,7 +681,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad object connector stride");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Distance between two connector sticks which connect the object and the generated pad.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -610,7 +694,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad object connector width");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("Width of the connector sticks which connect the object and the generated pad.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -621,7 +707,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad object connector penetration");
+    def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L(
         "How much should the tiny connectors penetrate into the model body.");
     def->sidetext = L("mm");
@@ -633,7 +721,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Enable hollowing");
+    def->option_group = L("Hollowing");
     def->category = ConfigItemDef::Category::Hollowing;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Hollow out a model to have an empty interior");
     def->mode = comSimple;
     def->init_fn = init_with(false);
@@ -642,7 +732,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Wall thickness");
+    def->option_group = L("Hollowing");
     def->category = ConfigItemDef::Category::Hollowing;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("Minimum wall thickness of a hollowed model.");
     def->sidetext = L("mm");
     def->min = 1;
@@ -654,7 +746,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Accuracy");
+    def->option_group = L("Hollowing");
     def->category = ConfigItemDef::Category::Hollowing;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("Performance vs accuracy of calculation. Lower values may produce unwanted artifacts.");
     def->min = 0;
     def->max = 1;
@@ -665,7 +759,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Closing distance");
+    def->option_group = L("Hollowing");
     def->category = ConfigItemDef::Category::Hollowing;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L(
         "Hollowing is done in two steps: first, an imaginary interior is "
         "calculated deeper (offset plus the closing distance) in the object and "
@@ -781,6 +877,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_down_initial_speed", typeid(EnumVectorWrapper));
     def->location = Material;
     def->full_label = L("Tilt down initial speed");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Tilt speed used for an initial portion of tilt down move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
@@ -789,6 +888,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_down_finish_speed", typeid(EnumVectorWrapper));
     def->location = Material;
     def->full_label = L("Tilt down finish speed");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Tilt speed used for the rest of the tilt down move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
@@ -797,6 +899,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_up_initial_speed", typeid(EnumVectorWrapper));
     def->location = Material;
     def->full_label = L("Tilt up initial speed");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Tilt speed used for an initial portion of tilt up move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
@@ -805,6 +910,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_up_finish_speed", typeid(EnumVectorWrapper));
     def->location = Material;
     def->full_label = L("Tilt up finish speed");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Tilt speed used for the rest of the tilt-up.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
@@ -813,6 +921,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("use_tilt", typeid(std::vector<bool>));
     def->location = Material;
     def->full_label = L("Use tilt");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If enabled, tilt is used for layer separation. Otherwise, all the parameters below are ignored.");
     def->mode = comExpert;
     def->init_fn = init_with((std::vector<bool>{ true, true }));
@@ -900,7 +1011,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
         def->label = L("Pinhead front diameter");
+        def->option_group = L("Support head");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("Diameter of the pointing side of the head");
         def->sidetext = L("mm");
         def->min = 0;
@@ -911,7 +1024,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
         def->label = L("Head penetration");
+        def->option_group = L("Support head");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("How much the pinhead has to penetrate the model surface");
         def->sidetext = L("mm");
         def->mode = comAdvanced;
@@ -922,7 +1037,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
         def->label = L("Pinhead width");
+        def->option_group = L("Support head");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("Width from the back sphere center to the front sphere center");
         def->sidetext = L("mm");
         def->min = 0;
@@ -934,7 +1051,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
         def->label = L("Pillar diameter");
+        def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("Diameter in mm of the support pillars");
         def->sidetext = L("mm");
         def->min = 0;
@@ -946,7 +1065,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Small pillar diameter percent");
+        def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("The percentage of smaller pillars compared to the normal pillar diameter "
             "which are used in problematic areas where a normal pilla cannot fit.");
         def->sidetext = L("%");
@@ -959,6 +1080,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Max bridges on a pillar");
+        def->option_group = L("Support pillar");
+        def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L(
             "Maximum number of bridges that can be placed on a pillar. Bridges "
             "hold support point pinheads and connect to pillars as small branches.");
@@ -974,7 +1098,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Max weight on model");
+        def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L(
             "Maximum weight of sub-trees that terminate on the model instead of the print bed. The weight is the sum of the lenghts of all "
             "branches emanating from the endpoint.");
@@ -987,6 +1113,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Pillar connection mode");
+        def->option_group = L("Support pillar");
+        def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::combobox;
         def->tooltip = L("Controls the bridge type between two neighboring pillars."
             " Can be zig-zag, cross (double zig-zag) or dynamic which"
             " will automatically switch between the first two depending"
@@ -1003,7 +1132,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Support on build plate only");
+        def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::combobox;
         def->tooltip = L("Only create support if it lies on a build plate. Don't create support on a print.");
         def->mode = comSimple;
         def->init_fn = init_with(false);
@@ -1012,7 +1143,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Pillar widening factor");
+        def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip =
             L("Merging bridges or pillars into another pillars can "
                 "increase the radius. Zero means no increase, one means "
@@ -1027,7 +1160,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Support base diameter");
+        def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("Diameter in mm of the pillar base");
         def->sidetext = L("mm");
         def->min = 0;
@@ -1039,7 +1174,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Support base height");
+        def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("The height of the pillar base cone");
         def->sidetext = L("mm");
         def->min = 0;
@@ -1050,7 +1187,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Support base safety distance");
+        def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L(
             "The minimum distance of the pillar base from the model in mm. "
             "Makes sense in zero elevation mode where a gap according "
@@ -1065,7 +1204,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Critical angle");
+        def->option_group = L("Connection of the support sticks and junctions");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("The default angle for connecting support sticks and junctions.");
         def->sidetext = L("°");
         def->min = 0;
@@ -1077,7 +1218,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Max bridge length");
+        def->option_group = L("Connection of the support sticks and junctions");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("The max length of a bridge");
         def->sidetext = L("mm");
         def->min = 0;
@@ -1091,7 +1234,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->location = Print;
         def->overrides_in = Locations{ Object };
         def->label = L("Max pillar linking distance");
+        def->option_group = L("Connection of the support sticks and junctions");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("The max distance of two pillars to get linked with each other."
             " A zero value will prohibit pillar cascading.");
         def->sidetext = L("mm");

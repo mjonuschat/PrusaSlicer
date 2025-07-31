@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/ConfigSubcategoryListView.hpp"
 
+#include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -12,8 +13,10 @@ namespace Slic3r::App {
 
 ConfigSubcategoryListView::ConfigSubcategoryListView(
     Domain::ConfigItemDef::Category category,
+    Biz::Preset::PresetInteractor& preset_interactor,
     Biz::ConfigBoxInteractor& cbi
 ) :
+    m_preset_interactor(preset_interactor),
     m_cbi(cbi)
 {
     set_orientation(Orientation::Vertical);
@@ -41,12 +44,19 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
         }
     });
 
-    m_category_filter.set_source_model(&m_cbi.config_box_list());
+    m_category_filter.set_source_model(m_cbi.config_box_list());
 
-    m_list_view = emplace_back<SubcategoryListView>(cbi);
+    m_list_view = emplace_back<SubcategoryListView>(
+        SubcategoryListViewFactory{m_preset_interactor, m_cbi}
+    );
     m_list_view->set_orientation(Orientation::Vertical);
     m_list_view->set_source_list(&m_category_filter);
     m_list_view->set_gap(5);
+}
+
+ConfigSubcategoryListView::~ConfigSubcategoryListView()
+{
+    m_list_view->set_source_list(nullptr);
 }
 
 } // namespace Slic3r::App

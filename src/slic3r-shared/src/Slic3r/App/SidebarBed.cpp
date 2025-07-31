@@ -29,6 +29,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
     set_flex_shrink(0);
 
     m_filament_button_group = std::make_shared<ButtonGroup>();
+    m_filament_button_group->set_always_checked(false);
 
     m_bed_name = emplace_back<Text>("Bed 1");
     m_bed_name->set_font_type(Render::ImguiFontType::Bold);
@@ -37,6 +38,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
     m_physical_printer_button->set_icon(Render::Icon::PrinterNEXT);
     m_physical_printer_button->set_printer_name("NEXT/Elsa");
     m_physical_printer_button->set_preset_name("Prusa NEXT 1T");
+    m_physical_printer_button->set_visible(false); // Hide Physical printers for now
 
     m_logical_printer_button = emplace_back<PrinterSettingsButton>("Logical printer");
     m_logical_printer_button->set_icon(Render::Icon::PrinterNEXT);
@@ -86,7 +88,9 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
     };
 
     m_filament_settings_dialog.dialog_callbacks().tab_selected = [this](size_t current_index) {
-        dynamic_cast<AbstractButton*>(m_list_view->get_item(current_index))->set_checked(true);
+        if (m_filament_settings_dialog.opened()) {
+            dynamic_cast<AbstractButton*>(m_list_view->get_item(current_index))->set_checked(true);
+        }
     };
 
     m_filament_button_group->callbacks().checked_changed =

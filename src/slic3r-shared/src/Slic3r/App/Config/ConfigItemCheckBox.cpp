@@ -4,10 +4,17 @@
 ///|/
 #include "Slic3r/App/Config/ConfigItemCheckBox.hpp"
 
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+
 namespace Slic3r::App {
 
-ConfigItemCheckBox::ConfigItemCheckBox(size_t index, const Domain::ConfigItem& data) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data)
+ConfigItemCheckBox::ConfigItemCheckBox(
+    size_t index,
+    const Domain::ConfigItem& data,
+    Biz::Preset::PresetInteractor& preset_interactor
+) :
+    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    m_preset_interactor(preset_interactor)
 {
     on_data_update();
 
@@ -20,6 +27,15 @@ ConfigItemCheckBox::ConfigItemCheckBox(size_t index, const Domain::ConfigItem& d
 void ConfigItemCheckBox::on_data_update()
 {
     set_checked(m_state->value().get<bool>());
+}
+
+void ConfigItemCheckBox::checked_updated_internal()
+{
+    ToggleButton::checked_updated_internal();
+
+    if (m_state->value().get<bool>() != checked()) {
+        m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{checked()});
+    }
 }
 
 } // namespace Slic3r::App

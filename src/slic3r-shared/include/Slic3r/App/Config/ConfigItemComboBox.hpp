@@ -7,17 +7,30 @@
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Biz/DataObserver.hpp"
-#include "Slic3r/App/Yoga/Tooltip.hpp"
+#include "Slic3r/App/Yoga/Validator.hpp"
+
+namespace Slic3r::Biz::Preset {
+class PresetInteractor;
+} // namespace Slic3r::Biz::Preset
 
 namespace Slic3r::App {
 
 class ConfigItemComboBox : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::ComboBox
 {
 public:
-    ConfigItemComboBox(size_t index, const Domain::ConfigItem& config_item);
+    ConfigItemComboBox(
+        size_t index,
+        const Domain::ConfigItem& config_item,
+        Biz::Preset::PresetInteractor& preset_interactor
+    );
 
 protected:
     void on_data_update() override;
+
+private:
+    Biz::Preset::PresetInteractor& m_preset_interactor;
+    Yoga::Passthrough<Yoga::IntValidator> m_int_validator;
+    Yoga::Passthrough<Yoga::DoubleValidator> m_double_validator;
 };
 
 } // namespace Slic3r::App

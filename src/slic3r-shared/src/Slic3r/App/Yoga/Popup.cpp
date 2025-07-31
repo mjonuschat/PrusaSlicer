@@ -6,6 +6,8 @@
 
 #include "Slic3r/App/Yoga/RootItem.hpp"
 
+#include <Slic3r/Log.hpp>
+
 #include <imgui_internal.h>
 
 #include <list>
@@ -108,6 +110,12 @@ void Popup::set_preferred_position(Position preferred_position)
 
 RootItem* Popup::get_or_find_root_item()
 {
+    // We were never parented, that means we are not opened and we can be destroyed in silence
+    if (!m_parent) {
+        ASSERT(!m_opened);
+        return nullptr;
+    }
+
     if (!m_root_item) {
         find_root_item();
     }
@@ -320,6 +328,8 @@ void Popup::find_root_item()
 {
     Item* parent = m_parent;
     while (parent) {
+        // TODO: OOF, this won't work in the destructor, RootItem needs a more
+        // comprehensive handling!
         RootItem* root_item = dynamic_cast<RootItem*>(parent);
         if (root_item) {
             m_root_item = root_item;
@@ -332,7 +342,10 @@ void Popup::find_root_item()
 
         parent = parent->parent();
     }
-    ASSERT(m_root_item, "RootItem was not found");
+    if (!m_root_item) {
+        SPDLOG_WARN("RootItem was not found");
+    }
+    // ASSERT(m_root_item, "RootItem was not found");
 }
 
 float Popup::offset() const

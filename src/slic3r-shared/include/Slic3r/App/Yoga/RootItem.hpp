@@ -14,6 +14,8 @@ class Popup;
 class RootItem : public Item
 {
 public:
+    RootItem();
+
     void render(Vec2f pos, Vec2f size) override;
 
     void set_style_dirty() override;

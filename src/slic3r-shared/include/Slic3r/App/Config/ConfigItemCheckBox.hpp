@@ -8,15 +8,28 @@
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 
+namespace Slic3r::Biz::Preset {
+class PresetInteractor;
+} // namespace Slic3r::Biz::Preset
+
 namespace Slic3r::App {
 
-class ConfigItemCheckBox : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::ToggleButton {
+class ConfigItemCheckBox : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::ToggleButton
+{
 public:
-
-    ConfigItemCheckBox(size_t index, const Domain::ConfigItem& data);
+    ConfigItemCheckBox(
+        size_t index,
+        const Domain::ConfigItem& data,
+        Biz::Preset::PresetInteractor& preset_interactor
+    );
 
 protected:
     void on_data_update() override;
+
+    void checked_updated_internal() override;
+
+private:
+    Biz::Preset::PresetInteractor& m_preset_interactor;
 };
 
-}
+} // namespace Slic3r::App

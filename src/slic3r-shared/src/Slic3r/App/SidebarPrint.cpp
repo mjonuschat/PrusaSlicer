@@ -91,6 +91,7 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor) :
     m_settings_set_btn = layer_height_row->emplace_back<LayoutButton>("", Render::Icon::Cog);
     m_settings_set_btn->set_checkable(true);
     m_group_print_tools = std::make_shared<ButtonGroup>();
+    m_group_print_tools->set_always_checked(false);
     m_group_print_tools->insert_button(m_settings_set_btn);
 
     m_tool_head_list_view = m_content_area->emplace_back<ToolHeadListView>(
@@ -109,6 +110,24 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor) :
         [this](AbstractButton* current_checked, AbstractButton* last_checked) {
         if (current_checked) {
             m_print_settings_dialog.open();
+
+            // This is really ugly, refactor this once we will settle on the final-ish design
+            if (current_checked == m_settings_set_btn) {
+                m_print_settings_dialog.set_current_tab(0);
+            } else {
+                for (size_t tool_index = 0; tool_index < m_tool_head_list_view->item_count();
+                     ++tool_index)
+                {
+                    AbstractButton* cog_button = dynamic_cast<SidebarToolHeadRow*>(
+                                                     m_tool_head_list_view->item_at(tool_index)
+                    )
+                                                     ->cog_button();
+                    if (cog_button == current_checked) {
+                        m_print_settings_dialog.set_current_tab(1 + tool_index);
+                        break;
+                    }
+                }
+            }
         } else {
             m_print_settings_dialog.close();
         }

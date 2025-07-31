@@ -28,13 +28,24 @@ Dialog::Dialog()
 
     m_tab_button_group.callbacks().checked_changed =
         [this](AbstractButton* current_checked, AbstractButton* last_checked) {
-        const size_t current_index = std::distance(
-            m_tab_buttons.cbegin(),
-            std::find(m_tab_buttons.cbegin(), m_tab_buttons.cend(), current_checked)
-        );
-        on_tab_selected(current_index);
-        if (m_callbacks.tab_selected) {
-            m_callbacks.tab_selected(current_index);
+        if (current_checked) {
+            std::vector<LayoutButton*>::const_iterator it = std::find(
+                m_tab_buttons.cbegin(),
+                m_tab_buttons.cend(),
+                current_checked
+            );
+
+            // This may be a bigger underlying problem.
+            if (it == m_tab_buttons.cend()) {
+                return;
+            }
+
+            const size_t current_index = std::distance(m_tab_buttons.cbegin(), it);
+
+            on_tab_selected(current_index);
+            if (m_callbacks.tab_selected) {
+                m_callbacks.tab_selected(current_index);
+            }
         }
     };
 
@@ -121,6 +132,15 @@ LayoutButton* Dialog::append_tab(const std::string& tab)
     m_tab_button_group.insert_button(tab_button);
 
     return tab_button;
+}
+
+void Dialog::remove_tab(size_t index)
+{
+    ASSERT(index < m_tab_buttons.size());
+    LayoutButton* button = m_tab_buttons.at(index);
+    m_tab_button_group.remove_button(button);
+    m_tab_container->remove(m_tab_container->get_item(index));
+    m_tab_buttons.erase(m_tab_buttons.cbegin() + index);
 }
 
 void Dialog::set_current_tab(size_t current_index)

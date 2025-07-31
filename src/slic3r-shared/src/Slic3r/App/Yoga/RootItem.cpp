@@ -8,6 +8,11 @@
 
 namespace Slic3r::App::Yoga {
 
+RootItem::RootItem()
+{
+    set_item_name("RootItem");
+}
+
 void RootItem::render(Vec2f pos, Vec2f size)
 {
     ASSERT(!m_parent);

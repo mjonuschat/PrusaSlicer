@@ -47,6 +47,13 @@ class ListView : public Biz::IListObserver<Data>, public BaseItem
 public:
     ListView(ViewFactoryT factory = {}) : m_factory(factory) {}
 
+    ~ListView()
+    {
+        if (m_source_list.is_valid()) {
+            m_source_list->template remove_listener<Biz::IListObserver<Data>>(this);
+        }
+    }
+
     View* item_at(size_t index) const
     {
         return m_items.at(index);
@@ -91,7 +98,7 @@ public:
             on_removed({0, m_items.size() - 1});
         }
 
-        if (m_source_list) {
+        if (m_source_list.is_valid()) {
             for (size_t index = 0; index < m_source_list->size(); ++index) {
                 on_inserted(m_source_list->at(index), index);
             }
@@ -110,13 +117,30 @@ public:
 
     void set_source_list(Biz::IObservableList<Data>* source_list)
     {
+        set_source_list(Biz::WeakerPointer<Biz::IObservableList<Data>>{source_list});
+    }
+
+    template <
+        typename Derived,
+        typename = std::enable_if_t<std::is_base_of_v<Biz::IObservableList<Data>, Derived>>>
+    void set_source_list(const std::weak_ptr<Derived>& source_list)
+    {
+        set_source_list(
+            Biz::WeakerPointer<Biz::IObservableList<Data>>{
+                std::static_pointer_cast<Biz::IObservableList<Data>>(source_list.lock())
+            }
+        );
+    }
+
+    void set_source_list(const Biz::WeakerPointer<Biz::IObservableList<Data>>& source_list)
+    {
         if (m_source_list != source_list) {
-            if (m_source_list) {
+            if (m_source_list.is_valid()) {
                 m_source_list->template remove_listener<Biz::IListObserver<Data>>(this);
             }
 
             m_source_list = source_list;
-            if (m_source_list) {
+            if (m_source_list.get()) {
                 m_source_list->template add_listener<Biz::IListObserver<Data>>(this);
             }
 
@@ -134,7 +158,7 @@ private:
     }
 
 private:
-    Biz::IObservableList<Data>* m_source_list = nullptr;
+    Biz::WeakerPointer<Biz::IObservableList<Data>> m_source_list;
     ViewFactoryT m_factory;
 
     Items m_items;

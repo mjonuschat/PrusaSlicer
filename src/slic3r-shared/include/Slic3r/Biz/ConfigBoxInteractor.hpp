@@ -10,20 +10,44 @@ namespace Slic3r::Biz {
 
 class PresetInteractor;
 
+/**
+ * @brief The ConfigBoxInteractor class acts as Wrapper around ConfigBox
+ * and provides IObservableList functionality.
+ * @warning All set_value has to go through this Interactor, otherwise
+ * there is a high chance of introducing desync.
+ */
 class ConfigBoxInteractor
 {
 public:
-    ConfigBoxObservableList& config_box_list();
+    class SetAccessor
+    {
+    public:
+        void set_source(
+            std::weak_ptr<ConfigBoxObservableList> config_box_list,
+            std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list
+        );
 
-    ConfigBoxOverridesObservableList& config_box_overrides_list();
+        void set_value(const std::string& key, const Domain::ConfigValue& value);
 
-    void set_value(const std::string& key, const Domain::ConfigValue& value);
+    private:
+        std::weak_ptr<ConfigBoxObservableList> m_config_box_list;
+        std::weak_ptr<ConfigBoxOverridesObservableList> m_config_box_overrides_list;
+    };
+
+    ConfigBoxInteractor();
+    explicit ConfigBoxInteractor(SetAccessor& set_accessor, Domain::ConfigBox* config_box);
+
+    std::weak_ptr<ConfigBoxObservableList> config_box_list();
+
+    std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list();
 
     void set_config_box(Domain::ConfigBox* config_box);
 
 private:
-    ConfigBoxObservableList m_config_box_list;
-    ConfigBoxOverridesObservableList m_config_box_overrides_list;
+    // These shared_ptrs should not be shared to anywhere, only pass weak_ptrs
+    // TODO: Implement a suitable container class for it.
+    std::shared_ptr<ConfigBoxObservableList> m_config_box_list;
+    std::shared_ptr<ConfigBoxOverridesObservableList> m_config_box_overrides_list;
 };
 
 } // namespace Slic3r::Biz

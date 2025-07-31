@@ -60,6 +60,9 @@ public:
     Position preferred_position() const;
     void set_preferred_position(Position preferred_position);
 
+    /**
+     * @warning may return null if Popup was never opened
+     */
     RootItem* get_or_find_root_item();
     void set_root_item(RootItem* root_item);
 

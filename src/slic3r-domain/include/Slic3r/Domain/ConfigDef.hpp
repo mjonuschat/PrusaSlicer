@@ -87,6 +87,7 @@ struct ConfigItemDef
         Supports,
         Hollowing,
         Notes,
+        MaterialPrintingProfile
     };
 
     static std::string translate_category(Category category);

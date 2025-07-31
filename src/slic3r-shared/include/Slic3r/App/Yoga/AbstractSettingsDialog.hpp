@@ -46,17 +46,17 @@ protected:
         Yoga::StackLayout* pages_stack_layout = nullptr;
     };
 
-    ScrollArea* emplace_stack_page();
-
     void on_tab_selected(int current_index) override;
 
     Tab* append_tab(const std::string& tab);
+    void remove_tab(size_t index);
 
 protected:
     std::vector<std::unique_ptr<Tab>> m_tabs;
     Item* m_footer                  = nullptr;
     Tab* m_current_tab              = nullptr;
     Yoga::StackLayout* m_stack_tabs = nullptr;
+    bool m_remove_in_progress        = false;
 };
 
 } // namespace Slic3r::App::Yoga

@@ -7,7 +7,6 @@
 #include "Slic3r/App/Yoga/StackLayout.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/App/Yoga/ScrollArea.hpp"
 
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::App::Render;
@@ -92,27 +91,37 @@ void AbstractSettingsDialog::emplace_subcategory(
     }
 }
 
-ScrollArea* AbstractSettingsDialog::emplace_stack_page()
-{
-    ScrollArea* stacked_page = m_current_tab->pages_stack_layout->emplace_back<ScrollArea>();
-    stacked_page->set_orientation(Orientation::Vertical);
-    stacked_page->set_flex_grow(1);
-    stacked_page->set_min_size({0, 100});
-    stacked_page->set_padding(20);
-
-    return stacked_page;
-}
-
 void AbstractSettingsDialog::on_tab_selected(int current_index)
 {
-    m_current_tab = m_tabs.at(current_index).get();
-    m_stack_tabs->set_current_index(current_index);
+    if (m_remove_in_progress) {
+        return;
+    }
+
+    if (!m_tabs.empty()) {
+        m_current_tab = m_tabs.at(current_index).get();
+        m_stack_tabs->set_current_index(current_index);
+    } else {
+        m_current_tab = nullptr;
+    }
+}
+
+void AbstractSettingsDialog::remove_tab(size_t index)
+{
+    Tab* tab_to_delete = m_tabs.at(index).get();
+
+    m_remove_in_progress = true;
+    m_stack_tabs->remove(m_stack_tabs->get_item(index));
+    m_tabs.erase(m_tabs.cbegin() + index);
+    Dialog::remove_tab(index);
+    m_remove_in_progress = false;
+
+    if (m_current_tab == tab_to_delete && !m_tabs.empty()) {
+        set_current_tab(0);
+    }
 }
 
 AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::string& tab)
 {
-    Dialog::append_tab(tab);
-
     Item* tab_item = m_stack_tabs->emplace_back<Item>();
     tab_item->set_orientation(Orientation::Horizontal);
 
@@ -142,8 +151,10 @@ AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::strin
 
     m_tabs.emplace_back(std::make_unique<Tab>(page_list_view, pages_stack_layout));
 
-    if (!m_current_tab) {
-        m_current_tab = m_tabs.back().get();
+    Dialog::append_tab(tab);
+
+    if (m_tabs.size() == 1) {
+        set_current_tab(0);
     }
 
     return m_tabs.back().get();

@@ -14,19 +14,33 @@
 namespace Slic3r::App::Yoga {
 class Text;
 class Rectangle;
-}
+} // namespace Slic3r::App::Yoga
 
 namespace Slic3r::Biz {
 class ConfigBoxInteractor;
 } // namespace Slic3r::Biz
 
+namespace Slic3r::Biz::Preset {
+class PresetInteractor;
+} // namespace Slic3r::Biz::Preset
+
 namespace Slic3r::App {
 
 class ConfigSubcategoryItem : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
 {
-    using ConfigRowListView = Yoga::ListView<ConfigRowItem, Domain::ConfigItem>;
+    using ConfigRowListView = Yoga::ListView<
+        ConfigRowItem,
+        Domain::ConfigItem,
+        Yoga::ViewFactory<ConfigRowItem, Domain::ConfigItem, Biz::Preset::PresetInteractor&>>;
+
 public:
-    ConfigSubcategoryItem(size_t index, const Domain::ConfigItem& data, Biz::ConfigBoxInteractor& cbi);
+    ConfigSubcategoryItem(
+        size_t index,
+        const Domain::ConfigItem& data,
+        Biz::Preset::PresetInteractor& preset_interactor,
+        Biz::ConfigBoxInteractor& cbi
+    );
+    ~ConfigSubcategoryItem();
 
 private:
     void on_data_update() override;
@@ -35,6 +49,7 @@ private:
 
 private:
     Biz::ConfigBoxInteractor& m_cbi;
+    Biz::Preset::PresetInteractor& m_preset_interactor;
 
     ConfigRowListView* m_rows_list_view{nullptr};
     Biz::ObservableListSortFilter<Domain::ConfigItem> m_rows_filter_list;

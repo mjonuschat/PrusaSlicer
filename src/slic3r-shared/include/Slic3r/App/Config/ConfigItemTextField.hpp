@@ -7,16 +7,29 @@
 #include "Slic3r/Biz/DataObserver.hpp"
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/App/Yoga/InputTextField.hpp"
+#include "Slic3r/App/Yoga/Validator.hpp"
+
+namespace Slic3r::Biz::Preset {
+class PresetInteractor;
+} // namespace Slic3r::Biz::Preset
 
 namespace Slic3r::App {
 
-class ConfigItemTextField : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::InputTextField {
+class ConfigItemTextField : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::InputTextField
+{
 public:
-
-    ConfigItemTextField(size_t index, const Domain::ConfigItem& data);
+    ConfigItemTextField(
+        size_t index,
+        const Domain::ConfigItem& data,
+        Biz::Preset::PresetInteractor& preset_interactor
+    );
 
 protected:
     void on_data_update() override;
+
+private:
+    Biz::Preset::PresetInteractor& m_preset_interactor;
+    Yoga::Passthrough<Yoga::DoubleValidator> m_validator;
 };
 
-}
+} // namespace Slic3r::App

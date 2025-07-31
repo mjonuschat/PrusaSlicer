@@ -13,22 +13,46 @@ template <class SourceData, class TargetData>
 class ObservableListTransformer : public IObservableList<TargetData>, public IListObserver<SourceData>
 {
 public:
+    virtual ~ObservableListTransformer()
+    {
+        if (m_source_model.is_valid()) {
+            m_source_model->template remove_listener<Biz::IListObserver<SourceData>>(this);
+        }
+    }
+
     using TransformFn = std::function<TargetData(const SourceData& source_data)>;
 
     IObservableList<SourceData>* source_model() const
     {
-        return m_source_model;
+        return m_source_model.get();
     }
 
     void set_source_model(IObservableList<SourceData>* source_model)
     {
+        set_source_model(WeakerPointer<IObservableList<SourceData>>{source_model});
+    }
+
+    template <
+        typename Derived,
+        typename = std::enable_if_t<std::is_base_of_v<IObservableList<SourceData>, Derived>>>
+    void set_source_model(const std::weak_ptr<Derived>& source_model)
+    {
+        set_source_model(
+            WeakerPointer<IObservableList<SourceData>>{
+                std::static_pointer_cast<IObservableList<SourceData>>(source_model.lock())
+            }
+        );
+    }
+
+    void set_source_model(const WeakerPointer<IObservableList<SourceData>>& source_model)
+    {
         if (m_source_model != source_model) {
-            if (m_source_model) {
+            if (m_source_model.is_valid()) {
                 m_source_model->template remove_listener<Biz::IListObserver<SourceData>>(this);
             }
 
             m_source_model = source_model;
-            if (m_source_model) {
+            if (m_source_model.is_valid()) {
                 m_source_model->template add_listener<Biz::IListObserver<SourceData>>(this);
             }
 
@@ -80,7 +104,7 @@ public:
 
     void on_updated(const IndexRange& index_range) override
     {
-        if (m_transform_fn && m_source_model) {
+        if (m_transform_fn && m_source_model.is_valid()) {
             for (size_t i = index_range.from; i < index_range.to; ++i) {
                 m_transformed_items[i] = m_transform_fn(m_source_model->at(i));
             }
@@ -95,7 +119,7 @@ public:
     {
         m_transformed_items.clear();
 
-        if (m_transform_fn && m_source_model) {
+        if (m_transform_fn && m_source_model.is_valid()) {
             const size_t source_size = m_source_model->size();
             m_transformed_items.reserve(source_size);
             for (size_t i = 0; i < source_size; ++i) {
@@ -135,7 +159,7 @@ public:
 
 private:
     TransformFn m_transform_fn;
-    IObservableList<SourceData>* m_source_model{nullptr};
+    WeakerPointer<IObservableList<SourceData>> m_source_model;
     std::vector<TargetData> m_transformed_items;
 };
 

@@ -5,28 +5,38 @@
 #include "Slic3r/App/Config/ConfigItemSpinBox.hpp"
 
 #include "Slic3r/App/Yoga/Validator.hpp"
-
-#include <fmt/format.h>
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-ConfigItemSpinBox::ConfigItemSpinBox(size_t index, const Domain::ConfigItem& data) :
+ConfigItemSpinBox::ConfigItemSpinBox(
+    size_t index,
+    const Domain::ConfigItem& data,
+    Biz::Preset::PresetInteractor& preset_interactor
+) :
     Biz::DataObserver<Domain::ConfigItem>(index, data),
     InputTextWithSpin(
         std::make_unique<IntValidator>(
             data.def().min.value_or(std::numeric_limits<int>::min()),
             data.def().max.value_or(std::numeric_limits<int>::max())
         )
-    )
+    ),
+    m_preset_interactor(preset_interactor)
 {
+    m_value_validator = dynamic_cast<IntValidator*>(validator());
+
     on_data_update();
+
+    callbacks().text_edited = [this]() {
+        m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{m_value_validator->value()});
+    };
 }
 
 void ConfigItemSpinBox::on_data_update()
 {
-    set_text(fmt::format("{}", m_state->get<int>()));
+    set_text(std::to_string(m_state->get<int>()));
 }
 
 } // namespace Slic3r::App

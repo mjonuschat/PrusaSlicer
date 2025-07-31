@@ -104,8 +104,11 @@ endif ()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     add_compile_options(
+        # Nikita 31.7.2025: I'm turning this off, the compilation works fine and this option has made clang-tidy unusable, because
+        # compile_commands.json contained this option which is not recognized by Clang
+        # Previous Text:
         # Adding -fext-numeric-literals to enable GCC extensions on definitions of quad float literals, which are required by Boost.
-        -fext-numeric-literals
+        # -fext-numeric-literals
 
         #GCC generates loads of -Wunknown-pragmas when compiling igl. The fix is not easy due to a bug in gcc, see
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66943 or

@@ -22,6 +22,7 @@ class PhysicalPrinterSettingsDialog : public Yoga::Dialog
 {
 public:
     PhysicalPrinterSettingsDialog(PrinterAddDialog* printer_add_dialog);
+    ~PhysicalPrinterSettingsDialog();
 
 private:
     void create_page_list();

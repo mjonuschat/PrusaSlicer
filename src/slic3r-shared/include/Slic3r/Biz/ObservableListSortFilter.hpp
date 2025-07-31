@@ -24,6 +24,13 @@ public:
     using SortFn   = std::function<int(const Data& lhs, const Data& rhs)>;
     using GroupByFn = std::function<bool(const Data& item, std::unordered_set<GroupKey>& seen_keys)>;
 
+    virtual ~ObservableListSortFilter()
+    {
+        if (m_source_model.is_valid()) {
+            m_source_model->template remove_listener<Biz::IListObserver<Data>>(this);
+        }
+    }
+
     void set_filter_fn(const FilterFn& filter_fn)
     {
         m_filter_fn = filter_fn;
@@ -67,10 +74,13 @@ public:
 
     void on_updated(const Biz::IndexRange& index_range) override
     {
-        if (m_mapped_indexes.size()) {
-            this->template invoke_listeners<IListObserver<Data>>([&](auto* l) {
-                l->on_updated({0, m_mapped_indexes.size()});
-            });
+        for (size_t index = index_range.from; index < index_range.to; ++index) {
+            IndexMap::const_iterator it = m_index_map.find(index);
+            if (it != m_index_map.cend()) {
+                this->template invoke_listeners<IListObserver<Data>>([it](auto* l) {
+                    l->on_updated(it->second);
+                });
+            }
         }
     }
 
@@ -91,13 +101,28 @@ public:
 
     void set_source_model(IObservableList<Data>* source_model)
     {
+        set_source_model(WeakerPointer<IObservableList<Data>>{source_model});
+    }
+
+    template <typename Derived, typename = std::enable_if_t<std::is_base_of_v<IObservableList<Data>, Derived>>>
+    void set_source_model(const std::weak_ptr<Derived>& source_model)
+    {
+        set_source_model(
+            WeakerPointer<IObservableList<Data>>{
+                std::static_pointer_cast<IObservableList<Data>>(source_model.lock())
+            }
+        );
+    }
+
+    void set_source_model(const WeakerPointer<IObservableList<Data>>& source_model)
+    {
         if (m_source_model != source_model) {
-            if (m_source_model) {
+            if (m_source_model.is_valid()) {
                 m_source_model->template remove_listener<Biz::IListObserver<Data>>(this);
             }
 
             m_source_model = source_model;
-            if (m_source_model) {
+            if (m_source_model.get()) {
                 m_source_model->template add_listener<Biz::IListObserver<Data>>(this);
             }
 
@@ -109,8 +134,9 @@ private:
     void invalidate()
     {
         m_mapped_indexes.clear();
+        m_index_map.clear();
 
-        if (!m_source_model) {
+        if (!m_source_model.is_valid()) {
             this->template invoke_listeners<IListObserver<Data>>([&](auto* l) { l->on_reset(); });
             return;
         }
@@ -143,12 +169,19 @@ private:
             );
         }
 
+        for (size_t mapped_index = 0; mapped_index < m_mapped_indexes.size(); ++mapped_index) {
+            m_index_map[m_mapped_indexes.at(mapped_index)] = mapped_index;
+        }
+
         this->template invoke_listeners<IListObserver<Data>>([&](auto* l) { l->on_reset(); });
     }
 
 private:
-    IObservableList<Data>* m_source_model{nullptr};
+    using IndexMap = std::unordered_map<size_t, size_t>;
+
+    WeakerPointer<IObservableList<Data>> m_source_model{nullptr};
     std::vector<size_t> m_mapped_indexes;
+    IndexMap m_index_map; // <source_index, mapped_index>
 
     FilterFn m_filter_fn;
     SortFn m_sort_fn;

@@ -279,6 +279,12 @@ std::string ComboBox::current_label() const
     return m_editable ? std::string(m_buffer.data()) : m_current_label;
 }
 
+void ComboBox::set_current_label(const std::string &current_label)
+{
+    ASSERT(m_editable);
+    m_current_label = current_label;
+}
+
 int ComboBox::current_index() const
 {
     return m_current_index;

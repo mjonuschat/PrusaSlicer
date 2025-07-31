@@ -89,8 +89,8 @@ struct EvaluatedPreset
     {
         return std::visit(
             overloaded{
-                [](const auto& c) -> ConfigBox& { return c; },
-                [](const std::monostate& c) -> ConfigBox& { PANIC("Unsupported"); },
+                [](auto& c) -> ConfigBox& { return c; },
+                [](std::monostate& c) -> ConfigBox& { PANIC("Unsupported"); },
             },
             values
         );

@@ -8,17 +8,31 @@
 #include "Slic3r/App/Yoga/InputTextWithSpin.hpp"
 #include "Slic3r/Biz/DataObserver.hpp"
 
+namespace Slic3r::Biz::Preset {
+class PresetInteractor;
+} // namespace Slic3r::Biz::Preset
+
+namespace Slic3r::App::Yoga {
+class IntValidator;
+} // namespace Slic3r::App::Yoga
+
 namespace Slic3r::App {
 
 class ConfigItemSpinBox : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::InputTextWithSpin
 {
 public:
-    ConfigItemSpinBox(size_t index, const Domain::ConfigItem& data);
+    ConfigItemSpinBox(
+        size_t index,
+        const Domain::ConfigItem& data,
+        Biz::Preset::PresetInteractor& preset_interactor
+    );
 
 protected:
     void on_data_update() override;
 
 private:
+    Biz::Preset::PresetInteractor& m_preset_interactor;
+    Yoga::IntValidator* m_value_validator{nullptr};
 };
 
 } // namespace Slic3r::App

@@ -60,7 +60,9 @@ PrinterAddDialog::PrinterAddDialog() : Dialog({"Add logical printer", "Add physi
     create_add_physical_printer_page();
 }
 
-PrinterAddDialog::~PrinterAddDialog() {}
+PrinterAddDialog::~PrinterAddDialog() {
+    m_page_list_view->set_source_list(nullptr);
+}
 
 void PrinterAddDialog::on_tab_selected(int current_index)
 {

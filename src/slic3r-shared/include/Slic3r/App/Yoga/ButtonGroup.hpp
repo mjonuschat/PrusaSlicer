@@ -22,6 +22,7 @@ class AbstractButton;
 class ButtonGroup
 {
 public:
+
     struct Callbacks
     {
         std::function<void(AbstractButton*)> action{nullptr};
@@ -33,6 +34,7 @@ public:
      * @warning action and checked_changed callbacks will be overwritten
      */
     ButtonGroup(std::initializer_list<AbstractButton*> initializer_list = {});
+    virtual ~ButtonGroup();
 
     Callbacks& callbacks();
 
@@ -48,6 +50,9 @@ public:
     size_t button_count() const;
 
     const std::set<AbstractButton*>& buttons() const;
+
+    bool always_checked() const;
+    void set_always_checked(bool always_checked);
 
 private:
     void on_button_action(AbstractButton* button);
@@ -65,7 +70,8 @@ private:
 
     Buttons m_buttons;
     AbstractButton* m_checked_button = nullptr;
-    bool m_checked_blocker = false;
+    bool m_checked_blocker           = false;
+    bool m_always_checked = true; ///< if true, at least one button has to be checked at all times
 };
 
 } // namespace Slic3r::App::Yoga

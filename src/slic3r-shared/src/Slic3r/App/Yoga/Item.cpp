@@ -4,7 +4,9 @@
 ///|/
 #include "Slic3r/App/Yoga/Item.hpp"
 
-#include "Slic3r/Assert.hpp"
+#include <Slic3r/Assert.hpp>
+#include <Slic3r/Log.hpp>
+
 #include "Slic3r/App/Render/ImguiRender.hpp"
 #include "Slic3r/App/Yoga/ItemEvents.hpp"
 #include "Slic3r/App/Yoga/Popup.hpp"
@@ -438,11 +440,23 @@ Vec2f Item::get_item_size()
 
 void Item::push_event(std::unique_ptr<Event> event)
 {
+    Item* item_to_push = nullptr;
+
     if (m_parent_popup) {
-        m_parent_popup->get_or_find_root_item()->push_event(std::move(event));
-    } else {
-        ASSERT(m_parent);
+        item_to_push = m_parent_popup->get_or_find_root_item();
+    } else if (m_parent) {
+        item_to_push = m_parent;
+    }
+
+    if (item_to_push) {
+        // Event will be pushed either to parent or directly to RootItem for processing
         m_parent->push_event(std::move(event));
+    } else {
+        // Ignore for now, this may be safe to do, maybe not!
+        SPDLOG_WARN(
+            "ItemEvent {} cannot be pushed",
+            std::to_string(reinterpret_cast<unsigned long long>(event.get()))
+        );
     }
 }
 

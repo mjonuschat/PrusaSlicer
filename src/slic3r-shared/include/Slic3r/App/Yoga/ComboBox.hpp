@@ -26,20 +26,19 @@ public:
     };
 
     explicit ComboBox(const std::string& name = "ComboBox");
-    ComboBox(
-        std::initializer_list<std::string> initializer_list = {},
-        const std::string& name = "ComboBox"
-    );
+    ComboBox(std::initializer_list<std::string> initializer_list = {}, const std::string& name = "ComboBox");
 
-    template<typename Container>
+    template <typename Container>
     ComboBox(Container&& data, const std::string& name) : ComboBox(name)
     {
         m_items.insert(
-            m_items.end(), std::make_move_iterator(std::begin(data)),
+            m_items.end(),
+            std::make_move_iterator(std::begin(data)),
             std::make_move_iterator(std::end(data))
         );
         set_current_index(0);
     }
+
     ~ComboBox();
 
     void render(Vec2f pos, Vec2f size) override;
@@ -52,6 +51,10 @@ public:
     int current_index() const;
     void set_current_index(int current_index);
     std::string current_label() const;
+    /**
+     * @note this seter can only be used for editable comboboxes, otherwise use set_current_index
+     */
+    void set_current_label(const std::string& current_label);
 
     bool editable() const;
     void set_editable(bool editable);
@@ -83,11 +86,11 @@ private:
      * in order to use std::string
      */
     std::array<char, 2048> m_buffer = {0};
-    int m_current_index = 0;
-    int m_default_index = 0;
+    int m_current_index              = 0;
+    int m_default_index              = 0;
     std::string m_current_label;
     ImGuiComboFlags m_flags = 0;
-    bool m_editable = false;
+    bool m_editable         = false;
     std::unique_ptr<Validator> m_validator;
     bool m_updated = false;
     bool m_hovered = false;

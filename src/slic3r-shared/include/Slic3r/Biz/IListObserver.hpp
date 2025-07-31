@@ -16,39 +16,109 @@ namespace Slic3r::Biz {
 struct IndexRange
 {
     IndexRange() = default;
-    IndexRange(size_t index) : IndexRange(index, index) {}
-    IndexRange(size_t from, size_t to) : from(from), to(to) { ASSERT(from <= to); }
 
-    bool is_valid() const { return from <= to; }
+    IndexRange(size_t index) : IndexRange(index, index) {}
+
+    IndexRange(size_t from, size_t to) : from(from), to(to)
+    {
+        ASSERT(from <= to);
+    }
+
+    bool is_valid() const
+    {
+        return from <= to;
+    }
 
     size_t from{0};
     size_t to{0};
 };
 
-template<class Data>
+/**
+ * @brief The WeakerPointer class
+ * it essentially acts as a raw Pointer.
+ * Optionally can get weak_ptr and if so the is_valid method can return false
+ * if weak_ptr is already expired.
+ */
+template <class Data>
+class WeakerPointer
+{
+public:
+    WeakerPointer() {}
+
+    WeakerPointer(Data* raw_ptr) : m_ptr(raw_ptr) {}
+
+    WeakerPointer(const std::weak_ptr<Data>& weak_ptr) :
+        m_weak_ptr(weak_ptr),
+        m_ptr(m_weak_ptr->lock().get())
+    {}
+
+    inline bool operator==(Data* other) const
+    {
+        return get() == other;
+    }
+
+    inline bool operator!=(Data* other) const
+    {
+        return !(*this == other);
+    }
+
+    inline bool operator==(const WeakerPointer<Data>& other)
+    {
+        return get() == other.get();
+    }
+
+    inline bool operator!=(const WeakerPointer<Data>& other)
+    {
+        return !(*this == other);
+    }
+
+    Data* operator->() const
+    {
+        return get();
+    }
+
+    Data* get() const
+    {
+        return m_ptr;
+    }
+
+    /**
+     * @return for raw pointer always true, expired property otherwise
+     */
+    bool is_valid() const
+    {
+        return m_weak_ptr.has_value() ? !m_weak_ptr.value().expired() : m_ptr != nullptr;
+    }
+
+private:
+    std::optional<std::weak_ptr<Data>> m_weak_ptr;
+    Data* m_ptr{nullptr};
+};
+
+template <class Data>
 class IListObserver
 {
 public:
     /**
      * @brief on_inserted - Data at index was inserted
      */
-    virtual void on_inserted(const Data& data, size_t index) = 0;
+    virtual void on_inserted(const Data& data, size_t index) {};
     /**
      * @brief on_removed - all Data in range [IndexRange.from, IndexRange.to] were removed
      */
-    virtual void on_removed(const IndexRange& index_range) = 0;
+    virtual void on_removed(const IndexRange& index_range) {};
     /**
      * @brief on_updated - add Data in range [IndexRange.from, IndexRange.to] were updated
      */
-    virtual void on_updated(const IndexRange& index_range) = 0;
+    virtual void on_updated(const IndexRange& index_range) {};
     /**
      * @brief on_reset - all Data is invalid, reconstruct List completely
      */
-    virtual void on_reset() = 0;
+    virtual void on_reset() {};
     /**
      * @brief on_moved - Data from index was moved to to index
      */
-    virtual void on_moved(size_t from, size_t to) = 0;
+    virtual void on_moved(size_t from, size_t to) {};
 };
 
 } // namespace Slic3r::Biz

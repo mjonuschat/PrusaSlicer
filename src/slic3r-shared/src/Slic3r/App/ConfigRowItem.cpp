@@ -17,8 +17,13 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-ConfigRowItem::ConfigRowItem(size_t index, const Domain::ConfigItem& data) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data)
+ConfigRowItem::ConfigRowItem(
+    size_t index,
+    const Domain::ConfigItem& data,
+    Biz::Preset::PresetInteractor& preset_interactor
+) :
+    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    m_preset_interactor(preset_interactor)
 {
     set_flex_shrink(0);
 
@@ -28,18 +33,18 @@ ConfigRowItem::ConfigRowItem(size_t index, const Domain::ConfigItem& data) :
 
     switch (data.def().gui_type) {
     case Slic3r::Domain::ConfigItemDef::GUIType::textfield:
-        m_input = emplace_back<ConfigItemTextField>(index, data);
+        m_input = emplace_back<ConfigItemTextField>(index, data, m_preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::textfields:
-        m_input = emplace_back<ConfigItemTextFields>(index, data);
+        m_input = emplace_back<ConfigItemTextFields>(index, data, m_preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::checkbox:
-        m_input = emplace_back<ConfigItemCheckBox>(index, data);
+        m_input = emplace_back<ConfigItemCheckBox>(index, data, m_preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::f_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::i_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::combobox:
-        m_input = emplace_back<ConfigItemComboBox>(index, data);
+        m_input = emplace_back<ConfigItemComboBox>(index, data, m_preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::points:
         m_input = emplace_back<ConfigItemPoints>(index, data);
@@ -48,7 +53,7 @@ ConfigRowItem::ConfigRowItem(size_t index, const Domain::ConfigItem& data) :
         m_input = emplace_back<ConfigItemColorPicker>(index, data);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinbox:
-        m_input = emplace_back<ConfigItemSpinBox>(index, data);
+        m_input = emplace_back<ConfigItemSpinBox>(index, data, m_preset_interactor);
         break;
     }
 

@@ -12,8 +12,13 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-ConfigItemTextFields::ConfigItemTextFields(size_t index, const Domain::ConfigItem& data) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data)
+ConfigItemTextFields::ConfigItemTextFields(
+    size_t index,
+    const Domain::ConfigItem& data,
+    Biz::Preset::PresetInteractor& preset_interactor
+) :
+    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    m_preset_interactor(preset_interactor)
 {
     set_orientation(Orientation::Horizontal);
     set_gap(5);

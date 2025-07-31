@@ -37,6 +37,7 @@ protected:
     LayoutButton* close_button() const;
     Separator* add_separator();
     LayoutButton* append_tab(const std::string& tab);
+    void remove_tab(size_t index);
 
     virtual void on_tab_selected(int current_index);
 

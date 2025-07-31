@@ -10,6 +10,7 @@
 #include "Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp"
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
+#include "Slic3r/Biz/CBIObservableList.hpp"
 
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 
@@ -182,15 +183,14 @@ public:
 
     ConfigBoxInteractor& printer_cbi();
     ConfigBoxInteractor& print_cbi();
-    BatchObservableList<ConfigBoxInteractor>& material_cbi_list();
-    BatchObservableList<ConfigBoxInteractor>& tool_cbi_list();
+    CBIObservableList& material_cbi_list();
+    CBIObservableList& tool_cbi_list();
 
     void set_item_value(const Domain::ConfigItem& item, const Domain::ConfigValue& value, size_t index = 0);
 
 private:
     friend class LegacyPresetConfigInteractor;
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
-
     PresetInteractorConfigContainerContext& mutable_selected_config_container_context();
 
     Domain::Preset::SelectedPreset& mutable_selected_printer_presets();
@@ -219,16 +219,16 @@ private:
     void fill_printer_presets();
     void fill_print_presets(
         const Domain::Preset::EvaluatedPrinterPreset& selected_printer_ep,
-        const Domain::Preset::SelectedPreset& s
+        Domain::Preset::SelectedPreset& selected_preset
     );
     void fill_tools_presets(
         const Domain::Preset::EvaluatedPrinterPreset& selected_printer_ep,
         const Domain::Preset::EvaluatedPrintPreset& selected_print_ep,
-        const Domain::Preset::SelectedPreset& s
+        Domain::Preset::SelectedPreset& selected_preset
     );
     void fill_materials_presets(
         const Domain::Preset::EvaluatedPrintPreset& selected_print_ep,
-        const Domain::Preset::SelectedPreset& s
+        Domain::Preset::SelectedPreset& selected_preset
     );
 
     void select_legacy_printer_preset(size_t preset_idx);
@@ -249,6 +249,8 @@ private:
     );
 
 private:
+    using SetAccessorMap = std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor>;
+
     Domain::Workbench& m_workbench;
     ListenerList<IBedPresetValueChangedListener> m_bed_preset_value_changed_listeners;
     ListenerList<IBedPresetSwitchedListener> m_bed_preset_switched_listeners;
@@ -263,16 +265,11 @@ private:
 
     ProjectContexts m_project_contexts;
 
-    // All dummy config boxes are here only temporarily
-    Domain::ConfigBox m_dummy_printer_cb;
-    Domain::ConfigBox m_dummy_print_cb;
-    std::vector<Domain::ConfigBox> m_dummy_material_cb;
-    std::vector<Domain::ConfigBox> m_dummy_tool_cb;
-
     ConfigBoxInteractor m_printer_cbi;
     ConfigBoxInteractor m_print_cbi;
-    BatchObservableList<ConfigBoxInteractor> m_material_cbi_list;
-    BatchObservableList<ConfigBoxInteractor> m_tool_cbi_list;
+    CBIObservableList m_material_cbi_list;
+    CBIObservableList m_tool_cbi_list;
+    SetAccessorMap m_cbi_accessors; ///< Contains All SetAccessors currently in use
 
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
 };

@@ -19,7 +19,7 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(Biz::ProjectInterac
     m_cbi(project_interactor.preset_interactor().printer_cbi())
 {
     m_category_page_transformer.set_source_model(&m_observable_categorizer);
-    m_observable_categorizer.set_source_model(&m_cbi.config_box_list());
+    m_observable_categorizer.set_source_model(m_cbi.config_box_list());
 
     m_current_tab->page_list_view->set_source_list(&m_category_page_transformer);
 
@@ -30,6 +30,7 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(Biz::ProjectInterac
     for (size_t i = 0; i < m_category_page_transformer.size(); ++i) {
         m_current_tab->pages_stack_layout->emplace_back<ConfigSubcategoryListView>(
             m_observable_categorizer.at(i).def().category,
+            m_project_interactor.preset_interactor(),
             m_cbi
         );
     }

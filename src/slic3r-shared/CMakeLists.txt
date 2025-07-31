@@ -416,6 +416,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/IListObserver.hpp
         include/Slic3r/Biz/DataObserver.hpp
         include/Slic3r/Biz/ConfigBoxObservableList.hpp
+        include/Slic3r/Biz/CBIObservableList.hpp
+        src/Slic3r/Biz/CBIObservableList.cpp
         src/Slic3r/Biz/ConfigBoxObservableList.cpp
         include/Slic3r/Biz/ConfigBoxInteractor.hpp
         src/Slic3r/Biz/ConfigBoxInteractor.cpp

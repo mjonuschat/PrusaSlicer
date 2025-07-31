@@ -8,6 +8,10 @@
 #include "Slic3r/Biz/DataObserver.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 
+namespace Slic3r::Biz::Preset {
+class PresetInteractor;
+} // namespace Slic3r::Biz::Preset
+
 namespace Slic3r::App::Yoga {
 class InputTextField;
 } // namespace Slic3r::App::Yoga
@@ -17,12 +21,17 @@ namespace Slic3r::App {
 class ConfigItemTextFields : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
 {
 public:
-    ConfigItemTextFields(size_t index, const Domain::ConfigItem& data);
+    ConfigItemTextFields(
+        size_t index,
+        const Domain::ConfigItem& data,
+        Biz::Preset::PresetInteractor& preset_interactor
+    );
 
 protected:
     void on_data_update() override;
 
 private:
+    Biz::Preset::PresetInteractor& m_preset_interactor;
     std::vector<Yoga::InputTextField*> m_fields;
 };
 
