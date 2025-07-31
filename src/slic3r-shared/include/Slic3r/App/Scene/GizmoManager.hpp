@@ -34,7 +34,7 @@ public:
         Render::Device& device,
         ISceneProvider& scene_provider,
         Biz::ProjectInteractor& project_interactor,
-        std::unique_ptr<MouseDragDetector> m_mouse_drag_detector
+        std::unique_ptr<MouseDragDetector> mouse_drag_detector
     );
 
     void on_scene_mouse_event(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
@@ -46,6 +46,7 @@ public:
     {
         m_base_gizmos.emplace_back(std::make_unique<G>(args...));
         auto& ptr = m_base_gizmos.back();
+        m_mouse_drag_detector->add_listener(ptr.get());
         ptr->register_commands(m_command_registry);
         return *static_cast<G*>(ptr.get());
     }
@@ -55,6 +56,7 @@ public:
     {
         m_tool_gizmos.emplace_back(std::make_unique<G>(args...));
         auto& ptr = m_tool_gizmos.back();
+        m_mouse_drag_detector->add_listener(ptr.get());
         ptr->register_commands(m_command_registry);
         return *static_cast<G*>(ptr.get());
     }

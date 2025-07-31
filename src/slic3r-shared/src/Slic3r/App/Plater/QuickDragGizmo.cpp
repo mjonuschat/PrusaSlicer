@@ -8,22 +8,12 @@ using Slic3r::Domain::Vec3d;
 namespace Slic3r::App::Plater {
 QuickDragGizmo::QuickDragGizmo(
     Biz::Scene::SceneInteractor& scene_interactor,
-    Scene::ISceneProvider& scene_provider,
-    Scene::IMouseDragCallbacks& drag_callbacks
+    Scene::ISceneProvider& scene_provider
 ) :
     m_scene_interactor(scene_interactor),
     m_scene_provider(scene_provider),
     m_selection_handler(scene_interactor)
-{
-    drag_callbacks.add_on_start(this, [this](const Scene::GizmoEventContext& ctx) {
-        return on_drag_start(ctx);
-    });
-    drag_callbacks.add_on_drag(this, [this](const Scene::GizmoEventContext& ctx) {
-        return on_draging(ctx);
-    });
-    drag_callbacks.add_on_finish(this, [this]() { on_drag_finish(); });
-    drag_callbacks.add_on_cancel(this, [this]() { on_drag_cancel(); });
-}
+{}
 
 Scene::GizmoActivationState QuickDragGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
@@ -51,7 +41,7 @@ bool QuickDragGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
     return true;
 }
 
-bool QuickDragGizmo::on_draging(const Scene::GizmoEventContext& ctx)
+bool QuickDragGizmo::on_dragging(const Scene::GizmoEventContext& ctx)
 {
     Vec3d p;
     if (!mouse_pos(ctx.screen_mouse_x(), ctx.screen_mouse_y(), p)) {

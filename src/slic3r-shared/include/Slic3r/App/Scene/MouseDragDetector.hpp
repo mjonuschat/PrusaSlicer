@@ -2,11 +2,18 @@
 #include <chrono>
 #include <optional>
 #include <string>
+#include <functional>
 #include <Slic3r/App/Platform/MouseEvent.hpp>
 #include <Slic3r/App/Scene/Scene.hpp> // NodePickResults
 #include <Slic3r/App/Scene/Ray.hpp>
 #include <Slic3r/App/Scene/GizmoEventContext.hpp>
 #include "Slic3r/App/Scene/IGizmo.hpp"
+
+/// <summary>
+/// Way to unify drag conditions(time or offset).
+/// On detection of start dragging (MouseEvent::Move)
+/// is selected first gizmo from active list to process dragging operation(dragging + finish(cancel) evenet)
+/// </summary>
 
 namespace Slic3r::App::Scene {
 /// <summary>
@@ -20,45 +27,14 @@ enum class DragState
 };
 std::string to_string(DragState state);
 
-/// <summary>
-/// Keep information about place of drag start
-/// </summary>
-struct DragStart
+class IMouseDrag
 {
-    // NOTE: GizmoEventContext contain only reference on mouse event
-    Platform::MouseEvent mouse_event;
-    Ray pick_ray;
-    NodePickResults pick_results;
-    Render::ScreenInfo screen_info; // need make a copy
-
-    DragStart(const GizmoEventContext& ctx) :
-        mouse_event(ctx.mouse_event()),
-        pick_ray(ctx.pick_ray()),
-        pick_results(ctx.pick_results()),
-        screen_info(ctx.screen_info())
-    {}
-
-    const GizmoEventContext create_ctx() const
-    {
-        return GizmoEventContext{mouse_event, pick_ray, pick_results, screen_info};
-    }
-};
-
-class IMouseDragCallbacks{
 public:
-    virtual ~IMouseDragCallbacks() = default;
-    
-    using OnStart = std::function<bool(const GizmoEventContext&)>;
-    virtual void add_on_start(IGizmo* gizmo, OnStart callback) = 0;
-    
-    using OnDrag = std::function<bool(const GizmoEventContext&)>;
-    virtual void add_on_drag(IGizmo* gizmo, OnDrag callback) = 0;
-
-    using OnFinish = std::function<void()>;
-    virtual void add_on_finish(IGizmo* gizmo, OnFinish callback) = 0;
-
-    using OnCancel = std::function<void()>;
-    virtual void add_on_cancel(IGizmo* gizmo, OnCancel callback) = 0;
+    virtual ~IMouseDrag()                                = default;
+    virtual bool on_drag_start(const GizmoEventContext&) = 0;
+    virtual bool on_dragging(const GizmoEventContext&)   = 0;
+    virtual void on_drag_finish()                        = 0;
+    virtual void on_drag_cancel()                        = 0;
 };
 
 /// <summary>
@@ -66,27 +42,29 @@ public:
 /// Sniff mouse events from OS provide Drag object
 /// NOTE: Consumers get only const reference to this object
 /// </summary>
-class MouseDragDetector: public IMouseDragCallbacks
+class MouseDragDetector
 {
 public:
     MouseDragDetector(int min_time_span, int min_offset);
-    
-    // overrides of the IMouseDragCallbacks
-    void add_on_start(IGizmo* gizmo, IMouseDragCallbacks::OnStart callback) override;
-    void add_on_drag(IGizmo* gizmo, IMouseDragCallbacks::OnDrag callback) override;
-    void add_on_finish(IGizmo* gizmo, IMouseDragCallbacks::OnFinish callback) override;
-    void add_on_cancel(IGizmo* gizmo, IMouseDragCallbacks::OnCancel callback) override;
+
+    /// <summary>
+    /// Internaly detect if gizmo implement IMouseDrag interface
+    /// When yes add to sorted listener list
+    /// </summary>
+    /// <param name="gizmo"></param>
+    void add_listener(IGizmo* gizmo);
+    void rem_listener(IGizmo* gizmo);
 
     /// <summary>
     /// Change state by mouse events to detect draging by mouse events
     /// </summary>
     /// <param name="ctx">Mouse event + casted ray</param>
     /// <param name="gizmos">Current active gizmos</param>
-    bool mouse_event(const GizmoEventContext& ctx, const std::vector<IGizmo*>& gizmos);
+    using GetActiveGizmos = std::function<std::vector<IGizmo*>()>;
+    bool mouse_event(const GizmoEventContext& ctx, GetActiveGizmos get_gizmos);
 
     /// <summary>
     /// Way to cancel draging e.g. on ESC key
-    /// But state is no changed in mouse event
     /// </summary>
     void cancel_drag_event();
 
@@ -105,18 +83,41 @@ private:
     bool m_right_down  = false;
     bool m_middle_down = false;
 
+    /// <summary>
+    /// Keep information about place of drag start
+    /// </summary>
+    struct DragStart
+    {
+        // NOTE: GizmoEventContext contain only reference on mouse event
+        Platform::MouseEvent mouse_event;
+        Ray pick_ray;
+        NodePickResults pick_results;
+        Render::ScreenInfo screen_info; // need make a copy
+
+        DragStart(const GizmoEventContext& ctx) :
+            mouse_event(ctx.mouse_event()),
+            pick_ray(ctx.pick_ray()),
+            pick_results(ctx.pick_results()),
+            screen_info(ctx.screen_info())
+        {}
+
+        const GizmoEventContext create_ctx() const
+        {
+            return GizmoEventContext{mouse_event, pick_ray, pick_results, screen_info};
+        }
+    };
+
     // keep state of left mouse button drag
     DragState m_state = DragState::NoDrag;
     // keep data from drag start
     std::optional<DragStart> m_start = std::nullopt;
 
     // set on_start, discard on finish OR cancel
-    const IGizmo* m_dragging_gizmo = nullptr;
+    IMouseDrag* m_dragging = nullptr;
 
-    // sorted vector by pointer on IGizmo*
-    std::vector<std::pair<IGizmo*, IMouseDragCallbacks::OnStart>> m_on_starts;
-    std::vector<std::pair<IGizmo*, IMouseDragCallbacks::OnDrag>> m_on_drags;
-    std::vector<std::pair<IGizmo*, IMouseDragCallbacks::OnFinish>> m_on_finishes;
-    std::vector<std::pair<IGizmo*, IMouseDragCallbacks::OnCancel>> m_on_cancels;
+    using Listener  = std::pair<IGizmo*, IMouseDrag*>;
+    using Listeners = std::vector<Listener>;
+    // sorted by IGizmo pointer
+    Listeners m_listeners;
 };
 } // namespace Slic3r::App::Scene

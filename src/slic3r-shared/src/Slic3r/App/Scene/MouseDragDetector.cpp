@@ -32,79 +32,67 @@ MouseDragDetector::MouseDragDetector(int min_time_span, int min_offset) :
     m_min_offset(min_offset)
 {}
 
-namespace {
-template<class Callback>
-void add_callback(std::vector<std::pair<IGizmo*, Callback>>& callbacks, IGizmo* gizmo, Callback&& callback) {
-    // sorted insert
-    auto pred = [](IGizmo* gizmo, const std::pair<IGizmo*, Callback>& c) { return gizmo < c.first; };
-    auto it = std::upper_bound(callbacks.begin(), callbacks.end(), gizmo, pred);
-    if (it == callbacks.end()) {
-        if (callback != nullptr) // sorted insert
-            callbacks.emplace_back(gizmo, std::move(callback));
-    } else if (it->first == gizmo) {
-        if (callback == nullptr) {
-            // free callback
-            callbacks.erase(it);
-        } else {
-            // override callback for gizmo
-            it->second = std::move(callback);
-        }
-    } else {
-        // sorted insert
-        callbacks.insert(it, std::pair<IGizmo*, Callback>(gizmo, callback));
-    }
-}
-}
-
-void MouseDragDetector::add_on_start(IGizmo* gizmo, IMouseDragCallbacks::OnStart callback) { add_callback(m_on_starts, gizmo, std::move(callback)); }
-void MouseDragDetector::add_on_drag(IGizmo* gizmo, IMouseDragCallbacks::OnDrag callback) { add_callback(m_on_drags, gizmo, std::move(callback)); }
-void MouseDragDetector::add_on_finish(IGizmo* gizmo, IMouseDragCallbacks::OnFinish callback) { add_callback(m_on_finishes, gizmo, std::move(callback)); }
-void MouseDragDetector::add_on_cancel(IGizmo* gizmo, IMouseDragCallbacks::OnCancel callback) { add_callback(m_on_cancels, gizmo, std::move(callback)); }
-
-bool MouseDragDetector::on_start(const std::vector<IGizmo*>& gizmos) {
-    GizmoEventContext ctx = m_start->create_ctx();
-    auto pred = [](const std::pair<IGizmo*, IMouseDragCallbacks::OnStart>& c, const IGizmo* gizmo) { return gizmo < c.first; };
-    for (const IGizmo* gizmo : gizmos) {
-        auto it = std::lower_bound(m_on_starts.cbegin(), m_on_starts.cend(), gizmo, pred);
-        if (it != m_on_starts.cend() && 
-            it->first == gizmo &&
-            it->second(ctx)) {
-            // gizmo consume drag
-            m_dragging_gizmo = gizmo;
-            return true; 
-        }
-    }
-    m_dragging_gizmo = nullptr;
-    return false;
-}
-
-namespace {
-bool call_dragging(const GizmoEventContext& ctx, const IGizmo* gizmo, const std::vector<std::pair<IGizmo*, IMouseDragCallbacks::OnDrag>>& on_drags) {
-    if (gizmo == nullptr)
-        return false;
-
-    auto pred = [](const std::pair<IGizmo*, IMouseDragCallbacks::OnDrag>& c, const IGizmo* gizmo) { return gizmo < c.first; };
-    auto it = std::lower_bound(on_drags.begin(), on_drags.end(), gizmo, pred);
-    if (it != on_drags.end() && it->first == gizmo) {
-        it->second(ctx);
-        return true;
-    }
-    return false;
-}
-void call_finish(const IGizmo* gizmo, const std::vector<std::pair<IGizmo*, IMouseDragCallbacks::OnFinish>>& on_finishes) {
+void MouseDragDetector::add_listener(IGizmo* gizmo)
+{
     if (gizmo == nullptr)
         return;
 
-    auto pred = [](const std::pair<IGizmo*, IMouseDragCallbacks::OnFinish>& c, const IGizmo* gizmo) { return gizmo < c.first; };
-    auto it = std::lower_bound(on_finishes.begin(), on_finishes.end(), gizmo, pred);
-    if (it != on_finishes.end() && it->first == gizmo) {
-        it->second();
+    IMouseDrag* drag = dynamic_cast<IMouseDrag*>(gizmo);
+    if (drag == nullptr)
+        return;
+
+    auto pred = [](const Listener& l, IGizmo* gizmo) {
+        return gizmo < l.first;
+    };
+    auto it = std::lower_bound(m_listeners.begin(), m_listeners.end(), gizmo, pred);
+    if (it == m_listeners.end()) {
+        m_listeners.emplace_back(gizmo, drag);
+    } else if (it->first == gizmo) {
+        // already registred
+        return;
+    } else {
+        // sorted insert
+        m_listeners.insert(it, Listener{gizmo, drag});
     }
 }
 
+void MouseDragDetector::rem_listener(IGizmo* gizmo)
+{
+    if (gizmo == nullptr)
+        return;
+    auto pred = [](const Listener& l, IGizmo* gizmo) {
+        return gizmo < l.first;
+    };
+    auto it = std::lower_bound(m_listeners.begin(), m_listeners.end(), gizmo, pred);
+    if (it != m_listeners.end() && it->first == gizmo) {
+        IMouseDrag* drag = dynamic_cast<IMouseDrag*>(gizmo);
+        if (drag != nullptr && m_dragging == drag) {
+            cancel_drag_event();
+            m_dragging = nullptr;
+        }
+        m_listeners.erase(it);
+    }
 }
 
-bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, const std::vector<IGizmo*>& gizmos)
+bool MouseDragDetector::on_start(const std::vector<IGizmo*>& gizmos)
+{
+    GizmoEventContext ctx = m_start->create_ctx();
+    auto pred             = [](const Listener& l, const IGizmo* gizmo) {
+        return gizmo < l.first;
+    };
+    for (const IGizmo* gizmo : gizmos) {
+        auto it = std::lower_bound(m_listeners.begin(), m_listeners.end(), gizmo, pred);
+        if (it != m_listeners.end() && it->first == gizmo && it->second->on_drag_start(ctx)) {
+            // gizmo consume drag
+            m_dragging = it->second;
+            return true;
+        }
+    }
+    m_dragging = nullptr;
+    return false;
+}
+
+bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, GetActiveGizmos get_gizmos)
 {
     const Platform::MouseEvent& me = ctx.mouse_event();
     switch (me.type()) {
@@ -113,7 +101,14 @@ bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, const std::vec
         case DragState::NoDrag:
             return false;
         case DragState::Dragging:
-            return call_dragging(ctx, m_dragging_gizmo, m_on_drags);
+            if (m_dragging == nullptr)
+                return false;
+            if (!m_dragging->on_dragging(ctx)) {
+                // stop dragging inside on_drag event
+                m_dragging = nullptr;
+                return false;
+            }
+            return true;
         case DragState::StartWeWillSee:
             if (!m_start.has_value()) { // For sure
                 log_weird_state("Missing start data");
@@ -121,7 +116,8 @@ bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, const std::vec
             } else if (is_over_span(m_start_time, m_min_time_span)
                        || is_over_offset(m_start->mouse_event, me, m_min_offset))
             {
-                m_state = DragState::Dragging;
+                m_state                     = DragState::Dragging;
+                std::vector<IGizmo*> gizmos = get_gizmos();
                 return on_start(gizmos);
             }
             return false;
@@ -164,14 +160,16 @@ bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, const std::vec
         case Platform::MouseButton::Left:
             switch (m_state) {
             case DragState::Dragging:
-                call_finish(m_dragging_gizmo, m_on_finishes);
                 m_state = DragState::NoDrag;
-                break;
+                if (m_dragging != nullptr) {
+                    m_dragging->on_drag_finish();
+                    return true;
+                }
+                return false;
             case DragState::StartWeWillSee:
                 m_state = DragState::NoDrag;
-                break;
-            case DragState::NoDrag:
-                log_weird_state("Button up before down.");
+                // case DragState::NoDrag: no action
+                // it can appear after external cancel dragging(e.g. ESC)
             }
             return false;
         case Platform::MouseButton::Right:
@@ -204,7 +202,7 @@ bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, const std::vec
         // NOTE: When true but in reality false it will be blocking next drag
         m_right_down  = false;
         m_middle_down = false;
-        break;
+        return false;
     case Platform::MouseEvent::Type::Wheel:
         [[fallthrough]];
     case Platform::MouseEvent::Type::Leave:
@@ -216,27 +214,14 @@ bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, const std::vec
     return false;
 }
 
-namespace {
-void call_cancel(const IGizmo* gizmo, const std::vector<std::pair<IGizmo*, IMouseDragCallbacks::OnCancel>>& on_cancels) {
-    if (gizmo == nullptr)
-        return;
-    
-    auto pred = [](const std::pair<IGizmo*, IMouseDragCallbacks::OnCancel>& c, const IGizmo* gizmo) { return gizmo < c.first; };
-    auto it = std::lower_bound(on_cancels.begin(), on_cancels.end(), gizmo, pred);
-    if (it != on_cancels.end() && it->first == gizmo) {
-        it->second();
-    }
-}
-}
-
-
 void MouseDragDetector::cancel_drag_event()
 {
     switch (m_state) {
     case DragState::NoDrag:
         return;
     case DragState::Dragging:
-        call_cancel(m_dragging_gizmo, m_on_cancels);
+        if (m_dragging != nullptr)
+            m_dragging->on_drag_cancel();
         m_state = DragState::NoDrag;
         return;
     case DragState::StartWeWillSee:

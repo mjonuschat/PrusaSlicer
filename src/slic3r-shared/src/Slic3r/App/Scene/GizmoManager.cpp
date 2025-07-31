@@ -77,7 +77,7 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
     );
     GizmoEventContext ctx{e, pick_ray, pick_results, screen_info};
     if (m_mouse_drag_detector && 
-        m_mouse_drag_detector->mouse_event(ctx, get_gizmos(m_base_gizmos, p.active_tool)))
+        m_mouse_drag_detector->mouse_event(ctx, [this](){ return get_gizmos(m_base_gizmos, current_context().active_tool); }))
         return;
         
     const bool single_active = p.in_cycle_gizmos.size() == 1;
