@@ -34,7 +34,6 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
             file_path
         )
         .on_result([&](Domain::Project&& project) { add_project(std::move(project)); })
-        .on_exception([](std::exception_ptr eptr) { std::rethrow_exception(eptr); })
         .start();
 }
 

@@ -12,21 +12,23 @@ using namespace std::chrono_literals;
 using std::chrono::high_resolution_clock;
 using std::chrono::seconds;
 using namespace std::chrono_literals;
-using Slic3r::Biz::Platform::JobManager::ProgressTracker;
-using Slic3r::Domain::Percentage;
 using Slic3r::Biz::Platform::JobManager::IJobManagerStatusChangedListener;
 using Slic3r::Biz::Platform::JobManager::JobManagerStatus;
-using Slic3r::Biz::Platform::JobManager::Progress;
 using Slic3r::Biz::Platform::JobManager::JobStatus;
+using Slic3r::Biz::Platform::JobManager::Progress;
+using Slic3r::Biz::Platform::JobManager::ProgressTracker;
+using Slic3r::Domain::Percentage;
 
 struct MyData
 {
     std::unique_ptr<int> data;
 };
 
-struct JobManagerStatusListener: public Slic3r::Biz::Platform::JobManager::IJobManagerStatusChangedListener
+struct JobManagerStatusListener :
+    public Slic3r::Biz::Platform::JobManager::IJobManagerStatusChangedListener
 {
-    void on_job_manager_status_changed(const JobManagerStatus& job_manager_status) override {
+    void on_job_manager_status_changed(const JobManagerStatus& job_manager_status) override
+    {
         REQUIRE(job_manager_status.size() == 1);
         REQUIRE(job_manager_status.contains("test_job"));
         progress.push_back(job_manager_status.at("test_job"));
@@ -37,12 +39,15 @@ struct JobManagerStatusListener: public Slic3r::Biz::Platform::JobManager::IJobM
     std::set<JobStatus> statuses;
 };
 
-struct JobManagerFixture {
-    JobManagerFixture() {
+struct JobManagerFixture
+{
+    JobManagerFixture()
+    {
         job_manager.add_listener<IJobManagerStatusChangedListener>(&listener);
     }
 
-    ~JobManagerFixture() {
+    ~JobManagerFixture()
+    {
         dispatcher.close();
     }
 
@@ -50,11 +55,7 @@ struct JobManagerFixture {
     StdMainThreadDispatcher dispatcher;
     JobManager job_manager{dispatcher};
 
-
-    bool wait_for_status(
-        const JobStatus status,
-        const seconds& timeout
-    )
+    bool wait_for_status(const JobStatus status, const seconds& timeout)
     {
         const auto start{high_resolution_clock::now()};
         while (true) {
@@ -68,7 +69,6 @@ struct JobManagerFixture {
             }
         }
     }
-
 };
 
 TEST_CASE_METHOD(JobManagerFixture, "JobManager job works with move only data", "[JobManager]")
@@ -106,7 +106,7 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can be cancelled", "[JobMana
 {
     const auto job{[&](StopToken stop_token) {
         const auto start{high_resolution_clock::now()};
-        while(!stop_token.stop_requested()) {
+        while (!stop_token.stop_requested()) {
             std::this_thread::sleep_for(1ms);
             const auto now{high_resolution_clock::now()};
             if (now - start > 5s) {
@@ -116,9 +116,7 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can be cancelled", "[JobMana
     }};
 
     bool result_recieved{false};
-    job_manager.create_job("test_job", job)
-        .on_result([&]() { result_recieved = true; })
-        .start();
+    job_manager.create_job("test_job", job).on_result([&]() { result_recieved = true; }).start();
     std::this_thread::sleep_for(10ms);
     job_manager.cancel_job("test_job");
 
@@ -126,7 +124,8 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can be cancelled", "[JobMana
     CHECK(result_recieved);
 }
 
-struct StopRequested : std::runtime_error {
+struct StopRequested : std::runtime_error
+{
     using std::runtime_error::runtime_error;
 };
 
@@ -134,7 +133,7 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can be cancelled by starting
 {
     const auto job{[&](StopToken stop_token) {
         const auto start{high_resolution_clock::now()};
-        while(true) {
+        while (true) {
             std::this_thread::sleep_for(1ms);
 
             if (stop_token.stop_requested()) {
@@ -150,7 +149,7 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can be cancelled by starting
 
     bool stop_requested{true};
     job_manager.create_job("test_job", job)
-        .on_exception([&](const std::exception_ptr& exception) {
+        .on_exception([&](const std::exception_ptr& exception, const cpptrace::stacktrace&) {
             try {
                 std::rethrow_exception(exception);
             } catch (const StopRequested&) {
@@ -161,7 +160,7 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can be cancelled by starting
     std::this_thread::sleep_for(10ms);
 
     bool result_recieved{false};
-    job_manager.create_job("test_job", [](StopToken){})
+    job_manager.create_job("test_job", [](StopToken) {})
         .on_result([&]() { result_recieved = true; })
         .start();
 
@@ -175,16 +174,12 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can use the dispatcher", "[J
     std::size_t event_recieved{0};
     const auto job{[&](StopToken, IMainThreadDispatcher& dispatcher) {
         for (std::size_t _{}; _ < 42; ++_) {
-            (void)dispatcher.dispatch_on_main_thread([&](){
-                event_recieved++;
-            });
+            (void) dispatcher.dispatch_on_main_thread([&]() { event_recieved++; });
             std::this_thread::sleep_for(1ms);
         }
     }};
 
-    job_manager.create_job("test_job", job)
-        .on_result([&]() {})
-        .start();
+    job_manager.create_job("test_job", job).on_result([&]() {}).start();
 
     REQUIRE(wait_for_status(JobStatus::Finished, 3s));
     CHECK(event_recieved == 42);
@@ -196,9 +191,7 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can use the progress", "[Job
         progress.set(Percentage{10});
     }};
 
-    job_manager.create_job("test_job", job)
-        .on_result([&]() { })
-        .start();
+    job_manager.create_job("test_job", job).on_result([&]() {}).start();
 
     REQUIRE(wait_for_status(JobStatus::Finished, 3s));
     REQUIRE(listener.progress.size() == 3);
@@ -210,14 +203,10 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can use the progress and dis
     bool event_recieved{false};
     const auto job{[&](StopToken, IMainThreadDispatcher& dispatcher, ProgressTracker progress) {
         progress.set(Percentage{10});
-        (void)dispatcher.dispatch_on_main_thread([&](){
-            event_recieved = true;
-        });
+        (void) dispatcher.dispatch_on_main_thread([&]() { event_recieved = true; });
     }};
 
-    job_manager.create_job("test_job", job)
-        .on_result([&]() { })
-        .start();
+    job_manager.create_job("test_job", job).on_result([&]() {}).start();
 
     REQUIRE(wait_for_status(JobStatus::Finished, 3s));
     REQUIRE(listener.progress.size() == 3);
@@ -225,19 +214,25 @@ TEST_CASE_METHOD(JobManagerFixture, "JobManager job can use the progress and dis
     CHECK(event_recieved);
 }
 
-TEST_CASE_METHOD(JobManagerFixture, "By default exception thrown in the thread is rethrown in main thread", "[JobManager]")
+TEST_CASE_METHOD(
+    JobManagerFixture,
+    "By default exception thrown in the thread is rethrown in main thread",
+    "[JobManager]"
+)
 {
     const auto job{[&](StopToken) {
         throw std::runtime_error{""};
     }};
 
-    job_manager.create_job("test_job", job)
-        .on_result([&]() { REQUIRE(false); })
-        .start();
+    job_manager.create_job("test_job", job).on_result([&]() { REQUIRE(false); }).start();
     CHECK_THROWS_AS(wait_for_status(JobStatus::Failed, 3s), std::runtime_error);
 }
 
-TEST_CASE_METHOD(JobManagerFixture, "Exception handling can be configured (swallowed in this case)", "[JobManager]")
+TEST_CASE_METHOD(
+    JobManagerFixture,
+    "Exception handling can be configured (swallowed in this case)",
+    "[JobManager]"
+)
 {
     const auto job{[&](StopToken) {
         throw std::runtime_error{"My error"};
@@ -245,7 +240,9 @@ TEST_CASE_METHOD(JobManagerFixture, "Exception handling can be configured (swall
 
     bool exception_recieved{false};
     job_manager.create_job("test_job", job)
-        .on_exception([&](const std::exception_ptr) { exception_recieved = true; })
+        .on_exception([&](const std::exception_ptr, const cpptrace::stacktrace&) {
+            exception_recieved = true;
+        })
         .on_result([&]() { REQUIRE(false); })
         .start();
     REQUIRE(wait_for_status(JobStatus::Failed, 3s));
