@@ -719,6 +719,7 @@ Loaded3MF load_3mf(const std::string& filepath_3mf)
     // collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::content_types_file_missing, std::string(CONTENT_TYPES_FILE)));
 
     Loaded3MF loaded_3mf;
+    loaded_3mf.metadata               = prusa_files_result.project_metadata;
     loaded_3mf.model                  = std::move(model);
     loaded_3mf.filepath_3mf           = filepath_3mf;
     loaded_3mf.config_containers_data = prusa_files_result.config_containers_data;
@@ -794,7 +795,13 @@ void store_3mf(const std::string& filepath, const Domain::Project& project, cons
     StoredStructure stored_structure = store_model3mf(archive, project.model(), MODEL_FILE.c_str(), param);
 
     // Add Prusa project files as structured JSONs
-    store_prusa_files(archive, project.model(), project.config_containers(), stored_structure);
+    store_prusa_files(
+        archive,
+        project.model(),
+        project.metadata(),
+        project.config_containers(),
+        stored_structure
+    );
 
     if (!mz_zip_writer_finalize_archive(archive_ptr))
         throw boost::filesystem::filesystem_error("Unable to finalize the archive.", {});

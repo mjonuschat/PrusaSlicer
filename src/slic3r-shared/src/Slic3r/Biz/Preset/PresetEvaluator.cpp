@@ -2,6 +2,7 @@
 #include <fmt/ranges.h>
 #include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
 #include "Slic3r/Biz/Preset/ValueMapBuilder.hpp"
+#include "Slic3r/Uuid.hpp"
 #include "Slic3r/TypeInfo.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -274,7 +275,7 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
     return {
         .kind       = kind,
         .root_id   = context.root_id,
-        .id         = context.id.empty() ? Domain::Preset::generate_id() : context.id,
+        .id         = context.id.empty() ? generate_uuid() : context.id,
         .name       = context.name,
         .values     = config_values<FdmConfigType, SlaConfigType>(technology, context.values),
         .features   = context.features,

@@ -4,6 +4,7 @@
 #include <tl/expected.hpp>
 #include <variant>
 #include "Slic3r/Biz/Config/ConfigJson.hpp"
+#include "Slic3r/Biz/Config/FeatureValueJson.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Domain/Preset/Types.hpp"
 #include "fmt/format.h"
@@ -11,13 +12,16 @@
 #include "magic_enum/magic_enum.hpp"
 
 using nlohmann::ordered_json;
-
 using Slic3r::Domain::Preset::HwFeederConfig;
 using Slic3r::Domain::Preset::HwFeederConfigs;
 using Slic3r::Domain::Preset::HwMaterialConfigs;
+using Slic3r::Domain::Preset::HwToolConfig;
+using Slic3r::Domain::Preset::HwToolConfigs;
 using Slic3r::Domain::Preset::MaterialConfig;
 
 namespace Slic3r::Domain::Preset {
+void to_json(ordered_json& j, const HwToolConfig& v);
+void from_json(const ordered_json& j, HwToolConfig& v);
 void to_json(ordered_json& j, const HwFeederConfig& v);
 void from_json(const ordered_json& j, HwFeederConfig& v);
 void to_json(ordered_json& j, const MaterialConfig& v);
@@ -25,8 +29,9 @@ void from_json(const ordered_json& j, MaterialConfig& v);
 } // namespace Slic3r::Domain::Preset
 
 namespace {
-using PartialyParsedFeederConfigs = std::map<std::string, HwFeederConfig>;
-using PartialyParsedMaterialConfigs = std::map<std::string, MaterialConfig>;
+using PartiallyParsedToolConfigs     = std::map<std::string, HwToolConfig>;
+using PartiallyParsedFeederConfigs   = std::map<std::string, HwFeederConfig>;
+using PartiallyParsedMaterialConfigs = std::map<std::string, MaterialConfig>;
 
 using Slic3r::Domain::Preset::Address;
 
@@ -64,85 +69,78 @@ tl::expected<Address, std::string> from_string(const std::string& input)
 
 NLOHMANN_JSON_NAMESPACE_BEGIN
 
-using Slic3r::Domain::Preset::FeatureValue;
-
-template<>
-struct adl_serializer<FeatureValue>
-{
-    static void to_json(ordered_json& j, const FeatureValue& v)
-    {
-        std::visit([&j](auto&& arg) { j = arg; }, v);
-    }
-
-    static void from_json(const ordered_json& j, FeatureValue& v)
-    {
-        if (j.is_boolean())
-            v = j.get<bool>();
-        else if (j.is_number())
-            v = j.get<float>();
-        else if (j.is_string())
-            v = j.get<std::string>();
-    }
-};
-
 using Slic3r::Domain::Preset::HwFeederConfig;
 using Slic3r::Domain::Preset::HwFeederConfigs;
 using Slic3r::Domain::Preset::HwMaterialConfigs;
 using Slic3r::Domain::Preset::MaterialConfig;
 
-template<>
-struct adl_serializer<HwFeederConfigs>
+template <>
+struct adl_serializer<PartiallyParsedFeederConfigs>
 {
-    static void to_json(ordered_json& j, const HwFeederConfigs& v)
-    {
-        for (const auto& [key, value] : v) {
-            j[::to_string(key)] = value;
-        }
-    }
-};
-
-template<>
-struct adl_serializer<PartialyParsedFeederConfigs>
-{
-    static void from_json(const ordered_json& j, PartialyParsedFeederConfigs& v)
+    static void from_json(const ordered_json& j, PartiallyParsedFeederConfigs& v)
     {
         v.clear();
         for (const auto& [key, value] : j.items()) {
-            v.insert({key, value.get<HwFeederConfig>()});
+            if (value.contains("feeder"))
+                v.insert({key, value.get<HwFeederConfig>()});
         }
     }
 };
 
-template<>
-struct adl_serializer<HwMaterialConfigs>
+template <>
+struct adl_serializer<PartiallyParsedMaterialConfigs>
 {
-    static void to_json(ordered_json& j, const HwMaterialConfigs& v)
-    {
-        for (const auto& [key, value] : v) {
-            j[::to_string(key)] = value;
-        }
-    }
-};
-
-template<>
-struct adl_serializer<PartialyParsedMaterialConfigs>
-{
-    static void from_json(const ordered_json& j, PartialyParsedMaterialConfigs& v)
+    static void from_json(const ordered_json& j, PartiallyParsedMaterialConfigs& v)
     {
         v.clear();
         for (const auto& [key, value] : j.items()) {
-            v.insert({key, value.get<MaterialConfig>()});
+            if (value.contains("material"))
+                v.insert({key, value.get<MaterialConfig>()});
+        }
+    }
+};
+
+template <>
+struct adl_serializer<PartiallyParsedToolConfigs>
+{
+    static void from_json(const ordered_json& j, PartiallyParsedToolConfigs& v)
+    {
+        v.clear();
+        for (const auto& [key, value] : j.items()) {
+            if (!value.contains("type"))
+                continue;
+            v.insert({key, value.get<HwToolConfig>()});
         }
     }
 };
 
 NLOHMANN_JSON_NAMESPACE_END
 
+namespace {
+
+constexpr std::string PRINTER_TOOL_TYPE = "print_head";
+
+struct KeyDesc
+{
+    std::string key;
+    std::optional<std::string> json_key;
+};
+
+// This is a list of keys stored as features in material
+// which should be moved level up from features into material
+// when serializing into json
+constexpr KeyDesc MATERIAL_KEYS_TO_EXTRACT[] = {
+    {"material_uuid"},
+    {"material_color"},
+};
+
+}
+
 namespace Slic3r::Domain::Preset {
 
 void to_json(ordered_json& j, const HwToolConfig& v)
 {
-    j = ordered_json{{"id", v.id}, {"features", v.features}};
+    j = ordered_json{{"type", PRINTER_TOOL_TYPE}, {"id", v.id}, {"features", v.features}};
 }
 
 void from_json(const ordered_json& j, HwToolConfig& v)
@@ -168,7 +166,8 @@ void to_json(ordered_json& j, const HwFeederConfig& v)
         {"id", v.id},
         {"slot_count", v.slot_count},
         {"type", magic_enum::enum_name(v.type)},
-        {"model", v.model},
+        {"model", v.model.model},
+        {"base_model", v.model.base_model},
         {"features", v.features}
     };
 }
@@ -178,17 +177,23 @@ void from_json(const ordered_json& j, HwFeederConfig& v)
     j.at("id").get_to(v.id);
     j.at("slot_count").get_to(v.slot_count);
     v.type = magic_enum::enum_cast<FeederType>(j.at("type").get<std::string>()).value();
-    j.at("model").get_to(v.model);
+    j.get_to(v.model);
     j.at("features").get_to(v.features);
 }
 
 void to_json(ordered_json& j, const MaterialConfig& v)
 {
-    j = ordered_json{{"features", v.features}};
+    j["id"] = v.id;
+    if (v.type)
+        j["type"] = v.type.value();
+    j["features"] = v.features;
 }
 
 void from_json(const ordered_json& j, MaterialConfig& v)
 {
+    j.at("id").get_to(v.id);
+    if (j.contains("type"))
+        j.at("type").get_to(v.type);
     j.at("features").get_to(v.features);
 }
 
@@ -210,20 +215,101 @@ void from_json(const ordered_json& j, HwSheetConfig& v)
     j.at("features").get_to(v.features);
 }
 
+void tools_to_json(
+    ordered_json& j,
+    const HwToolConfigs& tools,
+    const HwFeederConfigs& feeders,
+    const HwMaterialConfigs& materials
+)
+{
+    for (size_t i = 0, n = tools.size(); i < n; ++i) {
+        ordered_json ji      = tools[i];
+        j[std::to_string(i)] = ji;
+    }
+
+    for (const auto& [k, v] : feeders) {
+        std::string key = to_string(k);
+        if (!j.contains(key)) {
+            j[key] = ordered_json{};
+        }
+        auto& ji     = j[key];
+        ji["feeder"] = v;
+    }
+
+    for (const auto& [k, v] : materials) {
+        MaterialConfig mat = v;
+
+        for (const auto& kte : MATERIAL_KEYS_TO_EXTRACT) {
+            mat.features.erase(kte.key);
+        }
+
+        std::string key = to_string(k);
+        if (!j.contains(key)) {
+            j[key] = ordered_json{};
+        }
+        auto& ji = j[key];
+        auto& jm = ji["material"];
+        jm       = mat;
+        for (const auto& kte : MATERIAL_KEYS_TO_EXTRACT) {
+            auto fit = v.features.find(kte.key);
+            if (fit != v.features.end())
+                jm[kte.json_key.value_or(kte.key)] = fit->second;
+        }
+    }
+}
+
+struct ToolsNodeLoadedResult
+{
+    PartiallyParsedToolConfigs tools;
+    PartiallyParsedFeederConfigs feeders;
+    PartiallyParsedMaterialConfigs materials;
+};
+
+tl::expected<ToolsNodeLoadedResult, std::string> parse_tools(const ordered_json& json)
+{
+    ToolsNodeLoadedResult ret;
+    for (const auto& [k, v] : json.items()) {
+        bool parsed = false;
+        if (v.contains("type")) {
+            // read tool definition
+            ret.tools.insert({k, v.get<HwToolConfig>()});
+            parsed = true;
+        }
+        if (v.contains("feeder")) {
+            // read feeder definition
+            ret.feeders.insert({k, v.at("feeder").get<HwFeederConfig>()});
+            parsed = true;
+        }
+        if (v.contains("material")) {
+            const auto& mat_node = v.at("material");
+            // read material definition
+            auto mat = mat_node.get<MaterialConfig>();
+            ret.materials.insert({k, mat});
+            parsed = true;
+        }
+        if (!parsed)
+            return tl::unexpected(fmt::format("Invalid tools config item with key \"{}\"", k));
+    }
+    return ret;
+}
+
 void to_json(ordered_json& j, const HwPrinterConfig& v)
 {
+    ordered_json tools;
+    tools_to_json(tools, v.tools, v.feeders, v.materials);
+
     j = ordered_json{
         {"id", v.id},
         {"printer_id", v.printer_id},
         {"vendor_id", v.vendor_id},
+        {"repo_id", v.repo_id},
         {"name", v.name},
         {"technology", magic_enum::enum_name(v.technology)},
-        {"model", v.model},
+        {"model", v.model.model},
+        {"base_model", v.model.base_model},
         {"tool_count", v.tool_count},
         {"features", v.features},
-        {"tools", v.tools},
-        {"feeders", v.feeders},
-        {"materials", v.materials},
+        {"tools", tools},
         {"sheet", v.sheet},
     };
 }
@@ -241,12 +327,12 @@ using Domain::Preset::HwFeederConfigs;
 using Domain::Preset::HwMaterialConfigs;
 using Domain::Preset::HwModel;
 using Domain::Preset::HwPrinterConfig;
+using Domain::Preset::HwSheetConfig;
 using Domain::Preset::HwToolConfig;
 using Domain::Preset::HwToolConfigs;
 using Domain::Preset::MaterialConfig;
-using Domain::Preset::HwSheetConfig;
 
-template<>
+template <>
 tl::expected<void, std::string> is_valid<HwPrinterConfig>(const nlohmann::ordered_json& json_value)
 {
     for (const auto& key : std::vector<std::string>{
@@ -256,13 +342,13 @@ tl::expected<void, std::string> is_valid<HwPrinterConfig>(const nlohmann::ordere
              "name",
              "technology",
              "model",
+             "base_model",
              "tool_count",
              "features",
              "tools",
-             "feeders",
-             "materials",
              "sheet",
-         }) {
+         })
+    {
         if (!json_value.contains(key)) {
             return tl::unexpected{"'" + key + "' not present!"};
         }
@@ -270,7 +356,7 @@ tl::expected<void, std::string> is_valid<HwPrinterConfig>(const nlohmann::ordere
     return tl::expected<void, std::string>{};
 }
 
-template<>
+template <>
 tl::expected<void, std::string> is_valid<HwModel>(const nlohmann::ordered_json& json_value)
 {
     if (!json_value.contains("base_model")) {
@@ -288,7 +374,7 @@ tl::expected<void, std::string> is_valid<HwModel>(const nlohmann::ordered_json& 
     return tl::expected<void, std::string>{};
 }
 
-template<>
+template <>
 tl::expected<void, std::string> is_valid<uint8_t>(const nlohmann::ordered_json& json_value)
 {
     if (!json_value.is_number_unsigned()) {
@@ -300,7 +386,7 @@ tl::expected<void, std::string> is_valid<uint8_t>(const nlohmann::ordered_json& 
     return tl::expected<void, std::string>{};
 }
 
-template<>
+template <>
 tl::expected<void, std::string> is_valid<FeatureValue>(const nlohmann::ordered_json& json_value)
 {
     if (!json_value.is_boolean() && !json_value.is_number() && !json_value.is_string()) {
@@ -309,18 +395,24 @@ tl::expected<void, std::string> is_valid<FeatureValue>(const nlohmann::ordered_j
     return tl::expected<void, std::string>{};
 }
 
-template<>
+template <>
 tl::expected<void, std::string> is_valid<HwToolConfig>(const nlohmann::ordered_json& json_value)
 {
     if (!json_value.contains("id")) {
         return tl::unexpected{"'id' not present!"};
     }
 
-    if(!json_value.at("id").is_string()) {
+    if (!json_value.at("id").is_string()) {
         return tl::unexpected{"'id' is not a string!"};
     }
     if (!json_value.contains("features")) {
         return tl::unexpected{"'features' are not present"};
+    }
+    if (!json_value.contains("type")) {
+        return tl::unexpected{"'type' is not present"};
+    }
+    if (json_value.at("type").get<std::string>() != PRINTER_TOOL_TYPE) {
+        return tl::unexpected{"'type' has not expected value"};
     }
     const auto features_valid{is_valid_map<FeatureValueMap>(json_value.at("features"))};
     if (!features_valid) {
@@ -330,14 +422,14 @@ tl::expected<void, std::string> is_valid<HwToolConfig>(const nlohmann::ordered_j
     return tl::expected<void, std::string>{};
 }
 
-template<>
+template <>
 tl::expected<void, std::string> is_valid<HwFeederConfig>(const nlohmann::ordered_json& json_value)
 {
     if (!json_value.contains("id")) {
         return tl::unexpected{"'id' not present!"};
     }
 
-    if(!json_value.at("id").is_string()) {
+    if (!json_value.at("id").is_string()) {
         return tl::unexpected{"'id' is not a string!"};
     }
 
@@ -356,7 +448,7 @@ tl::expected<void, std::string> is_valid<HwFeederConfig>(const nlohmann::ordered
     if (!json_value.contains("model")) {
         return tl::unexpected{"'model' not present"};
     }
-    const auto model_valid{is_valid<HwModel>(json_value.at("model"))};
+    const auto model_valid{is_valid<HwModel>(json_value)};
     if (!model_valid) {
         return model_valid;
     }
@@ -378,7 +470,7 @@ tl::expected<void, std::string> is_valid<HwFeederConfig>(const nlohmann::ordered
     return tl::expected<void, std::string>{};
 }
 
-template<>
+template <>
 tl::expected<void, std::string> is_valid<MaterialConfig>(const nlohmann::ordered_json& json_value)
 {
     if (!json_value.contains("features")) {
@@ -392,7 +484,7 @@ tl::expected<void, std::string> is_valid<MaterialConfig>(const nlohmann::ordered
     return tl::expected<void, std::string>{};
 }
 
-template<>
+template <>
 tl::expected<void, std::string> is_valid<HwSheetConfig>(const nlohmann::ordered_json& json_value)
 {
     for (const auto& key : {"id", "name", "type", "features"}) {
@@ -407,7 +499,6 @@ tl::expected<void, std::string> is_valid<HwSheetConfig>(const nlohmann::ordered_
 
     return tl::expected<void, std::string>{};
 }
-
 
 tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& json)
 {
@@ -452,7 +543,7 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
     }
     result.technology = technology_enum.value();
 
-    const auto model{parse<HwModel>(json.at("model"))};
+    const auto model{parse<HwModel>(json)};
     if (!model) {
         return tl::unexpected{"Invalid model: " + model.error()};
     }
@@ -470,39 +561,53 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
     }
     result.features = features.value();
 
-    const auto tools{parse<HwToolConfigs>(json.at("tools"))};
-    if (!tools) {
-        return tl::unexpected{"Invalid tools: " + tools.error()};
+    auto tools_result = Domain::Preset::parse_tools(json.at("tools"));
+    if (!tools_result) {
+        return tl::unexpected{"Invalid tools: " + tools_result.error()};
     }
-    result.tools = tools.value();
 
-    const auto partial_feeders{parse<PartialyParsedFeederConfigs>(json.at("feeders"))};
-    if (!partial_feeders) {
-        return tl::unexpected{"Invalid feeders: " + partial_feeders.error()};
+    if (tools_result->tools.size() != *tool_count) {
+        return tl::unexpected{fmt::format(
+            "Invalid tool count stored, expecting {} but found {}",
+            *tool_count,
+            tools_result->tools.size()
+        )};
     }
-    HwFeederConfigs feeders;
-    for (const auto& [key, value] : *partial_feeders) {
+
+    HwToolConfigs& tools = result.tools;
+    tools.resize(*tool_count);
+    for (const auto& [key, value] : tools_result->tools) {
+        const auto address{from_string(key)};
+        if (!address) {
+            return tl::unexpected{"Address could not be parsed from '" + key + "': " + address.error()};
+        }
+        if (address->size() != 1) {
+            return tl::unexpected{fmt::format(
+                "Invalid address \"{}\" for tools, expecting exactly single component, but found {} components",
+                key,
+                address->size()
+            )};
+        }
+        tools[address->at(0)] = value;
+    }
+
+    HwFeederConfigs& feeders = result.feeders;
+    for (const auto& [key, value] : tools_result->feeders) {
         const auto address{from_string(key)};
         if (!address) {
             return tl::unexpected{"Address could not be parsed from '" + key + "': " + address.error()};
         }
         feeders.insert({*address, value});
     }
-    result.feeders = feeders;
 
-    const auto partial_materials{parse<PartialyParsedMaterialConfigs>(json.at("materials"))};
-    if (!partial_materials) {
-        return tl::unexpected{"Invalid materials: " + partial_feeders.error()};
-    }
-    HwMaterialConfigs materials;
-    for (const auto& [key, value] : *partial_materials) {
+    HwMaterialConfigs materials = result.materials;
+    for (const auto& [key, value] : tools_result->materials) {
         const auto address{from_string(key)};
         if (!address) {
             return tl::unexpected{"Address could not be parsed from '" + key + "': " + address.error()};
         }
         materials.insert({*address, value});
     }
-    result.materials = materials;
 
     const auto sheet{parse<HwSheetConfig>(json.at("sheet"))};
     if (!sheet) {

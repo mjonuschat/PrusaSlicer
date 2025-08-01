@@ -207,7 +207,7 @@ id: 'c1-default'
 name: 'CORE One'
 tool_count: 1
 tools:
-  - tool: '0.4'
+  - tool: '0.4HF'
 default_sheet: 'pei_smooth'
 ---
 kind: printer_config

@@ -9,7 +9,15 @@ namespace Slic3r::Utils {
 time_t get_current_time_utc();
 
 enum class TimeZone { local, utc };
-enum class TimeFormat { gcode, iso8601Z };
+enum class TimeFormat
+{
+    /** @brief Gcode human readable */
+    gcode,
+    /** @brief Short form of iso8601 in UTC in format: YYYYMMDDThhmmssZ */
+    iso8601Z,
+    /** @brief Extended form of iso8601 in UTC in format: YYYY-MM-DDThh:mm:ssZ */
+    iso8601ZExtended
+};
 
 // time_t to string functions...
 
@@ -50,6 +58,16 @@ inline std::string iso_utc_timestamp(time_t t)
 inline std::string iso_utc_timestamp()
 {
     return iso_utc_timestamp(get_current_time_utc());
+}
+
+inline std::string iso_ext_utc_timestamp(time_t t)
+{
+    return time2str(t, TimeZone::utc, TimeFormat::iso8601ZExtended);
+}
+
+inline std::string iso_ext_utc_timestamp()
+{
+    return iso_ext_utc_timestamp(get_current_time_utc());
 }
 
 inline time_t parse_iso_utc_timestamp(const std::string &str)

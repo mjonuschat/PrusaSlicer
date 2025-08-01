@@ -131,6 +131,12 @@ add_library(slic3r-domain STATIC
     include/Slic3r/Domain/ConfigPack.hpp
     src/Slic3r/Domain/ConfigPack.cpp
 
+    include/Slic3r/Domain/ProjectMetadata.hpp
+    src/Slic3r/Domain/ProjectMetadata.cpp
+
+    include/Slic3r/Domain/GCodeMetadata.hpp
+    src/Slic3r/Domain/GCodeMetadata.cpp
+
     include/Slic3r/Domain/Image.hpp
 
     include/Slic3r/Domain/PixelFormat.hpp

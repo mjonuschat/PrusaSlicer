@@ -44,6 +44,12 @@ double get_cubes_filament_used(const Domain::Model &model) {
     return model.objects.size() * 1483.0;
 }
 
+Domain::Preset::SelectedPresetMetadata get_selected_preset_metadata()
+{
+    Domain::Preset::SelectedPresetMetadata metadata;
+    return metadata;
+}
+
 Domain::ConfigPack get_config() {
     Domain::ConfigPackFDM config;
     config.print.items.opt("skirts").set(0);

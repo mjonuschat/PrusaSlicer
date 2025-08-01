@@ -57,6 +57,8 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]"
         bed_models.emplace_back(get_cubes_model(cube_count, 5));
         slicing.update_process(
             bed_models.back().model,
+            bed_models.back().project_metadata,
+            bed_models.back().preset_metadata,
             bed_models.back().config,
             bed_models.back().bed_instance
         );
@@ -134,7 +136,13 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
 
     ModelOnBed model_on_bed{std::move(model), std::move(config)};
     model_on_bed.bed_instance.wipe_tower = wipe_towers.at(0);
-    slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
+    slicing.update_process(
+        model_on_bed.model,
+        model_on_bed.project_metadata,
+        model_on_bed.preset_metadata,
+        model_on_bed.config,
+        model_on_bed.bed_instance
+    );
     slicing.slice_all();
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 5s, [](const StatusEvents &events){
@@ -194,11 +202,23 @@ TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer te
     SLAObjectListener object_listener;
     slicing.set_listener<ISLAResultListener>(&result_listener);
     slicing.set_listener<ISLAObjectListener>(&object_listener);
-    slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
+    slicing.update_process(
+        model_on_bed.model,
+        model_on_bed.project_metadata,
+        model_on_bed.preset_metadata,
+        model_on_bed.config,
+        model_on_bed.bed_instance
+    );
 
     model_on_bed.config = ConfigPackSLA{};
 
-    slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
+    slicing.update_process(
+        model_on_bed.model,
+        model_on_bed.project_metadata,
+        model_on_bed.preset_metadata,
+        model_on_bed.config,
+        model_on_bed.bed_instance
+    );
     slicing.slice_all();
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 15s, [](const StatusEvents &events){

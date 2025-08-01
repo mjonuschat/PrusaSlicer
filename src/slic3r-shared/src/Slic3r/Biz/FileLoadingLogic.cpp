@@ -314,6 +314,7 @@ tl::expected<ReturnData, std::string> read_data_from_file(const boost::filesyste
                 )
             );
         }
+
         ret.model = loaded_3mf.model;
         return ret;
     }
@@ -460,6 +461,7 @@ std::vector<ReturnData> import_files(
 static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
 {
     Domain::Project project;
+    project.set_metadata(loaded_3mf.metadata);
     project.set_file_name(loaded_3mf.filepath_3mf);
     project.model() = std::move(loaded_3mf.model);
 

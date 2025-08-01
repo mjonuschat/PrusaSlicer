@@ -21,6 +21,7 @@ using Slic3r::Biz::Slicing::SLAResult;
 using Slic3r::Biz::Slicing::Sla::Object;
 using Slic3r::Tests::precise_sleep;
 using Slic3r::Tests::get_config;
+using Slic3r::Tests::get_selected_preset_metadata;
 using Slic3r::Domain::ModelInstanceList;
 
 using LogEntry = std::pair<time_point, Status>;
@@ -163,10 +164,19 @@ TEST_CASE("Test process slice() returns immediately", "[background-process][slic
 
     StatusLog log;
     Slic3r::Domain::Model model{};
+    Slic3r::Domain::ProjectMetadata project_metadata;
     const Slic3r::Domain::Bed bed;
     const Slic3r::Domain::BedInstance bed_instance{bed};
-    BackgroundProcess
-        process{std::move(print), log, model, get_config(), bed_instance, SlicingId{}};
+    BackgroundProcess process{
+        std::move(print),
+        log,
+        model,
+        std::move(project_metadata),
+        get_selected_preset_metadata(),
+        get_config(),
+        bed_instance,
+        SlicingId{}
+    };
 
     const auto execution_time{measure_execution_time([&]() { process.slice(); })};
     INFO("process.slice() exectuion time: " + std::to_string(execution_time.count()));
@@ -197,10 +207,19 @@ TEST_CASE("Test process stop() returns immediately", "[background-process][slici
 
     StatusLog log;
     Slic3r::Domain::Model model{};
+    Slic3r::Domain::ProjectMetadata project_metadata;
     const Slic3r::Domain::Bed bed;
     const Slic3r::Domain::BedInstance bed_instance{bed};
-    BackgroundProcess
-        process{std::move(print), log, model, get_config(), bed_instance, SlicingId{}};
+    BackgroundProcess process{
+        std::move(print),
+        log,
+        model,
+        std::move(project_metadata),
+        get_selected_preset_metadata(),
+        get_config(),
+        bed_instance,
+        SlicingId{}
+    };
 
     process.slice();
     const auto time_before_stop{20ms};
@@ -251,12 +270,21 @@ TEST_CASE("Test process update() updates status", "[background-process][slicing-
     std::optional<BackgroundProcess> optional_process;
 
     Slic3r::Domain::Model model{};
+    Slic3r::Domain::ProjectMetadata project_metadata;
     const Slic3r::Domain::Bed bed;
     const Slic3r::Domain::BedInstance bed_instance{bed};
 
     const auto execution_time{measure_execution_time([&]() {
-        optional_process
-            .emplace(std::move(print), log, model, get_config(), bed_instance, SlicingId{});
+        optional_process.emplace(
+            std::move(print),
+            log,
+            model,
+            std::move(project_metadata),
+            get_selected_preset_metadata(),
+            get_config(),
+            bed_instance,
+            SlicingId{}
+        );
     })};
     INFO("process.update() exectuion time: " + std::to_string(execution_time.count()));
     REQUIRE((execution_time - apply_time) < 5ms); // Update blocks the ui thread.

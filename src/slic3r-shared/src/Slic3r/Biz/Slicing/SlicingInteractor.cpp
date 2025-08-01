@@ -12,6 +12,8 @@
 
 namespace Slic3r::Biz::Slicing {
 
+using Domain::Preset::SelectedPresetMetadata;
+using Domain::ProjectMetadata;
 using Domain::ConfigPack;
 
 SlicingInteractor::SlicingInteractor(
@@ -33,6 +35,8 @@ SlicingInteractor::~SlicingInteractor()
 
 void SlicingInteractor::create_process(
     Domain::Model& model,
+    const ProjectMetadata& project_metadata,
+    const SelectedPresetMetadata& preset_metadata,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
     const SlicingId id
@@ -43,12 +47,22 @@ void SlicingInteractor::create_process(
     m_processes.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(id),
-        std::forward_as_tuple(*this, model, ConfigPack{config}, bed, id)
+        std::forward_as_tuple(
+            *this,
+            model,
+            ProjectMetadata{project_metadata},
+            SelectedPresetMetadata{preset_metadata},
+            ConfigPack{config},
+            bed,
+            id
+        )
     );
 }
 
 void SlicingInteractor::update_process(
     Domain::Model& model,
+    const ProjectMetadata& project_metadata,
+    const SelectedPresetMetadata& preset_metadata,
     const ConfigPack& config,
     const Domain::BedInstance& bed
 )
@@ -59,12 +73,15 @@ void SlicingInteractor::update_process(
         SPDLOG_INFO("{}: update process", fmt::streamed(id));
 
         stop_slicing_bed(bed_instance_id);
-        m_update_requests.insert_or_assign(id, UpdateRequest{model, config, bed});
+        m_update_requests.insert_or_assign(
+            id,
+            UpdateRequest{model, project_metadata, preset_metadata, config, bed}
+        );
         process_update_requests();
         return;
     }
 
-    create_process(model, config, bed, id);
+    create_process(model, project_metadata, preset_metadata, config, bed, id);
 }
 
 void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
@@ -312,15 +329,24 @@ void SlicingInteractor::process_update_requests()
             continue;
         }
 
+        //const SelectedP
         const ConfigPack& config{request.config.get()};
         const Domain::BedInstance& bed{request.bed.get()};
+
         if (process.get_printer_technology() != get_printer_technology(config)) {
             m_processes.erase(id);
-            create_process(request.model.get(), config, bed, id);
+            create_process(
+                request.model.get(),
+                request.project_metadata.get(),
+                request.preset_metadata.get(),
+                config,
+                bed,
+                id
+            );
             continue;
         }
 
-        process.update(request.model.get(), config, bed);
+        process.update(request.model.get(), request.project_metadata, request.preset_metadata, config, bed);
         to_remove.insert(id);
     }
 

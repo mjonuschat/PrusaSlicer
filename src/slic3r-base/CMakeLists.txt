@@ -19,6 +19,8 @@ set(SLIC3R_BASE_FILES
         src/Slic3r/Time.cpp
         include/Slic3r/Timer.hpp
         src/Slic3r/Timer.cpp
+		include/Slic3r/Uuid.hpp
+		src/Slic3r/Uuid.cpp
 )
 
 if (APPLE)

@@ -1,7 +1,4 @@
 #include <functional>
-#include <sstream>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Assert.hpp"
 
@@ -219,13 +216,6 @@ HwPrinterConfig remove_features_with_default(
     return ret;
 }
 
-std::string generate_id()
-{
-    boost::uuids::random_generator gen;
-    std::ostringstream out;
-    out << gen();
-    return out.str();
-}
 
 std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_data)
 {
@@ -233,17 +223,21 @@ std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_da
     ASSERT(printer != nullptr, cfg.printer_id);
     std::stringstream ss;
     ss << printer->name;
-    bool first = true;
-    for (const auto& t : cfg.tools) {
-        auto* tool = vendor_data.find_tool_config_def_by_id(t.id);
-        ASSERT(tool != nullptr, t.id);
-        if (first) {
-            first = false;
-            ss << " ";
-        } else {
-            ss << ", ";
+    if (cfg.technology == PrinterTechnology::FFF) {
+        if (cfg.tool_count > 1)
+            ss << " " << int(cfg.tool_count) << "T";
+        bool first = true;
+        for (const auto& t : cfg.tools) {
+            auto* tool = vendor_data.find_tool_config_def_by_id(t.id);
+            ASSERT(tool != nullptr, t.id);
+            if (first) {
+                first = false;
+                ss << " ";
+            } else {
+                ss << ", ";
+            }
+            ss << tool->name;
         }
-        ss << tool->name;
     }
 
     return ss.str();

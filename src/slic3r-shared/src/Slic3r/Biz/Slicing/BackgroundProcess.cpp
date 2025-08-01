@@ -1,13 +1,19 @@
 #include <fmt/ostream.h>
+#include <nlohmann/json.hpp>
 #include <Slic3r/Biz/Slicing/BackgroundProcess.hpp>
 #include <Slic3r/Assert.hpp>
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
+#include "Slic3r/Domain/GCodeMetadata.hpp"
+#include "Slic3r/Biz/ProjectMetadataJson.hpp"
+#include "Slic3r/Biz/Config/GCodeMetadataJson.hpp"
 #include "Slic3r/Log.hpp"
 
+#include "libslic3r/libslic3r_version.h"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/Utils.hpp"
+#include "Slic3r/Time.hpp"
 
 namespace {
 using namespace Slic3r;
@@ -113,6 +119,8 @@ Domain::PrinterTechnology get_printer_technology(const ConfigPack& config) {
 BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
     Domain::Model& model,
+    Domain::ProjectMetadata&& project_metadata,
+    Domain::Preset::SelectedPresetMetadata&& preset_metadata,
     ConfigPack&& config,
     const Domain::BedInstance& bed,
     const SlicingId id
@@ -123,13 +131,15 @@ BackgroundProcess::BackgroundProcess(
     , m_get_status{[call = std::reference_wrapper(callbacks), id]() { return call.get().get_status(id); }}
     , m_id{id}
 {
-    this->update(model, std::move(config), bed);
+    this->update(model, std::move(project_metadata), std::move(preset_metadata), std::move(config), bed);
 };
 
 BackgroundProcess::BackgroundProcess(
     std::unique_ptr<IPrint>&& print,
     IProcessCallbacks& callbacks,
     Domain::Model& model,
+    Domain::ProjectMetadata&& project_metadata,
+    Domain::Preset::SelectedPresetMetadata&& preset_metadata,
     ConfigPack&& config,
     const Domain::BedInstance& bed,
     const SlicingId id
@@ -140,7 +150,7 @@ BackgroundProcess::BackgroundProcess(
     , m_get_status{[call = std::reference_wrapper(callbacks), id]() { return call.get().get_status(id); }}
     , m_id{id}
 {
-    this->update(model, std::move(config), bed);
+    this->update(model, std::move(project_metadata), std::move(preset_metadata), std::move(config), bed);
 };
 
 BackgroundProcess::~BackgroundProcess() {
@@ -153,6 +163,8 @@ BackgroundProcess::~BackgroundProcess() {
 
 void BackgroundProcess::update(
     Domain::Model& model,
+    const Domain::ProjectMetadata& project_metadata,
+    const Domain::Preset::SelectedPresetMetadata& preset_metadata,
     const ConfigPack& config,
     const Domain::BedInstance& bed
 )
@@ -178,10 +190,33 @@ void BackgroundProcess::update(
 
     this->m_on_status(Status::Updating);
 
+    Domain::GCodeMetadata metadata{
+        .general = {
+            .producer = SLIC3R_APP_NAME,
+            .producer_version = SLIC3R_VERSION,
+            .time = Utils::iso_ext_utc_timestamp(),
+        },
+        .config = {
+            .printer = preset_metadata.hw_config,
+            .presets = {
+                .vendor = preset_metadata.hw_config.vendor_id,
+                .repo_id =  preset_metadata.hw_config.repo_id,
+                .version = preset_metadata.hw_config.repo_version,
+                .printer =  preset_metadata.printer,
+                .print =  preset_metadata.print,
+                .tools = preset_metadata.tools,
+                .materials = preset_metadata.materials,
+            }
+        },
+        .presets = config,
+        .project = project_metadata,
+        .stats = {},
+    };
+
     const Print::SerializedConfig serialized_config{std::visit(
-        [](auto&& config) {
+        [&metadata](auto&& config) {
             return Print::SerializedConfig{
-                .json = beautify_json(Domain::as_boxes(config), 2),
+                .json = beautify_json(metadata, 2, 14),
                 .ini = Biz::serialize_as_legacy_config(config)
             };
         },

@@ -60,6 +60,8 @@ TEST_CASE("HwPrinterConfig json roundtrip", "[HwPrinterConfigRoundtrip]")
         .materials = {
             {{5, 6},
              MaterialConfig{
+                 .id="Generic PLA",
+                 .type="PLA",
                  .features = {
                      {"mat", FeatureValue{true}},
                  },

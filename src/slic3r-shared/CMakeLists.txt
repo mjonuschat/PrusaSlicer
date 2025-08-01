@@ -643,11 +643,16 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Config/ConfigLoad.cpp
         src/Slic3r/Biz/Config/ConfigJson.hpp
         src/Slic3r/Biz/Config/ConfigJson.cpp
+		src/Slic3r/Biz/Config/FeatureValueJson.hpp
 
+		src/Slic3r/Biz/ProjectMetadataJson.hpp
+		src/Slic3r/Biz/ProjectMetadataJson.cpp
         src/Slic3r/Biz/Config/HwConfigJson.hpp
         src/Slic3r/Biz/Config/HwConfigJson.cpp
         src/Slic3r/Biz/Config/SelectedPresetJson.hpp
         src/Slic3r/Biz/Config/SelectedPresetJson.cpp
+		src/Slic3r/Biz/Config/GCodeMetadataJson.hpp
+		src/Slic3r/Biz/Config/GCodeMetadataJson.cpp
         include/Slic3r/Biz/Format/3mf.hpp
         include/Slic3r/Biz/Format/Metadata.hpp
         include/Slic3r/Biz/Format/ResultLoad3mf.hpp

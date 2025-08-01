@@ -4,7 +4,9 @@
 #include <mutex>
 
 #include <Slic3r/Domain/SelectionId.hpp>
+#include <Slic3r/Domain/ProjectMetadata.hpp>
 #include <Slic3r/Domain/ConfigContainer.hpp>
+#include <Slic3r/Domain/GCodeMetadata.hpp>
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 #include "Slic3r/Log.hpp"
 
@@ -107,6 +109,8 @@ public:
     BackgroundProcess(
         IProcessCallbacks& callbacks,
         Domain::Model& model,
+        Domain::ProjectMetadata&& project_metadata,
+        Domain::Preset::SelectedPresetMetadata&& preset_metadata,
         Domain::ConfigPack&& config,
         const Domain::BedInstance& bed,
         const SlicingId id
@@ -115,6 +119,8 @@ public:
         std::unique_ptr<Print::IPrint>&& print,
         IProcessCallbacks& callbacks,
         Domain::Model& model,
+        Domain::ProjectMetadata&& project_metadata,
+        Domain::Preset::SelectedPresetMetadata&& preset_metadata,
         Domain::ConfigPack&& config,
         const Domain::BedInstance& bed,
         const SlicingId id
@@ -124,6 +130,8 @@ public:
     /* WARNING! It is up to the caller to ensure update is not called on a running thread! */
     void update(
         Domain::Model& model,
+        const Domain::ProjectMetadata& project_metadata,
+        const Domain::Preset::SelectedPresetMetadata& preset_metadata,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed
     );

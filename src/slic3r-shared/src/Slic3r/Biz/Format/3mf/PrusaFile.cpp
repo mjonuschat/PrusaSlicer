@@ -5,10 +5,13 @@
 #include <boost/assign.hpp>
 #include <boost/bimap.hpp>
 #include <boost/filesystem.hpp>
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
+#include <tl/expected.hpp>
+
 #include "libslic3r/NSVGUtils.hpp" // open content of svg file
 
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Biz/ProjectMetadataJson.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Biz/Config/SelectedPresetJson.hpp"
@@ -18,9 +21,6 @@
 #include "Slic3r/Domain/Types.hpp"
 
 using Slic3r::Domain::Vec3d;
-
-#include "tl/expected.hpp"
-
 
 using ModelObject = Slic3r::Domain::ModelObject;
 using ModelVolume = Slic3r::Domain::ModelVolume;
@@ -1361,19 +1361,22 @@ tl::expected<ResultLoadJson, Read3mfIssue> load_json(mz_zip_archive &archive, co
 namespace ProjectFileSerialization {
 constexpr const char *PRUSA_PROJECT_FILEPATH = "Metadata/PrusaSlicer3_project.json";
 constexpr std::string_view CONFIGURATION = "configuration"; // DynamicConfig
+constexpr std::string_view PROJECT_METADATA = "project";
 constexpr std::string_view PRESET_METADATA = "preset";
 constexpr std::string_view OBJECTS = "objects";
-NamesType PROJECT_NAMES{{CONFIGURATION, PRESET_METADATA, OBJECTS}};
+NamesType PROJECT_NAMES{{PROJECT_METADATA, CONFIGURATION, PRESET_METADATA, OBJECTS}};
 constexpr std::string_view CONFIG_CONTAINERS = "config_containers";
 
 void write(
     mz_zip_archive &archive,
     const Model &model,
+    const Domain::ProjectMetadata& project_metadata,
     const Domain::Project::ConfigContainerList& config_containers,
     const StoredStructure &stored_structure
 ) {
     json project_json = json::object();
     add(project_json, OBJECTS, ObjectsSerialization::objects_to_json(model, stored_structure));
+    project_json[PROJECT_METADATA] = project_metadata;
 
     std::vector<nlohmann::json> all_containers_json;
     for (const auto& config_container : config_containers) {
@@ -1416,6 +1419,7 @@ void write(
 void load(
     const json &project_json,
     const ModelMap &model_map,
+    Domain::ProjectMetadata& project_metadata,
     std::vector<Loaded3MF::ConfigContainerData>& config_containers_data,
     Read3mfIssues& collected_issues
 ) {
@@ -1425,6 +1429,14 @@ void load(
         return;
 
     ObjectsSerialization::load_objects(project_json, OBJECTS, model_map, collected_issues);
+
+    if (project_json.contains(PROJECT_METADATA)) {
+        const auto& pm = project_json.at(PROJECT_METADATA);
+        from_json(pm, "id", project_metadata.id, collected_issues);
+        from_json(pm, "version", project_metadata.version, collected_issues);
+    } else {
+        collected_issues.add_issue(RT::project_config_issue);
+    }
 
     // TODO: handle multiple config containers, add check that the keys exist in the JSON.
     for (const nlohmann::ordered_json& config_container : project_json["config_containers"]) {
@@ -1461,12 +1473,13 @@ void load(
 void Slic3r::store_prusa_files(
     mz_zip_archive &archive,
     const Model &model,
+    const Domain::ProjectMetadata& project_metadata,
     const Domain::Project::ConfigContainerList& config_containers,
     const StoredStructure &stored_structure
 ) {
     FacetsAnnotationSerialization::write(archive, model, stored_structure.volumes);
     EmbossShapeSerialization::write_svg_files(archive, model);
-    ProjectFileSerialization::write(archive, model, config_containers, stored_structure);
+    ProjectFileSerialization::write(archive, model, project_metadata, config_containers, stored_structure);
 }
 
 PrusaFilesResult Slic3r::load_prusa_files(
@@ -1493,7 +1506,7 @@ PrusaFilesResult Slic3r::load_prusa_files(
 
     if (std::optional<json> project_json = get_json(ProjectFileSerialization::PRUSA_PROJECT_FILEPATH, RT::project_file_is_corrupted);
         project_json.has_value())
-        ProjectFileSerialization::load(*project_json, model_map, result.config_containers_data, collected_issues);
+        ProjectFileSerialization::load(*project_json, model_map, result.project_metadata, result.config_containers_data, collected_issues);
 
     if (std::optional<json> facets_json = get_json(FacetsAnnotationSerialization::FACETS_ANNOTATION_FILE, RT::facets_annotation_file_is_corrupted);
         facets_json.has_value()) 

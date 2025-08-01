@@ -41,9 +41,21 @@ TEST_CASE_METHOD(SlicingFixture, "Update stops slicing", "[slicing][slicing-inte
 
     ModelOnBed model_on_bed{get_cubes_model(10, 5)};
     const SlicingId id{0, model_on_bed.bed_instance.id().id};
-    slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
+    slicing.update_process(
+        model_on_bed.model,
+        model_on_bed.project_metadata,
+        model_on_bed.preset_metadata,
+        model_on_bed.config,
+        model_on_bed.bed_instance
+    );
     slicing.slice_bed(id.bed_instance_id);
-    slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
+    slicing.update_process(
+        model_on_bed.model,
+        model_on_bed.project_metadata,
+        model_on_bed.preset_metadata,
+        model_on_bed.config,
+        model_on_bed.bed_instance
+    );
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
         return events.size() > 4;
@@ -79,7 +91,13 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
 
     const SelectionId bed_id{model_on_bed.bed_instance.id().id};
 
-    slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
+    slicing.update_process(
+        model_on_bed.model,
+        model_on_bed.project_metadata,
+        model_on_bed.preset_metadata,
+        model_on_bed.config,
+        model_on_bed.bed_instance
+    );
     slicing.slice_bed(bed_id);
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 5s, [](const StatusEvents &events){
@@ -105,8 +123,20 @@ TEST_CASE_METHOD(SlicingFixture, "Stop pops the action from queue", "[slicing][s
     const SlicingId id1{0, model_on_bed1.bed_instance.id().id};
     const SlicingId id2{0, model_on_bed2.bed_instance.id().id};
 
-    slicing.update_process(model_on_bed1.model, model_on_bed1.config, model_on_bed1.bed_instance);
-    slicing.update_process(model_on_bed2.model, model_on_bed2.config, model_on_bed2.bed_instance);
+    slicing.update_process(
+        model_on_bed1.model,
+        model_on_bed1.project_metadata,
+        model_on_bed1.preset_metadata,
+        model_on_bed1.config,
+        model_on_bed1.bed_instance
+    );
+    slicing.update_process(
+        model_on_bed2.model,
+        model_on_bed2.project_metadata,
+        model_on_bed2.preset_metadata,
+        model_on_bed2.config,
+        model_on_bed2.bed_instance
+    );
     slicing.slice_all();
     slicing.stop_slicing_bed(id2.bed_instance_id);
 
@@ -130,8 +160,20 @@ TEST_CASE_METHOD(SlicingFixture, "Stop all stops all processes", "[slicing][slic
     const SlicingId id1{0, model_on_bed1.bed_instance.id().id};
     const SlicingId id2{0, model_on_bed2.bed_instance.id().id};
 
-    slicing.update_process(model_on_bed1.model, model_on_bed1.config, model_on_bed1.bed_instance);
-    slicing.update_process(model_on_bed2.model, model_on_bed2.config, model_on_bed2.bed_instance);
+    slicing.update_process(
+        model_on_bed1.model,
+        model_on_bed1.project_metadata,
+        model_on_bed1.preset_metadata,
+        model_on_bed1.config,
+        model_on_bed1.bed_instance
+    );
+    slicing.update_process(
+        model_on_bed2.model,
+        model_on_bed2.project_metadata,
+        model_on_bed2.preset_metadata,
+        model_on_bed2.config,
+        model_on_bed2.bed_instance
+    );
     slicing.slice_all();
 
     // Let them both start.
@@ -161,7 +203,13 @@ TEST_CASE_METHOD(
 
     ModelOnBed model_on_bed{get_cubes_model(10, 5)};
     const SlicingId id{0, model_on_bed.bed_instance.id().id};
-    slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
+    slicing.update_process(
+        model_on_bed.model,
+        model_on_bed.project_metadata,
+        model_on_bed.preset_metadata,
+        model_on_bed.config,
+        model_on_bed.bed_instance
+    );
     slicing.slice_bed(id.bed_instance_id);
     slicing.remove_bed(id.bed_instance_id);
 
