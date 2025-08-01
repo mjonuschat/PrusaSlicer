@@ -14,8 +14,12 @@ namespace Slic3r::App::Preview {
 constexpr float navig_btn_width = 40.f;
 constexpr float export_button_size = 25;
 
-SidebarPreviewActionButtons::SidebarPreviewActionButtons()
-    : SidebarActionButtons("sidebar_preview_action_buttons", Render::ModuleType::Preview)
+SidebarPreviewActionButtons::SidebarPreviewActionButtons(Navigator* render_module_navigator) :
+    SidebarActionButtons(
+        "sidebar_preview_action_buttons",
+        Render::ModuleType::Preview,
+        render_module_navigator
+    )
 {
     set_min_size({220, 0});
     set_orientation(Orientation::Vertical);

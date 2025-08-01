@@ -247,7 +247,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Localization.hpp
         include/Slic3r/App/ILanguageChangedListener.hpp
 
-        include/Slic3r/App/IRenderModuleChangedListener.hpp
         src/Slic3r/App/Navigator.cpp
         include/Slic3r/App/Navigator.hpp
 

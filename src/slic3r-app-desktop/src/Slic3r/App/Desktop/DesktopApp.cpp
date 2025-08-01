@@ -158,7 +158,7 @@ bool DesktopApp::OnInit()
     platform_services.set_render_request_handler(&canvas);
     m_main_frame->update_canvas_ui_settings();
 
-    m_navigator.on_init(*m_plater_module, *m_preview_module, canvas);
+    m_navigator.on_init(*m_plater_module, *m_preview_module, canvas, m_project_interactor.get());
 
     canvas.set_render_module(m_plater_module.get());
 

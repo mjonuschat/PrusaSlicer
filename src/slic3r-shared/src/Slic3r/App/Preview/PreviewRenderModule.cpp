@@ -9,7 +9,7 @@
 #include "Slic3r/App/Preview/FdmViewerWrapperInputData.hpp"
 #include "Slic3r/App/Preview/Types.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
-#include "Slic3r/App/IRenderModuleChangedListener.hpp"
+#include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
@@ -410,14 +410,9 @@ void PreviewRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent&
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 }
 
-void PreviewRenderModule::add_type_changed_listener(IRenderModuleChangedListener* l)
+void PreviewRenderModule::set_navigator(Navigator* navigator)
 {
-    m_render_module_changed_listeners.insert(l);
-}
-
-void PreviewRenderModule::remove_type_changed_listener(IRenderModuleChangedListener* l)
-{
-    m_render_module_changed_listeners.erase(l);
+    m_render_module_navigator = navigator;
 }
 
 void PreviewRenderModule::on_selected_bed_instances_changed(
@@ -469,13 +464,22 @@ void PreviewRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId 
     request_render();
 }
 
-void PreviewRenderModule::on_selected_project_changed(size_t index)
+void PreviewRenderModule::on_selected_project_changed(size_t project_id)
 {
     update_bed_instances();
-    if (m_viewer == &m_fdm_viewer)
+    const Biz::Scene::BedSelection& bed_selection = m_project_interactor.scene_interactor()
+                                                        .bed_selection();
+    if (m_viewer == &m_fdm_viewer) {
         m_fdm_viewer.set_scene(m_scene_presenter->scene());
-    else if (m_viewer == &m_sla_viewer)
+        if (!bed_selection.empty()) {
+            update_fdm_viewer_data(m_project_interactor.selected_bed_slicing_id());
+        }
+    } else if (m_viewer == &m_sla_viewer) {
         m_sla_viewer.set_scene(m_scene_presenter->scene());
+        if (!bed_selection.empty()) {
+            update_sla_viewer_data(m_project_interactor.selected_bed_slicing_id());
+        }
+    }
 }
 
 void PreviewRenderModule::set_sidebars_visible(bool hide)
@@ -878,6 +882,7 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
 
 void PreviewRenderModule::init_scene_layout()
 {
+    ASSERT(m_render_module_navigator);
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this, *m_thumbnail_store);
 
@@ -888,11 +893,8 @@ void PreviewRenderModule::init_scene_layout()
     m_sidebar_print        = std::make_unique<SidebarPrint>(m_project_interactor);
     m_sidebar_auto_reslice = std::make_unique<SidebarAutoReslice>();
 
-    m_sidebar_action_buttons = std::make_unique<SidebarPreviewActionButtons>();
+    m_sidebar_action_buttons = std::make_unique<SidebarPreviewActionButtons>(m_render_module_navigator);
     m_sidebar_action_buttons->on_init(&m_project_interactor);
-    for (IRenderModuleChangedListener* listener : std::as_const(m_render_module_changed_listeners)) {
-        m_sidebar_action_buttons->add_listener<IRenderModuleChangedListener>(listener);
-    }
 
     m_layout.reset(new PreviewRenderLayout(
         m_top_bar.release(),
@@ -1266,7 +1268,9 @@ void PreviewRenderModule::update_fdm_viewer_data(const Biz::Slicing::SlicingId i
                                                   ViewType::ColorPrint
     );
 
-    center_camera_on_selected_bed();
+    // hbFIXME -> This code is commented out until @barzto fixes 
+    // the order of on_select_project and on_select_config_container calls.
+    // center_camera_on_selected_bed();
 }
 
 void PreviewRenderModule::update_sla_viewer_result_data(const Biz::Slicing::SlicingId id)

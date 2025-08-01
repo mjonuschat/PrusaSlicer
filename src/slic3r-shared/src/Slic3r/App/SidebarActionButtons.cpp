@@ -9,8 +9,14 @@ namespace Slic3r::App {
 
 using RMType = Render::ModuleType;
 
-SidebarActionButtons::SidebarActionButtons(const std::string& name, Render::ModuleType type)
-    : Yoga::Window(name), m_type(type)
+SidebarActionButtons::SidebarActionButtons(
+    const std::string& name,
+    Render::ModuleType type,
+    Navigator* render_module_navigator
+) :
+    Yoga::Window(name),
+    m_type(type),
+    m_render_module_navigator(render_module_navigator)
 {
     ASSERT(type != RMType::Undef);
 
@@ -47,9 +53,7 @@ bool SidebarActionButtons::slice_allowed() const
 
 void SidebarActionButtons::navigate_to_other()
 {
-    invoke_listeners<IRenderModuleChangedListener>([this](auto* listener) {
-        listener->on_render_module_changed(m_navigate_to_type);
-    });
+    m_render_module_navigator->set_render_module_type(m_navigate_to_type);
 }
 
 } // namespace Slic3r::App

@@ -7,8 +7,8 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Plater {
 
-SidebarPlaterActionButtons::SidebarPlaterActionButtons()
-    : SidebarActionButtons("sidebar_plater_action_buttons", Render::ModuleType::Plater)
+SidebarPlaterActionButtons::SidebarPlaterActionButtons(Navigator* render_module_navigator) :
+    SidebarActionButtons("sidebar_plater_action_buttons", Render::ModuleType::Plater, render_module_navigator)
 {
     m_button_slice = emplace_back<LayoutButton>("Slice");
     m_button_slice->set_flex_grow(1);

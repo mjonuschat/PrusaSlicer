@@ -30,7 +30,7 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
-#include "Slic3r/App/IRenderModuleChangedListener.hpp"
+#include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
@@ -134,18 +134,9 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
 }
 
-void PlaterRenderModule::add_type_changed_listener(IRenderModuleChangedListener* l)
-{
-    m_render_module_changed_listeners.insert(l);
-}
-
-void PlaterRenderModule::remove_type_changed_listener(IRenderModuleChangedListener* l)
-{
-    m_render_module_changed_listeners.erase(l);
-}
-
 void PlaterRenderModule::init_scene_layout()
 {
+    ASSERT(m_render_module_navigator);
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this, *m_thumbnail_store);
 
@@ -157,11 +148,10 @@ void PlaterRenderModule::init_scene_layout()
     m_history       = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
 
-    m_sidebar_action_buttons = Passthrough{std::make_unique<SidebarPlaterActionButtons>()};
+    m_sidebar_action_buttons = Passthrough{
+        std::make_unique<SidebarPlaterActionButtons>(m_render_module_navigator)
+    };
     m_sidebar_action_buttons->on_init(&m_project_interactor);
-    for (IRenderModuleChangedListener* listener : std::as_const(m_render_module_changed_listeners)) {
-        m_sidebar_action_buttons->add_listener<IRenderModuleChangedListener>(listener);
-    }
 
     m_layout.reset(new PlaterRenderLayout(
         m_top_bar.release(),
@@ -532,6 +522,11 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
 void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)
 {
     update_toolbar_tool_selection(active_tool ? active_tool->type() : Scene::ToolType::None);
+}
+
+void PlaterRenderModule::set_navigator(Navigator* navigator)
+{
+    m_render_module_navigator = navigator;
 }
 
 void PlaterRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)

@@ -10,7 +10,7 @@ namespace Slic3r::App::Preview {
 
 class SidebarPreviewActionButtons : public SidebarActionButtons {
 public:
-    SidebarPreviewActionButtons();
+    SidebarPreviewActionButtons(Navigator* render_module_navigator);
 
     void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
 

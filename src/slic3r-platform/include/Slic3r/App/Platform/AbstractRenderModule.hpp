@@ -7,7 +7,7 @@
 #include "Slic3r/App/Platform/CommandRegistry.hpp"
 
 namespace Slic3r::App {
-class IRenderModuleChangedListener;
+class Navigator;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Render {
@@ -63,8 +63,7 @@ protected:
     virtual void register_commands() {}
     void request_render();
 
-    virtual void add_type_changed_listener(IRenderModuleChangedListener* l) = 0;
-    virtual void remove_type_changed_listener(IRenderModuleChangedListener* l) = 0;
+    virtual void set_navigator(Navigator* n) = 0;
 
 protected:
     Render::Device* m_device{nullptr};

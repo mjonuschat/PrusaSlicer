@@ -22,6 +22,7 @@
 namespace Slic3r::App {
 struct ThumbnailStore;
 class ThumbnailStoreUpdater;
+class Navigator;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Preview {
@@ -60,8 +61,7 @@ public:
     void render_imgui(Render::CommandBuffer& cmd_buffer) override;
     void on_scene_mouse_event(const Platform::MouseEvent& e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent& e) override;
-    void add_type_changed_listener(IRenderModuleChangedListener* l) override;
-    void remove_type_changed_listener(IRenderModuleChangedListener* l) override;
+    void set_navigator(Navigator* navigator) override;
     /**@}*/
 
     void on_selected_bed_instances_changed(
@@ -155,7 +155,7 @@ private:
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;
 
-    std::unordered_set<IRenderModuleChangedListener*> m_render_module_changed_listeners;
+    Navigator* m_render_module_navigator{nullptr};
 
 private:
     void init_gizmos();

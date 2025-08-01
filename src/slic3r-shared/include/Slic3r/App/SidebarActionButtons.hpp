@@ -2,8 +2,8 @@
 
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Slicing/BackgroundProcess.hpp"
-#include "Slic3r/App/IRenderModuleChangedListener.hpp"
 #include "Slic3r/App/Yoga/Window.hpp"
+#include "Slic3r/App/Navigator.hpp"
 
 #include <string>
 
@@ -17,10 +17,10 @@ class ProjectInteractor;
 
 namespace Slic3r::App {
 
-class SidebarActionButtons : public Yoga::Window, public WithListeners<IRenderModuleChangedListener>
+class SidebarActionButtons : public Yoga::Window
 {
 public:
-    SidebarActionButtons(const std::string& name, Render::ModuleType type);
+    SidebarActionButtons(const std::string& name, Render::ModuleType type, Navigator* render_module_navigator);
 
     void on_init(Biz::ProjectInteractor* project_interactor);
 
@@ -31,6 +31,7 @@ protected:
 
 protected:
     Biz::ProjectInteractor* m_project_interactor{nullptr};
+    Navigator* m_render_module_navigator{nullptr};
 
     // The type of the owning render module.
     Render::ModuleType m_type{Render::ModuleType::Undef};
