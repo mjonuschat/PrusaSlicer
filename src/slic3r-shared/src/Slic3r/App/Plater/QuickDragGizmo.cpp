@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2025 Filip Sykala @Jony01
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/Domain/Types.hpp"

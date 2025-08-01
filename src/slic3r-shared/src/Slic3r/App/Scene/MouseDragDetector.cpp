@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2025 Filip Sykala @Jony01
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "Slic3r/App/Scene/MouseDragDetector.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -17,8 +21,6 @@ bool is_over_offset(const MouseEvent& me1, const MouseEvent& me2, int offset)
     // TODO: To convert on micrometers need DPI of the monitor
     return static_cast<int>(max_distance * (1'000 * 96 / 2.54)) > offset;
 }
-
-using Slic3r::App::Scene::DragState;
 
 void log_weird_state(const std::string& message)
 {
@@ -248,7 +250,7 @@ bool MouseDragDetector::can_start_drag()
     }
 }
 
-std::string to_string(DragState state)
+std::string MouseDragDetector::to_string(DragState state)
 {
     switch (state) {
     case DragState::NoDrag:

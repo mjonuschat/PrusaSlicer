@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2025 Filip Sykala @Jony01
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #pragma once
 #include <chrono>
 #include <optional>
@@ -9,24 +13,18 @@
 #include <Slic3r/App/Scene/GizmoEventContext.hpp>
 #include "Slic3r/App/Scene/IGizmo.hpp"
 
-/// <summary>
-/// Way to unify drag conditions(time or offset).
-/// On detection of start dragging (MouseEvent::Move)
-/// is selected first gizmo from active list to process dragging operation(dragging + finish(cancel) evenet)
-/// </summary>
-
+/**
+ *  @brief Way to unify drag conditions(time or offset).
+ *  On detection of start dragging (MouseEvent::Move)
+ *  is selected first gizmo from active list 
+ *  to process dragging operation(dragging + finish(cancel) evenet)
+ */
 namespace Slic3r::App::Scene {
-/// <summary>
-/// Current state of dragging for button
-/// </summary>
-enum class DragState
-{
-    NoDrag,
-    StartWeWillSee, // mouse click, record mouse event
-    Dragging // mouse move with button down
-};
-std::string to_string(DragState state);
 
+/**
+ *  @brief   Interface is used together with IGizmo.
+ *           allowe process mouse drag events
+ */
 class IMouseDrag
 {
 public:
@@ -37,35 +35,37 @@ public:
     virtual void on_drag_cancel()                        = 0;
 };
 
-/// <summary>
-/// Only one in the application(centralized place for dragging detection),
-/// Sniff mouse events from OS provide Drag object
-/// NOTE: Consumers get only const reference to this object
-/// </summary>
+/**
+ *  @brief   Only one in the application(centralized place for dragging detection),
+ *           Sniff mouse events from OS provide Drag object
+ *  @note Consumers(listeners) are registred by add_tool_gizmo(add_base_gizmo) into GizmoManager
+ */
 class MouseDragDetector
 {
 public:
     MouseDragDetector(int min_time_span, int min_offset);
 
-    /// <summary>
-    /// Internaly detect if gizmo implement IMouseDrag interface
-    /// When yes add to sorted listener list
-    /// </summary>
-    /// <param name="gizmo"></param>
+    /**
+     *  @brief When gizmo implement IMouseDrag interface
+     *         add into internal sorted listener list
+     *  @param gizmo - listener when implement IMouseDrag interface
+     */
     void add_listener(IGizmo* gizmo);
     void rem_listener(IGizmo* gizmo);
-
-    /// <summary>
-    /// Change state by mouse events to detect draging by mouse events
-    /// </summary>
-    /// <param name="ctx">Mouse event + casted ray</param>
-    /// <param name="gizmos">Current active gizmos</param>
+    
+    /**
+     *  @brief  Change state by mouse events to detect draging by mouse events
+     *  @param  ctx        - Mouse event + casted ray
+     *  @param  get_gizmos - call back to getter on the Current active gizmos
+     *  @retval            - True when consume event otherwise False
+     * @note MouseEvent::ButtonDown and event til the drag is confirm return False
+     */
     using GetActiveGizmos = std::function<std::vector<IGizmo*>()>;
     bool mouse_event(const GizmoEventContext& ctx, GetActiveGizmos get_gizmos);
 
-    /// <summary>
-    /// Way to cancel draging e.g. on ESC key
-    /// </summary>
+    /**
+     *  @brief Way to cancel draging e.g. on ESC key
+     */
     void cancel_drag_event();
 
 private:
@@ -83,9 +83,9 @@ private:
     bool m_right_down  = false;
     bool m_middle_down = false;
 
-    /// <summary>
-    /// Keep information about place of drag start
-    /// </summary>
+    /**
+     *  @brief Keep information about place of drag start
+     */
     struct DragStart
     {
         // NOTE: GizmoEventContext contain only reference on mouse event
@@ -107,8 +107,18 @@ private:
         }
     };
 
+    /**
+    *  @brief Current state of dragging for button
+    */
+    enum class DragState
+    {
+        NoDrag,
+        StartWeWillSee, // mouse click, record mouse event
+        Dragging // mouse move with button down
+    };
     // keep state of left mouse button drag
     DragState m_state = DragState::NoDrag;
+    static std::string to_string(DragState state);
     // keep data from drag start
     std::optional<DragStart> m_start = std::nullopt;
 
