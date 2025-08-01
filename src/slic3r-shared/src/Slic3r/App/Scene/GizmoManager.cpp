@@ -2,7 +2,7 @@
 
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
-// DEBUG ONLY
+// DEBUG ONLY: for MEASURE_GIZMO_DEBUG
 #include "Slic3r/App/Plater/MeasureGizmo.hpp"
 
 #if DEBUG_GIZMO_MANAGER
@@ -77,7 +77,7 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         pick_results, &pick_ray
 
     );
-    GizmoEventContext ctx{e, pick_ray, pick_results, screen_info};
+    GizmoEventContext ctx{scene, e, pick_ray, pick_results, screen_info};
     if (m_mouse_drag_detector && 
         m_mouse_drag_detector->mouse_event(ctx, [this](){ return get_gizmos(m_base_gizmos, current_context().active_tool); }))
         return;
@@ -184,12 +184,13 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
 }
 
 void GizmoManager::render_imgui() {
-    // DEBUG ONLY
+#if MEASURE_GIZMO_DEBUG
     if (current_tool_type() == ToolType::MeasureGizmo) {
         auto measure_gizmo = dynamic_cast<Slic3r::App::Plater::MeasureGizmo*>(current_context().active_tool);
         if (measure_gizmo!=nullptr)
             measure_gizmo->render_imgui();
     }
+#endif // MEASURE_GIZMO_DEBUG
 }
 
 //void GizmoManager::render_imgui()

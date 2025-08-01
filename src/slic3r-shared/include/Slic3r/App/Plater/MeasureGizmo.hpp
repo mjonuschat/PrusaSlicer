@@ -9,6 +9,8 @@
 #include "Slic3r/App/Plater/MeasureGizmoHelper.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
 
+#define MEASURE_GIZMO_DEBUG 0
+
 namespace Slic3r::Biz::Scene {
 struct ObjectSelection;
 class SceneInteractor;
@@ -46,6 +48,8 @@ public:
     void on_keyboard(Scene::GizmoKeyEventContext& ctx) override;
 
     void on_project_activated(size_t new_project_id) override;
+    void on_project_deactivated(size_t old_project_id) override;
+
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
 
     void register_commands(Platform::CommandRegistry& registry) override;
@@ -72,68 +76,78 @@ private:
     void update_feature_detection_data(const Scene::Node* scene_node, const Scene::GizmoEventContext& ctx);
     std::optional<Measure::FeatureItem> detect_current_feature();
     void update_current_feature_on_scene();
+    void update_measurement();
     void update_measurement_result();
+    void update_dimensioning();
+    void update_linear_dimensioning();
+    void update_angular_dimensioning();
+    void update_arc_edge_edge_dimensioning(
+        const Measure::SurfaceFeature& f1,
+        const Measure::SurfaceFeature& f2
+    );
+    void update_arc_edge_plane_dimensioning(
+        const Measure::SurfaceFeature& f1,
+        const Measure::SurfaceFeature& f2
+    );
+    void update_arc_plane_plane_dimensioning(
+        const Measure::SurfaceFeature& f1,
+        const Measure::SurfaceFeature& f2
+    );
     void update_ui_dialog();
-    void highlight_node(Scene::Node& node);
+    void update_highlight();
     void clear_scene();
+    void clear_features();
 
     void handle_left_click_on_current_feature(Scene::Node& feature_node);
     void handle_left_click_on_first_selected_feature(Scene::Node& feature_node);
     void handle_left_click_on_second_selected_feature(Scene::Node& feature_node);
+    void handle_left_click_on_first_circle_center_feature(Scene::Node& feature_node);
+    void handle_left_click_on_second_circle_center_feature(Scene::Node& feature_node);
+
+    void handle_hover_first_selected_feature(Scene::Node& feature_node);
+    void handle_hover_second_selected_feature(Scene::Node& feature_node);
+    void handle_hover_first_circle_center_feature(Scene::Node& feature_node);
+    void handle_hover_second_circle_center_feature(Scene::Node& feature_node);
 
     void add_feature_to_scene(
-        const Measure::FeatureItem& feature,
+        const Measure::SurfaceFeature& feature,
         Measure::MeasureGizmoElementType type,
+        const Domain::ElementRef& ref,
         const std::string& debug_name,
         const Domain::ColorRGBA& color,
-        const Measure::Measuring& measuring
+        const Measure::Measuring& measuring,
+        Scene::Node& parent_node
     );
     void remove_feature_from_scene(Measure::MeasureGizmoElementType type);
 
     void build_point_feature(
         Scene::NodeBuilder& builder,
-        const Measure::FeatureItem& feature,
+        const Measure::SurfaceFeature& feature,
         const Domain::ColorRGBA& color
     );
     void build_edge_feature(
         Scene::NodeBuilder& builder,
-        const Measure::FeatureItem& feature,
+        const Measure::SurfaceFeature& feature,
         const Domain::ColorRGBA& color
     );
     void build_circle_feature(
         Scene::NodeBuilder& builder,
-        const Measure::FeatureItem& feature,
+        const Measure::SurfaceFeature& feature,
         const Domain::ColorRGBA& color
     );
     void build_plane_feature(
         Scene::NodeBuilder& builder,
-        const Measure::FeatureItem& feature,
+        Domain::ElementRef ref,
+        const Measure::SurfaceFeature& feature,
         const Measure::Measuring& measuring,
         const Domain::ColorRGBA& color
     );
 
-    void build_distance_dimensioning(
-        Scene::NodeBuilder& builder,
-        const Domain::Vec3d& v1,
-        const Domain::Vec3d& v2,
-        double distance
-    );
-    void build_arc_edge_edge_dimensioning(
-        Scene::NodeBuilder& builder,
-        const Measure::SurfaceFeature& f1,
-        const Measure::SurfaceFeature& f2
-    );
-    void build_arc_edge_plane_dimensioning(
-        Scene::NodeBuilder& builder,
-        const Measure::SurfaceFeature& f1,
-        const Measure::SurfaceFeature& f2
-    );
-    void build_arc_plane_plane_dimensioning(
-        Scene::NodeBuilder& builder,
-        const Measure::SurfaceFeature& f1,
-        const Measure::SurfaceFeature& f2
-    );
-    void render_dimensioning();
+    void build_dimensioning_node();
+    void build_linear_dimensioning_node(Scene::NodeBuilder& builder);
+    void build_angular_dimensioning_node(Scene::NodeBuilder& builder);
+
+    Render::Material dimensioning_material();
 
 private:
     enum class SelectionMode : uint8_t
@@ -147,26 +161,41 @@ private:
     Biz::Scene::SceneInteractor& m_scene_interactor;
     PlaterScenePresenter& m_scene_presenter;
 
-    using GeometryManager     = Render::GeometryManager<std::string>;
-    using TriangleMeshManager = Scene::TriangleMeshManager<std::string>;
-    GeometryManager m_geometry_manager;
-    TriangleMeshManager m_triangle_mesh_manager;
-
-    Scene::Node* m_main_node{nullptr};
-    Scene::Node* m_dimensioning_node{nullptr};
     SelectionMode m_selection_mode{SelectionMode::Feature};
     bool m_mouse_left_down{false};
     std::optional<Measure::FeatureDetectionData> m_feature_detection_data;
 
+    struct DimensioningNodes
+    {
+        Scene::Node* main{nullptr};
+        Scene::Node* linear{nullptr};
+        Scene::Node* angular{nullptr};
+
+        void reset()
+        {
+            main    = nullptr;
+            linear  = nullptr;
+            angular = nullptr;
+        }
+    };
+
+    using GeometryManager     = Render::GeometryManager<std::string>;
+    using TriangleMeshManager = Scene::TriangleMeshManager<std::string>;
+
     struct ProjectContext
     {
-        size_t id{Domain::INVALID_ID}; // DEBUG ONLY
+        size_t id{Domain::INVALID_ID};
+        bool activated{false};
+        Scene::Node* main_node{nullptr};
+        Scene::Node* features_node{nullptr};
+        DimensioningNodes dimensioning_nodes;
+        GeometryManager geometry_manager;
+        TriangleMeshManager triangle_mesh_manager;
         Measure::SceneSelectionCache scene_selection_cache;
         Measure::FeatureCache feature_cache;
     };
 
     using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
-
     ProjectContexts m_projects;
     ProjectContext* m_current_project{nullptr};
 

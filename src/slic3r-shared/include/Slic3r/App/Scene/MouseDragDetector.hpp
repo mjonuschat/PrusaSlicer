@@ -88,23 +88,9 @@ private:
      */
     struct DragStart
     {
-        // NOTE: GizmoEventContext contain only reference on mouse event
-        Platform::MouseEvent mouse_event;
-        Ray pick_ray;
-        NodePickResults pick_results;
-        Render::ScreenInfo screen_info; // need make a copy
+        GizmoEventContext ctx;
 
-        DragStart(const GizmoEventContext& ctx) :
-            mouse_event(ctx.mouse_event()),
-            pick_ray(ctx.pick_ray()),
-            pick_results(ctx.pick_results()),
-            screen_info(ctx.screen_info())
-        {}
-
-        const GizmoEventContext create_ctx() const
-        {
-            return GizmoEventContext{mouse_event, pick_ray, pick_results, screen_info};
-        }
+        DragStart(const GizmoEventContext& ctx) : ctx(ctx) {}
     };
 
     /**

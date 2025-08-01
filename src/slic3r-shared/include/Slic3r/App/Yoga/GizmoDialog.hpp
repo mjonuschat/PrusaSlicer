@@ -29,18 +29,6 @@ protected:
 
 protected:
     GizmoDialogHelp m_help;
-
-    Text* help_title(int help_item_idx);
-    Icon* help_icon(int help_item_idx, int icon_idx = 0);
-
-protected:
-
-    struct HelpItem {
-        std::vector<Icon*> icons;
-        Text* title{ nullptr };
-    };
-
-    std::vector<HelpItem> m_help_items;
 };
 
 } // namespace Slic3r::App::Yoga

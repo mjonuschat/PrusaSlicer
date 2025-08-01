@@ -46,7 +46,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/MeasureGizmo.hpp
         src/Slic3r/App/Plater/MeasureGizmo.cpp
         include/Slic3r/App/Plater/MeasureGizmoHelper.hpp
-        src/Slic3r/App/Plater/MeasureGizmoHelper.cpp
         include/Slic3r/App/Plater/MeasureDialog.hpp
         src/Slic3r/App/Plater/MeasureDialog.cpp
         include/Slic3r/App/Plater/ThumbnailRenderer.hpp
@@ -238,6 +237,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/BedRenderUpdater.hpp
         src/Slic3r/App/Scene/BedRenderUpdater.cpp
         include/Slic3r/App/Scene/AuxiliaryElementId.hpp
+        include/Slic3r/App/Scene/ISceneChangedListener.hpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp
@@ -846,6 +846,8 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
 
         test/Slic3r/App/Scene/Node.cpp
         test/Slic3r/App/Scene/Ray.cpp
+
+        test/Slic3r/App/Plater/SurfaceMesh.cpp
 
         test/Slic3r/App/Yoga/ListViewTests.cpp
         test/Slic3r/App/Yoga/LayoutTests.cpp

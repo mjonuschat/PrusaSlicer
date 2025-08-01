@@ -12,6 +12,8 @@
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Render/Shader.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
+#include "Slic3r/Biz/Platform/WithListeners.hpp"
+#include "Slic3r/App/Scene/ISceneChangedListener.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
 
@@ -74,7 +76,7 @@ public:
  *   and in-memory geometry (triangle_mesh_manager())
  * .
  */
-class Scene final
+class Scene final : public WithListeners<ISceneChangedListener>
 {
 public:
     Scene();

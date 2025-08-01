@@ -22,7 +22,7 @@ public:
     Type type() const { return m_type; }
     KeyCode code() const { return m_code; }
     KeyModifiers key_modifiers() const { return m_key_modifiers; }
-    bool repeat() const { return m_repeat; }
+    bool is_repeat() const { return m_repeat; }
 
 private:
     Type m_type;
