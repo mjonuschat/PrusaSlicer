@@ -100,10 +100,9 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
     help_row->set_padding(5);
     help_row->set_gap(15);
 
-    add_help({{Render::Icon::MouseLeft}}, "Paint", help_row);
-    add_help({{Render::Icon::MouseRight}}, "Block", help_row);
-    add_help(
-        { {Render::Icon::KeyShift, {35.f, 35.f}}, {Render::Icon::MouseLeft} }, "Remove", help_row
-    );
+    m_help.init(help_row);
+    m_help.add_item({{Render::Icon::MouseLeft}}, "Paint");
+    m_help.add_item({{Render::Icon::MouseRight}}, "Block");
+    m_help.add_item({{Render::Icon::KeyShift, {35.f, 35.f}}, {Render::Icon::MouseLeft}}, "Remove");
 }
 } // namespace Slic3r::App::Plater

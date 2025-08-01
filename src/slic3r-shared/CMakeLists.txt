@@ -285,6 +285,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Dialog.cpp
         include/Slic3r/App/Yoga/GizmoDialog.hpp
         src/Slic3r/App/Yoga/GizmoDialog.cpp
+        include/Slic3r/App/Yoga/GizmoDialogHelp.hpp
+        src/Slic3r/App/Yoga/GizmoDialogHelp.cpp
         src/Slic3r/App/Yoga/Separator.cpp
         include/Slic3r/App/Yoga/Separator.hpp
         src/Slic3r/App/Yoga/Oval.cpp

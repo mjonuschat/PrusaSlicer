@@ -31,9 +31,10 @@ MeasureDialog::MeasureDialog() : GizmoDialog(_u8L("Measure"))
     m_helper_panel->set_align_items(YGAlign::YGAlignFlexStart);
     m_helper_panel->set_gap(gap_size());
 
-    add_help({ {Render::Icon::MouseLeft} }, _u8L("Select Feature"), m_helper_panel, false);
-    add_help({ {Render::Icon::KeyEsc, shortcut_button_size} }, _u8L("Unselect last"), m_helper_panel, false);
-    add_help({ {Render::Icon::KeyDel, shortcut_button_size} }, _u8L("Restart"), m_helper_panel, false);
+    m_extra_help.init(m_helper_panel);
+    m_extra_help.add_item({ {Render::Icon::MouseLeft} }, _u8L("Select Feature"), false);
+    m_extra_help.add_item({ {Render::Icon::KeyEsc, shortcut_button_size} }, _u8L("Unselect last"), false);
+    m_extra_help.add_item({ {Render::Icon::KeyDel, shortcut_button_size} }, _u8L("Restart"), false);
 
     // Create main panel
 
@@ -63,9 +64,10 @@ MeasureDialog::MeasureDialog() : GizmoDialog(_u8L("Measure"))
     help_row->set_padding(5);
     help_row->set_gap(15);
 
-    add_help({ {Render::Icon::MouseLeft} }, _u8L("Select"), help_row);
-    add_help({ {Render::Icon::KeyEsc, shortcut_button_size} }, _u8L("Unselect"), help_row);
-    add_help({ {Render::Icon::KeyDel, shortcut_button_size}  }, _u8L("Restart"), help_row);
+    m_help.init(help_row);
+    m_help.add_item({ {Render::Icon::MouseLeft} }, _u8L("Select"));
+    m_help.add_item({ {Render::Icon::KeyEsc, shortcut_button_size} }, _u8L("Unselect"));
+    m_help.add_item({ {Render::Icon::KeyDel, shortcut_button_size}  }, _u8L("Restart"));
 
     m_main_panel->set_visible(false);
 

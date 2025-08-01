@@ -55,6 +55,7 @@ private:
 
     Yoga::Item* m_helper_panel = nullptr;
     Yoga::Item* m_main_panel = nullptr;
+    Yoga::GizmoDialogHelp m_extra_help;
 };
 
 } // namespace Slic3r::App::Plater
