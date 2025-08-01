@@ -10,6 +10,7 @@
 #include <Slic3r/App/Plater/PlaterRenderModule.hpp>
 #include <Slic3r/App/Preview/PreviewRenderModule.hpp>
 #include <Slic3r/App/Init.hpp>
+#include <Slic3r/App/PresetUpdaterUI.hpp>
 
 #include <Slic3r/Biz/ThumbnailImageProvider.hpp>
 #include <Slic3r/Biz/ProjectInteractor.hpp>
@@ -20,10 +21,15 @@ class MainFrame;
 
 int run(const InitParams& init_params);
 
-class DesktopApp : public wxApp {
+class DesktopApp : public wxApp
+{
 public:
     bool OnInit() override;
-    void set_init_params(const InitParams& init_params) { m_init_params = init_params; }
+
+    void set_init_params(const InitParams& init_params)
+    {
+        m_init_params = init_params;
+    }
 
     // TODO: Any recoverable exception should be handled here.
     bool OnExceptionInMainLoop() override;
@@ -45,6 +51,7 @@ private:
     std::unique_ptr<wxGLContext> m_gl_context; // do NOT change order of this attribute
     std::unique_ptr<Biz::ThumbnailImageProvider> m_thumbnail_image_provider;
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;
+    std::unique_ptr<PresetUpdaterUI> m_preset_updater_ui;
 
     MainFrame* m_main_frame{nullptr};
     std::unique_ptr<Plater::PlaterRenderModule> m_plater_module;
@@ -55,4 +62,3 @@ private:
 };
 
 } // namespace Slic3r::App::Desktop
-

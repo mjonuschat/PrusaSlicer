@@ -5,8 +5,7 @@
 
 #include "Slic3r/Log.hpp"
 
-#include "libslic3r/format.hpp"
-
+#include "fmt/format.h"
 #include <boost/filesystem.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/algorithm/string.hpp>
@@ -17,14 +16,15 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-PrintHostPrusaLink::PrintHostPrusaLink(PrintHostConfig config, PrintHostJobData data)
-    : IPrintHost(std::move(config), std::move(data))
-{
-}
+PrintHostPrusaLink::PrintHostPrusaLink(PrintHostConfig config, PrintHostJobData data) :
+    IPrintHost(std::move(config), std::move(data))
+{}
 
 bool PrintHostPrusaLink::validate_version_text(const boost::optional<std::string>& version_text) const
 {
-    return version_text ? (boost::starts_with(*version_text, "PrusaLink") || boost::starts_with(*version_text, "OctoPrint")) : false;
+    return version_text ? (boost::starts_with(*version_text, "PrusaLink")
+                           || boost::starts_with(*version_text, "OctoPrint")) :
+                          false;
 }
 
 void PrintHostPrusaLink::set_auth(Network::IHttp* http) const
@@ -48,17 +48,19 @@ void PrintHostPrusaLink::set_auth(Network::IHttp* http) const
 
 std::string PrintHostPrusaLink::make_url(const std::string& path) const
 {
-    if (m_print_host_config.host.find("http://") == 0 || m_print_host_config.host.find("https://") == 0) {
+    if (m_print_host_config.host.find("http://") == 0
+        || m_print_host_config.host.find("https://") == 0)
+    {
         if (m_print_host_config.host.back() == '/') {
-            return format("%1%%2%", m_print_host_config.host, path);
+            return fmt::format("{}{}", m_print_host_config.host, path);
         } else {
-            return format("%1%/%2%", m_print_host_config.host, path);
+            return fmt::format("{}/{}", m_print_host_config.host, path);
         }
     } else {
-        return format("http://%1%/%2%", m_print_host_config.host, path);
+        return fmt::format("http://{}/{}", m_print_host_config.host, path);
     }
-
 }
+
 bool PrintHostPrusaLink::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
 #ifndef WIN32
@@ -78,10 +80,10 @@ bool PrintHostPrusaLink::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
             .set_retries(5) // number of rounds of queries send
             .set_timeout(1) // after each timeout, if there is any answer, the resolving will stop
             .on_resolve([&ra = resolved_addr](const std::vector<BonjourReply>& replies) {
-                for (const auto & rpl : replies) {
+                for (const auto& rpl : replies) {
                     boost::asio::ip::address ip(rpl.ip);
                     ra.emplace_back(ip);
-                    SPDLOG_INFO(format("Resolved IP address: %1%", rpl.ip));
+                    SPDLOG_INFO("Resolved IP address: {}", rpl.ip.to_string());
                 }
             })
             .resolve_sync();
@@ -89,24 +91,43 @@ bool PrintHostPrusaLink::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
 
     if (resolved_addr.empty()) {
         // no resolved addresses - try system resolving
-        SPDLOG_ERROR(format("Failed to resolve hostname %1% into the IP address. Starting upload with system resolving.", m_print_host_config.host));
+        SPDLOG_ERROR(
+            "Failed to resolve hostname {} into the IP address. Starting upload with system resolving.",
+            m_print_host_config.host
+        );
         return upload_inner_with_host(progress_fn, retry_fn, error_fn, info_fn);
     } else if (resolved_addr.size() == 1) {
         // one address resolved - upload there
-        return upload_inner_with_resolved_ip(progress_fn, retry_fn, error_fn, info_fn, resolved_addr.front());
-    }  else if (resolved_addr.size() == 2 && resolved_addr[0].is_v4() != resolved_addr[1].is_v4()) {
+        return upload_inner_with_resolved_ip(
+            progress_fn,
+            retry_fn,
+            error_fn,
+            info_fn,
+            resolved_addr.front()
+        );
+    } else if (resolved_addr.size() == 2 && resolved_addr[0].is_v4() != resolved_addr[1].is_v4()) {
         // there are just 2 addresses and 1 is ip_v4 and other is ip_v6
         // try sending to both. (Then if both fail, show both error msg after second try)
         std::string error_message;
-        if (!upload_inner_with_resolved_ip(progress_fn, retry_fn
-            , [&msg = error_message, resolved_addr](std::string error) { msg = format("%1%: %2%", resolved_addr.front(), error); }
-            , info_fn, resolved_addr.front())
-            &&
-            !upload_inner_with_resolved_ip(progress_fn, retry_fn
-            , [&msg = error_message, resolved_addr](std::string error) { msg += format("\n%1%: %2%", resolved_addr.back(), error); }
-            , info_fn, resolved_addr.back())
-            ) {
-
+        if (!upload_inner_with_resolved_ip(
+                progress_fn,
+                retry_fn,
+                [&msg = error_message, resolved_addr](std::string error) {
+                    msg = fmt::format("{}: {}", resolved_addr.front().to_string(), error);
+                },
+                info_fn,
+                resolved_addr.front()
+            )
+            && !upload_inner_with_resolved_ip(
+                progress_fn,
+                retry_fn,
+                [&msg = error_message, resolved_addr](std::string error) {
+                    msg += fmt::format("\n{}: {}", resolved_addr.back().to_string(), error);
+                },
+                info_fn,
+                resolved_addr.back()
+            ))
+        {
             error_fn(error_message);
             return false;
         }
@@ -115,7 +136,8 @@ bool PrintHostPrusaLink::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
         // There are multiple addresses - user needs to choose which to use. (Here used to be dialog (We are in worker thread!!))
         // Lets try all now until some works?
         for (size_t i = 0; i < resolved_addr.size(); i++) {
-            if (upload_inner_with_resolved_ip(progress_fn, retry_fn, error_fn, info_fn, resolved_addr[i])) {
+            if (upload_inner_with_resolved_ip(progress_fn, retry_fn, error_fn, info_fn, resolved_addr[i]))
+            {
                 return true;
             }
         }
@@ -133,17 +155,21 @@ bool PrintHostPrusaLink::test(std::string& msg, RetryFn retry_fn) const
     bool res = true;
     auto url = make_url("api/version");
 
-    SPDLOG_INFO(format("%1%: Get version at: %2%", name , url));
+    SPDLOG_INFO("{}: Get version at: {}", name, url);
 
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+        Network::IHttp::RequestMethod::Get,
+        std::move(url),
+        retry_fn
+    );
     set_auth(http.get());
     http->on_error([&](std::string body, std::string error, unsigned status) {
-        SPDLOG_ERROR(format("%1%: Error getting version: %2%, HTTP %3%, body: `%4%`", name , error , status , body));
-        res = false;
-        msg = format_error(body, error, status);
+            SPDLOG_ERROR("{}: Error getting version: {}, HTTP {}, body: `{}`", name, error, status, body);
+            res = false;
+            msg = format_error(body, error, status);
         })
         .on_complete([&, this](std::string body, unsigned) {
-            SPDLOG_INFO(format("%1%: Got version: %2%", name , body));
+            SPDLOG_INFO("{}: Got version: {}", name, body);
 
             try {
                 nlohmann::json json = nlohmann::json::parse(body);
@@ -153,14 +179,17 @@ bool PrintHostPrusaLink::test(std::string& msg, RetryFn retry_fn) const
                 }
                 boost::optional<std::string> text;
                 if (json.contains("text") && json["text"].is_string()) {
-                   text = json["text"].get<std::string>();
+                    text = json["text"].get<std::string>();
                 }
                 res = validate_version_text(text);
-                if (! res) {
-                    msg = format(_u8L("Mismatched type of print host: %s"), (text ? *text : name));
+                if (!res) {
+                    msg = fmt::format(
+                        "{} {}",
+                        _u8L("Mismatched type of print host:"),
+                        (text ? *text : name)
+                    );
                 }
-            }
-            catch (const std::exception&) {
+            } catch (const std::exception&) {
                 res = false;
                 msg = "Could not parse server response";
             }
@@ -175,7 +204,7 @@ bool PrintHostPrusaLink::test(std::string& msg, RetryFn retry_fn) const
 #endif // WIN32
         .perform_sync();
 
-     return res;
+    return res;
 }
 
 bool PrintHostPrusaLink::test_with_method_check(std::string& msg, bool& use_put, RetryFn retry_fn) const
@@ -188,89 +217,21 @@ bool PrintHostPrusaLink::test_with_method_check(std::string& msg, bool& use_put,
     bool res = true;
     auto url = make_url("api/version");
 
-    SPDLOG_INFO(format("%1%: Get version at: %2%", name, url));
+    SPDLOG_INFO("{}: Get version at: {}", name, url);
     // Here we do not have to add custom "Host" header - the url contains host filled by user and libCurl will set the header by itself.
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+        Network::IHttp::RequestMethod::Get,
+        std::move(url),
+        retry_fn
+    );
     set_auth(http.get());
     http->on_error([&](std::string body, std::string error, unsigned status) {
-        SPDLOG_ERROR(format("%1%: Error getting version: %2%, HTTP %3%, body: `%4%`", name, error, status, body));
-        res = false;
-        msg = format_error(body, error, status);
-    })
-    .on_complete([&, this](std::string body, unsigned) {
-        SPDLOG_INFO(format("%1%: Got version: %2%", name, body));
-
-        try {
-            nlohmann::json json = nlohmann::json::parse(body);
-            if (!json.contains("api") || !json["api"].is_string()) {
-                res = false;
-                return;
-            }
-            boost::optional<std::string> text;
-            if (json.contains("text") && json["text"].is_string()) {
-               text = json["text"].get<std::string>();
-            }
-            res = validate_version_text(text);
-            if (! res) {
-                 msg =format(_u8L("Mismatched type of print host: %s"), (text ? *text : "OctoPrint"));
-                use_put = false;
-                return;
-            }
-            if (json.contains("capabilities") && json["capabilities"].is_structured())
-            {
-                if (json["capabilities"].contains("upload-by-put") && json["capabilities"]["upload-by-put"].is_boolean()) {
-                   use_put = json["capabilities"]["upload-by-put"].get<bool>();
-                }
-            }
-        }
-        catch (const std::exception&) {
+            SPDLOG_ERROR("{}: Error getting version: {}, HTTP {}, body: `{}`", name, error, status, body);
             res = false;
-            msg = "Could not parse server response";
-        }
-    })
-#ifdef WIN32
-    .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
-    .on_ip_resolve([&](std::string address) {
-        // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
-        // Remember resolved address to be reused at successive REST API call.
-        msg = address;
-    })
-#endif // WIN32
-    .perform_sync();
-
-    return res;
-}
-
-#ifdef WIN32
-bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(std::string& msg, bool& use_put, RetryFn retry_fn) const
-{
-    // Since the request is performed synchronously here,
-    // it is ok to refer to `msg` from within the closure
-    const char* name = get_name();
-    bool res = true;
-    // Msg contains ip string.
-    std::string url = Network::IHttp::substitute_host(make_url("api/version"), msg);
-    msg.clear();
-
-    SPDLOG_INFO(format("%1%: Get version at: %2%", name, url));
-
-    std::string host = Network::IHttp::extract_host_from_url(m_print_host_config.host);
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, url, retry_fn);
-    // "Host" header is necessary here. We have resolved IP address and substituted it into "url" variable.
-    // And when creating Http object above, libcurl automatically includes "Host" header from address it got.
-    // Thus "Host" is set to the resolved IP instead of host filled by user. We need to change it back.
-    // Not changing the host would work on the most cases (where there is 1 service on 1 hostname) but would break when f.e. reverse proxy is used (issue #9734).
-    // Also when allow_ip_resolve = 0, this is not needed, but it should not break anything if it stays.
-    // https://www.rfc-editor.org/rfc/rfc7230#section-5.4
-    http->header("Host", host);
-    set_auth(http.get());
-    http->on_error([&](std::string body, std::string error, unsigned status) {
-        SPDLOG_ERROR(format("%1%: Error getting version at %2% : %3%, HTTP %4%, body: `%5%`", name, url, error, status, body));
-        res = false;
-        msg = format_error(body, error, status);
-            })
+            msg = format_error(body, error, status);
+        })
         .on_complete([&, this](std::string body, unsigned) {
-            SPDLOG_INFO(format("%1%: Got version: %2%", name, body));
+            SPDLOG_INFO("{}: Got version: {}", name, body);
 
             try {
                 nlohmann::json json = nlohmann::json::parse(body);
@@ -280,26 +241,120 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(std::string& msg
                 }
                 boost::optional<std::string> text;
                 if (json.contains("text") && json["text"].is_string()) {
-                   text = json["text"].get<std::string>();
+                    text = json["text"].get<std::string>();
                 }
                 res = validate_version_text(text);
-                if (! res) {
-                     msg =format(_u8L("Mismatched type of print host: %s"), (text ? *text : "OctoPrint"));
+                if (!res) {
+                    msg = fmt::format(
+                        "{} {}",
+                        _u8L("Mismatched type of print host:"),
+                        (text ? *text : "OctoPrint")
+                    );
                     use_put = false;
                     return;
                 }
-                if (json.contains("capabilities") && json["capabilities"].is_structured())
-                {
-                    if (json["capabilities"].contains("upload-by-put") && json["capabilities"]["upload-by-put"].is_boolean()) {
-                       use_put = json["capabilities"]["upload-by-put"].get<bool>();
+                if (json.contains("capabilities") && json["capabilities"].is_structured()) {
+                    if (json["capabilities"].contains("upload-by-put")
+                        && json["capabilities"]["upload-by-put"].is_boolean())
+                    {
+                        use_put = json["capabilities"]["upload-by-put"].get<bool>();
                     }
                 }
-            }
-            catch (const std::exception&) {
+            } catch (const std::exception&) {
                 res = false;
                 msg = "Could not parse server response";
             }
+        })
+#ifdef WIN32
+        .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
+        .on_ip_resolve([&](std::string address) {
+            // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
+            // Remember resolved address to be reused at successive REST API call.
+            msg = address;
+        })
+#endif // WIN32
+        .perform_sync();
 
+    return res;
+}
+
+#ifdef WIN32
+bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(
+    std::string& msg,
+    bool& use_put,
+    RetryFn retry_fn
+) const
+{
+    // Since the request is performed synchronously here,
+    // it is ok to refer to `msg` from within the closure
+    const char* name = get_name();
+    bool res         = true;
+    // Msg contains ip string.
+    std::string url = Network::IHttp::substitute_host(make_url("api/version"), msg);
+    msg.clear();
+
+    SPDLOG_INFO("{}: Get version at: {}", name, url);
+
+    std::string host = Network::IHttp::extract_host_from_url(m_print_host_config.host);
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+        Network::IHttp::RequestMethod::Get,
+        url,
+        retry_fn
+    );
+    // "Host" header is necessary here. We have resolved IP address and substituted it into "url" variable.
+    // And when creating Http object above, libcurl automatically includes "Host" header from address it got.
+    // Thus "Host" is set to the resolved IP instead of host filled by user. We need to change it back.
+    // Not changing the host would work on the most cases (where there is 1 service on 1 hostname) but would break when f.e. reverse proxy is used (issue #9734).
+    // Also when allow_ip_resolve = 0, this is not needed, but it should not break anything if it stays.
+    // https://www.rfc-editor.org/rfc/rfc7230#section-5.4
+    http->header("Host", host);
+    set_auth(http.get());
+    http->on_error([&](std::string body, std::string error, unsigned status) {
+            SPDLOG_ERROR(
+                "{}: Error getting version at {} : {}, HTTP {}, body: `{}`",
+                name,
+                url,
+                error,
+                status,
+                body
+            );
+            res = false;
+            msg = format_error(body, error, status);
+        })
+        .on_complete([&, this](std::string body, unsigned) {
+            SPDLOG_INFO("{}: Got version: {}", name, body);
+
+            try {
+                nlohmann::json json = nlohmann::json::parse(body);
+                if (!json.contains("api") || !json["api"].is_string()) {
+                    res = false;
+                    return;
+                }
+                boost::optional<std::string> text;
+                if (json.contains("text") && json["text"].is_string()) {
+                    text = json["text"].get<std::string>();
+                }
+                res = validate_version_text(text);
+                if (!res) {
+                    msg = fmt::format(
+                        "{} {}",
+                        _u8L("Mismatched type of print host:"),
+                        (text ? *text : "OctoPrint")
+                    );
+                    use_put = false;
+                    return;
+                }
+                if (json.contains("capabilities") && json["capabilities"].is_structured()) {
+                    if (json["capabilities"].contains("upload-by-put")
+                        && json["capabilities"]["upload-by-put"].is_boolean())
+                    {
+                        use_put = json["capabilities"]["upload-by-put"].get<bool>();
+                    }
+                }
+            } catch (const std::exception&) {
+                res = false;
+                msg = "Could not parse server response";
+            }
         })
         .ssl_revoke_best_effort(m_print_host_config.ssl_revoke_best_effort)
         .perform_sync();
@@ -307,50 +362,63 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(std::string& msg
     return res;
 }
 
-bool PrintHostPrusaLink::upload_inner_with_resolved_ip(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn, const boost::asio::ip::address& resolved_addr) const
+bool PrintHostPrusaLink::upload_inner_with_resolved_ip(
+    ProgressFn progress_fn,
+    RetryFn retry_fn,
+    ErrorFn error_fn,
+    InfoFn info_fn,
+    const boost::asio::ip::address& resolved_addr
+) const
 {
-     info_fn("resolve", (resolved_addr.to_string()));
+    info_fn("resolve", (resolved_addr.to_string()));
 
     // If test fails, test_msg contains the error message.
     // Otherwise on Windows it contains the resolved IP address of the host.
     // Test_msg already contains resolved ip and will be cleared on start of test().
     std::string test_msg = resolved_addr.to_string();
-    bool use_put = false;
+    bool use_put         = false;
     if (!test_with_resolved_ip_and_method_check(test_msg, use_put, retry_fn)) {
         error_fn(std::move(test_msg));
         return false;
     }
 
-    const char* name = get_name();
-    const fs::path upload_filename = m_upload_data.dest_path.filename();
+    const char* name                  = get_name();
+    const fs::path upload_filename    = m_upload_data.dest_path.filename();
     const fs::path upload_parent_path = m_upload_data.dest_path.parent_path();
-    std::string storage_path = (use_put ? "api/v1/files" : "api/files");
+    std::string storage_path          = (use_put ? "api/v1/files" : "api/files");
     storage_path += (m_upload_data.storage.empty() ? "/local" : m_upload_data.storage);
     std::string url = Network::IHttp::substitute_host(make_url(storage_path), resolved_addr.to_string());
     bool result = true;
     info_fn("resolve", url);
 
-    SPDLOG_INFO(format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%, method: %7%",
-        name
-        , m_upload_data.dest_path
-        , url
-        , upload_filename.string()
-        , upload_parent_path.string()
-        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
-        , (use_put ? "PUT" : "POST")));
+    SPDLOG_INFO(
+        "{}: Uploading file {} at {}, filename: {}, path: {}, print: {}, method: {}",
+        name,
+        m_upload_data.dest_path.string(),
+        url,
+        upload_filename.string(),
+        upload_parent_path.string(),
+        (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false"),
+        (use_put ? "PUT" : "POST")
+    );
 
     if (use_put)
         return put_inner(std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
     return post_inner(std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
 }
 
-#endif //WIN32
+#endif // WIN32
 
-bool PrintHostPrusaLink::upload_inner_with_host(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostPrusaLink::upload_inner_with_host(
+    ProgressFn progress_fn,
+    RetryFn retry_fn,
+    ErrorFn error_fn,
+    InfoFn info_fn
+) const
 {
     const char* name = get_name();
 
-    const auto upload_filename = m_upload_data.dest_path.filename();
+    const auto upload_filename    = m_upload_data.dest_path.filename();
     const auto upload_parent_path = m_upload_data.dest_path.parent_path();
 
     // If test fails, test_msg contains the error message.
@@ -375,41 +443,55 @@ bool PrintHostPrusaLink::upload_inner_with_host(ProgressFn progress_fn, RetryFn 
         url = make_url(storage_path);
     }
 #ifdef WIN32
-    else {
+    else
+    {
         // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
         // Curl uses easy_getinfo to get ip address of last successful transaction.
         // If it got the address use it instead of the stored in "host" variable.
         // This new address returns in "test_msg" variable.
         // Solves troubles of uploades failing with name address.
-        // in original address (m_host) replace host for resolved ip 
+        // in original address (m_host) replace host for resolved ip
         info_fn("resolve", test_msg);
         url = Network::IHttp::substitute_host(make_url(storage_path), test_msg);
-        SPDLOG_INFO(format("Upload address after ip resolve: %1%", url));
+        SPDLOG_INFO("Upload address after ip resolve: {}", url);
     }
 #endif // _WIN32
-    SPDLOG_INFO(format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%, method: %7%",
-        name
-        , m_upload_data.dest_path
-        , url
-        , upload_filename.string()
-        , upload_parent_path.string()   
-        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
-        , (use_put ? "PUT" : "POST")));
+    SPDLOG_INFO(
+        "{}: Uploading file {} at {}, filename: {}, path: {}, print: {}, method: {}",
+        name,
+        m_upload_data.dest_path.string(),
+        url,
+        upload_filename.string(),
+        upload_parent_path.string(),
+        (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false"),
+        (use_put ? "PUT" : "POST")
+    );
 
     if (use_put)
         return put_inner(std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
     return post_inner(std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
 }
 
-bool PrintHostPrusaLink::put_inner(std::string url, const std::string& name, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostPrusaLink::put_inner(
+    std::string url,
+    const std::string& name,
+    ProgressFn progress_fn,
+    RetryFn retry_fn,
+    ErrorFn error_fn,
+    InfoFn info_fn
+) const
 {
     info_fn("set_complete_off", {});
 
     bool res = true;
     // Percent escape all filenames in on path and add it to the url. This is different from POST.
     url += "/" + Network::IHttp::escape_path_by_element(m_upload_data.dest_path);
-     
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Put, std::move(url), retry_fn);
+
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+        Network::IHttp::RequestMethod::Put,
+        std::move(url),
+        retry_fn
+    );
 #ifdef WIN32
     // "Host" header is necessary here. We have resolved IP address and substituted it into "url" variable.
     // And when creating Http object above, libcurl automatically includes "Host" header from address it got.
@@ -427,11 +509,11 @@ bool PrintHostPrusaLink::put_inner(std::string url, const std::string& name, Pro
         .header("Content-Type", "text/x.gcode")
         .header("Overwrite", "?1")
         .on_complete([&](std::string body, unsigned status) {
-            SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name, status, body));
+            SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name, status, body);
             info_fn("complete", body);
         })
         .on_error([&](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR(format("%1%: Error uploading file: %2%, HTTP %3%, body: `%4%`", name, error, status, body));
+            SPDLOG_ERROR("{}: Error uploading file: , HTTP {}, body: `{}`", name, error, status, body);
             error_fn(format_error(body, error, status));
             res = false;
         })
@@ -451,14 +533,25 @@ bool PrintHostPrusaLink::put_inner(std::string url, const std::string& name, Pro
     return res;
 }
 
-bool PrintHostPrusaLink::post_inner(std::string url, const std::string& name, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostPrusaLink::post_inner(
+    std::string url,
+    const std::string& name,
+    ProgressFn progress_fn,
+    RetryFn retry_fn,
+    ErrorFn error_fn,
+    InfoFn info_fn
+) const
 {
     info_fn("set_complete_off", {});
-    bool res = true;
-    const auto upload_filename = m_upload_data.dest_path.filename();
+    bool res                      = true;
+    const auto upload_filename    = m_upload_data.dest_path.filename();
     const auto upload_parent_path = m_upload_data.dest_path.parent_path();
 
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
+        Network::IHttp::RequestMethod::Post,
+        std::move(url),
+        retry_fn
+    );
 #ifdef WIN32
     // "Host" header is necessary here. We have resolved IP address and subsituted it into "url" variable.
     // And when creating Http object above, libcurl automatically includes "Host" header from address it got.
@@ -470,18 +563,18 @@ bool PrintHostPrusaLink::post_inner(std::string url, const std::string& name, Pr
 #endif // _WIN32
     set_auth(http.get());
     set_http_post_header_args(http.get(), m_upload_data.post_action);
-    http->form_add("path", upload_parent_path.string())      // XXX: slashes on windows ???
+    http->form_add("path", upload_parent_path.string()) // XXX: slashes on windows ???
         .form_add_file("file", m_upload_data.source_path, upload_filename.string())
         .on_complete([&](std::string body, unsigned status) {
             // PrusaConnect message
-            SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name, status, body));
+            SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name, status, body);
             if (status == 202)
                 info_fn("complete_with_warning", body);
-            else 
+            else
                 info_fn("complete", body);
         })
         .on_error([&](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR(format("%1%: Error uploading file: %2%, HTTP %3%, body: `%4%`", name, error, status, body));
+            SPDLOG_ERROR("{}: Error uploading file: {}, HTTP {}, body: `{}`", name, error, status, body);
             error_fn(format_error(body, error, status));
             res = false;
         })
@@ -501,10 +594,12 @@ bool PrintHostPrusaLink::post_inner(std::string url, const std::string& name, Pr
     return res;
 }
 
-void PrintHostPrusaLink::set_http_post_header_args(Network::IHttp* http, PrintHostAfterUploadAction action) const
+void PrintHostPrusaLink::set_http_post_header_args(
+    Network::IHttp* http,
+    PrintHostAfterUploadAction action
+) const
 {
     http->form_add("print", action == PrintHostAfterUploadAction::StartPrint ? "true" : "false");
 }
 
-
-} // Slic3r::Biz::PrintHost
+} // namespace Slic3r::Biz::PrintHost

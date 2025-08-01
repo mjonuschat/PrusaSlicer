@@ -16,6 +16,7 @@
 #include <Slic3r/App/ThumbnailStore.hpp>
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
 
+#include "Slic3r/Biz/Directories.hpp"
 #include <Slic3r/App/Render/TextureManager.hpp>
 
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
@@ -44,17 +45,17 @@ void register_win32_device_notification_event()
     wxWindow::MSWRegisterMessageHandler(
         WM_COPYDATA,
         [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam) {
-        auto* app_instance = dynamic_cast<Slic3r::App::Desktop::DesktopApp*>(wxTheApp);
-        COPYDATASTRUCT* copy_data_structure = {0};
-        copy_data_structure                 = (COPYDATASTRUCT*) lParam;
-        if (copy_data_structure->dwData == 1) {
-            LPCWSTR arguments = (LPCWSTR) copy_data_structure->lpData;
-            std::string args  = WX::into_u8(arguments);
-            SPDLOG_INFO("MSG {}", args);
-            app_instance->handle_app_instance_message(args);
+            auto* app_instance = dynamic_cast<Slic3r::App::Desktop::DesktopApp*>(wxTheApp);
+            COPYDATASTRUCT* copy_data_structure = {0};
+            copy_data_structure                 = (COPYDATASTRUCT*) lParam;
+            if (copy_data_structure->dwData == 1) {
+                LPCWSTR arguments = (LPCWSTR) copy_data_structure->lpData;
+                std::string args  = WX::into_u8(arguments);
+                SPDLOG_INFO("MSG {}", args);
+                app_instance->handle_app_instance_message(args);
+            }
+            return true;
         }
-        return true;
-    }
     );
 }
 #endif // WIN32
@@ -67,7 +68,9 @@ int run(const Slic3r::App::InitParams& init_params)
     if (AppInstance::instance_check(init_params, single_instance_app_config)) {
         return 1;
     }
-    Render::TextureManager::set_resource_resolver(std::make_unique<ResourceResolver>(resources_dir()));
+    Render::TextureManager::set_resource_resolver(
+        std::make_unique<ResourceResolver>(Biz::resources_dir())
+    );
     auto* app = new Slic3r::App::Desktop::DesktopApp();
     Slic3r::App::Desktop::DesktopApp::SetInstance(app);
     int argc    = init_params.argc;
@@ -109,7 +112,7 @@ bool DesktopApp::OnInit()
     auto& preset_interactor = m_project_interactor->preset_interactor();
 
     // load new presets
-    fs::path preset_bundle_dir = fs::path{resources_dir()} / "presets";
+    fs::path preset_bundle_dir = fs::path{Biz::resources_dir()} / "presets";
     fs::path config_dir        = fs::path{data_dir()} / "configs";
     preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
@@ -161,6 +164,10 @@ bool DesktopApp::OnInit()
 
     m_main_frame->Show();
 
+    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(
+        m_project_interactor->preset_updater_interactor()
+    );
+
 #if !defined(__linux)
     // Initial repaint
     canvas.render();
@@ -210,8 +217,7 @@ void DesktopApp::init_translations()
         // likely some linux system
         message += "\n"
             + WX::format_wxstr(
-                       (
-                           "You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"
+                       ("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"
                        ),
                        "\"locale-gen\"",
                        "\"dpkg-reconfigure locales\""
