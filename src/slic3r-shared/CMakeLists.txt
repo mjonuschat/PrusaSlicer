@@ -844,6 +844,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
 
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
+        test/Slic3r/Biz/WeakerPointerTests.cpp
 
         test/Slic3r/Biz/Expr/ParserTests.cpp
         test/Slic3r/Biz/Expr/EvalTests.cpp
