@@ -48,6 +48,9 @@ public:
 
     ImGuiButtonFlags flags() const;
 
+    bool allow_overlap() const;
+    void set_allow_overlap(bool allow_overlap);
+
 protected:
     virtual void checked_updated_internal();
     virtual void hovered_updated_internal();
@@ -64,11 +67,12 @@ protected:
     Tooltip m_tooltip;
 
 private:
-    bool m_has_arrow = false;
-    bool m_checkable = false;
-    bool m_checked = false;
-    bool m_hovered = false;
-    bool m_pressed = false;
+    bool m_has_arrow     = false;
+    bool m_checkable     = false;
+    bool m_checked       = false;
+    bool m_hovered       = false;
+    bool m_pressed       = false;
+    bool m_allow_overlap = false;
 
     std::string m_shortcut;
     Callbacks m_callbacks;

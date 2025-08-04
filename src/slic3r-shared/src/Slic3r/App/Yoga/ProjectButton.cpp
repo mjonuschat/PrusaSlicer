@@ -22,6 +22,8 @@ ProjectButton::ProjectButton(
     , m_selected_project_changed_listener_scope(project_interactor, *this)
     , m_project_interactor(project_interactor)
 {
+    set_allow_overlap(true);
+
     m_background = emplace_back<ProjectButtonBackground>();
     m_background->set_padding({20.f, 5.f});
     m_background->set_rounding(0.f);

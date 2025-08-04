@@ -10,10 +10,14 @@
 
 namespace Slic3r::App::Yoga {
 
-AbstractButton::Callbacks& AbstractButton::callbacks() { return m_callbacks; }
+AbstractButton::Callbacks& AbstractButton::callbacks()
+{
+    return m_callbacks;
+}
 
-AbstractButton::AbstractButton(const std::string& tooltip, const std::string& name)
-    : Item(), m_tooltip(this, tooltip, "")
+AbstractButton::AbstractButton(const std::string& tooltip, const std::string& name) :
+    Item(),
+    m_tooltip(this, tooltip, "")
 {
     set_item_name(name);
 }
@@ -24,17 +28,21 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
 
     ImRect button_bb(to_im(pos), to_im(pos + size));
 
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    ImGuiWindow* window     = ImGui::GetCurrentWindow();
     const std::string label = "###" + m_item_name;
-    const ImGuiID id = window->GetID(label.c_str());
+    const ImGuiID id        = window->GetID(label.c_str());
+
+    if (m_allow_overlap) {
+        ImGui::SetNextItemAllowOverlap();
+    }
 
     ImGui::ItemSize(to_im(size), 0);
     if (!ImGui::ItemAdd(button_bb, id)) {
         return;
     }
 
-    bool pressed = false;
-    bool hovered = false;
+    bool pressed  = false;
+    bool hovered  = false;
     bool released = false;
 
     if (enabled()) {
@@ -61,7 +69,10 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
     render_item_end(pos, size);
 }
 
-const std::string& AbstractButton::shortcut() const { return m_shortcut; }
+const std::string& AbstractButton::shortcut() const
+{
+    return m_shortcut;
+}
 
 void AbstractButton::set_shortcut(const std::string& shortcut)
 {
@@ -69,22 +80,40 @@ void AbstractButton::set_shortcut(const std::string& shortcut)
     m_tooltip.set_shortcut(m_shortcut);
 }
 
-void AbstractButton::set_tooltip(const std::string& tooltip) { m_tooltip.set_text(tooltip); }
+void AbstractButton::set_tooltip(const std::string& tooltip)
+{
+    m_tooltip.set_text(tooltip);
+}
 
 void AbstractButton::set_tooltip_position(Yoga::Position position)
 {
     m_tooltip.set_preferred_position(position);
 }
 
-bool AbstractButton::has_arrow() const { return m_has_arrow; }
+bool AbstractButton::has_arrow() const
+{
+    return m_has_arrow;
+}
 
-void AbstractButton::set_has_arrow(bool has_arrow) { m_has_arrow = has_arrow; }
+void AbstractButton::set_has_arrow(bool has_arrow)
+{
+    m_has_arrow = has_arrow;
+}
 
-bool AbstractButton::checkable() const { return m_checkable; }
+bool AbstractButton::checkable() const
+{
+    return m_checkable;
+}
 
-void AbstractButton::set_checkable(bool checkable) { m_checkable = checkable; }
+void AbstractButton::set_checkable(bool checkable)
+{
+    m_checkable = checkable;
+}
 
-bool AbstractButton::checked() const { return m_checked; }
+bool AbstractButton::checked() const
+{
+    return m_checked;
+}
 
 void AbstractButton::set_checked(bool checked)
 {
@@ -97,7 +126,10 @@ void AbstractButton::set_checked(bool checked)
     }
 }
 
-bool AbstractButton::hovered() const { return m_hovered; }
+bool AbstractButton::hovered() const
+{
+    return m_hovered;
+}
 
 void AbstractButton::set_hovered(bool hovered)
 {
@@ -113,6 +145,11 @@ void AbstractButton::set_hovered(bool hovered)
     }
 }
 
+bool AbstractButton::pressed() const
+{
+    return m_pressed;
+}
+
 void AbstractButton::set_pressed(bool pressed)
 {
     if (m_pressed != pressed) {
@@ -123,15 +160,26 @@ void AbstractButton::set_pressed(bool pressed)
     }
 }
 
-ImGuiButtonFlags AbstractButton::flags() const { return m_flags; }
+ImGuiButtonFlags AbstractButton::flags() const
+{
+    return m_flags;
+}
+
+bool AbstractButton::allow_overlap() const
+{
+    return m_allow_overlap;
+}
+
+void AbstractButton::set_allow_overlap(bool allow_overlap)
+{
+    m_allow_overlap = allow_overlap;
+}
 
 void AbstractButton::checked_updated_internal() {}
 
 void AbstractButton::hovered_updated_internal() {}
 
 void AbstractButton::pressed_updated_internal() {}
-
-bool AbstractButton::pressed() const { return m_pressed; }
 
 void AbstractButton::enabled_updated_internal()
 {
