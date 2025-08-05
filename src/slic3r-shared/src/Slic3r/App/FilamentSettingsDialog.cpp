@@ -16,7 +16,7 @@ using namespace Slic3r::App::Render;
 namespace Slic3r::App {
 
 FilamentSettingsDialog::FilamentSettingsDialog(Biz::ProjectInteractor& project_interactor) :
-    AbstractSettingsDialog({}),
+    AbstractSettingsDialog({}, "FilamentSettingsDialog"),
     m_project_interactor(project_interactor),
     m_material_cbi_list(m_project_interactor.preset_interactor().material_cbi_list())
 {

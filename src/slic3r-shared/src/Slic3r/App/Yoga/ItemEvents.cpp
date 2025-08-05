@@ -5,14 +5,23 @@
 #include "Slic3r/App/Yoga/ItemEvents.hpp"
 
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Yoga/RootItem.hpp"
 
 namespace Slic3r::App::Yoga {
 
-Event::Event(Item* item) : m_item(item) { ASSERT(item); }
+Event::Event(Item* item) : m_item(item)
+{
+    ASSERT(item);
+}
 
 Event::~Event() {}
 
 void Event::affected(const ChangeList& change_list) {}
+
+std::vector<Slic3r::App::Yoga::Item*> Slic3r::App::Yoga::Event::required_items() const
+{
+    return {m_item};
+}
 
 RemoveEvent::RemoveEvent(Item* item) : Event(item) {}
 
@@ -45,7 +54,10 @@ Event::ChangeList MoveEvent::process()
     };
 }
 
-void LoopEvents::insert_event(EventPtr event) {
+LoopEvents::LoopEvents(RootItem& root_item) : m_root_item(root_item) {}
+
+void LoopEvents::insert_event(EventPtr event)
+{
     ASSERT(event);
     m_events.push_back(std::move(event));
 }
@@ -56,10 +68,22 @@ void LoopEvents::process_events()
         EventPtr event(std::move(m_events.front()));
         m_events.pop_front();
 
-        const Event::ChangeList change_list = event->process();
+        // This is a fast temporary solution, that will *definitely* be refactored
+        // once we are out of alpha
+        bool requirements_satisfied = true;
+        for (Item* item : event->required_items()) {
+            if (!m_root_item.find_item(item)) {
+                requirements_satisfied = false;
+                break;
+            }
+        }
 
-        for (const EventPtr& event : m_events) {
-            event->affected(change_list);
+        if (requirements_satisfied) {
+            const Event::ChangeList change_list = event->process();
+
+            for (const EventPtr& event : m_events) {
+                event->affected(change_list);
+            }
         }
     }
 }
@@ -84,6 +108,11 @@ void MoveEvent::affected(const ChangeList& change_list)
             break;
         }
     }
+}
+
+std::vector<Item*> MoveEvent::required_items() const
+{
+    return {m_item, m_new_parent};
 }
 
 } // namespace Slic3r::App::Yoga

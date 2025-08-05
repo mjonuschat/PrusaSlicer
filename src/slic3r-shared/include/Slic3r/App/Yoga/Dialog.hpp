@@ -21,9 +21,8 @@ public:
         std::function<void(size_t current_tab)> tab_selected{nullptr};
     };
 
-    Dialog();
-    explicit Dialog(const std::string& tab);
-    explicit Dialog(std::initializer_list<std::string> tabs);
+    explicit Dialog(const std::string& name = {});
+    explicit Dialog(std::initializer_list<std::string> tabs, const std::string& name = {});
 
     DialogCallbacks& dialog_callbacks();
 

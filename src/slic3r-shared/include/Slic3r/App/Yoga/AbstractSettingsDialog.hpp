@@ -18,7 +18,7 @@ namespace Slic3r::App::Yoga {
 class AbstractSettingsDialog : public Dialog
 {
 public:
-    explicit AbstractSettingsDialog(const std::initializer_list<std::string>& tabs);
+    explicit AbstractSettingsDialog(const std::initializer_list<std::string>& tabs, const std::string& name = {});
 
 protected:
     using PageListView = Yoga::ListView<

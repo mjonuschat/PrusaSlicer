@@ -6,10 +6,12 @@
 
 #include <memory>
 #include <list>
+#include <vector>
 
 namespace Slic3r::App::Yoga {
 
 class Item;
+class RootItem;
 
 class Event
 {
@@ -34,6 +36,8 @@ public:
 
     virtual void affected(const ChangeList& change_list);
 
+    virtual std::vector<Item*> required_items() const;
+
 protected:
     Item* m_item = nullptr;
 };
@@ -56,6 +60,8 @@ public:
 
     void affected(const ChangeList& change_list) override;
 
+    std::vector<Item *> required_items() const override;
+
 private:
     Item* m_new_parent = nullptr;
     size_t m_new_index = 0;
@@ -69,11 +75,14 @@ private:
 class LoopEvents
 {
 public:
+    explicit LoopEvents(RootItem& root_item);
+
     void insert_event(EventPtr event);
 
     void process_events();
 
 private:
+    RootItem& m_root_item;
     std::list<EventPtr> m_events;
 };
 

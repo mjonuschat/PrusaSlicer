@@ -17,7 +17,7 @@ using namespace Slic3r::App::Render;
 namespace Slic3r::App {
 
 PrintSettingsDialog::PrintSettingsDialog(Biz::ProjectInteractor& project_interactor) :
-    AbstractSettingsDialog({}),
+    AbstractSettingsDialog({}, "PrintSettingsDialog"),
     m_project_interactor(project_interactor),
     m_tool_cbi_list(project_interactor.preset_interactor().tool_cbi_list())
 {

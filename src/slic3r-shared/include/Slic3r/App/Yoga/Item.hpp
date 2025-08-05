@@ -173,6 +173,11 @@ public:
     size_t item_count() const;
     Item* get_item(size_t index) const;
     std::optional<size_t> index_of(Item* item) const;
+    /**
+     * @warning may traverse full tree
+     * @returns true if item was found in the tree, false otherwise
+     */
+    bool find_item(Item* item) const;
 
     static void set_imgui_render(Render::ImguiRender* imgui_render);
 

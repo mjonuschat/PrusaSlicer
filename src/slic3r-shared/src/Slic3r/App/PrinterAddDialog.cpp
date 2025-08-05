@@ -46,7 +46,8 @@ void emplace_family(Item* container, const std::string& name, const std::vector<
     }
 }
 
-PrinterAddDialog::PrinterAddDialog() : Dialog({"Add logical printer", "Add physical printer"})
+PrinterAddDialog::PrinterAddDialog() :
+    Dialog({"Add logical printer", "Add physical printer"}, "PrinterAddDialog")
 {
     content_item()->set_width(600);
     content_item()->set_height(500);

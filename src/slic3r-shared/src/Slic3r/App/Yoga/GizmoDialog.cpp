@@ -5,17 +5,13 @@
 
 #include "Slic3r/App/Yoga/GizmoDialog.hpp"
 
-#include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 
 namespace Slic3r::App::Yoga {
 
-GizmoDialog::GizmoDialog(const std::string& title)
-    : Dialog(title)
-{
-}
+GizmoDialog::GizmoDialog(const std::string& title) : Dialog({title}, "GizmoDialog") {}
 
 void GizmoDialog::add_separator(Item* item)
 {

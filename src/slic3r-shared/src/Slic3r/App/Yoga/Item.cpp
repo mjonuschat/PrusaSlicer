@@ -326,6 +326,21 @@ std::optional<size_t> Item::index_of(Item* item) const
     return result;
 }
 
+bool Item::find_item(Item* item) const
+{
+    if (this == item) {
+        return true;
+    }
+
+    for (const ItemPtr& child : m_children) {
+        if (child->find_item(item)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Item::set_debug_border(bool show_debug_border) { m_debug_border = show_debug_border; }
 
 std::string Item::debug_dump_tree() const
@@ -450,7 +465,7 @@ void Item::push_event(std::unique_ptr<Event> event)
 
     if (item_to_push) {
         // Event will be pushed either to parent or directly to RootItem for processing
-        m_parent->push_event(std::move(event));
+        item_to_push->push_event(std::move(event));
     } else {
         // Ignore for now, this may be safe to do, maybe not!
         SPDLOG_WARN(

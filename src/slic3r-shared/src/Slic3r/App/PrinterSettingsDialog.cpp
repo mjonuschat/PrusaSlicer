@@ -50,7 +50,7 @@ Slic3r::App::PrinterSettingsDialog::PrinterSettingsDialog(
     Biz::ProjectInteractor& project_interactor,
     PrinterAddDialog* printer_add_dialog
 ) :
-    Dialog("Printers"),
+    Dialog({"Printers"}, "PrinterSettingsDialog"),
     m_project_interactor(project_interactor),
     m_advanced_dialog(project_interactor),
     m_printer_add_dialog(printer_add_dialog)

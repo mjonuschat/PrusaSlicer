@@ -11,9 +11,9 @@
 namespace Slic3r::App::Yoga {
 constexpr float dialog_padding = 10;
 
-Dialog::Dialog()
+Dialog::Dialog(const std::string& name)
 {
-    WindowPtr window = std::make_unique<Window>("Dialog");
+    WindowPtr window = std::make_unique<Window>(name.empty() ? "Dialog" : name);
 
     window->set_orientation(Orientation::Vertical);
     window->set_gap(0);
@@ -69,9 +69,7 @@ Dialog::Dialog()
     set_content_item(std::move(window));
 }
 
-Dialog::Dialog(const std::string& tab) : Dialog(std::initializer_list<std::string>{tab}) {}
-
-Dialog::Dialog(std::initializer_list<std::string> tabs) : Dialog()
+Dialog::Dialog(std::initializer_list<std::string> tabs, const std::string& name) : Dialog(name)
 {
     for (const std::string& tab : tabs) {
         append_tab(tab);

@@ -14,7 +14,7 @@ using namespace Slic3r::App::Yoga;
 namespace Slic3r::App {
 
 PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(Biz::ProjectInteractor& project_interactor) :
-    AbstractSettingsDialog({"Printer"}),
+    AbstractSettingsDialog({"Printer"}, "PrinterAdvancedSettingsDialog"),
     m_project_interactor(project_interactor),
     m_cbi(project_interactor.preset_interactor().printer_cbi())
 {

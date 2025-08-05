@@ -37,8 +37,8 @@ void emplace_row(Item* container, ItemPtr input, const std::string& label, const
 
 namespace Slic3r::App::Yoga {
 
-AbstractSettingsDialog::AbstractSettingsDialog(const std::initializer_list<std::string>& tabs) :
-    Dialog()
+AbstractSettingsDialog::AbstractSettingsDialog(const std::initializer_list<std::string>& tabs, const std::string& name) :
+    Dialog(name.empty() ? "AbstractSettingsDialog" : name)
 {
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(0);

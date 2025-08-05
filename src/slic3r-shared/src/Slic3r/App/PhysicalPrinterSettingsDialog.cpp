@@ -18,7 +18,7 @@ using namespace Slic3r::App::Yoga;
 namespace Slic3r::App {
 
 PhysicalPrinterSettingsDialog::PhysicalPrinterSettingsDialog(PrinterAddDialog* printer_add_dialog) :
-    Dialog("Physical printer"),
+    Dialog({"Physical printer"}, "PhysicalPrinterSettingsDialog"),
     m_printer_add_dialog(printer_add_dialog)
 {
     content_item()->set_width(350);
