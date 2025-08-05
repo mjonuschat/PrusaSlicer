@@ -42,8 +42,8 @@ private:
 
         Biz::ConfigBoxInteractor* cbi{nullptr};
         Tab* tab{nullptr};
-        ObservableCategorizer observable_categorizer;
-        CategoryPageTransformer category_page_transformer;
+        Biz::UnsharedPointer<ObservableCategorizer> observable_categorizer;
+        Biz::UnsharedPointer<CategoryPageTransformer> category_page_transformer;
     };
 
     Biz::ProjectInteractor& m_project_interactor;

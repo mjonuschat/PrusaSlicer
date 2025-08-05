@@ -19,6 +19,7 @@ class AbstractSettingsDialog : public Dialog
 {
 public:
     explicit AbstractSettingsDialog(const std::initializer_list<std::string>& tabs, const std::string& name = {});
+    ~AbstractSettingsDialog();
 
 protected:
     using PageListView = Yoga::ListView<

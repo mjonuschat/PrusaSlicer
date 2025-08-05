@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Slic3r/Assert.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/Forward.hpp"
@@ -18,7 +17,7 @@ class Bed;
 
 struct BedInstance : public ObjectBase
 {
-    explicit BedInstance(const Bed& bed) : bed(bed) {}
+    explicit BedInstance(const Bed& bed);
 
     const Transform3d& matrix() const
     {
@@ -31,18 +30,23 @@ struct BedInstance : public ObjectBase
         return bed.contains(Vec2d{pos.x(), pos.y()}, bounds);
     }
 
-    std::string label() const
-    {
-        return std::to_string(index);
-    }
+    size_t index() const;
+    void set_index(size_t index);
+
+    const std::string& label() const;
+    const std::string& name() const;
 
     const Bed& bed;
-    size_t index{0};
     Transformation transformation;
     ModelInstanceList model_instances;
     bool print_volume_enabled{false};
     std::optional<ModelWipeTower> wipe_tower;
     std::optional<CustomGCode::Info> custom_gcode;
+
+private:
+    size_t m_index{0};
+    std::string m_label;
+    std::string m_name;
 };
 
 } // namespace Slic3r::Domain

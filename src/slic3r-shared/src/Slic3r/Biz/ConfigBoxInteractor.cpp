@@ -14,18 +14,18 @@ ConfigBoxInteractor::ConfigBoxInteractor() :
 ConfigBoxInteractor::ConfigBoxInteractor(SetAccessor& set_accessor, Domain::ConfigBox* config_box) :
     ConfigBoxInteractor()
 {
-    set_accessor.set_source(m_config_box_list, m_config_box_overrides_list);
+    set_accessor.set_source(m_config_box_list.get(), m_config_box_overrides_list.get());
     set_config_box(config_box);
 }
 
 std::weak_ptr<ConfigBoxObservableList> ConfigBoxInteractor::config_box_list()
 {
-    return m_config_box_list;
+    return m_config_box_list.get();
 }
 
 std::weak_ptr<ConfigBoxOverridesObservableList> ConfigBoxInteractor::config_box_overrides_list()
 {
-    return m_config_box_overrides_list;
+    return m_config_box_overrides_list.get();
 }
 
 void ConfigBoxInteractor::set_config_box(Domain::ConfigBox* config_box)

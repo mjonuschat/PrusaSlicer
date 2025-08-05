@@ -31,7 +31,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
     m_filament_button_group = std::make_shared<ButtonGroup>();
     m_filament_button_group->set_always_checked(false);
 
-    m_bed_name = emplace_back<Text>("Bed 1");
+    m_bed_name = emplace_back<Text>("Unkown");
     m_bed_name->set_font_type(Render::ImguiFontType::Bold);
 
     m_physical_printer_button = emplace_back<PrinterSettingsButton>("Physical printer");
@@ -109,6 +109,14 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
     on_list_selection_changed(
         m_project_interactor.preset_interactor().printer_presets().selected_index()
     );
+
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
+        this
+    );
+    on_selected_bed_instances_changed(
+        m_project_interactor.selected_project_id(),
+        m_project_interactor.scene_interactor().bed_selection()
+    );
 }
 
 void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
@@ -124,6 +132,25 @@ void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
 
     m_logical_printer_button->set_printer_name(preset_item.name);
     m_logical_printer_button->set_preset_name(preset_item.hw_pritner_config_name);
+}
+
+void SidebarBed::on_selected_bed_instances_changed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::BedSelection& bed_selection
+)
+{
+    if (project_id == Domain::INVALID_ID || m_project_interactor.selected_project_id() != project_id)
+    {
+        return;
+    }
+
+    Domain::BedInstance* bed_instance = m_project_interactor.selected_project().find_bed_instance_by_id(
+        bed_selection.last_selected_bed().instance_id
+    );
+
+    ASSERT(bed_instance);
+
+    m_bed_name->set_text(bed_instance->name());
 }
 
 } // namespace Slic3r::App

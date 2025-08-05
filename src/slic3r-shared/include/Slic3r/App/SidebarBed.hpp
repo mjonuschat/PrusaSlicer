@@ -12,6 +12,7 @@
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 #include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
+#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -25,12 +26,20 @@ class PrinterSettingsButton;
 class MaterialSettingsButton;
 } // namespace Yoga
 
-class SidebarBed : public Yoga::Window, public Biz::IListSelectionChangedListener
+class SidebarBed :
+    public Yoga::Window,
+    public Biz::IListSelectionChangedListener,
+    public Biz::ISelectedBedInstancesChangedListener
 {
 public:
     explicit SidebarBed(Biz::ProjectInteractor& project_interactor);
 
     void on_list_selection_changed(Domain::SelectionId new_selection) override;
+
+    void on_selected_bed_instances_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::BedSelection& bed_selection
+    ) override;
 
 private:
     Biz::ProjectInteractor& m_project_interactor;

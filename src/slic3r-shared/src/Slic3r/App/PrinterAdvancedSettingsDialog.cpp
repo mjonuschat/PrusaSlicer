@@ -16,20 +16,22 @@ namespace Slic3r::App {
 PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(Biz::ProjectInteractor& project_interactor) :
     AbstractSettingsDialog({"Printer"}, "PrinterAdvancedSettingsDialog"),
     m_project_interactor(project_interactor),
-    m_cbi(project_interactor.preset_interactor().printer_cbi())
+    m_cbi(project_interactor.preset_interactor().printer_cbi()),
+    m_observable_categorizer(std::make_shared<ObservableCategorizer>()),
+    m_category_page_transformer(std::make_shared<CategoryPageTransformer>())
 {
-    m_category_page_transformer.set_source_model(&m_observable_categorizer);
-    m_observable_categorizer.set_source_model(m_cbi.config_box_list());
+    m_category_page_transformer->set_source_model(m_observable_categorizer.get());
+    m_observable_categorizer->set_source_model(m_cbi.config_box_list());
 
-    m_current_tab->page_list_view->set_source_list(&m_category_page_transformer);
+    m_current_tab->page_list_view->set_source_list(m_category_page_transformer.get());
 
     content_item()->set_width(650);
     content_item()->set_height(700);
 
     // m_pages_stack_layout->set_orientation(Orientation::Vertical);
-    for (size_t i = 0; i < m_category_page_transformer.size(); ++i) {
+    for (size_t i = 0; i < m_category_page_transformer->size(); ++i) {
         m_current_tab->pages_stack_layout->emplace_back<ConfigSubcategoryListView>(
-            m_observable_categorizer.at(i).def().category,
+            m_observable_categorizer->at(i).def().category,
             m_project_interactor.preset_interactor(),
             m_cbi
         );

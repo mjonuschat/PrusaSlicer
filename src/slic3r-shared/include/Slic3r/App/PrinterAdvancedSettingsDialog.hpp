@@ -24,8 +24,8 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     Biz::ConfigBoxInteractor& m_cbi;
 
-    ObservableCategorizer m_observable_categorizer;
-    CategoryPageTransformer m_category_page_transformer;
+    Biz::UnsharedPointer<ObservableCategorizer> m_observable_categorizer;
+    Biz::UnsharedPointer<CategoryPageTransformer> m_category_page_transformer;
 };
 
 } // namespace Slic3r::App

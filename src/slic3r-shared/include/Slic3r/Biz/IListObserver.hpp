@@ -95,6 +95,35 @@ private:
     Data* m_ptr{nullptr};
 };
 
+/**
+ * @brief The UnsharedPointer class
+ * Is a special pointer that acts as a shared_ptr which
+ * can only be shared as weak_ptr. This is only useful
+ * as a guard so that we can be sure no more shared_ptrs of this ptr
+ * are created.
+ */
+template <class Data>
+class UnsharedPointer
+{
+public:
+    UnsharedPointer() {}
+
+    UnsharedPointer(std::shared_ptr<Data> ptr) : m_ptr(ptr) {}
+
+    Data* operator->() const
+    {
+        return m_ptr.get();
+    }
+
+    std::weak_ptr<Data> get() const
+    {
+        return m_ptr;
+    }
+
+private:
+    std::shared_ptr<Data> m_ptr;
+};
+
 template <class Data>
 class IListObserver
 {

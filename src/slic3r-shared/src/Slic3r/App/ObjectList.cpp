@@ -840,13 +840,12 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
                              ->print_technology()
         == Domain::PrinterTechnology::SLA;
 
-    const std::string name    = "Bed " + bed->label();
     const std::string name_id = "##bed_id" + std::to_string(bed_id);
 
     const ImGuiStyle& style = ImGui::GetStyle();
 
     const ImVec2 icon_size = ImVec2(40.f, 40.f);
-    const ImVec2 text_size = ImGui::CalcTextSize(name.c_str());
+    const ImVec2 text_size = ImGui::CalcTextSize(bed->name().c_str());
     const ImVec2 padding   = style.ItemInnerSpacing;
 
     const bool is_active{
@@ -872,7 +871,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     bool is_open = tree_node(
         name_id.c_str(),
         m_node_flags | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap,
-        name,
+        bed->name(),
         false,
         tex_id,
         icon_size

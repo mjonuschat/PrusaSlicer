@@ -70,18 +70,20 @@ PrintSettingsDialog::PrintSettingsTab::PrintSettingsTab(
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
     cbi(cbi),
-    tab(tab)
+    tab(tab),
+    observable_categorizer(std::make_shared<ObservableCategorizer>()),
+    category_page_transformer(std::make_shared<CategoryPageTransformer>())
 {
-    observable_categorizer.set_source_model(cbi->config_box_list());
-    category_page_transformer.set_source_model(&observable_categorizer);
-    for (size_t i = 0; i < category_page_transformer.size(); ++i) {
+    observable_categorizer->set_source_model(cbi->config_box_list());
+    category_page_transformer->set_source_model(observable_categorizer.get());
+    for (size_t i = 0; i < category_page_transformer->size(); ++i) {
         tab->pages_stack_layout->emplace_back<ConfigSubcategoryListView>(
-            observable_categorizer.at(i).def().category,
+            observable_categorizer->at(i).def().category,
             preset_interactor,
             *cbi
         );
     }
-    tab->page_list_view->set_source_list(&category_page_transformer);
+    tab->page_list_view->set_source_list(category_page_transformer.get());
 }
 
 } // namespace Slic3r::App

@@ -46,8 +46,8 @@ public:
 private:
     // These shared_ptrs should not be shared to anywhere, only pass weak_ptrs
     // TODO: Implement a suitable container class for it.
-    std::shared_ptr<ConfigBoxObservableList> m_config_box_list;
-    std::shared_ptr<ConfigBoxOverridesObservableList> m_config_box_overrides_list;
+    UnsharedPointer<ConfigBoxObservableList> m_config_box_list;
+    UnsharedPointer<ConfigBoxOverridesObservableList> m_config_box_overrides_list;
 };
 
 } // namespace Slic3r::Biz

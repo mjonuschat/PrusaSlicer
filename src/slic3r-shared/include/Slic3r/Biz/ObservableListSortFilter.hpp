@@ -116,7 +116,7 @@ public:
 
     void set_source_model(const WeakerPointer<IObservableList<Data>>& source_model)
     {
-        if (m_source_model != source_model) {
+        if (m_source_model.get() != source_model.get()) {
             if (m_source_model.is_valid()) {
                 m_source_model->template remove_listener<Biz::IListObserver<Data>>(this);
             }

@@ -37,7 +37,10 @@ void emplace_row(Item* container, ItemPtr input, const std::string& label, const
 
 namespace Slic3r::App::Yoga {
 
-AbstractSettingsDialog::AbstractSettingsDialog(const std::initializer_list<std::string>& tabs, const std::string& name) :
+AbstractSettingsDialog::AbstractSettingsDialog(
+    const std::initializer_list<std::string>& tabs,
+    const std::string& name
+) :
     Dialog(name.empty() ? "AbstractSettingsDialog" : name)
 {
     content()->set_orientation(Orientation::Vertical);
@@ -60,6 +63,13 @@ AbstractSettingsDialog::AbstractSettingsDialog(const std::initializer_list<std::
 
     for (const std::string& tab : tabs) {
         append_tab(tab);
+    }
+}
+
+AbstractSettingsDialog::~AbstractSettingsDialog()
+{
+    for (const std::unique_ptr<Tab>& tab : std::as_const(m_tabs)) {
+        tab->page_list_view->set_source_list(nullptr);
     }
 }
 

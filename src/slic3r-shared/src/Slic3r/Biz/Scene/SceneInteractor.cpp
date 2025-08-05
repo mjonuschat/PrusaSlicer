@@ -586,7 +586,7 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     auto& project               = project_context.project;
     Domain::ConfigContainer* cc = project.find_config_container(config_container_id);
     Domain::BedInstance& ret    = cc->add_bed_instance();
-    ret.index                   = cc->bed_instances().size();
+    ret.set_index(cc->bed_instances().size());
 
     m_bed_placement.layout(project, BED_GAP);
 
@@ -623,8 +623,9 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
 
     // update bed_instance index
     size_t idx = 1;
-    for (auto& inst : cc->bed_instances())
-        inst->index = idx++;
+    for (auto& inst : cc->bed_instances()) {
+        inst->set_index(idx++);
+    }
 
     m_bed_placement.layout(project, BED_GAP);
     auto changes = update_instances_bed_placement(project, insts);
