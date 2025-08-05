@@ -12,7 +12,8 @@ PresetUpdaterUI::PresetUpdaterUI(Biz::PresetUpdater::PresetUpdaterInteractor& pr
 {
     m_preset_updater_interactor.add_listener<Biz::PresetUpdater::IPresetUpdaterResultListener>(this);
 
-    m_preset_updater_interactor.build_update_sync_and_reconfiguration_check();
+    // TODO: uncomment this to enable remote downloading of presets
+    // m_preset_updater_interactor.build_update_sync_and_reconfiguration_check();
 
     // Testing of functions
     // m_preset_updater_interactor.check_forced_reconfigurations();

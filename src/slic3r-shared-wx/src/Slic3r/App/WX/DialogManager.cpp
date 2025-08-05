@@ -51,12 +51,16 @@ void DialogManager::show_file_dialog(
        return;
     }
 
-    wxArrayString paths;
-    dlg.GetPaths(paths);
-
     std::vector<boost::filesystem::path> out_paths;
-    for (const wxString& path : paths) {
-        out_paths.emplace_back(into_path(path));
+    if (dialog_type == FileDialogType::OpenMultiple) {
+        wxArrayString paths;
+        dlg.GetPaths(paths);
+
+        for (const wxString& path : paths) {
+            out_paths.emplace_back(into_path(path));
+        }
+    } else {
+        out_paths.emplace_back(into_path(dlg.GetPath()));
     }
 
     callback(true, out_paths);
