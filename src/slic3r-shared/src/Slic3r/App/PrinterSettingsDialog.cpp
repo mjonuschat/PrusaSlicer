@@ -105,11 +105,14 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
                 m_printer_list_view->get_item(button_index)
             );
             ASSERT(button);
+
+            if (index == button_index && !button->checked()) {
+                m_project_interactor.preset_interactor().select_printer_preset(
+                    m_project_interactor.preset_interactor().printer_presets().items().at(index).id
+                );
+            }
             button->set_checked(index == button_index);
         }
-        m_project_interactor.preset_interactor().select_printer_preset(
-            m_project_interactor.preset_interactor().printer_presets().items().at(index).id
-        );
     });
     m_printer_list_view = scroll_area->emplace_back<PrinterListView>(std::move(factory));
     m_printer_list_view->set_flex_grow(1);

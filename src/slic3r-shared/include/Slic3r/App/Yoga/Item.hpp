@@ -9,6 +9,7 @@
 
 #include "Slic3r/App/Yoga/Namespace.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Biz/IListObserver.hpp"
 
 #include <memory>
 #include <optional>
@@ -23,6 +24,7 @@ namespace Slic3r::App::Yoga {
 
 class Item;
 using ItemPtr = std::unique_ptr<Item>;
+using ItemHeartBeat = std::weak_ptr<int>;
 
 class Event;
 class Popup;
@@ -173,11 +175,6 @@ public:
     size_t item_count() const;
     Item* get_item(size_t index) const;
     std::optional<size_t> index_of(Item* item) const;
-    /**
-     * @warning may traverse full tree
-     * @returns true if item was found in the tree, false otherwise
-     */
-    bool find_item(Item* item) const;
 
     static void set_imgui_render(Render::ImguiRender* imgui_render);
 
@@ -187,6 +184,11 @@ public:
     Vec2f get_global_pos() const;
 
     void check_resized();
+
+    /**
+     * @warning ignore this and do not use
+     */
+    ItemHeartBeat heartbeat() const;
 
 protected:
     static ImVec2 to_im(const Vec2f& val);
@@ -245,6 +247,13 @@ protected:
     static Render::ImguiRender* m_imgui_render;
 
     static std::unordered_map<std::string, int> m_item_names;
+
+    // Nikita: I'M SORRY!! Due to my poor hastened decisions I literally got into corner and this is
+    // the only way right now how to actually be sure if this damn object is still alive.
+    // This will be rewritten once Dialogs are properly implemented!
+    //
+    // There should be a registered C++ offender list and I should be on it.
+    Biz::UnsharedPointer<int> m_heartbeat;
 
     Vec2f m_min_size = {};
     Vec2f m_max_size = {YGUndefined, YGUndefined};

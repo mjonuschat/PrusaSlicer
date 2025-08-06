@@ -768,7 +768,13 @@ find_package(magic_enum REQUIRED)
 
 slic3r_remap_configs("pugixml::static;yoga::yogacore;${YAML_LIB}" RelWithDebInfo Release)
 
-add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
+add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES}
+    include/Slic3r/App/Config/ConfigItemSpinBoxes.hpp
+    include/Slic3r/App/Config/ConfigItemComboBoxes.hpp
+    src/Slic3r/App/Config/ConfigItemSpinBoxes.cpp
+    src/Slic3r/App/Config/ConfigItemComboBoxes.cpp
+    include/Slic3r/App/Config/ConfigItemCheckBoxes.hpp
+    src/Slic3r/App/Config/ConfigItemCheckBoxes.cpp)
 
 target_link_libraries(slic3r-shared PUBLIC
         slic3r-platform

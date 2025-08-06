@@ -108,7 +108,7 @@ InputText* InputTextField::input_text() const
 void InputTextField::set_default(double default_value)
 {
     if (DoubleValidator* double_validator = dynamic_cast<DoubleValidator*>(validator());
-        double_validator && double_validator->precision())
+        double_validator && double_validator->precision().has_value())
     {
         m_default_text = fmt::format("{1:.{0}f}", double_validator->precision().value(), default_value);
     } else {
@@ -131,5 +131,9 @@ bool InputTextField::is_changed_value() const
 void InputTextField::reset()
 {
     m_input_text->set_text(m_default_text);
+
+    if (callbacks().text_edited) {
+        callbacks().text_edited();
+    }
 }
 } // namespace Slic3r::App::Yoga

@@ -147,8 +147,11 @@ struct ConfigItemDef
         textfield,
         textfields,
         checkbox,
+        checkboxes,
         spinbox,
+        spinboxes,
         combobox,
+        comboboxes,
         points
     };
     GUIType gui_type = GUIType::undefined;

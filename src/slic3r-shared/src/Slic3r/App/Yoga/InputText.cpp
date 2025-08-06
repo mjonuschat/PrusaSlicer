@@ -137,9 +137,6 @@ void InputText::set_text(const std::string& text)
     }
     if (m_callbacks.update_revert_button) {
         m_callbacks.update_revert_button();
-        if (m_callbacks.text_edited) {
-            m_callbacks.text_edited();
-        }
     }
     if (m_callbacks.text_changed) {
         m_callbacks.text_changed();

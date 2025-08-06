@@ -9,7 +9,7 @@
 
 namespace Slic3r::App::Yoga {
 
-Event::Event(Item* item) : m_item(item)
+Event::Event(Item* item) : m_item(item), m_item_heartbeat(item->heartbeat())
 {
     ASSERT(item);
 }
@@ -18,9 +18,9 @@ Event::~Event() {}
 
 void Event::affected(const ChangeList& change_list) {}
 
-std::vector<Slic3r::App::Yoga::Item*> Slic3r::App::Yoga::Event::required_items() const
+bool Event::is_valid() const
 {
-    return {m_item};
+    return !m_item_heartbeat.expired();
 }
 
 RemoveEvent::RemoveEvent(Item* item) : Event(item) {}
@@ -37,7 +37,12 @@ Event::ChangeList RemoveEvent::process()
     return {{Change::AffectedResult::Removed, parent, index.value()}};
 }
 
-MoveEvent::MoveEvent(Item* item, Item* new_parent, size_t new_index) : Event(item) {}
+MoveEvent::MoveEvent(Item* item, Item* new_parent, size_t new_index) :
+    Event(item),
+    m_new_parent(new_parent),
+    m_new_parent_heartbeat(m_new_parent->heartbeat()),
+    m_new_index(new_index)
+{}
 
 Event::ChangeList MoveEvent::process()
 {
@@ -69,21 +74,16 @@ void LoopEvents::process_events()
         m_events.pop_front();
 
         // This is a fast temporary solution, that will *definitely* be refactored
-        // once we are out of alpha
-        bool requirements_satisfied = true;
-        for (Item* item : event->required_items()) {
-            if (!m_root_item.find_item(item)) {
-                requirements_satisfied = false;
-                break;
-            }
+        // once we are out of alpha, for real!
+
+        if (!event->is_valid()) {
+            continue;
         }
 
-        if (requirements_satisfied) {
-            const Event::ChangeList change_list = event->process();
+        const Event::ChangeList change_list = event->process();
 
-            for (const EventPtr& event : m_events) {
-                event->affected(change_list);
-            }
+        for (const EventPtr& event : m_events) {
+            event->affected(change_list);
         }
     }
 }
@@ -110,9 +110,9 @@ void MoveEvent::affected(const ChangeList& change_list)
     }
 }
 
-std::vector<Item*> MoveEvent::required_items() const
+bool MoveEvent::is_valid() const
 {
-    return {m_item, m_new_parent};
+    return Event::is_valid() && !m_item_heartbeat.expired();
 }
 
 } // namespace Slic3r::App::Yoga

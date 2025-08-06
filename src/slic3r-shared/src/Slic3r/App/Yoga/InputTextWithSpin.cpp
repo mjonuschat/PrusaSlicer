@@ -33,8 +33,9 @@ InputTextWithSpin::InputTextWithSpin(
         } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
         }
 
-        if (m_callbacks.text_edited)
+        if (m_callbacks.text_edited) {
             m_callbacks.text_edited();
+        }
     };
 
     set_padding(0);

@@ -4,25 +4,24 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Biz/DataObserver.hpp"
+#include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
-#include "Slic3r/App/Yoga/Validator.hpp"
 
 namespace Slic3r::Biz::Preset {
 class PresetInteractor;
 } // namespace Slic3r::Biz::Preset
 
 namespace Slic3r::App::Yoga {
-class InputTextField;
+class ToggleButton;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
 
-class ConfigItemTextFields : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
+class ConfigItemCheckBoxes : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
 {
 public:
-    ConfigItemTextFields(
+    ConfigItemCheckBoxes(
         size_t index,
         const Domain::ConfigItem& data,
         Biz::Preset::PresetInteractor& preset_interactor
@@ -31,18 +30,15 @@ public:
 protected:
     void on_data_update() override;
 
+    const std::vector<bool>& get_data() const;
+
 private:
-    void reconstruct_fields();
+    void reconstruct_buttons();
     void update_values();
 
 private:
-    struct Field {
-        Yoga::InputTextField* textfield{nullptr};
-        Yoga::Passthrough<Yoga::DoubleValidator> double_validator;
-    };
-
     Biz::Preset::PresetInteractor& m_preset_interactor;
-    std::vector<Field> m_fields;
+    std::vector<Yoga::ToggleButton*> m_toggle_buttons;
 };
 
 } // namespace Slic3r::App

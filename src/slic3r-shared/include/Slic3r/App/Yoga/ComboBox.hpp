@@ -25,17 +25,26 @@ public:
         std::function<void(int index)> selection_changed{nullptr};
     };
 
-    explicit ComboBox(const std::string& name = "ComboBox");
-    ComboBox(std::initializer_list<std::string> initializer_list = {}, const std::string& name = "ComboBox");
+    explicit ComboBox(const std::string& name = {});
+    ComboBox(std::initializer_list<std::string> items = {}, const std::string& name = {});
 
-    template <typename Container>
-    ComboBox(Container&& data, const std::string& name) : ComboBox(name)
+    template <std::ranges::range Container>
+        requires std::convertible_to<std::ranges::range_value_t<Container>, std::string>
+    ComboBox(Container&& data, const std::string& name = {}) : ComboBox(name)
     {
         m_items.insert(
             m_items.end(),
             std::make_move_iterator(std::begin(data)),
             std::make_move_iterator(std::end(data))
         );
+        set_current_index(0);
+    }
+
+    template <std::ranges::range Container>
+        requires std::convertible_to<std::ranges::range_value_t<Container>, std::string>
+    ComboBox(const Container& data, const std::string& name = {}) : ComboBox(name)
+    {
+        m_items.insert(m_items.end(), std::begin(data), std::end(data));
         set_current_index(0);
     }
 

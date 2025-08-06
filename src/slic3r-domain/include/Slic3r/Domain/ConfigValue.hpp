@@ -80,12 +80,14 @@ struct EnumVectorWrapper
             m_values.push_back(static_cast<int>(value));
         }
     }
-
     void set_strings(const std::vector<std::string>& values);
     std::vector<std::string_view> get_strings() const;
 
+    std::vector<size_t> get_indexes() const;
+    void set_indexes(const std::vector<size_t>& indexes);
+
     const std::type_info* type() const;
-    const std::vector<int> values() const;
+    const std::vector<int>& values() const;
     const EnumValueDefs& def() const;
 
     bool operator==(const EnumVectorWrapper&) const;
@@ -134,10 +136,13 @@ struct EnumWrapper
     }
 
     void set_string(const std::string& value);
+    void set_index(size_t index);
 
     const std::type_info* type() const;
 
     const int value() const;
+
+    const size_t index_of_value(int value) const;
 
     const EnumValueDefs& def() const;
 

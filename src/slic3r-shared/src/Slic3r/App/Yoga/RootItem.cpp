@@ -43,11 +43,20 @@ void RootItem::render(Vec2f pos, Vec2f size)
     m_loop_events.process_events();
 }
 
-void RootItem::set_style_dirty() { m_style_dirty = true; }
+void RootItem::set_style_dirty()
+{
+    m_style_dirty = true;
+}
 
-void RootItem::push_event(EventPtr event) { m_loop_events.insert_event(std::move(event)); }
+void RootItem::push_event(EventPtr event)
+{
+    m_loop_events.insert_event(std::move(event));
+}
 
-Vec2f RootItem::get_available_size() const { return m_size; }
+Vec2f RootItem::get_available_size() const
+{
+    return m_size;
+}
 
 void RootItem::resize(Vec2f size)
 {

@@ -136,7 +136,7 @@ Render::ImguiRender* Slic3r::App::Yoga::Item::m_imgui_render = nullptr;
 
 std::unordered_map<std::string, int> Item::m_item_names = {};
 
-Item::Item()
+Item::Item() : m_heartbeat(std::make_shared<int>(1))
 {
     m_node = YGNodeNew();
 
@@ -324,21 +324,6 @@ std::optional<size_t> Item::index_of(Item* item) const
         result = std::distance(m_children.cbegin(), it);
     }
     return result;
-}
-
-bool Item::find_item(Item* item) const
-{
-    if (this == item) {
-        return true;
-    }
-
-    for (const ItemPtr& child : m_children) {
-        if (child->find_item(item)) {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 void Item::set_debug_border(bool show_debug_border) { m_debug_border = show_debug_border; }
@@ -881,6 +866,11 @@ Popup *Item::parent_popup() const
 void Item::set_parent_popup(Popup *parent_popup)
 {
     m_parent_popup = parent_popup;
+}
+
+ItemHeartBeat Item::heartbeat() const
+{
+    return m_heartbeat.get();
 }
 
 } // namespace Slic3r::App::Yoga

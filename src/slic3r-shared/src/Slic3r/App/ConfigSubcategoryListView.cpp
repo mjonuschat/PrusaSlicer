@@ -17,7 +17,8 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     Biz::ConfigBoxInteractor& cbi
 ) :
     m_preset_interactor(preset_interactor),
-    m_cbi(cbi)
+    m_cbi(cbi),
+    m_category_filter(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())
 {
     set_orientation(Orientation::Vertical);
     set_gap(5);
@@ -30,12 +31,12 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     );
     category_label->set_margin(10);
 
-    m_category_filter.set_filter_fn([=](const Domain::ConfigItem& config_item) {
+    m_category_filter->set_filter_fn([=](const Domain::ConfigItem& config_item) {
         return config_item.def().category == category;
     });
 
-    m_category_filter.set_group_by_fn([](const Domain::ConfigItem& config_item,
-                                         std::unordered_set<std::string>& seen_keys) {
+    m_category_filter->set_group_by_fn([](const Domain::ConfigItem& config_item,
+                                          std::unordered_set<std::string>& seen_keys) {
         if (seen_keys.contains(config_item.def().option_group)) {
             return true;
         } else {
@@ -44,13 +45,13 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
         }
     });
 
-    m_category_filter.set_source_model(m_cbi.config_box_list());
+    m_category_filter->set_source_model(m_cbi.config_box_list());
 
     m_list_view = emplace_back<SubcategoryListView>(
         SubcategoryListViewFactory{m_preset_interactor, m_cbi}
     );
     m_list_view->set_orientation(Orientation::Vertical);
-    m_list_view->set_source_list(&m_category_filter);
+    m_list_view->set_source_list(m_category_filter.get());
     m_list_view->set_gap(5);
 }
 

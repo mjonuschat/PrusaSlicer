@@ -1,0 +1,83 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+#include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
+
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/App/Yoga/ComboBox.hpp"
+
+using namespace Slic3r::App::Yoga;
+
+namespace Slic3r::App {
+
+ConfigItemComboBoxes::ConfigItemComboBoxes(
+    size_t index,
+    const Domain::ConfigItem& config_item,
+    Biz::Preset::PresetInteractor& preset_interactor
+) :
+    Biz::DataObserver<Domain::ConfigItem>(index, config_item),
+    m_preset_interactor(preset_interactor)
+{
+    set_width(150);
+    set_orientation(Orientation::Horizontal);
+    set_gap(5);
+
+    on_data_update();
+}
+
+void ConfigItemComboBoxes::on_data_update()
+{
+    if (m_combo_boxes.size() != m_state->get<Domain::EnumVectorWrapper>().values().size()) {
+        reconstruct_buttons();
+    } else {
+        update_values();
+    }
+}
+
+void ConfigItemComboBoxes::reconstruct_buttons()
+{
+    for (size_t child_index = 0; child_index < item_count(); ++child_index) {
+        remove(get_item(0));
+    }
+    m_combo_boxes.clear();
+
+    const Domain::EnumVectorWrapper vector_wrapper = m_state->get<Domain::EnumVectorWrapper>();
+
+    std::vector<std::string> items;
+    items.reserve(vector_wrapper.def().size());
+    std::transform(
+        vector_wrapper.def().cbegin(),
+        vector_wrapper.def().cend(),
+        std::back_inserter(items),
+        [](const Domain::EnumValueDef& value) { return value.str_ui; }
+    );
+
+    const std::vector<size_t> current_indexes = vector_wrapper.get_indexes();
+    m_combo_boxes.reserve(current_indexes.size());
+    for (int index : current_indexes) {
+        ComboBox* combo = emplace_back<ComboBox>(items);
+        m_combo_boxes.push_back(combo);
+        combo->set_current_index(index);
+
+        combo->callbacks().selection_changed = [this, combo](int index) {
+            Domain::EnumVectorWrapper vector_wrapper = m_state->get<Domain::EnumVectorWrapper>();
+            std::vector<size_t> current_indexes      = vector_wrapper.get_indexes();
+            current_indexes[index_of(combo).value()] = index;
+
+            vector_wrapper.set_indexes(current_indexes);
+
+            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{vector_wrapper});
+        };
+    }
+}
+
+void ConfigItemComboBoxes::update_values()
+{
+    const Domain::EnumVectorWrapper vector_wrapper = m_state->get<Domain::EnumVectorWrapper>();
+    const std::vector<int>& current_indexes        = vector_wrapper.values();
+    for (size_t i = 0; i < current_indexes.size(); ++i) {
+        m_combo_boxes[i]->set_current_index(current_indexes.at(i));
+    }
+}
+} // namespace Slic3r::App

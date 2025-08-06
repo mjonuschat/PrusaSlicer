@@ -508,6 +508,8 @@ void PresetInteractor::select_printer_preset(const std::string& printer_preset_i
     m_printer_presets.set_selected([&printer_preset_id](const PresetItem& item) {
         return item.id == printer_preset_id;
     });
+    m_printer_cbi.set_config_box(&selected_preset.printer.config_box());
+    m_print_cbi.set_config_box(&selected_preset.print.config_box());
 
     const auto* print = p.find_print_preset_by_id(selected_preset.print.id);
     ASSERT(print != nullptr, selected_preset.print.id);
@@ -533,6 +535,7 @@ void PresetInteractor::select_print_preset(const std::string& id)
     selected_preset                                       = mutable_selected_printer_presets();
 
     m_print_presets.set_selected([&id](const PresetItem& item) { return item.id == id; });
+    m_print_cbi.set_config_box(&selected_preset.print.config_box());
 
     const auto* print = printer.find_print_preset_by_id(selected_preset.print.id);
     ASSERT(print != nullptr, selected_preset.print.id);

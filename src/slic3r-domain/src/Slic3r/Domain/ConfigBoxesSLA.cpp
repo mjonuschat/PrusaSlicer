@@ -142,6 +142,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("fast_tilt_time", typeid(double));
     def->location = Printer;
     def->label = L("Fast");
+    def->option_group = L("Tilt");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Fast tilt");
     def->tooltip = L("Time of the fast tilt");
     def->sidetext = L("s");
@@ -152,6 +155,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("slow_tilt_time", typeid(double));
     def->location = Printer;
     def->label = L("Slow");
+    def->option_group = L("Tilt");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Slow tilt");
     def->tooltip = L("Time of the slow tilt");
     def->sidetext = L("s");
@@ -162,6 +168,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("high_viscosity_tilt_time", typeid(double));
     def->location = Printer;
     def->label = L("High viscosity");
+    def->option_group = L("Tilt");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Tilt for high viscosity resin");
     def->tooltip = L("Time of the super slow tilt");
     def->sidetext = L("s");
@@ -260,7 +269,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("zcorrection_layers", typeid(int));
     def->location = Material;
     def->label = L("Z compensation");
-    def->category = ConfigItemDef::Category::Advanced;;
+    def->option_group = L("Corrections");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of layers to Z correct to avoid cross layer bleed");
     def->min = 0;
     def->mode = comAdvanced;
@@ -269,6 +280,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("gamma_correction", typeid(double));
     def->location = Printer;
     def->label = L("Printer gamma correction");
+    def->option_group = L("Corrections");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Printer gamma correction");
     def->tooltip  = L("This will apply a gamma correction to the rasterized 2D "
                       "polygons. A gamma value of zero means thresholding with "
@@ -283,13 +297,16 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("material_colour", typeid(std::string));
     def->location = Material;
     def->label = L("Color");
-    def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
+    def->option_group = L("Material");
+    def->category = ConfigItemDef::Category::Filament;
     def->gui_type = ConfigItemDef::GUIType::color;
+    def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
     def->init_fn = init_with("#29B2B2");
 
     def = defs.add("material_type", typeid(std::string));
     def->location = Material;
     def->label = L("SLA material type");
+    def->category = ConfigItemDef::Category::Hidden;
     def->tooltip = L("SLA material type");
     def->gui_flags = "show_value";
     def->gui_type = ConfigItemDef::GUIType::select_open;
@@ -304,6 +321,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("initial_layer_height", typeid(double));
     def->location = Material;
     def->label = L("Initial layer height");
+    def->option_group = L("Layers");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Initial layer height");
     def->sidetext = L("mm");
     def->min = 0;
@@ -312,6 +332,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("bottle_volume", typeid(double));
     def->location = Material;
     def->label = L("Bottle volume");
+    def->option_group = L("Material");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Bottle volume");
     def->sidetext = L("ml");
     def->min = 50;
@@ -320,6 +343,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("bottle_weight", typeid(double));
     def->location = Material;
     def->label = L("Bottle weight");
+    def->option_group = L("Material");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Bottle weight");
     def->sidetext = L("kg");
     def->min = 0;
@@ -328,6 +354,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("material_density", typeid(double));
     def->location = Material;
     def->label = L("Density");
+    def->option_group = L("Material");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Density");
     def->sidetext = L("g/ml");
     def->min = 0;
@@ -336,6 +365,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("bottle_cost", typeid(double));
     def->location = Material;
     def->label = L("Cost");
+    def->option_group = L("Material");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Cost");
     def->sidetext = L("money/bottle");
     def->min = 0;
@@ -357,6 +389,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("min_exposure_time", typeid(double));
     def->location = Printer;
     def->label = L("Minimum exposure time");
+    def->option_group = L("Exposure");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Minimum exposure time");
     def->sidetext = L("s");
     def->min = 0;
@@ -366,6 +401,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("max_exposure_time", typeid(double));
     def->location = Printer;
     def->label = L("Maximum exposure time");
+    def->option_group = L("Exposure");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum exposure time");
     def->sidetext = L("s");
     def->min = 0;
@@ -375,6 +413,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("exposure_time", typeid(double));
     def->location = Material;
     def->label = L("Exposure time");
+    def->option_group = L("Exposure");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Exposure time");
     def->sidetext = L("s");
     def->min = 0;
@@ -383,6 +424,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("min_initial_exposure_time", typeid(double));
     def->location = Printer;
     def->label = L("Minimum initial exposure time");
+    def->option_group = L("Exposure");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Minimum initial exposure time");
     def->sidetext = L("s");
     def->min = 0;
@@ -392,6 +436,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("max_initial_exposure_time", typeid(double));
     def->location = Printer;
     def->label = L("Maximum initial exposure time");
+    def->option_group = L("Exposure");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum initial exposure time");
     def->sidetext = L("s");
     def->min = 0;
@@ -401,6 +448,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("initial_exposure_time", typeid(double));
     def->location = Material;
     def->label = L("Initial exposure time");
+    def->option_group = L("Exposure");
+    def->category = ConfigItemDef::Category::Filament;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Initial exposure time");
     def->sidetext = L("s");
     def->min = 0;
@@ -452,6 +502,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("material_notes", typeid(std::string));
     def->location = Material;
     def->label = L("SLA print material notes");
+    def->option_group = L("Notes");
+    def->category = ConfigItemDef::Category::Notes;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("You can put your notes regarding the SLA print material here.");
     def->multiline = true;
     def->full_width = true;
@@ -777,6 +830,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("material_print_speed", typeid(EnumWrapper));
     def->location = Material;
     def->label = L("Print speed");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L(
         "A slower printing profile might be necessary when using materials with higher viscosity "
         "or with some hollowed parts. It slows down the tilt movement and adds a delay before exposure.");
@@ -791,12 +847,18 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("sla_archive_format", typeid(std::string));
     def->location = Printer;
     def->label = L("Format of the output SLA archive");
+    def->option_group = L("Output");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->mode = comAdvanced;
     def->init_fn = init_with("SL1");
 
     def = defs.add("sla_output_precision", typeid(double));
     def->location = Printer;
     def->label = L("SLA output precision");
+    def->option_group = L("Output");
+    def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Minimum resolution in nanometers");
     def->sidetext = L("mm");
     def->min = 0.000001f;
@@ -806,6 +868,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("delay_before_exposure", typeid(std::vector<double>));
     def->location = Material;
     def->full_label = L("Delay before exposure");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Delay before exposure after previous layer separation.");
     def->sidetext = L("s");
     def->min = 0;
@@ -816,6 +881,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("delay_after_exposure", typeid(std::vector<double>));
     def->location = Material;
     def->full_label = L("Delay after exposure");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Delay after exposure before layer separation.");
     def->sidetext = L("s");
     def->min = 0;
@@ -826,6 +894,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tower_hop_height", typeid(std::vector<double>));
     def->location = Material;
     def->full_label = L("Tower hop height");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("The height of the tower raise.");
     def->sidetext = L("mm");
     def->min = 0;
@@ -836,6 +907,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tower_speed", typeid(EnumVectorWrapper));
     def->location = Material;
     def->full_label = L("Tower speed");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::comboboxes;
     def->tooltip = L("Tower speed used for tower raise.");
     def->mode = comExpert;
     def->sidetext = L("mm/s");
@@ -879,7 +953,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->full_label = L("Tilt down initial speed");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
-    def->gui_type = ConfigItemDef::GUIType::combobox;
+    def->gui_type = ConfigItemDef::GUIType::comboboxes;
     def->tooltip = L("Tilt speed used for an initial portion of tilt down move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
@@ -890,7 +964,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->full_label = L("Tilt down finish speed");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
-    def->gui_type = ConfigItemDef::GUIType::combobox;
+    def->gui_type = ConfigItemDef::GUIType::comboboxes;
     def->tooltip = L("Tilt speed used for the rest of the tilt down move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
@@ -901,7 +975,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->full_label = L("Tilt up initial speed");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
-    def->gui_type = ConfigItemDef::GUIType::combobox;
+    def->gui_type = ConfigItemDef::GUIType::comboboxes;
     def->tooltip = L("Tilt speed used for an initial portion of tilt up move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
@@ -923,7 +997,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->full_label = L("Use tilt");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
-    def->gui_type = ConfigItemDef::GUIType::checkbox;
+    def->gui_type = ConfigItemDef::GUIType::checkboxes;
     def->tooltip = L("If enabled, tilt is used for layer separation. Otherwise, all the parameters below are ignored.");
     def->mode = comExpert;
     def->init_fn = init_with((std::vector<bool>{ true, true }));
@@ -931,6 +1005,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_down_offset_steps", typeid(std::vector<int>));
     def->location = Material;
     def->full_label = L("Tilt down offset steps");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::spinboxes;
     def->tooltip = L("Number of steps to move down from the calibrated (horizontal) position with 'tilt_down_initial_speed'.");
     def->sidetext = L("μ-steps");
     def->min = 0;
@@ -941,6 +1018,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_down_offset_delay", typeid(std::vector<double>));
     def->location = Material;
     def->full_label = L("Tilt down offset delay");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Delay after the tilt reaches 'tilt_down_offset_steps' position.");
     def->sidetext = L("s");
     def->min = 0;
@@ -951,6 +1031,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_down_cycles", typeid(std::vector<int>));
     def->location = Material;
     def->full_label = L("Tilt down cycles");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::spinboxes;
     def->tooltip = L("Number of cycles to split the rest of the tilt down move.");
     def->min = 0;
     def->max = 10;
@@ -960,6 +1043,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_down_delay", typeid(std::vector<double>));
     def->location = Material;
     def->full_label = L("Tilt down delay");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("The delay between tilt-down cycles.");
     def->sidetext = L("s");
     def->min = 0;
@@ -970,6 +1056,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_up_offset_steps", typeid(std::vector<int>));
     def->location = Material;
     def->full_label = L("Tilt up offset steps");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::spinboxes;
     def->tooltip = L("Move tilt up to calibrated (horizontal) position minus this offset.");
     def->sidetext = L("μ-steps");
     def->min = 0;
@@ -980,6 +1069,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_up_offset_delay", typeid(std::vector<double>));
     def->location = Material;
     def->full_label = L("Tilt up offset delay");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Delay after the tilt reaches 'tilt_up_offset_steps' position.");
     def->sidetext = L("s");
     def->min = 0;
@@ -990,6 +1082,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_up_cycles", typeid(std::vector<int>));
     def->location = Material;
     def->full_label = L("Tilt up cycles");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::spinboxes;
     def->tooltip = L("Number of cycles to split the rest of the tilt-up.");
     def->min = 0;
     def->max = 10;
@@ -999,6 +1094,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("tilt_up_delay", typeid(std::vector<double>));
     def->location = Material;
     def->full_label = L("Tilt up delay");
+    def->option_group = L("Profile settings");
+    def->category = ConfigItemDef::Category::MaterialPrintingProfile;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("The delay between tilt-up cycles.");
     def->sidetext = L("s");
     def->min = 0;
@@ -1249,6 +1347,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->overrides_in = Locations{ Object };
         def->label = L("Object elevation");
         def->category = ConfigItemDef::Category::Supports;
+        def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("How much the supports should lift up the supported object. "
             "If \"Pad around object\" is enabled, this value is ignored.");
         def->sidetext = L("mm");

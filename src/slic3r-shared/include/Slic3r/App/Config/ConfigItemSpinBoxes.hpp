@@ -5,24 +5,24 @@
 #pragma once
 
 #include "Slic3r/Domain/Config.hpp"
-#include "Slic3r/Biz/DataObserver.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
-#include "Slic3r/App/Yoga/Validator.hpp"
+#include "Slic3r/Biz/DataObserver.hpp"
 
 namespace Slic3r::Biz::Preset {
 class PresetInteractor;
 } // namespace Slic3r::Biz::Preset
 
 namespace Slic3r::App::Yoga {
-class InputTextField;
+class IntValidator;
+class InputTextWithSpin;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
 
-class ConfigItemTextFields : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
+class ConfigItemSpinBoxes : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
 {
 public:
-    ConfigItemTextFields(
+    ConfigItemSpinBoxes(
         size_t index,
         const Domain::ConfigItem& data,
         Biz::Preset::PresetInteractor& preset_interactor
@@ -32,17 +32,19 @@ protected:
     void on_data_update() override;
 
 private:
-    void reconstruct_fields();
+    void reconstruct_spin_buttons();
     void update_values();
 
 private:
-    struct Field {
-        Yoga::InputTextField* textfield{nullptr};
-        Yoga::Passthrough<Yoga::DoubleValidator> double_validator;
+    struct Box
+    {
+        Yoga::InputTextWithSpin* spinbox{nullptr};
+        Yoga::IntValidator* value_validator{nullptr};
     };
 
     Biz::Preset::PresetInteractor& m_preset_interactor;
-    std::vector<Field> m_fields;
+
+    std::vector<Box> m_boxes;
 };
 
 } // namespace Slic3r::App

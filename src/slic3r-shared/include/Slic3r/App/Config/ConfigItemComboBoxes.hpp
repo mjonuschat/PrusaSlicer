@@ -7,24 +7,23 @@
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Biz/DataObserver.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
-#include "Slic3r/App/Yoga/Validator.hpp"
 
 namespace Slic3r::Biz::Preset {
 class PresetInteractor;
 } // namespace Slic3r::Biz::Preset
 
 namespace Slic3r::App::Yoga {
-class InputTextField;
+class ComboBox;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
 
-class ConfigItemTextFields : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
+class ConfigItemComboBoxes : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
 {
 public:
-    ConfigItemTextFields(
+    ConfigItemComboBoxes(
         size_t index,
-        const Domain::ConfigItem& data,
+        const Domain::ConfigItem& config_item,
         Biz::Preset::PresetInteractor& preset_interactor
     );
 
@@ -32,17 +31,12 @@ protected:
     void on_data_update() override;
 
 private:
-    void reconstruct_fields();
+    void reconstruct_buttons();
     void update_values();
 
 private:
-    struct Field {
-        Yoga::InputTextField* textfield{nullptr};
-        Yoga::Passthrough<Yoga::DoubleValidator> double_validator;
-    };
-
     Biz::Preset::PresetInteractor& m_preset_interactor;
-    std::vector<Field> m_fields;
+    std::vector<Yoga::ComboBox*> m_combo_boxes;
 };
 
 } // namespace Slic3r::App

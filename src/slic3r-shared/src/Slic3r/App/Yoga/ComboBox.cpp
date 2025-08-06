@@ -132,13 +132,13 @@ static bool YGBeginCombo(
 
 ComboBox::ComboBox(const std::string& name) : m_tooltip(this, "", "")
 {
-    set_item_name(name);
+    set_item_name(name.empty() ? "ComboBox" : name);
 }
 
-ComboBox::ComboBox(std::initializer_list<std::string> initializer_list, const std::string& name) :
+ComboBox::ComboBox(std::initializer_list<std::string> items, const std::string& name) :
     ComboBox(name)
 {
-    m_items = initializer_list;
+    m_items = items;
     set_current_index(0);
 }
 
@@ -180,12 +180,7 @@ void ComboBox::render(Vec2f pos, Vec2f size)
         {
             const ImVec2 im_size = to_im(size);
             for (size_t index = 0; index < m_items.size(); ++index) {
-                if (ImGui::Selectable(
-                        m_items.at(index).c_str(),
-                        index == m_current_index,
-                        0,
-                        im_size
-                    ))
+                if (ImGui::Selectable(m_items.at(index).c_str(), index == m_current_index, 0, im_size))
                 {
                     set_current_index(index);
                     if (m_callbacks.selection_changed) {
@@ -257,7 +252,10 @@ void ComboBox::reset()
     set_current_index(m_default_index);
 }
 
-ImGuiComboFlags ComboBox::flags() const { return m_flags; }
+ImGuiComboFlags ComboBox::flags() const
+{
+    return m_flags;
+}
 
 void ComboBox::set_flags(ImGuiComboFlags flags)
 {
@@ -279,7 +277,7 @@ std::string ComboBox::current_label() const
     return m_editable ? std::string(m_buffer.data()) : m_current_label;
 }
 
-void ComboBox::set_current_label(const std::string &current_label)
+void ComboBox::set_current_label(const std::string& current_label)
 {
     ASSERT(m_editable);
     m_current_label = current_label;

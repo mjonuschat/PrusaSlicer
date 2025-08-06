@@ -8,7 +8,7 @@ namespace Slic3r::App::Yoga {
 
 void StackLayout::insert(ItemPtr child, size_t index)
 {
-    if (m_children.size()) {
+    if (!m_children.empty()) {
         child->set_visible(false);
     }
 
@@ -18,6 +18,7 @@ void StackLayout::insert(ItemPtr child, size_t index)
 ItemPtr StackLayout::remove(Item* child)
 {
     std::optional<size_t> index = index_of(child);
+    ASSERT(index.has_value());
 
     ItemPtr item = Item::remove(child);
 

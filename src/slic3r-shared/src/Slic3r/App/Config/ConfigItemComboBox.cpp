@@ -75,13 +75,13 @@ void ConfigItemComboBox::on_data_update()
 
     } else if (*m_state->def().type == typeid(Domain::EnumWrapper)) {
         set_editable(false);
-        const Domain::EnumWrapper values = m_state->get<Domain::EnumWrapper>();
+        const Domain::EnumWrapper enum_wrapper = m_state->get<Domain::EnumWrapper>();
 
-        for (const Domain::EnumValueDef& value : values.def()) {
+        for (const Domain::EnumValueDef& value : enum_wrapper.def()) {
             items.push_back(std::string(value.str_ui));
         }
         set_items(items);
-        set_current_index(values.value());
+        set_current_index(enum_wrapper.index_of_value(enum_wrapper.value()));
     }
 }
 

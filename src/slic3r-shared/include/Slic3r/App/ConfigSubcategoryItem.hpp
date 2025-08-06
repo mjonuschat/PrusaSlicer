@@ -40,7 +40,6 @@ public:
         Biz::Preset::PresetInteractor& preset_interactor,
         Biz::ConfigBoxInteractor& cbi
     );
-    ~ConfigSubcategoryItem();
 
 private:
     void on_data_update() override;
@@ -52,7 +51,7 @@ private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
 
     ConfigRowListView* m_rows_list_view{nullptr};
-    Biz::ObservableListSortFilter<Domain::ConfigItem> m_rows_filter_list;
+    Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_rows_filter_list;
     Yoga::Text* m_label{nullptr};
     Yoga::Rectangle* m_background{nullptr};
 };

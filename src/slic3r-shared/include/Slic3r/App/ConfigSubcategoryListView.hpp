@@ -44,7 +44,7 @@ private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
     Biz::ConfigBoxInteractor& m_cbi;
     SubcategoryListView* m_list_view{nullptr};
-    Biz::ObservableListSortFilter<Domain::ConfigItem> m_category_filter;
+    Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_category_filter;
     Yoga::Rectangle* m_background{nullptr};
 };
 

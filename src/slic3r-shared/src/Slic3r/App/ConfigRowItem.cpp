@@ -12,6 +12,8 @@
 #include "Slic3r/App/Config/ConfigItemComboBox.hpp"
 #include "Slic3r/App/Config/ConfigItemTextFields.hpp"
 #include "Slic3r/App/Config/ConfigItemSpinBox.hpp"
+#include "Slic3r/App/Config/ConfigItemSpinBoxes.hpp"
+#include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -46,6 +48,9 @@ ConfigRowItem::ConfigRowItem(
     case Slic3r::Domain::ConfigItemDef::GUIType::combobox:
         m_input = emplace_back<ConfigItemComboBox>(index, data, m_preset_interactor);
         break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::comboboxes:
+        m_input = emplace_back<ConfigItemComboBoxes>(index, data, m_preset_interactor);
+        break;
     case Slic3r::Domain::ConfigItemDef::GUIType::points:
         m_input = emplace_back<ConfigItemPoints>(index, data);
         break;
@@ -54,6 +59,9 @@ ConfigRowItem::ConfigRowItem(
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinbox:
         m_input = emplace_back<ConfigItemSpinBox>(index, data, m_preset_interactor);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::spinboxes:
+        m_input = emplace_back<ConfigItemSpinBoxes>(index, data, m_preset_interactor);
         break;
     }
 

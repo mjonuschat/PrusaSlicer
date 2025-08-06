@@ -15,6 +15,7 @@ LogicalPrinterSettingsButton::LogicalPrinterSettingsButton(
 {
     on_data_update();
     set_flex_shrink(0);
+    set_checkable(false);
 
     callbacks().action = [this]() { m_on_clicked(m_index); };
 }

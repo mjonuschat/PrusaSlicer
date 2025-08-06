@@ -12,7 +12,7 @@ using namespace Slic3r::App::Yoga;
 using namespace Slic3r::App::Render;
 
 namespace {
-void emplace_row(Item* container, ItemPtr input, const std::string& label, const std::string& symbol = "")
+void emplace_row(Item* container, ItemPtr input, const std::string& label, const std::string& symbol = {})
 {
     ASSERT(container);
     ASSERT(input);
