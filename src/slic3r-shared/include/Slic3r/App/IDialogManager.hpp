@@ -50,6 +50,12 @@ public:
         const FileCallback& callback
     ) = 0;
 
+    virtual std::string show_input_dialog(
+        const std::string& title,
+        const std::string& text,
+        const std::string& default_value
+    ) = 0;
+
     virtual void show_webview_dialog(
         std::unique_ptr<Browser::AbstractBrowserLogic>&& logic,
         Slic3r::Biz::ProjectInteractor* project_interactor

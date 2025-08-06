@@ -9,10 +9,17 @@
 #include <optional>
 #include <vector>
 
+#include "Slic3r/App/WX/I18N.hpp" // translation for font name style modifier
+
 // #include "libslic3r/Utils.hpp" // IWYU pragma: keep
 // #include "libslic3r/Exception.hpp"
-
-#if defined(__APPLE__)
+#ifdef _WIN32
+#include <boost/crc.hpp>
+#include <windows.h>
+#include <wingdi.h>
+#include <windef.h>
+#include <WinUser.h>
+#elif defined(__APPLE__)
 #include "libslic3r/Utils.hpp" // ScopeGuard
 #include <CoreText/CTFont.h>
 #include <wx/uri.h>
@@ -352,6 +359,332 @@ wxFont create_wxFont(const Domain::EmbossStyle& style)
     return wx_font;
 }
 
+// extend fonts by styles and weight (italic + bold)
+namespace {
+    std::string to_string(wxFontStyle style)
+    {
+        switch (style) {
+        case wxFontStyle::wxFONTSTYLE_NORMAL:
+            // TRN It will be visible after font name in font list
+            return _u8L("normal");
+        case wxFontStyle::wxFONTSTYLE_ITALIC:
+            // TRN It will be visible after font name in font list
+            return _u8L("italic");
+        case wxFontStyle::wxFONTSTYLE_SLANT:
+            // TRN It will be visible after font name in font list
+            return _u8L("slant");
+        default:
+            return "unknown style";
+        }
+    }
+
+    std::string to_string(wxFontWeight weight)
+    {
+        switch (weight) {
+        case wxFontWeight::wxFONTWEIGHT_THIN:
+            // TRN It will be visible after font name in font list
+            return _u8L("thin");
+        case wxFontWeight::wxFONTWEIGHT_EXTRALIGHT:
+            // TRN It will be visible after font name in font list
+            return _u8L("extralight");
+        case wxFontWeight::wxFONTWEIGHT_LIGHT:
+            // TRN It will be visible after font name in font list
+            return _u8L("light");
+        case wxFontWeight::wxFONTWEIGHT_NORMAL:
+            // TRN It will be visible after font name in font list
+            return _u8L("normal");
+        case wxFontWeight::wxFONTWEIGHT_MEDIUM:
+            // TRN It will be visible after font name in font list
+            return _u8L("medium");
+        case wxFontWeight::wxFONTWEIGHT_SEMIBOLD:
+            // TRN It will be visible after font name in font list
+            return _u8L("semibold");
+        case wxFontWeight::wxFONTWEIGHT_BOLD:
+            // TRN It will be visible after font name in font list
+            return _u8L("bold");
+        case wxFontWeight::wxFONTWEIGHT_EXTRABOLD:
+            // TRN It will be visible after font name in font list
+            return _u8L("extrabold");
+        case wxFontWeight::wxFONTWEIGHT_HEAVY:
+            // TRN It will be visible after font name in font list
+            return _u8L("heavy");
+        case wxFontWeight::wxFONTWEIGHT_EXTRAHEAVY:
+            // TRN It will be visible after font name in font list
+            return _u8L("extraheavy");
+        default:
+            return "unknown weight";
+        }
+    }
+
+    void set_property(wxFont& wx_font, wxFontStyle style)
+    {
+        wx_font.SetStyle(style);
+    }
+
+    void set_property(wxFont& wx_font, wxFontWeight weight)
+    {
+        wx_font.SetWeight(weight);
+    }
+
+#ifdef _WIN32
+    // Identifier must load font file at least partialy
+    struct FontIdentifier
+    {
+        // font file size
+        size_t size = std::numeric_limits<size_t>::max();
+
+        // calculated crc for font file
+        size_t crc = std::numeric_limits<size_t>::max();
+
+        bool operator==(const FontIdentifier& o) const
+        {
+            return size == o.size && crc == o.crc;
+        }
+
+        bool operator<(const FontIdentifier& o) const
+        {
+            return size < o.size || (size == o.size && crc < o.crc);
+        }
+    };
+
+    // global data
+    HDC g_hdc = NULL;
+    std::vector<unsigned char> g_buffer = std::vector<unsigned char>(500);
+
+    void end_creation_font_ids()
+    {
+        ::DeleteDC(g_hdc);
+        g_buffer.clear();
+    }
+
+    // Copied from Emboss.hpp
+    bool load_hfont(void* hfont, DWORD& dwTable, DWORD& dwOffset, size_t& size, HDC hdc)
+    {
+        // To retrieve the data from the beginning of the file for TrueType
+        // Collection files specify 'ttcf' (0x66637474).
+        dwTable = 0x66637474;
+        dwOffset = 0;
+
+        ::SelectObject(hdc, hfont);
+        size = ::GetFontData(hdc, dwTable, dwOffset, NULL, 0);
+        if (size == GDI_ERROR) {
+            // HFONT is NOT TTC(collection)
+            dwTable = 0;
+            size = ::GetFontData(hdc, dwTable, dwOffset, NULL, 0);
+        }
+
+        if (size == 0 || size == GDI_ERROR) {
+            return false;
+        }
+        return true;
+    }
+
+    std::optional<FontIdentifier> create_font_identifier(const wxFont& font)
+    {
+        if (g_hdc == NULL) {
+            g_hdc = ::CreateCompatibleDC(NULL);
+            if (g_hdc == NULL) {
+                assert(false);
+                BOOST_LOG_TRIVIAL(error) << "Can't create HDC by CreateCompatibleDC(NULL).";
+                return {};
+            }
+        }
+
+        DWORD dwTable = 0, dwOffset = 0;
+        size_t size;
+        if (!load_hfont(font.GetHFONT(), dwTable, dwOffset, size, g_hdc)) {
+            return {};
+        }
+        size_t crc_size = std::min(g_buffer.size(), size);
+        size_t loaded_size = ::GetFontData(g_hdc, dwTable, dwOffset, g_buffer.data(), crc_size);
+        if (loaded_size != crc_size)
+            return {};
+
+        boost::crc_32_type result;
+        result.process_bytes(g_buffer.data(), crc_size);
+        size_t crc = result.checksum();
+        return FontIdentifier{ .size = size, .crc = crc };
+    }
+#else
+    using FontIdentifier = std::string;
+
+    void end_creation_font_ids() {}
+#endif
+
+    std::optional<FontIdentifier> get_font_id(const wxFont& font)
+    {
+#ifdef _WIN32
+        return create_font_identifier(font);
+#elif defined(__APPLE__)
+        return get_file_path(font);
+#elif defined(__linux__)
+        return Biz::WX::get_font_path(font);
+#else
+        return font.GetFamilyString().ToStdString();
+#endif
+    }
+
+    struct FontDescEx
+    {
+        Domain::FontDescriptor descriptor;
+        FontIdentifier id;
+    };
+
+    using FontDescExs = std::vector<FontDescEx>;
+
+    template <typename Property>
+    FontDescExs extend_by_properties(
+        const wxFont& wx_font_start,
+        const FontDescEx& font_ex,
+        const std::vector<Property>& properties
+    )
+    {
+        FontDescExs result;
+        const Domain::FontDescriptor& orig_descr = font_ex.descriptor;
+        for (Property property : properties) {
+            wxFont wx_font{ wx_font_start };
+            set_property(wx_font, property);
+
+            auto font_id_opt = get_font_id(wx_font);
+            if (!font_id_opt.has_value())
+                continue;
+
+            const FontIdentifier& font_id = *font_id_opt;
+            if (font_ex.id == font_id)
+                continue;
+
+            auto it = std::find_if(result.begin(), result.end(), [&font_id](const FontDescEx& r) {
+                return r.id == font_id;
+                });
+            if (it != result.end())
+                continue; // already exist in current extension
+
+            if (!Biz::WX::can_load(wx_font))
+                continue;
+
+            Domain::FontDescriptor descr = Biz::WX::create_descriptor(wx_font);
+            if (descr.path == orig_descr.path)
+                continue;
+
+            descr.name = orig_descr.name + " " + to_string(property);
+            result.push_back(FontDescEx{ .descriptor = descr, .id = font_id });
+        }
+        return result;
+    }
+
+} // namespace
+
+void extend(Domain::FontList& fonts, std::vector<wxString>& valid, std::vector<wxString>& bad)
+{
+    // NOTE: order define priority of used property when create same font
+    static std::vector<wxFontStyle> italic_styles = {
+        wxFontStyle::wxFONTSTYLE_ITALIC,
+        wxFontStyle::wxFONTSTYLE_SLANT,
+        wxFontStyle::wxFONTSTYLE_NORMAL
+    };
+    static std::vector<wxFontWeight> bold_weight = {
+        wxFontWeight::wxFONTWEIGHT_BOLD,
+        wxFontWeight::wxFONTWEIGHT_THIN,
+        wxFontWeight::wxFONTWEIGHT_LIGHT,
+        wxFontWeight::wxFONTWEIGHT_MEDIUM,
+        wxFontWeight::wxFONTWEIGHT_HEAVY,
+        wxFontWeight::wxFONTWEIGHT_EXTRAHEAVY,
+        wxFontWeight::wxFONTWEIGHT_EXTRALIGHT,
+        wxFontWeight::wxFONTWEIGHT_SEMIBOLD,
+        wxFontWeight::wxFONTWEIGHT_EXTRABOLD,
+        wxFontWeight::wxFONTWEIGHT_NORMAL
+    };
+
+    struct FontDescEx2
+    {
+        FontDescEx descriptor_ex;
+        std::optional<size_t> index;
+
+        FontDescEx2(const FontDescEx& descriptor_ex) : descriptor_ex(descriptor_ex) {}
+
+        FontDescEx2(const FontDescEx& descriptor_ex, size_t index) :
+            descriptor_ex(descriptor_ex),
+            index(index)
+        {
+        }
+
+        operator FontDescEx& ()
+        {
+            return descriptor_ex;
+        }
+    };
+
+    std::vector<FontDescEx2> result;
+    for (const Domain::FontDescriptor& font : fonts) {
+        wxFont wx_font = Biz::WX::load_wxFont(font.path);
+        auto font_id_opt = get_font_id(wx_font);
+        if (!font_id_opt.has_value())
+            continue;
+        FontDescEx font_ex{ .descriptor = font, .id = *font_id_opt };
+        result.push_back(FontDescEx2(font_ex, &font - &fonts.front()));
+        FontDescExs ext_style = extend_by_properties(wx_font, font_ex, italic_styles);
+        result.insert(result.end(), ext_style.begin(), ext_style.end());
+        ext_style.push_back(font_ex); // add original style
+        for (const FontDescEx& font_ex : ext_style) {
+            wxFont wx_font = Biz::WX::load_wxFont(font_ex.descriptor.path);
+            FontDescExs ext_weight = extend_by_properties(wx_font, font_ex, bold_weight);
+            result.insert(result.end(), ext_weight.begin(), ext_weight.end());
+        }
+    }
+    end_creation_font_ids();
+    // clean duplicit use of same file
+    auto pred_id_sort = [](const FontDescEx& f1, const FontDescEx& f2) {
+        return f1.id < f2.id;
+        };
+    std::sort(result.begin(), result.end(), pred_id_sort);
+    auto pred_id_unique = [](const FontDescEx& f1, const FontDescEx& f2) {
+        return f1.id == f2.id;
+        };
+    auto id_it = std::unique(result.begin(), result.end(), pred_id_unique);
+    result.erase(id_it, result.end());
+
+    // clean duplicit paths - for sure - can't be loaded both
+    auto pred_path_sort = [](const FontDescEx& f1, const FontDescEx& f2) {
+        return f1.descriptor.path < f2.descriptor.path;
+        };
+    std::sort(result.begin(), result.end(), pred_path_sort);
+    auto pred_path_unique = [](const FontDescEx& f1, const FontDescEx& f2) {
+        return f1.descriptor.path == f2.descriptor.path;
+        };
+    auto path_it = std::unique(result.begin(), result.end(), pred_path_unique);
+    result.erase(path_it, result.end());
+
+    // prepare sorted result
+    auto pred_name_sort = [](const FontDescEx& f1, const FontDescEx& f2) {
+        return f1.descriptor.name < f2.descriptor.name;
+        };
+    std::sort(result.begin(), result.end(), pred_name_sort);
+    Domain::FontList fonts_new;
+    fonts_new.reserve(result.size());
+    std::vector<wxString> valid_new;
+    valid_new.reserve(valid.size());
+    std::vector<bool> valid_used(valid.size(), { false });
+    for (const FontDescEx2& r : result) {
+        fonts_new.push_back(r.descriptor_ex.descriptor);
+        if (r.index.has_value()) {
+            valid_new.push_back(valid[*r.index]);
+            valid_used[*r.index] = true;
+        }
+        else {
+            valid_new.push_back(wxString()); // unknown name for filtration
+        }
+    }
+
+    // update bad list
+    for (size_t i = 0; i < valid.size(); ++i)
+        if (!valid_used[i])
+            bad.push_back(valid[i]);
+
+    std::sort(bad.begin(), bad.end());
+    fonts = fonts_new;
+    valid = valid_new;
+}
+
 void update_property(Domain::FontProp& font_prop, const wxFont& font)
 {
     wxString wx_face_name = font.GetFaceName();
@@ -381,69 +714,4 @@ void update_property(Domain::FontProp& font_prop, const wxFont& font)
     }
 }
 
-bool is_italic(const wxFont& font)
-{
-    wxFontStyle wx_style = font.GetStyle();
-    return wx_style == wxFONTSTYLE_ITALIC || wx_style == wxFONTSTYLE_SLANT;
-}
-
-bool is_bold(const wxFont& font)
-{
-    wxFontWeight wx_weight = font.GetWeight();
-    return wx_weight != wxFONTWEIGHT_NORMAL;
-}
-
-std::unique_ptr<Domain::FontFile> set_italic(wxFont& font, const Domain::FontFile& font_file)
-{
-    static std::vector<wxFontStyle> italic_styles = {
-        wxFontStyle::wxFONTSTYLE_ITALIC,
-        wxFontStyle::wxFONTSTYLE_SLANT
-    };
-    wxFontStyle orig_style = font.GetStyle();
-    for (wxFontStyle style : italic_styles) {
-        font.SetStyle(style);
-        std::unique_ptr<Domain::FontFile> new_font_file = create_font_file(font);
-
-        // can create italic font?
-        if (new_font_file == nullptr)
-            continue;
-
-        // is still same font file pointer?
-        if (font_file == *new_font_file)
-            continue;
-
-        return new_font_file;
-    }
-    // There is NO italic font by wx
-    font.SetStyle(orig_style);
-    return nullptr;
-}
-
-std::unique_ptr<Domain::FontFile> set_bold(wxFont& font, const Domain::FontFile& font_file)
-{
-    static std::vector<wxFontWeight> bold_weight = {
-        wxFontWeight::wxFONTWEIGHT_BOLD,
-        wxFontWeight::wxFONTWEIGHT_HEAVY,
-        wxFontWeight::wxFONTWEIGHT_EXTRABOLD,
-        wxFontWeight::wxFONTWEIGHT_EXTRAHEAVY
-    };
-    wxFontWeight orig_weight = font.GetWeight();
-    for (wxFontWeight weight : bold_weight) {
-        font.SetWeight(weight);
-        std::unique_ptr<Domain::FontFile> new_font_file = create_font_file(font);
-
-        // can create bold font file?
-        if (new_font_file == nullptr)
-            continue;
-
-        // is still same font file pointer?
-        if (font_file == *new_font_file)
-            continue;
-
-        return new_font_file;
-    }
-    // There is NO bold font by wx
-    font.SetWeight(orig_weight);
-    return nullptr;
-}
 } // namespace Slic3r::Biz::WX

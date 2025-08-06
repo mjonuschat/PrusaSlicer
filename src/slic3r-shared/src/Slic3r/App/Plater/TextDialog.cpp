@@ -50,15 +50,20 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
 
     m_font                                = Passthrough{std::make_unique<ComboBox>("Font name")};
     m_font->callbacks().selection_changed = [this](int index) {
+        if (index >= m_fonts.size())
+            return; // should not happend
+        const Domain::FontDescriptor& font = m_fonts[index];
+        set_font(font, false);
         if (m_callbacks.font_selection_changed)
-            m_callbacks.font_selection_changed(m_fonts[index]);
+            m_callbacks.font_selection_changed(font);
     };
     add_row(_u8L("Font"), m_font.release(), content(), _u8L("Revert font changes."));
 
     m_style                                = Passthrough{std::make_unique<ComboBox>("Font style")};
     m_style->callbacks().selection_changed = [this](int index) {
-        if (m_callbacks.style_selection_changed)
-            m_callbacks.style_selection_changed(index);
+        size_t font_index = m_font->current_index() + index;
+        if (m_callbacks.font_selection_changed && font_index < m_fonts.size())
+            m_callbacks.font_selection_changed(m_fonts[font_index]);
     };
     add_row(_u8L("Style"), m_style.release(), content(), _u8L("Revert style changes."));
 
@@ -392,30 +397,87 @@ void TextDialog::set_presets(const std::vector<std::string>& presets, int select
     m_preset->set_current_index(selected_preset_id);
 }
 
-namespace {
-std::vector<std::string> get_names(const Domain::FontList& fonts)
+void TextDialog::set_fonts(const Domain::FontList& fonts)
 {
+    m_fonts = fonts;
     std::vector<std::string> names;
     names.reserve(fonts.size());
     for (const Domain::FontDescriptor& font : fonts) {
         names.push_back(font.name);
     }
-    return names;
-}
-}
-
-void TextDialog::set_fonts(const Domain::FontList& fonts, int selected_font_id, int default_font_id)
-{
-    m_fonts = fonts;
-    m_font->set_items(get_names(fonts));
-    m_font->set_default(default_font_id);
-    m_font->set_current_index(selected_font_id);
+    m_font->set_items(names);
 }
 
-void TextDialog::set_styles(const std::vector<std::string>& styles, int selected_style_id, int default_style_id)
+namespace {
+std::string get_first_word(const std::string& sentence) {
+    // Find the position of the first space character.
+    // std::string::npos is returned if no space is found.
+    size_t spacePos = sentence.find(' ');
+
+    if (spacePos == std::string::npos) {
+        // If no space is found, the entire string is the first word.
+        return sentence;
+    }
+    // Space is found, return the substring from the beginning
+    // up to the position of the space.
+    return sentence.substr(0, spacePos);
+}
+
+bool starts_with(const std::string& sentence, const std::string& word){
+    return sentence.rfind(word, 0) == 0; // pos=0 limits the search to the prefix
+}
+} // namespace
+
+void TextDialog::set_font(const Domain::FontDescriptor& font, bool set_as_default)
 {
-    m_style->set_items(styles);
-    m_style->set_current_index(selected_style_id);
+    if (m_fonts.empty())
+        return; // First call function TextDialog::set_fonts()
+
+    auto unknown_font = [&]() {
+        m_font->set_current_index(0);
+        set_enable_all_except_font(true);
+        m_style->set_items({_u8L("Not available")});
+        m_style->set_current_index(0);
+    };
+
+    if (font.type != m_fonts.front().type)
+        // not current type
+        return unknown_font();
+
+    auto font_it = std::find_if(m_fonts.begin(), m_fonts.end(), [&font](const Domain::FontDescriptor& f) {
+        return f.path == font.path; });
+    if (font_it == m_fonts.end())
+        // not in known font but from same Operating system
+        return unknown_font();
+    
+    std::string name = get_first_word(font_it->name);
+    auto start_style_it = font_it;
+    while (start_style_it != m_fonts.begin() && starts_with((--start_style_it)->name, name));
+    if (start_style_it != m_fonts.begin() || !starts_with(start_style_it->name, name))
+        ++start_style_it;
+
+    auto end_style_it = font_it;
+    while (end_style_it != m_fonts.end() && starts_with((++end_style_it)->name, name));
+
+    m_font->set_current_index(start_style_it - m_fonts.begin());
+    if (set_as_default)
+        m_font->set_default(start_style_it - m_fonts.begin());
+
+    std::vector<std::string> style_names;
+    style_names.reserve(end_style_it - start_style_it);
+    size_t name_size = name.size();
+    for (auto style_it = start_style_it; style_it != end_style_it; ++style_it) {
+        if (style_it->name.size() <= name.size()){
+            style_names.push_back(_u8L("Regular"));
+        } else {
+            style_names.push_back(style_it->name.substr(name.size() + 1));
+        }
+    }
+
+    m_style->set_items(style_names);
+    m_style->set_current_index(font_it - start_style_it);
+    if (set_as_default)
+        m_style->set_default(font_it - start_style_it);
 }
 
 static void set_double_spin(

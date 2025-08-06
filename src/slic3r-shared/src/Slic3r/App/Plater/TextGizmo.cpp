@@ -4,6 +4,7 @@
 ///|/
 
 #include "Slic3r/App/Plater/TextGizmo.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/TextDialog.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -97,6 +98,7 @@ Biz::Emboss::CreateVolumeParams create_volume_params(
 } // namespace
 
 namespace Slic3r::App::Plater {
+
 TextGizmo::TextGizmo(
     Render::Device& device,
     PlaterScenePresenter& scene_presenter,
@@ -112,7 +114,7 @@ TextGizmo::TextGizmo(
     m_preset_manager(
         font_manager,
         ImGui::GetIO().Fonts->GetGlyphRangesDefault(),
-        data_dir() + "/cache/emboss_presets.cereal"
+        data_dir() + "/text_emboss_presets.cereal"
     )
 {
     // Initialize font descriptor to font copied with application
@@ -124,70 +126,35 @@ TextGizmo::TextGizmo(
 
     // Dialog callback settings (order follow UI)
     m_dialog = std::make_unique<TextDialog>();
-    m_dialog->callbacks().text_changed = [this](const std::string& text) {
-        m_text = text;
-    };
+    m_dialog->callbacks().text_changed = [this](const std::string& text) { m_text = text; };
     m_dialog->callbacks().font_selection_changed =
         [this](const Domain::FontDescriptor& font_descriptor) {
-            m_preset_manager.get_preset().emboss_style.descriptor = font_descriptor;
-        };    
-    m_dialog->callbacks().style_selection_changed = [this](int id) {
-
-        // TODO: implement
+            m_preset_manager.get_preset().emboss_style.descriptor.path = font_descriptor.path;
         };
-
-    m_dialog->callbacks().save_preset_as = [this]() { m_preset_manager.store_presets(); };
+    // style is only subcategory of font
+    m_dialog->callbacks().height_changed = [this](double value) {
+        m_preset_manager.get_font_prop().size_in_mm = value;
+        };
+    m_dialog->callbacks().depth_changed = [this](double value) {
+        m_preset_manager.get_preset().projection.depth = value;
+        };
+    m_dialog->callbacks().save_preset_as = [this]() {
+        m_preset_manager.save_preset_as(); 
+        m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index()); };
     m_dialog->callbacks().save_preset = [this]() { m_preset_manager.store_presets(); };
-    m_dialog->callbacks().rename_preset = [this]() { m_preset_manager.store_presets(); };
+    m_dialog->callbacks().rename_preset = [this]() {
+        m_preset_manager.rename_preset(); 
+        m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index()); };
     m_dialog->callbacks().delete_preset = [this]() { 
-        std::string style_name = m_preset_manager.get_preset().emboss_style.descriptor.name; // copy
-        size_t next_style_index = std::numeric_limits<size_t>::max();
-        bool exist_change = false;
-        while (true) {
-            // NOTE: can't use previous loaded activ index -> erase could change index
-            size_t active_index = m_preset_manager.get_preset_index();
-            next_style_index = (active_index > 0) ? active_index - 1 :
-                active_index + 1;
-
-            if (next_style_index >= m_preset_manager.get_styles().size()) {
-                //MessageDialog msg(plater, _L("Can't remove the last existing preset."), dialog_title, wxICON_ERROR | wxOK);
-                //msg.ShowModal();
-                break;
-            }
-
-            // IMPROVE: add function can_load?
-            // clean unactivable styles
-            if (!m_preset_manager.load_preset(next_style_index)) {
-                m_preset_manager.erase(next_style_index);
-                exist_change = true;
-                continue;
-            }
-
-            //wxString message = GUI::format_wxstr(_L("Are you sure you want to permanently remove the \"%1%\" preset?"), style_name);
-            //MessageDialog msg(plater, message, dialog_title, wxICON_WARNING | wxYES | wxNO);
-            //if (msg.ShowModal() == wxID_YES) {
-                // delete preset
-                m_preset_manager.erase(active_index);
-                exist_change = true;
-                //process();
-            //}
-            //else {
-            //    // load back preset
-            //    m_preset_manager.load_preset(active_index);
-            //}
-            break;
-        }
-        if (exist_change) {
-            m_preset_manager.store_presets(false);
+        if (m_preset_manager.delete_preset()) {
             activate_preset();
+            m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index());
         }
     };
-    m_dialog->callbacks().text_changed = [this](const std::string& text) {
-        m_text = text;
-    };
-    m_dialog->callbacks().set_on_face_camera = [this]() {
-        m_dialog->show_revert_buttons(false); // test
-    };
+
+    m_dialog->callbacks().set_on_face_camera = [this]() { 
+        m_dialog->set_enable_line_gap(false); // test
+        };
 
     m_dialog->callbacks().preset_selection_changed = [this](int id) {
         m_preset_manager.load_preset(static_cast<size_t>(id));
@@ -290,7 +257,7 @@ void TextGizmo::render_imgui()
                 m_preset_manager.get_preset().emboss_style.descriptor.name.c_str()
             ))
         {
-            const auto& styles = m_preset_manager.get_styles();
+            const auto& styles = m_preset_manager.get_presets();
             for (const Biz::Emboss::TextPresetManager::Preset& style : styles) {
                 const bool is_selected = (&style - &styles.front())
                     == m_preset_manager.get_preset_index();
@@ -325,15 +292,74 @@ size_t get_index(const Domain::FontList& fonts, const std::string& path)
     );
     return (it_font == fonts.end()) ? 0 : (it_font - fonts.begin());
 }
+
+const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor& project_interactor) {
+    const Biz::Scene::SceneInteractor& scene_interactor = project_interactor.scene_interactor();
+    const Biz::Scene::ObjectSelection& selection = scene_interactor.object_selection();
+    if (selection.elements.size() != 1)
+        return nullptr; // multiple volumes selected
+
+    const Domain::ElementRef& selected = selection.elements.front();
+    const Domain::Project& project = project_interactor.selected_project();
+    const Domain::ModelVolume* volume_ptr = project.find_volume_by_id(selected.object_id, selected.volume_id);
+    if (volume_ptr == nullptr)
+        return nullptr;
+
+    if (!volume_ptr->text_configuration.has_value())
+        return nullptr; // selected volume is not text
+
+    return volume_ptr;
 }
+
+}
+
+
 
 void TextGizmo::on_activated()
 {
-    if (m_preset_manager.get_styles().empty())
+    if (m_preset_manager.get_presets().empty())
         m_preset_manager.init();
-    m_text = "Emmmbosss text";
 
-    m_dialog->set_presets(m_preset_manager.get_style_names(), m_preset_manager.get_preset_index());
+    const Domain::ModelVolume* volume_ptr = get_selected_text_volume(m_project_interactor);
+    if (volume_ptr == nullptr) {
+        // create new text volume
+        m_preset_manager.discard_preset_changes();
+        m_text = "Emmmbosss text";
+
+        // TODO: how to wait till it is created?
+    
+    } else {
+        // load current settings
+        const Domain::TextConfiguration& tc = *volume_ptr->text_configuration;
+        const Domain::EmbossStyle& style = tc.style;
+
+        Biz::Emboss::TextPresetManager::Preset preset{
+            .emboss_style = style,
+            .projection = volume_ptr->emboss_shape->projection
+            // .distance = calc_distance(),
+            // .angle = calc_angle(selection)
+        };
+
+        const auto& presets = m_preset_manager.get_presets();
+        auto preset_it = std::find_if(presets.begin(), presets.end(),
+            [&name = style.descriptor.name](const Biz::Emboss::TextPresetManager::Preset& preset) {
+                return preset.emboss_style.descriptor.name == name;
+            });
+
+        if (preset_it == presets.end()) {
+            // unknown preset inside volume, create temporary one
+            m_preset_manager.load_preset(preset);
+        } else {
+            m_preset_manager.load_preset(presets.begin() - preset_it);
+            m_preset_manager.get_preset() = preset;                
+        }
+        // TODO: update dialog
+        
+        // Do not use focused input value when switch volume(it must swith value)
+        //ImGuiPureWrap::left_inputs();
+    }
+
+    m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index());
 
     // load current font_preset
     activate_preset(/*font_preset*/);
@@ -341,19 +367,13 @@ void TextGizmo::on_activated()
     bool use_inch = false; // wxGetApp().app_config->get_bool("use_inches");
     m_dialog->update_units(use_inch);
 
-    // unknown font, so only font selection is enabled
-    m_dialog->set_enable_all_except_font(true);
-
     // Propadate reloaded installed font into the dialog
     // NOTE: reload fonts from OS, 2.9.2 do it on dialog open, now it is on gizmo activation
     const Domain::FontList& fonts = m_font_manager.get_fonts(); // Re-Load Os fonts
-    const Domain::EmbossStyle& es = m_preset_manager.get_preset().emboss_style;
-    const Domain::EmbossStyle& es_ = m_preset_manager.exist_stored_style()?
-        m_preset_manager.get_stored_preset()->emboss_style : es;
-    int selected_font_id = (es.descriptor.type == m_font_manager.get_current_type()) ?
-        get_index(fonts, es.descriptor.path) : 0;
-    int default_font_id = get_index(fonts, es_.descriptor.path);
-    m_dialog->set_fonts(fonts, selected_font_id, default_font_id);
+    m_dialog->set_fonts(fonts);
+    if (m_preset_manager.exist_stored_style())
+        m_dialog->set_font(m_preset_manager.get_stored_preset()->emboss_style.descriptor, true);
+    m_dialog->set_font(m_preset_manager.get_preset().emboss_style.descriptor, false);
 }
 
 void TextGizmo::on_deactivated() {}
@@ -409,15 +429,14 @@ void TextGizmo::activate_preset(/*preset*/)
     const Biz::Emboss::TextPresetManager::Preset& preset_ = exist_stored ?
         *m_preset_manager.get_stored_preset() : preset;
 
-    const Domain::EmbossStyle& es = preset.emboss_style;
-    const Domain::EmbossStyle& es_ = preset_.emboss_style;
+    m_dialog->set_editor(m_text);
 
     // TODO: solve conversion from font name
-    std::vector<std::string> styles = { "Regular", "Bold", "Italic", "ItalicBold" };
-    int selected_style_id = 0;
-    int default_style_id = 0;
-    m_dialog->set_styles(styles, selected_style_id, default_style_id);    
-    m_dialog->set_editor(m_text);
+    const Domain::EmbossStyle& es = preset.emboss_style;
+    const Domain::EmbossStyle& es_ = preset_.emboss_style;
+    if (exist_stored)
+        m_dialog->set_font(es_.descriptor, true);
+    m_dialog->set_font(es.descriptor, false);
 
     const Domain::FontProp& prop = es.prop;
     const Domain::FontProp& prop_ = es_.prop;

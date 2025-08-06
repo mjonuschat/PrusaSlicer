@@ -20,6 +20,7 @@
 #include <wx/msgdlg.h>
 #include <wx/filedlg.h>
 #include <wx/string.h>
+#include <wx/textdlg.h>
 #include <wx/tokenzr.h>
 #include <wx/app.h>
 
@@ -156,6 +157,10 @@ void DialogManager::show_error_dialog(const std::string& text, const std::string
 {
     MessageDialog(nullptr, from_u8(text), title.empty() ? _L("Error") : from_u8(title), wxICON_ERROR | wxOK)
         .ShowModal();
+}
+std::string DialogManager::show_input_dialog(const std::string& title, const std::string& text, const std::string& default_value)
+{
+    return into_u8(wxGetTextFromUser(from_u8(text), from_u8(title), default_value.empty()? wxString(wxEmptyString) : from_u8(default_value)));
 }
 
 void DialogManager::show_diff_dialog(const Slic3r::Biz::Preset::PresetInteractor& preset_interactor, std::optional<Domain::Preset::PresetKind> kind)

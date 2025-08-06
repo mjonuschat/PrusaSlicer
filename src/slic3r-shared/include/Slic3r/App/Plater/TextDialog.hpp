@@ -29,7 +29,6 @@ public:
     {
         std::function<void(const std::string&)> text_changed{ nullptr };
         std::function<void(const Domain::FontDescriptor& font_descriptor)> font_selection_changed{nullptr};
-        std::function<void(int index)> style_selection_changed{nullptr};
 
         std::function<void(double value)> height_changed{nullptr};
         std::function<void(double value)> depth_changed{nullptr};
@@ -62,8 +61,8 @@ public:
 
     void set_editor(const std::string& text);
     void set_presets(const std::vector<std::string>& presets, int selected_preset_id);
-    void set_fonts(const Domain::FontList& fonts, int selected_font_id, int default_font_id);
-    void set_styles(const std::vector<std::string>& styles, int selected_style_id, int default_style_id);
+    void set_fonts(const Domain::FontList& fonts);
+    void set_font(const Domain::FontDescriptor& font, bool set_as_default);
     void set_height(double from, double to, double step, double step_fast, double height, double default_height);
     void set_depth(double from, double to, double step, double step_fast, double depth, double default_depth);
 
@@ -79,7 +78,6 @@ public:
     void set_surface_distance(double max_val, double step, double value, double default_value = 0.);
     void set_rotation(double max_val, double step, double value, double default_value = 0.);
 
-    void set_enable_all_except_font(bool enable);
     void set_enable_use_surface(bool enable);
     void set_enable_per_glyph(bool enable);
     void set_enable_line_gap(bool enable);
@@ -88,6 +86,7 @@ public:
     void show_revert_buttons(bool show);
 
 private:
+    void set_enable_all_except_font(bool enable);
     void add_advanced_panel();
     void add_part_specific_panel();
 

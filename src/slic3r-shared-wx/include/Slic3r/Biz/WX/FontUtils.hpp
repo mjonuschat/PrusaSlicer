@@ -44,31 +44,20 @@ wxFont load_wxFont(const std::string& font_descriptor);
 
 // Try to create similar font, loaded from 3mf from different Computer
 wxFont create_wxFont(const Domain::EmbossStyle& style);
+
+/// <summary>
+/// Extends the font list by style(bold/italic ...)
+/// Also detect invalid fonts from list when create unique FontId
+/// </summary>
+/// <param name="fonts">Font list to be extended
+/// NOTE: same size as @valid index into valid corespond with index into fonts.</param>
+/// <param name="valid">Vector that contain valid font string to create wxFont(from enumeration).
+/// NOTE: same size as @fonts index into fonts corespond with index into valid.</param>
+/// <param name="bad">Vector that contain invalid font string to create wxFont(from enumeration).</param>
+void extend(Domain::FontList& fonts, std::vector<wxString>& valid, std::vector<wxString>& bad);
+
 // update font property by wxFont - without emboss depth and font size
 void update_property(Domain::FontProp& font_prop, const wxFont& font);
-
-bool is_italic(const wxFont& font);
-bool is_bold(const wxFont& font);
-
-/// <summary>
-/// Set italic into wx font
-/// When italic font is same as original return nullptr.
-/// To not load font file twice on success is font_file returned.
-/// </summary>
-/// <param name="font">wx descriptor of font</param>
-/// <param name="font_file">file described in wx font</param>
-/// <returns>New created font fileon success otherwise nullptr</returns>
-std::unique_ptr<Domain::FontFile> set_italic(wxFont& font, const Domain::FontFile& prev_font_file);
-
-/// <summary>
-/// Set boldness into wx font
-/// When bolded font is same as original return nullptr.
-/// To not load font file twice on success is font_file returned.
-/// </summary>
-/// <param name="font">wx descriptor of font</param>
-/// <param name="font_file">file described in wx font</param>
-/// <returns>New created font fileon success otherwise nullptr</returns>
-std::unique_ptr<Domain::FontFile> set_bold(wxFont& font, const Domain::FontFile& font_file);
 
 // clang-format off
 // convert wxFont types to string and vice versa

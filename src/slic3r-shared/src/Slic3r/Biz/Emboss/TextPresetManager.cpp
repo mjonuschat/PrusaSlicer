@@ -4,6 +4,8 @@
 ///|/
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/App/IDialogManager.hpp"
 #include <optional>
 #include <GL/glew.h> // Imgui texture
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
@@ -85,14 +87,121 @@ bool TextPresetManager::store_presets(bool use_modification, bool store_active_i
     return true;
 }
 
-void TextPresetManager::add_preset(const std::string& name)
+void TextPresetManager::save_preset_as() {
+    auto& dlg_manager = App::DialogManagerProvider::instance().get();
+    App::IDialogManager::YesNoCallback callback;
+    auto save_preset_as_fn = [this, &dlg_manager, &callback]() {
+        std::string name = dlg_manager.show_input_dialog(_u8L("New presset name") + ':', _u8L("Type unique presset name to save current settings"),
+            get_preset().emboss_style.descriptor.name);
+        if (name.empty())
+            return;
+        if (!is_unique_style_name(name)) {
+            dlg_manager.show_yesno_dialog(_u8L("Presset name is not unique"), _u8L("Presset already exist would you like to try new name?"), callback);
+        }
+        else {
+            Domain::EmbossStyle& style = m_preset_cache.preset.emboss_style;
+            style.descriptor.name = name;
+            ::make_unique_name(m_data.presets, style.descriptor.name);
+            m_preset_cache.preset_index = m_data.presets.size();
+            m_preset_cache.truncated_name.clear();
+            m_data.presets.push_back({ style });
+            store_presets();
+        }
+    };
+    callback = [&](bool yes) {if (yes) save_preset_as_fn(); };
+    save_preset_as_fn();
+}
+
+void TextPresetManager::rename_preset()
 {
-    Domain::EmbossStyle& style = m_preset_cache.preset.emboss_style;
-    style.descriptor.name      = name;
-    ::make_unique_name(m_data.presets, style.descriptor.name);
-    m_preset_cache.preset_index = m_data.presets.size();
-    m_preset_cache.truncated_name.clear();
-    m_data.presets.push_back({style});
+    auto& dlg_manager = App::DialogManagerProvider::instance().get();
+    App::IDialogManager::YesNoCallback callback;
+    auto rename_preset_fn = [this, &dlg_manager, &callback]() {
+        std::string name = dlg_manager.show_input_dialog(_u8L("Re name presset") + ':', _u8L("Type unique presset name to save current settings"),
+            get_preset().emboss_style.descriptor.name);
+        if (name.empty())
+            return;
+        if (!is_unique_style_name(name)) {
+            dlg_manager.show_yesno_dialog(_u8L("Presset name is not unique"), _u8L("Presset already exist would you like to try new name?"), callback);
+        }
+        else {
+            m_preset_cache.preset.emboss_style.descriptor.name = name;
+            m_preset_cache.truncated_name.clear();
+            if (exist_stored_style()) {
+                Preset& it = m_data.presets[m_preset_cache.preset_index];
+                it.emboss_style.descriptor.name = name;
+            }
+            store_presets();
+        }
+    };
+    callback = [&](bool yes) {if (yes) rename_preset_fn(); };
+    rename_preset_fn();
+}
+
+bool TextPresetManager::delete_preset()
+{
+    /// <summary>
+    /// Remove preset
+    /// Fix selected index when index is under m_font_selected
+    /// </summary>
+    /// <param name="index">Index of preset to be removed</param>
+    auto erase = [this](size_t index) {
+        if (index >= m_data.presets.size())
+            return;
+
+        // fix selected index
+        if (exist_stored_style()) {
+            size_t& i = m_preset_cache.preset_index;
+            if (index < i)
+                --i;
+            else if (index == i)
+                i = std::numeric_limits<size_t>::max();
+        }
+        m_data.presets.erase(m_data.presets.begin() + index);
+    };
+
+    std::string style_name = get_preset().emboss_style.descriptor.name; // copy
+    size_t next_style_index = std::numeric_limits<size_t>::max();
+    bool exist_change = false;
+    while (true) {
+        // NOTE: can't use previous loaded activ index -> erase could change index
+        size_t active_index = get_preset_index();
+        next_style_index = (active_index > 0) ? active_index - 1 :
+            active_index + 1;
+
+        if (next_style_index >= get_presets().size()) {
+            //MessageDialog msg(plater, _L("Can't remove the last existing preset."), dialog_title, wxICON_ERROR | wxOK);
+            //msg.ShowModal();
+            break;
+        }
+
+        // IMPROVE: add function can_load?
+        // clean unactivable styles
+        if (!load_preset(next_style_index)) {
+            erase(next_style_index);
+            exist_change = true;
+            continue;
+        }
+
+        //wxString message = GUI::format_wxstr(_L("Are you sure you want to permanently remove the \"%1%\" preset?"), style_name);
+        //MessageDialog msg(plater, message, dialog_title, wxICON_WARNING | wxYES | wxNO);
+        //if (msg.ShowModal() == wxID_YES) {
+            // delete preset
+        erase(active_index);
+        exist_change = true;
+        //process();
+    //}
+    //else {
+    //    // load back preset
+    //    load_preset(active_index);
+    //}
+        break;
+    }
+    if (exist_change) {
+        store_presets(false);
+        return true;
+    }
+    return false;
 }
 
 void TextPresetManager::swap(size_t i1, size_t i2)
@@ -122,33 +231,6 @@ void TextPresetManager::discard_preset_changes()
 
     // try to save situation by load some font
     load_valid_preset();
-}
-
-void TextPresetManager::erase(size_t index)
-{
-    if (index >= m_data.presets.size())
-        return;
-
-    // fix selected index
-    if (exist_stored_style()) {
-        size_t& i = m_preset_cache.preset_index;
-        if (index < i)
-            --i;
-        else if (index == i)
-            i = std::numeric_limits<size_t>::max();
-    }
-
-    m_data.presets.erase(m_data.presets.begin() + index);
-}
-
-void TextPresetManager::rename(const std::string& name)
-{
-    m_preset_cache.preset.emboss_style.descriptor.name = name;
-    m_preset_cache.truncated_name.clear();
-    if (exist_stored_style()) {
-        Preset& it                       = m_data.presets[m_preset_cache.preset_index];
-        it.emboss_style.descriptor.name = name;
-    }
 }
 
 void TextPresetManager::load_valid_preset()
@@ -295,12 +377,12 @@ ImFont* TextPresetManager::get_imgui_font()
     return font;
 }
 
-const TextPresetManager::Presets& TextPresetManager::get_styles() const
+const TextPresetManager::Presets& TextPresetManager::get_presets() const
 {
     return m_data.presets;
 }
 
-std::vector<std::string> TextPresetManager::get_style_names() const 
+std::vector<std::string> TextPresetManager::get_presets_names() const 
 {
     std::vector<std::string> names;
     names.reserve(m_data.presets.size());
@@ -318,12 +400,12 @@ void TextPresetManager::init_style_images(const Domain::Index2& max_size, const 
     // check is initializing
     if (m_temp_style_images != nullptr) {
         // is initialization finished
-        if (!m_temp_style_images->styles.empty()) {
-            assert(m_temp_style_images->images.size() == m_temp_style_images->styles.size());
+        if (!m_temp_style_images->presets.empty()) {
+            assert(m_temp_style_images->images.size() == m_temp_style_images->presets.size());
             // copy images into styles
-            for (TextPresetManager::StyleImage& image : m_temp_style_images->images) {
+            for (TextPresetManager::PresetImage& image : m_temp_style_images->images) {
                 size_t index                 = &image - &m_temp_style_images->images.front();
-                StyleImagesData::Item& style = m_temp_style_images->styles[index];
+                PresetImagesData::Item& style = m_temp_style_images->presets[index];
 
                 // find style in font list and copy to it
                 for (auto& it : m_data.presets) {
@@ -343,8 +425,8 @@ void TextPresetManager::init_style_images(const Domain::Index2& max_size, const 
     }
 
     // create job for init images
-    m_temp_style_images = std::make_shared<StyleImagesData::StyleImages>();
-    StyleImagesData::Items presets;
+    m_temp_style_images = std::make_shared<PresetImagesData::PresetImages>();
+    PresetImagesData::Items presets;
     presets.reserve(m_data.presets.size());
     for (const Preset& style : m_data.presets) {
         std::unique_ptr<const Domain::FontFile> font_file = m_font_manager.open(

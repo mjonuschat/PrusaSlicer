@@ -525,7 +525,6 @@ const BedSelection& SceneInteractor::bed_selection() const
     return *ASSERT_VAL(result);
 }
 
-<<<<<<< HEAD
 BedSelection& SceneInteractor::bed_selection()
 {
     BedSelection* result{bed_selection(m_selected_project_id)};
@@ -547,11 +546,11 @@ BedSelection* SceneInteractor::bed_selection(const Domain::SelectionId project_i
     return const_cast<BedSelection*>(static_cast<const SceneInteractor*>(this)->bed_selection(project_id));
 }
 
-void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh) {
-    new_object_from_mesh(std::move(mesh), m_selected_project_id);
+void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, const std::string& name) {
+    new_object_from_mesh(std::move(mesh), m_selected_project_id, name);
 }
 
-void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::SelectionId project_id)
+void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::SelectionId project_id, const std::string& name)
 {
     auto& project = m_workbench.project(project_id);
     auto& obj     = *project.model().add_object();

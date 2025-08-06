@@ -52,7 +52,6 @@ public:
     /// </summary>
     /// <returns>List of favorits font descriptors in current OS</returns>
     Domain::FontList create_favorit() override;
-
 private:
     // data of can_load() faces
     Domain::FontList m_openable;

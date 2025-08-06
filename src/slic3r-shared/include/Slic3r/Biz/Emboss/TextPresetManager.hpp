@@ -29,7 +29,7 @@ public:
     /// <param name="font_manager">Accessor to font file data via Domain::FontDescriptor</param>
     /// <param name="language_glyph_range">Character to load for imgui when initialize imgui font</param>
     /// <param name="cache_path">File path for store cache with current user Emboss presets.
-    /// data_dir() + "/cache/emboss_presets.cereal"</param>
+    /// data_dir() + "/emboss_presets.cereal"</param>
     TextPresetManager(
         IFontManager& font_manager,
         const ImWchar* language_glyph_range,
@@ -53,11 +53,9 @@ public:
     /// <returns>True on succes otherwise False.</returns>
     bool store_presets(bool use_modification = true, bool store_active_index = true);
 
-    /// <summary>
-    /// Append current preset to list with given name
-    /// </summary>
-    /// <param name="name">New name for preset</param>
-    void add_preset(const std::string& name);
+    void save_preset_as();
+    void rename_preset();
+    bool delete_preset();
 
     /// <summary>
     /// Change order of preset item in m_presets.
@@ -72,19 +70,6 @@ public:
     /// When no activ preset use last used OR first loadable
     /// </summary>
     void discard_preset_changes();
-
-    /// <summary>
-    /// Remove preset
-    /// Fix selected index when index is under m_font_selected
-    /// </summary>
-    /// <param name="index">Index of preset to be removed</param>
-    void erase(size_t index);
-
-    /// <summary>
-    /// Rename current presset name
-    /// </summary>
-    /// <param name="name">New name</param>
-    void rename(const std::string& name);
 
     /// <summary>
     /// load some valid preset
@@ -177,14 +162,14 @@ public:
     void free_style_images();
 
     // access to all managed font styles
-    const std::vector<Preset>& get_styles() const;
+    const std::vector<Preset>& get_presets() const;
 
-    std::vector<std::string> get_style_names() const;
+    std::vector<std::string> get_presets_names() const;
 
     /// <summary>
     /// Describe image in GPU to show settings of style
     /// </summary>
-    struct StyleImage
+    struct PresetImage
     {
         void* texture_id = nullptr; // GLuint
         Domain::BoundingBox<int, 2> bounding_box;
@@ -225,7 +210,7 @@ public:
         }
 
         // visualization of style
-        std::optional<StyleImage> image;
+        std::optional<PresetImage> image;
     };
 
     using Presets = std::vector<Preset>;
@@ -288,7 +273,7 @@ private:
     /// <summary>
     /// Keep data needed to create Font Preset Images in Job
     /// </summary>
-    struct StyleImagesData
+    struct PresetImagesData
     {
         struct Item
         {
@@ -309,22 +294,22 @@ private:
         /// <summary>
         /// Result of job
         /// </summary>
-        struct StyleImages
+        struct PresetImages
         {
             // vector of inputs
-            StyleImagesData::Items styles;
+            PresetImagesData::Items presets;
             // job output
-            std::vector<StyleImage> images;
+            std::vector<PresetImage> images;
         };
 
         // place to store result in main thread in Finalize
-        std::shared_ptr<StyleImages> result;
+        std::shared_ptr<PresetImages> result;
 
         // pixel per milimeter (scaled DPI)
         double ppm;
     };
 
-    std::shared_ptr<StyleImagesData::StyleImages> m_temp_style_images = nullptr;
+    std::shared_ptr<PresetImagesData::PresetImages> m_temp_style_images = nullptr;
     bool m_exist_style_images                                         = false;
 };
 
