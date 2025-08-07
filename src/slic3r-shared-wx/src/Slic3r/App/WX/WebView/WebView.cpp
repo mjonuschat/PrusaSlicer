@@ -28,38 +28,43 @@ wxWebView* web_view_new()
     return webView;
 }
 
-void web_view_create(wxWebView* webView, wxWindow *parent, const wxString& url, const std::vector<std::string>& message_handlers)
+void web_view_create(
+    wxWebView* webView,
+    wxWindow* parent,
+    const wxString& url,
+    const std::vector<std::string>& message_handlers
+)
 {
     assert(webView);
     wxString correct_url = url.empty() ? wxString(L"") : wxURI(url).BuildURI();
-    wxString user_agent = L"PrusaSlicer/2.9.9 (Windows)"; // TODO
+    wxString user_agent  = L"PrusaSlicer/2.9.9 (Windows)"; // TODO
 #ifdef __WIN32__
     webView->SetUserAgent(user_agent);
     webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
-    //We register the wxfs:// protocol for testing purposes
-    //webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewArchiveHandler("wxfs")));
-    //And the memory: file system
-    //webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
+    // We register the wxfs:// protocol for testing purposes
+    // webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewArchiveHandler("wxfs")));
+    // And the memory: file system
+    // webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
 #else
     // With WKWebView handlers need to be registered before creation
-    //webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewArchiveHandler("wxfs")));
+    // webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewArchiveHandler("wxfs")));
     // And the memory: file system
-    //webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
+    // webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
     webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize);
     webView->SetUserAgent(user_agent);
 #endif
 #ifndef __WIN32__
     wxTheApp->CallAfter([message_handlers, webView] {
 #endif
-    for (const std::string& handler : message_handlers) {
-        if (!webView->AddScriptMessageHandler(from_u8(handler))) {
-            SPDLOG_ERROR( "WebView could not add script message handler {}", handler);
+        for (const std::string& handler : message_handlers) {
+            if (!webView->AddScriptMessageHandler(from_u8(handler))) {
+                SPDLOG_ERROR("WebView could not add script message handler {}", handler);
+            }
         }
-    }
 #ifndef __WIN32__
     });
 #endif
     webView->EnableContextMenu(false);
-} 
+}
 
 } // namespace Slic3r::App::WX::WebView

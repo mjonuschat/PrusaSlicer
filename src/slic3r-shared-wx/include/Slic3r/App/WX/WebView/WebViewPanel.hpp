@@ -11,26 +11,35 @@
 
 namespace Slic3r::App::WX::WebView {
 
-class WebViewPanel : public wxPanel , public Biz::UserAccount::IUserAccountListener, public App::Browser::AbstractBrowserLogicCommandHandler {
+class WebViewPanel :
+    public wxPanel,
+    public Biz::UserAccount::IUserAccountListener,
+    public App::Browser::AbstractBrowserLogicCommandHandler
+{
 public:
-    WebViewPanel(wxWindow* parent, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create);
+    WebViewPanel(
+        wxWindow* parent,
+        std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic,
+        bool do_create
+    );
     ~WebViewPanel() = default;
 
-    //IUserAccountListener;
+    // IUserAccountListener;
     void on_user_account_id_success(bool is_refresh) override;
     void on_user_account_logged_out() override;
     void on_user_account_will_refresh() override;
+
 private:
     std::unique_ptr<App::Browser::AbstractBrowserLogic> m_logic;
-    wxWebView* m_web_view;
+    wxWebView* m_web_view{nullptr};
 
     std::vector<std::string> m_script_message_hadler_names;
 
-    bool m_do_late_webview_create {false};
+    bool m_do_late_webview_create{false};
 
-    bool m_load_error_page { false };
-    bool m_shown { false };
-    bool m_load_default_url_on_next_error { false };
+    bool m_load_error_page{false};
+    bool m_shown{false};
+    bool m_load_default_url_on_next_error{false};
 
     void late_create();
     void load_url(const wxString& url);
@@ -42,8 +51,8 @@ private:
     // Let WebViewPanel do on_show so it can create webview properly
     // and load default page
     void on_show(wxShowEvent& evt);
-    void on_script_message(wxWebViewEvent& evt);    
-    void on_navigation_request(wxWebViewEvent &evt);
+    void on_script_message(wxWebViewEvent& evt);
+    void on_navigation_request(wxWebViewEvent& evt);
     void on_loaded(wxWebViewEvent& evt);
     void on_page_will_load();
 
@@ -69,19 +78,19 @@ private:
     wxBoxSizer* topsizer;
     wxBoxSizer* m_sizer_top;
 #ifdef DEBUG_URL_PANEL
-    
-    wxBoxSizer *bSizer_toolbar;
-    wxButton *  m_button_back;
-    wxButton *  m_button_forward;
-    wxButton *  m_button_stop;
-    wxButton *  m_button_reload;
-    wxTextCtrl *m_url;
-    wxButton *  m_button_tools;
+
+    wxBoxSizer* bSizer_toolbar;
+    wxButton* m_button_back;
+    wxButton* m_button_forward;
+    wxButton* m_button_stop;
+    wxButton* m_button_reload;
+    wxTextCtrl* m_url;
+    wxButton* m_button_tools;
 
     wxMenu* m_tools_menu;
     wxMenuItem* m_script_custom;
-    
-    wxInfoBar *m_info;
+
+    wxInfoBar* m_info;
     wxStaticText* m_info_text;
 
     wxMenuItem* m_context_menu;
@@ -108,4 +117,4 @@ protected:
     bool handle_logic_command_SetLoadDefaultURLOnErrorFalse(const std::string& data) override;
 };
 
-} // namespace Slic3r::App::WX
+} // namespace Slic3r::App::WX::WebView
