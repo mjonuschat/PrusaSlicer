@@ -35,7 +35,7 @@ void Buffer::set_data(const void* data, size_t size, BufferUsage usage)
 }
 
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
-TextureBuffer::TextureBuffer(Device& device, PixelFormat format)
+TextureBuffer::TextureBuffer(Device& device, Domain::PixelFormat format)
     : Buffer(device, BufferTarget::TextureBuffer)
     , m_format(format)
 {

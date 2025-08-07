@@ -652,21 +652,21 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data)
     if (!positions.empty()) {
 #if USE_TEXTURE_BUFFER
         // create and fill positions buffer
-        m_positions_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_positions", Render::PixelFormat::RGBA32F);
+        m_positions_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_positions", Domain::PixelFormat::RGBA32F);
         m_positions_buffer->set_data(positions.data(), positions.size() * sizeof(Vec4f), Render::BufferUsage::StaticDraw);
 
         // create and fill height, width and angles buffer
-        m_heights_widths_angles_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_heights_widths_angles", Render::PixelFormat::RGBA32F);
+        m_heights_widths_angles_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_heights_widths_angles", Domain::PixelFormat::RGBA32F);
         m_heights_widths_angles_buffer->set_data(heights_widths_angles.data(), heights_widths_angles.size() * sizeof(Vec4f), Render::BufferUsage::DynamicDraw);
 
         // create (but do not fill) colors buffer (data is set in update_colors())
-        m_colors_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_colors", Render::PixelFormat::R32F);
+        m_colors_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_colors", Domain::PixelFormat::R32F);
 
         // create (but do not fill) enabled segments buffer (data is set in update_enabled_entities())
-        m_enabled_segments_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_enabled_segments", Render::PixelFormat::R32UI);
+        m_enabled_segments_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_enabled_segments", Domain::PixelFormat::R32UI);
 
         // create (but do not fill) enabled options buffer (data is set in update_enabled_entities())
-        m_enabled_options_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_enabled_options", Render::PixelFormat::R32UI);
+        m_enabled_options_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_enabled_options", Domain::PixelFormat::R32UI);
 #else
         m_texture_data.init(m_device, positions.size());
         // create and fill position textures

@@ -6,15 +6,15 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <Slic3r/App/Render/Types.hpp>
+#include "Slic3r/Domain/Size.hpp"
 
-using namespace Slic3r::App::Render;
-using Catch::Matchers::WithinRel;
+using namespace Slic3r::Domain;
 
-TEST_CASE("Size comparison") {
+TEST_CASE("Size comparison")
+{
     Size a(10, 50);
     Size b;
-    b.width = 10;
+    b.width  = 10;
     b.height = 50;
 
     REQUIRE(a == b);
@@ -22,7 +22,8 @@ TEST_CASE("Size comparison") {
     REQUIRE(a.height == b.height);
 }
 
-TEST_CASE("Size scale IgnoreAspectRatio") {
+TEST_CASE("Size scale IgnoreAspectRatio")
+{
     Size a(10, 50);
 
     a.scale(Size(100, 100), Size::ScaleMode::IgnoreAspectRatio);
@@ -31,7 +32,8 @@ TEST_CASE("Size scale IgnoreAspectRatio") {
     REQUIRE(a.height == 100);
 }
 
-TEST_CASE("Size scale KeepAspectRatio") {
+TEST_CASE("Size scale KeepAspectRatio")
+{
     Size a(10, 50);
 
     a.scale(Size(100, 100), Size::ScaleMode::KeepAspectRatio);
@@ -40,7 +42,8 @@ TEST_CASE("Size scale KeepAspectRatio") {
     REQUIRE(a.height == 100);
 }
 
-TEST_CASE("Size scaled IgnoreAspectRatio") {
+TEST_CASE("Size scaled IgnoreAspectRatio")
+{
     Size a(10, 50);
 
     Size b = a.scaled(Size(100, 100), Size::ScaleMode::IgnoreAspectRatio);
@@ -51,7 +54,8 @@ TEST_CASE("Size scaled IgnoreAspectRatio") {
     REQUIRE(b.height == 100);
 }
 
-TEST_CASE("Size scaled KeepAspectRatio") {
+TEST_CASE("Size scaled KeepAspectRatio")
+{
     Size a(10, 50);
 
     Size b = a.scaled(Size(100, 100), Size::ScaleMode::KeepAspectRatio);
@@ -62,7 +66,8 @@ TEST_CASE("Size scaled KeepAspectRatio") {
     REQUIRE(b.height == 100);
 }
 
-TEST_CASE("Size space") {
+TEST_CASE("Size space")
+{
     Size a(10, 50);
 
     REQUIRE(a.space() == 500);

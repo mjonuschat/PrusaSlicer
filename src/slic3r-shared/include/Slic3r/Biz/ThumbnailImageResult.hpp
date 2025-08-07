@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Slic3r/Domain/SelectionId.hpp"
-#include "Slic3r/App/Render/Image.hpp"
+#include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/Biz/ThumbnailType.hpp"
 
 #include <vector>
@@ -13,7 +13,7 @@ struct ThumbnailImageResult
     ThumbnailType type;
     Domain::SelectionId project_id;
     Domain::SelectionId bed_instance_id;
-    App::Render::Images images;
+    Domain::Images images;
 };
 
 using ThumbnailImageResults = std::vector<ThumbnailImageResult>;

@@ -3,7 +3,7 @@
 #include "Slic3r/Assert.hpp"
 
 // for debug only (to get ENABLE_DEBUG_EXPORT_TO_PNG)
-#include "Slic3r/App/Render/Image.hpp"
+#include "Slic3r/Domain/Image.hpp"
 
 #include "libslic3r/SLA/SLAResult.hpp"
 
@@ -103,7 +103,7 @@ void SlicingInteractor::slice_bed(const Domain::SelectionId bed_instance_id)
         request.type                   = ThumbnailType::SlicingBed;
         request.params.project_id      = m_current_project_id;
         request.params.bed_instance_id = bed_instance_id;
-        request.params.pixel_format    = App::Render::PixelFormat::RGBA8;
+        request.params.pixel_format    = Domain::PixelFormat::RGBA8;
         request.params.sizes =
             {{160, 120}, {16, 16}, {220, 124}, {200, 240}, {380, 285}, {313, 173}, {480, 240}};
 

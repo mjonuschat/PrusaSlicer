@@ -1,8 +1,9 @@
 #pragma once
 
+#include "Slic3r/Domain/PixelFormat.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
-#include "Slic3r/App/Render/Types.hpp"
 #include "Slic3r/Biz/ThumbnailType.hpp"
+#include "Slic3r/Domain/Size.hpp"
 
 #include <vector>
 
@@ -12,8 +13,8 @@ struct ThumbnailParams
 {
     Domain::SelectionId project_id;
     Domain::SelectionId bed_instance_id;
-    App::Render::PixelFormat pixel_format{App::Render::PixelFormat::RGBA8};
-    App::Render::Sizes sizes;
+    Domain::PixelFormat pixel_format{Domain::PixelFormat::RGBA8};
+    Domain::Sizes sizes;
 
     bool operator==(const ThumbnailParams& other) const
     {

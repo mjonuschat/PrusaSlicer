@@ -9,16 +9,18 @@
 #include <cstdint>
 #include <optional>
 
-namespace Slic3r::App::Render {
-
+namespace Slic3r::Domain {
 class Image;
+}
+
+namespace Slic3r::App::Render {
 
 class TextImageGenerator
 {
 public:
     TextImageGenerator(const std::string& font_filename, uint8_t font_height);
 
-    Image to_image(const std::string& text, uint8_t padding_x, uint8_t padding_y, const std::optional<Domain::ColorRGB>& color = std::nullopt);
+    Domain::Image to_image(const std::string& text, uint8_t padding_x, uint8_t padding_y, const std::optional<Domain::ColorRGB>& color = std::nullopt);
 
 private:
     struct Atlas

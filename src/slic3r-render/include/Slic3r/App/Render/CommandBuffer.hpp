@@ -60,7 +60,7 @@ public:
         BlitFramebufferMask mask, BlitFramebufferFilter filter);
     void blit_to_draw_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask, BlitFramebufferFilter filter);
 
-    void read_pixels(const Framebuffer& fb, int x, int y, int width, int height, PixelFormat format, void* pixels);
+    void read_pixels(const Framebuffer& fb, int x, int y, int width, int height, Domain::PixelFormat format, void* pixels);
 
     void draw(PrimitiveType primitive, size_t offset, size_t count);
     void draw(const DrawCommand& cmd);

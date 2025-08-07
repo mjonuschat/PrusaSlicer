@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Domain/PixelFormat.hpp"
 #include "Types.hpp"
 #include "WithInternal.hpp"
 
@@ -14,8 +15,8 @@ class Texture : public WithInternal {
 public:
     ~Texture() override;
 
-    void set_data(PixelFormat format, int level, int w, int h, const void* data);
-    void set_sub_data(PixelFormat format, int level, int offset_x, int offset_y, int w, int h, const void* data);
+    void set_data(Domain::PixelFormat format, int level, int w, int h, const void* data);
+    void set_sub_data(Domain::PixelFormat format, int level, int offset_x, int offset_y, int w, int h, const void* data);
     void set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_filter);
 
     void set_object_name(const std::string& object_name);

@@ -5,18 +5,19 @@
 #include <memory>
 #include <vector>
 
-#include "Image.hpp"
+#include "Slic3r/Domain/Image.hpp"
+#include "Slic3r/Domain/Size.hpp"
 
 namespace Slic3r::App::Render {
 
 struct ImageLoadOptions
 {
-    int max_size_px {1024};
-    bool force_power_of_two {false};
-    bool gen_mipmaps {false};
+    int max_size_px{1'024};
+    bool force_power_of_two{false};
+    bool gen_mipmaps{false};
     bool flip_y{false};
 
-    Size resolve_to_size(const Size& source_size) const;
+    Domain::Size resolve_to_size(const Domain::Size& source_size) const;
 };
 
 /**.
@@ -42,9 +43,12 @@ public:
      * @return List of loaded image mipmaps (if its generation is enabled in loading options),
      * or a single image (if mipmaps disabled) or empty vector if error happened.
      */
-    virtual std::vector<Image> load(std::istream& is, const ImageLoadOptions& opts, Size* image_size = nullptr) = 0;
+    virtual std::vector<Domain::Image> load(
+        std::istream& is,
+        const ImageLoadOptions& opts,
+        Domain::Size* image_size = nullptr
+    ) = 0;
 };
-
 
 /**
  * Image Codec Registry holding all known image codecs.
@@ -58,12 +62,10 @@ public:
 
 private:
     ImageCodecManager();
+
 private:
     using LoaderList = std::vector<std::unique_ptr<IImageLoadCodec>>;
     LoaderList m_loaders;
 };
 
-
-
-}
-
+} // namespace Slic3r::App::Render

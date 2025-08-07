@@ -30,8 +30,6 @@ set(SLIC3R_RENDER_FILES
         include/Slic3r/App/Render/TextureManager.hpp
         src/Slic3r/App/Render/TextureBufferManager.cpp
         include/Slic3r/App/Render/TextureBufferManager.hpp
-        include/Slic3r/App/Render/Image.hpp
-        src/Slic3r/App/Render/Image.cpp
         src/Slic3r/App/Render/ImageCodec.cpp
         include/Slic3r/App/Render/ImageCodec.hpp
         include/Slic3r/App/Render/CommandBuffer.hpp
@@ -82,8 +80,7 @@ set(SLIC3R_RENDER_FILES
 
 find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
-add_library(slic3r-render STATIC ${SLIC3R_RENDER_FILES}
-    test/Slic3r/App/Render/SizeTests.cpp)
+add_library(slic3r-render STATIC ${SLIC3R_RENDER_FILES})
 target_link_libraries(slic3r-render PUBLIC
         PlatformGL
         imgui
@@ -99,7 +96,7 @@ if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-render PUBLIC png-mt )
 else()
     find_package(PNG REQUIRED)
-    target_link_libraries(slic3r-render PUBLIC PNG::PNG stb_image)
+    target_link_libraries(slic3r-render PUBLIC PNG::PNG)
 endif ()
 target_include_directories(slic3r-render PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -109,26 +106,3 @@ endif ()
 
 # Doxygen
 add_target_to_doxygen(slic3r-render)
-
-# Tests
-if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
-    add_executable(slic3r-render-tests
-        test/Slic3r/App/Render/SizeTests.cpp
-    )
-    target_include_directories(slic3r-render-tests PRIVATE test)
-
-    find_package(Catch2 3.8 REQUIRED)
-    slic3r_remap_configs(Catch2::Catch2 RelWithDebInfo Release)
-    slic3r_remap_configs(Catch2::Catch2WithMain RelWithDebInfo Release)
-
-    target_link_libraries(slic3r-render-tests PRIVATE slic3r-render Catch2::Catch2WithMain TBB::tbb)
-
-    set(_catch_args "exclude:[NotWorking] exclude:[Slow]")
-    list(APPEND _catch_args "${CATCH_EXTRA_ARGS}")
-    add_test(NAME slic3r-render-tests
-        COMMAND slic3r-render-tests ${_catch_args}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-endif()
-
-

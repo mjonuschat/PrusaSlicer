@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Domain/PixelFormat.hpp"
 #include "commonGL.hpp"
 #include "Slic3r/App/Render/Types.hpp"
 #include "Slic3r/Assert.hpp"
@@ -212,9 +213,9 @@ inline GLenum type(BlitFramebufferFilter filter)
 }
 
 const char* shader_input_name(VertexAttribType vat);
-GLenum texture_internal_format(PixelFormat format);
-GLenum texture_format(PixelFormat format);
-GLenum texture_format_type(PixelFormat format);
+GLenum texture_internal_format(Domain::PixelFormat format);
+GLenum texture_format(Domain::PixelFormat format);
+GLenum texture_format_type(Domain::PixelFormat format);
 GLenum type(BlendFactor type);
 GLenum type(BlendEquation type);
 

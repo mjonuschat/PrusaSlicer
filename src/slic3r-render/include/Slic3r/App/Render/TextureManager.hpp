@@ -15,7 +15,7 @@ struct TextureKey
     std::string key_name;
     int width = 0;
     int height = 0;
-    PixelFormat pixel_format = PixelFormat::RGBA8; // consider removing it from key
+    Domain::PixelFormat pixel_format = Domain::PixelFormat::RGBA8; // consider removing it from key
 
     bool operator==(const TextureKey& rhs) const;
     bool operator!=(const TextureKey& rhs) const;
@@ -52,7 +52,7 @@ public:
      * @return Shared pointer with the texture, that HAS to be released before context destruction
      * @note use this method when you are not working with real images or files that represents an image
      */
-    TexturePtr get_or_create_dynamic(const std::string& name, PixelFormat pf, size_t w, size_t h);
+    TexturePtr get_or_create_dynamic(const std::string& name, Domain::PixelFormat pf, size_t w, size_t h);
 
     void shutdown();
 
@@ -66,7 +66,7 @@ private:
     using DynamicTextureMap = std::unordered_map<std::string, std::weak_ptr<Texture>>;
 
     // stored size of filenames
-    using ImageSizeMap = std::unordered_map<std::string, Size>;
+    using ImageSizeMap = std::unordered_map<std::string, Domain::Size>;
 
     static std::unique_ptr<IResourceResolver> m_resource_resolver;
 

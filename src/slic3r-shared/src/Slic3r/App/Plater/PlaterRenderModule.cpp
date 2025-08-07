@@ -7,7 +7,7 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
-#include "Slic3r/App/Render/Image.hpp"
+#include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/App/Plater/PlaterCameraGizmo.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"

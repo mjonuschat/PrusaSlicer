@@ -9,6 +9,7 @@
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
@@ -19,14 +20,18 @@ using Slic3r::Domain::ColorRGBA;
 
 namespace Slic3r::App::Plater {
 
-Render::Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererParams& params)
+using Domain::Image;
+using Domain::Images;
+using Biz::Algorithms::ImageUtils::flip_vertical;
+
+Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererParams& params)
 {
     if (params.sizes.empty())
         PANIC("No thumbnail sizes specified");
     if (params.scene.root().children().empty())
         PANIC("Empty scene");
 
-    Render::Images ret;
+    Images ret;
     ret.reserve(params.sizes.size());
 
     // we need to modify the camera viewport, which changes for every thumbnail to produce
@@ -60,7 +65,7 @@ Render::Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererPar
             Render::Framebuffer* fb = m_device.context().framebuffer_manager().create(fb_data);
 
             // render scene to image
-            Render::Image& image = ret.emplace_back(params.pixel_format, size.width, size.height);
+            Image& image = ret.emplace_back(params.pixel_format, size.width, size.height);
 
             auto cmd_buffer = m_device.create_command_buffer();
             cmd_buffer->bind_framebuffer(*fb);
@@ -102,15 +107,15 @@ Render::Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererPar
                     size.width,
                     size.height,
                     params.pixel_format,
-                    image.data()
+                    image.pixels.data()
                 );
                 m_device.context().framebuffer_manager().destroy(resolve_fb);
             } else {
                 // extract image from framebuffer
                 cmd_buffer
-                    ->read_pixels(*fb, 0, 0, size.width, size.height, params.pixel_format, image.data());
+                    ->read_pixels(*fb, 0, 0, size.width, size.height, params.pixel_format, image.pixels.data());
             }
-            image.flip_vertical();
+            flip_vertical(image);
 
             cmd_buffer->unbind_framebuffer(*fb);
             m_device.context().framebuffer_manager().destroy(fb);
@@ -127,7 +132,7 @@ Render::Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererPar
     return ret;
 }
 
-Render::Images ThumbnailRenderer::generate_bed_thumbnails(
+Images ThumbnailRenderer::generate_bed_thumbnails(
     const ThumbnailRendererParams& params,
     const Domain::Project& project,
     Domain::SelectionId bed_instance_id,
@@ -137,7 +142,7 @@ Render::Images ThumbnailRenderer::generate_bed_thumbnails(
     const Domain::BedInstance* bed_instance = project.find_bed_instance_by_id(bed_instance_id);
     if (bed_instance == nullptr) {
         SPDLOG_ERROR("Invalid bed instance id {}. Skipping thumbnail generation.", bed_instance_id);
-        return Render::Images();
+        return Images();
     }
 
     Scene::Scene& scene = *const_cast<Scene::Scene*>(&params.scene);
@@ -158,14 +163,14 @@ Render::Images ThumbnailRenderer::generate_bed_thumbnails(
     return generate_thumbnails(mod_params);
 }
 
-Render::Images ThumbnailRenderer::generate_object_thumbnails(
+Images ThumbnailRenderer::generate_object_thumbnails(
     const Domain::ModelObject& object,
-    const Render::Sizes& sizes,
+    const Domain::Sizes& sizes,
     Scene::CameraProjectionType camera_type,
     std::optional<ColorRGBA> color
 )
 {
-    Render::Images ret;
+    Images ret;
 
     auto it = std::find_if(
         object.volumes.begin(),
@@ -231,7 +236,7 @@ Render::Images ThumbnailRenderer::generate_object_thumbnails(
     ThumbnailRendererParams params{
         .scene        = scene,
         .zoom_aabb    = world_aabb,
-        .pixel_format = Render::PixelFormat::RGBA8,
+        .pixel_format = Domain::PixelFormat::RGBA8,
         .sizes        = sizes
     };
 
@@ -239,7 +244,7 @@ Render::Images ThumbnailRenderer::generate_object_thumbnails(
     return generate_thumbnails(params);
 }
 
-Render::Images ThumbnailRenderer::generate_3mf_thumbnails(
+Images ThumbnailRenderer::generate_3mf_thumbnails(
     const ThumbnailRendererParams& params,
     const Domain::Project& project,
     Scene::CameraProjectionType camera_type
@@ -266,7 +271,7 @@ Render::Images ThumbnailRenderer::generate_3mf_thumbnails(
     return generate_thumbnails(mod_params);
 }
 
-Render::Images ThumbnailRenderer::generate_gcode_thumbnails(
+Images ThumbnailRenderer::generate_gcode_thumbnails(
     const ThumbnailRendererParams& params,
     const Domain::Project& project,
     Domain::SelectionId bed_instance_id,
@@ -276,7 +281,7 @@ Render::Images ThumbnailRenderer::generate_gcode_thumbnails(
     const Domain::BedInstance* bed_instance = project.find_bed_instance_by_id(bed_instance_id);
     if (bed_instance == nullptr) {
         SPDLOG_ERROR("Invalid bed instance id {}. Skipping thumbnail generation.", bed_instance_id);
-        return Render::Images();
+        return Images();
     }
 
     bool printable = false;
@@ -291,7 +296,7 @@ Render::Images ThumbnailRenderer::generate_gcode_thumbnails(
             "No printable model instances found for bed instance {}. Skipping thumbnail generation.",
             bed_instance_id
         );
-        return Render::Images();
+        return Images();
     }
 
     Scene::Scene& scene = *const_cast<Scene::Scene*>(&params.scene);

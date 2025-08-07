@@ -18,18 +18,6 @@ struct RgbaF
     float a;
 };
 
-enum class PixelFormat
-{
-    RGB8 = 0,
-    RGBA8,
-    R32F,
-    R32UI,
-    RGBA32F,
-    RGBA16F,
-    RGB32F,
-    DepthComponent,
-};
-
 enum class BufferTarget {
     VertexBuffer,
     IndexBuffer,
@@ -231,32 +219,5 @@ template <> struct IndexTypeTraits<unsigned short> {
 template <> struct IndexTypeTraits<unsigned int> {
     static constexpr IndexType index_type = IndexType::UInt;
 };
-
-struct Size
-{
-    enum class ScaleMode {
-        IgnoreAspectRatio,
-        KeepAspectRatio, // Fit Inside
-    };
-
-    Size() = default;
-    Size(int width, int height);
-    Size(const Size& size);
-    Size& operator=(const Size& size);
-
-
-    int width = 0;
-    int height = 0;
-
-    bool operator==(const Size& other) const;
-    bool operator!=(const Size& other) const;
-
-    void scale(const Size& scale_to, ScaleMode mode = ScaleMode::KeepAspectRatio);
-    Size scaled(const Size& scale_to, ScaleMode mode = ScaleMode::KeepAspectRatio) const;
-    //! \return space taken by this size (width * height)
-    int space() const;
-};
-
-using Sizes = std::vector<Size>;
 
 } // namespace Slic3r::App::Render

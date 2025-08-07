@@ -311,8 +311,8 @@ void Scene::generate_ao_noise(Render::Device& device) const
             noise_data.emplace_back(noise);
         }
 
-        m_ao.noise = device.context().texture_manager().get_or_create_dynamic("ao_noise", Render::PixelFormat::RGB32F, m_ao.noise_size, m_ao.noise_size);
-        m_ao.noise->set_data(Render::PixelFormat::RGB32F, 0, m_ao.noise_size, m_ao.noise_size, (void*)noise_data.data());
+        m_ao.noise = device.context().texture_manager().get_or_create_dynamic("ao_noise", Domain::PixelFormat::RGB32F, m_ao.noise_size, m_ao.noise_size);
+        m_ao.noise->set_data(Domain::PixelFormat::RGB32F, 0, m_ao.noise_size, m_ao.noise_size, (void*)noise_data.data());
 
         m_ao.pending_noise_size.reset();
     }
@@ -627,11 +627,11 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
         data.width = viewport_size[0];
         data.height = viewport_size[1];
         data.color_attachments.resize(5);
-        data.color_attachments[AmbientOcclusion::EYE_POS_CLR_ATTR].format = Render::PixelFormat::RGBA16F;
-        data.color_attachments[AmbientOcclusion::LIGHT_POS_CLR_ATTR].format = Render::PixelFormat::RGBA16F;
-        data.color_attachments[AmbientOcclusion::EYE_NORM_CLR_ATTR].format = Render::PixelFormat::RGBA16F;
-        data.color_attachments[AmbientOcclusion::COLOR_CLR_ATTR].format = Render::PixelFormat::RGBA8;
-        data.color_attachments[AmbientOcclusion::PBR_MATERIAL_ATTR].format = Render::PixelFormat::RGBA16F;
+        data.color_attachments[AmbientOcclusion::EYE_POS_CLR_ATTR].format = Domain::PixelFormat::RGBA16F;
+        data.color_attachments[AmbientOcclusion::LIGHT_POS_CLR_ATTR].format = Domain::PixelFormat::RGBA16F;
+        data.color_attachments[AmbientOcclusion::EYE_NORM_CLR_ATTR].format = Domain::PixelFormat::RGBA16F;
+        data.color_attachments[AmbientOcclusion::COLOR_CLR_ATTR].format = Domain::PixelFormat::RGBA8;
+        data.color_attachments[AmbientOcclusion::PBR_MATERIAL_ATTR].format = Domain::PixelFormat::RGBA16F;
         m_ao.gbuffer_fb = device.context().framebuffer_manager().create(data);
     }
 
@@ -704,7 +704,7 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2&
         data.height = viewport_size[1];
         data.depth = false;
         Render::FramebufferColorAttachment color;
-        color.format = Render::PixelFormat::R32F;
+        color.format = Domain::PixelFormat::R32F;
         data.color_attachments.push_back(color);
         m_ao.ao_tex_fb = device.context().framebuffer_manager().create(data);
     }
@@ -754,7 +754,7 @@ void Scene::render_ao_texture_blur_pass(Render::Device& device, const Domain::In
         data.height = viewport_size[1];
         data.depth = false;
         Render::FramebufferColorAttachment color;
-        color.format = Render::PixelFormat::R32F;
+        color.format = Domain::PixelFormat::R32F;
         data.color_attachments.push_back(color);
         m_ao.blur_fb = device.context().framebuffer_manager().create(data);
     }

@@ -15,11 +15,8 @@ namespace Slic3r {
 namespace Domain {
 class Model;
 class Project;
-} // namespace Domain
-
-namespace App::Render {
 class Image;
-} // namespace App::Render
+} // namespace Domain
 
 // The following function may throw Loaded3MFException.
 Loaded3MF load_3mf(const std::string& filepath_3mf);
@@ -32,7 +29,7 @@ struct Store3mfParam
     // Preview for stored geometry
     // Used as file icon of the 3mf file by OPC
     // NOTE: In future it will be generated inside of store function
-    const App::Render::Image* thumbnail{nullptr};
+    const Domain::Image* thumbnail{nullptr};
 
     // Flag to force using of the zip64 compression function
     bool zip64 = true;

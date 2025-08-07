@@ -4,8 +4,9 @@
 
 namespace Slic3r::App::Render {
 
-Renderbuffer::Renderbuffer(PixelFormat format)
-    : WithInternal(InternalType<GL::GLRenderbufferInternal>()), m_format(format)
+Renderbuffer::Renderbuffer(Domain::PixelFormat format) :
+    WithInternal(InternalType<GL::GLRenderbufferInternal>()),
+    m_format(format)
 {
     auto& self = get_internal_as<GL::GLRenderbufferInternal>();
     glGenRenderbuffers(1, &self.m_id);

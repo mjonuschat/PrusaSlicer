@@ -21,7 +21,8 @@
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "Slic3r/App/Render/Image.hpp"
+#include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
+#include "Slic3r/Domain/Image.hpp"
 #include "libslic3r/Utils.hpp" // ScopeGuard
 
 #include "LocalesUtils.hpp"
@@ -37,6 +38,7 @@ using Model             = Slic3r::Domain::Model;
 using ModelVolumeType   = Slic3r::Domain::ModelVolumeType;
 using ModelVolumePtrs   = Slic3r::Domain::ModelVolumePtrs;
 using ModelInstancePtrs = Slic3r::Domain::ModelInstancePtrs;
+namespace ImageUtils = Slic3r::Biz::Algorithms::ImageUtils;
 
 namespace {
 using namespace Slic3r;
@@ -89,11 +91,11 @@ void store_content_type(mz_zip_archive& archive, const ContentTypes& ct)
         throw boost::filesystem::filesystem_error("Unable to add content types to archive.", {});
 }
 
-void store_thumbnail(mz_zip_archive& archive, const App::Render::Image& thumbnail, const char* filepath)
+void store_thumbnail(mz_zip_archive& archive, const Domain::Image& thumbnail, const char* filepath)
 {
     size_t png_size = 0;
     void* png_data  = tdefl_write_image_to_png_file_in_memory_ex(
-        thumbnail.data(),
+        thumbnail.pixels.data(),
         thumbnail.width(),
         thumbnail.height(),
         4,
@@ -769,7 +771,7 @@ void store_3mf(const std::string& filepath, const Domain::Project& project, cons
         // main_model_path
         (!project.model().objects.empty()) ? MODEL_FILE : std::string(),
         // thumbnail_path
-        (param.thumbnail != nullptr && param.thumbnail->is_valid()) ? THUMBNAIL_FILE : std::string(),
+        (param.thumbnail != nullptr && ImageUtils::is_valid(*param.thumbnail)) ? THUMBNAIL_FILE : std::string(),
         // project_file_path
         // TODO: Fix to use same constant
         "Metadata/PrusaSlicer3_project.json" // PRUSA_PROJECT_FILEPATH
@@ -782,7 +784,7 @@ void store_3mf(const std::string& filepath, const Domain::Project& project, cons
     store_content_type(archive, content_types);
 
     // Write thumbnail into 3mf file
-    if (!relations.thumbnail_path.empty() && param.thumbnail != nullptr && param.thumbnail->is_valid())
+    if (!relations.thumbnail_path.empty() && param.thumbnail != nullptr && ImageUtils::is_valid(*param.thumbnail))
     {
         // Adds the file Metadata/thumbnail.png.
         store_thumbnail(archive, *param.thumbnail, relations.thumbnail_path.c_str());

@@ -10,6 +10,10 @@
 
 namespace Slic3r::App::Render {
 
+using Domain::Size;
+using Domain::PixelFormat;
+using Domain::Image;
+
 bool TextureKey::operator==(const TextureKey& rhs) const
 {
     return key_name == rhs.key_name && width == rhs.width && height == rhs.height &&
@@ -73,7 +77,7 @@ TexturePtr TextureManager::get_or_create_image(
     std::unique_ptr<Texture> tex = m_device.create_texture();
     for (size_t level = 0; level < images.size(); level++) {
         const auto& img = images[level];
-        tex->set_data(img.format(), level, img.width(), img.height(), img.data());
+        tex->set_data(img.format(), level, img.width(), img.height(), img.pixels.data());
     }
 
     // TODO: (Optional) Compress bitmap

@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Slic3r/App/Render/Image.hpp"
+#include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
+#include "Slic3r/Domain/Size.hpp"
 
 #include <optional>
 
@@ -24,8 +25,8 @@ struct ThumbnailRendererParams
 {
     const Scene::Scene& scene;
     std::optional<Eigen::AlignedBox3d> zoom_aabb;
-    Render::PixelFormat pixel_format{Render::PixelFormat::RGBA8};
-    Render::Sizes sizes;
+    Domain::PixelFormat pixel_format{Domain::PixelFormat::RGBA8};
+    Domain::Sizes sizes;
 };
 
 class ThumbnailRenderer
@@ -33,25 +34,25 @@ class ThumbnailRenderer
 public:
     explicit ThumbnailRenderer(Render::Device& device) : m_device(device) {}
 
-    [[nodiscard]] Render::Images generate_thumbnails(const ThumbnailRendererParams& params);
-    [[nodiscard]] Render::Images generate_bed_thumbnails(
+    [[nodiscard]] Domain::Images generate_thumbnails(const ThumbnailRendererParams& params);
+    [[nodiscard]] Domain::Images generate_bed_thumbnails(
         const ThumbnailRendererParams& params,
         const Domain::Project& project,
         Domain::SelectionId bed_instance_id,
         Scene::CameraProjectionType camera_type
     );
-    [[nodiscard]] Render::Images generate_object_thumbnails(
+    [[nodiscard]] Domain::Images generate_object_thumbnails(
         const Domain::ModelObject& object,
-        const Render::Sizes& sizes,
+        const Domain::Sizes& sizes,
         Scene::CameraProjectionType camera_type,
         std::optional<Domain::ColorRGBA> color = std::nullopt
     );
-    [[nodiscard]] Render::Images generate_3mf_thumbnails(
+    [[nodiscard]] Domain::Images generate_3mf_thumbnails(
         const ThumbnailRendererParams& params,
         const Domain::Project& project,
         Scene::CameraProjectionType camera_type
     );
-    [[nodiscard]] Render::Images generate_gcode_thumbnails(
+    [[nodiscard]] Domain::Images generate_gcode_thumbnails(
         const ThumbnailRendererParams& params,
         const Domain::Project& project,
         Domain::SelectionId bed_instance_id,

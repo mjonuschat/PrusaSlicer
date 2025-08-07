@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Domain/PixelFormat.hpp"
 #include "WithInternal.hpp"
 #include "Types.hpp"
 
@@ -38,9 +39,9 @@ public:
     std::unique_ptr<VertexBuffer> create_vertex_buffer();
     std::unique_ptr<IndexBuffer> create_index_buffer();
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
-    std::unique_ptr<TextureBuffer> create_texture_buffer(PixelFormat format);
+    std::unique_ptr<TextureBuffer> create_texture_buffer(Domain::PixelFormat format);
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
-    std::unique_ptr<Renderbuffer> create_render_buffer(PixelFormat format);
+    std::unique_ptr<Renderbuffer> create_render_buffer(Domain::PixelFormat format);
     std::unique_ptr<CommandBuffer> create_command_buffer();
     std::unique_ptr<Framebuffer> create_framebuffer(const FramebufferCreationData& data);
 

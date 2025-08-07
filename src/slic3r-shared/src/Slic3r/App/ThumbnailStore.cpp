@@ -7,9 +7,9 @@ void ThumbnailStore::update(Domain::SelectionId project_id, const Plater::BedThu
     projects.project(project_id).thumbnails = thumbnails;
 }
 
-void ThumbnailStore::update(Domain::SelectionId project_id, Render::Image&& thumbnail_3mf)
+void ThumbnailStore::update(Domain::SelectionId project_id, Domain::Image&& thumbnail_3mf)
 {
-    projects.project(project_id).thumbnail_3mf = std::make_unique<Render::Image>(
+    projects.project(project_id).thumbnail_3mf = std::make_unique<Domain::Image>(
         std::move(thumbnail_3mf)
     );
 }

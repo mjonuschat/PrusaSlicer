@@ -1,20 +1,21 @@
 #pragma once
 
+#include <vector>
 #include "WithInternal.hpp"
-#include "Types.hpp"
+#include "Slic3r/Domain/PixelFormat.hpp"
 
 namespace Slic3r::App::Render {
 
 class Renderbuffer : public WithInternal
 {
 public:
-    Renderbuffer(PixelFormat format);
+    Renderbuffer(Domain::PixelFormat format);
     ~Renderbuffer() override;
 
-    PixelFormat format() const { return m_format; }
+    Domain::PixelFormat format() const { return m_format; }
 
 protected:
-    PixelFormat m_format;
+    Domain::PixelFormat m_format;
 };
 
 using RenderbufferPtr = std::unique_ptr<Renderbuffer>;

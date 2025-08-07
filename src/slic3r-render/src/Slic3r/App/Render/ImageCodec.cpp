@@ -2,6 +2,7 @@
 
 #include <Slic3r/Log.hpp>
 #include <Slic3r/Memory.hpp>
+#include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 
 #include <sstream>
 #include <bit>
@@ -13,6 +14,12 @@
 #include <nanosvg/nanosvgrast.h>
 
 namespace Slic3r::App::Render {
+
+using Domain::Image;
+using Domain::Size;
+using Domain::PixelFormat;
+using Biz::Algorithms::ImageUtils::rescaled_with_preserved_ratio;
+using Biz::Algorithms::ImageUtils::half_sampled;
 
 void flip_pixels_in_y(Image::Data& pixels, size_t h, size_t row_stride)
 {
@@ -165,13 +172,13 @@ std::vector<Image> PngReadCodec::load(
 
     Image img(out_format, image_width, image_height, std::move(out_pixels));
     if (resolved_size != out_size) {
-        ret.emplace_back(img.rescaled_with_preserved_ratio(resolved_size));
+        ret.emplace_back(rescaled_with_preserved_ratio(img, resolved_size));
     } else
         ret.emplace_back(std::move(img));
 
     if (opts.gen_mipmaps) {
         while (ret.back().width() > 1 || ret.back().height() > 1) {
-            ret.emplace_back(ret.back().half_sampled());
+            ret.emplace_back(half_sampled(ret.back()));
         }
     }
 

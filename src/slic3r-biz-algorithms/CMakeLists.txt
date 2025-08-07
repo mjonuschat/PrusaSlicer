@@ -76,6 +76,8 @@ add_library(slic3r-biz-algorithms STATIC
     src/Slic3r/Biz/Algorithms/PolygonUtils.cpp
     include/Slic3r/Biz/Algorithms/IStackFunction.hpp
     include/Slic3r/Biz/Algorithms/Projection.hpp
+    include/Slic3r/Biz/Algorithms/ImageUtils.hpp
+    src/Slic3r/Biz/Algorithms/ImageUtils.cpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
@@ -97,6 +99,7 @@ target_link_libraries(slic3r-biz-algorithms PUBLIC
     admesh
     libigl
     boost_libs
+    stb_image
 )
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)

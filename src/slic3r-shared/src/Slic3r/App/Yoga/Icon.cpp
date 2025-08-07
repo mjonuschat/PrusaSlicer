@@ -7,6 +7,7 @@
 
 #include <Slic3r/App/Render/Texture.hpp>
 #include <Slic3r/App/Render/ImguiRender.hpp>
+#include "Slic3r/Domain/Size.hpp"
 
 namespace Slic3r::App::Yoga {
 
@@ -96,8 +97,8 @@ void Icon::update_draw_sizes()
     if (m_fill_mode == FillMode::Stretch) {
         m_draw_size = component_size;
     } else {
-        Render::Size size(m_texture->width(), m_texture->height());
-        size.scale(Render::Size(component_size.x, component_size.y));
+        Domain::Size size(m_texture->width(), m_texture->height());
+        size.scale(Domain::Size(component_size.x, component_size.y));
         m_draw_size.x = size.width;
         m_draw_size.y = size.height;
         if (m_fill_mode == FillMode::PreservedAspectCentered) {

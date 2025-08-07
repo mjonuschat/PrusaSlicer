@@ -1,5 +1,5 @@
 #include "Slic3r/App/Render/TextImageGenerator.hpp"
-#include "Slic3r/App/Render/Image.hpp"
+#include "Slic3r/Domain/Image.hpp"
 
 #include "Slic3r/Assert.hpp"
 
@@ -67,7 +67,7 @@ TextImageGenerator::TextImageGenerator(const std::string& font_filename, uint8_t
 #endif // ENABLE_DEBUG_EXPORT_TO_PNG
 }
 
-Image TextImageGenerator::to_image(const std::string& text, uint8_t padding_x, uint8_t padding_y, const std::optional<Domain::ColorRGB>& color)
+Domain::Image TextImageGenerator::to_image(const std::string& text, uint8_t padding_x, uint8_t padding_y, const std::optional<Domain::ColorRGB>& color)
 {
     int w = 0;
     int h = 0;
@@ -116,7 +116,7 @@ Image TextImageGenerator::to_image(const std::string& text, uint8_t padding_x, u
         }
     }
 
-    return Image(PixelFormat::RGBA8, w, h, std::move(bitmap));
+    return Domain::Image(Domain::PixelFormat::RGBA8, w, h, std::move(bitmap));
 }
 
 } // namespace Slic3r::App::Render

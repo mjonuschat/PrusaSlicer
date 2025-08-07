@@ -30,7 +30,7 @@ Texture::~Texture()
     glCheck();
 }
 
-void Texture::set_data(PixelFormat format, int level, int w, int h, const void* data)
+void Texture::set_data(Domain::PixelFormat format, int level, int w, int h, const void* data)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_texture(0, *this);
@@ -52,7 +52,7 @@ void Texture::set_data(PixelFormat format, int level, int w, int h, const void* 
     }
 }
 
-void Texture::set_sub_data(PixelFormat format, int level, int offset_x, int offset_y, int w, int h, const void* data)
+void Texture::set_sub_data(Domain::PixelFormat format, int level, int offset_x, int offset_y, int w, int h, const void* data)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_texture(0, *this);

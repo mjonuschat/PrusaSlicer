@@ -15,6 +15,8 @@
 
 namespace Slic3r::App::Render {
 
+using Domain::PixelFormat;
+
 Framebuffer::Framebuffer(Device& device, const FramebufferCreationData& data)
     : WithInternal::WithInternal(InternalType<GL::GLFramebufferInternal>(), data.target), m_device(device), m_target(data.target)
 {

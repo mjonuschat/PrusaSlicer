@@ -12,7 +12,7 @@ class Device;
 
 struct FramebufferColorAttachment
 {
-    PixelFormat format{ PixelFormat::RGBA8 };
+    Domain::PixelFormat format{ Domain::PixelFormat::RGBA8 };
     TextureMinFilter min_filter{ TextureMinFilter::Nearest };
     TextureMagFilter mag_filter{ TextureMagFilter::Nearest };
 };

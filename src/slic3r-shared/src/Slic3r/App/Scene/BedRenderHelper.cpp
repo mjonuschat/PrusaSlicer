@@ -12,6 +12,7 @@
 #include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 
 #include <Slic3r/Log.hpp>
 
@@ -28,6 +29,9 @@ using Slic3r::Domain::Lines;
 using Slic3r::Domain::Polyline;
 using Slic3r::Domain::Polylines;
 using Slic3r::Domain::Vec3f;
+using Slic3r::Domain::Image;
+using Slic3r::Biz::Algorithms::ImageUtils::half_sampled;
+using Slic3r::Biz::Algorithms::ImageUtils::flip_vertical;
 
 using namespace Slic3r::Biz;
 
@@ -60,14 +64,14 @@ std::shared_ptr<Render::Texture> BedRenderHelper::texture(const std::string& lab
         s_text_to_image = std::make_unique<Render::TextImageGenerator>(font_path, 128);
     }
 
-    Render::Image img = s_text_to_image->to_image(label, 2, 2, color);
+    Image img = s_text_to_image->to_image(label, 2, 2, color);
     size_t width = img.width();
     size_t height = img.height();
 
-    std::vector<Render::Image> mipmaps;
+    std::vector<Image> mipmaps;
     mipmaps.emplace_back(std::move(img));
     while (mipmaps.back().width() > 1 || mipmaps.back().height() > 1) {
-        mipmaps.emplace_back(mipmaps.back().half_sampled());
+        mipmaps.emplace_back(half_sampled(mipmaps.back()));
     }
 
 #if ENABLE_DEBUG_EXPORT_TO_PNG
@@ -84,12 +88,12 @@ std::shared_ptr<Render::Texture> BedRenderHelper::texture(const std::string& lab
     }
     else
         texture_name += "_255_255_255";
-    std::shared_ptr<Render::Texture> tex = manager.get_or_create_dynamic(texture_name, Render::PixelFormat::RGBA8, width, height);
+    std::shared_ptr<Render::Texture> tex = manager.get_or_create_dynamic(texture_name, Domain::PixelFormat::RGBA8, width, height);
     tex->set_filtering(Render::TextureMinFilter::MipMapLinearLinear, Render::TextureMagFilter::Linear);
     for (size_t i = 0; i < mipmaps.size(); ++i) {
-        Render::Image& image = mipmaps[i];
-        image.flip_vertical();
-        tex->set_data(Render::PixelFormat::RGBA8, int(i), image.width(), image.height(), image.data());
+        Image& image = mipmaps[i];
+        flip_vertical(image);
+        tex->set_data(Domain::PixelFormat::RGBA8, int(i), image.width(), image.height(), image.pixels.data());
     }
     return tex;
 }

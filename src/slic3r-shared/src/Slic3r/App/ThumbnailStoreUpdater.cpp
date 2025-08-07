@@ -11,7 +11,7 @@ namespace Slic3r::App {
 
 void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const Domain::BedRefs& bed_refs)
 {
-    static const Render::Size SIZE = {256, 256};
+    static const Domain::Size SIZE = {256, 256};
 
     if (m_thumbnail_results.valid())
         return;
@@ -25,7 +25,7 @@ void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const
         request.type                        = Biz::ThumbnailType::SceneBed;
         request.params.project_id           = project_id;
         request.params.bed_instance_id      = bed_ref.instance_id;
-        request.params.pixel_format         = Render::PixelFormat::RGBA8;
+        request.params.pixel_format         = Domain::PixelFormat::RGBA8;
         request.params.sizes                = {SIZE};
     }
 
@@ -34,7 +34,7 @@ void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const
     request.type                        = Biz::ThumbnailType::Scene;
     request.params.project_id           = project_id;
     request.params.bed_instance_id      = 0;
-    request.params.pixel_format         = Render::PixelFormat::RGBA8;
+    request.params.pixel_format         = Domain::PixelFormat::RGBA8;
     request.params.sizes                = {SIZE};
 
     m_thumbnail_results = m_thumbnail_image_provider.generate_thumbnails(requests);
@@ -79,7 +79,7 @@ void ThumbnailStoreUpdater::update(Render::Device& device, ThumbnailUpdateCallba
                                     0,
                                     image.width(),
                                     image.height(),
-                                    image.data()
+                                    image.pixels.data()
                                 );
                             }
                         }

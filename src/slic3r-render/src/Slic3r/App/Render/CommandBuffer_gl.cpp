@@ -183,7 +183,7 @@ void CommandBuffer::blit_to_draw_framebuffer(const Framebuffer& fb, int width, i
     m_device.get_internal_as<GL::GLDeviceInternal>().blit_to_draw_framebuffer(fb, width, height, mask, filter);
 }
 
-void CommandBuffer::read_pixels(const Framebuffer& fb, int x, int y, int width, int height, PixelFormat format, void* pixels)
+void CommandBuffer::read_pixels(const Framebuffer& fb, int x, int y, int width, int height, Domain::PixelFormat format, void* pixels)
 {
     m_device.get_internal_as<GL::GLDeviceInternal>().read_pixels(fb, x, y, width, height, format, pixels);
 }

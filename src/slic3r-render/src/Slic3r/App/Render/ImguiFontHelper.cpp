@@ -304,17 +304,17 @@ static void load_icon_from_file(const std::string& icon_name, int icon_sz, int r
 
         ImageLoadOptions opts;
         opts.max_size_px = icon_sz;
-        std::vector<Image> images = codec->load(is, opts);
+        std::vector<Domain::Image> images = codec->load(is, opts);
         if (images.empty()) {
             SPDLOG_ERROR("Cannot load image {}", filename);
             return;
         }
 
-        const Image& image = images.front();
+        const Domain::Image& image = images.front();
         DEBUG_ASSERT(image.width() <= icon_sz);
         DEBUG_ASSERT(image.height() <= icon_sz);
 
-        const ImU32* pIn = (ImU32*)image.data();
+        const ImU32* pIn = (ImU32*)image.pixels.data();
         for (size_t y = 0; y < image.height(); ++y) {
             ImU32* pOut = (ImU32*)pixels + (rect->Y + y) * tex_width + rect->X;
             for (size_t x = 0; x < image.width(); ++x) {
@@ -426,8 +426,8 @@ void ImguiFontHelper::create_font_texture()
         load_icons_into_font_texture(*this, rect_id, width, pixels);
     }
 
-    m_font_texture = m_device.context().texture_manager().get_or_create_dynamic("imgui_font", PixelFormat::RGBA8, width, height);
-    m_font_texture->set_data(PixelFormat::RGBA8, 0, width, height, pixels);
+    m_font_texture = m_device.context().texture_manager().get_or_create_dynamic("imgui_font", Domain::PixelFormat::RGBA8, width, height);
+    m_font_texture->set_data(Domain::PixelFormat::RGBA8, 0, width, height, pixels);
 //    m_textures[TextureType::Font]->set_filtering(Texture::MinFilter::Linear, Texture::MagFilter::Linear);
     io.Fonts->SetTexID((ImTextureID)(intptr_t)m_font_texture.get());
 }

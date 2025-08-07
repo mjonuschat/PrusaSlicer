@@ -15,7 +15,7 @@ class Device;
 class TextureBufferManager
 {
 public:
-    TextureBuffer* get_or_create_empty(const std::string& name, PixelFormat format);
+    TextureBuffer* get_or_create_empty(const std::string& name, Domain::PixelFormat format);
 
     void shutdown() { m_buffers.clear(); }
 

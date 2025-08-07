@@ -130,6 +130,14 @@ add_library(slic3r-domain STATIC
 
     include/Slic3r/Domain/ConfigPack.hpp
     src/Slic3r/Domain/ConfigPack.cpp
+
+    include/Slic3r/Domain/Image.hpp
+
+    include/Slic3r/Domain/PixelFormat.hpp
+    src/Slic3r/Domain/PixelFormat.cpp
+
+    include/Slic3r/Domain/Size.hpp
+    src/Slic3r/Domain/Size.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)
@@ -151,6 +159,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Domain/ConfigTests.cpp
         test/Slic3r/Domain/Preset/PresetTreeTests.cpp
         test/Slic3r/Domain/Preset/HwConfigTests.cpp
+        test/Slic3r/Domain/SizeTests.cpp
     )
     target_include_directories(slic3r-domain-tests PRIVATE test)
 

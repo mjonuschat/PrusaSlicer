@@ -8,6 +8,7 @@
 #include "Shader.hpp"
 #include "Context.hpp"
 #include "WithInternal.hpp"
+#include "Slic3r/Domain/PixelFormat.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -44,13 +45,13 @@ public:
 class TextureBuffer : public Buffer
 {
 public:
-    TextureBuffer(Device& device, PixelFormat format);
+    TextureBuffer(Device& device, Domain::PixelFormat format);
     ~TextureBuffer() override;
 
-    PixelFormat format() const { return m_format; }
+    Domain::PixelFormat format() const { return m_format; }
 
 private:
-    PixelFormat m_format;
+    Domain::PixelFormat m_format;
 };
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 

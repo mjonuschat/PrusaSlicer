@@ -7,7 +7,7 @@
 
 namespace Slic3r::App::Render {
 
-TextureBuffer* TextureBufferManager::get_or_create_empty(const std::string& name, PixelFormat format)
+TextureBuffer* TextureBufferManager::get_or_create_empty(const std::string& name, Domain::PixelFormat format)
 {
     BufferMap::const_iterator it = m_buffers.find(name);
     if (it != m_buffers.end())

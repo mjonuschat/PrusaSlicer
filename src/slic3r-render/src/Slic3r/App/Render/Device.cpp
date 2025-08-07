@@ -46,14 +46,14 @@ std::unique_ptr<IndexBuffer> Device::create_index_buffer()
 }
 
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
-std::unique_ptr<TextureBuffer> Device::create_texture_buffer(PixelFormat format)
+std::unique_ptr<TextureBuffer> Device::create_texture_buffer(Domain::PixelFormat format)
 {
     return std::make_unique<TextureBuffer>(*this, format);
 }
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
 
-std::unique_ptr<Renderbuffer> Device::create_render_buffer(PixelFormat format)
+std::unique_ptr<Renderbuffer> Device::create_render_buffer(Domain::PixelFormat format)
 {
     return std::make_unique<Renderbuffer>(format);
 }

@@ -459,7 +459,7 @@ void GLDeviceInternal::blit_to_draw_framebuffer(const Framebuffer& fb, int width
 #endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
 }
 
-void GLDeviceInternal::read_pixels(const Framebuffer& fb, int x, int y, int width, int height, PixelFormat format, void* pixels)
+void GLDeviceInternal::read_pixels(const Framebuffer& fb, int x, int y, int width, int height, Domain::PixelFormat format, void* pixels)
 {
     ResourceId fb_id = fb.get_internal_as<GLFramebufferInternal>().m_id;
 

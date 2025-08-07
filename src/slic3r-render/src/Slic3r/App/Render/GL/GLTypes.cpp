@@ -4,6 +4,8 @@
 
 namespace Slic3r::App::Render::GL {
 
+using Domain::PixelFormat;
+
 const char* shader_input_name(VertexAttribType vat)
 {
     switch (vat) {
