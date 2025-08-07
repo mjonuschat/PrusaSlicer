@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/Biz/IThumbnailImageGenerator.hpp"
+#include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
 
 #include <deque>
@@ -19,7 +19,7 @@ class Device;
 
 namespace Slic3r::App::Plater {
 
-class ThumbnailImageGenerator : public Biz::IThumbnailImageGenerator
+class ThumbnailImageGenerator : public Biz::Slicing::IThumbnailImageGenerator
 {
 public:
     ThumbnailImageGenerator(
@@ -34,16 +34,16 @@ public:
     {}
 
     void enqueue_thumbnail_requests(
-        const Biz::ThumbnailImageRequests& requests,
-        std::promise<Biz::ThumbnailImageResults>&& promise
+        const Biz::Slicing::ThumbnailImageRequests& requests,
+        std::promise<Biz::Slicing::ThumbnailImageResults>&& promise
     ) override;
     void handle_enqueued_requests() override;
 
 private:
     struct Item
     {
-        Biz::ThumbnailImageRequests requests;
-        std::promise<Biz::ThumbnailImageResults> promise;
+        Biz::Slicing::ThumbnailImageRequests requests;
+        std::promise<Biz::Slicing::ThumbnailImageResults> promise;
 
         bool operator==(const Item& other) const
         {

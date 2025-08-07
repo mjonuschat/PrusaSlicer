@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Slic3r/Biz/ThumbnailImageRequest.hpp"
-#include "Slic3r/Biz/ThumbnailImageResult.hpp"
+#include "libslic3r/ThumbnailImageRequest.hpp"
+#include "libslic3r/ThumbnailImageResult.hpp"
 
 #include <future>
 
-namespace Slic3r::Biz {
+namespace Slic3r::Biz::Slicing {
 
 class IThumbnailImageGenerator
 {

@@ -2,11 +2,11 @@
 
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Domain/Image.hpp"
-#include "Slic3r/Biz/ThumbnailType.hpp"
+#include "libslic3r/ThumbnailType.hpp"
 
 #include <vector>
 
-namespace Slic3r::Biz {
+namespace Slic3r::Biz::Slicing {
 
 struct ThumbnailImageResult
 {

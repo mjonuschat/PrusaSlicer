@@ -36,7 +36,7 @@ public:
 private:
     Biz::ThumbnailImageProvider& m_thumbnail_image_provider;
     std::shared_ptr<App::ThumbnailStore> m_thumbnail_store;
-    std::future<Biz::ThumbnailImageResults> m_thumbnail_results;
+    std::future<Biz::Slicing::ThumbnailImageResults> m_thumbnail_results;
 };
 
 } // namespace Slic3r::App

@@ -5,6 +5,9 @@
 
 namespace Slic3r::Biz {
 
+using Slicing::ThumbnailImageResults;
+using Slicing::ThumbnailImageRequests;
+
 std::future<ThumbnailImageResults> ThumbnailImageProvider::generate_thumbnails(
     const ThumbnailImageRequests& requests
 )

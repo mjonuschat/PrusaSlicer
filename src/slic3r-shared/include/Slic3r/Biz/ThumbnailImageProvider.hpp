@@ -1,21 +1,23 @@
 #pragma once
 
-#include "Slic3r/Biz/IThumbnailImageGenerator.hpp"
+#include "libslic3r/IThumbnailImageGenerator.hpp"
 
 namespace Slic3r::Biz {
 
 class ThumbnailImageProvider
 {
 public:
-    std::future<ThumbnailImageResults> generate_thumbnails(const ThumbnailImageRequests& requests);
+    std::future<Slicing::ThumbnailImageResults> generate_thumbnails(
+        const Slicing::ThumbnailImageRequests& requests
+    );
 
-    void set_generator(IThumbnailImageGenerator& generator)
+    void set_generator(Slicing::IThumbnailImageGenerator& generator)
     {
         m_generator = &generator;
     }
 
 private:
-    IThumbnailImageGenerator* m_generator{nullptr};
+    Slicing::IThumbnailImageGenerator* m_generator{nullptr};
 };
 
 } // namespace Slic3r::Biz

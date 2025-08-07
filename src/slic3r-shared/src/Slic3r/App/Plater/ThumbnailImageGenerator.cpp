@@ -5,12 +5,18 @@
 #include "Slic3r/App/Scene/Scene.hpp"
 
 #include "Slic3r/Assert.hpp"
+#include "libslic3r/ThumbnailImageRequest.hpp"
+#include "libslic3r/ThumbnailImageResult.hpp"
 
 namespace Slic3r::App::Plater {
 
+using Biz::Slicing::ThumbnailImageRequests;
+using Biz::Slicing::ThumbnailImageResults;
+using Biz::Slicing::ThumbnailImageResult;
+
 void ThumbnailImageGenerator::enqueue_thumbnail_requests(
-    const Biz::ThumbnailImageRequests& requests,
-    std::promise<Biz::ThumbnailImageResults>&& promise
+    const ThumbnailImageRequests& requests,
+    std::promise<ThumbnailImageResults>&& promise
 )
 {
     DEBUG_ASSERT(!requests.empty());
@@ -30,12 +36,12 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
     while (!m_queue.empty()) {
         Item& item = m_queue.front();
 
-        Biz::ThumbnailImageResults results;
+        ThumbnailImageResults results;
         for (const auto& request : item.requests) {
             const Domain::Project& project = m_workbench.project(request.params.project_id);
             Scene::Scene& scene = m_scene_provider.project_scene(request.params.project_id);
 
-            Biz::ThumbnailImageResult& result = results.emplace_back(Biz::ThumbnailImageResult());
+            ThumbnailImageResult& result = results.emplace_back(ThumbnailImageResult());
             result.type                       = request.type;
             result.project_id                 = request.params.project_id;
             result.bed_instance_id            = request.params.bed_instance_id;
