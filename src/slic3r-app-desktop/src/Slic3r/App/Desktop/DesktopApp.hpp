@@ -12,7 +12,6 @@
 #include <Slic3r/App/Init.hpp>
 #include <Slic3r/App/PresetUpdaterUI.hpp>
 
-#include <Slic3r/Biz/ThumbnailImageProvider.hpp>
 #include <Slic3r/Biz/ProjectInteractor.hpp>
 #include "Slic3r/App/Navigator.hpp"
 
@@ -49,7 +48,6 @@ private:
     void init_translations();
 
     std::unique_ptr<wxGLContext> m_gl_context; // do NOT change order of this attribute
-    std::unique_ptr<Biz::ThumbnailImageProvider> m_thumbnail_image_provider;
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;
     std::unique_ptr<PresetUpdaterUI> m_preset_updater_ui;
 

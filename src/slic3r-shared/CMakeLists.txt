@@ -424,14 +424,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/ConfigBoxInteractor.cpp
         include/Slic3r/Biz/ObservableListSortFilter.hpp
         include/Slic3r/Biz/ObservableListTransformer.hpp
-	include/Slic3r/Biz/BatchObservableList.hpp
+        include/Slic3r/Biz/BatchObservableList.hpp
         include/Slic3r/Biz/ObservableListWithSelection.hpp
-        include/Slic3r/Biz/ThumbnailImageProvider.hpp
-        src/Slic3r/Biz/ThumbnailImageProvider.cpp
-        include/Slic3r/Biz/IThumbnailImageGenerator.hpp
-        include/Slic3r/Biz/ThumbnailImageRequest.hpp
-        include/Slic3r/Biz/ThumbnailImageResult.hpp
-        include/Slic3r/Biz/ThumbnailType.hpp
         src/Slic3r/Biz/Utils/CopyFile.cpp
         include/Slic3r/Biz/Utils/CopyFile.hpp
         include/Slic3r/Biz/Directories.hpp

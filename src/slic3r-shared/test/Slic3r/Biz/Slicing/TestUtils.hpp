@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
-#include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/libpgcode/LineView.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
@@ -72,13 +72,29 @@ struct ResultListener : public Biz::Slicing::IFDMResultListener
     GCodes gcodes;
 };
 
+class MockThumbnailImageGenerator : public Biz::Slicing::IThumbnailImageGenerator
+{
+public:
+    std::future<Biz::Slicing::ThumbnailImageResults> enqueue_thumbnail_requests(
+        const Biz::Slicing::ThumbnailImageRequests& requests
+    ) override
+    {
+        std::promise<Biz::Slicing::ThumbnailImageResults> promise;
+        std::future<Biz::Slicing::ThumbnailImageResults> result{promise.get_future()};
+        promise.set_value(Biz::Slicing::ThumbnailImageResults{});
+        return result;
+    }
+
+    void handle_enqueued_requests() override {}
+};
+
 struct SlicingFixture {
     SlicingFixture();
     ~SlicingFixture();
 public:
     App::Platform::StdMainThreadDispatcher dispatcher;
-    Biz::ThumbnailImageProvider thumbnail_image_provider;
-    Biz::Slicing::SlicingInteractor slicing{dispatcher, thumbnail_image_provider};
+    MockThumbnailImageGenerator thumbnail_image_generator;
+    Biz::Slicing::SlicingInteractor slicing{dispatcher, thumbnail_image_generator};
     StatusListener status_listener;
 };
 

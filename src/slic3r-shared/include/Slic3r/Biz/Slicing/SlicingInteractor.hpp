@@ -1,7 +1,6 @@
 #pragma once
 
 #include <map>
-#include <atomic>
 #include <boost/functional/hash.hpp>
 
 #include <Slic3r/Domain/SelectionId.hpp>
@@ -11,9 +10,9 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/Domain/ConfigContainer.hpp>
 #include <Slic3r/Biz/Platform/WithListeners.hpp>
-#include <Slic3r/Biz/ThumbnailImageProvider.hpp>
 
 #include "BackgroundProcess.hpp"
+#include "libslic3r/IThumbnailImageGenerator.hpp"
 
 namespace Slic3r::Biz::Slicing::Sla {
 struct Object;
@@ -75,7 +74,7 @@ class SlicingInteractor :
 public:
     SlicingInteractor(
         Platform::IMainThreadDispatcher& dispatcher,
-        ThumbnailImageProvider& thumbnail_image_provider
+        IThumbnailImageGenerator& thumbnail_image_generator
     );
     ~SlicingInteractor();
 
@@ -135,7 +134,7 @@ private:
     Domain::SelectionId m_current_project_id{Domain::INVALID_ID};
     Platform::IMainThreadDispatcher& m_dispatcher;
 
-    ThumbnailImageProvider& m_thumbnail_image_provider;
+    IThumbnailImageGenerator& m_thumbnail_image_generator;
     std::future<ThumbnailImageResults> m_thumbnail_results;
 
     // Keep the threads last to be destroyed first.

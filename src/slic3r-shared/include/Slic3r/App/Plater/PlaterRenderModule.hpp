@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Slic3r/App/Plater/ArrangeGizmo.hpp"
+#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
@@ -45,10 +46,9 @@ public:
     PlaterRenderModule(
         const Domain::Workbench& workbench,
         Biz::ProjectInteractor& project_interactor,
-        Biz::ThumbnailImageProvider& thumbnail_image_provider,
         std::shared_ptr<ThumbnailStore> thumbnail_store,
         std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
-        std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator
+        std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator
     );
     ~PlaterRenderModule();
 
@@ -124,11 +124,9 @@ private:
     TextGizmo* m_text_gizmo                         = nullptr;
     MeasureGizmo* m_measure_gizmo                   = nullptr;
 
-    std::shared_ptr<App::SharedThumbnailImageGenerator> m_shared_thumbnail_image_generator;
-    Biz::ThumbnailImageProvider& m_thumbnail_image_provider;
-
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;
+    std::shared_ptr<Plater::ThumbnailImageGenerator> m_thumbnail_image_generator;
 
     Navigator* m_render_module_navigator{ nullptr };
 };

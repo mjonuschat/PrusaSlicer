@@ -31,7 +31,6 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/Navigator.hpp"
-#include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
 #if ENABLE_DEBUG_EXPORT_TO_PNG
@@ -79,17 +78,15 @@ namespace TriMesh = Biz::Algorithms::TriangleMesh;
 PlaterRenderModule::PlaterRenderModule(
     const Domain::Workbench& workbench,
     Biz::ProjectInteractor& project_interactor,
-    Biz::ThumbnailImageProvider& thumbnail_image_provider,
     std::shared_ptr<ThumbnailStore> thumbnail_store,
     std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
-    std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator
+    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator
 ) :
     m_workbench(workbench),
     m_project_interactor(project_interactor),
     m_thumbnail_store(thumbnail_store),
     m_thumbnail_store_updater(thumbnail_store_updater),
-    m_thumbnail_image_provider(thumbnail_image_provider),
-    m_shared_thumbnail_image_generator(shared_thumbnail_image_generator)
+    m_thumbnail_image_generator(thumbnail_image_generator)
 {}
 
 PlaterRenderModule::~PlaterRenderModule()
@@ -118,13 +115,13 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     init_scene();
     init_scene_layout();
 
-    if (m_shared_thumbnail_image_generator->generator == nullptr)
-        m_shared_thumbnail_image_generator->generator = std::make_unique<ThumbnailImageGenerator>(
+    if (!m_thumbnail_image_generator->initialized()) {
+        m_thumbnail_image_generator->init(
             m_workbench,
             *m_device,
             *m_scene_presenter
         );
-    m_thumbnail_image_provider.set_generator(*m_shared_thumbnail_image_generator->generator);
+    }
     m_scene_presenter->add_listener<Plater::IBedVisuallyChangedListener>(
         m_thumbnail_store_updater.get()
     );
@@ -1177,7 +1174,7 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     if (!m_scene_presenter->project_ready())
         return;
 
-    m_shared_thumbnail_image_generator->generator->handle_enqueued_requests();
+    m_thumbnail_image_generator->handle_enqueued_requests();
     m_thumbnail_store_updater->update(*m_device, [this](const BedThumbnailTextures& textures) {
         m_object_list->set_bed_instance_icons(textures);
     });

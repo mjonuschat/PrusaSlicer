@@ -2,9 +2,9 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/trompeloeil.hpp>
 
+#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
-#include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Domain/Types.hpp"
@@ -72,8 +72,8 @@ struct SceneInteractorFixture
     Domain::Workbench workbench;
 
     App::Platform::StdMainThreadDispatcher dispatcher;
-    Biz::ThumbnailImageProvider thumbnail_image_provider;
-    ProjectInteractor project_interactor{ workbench, dispatcher, thumbnail_image_provider };
+    App::Plater::ThumbnailImageGenerator thumbnail_image_generator;
+    ProjectInteractor project_interactor{ workbench, dispatcher, thumbnail_image_generator };
     Scene::SceneInteractor& scene_interactor{ project_interactor.scene_interactor() };
     ScopedThreadDispatcher thread_dispatcher{dispatcher};
 

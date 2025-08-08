@@ -11,40 +11,66 @@
 namespace Slic3r::App::Plater {
 
 using Biz::Slicing::ThumbnailImageRequests;
-using Biz::Slicing::ThumbnailImageResults;
 using Biz::Slicing::ThumbnailImageResult;
+using Biz::Slicing::ThumbnailImageResults;
 
-void ThumbnailImageGenerator::enqueue_thumbnail_requests(
-    const ThumbnailImageRequests& requests,
-    std::promise<ThumbnailImageResults>&& promise
+void ThumbnailImageGenerator::init(
+    const Domain::Workbench& workbench,
+    Render::Device& device,
+    Scene::IProjectSceneProvider& scene_provider
 )
 {
+    m_workbench      = &workbench;
+    m_device         = &device;
+    m_scene_provider = &scene_provider;
+
+    m_renderer = std::make_unique<ThumbnailRenderer>(device);
+}
+
+std::future<ThumbnailImageResults> ThumbnailImageGenerator::enqueue_thumbnail_requests(
+    const ThumbnailImageRequests& requests
+)
+{
+    ASSERT(initialized());
     DEBUG_ASSERT(!requests.empty());
 
-    for (const auto& request : requests) {
-        Item item{.requests = requests, .promise = std::move(promise)};
+    std::promise<ThumbnailImageResults> promise;
+    std::future<ThumbnailImageResults> future{promise.get_future()};
 
-        if (std::find(m_queue.begin(), m_queue.end(), item) == m_queue.end())
-            m_queue.emplace_back(std::move(item));
+    Biz::Platform::IMainThreadDispatcher& dispatcher{
+        Biz::Platform::PlatformServices::instance().main_thread_dispatcher()
+    };
+
+    if (!dispatcher.dispatch_on_main_thread([this, requests, _promise = std::move(promise)]() mutable {
+            Item item{.requests = requests, .promise = std::move(_promise)};
+
+            if (std::ranges::find(m_queue, item) == m_queue.end()) {
+                m_queue.push_back(std::move(item));
+            }
+
+            Biz::Platform::PlatformServices::instance().render_request_handler().request_render();
+        }))
+    {
+        SPDLOG_INFO("Thumbnail generation request not dispatched!");
     }
-
-    Biz::Platform::PlatformServices::instance().render_request_handler().request_render();
+    return future;
 }
 
 void ThumbnailImageGenerator::handle_enqueued_requests()
 {
+    ASSERT(initialized());
     while (!m_queue.empty()) {
         Item& item = m_queue.front();
 
         ThumbnailImageResults results;
         for (const auto& request : item.requests) {
-            const Domain::Project& project = m_workbench.project(request.params.project_id);
-            Scene::Scene& scene = m_scene_provider.project_scene(request.params.project_id);
+            const Domain::Project& project = m_workbench->project(request.params.project_id);
+            Scene::Scene& scene = m_scene_provider->project_scene(request.params.project_id);
 
             ThumbnailImageResult& result = results.emplace_back(ThumbnailImageResult());
-            result.type                       = request.type;
-            result.project_id                 = request.params.project_id;
-            result.bed_instance_id            = request.params.bed_instance_id;
+            result.type                  = request.type;
+            result.project_id            = request.params.project_id;
+            result.bed_instance_id       = request.params.bed_instance_id;
 
             switch (request.type) {
             // gallery
@@ -58,7 +84,7 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
                     .pixel_format = request.params.pixel_format,
                     .sizes        = request.params.sizes
                 };
-                result.images = m_renderer.generate_bed_thumbnails(
+                result.images = m_renderer->generate_bed_thumbnails(
                     params,
                     project,
                     request.params.bed_instance_id,
@@ -73,7 +99,7 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
                     .pixel_format = request.params.pixel_format,
                     .sizes        = request.params.sizes
                 };
-                result.images = m_renderer.generate_gcode_thumbnails(
+                result.images = m_renderer->generate_gcode_thumbnails(
                     params,
                     project,
                     request.params.bed_instance_id,
@@ -88,7 +114,7 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
                     .pixel_format = request.params.pixel_format,
                     .sizes        = request.params.sizes
                 };
-                result.images = m_renderer.generate_3mf_thumbnails(
+                result.images = m_renderer->generate_3mf_thumbnails(
                     params,
                     project,
                     Scene::CameraProjectionType::Orthographic
@@ -103,6 +129,11 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
         item.promise.set_value(std::move(results));
         m_queue.pop_front();
     }
+}
+
+bool ThumbnailImageGenerator::initialized() const
+{
+    return m_workbench != nullptr && m_device != nullptr && m_scene_provider != nullptr && m_renderer;
 }
 
 } // namespace Slic3r::App::Plater

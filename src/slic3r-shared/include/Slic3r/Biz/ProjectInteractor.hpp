@@ -20,7 +20,6 @@
 #include "Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp"
 #include "Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp"
 #include "Slic3r/Biz/ObservableProjectList.hpp"
-#include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
 
@@ -56,18 +55,18 @@ public:
     ProjectInteractor(
         Domain::Workbench& workbench,
         Platform::IMainThreadDispatcher& dispatcher,
-        ThumbnailImageProvider& thumbnail_image_provider
+        Biz::Slicing::IThumbnailImageGenerator& thumbnail_image_generator
     ) :
         m_workbench(workbench),
         m_preset_interactor(workbench),
         m_scene_interactor(workbench),
         m_arrange_interactor(m_scene_interactor, workbench),
-        m_slicing_interactor(dispatcher, thumbnail_image_provider),
+        m_slicing_interactor(dispatcher, thumbnail_image_generator),
         m_print_host_interactor(dispatcher),
         m_user_account_interactor(dispatcher),
         m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)),
-        m_project_list(*this),
-        m_preset_updater_interactor(dispatcher)
+        m_preset_updater_interactor(dispatcher),
+        m_project_list(*this)
     {
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);

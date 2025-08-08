@@ -12,11 +12,10 @@ class IThumbnailImageGenerator
 public:
     virtual ~IThumbnailImageGenerator() = default;
 
-    virtual void enqueue_thumbnail_requests(
-        const ThumbnailImageRequests& requests,
-        std::promise<ThumbnailImageResults>&& promise
+    virtual std::future<Biz::Slicing::ThumbnailImageResults> enqueue_thumbnail_requests(
+        const ThumbnailImageRequests& requests
     )                                       = 0;
     virtual void handle_enqueued_requests() = 0;
 };
 
-} // namespace Slic3r::Biz
+} // namespace Slic3r::Biz::Slicing

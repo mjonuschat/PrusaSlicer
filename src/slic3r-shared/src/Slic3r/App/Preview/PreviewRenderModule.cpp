@@ -6,7 +6,6 @@
 #include "Slic3r/App/Render/CommandBuffer.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
-#include "Slic3r/App/Preview/FdmViewerWrapperInputData.hpp"
 #include "Slic3r/App/Preview/Types.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
 #include "Slic3r/App/Navigator.hpp"
@@ -330,8 +329,9 @@ void imgui_scenegraph_node_info(const Scene::Node& node)
 
 void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {
-    if (m_shared_thumbnail_image_generator->generator != nullptr)
-        m_shared_thumbnail_image_generator->generator->handle_enqueued_requests();
+    if (m_thumbnail_image_generator->initialized()) {
+        m_thumbnail_image_generator->handle_enqueued_requests();
+    }
 
     m_thumbnail_store_updater->update(*m_device, [this](const Plater::BedThumbnailTextures& textures) {
         update_bed_instances();

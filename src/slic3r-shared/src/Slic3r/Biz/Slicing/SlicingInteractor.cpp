@@ -18,10 +18,10 @@ using Domain::ConfigPack;
 
 SlicingInteractor::SlicingInteractor(
     Platform::IMainThreadDispatcher& dispatcher,
-    ThumbnailImageProvider& thumbnail_image_provider
+    IThumbnailImageGenerator& thumbnail_image_generator
 ) :
     m_dispatcher(dispatcher),
-    m_thumbnail_image_provider(thumbnail_image_provider)
+    m_thumbnail_image_generator(thumbnail_image_generator)
 {}
 
 SlicingInteractor::~SlicingInteractor()
@@ -124,7 +124,7 @@ void SlicingInteractor::slice_bed(const Domain::SelectionId bed_instance_id)
         request.params.sizes =
             {{160, 120}, {16, 16}, {220, 124}, {200, 240}, {380, 285}, {313, 173}, {480, 240}};
 
-        m_thumbnail_results = m_thumbnail_image_provider.generate_thumbnails(requests);
+        m_thumbnail_results = m_thumbnail_image_generator.enqueue_thumbnail_requests(requests);
     }
 
     m_slicing_queue.push_back(id);

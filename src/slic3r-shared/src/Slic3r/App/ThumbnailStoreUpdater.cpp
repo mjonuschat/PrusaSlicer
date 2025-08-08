@@ -41,7 +41,7 @@ void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const
     request.params.pixel_format         = Domain::PixelFormat::RGBA8;
     request.params.sizes                = {SIZE};
 
-    m_thumbnail_results = m_thumbnail_image_provider.generate_thumbnails(requests);
+    m_thumbnail_results = m_thumbnail_image_generator.enqueue_thumbnail_requests(requests);
 }
 
 void ThumbnailStoreUpdater::update(Render::Device& device, ThumbnailUpdateCallback callback)

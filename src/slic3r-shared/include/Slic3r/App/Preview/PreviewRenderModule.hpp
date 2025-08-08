@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Preview/PreviewScenePresenter.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
-#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/App/Preview/PreviewRenderLayout.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
@@ -15,7 +15,6 @@
 #include <Slic3r/App/Preview/DoubleSliderForGCode.hpp>
 #include <Slic3r/App/Preview/DoubleSliderForLayers.hpp>
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
-#include "Slic3r/App/SharedThumbnailImageGenerator.hpp"
 
 #include <memory>
 
@@ -44,13 +43,13 @@ public:
         Biz::ProjectInteractor& project_interactor,
         std::shared_ptr<ThumbnailStore> thumbnail_store,
         std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
-        std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator
+        std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator
     ) :
         m_workbench(workbench),
         m_project_interactor(project_interactor),
         m_thumbnail_store(thumbnail_store),
         m_thumbnail_store_updater(thumbnail_store_updater),
-        m_shared_thumbnail_image_generator(shared_thumbnail_image_generator)
+        m_thumbnail_image_generator(thumbnail_image_generator)
     {}
 
     /**
@@ -151,9 +150,9 @@ private:
     Yoga::ToolbarButton* m_button_legend            = nullptr;
     Yoga::ToolbarButton* m_button_gcode             = nullptr;
 
-    std::shared_ptr<App::SharedThumbnailImageGenerator> m_shared_thumbnail_image_generator;
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;
+    std::shared_ptr<Plater::ThumbnailImageGenerator> m_thumbnail_image_generator;
 
     Navigator* m_render_module_navigator{nullptr};
 
