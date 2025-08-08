@@ -233,33 +233,6 @@ void EditorPrinter::build_fff()
 
         optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
             wxTheApp->CallAfter([this, opt_key, value]() {
-                if (opt_key == "thumbnails" && config().has("thumbnails_format")) {
-                    // to backward compatibility we need to update "thumbnails_format" from new "thumbnails"
-                    if (const std::string val = boost::any_cast<std::string>(value); !value.empty()) {
-                        auto [thumbnails_list, errors] = GCodeThumbnails::make_and_check_thumbnail_list(val);
-
-                        if (errors != Domain::enum_bitmask<ThumbnailError>()) {
-                            // TRN: First argument is parameter name, the second one is the value.
-                            std::string error_str = format(_u8L("Invalid value provided for parameter %1%: %2%"), "thumbnails", val);
-                            error_str += GCodeThumbnails::get_error_string(errors);
-                            WX::InfoDialog(parent(), _L("G-code flavor is switched"), WX::from_u8(error_str)).ShowModal();
-                        }
-
-                        if (!thumbnails_list.empty()) {
-                            GCodeThumbnailsFormat old_format = GCodeThumbnailsFormat(config().option("thumbnails_format")->getInt());
-                            GCodeThumbnailsFormat new_format = thumbnails_list.begin()->first;
-                            if (old_format != new_format) {
-                                DynamicPrintConfig new_conf = config();
-
-                                auto* opt = config().option("thumbnails_format")->clone();
-                                opt->setInt(int(new_format));
-                                new_conf.set_key_value("thumbnails_format", opt);
-
-                                load_config(new_conf);
-                            }
-                        }
-                    }
-                }
                 if (opt_key == "silent_mode") {
                     bool val = boost::any_cast<bool>(value);
                     if (m_use_silent_mode != val) {

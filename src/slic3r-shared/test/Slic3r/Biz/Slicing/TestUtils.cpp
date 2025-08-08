@@ -110,7 +110,7 @@ using StatusEvents = std::vector<StatusEvent>;
 }
 
 using Biz::Slicing::FDMResult;
-using Biz::Slicing::SlicingId;
+using Domain::SlicingId;
 using Biz::Slicing::IStatusListener;
 
 void ResultListener::on_fdm_result_changed(

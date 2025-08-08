@@ -41,7 +41,6 @@
 #include "libslic3r/Fill/FillAdaptive.hpp"
 #include "libslic3r/Fill/FillLightning.hpp"
 #include "libslic3r/Flow.hpp"
-#include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/GCode/ToolOrdering.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"
 #include "libslic3r/PrintBase.hpp"
@@ -551,6 +550,11 @@ enum ModelObjectCreationStatus
     Deleted
 };
 
+struct Thumbnails {
+    std::future<Biz::Slicing::ThumbnailImageResults> raw_data;
+    std::vector<Domain::GCodeThumbnailsFormat> formats;
+};
+
 // The complete print tray with possibly multiple objects.
 class Print : public PrintBaseWithState<PrintStep, psCount>
 {
@@ -612,11 +616,11 @@ public:
     void                finalize() override { PrintBaseWithState<PrintStep, psCount>::finalize_impl(m_objects); }
     void                cleanup() override;
 
-    void slice() override;
+    void slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator&) override;
 
     // Exports G-code into a file name based on the path_template, returns the file path of the generated G-code file.
     // If preview_data is not null, the preview_data is filled in for the G-code visualization (not used by the command line Slic3r).
-    Biz::libpgcode::ProcessorResult process_gcode(ThumbnailsGeneratorCallback thumbnail_cb = nullptr);
+    Biz::libpgcode::ProcessorResult process_gcode();
 
     // methods for handling state
     bool                is_step_done(PrintStep step) const { return Inherited::is_step_done(step); }
@@ -736,6 +740,8 @@ public:
 
     // Estimated print time, filament consumed.
     PrintStatistics                         m_print_statistics;
+
+    Thumbnails thumbnails;
 
     // To allow GCode to set the Print's GCodeExport step status.
     friend class GCodeGenerator;

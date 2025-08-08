@@ -12,7 +12,7 @@ class ISLAResultCacheChangedListener
 {
 public:
     virtual ~ISLAResultCacheChangedListener() = default;
-    virtual void on_sla_result_cache_changed(const Slicing::SlicingId& id) = 0;
+    virtual void on_sla_result_cache_changed(const Domain::SlicingId& id) = 0;
 };
 
 using SLAResultRef = std::reference_wrapper<const Slicing::SLAResult>;
@@ -28,10 +28,10 @@ class SLAResultCache :
     public WithListeners<ISLAResultCacheChangedListener>
 {
 public:
-    SLAResultOptRef get_result(const Slicing::SlicingId& id) const;
-    void on_sla_result_changed(const Slicing::SlicingId& id, Slicing::SLAResult&& result) override;
+    SLAResultOptRef get_result(const Domain::SlicingId& id) const;
+    void on_sla_result_changed(const Domain::SlicingId& id, Slicing::SLAResult&& result) override;
 private:
-    using Cache = std::map<Slicing::SlicingId, Slicing::SLAResult>;
+    using Cache = std::map<Domain::SlicingId, Slicing::SLAResult>;
     Cache m_results;
 };
 } // namespace Slic2r::Biz

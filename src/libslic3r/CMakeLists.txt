@@ -234,7 +234,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/GCode/SmoothPath.hpp
     src/libslic3r/GCode/SpiralVase.cpp
     src/libslic3r/GCode/SpiralVase.hpp
-    src/libslic3r/GCode/ThumbnailData.cpp
     src/libslic3r/GCode/Thumbnails.cpp
     src/libslic3r/GCode/ToolOrdering.cpp
     src/libslic3r/GCode/Travels.cpp
@@ -439,7 +438,6 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/Fill/FillLightning.hpp
     include/libslic3r/Flow.hpp
     include/libslic3r/format.hpp
-    include/libslic3r/GCode/ThumbnailData.hpp
     include/libslic3r/GCode/Thumbnails.hpp
     include/libslic3r/GCode/ToolOrdering.hpp
     include/libslic3r/GCode/WipeTower.hpp

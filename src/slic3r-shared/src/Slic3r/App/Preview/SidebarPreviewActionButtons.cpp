@@ -139,7 +139,7 @@ void SidebarPreviewActionButtons::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
 
 bool SidebarPreviewActionButtons::export_allowed() const
 {
-    const Biz::Slicing::SlicingId id = m_project_interactor->selected_bed_slicing_id();
+    const Domain::SlicingId id = m_project_interactor->selected_bed_slicing_id();
     const std::optional<Biz::Slicing::Status> status{
         m_project_interactor->status_cache().get_status(id)
     };

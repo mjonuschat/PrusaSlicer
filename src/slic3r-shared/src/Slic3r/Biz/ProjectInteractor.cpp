@@ -81,7 +81,7 @@ ObservableProjectList& ProjectInteractor::observable_project_list()
     return m_project_list;
 }
 
-Biz::Slicing::SlicingId ProjectInteractor::selected_bed_slicing_id() const
+Domain::SlicingId ProjectInteractor::selected_bed_slicing_id() const
 {
     return {selected_project_id(), m_scene_interactor.bed_selection().last_selected_bed().instance_id};
 }
@@ -198,7 +198,7 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
 }
 
 void ProjectInteractor::do_export(
-    const Slicing::SlicingId id,
+    const Domain::SlicingId id,
     const boost::filesystem::path& dest_path,
     bool to_removable
 )
@@ -216,7 +216,7 @@ void ProjectInteractor::do_export(
     m_print_host_interactor.export_gcode(std::move(config), std::move(data));
 }
 
-void ProjectInteractor::do_upload(const Slicing::SlicingId id, const std::string& filename)
+void ProjectInteractor::do_upload(const Domain::SlicingId id, const std::string& filename)
 {
     const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
     if (!fdm_result)
@@ -232,7 +232,7 @@ void ProjectInteractor::do_upload(const Slicing::SlicingId id, const std::string
     m_print_host_interactor.upload_gcode(std::move(config), std::move(data));
 }
 
-void ProjectInteractor::do_upload_connect(const Slicing::SlicingId id, const std::string& connect_msg)
+void ProjectInteractor::do_upload_connect(const Domain::SlicingId id, const std::string& connect_msg)
 {
     const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
     if (!fdm_result)

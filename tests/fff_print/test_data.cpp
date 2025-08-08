@@ -332,7 +332,7 @@ std::string gcode(Print & print)
 {
     print.set_status_silent();
     print.process();
-    const Biz::libpgcode::ProcessorResult result{print.process_gcode(nullptr)};
+    const Biz::libpgcode::ProcessorResult result{print.process_gcode()};
 	return result.const_gcode()->str();
 }
 

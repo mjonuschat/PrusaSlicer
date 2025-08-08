@@ -364,7 +364,7 @@ public:
     void                finalize() override { Inherited::finalize_impl(m_objects); }
     void                cleanup() override {}
 
-    void slice() override;
+    void slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator&) override;
 
     // Returns true if an object step is done on all objects and there's at least one object.
     bool                is_step_done(SLAPrintObjectStep step) const;
@@ -493,7 +493,7 @@ public:
 void export_print(
     const std::string& fname,
     Biz::Slicing::SLAResult& data,
-    const ThumbnailsList& thumbnails = {},
+    const Domain::Images& thumbnails = {},
     const std::string& projectname = ""
 );
 

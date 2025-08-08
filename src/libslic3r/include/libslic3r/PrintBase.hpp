@@ -19,8 +19,10 @@
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
+#include "Slic3r/Domain/SlicingId.hpp"
 
 #include "libslic3r/Config.hpp"
+#include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "libslic3r/SerializedConfig.hpp"
 
 namespace Slic3r {
@@ -483,7 +485,7 @@ public:
         const Domain::BedInstance& bed,
         const SerializedConfig& serialized_config
     ) = 0;
-    virtual void slice() = 0;
+    virtual void slice(Domain::SlicingId, Slicing::IThumbnailImageGenerator&) = 0;
     virtual bool empty() const = 0;
     virtual ~IPrint() = default;
 

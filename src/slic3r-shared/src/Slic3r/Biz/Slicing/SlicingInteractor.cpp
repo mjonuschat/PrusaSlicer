@@ -1,10 +1,6 @@
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Assert.hpp"
-
-// for debug only (to get ENABLE_DEBUG_EXPORT_TO_PNG)
-#include "Slic3r/Domain/Image.hpp"
-
 #include "libslic3r/SLA/SLAResult.hpp"
 
 #include <fmt/core.h>
@@ -14,6 +10,7 @@ namespace Slic3r::Biz::Slicing {
 
 using Domain::Preset::SelectedPresetMetadata;
 using Domain::ProjectMetadata;
+using Domain::SlicingId;
 using Domain::ConfigPack;
 
 SlicingInteractor::SlicingInteractor(
@@ -111,22 +108,6 @@ void SlicingInteractor::slice_bed(const Domain::SelectionId bed_instance_id)
     ASSERT(m_processes.contains(id));
     SPDLOG_INFO("{}: slicing request", fmt::streamed(id));
 
-    /* ====================== */
-    /* test thumbnail request */
-    /* ====================== */
-    {
-        ThumbnailImageRequests requests;
-        ThumbnailImageRequest& request = requests.emplace_back(ThumbnailImageRequest());
-        request.type                   = ThumbnailType::SlicingBed;
-        request.params.project_id      = m_current_project_id;
-        request.params.bed_instance_id = bed_instance_id;
-        request.params.pixel_format    = Domain::PixelFormat::RGBA8;
-        request.params.sizes =
-            {{160, 120}, {16, 16}, {220, 124}, {200, 240}, {380, 285}, {313, 173}, {480, 240}};
-
-        m_thumbnail_results = m_thumbnail_image_generator.enqueue_thumbnail_requests(requests);
-    }
-
     m_slicing_queue.push_back(id);
     process_slicing_queue();
 }
@@ -205,23 +186,6 @@ void SlicingInteractor::on_status(const Status status, const SlicingId id)
 void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id)
 {
     SPDLOG_INFO("{}: FDMResult{{moves_count: {}}}", fmt::streamed(id), result.const_moves()->size());
-
-    /* ===================== */
-    /* test thumbnail answer */
-    /* ===================== */
-    {
-        if (m_thumbnail_results.valid()) {
-            ThumbnailImageResults thumbnail_results = m_thumbnail_results.get();
-            // debug only: export the received thumbnails to PNG files
-#if ENABLE_DEBUG_EXPORT_TO_PNG
-            std::string name = fmt::format("thumbnail_gcode");
-            std::string path_prefix = fmt::format("C:/test/{}", name);
-            for (const auto& t : thumbnail_results) {
-                App::Scene::export_to_png_file(t.images, path_prefix);
-            }
-#endif // ENABLE_DEBUG_EXPORT_TO_PNG
-        }
-    }
 
     using Platform::MoveOnlyFunction;
 
@@ -306,7 +270,7 @@ void SlicingInteractor::process_slicing_queue()
         return;
     }
 
-    m_processes.at(to_slice).slice();
+    m_processes.at(to_slice).slice(m_thumbnail_image_generator);
 }
 
 void SlicingInteractor::process_update_requests()

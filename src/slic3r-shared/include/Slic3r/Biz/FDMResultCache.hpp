@@ -11,7 +11,7 @@ namespace Slic3r::Biz {
 struct IFDMResultCacheChangedListener
 {
     virtual ~IFDMResultCacheChangedListener() = default;
-    virtual void on_fdm_result_cache_changed(const Slicing::SlicingId id) = 0;
+    virtual void on_fdm_result_cache_changed(const Domain::SlicingId id) = 0;
 };
 
 using FDMResultRef = std::reference_wrapper<const Slicing::FDMResult>;
@@ -20,14 +20,14 @@ class FDMResultCache :
     public WithListeners<IFDMResultCacheChangedListener>
 {
 public:
-    std::optional<FDMResultRef> get_result(const Slicing::SlicingId id) const;
+    std::optional<FDMResultRef> get_result(const Domain::SlicingId id) const;
 
     void on_fdm_result_changed(
         Slicing::FDMResult&& result,
-        const Slicing::SlicingId id
+        const Domain::SlicingId id
     ) override;
 
 private:
-    std::map<Slicing::SlicingId, Slicing::FDMResult> m_results;
+    std::map<Domain::SlicingId, Slicing::FDMResult> m_results;
 };
 } // namespace Slic2r::Biz::FDMResultCache

@@ -60,7 +60,7 @@ public:
     void set_navigator(Navigator* navigator) override;
 
     void on_status_cache_changed(
-        const Biz::Slicing::SlicingId id
+        const Domain::SlicingId id
     ) override;
 
     void set_sidebars_visible(bool visible) override;

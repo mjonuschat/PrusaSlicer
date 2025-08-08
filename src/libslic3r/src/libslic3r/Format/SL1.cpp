@@ -9,13 +9,14 @@
 
 #include <sstream>
 
+#include "Slic3r/Domain/Image.hpp"
+#include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 #include "Slic3r/Time.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/Zipper.hpp"
 
 #include "libslic3r/miniz_extension.hpp" // IWYU pragma: keep
 #include <LocalesUtils.hpp>
-#include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Utils/JsonUtils.hpp"
 
 #include "libslic3r/SLA/RasterBase.hpp"
@@ -177,17 +178,17 @@ void fill_iniconf(ConfMap &m, const SLAPrintConfigView &cfg, const Sla::PrintSta
     m["action"] = "print";
 }
 
-static void write_thumbnail(Zipper &zipper, const ThumbnailData &data)
+static void write_thumbnail(Zipper &zipper, const Domain::Image &data)
 {
     size_t png_size = 0;
 
     void  *png_data = tdefl_write_image_to_png_file_in_memory_ex(
-         (const void *) data.pixels.data(), data.width, data.height, 4,
+         (const void *) data.pixels.data(), data.width(), data.height(), 4,
          &png_size, MZ_DEFAULT_LEVEL, 1);
 
     if (png_data != nullptr) {
-        zipper.add_entry("thumbnail/thumbnail" + std::to_string(data.width) +
-                             "x" + std::to_string(data.height) + ".png",
+        zipper.add_entry("thumbnail/thumbnail" + std::to_string(data.width()) +
+                             "x" + std::to_string(data.height()) + ".png",
                          static_cast<const std::uint8_t *>(png_data),
                          png_size);
 
@@ -239,8 +240,8 @@ void store_sl1(const std::string& file_path, const SLAResult& data)
             zipper.add_entry(imgname.c_str(), rst.data(), rst.size());
         }
 
-        for (const ThumbnailData& data : data.thumbnails)
-            if (data.is_valid())
+        for (const Domain::Image& data : data.thumbnails)
+            if (Biz::Algorithms::ImageUtils::is_valid(data))
                 write_thumbnail(zipper, data);
 
         zipper.finalize();

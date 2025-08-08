@@ -33,7 +33,7 @@ void SidebarActionButtons::on_init(Biz::ProjectInteractor* project_interactor)
     m_project_interactor = project_interactor;
 }
 
-Biz::Slicing::SlicingId SidebarActionButtons::active_bed_slicing_id() const
+Domain::SlicingId SidebarActionButtons::active_bed_slicing_id() const
 {
     return {
         m_project_interactor->selected_project_id(),
@@ -43,7 +43,7 @@ Biz::Slicing::SlicingId SidebarActionButtons::active_bed_slicing_id() const
 
 bool SidebarActionButtons::slice_allowed() const
 {
-    const Biz::Slicing::SlicingId id = m_project_interactor->selected_bed_slicing_id();
+    const Domain::SlicingId id = m_project_interactor->selected_bed_slicing_id();
     const std::optional<Biz::Slicing::Status> status{
         m_project_interactor->status_cache().get_status(id)
     };

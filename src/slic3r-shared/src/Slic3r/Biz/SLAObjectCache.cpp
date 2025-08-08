@@ -19,7 +19,7 @@ SLAObjectOptRef SLAObjectCache::get_instance(const SLAObjectCache::Key& key) con
 }
 
 std::vector<Slic3r::Domain::ObjectID> SLAObjectCache::get_object_ids(
-    const Slicing::SlicingId slicing_id
+    const Domain::SlicingId slicing_id
 ) const
 {
     std::vector<Domain::ObjectID> result;
@@ -31,7 +31,7 @@ std::vector<Slic3r::Domain::ObjectID> SLAObjectCache::get_object_ids(
     return result;
 }
 
-void SLAObjectCache::on_sla_object_changed(const SlicingId& id, Object&& object)
+void SLAObjectCache::on_sla_object_changed(const Domain::SlicingId& id, Object&& object)
 {
     const std::size_t object_id{object.object_id.id};
     ASSERT(object_id != 0);
@@ -55,6 +55,6 @@ void SLAObjectCache::on_sla_object_changed(const SlicingId& id, Object&& object)
     });
 }
 
-void SLAObjectCache::on_remove_bed(const Slicing::SlicingId& id) {
+void SLAObjectCache::on_remove_bed(const Domain::SlicingId& id) {
     std::erase_if(m_objects, [&id](const auto& pair) { return pair.first.first == id; });
 }

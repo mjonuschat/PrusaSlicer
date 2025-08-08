@@ -270,7 +270,7 @@ public:
         return m_arrange_interactor;
     }
 
-    Biz::Slicing::SlicingId selected_bed_slicing_id() const;
+    Domain::SlicingId selected_bed_slicing_id() const;
 
     /**
      * @name ISelectedBedInstancesChangedListener interface implementation
@@ -288,20 +288,20 @@ public:
      * PrintHostConfig origin is yet to be decided.
      * to_removable parameter is placeholder until more robust logic takes place.
      */
-    void do_export(const Slicing::SlicingId id, const boost::filesystem::path& dest_path, bool to_removable);
+    void do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path, bool to_removable);
 
     /**
      * @brief Creates PrintHostConfig and PrintHostData and passes it to PrintHostInteractor to start upload.
      * PrintHostData copies gcode data from m_fdm_result_cache.
      * PrintHostConfig origin is yet to be decided.
      */
-    void do_upload(const Slicing::SlicingId id, const std::string& filename);
+    void do_upload(const Domain::SlicingId id, const std::string& filename);
 
     /**
      * @brief Same as do_upload, but does parse connect_msg first.
      * Uploads to PrintHostType::PrusaConnect.
      */
-    void do_upload_connect(const Slicing::SlicingId id, const std::string& connect_msg);
+    void do_upload_connect(const Domain::SlicingId id, const std::string& connect_msg);
 
     /**
      * @brief Called after Mainframe is created to set window handle for AppInstanceMessageHandler.

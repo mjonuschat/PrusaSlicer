@@ -18,7 +18,7 @@
 namespace {
 using namespace Slic3r;
 using Biz::Slicing::IProcessCallbacks;
-using Biz::Slicing::SlicingId;
+using Domain::SlicingId;
 using Biz::Slicing::FDMResult;
 using Biz::Slicing::SLAResult;
 using Biz::Slicing::Sla::Object;
@@ -79,12 +79,6 @@ LoggingScopeLock::LoggingScopeLock(std::mutex& mutex, std::string id)
 LoggingScopeLock::~LoggingScopeLock() {
     SPDLOG_TRACE("Lock '{}' unlocked", m_id);
     m_mutex.unlock();
-}
-
-std::ostream& operator<<(std::ostream& output, const SlicingId& id) {
-    return output
-        << "{project_id: " << id.project_id
-        << ", bed_id: " << id.bed_instance_id << "}";
 }
 
 std::ostream& operator<<(std::ostream& output, const Status& status) {
@@ -226,12 +220,12 @@ void BackgroundProcess::update(
     apply_status = this->m_print->update(model, config, bed, serialized_config);
 }
 
-void BackgroundProcess::slice()
+void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
 {
     SPDLOG_INFO("{}: slice", fmt::streamed(m_id));
 
     this->stop();
-    this->queue_action([this]() {
+    this->queue_action([this, &thumbnail_generator]() {
         this->m_thread = {}; // Wait for join.
         ASSERT(!is_thread_active(m_get_status()), "The thread is stopped afterwards!");
 
@@ -242,7 +236,7 @@ void BackgroundProcess::slice()
         }
         m_on_status(Status::Running);
         this->m_thread = JThread{
-            [this](StopToken stop_token, IPrint* print) {
+            [this, &thumbnail_generator](StopToken stop_token, IPrint* print) {
                 print->stop_token = stop_token;
 
                 bool finished{false};
@@ -255,7 +249,7 @@ void BackgroundProcess::slice()
                 }};
 
                 try {
-                    print->slice();
+                    print->slice(m_id, thumbnail_generator);
                     finished = true;
                 } catch (CanceledException&) {
                 }

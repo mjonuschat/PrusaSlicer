@@ -450,7 +450,7 @@ void PreviewRenderModule::on_selected_bed_instances_changed(
     request_render();
 }
 
-void PreviewRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
+void PreviewRenderModule::on_status_cache_changed(const Domain::SlicingId id)
 {
     /*    if (m_project_interactor.selected_project_id() == id.project_id && m_viewer->has_data()) {
             const std::optional<Biz::Slicing::Status> status {
@@ -1236,7 +1236,7 @@ void PreviewRenderModule::update_toolbar_visibility()
     m_layout->set_bottom_toolbar_visible(m_button_legend->is_visible() || m_button_gcode->is_visible());
 }
 
-void PreviewRenderModule::update_fdm_viewer_data(const Biz::Slicing::SlicingId id)
+void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
 {
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
@@ -1273,7 +1273,7 @@ void PreviewRenderModule::update_fdm_viewer_data(const Biz::Slicing::SlicingId i
     // center_camera_on_selected_bed();
 }
 
-void PreviewRenderModule::update_sla_viewer_result_data(const Biz::Slicing::SlicingId id)
+void PreviewRenderModule::update_sla_viewer_result_data(const Domain::SlicingId id)
 {
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
@@ -1288,7 +1288,7 @@ void PreviewRenderModule::update_sla_viewer_result_data(const Biz::Slicing::Slic
 }
 
 void PreviewRenderModule::update_sla_viewer_object_data(
-    const Biz::Slicing::SlicingId id,
+    const Domain::SlicingId id,
     Domain::ObjectID instance_id
 )
 {
@@ -1304,7 +1304,7 @@ void PreviewRenderModule::update_sla_viewer_object_data(
         m_sla_viewer.reset_object(instance_id);
 }
 
-void PreviewRenderModule::update_sla_viewer_data(const Biz::Slicing::SlicingId id)
+void PreviewRenderModule::update_sla_viewer_data(const Domain::SlicingId id)
 {
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;

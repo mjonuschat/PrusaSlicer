@@ -526,7 +526,7 @@ void PlaterRenderModule::set_navigator(Navigator* navigator)
     m_render_module_navigator = navigator;
 }
 
-void PlaterRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
+void PlaterRenderModule::on_status_cache_changed(const Domain::SlicingId id)
 {
     // request redraw
     request_render();

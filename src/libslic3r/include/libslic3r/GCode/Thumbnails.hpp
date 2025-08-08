@@ -19,12 +19,15 @@
 #include <algorithm>
 #include <string>
 #include <utility>
+#include <tl/expected.hpp>
 
 #include "Slic3r/Domain/enum_bitmask.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "libslic3r/ThumbnailImageResult.hpp"
 
 #include "libslic3r/PrintConfig.hpp"
-#include "libslic3r/GCode/ThumbnailData.hpp"
+#include "Slic3r/Domain/Size.hpp"
+#include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 
 namespace Slic3r {
     class ConfigBase;
@@ -44,81 +47,63 @@ struct CompressedImageBuffer
     virtual std::string_view tag() const = 0;
 };
 
-std::unique_ptr<CompressedImageBuffer> compress_thumbnail(const ThumbnailData &data, GCodeThumbnailsFormat format);
+std::unique_ptr<CompressedImageBuffer> compress_thumbnail(
+    const Domain::Image& thumbnail,
+    Domain::GCodeThumbnailsFormat format
+);
 
-typedef std::vector<std::pair<GCodeThumbnailsFormat, Domain::Vec2d>> GCodeThumbnailDefinitionsList;
+struct RequestParsingResult {
+    Domain::Sizes sizes;
+    std::vector<Domain::GCodeThumbnailsFormat> formats;
+};
 
-using namespace std::literals;
-std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbnail_list(const std::string& thumbnails_string, const std::string_view def_ext = "PNG"sv);
-std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbnail_list(const Domain::ConfigView &config);
+tl::expected<RequestParsingResult, ThumbnailErrors> parse_request(
+    const std::string& request,
+    const std::string_view default_extension = "PNG"
+);
 
 std::string get_error_string(const ThumbnailErrors& errors);
 
-template<typename WriteToOutput, typename ThrowIfCanceledCallback>
-inline void export_thumbnails_to_file(ThumbnailsGeneratorCallback &thumbnail_cb, const std::vector<std::pair<GCodeThumbnailsFormat, Domain::Vec2d>>& thumbnails_list, WriteToOutput output, ThrowIfCanceledCallback throw_if_canceled)
+template <typename WriteToOutput, typename ThrowIfCanceledCallback>
+void export_thumbnails_to_file(
+    Biz::Slicing::ThumbnailImageResult thumbnails,
+    const std::vector<Domain::GCodeThumbnailsFormat>& formats,
+    WriteToOutput output,
+    ThrowIfCanceledCallback throw_if_canceled
+)
 {
-    // Write thumbnails using base64 encoding
-    if (thumbnail_cb != nullptr) {
-        for (const auto& [format, size] : thumbnails_list) {
-            static constexpr const size_t max_row_length = 78;
-            ThumbnailsList thumbnails = thumbnail_cb(ThumbnailsParams{ {size}, true, true, true, true });
-            for (const ThumbnailData& data : thumbnails)
-                if (data.is_valid()) {
-                    auto compressed = compress_thumbnail(data, format);
-                    if (compressed->data && compressed->size) {
-                        std::string encoded;
-                        encoded.resize(boost::beast::detail::base64::encoded_size(compressed->size));
-                        encoded.resize(boost::beast::detail::base64::encode((void*)encoded.data(), (const void*)compressed->data, compressed->size));
+    static constexpr const size_t max_row_length = 78;
 
-                        output((boost::format("\n;\n; %s begin %dx%d %d\n") % compressed->tag() % data.width % data.height % encoded.size()).str().c_str());
+    ASSERT(thumbnails.images.size() == formats.size());
+    for (std::size_t i{}; i < thumbnails.images.size(); ++i) {
+        const Domain::Image& thumbnail{thumbnails.images.at(i)};
+        Domain::GCodeThumbnailsFormat format{formats.at(i)};
 
-                        while (encoded.size() > max_row_length) {
-                            output((boost::format("; %s\n") % encoded.substr(0, max_row_length)).str().c_str());
-                            encoded = encoded.substr(max_row_length);
-                        }
-
-                        if (encoded.size() > 0)
-                            output((boost::format("; %s\n") % encoded).str().c_str());
-
-                        output((boost::format("; %s end\n;\n") % compressed->tag()).str().c_str());
-                    }
-                    throw_if_canceled();
-                }
+        if (!Biz::Algorithms::ImageUtils::is_valid(thumbnail)) {
+            continue;
         }
+
+        auto compressed = compress_thumbnail(thumbnail, format);
+        if (compressed->data && compressed->size) {
+            std::string encoded;
+            encoded.resize(boost::beast::detail::base64::encoded_size(compressed->size));
+            encoded.resize(boost::beast::detail::base64::encode((void*)encoded.data(), (const void*)compressed->data, compressed->size));
+
+            output((boost::format("\n;\n; %s begin %dx%d %d\n") % compressed->tag() % thumbnail.width() % thumbnail.height() % encoded.size()).str().c_str());
+
+            while (encoded.size() > max_row_length) {
+                output((boost::format("; %s\n") % encoded.substr(0, max_row_length)).str().c_str());
+                encoded = encoded.substr(max_row_length);
+            }
+
+            if (encoded.size() > 0)
+                output((boost::format("; %s\n") % encoded).str().c_str());
+
+            output((boost::format("; %s end\n;\n") % compressed->tag()).str().c_str());
+        }
+        throw_if_canceled();
     }
 }
-
-template<typename ThrowIfCanceledCallback>
-inline void generate_binary_thumbnails(ThumbnailsGeneratorCallback& thumbnail_cb, std::vector<bgcode::binarize::ThumbnailBlock>& out_thumbnails,
-    const std::vector<std::pair<GCodeThumbnailsFormat, Domain::Vec2d>> &thumbnails_list, ThrowIfCanceledCallback throw_if_canceled)
-{
-    using namespace bgcode::core;
-    using namespace bgcode::binarize;
-    out_thumbnails.clear();
-    assert(thumbnail_cb != nullptr);
-    if (thumbnail_cb != nullptr) {
-        for (const auto& [format, size] : thumbnails_list) {
-            ThumbnailsList thumbnails = thumbnail_cb(ThumbnailsParams{ {size}, true, true, true, true });
-            for (const ThumbnailData &data : thumbnails)
-                if (data.is_valid()) {
-                    auto compressed = compress_thumbnail(data, format);
-                    if (compressed->data != nullptr && compressed->size > 0) {
-                        ThumbnailBlock& block = out_thumbnails.emplace_back(ThumbnailBlock());
-                        block.params.width = (uint16_t)data.width;
-                        block.params.height = (uint16_t)data.height;
-                        switch (format) {
-                        case GCodeThumbnailsFormat::PNG: { block.params.format = (uint16_t)EThumbnailFormat::PNG; break; }
-                        case GCodeThumbnailsFormat::JPG: { block.params.format = (uint16_t)EThumbnailFormat::JPG; break; }
-                        case GCodeThumbnailsFormat::QOI: { block.params.format = (uint16_t)EThumbnailFormat::QOI; break; }
-                        }
-                        block.data.resize(compressed->size);
-                        memcpy(block.data.data(), compressed->data, compressed->size);
-                    }
-                }
-        }
-    }
-}
-
 } // namespace Slic3r::GCodeThumbnails
 
 #endif // slic3r_GCodeThumbnails_hpp_

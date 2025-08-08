@@ -73,7 +73,7 @@ SCENARIO("Model construction", "[Model]") {
 
                 print.update(model, config, bed_instance, SerializedConfig{});
 				print.process();
-                const Biz::libpgcode::ProcessorResult result{print.process_gcode(nullptr)};
+                const Biz::libpgcode::ProcessorResult result{print.process_gcode()};
                 CHECK(result.const_gcode()->str().size() > 0);
 			}
         }

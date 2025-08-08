@@ -30,30 +30,30 @@ public:
 class IFDMResultListener : public ISlicingListener
 {
 public:
-    virtual void on_fdm_result_changed(FDMResult&&, const SlicingId) = 0;
+    virtual void on_fdm_result_changed(FDMResult&&, const Domain::SlicingId) = 0;
 };
 
 class ISLAResultListener : public ISlicingListener
 {
 public:
-    virtual void on_sla_result_changed(const SlicingId&, SLAResult&&) = 0;
+    virtual void on_sla_result_changed(const Domain::SlicingId&, SLAResult&&) = 0;
 };
 
 class ISLAObjectListener : public ISlicingListener
 {
 public:
-    virtual void on_sla_object_changed(const SlicingId&, Sla::Object&&) = 0;
-    virtual void on_remove_bed(const SlicingId&)                        = 0;
+    virtual void on_sla_object_changed(const Domain::SlicingId&, Sla::Object&&) = 0;
+    virtual void on_remove_bed(const Domain::SlicingId&)                        = 0;
 };
 
 struct IStatusListener : ISlicingListener
 {
-    virtual void on_status_changed(const Status, const SlicingId) = 0;
+    virtual void on_status_changed(const Status, const Domain::SlicingId) = 0;
 };
 
 struct IWipeTowerGeometryListener : ISlicingListener
 {
-    virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry, const SlicingId) = 0;
+    virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry, const Domain::SlicingId) = 0;
 };
 
 struct UpdateRequest
@@ -100,45 +100,43 @@ public:
 
     void on_selected_project_changed(size_t index) override;
 
-    void on_fdm_result(FDMResult&&, SlicingId) override;
-    void on_sla_result(const SlicingId&, SLAResult&&) override;
-    void on_sla_object(const SlicingId&, Sla::Object&&) override;
-    void on_status(const Status, SlicingId) override;
-    void on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_tower_geometry, const SlicingId id) override;
-    Status get_status(const SlicingId id) const override;
+    void on_fdm_result(FDMResult&&, Domain::SlicingId) override;
+    void on_sla_result(const Domain::SlicingId&, SLAResult&&) override;
+    void on_sla_object(const Domain::SlicingId&, Sla::Object&&) override;
+    void on_status(const Status, Domain::SlicingId) override;
+    void on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_tower_geometry, const Domain::SlicingId id) override;
+    Status get_status(const Domain::SlicingId id) const override;
 
 private:
-    SlicingId get_process_id(const Domain::SelectionId bed_instance_id) const;
+    Domain::SlicingId get_process_id(const Domain::SelectionId bed_instance_id) const;
 
     void process_slicing_queue();
     void process_update_requests();
     int64_t get_active_processes_count() const;
-    void update_status(const SlicingId id, const Status status);
+    void update_status(const Domain::SlicingId id, const Status status);
     void create_process(
         Domain::Model& model,
         const Domain::ProjectMetadata& project_metadata,
         const Domain::Preset::SelectedPresetMetadata& preset_metadata,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
-        const SlicingId id
+        const Domain::SlicingId id
     );
 
     // WARNING: Do not reorder, if you do not know what you are doing!
     // Any members accessed by the threads must be destroyed after
     // the threads!
     mutable std::mutex m_status_mutex;
-    std::map<SlicingId, Status> m_statuses;
+    std::map<Domain::SlicingId, Status> m_statuses;
 
-    std::deque<SlicingId> m_slicing_queue;
-    std::map<SlicingId, UpdateRequest> m_update_requests;
+    std::deque<Domain::SlicingId> m_slicing_queue;
+    std::map<Domain::SlicingId, UpdateRequest> m_update_requests;
     Domain::SelectionId m_current_project_id{Domain::INVALID_ID};
     Platform::IMainThreadDispatcher& m_dispatcher;
-
     IThumbnailImageGenerator& m_thumbnail_image_generator;
-    std::future<ThumbnailImageResults> m_thumbnail_results;
 
     // Keep the threads last to be destroyed first.
-    std::map<SlicingId, BackgroundProcess> m_processes;
+    std::map<Domain::SlicingId, BackgroundProcess> m_processes;
 };
 
 } // namespace Slic3r::Biz::Slicing

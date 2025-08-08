@@ -22,7 +22,7 @@ using Slic3r::Biz::Slicing::Status;
 using Slic3r::Tests::get_cubes_model;
 using Slic3r::Tests::ModelOnBed;
 using Slic3r::Biz::Slicing::FDMResult;
-using Slic3r::Biz::Slicing::SlicingId;
+using Slic3r::Domain::SlicingId;
 using Slic3r::Domain::SelectionId;
 using Slic3r::Biz::Print::WipeTowerGeometry;
 using Slic3r::Tests::SlicingFixture;

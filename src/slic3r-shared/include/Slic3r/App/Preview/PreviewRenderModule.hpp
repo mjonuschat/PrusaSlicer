@@ -68,22 +68,22 @@ public:
         const Biz::Scene::BedSelection& selection
     ) override;
 
-    void on_fdm_result_cache_changed(const Biz::Slicing::SlicingId id) override
+    void on_fdm_result_cache_changed(const Domain::SlicingId id) override
     {
         update_fdm_viewer_data(id);
     }
 
-    void on_sla_result_cache_changed(const Biz::Slicing::SlicingId& id) override
+    void on_sla_result_cache_changed(const Domain::SlicingId& id) override
     {
         update_sla_viewer_result_data(id);
     }
 
-    void on_sla_object_cache_changed(const Biz::Slicing::SlicingId& id, Domain::ObjectID instance_id) override
+    void on_sla_object_cache_changed(const Domain::SlicingId& id, Domain::ObjectID instance_id) override
     {
         update_sla_viewer_object_data(id, instance_id);
     }
 
-    void on_status_cache_changed(const Biz::Slicing::SlicingId id) override;
+    void on_status_cache_changed(const Domain::SlicingId id) override;
 
     /**
      * @name Implementation of Biz::ISelectedProjectChangedListener public interface
@@ -159,10 +159,10 @@ private:
 private:
     void init_gizmos();
     void init_viewers(Render::Device& device);
-    void update_fdm_viewer_data(const Biz::Slicing::SlicingId id);
-    void update_sla_viewer_result_data(const Biz::Slicing::SlicingId id);
-    void update_sla_viewer_object_data(const Biz::Slicing::SlicingId id, Domain::ObjectID instance_id);
-    void update_sla_viewer_data(const Biz::Slicing::SlicingId id);
+    void update_fdm_viewer_data(const Domain::SlicingId id);
+    void update_sla_viewer_result_data(const Domain::SlicingId id);
+    void update_sla_viewer_object_data(const Domain::SlicingId id, Domain::ObjectID instance_id);
+    void update_sla_viewer_data(const Domain::SlicingId id);
     void init_scene_layout();
     void update_toolbar_visibility();
 

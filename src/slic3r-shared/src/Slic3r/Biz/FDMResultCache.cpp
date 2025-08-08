@@ -3,7 +3,7 @@
 
 namespace Slic3r::Biz {
 
-std::optional<FDMResultRef> FDMResultCache::get_result(const Slicing::SlicingId id) const
+std::optional<FDMResultRef> FDMResultCache::get_result(const Domain::SlicingId id) const
 {
     if (!m_results.contains(id)) {
         return std::nullopt;
@@ -13,7 +13,7 @@ std::optional<FDMResultRef> FDMResultCache::get_result(const Slicing::SlicingId 
 
 void FDMResultCache::on_fdm_result_changed(
     Slicing::FDMResult&& result,
-    const Slicing::SlicingId id
+    const Domain::SlicingId id
 )
 {
     m_results[id] = std::move(result);

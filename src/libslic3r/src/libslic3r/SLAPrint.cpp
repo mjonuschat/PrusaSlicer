@@ -1192,7 +1192,7 @@ void SLAPrint::process()
 
 }
 
-void SLAPrint::slice() {
+void SLAPrint::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator&) {
     this->process();
     this->finalize();
     this->cleanup();
@@ -1560,7 +1560,7 @@ using namespace Slic3r::Biz::Slicing;
 void Slic3r::export_print(
     const std::string& fname,
     SLAResult& data,
-    const ThumbnailsList& thumbnails,
+    const Domain::Images& thumbnails,
     const std::string& projectname
 )
 {

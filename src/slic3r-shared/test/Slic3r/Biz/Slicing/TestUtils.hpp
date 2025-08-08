@@ -37,7 +37,7 @@ ModelOnBed get_cubes_model(const int count, const int row_size);
 
 struct StatusEvent {
     Biz::Slicing::Status status;
-    Biz::Slicing::SlicingId slicing_id;
+    Domain::SlicingId slicing_id;
 };
 
 std::ostream& operator<<(std::ostream& output, const StatusEvent& status_event);
@@ -47,7 +47,7 @@ bool operator==(const StatusEvent& a, const StatusEvent& b);
 using StatusEvents = std::vector<StatusEvent>;
 
 struct StatusListener : public Biz::Slicing::IStatusListener {
-    virtual void on_status_changed(const Biz::Slicing::Status status, const Biz::Slicing::SlicingId id) override {
+    virtual void on_status_changed(const Biz::Slicing::Status status, const Domain::SlicingId id) override {
         status_events.push_back(StatusEvent{status, id});
     }
 
@@ -66,7 +66,7 @@ struct ResultListener : public Biz::Slicing::IFDMResultListener
 {
     void on_fdm_result_changed(
         Biz::Slicing::FDMResult&& result,
-        const Biz::Slicing::SlicingId id
+        const Domain::SlicingId id
     ) override;
 
     GCodes gcodes;
