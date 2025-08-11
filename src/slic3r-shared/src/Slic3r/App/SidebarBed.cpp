@@ -131,7 +131,7 @@ void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
                                                      .at(new_selection);
 
     m_logical_printer_button->set_printer_name(preset_item.name);
-    m_logical_printer_button->set_preset_name(preset_item.hw_pritner_config_name);
+    m_logical_printer_button->set_preset_name(preset_item.hw_printer_config_name);
 }
 
 void SidebarBed::on_selected_bed_instances_changed(

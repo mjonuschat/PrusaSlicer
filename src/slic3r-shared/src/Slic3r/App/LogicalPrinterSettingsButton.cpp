@@ -23,7 +23,7 @@ LogicalPrinterSettingsButton::LogicalPrinterSettingsButton(
 void LogicalPrinterSettingsButton::on_data_update()
 {
     set_printer_name(m_state->name);
-    set_preset_name(m_state->hw_pritner_config_name);
+    set_preset_name(m_state->hw_printer_config_name);
     set_icon(Render::Icon::PrinterNEXT);
 }
 

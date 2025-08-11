@@ -66,7 +66,7 @@ struct PresetItem
     std::string id;
     std::string name;
     std::string hw_printer_config_id;
-    std::string hw_pritner_config_name;
+    std::string hw_printer_config_name;
 };
 
 using PresetItemObservableList         = ObservableListWithSelection<PresetItem>;
@@ -134,7 +134,10 @@ public:
         return m_material_presets;
     }
 
-    void select_printer_preset(const std::string& printer_preset_id);
+    void select_printer_preset(
+        const std::string& printer_hw_config_id,
+        const std::string& printer_preset_id
+    );
     void select_print_preset(const std::string& id);
     void select_tool_print_preset(size_t tool_index, const std::string& id);
     void select_material_preset(size_t material_index, const std::string& id);
@@ -214,6 +217,7 @@ private:
     const std::string& selected_hw_config_id() const;
     void fill_config_container_with_selected_preset(
         Domain::ConfigContainer& cc,
+        const std::string& printer_hw_config_id,
         const std::string& printer_preset_id
     );
     void fill_printer_presets();

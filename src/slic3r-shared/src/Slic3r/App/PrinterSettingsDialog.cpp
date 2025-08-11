@@ -97,23 +97,24 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
     auto factory = Yoga::ViewFactory<
         LogicalPrinterSettingsButton,
         Biz::Preset::PresetItem,
-        LogicalPrinterSettingsButton::FnIndexClicked>([this](size_t index) {
-        m_stack_layout->set_current_index(1);
-        for (size_t button_index = 0; button_index < m_printer_list_view->item_count(); ++button_index)
+        LogicalPrinterSettingsButton::FnIndexClicked>(
+        [this](size_t index)
         {
-            LogicalPrinterSettingsButton* button = dynamic_cast<LogicalPrinterSettingsButton*>(
-                m_printer_list_view->get_item(button_index)
-            );
-            ASSERT(button);
-
-            if (index == button_index && !button->checked()) {
-                m_project_interactor.preset_interactor().select_printer_preset(
-                    m_project_interactor.preset_interactor().printer_presets().items().at(index).id
+            m_stack_layout->set_current_index(1);
+            for (size_t button_index = 0; button_index < m_printer_list_view->item_count();
+                 ++button_index)
+            {
+                LogicalPrinterSettingsButton* button = dynamic_cast<LogicalPrinterSettingsButton*>(
+                    m_printer_list_view->get_item(button_index)
                 );
+                ASSERT(button);
+                button->set_checked(index == button_index);
             }
-            button->set_checked(index == button_index);
+            auto& preset_interactor = m_project_interactor.preset_interactor();
+            const auto& item        = preset_interactor.printer_presets().items().at(index);
+            preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
         }
-    });
+    );
     m_printer_list_view = scroll_area->emplace_back<PrinterListView>(std::move(factory));
     m_printer_list_view->set_flex_grow(1);
     m_printer_list_view->set_padding(Paddings(0, 0, 10, 0));

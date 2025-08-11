@@ -2,15 +2,18 @@
 
 namespace Slic3r::Domain::Preset {
 
-const EvaluatedPrinterPreset* Bundle::find_printer_preset_by_id(const std::string& id) const
+const EvaluatedPrinterPreset* Bundle::find_printer_preset(
+    const std::string& printer_hw_config_id,
+    const std::string& printer_preset_id
+) const
 {
-    for (const auto& [_, v] : evaluated_presets) {
-        auto it = std::ranges::find_if(v, [&id](const EvaluatedPrinterPreset& p) {
-            return p.preset.id == id;
-        });
-        if (it != v.end())
-            return &*it;
-    }
+    const auto& printer_presets = evaluated_presets.at(printer_hw_config_id);
+
+    auto it = std::ranges::find_if(printer_presets, [&printer_preset_id](const EvaluatedPrinterPreset& p) {
+        return p.preset.id == printer_preset_id;
+    });
+    if (it != printer_presets.end())
+        return &*it;
     return nullptr;
 }
 

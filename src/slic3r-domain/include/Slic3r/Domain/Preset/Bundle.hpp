@@ -31,7 +31,10 @@ struct Bundle
     PrinterConfigs printer_configs;
     EvaluatedPrinterPresets evaluated_presets;
 
-    const EvaluatedPrinterPreset* find_printer_preset_by_id(const std::string& id) const;
+    const EvaluatedPrinterPreset* find_printer_preset(
+        const std::string& printer_hw_config_id,
+        const std::string& printer_preset_id
+    ) const;
 };
 
 }
