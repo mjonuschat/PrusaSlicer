@@ -52,23 +52,16 @@ std::unique_ptr<CompressedImageBuffer> compress_thumbnail_png(const Domain::Imag
         4,
         &out->size,
         MZ_DEFAULT_LEVEL,
-        1
+        false
     );
     return out;
 }
 
 std::unique_ptr<CompressedImageBuffer> compress_thumbnail_jpg(const Domain::Image& thumbnail)
 {
-    // Take vector of RGBA pixels and flip the image vertically
-    std::vector<unsigned char> rgba_pixels(thumbnail.pixels.size());
+    // This might be useless, but the C api takes non const ptrs, so better be safe.
+    std::vector<unsigned char> rgba_pixels(thumbnail.pixels);
     const unsigned int row_size = thumbnail.width() * 4;
-    for (unsigned int y = 0; y < thumbnail.height(); ++y) {
-        ::memcpy(
-            rgba_pixels.data() + (thumbnail.height() - y - 1) * row_size,
-            thumbnail.pixels.data() + y * row_size,
-            row_size
-        );
-    }
 
     // Store pointers to scanlines start for later use
     std::vector<unsigned char*> rows_ptrs;
@@ -117,19 +110,9 @@ std::unique_ptr<CompressedImageBuffer> compress_thumbnail_qoi(const Domain::Imag
     desc.channels   = 4;
     desc.colorspace = QOI_SRGB;
 
-    // Take vector of RGBA pixels and flip the image vertically
-    std::vector<uint8_t> rgba_pixels(thumbnail.pixels.size() * 4);
-    size_t row_size = thumbnail.width() * 4;
-    for (size_t y = 0; y < thumbnail.height(); ++y)
-        memcpy(
-            rgba_pixels.data() + (thumbnail.height() - y - 1) * row_size,
-            thumbnail.pixels.data() + y * row_size,
-            row_size
-        );
-
     auto out = std::make_unique<CompressedQOI>();
     int size;
-    out->data = qoi_encode((const void*) rgba_pixels.data(), &desc, &size);
+    out->data = qoi_encode((const void*) thumbnail.pixels.data(), &desc, &size);
     out->size = size;
     return out;
 }

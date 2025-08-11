@@ -33,9 +33,6 @@
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
-#if ENABLE_DEBUG_EXPORT_TO_PNG
-#include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
-#endif // ENABLE_DEBUG_EXPORT_TO_PNG
 
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/CubeView.hpp"
@@ -1254,30 +1251,6 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
 {
     if (!m_gizmo_manager->on_scene_keyboard_event(e))
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
-
-#if ENABLE_DEBUG_EXPORT_TO_PNG
-    Scene::CameraProjectionType camera_type = Scene::CameraProjectionType::Orthographic;
-    const Domain::Project& project          = m_project_interactor.selected_project();
-    ThumbnailRenderer renderer(*m_device);
-
-    // test code to simulate generation of thumbnails for gallery
-    {
-        if (!project.model().objects.empty()) {
-            Render::Images images = renderer.generate_object_thumbnails(
-                *project.model().objects.front(),
-                {{256, 256}},
-                camera_type
-            );
-
-            std::string name = fmt::format(
-                "thumbnail_object_{}",
-                project.model().objects.front()->id().id
-            );
-            std::string path_prefix = fmt::format("C:/test/{}", name);
-            Render::export_to_png_file(images, path_prefix);
-        }
-    }
-#endif // ENABLE_DEBUG_EXPORT_TO_PNG
 }
 
 void PlaterRenderModule::on_activated()
