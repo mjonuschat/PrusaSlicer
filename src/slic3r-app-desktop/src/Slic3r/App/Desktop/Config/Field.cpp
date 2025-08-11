@@ -51,23 +51,6 @@ namespace Slic3r::App::Desktop::Config {
 using WX::_L;
 using WX::_;
 
-ThumbnailErrors validate_thumbnails_string(wxString& str, const wxString& def_ext = WX::from_u8("PNG"))
-{
-    std::string input_string = WX::into_u8(str);
-
-    str.Clear();
-
-    auto [thumbnails_list, errors] = GCodeThumbnails::make_and_check_thumbnail_list(input_string);
-    if (!thumbnails_list.empty()) {
-        const auto& extentions = ConfigOptionEnum<GCodeThumbnailsFormat>::get_enum_names();
-        for (const auto& [format, size] : thumbnails_list)
-            str += WX::format_wxstr("%1%x%2%/%3%, ", size.x(), size.y(), extentions[int(format)]);
-        str.resize(str.Len() - 2);
-    }
-
-    return errors;
-}
-
 Field::Field(const ConfigOptionDef& opt, const t_config_option_key& id) : m_opt(opt), m_opt_id(id)
 {
     localization().add_listener<ILanguageChangedListener>(this);
@@ -395,32 +378,6 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                 }
 				else
 					set_value(stVal, false); // it's no needed but can be helpful, when inputted value contained "," instead of "."
-            }
-        }
-
-        if (m_opt.opt_key == "thumbnails") {
-            wxString str_out = str;
-            ThumbnailErrors errors = validate_thumbnails_string(str_out);
-            if (errors != enum_bitmask<ThumbnailError>()) {
-                set_value(str_out, true);
-                wxString error_str;
-                if (errors.has(ThumbnailError::InvalidVal))
-                    error_str += WX::format_wxstr(_L("Invalid input format. Expected vector of dimensions in the following format: \"%1%\""), "XxY/EXT, XxY/EXT, ...");
-                if (errors.has(ThumbnailError::OutOfRange)) {
-                    if (!error_str.empty())
-                        error_str += WX::from_u8("\n\n");
-                    error_str += _L("Input value is out of range");
-                }
-                if (errors.has(ThumbnailError::InvalidExt)) {
-                    if (!error_str.empty())
-                        error_str += WX::from_u8("\n\n");
-                    error_str += _L("Some extension in the input is invalid");
-                }
-                WX::ErrorDialog(m_parent, error_str, false).ShowModal();
-            }
-            else if (str_out != str) {
-                str = str_out;
-                set_value(str, true);
             }
         }
 

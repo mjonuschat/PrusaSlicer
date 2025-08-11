@@ -51,10 +51,9 @@ TEST_CASE("Archive export test", "[sla_archives]") {
         print.apply(m, cfg, serialized_config);
         print.process();
 
-        ThumbnailsList thumbnails;
         auto outputfname = std::string("output_") + pname + ".sl1";
 
-        export_print(outputfname, sla_result, thumbnails, pname);
+        export_print(outputfname, sla_result, {}, pname);
 
         // Not much can be checked about the archives...
         REQUIRE(boost::filesystem::exists(outputfname));

@@ -16,7 +16,9 @@
 namespace Slic3r {
     struct ConfigSubstitutionContext;
     class DynamicPrintConfig;
-    struct ThumbnailData;
+    namespace Domain {
+        class Image;
+    }
 }
 
 namespace Slic3rLegacy {
@@ -77,7 +79,7 @@ namespace Slic3rLegacy {
         bool fullpath_sources,
         const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
         const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
-        const Slic3r::ThumbnailData* thumbnail_data = nullptr,
+        const Slic3r::Domain::Image* thumbnail_data = nullptr,
         bool zip64 = true
     );
 

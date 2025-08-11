@@ -13,6 +13,7 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/SlicingId.hpp"
 
 #include "libslic3r/PrintBase.hpp"
 
@@ -55,24 +56,6 @@ private:
     std::string m_id;
 };
 
-struct SlicingId {
-    Domain::SelectionId project_id{};
-    Domain::SelectionId bed_instance_id{};
-
-    bool operator<(const SlicingId& other) const {
-        if (project_id != other.project_id) {
-            return project_id < other.project_id;
-        }
-        return bed_instance_id < other.bed_instance_id;
-    }
-
-    bool operator==(const SlicingId& b) const {
-        return bed_instance_id == b.bed_instance_id && project_id == b.project_id;
-    }
-};
-
-std::ostream& operator<<(std::ostream& output, const SlicingId& id);
-
 enum class Status
 {
     Empty,
@@ -94,12 +77,12 @@ using FDMResult = libpgcode::ProcessorResult;
 
 class IProcessCallbacks {
 public:
-    virtual void on_fdm_result(FDMResult &&, SlicingId) = 0;
-    virtual void on_sla_result(const SlicingId&, SLAResult&&) = 0;
-    virtual void on_sla_object(const SlicingId&, Sla::Object&&) = 0;
-    virtual void on_status(const Status, SlicingId) = 0;
-    virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, SlicingId) = 0;
-    virtual Status get_status(const SlicingId) const = 0;
+    virtual void on_fdm_result(FDMResult &&, Domain::SlicingId) = 0;
+    virtual void on_sla_result(const Domain::SlicingId&, SLAResult&&) = 0;
+    virtual void on_sla_object(const Domain::SlicingId&, Sla::Object&&) = 0;
+    virtual void on_status(const Status, Domain::SlicingId) = 0;
+    virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, Domain::SlicingId) = 0;
+    virtual Status get_status(const Domain::SlicingId) const = 0;
     virtual ~IProcessCallbacks() = default;
 };
 
@@ -113,7 +96,7 @@ public:
         Domain::Preset::SelectedPresetMetadata&& preset_metadata,
         Domain::ConfigPack&& config,
         const Domain::BedInstance& bed,
-        const SlicingId id
+        const Domain::SlicingId id
     );
     BackgroundProcess(
         std::unique_ptr<Print::IPrint>&& print,
@@ -123,7 +106,7 @@ public:
         Domain::Preset::SelectedPresetMetadata&& preset_metadata,
         Domain::ConfigPack&& config,
         const Domain::BedInstance& bed,
-        const SlicingId id
+        const Domain::SlicingId id
     );
     ~BackgroundProcess();
 
@@ -136,7 +119,7 @@ public:
         const Domain::BedInstance& bed
     );
 
-    void slice();
+    void slice(IThumbnailImageGenerator& thumbnail_generator);
     void stop();
 
     Domain::PrinterTechnology get_printer_technology() const;
@@ -146,7 +129,7 @@ private:
     std::unique_ptr<Print::IPrint> m_print;
     std::function<void(Status)> m_on_status;
     std::function<Status()> m_get_status;
-    SlicingId m_id;
+    Domain::SlicingId m_id;
 
     JThread::JThread m_thread;
     JThread::JThread m_helper_thread;

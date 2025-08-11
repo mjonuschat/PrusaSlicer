@@ -74,12 +74,6 @@ std::shared_ptr<Render::Texture> BedRenderHelper::texture(const std::string& lab
         mipmaps.emplace_back(half_sampled(mipmaps.back()));
     }
 
-#if ENABLE_DEBUG_EXPORT_TO_PNG
-    std::string name = fmt::format("bed_label_{}", label);
-    std::string path_prefix = fmt::format("C:/test/{}", name);
-    Render::export_to_png_file(mipmaps, path_prefix);
-#endif // ENABLE_DEBUG_EXPORT_TO_PNG
-
     std::string texture_name = "bed_label_" + label;
     if (color.has_value()) {
         texture_name += "_" + std::to_string(color->r_uchar());

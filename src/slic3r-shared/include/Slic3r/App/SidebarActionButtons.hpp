@@ -25,7 +25,7 @@ public:
     void on_init(Biz::ProjectInteractor* project_interactor);
 
 protected:
-    Biz::Slicing::SlicingId active_bed_slicing_id() const;
+    Domain::SlicingId active_bed_slicing_id() const;
     bool slice_allowed() const;
     void navigate_to_other();
 

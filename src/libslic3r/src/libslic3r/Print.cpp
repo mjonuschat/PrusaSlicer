@@ -23,12 +23,14 @@
 #include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
+#include "Slic3r/Domain/SlicingId.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Brim.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Extruder.hpp"
 #include "libslic3r/Flow.hpp"
+#include "libslic3r/GCode/Thumbnails.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/I18N.hpp"
 #include "libslic3r/ShortestPath.hpp"
@@ -811,7 +813,7 @@ void Print::process()
 // The export_gcode may die for various reasons (fails to process output_filename_format,
 // write error into the G-code, cannot execute post-processing scripts).
 // It is up to the caller to show an error message.
-Biz::libpgcode::ProcessorResult Print::process_gcode(ThumbnailsGeneratorCallback thumbnail_cb)
+Biz::libpgcode::ProcessorResult Print::process_gcode()
 {
     // output everything to a G-code file
     // The following call may die if the output_filename_format template substitution fails.
@@ -820,7 +822,7 @@ Biz::libpgcode::ProcessorResult Print::process_gcode(ThumbnailsGeneratorCallback
 
     // Create GCode on heap, it has quite a lot of data.
     std::unique_ptr<GCodeGenerator> gcode(new GCodeGenerator(const_cast<const Print*>(this)));
-    Biz::libpgcode::ProcessorResult result{gcode->do_export(this, m_serialized_config, thumbnail_cb)};
+    Biz::libpgcode::ProcessorResult result{gcode->do_export(this, m_serialized_config)};
 
     if (m_conflict_result.has_value())
         result.conflict_result = *m_conflict_result;
@@ -830,15 +832,51 @@ Biz::libpgcode::ProcessorResult Print::process_gcode(ThumbnailsGeneratorCallback
     return result;
 }
 
-void Print::slice()
+namespace {
+Thumbnails request_thumbnails(
+    const Domain::SlicingId& slicing_id,
+    const std::string& thumbnails_request,
+    Biz::Slicing::IThumbnailImageGenerator& thumbnail_generator
+)
 {
+    using GCodeThumbnails::parse_request;
+    using GCodeThumbnails::RequestParsingResult;
+
+    const tl::expected<RequestParsingResult, ThumbnailErrors> request_data{
+        parse_request(thumbnails_request)
+    };
+
+    if (!request_data.has_value()) {
+        std::string error_str = format("Invalid thumbnails value:");
+        error_str += GCodeThumbnails::get_error_string(request_data.error());
+        throw Slic3r::ExportError(error_str);
+    }
+
+    Biz::Slicing::ThumbnailImageRequest request{
+        ThumbnailType::SlicingBed,
+        Biz::Slicing::ThumbnailParams{
+            .project_id      = slicing_id.project_id,
+            .bed_instance_id = slicing_id.bed_instance_id,
+            .pixel_format    = Domain::PixelFormat::RGBA8,
+            .sizes           = request_data->sizes
+        }
+    };
+
+    return {thumbnail_generator.enqueue_thumbnail_requests({request}), request_data->formats};
+}
+} // namespace
+
+void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator& thumbnail_generator)
+{
+    thumbnails = request_thumbnails(slicing_id, config().get<std::string>("thumbnails"), thumbnail_generator);
+
     ASSERT(
         !this->is_step_done(psGCodeExport),
         "An earlier return should happen, if the whole thing is already finnished!"
     );
     this->process();
     m_on_fdm_result(Biz::Print::get_result_preview(*this));
-    Biz::libpgcode::ProcessorResult result{this->process_gcode(nullptr)};
+    Biz::libpgcode::ProcessorResult result{this->process_gcode()};
     m_on_fdm_result(std::move(result));
     this->finalize();
     this->cleanup();

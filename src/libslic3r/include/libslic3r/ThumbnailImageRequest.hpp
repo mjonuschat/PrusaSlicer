@@ -2,12 +2,12 @@
 
 #include "Slic3r/Domain/PixelFormat.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
-#include "Slic3r/Biz/ThumbnailType.hpp"
+#include "libslic3r/ThumbnailType.hpp"
 #include "Slic3r/Domain/Size.hpp"
 
 #include <vector>
 
-namespace Slic3r::Biz {
+namespace Slic3r::Biz::Slicing {
 
 struct ThumbnailParams
 {

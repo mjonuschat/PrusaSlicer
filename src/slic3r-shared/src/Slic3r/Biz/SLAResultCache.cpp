@@ -7,6 +7,7 @@
 
 using namespace Slic3r::Biz;
 using namespace Slic3r::Biz::Slicing;
+using Slic3r::Domain::SlicingId;
 
 SLAResultOptRef SLAResultCache::get_result(const SlicingId& id) const
 {

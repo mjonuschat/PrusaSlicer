@@ -59,12 +59,6 @@ TextImageGenerator::TextImageGenerator(const std::string& font_filename, uint8_t
             m_atlas.bitmap[px_rgba + 3] = packed_atlas[px_base];
         }
     }
-
-#if ENABLE_DEBUG_EXPORT_TO_PNG
-    std::vector<uint8_t> rgba = m_atlas.bitmap;
-    Image image(PixelFormat::RGBA8, m_atlas.width, m_atlas.height, std::move(rgba));
-    export_to_png_file(image, "C:/test/font_atlas");
-#endif // ENABLE_DEBUG_EXPORT_TO_PNG
 }
 
 Domain::Image TextImageGenerator::to_image(const std::string& text, uint8_t padding_x, uint8_t padding_y, const std::optional<Domain::ColorRGB>& color)

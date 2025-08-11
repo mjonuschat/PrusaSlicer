@@ -2,6 +2,7 @@
 #include "MainFrame.hpp"
 #include "AppInstanceCheck.hpp"
 #include "SecretStoreFactory.hpp"
+#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
 
 #include <Slic3r/Log.hpp>
@@ -101,13 +102,20 @@ bool DesktopApp::OnInit()
         std::make_unique<JobManager>(platform_services.main_thread_dispatcher())
     );
 
-    m_thumbnail_image_provider = std::make_unique<Biz::ThumbnailImageProvider>();
+    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{std::make_shared<Plater::ThumbnailImageGenerator>()};
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(
         m_workbench,
         platform_services.main_thread_dispatcher(),
-        *m_thumbnail_image_provider
+        *thumbnail_image_generator
     );
+
+    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(
+        *m_project_interactor
+    );
+
+    std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<
+        App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
 
     auto& preset_interactor = m_project_interactor->preset_interactor();
 
@@ -116,29 +124,20 @@ bool DesktopApp::OnInit()
     fs::path config_dir        = fs::path{data_dir()} / "configs";
     preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
-    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(
-        *m_project_interactor
-    );
-    std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<
-        App::ThumbnailStoreUpdater>(*m_thumbnail_image_provider, thumbnail_store);
-
-    std::shared_ptr<App::SharedThumbnailImageGenerator>
-        shared_thumbnail_image_generator = std::make_shared<App::SharedThumbnailImageGenerator>();
 
     m_plater_module = std::make_unique<Plater::PlaterRenderModule>(
         m_workbench,
         *m_project_interactor,
-        *m_thumbnail_image_provider,
         thumbnail_store,
         thumbnail_store_updater,
-        shared_thumbnail_image_generator
+        thumbnail_image_generator
     );
     m_preview_module = std::make_unique<Preview::PreviewRenderModule>(
         m_workbench,
         *m_project_interactor,
         thumbnail_store,
         thumbnail_store_updater,
-        shared_thumbnail_image_generator
+        thumbnail_image_generator
     );
 
     DialogManagerProvider::instance().set_dialog_manager_implementation(

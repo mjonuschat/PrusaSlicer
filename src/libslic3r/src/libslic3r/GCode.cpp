@@ -721,8 +721,7 @@ GCodeGenerator::GCodeGenerator(const Print* print) :
 
 Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
     Print* print,
-    const Biz::Print::SerializedConfig& serialized_config,
-    ThumbnailsGeneratorCallback thumbnail_cb
+    const Biz::Print::SerializedConfig& serialized_config
 )
 {
     using namespace Biz::libpgcode;
@@ -751,7 +750,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
     Processor processor(std::move(processor_config));
     GCodeOutputStream file(processor);
 
-    this->_do_export(*print, file, serialized_config, thumbnail_cb);
+    this->_do_export(*print, file, serialized_config);
 
     if (! m_placeholder_parser_integration.failed_templates.empty()) {
         // G-code export proceeded, but some of the PlaceholderParser substitutions failed.
@@ -1018,8 +1017,7 @@ static inline std::optional<std::string> find_M84(const std::string &gcode) {
 void GCodeGenerator::_do_export(
     Print& print,
     GCodeOutputStream& file,
-    const Biz::Print::SerializedConfig& serialized_config,
-    ThumbnailsGeneratorCallback thumbnail_cb
+    const Biz::Print::SerializedConfig& serialized_config
 )
 {
     std::string prepared_by_info;
@@ -1091,19 +1089,19 @@ void GCodeGenerator::_do_export(
         file.write_format("; prepared by %s\n", prepared_by_info.c_str());
     file.write_format("\n");
 
-    // if exporting gcode in ascii format, generate the thumbnails here
-    auto [thumbnails, errors] = GCodeThumbnails::make_and_check_thumbnail_list(print.config());
+    if (print.thumbnails.raw_data.valid()) {
+        Biz::Slicing::ThumbnailImageResults thumbnails{print.thumbnails.raw_data.get()};
 
-    if (errors != Domain::enum_bitmask<ThumbnailError>()) {
-        std::string error_str = format("Invalid thumbnails value:");
-        error_str += GCodeThumbnails::get_error_string(errors);
-        throw Slic3r::ExportError(error_str);
+        if (!thumbnails.empty() && !thumbnails.front().images.empty()) {
+            ASSERT(thumbnails.size() == 1);
+            GCodeThumbnails::export_thumbnails_to_file(
+                std::move(thumbnails.front()),
+                print.thumbnails.formats,
+                [&file](const char* sz) { file.write(sz); },
+                [&print]() { print.throw_if_canceled(); }
+            );
+        }
     }
-
-    if (!thumbnails.empty())
-        GCodeThumbnails::export_thumbnails_to_file(thumbnail_cb, thumbnails,
-            [&file](const char* sz) { file.write(sz); },
-            [&print]() { print.throw_if_canceled(); });
 
     // Write notes (content of the Print Settings tab -> Notes)
     {

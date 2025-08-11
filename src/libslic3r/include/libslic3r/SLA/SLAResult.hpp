@@ -4,12 +4,12 @@
 #include <optional>
 
 #include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Domain/Image.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
 
 #include "libslic3r/ConfigViews.hpp"
-#include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/SerializedConfig.hpp"
 
 namespace Slic3r::Biz::Slicing {
@@ -129,9 +129,7 @@ struct SLAResult
     // It is generated as the last operation of the slicing
     Sla::OutputFiles files; // count files == slices.size()
 
-    // At the moment it is generated at frontend but it is tendenco to change it
-    // So it could be emty
-    ThumbnailsList thumbnails;
+    Domain::Images thumbnails;
 
     // upload_job.upload_data.upload_path.filename()
     std::string project_name;

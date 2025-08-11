@@ -9,6 +9,10 @@
 
 namespace Slic3r::App {
 
+using Biz::Slicing::ThumbnailImageRequest;
+using Biz::Slicing::ThumbnailImageRequests;
+using Biz::Slicing::ThumbnailImageResults;
+
 void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const Domain::BedRefs& bed_refs)
 {
     static const Domain::Size SIZE = {256, 256};
@@ -16,12 +20,12 @@ void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const
     if (m_thumbnail_results.valid())
         return;
 
-    Biz::ThumbnailImageRequests requests;
+    ThumbnailImageRequests requests;
     requests.reserve(bed_refs.size() + 1);
 
     // thumbnails for object list
     for (const auto& bed_ref : bed_refs) {
-        Biz::ThumbnailImageRequest& request = requests.emplace_back(Biz::ThumbnailImageRequest());
+        ThumbnailImageRequest& request = requests.emplace_back(ThumbnailImageRequest());
         request.type                        = Biz::ThumbnailType::SceneBed;
         request.params.project_id           = project_id;
         request.params.bed_instance_id      = bed_ref.instance_id;
@@ -30,14 +34,14 @@ void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const
     }
 
     // thumbnails for 3mf
-    Biz::ThumbnailImageRequest& request = requests.emplace_back(Biz::ThumbnailImageRequest());
+    ThumbnailImageRequest& request = requests.emplace_back(ThumbnailImageRequest());
     request.type                        = Biz::ThumbnailType::Scene;
     request.params.project_id           = project_id;
     request.params.bed_instance_id      = 0;
     request.params.pixel_format         = Domain::PixelFormat::RGBA8;
     request.params.sizes                = {SIZE};
 
-    m_thumbnail_results = m_thumbnail_image_provider.generate_thumbnails(requests);
+    m_thumbnail_results = m_thumbnail_image_generator.enqueue_thumbnail_requests(requests);
 }
 
 void ThumbnailStoreUpdater::update(Render::Device& device, ThumbnailUpdateCallback callback)
@@ -45,7 +49,7 @@ void ThumbnailStoreUpdater::update(Render::Device& device, ThumbnailUpdateCallba
     if (m_thumbnail_results.valid()) {
         std::future_status status = m_thumbnail_results.wait_for(std::chrono::milliseconds(5));
         if (status == std::future_status::ready) {
-            Biz::ThumbnailImageResults thumbnail_results = m_thumbnail_results.get();
+            ThumbnailImageResults thumbnail_results = m_thumbnail_results.get();
             if (!thumbnail_results.empty()) {
                 // all results have the same project_id, so we can use the first one
                 Domain::SelectionId project_id = thumbnail_results.front().project_id;

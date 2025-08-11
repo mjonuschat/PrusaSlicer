@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Slic3r/Biz/IThumbnailImageGenerator.hpp"
+#include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
+#include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
 
 #include <deque>
@@ -19,31 +20,27 @@ class Device;
 
 namespace Slic3r::App::Plater {
 
-class ThumbnailImageGenerator : public Biz::IThumbnailImageGenerator
+class ThumbnailImageGenerator : public Biz::Slicing::IThumbnailImageGenerator
 {
 public:
-    ThumbnailImageGenerator(
+    void init(
         const Domain::Workbench& workbench,
         Render::Device& device,
         Scene::IProjectSceneProvider& scene_provider
-    ) :
-        m_workbench(workbench),
-        m_device(device),
-        m_scene_provider(scene_provider),
-        m_renderer(device)
-    {}
+    );
 
-    void enqueue_thumbnail_requests(
-        const Biz::ThumbnailImageRequests& requests,
-        std::promise<Biz::ThumbnailImageResults>&& promise
+    std::future<Biz::Slicing::ThumbnailImageResults> enqueue_thumbnail_requests(
+        const Biz::Slicing::ThumbnailImageRequests& requests
     ) override;
     void handle_enqueued_requests() override;
+
+    bool initialized() const;
 
 private:
     struct Item
     {
-        Biz::ThumbnailImageRequests requests;
-        std::promise<Biz::ThumbnailImageResults> promise;
+        Biz::Slicing::ThumbnailImageRequests requests;
+        std::promise<Biz::Slicing::ThumbnailImageResults> promise;
 
         bool operator==(const Item& other) const
         {
@@ -51,10 +48,10 @@ private:
         }
     };
 
-    const Domain::Workbench& m_workbench;
-    Render::Device& m_device;
-    Scene::IProjectSceneProvider& m_scene_provider;
-    ThumbnailRenderer m_renderer;
+    const Domain::Workbench* m_workbench{nullptr};
+    Render::Device* m_device{nullptr};
+    Scene::IProjectSceneProvider* m_scene_provider{nullptr};
+    std::unique_ptr<ThumbnailRenderer> m_renderer;
     std::deque<Item> m_queue;
 };
 

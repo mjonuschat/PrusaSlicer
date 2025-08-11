@@ -39,7 +39,6 @@
 #include "libslic3r/GCode/Wipe.hpp"
 #include "libslic3r/GCode/WipeTowerIntegration.hpp"
 #include "libslic3r/GCode/SeamPlacer.hpp"
-#include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/GCode/Travels.hpp"
 #include "EdgeGrid.hpp"
 #include "tcbspan/span.hpp"
@@ -114,8 +113,7 @@ public:
     // throws CanceledException through print->throw_if_canceled().
     Biz::libpgcode::ProcessorResult do_export(
         Print* print,
-        const Biz::Print::SerializedConfig& serialized_config,
-        ThumbnailsGeneratorCallback thumbnail_cb = nullptr
+        const Biz::Print::SerializedConfig& serialized_config
     );
 
     // Exported for the helper classes (OozePrevention, Wipe) and for the Perl binding for unit tests.
@@ -215,8 +213,7 @@ private:
     void _do_export(
         Print& print,
         GCodeOutputStream& file,
-        const Biz::Print::SerializedConfig& serialized_config,
-        ThumbnailsGeneratorCallback thumbnail_cb
+        const Biz::Print::SerializedConfig& serialized_config
     );
 
     static ObjectsLayerToPrint         		                     collect_layers_to_print(const PrintObject &object);

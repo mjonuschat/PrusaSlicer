@@ -155,32 +155,6 @@ void flip_vertical(Image& image)
     }
 }
 
-#if ENABLE_DEBUG_EXPORT_TO_PNG
-void export_to_png_file(const Image& image, const std::string& path_prefix)
-{
-    int w                = image.width();
-    int h                = image.height();
-    int comp             = int(image.channel_count());
-    int stride_bytes     = int(w * image.pixel_size());
-    std::string filename = path_prefix + "_" + std::to_string(w) + "_" + std::to_string(h) + ".png";
-
-    std::filesystem::path out(filename);
-    out.remove_filename();
-    if (!std::filesystem::exists(out))
-        std::filesystem::create_directories(out);
-
-    if (stbi_write_png(filename.c_str(), w, h, comp, image.data(), stride_bytes) == 0)
-        PANIC("Unable to save thumbnail to file: " + filename);
-}
-
-void export_to_png_file(const Images& images, const std::string& path_prefix)
-{
-    for (const auto& image : images) {
-        export_to_png_file(image, path_prefix);
-    }
-}
-#endif // ENABLE_DEBUG_EXPORT_TO_PNG
-
 void fill(Image& image, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
     const size_t n_channels = channel_count(image);

@@ -26,7 +26,7 @@ using Slic3r::Domain::ModelInstanceList;
 
 using LogEntry = std::pair<time_point, Status>;
 using LogEntries = std::vector<LogEntry>;
-using Slic3r::Biz::Slicing::SlicingId;
+using Slic3r::Domain::SlicingId;
 
 struct StatusLog : IProcessCallbacks
 {
@@ -130,7 +130,7 @@ public:
         precise_sleep(this->apply_time);
         return ApplyStatus::changed;
     }
-    void slice() override
+    void slice(Slic3r::Domain::SlicingId, Slic3r::Biz::Slicing::IThumbnailImageGenerator&) override
     {
         const auto start{high_resolution_clock::now()};
         while (true) {
@@ -178,7 +178,8 @@ TEST_CASE("Test process slice() returns immediately", "[background-process][slic
         SlicingId{}
     };
 
-    const auto execution_time{measure_execution_time([&]() { process.slice(); })};
+    Slic3r::Tests::MockThumbnailImageGenerator thumbnail_generator;
+    const auto execution_time{measure_execution_time([&]() { process.slice(thumbnail_generator); })};
     INFO("process.slice() exectuion time: " + std::to_string(execution_time.count()));
     REQUIRE(execution_time <= 5ms); // It should return imediatly
                                     //
@@ -221,7 +222,8 @@ TEST_CASE("Test process stop() returns immediately", "[background-process][slici
         SlicingId{}
     };
 
-    process.slice();
+    Slic3r::Tests::MockThumbnailImageGenerator thumbnail_generator;
+    process.slice(thumbnail_generator);
     const auto time_before_stop{20ms};
     precise_sleep(time_before_stop);
     const auto execution_time{measure_execution_time([&]() { process.stop(); })};
@@ -233,7 +235,7 @@ TEST_CASE("Test process stop() returns immediately", "[background-process][slici
         precise_sleep(2ms);
         process.stop();
     }
-    process.slice();
+    process.slice(thumbnail_generator);
 
     // Make sure there is plenty of time for the processing to finish.
     precise_sleep(processing_time * 2);

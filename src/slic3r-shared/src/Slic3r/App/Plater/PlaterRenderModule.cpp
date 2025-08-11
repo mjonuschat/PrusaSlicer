@@ -31,12 +31,8 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/Navigator.hpp"
-#include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
-#if ENABLE_DEBUG_EXPORT_TO_PNG
-#include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
-#endif // ENABLE_DEBUG_EXPORT_TO_PNG
 
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/CubeView.hpp"
@@ -79,17 +75,15 @@ namespace TriMesh = Biz::Algorithms::TriangleMesh;
 PlaterRenderModule::PlaterRenderModule(
     const Domain::Workbench& workbench,
     Biz::ProjectInteractor& project_interactor,
-    Biz::ThumbnailImageProvider& thumbnail_image_provider,
     std::shared_ptr<ThumbnailStore> thumbnail_store,
     std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
-    std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator
+    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator
 ) :
     m_workbench(workbench),
     m_project_interactor(project_interactor),
     m_thumbnail_store(thumbnail_store),
     m_thumbnail_store_updater(thumbnail_store_updater),
-    m_thumbnail_image_provider(thumbnail_image_provider),
-    m_shared_thumbnail_image_generator(shared_thumbnail_image_generator)
+    m_thumbnail_image_generator(thumbnail_image_generator)
 {}
 
 PlaterRenderModule::~PlaterRenderModule()
@@ -118,13 +112,13 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     init_scene();
     init_scene_layout();
 
-    if (m_shared_thumbnail_image_generator->generator == nullptr)
-        m_shared_thumbnail_image_generator->generator = std::make_unique<ThumbnailImageGenerator>(
+    if (!m_thumbnail_image_generator->initialized()) {
+        m_thumbnail_image_generator->init(
             m_workbench,
             *m_device,
             *m_scene_presenter
         );
-    m_thumbnail_image_provider.set_generator(*m_shared_thumbnail_image_generator->generator);
+    }
     m_scene_presenter->add_listener<Plater::IBedVisuallyChangedListener>(
         m_thumbnail_store_updater.get()
     );
@@ -529,7 +523,7 @@ void PlaterRenderModule::set_navigator(Navigator* navigator)
     m_render_module_navigator = navigator;
 }
 
-void PlaterRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
+void PlaterRenderModule::on_status_cache_changed(const Domain::SlicingId id)
 {
     // request redraw
     request_render();
@@ -1177,7 +1171,7 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     if (!m_scene_presenter->project_ready())
         return;
 
-    m_shared_thumbnail_image_generator->generator->handle_enqueued_requests();
+    m_thumbnail_image_generator->handle_enqueued_requests();
     m_thumbnail_store_updater->update(*m_device, [this](const BedThumbnailTextures& textures) {
         m_object_list->set_bed_instance_icons(textures);
     });
@@ -1257,30 +1251,6 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
 {
     if (!m_gizmo_manager->on_scene_keyboard_event(e))
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
-
-#if ENABLE_DEBUG_EXPORT_TO_PNG
-    Scene::CameraProjectionType camera_type = Scene::CameraProjectionType::Orthographic;
-    const Domain::Project& project          = m_project_interactor.selected_project();
-    ThumbnailRenderer renderer(*m_device);
-
-    // test code to simulate generation of thumbnails for gallery
-    {
-        if (!project.model().objects.empty()) {
-            Render::Images images = renderer.generate_object_thumbnails(
-                *project.model().objects.front(),
-                {{256, 256}},
-                camera_type
-            );
-
-            std::string name = fmt::format(
-                "thumbnail_object_{}",
-                project.model().objects.front()->id().id
-            );
-            std::string path_prefix = fmt::format("C:/test/{}", name);
-            Render::export_to_png_file(images, path_prefix);
-        }
-    }
-#endif // ENABLE_DEBUG_EXPORT_TO_PNG
 }
 
 void PlaterRenderModule::on_activated()

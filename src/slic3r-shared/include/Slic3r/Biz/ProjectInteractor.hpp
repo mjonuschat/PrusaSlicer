@@ -20,7 +20,6 @@
 #include "Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp"
 #include "Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp"
 #include "Slic3r/Biz/ObservableProjectList.hpp"
-#include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
 
@@ -56,18 +55,18 @@ public:
     ProjectInteractor(
         Domain::Workbench& workbench,
         Platform::IMainThreadDispatcher& dispatcher,
-        ThumbnailImageProvider& thumbnail_image_provider
+        Biz::Slicing::IThumbnailImageGenerator& thumbnail_image_generator
     ) :
         m_workbench(workbench),
         m_preset_interactor(workbench),
         m_scene_interactor(workbench),
         m_arrange_interactor(m_scene_interactor, workbench),
-        m_slicing_interactor(dispatcher, thumbnail_image_provider),
+        m_slicing_interactor(dispatcher, thumbnail_image_generator),
         m_print_host_interactor(dispatcher),
         m_user_account_interactor(dispatcher),
         m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)),
-        m_project_list(*this),
-        m_preset_updater_interactor(dispatcher)
+        m_preset_updater_interactor(dispatcher),
+        m_project_list(*this)
     {
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
@@ -271,7 +270,7 @@ public:
         return m_arrange_interactor;
     }
 
-    Biz::Slicing::SlicingId selected_bed_slicing_id() const;
+    Domain::SlicingId selected_bed_slicing_id() const;
 
     /**
      * @name ISelectedBedInstancesChangedListener interface implementation
@@ -289,20 +288,20 @@ public:
      * PrintHostConfig origin is yet to be decided.
      * to_removable parameter is placeholder until more robust logic takes place.
      */
-    void do_export(const Slicing::SlicingId id, const boost::filesystem::path& dest_path, bool to_removable);
+    void do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path, bool to_removable);
 
     /**
      * @brief Creates PrintHostConfig and PrintHostData and passes it to PrintHostInteractor to start upload.
      * PrintHostData copies gcode data from m_fdm_result_cache.
      * PrintHostConfig origin is yet to be decided.
      */
-    void do_upload(const Slicing::SlicingId id, const std::string& filename);
+    void do_upload(const Domain::SlicingId id, const std::string& filename);
 
     /**
      * @brief Same as do_upload, but does parse connect_msg first.
      * Uploads to PrintHostType::PrusaConnect.
      */
-    void do_upload_connect(const Slicing::SlicingId id, const std::string& connect_msg);
+    void do_upload_connect(const Domain::SlicingId id, const std::string& connect_msg);
 
     /**
      * @brief Called after Mainframe is created to set window handle for AppInstanceMessageHandler.

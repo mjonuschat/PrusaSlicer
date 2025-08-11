@@ -136,7 +136,7 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
 
 void ObjectListWindow::update_sliced_info()
 {
-    const Biz::Slicing::SlicingId id = m_project_interactor->selected_bed_slicing_id();
+    const Domain::SlicingId id = m_project_interactor->selected_bed_slicing_id();
     const std::optional<Biz::Slicing::Status> status{
         m_project_interactor->status_cache().get_status(id) };
 

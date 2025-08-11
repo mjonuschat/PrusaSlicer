@@ -4,6 +4,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 
+#include "Slic3r/Domain/Image.hpp"
 #include "libslic3r/libslic3r_version.h"
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Domain/Model.hpp"
@@ -50,9 +51,9 @@ namespace pt = boost::property_tree;
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/Legacy/PrintConfig.hpp"
+#include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 
 #include "libslic3r/CustomGCode.hpp"
-#include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/miniz_extension.hpp"
 #include "libslic3r/NSVGUtils.hpp"
 #include "libslic3r/Utils.hpp"
@@ -2917,7 +2918,7 @@ namespace Slic3rLegacy {
             const Domain::Model& model,
             const std::optional<ConfigPack>& config,
             bool fullpath_sources,
-            const ThumbnailData* thumbnail_data,
+            const Domain::Image* thumbnail_data,
             bool zip64,
             const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
             const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
@@ -2929,12 +2930,12 @@ namespace Slic3rLegacy {
             const std::string& filename,
             const Domain::Model& model,
             const std::optional<ConfigPack>& config,
-            const ThumbnailData* thumbnail_data,
+            const Domain::Image* thumbnail_data,
             const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
             const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
         );
         bool _add_content_types_file_to_archive(mz_zip_archive& archive);
-        bool _add_thumbnail_file_to_archive(mz_zip_archive& archive, const ThumbnailData& thumbnail_data);
+        bool _add_thumbnail_file_to_archive(mz_zip_archive& archive, const Domain::Image& thumbnail_data);
         bool _add_relationships_file_to_archive(mz_zip_archive& archive);
         bool _add_model_file_to_archive(const std::string& filename, mz_zip_archive& archive, const Domain::Model& model, IdToObjectDataMap& objects_data);
         bool _add_object_to_model_stream(mz_zip_writer_staged_context &context, unsigned int& object_id, Domain::ModelObject& object, BuildItemsList& build_items, VolumeToOffsetsMap& volumes_offsets);
@@ -2956,7 +2957,7 @@ namespace Slic3rLegacy {
         const Domain::Model& model,
         const std::optional<ConfigPack>& config,
         bool fullpath_sources,
-        const ThumbnailData* thumbnail_data,
+        const Domain::Image* thumbnail_data,
         bool zip64,
         const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
         const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
@@ -2972,7 +2973,7 @@ namespace Slic3rLegacy {
         const std::string& filename,
         const Domain::Model& model,
         const std::optional<ConfigPack>& config,
-        const ThumbnailData* thumbnail_data,
+        const Domain::Image* thumbnail_data,
         const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
         const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
     )
@@ -2993,7 +2994,7 @@ namespace Slic3rLegacy {
             return false;
         }
 
-        if (thumbnail_data != nullptr && thumbnail_data->is_valid()) {
+        if (thumbnail_data != nullptr && Biz::Algorithms::ImageUtils::is_valid(*thumbnail_data)) {
             // Adds the file Metadata/thumbnail.png.
             if (!_add_thumbnail_file_to_archive(archive, *thumbnail_data)) {
                 close_zip_writer(&archive);
@@ -3132,12 +3133,12 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_thumbnail_file_to_archive(mz_zip_archive& archive, const ThumbnailData& thumbnail_data)
+    bool _3MF_Exporter::_add_thumbnail_file_to_archive(mz_zip_archive& archive, const Domain::Image& thumbnail_data)
     {
         bool res = false;
 
         size_t png_size = 0;
-        void* png_data = tdefl_write_image_to_png_file_in_memory_ex((const void*)thumbnail_data.pixels.data(), thumbnail_data.width, thumbnail_data.height, 4, &png_size, MZ_DEFAULT_LEVEL, 1);
+        void* png_data = tdefl_write_image_to_png_file_in_memory_ex((const void*)thumbnail_data.pixels.data(), thumbnail_data.width(), thumbnail_data.height(), 4, &png_size, MZ_DEFAULT_LEVEL, 1);
         if (png_data != nullptr) {
             res = mz_zip_writer_add_mem(&archive, THUMBNAIL_FILE.c_str(), (const void*)png_data, png_size, MZ_DEFAULT_COMPRESSION);
             mz_free(png_data);
@@ -4510,7 +4511,7 @@ bool store_3mf_legacy(
     bool fullpath_sources,
     const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
     const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
-    const ThumbnailData* thumbnail_data,
+    const Slic3r::Domain::Image* thumbnail_data,
     bool zip64
 )
 {

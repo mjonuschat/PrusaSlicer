@@ -5107,19 +5107,24 @@ void PrintConfigDef::handle_legacy_composite(DynamicPrintConfig &config)
         }
 
         std::string thumbnails_str = config.opt_string("thumbnails");
-        auto [thumbnails_list, errors] = GCodeThumbnails::make_and_check_thumbnail_list(thumbnails_str, extention);
+        auto parsed_request = GCodeThumbnails::parse_request(thumbnails_str, extention);
 
-        if (errors != Domain::enum_bitmask<ThumbnailError>()) {
+        if (!parsed_request.has_value()) {
             std::string error_str = "\n" + format("Invalid value provided for parameter %1%: %2%", "thumbnails", thumbnails_str);
-            error_str += GCodeThumbnails::get_error_string(errors);
+            error_str += GCodeThumbnails::get_error_string(parsed_request.error());
             throw BadOptionValueException(error_str);
         }
 
-        if (!thumbnails_list.empty()) {
+        if (!parsed_request.value().formats.empty()) {
             const auto& extentions = ConfigOptionEnum<GCodeThumbnailsFormat>::get_enum_names();
             thumbnails_str.clear();
-            for (const auto& [ext, size] : thumbnails_list)
-                thumbnails_str += format("%1%x%2%/%3%, ", size.x(), size.y(), extentions[int(ext)]);
+
+            for (std::size_t i{}; i < parsed_request.value().formats.size(); ++i) {
+                const Domain::Size size{parsed_request.value().sizes.at(i)};
+                const Domain::GCodeThumbnailsFormat ext{parsed_request.value().formats.at(i)};
+
+                thumbnails_str += format("%1%x%2%/%3%, ", size.width, size.height, extentions[int(ext)]);
+            }
             thumbnails_str.resize(thumbnails_str.length() - 2);
 
             config.set_key_value("thumbnails", new ConfigOptionString(thumbnails_str));
