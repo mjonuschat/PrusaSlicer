@@ -39,7 +39,9 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
 
 void ProjectInteractor::save_project(const std::string& file_path, const Store3mfParam& params)
 {
-    store_3mf(file_path, this->selected_project(), params);
+    auto& selected_project = this->selected_project();
+    selected_project.increment_version();
+    store_3mf(file_path, selected_project, params);
 }
 
 void ProjectInteractor::initialize_new_project_before_inserting(Domain::Project& p)
@@ -98,17 +100,25 @@ void ProjectInteractor::on_selected_bed_instances_changed(
 
 void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_instance)
 {
+    auto& project = selected_project();
     const Domain::BedInstance* instance{
-        selected_project().find_bed_instance_by_id(bed_instance.instance_id)
+        project.find_bed_instance_by_id(bed_instance.instance_id)
     };
     ASSERT(instance);
     const auto* config_container{
-        selected_project().find_config_container(bed_instance.config_container_id)
+        project.find_config_container(bed_instance.config_container_id)
     };
     ASSERT(config_container);
 
-    m_slicing_interactor
-        .update_process(selected_project().model(), config_container->print_config(), *instance);
+    const auto& selected_preset = config_container->selected_preset();
+
+    m_slicing_interactor.update_process(
+        project.model(),
+        project.metadata(),
+        selected_preset.metadata(),
+        config_container->print_config(),
+        *instance
+    );
 }
 
 void ProjectInteractor::on_slicing_input_removed(const Domain::BedRef& bed_instance)

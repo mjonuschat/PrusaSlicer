@@ -60,6 +60,8 @@ struct IWipeTowerGeometryListener : ISlicingListener
 struct UpdateRequest
 {
     std::reference_wrapper<Domain::Model> model;
+    std::reference_wrapper<const Domain::ProjectMetadata> project_metadata;
+    std::reference_wrapper<const Domain::Preset::SelectedPresetMetadata> preset_metadata;
     std::reference_wrapper<const Domain::ConfigPack> config;
     std::reference_wrapper<const Domain::BedInstance> bed;
 };
@@ -84,6 +86,8 @@ public:
      * is removed (using remove_process) the validity of the references is no longer required.*/
     void update_process(
         Domain::Model& model,
+        const Domain::ProjectMetadata& project_metadata,
+        const Domain::Preset::SelectedPresetMetadata& preset_metadata,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed
     );
@@ -113,6 +117,8 @@ private:
     void update_status(const SlicingId id, const Status status);
     void create_process(
         Domain::Model& model,
+        const Domain::ProjectMetadata& project_metadata,
+        const Domain::Preset::SelectedPresetMetadata& preset_metadata,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
         const SlicingId id

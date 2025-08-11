@@ -12,7 +12,7 @@
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Preset/SelectedPreset.hpp"
 #include "Slic3r/Semver.hpp"
-
+#include "Slic3r/Domain/ProjectMetadata.hpp"
 
 namespace Slic3r {
 
@@ -281,6 +281,7 @@ struct Loaded3MF {
         std::vector<Domain::Vec2d> bed_offsets;
     };
 
+    Domain::ProjectMetadata metadata;
     Domain::Model model;
     std::string filepath_3mf;
     std::vector<Loaded3MF::ConfigContainerData> config_containers_data;

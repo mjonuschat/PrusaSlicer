@@ -231,6 +231,8 @@ private:
         Domain::Preset::SelectedPreset& selected_preset
     );
 
+    void invoke_slicing_input_changed();
+
     void select_legacy_printer_preset(size_t preset_idx);
     void select_legacy_print_preset(size_t preset_idx);
     void select_legacy_extruder_preset(size_t extruder_idx, size_t preset_idx);
@@ -252,9 +254,6 @@ private:
     using SetAccessorMap = std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor>;
 
     Domain::Workbench& m_workbench;
-    ListenerList<IBedPresetValueChangedListener> m_bed_preset_value_changed_listeners;
-    ListenerList<IBedPresetSwitchedListener> m_bed_preset_switched_listeners;
-    ListenerList<ISlicingInputChangedListener> m_slicing_input_changed_listeners;
 
     PresetItemObservableList m_printer_presets;
     PresetItemObservableList m_print_presets;

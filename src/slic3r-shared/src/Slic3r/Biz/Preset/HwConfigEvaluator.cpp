@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
 #include "Slic3r/Biz/Preset/ValueMapBuilder.hpp"
+#include "Slic3r/Uuid.hpp"
 #include "libslic3r/Config.hpp"
 
 namespace Slic3r::Biz::Preset {
@@ -52,19 +53,19 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
     Domain::Preset::override_visual(visual, templ.visual);
 
     Domain::Preset::HwPrinterConfig printer_config{
-        .id         = Domain::Preset::generate_id(),
-        .printer_id = printer_def->id,
-        .vendor_id  = vendor_data.info.id,
-        .repo_id    = vendor_data.info.repo_id,
-        .technology = printer_def->technology,
-        .model      = printer_def->model,
-        .tool_count = templ.tool_count.has_value() ? templ.tool_count.value() :
-                                                     printer_def->tool_count,
-        .features   = features,
-        .visual     = visual
+        .id           = generate_uuid(),
+        .printer_id   = printer_def->id,
+        .vendor_id    = vendor_data.info.id,
+        .repo_id      = vendor_data.info.repo_id,
+        .repo_version = vendor_data.info.version,
+        .name         = templ.name.empty() ? printer_def->name : templ.name,
+        .technology   = printer_def->technology,
+        .model        = printer_def->model,
+        .tool_count   = templ.tool_count.has_value() ? templ.tool_count.value() :
+                                                       printer_def->tool_count,
+        .features     = features,
+        .visual       = visual
     };
-
-    printer_config.name = Domain::Preset::suggest_name(printer_config, vendor_data);
 
     ASSERT(templ.tools.size() == templ.tool_count || templ.tools.size() == 1, templ.id);
     for (const auto& tool_templ : templ.tools) {
@@ -118,6 +119,8 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
         sheet.features = Domain::Preset::build_features(vendor_data.info.features.sheet);
         Domain::Preset::override_features(sheet.features, sheet_def->features);
     }
+
+    printer_config.name = Domain::Preset::suggest_name(printer_config, vendor_data);
 
     return printer_config;
 }

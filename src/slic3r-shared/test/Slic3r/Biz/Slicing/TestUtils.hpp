@@ -18,6 +18,7 @@ Domain::Model generate_cubes(const int count, const int row_size);
 
 double get_cubes_filament_used(const Domain::Model &model);
 
+Domain::Preset::SelectedPresetMetadata get_selected_preset_metadata();
 Domain::ConfigPack get_config();
 
 struct ModelOnBed {
@@ -26,6 +27,8 @@ struct ModelOnBed {
     static Domain::Bed bed;
 
     Domain::Model model;
+    Domain::ProjectMetadata project_metadata;
+    Domain::Preset::SelectedPresetMetadata preset_metadata;
     Domain::ConfigPack config;
     Domain::BedInstance bed_instance;
 };

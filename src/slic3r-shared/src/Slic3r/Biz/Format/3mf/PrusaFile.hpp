@@ -24,6 +24,7 @@ struct ConfigSubstitutionContext;
 void store_prusa_files(
     mz_zip_archive &archive,
     const Domain::Model &model,
+    const Domain::ProjectMetadata& project_metadata,
     const Domain::Project::ConfigContainerList& config_containers,
     const StoredStructure &stored_structure
 );
@@ -31,6 +32,7 @@ void store_prusa_files(
 struct PrusaFilesResult {
     // Flag for each file in 3mf zip archive
     std::vector<bool> used_file_indices; // for detection of unproccessed files
+    Domain::ProjectMetadata project_metadata;
     std::vector<Loaded3MF::ConfigContainerData> config_containers_data; // Pack for each config container.
 };
 

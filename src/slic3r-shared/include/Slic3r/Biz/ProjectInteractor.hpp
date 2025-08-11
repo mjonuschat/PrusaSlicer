@@ -75,7 +75,6 @@ public:
         m_scene_interactor.add_listener<ISelectedBedInstancesChangedListener>(this);
         add_listener<ISelectedProjectChangedListener>(&m_slicing_interactor);
         m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
-        m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_slicing_interactor.set_listener<Slicing::IFDMResultListener>(&m_fdm_result_cache);
         m_slicing_interactor.set_listener<Slicing::ISLAResultListener>(&m_sla_result_cache);

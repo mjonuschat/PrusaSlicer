@@ -73,6 +73,8 @@ struct HwFeederConfig
 
 struct MaterialConfig
 {
+    std::string id;
+    std::optional<std::string> type;
     FeatureValueMap features;
 };
 
@@ -101,6 +103,7 @@ struct HwPrinterConfig
     std::string printer_id;
     std::string vendor_id;
     std::string repo_id;
+    std::string repo_version;
     std::string name;
     PrinterTechnology technology;
     HwModel model;
@@ -363,8 +366,6 @@ HwPrinterConfig remove_features_with_default(
     const HwPrinterConfig& printer_config,
     const VendorData& vendor_data
 );
-
-std::string generate_id();
 
 std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_data);
 

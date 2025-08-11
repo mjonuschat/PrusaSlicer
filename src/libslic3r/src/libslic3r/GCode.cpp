@@ -1495,6 +1495,15 @@ void GCodeGenerator::_do_export(
         print.m_print_statistics
     );
 
+    // if exporting gcode in ascii format, config export in new format is done here
+    // Append full config, delimited by two 'phony' configuration keys prusaslicer_config = begin and prusaslicer_config = end.
+    // The delimiters are structured as configuration key / value pairs to be parsable by older versions of PrusaSlicer G-code viewer.
+    {
+        file.write("; prusaslicer_json_config = begin\n");
+        file.write(std::string("; ") + boost::replace_all_copy(serialized_config.json, "\n", "\n; ") + "\n");
+        file.write("; prusaslicer_json_config = end\n");
+    }
+
     file.write_format("; objects_info = %s\n", m_label_objects.all_objects_header_singleline_json().c_str());
     file.write(filament_stats_string_out);
 
@@ -1514,9 +1523,6 @@ void GCodeGenerator::_do_export(
         file.write("\n; prusaslicer_config = begin\n");
         file.write(std::string("; ") + boost::replace_all_copy(serialized_config.ini, "\n", "\n; ") + "\n");
         file.write("; prusaslicer_config = end\n\n");
-        file.write("; prusaslicer_json_config = begin\n");
-        file.write(std::string("; ") + boost::replace_all_copy(serialized_config.json, "\n", "\n; ") + "\n");
-        file.write("; prusaslicer_json_config = end\n");
     }
 
     if (std::optional<std::string> line_M84 = find_M84(print.config().get<std::string>("end_gcode"));

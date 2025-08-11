@@ -1,9 +1,10 @@
 #include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Uuid.hpp"
 
 namespace Slic3r::Domain {
 
 
-Project::Project() : m_model(new Model()) {}
+Project::Project() : m_metadata(generate_uuid()),  m_model(new Model()) {}
 
 const ConfigContainer* Project::find_config_container(size_t id) const
 {
