@@ -64,7 +64,8 @@ enum class Status
     Finished,
     Modified,
     Stopping,
-    Removed
+    Removed,
+    InvalidData
 };
 
 std::ostream& operator<<(std::ostream& output, const Status& status);

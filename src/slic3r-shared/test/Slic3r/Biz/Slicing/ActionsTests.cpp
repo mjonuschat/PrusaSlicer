@@ -48,7 +48,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update stops slicing", "[slicing][slicing-inte
         model_on_bed.config,
         model_on_bed.bed_instance
     );
-    slicing.slice_bed(id.bed_instance_id);
+    slicing.slice_bed(id);
     slicing.update_process(
         model_on_bed.model,
         model_on_bed.project_metadata,
@@ -98,7 +98,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
         model_on_bed.config,
         model_on_bed.bed_instance
     );
-    slicing.slice_bed(bed_id);
+    slicing.slice_bed({0, bed_id});
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 5s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
@@ -138,7 +138,7 @@ TEST_CASE_METHOD(SlicingFixture, "Stop pops the action from queue", "[slicing][s
         model_on_bed2.bed_instance
     );
     slicing.slice_all();
-    slicing.stop_slicing_bed(id2.bed_instance_id);
+    slicing.stop_slicing_bed(id2);
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
@@ -210,7 +210,7 @@ TEST_CASE_METHOD(
         model_on_bed.config,
         model_on_bed.bed_instance
     );
-    slicing.slice_bed(id.bed_instance_id);
+    slicing.slice_bed(id);
     slicing.remove_bed(id.bed_instance_id);
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){

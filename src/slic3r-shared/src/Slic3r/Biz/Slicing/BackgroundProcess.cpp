@@ -175,7 +175,9 @@ void BackgroundProcess::update(
     const ScopeGuard guard{[this, &previous_status, &apply_status]() {
         if (this->m_print->empty()) {
             this->m_on_status(Status::Empty);
-        } else if (previous_status == Status::Finished && apply_status == ApplyStatus::unchanged) {
+        } else if (apply_status == ApplyStatus::InvalidData) {
+            this->m_on_status(Status::InvalidData);
+        } else if (previous_status == Status::Finished && apply_status == ApplyStatus::Unchanged) {
             this->m_on_status(Status::Finished);
         } else {
             this->m_on_status(Status::Modified);

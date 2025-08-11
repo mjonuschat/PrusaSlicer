@@ -1360,17 +1360,27 @@ void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
 
     ImGui::TableSetColumnIndex(ciPrintable);
 
+    ImVec4 DARK_BLUE{};
+
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.f, 1.f));
     if (status == Biz::Slicing::Status::Finished) {
         BoldFontGuard bfg(m_imgui_render);
         text_with_bg_aligned(align_x, L("SLICED"), BLUE_BUTTON_COLOR);
-    } else if (status != Biz::Slicing::Status::Modified) {
-        text_with_bg_aligned(align_x, L("SLICING"), {0.32f, 0.48f, 0.84f, 0.65f});
-    } else if (m_mode == Mode::Preview) {
+    } else if (status == Biz::Slicing::Status::Updating) {
+        text_with_bg_aligned(align_x, L("UPDATING"), DARK_BLUE);
+    } else if (status == Biz::Slicing::Status::Stopping) {
+        text_with_bg_aligned(align_x, L("STOPPING"), DARK_BLUE);
+    } else if (status == Biz::Slicing::Status::Running) {
+        text_with_bg_aligned(align_x, L("SLICING"), DARK_BLUE);
+    } else if (status == Biz::Slicing::Status::InvalidData) {
+        text_with_bg_aligned(align_x, L("INVALID"), DARK_BLUE);
+    } else if (m_mode == Mode::Preview && status == Biz::Slicing::Status::Modified) {
         BoldFontGuard bfg(m_imgui_render);
         ImGui::PushStyleColor(ImGuiCol_Button, ORANGE_BUTTON_COLOR);
         if (button_aligned(align_x, L("SLICE"), ImVec2(0, 0), ImGuiButtonFlags_AlignTextBaseLine))
-            m_project_interactor->slicing_interactor().slice_bed(bed_instance_id);
+            m_project_interactor->slicing_interactor().slice_bed(
+                {m_project_interactor->selected_project_id(), bed_instance_id}
+            );
         ImGui::PopStyleColor();
     }
     ImGui::PopStyleVar();

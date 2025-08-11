@@ -6,6 +6,7 @@
 #include "Slic3r/Domain/BedRef.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
+#include "Slic3r/Domain/Workbench.hpp"
 
 namespace Slic3r::Biz::Scene {
 
@@ -66,5 +67,14 @@ private:
 
     bool remove(const Domain::BedRef& bed_ref);
 };
+
+using BedInstanceRefWrap = std::reference_wrapper<const Domain::BedInstance>;
+using BedInstances       = std::vector<BedInstanceRefWrap>;
+
+[[nodiscard]] BedInstances get_selected_beds(
+    const Domain::SelectionId project_id,
+    const BedSelection& selection,
+    const Domain::Workbench& workbench
+);
 
 } // namespace Slic3r::Biz::Scene

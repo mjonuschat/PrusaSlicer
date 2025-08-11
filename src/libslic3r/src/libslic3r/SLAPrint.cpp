@@ -834,7 +834,7 @@ Biz::Print::ApplyStatus SLAPrint::update(
     });
     const bool changed{!invalidated_steps.empty()};
     if (!changed) {
-        return Biz::Print::ApplyStatus::unchanged;
+        return Biz::Print::ApplyStatus::Unchanged;
     }
 
     m_on_sla_result({});
@@ -866,7 +866,7 @@ Biz::Print::ApplyStatus SLAPrint::update(
         }
     }
 
-    return Biz::Print::ApplyStatus::changed;
+    return Biz::Print::ApplyStatus::Changed;
 }
 
 InvalidatedSteps SLAPrint::apply(

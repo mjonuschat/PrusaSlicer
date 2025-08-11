@@ -466,8 +466,9 @@ private:
 
 namespace Biz::Print {
 enum class ApplyStatus {
-    unchanged,
-    changed
+    Unchanged,
+    Changed,
+    InvalidData
 };
 
 struct ZDepth{

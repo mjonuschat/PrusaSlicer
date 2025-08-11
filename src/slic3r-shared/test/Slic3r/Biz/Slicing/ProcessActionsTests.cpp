@@ -128,7 +128,7 @@ public:
     ) override
     {
         precise_sleep(this->apply_time);
-        return ApplyStatus::changed;
+        return ApplyStatus::Changed;
     }
     void slice(Slic3r::Domain::SlicingId, Slic3r::Biz::Slicing::IThumbnailImageGenerator&) override
     {

@@ -69,7 +69,7 @@ void SlicingInteractor::update_process(
     if (m_processes.contains(id)) {
         SPDLOG_INFO("{}: update process", fmt::streamed(id));
 
-        stop_slicing_bed(bed_instance_id);
+        stop_slicing_bed(id);
         m_update_requests.insert_or_assign(
             id,
             UpdateRequest{model, project_metadata, preset_metadata, config, bed}
@@ -85,7 +85,7 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
 {
     const SlicingId id{get_process_id(bed_instance_id)};
 
-    stop_slicing_bed(bed_instance_id);
+    stop_slicing_bed(id);
     m_processes.erase(id);
     {
         const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
@@ -102,9 +102,8 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
     invoke_listener<ISLAObjectListener>([&id](auto* listener) { listener->on_remove_bed(id); });
 }
 
-void SlicingInteractor::slice_bed(const Domain::SelectionId bed_instance_id)
+void SlicingInteractor::slice_bed(const SlicingId id)
 {
-    const SlicingId id{get_process_id(bed_instance_id)};
     ASSERT(m_processes.contains(id));
     SPDLOG_INFO("{}: slicing request", fmt::streamed(id));
 
@@ -112,9 +111,8 @@ void SlicingInteractor::slice_bed(const Domain::SelectionId bed_instance_id)
     process_slicing_queue();
 }
 
-void SlicingInteractor::stop_slicing_bed(const Domain::SelectionId bed_instance_id)
+void SlicingInteractor::stop_slicing_bed(const Domain::SlicingId id)
 {
-    const SlicingId id{get_process_id(bed_instance_id)};
     ASSERT(m_processes.contains(id));
 
     const auto it{std::ranges::find(m_slicing_queue, id)};
