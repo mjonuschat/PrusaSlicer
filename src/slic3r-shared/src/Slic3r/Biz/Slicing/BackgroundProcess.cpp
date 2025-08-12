@@ -1,5 +1,6 @@
 #include <fmt/ostream.h>
 #include <nlohmann/json.hpp>
+#include <cpptrace/from_current.hpp>
 #include <Slic3r/Biz/Slicing/BackgroundProcess.hpp>
 #include <Slic3r/Assert.hpp>
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
@@ -127,12 +128,19 @@ BackgroundProcess::BackgroundProcess(
     ConfigPack&& config,
     const Domain::BedInstance& bed,
     const SlicingId id
-)
-    : m_printer_technology{Slicing::get_printer_technology(config)}
-    , m_print{init_print(m_printer_technology, callbacks, id)}
-    , m_on_status{[call = std::reference_wrapper(callbacks), id](const Status status) {call.get().on_status(status, id); }}
-    , m_get_status{[call = std::reference_wrapper(callbacks), id]() { return call.get().get_status(id); }}
-    , m_id{id}
+) :
+    m_printer_technology{Slicing::get_printer_technology(config)},
+    m_print{init_print(m_printer_technology, callbacks, id)},
+    m_on_status{[call = std::reference_wrapper(callbacks), id](const Status status) {
+        call.get().on_status(status, id);
+    }},
+    m_on_exception{[call = std::reference_wrapper(callbacks), id](std::exception_ptr exception) {
+        call.get().on_exception(exception, id);
+    }},
+    m_get_status{[call = std::reference_wrapper(callbacks), id]() {
+        return call.get().get_status(id);
+    }},
+    m_id{id}
 {
     this->update(model, std::move(project_metadata), std::move(preset_metadata), std::move(config), bed);
 };
@@ -263,19 +271,30 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
                 print->stop_token = stop_token;
 
                 bool finished{false};
-                const ScopeGuard guard{[this, &finished]() {
+                std::string slicing_error;
+                const ScopeGuard guard{[this, &finished, &slicing_error]() {
                     if (finished) {
                         m_on_status({StatusCode::Finished});
+                    } else if(!slicing_error.empty()) {
+                        m_on_status({StatusCode::InvalidData, slicing_error, {}});
                     } else {
                         m_on_status({StatusCode::Modified});
                     }
                 }};
 
-                try {
-                    print->slice(m_id, thumbnail_generator);
-                    finished = true;
-                } catch (CanceledException&) {
-                }
+                cpptrace::try_catch(
+                    [&] {
+                        print->slice(m_id, thumbnail_generator);
+                        finished = true;
+                    },
+                    [&](const SlicingError& error) { slicing_error = error.what(); },
+                    [&](CanceledException&) { /* Intentionally pass. */ },
+                    [&](){
+                        SPDLOG_CRITICAL("Unhandled exception on background thread!");
+                        cpptrace::from_current_exception().print();
+                        m_on_exception(std::current_exception());
+                    }
+                );
             },
             this->m_print.get()
         };

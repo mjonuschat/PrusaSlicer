@@ -92,6 +92,7 @@ public:
     virtual void on_sla_result(const Domain::SlicingId&, SLAResult&&) = 0;
     virtual void on_sla_object(const Domain::SlicingId&, Sla::Object&&) = 0;
     virtual void on_status(const Status, Domain::SlicingId) = 0;
+    virtual void on_exception(std::exception_ptr exception, Domain::SlicingId) = 0;
     virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, Domain::SlicingId) = 0;
     virtual Status get_status(const Domain::SlicingId) const = 0;
     virtual ~IProcessCallbacks() = default;
@@ -139,6 +140,7 @@ private:
     Domain::PrinterTechnology m_printer_technology;
     std::unique_ptr<Print::IPrint> m_print;
     std::function<void(Status)> m_on_status;
+    std::function<void(std::exception_ptr)> m_on_exception;
     std::function<Status()> m_get_status;
     Domain::SlicingId m_id;
 

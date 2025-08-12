@@ -65,6 +65,12 @@ struct UpdateRequest
     std::reference_wrapper<const Domain::BedInstance> bed;
 };
 
+/** @brief This is a fatal exception and the backend might be in invalid state after it.
+ *  It is expected that the program will gracefully terminate! */
+struct FatalSlicingError : public std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
 class SlicingInteractor :
     public ISelectedProjectChangedListener,
     public IProcessCallbacks,
@@ -104,6 +110,7 @@ public:
     void on_sla_result(const Domain::SlicingId&, SLAResult&&) override;
     void on_sla_object(const Domain::SlicingId&, Sla::Object&&) override;
     void on_status(const Status, Domain::SlicingId) override;
+    void on_exception(std::exception_ptr exception, Domain::SlicingId) override;
     void on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_tower_geometry, const Domain::SlicingId id) override;
     Status get_status(const Domain::SlicingId id) const override;
 

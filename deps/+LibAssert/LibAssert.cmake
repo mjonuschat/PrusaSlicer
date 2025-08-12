@@ -1,6 +1,6 @@
 add_cmake_project(LibAssert
-        URL https://github.com/jeremy-rifkin/libassert/archive/refs/tags/v2.1.0.zip
-        URL_HASH SHA256=6fda4c371e515aa9925ddd37cf4b1c57ec40042b8489470e5458ee30576778e3
+        URL https://github.com/jeremy-rifkin/libassert/archive/refs/tags/v2.2.1.zip
+        URL_HASH SHA256=a4728a2cc6d2672ba29443bbb871c2529a8a812f2d504c92a0b9b9cff1779117
         EMSCRIPTEN_EXCLUDED ON
 #        EMSCRIPTEN_CMAKE_ARGS
 #        -DCPPTRACE_UNWIND_WITH_NOTHING=ON

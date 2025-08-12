@@ -40,6 +40,9 @@ struct StatusLog : IProcessCallbacks
         statuses.emplace_back(high_resolution_clock::now(), status.code);
         m_status.store(status.code);
     }
+    void on_exception(std::exception_ptr exception, const SlicingId) override {
+        std::rethrow_exception(exception);
+    };
 
     Status get_status(const SlicingId) const override {
         return {m_status.load()};

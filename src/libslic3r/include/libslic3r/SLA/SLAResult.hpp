@@ -136,6 +136,6 @@ struct SLAResult
 
     // used for merge Result in Cache
     // Define the state of the result data
-    Sla::ResultType type; // type of the result
+    Sla::ResultType type{Sla::ResultType::None}; // type of the result
 };
 } // namespace Slic3r::Biz::Slicing
