@@ -118,7 +118,7 @@ NLOHMANN_JSON_NAMESPACE_END
 
 namespace {
 
-constexpr std::string PRINTER_TOOL_TYPE = "print_head";
+const std::string PRINTER_TOOL_TYPE = "print_head";
 
 struct KeyDesc
 {
@@ -129,7 +129,7 @@ struct KeyDesc
 // This is a list of keys stored as features in material
 // which should be moved level up from features into material
 // when serializing into json
-constexpr KeyDesc MATERIAL_KEYS_TO_EXTRACT[] = {
+const KeyDesc MATERIAL_KEYS_TO_EXTRACT[] = {
     {"material_uuid"},
     {"material_color"},
 };
