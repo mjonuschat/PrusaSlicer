@@ -18,8 +18,8 @@
 
 namespace Slic3r::Biz::Preset {
 
-class IBedPresetValueChangedListener;
 class IBedPresetSwitchedListener;
+class IPresetChangedListener;
 
 class PresetInteractor;
 
@@ -77,7 +77,7 @@ using PresetItemCompoundObservableList = BatchObservableList<PresetItemObservabl
  */
 class PresetInteractor final :
     public ISelectedConfigContainerChangedListener,
-    public WithListeners<IBedPresetValueChangedListener, IBedPresetSwitchedListener, ISlicingInputChangedListener>
+    public WithListeners<IPresetChangedListener, IBedPresetSwitchedListener, ISlicingInputChangedListener>
 {
 public:
     explicit PresetInteractor(Domain::Workbench& workbench);
@@ -143,6 +143,7 @@ public:
     void select_material_preset(size_t material_index, const std::string& id);
 
     using ConfigItemModifyFn = std::function<void(Domain::ConfigItem&)>;
+
     void set_preset_value(
         Domain::ConfigLocation location,
         int element_idx,
@@ -150,34 +151,8 @@ public:
         ConfigItemModifyFn modify_fn
     );
 
-    void set_legacy_preset_state_value(
-        Slic3r::Preset::Type preset_type,
-        size_t preset_index,
-        const std::string& name,
-        const boost::any& value,
-        int opt_index = 0
-    );
-    void set_legacy_preset_state_config_num_extruders(
-        Slic3r::Preset::Type preset_type,
-        size_t preset_index,
-        size_t num_extruders
-    );
-    void set_legacy_preset_state(
-        Slic3r::Preset::Type preset_type,
-        size_t preset_index,
-        const DynamicPrintConfig& config
-    );
-    void modify_legacy_preset_state(
-        Slic3r::Preset::Type preset_type,
-        size_t preset_index,
-        IConfigInteractor::ModifyFunc modify_fn
-    );
-
-    const PresetCollection& preset_collection(Slic3r::Preset::Type preset_type) const;
 
     const PresetBundle& preset_bundle_legacy() const;
-
-    void select_legacy_preset(Slic3r::Preset::Type preset_type, size_t preset_index, size_t collection_index);
 
     void on_selected_config_container_changed(
         Domain::SelectionId project_id,
@@ -237,22 +212,10 @@ private:
 
     void invoke_slicing_input_changed();
 
-    void select_legacy_printer_preset(size_t preset_idx);
-    void select_legacy_print_preset(size_t preset_idx);
-    void select_legacy_extruder_preset(size_t extruder_idx, size_t preset_idx);
-    void select_legacy_material_preset(size_t extruder_idx, size_t preset_idx);
-
     PresetCollection& legacy_preset_collection(Slic3r::Preset::Type preset_type);
 
     static PresetState create_preset_state(PresetCollection& source_with_selected);
     PresetState create_preset_state(Slic3r::Preset* selected_preset);
-
-    static void set_config_value(
-        DynamicPrintConfig& config,
-        const std::string& name,
-        const boost::any& value,
-        int opt_index
-    );
 
 private:
     using SetAccessorMap = std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor>;
