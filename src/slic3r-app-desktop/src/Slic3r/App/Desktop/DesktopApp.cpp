@@ -86,7 +86,6 @@ bool DesktopApp::OnInit()
     set_log_level(4);
 
     init_translations();
-    m_workbench.load_legacy_configs();
 
     using Biz::Platform::PlatformServices;
     using Biz::Platform::JobManager::JobManager;

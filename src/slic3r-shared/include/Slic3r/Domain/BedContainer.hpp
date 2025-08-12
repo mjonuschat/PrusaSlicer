@@ -5,11 +5,6 @@
 #include <memory>
 
 #include "Slic3r/Domain/Bed.hpp"
-#include "libslic3r/Preset.hpp"
-
-namespace Slic3r {
-class PresetBundle;
-} // namespace Slic3r
 
 namespace Slic3r::Domain::Preset {
 struct SelectedPreset;
@@ -31,7 +26,7 @@ public:
         const std::string& texture_filename
     );
 
-    [[nodiscard]] Bed& add_bed(const Preset::SelectedPreset& preset, const PresetBundle& preset_bundle);
+    [[nodiscard]] Bed& add_bed(const Preset::SelectedPreset& preset, const std::string& resources_dir_path);
 
     size_t beds_count() const { return m_beds.size(); }
     std::vector<size_t> beds_indices() const;

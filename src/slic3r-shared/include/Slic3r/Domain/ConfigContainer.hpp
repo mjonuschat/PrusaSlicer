@@ -9,9 +9,6 @@
 #include <memory>
 #include <vector>
 
-#include "libslic3r/PrintConfig.hpp"
-#include "libslic3r/Preset.hpp"
-
 namespace Slic3r::Domain {
 
 class Bed;

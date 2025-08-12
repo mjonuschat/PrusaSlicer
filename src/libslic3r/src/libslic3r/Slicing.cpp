@@ -66,6 +66,24 @@ double Slicing::max_layer_height_from_nozzle(const DynamicPrintConfig &print_con
     return std::max(min_layer_height, (max_layer_height == 0.) ? (0.75 * nozzle_dmr) : max_layer_height);
 }
 
+// Minimum layer height for the variable layer height algorithm.
+double Slicing::min_layer_height_from_nozzle(const Domain::ConfigPackFDM& pack, int idx_nozzle)
+{
+    double min_layer_height = pack.tool.at(idx_nozzle - 1).contains("min_layer_height").item->get<double>();
+    return (min_layer_height == 0.) ? MIN_LAYER_HEIGHT_DEFAULT : std::max(MIN_LAYER_HEIGHT, min_layer_height);
+}
+
+// Maximum layer height for the variable layer height algorithm, 3/4 of a nozzle diameter by default,
+// it should not be smaller than the minimum layer height.
+double Slicing::max_layer_height_from_nozzle(const Domain::ConfigPackFDM& pack, int idx_nozzle)
+{
+    double min_layer_height = min_layer_height_from_nozzle(pack, idx_nozzle);
+    const auto& tool        = pack.tool.at(idx_nozzle - 1);
+    double max_layer_height = tool.contains("max_layer_height").item->get<double>();
+    double nozzle_dmr       = tool.contains("nozzle_diameter").item->get<double>();
+    return std::max(min_layer_height, (max_layer_height == 0.) ? (0.75 * nozzle_dmr) : max_layer_height);
+}
+
 SlicingParameters SlicingParameters::create_from_config(
 	const Domain::ConfigView     &config,
 	double				         object_height,

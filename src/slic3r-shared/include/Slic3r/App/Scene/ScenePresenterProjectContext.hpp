@@ -27,7 +27,6 @@ public:
     ScenePresenterProjectContext& operator=(const ScenePresenterProjectContext&) = delete;
 
     ScenePresenterProjectContext(ScenePresenterProjectContext&&) = default;
-    ScenePresenterProjectContext& operator=(ScenePresenterProjectContext&&) = default;
 
     Scene& scene() { return *m_scene; }
     const Scene& scene() const { return *m_scene; }

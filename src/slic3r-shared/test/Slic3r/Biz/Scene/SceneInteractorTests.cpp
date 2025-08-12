@@ -53,7 +53,6 @@ struct SceneInteractorFixture
     SceneInteractorFixture()
     {
         set_data_dir(Tests::get_datadir().string());
-        workbench.load_legacy_configs();
 
         project_interactor.preset_interactor()
             .load_preset_bundle(preset_bundle_dir.string(), config_dir.string());

@@ -169,15 +169,6 @@ void PresetInteractor::on_selected_config_container_changed(
     // update selected config
     auto& ccc = get_or_create_config_container_context(m_selected_project_id, container_id);
 
-    // TODO: remove this legacy
-    ccc.preset_bundle_runtime
-        .update_compatible_prints(m_workbench.preset_bundle_legacy(), *ccc.printer.selected_preset);
-    ccc.preset_bundle_runtime.update_compatible_materials(
-        m_workbench.preset_bundle_legacy(),
-        *ccc.printer.selected_preset,
-        *ccc.print.selected_preset
-    );
-
     fill_printer_presets();
     const Domain::Preset::EvaluatedPrinterPreset& printer_preset = current_printer_preset();
     Domain::Preset::SelectedPreset& selected_preset = mutable_selected_printer_presets();
@@ -785,13 +776,6 @@ void PresetInteractor::invoke_slicing_input_changed()
     }
 }
 
-
-const PresetBundle& PresetInteractor::preset_bundle_legacy() const
-{
-    return m_workbench.preset_bundle_legacy();
-}
-
-
 PresetInteractorProjectContext& PresetInteractor::get_or_create_project_context(
     Domain::SelectionId project_id
 )
@@ -821,83 +805,11 @@ PresetInteractorConfigContainerContext& PresetInteractor::get_or_create_config_c
     PresetInteractorConfigContainerContext ccc{config_container_id};
     Domain::ConfigContainer& cc = *ASSERT_VAL(project.find_config_container(config_container_id));
 
-    // fill ccc presets from cc.print_config
-    PresetBundle& preset_bundle = m_workbench.preset_bundle_legacy();
-    auto pt                     = preset_bundle.printers.get_selected_preset().printer_technology();
-    // Legacy, remove when possilbe
-    DynamicPrintConfig config;
-    preset_bundle.load_config_model(project.file_name(), config.full_print_config());
-    ccc.printer = create_preset_state(preset_bundle.printers);
-    ccc.print   = create_preset_state(
-        pt == PrinterTechnology::ptFFF ? preset_bundle.prints : preset_bundle.sla_prints
-    );
-    ccc.materials = {create_preset_state(preset_bundle.materials(pt))};
-    ccc.preset_bundle_runtime.update_compatible_prints(preset_bundle, ccc.printer.edited_preset);
-    ccc.preset_bundle_runtime.update_compatible_materials(
-        preset_bundle,
-        ccc.printer.edited_preset,
-        ccc.print.edited_preset
-    );
+    // TODO: initialize ConfigContainerContext here
 
     bool _;
     std::tie(it, _) = project_context.config_containers.emplace(config_container_id, std::move(ccc));
     return it->second;
-}
-
-PresetCollection& PresetInteractor::legacy_preset_collection(Slic3r::Preset::Type preset_type)
-{
-    auto& pb = m_workbench.preset_bundle_legacy();
-    return pb.get_presets(preset_type);
-}
-
-PresetState PresetInteractor::create_preset_state(Slic3r::Preset* selected_preset)
-{
-    auto& collection = m_workbench.preset_bundle_legacy().get_presets(selected_preset->type);
-    return {selected_preset, collection.get_preset_parent(*selected_preset)};
-}
-
-PresetState PresetInteractor::create_preset_state(PresetCollection& source_with_selected)
-{
-    auto& preset = source_with_selected.get_selected_preset();
-    return {&preset, source_with_selected.get_selected_preset_parent()};
-}
-
-const DynamicPrintConfig& LegacyPresetConfigInteractor::config() const
-{
-    return m_parent.selected_config_container_context()
-        .preset_state(m_preset_type, m_preset_index)
-        .edited_preset.config;
-}
-
-const PresetState& LegacyPresetConfigInteractor::legacy_preset_state() const
-{
-    return m_parent.selected_config_container_context().preset_state(m_preset_type, m_preset_index);
-}
-
-void LegacyPresetConfigInteractor::set_config_value(
-    const std::string& name,
-    const boost::any& value,
-    int opt_index
-)
-{
-    // Removed
-    //m_parent.set_legacy_preset_state_value(m_preset_type, m_preset_index, name, value, opt_index);
-}
-
-void LegacyPresetConfigInteractor::set_config_num_extruders(size_t num_extruders)
-{
-    // Removed
-    //m_parent.set_legacy_preset_state_config_num_extruders(m_preset_type, m_preset_index, num_extruders);
-}
-
-void LegacyPresetConfigInteractor::set_config(const Slic3r::DynamicPrintConfig& config)
-{
-    //m_parent.set_legacy_preset_state(m_preset_type, m_preset_index, config);
-}
-
-void LegacyPresetConfigInteractor::modify_config(IConfigInteractor::ModifyFunc mod_fn)
-{
-    //m_parent.modify_legacy_preset_state(m_preset_type, m_preset_index, mod_fn);
 }
 
 } // namespace Slic3r::Biz::Preset

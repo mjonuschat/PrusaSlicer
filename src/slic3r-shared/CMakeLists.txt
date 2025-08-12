@@ -458,15 +458,10 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp
         include/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp
         src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.cpp
-        include/Slic3r/Biz/Preset/PresetState.hpp
-        include/Slic3r/Biz/Preset/PresetRuntime.hpp
-        include/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
         include/Slic3r/Biz/Preset/PresetHints.hpp
         src/Slic3r/Biz/Preset/PresetHints.cpp
         include/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
         src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
-        src/Slic3r/Biz/Preset/PresetBundleRuntime.cpp
-        include/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
 
 #		include/Slic3r/Biz/Preset/Bundle.hpp
 #		src/Slic3r/Biz/Preset/Bundle.cpp

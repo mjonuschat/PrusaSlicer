@@ -27,6 +27,10 @@ class PrintConfigView;
 class PrintObjectConfigView;
 class DynamicPrintConfig;
 
+namespace Domain {
+struct ConfigPackFDM;
+}
+
 // Parameters to guide object slicing and support generation.
 // The slicing parameters account for a raft and whether the 1st object layer is printed with a normal or a bridging flow
 // (using a normal flow over a soluble support, using a bridging flow over a non-soluble support).
@@ -201,11 +205,13 @@ int generate_layer_height_texture(
 namespace Slicing {
 	// Minimum layer height for the variable layer height algorithm. Nozzle index is 1 based.
 	double min_layer_height_from_nozzle(const DynamicPrintConfig &print_config, int idx_nozzle);
+    double min_layer_height_from_nozzle(const Domain::ConfigPackFDM& print_config, int idx_nozzle);
 
 	// Maximum layer height for the variable layer height algorithm, 3/4 of a nozzle dimaeter by default,
 	// it should not be smaller than the minimum layer height.
 	// Nozzle index is 1 based.
 	double max_layer_height_from_nozzle(const DynamicPrintConfig &print_config, int idx_nozzle);
+    double max_layer_height_from_nozzle(const Domain::ConfigPackFDM& print_config, int idx_nozzle);
 } // namespace Slicing
 
 } // namespace Slic3r

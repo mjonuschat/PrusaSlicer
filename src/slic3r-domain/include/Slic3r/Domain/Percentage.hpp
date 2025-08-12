@@ -21,6 +21,7 @@ public:
 
     bool is_percentage() const { return m_is_percentage; }
     bool is_zero() const { return m_value == 0.; }
+    bool is_positive() const { return m_value > 0; }
 
     double float_value() const
     {

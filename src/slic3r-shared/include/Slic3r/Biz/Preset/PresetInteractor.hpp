@@ -14,44 +14,12 @@
 
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 
-#include "libslic3r/PresetBundle.hpp"
-
 namespace Slic3r::Biz::Preset {
 
 class IBedPresetSwitchedListener;
 class IPresetChangedListener;
 
 class PresetInteractor;
-
-/**
- * Implements interaction with Preset underlying DynamicPrintConfig
- */
-class LegacyPresetConfigInteractor : public IConfigInteractor
-{
-public:
-    LegacyPresetConfigInteractor(
-        PresetInteractor& parent,
-        Slic3r::Preset::Type preset_type,
-        size_t preset_index = 0
-    ) :
-        m_parent(parent),
-        m_preset_type(preset_type),
-        m_preset_index(preset_index)
-    {}
-
-    const DynamicPrintConfig& config() const override;
-    void set_config_value(const std::string& name, const boost::any& value, int opt_index) override;
-    void set_config(const DynamicPrintConfig& config) override;
-    void set_config_num_extruders(size_t num_extruders) override;
-    void modify_config(ModifyFunc mod_fn) override;
-
-    const PresetState& legacy_preset_state() const;
-
-private:
-    PresetInteractor& m_parent;
-    Slic3r::Preset::Type m_preset_type;
-    size_t m_preset_index;
-};
 
 enum class PresetItemType
 {
@@ -152,8 +120,6 @@ public:
     );
 
 
-    const PresetBundle& preset_bundle_legacy() const;
-
     void on_selected_config_container_changed(
         Domain::SelectionId project_id,
         Domain::SelectionId bed_id
@@ -167,7 +133,6 @@ public:
     void set_item_value(const Domain::ConfigItem& item, const Domain::ConfigValue& value, size_t index = 0);
 
 private:
-    friend class LegacyPresetConfigInteractor;
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
     PresetInteractorConfigContainerContext& mutable_selected_config_container_context();
 
@@ -212,10 +177,6 @@ private:
 
     void invoke_slicing_input_changed();
 
-    PresetCollection& legacy_preset_collection(Slic3r::Preset::Type preset_type);
-
-    static PresetState create_preset_state(PresetCollection& source_with_selected);
-    PresetState create_preset_state(Slic3r::Preset* selected_preset);
 
 private:
     using SetAccessorMap = std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor>;

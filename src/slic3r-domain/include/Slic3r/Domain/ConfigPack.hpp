@@ -2,6 +2,7 @@
 
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
+#include "Slic3r/Domain/ConfigBoxesSLA.hpp"
 
 namespace Slic3r::Domain {
 
@@ -17,6 +18,9 @@ struct ConfigPackFDM
     Domain::ProjectSettings project;
 
     bool operator==(const ConfigPackFDM&) const = default;
+
+    ContainsResult contains(const std::string& key, size_t slot);
+    ConstContainsResult contains(const std::string& key, size_t slot) const;
 };
 
 struct ConfigPackSLA
@@ -26,6 +30,9 @@ struct ConfigPackSLA
     Domain::SLAPrintSettings sla_print_settings;
 
     bool operator==(const ConfigPackSLA&) const = default;
+
+    ContainsResult contains(const std::string& key);
+    ConstContainsResult contains(const std::string& key) const;
 };
 
 using ConfigPack = std::variant<ConfigPackFDM, ConfigPackSLA>;

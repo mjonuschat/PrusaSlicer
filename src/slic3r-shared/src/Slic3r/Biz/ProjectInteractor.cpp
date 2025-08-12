@@ -12,6 +12,7 @@
 
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
+#include "libslic3r/Utils.hpp"
 
 namespace Slic3r::Biz {
 Domain::SelectionId ProjectInteractor::new_project()
@@ -57,7 +58,7 @@ void ProjectInteractor::initialize_inserted_project(size_t project_id)
         size_t cc_id                        = cc_ptr->id().id;
         const auto& selected_printer_preset = cc_ptr->selected_preset();
         Domain::Bed& bed                    = p.bed_container()
-                               .add_bed(selected_printer_preset, m_workbench.preset_bundle_legacy());
+                               .add_bed(selected_printer_preset, Slic3r::resources_dir());
         cc_ptr->set_bed(bed);
         m_scene_interactor.add_bed_instance(cc_id);
     }

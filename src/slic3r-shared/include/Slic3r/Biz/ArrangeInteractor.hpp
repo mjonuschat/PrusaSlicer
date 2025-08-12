@@ -2,6 +2,7 @@
 
 #include "Slic3r/Biz/Arrange/Settings.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+#include "Slic3r/Exception.hpp"
 
 namespace Slic3r::Biz {
 

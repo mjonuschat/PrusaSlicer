@@ -60,7 +60,6 @@ TEST_CASE("Project Interactor Listeners")
 
     Slic3r::Domain::Workbench workbench;
     Slic3r::set_data_dir(Tests::get_datadir().string());
-    workbench.load_legacy_configs();
 
     Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
     Slic3r::App::Plater::ThumbnailImageGenerator thumbnail_image_generator;

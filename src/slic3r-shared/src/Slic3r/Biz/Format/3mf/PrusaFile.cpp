@@ -16,7 +16,8 @@
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Biz/Config/SelectedPresetJson.hpp"
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
-#include "Slic3r/Domain/ConfigBoxesSLA.hpp"
+#include "Slic3r/Domain/FullConfigFDM.hpp"
+#include "Slic3r/Domain/FullConfigSLA.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Domain/Types.hpp"
 

@@ -436,7 +436,7 @@ double ArrangeInteractor::apply_arrange_result(
 
     std::size_t bed_index{0};
     for (Pack pack : std::span{packs}.subspan(0, existing_count)) {
-        const BedInstance& bed_instance{bed_instances.at(bed_index)};
+        const BedInstance& bed_instance{bed_instances.at(bed_index).get()};
         Transformation bed_trafo{bed_instance.transformation};
         const Vec2d bed_offset{to_2d(bed_trafo.get_offset())};
         offset_trafos(pack.trafos, bed_offset);

@@ -2,8 +2,6 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Preset/SelectedPreset.hpp"
 
-#include <libslic3r/Utils.hpp>
-
 namespace Slic3r::Domain {
 
 std::vector<size_t> BedContainer::beds_indices() const
@@ -30,7 +28,7 @@ Bed& BedContainer::add_bed(
     return *m_beds.back();
 }
 
-Bed& BedContainer::add_bed(const Preset::SelectedPreset& preset, const PresetBundle& preset_bundle)
+Bed& BedContainer::add_bed(const Preset::SelectedPreset& preset, const std::string& resources_dir_path)
 {
     const auto& printer_preset = preset.printer.config_box();
     auto shape_item            = printer_preset.contains("bed_shape");
@@ -43,7 +41,7 @@ Bed& BedContainer::add_bed(const Preset::SelectedPreset& preset, const PresetBun
     if (max_print_height_item.item != nullptr)
         max_print_height = max_print_height_item.item->value().get<double>();
 
-    std::string assets_path = Slic3r::resources_dir()
+    std::string assets_path = resources_dir_path
         + "/presets/"
         + preset.hw_config.repo_id
         + "/"
