@@ -67,6 +67,8 @@ using Platform::PlatformServices;
 using Platform::JobManager::JobManager;
 using Platform::JobManager::ProgressTracker;
 using Scene::BedSelection;
+using Scene::BedInstances;
+using Scene::get_selected_beds;
 
 using Trafo  = Scene::SceneInteractor::Trafo;
 using Trafos = Scene::SceneInteractor::Trafos;
@@ -275,37 +277,6 @@ double get_max_brim(const ConstModelInstanceList& instances)
     return result;
 }
 
-using BedInstanceRefWrap = std::reference_wrapper<const BedInstance>;
-using BedInstances       = std::vector<BedInstanceRefWrap>;
-
-BedInstances get_beds(
-    const SelectionId project_id,
-    const Scene::BedSelection& selection,
-    const Workbench& workbench
-)
-{
-    BedInstances result;
-
-    const ConfigContainer* config_container{
-        workbench.project(project_id).find_config_container(selection.config_container_id())
-    };
-
-    if (config_container == nullptr) {
-        return {};
-    }
-
-    for (const auto& bed_instance : config_container->bed_instances()) {
-        if (selection.is_selected(BedRef{config_container->id().id, bed_instance->id().id}))
-            result.push_back(*bed_instance);
-    }
-
-    std::ranges::sort(result, [](const BedInstanceRefWrap& a, const BedInstanceRefWrap& b) {
-        return a.get().index() < b.get().index();
-    });
-
-    return result;
-}
-
 ArrangeBed get_arrange_bed(
     const SelectionId project_id,
     const BedRef& bed_ref,
@@ -423,7 +394,7 @@ ConstModelInstanceList ArrangeInteractor::get_model_instances(
 ) const
 {
     ConstModelInstanceList result;
-    const BedInstances beds{get_beds(project_id, selection, m_workbench)};
+    const BedInstances beds{get_selected_beds(project_id, selection, m_workbench)};
     for (const auto& bed : beds) {
         const ModelInstanceList& instances{bed.get().model_instances};
         result.insert(result.end(), instances.begin(), instances.end());
@@ -446,7 +417,7 @@ double ArrangeInteractor::apply_arrange_result(
     const double initial_offset
 )
 {
-    BedInstances bed_instances{get_beds(project_id, selection, m_workbench)};
+    BedInstances bed_instances{get_selected_beds(project_id, selection, m_workbench)};
 
     std::size_t existing_count{std::min(bed_instances.size(), packs.size())};
     std::size_t remaining_count{packs.size() - existing_count};

@@ -40,7 +40,7 @@ void SlicingInteractor::create_process(
 )
 {
     SPDLOG_INFO("{}: create process", fmt::streamed(id));
-    update_status(id, Status::Modified);
+    update_status(id, {StatusCode::Modified});
     m_processes.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(id),
@@ -69,7 +69,7 @@ void SlicingInteractor::update_process(
     if (m_processes.contains(id)) {
         SPDLOG_INFO("{}: update process", fmt::streamed(id));
 
-        stop_slicing_bed(bed_instance_id);
+        stop_slicing_bed(id);
         m_update_requests.insert_or_assign(
             id,
             UpdateRequest{model, project_metadata, preset_metadata, config, bed}
@@ -85,7 +85,7 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
 {
     const SlicingId id{get_process_id(bed_instance_id)};
 
-    stop_slicing_bed(bed_instance_id);
+    stop_slicing_bed(id);
     m_processes.erase(id);
     {
         const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
@@ -102,9 +102,8 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
     invoke_listener<ISLAObjectListener>([&id](auto* listener) { listener->on_remove_bed(id); });
 }
 
-void SlicingInteractor::slice_bed(const Domain::SelectionId bed_instance_id)
+void SlicingInteractor::slice_bed(const SlicingId id)
 {
-    const SlicingId id{get_process_id(bed_instance_id)};
     ASSERT(m_processes.contains(id));
     SPDLOG_INFO("{}: slicing request", fmt::streamed(id));
 
@@ -112,9 +111,8 @@ void SlicingInteractor::slice_bed(const Domain::SelectionId bed_instance_id)
     process_slicing_queue();
 }
 
-void SlicingInteractor::stop_slicing_bed(const Domain::SelectionId bed_instance_id)
+void SlicingInteractor::stop_slicing_bed(const Domain::SlicingId id)
 {
-    const SlicingId id{get_process_id(bed_instance_id)};
     ASSERT(m_processes.contains(id));
 
     const auto it{std::ranges::find(m_slicing_queue, id)};
@@ -131,8 +129,8 @@ void SlicingInteractor::slice_all()
     m_slicing_queue = {};
     for (const auto& pair : m_processes) {
         const SlicingId id{pair.first};
-        const Status status{get_status(id)};
-        if (status == Status::Empty || status == Status::Finished) {
+        const StatusCode status{get_status(id).code};
+        if (status == StatusCode::Empty || status == StatusCode::Finished) {
             continue;
         }
         SPDLOG_INFO("{}: slicing request", fmt::streamed(id));
@@ -289,7 +287,7 @@ void SlicingInteractor::process_update_requests()
     std::set<SlicingId> to_remove;
     for (auto& [id, request] : m_update_requests) {
         BackgroundProcess& process{m_processes.at(id)};
-        if (is_thread_active(get_status(id))) {
+        if (is_thread_active(get_status(id).code)) {
             continue;
         }
 
@@ -330,7 +328,7 @@ int64_t SlicingInteractor::get_active_processes_count() const
 {
     const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
     return std::ranges::count_if(m_statuses, [](const auto& pair) {
-        const Status status{pair.second};
+        const StatusCode status{pair.second.code};
         return is_thread_active(status);
     });
 }

@@ -22,11 +22,10 @@ class SidebarActionButtons : public Yoga::Window
 public:
     SidebarActionButtons(const std::string& name, Render::ModuleType type, Navigator* render_module_navigator);
 
-    void on_init(Biz::ProjectInteractor* project_interactor);
+    virtual void on_init(Biz::ProjectInteractor* project_interactor);
 
 protected:
     Domain::SlicingId active_bed_slicing_id() const;
-    bool slice_allowed() const;
     void navigate_to_other();
 
 protected:

@@ -144,7 +144,7 @@ bool SidebarPreviewActionButtons::export_allowed() const
         m_project_interactor->status_cache().get_status(id)
     };
 
-    return status && status == Biz::Slicing::Status::Finished;
+    return status && status->code == Biz::Slicing::StatusCode::Finished;
 }
 
 } // namespace Slic3r::App::Preview

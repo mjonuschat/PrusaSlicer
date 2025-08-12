@@ -4,7 +4,7 @@ namespace Slic3r::Biz {
 
 void StatusCache::on_status_changed(const Slicing::Status status, const Domain::SlicingId id)
 {
-    if (status == Slicing::Status::Removed) {
+    if (status.code == Slicing::StatusCode::Removed) {
         m_statuses.erase(id);
     } else {
         m_statuses[id] = status;

@@ -22,6 +22,7 @@ enum class Icon : wchar_t
     MinimalizeButton,
     MinimalizeHoverButton,
     WarningMarker,
+    WarningMarkerWhite,
     ErrorMarker,
     EjectButton,
     EjectHoverButton,

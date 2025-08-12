@@ -41,16 +41,6 @@ Domain::SlicingId SidebarActionButtons::active_bed_slicing_id() const
     };
 }
 
-bool SidebarActionButtons::slice_allowed() const
-{
-    const Domain::SlicingId id = m_project_interactor->selected_bed_slicing_id();
-    const std::optional<Biz::Slicing::Status> status{
-        m_project_interactor->status_cache().get_status(id)
-    };
-
-    return status && status == Biz::Slicing::Status::Modified;
-}
-
 void SidebarActionButtons::navigate_to_other()
 {
     m_render_module_navigator->set_render_module_type(m_navigate_to_type);

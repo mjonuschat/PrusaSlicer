@@ -409,8 +409,7 @@ public:
         clear_support_layers();
     }
 
-    PrintBase::ApplyStatus  set_instances(PrintInstances &&instances);
-    SlicingSync::PrintSteps set_instances_new(PrintInstances &&instances);
+    SlicingSync::PrintSteps set_instances(PrintInstances &&instances);
     // Invalidates the step, and its depending steps in PrintObject and Print.
     bool                    invalidate_step(PrintObjectStep step);
     // Invalidates all PrintObject and Print steps.
@@ -582,14 +581,14 @@ public:
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
     std::vector<Domain::ObjectID> print_object_ids() const override;
 
-    virtual Biz::Print::ApplyStatus update(
+    virtual Biz::Print::ApplyStatus::Status update(
         Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
         const Biz::Print::SerializedConfig& serialized_config
     ) override;
 
-    ApplyStatus apply(
+    bool apply(
         const Domain::Model& model,
         const Domain::FullConfigFDMPtr& new_full_config_ptr,
         const Biz::Print::SerializedConfig& serialized_config,
@@ -638,7 +637,7 @@ public:
     double              skirt_first_layer_height() const;
     Flow                brim_flow() const;
     Flow                skirt_flow() const;
-    
+
     std::vector<unsigned int> object_extruders() const;
     std::vector<unsigned int> support_material_extruders() const;
     std::vector<unsigned int> extruders() const;

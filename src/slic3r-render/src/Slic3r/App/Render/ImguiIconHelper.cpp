@@ -110,6 +110,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::EjectButton, "notification_eject_sd"},
     {Icon::EjectHoverButton, "notification_eject_sd_hover"},
     {Icon::WarningMarker, "notification_warning"},
+    {Icon::WarningMarkerWhite, "notification_warning_white"},
     {Icon::ErrorMarker, "notification_error"},
     {Icon::CancelButton, "notification_cancel"},
     {Icon::CancelHoverButton, "notification_cancel_hover"},

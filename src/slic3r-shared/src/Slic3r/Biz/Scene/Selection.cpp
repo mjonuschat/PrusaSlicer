@@ -184,4 +184,32 @@ bool BedSelection::remove(const Domain::BedRef& bed_ref)
     return erased_count != 0;
 }
 
+BedInstances get_selected_beds(
+    const Domain::SelectionId project_id,
+    const BedSelection& selection,
+    const Domain::Workbench& workbench
+)
+{
+    BedInstances result;
+
+    const Domain::ConfigContainer* config_container{
+        workbench.project(project_id).find_config_container(selection.config_container_id())
+    };
+
+    if (config_container == nullptr) {
+        return {};
+    }
+
+    for (const auto& bed_instance : config_container->bed_instances()) {
+        if (selection.is_selected(Domain::BedRef{config_container->id().id, bed_instance->id().id}))
+            result.push_back(*bed_instance);
+    }
+
+    std::ranges::sort(result, [](const BedInstanceRefWrap& a, const BedInstanceRefWrap& b) {
+        return a.get().index() < b.get().index();
+    });
+
+    return result;
+}
+
 } // namespace Slic3r::Biz::Scene

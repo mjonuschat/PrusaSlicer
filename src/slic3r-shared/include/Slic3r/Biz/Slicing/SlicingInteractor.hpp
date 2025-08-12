@@ -93,8 +93,8 @@ public:
 
     /* Blocks the UI thread if the process is running! */
     void remove_bed(const Domain::SelectionId bed_instance_id);
-    void slice_bed(const Domain::SelectionId bed_instance_id);
-    void stop_slicing_bed(const Domain::SelectionId bed_instance_id);
+    void slice_bed(const Domain::SlicingId slicing_id);
+    void stop_slicing_bed(const Domain::SlicingId slicing_id);
     void slice_all();
     void stop_all();
 

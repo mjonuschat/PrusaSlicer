@@ -43,7 +43,9 @@ void Text::render(Vec2f pos, Vec2f size)
 
 const std::string& Text::text() const { return m_text; }
 
-void Text::set_text(const std::string& text) { m_text = text; }
+void Text::set_text(const std::string& text) {
+    m_text = text;
+}
 
 Vec2f Text::get_item_size()
 {

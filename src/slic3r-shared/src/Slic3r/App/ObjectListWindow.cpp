@@ -140,7 +140,7 @@ void ObjectListWindow::update_sliced_info()
     const std::optional<Biz::Slicing::Status> status{
         m_project_interactor->status_cache().get_status(id) };
 
-    const bool is_finished = status && status == Biz::Slicing::Status::Finished;
+    const bool is_finished = status && status->code == Biz::Slicing::StatusCode::Finished;
     m_sliced_info->set_visible(is_finished);
 
     if (!is_finished) {

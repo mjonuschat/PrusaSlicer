@@ -150,30 +150,7 @@ PrintObject::PrintObject(Print* print, Domain::ModelObject* model_object, const 
     this->set_instances(std::move(instances));
 }
 
-PrintBase::ApplyStatus PrintObject::set_instances(PrintInstances &&instances)
-{
-    for (PrintInstance &i : instances)
-    	// Add the center offset, which will be subtracted from the mesh when slicing.
-    	i.shift += m_center_offset;
-    // Invalidate and set copies.
-    PrintBase::ApplyStatus status = PrintBase::APPLY_STATUS_UNCHANGED;
-    bool equal_length = instances.size() == m_instances.size();
-    bool equal = equal_length && std::equal(instances.begin(), instances.end(), m_instances.begin(), 
-    	[](const PrintInstance& lhs, const PrintInstance& rhs) { return lhs.model_instance == rhs.model_instance && lhs.shift == rhs.shift; });
-    if (! equal) {
-        status = PrintBase::APPLY_STATUS_CHANGED;
-        if (m_print->invalidate_steps({ psSkirtBrim, psGCodeExport }) ||
-            (! equal_length && m_print->invalidate_step(psWipeTower)))
-            status = PrintBase::APPLY_STATUS_INVALIDATED;
-        m_instances = std::move(instances);
-        for (PrintInstance &i : m_instances)
-            i.print_object = this;
-    }
-
-    return status;
-}
-
-SlicingSync::PrintSteps PrintObject::set_instances_new(PrintInstances &&instances)
+SlicingSync::PrintSteps PrintObject::set_instances(PrintInstances &&instances)
 {
     using SlicingSync::PrintSteps;
 

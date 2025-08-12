@@ -465,10 +465,24 @@ private:
 };
 
 namespace Biz::Print {
-enum class ApplyStatus {
-    unchanged,
-    changed
+
+namespace ApplyStatus {
+struct Unchanged
+{};
+
+struct Changed
+{
+    std::vector<std::string> warrnings;
 };
+
+struct InvalidData
+{
+    std::string error;
+};
+
+using Status = std::variant<InvalidData, Unchanged, Changed>;
+} // namespace ApplyStatus
+
 
 struct ZDepth{
     double z{};
@@ -479,7 +493,7 @@ using WipeTowerGeometry = std::vector<ZDepth>;
 
 class IPrint {
 public:
-    virtual ApplyStatus update(
+    virtual ApplyStatus::Status update(
         Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
@@ -519,16 +533,6 @@ public:
 
     // Validate the print, return empty string if valid, return error if process() cannot (or should not) be started.
     virtual std::string     validate(std::vector<std::string>* warnings = nullptr) const { return std::string(); }
-
-    enum ApplyStatus {
-        // No change after the Print::apply() call.
-        APPLY_STATUS_UNCHANGED,
-        // Some of the Print / PrintObject / PrintObjectInstance data was changed,
-        // but no result was invalidated (only data influencing not yet calculated results were changed).
-        APPLY_STATUS_CHANGED,
-        // Some data was changed, which in turn invalidated already calculated steps.
-        APPLY_STATUS_INVALIDATED,
-    };
 
     const Domain::Model&                  model() const { return m_model; }
     std::optional<Domain::ModelWipeTower> wipe_tower() const {

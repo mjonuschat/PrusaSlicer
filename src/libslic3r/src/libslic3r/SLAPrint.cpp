@@ -816,13 +816,15 @@ InstanceTrafos get_instance_trafos(const SLAPrintObject& object) {
     return instance_trafos;
 }
 
-Biz::Print::ApplyStatus SLAPrint::update(
+Biz::Print::ApplyStatus::Status SLAPrint::update(
     Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
     const Biz::Print::SerializedConfig& serialized_config
 )
 {
+    namespace ApplyStatus = Biz::Print::ApplyStatus;
+
     std::set<ObjectID> old_ids{};
     for (const SLAPrintObject* object : m_objects) {
         old_ids.insert(object->model_object()->id());
@@ -834,7 +836,7 @@ Biz::Print::ApplyStatus SLAPrint::update(
     });
     const bool changed{!invalidated_steps.empty()};
     if (!changed) {
-        return Biz::Print::ApplyStatus::unchanged;
+        return ApplyStatus::Unchanged{};
     }
 
     m_on_sla_result({});
@@ -866,7 +868,7 @@ Biz::Print::ApplyStatus SLAPrint::update(
         }
     }
 
-    return Biz::Print::ApplyStatus::changed;
+    return ApplyStatus::Changed{};
 }
 
 InvalidatedSteps SLAPrint::apply(

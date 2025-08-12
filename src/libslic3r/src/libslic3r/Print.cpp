@@ -94,32 +94,40 @@ void Print::clear()
     m_model.clear_objects();
 }
 
-using Domain::FullConfigFDM;
 using Domain::FullConfigFDMPtr;
 
-Biz::Print::ApplyStatus Print::update(
+Biz::Print::ApplyStatus::Status Print::update(
     Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
     const Biz::Print::SerializedConfig& serialized_config
 )
 {
-    Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
+    namespace ApplyStatus = Biz::Print::ApplyStatus;
+
+    ApplyStatus::Status result{ApplyStatus::Unchanged{}};
     Biz::Slicing::with_limited_instances(model, bed.model_instances, [&]() {
-        const ApplyStatus status{this->apply(
+
+        const bool changed{this->apply(
             model,
             prepare_slicing_input(std::get<ConfigPackFDM>(config)),
             serialized_config,
             bed.wipe_tower,
             bed.custom_gcode
         )};
-        if (status == APPLY_STATUS_UNCHANGED) {
+        if (!changed) {
             return;
         }
-        result = Biz::Print::ApplyStatus::changed;
+        std::vector<std::string> warrnings;
+        const std::string error{validate(&warrnings)};
+        if (!error.empty()) {
+            result = ApplyStatus::InvalidData{error};
+        } else {
+            result = ApplyStatus::Changed{warrnings};
+        }
     });
 
-    if (result == Biz::Print::ApplyStatus::changed) {
+    if (!std::holds_alternative<ApplyStatus::Unchanged>(result)) {
         m_on_fdm_result({});
     }
 
@@ -291,7 +299,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
 
     if (m_config.get<bool>("avoid_crossing_perimeters") && m_config.get<bool>("avoid_crossing_curled_overhangs")) {
         return _u8L("Avoid crossing perimeters option and avoid crossing curled overhangs option cannot be both enabled together.");
-    }    
+    }
 
     if (m_config.get<bool>("spiral_vase")) {
         size_t total_copies_count = 0;
@@ -392,7 +400,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             return _u8L("The Wipe Tower currently does not support volumetric E (use_volumetric_e=0).");
         if (m_config.get<bool>("complete_objects") && extruders.size() > 1)
             return _u8L("The Wipe Tower is currently not supported for multimaterial sequential prints.");
-        
+
         if (m_objects.size() > 1) {
             const SlicingParameters     &slicing_params0       = m_objects.front()->slicing_parameters();
             size_t                       tallest_object_idx    = 0;
@@ -440,7 +448,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             }
         }
     }
-    
+
 	{
 		// Find the smallest used nozzle diameter and the number of unique nozzle diameters.
 		double min_nozzle_diameter = std::numeric_limits<double>::max();
@@ -450,15 +458,6 @@ std::string Print::validate(std::vector<std::string>* warnings) const
 			min_nozzle_diameter = std::min(min_nozzle_diameter, dmr);
 			max_nozzle_diameter = std::max(max_nozzle_diameter, dmr);
 		}
-
-#if 0
-        // We currently allow one to assign extruders with a higher index than the number
-        // of physical extruders the machine is equipped with, as the Printer::apply() clamps them.
-        unsigned int total_extruders_count = m_config.nozzle_diameter.size();
-        for (const auto& extruder_idx : extruders)
-            if ( extruder_idx >= total_extruders_count )
-                return _u8L("One or more object were assigned an extruder that the printer does not have.");
-#endif
 
         auto validate_extrusion_width = [/*min_nozzle_diameter,*/ max_nozzle_diameter](const Domain::ConfigView &config, const char *opt_key, double layer_height, std::string &err_msg) -> bool {
             // This may change in the future, if we switch to "extrusion width wrt. nozzle diameter"
@@ -543,7 +542,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             }
             if (first_layer_height > first_layer_min_nozzle_diameter)
                 return _u8L("First layer height can't be greater than nozzle diameter");
-            
+
             // validate layer_height
             if (layer_height > min_nozzle_diameter)
                 return _u8L("Layer height can't be greater than nozzle diameter");
@@ -576,63 +575,6 @@ std::string Print::validate(std::vector<std::string>* warnings) const
 
     return std::string();
 }
-
-#if 0
-// the bounding box of objects placed in copies position
-// (without taking skirt/brim/support material into account)
-BoundingBox Print::bounding_box() const
-{
-    BoundingBox bb;
-    for (const PrintObject *object : m_objects)
-        for (const PrintInstance &instance : object->instances()) {
-        	BoundingBox bb2(object->bounding_box());
-        	bb.merge(bb2.min + instance.shift);
-        	bb.merge(bb2.max + instance.shift);
-        }
-    return bb;
-}
-
-// the total bounding box of extrusions, including skirt/brim/support material
-// this methods needs to be called even when no steps were processed, so it should
-// only use configuration values
-BoundingBox Print::total_bounding_box() const
-{
-    // get objects bounding box
-    BoundingBox bb = this->bounding_box();
-    
-    // we need to offset the objects bounding box by at least half the perimeters extrusion width
-    Flow perimeter_flow = m_objects.front()->get_layer(0)->get_region(0)->flow(frPerimeter);
-    double extra = perimeter_flow.width/2;
-    
-    // consider support material
-    if (this->has_support_material()) {
-        extra = std::max(extra, SUPPORT_MATERIAL_MARGIN);
-    }
-    
-    // consider brim and skirt
-    if (m_config.brim_width.value > 0) {
-        Flow brim_flow = this->brim_flow();
-        extra = std::max(extra, m_config.brim_width.value + brim_flow.width/2);
-    }
-    if (this->has_skirt()) {
-        int skirts = m_config.skirts.value;
-        if (skirts == 0 && this->has_infinite_skirt()) skirts = 1;
-        Flow skirt_flow = this->skirt_flow();
-        extra = std::max(
-            extra,
-            m_config.brim_width.value
-                + m_config.skirt_distance.value
-                + skirts * skirt_flow.spacing()
-                + skirt_flow.width/2
-        );
-    }
-    
-    if (extra > 0)
-        bb.offset(scale_(extra));
-    
-    return bb;
-}
-#endif
 
 double Print::skirt_first_layer_height() const
 {
