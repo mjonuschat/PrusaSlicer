@@ -54,7 +54,9 @@ public:
     void render_imgui();
 private:
     void close();
+
     bool init_create(Domain::ModelVolumeType volume_type);
+    bool emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results);
 
     void update_presets_list();
     void activate_preset(/*preset*/);
@@ -68,8 +70,7 @@ private:
     Biz::Emboss::TextPresetManager m_preset_manager;
 
     std::string m_text; // embossed text
-    Domain::EmbossProjection m_projection = {};
-    
+   
     Yoga::Passthrough<TextDialog> m_dialog;
     Biz::ProjectInteractor& m_project_interactor;
 };

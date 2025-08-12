@@ -988,7 +988,7 @@ void MeasureGizmo::update_feature_detection_data(
                 &(*inst_it),
                 first_pick.node,
                 ctx.pick_ray(),
-                first_pick.t
+                first_pick.cast.distance
             };
             return;
         }
@@ -997,7 +997,7 @@ void MeasureGizmo::update_feature_detection_data(
     double t = 0.0;
     for (size_t i = 0; i < pick_results.size(); ++i) {
         if (pick_results[i].node == scene_node) {
-            t = pick_results[i].t;
+            t = pick_results[i].cast.distance;
             break;
         }
     }

@@ -85,8 +85,8 @@ public:
     void set_warning(const std::string& warning);
     void show_revert_buttons(bool show);
 
-private:
     void set_enable_all_except_font(bool enable);
+private:
     void add_advanced_panel();
     void add_part_specific_panel();
 

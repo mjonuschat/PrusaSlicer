@@ -522,6 +522,18 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Add instance")
     );
 
+    m_toolbar_text = m_layout->add_toolbar_item_gizmo( // Move up for faster debugging
+        ToolbarID::Middle,
+        Render::Icon::ToolbarText,
+        "Text",
+        "T",
+        { .action =
+             [this]() {
+                 toggle_activate_tool(Scene::ToolType::Text);
+             } },
+        m_text_gizmo
+    );
+
     m_toolbar_move = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Move,
@@ -564,17 +576,6 @@ void PlaterRenderModule::init_scene_layout()
         m_simplify_gizmo
     );
 
-    m_toolbar_text = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle,
-        Render::Icon::ToolbarText,
-        "Text",
-        "T",
-        {.action =
-             [this]() {
-                 toggle_activate_tool(Scene::ToolType::Text);
-             }},
-        m_text_gizmo
-    );
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::PaintSupports,

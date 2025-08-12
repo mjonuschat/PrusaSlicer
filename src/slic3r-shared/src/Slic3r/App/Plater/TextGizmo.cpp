@@ -45,8 +45,8 @@ public:
             return shape; // use cached value
         FontFileWithCache font_with_cache(m_font_manager.open(m_text_configuration.style.descriptor));
         std::wstring text = boost::nowide::widen(m_text_configuration.text);
-        const Domain::FontProp font_prop; // default font properties
-        shape = {.shapes_with_ids{text2vshapes(font_with_cache, text, font_prop)}};
+        const Domain::FontProp& font_prop = m_text_configuration.style.prop;
+        shape.shapes_with_ids = text2vshapes(font_with_cache, text, font_prop);
         return shape;
     }
 
@@ -67,35 +67,6 @@ private:
     Biz::Emboss::IFontManager& m_font_manager;
 };
 } // namespace Slic3r::Biz::Emboss
-
-namespace {
-using namespace Slic3r;
-
-Biz::Emboss::CreateVolumeParams create_volume_params(
-    Biz::ProjectInteractor& project_interactor,
-    Biz::Emboss::IFontManager& font_manager,
-    Domain::TextConfiguration&& configuration,
-    Domain::EmbossProjection& projection,
-    Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART
-)
-{
-    
-    return Biz::Emboss::CreateVolumeParams{
-        .base{
-            .shape_provider = std::make_unique<Biz::Emboss::TextShapeProvider>(
-                std::move(configuration),
-                projection,
-                font_manager
-            ),
-            .project_interactor = project_interactor,
-            .is_outside         = (volume_type == Domain::ModelVolumeType::MODEL_PART),
-            .volume_name        = "Embossed textik"
-        },
-        .volume_type = volume_type,
-        .gizmo       = 13
-    };
-}
-} // namespace
 
 namespace Slic3r::App::Plater {
 
@@ -184,18 +155,8 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
     if (mouse_event.type() == MouseEvent::Type::ButtonDown
         && mouse_event.button() == MouseButton::Right)
     {
-        Domain::TextConfiguration text_config{
-            .style = m_preset_manager.get_preset().emboss_style,
-            .text = m_text
-        };
-        auto params = create_volume_params(
-            m_project_interactor,
-            m_font_manager,
-            std::move(text_config),
-            m_projection,
-            Domain::ModelVolumeType::NEGATIVE_VOLUME
-        );
-        if (Biz::Emboss::start_create_volume(params, ctx.pick_ray(), ctx.pick_results()))
+        Domain::ModelVolumeType type = Domain::ModelVolumeType::NEGATIVE_VOLUME;
+        if(emboss_text(type, ctx.pick_ray(), ctx.pick_results()))
             return Scene::GizmoActivationState::Active; // create volume at pick ray
     }
     return Scene::GizmoActivationState::Inactive;
@@ -215,68 +176,72 @@ void TextGizmo::register_commands(Platform::CommandRegistry& registry)
 
 void TextGizmo::render_imgui()
 {
-    if (ImGui::Begin("Text Gizmo")) {
-        ImGui::TextColored(
-            ImVec4(.1f, .9f, .2f, 1.f),
-            "RClick add negative volume \n or object on plate"
-        );
+    if (!ImGui::Begin("Text Gizmo"))
+        return ImGui::End();
+     
+    ImGui::TextColored(
+        ImVec4(.1f, .9f, .2f, 1.f),
+        "RClick add negative volume \n or object on plate"
+    );
 
-        ImVec2 input_size(-FLT_MIN, ImGui::GetTextLineHeightWithSpacing() * 3);
-        const ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput
-            | ImGuiInputTextFlags_AutoSelectAll;
-        ImGui::InputTextMultiline("##emboss_text_input", &m_text, input_size, flags);
+    ImVec2 input_size(-FLT_MIN, ImGui::GetTextLineHeightWithSpacing() * 3);
+    const ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput
+        | ImGuiInputTextFlags_AutoSelectAll;
+    ImGui::InputTextMultiline("##emboss_text_input", &m_text, input_size, flags);
 
-        const Domain::FontList& fonts = m_font_manager.get_fonts();
-        auto it_font                  = std::find_if(
-            fonts.begin(),
-            fonts.end(),
-            [&path = m_preset_manager.get_preset().emboss_style.descriptor.path](const Domain::FontDescriptor& fd) {
-                return fd.path == path;
-            }
-        );
-        std::string selected = (it_font == fonts.end()) ? std::string("Not selected yet") :
-                                                          it_font->name;
-        if (ImGui::BeginCombo("Font", selected.c_str())) {
-            for (const Domain::FontDescriptor& fd : fonts) {
-                const bool is_selected = (it_font == fonts.end()) ? false : &fd == &(*it_font);
-                if (ImGui::Selectable(fd.name.c_str(), is_selected)) {
-                    m_preset_manager.get_preset().emboss_style.descriptor = fd;
-                }
-
-                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
+    const Domain::FontList& fonts = m_font_manager.get_fonts();
+    auto it_font                  = std::find_if(
+        fonts.begin(),
+        fonts.end(),
+        [&path = m_preset_manager.get_preset().emboss_style.descriptor.path](const Domain::FontDescriptor& fd) {
+            return fd.path == path;
         }
-
-        // pressets
-
-        if (ImGui::BeginCombo(
-                "Pressets",
-                m_preset_manager.get_preset().emboss_style.descriptor.name.c_str()
-            ))
-        {
-            const auto& styles = m_preset_manager.get_presets();
-            for (const Biz::Emboss::TextPresetManager::Preset& style : styles) {
-                const bool is_selected = (&style - &styles.front())
-                    == m_preset_manager.get_preset_index();
-                if (ImGui::Selectable(style.emboss_style.descriptor.name.c_str(), is_selected)) {
-                    m_preset_manager.load_preset(style);
-                }
-
-                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
+    );
+    std::string selected = (it_font == fonts.end()) ? std::string("Not selected yet") :
+                                                        it_font->name;
+    if (ImGui::BeginCombo("Font", selected.c_str())) {
+        for (const Domain::FontDescriptor& fd : fonts) {
+            const bool is_selected = (it_font == fonts.end()) ? false : &fd == &(*it_font);
+            if (ImGui::Selectable(fd.name.c_str(), is_selected)) {
+                m_preset_manager.get_preset().emboss_style.descriptor = fd;
             }
-            ImGui::EndCombo();
-        }
 
-        ImGui::Text("Emboss text");
-        if (ImGui::Button("Close")) {
-            close();
+            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
         }
+        ImGui::EndCombo();
     }
+
+    // pressets
+
+    if (ImGui::BeginCombo(
+            "Pressets",
+            m_preset_manager.get_preset().emboss_style.descriptor.name.c_str()
+        ))
+    {
+        const auto& styles = m_preset_manager.get_presets();
+        for (const Biz::Emboss::TextPresetManager::Preset& style : styles) {
+            const bool is_selected = (&style - &styles.front())
+                == m_preset_manager.get_preset_index();
+            if (ImGui::Selectable(style.emboss_style.descriptor.name.c_str(), is_selected)) {
+                m_preset_manager.load_preset(style);
+            }
+
+            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+        
+    ImGui::InputFloat("size_in_mm", &m_preset_manager.get_preset().emboss_style.prop.size_in_mm);
+    ImGui::InputDouble("depth", &m_preset_manager.get_preset().projection.depth);
+
+    if (ImGui::Button("Close")) {
+        close();
+    }
+
     ImGui::End();
 }
 
@@ -301,7 +266,18 @@ const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor
 
     const Domain::ElementRef& selected = selection.elements.front();
     const Domain::Project& project = project_interactor.selected_project();
-    const Domain::ModelVolume* volume_ptr = project.find_volume_by_id(selected.object_id, selected.volume_id);
+    
+    const Domain::ModelVolume* volume_ptr = nullptr;
+    if (selected.has_volume()) {
+        volume_ptr = project.find_volume_by_id(selected.object_id, selected.volume_id);    
+    } else {
+        // Check is selected object contain only volume with text
+        const Domain::ModelObject* object_ptr = project.find_object_by_id(selected.object_id);
+        if (object_ptr->volumes.size() != 1)
+            return nullptr;
+        volume_ptr = object_ptr->volumes.front();
+    }
+
     if (volume_ptr == nullptr)
         return nullptr;
 
@@ -310,10 +286,7 @@ const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor
 
     return volume_ptr;
 }
-
 }
-
-
 
 void TextGizmo::on_activated()
 {
@@ -326,9 +299,14 @@ void TextGizmo::on_activated()
         m_preset_manager.discard_preset_changes();
         m_text = "Emmmbosss text";
 
+        // What shows few miliseconds till new item is created?
+        m_dialog->set_enable_all_except_font(false);
+
+        add_text_by_view_direction(Domain::ModelVolumeType::MODEL_PART);
         // TODO: how to wait till it is created?
-    
+        // Catch selection changed event
     } else {
+        m_dialog->set_enable_all_except_font(true);
         // load current settings
         const Domain::TextConfiguration& tc = *volume_ptr->text_configuration;
         const Domain::EmbossStyle& style = tc.style;
@@ -384,24 +362,23 @@ Scene::ToolType TextGizmo::type() const {
 
 bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
 {
-    if (m_gizmo_manager.current_tool_type() == type())
-        return false; // already active
+    //if (m_gizmo_manager.current_tool_type() == type())
+    //    return false; // already active
 
     if (!init_create(volume_type))
-        return false;
+        return false;    
 
-    Domain::TextConfiguration text_config{
-        .style = m_preset_manager.get_preset().emboss_style,
-        .text  = m_text
-    };
-    auto params = create_volume_params(
-        m_project_interactor,
-        m_font_manager,
-        std::move(text_config),
-        m_projection,
-        volume_type
-    );
-    return Biz::Emboss::start_create_volume_without_position(params);
+    Scene::ISceneProvider& scene_provider = m_scene_presenter;
+
+    // get (pickray + pickresults) from screen center
+    Scene::Scene& scene = static_cast<Scene::ISceneProvider&>(m_scene_presenter).scene();
+    const Render::Rect& v = scene.camera().viewport();
+    Domain::Point logic_center{ v.x + v.width / 2, v.y + v.height / 2 };
+    Scene::NodePickResults pick_results;
+    Scene::Ray pick_ray;
+    scene.pick_at(logic_center.x(), logic_center.y(), pick_results, &pick_ray);
+
+    return emboss_text(volume_type, pick_ray, pick_results);
 }
 
 void TextGizmo::close()
@@ -418,6 +395,52 @@ bool TextGizmo::init_create(Domain::ModelVolumeType volume_type)
 
     // if (wxGetApp().obj_list()->has_selected_cut_object()) return false;
     return true;
+}
+
+namespace {
+    using namespace Slic3r;
+
+    Biz::Emboss::CreateVolumeParams create_volume_params(
+        Biz::ProjectInteractor& project_interactor,
+        Biz::Emboss::IFontManager& font_manager,
+        Domain::TextConfiguration&& configuration,
+        Domain::EmbossProjection& projection,
+        Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART
+    )
+    {
+        Domain::SelectionId project_id = project_interactor.selected_project_id();
+        return Biz::Emboss::CreateVolumeParams{
+            .base{
+                .shape_provider = std::make_unique<Biz::Emboss::TextShapeProvider>(
+                    std::move(configuration),
+                    projection,
+                    font_manager
+                ),
+                .project_interactor = project_interactor,
+                .project_id = project_id,
+                .gizmo = static_cast<uint8_t>(App::Scene::ToolType::Text),
+                .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
+                .volume_name = "Embossed textik"
+            },
+            .volume_type = volume_type
+        };
+    }
+} // namespace
+
+bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results)
+{
+    Domain::TextConfiguration text_config{
+        .style = m_preset_manager.get_preset().emboss_style,
+        .text = m_text
+    };
+    auto params = create_volume_params(
+        m_project_interactor,
+        m_font_manager,
+        std::move(text_config),
+        m_preset_manager.get_preset().projection,
+        volume_type
+    );
+    return Biz::Emboss::start_create_volume(params, ray, results);
 }
 
 void TextGizmo::update_presets_list() {}
@@ -448,7 +471,7 @@ void TextGizmo::activate_preset(/*preset*/)
     double height_default = prop_.size_in_mm;
     m_dialog->set_height(height_from, height_to, height_step, height_step_fast, height, height_default);
 
-    const Domain::EmbossProjection& ep = m_projection;
+    const Domain::EmbossProjection& ep = preset.projection;
     const Domain::EmbossProjection& ep_ = preset_.projection;
 
     double depth_from = 0.1;
@@ -490,7 +513,7 @@ void TextGizmo::activate_preset(/*preset*/)
     double surface_distance = 0.;
     double surface_distance_ = preset_.distance.value_or(0.f);
     m_dialog->set_surface_distance(surface_distance_max, surface_distance_step, surface_distance, surface_distance_);
-    bool allowe_surface_distance = !m_projection.use_surface;// && !m_volume->is_the_only_one_part();
+    bool allowe_surface_distance = !preset.projection.use_surface;// && !m_volume->is_the_only_one_part();
     m_dialog->set_enable_surface_distance(allowe_surface_distance);
 
     double rotation_max = 180.;

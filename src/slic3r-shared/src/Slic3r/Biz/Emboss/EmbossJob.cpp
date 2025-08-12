@@ -70,17 +70,11 @@ struct DataCreateVolume
     // define embossed volume type
     Domain::ModelVolumeType volume_type;
 
-    // project of the object
-    Domain::SelectionId project_id;
-
     // parent ModelObject index where to create volume
     ObjectID object_id;
 
     // new created volume transformation
     std::optional<Domain::Transform3d> trmat;
-
-    // Define which gizmo open on the success
-    int /* GLGizmosManager::EType*/ gizmo;
 };
 
 // Offset of clossed side to model
@@ -112,14 +106,8 @@ struct DataCreateObject
     // Hold data about shape
     BaseData base;
 
-    // define position on screen where to create object
-    Domain::Vec2d screen_coor;
-
-    // shape of bed in case of create volume on bed
-    std::vector<Domain::Vec2d> bed_shape;
-
-    // Define which gizmo open on the success
-    int /* GLGizmosManager::EType */ gizmo;
+    // Define coordinate on the bed
+    Domain::Vec2d bed_coor;
 
     // additionl rotation around Z axe, given by style settings
     std::optional<float> angle = {};
@@ -133,7 +121,7 @@ class CreateObjectJob : public Job
 {
     DataCreateObject m_input;
     TriangleMesh m_result;
-    Domain::Transform3d m_transformation;
+    Domain::SquareMatrix4d m_transformation;
 
 public:
     explicit CreateObjectJob(DataCreateObject&& input);
@@ -159,14 +147,8 @@ struct CreateSurfaceVolumeData : public SurfaceVolumeData
     // define embossed volume type
     Domain::ModelVolumeType volume_type;
 
-    // define project where is object
-    Domain::SelectionId project_id;
-
     // parent ModelObject index where to create volume
     ObjectID object_id;
-
-    // Define which gizmo open on the success
-    int /* GLGizmosManager::EType*/ gizmo;
 };
 
 /// <summary>
@@ -368,12 +350,12 @@ void CreateVolumeJob::finalize()
         return create_message("Can't create empty volume.");
     create_volume(
         std::move(m_result),
-        m_input.project_id,
+        m_input.base.project_id,
         m_input.object_id,
         m_input.volume_type,
         m_input.trmat,
         m_input.base,
-        m_input.gizmo
+        m_input.base.gizmo
     );
 }
 
@@ -399,83 +381,52 @@ void CreateObjectJob::process(StopToken& stop)
     if (was_canceled())
         return;
 
-    // Create new object
-    // calculate X,Y offset position for lay on platter in place of
-    // mouse click
-    Domain::Vec2d bed_coor; // = CameraUtils::get_z0_position(m_input.camera, m_input.screen_coor);
-
     // check point is on build plate:
-    Domain::Points bed_shape_;
-    bed_shape_.reserve(m_input.bed_shape.size());
-    for (const Domain::Vec2d& p : m_input.bed_shape)
-        bed_shape_.emplace_back(p.cast<Domain::coord_t>());
-    Domain::Polygon bed(bed_shape_);
-    if (!Biz::Algorithms::Polygon::contains(bed, bed_coor.cast<Domain::coord_t>()))
-        // mouse pose is out of build plate so create object in center of plate
-        bed_coor = bed.centroid().cast<double>();
-
     double z = emboss_shape.projection.depth / 2;
-    Domain::Vec3d offset(bed_coor.x(), bed_coor.y(), z);
+    Domain::Vec3d offset(m_input.bed_coor.x(), m_input.bed_coor.y(), z);
 
     Domain::BoundingBox3d bb3 = m_result.bounding_box();
     offset -= (bb3.max + bb3.min) * .5; // result mesh center
 
     Domain::Transform3d::TranslationType tt(offset.x(), offset.y(), offset.z());
-    m_transformation = Domain::Transform3d(tt);
+    Domain::Transform3d transformation(tt);
 
     // rotate around Z by style settings
     if (m_input.angle.has_value()) {
         std::optional<float> distance; // new object ignore surface distance from style settings
-        Biz::Emboss::apply_transformation(m_input.angle, distance, m_transformation);
+        Biz::Emboss::apply_transformation(m_input.angle, distance, transformation);
     }
+    m_transformation = transformation.matrix();
 }
 
 void CreateObjectJob::finalize()
 {
-    // only for sure
-    if (m_result.empty())
+    if (m_result.empty()) // only for sure
         return create_message("Can't create empty object.");
 
-    // plater->take_snapshot(_L("Add Emboss text object"));
-    Domain::Model model; // = plater->model();
-    {
-        // INFO: inspiration for create object is from ObjectList::load_mesh_object()
-        Domain::ModelObject* new_object = model.add_object();
-        new_object->name                = m_input.base.volume_name;
-        new_object->add_instance(); // each object should have at list one instance
+    const BaseData& base = m_input.base;
+    if (base.project_interactor.selected_project_id() != base.project_id)
+        m_input.base.project_interactor.select_project(base.project_id);
 
-        Domain::ModelVolume* new_volume = Biz::Algorithms::ModelObject::add_volume(
-            new_object,
-            std::move(m_result)
-        );
-        // set a default extruder value, since user can't add it manually
-        // new_volume->config.set_key_value("extruder", new ConfigOptionInt(0));
-        // write emboss data into volume
-        m_input.base.shape_provider->write(*new_volume);
+    Biz::Scene::SceneInteractor& scene_interactor = base.project_interactor.scene_interactor();
+    scene_interactor.new_object_from_mesh(std::move(m_result), m_input.base.volume_name);
+    // NOTE: function above MUST select just added Object
 
-        // set transformation
-        Slic3r::Domain::Transformation tr(m_transformation);
-        new_object->instances.front()->set_transformation(tr);
-        new_object->instances.front()->set_offset(
-            new_object->instances.front()->get_offset()
-            + s_multiple_beds.get_bed_translation(s_multiple_beds.get_active_bed())
-        );
-        // new_object->ensure_on_bed();
+    const Biz::Scene::ObjectSelection& selection = scene_interactor.object_selection();
+    ASSERT(selection.elements.size() == 1);
+    const Domain::ElementRef& selected = selection.elements.front();
+    Domain::Project& project = base.project_interactor.selected_project();
+    Domain::ModelObject* object_ptr = project.find_object_by_id(selected.object_id);
+    ASSERT(object_ptr != nullptr);
+    ASSERT(object_ptr->volumes.size() == 1);
+    Domain::ModelVolume* volume_ptr = object_ptr->volumes.front();
+    ASSERT(volume_ptr != nullptr);
 
-        // Actualize right panel and set inside of selection
-        // app.obj_list()->paste_objects_into_list({model.objects.size() - 1});
-    }
+    // write emboss data into volume
+    m_input.base.shape_provider->write(*volume_ptr);
 
-    // When add new object selection is empty.
-    // When cursor move and no one object is selected than
-    // Manager::reset_all() So Gizmo could be closed before end of creation object
-    // GLCanvas3D      *canvas  = plater->canvas3D();
-    // GLGizmosManager &manager = canvas->get_gizmos_manager();
-    // if (manager.get_current_type() != m_input.gizmo)
-    // manager.open_gizmo(m_input.gizmo);
-
-    // redraw scene
-    // canvas->reload_scene(true);
+    // Transform on the wanted place
+    scene_interactor.transform_selection(m_transformation);
 }
 
 /////////////////
@@ -616,12 +567,12 @@ void CreateSurfaceVolumeJob::finalize()
 {
     create_volume(
         std::move(m_result),
-        m_input.project_id,
+        m_input.base.project_id,
         m_input.object_id,
         m_input.volume_type,
         m_input.transform,
         m_input.base,
-        m_input.gizmo
+        m_input.base.gizmo
     );
 }
 
@@ -662,14 +613,12 @@ bool is_valid(Domain::ModelVolumeType volume_type);
 /// <param name="volume_tr">Wanted volume transformation, when not set will be calculated after creation to be near the object</param>
 /// <param name="data">Define what to emboss - shape</param>
 /// <param name="volume_type">Type of volume: Part, negative, modifier</param>
-/// <param name="gizmo">Define which gizmo open on the success</param>
 /// <returns>Nullptr when job is sucessfully add to worker otherwise return data to be processed different way</returns>
 bool start_create_volume_job(
     const Domain::ModelObject& object,
     const std::optional<Domain::Transform3d>& volume_tr,
     BaseData& data,
-    Domain::ModelVolumeType volume_type,
-    int /*GLGizmosManager::EType*/ gizmo
+    Domain::ModelVolumeType volume_type
 );
 
 /// <summary>
@@ -751,7 +700,7 @@ bool start_create_volume(
             const Domain::ModelObject& object = *volume->get_object();
             input.base.shape_provider->create_text_lines(tr, ::prepare_volumes_to_slice(object));
 
-            return start_create_volume_job(object, tr, input.base, input.volume_type, input.gizmo);
+            return start_create_volume_job(object, tr, input.base, input.volume_type);
         }
         if (pick.node->has_tag_of_type<App::Scene::BedNodeTag>()) {
             double d_z = pick_ray.direction.z();
@@ -768,7 +717,11 @@ bool start_create_volume(
 
 bool start_create_volume_without_position(CreateVolumeParams& input)
 {
-    // return ::start_create_object_job(input, Vec2d(300,300)); // Temporary
+    // need gather: pickray + pickresults
+
+
+    //return ::start_create_object_job(input, Vec2d(300,300)); // Temporary
+
 
     //// select position by camera position and view direction
     // const Selection &selection = input.canvas.get_selection();
@@ -889,11 +842,11 @@ static inline bool execute_job(std::shared_ptr<Job> j)
 ////////////////////////////
 /// private namespace implementation
 namespace {
-bool check(int /*GLGizmosManager::EType*/ gizmo)
+bool check(uint8_t /*App::Scene::ToolType*/ gizmo)
 {
     return true;
-    // assert(gizmo == GLGizmosManager::Emboss || gizmo == GLGizmosManager::Svg);
-    // return gizmo == GLGizmosManager::Emboss || gizmo == GLGizmosManager::Svg;
+    // assert(gizmo == App::Scene::ToolType::Text || gizmo == App::Scene::ToolType::Svg);
+    // return gizmo == App::Scene::ToolType::Text || gizmo == App::Scene::ToolType::Svg;
 }
 
 bool check(const ObjectID& object_id)
@@ -906,14 +859,14 @@ bool check(const BaseData& base)
 {
     assert(base.shape_provider != nullptr);
     bool res = base.shape_provider != nullptr;
+    res &= check(base.gizmo);
+    res &= (base.project_id != Domain::INVALID_ID);
     return res;
 }
 
 bool check(const CreateVolumeParams& input)
 {
-    bool res        = is_valid(input.volume_type);
-    auto gizmo_type = static_cast<int /*GLGizmosManager::EType*/>(input.gizmo);
-    res &= check(gizmo_type);
+    bool res = is_valid(input.volume_type);
     res &= check(input.base);
     return res;
 }
@@ -924,7 +877,6 @@ bool check(const DataCreateVolume& input, bool is_main_thread)
     assert(input.base.shape_provider != nullptr);
     bool res = input.base.shape_provider != nullptr;
     res &= is_valid(input.volume_type);
-    res &= check(input.gizmo);
     return res;
 }
 
@@ -933,13 +885,6 @@ bool check(const DataCreateObject& input)
     bool check_fontfile = false;
     assert(input.base.shape_provider != nullptr);
     bool res = input.base.shape_provider != nullptr;
-    assert(input.screen_coor.x() >= 0.);
-    res &= input.screen_coor.x() >= 0.;
-    assert(input.screen_coor.y() >= 0.);
-    res &= input.screen_coor.y() >= 0.;
-    assert(input.bed_shape.size() >= 3); // at least triangle
-    res &= input.bed_shape.size() >= 3;
-    res &= check(input.gizmo);
     return res;
 }
 
@@ -970,7 +915,6 @@ bool check(const CreateSurfaceVolumeData& input)
 {
     bool res = check((const SurfaceVolumeData&) input);
     res &= check(input.base);
-    res &= check(input.gizmo);
     // res &= check(input.volume_type);
     res &= check(input.object_id);
     assert(!input.sources.empty());
@@ -1611,12 +1555,10 @@ bool start_create_volume_job(
     const Domain::ModelObject& object,
     const std::optional<Domain::Transform3d>& volume_tr,
     BaseData& data,
-    Domain::ModelVolumeType volume_type,
-    int /*GLGizmosManager::EType*/ gizmo
+    Domain::ModelVolumeType volume_type
 )
 {
-    Domain::SelectionId project_id = data.project_interactor.selected_project_id();
-    bool& use_surface              = data.shape_provider->get_shape().projection.use_surface;
+    bool& use_surface = data.shape_provider->get_shape().projection.use_surface;
     std::unique_ptr<Job> job;
     if (use_surface) {
         // Model to cut surface from.
@@ -1629,9 +1571,7 @@ bool start_create_volume_job(
                 std::move(sfvd),
                 std::move(data),
                 volume_type,
-                project_id,
-                object.id(),
-                gizmo
+                object.id()
             };
             job = std::make_unique<CreateSurfaceVolumeJob>(std::move(surface_data));
         }
@@ -1641,10 +1581,8 @@ bool start_create_volume_job(
         DataCreateVolume create_volume_data{
             std::move(data),
             volume_type,
-            project_id,
             object.id(),
-            volume_tr,
-            gizmo
+            volume_tr
         };
         job = std::make_unique<CreateVolumeJob>(std::move(create_volume_data));
     }
@@ -1688,18 +1626,14 @@ bool start_create_volume_job(
 
 bool start_create_object_job(CreateVolumeParams& input, const Domain::Vec2d& coor)
 {
-    return false;
-    // const Pointfs   &bed_shape  = input.build_volume.bed_shape();
-    // auto             gizmo_type = static_cast<int /*GLGizmosManager::EType*/>(input.gizmo);
-    // DataCreateObject data{std::move(input.data), coor, input.camera, bed_shape, gizmo_type, input.angle};
-
-    //// Fix: adding text on print bed with style containing use_surface
-    // if (data.base->shape.projection.use_surface)
-    // // Til the print bed is flat using surface for Object is useless
-    // data.base->shape.projection.use_surface = false;
-
-    // auto job = std::make_unique<CreateObjectJob>(std::move(data));
-    // return queue_job(input.worker, std::move(job));
+    // create transformation on the coordinate
+    DataCreateObject data {
+        .base = std::move(input.base), 
+        .bed_coor = coor,
+        .angle = input.angle
+    };    
+    auto job = std::make_unique<CreateObjectJob>(std::move(data));
+    return queue_job(std::move(job));
 }
 
 // for creation volume

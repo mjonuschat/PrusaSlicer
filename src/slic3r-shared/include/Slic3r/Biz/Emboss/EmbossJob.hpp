@@ -87,6 +87,12 @@ struct BaseData
     // Add volume into project
     Biz::ProjectInteractor& project_interactor;
 
+    // project of the object
+    Domain::SelectionId project_id;
+
+    // Define which gizmo open on the success(Text VS SVG)
+    uint8_t /* App::Scene::ToolType GLGizmosManager::EType*/ gizmo;
+
     // Define projection move
     // True (raised) .. move outside from surface (MODEL_PART)
     // False (engraved).. move into object (NEGATIVE_VOLUME & MODIFIER)
@@ -111,10 +117,6 @@ struct CreateVolumeParams
 
     // New created volume type
     Domain::ModelVolumeType volume_type;
-
-    // Define which gizmo open on the success
-    // Used only when create without opened gizmo
-    unsigned char gizmo; // GLGizmosManager::EType
 
     // Wanted additionl move in Z(emboss) direction of new created volume
     std::optional<float> distance = {};
