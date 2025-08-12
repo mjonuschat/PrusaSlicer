@@ -62,7 +62,7 @@ std::unique_ptr<IPrint> init_print(
 namespace Slic3r::Biz::Slicing {
 
 using Print::IPrint;
-using Print::ApplyStatus;
+namespace ApplyStatus = Print::ApplyStatus;
 using JThread::StopToken;
 using JThread::JThread;
 using Domain::ConfigPack;
@@ -81,23 +81,32 @@ LoggingScopeLock::~LoggingScopeLock() {
     m_mutex.unlock();
 }
 
-std::ostream& operator<<(std::ostream& output, const Status& status) {
-    switch(status) {
-        case Status::Empty: return output << "Empty";
-        case Status::Updating: return output << "Updating";
-        case Status::Running: return output << "Running";
-        case Status::Finished: return output << "Finished";
-        case Status::Modified: return output << "Modified";
-        case Status::Stopping: return output << "Stopping";
-        case Status::Removed: return output << "Removed";
+std::ostream& operator<<(std::ostream& output, const StatusCode& status_code) {
+    switch(status_code) {
+        case StatusCode::Empty: return output << "Empty";
+        case StatusCode::Updating: return output << "Updating";
+        case StatusCode::Running: return output << "Running";
+        case StatusCode::Finished: return output << "Finished";
+        case StatusCode::Modified: return output << "Modified";
+        case StatusCode::Stopping: return output << "Stopping";
+        case StatusCode::Removed: return output << "Removed";
         default: return output << "Unknown";
     }
 }
 
-bool is_thread_active(const Status status) {
-    return status == Status::Running
-        || status == Status::Stopping
-        || status == Status::Updating;
+std::ostream& operator<<(std::ostream& output, const Status& status) {
+    output << "{code: ";
+    output << status.code;
+    output << ", has_error: " << !status.error.empty();
+    output << ", has_warrnings: " << !status.warrnings.empty();
+    output << "}";
+    return output;
+}
+
+bool is_thread_active(const StatusCode status) {
+    return status == StatusCode::Running
+        || status == StatusCode::Stopping
+        || status == StatusCode::Updating;
 }
 
 Domain::PrinterTechnology get_printer_technology(const ConfigPack& config) {
@@ -152,7 +161,7 @@ BackgroundProcess::~BackgroundProcess() {
     this->m_helper_thread = {};
     this->m_thread = {};
 
-    m_on_status(Status::Removed);
+    m_on_status({StatusCode::Removed});
 }
 
 void BackgroundProcess::update(
@@ -170,21 +179,33 @@ void BackgroundProcess::update(
     const LoggingScopeLock lock{m_mutex, "background process"};
 
     const Status previous_status{m_get_status()};
-    ASSERT(!is_thread_active(previous_status), "Update must be called on stopped thread!");
-    std::optional<ApplyStatus> apply_status;
+    ASSERT(!is_thread_active(previous_status.code), "Update must be called on stopped thread!");
+    std::optional<ApplyStatus::Status> apply_status;
     const ScopeGuard guard{[this, &previous_status, &apply_status]() {
+        ASSERT(apply_status);
+
+        const bool unchanged{std::holds_alternative<ApplyStatus::Unchanged>(*apply_status)};
+        const bool changed{std::holds_alternative<ApplyStatus::Changed>(*apply_status)};
+        const bool invalid_data{std::holds_alternative<ApplyStatus::InvalidData>(*apply_status)};
+
         if (this->m_print->empty()) {
-            this->m_on_status(Status::Empty);
-        } else if (apply_status == ApplyStatus::InvalidData) {
-            this->m_on_status(Status::InvalidData);
-        } else if (previous_status == Status::Finished && apply_status == ApplyStatus::Unchanged) {
-            this->m_on_status(Status::Finished);
+            this->m_on_status({StatusCode::Empty});
+        } else if (previous_status.code == StatusCode::Finished && unchanged) {
+            this->m_on_status({StatusCode::Finished});
+        } else if (unchanged){
+            this->m_on_status({StatusCode::Modified, previous_status.error, previous_status.warrnings});
+        } else if (changed) {
+            const auto& changed_status{std::get<ApplyStatus::Changed>(*apply_status)};
+            this->m_on_status({StatusCode::Modified, "", changed_status.warrnings});
+        } else if (invalid_data) {
+            const auto& invalid_data_status{std::get<ApplyStatus::InvalidData>(*apply_status)};
+            this->m_on_status({StatusCode::InvalidData, invalid_data_status.error, {} });
         } else {
-            this->m_on_status(Status::Modified);
+            PANIC("Unreachable state!");
         }
     }};
 
-    this->m_on_status(Status::Updating);
+    this->m_on_status({StatusCode::Updating});
 
     Domain::GCodeMetadata metadata{
         .general = {
@@ -229,14 +250,14 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
     this->stop();
     this->queue_action([this, &thumbnail_generator]() {
         this->m_thread = {}; // Wait for join.
-        ASSERT(!is_thread_active(m_get_status()), "The thread is stopped afterwards!");
+        ASSERT(!is_thread_active(m_get_status().code), "The thread is stopped afterwards!");
 
         const LoggingScopeLock lock{m_mutex, "background process"};
 
-        if (m_get_status() != Status::Modified) {
+        if (m_get_status().code != StatusCode::Modified) {
             return;
         }
-        m_on_status(Status::Running);
+        m_on_status({StatusCode::Running});
         this->m_thread = JThread{
             [this, &thumbnail_generator](StopToken stop_token, IPrint* print) {
                 print->stop_token = stop_token;
@@ -244,9 +265,9 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
                 bool finished{false};
                 const ScopeGuard guard{[this, &finished]() {
                     if (finished) {
-                        m_on_status(Status::Finished);
+                        m_on_status({StatusCode::Finished});
                     } else {
-                        m_on_status(Status::Modified);
+                        m_on_status({StatusCode::Modified});
                     }
                 }};
 
@@ -264,10 +285,10 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
 void BackgroundProcess::stop()
 {
     this->queue_action([this]() {
-        if (m_get_status() == Status::Running) {
+        if (m_get_status().code == StatusCode::Running) {
             SPDLOG_INFO("{}: stop", fmt::streamed(m_id));
             this->m_thread.request_stop();
-            this->m_on_status(Status::Stopping);
+            this->m_on_status({StatusCode::Stopping});
         }
     });
 }

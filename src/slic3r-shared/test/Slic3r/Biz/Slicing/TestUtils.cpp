@@ -77,8 +77,12 @@ std::ostream& operator<<(std::ostream& output, const StatusEvent& status_event) 
                   << ", slicing_id: " << status_event.slicing_id << "}";
 }
 
-bool operator==(const StatusEvent& a, const StatusEvent& b) {
-    return a.status == b.status && a.slicing_id == b.slicing_id;
+bool operator==(const StatusEvent& a, const StatusEvent& b)
+{
+    return a.status.code == b.status.code
+        && a.status.error == b.status.error
+        && a.status.warrnings == b.status.warrnings
+        && a.slicing_id == b.slicing_id;
 }
 
 using StatusEvents = std::vector<StatusEvent>;

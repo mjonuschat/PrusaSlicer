@@ -753,7 +753,7 @@ void ObjectList::render_all_beds_node()
                 m_project_interactor->status_cache()
                     .get_status({m_project_interactor->selected_project_id(), bed_inst->id().id})
             };
-            if (status && status == Biz::Slicing::Status::Finished)
+            if (status && status->code == Biz::Slicing::StatusCode::Finished)
                 finished_beds_cnt++;
         }
     }
@@ -1350,10 +1350,16 @@ void ObjectList::render_extruder_marker(size_t extruder_id, const std::vector<st
 
 void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
 {
+    using Biz::Slicing::StatusCode;
     const std::optional<Biz::Slicing::Status> status{m_project_interactor->status_cache().get_status(
         {m_project_interactor->selected_project_id(), bed_instance_id}
     )};
-    if (!status || status == Biz::Slicing::Status::Empty)
+    if (!status) {
+        return;
+    }
+    const StatusCode status_code{status->code};
+
+    if (status_code == StatusCode::Empty)
         return;
 
     const float align_x{1.f};
@@ -1363,18 +1369,18 @@ void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
     ImVec4 DARK_BLUE{};
 
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.f, 1.f));
-    if (status == Biz::Slicing::Status::Finished) {
+    if (status_code == StatusCode::Finished) {
         BoldFontGuard bfg(m_imgui_render);
         text_with_bg_aligned(align_x, L("SLICED"), BLUE_BUTTON_COLOR);
-    } else if (status == Biz::Slicing::Status::Updating) {
+    } else if (status_code == StatusCode::Updating) {
         text_with_bg_aligned(align_x, L("UPDATING"), DARK_BLUE);
-    } else if (status == Biz::Slicing::Status::Stopping) {
+    } else if (status_code == StatusCode::Stopping) {
         text_with_bg_aligned(align_x, L("STOPPING"), DARK_BLUE);
-    } else if (status == Biz::Slicing::Status::Running) {
+    } else if (status_code == StatusCode::Running) {
         text_with_bg_aligned(align_x, L("SLICING"), DARK_BLUE);
-    } else if (status == Biz::Slicing::Status::InvalidData) {
+    } else if (status_code == StatusCode::InvalidData) {
         text_with_bg_aligned(align_x, L("INVALID"), DARK_BLUE);
-    } else if (m_mode == Mode::Preview && status == Biz::Slicing::Status::Modified) {
+    } else if (m_mode == Mode::Preview && status_code == StatusCode::Modified) {
         BoldFontGuard bfg(m_imgui_render);
         ImGui::PushStyleColor(ImGuiCol_Button, ORANGE_BUTTON_COLOR);
         if (button_aligned(align_x, L("SLICE"), ImVec2(0, 0), ImGuiButtonFlags_AlignTextBaseLine))

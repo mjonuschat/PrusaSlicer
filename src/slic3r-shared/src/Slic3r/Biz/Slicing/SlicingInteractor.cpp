@@ -40,7 +40,7 @@ void SlicingInteractor::create_process(
 )
 {
     SPDLOG_INFO("{}: create process", fmt::streamed(id));
-    update_status(id, Status::Modified);
+    update_status(id, {StatusCode::Modified});
     m_processes.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(id),
@@ -129,8 +129,8 @@ void SlicingInteractor::slice_all()
     m_slicing_queue = {};
     for (const auto& pair : m_processes) {
         const SlicingId id{pair.first};
-        const Status status{get_status(id)};
-        if (status == Status::Empty || status == Status::Finished) {
+        const StatusCode status{get_status(id).code};
+        if (status == StatusCode::Empty || status == StatusCode::Finished) {
             continue;
         }
         SPDLOG_INFO("{}: slicing request", fmt::streamed(id));
@@ -287,7 +287,7 @@ void SlicingInteractor::process_update_requests()
     std::set<SlicingId> to_remove;
     for (auto& [id, request] : m_update_requests) {
         BackgroundProcess& process{m_processes.at(id)};
-        if (is_thread_active(get_status(id))) {
+        if (is_thread_active(get_status(id).code)) {
             continue;
         }
 
@@ -328,7 +328,7 @@ int64_t SlicingInteractor::get_active_processes_count() const
 {
     const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
     return std::ranges::count_if(m_statuses, [](const auto& pair) {
-        const Status status{pair.second};
+        const StatusCode status{pair.second.code};
         return is_thread_active(status);
     });
 }

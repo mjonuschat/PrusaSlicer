@@ -1104,7 +1104,7 @@ PrintObjectsSyncResult sync_print_objects(
                 );
                 result.invalidated_steps.print = SlicingSync::merge(
                     result.invalidated_steps.print,
-                    AllOrSome<PrintSteps>{print_object->set_instances_new(std::move(new_instances.instances))}
+                    AllOrSome<PrintSteps>{print_object->set_instances(std::move(new_instances.instances))}
                 );
                 result.invalidated_steps.object[print_object] = SlicingSync::merge(
                     result.invalidated_steps.object[print_object],
@@ -1366,7 +1366,7 @@ bool InvalidatedSteps::empty() const {
     return true;
 }
 
-Print::ApplyStatus Print::apply(
+bool Print::apply(
     const Domain::Model& model,
     const FullConfigFDMPtr& new_full_config_ptr,
     const Biz::Print::SerializedConfig& serialized_config,
@@ -1474,13 +1474,10 @@ Print::ApplyStatus Print::apply(
         this->cleanup();
     }
 
-    if (invalidated) {
-        return APPLY_STATUS_INVALIDATED;
+    if (invalidated || changed) {
+        return true;
     }
-    if (changed) {
-        return APPLY_STATUS_CHANGED;
-    }
-    return APPLY_STATUS_UNCHANGED;
+    return false;
 }
 
 void Print::cleanup()

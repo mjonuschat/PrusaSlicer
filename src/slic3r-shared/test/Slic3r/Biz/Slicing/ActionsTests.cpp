@@ -18,7 +18,7 @@ using Catch::Matchers::Contains;
 using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::chrono::high_resolution_clock;
-using Slic3r::Biz::Slicing::Status;
+using Slic3r::Biz::Slicing::StatusCode;
 using Slic3r::Tests::get_cubes_model;
 using Slic3r::Tests::ModelOnBed;
 using Slic3r::Biz::Slicing::FDMResult;
@@ -62,11 +62,11 @@ TEST_CASE_METHOD(SlicingFixture, "Update stops slicing", "[slicing][slicing-inte
     }));
 
     const StatusEvents expected_events{
-        StatusEvent{Status::Updating, id},
-        StatusEvent{Status::Modified, id},
-        StatusEvent{Status::Running, id},
-        StatusEvent{Status::Stopping, id},
-        StatusEvent{Status::Modified, id},
+        StatusEvent{{StatusCode::Updating}, id},
+        StatusEvent{{StatusCode::Modified}, id},
+        StatusEvent{{StatusCode::Running}, id},
+        StatusEvent{{StatusCode::Stopping}, id},
+        StatusEvent{{StatusCode::Modified}, id},
     };
 
     CHECK_THAT(status_listener.status_events, Equals(expected_events));
@@ -101,7 +101,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
     slicing.slice_bed({0, bed_id});
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 5s, [](const StatusEvents &events){
-        return events.back().status == Status::Finished;
+        return events.back().status.code == StatusCode::Finished;
     }));
 
     REQUIRE(listener.gcodes.size() == 1);
@@ -141,15 +141,15 @@ TEST_CASE_METHOD(SlicingFixture, "Stop pops the action from queue", "[slicing][s
     slicing.stop_slicing_bed(id2);
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
-        return events.back().status == Status::Finished;
+        return events.back().status.code == StatusCode::Finished;
     }));
     // Let the second bed finish slicing if the stop failed.
     std::this_thread::sleep_for(20ms);
     PlatformServices::instance().main_thread_dispatcher().dispatch_enqueued();
 
-    CHECK_THAT(status_listener.status_events, Contains(StatusEvents{{Status::Finished, id1}}));
-    CHECK_THAT(status_listener.status_events, !Contains(StatusEvents{{Status::Stopping, id2}}));
-    CHECK_THAT(status_listener.status_events, !Contains(StatusEvents{{Status::Finished, id2}}));
+    CHECK_THAT(status_listener.status_events, Contains(StatusEvents{{{StatusCode::Finished}, id1}}));
+    CHECK_THAT(status_listener.status_events, !Contains(StatusEvents{{{StatusCode::Stopping}, id2}}));
+    CHECK_THAT(status_listener.status_events, !Contains(StatusEvents{{{StatusCode::Finished}, id2}}));
 }
 
 TEST_CASE_METHOD(SlicingFixture, "Stop all stops all processes", "[slicing][slicing-interactor]") {
@@ -178,19 +178,19 @@ TEST_CASE_METHOD(SlicingFixture, "Stop all stops all processes", "[slicing][slic
 
     // Let them both start.
     REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [&](const StatusEvents &events){
-        const auto it1{std::ranges::find(events, StatusEvent{Status::Running, id1})};
-        const auto it2{std::ranges::find(events, StatusEvent{Status::Running, id2})};
+        const auto it1{std::ranges::find(events, StatusEvent{{StatusCode::Running}, id1})};
+        const auto it2{std::ranges::find(events, StatusEvent{{StatusCode::Running}, id2})};
         return it1 != events.end() && it2 != events.end();
     }));
     slicing.stop_all();
     REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [&](const StatusEvents &events){
-        const auto it1{std::ranges::find(events, StatusEvent{Status::Stopping, id1})};
-        const auto it2{std::ranges::find(events, StatusEvent{Status::Stopping, id2})};
+        const auto it1{std::ranges::find(events, StatusEvent{{StatusCode::Stopping}, id1})};
+        const auto it2{std::ranges::find(events, StatusEvent{{StatusCode::Stopping}, id2})};
         return it1 != events.end() && it2 != events.end();
     }));
 
-    CHECK_THAT(status_listener.status_events, Contains(StatusEvents{{Status::Stopping, id1}}));
-    CHECK_THAT(status_listener.status_events, Contains(StatusEvents{{Status::Stopping, id2}}));
+    CHECK_THAT(status_listener.status_events, Contains(StatusEvents{{{StatusCode::Stopping}, id1}}));
+    CHECK_THAT(status_listener.status_events, Contains(StatusEvents{{{StatusCode::Stopping}, id2}}));
 }
 
 TEST_CASE_METHOD(
@@ -218,12 +218,12 @@ TEST_CASE_METHOD(
     }));
 
     const StatusEvents expected_events{
-        StatusEvent{Status::Updating, id},
-        StatusEvent{Status::Modified, id},
-        StatusEvent{Status::Running, id},
-        StatusEvent{Status::Stopping, id},
-        StatusEvent{Status::Modified, id},
-        StatusEvent{Status::Removed, id},
+        StatusEvent{{StatusCode::Updating}, id},
+        StatusEvent{{StatusCode::Modified}, id},
+        StatusEvent{{StatusCode::Running}, id},
+        StatusEvent{{StatusCode::Stopping}, id},
+        StatusEvent{{StatusCode::Modified}, id},
+        StatusEvent{{StatusCode::Removed}, id},
     };
 
     CHECK_THAT(status_listener.status_events, Equals(expected_events));

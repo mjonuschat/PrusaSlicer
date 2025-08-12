@@ -96,34 +96,38 @@ void Print::clear()
 
 using Domain::FullConfigFDMPtr;
 
-Biz::Print::ApplyStatus Print::update(
+Biz::Print::ApplyStatus::Status Print::update(
     Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
     const Biz::Print::SerializedConfig& serialized_config
 )
 {
-    Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::Unchanged};
+    namespace ApplyStatus = Biz::Print::ApplyStatus;
+
+    ApplyStatus::Status result{ApplyStatus::Unchanged{}};
     Biz::Slicing::with_limited_instances(model, bed.model_instances, [&]() {
 
-        const ApplyStatus status{this->apply(
+        const bool changed{this->apply(
             model,
             prepare_slicing_input(std::get<ConfigPackFDM>(config)),
             serialized_config,
             bed.wipe_tower,
             bed.custom_gcode
         )};
-        if (status == APPLY_STATUS_UNCHANGED) {
+        if (!changed) {
             return;
         }
-        if (!validate().empty()) {
-            result = Biz::Print::ApplyStatus::InvalidData;
+        std::vector<std::string> warrnings;
+        const std::string error{validate(&warrnings)};
+        if (!error.empty()) {
+            result = ApplyStatus::InvalidData{error};
         } else {
-            result = Biz::Print::ApplyStatus::Changed;
+            result = ApplyStatus::Changed{warrnings};
         }
     });
 
-    if (result != Biz::Print::ApplyStatus::Unchanged) {
+    if (!std::holds_alternative<ApplyStatus::Unchanged>(result)) {
         m_on_fdm_result({});
     }
 

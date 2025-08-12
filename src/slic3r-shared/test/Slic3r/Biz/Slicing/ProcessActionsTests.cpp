@@ -11,9 +11,10 @@ using std::chrono::duration_cast;
 using std::chrono::high_resolution_clock;
 using time_point = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using Slic3r::Biz::Slicing::Status;
+using Slic3r::Biz::Slicing::StatusCode;
 using Slic3r::Biz::Slicing::BackgroundProcess;
 using Slic3r::Biz::Print::IPrint;
-using Slic3r::Biz::Print::ApplyStatus;
+namespace ApplyStatus = Slic3r::Biz::Print::ApplyStatus;
 using Slic3r::Biz::Print::WipeTowerGeometry;
 using Slic3r::Biz::Slicing::IProcessCallbacks;
 using Slic3r::Biz::Slicing::FDMResult;
@@ -24,7 +25,7 @@ using Slic3r::Tests::get_config;
 using Slic3r::Tests::get_selected_preset_metadata;
 using Slic3r::Domain::ModelInstanceList;
 
-using LogEntry = std::pair<time_point, Status>;
+using LogEntry = std::pair<time_point, StatusCode>;
 using LogEntries = std::vector<LogEntry>;
 using Slic3r::Domain::SlicingId;
 
@@ -36,12 +37,12 @@ struct StatusLog : IProcessCallbacks
     LogEntries statuses{};
 
     void on_status(const Status status, const SlicingId) override {
-        statuses.emplace_back(high_resolution_clock::now(), status);
-        m_status.store(status);
+        statuses.emplace_back(high_resolution_clock::now(), status.code);
+        m_status.store(status.code);
     }
 
     Status get_status(const SlicingId) const override {
-        return m_status.load();
+        return {m_status.load()};
     }
 
     void on_fdm_result(FDMResult&& fdm_result, const SlicingId) override {}
@@ -49,12 +50,12 @@ struct StatusLog : IProcessCallbacks
     void on_sla_object(const SlicingId&, Object&&) override {}
     void on_wipe_tower_geometry(WipeTowerGeometry&&, const SlicingId) override {}
 
-    std::vector<std::pair<time_point, Status>> get_entries(const Status status) const
+    std::vector<std::pair<time_point, StatusCode>> get_entries(const StatusCode status) const
     {
-        std::vector<std::pair<time_point, Status>> result;
+        std::vector<std::pair<time_point, StatusCode>> result;
         std::copy_if(
             this->statuses.begin(), this->statuses.end(), std::back_inserter(result),
-            [&](const std::pair<time_point, Status>& log_entry) {
+            [&](const std::pair<time_point, StatusCode>& log_entry) {
                 return log_entry.second == status;
             }
         );
@@ -62,7 +63,7 @@ struct StatusLog : IProcessCallbacks
     }
 
 private:
-    std::atomic<Status> m_status;
+    std::atomic<StatusCode> m_status;
 };
 
 std::ostream& operator<<(std::ostream& out, const StatusLog& log)
@@ -120,7 +121,7 @@ milliseconds measure_execution_time(const std::function<void()>& func)
 class MockPrint : public IPrint
 {
 public:
-    ApplyStatus update(
+    ApplyStatus::Status update(
         Slic3r::Domain::Model&,
         const Slic3r::Domain::ConfigPack&,
         const Slic3r::Domain::BedInstance&,
@@ -128,7 +129,7 @@ public:
     ) override
     {
         precise_sleep(this->apply_time);
-        return ApplyStatus::Changed;
+        return ApplyStatus::Changed{};
     }
     void slice(Slic3r::Domain::SlicingId, Slic3r::Biz::Slicing::IThumbnailImageGenerator&) override
     {
@@ -187,8 +188,8 @@ TEST_CASE("Test process slice() returns immediately", "[background-process][slic
     precise_sleep(processing_time * 2);
 
     LogEntries statuses{
-        LogEntry{0ms, Status::Updating}, LogEntry{0ms, Status::Modified},
-        LogEntry{0ms, Status::Running}, LogEntry{processing_time, Status::Finished}};
+        LogEntry{0ms, StatusCode::Updating}, LogEntry{0ms, StatusCode::Modified},
+        LogEntry{0ms, StatusCode::Running}, LogEntry{processing_time, StatusCode::Finished}};
     const StatusLog expected_log{statuses};
     INFO(log);
     INFO("!=");
@@ -241,13 +242,13 @@ TEST_CASE("Test process stop() returns immediately", "[background-process][slici
     precise_sleep(processing_time * 2);
 
     std::vector<LogEntry> statuses{
-        LogEntry{0ms, Status::Updating},
-        LogEntry{0ms, Status::Modified},
-        LogEntry{0ms, Status::Running},
-        LogEntry{time_before_stop, Status::Stopping},
-        LogEntry{time_before_stop + delay_after_stop, Status::Modified},
-        LogEntry{time_before_stop + delay_after_stop, Status::Running},
-        LogEntry{time_before_stop + delay_after_stop + processing_time, Status::Finished},
+        LogEntry{0ms, StatusCode::Updating},
+        LogEntry{0ms, StatusCode::Modified},
+        LogEntry{0ms, StatusCode::Running},
+        LogEntry{time_before_stop, StatusCode::Stopping},
+        LogEntry{time_before_stop + delay_after_stop, StatusCode::Modified},
+        LogEntry{time_before_stop + delay_after_stop, StatusCode::Running},
+        LogEntry{time_before_stop + delay_after_stop + processing_time, StatusCode::Finished},
     };
     const StatusLog expected_log{statuses};
     INFO(log);
@@ -295,8 +296,8 @@ TEST_CASE("Test process update() updates status", "[background-process][slicing-
     precise_sleep(apply_time * 2);
 
     std::vector<LogEntry> statuses{
-        LogEntry{0ms, Status::Updating},
-        LogEntry{apply_time, Status::Modified},
+        LogEntry{0ms, StatusCode::Updating},
+        LogEntry{apply_time, StatusCode::Modified},
     };
     const StatusLog expected_log{statuses};
     INFO(log);

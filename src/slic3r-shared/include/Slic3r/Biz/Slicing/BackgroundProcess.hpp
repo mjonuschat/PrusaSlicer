@@ -56,7 +56,7 @@ private:
     std::string m_id;
 };
 
-enum class Status
+enum class StatusCode
 {
     Empty,
     Updating,
@@ -68,9 +68,19 @@ enum class Status
     InvalidData
 };
 
+struct Status {
+    StatusCode code;
+
+    // TODO: will be enum in the future.
+    std::string error;
+    // TODO: will be vector of enums in the future.
+    std::vector<std::string> warrnings;
+};
+
+std::ostream& operator<<(std::ostream& output, const StatusCode& status_code);
 std::ostream& operator<<(std::ostream& output, const Status& status);
 
-bool is_thread_active(const Status status);
+bool is_thread_active(const StatusCode status);
 
 Domain::PrinterTechnology get_printer_technology(const Domain::ConfigPack& config);
 
