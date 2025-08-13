@@ -123,9 +123,9 @@ Domain::PrinterTechnology get_printer_technology(const ConfigPack& config) {
 BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
     Domain::Model& model,
-    Domain::ProjectMetadata&& project_metadata,
-    Domain::Preset::SelectedPresetMetadata&& preset_metadata,
-    ConfigPack&& config,
+    const Domain::ProjectMetadata& project_metadata,
+    const Domain::Preset::SelectedPresetMetadata& preset_metadata,
+    const ConfigPack& config,
     const Domain::BedInstance& bed,
     const SlicingId id
 ) :
@@ -142,16 +142,16 @@ BackgroundProcess::BackgroundProcess(
     }},
     m_id{id}
 {
-    this->update(model, std::move(project_metadata), std::move(preset_metadata), std::move(config), bed);
+    this->update(model, project_metadata, preset_metadata, config, bed);
 };
 
 BackgroundProcess::BackgroundProcess(
     std::unique_ptr<IPrint>&& print,
     IProcessCallbacks& callbacks,
     Domain::Model& model,
-    Domain::ProjectMetadata&& project_metadata,
-    Domain::Preset::SelectedPresetMetadata&& preset_metadata,
-    ConfigPack&& config,
+    const Domain::ProjectMetadata& project_metadata,
+    const Domain::Preset::SelectedPresetMetadata& preset_metadata,
+    const ConfigPack& config,
     const Domain::BedInstance& bed,
     const SlicingId id
 )
@@ -161,7 +161,7 @@ BackgroundProcess::BackgroundProcess(
     , m_get_status{[call = std::reference_wrapper(callbacks), id]() { return call.get().get_status(id); }}
     , m_id{id}
 {
-    this->update(model, std::move(project_metadata), std::move(preset_metadata), std::move(config), bed);
+    this->update(model, project_metadata, preset_metadata, config, bed);
 };
 
 BackgroundProcess::~BackgroundProcess() {

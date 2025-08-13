@@ -48,9 +48,9 @@ void SlicingInteractor::create_process(
         std::forward_as_tuple(
             *this,
             model,
-            ProjectMetadata{project_metadata},
-            SelectedPresetMetadata{preset_metadata},
-            ConfigPack{config},
+            project_metadata,
+            preset_metadata,
+            config,
             bed,
             id
         )
@@ -325,24 +325,25 @@ void SlicingInteractor::process_update_requests()
             continue;
         }
 
-        //const SelectedP
-        const ConfigPack& config{request.config.get()};
-        const Domain::BedInstance& bed{request.bed.get()};
-
-        if (process.get_printer_technology() != get_printer_technology(config)) {
+        if (process.get_printer_technology() != get_printer_technology(request.config)) {
             m_processes.erase(id);
             create_process(
                 request.model.get(),
-                request.project_metadata.get(),
-                request.preset_metadata.get(),
-                config,
-                bed,
+                request.project_metadata,
+                request.preset_metadata,
+                request.config,
+                request.bed.get(),
                 id
             );
-            continue;
+        } else {
+            process.update(
+                request.model.get(),
+                request.project_metadata,
+                request.preset_metadata,
+                request.config,
+                request.bed.get()
+            );
         }
-
-        process.update(request.model.get(), request.project_metadata, request.preset_metadata, config, bed);
         to_remove.insert(id);
     }
 

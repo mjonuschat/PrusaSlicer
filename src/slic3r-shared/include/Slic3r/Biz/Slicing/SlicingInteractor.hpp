@@ -59,9 +59,9 @@ struct IWipeTowerGeometryListener : ISlicingListener
 struct UpdateRequest
 {
     std::reference_wrapper<Domain::Model> model;
-    std::reference_wrapper<const Domain::ProjectMetadata> project_metadata;
-    std::reference_wrapper<const Domain::Preset::SelectedPresetMetadata> preset_metadata;
-    std::reference_wrapper<const Domain::ConfigPack> config;
+    Domain::ProjectMetadata project_metadata;
+    Domain::Preset::SelectedPresetMetadata preset_metadata;
+    Domain::ConfigPack config;
     std::reference_wrapper<const Domain::BedInstance> bed;
 };
 

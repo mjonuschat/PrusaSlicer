@@ -104,9 +104,9 @@ public:
     BackgroundProcess(
         IProcessCallbacks& callbacks,
         Domain::Model& model,
-        Domain::ProjectMetadata&& project_metadata,
-        Domain::Preset::SelectedPresetMetadata&& preset_metadata,
-        Domain::ConfigPack&& config,
+        const Domain::ProjectMetadata& project_metadata,
+        const Domain::Preset::SelectedPresetMetadata& preset_metadata,
+        const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
         const Domain::SlicingId id
     );
@@ -114,9 +114,9 @@ public:
         std::unique_ptr<Print::IPrint>&& print,
         IProcessCallbacks& callbacks,
         Domain::Model& model,
-        Domain::ProjectMetadata&& project_metadata,
-        Domain::Preset::SelectedPresetMetadata&& preset_metadata,
-        Domain::ConfigPack&& config,
+        const Domain::ProjectMetadata& project_metadata,
+        const Domain::Preset::SelectedPresetMetadata& preset_metadata,
+        const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
         const Domain::SlicingId id
     );
