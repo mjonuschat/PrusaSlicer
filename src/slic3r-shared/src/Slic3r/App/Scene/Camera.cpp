@@ -6,6 +6,7 @@
 #include "Slic3r/Math.hpp"
 
 using Slic3r::Domain::SquareMatrix4d;
+using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec4d;
 
@@ -104,6 +105,25 @@ Vec3d Camera::unproject(const Vec3d& win_pos) const
     };
     Vec4d p = inv_pm * w;
     return p.head<3>() / p.w();
+}
+
+Domain::Vec3d Camera::project_to_ndc(const Domain::Vec3d& world_pos) const
+{
+    const Transform projection_view_matrix = m_projection * view();
+    // world to clip
+    Vec4d clip = projection_view_matrix * Vec4d(world_pos.x(), world_pos.y(), world_pos.z(), 1.0);
+    // clip to ndc
+    return Vec3d(clip.x(), clip.y(), clip.z()) / clip.w();
+}
+
+Vec2d Camera::project_to_screen_space(const Vec3d& world_pos) const
+{
+    // world to ndc
+    Vec3d ndc = project_to_ndc(world_pos);
+    // ndc to ss
+    double half_w = 0.5 * double(m_viewport.width);
+    double half_h = 0.5 * double(m_viewport.height);
+    return { half_w * ndc.x() + double(m_viewport.x) + half_w, half_h * ndc.y() + double(m_viewport.y) + half_h };
 }
 
 void Camera::update_projection()

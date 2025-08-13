@@ -158,6 +158,8 @@ public:
 
     Ray ray_at(double screen_x, double screen_y) const;
     Domain::Vec3d unproject(const Domain::Vec3d& win_pos) const;
+    Domain::Vec3d project_to_ndc(const Domain::Vec3d& world_pos) const;
+    Domain::Vec2d project_to_screen_space(const Domain::Vec3d& world_pos) const;
 
     const AbstractCameraProjection& cam_projection() const { return *m_projection_getter; }
     AbstractCameraProjection& cam_projection() { return *m_projection_getter; }

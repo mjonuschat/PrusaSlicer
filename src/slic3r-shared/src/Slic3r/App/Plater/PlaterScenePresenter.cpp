@@ -740,8 +740,10 @@ void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, size_t
 {
     cmd_buf.set_depth_write_enabled(true);
     if (layer_idx == int(PlaterSceneLayer::GizmoHandles))
-
         // clear depth buffer so all gizmo handles are rendered over document objects
+        cmd_buf.clear_buffers(false, true);
+    else if (layer_idx == int(PlaterSceneLayer::AlwaysOnTop))
+        // clear depth buffer to ensure geometry belonging to this layer is always rendered over any other object
         cmd_buf.clear_buffers(false, true);
 }
 

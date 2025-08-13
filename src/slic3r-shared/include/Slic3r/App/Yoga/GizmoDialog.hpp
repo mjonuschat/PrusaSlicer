@@ -9,6 +9,7 @@
 
 namespace Slic3r::App::Yoga {
 
+class Icon;
 class Text;
 class LayoutButton;
 

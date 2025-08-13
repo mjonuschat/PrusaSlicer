@@ -299,6 +299,12 @@ indexed_triangle_set its_make_snap(
     float space_proportion = 0.25f,
     float bulge_proportion = 0.125f
 );
+indexed_triangle_set its_make_torus(
+    double r,
+    double t,
+    double ra = (2 * std::numbers::pi / 360),
+    double ta = (2 * std::numbers::pi / 360)
+);
 
 indexed_triangle_set its_convex_hull(const std::vector<Domain::Vec3f>& pts);
 
@@ -341,6 +347,17 @@ inline Domain::TriangleMesh make_sphere(double rho, double fa = (2 * std::number
 {
     using Biz::Algorithms::TriangleMesh::construct;
     return construct(its_make_sphere(rho, fa));
+}
+
+inline Domain::TriangleMesh make_torus(
+    double r,
+    double t,
+    double ra = (2 * std::numbers::pi / 360),
+    double ta = (2 * std::numbers::pi / 360)
+)
+{
+    using Biz::Algorithms::TriangleMesh::construct;
+    return construct(its_make_torus(r, t, ra, ta));
 }
 
 } // namespace Slic3r::Biz::Algorithms::TriangleMesh

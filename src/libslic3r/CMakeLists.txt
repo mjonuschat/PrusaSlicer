@@ -261,9 +261,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/LayerRegion.hpp
     src/libslic3r/Line.hpp
     src/libslic3r/MarchingSquares.hpp
-    src/libslic3r/Measure.cpp
-    src/libslic3r/Measure.hpp
-    src/libslic3r/MeasureUtils.hpp
     src/libslic3r/MeshNormals.cpp
     src/libslic3r/MeshNormals.hpp
     src/libslic3r/MinAreaBoundingBox.cpp
@@ -388,7 +385,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/Surface.hpp
     src/libslic3r/SurfaceCollection.cpp
     src/libslic3r/SurfaceCollection.hpp
-    src/libslic3r/SurfaceMesh.hpp
     src/libslic3r/Technologies.hpp
     src/libslic3r/Thread.cpp
     src/libslic3r/Thread.hpp

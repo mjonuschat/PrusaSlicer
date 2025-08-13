@@ -78,13 +78,12 @@ void MouseDragDetector::rem_listener(IGizmo* gizmo)
 
 bool MouseDragDetector::on_start(const std::vector<IGizmo*>& gizmos)
 {
-    GizmoEventContext ctx = m_start->create_ctx();
     auto pred             = [](const Listener& l, const IGizmo* gizmo) {
         return gizmo < l.first;
     };
     for (const IGizmo* gizmo : gizmos) {
         auto it = std::lower_bound(m_listeners.begin(), m_listeners.end(), gizmo, pred);
-        if (it != m_listeners.end() && it->first == gizmo && it->second->on_drag_start(ctx)) {
+        if (it != m_listeners.end() && it->first == gizmo && it->second->on_drag_start(m_start->ctx)) {
             // gizmo consume drag
             m_dragging = it->second;
             return true;
@@ -116,7 +115,7 @@ bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, GetActiveGizmo
                 log_weird_state("Missing start data");
                 m_state = DragState::NoDrag;
             } else if (is_over_span(m_start_time, m_min_time_span)
-                       || is_over_offset(m_start->mouse_event, me, m_min_offset))
+                       || is_over_offset(m_start->ctx.mouse_event(), me, m_min_offset))
             {
                 m_state                     = DragState::Dragging;
                 std::vector<IGizmo*> gizmos = get_gizmos();
@@ -131,7 +130,7 @@ bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, GetActiveGizmo
             if (!me.is_imgui_captured() && can_start_drag()) {
                 m_state      = DragState::StartWeWillSee;
                 m_start_time = std::chrono::steady_clock::now();
-                m_start      = DragStart(ctx);
+                m_start.emplace(ctx);
             }
             return false;
         case Platform::MouseButton::Right:

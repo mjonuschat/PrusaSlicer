@@ -760,7 +760,8 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 
             update_key_modifiers(event_type, key_code);
 
-            KeyboardEvent platform_event{event_type, key_code, modifiers(evt)};
+            KeyboardEvent platform_event{event_type, key_code, modifiers(evt),
+                event_type == KeyboardEvent::Type::KeyDown && evt.IsAutoRepeat()};
 
             enqueue_keyboard(platform_event);
         }

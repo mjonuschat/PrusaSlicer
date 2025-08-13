@@ -818,6 +818,13 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
                 canceled ? TransformState::Canceled : TransformState::Completed
             );
     });
+
+    if (!canceled && !memento.elements.empty()) {
+        invoke_listeners<ISceneSelectionChangedListener>([&](ISceneSelectionChangedListener* l) {
+            l->on_scene_selection_transformed(m_selected_project_id, proj.object_selection);
+        });
+    }
+
     memento.reset();
 }
 

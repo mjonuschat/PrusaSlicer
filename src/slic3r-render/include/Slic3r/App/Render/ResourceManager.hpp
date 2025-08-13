@@ -41,9 +41,27 @@ public:
         m_resources[name] = std::move(resource);
     }
 
+    bool release(const K& name)
+    {
+        return m_resources.erase(name) > 0;
+    }
 
-    bool release(const K& name) { return m_resources.erase(name) > 0; }
-    void release_all() { m_resources.clear(); }
+    void release_all()
+    {
+        m_resources.clear();
+    }
+
+    size_t release_if(std::function<bool(const K& name, const R& resource)> predicate)
+    {
+        size_t count = 0;
+        std::erase_if(m_resources, [&](const auto& item) {
+            bool res = predicate(item.first, *item.second);
+            if (res)
+                ++count;
+            return res;
+        });
+        return count;
+    }
 
 private:
     using ResourceMap = std::unordered_map<K, std::unique_ptr<R>>;

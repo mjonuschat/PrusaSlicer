@@ -15,18 +15,20 @@ public:
         COUNT = KeyUp
     };
 
-    KeyboardEvent(Type type, KeyCode code, KeyModifiers modifiers)
-        : m_type(type), m_code(code), m_key_modifiers(modifiers)
+    KeyboardEvent(Type type, KeyCode code, KeyModifiers modifiers, bool repeat)
+        : m_type(type), m_code(code), m_key_modifiers(modifiers), m_repeat(repeat)
     {}
 
     Type type() const { return m_type; }
     KeyCode code() const { return m_code; }
     KeyModifiers key_modifiers() const { return m_key_modifiers; }
+    bool is_repeat() const { return m_repeat; }
 
 private:
     Type m_type;
     KeyModifiers m_key_modifiers;
     KeyCode m_code;
+    bool m_repeat;
 };
 
-}
+} // namespace Slic3r::App::Platform
