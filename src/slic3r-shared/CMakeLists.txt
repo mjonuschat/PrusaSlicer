@@ -502,15 +502,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ObservableProjectList.hpp
         src/Slic3r/Biz/ObservableProjectList.cpp
 
-        src/Slic3r/Domain/Project.cpp
-        include/Slic3r/Domain/Project.hpp
-        include/Slic3r/Domain/BedContainer.hpp
-        src/Slic3r/Domain/BedContainer.cpp
-        src/Slic3r/Domain/Workbench.cpp
-        include/Slic3r/Domain/Workbench.hpp
-        src/Slic3r/Domain/ConfigContainer.cpp
-        include/Slic3r/Domain/ConfigContainer.hpp
-
         src/Slic3r/Biz/Units.cpp
         include/Slic3r/Biz/Units.hpp
         src/Slic3r/Biz/Units.cpp

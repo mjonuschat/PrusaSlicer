@@ -3,6 +3,15 @@ project(slic3r-domain)
 find_package(NanoSVG REQUIRED)
 
 add_library(slic3r-domain STATIC
+    src/Slic3r/Domain/Project.cpp
+    include/Slic3r/Domain/Project.hpp
+    include/Slic3r/Domain/BedContainer.hpp
+    src/Slic3r/Domain/BedContainer.cpp
+    src/Slic3r/Domain/Workbench.cpp
+    include/Slic3r/Domain/Workbench.hpp
+    src/Slic3r/Domain/ConfigContainer.cpp
+    include/Slic3r/Domain/ConfigContainer.hpp
+
     include/Slic3r/Domain/CustomGCode.hpp
     include/Slic3r/Domain/Line.hpp
     include/Slic3r/Domain/MultiPoint.hpp
