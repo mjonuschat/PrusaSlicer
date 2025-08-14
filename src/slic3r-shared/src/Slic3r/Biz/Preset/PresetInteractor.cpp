@@ -325,36 +325,39 @@ concept HavingEvaluatedPreset = requires(T t) {
     requires IsEvaluatedPreset<decltype(t.preset)>::value;
 };
 
-template <HavingEvaluatedPreset T>
-void append_items(
-    std::vector<PresetItem>& dest,
-    const std::vector<T>& source,
-    const Domain::Preset::HwPrinterConfig& cfg,
-    const std::string& selected_id,
-    size_t& idx,
-    size_t& selected_index
-)
+template <HavingEvaluatedPreset T, std::output_iterator<PresetItem> Out>
+void append_items(const std::vector<T>& source, const Domain::Preset::HwPrinterConfig& cfg, Out out)
 {
-    selected_index = size_t(-1);
-    for (const auto& p : source) {
-        dest.emplace_back(
-            PresetItem{
-                .id                     = p.preset.id,
-                .name                   = std::string{p.preset.short_name()},
+    std::ranges::transform(
+        source,
+        out,
+        [&](const T& preset)
+        {
+            return PresetItem{
+                .id                     = preset.preset.id,
+                .name                   = std::string{preset.preset.short_name()},
                 .hw_printer_config_id   = cfg.id,
                 .hw_printer_config_name = cfg.name
-            }
-        );
-        if (p.preset.id == selected_id)
-            selected_index = idx;
-        idx++;
-    }
+            };
+        }
+    );
 }
 
 void set_items(PresetItemObservableList& dest, std::vector<PresetItem>&& items, size_t selected_index)
 {
+    ASSERT(selected_index != Domain::INVALID_ID);
     dest.items().set_items(std::move(items));
     dest.set_selected_index(selected_index);
+}
+
+std::size_t find_index_selected(const std::vector<PresetItem>& items, const std::string& selected_id)
+{
+    const auto it{
+        std::ranges::find_if(items, [&](const PresetItem& item) { return item.id == selected_id; })
+    };
+
+    ASSERT(it != items.end());
+    return static_cast<std::size_t>(std::distance(items.begin(), it));
 }
 
 template <HavingEvaluatedPreset T>
@@ -366,9 +369,8 @@ void set_items(
 )
 {
     std::vector<PresetItem> items;
-    size_t idx = 0;
-    size_t selected_index;
-    append_items<T>(items, source, cfg, selected_id, idx, selected_index);
+    append_items<T>(source, cfg, std::back_inserter(items));
+    const std::size_t selected_index{find_index_selected(items, selected_id)};
     set_items(dest, std::move(items), selected_index);
 }
 
@@ -376,17 +378,18 @@ void set_items(
 
 void PresetInteractor::fill_printer_presets()
 {
-    const auto& printer_preset_id = selected_printer_preset().printer.id;
+    const auto& selected_id = selected_printer_preset().printer.id;
     std::vector<PresetItem> printers;
     const auto& preset_bundle = m_workbench.preset_bundle();
-    size_t idx                = 0;
-    size_t selected_index     = Domain::INVALID_ID;
+
     for (const auto& [hw_config_id, ps] : preset_bundle.evaluated_presets) {
         if (ps.empty())
             continue;
         const auto& hw_config = ps.front().hw_config;
-        append_items(printers, ps, hw_config, printer_preset_id, idx, selected_index);
+        append_items(ps, hw_config, std::back_inserter(printers));
     }
+
+    const std::size_t selected_index{find_index_selected(printers, selected_id)};
     set_items(m_printer_presets, std::move(printers), selected_index);
 }
 

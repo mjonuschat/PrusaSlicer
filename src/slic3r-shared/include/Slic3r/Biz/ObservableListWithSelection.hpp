@@ -27,21 +27,25 @@ public:
 
     List& items()
     {
+        ASSERT(m_items.size() == 0 || m_selected_index != Domain::INVALID_ID);
         return m_items;
     }
 
     const List& items() const
     {
+        ASSERT(m_items.size() == 0 || m_selected_index != Domain::INVALID_ID);
         return m_items;
     }
 
     size_t selected_index() const
     {
+        ASSERT(m_selected_index != Domain::INVALID_ID);
         return m_selected_index;
     }
 
     void set_selected_index(size_t index)
     {
+        ASSERT(index < m_items.size());
         m_selected_index = index;
         invoke_listeners<IListSelectionChangedListener>([index](IListSelectionChangedListener* l) {
             l->on_list_selection_changed(index);
@@ -57,7 +61,6 @@ public:
                 return true;
             }
         }
-        set_selected_index(Domain::INVALID_ID);
         return false;
     }
 

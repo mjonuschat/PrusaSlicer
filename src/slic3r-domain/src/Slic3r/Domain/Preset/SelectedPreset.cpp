@@ -73,7 +73,7 @@ SelectedPreset SelectedPreset::make(const SelectedPresetMetadata& metadata, cons
 
                 ASSERT(metadata.hw_config.tools.size() == metadata.tools.size());
                 ASSERT(typed_config.tool.size() == metadata.tools.size());
-                ret.tools.resize(metadata.tools.size());
+                ret.tools.reserve(metadata.tools.size());
                 for (size_t i = 0, n = metadata.tools.size(); i < n; i++) {
                     const auto& t  = metadata.tools.at(i);
                     const auto& tc = typed_config.tool.at(i);
@@ -83,7 +83,7 @@ SelectedPreset SelectedPreset::make(const SelectedPresetMetadata& metadata, cons
                 }
 
                 ASSERT(typed_config.filament.size() == metadata.materials.size());
-                ret.materials.resize(metadata.materials.size());
+                ret.materials.reserve(metadata.materials.size());
                 for (size_t i = 0, n = metadata.materials.size(); i < n; i++) {
                     const auto& t  = metadata.materials.at(i);
                     const auto& tc = typed_config.filament.at(i);
