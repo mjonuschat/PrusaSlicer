@@ -77,10 +77,11 @@ public:
  *   and in-memory geometry (triangle_mesh_manager())
  * .
  */
-class Scene final : public WithListeners<ISceneChangedListener>
+class Scene final : public WithListeners<ISceneChangedListener>, public IGraphicsSettingsChangedListener
 {
 public:
     Scene();
+    ~Scene();
 
     Scene(const Scene&) = delete;
     Scene& operator=(const Scene&) = delete;
@@ -244,7 +245,9 @@ public:
     void set_background_enabled(bool enabled) { m_background_enabled = enabled; }
 
     static GraphicsSettings& graphics_settings() { return s_graphics_settings; }
-//    void on_shading_type_changed(ShadingType shading_type) override;
+
+    void on_shading_type_changed(ShadingType shading_type) override;
+    void on_debug_windows_enabled_changed(bool enabled) override {}
 
     /**
      * @name Lighing-related methods
@@ -272,8 +275,6 @@ public:
      * @{
      */
 
-    bool shadows_enabled() const { return m_shadows.enabled; }
-    void set_shadows_enabled(bool enable);
     void set_default_shadows_intensity() { m_shadows.intensity = Shadows::DEFAULT_INTENSITY; }
 
     bool bed_model_cast_shadow() const { return m_shadows.bed_model_cast_shadow; }
@@ -294,9 +295,6 @@ public:
      * @name Ambient occlusion-related methods
      * @{
      */
-
-    bool ao_enabled() const { return m_ao.enabled; }
-    void set_ao_enabled(bool enable);
 
     Domain::Index2 ao_framebuffer_size() const { return m_ao.framebuffer_size; }
 
@@ -335,9 +333,6 @@ public:
      * @name Physically based rendering-related methods
      * @{
      */
-
-    bool pbr_enabled() const { return m_pbr.enabled; }
-    void set_pbr_enabled(bool enable);
 
     float pbr_intensity() const { return m_pbr.intensity; }
     void set_pbr_intensity(float intensity) { m_pbr.intensity = intensity; }
@@ -393,7 +388,6 @@ private:
 
     struct Shadows
     {
-        bool enabled{ true };
         bool bed_model_cast_shadow{ true };
         Eigen::AlignedBox3d aabb;
 
@@ -413,8 +407,6 @@ private:
 
     struct AmbientOcclusion
     {
-        bool enabled{true};
-
         mutable Domain::Index2 framebuffer_size{0, 0};
         mutable Render::Framebuffer* gbuffer_fb{nullptr};
         mutable Render::Framebuffer* ao_tex_fb{nullptr};
@@ -456,7 +448,6 @@ private:
 
     struct PBR
     {
-        bool enabled{true};
         mutable float intensity{DEFAULT_INTENSITY};
 
         static constexpr float DEFAULT_INTENSITY = 20.0f;

@@ -137,12 +137,18 @@ Scene::Scene() : m_camera_trackball(m_camera)
     m_nodes_by_id[m_root.id()] = &m_root;
     m_root.set_debug_name("root");
 
-    if (m_pbr.enabled)
-        set_ao_enabled(true);
-    else if (m_ao.enabled)
-        set_shadows_enabled(true);
-    else
-        validate_lights(m_lighting.lights);
+    s_graphics_settings.add_listener<IGraphicsSettingsChangedListener>(this);
+    validate_lights(m_lighting.lights);
+}
+
+Scene::~Scene()
+{
+    s_graphics_settings.remove_listener<IGraphicsSettingsChangedListener>(this);
+}
+
+void Scene::on_shading_type_changed(ShadingType shading_type)
+{
+    validate_lights(m_lighting.lights);
 }
 
 void Scene::add_child(Node* node, Node* parent)
@@ -537,7 +543,7 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
 void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
 {
     NodeMaterials nodes = collect_nodes_with_material([this](auto n) {
-        return n->has_render_component() && ((!m_shadows.enabled && !m_ao.enabled)|| !n->render_component()->receive_shadows());
+        return n->has_render_component() && (!s_graphics_settings.shadows_enabled() || !n->render_component()->receive_shadows());
     });
 
     if (nodes.empty())
@@ -682,7 +688,7 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
                 .set_shader(device.context().shader_manager().shader(shader_name))
                 .set_uniform("light_matrix", light_cam_matrix);
 
-            if (m_pbr.enabled && n->render_component()->has_pbr())
+            if (s_graphics_settings.pbr_enabled() && n->render_component()->has_pbr())
                 set_uniforms(*n->render_component()->pbr(), mat);
 
             n->render_component()->render(*n, m_camera, m_lighting, mat, *cmd_buffer);
@@ -794,10 +800,10 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
     Render::Material material;
     material
         .set_shader(device.context().shader_manager().shader("ao_lighting"))
-        .set_uniform("apply_pbr", m_pbr.enabled)
-        .set_uniform("pbr_intensity", m_pbr.enabled ? m_pbr.intensity : 1.0f)
-        .set_uniform("apply_shadows", m_shadows.enabled)
-        .set_uniform("shadows_intensity", m_shadows.enabled ? m_shadows.intensity : 0.0f)
+        .set_uniform("apply_pbr", s_graphics_settings.pbr_enabled())
+        .set_uniform("pbr_intensity", s_graphics_settings.pbr_enabled() ? m_pbr.intensity : 1.0f)
+        .set_uniform("apply_shadows", s_graphics_settings.shadows_enabled())
+        .set_uniform("shadows_intensity", s_graphics_settings.shadows_enabled() ? m_shadows.intensity : 0.0f)
         .set_uniform("g_eye_position", AmbientOcclusion::EYE_POS_TEX_UNIT)
         .set_uniform("g_light_position", AmbientOcclusion::LIGHT_POS_TEX_UNIT)
         .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
@@ -833,10 +839,10 @@ void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, IS
     if (m_background_enabled)
         render_background(cmd_buffer, device, false);
 
-    if (m_shadows.enabled)
+    if (s_graphics_settings.shadows_enabled())
         render_shadowsmap_pass(device, customizer);
 
-    if (m_ao.enabled) {
+    if (s_graphics_settings.ao_enabled()) {
         const Render::Rect& viewport = m_camera.viewport();
         Domain::Index2 viewport_size = { viewport.width, viewport.height };
         render_ao_gbuffer_pass(device, customizer, viewport_size);
@@ -849,7 +855,7 @@ void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, IS
             Render::BlitFramebufferMask::DepthBufferBit, Render::BlitFramebufferFilter::Nearest);
         m_ao.framebuffer_size = viewport_size;
     }
-    else if (m_shadows.enabled)
+    else if (s_graphics_settings.shadows_enabled())
         render_shadows_receivers_pass(device, cmd_buffer, customizer);
 
     render_no_shadows_pass(cmd_buffer, customizer);
@@ -951,7 +957,7 @@ bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results, Ray*
 
 void Scene::validate_lights(Lights& lights)
 {
-    if (m_shadows.enabled) {
+    if (s_graphics_settings.shadows_enabled()) {
         // ensure one light is set to cast shadows
         int count = std::count_if(lights.begin(), lights.end(),
             [](const Light& l) {
@@ -980,34 +986,6 @@ void Scene::validate_lights(Lights& lights)
     // avoid shininess == 0.0, see: https://registry.khronos.org/OpenGL-Refpages/gl4/html/pow.xhtml
     std::for_each(lights.begin(), lights.end(),
         [](Light& l) { if (l.shininess == 0.0f) l.shininess = 0.001f; });
-}
-
-void Scene::set_shadows_enabled(bool enable)
-{
-    m_shadows.enabled = enable;
-    if (!enable) {
-        m_ao.enabled = false;
-        m_pbr.enabled = false;
-    }
-    validate_lights(m_lighting.lights);
-}
-
-void Scene::set_ao_enabled(bool enable)
-{
-    m_ao.enabled = enable;
-    if (enable)
-        set_shadows_enabled(true);
-    else
-        m_pbr.enabled = false;
-}
-
-void Scene::set_pbr_enabled(bool enable)
-{
-    m_pbr.enabled = enable;
-    if (enable) {
-        m_ao.enabled = true;
-        set_shadows_enabled(true);
-    }
 }
 
 void Scene::log_nodes() const

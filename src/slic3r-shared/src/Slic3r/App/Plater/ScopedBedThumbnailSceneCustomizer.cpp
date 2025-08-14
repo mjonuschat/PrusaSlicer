@@ -31,9 +31,7 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(
     //
 
     // shading
-    m_cache.shadows_enabled = m_scene.shadows_enabled();
-    m_cache.ao_enabled      = m_scene.ao_enabled();
-    m_cache.pbr_enabled     = m_scene.pbr_enabled();
+    m_cache.shading_type = Scene::Scene::graphics_settings().shading_type();
 
     // camera
     Scene::Camera& camera                 = m_scene.camera();
@@ -146,7 +144,7 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(
     m_scene.set_shadows_aabb(bed_aabb);
 
     // setup shading
-    m_scene.set_pbr_enabled(true);
+    Scene::Scene::graphics_settings().set_shading_type(Scene::ShadingType::PBR);
 
     // camera type
     if (m_cache.switch_camera_projection_type)
@@ -185,12 +183,7 @@ ScopedBedThumbnailSceneCustomizer::~ScopedBedThumbnailSceneCustomizer()
     }
 
     // shading
-    if (!m_cache.shadows_enabled)
-        m_scene.set_shadows_enabled(m_cache.shadows_enabled);
-    else if (!m_cache.ao_enabled)
-        m_scene.set_ao_enabled(m_cache.ao_enabled);
-    else if (!m_cache.pbr_enabled)
-        m_scene.set_pbr_enabled(m_cache.pbr_enabled);
+    Scene::Scene::graphics_settings().set_shading_type(m_cache.shading_type);
 
     // shadows aabb
     m_scene.set_shadows_aabb(m_cache.shadows_aabb);

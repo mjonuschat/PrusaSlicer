@@ -48,9 +48,9 @@ SidebarGraphicsSettings::SidebarGraphicsSettings() :
 
     m_combo_settings->set_current_index(int(Scene::Scene::graphics_settings().shading_type()));
 
-    Yoga::ToggleButton* show_debug_windows_btn = panel->emplace_back<Yoga::ToggleButton>(L("Show debug windows"));
-    show_debug_windows_btn->set_checked(Scene::Scene::graphics_settings().debug_windows_enabled());
-    show_debug_windows_btn->callbacks().checked_changed = [this](bool checked) {
+    m_show_debug_windows_btn = panel->emplace_back<Yoga::ToggleButton>(L("Show debug windows"));
+    m_show_debug_windows_btn->set_checked(Scene::Scene::graphics_settings().debug_windows_enabled());
+    m_show_debug_windows_btn->callbacks().checked_changed = [this](bool checked) {
         Scene::Scene::graphics_settings().set_debug_windows_enabled(checked);
     };
 }
@@ -58,6 +58,11 @@ SidebarGraphicsSettings::SidebarGraphicsSettings() :
 void SidebarGraphicsSettings::on_shading_type_changed(Scene::ShadingType shading_type)
 {
     m_combo_settings->set_current_index(int(shading_type));
+}
+
+void SidebarGraphicsSettings::on_debug_windows_enabled_changed(bool enabled)
+{
+    m_show_debug_windows_btn->set_checked(enabled);
 }
 
 } // namespace Slic3r::App

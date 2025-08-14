@@ -28,6 +28,7 @@ class IGraphicsSettingsChangedListener
 public:
     virtual ~IGraphicsSettingsChangedListener() = default;
     virtual void on_shading_type_changed(ShadingType shading_type) = 0;
+    virtual void on_debug_windows_enabled_changed(bool enabled) = 0;
 };
 
 class GraphicsSettings : public WithListeners<IGraphicsSettingsChangedListener>
@@ -42,7 +43,12 @@ public:
     }
 
     bool debug_windows_enabled() const { return m_debug_windows_enabled; }
-    void set_debug_windows_enabled(bool enabled) { m_debug_windows_enabled = enabled; }
+    void set_debug_windows_enabled(bool enabled) {
+        if (m_debug_windows_enabled != enabled) {
+            m_debug_windows_enabled = enabled;
+            invoke_listeners<IGraphicsSettingsChangedListener>([this](auto* l) { l->on_debug_windows_enabled_changed(m_debug_windows_enabled); });
+        }
+    }
 
     bool shadows_enabled() const { return m_shading_type > ShadingType::Legacy; }
     bool ao_enabled() const { return m_shading_type > ShadingType::Shadows; }

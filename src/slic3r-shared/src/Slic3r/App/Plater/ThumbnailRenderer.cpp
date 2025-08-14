@@ -211,7 +211,7 @@ Images ThumbnailRenderer::generate_object_thumbnails(
 
     // setup shading
     scene.set_background_enabled(false);
-    scene.set_pbr_enabled(true);
+    Scene::Scene::graphics_settings().set_shading_type(Scene::ShadingType::PBR);
 
     // aabb for auto zoom
     Eigen::AlignedBox3d world_aabb;

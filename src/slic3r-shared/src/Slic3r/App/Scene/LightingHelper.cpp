@@ -5,9 +5,7 @@
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
-#if ENABLED_LIGHTS_CUSTOMIZATION
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
-#endif // ENABLED_LIGHTS_CUSTOMIZATION
 
 #include <Slic3r/App/libvgcode/GCodeNodeTag.hpp>
 
@@ -43,7 +41,6 @@ void set_uniforms(const PBRParams& pbr, Render::Material& material)
         .set_uniform("material.ior", pbr.ior);
 }
 
-#if ENABLED_SCENE_SHADING_CUSTOMIZATION
 void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, std::function<void(void)> cb_update_beds_shadows_data)
 {
     Scene& scene = scene_provider.scene();
@@ -55,14 +52,10 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
     float min_w = ImGui::CalcTextSize(caption.c_str()).x +
         2.0f * (style.WindowPadding.x + style.FramePadding.x + style.ItemSpacing.x);
     ImGui::SetNextWindowSizeConstraints({ min_w, 0.0f }, { FLT_MAX, 0.75f * ImGui::GetMainViewport()->Size.y });
-    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->Size * 0.5f, ImGuiCond_Once, {0.5f, 0.0f});
     if (ImGui::Begin(caption.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar)) {
 
         if (ImGui::CollapsingHeader("Shadows")) {
-
-            bool enabled = scene.shadows_enabled();
-            if (ImGui::Checkbox("Enabled##Shadows", &enabled))
-                scene.set_shadows_enabled(enabled);
 
             bool bed_model_cast_shadow = scene.bed_model_cast_shadow();
             if (ImGui::Checkbox("Bed model cast shadow", &bed_model_cast_shadow)) {
@@ -136,10 +129,6 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
         }
 
         if (ImGui::CollapsingHeader("Ambient occlusion")) {
-
-            bool enabled = scene.ao_enabled();
-            if (ImGui::Checkbox("Enabled##ao", &enabled))
-                scene.set_ao_enabled(enabled);
 
             Domain::Index2 fb_size = scene.ao_framebuffer_size();
             if (fb_size[0] > 0 && fb_size[1] > 0) {
@@ -321,9 +310,6 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
         }
 
         if (ImGui::CollapsingHeader("Physically based rendering")) {
-            bool enabled = scene.pbr_enabled();
-            if (ImGui::Checkbox("Enabled##pbr", &enabled))
-                scene.set_pbr_enabled(enabled);
 
             if (ImGui::BeginTable("PBR", 2, ImGuiTableFlags_Borders)) {
 
@@ -429,9 +415,7 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
     }
     ImGui::End();
 }
-#endif // ENABLED_SCENE_SHADING_CUSTOMIZATION
 
-#if ENABLED_LIGHTS_CUSTOMIZATION
 static std::pair<float, float> xyz_to_az(const Domain::Vec3f& xyz)
 {
     if (xyz.isApprox(Domain::Vec3f::UnitZ()))
@@ -454,10 +438,10 @@ void render_imgui_lights_customization(ISceneProvider& scene_provider)
     bool modified = false;
     static int edit_id = -1;
 
-    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->Size * 0.5f, ImGuiCond_Once, {0.5f, 1.0f});
     if (ImGui::Begin("Lights customization", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar)) {
-        bool pbr_enabled = scene.pbr_enabled();
-        bool shadows_enabled = scene.shadows_enabled();
+        bool pbr_enabled = Scene::Scene::graphics_settings().pbr_enabled();
+        bool shadows_enabled = Scene::Scene::graphics_settings().shadows_enabled();
         if (edit_id == -1) {
 
             if (pbr_enabled) {
@@ -748,6 +732,5 @@ void render_imgui_lights_customization(ISceneProvider& scene_provider)
         scene.set_lights(lights);
     }
 }
-#endif // ENABLED_LIGHTS_CUSTOMIZATION
 
 } // namespace Slic3r::App::Scene

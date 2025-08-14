@@ -391,12 +391,10 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 #if ENABLED_DEBUG_VIEWER_MODE
     render_imgui_debug_viewer_mode(m_fdm_viewer);
 #endif // ENABLED_DEBUG_VIEWER_MODE
-#if ENABLED_SCENE_SHADING_CUSTOMIZATION
-    render_imgui_scene_shading_customization(*m_scene_presenter);
-#endif // ENABLED_SCENE_SHADING_CUSTOMIZATION
-#if ENABLED_LIGHTS_CUSTOMIZATION
-    render_imgui_lights_customization(*m_scene_presenter);
-#endif // ENABLED_LIGHTS_CUSTOMIZATION
+    if (Scene::Scene::graphics_settings().debug_windows_enabled()) {
+        render_imgui_scene_shading_customization(*m_scene_presenter);
+        render_imgui_lights_customization(*m_scene_presenter);
+    }
 }
 
 void PreviewRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
