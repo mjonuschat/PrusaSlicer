@@ -77,9 +77,7 @@ SDLRenderCanvas::SDLRenderCanvas()
     (void) io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
 
-#ifdef __EMSCRIPTEN__
     io.IniFilename = nullptr;
-#endif
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
