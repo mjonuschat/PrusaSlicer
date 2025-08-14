@@ -14,6 +14,7 @@
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/App/Scene/ISceneChangedListener.hpp"
+#include "Slic3r/App/Scene/GraphicsSettings.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
 
@@ -242,6 +243,9 @@ public:
     bool background_enabled() const { return m_background_enabled; }
     void set_background_enabled(bool enabled) { m_background_enabled = enabled; }
 
+    static GraphicsSettings& graphics_settings() { return s_graphics_settings; }
+//    void on_shading_type_changed(ShadingType shading_type) override;
+
     /**
      * @name Lighing-related methods
      * @{
@@ -460,6 +464,7 @@ private:
 
     PBR m_pbr;
 
+    static GraphicsSettings s_graphics_settings;
     static MinimalSceneRenderCustomizer ms_default_customizer;
 };
 

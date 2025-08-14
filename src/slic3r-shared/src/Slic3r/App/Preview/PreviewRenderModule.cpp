@@ -891,7 +891,12 @@ void PreviewRenderModule::init_scene_layout()
     m_cube_view            = std::make_unique<CubeView>();
     m_sidebar_bed          = std::make_unique<SidebarBed>(m_project_interactor);
     m_sidebar_print        = std::make_unique<SidebarPrint>(m_project_interactor);
+    m_sidebar_graphics_settings = std::make_unique<SidebarGraphicsSettings>();
     m_sidebar_auto_reslice = std::make_unique<SidebarAutoReslice>();
+
+    m_scene_presenter->scene().graphics_settings().add_listener<Scene::IGraphicsSettingsChangedListener>(
+        m_sidebar_graphics_settings.get()
+    );
 
     m_sidebar_action_buttons = std::make_unique<SidebarPreviewActionButtons>(m_render_module_navigator);
     m_sidebar_action_buttons->on_init(&m_project_interactor);
@@ -902,6 +907,7 @@ void PreviewRenderModule::init_scene_layout()
         m_cube_view.release(),
         m_sidebar_bed.release(),
         m_sidebar_print.release(),
+        m_sidebar_graphics_settings.release(),
         m_sidebar_action_buttons.release(),
         m_gcode_window.release(),
         m_legend.release(),

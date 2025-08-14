@@ -103,6 +103,7 @@ private:
     Yoga::Passthrough<CubeView> m_cube_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
+    Yoga::Passthrough<SidebarGraphicsSettings> m_sidebar_graphics_settings;
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<History> m_history;
 

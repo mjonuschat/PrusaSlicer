@@ -7,6 +7,7 @@
 #include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
+#include "Slic3r/App/SidebarGraphicsSettings.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 
 #include <map>
@@ -44,7 +45,8 @@ public:
         std::unique_ptr<ObjectListWindow> object_list,
         std::unique_ptr<CubeView> cube_view,
         std::unique_ptr<SidebarBed> sidebar_bed,
-        std::unique_ptr<SidebarPrint> sidebar_print
+        std::unique_ptr<SidebarPrint> sidebar_print,
+        std::unique_ptr<SidebarGraphicsSettings> sidebar_graphics_settings
     );
     virtual ~AbstractRenderLayout();
     AbstractRenderLayout(const AbstractRenderLayout& other) = delete;
@@ -143,6 +145,7 @@ protected:
     Yoga::Passthrough<CubeView> m_cube_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
+    Yoga::Passthrough<SidebarGraphicsSettings> m_sidebar_graphics_settings;
 };
 
 } // namespace Slic3r::App

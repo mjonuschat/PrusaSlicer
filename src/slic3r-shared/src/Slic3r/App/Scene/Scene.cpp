@@ -127,6 +127,7 @@ void MinimalSceneRenderCustomizer::on_transparent_pass_end(
 }
 
 
+GraphicsSettings Scene::s_graphics_settings;
 
 MinimalSceneRenderCustomizer Scene::ms_default_customizer;
 

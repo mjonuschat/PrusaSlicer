@@ -17,6 +17,7 @@ PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<CubeView> cube_view,
     std::unique_ptr<SidebarBed> sidebar_bed,
     std::unique_ptr<SidebarPrint> sidebar_print,
+    std::unique_ptr<SidebarGraphicsSettings> sidebar_graphics_settings,
     std::unique_ptr<SidebarPreviewActionButtons> sidebar_action_buttons,
     std::unique_ptr<GCodeWindow> m_gcode_window,
     std::unique_ptr<LegendWindow> legend,
@@ -26,8 +27,8 @@ PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
 )
     : AbstractRenderLayout(
-          std::move(top_bar), std::move(object_list), std::move(cube_view), std::move(sidebar_bed), std::move(sidebar_print)
-      )
+        std::move(top_bar), std::move(object_list), std::move(cube_view), std::move(sidebar_bed), std::move(sidebar_print), std::move(sidebar_graphics_settings)
+    )
     , m_gcode_window(std::move(m_gcode_window))
     , m_legend(std::move(legend))
     , m_double_slider_layers(std::move(double_slider_layers))
