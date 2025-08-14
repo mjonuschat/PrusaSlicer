@@ -11,6 +11,7 @@ endif()
 add_executable(slic3r-app-sdltest WIN32 ${SLIC3R_APP_SDLTEST_FILES})
 
 find_package(fmt REQUIRED)
+slic3r_remap_configs(fmt::fmt RelWithDebInfo Release)
 target_link_libraries(slic3r-app-sdltest PUBLIC slic3r-platform-sdl fmt::fmt)
 
 slic3r_link_resources(slic3r-app-sdltest ${SLIC3R_RESOURCES_DIR})
