@@ -91,8 +91,6 @@ private:
     std::unique_ptr<PlaterScenePresenter> m_scene_presenter;
     std::unique_ptr<Scene::GizmoManager> m_gizmo_manager;
 
-    bool m_gui_win_open{true};
-
     // tmp menu for add volume
     std::unique_ptr<Yoga::Menu> m_add_volumes_menu;
     // main window layout
