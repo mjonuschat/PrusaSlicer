@@ -129,12 +129,18 @@ const PresetInteractorConfigContainerContext& PresetInteractor::selected_config_
     return cccs.find(project_ctx.selected_config_container_id)->second;
 }
 
-void PresetInteractor::prepare_config_container_preset(
+PresetInteractorConfigContainerContext& PresetInteractor::initialize_config_container_context(
     Domain::SelectionId project_id,
     Domain::SelectionId config_container_id
 )
 {
-    auto& ccc = get_or_create_config_container_context(project_id, config_container_id);
+    auto& project_context{get_or_create_project_context(project_id)};
+    PresetInteractorConfigContainerContext ccc{config_container_id};
+    const auto [it, inserted]{
+        project_context.config_containers.insert({config_container_id, std::move(ccc)})
+    };
+    ASSERT(inserted);
+    return it->second;
 }
 
 void PresetInteractor::initialize_config_container(Domain::ConfigContainer& cc)
@@ -337,7 +343,8 @@ void append_items(const std::vector<T>& source, const Domain::Preset::HwPrinterC
                 .id                     = preset.preset.id,
                 .name                   = std::string{preset.preset.short_name()},
                 .hw_printer_config_id   = cfg.id,
-                .hw_printer_config_name = cfg.name
+                .hw_printer_config_name = cfg.name,
+                .runtime_only           = preset.preset.runtime_only
             };
         }
     );
@@ -350,11 +357,17 @@ void set_items(PresetItemObservableList& dest, std::vector<PresetItem>&& items, 
     dest.set_selected_index(selected_index);
 }
 
-std::size_t find_index_selected(const std::vector<PresetItem>& items, const std::string& selected_id)
+std::size_t find_index_selected(
+    const std::vector<PresetItem>& items,
+    const std::string& item_id,
+    const std::string& hw_config_id
+)
 {
-    const auto it{
-        std::ranges::find_if(items, [&](const PresetItem& item) { return item.id == selected_id; })
-    };
+    const auto it{std::ranges::find_if(
+        items,
+        [&](const PresetItem& item)
+        { return item.hw_printer_config_id == hw_config_id && item.id == item_id; }
+    )};
 
     ASSERT(it != items.end());
     return static_cast<std::size_t>(std::distance(items.begin(), it));
@@ -370,7 +383,7 @@ void set_items(
 {
     std::vector<PresetItem> items;
     append_items<T>(source, cfg, std::back_inserter(items));
-    const std::size_t selected_index{find_index_selected(items, selected_id)};
+    const std::size_t selected_index{find_index_selected(items, selected_id, cfg.id)};
     set_items(dest, std::move(items), selected_index);
 }
 
@@ -378,10 +391,9 @@ void set_items(
 
 void PresetInteractor::fill_printer_presets()
 {
-    const auto& selected_id = selected_printer_preset().printer.id;
-    std::vector<PresetItem> printers;
     const auto& preset_bundle = m_workbench.preset_bundle();
 
+    std::vector<PresetItem> printers;
     for (const auto& [hw_config_id, ps] : preset_bundle.evaluated_presets) {
         if (ps.empty())
             continue;
@@ -389,7 +401,11 @@ void PresetInteractor::fill_printer_presets()
         append_items(ps, hw_config, std::back_inserter(printers));
     }
 
-    const std::size_t selected_index{find_index_selected(printers, selected_id)};
+    const std::size_t selected_index{find_index_selected(
+        printers,
+        selected_printer_preset().printer.id,
+        selected_printer_preset().hw_config.id
+    )};
     set_items(m_printer_presets, std::move(printers), selected_index);
 }
 

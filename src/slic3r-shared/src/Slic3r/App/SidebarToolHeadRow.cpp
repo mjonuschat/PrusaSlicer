@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/SidebarToolHeadRow.hpp"
 
+#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
@@ -36,7 +37,8 @@ SidebarToolHeadRow::SidebarToolHeadRow(
 
     m_combo_box = emplace_back<ComboBoxListViewSelection<Biz::Preset::PresetItem>>();
     m_combo_box->set_get_name_fn([](const Biz::Preset::PresetItem* item) -> std::string {
-        return item->name;
+        const std::string prefix{item->runtime_only ? _u8L("(From 3mf) ") : ""};
+        return prefix + item->name;
     });
     m_combo_box->set_flex_grow(1);
     m_combo_box->set_source_list(&const_cast<Biz::Preset::PresetItemObservableList&>(data).items());

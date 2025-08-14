@@ -42,6 +42,7 @@ struct EvaluatedPreset
     FeatureValueMap features;
     Expressions conditions;
     SourceLocation last_node_location;
+    bool runtime_only{false};
 
     static EvaluatedPreset make(PresetKind kind, const EvaluatedPresetMetadata& metadata, PresetValues values)
     {

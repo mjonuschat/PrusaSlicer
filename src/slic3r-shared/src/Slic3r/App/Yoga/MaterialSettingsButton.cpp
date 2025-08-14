@@ -1,5 +1,6 @@
 #include "Slic3r/App/Yoga/MaterialSettingsButton.hpp"
 
+#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
@@ -81,7 +82,8 @@ void MaterialSettingsButton::on_list_selection_changed(Domain::SelectionId new_s
 
     const Biz::Preset::PresetItem& preset_item = m_state->items().at(new_selection);
 
-    set_material_name(preset_item.name);
+    const std::string prefix{preset_item.runtime_only ? _u8L("(From 3mf) ") : ""};
+    set_material_name(prefix + preset_item.name);
     set_color(ImColor(250, 104, 48));
     set_nozzle(0.4);
 }

@@ -89,6 +89,11 @@ public:
         return m_workbench;
     }
 
+    void initialize_bed(
+        Domain::ConfigContainer& config_container,
+        Domain::BedContainer& bed_container
+    );
+
     /**
      * @name Project manipulation
      * @{
@@ -417,9 +422,6 @@ private:
 
     void do_select_project(Domain::SelectionId project_id);
     void do_select_config_container(Domain::SelectionId container_id);
-
-    void initialize_new_project_before_inserting(Domain::Project& p);
-    void initialize_inserted_project(size_t project_id);
 
 private:
     struct Selection

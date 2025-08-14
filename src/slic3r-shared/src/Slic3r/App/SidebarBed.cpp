@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/SidebarBed.hpp"
 
+#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/PrinterSettingsButton.hpp"
 #include "Slic3r/App/Yoga/MaterialSettingsButton.hpp"
@@ -130,7 +131,8 @@ void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
                                                      .items()
                                                      .at(new_selection);
 
-    m_logical_printer_button->set_printer_name(preset_item.name);
+    const std::string prefix{preset_item.runtime_only ? _u8L("(From 3mf) ") : ""};
+    m_logical_printer_button->set_printer_name(prefix + preset_item.name);
     m_logical_printer_button->set_preset_name(preset_item.hw_printer_config_name);
 }
 

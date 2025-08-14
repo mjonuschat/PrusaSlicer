@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/SidebarPrint.hpp"
 
+#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Yoga/RectangleButton.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/InputTextField.hpp"
@@ -73,7 +74,8 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor) :
     m_combo_print = layer_height_row
                         ->emplace_back<ComboBoxListViewSelection<Biz::Preset::PresetItem>>();
     m_combo_print->set_get_name_fn([](const Biz::Preset::PresetItem* item) -> std::string {
-        return item->name;
+        const std::string prefix{item->runtime_only ? _u8L("(From 3mf) ") : ""};
+        return prefix + item->name;
     });
     m_combo_print->set_source_list(&m_project_interactor.preset_interactor().print_presets().items());
     m_combo_print->set_flex_grow(1);

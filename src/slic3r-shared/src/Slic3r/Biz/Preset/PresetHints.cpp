@@ -10,7 +10,6 @@
 #include "libslic3r/Slicing.hpp"
 
 #include "Slic3r/Biz/Preset/PresetHints.hpp"
-#include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
 
 #include "Slic3r/App/I18N/I18N.hpp"
 

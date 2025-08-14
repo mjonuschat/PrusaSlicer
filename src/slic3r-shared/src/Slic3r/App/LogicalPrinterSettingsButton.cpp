@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/LogicalPrinterSettingsButton.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -22,7 +23,8 @@ LogicalPrinterSettingsButton::LogicalPrinterSettingsButton(
 
 void LogicalPrinterSettingsButton::on_data_update()
 {
-    set_printer_name(m_state->name);
+    const std::string prefix{m_state->runtime_only ? _u8L("(From 3mf) ") : ""};
+    set_printer_name(prefix + m_state->name);
     set_preset_name(m_state->hw_printer_config_name);
     set_icon(Render::Icon::PrinterNEXT);
 }

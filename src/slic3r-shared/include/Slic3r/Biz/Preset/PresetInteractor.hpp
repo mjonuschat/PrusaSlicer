@@ -35,6 +35,7 @@ struct PresetItem
     std::string name;
     std::string hw_printer_config_id;
     std::string hw_printer_config_name;
+    bool runtime_only;
 };
 
 using PresetItemObservableList         = ObservableListWithSelection<PresetItem>;
@@ -61,7 +62,7 @@ public:
 
     const PresetInteractorConfigContainerContext& selected_config_container_context() const;
 
-    void prepare_config_container_preset(
+    PresetInteractorConfigContainerContext& initialize_config_container_context(
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id
     );

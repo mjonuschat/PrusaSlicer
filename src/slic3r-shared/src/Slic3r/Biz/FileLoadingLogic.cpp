@@ -474,11 +474,6 @@ static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
         );
     }
 
-    if (project.config_containers().empty()) {
-        auto cc = std::make_unique<Domain::ConfigContainer>();
-
-        project.config_containers().emplace_back(std::move(cc));
-    }
     return project;
 }
 
