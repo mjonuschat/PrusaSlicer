@@ -35,6 +35,7 @@ class PaintOnSupportsGizmo;
 class SimplifyGizmo;
 class TextGizmo;
 class MeasureGizmo;
+class PlaterCameraGizmo;
 
 class PlaterRenderModule final :
     public Platform::AbstractRenderModule,
@@ -123,6 +124,7 @@ private:
     PaintOnSupportsGizmo* m_paint_on_supports_gizmo = nullptr;
     TextGizmo* m_text_gizmo                         = nullptr;
     MeasureGizmo* m_measure_gizmo                   = nullptr;
+    PlaterCameraGizmo* m_camera_gizmo               = nullptr;
 
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;

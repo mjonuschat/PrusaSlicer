@@ -112,6 +112,13 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     init_scene();
     init_scene_layout();
 
+    // The camera gizmo missed the selected_bed_instances_changed event which was triggered before the gizmo was initialized.
+    // Faking the event here ensures that the camera pivot is set properly to the center of the bed.
+    m_camera_gizmo->on_selected_bed_instances_changed(
+        m_project_interactor.selected_project_id(),
+        m_project_interactor.scene_interactor().bed_selection()
+    );
+
     if (!m_thumbnail_image_generator->initialized()) {
         m_thumbnail_image_generator->init(
             m_workbench,
@@ -391,12 +398,12 @@ void PlaterRenderModule::init_gizmos()
         std::move(drag_detector)
     );
     m_gizmo_manager->add_listener<IGizmoActiveToolListener>(this);
-    PlaterCameraGizmo* camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(
+    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(
         m_workbench,
         *m_scene_presenter
     );
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
-        camera_gizmo
+        m_camera_gizmo
     );
     BedSelectGizmo& bed_select_gizmo{m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(
         m_project_interactor.scene_interactor(),
