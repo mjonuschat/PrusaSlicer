@@ -108,6 +108,8 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         } else if (ret == GizmoActivationState::Active) {
             p.in_cycle_gizmos.clear();
             p.in_cycle_gizmos.push_back(g);
+            if (m_mouse_drag_detector)
+                m_mouse_drag_detector->cancel_drag_event();
             break;
         }
         ++it;

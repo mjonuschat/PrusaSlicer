@@ -357,7 +357,7 @@ void SceneInteractor::add_instance(const Vec2d& offset)
 {
     auto& project        = m_workbench.project(m_selected_project_id);
     const ObjectSelection& sel = object_selection();
-    DEBUG_ASSERT(sel.elements.size() == 1);
+    DEBUG_ASSERT(sel.elements.size() >= 1);
     size_t obj_id = sel.elements[0].object_id;
     Domain::ElementRefs updated;
 
