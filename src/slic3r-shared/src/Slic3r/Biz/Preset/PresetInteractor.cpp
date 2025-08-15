@@ -357,7 +357,7 @@ void set_items(PresetItemObservableList& dest, std::vector<PresetItem>&& items, 
     dest.set_selected_index(selected_index);
 }
 
-std::size_t find_index_selected(
+std::optional<std::size_t> find_index_selected(
     const std::vector<PresetItem>& items,
     const std::string& item_id,
     const std::string& hw_config_id
@@ -369,7 +369,9 @@ std::size_t find_index_selected(
         { return item.hw_printer_config_id == hw_config_id && item.id == item_id; }
     )};
 
-    ASSERT(it != items.end());
+    if (it == items.end()) {
+        return std::nullopt;
+    }
     return static_cast<std::size_t>(std::distance(items.begin(), it));
 }
 
@@ -383,8 +385,22 @@ void set_items(
 {
     std::vector<PresetItem> items;
     append_items<T>(source, cfg, std::back_inserter(items));
-    const std::size_t selected_index{find_index_selected(items, selected_id, cfg.id)};
-    set_items(dest, std::move(items), selected_index);
+
+    if (items.empty()) {
+        return;
+    }
+    const std::optional<std::size_t> selected_index{find_index_selected(items, selected_id, cfg.id)};
+
+    if (!selected_index) {
+        // TODO: now we cannot ensure the selected id is present, but once we have
+        // more advanced selection state memory, we should be able to ensure this.
+
+        // Just pick the first one.
+        set_items(dest, std::move(items), 0);
+        return;
+    }
+
+    set_items(dest, std::move(items), *selected_index);
 }
 
 } // namespace
@@ -401,12 +417,14 @@ void PresetInteractor::fill_printer_presets()
         append_items(ps, hw_config, std::back_inserter(printers));
     }
 
-    const std::size_t selected_index{find_index_selected(
+    const std::optional<std::size_t> selected_index{find_index_selected(
         printers,
         selected_printer_preset().printer.id,
         selected_printer_preset().hw_config.id
     )};
-    set_items(m_printer_presets, std::move(printers), selected_index);
+
+    ASSERT(selected_index, "Selected printer preset shuldd always be part of printers list!");
+    set_items(m_printer_presets, std::move(printers), *selected_index);
 }
 
 void PresetInteractor::fill_print_presets(
