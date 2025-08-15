@@ -169,16 +169,14 @@ bool BedSelection::set_mode(const BedSelectionMode mode)
 
 bool BedSelection::remove(const Domain::BedRef& bed_ref)
 {
-    ASSERT(m_mode == BedSelectionMode::SingleBed);
-
-    if (m_selected_beds.size() <= 1) {
-        return false;
-    }
-
     const std::size_t erased_count{std::erase(m_selected_beds, bed_ref)};
     if (m_last_selected_bed == bed_ref) {
         ASSERT(erased_count == 1);
-        m_last_selected_bed = m_selected_beds.back();
+        if (!m_selected_beds.empty()) {
+            m_last_selected_bed = m_selected_beds.back();
+        } else {
+            m_last_selected_bed = {Domain::INVALID_ID, Domain::INVALID_ID};
+        }
     }
 
     return erased_count != 0;

@@ -9,7 +9,13 @@ struct AuxiliaryElementId
     enum class Type : uint8_t
     {
         Volume = 0,
-        Bed,
+        BedLabel,
+        BedPlate,
+        BedGrid,
+        BedContour,
+        BedPrintVolume,
+        BedAxis,
+        BedModel,
         WipeTower,
         SlaMesh,
         SlaSupports,

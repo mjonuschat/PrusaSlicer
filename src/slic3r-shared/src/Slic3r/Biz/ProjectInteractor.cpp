@@ -22,7 +22,7 @@ void ProjectInteractor::initialize_bed(
 )
 {
     const auto& selected_printer_preset{config_container.selected_preset()};
-    Domain::Bed& bed{bed_container.add_bed(selected_printer_preset, Slic3r::resources_dir())};
+    Domain::Bed& bed{bed_container.get_or_create_bed(selected_printer_preset, Slic3r::resources_dir())};
     config_container.set_bed(bed);
     m_scene_interactor.add_bed_instance(config_container.id().id);
 }

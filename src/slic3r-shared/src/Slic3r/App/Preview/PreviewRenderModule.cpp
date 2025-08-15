@@ -1432,7 +1432,7 @@ void PreviewRenderModule::center_camera_on_selected_bed()
         return;
 
     Domain::Vec3d bed_inst_offset           = bed_inst->transformation.get_offset();
-    const Domain::Bed& bed                  = bed_inst->bed;
+    const Domain::Bed& bed                  = bed_inst->bed.get();
     std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed);
     Eigen::AlignedBox3d bed_aabb;
     for (const auto& v : print_volume) {

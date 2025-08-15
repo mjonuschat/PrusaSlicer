@@ -77,9 +77,48 @@ bool Bed::contains(const Vec2d& bed_inst_position, const BoundingBox2d& object_b
     return bed_bounds.overlap(object_bb);
 }
 
+static bool vec2d_equal(const Vec2d& a, const Vec2d& b)
+{
+    return Domain::fuzzy_compare(a.x(), b.x()) &&
+           Domain::fuzzy_compare(a.y(), b.y());
+}
+
+bool Bed::operator==(const Bed& rhs) const
+{
+    if (!vec2d_equal(m_center, rhs.m_center)) {
+        return false;
+    }
+    if (!vec2d_equal(m_offset, rhs.m_offset)) {
+        return false;
+    }
+    if (!vec2d_equal(m_contour_aabb_extent, rhs.m_contour_aabb_extent)) {
+        return false;
+    }
+    if (!Domain::fuzzy_compare(m_max_print_height, rhs.m_max_print_height)) {
+        return false;
+    }
+    if (m_model_filename != rhs.m_model_filename) {
+        return false;
+    }
+    if (m_texture_filename != rhs.m_texture_filename) {
+        return false;
+    }
+    if (m_segments != rhs.m_segments) {
+        return false;
+    }
+    if (m_contour.size() != rhs.m_contour.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < m_contour.size(); ++i) {
+        if (!vec2d_equal(m_contour[i], rhs.m_contour[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool operator==(const Bed::Segments& a, const Bed::Segments& b) {
     return a.x_count == b.x_count && a.y_count == b.y_count;
 }
-
 
 }

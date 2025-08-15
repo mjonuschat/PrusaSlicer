@@ -137,7 +137,7 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(
     });
 
     // set aabb for shadows
-    std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed_instance->bed);
+    std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed_instance->bed.get());
     Eigen::AlignedBox3d bed_aabb;
     Domain::Vec3d bed_inst_offset = bed_instance->transformation.get_offset();
     for (const auto& v : print_volume) {

@@ -27,7 +27,7 @@ struct BedInstance : public ObjectBase
     bool contains(const BoundingBox2d& bounds) const
     {
         Vec3d pos = transformation.get_offset();
-        return bed.contains(Vec2d{pos.x(), pos.y()}, bounds);
+        return bed.get().contains(Vec2d{pos.x(), pos.y()}, bounds);
     }
 
     size_t index() const;
@@ -36,7 +36,7 @@ struct BedInstance : public ObjectBase
     const std::string& label() const;
     const std::string& name() const;
 
-    const Bed& bed;
+    std::reference_wrapper<const Bed> bed;
     Transformation transformation;
     ModelInstanceList model_instances;
     bool print_volume_enabled{false};

@@ -18,15 +18,9 @@ struct BedInstance;
 class BedContainer
 {
 public:
-    [[nodiscard]] Bed& add_bed(
-        const Vec2ds& contour,
-        float max_print_height,
-        const std::optional<Bed::Segments>& bed_segments,
-        const std::string& model_filename,
-        const std::string& texture_filename
-    );
+    [[nodiscard]] Bed& get_or_create_bed(const Preset::SelectedPreset& preset, const std::string& resources_dir_path);
 
-    [[nodiscard]] Bed& add_bed(const Preset::SelectedPreset& preset, const std::string& resources_dir_path);
+    void remove(const Bed* bed);
 
     size_t beds_count() const { return m_beds.size(); }
     std::vector<size_t> beds_indices() const;
@@ -41,6 +35,14 @@ public:
     void reset() { m_beds.clear(); }
 
 private:
+    [[nodiscard]] Bed& add_bed(
+        const Vec2ds& contour,
+        float max_print_height,
+        const std::optional<Bed::Segments>& bed_segments,
+        const std::string& model_filename,
+        const std::string& texture_filename
+    );
+
     BedList m_beds;
 };
 

@@ -1051,7 +1051,7 @@ static void render_imgui_debug_bed(
                             );
                             Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
                             n.render_component()->replace_material(
-                                Scene::BedMaterials::plate_textured_material(device, inst.bed)
+                                Scene::BedMaterials::plate_textured_material(device, inst.bed.get())
                             );
                             if (n.has_material_override())
                                 n.set_material_override(

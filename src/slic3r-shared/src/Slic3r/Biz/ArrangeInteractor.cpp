@@ -154,7 +154,7 @@ std::optional<ArbitraryShape> extract_outline(const InstanceMeshes& meshes, cons
 
 Points get_bed_contour(const ArrangeBed& arrange_bed)
 {
-    const Domain::Bed& bed{arrange_bed.bed_instance.bed};
+    const Domain::Bed& bed{arrange_bed.bed_instance.bed.get()};
     Points points;
     for (const Vec2d& point : bed.contour()) {
         points.push_back(scaled(point));

@@ -133,7 +133,7 @@ PenaltyBreakScopeResolution: 1000
 PenaltyBreakString: 0
 PenaltyBreakTemplateDeclaration: 0
 PenaltyExcessCharacter: 10
-PenaltyIndentedWhitespace: 0
+PenaltyIndentedWhitespace: 1000
 PenaltyReturnTypeOnItsOwnLine: 1000
 PointerAlignment: Left
 QualifierAlignment: Leave

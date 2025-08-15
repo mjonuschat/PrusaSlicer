@@ -6,6 +6,7 @@
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
@@ -100,7 +101,7 @@ class ISceneBedInstanceChangedListener
 public:
     virtual ~ISceneBedInstanceChangedListener() = default;
 
-    virtual void on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances) {};
+    virtual void on_bed_instance_updated(Domain::SelectionId project_id, const Domain::BedRefs& instances) {};
     virtual void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) {};
     virtual void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, TransformState state) {};
 };
@@ -110,6 +111,7 @@ struct TransformMemento;
 class SceneInteractor final :
     public ISelectedProjectChangedListener,
     public ISelectedConfigContainerChangedListener,
+    public Preset::IPresetChangedListener,
     public WithListeners<
         ISceneSelectionChangedListener,
         ISceneChangedListener,
@@ -156,6 +158,18 @@ public:
     Domain::BedInstance& add_bed_instance(size_t config_container_id);
     void remove_bed_instance(const Domain::BedRef& instance);
     void transform_bed_instance(const Domain::BedRef& instance, const Transform& xform);
+
+    void on_preset_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Preset::PresetItemType type
+    ) override;
+
+    void on_preset_value_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        const Domain::ConfigItem& item
+    ) override;
 
     const Domain::Project::ConfigContainerList& selected_project_config_containers() const;
     const Domain::ModelInstanceList& unplaced_model_instances(const Domain::SelectionId project_id) const;
@@ -229,8 +243,11 @@ public:
 private:
     void update_selection_instance_bed_placement();
     void invoke_slicing_input_changed(const Domain::BedRef& bed_instance);
+    void update_config_container_bed(
+        Domain::Project& project,
+        const Domain::SelectionId& config_container_id
+    );
 
-private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, SceneInteractorProjectContext>;
 
     Domain::Workbench& m_workbench;

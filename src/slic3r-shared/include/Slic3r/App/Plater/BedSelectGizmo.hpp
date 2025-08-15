@@ -6,12 +6,10 @@
 
 namespace Slic3r::App::Plater {
 
-class BedSelectGizmo : public Scene::IGizmo, public Biz::Scene::ISceneBedInstanceChangedListener
+class BedSelectGizmo : public Scene::IGizmo
 {
 public:
     BedSelectGizmo(Biz::Scene::SceneInteractor& scene_interactor, Scene::ISceneProvider& scene_provider);
-
-    ~BedSelectGizmo();
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
 

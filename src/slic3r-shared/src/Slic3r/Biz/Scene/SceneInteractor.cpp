@@ -6,6 +6,7 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "libslic3r/Utils.hpp"
 
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
@@ -639,7 +640,7 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
         invoke_slicing_input_changed(bed_ref);
 
     invoke_listeners<ISceneBedInstanceChangedListener>([&](auto* l) {
-        l->on_bed_instance_added(m_selected_project_id, { updated });
+        l->on_bed_instance_updated(m_selected_project_id, { updated });
     });
     return ret;
 }
@@ -648,12 +649,13 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
 {
     auto& project               = m_projects.find(m_selected_project_id)->second.project;
     Domain::ConfigContainer* cc = project.find_config_container(instance.config_container_id);
-    DEBUG_ASSERT(cc != nullptr);
+    ASSERT(cc != nullptr);
     auto* bed_inst = Domain::find_by_id(cc->bed_instances(), instance.instance_id);
 
     auto insts = bed_inst->model_instances;
 
     cc->remove_bed_instance_by_id(instance.instance_id);
+    bed_selection().remove(instance);
 
     // update bed_instance index
     size_t idx = 1;
@@ -690,6 +692,80 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
     invoke_listeners<ISceneBedInstanceChangedListener>([&](auto* l) {
         l->on_bed_instance_transformed(m_selected_project_id, {instance}, TransformState::Completed);
     });
+}
+
+void SceneInteractor::update_config_container_bed(
+    Domain::Project& project,
+    const Domain::SelectionId& config_container_id
+)
+{
+    Domain::ConfigContainer* config_container{project.find_config_container(config_container_id)};
+    if (config_container == nullptr) {
+        return;
+    }
+    const auto& selected_printer_preset{config_container->selected_preset()};
+    Domain::Bed& bed{
+        (project.bed_container().get_or_create_bed(selected_printer_preset, Slic3r::resources_dir()))
+    };
+
+    const Domain::Bed* previous_bed{&config_container->bed()};
+    if (previous_bed != &bed) {
+        config_container->set_bed(bed);
+
+        Domain::BedRefs bed_refs;
+        for (auto& bed_instance : config_container->bed_instances()) {
+            bed_instance->bed = bed;
+            bed_refs.push_back({config_container->id().id, bed_instance->id().id});
+        }
+        m_bed_placement.layout(project, BED_GAP);
+
+        const auto it{std::ranges::find_if(
+            project.config_containers(),
+            [&](const auto& config_container) { return &config_container->bed() == previous_bed; }
+        )};
+
+        if (it == project.config_containers().end()) {
+            project.bed_container().remove(previous_bed);
+        }
+
+        invoke_listeners<ISceneBedInstanceChangedListener>([&](auto* l) {
+            l->on_bed_instance_updated(m_selected_project_id, bed_refs);
+        });
+    }
+}
+
+void SceneInteractor::on_preset_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Preset::PresetItemType type
+)
+{
+    if (type != Preset::PresetItemType::PrinterPreset) {
+        return;
+    }
+
+    Domain::Project& project{m_workbench.project(project_id)};
+    update_config_container_bed(project, config_container_id);
+}
+
+void SceneInteractor::on_preset_value_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    const Domain::ConfigItem& item
+) {
+    const std::vector<std::string> bed_related_keys{
+        "bed_shape",
+        "max_print_height",
+        "bed_custom_model",
+        "bed_custom_texture",
+    };
+
+    if (std::ranges::find(bed_related_keys, item.def().name) == bed_related_keys.end()) {
+        return;
+    }
+
+    Domain::Project& project{m_workbench.project(project_id)};
+    update_config_container_bed(project, config_container_id);
 }
 
 const Domain::Project::ConfigContainerList& SceneInteractor::selected_project_config_containers() const

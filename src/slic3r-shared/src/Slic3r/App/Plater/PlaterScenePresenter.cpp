@@ -116,7 +116,7 @@ void PlaterScenePresenter::load_selected_project()
         updated_obj_instances.emplace_back(mi->get_object()->id().id, mi->id().id, 0);
     }
 
-    PlaterScenePresenter::on_bed_instance_added(project_id, updated_beds);
+    PlaterScenePresenter::on_bed_instance_updated(project_id, updated_beds);
     if (!updated_obj_instances.empty()) {
         on_instance_added(project_id, updated_obj_instances);
     }
@@ -161,13 +161,13 @@ void PlaterScenePresenter::update_camera_frustum()
     for (const auto& cc : scene_interactor.selected_project_config_containers()) {
         for (const auto& bed_inst : cc->bed_instances()) {
             std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(
-                bed_inst->bed
+                bed_inst->bed.get()
             );
             Domain::Vec3d bed_inst_offset = bed_inst->transformation.get_offset();
             for (const auto& v : print_volume) {
                 aabb.extend(bed_inst_offset + v.cast<double>());
             }
-            Eigen::AlignedBox3d model_aabb = Biz::Scene::BedGeometry::model_aabb(bed_inst->bed);
+            Eigen::AlignedBox3d model_aabb = Biz::Scene::BedGeometry::model_aabb(bed_inst->bed.get());
             if (!model_aabb.isEmpty()) {
                 aabb.extend(bed_inst_offset + model_aabb.min());
                 aabb.extend(bed_inst_offset + model_aabb.max());
@@ -348,7 +348,7 @@ void PlaterScenePresenter::on_selected_bed_instances_changed(
     for (const auto& bed_instance : selected_bed_instances()) {
         const Domain::Vec3d bed_inst_offset{bed_instance.get().transformation.get_offset()};
         const std::vector<Domain::Vec3f> print_volume{
-            Biz::Scene::BedGeometry::print_volume(bed_instance.get().bed)
+            Biz::Scene::BedGeometry::print_volume(bed_instance.get().bed.get())
         };
         for (const auto& v : print_volume) {
             bed_aabb.extend(bed_inst_offset + v.cast<double>());
@@ -649,13 +649,15 @@ void PlaterScenePresenter::on_volume_transformed(
         invoke_bed_visually_changed(project_id);
 }
 
-void PlaterScenePresenter::on_bed_instance_added(
+void PlaterScenePresenter::on_bed_instance_updated(
     Domain::SelectionId project_id,
     const Domain::BedRefs& instances
 )
 {
     auto& scn        = scene();
     const auto& proj = m_workbench.project(project_id);
+
+    remove_beds(project_id, instances);
 
     for (auto& instance : instances) {
         const Domain::ConfigContainer* cc = proj.find_config_container(instance.config_container_id);
@@ -688,14 +690,7 @@ void PlaterScenePresenter::on_bed_instance_removed(
     const Domain::BedRefs& instances
 )
 {
-    remove_children<Scene::BedNodeTag, Domain::BedRef>(
-        scene(),
-        instances,
-        [](const Scene::BedNodeTag& tag, const Domain::BedRef& br) {
-            return tag.config_container_id == br.config_container_id
-                && tag.instance_id == br.instance_id;
-        }
-    );
+    remove_beds(project_id, instances);
 
     m_bed_render_updater.update_all(scene().camera());
     update_camera_frustum();
@@ -745,6 +740,63 @@ void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, size_t
     else if (layer_idx == int(PlaterSceneLayer::AlwaysOnTop))
         // clear depth buffer to ensure geometry belonging to this layer is always rendered over any other object
         cmd_buf.clear_buffers(false, true);
+}
+
+void PlaterScenePresenter::remove_beds(Domain::SelectionId project_id, const Domain::BedRefs& instances)
+{
+    remove_children<Scene::BedNodeTag, Domain::BedRef>(
+        scene(),
+        instances,
+        [](const Scene::BedNodeTag& tag, const Domain::BedRef& br)
+        {
+            return tag.config_container_id == br.config_container_id
+                && tag.instance_id == br.instance_id;
+        }
+    );
+
+    std::set<std::size_t> active_beds;
+    std::set<std::size_t> active_bed_instances;
+
+    const Domain::Project& project{m_workbench.project(project_id)};
+    for (const auto& config_container : project.config_containers()) {
+        active_beds.insert(config_container->bed().id().id);
+        for (const auto& bed_instance : config_container->bed_instances()) {
+            active_bed_instances.insert(bed_instance->id().id);
+        }
+    }
+
+    const auto is_active = [&](const Scene::AuxiliaryElementId& id)
+    {
+        using Type = Scene::AuxiliaryElementId::Type;
+        switch (id.type) {
+        case Type::BedLabel:
+            return active_bed_instances.contains(id.id);
+        case Type::BedPlate:
+            [[fallthrough]];
+        case Type::BedGrid:
+            [[fallthrough]];
+        case Type::BedContour:
+            [[fallthrough]];
+        case Type::BedPrintVolume:
+            [[fallthrough]];
+        case Type::BedAxis:
+            [[fallthrough]];
+        case Type::BedModel:
+            return active_beds.contains(id.id);
+        default:
+            return true;
+        }
+    };
+
+    Scene::ScenePresenterProjectContext& project_context{m_projects.at(project_id)};
+    project_context.model_geometry_manager().release_if(
+        [&](const Scene::AuxiliaryElementId& id, const Render::Geometry&) { return !is_active(id); }
+    );
+
+    project_context.model_triangle_mesh_manager().release_if(
+        [&](const Scene::AuxiliaryElementId& id, const Scene::TriangleMesh&)
+        { return !is_active(id); }
+    );
 }
 
 } // namespace Slic3r::App::Plater

@@ -9,14 +9,7 @@ BedSelectGizmo::BedSelectGizmo(
 ) :
     m_scene_interactor(scene_interactor),
     m_scene_provider(scene_provider)
-{
-    m_scene_interactor.add_listener<Biz::Scene::ISceneBedInstanceChangedListener>(this);
-}
-
-BedSelectGizmo::~BedSelectGizmo()
-{
-    m_scene_interactor.remove_listener<Biz::Scene::ISceneBedInstanceChangedListener>(this);
-}
+{ }
 
 Scene::GizmoActivationState BedSelectGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {

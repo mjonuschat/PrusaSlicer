@@ -59,13 +59,13 @@ struct BedSelection
 
     bool set_mode(const BedSelectionMode mode);
 
+    bool remove(const Domain::BedRef& bed_ref);
+
 private:
     Domain::BedRefs m_selected_beds;
     Domain::SelectionId m_selected_config_container{Domain::INVALID_ID};
     Domain::BedRef m_last_selected_bed{Domain::INVALID_ID, Domain::INVALID_ID};
     BedSelectionMode m_mode{BedSelectionMode::SingleBed};
-
-    bool remove(const Domain::BedRef& bed_ref);
 };
 
 using BedInstanceRefWrap = std::reference_wrapper<const Domain::BedInstance>;

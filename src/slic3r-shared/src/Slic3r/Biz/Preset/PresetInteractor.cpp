@@ -188,7 +188,7 @@ void PresetInteractor::on_selected_config_container_changed(
 
     // notify listeners on changes
     invoke_listeners<IPresetChangedListener>(
-        [project_id](auto* l) { l->on_config_container_selection_changed(project_id); }
+        [&](auto* l) { l->on_config_container_selection_changed(project_id, container_id); }
     );
     invoke_slicing_input_changed();
 
@@ -530,8 +530,8 @@ void PresetInteractor::select_printer_preset(
 
     // notify on change
     invoke_listeners<IPresetChangedListener>(
-        [project_id = m_selected_project_id](auto* l)
-        { l->on_preset_selection_changed(project_id); }
+        [project_id = m_selected_project_id, &cc](auto* l)
+        { l->on_preset_selection_changed(project_id, cc->id().id, PresetItemType::PrinterPreset); }
     );
     invoke_slicing_input_changed();
 }
@@ -561,10 +561,13 @@ void PresetInteractor::select_print_preset(const std::string& id)
     fill_tools_presets(*ep, *print, selected_preset);
     fill_materials_presets(*print, selected_preset);
 
-    // notify on change
+    const auto& ccc = selected_config_container_context();
+    const Domain::SelectionId config_container_id{ccc.config_container_id};
     invoke_listeners<IPresetChangedListener>(
-        [project_id = m_selected_project_id](auto* l)
-        { l->on_preset_selection_changed(project_id); }
+        [project_id = m_selected_project_id, config_container_id](auto* l)
+        {
+            l->on_preset_selection_changed(project_id, config_container_id, PresetItemType::PrintPreset);
+        }
     );
     invoke_slicing_input_changed();
 }
@@ -591,10 +594,17 @@ void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::st
         item.set_selected([&id](const PresetItem& item) { return item.id == id; });
     });
 
-    // notify on change
+    const auto& ccc = selected_config_container_context();
+    const Domain::SelectionId config_container_id{ccc.config_container_id};
     invoke_listeners<IPresetChangedListener>(
-        [project_id = m_selected_project_id](auto* l)
-        { l->on_preset_selection_changed(project_id); }
+        [project_id = m_selected_project_id, config_container_id](auto* l)
+        {
+            l->on_preset_selection_changed(
+                project_id,
+                config_container_id,
+                PresetItemType::ToolPrintPreset
+            );
+        }
     );
     invoke_slicing_input_changed();
 }
@@ -624,10 +634,11 @@ void PresetInteractor::select_material_preset(size_t material_index, const std::
         { item.set_selected([&id](const PresetItem& item) { return item.id == id; }); }
     );
 
-    // notify on change
+    const auto& ccc = selected_config_container_context();
+    const Domain::SelectionId config_container_id{ccc.config_container_id};
     invoke_listeners<IPresetChangedListener>(
-        [project_id = m_selected_project_id](auto* l)
-        { l->on_preset_selection_changed(project_id); }
+        [project_id = m_selected_project_id, config_container_id](auto* l)
+        { l->on_preset_selection_changed(project_id, config_container_id, PresetItemType::MaterialPreset); }
     );
     invoke_slicing_input_changed();
 }
@@ -696,12 +707,7 @@ void PresetInteractor::set_preset_value(
     ASSERT(it.item != nullptr);
     modify_fn(*it.item);
 
-    // notify on change
-    invoke_listeners<IPresetChangedListener>(
-        [project_id = m_selected_project_id](auto* l)
-        { l->on_config_container_selection_changed(project_id); }
-    );
-
+    invoke_on_preset_value_changed(*it.item);
 }
 
 ConfigBoxInteractor& PresetInteractor::printer_cbi()
@@ -774,11 +780,7 @@ void PresetInteractor::set_item_value(
         },
         item.def().location
     );
-    // notify on changes
-    invoke_listeners<IPresetChangedListener>(
-        [project_id = m_selected_project_id](auto* l)
-        { l->on_preset_value_changed(project_id); }
-    );
+    invoke_on_preset_value_changed(item);
     invoke_slicing_input_changed();
 }
 
@@ -793,6 +795,21 @@ void PresetInteractor::invoke_slicing_input_changed()
             listener->on_slicing_input_changed({ccc.config_container_id, instance->id().id});
         });
     }
+}
+
+void PresetInteractor::invoke_on_preset_value_changed(const Domain::ConfigItem& config_item)
+{
+    const auto& ccc     = selected_config_container_context();
+    invoke_listeners<IPresetChangedListener>(
+        [&](auto listener)
+        {
+            listener->on_preset_value_changed(
+                m_selected_project_id,
+                ccc.config_container_id,
+                config_item
+            );
+        }
+    );
 }
 
 PresetInteractorProjectContext& PresetInteractor::get_or_create_project_context(

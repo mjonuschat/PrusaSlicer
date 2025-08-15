@@ -21,14 +21,6 @@ class IPresetChangedListener;
 
 class PresetInteractor;
 
-enum class PresetItemType
-{
-    PrinterPreset,
-    PrintPreset,
-    ToolPrintPreset,
-    MaterialPreset
-};
-
 struct PresetItem
 {
     std::string id;
@@ -177,6 +169,7 @@ private:
     );
 
     void invoke_slicing_input_changed();
+    void invoke_on_preset_value_changed(const Domain::ConfigItem& config_item);
 
 
 private:

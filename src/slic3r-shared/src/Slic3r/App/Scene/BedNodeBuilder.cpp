@@ -20,16 +20,6 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Scene {
 
-static size_t encode_bed_id(const BedNodeTag& tag, BedElementType type)
-{
-    return tag.config_container_id * 100000 + size_t(type);
-}
-
-static size_t encode_bed_instance_id(const BedNodeTag& tag, BedElementType type)
-{
-    return tag.config_container_id * 100000 + tag.instance_id * 100 + size_t(type);
-}
-
 static double z_offset(BedElementType type)
 {
     static constexpr double Z_OFFSET = -0.05;
@@ -56,8 +46,7 @@ static void plate_node(Render::Device& device, ScenePresenterProjectContext& ctx
     std::vector<std::pair<Vec3f, Vec2f>> triangles = Biz::Scene::BedGeometry::plate_triangles(bed);
     DEBUG_ASSERT(!triangles.empty());
 
-    BedElementType type = bed.texture_filename().empty() ? BedElementType::PlateDefault : BedElementType::PlateTextured;
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, encode_bed_id(tag, type) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::BedPlate, bed.id().id };
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_triangles(device, triangles);
     });
@@ -68,10 +57,14 @@ static void plate_node(Render::Device& device, ScenePresenterProjectContext& ctx
         });
 
     Render::Material material;
+    const BedElementType type{
+        bed.texture_filename().empty() ? BedElementType::PlateDefault : BedElementType::PlateTextured
+    };
     switch (type)
     {
     case BedElementType::PlateDefault:  { material = BedMaterials::plate_default_material(device); break; }
     case BedElementType::PlateTextured: { material = BedMaterials::plate_textured_material(device, bed); break; }
+    default: PANIC("Unknown type!");
     }
 
     builder
@@ -95,7 +88,7 @@ static void grid_node(Render::Device& device, ScenePresenterProjectContext& ctx,
     std::vector<Vec3f> lines = BedRenderHelper::plate_grid(bed);
     DEBUG_ASSERT(!lines.empty());
 
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, encode_bed_id(tag, BedElementType::Grid) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::BedGrid, bed.id().id };
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_lines(device, lines);
     });
@@ -120,7 +113,7 @@ static void contour_node(Render::Device& device, ScenePresenterProjectContext& c
     std::vector<Vec3f> lines = Biz::Scene::BedGeometry::plate_contour(bed);
     DEBUG_ASSERT(!lines.empty());
 
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, encode_bed_id(tag, BedElementType::Contour) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::BedContour, bed.id().id };
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_lines(device, lines);
     });
@@ -145,7 +138,7 @@ static void print_volume_node(Render::Device& device, ScenePresenterProjectConte
     std::vector<Vec3f> lines = Biz::Scene::BedGeometry::print_volume(bed);
     DEBUG_ASSERT(!lines.empty());
 
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, encode_bed_id(tag, BedElementType::PrintVolume) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::BedPrintVolume, bed.id().id };
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_lines(device, lines);
     });
@@ -174,7 +167,7 @@ static void model_node(Render::Device& device, ScenePresenterProjectContext& ctx
     auto& geom_mgr = ctx.model_geometry_manager();
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
 
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, encode_bed_id(tag, BedElementType::Model) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::BedModel, bed.id().id };
     const auto& trimesh =
         trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<TriangleMesh> {
             return std::make_unique<TriangleMesh>(std::move(mesh.its));
@@ -205,7 +198,7 @@ static void axis_node(uint8_t axis_id, Render::Device& device, ScenePresenterPro
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
 
     Domain::TriangleMesh mesh = Biz::Scene::BedGeometry::axis(bed);
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, encode_bed_id(tag, BedElementType::Axis) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::BedAxis, bed.id().id };
     const auto& trimesh =
         trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<TriangleMesh> {
             return std::make_unique<TriangleMesh>(std::move(mesh.its));
@@ -272,7 +265,7 @@ static void label_node(Render::Device& device, ScenePresenterProjectContext& ctx
     std::vector<std::pair<Vec3f, Vec2f>> triangles = Biz::Scene::BedGeometry::label(bed, label_width, label_height);
     DEBUG_ASSERT(!triangles.empty());
 
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, encode_bed_instance_id(tag, BedElementType::Label) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::BedLabel, tag.instance_id };
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_triangles(device, triangles);
     });
@@ -294,7 +287,7 @@ void BedNodeBuilder::bed_node(NodeBuilder& builder, const Domain::BedInstance& i
         .set_tag(tag)
         .transform([&instance](auto& t) { t = instance.matrix(); });
 
-    const Domain::Bed& bed = instance.bed;
+    const Domain::Bed& bed = instance.bed.get();
 
     plate_node(device, ctx, builder, bed, tag, layer_id);
     if (!bed.model_filename().empty())

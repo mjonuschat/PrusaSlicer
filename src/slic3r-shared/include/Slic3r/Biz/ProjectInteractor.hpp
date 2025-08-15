@@ -2,6 +2,7 @@
 
 #include "Slic3r/Biz/ArrangeInteractor.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/SLAResultCache.hpp"
 #include "Slic3r/Biz/SLAObjectCache.hpp"
 #include "Slic3r/Biz/StatusCache.hpp"
@@ -75,6 +76,7 @@ public:
         add_listener<ISelectedProjectChangedListener>(&m_slicing_interactor);
         m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
+        m_preset_interactor.add_listener<Preset::IPresetChangedListener>(&m_scene_interactor);
         m_slicing_interactor.set_listener<Slicing::IFDMResultListener>(&m_fdm_result_cache);
         m_slicing_interactor.set_listener<Slicing::ISLAResultListener>(&m_sla_result_cache);
         m_slicing_interactor.set_listener<Slicing::ISLAObjectListener>(&m_sla_object_cache);
