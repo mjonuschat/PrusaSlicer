@@ -76,7 +76,7 @@ void BedRenderUpdater::update_shadows(const Camera& cam)
 
                 const bool is_active{m_scene_interactor.bed_selection().is_selected(BedRef{cc->id().id, inst->id().id})};
                 if (!cam_pointing_upward && is_active) {
-                    if (tag->type == BedElementType::Model && m_scene_provider.scene().bed_model_cast_shadow())
+                    if (tag->type == BedElementType::Model && Scene::Scene::graphics_settings().bed_model_cast_shadow())
                         n.render_component()->set_shadows(Render::Shadows{ true, true });
                     else
                         n.render_component()->set_shadows(Render::Shadows{ false, true });

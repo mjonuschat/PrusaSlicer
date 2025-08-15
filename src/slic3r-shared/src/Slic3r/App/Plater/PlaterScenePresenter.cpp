@@ -354,7 +354,7 @@ void PlaterScenePresenter::on_selected_bed_instances_changed(
             bed_aabb.extend(bed_inst_offset + v.cast<double>());
         }
     }
-    scene().set_shadows_aabb(bed_aabb);
+    Scene::Scene::set_shadows_aabb(bed_aabb);
     update_objects_shadows_data();
 }
 

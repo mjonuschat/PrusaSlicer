@@ -150,9 +150,7 @@ void PlaterRenderModule::init_scene_layout()
     m_history       = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
 
-    m_scene_presenter->scene().graphics_settings().add_listener<Scene::IGraphicsSettingsChangedListener>(
-        m_sidebar_graphics_settings.get()
-    );
+    Scene::Scene::add_graphics_settings_listener(m_sidebar_graphics_settings.get());
 
     m_sidebar_action_buttons = Passthrough{
         std::make_unique<SidebarPlaterActionButtons>(m_render_module_navigator)

@@ -43,7 +43,7 @@ SidebarGraphicsSettings::SidebarGraphicsSettings() :
 
     m_combo_settings->callbacks() = {
         nullptr,
-        [&](int id) { Scene::Scene::graphics_settings().set_shading_type(Scene::ShadingType(id)); }
+        [&](int id) { Scene::Scene::set_shading_type(Scene::ShadingType(id)); }
     };
 
     m_combo_settings->set_current_index(int(Scene::Scene::graphics_settings().shading_type()));
@@ -51,7 +51,7 @@ SidebarGraphicsSettings::SidebarGraphicsSettings() :
     m_show_debug_windows_btn = panel->emplace_back<Yoga::ToggleButton>(L("Show debug windows"));
     m_show_debug_windows_btn->set_checked(Scene::Scene::graphics_settings().debug_windows_enabled());
     m_show_debug_windows_btn->callbacks().checked_changed = [this](bool checked) {
-        Scene::Scene::graphics_settings().set_debug_windows_enabled(checked);
+        Scene::Scene::set_graphics_settings_debug_windows_enabled(checked);
     };
 }
 

@@ -892,9 +892,7 @@ void PreviewRenderModule::init_scene_layout()
     m_sidebar_graphics_settings = std::make_unique<SidebarGraphicsSettings>();
     m_sidebar_auto_reslice = std::make_unique<SidebarAutoReslice>();
 
-    m_scene_presenter->scene().graphics_settings().add_listener<Scene::IGraphicsSettingsChangedListener>(
-        m_sidebar_graphics_settings.get()
-    );
+    Scene::Scene::add_graphics_settings_listener(m_sidebar_graphics_settings.get());
 
     m_sidebar_action_buttons = std::make_unique<SidebarPreviewActionButtons>(m_render_module_navigator);
     m_sidebar_action_buttons->on_init(&m_project_interactor);
@@ -1442,7 +1440,7 @@ void PreviewRenderModule::center_camera_on_selected_bed()
     for (const auto& v : print_volume) {
         bed_aabb.extend(bed_inst_offset + v.cast<double>());
     }
-    m_scene_presenter->scene().set_shadows_aabb(bed_aabb);
+    Scene::Scene::set_shadows_aabb(bed_aabb);
     Scene::CameraTrackballController& trackball = m_scene_presenter->scene().camera_trackball();
 
     trackball.set_target(bed_inst_offset + Algorithms::Point::to_3d(bed.center(), 0.0));

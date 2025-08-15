@@ -39,7 +39,7 @@ Scoped3mfThumbnailSceneCustomizer::Scoped3mfThumbnailSceneCustomizer(Scene::Scen
     m_cache.trackball_view_rotation = trackball.view_rotation();
 
     // scene
-    m_cache.shadows_aabb = m_scene.shadows_aabb();
+    m_cache.shadows_aabb = Scene::Scene::graphics_settings().shadows_aabb();
     m_cache.background_enabled = m_scene.background_enabled();
 
     // hide gizmos
@@ -112,11 +112,11 @@ Scoped3mfThumbnailSceneCustomizer::Scoped3mfThumbnailSceneCustomizer(Scene::Scen
         if (tag != nullptr && tag->volume_type == Domain::ModelVolumeType::MODEL_PART && n.has_raycast_component())
             world_aabb.extend(n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>());
     });
-    m_scene.set_shadows_aabb(world_aabb);
+    Scene::Scene::set_shadows_aabb(world_aabb);
 
     // setup shading
     m_scene.set_background_enabled(false);
-    Scene::Scene::graphics_settings().set_shading_type(Scene::ShadingType::PBR);
+    Scene::Scene::set_shading_type(Scene::ShadingType::PBR);
 
     // camera type
     if (m_cache.switch_camera_projection_type)
@@ -153,10 +153,10 @@ Scoped3mfThumbnailSceneCustomizer::~Scoped3mfThumbnailSceneCustomizer()
     m_scene.set_background_enabled(m_cache.background_enabled);
 
     // shading
-    Scene::Scene::graphics_settings().set_shading_type(m_cache.shading_type);
+    Scene::Scene::set_shading_type(m_cache.shading_type);
 
     // shadows aabb
-    m_scene.set_shadows_aabb(m_cache.shadows_aabb);
+    Scene::Scene::set_shadows_aabb(m_cache.shadows_aabb);
 
     // camera trackball
     Scene::CameraTrackballController& trackball = m_scene.camera_trackball();

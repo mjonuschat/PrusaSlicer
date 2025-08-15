@@ -244,10 +244,60 @@ public:
     bool background_enabled() const { return m_background_enabled; }
     void set_background_enabled(bool enabled) { m_background_enabled = enabled; }
 
-    static GraphicsSettings& graphics_settings() { return s_graphics_settings; }
+    /**
+     * @name Graphics settings-related methods
+     * @{
+     */
+    static const GraphicsSettings& graphics_settings() { return s_graphics_settings; }
+    static void add_graphics_settings_listener(IGraphicsSettingsChangedListener* listener) { 
+        s_graphics_settings.add_listener<Scene::IGraphicsSettingsChangedListener>(listener);
+    }
+    static void set_shading_type(ShadingType shading_type) { s_graphics_settings.set_shading_type(shading_type); }
+    static void set_graphics_settings_debug_windows_enabled(bool enabled) { s_graphics_settings.set_debug_windows_enabled(enabled); }
+    /** @} */
 
+    /**
+     * @name Implementation of IGraphicsSettingsChangedListener public interface
+     * @{
+     */
     void on_shading_type_changed(ShadingType shading_type) override;
     void on_debug_windows_enabled_changed(bool enabled) override {}
+    /** @} */
+
+    /**
+     * @name Shadows-related methods
+     * @{
+     */
+    static void set_shadowsmap_size(int size) { s_graphics_settings.set_shadowsmap_size(size); }
+    static void set_default_shadows_intensity() { s_graphics_settings.set_default_shadows_intensity(); }
+    static void set_shadows_intensity(float intensity) { s_graphics_settings.set_shadows_intensity(intensity); }
+    static void set_shadows_aabb(const Eigen::AlignedBox3d& aabb) { s_graphics_settings.set_shadows_aabb(aabb); }
+    static void set_bed_model_cast_shadow(bool cast) { s_graphics_settings.set_bed_model_cast_shadow(cast); }
+    /** @} */
+
+    /**
+     * @name Ambient occlusion-related methods
+     * @{
+     */
+    static void set_ao_kernel_size(size_t size) { s_graphics_settings.set_ao_kernel_size(size); }
+    static void set_ao_noise_size(size_t size) { s_graphics_settings.set_ao_noise_size(size); }
+    static void set_ao_radius(float radius) { s_graphics_settings.set_ao_radius(radius); }
+    static void set_ao_bias(float bias) { s_graphics_settings.set_ao_bias(bias); }
+    static void set_ao_blur_filter_size(size_t size) { s_graphics_settings.set_ao_blur_filter_size(size); }
+    static void set_default_ao_kernel_size() { s_graphics_settings.set_default_ao_kernel_size(); }
+    static void set_default_ao_noise_size() { s_graphics_settings.set_default_ao_noise_size(); }
+    static void set_default_ao_radius() { s_graphics_settings.set_default_ao_radius(); }
+    static void set_default_ao_bias() { s_graphics_settings.set_default_ao_bias(); }
+    static void set_default_ao_blur_filter_size() { s_graphics_settings.set_default_ao_blur_filter_size(); }
+    /** @} */
+
+    /**
+     * @name Physically based rendering-related methods
+     * @{
+     */
+    static void set_pbr_intensity(float intensity) { s_graphics_settings.set_pbr_intensity(intensity); }
+    static void set_default_pbr_intensity() { s_graphics_settings.set_default_pbr_intensity(); }
+    /** @} */
 
     /**
      * @name Lighing-related methods
@@ -267,76 +317,6 @@ public:
         validate_lights(m_lighting.lights);
     }
     void validate_lights(Lights& lights);
-
-    /** @} */
-
-    /**
-     * @name Shadows-related methods
-     * @{
-     */
-
-    void set_default_shadows_intensity() { m_shadows.intensity = Shadows::DEFAULT_INTENSITY; }
-
-    bool bed_model_cast_shadow() const { return m_shadows.bed_model_cast_shadow; }
-    void set_bed_model_cast_shadow(bool cast) { m_shadows.bed_model_cast_shadow = cast; }
-
-    int shadowsmap_size() const { return m_shadows.framebuffer_size; }
-    void set_shadowsmap_size(int size) { m_shadows.pending_framebuffer_size = size; }
-
-    float shadows_intensity() const { return m_shadows.intensity; }
-    void set_shadows_intensity(float intensity) { m_shadows.intensity = intensity; }
-
-    const Eigen::AlignedBox3d& shadows_aabb() const { return m_shadows.aabb; }
-    void set_shadows_aabb(const Eigen::AlignedBox3d& aabb) { m_shadows.aabb = aabb; }
-
-    /** @} */
-
-    /**
-     * @name Ambient occlusion-related methods
-     * @{
-     */
-
-    Domain::Index2 ao_framebuffer_size() const { return m_ao.framebuffer_size; }
-
-    size_t ao_kernel_size() const { return m_ao.kernel.size(); }
-    void set_ao_kernel_size(size_t size) { m_ao.pending_kernel_size = size; }
-    void set_default_ao_kernel_size()
-    {
-        m_ao.pending_kernel_size = AmbientOcclusion::DEFAULT_KERNEL_SIZE;
-    }
-
-    size_t ao_noise_size() const { return m_ao.noise_size; }
-    void set_ao_noise_size(size_t size) { m_ao.pending_noise_size = size; }
-    void set_default_ao_noise_size()
-    {
-        m_ao.pending_noise_size = AmbientOcclusion::DEFAULT_NOISE_SIZE;
-    }
-
-    float ao_radius() const { return m_ao.radius; }
-    void set_ao_radius(float radius) { m_ao.radius = radius; }
-    void set_default_ao_radius() { m_ao.radius = AmbientOcclusion::DEFAULT_RADIUS; }
-
-    float ao_bias() const { return m_ao.bias; }
-    void set_ao_bias(float bias) { m_ao.bias = bias; }
-    void set_default_ao_bias() { m_ao.bias = AmbientOcclusion::DEFAULT_BIAS; }
-
-    size_t ao_blur_filter_size() const { return m_ao.blur_filter_size; }
-    void set_ao_blur_filter_size(size_t size) { m_ao.blur_filter_size = size; }
-    void set_default_ao_blur_filter_size()
-    {
-        m_ao.blur_filter_size = AmbientOcclusion::DEFAULT_BLUR_FILTER_SIZE;
-    }
-
-    /** @} */
-
-    /**
-     * @name Physically based rendering-related methods
-     * @{
-     */
-
-    float pbr_intensity() const { return m_pbr.intensity; }
-    void set_pbr_intensity(float intensity) { m_pbr.intensity = intensity; }
-    void set_default_pbr_intensity() { m_pbr.intensity = PBR::DEFAULT_INTENSITY; }
 
     /** @} */
 
@@ -385,75 +365,6 @@ private:
     bool m_background_enabled{true};
 
     mutable Render::Geometry* m_screen_quad{nullptr};
-
-    struct Shadows
-    {
-        bool bed_model_cast_shadow{ true };
-        Eigen::AlignedBox3d aabb;
-
-        mutable float intensity{DEFAULT_INTENSITY};
-
-        mutable int framebuffer_size{0};
-        mutable std::optional<int> pending_framebuffer_size;
-        mutable Render::Framebuffer* framebuffer{nullptr};
-        mutable Camera light_cam;
-
-        static constexpr int DEFAULT_FRAMEBUFFER_SIZE = 4096;
-        static constexpr float DEFAULT_INTENSITY = 0.75f;
-        static constexpr int SHADOWSMAP_TEX_UNIT = 15;
-    };
-
-    Shadows m_shadows;
-
-    struct AmbientOcclusion
-    {
-        mutable Domain::Index2 framebuffer_size{0, 0};
-        mutable Render::Framebuffer* gbuffer_fb{nullptr};
-        mutable Render::Framebuffer* ao_tex_fb{nullptr};
-        mutable Render::Framebuffer* blur_fb{nullptr};
-
-        mutable std::optional<size_t> pending_kernel_size;
-        mutable std::vector<Domain::Vec3f> kernel;
-
-        mutable size_t noise_size{0};
-        mutable std::optional<size_t> pending_noise_size;
-        mutable std::shared_ptr<Render::Texture> noise{nullptr};
-
-        mutable float radius{DEFAULT_RADIUS};
-        mutable float bias{DEFAULT_BIAS};
-        mutable size_t blur_filter_size{DEFAULT_BLUR_FILTER_SIZE};
-
-        static constexpr int EYE_POS_CLR_ATTR = 0;
-        static constexpr int LIGHT_POS_CLR_ATTR = 1;
-        static constexpr int EYE_NORM_CLR_ATTR = 2;
-        static constexpr int COLOR_CLR_ATTR = 3;
-        static constexpr int PBR_MATERIAL_ATTR = 4;
-
-        static constexpr int NOISE_TEX_UNIT = 8;
-        static constexpr int EYE_POS_TEX_UNIT = 9;
-        static constexpr int LIGHT_POS_TEX_UNIT = 10;
-        static constexpr int EYE_NORM_TEX_UNIT = 11;
-        static constexpr int COLOR_TEX_UNIT = 12;
-        static constexpr int PBR_MATERIAL_TEX_UNIT = 13;
-        static constexpr int AO_TEX_UNIT = 14;
-
-        static constexpr int DEFAULT_KERNEL_SIZE = 32;
-        static constexpr int DEFAULT_NOISE_SIZE = 4;
-        static constexpr float DEFAULT_RADIUS = 30.0f;
-        static constexpr float DEFAULT_BIAS = 1.5f;
-        static constexpr size_t DEFAULT_BLUR_FILTER_SIZE = 5;
-    };
-
-    AmbientOcclusion m_ao;
-
-    struct PBR
-    {
-        mutable float intensity{DEFAULT_INTENSITY};
-
-        static constexpr float DEFAULT_INTENSITY = 20.0f;
-    };
-
-    PBR m_pbr;
 
     static GraphicsSettings s_graphics_settings;
     static MinimalSceneRenderCustomizer ms_default_customizer;

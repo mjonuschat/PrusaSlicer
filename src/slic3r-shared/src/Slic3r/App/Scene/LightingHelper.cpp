@@ -57,16 +57,16 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
 
         if (ImGui::CollapsingHeader("Shadows")) {
 
-            bool bed_model_cast_shadow = scene.bed_model_cast_shadow();
+            bool bed_model_cast_shadow = Scene::Scene::graphics_settings().bed_model_cast_shadow();
             if (ImGui::Checkbox("Bed model cast shadow", &bed_model_cast_shadow)) {
-                scene.set_bed_model_cast_shadow(bed_model_cast_shadow);
+                Scene::Scene::set_bed_model_cast_shadow(bed_model_cast_shadow);
                 if (cb_update_beds_shadows_data != nullptr)
                     cb_update_beds_shadows_data();
             }
 
             if (ImGui::BeginTable("Shadows", 2, ImGuiTableFlags_Borders)) {
 
-                int shadowsmap_size = scene.shadowsmap_size();
+                int shadowsmap_size = Scene::Scene::graphics_settings().shadowsmap_size();
                 if (shadowsmap_size > 0) {
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
@@ -108,10 +108,10 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
                     }
 
                     if (sizes[sel_size] != shadowsmap_size)
-                        scene.set_shadowsmap_size(sizes[sel_size]);
+                        Scene::Scene::set_shadowsmap_size(sizes[sel_size]);
                 }
 
-                float intensity = scene.shadows_intensity();
+                float intensity = Scene::Scene::graphics_settings().shadows_intensity();
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 ImGui::AlignTextToFramePadding();
@@ -119,18 +119,18 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
                 ImGui::TableSetColumnIndex(1);
                 ImGui::SetNextItemWidth(items_width);
                 if (ImGui::SliderFloat("##intensity", &intensity, 0.2f, 1.0f, "%.2f", ImGuiSliderFlags_NoInput))
-                    scene.set_shadows_intensity(intensity);
+                    Scene::Scene::set_shadows_intensity(intensity);
 
                 ImGui::EndTable();
             }
 
             if (ImGui::Button("Default##Shadows"))
-                scene.set_default_shadows_intensity();
+                Scene::Scene::set_default_shadows_intensity();
         }
 
         if (ImGui::CollapsingHeader("Ambient occlusion")) {
 
-            Domain::Index2 fb_size = scene.ao_framebuffer_size();
+            Domain::Index2 fb_size = Scene::Scene::graphics_settings().ao_framebuffer_size();
             if (fb_size[0] > 0 && fb_size[1] > 0) {
                 if (ImGui::BeginTable("AO", 2, ImGuiTableFlags_Borders)) {
 
@@ -141,7 +141,7 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
                     ImGui::TableSetColumnIndex(1);
                     ImGui::Text("%dx%d", fb_size[0], fb_size[1]);
 
-                    size_t k_size = scene.ao_kernel_size();
+                    size_t k_size = Scene::Scene::graphics_settings().ao_kernel_size();
                     if (k_size > 0) {
 
                         ImGui::TableNextRow();
@@ -189,7 +189,7 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
                             scene.set_ao_kernel_size(k_sizes[sel_k_size]);
                     }
 
-                    size_t n_size = scene.ao_noise_size();
+                    size_t n_size = Scene::Scene::graphics_settings().ao_noise_size();
                     if (n_size > 0) {
 
                         ImGui::TableNextRow();
@@ -234,7 +234,7 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
                             scene.set_ao_noise_size(n_sizes[sel_n_size]);
                     }
 
-                    float radius = scene.ao_radius();
+                    float radius = Scene::Scene::graphics_settings().ao_radius();
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
                     ImGui::AlignTextToFramePadding();
@@ -244,7 +244,7 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
                     if (ImGui::SliderFloat("##ao_radius", &radius, 0.1f, 50.0f, "%.1f", ImGuiSliderFlags_NoInput))
                         scene.set_ao_radius(radius);
 
-                    float bias = scene.ao_bias();
+                    float bias = Scene::Scene::graphics_settings().ao_bias();
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
                     ImGui::AlignTextToFramePadding();
@@ -254,7 +254,7 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
                     if (ImGui::SliderFloat("##ao_bias", &bias, 0.001f, 10.0f, "%.3f", ImGuiSliderFlags_NoInput))
                         scene.set_ao_bias(bias);
 
-                    size_t bf_size = scene.ao_blur_filter_size();
+                    size_t bf_size = Scene::Scene::graphics_settings().ao_blur_filter_size();
                     if (bf_size > 0) {
 
                         ImGui::TableNextRow();
@@ -313,7 +313,7 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
 
             if (ImGui::BeginTable("PBR", 2, ImGuiTableFlags_Borders)) {
 
-                float intensity = scene.pbr_intensity();
+                float intensity = Scene::Scene::graphics_settings().pbr_intensity();
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 ImGui::AlignTextToFramePadding();

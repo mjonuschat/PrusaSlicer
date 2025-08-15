@@ -49,7 +49,7 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(
     m_cache.trackball_view_rotation             = trackball.view_rotation();
 
     // scene
-    m_cache.shadows_aabb = m_scene.shadows_aabb();
+    m_cache.shadows_aabb = Scene::Scene::graphics_settings().shadows_aabb();
 
     // hide gizmos
     Scene::visit(m_scene.root(), [&](Scene::Node& n) {
@@ -141,10 +141,10 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(
     for (const auto& v : print_volume) {
         bed_aabb.extend(bed_inst_offset + v.cast<double>());
     }
-    m_scene.set_shadows_aabb(bed_aabb);
+    Scene::Scene::set_shadows_aabb(bed_aabb);
 
     // setup shading
-    Scene::Scene::graphics_settings().set_shading_type(Scene::ShadingType::PBR);
+    Scene::Scene::set_shading_type(Scene::ShadingType::PBR);
 
     // camera type
     if (m_cache.switch_camera_projection_type)
@@ -183,10 +183,10 @@ ScopedBedThumbnailSceneCustomizer::~ScopedBedThumbnailSceneCustomizer()
     }
 
     // shading
-    Scene::Scene::graphics_settings().set_shading_type(m_cache.shading_type);
+    Scene::Scene::set_shading_type(m_cache.shading_type);
 
     // shadows aabb
-    m_scene.set_shadows_aabb(m_cache.shadows_aabb);
+    Scene::Scene::set_shadows_aabb(m_cache.shadows_aabb);
 
     // camera trackball
     Scene::CameraTrackballController& trackball = m_scene.camera_trackball();
