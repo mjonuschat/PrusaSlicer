@@ -18,6 +18,7 @@ using Slic3r::Domain::BedContainer;
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Model;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::ModelInstance;
@@ -75,6 +76,34 @@ Transformation transform_product(
     return Transformation{Transform3d{xform}};
 }
 
+void decompose_transform(
+    const SceneInteractor::Transform& final_transform,
+    SceneInteractor::Transform& instance_transform,
+    SceneInteractor::Transform& volume_transform
+)
+{
+    // 1. Extract components for instance_transform from the original matrix final_transform
+
+    // The translation part of final_transform is in the last column.
+    // We only want the X and Y components for instance_transform.
+    Vec3d translation_t = final_transform.block<3, 1>(0, 3);
+    Eigen::Translation3d xy_translation(translation_t.x(), translation_t.y(), 0.0f);
+
+    // The rotation part of final_transform is in the top-left 3x3 block.
+    // We can find the rotation angle around the Z-axis by looking at where the
+    // X-axis is transformed. The angle is atan2 of the Y and X components
+    // of the first column of the matrix.
+    double angle_z = std::atan2(final_transform(1, 0), final_transform(0, 0));
+    Eigen::AngleAxisd z_rotation(angle_z, Eigen::Vector3d::UnitZ());
+
+    // 2. Construct instance_transform from the extracted rotation and translation
+    instance_transform = (xy_translation * z_rotation).matrix();
+
+    // 3. Calculate volume_transform using the inverse of instance_transform
+    // Since final_transform = instance_transform * volume_transform, then volume_transform = instance_transform.inverse() * final_transform
+    volume_transform = instance_transform.inverse() * final_transform;
+}
+
 void transform_selection_instance_mode(
     const SceneInteractorProjectContext& proj,
     const SceneInteractor::Transform& relative_transform,
@@ -87,26 +116,62 @@ void transform_selection_instance_mode(
 
     if (initialize_memento)
         memento.elements.reserve(sel.elements.size());
+
+    SceneInteractor::Transform instance_transform, volume_transform;
+    decompose_transform(relative_transform, instance_transform, volume_transform);
+
+    std::set<size_t> object_ids;
+
     for (const auto& e : sel.elements) {
         auto* inst = proj.project.find_instance_by_id(e.object_id, e.instance_id);
         if (initialize_memento)
             memento.elements.insert({e, {e, inst->get_matrix().matrix()}});
+        object_ids.insert(inst->get_object()->id().id);
         inst->set_transformation(
+            //transform_product(memento.elements[e].original_xform, instance_transform)
             transform_product(memento.elements[e].original_xform, relative_transform)
         );
     }
+
+    // for (size_t object_id : object_ids) {
+    //     auto* obj = proj.project.find_object_by_id(object_id);
+    //     for (auto* vol : obj->volumes) {
+    //         Domain::ElementRef e{object_id, 0, vol->id().id};
+    //         if (initialize_memento)
+    //             memento.elements.insert({e, {e, vol->get_matrix().matrix()}});
+    //
+    //         vol->set_transformation(
+    //             transform_product(memento.elements[e].original_xform, relative_transform)
+    //         );
+    //     }
+    // }
 }
 
 void transform_selection_volume_mode(
     const SceneInteractorProjectContext& proj,
     const SceneInteractor::Transform& relative_transform,
+    TransformMode mode,
     TransformMemento& memento
 )
 {
     const bool initialize_memento = memento.elements.empty();
     const auto& sel               = proj.object_selection;
     DEBUG_ASSERT(sel.mode == SelectionMode::Volume);
-
+    ASSERT(!sel.elements.empty());
+    const auto& first_el = sel.elements[0];
+    // assert that all elements are of same instance
+    DEBUG_ASSERT(
+        std::all_of(
+            ++sel.elements.begin(),
+            sel.elements.end(),
+            [inst_id = first_el.instance_id](const auto& el) { return el.instance_id == inst_id; }
+        )
+    );
+    const auto* first_inst = proj.project.find_instance_by_id(first_el.object_id, first_el.instance_id);
+    const auto parent = first_inst->get_matrix();
+    const SceneInteractor::Transform volume_relative_transform = mode == TransformMode::Local ?
+        (parent.inverse() * relative_transform * parent).matrix() :
+        relative_transform;
     if (initialize_memento)
         memento.elements.reserve(sel.elements.size());
     for (const auto& e : sel.elements) {
@@ -115,7 +180,7 @@ void transform_selection_volume_mode(
         if (initialize_memento)
             memento.elements.insert({e, {e, vol->get_matrix().matrix()}});
         vol->set_transformation(
-            transform_product(memento.elements[e].original_xform, relative_transform)
+            transform_product(memento.elements[e].original_xform, volume_relative_transform)
         );
     }
 }
@@ -791,21 +856,25 @@ const BedContainer::BedList& SceneInteractor::selected_project_beds() const
     return project.bed_container().beds();
 }
 
-void SceneInteractor::transform_selection(const Transform& relative_transform)
+void SceneInteractor::transform_selection(const Transform& relative_transform, TransformMode mode)
 {
     TransformMemento memento;
-    transform_selection(relative_transform, memento);
+    transform_selection(relative_transform, mode, memento);
     finalize_transform_selection(memento, false);
 }
 
-void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transform, TransformMemento& memento)
+void SceneInteractor::transform_selection(
+    const SquareMatrix4d& relative_transform,
+    TransformMode mode,
+    TransformMemento& memento
+)
 {
     auto& proj               = m_projects.find(m_selected_project_id)->second;
     const bool instance_mode = proj.object_selection.mode == SelectionMode::Instance;
     if (instance_mode)
         transform_selection_instance_mode(proj, relative_transform, memento);
     else
-        transform_selection_volume_mode(proj, relative_transform, memento);
+        transform_selection_volume_mode(proj, relative_transform, mode, memento);
     update_selection_instance_bed_placement();
     invoke_listeners<ISceneChangedListener>([&](ISceneChangedListener* l) {
         if (instance_mode)

@@ -238,7 +238,7 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
         xform.rotate(Eigen::AngleAxisd(theta, axis_type_dir(m_curr_axis)));
         xform.translate(-m_pivot_local);
         m_scene_presenter.set_freeze_selection_center(true);
-        m_scene_interactor.transform_selection(xform.matrix(), m_xform_memento);
+        m_scene_interactor.transform_selection(xform.matrix(), Biz::Scene::TransformMode::World, m_xform_memento);
         m_scene_presenter.set_freeze_selection_center(false);
     }
 

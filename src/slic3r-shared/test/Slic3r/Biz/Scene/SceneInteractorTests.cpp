@@ -106,7 +106,7 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
         xform.translate(Vec3d{bed_center.x() - cube_side / 2, bed_center.y() - cube_side / 2, 0});
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi1_id);
-        scene_interactor.transform_selection(xform.matrix());
+        scene_interactor.transform_selection(xform.matrix(), Scene::TransformMode::World);
     }
 
     const auto first_el_ref = scene_interactor.object_selection().elements.front();
@@ -154,7 +154,7 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi2_id);
 
-        scene_interactor.transform_selection(xform.matrix());
+        scene_interactor.transform_selection(xform.matrix(), Scene::TransformMode::World);
 
         /*
         selection: instance mode
@@ -177,7 +177,7 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi2_id);
 
-        scene_interactor.transform_selection(xform.matrix());
+        scene_interactor.transform_selection(xform.matrix(), Scene::TransformMode::World);
         /*
         selection: instance mode
                        (1)
@@ -218,7 +218,7 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
         xform.translate(Vec3d{0, -bed_pitch.y(), 0});
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi2_id);
-        scene_interactor.transform_selection(xform.matrix());
+        scene_interactor.transform_selection(xform.matrix(), Scene::TransformMode::World);
 
         /*
         selection: instance mode
@@ -283,7 +283,7 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
         xform.translate(Vec3d{-bed_pitch.x(), 0, 0});
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi1_id);
-        scene_interactor.transform_selection(xform.matrix());
+        scene_interactor.transform_selection(xform.matrix(), Scene::TransformMode::World);
 
         /*
         selection: instance mode
@@ -341,7 +341,7 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
         xform.translate(Vec3d{bed_pitch.x(), 0, 0});
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi4_id);
-        scene_interactor.transform_selection(xform.matrix());
+        scene_interactor.transform_selection(xform.matrix(), Scene::TransformMode::World);
 
         /*
         selection: instance mode
@@ -393,7 +393,7 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
             .WITH(_1.instance_id == bi1_id);
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi4_id);
-        scene_interactor.transform_selection(xform.matrix());
+        scene_interactor.transform_selection(xform.matrix(), Scene::TransformMode::World);
 
         /*
         selection: volume mode
