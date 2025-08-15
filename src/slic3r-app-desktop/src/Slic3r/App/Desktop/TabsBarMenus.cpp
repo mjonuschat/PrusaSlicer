@@ -11,7 +11,6 @@
 // #include "GUI_Factories.hpp"
 
 #include "Slic3r/App/WX/StringConversions.hpp"
-#include "libslic3r/Config.hpp" //ConfigOptionMode
 
 namespace Slic3r::App::Desktop {
 
@@ -35,14 +34,14 @@ void TabsBarMenus::AppendMenuSeparaorItem()
     main.AppendSeparator();
 }
 
-wxString TabsBarMenus::get_workspace_name(int mode/* = -1*/)
-{
-    if (mode < 0 && m_cb_get_mode)
-        mode = m_cb_get_mode();
+// wxString TabsBarMenus::get_workspace_name(int mode/* = -1*/)
+// {
+//     if (mode < 0 && m_cb_get_mode)
+//         mode = m_cb_get_mode();
 
-    return  mode == Slic3r::ConfigOptionMode::comSimple   ? _L("Beginner mode") :
-            mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Normal mode")  : _L("Expert mode");
-}
+//     return  mode == Slic3r::ConfigOptionMode::comSimple   ? _L("Beginner mode") :
+//             mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Normal mode")  : _L("Expert mode");
+// }
 
 wxBitmapBundle* TabsBarMenus::get_workspace_bitmap(int mode/* = -1*/)
 {
@@ -68,29 +67,29 @@ void TabsBarMenus::sys_color_changed()
     */
 }
 
-void TabsBarMenus::ApplyWorkspacesMenu()
-{
-    wxMenuItemList& items = workspaces.GetMenuItems();
-    if (!items.IsEmpty()) {
-        for (int id = int(workspaces.GetMenuItemCount()) - 1; id >= 0; id--)
-            workspaces.Destroy(items[id]);
-    }
+// void TabsBarMenus::ApplyWorkspacesMenu()
+// {
+//     wxMenuItemList& items = workspaces.GetMenuItems();
+//     if (!items.IsEmpty()) {
+//         for (int id = int(workspaces.GetMenuItemCount()) - 1; id >= 0; id--)
+//             workspaces.Destroy(items[id]);
+//     }
 
-    for (const /*Slic3r::*/ConfigOptionMode& mode : { /*Slic3r::*/ConfigOptionMode::comSimple,
-                                                  /*Slic3r::*/ConfigOptionMode::comAdvanced,
-                                                  /*Slic3r::*/ConfigOptionMode::comExpert }) {
-        const wxString label = get_workspace_name(mode);
-        append_menu_item(&workspaces, wxID_ANY, label, label,
-            [mode, this](wxCommandEvent&) {
-                if (m_cb_get_mode && m_cb_save_mode &&
-                    m_cb_get_mode() != mode)
-                    m_cb_save_mode(mode);
-            }, get_workspace_bitmap(mode));
+//     for (const /*Slic3r::*/ConfigOptionMode& mode : { /*Slic3r::*/ConfigOptionMode::comSimple,
+//                                                   /*Slic3r::*/ConfigOptionMode::comAdvanced,
+//                                                   /*Slic3r::*/ConfigOptionMode::comExpert }) {
+//         const wxString label = get_workspace_name(mode);
+//         append_menu_item(&workspaces, wxID_ANY, label, label,
+//             [mode, this](wxCommandEvent&) {
+//                 if (m_cb_get_mode && m_cb_save_mode &&
+//                     m_cb_get_mode() != mode)
+//                     m_cb_save_mode(mode);
+//             }, get_workspace_bitmap(mode));
 
-        if (mode < /*Slic3r::*/ConfigOptionMode::comExpert)
-            workspaces.AppendSeparator();
-    }
-}
+//         if (mode < /*Slic3r::*/ConfigOptionMode::comExpert)
+//             workspaces.AppendSeparator();
+//     }
+// }
 
 void TabsBarMenus::CreateAccountMenu()
 {

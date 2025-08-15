@@ -16,7 +16,6 @@
 #include "libslic3r/libslic3r.h"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/ConfigViews.hpp"
 #include "libslic3r/ConfigUtils.hpp"
 

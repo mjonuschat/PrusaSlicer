@@ -7,7 +7,6 @@
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
-#include "libslic3r/Config.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Format/OBJ.hpp"
 
@@ -261,7 +260,7 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Domain
 		object->add_instance();
 	}
 
-    double distance = min_object_distance(config.get_view());
+    double distance = arrange_min_distance(config);
     arr2::ArrangeSettings arrange_settings{};
     arrange_settings.set_distance_from_objects(distance);
 

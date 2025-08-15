@@ -6,9 +6,7 @@
 
 #include <boost/regex.hpp>
 
-#include "libslic3r/Config.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 

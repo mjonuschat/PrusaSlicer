@@ -18,8 +18,6 @@
 #include <wx/bmpcbox.h>
 #include <wx/clrpicker.h>
 
-#include "libslic3r/Config.hpp"
-
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/Scalable.hpp>
 
@@ -43,7 +41,7 @@ namespace Slic3r::App::Desktop::Config {
 class Field;
 using t_field = std::unique_ptr<Field>;
 using t_kill_focus = std::function<void(const std::string&)>;
-using t_change = std::function<void(const t_config_option_key&, const boost::any&)>;
+using t_change = std::function<void(const std::string&, const boost::any&)>;
 using t_back_to_init = std::function<void(const std::string&)>;
 
 

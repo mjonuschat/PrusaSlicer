@@ -6,7 +6,6 @@
 
 #include "test_data.hpp" // get access to init_print, etc
 
-#include "libslic3r/Config.hpp"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/libslic3r.h"

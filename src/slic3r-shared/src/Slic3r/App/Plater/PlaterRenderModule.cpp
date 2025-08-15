@@ -372,7 +372,7 @@ void PlaterRenderModule::update_toolbar_tool_selection(Scene::ToolType current_t
 
 void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
 {
-    m_gizmo_manager->toggle_activate_tool(tool_type, ptFFF);
+    m_gizmo_manager->toggle_activate_tool(tool_type, Domain::PrinterTechnology::FFF);
 
     Scene::ToolType current_tool_type = m_gizmo_manager->current_tool_type();
     update_toolbar_tool_selection(current_tool_type);

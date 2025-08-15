@@ -54,7 +54,6 @@
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/MultiMaterialSegmentation.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Support/SupportLayer.hpp"
 #include "libslic3r/Support/SupportParameters.hpp"
 #include "libslic3r/Support/TreeModelVolumes.hpp"

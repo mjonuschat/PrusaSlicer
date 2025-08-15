@@ -6,9 +6,7 @@
 #include <catch2/catch_approx.hpp>
 
 #include "libslic3r/GCode/GCodeWriter.hpp"
-#include "libslic3r/Config.hpp"
 #include <Slic3r/Biz/GCodeReader/GCodeReader.hpp>
-#include <libslic3r/Config.hpp>
 
 #include "test_data.hpp"
 #include <regex>

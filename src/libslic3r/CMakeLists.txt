@@ -104,7 +104,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/ClipperUtils.cpp
     src/libslic3r/ClipperUtils.hpp
     src/libslic3r/ClipperZUtils.hpp
-    src/libslic3r/Config.cpp
     src/libslic3r/ConfigPackUtils.cpp
     src/libslic3r/ConfigPackUtils.hpp
     src/libslic3r/ConfigUtils.cpp
@@ -298,14 +297,11 @@ set(SLIC3R_SOURCES
     src/libslic3r/Polyline.hpp
     src/libslic3r/PrePreview.cpp
     src/libslic3r/PrePreview.hpp
-    src/libslic3r/Preset.cpp
-    src/libslic3r/PresetBundle.cpp
     src/libslic3r/PrincipalComponents2D.cpp
     src/libslic3r/PrincipalComponents2D.hpp
     src/libslic3r/Print.cpp
     src/libslic3r/PrintApply.cpp
     src/libslic3r/PrintBase.cpp
-    src/libslic3r/PrintConfig.cpp
     src/libslic3r/PrintObject.cpp
     src/libslic3r/PrintObjectSlice.cpp
     src/libslic3r/PrintRegion.cpp
@@ -329,8 +325,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/SLA/RasterToPolygons.cpp
     src/libslic3r/SLA/RasterToPolygons.hpp
     src/libslic3r/SLA/ReprojectPointsOnMesh.hpp
-    src/libslic3r/SLA/Rotfinder.cpp
-    src/libslic3r/SLA/Rotfinder.hpp
     src/libslic3r/SLA/SpatIndex.cpp
     src/libslic3r/SLA/SpatIndex.hpp
     src/libslic3r/SLA/SupportIslands/SampleConfigFactory.cpp
@@ -420,7 +414,6 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/AppConfig.hpp
     include/libslic3r/BoostAdapter.hpp
     include/libslic3r/clonable_ptr.hpp
-    include/libslic3r/Config.hpp
     include/libslic3r/ConfigUtils.hpp
     include/libslic3r/ConfigViews.hpp
     include/libslic3r/CSGMesh/CSGMesh.hpp
@@ -446,11 +439,8 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/OpenVDBUtils.hpp
     include/libslic3r/Optimize/NLoptOptimizer.hpp
     include/libslic3r/Optimize/Optimizer.hpp
-    include/libslic3r/Preset.hpp
-    include/libslic3r/PresetBundle.hpp
     include/libslic3r/Print.hpp
     include/libslic3r/PrintBase.hpp
-    include/libslic3r/PrintConfig.hpp
     include/libslic3r/SerializedConfig.hpp
     include/libslic3r/SLA/Hollowing.hpp
     include/libslic3r/SLA/JobController.hpp

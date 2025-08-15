@@ -21,11 +21,12 @@
 #include <utility>
 #include <tl/expected.hpp>
 
+#include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Domain/ConfigCommon.hpp"
 #include "Slic3r/Domain/enum_bitmask.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "libslic3r/ThumbnailImageResult.hpp"
 
-#include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Domain/Size.hpp"
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 

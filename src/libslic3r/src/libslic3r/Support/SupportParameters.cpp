@@ -6,7 +6,6 @@
 #include <cassert>
 
 #include "libslic3r/Print.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Slicing.hpp"
 #include "SupportParameters.hpp"
 #include "libslic3r/Geometry.hpp"

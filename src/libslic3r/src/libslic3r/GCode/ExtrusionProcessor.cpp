@@ -7,7 +7,6 @@
 #include <cstddef>
 
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/Config.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"

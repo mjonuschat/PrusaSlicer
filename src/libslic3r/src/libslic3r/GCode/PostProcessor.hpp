@@ -5,8 +5,8 @@
 #ifndef slic3r_GCode_PostProcessor_hpp_
 #define slic3r_GCode_PostProcessor_hpp_
 
+#include "libslic3r/ConfigViews.hpp"
 #include "libslic3r/libslic3r.h"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/PrintBase.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 
@@ -40,9 +40,9 @@ extern Slic3r::Biz::libpgcode::ProcessorResult post_process(
 // output_name is the final name of the G-code on SD card or when uploaded to PrusaLink or OctoPrint.
 // If uploading to PrusaLink or OctoPrint, then the file will be renamed to output_name first on the target host.
 // The post-processing script may change the output_name.
-extern bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::string &host, std::string &output_name, const DynamicPrintConfig &config);
+extern bool run_post_process_scripts(std::string &src_path, bool make_copy, const std::string &host, std::string &output_name, const PrintConfigView &config);
 
-inline bool run_post_process_scripts(std::string &src_path, const DynamicPrintConfig &config)
+inline bool run_post_process_scripts(std::string &src_path, const PrintConfigView &config)
 {
 	std::string src_path_name = src_path;
 	return run_post_process_scripts(src_path, false, "File", src_path_name, config);

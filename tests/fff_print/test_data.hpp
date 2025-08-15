@@ -215,6 +215,25 @@ struct SeamsFixture
 };
 
 
+
+inline double arrange_min_distance(const TestConfig& config)
+{
+    double out = 6.;
+    if (config.get_view().get<Domain::PrinterTechnology>("printer_technology") == Domain::PrinterTechnology::FFF) {
+        out = 0.;
+        bool has_all = std::ranges::all_of(std::vector<std::string>{"extruder_clearance_radius", "duplicate_distance", "complete_objects"},
+            [&config](const auto& s) { return bool(config.contains("s", 0).item); });
+        if (has_all) {
+            auto ecr = config.get_view().get<double>("extruder_clearance_radius");
+            auto dd  = config.get_view().get<double>("duplicate_distance");
+            auto co  = config.get_view().get<bool>("complete_objects");
+            out = (co && ecr > dd) ? ecr : dd;
+        }
+    }
+    return out;
+}
+
+
 }} // namespace Slic3r::Test
 
 #endif // SLIC3R_TEST_DATA_HPP

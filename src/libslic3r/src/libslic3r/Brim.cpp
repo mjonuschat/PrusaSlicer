@@ -38,7 +38,6 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/PrintBase.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #if defined(BRIM_DEBUG_TO_SVG)

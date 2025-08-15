@@ -1,7 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "libslic3r/Config.hpp"
-
 #include <boost/filesystem/operations.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
@@ -34,7 +32,6 @@ SCENARIO("Reading 3mf file", "[3mf]") {
         WHEN("3mf model is read") {
         	std::string path = std::string(TEST_DATA_DIR) + "/test_3mf/Geräte/Büchse.3mf";
         	Domain::ConfigPack config;
-            ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
             boost::optional<Semver> version;
             Domain::WipeTowersOnBeds wipe_towers;
             Domain::CustomGCodesOnBeds custom_gcodes;
@@ -103,7 +100,6 @@ TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
             Domain::WipeTowersOnBeds dst_wipe_towers;
             Domain::CustomGCodesOnBeds dst_custom_gcodes;
             {
-                ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
                 boost::optional<Semver> version;
                 Slic3rLegacy::load_3mf_legacy(test_file.c_str(), dst_config, &dst_model, false, version, dst_wipe_towers, dst_custom_gcodes);
             }

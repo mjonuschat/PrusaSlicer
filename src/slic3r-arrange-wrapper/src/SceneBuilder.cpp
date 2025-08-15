@@ -32,7 +32,7 @@
 
 #include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/ConfigUtils.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 

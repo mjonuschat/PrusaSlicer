@@ -31,10 +31,8 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Flow.hpp"
-#include "libslic3r/Config.hpp"
 #include "libslic3r/Line.hpp"
 #include "Slic3r/Exception.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 
 namespace Slic3r {

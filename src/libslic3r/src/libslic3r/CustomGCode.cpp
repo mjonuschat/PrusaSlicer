@@ -6,9 +6,7 @@
 
 #include <cassert>
 
-#include "libslic3r/Config.hpp"
 #include "libslic3r/GCode.hpp"
-#include "libslic3r/PrintConfig.hpp"
 
 namespace Slic3r {
 
@@ -18,32 +16,6 @@ using Domain::CustomGCode::Info;
 using Domain::CustomGCode::Mode;
 using Domain::CustomGCode::Type;
 using Domain::CustomGCode::Item;
-
-// If loaded configuration has a "colorprint_heights" option (if it was imported from older Slicer), 
-// and if CustomGCode::Info.gcodes is empty (there is no color print data available in a new format
-// then CustomGCode::Info.gcodes should be updated considering this option.
-extern void update_custom_gcode_per_print_z_from_config(Info& info, DynamicPrintConfig* config)
-{
-	auto *colorprint_heights = config->option<ConfigOptionFloats>("colorprint_heights");
-    if (colorprint_heights == nullptr)
-        return;
-    if (info.gcodes.empty() && ! colorprint_heights->values.empty()) {
-		// Convert the old colorprint_heighs only if there is no equivalent data in a new format.
-        const std::vector<std::string>& colors = ColorPrintColors::get();
-        const auto& colorprint_values = colorprint_heights->values;
-        info.gcodes.clear();
-        info.gcodes.reserve(colorprint_values.size());
-        int i = 0;
-        for (auto val : colorprint_values)
-            info.gcodes.emplace_back(Item{ val, Type::ColorChange, 1, colors[(++i)%7] });
-
-        info.mode = Mode::SingleExtruder;
-	}
-
-	// The "colorprint_heights" config value has been deprecated. At this point of time it has been converted
-	// to a new format and therefore it shall be erased.
-    config->erase("colorprint_heights");
-}
 
 // If information for custom Gcode per print Z was imported from older Slicer, mode will be undefined.
 // So, we should set CustomGCode::Info.mode should be updated considering code values from items.

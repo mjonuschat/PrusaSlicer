@@ -14,7 +14,6 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Support/SupportLayer.hpp"
 #include "libslic3r/Support/SupportParameters.hpp"
-#include "libslic3r/PrintConfig.hpp"
 
 namespace Slic3r {
 

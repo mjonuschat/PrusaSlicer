@@ -8,8 +8,6 @@
 #include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
 #include "Slic3r/Biz/Directories.hpp"
 
-#include "libslic3r/Config.hpp" // escape_string_cstyle
-
 #include <string>
 #include <boost/filesystem.hpp>
 

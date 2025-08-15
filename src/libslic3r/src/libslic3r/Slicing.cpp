@@ -9,7 +9,6 @@
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Slicing.hpp"
 #include "libslic3r/SlicingAdaptive.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/ConfigViews.hpp"
 
@@ -46,23 +45,6 @@ inline double max_layer_height_from_nozzle(const Domain::ConfigView &print_confi
     double min_layer_height = min_layer_height_from_nozzle(print_config, idx_nozzle);
     double max_layer_height = print_config.get<std::vector<double>>("max_layer_height").at(idx_nozzle - 1);
     double nozzle_dmr       = print_config.get<std::vector<double>>("nozzle_diameter").at(idx_nozzle - 1);
-    return std::max(min_layer_height, (max_layer_height == 0.) ? (0.75 * nozzle_dmr) : max_layer_height);
-}
-
-// Minimum layer height for the variable layer height algorithm.
-double Slicing::min_layer_height_from_nozzle(const DynamicPrintConfig &print_config, int idx_nozzle)
-{
-    double min_layer_height = print_config.opt_float("min_layer_height", idx_nozzle - 1);
-    return (min_layer_height == 0.) ? MIN_LAYER_HEIGHT_DEFAULT : std::max(MIN_LAYER_HEIGHT, min_layer_height);
-}
-
-// Maximum layer height for the variable layer height algorithm, 3/4 of a nozzle diameter by default,
-// it should not be smaller than the minimum layer height.
-double Slicing::max_layer_height_from_nozzle(const DynamicPrintConfig &print_config, int idx_nozzle)
-{
-    double min_layer_height = min_layer_height_from_nozzle(print_config, idx_nozzle);
-    double max_layer_height = print_config.opt_float("max_layer_height", idx_nozzle - 1);
-    double nozzle_dmr       = print_config.opt_float("nozzle_diameter", idx_nozzle - 1);
     return std::max(min_layer_height, (max_layer_height == 0.) ? (0.75 * nozzle_dmr) : max_layer_height);
 }
 

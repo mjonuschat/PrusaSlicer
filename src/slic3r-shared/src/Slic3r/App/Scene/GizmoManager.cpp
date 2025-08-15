@@ -205,7 +205,7 @@ void GizmoManager::render_imgui() {
 //#endif
 //}
 
-void GizmoManager::activate_tool(ToolType tool, PrinterTechnology pt)
+void GizmoManager::activate_tool(ToolType tool, Domain::PrinterTechnology pt)
 {
     auto& p = current_context();
     deactivate_current_tool();
@@ -218,7 +218,7 @@ void GizmoManager::activate_tool(ToolType tool, PrinterTechnology pt)
     }
 }
 
-void GizmoManager::toggle_activate_tool(ToolType tool, PrinterTechnology pt)
+void GizmoManager::toggle_activate_tool(ToolType tool, Domain::PrinterTechnology pt)
 {
     auto& p = current_context();
     IToolGizmo* original_tool = p.active_tool;
@@ -248,7 +248,7 @@ ToolType GizmoManager::current_tool_type() const
     return (ctx.active_tool != nullptr) ? ctx.active_tool->type() : ToolType::None;
 }
 
-IToolGizmo* GizmoManager::find_tool(ToolType tool, PrinterTechnology pt)
+IToolGizmo* GizmoManager::find_tool(ToolType tool, Domain::PrinterTechnology pt)
 {
     auto it =
         std::find_if(m_tool_gizmos.begin(), m_tool_gizmos.end(), [tool, pt](const IToolGizmoPtr& tg) {

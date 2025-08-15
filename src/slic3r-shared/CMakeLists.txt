@@ -460,8 +460,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.cpp
         include/Slic3r/Biz/Preset/PresetHints.hpp
         src/Slic3r/Biz/Preset/PresetHints.cpp
-        include/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
-        src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
+        #include/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
+        #src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
 
 #		include/Slic3r/Biz/Preset/Bundle.hpp
 #		src/Slic3r/Biz/Preset/Bundle.cpp
@@ -501,7 +501,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/LastExportPathStorage.hpp
         include/Slic3r/Biz/ObservableProjectList.hpp
         src/Slic3r/Biz/ObservableProjectList.cpp
-
         src/Slic3r/Biz/Units.cpp
         include/Slic3r/Biz/Units.hpp
         src/Slic3r/Biz/Units.cpp

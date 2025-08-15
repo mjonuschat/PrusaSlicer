@@ -28,7 +28,6 @@
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Surface.hpp"
 // for Arachne based infills
 #include "libslic3r/PerimeterGenerator.hpp"

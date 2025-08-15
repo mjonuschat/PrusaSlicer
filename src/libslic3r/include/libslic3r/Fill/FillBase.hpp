@@ -122,7 +122,6 @@ public:
     virtual Fill* clone() const = 0;
 
     static Fill* new_from_type(const Domain::InfillPattern type);
-    static Fill* new_from_type(const std::string &type);
     static bool  use_bridge_flow(const Domain::InfillPattern type);
 
     void         set_bounding_box(const Domain::BoundingBox2crd &bbox) { bounding_box = bbox; }

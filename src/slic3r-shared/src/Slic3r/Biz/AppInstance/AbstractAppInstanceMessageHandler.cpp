@@ -4,8 +4,8 @@
 #include "Slic3r/Biz/Platform/ISingleInstanceChecker.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Biz/Algorithms/StringUtils.hpp"
 
-#include "libslic3r/Config.hpp" // unescape_strings_cstyle
 
 #include <nlohmann/json.hpp>
 #include <boost/filesystem.hpp>

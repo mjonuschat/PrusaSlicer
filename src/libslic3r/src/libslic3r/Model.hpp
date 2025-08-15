@@ -17,7 +17,6 @@
 #include "Slic3r/Domain/SLA/DrainHole.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/Point.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"

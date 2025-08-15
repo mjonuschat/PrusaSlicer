@@ -5,6 +5,7 @@
 #include "STEP.hpp"
 #include "../../occt_wrapper/OCCTWrapper.hpp"
 
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Model.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
@@ -13,6 +14,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include <string>
 #include <functional>

@@ -24,7 +24,6 @@
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "Geometry/ArcWelder.hpp"
 #include "libslic3r/GCode/AvoidCrossingPerimeters.hpp"
 #include "libslic3r/GCode/CoolingBuffer.hpp"

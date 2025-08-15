@@ -8,7 +8,6 @@
 #include <optional>
 
 #include "libslic3r/GCode/WipeTower.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/ConfigViews.hpp"
 

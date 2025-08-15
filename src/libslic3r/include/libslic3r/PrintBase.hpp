@@ -21,7 +21,6 @@
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 #include "Slic3r/Domain/SlicingId.hpp"
 
-#include "libslic3r/Config.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "libslic3r/SerializedConfig.hpp"
 
@@ -524,7 +523,7 @@ public:
 	PrintBase() { this->restart(); }
     inline virtual ~PrintBase() {}
 
-    virtual PrinterTechnology technology() const noexcept = 0;
+    virtual Domain::PrinterTechnology technology() const noexcept = 0;
 
     // Reset the print status including the copy of the Model / ModelObject hierarchy.
     virtual void            clear() = 0;

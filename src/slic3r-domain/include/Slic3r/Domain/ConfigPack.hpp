@@ -2,7 +2,6 @@
 
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
-#include "Slic3r/Domain/ConfigBoxesSLA.hpp"
 
 namespace Slic3r::Domain {
 

@@ -1,5 +1,4 @@
 #include "MainFrame.hpp"
-#include "Slic3r/App/WX/Scalable.hpp""
 
 #include "Slic3r/App/Desktop/LeftBar.hpp"
 
@@ -17,6 +16,7 @@
 #include "Slic3r/App/Browser/BrowserLogicConnectPage.hpp"
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
 
+#include "Slic3r/App/WX/Scalable.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <wx/panel.h>

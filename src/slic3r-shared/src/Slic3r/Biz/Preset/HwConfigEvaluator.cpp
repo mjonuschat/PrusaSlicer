@@ -1,7 +1,6 @@
 #include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
 #include "Slic3r/Biz/Preset/ValueMapBuilder.hpp"
 #include "Slic3r/Uuid.hpp"
-#include "libslic3r/Config.hpp"
 
 namespace Slic3r::Biz::Preset {
 

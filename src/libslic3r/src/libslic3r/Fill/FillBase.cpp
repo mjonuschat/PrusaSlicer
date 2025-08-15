@@ -23,7 +23,6 @@
 #include "libslic3r/Geometry.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/Circle.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Fill/FillBase.hpp"
@@ -37,7 +36,6 @@
 #include "libslic3r/Fill/FillAdaptive.hpp"
 #include "libslic3r/Fill/FillLightning.hpp"
 #include "libslic3r/Fill/FillEnsuring.hpp"
-#include "libslic3r/Config.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/ShortestPath.hpp"
 
@@ -80,13 +78,6 @@ Fill* Fill::new_from_type(const Domain::InfillPattern type)
     }
 }
 
-Fill* Fill::new_from_type(const std::string &type)
-{
-    const t_config_enum_values &enum_keys_map = ConfigOptionEnum<InfillPattern>::get_enum_values();
-    t_config_enum_values::const_iterator it = enum_keys_map.find(type);
-    return (it == enum_keys_map.end()) ? nullptr : new_from_type(Domain::InfillPattern(it->second));
-}
-
 // Force initialization of the Fill::use_bridge_flow() internal static map in a thread safe fashion even on compilers
 // not supporting thread safe non-static data member initializers.
 static bool use_bridge_flow_initializer = Fill::use_bridge_flow(Domain::InfillPattern::ipGrid);
@@ -95,7 +86,7 @@ bool Fill::use_bridge_flow(const Domain::InfillPattern type)
 {
 	static std::vector<unsigned char> cached;
 	if (cached.empty()) {
-		cached.assign(size_t(ipCount), 0);
+		cached.assign(size_t(Domain::InfillPattern::ipCount), 0);
 		for (size_t i = 0; i < cached.size(); ++ i) {
 			auto *fill = Fill::new_from_type((Domain::InfillPattern)i);
 			cached[i] = fill->use_bridge_flow();

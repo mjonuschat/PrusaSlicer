@@ -26,7 +26,6 @@
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/GCode/AvoidCrossingPerimeters.hpp"
-#include "libslic3r/Config.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Line.hpp"

@@ -32,6 +32,7 @@
 #include <boost/algorithm/string.hpp>
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Exception.hpp"
 
 #include "libslic3r/ModelUtils.hpp"
 
@@ -416,7 +417,7 @@ void delete_old_model_objects(const Domain::ModelObjectPtrs& old_objects, const 
     }
 }
 
-AllOrSome<PrintSteps> get_steps_invalidated_by_config_options(const std::vector<t_config_option_key> &opt_keys)
+AllOrSome<PrintSteps> get_steps_invalidated_by_config_options(const std::vector<std::string> &opt_keys)
 {
     using namespace std::string_view_literals;
 
@@ -526,14 +527,14 @@ AllOrSome<PrintSteps> get_steps_invalidated_by_config_options(const std::vector<
     return steps;
 }
 
-PrintObjectSteps get_object_steps_invalidated_by_config_options(const std::vector<t_config_option_key> &opt_keys)
+PrintObjectSteps get_object_steps_invalidated_by_config_options(const std::vector<std::string> &opt_keys)
 {
     if (opt_keys.empty()) {
         return {};
     }
 
     PrintObjectSteps result;
-    for (const t_config_option_key &opt_key : opt_keys) {
+    for (const std::string &opt_key : opt_keys) {
         if (   opt_key == "hollowing_enable"
             || opt_key == "hollowing_min_thickness"
             || opt_key == "hollowing_quality"
@@ -1200,7 +1201,7 @@ void SLAPrint::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImage
     this->cleanup();
 };
 
-bool SLAPrint::invalidate_state_by_config_options(const std::vector<t_config_option_key> &opt_keys, bool &invalidate_all_model_objects)
+bool SLAPrint::invalidate_state_by_config_options(const std::vector<std::string> &opt_keys, bool &invalidate_all_model_objects)
 {
     using namespace std::string_view_literals;
 

@@ -45,6 +45,7 @@
 #include "libslic3r/ModelUtils.hpp"
 #include "libslic3r/SlicingInput.hpp"
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <float.h>
 
 #include <algorithm>
@@ -69,6 +70,7 @@ using ParserConfig = Biz::Parser::IO::Config;
 using Biz::Parser::PlaceholderParser;
 using Domain::ConfigPack;
 using Domain::ConfigPackFDM;
+using Domain::GCodeFlavor;
 
 template class PrintState<PrintStep, psCount>;
 template class PrintState<PrintObjectStep, posCount>;
@@ -314,7 +316,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             return _u8L("The Spiral Vase option can only be used when printing single material objects.");
     }
 
-    if (m_config.get<Domain::MachineLimitsUsage>("machine_limits_usage") == Domain::MachineLimitsUsage::EmitToGCode && m_config.get<GCodeFlavor>("gcode_flavor") == gcfKlipper)
+    if (m_config.get<Domain::MachineLimitsUsage>("machine_limits_usage") == Domain::MachineLimitsUsage::EmitToGCode && m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfKlipper)
         return L("Machine limits cannot be emitted to G-Code when Klipper firmware flavor is used. "
                  "Change the value of machine_limits_usage.");
 
@@ -388,9 +390,9 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             }
         }
 
-        if (m_config.get<GCodeFlavor>("gcode_flavor") != gcfRepRapSprinter && m_config.get<GCodeFlavor>("gcode_flavor") != gcfRepRapFirmware &&
-            m_config.get<GCodeFlavor>("gcode_flavor") != gcfRepetier && m_config.get<GCodeFlavor>("gcode_flavor") != gcfMarlinLegacy &&
-            m_config.get<GCodeFlavor>("gcode_flavor") != gcfMarlinFirmware && m_config.get<GCodeFlavor>("gcode_flavor") != gcfKlipper)
+        if (m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfRepRapSprinter && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfRepRapFirmware &&
+            m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfRepetier && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfMarlinLegacy &&
+            m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfMarlinFirmware && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfKlipper)
             return _u8L("The Wipe Tower is currently only supported for the Marlin, Klipper, RepRap/Sprinter, RepRapFirmware and Repetier G-code flavors.");
         if (! m_config.get<bool>("use_relative_e_distances"))
             return _u8L("The Wipe Tower is currently only supported with the relative extruder addressing (use_relative_e_distances=1).");
@@ -564,7 +566,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
         bool layer_gcode_resets_extruder        = boost::regex_search(m_config.get<std::string>("layer_gcode"), regex_g92e0);
         if (m_config.get<bool>("use_relative_e_distances")) {
             // See GH issues #6336 #5073
-            if ((m_config.get<GCodeFlavor>("gcode_flavor") == gcfMarlinLegacy || m_config.get<GCodeFlavor>("gcode_flavor") == gcfMarlinFirmware) &&
+            if ((m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinLegacy || m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinFirmware) &&
                 ! before_layer_gcode_resets_extruder && ! layer_gcode_resets_extruder)
                 return _u8L("Relative extruder addressing requires resetting the extruder position at each layer to prevent loss of floating point accuracy. Add \"G92 E0\" to layer_gcode.");
         } else if (before_layer_gcode_resets_extruder)

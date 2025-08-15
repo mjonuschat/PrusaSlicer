@@ -33,7 +33,6 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
-#include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"

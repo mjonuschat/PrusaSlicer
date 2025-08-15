@@ -11,7 +11,6 @@
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/OnBeds.hpp"
 
-#include "libslic3r/Config.hpp"
 
 namespace Tests {
     inline boost::filesystem::path get_datadir() {
@@ -34,7 +33,6 @@ namespace Tests {
         Slic3r::Domain::WipeTowersOnBeds wipe_towers;
         Slic3r::Domain::CustomGCodesOnBeds custom_gcodes;
 
-        ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
         boost::optional<Semver> version;
         Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, &model, false, version, wipe_towers, custom_gcodes);
 
