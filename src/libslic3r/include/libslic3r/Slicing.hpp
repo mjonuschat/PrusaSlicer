@@ -202,6 +202,15 @@ int generate_layer_height_texture(
     const std::vector<double> &layers,
     void *data, int rows, int cols, bool level_of_detail_2nd_level);
 
+namespace Slicing {
+    // Minimum layer height for the variable layer height algorithm. Nozzle index is 1 based.
+	double min_layer_height_from_nozzle(const Domain::ConfigPackFDM& print_config, int idx_nozzle);
+
+	// Maximum layer height for the variable layer height algorithm, 3/4 of a nozzle dimaeter by default,
+	// it should not be smaller than the minimum layer height.
+	// Nozzle index is 1 based.
+	double max_layer_height_from_nozzle(const Domain::ConfigPackFDM& print_config, int idx_nozzle);
+} // namespace Slicing
 } // namespace Slic3r
 
 namespace cereal

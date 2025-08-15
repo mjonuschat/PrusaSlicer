@@ -32,6 +32,7 @@
 #include <boost/algorithm/string.hpp>
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Exception.hpp"
 
 #include "libslic3r/ModelUtils.hpp"
 

@@ -22,12 +22,12 @@ set(SLIC3R_APP_DESKTOP_FILES
     src/Slic3r/App/Desktop/AppInstanceCheck.cpp
     src/Slic3r/App/Desktop/SecretStoreFactory.hpp
 
-    src/Slic3r/App/Desktop/Config/Field.cpp
-    src/Slic3r/App/Desktop/Config/Field.hpp
-    src/Slic3r/App/Desktop/Config/OptionsGroup.cpp
-    src/Slic3r/App/Desktop/Config/OptionsGroup.hpp
-    src/Slic3r/App/Desktop/Config/OG_CustomCtrl.cpp
-    src/Slic3r/App/Desktop/Config/OG_CustomCtrl.hpp
+    #src/Slic3r/App/Desktop/Config/Field.cpp
+    #src/Slic3r/App/Desktop/Config/Field.hpp
+    #src/Slic3r/App/Desktop/Config/OptionsGroup.cpp
+    #src/Slic3r/App/Desktop/Config/OptionsGroup.hpp
+    #src/Slic3r/App/Desktop/Config/OG_CustomCtrl.cpp
+    #src/Slic3r/App/Desktop/Config/OG_CustomCtrl.hpp
 
 #    We are about to remove src/Slic3r/App/Desktop/Preset
 

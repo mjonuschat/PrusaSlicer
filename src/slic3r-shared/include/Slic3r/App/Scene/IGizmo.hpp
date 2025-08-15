@@ -3,7 +3,8 @@
 #include "Slic3r/App/Scene/GizmoEventContext.hpp"
 #include "Slic3r/App/Scene/GizmoKeyEventContext.hpp"
 #include "Slic3r/App/Platform/CommandRegistry.hpp"
-#include "libslic3r/Config.hpp"
+
+#include "Slic3r/Domain/PrinterTechnology.hpp"
 
 namespace Slic3r::App::Yoga {
 class Dialog;
@@ -159,7 +160,7 @@ public:
      * @{
      */
     virtual ToolType type() const = 0;
-    virtual bool supports_printer(PrinterTechnology pt) const;
+    virtual bool supports_printer(Domain::PrinterTechnology pt) const;
     /**@}*/
 
     /**

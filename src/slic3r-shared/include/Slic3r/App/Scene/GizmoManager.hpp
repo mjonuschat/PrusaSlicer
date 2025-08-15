@@ -12,6 +12,7 @@
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Scene/MouseDragDetector.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
+#include "Slic3r/Domain/PrinterTechnology.hpp"
 
 
 #ifndef DEBUG_GIZMO_MANAGER
@@ -63,8 +64,8 @@ public:
 
     void render_scene(Render::CommandBuffer& cmd_buffer);
 
-    void toggle_activate_tool(ToolType tool, PrinterTechnology pt);
-    void activate_tool(ToolType tool, PrinterTechnology pt);
+    void toggle_activate_tool(ToolType tool, Domain::PrinterTechnology pt);
+    void activate_tool(ToolType tool, Domain::PrinterTechnology pt);
     void deactivate_current_tool();
     ToolType current_tool_type() const;
 
@@ -76,7 +77,7 @@ private:
     void on_selected_project_changed(size_t index) override;
 
     void prepare_cycle();
-    IToolGizmo* find_tool(ToolType tool, PrinterTechnology pt);
+    IToolGizmo* find_tool(ToolType tool, Domain::PrinterTechnology pt);
 
     struct ProjectContext;
     ProjectContext& current_context() { return m_projects.selected(); }
