@@ -18,6 +18,8 @@
 
 #include "test_data.hpp"
 
+#include "boost/algorithm/string.hpp"
+
 using namespace Slic3r;
 using Biz::GCodeReader::GCodeReader;
 using namespace std::literals;
@@ -37,7 +39,7 @@ TEST_CASE("Fill: adjusted solid distance") {
 #endif
 
 TEST_CASE("Fill: Pattern Path Length", "[Fill]") {
-    std::unique_ptr<Slic3r::Fill> filler(Slic3r::Fill::new_from_type("rectilinear"));
+    std::unique_ptr<Slic3r::Fill> filler(Slic3r::Fill::new_from_type(Domain::InfillPattern::ipRectilinear));
     filler->angle = float(-(PI)/2.0);
 	FillParams fill_params;
 	filler->spacing = 5;
@@ -130,7 +132,7 @@ TEST_CASE("Fill: Pattern Path Length", "[Fill]") {
 
     SECTION("Rotated Square produces one continuous path") {
         Slic3r::ExPolygon expolygon(Slic3r::Biz::Algorithms::Polygon::scaled({ {0, 0}, {50, 0}, {50, 50}, {0, 50} }));
-        std::unique_ptr<Slic3r::Fill> filler(Slic3r::Fill::new_from_type("rectilinear"));
+        std::unique_ptr<Slic3r::Fill> filler(Slic3r::Fill::new_from_type(Domain::InfillPattern::ipRectilinear));
 		filler->bounding_box = get_extents(expolygon);
         filler->angle = 0;
         
@@ -678,7 +680,7 @@ SCENARIO("Infill density zero", "[Fill]")
 
 bool test_if_solid_surface_filled(const ExPolygon& expolygon, double flow_spacing, double angle, double density)
 {
-    std::unique_ptr<Slic3r::Fill> filler(Slic3r::Fill::new_from_type("rectilinear"));
+    std::unique_ptr<Slic3r::Fill> filler(Slic3r::Fill::new_from_type(Domain::InfillPattern::ipRectilinear));
 	filler->bounding_box = get_extents(expolygon.contour);
     filler->angle = float(angle);
 

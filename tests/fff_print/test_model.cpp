@@ -56,7 +56,7 @@ SCENARIO("Model construction", "[Model]") {
             arrange_objects(model,
                             arr2::to_arrange_bed(pts_scaled, scaled(Vec2d(10, 10))),
                             arr2::ArrangeSettings{}.set_distance_from_objects(
-                                min_object_distance(config.get_view())));
+                                arrange_min_distance(config)));
 
             ensure_on_bed(*model_object);
 			THEN("Print works?") {

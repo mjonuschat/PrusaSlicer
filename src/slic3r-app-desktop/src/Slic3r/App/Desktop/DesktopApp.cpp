@@ -30,8 +30,8 @@
 
 // TODO: replace with spdlog
 #include <boost/log/trivial.hpp>
-
 #include <boost/filesystem/path.hpp>
+#include <boost/algorithm/string.hpp>
 
 wxIMPLEMENT_APP_NO_MAIN(Slic3r::App::Desktop::DesktopApp);
 

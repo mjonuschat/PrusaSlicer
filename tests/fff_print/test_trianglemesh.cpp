@@ -4,7 +4,6 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/Config.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/libslic3r.h"
 

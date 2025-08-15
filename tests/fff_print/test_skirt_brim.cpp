@@ -2,7 +2,6 @@
 #include <catch2/catch_approx.hpp>
 
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
-#include "libslic3r/Config.hpp"
 #include "libslic3r/Geometry.hpp"
 
 #include <boost/algorithm/string.hpp>

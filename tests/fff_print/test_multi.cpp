@@ -15,6 +15,8 @@
 
 #include "test_data.hpp"
 
+#include "boost/algorithm/string.hpp"
+
 using namespace Slic3r;
 using namespace std::literals;
 using Biz::GCodeReader::GCodeReader;

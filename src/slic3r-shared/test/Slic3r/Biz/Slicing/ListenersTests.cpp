@@ -190,9 +190,6 @@ struct SLAObjectListener : public ISLAObjectListener{
 TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer technology differs", "[slicing][slicing-interactor]") {
     using namespace std::chrono_literals;
 
-    using Slic3r::ConfigOptionEnum;
-    using Slic3r::PrinterTechnology;
-
     // Allow logging to be enabled in the test
     //Slic3r::set_logging_level(spdlog::level::trace);
     //Slic3r::init_logging();
