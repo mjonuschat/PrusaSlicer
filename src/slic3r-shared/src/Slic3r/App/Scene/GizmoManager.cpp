@@ -36,7 +36,8 @@ GizmoManager::GizmoManager(
     m_scene_provider(scene_provider),
     m_project_interactor(project_interactor),
     m_data_factory(device),
-    m_mouse_drag_detector(std::move(mouse_drag_detector))
+    m_mouse_drag_detector(std::move(mouse_drag_detector)),
+    m_command_registry(*this)
 {
     GizmoManager::on_selected_project_changed(m_project_interactor.selected_project_id());
 }
@@ -191,19 +192,10 @@ void GizmoManager::render_imgui() {
             measure_gizmo->render_imgui();
     }
 #endif // MEASURE_GIZMO_DEBUG
+#if DEBUG_GIZMO_MANAGER
+    render_gizmo_activation_debug();
+#endif
 }
-
-//void GizmoManager::render_imgui()
-//{
-//    for (auto* g : m_in_cycle_gizmos)
-//        g->render_imgui();
-//
-//    if (m_active_tool)
-//        m_active_tool->render_imgui();
-//#if DEBUG_GIZMO_MANAGER
-//    render_gizmo_activation_debug();
-//#endif
-//}
 
 void GizmoManager::activate_tool(ToolType tool, Domain::PrinterTechnology pt)
 {
@@ -247,6 +239,13 @@ ToolType GizmoManager::current_tool_type() const
     const auto& ctx = current_context();
     return (ctx.active_tool != nullptr) ? ctx.active_tool->type() : ToolType::None;
 }
+
+bool GizmoManager::is_tool_active_in_current_project(const IToolGizmo& tool) const
+{
+    const auto& ctx = current_context();
+    return ctx.active_tool == &tool;
+}
+
 
 IToolGizmo* GizmoManager::find_tool(ToolType tool, Domain::PrinterTechnology pt)
 {
