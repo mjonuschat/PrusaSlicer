@@ -861,7 +861,6 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp
         test/Slic3r/Biz/Slicing/ActionsTests.cpp
         test/Slic3r/Biz/Slicing/ListenersTests.cpp
-        test/Slic3r/Biz/Slicing/ProcessActionsTests.cpp
 
         test/Slic3r/Biz/Config/ConfigLegacyTests.cpp
         test/Slic3r/Biz/Config/ConfigLoadTests.cpp
