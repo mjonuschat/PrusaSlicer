@@ -146,11 +146,8 @@ void PlaterRenderModule::init_scene_layout()
     m_cube_view     = Passthrough{std::make_unique<CubeView>()};
     m_sidebar_bed   = Passthrough(std::make_unique<SidebarBed>(m_project_interactor));
     m_sidebar_print = Passthrough(std::make_unique<SidebarPrint>(m_project_interactor));
-    m_sidebar_graphics_settings = Passthrough(std::make_unique<SidebarGraphicsSettings>());
     m_history       = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
-
-    Scene::Scene::add_graphics_settings_listener(m_sidebar_graphics_settings.get());
 
     m_sidebar_action_buttons = Passthrough{
         std::make_unique<SidebarPlaterActionButtons>(m_render_module_navigator)
@@ -163,7 +160,6 @@ void PlaterRenderModule::init_scene_layout()
         m_cube_view.release(),
         m_sidebar_bed.release(),
         m_sidebar_print.release(),
-        m_sidebar_graphics_settings.release(),
         m_sidebar_action_buttons.release(),
         m_history.release()
     ));
@@ -1230,12 +1226,7 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         m_scene_presenter->scene().camera_trackball()
     );
 #endif // ENABLED_DEBUG_CAMERA
-    if (Scene::Scene::graphics_settings().debug_windows_enabled()) {
-        render_imgui_scene_shading_customization(*m_scene_presenter, [this]() {
-            m_scene_presenter->update_beds_shadows_data();
-        });
-        render_imgui_lights_customization(*m_scene_presenter);
-    }
+    Scene::render_imgui_graphics_settings_debug_window(*m_scene_presenter, *m_imgui_render);
 }
 
 void PlaterRenderModule::render_object_hud(

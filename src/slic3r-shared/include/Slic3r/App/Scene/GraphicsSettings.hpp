@@ -34,7 +34,6 @@ class IGraphicsSettingsChangedListener
 public:
     virtual ~IGraphicsSettingsChangedListener() = default;
     virtual void on_shading_type_changed(ShadingType shading_type) = 0;
-    virtual void on_debug_windows_enabled_changed(bool enabled) = 0;
 };
 
 struct Shadows
@@ -123,8 +122,6 @@ public:
 
     float pbr_intensity() const { return m_pbr.intensity; }
 
-    bool debug_windows_enabled() const { return m_debug_windows_enabled; }
-
 private:
     //
     // setters are accessible only through Scene class
@@ -156,19 +153,11 @@ private:
     void set_pbr_intensity(float intensity) { m_pbr.intensity = intensity; }
     void set_default_pbr_intensity() { m_pbr.intensity = PBR::DEFAULT_INTENSITY; }
 
-    void set_debug_windows_enabled(bool enabled) {
-        if (m_debug_windows_enabled != enabled) {
-            m_debug_windows_enabled = enabled;
-            invoke_listeners<IGraphicsSettingsChangedListener>([this](auto* l) { l->on_debug_windows_enabled_changed(m_debug_windows_enabled); });
-        }
-    }
-
 private:
     ShadingType m_shading_type{ ShadingType::PBR };
     Shadows m_shadows;
     AmbientOcclusion m_ao;
     PBR m_pbr;
-    bool m_debug_windows_enabled{ false };
 
     friend class Scene;
 };

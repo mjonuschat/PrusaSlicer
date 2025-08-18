@@ -126,7 +126,6 @@ private:
     Yoga::Passthrough<CubeView> m_cube_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
-    Yoga::Passthrough<SidebarGraphicsSettings> m_sidebar_graphics_settings;
     Yoga::Passthrough<SidebarPreviewActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<GCodeWindow> m_gcode_window;
     Yoga::Passthrough<LegendWindow> m_legend;

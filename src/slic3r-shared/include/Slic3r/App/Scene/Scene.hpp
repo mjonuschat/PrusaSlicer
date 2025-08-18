@@ -253,7 +253,6 @@ public:
         s_graphics_settings.add_listener<Scene::IGraphicsSettingsChangedListener>(listener);
     }
     static void set_shading_type(ShadingType shading_type) { s_graphics_settings.set_shading_type(shading_type); }
-    static void set_graphics_settings_debug_windows_enabled(bool enabled) { s_graphics_settings.set_debug_windows_enabled(enabled); }
     /** @} */
 
     /**
@@ -261,7 +260,6 @@ public:
      * @{
      */
     void on_shading_type_changed(ShadingType shading_type) override;
-    void on_debug_windows_enabled_changed(bool enabled) override {}
     /** @} */
 
     /**

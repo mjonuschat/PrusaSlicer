@@ -239,7 +239,6 @@ void AbstractRenderLayout::init_right_column()
     m_layout_right_column->append(m_sidebar_bed.release());
 
     m_layout_right_column->append(m_sidebar_print.release());
-    m_layout_right_column->append(m_sidebar_graphics_settings.release());
 }
 
 void AbstractRenderLayout::init_toolbar_column()
@@ -384,15 +383,13 @@ AbstractRenderLayout::AbstractRenderLayout(
     std::unique_ptr<ObjectListWindow> object_list,
     std::unique_ptr<CubeView> cube_view,
     std::unique_ptr<SidebarBed> sidebar_bed,
-    std::unique_ptr<SidebarPrint> sidebar_print,
-    std::unique_ptr<SidebarGraphicsSettings> sidebar_graphics_settings
+    std::unique_ptr<SidebarPrint> sidebar_print
 )
     : m_top_bar(std::move(top_bar))
     , m_object_list(std::move(object_list))
     , m_cube_view(std::move(cube_view))
     , m_sidebar_bed(std::move(sidebar_bed))
     , m_sidebar_print(std::move(sidebar_print))
-    , m_sidebar_graphics_settings(std::move(sidebar_graphics_settings))
 {}
 
 AbstractRenderLayout::~AbstractRenderLayout() {}

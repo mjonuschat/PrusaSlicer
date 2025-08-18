@@ -19,7 +19,6 @@ public:
         std::unique_ptr<CubeView> cube_view,
         std::unique_ptr<SidebarBed> sidebar_bed,
         std::unique_ptr<SidebarPrint> sidebar_print,
-        std::unique_ptr<SidebarGraphicsSettings> sidebar_graphics_settings,
         std::unique_ptr<SidebarPlaterActionButtons> sidebar_action_buttons,
         std::unique_ptr<History> history
     );

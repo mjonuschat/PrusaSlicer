@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Slic3r/App/Render/ImguiRender.hpp"
+
 #include <functional>
 
 namespace Slic3r::App::Render {
@@ -31,7 +33,6 @@ static const PBRParams DEFAULT_GCODE_OPTIONS_PBRPARAMS = { 0.0f, 0.25f, 1.5f };
 void set_uniforms(const Lighting& lights, Render::Material& material);
 void set_uniforms(const PBRParams& pbr, Render::Material& material);
 
-void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, std::function<void(void)> cb_update_beds_shadows_data = nullptr);
-void render_imgui_lights_customization(ISceneProvider& scene_provider);
+void render_imgui_graphics_settings_debug_window(ISceneProvider& scene_provider, Render::ImguiRender& imgui_render);
 
 } // namespace Slic3r::App::Scene
