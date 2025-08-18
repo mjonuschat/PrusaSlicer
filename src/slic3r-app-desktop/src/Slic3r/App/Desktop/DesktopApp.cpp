@@ -1,5 +1,6 @@
 #include "DesktopApp.hpp"
 #include "MainFrame.hpp"
+#include "SplashScreen.hpp"
 #include "AppInstanceCheck.hpp"
 #include "SecretStoreFactory.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
@@ -9,7 +10,7 @@
 #include <Slic3r/App/Platform/WX/WXMainThreadDispatcher.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/format.hpp>
-#include "Slic3r/App/WX/StringConversions.hpp"
+#include <Slic3r/App/WX/I18N.hpp>
 #include <Slic3r/App/Init.hpp>
 #include <Slic3r/App/Localization.hpp>
 #include <Slic3r/App/ResourceResolver.hpp>
@@ -82,10 +83,53 @@ int run(const Slic3r::App::InitParams& init_params)
 
 bool DesktopApp::OnInit()
 {
+    // Set initialization of image handlers before any UI actions - See GH issue #7469
+    wxInitAllImageHandlers();
+
     init_logging();
     set_log_level(4);
 
     init_translations();
+
+    const bool is_dark             = true;
+    const bool is_sys_menu         = true;
+    WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
+
+    bool is_editor     = true; // is_editor();
+    SplashScreen* scrn = nullptr;
+    if (1 /*app_config->get_bool("show_splash_screen")*/) {
+        // Detect position (display) to show the splash screen
+        // Now this position is equal to the mainframe position
+        wxPoint splashscreen_pos      = wxDefaultPosition;
+        bool default_splashscreen_pos = true;
+        /* ysFIXME uncomment, when we start to process app_config
+                if (app_config->has("window_mainframe") && app_config->get_bool("restore_win_position")) {
+                    auto metrics = WindowMetrics::deserialize(app_config->get("window_mainframe"));
+                    default_splashscreen_pos = metrics == boost::none;
+                    if (!default_splashscreen_pos)
+                        splashscreen_pos = metrics->get_rect().GetPosition();
+                }
+
+                if (!default_splashscreen_pos) {
+                    // workaround for crash related to the positioning of the window on secondary monitor
+                    get_app_config()->set("restore_win_position", "crashed_at_splashscreen_pos");
+                    get_app_config()->save();
+                }
+        */
+        // create splash screen with updated bmp
+        scrn = new SplashScreen(is_editor, splashscreen_pos);
+
+/* ysFIXME uncomment, when we start to process app_config
+        if (!default_splashscreen_pos) {
+            // revert "restore_win_position" value if application wasn't crashed
+            get_app_config()->set("restore_win_position", "1");
+        }
+*/
+#ifndef __linux__
+        wxYield();
+#endif
+        scrn->SetText(L("Loading configurations") + "...");
+    }
 
     using Biz::Platform::PlatformServices;
     using Biz::Platform::JobManager::JobManager;
@@ -123,6 +167,8 @@ bool DesktopApp::OnInit()
     fs::path config_dir        = fs::path{data_dir()} / "configs";
     preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
+    if (scrn && is_editor)
+        scrn->SetText(L("Preparing Plater") + "...");
 
     m_plater_module = std::make_unique<Plater::PlaterRenderModule>(
         m_workbench,
@@ -131,6 +177,10 @@ bool DesktopApp::OnInit()
         thumbnail_store_updater,
         thumbnail_image_generator
     );
+
+    if (scrn && is_editor)
+        scrn->SetText(L("Preparing Preview") + "...");
+
     m_preview_module = std::make_unique<Preview::PreviewRenderModule>(
         m_workbench,
         *m_project_interactor,
@@ -142,10 +192,6 @@ bool DesktopApp::OnInit()
     DialogManagerProvider::instance().set_dialog_manager_implementation(
         std::make_unique<WX::DialogManager>()
     );
-
-    const bool is_dark             = true;
-    const bool is_sys_menu         = true;
-    WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
 
     m_project_interactor->new_project();
 
