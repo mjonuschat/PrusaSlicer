@@ -9,9 +9,7 @@
 
 namespace Slic3r::Biz::UserAccount {
 
-UserAccountCommunicationTokenBase::UserAccountCommunicationTokenBase(
-    Platform::IMainThreadDispatcher& dispatcher
-) :
+UserAccountCommunicationTokenBase::UserAccountCommunicationTokenBase(Platform::IMainThreadDispatcher& dispatcher) :
     m_session{dispatcher}
 {
     TokenStore::StoreData stored_data;
@@ -23,10 +21,8 @@ UserAccountCommunicationTokenBase::UserAccountCommunicationTokenBase(
         return;
     }
 
-    long long next_timeout_long = stored_data.next_timeout.empty() ?
-        0 :
-        std::stoll(stored_data.next_timeout);
-    long long remain_time       = next_timeout_long - std::time(nullptr);
+    long long next_timeout_long = stored_data.next_timeout.empty() ? 0 : std::stoll(stored_data.next_timeout);
+    long long remain_time = next_timeout_long - std::time(nullptr);
     if (remain_time <= 0) {
         stored_data.access_token.clear();
     } else {
@@ -44,12 +40,7 @@ UserAccountCommunicationTokenBase::UserAccountCommunicationTokenBase(
     }
 
     bool has_token = !stored_data.refresh_token.empty();
-    set_tokens_to_session(
-        stored_data.access_token,
-        stored_data.refresh_token,
-        stored_data.shared_session_key,
-        next_timeout_long
-    );
+    set_tokens_to_session(stored_data.access_token, stored_data.refresh_token, stored_data.shared_session_key, next_timeout_long);
     init_session_thread();
     // perform login at the start, but only with tokens
     if (has_token) {
@@ -76,11 +67,7 @@ void UserAccountCommunicationTokenBase::set_refresh_time(int seconds)
     const auto prior_expiration_secs = std::max(seconds / 24, 10);
     int milliseconds                 = std::max((seconds - prior_expiration_secs) * 1'000, 1'000);
     m_next_token_refresh_at          = std::time(nullptr) + milliseconds / 1'000;
-    m_token_timer_id                 = timer_queue.set_timer(
-        std::chrono::milliseconds(milliseconds),
-        std::bind(&UserAccountCommunicationTokenBase::on_token_timer, this),
-        false
-    );
+    m_token_timer_id = timer_queue.set_timer(std::chrono::milliseconds(milliseconds), std::bind(&UserAccountCommunicationTokenBase::on_token_timer, this), false);
 }
 
 void UserAccountCommunicationTokenBase::on_token_timer()
@@ -98,9 +85,7 @@ void UserAccountCommunicationTokenBase::on_token_timer()
         return;
     }
 
-    long long expires_in_second = stored_data.next_timeout.empty() ?
-        0 :
-        std::stoll(stored_data.next_timeout) - std::time(nullptr);
+    long long expires_in_second = stored_data.next_timeout.empty() ? 0 : std::stoll(stored_data.next_timeout) - std::time(nullptr);
     if (my_pid == stored_data.master_pid) {
         enqueue_refresh();
         return;
@@ -108,11 +93,7 @@ void UserAccountCommunicationTokenBase::on_token_timer()
     // token could be either already new -> we want to start using it now
     const auto prior_expiration_secs = std::max(m_last_token_duration_seconds / 24, 10);
     if (expires_in_second >= 0 && expires_in_second > prior_expiration_secs) {
-        SPDLOG_INFO(
-            "Current token has different PID - expiration is {} while longest expected was {}. Using this token.",
-            expires_in_second,
-            prior_expiration_secs
-        );
+        SPDLOG_INFO("Current token has different PID - expiration is {} while longest expected was {}. Using this token.", expires_in_second, prior_expiration_secs);
         set_tokens(
             stored_data.access_token,
             stored_data.refresh_token,
@@ -149,9 +130,7 @@ void UserAccountCommunicationTokenBase::on_slave_read_timer()
         return;
     }
 
-    long long expires_in_second = stored_data.next_timeout.empty() ?
-        0 :
-        std::stoll(stored_data.next_timeout) - std::time(nullptr);
+    long long expires_in_second = stored_data.next_timeout.empty() ? 0 : std::stoll(stored_data.next_timeout) - std::time(nullptr);
     if (stored_data.access_token != current_access_token) {
         // consider stored_data as renewed token from master
         SPDLOG_INFO("Token in store seems to be new - using it.");
@@ -173,24 +152,15 @@ void UserAccountCommunicationTokenBase::on_slave_read_timer()
     enqueue_refresh_race({});
 }
 
-void UserAccountCommunicationTokenBase::set_tokens(
-    const std::string& access_token,
-    const std::string& refresh_token,
-    const std::string& shared_session_key,
-    const std::string& next_token_timeout
-)
+void UserAccountCommunicationTokenBase::
+    set_tokens(const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, const std::string& next_token_timeout)
 {
     stop_token_timers();
     long long next = next_token_timeout.empty() ? 0 : std::stoll(next_token_timeout);
     set_tokens_to_session(access_token, refresh_token, shared_session_key, next);
 }
 
-void UserAccountCommunicationTokenBase::set_tokens_to_session(
-    const std::string& access_token,
-    const std::string& refresh_token,
-    const std::string& shared_session_key,
-    long long next_token_timeout
-)
+void UserAccountCommunicationTokenBase::set_tokens_to_session(const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, long long next_token_timeout)
 {
     m_session.set_tokens(access_token, refresh_token, shared_session_key, next_token_timeout);
 }
@@ -228,31 +198,32 @@ void UserAccountCommunicationTokenBase::stop_all_timers()
 
 void UserAccountCommunicationTokenBase::init_session_thread()
 {
-    m_polling_timer_id = Platform::PlatformServices::instance().timer_queue().set_timer(
-        std::chrono::milliseconds(10'000),
-        std::bind(&UserAccountCommunicationTokenBase::on_polling_timer, this),
-        false
-    );
+    m_polling_timer_id = Platform::PlatformServices::instance().timer_queue().set_timer(std::chrono::milliseconds(10'000), std::bind(&UserAccountCommunicationTokenBase::on_polling_timer, this), false);
 
-    m_thread = JThread::JThread([&](JThread::StopToken stop_token) {
-        for (;;) {
-            {
-                std::unique_lock<std::mutex> lck(m_thread_stop_mutex);
-                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(88'888), [this, stop_token] {
-                    return stop_token.stop_requested() || m_thread_wakeup;
-                });
+    m_thread = JThread::JThread(
+        [&](JThread::StopToken stop_token)
+        {
+            for (;;) {
+                {
+                    std::unique_lock<std::mutex> lck(m_thread_stop_mutex);
+                    m_thread_stop_condition.wait_for(
+                        lck,
+                        std::chrono::seconds(88'888),
+                        [this, stop_token] { return stop_token.stop_requested() || m_thread_wakeup; }
+                    );
+                }
+                if (stop_token.stop_requested())
+                    // Stop the worker thread.
+                    break;
+                // Do not process_action_queue if window is not active and thread was not forced to wakeup
+                if (!m_window_is_active && !m_thread_wakeup) {
+                    continue;
+                }
+                m_thread_wakeup = false;
+                m_session.process_action_queue();
             }
-            if (stop_token.stop_requested())
-                // Stop the worker thread.
-                break;
-            // Do not process_action_queue if window is not active and thread was not forced to wakeup
-            if (!m_window_is_active && !m_thread_wakeup) {
-                continue;
-            }
-            m_thread_wakeup = false;
-            m_session.process_action_queue();
         }
-    });
+    );
 }
 
 void UserAccountCommunicationTokenBase::do_clear(bool notify_owner)
@@ -276,7 +247,7 @@ void UserAccountCommunicationTokenBase::on_username_changed(const std::string& u
     if (!at_print.empty())
         at_print = at_print.substr(0, 5) + "..." + at_print.substr(at_print.size() - 5);
     SPDLOG_INFO("{} access_token: {}", __FUNCTION__, (username.empty() ? "" : at_print));
-    
+
     TokenStore::StoreData stored_data{
         m_session.get_access_token(),
         m_session.get_refresh_token(),
@@ -353,9 +324,7 @@ void UserAccountCommunicationTokenBase::on_race_lost(const std::string& body)
         return;
     }
 
-    long long expires_in_second      = stored_data.next_timeout.empty() ?
-             0 :
-             std::stoll(stored_data.next_timeout) - std::time(nullptr);
+    long long expires_in_second = stored_data.next_timeout.empty() ? 0 : std::stoll(stored_data.next_timeout) - std::time(nullptr);
     const auto prior_expiration_secs = std::max(m_last_token_duration_seconds / 24, 10);
     if (expires_in_second > 0 && expires_in_second > prior_expiration_secs) {
         SPDLOG_INFO("Token is alive - using it.");
@@ -391,9 +360,7 @@ void UserAccountCommunicationTokenBase::on_after_race_lost_timer()
         return;
     }
 
-    long long expires_in_second      = stored_data.next_timeout.empty() ?
-             0 :
-             std::stoll(stored_data.next_timeout) - std::time(nullptr);
+    long long expires_in_second = stored_data.next_timeout.empty() ? 0 : std::stoll(stored_data.next_timeout) - std::time(nullptr);
     const auto prior_expiration_secs = std::max(m_last_token_duration_seconds / 24, 10);
     if (expires_in_second > 0 && expires_in_second > prior_expiration_secs) {
         SPDLOG_INFO("Token is alive - using it.");
@@ -416,9 +383,7 @@ void UserAccountCommunicationTokenBase::on_read_token_store_message()
     bool tokens_loaded = TokenStore::load_tokens(stored_data);
     if (!tokens_loaded || stored_data.refresh_token.empty()) {
         SPDLOG_INFO("Store is empty - logging out.");
-        do_clear(
-            false
-        ); // The false here is important, we do not want to notify other instances - we were just notified.
+        do_clear(false); // The false here is important, we do not want to notify other instances - we were just notified.
         return;
     }
 
@@ -428,9 +393,7 @@ void UserAccountCommunicationTokenBase::on_read_token_store_message()
         return;
     }
 
-    long long expires_in_second      = stored_data.next_timeout.empty() ?
-             0 :
-             std::stoll(stored_data.next_timeout) - std::time(nullptr);
+    long long expires_in_second = stored_data.next_timeout.empty() ? 0 : std::stoll(stored_data.next_timeout) - std::time(nullptr);
     const auto prior_expiration_secs = std::max(m_last_token_duration_seconds / 24, 10);
     if (expires_in_second > 0) {
         SPDLOG_INFO("Token is alive - using it.");
@@ -459,12 +422,8 @@ void UserAccountCommunicationTokenBase::request_refresh()
 
     // Here we need to count with situation when token was renewed in m_session but was not yet stored.
     // Then store token is not valid - it should has earlier expiration
-    long long expires_in_second = stored_data.next_timeout.empty() ?
-        0 :
-        std::stoll(stored_data.next_timeout) - std::time(nullptr);
-    if (stored_data.access_token != current_access_token
-        && expires_in_second > 0
-        && expires_in_second > m_next_token_refresh_at - std::time(nullptr))
+    long long expires_in_second = stored_data.next_timeout.empty() ? 0 : std::stoll(stored_data.next_timeout) - std::time(nullptr);
+    if (stored_data.access_token != current_access_token && expires_in_second > 0 && expires_in_second > m_next_token_refresh_at - std::time(nullptr))
     {
         SPDLOG_INFO("Found usable token. Expires in {}", expires_in_second);
         set_tokens(

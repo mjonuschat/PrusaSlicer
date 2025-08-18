@@ -39,13 +39,10 @@ inline bool operator==(const DriveData& lhs, const DriveData& rhs)
     return lhs.path == rhs.path;
 }
 
-inline std::vector<DriveData>::const_iterator find_drive(
-    const std::vector<DriveData>& sorted_drives,
-    const boost::filesystem::path& p
-)
+inline std::vector<DriveData>::const_iterator
+find_drive(const std::vector<DriveData>& sorted_drives, const boost::filesystem::path& p)
 {
-    auto is_ancestor =
-        [](const boost::filesystem::path& base, const boost::filesystem::path& path_to_check)
+    auto is_ancestor = [](const boost::filesystem::path& base, const boost::filesystem::path& path_to_check)
     {
         auto base_it = base.begin();
         auto path_it = path_to_check.begin();
@@ -74,10 +71,8 @@ inline std::vector<DriveData>::const_iterator find_drive(
 /**
  * @brief Returns vector of added and vector of removed drives.
  */
-inline std::pair<std::vector<DriveData>, std::vector<DriveData>> get_drive_changes(
-    const std::vector<DriveData>& sorted_old_drives,
-    const std::vector<DriveData>& sorted_new_drives
-)
+inline std::pair<std::vector<DriveData>, std::vector<DriveData>>
+get_drive_changes(const std::vector<DriveData>& sorted_old_drives, const std::vector<DriveData>& sorted_new_drives)
 {
     std::vector<DriveData> added;
     std::vector<DriveData> deleted;

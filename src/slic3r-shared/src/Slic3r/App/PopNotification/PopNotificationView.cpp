@@ -15,11 +15,7 @@ constexpr int TotalWidth = 400;
 constexpr int MinHeight  = 40;
 constexpr int MaxHeight  = 200;
 
-PopNotificationView::PopNotificationView(
-    size_t index,
-    const PopNotificationData& data,
-    PopNotificationObservableList& notification_list
-) :
+PopNotificationView::PopNotificationView(size_t index, const PopNotificationData& data, PopNotificationObservableList& notification_list) :
     Biz::DataObserver<PopNotificationData>(index, data),
     Yoga::Window("PopNotification"),
     m_notification_list(notification_list),
@@ -101,34 +97,26 @@ void PopNotificationView::on_data_update()
 
     } break;
     case PopNotificationLayout::HeaderText: {
-        const auto* layout_data = std::get_if<PopNotificationLayoutHeaderText>(
-            &m_state->layout_variant()
-        );
+        const auto* layout_data = std::get_if<PopNotificationLayoutHeaderText>(&m_state->layout_variant());
         ASSERT(layout_data);
         update_header(layout_data->header);
         update_text(layout_data->text);
     } break;
     case PopNotificationLayout::TextButtons: {
-        const auto* layout_data = std::get_if<PopNotificationLayoutTextButtons>(
-            &m_state->layout_variant()
-        );
+        const auto* layout_data = std::get_if<PopNotificationLayoutTextButtons>(&m_state->layout_variant());
         ASSERT(layout_data);
         update_text(layout_data->text);
         update_buttons(layout_data->buttons);
     } break;
     case PopNotificationLayout::HeaderTextButtons: {
-        const auto* layout_data = std::get_if<PopNotificationLayoutHeaderTextButtons>(
-            &m_state->layout_variant()
-        );
+        const auto* layout_data = std::get_if<PopNotificationLayoutHeaderTextButtons>(&m_state->layout_variant());
         ASSERT(layout_data);
         update_header(layout_data->header);
         update_text(layout_data->text);
         update_buttons(layout_data->buttons);
     } break;
     case PopNotificationLayout::TextProgress: {
-        const auto* layout_data = std::get_if<PopNotificationLayoutTextProgress>(
-            &m_state->layout_variant()
-        );
+        const auto* layout_data = std::get_if<PopNotificationLayoutTextProgress>(&m_state->layout_variant());
         ASSERT(layout_data);
         update_text(layout_data->text);
         update_progress(layout_data->progress);
@@ -169,10 +157,7 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
     right_column->set_min_size({25, MinHeight});
 
     mid_column->set_self_align(YGAlignStretch);
-    Yoga::LayoutButton* close_button = right_column->emplace_back<Yoga::LayoutButton>(
-        "",
-        Render::Icon::PrintIdle
-    );
+    Yoga::LayoutButton* close_button = right_column->emplace_back<Yoga::LayoutButton>("", Render::Icon::PrintIdle);
     close_button->set_min_size({20, 20});
     close_button->set_max_size({20, 20});
     close_button->callbacks().action = [this]()
@@ -277,9 +262,7 @@ void PopNotificationView::layout_text_buttons()
 
 void PopNotificationView::layout_header_text_buttons()
 {
-    const auto* layout_data = std::get_if<PopNotificationLayoutHeaderTextButtons>(
-        &m_state->layout_variant()
-    );
+    const auto* layout_data = std::get_if<PopNotificationLayoutHeaderTextButtons>(&m_state->layout_variant());
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
     mid_column->set_padding(5.);
@@ -314,9 +297,7 @@ void PopNotificationView::layout_header_text_buttons()
 
 void PopNotificationView::layout_text_progress()
 {
-    const auto* layout_data = std::get_if<PopNotificationLayoutTextProgress>(
-        &m_state->layout_variant()
-    );
+    const auto* layout_data = std::get_if<PopNotificationLayoutTextProgress>(&m_state->layout_variant());
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
     mid_column->set_padding(5.);

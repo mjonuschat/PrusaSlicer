@@ -51,11 +51,6 @@ struct EjectNotificationData
 };
 
 // Define the variant type alias.
-using PopNotificationDataVariant = std::variant<
-    DefaultNotificationData,
-    JobProgressNotificationData,
-    SlicingProgressNotificationData,
-    PrintHostProgressNotificationData,
-    EjectNotificationData>;
+using PopNotificationDataVariant = std::variant<DefaultNotificationData, JobProgressNotificationData, SlicingProgressNotificationData, PrintHostProgressNotificationData, EjectNotificationData>;
 
 } // namespace Slic3r::App::PopNotification

@@ -5,12 +5,7 @@
 
 namespace Slic3r::Biz::PrintHost {
 
-PrintHostJob::PrintHostJob(
-    IPrintHostJobCallbacks* owner,
-    size_t id,
-    PrintHostConfig config,
-    PrintHostJobData data
-) :
+PrintHostJob::PrintHostJob(IPrintHostJobCallbacks* owner, size_t id, PrintHostConfig config, PrintHostJobData data) :
     m_owner(owner),
     m_id(id),
     m_print_host(create_print_host(std::move(config), std::move(data))),
@@ -34,46 +29,46 @@ void PrintHostJob::start()
         return;
     }
 
-    m_thread = JThread::JThread([&](JThread::StopToken stop_token) {
-        for (const auto& dep : m_dependencies) {
-            dep->get_future().wait(); // Wait for dependency to finish
-        }
-        m_owner->on_job_progress(m_id, 0); // Indicate the upload is starting
-        std::string filename(m_print_host->upload_data().dest_path.filename().string());
-        this->on_info_fn("filename", std::move(filename));
-        bool success = m_print_host->perform(
-            [this, stop_token](Network::IHttp::Progress progress, bool& cancel) {
-                this->on_progress_fn(std::move(progress), cancel);
-                if (stop_token.stop_requested())
-                    cancel = true;
-            },
-            [this, stop_token](Network::IHttp::Retry retry, bool& cancel) {
-                this->on_retry_fn(std::move(retry), cancel);
-                if (stop_token.stop_requested())
-                    cancel = true;
-            },
-            [this](std::string error) { this->on_error_fn(std::move(error)); },
-            [this](std::string tag, std::string host) {
-                this->on_info_fn(std::move(tag), std::move(host));
+    m_thread = JThread::JThread(
+        [&](JThread::StopToken stop_token)
+        {
+            for (const auto& dep : m_dependencies) {
+                dep->get_future().wait(); // Wait for dependency to finish
             }
+            m_owner->on_job_progress(m_id, 0); // Indicate the upload is starting
+            std::string filename(m_print_host->upload_data().dest_path.filename().string());
+            this->on_info_fn("filename", std::move(filename));
+            bool success = m_print_host->perform(
+                [this, stop_token](Network::IHttp::Progress progress, bool& cancel)
+                {
+                    this->on_progress_fn(std::move(progress), cancel);
+                    if (stop_token.stop_requested())
+                        cancel = true;
+                },
+                [this, stop_token](Network::IHttp::Retry retry, bool& cancel)
+                {
+                    this->on_retry_fn(std::move(retry), cancel);
+                    if (stop_token.stop_requested())
+                        cancel = true;
+                },
+                [this](std::string error) { this->on_error_fn(std::move(error)); },
+                [this](std::string tag, std::string host)
+                { this->on_info_fn(std::move(tag), std::move(host)); }
 
-        );
-        m_promise.set_value();
+            );
+            m_promise.set_value();
 
-        if (success) {
-            m_owner->on_job_progress(m_id, 100);
+            if (success) {
+                m_owner->on_job_progress(m_id, 100);
+            }
+            m_owner->on_job_done(m_id);
         }
-        m_owner->on_job_done(m_id);
-    });
+    );
 }
 
 void PrintHostJob::on_progress_fn(Network::IHttp::Progress&& progress, bool& cancel)
 {
-    SPDLOG_INFO(
-        "PrintHostJob::on_progress_fn id:{} progress: {}",
-        std::to_string(m_id),
-        progress.to_string()
-    );
+    SPDLOG_INFO("PrintHostJob::on_progress_fn id:{} progress: {}", std::to_string(m_id), progress.to_string());
     int prg = (progress.ultotal > 0 ? 100 * progress.ulnow / progress.ultotal : 0);
     m_owner->on_job_progress(m_id, prg);
 }

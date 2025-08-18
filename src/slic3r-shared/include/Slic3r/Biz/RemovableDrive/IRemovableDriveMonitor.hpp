@@ -29,16 +29,12 @@ public:
     /**
      * @brief Returns path to removable drive if any exists. Prefarably one with preferred_path.
      */
-    virtual boost::filesystem::path get_path_on_removable_drive(
-        const boost::filesystem::path& preferred_path
-    ) = 0;
+    virtual boost::filesystem::path get_path_on_removable_drive(const boost::filesystem::path& preferred_path) = 0;
 
     /**
      * @brief Returns path to removable drive if "path" is on removable.
      */
-    virtual boost::filesystem::path get_removable_drive_path_from_path(
-        const boost::filesystem::path& path
-    ) = 0;
+    virtual boost::filesystem::path get_removable_drive_path_from_path(const boost::filesystem::path& path) = 0;
 
     /**
      * @brief Returns number of removable drives.

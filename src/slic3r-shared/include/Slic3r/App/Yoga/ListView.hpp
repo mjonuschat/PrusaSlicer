@@ -23,10 +23,8 @@ public:
 
     std::unique_ptr<View> create(size_t index, const Data& data)
     {
-        return std::apply(
-            [&](auto&&... args) { return std::make_unique<View>(index, data, args...); },
-            m_args
-        );
+        return std::
+            apply([&](auto&&... args) { return std::make_unique<View>(index, data, args...); }, m_args);
     }
 
 private:
@@ -140,15 +138,12 @@ public:
         set_source_list(Biz::WeakerPointer<Biz::IObservableList<Data>>{source_list});
     }
 
-    template <
-        typename Derived,
-        typename = std::enable_if_t<std::is_base_of_v<Biz::IObservableList<Data>, Derived>>>
+    template <typename Derived, typename = std::enable_if_t<std::is_base_of_v<Biz::IObservableList<Data>, Derived>>>
     void set_source_list(const std::weak_ptr<Derived>& source_list)
     {
         set_source_list(
-            Biz::WeakerPointer<Biz::IObservableList<Data>>{
-                std::static_pointer_cast<Biz::IObservableList<Data>>(source_list.lock())
-            }
+            Biz::WeakerPointer<Biz::IObservableList<Data>>{std::static_pointer_cast<
+                Biz::IObservableList<Data>>(source_list.lock())}
         );
     }
 

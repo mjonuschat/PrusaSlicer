@@ -17,9 +17,6 @@ enum class RemovableDriveStatus
 class IRemovableDriveStatusListener
 {
 public:
-    virtual void on_removable_drive_status_changed(
-        const boost::filesystem::path& drive_path,
-        RemovableDriveStatus status
-    ) = 0;
+    virtual void on_removable_drive_status_changed(const boost::filesystem::path& drive_path, RemovableDriveStatus status) = 0;
 };
 } // namespace Slic3r::Biz::RemovableDrive

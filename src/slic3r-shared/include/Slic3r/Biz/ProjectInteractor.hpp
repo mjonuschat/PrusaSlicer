@@ -54,11 +54,7 @@ class ProjectInteractor final :
     public WithListeners<ISelectedProjectChangedListener, IProjectsChangedListener, ISelectedConfigContainerChangedListener>
 {
 public:
-    ProjectInteractor(
-        Domain::Workbench& workbench,
-        Platform::IMainThreadDispatcher& dispatcher,
-        Biz::Slicing::IThumbnailImageGenerator& thumbnail_image_generator
-    ) :
+    ProjectInteractor(Domain::Workbench& workbench, Platform::IMainThreadDispatcher& dispatcher, Biz::Slicing::IThumbnailImageGenerator& thumbnail_image_generator) :
         m_workbench(workbench),
         m_preset_interactor(workbench),
         m_scene_interactor(workbench),
@@ -84,8 +80,7 @@ public:
         m_slicing_interactor.set_listener<Slicing::ISLAObjectListener>(&m_sla_object_cache);
         m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
         m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
-        m_app_instance_message_handler
-            ->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
+        m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
     }
 
     const Domain::Workbench& workbench() const
@@ -93,10 +88,7 @@ public:
         return m_workbench;
     }
 
-    void initialize_bed(
-        Domain::ConfigContainer& config_container,
-        Domain::BedContainer& bed_container
-    );
+    void initialize_bed(Domain::ConfigContainer& config_container, Domain::BedContainer& bed_container);
 
     /**
      * @name Project manipulation
@@ -198,17 +190,13 @@ public:
     const Domain::ConfigContainer& selected_config_container() const
     {
         DEBUG_ASSERT(m_selection.config_container_id != Domain::INVALID_ID);
-        return *DEBUG_ASSERT_VAL(
-            selected_project().find_config_container(m_selection.config_container_id)
-        );
+        return *DEBUG_ASSERT_VAL(selected_project().find_config_container(m_selection.config_container_id));
     }
 
     Domain::ConfigContainer& selected_config_container()
     {
         DEBUG_ASSERT(m_selection.config_container_id != Domain::INVALID_ID);
-        return *DEBUG_ASSERT_VAL(
-            selected_project().find_config_container(m_selection.config_container_id)
-        );
+        return *DEBUG_ASSERT_VAL(selected_project().find_config_container(m_selection.config_container_id));
     }
 
     /** @} */
@@ -285,10 +273,7 @@ public:
      * @name ISelectedBedInstancesChangedListener interface implementation
      * @{
      */
-    void on_selected_bed_instances_changed(
-        Domain::SelectionId project_id,
-        const Scene::BedSelection& selection
-    ) override;
+    void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Scene::BedSelection& selection) override;
     /** @} */
 
     /**
@@ -333,11 +318,8 @@ public:
      */
     void on_user_account_id_success(bool is_refresh, const std::string& username) override
     {
-        m_app_instance_message_handler->multicast_message(
-            "STORE_READ",
-            {},
-            Biz::Platform::PlatformServices::instance().app_hash()
-        );
+        m_app_instance_message_handler
+            ->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
     }
 
     /**
@@ -347,11 +329,8 @@ public:
      */
     void on_user_account_logged_out() override
     {
-        m_app_instance_message_handler->multicast_message(
-            "STORE_READ",
-            {},
-            Biz::Platform::PlatformServices::instance().app_hash()
-        );
+        m_app_instance_message_handler
+            ->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
     }
 
     void on_user_account_will_refresh() override

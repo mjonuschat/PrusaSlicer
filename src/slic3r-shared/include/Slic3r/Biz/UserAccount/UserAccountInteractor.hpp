@@ -13,9 +13,7 @@ namespace Slic3r::Biz::UserAccount {
 /**
  * @brief Hub for all communication with UserAccount.
  */
-class UserAccountInteractor final :
-    public IUserAccountSessionListener,
-    public WithListeners<IUserAccountListener>
+class UserAccountInteractor final : public IUserAccountSessionListener, public WithListeners<IUserAccountListener>
 {
 public:
     UserAccountInteractor(Platform::IMainThreadDispatcher& dispatcher);
@@ -39,11 +37,8 @@ public:
      * Use case: User selects "log in" - this function is called to get url to be displayed in dialog.
      * There user selects "Google" - This function is called with "Google" as service and returns url to be displayed in external browser.
      */
-    std::string on_log_in_request(
-        const std::string& lang_code,
-        bool generate_code_verifier,
-        const std::string& service = std::string()
-    );
+    std::string
+    on_log_in_request(const std::string& lang_code, bool generate_code_verifier, const std::string& service = std::string());
 
     /**
      * @brief Passes code from browser to finish logging in.

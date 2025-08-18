@@ -8,10 +8,7 @@
 
 namespace Slic3r::App::PopNotification {
 
-using PopNotificationViewFactory = Yoga::ViewFactory<
-    PopNotificationView,
-    PopNotificationData,
-    PopNotificationObservableList&>;
+using PopNotificationViewFactory = Yoga::ViewFactory<PopNotificationView, PopNotificationData, PopNotificationObservableList&>;
 using PopNotificationBaseListView = Yoga::ListView<PopNotificationView, PopNotificationData, PopNotificationViewFactory>;
 
 class PopNotificationListView final : public PopNotificationBaseListView

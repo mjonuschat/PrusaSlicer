@@ -9,17 +9,17 @@
 namespace Slic3r::Biz::UserAccount {
 
 /**
- * @brief Manages token refresh with respect to multiple instances using same token. 
+ * @brief Manages token refresh with respect to multiple instances using same token.
  */
 class UserAccountCommunicationTokenBase
 {
 public:
-	UserAccountCommunicationTokenBase(Platform::IMainThreadDispatcher& dispatcher);
-	~UserAccountCommunicationTokenBase();
+    UserAccountCommunicationTokenBase(Platform::IMainThreadDispatcher& dispatcher);
+    ~UserAccountCommunicationTokenBase();
 
-	UserAccountCommunicationTokenBase(const UserAccountCommunicationTokenBase& ) = delete;
-    UserAccountCommunicationTokenBase(UserAccountCommunicationTokenBase&& other) = delete;
-    UserAccountCommunicationTokenBase& operator=(const UserAccountCommunicationTokenBase& ) = delete;
+    UserAccountCommunicationTokenBase(const UserAccountCommunicationTokenBase&)            = delete;
+    UserAccountCommunicationTokenBase(UserAccountCommunicationTokenBase&& other)           = delete;
+    UserAccountCommunicationTokenBase& operator=(const UserAccountCommunicationTokenBase&) = delete;
     UserAccountCommunicationTokenBase& operator=(UserAccountCommunicationTokenBase&& other) = delete;
 
     /**
@@ -38,7 +38,6 @@ public:
      */
     void on_race_lost(const std::string& body);
 
-    
     void add_session_listener(IUserAccountSessionListener* listener)
     {
         m_session.add_listener<IUserAccountSessionListener>(listener);
@@ -48,20 +47,24 @@ public:
      * @brief Called when other instance changed tokens in store.
      */
     void on_read_token_store_message();
-    
+
     /**
      * @brief This function is called when Printables requests new token - same token as we have now wont do.
      */
     void request_refresh();
 
-    std::string username() const { return m_username; }
+    std::string username() const
+    {
+        return m_username;
+    }
 
-    void cancel_ongoing_session_action() 
+    void cancel_ongoing_session_action()
     {
         m_session.cancel_ongoing_session_action();
     }
+
 protected:
-    UserAccountSession 		m_session;
+    UserAccountSession m_session;
 
     /**
      * @brief Logs out. All tokens are thrown out and deleted from store. All timers are stopped.
@@ -73,8 +76,7 @@ protected:
      */
     void wakeup_session_thread();
 
-private:   
-
+private:
     void on_token_timer();
     void on_slave_read_timer();
     void on_polling_timer();
@@ -100,18 +102,16 @@ private:
     Platform::TimerQueue::TimerID m_slave_read_timer_id;
     Platform::TimerQueue::TimerID m_after_race_lost_timer_id;
 
-    int m_last_token_duration_seconds {0};
-    std::time_t m_next_token_refresh_at {0};
+    int m_last_token_duration_seconds{0};
+    std::time_t m_next_token_refresh_at{0};
 
     JThread::JThread m_thread;
-    std::mutex                              m_thread_stop_mutex;
-    std::condition_variable                 m_thread_stop_condition;
-    bool                                    m_thread_wakeup{ false };
-    bool                                    m_window_is_active{ true };
+    std::mutex m_thread_stop_mutex;
+    std::condition_variable m_thread_stop_condition;
+    bool m_thread_wakeup{false};
+    bool m_window_is_active{true};
 
     std::string refresh_token_from_store;
-      
-    
 };
 
-}
+} // namespace Slic3r::Biz::UserAccount

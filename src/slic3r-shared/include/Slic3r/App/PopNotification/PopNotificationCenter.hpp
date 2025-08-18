@@ -83,10 +83,7 @@ public:
     void on_print_host_info(size_t id, const std::string& tag, const std::string& msg) override;
 
     // Removable Drive
-    void on_removable_drive_status_changed(
-        const boost::filesystem::path& drive_path,
-        Biz::RemovableDrive::RemovableDriveStatus status
-    ) override;
+    void on_removable_drive_status_changed(const boost::filesystem::path& drive_path, Biz::RemovableDrive::RemovableDriveStatus status) override;
 
     // User account
     void on_user_account_id_success(bool is_refresh, const std::string& username) override;

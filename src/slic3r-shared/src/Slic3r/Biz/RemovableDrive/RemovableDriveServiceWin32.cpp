@@ -26,20 +26,13 @@ bool eject_inner(const boost::filesystem::path& path)
     std::wstring wpath = path.wstring();
     HRESULT hr         = CoInitialize(nullptr);
     if (!SUCCEEDED(hr)) {
-        SPDLOG_ERROR(
-            "Ejecting of {} has failed: Failed to initialize COM. Error code: {}",
-            path.string(),
-            hr
-        );
+        SPDLOG_ERROR("Ejecting of {} has failed: Failed to initialize COM. Error code: {}", path.string(), hr);
         return false;
     }
     CComPtr<IShellDispatch> pShellDisp;
     hr = pShellDisp.CoCreateInstance(CLSID_Shell, nullptr, CLSCTX_INPROC_SERVER);
     if (!SUCCEEDED(hr)) {
-        SPDLOG_ERROR(
-            "Ejecting of {} has failed: Attempt to get Shell pointer has failed.",
-            path.string()
-        );
+        SPDLOG_ERROR("Ejecting of {} has failed: Attempt to get Shell pointer has failed.", path.string());
         CoUninitialize();
         return false;
     }
@@ -50,10 +43,7 @@ bool eject_inner(const boost::filesystem::path& path)
     vtDrives.lVal = ssfDRIVES;
     hr            = pShellDisp->NameSpace(vtDrives, &pFolder);
     if (!SUCCEEDED(hr)) {
-        SPDLOG_ERROR(
-            "Ejecting of {} has failed: Attempt to create Namespace has failed.",
-            path.string()
-        );
+        SPDLOG_ERROR("Ejecting of {} has failed: Attempt to create Namespace has failed.", path.string());
         CoUninitialize();
         return false;
     }
@@ -91,13 +81,16 @@ void RemovableDriveService::eject_in_thread(const boost::filesystem::path& path)
         m_eject_thread.join();
     }
 
-    m_eject_thread = JThread::JThread([this, path](JThread::StopToken stop_token) {
-        bool res = eject_inner(path);
-        if (!res) {
-            dispatch_status_on_main_thread(path, RemovableDriveStatus::Failed);
+    m_eject_thread = JThread::JThread(
+        [this, path](JThread::StopToken stop_token)
+        {
+            bool res = eject_inner(path);
+            if (!res) {
+                dispatch_status_on_main_thread(path, RemovableDriveStatus::Failed);
+            }
+            // Do not dispatch Removed here, it will be confirmed by system callback.
         }
-        // Do not dispatch Removed here, it will be confirmed by system callback.
-    });
+    );
 }
 
 } // namespace Slic3r::Biz::RemovableDrive

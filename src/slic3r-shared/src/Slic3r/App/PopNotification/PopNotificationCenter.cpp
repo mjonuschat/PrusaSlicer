@@ -64,8 +64,9 @@ PopNotificationDataIt PopNotificationObservableList::erase_notification(PopNotif
     const size_t index = std::distance(m_notifications.begin(), it);
     it                 = m_notifications.erase(it);
 
-    invoke_listeners<Biz::IListObserver<PopNotificationData>>([&](auto* l)
-                                                              { l->on_removed({index}); });
+    invoke_listeners<Biz::IListObserver<PopNotificationData>>(
+        [&](auto* l) { l->on_removed({index}); }
+    );
     return it;
 }
 
@@ -73,8 +74,9 @@ void PopNotificationObservableList::notification_updated(PopNotificationDataIt i
 {
     ASSERT(it != m_notifications.end());
     const size_t index = std::distance(m_notifications.begin(), it);
-    invoke_listeners<Biz::IListObserver<PopNotificationData>>([&](auto* l)
-                                                              { l->on_updated({index}); });
+    invoke_listeners<Biz::IListObserver<PopNotificationData>>(
+        [&](auto* l) { l->on_updated({index}); }
+    );
 }
 
 void PopNotificationObservableList::set_notification_timeout(PopNotificationDataIt it, size_t seconds)
@@ -167,9 +169,7 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
                 if (notif_ptr->type() != PopNotificationType::JobProgress) {
                     return false;
                 }
-                const auto* job_data = std::get_if<JobProgressNotificationData>(
-                    &notif_ptr->additional_data()
-                );
+                const auto* job_data = std::get_if<JobProgressNotificationData>(&notif_ptr->additional_data());
                 return job_data && job_data->job_name == job_name;
             }
         );
@@ -177,8 +177,7 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
         if (it != m_notifications.end()) {
             PopNotificationDataPtr& notif_ptr = *it;
             auto* job_data = std::get_if<JobProgressNotificationData>(&notif_ptr->additional_data());
-            if (job_data->progress.status != JobStatus::Finished
-                && progress.status == JobStatus::Finished)
+            if (job_data->progress.status != JobStatus::Finished && progress.status == JobStatus::Finished)
             {
                 set_notification_timeout(it, 5);
             }
@@ -186,10 +185,7 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
 
             if (progress.percent) {
                 int perc = (int) (progress.percent.value().value * 100);
-                notif_ptr->set_layout(
-                    PopNotificationLayout::TextProgress,
-                    PopNotificationLayoutTextProgress(text, perc)
-                );
+                notif_ptr->set_layout(PopNotificationLayout::TextProgress, PopNotificationLayoutTextProgress(text, perc));
             } else {
                 notif_ptr->set_layout(PopNotificationLayout::Text, PopNotificationLayoutText(text));
             }
@@ -249,10 +245,15 @@ void PopNotificationCenter::on_status_changed(const Biz::Slicing::Status status,
         }
         job_data->status = status;
 
-        (*it)->set_layout(PopNotificationLayout::HeaderText, PopNotificationLayoutHeaderText("Slicing", slicing_status_to_string(status.code)));
+        (*it)->set_layout(
+            PopNotificationLayout::HeaderText,
+            PopNotificationLayoutHeaderText("Slicing", slicing_status_to_string(status.code))
+        );
         notification_updated(it);
     } else {
-        add_notification(PopNotificationFactory::create_slicing_notification(slicing_status_to_string(status.code), status, slicing_id));
+        add_notification(
+            PopNotificationFactory::create_slicing_notification(slicing_status_to_string(status.code), status, slicing_id)
+        );
     }
 }
 
@@ -267,10 +268,7 @@ enum class  PrintHostJobStatus
 };
 */
 
-PopNotificationLayoutVariant upload_layout(
-    const PrintHostProgressNotificationData& data,
-    PopNotificationLayout& ret_type
-)
+PopNotificationLayoutVariant upload_layout(const PrintHostProgressNotificationData& data, PopNotificationLayout& ret_type)
 {
     switch (data.status) {
     case PrintHostJobStatus::None: {
@@ -325,12 +323,7 @@ PopNotificationLayoutVariant upload_layout(
         } else if (data.filename.empty()) {
             msg = fmt::format("Uploading to {} has Failed. {}", data.target, data.additional_msg);
         } else {
-            msg = fmt::format(
-                "Uploading {} to {} has Failed. {}",
-                data.filename,
-                data.target,
-                data.additional_msg
-            );
+            msg = fmt::format("Uploading {} to {} has Failed. {}", data.filename, data.target, data.additional_msg);
         }
         return PopNotificationLayoutText(std::move(msg));
     }
@@ -340,10 +333,7 @@ PopNotificationLayoutVariant upload_layout(
     return PopNotificationLayoutText("");
 }
 
-PopNotificationLayoutVariant export_layout(
-    const PrintHostProgressNotificationData& data,
-    PopNotificationLayout& ret_type
-)
+PopNotificationLayoutVariant export_layout(const PrintHostProgressNotificationData& data, PopNotificationLayout& ret_type)
 {
     switch (data.status) {
     case PrintHostJobStatus::None: {
@@ -438,10 +428,7 @@ PopNotificationLayoutVariant export_layout(
     return PopNotificationLayoutText("");
 }
 
-PopNotificationLayoutVariant print_host_layout(
-    const PrintHostProgressNotificationData& data,
-    PopNotificationLayout& ret_type
-)
+PopNotificationLayoutVariant print_host_layout(const PrintHostProgressNotificationData& data, PopNotificationLayout& ret_type)
 {
     if (data.is_upload) {
         return upload_layout(data, ret_type);
@@ -462,9 +449,7 @@ void PopNotificationCenter::on_print_host_progress(size_t print_host_id, int pro
             if (notif_ptr->type() != PopNotificationType::PrintHostProgress) {
                 return false;
             }
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(
-                &notif_ptr->additional_data()
-            );
+            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data());
             return job_data && job_data->print_host_id == print_host_id;
         }
     );
@@ -484,15 +469,7 @@ void PopNotificationCenter::on_print_host_progress(size_t print_host_id, int pro
         PopNotificationLayout layout_type;
         auto layout_variant = print_host_layout(data, layout_type);
         add_notification(
-            std::make_unique<PopNotificationData>(
-                PopNotificationFactory::next_id(),
-                PopNotificationType::PrintHostProgress,
-                PopNotificationLevel::Important,
-                0,
-                layout_type,
-                std::move(layout_variant),
-                std::move(data)
-            )
+            std::make_unique<PopNotificationData>(PopNotificationFactory::next_id(), PopNotificationType::PrintHostProgress, PopNotificationLevel::Important, 0, layout_type, std::move(layout_variant), std::move(data))
         );
     }
 }
@@ -507,9 +484,7 @@ void PopNotificationCenter::on_print_host_error(size_t print_host_id, const std:
             if (notif_ptr->type() != PopNotificationType::PrintHostProgress) {
                 return false;
             }
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(
-                &notif_ptr->additional_data()
-            );
+            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data());
             return job_data && job_data->print_host_id == print_host_id;
         }
     );
@@ -532,15 +507,7 @@ void PopNotificationCenter::on_print_host_error(size_t print_host_id, const std:
         PopNotificationLayout layout_type;
         auto layout_variant = print_host_layout(data, layout_type);
         add_notification(
-            std::make_unique<PopNotificationData>(
-                PopNotificationFactory::next_id(),
-                PopNotificationType::PrintHostProgress,
-                PopNotificationLevel::Error,
-                0,
-                layout_type,
-                std::move(layout_variant),
-                std::move(data)
-            )
+            std::make_unique<PopNotificationData>(PopNotificationFactory::next_id(), PopNotificationType::PrintHostProgress, PopNotificationLevel::Error, 0, layout_type, std::move(layout_variant), std::move(data))
         );
     }
 }
@@ -555,9 +522,7 @@ void PopNotificationCenter::on_print_host_cancel(size_t print_host_id)
             if (notif_ptr->type() != PopNotificationType::PrintHostProgress) {
                 return false;
             }
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(
-                &notif_ptr->additional_data()
-            );
+            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data());
             return job_data && job_data->print_host_id == print_host_id;
         }
     );
@@ -577,9 +542,7 @@ void PopNotificationCenter::on_print_host_done(size_t print_host_id)
             if (notif_ptr->type() != PopNotificationType::PrintHostProgress) {
                 return false;
             }
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(
-                &notif_ptr->additional_data()
-            );
+            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data());
             return job_data && job_data->print_host_id == print_host_id;
         }
     );
@@ -599,24 +562,12 @@ void PopNotificationCenter::on_print_host_done(size_t print_host_id)
         PopNotificationLayout layout_type;
         auto layout_variant = print_host_layout(data, layout_type);
         add_notification(
-            std::make_unique<PopNotificationData>(
-                PopNotificationFactory::next_id(),
-                PopNotificationType::PrintHostProgress,
-                PopNotificationLevel::Important,
-                0,
-                layout_type,
-                std::move(layout_variant),
-                std::move(data)
-            )
+            std::make_unique<PopNotificationData>(PopNotificationFactory::next_id(), PopNotificationType::PrintHostProgress, PopNotificationLevel::Important, 0, layout_type, std::move(layout_variant), std::move(data))
         );
     }
 }
 
-void PopNotificationCenter::on_print_host_info(
-    size_t print_host_id,
-    const std::string& tag,
-    const std::string& msg
-)
+void PopNotificationCenter::on_print_host_info(size_t print_host_id, const std::string& tag, const std::string& msg)
 {
     auto it = std::find_if(
         m_notifications.begin(),
@@ -626,9 +577,7 @@ void PopNotificationCenter::on_print_host_info(
             if (notif_ptr->type() != PopNotificationType::PrintHostProgress) {
                 return false;
             }
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(
-                &notif_ptr->additional_data()
-            );
+            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data());
             return job_data && job_data->print_host_id == print_host_id;
         }
     );
@@ -670,24 +619,13 @@ void PopNotificationCenter::on_print_host_info(
         PopNotificationLayout layout_type;
         auto layout_variant = print_host_layout(data, layout_type);
         add_notification(
-            std::make_unique<PopNotificationData>(
-                PopNotificationFactory::next_id(),
-                PopNotificationType::PrintHostProgress,
-                PopNotificationLevel::Important,
-                0,
-                layout_type,
-                std::move(layout_variant),
-                std::move(data)
-            )
+            std::make_unique<PopNotificationData>(PopNotificationFactory::next_id(), PopNotificationType::PrintHostProgress, PopNotificationLevel::Important, 0, layout_type, std::move(layout_variant), std::move(data))
         );
     }
 }
 
 namespace {
-std::string removable_drive_status_to_string(
-    const boost::filesystem::path& drive_path,
-    Biz::RemovableDrive::RemovableDriveStatus status
-)
+std::string removable_drive_status_to_string(const boost::filesystem::path& drive_path, Biz::RemovableDrive::RemovableDriveStatus status)
 {
     switch (status) {
     case Slic3r::Biz::RemovableDrive::RemovableDriveStatus::Inserted:
@@ -708,10 +646,7 @@ std::string removable_drive_status_to_string(
 }
 } // namespace
 
-void PopNotificationCenter::on_removable_drive_status_changed(
-    const boost::filesystem::path& drive_path,
-    Biz::RemovableDrive::RemovableDriveStatus status
-)
+void PopNotificationCenter::on_removable_drive_status_changed(const boost::filesystem::path& drive_path, Biz::RemovableDrive::RemovableDriveStatus status)
 {
     // Ignore inserted state.
     if (status == Slic3r::Biz::RemovableDrive::RemovableDriveStatus::Inserted) {
@@ -746,10 +681,7 @@ void PopNotificationCenter::on_removable_drive_status_changed(
                 set_notification_timeout(it, 10);
                 (*it)->set_level(PopNotificationLevel::Warning);
             }
-            (*it)->set_layout(
-                PopNotificationLayout::Text,
-                PopNotificationLayoutText(removable_drive_status_to_string(drive_path, status))
-            );
+            (*it)->set_layout(PopNotificationLayout::Text, PopNotificationLayoutText(removable_drive_status_to_string(drive_path, status)));
             notification_updated(it);
         }
         // Ignore Removed status if there is now previous ejecting (its not being ejected by us)
@@ -758,9 +690,7 @@ void PopNotificationCenter::on_removable_drive_status_changed(
             std::make_unique<PopNotificationData>(
                 PopNotificationFactory::next_id(),
                 PopNotificationType::Eject,
-                status != Slic3r::Biz::RemovableDrive::RemovableDriveStatus::Failed ?
-                    PopNotificationLevel::Regular :
-                    PopNotificationLevel::Warning,
+                status != Slic3r::Biz::RemovableDrive::RemovableDriveStatus::Failed ? PopNotificationLevel::Regular : PopNotificationLevel::Warning,
                 status == Slic3r::Biz::RemovableDrive::RemovableDriveStatus::Ejecting ? 0 : 10,
                 PopNotificationLayout::Text,
                 PopNotificationLayoutText(removable_drive_status_to_string(drive_path, status)),
@@ -779,15 +709,7 @@ void PopNotificationCenter::on_user_account_id_success(bool is_refresh, const st
     close_notifications_of_type(PopNotificationType::UserAccountTransientError);
 
     add_notification(
-        std::make_unique<PopNotificationData>(
-            PopNotificationFactory::next_id(),
-            PopNotificationType::UserAccountLogin,
-            PopNotificationLevel::Important,
-            10,
-            PopNotificationLayout::Text,
-            PopNotificationLayoutText(fmt::format("User {} logged in.", username)),
-            DefaultNotificationData()
-        )
+        std::make_unique<PopNotificationData>(PopNotificationFactory::next_id(), PopNotificationType::UserAccountLogin, PopNotificationLevel::Important, 10, PopNotificationLayout::Text, PopNotificationLayoutText(fmt::format("User {} logged in.", username)), DefaultNotificationData())
     );
 }
 
@@ -796,15 +718,7 @@ void PopNotificationCenter::on_user_account_logged_out()
     close_notifications_of_type(PopNotificationType::UserAccountLogin);
     close_notifications_of_type(PopNotificationType::UserAccountTransientError);
     add_notification(
-        std::make_unique<PopNotificationData>(
-            PopNotificationFactory::next_id(),
-            PopNotificationType::UserAccountLogin,
-            PopNotificationLevel::Important,
-            10,
-            PopNotificationLayout::Text,
-            PopNotificationLayoutText("User Account logged out."),
-            DefaultNotificationData()
-        )
+        std::make_unique<PopNotificationData>(PopNotificationFactory::next_id(), PopNotificationType::UserAccountLogin, PopNotificationLevel::Important, 10, PopNotificationLayout::Text, PopNotificationLayoutText("User Account logged out."), DefaultNotificationData())
     );
 }
 
@@ -812,10 +726,7 @@ void PopNotificationCenter::on_user_account_will_refresh()
 { /*unused*/
 }
 
-void PopNotificationCenter::on_user_account_action_retry(
-    const Biz::Network::IHttp::Retry& retry,
-    std::function<void(void)> cancel_callback
-)
+void PopNotificationCenter::on_user_account_action_retry(const Biz::Network::IHttp::Retry& retry, std::function<void(void)> cancel_callback)
 {
     ASSERT(cancel_callback);
     close_notifications_of_type(PopNotificationType::UserAccountLogin);

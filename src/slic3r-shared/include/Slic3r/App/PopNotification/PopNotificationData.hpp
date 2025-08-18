@@ -31,15 +31,7 @@ enum class PopNotificationLevel : int
 class PopNotificationData
 {
 public:
-    explicit PopNotificationData(
-        size_t id,
-        PopNotificationType type,
-        PopNotificationLevel level,
-        size_t duration,
-        PopNotificationLayout layout,
-        PopNotificationLayoutVariant layout_variant,
-        PopNotificationDataVariant additional_data = DefaultNotificationData()
-    ) :
+    explicit PopNotificationData(size_t id, PopNotificationType type, PopNotificationLevel level, size_t duration, PopNotificationLayout layout, PopNotificationLayoutVariant layout_variant, PopNotificationDataVariant additional_data = DefaultNotificationData()) :
         m_id(id),
         m_type(type),
         m_level(level),

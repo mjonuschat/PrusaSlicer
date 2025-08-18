@@ -8,20 +8,9 @@ void ExportPathSelect::set_wildcards(const std::string wildcard)
     m_wildcards = wildcard;
 }
 
-void ExportPathSelect::show_modal_dialog(
-    const boost::filesystem::path& default_folder,
-    const std::string& default_filename,
-    const IDialogManager::FileCallback& callback
-)
+void ExportPathSelect::show_modal_dialog(const boost::filesystem::path& default_folder, const std::string& default_filename, const IDialogManager::FileCallback& callback)
 {
-    AppServices::instance().dialog_manager().show_file_dialog(
-        FileDialogType::Save,
-        "Export as",
-        default_folder,
-        default_filename,
-        m_wildcards,
-        callback
-    );
+    AppServices::instance().dialog_manager().show_file_dialog(FileDialogType::Save, "Export as", default_folder, default_filename, m_wildcards, callback);
 }
 
 GCodeExportPathSelect::GCodeExportPathSelect(bool bgcode_compatible) : ExportPathSelect()

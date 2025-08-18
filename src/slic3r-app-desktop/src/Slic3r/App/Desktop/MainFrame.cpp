@@ -57,16 +57,7 @@ static void add_experimets_page(TabsBar* top_bar, MainFrame* main_frame)
     ScalableButton* test_btn2 = new ScalableButton(test_panel, wxID_ANY, "edit", _L("Apply"));
     test_btn2->SetFont(w_config()->bold_font());
 
-    ScalableButton* lang_selection_btn = new ScalableButton(
-        test_panel,
-        wxID_ANY,
-        "language",
-        _L("Select the language"),
-        wxDefaultSize,
-        wxDefaultPosition,
-        wxBU_EXACTFIT | wxNO_BORDER,
-        24
-    );
+    ScalableButton* lang_selection_btn = new ScalableButton(test_panel, wxID_ANY, "language", _L("Select the language"), wxDefaultSize, wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, 24);
     lang_selection_btn->SetFont(w_config()->bold_font());
 
     test_sizer->Add(test_btn, 0, wxALIGN_CENTRE_VERTICAL | wxALL, 20);
@@ -88,34 +79,42 @@ static void add_experimets_page(TabsBar* top_bar, MainFrame* main_frame)
 
     test_sizer2->Add(test_btn2, 0, wxALIGN_CENTRE_VERTICAL | wxALL, 20);
 
-    test_btn->Bind(wxEVT_BUTTON, [=](wxCommandEvent& e) {
-        main_frame->sys_color_changed();
+    test_btn->Bind(
+        wxEVT_BUTTON,
+        [=](wxCommandEvent& e)
+        {
+            main_frame->sys_color_changed();
 
-        test_btn->sys_color_changed();
-        test_btn2->sys_color_changed();
-        lang_selection_btn->sys_color_changed();
+            test_btn->sys_color_changed();
+            test_btn2->sys_color_changed();
+            lang_selection_btn->sys_color_changed();
 
-        w_config()->UpdateDarkUI(test_txt);
-        w_config()->UpdateDarkUI(test_txt2);
-        w_config()->UpdateDarkUI(edit_font);
-        w_config()->UpdateDarkUI(test_panel);
-        test_panel->Refresh();
-    });
-
-    test_btn2->Bind(wxEVT_BUTTON, [=](wxCommandEvent& e) {
-        int font_sz;
-        edit_font->GetValue().ToInt(&font_sz);
-
-        if (w_config()->normal_font().GetPointSize() != font_sz) {
-            wxFont font = w_config()->normal_font();
-            font.SetPointSize(font_sz);
-            w_config()->update_fonts(font, w_config()->em_unit());
-            w_config()->force_fonts_update(main_frame, true);
-            main_frame->update_canvas_ui_settings();
+            w_config()->UpdateDarkUI(test_txt);
+            w_config()->UpdateDarkUI(test_txt2);
+            w_config()->UpdateDarkUI(edit_font);
+            w_config()->UpdateDarkUI(test_panel);
+            test_panel->Refresh();
         }
+    );
 
-        test_panel->Layout();
-    });
+    test_btn2->Bind(
+        wxEVT_BUTTON,
+        [=](wxCommandEvent& e)
+        {
+            int font_sz;
+            edit_font->GetValue().ToInt(&font_sz);
+
+            if (w_config()->normal_font().GetPointSize() != font_sz) {
+                wxFont font = w_config()->normal_font();
+                font.SetPointSize(font_sz);
+                w_config()->update_fonts(font, w_config()->em_unit());
+                w_config()->force_fonts_update(main_frame, true);
+                main_frame->update_canvas_ui_settings();
+            }
+
+            test_panel->Layout();
+        }
+    );
 
     lang_selection_btn->Bind(wxEVT_BUTTON, [=](wxCommandEvent& e) { main_frame->select_language(); });
 
@@ -152,14 +151,18 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
     update_preset_editors();
 
 #ifndef __WXOSX__
-    this->Bind(wxEVT_DPI_CHANGED, [this](wxDPIChangedEvent& event) {
-        event.Skip();
-        m_top_bar->Rescale();
-        for (auto& [type, panel] : m_preset_editors)
-            panel->msw_rescale();
+    this->Bind(
+        wxEVT_DPI_CHANGED,
+        [this](wxDPIChangedEvent& event)
+        {
+            event.Skip();
+            m_top_bar->Rescale();
+            for (auto& [type, panel] : m_preset_editors)
+                panel->msw_rescale();
 
-        update_canvas_ui_settings();
-    });
+            update_canvas_ui_settings();
+        }
+    );
 #endif
 #endif // OLD_CODE
 
@@ -167,22 +170,21 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
     complete_and_bind_left_bar();
 
     m_tabs_bar_menus.set_account_menu_callbacks(
-        [&project_interactor]() {
+        [&project_interactor]()
+        {
             if (!project_interactor.user_account_interactor().is_logged_in()) {
                 AppServices::instance().dialog_manager().show_webview_dialog(
-                    std::make_unique<Browser::BrowserLogicLogInRedirect>(
-                        project_interactor.user_account_interactor()
-                    ),
+                    std::make_unique<Browser::BrowserLogicLogInRedirect>(project_interactor.user_account_interactor()),
                     &project_interactor
                 );
             } else {
                 project_interactor.user_account_interactor().do_log_out(true);
             }
         },
-        []() {
-        } // TODO finish with preferences options
+        []() {} // TODO finish with preferences options
         ,
-        [&project_interactor]() {
+        [&project_interactor]()
+        {
             return TabsBarMenus::UserAccountInfo{
                 project_interactor.user_account_interactor().is_logged_in(),
                 project_interactor.user_account_interactor().username(),
@@ -191,39 +193,57 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
         }
     );
 
-    project_interactor.user_account_interactor().set_update_menu_callback([this](bool avatar) {
-        m_tabs_bar_menus.UpdateAccountMenu();
-        m_left_bar->GetLeftBarCtrl()->UpdateAccountButton(avatar);
-    });
+    project_interactor.user_account_interactor().set_update_menu_callback(
+        [this](bool avatar)
+        {
+            m_tabs_bar_menus.UpdateAccountMenu();
+            m_left_bar->GetLeftBarCtrl()->UpdateAccountButton(avatar);
+        }
+    );
 
-    project_interactor.user_account_interactor().set_on_logged_in_callback([this]() {
-        this->Show(true);
-        this->Raise();
-        this->SetFocus();
-    });
+    project_interactor.user_account_interactor().set_on_logged_in_callback(
+        [this]()
+        {
+            this->Show(true);
+            this->Raise();
+            this->SetFocus();
+        }
+    );
 
-    this->Bind(wxEVT_SYS_COLOUR_CHANGED, [this](wxSysColourChangedEvent& event) {
-        event.Skip();
-        m_left_bar->OnColorsChanged();
-    });
+    this->Bind(
+        wxEVT_SYS_COLOUR_CHANGED,
+        [this](wxSysColourChangedEvent& event)
+        {
+            event.Skip();
+            m_left_bar->OnColorsChanged();
+        }
+    );
 
 #ifndef __WXOSX__
-    this->Bind(wxEVT_DPI_CHANGED, [this](wxDPIChangedEvent& event) {
-        event.Skip();
-        m_left_bar->Rescale();
-        update_canvas_ui_settings();
-    });
+    this->Bind(
+        wxEVT_DPI_CHANGED,
+        [this](wxDPIChangedEvent& event)
+        {
+            event.Skip();
+            m_left_bar->Rescale();
+            update_canvas_ui_settings();
+        }
+    );
 #endif
 
     Bind(wxEVT_CLOSE_WINDOW, &MainFrame::on_close, this);
 
-    Bind(wxEVT_SIZE, [this](wxSizeEvent& event) {
+    Bind(
+        wxEVT_SIZE,
+        [this](wxSizeEvent& event)
+        {
 #ifdef _WIN32
     // TODO
     // wxGetApp().other_instance_message_handler()->update_windows_properties(this);
 #endif // WIN32
-        event.Skip();
-    });
+            event.Skip();
+        }
+    );
 }
 
 MainFrame::~MainFrame()
@@ -258,12 +278,16 @@ void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
     //! experiments just for UI testing
     add_experimets_page(m_left_bar, this);
 
-    m_left_bar->message_button()->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
-        wxMessageBox(from_u8("Message Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION);
-    });
-    m_left_bar->notifications_button()->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
-        wxMessageBox(from_u8("Notifications Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION);
-    });
+    m_left_bar->message_button()->Bind(
+        wxEVT_BUTTON,
+        [](wxCommandEvent&)
+        { wxMessageBox(from_u8("Message Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION); }
+    );
+    m_left_bar->notifications_button()->Bind(
+        wxEVT_BUTTON,
+        [](wxCommandEvent&)
+        { wxMessageBox(from_u8("Notifications Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION); }
+    );
 }
 
 // !!! temporary function just for testing
@@ -286,15 +310,9 @@ static wxPanel* tmp_panel(wxWindow* parent, const wxString& info_text)
 
 void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
 {
-    std::unique_ptr<App::Browser::BrowserLogicConnectPage>
-        logic = std::make_unique<App::Browser::BrowserLogicConnectPage>(project_interactor);
-    WebView::WebViewPanel* webview_panel = new WX::WebView::WebViewPanel(
-        m_left_bar,
-        std::move(logic),
-        false
-    );
-    project_interactor.user_account_interactor()
-        .add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
+    std::unique_ptr<App::Browser::BrowserLogicConnectPage> logic = std::make_unique<App::Browser::BrowserLogicConnectPage>(project_interactor);
+    WebView::WebViewPanel* webview_panel = new WX::WebView::WebViewPanel(m_left_bar, std::move(logic), false);
+    project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
     m_left_bar->AddNewPage(webview_panel, from_u8(L("Printers")), "lb_printers");
 }
 
@@ -312,15 +330,9 @@ void MainFrame::init_slicing_page()
 
 void MainFrame::init_printables_page(Biz::ProjectInteractor& project_interactor)
 {
-    std::unique_ptr<App::Browser::BrowserLogicPrintables>
-        logic = std::make_unique<App::Browser::BrowserLogicPrintables>(project_interactor);
-    WebView::WebViewPanel* webview_panel = new WX::WebView::WebViewPanel(
-        m_left_bar,
-        std::move(logic),
-        false
-    );
-    project_interactor.user_account_interactor()
-        .add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
+    std::unique_ptr<App::Browser::BrowserLogicPrintables> logic = std::make_unique<App::Browser::BrowserLogicPrintables>(project_interactor);
+    WebView::WebViewPanel* webview_panel = new WX::WebView::WebViewPanel(m_left_bar, std::move(logic), false);
+    project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
     m_left_bar->AddNewPage(webview_panel, from_u8(L("Printables")), "lb_printables");
 }
 
@@ -341,12 +353,7 @@ void MainFrame::sys_color_changed()
     m_left_bar->OnColorsChanged();
 }
 
-static int GetSingleChoiceIndex(
-    const wxString& message,
-    const wxString& caption,
-    const wxArrayString& choices,
-    int initialSelection
-)
+static int GetSingleChoiceIndex(const wxString& message, const wxString& caption, const wxArrayString& choices, int initialSelection)
 {
 #ifdef _WIN32
     wxSingleChoiceDialog dialog(nullptr, message, caption, choices);
@@ -378,12 +385,7 @@ bool MainFrame::select_language()
         names.Add(WX::from_u8(language_infos[i].description));
     }
 
-    const long index = GetSingleChoiceIndex(
-        _L("Select the language"),
-        _L("Language"),
-        names,
-        init_selection
-    );
+    const long index = GetSingleChoiceIndex(_L("Select the language"), _L("Language"), names, init_selection);
 
     // Try to load a new language.
     if (index != -1 && (init_selection == -1 || init_selection != index)) {
@@ -392,20 +394,11 @@ bool MainFrame::select_language()
 
         // If something was failed during the set new language:
 
-        wxString message = WX::format_wxstr(
-            _L("Switching PrusaSlicer to language %1% failed."),
-            language_infos[index].canonical_name
-        );
+        wxString message = WX::
+            format_wxstr(_L("Switching PrusaSlicer to language %1% failed."), language_infos[index].canonical_name);
 #if !defined(_WIN32) && !defined(__APPLE__)
         // likely some linux system
-        message += "\n"
-            + WX::format_wxstr(
-                       _L(
-                           "You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"
-                       ),
-                       "\"locale-gen\"",
-                       "\"dpkg-reconfigure locales\""
-            );
+        message += "\n" + WX::format_wxstr(_L("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"), "\"locale-gen\"", "\"dpkg-reconfigure locales\"");
 #endif
         MessageDialog(this, message, _L("PrusaSlicer - Switching language failed"), wxOK | wxICON_ERROR);
     }
@@ -415,28 +408,21 @@ bool MainFrame::select_language()
 void MainFrame::update_canvas_ui_settings()
 {
     m_canvas->set_language(localization().active_language());
-    m_canvas->set_font_size(
-        float(w_config()->normal_font().GetPointSize()) * this->GetDPIScaleFactor()
-    );
+    m_canvas->set_font_size(float(w_config()->normal_font().GetPointSize()) * this->GetDPIScaleFactor());
     m_canvas->set_font_global_scale(this->GetDPIScaleFactor());
 }
 
 #ifdef WIN32
 void MainFrame::register_win32_callbacks()
 {
-    static GUID GUID_DEVINTERFACE_HID =
-        {0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30};
+    static GUID GUID_DEVINTERFACE_HID = {0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30};
 
     // Register USB HID (Human Interface Devices) notifications to trigger the 3DConnexion enumeration.
     DEV_BROADCAST_DEVICEINTERFACE NotificationFilter = {0};
     NotificationFilter.dbcc_size                     = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
     NotificationFilter.dbcc_devicetype               = DBT_DEVTYP_DEVICEINTERFACE;
     NotificationFilter.dbcc_classguid                = GUID_DEVINTERFACE_HID;
-    m_hDeviceNotify                                  = ::RegisterDeviceNotification(
-        this->GetHWND(),
-        &NotificationFilter,
-        DEVICE_NOTIFY_WINDOW_HANDLE
-    );
+    m_hDeviceNotify = ::RegisterDeviceNotification(this->GetHWND(), &NotificationFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
 
     // Using Win32 Shell API to register for media insert / removal events.
     LPITEMIDLIST ppidl;

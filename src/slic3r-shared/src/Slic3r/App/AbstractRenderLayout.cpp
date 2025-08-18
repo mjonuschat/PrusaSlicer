@@ -24,13 +24,8 @@ Vec2f AbstractRenderLayout::frame_padding() const
     return Vec2f(GImGui->Style.FramePadding.x, GImGui->Style.FramePadding.y);
 }
 
-ToolbarButton* AbstractRenderLayout::add_toolbar_item(
-    ToolbarID id,
-    Render::Icon icon,
-    const std::string& tooltip,
-    const std::string& shortcut,
-    AbstractButton::Callbacks callbacks
-)
+ToolbarButton*
+AbstractRenderLayout::add_toolbar_item(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, AbstractButton::Callbacks callbacks)
 {
     Toolbar* toolbar = find_toolbar(id);
     ASSERT(toolbar);
@@ -43,14 +38,8 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item(
     return button.get();
 }
 
-ToolbarButton* AbstractRenderLayout::add_toolbar_item_checkable(
-    ToolbarID id,
-    Render::Icon icon,
-    const std::string& tooltip,
-    const std::string& shortcut,
-    AbstractButton::Callbacks callbacks,
-    bool checked
-)
+ToolbarButton*
+AbstractRenderLayout::add_toolbar_item_checkable(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, AbstractButton::Callbacks callbacks, bool checked)
 {
     ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
     ASSERT(button);
@@ -61,14 +50,8 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_checkable(
     return button;
 }
 
-ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
-    ToolbarID id,
-    Render::Icon icon,
-    const std::string& tooltip,
-    const std::string& shortcut,
-    Yoga::AbstractButton::Callbacks callbacks,
-    Scene::IToolGizmo* tool
-)
+ToolbarButton*
+AbstractRenderLayout::add_toolbar_item_gizmo(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks, Scene::IToolGizmo* tool)
 {
     ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
     ASSERT(button);
@@ -76,22 +59,15 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
     Dialog* dialog = tool->unload_ui_dialog();
     if (dialog) {
         dialog->attach_to_item(button);
-        button->callbacks().checked_changed = [dialog](bool checked) {
-            checked ? dialog->open() : dialog->close();
-        };
+        button->callbacks().checked_changed = [dialog](bool checked)
+        { checked ? dialog->open() : dialog->close(); };
     }
 
     return button;
 }
 
-ToolbarButton* AbstractRenderLayout::add_toolbar_item_panel(
-    ToolbarID id,
-    Render::Icon icon,
-    const std::string& tooltip,
-    const std::string& shortcut,
-    Yoga::AbstractButton::Callbacks callbacks,
-    Yoga::Item* panel
-)
+ToolbarButton*
+AbstractRenderLayout::add_toolbar_item_panel(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks, Yoga::Item* panel)
 {
     ASSERT(panel);
 
@@ -100,7 +76,8 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_panel(
 
     button->set_checked(panel->is_visible());
 
-    button->callbacks().action = [this, button] {
+    button->callbacks().action = [this, button]
+    {
         SidebarPanel& sidebar = m_sidebar_panels[button];
         sidebar.visible       = !sidebar.visible;
         update_sidebar_visibility();
@@ -127,9 +104,8 @@ Toolbar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
 void AbstractRenderLayout::update_toolbar_tooltip()
 {
     // if any toolbar is hovered and also subtoolbar is now opened;
-    bool show_tooltips = (m_top_toolbar->hovered()
-                          || m_middle_toolbar->hovered()
-                          || m_bottom_toolbar->hovered())
+    bool
+        show_tooltips = (m_top_toolbar->hovered() || m_middle_toolbar->hovered() || m_bottom_toolbar->hovered())
         && !m_top_toolbar->any_subtoolbar_opened()
         && !m_middle_toolbar->any_subtoolbar_opened()
         && !m_bottom_toolbar->any_subtoolbar_opened();
@@ -302,24 +278,12 @@ void AbstractRenderLayout::init_toolbar_column()
     m_bottom_dummy_toolbar = m_layout_left_toolbar_column->emplace_back<Item>();
     m_bottom_dummy_toolbar->set_visible(false);
 
-    m_top_toolbar->callbacks().hovered_changed = [this]() {
-        update_toolbar_tooltip();
-    };
-    m_middle_toolbar->callbacks().hovered_changed = [this]() {
-        update_toolbar_tooltip();
-    };
-    m_bottom_toolbar->callbacks().hovered_changed = [this]() {
-        update_toolbar_tooltip();
-    };
-    m_top_toolbar->callbacks().subtoolbar_opened = [this]() {
-        update_toolbar_tooltip();
-    };
-    m_middle_toolbar->callbacks().subtoolbar_opened = [this]() {
-        update_toolbar_tooltip();
-    };
-    m_bottom_toolbar->callbacks().subtoolbar_opened = [this]() {
-        update_toolbar_tooltip();
-    };
+    m_top_toolbar->callbacks().hovered_changed      = [this]() { update_toolbar_tooltip(); };
+    m_middle_toolbar->callbacks().hovered_changed   = [this]() { update_toolbar_tooltip(); };
+    m_bottom_toolbar->callbacks().hovered_changed   = [this]() { update_toolbar_tooltip(); };
+    m_top_toolbar->callbacks().subtoolbar_opened    = [this]() { update_toolbar_tooltip(); };
+    m_middle_toolbar->callbacks().subtoolbar_opened = [this]() { update_toolbar_tooltip(); };
+    m_bottom_toolbar->callbacks().subtoolbar_opened = [this]() { update_toolbar_tooltip(); };
 }
 
 void AbstractRenderLayout::set_our_style_colors()
@@ -362,18 +326,10 @@ void AbstractRenderLayout::set_our_style_colors()
     colors[ImGuiCol_ResizeGripActive]     = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
     colors[ImGuiCol_TabHovered]           = colors[ImGuiCol_HeaderHovered];
     colors[ImGuiCol_Tab] = ImLerp(colors[ImGuiCol_Header], colors[ImGuiCol_TitleBgActive], 0.80f);
-    colors[ImGuiCol_TabSelected] = ImLerp(
-        colors[ImGuiCol_HeaderActive],
-        colors[ImGuiCol_TitleBgActive],
-        0.60f
-    );
+    colors[ImGuiCol_TabSelected] = ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
     colors[ImGuiCol_TabSelectedOverline] = colors[ImGuiCol_HeaderActive];
     colors[ImGuiCol_TabDimmed] = ImLerp(colors[ImGuiCol_Tab], colors[ImGuiCol_TitleBg], 0.80f);
-    colors[ImGuiCol_TabDimmedSelected] = ImLerp(
-        colors[ImGuiCol_TabSelected],
-        colors[ImGuiCol_TitleBg],
-        0.40f
-    );
+    colors[ImGuiCol_TabDimmedSelected] = ImLerp(colors[ImGuiCol_TabSelected], colors[ImGuiCol_TitleBg], 0.40f);
     colors[ImGuiCol_TabDimmedSelectedOverline] = ImVec4(0.50f, 0.50f, 0.50f, 0.00f);
     colors[ImGuiCol_PlotLines]                 = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
     colors[ImGuiCol_PlotLinesHovered]          = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);

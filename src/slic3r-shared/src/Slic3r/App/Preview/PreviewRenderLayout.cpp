@@ -61,8 +61,8 @@ void PreviewRenderLayout::init_middle_column()
     AbstractRenderLayout::init_middle_column();
 
     // flexbox doesnt support justify-self, spacer is needed
-    //Yoga::Item* column_spacer = m_layout_middle_column->emplace_back<Yoga::Item>();
-    //column_spacer->set_flex_grow(1);
+    // Yoga::Item* column_spacer = m_layout_middle_column->emplace_back<Yoga::Item>();
+    // column_spacer->set_flex_grow(1);
     m_layout_middle_column->append(m_double_slider_gcode.release());
 
     m_layout_center_row->append(m_double_slider_layers.release());

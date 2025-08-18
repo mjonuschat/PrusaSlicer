@@ -17,11 +17,7 @@ namespace Slic3r::App::PopNotification {
 class PopNotificationView : public Yoga::Window, public Biz::DataObserver<PopNotificationData>
 {
 public:
-    PopNotificationView(
-        size_t index,
-        const PopNotificationData& data,
-        PopNotificationObservableList& notification_list
-    );
+    PopNotificationView(size_t index, const PopNotificationData& data, PopNotificationObservableList& notification_list);
 
 protected:
     void on_data_update() override;

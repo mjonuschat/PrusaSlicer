@@ -10,7 +10,7 @@ namespace Slic3r::Biz::Platform::JobManager {
 struct Progress
 {
     Domain::JobStatus status;
-    Domain::JobProgressInfo info {Domain::JobProgressInfo::None};
+    Domain::JobProgressInfo info{Domain::JobProgressInfo::None};
     std::optional<Domain::Percentage> percent;
 };
 

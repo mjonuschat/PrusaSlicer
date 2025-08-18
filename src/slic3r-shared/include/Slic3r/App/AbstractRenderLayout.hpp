@@ -59,37 +59,14 @@ public:
     Vec2f win_padding() const;
     Vec2f frame_padding() const;
 
-    Yoga::ToolbarButton* add_toolbar_item(
-        ToolbarID id,
-        Render::Icon icon,
-        const std::string& tooltip,
-        const std::string& shortcut,
-        Yoga::AbstractButton::Callbacks callbacks
-    );
-    Yoga::ToolbarButton* add_toolbar_item_checkable(
-        ToolbarID id,
-        Render::Icon icon,
-        const std::string& tooltip,
-        const std::string& shortcut,
-        Yoga::AbstractButton::Callbacks callbacks,
-        bool checked = false
-    );
-    Yoga::ToolbarButton* add_toolbar_item_gizmo(
-        ToolbarID id,
-        Render::Icon icon,
-        const std::string& tooltip,
-        const std::string& shortcut,
-        Yoga::AbstractButton::Callbacks callbacks,
-        Scene::IToolGizmo* tool
-    );
-    Yoga::ToolbarButton* add_toolbar_item_panel(
-        ToolbarID id,
-        Render::Icon icon,
-        const std::string& tooltip,
-        const std::string& shortcut,
-        Yoga::AbstractButton::Callbacks callbacks,
-        Yoga::Item* panel
-    );
+    Yoga::ToolbarButton*
+    add_toolbar_item(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks);
+    Yoga::ToolbarButton*
+    add_toolbar_item_checkable(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks, bool checked = false);
+    Yoga::ToolbarButton*
+    add_toolbar_item_gizmo(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks, Scene::IToolGizmo* tool);
+    Yoga::ToolbarButton*
+    add_toolbar_item_panel(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks, Yoga::Item* panel);
 
     Yoga::Toolbar* top_toolbar() const;
     Yoga::Toolbar* middle_toolbar() const;

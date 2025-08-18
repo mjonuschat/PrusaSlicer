@@ -14,14 +14,8 @@
 
 namespace Slic3r::App::WX {
 
-void DialogManager::show_file_dialog(
-    FileDialogType dialog_type,
-    const std::string& dialog_title,
-    const boost::filesystem::path& default_folder,
-    const std::string& default_file_name,
-    const std::string& wildcards,
-    const FileCallback& callback
-)
+void
+DialogManager::show_file_dialog(FileDialogType dialog_type, const std::string& dialog_title, const boost::filesystem::path& default_folder, const std::string& default_file_name, const std::string& wildcards, const FileCallback& callback)
 {
     ASSERT(callback);
 
@@ -39,14 +33,7 @@ void DialogManager::show_file_dialog(
         break;
     }
 
-    wxFileDialog dlg(
-        nullptr,
-        from_u8(dialog_title),
-        from_u8(default_folder.string()),
-        from_u8(default_file_name),
-        from_u8(wildcards),
-        flags
-    );
+    wxFileDialog dlg(nullptr, from_u8(dialog_title), from_u8(default_folder.string()), from_u8(default_file_name), from_u8(wildcards), flags);
 
     if (dlg.ShowModal() != wxID_OK) {
         callback(false, {});
@@ -88,24 +75,15 @@ void DialogManager::show_file_dialog(
     callback(true, out_paths);
 }
 
-void DialogManager::show_webview_dialog(
-    std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic,
-    Biz::ProjectInteractor* project_interactor
-)
+void DialogManager::show_webview_dialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, Biz::ProjectInteractor* project_interactor)
 {
     WebView::WebViewDialog dlg(std::move(logic));
-    project_interactor->user_account_interactor()
-        .add_listener<Biz::UserAccount::IUserAccountListener>(&dlg);
+    project_interactor->user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(&dlg);
     dlg.ShowModal();
-    project_interactor->user_account_interactor()
-        .remove_listener<Biz::UserAccount::IUserAccountListener>(&dlg);
+    project_interactor->user_account_interactor().remove_listener<Biz::UserAccount::IUserAccountListener>(&dlg);
 }
 
-void DialogManager::show_yesno_dialog(
-    const std::string& title,
-    const std::string& text,
-    const YesNoCallback& callback
-)
+void DialogManager::show_yesno_dialog(const std::string& title, const std::string& text, const YesNoCallback& callback)
 {
     wxMessageDialog dlg(nullptr, from_u8(text), from_u8(title), wxYES_NO);
     if (dlg.ShowModal() == wxID_YES)
@@ -114,13 +92,7 @@ void DialogManager::show_yesno_dialog(
         callback(false);
 }
 
-void DialogManager::show_rich_yesno_dialog(
-    const std::string& title,
-    const std::string& text,
-    const std::string& check_text,
-    const YesNoCallback& callback,
-    const CheckBoxCheckedCallback& cbc_callback
-)
+void DialogManager::show_rich_yesno_dialog(const std::string& title, const std::string& text, const std::string& check_text, const YesNoCallback& callback, const CheckBoxCheckedCallback& cbc_callback)
 {
     RichMessageDialog dlg(nullptr, from_u8(text), from_u8(title), wxICON_QUESTION | wxYES_NO);
     dlg.ShowCheckBox(from_u8(check_text));
@@ -135,23 +107,13 @@ void DialogManager::show_rich_yesno_dialog(
 
 void DialogManager::show_info_dialog(const std::string& text, const std::string& title)
 {
-    MessageDialog(
-        nullptr,
-        from_u8(text),
-        title.empty() ? _L("Information") : from_u8(title),
-        wxICON_INFORMATION | wxOK
-    )
+    MessageDialog(nullptr, from_u8(text), title.empty() ? _L("Information") : from_u8(title), wxICON_INFORMATION | wxOK)
         .ShowModal();
 }
 
 void DialogManager::show_warning_dialog(const std::string& text, const std::string& title)
 {
-    MessageDialog(
-        nullptr,
-        from_u8(text),
-        title.empty() ? _L("Warning") : from_u8(title),
-        wxICON_WARNING | wxOK
-    )
+    MessageDialog(nullptr, from_u8(text), title.empty() ? _L("Warning") : from_u8(title), wxICON_WARNING | wxOK)
         .ShowModal();
 }
 

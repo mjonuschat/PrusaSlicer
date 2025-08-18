@@ -27,9 +27,10 @@ enum class JobProgressInfo
     SlicingProgressProcessingTriangulatedMesh,
 };
 
-struct ProgressDetail {
-     JobProgressInfo info;
-     std::any payload;
+struct ProgressDetail
+{
+    JobProgressInfo info;
+    std::any payload;
 };
 
 } // namespace Slic3r::Domain

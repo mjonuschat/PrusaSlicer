@@ -112,19 +112,24 @@ std::vector<DriveData> search_for_removable_drives()
 RemovableDriveMonitorLinux::RemovableDriveMonitorLinux(Platform::IMainThreadDispatcher& dispatcher) :
     m_dispatcher(dispatcher)
 {
-    m_thread = JThread::JThread([this](JThread::StopToken stop_token) {
-        while (true) {
-            std::unique_lock<std::mutex> lck(m_thread_stop_mutex);
-            m_thread_stop_condition.wait_for(lck, std::chrono::seconds(2), [this, stop_token] {
-                return stop_token.stop_requested() || m_wakeup;
-            });
-            if (stop_token.stop_requested()) {
-                return;
+    m_thread = JThread::JThread(
+        [this](JThread::StopToken stop_token)
+        {
+            while (true) {
+                std::unique_lock<std::mutex> lck(m_thread_stop_mutex);
+                m_thread_stop_condition.wait_for(
+                    lck,
+                    std::chrono::seconds(2),
+                    [this, stop_token] { return stop_token.stop_requested() || m_wakeup; }
+                );
+                if (stop_token.stop_requested()) {
+                    return;
+                }
+                this->update();
+                m_wakeup = false;
             }
-            this->update();
-            m_wakeup = false;
         }
-    });
+    );
 }
 
 void RemovableDriveMonitorLinux::update()
@@ -159,9 +164,7 @@ void RemovableDriveMonitorLinux::update()
     }
 }
 
-boost::filesystem::path RemovableDriveMonitorLinux::get_path_on_removable_drive(
-    const boost::filesystem::path& preferred_path
-)
+boost::filesystem::path RemovableDriveMonitorLinux::get_path_on_removable_drive(const boost::filesystem::path& preferred_path)
 {
     boost::filesystem::path result = get_removable_drive_path_from_path(preferred_path);
     if (!result.empty()) {
@@ -176,9 +179,7 @@ boost::filesystem::path RemovableDriveMonitorLinux::get_path_on_removable_drive(
     }
 }
 
-boost::filesystem::path RemovableDriveMonitorLinux::get_removable_drive_path_from_path(
-    const boost::filesystem::path& path
-)
+boost::filesystem::path RemovableDriveMonitorLinux::get_removable_drive_path_from_path(const boost::filesystem::path& path)
 {
     {
         std::scoped_lock<std::mutex> lock(m_drives_mutex);
@@ -199,16 +200,16 @@ size_t RemovableDriveMonitorLinux::removable_drives_count()
     }
 }
 
-void RemovableDriveMonitorLinux::dispatch_status(
-    const boost::filesystem::path& drive_path,
-    RemovableDriveStatus status
-)
+void RemovableDriveMonitorLinux::dispatch_status(const boost::filesystem::path& drive_path, RemovableDriveStatus status)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, drive_path, status]() mutable {
-        this->invoke_listeners<IRemovableDriveStatusListener>([drive_path,
-                                                               status](auto* listener) mutable {
-            listener->on_removable_drive_status_changed(drive_path, status);
-        });
-    });
+    bool dispatched = m_dispatcher.dispatch_on_main_thread(
+        [this, drive_path, status]() mutable
+        {
+            this->invoke_listeners<IRemovableDriveStatusListener>(
+                [drive_path, status](auto* listener) mutable
+                { listener->on_removable_drive_status_changed(drive_path, status); }
+            );
+        }
+    );
 }
 } // namespace Slic3r::Biz::RemovableDrive

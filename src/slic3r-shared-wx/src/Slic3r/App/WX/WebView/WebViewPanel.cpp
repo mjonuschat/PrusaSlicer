@@ -20,11 +20,7 @@
 
 namespace Slic3r::App::WX::WebView {
 
-WebViewPanel::WebViewPanel(
-    wxWindow* parent,
-    std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic,
-    bool do_create
-) :
+WebViewPanel::WebViewPanel(wxWindow* parent, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create) :
     wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize),
     m_logic(std::move(logic))
 {
@@ -51,14 +47,7 @@ WebViewPanel::WebViewPanel(
     m_button_reload = new wxButton(this, wxID_ANY, wxT("Reload"), wxDefaultPosition, wxDefaultSize, 0);
     bSizer_toolbar->Add(m_button_reload, 0, wxALL, 5);
 
-    m_url = new wxTextCtrl(
-        this,
-        wxID_ANY,
-        wxEmptyString,
-        wxDefaultPosition,
-        wxDefaultSize,
-        wxTE_PROCESS_ENTER
-    );
+    m_url = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
     bSizer_toolbar->Add(m_url, 1, wxALL | wxEXPAND, 5);
 
     m_button_tools = new wxButton(this, wxID_ANY, wxT("Tools"), wxDefaultPosition, wxDefaultSize, 0);
@@ -155,12 +144,7 @@ void WebViewPanel::late_create()
 
     // Connect the webview events
     Bind(wxEVT_WEBVIEW_ERROR, &WebViewPanel::on_error, this, m_web_view->GetId());
-    Bind(
-        wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED,
-        &WebViewPanel::on_script_message,
-        this,
-        m_web_view->GetId()
-    );
+    Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, &WebViewPanel::on_script_message, this, m_web_view->GetId());
     Bind(wxEVT_WEBVIEW_NAVIGATING, &WebViewPanel::on_navigation_request, this, m_web_view->GetId());
     Bind(wxEVT_WEBVIEW_LOADED, &WebViewPanel::on_loaded, this, m_web_view->GetId());
     Layout();
@@ -267,9 +251,7 @@ void WebViewPanel::on_show(wxShowEvent& evt)
 
 void WebViewPanel::on_script_message(wxWebViewEvent& evt)
 {
-    if (!process_logic_command_vector(
-            std::move(m_logic->on_script_message_webview_event(into_u8(evt.GetString())))
-        ))
+    if (!process_logic_command_vector(std::move(m_logic->on_script_message_webview_event(into_u8(evt.GetString())))))
     {
         evt.Veto();
     }
@@ -290,9 +272,7 @@ void WebViewPanel::on_navigation_request(wxWebViewEvent& evt)
 
 void WebViewPanel::on_loaded(wxWebViewEvent& evt)
 {
-    if (!process_logic_command_vector(
-            std::move(m_logic->on_loaded_webview_event(into_u8(evt.GetURL())))
-        ))
+    if (!process_logic_command_vector(std::move(m_logic->on_loaded_webview_event(into_u8(evt.GetURL())))))
     {
         evt.Veto();
     }
@@ -418,23 +398,9 @@ void WebViewPanel::on_view_text_request(wxCommandEvent& evt)
     if (!m_web_view)
         return;
 
-    wxDialog textViewDialog(
-        this,
-        wxID_ANY,
-        L"Page Text",
-        wxDefaultPosition,
-        wxSize(700, 500),
-        wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
-    );
+    wxDialog textViewDialog(this, wxID_ANY, L"Page Text", wxDefaultPosition, wxSize(700, 500), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 
-    wxTextCtrl* text = new wxTextCtrl(
-        this,
-        wxID_ANY,
-        m_web_view->GetPageText(),
-        wxDefaultPosition,
-        wxDefaultSize,
-        wxTE_MULTILINE | wxTE_RICH | wxTE_READONLY
-    );
+    wxTextCtrl* text = new wxTextCtrl(this, wxID_ANY, m_web_view->GetPageText(), wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_RICH | wxTE_READONLY);
 
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
     sizer->Add(text, 1, wxEXPAND);
@@ -458,13 +424,7 @@ void WebViewPanel::on_tools_clicked(wxCommandEvent& evt)
 
 void WebViewPanel::on_run_script_custom(wxCommandEvent& evt)
 {
-    wxTextEntryDialog dialog(
-        this,
-        L"Please enter JavaScript code to execute",
-        from_u8(wxGetTextFromUserPromptStr),
-        L"",
-        wxOK | wxCANCEL | wxCENTRE | wxTE_MULTILINE
-    );
+    wxTextEntryDialog dialog(this, L"Please enter JavaScript code to execute", from_u8(wxGetTextFromUserPromptStr), L"", wxOK | wxCANCEL | wxCENTRE | wxTE_MULTILINE);
     if (dialog.ShowModal() != wxID_OK)
         return;
 
@@ -477,13 +437,7 @@ void WebViewPanel::on_add_user_script(wxCommandEvent& evt)
         return;
     }
     wxString userScript;
-    wxTextEntryDialog dialog(
-        this,
-        L"Enter the JavaScript code to run as the initialization script that runs before any script in the HTML document.",
-        from_u8(wxGetTextFromUserPromptStr),
-        userScript,
-        wxOK | wxCANCEL | wxCENTRE | wxTE_MULTILINE
-    );
+    wxTextEntryDialog dialog(this, L"Enter the JavaScript code to run as the initialization script that runs before any script in the HTML document.", from_u8(wxGetTextFromUserPromptStr), userScript, wxOK | wxCANCEL | wxCENTRE | wxTE_MULTILINE);
     if (dialog.ShowModal() != wxID_OK)
         return;
 
@@ -499,13 +453,7 @@ void WebViewPanel::on_set_custom_user_agent(wxCommandEvent& evt)
         return;
 
     wxString customUserAgent;
-    wxTextEntryDialog dialog(
-        this,
-        L"Enter the custom user agent string you would like to use.",
-        from_u8(wxGetTextFromUserPromptStr),
-        customUserAgent,
-        wxOK | wxCANCEL | wxCENTRE
-    );
+    wxTextEntryDialog dialog(this, L"Enter the custom user agent string you would like to use.", from_u8(wxGetTextFromUserPromptStr), customUserAgent, wxOK | wxCANCEL | wxCENTRE);
     if (dialog.ShowModal() != wxID_OK)
         return;
 

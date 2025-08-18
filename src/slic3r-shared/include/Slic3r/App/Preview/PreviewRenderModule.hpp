@@ -64,10 +64,7 @@ public:
     void set_navigator(Navigator* navigator) override;
     /**@}*/
 
-    void on_selected_bed_instances_changed(
-        Domain::SelectionId project_id,
-        const Biz::Scene::BedSelection& selection
-    ) override;
+    void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection) override;
 
     void on_fdm_result_cache_changed(const Domain::SlicingId id) override
     {

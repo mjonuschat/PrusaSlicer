@@ -37,11 +37,7 @@ class TextGizmo;
 class MeasureGizmo;
 class PlaterCameraGizmo;
 
-class PlaterRenderModule final :
-    public Platform::AbstractRenderModule,
-    public Biz::IStatusCacheChangedListener,
-    public Biz::Scene::ISceneSelectionChangedListener,
-    private Scene::IGizmoActiveToolListener
+class PlaterRenderModule final : public Platform::AbstractRenderModule, public Biz::IStatusCacheChangedListener, public Biz::Scene::ISceneSelectionChangedListener, private Scene::IGizmoActiveToolListener
 {
 public:
     PlaterRenderModule(
@@ -57,10 +53,7 @@ public:
     void render_imgui(Render::CommandBuffer& cmd_buffer) override;
     void on_scene_mouse_event(const Platform::MouseEvent& e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent& e) override;
-    void on_scene_selection_changed(
-        Domain::SelectionId project_id,
-        const Biz::Scene::ObjectSelection& selection
-    ) override;
+    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
     void set_navigator(Navigator* navigator) override;
 
     void on_status_cache_changed(const Domain::SlicingId id) override;

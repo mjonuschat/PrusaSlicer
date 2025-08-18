@@ -5,33 +5,32 @@
 #include <nlohmann/json.hpp>
 
 namespace Slic3r::Biz::UserAccount {
-UserAccountInteractor::UserAccountInteractor(Platform::IMainThreadDispatcher& dispatcher)
-	: m_dispatcher{dispatcher}
-    , m_communication{dispatcher}
+UserAccountInteractor::UserAccountInteractor(Platform::IMainThreadDispatcher& dispatcher) :
+    m_dispatcher{dispatcher},
+    m_communication{dispatcher}
 {
     m_communication.add_session_listener(this);
 }
 
 UserAccountInteractor::~UserAccountInteractor()
 {
-	ASSERT(
+    ASSERT(
         m_dispatcher.is_closed(),
         "There must be no queued events (not even in the future),"
         " because they may remember the address of this instance!"
     );
 }
 
-
 void UserAccountInteractor::do_log_out(bool notify_owner)
 {
     m_communication.do_log_out(notify_owner);
-    if (update_menu_callback)
-    {
+    if (update_menu_callback) {
         update_menu_callback(true);
     }
 }
 
-std::string UserAccountInteractor::on_log_in_request(const std::string& lang_code, bool generate_code_verifier, const std::string& service/* = std::string()*/)
+std::string
+UserAccountInteractor::on_log_in_request(const std::string& lang_code, bool generate_code_verifier, const std::string& service /* = std::string()*/)
 {
     return m_communication.on_log_in_request(lang_code, generate_code_verifier, service);
 }
@@ -46,9 +45,7 @@ bool UserAccountInteractor::is_logged_in() const
     return m_communication.is_logged_in();
 }
 
-void UserAccountInteractor::on_read_token_store_message()
-{
-}
+void UserAccountInteractor::on_read_token_store_message() {}
 
 std::string UserAccountInteractor::username() const
 {
@@ -62,7 +59,7 @@ boost::filesystem::path UserAccountInteractor::avatar() const
 
 void UserAccountInteractor::request_refresh()
 {
-     m_communication.request_refresh();
+    m_communication.request_refresh();
 }
 
 std::string UserAccountInteractor::access_token() const
@@ -72,25 +69,31 @@ std::string UserAccountInteractor::access_token() const
 
 void UserAccountInteractor::on_action_retry(const Network::IHttp::Retry& retry)
 {
-    SPDLOG_INFO("UserAccountInteractor: Retry attempt {}: {} ms to next attempt",  retry.attempt, retry.ms_to_next_attempt); 
-    invoke_listeners<IUserAccountListener>([this, retry](auto* listener){
-        listener->on_user_account_action_retry(retry, [this](){cancel_ongoing_session_action();});
-    });
+    SPDLOG_INFO(
+        "UserAccountInteractor: Retry attempt {}: {} ms to next attempt",
+        retry.attempt,
+        retry.ms_to_next_attempt
+    );
+    invoke_listeners<IUserAccountListener>(
+        [this, retry](auto* listener)
+        {
+            listener
+                ->on_user_account_action_retry(retry, [this]() { cancel_ongoing_session_action(); });
+        }
+    );
 }
 
-void UserAccountInteractor::on_action_success(ActionSuccessType success_type, std::string body) 
+void UserAccountInteractor::on_action_success(ActionSuccessType success_type, std::string body)
 {
-    SPDLOG_INFO("UserAccountInteractor: Action success({})", static_cast<int>(success_type)); 
-    switch (success_type)
-    {
+    SPDLOG_INFO("UserAccountInteractor: Action success({})", static_cast<int>(success_type));
+    switch (success_type) {
     case Slic3r::Biz::UserAccount::ActionSuccessType::None:
-         // Empty callback
+        // Empty callback
         return;
     case Slic3r::Biz::UserAccount::ActionSuccessType::UserID:
     case Slic3r::Biz::UserAccount::ActionSuccessType::UserIDAfterToken:
         on_user_id(body);
-        if (update_menu_callback)
-        {
+        if (update_menu_callback) {
             update_menu_callback(false);
         }
         break;
@@ -100,8 +103,7 @@ void UserAccountInteractor::on_action_success(ActionSuccessType success_type, st
         break;
     case Slic3r::Biz::UserAccount::ActionSuccessType::Avatar:
         m_communication.on_avatar_success(std::move(body));
-        if (update_menu_callback)
-        {
+        if (update_menu_callback) {
             update_menu_callback(true);
         }
         break;
@@ -113,12 +115,11 @@ void UserAccountInteractor::on_action_success(ActionSuccessType success_type, st
     }
 }
 
-void UserAccountInteractor::on_action_fail(ActionFailType fail_type, std::string body)  
+void UserAccountInteractor::on_action_fail(ActionFailType fail_type, std::string body)
 {
-    SPDLOG_INFO("UserAccountInteractor: Action fail({})", static_cast<int>(fail_type)); 
-    switch (fail_type)
-    {
-    case Slic3r::Biz::UserAccount::ActionFailType::None: 
+    SPDLOG_INFO("UserAccountInteractor: Action fail({})", static_cast<int>(fail_type));
+    switch (fail_type) {
+    case Slic3r::Biz::UserAccount::ActionFailType::None:
         // Empty callback
         return;
     case Slic3r::Biz::UserAccount::ActionFailType::Fail:
@@ -134,26 +135,26 @@ void UserAccountInteractor::on_action_fail(ActionFailType fail_type, std::string
     }
 }
 
-void UserAccountInteractor::on_enqueued_refresh() 
+void UserAccountInteractor::on_enqueued_refresh()
 {
     // Here information about refresh being enqueued should be passed to other components, f.e. Printables WebView.
 }
 
-void UserAccountInteractor::on_new_refresh_time(long long exp) 
+void UserAccountInteractor::on_new_refresh_time(long long exp)
 {
     m_communication.set_refresh_time(exp);
 }
 
-void UserAccountInteractor::on_race_lost(const std::string& msg) 
+void UserAccountInteractor::on_race_lost(const std::string& msg)
 {
     m_communication.on_race_lost(msg);
 }
 
 void UserAccountInteractor::on_logged_out()
 {
-    invoke_listeners<IUserAccountListener>([](auto* listener){
-        listener->on_user_account_logged_out();
-    });
+    invoke_listeners<IUserAccountListener>(
+        [](auto* listener) { listener->on_user_account_logged_out(); }
+    );
 }
 
 void UserAccountInteractor::on_user_id(const std::string& body)
@@ -162,16 +163,15 @@ void UserAccountInteractor::on_user_id(const std::string& body)
     SPDLOG_INFO("UserAccountInteractor: User ID message: {}", body);
     try {
         nlohmann::json j = nlohmann::json::parse(body);
-        
+
         m_account_user_data.clear();
         for (const auto& [key, value] : j.items()) {
             if (value.is_string()) {
                 m_account_user_data[key] = value.get<std::string>();
             }
         }
-    } 
-    catch (const std::exception&) {
-       SPDLOG_INFO("UserIDUserAction Could not parse server response.");
+    } catch (const std::exception&) {
+        SPDLOG_INFO("UserIDUserAction Could not parse server response.");
         return;
     }
 
@@ -183,7 +183,7 @@ void UserAccountInteractor::on_user_id(const std::string& body)
     m_communication.on_username_changed(public_username, true);
 
     // enqueue GET with avatar url
-    
+
     if (m_account_user_data.find("avatar_small") != m_account_user_data.end()) {
         m_communication.on_avatar_url(m_account_user_data["avatar_small"]);
     } else {
@@ -191,11 +191,11 @@ void UserAccountInteractor::on_user_id(const std::string& body)
     }
     // update printers list
     // enqueue_connect_printer_models_action();
-    
 
-    invoke_listeners<IUserAccountListener>([was_logged, public_username](auto* listener){
-        listener->on_user_account_id_success(was_logged, public_username);
-    });
+    invoke_listeners<IUserAccountListener>(
+        [was_logged, public_username](auto* listener)
+        { listener->on_user_account_id_success(was_logged, public_username); }
+    );
 
     if (!was_logged && on_logged_in_callback) {
         on_logged_in_callback();

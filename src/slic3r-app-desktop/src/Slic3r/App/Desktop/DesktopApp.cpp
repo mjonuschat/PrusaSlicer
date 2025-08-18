@@ -44,8 +44,7 @@
 #ifdef WIN32
 #include <dbt.h>
 #include <shlobj.h>
-static GUID GUID_DEVINTERFACE_HID =
-    {0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30};
+static GUID GUID_DEVINTERFACE_HID = {0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30};
 #endif // WIN32
 
 wxIMPLEMENT_APP_NO_MAIN(Slic3r::App::Desktop::DesktopApp);
@@ -149,9 +148,7 @@ int run(const Slic3r::App::InitParams& init_params)
     if (AppInstance::instance_check(init_params, single_instance_app_config)) {
         return 1;
     }
-    Render::TextureManager::set_resource_resolver(
-        std::make_unique<ResourceResolver>(Slic3r::resources_dir())
-    );
+    Render::TextureManager::set_resource_resolver(std::make_unique<ResourceResolver>(Biz::resources_dir()));
     auto* app = new Slic3r::App::Desktop::DesktopApp();
     Slic3r::App::Desktop::DesktopApp::SetInstance(app);
     int argc    = init_params.argc;
@@ -221,26 +218,15 @@ bool DesktopApp::OnInit()
 
     platform_services.set_secret_store(SecretStoreFactory::create_secret_store());
 
-    platform_services.set_job_manager(
-        std::make_unique<JobManager>(platform_services.main_thread_dispatcher())
-    );
+    platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
 
-    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{
-        std::make_shared<Plater::ThumbnailImageGenerator>()
-    };
+    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{std::make_shared<Plater::ThumbnailImageGenerator>()};
 
-    m_project_interactor = std::make_unique<Biz::ProjectInteractor>(
-        m_workbench,
-        platform_services.main_thread_dispatcher(),
-        *thumbnail_image_generator
-    );
+    m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench, platform_services.main_thread_dispatcher(), *thumbnail_image_generator);
 
-    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(
-        *m_project_interactor
-    );
+    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(*m_project_interactor);
 
-    std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<
-        App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
+    std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
 
     auto& preset_interactor = m_project_interactor->preset_interactor();
 
@@ -249,19 +235,15 @@ bool DesktopApp::OnInit()
     fs::path config_dir        = fs::path{data_dir()} / "configs";
     preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
-    std::shared_ptr<App::SharedThumbnailImageGenerator>
-        shared_thumbnail_image_generator = std::make_shared<App::SharedThumbnailImageGenerator>();
+    std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator = std::make_shared<App::SharedThumbnailImageGenerator>();
     app_services.set_dialog_manager(std::make_unique<WX::DialogManager>());
     app_services.set_pop_notification_center(
-        std::make_unique<PopNotification::PopNotificationCenter>(
-            m_project_interactor->removable_drive_service()
-        )
+        std::make_unique<PopNotification::PopNotificationCenter>(m_project_interactor->removable_drive_service())
     );
     app_services.set_file_explorer_handler(std::make_unique<WX::FileExplorerHandler>());
-    platform_services.job_manager()
-        .add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
-            &app_services.pop_notification_center()
-        );
+    platform_services.job_manager().add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
+        &app_services.pop_notification_center()
+    );
     m_project_interactor->user_account_interactor()
         .add_listener<Biz::UserAccount::IUserAccountListener>(&app_services.pop_notification_center());
     if (scrn && is_editor)
@@ -291,12 +273,8 @@ bool DesktopApp::OnInit()
     m_project_interactor->slicing_interactor().add_listener<Biz::Slicing::IStatusListener>(
         &app_services.pop_notification_center()
     );
-    m_project_interactor->print_host_interactor().add_print_host_listener(
-        &app_services.pop_notification_center()
-    );
-    m_project_interactor->removable_drive_service().add_status_listener(
-        &app_services.pop_notification_center()
-    );
+    m_project_interactor->print_host_interactor().add_print_host_listener(&app_services.pop_notification_center());
+    m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center());
     WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
 
     m_project_interactor->new_project();
@@ -314,36 +292,30 @@ bool DesktopApp::OnInit()
 
     m_main_frame->Show();
 
-    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(
-        m_project_interactor->preset_updater_interactor()
-    );
+    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(m_project_interactor->preset_updater_interactor());
 
 #ifdef WIN32
     m_main_frame->register_win32_callbacks();
 #endif
 
-
     platform_services.instance()
-    .job_manager()
-    .create_job(
-        "countdown",
-        [](Biz::JThread::StopToken stop_token, Biz::Platform::IMainThreadDispatcher& dis, Biz::Platform::JobManager::ProgressTracker progress) {
-            for (size_t i = 0; i < 100; i++) {
-                std::this_thread::sleep_for(1000ms);
-                Slic3r::Domain::Percentage p;
-                p.value = (double)i /100.;
-                progress.set(p);
-                AppServices::instance().pop_notification_center().add_notification(
-                    PopNotification::PopNotificationFactory::create_custom(
-                        PopNotification::PopNotificationLevel::Important,
-                        0,
-                        "test " + std::to_string(i)
-                    )
-                );
+        .job_manager()
+        .create_job(
+            "countdown",
+            [](Biz::JThread::StopToken stop_token, Biz::Platform::IMainThreadDispatcher& dis, Biz::Platform::JobManager::ProgressTracker progress)
+            {
+                for (size_t i = 0; i < 100; i++) {
+                    std::this_thread::sleep_for(1'000ms);
+                    Slic3r::Domain::Percentage p;
+                    p.value = (double) i / 100.;
+                    progress.set(p);
+                    AppServices::instance().pop_notification_center().add_notification(
+                        PopNotification::PopNotificationFactory::create_custom(PopNotification::PopNotificationLevel::Important, 0, "test " + std::to_string(i))
+                    );
+                }
             }
-        }
-    )
-    .start();
+        )
+        .start();
 
 #if !defined(__linux)
     // Initial repaint
@@ -384,21 +356,14 @@ void DesktopApp::init_translations()
     // Get the active language from PrusaSlicer.ini, or empty string if the key does not exist.
     std::string language = ""; // app_config->get("translation_language");
     if (!language.empty())
-        BOOST_LOG_TRIVIAL(trace)
-            << boost::format("translation_language provided by PrusaSlicer.ini: %1%") % language;
+        BOOST_LOG_TRIVIAL(trace) << boost::format("translation_language provided by PrusaSlicer.ini: %1%") % language;
 
     if (!localization().set_language(language)) {
         // Loading the language dictionary failed.
         wxString message = WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language);
 #if !defined(_WIN32) && !defined(__APPLE__)
         // likely some linux system
-        message += "\n"
-            + WX::format_wxstr(
-                       ("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"
-                       ),
-                       "\"locale-gen\"",
-                       "\"dpkg-reconfigure locales\""
-            );
+        message += "\n" + WX::format_wxstr(("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"), "\"locale-gen\"", "\"dpkg-reconfigure locales\"");
 #endif
         message += WX::from_u8("\n\nApplication will close.");
         wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language failed"), wxOK | wxICON_ERROR);
@@ -407,12 +372,11 @@ void DesktopApp::init_translations()
     } else if (!language.empty() && language != localization().active_language()) {
         // Loading the language dictionary failed.
         wxString message = WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language);
-        message += WX::from_u8("\n\n")
+        message +=
+            WX::from_u8("\n\n")
             + WX::format_wxstr(
-                       localization().is_alternative_language() ?
-                           "Application is started in alternative language %1%." :
-                           "Application is started in system language %1%.",
-                       localization().active_language()
+                localization().is_alternative_language() ? "Application is started in alternative language %1%." : "Application is started in system language %1%.",
+                localization().active_language()
             );
         wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language"), wxOK | wxICON_WARNING);
     }

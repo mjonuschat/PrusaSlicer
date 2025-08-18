@@ -39,12 +39,7 @@ public:
     /**
      * Delivers data to given path on host specified in config.
      */
-    virtual bool perform(
-        ProgressFn progress_fn,
-        RetryFn retry_fn,
-        ErrorFn error_fn,
-        InfoFn info_fn
-    ) const = 0;
+    virtual bool perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const = 0;
 
     virtual const char* get_name() const = 0;
     /**

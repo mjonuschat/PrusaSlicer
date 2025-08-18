@@ -16,9 +16,7 @@ static size_t next_id()
 
 PrintHostJobManager::PrintHostJobManager(Platform::IMainThreadDispatcher& dispatcher) :
     m_dispatcher{dispatcher},
-    m_done_listener{std::make_unique<PrintHostDoneListener>(
-        std::bind(&PrintHostJobManager::erase_job, this, std::placeholders::_1)
-    )}
+    m_done_listener{std::make_unique<PrintHostDoneListener>(std::bind(&PrintHostJobManager::erase_job, this, std::placeholders::_1))}
 {
     add_listener<IPrintHostListener>(m_done_listener.get());
 }
@@ -59,11 +57,15 @@ void PrintHostJobManager::on_job_progress(size_t id, int progress)
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
 
-        bool dispatched = m_dispatcher.dispatch_on_main_thread([this, id, progress]() {
-            this->invoke_listeners<IPrintHostListener>([id, progress](auto* listener) {
-                listener->on_print_host_progress(id, progress);
-            });
-        });
+        bool dispatched = m_dispatcher.dispatch_on_main_thread(
+            [this, id, progress]()
+            {
+                this->invoke_listeners<IPrintHostListener>(
+                    [id, progress](auto* listener)
+                    { listener->on_print_host_progress(id, progress); }
+                );
+            }
+        );
     }
 }
 
@@ -71,11 +73,14 @@ void PrintHostJobManager::on_job_error(size_t id, const std::string& error)
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-        bool dispatched = m_dispatcher.dispatch_on_main_thread([this, id, error]() {
-            this->invoke_listeners<IPrintHostListener>([id, error](auto* listener) {
-                listener->on_print_host_error(id, error);
-            });
-        });
+        bool dispatched = m_dispatcher.dispatch_on_main_thread(
+            [this, id, error]()
+            {
+                this->invoke_listeners<IPrintHostListener>(
+                    [id, error](auto* listener) { listener->on_print_host_error(id, error); }
+                );
+            }
+        );
     }
 }
 
@@ -83,11 +88,14 @@ void PrintHostJobManager::on_job_cancel(size_t id)
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-        bool dispatched = m_dispatcher.dispatch_on_main_thread([this, id]() {
-            this->invoke_listeners<IPrintHostListener>([id](auto* listener) {
-                listener->on_print_host_cancel(id);
-            });
-        });
+        bool dispatched = m_dispatcher.dispatch_on_main_thread(
+            [this, id]()
+            {
+                this->invoke_listeners<IPrintHostListener>(
+                    [id](auto* listener) { listener->on_print_host_cancel(id); }
+                );
+            }
+        );
     }
 }
 
@@ -95,11 +103,14 @@ void PrintHostJobManager::on_job_done(size_t id)
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-        bool dispatched = m_dispatcher.dispatch_on_main_thread([this, id]() {
-            this->invoke_listeners<IPrintHostListener>([id](auto* listener) {
-                listener->on_print_host_done(id);
-            });
-        });
+        bool dispatched = m_dispatcher.dispatch_on_main_thread(
+            [this, id]()
+            {
+                this->invoke_listeners<IPrintHostListener>(
+                    [id](auto* listener) { listener->on_print_host_done(id); }
+                );
+            }
+        );
     }
 }
 
@@ -107,11 +118,14 @@ void PrintHostJobManager::on_job_info(size_t id, const std::string& tag, const s
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-        bool dispatched = m_dispatcher.dispatch_on_main_thread([this, id, tag, msg]() {
-            this->invoke_listeners<IPrintHostListener>([id, tag, msg](auto* listener) {
-                listener->on_print_host_info(id, tag, msg);
-            });
-        });
+        bool dispatched = m_dispatcher.dispatch_on_main_thread(
+            [this, id, tag, msg]()
+            {
+                this->invoke_listeners<IPrintHostListener>(
+                    [id, tag, msg](auto* listener) { listener->on_print_host_info(id, tag, msg); }
+                );
+            }
+        );
     }
 }
 

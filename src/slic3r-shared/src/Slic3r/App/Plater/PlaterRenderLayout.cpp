@@ -14,14 +14,7 @@ PlaterRenderLayout::PlaterRenderLayout(
     std::unique_ptr<SidebarPlaterActionButtons> sidebar_action_buttons,
     std::unique_ptr<History> history
 ) :
-    AbstractRenderLayout(
-        std::move(top_bar),
-        std::move(object_list),
-        std::move(cube_view),
-        std::move(pop_notification_list_view),
-        std::move(sidebar_bed),
-        std::move(sidebar_print)
-    ),
+    AbstractRenderLayout(std::move(top_bar), std::move(object_list), std::move(cube_view), std::move(pop_notification_list_view), std::move(sidebar_bed), std::move(sidebar_print)),
     m_sidebar_action_buttons(std::move(sidebar_action_buttons)),
     m_history(std::move(history))
 {}

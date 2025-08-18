@@ -24,18 +24,16 @@ using NodeList = Scene::Node::NodeList;
 using Biz::Arrange::Mode;
 using Biz::Platform::PlatformServices;
 using Biz::Platform::JobManager::JobManagerStatus;
-using Domain::JobStatus;
 using Biz::Platform::JobManager::Progress;
 using Biz::Scene::BedSelectionMode;
 using Biz::Scene::SceneInteractor;
 using Domain::ConfigContainer;
+using Domain::JobStatus;
 
 namespace {
 std::optional<Bed::Segments> get_bed_segments(const Project& project, const BedSelection& selection)
 {
-    const ConfigContainer* config_container{
-        project.find_config_container(selection.config_container_id())
-    };
+    const ConfigContainer* config_container{project.find_config_container(selection.config_container_id())};
     if (!config_container) {
         return std::nullopt;
     }
@@ -44,14 +42,7 @@ std::optional<Bed::Segments> get_bed_segments(const Project& project, const BedS
 }
 } // namespace
 
-ArrangeGizmo::ArrangeGizmo(
-    Biz::ArrangeInteractor& arrange_interactor,
-    Render::Device& device,
-    Scene::ISceneProvider& scene_provider,
-    Scene::GeometryDataFactory& data_factory,
-    Biz::ProjectInteractor& project_interactor,
-    const Domain::Workbench& workbench
-) :
+ArrangeGizmo::ArrangeGizmo(Biz::ArrangeInteractor& arrange_interactor, Render::Device& device, Scene::ISceneProvider& scene_provider, Scene::GeometryDataFactory& data_factory, Biz::ProjectInteractor& project_interactor, const Domain::Workbench& workbench) :
     m_arrange_interactor{arrange_interactor},
     m_device{device},
     m_scene_provider{scene_provider},
@@ -59,11 +50,11 @@ ArrangeGizmo::ArrangeGizmo(
     m_project_interactor{project_interactor},
     m_workbench{workbench},
     m_dialog{
-        [this](const Settings& settings) {
-            m_arrange_interactor.arrange(m_project_interactor.selected_project_id(), settings);
-        },
+        [this](const Settings& settings)
+        { m_arrange_interactor.arrange(m_project_interactor.selected_project_id(), settings); },
         []() { PlatformServices::instance().job_manager().cancel_job("arrange"); },
-        [this](const Mode mode) {
+        [this](const Mode mode)
+        {
             SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
             BedSelection& selection{scene_interactor.bed_selection()};
             if (mode == Mode::Local) {
@@ -75,22 +66,15 @@ ArrangeGizmo::ArrangeGizmo(
         default_settings()
     }
 {
-    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
-        this
-    );
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(this);
 
-    PlatformServices::instance()
-        .job_manager()
-        .add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(this);
+    PlatformServices::instance().job_manager().add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(this);
 }
 
 ArrangeGizmo::~ArrangeGizmo()
 {
-    m_project_interactor.scene_interactor()
-        .remove_listener<Biz::ISelectedBedInstancesChangedListener>(this);
-    PlatformServices::instance()
-        .job_manager()
-        .remove_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(this);
+    m_project_interactor.scene_interactor().remove_listener<Biz::ISelectedBedInstancesChangedListener>(this);
+    PlatformServices::instance().job_manager().remove_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(this);
 }
 
 Scene::GizmoActivationState ArrangeGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)

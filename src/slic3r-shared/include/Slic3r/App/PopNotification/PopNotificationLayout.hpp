@@ -50,11 +50,6 @@ struct PopNotificationLayoutTextProgress
     int progress;
 };
 
-using PopNotificationLayoutVariant = std::variant<
-    PopNotificationLayoutText,
-    PopNotificationLayoutHeaderText,
-    PopNotificationLayoutTextButtons,
-    PopNotificationLayoutHeaderTextButtons,
-    PopNotificationLayoutTextProgress>;
+using PopNotificationLayoutVariant = std::variant<PopNotificationLayoutText, PopNotificationLayoutHeaderText, PopNotificationLayoutTextButtons, PopNotificationLayoutHeaderTextButtons, PopNotificationLayoutTextProgress>;
 
 } // namespace Slic3r::App::PopNotification

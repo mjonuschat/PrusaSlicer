@@ -103,11 +103,7 @@ struct PrintHostJobData
 
     PrintHostJobData() = delete;
 
-    PrintHostJobData(
-        DataPtrVariant data,
-        const boost::filesystem::path& dest,
-        PrintHostExportFormat result_format
-    ) :
+    PrintHostJobData(DataPtrVariant data, const boost::filesystem::path& dest, PrintHostExportFormat result_format) :
         data_ptr(data),
         dest_path(dest),
         result_format(result_format)

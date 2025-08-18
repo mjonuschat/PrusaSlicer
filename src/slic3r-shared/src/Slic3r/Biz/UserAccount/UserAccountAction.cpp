@@ -28,11 +28,7 @@ void UserAccountActionPost::perform(
         cancel = global_cancel;
     };
 
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
-        Network::IHttp::RequestMethod::Post,
-        std::move(url),
-        retry_fn
-    );
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
     if (!input.empty())
         http->set_post_body(input);
     http->header("Content-type", "application/x-www-form-urlencoded")
@@ -63,14 +59,8 @@ void UserAccountActionPost::perform(
         .perform_sync(Network::HttpRetryOpt::default_retry());
 }
 
-void UserAccountActionGetWithEvent::perform(
-    IUserAccountActionCallbacks* callbacks,
-    const std::string& access_token,
-    ActionSuccessFn success_callback,
-    ActionFailFn fail_callback,
-    const std::string& input,
-    std::atomic_bool& global_cancel
-) const
+void UserAccountActionGetWithEvent::
+    perform(IUserAccountActionCallbacks* callbacks, const std::string& access_token, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input, std::atomic_bool& global_cancel) const
 {
     std::string url = m_url;
     std::string post_body;
@@ -91,11 +81,7 @@ void UserAccountActionGetWithEvent::perform(
         cancel = global_cancel;
     };
 
-    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
-        Network::IHttp::RequestMethod::Get,
-        std::move(url),
-        retry_fn
-    );
+    std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
     if (!post_body.empty())
         http->set_post_body(post_body);
     if (!access_token.empty()) {
@@ -112,30 +98,19 @@ void UserAccountActionGetWithEvent::perform(
 #endif
     }
     http->on_error(
-            [fail_callback,
-             action_name = &m_action_name,
-             &callbacks,
-             fail_type = m_fail_type](std::string body, std::string error, unsigned status)
+            [fail_callback, action_name = &m_action_name, &callbacks, fail_type = m_fail_type](std::string body, std::string error, unsigned status)
             {
                 // SPDLOG_INFO("UserActionGetWithEvent::perform on_error");
                 if (fail_callback)
                     fail_callback(body);
-                std::string message = fmt::format(
-                    "{} action failed ({}): {}",
-                    *action_name,
-                    std::to_string(status),
-                    body
-                );
+                std::string message = fmt::format("{} action failed ({}): {}", *action_name, std::to_string(status), body);
                 if (fail_type != ActionFailType::None) {
                     callbacks->on_action_fail(fail_type, std::move(message));
                 }
             }
     )
         .on_progress(
-            [fail_callback,
-             action_name = &m_action_name,
-             &callbacks,
-             fail_type = m_fail_type](Network::IHttp::Progress progress, bool& cancel)
+            [fail_callback, action_name = &m_action_name, &callbacks, fail_type = m_fail_type](Network::IHttp::Progress progress, bool& cancel)
             {
                 if (cancel) {
                     if (fail_callback) {
@@ -149,9 +124,7 @@ void UserAccountActionGetWithEvent::perform(
             }
         )
         .on_complete(
-            [success_callback,
-             &callbacks,
-             success_type = m_success_type](std::string body, unsigned status)
+            [success_callback, &callbacks, success_type = m_success_type](std::string body, unsigned status)
             {
                 // SPDLOG_INFO("UserActionGetWithEvent::perform on_complete");
                 if (success_callback)

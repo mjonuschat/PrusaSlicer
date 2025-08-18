@@ -19,11 +19,7 @@ namespace Slic3r::App {
 
 using namespace Yoga;
 
-TopBar::TopBar(
-    Biz::ProjectInteractor* project_interactor,
-    Platform::AbstractRenderModule* render_module,
-    ThumbnailStore& thumbnail_store
-) :
+TopBar::TopBar(Biz::ProjectInteractor* project_interactor, Platform::AbstractRenderModule* render_module, ThumbnailStore& thumbnail_store) :
     Window("top_bar"),
     m_selected_project_changed_listener_scope(*project_interactor, *this),
     m_project_interactor(project_interactor),
@@ -100,24 +96,25 @@ void TopBar::on_selected_project_changed(size_t index)
 void TopBar::add_load_project_btn(Item* parent)
 {
     m_load_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarLoad, _u8L("Load"));
-    m_load_btn->callbacks().action = [this]() {
-        IDialogManager::FileCallback callback =
-            [this](bool success, const std::vector<boost::filesystem::path>& file_paths) {
-                if (success) {
-                    m_project_interactor->load_project(file_paths.front());
-                }
-            };
+    m_load_btn->callbacks().action = [this]()
+    {
+        IDialogManager::FileCallback callback = [this](bool success, const std::vector<boost::filesystem::path>& file_paths)
+        {
+            if (success) {
+                m_project_interactor->load_project(file_paths.front());
+            }
+        };
 
         auto& dlg_manager = AppServices::instance().dialog_manager();
-        dlg_manager
-            .show_file_dialog(FileDialogType::Open, _u8L("Open Project"), "", "", "*.3mf", callback);
+        dlg_manager.show_file_dialog(FileDialogType::Open, _u8L("Open Project"), "", "", "*.3mf", callback);
     };
 }
 
 void TopBar::add_save_project_btn(Item* parent)
 {
     m_save_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarSave, _u8L("Save"));
-    m_save_btn->callbacks().action = [this]() {
+    m_save_btn->callbacks().action = [this]()
+    {
         auto& dlg_manager = AppServices::instance().dialog_manager();
         dlg_manager.show_yesno_dialog(
             "DEVELOPER WARNING",
@@ -153,23 +150,13 @@ void TopBar::add_save_project_btn(Item* parent)
                 if (true || project_name.empty())
                 { // The 'true' is here for the development phase - effectively it always "Saves as".
                     // Saving a new project - show file save dialog.
-                    IDialogManager::FileCallback callback =
-                        [this, &params](
-                            bool success,
-                            const std::vector<boost::filesystem::path>& file_paths
-                        ) {
-                            if (success)
-                                m_project_interactor->save_project(file_paths.front().string(), params);
-                        };
+                    IDialogManager::FileCallback callback = [this, &params](bool success, const std::vector<boost::filesystem::path>& file_paths)
+                    {
+                        if (success)
+                            m_project_interactor->save_project(file_paths.front().string(), params);
+                    };
                     auto& dlg_manager = AppServices::instance().dialog_manager();
-                    dlg_manager.show_file_dialog(
-                        FileDialogType::Save,
-                        _u8L("Save Project"),
-                        "",
-                        "",
-                        "*.3mf",
-                        callback
-                    );
+                    dlg_manager.show_file_dialog(FileDialogType::Save, _u8L("Save Project"), "", "", "*.3mf", callback);
                 } else {
                     // Saving an existing project - just save.
                     m_project_interactor->save_project(project_name, params);
@@ -181,17 +168,12 @@ void TopBar::add_save_project_btn(Item* parent)
 
 void TopBar::add_show_ui_btn(Item* parent)
 {
-    m_show_ui_btn = parent->emplace_back<LayoutButton>(
-        "",
-        Render::Icon::TobBarShowUI,
-        _u8L("Hide sidebars")
-    );
+    m_show_ui_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarShowUI, _u8L("Hide sidebars"));
     m_show_ui_btn->set_checkable(true);
 
-    m_show_ui_btn->callbacks().action = [this]() {
-        m_show_ui_btn->set_tooltip(
-            m_show_ui_btn->checked() ? _u8L("Show sidebars") : _u8L("Hide sidebars")
-        );
+    m_show_ui_btn->callbacks().action = [this]()
+    {
+        m_show_ui_btn->set_tooltip(m_show_ui_btn->checked() ? _u8L("Show sidebars") : _u8L("Hide sidebars"));
         // Propagate sidebars visibility into active RenderModule
         m_render_module->set_sidebars_visible(!m_show_ui_btn->checked());
 
@@ -203,9 +185,7 @@ void TopBar::add_new_project_btn(Item* parent)
 {
     m_new_btn = parent->emplace_back<LayoutButton>("", Render::Icon::NewBtnIcon, "Add new project");
     m_new_btn->set_background_color(IM_COL32_BLACK_TRANS);
-    m_new_btn->callbacks().action = [this]() {
-        m_project_interactor->new_project();
-    };
+    m_new_btn->callbacks().action = [this]() { m_project_interactor->new_project(); };
 }
 
 } // namespace Slic3r::App

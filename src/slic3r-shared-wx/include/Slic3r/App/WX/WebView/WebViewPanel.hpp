@@ -11,17 +11,10 @@
 
 namespace Slic3r::App::WX::WebView {
 
-class WebViewPanel :
-    public wxPanel,
-    public Biz::UserAccount::IUserAccountListener,
-    public App::Browser::AbstractBrowserLogicCommandHandler
+class WebViewPanel : public wxPanel, public Biz::UserAccount::IUserAccountListener, public App::Browser::AbstractBrowserLogicCommandHandler
 {
 public:
-    WebViewPanel(
-        wxWindow* parent,
-        std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic,
-        bool do_create
-    );
+    WebViewPanel(wxWindow* parent, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create);
     ~WebViewPanel() = default;
 
     // IUserAccountListener;

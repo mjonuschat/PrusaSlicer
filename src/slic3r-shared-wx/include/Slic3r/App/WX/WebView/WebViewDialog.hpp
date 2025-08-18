@@ -8,21 +8,20 @@
 #include <wx/dialog.h>
 #include <memory>
 #include <atomic>
+
 namespace Slic3r::App::WX::WebView {
 
-class WebViewDialog :
-    public wxDialog,
-    public Biz::UserAccount::IUserAccountListener,
-    public App::Browser::AbstractBrowserLogicCommandHandler
+class WebViewDialog : public wxDialog, public Biz::UserAccount::IUserAccountListener, public App::Browser::AbstractBrowserLogicCommandHandler
 {
 public:
     WebViewDialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic);
     ~WebViewDialog() = default;
 
-    //IUserAccountListener
+    // IUserAccountListener
     void on_user_account_id_success(bool is_refresh, const std::string& username) override;
     void on_user_account_logged_out() override;
     void on_user_account_will_refresh() override;
+
     void on_user_account_action_retry(const Biz::Network::IHttp::Retry& retry, std::function<void(void)> cancel_callback) override
     { /*unused*/
     }
@@ -50,8 +49,8 @@ private:
     void on_select_all(wxCommandEvent& evt);
     void On_enable_context_menu(wxCommandEvent& evt);
     void On_enable_dev_tools(wxCommandEvent& evt);
-    void on_navigation_request(wxWebViewEvent &evt);
-    void on_loaded(wxWebViewEvent &evt);
+    void on_navigation_request(wxWebViewEvent& evt);
+    void on_loaded(wxWebViewEvent& evt);
 
     void run_script(const wxString& javascript);
     void load_error_page();
@@ -74,15 +73,15 @@ private:
 #endif
 
     std::string m_loading_html;
-    bool m_load_error_page{ false };
+    bool m_load_error_page{false};
 
     wxString m_response_js;
     wxString m_default_url;
 
-    bool                m_waiting_for_counters {false};
-    std::atomic<size_t> m_atomic_counter {0};
-    size_t              m_counter_to_match {0};
-    bool                m_force_close {false};
+    bool m_waiting_for_counters{false};
+    std::atomic<size_t> m_atomic_counter{0};
+    size_t m_counter_to_match{0};
+    bool m_force_close{false};
 
 protected:
     bool handle_logic_command_LoadURL(const std::string& data) override;
@@ -104,4 +103,4 @@ protected:
     bool handle_logic_command_SetLoadDefaultURLOnErrorFalse(const std::string& data) override;
 };
 
-} // namespace Slic3r::App::WX
+} // namespace Slic3r::App::WX::WebView

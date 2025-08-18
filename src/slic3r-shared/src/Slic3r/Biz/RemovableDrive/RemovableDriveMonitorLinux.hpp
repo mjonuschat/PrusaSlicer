@@ -34,10 +34,7 @@ public:
     /**
      * @brief Returns path to removable drive if any exists. Prefarably one with preferred_path.
      */
-    boost::filesystem::path get_path_on_removable_drive(
-        const boost::filesystem::path& preferred_path
-    ) override;
-    
+    boost::filesystem::path get_path_on_removable_drive(const boost::filesystem::path& preferred_path) override;
 
     /**
      * @brief Returns path to removable drive if "path" is on removable.

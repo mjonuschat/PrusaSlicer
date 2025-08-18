@@ -20,18 +20,12 @@ bool PrintHostLocal::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn e
     info_fn("is_export", {});
     bool res = move_file(m_upload_data.source_path, m_upload_data.dest_path, error);
     if (!res) {
-        error_fn(
-            fmt::format("{}{}. {}", _u8L("Failed to export file to"), m_upload_data.dest_path.string(), error)
-        );
+        error_fn(fmt::format("{}{}. {}", _u8L("Failed to export file to"), m_upload_data.dest_path.string(), error));
     }
     return res;
 }
 
-bool PrintHostLocal::move_file(
-    const boost::filesystem::path& source,
-    const boost::filesystem::path& dest,
-    std::string& msg
-) const
+bool PrintHostLocal::move_file(const boost::filesystem::path& source, const boost::filesystem::path& dest, std::string& msg) const
 {
     boost::system::error_code ec;
     ASSERT(fs::exists(source, ec) && !ec);
@@ -54,7 +48,8 @@ bool PrintHostLocal::move_file(
     }
     // If rename fails, we can do copy + remove
     std::string copy_msg;
-    if(Utils::copy_file(source.string(), dest.string(), copy_msg) != Utils::CopyFileResult::Success) {
+    if (Utils::copy_file(source.string(), dest.string(), copy_msg) != Utils::CopyFileResult::Success)
+    {
         msg = fmt::format("Failed to move {} to {}: {}", source.string(), dest.string(), copy_msg);
         return false;
     }

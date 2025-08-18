@@ -31,8 +31,8 @@ class IUserAccountActionCallbacks
 public:
     virtual ~IUserAccountActionCallbacks() = default;
 
-    virtual void on_action_retry(const Network::IHttp::Retry& retry) = 0;
+    virtual void on_action_retry(const Network::IHttp::Retry& retry)                 = 0;
     virtual void on_action_success(ActionSuccessType success_type, std::string body) = 0;
-    virtual void on_action_fail(ActionFailType fail_type, std::string body) = 0;
+    virtual void on_action_fail(ActionFailType fail_type, std::string body)          = 0;
 };
-}
+} // namespace Slic3r::Biz::UserAccount

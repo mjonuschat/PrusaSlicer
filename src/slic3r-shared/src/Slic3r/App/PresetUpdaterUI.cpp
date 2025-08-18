@@ -27,9 +27,7 @@ void PresetUpdaterUI::on_preset_updater_error(const std::string& body)
     DEBUG_ASSERT(false);
 }
 
-void PresetUpdaterUI::on_preset_updater_reconfigurations_list(
-    const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations
-)
+void PresetUpdaterUI::on_preset_updater_reconfigurations_list(const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations)
 {
     SPDLOG_INFO(__FUNCTION__);
     SPDLOG_INFO(
@@ -73,9 +71,7 @@ void PresetUpdaterUI::on_preset_updater_reconfigurations_list(
             m_preset_updater_interactor.perform_reconfigurations(reconfigurations);
         }
     };
-    AppServices::instance()
-        .dialog_manager()
-        .show_yesno_dialog("Preset Updater reconfigurations", dialog_msg, after_dialog);
+    AppServices::instance().dialog_manager().show_yesno_dialog("Preset Updater reconfigurations", dialog_msg, after_dialog);
 }
 
 void PresetUpdaterUI::on_preset_updater_reconfigurations_perfomed()
@@ -85,31 +81,18 @@ void PresetUpdaterUI::on_preset_updater_reconfigurations_perfomed()
 
 void PresetUpdaterUI::on_preset_updater_status(const std::string& target, int attempt, unsigned delay)
 {
-    SPDLOG_INFO(
-        "PRESET UPDATER STATUS: target:{} attempt:{} delay:{}",
-        target,
-        std::to_string(attempt),
-        std::to_string(delay)
-    );
+    SPDLOG_INFO("PRESET UPDATER STATUS: target:{} attempt:{} delay:{}", target, std::to_string(attempt), std::to_string(delay));
 }
 
-void PresetUpdaterUI::on_preset_updater_repository_info_vector(
-    const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor
-)
+void PresetUpdaterUI::on_preset_updater_repository_info_vector(const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor)
 {
     std::string dialog_msg = "Preset Updater Sources\n\n";
 
     for (const auto pair : descriptor) {
-        dialog_msg += fmt::format(
-            "source: {}({}) {}\n",
-            pair.descriptor.id,
-            pair.descriptor.unzipped_data_path.empty() ? "online" : "local",
-            pair.selected ? "selected" : "not selected"
-        );
+        dialog_msg += fmt::
+            format("source: {}({}) {}\n", pair.descriptor.id, pair.descriptor.unzipped_data_path.empty() ? "online" : "local", pair.selected ? "selected" : "not selected");
     }
 
-    AppServices::instance()
-        .dialog_manager()
-        .show_yesno_dialog("Preset Updater Sources", dialog_msg, nullptr);
+    AppServices::instance().dialog_manager().show_yesno_dialog("Preset Updater Sources", dialog_msg, nullptr);
 }
 } // namespace Slic3r::App

@@ -99,11 +99,7 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
 {
     AbstractRenderModule::on_init(device, imgui_render);
     Yoga::Item::set_imgui_render(&imgui_render); // Todo: move this somewhere where it is invoked once
-    m_scene_presenter = std::make_unique<PlaterScenePresenter>(
-        m_workbench,
-        m_project_interactor,
-        *m_device
-    );
+    m_scene_presenter = std::make_unique<PlaterScenePresenter>(m_workbench, m_project_interactor, *m_device);
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(this);
     m_project_interactor.add_listener<Biz::IProjectsChangedListener>(m_scene_presenter.get());
@@ -119,15 +115,9 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_scene_presenter->center_camera_on_selected_bed();
 
     if (!m_thumbnail_image_generator->initialized()) {
-        m_thumbnail_image_generator->init(
-            m_workbench,
-            *m_device,
-            *m_scene_presenter
-        );
+        m_thumbnail_image_generator->init(m_workbench, *m_device, *m_scene_presenter);
     }
-    m_scene_presenter->add_listener<Plater::IBedVisuallyChangedListener>(
-        m_thumbnail_store_updater.get()
-    );
+    m_scene_presenter->add_listener<Plater::IBedVisuallyChangedListener>(m_thumbnail_store_updater.get());
 
     m_scene_presenter->force_bed_thumbnails_generation();
 
@@ -145,17 +135,13 @@ void PlaterRenderModule::init_scene_layout()
     m_cube_view     = Passthrough{std::make_unique<CubeView>()};
     m_sidebar_bed   = Passthrough(std::make_unique<SidebarBed>(m_project_interactor));
     m_sidebar_print = Passthrough(std::make_unique<SidebarPrint>(m_project_interactor));
-    m_pop_notification_list_view = Passthrough{
-        std::make_unique<PopNotification::PopNotificationListView>(
-            AppServices::instance().pop_notification_center()
-        )
-    };
+    m_pop_notification_list_view = Passthrough{std::make_unique<PopNotification::PopNotificationListView>(
+        AppServices::instance().pop_notification_center()
+    )};
     m_history = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
 
-    m_sidebar_action_buttons = Passthrough{
-        std::make_unique<SidebarPlaterActionButtons>(m_render_module_navigator)
-    };
+    m_sidebar_action_buttons = Passthrough{std::make_unique<SidebarPlaterActionButtons>(m_render_module_navigator)};
     m_sidebar_action_buttons->on_init(&m_project_interactor);
 
     m_layout.reset(new PlaterRenderLayout(
@@ -194,36 +180,28 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarAdd,
         "Add...",
         "Ctrl + I",
-        {.action = [this]() {
-            IDialogManager::FileCallback callback =
-                [this](bool success, const std::vector<boost::filesystem::path>& file_paths) {
-                    if (success) {
-                        const auto& cc = m_project_interactor.selected_project()
-                                             .config_containers()
-                                             .front();
-                        const auto& bed     = cc->bed();
-                        int nozzle_dmrs_cnt = cc->selected_preset().hw_config.tool_count;
-                        Biz::FileLoadingLogic::import_files_and_add_to_scene(
-                            file_paths,
-                            nozzle_dmrs_cnt,
-                            m_project_interactor.scene_interactor(),
-                            bed.center()
-                        );
+        {.action = [this]()
+         {
+             IDialogManager::FileCallback callback = [this](bool success, const std::vector<boost::filesystem::path>& file_paths)
+             {
+                 if (success) {
+                     const auto& cc = m_project_interactor.selected_project().config_containers().front();
+                     const auto& bed     = cc->bed();
+                     int nozzle_dmrs_cnt = cc->selected_preset().hw_config.tool_count;
+                     Biz::FileLoadingLogic::import_files_and_add_to_scene(
+                         file_paths,
+                         nozzle_dmrs_cnt,
+                         m_project_interactor.scene_interactor(),
+                         bed.center()
+                     );
 
-                        m_scene_presenter->scene().log_nodes();
-                    }
-                };
+                     m_scene_presenter->scene().log_nodes();
+                 }
+             };
 
-            auto& dlg_manager = App::AppServices::instance().dialog_manager();
-            dlg_manager.show_file_dialog(
-                FileDialogType::OpenMultiple,
-                _u8L("Import File"),
-                "",
-                "",
-                "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf",
-                callback
-            );
-        }}
+             auto& dlg_manager = App::AppServices::instance().dialog_manager();
+             dlg_manager.show_file_dialog(FileDialogType::OpenMultiple, _u8L("Import File"), "", "", "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf", callback);
+         }}
     );
 
     m_toolbar_add_volume = m_layout->add_toolbar_item(
@@ -231,9 +209,7 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::AddVolume,
         "Add Volume",
         "",
-        {.action = [this]() {
-            m_add_volumes_menu->open();
-        }}
+        {.action = [this]() { m_add_volumes_menu->open(); }}
     );
     m_toolbar_add_volume->set_enabled(false);
     init_add_volume_menu();
@@ -243,26 +219,26 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::DeleteBtnIcon,
         "Delete selection",
         "",
-        {.action = [this]() {
-            std::optional<std::string> last_solid_part_name = m_project_interactor
-                                                                  .scene_interactor()
-                                                                  .delete_selected_elements();
+        {.action = [this]()
+         {
+             std::optional<std::string>
+                 last_solid_part_name = m_project_interactor.scene_interactor().delete_selected_elements();
 
-            if (last_solid_part_name) {
-                // Show warning dialog
-                auto& dlg_manager = App::AppServices::instance().dialog_manager();
-                dlg_manager.show_warning_dialog(
-                    fmt::vformat(
-                        _u8L(
-                            "Part {} could not be deleted from the object,\n"
-                            "as removing the last solid part is not permitted."
-                        ),
-                        fmt::make_format_args(last_solid_part_name.value())
-                    ) + "\n",
-                    _u8L("Delete selection")
-                );
-            }
-        }}
+             if (last_solid_part_name) {
+                 // Show warning dialog
+                 auto& dlg_manager = App::AppServices::instance().dialog_manager();
+                 dlg_manager.show_warning_dialog(
+                     fmt::vformat(
+                         _u8L(
+                             "Part {} could not be deleted from the object,\n"
+                             "as removing the last solid part is not permitted."
+                         ),
+                         fmt::make_format_args(last_solid_part_name.value())
+                     ) + "\n",
+                     _u8L("Delete selection")
+                 );
+             }
+         }}
     );
     m_toolbar_delete->set_enabled(false);
 
@@ -271,10 +247,11 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarAddInstance,
         "Add instance",
         "+",
-        {.action = [this]() {
-            m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
-            m_scene_presenter->scene().log_nodes();
-        }}
+        {.action = [this]()
+         {
+             m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
+             m_scene_presenter->scene().log_nodes();
+         }}
     );
     m_toolbar_add_instance->set_enabled(false);
 
@@ -283,10 +260,7 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarMove,
         "Move",
         "M",
-        {.action =
-             [this]() {
-                 toggle_activate_tool(Scene::ToolType::Translation);
-             }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Translation); }},
         m_translation_gizmo
     );
     m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
@@ -294,10 +268,7 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarRotation,
         "Rotate",
         "R",
-        {.action =
-             [this]() {
-                 toggle_activate_tool(Scene::ToolType::Rotation);
-             }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }},
         m_rotation_gizmo
     );
     m_toolbar_arrange = m_layout->add_toolbar_item_gizmo(
@@ -305,10 +276,7 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarArrange,
         "Arrange",
         "A",
-        {.action =
-             [this]() {
-                 toggle_activate_tool(Scene::ToolType::ArrangeGizmo);
-             }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::ArrangeGizmo); }},
         m_arrange_gizmo
     );
     m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
@@ -316,10 +284,7 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarGraph,
         "Simplify",
         "B",
-        {.action =
-             [this]() {
-                 toggle_activate_tool(Scene::ToolType::Simplify);
-             }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Simplify); }},
         m_simplify_gizmo
     );
     m_toolbar_simplify->set_enabled(false);
@@ -329,10 +294,7 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarPaintOnSupports,
         "Paint-on supports",
         "L",
-        {.action =
-             [this]() {
-                 toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo);
-             }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); }},
         m_paint_on_supports_gizmo
     );
 
@@ -341,10 +303,7 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarText,
         "Text",
         "T",
-        {.action =
-             [this]() {
-                 toggle_activate_tool(Scene::ToolType::TextGizmo);
-             }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); }},
         m_text_gizmo
     );
 
@@ -353,10 +312,7 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::ToolbarMeasure,
         "Measure",
         "U",
-        {.action =
-             [this]() {
-                 toggle_activate_tool(Scene::ToolType::MeasureGizmo);
-             }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::MeasureGizmo); }},
         m_measure_gizmo
     );
 }
@@ -367,9 +323,7 @@ void PlaterRenderModule::update_toolbar_tool_selection(Scene::ToolType current_t
     m_toolbar_rotate->set_checked(current_tool_type == Scene::ToolType::Rotation);
     m_toolbar_simplify->set_checked(current_tool_type == Scene::ToolType::Simplify);
     m_toolbar_arrange->set_checked(current_tool_type == Scene::ToolType::ArrangeGizmo);
-    m_toolbar_paint_on_supports->set_checked(
-        current_tool_type == Scene::ToolType::PaintOnSupportsGizmo
-    );
+    m_toolbar_paint_on_supports->set_checked(current_tool_type == Scene::ToolType::PaintOnSupportsGizmo);
     m_toolbar_text->set_checked(current_tool_type == Scene::ToolType::TextGizmo);
     m_toolbar_measure->set_checked(current_tool_type == Scene::ToolType::MeasureGizmo);
 }
@@ -395,34 +349,14 @@ void PlaterRenderModule::init_gizmos()
     // TODO: Load constant from OS
     int min_drag_offset = 500; // [in um]
     auto drag_detector = std::make_unique<Scene::MouseDragDetector>(min_drag_time_span, min_drag_offset);
-    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(
-        *m_device,
-        *m_scene_presenter,
-        m_project_interactor,
-        std::move(drag_detector)
-    );
+    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter, m_project_interactor, std::move(drag_detector));
     m_gizmo_manager->add_listener<IGizmoActiveToolListener>(this);
-    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(
-        m_workbench,
-        *m_scene_presenter
-    );
-    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
-        m_camera_gizmo
-    );
-    BedSelectGizmo& bed_select_gizmo{m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(
-        m_project_interactor.scene_interactor(),
-        *m_scene_presenter
-    )};
-    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(
-        m_project_interactor.scene_interactor(),
-        *m_device,
-        *m_scene_presenter,
-        m_screen_info
-    );
-    m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(
-        m_project_interactor.scene_interactor(),
-        *m_scene_presenter
-    );
+    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(m_workbench, *m_scene_presenter);
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(m_camera_gizmo);
+    BedSelectGizmo& bed_select_gizmo{m_gizmo_manager->add_base_gizmo<
+        BedSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter)};
+    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_device, *m_scene_presenter, m_screen_info);
+    m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
     m_translation_gizmo = &m_gizmo_manager->add_tool_gizmo<TranslationGizmo>(
         *m_device,
         m_gizmo_manager->data_factory(),
@@ -444,62 +378,36 @@ void PlaterRenderModule::init_gizmos()
         m_workbench
     );
 
-    SimplifyGizmo::CloseFn close_fn = [mng = m_gizmo_manager.get()]() {
-        mng->deactivate_current_tool();
-    };
-    m_simplify_gizmo = &m_gizmo_manager->add_tool_gizmo<SimplifyGizmo>(
-        *m_device,
-        *m_scene_presenter,
-        m_project_interactor,
-        close_fn
-    );
+    SimplifyGizmo::CloseFn close_fn = [mng = m_gizmo_manager.get()]()
+    { mng->deactivate_current_tool(); };
+    m_simplify_gizmo = &m_gizmo_manager->add_tool_gizmo<SimplifyGizmo>(*m_device, *m_scene_presenter, m_project_interactor, close_fn);
     m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>();
     m_text_gizmo              = &m_gizmo_manager->add_tool_gizmo<TextGizmo>();
-    m_measure_gizmo           = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(
-        *m_device,
-        m_project_interactor,
-        *m_scene_presenter
-    );
-    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(
-        m_measure_gizmo
-    );
+    m_measure_gizmo = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(*m_device, m_project_interactor, *m_scene_presenter);
+    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(m_measure_gizmo);
 }
 
 void PlaterRenderModule::init_add_volume_menu()
 {
-    m_add_volumes_menu = std::make_unique<Yoga::Menu>(
-        m_toolbar_add_volume,
-        "add_volume_menu",
-        Yoga::Position::Right
-    );
+    m_add_volumes_menu = std::make_unique<Yoga::Menu>(m_toolbar_add_volume, "add_volume_menu", Yoga::Position::Right);
 
     m_add_volumes_menu
         ->append_item(_u8L("Solid Part Volume"), nullptr, Render::Icon::SolidPartVolume)
         ->callbacks()
-        .action = [this]() {
-        add_volume(Domain::ModelVolumeType::MODEL_PART);
-    };
+        .action = [this]() { add_volume(Domain::ModelVolumeType::MODEL_PART); };
     m_add_volumes_menu->append_item(_u8L("Negative Volume"), nullptr, Render::Icon::NegativeVolume)
         ->callbacks()
-        .action = [this]() {
-        add_volume(Domain::ModelVolumeType::NEGATIVE_VOLUME);
-    };
+        .action = [this]() { add_volume(Domain::ModelVolumeType::NEGATIVE_VOLUME); };
     m_add_volumes_menu->append_item(_u8L("Modifier Volume"), nullptr, Render::Icon::ModifierVolume)
         ->callbacks()
-        .action = [this]() {
-        add_volume(Domain::ModelVolumeType::PARAMETER_MODIFIER);
-    };
+        .action = [this]() { add_volume(Domain::ModelVolumeType::PARAMETER_MODIFIER); };
     m_add_volumes_menu->append_item(_u8L("Support Blocker"), nullptr, Render::Icon::SupportBlocker)
         ->callbacks()
-        .action = [this]() {
-        add_volume(Domain::ModelVolumeType::SUPPORT_BLOCKER);
-    };
+        .action = [this]() { add_volume(Domain::ModelVolumeType::SUPPORT_BLOCKER); };
     m_add_volumes_menu
         ->append_item(_u8L("Support Modifier"), nullptr, Render::Icon::SupportModifier)
         ->callbacks()
-        .action = [this]() {
-        add_volume(Domain::ModelVolumeType::SUPPORT_ENFORCER);
-    };
+        .action = [this]() { add_volume(Domain::ModelVolumeType::SUPPORT_ENFORCER); };
 }
 
 void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
@@ -507,28 +415,18 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
     assert(m_add_volumes_menu->opened());
     m_add_volumes_menu->close();
 
-    IDialogManager::FileCallback callback =
-        [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths) {
-            if (success) {
-                Biz::FileLoadingLogic::import_volumes_into_selected_object(
-                    file_paths,
-                    type,
-                    m_project_interactor.scene_interactor()
-                );
+    IDialogManager::FileCallback callback = [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths)
+    {
+        if (success) {
+            Biz::FileLoadingLogic::
+                import_volumes_into_selected_object(file_paths, type, m_project_interactor.scene_interactor());
 
-                m_scene_presenter->scene().log_nodes();
-            }
-        };
+            m_scene_presenter->scene().log_nodes();
+        }
+    };
 
     auto& dlg_manager = AppServices::instance().dialog_manager();
-    dlg_manager.show_file_dialog(
-        FileDialogType::OpenMultiple,
-        _u8L("Import File"),
-        "",
-        "",
-        "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf",
-        callback
-    );
+    dlg_manager.show_file_dialog(FileDialogType::OpenMultiple, _u8L("Import File"), "", "", "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf", callback);
 }
 
 void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)
@@ -622,16 +520,7 @@ void imgui_scenegraph_node_info(const Scene::Node& node)
     if (node.children().empty())
         node_flags |= ImGuiTreeNodeFlags_Leaf;
     const std::string& name = node.debug_name();
-    if (ImGui::TreeNodeEx(
-            &node,
-            node_flags,
-            "%s %s%s%s%s",
-            name.empty() ? "Node" : name.c_str(),
-            node.has_render_component() ? "(R)" : "",
-            node.has_material_override() ? "(M)" : "",
-            node.has_imgui_render_component() ? "(I)" : "",
-            node.has_raycast_component() ? "(C)" : ""
-        ))
+    if (ImGui::TreeNodeEx(&node, node_flags, "%s %s%s%s%s", name.empty() ? "Node" : name.c_str(), node.has_render_component() ? "(R)" : "", node.has_material_override() ? "(M)" : "", node.has_imgui_render_component() ? "(I)" : "", node.has_raycast_component() ? "(C)" : ""))
     {
         static const Scene::Node* opened_node = nullptr;
 
@@ -739,10 +628,7 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
-                    Imgui::icon_button(
-                        ICONS[i].first,
-                        ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f
-                    );
+                    Imgui::icon_button(ICONS[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
                         ImGui::BeginTooltip();
@@ -785,10 +671,7 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
-                    Imgui::icon_button(
-                        ICONS_MEDIUM[i].first,
-                        ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f
-                    );
+                    Imgui::icon_button(ICONS_MEDIUM[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
                         ImGui::BeginTooltip();
@@ -850,10 +733,7 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
-                    Imgui::icon_button(
-                        ICONS_LARGE[i].first,
-                        ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f
-                    );
+                    Imgui::icon_button(ICONS_LARGE[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
                         ImGui::BeginTooltip();
@@ -882,10 +762,8 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
-                    Imgui::icon_button(
-                        ICONS_EXTRA_LARGE[i].first,
-                        ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f
-                    );
+                    Imgui::
+                        icon_button(ICONS_EXTRA_LARGE[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
                         ImGui::BeginTooltip();
@@ -905,11 +783,7 @@ static void render_imgui_debug_icons()
 #endif // ENABLED_DEBUG_IMGUI_ICONS
 
 #if ENABLED_DEBUG_BEDS
-static void render_imgui_debug_bed(
-    Biz::ProjectInteractor& project_interactor,
-    PlaterScenePresenter& scene_presenter,
-    Render::Device& device
-)
+static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, PlaterScenePresenter& scene_presenter, Render::Device& device)
 {
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("Bed test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -934,56 +808,57 @@ static void render_imgui_debug_bed(
             ImGui::TableSetupColumn("Print Volume");
             ImGui::TableHeadersRow();
 
-            Scene::visit(scene_presenter.scene().root(), [&](Scene::Node& n) {
-                Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
-                if (tag != nullptr) {
-                    Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id);
-                    DEBUG_ASSERT(cc != nullptr);
-                    Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
-                    if (tag->type == Scene::BedElementType::Undefined) {
-                        bool active = active_tag.config_container_id == tag->config_container_id
-                            && active_tag.instance_id == tag->instance_id;
+            Scene::visit(
+                scene_presenter.scene().root(),
+                [&](Scene::Node& n)
+                {
+                    Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
+                    if (tag != nullptr) {
+                        Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id);
+                        DEBUG_ASSERT(cc != nullptr);
+                        Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
+                        if (tag->type == Scene::BedElementType::Undefined) {
+                            bool active = active_tag.config_container_id == tag->config_container_id
+                                && active_tag.instance_id == tag->instance_id;
 
-                        ImGui::TableNextRow();
-                        if (active)
-                            ImGui::TableSetBgColor(
-                                ImGuiTableBgTarget_RowBg0,
-                                ImGui::GetColorU32(ImGuiCol_TableHeaderBg)
-                            );
+                            ImGui::TableNextRow();
+                            if (active)
+                                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_TableHeaderBg));
 
-                        ImGui::TableSetColumnIndex(0);
-                        ImGui::AlignTextToFramePadding();
-                        ImGui::Text("%zu", tag->config_container_id);
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::AlignTextToFramePadding();
+                            ImGui::Text("%zu", tag->config_container_id);
 
-                        ImGui::TableSetColumnIndex(1);
-                        ImGui::Text("%zu", tag->instance_id);
+                            ImGui::TableSetColumnIndex(1);
+                            ImGui::Text("%zu", tag->instance_id);
 
-                        ImGui::TableSetColumnIndex(2);
-                        ImGui::Text("%zu", inst.model_instances.size());
+                            ImGui::TableSetColumnIndex(2);
+                            ImGui::Text("%zu", inst.model_instances.size());
 
-                        ImGui::TableSetColumnIndex(3);
-                        bool print_volume = inst.print_volume_enabled;
-                        if (ImGui::Checkbox(
-                                fmt::format("##print_volume{}/{}", tag->config_container_id, tag->instance_id)
-                                    .c_str(),
-                                &print_volume
-                            ))
-                        {
-                            inst.print_volume_enabled = print_volume;
-                            scene_presenter.update_beds();
-                        }
-
-                        if (total_instances_count > 1) {
-                            ImGui::TableSetColumnIndex(4);
-                            if (ImGui::Button(
-                                    fmt::format("Remove##{}/{}", tag->config_container_id, tag->instance_id)
-                                        .c_str()
+                            ImGui::TableSetColumnIndex(3);
+                            bool print_volume = inst.print_volume_enabled;
+                            if (ImGui::Checkbox(
+                                    fmt::format("##print_volume{}/{}", tag->config_container_id, tag->instance_id)
+                                        .c_str(),
+                                    &print_volume
                                 ))
-                                remove_tag = {tag->config_container_id, tag->instance_id};
+                            {
+                                inst.print_volume_enabled = print_volume;
+                                scene_presenter.update_beds();
+                            }
+
+                            if (total_instances_count > 1) {
+                                ImGui::TableSetColumnIndex(4);
+                                if (ImGui::Button(
+                                        fmt::format("Remove##{}/{}", tag->config_container_id, tag->instance_id)
+                                            .c_str()
+                                    ))
+                                    remove_tag = {tag->config_container_id, tag->instance_id};
+                            }
                         }
                     }
                 }
-            });
+            );
 
             ImGui::EndTable();
         }
@@ -1020,9 +895,12 @@ static void render_imgui_debug_bed(
             }
 
             std::vector<std::string> sizes_str;
-            std::transform(sizes.begin(), sizes.end(), std::back_inserter(sizes_str), [](size_t size) {
-                return std::to_string(size) + "x" + std::to_string(size);
-            });
+            std::transform(
+                sizes.begin(),
+                sizes.end(),
+                std::back_inserter(sizes_str),
+                [](size_t size) { return std::to_string(size) + "x" + std::to_string(size); }
+            );
 
             auto it = std::find(sizes.begin(), sizes.end(), texture_size);
             DEBUG_ASSERT(it != sizes.end());
@@ -1046,26 +924,27 @@ static void render_imgui_debug_bed(
             // force bed textures reload with the new size
             if (sizes[sel_size] != texture_size) {
                 Scene::BedRenderHelper::set_bed_texture_size(sizes[sel_size]);
-                Scene::visit(scene_presenter.scene().root(), [&](Scene::Node& n) {
-                    Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
-                    if (tag != nullptr) {
-                        if (tag->type == Scene::BedElementType::PlateTextured) {
-                            Domain::ConfigContainer* cc = proj.find_config_container(
-                                tag->config_container_id
-                            );
-                            Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
-                            n.render_component()->replace_material(
-                                Scene::BedMaterials::plate_textured_material(device, inst.bed.get())
-                            );
-                            if (n.has_material_override())
-                                n.set_material_override(
-                                    Scene::BedMaterials::plate_textured_override_material(
-                                        n.render_component()->material()
-                                    )
+                Scene::visit(
+                    scene_presenter.scene().root(),
+                    [&](Scene::Node& n)
+                    {
+                        Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
+                        if (tag != nullptr) {
+                            if (tag->type == Scene::BedElementType::PlateTextured) {
+                                Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id);
+                                Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
+                                n.render_component()->replace_material(
+                                    Scene::BedMaterials::plate_textured_material(device, inst.bed.get())
                                 );
+                                if (n.has_material_override())
+                                    n.set_material_override(
+                                        Scene::BedMaterials::
+                                            plate_textured_override_material(n.render_component()->material())
+                                    );
+                            }
                         }
                     }
-                });
+                );
             }
         }
     }
@@ -1074,10 +953,7 @@ static void render_imgui_debug_bed(
 #endif // ENABLED_DEBUG_BEDS
 
 #if ENABLED_DEBUG_CAMERA
-static void render_imgui_debug_camera(
-    const Scene::Camera& camera,
-    const Scene::CameraTrackballController& trackball
-)
+static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::CameraTrackballController& trackball)
 {
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("Camera debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -1173,10 +1049,7 @@ static void render_imgui_debug_camera(
                 ImGui::TableSetColumnIndex(0);
                 ImGui::Text("FOVy");
                 ImGui::TableSetColumnIndex(1);
-                ImGui::Text(
-                    "%.3f",
-                    dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy()
-                );
+                ImGui::Text("%.3f", dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy());
 
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
@@ -1184,8 +1057,7 @@ static void render_imgui_debug_camera(
                 ImGui::TableSetColumnIndex(1);
                 ImGui::Text(
                     "%.3f",
-                    dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy()
-                        / camera.zoom()
+                    dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy() / camera.zoom()
                 );
             }
 
@@ -1202,14 +1074,13 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         return;
 
     m_thumbnail_image_generator->handle_enqueued_requests();
-    m_thumbnail_store_updater->update(*m_device, [this](const BedThumbnailTextures& textures) {
-        m_object_list->set_bed_instance_icons(textures);
-    });
-
-    m_cube_view->set_camera_data(
-        m_scene_presenter->scene().camera(),
-        m_scene_presenter->scene().camera_trackball()
+    m_thumbnail_store_updater->update(
+        *m_device,
+        [this](const BedThumbnailTextures& textures)
+        { m_object_list->set_bed_instance_icons(textures); }
     );
+
+    m_cube_view->set_camera_data(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 
     m_layout->render(Vec2f(m_screen_info.logical_width(), m_screen_info.logical_height()));
 
@@ -1237,27 +1108,17 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 #endif // ENABLED_DEBUG_BEDS
 
 #if ENABLED_DEBUG_CAMERA
-    render_imgui_debug_camera(
-        m_scene_presenter->scene().camera(),
-        m_scene_presenter->scene().camera_trackball()
-    );
+    render_imgui_debug_camera(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 #endif // ENABLED_DEBUG_CAMERA
     Scene::render_imgui_graphics_settings_debug_window(*m_scene_presenter, *m_imgui_render);
 }
 
-void PlaterRenderModule::render_object_hud(
-    const Scene::Node& n,
-    const Eigen::AlignedBox<float, 2>& screen_bounding_box
-)
+void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)
 {
     std::string node_name = "##node_hud_" + std::to_string(reinterpret_cast<size_t>(&n));
 
     ImGui::SetNextWindowPos({screen_bounding_box.max().x(), screen_bounding_box.min().y()});
-    if (ImGui::Begin(
-            node_name.c_str(),
-            nullptr,
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground
-        ))
+    if (ImGui::Begin(node_name.c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground))
     {
         if (ImGui::SmallButton("Foc"))
             m_scene_presenter->scene().camera_trackball().set_target(Vec3d::Zero());
@@ -1291,10 +1152,7 @@ void PlaterRenderModule::on_deactivated()
     App::set_global_lighting(m_scene_presenter->scene().lights());
 }
 
-void PlaterRenderModule::on_scene_selection_changed(
-    Domain::SelectionId project_id,
-    const Biz::Scene::ObjectSelection& selection
-)
+void PlaterRenderModule::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
 {
     const bool empty_selection = selection.empty();
     m_toolbar_move->set_enabled(!empty_selection);
@@ -1302,9 +1160,7 @@ void PlaterRenderModule::on_scene_selection_changed(
     m_toolbar_simplify->set_enabled(!empty_selection);
     m_toolbar_delete->set_enabled(!empty_selection);
 
-    m_text_gizmo->update_layout(
-        !empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume
-    );
+    m_text_gizmo->update_layout(!empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume);
 
     bool can_add_instance = !empty_selection;
     if (can_add_instance) {

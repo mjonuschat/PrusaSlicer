@@ -18,46 +18,14 @@ BrowserLogicPrintables::BrowserLogicPrintables(Biz::ProjectInteractor& project_i
     AbstractBrowserLogic(Biz::Network::ServiceConfig::instance().printables_url(), {"ExternalApp"}),
     m_project_interactor(project_interactor)
 {
-    m_events["accessTokenExpired"] = std::bind(
-        &BrowserLogicPrintables::on_printables_event_access_token_expired,
-        this,
-        std::placeholders::_1
-    );
-    m_events["printGcode"] = std::bind(
-        &BrowserLogicPrintables::on_printables_event_print_gcode,
-        this,
-        std::placeholders::_1
-    );
-    m_events["downloadFile"] = std::bind(
-        &BrowserLogicPrintables::on_printables_event_download_file,
-        this,
-        std::placeholders::_1
-    );
-    m_events["sliceFile"] = std::bind(
-        &BrowserLogicPrintables::on_printables_event_slice_file,
-        this,
-        std::placeholders::_1
-    );
-    m_events["requiredLogin"] = std::bind(
-        &BrowserLogicPrintables::on_printables_event_required_login,
-        this,
-        std::placeholders::_1
-    );
-    m_events["openExternalUrl"] = std::bind(
-        &BrowserLogicPrintables::on_printables_event_open_url,
-        this,
-        std::placeholders::_1
-    );
-    m_events["ready"] = std::bind(
-        &BrowserLogicPrintables::on_printables_event_dummy,
-        this,
-        std::placeholders::_1
-    );
-    m_events["reloadHomePage"] = std::bind(
-        &BrowserLogicPrintables::on_webview_reload_event,
-        this,
-        std::placeholders::_1
-    );
+    m_events["accessTokenExpired"] = std::bind(&BrowserLogicPrintables::on_printables_event_access_token_expired, this, std::placeholders::_1);
+    m_events["printGcode"] = std::bind(&BrowserLogicPrintables::on_printables_event_print_gcode, this, std::placeholders::_1);
+    m_events["downloadFile"] = std::bind(&BrowserLogicPrintables::on_printables_event_download_file, this, std::placeholders::_1);
+    m_events["sliceFile"] = std::bind(&BrowserLogicPrintables::on_printables_event_slice_file, this, std::placeholders::_1);
+    m_events["requiredLogin"] = std::bind(&BrowserLogicPrintables::on_printables_event_required_login, this, std::placeholders::_1);
+    m_events["openExternalUrl"] = std::bind(&BrowserLogicPrintables::on_printables_event_open_url, this, std::placeholders::_1);
+    m_events["ready"] = std::bind(&BrowserLogicPrintables::on_printables_event_dummy, this, std::placeholders::_1);
+    m_events["reloadHomePage"] = std::bind(&BrowserLogicPrintables::on_webview_reload_event, this, std::placeholders::_1);
 }
 
 std::string BrowserLogicPrintables::access_token()
@@ -65,10 +33,8 @@ std::string BrowserLogicPrintables::access_token()
     return m_project_interactor.user_account_interactor().access_token();
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_navigation_request_webview_event(
-    const std::string& new_url,
-    const std::string& current_url
-)
+std::vector<BrowserLogicCommand>
+BrowserLogicPrintables::on_navigation_request_webview_event(const std::string& new_url, const std::string& current_url)
 {
     if (new_url.find(m_url) == 0) {
         m_reached_default_url = true;
@@ -154,10 +120,8 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_id_succ
     std::vector<BrowserLogicCommand> result;
     result.emplace_back(BrowserLogicCommandType::RunScript, script_hide_loading_overlay());
 
-    std::string token  = m_project_interactor.user_account_interactor().access_token();
-    std::string script = "window.postMessage(JSON.stringify({event: 'accessTokenChange',token: '"
-        + token
-        + "'}));";
+    std::string token = m_project_interactor.user_account_interactor().access_token();
+    std::string script = "window.postMessage(JSON.stringify({event: 'accessTokenChange',token: '" + token + "'}));";
     result.emplace_back(BrowserLogicCommandType::RunScript, script);
 
     return result;
@@ -176,15 +140,10 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_user_account_will_re
     if (m_load_default_url) {
         return {};
     }
-    return {
-        {BrowserLogicCommandType::RunScript,
-         "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))"}
-    };
+    return {{BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))"}};
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_script_message_webview_event(
-    const std::string& message
-)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_script_message_webview_event(const std::string& message)
 {
     std::string event_string;
     try {
@@ -203,16 +162,12 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_script_message_webvi
     }
 
     SPDLOG_INFO("Printables Request: {}", event_string);
-    ASSERT(
-        m_events.find(event_string) != m_events.end(),
-        "There is an event that has no handling function."
-    );
+    ASSERT(m_events.find(event_string) != m_events.end(), "There is an event that has no handling function.");
     return m_events[event_string](message);
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_access_token_expired(
-    const std::string& message_data
-)
+std::vector<BrowserLogicCommand>
+BrowserLogicPrintables::on_printables_event_access_token_expired(const std::string& message_data)
 {
     // { "event": "accessTokenExpired")
     // There seems to be a situation where we get accessTokenExpired when there is active token from Slicer POW
@@ -225,9 +180,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_acc
     return {{BrowserLogicCommandType::RunScript, script_show_loading_overlay()}};
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_print_gcode(
-    const std::string& message_data
-)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_print_gcode(const std::string& message_data)
 {
     // { "event": "downloadFile", "url": "https://media.printables.com/somesecure.stl", "modelUrl": "https://www.printables.com/model/123" }
     std::string download_url;
@@ -246,22 +199,15 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_pri
     }
     DEBUG_ASSERT(!download_url.empty() && !model_url.empty(), "Faulty printables message.");
 
-    std::string final_url = Biz::Network::ServiceConfig::instance().connect_printables_print_url()
-        + "?url="
-        + Biz::Network::IHttp::escape_string(download_url);
+    std::string final_url = Biz::Network::ServiceConfig::instance().connect_printables_print_url() + "?url=" + Biz::Network::IHttp::escape_string(download_url);
     // TODO use final_url
 
-    AppServices::instance().dialog_manager().show_webview_dialog(
-        std::make_unique<Browser::BrowserLogicPrintablesToConnect>(final_url, m_project_interactor),
-        &m_project_interactor
-    );
+    AppServices::instance().dialog_manager().show_webview_dialog(std::make_unique<Browser::BrowserLogicPrintablesToConnect>(final_url, m_project_interactor), &m_project_interactor);
 
     return {};
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_download_file(
-    const std::string& message_data
-)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_download_file(const std::string& message_data)
 {
     // { "event": "downloadFile", "url": "https://media.printables.com/somesecure.stl", "modelUrl": "https://www.printables.com/model/123" }
     std::string download_url;
@@ -280,17 +226,13 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_dow
     }
     DEBUG_ASSERT(!download_url.empty() && !model_url.empty(), "Faulty printables message.");
 
-    std::string final_url = Biz::Network::ServiceConfig::instance().connect_printables_print_url()
-        + "?url="
-        + Biz::Network::IHttp::escape_string(download_url);
+    std::string final_url = Biz::Network::ServiceConfig::instance().connect_printables_print_url() + "?url=" + Biz::Network::IHttp::escape_string(download_url);
     // TODO use final_url
 
     return {};
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_slice_file(
-    const std::string& message_data
-)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_slice_file(const std::string& message_data)
 {
     // { "event": "downloadFile", "url": "https://media.printables.com/somesecure.stl", "modelUrl": "https://www.printables.com/model/123" }
     std::string download_url;
@@ -309,24 +251,18 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_sli
     }
     DEBUG_ASSERT(!download_url.empty() && !model_url.empty(), "Faulty printables message.");
 
-    std::string final_url = Biz::Network::ServiceConfig::instance().connect_printables_print_url()
-        + "?url="
-        + Biz::Network::IHttp::escape_string(download_url);
+    std::string final_url = Biz::Network::ServiceConfig::instance().connect_printables_print_url() + "?url=" + Biz::Network::IHttp::escape_string(download_url);
     // TODO use final_url
 
     return {};
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_required_login(
-    const std::string& message_data
-)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_required_login(const std::string& message_data)
 {
     return {};
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_open_url(
-    const std::string& message_data
-)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_open_url(const std::string& message_data)
 {
     std::string url;
     try {
@@ -341,17 +277,13 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_ope
     return {{BrowserLogicCommandType::OpenExternalBrowser, url}};
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_webview_reload_event(
-    const std::string& message_data
-)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_webview_reload_event(const std::string& message_data)
 {
     // Event from our error page button or keyboard shortcut
     m_styles_defined = false;
     try {
         nlohmann::json j = nlohmann::json::parse(message_data);
-        if (j.contains("fromKeyboard")
-            && j["fromKeyboard"].is_boolean()
-            && j["fromKeyboard"].get<bool>())
+        if (j.contains("fromKeyboard") && j["fromKeyboard"].is_boolean() && j["fromKeyboard"].get<bool>())
         {
             return {{BrowserLogicCommandType::DoReload, {}}};
         } else {
@@ -377,8 +309,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::logout(const std::strin
     );
     result.emplace_back(BrowserLogicCommandType::RunScript, "localStorage.clear();");
 
-    std::string next_url = override_url.empty() ? url_lang_theme(m_last_loaded_url) :
-                                                  url_lang_theme(override_url);
+    std::string next_url = override_url.empty() ? url_lang_theme(m_last_loaded_url) : url_lang_theme(override_url);
 #ifdef _WIN32
     result.emplace_back(BrowserLogicCommandType::LoadURL, next_url);
 #else
@@ -389,10 +320,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::logout(const std::strin
     return result;
 }
 
-std::vector<BrowserLogicCommand> BrowserLogicPrintables::login(
-    const std::string& access_token,
-    const std::string& override_url
-)
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::login(const std::string& access_token, const std::string& override_url)
 {
     std::vector<BrowserLogicCommand> result;
     m_refreshing_token = false;
@@ -401,14 +329,8 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::login(
     // We cannot add token to header as when making the first request.
     // In fact, we shall not do request here, only run scripts.
     // postMessage accessTokenWillChange -> postMessage accessTokenChange -> window.location.reload();
-    result.emplace_back(
-        BrowserLogicCommandType::RunScript,
-        "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))"
-    );
-    result.emplace_back(
-        BrowserLogicCommandType::RunScript,
-        "window.postMessage(JSON.stringify({event: 'accessTokenChange',token: '" + access_token + "'}));"
-    );
+    result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({ event: 'accessTokenWillChange' }))");
+    result.emplace_back(BrowserLogicCommandType::RunScript, "window.postMessage(JSON.stringify({event: 'accessTokenChange',token: '" + access_token + "'}));");
 
     if (override_url.empty()) {
         result.emplace_back(BrowserLogicCommandType::RunScript, "window.location.reload();");
@@ -616,9 +538,11 @@ std::string BrowserLogicPrintables::url_lang_theme(const std::string& url) const
         return url_string;
 
     // missing params string
-    std::string new_params = lang_found ? "theme=" + theme :
-        theme_found                     ? "lang=" + language :
-                                          "lang=" + language + "&theme=" + theme;
+    std::string new_params = lang_found ?
+        "theme=" + theme :
+        theme_found ?
+        "lang=" + language :
+        "lang=" + language + "&theme=" + theme;
 
     // Regex to capture query and optional fragment
     std::regex query_regex(R"((\?.*?)(#.*)?$)");
@@ -639,10 +563,8 @@ std::string BrowserLogicPrintables::url_lang_theme(const std::string& url) const
 void BrowserLogicPrintables::emplace_load_default_url_commands(std::vector<BrowserLogicCommand>& res)
 {
     res.emplace_back(BrowserLogicCommandType::RunScript, script_hide_loading_overlay());
-    m_styles_defined               = false;
-    std::string actual_default_url = url_lang_theme(
-        Biz::Network::ServiceConfig::instance().printables_url() + "/homepage"
-    );
+    m_styles_defined = false;
+    std::string actual_default_url = url_lang_theme(Biz::Network::ServiceConfig::instance().printables_url() + "/homepage");
     const std::string access_token = m_project_interactor.user_account_interactor().access_token();
     // in case of opening printables logged out - delete cookies and localstorage to get rid of last login
     if (access_token.empty()) {
