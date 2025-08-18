@@ -12,6 +12,7 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/libslic3r.h"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 
 #include "test_data.hpp"
 
@@ -28,6 +29,7 @@ using Biz::Algorithms::ModelObject::add_volume;
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Biz::Algorithms::ModelVolume::translate;
 using Biz::Print::SerializedConfig;
+using Domain::Preset::HwPrinterConfig;
 
 SCENARIO("Basic tests", "[Multi]")
 {
@@ -200,7 +202,7 @@ std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &
         }
     }
     Print print;
-    print.update(model, config, bed_instance, SerializedConfig{});
+    print.update(model, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
     print.validate();
     return Test::gcode(print);
 }

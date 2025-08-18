@@ -594,6 +594,40 @@ std::string GCodeWriter::set_fan(unsigned int speed) const
     return GCodeWriter::set_fan(this->config.get<GCodeFlavor>("gcode_flavor"), this->config.get<bool>("gcode_comments"), speed);
 }
 
+std::string GCodeWriter::set_pressure_advance(const double pressure_advance, const std::string& vendor_id) const
+{
+    if (pressure_advance <= 0.) {
+        return "";
+    }
+
+    const GCodeFlavor gcode_flavor = this->config.get<GCodeFlavor>("gcode_flavor");
+
+    std::ostringstream gcode;
+    switch (gcode_flavor) {
+    case gcfMarlinFirmware: {
+        if (vendor_id == "PrusaResearch") {
+            gcode << "M572 S" << pressure_advance << "\n";
+        } else {
+            gcode << "M900 K" << pressure_advance << "\n";
+        }
+        break;
+    }
+    case gcfMarlinLegacy:
+        gcode << "M900 K" << pressure_advance << "\n";
+        break;
+    case gcfKlipper:
+        gcode << "SET_PRESSURE_ADVANCE ADVANCE=" << pressure_advance << "\n";
+        break;
+    case gcfRepRapFirmware:
+        gcode << "M572 D0 S" << pressure_advance << "\n";
+        break;
+    default:
+        break;
+    }
+
+    return gcode.str();
+}
+
 void GCodeFormatter::emit_axis(const char axis, const double v, size_t digits) {
     assert(digits <= 9);
     static constexpr const std::array<int, 10> pow_10{1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};

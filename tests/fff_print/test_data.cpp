@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Format/OBJ.hpp"
 
@@ -27,6 +28,7 @@ namespace Slic3r { namespace Test {
 using Biz::Algorithms::ModelObject::add_volume;
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Domain::TriangleMesh;
+using Domain::Preset::HwPrinterConfig;
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
 
 // Mesh enumeration to name mapping
@@ -290,7 +292,7 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Domain
             bed_instance.model_instances.push_back(instance);
         }
     }
-	print.update(model, config, bed_instance, serialized_config);
+    print.update(model, config, bed_instance, serialized_config, HwPrinterConfig{});
     print.validate();
     print.set_status_silent();
 }

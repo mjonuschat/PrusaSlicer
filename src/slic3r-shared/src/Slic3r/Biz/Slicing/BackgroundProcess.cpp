@@ -248,7 +248,7 @@ void BackgroundProcess::update(
         config
     )};
 
-    apply_status = this->m_print->update(model, config, bed, serialized_config);
+    apply_status = this->m_print->update(model, config, bed, serialized_config, preset_metadata.hw_config);
 }
 
 void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)

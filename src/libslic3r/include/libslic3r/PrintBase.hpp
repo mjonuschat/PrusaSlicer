@@ -17,6 +17,7 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 #include "Slic3r/Domain/SlicingId.hpp"
@@ -496,7 +497,8 @@ public:
         Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
-        const SerializedConfig& serialized_config
+        const SerializedConfig& serialized_config,
+        const Domain::Preset::HwPrinterConfig& hw_config
     ) = 0;
     virtual void slice(Domain::SlicingId, Slicing::IThumbnailImageGenerator&) = 0;
     virtual bool empty() const = 0;

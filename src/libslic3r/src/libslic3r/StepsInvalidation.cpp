@@ -380,6 +380,8 @@ const std::set<std::string> options_influencing_gcode{
     "output_filename_format",
     "perimeter_acceleration",
     "post_process",
+    "pressure_advance_enable",
+    "pressure_advance_value",
     "gcode_substitutions",
     "printer_notes",
     "travel_ramping_lift",

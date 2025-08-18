@@ -102,7 +102,8 @@ Biz::Print::ApplyStatus::Status Print::update(
     Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
-    const Biz::Print::SerializedConfig& serialized_config
+    const Biz::Print::SerializedConfig& serialized_config,
+    const Domain::Preset::HwPrinterConfig& hw_config
 )
 {
     namespace ApplyStatus = Biz::Print::ApplyStatus;
@@ -114,6 +115,7 @@ Biz::Print::ApplyStatus::Status Print::update(
             model,
             prepare_slicing_input(std::get<ConfigPackFDM>(config)),
             serialized_config,
+            hw_config,
             bed.wipe_tower,
             bed.custom_gcode
         )};

@@ -144,6 +144,8 @@ public:
     // Keeping the state is left to the CoolingBuffer, which runs asynchronously on another thread.
     std::string set_fan(unsigned int speed) const;
 
+    std::string set_pressure_advance(double pressure_advance, const std::string& vendor_id) const;
+
 private:
 	// Extruders are sorted by their ID, so that binary search is possible.
     std::vector<Extruder> m_extruders;

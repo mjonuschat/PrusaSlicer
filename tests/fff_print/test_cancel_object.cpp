@@ -5,6 +5,7 @@
 
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "libslic3r/GCode.hpp"
 #include "test_data.hpp"
 
@@ -17,6 +18,7 @@ using Biz::Algorithms::ModelObject::add_volume;
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Biz::Algorithms::ModelVolume::translate;
 using Biz::Print::SerializedConfig;
+using Domain::Preset::HwPrinterConfig;
 
 constexpr bool debug_files{false};
 
@@ -155,7 +157,7 @@ TEST_CASE_METHOD(CancelObjectFixture, "Single extruder", "[CancelObject]") {
     }
 
     Print print;
-	print.update(two_cubes, config, bed_instance, SerializedConfig{});
+    print.update(two_cubes, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
     print.validate();
     const std::string gcode{Test::gcode(print)};
 
@@ -193,7 +195,7 @@ TEST_CASE_METHOD(CancelObjectFixture, "Sequential print", "[CancelObject]") {
     }
 
     Print print;
-    print.update(two_cubes, config, bed_instance, SerializedConfig{});
+    print.update(two_cubes, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
     print.validate();
     const std::string gcode{Test::gcode(print)};
 

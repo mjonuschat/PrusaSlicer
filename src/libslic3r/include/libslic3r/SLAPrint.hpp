@@ -26,6 +26,7 @@
 
 #include "Slic3r/Domain/ExPolygon.hpp"
 #include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 #include "libslic3r/ConfigViews.hpp"
@@ -345,13 +346,15 @@ public:
         Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
-        const Biz::Print::SerializedConfig& serialized_config
+        const Biz::Print::SerializedConfig& serialized_config,
+        const Domain::Preset::HwPrinterConfig& hw_config
     ) override;
 
     SLASlicingSync::InvalidatedSteps apply(
         const Domain::Model& model,
         const Domain::ConfigPackSLA& config_pack,
         const Biz::Print::SerializedConfig& serialized_config,
+        const Domain::Preset::HwPrinterConfig& hw_config,
         std::vector<std::string>* warnings = nullptr
     );
 
@@ -454,8 +457,9 @@ public:
     OnSlaResult                     m_on_sla_result;
     OnSlaObject                     m_on_sla_object;
 
-    SLAPrintConfigView              m_print_config;
-    Biz::Print::SerializedConfig    m_serialized_config;
+    SLAPrintConfigView m_print_config;
+    Domain::Preset::HwPrinterConfig m_hw_config;
+    Biz::Print::SerializedConfig m_serialized_config;
 
     ::Slic3r::Biz::Slicing::Sla::PrintStatistics m_print_statistics;
 

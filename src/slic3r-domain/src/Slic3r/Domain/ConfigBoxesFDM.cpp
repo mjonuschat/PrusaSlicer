@@ -2802,6 +2802,32 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     def->init_fn = init_with(std::vector<std::string>{});
 
+    def               = defs.add("pressure_advance_enable", typeid(bool));
+    def->location     = Filament;
+    def->label        = L("Enable pressure advance");
+    def->option_group = L("Pressure advance");
+    def->category     = ConfigItemDef::Category::Advanced;
+    def->gui_type     = ConfigItemDef::GUIType::checkbox;
+    def->tooltip = L("Enables emitting of the pressure advance value into g-code for this filament.");
+    def->mode    = comExpert;
+    def->init_fn = init_with(false);
+
+    def               = defs.add("pressure_advance_value", typeid(double));
+    def->location     = Filament;
+    def->label        = L("Pressure advance");
+    def->option_group = L("Pressure advance");
+    def->category     = ConfigItemDef::Category::Advanced;
+    def->gui_type     = ConfigItemDef::GUIType::textfield;
+    def->tooltip      = L(
+        "Pressure Advance (also called Linear Advance in some firmware) compensates "
+             "for nozzle pressure to achieve sharper corners. Proper value helps reduce "
+             "bulging on deceleration and under-extrusion on acceleration."
+    );
+
+    def->min = 0.;
+    def->mode = comExpert;
+    def->init_fn = init_with(0.);
+
     def = defs.add("printer_notes", typeid(std::string));
     def->location = Printer;
     def->label = L("Printer notes");

@@ -3898,6 +3898,14 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
             gcode += this->placeholder_parser_process("start_filament_gcode", start_filament_gcode, extruder_id, &dynamic_config);
             check_add_eol(gcode);
         }
+
+        if (config.get<std::vector<bool>>("pressure_advance_enable").at(extruder_id)) {
+            gcode += m_writer.set_pressure_advance(
+                config.get<std::vector<double>>("pressure_advance_value").at(extruder_id),
+                this->m_print->m_hw_config.vendor_id
+            );
+        }
+
         gcode += m_writer.toolchange(extruder_id);
         return gcode;
     }
@@ -3980,6 +3988,14 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
         gcode += this->placeholder_parser_process("start_filament_gcode", start_filament_gcode, extruder_id, &dynamic_config);
         check_add_eol(gcode);
     }
+
+    if (config.get<std::vector<bool>>("pressure_advance_enable").at(extruder_id)) {
+        gcode += m_writer.set_pressure_advance(
+            config.get<std::vector<double>>("pressure_advance_value").at(extruder_id),
+            this->m_print->m_hw_config.vendor_id
+        );
+    }
+
     // Set the new extruder to the operating temperature.
     if (m_ooze_prevention.enable)
         gcode += m_ooze_prevention.post_toolchange(*this, config);

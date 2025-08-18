@@ -6,11 +6,14 @@
 #include "libslic3r/SLAPrint.hpp"
 
 #include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 
 #include <boost/filesystem.hpp>
 
 using namespace Slic3r;
 using namespace Slic3r::Biz::Slicing; // SLAResult
+
+using Domain::Preset::HwPrinterConfig;
 
 TEST_CASE("Archive export test", "[sla_archives]") {
     SLAResult sla_result;
@@ -48,7 +51,7 @@ TEST_CASE("Archive export test", "[sla_archives]") {
             .json = Biz::beautify_json(Domain::as_boxes(cfg), 2),
             .ini = Biz::serialize_as_legacy_config(cfg)
         };
-        print.apply(m, cfg, serialized_config);
+        print.apply(m, cfg, serialized_config, HwPrinterConfig{});
         print.process();
 
         auto outputfname = std::string("output_") + pname + ".sl1";

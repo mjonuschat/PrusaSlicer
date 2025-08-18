@@ -821,7 +821,8 @@ Biz::Print::ApplyStatus::Status SLAPrint::update(
     Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
-    const Biz::Print::SerializedConfig& serialized_config
+    const Biz::Print::SerializedConfig& serialized_config,
+    const Domain::Preset::HwPrinterConfig& hw_config
 )
 {
     namespace ApplyStatus = Biz::Print::ApplyStatus;
@@ -833,7 +834,7 @@ Biz::Print::ApplyStatus::Status SLAPrint::update(
 
     InvalidatedSteps invalidated_steps;
     Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
-        invalidated_steps = this->apply(model, std::get<ConfigPackSLA>(config), serialized_config);
+        invalidated_steps = this->apply(model, std::get<ConfigPackSLA>(config), serialized_config, hw_config);
     });
     const bool changed{!invalidated_steps.empty()};
     if (!changed) {
@@ -876,6 +877,7 @@ InvalidatedSteps SLAPrint::apply(
     const Domain::Model& model,
     const Domain::ConfigPackSLA& config_pack,
     const Biz::Print::SerializedConfig& serialized_config,
+    const Domain::Preset::HwPrinterConfig& hw_config,
     std::vector<std::string>* warnings
 )
 {
@@ -886,6 +888,7 @@ InvalidatedSteps SLAPrint::apply(
 
     const auto new_full_config_ptr{std::make_shared<FullConfigSLA>(config_pack)};
     const SLAPrintConfigView new_print_config{new_full_config_ptr};
+    m_hw_config         = hw_config;
     m_serialized_config = serialized_config;
 
     // Collect changes to print config.

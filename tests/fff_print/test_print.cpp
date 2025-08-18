@@ -5,6 +5,7 @@
 #include "libslic3r/Layer.hpp"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 
 #include "test_data.hpp"
 
@@ -14,6 +15,7 @@ using Biz::GCodeReader::GCodeReader;
 using Domain::Percentage;
 using Domain::FloatOrPercentage;
 using Biz::Print::SerializedConfig;
+using Domain::Preset::HwPrinterConfig;
 namespace BB = Biz::Algorithms::BoundingBox;
 
 SCENARIO("PrintObject: Perimeter generation", "[PrintObject]") {
@@ -66,7 +68,7 @@ void update(Print& print, Domain::Model& model, const TestConfig& config)
             bed_instance.model_instances.push_back(instance);
         }
     }
-    print.update(model, config, bed_instance, SerializedConfig{});
+    print.update(model, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
 }
 } // namespace
 

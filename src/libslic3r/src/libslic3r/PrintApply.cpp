@@ -1368,12 +1368,14 @@ bool Print::apply(
     const Domain::Model& model,
     const FullConfigFDMPtr& new_full_config_ptr,
     const Biz::Print::SerializedConfig& serialized_config,
+    const Domain::Preset::HwPrinterConfig& hw_config,
     const std::optional<Domain::ModelWipeTower>& wipe_tower,
     const std::optional<Domain::CustomGCode::Info>& custom_gcode,
     std::vector<std::string>* warnings
 )
 {
     PrintConfigView new_print_config{new_full_config_ptr};
+    m_hw_config         = hw_config;
     m_serialized_config = serialized_config;
 
     // Check if the print config change will produce any warnings.

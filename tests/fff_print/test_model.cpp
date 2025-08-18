@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Model.hpp"
 #include <arrange-wrapper/ModelArrange.hpp>
@@ -16,6 +17,7 @@ using namespace Slic3r::Test;
 using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Biz::Algorithms::ModelObject::add_volume;
 using Biz::Print::SerializedConfig;
+using Domain::Preset::HwPrinterConfig;
 
 SCENARIO("Model construction", "[Model]") {
     GIVEN("A Slic3r Model") {
@@ -71,8 +73,8 @@ SCENARIO("Model construction", "[Model]") {
                     }
                 }
 
-                print.update(model, config, bed_instance, SerializedConfig{});
-				print.process();
+                print.update(model, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
+                print.process();
                 const Biz::libpgcode::ProcessorResult result{print.process_gcode()};
                 CHECK(result.const_gcode()->str().size() > 0);
 			}
