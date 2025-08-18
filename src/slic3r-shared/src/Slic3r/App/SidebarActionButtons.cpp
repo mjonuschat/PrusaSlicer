@@ -15,14 +15,14 @@ SidebarActionButtons::SidebarActionButtons(
     Navigator* render_module_navigator
 ) :
     Yoga::Window(name),
-    m_type(type),
-    m_render_module_navigator(render_module_navigator)
+    m_render_module_navigator(render_module_navigator),
+    m_type(type)
 {
     ASSERT(type != RMType::Undef);
 
-    m_navigator_name = m_type == RMType::Plater ? ">" : "<";
+    m_navigator_name    = m_type == RMType::Plater ? ">" : "<";
     m_navigator_tooltip = m_type == RMType::Plater ? "Show Preview" : "Back to Plater";
-    m_navigate_to_type = m_type == RMType::Plater ? RMType::Preview : RMType::Plater;
+    m_navigate_to_type  = m_type == RMType::Plater ? RMType::Preview : RMType::Plater;
 
     set_min_size({220, 0});
     set_flex_shrink(0);

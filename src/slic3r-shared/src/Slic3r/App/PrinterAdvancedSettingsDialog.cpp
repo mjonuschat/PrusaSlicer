@@ -25,9 +25,6 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(Biz::ProjectInterac
 
     m_current_tab->page_list_view->set_source_list(m_category_page_transformer.get());
 
-    content_item()->set_width(650);
-    content_item()->set_height(700);
-
     // m_pages_stack_layout->set_orientation(Orientation::Vertical);
     for (size_t i = 0; i < m_category_page_transformer->size(); ++i) {
         m_current_tab->pages_stack_layout->emplace_back<ConfigSubcategoryListView>(

@@ -30,6 +30,7 @@ ConfigItemComboBox::ConfigItemComboBox(
 
     on_data_update();
 
+    m_tooltip.set_text(config_item.def().tooltip);
     m_tooltip.content_item()->set_width(350);
     m_tooltip.set_text_wrap(true);
 

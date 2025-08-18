@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Slic3r/Biz/Platform/WithListeners.hpp"
-#include "Slic3r/Biz/Slicing/BackgroundProcess.hpp"
 #include "Slic3r/App/Yoga/Window.hpp"
 #include "Slic3r/App/Navigator.hpp"
 

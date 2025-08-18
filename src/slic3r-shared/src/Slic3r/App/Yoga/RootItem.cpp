@@ -86,6 +86,10 @@ void RootItem::process_events(Vec2f pos, Vec2f size)
 {
     Item::process_events(pos, size);
 
+    // Number of popups can be changed inside process events
+    // and so we are creating an immutable copy
+    // TODO: a deffered popup insert/close should be implemented
+    const Popups popups = m_popups;
     for (Popup* popup : std::as_const(m_popups)) {
         popup->process_events(pos, size);
     }

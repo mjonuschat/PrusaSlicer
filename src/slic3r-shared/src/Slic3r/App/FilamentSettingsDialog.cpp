@@ -20,9 +20,6 @@ FilamentSettingsDialog::FilamentSettingsDialog(Biz::ProjectInteractor& project_i
     m_project_interactor(project_interactor),
     m_material_cbi_list(m_project_interactor.preset_interactor().material_cbi_list())
 {
-    content_item()->set_width(650);
-    content_item()->set_height(700);
-
     m_material_cbi_list.add_listener<Biz::IListObserver<Biz::ConfigBoxInteractor>>(this);
 
     on_reset();

@@ -39,7 +39,7 @@ void ConfigItemCheckBoxes::on_data_update()
     }
 }
 
-const std::vector<bool>& ConfigItemCheckBoxes::get_data() const
+std::vector<bool> ConfigItemCheckBoxes::get_data() const
 {
     return m_state->value().get<std::vector<bool>>();
 }

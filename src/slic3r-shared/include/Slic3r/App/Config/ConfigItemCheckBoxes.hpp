@@ -30,7 +30,7 @@ public:
 protected:
     void on_data_update() override;
 
-    const std::vector<bool>& get_data() const;
+    std::vector<bool> get_data() const;
 
 private:
     void reconstruct_buttons();

@@ -32,6 +32,10 @@ ConfigItemSpinBox::ConfigItemSpinBox(
     callbacks().text_edited = [this]() {
         m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{m_value_validator->value()});
     };
+
+    set_tooltip(data.def().tooltip);
+    m_tooltip.set_text_wrap(true);
+    m_tooltip.content_item()->set_width(350);
 }
 
 void ConfigItemSpinBox::on_data_update()

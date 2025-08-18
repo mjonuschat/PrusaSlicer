@@ -21,9 +21,6 @@ PrintSettingsDialog::PrintSettingsDialog(Biz::ProjectInteractor& project_interac
     m_project_interactor(project_interactor),
     m_tool_cbi_list(project_interactor.preset_interactor().tool_cbi_list())
 {
-    content_item()->set_width(650);
-    content_item()->set_height(700);
-
     Tab* tab = append_tab(_u8L("Print"));
     m_tabs.emplace_back(
         std::make_unique<PrintSettingsTab>(
