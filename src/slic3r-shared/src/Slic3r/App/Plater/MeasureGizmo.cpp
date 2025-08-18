@@ -260,7 +260,8 @@ Scene::GizmoActivationState MeasureGizmo::on_mouse(Scene::GizmoEventContext& ctx
         feature_cache.current.reset();
         update_current_feature_on_scene();
         update_ui_dialog();
-        return return_value;
+        // return Inactive to allow selection of objects in the scene
+        return Scene::GizmoActivationState::Inactive;
     }
 
     feature_cache.hover_id = HoverID::None;
@@ -562,6 +563,10 @@ void MeasureGizmo::on_scene_selection_changed(
         reset();
         return;
     }
+
+    m_current_project->feature_cache.reset();
+    update_measurement();
+    clear_features();
 
     m_dialog->show_measure(true);
 
