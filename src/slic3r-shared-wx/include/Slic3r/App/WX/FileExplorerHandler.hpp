@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Platform/IFileExplorerHandler.hpp"
-#include "Slic3r/Biz/Directories.hpp"
+#include "Slic3r/Directories.hpp"
 
 namespace Slic3r::App::WX {
 
@@ -12,7 +12,7 @@ public:
 
     void open_datadir_folder() override
     {
-        boost::filesystem::path path(Biz::data_dir());
+        boost::filesystem::path path(data_dir());
         open_folder(path);
     }
 };

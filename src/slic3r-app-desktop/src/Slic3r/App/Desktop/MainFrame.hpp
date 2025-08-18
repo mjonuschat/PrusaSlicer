@@ -21,6 +21,10 @@ class ProjectInteractor;
 
 namespace Slic3r::App::Desktop {
 
+#ifdef WIN32
+constexpr int WM_USER_MEDIACHANGED{0x7FFF}; // WM_USER from 0x0400 to 0x7FFF, picking the last one to not interfere with wxWidgets allocation
+#endif // WIN32
+
 class LeftBar;
 
 class MainFrame : public wxFrame, public ILanguageChangedListener
@@ -44,10 +48,6 @@ public:
     // Register Win32 RawInput callbacks (3DConnexion) and removable media insert / remove callbacks.
     // Called from wxEVT_ACTIVATE, as wxEVT_CREATE was not reliable (bug in wxWidgets?).
     void register_win32_callbacks();
-
-    void* m_hDeviceNotify{nullptr};
-    uint32_t m_ulSHChangeNotifyRegister{0};
-    static constexpr int WM_USER_MEDIACHANGED{0x7FFF}; // WM_USER from 0x0400 to 0x7FFF, picking the last one to not interfere with wxWidgets allocation
 #endif // WIN32
 
 private:
@@ -87,6 +87,11 @@ private:
 
     TabsBarMenus m_tabs_bar_menus;
     LeftBar* m_left_bar{nullptr};
+
+#ifdef WIN32
+    void* m_hDeviceNotify{nullptr};
+    uint32_t m_ulSHChangeNotifyRegister{0};
+#endif // WIN32
 };
 
 } // namespace Slic3r::App::Desktop

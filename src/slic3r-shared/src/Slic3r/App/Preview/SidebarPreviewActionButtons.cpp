@@ -65,7 +65,8 @@ SidebarPreviewActionButtons::SidebarPreviewActionButtons(Navigator* render_modul
             {
                 GCodeExportPathSelect export_path_select(true);
                 export_path_select.show_modal_dialog(
-                    m_project_interactor->last_export_path(true),
+                    m_project_interactor->removable_drive_service()
+                        .get_path_on_removable_drive(m_project_interactor->last_export_path(true)),
                     m_project_interactor->get_project_name(m_project_interactor->selected_project_id()),
                     [this](bool result, const std::vector<boost::filesystem::path>& file_paths)
                     {

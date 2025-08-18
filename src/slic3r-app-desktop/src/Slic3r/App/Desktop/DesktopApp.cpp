@@ -111,7 +111,7 @@ void register_win32_device_notification_event()
     );
 
     wxWindow::MSWRegisterMessageHandler(
-        MainFrame::WM_USER_MEDIACHANGED,
+        WM_USER_MEDIACHANGED,
         [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam)
         {
             auto* app_instance = dynamic_cast<Slic3r::App::Desktop::DesktopApp*>(wxTheApp);
@@ -148,7 +148,7 @@ int run(const Slic3r::App::InitParams& init_params)
     if (AppInstance::instance_check(init_params, single_instance_app_config)) {
         return 1;
     }
-    Render::TextureManager::set_resource_resolver(std::make_unique<ResourceResolver>(Biz::resources_dir()));
+    Render::TextureManager::set_resource_resolver(std::make_unique<ResourceResolver>(resources_dir()));
     auto* app = new Slic3r::App::Desktop::DesktopApp();
     Slic3r::App::Desktop::DesktopApp::SetInstance(app);
     int argc    = init_params.argc;
@@ -268,14 +268,11 @@ bool DesktopApp::OnInit()
         thumbnail_image_generator
     );
 
-    const bool is_dark     = true;
-    const bool is_sys_menu = true;
     m_project_interactor->slicing_interactor().add_listener<Biz::Slicing::IStatusListener>(
         &app_services.pop_notification_center()
     );
     m_project_interactor->print_host_interactor().add_print_host_listener(&app_services.pop_notification_center());
     m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center());
-    WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
 
     m_project_interactor->new_project();
 
@@ -297,25 +294,6 @@ bool DesktopApp::OnInit()
 #ifdef WIN32
     m_main_frame->register_win32_callbacks();
 #endif
-
-    platform_services.instance()
-        .job_manager()
-        .create_job(
-            "countdown",
-            [](Biz::JThread::StopToken stop_token, Biz::Platform::IMainThreadDispatcher& dis, Biz::Platform::JobManager::ProgressTracker progress)
-            {
-                for (size_t i = 0; i < 100; i++) {
-                    std::this_thread::sleep_for(1'000ms);
-                    Slic3r::Domain::Percentage p;
-                    p.value = (double) i / 100.;
-                    progress.set(p);
-                    AppServices::instance().pop_notification_center().add_notification(
-                        PopNotification::PopNotificationFactory::create_custom(PopNotification::PopNotificationLevel::Important, 0, "test " + std::to_string(i))
-                    );
-                }
-            }
-        )
-        .start();
 
 #if !defined(__linux)
     // Initial repaint

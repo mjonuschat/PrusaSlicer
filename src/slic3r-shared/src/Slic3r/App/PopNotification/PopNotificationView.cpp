@@ -5,7 +5,7 @@
 #include "Slic3r/App/Yoga/ProgressBar.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 
-#include "Slic3r/Biz/Directories.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include "Slic3r/Log.hpp"
 
