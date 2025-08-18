@@ -564,6 +564,10 @@ void MeasureGizmo::on_scene_selection_changed(
         return;
     }
 
+    m_current_project->feature_cache.reset();
+    update_measurement();
+    clear_features();
+
     m_dialog->show_measure(true);
 
     Domain::ElementRefs& volumes_ids = m_current_project->scene_selection_cache.volume_ids;
