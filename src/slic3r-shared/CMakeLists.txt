@@ -433,8 +433,10 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/PopNotification/PopNotificationListView.hpp
         include/Slic3r/App/PopNotification/PopNotificationDataVariant.hpp
         include/Slic3r/App/PopNotification/PopNotificationLayout.hpp
+        include/Slic3r/App/PopNotification/PopNotificationObservableList.hpp
         src/Slic3r/App/PopNotification/PopNotificationCenter.cpp
         src/Slic3r/App/PopNotification/PopNotificationView.cpp
+        src/Slic3r/App/PopNotification/PopNotificationObservableList.cpp
 
         include/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
@@ -732,8 +734,6 @@ elseif (APPLE)
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryMac.cpp
         include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
         src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
-        include/Slic3r/Biz/DirectoriesMacUtils.hpp
-        src/Slic3r/Biz/DirectoriesMacUtils.mm
         src/Slic3r/Biz/RemovableDrive/RemovableDriveServiceMac.cpp
         src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorMac.hpp
         src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorMac.cpp

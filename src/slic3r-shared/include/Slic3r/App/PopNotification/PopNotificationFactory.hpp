@@ -82,7 +82,7 @@ public:
             PopNotificationLevel::Important,
             status.code == Biz::Slicing::StatusCode::Finished ? 5 : 0,
             PopNotificationLayout::HeaderText,
-            PopNotificationLayoutHeaderText("Slicing", text),
+            PopNotificationLayoutHeaderText("Slicing Project " + std::to_string(slicing_id.project_id), text),
             SlicingProgressNotificationData(status, slicing_id)
         );
     }

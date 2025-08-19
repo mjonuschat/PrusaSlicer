@@ -27,17 +27,17 @@ PopNotificationView::PopNotificationView(size_t index, const PopNotificationData
 void PopNotificationView::reset()
 {
     // remove child trees from root
-    if (left_column) {
-        remove(left_column);
-        left_column = nullptr;
+    if (m_left_column) {
+        remove(m_left_column);
+        m_left_column = nullptr;
     }
-    if (mid_column) {
-        remove(mid_column);
-        mid_column = nullptr;
+    if (m_mid_column) {
+        remove(m_mid_column);
+        m_mid_column = nullptr;
     }
-    if (right_column) {
-        remove(right_column);
-        right_column = nullptr;
+    if (m_right_column) {
+        remove(m_right_column);
+        m_right_column = nullptr;
     }
 
     // set rest of the pointers to nullptr (those are already removed)
@@ -138,26 +138,26 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
     set_justify_content(YGJustifyFlexStart); // razeni itemu uvnitr
     set_self_align(YGAlignFlexEnd); // razeni sebe v listu, end = napravo
 
-    left_column  = emplace_back<Yoga::Item>();
-    mid_column   = emplace_back<Yoga::Item>();
-    right_column = emplace_back<Yoga::Item>();
+    m_left_column  = emplace_back<Yoga::Item>();
+    m_mid_column   = emplace_back<Yoga::Item>();
+    m_right_column = emplace_back<Yoga::Item>();
 
     left_layout(icon_override);
 
     /*
-    right_column->set_orientation(Yoga::Orientation::Vertical);
-    right_column->set_justify_content(YGJustifyCenter);
-    right_column->set_min_size({30, 50});
+    m_right_column->set_orientation(Yoga::Orientation::Vertical);
+    m_right_column->set_justify_content(YGJustifyCenter);
+    m_right_column->set_min_size({30, 50});
     */
 
-    right_column->set_orientation(Yoga::Orientation::Horizontal);
-    right_column->set_justify_content(YGJustifyFlexEnd);
-    // right_column->set_self_align(YGAlignFlexEnd);
-    right_column->set_flex_grow(1);
-    right_column->set_min_size({25, MinHeight});
+    m_right_column->set_orientation(Yoga::Orientation::Horizontal);
+    m_right_column->set_justify_content(YGJustifyFlexEnd);
+    // m_right_column->set_self_align(YGAlignFlexEnd);
+    m_right_column->set_flex_grow(1);
+    m_right_column->set_min_size({25, MinHeight});
 
-    mid_column->set_self_align(YGAlignStretch);
-    Yoga::LayoutButton* close_button = right_column->emplace_back<Yoga::LayoutButton>("", Render::Icon::PrintIdle);
+    m_mid_column->set_self_align(YGAlignStretch);
+    Yoga::LayoutButton* close_button = m_right_column->emplace_back<Yoga::LayoutButton>("", Render::Icon::PrintIdle);
     close_button->set_min_size({20, 20});
     close_button->set_max_size({20, 20});
     close_button->callbacks().action = [this]()
@@ -166,20 +166,20 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
         m_notification_list.on_notification_close_button(m_state->id());
     };
 
-    int left_width  = left_column->min_size().x();
-    int right_width = right_column->min_size().x();
-    // mid_column->set_min_size({TotalWidth - (left_width + right_width), MinHeight});
-    // mid_column->set_max_size({TotalWidth - (left_width + right_width), MaxHeight});
+    int left_width  = m_left_column->min_size().x();
+    int right_width = m_right_column->min_size().x();
+    // m_mid_column->set_min_size({TotalWidth - (left_width + right_width), MinHeight});
+    // m_mid_column->set_max_size({TotalWidth - (left_width + right_width), MaxHeight});
 
-    // right_column->set_debug_border(true);
-    // mid_column->set_debug_border(true);
-    // left_column->set_debug_border(true);
+    // m_right_column->set_debug_border(true);
+    // m_mid_column->set_debug_border(true);
+    // m_left_column->set_debug_border(true);
 }
 
 void PopNotificationView::left_layout(Render::Icon icon_override)
 {
-    left_column->set_orientation(Yoga::Orientation::Horizontal);
-    left_column->set_justify_content(YGJustifyFlexStart);
+    m_left_column->set_orientation(Yoga::Orientation::Horizontal);
+    m_left_column->set_justify_content(YGJustifyFlexStart);
 
     Render::Icon icon = Render::Icon::None;
     if (icon_override != Render::Icon::None) {
@@ -190,12 +190,12 @@ void PopNotificationView::left_layout(Render::Icon icon_override)
         icon = Render::Icon::WarningMarker;
     }
     if (icon == Render::Icon::None) {
-        left_column->set_min_size({0, MinHeight});
+        m_left_column->set_min_size({0, MinHeight});
         return;
     }
 
-    left_column->set_min_size({25, MinHeight});
-    m_left_icon = left_column->emplace_back<Yoga::Icon>(icon);
+    m_left_column->set_min_size({25, MinHeight});
+    m_left_icon = m_left_column->emplace_back<Yoga::Icon>(icon);
     m_left_icon->set_min_size({20, 20});
 }
 
@@ -204,11 +204,11 @@ void PopNotificationView::layout_text()
     const auto* layout_data = std::get_if<PopNotificationLayoutText>(&m_state->layout_variant());
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
-    mid_column->set_padding(5.);
-    mid_column->set_orientation(Yoga::Orientation::Vertical);
-    mid_column->set_justify_content(YGJustifyCenter);
+    m_mid_column->set_padding(5.);
+    m_mid_column->set_orientation(Yoga::Orientation::Vertical);
+    m_mid_column->set_justify_content(YGJustifyCenter);
 
-    m_text = mid_column->emplace_back<Yoga::Text>(layout_data->text);
+    m_text = m_mid_column->emplace_back<Yoga::Text>(layout_data->text);
 
     m_text->set_text_color(text_color());
 }
@@ -218,12 +218,12 @@ void PopNotificationView::layout_header_text()
     const auto* layout_data = std::get_if<PopNotificationLayoutHeaderText>(&m_state->layout_variant());
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
-    mid_column->set_padding(5.);
-    mid_column->set_orientation(Yoga::Orientation::Vertical);
-    mid_column->set_justify_content(YGJustifyFlexStart);
-    m_header = mid_column->emplace_back<Yoga::Text>(layout_data->header);
+    m_mid_column->set_padding(5.);
+    m_mid_column->set_orientation(Yoga::Orientation::Vertical);
+    m_mid_column->set_justify_content(YGJustifyFlexStart);
+    m_header = m_mid_column->emplace_back<Yoga::Text>(layout_data->header);
     m_header->set_font_type(Render::ImguiFontType::Bold);
-    m_text = mid_column->emplace_back<Yoga::Text>(layout_data->text);
+    m_text = m_mid_column->emplace_back<Yoga::Text>(layout_data->text);
 
     m_text->set_text_color(text_color());
     m_header->set_text_color(text_color());
@@ -234,13 +234,13 @@ void PopNotificationView::layout_text_buttons()
     const auto* layout_data = std::get_if<PopNotificationLayoutTextButtons>(&m_state->layout_variant());
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
-    mid_column->set_padding(5.);
-    mid_column->set_orientation(Yoga::Orientation::Vertical);
-    mid_column->set_justify_content(YGJustifyCenter);
+    m_mid_column->set_padding(5.);
+    m_mid_column->set_orientation(Yoga::Orientation::Vertical);
+    m_mid_column->set_justify_content(YGJustifyCenter);
 
-    m_text = mid_column->emplace_back<Yoga::Text>(layout_data->text);
+    m_text = m_mid_column->emplace_back<Yoga::Text>(layout_data->text);
 
-    m_button_line = mid_column->emplace_back<Yoga::Item>();
+    m_button_line = m_mid_column->emplace_back<Yoga::Item>();
     m_button_line->set_orientation(Yoga::Orientation::Horizontal);
     m_button_line->set_justify_content(YGJustifyFlexStart);
     m_button_line->set_padding(5.);
@@ -265,16 +265,16 @@ void PopNotificationView::layout_header_text_buttons()
     const auto* layout_data = std::get_if<PopNotificationLayoutHeaderTextButtons>(&m_state->layout_variant());
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
-    mid_column->set_padding(5.);
-    mid_column->set_orientation(Yoga::Orientation::Vertical);
-    mid_column->set_justify_content(YGJustifyCenter);
+    m_mid_column->set_padding(5.);
+    m_mid_column->set_orientation(Yoga::Orientation::Vertical);
+    m_mid_column->set_justify_content(YGJustifyCenter);
 
-    m_header = mid_column->emplace_back<Yoga::Text>(layout_data->header);
+    m_header = m_mid_column->emplace_back<Yoga::Text>(layout_data->header);
     m_header->set_font_type(Render::ImguiFontType::Bold);
 
-    m_text = mid_column->emplace_back<Yoga::Text>(layout_data->text);
+    m_text = m_mid_column->emplace_back<Yoga::Text>(layout_data->text);
 
-    m_button_line = mid_column->emplace_back<Yoga::Item>();
+    m_button_line = m_mid_column->emplace_back<Yoga::Item>();
     m_button_line->set_orientation(Yoga::Orientation::Horizontal);
     m_button_line->set_justify_content(YGJustifyFlexStart);
     m_button_line->set_padding(5.);
@@ -300,19 +300,22 @@ void PopNotificationView::layout_text_progress()
     const auto* layout_data = std::get_if<PopNotificationLayoutTextProgress>(&m_state->layout_variant());
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
-    mid_column->set_padding(5.);
-    mid_column->set_orientation(Yoga::Orientation::Vertical);
-    mid_column->set_justify_content(YGJustifyFlexStart);
+    m_mid_column->set_padding(5.);
+    m_mid_column->set_orientation(Yoga::Orientation::Vertical);
+    m_mid_column->set_justify_content(YGJustifyFlexStart);
 
-    m_text = mid_column->emplace_back<Yoga::Text>(layout_data->text);
+    m_text = m_mid_column->emplace_back<Yoga::Text>(layout_data->text);
 
-    m_progress_bar = mid_column->emplace_back<Yoga::ProgressBar>();
+    m_progress_percent_text = m_mid_column->emplace_back<Yoga::Text>(std::to_string(layout_data->progress) + "%");
+
+    m_progress_bar = m_mid_column->emplace_back<Yoga::ProgressBar>();
     m_progress_bar->set_show_overlay(true);
     m_progress_bar->set_flex_grow(1.f);
     // m_progress_bar->set_progress_fill(GImGui->Style.Colors[ImGuiCol_ButtonActive]);
     // m_progress_bar->set_overlay_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
     m_progress_bar->set_progress(layout_data->progress);
-
+    int w = TotalWidth - (m_left_column->min_size().x() + 25 + 25 + 10);
+    m_progress_bar->set_min_size({w, 10});
     m_text->set_text_color(text_color());
 }
 
@@ -352,6 +355,9 @@ void PopNotificationView::update_buttons(const std::vector<PopNotificationButton
 
 void PopNotificationView::update_progress(int progress)
 {
+    if (m_progress_percent_text) {
+        m_progress_percent_text->set_text(std::to_string(progress) + "%");
+    }
     if (m_progress_bar) {
         m_progress_bar->set_progress(progress);
     }

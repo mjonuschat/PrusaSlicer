@@ -14,129 +14,6 @@ using Slic3r::Domain::SlicingId;
 
 namespace Slic3r::App::PopNotification {
 
-void PopNotificationObservableList::add_notification(PopNotificationDataPtr&& notification)
-{
-    if (notification->timeout() > 0) {
-        auto& timer_queue    = Biz::Platform::PlatformServices::instance().timer_queue();
-        int duration_milisec = notification->timeout() * 1'000;
-        notification->set_timer_id(timer_queue.set_timer(
-            std::chrono::milliseconds(duration_milisec),
-            std::bind(&PopNotificationObservableList::on_notification_timer, this, notification->id()),
-            false
-        ));
-    }
-
-    m_notifications.emplace_back(std::move(notification));
-
-    invoke_listeners<Biz::IListObserver<PopNotificationData>>(
-        [&](auto* l)
-        {
-            const size_t index = m_notifications.size() - 1;
-            l->on_inserted(at(index), index);
-        }
-    );
-}
-
-void PopNotificationObservableList::on_notification_timer(size_t id)
-{
-    auto it = std::find_if(
-        m_notifications.begin(),
-        m_notifications.end(),
-        [id](const PopNotificationDataPtr& notification) { return notification->id() == id; }
-    );
-    erase_notification_by_id(id);
-}
-
-void PopNotificationObservableList::erase_notification_by_id(size_t id)
-{
-    auto it = std::find_if(
-        m_notifications.begin(),
-        m_notifications.end(),
-        [id](const PopNotificationDataPtr& notification) { return notification->id() == id; }
-    );
-    erase_notification(it);
-}
-
-PopNotificationDataIt PopNotificationObservableList::erase_notification(PopNotificationDataIt it)
-{
-    ASSERT(it != m_notifications.end());
-    stop_notification_timer(it);
-    const size_t index = std::distance(m_notifications.begin(), it);
-    it                 = m_notifications.erase(it);
-
-    invoke_listeners<Biz::IListObserver<PopNotificationData>>(
-        [&](auto* l) { l->on_removed({index}); }
-    );
-    return it;
-}
-
-void PopNotificationObservableList::notification_updated(PopNotificationDataIt it)
-{
-    ASSERT(it != m_notifications.end());
-    const size_t index = std::distance(m_notifications.begin(), it);
-    invoke_listeners<Biz::IListObserver<PopNotificationData>>(
-        [&](auto* l) { l->on_updated({index}); }
-    );
-}
-
-void PopNotificationObservableList::set_notification_timeout(PopNotificationDataIt it, size_t seconds)
-{
-    ASSERT(it != m_notifications.end());
-    stop_notification_timer(it);
-    if (seconds == 0) {
-        return;
-    }
-    it->get()->set_timeout(seconds);
-    auto& timer_queue    = Biz::Platform::PlatformServices::instance().timer_queue();
-    int duration_milisec = seconds * 1'000;
-    it->get()->set_timer_id(timer_queue.set_timer(
-        std::chrono::milliseconds(duration_milisec),
-        std::bind(&PopNotificationObservableList::on_notification_timer, this, it->get()->id()),
-        false
-    ));
-}
-
-void PopNotificationObservableList::stop_notification_timer(PopNotificationDataIt it)
-{
-    ASSERT(it != m_notifications.end());
-    auto& timer_queue = Biz::Platform::PlatformServices::instance().timer_queue();
-    if (it->get()->timer_id() != Biz::Platform::TimerQueue::TimerID()
-        && timer_queue.is_timer_running(it->get()->timer_id()))
-    {
-        timer_queue.cancel_timer(it->get()->timer_id());
-    }
-    it->get()->set_timeout(0);
-}
-
-void PopNotificationObservableList::on_notification_close_button(size_t id)
-{
-    SPDLOG_INFO("{} id:{}", __FUNCTION__, id);
-    erase_notification_by_id(id);
-}
-
-void PopNotificationObservableList::on_notification_hover(size_t id) {}
-
-const PopNotificationData& PopNotificationObservableList::at(size_t index) const
-{
-    return *m_notifications[index].get();
-}
-
-size_t PopNotificationObservableList::size() const
-{
-    return m_notifications.size();
-}
-
-void PopNotificationObservableList::close_notifications_of_type(PopNotificationType type)
-{
-    for (auto it = m_notifications.begin(); it != m_notifications.end();) {
-        if ((*it)->type() == type) {
-            it = erase_notification(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
 namespace {
 std::string job_status_to_string(const JobStatus status)
 {
@@ -169,7 +46,8 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
                 if (notif_ptr->type() != PopNotificationType::JobProgress) {
                     return false;
                 }
-                const auto* job_data = std::get_if<JobProgressNotificationData>(&notif_ptr->additional_data());
+                const auto* job_data = std::get_if<JobProgressNotificationData>(&notif_ptr->additional_data(
+                ));
                 return job_data && job_data->job_name == job_name;
             }
         );
@@ -233,7 +111,14 @@ void PopNotificationCenter::on_status_changed(const Biz::Slicing::Status status,
         m_notifications.begin(),
         m_notifications.end(),
         [&slicing_id](const PopNotificationDataPtr& notif_ptr)
-        { return notif_ptr->type() == PopNotificationType::SlicingProgress; }
+        {
+            if (notif_ptr->type() != PopNotificationType::SlicingProgress) {
+                return false;
+            }
+            const auto* job_data = std::get_if<SlicingProgressNotificationData>(&notif_ptr->additional_data(
+            ));
+            return job_data && job_data->slicing_id.project_id == slicing_id.project_id;
+        }
     );
 
     if (it != m_notifications.end()) {
@@ -247,7 +132,7 @@ void PopNotificationCenter::on_status_changed(const Biz::Slicing::Status status,
 
         (*it)->set_layout(
             PopNotificationLayout::HeaderText,
-            PopNotificationLayoutHeaderText("Slicing", slicing_status_to_string(status.code))
+            PopNotificationLayoutHeaderText("Slicing Project " + std::to_string(slicing_id.project_id), slicing_status_to_string(status.code))
         );
         notification_updated(it);
     } else {
@@ -383,7 +268,7 @@ PopNotificationLayoutVariant export_layout(const PrintHostProgressNotificationDa
                       AppServices::instance().file_explorer_handler().open_folder(
                           target_path.parent_path().string()
                       );
-                      return true;
+                      return false;
                   }}}
             );
         } else {
@@ -399,7 +284,7 @@ PopNotificationLayoutVariant export_layout(const PrintHostProgressNotificationDa
                       AppServices::instance().file_explorer_handler().open_folder(
                           target_path.parent_path().string()
                       );
-                      return true;
+                      return false;
                   }},
                  {"eject",
                   [data]()
@@ -449,7 +334,8 @@ void PopNotificationCenter::on_print_host_progress(size_t print_host_id, int pro
             if (notif_ptr->type() != PopNotificationType::PrintHostProgress) {
                 return false;
             }
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data());
+            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data(
+            ));
             return job_data && job_data->print_host_id == print_host_id;
         }
     );
@@ -484,7 +370,8 @@ void PopNotificationCenter::on_print_host_error(size_t print_host_id, const std:
             if (notif_ptr->type() != PopNotificationType::PrintHostProgress) {
                 return false;
             }
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data());
+            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data(
+            ));
             return job_data && job_data->print_host_id == print_host_id;
         }
     );
@@ -522,7 +409,8 @@ void PopNotificationCenter::on_print_host_cancel(size_t print_host_id)
             if (notif_ptr->type() != PopNotificationType::PrintHostProgress) {
                 return false;
             }
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data());
+            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data(
+            ));
             return job_data && job_data->print_host_id == print_host_id;
         }
     );
@@ -542,7 +430,8 @@ void PopNotificationCenter::on_print_host_done(size_t print_host_id)
             if (notif_ptr->type() != PopNotificationType::PrintHostProgress) {
                 return false;
             }
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data());
+            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data(
+            ));
             return job_data && job_data->print_host_id == print_host_id;
         }
     );
@@ -577,7 +466,8 @@ void PopNotificationCenter::on_print_host_info(size_t print_host_id, const std::
             if (notif_ptr->type() != PopNotificationType::PrintHostProgress) {
                 return false;
             }
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data());
+            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->additional_data(
+            ));
             return job_data && job_data->print_host_id == print_host_id;
         }
     );

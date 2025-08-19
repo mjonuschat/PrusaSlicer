@@ -26,15 +26,16 @@ private:
     // const PopNotificationData& m_notification_data;
     PopNotificationObservableList& m_notification_list;
 
-    Yoga::Item* left_column;
-    Yoga::Item* mid_column;
-    Yoga::Item* right_column;
+    Yoga::Item* m_left_column;
+    Yoga::Item* m_mid_column;
+    Yoga::Item* m_right_column;
 
     Yoga::Icon* m_left_icon{nullptr};
     Yoga::Text* m_text{nullptr};
     Yoga::Text* m_header{nullptr};
     std::vector<Yoga::LayoutButton*> m_buttons;
     Yoga::Item* m_button_line;
+    Yoga::Text* m_progress_percent_text{nullptr};
     Yoga::ProgressBar* m_progress_bar;
 
     PopNotificationLayout m_current_layout;

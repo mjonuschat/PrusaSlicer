@@ -210,7 +210,7 @@ void WebViewPanel::run_script(const wxString& javascript)
 {
     if (!m_web_view || !m_shown)
         return;
-    SPDLOG_DEBUG("RunScript: {}", into_u8(javascript));
+    //SPDLOG_DEBUG("RunScript: {}", into_u8(javascript));
     m_web_view->RunScriptAsync(javascript);
 }
 
