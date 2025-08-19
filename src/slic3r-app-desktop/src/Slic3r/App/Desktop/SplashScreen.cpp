@@ -18,99 +18,134 @@
 
 namespace Slic3r::App::Desktop {
 
-// make a bitmap with dark grey banner on the left side
-static wxBitmap MakeBitmap(bool is_editor)
-{
-    wxBitmap bmp = wxBitmap(WX::from_u8(var(is_editor ? "splashscreen.jpg" : "splashscreen-gcodepreview.jpg")), wxBITMAP_TYPE_JPEG);
+namespace {
+// Helper function to determine the scale factor of the display where the splash screen will appear.
+// This needs to be a free function so it can be called before the constructor's initializer list.
+float get_display_scale_factor(const wxPoint& pos) {
+    int display_idx = wxDisplay::GetFromPoint(pos == wxDefaultPosition ? wxGetMousePosition() : pos);
+    wxDisplay display(display_idx != wxNOT_FOUND ? display_idx : 0);
+    double scale = display.GetScaleFactor();
 
-    if (!bmp.IsOk()) {
-        wxBitmapBundle* bmp_bndl = WX::get_bmp_bundle("PrusaSlicer", 400);
-        bmp = bmp_bndl->GetBitmap(bmp_bndl->GetPreferredBitmapSizeAtScale(1.0));
-        ASSERT(bmp.IsOk());
+    // Ensure scale is at least 1.0 as a fallback.
+    if (scale < 1.0) {
+        scale = 1.0;
     }
-
-    // create dark grey background for the splashscreen
-    // It will be 5/3 of the weight of the bitmap
-    int width  = lround((double) 5 / 3 * bmp.GetWidth());
-    int height = bmp.GetHeight();
-
-    wxImage image(width, height);
-    unsigned char* imgdata_ = image.GetData();
-    for (int i = 0; i < width * height; ++i) {
-        *imgdata_++ = 51;
-        *imgdata_++ = 51;
-        *imgdata_++ = 51;
-    }
-
-    wxBitmap new_bmp(image);
-
-    wxMemoryDC memDC;
-    memDC.SelectObject(new_bmp);
-    memDC.DrawBitmap(bmp, width - bmp.GetWidth(), 0, true);
-
-    return new_bmp;
+    return scale;
 }
 
+// This function is responsible for creating a bitmap correctly scaled for the target display.
+static wxBitmap make_bitmap(bool is_editor, double scale)
+{
+    // 1. Load the base 1x resolution bitmap from the JPEG file.
+    wxBitmap bmp_1x = wxBitmap(WX::from_u8(var(is_editor ? "splashscreen.jpg" : "splashscreen-gcodepreview.jpg")), wxBITMAP_TYPE_JPEG);
+
+    if (!bmp_1x.IsOk()) {
+        // Fallback to a bundled bitmap if the JPEG fails to load.
+        wxBitmapBundle* bmp_bndl = WX::get_bmp_bundle("PrusaSlicer", 400);
+        bmp_1x = bmp_bndl->GetBitmap(bmp_bndl->GetPreferredBitmapSizeAtScale(1.0));
+        // It's critical to have a valid bitmap here.
+        if (!bmp_1x.IsOk()) return wxBitmap();
+    }
+
+    // 2. Calculate logical and scaled dimensions for the final composite bitmap.
+    // The final bitmap has a dark grey banner on the left, making it wider.
+    const wxSize image_part_logical_size = bmp_1x.GetSize();
+    const int final_logical_width = lround((double) 5 / 3 * image_part_logical_size.GetWidth());
+    const int final_logical_height = image_part_logical_size.GetHeight();
+
+    const wxSize final_scaled_size(lround(final_logical_width * scale), lround(final_logical_height * scale));
+
+    // 3. Create a wxImage to build the hi-res splash screen.
+    wxImage final_image(final_scaled_size);
+    if (!final_image.IsOk()) return wxBitmap();
+
+    // 4. Fill the entire image with the dark grey background color.
+    final_image.SetRGB(wxRect(final_scaled_size), 51, 51, 51);
+
+    // 5. Rescale the original JPEG image part to the target resolution.
+    wxImage image_part_scaled = bmp_1x.ConvertToImage().Rescale(lround(image_part_logical_size.GetWidth() * scale),
+                                                               lround(image_part_logical_size.GetHeight() * scale),
+                                                               wxIMAGE_QUALITY_HIGH);
+
+    // 6. Paste the scaled image part onto the grey background at the correct position.
+    const int image_part_x_offset = lround((final_logical_width - image_part_logical_size.GetWidth()) * scale);
+    final_image.Paste(image_part_scaled, image_part_x_offset, 0);
+
+    // 7. Convert the final wxImage to a wxBitmap.
+    wxBitmap final_bitmap(final_image);
+
+    // 8. This is the crucial step: set the bitmap's scale factor.
+    // This tells wxWidgets that this large bitmap should occupy a smaller logical area.
+#ifdef __WXOSX__
+    if (final_bitmap.IsOk()) {
+        final_bitmap.SetScaleFactor(scale);
+    }
+#endif
+
+    return final_bitmap;
+}
+
+} // namespace
+
 SplashScreen::SplashScreen(bool is_editor, wxPoint pos) :
+    // The base class constructor is called here. We generate the scaled, but undecorated,
+    // bitmap by calling our static helper functions directly in the initializer list.
     wxSplashScreen(
-        MakeBitmap(is_editor),
+        make_bitmap(is_editor, get_display_scale_factor(pos)),
         wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_TIMEOUT,
-        4'000,
+        4000,
         nullptr,
         wxID_ANY,
-        wxDefaultPosition,
+        pos,
         wxDefaultSize,
-#ifdef __APPLE__
         wxSIMPLE_BORDER | wxFRAME_NO_TASKBAR | wxSTAY_ON_TOP
-#else
-        wxSIMPLE_BORDER | wxFRAME_NO_TASKBAR
-#endif // !__APPLE__
     ),
-    m_is_editor(is_editor)
+    m_is_editor(is_editor),
+    m_scale(get_display_scale_factor(pos)) // Initialize member variable for scale factor.
 {
+    // The base class now has the undecorated bitmap.
+    // We get a reference to it, decorate it, and then set it back.
     m_main_bitmap = m_window->GetBitmap();
+    if (!m_main_bitmap.IsOk()) {
+        return;
+    }
 
-    // int init_dpi = get_dpi_for_window(this);
-    this->SetPosition(pos);
-    // The size of the SplashScreen can be hanged after its moving to another display
-    // So, update it from a bitmap size
-    this->SetClientSize(m_main_bitmap.GetWidth(), m_main_bitmap.GetHeight());
-    this->CenterOnScreen();
-
-    // int new_dpi = get_dpi_for_window(this);
-    // m_scale         = (float)(new_dpi) / (float)(init_dpi);
-    // scale_bitmap(m_main_bitmap, m_scale);
-
-    // init constant texts and scale fonts
+    // Initialize constant texts and scale fonts using the determined scale factor.
     init_constant_text();
 
-    // this font will be used for the action string
+    // This font will be used for the action string.
     m_action_font = m_constant_text.credits_font.Bold();
 
-    // draw logo and constant info text
+    // Draw the logo and constant info text onto our hi-res bitmap.
     Decorate(m_main_bitmap);
+
+    // Update the splash screen window with the newly decorated bitmap.
+    set_bitmap(m_main_bitmap);
 }
 
 void SplashScreen::SetText(const std::string& text)
 {
-    set_bitmap(m_main_bitmap);
+    // This method creates a temporary copy of the main bitmap to draw on.
+    wxBitmap bitmap(m_main_bitmap);
     if (!text.empty()) {
-        wxBitmap bitmap(m_main_bitmap);
-
         wxMemoryDC memDC;
         memDC.SelectObject(bitmap);
 
         memDC.SetFont(m_action_font);
         memDC.SetTextForeground(wxColour(237, 107, 33));
-        memDC.DrawText(WX::from_u8(text), int(m_scale * 60), m_action_line_y_position);
+
+        // Draw text at a scaled position.
+        memDC.DrawText(WX::from_u8(text), int(/*m_scale **/ 60), m_action_line_y_position);
 
         memDC.SelectObject(wxNullBitmap);
-        set_bitmap(bitmap);
-#ifdef __WXOSX__
-        // without this code splash screen wouldn't be updated under OSX
-        wxYield();
-#endif
     }
+    // Update the splash screen with the (potentially modified) bitmap.
+    set_bitmap(bitmap);
+
+#ifdef __WXOSX__
+    // This yield helps ensure the splash screen updates promptly on macOS.
+    wxYield();
+#endif
 }
 
 void SplashScreen::Decorate(wxBitmap& bmp)
@@ -120,7 +155,7 @@ void SplashScreen::Decorate(wxBitmap& bmp)
 
     // draw text to the box at the left of the splashscreen.
     // this box will be 2/5 of the weight of the bitmap, and be at the left.
-    int width = lround(bmp.GetWidth() * 0.4);
+    int width = lround(bmp.GetLogicalWidth() * 0.4);
 
     // load bitmap for logo
     WX::BitmapCache bmp_cache;
@@ -129,18 +164,16 @@ void SplashScreen::Decorate(wxBitmap& bmp)
     if (logo_bmp_ptr == nullptr)
         return;
 
-    wxBitmap logo_bmp = *logo_bmp_ptr;
+    wxCoord margin = 20;
 
-    wxCoord margin = int(m_scale * 20);
-
-    wxRect banner_rect(wxPoint(0, logo_size), wxPoint(width, bmp.GetHeight()));
+    wxRect banner_rect(wxPoint(0, logo_size), wxPoint(width, bmp.GetLogicalHeight()));
     banner_rect.Deflate(margin, 2 * margin);
 
     // use a memory DC to draw directly onto the bitmap
     wxMemoryDC memDc(bmp);
 
     // draw logo
-    memDc.DrawBitmap(logo_bmp, margin, margin, true);
+    memDc.DrawBitmap(*logo_bmp_ptr, margin, margin, true);
 
     // draw the (white) labels inside of our black box (at the left of the splashscreen)
     memDc.SetTextForeground(wxColour(255, 255, 255));
@@ -150,23 +183,22 @@ void SplashScreen::Decorate(wxBitmap& bmp)
 
     int title_height = memDc.GetTextExtent(WX::from_u8(m_constant_text.title)).GetY();
     banner_rect.SetTop(banner_rect.GetTop() + title_height);
-    banner_rect.SetHeight(banner_rect.GetHeight() - title_height);
 
     memDc.SetFont(m_constant_text.version_font);
     memDc.DrawLabel(WX::from_u8(m_constant_text.version), banner_rect, wxALIGN_TOP | wxALIGN_LEFT);
-    int version_height = memDc.GetTextExtent(WX::from_u8(m_constant_text.version)).GetY();
+    int version_height = memDc.GetTextExtent(WX::from_u8(m_constant_text.version)).GetY() / m_scale;
 
     memDc.SetFont(m_constant_text.credits_font);
     memDc.DrawLabel(WX::from_u8(m_constant_text.credits), banner_rect, wxALIGN_BOTTOM | wxALIGN_LEFT);
-    int credits_height = memDc.GetMultiLineTextExtent(WX::from_u8(m_constant_text.credits)).GetY();
-    int text_height    = memDc.GetTextExtent(WX::from_u8("text")).GetY();
+    int credits_height = memDc.GetMultiLineTextExtent(WX::from_u8(m_constant_text.credits)).GetY() / m_scale;
+    int text_height    = memDc.GetTextExtent(WX::from_u8("text")).GetY() / m_scale;
 
     // calculate position for the dynamic text
     int logo_and_header_height = margin + logo_size + title_height + version_height;
-    m_action_line_y_position = logo_and_header_height + 0.5 * (bmp.GetHeight() - margin - credits_height - logo_and_header_height - text_height);
+    m_action_line_y_position = logo_and_header_height + 0.5 * (bmp.GetLogicalHeight() - margin - credits_height - logo_and_header_height - text_height);
 }
 
-void SplashScreen::ConstantText::init(wxFont init_font, bool is_editor)
+void SplashScreen::ConstantText::init(const wxFont& init_font, bool is_editor)
 {
     // title
     title = SLIC3R_APP_NAME; // is_editor ? SLIC3R_APP_NAME : GCODEVIEWER_APP_NAME;
@@ -182,27 +214,29 @@ void SplashScreen::ConstantText::init(wxFont init_font, bool is_editor)
 
 void SplashScreen::init_constant_text()
 {
-    m_constant_text.init(WX::w_config()->normal_font() /*get_default_font(this)*/, m_is_editor);
+    m_constant_text.init(WX::w_config()->normal_font(), m_is_editor);
 
-    // As default we use a system font for current display.
-    // Scale fonts in respect to banner width
+    // The text banner width in logical pixels.
+    int text_banner_width = lround(0.4 * m_main_bitmap.GetLogicalWidth()) - roundl(m_scale * 50);
 
-    int text_banner_width = lround(0.4 * m_main_bitmap.GetWidth()) - roundl(m_scale * 50); // banner_width - margins
+    // Use a temporary DC to measure text extents with the correct fonts.
+    wxMemoryDC memDC;
 
-    float title_font_scale = (float) text_banner_width
-        / GetTextExtent(WX::from_u8(m_constant_text.title)).GetX();
+    memDC.SetFont(m_constant_text.title_font);
+    float title_font_scale = (float) text_banner_width / memDC.GetTextExtent(WX::from_u8(m_constant_text.title)).GetX();
     scale_font(m_constant_text.title_font, title_font_scale > 3.5f ? 3.5f : title_font_scale);
 
-    float version_font_scale = (float) text_banner_width
-        / GetTextExtent(WX::from_u8(m_constant_text.version)).GetX();
+    memDC.SetFont(m_constant_text.version_font);
+    float version_font_scale = (float) text_banner_width / memDC.GetTextExtent(WX::from_u8(m_constant_text.version)).GetX();
     scale_font(m_constant_text.version_font, version_font_scale > 2.f ? 2.f : version_font_scale);
 
     // The width of the credits information string doesn't respect to the banner width some times.
     // So, scale credits_font in the respect to the longest string width
-    wxString credits         = WX::from_u8(m_constant_text.credits);
-    int longest_string_width = word_wrap_string(credits);
-    m_constant_text.credits  = WX::into_u8(credits);
-    float font_scale         = (float) text_banner_width / longest_string_width;
+    wxString credits = WX::from_u8(m_constant_text.credits);
+    memDC.SetFont(m_constant_text.credits_font);
+    int longest_string_width = word_wrap_string(credits, memDC);
+    m_constant_text.credits = WX::into_u8(credits);
+    float font_scale = (float) text_banner_width / longest_string_width;
     scale_font(m_constant_text.credits_font, font_scale);
 }
 
@@ -213,53 +247,31 @@ void SplashScreen::set_bitmap(wxBitmap& bmp)
     m_window->Update();
 }
 
-void SplashScreen::scale_bitmap(wxBitmap& bmp, float scale)
-{
-    if (scale == 1.0)
-        return;
-
-    wxImage image = bmp.ConvertToImage();
-    if (!image.IsOk() || image.GetWidth() == 0 || image.GetHeight() == 0)
-        return;
-
-    int width  = int(scale * image.GetWidth());
-    int height = int(scale * image.GetHeight());
-    image.Rescale(width, height, wxIMAGE_QUALITY_BILINEAR);
-
-    bmp = wxBitmap(std::move(image));
-}
-
 void SplashScreen::scale_font(wxFont& font, float scale)
 {
-#ifdef __WXMSW__
-    // Workaround for the font scaling in respect to the current active display,
-    // not for the primary display, as it's implemented in Font.cpp
-    // See https://github.com/wxWidgets/wxWidgets/blob/master/src/msw/font.cpp
-    // void wxNativeFontInfo::SetFractionalPointSize(float pointSizeNew)
-    wxNativeFontInfo nfi = *font.GetNativeFontInfo();
-    float pointSizeNew   = wxDisplay(this).GetScaleFactor() * scale * font.GetPointSize();
-    // nfi.lf.lfHeight      = nfi.GetLogFontHeightAtPPI(pointSizeNew, get_dpi_for_window(this));
-    nfi.lf.lfHeight = nfi.GetLogFontHeightAtPPI(pointSizeNew, this->GetDPIScaleFactor());
-    nfi.pointSize   = pointSizeNew;
-    font            = wxFont(nfi);
-#else
-    font.Scale(scale);
-#endif //__WXMSW__
+    // The font size should be scaled by the overall scale factor of the splash screen.
+    float final_scale = scale /** m_scale*/;
+    if (final_scale == 1.0) return;
+
+    // Use wxFont::Scaled for a platform-independent way to scale fonts.
+    font = font.Scaled(final_scale);
 }
 
 // wrap a string for the strings no longer then 55 symbols
 // return extent of the longest string
-int SplashScreen::word_wrap_string(wxString& input)
+int SplashScreen::word_wrap_string(wxString& input, wxDC& dc)
 {
     size_t line_len = 55; // count of symbols in one line
-    int idx         = -1;
-    size_t cur_len  = 0;
-
+    int idx = -1;
+    size_t cur_len = 0;
     wxString longest_sub_string;
-    auto get_longest_sub_string = [input](wxString& longest_sub_str, size_t cur_len, size_t i)
-    {
-        if (cur_len > longest_sub_str.Len())
-            longest_sub_str = input.SubString(i - cur_len + 1, i);
+
+    size_t start_of_line = 0;
+    auto update_longest_string = [&](size_t end_of_line) {
+        wxString current_line = input.Mid(start_of_line, end_of_line - start_of_line);
+        if (dc.GetTextExtent(current_line).GetX() > dc.GetTextExtent(longest_sub_string).GetX()) {
+            longest_sub_string = current_line;
+        }
     };
 
     for (size_t i = 0; i < input.Len(); i++) {
@@ -267,18 +279,23 @@ int SplashScreen::word_wrap_string(wxString& input)
         if (input[i] == ' ')
             idx = i;
         if (input[i] == '\n') {
-            get_longest_sub_string(longest_sub_string, cur_len, i);
-            idx     = -1;
+            update_longest_string(i);
+            start_of_line = i + 1;
+            idx = -1;
             cur_len = 0;
         }
-        if (cur_len >= line_len && idx >= 0) {
-            get_longest_sub_string(longest_sub_string, cur_len, i);
+        if (cur_len >= line_len && idx != -1) {
+            update_longest_string(idx);
             input[idx] = '\n';
-            cur_len    = i - static_cast<size_t>(idx);
+            start_of_line = static_cast<size_t>(idx) + 1;
+            cur_len = i - static_cast<size_t>(idx);
+            idx = -1;
         }
     }
+    // Check the last line
+    update_longest_string(input.Len());
 
-    return GetTextExtent(longest_sub_string).GetX();
+    return dc.GetTextExtent(longest_sub_string).GetX();
 }
 
 } // namespace Slic3r::App::Desktop
