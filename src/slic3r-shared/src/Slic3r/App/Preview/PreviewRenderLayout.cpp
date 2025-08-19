@@ -26,8 +26,8 @@ PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
 )
     : AbstractRenderLayout(
-          std::move(top_bar), std::move(object_list), std::move(cube_view), std::move(sidebar_bed), std::move(sidebar_print)
-      )
+        std::move(top_bar), std::move(object_list), std::move(cube_view), std::move(sidebar_bed), std::move(sidebar_print)
+    )
     , m_gcode_window(std::move(m_gcode_window))
     , m_legend(std::move(legend))
     , m_double_slider_layers(std::move(double_slider_layers))

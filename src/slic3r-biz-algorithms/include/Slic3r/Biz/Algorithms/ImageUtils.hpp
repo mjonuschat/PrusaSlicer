@@ -14,4 +14,11 @@ Domain::Image rescaled_with_preserved_ratio(const Domain::Image& image, const Do
 void flip_vertical(Domain::Image& image);
 
 void fill(Domain::Image& image, uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255);
+
+#define ENABLE_DEBUG_EXPORT_TO_PNG 0
+#if ENABLE_DEBUG_EXPORT_TO_PNG
+void export_to_png_file(const Slic3r::Domain::Image& image, const std::string& path_prefix);
+void export_to_png_file(const Slic3r::Domain::Images& images, const std::string& path_prefix);
+#endif // ENABLE_DEBUG_EXPORT_TO_PNG
+
 } // namespace Slic3r::Biz::Algorithms::ImageUtils

@@ -391,12 +391,7 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 #if ENABLED_DEBUG_VIEWER_MODE
     render_imgui_debug_viewer_mode(m_fdm_viewer);
 #endif // ENABLED_DEBUG_VIEWER_MODE
-#if ENABLED_SCENE_SHADING_CUSTOMIZATION
-    render_imgui_scene_shading_customization(*m_scene_presenter);
-#endif // ENABLED_SCENE_SHADING_CUSTOMIZATION
-#if ENABLED_LIGHTS_CUSTOMIZATION
-    render_imgui_lights_customization(*m_scene_presenter);
-#endif // ENABLED_LIGHTS_CUSTOMIZATION
+    Scene::render_imgui_graphics_settings_debug_window(*m_scene_presenter, *m_imgui_render);
 }
 
 void PreviewRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
@@ -1438,7 +1433,7 @@ void PreviewRenderModule::center_camera_on_selected_bed()
     for (const auto& v : print_volume) {
         bed_aabb.extend(bed_inst_offset + v.cast<double>());
     }
-    m_scene_presenter->scene().set_shadows_aabb(bed_aabb);
+    Scene::Scene::set_shadows_aabb(bed_aabb);
     Scene::CameraTrackballController& trackball = m_scene_presenter->scene().camera_trackball();
 
     trackball.set_target(bed_inst_offset + Algorithms::Point::to_3d(bed.center(), 0.0));

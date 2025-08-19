@@ -1226,14 +1226,7 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         m_scene_presenter->scene().camera_trackball()
     );
 #endif // ENABLED_DEBUG_CAMERA
-#if ENABLED_SCENE_SHADING_CUSTOMIZATION
-    render_imgui_scene_shading_customization(*m_scene_presenter, [this]() {
-        m_scene_presenter->update_beds_shadows_data();
-    });
-#endif // ENABLED_SCENE_SHADING_CUSTOMIZATION
-#if ENABLED_LIGHTS_CUSTOMIZATION
-    render_imgui_lights_customization(*m_scene_presenter);
-#endif // ENABLED_LIGHTS_CUSTOMIZATION
+    Scene::render_imgui_graphics_settings_debug_window(*m_scene_presenter, *m_imgui_render);
 }
 
 void PlaterRenderModule::render_object_hud(

@@ -127,6 +127,7 @@ void MinimalSceneRenderCustomizer::on_transparent_pass_end(
 }
 
 
+GraphicsSettings Scene::s_graphics_settings;
 
 MinimalSceneRenderCustomizer Scene::ms_default_customizer;
 
@@ -136,12 +137,20 @@ Scene::Scene() : m_camera_trackball(m_camera)
     m_nodes_by_id[m_root.id()] = &m_root;
     m_root.set_debug_name("root");
 
-    if (m_pbr.enabled)
-        set_ao_enabled(true);
-    else if (m_ao.enabled)
-        set_shadows_enabled(true);
-    else
-        validate_lights(m_lighting.lights);
+    s_graphics_settings.add_listener<IGraphicsSettingsChangedListener>(this);
+    validate_lights(m_lighting.lights);
+}
+
+Scene::~Scene()
+{
+    s_graphics_settings.remove_listener<IGraphicsSettingsChangedListener>(this);
+    // force destruction here, while the OpenGL context is still valid
+    s_graphics_settings.m_ao.noise_tex.reset();
+}
+
+void Scene::on_shading_type_changed(ShadingType shading_type)
+{
+    validate_lights(m_lighting.lights);
 }
 
 void Scene::add_child(Node* node, Node* parent)
@@ -268,56 +277,60 @@ void Scene::init_screen_quad(Render::Device& device) const
 
 void Scene::generate_ao_kernel(Render::Device& device) const
 {
-    if (m_ao.kernel.empty())
-        m_ao.pending_kernel_size = m_ao.DEFAULT_KERNEL_SIZE;
+    AmbientOcclusion& ao = s_graphics_settings.m_ao;
 
-    if (m_ao.pending_kernel_size.has_value() && *m_ao.pending_kernel_size != m_ao.kernel.size()) {
+    if (ao.kernel.empty())
+        ao.pending_kernel_size = ao.DEFAULT_KERNEL_SIZE;
+
+    if (ao.pending_kernel_size.has_value() && *ao.pending_kernel_size != ao.kernel.size()) {
         std::uniform_real_distribution<float> random_floats(0.0f, 1.0f); // generates random floats between 0.0 and 1.0
         std::default_random_engine generator;
 
-        m_ao.kernel.clear();
-        m_ao.kernel.reserve(*m_ao.pending_kernel_size);
-        for (size_t i = 0; i < *m_ao.pending_kernel_size; ++i) {
+        ao.kernel.clear();
+        ao.kernel.reserve(*ao.pending_kernel_size);
+        for (size_t i = 0; i < *ao.pending_kernel_size; ++i) {
             Vec3f sample(random_floats(generator) * 2.0f - 1.0f,
                          random_floats(generator) * 2.0f - 1.0f,
                          random_floats(generator));
             sample.normalize();
             sample *= random_floats(generator);
-            float scale = float(i) / float(*m_ao.pending_kernel_size);
+            float scale = float(i) / float(*ao.pending_kernel_size);
             // scale samples s.t. they're more aligned to center of kernel
             scale = 0.1f + scale * scale * 0.9f;
             sample *= scale;
-            m_ao.kernel.emplace_back(sample);
+            ao.kernel.emplace_back(sample);
         }
 
-        m_ao.pending_kernel_size.reset();
+        ao.pending_kernel_size.reset();
     }
 }
 
 void Scene::generate_ao_noise(Render::Device& device) const
 {
-    if (m_ao.noise_size == 0)
-        m_ao.pending_noise_size = m_ao.DEFAULT_NOISE_SIZE;
+    AmbientOcclusion& ao = s_graphics_settings.m_ao;
 
-    if (m_ao.pending_noise_size.has_value() && *m_ao.pending_noise_size != m_ao.noise_size) {
-        m_ao.noise_size = *m_ao.pending_noise_size;
+    if (ao.noise_size == 0)
+        ao.pending_noise_size = ao.DEFAULT_NOISE_SIZE;
+
+    if (ao.pending_noise_size.has_value() && *ao.pending_noise_size != ao.noise_size) {
+        ao.noise_size = *ao.pending_noise_size;
 
         std::uniform_real_distribution<float> random_floats(0.0f, 1.0f); // generates random floats between 0.0 and 1.0
         std::default_random_engine generator;
 
         std::vector<Vec3f> noise_data;
-        noise_data.reserve(m_ao.noise_size * m_ao.noise_size);
-        for (size_t i = 0; i < m_ao.noise_size * m_ao.noise_size; ++i) {
+        noise_data.reserve(ao.noise_size * ao.noise_size);
+        for (size_t i = 0; i < ao.noise_size * ao.noise_size; ++i) {
             Vec3f noise(random_floats(generator) * 2.0f - 1.0f,
                         random_floats(generator) * 2.0f - 1.0f,
                         0.0f); // rotate around z-axis (in tangent space)
             noise_data.emplace_back(noise);
         }
 
-        m_ao.noise = device.context().texture_manager().get_or_create_dynamic("ao_noise", Domain::PixelFormat::RGB32F, m_ao.noise_size, m_ao.noise_size);
-        m_ao.noise->set_data(Domain::PixelFormat::RGB32F, 0, m_ao.noise_size, m_ao.noise_size, (void*)noise_data.data());
+        ao.noise_tex = device.context().texture_manager().get_or_create_dynamic("ao_noise", Domain::PixelFormat::RGB32F, ao.noise_size, ao.noise_size);
+        ao.noise_tex->set_data(Domain::PixelFormat::RGB32F, 0, ao.noise_size, ao.noise_size, (void*)noise_data.data());
 
-        m_ao.pending_noise_size.reset();
+        ao.pending_noise_size.reset();
     }
 }
 
@@ -356,29 +369,31 @@ void Scene::render_background(Render::CommandBuffer& cmd_buffer, Render::Device&
 
 void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomizer* customizer) const
 {
-    if (m_shadows.framebuffer == nullptr)
-        m_shadows.pending_framebuffer_size = m_shadows.DEFAULT_FRAMEBUFFER_SIZE;
+    Shadows& shadows = s_graphics_settings.m_shadows;
 
-    if (m_shadows.pending_framebuffer_size.has_value() && *m_shadows.pending_framebuffer_size != m_shadows.framebuffer_size) {
-        if (m_shadows.framebuffer != nullptr)
-            device.context().framebuffer_manager().destroy(m_shadows.framebuffer);
+    if (shadows.framebuffer == nullptr)
+        shadows.pending_framebuffer_size = shadows.DEFAULT_FRAMEBUFFER_SIZE;
+
+    if (shadows.pending_framebuffer_size.has_value() && *shadows.pending_framebuffer_size != shadows.framebuffer_size) {
+        if (shadows.framebuffer != nullptr)
+            device.context().framebuffer_manager().destroy(shadows.framebuffer);
         Render::FramebufferCreationData data;
-        data.width = *m_shadows.pending_framebuffer_size;
-        data.height = *m_shadows.pending_framebuffer_size;
-        m_shadows.framebuffer = device.context().framebuffer_manager().create(data);
-        m_shadows.framebuffer_size = *m_shadows.pending_framebuffer_size;
-        m_shadows.pending_framebuffer_size.reset();
+        data.width = *shadows.pending_framebuffer_size;
+        data.height = *shadows.pending_framebuffer_size;
+        shadows.framebuffer = device.context().framebuffer_manager().create(data);
+        shadows.framebuffer_size = *shadows.pending_framebuffer_size;
+        shadows.pending_framebuffer_size.reset();
     }
 
     auto cmd_buffer = device.create_command_buffer();
     // set light viewport
-    cmd_buffer->bind_framebuffer(*m_shadows.framebuffer);
-    cmd_buffer->set_viewport({ 0, 0, m_shadows.framebuffer_size, m_shadows.framebuffer_size });
+    cmd_buffer->bind_framebuffer(*shadows.framebuffer);
+    cmd_buffer->set_viewport({ 0, 0, shadows.framebuffer_size, shadows.framebuffer_size });
     cmd_buffer->set_depth_test_enabled(true);
     cmd_buffer->set_cull_face_enabled(true);
     cmd_buffer->clear_buffers(false, true);
 
-    Eigen::AlignedBox3d world_aabb = m_shadows.aabb;
+    Eigen::AlignedBox3d world_aabb = shadows.aabb;
 
     NodeMaterials nodes = collect_nodes_with_material([](auto n) {
         return n->has_render_component() && n->render_component()->cast_shadows() && !resolve_material(*n).transparent();
@@ -404,10 +419,10 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
             it->direction.cast<double>();
         Vec3d world_light_pos = center - 1.0f * world_light_dir;
 
-        m_shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
-        m_shadows.light_cam.switch_projection_type();
+        shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
+        shadows.light_cam.switch_projection_type();
 
-        Eigen::AlignedBox3d light_aabb = world_aabb.transformed(Transform3d(m_shadows.light_cam.view()));
+        Eigen::AlignedBox3d light_aabb = world_aabb.transformed(Transform3d(shadows.light_cam.view()));
 
         Vec3d eye_min = { DBL_MAX, DBL_MAX, DBL_MAX };
         Vec3d eye_max = { -DBL_MAX, -DBL_MAX, -DBL_MAX };
@@ -426,12 +441,12 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
         eye_min.z() -= delta_z;
         eye_max.z() -= delta_z;
 
-        m_shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
+        shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
 
         double max_x = std::max(std::abs(eye_min.x()), std::abs(eye_max.x()));
         double max_y = std::max(std::abs(eye_min.y()), std::abs(eye_max.y()));
 
-        m_shadows.light_cam.set_projection(
+        shadows.light_cam.set_projection(
             Render::ortho(-max_x, max_x, -max_y, max_y, eye_min.z(), eye_max.z()));
 
         if (customizer)
@@ -460,7 +475,7 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
             mat
               .set_shader(device.context().shader_manager().shader(shader_name))
               .set_uniform("light_position", (Vec3f)world_light_pos.cast<float>());
-            n->render_component()->render(*n, m_shadows.light_cam, m_lighting, mat, *cmd_buffer);
+            n->render_component()->render(*n, shadows.light_cam, m_lighting, mat, *cmd_buffer);
         }
 
         if (customizer) {
@@ -472,7 +487,7 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
 
     // restore camera viewport
     cmd_buffer->set_viewport(m_camera.viewport());
-    cmd_buffer->unbind_framebuffer(*m_shadows.framebuffer);
+    cmd_buffer->unbind_framebuffer(*shadows.framebuffer);
 }
 
 void Scene::render_shadows_receivers_pass(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
@@ -484,7 +499,9 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
     if (nodes.empty())
         return;
 
-    Transform light_cam_proj_view_matrix = m_shadows.light_cam.projection() * m_shadows.light_cam.view();
+    const Shadows& shadows = s_graphics_settings.m_shadows;
+
+    Transform light_cam_proj_view_matrix = shadows.light_cam.projection() * shadows.light_cam.view();
     for (auto& [node, material] : nodes) {
         SquareMatrix4f light_cam_matrix = (light_cam_proj_view_matrix * node->world_transform()).cast<float>();
         std::string shader_name = device.context().shader_manager().shader_name(material.shader());
@@ -492,9 +509,9 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
         material
             .set_shader(device.context().shader_manager().shader(shader_name))
             .set_uniform("light_matrix", light_cam_matrix)
-            .set_uniform("shadows_intensity", m_shadows.intensity)
-            .set_texture(m_shadows.SHADOWSMAP_TEX_UNIT, m_shadows.framebuffer->depth())
-            .set_uniform("shadowsmap", m_shadows.SHADOWSMAP_TEX_UNIT);
+            .set_uniform("shadows_intensity", shadows.intensity)
+            .set_texture(shadows.SHADOWSMAP_TEX_UNIT, shadows.framebuffer->depth())
+            .set_uniform("shadowsmap", shadows.SHADOWSMAP_TEX_UNIT);
 
         set_uniforms(m_lighting, material);
     }
@@ -536,7 +553,7 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
 void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
 {
     NodeMaterials nodes = collect_nodes_with_material([this](auto n) {
-        return n->has_render_component() && ((!m_shadows.enabled && !m_ao.enabled)|| !n->render_component()->receive_shadows());
+        return n->has_render_component() && (!s_graphics_settings.shadows_enabled() || !n->render_component()->receive_shadows());
     });
 
     if (nodes.empty())
@@ -623,9 +640,11 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
 
 void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomizer* customizer, const Domain::Index2& viewport_size) const
 {
-    if (m_ao.gbuffer_fb == nullptr || m_ao.framebuffer_size != viewport_size) {
-        if (m_ao.gbuffer_fb != nullptr)
-            device.context().framebuffer_manager().destroy(m_ao.gbuffer_fb);
+    AmbientOcclusion& ao = s_graphics_settings.m_ao;
+
+    if (ao.gbuffer_fb == nullptr || ao.framebuffer_size != viewport_size) {
+        if (ao.gbuffer_fb != nullptr)
+            device.context().framebuffer_manager().destroy(ao.gbuffer_fb);
         Render::FramebufferCreationData data;
         data.width = viewport_size[0];
         data.height = viewport_size[1];
@@ -635,11 +654,11 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
         data.color_attachments[AmbientOcclusion::EYE_NORM_CLR_ATTR].format = Domain::PixelFormat::RGBA16F;
         data.color_attachments[AmbientOcclusion::COLOR_CLR_ATTR].format = Domain::PixelFormat::RGBA8;
         data.color_attachments[AmbientOcclusion::PBR_MATERIAL_ATTR].format = Domain::PixelFormat::RGBA16F;
-        m_ao.gbuffer_fb = device.context().framebuffer_manager().create(data);
+        ao.gbuffer_fb = device.context().framebuffer_manager().create(data);
     }
 
     auto cmd_buffer = device.create_command_buffer();
-    cmd_buffer->bind_framebuffer(*m_ao.gbuffer_fb);
+    cmd_buffer->bind_framebuffer(*ao.gbuffer_fb);
     cmd_buffer->set_depth_test_enabled(true);
     cmd_buffer->set_cull_face_enabled(true);
     cmd_buffer->set_viewport(m_camera.viewport());
@@ -650,8 +669,10 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
         return n->has_render_component() && n->render_component()->receive_shadows() && !resolve_material(*n).transparent();
     });
 
+    const Shadows& shadows = s_graphics_settings.m_shadows;
+
     if (!nodes.empty()) {
-        Transform light_cam_proj_view_matrix = m_shadows.light_cam.projection() * m_shadows.light_cam.view();
+        Transform light_cam_proj_view_matrix = shadows.light_cam.projection() * shadows.light_cam.view();
 
         if (customizer)
             customizer->on_render_begin(*cmd_buffer);
@@ -681,7 +702,7 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
                 .set_shader(device.context().shader_manager().shader(shader_name))
                 .set_uniform("light_matrix", light_cam_matrix);
 
-            if (m_pbr.enabled && n->render_component()->has_pbr())
+            if (s_graphics_settings.pbr_enabled() && n->render_component()->has_pbr())
                 set_uniforms(*n->render_component()->pbr(), mat);
 
             n->render_component()->render(*n, m_camera, m_lighting, mat, *cmd_buffer);
@@ -694,14 +715,16 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
         }
     }
 
-    cmd_buffer->unbind_framebuffer(*m_ao.gbuffer_fb);
+    cmd_buffer->unbind_framebuffer(*ao.gbuffer_fb);
 }
 
 void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2& viewport_size) const
 {
-    if (m_ao.ao_tex_fb == nullptr || m_ao.framebuffer_size != viewport_size) {
-        if (m_ao.ao_tex_fb != nullptr)
-            device.context().framebuffer_manager().destroy(m_ao.ao_tex_fb);
+    AmbientOcclusion& ao = s_graphics_settings.m_ao;
+
+    if (ao.ao_tex_fb == nullptr || ao.framebuffer_size != viewport_size) {
+        if (ao.ao_tex_fb != nullptr)
+            device.context().framebuffer_manager().destroy(ao.ao_tex_fb);
         Render::FramebufferCreationData data;
         data.width = viewport_size[0];
         data.height = viewport_size[1];
@@ -709,11 +732,11 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2&
         Render::FramebufferColorAttachment color;
         color.format = Domain::PixelFormat::R32F;
         data.color_attachments.push_back(color);
-        m_ao.ao_tex_fb = device.context().framebuffer_manager().create(data);
+        ao.ao_tex_fb = device.context().framebuffer_manager().create(data);
     }
 
     auto cmd_buffer = device.create_command_buffer();
-    cmd_buffer->bind_framebuffer(*m_ao.ao_tex_fb);
+    cmd_buffer->bind_framebuffer(*ao.ao_tex_fb);
     cmd_buffer->set_viewport(m_camera.viewport());
     cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
     cmd_buffer->clear_buffers(true, false);
@@ -724,34 +747,36 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2&
     Render::Material material;
     material
         .set_shader(device.context().shader_manager().shader("ao_texture"))
-        .set_uniform("kernel_size", int(m_ao.kernel.size()))
-        .set_uniform("radius", m_ao.radius)
-        .set_uniform("bias", m_ao.bias)
+        .set_uniform("kernel_size", int(ao.kernel.size()))
+        .set_uniform("radius", ao.radius)
+        .set_uniform("bias", ao.bias)
         .set_uniform("viewport_size", v_size)
         .set_uniform("projection_matrix", projection)
         .set_uniform("g_eye_position", AmbientOcclusion::EYE_POS_TEX_UNIT)
         .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
         .set_uniform("tex_noise", AmbientOcclusion::NOISE_TEX_UNIT)
-        .set_texture(AmbientOcclusion::EYE_POS_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_POS_CLR_ATTR))
-        .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
-        .set_texture(AmbientOcclusion::NOISE_TEX_UNIT, m_ao.noise);
+        .set_texture(AmbientOcclusion::EYE_POS_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_POS_CLR_ATTR))
+        .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
+        .set_texture(AmbientOcclusion::NOISE_TEX_UNIT, ao.noise_tex);
 
 
-    for (size_t i = 0; i < m_ao.kernel.size(); ++i) {
+    for (size_t i = 0; i < ao.kernel.size(); ++i) {
         std::string name = "kernel[" + std::to_string(i) + "]";
-        material.set_uniform(name, m_ao.kernel[i]);
+        material.set_uniform(name, ao.kernel[i]);
     }
 
     cmd_buffer->bind_and_draw(*m_screen_quad, material);
 
-    cmd_buffer->unbind_framebuffer(*m_ao.ao_tex_fb);
+    cmd_buffer->unbind_framebuffer(*ao.ao_tex_fb);
 }
 
 void Scene::render_ao_texture_blur_pass(Render::Device& device, const Domain::Index2& viewport_size) const
 {
-    if (m_ao.blur_fb == nullptr || m_ao.framebuffer_size != viewport_size) {
-        if (m_ao.blur_fb != nullptr)
-            device.context().framebuffer_manager().destroy(m_ao.blur_fb);
+    AmbientOcclusion& ao = s_graphics_settings.m_ao;
+
+    if (ao.blur_fb == nullptr || ao.framebuffer_size != viewport_size) {
+        if (ao.blur_fb != nullptr)
+            device.context().framebuffer_manager().destroy(ao.blur_fb);
         Render::FramebufferCreationData data;
         data.width = viewport_size[0];
         data.height = viewport_size[1];
@@ -759,11 +784,11 @@ void Scene::render_ao_texture_blur_pass(Render::Device& device, const Domain::In
         Render::FramebufferColorAttachment color;
         color.format = Domain::PixelFormat::R32F;
         data.color_attachments.push_back(color);
-        m_ao.blur_fb = device.context().framebuffer_manager().create(data);
+        ao.blur_fb = device.context().framebuffer_manager().create(data);
     }
 
     auto cmd_buffer = device.create_command_buffer();
-    cmd_buffer->bind_framebuffer(*m_ao.blur_fb);
+    cmd_buffer->bind_framebuffer(*ao.blur_fb);
     cmd_buffer->set_viewport(m_camera.viewport());
     cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
     cmd_buffer->clear_buffers(true, false);
@@ -772,12 +797,12 @@ void Scene::render_ao_texture_blur_pass(Render::Device& device, const Domain::In
     material
         .set_shader(device.context().shader_manager().shader("ao_blur"))
         .set_uniform("in_tex", AmbientOcclusion::AO_TEX_UNIT)
-        .set_uniform("filter_size", int(m_ao.blur_filter_size))
-        .set_texture(AmbientOcclusion::AO_TEX_UNIT, m_ao.ao_tex_fb->color_attachment(0));
+        .set_uniform("filter_size", int(ao.blur_filter_size))
+        .set_texture(AmbientOcclusion::AO_TEX_UNIT, ao.ao_tex_fb->color_attachment(0));
 
     cmd_buffer->bind_and_draw(*m_screen_quad, material);
 
-    cmd_buffer->unbind_framebuffer(*m_ao.blur_fb);
+    cmd_buffer->unbind_framebuffer(*ao.blur_fb);
 }
 
 void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device) const
@@ -790,13 +815,17 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
 
     SquareMatrix4f view = camera().view().cast<float>();
 
+    const AmbientOcclusion& ao = s_graphics_settings.m_ao;
+    const Shadows& shadows = s_graphics_settings.m_shadows;
+    const PBR& pbr = s_graphics_settings.m_pbr;
+
     Render::Material material;
     material
         .set_shader(device.context().shader_manager().shader("ao_lighting"))
-        .set_uniform("apply_pbr", m_pbr.enabled)
-        .set_uniform("pbr_intensity", m_pbr.enabled ? m_pbr.intensity : 1.0f)
-        .set_uniform("apply_shadows", m_shadows.enabled)
-        .set_uniform("shadows_intensity", m_shadows.enabled ? m_shadows.intensity : 0.0f)
+        .set_uniform("apply_pbr", s_graphics_settings.pbr_enabled())
+        .set_uniform("pbr_intensity", s_graphics_settings.pbr_enabled() ? pbr.intensity : 1.0f)
+        .set_uniform("apply_shadows", s_graphics_settings.shadows_enabled())
+        .set_uniform("shadows_intensity", s_graphics_settings.shadows_enabled() ? shadows.intensity : 0.0f)
         .set_uniform("g_eye_position", AmbientOcclusion::EYE_POS_TEX_UNIT)
         .set_uniform("g_light_position", AmbientOcclusion::LIGHT_POS_TEX_UNIT)
         .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
@@ -805,13 +834,13 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
         .set_uniform("ssao", AmbientOcclusion::AO_TEX_UNIT)
         .set_uniform("shadowsmap", Shadows::SHADOWSMAP_TEX_UNIT)
         .set_uniform("view_matrix", view)
-        .set_texture(AmbientOcclusion::EYE_POS_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_POS_CLR_ATTR))
-        .set_texture(AmbientOcclusion::LIGHT_POS_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::LIGHT_POS_CLR_ATTR))
-        .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
-        .set_texture(AmbientOcclusion::COLOR_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::COLOR_CLR_ATTR))
-        .set_texture(AmbientOcclusion::PBR_MATERIAL_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::PBR_MATERIAL_ATTR))
-        .set_texture(AmbientOcclusion::AO_TEX_UNIT, m_ao.blur_fb->color_attachment(0))
-        .set_texture(Shadows::SHADOWSMAP_TEX_UNIT, m_shadows.framebuffer->depth());
+        .set_texture(AmbientOcclusion::EYE_POS_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_POS_CLR_ATTR))
+        .set_texture(AmbientOcclusion::LIGHT_POS_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::LIGHT_POS_CLR_ATTR))
+        .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
+        .set_texture(AmbientOcclusion::COLOR_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::COLOR_CLR_ATTR))
+        .set_texture(AmbientOcclusion::PBR_MATERIAL_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::PBR_MATERIAL_ATTR))
+        .set_texture(AmbientOcclusion::AO_TEX_UNIT, ao.blur_fb->color_attachment(0))
+        .set_texture(Shadows::SHADOWSMAP_TEX_UNIT, shadows.framebuffer->depth());
  
     set_uniforms(m_lighting, material);
 
@@ -832,10 +861,10 @@ void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, IS
     if (m_background_enabled)
         render_background(cmd_buffer, device, false);
 
-    if (m_shadows.enabled)
+    if (s_graphics_settings.shadows_enabled())
         render_shadowsmap_pass(device, customizer);
 
-    if (m_ao.enabled) {
+    if (s_graphics_settings.ao_enabled()) {
         const Render::Rect& viewport = m_camera.viewport();
         Domain::Index2 viewport_size = { viewport.width, viewport.height };
         render_ao_gbuffer_pass(device, customizer, viewport_size);
@@ -844,11 +873,12 @@ void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, IS
         render_ao_texture_pass(device, viewport_size);
         render_ao_texture_blur_pass(device, viewport_size);
         render_ao_lighting_pass(cmd_buffer, device);
-        cmd_buffer.blit_to_draw_framebuffer(*m_ao.gbuffer_fb, viewport.width, viewport.height,
+        AmbientOcclusion& ao = s_graphics_settings.m_ao;
+        cmd_buffer.blit_to_draw_framebuffer(*ao.gbuffer_fb, viewport.width, viewport.height,
             Render::BlitFramebufferMask::DepthBufferBit, Render::BlitFramebufferFilter::Nearest);
-        m_ao.framebuffer_size = viewport_size;
+        ao.framebuffer_size = viewport_size;
     }
-    else if (m_shadows.enabled)
+    else if (s_graphics_settings.shadows_enabled())
         render_shadows_receivers_pass(device, cmd_buffer, customizer);
 
     render_no_shadows_pass(cmd_buffer, customizer);
@@ -950,7 +980,7 @@ bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results, Ray*
 
 void Scene::validate_lights(Lights& lights)
 {
-    if (m_shadows.enabled) {
+    if (s_graphics_settings.shadows_enabled()) {
         // ensure one light is set to cast shadows
         int count = std::count_if(lights.begin(), lights.end(),
             [](const Light& l) {
@@ -979,34 +1009,6 @@ void Scene::validate_lights(Lights& lights)
     // avoid shininess == 0.0, see: https://registry.khronos.org/OpenGL-Refpages/gl4/html/pow.xhtml
     std::for_each(lights.begin(), lights.end(),
         [](Light& l) { if (l.shininess == 0.0f) l.shininess = 0.001f; });
-}
-
-void Scene::set_shadows_enabled(bool enable)
-{
-    m_shadows.enabled = enable;
-    if (!enable) {
-        m_ao.enabled = false;
-        m_pbr.enabled = false;
-    }
-    validate_lights(m_lighting.lights);
-}
-
-void Scene::set_ao_enabled(bool enable)
-{
-    m_ao.enabled = enable;
-    if (enable)
-        set_shadows_enabled(true);
-    else
-        m_pbr.enabled = false;
-}
-
-void Scene::set_pbr_enabled(bool enable)
-{
-    m_pbr.enabled = enable;
-    if (enable) {
-        m_ao.enabled = true;
-        set_shadows_enabled(true);
-    }
 }
 
 void Scene::log_nodes() const

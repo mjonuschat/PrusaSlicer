@@ -21,9 +21,7 @@ Scoped3mfThumbnailSceneCustomizer::Scoped3mfThumbnailSceneCustomizer(Scene::Scen
     //
 
     // shading
-    m_cache.shadows_enabled = m_scene.shadows_enabled();
-    m_cache.ao_enabled = m_scene.ao_enabled();
-    m_cache.pbr_enabled = m_scene.pbr_enabled();
+    m_cache.shading_type = Scene::Scene::graphics_settings().shading_type();
 
     // camera
     Scene::Camera& camera = m_scene.camera();
@@ -41,7 +39,7 @@ Scoped3mfThumbnailSceneCustomizer::Scoped3mfThumbnailSceneCustomizer(Scene::Scen
     m_cache.trackball_view_rotation = trackball.view_rotation();
 
     // scene
-    m_cache.shadows_aabb = m_scene.shadows_aabb();
+    m_cache.shadows_aabb = Scene::Scene::graphics_settings().shadows_aabb();
     m_cache.background_enabled = m_scene.background_enabled();
 
     // hide gizmos
@@ -114,11 +112,11 @@ Scoped3mfThumbnailSceneCustomizer::Scoped3mfThumbnailSceneCustomizer(Scene::Scen
         if (tag != nullptr && tag->volume_type == Domain::ModelVolumeType::MODEL_PART && n.has_raycast_component())
             world_aabb.extend(n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>());
     });
-    m_scene.set_shadows_aabb(world_aabb);
+    Scene::Scene::set_shadows_aabb(world_aabb);
 
     // setup shading
     m_scene.set_background_enabled(false);
-    m_scene.set_pbr_enabled(true);
+    Scene::Scene::set_shading_type(Scene::ShadingType::PBR);
 
     // camera type
     if (m_cache.switch_camera_projection_type)
@@ -155,15 +153,10 @@ Scoped3mfThumbnailSceneCustomizer::~Scoped3mfThumbnailSceneCustomizer()
     m_scene.set_background_enabled(m_cache.background_enabled);
 
     // shading
-    if (!m_cache.shadows_enabled)
-        m_scene.set_shadows_enabled(m_cache.shadows_enabled);
-    else if (!m_cache.ao_enabled)
-        m_scene.set_ao_enabled(m_cache.ao_enabled);
-    else if (!m_cache.pbr_enabled)
-        m_scene.set_pbr_enabled(m_cache.pbr_enabled);
+    Scene::Scene::set_shading_type(m_cache.shading_type);
 
     // shadows aabb
-    m_scene.set_shadows_aabb(m_cache.shadows_aabb);
+    Scene::Scene::set_shadows_aabb(m_cache.shadows_aabb);
 
     // camera trackball
     Scene::CameraTrackballController& trackball = m_scene.camera_trackball();

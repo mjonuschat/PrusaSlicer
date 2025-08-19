@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Scene/Camera.hpp"
+#include "Slic3r/App/Scene/GraphicsSettings.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 
@@ -54,9 +55,7 @@ private:
         Eigen::AlignedBox3d shadows_aabb;
         bool background_enabled;
 
-        bool shadows_enabled;
-        bool ao_enabled;
-        bool pbr_enabled;
+        Scene::ShadingType shading_type;
 
         bool switch_camera_projection_type;
 
