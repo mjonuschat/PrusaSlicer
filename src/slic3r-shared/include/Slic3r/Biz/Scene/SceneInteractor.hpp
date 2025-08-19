@@ -234,14 +234,14 @@ public:
      */
     void transform_selection(const Transform& relative_transform, TransformMode mode);
 
-    struct Trafo {
+    struct InstanceTransform2D {
         Domain::ElementRef instance_ref;
         Domain::Vec2d absolute_offset;
         double rotation_delta;
     };
 
-    using Trafos = std::vector<Trafo>;
-    void transform_instances(const Trafos& transformations);
+    using InstanceTransforms = std::vector<InstanceTransform2D>;
+    void transform_instances(const InstanceTransforms& transformations);
 
     /**
      * @brief Finalize or cancel selection transform.

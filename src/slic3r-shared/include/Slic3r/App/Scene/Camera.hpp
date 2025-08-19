@@ -62,7 +62,7 @@ public:
      * - for perspective projection the zoom modifies the vertical field of view by applying a scaling factor equal to 1/zoom
      * - for orthographic projection the zoom modifies the viewport by applying a scaling factor equal to 1/zoom
      */
-    virtual Transform projection(const Render::Rect& viewport, double zoom) const = 0;
+    virtual Domain::SquareMatrix4d projection(const Render::Rect& viewport, double zoom) const = 0;
 
     virtual double min_zoom() const = 0;
     virtual double max_zoom() const = 0;
@@ -136,18 +136,18 @@ public:
 
     void look_at(const Domain::Vec3d& eye, const Domain::Vec3d& center, const Domain::Vec3d& up);
 
-    const Transform& projection() const { return m_projection; }
-    void set_projection(const Transform& m);
+    const Domain::SquareMatrix4d& projection() const { return m_projection; }
+    void set_projection(const Domain::SquareMatrix4d& m);
 
     void switch_projection_type();
 
     Transform view() const { return m_model.inverse(); }
 
-    Domain::Vec3d position() const { return m_model.block<3, 1>(0, 3); }
+    Domain::Vec3d position() const { return m_model.matrix().block<3, 1>(0, 3); }
 
-    Domain::Vec3d forward() const { return -m_model.block<3, 1>(0, 2); }
-    Domain::Vec3d right() const { return m_model.block<3, 1>(0, 0); }
-    Domain::Vec3d up() const { return m_model.block<3, 1>(0, 1); }
+    Domain::Vec3d forward() const { return -m_model.matrix().block<3, 1>(0, 2); }
+    Domain::Vec3d right() const { return m_model.matrix().block<3, 1>(0, 0); }
+    Domain::Vec3d up() const { return m_model.matrix().block<3, 1>(0, 1); }
 
     void set_viewport(const Render::Rect& viewport);
     const Render::Rect& viewport() const { return m_viewport; }
@@ -175,7 +175,7 @@ private:
     using CameraUpdateListeners = Biz::ListenerList<ICameraUpdateListener>;
 
     Transform m_model{Transform::Identity()};
-    Transform m_projection{Transform::Identity()};
+    Domain::SquareMatrix4d m_projection{Domain::SquareMatrix4d::Identity()};
     Render::Rect m_viewport;
     double m_zoom{ 1. };
     std::unique_ptr<AbstractCameraProjection> m_projection_getter;
@@ -188,7 +188,7 @@ public:
         : AbstractCameraProjection(CameraProjectionType::Perspective)
     {}
 
-    Transform projection(const Render::Rect& viewport, double zoom) const override;
+    Domain::SquareMatrix4d projection(const Render::Rect& viewport, double zoom) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
 
     double fovy() const { return m_fovy; }
@@ -210,7 +210,7 @@ public:
         : AbstractCameraProjection(CameraProjectionType::Orthographic, z_near, z_far)
     {}
 
-    Transform projection(const Render::Rect& viewport, double zoom) const override;
+    Domain::SquareMatrix4d projection(const Render::Rect& viewport, double zoom) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
 
     double min_zoom() const override { return CameraProjectionParameters::orthographic_min_zoom(); }

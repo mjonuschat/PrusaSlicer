@@ -157,7 +157,7 @@ ScopedGCodeThumbnailSceneCustomizer::ScopedGCodeThumbnailSceneCustomizer(
             && tag->volume_type == Domain::ModelVolumeType::MODEL_PART
             && n.has_raycast_component())
             world_aabb.extend(
-                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+                n.raycast_component()->world_bounding_box(n.world_transform().matrix()).cast<double>()
             );
     });
     Scene::Scene::set_shadows_aabb(world_aabb);

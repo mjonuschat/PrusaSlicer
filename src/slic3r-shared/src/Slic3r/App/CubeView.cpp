@@ -22,8 +22,8 @@ void CubeView::render_body(Domain::Vec2f pos, Domain::Vec2f size)
     DEBUG_ASSERT(m_camera != nullptr);
     DEBUG_ASSERT(m_trackball != nullptr);
 
-    Domain::SquareMatrix4f view = m_camera->view().cast<float>();
-    Domain::SquareMatrix4f proj = m_camera->projection().cast<float>();
+    Domain::SquareMatrix4f view = m_camera->view().matrix().cast<float>();
+    Domain::SquareMatrix4f proj = m_camera->projection().matrix().cast<float>();
     float cam_distance = m_trackball->distance_to_target();
     ImVec2 im_pos = ImVec2(pos.x(), pos.y());
     ImVec2 im_size = ImVec2(size.x(), size.y());

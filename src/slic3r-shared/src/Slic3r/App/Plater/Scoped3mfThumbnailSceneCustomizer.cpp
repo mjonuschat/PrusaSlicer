@@ -110,7 +110,7 @@ Scoped3mfThumbnailSceneCustomizer::Scoped3mfThumbnailSceneCustomizer(Scene::Scen
     Scene::visit(m_scene.root(), [&](const Scene::Node& n) {
         const auto* tag = n.tag_of_type<SceneNodeTag>();
         if (tag != nullptr && tag->volume_type == Domain::ModelVolumeType::MODEL_PART && n.has_raycast_component())
-            world_aabb.extend(n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>());
+            world_aabb.extend(n.raycast_component()->world_bounding_box(n.world_transform().matrix()).cast<double>());
     });
     Scene::Scene::set_shadows_aabb(world_aabb);
 

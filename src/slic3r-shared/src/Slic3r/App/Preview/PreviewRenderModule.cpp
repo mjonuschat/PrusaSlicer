@@ -315,7 +315,7 @@ void imgui_scenegraph_node_info(const Scene::Node& node)
             ImguiVecRender vec_render;
             for (size_t i = 0; i < 4; i++) {
                 ImGui::PushID(i);
-                vec_render("##", Vec4d{transform.row(i)});
+                vec_render("##", Vec4d{transform.matrix().row(i)});
                 ImGui::PopID();
             }
         }

@@ -626,11 +626,11 @@ void render_imgui_graphics_settings_debug_window(ISceneProvider& scene_provider,
                                 if (ImGui::Selectable(systems[i].c_str(), is_selected)) {
                                     sel = i;
                                     if (systems[sel] == "World") {
-                                        l.direction = scene.camera().model().block<3, 3>(0, 0).cast<float>() * l.direction;
+                                        l.direction = scene.camera().model().matrix().block<3, 3>(0, 0).cast<float>() * l.direction;
                                         float nn = l.direction.norm();
                                         DEBUG_ASSERT(std::abs(l.direction.norm() - 1.0f) < FLT_EPSILON);
                                     } else if (systems[sel] == "Camera") {
-                                        l.direction = scene.camera().view().block<3, 3>(0, 0).cast<float>() * l.direction;
+                                        l.direction = scene.camera().view().matrix().block<3, 3>(0, 0).cast<float>() * l.direction;
                                         float nn = l.direction.norm();
                                         DEBUG_ASSERT(std::abs(l.direction.norm() - 1.0f) < FLT_EPSILON);
                                     }

@@ -70,8 +70,8 @@ using Scene::BedSelection;
 using Scene::BedInstances;
 using Scene::get_selected_beds;
 
-using Trafo  = Scene::SceneInteractor::Trafo;
-using Trafos = Scene::SceneInteractor::Trafos;
+using Trafo  = Scene::SceneInteractor::InstanceTransform2D;
+using Trafos = Scene::SceneInteractor::InstanceTransforms;
 
 namespace BB = Biz::Algorithms::BoundingBox;
 

@@ -128,8 +128,8 @@ void transform_selection_instance_mode(
             memento.elements.insert({e, {e, inst->get_matrix().matrix()}});
         object_ids.insert(inst->get_object()->id().id);
         inst->set_transformation(
-            //transform_product(memento.elements[e].original_xform, instance_transform)
-            transform_product(memento.elements[e].original_xform, relative_transform)
+            transform_product(memento.elements[e].original_xform, instance_transform)
+            //transform_product(memento.elements[e].original_xform, relative_transform)
         );
     }
 
@@ -169,6 +169,7 @@ void transform_selection_volume_mode(
     );
     const auto* first_inst = proj.project.find_instance_by_id(first_el.object_id, first_el.instance_id);
     const auto parent = first_inst->get_matrix();
+    // If this is a local transform mode, we need to take the `relative_transform` and turn it into local one
     const SceneInteractor::Transform volume_relative_transform = mode == TransformMode::Local ?
         (parent.inverse() * relative_transform * parent).matrix() :
         relative_transform;
@@ -240,7 +241,7 @@ void SceneInteractor::set_object_selection(const ObjectSelection& selection)
         const auto* obj = project_context.project.find_object_by_id(e.object_id);
         ASSERT(obj != nullptr);
         for (const auto& inst : obj->instances)
-            sel.elements.push_back({e.object_id, inst->id().id});
+            sel.elements.emplace_back(e.object_id, inst->id().id);
     }
 
     DEBUG_ASSERT(sel.is_valid());
@@ -895,12 +896,12 @@ void SceneInteractor::transform_selection(
     });
 }
 
-void SceneInteractor::transform_instances(const Trafos& transformations)
+void SceneInteractor::transform_instances(const InstanceTransforms& transformations)
 {
     Project& project{m_projects.find(m_selected_project_id)->second.project};
 
     std::vector<Domain::ElementRef> elements;
-    for (const Trafo& trafo : transformations) {
+    for (const InstanceTransform2D& trafo : transformations) {
         ModelInstance* instance{
             project.find_instance_by_id(trafo.instance_ref.object_id, trafo.instance_ref.instance_id)
         };

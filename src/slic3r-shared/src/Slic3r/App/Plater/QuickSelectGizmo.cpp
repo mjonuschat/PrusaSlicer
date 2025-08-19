@@ -128,7 +128,7 @@ Scene::Node::NodeList RectangleSelection::collect_contained_nodes()
           // node represents volume/instance
           n->has_tag_of_type<SceneNodeTag>() &&
           // node intersects frustum
-          rcc->intersects(n->world_transform(), m_frustum);
+          rcc->intersects(n->world_transform().matrix(), m_frustum);
     }, nodes);
 
     return nodes;

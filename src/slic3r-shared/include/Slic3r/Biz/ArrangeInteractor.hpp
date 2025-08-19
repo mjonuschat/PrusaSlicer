@@ -21,7 +21,7 @@ struct ArrangeFatalError : public Exception
 
 struct Pack
 {
-    Scene::SceneInteractor::Trafos trafos;
+    Scene::SceneInteractor::InstanceTransforms trafos;
     Domain::BoundingBox2d bounding_box;
 };
 

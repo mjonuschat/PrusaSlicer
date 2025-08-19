@@ -22,7 +22,7 @@ void Camera::set_model(const Transform& m)
     invoke_listeners<ICameraUpdateListener>([this](auto* l) { l->camera_updated(*this); });
 }
 
-void Camera::set_projection(const Transform& m)
+void Camera::set_projection(const Domain::SquareMatrix4d& m)
 {
     m_projection = m;
     invoke_listeners<ICameraUpdateListener>([this](auto* l) { l->camera_updated(*this); });
@@ -86,7 +86,7 @@ Ray Camera::ray_at(double screen_x, double screen_y) const
 //        SPDLOG_INFO("ray eye ({},  {},  {},  {})", ray_eye.x(), ray_eye.y(), ray_eye.z(), ray_eye.w());
 //        SPDLOG_INFO("ray world ({},  {},  {})", ray_world.x(), ray_world.y(), ray_world.z());
 
-        return {m_model.block<3, 1>(0, 3), ray_world.normalized()};
+        return {m_model.matrix().block<3, 1>(0, 3), ray_world.normalized()};
     }
     else {
         Vec4d ray_origin_eye(ray_eye.x(), ray_eye.y(), 0, 1);
@@ -96,7 +96,7 @@ Ray Camera::ray_at(double screen_x, double screen_y) const
 
 Vec3d Camera::unproject(const Vec3d& win_pos) const
 {
-    SquareMatrix4d inv_pm = (m_projection * view()).inverse();
+    SquareMatrix4d inv_pm = (m_projection * view().matrix()).inverse();
     Vec4d w{
         (2 * win_pos.x() - m_viewport.x) / m_viewport.width - 1,
         (2 * win_pos.y() - m_viewport.y) / m_viewport.height - 1,
@@ -109,7 +109,7 @@ Vec3d Camera::unproject(const Vec3d& win_pos) const
 
 Domain::Vec3d Camera::project_to_ndc(const Domain::Vec3d& world_pos) const
 {
-    const Transform projection_view_matrix = m_projection * view();
+    const Domain::SquareMatrix4d projection_view_matrix = m_projection * view().matrix();
     // world to clip
     Vec4d clip = projection_view_matrix * Vec4d(world_pos.x(), world_pos.y(), world_pos.z(), 1.0);
     // clip to ndc
@@ -132,7 +132,7 @@ void Camera::update_projection()
     m_projection = m_projection_getter->projection(m_viewport, m_zoom);
 }
 
-Transform PerspectiveCameraProjection::projection(const Render::Rect& viewport, double zoom) const
+Domain::SquareMatrix4d PerspectiveCameraProjection::projection(const Render::Rect& viewport, double zoom) const
 {
     DEBUG_ASSERT(zoom != 0.0);
     return Render::perspective(m_fovy / zoom, double(viewport.width) / double(viewport.height), m_z_near, m_z_far);
@@ -154,7 +154,7 @@ double PerspectiveCameraProjection::constant_screen_space_size_scale(
     return cam_object_dist/2 * std::tan(deg2rad(phi_half));
 }
 
-Transform OrthographicCameraProjection::projection(const Render::Rect& viewport, double zoom) const
+Domain::SquareMatrix4d OrthographicCameraProjection::projection(const Render::Rect& viewport, double zoom) const
 {
     ASSERT(zoom != 0.0);
     double inv_zoom = 1.0 / zoom;

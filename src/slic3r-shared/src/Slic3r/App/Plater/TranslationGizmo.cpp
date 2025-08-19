@@ -70,9 +70,8 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
         }
 
         const GizmoNodeTag& tag = *node->tag_of_type<GizmoNodeTag>();
-        m_translation_ray.origin = m_scene_provider.selection_root().world_transform().col(3).head(
-            3
-        );
+        m_translation_ray
+            .origin = m_scene_provider.selection_root().world_transform().matrix().col(3).head(3);
         m_translation_ray.direction = tag.primary_axis_dir();
     }
 
