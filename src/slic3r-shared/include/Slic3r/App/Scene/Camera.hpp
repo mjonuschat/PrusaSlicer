@@ -24,7 +24,7 @@ struct CameraProjectionParameters
     static double orthographic_zoom_from_perspective(double perspective_zoom) { return 1 / (REF_Z * std::tan((REF_FOVY * M_PI) / (2 * 180 *  perspective_zoom))); }
     static double perspective_zoom_from_orthographic(double ortho_zoom) { return (REF_FOVY * M_PI) / (180 * 2 * std::atan(1 / (REF_Z * ortho_zoom))); }
 
-    static constexpr double REF_FOVY = 90.0;
+    static constexpr double REF_FOVY = 60.0;
 
     // static constexpr double Z_NEAR = 10;
     // static constexpr double Z_FAR = 1000.0;
