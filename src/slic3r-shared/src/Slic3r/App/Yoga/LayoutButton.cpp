@@ -9,18 +9,20 @@
 
 namespace Slic3r::App::Yoga {
 
-Slic3r::App::Yoga::LayoutButton::LayoutButton(const std::string& label)
-    : LayoutButton(label, Render::Icon::None)
+Slic3r::App::Yoga::LayoutButton::LayoutButton(const std::string& label) :
+    LayoutButton(label, Render::Icon::None)
 {}
 
-LayoutButton::LayoutButton(const std::string& label, Render::Icon icon)
-    : LayoutButton(label, icon, "")
+LayoutButton::LayoutButton(const std::string& label, Render::Icon icon) :
+    LayoutButton(label, icon, "")
 {}
 
 Slic3r::App::Yoga::LayoutButton::LayoutButton(
-    const std::string& label, Render::Icon icon, const std::string& tooltip
-)
-    : RectangleButton(tooltip)
+    const std::string& label,
+    Render::Icon icon,
+    const std::string& tooltip
+) :
+    RectangleButton(tooltip)
 {
     set_orientation(Orientation::Horizontal);
 
@@ -37,7 +39,10 @@ Slic3r::App::Yoga::LayoutButton::LayoutButton(
     set_background_color_checked(ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 }
 
-const std::string& Slic3r::App::Yoga::LayoutButton::label() const { return m_text->text(); }
+const std::string& Slic3r::App::Yoga::LayoutButton::label() const
+{
+    return m_text->text();
+}
 
 void Slic3r::App::Yoga::LayoutButton::set_label(const std::string& label)
 {
@@ -45,16 +50,25 @@ void Slic3r::App::Yoga::LayoutButton::set_label(const std::string& label)
     m_text->set_visible(!label.empty());
 }
 
-Render::ImguiFontType LayoutButton::label_font_type() const { return m_text->font_type(); }
+Render::ImguiFontType LayoutButton::label_font_type() const
+{
+    return m_text->font_type();
+}
 
 void LayoutButton::set_label_font_type(Render::ImguiFontType label_font_type)
 {
     m_text->set_font_type(label_font_type);
 }
 
-void LayoutButton::expand_label(bool expand) { m_text->set_flex_grow(expand ? 1.f : 0.f); }
+void LayoutButton::set_expand_label(bool expand)
+{
+    m_text->set_flex_grow(expand ? 1.f : 0.f);
+}
 
-Render::Icon LayoutButton::icon() const { return m_icon->icon(); }
+Render::Icon LayoutButton::icon() const
+{
+    return m_icon->icon();
+}
 
 void LayoutButton::set_icon(Render::Icon icon)
 {

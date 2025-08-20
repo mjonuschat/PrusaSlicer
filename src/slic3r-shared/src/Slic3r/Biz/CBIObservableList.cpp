@@ -20,6 +20,10 @@ std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor> CBIObserv
     const std::vector<Domain::ConfigBox*>& config_boxes
 )
 {
+    invoke_listeners<IListObserver<ConfigBoxInteractor>>([](IListObserver<ConfigBoxInteractor>* l) {
+        l->on_will_be_reset();
+    });
+
     m_items.clear();
     m_items.reserve(config_boxes.size());
 

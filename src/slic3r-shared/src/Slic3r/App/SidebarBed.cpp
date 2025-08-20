@@ -21,8 +21,8 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
     Window("sidebar_bed"),
     m_project_interactor(project_interactor),
     m_printer_settings_dialog(project_interactor, &m_printer_add_dialog),
-    m_filament_settings_dialog(project_interactor),
-    m_physical_printer_settings_dialog(&m_printer_add_dialog)
+    m_physical_printer_settings_dialog(&m_printer_add_dialog),
+    m_material_settings_dialog(project_interactor)
 {
     set_min_size({240, 60});
     set_orientation(Orientation::Vertical);
@@ -81,15 +81,16 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
     m_list_view->set_orientation(Orientation::Vertical);
     m_list_view->set_gap(5);
 
-    m_filament_settings_dialog.attach_to_item(this, Position::Left);
-    m_filament_settings_dialog.callbacks().closed = [this]() {
+    m_material_settings_dialog.attach_to_item(this, Position::Left);
+    m_material_settings_dialog.callbacks().closed = [this]() {
         for (AbstractButton* button : m_filament_button_group->buttons()) {
             button->set_checked(false);
         }
     };
 
-    m_filament_settings_dialog.dialog_callbacks().tab_selected = [this](size_t current_index) {
-        if (m_filament_settings_dialog.opened()) {
+    m_material_settings_dialog.material_selection_callbacks().advanced_settings_tab_opened =
+        [this](size_t current_index) {
+        if (m_material_settings_dialog.opened()) {
             dynamic_cast<AbstractButton*>(m_list_view->get_item(current_index))->set_checked(true);
         }
     };
@@ -97,10 +98,10 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
     m_filament_button_group->callbacks().checked_changed =
         [this](AbstractButton* current_check, AbstractButton* last_check) {
         if (current_check) {
-            m_filament_settings_dialog.open();
-            m_filament_settings_dialog.set_current_tab(m_list_view->index_of(current_check).value());
+            m_material_settings_dialog.open();
+            m_material_settings_dialog.set_material_index(m_list_view->index_of(current_check).value());
         } else {
-            m_filament_settings_dialog.close();
+            m_material_settings_dialog.close();
         }
     };
 

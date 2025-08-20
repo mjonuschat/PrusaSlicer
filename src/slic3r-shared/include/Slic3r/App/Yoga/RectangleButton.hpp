@@ -44,6 +44,9 @@ public:
     YGAlign content_align_item() const;
     void set_content_align_items(YGAlign align);
 
+    YGDirection content_direction() const;
+    void set_content_direction(YGDirection direction);
+
     float rounding() const;
     void set_rounding(float rounding);
 

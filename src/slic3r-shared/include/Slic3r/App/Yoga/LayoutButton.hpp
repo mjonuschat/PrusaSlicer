@@ -15,12 +15,6 @@ class Text;
 class LayoutButton : public RectangleButton
 {
 public:
-    enum class Align {
-        Left,
-        Center,
-        Right
-    };
-
     LayoutButton(const std::string& label);
     LayoutButton(const std::string& label, Render::Icon icon);
     LayoutButton(const std::string& label, Render::Icon icon, const std::string& tooltip);
@@ -30,7 +24,7 @@ public:
 
     Render::ImguiFontType label_font_type() const;
     void set_label_font_type(Render::ImguiFontType label_font_type);
-    void expand_label(bool expand);
+    void set_expand_label(bool expand);
 
     Render::Icon icon() const;
     void set_icon(Render::Icon icon);

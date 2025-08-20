@@ -762,7 +762,14 @@ add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES}
     src/Slic3r/App/Config/ConfigItemSpinBoxes.cpp
     src/Slic3r/App/Config/ConfigItemComboBoxes.cpp
     include/Slic3r/App/Config/ConfigItemCheckBoxes.hpp
-    src/Slic3r/App/Config/ConfigItemCheckBoxes.cpp)
+    src/Slic3r/App/Config/ConfigItemCheckBoxes.cpp
+    src/Slic3r/App/MaterialSelectionDialog.cpp
+    include/Slic3r/App/MaterialSelectionDialog.hpp
+    include/Slic3r/App/MaterialSelectionRow.hpp
+    src/Slic3r/App/MaterialSelectionRow.cpp
+    include/Slic3r/App/Search.hpp
+    src/Slic3r/App/Search.cpp
+)
 
 target_link_libraries(slic3r-shared PUBLIC
         slic3r-platform

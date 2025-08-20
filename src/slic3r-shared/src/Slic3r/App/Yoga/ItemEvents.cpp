@@ -67,8 +67,9 @@ void LoopEvents::insert_event(EventPtr event)
     m_events.push_back(std::move(event));
 }
 
-void LoopEvents::process_events()
+unsigned int LoopEvents::process_events()
 {
+    unsigned int processed_events = 0;
     while (!m_events.empty()) {
         EventPtr event(std::move(m_events.front()));
         m_events.pop_front();
@@ -81,11 +82,13 @@ void LoopEvents::process_events()
         }
 
         const Event::ChangeList change_list = event->process();
-
+        processed_events++;
         for (const EventPtr& event : m_events) {
             event->affected(change_list);
         }
     }
+
+    return processed_events;
 }
 
 void MoveEvent::affected(const ChangeList& change_list)

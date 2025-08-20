@@ -71,6 +71,16 @@ void RectangleButton::set_content_align_items(YGAlign align)
     m_background->set_align_items(align);
 }
 
+YGDirection RectangleButton::content_direction() const
+{
+    return m_direction;
+}
+
+void RectangleButton::set_content_direction(YGDirection direction)
+{
+    m_background->set_direction(direction);
+}
+
 const ImColor& RectangleButton::background_color_checked() const
 {
     return m_background_color_checked;

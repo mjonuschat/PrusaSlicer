@@ -20,8 +20,11 @@ template <class Data, class GroupKey = std::string>
 class ObservableListSortFilter : public Biz::IListObserver<Data>, public Biz::IObservableList<Data>
 {
 public:
+    // Returns true if item should be included
     using FilterFn = std::function<bool(const Data& item)>;
-    using SortFn   = std::function<int(const Data& lhs, const Data& rhs)>;
+    // Returns lhs < rhs operation
+    using SortFn = std::function<int(const Data& lhs, const Data& rhs)>;
+    // Returns true if item is groupped and should NOT be included
     using GroupByFn = std::function<bool(const Data& item, std::unordered_set<GroupKey>& seen_keys)>;
 
     virtual ~ObservableListSortFilter()
@@ -130,50 +133,50 @@ public:
         }
     }
 
-private:
     void invalidate()
     {
+        this->template invoke_listeners<IListObserver<Data>>([&](auto* l) { l->on_will_be_reset(); });
+
         m_mapped_indexes.clear();
         m_index_map.clear();
 
         if (!m_source_model.is_valid()) {
             this->template invoke_listeners<IListObserver<Data>>([&](auto* l) { l->on_reset(); });
-            return;
-        }
+        } else {
+            m_mapped_indexes.reserve(m_source_model->size());
 
-        m_mapped_indexes.reserve(m_source_model->size());
+            std::unordered_set<GroupKey> group_keys_seen;
 
-        std::unordered_set<GroupKey> group_keys_seen;
+            for (size_t i = 0; i < m_source_model->size(); ++i) {
+                const Data& source_item = m_source_model->at(i);
 
-        for (size_t i = 0; i < m_source_model->size(); ++i) {
-            const Data& source_item = m_source_model->at(i);
+                if (m_filter_fn && !m_filter_fn(source_item)) {
+                    continue; // Skip filtered items
+                }
 
-            if (m_filter_fn && !m_filter_fn(source_item)) {
-                continue; // Skip filtered items
+                if (m_group_by_fn && m_group_by_fn(source_item, group_keys_seen)) {
+                    continue; // Skip subsequent items in the same group
+                }
+
+                m_mapped_indexes.push_back(i);
             }
 
-            if (m_group_by_fn && m_group_by_fn(source_item, group_keys_seen)) {
-                continue; // Skip subsequent items in the same group
+            if (m_sort_fn) {
+                std::sort(
+                    m_mapped_indexes.begin(),
+                    m_mapped_indexes.end(),
+                    [this](const std::optional<size_t>& lhs, const std::optional<size_t>& rhs) {
+                    return m_sort_fn(m_source_model->at(lhs.value()), m_source_model->at(rhs.value()));
+                }
+                );
             }
 
-            m_mapped_indexes.push_back(i);
-        }
-
-        if (m_sort_fn) {
-            std::sort(
-                m_mapped_indexes.begin(),
-                m_mapped_indexes.end(),
-                [this](const std::optional<size_t>& lhs, const std::optional<size_t>& rhs) {
-                return m_sort_fn(m_source_model->at(lhs.value()), m_source_model->at(rhs.value()));
+            for (size_t mapped_index = 0; mapped_index < m_mapped_indexes.size(); ++mapped_index) {
+                m_index_map[m_mapped_indexes.at(mapped_index)] = mapped_index;
             }
-            );
-        }
 
-        for (size_t mapped_index = 0; mapped_index < m_mapped_indexes.size(); ++mapped_index) {
-            m_index_map[m_mapped_indexes.at(mapped_index)] = mapped_index;
+            this->template invoke_listeners<IListObserver<Data>>([&](auto* l) { l->on_reset(); });
         }
-
-        this->template invoke_listeners<IListObserver<Data>>([&](auto* l) { l->on_reset(); });
     }
 
 private:

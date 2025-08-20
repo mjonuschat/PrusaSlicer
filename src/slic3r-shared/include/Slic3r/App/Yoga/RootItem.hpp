@@ -38,6 +38,8 @@ public:
 protected:
     Vec2f get_available_size() const override;
 
+    void render_debug_overlay();
+
 protected:
     LoopEvents m_loop_events;
 

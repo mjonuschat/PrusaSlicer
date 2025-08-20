@@ -788,11 +788,34 @@ void Item::render_node(Vec2f pos, Item* child)
     Vec2f cell_pos = pos + Vec2f(YGNodeLayoutGetLeft(child_node), YGNodeLayoutGetTop(child_node));
     Vec2f cell_size = Vec2f(YGNodeLayoutGetWidth(child_node), YGNodeLayoutGetHeight(child_node));
 
+    if (isnan(cell_size.x()) || isnan(cell_size.y())) {
+        return;
+    }
+
     child->render(cell_pos, cell_size);
 }
 
+#ifdef DEBUG
+Item* Item::m_debug_item = nullptr;
+#endif
+
 void Item::render_debug(Vec2f pos, Vec2f size)
 {
+#ifdef DEBUG
+    {
+        ImRect rect(to_im(pos), to_im(pos + size));
+
+        if (ImGui::IsMouseHoveringRect(rect.Min, rect.Max, false)) {
+            if (ImGui::IsKeyDown(ImGuiMod_Alt) && ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
+                ImDrawList* draw_list = ImGui::GetForegroundDrawList();
+                draw_list->AddRect(rect.Min, rect.Max, IM_COL32(255, 0, 0, 128));
+            } else if (ImGui::IsKeyDown(ImGuiMod_Alt)) {
+                m_debug_item = this;
+            }
+        }
+    }
+#endif
+
     if (m_debug_border) {
         ImDrawList* draw_list = ImGui::GetForegroundDrawList();
         ImRect rect(to_im(pos), to_im(pos + size));

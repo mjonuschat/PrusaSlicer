@@ -22,38 +22,83 @@ AbstractButton::AbstractButton(const std::string& tooltip, const std::string& na
     set_item_name(name);
 }
 
+// void AbstractButton::render(Vec2f pos, Vec2f size)
+// {
+// render_item_begin(pos, size);
+
+// ImRect bb_screen(to_im(pos), to_im(pos + size));
+
+// ImGuiWindow* window     = ImGui::GetCurrentWindow();
+// const std::string label = "###" + m_item_name;
+// const ImGuiID id        = window->GetID(label.c_str());
+
+// if (m_allow_overlap) {
+// ImGui::SetNextItemAllowOverlap();
+// }
+
+// const ImVec2 win_pos = ImGui::GetWindowPos();
+// ImRect bb_local(bb_screen.Min - win_pos, bb_screen.Max - win_pos);
+
+// ImGui::SetCursorScreenPos(bb_screen.Min);
+// ImGui::ItemSize(bb_local.GetSize(), 0);
+// if (!ImGui::ItemAdd(bb_local, id)) {
+// return;
+// }
+
+// bool pressed  = false;
+// bool hovered  = false;
+// bool released = false;
+
+// // hovered = ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max, false);
+// // released = hovered && ImGui::IsMouseClicked(0);
+// if (enabled()) {
+// // We ignore pressed and hovered here, we already catched them before
+// released = ImGui::ButtonBehavior(bb_local, id, &hovered, &pressed, m_flags);
+
+// ImGui::RenderNavCursor(bb_local, id);
+// }
+
+// set_hovered(hovered);
+
+// if (released) {
+// if (m_checkable) {
+// set_checked(!m_checked);
+// }
+// if (m_callbacks.action) {
+// m_callbacks.action();
+// }
+// pressed_updated_internal();
+// }
+
+// set_pressed(pressed);
+
+// render_item_end(pos, size);
+// }
+
 void AbstractButton::render(Vec2f pos, Vec2f size)
 {
     render_item_begin(pos, size);
 
-    ImRect button_bb(to_im(pos), to_im(pos + size));
+    ImGui::SetCursorScreenPos(to_im(pos));
 
-    ImGuiWindow* window     = ImGui::GetCurrentWindow();
-    const std::string label = "###" + m_item_name;
-    const ImGuiID id        = window->GetID(label.c_str());
-
+    ImGui::PushID(m_item_name.c_str());
     if (m_allow_overlap) {
         ImGui::SetNextItemAllowOverlap();
     }
 
-    ImGui::ItemSize(to_im(size), 0);
-    if (!ImGui::ItemAdd(button_bb, id)) {
-        return;
-    }
+    bool pressed  = ImGui::InvisibleButton("##btn", to_im(size.cwiseMax(10)), m_flags);
+    bool hovered  = ImGui::IsItemHovered();
+    bool held     = ImGui::IsItemActive();
+    bool released = pressed;
 
-    bool pressed  = false;
-    bool hovered  = false;
-    bool released = false;
+    ImRect bb(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
 
-    if (enabled()) {
-        // We ignore pressed and hovered here, we already catched them before
-        released = ImGui::ButtonBehavior(button_bb, id, &hovered, &pressed, m_flags);
+    ImGui::RenderNavHighlight(bb, ImGui::GetItemID());
 
-        ImGui::RenderNavCursor(button_bb, id);
-    }
+    ImGui::PopID();
 
     set_hovered(hovered);
-
+    set_pressed(held);
     if (released) {
         if (m_checkable) {
             set_checked(!m_checked);
@@ -63,8 +108,6 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
         }
         pressed_updated_internal();
     }
-
-    set_pressed(pressed);
 
     render_item_end(pos, size);
 }

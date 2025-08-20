@@ -9,6 +9,9 @@ namespace Slic3r::Biz {
 void ConfigBoxObservableList::set_config_box(Domain::ConfigBox* config_box)
 {
     // if (m_config_box != config_box) {
+    invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l) {
+        l->on_will_be_reset();
+    });
     m_config_box = config_box;
     invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l) {
         l->on_reset();
@@ -49,7 +52,10 @@ void ConfigBoxObservableList::set_value(const std::string_view key, const Domain
 
 void ConfigBoxOverridesObservableList::set_config_box(Domain::ConfigBox* config_box)
 {
-    // if (m_config_box != config_box) {
+    // if (m_config_box != config_box)
+    invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l) {
+        l->on_will_be_reset();
+    });
     m_config_box = config_box;
     invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l) {
         l->on_reset();

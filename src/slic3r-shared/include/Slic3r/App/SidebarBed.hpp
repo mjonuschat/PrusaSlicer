@@ -8,11 +8,11 @@
 
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/PrinterSettingsDialog.hpp"
-#include "Slic3r/App/FilamentSettingsDialog.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 #include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+#include "Slic3r/App/MaterialSelectionDialog.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -59,9 +59,9 @@ private:
 
     MaterialListView* m_list_view{nullptr};
     PrinterSettingsDialog m_printer_settings_dialog;
-    FilamentSettingsDialog m_filament_settings_dialog;
     PhysicalPrinterSettingsDialog m_physical_printer_settings_dialog;
     PrinterAddDialog m_printer_add_dialog;
+    MaterialSelectionDialog m_material_settings_dialog;
 };
 
 } // namespace Slic3r::App

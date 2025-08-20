@@ -10,7 +10,6 @@
 
 namespace Slic3r::App::Yoga {
 class StackLayout;
-class ScrollArea;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::Yoga {

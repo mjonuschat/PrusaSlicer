@@ -15,11 +15,14 @@ namespace Slic3r::Biz {
  * in most use-cases you actually want to just derive from IObservableList yourself
  * and add your own implementation
  */
-template<class Data>
+template <class Data>
 class ObservableList : public IObservableList<Data>
 {
 public:
-    void append(Data data) { insert(data, m_data_items.size()); }
+    void append(Data data)
+    {
+        insert(data, m_data_items.size());
+    }
 
     void insert(Data data, size_t index)
     {
@@ -34,8 +37,14 @@ public:
     {
         ASSERT(index_range.is_valid() && index_range.to < m_data_items.size());
 
-        m_data_items
-            .erase(m_data_items.begin() + index_range.from, m_data_items.begin() + index_range.to + 1);
+        this->template invoke_listeners<IListObserver<Data>>([this, index_range](auto* l) {
+            l->on_will_be_removed(index_range);
+        });
+
+        m_data_items.erase(
+            m_data_items.begin() + index_range.from,
+            m_data_items.begin() + index_range.to + 1
+        );
 
         this->template invoke_listeners<IListObserver<Data>>([this, index_range](auto* l) {
             l->on_removed(index_range);
@@ -48,13 +57,15 @@ public:
 
         m_data_items[index] = data;
 
-        this->template invoke_listeners<IListObserver<Data>>([&](auto* l) {
-            l->on_updated({index});
-        });
+        this->template invoke_listeners<IListObserver<Data>>([&](auto* l) { l->on_updated({index}); });
     }
 
     void reset(std::initializer_list<Data> data)
     {
+        this->template invoke_listeners<IListObserver<Data>>([&](IListObserver<Data>* l) {
+            l->on_will_be_reset();
+        });
+
         m_data_items = data;
 
         this->template invoke_listeners<IListObserver<Data>>([&](IListObserver<Data>* l) {
@@ -63,13 +74,18 @@ public:
     }
 
     template <typename Container>
-    void reset(Container&& data) {
+    void reset(Container&& data)
+    {
+        this->template invoke_listeners<IListObserver<Data>>([&](IListObserver<Data>* l) {
+            l->on_will_be_reset();
+        });
+
         m_data_items.clear();
         m_data_items.insert(
             m_data_items.end(),
             std::make_move_iterator(std::begin(data)),
             std::make_move_iterator(std::end(data))
-            );
+        );
         this->template invoke_listeners<IListObserver<Data>>([&](IListObserver<Data>* l) {
             l->on_reset();
         });
@@ -84,11 +100,14 @@ public:
 
         if (from > to) {
             std::rotate(
-                m_data_items.rend() - from - 1, m_data_items.rend() - from, m_data_items.rend() - to
+                m_data_items.rend() - from - 1,
+                m_data_items.rend() - from,
+                m_data_items.rend() - to
             );
         } else {
             std::rotate(
-                m_data_items.begin() + from, m_data_items.begin() + from + 1,
+                m_data_items.begin() + from,
+                m_data_items.begin() + from + 1,
                 m_data_items.begin() + to + 1
             );
         }
@@ -98,9 +117,15 @@ public:
         });
     }
 
-    const Data& at(size_t index) const override { return m_data_items.at(index); }
+    const Data& at(size_t index) const override
+    {
+        return m_data_items.at(index);
+    }
 
-    size_t size() const override { return m_data_items.size(); }
+    size_t size() const override
+    {
+        return m_data_items.size();
+    }
 
 protected:
     /**

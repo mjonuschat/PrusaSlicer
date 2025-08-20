@@ -133,6 +133,10 @@ public:
      */
     virtual void on_inserted(const Data& data, size_t index) {};
     /**
+     * @brief on_will_be_removed - all Data in range [IndexRange.from, IndexRange.to] will be removed
+     */
+    virtual void on_will_be_removed(const IndexRange& index_range) {};
+    /**
      * @brief on_removed - all Data in range [IndexRange.from, IndexRange.to] were removed
      */
     virtual void on_removed(const IndexRange& index_range) {};
@@ -140,6 +144,10 @@ public:
      * @brief on_updated - add Data in range [IndexRange.from, IndexRange.to] were updated
      */
     virtual void on_updated(const IndexRange& index_range) {};
+    /**
+     * @brief on_will_be_reset - all data will be removed, last chance to do something smart
+     */
+    virtual void on_will_be_reset() {};
     /**
      * @brief on_reset - all Data is invalid, reconstruct List completely
      */

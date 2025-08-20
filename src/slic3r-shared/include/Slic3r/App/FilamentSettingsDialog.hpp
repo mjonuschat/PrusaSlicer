@@ -21,6 +21,9 @@ class PresetInteractor;
 
 namespace Slic3r::App {
 
+/**
+ * @todo Rename this to MaterialSettingsDialog
+ */
 class FilamentSettingsDialog :
     public Yoga::AbstractSettingsDialog,
     public Biz::IListObserver<Biz::ConfigBoxInteractor>

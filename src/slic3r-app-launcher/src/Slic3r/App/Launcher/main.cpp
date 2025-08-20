@@ -1,8 +1,8 @@
 #ifdef _WIN32
-    #include <windows.h>
+#include <windows.h>
 #endif
 #ifdef SLIC3R_GUI
-    #include "Slic3r/App/Desktop/Run.hpp"
+#include "Slic3r/App/Desktop/Run.hpp"
 #endif
 
 #include "Slic3r/App/CLI/CLIApp.hpp"
@@ -10,7 +10,6 @@
 #include "Slic3r/Log.hpp"
 
 #include "boost/nowide/args.hpp"
-#include "boost/nowide/convert.hpp"
 
 #if !defined(__has_feature)
 #define __has_feature(x) 0
@@ -21,15 +20,15 @@
 extern "C" {
 
     const char* __lsan_default_suppressions();
-    const char* __lsan_default_suppressions() {
-        return "leak:libfontconfig\n"              // FontConfig looks like it leaks, but it doesn't.
-            ;
-    }
 
+    const char* __lsan_default_suppressions()
+    {
+        return "leak:libfontconfig\n" // FontConfig looks like it leaks, but it doesn't.
+               "leak:libglib-2.0.so\n";
+    }
 }
 
 #endif
-
 
 int main(int argc, char* argv[])
 {
@@ -38,19 +37,19 @@ int main(int argc, char* argv[])
     Slic3r::App::InitParams init_params = Slic3r::App::Launcher::read_cli(argc, argv);
 
     if (init_params.start_gui) {
-        #ifdef SLIC3R_GUI
-            return Slic3r::App::Desktop::run(init_params);
-        #endif
+#ifdef SLIC3R_GUI
+        return Slic3r::App::Desktop::run(init_params);
+#endif
         SPDLOG_ERROR("ERROR: PrusaSlicer was built without GUI support. Quitting.");
-        return 1;        
+        return 1;
     }
     return Slic3r::App::CLI::run(init_params);
 }
 
 // This is currently not used, see respective add_executable in CMake.
 // #ifdef _WIN32
-//int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
+// int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 //{
-//    return main(__argc, __argv);
+// return main(__argc, __argv);
 //}
-//#endif
+// #endif

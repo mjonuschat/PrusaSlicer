@@ -8,7 +8,6 @@
 
 #include <memory>
 #include <list>
-#include <vector>
 
 namespace Slic3r::App::Yoga {
 
@@ -28,6 +27,7 @@ public:
         Item* parent{nullptr};
         size_t new_index{0};
     };
+
     using ChangeList = std::list<Change>;
 
     Event(Item* item);
@@ -43,6 +43,7 @@ protected:
     Item* m_item = nullptr;
     ItemHeartBeat m_item_heartbeat;
 };
+
 using EventPtr = std::unique_ptr<Event>;
 
 class RemoveEvent : public Event
@@ -82,7 +83,10 @@ public:
 
     void insert_event(EventPtr event);
 
-    void process_events();
+    /**
+     * @return number of processed events. if > 0, something in the tree did change
+     */
+    unsigned int process_events();
 
 private:
     RootItem& m_root_item;

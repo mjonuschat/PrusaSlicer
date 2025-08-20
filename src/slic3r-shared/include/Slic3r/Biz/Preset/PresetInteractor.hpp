@@ -31,7 +31,7 @@ struct PresetItem
 };
 
 using PresetItemObservableList         = ObservableListWithSelection<PresetItem>;
-using PresetItemCompoundObservableList = BatchObservableList<PresetItemObservableList>;
+using PresetItemCompoundObservableList = MutableBatchObservableList<PresetItemObservableList>;
 
 /**
  * Manipulates presets associated with config containers.

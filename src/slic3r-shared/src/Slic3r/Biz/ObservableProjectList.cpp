@@ -47,7 +47,12 @@ void ObservableProjectList::on_project_removed(Domain::SelectionId project_id)
     }
 
     const size_t index = std::distance(m_projects.cbegin(), it);
+    invoke_listeners<Biz::IListObserver<Domain::SelectionId>>([&](auto* l) {
+        l->on_will_be_removed({index});
+    });
+
     m_projects.erase(it);
+
     invoke_listeners<Biz::IListObserver<Domain::SelectionId>>([&](auto* l) {
         l->on_removed({index});
     });

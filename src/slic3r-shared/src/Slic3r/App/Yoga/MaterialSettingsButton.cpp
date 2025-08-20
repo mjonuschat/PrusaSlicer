@@ -15,7 +15,7 @@ MaterialSettingsButton::MaterialSettingsButton(
     const Biz::Preset::PresetItemObservableList& state,
     std::weak_ptr<ButtonGroup> button_group
 ) :
-    RectangleButton("Filament " + std::to_string(index + 1) + " TT"),
+    RectangleButton(format(_u8L("Material %1% TT"), index + 1)),
     Biz::DataObserver<Biz::Preset::PresetItemObservableList>(index, state),
     m_button_group(button_group)
 {

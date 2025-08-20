@@ -4,6 +4,8 @@
 ///|/
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 
+#include "Slic3r/Log.hpp"
+
 #include <imgui_internal.h>
 
 namespace Slic3r::App::Yoga {
@@ -27,6 +29,20 @@ void ScrollArea::render(Vec2f pos, Vec2f size)
     pos -= m_last_scroll;
     for (Item* child : std::as_const(m_children_render_order)) {
         render_node(pos, child);
+    }
+
+    if (m_debug_border) {
+        SPDLOG_INFO(
+            "{}:{} {}:{} {}:{} {}:{}",
+            pos.x(),
+            pos.y(),
+            size.x(),
+            size.y(),
+            m_last_scroll.x(),
+            m_last_scroll.y(),
+            ImGui::GetScrollMaxX(),
+            ImGui::GetScrollMaxY()
+        );
     }
 
     ImGui::EndChild();

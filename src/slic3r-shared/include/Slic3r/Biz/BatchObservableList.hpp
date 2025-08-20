@@ -20,7 +20,7 @@ struct IBatchObservableListNotifier
  * @tparam T Item type
  */
 template <typename T>
-class BatchObservableList : public IObservableList<T>, private Details::IBatchObservableListNotifier
+class BatchObservableList : public IObservableList<T>, protected Details::IBatchObservableListNotifier
 {
 public:
     using Items = std::vector<T>;
@@ -69,6 +69,9 @@ public:
 
     void set_items(const Items& data)
     {
+        IObservableList<T>::template invoke_listeners<IListObserver<T>>([](IListObserver<T>* l) {
+            l->on_will_be_reset();
+        });
         m_items = data;
         IObservableList<T>::template invoke_listeners<IListObserver<T>>([](IListObserver<T>* l) {
             l->on_reset();
@@ -77,6 +80,9 @@ public:
 
     void set_items(Items&& data)
     {
+        IObservableList<T>::template invoke_listeners<IListObserver<T>>([](IListObserver<T>* l) {
+            l->on_will_be_reset();
+        });
         m_items = data;
         IObservableList<T>::template invoke_listeners<IListObserver<T>>([](IListObserver<T>* l) {
             l->on_reset();
@@ -92,8 +98,29 @@ private:
         });
     }
 
-private:
+protected:
     Items m_items;
+};
+
+template <typename T>
+class MutableBatchObservableList : public BatchObservableList<T>
+{
+    using Base = BatchObservableList<T>;
+
+public:
+    using Base::at; // avoid hiding the const overload
+
+    MutableBatchObservableList() = default;
+
+    explicit MutableBatchObservableList(Base::WriteAccessor& writer)
+    {
+        writer.set_source(*this, this->m_items);
+    }
+
+    T& at(size_t index)
+    {
+        return this->m_items.at(index);
+    }
 };
 
 } // namespace Slic3r::Biz
