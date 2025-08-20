@@ -92,7 +92,7 @@ static wxBitmap make_bitmap(bool is_editor, double scale)
 SplashScreen::SplashScreen(bool is_editor, wxPoint pos) :
     // The base class constructor is called here. We generate the scaled, but undecorated,
     // bitmap by calling our static helper functions directly in the initializer list.
-    wxSplashScreen(make_bitmap(is_editor, get_display_scale_factor(pos)), wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_TIMEOUT, 4000, nullptr, wxID_ANY, pos),
+    wxSplashScreen(make_bitmap(is_editor, get_display_scale_factor(pos)), wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_TIMEOUT, 1500, nullptr, wxID_ANY, pos),
     m_is_editor(is_editor),
     m_scale(get_display_scale_factor(pos)) // Initialize member variable for scale factor.
 {
@@ -238,7 +238,10 @@ void SplashScreen::ConstantText::init(const wxFont& init_font, bool is_editor, i
 
     credits_font = init_font.Scaled(credits_font_scale);
     title_font   = credits_font.Scaled(3.5f);
-    version_font = credits_font.Scaled(2.f);
+
+    memDC.SetFont(credits_font);
+    float version_font_scale = (float)text_banner_width / memDC.GetTextExtent(WX::from_u8(version)).GetX();
+    version_font = credits_font.Scaled(version_font_scale > 2.f ? 2.f : version_font_scale);
 }
 
 // wrap a string for the strings no longer then 55 symbols
