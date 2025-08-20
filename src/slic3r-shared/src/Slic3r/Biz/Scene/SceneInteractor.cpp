@@ -745,6 +745,12 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
         inst->set_index(idx++);
     }
 
+    if (bed_selection().empty()) {
+        // ensure one bed instance is selected
+        ASSERT(!cc->bed_instances().empty());
+        bed_selection().select_one({ cc->id().id, cc->bed_instances().front()->id().id });
+    }
+
     m_bed_placement.layout(project, BED_GAP);
     auto changes = update_instances_bed_placement(project, insts);
     for (const auto& bed_ref : changes.updated_beds)
