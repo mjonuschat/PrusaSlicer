@@ -32,7 +32,7 @@
 
 // Explicit horror include (used to be implicit) - libslic3r "officialy" does not depend on imgui.
 #include "../../bundled_deps/imgui/imgui/imstb_truetype.h" // stbtt_fontinfo
-#include "libslic3r/Utils.hpp" // ScopeGuard
+#include "Slic3r/Utils.hpp" // ScopeGuard
 #include "libslic3r.h"
 // to heal shape
 #include "libslic3r/ClipperUtils.hpp" // union_ex + for boldness(polygon extend(offset))

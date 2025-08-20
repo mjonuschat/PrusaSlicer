@@ -4,7 +4,7 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Directories.hpp"
 
-#include "libslic3r/Utils.hpp" // data_dir(), ScopeGuard
+#include "Slic3r/Utils.hpp" // ScopeGuard
 #include "libslic3r/format.hpp"
 
 #include <boost/filesystem.hpp> 

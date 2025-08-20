@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -161,5 +162,46 @@ inline bool is_in_range(const T& value, const T& low, const T& high)
 // Starting at pos. ASCII characters returns 1. Works also if pos is in the middle of the sequence.
 size_t get_utf8_sequence_length(const std::string& text, size_t pos = 0);
 size_t get_utf8_sequence_length(const char *seq, size_t size);
+
+// A very lightweight RAII wrapper around C FILE.
+// The old C file API is much faster than C++ streams, thus they are recommended for processing large / huge files.
+struct FilePtr {
+    FilePtr(FILE *f) : f(f) {}
+    ~FilePtr() { this->close(); }
+    void close() { 
+        if (this->f) {
+            ::fclose(this->f);
+            this->f = nullptr;
+        }
+    }
+    FILE* f = nullptr;
+};
+
+class ScopeGuard
+{
+public:
+    typedef std::function<void()> Closure;
+    Closure closure;
+
+public:
+    ScopeGuard() {}
+    ScopeGuard(Closure closure) : closure(std::move(closure)) {}
+    ScopeGuard(const ScopeGuard&) = delete;
+    ScopeGuard(ScopeGuard &&other) : closure(std::move(other.closure)) {}
+
+    ~ScopeGuard()
+    {
+        if (closure) { closure(); }
+    }
+
+    ScopeGuard& operator=(const ScopeGuard&) = delete;
+    ScopeGuard& operator=(ScopeGuard &&other)
+    {
+        closure = std::move(other.closure);
+        return *this;
+    }
+
+    void reset() { closure = Closure(); }
+};
 
 } // namespace Slic3r

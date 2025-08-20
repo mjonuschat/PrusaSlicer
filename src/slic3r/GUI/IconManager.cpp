@@ -8,7 +8,7 @@
 #include <boost/algorithm/string.hpp>
 #include "nanosvg/nanosvg.h"
 #include "nanosvg/nanosvgrast.h"
-#include "libslic3r/Utils.hpp" // ScopeGuard   
+#include "Slic3r/Utils.hpp" // ScopeGuard   
 
 #include "3DScene.hpp" // glsafe
 #include "GL/glew.h"
