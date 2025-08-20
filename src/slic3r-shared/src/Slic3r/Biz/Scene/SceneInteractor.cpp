@@ -6,10 +6,10 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Types.hpp"
-#include "libslic3r/Utils.hpp"
 
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
+#include <Slic3r/Directories.hpp>
 #include <fmt/ranges.h>
 #include <vector>
 #include <algorithm>

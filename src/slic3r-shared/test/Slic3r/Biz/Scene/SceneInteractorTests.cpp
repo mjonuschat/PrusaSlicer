@@ -9,7 +9,7 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/Utils.hpp"
+#include "Slic3r/Directories.hpp"
 
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec3d;

@@ -2,16 +2,16 @@
 
 #include "WebViewPlatformUtils.hpp"
 
-#include "Slic3r/Log.hpp"
 #include "Slic3r/App/WX/WebView/WebView.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/I18N.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include "Slic3r/App/WX/format.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
-#include <Slic3r/Assert.hpp>
 
-#include "libslic3r/Utils.hpp"
+#include "Slic3r/Log.hpp"
+#include <Slic3r/Assert.hpp>
+#include <Slic3r/Directories.hpp>
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>

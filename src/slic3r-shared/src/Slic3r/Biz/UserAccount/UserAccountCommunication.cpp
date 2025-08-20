@@ -4,7 +4,7 @@
 #include "Slic3r/Biz/Network/IHttp.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
-#include "Slic3r/Biz/Directories.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include "fmt/format.h"
 

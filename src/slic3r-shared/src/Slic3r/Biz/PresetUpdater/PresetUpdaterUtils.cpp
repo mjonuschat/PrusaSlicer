@@ -3,7 +3,7 @@
 #include "PresetUpdaterProcessStatus.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp"
 #include "Slic3r/Biz/Utils/CopyFile.hpp"
-#include "Slic3r/Biz/Directories.hpp"
+#include "Slic3r/Directories.hpp"
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
 
 #include "Slic3r/Exception.hpp"

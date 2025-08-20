@@ -21,12 +21,16 @@ set(SLIC3R_BASE_FILES
         src/Slic3r/Timer.cpp
 		include/Slic3r/Uuid.hpp
 		src/Slic3r/Uuid.cpp
+        include/Slic3r/Directories.hpp
+        src/Slic3r/Directories.cpp
 )
 
 if (APPLE)
 	set(SLIC3R_BASE_FILES
 			${SLIC3R_BASE_FILES}
 			src/Slic3r/PlatformInfo_osx.mm
+			include/Slic3r/DirectoriesMacUtils.hpp
+            src/Slic3r/DirectoriesMacUtils.mm
 	)
 elseif (WIN32)
 	set(SLIC3R_BASE_FILES

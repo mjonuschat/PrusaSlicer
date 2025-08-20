@@ -36,41 +36,6 @@ extern void enforce_thread_count(std::size_t count);
 // Returns the size of physical memory (RAM) in bytes.
 extern size_t total_physical_memory();
 
-// Set a path with GUI resource files.
-void set_var_dir(const std::string &path);
-// Return a full path to the GUI resource files.
-const std::string& var_dir();
-// Return a full resource path for a file_name.
-std::string var(const std::string &file_name);
-
-// Set a path with various static definition data (for example the initial config bundles).
-void set_resources_dir(const std::string &path);
-// Return a full path to the resources directory.
-const std::string& resources_dir();
-
-// Set a path with GUI localization files.
-void set_local_dir(const std::string &path);
-// Return a full path to the localization directory.
-const std::string& localization_dir();
-
-// Set a path with shapes gallery files.
-void set_sys_shapes_dir(const std::string &path);
-// Return a full path to the system shapes gallery directory.
-const std::string& sys_shapes_dir();
-
-// Return a full path to the custom shapes gallery directory.
-std::string custom_shapes_dir();
-
-// Set a path with shapes gallery files.
-void set_custom_gcodes_dir(const std::string &path);
-// Return a full path to the system shapes gallery directory.
-const std::string& custom_gcodes_dir();
-
-// Set a path with preset files.
-void set_data_dir(const std::string &path);
-// Return a full path to the GUI resource files.
-const std::string& data_dir();
-
 // Format an output path for debugging purposes.
 // Writes out the output path prefix to the console for the first time the function is called,
 // so the user knows where to search for the debugging output.
@@ -110,7 +75,6 @@ extern bool is_gcode_file(const std::string &path);
 extern bool is_img_file(const std::string& path);
 extern bool is_gallery_file(const boost::filesystem::directory_entry& path, char const* type);
 extern bool is_gallery_file(const std::string& path, char const* type);
-extern bool is_shapes_dir(const std::string& dir);
 
 std::string string_printf(const char *format, ...);
 

@@ -439,8 +439,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ObservableListWithSelection.hpp
         src/Slic3r/Biz/Utils/CopyFile.cpp
         include/Slic3r/Biz/Utils/CopyFile.hpp
-        include/Slic3r/Biz/Directories.hpp
-        src/Slic3r/Biz/Directories.cpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
@@ -709,8 +707,6 @@ elseif (APPLE)
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryMac.cpp
         include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
         src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
-        include/Slic3r/Biz/DirectoriesMacUtils.hpp
-        src/Slic3r/Biz/DirectoriesMacUtils.mm
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND SLIC3R_SHARED_FILES

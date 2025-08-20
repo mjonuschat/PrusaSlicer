@@ -1,6 +1,6 @@
 #include "Slic3r/App/Localization.hpp"
 
-#include <libslic3r/Utils.hpp>
+#include "Slic3r/Directories.hpp"
 
 namespace Slic3r::App {
 
@@ -12,7 +12,7 @@ Localization& Localization::instance()
 
 Localization::Localization()
 {
-    m_translations.init_translations(boost::filesystem::path(localization_dir()));
+    m_translations.init_translations(boost::filesystem::path(Slic3r::localization_dir()));
 }
 
 Localization& localization()

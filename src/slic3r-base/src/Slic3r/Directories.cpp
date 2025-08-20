@@ -1,8 +1,7 @@
-#include "Slic3r/Biz/Directories.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include "Slic3r/Log.hpp"
 
-#include "libslic3r/libslic3r_version.h"
 
 #include <boost/filesystem/path.hpp>
 #include <boost/nowide/convert.hpp>
@@ -18,11 +17,11 @@
 
 #elif defined(__APPLE__)
 
-#include "Slic3r/Biz/DirectoriesMacUtils.hpp"
+#include "Slic3r/DirectoriesMacUtils.hpp"
 
 #endif
 
-namespace Slic3r::Biz {
+namespace Slic3r {
 
 static std::string g_var_dir;
 
@@ -209,7 +208,11 @@ static std::string get_platform_data_dir()
 std::string get_default_datadir()
 {
     const std::string config_dir = get_platform_data_dir();
-    std::string datadir_name     = std::string(SLIC3R_APP_NAME) + "3";
+
+    // FIXME!
+    //std::string datadir_name     = std::string(SLIC3R_APP_NAME) + "3";
+    std::string datadir_name     = std::string("PrusaSlicer") + "3";
+
     std::string data_dir = (boost::filesystem::path(config_dir) / datadir_name).make_preferred().string();
     return data_dir;
 }

@@ -5,7 +5,7 @@
 #include "PresetUpdaterIndex.hpp"
 #include "PresetUpdaterFileHash.hpp"
 #include "PresetUpdaterUtils.hpp"
-#include "Slic3r/Biz/Directories.hpp"
+#include "Slic3r/Directories.hpp"
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
 
 #include "Slic3r/Exception.hpp"
@@ -88,7 +88,7 @@ void PresetUpdaterRepositorySync::sync(
 
     // Create workspace in OS temp folder.
     fs::path temp_dir;
-    const fs::path resources_dir = fs::path(Biz::resources_dir()) / "presets";
+    const fs::path resources_dir = fs::path(Slic3r::resources_dir()) / "presets";
 
     try {
         create_temp_dir(temp_dir);

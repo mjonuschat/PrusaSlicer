@@ -18,7 +18,7 @@
 #include <Slic3r/App/ThumbnailStore.hpp>
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
 
-#include "Slic3r/Biz/Directories.hpp"
+#include "Slic3r/Directories.hpp"
 #include <Slic3r/App/Render/TextureManager.hpp>
 
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
@@ -71,7 +71,7 @@ int run(const Slic3r::App::InitParams& init_params)
         return 1;
     }
     Render::TextureManager::set_resource_resolver(
-        std::make_unique<ResourceResolver>(Biz::resources_dir())
+        std::make_unique<ResourceResolver>(Slic3r::resources_dir())
     );
     auto* app = new Slic3r::App::Desktop::DesktopApp();
     Slic3r::App::Desktop::DesktopApp::SetInstance(app);
@@ -163,7 +163,7 @@ bool DesktopApp::OnInit()
     auto& preset_interactor = m_project_interactor->preset_interactor();
 
     // load new presets
-    fs::path preset_bundle_dir = fs::path{Biz::resources_dir()} / "presets";
+    fs::path preset_bundle_dir = fs::path{Slic3r::resources_dir()} / "presets";
     fs::path config_dir        = fs::path{data_dir()} / "configs";
     preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 

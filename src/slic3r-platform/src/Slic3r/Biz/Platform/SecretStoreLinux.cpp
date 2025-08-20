@@ -2,6 +2,7 @@
 
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include "libslic3r/Utils.hpp" // data_dir(), ScopeGuard
 #include "libslic3r/format.hpp"

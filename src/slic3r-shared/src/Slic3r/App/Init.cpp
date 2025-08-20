@@ -1,6 +1,6 @@
 #include "Slic3r/App/Init.hpp"
 
-#include "Slic3r/Biz/Directories.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -48,16 +48,16 @@ void init_paths()
 #endif // __EMSCRIPTEN__
 
     // Resource dirs
-    Biz::set_resources_dir(path_resources.string());
-    Biz::set_var_dir((path_resources / "icons").string());
-    Biz::set_local_dir((path_resources / "localization").string());
-    Biz::set_sys_shapes_dir((path_resources / "shapes").string());
-    Biz::set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
+    Slic3r::set_resources_dir(path_resources.string());
+    Slic3r::set_var_dir((path_resources / "icons").string());
+    Slic3r::set_local_dir((path_resources / "localization").string());
+    Slic3r::set_sys_shapes_dir((path_resources / "shapes").string());
+    Slic3r::set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
 
     // Old libslic3r variables
 
     // Data/config dir
-    Biz::set_data_dir(Biz::get_default_datadir());
+    Slic3r::set_data_dir(Slic3r::get_default_datadir());
 
     set_resources_dir(path_resources.string());
     set_var_dir((path_resources / "icons").string());
@@ -66,7 +66,7 @@ void init_paths()
     set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
 
     // Data/config dir
-    set_data_dir(Biz::get_default_datadir());
+    set_data_dir(Slic3r::get_default_datadir());
 
     boost::filesystem::path data_dir_path(data_dir());
     if (!boost::filesystem::exists(data_dir_path) || !boost::filesystem::is_directory(data_dir_path))

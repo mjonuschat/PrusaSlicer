@@ -85,7 +85,7 @@ target_link_libraries(slic3r-render PUBLIC
         PlatformGL
         imgui
         imgui_backend_ogl3
-        libslic3r # To get semver
+        libslic3r
         slic3r-domain
         NanoSVG::nanosvg
         NanoSVG::nanosvgrast

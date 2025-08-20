@@ -187,91 +187,8 @@ void enforce_thread_count(const std::size_t count)
 #endif // TBB_HAS_GLOBAL_CONTROL
 }
 
-static std::string g_var_dir;
-
-void set_var_dir(const std::string &dir)
-{
-    g_var_dir = dir;
-}
-
-const std::string& var_dir()
-{
-    return g_var_dir;
-}
-
-std::string var(const std::string &file_name)
-{
-    auto file = (boost::filesystem::path(g_var_dir) / file_name).make_preferred();
-    return file.string();
-}
-
-static std::string g_resources_dir;
-
-void set_resources_dir(const std::string &dir)
-{
-    g_resources_dir = dir;
-}
-
-const std::string& resources_dir()
-{
-    return g_resources_dir;
-}
-
-static std::string g_local_dir;
-
-void set_local_dir(const std::string &dir)
-{
-    g_local_dir = dir;
-}
-
-const std::string& localization_dir()
-{
-	return g_local_dir;
-}
-
-static std::string g_sys_shapes_dir;
-
-void set_sys_shapes_dir(const std::string &dir)
-{
-    g_sys_shapes_dir = dir;
-}
-
-const std::string& sys_shapes_dir()
-{
-	return g_sys_shapes_dir;
-}
-
-static std::string g_custom_gcodes_dir;
-
-void set_custom_gcodes_dir(const std::string &dir)
-{
-    g_custom_gcodes_dir = dir;
-}
-
-const std::string& custom_gcodes_dir()
-{
-    return g_custom_gcodes_dir;
-}
-
 // Translate function callback, to call wxWidgets translate function to convert non-localized UTF8 string to a localized one.
 Slic3r::I18N::translate_fn_type Slic3r::I18N::translate_fn = nullptr;
-
-static std::string g_data_dir;
-
-void set_data_dir(const std::string &dir)
-{
-    g_data_dir = dir;
-}
-
-const std::string& data_dir()
-{
-    return g_data_dir;
-}
-
-std::string custom_shapes_dir()
-{
-    return (boost::filesystem::path(g_data_dir) / "shapes").string();
-}
 
 static std::atomic<bool> debug_out_path_called(false);
 
@@ -860,11 +777,6 @@ bool is_gallery_file(const boost::filesystem::directory_entry& dir_entry, char c
 bool is_gallery_file(const std::string &path, char const* type)
 {
 	return boost::iends_with(path, type);
-}
-
-bool is_shapes_dir(const std::string& dir)
-{
-	return dir == sys_shapes_dir() || dir == custom_shapes_dir();
 }
 
 } // namespace Slic3r

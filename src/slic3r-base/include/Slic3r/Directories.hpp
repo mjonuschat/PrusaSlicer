@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace Slic3r::Biz {
+namespace Slic3r {
 
 // Set a path with GUI resource files.
 void set_var_dir(const std::string& path);

@@ -9,7 +9,7 @@
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Domain/Model.hpp"
 
-#include "libslic3r/Utils.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/nowide/filesystem.hpp>

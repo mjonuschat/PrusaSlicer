@@ -9,7 +9,7 @@
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Domain/Color.hpp"
 
-#include <libslic3r/Utils.hpp>
+#include "Slic3r/Directories.hpp"
 
 #include <set>
 
@@ -39,16 +39,6 @@ static std::string float_to_string_decimal_point(double value, int precision = -
 {
     return std::to_string(value);
 }
-
-/*
-static std::string var(const std::string icon_name)
-{
-    static const std::string g_var_dir = "C:\\PS_3\\PrusaSlicerPrivate\\resources\\icons";
-    auto file = (boost::filesystem::path(g_var_dir) / icon_name).make_preferred();
-    return file.string();
-}
-*/
-
 
 BitmapCache::BitmapCache()
 {

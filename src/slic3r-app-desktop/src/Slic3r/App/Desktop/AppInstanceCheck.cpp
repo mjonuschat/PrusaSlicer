@@ -6,7 +6,7 @@
 #include "Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp"
 #include "Slic3r/Biz/Platform/ISingleInstanceChecker.hpp"
 #include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
-#include "Slic3r/Biz/Directories.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include <string>
 #include <boost/filesystem.hpp>
@@ -47,7 +47,7 @@ bool instance_check(const Slic3r::App::InitParams& init_params, bool app_config_
     // The path in second parameter should change, once the new data dir structure is set.
     std::unique_ptr<Biz::Platform::ISingleInstanceChecker>
         single_instance_checker = SingleInstanceCheckerFactory::create_single_instance_checker(
-            boost::filesystem::path(Biz::data_dir()) / "cache" / (lock_name + ".lock")
+            boost::filesystem::path(Slic3r::data_dir()) / "cache" / (lock_name + ".lock")
         );
     ASSERT(single_instance_checker != nullptr);
 

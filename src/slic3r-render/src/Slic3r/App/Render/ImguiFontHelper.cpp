@@ -6,9 +6,10 @@
 #include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/ImguiIconHelper.hpp"
 
+
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
-#include <libslic3r/Utils.hpp>
+#include "Slic3r/Directories.hpp"
 
 #include <imgui/imgui.h>
 #include <boost/algorithm/string/predicate.hpp>
