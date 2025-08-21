@@ -30,45 +30,17 @@ ProjectButton::ProjectButton(
     m_background->set_gap(7.f);
     m_background->set_fill(GImGui->Style.Colors[ImGuiCol_WindowBg]);
 
-    const boost::filesystem::path proj_path(m_project_interactor.get_project_name(*m_state));
-    std::string btn_label;
-    std::string btn_tooltip;
-    if (proj_path.empty()) {
-        std::string new_project = _u8L("New Project");
-        if (*m_state) {
-            new_project += fmt::format(" ({})", *m_state);
-        }
-        btn_label   = new_project;
-        btn_tooltip = new_project;
-    } else {
-        btn_label   = proj_path.filename().string();
-        btn_tooltip = proj_path.string();
-    }
-
-    set_tooltip(btn_tooltip);
     set_tooltip_position(Position::Bottom);
 
-    m_label = m_background->emplace_back<Text>(btn_label);
+    m_label = m_background->emplace_back<Text>("");
     m_label->set_self_align(YGAlignCenter);
 
     m_cross = m_background->emplace_back<LayoutButton>("", Render::Icon::TopBarCross);
     m_cross->set_max_size({20.f, 20.f});
     m_cross->set_self_align(YGAlignCenter);
     m_cross->set_background_color(IM_COL32_BLACK_TRANS);
-    m_cross->callbacks().action = [this]() {
-        m_project_interactor.remove_project(*m_state);
-    };
 
-    callbacks().action = [this]() {
-        // Ignore action, if cross button was clicked or if button is already selected
-        if (m_cross->hovered() || m_selected) {
-            return;
-        }
-        // select related project
-        m_project_interactor.select_project(*m_state);
-    };
-
-    set_selected(m_project_interactor.selected_project_id() == data);
+    on_data_update();
 }
 
 bool ProjectButton::is_cross_hovered() const
@@ -107,6 +79,42 @@ void ProjectButton::hovered_updated_internal()
     m_background->set_mode(
         hovered() ? ProjectButtonBackground::Border : ProjectButtonBackground::FilledRect
     );
+}
+
+void ProjectButton::on_data_update()
+{
+    const boost::filesystem::path proj_path(m_project_interactor.get_project_name(*m_state));
+    std::string btn_label;
+    std::string btn_tooltip;
+    if (proj_path.empty()) {
+        std::string new_project = _u8L("New Project");
+        if (*m_state) {
+            new_project += fmt::format(" ({})", *m_state);
+        }
+        btn_label   = new_project;
+        btn_tooltip = new_project;
+    } else {
+        btn_label   = proj_path.filename().string();
+        btn_tooltip = proj_path.string();
+    }
+
+    set_tooltip(btn_tooltip);
+    m_label->set_text(btn_label);
+
+    m_cross->callbacks().action = [this]() {
+        m_project_interactor.remove_project(*m_state);
+    };
+
+    callbacks().action = [this]() {
+        // Ignore action, if cross button was clicked or if button is already selected
+        if (m_cross->hovered() || m_selected) {
+            return;
+        }
+        // select related project
+        m_project_interactor.select_project(*m_state);
+    };
+
+    set_selected(m_project_interactor.selected_project_id() == *m_state);
 }
 
 } // namespace Slic3r::App::Yoga

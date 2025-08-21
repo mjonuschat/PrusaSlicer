@@ -10,8 +10,10 @@
 
 namespace Slic3r::App::Yoga {
 
-Text::Text(const std::string& text, Render::ImguiFontType font_type)
-    : Item(), m_text(text), m_font_type(font_type)
+Text::Text(const std::string& text, Render::ImguiFontType font_type) :
+    Item(),
+    m_text(text),
+    m_font_type(font_type)
 {}
 
 void Text::render(Vec2f pos, Vec2f size)
@@ -41,10 +43,18 @@ void Text::render(Vec2f pos, Vec2f size)
     render_item_end(pos, size);
 }
 
-const std::string& Text::text() const { return m_text; }
+const std::string& Text::text() const
+{
+    return m_text;
+}
 
-void Text::set_text(const std::string& text) {
-    m_text = text;
+void Text::set_text(const std::string& text)
+{
+    if (m_text != text) {
+        m_text = text;
+        invalidate_min_size_calculation();
+        set_style_dirty();
+    }
 }
 
 Vec2f Text::get_item_size()
@@ -69,7 +79,10 @@ void Text::on_resized()
     }
 }
 
-bool Text::wrap() const { return m_wrap; }
+bool Text::wrap() const
+{
+    return m_wrap;
+}
 
 void Text::set_wrap(bool wrap)
 {
@@ -81,12 +94,24 @@ void Text::set_wrap(bool wrap)
     }
 }
 
-const ImColor& Text::text_color() const { return m_text_color; }
+const ImColor& Text::text_color() const
+{
+    return m_text_color;
+}
 
-void Text::set_text_color(const ImColor& text_color) { m_text_color = text_color; }
+void Text::set_text_color(const ImColor& text_color)
+{
+    m_text_color = text_color;
+}
 
-Render::ImguiFontType Text::font_type() const { return m_font_type; }
+Render::ImguiFontType Text::font_type() const
+{
+    return m_font_type;
+}
 
-void Text::set_font_type(Render::ImguiFontType font_type) { m_font_type = font_type; }
+void Text::set_font_type(Render::ImguiFontType font_type)
+{
+    m_font_type = font_type;
+}
 
 } // namespace Slic3r::App::Yoga

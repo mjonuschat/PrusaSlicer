@@ -138,7 +138,12 @@ void ProjectInteractor::save_project(const std::string& file_path, const Store3m
 {
     auto& selected_project = this->selected_project();
     selected_project.increment_version();
+    selected_project.set_file_name(file_path);
     store_3mf(file_path, selected_project, params);
+
+    invoke_listeners<IProjectsChangedListener>([this](auto* l) {
+        l->on_project_changed(selected_project_id());
+    });
 }
 
 void ProjectInteractor::select_project(Domain::SelectionId project_id)

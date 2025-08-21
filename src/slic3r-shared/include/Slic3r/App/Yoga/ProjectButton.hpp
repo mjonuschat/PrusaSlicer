@@ -40,6 +40,8 @@ protected:
 
     void hovered_updated_internal() override;
 
+    void on_data_update() override;
+
 private:
     Biz::ListenerScope<Biz::ISelectedProjectChangedListener, Biz::ProjectInteractor, ProjectButton>
         m_selected_project_changed_listener_scope;

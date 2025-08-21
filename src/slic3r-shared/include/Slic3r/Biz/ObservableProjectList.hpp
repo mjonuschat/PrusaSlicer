@@ -16,9 +16,9 @@ namespace Slic3r::Biz {
 
 class ProjectInteractor;
 
-class ObservableProjectList
-    : public Biz::IObservableList<Domain::SelectionId>,
-      public Biz::IProjectsChangedListener
+class ObservableProjectList :
+    public Biz::IObservableList<Domain::SelectionId>,
+    public Biz::IProjectsChangedListener
 {
 public:
     explicit ObservableProjectList(Biz::ProjectInteractor& project_interactor);
@@ -29,6 +29,7 @@ public:
 
     void on_project_added(Domain::SelectionId project_id) override;
     void on_project_removed(Domain::SelectionId project_id) override;
+    void on_project_changed(Domain::SelectionId project_id) override;
 
 private:
     Biz::ListenerScope<Biz::IProjectsChangedListener, Biz::ProjectInteractor, ObservableProjectList>
@@ -39,4 +40,4 @@ private:
     Projects m_projects;
 };
 
-} // namespace Slic3r::App
+} // namespace Slic3r::Biz

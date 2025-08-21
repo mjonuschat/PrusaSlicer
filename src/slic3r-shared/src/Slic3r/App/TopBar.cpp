@@ -126,9 +126,17 @@ void TopBar::add_save_project_btn(Item* parent)
             { // The 'true' is here for the development phase - effectively it always "Saves as".
                 // Saving a new project - show file save dialog.
                 IDialogManager::FileCallback callback =
-                    [this, &params](bool success, const std::vector<boost::filesystem::path>& file_paths) {
-                    if (success)
-                        m_project_interactor->save_project(file_paths.front().string(), params);
+                    [this,
+                     &params](bool success, const std::vector<boost::filesystem::path>& file_paths) {
+                    if (success) {
+                        std::string file_path = file_paths.front().string();
+                        // file path could have locale dependent characters, do not use tolower
+                        if (!file_path.ends_with(".3mf") && !file_path.ends_with(".3MF")) {
+                            file_path.append(".3mf");
+                        }
+
+                        m_project_interactor->save_project(file_path, params);
+                    }
                 };
                 auto& dlg_manager = DialogManagerProvider::instance().get();
                 dlg_manager.show_file_dialog(

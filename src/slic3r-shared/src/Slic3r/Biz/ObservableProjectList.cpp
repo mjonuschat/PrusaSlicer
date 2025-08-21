@@ -58,4 +58,19 @@ void ObservableProjectList::on_project_removed(Domain::SelectionId project_id)
     });
 }
 
+void ObservableProjectList::on_project_changed(Domain::SelectionId project_id)
+{
+    Projects::const_iterator it = std::find_if(
+        m_projects.cbegin(), m_projects.cend(),
+        [&project_id](const std::unique_ptr<Domain::SelectionId>& ptr) { return *ptr == project_id; }
+        );
+    if (it == m_projects.cend()) {
+        return;
+    }
+
+    invoke_listeners<Biz::IListObserver<Domain::SelectionId>>([&](auto* l) {
+        l->on_updated(std::distance(m_projects.cbegin(), it));
+    });
+}
+
 } // namespace Slic3r::App

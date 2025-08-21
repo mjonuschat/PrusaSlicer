@@ -46,9 +46,11 @@ void RootItem::render(Vec2f pos, Vec2f size)
 
     render_debug_overlay();
 
-    if (m_loop_events.process_events()) {
+    if (m_loop_events.process_events() || m_style_dirty) {
         // There were a number of processed events,
         // therefore we need to schedule another render pass
+        // OR
+        // Some item called set_style_dirty in render()
         Biz::Platform::PlatformServices::instance().render_request_handler().request_render();
     }
 }
