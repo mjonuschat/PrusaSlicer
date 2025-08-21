@@ -183,9 +183,9 @@ TextGizmo::TextGizmo(
         }
     };
 
-    m_dialog->callbacks().operation_selection_changed = [this](int id) {
-        // TODO: implement
-    };
+    //m_dialog->callbacks().operation_selection_changed = [this](Domain::ModelVolumeType type) {
+    //    // TODO: implement
+    //};
 }
 
 bool TextGizmo::enabled() const { return true; };

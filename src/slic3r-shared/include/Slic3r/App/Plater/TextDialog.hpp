@@ -11,6 +11,7 @@
 #include "Slic3r/App/Yoga/InputTextWithSpin.hpp"
 #include "Slic3r/App/Yoga/AlignmentButtons.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
+#include "Slic3r/Domain/ModelVolume.hpp" // ModelVolumeType
 #include <vector>
 
 namespace Slic3r::App::Yoga {
@@ -50,8 +51,8 @@ public:
         std::function<void()> save_preset{nullptr};
         std::function<void()> rename_preset{nullptr};
         std::function<void()> delete_preset{nullptr};
-
-        std::function<void(int index)> operation_selection_changed{nullptr};
+        std::function<void(int)> operation_selection_changed{ nullptr };
+        //std::function<void(Domain::ModelVolumeType)> operation_selection_changed{nullptr};
     };
 
     Callbacks& callbacks();

@@ -160,7 +160,12 @@ void DialogManager::show_error_dialog(const std::string& text, const std::string
 }
 std::string DialogManager::show_input_dialog(const std::string& title, const std::string& text, const std::string& default_value)
 {
-    return into_u8(wxGetTextFromUser(from_u8(text), from_u8(title), default_value.empty()? wxString(wxEmptyString) : from_u8(default_value)));
+    wxTextEntryDialog dialog(NULL, from_u8(text), from_u8(title), default_value.empty() ? wxString(wxEmptyString) : from_u8(default_value));
+    WX::w_config()->UpdateDlgDarkUI(&dialog);
+    if (dialog.ShowModal() == wxID_OK){
+        return into_u8(dialog.GetValue());
+    }
+    return {};
 }
 
 void DialogManager::show_diff_dialog(const Slic3r::Biz::Preset::PresetInteractor& preset_interactor, std::optional<Domain::Preset::PresetKind> kind)
