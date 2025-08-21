@@ -7,8 +7,9 @@
 #include "Slic3r/App/WX/BitmapGetters.hpp"
 #include <Slic3r/App/WX/I18N.hpp>
 
+#include "Slic3r/Directories.hpp"
+
 #include "libslic3r/libslic3r_version.h"
-#include "libslic3r/Utils.hpp"
 
 #include <wx/font.h>
 #include <wx/dcmemory.h>

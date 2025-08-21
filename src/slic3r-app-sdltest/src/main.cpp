@@ -5,6 +5,8 @@
 
 
 #include <Slic3r/Log.hpp>
+#include <Slic3r/Directories.hpp>
+
 #include <Slic3r/App/Init.hpp>
 #include <Slic3r/App/Render/Context.hpp>
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>

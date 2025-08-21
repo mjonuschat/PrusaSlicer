@@ -12,7 +12,8 @@
 
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
-#include "libslic3r/Utils.hpp"
+
+#include "Slic3r/Directories.hpp"
 
 namespace Slic3r::Biz {
 

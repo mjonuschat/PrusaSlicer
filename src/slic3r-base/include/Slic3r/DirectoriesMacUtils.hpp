@@ -2,8 +2,8 @@
 
 #include <string>
 
-namespace Slic3r::Biz {
+namespace Slic3r {
 
 std::string get_platform_data_dir();
 
-} // namespace Slic3r::Biz
+} // namespace Slic3r

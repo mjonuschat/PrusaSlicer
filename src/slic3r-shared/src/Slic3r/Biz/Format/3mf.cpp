@@ -23,7 +23,7 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 #include "Slic3r/Domain/Image.hpp"
-#include "libslic3r/Utils.hpp" // ScopeGuard
+#include "Slic3r/Utils.hpp" // ScopeGuard
 
 #include "LocalesUtils.hpp"
 

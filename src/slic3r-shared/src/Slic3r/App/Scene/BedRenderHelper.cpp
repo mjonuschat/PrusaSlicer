@@ -15,8 +15,7 @@
 #include "Slic3r/Biz/Algorithms/ImageUtils.hpp"
 
 #include <Slic3r/Log.hpp>
-
-#include <libslic3r/Utils.hpp>
+#include <Slic3r/Directories.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 

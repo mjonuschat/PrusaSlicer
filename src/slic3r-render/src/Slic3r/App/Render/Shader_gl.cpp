@@ -6,10 +6,9 @@
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/format.hpp"
-#include "libslic3r/Utils.hpp"
 #include <Slic3r/Log.hpp>
 #include <Slic3r/Assert.hpp>
+#include <Slic3r/Directories.hpp>
 
 
 #include <boost/nowide/fstream.hpp>
@@ -87,7 +86,7 @@ bool Shader::init_from_files(const std::string& name, const ShaderFilenames& fil
     for (std::string_view def : defines)
         // Our shaders are stored with "\r\n", thus replicate the same here for consistency. Likely "\n" would suffice, 
         // but we don't know all the OpenGL shader compilers around.
-        defines_program += format("#define %s\r\n", def);
+        defines_program += std::string("#define ") + std::string(def) + "\r\n";
 
     ShaderSources sources = {};
     for (size_t i = 0; i < static_cast<size_t>(ShaderType::Count); ++i) {

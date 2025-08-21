@@ -48,7 +48,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/Algorithm/PathSorting.hpp
     src/libslic3r/Algorithm/RegionExpansion.cpp
     src/libslic3r/Algorithm/RegionExpansion.hpp
-    src/libslic3r/AppConfig.cpp
+    #src/libslic3r/AppConfig.cpp
     src/libslic3r/Arachne/BeadingStrategy/BeadingStrategy.cpp
     src/libslic3r/Arachne/BeadingStrategy/BeadingStrategy.hpp
     src/libslic3r/Arachne/BeadingStrategy/BeadingStrategyFactory.cpp
@@ -389,7 +389,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/TriangleSetSampling.hpp
     src/libslic3r/TriangulateWall.hpp
     src/libslic3r/utils.cpp
-    src/libslic3r/Utils/DirectoriesUtils.cpp
+    #src/libslic3r/Utils/DirectoriesUtils.cpp
     src/libslic3r/Utils/JsonUtils.cpp
     src/libslic3r/Utils/JsonUtils.hpp
     src/libslic3r/Zipper.cpp
@@ -411,7 +411,7 @@ endif ()
 set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/AABBMesh.hpp
     include/libslic3r/AnyPtr.hpp
-    include/libslic3r/AppConfig.hpp
+    #include/libslic3r/AppConfig.hpp
     include/libslic3r/BoostAdapter.hpp
     include/libslic3r/clonable_ptr.hpp
     include/libslic3r/ConfigUtils.hpp
@@ -456,7 +456,7 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/SupportSpotsGenerator.hpp
     include/libslic3r/TriangleMeshSlicer.hpp
     include/libslic3r/Utils.hpp
-    include/libslic3r/Utils/DirectoriesUtils.hpp
+    #include/libslic3r/Utils/DirectoriesUtils.hpp
 
     "${CMAKE_CURRENT_BINARY_DIR}/include/libslic3r/libslic3r_version.h"
 )
