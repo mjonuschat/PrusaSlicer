@@ -70,6 +70,15 @@ public:
         update_indexes(++index);
     }
 
+    void on_will_be_removed(const Biz::IndexRange& index_range) override
+    {
+        ASSERT(index_range.to <= m_items.size());
+
+        for (size_t i = index_range.from; i <= index_range.to; ++i) {
+            m_items.at(i)->on_will_be_removed();
+        }
+    }
+
     void on_removed(const Biz::IndexRange& index_range) override
     {
         ASSERT(index_range.to <= m_items.size());
@@ -89,6 +98,13 @@ public:
         size_t index = 0;
         for (View* view : std::as_const(m_items)) {
             view->set_state(m_source_list->at(index++));
+        }
+    }
+
+    void on_will_be_reset() override
+    {
+        for (View* view : std::as_const(m_items)) {
+            view->on_will_be_removed();
         }
     }
 

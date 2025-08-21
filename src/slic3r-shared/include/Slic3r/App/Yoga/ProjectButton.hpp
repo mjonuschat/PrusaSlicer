@@ -35,6 +35,8 @@ public:
 
     void on_selected_project_changed(size_t index) override;
 
+    void on_will_be_removed() override;
+
 protected:
     void set_selected(bool selected);
 
@@ -43,9 +45,6 @@ protected:
     void on_data_update() override;
 
 private:
-    Biz::ListenerScope<Biz::ISelectedProjectChangedListener, Biz::ProjectInteractor, ProjectButton>
-        m_selected_project_changed_listener_scope;
-
     Biz::ProjectInteractor& m_project_interactor;
     ProjectButtonBackground* m_background{nullptr};
     Text* m_label{nullptr};

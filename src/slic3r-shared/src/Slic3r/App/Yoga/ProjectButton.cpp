@@ -19,9 +19,10 @@ ProjectButton::ProjectButton(
     Biz::ProjectInteractor& project_interactor
 ) :
     Biz::DataObserver<Domain::SelectionId>(index, data),
-    m_selected_project_changed_listener_scope(project_interactor, *this),
     m_project_interactor(project_interactor)
 {
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
+
     set_allow_overlap(true);
 
     m_background = emplace_back<ProjectButtonBackground>();
@@ -115,6 +116,11 @@ void ProjectButton::on_data_update()
     };
 
     set_selected(m_project_interactor.selected_project_id() == *m_state);
+}
+
+void ProjectButton::on_will_be_removed()
+{
+    m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
 }
 
 } // namespace Slic3r::App::Yoga
