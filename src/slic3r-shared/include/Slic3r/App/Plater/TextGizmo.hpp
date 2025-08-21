@@ -67,15 +67,17 @@ public:
     // Only debug 
     void render_imgui();
 private:
+    // Params to change inside of volume after create, which are not in preset manager
+    struct UpdateParams {
+        std::optional<Domain::Transform3d> volume_transformation = std::nullopt;
+        std::optional<Domain::ModelVolumeType> volume_type = std::nullopt;
+    };
     // Call every time when param of emboss change
-    bool update_volume(std::optional<Domain::Transform3d> volume_transformation = std::nullopt);
+    bool update_volume(const UpdateParams& params = {});
     void close();
 
     bool init_create(Domain::ModelVolumeType volume_type);
     bool emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results);
-
-    void update_presets_list();
-    void activate_preset(/*preset*/);
 
     Render::Device& m_device;
     PlaterScenePresenter& m_scene_presenter;

@@ -155,7 +155,8 @@ struct UpdateVolumeParams
 
     // Transformation of volume after update volume shape
     // NOTE: Add for style change, because it change rotation and distance from surface
-    std::optional<Domain::Transform3d> trmat;
+    std::optional<Domain::Transform3d> volume_trmat = std::nullopt;
+    std::optional<Domain::ModelVolumeType> volume_type = std::nullopt;
 };
 
 /// <summary>

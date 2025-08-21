@@ -166,7 +166,6 @@ TextGizmo::TextGizmo(
     // Presets
     m_dialog->callbacks().preset_selection_changed = [this](int id) {
         m_preset_manager.load_preset(static_cast<size_t>(id));
-        activate_preset();
         update_volume();
     };
     m_dialog->callbacks().save_preset_as = [this]() {
@@ -178,14 +177,14 @@ TextGizmo::TextGizmo(
         m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index()); };
     m_dialog->callbacks().delete_preset = [this]() { 
         if (m_preset_manager.delete_preset()) {
-            activate_preset();
             m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index());
+            update_volume();
         }
     };
 
-    //m_dialog->callbacks().operation_selection_changed = [this](Domain::ModelVolumeType type) {
-    //    // TODO: implement
-    //};
+    m_dialog->callbacks().operation_selection_changed = [this](Domain::ModelVolumeType type) {
+        update_volume(UpdateParams{ .volume_type = type });
+    };
 }
 
 bool TextGizmo::enabled() const { return true; };
@@ -372,7 +371,7 @@ void TextGizmo::on_activated()
         m_text = _u8L("Embosed text");
 
         // What shows few miliseconds till new item is created?
-        m_dialog->show_part_specific_panel(false); // enable when set known font
+        m_dialog->set_enable_all_except_font(true);
 
         add_text_by_view_direction(Domain::ModelVolumeType::MODEL_PART);
         // after create it is called function on_scene_selection_changed()
@@ -393,6 +392,87 @@ Scene::ToolType TextGizmo::type() const {
     return Scene::ToolType::Text;
 }
 
+namespace {
+void activate_preset(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager)
+{    
+    bool exist_stored = preset_manager.exist_stored_style();
+    const Biz::Emboss::TextPresetManager::Preset& preset = preset_manager.get_preset();
+    const Biz::Emboss::TextPresetManager::Preset& preset_ = exist_stored ?
+        *preset_manager.get_stored_preset() : preset;
+
+    // TODO: solve conversion from font name
+    const Domain::EmbossStyle& es = preset.emboss_style;
+    const Domain::EmbossStyle& es_ = preset_.emboss_style;
+    if (exist_stored)
+        dialog.set_font(es_.descriptor, true);
+    dialog.set_font(es.descriptor, false);
+    
+    const Domain::FontProp& prop = es.prop;
+    const Domain::FontProp& prop_ = es_.prop;
+    double height_from = 0.1;
+    double height_to = 100.;
+    double height_step = 0.1;
+    double height_step_fast = 1;
+    double height = prop.size_in_mm;
+    double height_default = prop_.size_in_mm;
+    dialog.set_height(height_from, height_to, height_step, height_step_fast, height, height_default);
+
+    const Domain::EmbossProjection& ep = preset.projection;
+    const Domain::EmbossProjection& ep_ = preset_.projection;
+
+    double depth_from = 0.1;
+    double depth_to = 100.;
+    double depth_step = 0.1;
+    double depth_step_fast = 1;
+    dialog.set_depth(depth_from, depth_to, depth_step, depth_step_fast, ep.depth, ep_.depth);
+    dialog.set_use_surface(ep.use_surface, ep_.use_surface);
+    dialog.set_per_glyph(prop.per_glyph, prop_.per_glyph);
+    dialog.set_align(prop.align, prop_.align);
+
+    double scale = 1e-3; // font points to mm
+    double char_gap_max = 3.62;
+    double char_gap_step = 0.01;
+    double char_gap_in_mm = prop.char_gap.value_or(0) * scale;
+    double char_gap_in_mm_ = prop_.char_gap.value_or(0) * scale;
+    dialog.set_char_gap(char_gap_max, char_gap_step, char_gap_in_mm, char_gap_in_mm_);
+
+    double line_gap_max = 3.62;
+    double line_gap_step = 0.01;
+    double line_gap_in_mm = prop.line_gap.value_or(0) * scale;
+    double line_gap_in_mm_ = prop_.line_gap.value_or(0) * scale;
+    dialog.set_line_gap(line_gap_max, line_gap_step, line_gap_in_mm, line_gap_in_mm_);
+
+    double boldness_max = 0.8;
+    double boldness_step = 0.1;
+    double boldness_in_mm = prop.boldness.value_or(0) * scale;
+    double boldness_in_mm_ = prop_.boldness.value_or(0) * scale;
+    dialog.set_boldness(boldness_max, boldness_step, boldness_in_mm, boldness_in_mm_);
+
+    double skew_ratio_max = 1.;
+    double skew_ratio_step = 0.01;
+    double skew_ratio = prop.skew.value_or(0.f);
+    double skew_ratio_ = prop_.skew.value_or(0.f);
+    dialog.set_skew_ratio(skew_ratio_max, skew_ratio_step, skew_ratio, skew_ratio_);
+
+    double surface_distance_max = 2.;
+    double surface_distance_step = 0.01;
+    double surface_distance = 0.;
+    double surface_distance_ = preset_.distance.value_or(0.f);
+    dialog.set_surface_distance(surface_distance_max, surface_distance_step, surface_distance, surface_distance_);
+    bool allowe_surface_distance = !preset.projection.use_surface;// && !m_volume->is_the_only_one_part();
+    dialog.set_enable_surface_distance(allowe_surface_distance);
+
+    double rotation_max = 180.;
+    double rotation_step = 0.1;
+    double rotation = 92.;
+    double rotation_ = preset_.angle.value_or(0.f);
+    dialog.set_rotation(rotation_max, rotation_step, rotation, rotation_);    
+
+    // NOTE: not neccessary to write pressets names every time when volume loads
+    dialog.set_presets(preset_manager.get_presets_names(), preset_manager.get_preset_index());
+}
+}
+
 void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
 {
     const Domain::Project& project = m_project_interactor.workbench().project(project_id);
@@ -401,6 +481,8 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
         return close(); // unselection text volume
         
     const Domain::ModelVolume& volume = *volume_ptr;
+
+    m_dialog->show_part_specific_panel(volume.get_object()->volumes.size() != 1);
 
     // load current settings
     const Domain::TextConfiguration& tc = *volume.text_configuration;
@@ -417,6 +499,7 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
         [&name = style.descriptor.name](const Biz::Emboss::TextPresetManager::Preset& preset) {
             return preset.emboss_style.descriptor.name == name;
         });
+
     if (preset_it == presets.end()) {
         // unknown preset inside volume, create temporary one
         m_preset_manager.load_preset(preset);
@@ -426,14 +509,13 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
     }
 
     // Update dialog data
-    activate_preset();
+    m_dialog->set_editor(m_text);
+    activate_preset(*m_dialog, m_preset_manager);
 
     // Do not use focused input value when switch volume(it must swith value)
     //ImGuiPureWrap::left_inputs();
 
     // remove_notification_not_valid_font();
-
-    m_dialog->show_part_specific_panel(true);
     last_loaded_volume_id = volume.id();
 }
 
@@ -489,7 +571,7 @@ Biz::Emboss::BaseData create_base_data(
 
 } // namespace
 
-bool TextGizmo::update_volume(std::optional<Domain::Transform3d> volume_transformation) {
+bool TextGizmo::update_volume(const UpdateParams& update_params) {
     const Domain::ModelVolume* volume_ptr = get_selected_text_volume(m_project_interactor);
     if (volume_ptr == nullptr)
         return false; // no volume selected
@@ -507,10 +589,12 @@ bool TextGizmo::update_volume(std::optional<Domain::Transform3d> volume_transfor
     if (is_text_empty(m_text)) 
         return false;
 
+    Domain::ModelVolumeType new_type = update_params.volume_type.value_or(volume_ptr->type());
     Biz::Emboss::UpdateVolumeParams params{
-        .base = create_base_data(m_text, volume_ptr->type(), m_preset_manager, m_project_interactor),
+        .base = create_base_data(m_text, new_type, m_preset_manager, m_project_interactor),
         .volume_id = volume.id(),
-        .trmat = volume_transformation
+        .volume_trmat = update_params.volume_transformation,
+        .volume_type = update_params.volume_type
     };
     return start_update_volume(std::move(params), volume);
 }
@@ -538,88 +622,6 @@ bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ra
         .volume_type = volume_type
     };
     return Biz::Emboss::start_create_volume(params, ray, results);
-}
-
-void TextGizmo::update_presets_list() {}
-
-void TextGizmo::activate_preset(/*preset*/)
-{    
-    bool exist_stored = m_preset_manager.exist_stored_style();
-    const Biz::Emboss::TextPresetManager::Preset& preset = m_preset_manager.get_preset();
-    const Biz::Emboss::TextPresetManager::Preset& preset_ = exist_stored ?
-        *m_preset_manager.get_stored_preset() : preset;
-
-    m_dialog->set_editor(m_text);
-
-    // TODO: solve conversion from font name
-    const Domain::EmbossStyle& es = preset.emboss_style;
-    const Domain::EmbossStyle& es_ = preset_.emboss_style;
-    if (exist_stored)
-        m_dialog->set_font(es_.descriptor, true);
-    m_dialog->set_font(es.descriptor, false);
-    
-    const Domain::FontProp& prop = es.prop;
-    const Domain::FontProp& prop_ = es_.prop;
-    double height_from = 0.1;
-    double height_to = 100.;
-    double height_step = 0.1;
-    double height_step_fast = 1;
-    double height = prop.size_in_mm;
-    double height_default = prop_.size_in_mm;
-    m_dialog->set_height(height_from, height_to, height_step, height_step_fast, height, height_default);
-
-    const Domain::EmbossProjection& ep = preset.projection;
-    const Domain::EmbossProjection& ep_ = preset_.projection;
-
-    double depth_from = 0.1;
-    double depth_to = 100.;
-    double depth_step = 0.1;
-    double depth_step_fast = 1;
-    m_dialog->set_depth(depth_from, depth_to, depth_step, depth_step_fast, ep.depth, ep_.depth);
-    m_dialog->set_use_surface(ep.use_surface, ep_.use_surface);
-    m_dialog->set_per_glyph(prop.per_glyph, prop_.per_glyph);
-    m_dialog->set_align(prop.align, prop_.align);
-
-    double scale = 1e-3; // font points to mm
-    double char_gap_max = 3.62;
-    double char_gap_step = 0.01;
-    double char_gap_in_mm = prop.char_gap.value_or(0) * scale;
-    double char_gap_in_mm_ = prop_.char_gap.value_or(0) * scale;
-    m_dialog->set_char_gap(char_gap_max, char_gap_step, char_gap_in_mm, char_gap_in_mm_);
-
-    double line_gap_max = 3.62;
-    double line_gap_step = 0.01;
-    double line_gap_in_mm = prop.line_gap.value_or(0) * scale;
-    double line_gap_in_mm_ = prop_.line_gap.value_or(0) * scale;
-    m_dialog->set_line_gap(line_gap_max, line_gap_step, line_gap_in_mm, line_gap_in_mm_);
-
-    double boldness_max = 0.8;
-    double boldness_step = 0.1;
-    double boldness_in_mm = prop.boldness.value_or(0) * scale;
-    double boldness_in_mm_ = prop_.boldness.value_or(0) * scale;
-    m_dialog->set_boldness(boldness_max, boldness_step, boldness_in_mm, boldness_in_mm_);
-
-    double skew_ratio_max = 1.;
-    double skew_ratio_step = 0.01;
-    double skew_ratio = prop.skew.value_or(0.f);
-    double skew_ratio_ = prop_.skew.value_or(0.f);
-    m_dialog->set_skew_ratio(skew_ratio_max, skew_ratio_step, skew_ratio, skew_ratio_);
-
-    double surface_distance_max = 2.;
-    double surface_distance_step = 0.01;
-    double surface_distance = 0.;
-    double surface_distance_ = preset_.distance.value_or(0.f);
-    m_dialog->set_surface_distance(surface_distance_max, surface_distance_step, surface_distance, surface_distance_);
-    bool allowe_surface_distance = !preset.projection.use_surface;// && !m_volume->is_the_only_one_part();
-    m_dialog->set_enable_surface_distance(allowe_surface_distance);
-
-    double rotation_max = 180.;
-    double rotation_step = 0.1;
-    double rotation = 92.;
-    double rotation_ = preset_.angle.value_or(0.f);
-    m_dialog->set_rotation(rotation_max, rotation_step, rotation, rotation_);    
-
-    m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index());
 }
 
 } // namespace Slic3r::App::Plater

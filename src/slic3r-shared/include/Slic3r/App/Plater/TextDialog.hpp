@@ -51,8 +51,8 @@ public:
         std::function<void()> save_preset{nullptr};
         std::function<void()> rename_preset{nullptr};
         std::function<void()> delete_preset{nullptr};
-        std::function<void(int)> operation_selection_changed{ nullptr };
-        //std::function<void(Domain::ModelVolumeType)> operation_selection_changed{nullptr};
+
+        std::function<void(Domain::ModelVolumeType type)> operation_selection_changed{ nullptr };
     };
 
     Callbacks& callbacks();

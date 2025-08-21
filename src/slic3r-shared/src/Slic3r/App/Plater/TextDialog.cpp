@@ -13,6 +13,7 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <imgui_internal.h>
+
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
 
@@ -298,14 +299,15 @@ otherwise, the whole text has the same orthogonal projection.")
 }
 
 namespace {
-std::initializer_list<std::string> get_operation_names() {
+std::vector<std::string> get_operation_names() {
     // NOTE: odred must match to function to_type
-    return std::initializer_list<std::string>{
+    return {
         _u8L("Join with object"), // index 0
         _u8L("Cut from object"), // 1
         _u8L("Modify object") // 2
     };
 }
+
 Domain::ModelVolumeType to_type(size_t operation_index) {
     switch (operation_index) {
     case 0: return Domain::ModelVolumeType::MODEL_PART;
@@ -325,7 +327,10 @@ void TextDialog::add_part_specific_panel()
     m_part_specific_panel->set_gap(gap_size());
     add_separator(m_part_specific_panel);
     m_operation = Passthrough(std::make_unique<ComboBox>(get_operation_names()));
-    m_operation->callbacks().selection_changed = m_callbacks.operation_selection_changed;
+    m_operation->callbacks().selection_changed = [this](int index) {
+        if (m_callbacks.operation_selection_changed)
+            m_callbacks.operation_selection_changed(to_type(index));
+    };
     add_row(_u8L("Operation"), m_operation.release(), m_part_specific_panel);
 
     m_part_specific_panel->set_visible(false);
