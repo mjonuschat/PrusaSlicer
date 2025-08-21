@@ -43,6 +43,10 @@ Domain::SelectionId ProjectInteractor::new_project()
     initialize_bed(config_container, added_project.bed_container());
     m_scene_interactor.notify_listener_on_objects();
 
+    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
+        l->on_project_loaded(project_id);
+    });
+
     return project_id;
 }
 
@@ -118,6 +122,10 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
             }
 
             m_scene_interactor.notify_listener_on_objects();
+
+            invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
+                l->on_project_loaded(project_id);
+            });
         }
     };
 

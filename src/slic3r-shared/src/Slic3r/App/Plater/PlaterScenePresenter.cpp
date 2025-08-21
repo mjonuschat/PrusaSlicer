@@ -21,6 +21,7 @@
 #include "Slic3r/App/Scene/BedNodeBuilder.hpp"
 #include "Slic3r/App/Plater/ThumbnailRenderer.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::SquareMatrix4d;
@@ -229,6 +230,24 @@ void PlaterScenePresenter::update_objects_shadows_data()
 void PlaterScenePresenter::update_beds_shadows_data()
 {
     m_bed_render_updater.update_shadows(project_context().scene().camera());
+}
+
+void PlaterScenePresenter::on_project_loaded(Domain::SelectionId project_id)
+{
+    center_camera_on_selected_bed();
+}
+
+void PlaterScenePresenter::center_camera_on_selected_bed()
+{
+    // Center the camera on the selected bed
+    Domain::BedRef selected_bed = m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
+    const auto& proj = m_workbench.project(m_project_interactor.selected_project_id());
+    const Domain::ConfigContainer* cc = proj.find_config_container(selected_bed.config_container_id);
+    DEBUG_ASSERT(cc != nullptr);
+    const Domain::BedInstance& inst = cc->find_bed_instance(selected_bed.instance_id);
+    Vec3d selected_bed_center = Biz::Algorithms::Point::to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset();
+    scene().camera_trackball().set_target(selected_bed_center);
+    scene().camera_trackball().synchronize_pivot_with_target();
 }
 
 static std::string bed_instance_thumbnail_name(size_t config_container_id, size_t instance_id)

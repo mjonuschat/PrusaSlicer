@@ -12,6 +12,7 @@ public:
     virtual void on_project_will_be_removed(Domain::SelectionId project_id) {}
     virtual void on_project_removed(Domain::SelectionId project_id) {}
     virtual void on_project_changed(Domain::SelectionId project_id) {}
+    virtual void on_project_loaded(Domain::SelectionId project_id) {}
 };
 
-}
+} // namespace Slic3r::Biz

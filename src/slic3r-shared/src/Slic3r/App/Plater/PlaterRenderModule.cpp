@@ -50,7 +50,6 @@
 #include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
-#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 
 #include <imgui/imgui.h>
@@ -104,6 +103,7 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     );
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(this);
+    m_project_interactor.add_listener<Biz::IProjectsChangedListener>(m_scene_presenter.get());
 
     // Set our color styles before gizmos initialization
     // to use them during GiymoDialogs creation
@@ -113,15 +113,7 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     init_scene();
     init_scene_layout();
 
-    // Center the camera on the selected bed
-    Domain::BedRef selected_bed = m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
-    const auto& proj = m_workbench.project(m_project_interactor.selected_project_id());
-    const Domain::ConfigContainer* cc = proj.find_config_container(selected_bed.config_container_id);
-    DEBUG_ASSERT(cc != nullptr);
-    const Domain::BedInstance& inst = cc->find_bed_instance(selected_bed.instance_id);
-    Vec3d selected_bed_center = Biz::Algorithms::Point::to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset();
-    m_scene_presenter->scene().camera_trackball().set_target(selected_bed_center);
-    m_scene_presenter->scene().camera_trackball().synchronize_pivot_with_target();
+    m_scene_presenter->center_camera_on_selected_bed();
 
     if (!m_thumbnail_image_generator->initialized()) {
         m_thumbnail_image_generator->init(
