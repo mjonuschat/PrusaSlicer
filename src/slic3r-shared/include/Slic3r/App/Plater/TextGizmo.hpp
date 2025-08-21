@@ -9,6 +9,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
+#include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneSelectionChangedListener
 
 namespace Slic3r::App::Yoga {
 class Dialog;
@@ -17,8 +18,17 @@ class Dialog;
 namespace Slic3r::App::Plater {
 class TextDialog;
 
-// Please implement me!
-class TextGizmo : public Scene::IToolGizmo
+/**
+ *  @brief   Tool for emboss text on surface of model
+ *  @details Main idea: 
+ *  1) Gizmo is open only with selected text volume (detail in 'on_activated').
+ *  2) Shown data are from m_preset_manager cache (actualized in 'on_scene_selection_changed')
+ *  3) ModelVolume always contain TextConfiguration to recreate volume (without modification)
+ *  4) Volume is created in a process thread (detail inside file 'EmbossJob'). 
+ */
+class TextGizmo : 
+    public Scene::IToolGizmo,
+    public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
     TextGizmo(
@@ -43,16 +53,22 @@ public:
     void on_deactivated() override;
     Scene::ToolType type() const override { return Scene::ToolType::Text; }
 
+    /**
+     * @name Implementation of ISceneSelectionChangedListener interface
+     */
+    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
+
     /// <summary>
     /// Create new text without given position
     /// </summary>
     /// <param name="volume_type">Object part / Negative volume / Modifier</param>
     bool add_text_by_view_direction(Domain::ModelVolumeType volume_type);
 
-    void update_layout(bool show_for_part);
     // Only debug 
     void render_imgui();
 private:
+    // Call every time when param of emboss change
+    bool update_volume(std::optional<Domain::Transform3d> volume_transformation = std::nullopt);
     void close();
 
     bool init_create(Domain::ModelVolumeType volume_type);
@@ -70,9 +86,10 @@ private:
     Biz::Emboss::TextPresetManager m_preset_manager;
 
     std::string m_text; // embossed text
-   
     Yoga::Passthrough<TextDialog> m_dialog;
-    Biz::ProjectInteractor& m_project_interactor;
+
+    // only for check
+    Domain::ObjectID last_loaded_volume_id;
 };
 
 } // namespace Slic3r::App::Plater

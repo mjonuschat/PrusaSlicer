@@ -31,23 +31,25 @@ public:
     TextShapeProvider(
         const Domain::TextConfiguration& text_configuration,
         const Domain::EmbossProjection& projection,
-        Biz::Emboss::IFontManager& font_manager
+        FontFileWithCache& font_with_cache
     ) 
         : m_text_configuration(text_configuration)
-        , m_font_manager(font_manager)
+        , m_font_with_cache(font_with_cache)
     {
-        shape.projection = projection; // copy current projection
+        m_shape.projection = projection; // copy current projection
     }
 
     Domain::EmbossShape& get_shape() override
     {
-        if (!shape.final_shape.expolygons.empty())
-            return shape; // use cached value
-        FontFileWithCache font_with_cache(m_font_manager.open(m_text_configuration.style.descriptor));
+        if (!m_shape.final_shape.expolygons.empty())
+            return m_shape; // use cached value
+                
         std::wstring text = boost::nowide::widen(m_text_configuration.text);
         const Domain::FontProp& font_prop = m_text_configuration.style.prop;
-        shape.shapes_with_ids = text2vshapes(font_with_cache, text, font_prop);
-        return shape;
+        m_shape.shapes_with_ids = text2vshapes(m_font_with_cache, text, font_prop);
+        const Domain::FontFile& ff = *m_font_with_cache.font_file;
+        m_shape.scale = get_text_shape_scale(font_prop, ff);
+        return m_shape;
     }
 
     void write(Domain::ModelVolume& volume) const override
@@ -64,7 +66,7 @@ public:
 private:
     // font item is not used for create object
     Domain::TextConfiguration m_text_configuration;
-    Biz::Emboss::IFontManager& m_font_manager;
+    FontFileWithCache& m_font_with_cache;
 };
 } // namespace Slic3r::Biz::Emboss
 
@@ -97,18 +99,76 @@ TextGizmo::TextGizmo(
 
     // Dialog callback settings (order follow UI)
     m_dialog = std::make_unique<TextDialog>();
-    m_dialog->callbacks().text_changed = [this](const std::string& text) { m_text = text; };
-    m_dialog->callbacks().font_selection_changed =
-        [this](const Domain::FontDescriptor& font_descriptor) {
-            m_preset_manager.get_preset().emboss_style.descriptor.path = font_descriptor.path;
-        };
-    // style is only subcategory of font
+    m_dialog->callbacks().text_changed = [this](const std::string& text) {
+        m_text = text; 
+        update_volume();
+    };
+    m_dialog->callbacks().font_selection_changed = [this](const Domain::FontDescriptor& font_descriptor){
+        m_preset_manager.set_font(font_descriptor); 
+        update_volume();
+    }; 
+    // NOTE: style is only subcategory of font    
     m_dialog->callbacks().height_changed = [this](double value) {
         m_preset_manager.get_font_prop().size_in_mm = value;
-        };
-    m_dialog->callbacks().depth_changed = [this](double value) {
+        update_volume();
+    };
+    m_dialog->callbacks().depth_changed = [this](double value)
+    {
         m_preset_manager.get_preset().projection.depth = value;
-        };
+        update_volume();
+    };
+
+    // Advanced settings
+    m_dialog->callbacks().use_surface_checked = [this](bool check) {
+        m_preset_manager.get_preset().projection.use_surface = check;
+        update_volume();
+    };
+    m_dialog->callbacks().per_glyph_checked = [this](bool check) {
+        m_preset_manager.get_preset().emboss_style.prop.per_glyph = check;
+        update_volume();
+    };
+    m_dialog->callbacks().align_changed = [this](const Domain::FontProp::Align& align) {
+        m_preset_manager.get_preset().emboss_style.prop.align = align;
+        update_volume();
+    };
+    m_dialog->callbacks().char_gap_changed = [this](double value) {
+        m_preset_manager.get_preset().emboss_style.prop.char_gap = value;
+        update_volume();
+    };
+    m_dialog->callbacks().line_gap_changed = [this](double value) {
+        m_preset_manager.get_preset().emboss_style.prop.line_gap = value;
+        update_volume();
+    };
+    m_dialog->callbacks().boldness_changed = [this](double value) {
+        m_preset_manager.get_preset().emboss_style.prop.boldness = value;
+        m_preset_manager.clear_glyphs_cache();
+        update_volume();
+    };
+    m_dialog->callbacks().skew_ratio_changed = [this](double value) {
+        m_preset_manager.get_preset().emboss_style.prop.skew = value;
+        m_preset_manager.clear_glyphs_cache();
+        update_volume();
+    };
+    m_dialog->callbacks().surface_distance_changed = [this](double value) {
+        // TODO: implement
+    };
+    m_dialog->callbacks().rotation_changed = [this](double value) {
+        // TODO: implement
+    };
+    m_dialog->callbacks().unlock_rotation = [this](bool check) {
+        // TODO: implement
+    };
+    m_dialog->callbacks().set_on_face_camera = [this]() {
+        // TODO: implement
+        m_dialog->set_enable_line_gap(false); // test
+    };
+
+    // Presets
+    m_dialog->callbacks().preset_selection_changed = [this](int id) {
+        m_preset_manager.load_preset(static_cast<size_t>(id));
+        activate_preset();
+        update_volume();
+    };
     m_dialog->callbacks().save_preset_as = [this]() {
         m_preset_manager.save_preset_as(); 
         m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index()); };
@@ -123,15 +183,9 @@ TextGizmo::TextGizmo(
         }
     };
 
-    m_dialog->callbacks().set_on_face_camera = [this]() { 
-        m_dialog->set_enable_line_gap(false); // test
-        };
-
-    m_dialog->callbacks().preset_selection_changed = [this](int id) {
-        m_preset_manager.load_preset(static_cast<size_t>(id));
-        activate_preset();
+    m_dialog->callbacks().operation_selection_changed = [this](int id) {
+        // TODO: implement
     };
-    m_dialog->callbacks().operation_selection_changed = [this](int id) {};
 }
 
 bool TextGizmo::enabled() const { return true; };
@@ -140,11 +194,6 @@ Scene::ToolType TextGizmo::type() const { return Scene::ToolType::TextGizmo; }
 Yoga::GizmoWindowPtr TextGizmo::release_ui_window()
 {
     return m_dialog.release();
-}
-
-void TextGizmo::update_layout(bool show_for_part)
-{
-    m_dialog->show_part_specific_panel(show_for_part);
 }
 
 Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
@@ -237,10 +286,13 @@ void TextGizmo::render_imgui()
         
     ImGui::InputFloat("size_in_mm", &m_preset_manager.get_preset().emboss_style.prop.size_in_mm);
     ImGui::InputDouble("depth", &m_preset_manager.get_preset().projection.depth);
+    ImGui::Checkbox("use surface", &m_preset_manager.get_preset().projection.use_surface);
+    ImGui::Checkbox("per glyph", &m_preset_manager.get_font_prop().per_glyph);
 
-    if (ImGui::Button("Close")) {
-        close();
-    }
+    ImGui::Separator();
+    if (ImGui::Button("Update")) update_volume();
+    ImGui::SameLine();
+    if (ImGui::Button("Close")) close();
 
     ImGui::End();
 }
@@ -258,21 +310,19 @@ size_t get_index(const Domain::FontList& fonts, const std::string& path)
     return (it_font == fonts.end()) ? 0 : (it_font - fonts.begin());
 }
 
-const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor& project_interactor) {
-    const Biz::Scene::SceneInteractor& scene_interactor = project_interactor.scene_interactor();
-    const Biz::Scene::ObjectSelection& selection = scene_interactor.object_selection();
+const Domain::ModelVolume* get_selected_text_volume(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection) {
     if (selection.elements.size() != 1)
         return nullptr; // multiple volumes selected
 
-    const Domain::ElementRef& selected = selection.elements.front();
-    const Domain::Project& project = project_interactor.selected_project();
-    
+    const Domain::ElementRef& selected = selection.elements.front();    
     const Domain::ModelVolume* volume_ptr = nullptr;
     if (selected.has_volume()) {
         volume_ptr = project.find_volume_by_id(selected.object_id, selected.volume_id);    
     } else {
         // Check is selected object contain only volume with text
         const Domain::ModelObject* object_ptr = project.find_object_by_id(selected.object_id);
+        if (object_ptr == nullptr)
+            return nullptr; // after delete volume
         if (object_ptr->volumes.size() != 1)
             return nullptr;
         volume_ptr = object_ptr->volumes.front();
@@ -286,6 +336,12 @@ const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor
 
     return volume_ptr;
 }
+
+const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor& project_interactor) {
+    const Domain::Project& project = project_interactor.selected_project();
+    const Biz::Scene::ObjectSelection& selection = project_interactor.scene_interactor().object_selection();
+    return get_selected_text_volume(project, selection);
+}
 }
 
 void TextGizmo::on_activated()
@@ -293,71 +349,92 @@ void TextGizmo::on_activated()
     if (m_preset_manager.get_presets().empty())
         m_preset_manager.init();
 
-    const Domain::ModelVolume* volume_ptr = get_selected_text_volume(m_project_interactor);
-    if (volume_ptr == nullptr) {
-        // create new text volume
-        m_preset_manager.discard_preset_changes();
-        m_text = "Emmmbosss text";
-
-        // What shows few miliseconds till new item is created?
-        m_dialog->set_enable_all_except_font(false);
-
-        add_text_by_view_direction(Domain::ModelVolumeType::MODEL_PART);
-        // TODO: how to wait till it is created?
-        // Catch selection changed event
-    } else {
-        m_dialog->set_enable_all_except_font(true);
-        // load current settings
-        const Domain::TextConfiguration& tc = *volume_ptr->text_configuration;
-        const Domain::EmbossStyle& style = tc.style;
-
-        Biz::Emboss::TextPresetManager::Preset preset{
-            .emboss_style = style,
-            .projection = volume_ptr->emboss_shape->projection
-            // .distance = calc_distance(),
-            // .angle = calc_angle(selection)
-        };
-
-        const auto& presets = m_preset_manager.get_presets();
-        auto preset_it = std::find_if(presets.begin(), presets.end(),
-            [&name = style.descriptor.name](const Biz::Emboss::TextPresetManager::Preset& preset) {
-                return preset.emboss_style.descriptor.name == name;
-            });
-
-        if (preset_it == presets.end()) {
-            // unknown preset inside volume, create temporary one
-            m_preset_manager.load_preset(preset);
-        } else {
-            m_preset_manager.load_preset(presets.begin() - preset_it);
-            m_preset_manager.get_preset() = preset;                
-        }
-        // TODO: update dialog
-        
-        // Do not use focused input value when switch volume(it must swith value)
-        //ImGuiPureWrap::left_inputs();
-    }
-
-    m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index());
-
-    // load current font_preset
-    activate_preset(/*font_preset*/);
-
     bool use_inch = false; // wxGetApp().app_config->get_bool("use_inches");
     m_dialog->update_units(use_inch);
 
-    // Propadate reloaded installed font into the dialog
-    // NOTE: reload fonts from OS, 2.9.2 do it on dialog open, now it is on gizmo activation
-    const Domain::FontList& fonts = m_font_manager.get_fonts(); // Re-Load Os fonts
+    // Re-load installed fonts
+    // NOTE: Version 2.9.2 do it on dialog open, now it is on gizmo activation
+    const Domain::FontList& fonts = m_font_manager.get_fonts(); 
     m_dialog->set_fonts(fonts);
     if (m_preset_manager.exist_stored_style())
         m_dialog->set_font(m_preset_manager.get_stored_preset()->emboss_style.descriptor, true);
     m_dialog->set_font(m_preset_manager.get_preset().emboss_style.descriptor, false);
+
+    // Register for scene changes
+    Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+
+    // when text volume is not selected, create new one
+    if (get_selected_text_volume(m_project_interactor) == nullptr) {
+        // create new text volume
+        m_preset_manager.discard_preset_changes();
+        // TRN: default text embossed from model
+        m_text = _u8L("Embosed text");
+
+        // What shows few miliseconds till new item is created?
+        m_dialog->show_part_specific_panel(false); // enable when set known font
+
+        add_text_by_view_direction(Domain::ModelVolumeType::MODEL_PART);
+        // after create it is called function on_scene_selection_changed()
+        return;
+    }
+
+    // set current state of scene
+    Domain::SelectionId project_id = m_project_interactor.selected_project_id();
+    on_scene_selection_changed(project_id, scene_interactor.object_selection());
 }
 
-void TextGizmo::on_deactivated() {}
+void TextGizmo::on_deactivated() {
+    Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+}
 
 Scene::ToolType TextGizmo::type() const {
     return Scene::ToolType::Text;
+}
+
+void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
+{
+    const Domain::Project& project = m_project_interactor.workbench().project(project_id);
+    const Domain::ModelVolume* volume_ptr = get_selected_text_volume(project, selection);
+    if (volume_ptr == nullptr)
+        return close(); // unselection text volume
+        
+    const Domain::ModelVolume& volume = *volume_ptr;
+
+    // load current settings
+    const Domain::TextConfiguration& tc = *volume.text_configuration;
+    const Domain::EmbossStyle& style = tc.style;
+
+    Biz::Emboss::TextPresetManager::Preset preset{
+        .emboss_style = style,
+        .projection = volume.emboss_shape->projection
+        // .distance = calc_distance(),
+        // .angle = calc_angle(selection)
+    };
+    const auto& presets = m_preset_manager.get_presets();
+    auto preset_it = std::find_if(presets.begin(), presets.end(),
+        [&name = style.descriptor.name](const Biz::Emboss::TextPresetManager::Preset& preset) {
+            return preset.emboss_style.descriptor.name == name;
+        });
+    if (preset_it == presets.end()) {
+        // unknown preset inside volume, create temporary one
+        m_preset_manager.load_preset(preset);
+    } else {
+        m_preset_manager.load_preset(presets.begin() - preset_it);
+        m_preset_manager.get_preset() = preset;
+    }
+
+    // Update dialog data
+    activate_preset();
+
+    // Do not use focused input value when switch volume(it must swith value)
+    //ImGuiPureWrap::left_inputs();
+
+    // remove_notification_not_valid_font();
+
+    m_dialog->show_part_specific_panel(true);
+    last_loaded_volume_id = volume.id();
 }
 
 bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
@@ -381,6 +458,63 @@ bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
     return emboss_text(volume_type, pick_ray, pick_results);
 }
 
+namespace {
+bool is_text_empty(std::string_view text) {
+    return text.empty() || text.find_first_not_of(" \n\t\r") == std::string::npos; 
+}
+
+Biz::Emboss::BaseData create_base_data(
+    const std::string& text,
+    Domain::ModelVolumeType volume_type,
+    Biz::Emboss::TextPresetManager& preset_manager,
+    Biz::ProjectInteractor& project_interactor
+) {
+    const Biz::Emboss::TextPresetManager::Preset& preset = preset_manager.get_preset();
+    Domain::TextConfiguration text_config{ .style = preset.emboss_style, .text = text };
+    Domain::SelectionId project_id = project_interactor.selected_project_id();
+    Biz::Emboss::FontFileWithCache& font_file = preset_manager.get_font_file_with_cache();
+    return Biz::Emboss::BaseData{
+        .shape_provider = std::make_unique<Biz::Emboss::TextShapeProvider>(
+            std::move(text_config),
+            preset.projection,
+            font_file
+        ),
+        .project_interactor = project_interactor,
+        .project_id = project_id,
+        .gizmo = static_cast<uint8_t>(App::Scene::ToolType::Text),
+        .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
+        .volume_name = "Embossed textik"
+    };
+}
+
+} // namespace
+
+bool TextGizmo::update_volume(std::optional<Domain::Transform3d> volume_transformation) {
+    const Domain::ModelVolume* volume_ptr = get_selected_text_volume(m_project_interactor);
+    if (volume_ptr == nullptr)
+        return false; // no volume selected
+
+    // check that selection did not change without call 'on_scene_selection_changed()'
+    const Domain::ModelVolume& volume = *volume_ptr;
+    if (last_loaded_volume_id != volume.id())
+        return false;
+
+    // exist loadeable font file?
+    if (!m_preset_manager.get_font_file_with_cache().has_value())
+        return false;
+
+    // without text there is nothing to emboss
+    if (is_text_empty(m_text)) 
+        return false;
+
+    Biz::Emboss::UpdateVolumeParams params{
+        .base = create_base_data(m_text, volume_ptr->type(), m_preset_manager, m_project_interactor),
+        .volume_id = volume.id(),
+        .trmat = volume_transformation
+    };
+    return start_update_volume(std::move(params), volume);
+}
+
 void TextGizmo::close()
 {
     m_gizmo_manager.deactivate_current_tool();
@@ -397,49 +531,12 @@ bool TextGizmo::init_create(Domain::ModelVolumeType volume_type)
     return true;
 }
 
-namespace {
-    using namespace Slic3r;
-
-    Biz::Emboss::CreateVolumeParams create_volume_params(
-        Biz::ProjectInteractor& project_interactor,
-        Biz::Emboss::IFontManager& font_manager,
-        Domain::TextConfiguration&& configuration,
-        Domain::EmbossProjection& projection,
-        Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART
-    )
-    {
-        Domain::SelectionId project_id = project_interactor.selected_project_id();
-        return Biz::Emboss::CreateVolumeParams{
-            .base{
-                .shape_provider = std::make_unique<Biz::Emboss::TextShapeProvider>(
-                    std::move(configuration),
-                    projection,
-                    font_manager
-                ),
-                .project_interactor = project_interactor,
-                .project_id = project_id,
-                .gizmo = static_cast<uint8_t>(App::Scene::ToolType::Text),
-                .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
-                .volume_name = "Embossed textik"
-            },
-            .volume_type = volume_type
-        };
-    }
-} // namespace
-
 bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results)
 {
-    Domain::TextConfiguration text_config{
-        .style = m_preset_manager.get_preset().emboss_style,
-        .text = m_text
+    Biz::Emboss::CreateVolumeParams params{
+        .base = create_base_data(m_text, volume_type, m_preset_manager, m_project_interactor),
+        .volume_type = volume_type
     };
-    auto params = create_volume_params(
-        m_project_interactor,
-        m_font_manager,
-        std::move(text_config),
-        m_preset_manager.get_preset().projection,
-        volume_type
-    );
     return Biz::Emboss::start_create_volume(params, ray, results);
 }
 
@@ -460,7 +557,7 @@ void TextGizmo::activate_preset(/*preset*/)
     if (exist_stored)
         m_dialog->set_font(es_.descriptor, true);
     m_dialog->set_font(es.descriptor, false);
-
+    
     const Domain::FontProp& prop = es.prop;
     const Domain::FontProp& prop_ = es_.prop;
     double height_from = 0.1;
@@ -521,6 +618,8 @@ void TextGizmo::activate_preset(/*preset*/)
     double rotation = 92.;
     double rotation_ = preset_.angle.value_or(0.f);
     m_dialog->set_rotation(rotation_max, rotation_step, rotation, rotation_);    
+
+    m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index());
 }
 
 } // namespace Slic3r::App::Plater

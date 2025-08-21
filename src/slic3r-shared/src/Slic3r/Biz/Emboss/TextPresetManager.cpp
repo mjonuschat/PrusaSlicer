@@ -332,11 +332,6 @@ bool TextPresetManager::is_unique_style_name(const std::string& name) const
     return true;
 }
 
-bool TextPresetManager::is_active_font()
-{
-    return m_preset_cache.font_file.has_value();
-}
-
 const TextPresetManager::Preset* TextPresetManager::get_stored_preset() const
 {
     if (m_preset_cache.preset_index >= m_data.presets.size())
@@ -357,11 +352,20 @@ void TextPresetManager::clear_imgui_font()
     m_preset_cache.atlas.Clear();
 }
 
+void TextPresetManager::set_font(const Domain::FontDescriptor& font_descriptor)
+{
+    m_preset_cache.font_file.font_file = nullptr; // discard cache
+    Domain::FontDescriptor& cache_descriptor = m_preset_cache.preset.emboss_style.descriptor;
+    if (cache_descriptor.type != font_descriptor.type) {
+        // discard style name(FontDescriptor::name)
+        cache_descriptor = font_descriptor;
+    } else {
+        cache_descriptor.path = font_descriptor.path;
+    }
+}
+
 ImFont* TextPresetManager::get_imgui_font()
 {
-    if (!is_active_font())
-        return nullptr;
-
     ImVector<ImFont*>& fonts = m_preset_cache.atlas.Fonts;
     if (fonts.empty())
         return nullptr;

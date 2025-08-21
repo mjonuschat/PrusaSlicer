@@ -30,6 +30,10 @@ class ShapeProvider
 public:
     virtual ~ShapeProvider() = default;
 
+    Domain::EmbossProjection& get_projection() {
+        return m_shape.projection;
+    }
+
     /// <summary>
     /// Create shape
     /// e.g. Text extract glyphs from font file
@@ -37,7 +41,7 @@ public:
     /// </summary>
     virtual Domain::EmbossShape& get_shape()
     {
-        return shape;
+        return m_shape;
     }
 
     /// <summary>
@@ -46,7 +50,7 @@ public:
     /// <param name="volume">Data object for store emboss params</param>
     virtual void write(Domain::ModelVolume& volume) const
     {
-        volume.emboss_shape = shape;
+        volume.emboss_shape = m_shape;
     }
 
     /// <summary>
@@ -66,15 +70,15 @@ public:
     /// <returns></returns>
     virtual const Biz::Emboss::TextLines& get_text_lines()
     {
-        return text_lines;
+        return m_text_lines;
     }
 
 protected:
-    Domain::EmbossShape shape;
+    Domain::EmbossShape m_shape;
 
     // Define per letter projection on one text line
     // [optional] It is not used when empty
-    Biz::Emboss::TextLines text_lines = {};
+    Biz::Emboss::TextLines m_text_lines = {};
 };
 
 using ShapeProviderPtr = std::unique_ptr<ShapeProvider>;
@@ -139,12 +143,6 @@ bool start_create_volume(
 );
 
 /// <summary>
-/// Same as previous function but without mouse position
-/// Need to suggest position or put near the selection
-/// </summary>
-bool start_create_volume_without_position(CreateVolumeParams& input);
-
-/// <summary>
 /// Parameters for call start_update_volume function
 /// </summary>
 struct UpdateVolumeParams
@@ -152,8 +150,8 @@ struct UpdateVolumeParams
     // base input data for job
     BaseData base;
 
-    // Used for prevent flooding Undo/Redo stack on slider.
-    bool make_snapshot;
+    // unique identifier of volume to change
+    Domain::ObjectID volume_id;
 
     // Transformation of volume after update volume shape
     // NOTE: Add for style change, because it change rotation and distance from surface
@@ -164,30 +162,9 @@ struct UpdateVolumeParams
 /// Start job for update embossed volume
 /// </summary>
 /// <param name="data">define update data</param>
+/// <param name="volume">volume to update</param>
 /// <returns>True when start job otherwise false</returns>
-bool start_update_volume(UpdateVolumeParams& data);
-
-/// <summary>
-/// Triangle sources for cut surface from volume
-/// used only with SurfaceVolumeData
-/// </summary>
-struct ModelSource
-{
-    // source volumes
-    std::shared_ptr<const Domain::TriangleMesh> mesh;
-    // Transformation of volume inside of object
-    Domain::Transform3d tr;
-};
-
-using ModelSources = std::vector<ModelSource>;
-
-/// <summary>
-/// Copied triangles from object to be able create mesh for cut surface from
-/// </summary>
-/// <param name="volume">Define embossed volume</param>
-/// <returns>Source data for cut surface from</returns>
-ModelSources create_volume_sources(const Domain::ModelVolume& volume);
-
+bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& volume);
 } // namespace Slic3r::Biz::Emboss
 
 #endif // slic3r_EmbossJob_hpp_

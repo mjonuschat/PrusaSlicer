@@ -547,10 +547,16 @@ BedSelection* SceneInteractor::bed_selection(const Domain::SelectionId project_i
 }
 
 void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, const std::string& name) {
-    new_object_from_mesh(std::move(mesh), m_selected_project_id, name);
+    UpdateObjectFn update_object = [&name](ModelObject& object) {
+        object.name = name;
+        object.volumes.front()->name = name;
+        //for (Domain::ModelVolume* volume : object.volumes)
+        //    volume->name = name;
+    };
+    new_object_from_mesh(std::move(mesh), m_selected_project_id, update_object);
 }
 
-void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::SelectionId project_id, const std::string& name)
+void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::SelectionId project_id, UpdateObjectFn update_object)
 {
     auto& project = m_workbench.project(project_id);
     auto& obj     = *project.model().add_object();
@@ -560,7 +566,12 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::Selectio
     // const Domain::ElementRefs updated_vols{{obj.id().id, inst.id().id, vol.id().id}};
     auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
 
-    obj.name      = vol.name = name;
+    update_object(obj);
+    if (project.file_name().empty()) {
+        const boost::filesystem::path filename_path(vol->name);
+        const std::string stem_name = filename_path.stem().string();
+        project.set_file_name(stem_name);
+    }
 
     for (const auto& bed_ref : changes.updated_beds) {
         invoke_slicing_input_changed(bed_ref);

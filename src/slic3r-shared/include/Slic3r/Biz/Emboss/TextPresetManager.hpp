@@ -93,6 +93,9 @@ public:
     // remove cached imgui font for actual selected font
     void clear_imgui_font();
 
+    // setter for font
+    void set_font(const Domain::FontDescriptor& font_descriptor);
+
     // getters for private data
     const Preset* get_stored_preset() const;
 
@@ -123,12 +126,17 @@ public:
 
     FontFileWithCache& get_font_file_with_cache()
     {
-        return m_preset_cache.font_file;
+        FontFileWithCache& ff = m_preset_cache.font_file;
+        if (ff.has_value())
+            return ff; // use cache
+        // create new cache
+        ff = FontFileWithCache(m_font_manager.open(m_preset_cache.preset.emboss_style.descriptor));
+        return ff; 
     }
 
     bool has_collections() const
     {
-        return m_preset_cache.font_file.font_file != nullptr
+        return m_preset_cache.font_file.has_value()
             && m_preset_cache.font_file.font_file->infos.size() > 1;
     }
 
@@ -220,9 +228,6 @@ public:
         Presets presets;
         size_t current_index;
     };
-
-    // check if exist selected font style in manager
-    bool is_active_font();
 
     // Limits for imgui loaded font size
     // Value out of limits is crop

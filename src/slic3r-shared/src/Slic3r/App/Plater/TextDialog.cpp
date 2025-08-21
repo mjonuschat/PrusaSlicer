@@ -435,7 +435,7 @@ void TextDialog::set_font(const Domain::FontDescriptor& font, bool set_as_defaul
 
     auto unknown_font = [&]() {
         m_font->set_current_index(0);
-        set_enable_all_except_font(true);
+        set_enable_all_except_font(false);
         m_style->set_items({_u8L("Not available")});
         m_style->set_current_index(0);
     };
@@ -478,6 +478,8 @@ void TextDialog::set_font(const Domain::FontDescriptor& font, bool set_as_defaul
     m_style->set_current_index(font_it - start_style_it);
     if (set_as_default)
         m_style->set_default(font_it - start_style_it);
+    // known font
+    set_enable_all_except_font(true);
 }
 
 static void set_double_spin(
