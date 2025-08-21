@@ -42,7 +42,7 @@ endif ()
 add_library(slic3r-platform STATIC ${SLIC3R_PLATFORM_FILES})
 
 target_include_directories(slic3r-platform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(slic3r-platform PUBLIC slic3r-render)
+target_link_libraries(slic3r-platform PUBLIC slic3r-render slic3r-jthread)
 
 
 # Doxygen

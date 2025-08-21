@@ -6,7 +6,6 @@
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
-#include "libslic3r/format.hpp"
 #include <Slic3r/Log.hpp>
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Directories.hpp>

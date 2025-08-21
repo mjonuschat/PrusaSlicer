@@ -5,11 +5,11 @@
 #include "Slic3r/Directories.hpp"
 
 #include "Slic3r/Utils.hpp" // ScopeGuard
-#include "libslic3r/format.hpp"
 
 #include <boost/filesystem.hpp> 
 #include <boost/nowide/fstream.hpp>
 #include <boost/algorithm/string.hpp>
+#include <fmt/format.h>
 #include <fcntl.h>
 
 namespace Slic3r::Biz::Platform {
@@ -67,7 +67,7 @@ bool SecretStoreLinux::save_secret(const std::string& opt, const std::string& us
 {
     boost::filesystem::path target(boost::filesystem::path(Slic3r::data_dir()) / (opt + ".dat"));
 	ASSERT(usr.find('\n') == std::string::npos);    
-    std::string data = format("usr: %1%\npsswd: %2%", usr, psswd);
+    std::string data = fmt::format("usr: {}\npsswd: {}", usr, psswd);
 
     static const auto perms = boost::filesystem::owner_read | boost::filesystem::owner_write;   // aka 600
 
