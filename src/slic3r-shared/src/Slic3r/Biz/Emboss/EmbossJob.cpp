@@ -37,23 +37,23 @@ using namespace Slic3r::Biz::Emboss;
 bool check(const CreateVolumeParams& input);
 bool check(const UpdateVolumeParams& input, bool is_main_thread = false, bool use_surface = false);
 
-/// <summary>
-/// Start job for add new volume to object with given transformation
-/// </summary>
-/// <param name="object">Define where to add</param>
-/// <param name="volume_tr">Wanted volume transformation, when not set will be calculated after creation to be near the object</param>
-/// <param name="data">Define what to emboss - shape</param>
-/// <param name="volume_type">Type of volume: Part, negative, modifier</param>
-/// <returns>Nullptr when job is sucessfully add to worker otherwise return data to be processed different way</returns>
+/**
+@brief Start job for add new volume to object with given transformation
+@param object Define where to add
+@param volume_tr Wanted volume transformation, when not set will be calculated after creation to be near the object
+@param data Define what to emboss - shape
+@param volume_type Type of volume: Part, negative, modifier
+@return Nullptr when job is sucessfully add to worker otherwise return data to be processed different way
+*/
 bool start_create_volume_job(const Domain::ModelObject& object, const std::optional<Domain::Transform3d>& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type);
 
-/// <summary>
-/// Start job for add object with text into scene
-/// </summary>
-/// <param name="input">Contain worker, build shape, gizmo,
-/// emboss_data is moved out soo it can't be const</param>
-/// <param name="coor">Screen coordinat, where to create new object laying on bed</param>
-/// <returns>True when can add job to worker otherwise FALSE</returns>
+/**
+@brief Start job for add object with text into scene
+@param input Contain worker, build shape, gizmo,
+emboss_data is moved out soo it can't be const
+@param coor Screen coordinat, where to create new object laying on bed
+@return True when can add job to worker otherwise FALSE
+*/
 bool start_create_object_job(CreateVolumeParams& input, const Domain::Vec2d& coor);
 
 Domain::ModelVolumePtrs prepare_volumes_to_slice(const Domain::ModelObject& mo);
@@ -69,11 +69,11 @@ public:
     virtual void finalize() {}
 };
 
-/// <summary>
-/// Hold neccessary data to create ModelVolume in job
-/// Volume is created on the surface of existing volume in object.
-/// NOTE: EmbossDataBase::font_file doesn't have to be valid !!!
-/// </summary>
+/**
+@brief Hold neccessary data to create ModelVolume in job
+Volume is created on the surface of existing volume in object.
+NOTE: EmbossDataBase::font_file doesn't have to be valid !!!
+*/
 struct DataCreateVolume
 {
     // Hold data about shape
@@ -92,11 +92,11 @@ struct DataCreateVolume
 // Offset of clossed side to model
 constexpr float SAFE_SURFACE_OFFSET = 0.015f; // [in mm]
 
-/// <summary>
-/// Create new TextVolume on the surface of ModelObject
-/// Should not be stopped
-/// NOTE: EmbossDataBase::font_file doesn't have to be valid !!!
-/// </summary>
+/**
+@brief Create new TextVolume on the surface of ModelObject
+Should not be stopped
+NOTE: EmbossDataBase::font_file doesn't have to be valid !!!
+*/
 class CreateVolumeJob : public Job
 {
     DataCreateVolume m_input;
@@ -108,11 +108,11 @@ public:
     void finalize() override;
 };
 
-/// <summary>
-/// Hold neccessary data to create ModelObject in job
-/// Object is placed on bed under screen coor
-/// OR to center of scene when it is out of bed shape
-/// </summary>
+/**
+@brief Hold neccessary data to create ModelObject in job
+Object is placed on bed under screen coor
+OR to center of scene when it is out of bed shape
+*/
 struct DataCreateObject
 {
     // Hold data about shape
@@ -125,10 +125,10 @@ struct DataCreateObject
     std::optional<float> angle = {};
 };
 
-/// <summary>
-/// Create new TextObject on the platter
-/// Should not be stopped
-/// </summary>
+/**
+@brief Create new TextObject on the platter
+Should not be stopped
+*/
 class CreateObjectJob : public Job
 {
     DataCreateObject m_input;
@@ -141,10 +141,10 @@ public:
     void finalize() override;
 };
 
-/// <summary>
-/// Triangle sources for cut surface from volume
-/// used only with SurfaceVolumeData
-/// </summary>
+/**
+@brief Triangle sources for cut surface from volume
+used only with SurfaceVolumeData
+*/
 struct ModelSource
 {
     // source volumes
@@ -155,11 +155,11 @@ struct ModelSource
 
 using ModelSources = std::vector<ModelSource>;
 
-/// <summary>
-/// Copied triangles from object to be able create mesh for cut surface from
-/// </summary>
-/// <param name="volume">Define embossed volume</param>
-/// <returns>Source data for cut surface from</returns>
+/**
+@brief Copied triangles from object to be able create mesh for cut surface from
+@param volume Define embossed volume
+@return Source data for cut surface from
+*/
 ModelSources create_volume_sources(const Domain::ModelVolume& volume);
 
 struct SurfaceVolumeData
@@ -169,9 +169,9 @@ struct SurfaceVolumeData
     ModelSources sources;
 };
 
-/// <summary>
-/// Hold neccessary data to create(cut) volume from surface object in job
-/// </summary>
+/**
+@brief Hold neccessary data to create(cut) volume from surface object in job
+*/
 struct CreateSurfaceVolumeData : public SurfaceVolumeData
 {
     // Hold data about shape
@@ -184,10 +184,10 @@ struct CreateSurfaceVolumeData : public SurfaceVolumeData
     Domain::ObjectID object_id;
 };
 
-/// <summary>
-/// Cut surface from object and create cutted volume
-/// Should not be stopped
-/// </summary>
+/**
+@brief Cut surface from object and create cutted volume
+Should not be stopped
+*/
 class CreateSurfaceVolumeJob : public Job
 {
     CreateSurfaceVolumeData m_input;
@@ -199,14 +199,14 @@ public:
     void finalize() override;
 };
 
-/// <summary>
-/// Hold neccessary data to update embossed text object in job
-/// </summary>
+/**
+@brief Hold neccessary data to update embossed text object in job
+*/
 struct UpdateSurfaceVolumeData : public UpdateVolumeParams, public SurfaceVolumeData{};
 
-/// <summary>
-/// Update text volume to use surface from object
-/// </summary>
+/**
+@brief Update text volume to use surface from object
+*/
 class UpdateSurfaceVolumeJob : public Job
 {
     UpdateSurfaceVolumeData m_input;
@@ -218,10 +218,10 @@ public:
     void finalize() override;
 };
 
-/// <summary>
-/// Update text shape in existing text volume
-/// Predict that there is only one runnig(not canceled) instance of it
-/// </summary>
+/**
+@brief Update text shape in existing text volume
+Predict that there is only one runnig(not canceled) instance of it
+*/
 class UpdateJob : public Job
 {
     UpdateVolumeParams m_input;
@@ -231,27 +231,27 @@ public:
     // move params to private variable
     explicit UpdateJob(UpdateVolumeParams&& input);
 
-    /// <summary>
-    /// Create new embossed volume by m_input data and store to m_result
-    /// </summary>
-    /// <param name="ctl">Control containing cancel flag</param>
+    /**
+    @brief Create new embossed volume by m_input data and store to m_result
+    @param ctl Control containing cancel flag
+    */
     void process(StopToken& stop) override;
 
-    /// <summary>
-    /// Update volume - change object_id
-    /// </summary>
-    /// <param name="canceled">Was process canceled.
-    /// NOTE: Be carefull it doesn't care about
-    /// time between finished process and started finalize part.</param>
-    /// <param name="">unused</param>
+    /**
+    @brief Update volume - change object_id
+    @param canceled Was process canceled.
+    NOTE: Be carefull it doesn't care about
+    time between finished process and started finalize part.
+    @param  unused
+    */
     void finalize() override;
 
-    /// <summary>
-    /// Update text volume
-    /// </summary>
-    /// <param name="volume">Volume to be updated</param>
-    /// <param name="mesh">New Triangle mesh for volume</param>
-    /// <param name="base">Data to write into volume</param>
+    /**
+    @brief Update text volume
+    @param volume Volume to be updated
+    @param mesh New Triangle mesh for volume
+    @param base Data to write into volume
+    */
     static void update_volume(Domain::ModelVolume& volume, Domain::TriangleMesh&& mesh, const Biz::Emboss::BaseData& base);
 };
 
@@ -341,9 +341,9 @@ bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& v
 
 // Private implementation for create volume and objects jobs
 namespace {
-/// <summary>
-/// Assert check of inputs data
-/// </summary>
+/**
+@brief Assert check of inputs data
+*/
 bool check(const DataCreateVolume& input, bool is_main_thread = false);
 bool check(const DataCreateObject& input);
 bool check(const SurfaceVolumeData& input);
@@ -370,71 +370,71 @@ Domain::TriangleMesh try_create_mesh(BaseData& input, const Fnc& was_canceled);
 template <typename Fnc>
 Domain::TriangleMesh create_mesh(BaseData& input, const Fnc& was_canceled);
 
-/// <summary>
-/// Create default mesh for embossed text
-/// </summary>
-/// <returns>Not empty model(index trinagle set - its)</returns>
+/**
+@brief Create default mesh for embossed text
+@return Not empty model(index trinagle set - its)
+*/
 Domain::TriangleMesh create_default_mesh();
 
-/// <summary>
-/// Must be called on main thread
-/// </summary>
-/// <param name="mesh">New mesh data</param>
-/// <param name="data">Text configuration, ...,
-/// Note: NOT CONST -> contain Project interactor to change on the poroject
-/// containing updated volume</param>
+/**
+@brief Must be called on main thread
+@param mesh New mesh data
+@param data Text configuration, ...,
+Note: NOT CONST -> contain Project interactor to change on the poroject
+containing updated volume
+*/
 void final_update_volume(Domain::TriangleMesh&& mesh, UpdateVolumeParams& data);
 
-/// <summary>
-/// Add new volume to object
-/// </summary>
-/// <param name="mesh">triangles of new volume</param>
-/// <param name="project_id">Project containing object</param>
-/// <param name="object_id">Object where to add volume</param>
-/// <param name="type">Type of new volume</param>
-/// <param name="trmat">Transformation of volume inside of object</param>
-/// <param name="data">Text configuration and New VolumeName</param>
-/// <param name="gizmo">Gizmo to open</param>
+/**
+@brief Add new volume to object
+@param mesh triangles of new volume
+@param project_id Project containing object
+@param object_id Object where to add volume
+@param type Type of new volume
+@param trmat Transformation of volume inside of object
+@param data Text configuration and New VolumeName
+@param gizmo Gizmo to open
+*/
 void
 create_volume(Domain::TriangleMesh&& mesh, const Domain::SelectionId& project_id, const Domain::ObjectID& object_id, const Domain::ModelVolumeType type, const std::optional<Domain::Transform3d>& trmat, const BaseData& data, int /*GLGizmosManager::EType*/ gizmo);
 
-/// <summary>
-/// Create projection for cut surface from mesh
-/// </summary>
-/// <param name="tr">Volume transformation in object</param>
-/// <param name="shape_scale">Convert shape to milimeters</param>
-/// <param name="z_range">Bounding box 3d of model volume for projection ranges</param>
-/// <returns>Orthogonal cut_projection</returns>
+/**
+@brief Create projection for cut surface from mesh
+@param tr Volume transformation in object
+@param shape_scale Convert shape to milimeters
+@param z_range Bounding box 3d of model volume for projection ranges
+@return Orthogonal cut_projection
+*/
 OrthoProject create_projection_for_cut(Domain::Transform3d tr, double shape_scale, const std::pair<float, float>& z_range);
 
-/// <summary>
-/// Create tranformation for emboss Cutted surface
-/// </summary>
-/// <param name="is_outside">True .. raise, False .. engrave</param>
-/// <param name="emboss">Depth of embossing</param>
-/// <param name="tr">Text voliume transformation inside object</param>
-/// <param name="cut">Cutted surface from model</param>
-/// <returns>Projection</returns>
+/**
+@brief Create tranformation for emboss Cutted surface
+@param is_outside True .. raise, False .. engrave
+@param emboss Depth of embossing
+@param tr Text voliume transformation inside object
+@param cut Cutted surface from model
+@return Projection
+*/
 OrthoProject3d
 create_emboss_projection(bool is_outside, float emboss, Domain::Transform3d tr, Biz::CGAL::Algorithms::SurfaceCut& cut);
 
-/// <summary>
-/// Cut surface into triangle mesh
-/// </summary>
-/// <param name="base">(can't be const - cache of font)</param>
-/// <param name="input2">SurfaceVolume data</param>
-/// <param name="was_canceled">Check to interupt execution</param>
-/// <returns>Extruded object from cuted surace</returns>
+/**
+@brief Cut surface into triangle mesh
+@param base (can't be const - cache of font)
+@param input2 SurfaceVolume data
+@param was_canceled Check to interupt execution
+@return Extruded object from cuted surace
+*/
 template <typename Fnc>
 Domain::TriangleMesh cut_surface(/*const*/ BaseData& input1, const SurfaceVolumeData& input2, const Fnc& was_canceled
 );
 
-/// <summary>
-/// Copied triangles from object to be able create mesh for cut surface from
-/// </summary>
-/// <param name="volumes">Source object volumes for cut surface from</param>
-/// <param name="text_volume_id">Source volume id</param>
-/// <returns>Source data for cut surface from</returns>
+/**
+@brief Copied triangles from object to be able create mesh for cut surface from
+@param volumes Source object volumes for cut surface from
+@param text_volume_id Source volume id
+@return Source data for cut surface from
+*/
 ModelSources create_sources(const Domain::ModelVolumePtrs& volumes, std::optional<size_t> text_volume_id = {});
 
 void create_message(const std::string& message); // only in finalize
@@ -1088,12 +1088,12 @@ OrthoProject3d create_emboss_projection(bool is_outside, float emboss, Domain::T
     return OrthoProject3d(from_front_to_back);
 }
 
-/// <summary>
-/// Check whether transformation matrix contains odd number of mirroring.
-/// NOTE: In code is sometime function named is_left_handed
-/// </summary>
-/// <param name="transform">Transformation to check</param>
-/// <returns>Is positive determinant</returns>
+/**
+@brief Check whether transformation matrix contains odd number of mirroring.
+NOTE: In code is sometime function named is_left_handed
+@param transform Transformation to check
+@return Is positive determinant
+*/
 bool has_reflection(const Domain::Transform3d& transform) { return transform.linear().determinant() < 0; }
 
 indexed_triangle_set

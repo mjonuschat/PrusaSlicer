@@ -237,16 +237,16 @@ int get_repaired_errors_count(const Domain::ModelObject* object, const int vol_i
 
 
 
-/// <summary>
-/// Compare TriangleMeshes by Bounding boxes (mainly for sort)
-/// From Front(Z) Upper(Y) TopLeft(X) corner.
-/// 1. Seraparate group not overlaped i Z axis
-/// 2. Seraparate group not overlaped i Y axis
-/// 3. Start earlier in X (More on left side)
-/// </summary>
-/// <param name="triangle_mesh1">Compare from</param>
-/// <param name="triangle_mesh2">Compare to</param>
-/// <returns>True when triangle mesh 1 is closer, upper or lefter than triangle mesh 2 other wise false</returns>
+/**
+@brief Compare TriangleMeshes by Bounding boxes (mainly for sort)
+From Front(Z) Upper(Y) TopLeft(X) corner.
+1. Seraparate group not overlaped i Z axis
+2. Seraparate group not overlaped i Y axis
+3. Start earlier in X (More on left side)
+@param triangle_mesh1 Compare from
+@param triangle_mesh2 Compare to
+@return True when triangle mesh 1 is closer, upper or lefter than triangle mesh 2 other wise false
+*/
 static bool is_front_up_left(const TriangleMesh &trinagle_mesh1, const TriangleMesh &triangle_mesh2)
 {
     // stats form t1

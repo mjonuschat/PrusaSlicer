@@ -19,12 +19,12 @@
 
 namespace Slic3r::Biz::Emboss {
 
-/// <summary>
-/// Provide ability to lazy create shape for Embossing
-/// Text have to load font file and create shapes for glyphs
-/// SVG have to load SVG file and create shapes for paths
-/// Different store into volume
-/// </summary>
+/**
+@brief Provide ability to lazy create shape for Embossing
+Text have to load font file and create shapes for glyphs
+SVG have to load SVG file and create shapes for paths
+Different store into volume
+*/
 class ShapeProvider
 {
 public:
@@ -34,40 +34,39 @@ public:
         return m_shape.projection;
     }
 
-    /// <summary>
-    /// Create shape
-    /// e.g. Text extract glyphs from font file
-    /// Not 'const' function because it could modify shape
-    /// </summary>
+    /**
+    @brief Create shape
+    e.g. Text extract glyphs from font file
+    Not 'const' function because it could modify shape
+    */
     virtual Domain::EmbossShape& get_shape()
     {
         return m_shape;
     }
 
-    /// <summary>
-    /// Write data how to reconstruct shape to volume
-    /// </summary>
-    /// <param name="volume">Data object for store emboss params</param>
+    /**
+    @brief Write data how to reconstruct shape to volume
+    @param volume Data object for store emboss params
+    */
     virtual void write(Domain::ModelVolume& volume) const
     {
         volume.emboss_shape = m_shape;
     }
 
-    /// <summary>
-    /// Used only with text for embossing per glyph
-    /// </summary>
-    /// <param name="tr">Embossed volume final transformation in world</param>
-    /// <param name="vols">Volumes to be sliced to text lines</param>
-    /// <returns>True on succes otherwise False(Per glyph shoud be disabled)</returns>
+    /**
+    @brief Used only with text for embossing per glyph
+    @param tr Embossed volume final transformation in world
+    @param vols Volumes to be sliced to text lines
+    @return True on succes otherwise False(Per glyph shoud be disabled)
+    */
     virtual bool create_text_lines(const Domain::Transform3d& tr, const Domain::ModelVolumePtrs& vols)
     {
         return false;
     }
 
-    /// <summary>
-    /// Create text lines when empty
-    /// </summary>
-    /// <returns></returns>
+    /**
+    @brief Create text lines when empty
+    */
     virtual const Biz::Emboss::TextLines& get_text_lines()
     {
         return m_text_lines;
@@ -111,9 +110,9 @@ struct BaseData
     std::string volume_name;
 };
 
-/// <summary>
-/// shorten params for start_crate_volume functions
-/// </summary>
+/**
+@brief shorten params for start_crate_volume functions
+*/
 struct CreateVolumeParams
 {
     // base input data for job
@@ -129,22 +128,22 @@ struct CreateVolumeParams
     std::optional<float> angle = {};
 };
 
-/// <summary>
-/// Create new volume on position of mouse cursor
-/// </summary>
-/// <param name="input">Cantain all needed data for start creation job</param>
-/// <param name="pick_ray">Ray into scene given by coordinate on screen</param>
-/// <param name="picks">Scene Node with intersection of picked ray</param>
-/// <returns>True on success otherwise False</returns>
+/**
+@brief Create new volume on position of mouse cursor
+@param input Cantain all needed data for start creation job
+@param pick_ray Ray into scene given by coordinate on screen
+@param picks Scene Node with intersection of picked ray
+@return True on success otherwise False
+*/
 bool start_create_volume(
     CreateVolumeParams& input,
     const App::Scene::Ray& pick_ray,
     const App::Scene::NodePickResults& picks
 );
 
-/// <summary>
-/// Parameters for call start_update_volume function
-/// </summary>
+/**
+@brief Parameters for call start_update_volume function
+*/
 struct UpdateVolumeParams
 {
     // base input data for job
@@ -159,12 +158,12 @@ struct UpdateVolumeParams
     std::optional<Domain::ModelVolumeType> volume_type = std::nullopt;
 };
 
-/// <summary>
-/// Start job for update embossed volume
-/// </summary>
-/// <param name="data">define update data</param>
-/// <param name="volume">volume to update</param>
-/// <returns>True when start job otherwise false</returns>
+/**
+@brief Start job for update embossed volume
+@param data define update data
+@param volume volume to update
+@return True when start job otherwise false
+*/
 bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& volume);
 } // namespace Slic3r::Biz::Emboss
 

@@ -8,9 +8,9 @@
 
 namespace Slic3r::sla {
 
-/// <summary>
-/// Configure how to prepare data for SupportPointGenerator
-/// </summary>
+/**
+@brief Configure how to prepare data for SupportPointGenerator
+*/
 struct PrepareSupportConfig
 {
     // Size of the steps between discretized samples on the overhanging part of layer
@@ -36,11 +36,11 @@ struct PrepareSupportConfig
     float minimal_bounding_sphere_radius = 0.2f; // [in mm]
 };
 
-/// <summary>
-/// Configuration DTO 
-/// Define where is neccessary to put support point on island
-/// Mainly created by SampleConfigFactory
-/// </summary>
+/**
+@brief Configuration DTO
+Define where is neccessary to put support point on island
+Mainly created by SampleConfigFactory
+*/
 struct SampleConfig
 {
     // Maximal distance of support points on thin island's part

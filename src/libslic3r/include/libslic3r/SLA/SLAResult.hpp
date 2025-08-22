@@ -15,10 +15,10 @@
 namespace Slic3r::Biz::Slicing {
 
 namespace Sla {
-/// <summary>
-/// Statistic data about slicing
-/// Estimated print time, material consumed, etc.
-/// </summary>
+/**
+@brief Statistic data about slicing
+Estimated print time, material consumed, etc.
+*/
 struct PrintStatistics
 {
     double estimated_print_time = 0.;
@@ -53,11 +53,11 @@ enum class ResultType
     Files     // Last steps prepared files for store
 };
 
-/// <summary>
-/// Issue found on backend during slicing
-/// NOTE: originaly it was divided on CRITICAL and PrintStateBase::WarningLevel::NON_CRITICAL 
-/// now use function is_critical()
-/// </summary>
+/**
+@brief Issue found on backend during slicing
+NOTE: originaly it was divided on CRITICAL and PrintStateBase::WarningLevel::NON_CRITICAL
+now use function is_critical()
+*/
 enum class ObjectIssueType
 { // issue are chronologicaly orderd and grouped by slice step - for clarity
     BadCGALBooleans,     // CSG mesh is not egligible for proper CGAL booleans!

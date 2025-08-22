@@ -13,10 +13,10 @@
 
 namespace Slic3r {
 
-/// <summary>
-/// Collection of static function
-/// to create normals
-/// </summary>
+/**
+@brief Collection of static function
+to create normals
+*/
 class NormalUtils
 {
 public:
@@ -30,29 +30,29 @@ public:
         NelsonMaxWeighted
     };
 
-    /// <summary>
-    /// Create normal for triangle defined by indices from vertices
-    /// </summary>
-    /// <param name="indices">index into vertices</param>
-    /// <param name="vertices">vector of vertices</param>
-    /// <returns>normal to triangle(normalized to size 1)</returns>
+    /**
+    @brief Create normal for triangle defined by indices from vertices
+    @param indices index into vertices
+    @param vertices vector of vertices
+    @return normal to triangle(normalized to size 1)
+    */
     static Normal create_triangle_normal(
         const stl_triangle_vertex_indices &indices,
         const std::vector<stl_vertex> &    vertices);
 
-    /// <summary>
-    /// Create normals for each vertices
-    /// </summary>
-    /// <param name="its">indices and vertices</param>
-    /// <returns>Vector of normals</returns>
+    /**
+    @brief Create normals for each vertices
+    @param its indices and vertices
+    @return Vector of normals
+    */
     static Normals create_triangle_normals(const indexed_triangle_set &its);
 
-    /// <summary>
-    /// Create normals for each vertex by averaging neighbor triangles normal
-    /// </summary>
-    /// <param name="its">Triangle indices and vertices</param>
-    /// <param name="type">Type of calculation normals</param>
-    /// <returns>Normal for each vertex</returns>
+    /**
+    @brief Create normals for each vertex by averaging neighbor triangles normal
+    @param its Triangle indices and vertices
+    @param type Type of calculation normals
+    @return Normal for each vertex
+    */
     static Normals create_normals(
         const indexed_triangle_set &its,
         VertexNormalType type = VertexNormalType::NelsonMaxWeighted);
@@ -60,13 +60,13 @@ public:
     static Normals create_normals_angle_weighted(const indexed_triangle_set &its);
     static Normals create_normals_nelson_weighted(const indexed_triangle_set &its);
 
-    /// <summary>
-    /// Calculate angle of trinagle side.
-    /// </summary>
-    /// <param name="i">index to indices, define angle point</param>
-    /// <param name="indice">address to vertices</param>
-    /// <param name="vertices">vertices data</param>
-    /// <returns>Angle [in radian]</returns>
+    /**
+    @brief Calculate angle of trinagle side.
+    @param i index to indices, define angle point
+    @param indice address to vertices
+    @param vertices vertices data
+    @return Angle [in radian]
+    */
     static float indice_angle(int i, const std::vector<stl_vertex> &vertices);
 };
 

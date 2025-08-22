@@ -6,9 +6,9 @@
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
 
-/// <summary>
-/// External Cereal serialization of ExPolygons
-/// </summary>
+/**
+@brief External Cereal serialization of ExPolygons
+*/
 
 // Serialization through the Cereal library
 #include <cereal/access.hpp>

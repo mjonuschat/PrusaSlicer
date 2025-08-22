@@ -20,9 +20,9 @@
 // Helper function to work with nano svg
 namespace Slic3r {
 
-/// <summary>
-/// Paramreters for conversion curve from SVG to lines in Polygon
-/// </summary>
+/**
+@brief Paramreters for conversion curve from SVG to lines in Polygon
+*/
 struct NSVGLineParams
 {
     // Smaller will divide curve to more lines
@@ -51,16 +51,16 @@ struct NSVGLineParams
     {}
 };
 
-/// <summary>
-/// Convert .svg opened by nanoSvg to shapes stored in expolygons with ids
-/// </summary>
-/// <param name="image">Parsed svg file by NanoSvg</param>
-/// <param name="tesselation_tolerance">Smaller will divide curve to more lines
-/// NOTE: Value is in image scale</param>
-/// <param name="max_level">Maximal depth for conversion curve to lines</param>
-/// <param name="scale">Multiplicator of point coors
-/// NOTE: Every point coor from image(float) is multiplied by scale and rounded to integer</param>
-/// <returns>Shapes from svg image - fill + stroke</returns>
+/**
+@brief Convert .svg opened by nanoSvg to shapes stored in expolygons with ids
+@param image Parsed svg file by NanoSvg
+@param tesselation_tolerance Smaller will divide curve to more lines
+NOTE: Value is in image scale
+@param max_level Maximal depth for conversion curve to lines
+@param scale Multiplicator of point coors
+NOTE: Every point coor from image(float) is multiplied by scale and rounded to integer
+@return Shapes from svg image - fill + stroke
+*/
 Domain::ExPolygonsWithIds create_shape_with_ids(const NSVGimage &image, const NSVGLineParams &param);
 
 // help functions - prepare to be tested
@@ -77,11 +77,11 @@ NSVGimage_ptr nsvgParseFromFile(const std::string &svg_file_path, const char *un
 NSVGimage_ptr nsvgParse(const std::string& file_data, const char *units = "mm", float dpi = 96.0f);
 NSVGimage *init_image(Domain::EmbossShape::SvgFile &svg_file);
 
-/// <summary>
-/// Iterate over shapes and calculate count
-/// </summary>
-/// <param name="image">Contain pointer to first shape</param>
-/// <returns>Count of shapes</returns>
+/**
+@brief Iterate over shapes and calculate count
+@param image Contain pointer to first shape
+@return Count of shapes
+*/
 size_t get_shapes_count(const NSVGimage &image);
 
 //void save(const NSVGimage &image, std::ostream &data);

@@ -95,10 +95,10 @@ bool polygons_match(const Polygon &l, const Polygon &r);
 Polygon make_circle(double radius, double error);
 Polygon make_circle_num_segments(double radius, size_t num_segments);
 
-/// <summary>
-/// Define point laying on polygon
-/// keep index of polygon line and point coordinate
-/// </summary>
+/**
+@brief Define point laying on polygon
+keep index of polygon line and point coordinate
+*/
 struct PolygonPoint
 {
     // index of line inside of polygon

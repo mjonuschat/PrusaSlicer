@@ -23,21 +23,21 @@ namespace Slic3r::sla {
 std::vector<Domain::Vec2f> create_default_support_curve();
 SampleConfig create_default_island_configuration(float head_diameter_in_mm);
 
-/// <summary>
-/// Configuration for automatic support placement
-/// </summary>
+/**
+@brief Configuration for automatic support placement
+*/
 struct SupportPointGeneratorConfig{
-    /// <summary>
-    /// 0 mean only one support point for each island
-    /// lower than one mean less amount of support points
-    /// 1 mean fine tuned sampling
-    /// more than one mean bigger amout of support points
-    /// </summary>
+    /**
+    @brief 0 mean only one support point for each island
+    lower than one mean less amount of support points
+    1 mean fine tuned sampling
+    more than one mean bigger amout of support points
+    */
     float density_relative{1.f};
 
-    /// <summary>
-    /// Size range for support point interface (head)
-    /// </summary>
+    /**
+    @brief Size range for support point interface (head)
+    */
     float head_diameter = 0.4f; // [in mm]
 
     // maximal distance to nearest support point(define radiuses per layer)
@@ -105,9 +105,9 @@ struct LayerPart {
     Peninsulas peninsulas;
 };
 
-/// <summary>
-/// Extend support point with information from layer
-/// </summary>
+/**
+@brief Extend support point with information from layer
+*/
 struct LayerSupportPoint: public Domain::SLA::SupportPoint
 {
     // 2d coordinate on layer
@@ -128,9 +128,9 @@ struct LayerSupportPoint: public Domain::SLA::SupportPoint
 };
 using LayerSupportPoints = std::vector<LayerSupportPoint>;
 
-/// <summary>
-/// One slice divided into 
-/// </summary>
+/**
+@brief One slice divided into
+*/
 struct Layer
 {
     // Absolute distance from Zero - copy value from heights<float>
@@ -142,10 +142,10 @@ struct Layer
 };
 using Layers = std::vector<Layer>;
 
-/// <summary>
-/// Keep state of Support Point generation
-/// Used for resampling with different configuration
-/// </summary>
+/**
+@brief Keep state of Support Point generation
+Used for resampling with different configuration
+*/
 struct SupportPointGeneratorData
 {
     // Input slices of mesh
@@ -176,18 +176,18 @@ struct PrepareGeneratorDataConfig
     Domain::coord_t peninsula_width = scale_(2.); // [in scaled mm]
 };
 
-/// <summary>
-/// Prepare data for generate support points
-/// Used for interactive resampling to store permanent data between configuration changes.,
-/// Everything which could be prepared are stored into result.
-/// Need to regenerate on mesh change(Should be connected with ObjectId) OR change of slicing heights
-/// </summary>
-/// <param name="slices">Countour cut from mesh</param>
-/// <param name="heights">Heights of the slices - Same size as slices</param>
-/// <param name="config">Preparation parameters</param>
-/// <param name="throw_on_cancel">Call in meanwhile to check cancel event</param>
-/// <param name="statusfn">Say progress of generation into gui</param>
-/// <returns>Data prepared for generate support points</returns>
+/**
+@brief Prepare data for generate support points
+Used for interactive resampling to store permanent data between configuration changes.,
+Everything which could be prepared are stored into result.
+Need to regenerate on mesh change(Should be connected with ObjectId) OR change of slicing heights
+@param slices Countour cut from mesh
+@param heights Heights of the slices - Same size as slices
+@param config Preparation parameters
+@param throw_on_cancel Call in meanwhile to check cancel event
+@param statusfn Say progress of generation into gui
+@return Data prepared for generate support points
+*/
 SupportPointGeneratorData prepare_generator_data(
     std::vector<Domain::ExPolygons> &&slices,
     const std::vector<float> &heights,
@@ -196,14 +196,14 @@ SupportPointGeneratorData prepare_generator_data(
     StatusFunction statusfn = [](int) {}
 );
 
-/// <summary>
-/// Generate support points on islands by configuration parameters
-/// </summary>
-/// <param name="data">Preprocessed data needed for sampling</param>
-/// <param name="config">Define density of samples</param>
-/// <param name="throw_on_cancel">Call in meanwhile to check cancel event</param>
-/// <param name="statusfn">Progress of generation into gui</param>
-/// <returns>Generated support points</returns>
+/**
+@brief Generate support points on islands by configuration parameters
+@param data Preprocessed data needed for sampling
+@param config Define density of samples
+@param throw_on_cancel Call in meanwhile to check cancel event
+@param statusfn Progress of generation into gui
+@return Generated support points
+*/
 LayerSupportPoints generate_support_points(
     const SupportPointGeneratorData &data,
     const SupportPointGeneratorConfig &config,
@@ -216,13 +216,13 @@ LayerSupportPoints generate_support_points(
 namespace Slic3r{
 class AABBMesh;
 namespace sla {
-/// <summary>
-/// Move support points on surface of mesh
-/// </summary>
-/// <param name="points">Support points to move on surface</param>
-/// <param name="mesh">Define surface for move points</param>
-/// <param name="throw_on_cancel">Call in meanwhile to check cancel event</param>
-/// <returns>Support points laying on mesh surface</returns>
+/**
+@brief Move support points on surface of mesh
+@param points Support points to move on surface
+@param mesh Define surface for move points
+@param throw_on_cancel Call in meanwhile to check cancel event
+@return Support points laying on mesh surface
+*/
 Domain::SLA::SupportPoints move_on_mesh_surface(
     const LayerSupportPoints &points,
     const AABBMesh &mesh,

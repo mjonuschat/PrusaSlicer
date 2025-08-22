@@ -126,20 +126,20 @@ inline std::string to_string(const Vec3d   &pt) { return std::string("[") + floa
 std::vector<Vec3f> transform(const std::vector<Vec3f>& points, const Transform3f& t);
 Pointf3s transform(const Pointf3s& points, const Transform3d& t);
 
-/// <summary>
-/// Check whether transformation matrix contains odd number of mirroring.
-/// NOTE: In code is sometime function named is_left_handed
-/// </summary>
-/// <param name="transform">Transformation to check</param>
-/// <returns>Is positive determinant</returns>
+/**
+@brief Check whether transformation matrix contains odd number of mirroring.
+NOTE: In code is sometime function named is_left_handed
+@param transform Transformation to check
+@return Is positive determinant
+*/
 inline bool has_reflection(const Transform3d &transform) { return transform.matrix().determinant() < 0; }
 
-/// <summary>
-/// Getter on base of transformation matrix
-/// </summary>
-/// <param name="index">column index</param>
-/// <param name="transform">source transformation</param>
-/// <returns>Base of transformation matrix</returns>
+/**
+@brief Getter on base of transformation matrix
+@param index column index
+@param transform source transformation
+@return Base of transformation matrix
+*/
 inline const Vec3d get_base(unsigned index, const Transform3d &transform) { return transform.linear().col(index); }
 inline const Vec3d get_x_base(const Transform3d &transform) { return get_base(0, transform); }
 inline const Vec3d get_y_base(const Transform3d &transform) { return get_base(1, transform); }

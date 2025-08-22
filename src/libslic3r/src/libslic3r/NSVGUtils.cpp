@@ -333,18 +333,18 @@ bool is_line(const float* p, float precision)
         && Domain::is_approx(p[5], p[7] - dy_3, precision);
 }
 
-/// <summary>
-/// Convert cubic curve to lines
-/// Inspired by nanosvgrast.h function nsvgRasterize -> nsvg__flattenShape -> nsvg__flattenCubicBez
-/// https://github.com/memononen/nanosvg/blob/f0a3e1034dd22e2e87e5db22401e44998383124e/src/nanosvgrast.h#L335
-/// </summary>
-/// <param name="polygon">Result points</param>
-/// <param name="tessTol">Tesselation tolerance</param>
-/// <param name="p1">Curve point</param>
-/// <param name="p2">Curve point</param>
-/// <param name="p3">Curve point</param>
-/// <param name="p4">Curve point</param>
-/// <param name="level">Actual depth of recursion</param>
+/**
+@brief Convert cubic curve to lines
+Inspired by nanosvgrast.h function nsvgRasterize -> nsvg__flattenShape -> nsvg__flattenCubicBez
+https://github.com/memononen/nanosvg/blob/f0a3e1034dd22e2e87e5db22401e44998383124e/src/nanosvgrast.h#L335
+@param polygon Result points
+@param tessTol Tesselation tolerance
+@param p1 Curve point
+@param p2 Curve point
+@param p3 Curve point
+@param p4 Curve point
+@param level Actual depth of recursion
+*/
 void flatten_cubic_bez(
     Domain::Points& points,
     float tessTol,

@@ -19,10 +19,10 @@
 #include "Slic3r/Domain/EmbossShape.hpp"
 
 namespace Slic3r::Biz::Emboss {
-/// <summary>
-/// Manage Emboss text preset(style of the embossing)
-/// Cache current state of preset
-/// </summary>
+/**
+@brief Manage Emboss text preset(style of the embossing)
+Cache current state of preset
+*/
 class TextPresetManager
 {
 public:
@@ -36,52 +36,52 @@ public:
         const std::string& cache_path = ""
     );
 
-    /// <summary>
-    /// Load font presets from file
-    /// Also select actual activ font
-    /// </summary>
-    /// <param name="app_config">Application configuration loaded from file "PrusaSlicer.ini"
-    /// + cfg is stored to privat variable</param>
+    /**
+    @brief Load font presets from file
+    Also select actual activ font
+    @param app_config Application configuration loaded from file "PrusaSlicer.ini"
+    + cfg is stored to privat variable
+    */
     void init();
 
-    /// <summary>
-    /// Write font list into AppConfig
-    /// </summary>
-    /// <param name="item_to_store">Configuration</param>
-    /// <param name="use_modification">When true cache state will be used for store</param>
-    /// <param name="store_active_index">When treu also store current activ index</param>
-    /// <returns>True on succes otherwise False.</returns>
+    /**
+    @brief Write font list into AppConfig
+    @param item_to_store Configuration
+    @param use_modification When true cache state will be used for store
+    @param store_active_index When treu also store current activ index
+    @return True on succes otherwise False.
+    */
     bool store_presets(bool use_modification = true, bool store_active_index = true);
 
     void save_preset_as();
     void rename_preset();
     bool delete_preset();
 
-    /// <summary>
-    /// Change order of preset item in m_presets.
-    /// Fix selected font index when (i1 || i2) == m_font_selected
-    /// </summary>
-    /// <param name="i1">First index to m_presets</param>
-    /// <param name="i2">Second index to m_presets</param>
+    /**
+    @brief Change order of preset item in m_presets.
+    Fix selected font index when (i1 || i2) == m_font_selected
+    @param i1 First index to m_presets
+    @param i2 Second index to m_presets
+    */
     void swap(size_t i1, size_t i2);
 
-    /// <summary>
-    /// Discard changes in current preset
-    /// When no activ preset use last used OR first loadable
-    /// </summary>
+    /**
+    @brief Discard changes in current preset
+    When no activ preset use last used OR first loadable
+    */
     void discard_preset_changes();
 
-    /// <summary>
-    /// load some valid preset
-    /// </summary>
+    /**
+    @brief load some valid preset
+    */
     void load_valid_preset();
 
-    /// <summary>
-    /// Change current preset
-    /// When font can't load, roll back current preset
-    /// </summary>
-    /// <param name="preset_index">New preset index(from m_presets range)</param>
-    /// <returns>True on succes. False on fail load font</returns>
+    /**
+    @brief Change current preset
+    When font can't load, roll back current preset
+    @param preset_index New preset index(from m_presets range)
+    @return True on succes. False on fail load font
+    */
     bool load_preset(size_t preset_index);
     // load font preset not stored in list
     struct Preset;
@@ -146,10 +146,9 @@ public:
         return m_preset_cache.preset_index != std::numeric_limits<size_t>::max();
     }
 
-    /// <summary>
-    /// check whether current style differ to selected
-    /// </summary>
-    /// <returns></returns>
+    /**
+    @brief check whether current style differ to selected
+    */
     bool is_font_changed() const;
 
     bool is_unique_style_name(const std::string& name) const;
@@ -161,11 +160,11 @@ public:
     // initialize font range by unique symbols in text
     ImFont* create_imgui_font(const std::string& text, double scale);
 
-    /// <summary>
-    /// Initialization texture with rendered font style
-    /// </summary>
-    /// <param name="max_size">Maximal width and height of one style texture</param>
-    /// <param name="text">Text to render by style</param>
+    /**
+    @brief Initialization texture with rendered font style
+    @param max_size Maximal width and height of one style texture
+    @param text Text to render by style
+    */
     void init_style_images(const Domain::Index2& max_size, const std::string& text);
     void free_style_images();
 
@@ -174,9 +173,9 @@ public:
 
     std::vector<std::string> get_presets_names() const;
 
-    /// <summary>
-    /// Describe image in GPU to show settings of style
-    /// </summary>
+    /**
+    @brief Describe image in GPU to show settings of style
+    */
     struct PresetImage
     {
         void* texture_id = nullptr; // GLuint
@@ -187,10 +186,10 @@ public:
         Domain::Point offset = Domain::Point(0, 0);
     };
 
-    /// <summary>
-    /// All connected with one style
-    /// keep temporary data and caches for style
-    /// </summary>
+    /**
+    @brief All connected with one style
+    keep temporary data and caches for style
+    */
     struct Preset
     {
         Domain::EmbossStyle emboss_style;
@@ -245,12 +244,12 @@ private:
     const ImWchar* m_imgui_init_glyph_range;
     std::string m_cache_path;
 
-    /// <summary>
-    /// Cache data from style to reduce amount of:
-    /// 1) loading font from file
-    /// 2) Create atlas of symbols for imgui
-    /// 3) Keep loaded(and modified by style) glyphs from font
-    /// </summary>
+    /**
+    @brief Cache data from style to reduce amount of:
+    1) loading font from file
+    2) Create atlas of symbols for imgui
+    3) Keep loaded(and modified by style) glyphs from font
+    */
     struct PresetCache
     {
         // share font file data with emboss job thread
@@ -275,9 +274,9 @@ private:
     // Privat member
     PresetsObj m_data;
 
-    /// <summary>
-    /// Keep data needed to create Font Preset Images in Job
-    /// </summary>
+    /**
+    @brief Keep data needed to create Font Preset Images in Job
+    */
     struct PresetImagesData
     {
         struct Item
@@ -296,9 +295,9 @@ private:
         // Text to render
         std::string text;
 
-        /// <summary>
-        /// Result of job
-        /// </summary>
+        /**
+        @brief Result of job
+        */
         struct PresetImages
         {
             // vector of inputs
