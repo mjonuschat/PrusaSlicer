@@ -101,7 +101,7 @@ void BedRenderUpdater::update_positions()
                 if (inst == nullptr)
                     return;
 
-                n.set_world_transform(inst->matrix().matrix());
+                n.set_world_transform(inst->matrix());
             }
         }
     }, true);
@@ -215,7 +215,7 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
                 if (is_active) {
                     Transform3d scale = Transform3d::Identity();
                     scale.scale(std::min(1.0, 1.0 / cam.zoom() * 10.0));
-                    n.set_local_transform(scale.matrix());
+                    n.set_local_transform(scale);
                 }
             }
         }

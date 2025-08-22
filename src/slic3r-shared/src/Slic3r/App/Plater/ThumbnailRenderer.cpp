@@ -153,7 +153,7 @@ Images ThumbnailRenderer::generate_bed_thumbnails(
     Scene::visit(scene.root(), [&](const Scene::Node& n) {
         if (n.has_raycast_component())
             world_aabb.extend(
-                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+                n.raycast_component()->world_bounding_box(n.world_transform().matrix()).cast<double>()
             );
     });
 
@@ -218,7 +218,7 @@ Images ThumbnailRenderer::generate_object_thumbnails(
     Scene::visit(scene.root(), [&](const Scene::Node& n) {
         if (n.has_raycast_component())
             world_aabb.extend(
-                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+                n.raycast_component()->world_bounding_box(n.world_transform().matrix()).cast<double>()
             );
     });
 
@@ -261,7 +261,7 @@ Images ThumbnailRenderer::generate_3mf_thumbnails(
             && tag->volume_type == Domain::ModelVolumeType::MODEL_PART
             && n.has_raycast_component())
             world_aabb.extend(
-                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+                n.raycast_component()->world_bounding_box(n.world_transform().matrix()).cast<double>()
             );
     });
 
@@ -310,7 +310,7 @@ Images ThumbnailRenderer::generate_gcode_thumbnails(
             && tag->volume_type == Domain::ModelVolumeType::MODEL_PART
             && n.has_raycast_component())
             world_aabb.extend(
-                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+                n.raycast_component()->world_bounding_box(n.world_transform().matrix()).cast<double>()
             );
     });
 

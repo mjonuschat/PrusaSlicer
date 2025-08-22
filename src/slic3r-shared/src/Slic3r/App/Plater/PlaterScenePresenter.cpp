@@ -300,7 +300,7 @@ void PlaterScenePresenter::on_scene_selection_changed(
         visit(*n, [&](const Scene::Node& ni) {
             auto* collision = ni.raycast_component();
             if (collision != nullptr) {
-                auto wbb = collision->world_bounding_box(ni.world_transform());
+                auto wbb = collision->world_bounding_box(ni.world_transform().matrix());
                 for (size_t i = 0; i < 8; i++)
                     bounds.extend(wbb.corner(static_cast<decltype(wbb)::CornerType>(i)));
             }
@@ -325,7 +325,7 @@ void PlaterScenePresenter::on_scene_selection_changed(
             // xform.block<1, 3>(0, 3) = bounds.center().cast<double>();
             xform.col(3).head(3) = bounds.center().cast<double>();
         }
-        proj.selection_root().set_world_transform(xform);
+        proj.selection_root().set_world_transform(Scene::Transform{xform});
     }
 }
 
@@ -510,7 +510,7 @@ void PlaterScenePresenter::on_instance_transformed(
             for (const auto& e : elements) {
                 if (t->instance_id == e.instance_id) {
                     const auto* inst = proj.find_instance_by_id(e.object_id, e.instance_id);
-                    n.set_local_transform(inst->get_matrix().matrix());
+                    n.set_local_transform(Scene::Transform{inst->get_matrix()});
                 }
             }
         } else {
@@ -610,7 +610,7 @@ void PlaterScenePresenter::on_volume_transformed(
         for (const auto& e : elements) {
             if (t->volume_id == e.volume_id) {
                 const auto* vol = proj.find_volume_by_id(e.object_id, e.volume_id);
-                n.set_local_transform(vol->get_matrix().matrix());
+                n.set_local_transform(vol->get_matrix());
                 if (vol->is_model_part()) {
                     Scene::visit(scene.root(), [&](Scene::Node& n) {
                         const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();

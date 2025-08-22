@@ -31,8 +31,8 @@ void MeshRenderNodeComponent::render(
     Render::Material material = resolved_material;
 
     // Set transform uniforms
-    Transform view = camera.view();
-    const Transform& model = node.world_transform();
+    Domain::SquareMatrix4d view = camera.view().matrix();
+    const Domain::SquareMatrix4d& model = node.world_transform().matrix();
 
     // update per-node uniforms
     SquareMatrix4f view_m = view.cast<float>();
@@ -44,7 +44,7 @@ void MeshRenderNodeComponent::render(
     SquareMatrix3f normal =
         (view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0)).inverse().transpose().cast<float>();
     material.set_uniform(UNIFORM_VIEW_NORMAL_MATRIX, normal);
-    SquareMatrix4f vol_world = node.world_transform().cast<float>();
+    SquareMatrix4f vol_world = node.world_transform().matrix().cast<float>();
     material.set_uniform(UNIFORM_VOLUME_WORLD_MATRIX, vol_world);
 
     set_uniforms(lights, material);

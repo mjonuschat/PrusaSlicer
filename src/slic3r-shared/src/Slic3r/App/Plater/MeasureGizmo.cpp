@@ -1189,7 +1189,7 @@ void MeasureGizmo::update_linear_dimensioning()
         }
     );
     DEBUG_ASSERT(stem_node != nullptr);
-    stem_node->set_local_transform(stem_trafo.matrix());
+    stem_node->set_local_transform(stem_trafo);
 
     Scene::MeshRenderNodeComponent* stem_render_component = nullptr;
     if (stem_node->has_render_component()) {
@@ -1239,14 +1239,14 @@ void MeasureGizmo::update_linear_dimensioning()
         }
     );
     DEBUG_ASSERT(arrow_node != nullptr);
-    arrow_node->set_local_transform(trafo12.matrix());
+    arrow_node->set_local_transform(trafo12);
 
     arrow_node = m_current_project->dimensioning_nodes.linear->query_first([](const Scene::Node* n) {
         return n->tag_of_type<MeasureGizmoNodeTag>()->type
             == MeasureGizmoElementType::DimensioningLinearArrow2;
     });
     DEBUG_ASSERT(arrow_node != nullptr);
-    arrow_node->set_local_transform(trafo21.matrix());
+    arrow_node->set_local_transform(trafo21);
 }
 
 void MeasureGizmo::update_angular_dimensioning()
@@ -1338,7 +1338,7 @@ void MeasureGizmo::update_arc_edge_edge_dimensioning(
     DEBUG_ASSERT(node != nullptr);
     Domain::Transform3d trafo = Domain::Transform3d::Identity();
     trafo.translate(center);
-    node->set_local_transform(trafo.matrix());
+    node->set_local_transform(trafo);
 
     Scene::MeshRenderNodeComponent* render_component = nullptr;
     if (node->has_render_component()) {

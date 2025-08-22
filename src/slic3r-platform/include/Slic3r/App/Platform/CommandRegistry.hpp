@@ -14,11 +14,13 @@ namespace Slic3r::App::Platform {
 class CommandRegistry
 {
 public:
+    virtual ~CommandRegistry() = default;
+
     /**
      * @brief Register single command
      * @param command Pointer to command imeplementaiton
      */
-    CommandRegistry& register_command(std::unique_ptr<ICommand> command);
+    virtual CommandRegistry& register_command(std::unique_ptr<ICommand> command);
 
     /**
      * @brief Process keyboard event and eventually execute related command.

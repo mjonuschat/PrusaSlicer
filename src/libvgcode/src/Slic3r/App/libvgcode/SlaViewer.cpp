@@ -334,7 +334,7 @@ void SlaViewer::build_instance_node(
     for (const auto& node : parent_node->children()) {
         const SlaObjectNodeTag* t = node->tag_of_type<SlaObjectNodeTag>();
         if (t != nullptr && t->instance_id == instance_id) {
-            node->set_local_transform(trafo.matrix());
+            node->set_local_transform(trafo);
         }
     }
 }

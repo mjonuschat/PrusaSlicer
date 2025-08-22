@@ -12,6 +12,7 @@
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Scene/MouseDragDetector.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
+#include "Slic3r/App/Scene/GizmoCommandRegistry.hpp"
 #include "Slic3r/Domain/PrinterTechnology.hpp"
 
 
@@ -57,6 +58,7 @@ public:
     {
         m_tool_gizmos.emplace_back(std::make_unique<G>(args...));
         auto& ptr = m_tool_gizmos.back();
+        m_command_registry.set_registering_tool_gizmo(*ptr);
         m_mouse_drag_detector->add_listener(ptr.get());
         ptr->register_commands(m_command_registry);
         return *static_cast<G*>(ptr.get());
@@ -68,6 +70,7 @@ public:
     void activate_tool(ToolType tool, Domain::PrinterTechnology pt);
     void deactivate_current_tool();
     ToolType current_tool_type() const;
+    bool is_tool_active_in_current_project(const IToolGizmo& tool) const;
 
     GeometryDataFactory& data_factory() { return m_data_factory; }
 
@@ -121,7 +124,7 @@ private:
 
     GizmoList m_base_gizmos;
     ToolGizmoList m_tool_gizmos;
-    Platform::CommandRegistry m_command_registry;
+    GizmoCommandRegistry m_command_registry;
 
 #if DEBUG_GIZMO_MANAGER
     constexpr static size_t NUM_DEBUG_ACTIVATION_LAST_STEPS = 63;

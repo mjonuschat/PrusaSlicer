@@ -18,6 +18,7 @@ using Slic3r::Domain::BedContainer;
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
+using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Model;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::ModelInstance;
@@ -58,7 +59,6 @@ using Domain::Transformation;
 using Domain::TriangleMesh;
 
 namespace {
-
 Transformation transform_product(const Transformation& orig_xform, const SceneInteractor::Transform& delta)
 {
     Transform3d xform = orig_xform.get_matrix();
@@ -71,11 +71,46 @@ Transformation transform_product(
     const SceneInteractor::Transform& delta
 )
 {
+    DEBUG_ASSERT(fabs(delta.determinant()) > 1e-9);
+    DEBUG_ASSERT(fabs(orig_xform.determinant()) > 1e-9);
+
     SceneInteractor::Transform xform = delta * orig_xform;
+
+    DEBUG_ASSERT(fabs(xform.determinant()) > 1e-9);
+
     return Transformation{Transform3d{xform}};
 }
 
-void transform_selection_instance_mode(
+/**
+ * @brief Determines if a transform must be applied to a volume node.
+ * * This is required if the transform contains any rotation component around
+ * the X or Y axes, which would change the direction of the Z-axis.
+ * Scaling along the Z-axis is permitted for instance-level transforms.
+ *
+ * @param xform The relative transformation matrix to check.
+ * @return True if the transform has X/Y rotation, false otherwise.
+ */
+bool requires_volume_transform(const Eigen::Matrix4d& xform) {
+    // Extract the third column of the linear part (rotation/scaling).
+    // This vector shows where the original Z-axis (0,0,1) points after transformation.
+    Eigen::Vector3d transformed_z = xform.topLeftCorner<3,3>().col(2);
+
+    // Handle the edge case where the Z-axis is scaled to zero length.
+    // Such a transform is highly distorting and should be flagged.
+    if (transformed_z.norm() < 1e-9) {
+        return true;
+    }
+
+    // Normalize the vector to get its direction, ignoring any scaling.
+    transformed_z.normalize();
+
+    // Check if the direction is still parallel to the original Z-axis.
+    // We use isApprox() for safe floating-point comparison. A dot product
+    // check like `abs(transformed_z.dot(Eigen::Vector3d::UnitZ()))` could also work.
+    return !transformed_z.isApprox(Eigen::Vector3d::UnitZ());
+}
+
+SelectionMode transform_selection_instance_mode(
     const SceneInteractorProjectContext& proj,
     const SceneInteractor::Transform& relative_transform,
     TransformMemento& memento
@@ -85,16 +120,50 @@ void transform_selection_instance_mode(
     const auto& sel               = proj.object_selection;
     DEBUG_ASSERT(sel.mode == SelectionMode::Instance);
 
+    const bool volume_transform_mode = memento.forced_volume_mode || requires_volume_transform(relative_transform);
+
     if (initialize_memento)
         memento.elements.reserve(sel.elements.size());
+
+    std::set<size_t> object_ids;
+
     for (const auto& e : sel.elements) {
         auto* inst = proj.project.find_instance_by_id(e.object_id, e.instance_id);
-        if (initialize_memento)
-            memento.elements.insert({e, {e, inst->get_matrix().matrix()}});
-        inst->set_transformation(
-            transform_product(memento.elements[e].original_xform, relative_transform)
-        );
+        if (volume_transform_mode)
+            object_ids.insert(inst->get_object()->id().id);
+        else {
+            if (initialize_memento)
+                memento.elements.insert({e, {e, inst->get_matrix().matrix()}});
+            inst->set_transformation(
+                transform_product(memento.elements[e].original_xform, relative_transform)
+            );
+        }
     }
+
+    if (!volume_transform_mode)
+        return SelectionMode::Instance;
+
+    memento.forced_volume_mode = true;
+
+    for (size_t object_id : object_ids) {
+        auto* obj = proj.project.find_object_by_id(object_id);
+
+        auto first_inst_it = std::ranges::find_if(
+            proj.object_selection.elements, [object_id](const auto& e) { return e.object_id == object_id; });
+        ASSERT(first_inst_it != proj.object_selection.elements.end());
+        auto* first_inst = proj.project.find_instance_by_id(first_inst_it->object_id, first_inst_it->instance_id);
+        const auto parent = first_inst->get_matrix();
+
+        // We need to take the `relative_transform` and turn it into local one
+        const SceneInteractor::Transform volume_relative_transform = (parent.inverse() * relative_transform * parent).matrix();
+        for (auto* vol : obj->volumes) {
+            Domain::ElementRef e{object_id, 0, vol->id().id};
+            if (!memento.elements.contains(e))
+                memento.elements.insert({e, {e, vol->get_matrix().matrix()}});
+            vol->set_transformation(transform_product(memento.elements[e].original_xform, volume_relative_transform));
+        }
+    }
+    return SelectionMode::Volume;
 }
 
 void transform_selection_volume_mode(
@@ -106,7 +175,20 @@ void transform_selection_volume_mode(
     const bool initialize_memento = memento.elements.empty();
     const auto& sel               = proj.object_selection;
     DEBUG_ASSERT(sel.mode == SelectionMode::Volume);
-
+    ASSERT(!sel.elements.empty());
+    const auto& first_el = sel.elements[0];
+    // assert that all elements are of same instance
+    DEBUG_ASSERT(
+        std::all_of(
+            ++sel.elements.begin(),
+            sel.elements.end(),
+            [inst_id = first_el.instance_id](const auto& el) { return el.instance_id == inst_id; }
+        )
+    );
+    const auto* first_inst = proj.project.find_instance_by_id(first_el.object_id, first_el.instance_id);
+    const auto parent = first_inst->get_matrix();
+    // We need to take the `relative_transform` which is in world space and turn it into local space
+    const SceneInteractor::Transform volume_relative_transform = (parent.inverse() * relative_transform * parent).matrix();
     if (initialize_memento)
         memento.elements.reserve(sel.elements.size());
     for (const auto& e : sel.elements) {
@@ -115,7 +197,7 @@ void transform_selection_volume_mode(
         if (initialize_memento)
             memento.elements.insert({e, {e, vol->get_matrix().matrix()}});
         vol->set_transformation(
-            transform_product(memento.elements[e].original_xform, relative_transform)
+            transform_product(memento.elements[e].original_xform, volume_relative_transform)
         );
     }
 }
@@ -175,7 +257,7 @@ void SceneInteractor::set_object_selection(const ObjectSelection& selection)
         const auto* obj = project_context.project.find_object_by_id(e.object_id);
         ASSERT(obj != nullptr);
         for (const auto& inst : obj->instances)
-            sel.elements.push_back({e.object_id, inst->id().id});
+            sel.elements.emplace_back(e.object_id, inst->id().id);
     }
 
     DEBUG_ASSERT(sel.is_valid());
@@ -292,7 +374,7 @@ void SceneInteractor::add_instance(const Vec2d& offset)
 {
     auto& project        = m_workbench.project(m_selected_project_id);
     const ObjectSelection& sel = object_selection();
-    DEBUG_ASSERT(sel.elements.size() == 1);
+    DEBUG_ASSERT(sel.elements.size() >= 1);
     size_t obj_id = sel.elements[0].object_id;
     Domain::ElementRefs updated;
 
@@ -798,40 +880,53 @@ void SceneInteractor::transform_selection(const Transform& relative_transform)
     finalize_transform_selection(memento, false);
 }
 
-void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transform, TransformMemento& memento)
+void SceneInteractor::transform_selection(
+    const SquareMatrix4d& relative_transform,
+    TransformMemento& memento
+)
 {
+    DEBUG_ASSERT(fabs(relative_transform.determinant()) > 1e-9);
     auto& proj               = m_projects.find(m_selected_project_id)->second;
-    const bool instance_mode = proj.object_selection.mode == SelectionMode::Instance;
-    if (instance_mode)
-        transform_selection_instance_mode(proj, relative_transform, memento);
+    bool instance_mode = proj.object_selection.mode == SelectionMode::Instance;
+    auto selection = proj.object_selection;
+    if (instance_mode) {
+        auto final_mode = transform_selection_instance_mode(proj, relative_transform, memento);
+        if (final_mode == SelectionMode::Volume) {
+            instance_mode = false;
+            selection.mode = SelectionMode::Volume;
+            selection.elements.clear();
+            for (const auto& e : memento.elements)
+                selection.elements.push_back(e.first);
+        }
+    }
     else
         transform_selection_volume_mode(proj, relative_transform, memento);
-    update_selection_instance_bed_placement();
+    update_selection_instance_bed_placement(memento.forced_volume_mode);
     invoke_listeners<ISceneChangedListener>([&](ISceneChangedListener* l) {
         if (instance_mode)
             l->on_instance_transformed(
                 m_selected_project_id,
-                proj.object_selection.elements,
+                selection.elements,
                 TransformState::InProgress
             );
         else
             l->on_volume_transformed(
                 m_selected_project_id,
-                proj.object_selection.elements,
+                selection.elements,
                 TransformState::InProgress
             );
     });
     invoke_listeners<ISceneSelectionChangedListener>([&](ISceneSelectionChangedListener* l) {
-        l->on_scene_selection_transformed(m_selected_project_id, proj.object_selection);
+        l->on_scene_selection_transformed(m_selected_project_id, selection);
     });
 }
 
-void SceneInteractor::transform_instances(const Trafos& transformations)
+void SceneInteractor::transform_instances(const InstanceTransforms& transformations)
 {
     Project& project{m_projects.find(m_selected_project_id)->second.project};
 
     std::vector<Domain::ElementRef> elements;
-    for (const Trafo& trafo : transformations) {
+    for (const InstanceTransform2D& trafo : transformations) {
         ModelInstance* instance{
             project.find_instance_by_id(trafo.instance_ref.object_id, trafo.instance_ref.instance_id)
         };
@@ -862,7 +957,14 @@ void SceneInteractor::transform_instances(const Trafos& transformations)
 void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bool canceled)
 {
     auto& proj          = m_projects.find(m_selected_project_id)->second;
-    const bool vol_mode = proj.object_selection.mode == SelectionMode::Volume;
+    const bool vol_mode = memento.forced_volume_mode || proj.object_selection.mode == SelectionMode::Volume;
+
+    auto selected_elements = proj.object_selection.elements;
+    if (memento.forced_volume_mode) {
+        selected_elements.clear();
+        for (const auto& e : memento.elements)
+            selected_elements.push_back(e.first);
+    }
 
     if (canceled) {
         for (const auto& [_, e] : memento.elements) {
@@ -877,20 +979,20 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
             }
         }
 
-        update_selection_instance_bed_placement();
+        update_selection_instance_bed_placement(memento.forced_volume_mode);
     }
 
     invoke_listeners<ISceneChangedListener>([&](ISceneChangedListener* l) {
         if (vol_mode)
             l->on_volume_transformed(
                 m_selected_project_id,
-                proj.object_selection.elements,
+                selected_elements,
                 canceled ? TransformState::Canceled : TransformState::Completed
             );
         else
             l->on_instance_transformed(
                 m_selected_project_id,
-                proj.object_selection.elements,
+                selected_elements,
                 canceled ? TransformState::Canceled : TransformState::Completed
             );
     });
@@ -904,11 +1006,11 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
     memento.reset();
 }
 
-void SceneInteractor::update_selection_instance_bed_placement()
+void SceneInteractor::update_selection_instance_bed_placement(bool forced_volume_mode)
 {
     BedTrackingChanges changes;
     auto& proj          = m_projects.find(m_selected_project_id)->second;
-    const bool vol_mode = proj.object_selection.mode == SelectionMode::Volume;
+    const bool vol_mode = forced_volume_mode || proj.object_selection.mode == SelectionMode::Volume;
     if (vol_mode) {
         std::set<size_t> object_ids;
         for (const auto& e : proj.object_selection.elements)

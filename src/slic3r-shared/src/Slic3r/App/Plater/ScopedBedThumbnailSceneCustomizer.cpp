@@ -155,7 +155,7 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(
     Scene::visit(m_scene.root(), [&](const Scene::Node& n) {
         if (n.has_raycast_component())
             world_aabb.extend(
-                n.raycast_component()->world_bounding_box(n.world_transform()).cast<double>()
+                n.raycast_component()->world_bounding_box(n.world_transform().matrix()).cast<double>()
             );
     });
     trackball.set_target(world_aabb.center());

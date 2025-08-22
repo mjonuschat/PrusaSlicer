@@ -205,32 +205,43 @@ public:
      * selected volumes or instances (depending on selection mode).
      *
      * @param relative_transform Relative transformation (w.r.t. object transformation at the start
-     * of transform change) to be applied to all objects in selection.
+     * of transform change) to be applied to all objects in selection. Note that the transform is
+     * interpreted always as in WORLD COORDINATES. This means that if you want to rotate around
+     * certain `O`, the transform passed here is computed as `T(O) * R * T(-O)`, where `T(x)` is
+     * translation by `x`, and `R` is the rotation to be applied. If you pass just `R` here, it will
+     * be interpreted as rotation around world origin. Same applies for scaling.
      * @param memento Maintains state of the transformation (i.e. original transformation at time of
      * transform change start).
      *
      * @note It is required to call finalize_transform_selection() to finish the operation.
      */
-    void transform_selection(const Transform& relative_transform, TransformMemento& memento);
+    void transform_selection(
+        const Transform& relative_transform,
+        TransformMemento& memento
+    );
 
     /**
      * @brief Update selection transform in one shot (not interactive way).
      * @param relative_transform Relative transformation (w.r.t. object transformation at the start
-     * of transform change) to be applied to all objects in selection.
+     * of transform change) to be applied to all objects in selection. Note that the transform is
+     * interpreted always as in WORLD COORDINATES. This means that if you want to rotate around
+     * certain `O`, the transform passed here is computed as `T(O) * R * T(-O)`, where `T(x)` is
+     * translation by `x`, and `R` is the rotation to be applied. If you pass just `R` here, it will
+     * be interpreted as rotation around world origin. Same applies for scaling.
      *
      * @note This effectively same as calling transform_selection(const Transform&, TransformMemento&)
      * and then finalize_transform_selection()
      */
     void transform_selection(const Transform& relative_transform);
 
-    struct Trafo {
+    struct InstanceTransform2D {
         Domain::ElementRef instance_ref;
         Domain::Vec2d absolute_offset;
         double rotation_delta;
     };
 
-    using Trafos = std::vector<Trafo>;
-    void transform_instances(const Trafos& transformations);
+    using InstanceTransforms = std::vector<InstanceTransform2D>;
+    void transform_instances(const InstanceTransforms& transformations);
 
     /**
      * @brief Finalize or cancel selection transform.
@@ -241,7 +252,7 @@ public:
     /** @} */
 
 private:
-    void update_selection_instance_bed_placement();
+    void update_selection_instance_bed_placement(bool forced_volume_mode = false);
     void invoke_slicing_input_changed(const Domain::BedRef& bed_instance);
     void update_config_container_bed(
         Domain::Project& project,
@@ -268,8 +279,13 @@ struct TransformMemento
     using Elements = std::unordered_map<Domain::ElementRef, Element>;
 
     Elements elements;
+    bool forced_volume_mode {false};
 
-    void reset() { elements.clear(); }
+    void reset()
+    {
+        elements.clear();
+        forced_volume_mode = false;
+    }
 };
 
 

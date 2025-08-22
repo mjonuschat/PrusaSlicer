@@ -46,7 +46,7 @@ void CameraTrackballController::add_azimuth_and_zenith(double delta_azimuth, dou
     view.fromPositionOrientationScale(m_view_rotation * (-m_pivot) + translation, m_view_rotation, Vec3d::Ones());
 
     Transform3d model = view.inverse();
-    m_camera.set_model(model.matrix());
+    m_camera.set_model(model);
     m_target = model * old_eye_target;
 }
 
@@ -64,7 +64,7 @@ void CameraTrackballController::set_camera_orientation()
     Vec3d pos = m_target - off;
 
     m_camera.look_at(pos, m_target, up);
-    m_view_rotation = Eigen::Quaterniond(m_camera.view().block<3, 3>(0, 0));
+    m_view_rotation = Eigen::Quaterniond(m_camera.view().matrix().block<3, 3>(0, 0));
 }
 
 void CameraTrackballController::normalize_azimuth_and_zenith()

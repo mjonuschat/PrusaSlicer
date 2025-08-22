@@ -22,13 +22,13 @@ NodeBuilder& NodeBuilder::transform(const std::function<void(Transform3d&)>& mod
 
     Transform3d xform = Transform3d::Identity();
     modifier(xform);
-    m_current->set_local_transform(xform.matrix());
+    m_current->set_local_transform(xform);
     return *this;
 }
 
 NodeBuilder& NodeBuilder::set_transform(const Transform3d& tr) 
 {
-    m_current->set_local_transform(tr.matrix());
+    m_current->set_local_transform(tr);
     return *this;
 }
 

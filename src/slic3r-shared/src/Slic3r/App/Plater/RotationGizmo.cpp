@@ -116,7 +116,7 @@ static Vec3d mouse_position_in_local_plane(AxisType axis, const Transform3d& ori
 
 static Vec3d extract_position(const App::Scene::Transform& xform)
 {
-    return xform.block<3, 1>(0, 3);
+    return xform.matrix().block<3, 1>(0, 3);
 }
 
 RotationGizmo::RotationGizmo(Render::Device& device, Scene::GeometryDataFactory& data_factory,
@@ -145,6 +145,7 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
 
     const auto& pick_ray = ctx.pick_ray();
 
+    Vec3d node_center;
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<RotationGizmoNodeTag>();
         if (node == nullptr) {
@@ -166,25 +167,25 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         m_dragging = true;
         m_pivot_world = extract_position(m_scene_presenter.selection_root().world_transform());
-        const auto& selection = m_scene_interactor.object_selection();
-        if (selection.mode == Biz::Scene::SelectionMode::Instance) {
-            m_pivot_local = m_pivot_world;
-        } else {
-            auto first_element_ref = selection.elements.front();
-            auto parent_ref = Domain::ElementRef{first_element_ref.object_id, first_element_ref.instance_id, 0};
-
-            const Scene::Node *parent_node = ASSERT_VAL(
-                m_scene_presenter.scene().root().query_first([&](const auto& node) {
-                    auto* node_tag = node->template tag_of_type<SceneNodeTag>();
-                    return node_tag && node_tag->matches_element(parent_ref);
-                })
-            );
-
-            auto parent_world = parent_node->world_transform();
-            m_pivot_local = extract_position(
-                parent_world.inverse() * m_scene_presenter.selection_root().
-                world_transform());
-        }
+        // const auto& selection = m_scene_interactor.object_selection();
+        // if (selection.mode == Biz::Scene::SelectionMode::Instance) {
+        //     m_pivot_local = m_pivot_world;
+        // } else {
+        //     auto first_element_ref = selection.elements.front();
+        //     auto parent_ref = Domain::ElementRef{first_element_ref.object_id, first_element_ref.instance_id, 0};
+        //
+        //     const Scene::Node *parent_node = ASSERT_VAL(
+        //         m_scene_presenter.scene().root().query_first([&](const auto& node) {
+        //             auto* node_tag = node->template tag_of_type<SceneNodeTag>();
+        //             return node_tag && node_tag->matches_element(parent_ref);
+        //         })
+        //     );
+        //
+        //     auto parent_world = parent_node->world_transform();
+        //     m_pivot_local = extract_position(
+        //         parent_world.inverse() * m_scene_presenter.selection_root().
+        //         world_transform());
+        // }
         return Scene::GizmoActivationState::Active;
     }
 
@@ -231,12 +232,12 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
 
         Transform3d xform = Transform3d::Identity();
         xform.rotate(Eigen::AngleAxisd(theta, Vec3d::UnitZ()));
-        m_handles[size_t(m_curr_axis) - 1]->set_local_transform(xform.matrix());
+        m_handles[size_t(m_curr_axis) - 1]->set_local_transform(xform);
 
         xform = Transform3d::Identity();
-        xform.translate(m_pivot_local);
+        xform.translate(m_pivot_world);
         xform.rotate(Eigen::AngleAxisd(theta, axis_type_dir(m_curr_axis)));
-        xform.translate(-m_pivot_local);
+        xform.translate(-m_pivot_world);
         m_scene_presenter.set_freeze_selection_center(true);
         m_scene_interactor.transform_selection(xform.matrix(), m_xform_memento);
         m_scene_presenter.set_freeze_selection_center(false);
@@ -487,7 +488,7 @@ void RotationGizmo::clear_highlight()
 void RotationGizmo::on_stop_dragging()
 {
     std::for_each(m_handles.begin(), m_handles.end(), [](Scene::Node* n) {
-        n->set_local_transform(Transform3d::Identity().matrix());
+        n->set_local_transform(Transform3d::Identity());
     });
     m_dragging = false;
 }

@@ -70,9 +70,8 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
         }
 
         const GizmoNodeTag& tag = *node->tag_of_type<GizmoNodeTag>();
-        m_translation_ray.origin = m_scene_provider.selection_root().world_transform().col(3).head(
-            3
-        );
+        m_translation_ray
+            .origin = m_scene_provider.selection_root().world_transform().matrix().col(3).head(3);
         m_translation_ray.direction = tag.primary_axis_dir();
     }
 
@@ -99,7 +98,8 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
     // SPDLOG_INFO("Translation: ({}, {}, {}) (t0: {}  t1: {})", delta.x(), delta.y(), delta.z(),
     // m_start_t, t);
 
-    m_scene_interactor.transform_selection(translation_matrix, m_xform_memento);
+    m_scene_interactor
+        .transform_selection(translation_matrix, m_xform_memento);
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
         m_scene_interactor.finalize_transform_selection(m_xform_memento, false);

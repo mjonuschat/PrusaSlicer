@@ -402,7 +402,7 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
     if (!nodes.empty()) {
         for (const auto& [node, material] : nodes) {
             if (node->has_raycast_component())
-                world_aabb.extend(node->raycast_component()->world_bounding_box(node->world_transform()).cast<double>());
+                world_aabb.extend(node->raycast_component()->world_bounding_box(node->world_transform().matrix()).cast<double>());
         }
 
         Vec3d center = world_aabb.center();
@@ -415,7 +415,7 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
         DEBUG_ASSERT(it != m_lighting.lights.end());
 
         Vec3d world_light_dir = (it->system == LightReferenceSystem::Camera) ?
-            Vec3d(m_camera.model().block<3, 3>(0, 0) * it->direction.cast<double>()) :
+            Vec3d(m_camera.model().matrix().block<3, 3>(0, 0) * it->direction.cast<double>()) :
             it->direction.cast<double>();
         Vec3d world_light_pos = center - 1.0f * world_light_dir;
 
@@ -501,9 +501,9 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
 
     const Shadows& shadows = s_graphics_settings.m_shadows;
 
-    Transform light_cam_proj_view_matrix = shadows.light_cam.projection() * shadows.light_cam.view();
+    Domain::SquareMatrix4d light_cam_proj_view_matrix = shadows.light_cam.projection() * shadows.light_cam.view().matrix();
     for (auto& [node, material] : nodes) {
-        SquareMatrix4f light_cam_matrix = (light_cam_proj_view_matrix * node->world_transform()).cast<float>();
+        SquareMatrix4f light_cam_matrix = (light_cam_proj_view_matrix * node->world_transform().matrix()).cast<float>();
         std::string shader_name = device.context().shader_manager().shader_name(material.shader());
         shader_name = shader_name_by_shading_pass(shader_name, ShadingPass::ShadowsReceivers);
         material
@@ -672,7 +672,7 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
     const Shadows& shadows = s_graphics_settings.m_shadows;
 
     if (!nodes.empty()) {
-        Transform light_cam_proj_view_matrix = shadows.light_cam.projection() * shadows.light_cam.view();
+        Domain::SquareMatrix4d light_cam_proj_view_matrix = shadows.light_cam.projection() * shadows.light_cam.view().matrix();
 
         if (customizer)
             customizer->on_render_begin(*cmd_buffer);
@@ -695,7 +695,7 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
                 current_layer = layer;
             }
 
-            SquareMatrix4f light_cam_matrix = (light_cam_proj_view_matrix * n->world_transform()).cast<float>();
+            SquareMatrix4f light_cam_matrix = (light_cam_proj_view_matrix * n->world_transform().matrix()).cast<float>();
             std::string shader_name = device.context().shader_manager().shader_name(mat.shader());
             shader_name = shader_name_by_shading_pass(shader_name, ShadingPass::AOGBuffer);
             mat
@@ -813,7 +813,7 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
     Render::Blending blending{ {Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha} };
     cmd_buffer.set_blending(blending);
 
-    SquareMatrix4f view = camera().view().cast<float>();
+    SquareMatrix4f view = camera().view().matrix().cast<float>();
 
     const AmbientOcclusion& ao = s_graphics_settings.m_ao;
     const Shadows& shadows = s_graphics_settings.m_shadows;
@@ -890,8 +890,8 @@ Eigen::AlignedBox<float, 2> resolve_bounding_box(const Node& node, const Camera&
     while (n) {
         if (n->has_raycast_component()) {
             const auto& raycast = *n->raycast_component();
-            const auto& m = n->world_transform();
-            const auto v = cam.view();
+            const auto& m = n->world_transform().matrix();
+            const auto v = cam.view().matrix();
             const auto& p = cam.projection();
 
             const auto vp = p * v;
@@ -941,7 +941,7 @@ bool Scene::pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results,
     auto ret = visit_conditional_transform<double>(n, [&ray](const Node& n, double& t) {
         if (!n.has_raycast_component())
             return false;
-        return n.raycast_component()->raycast(n.world_transform(), ray, t);
+        return n.raycast_component()->raycast(n.world_transform().matrix(), ray, t);
     });
     results.reserve(results.size() + ret.size());
     std::transform(
@@ -964,7 +964,7 @@ bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results, Ray*
     auto ret = visit_conditional_transform<double>(n, [&ray](Node& n, double& t) {
         if (!n.has_raycast_component())
             return false;
-        return n.raycast_component()->raycast(n.world_transform(), ray, t);
+        return n.raycast_component()->raycast(n.world_transform().matrix(), ray, t);
     });
     std::sort(ret.begin(), ret.end(), [](auto a, auto b) {
         return a.second < b.second;

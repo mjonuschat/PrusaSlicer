@@ -3,5 +3,5 @@
 
 namespace Slic3r::App::Scene {
 
-using Transform = Domain::SquareMatrix4d;
+using Transform = Eigen::Affine3d; //Domain::SquareMatrix4d;
 } // namespace Slic3r::App::Scene

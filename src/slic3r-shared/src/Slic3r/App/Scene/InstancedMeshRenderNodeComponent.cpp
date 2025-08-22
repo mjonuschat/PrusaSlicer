@@ -33,11 +33,11 @@ void InstancedMeshRenderNodeComponent::render(
     Render::Material material = resolved_material;
 
     // Set transform uniforms
-    Transform view = camera.view();
-    const Transform& model = node.world_transform();
+    Domain::SquareMatrix4d view = camera.view().matrix();
+    const Domain::SquareMatrix4d& model = node.world_transform().matrix();
 
     // update per-node uniforms
-    SquareMatrix4f view_m = view.cast<float>();
+    SquareMatrix4f view_m = view.matrix().cast<float>();
     material.set_uniform(UNIFORM_VIEW_MATRIX, view_m);
     SquareMatrix4f model_view = (view * model).cast<float>();
     material.set_uniform(UNIFORM_VIEW_MODEL_MATRIX, model_view);
