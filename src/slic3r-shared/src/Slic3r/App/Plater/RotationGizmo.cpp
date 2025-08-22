@@ -167,25 +167,25 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         m_dragging = true;
         m_pivot_world = extract_position(m_scene_presenter.selection_root().world_transform());
-        const auto& selection = m_scene_interactor.object_selection();
-        if (selection.mode == Biz::Scene::SelectionMode::Instance) {
-            m_pivot_local = m_pivot_world;
-        } else {
-            auto first_element_ref = selection.elements.front();
-            auto parent_ref = Domain::ElementRef{first_element_ref.object_id, first_element_ref.instance_id, 0};
-
-            const Scene::Node *parent_node = ASSERT_VAL(
-                m_scene_presenter.scene().root().query_first([&](const auto& node) {
-                    auto* node_tag = node->template tag_of_type<SceneNodeTag>();
-                    return node_tag && node_tag->matches_element(parent_ref);
-                })
-            );
-
-            auto parent_world = parent_node->world_transform();
-            m_pivot_local = extract_position(
-                parent_world.inverse() * m_scene_presenter.selection_root().
-                world_transform());
-        }
+        // const auto& selection = m_scene_interactor.object_selection();
+        // if (selection.mode == Biz::Scene::SelectionMode::Instance) {
+        //     m_pivot_local = m_pivot_world;
+        // } else {
+        //     auto first_element_ref = selection.elements.front();
+        //     auto parent_ref = Domain::ElementRef{first_element_ref.object_id, first_element_ref.instance_id, 0};
+        //
+        //     const Scene::Node *parent_node = ASSERT_VAL(
+        //         m_scene_presenter.scene().root().query_first([&](const auto& node) {
+        //             auto* node_tag = node->template tag_of_type<SceneNodeTag>();
+        //             return node_tag && node_tag->matches_element(parent_ref);
+        //         })
+        //     );
+        //
+        //     auto parent_world = parent_node->world_transform();
+        //     m_pivot_local = extract_position(
+        //         parent_world.inverse() * m_scene_presenter.selection_root().
+        //         world_transform());
+        // }
         return Scene::GizmoActivationState::Active;
     }
 
@@ -235,11 +235,11 @@ Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ct
         m_handles[size_t(m_curr_axis) - 1]->set_local_transform(xform);
 
         xform = Transform3d::Identity();
-        xform.translate(m_pivot_local);
-            xform.rotate(Eigen::AngleAxisd(theta, axis_type_dir(m_curr_axis)));
-        xform.translate(-m_pivot_local);
+        xform.translate(m_pivot_world);
+        xform.rotate(Eigen::AngleAxisd(theta, axis_type_dir(m_curr_axis)));
+        xform.translate(-m_pivot_world);
         m_scene_presenter.set_freeze_selection_center(true);
-        m_scene_interactor.transform_selection(xform.matrix(), Biz::Scene::TransformMode::Local, m_xform_memento);
+        m_scene_interactor.transform_selection(xform.matrix(), m_xform_memento);
         m_scene_presenter.set_freeze_selection_center(false);
     }
 

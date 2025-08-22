@@ -3,6 +3,7 @@
 #include "Slic3r/Domain/Forward.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
+#include "Slic3r/Domain/ITransformable.hpp"
 
 namespace cereal {
 template<class Archive> void serialize(Archive&, Slic3r::Domain::ModelInstance&);
@@ -22,7 +23,7 @@ enum ModelInstanceEPrintVolumeState : unsigned char
  * A single instance of a ModelObject.
  * Knows the affine transformation of an object.
  */
-class ModelInstance final : public ObjectBase
+class ModelInstance final : public ObjectBase, public ITransformable
 {
 private:
     Transformation                 m_transformation;
@@ -39,36 +40,36 @@ public:
     ModelObject*                  get_object() const;
     void                          set_model_object(ModelObject *model_object);
 
-    const Transformation&         get_transformation() const;
-    void                          set_transformation(const Transformation& transformation);
+    const Transformation&         get_transformation() const override;
+    void                          set_transformation(const Transformation& transformation) override;
 
-    Vec3d                         get_offset() const;
-    double                        get_offset(Axis axis) const;
+    Vec3d                         get_offset() const override;
+    double                        get_offset(Axis axis) const override;
 
-    void                          set_offset(const Vec3d& offset);
-    void                          set_offset(Axis axis, double offset);
+    void                          set_offset(const Vec3d& offset) override;
+    void                          set_offset(Axis axis, double offset) override;
 
-    Vec3d                         get_rotation() const;
-    double                        get_rotation(Axis axis) const;
+    Vec3d                         get_rotation() const override;
+    double                        get_rotation(Axis axis) const override;
 
-    void                          set_rotation(const Vec3d& rotation);
-    void                          set_rotation(Axis axis, double rotation);
+    void                          set_rotation(const Vec3d& rotation) override;
+    void                          set_rotation(Axis axis, double rotation) override;
 
-    Vec3d                         get_scaling_factor() const;
-    double                        get_scaling_factor(Axis axis) const;
+    Vec3d                         get_scaling_factor() const override;
+    double                        get_scaling_factor(Axis axis) const override;
 
-    void                          set_scaling_factor(const Vec3d& scaling_factor);
-    void                          set_scaling_factor(Axis axis, double scaling_factor);
+    void                          set_scaling_factor(const Vec3d& scaling_factor) override;
+    void                          set_scaling_factor(Axis axis, double scaling_factor) override;
 
-    Vec3d                         get_mirror() const;
-    double                        get_mirror(Axis axis) const;
+    Vec3d                         get_mirror() const override;
+    double                        get_mirror(Axis axis) const override;
 
-    void                          set_mirror(const Vec3d& mirror);
-    void                          set_mirror(Axis axis, double mirror);
+    void                          set_mirror(const Vec3d& mirror) override;
+    void                          set_mirror(Axis axis, double mirror) override;
 
-    const Transform3d&            get_matrix() const;
-    Transform3d                   get_matrix_no_offset() const;
-    bool                          is_left_handed() const;
+    const Transform3d&            get_matrix() const override;
+    Transform3d                   get_matrix_no_offset() const override;
+    bool                          is_left_handed() const override;
 
     bool                          is_printable() const;
 

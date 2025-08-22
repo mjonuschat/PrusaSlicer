@@ -520,7 +520,7 @@ void import_files_and_add_to_scene(
             xform.translate(-center(bbox));
             xform.translate(Vec3d(0., 0., sizes(bbox).z() / 2.));
             xform.translate(Vec3d{bed_center.x(), bed_center.y(), 0});
-            scene_interactor.transform_selection(xform.matrix(), Scene::TransformMode::World);
+            scene_interactor.transform_selection(xform.matrix());
         }
     }
 }

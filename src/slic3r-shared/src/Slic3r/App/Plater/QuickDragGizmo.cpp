@@ -56,7 +56,7 @@ bool QuickDragGizmo::on_dragging(const Scene::GizmoEventContext& ctx)
     SquareMatrix4d xform    = SquareMatrix4d::Identity();
     xform.block<3, 1>(0, 3) = p - m_initial_world_pos;
 
-    m_scene_interactor.transform_selection(xform, Biz::Scene::TransformMode::World, m_xform_memento);
+    m_scene_interactor.transform_selection(xform, m_xform_memento);
     return true;
 }
 

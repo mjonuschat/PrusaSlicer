@@ -11,6 +11,7 @@
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/ITransformable.hpp"
 
 #include <optional>
 
@@ -52,7 +53,7 @@ enum class ModelVolumeType : int
  * An object STL, or a modifier volume, over which a different set of parameters shall be applied.
  * ModelVolume instances are owned by a ModelObject.
  */
-class ModelVolume final : public ObjectBase
+class ModelVolume final : public ObjectBase, public ITransformable
 {
 public:
     std::string         name;
@@ -172,38 +173,38 @@ public:
     const TriangleMesh&                 get_convex_hull() const;
     const std::shared_ptr<const TriangleMesh>& get_convex_hull_shared_ptr() const;
 
-    const Transformation&               get_transformation() const;
-    void                                set_transformation(const Transformation& transformation);
+    const Transformation&               get_transformation() const override;
+    void                                set_transformation(const Transformation& transformation) override;
     void                                set_transformation(const Transform3d& trafo);
 
-    Vec3d                               get_offset() const;
+    Vec3d                               get_offset() const override;
 
-    double                              get_offset(Axis axis) const;
+    double                              get_offset(Axis axis) const override;
 
-    void                                set_offset(const Vec3d& offset);
-    void                                set_offset(Axis axis, double offset);
+    void                                set_offset(const Vec3d& offset) override;
+    void                                set_offset(Axis axis, double offset) override;
 
-    Vec3d                               get_rotation() const;
-    double                              get_rotation(Axis axis) const;
+    Vec3d                               get_rotation() const override;
+    double                              get_rotation(Axis axis) const override;
 
-    void                                set_rotation(const Vec3d& rotation);
-    void                                set_rotation(Axis axis, double rotation);
+    void                                set_rotation(const Vec3d& rotation) override;
+    void                                set_rotation(Axis axis, double rotation) override;
 
-    Vec3d                               get_scaling_factor() const;
-    double                              get_scaling_factor(Axis axis) const;
+    Vec3d                               get_scaling_factor() const override;
+    double                              get_scaling_factor(Axis axis) const override;
 
-    void                                set_scaling_factor(const Vec3d& scaling_factor);
-    void                                set_scaling_factor(Axis axis, double scaling_factor);
+    void                                set_scaling_factor(const Vec3d& scaling_factor) override;
+    void                                set_scaling_factor(Axis axis, double scaling_factor) override;
 
-    Vec3d                               get_mirror() const;
-    double                              get_mirror(Axis axis) const;
-    bool                                is_left_handed() const;
+    Vec3d                               get_mirror() const override;
+    double                              get_mirror(Axis axis) const override;
+    bool                                is_left_handed() const override;
 
-    void                                set_mirror(const Vec3d& mirror);
-    void                                set_mirror(Axis axis, double mirror);
+    void                                set_mirror(const Vec3d& mirror) override;
+    void                                set_mirror(Axis axis, double mirror) override;
 
-    const Transform3d&                  get_matrix() const;
-    Transform3d                         get_matrix_no_offset() const;
+    const Transform3d&                  get_matrix() const override;
+    Transform3d                         get_matrix_no_offset() const override;
 
     void                                set_new_unique_id() override;
 

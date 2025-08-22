@@ -85,6 +85,8 @@ add_library(slic3r-domain STATIC
     include/Slic3r/Domain/Transformation.hpp
     src/Slic3r/Domain/Transformation.cpp
 
+    include/Slic3r/Domain/ITransformable.hpp
+
     include/Slic3r/Domain/ConfigValue.hpp
     src/Slic3r/Domain/ConfigValue.cpp
 

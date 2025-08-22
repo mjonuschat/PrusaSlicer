@@ -108,11 +108,6 @@ public:
 
 struct TransformMemento;
 
-enum class TransformMode
-{
-    World, Local
-};
-
 class SceneInteractor final :
     public ISelectedProjectChangedListener,
     public ISelectedConfigContainerChangedListener,
@@ -210,8 +205,11 @@ public:
      * selected volumes or instances (depending on selection mode).
      *
      * @param relative_transform Relative transformation (w.r.t. object transformation at the start
-     * of transform change) to be applied to all objects in selection.
-     * @param mode Mode of transformation i.e. either World coordinate or local coordinate system.
+     * of transform change) to be applied to all objects in selection. Note that the transform is
+     * interpreted always as in WORLD COORDINATES. This means that if you want to rotate around
+     * certain `O`, the transform passed here is computed as `T(O) * R * T(-O)`, where `T(x)` is
+     * translation by `x`, and `R` is the rotation to be applied. If you pass just `R` here, it will
+     * be interpreted as rotation around world origin. Same applies for scaling.
      * @param memento Maintains state of the transformation (i.e. original transformation at time of
      * transform change start).
      *
@@ -219,20 +217,22 @@ public:
      */
     void transform_selection(
         const Transform& relative_transform,
-        TransformMode mode,
         TransformMemento& memento
     );
 
     /**
      * @brief Update selection transform in one shot (not interactive way).
      * @param relative_transform Relative transformation (w.r.t. object transformation at the start
-     * of transform change) to be applied to all objects in selection.
-     * @param mode Mode of transformation i.e. either World coordinate or local coordinate system.
+     * of transform change) to be applied to all objects in selection. Note that the transform is
+     * interpreted always as in WORLD COORDINATES. This means that if you want to rotate around
+     * certain `O`, the transform passed here is computed as `T(O) * R * T(-O)`, where `T(x)` is
+     * translation by `x`, and `R` is the rotation to be applied. If you pass just `R` here, it will
+     * be interpreted as rotation around world origin. Same applies for scaling.
      *
      * @note This effectively same as calling transform_selection(const Transform&, TransformMemento&)
      * and then finalize_transform_selection()
      */
-    void transform_selection(const Transform& relative_transform, TransformMode mode);
+    void transform_selection(const Transform& relative_transform);
 
     struct InstanceTransform2D {
         Domain::ElementRef instance_ref;
@@ -279,8 +279,13 @@ struct TransformMemento
     using Elements = std::unordered_map<Domain::ElementRef, Element>;
 
     Elements elements;
+    bool forced_volume_mode {false};
 
-    void reset() { elements.clear(); }
+    void reset()
+    {
+        elements.clear();
+        forced_volume_mode = false;
+    }
 };
 
 

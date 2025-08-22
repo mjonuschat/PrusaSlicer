@@ -63,7 +63,6 @@ private:
     };
     Snap m_snap;
     Domain::Vec3d m_pivot_world{ Domain::Vec3d::Zero()};
-    Domain::Vec3d m_pivot_local{ Domain::Vec3d::Zero()};
     Biz::Scene::TransformMemento m_xform_memento;
     Scene::Node::NodeList m_handles;
 };

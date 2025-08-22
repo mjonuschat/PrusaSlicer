@@ -99,7 +99,7 @@ Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext&
     // m_start_t, t);
 
     m_scene_interactor
-        .transform_selection(translation_matrix, Biz::Scene::TransformMode::Local, m_xform_memento);
+        .transform_selection(translation_matrix, m_xform_memento);
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
         m_scene_interactor.finalize_transform_selection(m_xform_memento, false);
