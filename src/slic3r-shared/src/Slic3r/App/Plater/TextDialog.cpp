@@ -10,6 +10,9 @@
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 
+#include <boost/assign.hpp>
+#include <boost/bimap.hpp>
+
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <imgui_internal.h>
@@ -317,6 +320,15 @@ Domain::ModelVolumeType to_type(size_t operation_index) {
     // should not appear
     return Domain::ModelVolumeType::MODEL_PART;
 }
+size_t to_operation_index(Domain::ModelVolumeType type) {
+    switch (type) {
+    case Domain::ModelVolumeType::MODEL_PART: return 0;
+    case Domain::ModelVolumeType::NEGATIVE_VOLUME: return 1;
+    case Domain::ModelVolumeType::PARAMETER_MODIFIER: return 2;
+    }
+    // should not appear
+    return 0;
+}
 }
 
 void TextDialog::add_part_specific_panel()
@@ -334,6 +346,10 @@ void TextDialog::add_part_specific_panel()
     add_row(_u8L("Operation"), m_operation.release(), m_part_specific_panel);
 
     m_part_specific_panel->set_visible(false);
+}
+
+void TextDialog::set_operation(Domain::ModelVolumeType type){
+    m_operation->set_current_index(to_operation_index(type));
 }
 
 Item* TextDialog::add_row(

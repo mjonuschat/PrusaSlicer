@@ -483,7 +483,10 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
         
     const Domain::ModelVolume& volume = *volume_ptr;
 
-    m_dialog->show_part_specific_panel(volume.get_object()->volumes.size() != 1);
+    bool is_part = volume.get_object()->volumes.size() != 1;
+    m_dialog->show_part_specific_panel(is_part);
+    if (is_part)
+        m_dialog->set_operation(volume.type());    
 
     // load current settings
     const Domain::TextConfiguration& tc = *volume.text_configuration;

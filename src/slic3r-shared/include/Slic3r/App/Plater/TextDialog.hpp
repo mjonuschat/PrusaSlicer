@@ -57,7 +57,6 @@ public:
 
     Callbacks& callbacks();
 
-    void show_part_specific_panel(bool show);
     void update_units(bool use_inches);
 
     void set_editor(const std::string& text);
@@ -84,6 +83,9 @@ public:
     void set_enable_line_gap(bool enable);
     void set_enable_surface_distance(bool enable);
     void set_warning(const std::string& warning);
+
+    void set_operation(Domain::ModelVolumeType type);
+    void show_part_specific_panel(bool show);
     void show_revert_buttons(bool show);
 
     void set_enable_all_except_font(bool enable);
