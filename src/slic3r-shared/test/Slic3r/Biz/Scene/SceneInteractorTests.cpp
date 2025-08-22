@@ -178,7 +178,6 @@ TEST_CASE_METHOD(SceneInteractorFixture, "Scene Interactor Bed Tracking", "[Scen
             .WITH(_1.instance_id == bi2_id);
 
         scene_interactor.transform_selection(xform.matrix());
-        scene_interactor.transform_selection(xform.matrix());
         /*
         selection: instance mode
                        (1)

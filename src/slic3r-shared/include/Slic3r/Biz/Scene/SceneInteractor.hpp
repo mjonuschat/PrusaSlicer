@@ -252,7 +252,7 @@ public:
     /** @} */
 
 private:
-    void update_selection_instance_bed_placement();
+    void update_selection_instance_bed_placement(bool forced_volume_mode = false);
     void invoke_slicing_input_changed(const Domain::BedRef& bed_instance);
     void update_config_container_bed(
         Domain::Project& project,
