@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #pragma once
+#include <optional>
 #include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
@@ -69,11 +70,11 @@ public:
 private:
     // Params to change inside of volume after create, which are not in preset manager
     struct UpdateParams {
-        std::optional<Domain::Transform3d> volume_transformation = std::nullopt;
-        std::optional<Domain::ModelVolumeType> volume_type = std::nullopt;
+        std::optional<Domain::Transform3d> volume_transformation;
+        std::optional<Domain::ModelVolumeType> volume_type;
     };
     // Call every time when param of emboss change
-    bool update_volume(const UpdateParams& params = {});
+    bool update_volume(const UpdateParams& params = UpdateParams{});
     void close();
 
     bool init_create(Domain::ModelVolumeType volume_type);

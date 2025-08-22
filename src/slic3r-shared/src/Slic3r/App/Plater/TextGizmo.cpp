@@ -14,6 +14,7 @@
 #include <imgui/imgui.h>
 #include <imgui/imgui_stdlib.h> // using std::string for inputs
 
+#include <Slic3r/Directories.hpp>
 #include <Slic3r/Domain/TriangleMesh.hpp>
 #include <Slic3r/Domain/ModelObject.hpp> // add volume into object
 #include <Slic3r/Biz/Algorithms/TriangleMesh.hpp>
@@ -87,7 +88,7 @@ TextGizmo::TextGizmo(
     m_preset_manager(
         font_manager,
         ImGui::GetIO().Fonts->GetGlyphRangesDefault(),
-        data_dir() + "/text_emboss_presets.cereal"
+        Slic3r::data_dir() + "/text_emboss_presets.cereal"
     )
 {
     // Initialize font descriptor to font copied with application
@@ -521,13 +522,8 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
 
 bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
 {
-    //if (m_gizmo_manager.current_tool_type() == type())
-    //    return false; // already active
-
     if (!init_create(volume_type))
         return false;    
-
-    Scene::ISceneProvider& scene_provider = m_scene_presenter;
 
     // get (pickray + pickresults) from screen center
     Scene::Scene& scene = static_cast<Scene::ISceneProvider&>(m_scene_presenter).scene();
