@@ -582,6 +582,7 @@ static std::vector<std::string> s_Preset_print_options {
 
     "wipe_tower_disable_filament_ramming",
     "wipe_tower_disable_cooling_moves",
+    "wipe_tower_disable_linear_advance",
 
     "small_perimeter_min_length",
     "small_perimeter_max_length",
