@@ -24,6 +24,12 @@ public:
     }
 
     static PopNotificationDataPtr
+    create_text(PopNotificationType type, PopNotificationLevel level, int duration_seconds, const std::string& text)
+    {
+        return std::make_unique<PopNotificationData>(s_next_id++, type, level, duration_seconds, PopNotificationLayout::Text, PopNotificationLayoutText(text));
+    }
+
+    static PopNotificationDataPtr
     create_custom_with_header(PopNotificationLevel level, int duration_seconds, const std::string& text, const std::string& header)
     {
         return std::make_unique<PopNotificationData>(s_next_id++, PopNotificationType::Custom, level, duration_seconds, PopNotificationLayout::HeaderText, PopNotificationLayoutHeaderText(header, text));

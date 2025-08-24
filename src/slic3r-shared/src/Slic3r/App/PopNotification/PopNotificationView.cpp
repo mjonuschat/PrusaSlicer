@@ -76,6 +76,7 @@ void PopNotificationView::layout()
 
 void PopNotificationView::on_data_update()
 {
+    ASSERT(m_state);
     // rebuild whole notification if layout differs
     if (m_current_layout != m_state->layout()) {
         reset();

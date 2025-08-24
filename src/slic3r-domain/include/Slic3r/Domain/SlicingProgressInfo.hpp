@@ -1,6 +1,5 @@
 #pragma once
 
-
 namespace Slic3r::Domain {
 
 enum class SlicingProgressInfo : int

@@ -86,17 +86,15 @@ public:
         ASSERT(index_range.to <= m_items.size());
 
         for (size_t i = index_range.from; i <= index_range.to; ++i) {
-            this->remove_later(this->get_item(i));
+            this->remove_later(m_items[i]);
         }
         m_items.erase(m_items.cbegin() + index_range.from, m_items.cbegin() + index_range.to + 1);
-
         update_indexes(index_range.from);
     }
 
     void on_updated(const Biz::IndexRange& index_range) override
     {
         ASSERT(index_range.to <= m_items.size());
-
         size_t index = 0;
         for (View* view : std::as_const(m_items)) {
             view->set_state(m_source_list->at(index++));

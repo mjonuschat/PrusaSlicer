@@ -16,7 +16,12 @@ void PopNotificationObservableList::add_notification(PopNotificationDataPtr&& no
     }
     int id = notification->id();
     m_notifications.emplace_back(std::move(notification));
-    SPDLOG_INFO("invoke_listeners on_inserted {} size {} id {}", std::to_string(m_notifications.size() - 1), m_notifications.size(), id);
+    SPDLOG_INFO(
+        "invoke_listeners on_inserted {} size {} id {}",
+        std::to_string(m_notifications.size() - 1),
+        m_notifications.size(),
+        id
+    );
     invoke_listeners<Biz::IListObserver<PopNotificationData>>(
         [&](auto* l)
         {
@@ -43,28 +48,22 @@ void PopNotificationObservableList::erase_notification_by_id(size_t id)
         m_notifications.end(),
         [id](const PopNotificationDataPtr& notification) { return notification->id() == id; }
     );
-    erase_notification(it);
+    erase_notification_by_index(std::distance(m_notifications.begin(), it));
 }
 
-PopNotificationDataIt PopNotificationObservableList::erase_notification(PopNotificationDataIt it)
+void PopNotificationObservableList::erase_notification_by_index(size_t index)
 {
-    ASSERT(it != m_notifications.end());
-    stop_notification_timer(it);
-    const size_t index = std::distance(m_notifications.begin(), it);
-    int id = it->get()->id();
-    it                 = m_notifications.erase(it);
-    SPDLOG_INFO("invoke_listeners on_removed {} size {} id {}", std::to_string(index), m_notifications.size(), id);
+    ASSERT(index < m_notifications.size());
+    stop_notification_timer(m_notifications.begin() + index);
+    m_notifications.erase(m_notifications.begin() + index);
     invoke_listeners<Biz::IListObserver<PopNotificationData>>(
         [&](auto* l) { l->on_removed({index}); }
     );
-    return it;
 }
 
-void PopNotificationObservableList::notification_updated(PopNotificationDataIt it)
+void PopNotificationObservableList::notification_updated(size_t index)
 {
-    ASSERT(it != m_notifications.end());
-    const size_t index = std::distance(m_notifications.begin(), it);
-    SPDLOG_INFO("invoke_listeners on_updated {} size {} id {}", std::to_string(index), m_notifications.size(), it->get()->id());
+    ASSERT(index < m_notifications.size());
     invoke_listeners<Biz::IListObserver<PopNotificationData>>(
         [&](auto* l) { l->on_updated({index}); }
     );
@@ -87,7 +86,7 @@ void PopNotificationObservableList::set_notification_timeout(PopNotificationData
     ));
 }
 
-void PopNotificationObservableList::stop_notification_timer(PopNotificationDataIt it)
+void PopNotificationObservableList::stop_notification_timer(PopNotificationDataIt it) const
 {
     ASSERT(it != m_notifications.end());
     auto& timer_queue = Biz::Platform::PlatformServices::instance().timer_queue();
@@ -119,11 +118,10 @@ size_t PopNotificationObservableList::size() const
 
 void PopNotificationObservableList::close_notifications_of_type(PopNotificationType type)
 {
-    for (auto it = m_notifications.begin(); it != m_notifications.end();) {
-        if ((*it)->type() == type) {
-            it = erase_notification(it);
-        } else {
-            ++it;
+    for (int i = m_notifications.size() - 1; i >= 0; --i) {
+        if (m_notifications[i]->type() == type) {
+            // m_notifications.erase(m_notifications.begin() + i);
+            erase_notification_by_index((size_t) i);
         }
     }
 }

@@ -220,11 +220,13 @@ bool DesktopApp::OnInit()
 
     platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
 
-    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{std::make_shared<Plater::ThumbnailImageGenerator>()};
+    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{std::make_shared<Plater::ThumbnailImageGenerator>(
+    )};
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench, platform_services.main_thread_dispatcher(), *thumbnail_image_generator);
 
-    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(*m_project_interactor);
+    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(*m_project_interactor
+    );
 
     std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
 
@@ -235,7 +237,8 @@ bool DesktopApp::OnInit()
     fs::path config_dir        = fs::path{data_dir()} / "configs";
     preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
-    std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator = std::make_shared<App::SharedThumbnailImageGenerator>();
+    std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator = std::make_shared<App::SharedThumbnailImageGenerator>(
+    );
     app_services.set_dialog_manager(std::make_unique<WX::DialogManager>());
     app_services.set_pop_notification_center(
         std::make_unique<PopNotification::PopNotificationCenter>(m_project_interactor->removable_drive_service())
@@ -249,30 +252,20 @@ bool DesktopApp::OnInit()
     if (scrn && is_editor)
         scrn->SetText(L("Preparing Plater") + "...");
 
-    m_plater_module = std::make_unique<Plater::PlaterRenderModule>(
-        m_workbench,
-        *m_project_interactor,
-        thumbnail_store,
-        thumbnail_store_updater,
-        thumbnail_image_generator
-    );
+    m_plater_module = std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
 
     if (scrn && is_editor)
         scrn->SetText(L("Preparing Preview") + "...");
 
-    m_preview_module = std::make_unique<Preview::PreviewRenderModule>(
-        m_workbench,
-        *m_project_interactor,
-        thumbnail_store,
-        thumbnail_store_updater,
-        thumbnail_image_generator
-    );
+    m_preview_module = std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
 
     m_project_interactor->slicing_interactor().add_listener<Biz::Slicing::IStatusListener>(
         &app_services.pop_notification_center()
     );
-    m_project_interactor->print_host_interactor().add_print_host_listener(&app_services.pop_notification_center());
-    m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center());
+    m_project_interactor->print_host_interactor().add_print_host_listener(&app_services.pop_notification_center(
+    ));
+    m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center(
+    ));
 
     m_project_interactor->new_project();
 
@@ -289,7 +282,8 @@ bool DesktopApp::OnInit()
 
     m_main_frame->Show();
 
-    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(m_project_interactor->preset_updater_interactor());
+    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(m_project_interactor->preset_updater_interactor(
+    ));
 
 #ifdef WIN32
     m_main_frame->register_win32_callbacks();

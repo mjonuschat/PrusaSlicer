@@ -68,9 +68,20 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
                 notif_ptr->set_layout(PopNotificationLayout::Text, PopNotificationLayoutText(text));
             }
 
-            notification_updated(it);
+            notification_updated(std::distance(m_notifications.begin(), it));
         } else {
             add_notification(PopNotificationFactory::create_job_notification(text, job_name, progress));
+            PopNotificationLayout layout_type;
+            PopNotificationLayoutVariant layout_variant;
+            if (progress.percent) {
+                int perc       = (int) (progress.percent.value().value * 100);
+                layout_type    = PopNotificationLayout::TextProgress;
+                layout_variant = PopNotificationLayoutTextProgress(text, perc);
+            } else {
+                layout_type    = PopNotificationLayout::Text;
+                layout_variant = PopNotificationLayoutText(text);
+            }
+            std::make_unique<PopNotificationData>(PopNotificationFactory::next_id(), PopNotificationType::JobProgress, PopNotificationLevel::Important, 0, layout_type, layout_variant, JobProgressNotificationData(job_name, progress));
         }
     }
 }
@@ -132,10 +143,16 @@ void PopNotificationCenter::on_status_changed(const Biz::Slicing::Status status,
 
         (*it)->set_layout(
             PopNotificationLayout::HeaderText,
-            PopNotificationLayoutHeaderText("Slicing Project " + std::to_string(slicing_id.project_id), slicing_status_to_string(status.code))
+            PopNotificationLayoutHeaderText(
+                "Slicing Project " + std::to_string(slicing_id.project_id),
+                slicing_status_to_string(status.code)
+            )
         );
-        notification_updated(it);
+        notification_updated(std::distance(m_notifications.begin(), it));
     } else {
+        if (status.code == SlicingStatusCode::Finished) {
+            return;
+        }
         add_notification(
             PopNotificationFactory::create_slicing_notification(slicing_status_to_string(status.code), status, slicing_id)
         );
@@ -347,7 +364,7 @@ void PopNotificationCenter::on_print_host_progress(size_t print_host_id, int pro
         PopNotificationLayout layout_type;
         auto layout_variant = print_host_layout(*job_data, layout_type);
         (*it)->set_layout(layout_type, std::move(layout_variant));
-        notification_updated(it);
+        notification_updated(std::distance(m_notifications.begin(), it));
     } else {
         PrintHostProgressNotificationData data(print_host_id);
         data.status   = PrintHostJobStatus::Started;
@@ -385,7 +402,7 @@ void PopNotificationCenter::on_print_host_error(size_t print_host_id, const std:
         auto layout_variant = print_host_layout(*job_data, layout_type);
         (*it)->set_layout(layout_type, std::move(layout_variant));
         (*it)->set_level(PopNotificationLevel::Error);
-        notification_updated(it);
+        notification_updated(std::distance(m_notifications.begin(), it));
     } else {
         PrintHostProgressNotificationData data(print_host_id);
         data.status         = PrintHostJobStatus::Failed;
@@ -416,7 +433,7 @@ void PopNotificationCenter::on_print_host_cancel(size_t print_host_id)
     );
 
     if (it != m_notifications.end()) {
-        erase_notification(it);
+        erase_notification_by_index(std::distance(m_notifications.begin(), it));
     }
 }
 
@@ -443,7 +460,7 @@ void PopNotificationCenter::on_print_host_done(size_t print_host_id)
         PopNotificationLayout layout_type;
         auto layout_variant = print_host_layout(*job_data, layout_type);
         (*it)->set_layout(layout_type, std::move(layout_variant));
-        notification_updated(it);
+        notification_updated(std::distance(m_notifications.begin(), it));
     } else {
         PrintHostProgressNotificationData data(print_host_id);
         data.status   = PrintHostJobStatus::Finished;
@@ -490,7 +507,7 @@ void PopNotificationCenter::on_print_host_info(size_t print_host_id, const std::
         PopNotificationLayout layout_type;
         auto layout_variant = print_host_layout(*job_data, layout_type);
         (*it)->set_layout(layout_type, std::move(layout_variant));
-        notification_updated(it);
+        notification_updated(std::distance(m_notifications.begin(), it));
     } else {
         PrintHostProgressNotificationData data(print_host_id);
         if (tag == "filename") {
@@ -572,7 +589,7 @@ void PopNotificationCenter::on_removable_drive_status_changed(const boost::files
                 (*it)->set_level(PopNotificationLevel::Warning);
             }
             (*it)->set_layout(PopNotificationLayout::Text, PopNotificationLayoutText(removable_drive_status_to_string(drive_path, status)));
-            notification_updated(it);
+            notification_updated(std::distance(m_notifications.begin(), it));
         }
         // Ignore Removed status if there is now previous ejecting (its not being ejected by us)
     } else if (status != Slic3r::Biz::RemovableDrive::RemovableDriveStatus::Removed) {

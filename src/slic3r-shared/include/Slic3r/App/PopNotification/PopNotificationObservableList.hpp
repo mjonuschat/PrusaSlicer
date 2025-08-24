@@ -41,10 +41,10 @@ public:
 protected:
     void on_notification_timer(size_t id);
     void erase_notification_by_id(size_t id);
-    PopNotificationDataIt erase_notification(PopNotificationDataIt it);
-    void notification_updated(PopNotificationDataIt it);
+    void erase_notification_by_index(size_t index);
+    void notification_updated(size_t index);
     void set_notification_timeout(PopNotificationDataIt it, size_t seconds);
-    void stop_notification_timer(PopNotificationDataIt it);
+    void stop_notification_timer(PopNotificationDataIt it) const;
 
     std::vector<PopNotificationDataPtr> m_notifications;
 };
