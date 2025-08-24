@@ -549,6 +549,7 @@ WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfig& c
     m_semm(config.single_extruder_multi_material.value),
     m_disable_cooling_moves(config.wipe_tower_disable_cooling_moves.value),
     m_disable_filament_ramming(config.wipe_tower_disable_filament_ramming.value),
+    m_disable_linear_advance(config.wipe_tower_disable_linear_advance.value),
     m_wipe_tower_pos(pos),
     m_wipe_tower_width(float(config.wipe_tower_width)),
     m_wipe_tower_brim_width(float(config.wipe_tower_brim_width)),
@@ -912,7 +913,7 @@ void WipeTower::toolchange_Unload(
 
     if (do_ramming) {
         writer.travel(ramming_start_pos); // move to starting position
-        if (! m_is_mk4mmu3)
+        if (!m_is_mk4mmu3 && m_disable_linear_advance)
             writer.disable_linear_advance();
         if (cold_ramming)
             writer.set_extruder_temp(old_temperature - 20);
@@ -1022,7 +1023,7 @@ void WipeTower::toolchange_Unload(
 
         float speed_inc = (final_speed - initial_speed) / (2.f * number_of_cooling_moves - 1.f);
 
-        if (m_is_mk4mmu3)
+        if (m_is_mk4mmu3 && m_disable_linear_advance)
             writer.disable_linear_advance();
 
         writer.suppress_preview()
