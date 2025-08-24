@@ -312,8 +312,9 @@ private:
     GCodeFlavor     m_gcode_flavor;
 
 	// BOSS
-	bool			m_disable_filament_ramming	= false;
-	bool			m_disable_cooling_moves		= false;
+	bool			m_disable_filament_ramming  = false;
+	bool			m_disable_cooling_moves     = false;
+	bool			m_disable_linear_advance    = true;
 
     // Bed properties
     enum {

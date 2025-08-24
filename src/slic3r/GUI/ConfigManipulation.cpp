@@ -463,7 +463,7 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     for (auto el : { "wipe_tower_width",  "wipe_tower_brim_width", "wipe_tower_cone_angle",
                      "wipe_tower_extra_spacing", "wipe_tower_extra_flow", "wipe_tower_bridging", "wipe_tower_no_sparse_layers", "single_extruder_multi_material_priming",
                      // BOSS
-                     "wipe_tower_disable_filament_ramming", "wipe_tower_disable_cooling_moves", "wipe_tower_max_purge_speed" })
+                     "wipe_tower_disable_filament_ramming", "wipe_tower_disable_cooling_moves", "wipe_tower_max_purge_speed", "wipe_tower_disable_linear_advance" })
         toggle_field(el, have_wipe_tower);
 
     toggle_field("avoid_crossing_curled_overhangs", !config->opt_bool("avoid_crossing_perimeters"));
