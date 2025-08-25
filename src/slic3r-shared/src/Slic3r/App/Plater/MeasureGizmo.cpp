@@ -1872,7 +1872,10 @@ void MeasureGizmo::build_plane_feature(
         mesh_its.vertices.emplace_back(offset + its.vertices[src_triangle[0]]);
         mesh_its.vertices.emplace_back(offset + its.vertices[src_triangle[1]]);
         mesh_its.vertices.emplace_back(offset + its.vertices[src_triangle[2]]);
+        // to let the triangle be visible from both sides, we add it twice with opposite winding
         Domain::Index3 dst_triangle = {int(base + 0), int(base + 1), int(base + 2)};
+        mesh_its.indices.emplace_back(dst_triangle);
+        dst_triangle = { int(base + 0), int(base + 2), int(base + 1) };
         mesh_its.indices.emplace_back(dst_triangle);
     }
 
