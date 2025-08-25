@@ -1209,11 +1209,69 @@ std::string CoolingBuffer::apply_layer_cooldown(
     int                 current_feedrate  = 0;
 
     change_extruder_set_fan();
+
+    const CoolingLine *line_waiting_for_split = nullptr;
     for (const CoolingLine *line : lines) {
         const char *line_start  = gcode.c_str() + line->line_start;
         const char *line_end    = gcode.c_str() + line->line_end;
-        if (line_start > pos)
-            new_gcode.append(pos, line_start - pos);
+        if (line_start > pos) {
+            if (line_waiting_for_split != nullptr &&
+                line_waiting_for_split->move_segments.front().line_start == (pos - gcode.c_str()) &&
+                line_waiting_for_split->move_segments.back().line_end == line->line_start) {
+                assert(!line_waiting_for_split->move_segments.empty());
+
+                // We need to split CoolingLine into two parts with different feedrates.
+                const float segments_total_length    = std::accumulate(line_waiting_for_split->move_segments.begin(), line_waiting_for_split->move_segments.end(), 0.f, [](float sum, const GCodeMoveSegment &segment) {
+                    return sum + segment.length;
+                });
+                const float split_segments_at_length = segments_total_length - line_waiting_for_split->non_adjustable_length;
+
+                float accumulated_length = 0.f;
+                auto  segment_it         = line_waiting_for_split->move_segments.cbegin();
+                for (; segment_it != line_waiting_for_split->move_segments.cend() && accumulated_length + segment_it->length <= split_segments_at_length; ++segment_it) {
+                    new_gcode.append(gcode.c_str() + segment_it->line_start, segment_it->line_end - segment_it->line_start);
+                    accumulated_length += segment_it->length;
+                }
+
+                if (segment_it != line_waiting_for_split->move_segments.cend()) {
+                    const GCodeMoveSegment &segment         = *segment_it;
+                    const float             split_at_length = split_segments_at_length - accumulated_length;
+
+                    if (split_at_length >= segment.length - SEGMENT_SPLIT_EPSILON) {
+                        new_gcode.append(gcode.c_str() + segment_it->line_start, segment_it->line_end - segment_it->line_start);
+                        ++segment_it;
+
+                        if (segment_it != line_waiting_for_split->move_segments.cend()) {
+                            new_gcode.append(emit_feedrate(line_waiting_for_split->feedrate_original));
+                        }
+                    } else if (split_at_length <= SEGMENT_SPLIT_EPSILON) {
+                        new_gcode.append(emit_feedrate(line_waiting_for_split->feedrate_original));
+                        new_gcode.append(gcode.c_str() + segment_it->line_start, segment_it->line_end - segment_it->line_start);
+                        ++segment_it;
+                    } else {
+                        const std::pair<std::string, std::string> segment_parts = segment.is_arc() ? split_arc_segment(segment, split_at_length, m_config.get<bool>("use_relative_e_distances"))
+                                                                                                   : split_linear_segment(segment, split_at_length, m_config.get<bool>("use_relative_e_distances"));
+                        new_gcode += segment_parts.first;
+
+                        // Change the feedrate for the second part.
+                        new_gcode.append(emit_feedrate(line_waiting_for_split->feedrate_original));
+
+                        new_gcode += segment_parts.second;
+
+                        ++segment_it;
+                    }
+                }
+
+                for (; segment_it != line_waiting_for_split->move_segments.end(); ++segment_it) {
+                    new_gcode.append(gcode.c_str() + segment_it->line_start, segment_it->line_end - segment_it->line_start);
+                }
+
+                line_waiting_for_split = nullptr;
+            } else {
+                new_gcode.append(pos, line_start - pos);
+            }
+        }
+
         if (line->type & CoolingLine::TYPE_SET_TOOL) {
             unsigned int new_extruder = 0;
             auto res = std::from_chars(line_start + m_toolchange_prefix.size(), line_end, new_extruder);
@@ -1320,53 +1378,8 @@ std::string CoolingBuffer::apply_layer_cooldown(
             }
 
             if (line->slowdown && !line->move_segments.empty() && line->non_adjustable_length > 0.f) {
-                // We need to split CoolingLine into two parts with different feedrates.
-                const float segments_total_length    = std::accumulate(line->move_segments.begin(), line->move_segments.end(), 0.f, [](float sum, const GCodeMoveSegment &segment) {
-                    return sum + segment.length;
-                });
-                const float split_segments_at_length = segments_total_length - line->non_adjustable_length;
-
-                float accumulated_length = 0.f;
-                auto  segment_it         = line->move_segments.cbegin();
-                for (; segment_it != line->move_segments.cend() && accumulated_length + segment_it->length <= split_segments_at_length; ++segment_it) {
-                    new_gcode.append(gcode.c_str() + segment_it->line_start, segment_it->line_end - segment_it->line_start);
-                    accumulated_length += segment_it->length;
-                }
-
-                if (segment_it != line->move_segments.cend()) {
-                    const GCodeMoveSegment &segment         = *segment_it;
-                    const float             split_at_length = split_segments_at_length - accumulated_length;
-
-                    if (split_at_length >= segment.length - SEGMENT_SPLIT_EPSILON) {
-                        new_gcode.append(gcode.c_str() + segment_it->line_start, segment_it->line_end - segment_it->line_start);
-                        ++segment_it;
-
-                        if (segment_it != line->move_segments.cend()) {
-                            new_gcode.append(emit_feedrate(line->feedrate_original));
-                        }
-                    } else if (split_at_length <= SEGMENT_SPLIT_EPSILON) {
-                        new_gcode.append(emit_feedrate(line->feedrate_original));
-                        new_gcode.append(gcode.c_str() + segment_it->line_start, segment_it->line_end - segment_it->line_start);
-                        ++segment_it;
-                    } else {
-                        const std::pair<std::string, std::string> segment_parts = segment.is_arc() ? split_arc_segment(segment, split_at_length, m_config.get<bool>("use_relative_e_distances"))
-                                                                                                   : split_linear_segment(segment, split_at_length, m_config.get<bool>("use_relative_e_distances"));
-                        new_gcode += segment_parts.first;
-
-                        // Change the feedrate for the second part.
-                        new_gcode.append(emit_feedrate(line->feedrate_original));
-
-                        new_gcode += segment_parts.second;
-
-                        ++segment_it;
-                    }
-                }
-
-                for (; segment_it != line->move_segments.end(); ++segment_it) {
-                    new_gcode.append(gcode.c_str() + segment_it->line_start, segment_it->line_end - segment_it->line_start);
-                }
-
-                line_end = gcode.c_str() + line->move_segments.back().line_end;
+                assert(line_waiting_for_split == nullptr);
+                line_waiting_for_split = line;
             }
         } else {
             new_gcode.append(line_start, line_end - line_start);
