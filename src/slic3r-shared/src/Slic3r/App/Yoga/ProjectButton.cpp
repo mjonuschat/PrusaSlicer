@@ -24,8 +24,10 @@ ProjectButton::ProjectButton(
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
     set_allow_overlap(true);
+    set_flex_shrink(0);
 
     m_background = emplace_back<ProjectButtonBackground>();
+    m_background->set_margin(Margins(0, -1));
     m_background->set_padding({20.f, 5.f});
     m_background->set_rounding(0.f);
     m_background->set_gap(7.f);

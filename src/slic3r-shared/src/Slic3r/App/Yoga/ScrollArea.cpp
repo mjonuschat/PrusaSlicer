@@ -4,8 +4,6 @@
 ///|/
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 
-#include "Slic3r/Log.hpp"
-
 #include <imgui_internal.h>
 
 namespace Slic3r::App::Yoga {
@@ -25,25 +23,40 @@ void ScrollArea::render(Vec2f pos, Vec2f size)
     ImGui::SetNextWindowSize(to_im(size));
     ImGui::BeginChild(item_name().c_str(), {size.x(), size.y()}, m_child_flags, m_window_flags);
 
+    // normally ImGui scrolls horizontally with SHIFT + Mouse Wheel, we want to use Mouse Wheel
+    // only if m_remap_horizontal_scroll is true
+    if (m_remap_horizontal_scroll
+        && ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+    {
+        ImGuiIO& io  = ImGui::GetIO();
+        float delta  = io.MouseWheel;
+        float deltaH = io.MouseWheelH;
+        float speed  = ImGui::GetFontSize() * 1.5f;
+
+        float x = ImGui::GetScrollX();
+        x -= (delta + deltaH) * speed;
+        x = std::clamp(x, 0.0f, ImGui::GetScrollMaxX());
+        ImGui::SetScrollX(x);
+    }
+
+    if (m_requested_item_scroll
+        && index_of(m_requested_item_scroll).has_value()
+        && !m_requested_item_scroll->is_node_dirty())
+    {
+        ImGui::SetScrollX(m_requested_item_scroll->x());
+        ImGui::SetScrollY(pos.y() = m_requested_item_scroll->y());
+
+        m_requested_item_scroll = nullptr;
+    }
+
     m_last_scroll = Vec2f{ImGui::GetScrollX(), ImGui::GetScrollY()};
     pos -= m_last_scroll;
+
     for (Item* child : std::as_const(m_children_render_order)) {
         render_node(pos, child);
     }
 
-    if (m_debug_border) {
-        SPDLOG_INFO(
-            "{}:{} {}:{} {}:{} {}:{}",
-            pos.x(),
-            pos.y(),
-            size.x(),
-            size.y(),
-            m_last_scroll.x(),
-            m_last_scroll.y(),
-            ImGui::GetScrollMaxX(),
-            ImGui::GetScrollMaxY()
-        );
-    }
+    m_scroll_max = Vec2f{ImGui::GetScrollMaxX(), ImGui::GetScrollMaxY()};
 
     ImGui::EndChild();
 }
@@ -76,9 +89,34 @@ void ScrollArea::set_window_flags(ImGuiWindowFlags window_flags)
     m_window_flags = window_flags;
 }
 
+bool ScrollArea::remap_horizontal_scroll() const
+{
+    return m_remap_horizontal_scroll;
+}
+
+void ScrollArea::set_remap_horizontal_scroll(bool remap_horizontal_scroll)
+{
+    m_remap_horizontal_scroll = remap_horizontal_scroll;
+}
+
 const Vec2f& ScrollArea::content_pos() const
 {
     return m_last_scroll;
+}
+
+const Vec2f& ScrollArea::content_size() const
+{
+    return m_scroll_max;
+}
+
+void ScrollArea::set_content_pos(const Vec2f& scroll)
+{
+    // m_requested_pos = scroll;
+}
+
+void ScrollArea::scroll_at_item(Item* item)
+{
+    m_requested_item_scroll = item;
 }
 
 } // namespace Slic3r::App::Yoga

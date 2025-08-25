@@ -25,6 +25,7 @@ TopBar::TopBar(
     ThumbnailStore& thumbnail_store
 ) :
     Window("top_bar"),
+    m_selected_project_changed_listener_scope(*project_interactor, *this),
     m_project_interactor(project_interactor),
     m_render_module(render_module),
     m_thumbnail_store(thumbnail_store)
@@ -38,22 +39,31 @@ TopBar::TopBar(
     set_flex_shrink(0);
 
     Rectangle* left_wrapper = emplace_back<Rectangle>();
+    left_wrapper->set_flex_shrink(0);
 
+    add_new_project_btn(left_wrapper);
     add_load_project_btn(left_wrapper);
     add_save_project_btn(left_wrapper);
     add_show_ui_btn(left_wrapper);
 
     m_list_view = emplace_back<ProjectButtonListView>(*m_project_interactor);
+    m_list_view->set_window_flags(
+        ImGuiWindowFlags_HorizontalScrollbar // compute horizontal scroll range
+        | ImGuiWindowFlags_NoScrollbar // don't show any scrollbar
+        | ImGuiWindowFlags_NoScrollWithMouse // don't let ImGui consume wheel vertically
+    );
+    m_list_view->set_remap_horizontal_scroll(true);
     m_list_view->set_source_list(&project_interactor->observable_project_list());
 
     Rectangle* project_actions_wrapper = emplace_back<Rectangle>();
     project_actions_wrapper->set_flex_grow(1.);
 
-    add_new_project_btn(project_actions_wrapper);
-    add_expander_btn(project_actions_wrapper);
+    // add_new_project_btn(project_actions_wrapper);
+    // add_expander_btn(project_actions_wrapper);
 
     Rectangle* right_wrapper = emplace_back<Rectangle>();
-    m_search                 = right_wrapper->emplace_back<Rectangle>();
+    right_wrapper->set_flex_shrink(0);
+    m_search = right_wrapper->emplace_back<Rectangle>();
     m_search->set_min_size({200.f, YGUndefined});
     m_search->set_rounding(0.f);
 
@@ -72,17 +82,19 @@ TopBar::TopBar(
         btn->set_tooltip_position(Position::Bottom);
     }
 
-    for (Rectangle* wrapper : std::initializer_list<Rectangle*>{
-             left_wrapper,
-             right_wrapper,
-             project_actions_wrapper,
-         })
+    for (Rectangle* wrapper :
+         std::initializer_list<Rectangle*>{left_wrapper, right_wrapper, project_actions_wrapper})
     {
         wrapper->set_fill(GImGui->Style.Colors[ImGuiCol_WindowBg]);
         wrapper->set_rounding(0.f);
         wrapper->set_gap(15.f);
         wrapper->set_padding(paddings);
     }
+}
+
+void TopBar::on_selected_project_changed(size_t index)
+{
+    m_list_view->scroll_at_item(m_list_view->get_item(index));
 }
 
 void TopBar::add_load_project_btn(Item* parent)
@@ -178,18 +190,11 @@ void TopBar::add_show_ui_btn(Item* parent)
 
 void TopBar::add_new_project_btn(Item* parent)
 {
-    m_new_btn = parent->emplace_back<LayoutButton>("", Render::Icon::TobBarPlus, "Add new project");
+    m_new_btn = parent->emplace_back<LayoutButton>("", Render::Icon::NewBtnIcon, "Add new project");
     m_new_btn->set_background_color(IM_COL32_BLACK_TRANS);
     m_new_btn->callbacks().action = [this]() {
         m_project_interactor->new_project();
     };
-}
-
-void TopBar::add_expander_btn(Item* parent)
-{
-    m_expand_btn = parent->emplace_back<LayoutButton>("", Render::Icon::OpenArrow);
-    m_expand_btn->set_background_color(IM_COL32_BLACK_TRANS);
-    m_expand_btn->set_visible(false);
 }
 
 } // namespace Slic3r::App

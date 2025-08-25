@@ -166,61 +166,150 @@ void Item::process_events(Vec2f pos, Vec2f size)
     }
 }
 
-YGNodeRef Item::node() const { return m_node; }
+YGNodeRef Item::node() const
+{
+    return m_node;
+}
 
-Item* Item::parent() const { return m_parent; }
+Item* Item::parent() const
+{
+    return m_parent;
+}
 
-float Item::x() const { return YGNodeLayoutGetLeft(m_node); }
+float Item::x() const
+{
+    return YGNodeLayoutGetLeft(m_node);
+}
 
-float Item::y() const { return YGNodeLayoutGetTop(m_node); }
+float Item::y() const
+{
+    return YGNodeLayoutGetTop(m_node);
+}
 
-float Item::z() const { return m_z; }
+float Item::z() const
+{
+    return m_z;
+}
 
-float Item::width() const { return YGNodeLayoutGetWidth(m_node); }
+float Item::width() const
+{
+    return YGNodeLayoutGetWidth(m_node);
+}
 
-float Item::height() const { return YGNodeLayoutGetHeight(m_node); }
+float Item::height() const
+{
+    return YGNodeLayoutGetHeight(m_node);
+}
 
-float Item::left() const { return YGNodeLayoutGetLeft(m_node); }
+float Item::left() const
+{
+    return YGNodeLayoutGetLeft(m_node);
+}
 
-float Item::right() const { return YGNodeLayoutGetRight(m_node); }
+float Item::right() const
+{
+    return YGNodeLayoutGetRight(m_node);
+}
 
-float Item::top() const { return YGNodeLayoutGetTop(m_node); }
+float Item::top() const
+{
+    return YGNodeLayoutGetTop(m_node);
+}
 
-float Item::bottom() const { return YGNodeLayoutGetBottom(m_node); }
+float Item::bottom() const
+{
+    return YGNodeLayoutGetBottom(m_node);
+}
 
-const Vec2f& Item::min_size() const { return m_min_size; }
+const Vec2f& Item::min_size() const
+{
+    return m_min_size;
+}
 
-const Vec2f& Item::max_size() const { return m_max_size; }
+const Vec2f& Item::max_size() const
+{
+    return m_max_size;
+}
 
-bool Item::is_visible() const { return YGNodeStyleGetDisplay(m_node) == YGDisplayFlex; }
+bool Item::is_visible() const
+{
+    return YGNodeStyleGetDisplay(m_node) == YGDisplayFlex;
+}
 
-bool Item::debug_border() const { return m_debug_border; }
+bool Item::debug_border() const
+{
+    return m_debug_border;
+}
 
-float Item::flex_grow() const { return m_flex_grow; }
+float Item::flex_grow() const
+{
+    return m_flex_grow;
+}
 
-float Item::flex_shrink() const { return m_flex_shrink; }
+float Item::flex_shrink() const
+{
+    return m_flex_shrink;
+}
 
-YGDirection Item::direction() const { return m_direction; }
+YGDirection Item::direction() const
+{
+    return m_direction;
+}
 
-float Item::aspect_ratio() const { return m_aspect_ratio; }
+float Item::aspect_ratio() const
+{
+    return m_aspect_ratio;
+}
 
-YGJustify Item::justify_content() const { return m_justify_content; }
+YGJustify Item::justify_content() const
+{
+    return m_justify_content;
+}
 
-YGPositionType Item::position_type() const { return m_position_type; }
+YGPositionType Item::position_type() const
+{
+    return m_position_type;
+}
 
-YGAlign Item::align_items() const { return m_align_items; }
+YGAlign Item::align_items() const
+{
+    return m_align_items;
+}
 
-YGAlign Item::align_content() const { return m_align_content; }
+YGAlign Item::align_content() const
+{
+    return m_align_content;
+}
 
-const Margins& Item::margin() const { return m_margin; }
+const Margins& Item::margin() const
+{
+    return m_margin;
+}
 
-const Paddings& Item::padding() const { return m_padding; }
+const Paddings& Item::padding() const
+{
+    return m_padding;
+}
 
-float Item::gap() const { return m_gap; }
+float Item::gap() const
+{
+    return m_gap;
+}
 
-Orientation Item::orientation() const { return m_orientation; }
+Orientation Item::orientation() const
+{
+    return m_orientation;
+}
 
-YGWrap Item::flex_wrap() const { return YGNodeStyleGetFlexWrap(m_node); }
+YGWrap Item::flex_wrap() const
+{
+    return YGNodeStyleGetFlexWrap(m_node);
+}
+
+bool Item::is_node_dirty() const
+{
+    return YGNodeIsDirty(m_node);
+}
 
 bool Item::enabled()
 {
@@ -264,9 +353,15 @@ void Item::set_visible(bool visible)
     }
 }
 
-void Item::set_width(float width) { YGNodeStyleSetWidth(m_node, width); }
+void Item::set_width(float width)
+{
+    YGNodeStyleSetWidth(m_node, width);
+}
 
-void Item::set_height(float height) { YGNodeStyleSetHeight(m_node, height); }
+void Item::set_height(float height)
+{
+    YGNodeStyleSetHeight(m_node, height);
+}
 
 void Item::set_width_percent(float width_percent)
 {
@@ -278,17 +373,35 @@ void Item::set_height_percent(float height_percent)
     YGNodeStyleSetHeightPercent(m_node, height_percent);
 }
 
-void Item::set_left(float left) { YGNodeStyleSetPosition(m_node, YGEdgeLeft, left); }
+void Item::set_left(float left)
+{
+    YGNodeStyleSetPosition(m_node, YGEdgeLeft, left);
+}
 
-void Item::set_right(float right) { YGNodeStyleSetPosition(m_node, YGEdgeRight, right); }
+void Item::set_right(float right)
+{
+    YGNodeStyleSetPosition(m_node, YGEdgeRight, right);
+}
 
-void Item::set_top(float top) { YGNodeStyleSetPosition(m_node, YGEdgeTop, top); }
+void Item::set_top(float top)
+{
+    YGNodeStyleSetPosition(m_node, YGEdgeTop, top);
+}
 
-void Item::set_bottom(float bottom) { YGNodeStyleSetPosition(m_node, YGEdgeBottom, bottom); }
+void Item::set_bottom(float bottom)
+{
+    YGNodeStyleSetPosition(m_node, YGEdgeBottom, bottom);
+}
 
-void Item::set_flex(float flex) { YGNodeStyleSetFlex(m_node, flex); }
+void Item::set_flex(float flex)
+{
+    YGNodeStyleSetFlex(m_node, flex);
+}
 
-void Item::set_flex_wrap(YGWrap wrap) { YGNodeStyleSetFlexWrap(m_node, wrap); }
+void Item::set_flex_wrap(YGWrap wrap)
+{
+    YGNodeStyleSetFlexWrap(m_node, wrap);
+}
 
 void Item::remove_later(Item* child)
 {
@@ -307,7 +420,9 @@ std::vector<Item*> Item::items() const
     std::vector<Item*> result;
     result.reserve(m_children.size());
     std::transform(
-        m_children.cbegin(), m_children.cend(), std::back_inserter(result),
+        m_children.cbegin(),
+        m_children.cend(),
+        std::back_inserter(result),
         [](const ItemPtr& child) { return child.get(); }
     );
     return result;
@@ -315,10 +430,11 @@ std::vector<Item*> Item::items() const
 
 std::optional<size_t> Item::index_of(Item* item) const
 {
-    std::vector<ItemPtr>::const_iterator it =
-        std::find_if(m_children.cbegin(), m_children.cend(), [item](const ItemPtr& child) {
-            return item == child.get();
-        });
+    std::vector<ItemPtr>::const_iterator it = std::find_if(
+        m_children.cbegin(),
+        m_children.cend(),
+        [item](const ItemPtr& child) { return item == child.get(); }
+    );
     std::optional<size_t> result;
     if (it != m_children.cend()) {
         result = std::distance(m_children.cbegin(), it);
@@ -326,7 +442,10 @@ std::optional<size_t> Item::index_of(Item* item) const
     return result;
 }
 
-void Item::set_debug_border(bool show_debug_border) { m_debug_border = show_debug_border; }
+void Item::set_debug_border(bool show_debug_border)
+{
+    m_debug_border = show_debug_border;
+}
 
 std::string Item::debug_dump_tree() const
 {
@@ -337,38 +456,37 @@ std::string Item::debug_dump_tree() const
     dump += "minWidth: " + std::to_string(YGNodeStyleGetMinWidth(m_node).value) + ", ";
     dump += "minHeight: " + std::to_string(YGNodeStyleGetMinHeight(m_node).value) + ", ";
     // if (m_max_size.x() != YGUndefined) {
-    //     dump += "maxWidth: " + std::to_string(YGNodeStyleGetMaxWidth(m_node).value) + ", "
+    // dump += "maxWidth: " + std::to_string(YGNodeStyleGetMaxWidth(m_node).value) + ", "
     // }
     // if (m_max_size.y() != YGUndefined) {
-    //     dump += "maxHeight: " + std::to_string(YGNodeStyleGetMaxHeight(m_node).value) + ", ";
+    // dump += "maxHeight: " + std::to_string(YGNodeStyleGetMaxHeight(m_node).value) + ", ";
     // }
     if (m_padding.left > 0)
-        dump += "paddingLeft: " + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeLeft).value) +
-            ", ";
+        dump += "paddingLeft: " + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeLeft).value) + ", ";
     if (m_padding.right > 0)
-        dump += "paddingRight: " +
-            std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeRight).value) + ", ";
+        dump += "paddingRight: "
+            + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeRight).value)
+            + ", ";
     if (m_padding.left > 0)
-        dump += "paddingTop: " + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeTop).value) +
-            ", ";
+        dump += "paddingTop: " + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeTop).value) + ", ";
     if (m_padding.bottom > 0)
-        dump += "paddingBottom: " +
-            std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeBottom).value) + ", ";
+        dump += "paddingBottom: "
+            + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeBottom).value)
+            + ", ";
     if (m_margin.left > 0)
-        dump += "marginLeft: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeLeft).value) +
-            ", ";
+        dump += "marginLeft: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeLeft).value) + ", ";
     if (m_margin.right > 0)
-        dump += "marginRight: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeRight).value) +
-            ", ";
+        dump += "marginRight: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeRight).value) + ", ";
     if (m_margin.top > 0)
         dump += "marginTop: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeTop).value) + ", ";
     if (m_margin.bottom > 0)
-        dump += "marginBottom: " +
-            std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeBottom).value) + ", ";
+        dump += "marginBottom: "
+            + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeBottom).value)
+            + ", ";
 
     dump += "flexGrow: " + std::to_string(YGNodeStyleGetFlexGrow(m_node)) + ", ";
     // if (m_aspect_ratio != YGUndefined) {
-    //     dump += "aspectRatio: " + std::to_string(YGNodeStyleGetAspectRatio(m_node)) + ", ";
+    // dump += "aspectRatio: " + std::to_string(YGNodeStyleGetAspectRatio(m_node)) + ", ";
     // }
     dump += "alignSelf: " + yoga_align_to_string(m_self_align) + ", ";
     dump += "flexDirection: " + yoga_flex_direction(m_flex_direction) + ", ";
@@ -392,12 +510,18 @@ std::string Item::debug_dump_tree() const
 void Item::invalidate_min_size_calculation()
 {
     m_min_size_calculated = false;
-    m_min_size = Vec2f();
+    m_min_size            = Vec2f();
 }
 
-ImVec2 Item::to_im(const Vec2f& val) { return ImVec2(val.x(), val.y()); }
+ImVec2 Item::to_im(const Vec2f& val)
+{
+    return ImVec2(val.x(), val.y());
+}
 
-Vec2f Item::from_im(const ImVec2& val) { return Vec2f(val.x, val.y); }
+Vec2f Item::from_im(const ImVec2& val)
+{
+    return Vec2f(val.x, val.y);
+}
 
 bool Item::is_node_visible(YGNodeRef node)
 {
@@ -426,9 +550,9 @@ Vec2f Item::get_item_size()
     ImVec2 cur_pos = ImGui::GetCursorPos();
 
     // if we render literally nothing, set our size to nothing, otherwise use whatever ImGui gave us
-    ImVec2 size = cur_pos_prev.x == 0 && cur_pos_prev.y == 0
-        ? cur_pos_prev
-        : ImVec2{cur_pos.x, cur_pos_prev.y + GImGui->Style.ItemSpacing.y};
+    ImVec2 size = cur_pos_prev.x == 0 && cur_pos_prev.y == 0 ?
+        cur_pos_prev :
+        ImVec2{cur_pos.x, cur_pos_prev.y + GImGui->Style.ItemSpacing.y};
 
     Vec2f result = Vec2f{ImMax(10.f, size.x), ImMax(10.f, size.y)};
 
@@ -464,7 +588,10 @@ void Item::enabled_updated_internal() {}
 
 void Item::visible_updated_internal() {}
 
-Vec2f Item::get_available_size() const { return m_parent->get_available_size(); }
+Vec2f Item::get_available_size() const
+{
+    return m_parent->get_available_size();
+}
 
 void Item::on_resized() {}
 
@@ -483,7 +610,10 @@ Vec2f Item::get_global_pos() const
     return pos;
 };
 
-void Item::set_imgui_render(Render::ImguiRender* imgui_render) { m_imgui_render = imgui_render; }
+void Item::set_imgui_render(Render::ImguiRender* imgui_render)
+{
+    m_imgui_render = imgui_render;
+}
 
 void Item::add_child(ItemPtr child, size_t index)
 {
@@ -505,10 +635,11 @@ ItemPtr Item::remove_child(Item* child)
     ASSERT(child);
     ASSERT(child->node());
 
-    std::vector<ItemPtr>::iterator it =
-        std::find_if(m_children.begin(), m_children.end(), [child](const ItemPtr& child_item) {
-            return child_item.get() == child;
-        });
+    std::vector<ItemPtr>::iterator it = std::find_if(
+        m_children.begin(),
+        m_children.end(),
+        [child](const ItemPtr& child_item) { return child_item.get() == child; }
+    );
 
     ASSERT(it != m_children.end(), "Trying to remove unmaintained child");
     if (it == m_children.end()) {
@@ -531,12 +662,15 @@ void Item::update_children_render_order()
 {
     m_children_render_order.clear();
     std::transform(
-        m_children.cbegin(), m_children.cend(), std::back_inserter(m_children_render_order),
+        m_children.cbegin(),
+        m_children.cend(),
+        std::back_inserter(m_children_render_order),
         [](const ItemPtr& child) { return child.get(); }
     );
     // sort children by Z layer, higher Z shall be rendered first
     std::sort(
-        m_children_render_order.begin(), m_children_render_order.end(),
+        m_children_render_order.begin(),
+        m_children_render_order.end(),
         [](Item* left, Item* right) { return left->z() > right->z(); }
     );
 }
@@ -641,10 +775,9 @@ void Item::set_position_type(YGPositionType position_type)
 void Item::set_orientation(Orientation orientation)
 {
     if (m_orientation != orientation) {
-        m_orientation = orientation;
-        m_flex_direction = orientation == Orientation::Horizontal
-            ? YGFlexDirectionRow
-            : YGFlexDirectionColumn;
+        m_orientation    = orientation;
+        m_flex_direction = orientation == Orientation::Horizontal ? YGFlexDirectionRow :
+                                                                    YGFlexDirectionColumn;
         YGNodeStyleSetFlexDirection(m_node, m_flex_direction);
         set_style_dirty();
     }
@@ -688,7 +821,10 @@ void Item::set_z(float z)
     }
 }
 
-const std::string& Item::item_name() const { return m_item_name; }
+const std::string& Item::item_name() const
+{
+    return m_item_name;
+}
 
 void Item::set_item_name(const std::string& item_name)
 {
@@ -728,8 +864,8 @@ void Item::style_node()
         // If we are a leaf node, calculate our min size
         if (!m_min_size_calculated) {
             m_min_size_calculated = true;
-            Vec2f sz = get_item_size();
-            m_min_size = m_min_size.cwiseMax(sz);
+            Vec2f sz              = get_item_size();
+            m_min_size            = m_min_size.cwiseMax(sz);
             YGNodeStyleSetMinWidth(m_node, m_min_size.x());
             YGNodeStyleSetMinHeight(m_node, m_min_size.y());
         }
@@ -759,13 +895,25 @@ ImVec2 Item::get_node_pos() const
     return {YGNodeLayoutGetLeft(m_node), YGNodeLayoutGetTop(m_node)};
 }
 
-void Item::prepend(ItemPtr child) { insert(std::move(child), 0); }
+void Item::prepend(ItemPtr child)
+{
+    insert(std::move(child), 0);
+}
 
-void Item::append(ItemPtr child) { insert(std::move(child), get_node_count()); }
+void Item::append(ItemPtr child)
+{
+    insert(std::move(child), get_node_count());
+}
 
-void Item::insert(ItemPtr child, size_t index) { add_child(std::move(child), index); }
+void Item::insert(ItemPtr child, size_t index)
+{
+    add_child(std::move(child), index);
+}
 
-ItemPtr Item::remove(Item* child) { return remove_child(child); }
+ItemPtr Item::remove(Item* child)
+{
+    return remove_child(child);
+}
 
 void Item::render_item_begin(Vec2f pos, Vec2f size) {}
 
@@ -785,7 +933,7 @@ void Item::render_node(Vec2f pos, Item* child)
         return;
     }
 
-    Vec2f cell_pos = pos + Vec2f(YGNodeLayoutGetLeft(child_node), YGNodeLayoutGetTop(child_node));
+    Vec2f cell_pos  = pos + Vec2f(YGNodeLayoutGetLeft(child_node), YGNodeLayoutGetTop(child_node));
     Vec2f cell_size = Vec2f(YGNodeLayoutGetWidth(child_node), YGNodeLayoutGetHeight(child_node));
 
     if (isnan(cell_size.x()) || isnan(cell_size.y())) {
@@ -820,8 +968,8 @@ void Item::render_debug(Vec2f pos, Vec2f size)
         ImDrawList* draw_list = ImGui::GetForegroundDrawList();
         ImRect rect(to_im(pos), to_im(pos + size));
         // SPDLOG_INFO(
-        //     "debug {}:{} -> {}:{} pos {}:{} size {}:{}", rect.Min.x, rect.Min.y, rect.Max.x,
-        //     rect.Max.y, pos.x(), pos.y(), size.x(), size.y()
+        // "debug {}:{} -> {}:{} pos {}:{} size {}:{}", rect.Min.x, rect.Min.y, rect.Max.x,
+        // rect.Max.y, pos.x(), pos.y(), size.x(), size.y()
         // );
         draw_list->AddRectFilled(
             rect.Min,
@@ -840,7 +988,7 @@ void Item::process_events_node(Vec2f pos, Item* child)
         return;
     }
 
-    Vec2f cell_pos = pos + Vec2f(YGNodeLayoutGetLeft(child_node), YGNodeLayoutGetTop(child_node));
+    Vec2f cell_pos  = pos + Vec2f(YGNodeLayoutGetLeft(child_node), YGNodeLayoutGetTop(child_node));
     Vec2f cell_size = Vec2f(YGNodeLayoutGetWidth(child_node), YGNodeLayoutGetHeight(child_node));
 
     child->process_events(cell_pos, cell_size);
@@ -864,14 +1012,17 @@ Item* Item::get_item(size_t index) const
     return index >= m_children.size() ? nullptr : m_children.at(index).get();
 }
 
-size_t Item::item_count() const { return m_children.size(); }
+size_t Item::item_count() const
+{
+    return m_children.size();
+}
 
 void Item::check_resized()
 {
     float w = width();
     float h = height();
     if (!Domain::fuzzy_compare(w, m_last_width) || !Domain::fuzzy_compare(h, m_last_height)) {
-        m_last_width = w;
+        m_last_width  = w;
         m_last_height = h;
         on_resized();
     }
@@ -881,12 +1032,12 @@ void Item::check_resized()
     }
 }
 
-Popup *Item::parent_popup() const
+Popup* Item::parent_popup() const
 {
     return m_parent_popup;
 }
 
-void Item::set_parent_popup(Popup *parent_popup)
+void Item::set_parent_popup(Popup* parent_popup)
 {
     m_parent_popup = parent_popup;
 }

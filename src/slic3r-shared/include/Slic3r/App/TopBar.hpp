@@ -2,13 +2,14 @@
 
 #include <Slic3r/Domain/SelectionId.hpp>
 
+#include <Slic3r/Biz/Platform/ListenerScope.hpp>
+
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+
 #include "Slic3r/App/Yoga/Window.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
-#include "Slic3r/App/Yoga/ProjectButton.hpp"
-
-namespace Slic3r::Biz {
-class ProjectInteractor;
-} // namespace Slic3r::Biz
+#include "Slic3r/App/Yoga/ScrollArea.hpp"
 
 namespace Slic3r::App::Platform {
 class AbstractRenderModule;
@@ -20,11 +21,12 @@ namespace Yoga {
 class ProjectButton;
 class LayoutButton;
 class Rectangle;
+class ScrollArea;
 } // namespace Yoga
 
 struct ThumbnailStore;
 
-class TopBar : public Yoga::Window
+class TopBar : public Yoga::Window, public Biz::ISelectedProjectChangedListener
 {
 public:
     TopBar(
@@ -33,28 +35,31 @@ public:
         ThumbnailStore& thumbnail_store
     );
 
+    void on_selected_project_changed(size_t index) override;
+
 private:
     void add_load_project_btn(Item* parent);
     void add_save_project_btn(Item* parent);
     void add_show_ui_btn(Item* parent);
 
     void add_new_project_btn(Item* parent);
-    void add_expander_btn(Item* parent);
 
 private:
     using ProjectButtonListView = Yoga::ListView<
         Yoga::ProjectButton,
         Domain::SelectionId,
-        Yoga::ViewFactory<Yoga::ProjectButton, Domain::SelectionId, Biz::ProjectInteractor&>>;
+        Yoga::ViewFactory<Yoga::ProjectButton, Domain::SelectionId, Biz::ProjectInteractor&>,
+        Yoga::ScrollArea>;
+
+    Biz::ListenerScope<Biz::ISelectedProjectChangedListener, Biz::ProjectInteractor, TopBar>
+        m_selected_project_changed_listener_scope;
 
     ProjectButtonListView* m_list_view{nullptr};
 
+    Yoga::LayoutButton* m_new_btn{nullptr};
     Yoga::LayoutButton* m_load_btn{nullptr};
     Yoga::LayoutButton* m_save_btn{nullptr};
     Yoga::LayoutButton* m_show_ui_btn{nullptr};
-
-    Yoga::LayoutButton* m_new_btn{nullptr};
-    Yoga::LayoutButton* m_expand_btn{nullptr};
 
     Yoga::Rectangle* m_search{nullptr};
 

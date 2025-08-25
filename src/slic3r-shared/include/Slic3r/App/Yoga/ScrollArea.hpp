@@ -23,12 +23,21 @@ public:
     ImGuiWindowFlags window_flags() const;
     void set_window_flags(ImGuiWindowFlags window_flags);
 
+    bool remap_horizontal_scroll() const;
+    void set_remap_horizontal_scroll(bool remap_horizontal_scroll);
+
     const Vec2f& content_pos() const;
+    const Vec2f& content_size() const;
+    void set_content_pos(const Vec2f& content_pos);
+    void scroll_at_item(Item* item);
 
 private:
-    ImGuiChildFlags m_child_flags = 0;
+    ImGuiChildFlags m_child_flags   = 0;
     ImGuiWindowFlags m_window_flags = 0;
     Vec2f m_last_scroll;
+    Vec2f m_scroll_max;
+    bool m_remap_horizontal_scroll = false;
+    Item* m_requested_item_scroll  = nullptr;
 };
 
 } // namespace Slic3r::App::Yoga

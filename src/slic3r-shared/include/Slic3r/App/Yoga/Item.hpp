@@ -106,6 +106,7 @@ public:
     float gap() const;
     Orientation orientation() const;
     YGWrap flex_wrap() const;
+    bool is_node_dirty() const;
 
     bool enabled();
     void set_enabled(bool enabled);
