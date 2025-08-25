@@ -1511,7 +1511,7 @@ void MeasureGizmo::clear_scene()
 void MeasureGizmo::clear_features()
 {
     m_scene_presenter.scene().remove_children(
-        [&](const Scene::Node* node) { return node->tag_of_type<MeasureGizmoNodeTag>() != nullptr; },
+        [](const Scene::Node* node) { return node->tag_of_type<MeasureGizmoNodeTag>() != nullptr; },
         m_current_project->features_node
     );
 }

@@ -199,9 +199,7 @@ public:
     void add_child(Node* node, Node* parent = nullptr);
 
     /**
-     * @brief Remove @p node from its parent and destroy it.
-     *
-     * @note This function is not recursive.
+     * @brief Remove @p node (and its children) from its parent and destroy it.
      *
      * @return True if @p node was removed from its parent and destroyed otherwise false (i.e. not
      * found in its parent).
@@ -213,8 +211,6 @@ public:
      *
      * @note Unlike detach_children() this method will destroy all children satisfying
      * @p predicate.
-     *
-     * @note This function is not recursive.
      *
      * @param predicate Predicate function to test node if it is supposed to be removed.
      * @param parent Optional parent node, if not specified the scene root is searched instead.

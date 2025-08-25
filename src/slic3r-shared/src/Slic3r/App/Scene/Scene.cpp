@@ -166,6 +166,9 @@ bool Scene::remove_child(Node* node)
     auto* parent = node->parent();
     if (parent == nullptr)
         return false;
+
+    // remove all children of the node before removing the node itself
+    remove_children([](const Node* child) { return true; }, node);
     return remove_children([node](const Node* child) {
         return child == node;
     }, parent);
@@ -178,10 +181,13 @@ bool Scene::remove_children(const Node::NodePredicate& predicate, Node* parent)
 
     return parent->remove_children([this, predicate](Node* n) {
         if (predicate(n)) {
+            remove_children(predicate, n);
+
             invoke_listeners<ISceneChangedListener>([n](auto* listener) {
                 listener->on_node_removed(n);
             });
             unregister_node(n);
+
             return true;
         }
         return false;
