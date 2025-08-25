@@ -63,9 +63,7 @@ public:
     }
 
     BedInstance& add_bed_instance();
-    void remove_last_bed_instance();
-    void remove_bed_instance_by_id(size_t id);
-    void clear_bed_instances();
+    BedInstanceList::const_iterator remove_bed_instance_by_id(size_t id);
 
     const BedInstance& find_bed_instance(size_t id) const
     {

@@ -300,7 +300,7 @@ void SceneInteractor::new_object_from_mesh(Domain::TriangleMesh&& mesh, const st
         const std::string stem_name = filename_path.stem().string();
         project.set_file_name(stem_name);
     }
-    
+
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
     invoke_listeners<ISceneChangedListener>(
@@ -751,14 +751,28 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
 
     auto insts = bed_inst->model_instances;
 
-    cc->remove_bed_instance_by_id(instance.instance_id);
-    bed_selection().remove(instance);
+    auto& selection = bed_selection();
+    selection.remove(instance);
+    auto it = cc->remove_bed_instance_by_id(instance.instance_id);
+
+    if (it != cc->bed_instances().end()) {
+        selection.select_one({cc->id().id, it->get()->id().id});
+    }
 
     // update bed_instance index
     size_t idx = 1;
+    Domain::BedRefs updated;
     for (auto& inst : cc->bed_instances()) {
-        inst->set_index(idx++);
+        auto index = idx++;
+        if (index != inst->index()) {
+            inst->set_index(index);
+            updated.emplace_back(cc->id().id, inst->id().id);
+        }
     }
+    invoke_listeners<ISceneBedInstanceChangedListener>(
+        [&](auto* l) { l->on_bed_instance_updated(m_selected_project_id, updated); }
+    );
+
 
     if (bed_selection().empty()) {
         // ensure one bed instance is selected
@@ -777,6 +791,10 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
     invoke_listeners<ISceneBedInstanceChangedListener>(
         [&](auto* l) { l->on_bed_instance_removed(m_selected_project_id, {instance}); }
     );
+
+    if (cc->bed_instances().empty()) {
+        add_bed_instance(cc->id().id);
+    }
 }
 
 void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, const Transform& xform)
