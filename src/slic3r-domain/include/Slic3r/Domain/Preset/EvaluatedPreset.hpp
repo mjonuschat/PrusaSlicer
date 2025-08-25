@@ -71,7 +71,7 @@ struct EvaluatedPreset
         size_t idx = name.find('@');
         if (idx == 0 || idx == std::string_view::npos)
             return name;
-        while (idx > 0 && name[idx] != ' ') idx--;
+        while (idx > 0 && name[idx] == ' ') idx--;
         return std::string_view{name.data(), idx};
     }
 

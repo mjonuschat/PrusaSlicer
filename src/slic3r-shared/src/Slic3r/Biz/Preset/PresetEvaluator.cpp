@@ -362,7 +362,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             printer_preset
         );
 
-        // 3. Print preset
+        // 2. Print preset
         PresetKind print_kind = Domain::Preset::print_kind(hw_config.technology);
         auto prints_it        = m_presets.find(print_kind);
         auto print_names_it   = m_named_presets.find(print_kind);
@@ -371,7 +371,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
         PresetCollectionEvaluator print_eval(prints_it->second, print_names_it->second, m_eval, {});
         auto print_presets = print_eval.eval_preset(printer_tools_values);
 
-        // 4. Tool print presets
+        // 3. Tool print presets
         // for each tool
         PresetKind tool_kind = Domain::Preset::tool_print_kind(hw_config.technology);
         auto tool_it         = m_presets.find(tool_kind);
@@ -412,7 +412,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                 }
             }
 
-            // 2. Material
+            // 4. Material
             PresetKind mat_kind = Domain::Preset::material_kind(hw_config.technology);
             auto mats_it        = m_presets.find(mat_kind);
             auto mat_names_it   = m_named_presets.find(mat_kind);

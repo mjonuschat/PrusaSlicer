@@ -173,8 +173,10 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     for (const auto& ctx : ret) {
         for (const auto& var_ctx : var_contexts) {
             PresetEvaluator::EvalPresetContext context = ctx;
-            context.id   = Domain::Preset::derive_name(var_ctx.id, context.id);
-            context.name = Domain::Preset::derive_name(var_ctx.name, context.name);
+            if (!var_ctx.id.empty())
+                context.id   = Domain::Preset::derive_name(var_ctx.id, context.id);
+            if (!var_ctx.name.empty())
+                context.name = Domain::Preset::derive_name(var_ctx.name, context.name);
             context.conditions.insert(
                 context.conditions.end(),
                 var_ctx.conditions.begin(),
