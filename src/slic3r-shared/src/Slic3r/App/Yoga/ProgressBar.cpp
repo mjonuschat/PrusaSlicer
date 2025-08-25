@@ -28,7 +28,6 @@ ProgressBar::ProgressBar() : Rectangle()
     m_overlay->set_font_type(Render::ImguiFontType::Bold);
     m_overlay->set_position_type(YGPositionTypeAbsolute);
     m_overlay->set_self_align(YGAlignCenter);
-    m_overlay->set_debug_border(true);
 }
 
 double ProgressBar::progress() const
