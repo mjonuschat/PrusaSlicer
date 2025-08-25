@@ -3,7 +3,7 @@
 <head>
   <meta charset='UTF-8' />
   <meta content='width=device-width, initial-scale=1.0' name='viewport' />
-  <title>Slicer error</title>
+  <title>Slicer</title>
   <style>
     body {
             font-family: Arial, sans-serif;
@@ -39,6 +39,17 @@
             outline: none;
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
         }
+        .hypertext-link {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .hypertext-link:hover {
+            text-decoration: underline;
+          }
   </style>
 </head>
 <body>
@@ -99,8 +110,9 @@
       </svg>
     </p>
     <p style="font-size: 24px;">Please, log in external browser.</p>
-    <a href="#" class="reload-link" onclick="window.PrusaSlicerWebviewMessage.postMessage(JSON.stringify({ event: 'reopenLogInBrowser' })); return false;">Reopen external browser.</a>
+    <a href="#" class="reload-link" onclick="window.PrusaSlicerWebviewMessage.postMessage(JSON.stringify({ event: 'reopenLogInBrowser' })); return false;">Reopen external browser</a>
   </div>
 </div>
+<a class="hypertext-link" href="#" onclick="window.PrusaSlicerWebviewMessage.postMessage(JSON.stringify({ event: 'openLoginPage' }))">Login in this window</a>
 </body>
 </html>

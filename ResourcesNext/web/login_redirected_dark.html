@@ -3,45 +3,54 @@
 <head>
   <meta charset='UTF-8' />
   <meta content='width=device-width, initial-scale=1.0' name='viewport' />
-  <title>Slicer error (Dark Mode)</title>
+  <title>Slicer</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      background-color: #121212; /* Dark background */
-      color: #e0e0e0;           /* Light text */
-    }
+      body {
+          font-family: Arial, sans-serif;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+          background-color: #121212; 
+          color: #e0e0e0;           
+      }
 
-    /* Style for the link to make it more prominent */
-    .reload-link {
-      display: inline-block;
-      padding: 10px 18px;
-      margin-top: 15px;
-      font-size: 16px;
-      color: #e0e0e0;             /* Light text */
-      background-color: #333333; /* Dark grey background */
-      border: 1px solid #555555;   /* Lighter grey border */
-      border-radius: 5px;
-      cursor: pointer;
-      text-decoration: none; /* Remove underline */
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
+      .reload-link {
+          display: inline-block;
+          padding: 10px 18px;
+          margin-top: 15px;
+          font-size: 16px;
+          color: #e0e0e0;  
+          background-color: #333333; 
+          border: 1px solid #555555;
+          border-radius: 5px;
+          cursor: pointer;
+          text-decoration: none;
+          transition: background-color 0.3s ease, color 0.3s ease;
+      }
 
-    .reload-link:hover {
-      background-color: #555555; /* Lighter grey on hover */
-      color: #ffffff;             /* White text on hover */
-    }
+      .reload-link:hover {
+          background-color: #555555;
+          color: #ffffff;
+      }
 
-    .reload-link:focus {
-      outline: none;
-      box-shadow: 0 0 5px rgba(100, 100, 100, 0.5); /* Lighter shadow */
-    }
+      .reload-link:focus {
+          outline: none;
+          box-shadow: 0 0 5px rgba(100, 100, 100, 0.5);
+      }
+      .hypertext-link {
+          position: absolute;
+          bottom: 20px;
+          right: 20px;
+          color: #e0e0e0;
+          text-decoration: none;
+      }
 
+      .hypertext-link:hover {
+          text-decoration: underline;
+      }
   </style>
 </head>
 <body>
@@ -89,8 +98,9 @@
       </svg>
     </p>
     <p style="font-size: 24px;">Please, log in external browser.</p>
-    <a href="#" class="reload-link" onclick="window.PrusaSlicerWebviewMessage.postMessage(JSON.stringify({ event: 'reopenLogInBrowser' })); return false;">Reopen external browser.</a>
+    <a href="#" class="reload-link" onclick="window.PrusaSlicerWebviewMessage.postMessage(JSON.stringify({ event: 'reopenLogInBrowser' })); return false;">Reopen external browser</a>
   </div>
 </div>
+<a class="hypertext-link" href="#" onclick="window.PrusaSlicerWebviewMessage.postMessage(JSON.stringify({ event: 'openLoginPage' }))">Login in this window</a>
 </body>
 </html>
