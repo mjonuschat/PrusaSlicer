@@ -33,6 +33,11 @@ struct PresetItem
 using PresetItemObservableList         = ObservableListWithSelection<PresetItem>;
 using PresetItemCompoundObservableList = MutableBatchObservableList<PresetItemObservableList>;
 
+using ToolConfigItemObservableList = ObservableListWithSelection<Domain::Preset::HwToolConfigDef>;
+using ToolConfigItemCompoundObservableList = MutableBatchObservableList<ToolConfigItemObservableList>;
+
+using SheetConfigItemObservableList = ObservableListWithSelection<Domain::Preset::HwSheetConfigDef>;
+
 /**
  * Manipulates presets associated with config containers.
  */
@@ -63,36 +68,64 @@ public:
     const Domain::Preset::EvaluatedPrinterPreset& current_printer_preset() const;
     const Domain::Preset::SelectedPreset& selected_printer_preset() const;
 
-    PresetItemObservableList& printer_presets() {
+    PresetItemObservableList& printer_presets()
+    {
         return m_printer_presets;
     }
 
-    const PresetItemObservableList& printer_presets() const {
+    const PresetItemObservableList& printer_presets() const
+    {
         return m_printer_presets;
     }
 
-    PresetItemObservableList& print_presets() {
+    PresetItemObservableList& print_presets()
+    {
         return m_print_presets;
     }
 
-    const PresetItemObservableList& print_presets() const {
+    const PresetItemObservableList& print_presets() const
+    {
         return m_print_presets;
     }
 
-    PresetItemCompoundObservableList& tool_presets() {
+    PresetItemCompoundObservableList& tool_presets()
+    {
         return m_tool_print_presets;
     }
 
-    const PresetItemCompoundObservableList& tool_presets() const {
+    const PresetItemCompoundObservableList& tool_presets() const
+    {
         return m_tool_print_presets;
     }
 
-    PresetItemCompoundObservableList& material_presets() {
+    PresetItemCompoundObservableList& material_presets()
+    {
         return m_material_presets;
     }
 
-    const PresetItemCompoundObservableList& material_presets() const {
+    const PresetItemCompoundObservableList& material_presets() const
+    {
         return m_material_presets;
+    }
+
+    ToolConfigItemCompoundObservableList& tool_items()
+    {
+        return m_tool_items;
+    }
+
+    const ToolConfigItemCompoundObservableList& tool_items() const
+    {
+        return m_tool_items;
+    }
+
+    SheetConfigItemObservableList& sheet_items()
+    {
+        return m_sheet_items;
+    }
+
+    const SheetConfigItemObservableList& sheet_items() const
+    {
+        return m_sheet_items;
     }
 
     void select_printer_preset(
@@ -102,6 +135,8 @@ public:
     void select_print_preset(const std::string& id);
     void select_tool_print_preset(size_t tool_index, const std::string& id);
     void select_material_preset(size_t material_index, const std::string& id);
+    void select_printer_tool_item(size_t tool_index, const std::string& id);
+    void select_printer_sheet(const std::string& id);
 
     using ConfigItemModifyFn = std::function<void(Domain::ConfigItem&)>;
 
@@ -111,7 +146,6 @@ public:
         const std::string& name,
         ConfigItemModifyFn modify_fn
     );
-
 
     void on_selected_config_container_changed(
         Domain::SelectionId project_id,
@@ -167,10 +201,11 @@ private:
         const Domain::Preset::EvaluatedPrintPreset& selected_print_ep,
         Domain::Preset::SelectedPreset& selected_preset
     );
+    void fill_tool_items(const Domain::Preset::EvaluatedPrinterPreset& selected_printer_ep);
+    void fill_sheet_items(const Domain::Preset::EvaluatedPrinterPreset& selected_printer_ep);
 
     void invoke_slicing_input_changed();
     void invoke_on_preset_value_changed(const Domain::ConfigItem& config_item);
-
 
 private:
     using SetAccessorMap = std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor>;
@@ -183,6 +218,9 @@ private:
     PresetItemCompoundObservableList m_tool_print_presets{m_tool_print_presets_writer};
     PresetItemCompoundObservableList::WriteAccessor m_material_presets_writer;
     PresetItemCompoundObservableList m_material_presets{m_material_presets_writer};
+    ToolConfigItemCompoundObservableList::WriteAccessor m_tool_items_writer;
+    ToolConfigItemCompoundObservableList m_tool_items{m_tool_items_writer};
+    SheetConfigItemObservableList m_sheet_items;
 
     ProjectContexts m_project_contexts;
 

@@ -5,8 +5,12 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Dialog.hpp"
+#include "Slic3r/App/Yoga/ComboBoxListViewSelection.hpp"
 #include "Slic3r/App/PrinterAdvancedSettingsDialog.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsButton.hpp"
+#include "Slic3r/App/PrinterNozzleRow.hpp"
+
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -33,12 +37,19 @@ private:
         Biz::Preset::PresetItem,
         Yoga::ViewFactory<LogicalPrinterSettingsButton, Biz::Preset::PresetItem, LogicalPrinterSettingsButton::FnIndexClicked>>;
 
+    using NozzleListView = Yoga::ListView<
+        PrinterNozzleRow,
+        Biz::Preset::ToolConfigItemObservableList,
+        Yoga::ViewFactory<PrinterNozzleRow, Biz::Preset::ToolConfigItemObservableList, Biz::Preset::PresetInteractor&>>;
+
     Biz::ProjectInteractor& m_project_interactor;
     PrinterListView* m_printer_list_view{nullptr};
     Yoga::StackLayout* m_stack_layout{nullptr};
     Yoga::Item* m_page_list{nullptr};
     Yoga::Item* m_page_settings{nullptr};
     Yoga::ButtonGroup m_group_keywords;
+    Yoga::ComboBoxListViewSelection<Domain::Preset::HwSheetConfigDef>* m_combo_sheets;
+    NozzleListView* m_nozzle_list_view{nullptr};
     PrinterAdvancedSettingsDialog m_advanced_dialog;
     PrinterAddDialog* m_printer_add_dialog{nullptr};
 };
