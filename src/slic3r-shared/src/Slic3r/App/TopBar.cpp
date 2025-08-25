@@ -121,45 +121,44 @@ void TopBar::add_save_project_btn(Item* parent)
             "EXPORT TO 3MF IS NOT FINALIZED YET.\n\nThe exported project MUST NOT be shared publicly, "
             "it will not be compatible with both old PrusaSlicer and the finalized 3.0.0.\n\n"
             "Do you really want to export it?",
-            [this](bool answer) {
-            if (!answer)
-                return;
-            Domain::SelectionId selected_project_id = m_project_interactor->selected_project_id();
-            const std::string& project_name         = m_project_interactor->get_project_name(
-                selected_project_id
-            );
-            Store3mfParam params{
-                .thumbnail = m_thumbnail_store.projects.selected().thumbnail_3mf.get()
-            };
-            if (true || project_name.empty())
-            { // The 'true' is here for the development phase - effectively it always "Saves as".
-                // Saving a new project - show file save dialog.
-                IDialogManager::FileCallback callback =
-                    [this,
-                     &params](bool success, const std::vector<boost::filesystem::path>& file_paths) {
-                    if (success) {
-                        std::string file_path = file_paths.front().string();
-                        // file path could have locale dependent characters, do not use tolower
-                        if (!file_path.ends_with(".3mf") && !file_path.ends_with(".3MF")) {
-                            file_path.append(".3mf");
-                        }
-
-                        m_project_interactor->save_project(file_path, params);
-                    }
+            [this](bool answer)
+            {
+                if (!answer)
+                    return;
+                Domain::SelectionId selected_project_id = m_project_interactor->selected_project_id();
+                const std::string& project_name = m_project_interactor->get_project_name(selected_project_id);
+                Store3mfParam params{
+                    .thumbnail = m_thumbnail_store.projects.selected().thumbnail_3mf.get()
                 };
                 if (true || project_name.empty())
                 { // The 'true' is here for the development phase - effectively it always "Saves as".
                     // Saving a new project - show file save dialog.
                     IDialogManager::FileCallback callback = [this, &params](bool success, const std::vector<boost::filesystem::path>& file_paths)
                     {
-                        if (success)
-                            m_project_interactor->save_project(file_paths.front().string(), params);
+                        if (success) {
+                            std::string file_path = file_paths.front().string();
+                            // file path could have locale dependent characters, do not use tolower
+                            if (!file_path.ends_with(".3mf") && !file_path.ends_with(".3MF")) {
+                                file_path.append(".3mf");
+                            }
+
+                            m_project_interactor->save_project(file_path, params);
+                        }
                     };
-                    auto& dlg_manager = AppServices::instance().dialog_manager();
-                    dlg_manager.show_file_dialog(FileDialogType::Save, _u8L("Save Project"), "", "", "*.3mf", callback);
-                } else {
-                    // Saving an existing project - just save.
-                    m_project_interactor->save_project(project_name, params);
+                    if (true || project_name.empty())
+                    { // The 'true' is here for the development phase - effectively it always "Saves as".
+                        // Saving a new project - show file save dialog.
+                        IDialogManager::FileCallback callback = [this, &params](bool success, const std::vector<boost::filesystem::path>& file_paths)
+                        {
+                            if (success)
+                                m_project_interactor->save_project(file_paths.front().string(), params);
+                        };
+                        auto& dlg_manager = AppServices::instance().dialog_manager();
+                        dlg_manager.show_file_dialog(FileDialogType::Save, _u8L("Save Project"), "", "", "*.3mf", callback);
+                    } else {
+                        // Saving an existing project - just save.
+                        m_project_interactor->save_project(project_name, params);
+                    }
                 }
             }
         );
