@@ -17,13 +17,32 @@ bool AabbRaycastNodeComponent::raycast(const SquareMatrix4d& world, const Ray& r
 
     SquareMatrix4d inv_world = world.inverse();
 
-    Vec3d local_ray_origin = (inv_world * Vec4d{ray.origin.x(), ray.origin.y(), ray.origin.z(), 1}).head<3>().cast<double>();
-    Vec3d local_ray_direction = (inv_world.block<3, 3>(0, 0) * ray.direction).cast<double>().normalized();
+    // Transform ray to local-space first
+    Vec3d local_ray_origin = (inv_world * Vec4d{ray.origin.x(), ray.origin.y(), ray.origin.z(), 1}).head<3>();
+    Vec3d local_ray_direction = (inv_world.block<3, 3>(0, 0) * ray.direction).normalized();
 
+    // Do hit test in local-space
     auto hit = m_aabb_mesh->query_ray_hit(local_ray_origin, local_ray_direction);
     if (!hit.is_hit())
         return false;
-    t = hit.distance();
+
+    // Calculate the local-space hit point using the local t
+    double t_local = hit.distance();
+    Vec3d local_hit_point = local_ray_origin + t_local * local_ray_direction;
+
+    // Transform the local hit point back to world space
+    Vec3d world_hit_point = (world * Vec4d{local_hit_point.x(), local_hit_point.y(), local_hit_point.z(), 1}).head<3>();
+
+    // Solve for the original ray's parameter 't'.
+    // This is the key change for non-normalized rays.
+    // The vector from ray origin to the hit point is (world_hit_point - ray.origin).
+    // This vector must be equal to t * ray.direction.
+    // We can solve for t using a dot product:
+    // t = ((world_hit_point - ray.origin).dot(ray.direction)) / ray.direction.squaredNorm();
+
+    Vec3d hit_vector = world_hit_point - ray.origin;
+    t = hit_vector.dot(ray.direction) / ray.direction.squaredNorm();
+
     return true;
 }
 
