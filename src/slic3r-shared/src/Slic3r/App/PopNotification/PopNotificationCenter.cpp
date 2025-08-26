@@ -455,6 +455,10 @@ void PopNotificationCenter::on_print_host_done(size_t print_host_id)
 
     if (it != m_notifications.end()) {
         auto* job_data = std::get_if<PrintHostProgressNotificationData>(&(*it)->additional_data());
+        if (job_data->status == PrintHostJobStatus::Failed) {
+            // Its possible to get Done status after an error - leave the error displayed.
+            return;
+        }
         job_data->status   = PrintHostJobStatus::Finished;
         job_data->progress = 100;
         PopNotificationLayout layout_type;
