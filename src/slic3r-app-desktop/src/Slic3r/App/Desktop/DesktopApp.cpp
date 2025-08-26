@@ -241,7 +241,7 @@ bool DesktopApp::OnInit()
     );
     app_services.set_dialog_manager(std::make_unique<WX::DialogManager>());
     app_services.set_pop_notification_center(
-        std::make_unique<PopNotification::PopNotificationCenter>(m_project_interactor->removable_drive_service())
+        std::make_unique<PopNotification::PopNotificationCenter>(*m_project_interactor.get())
     );
     app_services.set_file_explorer_handler(std::make_unique<WX::FileExplorerHandler>());
     platform_services.job_manager().add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(

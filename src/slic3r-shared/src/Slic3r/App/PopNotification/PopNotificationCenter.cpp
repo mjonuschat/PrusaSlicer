@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/AppServices.hpp"
 
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -13,6 +14,11 @@ using SlicingStatusCode = Slic3r::Biz::Slicing::StatusCode;
 using Slic3r::Domain::SlicingId;
 
 namespace Slic3r::App::PopNotification {
+
+PopNotificationCenter::PopNotificationCenter(Biz::ProjectInteractor& project_interactor) :
+    m_removable_drive_service(project_interactor.removable_drive_service()),
+    m_project_interactor(project_interactor)
+{}
 
 namespace {
 std::string job_status_to_string(const JobStatus status)
@@ -101,7 +107,7 @@ std::string slicing_status_to_string(const SlicingStatusCode status)
     case SlicingStatusCode::Modified:
         return "Modified";
     case SlicingStatusCode::Stopping:
-        return "Stopping";
+        return "Stopped";
     case SlicingStatusCode::Removed:
         return "Removed";
     default:
@@ -131,31 +137,67 @@ void PopNotificationCenter::on_status_changed(const Biz::Slicing::Status status,
             return job_data && job_data->slicing_id.project_id == slicing_id.project_id;
         }
     );
+    std::string header = "Slicing Project " + std::to_string(slicing_id.project_id);
+    std::string text   = slicing_status_to_string(status.code);
 
     if (it != m_notifications.end()) {
         auto* job_data = std::get_if<SlicingProgressNotificationData>(&(*it)->additional_data());
         job_data->slicing_id = slicing_id;
 
-        if (job_data->status.code != status.code && status.code == SlicingStatusCode::Finished) {
+        if (job_data->status.code != status.code && (status.code == SlicingStatusCode::Finished || status.code == SlicingStatusCode::Stopping)) {
             set_notification_timeout(it, 5);
         }
         job_data->status = status;
 
-        (*it)->set_layout(
-            PopNotificationLayout::HeaderText,
-            PopNotificationLayoutHeaderText(
-                "Slicing Project " + std::to_string(slicing_id.project_id),
-                slicing_status_to_string(status.code)
-            )
-        );
+        if (status.code == SlicingStatusCode::Running) {
+            (*it)->set_layout(
+                PopNotificationLayout::HeaderTextButtons,
+                PopNotificationLayoutHeaderTextButtons(
+                    header,
+                    text,
+                    {{"Stop",
+                      [this, slicing_id]()
+                      {
+                          m_project_interactor.slicing_interactor().stop_slicing_bed(slicing_id);
+                          return true;
+                      }}}
+                )
+            );
+        } else {
+            (*it)->set_layout(PopNotificationLayout::HeaderText, PopNotificationLayoutHeaderText(header, text));
+        }
         notification_updated(std::distance(m_notifications.begin(), it));
+
     } else {
         if (status.code == SlicingStatusCode::Finished) {
             return;
         }
-        add_notification(
-            PopNotificationFactory::create_slicing_notification(slicing_status_to_string(status.code), status, slicing_id)
-        );
+        if (status.code == SlicingStatusCode::Running) {
+            add_notification(
+                std::make_unique<PopNotificationData>(
+                    PopNotificationFactory::next_id(),
+                    PopNotificationType::SlicingProgress,
+                    PopNotificationLevel::Important,
+                    0,
+                    PopNotificationLayout::HeaderTextButtons,
+                    PopNotificationLayoutHeaderTextButtons(
+                        header,
+                        text,
+                        {{"Stop",
+                          [this, slicing_id]()
+                          {
+                              m_project_interactor.slicing_interactor().stop_slicing_bed(slicing_id);
+                              return true;
+                          }}}
+                    ),
+                    SlicingProgressNotificationData(status, slicing_id)
+                )
+            );
+        } else {
+            add_notification(
+                std::make_unique<PopNotificationData>(PopNotificationFactory::next_id(), PopNotificationType::SlicingProgress, PopNotificationLevel::Important, 5, PopNotificationLayout::HeaderText, PopNotificationLayoutHeaderText(header, text), SlicingProgressNotificationData(status, slicing_id))
+            );
+        }
     }
 }
 

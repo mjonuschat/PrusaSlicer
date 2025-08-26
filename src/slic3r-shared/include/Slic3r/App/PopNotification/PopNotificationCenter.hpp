@@ -9,6 +9,10 @@
 
 #include <vector>
 
+namespace Slic3r::Biz {
+class ProjectInteractor;
+}
+
 namespace Slic3r::App::PopNotification {
 
 class PopNotificationCenter :
@@ -20,9 +24,7 @@ class PopNotificationCenter :
     public Biz::UserAccount::IUserAccountListener
 {
 public:
-    PopNotificationCenter(Biz::RemovableDrive::RemovableDriveService& removable_drive_service) :
-        m_removable_drive_service(removable_drive_service)
-    {}
+    PopNotificationCenter(Biz::ProjectInteractor& project_interactor);
 
     ~PopNotificationCenter() = default;
 
@@ -50,6 +52,7 @@ public:
 
 private:
     Biz::RemovableDrive::RemovableDriveService& m_removable_drive_service;
+    Biz::ProjectInteractor& m_project_interactor;
 };
 
 } // namespace Slic3r::App::PopNotification
