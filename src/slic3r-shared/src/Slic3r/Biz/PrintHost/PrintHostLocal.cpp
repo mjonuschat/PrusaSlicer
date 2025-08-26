@@ -16,8 +16,7 @@ namespace Slic3r::Biz::PrintHost {
 bool PrintHostLocal::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     std::string error;
-    info_fn("resolve", m_upload_data.dest_path.string());
-    info_fn("is_export", {});
+    info_fn(PrintHostJobInfoTag::Resolve, m_upload_data.dest_path.string());
     bool res = move_file(m_upload_data.source_path, m_upload_data.dest_path, error);
     if (!res) {
         error_fn(fmt::format("{}{}. {}", _u8L("Failed to export file to"), m_upload_data.dest_path.string(), error));

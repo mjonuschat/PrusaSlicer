@@ -145,7 +145,7 @@ bool PrintHostOctoPrint::test(std::string& msg, RetryFn retry_fn) const
                         (text ? *text : name)
                     );
                 }
-            } catch (const std::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 res = false;
                 msg = "Could not parse server response";
             }
@@ -223,7 +223,7 @@ bool PrintHostOctoPrint::test_with_resolved_ip(std::string& msg, RetryFn retry_f
                         (text ? *text : name)
                     );
                 }
-            } catch (const std::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 res = false;
                 msg = "Could not parse server response.";
             }
@@ -276,7 +276,7 @@ bool PrintHostOctoPrint::upload_inner_with_host(
         // This new address returns in "test_msg" variable.
         // Solves troubles of uploades failing with name address.
         // in original address (m_host) replace host for resolved ip
-        info_fn("resolve", test_msg);
+        info_fn(PrintHostJobInfoTag::Resolve, test_msg);
         url = Network::IHttp::substitute_host(make_url("api/files/local"), test_msg);
         SPDLOG_INFO("Upload address after ip resolve: ", url);
     }
@@ -346,7 +346,7 @@ bool PrintHostOctoPrint::upload_inner_with_resolved_ip(
     const boost::asio::ip::address& resolved_addr
 ) const
 {
-    info_fn("resolve", resolved_addr.to_string());
+    info_fn(PrintHostJobInfoTag::Resolve, resolved_addr.to_string());
 
     // If test fails, test_msg contains the error message.
     // Otherwise on Windows it contains the resolved IP address of the host.
@@ -366,7 +366,7 @@ bool PrintHostOctoPrint::upload_inner_with_resolved_ip(
     );
     bool result = true;
 
-    info_fn("resolve", url);
+    info_fn(PrintHostJobInfoTag::Resolve, url);
 
     SPDLOG_INFO(
         "{}: Uploading file at {}, filename: {}, path: {}, print: {}",

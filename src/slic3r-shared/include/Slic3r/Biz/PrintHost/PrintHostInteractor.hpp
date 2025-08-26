@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Slic3r/Biz/PrintHost/IPrintHostListener.hpp"
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostJobManager.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostDataFinalizer.hpp"
@@ -12,42 +11,14 @@ namespace Slic3r::Biz::PrintHost {
 
 class PrintHostJobManager;
 
-class PrintHostInteractor : public IPrintHostListener, public IPrintHostBinarizeListener
+class PrintHostInteractor : public IPrintHostBinarizeListener
 {
 public:
     PrintHostInteractor(Platform::IMainThreadDispatcher& dispatcher);
 
     typedef std::function<void(const std::string& storage_json)> StorageInfoFn;
 
-    /**
-     * @brief Callback from PrintHostJobManager with progress from PrintHostJob worker thread.
-     * Should Pass data to listeners via ProjectInteractor to UI.
-     */
-    void on_print_host_progress(size_t id, int progress) override;
-
-    /**
-     * @brief Callback from PrintHostJobManager with progress from PrintHostJob worker thread.
-     * Should Pass data to listeners via ProjectInteractor to UI.
-     */
-    void on_print_host_error(size_t id, const std::string& msg) override;
-
-    /**
-     * @brief Callback from PrintHostJobManager with progress from PrintHostJob worker thread.
-     * Should Pass data to listeners via ProjectInteractor to UI.
-     */
-    void on_print_host_cancel(size_t id) override;
-
-    /**
-     * @brief Callback from PrintHostJobManager with progress from PrintHostJob worker thread.
-     * Should Pass data to listeners via ProjectInteractor to UI.
-     */
-    void on_print_host_done(size_t id) override;
-
-    /**
-     * @brief Callback from PrintHostJobManager with progress from PrintHostJob worker thread.
-     * Should Pass data to listeners via ProjectInteractor to UI.
-     */
-    void on_print_host_info(size_t id, const std::string& tag, const std::string& msg) override;
+    void on_storage_resolved(size_t id, const std::string& storage);
 
     /**
      * @brief Accepts data from PrintHostJobManager and passes it to PrintHostDataFinalizer and process_gcode_inner.
@@ -61,8 +32,6 @@ public:
 
     void on_print_host_binarize_success(PrintHostConfig config, PrintHostJobData data) override;
     void on_print_host_binarize_fail(const std::string& msg) override;
-
-    void add_print_host_listener(IPrintHostListener* listener);
 
 private:
     PrintHostJobManager m_print_host_job_manager;

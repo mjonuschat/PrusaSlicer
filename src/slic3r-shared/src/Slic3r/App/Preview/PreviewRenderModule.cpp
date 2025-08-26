@@ -743,7 +743,7 @@ void PreviewRenderModule::init_scene_layout()
         std::make_unique<SidebarPrint>(m_project_interactor, *m_render_module_navigator);
     m_sidebar_object             = std::make_unique<SidebarObject>(m_project_interactor);
     m_pop_notification_list_view = std::make_unique<PopNotification::PopNotificationListView>(
-        AppServices::instance().pop_notification_center()
+        AppServices::instance().pop_notification_center().observable_list()
     );
     m_sidebar_auto_reslice = std::make_unique<SidebarAutoReslice>(m_project_interactor);
 

@@ -245,11 +245,9 @@ void PlaterRenderModule::init_scene_layout()
         std::make_unique<SidebarPrint>(m_project_interactor, *m_render_module_navigator)
     );
     m_sidebar_object = Passthrough(std::make_unique<SidebarObject>(m_project_interactor));
-    m_pop_notification_list_view = Passthrough{
-        std::make_unique<PopNotification::PopNotificationListView>(
-            AppServices::instance().pop_notification_center()
-        )
-    };
+    m_pop_notification_list_view = Passthrough{std::make_unique<PopNotification::PopNotificationListView>(
+        AppServices::instance().pop_notification_center().observable_list()
+    )};
     m_history = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
 

@@ -78,4 +78,9 @@ void LayoutButton::set_icon(Render::Icon icon)
     }
 }
 
+Text* LayoutButton::text() const
+{
+    return m_text;
+}
+
 } // namespace Slic3r::App::Yoga

@@ -9,8 +9,12 @@
 #include <ranges>
 
 using Slic3r::Biz::Platform::JobManager::JobManagerStatus;
+using Slic3r::Biz::Platform::JobManager::Progress;
 using Slic3r::Domain::JobStatus;
 using SlicingStatusCode = Slic3r::Biz::Slicing::StatusCode;
+using Slic3r::Biz::PrintHost::PrintHostJobProgressPayload;
+using Slic3r::Biz::PrintHost::PrintHostJobProgressState;
+using Slic3r::Biz::PrintHost::PrintHostJobInfoTag;
 using Slic3r::Domain::SlicingId;
 
 using namespace Slic3r::Biz;
@@ -23,23 +27,50 @@ PopNotificationCenter::PopNotificationCenter(Biz::ProjectInteractor& project_int
 {
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.add_listener<Biz::IProjectsChangedListener>(this);
+    m_list_sort_filter.set_source_model(&m_notification_list);
+
+    auto sort_fn = [](const PopNotificationData& lhs, const PopNotificationData& rhs)
+    {
+        if (lhs.level == PopNotificationLevel::ProgressNoClose || lhs.level == PopNotificationLevel::ProgressWithClose) {
+            return false;
+        }
+        if (rhs.level == PopNotificationLevel::ProgressNoClose || rhs.level == PopNotificationLevel::ProgressWithClose) {
+            return true;
+        }
+        return false;
+    };
+    m_list_sort_filter.set_sort_fn(sort_fn);
 }
 
-namespace {
-std::string job_status_to_string(const JobStatus status)
+void PopNotificationCenter::upsert_notifcation(PopNotificationData data, PopNotificationObservableList::Matcher matcher)
 {
-    switch (status) {
-    case JobStatus::None:
-        return "None";
-    case JobStatus::Started:
-        return "Started";
-    case JobStatus::Finished:
-        return "Finished";
-    case JobStatus::Failed:
-        return "Failed";
-    default:
-        return "Unknown";
+    m_notification_list.upsert_notifcation(std::move(data), matcher);
+}
+
+
+namespace {
+std::string job_status_to_string(const JobStatus& status, const std::string& job_name)
+{
+    std::string ui_name = job_name;
+    if (job_name == "arrange") {
+        ui_name = _u8L("Arrange");
     }
+
+    std::string status_text;
+    switch (status) {
+    case JobStatus::Finished:
+        status_text = _u8L("finished");
+        break;
+    case JobStatus::Failed:
+        status_text = _u8L("failed");
+        break;
+    case JobStatus::Started:
+    case JobStatus::None:
+    default:
+        break;
+    }
+
+    return fmt::format("{} {}", ui_name, status_text);
 }
 } // namespace
 
@@ -63,12 +94,17 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
 {
     for (const auto& [job_name, progress] : status) {
         ASSERT(!job_name.empty());
-        const std::string text{
-            fmt::format("{}: {}", job_name, job_status_to_string(progress.status))
-        };
+
+        if (job_name.starts_with("printhost")) {
+            on_job_print_host(job_name, progress);
+            continue;
+        }
+
+        // Follows generic job notification logic. 
+        const std::string text{job_status_to_string(progress.status, job_name)};
 
         PopNotificationLayout layout;
-        if (progress.percent) {
+        if (progress.status == JobStatus::Started && progress.percent) {
             int perc = (int) (progress.percent.value().value * 100);
             layout   = PopNotificationLayoutTextProgress(text, perc);
         } else {
@@ -77,8 +113,9 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
 
         PopNotificationData notification{
             PopNotificationType::JobProgress,
-            PopNotificationLevel::Important,
-            0s,
+            progress.status == JobStatus::Started ? PopNotificationLevel::ProgressNoClose :
+                                                    PopNotificationLevel::ProgressWithClose,
+            progress.status == JobStatus::Started ? 0s : 5s,
             layout,
             JobProgressNotificationData(job_name, progress)
         };
@@ -87,8 +124,52 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
         const auto matcher{cmp<Payload>( //
             [](const Payload& a, const Payload& b) { return a.job_name == b.job_name; }
         )};
-        upsert_notifcation(std::move(notification), matcher);
+        m_notification_list.upsert_notifcation(std::move(notification), matcher);
     }
+}
+
+void PopNotificationCenter::on_job_print_host(const std::string& string, const Progress& progress)
+{
+
+    size_t payload_id;
+    PrintHostJobInfoTag payload_tag;
+    std::string payload_message;
+    if (const auto* payload = std::any_cast<PrintHostJobProgressPayload>(&progress.progress_detail.payload))
+    {
+        payload_id = payload->id;
+        payload_tag = payload->tag;
+        payload_message = payload->message;
+
+    } else {
+        // Ignore all progress without payload. It should be only first started status.
+        ASSERT(progress.status == JobStatus::Started);
+        return;
+    }
+
+    switch ((PrintHostJobProgressState) progress.progress_detail.info) {
+    case PrintHostJobProgressState::None:
+        if (progress.status == JobStatus::Finished)
+        {
+            on_print_host_done(payload_id);
+        } else {
+            if (progress.percent)
+            {
+                on_print_host_progress(payload_id, (int) (progress.percent.value().value * 100));
+            }   
+        }
+        
+        break;
+    case PrintHostJobProgressState::Info: {
+        on_print_host_info(payload_id, payload_tag, payload_message);
+    } break;
+    case PrintHostJobProgressState::Error: {
+        on_print_host_error(payload_id, payload_message);
+    } break;
+    default:
+        ASSERT(false, "Missing PrintHostJobProgressState handling.");
+        break;
+    }
+    
 }
 
 namespace {
@@ -96,34 +177,26 @@ std::string slicing_status_to_string(const SlicingStatusCode status)
 {
     switch (status) {
     case SlicingStatusCode::Empty:
-        return "Empty";
+        return _u8L("Empty");
     case SlicingStatusCode::Updating:
-        return "Updating";
+        return _u8L("Updating");
     case SlicingStatusCode::Running:
-        return "Running";
+        return _u8L("Slicing");
     case SlicingStatusCode::Finished:
-        return "Finished";
+        return _u8L("Slicing Finished");
     case SlicingStatusCode::Modified:
-        return "Modified";
+        return _u8L("Modified");
     case SlicingStatusCode::Stopping:
-        return "Stopped";
+        return _u8L("Slicing Stopped");
     case SlicingStatusCode::Removed:
-        return "Removed";
+        return _u8L("Removed");
     case SlicingStatusCode::InvalidData:
-        return "Invalid settings";
+        return _u8L("Invalid settings");
     default:
         return "Unknown";
     }
 }
 
-std::string get_slicing_header(
-    const std::string& prefix,
-    const SlicingId slicing_id,
-    const Biz::ProjectInteractor& project_interactor
-)
-{
-    return prefix + " " + project_interactor.get_project_name(slicing_id.project_id);
-}
 } // namespace
 
 
@@ -150,7 +223,7 @@ void PopNotificationCenter::on_status_cache_status_code_changed(const SlicingId 
 
     using Payload = SlicingStatusNotificationData;
     if (status.code == SlicingStatusCode::InvalidData) {
-        erase_notification_by_predicate(
+        m_notification_list.erase_notification_by_predicate(
             [slicing_id](const PopNotificationData& notification)
             {
                 const auto payload{std::get_if<Payload>(&notification.payload)};
@@ -163,13 +236,13 @@ void PopNotificationCenter::on_status_cache_status_code_changed(const SlicingId 
         return;
     }
 
-    const std::string header{get_slicing_header(_u8L("Slicing"), slicing_id, m_project_interactor)};
+    const std::string header{m_project_interactor.get_project_name(slicing_id.project_id)};
     const std::string text{slicing_status_to_string(status.code)};
 
-    upsert_notifcation(
+    m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::SlicingProgress,
-            PopNotificationLevel::Important,
+            status.code == SlicingStatusCode::Running ? PopNotificationLevel::ProgressNoClose : PopNotificationLevel::ProgressWithClose,
             status.code == Biz::Slicing::StatusCode::Finished ? 5s : 0s,
             PopNotificationLayoutHeaderText{header, text},
             SlicingStatusNotificationData{slicing_id}
@@ -187,17 +260,17 @@ void PopNotificationCenter::on_status_cache_progress_changed(const Domain::Slici
     if (!status.progress) {
         return;
     }
-    const std::string header{
-        get_slicing_header(_u8L("Slicing in progress: "), slicing_id, m_project_interactor)
-        + "\n" + to_display_string(status.progress->progress_info)
-    };
+
+    const std::string header{m_project_interactor.get_project_name(slicing_id.project_id)};
+    const std::string text{to_display_string(status.progress->progress_info)};
+
     const int progress{static_cast<int>(std::round(status.progress->progress.value))};
-    upsert_notifcation(
+    m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::SlicingProgress,
-            PopNotificationLevel::Important,
+            status.code == SlicingStatusCode::Running ? PopNotificationLevel::ProgressNoClose : PopNotificationLevel::ProgressWithClose,
             0s,
-            PopNotificationLayoutTextProgress{header, progress},
+            PopNotificationLayoutHeaderTextProgress{header, text, progress},
             SlicingStatusNotificationData{slicing_id}
         },
         slicing_matcher
@@ -218,7 +291,7 @@ void PopNotificationCenter::on_status_cache_errors_changed(const Domain::Slicing
     for (const Error& error : optional_status->errors) {
         present_error_codes.insert(error.code);
     }
-    erase_notification_by_predicate(
+    m_notification_list.erase_notification_by_predicate(
         [&](const PopNotificationData& notification)
         {
             const auto payload{std::get_if<Payload>(&notification.payload)};
@@ -241,12 +314,10 @@ void PopNotificationCenter::on_status_cache_errors_changed(const Domain::Slicing
                 && a.error_code == b.error_code;
         }
     )};
-    const std::string header{
-        get_slicing_header(_u8L("Error: "), slicing_id, m_project_interactor)
-    };
+    const std::string header{m_project_interactor.get_project_name(slicing_id.project_id)};
     const Domain::Project& project{m_project_interactor.workbench().project(slicing_id.project_id)};
     for (const Error& error : errors) {
-        upsert_notifcation(
+        m_notification_list.upsert_notifcation(
             PopNotificationData{
                 PopNotificationType::SlicingError,
                 PopNotificationLevel::Error,
@@ -273,7 +344,7 @@ void PopNotificationCenter::on_status_cache_warnings_changed(const Domain::Slici
     for (const Warning& warning : optional_status->warrnings) {
         present_warning_codes.insert(warning.code);
     }
-    erase_notification_by_predicate(
+    m_notification_list.erase_notification_by_predicate(
         [&](const PopNotificationData& notification)
         {
             const auto payload{std::get_if<Payload>(&notification.payload)};
@@ -296,12 +367,10 @@ void PopNotificationCenter::on_status_cache_warnings_changed(const Domain::Slici
                 && a.warning_code == b.warning_code;
         }
     )};
-    const std::string header{
-        get_slicing_header(_u8L("Warning: "), slicing_id, m_project_interactor)
-    };
+    const std::string header{m_project_interactor.get_project_name(slicing_id.project_id)};
     const Domain::Project& project{m_project_interactor.workbench().project(slicing_id.project_id)};
     for (const Warning& warning : warnings) {
-        upsert_notifcation(
+        m_notification_list.upsert_notifcation(
             PopNotificationData{
                 PopNotificationType::SlicingWarning,
                 PopNotificationLevel::Warning,
@@ -357,13 +426,13 @@ PopNotificationLayout upload_layout(const PrintHostProgressNotificationData& dat
     case PrintHostJobStatus::Finished: {
         std::string msg;
         if (data.filename.empty() && data.target.empty()) {
-            msg = "Uploading has Finished.";
+            msg = "Uploading has finished.";
         } else if (data.target.empty()) {
-            msg = fmt::format("Uploading {} has Finished.", data.filename);
+            msg = fmt::format("Uploading {} has finished.", data.filename);
         } else if (data.filename.empty()) {
-            msg = fmt::format("Uploading to {} has Finished.", data.target);
+            msg = fmt::format("Uploading to {} has finished.", data.target);
         } else {
-            msg = fmt::format("Uploading {} to {} has Finished.", data.filename, data.target);
+            msg = fmt::format("Uploading {} to {} has finished.", data.filename, data.target);
         }
         return PopNotificationLayoutText(std::move(msg));
     }
@@ -419,13 +488,13 @@ PopNotificationLayout export_layout(const PrintHostProgressNotificationData& dat
     case PrintHostJobStatus::Finished: {
         std::string msg;
         if (data.filename.empty() && data.target.empty()) {
-            msg = "Exporting has Finished.";
+            msg = "Exporting has finished.";
             return PopNotificationLayoutText(std::move(msg));
         } else if (data.target.empty()) {
-            msg = fmt::format("Exporting {} has Finished.", data.filename);
+            msg = fmt::format("Exporting {} has finished.", data.filename);
             return PopNotificationLayoutText(std::move(msg));
         } else if (data.eject_fn == nullptr) {
-            msg = fmt::format("Exporting to {} has Finished.", data.target);
+            msg = fmt::format("Exporting to {} has finished.", data.target);
             return PopNotificationLayoutTextButtons(
                 std::move(msg),
                 {{"Open folder",
@@ -440,7 +509,7 @@ PopNotificationLayout export_layout(const PrintHostProgressNotificationData& dat
                   }}}
             );
         } else {
-            msg = fmt::format("Exporting to {} has Finished.", data.target);
+            msg = fmt::format("Exporting to {} has finished.", data.target);
             return PopNotificationLayoutTextButtons(
                 std::move(msg),
                 {{"Open folder",
@@ -500,7 +569,7 @@ void PopNotificationCenter::on_print_host_progress(size_t print_host_id, int pro
     using namespace std::chrono_literals;
 
     using Payload = PrintHostProgressNotificationData;
-    const Payload* previous_payload{get_notifcation_payload<Payload>(
+    const Payload* previous_payload{m_notification_list.get_notifcation_payload<Payload>(
         [=](const Payload& payload) { return payload.print_host_id == print_host_id; }
     )};
     Payload payload{previous_payload == nullptr ? Payload{print_host_id} : *previous_payload};
@@ -508,10 +577,10 @@ void PopNotificationCenter::on_print_host_progress(size_t print_host_id, int pro
     payload.progress = progress;
     auto layout{print_host_layout(payload)};
 
-    upsert_notifcation(
+    m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::PrintHostProgress,
-            PopNotificationLevel::Important,
+            PopNotificationLevel::ProgressNoClose,
             0s,
             layout,
             std::move(payload)
@@ -523,7 +592,7 @@ void PopNotificationCenter::on_print_host_progress(size_t print_host_id, int pro
 void PopNotificationCenter::on_print_host_error(size_t print_host_id, const std::string& msg)
 {
     using Payload = PrintHostProgressNotificationData;
-    const Payload* previous_payload{get_notifcation_payload<Payload>(
+    const Payload* previous_payload{m_notification_list.get_notifcation_payload<Payload>(
         [=](const Payload& payload) { return payload.print_host_id == print_host_id; }
     )};
     Payload payload{previous_payload == nullptr ? Payload{print_host_id} : *previous_payload};
@@ -531,7 +600,7 @@ void PopNotificationCenter::on_print_host_error(size_t print_host_id, const std:
     payload.progress       = -1;
     payload.additional_msg = msg;
     auto layout            = print_host_layout(payload);
-    upsert_notifcation(
+    m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::PrintHostProgress,
             PopNotificationLevel::Error,
@@ -545,36 +614,37 @@ void PopNotificationCenter::on_print_host_error(size_t print_host_id, const std:
 
 void PopNotificationCenter::on_print_host_cancel(size_t print_host_id)
 {
-    auto it = std::find_if(
-        m_notifications.begin(),
-        m_notifications.end(),
-        [print_host_id](const PopNotificationDataPtr& notif_ptr)
-        {
-            auto* job_data = std::get_if<PrintHostProgressNotificationData>(&notif_ptr->payload);
-            return job_data && job_data->print_host_id == print_host_id;
-        }
-    );
-
-    if (it != m_notifications.end()) {
-        erase_notification_by_index(std::distance(m_notifications.begin(), it));
-    }
+    m_notification_list.erase_notification_by_predicate(
+            [print_host_id](const PopNotificationData& notification)
+            {
+                const auto payload{std::get_if<PrintHostProgressNotificationData>(&notification.payload)};
+                if (payload == nullptr) {
+                    return false;
+                }
+                return payload->print_host_id == print_host_id;
+            }
+        );
 }
 
 void PopNotificationCenter::on_print_host_done(size_t print_host_id)
 {
     using Payload = PrintHostProgressNotificationData;
-    const Payload* previous_payload{get_notifcation_payload<Payload>(
+    const Payload* previous_payload{m_notification_list.get_notifcation_payload<Payload>(
         [=](const Payload& payload) { return payload.print_host_id == print_host_id; }
     )};
     Payload payload{previous_payload == nullptr ? Payload{print_host_id} : *previous_payload};
     payload.status   = PrintHostJobStatus::Finished;
     payload.progress = 100;
     auto layout      = print_host_layout(payload);
-    upsert_notifcation(
+    bool simple = false;
+    if (std::holds_alternative<PopNotificationLayoutText>(layout)) {
+        simple = true;
+    }
+    m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::PrintHostProgress,
-            PopNotificationLevel::Important,
-            0s,
+            PopNotificationLevel::ProgressWithClose,
+            simple ? 10s : 0s,
             std::move(layout),
             std::move(payload)
         },
@@ -584,33 +654,33 @@ void PopNotificationCenter::on_print_host_done(size_t print_host_id)
 
 void PopNotificationCenter::on_print_host_info(
     size_t print_host_id,
-    const std::string& tag,
+    const PrintHostJobInfoTag& tag,
     const std::string& msg
 )
 {
     using Payload = PrintHostProgressNotificationData;
-    const Payload* previous_payload{get_notifcation_payload<Payload>(
+    const Payload* previous_payload{m_notification_list.get_notifcation_payload<Payload>(
         [=](const Payload& payload) { return payload.print_host_id == print_host_id; }
     )};
     Payload payload{previous_payload == nullptr ? Payload{print_host_id} : *previous_payload};
-    if (tag == "filename") {
+    if (tag == PrintHostJobInfoTag::Filename) {
         payload.filename = msg;
     }
-    if (tag == "resolve") {
+    if (tag == PrintHostJobInfoTag::Resolve) {
         payload.target = msg;
         if (m_removable_drive_service.is_path_on_removable_drive(boost::filesystem::path(msg))) {
             payload.eject_fn = [this](const boost::filesystem::path& path)
             { m_removable_drive_service.eject_drive(path); };
         }
     }
-    if (tag == "is_export") {
+    if (tag == PrintHostJobInfoTag::OperationType && msg == "export") { // todo: also msg "storage"
         payload.is_upload = false;
     }
     auto layout = print_host_layout(payload);
-    upsert_notifcation(
+    m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::PrintHostProgress,
-            PopNotificationLevel::Important,
+            payload.status == PrintHostJobStatus::Started ? PopNotificationLevel::ProgressNoClose : PopNotificationLevel::ProgressWithClose,
             0s,
             std::move(layout),
             std::move(payload)
@@ -658,7 +728,7 @@ void PopNotificationCenter::on_removable_drive_status_changed(
     const auto matcher{cmp<Payload>( //
         [](const Payload& a, const Payload& b) { return a.drive_path == b.drive_path; }
     )};
-    upsert_notifcation(
+    m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::Eject,
             status != Slic3r::Biz::RemovableDrive::RemovableDriveStatus::Failed ?
@@ -672,40 +742,37 @@ void PopNotificationCenter::on_removable_drive_status_changed(
     );
 }
 
-const auto never_equal{[](const PopNotificationPayload&, const PopNotificationPayload&)
-                       { return false; }};
-
 void PopNotificationCenter::on_user_account_id_success(bool is_refresh, const std::string& username)
 {
     if (is_refresh) {
         return;
     }
-    close_notifications_of_type(PopNotificationType::UserAccountLogin);
-    close_notifications_of_type(PopNotificationType::UserAccountTransientError);
+    m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountLogin);
+    m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
 
-    upsert_notifcation(
+    m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::UserAccountLogin,
-            PopNotificationLevel::Important,
+            PopNotificationLevel::Regular,
             10s,
             PopNotificationLayoutText(fmt::format("User {} logged in.", username))
         },
-        never_equal
+        never_equal_matcher
     );
 }
 
 void PopNotificationCenter::on_user_account_logged_out()
 {
-    close_notifications_of_type(PopNotificationType::UserAccountLogin);
-    close_notifications_of_type(PopNotificationType::UserAccountTransientError);
-    upsert_notifcation(
+    m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountLogin);
+    m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
+    m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::UserAccountLogin,
-            PopNotificationLevel::Important,
+            PopNotificationLevel::Regular,
             10s,
             PopNotificationLayoutText("User Account logged out.")
         },
-        never_equal
+        never_equal_matcher
     );
 }
 
@@ -719,15 +786,15 @@ void PopNotificationCenter::on_user_account_action_retry(
 )
 {
     ASSERT(cancel_callback);
-    close_notifications_of_type(PopNotificationType::UserAccountLogin);
-    close_notifications_of_type(PopNotificationType::UserAccountTransientError);
+    m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountLogin);
+    m_notification_list.close_notifications_of_type(PopNotificationType::UserAccountTransientError);
 
     std::string text = fmt::format(
         "(Attempt {}) Communication with Prusa Account is taking longer than expected. Retrying. Attempt {}.",
         std::to_string(retry.attempt),
         std::to_string(retry.attempt)
     );
-    upsert_notifcation(
+    m_notification_list.upsert_notifcation(
         PopNotificationData{
             PopNotificationType::UserAccountTransientError,
             PopNotificationLevel::Warning,
@@ -742,7 +809,7 @@ void PopNotificationCenter::on_user_account_action_retry(
                   }}}
             )
         },
-        never_equal
+        never_equal_matcher
     );
 }
 

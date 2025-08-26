@@ -617,8 +617,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/StatusCache.cpp
 
         include/Slic3r/Biz/PrintHost/IPrintHost.hpp
-        include/Slic3r/Biz/PrintHost/IPrintHostListener.hpp
-        include/Slic3r/Biz/PrintHost/IPrintHostJobCallbacks.hpp
+        include/Slic3r/Biz/PrintHost/IPrintHostBinarizeListener.hpp
         include/Slic3r/Biz/PrintHost/PrintHostJob.hpp
         include/Slic3r/Biz/PrintHost/PrintHostJobManager.hpp
         include/Slic3r/Biz/PrintHost/PrintHostInteractor.hpp
@@ -637,9 +636,9 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/PrintHost/PrintHostRepetier.hpp
         include/Slic3r/Biz/PrintHost/PrintHostMKS.hpp
         include/Slic3r/Biz/PrintHost/PrintHostDataFinalizer.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostJobInfoTag.hpp
         src/Slic3r/Biz/PrintHost/PrintHostJobManager.cpp
         src/Slic3r/Biz/PrintHost/PrintHostInteractor.cpp
-        src/Slic3r/Biz/PrintHost/PrintHostJob.cpp
         src/Slic3r/Biz/PrintHost/PrintHostFactory.cpp
         src/Slic3r/Biz/PrintHost/PrintHostLocal.cpp
         src/Slic3r/Biz/PrintHost/PrintHostOctoPrint.cpp
@@ -799,6 +798,9 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/DisplayStrings.hpp
         src/Slic3r/App/DisplayStrings.cpp
+
+        include/Slic3r/App/PrusaLinkStorageListener.hpp
+        src/Slic3r/App/PrusaLinkStorageListener.cpp
 )
 
 if (WIN32)
@@ -975,6 +977,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/App/Yoga/SegmentedControlTests.cpp
 
         test/Slic3r/Biz/ProjectInteractorTests.cpp
+        test/Slic3r/Biz/ExportGcodeTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
         test/Slic3r/Biz/WeakerPointerTests.cpp
         test/Slic3r/Biz/ObservableListSortFilterTests.cpp

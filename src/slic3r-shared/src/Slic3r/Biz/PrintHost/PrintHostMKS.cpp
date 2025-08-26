@@ -37,7 +37,7 @@ bool PrintHostMKS::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn err
             try {
                 nlohmann::json json = nlohmann::json::parse(body);
                 err_code            = json.value("err", 0);
-            } catch (const std::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 SPDLOG_INFO(("Failed to parse MKS on_complete msg json: ", body));
             }
 

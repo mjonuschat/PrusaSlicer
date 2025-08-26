@@ -11,77 +11,16 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-namespace {
-void get_storage_choices_from_json(const std::string& json_text, std::vector<PrintHostStorageInfo>& storage_list)
-{
-    /*
-    [{
-        "name": "Storage",
-        "path": "/mnt/storage",
-        "read_only": false,
-        "free_space": 123456789
-    },
-    {
-        "name": "usb",
-        "path": "/usb",
-        "read_only": false
-        "free_space": 123456789
-    }]
-    */
-
-    try {
-        nlohmann::json json = nlohmann::json::parse(json_text);
-
-        for (const auto& item : json) {
-            PrintHostStorageInfo storage;
-            storage.name       = item.value("name", "");
-            storage.path       = item.value("path", "");
-            storage.read_only  = item.value("read_only", false);
-            storage.free_space = item.value("free_space", -1);
-
-            storage_list.emplace_back(std::move(storage));
-        }
-    } catch (const std::exception& e) {
-        SPDLOG_ERROR("Error parsing JSON: {}", e.what());
-    }
-}
-} // namespace
-
 PrintHostInteractor::PrintHostInteractor(Platform::IMainThreadDispatcher& dispatcher) :
-    m_print_host_job_manager(dispatcher),
     m_print_host_data_finalizer(dispatcher)
 {
-    m_print_host_job_manager.add_listener<PrintHost::IPrintHostListener>(this);
     m_print_host_data_finalizer.add_listener<PrintHost::IPrintHostBinarizeListener>(this);
 }
 
-void PrintHostInteractor::on_print_host_progress(size_t id, int progress)
+void PrintHostInteractor::on_storage_resolved(size_t id, const std::string& storage)
 {
-    SPDLOG_INFO("ProjectInteractor::on_print_host_progress id:{} progress: {}", std::to_string(id), std::to_string(progress));
-}
-
-void PrintHostInteractor::on_print_host_error(size_t id, const std::string& msg)
-{
-    SPDLOG_ERROR("ProjectInteractor::on_print_host_error id:{} msg: {}", std::to_string(id), msg);
-}
-
-void PrintHostInteractor::on_print_host_cancel(size_t id)
-{
-    SPDLOG_INFO("ProjectInteractor::on_print_host_cancel id:{}", std::to_string(id));
-}
-
-void PrintHostInteractor::on_print_host_done(size_t id)
-{
-    SPDLOG_INFO("ProjectInteractor::on_print_host_done id:{}", std::to_string(id));
-}
-
-void PrintHostInteractor::on_print_host_info(size_t id, const std::string& tag, const std::string& msg)
-{
-    SPDLOG_INFO("ProjectInteractor::on_print_host_info id:{} tag: {} msg: {}", std::to_string(id), tag, msg);
-
-    if (tag == "storage" && m_storage_callbacks_map.find(id) != m_storage_callbacks_map.end()) {
-        m_storage_callbacks_map[id](msg);
-        m_storage_callbacks_map.erase(id);
+    if (auto node = m_storage_callbacks_map.extract(id); !node.empty()) {
+        node.mapped()(storage);
     }
 }
 
@@ -111,16 +50,9 @@ void PrintHostInteractor::upload_gcode_with_storage_choice(PrintHostConfig confi
     auto config_ptr = std::make_shared<PrintHostConfig>(std::move(config));
     auto data_ptr   = std::make_shared<PrintHostJobData>(std::move(data));
 
-    StorageInfoFn callback = [this, config_ptr, data_ptr](const std::string& json) mutable
+    StorageInfoFn callback = [this, config_ptr, data_ptr](const std::string& storage) mutable
     {
-        std::vector<PrintHostStorageInfo> storage_list;
-        get_storage_choices_from_json(json, storage_list);
-        // TODO: here user should choose storage
-        // for now we just use the first one
-        if (storage_list.empty()) {
-            return;
-        }
-        data_ptr->storage = storage_list[0].path;
+        data_ptr->storage = storage;
         m_print_host_job_manager.emplace_job(std::move(*config_ptr), std::move(*data_ptr));
     };
 
@@ -148,11 +80,6 @@ void PrintHostInteractor::on_print_host_binarize_success(PrintHostConfig config,
 void PrintHostInteractor::on_print_host_binarize_fail(const std::string& msg)
 {
     SPDLOG_ERROR("PrintHostDataFinalizer has failed: {}", msg);
-}
-
-void PrintHostInteractor::add_print_host_listener(IPrintHostListener* listener)
-{
-    m_print_host_job_manager.add_listener<IPrintHostListener>(listener);
 }
 
 } // namespace Slic3r::Biz::PrintHost

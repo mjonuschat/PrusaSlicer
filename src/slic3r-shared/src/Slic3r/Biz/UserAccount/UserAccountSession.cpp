@@ -280,7 +280,7 @@ void UserAccountSession::token_success_callback(const std::string& body)
             refresh_token = j["refresh_token"].get<std::string>();
         if (j.contains("shared_session_key"))
             shared_session_key = j["shared_session_key"].get<std::string>();
-    } catch (const std::exception&) {
+    } catch (const nlohmann::json::exception&) {
         std::string msg = "Could not parse server response after code exchange.";
         dispatch_action_fail(ActionFailType::Reset, body);
         return;

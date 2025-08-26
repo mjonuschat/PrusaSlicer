@@ -62,7 +62,7 @@ bool PrintHostPrusaLinkStorage::perform(
                     return;
                 }
                 storage_result = json["storage_list"].dump();
-            } catch (const std::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 res = false;
             }
         })
@@ -72,7 +72,7 @@ bool PrintHostPrusaLinkStorage::perform(
         .perform_sync();
 
     if (res) {
-        info_fn("storage", storage_result);
+        info_fn(PrintHostJobInfoTag::Storage, storage_result);
     }
 
     return res;

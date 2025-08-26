@@ -262,8 +262,6 @@ bool DesktopApp::OnInit()
 
     m_preview_module = std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
 
-    m_project_interactor->print_host_interactor().add_print_host_listener(&app_services.pop_notification_center(
-    ));
     m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center(
     ));
 
@@ -288,6 +286,13 @@ bool DesktopApp::OnInit()
 
     m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(m_project_interactor->preset_updater_interactor(
     ));
+
+    m_prusalink_storage_listener =
+        std::make_unique<PrintHost::PrusaLinkStorageListener>(*m_project_interactor.get());
+    platform_services.job_manager()
+        .add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
+            m_prusalink_storage_listener.get()
+        );
 
 #ifdef WIN32
     m_main_frame->register_win32_callbacks();

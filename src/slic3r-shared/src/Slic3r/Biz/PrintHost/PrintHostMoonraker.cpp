@@ -48,7 +48,7 @@ bool PrintHostMoonraker::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
         // This new address returns in "test_msg_or_host_ip" variable.
         // Solves troubles of uploads failing with name address.
         // in original address (m_host) replace host for resolved ip
-        info_fn("resolve", test_msg_or_host_ip);
+        info_fn(PrintHostJobInfoTag::Resolve, test_msg_or_host_ip);
         url = Network::IHttp::substitute_host(make_url("server/files/upload"), test_msg_or_host_ip);
         SPDLOG_INFO("Upload address after ip resolve: " + url);
     }
@@ -152,7 +152,7 @@ bool PrintHostMoonraker::test(std::string& msg, RetryFn retry_fn) const
                     return;
                 }
                 SPDLOG_INFO("{}: Got version: {}", name, json["result"]["moonraker_version"].dump());
-            } catch (const std::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 res = false;
                 msg = "Could not parse server response";
             }

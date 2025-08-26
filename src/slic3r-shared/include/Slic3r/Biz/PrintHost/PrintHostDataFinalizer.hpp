@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/Biz/PrintHost/IPrintHostListener.hpp"
+#include "Slic3r/Biz/PrintHost/IPrintHostBinarizeListener.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostConfig.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"

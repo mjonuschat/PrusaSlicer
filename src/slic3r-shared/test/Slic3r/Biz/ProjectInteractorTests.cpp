@@ -8,7 +8,6 @@
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Domain/Model.hpp"
-
 #include "Slic3r/Directories.hpp"
 
 #include <boost/filesystem/operations.hpp>

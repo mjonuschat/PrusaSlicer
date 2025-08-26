@@ -189,7 +189,7 @@ bool PrintHostPrusaLink::test(std::string& msg, RetryFn retry_fn) const
                         (text ? *text : name)
                     );
                 }
-            } catch (const std::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 res = false;
                 msg = "Could not parse server response";
             }
@@ -260,7 +260,7 @@ bool PrintHostPrusaLink::test_with_method_check(std::string& msg, bool& use_put,
                         use_put = json["capabilities"]["upload-by-put"].get<bool>();
                     }
                 }
-            } catch (const std::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 res = false;
                 msg = "Could not parse server response";
             }
@@ -351,7 +351,7 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(
                         use_put = json["capabilities"]["upload-by-put"].get<bool>();
                     }
                 }
-            } catch (const std::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 res = false;
                 msg = "Could not parse server response";
             }
@@ -370,7 +370,7 @@ bool PrintHostPrusaLink::upload_inner_with_resolved_ip(
     const boost::asio::ip::address& resolved_addr
 ) const
 {
-    info_fn("resolve", (resolved_addr.to_string()));
+    info_fn(PrintHostJobInfoTag::Resolve, (resolved_addr.to_string()));
 
     // If test fails, test_msg contains the error message.
     // Otherwise on Windows it contains the resolved IP address of the host.
@@ -389,7 +389,7 @@ bool PrintHostPrusaLink::upload_inner_with_resolved_ip(
     storage_path += (m_upload_data.storage.empty() ? "/local" : m_upload_data.storage);
     std::string url = Network::IHttp::substitute_host(make_url(storage_path), resolved_addr.to_string());
     bool result = true;
-    info_fn("resolve", url);
+    info_fn(PrintHostJobInfoTag::Resolve, url);
 
     SPDLOG_INFO(
         "{}: Uploading file {} at {}, filename: {}, path: {}, print: {}, method: {}",
@@ -451,7 +451,7 @@ bool PrintHostPrusaLink::upload_inner_with_host(
         // This new address returns in "test_msg" variable.
         // Solves troubles of uploades failing with name address.
         // in original address (m_host) replace host for resolved ip
-        info_fn("resolve", test_msg);
+        info_fn(PrintHostJobInfoTag::Resolve, test_msg);
         url = Network::IHttp::substitute_host(make_url(storage_path), test_msg);
         SPDLOG_INFO("Upload address after ip resolve: {}", url);
     }
@@ -481,7 +481,7 @@ bool PrintHostPrusaLink::put_inner(
     InfoFn info_fn
 ) const
 {
-    info_fn("set_complete_off", {});
+    //info_fn("set_complete_off", {});
 
     bool res = true;
     // Percent escape all filenames in on path and add it to the url. This is different from POST.
@@ -510,7 +510,7 @@ bool PrintHostPrusaLink::put_inner(
         .header("Overwrite", "?1")
         .on_complete([&](std::string body, unsigned status) {
             SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name, status, body);
-            info_fn("complete", body);
+            //info_fn("complete", body);
         })
         .on_error([&](std::string body, std::string error, unsigned status) {
             SPDLOG_ERROR("{}: Error uploading file: , HTTP {}, body: `{}`", name, error, status, body);
@@ -542,7 +542,7 @@ bool PrintHostPrusaLink::post_inner(
     InfoFn info_fn
 ) const
 {
-    info_fn("set_complete_off", {});
+    //info_fn("set_complete_off", {});
     bool res                      = true;
     const auto upload_filename    = m_upload_data.dest_path.filename();
     const auto upload_parent_path = m_upload_data.dest_path.parent_path();
@@ -568,10 +568,10 @@ bool PrintHostPrusaLink::post_inner(
         .on_complete([&](std::string body, unsigned status) {
             // PrusaConnect message
             SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name, status, body);
-            if (status == 202)
-                info_fn("complete_with_warning", body);
-            else
-                info_fn("complete", body);
+            //if (status == 202)
+            //    info_fn("complete_with_warning", body);
+            //else
+            //    info_fn("complete", body);
         })
         .on_error([&](std::string body, std::string error, unsigned status) {
             SPDLOG_ERROR("{}: Error uploading file: {}, HTTP {}, body: `{}`", name, error, status, body);

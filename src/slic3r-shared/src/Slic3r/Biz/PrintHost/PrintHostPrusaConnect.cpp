@@ -27,7 +27,7 @@ boost::optional<std::string> get_error_message_from_response_body(const std::str
         }
     }
     // ignore possible errors if body is not valid JSON
-    catch (std::exception&)
+    catch (const nlohmann::json::exception&)
     {}
 
     return message;
@@ -56,7 +56,7 @@ std::string get_keyword_from_json(const std::string& body, const std::string& ke
 
     try {
         json = nlohmann::json::parse(body);
-    } catch (const std::exception &e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("Failed to parse json: {}", e.what());
         SPDLOG_ERROR(json);
         return {};
@@ -199,7 +199,7 @@ bool PrintHostPrusaConnect::perform(
         Network::ServiceConfig::instance().connect_url(),
         m_print_host_config.printer_uuid
     );
-    info_fn("prusaconnect_printer_address", printer_page_url);
+    //info_fn(PrintHostJobInfoTag::ConnectPrinterAddress, printer_page_url);
 
     std::string init_out;
     if (!init_upload(m_upload_data, init_out, retry_fn)) {
@@ -216,7 +216,7 @@ bool PrintHostPrusaConnect::perform(
             return false;
         }
         upload_id = json["id"].get<std::size_t>();
-    } catch (const std::exception&) {
+    } catch (const nlohmann::json::exception&) {
         error_fn(_u8L("Failed to extract upload id from server reply."));
         return false;
     }

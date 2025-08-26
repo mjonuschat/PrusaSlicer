@@ -115,7 +115,7 @@ bool PrintHostAstroBox::test(std::string& msg, RetryFn retry_fn) const
                         (text ? *text : "AstroBox")
                     );
                 }
-            } catch (const std::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 res = false;
                 msg = "Could not parse server response";
             }
