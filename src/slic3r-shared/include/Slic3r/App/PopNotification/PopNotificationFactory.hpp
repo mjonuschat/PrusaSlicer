@@ -79,20 +79,6 @@ public:
             PopNotificationData>(s_next_id++, PopNotificationType::JobProgress, PopNotificationLevel::Important, 0, PopNotificationLayout::Text, PopNotificationLayoutText(text), JobProgressNotificationData(job_name, progress));
     }
 
-    static PopNotificationDataPtr
-    create_slicing_notification(const std::string& text, const Biz::Slicing::Status& status, const Domain::SlicingId& slicing_id)
-    {
-        return std::make_unique<PopNotificationData>(
-            s_next_id++,
-            PopNotificationType::SlicingProgress,
-            PopNotificationLevel::Important,
-            status.code == Biz::Slicing::StatusCode::Finished ? 5 : 0,
-            PopNotificationLayout::HeaderText,
-            PopNotificationLayoutHeaderText("Slicing Project " + std::to_string(slicing_id.project_id), text),
-            SlicingProgressNotificationData(status, slicing_id)
-        );
-    }
-
 private:
     inline static size_t s_next_id = 0;
 };

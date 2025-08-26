@@ -137,7 +137,7 @@ void PopNotificationCenter::on_status_changed(const Biz::Slicing::Status status,
             return job_data && job_data->slicing_id.project_id == slicing_id.project_id;
         }
     );
-    std::string header = "Slicing Project " + std::to_string(slicing_id.project_id);
+    std::string header = "Slicing " + m_project_interactor.get_project_name(slicing_id.project_id);
     std::string text   = slicing_status_to_string(status.code);
 
     if (it != m_notifications.end()) {
