@@ -35,7 +35,8 @@ void PrintHostJob::start()
             for (const auto& dep : m_dependencies) {
                 dep->get_future().wait(); // Wait for dependency to finish
             }
-            m_owner->on_job_progress(m_id, 0); // Indicate the upload is starting
+            //m_owner->on_job_progress(m_id, 0); // Indicate the upload is starting
+            
             std::string filename(m_print_host->upload_data().dest_path.filename().string());
             this->on_info_fn("filename", std::move(filename));
             bool success = m_print_host->perform(
