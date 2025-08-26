@@ -72,13 +72,7 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
         ASSERT(tool_def != nullptr, tool_templ.id);
         ASSERT(tool_def->technology == printer_def->technology, tool_templ.id);
 
-        auto tool_features = build_features(vendor_data.info.features.tool);
-        Domain::Preset::override_features(tool_features, tool_def->features);
-        Domain::Preset::override_features(tool_features, tool_templ.features);
-        Domain::Preset::HwToolConfig tool_config{
-            .id       = tool_def->id,
-            .features = tool_features,
-        };
+        Domain::Preset::HwToolConfig tool_config = from_def(vendor_data, *tool_def, tool_templ.features);
         printer_config.tools.emplace_back(std::move(tool_config));
     }
 
@@ -111,12 +105,7 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
                 vendor_data.defs.find(Domain::PrinterTechnology::FFF)->second.sheets
             );
         ASSERT(sheet_def != nullptr, sheet_def->id);
-        auto& sheet    = printer_config.sheet;
-        sheet.id       = sheet_def->id;
-        sheet.name     = sheet_def->name;
-        sheet.type     = sheet_def->type;
-        sheet.features = Domain::Preset::build_features(vendor_data.info.features.sheet);
-        Domain::Preset::override_features(sheet.features, sheet_def->features);
+        printer_config.sheet = from_def(vendor_data, *sheet_def);
     }
 
     printer_config.name = Domain::Preset::suggest_name(printer_config, vendor_data);
@@ -133,4 +122,32 @@ const Domain::Preset::HwSheetConfigDef* HwConfigEvaluator::first_compatible_shee
     return it == std::end(it) ? nullptr : &*it;
 }
 
+Domain::Preset::HwToolConfig
+from_def(const Domain::Preset::VendorData& vendor_data, const Domain::Preset::HwToolConfigDef& def, std::optional<Domain::Preset::FeatureValueMap> template_overrides)
+{
+    auto tool_features = build_features(vendor_data.info.features.tool);
+    Domain::Preset::override_features(tool_features, def.features);
+    if (template_overrides.has_value()) {
+        Domain::Preset::override_features(tool_features, *template_overrides);
+    }
+    return Domain::Preset::HwToolConfig{
+        .id       = def.id,
+        .name     = def.name,
+        .features = tool_features,
+    };
+}
+
+Domain::Preset::HwSheetConfig
+from_def(const Domain::Preset::VendorData& vendor_data, const Domain::Preset::HwSheetConfigDef& def)
+{
+    auto sheet_features = build_features(vendor_data.info.features.sheet);
+    Domain::Preset::override_features(sheet_features, def.features);
+    return Domain::Preset::HwSheetConfig{
+        .id       = def.id,
+        .name     = def.name,
+        .type     = def.type,
+        .features = sheet_features,
+    };
+
+}
 } // namespace Slic3r::Biz::Preset

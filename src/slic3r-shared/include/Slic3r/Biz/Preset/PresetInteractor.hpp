@@ -181,6 +181,8 @@ private:
         Domain::SelectionId config_container_id
     );
 
+    void update_presets_for_changed_hw_config();
+
     const std::string& selected_hw_config_id() const;
     void fill_config_container_with_selected_preset(
         Domain::ConfigContainer& cc,

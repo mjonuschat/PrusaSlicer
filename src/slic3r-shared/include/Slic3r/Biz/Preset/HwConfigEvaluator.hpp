@@ -144,4 +144,10 @@ private:
     Expr::Eval m_eval;
 };
 
+Domain::Preset::HwToolConfig
+from_def(const Domain::Preset::VendorData& vendor_data, const Domain::Preset::HwToolConfigDef& def, std::optional<Domain::Preset::FeatureValueMap> template_overrides = std::nullopt);
+
+Domain::Preset::HwSheetConfig
+from_def(const Domain::Preset::VendorData& vendor_data, const Domain::Preset::HwSheetConfigDef& def);
+
 }

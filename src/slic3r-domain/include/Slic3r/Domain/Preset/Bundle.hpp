@@ -14,6 +14,9 @@ struct VendorBundle
     VendorData vendor_data;
     PresetCollection presets;
     HwPrinterConfigs printer_configs;
+
+    const HwPrinterConfig* find_printer_config(const std::string& id) const;
+    HwPrinterConfig* find_printer_config(const std::string& id);
 };
 
 using VendorBundles = std::map<std::string, VendorBundle>;

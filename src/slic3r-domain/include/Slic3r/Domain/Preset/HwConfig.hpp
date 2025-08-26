@@ -50,6 +50,7 @@ enum class ToolType : uint8_t
 struct HwToolConfig
 {
     std::string id;
+    std::string name;
     FeatureValueMap features;
 };
 
