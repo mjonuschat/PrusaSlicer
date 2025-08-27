@@ -204,6 +204,8 @@ void PopNotificationView::basic_mid_layout()
 {
     m_mid_column->set_orientation(Yoga::Orientation::Vertical);
     m_mid_column->set_justify_content(YGJustifyCenter);
+    int w = TotalWidth - (m_left_column->min_size().x() + 25 + 25 + 10);
+    m_mid_column->set_min_size({w, MinHeight});
 }
 
 void PopNotificationView::basic_mid_header_layout(const std::string& header)
@@ -217,6 +219,7 @@ void PopNotificationView::basic_mid_header_layout(const std::string& header)
 void PopNotificationView::basic_mid_text_layout(const std::string& text)
 {
     m_text = m_mid_column->emplace_back<Yoga::Text>(text);
+    m_text->set_wrap(true);
     m_text->set_text_color(text_color());
     m_text->set_margin({0.f, 0.f, 0.f, 5.f});
 }
@@ -251,8 +254,7 @@ void PopNotificationView::basic_mid_progress_layout(int progress)
     m_progress_bar->set_show_overlay(true);
     m_progress_bar->set_flex_grow(1.f);
     m_progress_bar->set_progress(progress);
-    int w = TotalWidth - (m_left_column->min_size().x() + 25 + 25 + 10);
-    m_progress_bar->set_min_size({w, 10});
+    m_progress_bar->set_min_size({m_mid_column->min_size().x(), 10});
     m_progress_bar->set_margin({0.f, 0.f, 0.f, 5.f});
 }
 
