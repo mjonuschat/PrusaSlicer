@@ -21,8 +21,15 @@ enum class CameraProjectionType : uint8_t
 
 struct CameraProjectionParameters
 {
-    static double orthographic_zoom_from_perspective(double perspective_zoom) { return 1 / (REF_Z * std::tan((REF_FOVY * M_PI) / (2 * 180 *  perspective_zoom))); }
-    static double perspective_zoom_from_orthographic(double ortho_zoom) { return (REF_FOVY * M_PI) / (180 * 2 * std::atan(1 / (REF_Z * ortho_zoom))); }
+    static double orthographic_zoom_from_perspective(double perspective_zoom)
+    {
+        return 1 / (REF_Z * std::tan((REF_FOVY * M_PI) / (2 * 180 * perspective_zoom)));
+    }
+
+    static double perspective_zoom_from_orthographic(double ortho_zoom)
+    {
+        return (REF_FOVY * M_PI) / (180 * 2 * std::atan(1 / (REF_Z * ortho_zoom)));
+    }
 
     static constexpr double REF_FOVY = 60.0;
 
@@ -33,8 +40,15 @@ struct CameraProjectionParameters
     static constexpr double PERSPECTIVE_MIN_ZOOM = 0.6;
     static constexpr double PERSPECTIVE_MAX_ZOOM = 100;
 
-    static double orthographic_min_zoom() { return orthographic_zoom_from_perspective(PERSPECTIVE_MIN_ZOOM); }
-    static double orthographic_max_zoom() { return orthographic_zoom_from_perspective(PERSPECTIVE_MAX_ZOOM); }
+    static double orthographic_min_zoom()
+    {
+        return orthographic_zoom_from_perspective(PERSPECTIVE_MIN_ZOOM);
+    }
+
+    static double orthographic_max_zoom()
+    {
+        return orthographic_zoom_from_perspective(PERSPECTIVE_MAX_ZOOM);
+    }
 };
 
 /**
@@ -43,12 +57,14 @@ struct CameraProjectionParameters
 class AbstractCameraProjection
 {
 public:
-    explicit AbstractCameraProjection(CameraProjectionType type)
-        : m_type(type)
+    explicit AbstractCameraProjection(CameraProjectionType type) : m_type(type) {}
+
+    AbstractCameraProjection(CameraProjectionType type, double z_near, double z_far) :
+        m_type(type),
+        m_z_near(z_near),
+        m_z_far(z_far)
     {}
-    AbstractCameraProjection(CameraProjectionType type, double z_near, double z_far)
-        : m_type(type), m_z_near(z_near), m_z_far(z_far)
-    {}
+
     virtual ~AbstractCameraProjection() = default;
 
     /**
@@ -91,32 +107,51 @@ public:
      * @brief Get the type of projection
      * @return The type of projection
      */
-    CameraProjectionType type() const { return m_type; }
+    CameraProjectionType type() const
+    {
+        return m_type;
+    }
+
     /**
      * @brief Get the distance of the near plane from the camera eye
      * @return The distance of the near plane from the camera eye
      */
-    double z_near() const { return m_z_near; }
+    double z_near() const
+    {
+        return m_z_near;
+    }
+
     /**
      * @brief Set the distance of the near plane from the camera eye with the given value
      * @param val The new value for the distance of the near plane from the camera eye
      */
-    void set_z_near(double val) { m_z_near = val; }
+    void set_z_near(double val)
+    {
+        m_z_near = val;
+    }
+
     /**
      * @brief Get the distance of the far plane from the camera eye
      * @return The distance of the far plane from the camera eye
      */
-    double z_far() const { return m_z_far; }
+    double z_far() const
+    {
+        return m_z_far;
+    }
+
     /**
      * @brief Set the distance of the far plane from the camera eye with the given value
      * @param val The new value for the distance of the far plane from the camera eye
      */
-    void set_z_far(double val) { m_z_far = val; }
+    void set_z_far(double val)
+    {
+        m_z_far = val;
+    }
 
 protected:
     CameraProjectionType m_type;
-    double m_z_near{ 10. };
-    double m_z_far{ 1000. };
+    double m_z_near{10.};
+    double m_z_far{1000.};
 };
 
 class ICameraUpdateListener
@@ -127,45 +162,107 @@ public:
     virtual void camera_updated(const Camera& cam) = 0;
 };
 
-class Camera : public WithListeners<ICameraUpdateListener> {
+class Camera : public WithListeners<ICameraUpdateListener>
+{
 public:
     Camera();
 
-    const Transform& model() const { return m_model; }
+    const Transform& model() const
+    {
+        return m_model;
+    }
+
     void set_model(const Transform& m);
 
     void look_at(const Domain::Vec3d& eye, const Domain::Vec3d& center, const Domain::Vec3d& up);
 
-    const Domain::SquareMatrix4d& projection() const { return m_projection; }
+    const Domain::SquareMatrix4d& projection() const
+    {
+        return m_projection;
+    }
+
     void set_projection(const Domain::SquareMatrix4d& m);
 
     void switch_projection_type();
 
-    Transform view() const { return m_model.inverse(); }
+    Transform view() const
+    {
+        return m_model.inverse();
+    }
 
-    Domain::Vec3d position() const { return m_model.matrix().block<3, 1>(0, 3); }
+    Domain::Vec3d position() const
+    {
+        return m_model.matrix().block<3, 1>(0, 3);
+    }
 
-    Domain::Vec3d forward() const { return -m_model.matrix().block<3, 1>(0, 2); }
-    Domain::Vec3d right() const { return m_model.matrix().block<3, 1>(0, 0); }
-    Domain::Vec3d up() const { return m_model.matrix().block<3, 1>(0, 1); }
+    Domain::Vec3d forward() const
+    {
+        return -m_model.matrix().block<3, 1>(0, 2);
+    }
+
+    Domain::Vec3d right() const
+    {
+        return m_model.matrix().block<3, 1>(0, 0);
+    }
+
+    Domain::Vec3d up() const
+    {
+        return m_model.matrix().block<3, 1>(0, 1);
+    }
 
     void set_viewport(const Render::Rect& viewport);
-    const Render::Rect& viewport() const { return m_viewport; }
+
+    const Render::Rect& viewport() const
+    {
+        return m_viewport;
+    }
 
     void set_zoom(double value);
-    void update_zoom(double value) { set_zoom(m_zoom / (1.0 - std::max(std::min(value, 4.0), -4.0) * 0.1)); }
-    double zoom() const { return m_zoom; }
+
+    void update_zoom(double value)
+    {
+        set_zoom(m_zoom / (1.0 - std::max(std::min(value, 4.0), -4.0) * 0.1));
+    }
+
+    double zoom() const
+    {
+        return m_zoom;
+    }
+
+    void set_z_far(double z)
+    {
+        m_projection_getter->set_z_far(z);
+        update_projection();
+    }
+
+    void set_z_near(double z)
+    {
+        m_projection_getter->set_z_near(z);
+        update_projection();
+    }
+
+    void set_z_near_far(double z_near, double z_far)
+    {
+        m_projection_getter->set_z_near(z_near);
+        m_projection_getter->set_z_far(z_far);
+        update_projection();
+    }
 
     Ray ray_at(double screen_x, double screen_y) const;
     Domain::Vec3d unproject(const Domain::Vec3d& win_pos) const;
     Domain::Vec3d project_to_ndc(const Domain::Vec3d& world_pos) const;
     Domain::Vec2d project_to_screen_space(const Domain::Vec3d& world_pos) const;
 
-    const AbstractCameraProjection& cam_projection() const { return *m_projection_getter; }
-    AbstractCameraProjection& cam_projection() { return *m_projection_getter; }
+    const AbstractCameraProjection& cam_projection() const
+    {
+        return *m_projection_getter;
+    }
 
-    bool pointing_upward() const {
-        return (m_projection_getter->type() == CameraProjectionType::Perspective) ? position().z() < 0.0 : forward().z() >= 0.0;
+    bool pointing_upward() const
+    {
+        return (m_projection_getter->type() == CameraProjectionType::Perspective) ?
+            position().z() < 0.0 :
+            forward().z() >= 0.0;
     }
 
 private:
@@ -177,24 +274,32 @@ private:
     Transform m_model{Transform::Identity()};
     Domain::SquareMatrix4d m_projection{Domain::SquareMatrix4d::Identity()};
     Render::Rect m_viewport;
-    double m_zoom{ 1. };
+    double m_zoom{1.};
     std::unique_ptr<AbstractCameraProjection> m_projection_getter;
 };
 
 class PerspectiveCameraProjection : public AbstractCameraProjection
 {
 public:
-    PerspectiveCameraProjection()
-        : AbstractCameraProjection(CameraProjectionType::Perspective)
-    {}
+    PerspectiveCameraProjection() : AbstractCameraProjection(CameraProjectionType::Perspective) {}
 
     Domain::SquareMatrix4d projection(const Render::Rect& viewport, double zoom) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
 
-    double fovy() const { return m_fovy; }
+    double fovy() const
+    {
+        return m_fovy;
+    }
 
-    double min_zoom() const override { return CameraProjectionParameters::PERSPECTIVE_MIN_ZOOM; }
-    double max_zoom() const override { return CameraProjectionParameters::PERSPECTIVE_MAX_ZOOM; }
+    double min_zoom() const override
+    {
+        return CameraProjectionParameters::PERSPECTIVE_MIN_ZOOM;
+    }
+
+    double max_zoom() const override
+    {
+        return CameraProjectionParameters::PERSPECTIVE_MAX_ZOOM;
+    }
 
 private:
     const double m_fovy{CameraProjectionParameters::REF_FOVY};
@@ -203,19 +308,24 @@ private:
 class OrthographicCameraProjection : public AbstractCameraProjection
 {
 public:
-    OrthographicCameraProjection()
-        : AbstractCameraProjection(CameraProjectionType::Orthographic)
-    {}
-    OrthographicCameraProjection(double z_near, double z_far)
-        : AbstractCameraProjection(CameraProjectionType::Orthographic, z_near, z_far)
+    OrthographicCameraProjection() : AbstractCameraProjection(CameraProjectionType::Orthographic) {}
+
+    OrthographicCameraProjection(double z_near, double z_far) :
+        AbstractCameraProjection(CameraProjectionType::Orthographic, z_near, z_far)
     {}
 
     Domain::SquareMatrix4d projection(const Render::Rect& viewport, double zoom) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
 
-    double min_zoom() const override { return CameraProjectionParameters::orthographic_min_zoom(); }
-    double max_zoom() const override { return CameraProjectionParameters::orthographic_max_zoom(); }
+    double min_zoom() const override
+    {
+        return CameraProjectionParameters::orthographic_min_zoom();
+    }
 
+    double max_zoom() const override
+    {
+        return CameraProjectionParameters::orthographic_max_zoom();
+    }
 };
 
 } // namespace Slic3r::App::Scene

@@ -52,6 +52,8 @@
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 
+#include "Slic3r/Math.hpp"
+
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
 
@@ -1078,13 +1080,13 @@ static void render_imgui_debug_camera(
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Position");
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%s", to_string(camera.position()).c_str());
+            ImGui::Text("%.3f, %.3f, %.3f", camera.position().x(), camera.position().y(), camera.position().z());
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Target");
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%s", to_string(trackball.target()).c_str());
+            ImGui::Text("%.3f, %.3f, %.3f", trackball.target().x(), trackball.target().y(), trackball.target().z());
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -1096,7 +1098,7 @@ static void render_imgui_debug_camera(
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Pivot");
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%s", to_string(trackball.pivot()).c_str());
+            ImGui::Text("%.3f, %.3f, %.3f", trackball.pivot().x(), trackball.pivot().y(), trackball.pivot().z());
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -1114,19 +1116,31 @@ static void render_imgui_debug_camera(
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Forward");
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%s", to_string(camera.forward()).c_str());
+            ImGui::Text("%.3f, %.3f, %.3f", camera.forward().x(), camera.forward().y(), camera.forward().z());
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Right");
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%s", to_string(camera.right()).c_str());
+            ImGui::Text("%.3f, %.3f, %.3f", camera.right().x(), camera.right().y(), camera.right().z());
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Up");
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%s", to_string(camera.up()).c_str());
+            ImGui::Text("%.3f, %.3f, %.3f", camera.up().x(), camera.up().y(), camera.up().z());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Near Z");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%.3f", camera.cam_projection().z_near());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Far Z");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%.3f", camera.cam_projection().z_far());
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);

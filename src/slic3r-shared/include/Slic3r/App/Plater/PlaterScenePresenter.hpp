@@ -17,6 +17,7 @@
 #include "Slic3r/App/Scene/IProjectSceneProvider.hpp"
 #include "Slic3r/App/Scene/BedRenderUpdater.hpp"
 #include "Slic3r/App/Plater/IBedVisuallyChangedListener.hpp"
+#include "Slic3r/App/Plater/PlaterCameraFrustumUpdater.hpp"
 
 namespace Slic3r::App::Scene {
 class NodeBuilder;
@@ -39,8 +40,6 @@ class PlaterScenePresenter :
 {
 public:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, Scene::ScenePresenterProjectContext>;
-    using GeometryManager = Render::GeometryManager<std::string>;
-    using TriangleMeshManager = Scene::TriangleMeshManager<std::string>;
 
     void load_selected_project();
     PlaterScenePresenter(
@@ -118,7 +117,6 @@ public:
     using BedInstances = std::vector<std::reference_wrapper<const Domain::BedInstance>>;
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
-    void update_camera_frustum();
 
     void on_selected_project_changed(size_t index) override;
 
@@ -157,6 +155,7 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     Render::Device& m_device;
     Render::Rect m_viewport;
+    PlaterCameraFrustumUpdater m_camera_frustum_updater;
 
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
     ProjectContexts m_projects;

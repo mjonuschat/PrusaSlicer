@@ -125,14 +125,19 @@ void PlaterScenePresenter::load_selected_project()
 
 void PlaterScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 {
-    if (!m_projects.empty())
-        project_context().scene().render(m_device, command_buffer, this);
+    if (!m_projects.empty()){
+#if ENABLE_DEBUG_RENDER_SCENE_AABB
+        m_camera_frustum_updater.update_scene_aabb_node(project_context(), m_device);
+#endif // ENABLE_DEBUG_RENDER_SCENE_AABB
+        m_camera_frustum_updater.update_camera_frustum(scene().camera());
+        scene().render(m_device, command_buffer, this);
+    }
 }
 
 void PlaterScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
 {
     if (!m_projects.empty())
-        project_context().scene().render_imgui(screen_info);
+        scene().render_imgui(screen_info);
 }
 
 void PlaterScenePresenter::screen_resized(const Render::Rect& viewport)
@@ -151,36 +156,6 @@ void PlaterScenePresenter::update_cameras(const std::function<void(Scene::Camera
     std::for_each(m_projects.begin(), m_projects.end(), [modifier](auto& p) {
         modifier(p.second.scene().camera());
     });
-}
-
-void PlaterScenePresenter::update_camera_frustum()
-{
-    // set scene aabb using bed instances print volumes
-    size_t project_id = m_project_interactor.selected_project_id();
-    const Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
-    Eigen::AlignedBox3d aabb;
-    for (const auto& cc : scene_interactor.selected_project_config_containers()) {
-        for (const auto& bed_inst : cc->bed_instances()) {
-            std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(
-                bed_inst->bed.get()
-            );
-            Domain::Vec3d bed_inst_offset = bed_inst->transformation.get_offset();
-            for (const auto& v : print_volume) {
-                aabb.extend(bed_inst_offset + v.cast<double>());
-            }
-            Eigen::AlignedBox3d model_aabb = Biz::Scene::BedGeometry::model_aabb(bed_inst->bed.get());
-            if (!model_aabb.isEmpty()) {
-                aabb.extend(bed_inst_offset + model_aabb.min());
-                aabb.extend(bed_inst_offset + model_aabb.max());
-            }
-        }
-    }
-
-    // set new value for frustum z far
-    Vec3d sizes  = aabb.sizes();
-    double z_far = scene().camera_trackball().distance_to_target()
-        + 2.0 * std::max({sizes.x(), sizes.y(), sizes.z()});
-    scene().camera().cam_projection().set_z_far(std::max(1000.0, z_far));
 }
 
 namespace {
@@ -492,6 +467,7 @@ void PlaterScenePresenter::on_instance_added(
     }
 
     invoke_bed_visually_changed(project_id);
+    m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
 void PlaterScenePresenter::on_instance_removed(
@@ -508,6 +484,7 @@ void PlaterScenePresenter::on_instance_removed(
     );
 
     invoke_bed_visually_changed(project_id);
+    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_instance_transformed(
@@ -519,9 +496,9 @@ void PlaterScenePresenter::on_instance_transformed(
     const BedInstances bed_instances{selected_bed_instances()};
     const Domain::ModelInstanceList instance{get_instances_on_beds(bed_instances)};
 
-    auto& scene      = m_projects[m_selected_project_id].scene();
+    auto& scn      = scene();
     const auto& proj = m_workbench.project(project_id);
-    Scene::visit(scene.root(), [&](Scene::Node& n) {
+    Scene::visit(scn.root(), [&](Scene::Node& n) {
         const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
         if (t == nullptr)
             return;
@@ -559,6 +536,8 @@ void PlaterScenePresenter::on_instance_transformed(
 
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
+
+    m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
 void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
@@ -569,21 +548,21 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
     std::set<size_t> object_ids;
     for (const auto& v : volumes)
         object_ids.insert(v.object_id);
-    auto& scene = m_projects[project_id].scene();
+    auto& scn = scene();
 
-    Scene::visit_conditional(scene.root(), [&](Scene::Node& n) {
+    Scene::visit_conditional(scn.root(), [&](Scene::Node& n) {
         const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
         if (t != nullptr && t->volume_id == 0 && object_ids.contains(t->object_id)) {
             // root of the instance
             const auto* obj = m_workbench.project(project_id).find_object_by_id(t->object_id);
             const auto* inst = Domain::find_by_id<Domain::ModelInstance>(obj->instances, t->instance_id);
-            Scene::NodeBuilder builder{scene};
+            Scene::NodeBuilder builder{scn};
             for (const auto& e : volumes) {
                 if (e.object_id != t->object_id)
                     continue;
                 const auto* vol = Domain::find_by_id<Domain::ModelVolume>(obj->volumes, e.volume_id);
                 build_volume_node(builder, project_id, inst, vol);
-                scene.add_child(builder.build().release(), &n);
+                scn.add_child(builder.build().release(), &n);
             }
 
             return false;
@@ -592,6 +571,7 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
     });
 
     invoke_bed_visually_changed(project_id);
+    m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
 void PlaterScenePresenter::on_volume_removed(
@@ -608,6 +588,7 @@ void PlaterScenePresenter::on_volume_removed(
     );
 
     invoke_bed_visually_changed(project_id);
+    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_volume_transformed(
@@ -619,10 +600,10 @@ void PlaterScenePresenter::on_volume_transformed(
     const BedInstances& bed_instances{selected_bed_instances()};
     const Domain::Model* model          = &m_project_interactor.selected_project().model();
 
-    auto& scene      = m_projects[m_selected_project_id].scene();
+    auto& scn      = scene();
     const auto& proj = m_workbench.project(project_id);
 
-    Scene::visit(scene.root(), [&](Scene::Node& n) {
+    Scene::visit(scn.root(), [&](Scene::Node& n) {
         const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
         if (t == nullptr || t->volume_id == 0)
             return;
@@ -631,7 +612,7 @@ void PlaterScenePresenter::on_volume_transformed(
                 const auto* vol = proj.find_volume_by_id(e.object_id, e.volume_id);
                 n.set_local_transform(vol->get_matrix());
                 if (vol->is_model_part()) {
-                    Scene::visit(scene.root(), [&](Scene::Node& n) {
+                    Scene::visit(scn.root(), [&](Scene::Node& n) {
                         const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
                         if (tag != nullptr && n.has_render_component()) {
                             if (tag->object_id == t->object_id && tag->volume_id == t->volume_id) {
@@ -666,6 +647,8 @@ void PlaterScenePresenter::on_volume_transformed(
 
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
+
+    m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
 void PlaterScenePresenter::on_bed_instance_updated(
@@ -699,7 +682,7 @@ void PlaterScenePresenter::on_bed_instance_updated(
     }
 
     m_bed_render_updater.update_all(scn.camera());
-    update_camera_frustum();
+    m_camera_frustum_updater.update_scene_aabb(scn);
 
     invoke_bed_visually_changed(project_id);
 }
@@ -712,7 +695,7 @@ void PlaterScenePresenter::on_bed_instance_removed(
     remove_beds(project_id, instances);
 
     m_bed_render_updater.update_all(scene().camera());
-    update_camera_frustum();
+    m_camera_frustum_updater.update_scene_aabb(scene());
 
     invoke_bed_visually_changed(project_id);
 }
@@ -725,11 +708,14 @@ void PlaterScenePresenter::on_bed_instance_transformed(
 {
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
+
+    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_wipe_tower_added(Domain::SelectionId project_id, Domain::SelectionId wipe_tower_id)
 {
     invoke_bed_visually_changed(project_id);
+    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_wipe_tower_removed(
@@ -738,6 +724,7 @@ void PlaterScenePresenter::on_wipe_tower_removed(
 )
 {
     invoke_bed_visually_changed(project_id);
+    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_wipe_tower_transformed(
@@ -748,6 +735,8 @@ void PlaterScenePresenter::on_wipe_tower_transformed(
 {
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
+
+    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx)

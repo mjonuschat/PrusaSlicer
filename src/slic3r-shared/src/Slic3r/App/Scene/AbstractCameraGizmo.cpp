@@ -40,10 +40,8 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "look-at-active-bed",
-                [this]() {
-                    const CameraTrackballController& trackball = m_scene_provider.scene().camera_trackball();
-                    look_at(m_selected_bed_center, trackball.azimuth(), trackball.zenith());
-                },
+                [this]()
+                { m_scene_provider.scene().camera_trackball().set_target(m_selected_bed_center); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::B}
             )
@@ -51,7 +49,10 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-default-view",
-                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), DEFAULT_AZIMUTH, DEFAULT_ZENITH); },
+                [this]()
+                {
+                    look_at(m_scene_provider.scene().camera_trackball().target(), DEFAULT_AZIMUTH, DEFAULT_ZENITH);
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num0}
             )
@@ -59,7 +60,8 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-top-view",
-                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI); },
+                [this]()
+                { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num1}
             )
@@ -67,7 +69,8 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-bottom-view",
-                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, 0.0); },
+                [this]()
+                { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, 0.0); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num2}
             )
@@ -75,7 +78,8 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-front-view",
-                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI_2); },
+                [this]()
+                { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI_2); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num3}
             )
@@ -83,7 +87,8 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-rear-view",
-                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), -M_PI_2, M_PI_2); },
+                [this]()
+                { look_at(m_scene_provider.scene().camera_trackball().target(), -M_PI_2, M_PI_2); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num4}
             )
@@ -91,7 +96,8 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-left-view",
-                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), 0.0, M_PI_2); },
+                [this]()
+                { look_at(m_scene_provider.scene().camera_trackball().target(), 0.0, M_PI_2); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num5}
             )
@@ -99,12 +105,12 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-right-view",
-                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI, M_PI_2); },
+                [this]()
+                { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI, M_PI_2); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num6}
             )
-        )
-    ;
+        );
 }
 
 void AbstractCameraGizmo::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
@@ -112,7 +118,7 @@ void AbstractCameraGizmo::on_selected_bed_instances_changed(Domain::SelectionId 
     const Domain::BedRef last_selected_bed{selection.last_selected_bed()};
     const Domain::SelectionId container_id{last_selected_bed.config_container_id};
     const Domain::SelectionId bed_instance_id{last_selected_bed.instance_id};
-    const auto& proj = m_workbench.project(project_id);
+    const auto& proj                  = m_workbench.project(project_id);
     const Domain::ConfigContainer* cc = proj.find_config_container(container_id);
     DEBUG_ASSERT(cc != nullptr);
     const Domain::BedInstance& inst = cc->find_bed_instance(bed_instance_id);
@@ -139,7 +145,7 @@ void draw_square(Render::DynamicGeometry<V>& g, const Vec3f& position, const Vec
     for (size_t i = 0; i < 4; i++) {
         const float sx = i / 2 == 0 ? -1 : 1;
         const float sy = i == 0 || i == 3 ? -1 : 1;
-        Vec3f pt = x_axis * radius * sx + y_axis * radius * sy + position;
+        Vec3f pt       = x_axis * radius * sx + y_axis * radius * sy + position;
         builder.vertex(pt);
     }
 }
@@ -163,14 +169,10 @@ bool AbstractCameraGizmo::pick_plane(double mouse_x, double mouse_y, const Rende
     auto& cam = scene.camera();
     auto r = cam.ray_at(screen_info.mouse_to_screen(mouse_x), screen_info.mouse_to_screen(mouse_y));
 
-    Vec3d n = cam.forward();
-    Vec3d p = cam.position();
+    Vec3d n  = cam.forward();
+    Vec3d p  = cam.position();
     double q = p.dot(n) / n.dot(n);
-    const Plane plane {
-        n,
-        -scene.camera_trackball().distance_to_target() - q
-    };
-
+    const Plane plane{n, -scene.camera_trackball().distance_to_target() - q};
 
     double t;
     // r.origin = Vec3d::Zero();
@@ -181,12 +183,7 @@ bool AbstractCameraGizmo::pick_plane(double mouse_x, double mouse_y, const Rende
         plane.vectors_in_plane(u, v);
         const size_t N{32};
         const double R{30};
-        draw_circle(
-            m_dynamic_geometry,
-            out_plane_point.cast<float>(),
-            u.cast<float>(), v.cast<float>(),
-            R, N
-        );
+        draw_circle(m_dynamic_geometry, out_plane_point.cast<float>(), u.cast<float>(), v.cast<float>(), R, N);
 #endif
         return true;
     }
@@ -198,25 +195,36 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
 #if CAMERA_GIZMO_DEBUG
     m_dynamic_geometry.clear();
     {
-        const auto& scene = m_scene_provider.scene();
-        const auto& cam = scene.camera();
+        const auto& scene         = m_scene_provider.scene();
+        const auto& cam           = scene.camera();
         const auto& cam_trackball = scene.camera_trackball();
 
-        draw_square(m_dynamic_geometry, cam_trackball.cam_focal().cast<float>(), cam.up().cast<float>(), cam.right().cast<float>(), 100);
-        draw_cross(m_dynamic_geometry, cam_trackball.cam_focal().cast<float>(), cam.up().cast<float>(), cam.right().cast<float>(), 100);
+        draw_square(
+            m_dynamic_geometry,
+            cam_trackball.cam_focal().cast<float>(),
+            cam.up().cast<float>(),
+            cam.right().cast<float>(),
+            100
+        );
+        draw_cross(
+            m_dynamic_geometry,
+            cam_trackball.cam_focal().cast<float>(),
+            cam.up().cast<float>(),
+            cam.right().cast<float>(),
+            100
+        );
     }
 #endif
 
     const Platform::MouseEvent& event = ctx.mouse_event();
-    const auto type = event.type();
+    const auto type                   = event.type();
     if (type == Platform::MouseEvent::Type::ButtonDown) {
         if (any_draggable(ctx))
             return GizmoActivationState::Inactive;
 
-        const bool pan = event.button() == Platform::MouseButton::Right ||
-                         event.button() == Platform::MouseButton::Middle;
+        const bool pan = event.button() == Platform::MouseButton::Right || event.button() == Platform::MouseButton::Middle;
 
-        m_state = pan ? State::Panning : State::Rotating;
+        m_state  = pan ? State::Panning : State::Rotating;
         m_last_x = event.x();
         m_last_y = event.y();
     } else if (type == Platform::MouseEvent::Type::Move) {
@@ -231,8 +239,9 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
         else if (m_state == State::Panning) {
             Vec3d current_mouse_world_pos;
             Vec3d last_mouse_world_pos;
-            if (pick_plane(event.x(), event.y(), ctx.screen_info(), current_mouse_world_pos) &&
-                pick_plane(m_last_x, m_last_y, ctx.screen_info(), last_mouse_world_pos)) {
+            if (pick_plane(event.x(), event.y(), ctx.screen_info(), current_mouse_world_pos)
+                && pick_plane(m_last_x, m_last_y, ctx.screen_info(), last_mouse_world_pos))
+            {
                 bool shift_down = (ctx.mouse_event().key_modifiers() & Platform::KeyModifiers(Platform::KeyModifier::Shift)) != 0;
                 update_pan(last_mouse_world_pos - current_mouse_world_pos, shift_down);
             } else
@@ -293,27 +302,21 @@ void AbstractCameraGizmo::update_zoom(float wheel_delta_y)
     // the wheel_delta_y may be 0 (!) so prevent handling such events (this would lead to NaN in
     // zoom factor)
     if (wheel_delta_y != 0)
-        m_scene_provider.scene().camera_trackball().update_zoom(
-            wheel_delta_y / std::abs(wheel_delta_y)
-        );
+        m_scene_provider.scene().camera_trackball().update_zoom(wheel_delta_y / std::abs(wheel_delta_y));
 }
 
 void AbstractCameraGizmo::update_rotation(float delta_x, float delta_y, float delta_for_180_rotation)
 {
-    auto& scene = m_scene_provider.scene();
+    auto& scene     = m_scene_provider.scene();
     auto& trackball = scene.camera_trackball();
 
     const double delta_to_angle_factor{1.0 / delta_for_180_rotation * M_PI};
-    trackball.add_azimuth_and_zenith(
-        delta_x * delta_to_angle_factor,
-        delta_y * delta_to_angle_factor,
-        true
-    );
+    trackball.add_azimuth_and_zenith(delta_x * delta_to_angle_factor, delta_y * delta_to_angle_factor, true);
 }
 
 void AbstractCameraGizmo::look_at(const Vec3d& pos, double azimuth, double zenith)
 {
-    auto& scene = m_scene_provider.scene();
+    auto& scene     = m_scene_provider.scene();
     auto& trackball = scene.camera_trackball();
     trackball.set_target(pos);
     trackball.set_azimuth_and_zenith(azimuth, zenith);
