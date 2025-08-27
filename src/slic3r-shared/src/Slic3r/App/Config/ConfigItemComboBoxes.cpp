@@ -16,7 +16,7 @@ ConfigItemComboBoxes::ConfigItemComboBoxes(
     const Domain::ConfigItem& config_item,
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
-    Biz::DataObserver<Domain::ConfigItem>(index, config_item),
+    ConfigItemControl(index, config_item),
     m_preset_interactor(preset_interactor)
 {
     set_width(150);
@@ -53,12 +53,18 @@ void ConfigItemComboBoxes::reconstruct_buttons()
         [](const Domain::EnumValueDef& value) { return value.str_ui; }
     );
 
+    const std::string tooltip_value           = tooltip_text();
     const std::vector<size_t> current_indexes = vector_wrapper.get_indexes();
     m_combo_boxes.reserve(current_indexes.size());
     for (int index : current_indexes) {
         ComboBox* combo = emplace_back<ComboBox>(items);
         m_combo_boxes.push_back(combo);
         combo->set_current_index(index);
+
+        Tooltip& tooltip = combo->tooltip();
+        tooltip.set_text(tooltip_value);
+        tooltip.content_item()->set_width(350);
+        tooltip.set_text_wrap(true);
 
         combo->callbacks().selection_changed = [this, combo](int index) {
             Domain::EnumVectorWrapper vector_wrapper = m_state->get<Domain::EnumVectorWrapper>();

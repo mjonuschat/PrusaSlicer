@@ -19,7 +19,7 @@ ConfigItemTextFields::ConfigItemTextFields(
     const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    ConfigItemControl(index, data),
     m_preset_interactor(preset_interactor)
 {
     set_orientation(Orientation::Horizontal);
@@ -47,6 +47,8 @@ void ConfigItemTextFields::reconstruct_fields()
     }
     m_fields.clear();
 
+    const std::string tooltip = tooltip_text();
+
     const std::vector<double> values = m_state->get<std::vector<double>>();
     m_fields.reserve(values.size());
     for (double value : std::as_const(values)) {
@@ -62,6 +64,7 @@ void ConfigItemTextFields::reconstruct_fields()
         field.textfield->callbacks().text_edited = [this]() {
             send_data();
         };
+        field.textfield->set_tooltip(tooltip);
     }
 }
 

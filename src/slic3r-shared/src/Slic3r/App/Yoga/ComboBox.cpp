@@ -204,6 +204,11 @@ void ComboBox::render(Vec2f pos, Vec2f size)
     render_item_end(pos, size);
 }
 
+Tooltip& ComboBox::tooltip()
+{
+    return m_tooltip;
+}
+
 ComboBox::Callbacks& ComboBox::callbacks()
 {
     return m_callbacks;

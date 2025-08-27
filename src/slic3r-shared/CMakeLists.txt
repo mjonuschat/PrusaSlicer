@@ -812,6 +812,8 @@ add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES}
     src/Slic3r/App/MaterialSelectionRow.cpp
     include/Slic3r/App/Search.hpp
     src/Slic3r/App/Search.cpp
+    include/Slic3r/App/Config/ConfigItemControl.hpp
+    src/Slic3r/App/Config/ConfigItemControl.cpp
 )
 
 target_link_libraries(slic3r-shared PUBLIC

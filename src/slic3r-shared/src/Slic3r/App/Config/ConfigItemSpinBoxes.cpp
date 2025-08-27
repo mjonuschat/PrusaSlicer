@@ -17,7 +17,7 @@ ConfigItemSpinBoxes::ConfigItemSpinBoxes(
     const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    ConfigItemControl(index, data),
     m_preset_interactor(preset_interactor)
 {
     set_orientation(Orientation::Horizontal);
@@ -48,8 +48,10 @@ void ConfigItemSpinBoxes::reconstruct_spin_buttons()
     const int min = static_cast<int>(m_state->def().min.value_or(std::numeric_limits<int>::min()));
     const int max = static_cast<int>(m_state->def().max.value_or(std::numeric_limits<int>::max()));
 
+    const std::string tooltip = tooltip_text();
+
     for (size_t index = 0; index < size; ++index) {
-        Box& box = m_boxes.emplace_back();
+        Box& box                 = m_boxes.emplace_back();
         InputTextWithSpin* input = emplace_back<InputTextWithSpin>(
             std::make_unique<IntValidator>(min, max)
         );
@@ -61,6 +63,7 @@ void ConfigItemSpinBoxes::reconstruct_spin_buttons()
             data[index]           = m_boxes.at(index).value_validator->value();
             m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{data});
         };
+        input->set_tooltip(tooltip);
     }
 
     update_values();

@@ -54,6 +54,8 @@ public:
 
     Callbacks& callbacks();
 
+    Tooltip& tooltip();
+
     const std::vector<std::string>& items() const;
     void set_items(const std::vector<std::string>& items);
 

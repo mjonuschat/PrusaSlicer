@@ -13,7 +13,7 @@ ConfigItemCheckBox::ConfigItemCheckBox(
     const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    ConfigItemControl(index, data),
     m_preset_interactor(preset_interactor)
 {
     on_data_update();
@@ -21,7 +21,7 @@ ConfigItemCheckBox::ConfigItemCheckBox(
     set_width(150);
     m_tooltip.set_text_wrap(true);
     m_tooltip.content_item()->set_width(350);
-    set_tooltip(data.def().tooltip);
+    set_tooltip(tooltip_text());
 }
 
 void ConfigItemCheckBox::on_data_update()

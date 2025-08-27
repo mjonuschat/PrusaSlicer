@@ -17,7 +17,7 @@ ConfigItemCheckBoxes::ConfigItemCheckBoxes(
     const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    ConfigItemControl(index, data),
     m_preset_interactor(preset_interactor)
 {
     on_data_update();

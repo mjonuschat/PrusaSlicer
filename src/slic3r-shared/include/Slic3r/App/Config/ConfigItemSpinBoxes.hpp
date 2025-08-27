@@ -4,9 +4,8 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
-#include "Slic3r/Biz/DataObserver.hpp"
+#include "Slic3r/App/Config/ConfigItemControl.hpp"
 
 namespace Slic3r::Biz::Preset {
 class PresetInteractor;
@@ -19,7 +18,7 @@ class InputTextWithSpin;
 
 namespace Slic3r::App {
 
-class ConfigItemSpinBoxes : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
+class ConfigItemSpinBoxes : public ConfigItemControl, public Yoga::Item
 {
 public:
     ConfigItemSpinBoxes(

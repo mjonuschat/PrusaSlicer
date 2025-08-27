@@ -18,7 +18,7 @@ ConfigItemTextField::ConfigItemTextField(
     const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    ConfigItemControl(index, data),
     m_preset_interactor(preset_interactor)
 {
     if (data.def().multiline) {
@@ -39,7 +39,7 @@ ConfigItemTextField::ConfigItemTextField(
     }
 
     set_min_size({150, 0});
-    set_tooltip(data.def().tooltip);
+    set_tooltip(tooltip_text());
     m_tooltip.set_text_wrap(true);
     m_tooltip.content_item()->set_width(350);
 

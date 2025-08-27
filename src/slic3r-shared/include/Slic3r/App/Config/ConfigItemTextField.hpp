@@ -4,8 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Biz/DataObserver.hpp"
-#include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Yoga/InputTextField.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 
@@ -15,7 +14,7 @@ class PresetInteractor;
 
 namespace Slic3r::App {
 
-class ConfigItemTextField : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::InputTextField
+class ConfigItemTextField : public ConfigItemControl, public Yoga::InputTextField
 {
 public:
     ConfigItemTextField(

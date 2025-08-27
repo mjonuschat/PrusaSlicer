@@ -16,7 +16,7 @@ using namespace Slic3r::App::Yoga;
 namespace Slic3r::App {
 
 ConfigItemPoints::ConfigItemPoints(size_t index, const Domain::ConfigItem& data, Biz::Preset::PresetInteractor& preset_interactor) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    ConfigItemControl(index, data),
     m_preset_interactor(preset_interactor)
 {
     set_orientation(Orientation::Horizontal);

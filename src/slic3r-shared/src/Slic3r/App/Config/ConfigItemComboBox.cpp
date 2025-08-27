@@ -17,7 +17,7 @@ ConfigItemComboBox::ConfigItemComboBox(
     const Domain::ConfigItem& config_item,
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
-    Biz::DataObserver<Domain::ConfigItem>(index, config_item),
+    ConfigItemControl(index, config_item),
     ComboBox("ConfigItemCombo"),
     m_preset_interactor(preset_interactor)
 {
@@ -30,7 +30,7 @@ ConfigItemComboBox::ConfigItemComboBox(
 
     on_data_update();
 
-    m_tooltip.set_text(config_item.def().tooltip);
+    m_tooltip.set_text(tooltip_text());
     m_tooltip.content_item()->set_width(350);
     m_tooltip.set_text_wrap(true);
 

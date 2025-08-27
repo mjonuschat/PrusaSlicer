@@ -5,12 +5,11 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Rectangle.hpp"
-#include "Slic3r/Domain/Config.hpp"
-#include "Slic3r/Biz/DataObserver.hpp"
+#include "Slic3r/App/Config/ConfigItemControl.hpp"
 
 namespace Slic3r::App {
 
-class ConfigItemColorPicker : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Rectangle
+class ConfigItemColorPicker : public ConfigItemControl, public Yoga::Rectangle
 {
 public:
     ConfigItemColorPicker(size_t index, const Domain::ConfigItem& data);

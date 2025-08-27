@@ -11,7 +11,7 @@ using namespace Slic3r::App::Yoga;
 namespace Slic3r::App {
 
 ConfigItemColorPicker::ConfigItemColorPicker(size_t index, const Domain::ConfigItem& data) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data)
+    ConfigItemControl(index, data)
 {
     on_data_update();
 }

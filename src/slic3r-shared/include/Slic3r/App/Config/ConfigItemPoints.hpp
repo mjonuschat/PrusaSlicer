@@ -4,8 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Biz/DataObserver.hpp"
-#include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 
@@ -19,7 +18,7 @@ class InputTextField;
 
 namespace Slic3r::App {
 
-class ConfigItemPoints : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
+class ConfigItemPoints : public ConfigItemControl, public Yoga::Item
 {
 public:
     ConfigItemPoints(size_t index, const Domain::ConfigItem& data, Biz::Preset::PresetInteractor& preset_interactor);

@@ -16,7 +16,7 @@ ConfigItemSpinBox::ConfigItemSpinBox(
     const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor
 ) :
-    Biz::DataObserver<Domain::ConfigItem>(index, data),
+    ConfigItemControl(index, data),
     InputTextWithSpin(
         std::make_unique<IntValidator>(
             data.def().min.value_or(std::numeric_limits<int>::min()),
@@ -40,7 +40,7 @@ ConfigItemSpinBox::ConfigItemSpinBox(
         }
     };
 
-    set_tooltip(data.def().tooltip);
+    set_tooltip(tooltip_text());
     m_tooltip.set_text_wrap(true);
     m_tooltip.content_item()->set_width(350);
 }

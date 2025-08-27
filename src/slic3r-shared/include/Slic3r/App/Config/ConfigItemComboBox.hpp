@@ -5,8 +5,7 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/ComboBox.hpp"
-#include "Slic3r/Domain/Config.hpp"
-#include "Slic3r/Biz/DataObserver.hpp"
+#include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 
 namespace Slic3r::Biz::Preset {
@@ -15,7 +14,7 @@ class PresetInteractor;
 
 namespace Slic3r::App {
 
-class ConfigItemComboBox : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::ComboBox
+class ConfigItemComboBox : public ConfigItemControl, public Yoga::ComboBox
 {
 public:
     ConfigItemComboBox(
