@@ -67,6 +67,8 @@ void PopNotificationObservableList::notification_updated(size_t index)
     invoke_listeners<Biz::IListObserver<PopNotificationData>>(
         [&](auto* l) { l->on_updated({index}); }
     );
+    // To be removed when PopNotificationView items does call it correctly:
+    Biz::Platform::PlatformServices::instance().render_request_handler().request_render();
 }
 
 void PopNotificationObservableList::set_notification_timeout(PopNotificationDataIt it, size_t seconds)
