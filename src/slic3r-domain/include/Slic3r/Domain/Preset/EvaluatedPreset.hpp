@@ -8,7 +8,8 @@
 #include "Slic3r/Domain/Preset/PresetTree.hpp"
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
 #include "Slic3r/Domain/ConfigBoxesSLA.hpp"
-#include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/FullConfigFDM.hpp"
+#include "Slic3r/Log.hpp"
 
 namespace Slic3r::Domain::Preset {
 
@@ -42,8 +43,13 @@ struct EvaluatedPreset
     FeatureValueMap features;
     Expressions conditions;
     SourceLocation last_node_location;
-    bool runtime_only{false};
 
+    bool has_same_values(const EvaluatedPreset& rhs) const
+    {
+        const EvaluatedPreset& lhs = *this;
+        // last_node_location and conditions intentionally left
+        return lhs.kind == rhs.kind && lhs.root_id == rhs.root_id && lhs.id == rhs.id && lhs.name == rhs.name && lhs.values == rhs.values && lhs.features == rhs.features /*&& lhs.conditions == rhs.conditions*/;
+    }
     static EvaluatedPreset make(PresetKind kind, const EvaluatedPresetMetadata& metadata, PresetValues values)
     {
         return {
@@ -182,5 +188,13 @@ struct EvaluatedPrinterPreset
 
     bool is_valid() const;
 };
+
+template <typename EP>
+const EP* find_preset_with_same_value(const typename EP::Preset& preset, const std::vector<EP>& presets)
+{
+    auto it = std::ranges::find_if(presets, [&preset](const auto& p) { return p.preset.has_same_values(preset); });
+    return it == presets.end() ? nullptr : &(*it);
+}
+
 
 } // namespace Slic3r::Domain::Preset

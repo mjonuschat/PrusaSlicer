@@ -57,6 +57,17 @@ public:
         Domain::SelectionId config_container_id
     ) const;
 
+    /**
+     * @brief Load selected_preset from 3MF. This function makes sure the hw_configs and presets
+     * stored there are loaded into (runtime) bundle with deduplication and all relevant IDs
+     * are unique.
+     * @param project_id An ID of the project
+     * @param selected_preset Config container preset to load.
+     * @note The ID of selected_preset's hw_config may change if it collides with already existing
+     * having different values (config changed without changing its ID).
+     */
+    void load_selected_preset_from_3mf(Domain::SelectionId project_id, Domain::Preset::SelectedPreset& selected_preset);
+
     const PresetInteractorConfigContainerContext& selected_config_container_context() const;
 
     PresetInteractorConfigContainerContext& initialize_config_container_context(
@@ -65,7 +76,8 @@ public:
     );
     void initialize_config_container(Domain::ConfigContainer& cc);
 
-    const Domain::Preset::EvaluatedPrinterPreset& current_printer_preset() const;
+    const Domain::Preset::HwPrinterConfig& current_printer_config() const;
+    const Domain::Preset::EvaluatedPrinterPreset::Preset& current_printer_preset() const;
     const Domain::Preset::SelectedPreset& selected_printer_preset() const;
 
     PresetItemObservableList& printer_presets()
@@ -159,6 +171,17 @@ public:
 
     void set_item_value(const Domain::ConfigItem& item, const Domain::ConfigValue& value, size_t index = 0);
 
+    const Domain::Preset::HwPrinterConfig& get_printer_config(const std::string& hw_config_id) const;
+    const Domain::Preset::EvaluatedPrinterPreset::Preset&
+    get_printer_preset(const std::string& hw_config_id, const std::string& printer_preset_id) const;
+    const Domain::Preset::EvaluatedPrintPreset::Preset&
+    get_print_preset(const std::string& hw_config_id, const std::string& printer_preset_id, const std::string& print_id) const;
+    const Domain::Preset::EvaluatedToolPrintPreset::Preset&
+    get_tool_print_preset(const std::string& hw_config_id, const std::string& printer_preset_id, const std::string& print_preset_id, size_t tool_index, const std::string& tool_print_preset_id) const;
+    const Domain::Preset::EvaluatedMaterialPreset::Preset&
+    get_material_preset(const std::string& hw_config_id, const std::string& printer_preset_id, const std::string& print_preset_id, size_t slot_index, const std::string& material_preset_id) const;
+
+
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
     PresetInteractorConfigContainerContext& mutable_selected_config_container_context();
@@ -175,13 +198,20 @@ private:
         return m_project_contexts.find(project_id);
     }
 
+    const PresetInteractorProjectContext& get_or_fail_project_context(Domain::SelectionId project_id) const
+    {
+        auto it = m_project_contexts.find(project_id);
+        ASSERT(it != m_project_contexts.end());
+        return it->second;
+    }
+
     PresetInteractorProjectContext& get_or_create_project_context(Domain::SelectionId project_id);
     PresetInteractorConfigContainerContext& get_or_create_config_container_context(
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id
     );
 
-    void update_presets_for_changed_hw_config();
+    void update_changed_selected_preset_hw_config();
 
     const std::string& selected_hw_config_id() const;
     void fill_config_container_with_selected_preset(
@@ -190,21 +220,13 @@ private:
         const std::string& printer_preset_id
     );
     void fill_printer_presets();
-    void fill_print_presets(
-        const Domain::Preset::EvaluatedPrinterPreset& selected_printer_ep,
-        Domain::Preset::SelectedPreset& selected_preset
-    );
-    void fill_tools_presets(
-        const Domain::Preset::EvaluatedPrinterPreset& selected_printer_ep,
-        const Domain::Preset::EvaluatedPrintPreset& selected_print_ep,
-        Domain::Preset::SelectedPreset& selected_preset
-    );
-    void fill_materials_presets(
-        const Domain::Preset::EvaluatedPrintPreset& selected_print_ep,
-        Domain::Preset::SelectedPreset& selected_preset
-    );
-    void fill_tool_items(const Domain::Preset::EvaluatedPrinterPreset& selected_printer_ep);
-    void fill_sheet_items(const Domain::Preset::EvaluatedPrinterPreset& selected_printer_ep);
+    void fill_print_presets(Domain::Preset::SelectedPreset& selected_preset);
+    void fill_tools_presets(Domain::Preset::SelectedPreset& selected_preset);
+    void fill_materials_presets(Domain::Preset::SelectedPreset& selected_preset);
+    void fill_tool_items(const Domain::Preset::HwPrinterConfig& hw_config);
+    void fill_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);
+
+    void duplicate_hw_config_if_is_runtime(Domain::Preset::SelectedPreset& selected_preset);
 
     void invoke_slicing_input_changed();
     void invoke_on_preset_value_changed(const Domain::ConfigItem& config_item);

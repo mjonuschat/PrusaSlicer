@@ -482,10 +482,13 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetInteractor.cpp
         include/Slic3r/Biz/Preset/PresetInteractor.hpp
         include/Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp
+		src/Slic3r/Biz/Preset/PresetInteractorProjectContext.cpp
         include/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp
         src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.cpp
         include/Slic3r/Biz/Preset/PresetHints.hpp
         src/Slic3r/Biz/Preset/PresetHints.cpp
+		include/Slic3r/Biz/Preset/ProjectPresetView.hpp
+		src/Slic3r/Biz/Preset/ProjectPresetView.cpp
         #include/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
         #src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
 
@@ -790,6 +793,7 @@ endif ()
 
 
 find_package(magic_enum REQUIRED)
+find_package(range-v3 REQUIRED)
 
 slic3r_remap_configs("pugixml::static;yoga::yogacore;${YAML_LIB}" RelWithDebInfo Release)
 
@@ -911,6 +915,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
+			test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
 
         test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp

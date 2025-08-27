@@ -119,22 +119,25 @@ struct ConfigValueSetterVisitor
     Bools, Doubles, Ints, OptInts, Percentages, Vec2ds, Strings,
     bool, double, int, Percentage, Vec2d, std::string
      */
-    void operator()(const std::monostate& v)
+    bool operator()(const std::monostate& v)
     {
-        if (!is_override)
+        if (!is_override) {
             item.set<std::optional<int>>(std::nullopt);
+            return true;
+        }
+        return false;
     }
 
     template <typename ValueType>
         requires AnyTypeOf<ValueType, double, Domain::Percentage>::value
-    void operator()(const ValueType& v)
+    bool operator()(const ValueType& v)
     {
-        item.visit(CastingGetterVisitor<ValueType>{item, v});
+        return item.visit(CastingGetterVisitor<ValueType>{item, v});
     }
 
     template <typename ValueType>
         requires AnyTypeOf<ValueType, std::string>::value
-    void operator()(const ValueType& v)
+    bool operator()(const ValueType& v)
     {
         if (!item.holds_alternative<ValueType>() && !item.holds_alternative<Domain::EnumWrapper>()) {
             std::string dest_type_name = item.value().visit([](const auto& v) {
@@ -146,13 +149,15 @@ struct ConfigValueSetterVisitor
                 type_name(v),
                 dest_type_name
             );
-        } else
-            item.set(v);
+            return false;
+        }
+        item.set(v);
+        return true;
     }
 
     template <typename ValueType>
         requires AnyTypeOf<ValueType, Domain::Preset::Strings>::value
-    void operator()(const ValueType& v)
+    bool operator()(const ValueType& v)
     {
         if (item.holds_alternative<std::string>()) {
             item.set(fmt::format("{}", fmt::join(v, ",")));
@@ -168,8 +173,10 @@ struct ConfigValueSetterVisitor
                 type_name(v),
                 dest_type_name
             );
+            return false;
         } else
             item.set(v);
+        return true;
     }
 
     template <typename ValueType>
@@ -177,7 +184,7 @@ struct ConfigValueSetterVisitor
             ValueType,
             Domain::Vec2ds
         >::value
-    void operator()(const ValueType& v)
+    bool operator()(const ValueType& v)
     {
         if (item.holds_alternative<std::string>()) {
             std::vector<std::string> values;
@@ -194,8 +201,10 @@ struct ConfigValueSetterVisitor
                 type_name(v),
                 dest_type_name
             );
+            return false;
         } else
             item.set(v);
+        return true;
     }
 
     template <typename ValueType>
@@ -209,7 +218,7 @@ struct ConfigValueSetterVisitor
             bool,
             int,
             Domain::Vec2d>::value
-    void operator()(const ValueType& v)
+    bool operator()(const ValueType& v)
     {
         if (!item.holds_alternative<ValueType>()) {
             std::string dest_type_name = item.value().visit([](const auto& v) {
@@ -221,8 +230,10 @@ struct ConfigValueSetterVisitor
                 type_name(v),
                 dest_type_name
             );
-        } else
-            item.set(v);
+            return false;
+        }
+        item.set(v);
+        return true;
     }
 };
 
@@ -237,7 +248,11 @@ ConfigType config_values(const Domain::Preset::PresetValueMap& values)
             SPDLOG_ERROR("Invalid key {} for {}", k, type_name(config));
             continue;
         }
-        std::visit(ConfigValueSetterVisitor{q}, v);
+
+        // if value was written and this is override, we need to enable that override
+        if (std::visit(ConfigValueSetterVisitor{q}, v) && q.is_override) {
+            config.overrides.enable(q.item->name());
+        }
     }
     return config;
 }

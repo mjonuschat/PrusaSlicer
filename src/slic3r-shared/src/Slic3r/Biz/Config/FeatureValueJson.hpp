@@ -21,7 +21,7 @@ struct adl_serializer<Slic3r::Domain::Preset::FeatureValue>
         if (j.is_boolean())
             v = j.get<bool>();
         else if (j.is_number())
-            v = j.get<float>();
+            v = j.get<double>();
         else if (j.is_string())
             v = j.get<std::string>();
     }

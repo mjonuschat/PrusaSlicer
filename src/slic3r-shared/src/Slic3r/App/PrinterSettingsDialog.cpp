@@ -54,15 +54,13 @@ void Slic3r::App::PrinterSettingsDialog::on_preset_selection_changed(
         && m_project_interactor.selected_config_container_id() == config_container_id
         && type == Biz::Preset::PresetItemType::PrinterPreset)
     {
-        const Domain::Preset::EvaluatedPrinterPreset& printer_preset = m_project_interactor
-                                                                           .preset_interactor()
-                                                                           .current_printer_preset();
+        const Domain::Preset::HwPrinterConfig& printer_config = m_project_interactor.preset_interactor().current_printer_config();
 
-        m_text_printer_name->set_text(printer_preset.hw_config.name);
+        m_text_printer_name->set_text(printer_config.name);
 
-        if (printer_preset.hw_config.visual.thumbnail.has_value()) {
-            const std::string image_path = printer_preset.hw_config.relative_path_to_assets()
-                + printer_preset.hw_config.visual.thumbnail.value();
+        if (printer_config.visual.thumbnail.has_value()) {
+            const std::string image_path = printer_config.relative_path_to_assets()
+                + printer_config.visual.thumbnail.value();
 
             m_printer_icon->set_image(image_path);
         }

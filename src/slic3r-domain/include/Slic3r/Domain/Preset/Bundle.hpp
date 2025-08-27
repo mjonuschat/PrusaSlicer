@@ -38,6 +38,9 @@ struct Bundle
         const std::string& printer_hw_config_id,
         const std::string& printer_preset_id
     ) const;
+
+    const HwPrinterConfig* find_config_with_same_values(const HwPrinterConfig& printer_config) const;
+    const EvaluatedPrinterPreset* find_printer_preset_with_same_values(const std::string& hw_config_id, const EvaluatedPrinterPreset::Preset& printer_preset) const;
 };
 
 }

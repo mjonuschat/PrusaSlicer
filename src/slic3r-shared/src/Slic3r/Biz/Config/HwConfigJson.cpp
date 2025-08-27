@@ -140,12 +140,18 @@ namespace Slic3r::Domain::Preset {
 
 void to_json(ordered_json& j, const HwToolConfig& v)
 {
-    j = ordered_json{{"type", PRINTER_TOOL_TYPE}, {"id", v.id}, {"features", v.features}};
+    j = ordered_json{
+        {"type", PRINTER_TOOL_TYPE},
+        {"id", v.id},
+        {"name", v.name},
+        {"features", v.features}
+    };
 }
 
 void from_json(const ordered_json& j, HwToolConfig& v)
 {
     j.at("id").get_to(v.id);
+    j.at("name").get_to(v.name);
     j.at("features").get_to(v.features);
 }
 
@@ -303,6 +309,7 @@ void to_json(ordered_json& j, const HwPrinterConfig& v)
         {"printer_id", v.printer_id},
         {"vendor_id", v.vendor_id},
         {"repo_id", v.repo_id},
+        {"repo_version", v.repo_version},
         {"name", v.name},
         {"technology", magic_enum::enum_name(v.technology)},
         {"model", v.model.model},
@@ -312,6 +319,14 @@ void to_json(ordered_json& j, const HwPrinterConfig& v)
         {"tools", tools},
         {"sheet", v.sheet},
     };
+
+
+    if (v.visual.bed_model.has_value())
+        j["bed_model"] = v.visual.bed_model.value();
+    if (v.visual.bed_texture.has_value())
+        j["bed_texture"] = v.visual.bed_texture.value();
+    if (v.visual.thumbnail.has_value())
+        j["thumbnail"] = v.visual.thumbnail.value();
 }
 
 } // namespace Slic3r::Domain::Preset
@@ -339,6 +354,8 @@ tl::expected<void, std::string> is_valid<HwPrinterConfig>(const nlohmann::ordere
              "id",
              "printer_id",
              "vendor_id",
+             "repo_id",
+             "repo_version",
              "name",
              "technology",
              "model",
@@ -527,6 +544,17 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
     }
     result.vendor_id = vendor_id.value();
 
+    const auto repo_id{parse<std::string>(json.at("repo_id"))};
+    if (!repo_id) {
+        return tl::unexpected{"Invalid repo_id: " + repo_id.error()};
+    }
+    result.repo_id = repo_id.value();
+    const auto repo_version{parse<std::string>(json.at("repo_version"))};
+    if (!repo_version) {
+        return tl::unexpected{"Invalid repo_version: " + repo_version.error()};
+    }
+    result.repo_version = repo_version.value();
+
     const auto name{parse<std::string>(json.at("name"))};
     if (!name) {
         return tl::unexpected{"Invalid name: " + name.error()};
@@ -548,6 +576,28 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
         return tl::unexpected{"Invalid model: " + model.error()};
     }
     result.model = model.value();
+
+    if (json.contains("bed_model")) {
+        auto bed_model = parse<std::string>(json.at("bed_model"));
+        if (!bed_model) {
+            return tl::unexpected{"Invalid bed_model: " + bed_model.error()};
+        }
+        result.visual.bed_model = bed_model.value();
+    }
+    if (json.contains("bed_texture")) {
+        auto bed_texture = parse<std::string>(json.at("bed_texture"));
+        if (!bed_texture) {
+            return tl::unexpected{"Invalid bed_texture: " + bed_texture.error()};
+        }
+        result.visual.bed_texture = bed_texture.value();
+    }
+    if (json.contains("thumbnail")) {
+        auto thumbnail = parse<std::string>(json.at("thumbnail"));
+        if (!thumbnail) {
+            return tl::unexpected{"Invalid thumbnail: " + thumbnail.error()};
+        }
+        result.visual.thumbnail = thumbnail.value();
+    }
 
     const auto tool_count{parse<uint8_t>(json.at("tool_count"))};
     if (!tool_count) {

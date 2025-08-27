@@ -137,13 +137,12 @@ void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
     m_logical_printer_button->set_printer_name(prefix + preset_item.name);
     m_logical_printer_button->set_preset_name(preset_item.hw_printer_config_name);
 
-    const Domain::Preset::EvaluatedPrinterPreset& printer_preset = m_project_interactor
-                                                                       .preset_interactor()
-                                                                       .current_printer_preset();
+    const Domain::Preset::HwPrinterConfig& printer_config =
+        m_project_interactor.preset_interactor().current_printer_config();
 
-    if (printer_preset.hw_config.visual.thumbnail.has_value()) {
-        const std::string image_path = printer_preset.hw_config.relative_path_to_assets()
-            + printer_preset.hw_config.visual.thumbnail.value();
+    if (printer_config.visual.thumbnail.has_value()) {
+        const std::string image_path = printer_config.relative_path_to_assets()
+            + printer_config.visual.thumbnail.value();
 
         m_logical_printer_button->set_image(image_path);
     }

@@ -1,5 +1,6 @@
 #pragma once
 #include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
 
 namespace Slic3r::Domain::Preset {

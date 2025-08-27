@@ -66,7 +66,7 @@ SelectedPreset SelectedPreset::make(const SelectedPresetMetadata& metadata, cons
                     ),
                     .print = EvaluatedPrintPreset::Preset::make(
                         PresetKind::FdmPrint,
-                        metadata.printer,
+                        metadata.print,
                         typed_config.print
                     ),
                 };

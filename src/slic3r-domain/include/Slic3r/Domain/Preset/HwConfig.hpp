@@ -34,6 +34,16 @@ struct HwModel
 {
     std::string model;
     std::string base_model;
+
+    friend bool operator==(const HwModel& lhs, const HwModel& rhs)
+    {
+        return lhs.model == rhs.model && lhs.base_model == rhs.base_model;
+    }
+
+    friend bool operator!=(const HwModel& lhs, const HwModel& rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 /**
@@ -52,6 +62,16 @@ struct HwToolConfig
     std::string id;
     std::string name;
     FeatureValueMap features;
+
+    friend bool operator==(const HwToolConfig& lhs, const HwToolConfig& rhs)
+    {
+        return lhs.id == rhs.id && lhs.name == rhs.name && lhs.features == rhs.features;
+    }
+
+    friend bool operator!=(const HwToolConfig& lhs, const HwToolConfig& rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 /**
@@ -70,6 +90,16 @@ struct HwFeederConfig
     HwModel model;
     uint32_t slot_count{0};
     FeatureValueMap features;
+
+    friend bool operator==(const HwFeederConfig& lhs, const HwFeederConfig& rhs)
+    {
+        return lhs.id == rhs.id && lhs.type == rhs.type && lhs.model == rhs.model && lhs.slot_count == rhs.slot_count && lhs.features == rhs.features;
+    }
+
+    friend bool operator!=(const HwFeederConfig& lhs, const HwFeederConfig& rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 struct MaterialConfig
@@ -77,6 +107,16 @@ struct MaterialConfig
     std::string id;
     std::optional<std::string> type;
     FeatureValueMap features;
+
+    friend bool operator==(const MaterialConfig& lhs, const MaterialConfig& rhs)
+    {
+        return lhs.id == rhs.id && lhs.type == rhs.type && lhs.features == rhs.features;
+    }
+
+    friend bool operator!=(const MaterialConfig& lhs, const MaterialConfig& rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 struct HwSheetConfig
@@ -85,6 +125,16 @@ struct HwSheetConfig
     std::string name;
     std::string type;
     FeatureValueMap features;
+
+    friend bool operator==(const HwSheetConfig& lhs, const HwSheetConfig& rhs)
+    {
+        return lhs.id == rhs.id && lhs.name == rhs.name && lhs.type == rhs.type && lhs.features == rhs.features;
+    }
+
+    friend bool operator!=(const HwSheetConfig& lhs, const HwSheetConfig& rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 using HwToolConfigs     = std::vector<HwToolConfig>;
@@ -96,6 +146,16 @@ struct VisualRepresentation
     std::optional<std::string> bed_model;
     std::optional<std::string> bed_texture;
     std::optional<std::string> thumbnail;
+
+    friend bool operator==(const VisualRepresentation& lhs, const VisualRepresentation& rhs)
+    {
+        return lhs.bed_model == rhs.bed_model && lhs.bed_texture == rhs.bed_texture && lhs.thumbnail == rhs.thumbnail;
+    }
+
+    friend bool operator!=(const VisualRepresentation& lhs, const VisualRepresentation& rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 struct HwPrinterConfig
@@ -120,6 +180,24 @@ struct HwPrinterConfig
     HwSheetConfig sheet;
 
     std::string relative_path_to_assets() const;
+
+    bool has_same_values(const HwPrinterConfig& other) const
+    {
+        return printer_id == other.printer_id
+            && vendor_id == other.vendor_id
+            && repo_id == other.repo_id
+            && repo_version == other.repo_version
+            && name == other.name
+            && technology == other.technology
+            && model == other.model
+            && tool_count == other.tool_count
+            && features == other.features
+            && visual == other.visual
+            && tools == other.tools
+            && feeders == other.feeders
+            && materials == other.materials
+            && sheet == other.sheet;
+    }
 };
 
 using HwPrinterConfigs = std::vector<HwPrinterConfig>;
@@ -129,6 +207,7 @@ struct FeatureDef
     FeatureValue default_value;
     std::vector<FeatureValue> allowed_values;
     bool user_editable{true};
+
 };
 
 using FeatureDefs = std::map<std::string, FeatureDef>;

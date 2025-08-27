@@ -50,38 +50,6 @@ Domain::SelectionId ProjectInteractor::new_project()
     return project_id;
 }
 
-static Domain::Preset::EvaluatedPrinterPreset evaluated_from_selected(const Domain::Preset::SelectedPreset& selected_preset)
-{
-    using namespace Domain::Preset;
-
-    EvaluatedPrintPreset print_preset;
-    print_preset.preset              = selected_preset.print;
-    print_preset.preset.runtime_only = true;
-
-    AllToolsEvaluatedToolPrintPresets tools;
-    for (const EvaluatedToolPrintPreset::Preset& preset : selected_preset.tools) {
-        tools.push_back({EvaluatedToolPrintPreset{EvaluatedToolPrintPreset::Preset{preset}}});
-        tools.back().back().preset.runtime_only = true;
-    }
-    print_preset.tools = std::move(tools);
-
-    AllToolsEvaluatedMaterialPresets materials;
-    for (const EvaluatedMaterialPreset::Preset& preset : selected_preset.materials) {
-        materials.push_back({EvaluatedMaterialPreset{EvaluatedMaterialPreset::Preset{preset}}});
-        materials.back().back().preset.runtime_only = true;
-    }
-    print_preset.materials = std::move(materials);
-
-    EvaluatedPrinterPreset result;
-
-    result.hw_config           = selected_preset.hw_config;
-    result.preset              = selected_preset.printer;
-    result.prints              = EvaluatedPrintPresets{std::move(print_preset)};
-    result.preset.runtime_only = true;
-
-    return result;
-}
-
 void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
 {
     auto on_result{
@@ -90,22 +58,8 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
             const Domain::SelectionId project_id{add_project(std::move(project))};
             Domain::Project& added_project{m_workbench.project(project_id)};
 
-            Domain::Preset::Bundle& preset_bundle{m_workbench.preset_bundle()};
             for (auto& config_container : added_project.config_containers()) {
-                const Domain::Preset::SelectedPreset& selected_preset{config_container->selected_preset()};
-                auto printer_config_inserted{
-                    preset_bundle.printer_configs
-                        .insert({selected_preset.hw_config.id, selected_preset.hw_config})
-                        .second
-                };
-                auto evaluated_preset_inserted{
-                    preset_bundle.evaluated_presets
-                        .insert({selected_preset.hw_config.id, {evaluated_from_selected(selected_preset)}})
-                        .second
-                };
-
-                // This requires a matching and diffing mechanism.
-                ASSERT(printer_config_inserted && evaluated_preset_inserted, "TODO, this codepath");
+                m_preset_interactor.load_selected_preset_from_3mf(project_id, config_container->mutable_selected_preset());
             }
 
             if (added_project.config_containers().empty()) {
