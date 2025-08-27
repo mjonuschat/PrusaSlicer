@@ -429,7 +429,7 @@ static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
 {
     Domain::Project project;
     project.set_metadata(loaded_3mf.metadata);
-    project.set_file_name(loaded_3mf.filepath_3mf);
+    project.set_file_name(boost::filesystem::path(loaded_3mf.filepath_3mf).stem().string());
     project.model() = std::move(loaded_3mf.model);
 
     for (const Loaded3MF::ConfigContainerData& cc_data : loaded_3mf.config_containers_data) {

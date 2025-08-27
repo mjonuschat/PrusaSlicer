@@ -15,6 +15,8 @@
 
 #include "Slic3r/Directories.hpp"
 
+#include <boost/filesystem/path.hpp>
+
 namespace Slic3r::Biz {
 
 void ProjectInteractor::initialize_bed(Domain::ConfigContainer& config_container, Domain::BedContainer& bed_container)
@@ -138,7 +140,7 @@ void ProjectInteractor::save_project(const std::string& file_path, const Store3m
 {
     auto& selected_project = this->selected_project();
     selected_project.increment_version();
-    selected_project.set_file_name(file_path);
+    selected_project.set_file_name(boost::filesystem::path(file_path).stem().string());
     store_3mf(file_path, selected_project, params);
 
     invoke_listeners<IProjectsChangedListener>([this](auto* l) {
