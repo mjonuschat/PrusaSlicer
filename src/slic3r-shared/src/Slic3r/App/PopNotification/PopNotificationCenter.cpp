@@ -345,7 +345,7 @@ PopNotificationLayoutVariant export_layout(const PrintHostProgressNotificationDa
                       );
                       return false;
                   }},
-                 {"eject",
+                 {"Eject",
                   [data]()
                   {
                       data.eject_fn(data.target);

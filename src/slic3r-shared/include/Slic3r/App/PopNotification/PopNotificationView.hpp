@@ -45,12 +45,19 @@ private:
     void layout();
 
     void basic_layout(Render::Icon icon_override);
-    void left_layout(Render::Icon icon_override);
-    void layout_text();
-    void layout_header_text();
-    void layout_text_buttons();
-    void layout_header_text_buttons();
-    void layout_text_progress();
+    void basic_left_layout(Render::Icon icon_override);
+    
+    void basic_mid_layout();
+    void basic_mid_header_layout(const std::string& header);
+    void basic_mid_text_layout(const std::string& text);
+    void basic_mid_buttons_layout(const std::vector<PopNotificationButtonData>& buttons);
+    void basic_mid_progress_layout(int progress);
+
+    void layout_type_text();
+    void layout_type_header_text();
+    void layout_type_text_buttons();
+    void layout_type_header_text_buttons();
+    void layout_type_text_progress();
 
     void update_text(const std::string& text);
     void update_header(const std::string& text);
