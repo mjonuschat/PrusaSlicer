@@ -214,6 +214,8 @@ void PopNotificationView::basic_mid_header_layout(const std::string& header)
     m_header->set_font_type(Render::ImguiFontType::Bold);
     m_header->set_text_color(text_color());
     m_header->set_margin({0.f, 0.f, 0.f, 5.f});
+    m_header->set_flex_shrink(0.f);
+    m_header->set_wrap(true);
 }
 
 void PopNotificationView::basic_mid_text_layout(const std::string& text)
@@ -222,6 +224,7 @@ void PopNotificationView::basic_mid_text_layout(const std::string& text)
     m_text->set_wrap(true);
     m_text->set_text_color(text_color());
     m_text->set_margin({0.f, 0.f, 0.f, 5.f});
+    m_text->set_flex_shrink(0.f);
 }
 
 void PopNotificationView::basic_mid_buttons_layout(const std::vector<PopNotificationButtonData>& buttons)
@@ -230,7 +233,7 @@ void PopNotificationView::basic_mid_buttons_layout(const std::vector<PopNotifica
     m_button_line->set_orientation(Yoga::Orientation::Horizontal);
     m_button_line->set_justify_content(YGJustifyFlexStart);
     m_button_line->set_margin({0.f, 0.f, 0.f, 5.f});
-
+    m_button_line->set_flex_shrink(0.f);
     for (auto& bdata : buttons) {
         m_buttons.emplace_back(m_button_line->emplace_back<Yoga::LayoutButton>(bdata.text));
         m_buttons.back()->callbacks().action = [bdata, this]()
@@ -249,6 +252,7 @@ void PopNotificationView::basic_mid_progress_layout(int progress)
 {
     m_progress_percent_text = m_mid_column->emplace_back<Yoga::Text>(std::to_string(progress) + "%");
     m_progress_percent_text->set_margin({0.f, 0.f, 0.f, 5.f});
+    m_progress_percent_text->set_flex_shrink(0.f);
 
     m_progress_bar = m_mid_column->emplace_back<Yoga::ProgressBar>();
     m_progress_bar->set_show_overlay(true);
@@ -256,6 +260,7 @@ void PopNotificationView::basic_mid_progress_layout(int progress)
     m_progress_bar->set_progress(progress);
     m_progress_bar->set_min_size({m_mid_column->min_size().x(), 10});
     m_progress_bar->set_margin({0.f, 0.f, 0.f, 5.f});
+    m_progress_bar->set_flex_shrink(0.f);
 }
 
 void PopNotificationView::layout_type_text()
