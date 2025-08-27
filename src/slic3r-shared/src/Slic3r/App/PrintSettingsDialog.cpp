@@ -26,7 +26,7 @@ PrintSettingsDialog::PrintSettingsDialog(Biz::ProjectInteractor& project_interac
         std::make_unique<PrintSettingsTab>(
             &project_interactor.preset_interactor().print_cbi(),
             tab,
-            project_interactor.preset_interactor()
+            project_interactor
         )
     );
 
@@ -56,7 +56,7 @@ void PrintSettingsDialog::on_reset()
 
         Tab* tab = append_tab(fmt::format("Tool {}", tool_cbi_index + 1));
         m_tabs.emplace_back(
-            std::make_unique<PrintSettingsTab>(&cbi, tab, m_project_interactor.preset_interactor())
+            std::make_unique<PrintSettingsTab>(&cbi, tab, m_project_interactor)
         );
     }
 }
@@ -64,7 +64,7 @@ void PrintSettingsDialog::on_reset()
 PrintSettingsDialog::PrintSettingsTab::PrintSettingsTab(
     Biz::ConfigBoxInteractor* cbi,
     Yoga::AbstractSettingsDialog::Tab* tab,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::ProjectInteractor& project_interactor
 ) :
     cbi(cbi),
     tab(tab),
@@ -72,11 +72,12 @@ PrintSettingsDialog::PrintSettingsTab::PrintSettingsTab(
     category_page_transformer(std::make_shared<CategoryPageTransformer>())
 {
     observable_categorizer->set_source_model(cbi->config_box_list());
+    category_page_transformer->set_project_interactor(&project_interactor);
     category_page_transformer->set_source_model(observable_categorizer.get());
     for (size_t i = 0; i < category_page_transformer->size(); ++i) {
         tab->pages_stack_layout->emplace_back<ConfigSubcategoryListView>(
             observable_categorizer->at(i).def().category,
-            preset_interactor,
+            project_interactor.preset_interactor(),
             *cbi
         );
     }

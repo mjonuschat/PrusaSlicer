@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/ConfigSubcategoryListView.hpp"
 #include "Slic3r/App/Yoga/StackLayout.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
 
 #include <fmt/format.h>
 
@@ -44,9 +45,11 @@ void FilamentSettingsDialog::on_reset()
             m_material_cbi_list.at(material_cbi_index)
         );
 
-        Tab* tab = append_tab(fmt::format("Filament {}", material_cbi_index + 1));
+        std::string tab_name = m_project_interactor.selected_config_container().print_technology() == Domain::PrinterTechnology::FFF ? _u8L("Filament") : _u8L("Material");
+
+        Tab* tab = append_tab(fmt::format("{} {}", tab_name, material_cbi_index + 1));
         m_filaments.emplace_back(
-            std::make_unique<FilamentTab>(&cbi, tab, m_project_interactor.preset_interactor())
+            std::make_unique<FilamentTab>(&cbi, tab, m_project_interactor)
         );
     }
 }
@@ -54,7 +57,7 @@ void FilamentSettingsDialog::on_reset()
 FilamentSettingsDialog::FilamentTab::FilamentTab(
     Biz::ConfigBoxInteractor* cbi,
     Tab* tab,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::ProjectInteractor& project_interactor
 ) :
     cbi(cbi),
     tab(tab),
@@ -62,11 +65,12 @@ FilamentSettingsDialog::FilamentTab::FilamentTab(
     category_page_transformer(std::make_shared<CategoryPageTransformer>())
 {
     observable_categorizer->set_source_model(cbi->config_box_list());
+    category_page_transformer->set_project_interactor(&project_interactor);
     category_page_transformer->set_source_model(observable_categorizer.get());
     for (size_t i = 0; i < category_page_transformer->size(); ++i) {
         tab->pages_stack_layout->emplace_back<ConfigSubcategoryListView>(
             observable_categorizer->at(i).def().category,
-            preset_interactor,
+            project_interactor.preset_interactor(),
             *cbi
         );
     }

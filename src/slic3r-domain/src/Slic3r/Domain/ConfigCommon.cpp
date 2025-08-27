@@ -87,13 +87,14 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     if (technology == SLA) {
         def->location = print;
         def->overrides_in = Locations{ sla_material, sla_object};
+        def->option_group = L("Corrections");
     }
     if (technology == FFF) {
         def->location = FDMConfigLocation::Tool;
         def->overrides_in = Locations{ fdm_object, fdm_volume };
+        def->option_group = L("Slicing");
     }
     def->label = L("Elephant foot compensation");
-    def->option_group = L("Slicing");
     def->category = ConfigItemDef::Category::Advanced;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The first layer will be shrunk in the XY plane by the configured value "

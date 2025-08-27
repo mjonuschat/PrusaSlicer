@@ -223,4 +223,12 @@ std::string ImguiIconHelper::icon_path(Icon icon)
     return filename;
 }
 
+std::string ImguiIconHelper::icon_name(Icon icon)
+{
+    std::unordered_map<Icon, const char*>::const_iterator it = ICON_FILENAMES.find(icon);
+    ASSERT(it != ICON_FILENAMES.cend(), "Icon doesn't have defined filename!", icon);
+
+    return it->second;
+}
+
 }

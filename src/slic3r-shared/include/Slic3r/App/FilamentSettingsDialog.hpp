@@ -40,7 +40,7 @@ private:
         FilamentTab(
             Biz::ConfigBoxInteractor* cbi,
             Tab* tab,
-            Biz::Preset::PresetInteractor& preset_interactor
+            Biz::ProjectInteractor& project_interactor
         );
 
         Biz::ConfigBoxInteractor* cbi{nullptr};

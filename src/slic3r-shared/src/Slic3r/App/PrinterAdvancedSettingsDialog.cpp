@@ -20,6 +20,7 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(Biz::ProjectInterac
     m_observable_categorizer(std::make_shared<ObservableCategorizer>()),
     m_category_page_transformer(std::make_shared<CategoryPageTransformer>())
 {
+    m_category_page_transformer->set_project_interactor(&m_project_interactor);
     m_category_page_transformer->set_source_model(m_observable_categorizer.get());
     m_observable_categorizer->set_source_model(m_cbi.config_box_list());
 

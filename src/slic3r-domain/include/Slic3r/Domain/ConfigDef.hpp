@@ -68,7 +68,7 @@ struct ConfigItemDef
         Unkown              = 0, ///< Default category, throws an error
         Hidden              = 1, ///< Hidden from user, not visible in GUI
         General             = 2,
-        Filament            = 3,
+        Material            = 3,
         Cooling             = 4,
         CustomGcode         = 5,
         MachineLimits       = 6,
@@ -90,7 +90,7 @@ struct ConfigItemDef
         MaterialPrintingProfile
     };
 
-    static std::string translate_category(Category category);
+    static std::string translate_category(Category category, const PrinterTechnology pt);
 
     // Category of a configuration field, from the GUI perspective. One of: "Layers and Perimeters",
     // "Infill", "Support material", "Speed", "Extruders", "Advanced", "Extrusion Width"

@@ -270,7 +270,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Material;
     def->label = L("Z compensation");
     def->option_group = L("Corrections");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of layers to Z correct to avoid cross layer bleed");
     def->min = 0;
@@ -298,7 +298,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Material;
     def->label = L("Color");
     def->option_group = L("Material");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::color;
     def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
     def->init_fn = init_with("#29B2B2");
@@ -322,7 +322,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Material;
     def->label = L("Initial layer height");
     def->option_group = L("Layers");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Initial layer height");
     def->sidetext = L("mm");
@@ -333,7 +333,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Material;
     def->label = L("Bottle volume");
     def->option_group = L("Material");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Bottle volume");
     def->sidetext = L("ml");
@@ -344,7 +344,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Material;
     def->label = L("Bottle weight");
     def->option_group = L("Material");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Bottle weight");
     def->sidetext = L("kg");
@@ -355,7 +355,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Material;
     def->label = L("Density");
     def->option_group = L("Material");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Density");
     def->sidetext = L("g/ml");
@@ -366,7 +366,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Material;
     def->label = L("Cost");
     def->option_group = L("Material");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Cost");
     def->sidetext = L("money/bottle");
@@ -414,7 +414,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Material;
     def->label = L("Exposure time");
     def->option_group = L("Exposure");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Exposure time");
     def->sidetext = L("s");
@@ -449,7 +449,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Material;
     def->label = L("Initial exposure time");
     def->option_group = L("Exposure");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Initial exposure time");
     def->sidetext = L("s");
@@ -459,6 +459,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("material_correction", typeid(std::vector<double>));
     def->location = Material;
     def->category = ConfigItemDef::Category::Hidden;
+    def->option_group = L("Corrections");
     def->full_label = L("Correction for expansion");
     def->tooltip  = L("Correction for expansion");
     def->min = 0;
@@ -469,7 +470,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->location = Material;
     def->option_group = L("Corrections");
     def->label = L("X");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Correction for expansion in X axis");
     def->tooltip  = L("Correction for expansion in X axis");
@@ -479,8 +480,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("material_correction_y", typeid(double));
     def->location = Material;
+    def->option_group = L("Corrections");
     def->label = L("Y");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Correction for expansion in Y axis");
     def->tooltip  = L("Correction for expansion in Y axis");
@@ -490,8 +492,9 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("material_correction_z", typeid(double));
     def->location = Material;
+    def->option_group = L("Corrections");
     def->label = L("Z");
-    def->category = ConfigItemDef::Category::Filament;
+    def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Correction for expansion in Z axis");
     def->tooltip  = L("Correction for expansion in Z axis");
@@ -830,7 +833,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("material_print_speed", typeid(EnumWrapper));
     def->location = Material;
     def->label = L("Print speed");
-    def->option_group = L("Profile settings");
+    def->option_group = L("Material printing profile");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L(

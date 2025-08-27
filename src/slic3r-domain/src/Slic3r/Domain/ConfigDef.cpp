@@ -4,7 +4,7 @@ static const std::string& L(const std::string& s) { return s; }
 
 namespace Slic3r::Domain {
 
-std::string ConfigItemDef::translate_category(Category category)
+std::string ConfigItemDef::translate_category(Category category, const PrinterTechnology pt)
 {
     switch (category) {
     case Domain::ConfigItemDef::Category::General:
@@ -17,8 +17,11 @@ std::string ConfigItemDef::translate_category(Category category)
         return L("Custom Gcode");
     case Domain::ConfigItemDef::Category::Extruders:
         return L("Extruders");
-    case Domain::ConfigItemDef::Category::Filament:
-        return L("Filament");
+    case Domain::ConfigItemDef::Category::Material: {
+        if (pt == PrinterTechnology::FFF)
+            return L("Filament");
+        return L("Material");
+    }
     case Domain::ConfigItemDef::Category::Hollowing:
         return L("Hollowing");
     case Domain::ConfigItemDef::Category::Infill:
@@ -51,6 +54,8 @@ std::string ConfigItemDef::translate_category(Category category)
         return L("Hidden");
     case Domain::ConfigItemDef::Category::SingleExtruderMMSetup:
         return L("Single extruder MM setup");
+    case Domain::ConfigItemDef::Category::MaterialPrintingProfile:
+        return L("Material printing profile");
     }
 
     return "";

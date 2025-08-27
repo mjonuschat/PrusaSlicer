@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/ConfigSubcategoryListView.hpp"
-
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 
@@ -24,12 +24,6 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     set_gap(5);
     set_flex_grow(1);
     set_min_size({0, 100});
-
-    Text* category_label = emplace_back<Text>(
-        Domain::ConfigItemDef::translate_category(category),
-        Render::ImguiFontType::Bold
-    );
-    category_label->set_margin(10);
 
     m_category_filter->set_filter_fn([=](const Domain::ConfigItem& config_item) {
         return config_item.def().category == category;

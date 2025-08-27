@@ -153,6 +153,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Config/CategoryPageTransformer.hpp
         src/Slic3r/App/Config/CategoryPageTransformer.cpp
         src/Slic3r/App/Config/ObservableCategorizer.cpp
+        include/Slic3r/App/Config/CategoryPageGetters.hpp
+        src/Slic3r/App/Config/CategoryPageGetters.cpp
         include/Slic3r/App/SharedThumbnailImageGenerator.hpp
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp
