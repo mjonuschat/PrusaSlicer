@@ -74,7 +74,10 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
         // ToDo open some other settings dialog
     };
 
-    m_list_view = emplace_back<MaterialListView>(std::weak_ptr<ButtonGroup>(m_filament_button_group));
+    m_list_view = emplace_back<MaterialListView>(MaterialListViewFactory{
+        std::weak_ptr<ButtonGroup>(m_filament_button_group),
+        m_project_interactor
+    });
     m_list_view->set_source_list(&m_project_interactor.preset_interactor().material_presets());
     m_list_view->set_orientation(Orientation::Vertical);
     m_list_view->set_gap(5);

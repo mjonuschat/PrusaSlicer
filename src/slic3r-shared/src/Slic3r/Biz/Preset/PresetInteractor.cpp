@@ -646,13 +646,13 @@ void PresetInteractor::select_printer_preset(
     m_printer_cbi.set_config_box(&selected_preset.printer.config_box());
     m_print_cbi.set_config_box(&selected_preset.print.config_box());
 
+    fill_tool_items(p);
+    fill_sheet_items(p);
+
     const auto* print = p.find_print_preset_by_id(selected_preset.print.id);
     ASSERT(print != nullptr, selected_preset.print.id);
     fill_tools_presets(p, *print, selected_preset);
     fill_materials_presets(*print, selected_preset);
-
-    fill_tool_items(p);
-    fill_sheet_items(p);
 
     // notify on change
     invoke_listeners<IPresetChangedListener>([project_id = m_selected_project_id, &cc](auto* l) {
@@ -769,6 +769,13 @@ void PresetInteractor::select_printer_tool_item(size_t tool_index, const std::st
     hw_config.tools.at(tool_index) = from_def(vendor_data, *tool_def);
     hw_config.name = Domain::Preset::suggest_name(hw_config, vendor_data);
     update_presets_for_changed_hw_config();
+
+    const auto& ccc = selected_config_container_context();
+    const Domain::SelectionId config_container_id{ccc.config_container_id};
+    invoke_listeners<IPresetChangedListener>([project_id = m_selected_project_id,
+                                              config_container_id](auto* l) {
+        l->on_hw_item_selection_changed(project_id, config_container_id, HwItemType::ToolItem);
+    });
 }
 
 void PresetInteractor::select_printer_sheet(const std::string& id)
@@ -780,6 +787,13 @@ void PresetInteractor::select_printer_sheet(const std::string& id)
     ASSERT(sheet_def != nullptr, id);
     selected_preset.hw_config.sheet = from_def(vendor_data, *sheet_def);
     update_presets_for_changed_hw_config();
+
+    const auto& ccc = selected_config_container_context();
+    const Domain::SelectionId config_container_id{ccc.config_container_id};
+    invoke_listeners<IPresetChangedListener>([project_id = m_selected_project_id,
+                                              config_container_id](auto* l) {
+        l->on_hw_item_selection_changed(project_id, config_container_id, HwItemType::SheetItem);
+    });
 }
 
 void PresetInteractor::set_preset_value(

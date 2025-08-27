@@ -6,6 +6,8 @@
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+
 #include "libslic3r/format.hpp"
 
 namespace Slic3r::App::Yoga {
@@ -13,11 +15,14 @@ namespace Slic3r::App::Yoga {
 MaterialSettingsButton::MaterialSettingsButton(
     size_t index,
     const Biz::Preset::PresetItemObservableList& state,
-    std::weak_ptr<ButtonGroup> button_group
+    std::weak_ptr<ButtonGroup> button_group,
+    Biz::ProjectInteractor& project_interactor
 ) :
     RectangleButton(format(_u8L("Material %1% TT"), index + 1)),
     Biz::DataObserver<Biz::Preset::PresetItemObservableList>(index, state),
-    m_button_group(button_group)
+    m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
+    m_button_group(button_group),
+    m_project_interactor(project_interactor)
 {
     set_checkable(true);
     set_max_size({YGUndefined, 40.f});
@@ -65,9 +70,9 @@ void MaterialSettingsButton::set_color(const ImColor& color)
     m_color_marker->set_fill(color);
 }
 
-void MaterialSettingsButton::set_nozzle(float nozzle)
+void MaterialSettingsButton::set_nozzle(const std::string& nozzle)
 {
-    m_nozzle->set_text(format("%1%", nozzle));
+    m_nozzle->set_text(nozzle);
 }
 
 void MaterialSettingsButton::on_data_update()
@@ -85,7 +90,25 @@ void MaterialSettingsButton::on_list_selection_changed(Domain::SelectionId new_s
     const std::string prefix{preset_item.runtime_only ? _u8L("(From 3mf) ") : ""};
     set_material_name(prefix + preset_item.name);
     set_color(ImColor(250, 104, 48));
-    set_nozzle(0.4);
+    const Biz::Preset::ToolConfigItemObservableList&
+        tool_config_item_ol = m_project_interactor.preset_interactor().tool_items().at(m_index);
+    set_nozzle(tool_config_item_ol.items().at(tool_config_item_ol.selected_index()).name);
+}
+
+void MaterialSettingsButton::on_hw_item_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Biz::Preset::HwItemType type
+)
+{
+    if (m_project_interactor.selected_project_id() == project_id
+        && m_project_interactor.selected_config_container_id() == config_container_id
+        && type == Biz::Preset::HwItemType::ToolItem)
+    {
+        const Biz::Preset::ToolConfigItemObservableList&
+            tool_config_item_ol = m_project_interactor.preset_interactor().tool_items().at(m_index);
+        set_nozzle(tool_config_item_ol.items().at(tool_config_item_ol.selected_index()).name);
+    }
 }
 
 void MaterialSettingsButton::set_material_name(const std::string& name)

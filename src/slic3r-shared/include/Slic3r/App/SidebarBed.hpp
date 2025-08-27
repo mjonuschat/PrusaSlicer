@@ -49,13 +49,15 @@ private:
     Yoga::PrinterSettingsButton* m_logical_printer_button{nullptr};
 
     std::shared_ptr<Yoga::ButtonGroup> m_filament_button_group;
+    using MaterialListViewFactory = Yoga::ViewFactory<
+        Yoga::MaterialSettingsButton,
+        Biz::Preset::PresetItemObservableList,
+        std::weak_ptr<Yoga::ButtonGroup>,
+        Biz::ProjectInteractor&>;
     using MaterialListView = Yoga::ListView<
         Yoga::MaterialSettingsButton,
         Biz::Preset::PresetItemObservableList,
-        Yoga::ViewFactory<
-            Yoga::MaterialSettingsButton,
-            Biz::Preset::PresetItemObservableList,
-            std::weak_ptr<Yoga::ButtonGroup>>>;
+        MaterialListViewFactory>;
 
     MaterialListView* m_list_view{nullptr};
     PrinterSettingsDialog m_printer_settings_dialog;

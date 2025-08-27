@@ -13,6 +13,12 @@ enum class PresetItemType
     MaterialPreset
 };
 
+enum class HwItemType
+{
+    ToolItem,
+    SheetItem
+};
+
 class IPresetChangedListener
 {
 public:
@@ -36,6 +42,13 @@ public:
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id
     )
+    {}
+
+    virtual void on_hw_item_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        HwItemType type
+        )
     {}
 };
 
