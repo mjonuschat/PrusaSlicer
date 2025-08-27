@@ -6,6 +6,7 @@
 #include "Slic3r/App/Plater/TextGizmo.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/TextDialog.hpp"
+#include <Slic3r/App/Plater/SceneNodeTag.hpp>
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
@@ -22,6 +23,32 @@
 #include <Slic3r/Biz/Emboss/EmbossJob.hpp> // embossing jobs
 #include <Slic3r/Biz/Platform/PlatformServices.hpp> // main_thread_dispatcher
 #include "libslic3r/Utils.hpp"
+
+namespace {
+using namespace Slic3r;
+
+struct Drag {
+    // Project interactor transformation cache;
+    Biz::Scene::TransformMemento memento;
+
+    // volume world transformation before draggig
+    Domain::Transform3d to_world;
+    Domain::Transform3d instance_inv;
+    Domain::Transform3d volume_inv;
+
+    // screen coordinate volume center, change on the mouse drag(move)
+    Domain::Vec2d volume_center;
+
+    // screen coordinate offset volume center from mouse at drag start
+    // fixed during dragging
+    Domain::Vec2d volume_offset;
+
+    Domain::SquareMatrix4d last_tr; // for rendring
+
+    // True on hit object surface otherwise false. (cross hair color)
+    bool valid = true;
+};
+}
 
 using namespace Slic3r::App::Yoga;
 namespace Slic3r::Biz::Emboss {
@@ -71,7 +98,12 @@ private:
 };
 } // namespace Slic3r::Biz::Emboss
 
+struct EmbossTag {};
+struct CrossHairTag: EmbossTag {};
+
 namespace Slic3r::App::Plater {
+
+struct TextGizmo::Drag : public ::Drag {};
 
 TextGizmo::TextGizmo(
     Render::Device& device,
@@ -196,6 +228,18 @@ Yoga::GizmoWindowPtr TextGizmo::release_ui_window()
     return m_dialog.release();
 }
 
+void TextGizmo::register_commands(Platform::CommandRegistry& registry)
+{
+    registry.register_command(
+        std::make_unique<Platform::FuncCommand>(
+            "Create/Edit text",
+            [&]() { add_text_by_view_direction(Domain::ModelVolumeType::MODEL_PART); },
+            nullptr,
+            Platform::KeyboardShortcut{0, Platform::KeyCode::T}
+        )
+    );
+}
+
 Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
     using App::Platform::MouseButton;
@@ -211,16 +255,232 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
     return Scene::GizmoActivationState::Inactive;
 }
 
-void TextGizmo::register_commands(Platform::CommandRegistry& registry)
+namespace {
+void draw_cross_hair(
+    const ImVec2& position,
+    ImU32 color = ImGui::GetColorU32(ImVec4(1.f, 1.f, 1.f, .75f)),
+    float radius = 12.f,
+    int num_segments = 0,
+    float thickness = 3.f)
 {
-    registry.register_command(
-        std::make_unique<Platform::FuncCommand>(
-            "Create/Edit text",
-            [&]() { add_text_by_view_direction(Domain::ModelVolumeType::MODEL_PART); },
-            nullptr,
-            Platform::KeyboardShortcut{0, Platform::KeyCode::T}
-        )
+    auto draw_list = ImGui::GetForegroundDrawList();
+    draw_list->AddCircle(position, radius, color, num_segments, thickness);
+    auto dirs = { ImVec2{0, 1}, ImVec2{1, 0}, ImVec2{0, -1}, ImVec2{-1, 0} };
+    for (const ImVec2& dir : dirs) {
+        ImVec2 start(position.x + dir.x * 0.5 * radius, position.y + dir.y * 0.5 * radius);
+        ImVec2 end(position.x + dir.x * 1.5 * radius, position.y + dir.y * 1.5 * radius);
+        draw_list->AddLine(start, end, color, thickness);
+    }
+}
+
+void draw_cross_hair(const Drag& drag) {
+    const Domain::Vec2d& p = drag.volume_center;
+    ImVec2 position((float)p.x(), (float)p.y());
+    ImU32 color = ImGui::GetColorU32(drag.valid ?
+        ImVec4(1.f, 1.f, 1.f, .65f) : // transparent white (valid)
+        ImVec4(1.f, .3f, .3f, .65f) // transparent redish (invalid)
     );
+    draw_cross_hair(position, color);
+}
+
+} // namespace
+
+bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
+{
+    for (const Scene::NodePickResult& pick : ctx.pick_results()) {
+        if (!pick.node->has_tag_of_type<SceneNodeTag>())
+            continue; // ignore staff(node) infront of text volume
+        
+        auto* tag = pick.node->tag_of_type<SceneNodeTag>();
+        // Only last seleceted Volume could be dragged over surface
+        if (tag->volume_id != m_last_loaded_volume_id.id)
+            return false;
+
+        const Domain::Project& project = m_project_interactor.selected_project();
+        const Domain::ModelVolume* volume_ptr = 
+            project.find_volume_by_id(tag->object_id, tag->volume_id);
+        ASSERT(volume_ptr != nullptr);
+        const Domain::ModelVolume& volume = *volume_ptr;
+        if (volume.get_object()->volumes.size() == 1)
+            return false; // Object is moved by default drag
+
+        // calc mouse offset to volume center
+        const Scene::Camera& camera = static_cast<Scene::ISceneProvider&>(m_scene_presenter).scene().camera();
+
+        const Domain::ModelInstance* instance_ptr = 
+            project.find_instance_by_id(tag->object_id, tag->instance_id);
+        ASSERT(instance_ptr != nullptr);
+
+        m_drag = std::make_unique<Drag>();
+        m_drag->to_world = instance_ptr->get_matrix() * volume.get_matrix();
+        m_drag->instance_inv = instance_ptr->get_matrix().inverse();
+        m_drag->volume_inv = volume.get_matrix().inverse();
+        Domain::Vec3d volume_center = m_drag->to_world.translation();
+        // volume center screen coordinate
+        m_drag->volume_center = camera.project_to_screen_space(volume_center);
+        Domain::Vec2d mouse_coor(ctx.screen_mouse_x(), ctx.screen_mouse_y());
+        m_drag->volume_offset = m_drag->volume_center - mouse_coor;
+        // TODO: Not working ImGui Node
+        Scene::FuncImguiRenderNodeComponent::RenderFunc imgui_fn = 
+            [this](const Scene::Node& node, const Eigen::AlignedBox<float,2>& box) {
+                if (m_drag == nullptr) return;
+                draw_cross_hair(*m_drag);
+            };
+        Scene::Scene& scene = m_scene_presenter.scene();
+        Scene::NodeBuilder builder{scene};
+        builder
+            .set_debug_name("Cross hair for volume center -> 2D")
+            //.set_transform(m_drag->to_world)
+            .set_tag(CrossHairTag{})
+            .set_imgui_func(imgui_fn);
+        scene.add_child(builder.build().release());
+        return true;
+    }
+    return false;
+}
+
+namespace {
+// function copied from file: src/slic3r/GUI/SurfaceDrag.cpp
+Domain::Transform3d get_volume_transformation(
+    Domain::Transform3d world, // from volume
+    const Domain::Vec3d& world_dir, // wanted new direction
+    const Domain::Vec3d& world_position, // wanted new position
+    // Invers transformation of text volume instance
+    // Help convert world transformation to instance space 
+    const Domain::Transform3d& instance_inv,
+    // initial rotation in Z axis
+    std::optional<float> current_angle = {},
+    const std::optional<double>& up_limit = {})
+{
+    auto world_linear = world.linear();
+    // Calculate offset: transformation to wanted position
+    {
+        // Reset skew of the text Z axis:
+        // Project the old Z axis into a new Z axis, which is perpendicular to the old XY plane.
+        Domain::Vec3d old_z = world_linear.col(2);
+        Domain::Vec3d new_z = world_linear.col(0).cross(world_linear.col(1));
+        world_linear.col(2) = new_z * (old_z.dot(new_z) / new_z.squaredNorm());
+    }
+
+    Domain::Vec3d       text_z_world = world_linear.col(2); // world_linear * Vec3d::UnitZ()
+    auto        z_rotation = Eigen::Quaternion<double, Eigen::DontAlign>::FromTwoVectors(text_z_world, world_dir);
+    Domain::Transform3d world_new = z_rotation * world;
+    auto        world_new_linear = world_new.linear();
+
+    // Fix direction of up vector to zero initial rotation
+    if (up_limit.has_value()) {
+        Domain::Vec3d z_world = world_new_linear.col(2);
+        z_world.normalize();
+        Domain::Vec3d wanted_up = Biz::Emboss::suggest_up(z_world, *up_limit);
+
+        Domain::Vec3d y_world = world_new_linear.col(1);
+        auto  y_rotation = Eigen::Quaternion<double, Eigen::DontAlign>::FromTwoVectors(y_world, wanted_up);
+
+        world_new = y_rotation * world_new;
+        world_new_linear = world_new.linear();
+    }
+
+    // Edit position from right
+    Domain::Transform3d volume_new{ Eigen::Translation<double, 3>(instance_inv * world_position) };
+    volume_new.linear() = instance_inv.linear() * world_new_linear;
+
+    // Check that transformation matrix is valid transformation
+    assert(volume_new.matrix()(0, 0) == volume_new.matrix()(0, 0)); // Check valid transformation not a NAN
+    if (volume_new.matrix()(0, 0) != volume_new.matrix()(0, 0))
+        return Domain::Transform3d::Identity();
+
+    // Check that scale in world did not changed
+    assert(!calc_scale(world_linear, world_new_linear, Vec3d::UnitY()).has_value());
+    assert(!calc_scale(world_linear, world_new_linear, Vec3d::UnitZ()).has_value());
+
+    // apply move in Z direction and rotation by up vector
+    //Emboss::apply_transformation(current_angle, {}, volume_new);
+
+    return volume_new;
+}
+
+Domain::SquareMatrix4d get_drag_tr(
+    const Domain::Vec3d& world_position, // wanted new position
+    const Domain::Vec3d& world_dir, // wanted new direction
+    const Drag& drag) {
+    Domain::Transform3d new_volume_tr = get_volume_transformation(drag.to_world, world_dir, world_position, drag.instance_inv);
+    Domain::Transform3d volume_relative = new_volume_tr * drag.volume_inv;
+    return volume_relative.matrix();
+}
+
+} // namespace
+
+bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx) 
+{
+    Domain::SquareMatrix4d tr = Domain::SquareMatrix4d::Identity();
+    if (m_drag == nullptr)
+        return false;
+
+    m_project_interactor.scene_interactor()
+        .transform_selection(tr, m_drag->memento);
+
+    Domain::Vec2d mouse_coor(ctx.screen_mouse_x(), ctx.screen_mouse_y());
+    Domain::Vec2d pick = mouse_coor + m_drag->volume_offset;        
+    m_drag->volume_center = pick;
+    Scene::NodePickResults pick_results;
+    Scene::Ray pick_ray;
+    // ignor return value
+    m_scene_presenter.scene().pick_at(pick.x(), pick.y(), pick_results, &pick_ray); 
+
+    const Domain::Project& project = m_project_interactor.selected_project();
+    const Domain::ModelVolume* embossed_volume_ptr = Biz::Emboss::get_volume(project, m_last_loaded_volume_id);
+    if (embossed_volume_ptr == nullptr) {
+        // cant find last loaded volume -> end dragging
+        m_drag = nullptr;
+        return false;
+    }
+    size_t last_loaded_object_id = embossed_volume_ptr->get_object()->id().id;
+    
+
+    for (const Scene::NodePickResult& pick : pick_results) {
+        if (!pick.node->has_tag_of_type<SceneNodeTag>())
+            continue; // only node tag
+        auto* tag = pick.node->tag_of_type<SceneNodeTag>();
+        if (tag->volume_id == m_last_loaded_volume_id.id)
+            continue; // skip itself
+
+        if (tag->object_id != last_loaded_object_id)
+            continue; // another object
+
+        const Domain::ModelVolume* volume_ptr =
+            project.find_volume_by_id(tag->object_id, tag->volume_id);
+        if (volume_ptr == nullptr)
+            continue; // weird
+        const Domain::ModelVolume& volume = *volume_ptr;
+        if (volume.type() != Domain::ModelVolumeType::MODEL_PART)
+            continue; // allowe only the model part
+
+        Domain::Vec3d n = pick.cast.normal;
+        Domain::Vec3d p = pick_ray.point_at(pick.cast.distance);
+        Domain::SquareMatrix4d tr = get_drag_tr(p, n, *m_drag); 
+        m_drag->last_tr = tr;
+        m_project_interactor.scene_interactor()
+            .transform_selection(tr, m_drag->memento);
+        m_drag->valid = true;
+        return true;
+    }
+
+    // pick node not found
+    m_project_interactor.scene_interactor()
+        .transform_selection(m_drag->last_tr, m_drag->memento);
+    m_drag->valid = false;
+    return true;
+}
+
+void TextGizmo::on_drag_finish(){
+    m_project_interactor.scene_interactor()
+        .finalize_transform_selection(m_drag->memento, false);
+    m_drag = nullptr;
+}
+void TextGizmo::on_drag_cancel(){
+    m_project_interactor.scene_interactor()
+        .finalize_transform_selection(m_drag->memento, true);
+    m_drag = nullptr;
 }
 
 void TextGizmo::render_imgui()
@@ -293,6 +553,20 @@ void TextGizmo::render_imgui()
     if (ImGui::Button("Update")) update_volume();
     ImGui::SameLine();
     if (ImGui::Button("Close")) close();
+    ImGui::Separator();
+    if (ImGui::Button("Move X by 10 mm")) {
+        Biz::Scene::TransformMemento memento;        ;
+        Domain::SquareMatrix4d tr = Domain::SquareMatrix4d::Identity();
+        tr.block<3, 1>(0, 3) = Domain::Vec3d(10., 0., 0.);
+        m_project_interactor.scene_interactor()
+            .transform_selection(tr, memento); // relative transformation
+        m_project_interactor.scene_interactor()
+            .finalize_transform_selection(memento, false);
+    }
+
+    // Till imgui node not working
+    if (m_drag != nullptr)
+        draw_cross_hair(*m_drag);
 
     ImGui::End();
 }
@@ -342,7 +616,9 @@ const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor
     const Biz::Scene::ObjectSelection& selection = project_interactor.scene_interactor().object_selection();
     return get_selected_text_volume(project, selection);
 }
-}
+} // namespace
+
+
 
 void TextGizmo::on_activated()
 {
@@ -520,7 +796,7 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
     //ImGuiPureWrap::left_inputs();
 
     // remove_notification_not_valid_font();
-    last_loaded_volume_id = volume.id();
+    m_last_loaded_volume_id = volume.id();
 }
 
 bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
@@ -577,7 +853,7 @@ bool TextGizmo::update_volume(const UpdateParams& update_params) {
 
     // check that selection did not change without call 'on_scene_selection_changed()'
     const Domain::ModelVolume& volume = *volume_ptr;
-    if (last_loaded_volume_id != volume.id())
+    if (m_last_loaded_volume_id != volume.id())
         return false;
 
     // exist loadeable font file?

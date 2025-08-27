@@ -6,6 +6,7 @@
 #include <optional>
 #include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo
 #include "Slic3r/App/Scene/GizmoManager.hpp"
+#include "Slic3r/App/Scene/MouseDragDetector.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
@@ -29,7 +30,8 @@ class TextDialog;
  */
 class TextGizmo : 
     public Scene::IToolGizmo,
-    public Biz::Scene::ISceneSelectionChangedListener
+    public Biz::Scene::ISceneSelectionChangedListener,
+    public Scene::IMouseDrag
 {
 public:
     TextGizmo(
@@ -44,8 +46,16 @@ public:
     /**
      * @name Implementation of IGizmo interface
      */
-    Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void register_commands(Platform::CommandRegistry& registry) override;
+    Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
+
+    /**
+     * @name Implementation of IMouseDrag interface
+     */
+    bool on_drag_start(const Scene::GizmoEventContext& ctx) override;
+    bool on_dragging(const Scene::GizmoEventContext& ctx) override;
+    void on_drag_finish() override;
+    void on_drag_cancel() override;
 
     /**
      * @name Implementation of IToolGizmo interface
@@ -59,11 +69,12 @@ public:
      */
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
 
-    /// <summary>
-    /// Create new text without given position
-    /// </summary>
-    /// <param name="volume_type">Object part / Negative volume / Modifier</param>
-    bool add_text_by_view_direction(Domain::ModelVolumeType volume_type);
+    /**
+     *  @brief  Create new text volume without given position
+     *  @param  volume_type - volume type(part/negative/modifier)
+     *  @retval             - True on success otherwise False.
+     */
+    bool add_text_by_view_direction(Domain::ModelVolumeType volume_type = Domain::ModelVolumeType::MODEL_PART);
 
     // Only debug 
     void render_imgui();
@@ -91,8 +102,11 @@ private:
     std::string m_text; // embossed text
     Yoga::Passthrough<TextDialog> m_dialog;
 
+    struct Drag; // like pimpl
+    std::unique_ptr<Drag> m_drag = nullptr; // exist only during drag operation
+
     // only for check
-    Domain::ObjectID last_loaded_volume_id;
+    Domain::ObjectID m_last_loaded_volume_id;
 };
 
 } // namespace Slic3r::App::Plater

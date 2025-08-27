@@ -298,6 +298,7 @@ public:
      * certain `O`, the transform passed here is computed as `T(O) * R * T(-O)`, where `T(x)` is
      * translation by `x`, and `R` is the rotation to be applied. If you pass just `R` here, it will
      * be interpreted as rotation around world origin. Same applies for scaling.
+     * @note relative transformation multiply from left (volume_tr = relative * volume_tr)
      * @param memento Maintains state of the transformation (i.e. original transformation at time of
      * transform change start).
      *

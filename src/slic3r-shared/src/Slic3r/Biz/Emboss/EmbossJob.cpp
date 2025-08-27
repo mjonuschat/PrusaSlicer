@@ -336,6 +336,19 @@ bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& v
     UpdateSurfaceVolumeData surface_data{std::move(data), {volume_tr, std::move(sources)}};
     return queue_job(std::make_unique<UpdateSurfaceVolumeJob>(std::move(surface_data)));
 }
+
+Domain::ModelVolume* get_volume(const Domain::Project& project, const Domain::ObjectID& volume_id)
+{
+    const Domain::Model& model = project.model();
+    for (const Domain::ModelObject* object_ptr : model.objects) {
+        for (Domain::ModelVolume* volume_ptr : object_ptr->volumes) {
+            if (volume_ptr->id() == volume_id)
+                return volume_ptr;
+        }
+    }
+    return nullptr;
+}
+
 } // namespace Slic3r::Biz::Emboss
 
 
@@ -952,18 +965,6 @@ Domain::TriangleMesh create_default_mesh()
     // Biz::Algorithms::TriangleMesh::its_make_cube(36., 4., 2.5));
     //}
     // return triangle_mesh;
-}
-
-Domain::ModelVolume* get_volume(Domain::Project& project, const Domain::ObjectID& volume_id)
-{
-    const Domain::Model& model = project.model();
-    for (const Domain::ModelObject* object_ptr : model.objects) {
-        for (Domain::ModelVolume* volume_ptr : object_ptr->volumes) {
-            if (volume_ptr->id() == volume_id)
-                return volume_ptr;
-        }
-    }
-    return nullptr;
 }
 
 void final_update_volume(Domain::TriangleMesh&& mesh, UpdateVolumeParams& data)

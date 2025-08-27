@@ -165,6 +165,16 @@ struct UpdateVolumeParams
 @return True when start job otherwise false
 */
 bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& volume);
+
+/**
+ *  @brief  Find volume by id inside project without known object_id
+ *  @note Move functionality into foundable place not only EmbossJob
+ *  @param  project   - Project to search for volume_id
+ *  @param  volume_id - Define volume(unique inside project)
+ *  @retval           - Volume when found otherwise nullptr
+ */
+Domain::ModelVolume* get_volume(const Domain::Project& project, const Domain::ObjectID& volume_id);
+
 } // namespace Slic3r::Biz::Emboss
 
 #endif // slic3r_EmbossJob_hpp_
