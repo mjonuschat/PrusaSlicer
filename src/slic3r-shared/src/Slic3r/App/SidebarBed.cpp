@@ -36,13 +36,11 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
     m_bed_name->set_font_type(Render::ImguiFontType::Bold);
 
     m_physical_printer_button = emplace_back<PrinterSettingsButton>("Physical printer");
-    m_physical_printer_button->set_icon(Render::Icon::PrinterNEXT);
     m_physical_printer_button->set_printer_name("NEXT/Elsa");
     m_physical_printer_button->set_preset_name("Prusa NEXT 1T");
     m_physical_printer_button->set_visible(false); // Hide Physical printers for now
 
     m_logical_printer_button = emplace_back<PrinterSettingsButton>("Logical printer");
-    m_logical_printer_button->set_icon(Render::Icon::PrinterNEXT);
 
     m_printer_settings_dialog.attach_to_item(this, Position::Left);
     m_printer_settings_dialog.callbacks().closed = [this]() {
@@ -135,6 +133,17 @@ void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
     const std::string prefix{preset_item.runtime_only ? _u8L("(From 3mf) ") : ""};
     m_logical_printer_button->set_printer_name(prefix + preset_item.name);
     m_logical_printer_button->set_preset_name(preset_item.hw_printer_config_name);
+
+    const Domain::Preset::EvaluatedPrinterPreset& printer_preset = m_project_interactor
+                                                                       .preset_interactor()
+                                                                       .current_printer_preset();
+
+    if (printer_preset.hw_config.visual.thumbnail.has_value()) {
+        const std::string image_path = printer_preset.hw_config.relative_path_to_assets()
+            + printer_preset.hw_config.visual.thumbnail.value();
+
+        m_logical_printer_button->set_image(image_path);
+    }
 }
 
 void SidebarBed::on_selected_bed_instances_changed(

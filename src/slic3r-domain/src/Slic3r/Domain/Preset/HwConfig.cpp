@@ -216,7 +216,6 @@ HwPrinterConfig remove_features_with_default(
     return ret;
 }
 
-
 std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_data)
 {
     auto* printer = vendor_data.find_printer_config_def_by_id(cfg.printer_id);
@@ -241,6 +240,11 @@ std::string suggest_name(const HwPrinterConfig& cfg, const VendorData& vendor_da
     }
 
     return ss.str();
+}
+
+std::string HwPrinterConfig::relative_path_to_assets() const
+{
+    return "/presets/" + repo_id + "/" + vendor_id + "/assets/";
 }
 
 } // namespace Slic3r::Domain::Preset

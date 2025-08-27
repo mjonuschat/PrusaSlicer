@@ -24,7 +24,6 @@ PhysicalPrinterSettingsButton::PhysicalPrinterSettingsButton(
 void PhysicalPrinterSettingsButton::on_data_update()
 {
     set_printer_name(m_state->m_family + " / " + m_state->m_name);
-    set_icon(Render::Icon::PrinterNEXT);
 }
 
 } // namespace Slic3r::App

@@ -18,7 +18,7 @@ std::string ResourceResolver::resolve(const std::string& relative_filepath)
 {
     boost::filesystem::path path = boost::filesystem::exists(relative_filepath)
         ? relative_filepath
-        : (m_resources_path / "icons" / relative_filepath);
+        : (m_resources_path / relative_filepath);
 
     return path.string();
 }

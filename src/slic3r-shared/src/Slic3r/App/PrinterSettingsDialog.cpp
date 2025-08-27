@@ -54,9 +54,18 @@ void Slic3r::App::PrinterSettingsDialog::on_preset_selection_changed(
         && m_project_interactor.selected_config_container_id() == config_container_id
         && type == Biz::Preset::PresetItemType::PrinterPreset)
     {
-        m_text_printer_name->set_text(
-            m_project_interactor.preset_interactor().current_printer_preset().hw_config.name
-        );
+        const Domain::Preset::EvaluatedPrinterPreset& printer_preset = m_project_interactor
+                                                                           .preset_interactor()
+                                                                           .current_printer_preset();
+
+        m_text_printer_name->set_text(printer_preset.hw_config.name);
+
+        if (printer_preset.hw_config.visual.thumbnail.has_value()) {
+            const std::string image_path = printer_preset.hw_config.relative_path_to_assets()
+                + printer_preset.hw_config.visual.thumbnail.value();
+
+            m_printer_icon->set_image(image_path);
+        }
     }
 }
 
@@ -84,10 +93,7 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
     scroll_area->set_max_size({YGUndefined, 200});
 
     // Create the ViewFactory explicitly:
-    auto factory = Yoga::ViewFactory<
-        LogicalPrinterSettingsButton,
-        Biz::Preset::PresetItem,
-        LogicalPrinterSettingsButton::FnIndexClicked>([this](size_t index) {
+    auto factory        = PrinterListViewFactory([this](size_t index) {
         m_stack_layout->set_current_index(1);
         for (size_t button_index = 0; button_index < m_printer_list_view->item_count(); ++button_index)
         {
@@ -100,7 +106,7 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
         auto& preset_interactor = m_project_interactor.preset_interactor();
         const auto& item        = preset_interactor.printer_presets().items().at(index);
         preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
-    });
+    }, m_project_interactor.workbench());
     m_printer_list_view = scroll_area->emplace_back<PrinterListView>(std::move(factory));
     m_printer_list_view->set_flex_grow(1);
     m_printer_list_view->set_padding(Paddings(0, 0, 10, 0));
@@ -113,16 +119,16 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
 
     m_page_list->emplace_back<Separator>(Orientation::Horizontal);
 
-    LayoutButton* add_printer_button = m_page_list->emplace_back<LayoutButton>(
-        _u8L("Add logical printer")
-    );
-    add_printer_button->set_self_align(YGAlignFlexEnd);
-    add_printer_button->callbacks().action = [this] {
-        m_printer_add_dialog->attach_to_item(content_item(), Position::Left);
-        m_printer_add_dialog->set_root_item(get_or_find_root_item());
-        m_printer_add_dialog->set_current_tab(0);
-        m_printer_add_dialog->open();
-    };
+    // LayoutButton* add_printer_button = m_page_list->emplace_back<LayoutButton>(
+    //     _u8L("Add logical printer")
+    // );
+    // add_printer_button->set_self_align(YGAlignFlexEnd);
+    // add_printer_button->callbacks().action = [this] {
+    //     m_printer_add_dialog->attach_to_item(content_item(), Position::Left);
+    //     m_printer_add_dialog->set_root_item(get_or_find_root_item());
+    //     m_printer_add_dialog->set_current_tab(0);
+    //     m_printer_add_dialog->open();
+    // };
 }
 
 void Slic3r::App::PrinterSettingsDialog::create_page_settings()
@@ -141,10 +147,10 @@ void Slic3r::App::PrinterSettingsDialog::create_page_settings()
 
     m_page_settings->emplace_back<Separator>(Orientation::Horizontal);
 
-    Icon* printer_icon = m_page_settings->emplace_back<Icon>(Render::Icon::PrinterNEXT);
-    printer_icon->set_height(150);
-    printer_icon->set_margin({0, 10});
-    printer_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
+    m_printer_icon = m_page_settings->emplace_back<Icon>(Render::Icon::PrinterNEXT);
+    m_printer_icon->set_height(150);
+    m_printer_icon->set_margin({0, 10});
+    m_printer_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
 
     m_page_settings->emplace_back<Text>(_u8L("Sheet"), Render::ImguiFontType::Bold);
     m_combo_sheets = m_page_settings->emplace_back<

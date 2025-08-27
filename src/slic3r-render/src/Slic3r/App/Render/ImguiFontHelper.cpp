@@ -291,7 +291,7 @@ static void load_icon_from_file(const std::string& icon_name, int icon_sz, int r
         DEBUG_ASSERT(rect->Width == icon_sz);
         DEBUG_ASSERT(rect->Height == icon_sz);
 
-        std::string filename = Slic3r::var(icon_name);
+        std::string filename = Slic3r::resources_dir() + "/" + icon_name;
         auto* codec = ImageCodecManager::instance().find_loader(filename);
         if (codec == nullptr) {
             SPDLOG_ERROR("Cannot find Image Reader Codec for file {}", filename);

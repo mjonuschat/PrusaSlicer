@@ -40,10 +40,12 @@ private:
     void on_about_to_show() override;
 
 private:
-    using PrinterListView = Yoga::ListView<
+    using PrinterListViewFactory = Yoga::ViewFactory<
         LogicalPrinterSettingsButton,
         Biz::Preset::PresetItem,
-        Yoga::ViewFactory<LogicalPrinterSettingsButton, Biz::Preset::PresetItem, LogicalPrinterSettingsButton::FnIndexClicked>>;
+        LogicalPrinterSettingsButton::FnIndexClicked,
+        const Domain::Workbench&>;
+    using PrinterListView = Yoga::ListView<LogicalPrinterSettingsButton, Biz::Preset::PresetItem, PrinterListViewFactory>;
 
     using NozzleListView = Yoga::ListView<
         PrinterNozzleRow,
@@ -59,6 +61,7 @@ private:
     Yoga::Item* m_page_list{nullptr};
     Yoga::Item* m_page_settings{nullptr};
     Yoga::Text* m_text_printer_name{nullptr};
+    Yoga::Icon* m_printer_icon{nullptr};
     Yoga::ButtonGroup m_group_keywords;
     Yoga::ComboBoxListViewSelection<Domain::Preset::HwSheetConfigDef>* m_combo_sheets;
     NozzleListView* m_nozzle_list_view{nullptr};

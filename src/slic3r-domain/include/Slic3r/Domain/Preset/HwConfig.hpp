@@ -118,6 +118,8 @@ struct HwPrinterConfig
     HwFeederConfigs feeders;
     HwMaterialConfigs materials;
     HwSheetConfig sheet;
+
+    std::string relative_path_to_assets() const;
 };
 
 using HwPrinterConfigs = std::vector<HwPrinterConfig>;

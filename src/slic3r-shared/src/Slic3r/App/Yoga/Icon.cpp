@@ -11,12 +11,13 @@
 
 namespace Slic3r::App::Yoga {
 
-Icon::Icon(Render::Icon icon, PreferredSize explicit_max_size)
-    : Icon(icon, static_cast<int>(explicit_max_size))
+Icon::Icon(Render::Icon icon, PreferredSize explicit_max_size) :
+    Icon(icon, static_cast<int>(explicit_max_size))
 {}
 
-Icon::Icon(Render::Icon icon, int explicit_max_size)
-    : m_auto_resize(false), m_max_texture_size(explicit_max_size)
+Icon::Icon(Render::Icon icon, int explicit_max_size) :
+    m_auto_resize(false),
+    m_max_texture_size(explicit_max_size)
 {
     set_icon(icon);
 }
@@ -27,9 +28,11 @@ void Icon::render(Vec2f pos, Vec2f size)
 {
     render_item_begin(pos, size);
 
-    if (m_icon != Render::Icon::None &&
-        (!Domain::fuzzy_compare(m_cached_size.x(), size.x()) ||
-         !Domain::fuzzy_compare(m_cached_size.y(), size.y()))) {
+    if (((m_icon_type == IconType::Icon && m_icon != Render::Icon::None)
+         || (m_icon_type == IconType::Image && !m_image.empty()))
+        && (!Domain::fuzzy_compare(m_cached_size.x(), size.x())
+            || !Domain::fuzzy_compare(m_cached_size.y(), size.y())))
+    {
         m_cached_size = size;
         if (m_auto_resize) {
             int new_max_size = std::max(size.x(), size.y());
@@ -53,24 +56,59 @@ void Icon::render(Vec2f pos, Vec2f size)
     render_item_end(pos, size);
 }
 
-Render::Icon Icon::icon() const { return m_icon; }
+Icon::IconType Icon::icon_type() const
+{
+    return m_icon_type;
+}
+
+Render::Icon Icon::icon() const
+{
+    return m_icon_type == IconType::Icon ? m_icon : Render::Icon::None;
+}
 
 void Icon::set_icon(Render::Icon icon)
 {
-    if (m_icon == icon) {
+    if (m_icon == icon && m_icon_type == IconType::Icon) {
         return;
     }
 
-    m_icon = icon;
+    m_icon      = icon;
+    m_icon_type = IconType::Icon;
     update_texture();
     update_draw_sizes();
 }
 
-const Vec2f& Icon::source_size() const { return m_source_size; }
+std::string Icon::image() const
+{
+    return m_icon_type == IconType::Image ? m_image : std::string();
+}
 
-void Icon::set_source_size(const Vec2f& source_size) { m_source_size = source_size; }
+void Icon::set_image(const std::string& image)
+{
+    if (m_image == image && m_icon_type == IconType::Image) {
+        return;
+    }
 
-Icon::FillMode Icon::fill_mode() const { return m_fill_mode; }
+    m_image     = image;
+    m_icon_type = IconType::Image;
+    update_texture();
+    update_draw_sizes();
+}
+
+const Vec2f& Icon::source_size() const
+{
+    return m_source_size;
+}
+
+void Icon::set_source_size(const Vec2f& source_size)
+{
+    m_source_size = source_size;
+}
+
+Icon::FillMode Icon::fill_mode() const
+{
+    return m_fill_mode;
+}
 
 void Icon::set_fill_mode(FillMode fill_mode)
 {
@@ -82,9 +120,15 @@ void Icon::set_fill_mode(FillMode fill_mode)
     }
 }
 
-ImColor Icon::tint() const { return {m_tint}; }
+ImColor Icon::tint() const
+{
+    return {m_tint};
+}
 
-void Icon::set_tint(const ImColor& tint) { m_tint = tint; }
+void Icon::set_tint(const ImColor& tint)
+{
+    m_tint = tint;
+}
 
 void Icon::update_draw_sizes()
 {
@@ -102,8 +146,8 @@ void Icon::update_draw_sizes()
         m_draw_size.x = size.width;
         m_draw_size.y = size.height;
         if (m_fill_mode == FillMode::PreservedAspectCentered) {
-            m_offset.x = (component_size.x - size.width) * 0.5;
-            m_offset.y = (component_size.y - size.height) * 0.5;
+            m_offset.x = (component_size.x - size.width) * 0.5f;
+            m_offset.y = (component_size.y - size.height) * 0.5f;
         } else { // FillMode::PreservedAspect
             m_offset.x = 0;
             m_offset.y = 0;
@@ -113,10 +157,18 @@ void Icon::update_draw_sizes()
 
 void Icon::update_texture()
 {
-    if (m_icon == Render::Icon::None || m_max_texture_size == 0) {
-        m_texture = nullptr;
-    } else {
-        m_texture = m_imgui_render->icon_texture(m_icon, m_max_texture_size);
+    if (m_icon_type == IconType::Icon) {
+        if (m_icon == Render::Icon::None || m_max_texture_size == 0) {
+            m_texture = nullptr;
+        } else {
+            m_texture = m_imgui_render->icon_texture(m_icon, m_max_texture_size);
+        }
+    } else if (m_icon_type == IconType::Image) {
+        if (m_image.empty() || m_max_texture_size == 0) {
+            m_texture = nullptr;
+        } else {
+            m_texture = m_imgui_render->image_texture(m_image, m_max_texture_size);
+        }
     }
 }
 

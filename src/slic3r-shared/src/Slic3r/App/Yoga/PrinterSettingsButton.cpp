@@ -6,8 +6,7 @@
 
 namespace Slic3r::App::Yoga {
 
-PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip)
-    : RectangleButton(tooltip)
+PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : RectangleButton(tooltip)
 {
     set_checkable(true);
 
@@ -26,7 +25,11 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip)
 
     Vec2f btn_sz{20.f, 20.f};
 
-    m_printers_btn = emplace_back<LayoutButton>("", Render::Icon::ConfigContainer, "Show info about printer");
+    m_printers_btn = emplace_back<LayoutButton>(
+        "",
+        Render::Icon::ConfigContainer,
+        "Show info about printer"
+    );
     m_printers_btn->set_self_align(YGAlignCenter);
     m_printers_btn->set_max_size(btn_sz);
 
@@ -42,9 +45,9 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip)
     set_background_color(ImColor(41, 41, 41));
 }
 
-void PrinterSettingsButton::set_icon(Render::Icon icon)
+void PrinterSettingsButton::set_image(const std::string& image)
 {
-    m_icon->set_icon(icon);
+    m_icon->set_image(image);
 }
 
 void PrinterSettingsButton::set_printer_name(const std::string& printer_name)
@@ -80,7 +83,10 @@ void PrinterSettingsButton::set_visible_cog(bool is_visible)
     }
 }
 
-std::function<void()>& PrinterSettingsButton::on_cog() { return m_cog_btn->callbacks().action; }
+std::function<void()>& PrinterSettingsButton::on_cog()
+{
+    return m_cog_btn->callbacks().action;
+}
 
 std::function<void()>& PrinterSettingsButton::on_printer()
 {

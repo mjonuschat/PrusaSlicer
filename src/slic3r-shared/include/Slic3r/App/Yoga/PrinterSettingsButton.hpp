@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/RectangleButton.hpp"
-#include "Slic3r/App/Render/ImguiTypes.hpp"
 
 namespace Slic3r::App::Yoga {
 
@@ -14,7 +13,7 @@ class PrinterSettingsButton : public RectangleButton
 public:
     explicit PrinterSettingsButton(const std::string& tooltip = {});
 
-    void set_icon(Render::Icon icon);
+    void set_image(const std::string& image);
     void set_printer_name(const std::string& printer_name);
     void set_preset_name(const std::string& preset_name);
     void set_printing_state(int state);

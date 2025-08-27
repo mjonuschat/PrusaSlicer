@@ -33,6 +33,12 @@ namespace Slic3r::App::Yoga {
 class Icon : public Item
 {
 public:
+    enum class IconType
+    {
+        Icon, ///< Hardcoded Icon from our assets
+        Image ///< Any Image located somewhere in filesystem
+    };
+
     enum class PreferredSize : int
     {
         S = 32,
@@ -56,8 +62,11 @@ public:
 
     void render(Vec2f pos, Vec2f size) override;
 
+    IconType icon_type() const;
     Render::Icon icon() const;
     void set_icon(Render::Icon icon);
+    std::string image() const;
+    void set_image(const std::string& image);
 
     const Vec2f& source_size() const;
     void set_source_size(const Vec2f& source_size);
@@ -74,10 +83,12 @@ private:
 
 private:
     // Configured
+    IconType m_icon_type = IconType::Icon;
     bool m_auto_resize = true;
     int m_max_texture_size{0};
     std::shared_ptr<Render::Texture> m_texture;
     Render::Icon m_icon;
+    std::string m_image;
     Vec2f m_source_size{0, 0};
     FillMode m_fill_mode = FillMode::PreservedAspect;
     ImVec4 m_tint{1, 1, 1, 1};

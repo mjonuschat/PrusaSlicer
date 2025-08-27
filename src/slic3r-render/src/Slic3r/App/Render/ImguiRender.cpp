@@ -54,6 +54,11 @@ TexturePtr ImguiRender::icon_texture(Icon icon, int max_size)
     return m_device.context().texture_manager().get_or_create_image(ImguiIconHelper::icon_path(icon), {max_size});
 }
 
+TexturePtr ImguiRender::image_texture(const std::string& image, int max_size)
+{
+    return m_device.context().texture_manager().get_or_create_image(image, {max_size});
+}
+
 void ImguiRender::new_frame()
 {
     if (m_shader == nullptr)

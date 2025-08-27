@@ -37,6 +37,10 @@ public:
      * @note do not forget to register texture with use_texture when rendering them
      */
     TexturePtr icon_texture(Icon icon, int max_size);
+    /**
+     * @note do not forget to register texture with use_texture when rendering them
+     */
+    TexturePtr image_texture(const std::string& image, int max_size);
 
     void new_frame();
     void render(CommandBuffer& buffer, const ImDrawData* draw_data);

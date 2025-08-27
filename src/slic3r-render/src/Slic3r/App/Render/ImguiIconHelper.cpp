@@ -220,7 +220,7 @@ std::string ImguiIconHelper::icon_path(Icon icon)
         filename.append(".svg");
     }
 
-    return filename;
+    return "icons/" + filename;
 }
 
 std::string ImguiIconHelper::icon_name(Icon icon)
