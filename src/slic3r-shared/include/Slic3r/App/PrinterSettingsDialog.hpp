@@ -11,6 +11,8 @@
 #include "Slic3r/App/PrinterNozzleRow.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
+#include "Slic3r/Biz/Platform/ListenerScope.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -19,10 +21,16 @@ class ProjectInteractor;
 namespace Slic3r::App {
 class PrinterAddDialog;
 
-class PrinterSettingsDialog : public Yoga::Dialog
+class PrinterSettingsDialog : public Yoga::Dialog, public Biz::Preset::IPresetChangedListener
 {
 public:
     PrinterSettingsDialog(Biz::ProjectInteractor& project_interactor, PrinterAddDialog* printer_add_dialog);
+
+    void on_preset_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Biz::Preset::PresetItemType type
+    ) override;
 
 private:
     void create_page_list();
@@ -42,11 +50,15 @@ private:
         Biz::Preset::ToolConfigItemObservableList,
         Yoga::ViewFactory<PrinterNozzleRow, Biz::Preset::ToolConfigItemObservableList, Biz::Preset::PresetInteractor&>>;
 
+    Biz::ListenerScope<Biz::Preset::IPresetChangedListener, Biz::Preset::PresetInteractor, PrinterSettingsDialog>
+        m_preset_changed_listener_scope;
+
     Biz::ProjectInteractor& m_project_interactor;
     PrinterListView* m_printer_list_view{nullptr};
     Yoga::StackLayout* m_stack_layout{nullptr};
     Yoga::Item* m_page_list{nullptr};
     Yoga::Item* m_page_settings{nullptr};
+    Yoga::Text* m_text_printer_name{nullptr};
     Yoga::ButtonGroup m_group_keywords;
     Yoga::ComboBoxListViewSelection<Domain::Preset::HwSheetConfigDef>* m_combo_sheets;
     NozzleListView* m_nozzle_list_view{nullptr};

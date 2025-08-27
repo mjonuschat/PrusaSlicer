@@ -24,6 +24,7 @@ Slic3r::App::PrinterSettingsDialog::PrinterSettingsDialog(
     PrinterAddDialog* printer_add_dialog
 ) :
     Dialog({"Printers"}, "PrinterSettingsDialog"),
+    m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
     m_project_interactor(project_interactor),
     m_advanced_dialog(project_interactor),
     m_printer_add_dialog(printer_add_dialog)
@@ -41,6 +42,22 @@ Slic3r::App::PrinterSettingsDialog::PrinterSettingsDialog(
     create_page_settings();
 
     m_stack_layout->set_current_index(0);
+}
+
+void Slic3r::App::PrinterSettingsDialog::on_preset_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id,
+    Biz::Preset::PresetItemType type
+)
+{
+    if (m_project_interactor.selected_project_id() == project_id
+        && m_project_interactor.selected_config_container_id() == config_container_id
+        && type == Biz::Preset::PresetItemType::PrinterPreset)
+    {
+        m_text_printer_name->set_text(
+            m_project_interactor.preset_interactor().current_printer_preset().hw_config.name
+        );
+    }
 }
 
 void Slic3r::App::PrinterSettingsDialog::create_page_list()
@@ -120,7 +137,7 @@ void Slic3r::App::PrinterSettingsDialog::create_page_settings()
     back_button->callbacks().action = [this]() {
         m_stack_layout->set_current_index(0);
     };
-    title_row->emplace_back<Text>("NEXT / Elsa");
+    m_text_printer_name = title_row->emplace_back<Text>("Unknown");
 
     m_page_settings->emplace_back<Separator>(Orientation::Horizontal);
 
