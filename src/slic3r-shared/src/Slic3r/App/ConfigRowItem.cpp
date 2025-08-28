@@ -24,7 +24,8 @@ namespace Slic3r::App {
 ConfigRowItem::ConfigRowItem(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::Preset::PresetInteractor& preset_interactor,
+    bool small
 ) :
     Biz::DataObserver<Domain::ConfigItem>(index, data),
     m_preset_interactor(preset_interactor)
@@ -32,8 +33,6 @@ ConfigRowItem::ConfigRowItem(
     set_flex_shrink(0);
 
     Item* left_side = emplace_back<Item>();
-    left_side->set_width(175);
-    left_side->set_max_size({175, YGUndefined});
 
     if (*m_state->def().type == typeid(std::optional<int>)) {
         m_toggle_enable = left_side->emplace_back<ToggleButton>();
@@ -53,8 +52,6 @@ ConfigRowItem::ConfigRowItem(
     }
 
     m_label = left_side->emplace_back<Text>(data.def().label);
-    m_label->set_flex_grow(1);
-    m_label->set_wrap(true);
 
     switch (data.def().gui_type) {
     case Slic3r::Domain::ConfigItemDef::GUIType::textfield:
@@ -93,16 +90,33 @@ ConfigRowItem::ConfigRowItem(
     }
 
     if (m_input) { // Todo: handle all cases
+        m_input_value = dynamic_cast<Biz::DataObserver<Domain::ConfigItem>*>(m_input);
+    }
+
+    m_sidetext = emplace_back<Text>(data.def().sidetext);
+    m_sidetext->set_self_align(YGAlignCenter);
+
+    if (small) {
+        set_gap(5);
+        set_width(175);
+        m_input->set_min_size({50, YGUndefined});
+
+        left_side->set_flex_grow(1);
+        m_label->set_self_align(YGAlignCenter);
+    } else {
+        m_label->set_flex_grow(1);
+        m_label->set_wrap(true);
+
         if (data.def().full_width) {
             m_input->set_flex_grow(1);
             set_orientation(Orientation::Vertical);
         } else {
             set_align_items(YGAlign::YGAlignCenter);
         }
-        m_input_value = dynamic_cast<Biz::DataObserver<Domain::ConfigItem>*>(m_input);
-    }
 
-    m_sidetext = emplace_back<Text>(data.def().sidetext);
+        left_side->set_width(175);
+        left_side->set_max_size({175, YGUndefined});
+    }
 }
 
 void ConfigRowItem::on_data_update()

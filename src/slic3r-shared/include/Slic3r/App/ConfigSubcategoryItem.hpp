@@ -5,7 +5,7 @@
 #pragma once
 
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
-#include "Slic3r/App/ConfigRowItem.hpp"
+#include "Slic3r/App/ConfigRowItems.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Biz/DataObserver.hpp"
@@ -28,10 +28,12 @@ namespace Slic3r::App {
 
 class ConfigSubcategoryItem : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
 {
-    using ConfigRowListView = Yoga::ListView<
-        ConfigRowItem,
+    using ConfigRowListViewFactory = Yoga::ViewFactory<
+        ConfigRowItems,
         Domain::ConfigItem,
-        Yoga::ViewFactory<ConfigRowItem, Domain::ConfigItem, Biz::Preset::PresetInteractor&>>;
+        Biz::Preset::PresetInteractor&,
+        Biz::ConfigBoxInteractor&>;
+    using ConfigRowListView = Yoga::ListView<ConfigRowItems, Domain::ConfigItem, ConfigRowListViewFactory>;
 
 public:
     ConfigSubcategoryItem(

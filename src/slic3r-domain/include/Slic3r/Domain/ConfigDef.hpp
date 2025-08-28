@@ -96,6 +96,7 @@ struct ConfigItemDef
     // "Infill", "Support material", "Speed", "Extruders", "Advanced", "Extrusion Width"
     Category category = Category::Unkown;
     std::string option_group;
+    std::string row_group;
     std::string tooltip; // A tooltip text shown in the GUI.
     std::string sidetext; // Text right from the input field.
     std::string cli; // Format of this parameter on a command line.

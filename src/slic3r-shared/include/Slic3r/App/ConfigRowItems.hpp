@@ -8,6 +8,9 @@
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
+#include "Slic3r/App/ConfigRowItem.hpp"
+#include "Slic3r/Biz/ObservableListSortFilter.hpp"
+#include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 
 namespace Slic3r::Biz::Preset {
 class PresetInteractor;
@@ -15,21 +18,24 @@ class PresetInteractor;
 
 namespace Slic3r::App::Yoga {
 class Text;
-class ToggleButton;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
 
 class ConfigItemSpinBox;
 
-class ConfigRowItem : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
+class ConfigRowItems : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
 {
+    using ConfigRowListViewFactory = Yoga::
+        ViewFactory<ConfigRowItem, Domain::ConfigItem, Biz::Preset::PresetInteractor&, bool>;
+    using ConfigRowListView = Yoga::ListView<ConfigRowItem, Domain::ConfigItem, ConfigRowListViewFactory>;
+
 public:
-    ConfigRowItem(
+    ConfigRowItems(
         size_t index,
         const Domain::ConfigItem& data,
         Biz::Preset::PresetInteractor& preset_interactor,
-        bool small
+        Biz::ConfigBoxInteractor& cbi
     );
 
 private:
@@ -37,15 +43,12 @@ private:
 
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
+    Biz::ConfigBoxInteractor& m_cbi;
 
+    Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_row_items_filter;
+    ConfigRowListView* m_row_group_list_view{nullptr};
+    ConfigRowItem* m_single_item{nullptr};
     Yoga::Text* m_label{nullptr};
-    Yoga::Text* m_sidetext{nullptr};
-    Yoga::Item* m_input{nullptr};
-    Yoga::ToggleButton* m_toggle_enable{nullptr};
-
-    ConfigItemSpinBox* m_config_item_spin_box{nullptr}; ///< valid only if ConfigItem gui type is spinbox
-
-    Biz::DataObserver<Domain::ConfigItem>* m_input_value{nullptr};
 };
 
 } // namespace Slic3r::App

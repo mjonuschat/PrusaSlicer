@@ -176,6 +176,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Filament;
     def->label = L("Other layers");
     def->option_group = L("Temperature");
+    def->row_group = L("Bed");
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->category = ConfigItemDef::Category::Material;
     def->option_group = L("Filament");
@@ -192,6 +193,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     // TRN: Label of a configuration parameter: Nominal chamber temperature.
     def->label = L("Nominal");
     def->option_group = L("Temperature");
+    def->row_group = L("Chamber");
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->category = ConfigItemDef::Category::Material;
     def->full_label = L("Chamber temperature");
@@ -208,6 +210,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     // TRN: Label of a configuration parameter: Minimal chamber temperature
     def->label = L("Minimal");
     def->option_group = L("Temperature");
+    def->row_group = L("Chamber");
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->category = ConfigItemDef::Category::Material;
     def->full_label = L("Chamber minimal temperature");
@@ -265,6 +268,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     //TRN Print Settings: "Bottom solid layers"
     def->label = L_CONTEXT("Bottom", "Layers");
     def->option_group = L("Horizontal shells");
+    def->row_group = L("Solid layers");
     def->category = ConfigItemDef::Category::LayersAndPerimeters;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of solid layers to generate on bottom surfaces.");
@@ -277,6 +281,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Object, Volume };
     def->label = L_CONTEXT("Bottom", "Layers");
     def->option_group = L("Horizontal shells");
+    def->row_group = L("Minimum shell thickness");
     def->category = ConfigItemDef::Category::LayersAndPerimeters;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The number of bottom solid layers is increased above bottom_solid_layers if necessary to satisfy "
@@ -1583,6 +1588,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Filament;
     def->label = L("First layer");
     def->option_group = L("Temperature");
+    def->row_group = L("Bed");
     def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->full_label = L("First layer bed temperature");
@@ -1674,6 +1680,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Filament;
     def->label = L("First layer");
     def->option_group = L("Temperature");
+    def->row_group = L("Nozzle");
     def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->full_label = L("First layer nozzle temperature");
@@ -2468,6 +2475,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Max");
     def->full_label = L("Max fan speed");
     def->option_group = L("Fan settings");
+    def->row_group = L("Fan speed");
     def->category = ConfigItemDef::Category::Cooling;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("This setting represents the maximum speed of your fan.");
@@ -3109,6 +3117,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Filament };
     def->label = L("Above Z");
     def->option_group = L("Travel lift");
+    def->row_group = L("Only lift");
     def->category = ConfigItemDef::Category::General;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Only lift Z above");
@@ -3122,6 +3131,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Tool;
     def->overrides_in = Locations{ Filament };
     def->label = L("Below Z");
+    def->row_group = L("Only lift");
     def->option_group = L("Travel lift");
     def->category = ConfigItemDef::Category::General;
     def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -4160,6 +4170,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Filament;
     def->label = L("Other layers");
     def->option_group = L("Temperature");
+    def->row_group = L("Nozzle");
     def->category = ConfigItemDef::Category::Material;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Nozzle temperature for layers after the first one. Set this to zero to disable "
@@ -4251,6 +4262,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     //TRN Print Settings: "Top solid layers"
     def->label = L_CONTEXT("Top", "Layers");
     def->option_group = L("Horizontal shells");
+    def->row_group = L("Solid layers");
     def->category = ConfigItemDef::Category::LayersAndPerimeters;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of solid layers to generate on top surfaces.");
@@ -4263,6 +4275,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Object, Volume };
     def->label = L_CONTEXT("Top", "Layers");
     def->option_group = L("Horizontal shells");
+    def->row_group = L("Minimum shell thickness");
     def->category = ConfigItemDef::Category::LayersAndPerimeters;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The number of top solid layers is increased above top_solid_layers if necessary to satisfy "

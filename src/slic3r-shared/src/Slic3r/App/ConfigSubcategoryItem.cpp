@@ -36,14 +36,32 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
 
     m_label = m_background->emplace_back<Text>(m_state->def().option_group, Render::ImguiFontType::Bold);
 
-    m_rows_filter_list->set_source_model(m_cbi.config_box_list());
     const std::string option_group = m_state->def().option_group; // Intentional copy
     const Domain::ConfigItemDef::Category category = m_state->def().category; // Intentional copy
     m_rows_filter_list->set_filter_fn([option_group, category](const Domain::ConfigItem& item) -> bool {
         return item.def().option_group == option_group && item.def().category == category;
     });
+    // also group by row_group
+    m_rows_filter_list->set_group_by_fn(
+        [](const Domain::ConfigItem& item, std::unordered_set<std::string>& seen_keys) -> bool {
+        const std::string& row_group = item.def().row_group;
+        if (row_group.empty()) {
+            return false;
+        } else {
+            if (seen_keys.contains(row_group)) {
+                return true;
+            } else {
+                seen_keys.insert(row_group);
+                return false;
+            }
+        }
+    }
+    );
+    m_rows_filter_list->set_source_model(m_cbi.config_box_list());
 
-    m_rows_list_view = m_background->emplace_back<ConfigRowListView>(m_preset_interactor);
+    m_rows_list_view = m_background->emplace_back<ConfigRowListView>(
+        ConfigRowListViewFactory{m_preset_interactor, m_cbi}
+    );
     m_rows_list_view->set_source_list(m_rows_filter_list.get());
     m_rows_list_view->set_orientation(Orientation::Vertical);
     m_rows_list_view->set_gap(5);
