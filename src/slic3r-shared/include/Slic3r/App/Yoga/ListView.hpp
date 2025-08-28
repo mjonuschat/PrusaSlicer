@@ -23,9 +23,8 @@ public:
 
     std::unique_ptr<View> create(size_t index, const Data& data)
     {
-        return std::apply([&](auto&&... args) {
-            return std::make_unique<View>(index, data, args...);
-        }, m_args);
+        return std::
+            apply([&](auto&&... args) { return std::make_unique<View>(index, data, args...); }, m_args);
     }
 
 private:
@@ -79,22 +78,23 @@ public:
         }
     }
 
+    /**
+     * @warning Must be called only after the Data object is already removed.
+     */
     void on_removed(const Biz::IndexRange& index_range) override
     {
         ASSERT(index_range.to <= m_items.size());
 
         for (size_t i = index_range.from; i <= index_range.to; ++i) {
-            this->remove_later(this->get_item(i));
+            this->remove_later(m_items[i]);
         }
         m_items.erase(m_items.cbegin() + index_range.from, m_items.cbegin() + index_range.to + 1);
-
         update_indexes(index_range.from);
     }
 
     void on_updated(const Biz::IndexRange& index_range) override
     {
         ASSERT(index_range.to <= m_items.size());
-
         size_t index = 0;
         for (View* view : std::as_const(m_items)) {
             view->set_state(m_source_list->at(index++));
@@ -136,15 +136,12 @@ public:
         set_source_list(Biz::WeakerPointer<Biz::IObservableList<Data>>{source_list});
     }
 
-    template <
-        typename Derived,
-        typename = std::enable_if_t<std::is_base_of_v<Biz::IObservableList<Data>, Derived>>>
+    template <typename Derived, typename = std::enable_if_t<std::is_base_of_v<Biz::IObservableList<Data>, Derived>>>
     void set_source_list(const std::weak_ptr<Derived>& source_list)
     {
         set_source_list(
-            Biz::WeakerPointer<Biz::IObservableList<Data>>{
-                std::static_pointer_cast<Biz::IObservableList<Data>>(source_list.lock())
-            }
+            Biz::WeakerPointer<Biz::IObservableList<Data>>{std::static_pointer_cast<
+                Biz::IObservableList<Data>>(source_list.lock())}
         );
     }
 

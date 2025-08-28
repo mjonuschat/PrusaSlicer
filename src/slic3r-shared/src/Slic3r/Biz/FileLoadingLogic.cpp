@@ -11,7 +11,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <Slic3r/App/IDialogManager.hpp>
+#include <Slic3r/App/AppServices.hpp>
 
 #include "Slic3r/App/I18N/I18N.hpp"
 #include <fmt/format.h>
@@ -44,8 +44,7 @@ static bool looks_like_saved_in_meters(const TriangleMeshStats& stats)
 static bool has_zero_volume(const TriangleMeshStats& stats)
 {
     return stats.volume < zero_volume //
-        && stats.volume
-        > 0.f; // temporary check for the non-legacy project files, where volume is incorrect
+        && stats.volume > 0.f; // temporary check for the non-legacy project files, where volume is incorrect
 }
 
 static void convert_from_imperial_units(TriangleMesh& mesh)
@@ -80,8 +79,7 @@ static TriangleMeshStats get_object_mesh_stats(const ModelObject* object)
             Transform3d trans = object->instances.empty() ?
                 volume->get_matrix() :
                 (volume->get_matrix() * object->instances[0]->get_matrix());
-            full_stats.volume += stats.volume
-                * std::fabs(trans.matrix().block(0, 0, 3, 3).determinant());
+            full_stats.volume += stats.volume * std::fabs(trans.matrix().block(0, 0, 3, 3).determinant());
             full_stats.number_of_parts += stats.number_of_parts;
         }
     }
@@ -122,7 +120,8 @@ static void convert_to_multipart_object(Model& model, unsigned int max_extruders
             // Revert the centering operation.
             trafo_volume.set_offset(trafo_volume.get_offset() - o->origin_translation);
             int counter      = 1;
-            auto copy_volume = [o, max_extruders, &counter, &extruder_counter](ModelVolume* new_v) {
+            auto copy_volume = [o, max_extruders, &counter, &extruder_counter](ModelVolume* new_v)
+            {
                 assert(new_v != nullptr);
                 new_v->name = (counter > 1) ? o->name + "_" + std::to_string(counter++) : o->name;
                 // ! ysTODO: uncomment, when we will correct get a munber of extruders
@@ -134,8 +133,7 @@ static void convert_to_multipart_object(Model& model, unsigned int max_extruders
             } else {
                 for (const ModelInstance* i : o->instances)
                     // ...so, transform everything to a common reference system (world)
-                    copy_volume(object->add_volume(*v))
-                        ->set_transformation(i->get_transformation() * trafo_volume);
+                    copy_volume(object->add_volume(*v))->set_transformation(i->get_transformation() * trafo_volume);
             }
         }
     }
@@ -154,19 +152,14 @@ enum class Answer
     No
 };
 
-static void process_mesh(
-    TriangleMesh& mesh,
-    const std::string& input_file,
-    Answer* answer_convert_from_meters,
-    Answer* answer_convert_from_imperial_units
-)
+static void process_mesh(TriangleMesh& mesh, const std::string& input_file, Answer* answer_convert_from_meters, Answer* answer_convert_from_imperial_units)
 {
     const TriangleMeshStats& stats = mesh.stats();
 
     if (looks_like_saved_in_meters(stats)) {
         Answer answer = answer_convert_from_meters ? *answer_convert_from_meters : Answer::Default;
         if (answer_convert_from_meters && *answer_convert_from_meters == Answer::Default) {
-            auto& dlg_manager = App::DialogManagerProvider::instance().get();
+            auto& dlg_manager = App::AppServices::instance().dialog_manager();
             dlg_manager.show_rich_yesno_dialog(
                 _u8L("The object is too small"),
                 fmt::vformat(
@@ -179,7 +172,8 @@ static void process_mesh(
 
                 _u8L("Apply to all the remaining small objects being loaded."),
                 [&](bool dlg_answer) { answer = dlg_answer ? Answer::Yes : Answer::No; },
-                [&](bool checked) {
+                [&](bool checked)
+                {
                     if (checked)
                         *answer_convert_from_meters = answer;
                 }
@@ -191,12 +185,10 @@ static void process_mesh(
             // volume->source.is_converted_from_meters = true;
         }
     } else if (looks_like_imperial_units(stats)) {
-        Answer answer = answer_convert_from_imperial_units ? *answer_convert_from_imperial_units :
-                                                             Answer::Default;
-        if (answer_convert_from_imperial_units
-            && *answer_convert_from_imperial_units == Answer::Default)
+        Answer answer = answer_convert_from_imperial_units ? *answer_convert_from_imperial_units : Answer::Default;
+        if (answer_convert_from_imperial_units && *answer_convert_from_imperial_units == Answer::Default)
         {
-            auto& dlg_manager = App::DialogManagerProvider::instance().get();
+            auto& dlg_manager = App::AppServices::instance().dialog_manager();
             dlg_manager.show_rich_yesno_dialog(
                 _u8L("The object is too small"),
                 fmt::vformat(
@@ -209,7 +201,8 @@ static void process_mesh(
 
                 _u8L("Apply to all the remaining small objects being loaded."),
                 [&](bool dlg_answer) { answer = dlg_answer ? Answer::Yes : Answer::No; },
-                [&](bool checked) {
+                [&](bool checked)
+                {
                     if (checked)
                         *answer_convert_from_imperial_units = answer;
                 }
@@ -235,7 +228,7 @@ static void remove_objects_with_zero_volume(Model& model, const std::string& fil
             removed++;
         }
     if (removed > 0) {
-        auto& dlg_manager = App::DialogManagerProvider::instance().get();
+        auto& dlg_manager = App::AppServices::instance().dialog_manager();
         dlg_manager.show_info_dialog(
             fmt::vformat(
                 _L_PLURAL_u8(
@@ -270,9 +263,7 @@ static Loaded3MF load_legacy_project(const std::string& file_path)
             wipe_towers,
             custom_gcodes
         ))
-        throw Loaded3MFException(
-            Read3mfIssue(Read3mfIssueType::legacy_loader_failed, "Loading of legacy 3MF failed.")
-        );
+        throw Loaded3MFException(Read3mfIssue(Read3mfIssueType::legacy_loader_failed, "Loading of legacy 3MF failed."));
 
     loaded_3mf.filepath_3mf = file_path;
     return loaded_3mf;
@@ -307,30 +298,19 @@ tl::expected<ReturnData, std::string> read_data_from_file(const boost::filesyste
     } else if (boost::algorithm::iends_with(input_file_path.string(), ".3mf")) {
         Loaded3MF loaded_3mf = load_from_project(input_file_path);
         if (loaded_3mf.model.objects.empty()) {
-            return tl::make_unexpected(
-                fmt::vformat(
-                    _u8L("Model from {} couldn't be read because it's empty"),
-                    fmt::make_format_args(ret.file_name)
-                )
-            );
+            return tl::make_unexpected(fmt::vformat(_u8L("Model from {} couldn't be read because it's empty"), fmt::make_format_args(ret.file_name)));
         }
 
         ret.model = loaded_3mf.model;
         return ret;
     }
 
-    return tl::make_unexpected(_u8L(
-        "Unknown file format. Input file must have .stl, .obj, .step/.stp, .svg, .amf(.xml) or extension .3mf(.zip)."
-    ));
+    return tl::make_unexpected(_u8L("Unknown file format. Input file must have .stl, .obj, .step/.stp, .svg, .amf(.xml) or extension .3mf(.zip)."));
 }
 
 // Loading model from a file, it may be a simple geometry file as STL or OBJ, however it may be a project file as well.
-static tl::expected<ReturnData, std::string> read_and_process_file(
-    const boost::filesystem::path& input_file_path,
-    int tool_count,
-    Answer* answer_convert_from_meters         = nullptr,
-    Answer* answer_convert_from_imperial_units = nullptr
-)
+static tl::expected<ReturnData, std::string>
+read_and_process_file(const boost::filesystem::path& input_file_path, int tool_count, Answer* answer_convert_from_meters = nullptr, Answer* answer_convert_from_imperial_units = nullptr)
 {
     auto data = read_data_from_file(input_file_path);
     if (!data) {
@@ -344,12 +324,7 @@ static tl::expected<ReturnData, std::string> read_and_process_file(
     } else if (data.value().mesh) {
         TriangleMesh& mesh = data.value().mesh.value();
         if (has_zero_volume(mesh.stats())) {
-            return tl::make_unexpected(
-                fmt::vformat(
-                    _u8L("Mesh from file {} has zero volume. It will not be loaded."),
-                    fmt::make_format_args(file_name)
-                )
-            );
+            return tl::make_unexpected(fmt::vformat(_u8L("Mesh from file {} has zero volume. It will not be loaded."), fmt::make_format_args(file_name)));
         }
         process_mesh(mesh, file_name, answer_convert_from_meters, answer_convert_from_imperial_units);
     } else {
@@ -360,10 +335,7 @@ static tl::expected<ReturnData, std::string> read_and_process_file(
 }
 
 // Loading vector of meshs(from simple geometry file as STL or OBJ) or models(from a 3mf-file) from several files
-std::vector<ReturnData> import_files(
-    const std::vector<boost::filesystem::path>& input_file_paths,
-    int tool_count = 1
-)
+std::vector<ReturnData> import_files(const std::vector<boost::filesystem::path>& input_file_paths, int tool_count = 1)
 {
     Answer answer_convert_from_meters         = Answer::Default;
     Answer answer_convert_from_imperial_units = Answer::Default;
@@ -392,12 +364,7 @@ std::vector<ReturnData> import_files(
     }
 
     for (const auto& path : input_file_paths) {
-        auto data = read_and_process_file(
-            path,
-            tool_count,
-            &answer_convert_from_meters,
-            &answer_convert_from_imperial_units
-        );
+        auto data = read_and_process_file(path, tool_count, &answer_convert_from_meters, &answer_convert_from_imperial_units);
 
         if (!data) {
             errors += data.error() + "\n";
@@ -419,7 +386,7 @@ std::vector<ReturnData> import_files(
             extra_model->add_default_instances();
 
             // Check if the user actually wants to apply the conversion.
-            auto& dlg_manager = App::DialogManagerProvider::instance().get();
+            auto& dlg_manager = App::AppServices::instance().dialog_manager();
             dlg_manager.show_yesno_dialog(
                 _u8L("Multi-part object detected"),
                 _u8L(
@@ -451,7 +418,7 @@ std::vector<ReturnData> import_files(
     }
 
     if (!errors.empty()) {
-        auto& dlg_manager = App::DialogManagerProvider::instance().get();
+        auto& dlg_manager = App::AppServices::instance().dialog_manager();
         dlg_manager.show_error_dialog(errors, _u8L("Files import") + ":");
     }
 
@@ -462,16 +429,13 @@ static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
 {
     Domain::Project project;
     project.set_metadata(loaded_3mf.metadata);
-    project.set_file_name(loaded_3mf.filepath_3mf);
+    project.set_file_name(boost::filesystem::path(loaded_3mf.filepath_3mf).stem().string());
     project.model() = std::move(loaded_3mf.model);
 
     for (const Loaded3MF::ConfigContainerData& cc_data : loaded_3mf.config_containers_data) {
         project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
         auto& mutable_selected_preset = project.config_containers().back()->mutable_selected_preset();
-        mutable_selected_preset = Domain::Preset::SelectedPreset::make(
-            cc_data.preset,
-            cc_data.config_pack
-        );
+        mutable_selected_preset = Domain::Preset::SelectedPreset::make(cc_data.preset, cc_data.config_pack);
     }
 
     return project;
@@ -486,12 +450,7 @@ Domain::Project load_file_as_project(const boost::filesystem::path& project_file
     return convert_to_project(std::move(loaded_3mf));
 }
 
-void import_files_and_add_to_scene(
-    const std::vector<boost::filesystem::path>& file_paths,
-    int tool_count,
-    Scene::SceneInteractor& scene_interactor,
-    const Domain::Vec2d& bed_center
-)
+void import_files_and_add_to_scene(const std::vector<boost::filesystem::path>& file_paths, int tool_count, Scene::SceneInteractor& scene_interactor, const Domain::Vec2d& bed_center)
 {
     auto data = Biz::FileLoadingLogic::import_files(file_paths, tool_count);
 
@@ -525,16 +484,10 @@ void import_files_and_add_to_scene(
     }
 }
 
-
-
 /**
  * Load meshes from multiple source files and add them into selected object
  */
-void import_volumes_into_selected_object(
-    const std::vector<boost::filesystem::path>& file_paths,
-    const Domain::ModelVolumeType& volume_type,
-    Scene::SceneInteractor& scene_interactor
-)
+void import_volumes_into_selected_object(const std::vector<boost::filesystem::path>& file_paths, const Domain::ModelVolumeType& volume_type, Scene::SceneInteractor& scene_interactor)
 {
     auto data = Biz::FileLoadingLogic::import_files(file_paths);
 
@@ -545,8 +498,7 @@ void import_volumes_into_selected_object(
             scene_interactor.add_volume_from_mesh(std::move(mesh.value()), volume_type, file_data.file_name);
 
             bbox = mesh->bounding_box();
-        }
-        else if (file_data.model) {
+        } else if (file_data.model) {
             Domain::Model& model = file_data.model.value();
             // Convert objects from the model into separate meshes and add them for selected object
             TriangleMesh mesh;

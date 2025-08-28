@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Log.hpp"
 #include <string>
 #include <boost/filesystem.hpp>
 #include <memory>
@@ -9,13 +10,15 @@
 #include "Slic3r/Domain/ConfigPhysical.hpp"
 
 namespace Slic3r::Biz::libpgcode {
-    class LineView;
-}
+class LineView;
+} // namespace Slic3r::Biz::libpgcode
+
 namespace Slic3r::Biz::PrintHost {
 
 using DataPtrVariant = std::variant<std::shared_ptr<const libpgcode::LineView>>;
 
-enum class PrintHostAfterUploadAction {
+enum class PrintHostAfterUploadAction
+{
     None,
     StartPrint,
     StartSimulation,
@@ -30,8 +33,8 @@ struct PrintHostConfig
     std::string username;
     std::string password;
     std::string ca_file;
-    bool ssl_revoke_best_effort {false};
-     Domain::PrintHostAuthType auth_type { Domain::PrintHostAuthType::None};
+    bool ssl_revoke_best_effort{false};
+    Domain::PrintHostAuthType auth_type{Domain::PrintHostAuthType::None};
     std::string port;
     std::string team_id;
     std::string printer_uuid;
@@ -39,35 +42,30 @@ struct PrintHostConfig
 
     PrintHostConfig() = delete;
 
-    PrintHostConfig(Domain::PrintHostType type, std::string host) 
-        : type(type)
-        , host(std::move(host))
+    PrintHostConfig(Domain::PrintHostType type, std::string host) :
+        type(type),
+        host(std::move(host))
     {}
 
-    PrintHostConfig(Domain::PrintHostType type,
-        std::string host, 
-        std::string api_key)
-        : type(type)
-        , host(std::move(host))
-        , api_key(std::move(api_key))
-        , auth_type( Domain::PrintHostAuthType::ApiKey)
-    {}
-    
-    PrintHostConfig(Domain::PrintHostType type,
-        std::string host, 
-        std::string username, 
-        std::string password)
-        : type(type)
-        , host(std::move(host))
-        , username(std::move(username))
-        , password(std::move(password))
-        , auth_type(Domain::PrintHostAuthType::Digest)
+    PrintHostConfig(Domain::PrintHostType type, std::string host, std::string api_key) :
+        type(type),
+        host(std::move(host)),
+        api_key(std::move(api_key)),
+        auth_type(Domain::PrintHostAuthType::ApiKey)
     {}
 
-    PrintHostConfig(PrintHostConfig&& other) noexcept = default;
+    PrintHostConfig(Domain::PrintHostType type, std::string host, std::string username, std::string password) :
+        type(type),
+        host(std::move(host)),
+        username(std::move(username)),
+        password(std::move(password)),
+        auth_type(Domain::PrintHostAuthType::Digest)
+    {}
+
+    PrintHostConfig(PrintHostConfig&& other) noexcept            = default;
     PrintHostConfig& operator=(PrintHostConfig&& other) noexcept = default;
 
-    PrintHostConfig(const PrintHostConfig& other) = delete;
+    PrintHostConfig(const PrintHostConfig& other)            = delete;
     PrintHostConfig& operator=(const PrintHostConfig& other) = delete;
 };
 
@@ -78,9 +76,9 @@ enum class PrintHostExportFormat
     BGCode,
 };
 
-
 inline PrintHostExportFormat get_export_format_from_extension(const std::string& extension)
 {
+    SPDLOG_INFO("{} extension: {}", __FUNCTION__, extension);
     if (extension == ".gcode")
         return PrintHostExportFormat::GCode;
     if (extension == ".bgcode")
@@ -96,7 +94,7 @@ struct PrintHostJobData
     boost::filesystem::path source_path;
     boost::filesystem::path dest_path;
 
-    PrintHostAfterUploadAction post_action {PrintHostAfterUploadAction::None};
+    PrintHostAfterUploadAction post_action{PrintHostAfterUploadAction::None};
     std::string storage;
     std::string group;
     std::string request_body_json;
@@ -105,22 +103,17 @@ struct PrintHostJobData
 
     PrintHostJobData() = delete;
 
-    PrintHostJobData(
-        DataPtrVariant data,
-        const boost::filesystem::path& dest,
-        PrintHostExportFormat result_format
-    )
-        : data_ptr(data)
-        , dest_path(dest)
-        , result_format(result_format)
+    PrintHostJobData(DataPtrVariant data, const boost::filesystem::path& dest, PrintHostExportFormat result_format) :
+        data_ptr(data),
+        dest_path(dest),
+        result_format(result_format)
     {}
-
 
     PrintHostJobData(PrintHostJobData&& other) noexcept = default;
 
     PrintHostJobData& operator=(PrintHostJobData&& other) noexcept = default;
 
-    PrintHostJobData(const PrintHostJobData& other) = delete;
+    PrintHostJobData(const PrintHostJobData& other)            = delete;
     PrintHostJobData& operator=(const PrintHostJobData& other) = delete;
 };
 
@@ -128,8 +121,8 @@ struct PrintHostStorageInfo
 {
     std::string name;
     std::string path;
-    bool read_only = false;
+    bool read_only       = false;
     long long free_space = -1;
 };
 
-} // Slic3r::Biz::PrintHost
+} // namespace Slic3r::Biz::PrintHost

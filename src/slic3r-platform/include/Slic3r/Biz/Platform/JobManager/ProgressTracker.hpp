@@ -2,20 +2,15 @@
 
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
 #include "Slic3r/Domain/Percentage.hpp"
+#include "Slic3r/Domain/JobStatus.hpp"
 #include "Slic3r/Log.hpp" // IWYU pragma: keep
 
 namespace Slic3r::Biz::Platform::JobManager {
-enum class JobStatus
-{
-    None,
-    Started,
-    Finished,
-    Failed
-};
 
 struct Progress
 {
-    JobStatus status;
+    Domain::JobStatus status;
+    Domain::ProgressDetail progress_detail;
     std::optional<Domain::Percentage> percent;
 };
 
@@ -24,10 +19,11 @@ class ProgressTracker
 public:
     ProgressTracker(IMainThreadDispatcher& dispatcher, std::function<void(Progress)> on_change);
 
-    void set_status(const JobStatus status);
-    void set_status_unsafe(const JobStatus status);
+    void set_status(const Domain::JobStatus status);
+    void set_status_unsafe(const Domain::JobStatus status);
     void set(Domain::Percentage percentage);
     const Progress& get_progress() const;
+    void set_progress_detail(Domain::ProgressDetail progress_detail);
 
 private:
     // All these data must only be accessed from the main thread!

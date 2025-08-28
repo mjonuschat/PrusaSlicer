@@ -4,82 +4,77 @@
 #include <jthread/JThread.hpp>
 #include <map>
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
-#include "Slic3r/Biz/Platform/JobManager/ProgressTracker.hpp"
+#include "Slic3r/Biz/Platform/JobManager/IJobManagerStatusChangedListener.hpp"
 #include "Slic3r/Biz/Platform/JobManager/Job.hpp"
 #include "Slic3r/Log.hpp" // IWYU pragma: keep
 
 namespace Slic3r::Biz::Platform::JobManager {
 
-using JobManagerStatus = std::map<std::string, Progress>;
-
-struct IJobManagerStatusChangedListener
-{
-    virtual void on_job_manager_status_changed(const JobManagerStatus&) = 0;
-    virtual ~IJobManagerStatusChangedListener() = default;
-};
-
 namespace Impl {
-template<typename T>
+template <typename T>
 struct function_traits;
 
-template<typename R, typename... Args>
+template <typename R, typename... Args>
 struct function_traits<std::function<R(Args...)>>
 {
     using return_type = R;
-    using args_type = std::tuple<Args...>;
+    using args_type   = std::tuple<Args...>;
 };
 
-template<std::size_t Index, typename Tuple, typename T>
+template <std::size_t Index, typename Tuple, typename T>
 constexpr bool is_same_at_index_v = false;
 
-template<std::size_t Index, typename Tuple, typename T>
+template <std::size_t Index, typename Tuple, typename T>
     requires(Index < std::tuple_size_v<Tuple>)
-constexpr bool
-    is_same_at_index_v<Index, Tuple, T> = std::is_same_v<std::tuple_element_t<Index, Tuple>, T>;
+constexpr bool is_same_at_index_v<Index, Tuple, T> = std::is_same_v<std::tuple_element_t<Index, Tuple>, T>;
 
-template<typename Tuple>
+template <typename Tuple>
 struct without_stop_token
 {};
 
-template<typename StopToken, typename... Args>
+template <typename StopToken, typename... Args>
 struct without_stop_token<std::tuple<StopToken, Args...>>
 {
     using type = std::tuple<Args...>;
 };
 
 template <typename T>
-struct remove_rv_ref {
+struct remove_rv_ref
+{
     using type = T;
 };
 
 template <typename T>
-struct remove_rv_ref<T&&> {
+struct remove_rv_ref<T&&>
+{
     using type = T;
 };
 
 template <typename... Args>
-struct remove_rv_ref<std::tuple<Args...>> {
+struct remove_rv_ref<std::tuple<Args...>>
+{
     using type = std::tuple<typename remove_rv_ref<Args>::type...>;
 };
 
 template <typename T>
 using remove_rv_ref_t = typename remove_rv_ref<T>::type;
-}
+} // namespace Impl
 
-template<typename T>
+template <typename T>
 struct DebugType;
 
-template<typename T>
-void debug_type() {
+template <typename T>
+void debug_type()
+{
     static_assert(sizeof(DebugType<T>) == 0, "Check the template type here");
 }
 
-class JobManager: public WithListeners<IJobManagerStatusChangedListener>
+class JobManager : public WithListeners<IJobManagerStatusChangedListener>
 {
 public:
-    JobManager(IMainThreadDispatcher& dispatcher): m_dispatcher{dispatcher} {}
+    JobManager(IMainThreadDispatcher& dispatcher) : m_dispatcher{dispatcher} {}
 
-     /**
+    /**
      * @brief Creates a job in a thread.
      *
      * Jobs can be cancelled, return values, report progress, dispatch code to the main thread, and handle exceptions.
@@ -103,7 +98,7 @@ public:
      * @return A reference to the created job. Optionally specify how the job should behave
      *   using .on_result(...).on_exception(...) and than call .start() on it.
      */
-    template<typename F, typename... Args>
+    template <typename F, typename... Args>
     auto& create_job(const std::string& name, F&& function, Args&&... args)
     {
         auto job{init_job(name, std::forward<F>(function), std::forward<Args>(args)...)};
@@ -123,84 +118,65 @@ private:
     std::map<std::string, std::unique_ptr<JobBase>> m_jobs;
     JobManagerStatus m_status;
 
-    template<typename ArgsTuple, typename... Args>
+    template <typename ArgsTuple, typename... Args>
     ArgsTuple get_args_tuple(const ProgressTracker& progress_tracker, Args&&... args)
     {
-        static_assert(
-            !Impl::is_same_at_index_v<0, ArgsTuple, ProgressTracker&>
-                && !Impl::is_same_at_index_v<1, ArgsTuple, ProgressTracker&>,
-            "Progress tracker must not be a reference!"
-        );
+        static_assert(!Impl::is_same_at_index_v<0, ArgsTuple, ProgressTracker&> && !Impl::is_same_at_index_v<1, ArgsTuple, ProgressTracker&>, "Progress tracker must not be a reference!");
 
-        static_assert(
-            !Impl::is_same_at_index_v<0, ArgsTuple, IMainThreadDispatcher>,
-            "IMainThread dispatcher must be a reference!"
-        );
+        static_assert(!Impl::is_same_at_index_v<0, ArgsTuple, IMainThreadDispatcher>, "IMainThread dispatcher must be a reference!");
 
-        if constexpr (Impl::is_same_at_index_v<0, ArgsTuple, IMainThreadDispatcher&>
-                      && Impl::is_same_at_index_v<1, ArgsTuple, ProgressTracker>) {
+        if constexpr (Impl::is_same_at_index_v<0, ArgsTuple, IMainThreadDispatcher&> && Impl::is_same_at_index_v<1, ArgsTuple, ProgressTracker>)
+        {
             static_assert(sizeof...(args) + 2 == std::tuple_size_v<ArgsTuple>);
-            return std::tuple_cat(
-                std::forward_as_tuple(m_dispatcher),
-                std::make_tuple(progress_tracker),
-                std::forward_as_tuple(args...)
-            );
+            return std::tuple_cat(std::forward_as_tuple(m_dispatcher), std::make_tuple(progress_tracker), std::forward_as_tuple(args...));
         } else if constexpr (Impl::is_same_at_index_v<0, ArgsTuple, ProgressTracker>) {
             static_assert(sizeof...(args) + 1 == std::tuple_size_v<ArgsTuple>);
-            return std::tuple_cat(
-                std::make_tuple(progress_tracker),
-                std::forward_as_tuple(args...)
-            );
+            return std::tuple_cat(std::make_tuple(progress_tracker), std::forward_as_tuple(args...));
         } else if constexpr (Impl::is_same_at_index_v<0, ArgsTuple, IMainThreadDispatcher&>) {
             static_assert(sizeof...(args) + 1 == std::tuple_size_v<ArgsTuple>);
             return std::tuple_cat(std::forward_as_tuple(m_dispatcher), std::forward_as_tuple(args...));
         } else {
             static_assert(sizeof...(args) == std::tuple_size_v<ArgsTuple>);
             return ArgsTuple{std::forward<Args...>(args)...};
-
         }
     }
 
-    template<typename F, typename... Args>
+    template <typename F, typename... Args>
     auto init_job(const std::string& name, F&& function, Args&&... args)
     {
         std::function std_function{std::forward<F>(function)};
 
         using AllArgsTuple = typename Impl::function_traits<decltype(std_function)>::args_type;
-        static_assert(
-            Impl::is_same_at_index_v<0, AllArgsTuple, JThread::StopToken>,
-            "First argument of the job must be stop token!"
-        );
+        static_assert(Impl::is_same_at_index_v<0, AllArgsTuple, JThread::StopToken>, "First argument of the job must be stop token!");
 
         using ArgsTuple = typename Impl::without_stop_token<AllArgsTuple>::type;
 
-        const ProgressTracker progress_tracker{ProgressTracker(m_dispatcher, [this, name](const Progress progress) {
-            ASSERT(progress.status != JobStatus::None);
-            m_status.insert_or_assign(name, progress);
-            invoke_on_change();
-            if (progress.status == JobStatus::Finished || progress.status == JobStatus::Failed) {
-                m_status.erase(name);
+        const ProgressTracker progress_tracker{ProgressTracker(
+            m_dispatcher,
+            [this, name](const Progress progress)
+            {
+                ASSERT(progress.status != Domain::JobStatus::None);
+                m_status.insert_or_assign(name, progress);
+                invoke_on_change();
+                if (progress.status == Domain::JobStatus::Finished || progress.status == Domain::JobStatus::Failed)
+                {
+                    m_status.erase(name);
+                }
             }
-        })};
+        )};
 
         ArgsTuple args_tuple{get_args_tuple<ArgsTuple>(progress_tracker, std::forward<Args>(args)...)};
         Impl::remove_rv_ref_t<decltype(args_tuple)> no_rv_ref{std::move(args_tuple)};
 
-        Job job_value{
-            name,
-            std::move(std_function),
-            m_dispatcher,
-            progress_tracker,
-            std::move(no_rv_ref)
-        };
+        Job job_value{name, std::move(std_function), m_dispatcher, progress_tracker, std::move(no_rv_ref)};
         return std::make_unique<decltype(job_value)>(std::move(job_value));
     }
 
     void invoke_on_change()
     {
-        invoke_listeners<IJobManagerStatusChangedListener>([&](auto* listener) {
-            listener->on_job_manager_status_changed(m_status);
-        });
+        invoke_listeners<IJobManagerStatusChangedListener>(
+            [&](auto* listener) { listener->on_job_manager_status_changed(m_status); }
+        );
     }
 };
 

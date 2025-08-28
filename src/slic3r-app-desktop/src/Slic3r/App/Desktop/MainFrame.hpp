@@ -13,35 +13,46 @@
 
 namespace Slic3r::App::Desktop::Preset {
 class AbstractEditor;
-}
+} // namespace Slic3r::App::Desktop::Preset
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
-}
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App::Desktop {
 
+#ifdef WIN32
+constexpr int WM_USER_MEDIACHANGED{0x7FFF}; // WM_USER from 0x0400 to 0x7FFF, picking the last one to not interfere with wxWidgets allocation
+#endif // WIN32
+
 class LeftBar;
 
-class MainFrame : public wxFrame, public ILanguageChangedListener {
+class MainFrame : public wxFrame, public ILanguageChangedListener
+{
 public:
-    MainFrame(
-        Domain::Workbench& workbench,
-        Biz::ProjectInteractor& project_interactor
-    );
+    MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor);
     ~MainFrame();
 
-    Platform::WX::WXRenderCanvas& get_render_canvas() { return *m_canvas; }
+    Platform::WX::WXRenderCanvas& get_render_canvas()
+    {
+        return *m_canvas;
+    }
 
-    void    sys_color_changed();
-    bool    select_language();
+    void sys_color_changed();
+    bool select_language();
 
     // set language, font and all other ui settings for canvas
-    void    update_canvas_ui_settings();
+    void update_canvas_ui_settings();
+
+#ifdef WIN32
+    // Register Win32 RawInput callbacks (3DConnexion) and removable media insert / remove callbacks.
+    // Called from wxEVT_ACTIVATE, as wxEVT_CREATE was not reliable (bug in wxWidgets?).
+    void register_win32_callbacks();
+#endif // WIN32
 
 private:
-    // Move to BasicAppConfig 
-    /*ConfigOptionMode*/ int m_mode{ 1 /*comAdvanced*/ };
+    // Move to BasicAppConfig
+    /*ConfigOptionMode*/ int m_mode{1 /*comAdvanced*/};
 
 #ifdef OLD_CODE
     void init_plater();
@@ -71,11 +82,16 @@ private:
     std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
 
 #ifdef OLD_CODE
-    std::map<Slic3r::Preset::Type, Preset::AbstractEditor*>   m_preset_editors;
+    std::map<Slic3r::Preset::Type, Preset::AbstractEditor*> m_preset_editors;
 #endif
 
-    TabsBarMenus    m_tabs_bar_menus;
-    LeftBar*        m_left_bar{ nullptr };
+    TabsBarMenus m_tabs_bar_menus;
+    LeftBar* m_left_bar{nullptr};
+
+#ifdef WIN32
+    void* m_hDeviceNotify{nullptr};
+    uint32_t m_ulSHChangeNotifyRegister{0};
+#endif // WIN32
 };
 
-}
+} // namespace Slic3r::App::Desktop

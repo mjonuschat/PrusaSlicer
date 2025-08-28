@@ -15,12 +15,7 @@ UserAccountSession::UserAccountSession(Platform::IMainThreadDispatcher& dispatch
     UserAccountSessionDispatchBase{dispatcher}
 {}
 
-void UserAccountSession::set_tokens(
-    const std::string& access_token,
-    const std::string& refresh_token,
-    const std::string& shared_session_key,
-    long long expires_in
-)
+void UserAccountSession::set_tokens(const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, long long expires_in)
 {
     // TODO: Add checks for empty tokens
 
@@ -42,8 +37,10 @@ void UserAccountSession::set_tokens(
         m_shared_session_key = shared_session_key;
         m_next_token_timeout = /*std::time(nullptr) +*/ expires_in;
     }
-    long long exp = expires_in - std::time(nullptr);
-    dispatch_new_refresh_time(exp);
+    if (!access_token.empty()) {
+        long long exp = expires_in - std::time(nullptr);
+        dispatch_new_refresh_time(exp);
+    }
 }
 
 void UserAccountSession::do_clear(bool notify_owner)
@@ -121,15 +118,8 @@ void UserAccountSession::on_log_in_code_response(const std::string& code, const 
         std::lock_guard<std::mutex> lock(m_session_mutex);
         // Data we have
         const std::string REDIRECT_URI = "prusaslicer://login";
-        std::string post_fields        = "code="
-            + code
-            + "&client_id="
-            + Network::ServiceConfig::instance().account_client_id()
-            + "&grant_type=authorization_code"
-            + "&redirect_uri="
-            + REDIRECT_URI
-            + "&code_verifier="
-            + code_verifier;
+        std::string post_fields =
+            "code=" + code + "&client_id=" + Network::ServiceConfig::instance().account_client_id() + "&grant_type=authorization_code" + "&redirect_uri=" + REDIRECT_URI + "&code_verifier=" + code_verifier;
 
         m_processing_enabled = true;
         // fail fn might be cancel_queue here
@@ -142,12 +132,7 @@ void UserAccountSession::on_log_in_code_response(const std::string& code, const 
     }
 }
 
-void UserAccountSession::enqueue_action(
-    UserAccountActionID id,
-    ActionSuccessFn success_callback,
-    ActionFailFn fail_callback,
-    const std::string& input
-)
+void UserAccountSession::enqueue_action(UserAccountActionID id, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input)
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -163,10 +148,7 @@ void UserAccountSession::enqueue_test_with_refresh()
         // on test fail - try refresh
         m_processing_enabled = true;
         m_priority_action_queue.push_back(
-            {UserAccountActionID::TestAccessToken,
-             nullptr,
-             std::bind(&UserAccountSession::enqueue_refresh, this, std::placeholders::_1),
-             {}}
+            {UserAccountActionID::TestAccessToken, nullptr, std::bind(&UserAccountSession::enqueue_refresh, this, std::placeholders::_1), {}}
         );
     }
 }
@@ -237,12 +219,7 @@ bool UserAccountSession::is_enqueued(UserAccountActionID action_id) const
     }
 }
 
-void UserAccountSession::enqueue_action_inner(
-    UserAccountActionID id,
-    ActionSuccessFn success_callback,
-    ActionFailFn fail_callback,
-    const std::string& input
-)
+void UserAccountSession::enqueue_action_inner(UserAccountActionID id, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input)
 {
     m_processing_enabled = true;
     m_action_queue.push({id, success_callback, fail_callback, input});
@@ -313,13 +290,7 @@ void UserAccountSession::token_success_callback(const std::string& body)
     if (access_token.empty() || refresh_token.empty() || shared_session_key.empty() || expires_in <= 0)
     {
         // just debug msg, no need to translate
-        std::string msg = fmt::format(
-            "Failed read tokens after POST.\nAccess token: {}\nRefresh token: {}\nShared session token: {}\nbody: {}",
-            access_token,
-            refresh_token,
-            shared_session_key,
-            body
-        );
+        std::string msg = fmt::format("Failed read tokens after POST.\nAccess token: {}\nRefresh token: {}\nShared session token: {}\nbody: {}", access_token, refresh_token, shared_session_key, body);
         {
             std::lock_guard<std::mutex> lock(m_credentials_mutex);
             m_access_token       = std::string();

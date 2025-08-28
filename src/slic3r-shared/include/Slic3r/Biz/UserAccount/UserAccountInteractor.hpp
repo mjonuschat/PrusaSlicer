@@ -16,29 +16,30 @@ namespace Slic3r::Biz::UserAccount {
 class UserAccountInteractor final : public IUserAccountSessionListener, public WithListeners<IUserAccountListener>
 {
 public:
-	UserAccountInteractor(Platform::IMainThreadDispatcher& dispatcher);
-	~UserAccountInteractor();
+    UserAccountInteractor(Platform::IMainThreadDispatcher& dispatcher);
+    ~UserAccountInteractor();
 
-	UserAccountInteractor(const UserAccountInteractor& ) = delete;
-    UserAccountInteractor(UserAccountInteractor&& other) = delete;
-    UserAccountInteractor& operator=(const UserAccountInteractor& ) = delete;
+    UserAccountInteractor(const UserAccountInteractor&)             = delete;
+    UserAccountInteractor(UserAccountInteractor&& other)            = delete;
+    UserAccountInteractor& operator=(const UserAccountInteractor&)  = delete;
     UserAccountInteractor& operator=(UserAccountInteractor&& other) = delete;
 
     /**
      * @brief Logs out of User Account, tokens are thrown out, all other running apps gets message to log out.
      */
     void do_log_out(bool notify_owner);
-    
+
     /**
      * @brief Returns url to be displayed in browser for logging in.
      * @param lang_code Language code for localization. 2 letters.
      * @param generate_code_verifier If true, code verifier is generated and stored for later use. If false, older verifier is used. Should be false if service is not Prusa Account.
      * @param service Service that user selected to log in with. Returned url will be redirecting to the service. Default empty service is Prusa Account log in.
-     * Use case: User selects "log in" - this function is called to get url to be displayed in dialog. 
+     * Use case: User selects "log in" - this function is called to get url to be displayed in dialog.
      * There user selects "Google" - This function is called with "Google" as service and returns url to be displayed in external browser.
      */
-    std::string on_log_in_request(const std::string& lang_code, bool generate_code_verifier, const std::string& service = std::string());
-    
+    std::string
+    on_log_in_request(const std::string& lang_code, bool generate_code_verifier, const std::string& service = std::string());
+
     /**
      * @brief Passes code from browser to finish logging in.
      */
@@ -55,7 +56,7 @@ public:
     void on_read_token_store_message();
 
     /**
-     * @brief Returns public username or empty string. 
+     * @brief Returns public username or empty string.
      */
     std::string username() const;
 
@@ -65,19 +66,30 @@ public:
     boost::filesystem::path avatar() const;
 
     /**
-     * @brief Sets callback for refreshing left bar account menu. Bool is recreate avatar. 
+     * @brief Sets callback for refreshing left bar account menu. Bool is recreate avatar.
      */
-    void set_update_menu_callback(std::function<void(bool)> cb) { update_menu_callback = std::move(cb); }
+    void set_update_menu_callback(std::function<void(bool)> cb)
+    {
+        update_menu_callback = std::move(cb);
+    }
 
     /**
-     * @brief Sets callback when account switches to logged in stage. 
+     * @brief Sets callback when account switches to logged in stage.
      */
-    void set_on_logged_in_callback(std::function<void(void)> cb) { on_logged_in_callback = std::move(cb); }
+    void set_on_logged_in_callback(std::function<void(void)> cb)
+    {
+        on_logged_in_callback = std::move(cb);
+    }
+
+    void cancel_ongoing_session_action()
+    {
+        m_communication.cancel_ongoing_session_action();
+    }
 
     void request_refresh();
 
     // IUserAccountSessionListener implementations
-    void on_action_retry(Network::IHttp::Retry retry) override;
+    void on_action_retry(const Network::IHttp::Retry& retry) override;
     void on_action_success(ActionSuccessType success_type, std::string body) override;
     void on_action_fail(ActionFailType fail_type, std::string body) override;
     void on_enqueued_refresh() override;
@@ -86,14 +98,15 @@ public:
     void on_logged_out() override;
 
     std::string access_token() const;
+
 private:
     void on_user_id(const std::string& body);
 
-    Platform::IMainThreadDispatcher&    m_dispatcher;
-	UserAccountCommunication 	        m_communication;
-	UserAccountConnectMessageHandler 	m_connect_message_handler;
+    Platform::IMainThreadDispatcher& m_dispatcher;
+    UserAccountCommunication m_communication;
+    UserAccountConnectMessageHandler m_connect_message_handler;
 
-    std::map<std::string, std::string>  m_account_user_data;
+    std::map<std::string, std::string> m_account_user_data;
 
     std::function<void(bool)> update_menu_callback;
     std::function<void(void)> on_logged_in_callback;

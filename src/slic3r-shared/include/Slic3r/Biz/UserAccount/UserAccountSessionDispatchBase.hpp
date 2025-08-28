@@ -14,21 +14,20 @@ namespace Slic3r::Biz::UserAccount {
 class UserAccountSessionDispatchBase : public IUserAccountActionCallbacks, public WithListeners<IUserAccountSessionListener>
 {
 public:
-	UserAccountSessionDispatchBase(Platform::IMainThreadDispatcher& dispatcher);
-	~UserAccountSessionDispatchBase();
+    UserAccountSessionDispatchBase(Platform::IMainThreadDispatcher& dispatcher);
+    ~UserAccountSessionDispatchBase();
 
-    
-    void on_action_retry(Network::IHttp::Retry retry) override;
+    void on_action_retry(const Network::IHttp::Retry& retry) override;
     void on_action_success(ActionSuccessType success_type, std::string body) override;
     void on_action_fail(ActionFailType fail_type, std::string body) override;
 
-	UserAccountSessionDispatchBase(const UserAccountSessionDispatchBase& ) = delete;
-    UserAccountSessionDispatchBase(UserAccountSessionDispatchBase&& other) = delete;
-    UserAccountSessionDispatchBase& operator=(const UserAccountSessionDispatchBase& ) = delete;
+    UserAccountSessionDispatchBase(const UserAccountSessionDispatchBase&)             = delete;
+    UserAccountSessionDispatchBase(UserAccountSessionDispatchBase&& other)            = delete;
+    UserAccountSessionDispatchBase& operator=(const UserAccountSessionDispatchBase&)  = delete;
     UserAccountSessionDispatchBase& operator=(UserAccountSessionDispatchBase&& other) = delete;
 
 protected:
-    void dispatch_action_retry(Network::IHttp::Retry retry);
+    void dispatch_action_retry(const Network::IHttp::Retry& retry);
     void dispatch_action_success(ActionSuccessType success_type, std::string body);
     void dispatch_action_fail(ActionFailType fail_type, std::string body);
     void dispatch_enqueued_refresh();
@@ -37,6 +36,6 @@ protected:
     void dispatch_logged_out();
 
 private:
-	Platform::IMainThreadDispatcher& m_dispatcher;
+    Platform::IMainThreadDispatcher& m_dispatcher;
 };
-}
+} // namespace Slic3r::Biz::UserAccount

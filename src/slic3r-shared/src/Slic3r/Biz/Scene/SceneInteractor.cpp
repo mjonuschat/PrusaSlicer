@@ -13,6 +13,7 @@
 #include <fmt/ranges.h>
 #include <vector>
 #include <algorithm>
+#include <boost/filesystem/path.hpp>
 
 using Slic3r::Domain::BedContainer;
 using Slic3r::Domain::SquareMatrix4d;
@@ -317,7 +318,12 @@ void SceneInteractor::new_object_from_mesh(Domain::TriangleMesh&& mesh, const st
     auto changes = update_instances_bed_placement(project, updated);
 
     obj.name      = vol.name = name;
-
+    if (project.file_name().empty()) {
+        const boost::filesystem::path filename_path(name);
+        const std::string stem_name = filename_path.stem().string();
+        project.set_file_name(stem_name);
+    }
+    
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
@@ -334,6 +340,12 @@ void SceneInteractor::add_new_objects(const std::vector<Domain::ModelObject*>& o
     Domain::ModelObjectPtrs new_objects;
     for (Domain::ModelObject* object : objects) {
         new_objects.emplace_back(project.model().add_object(*object));
+    }
+
+    if (project.file_name().empty()) {
+        const boost::filesystem::path filename_path(objects.front()->name);
+        const std::string stem_name = filename_path.stem().string();
+        project.set_file_name(stem_name);
     }
 
     notify_listener_on_objects(new_objects);

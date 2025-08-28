@@ -17,6 +17,10 @@
 #include <Slic3r/App/SharedThumbnailImageGenerator.hpp>
 #include <Slic3r/App/ThumbnailStore.hpp>
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
+#include <Slic3r/App/PopNotification/PopNotificationCenter.hpp>
+#include <Slic3r/App/AppServices.hpp>
+#include <Slic3r/App/PopNotification/PopNotificationFactory.hpp>
+#include <Slic3r/App/WX/FileExplorerHandler.hpp>
 
 #include "Slic3r/Directories.hpp"
 #include <Slic3r/App/Render/TextureManager.hpp>
@@ -24,6 +28,9 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/Biz/Platform/JobManager/JobManager.hpp>
 #include <Slic3r/Biz/Platform/Termination.hpp>
+#include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
+#include <Slic3r/Biz/PrintHost/PrintHostInteractor.hpp>
+#include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
 
 #include "Slic3r/App/WX/DialogManager.hpp"
 
@@ -34,6 +41,12 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
 
+#ifdef WIN32
+#include <dbt.h>
+#include <shlobj.h>
+static GUID GUID_DEVINTERFACE_HID = {0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30};
+#endif // WIN32
+
 wxIMPLEMENT_APP_NO_MAIN(Slic3r::App::Desktop::DesktopApp);
 
 namespace fs = boost::filesystem;
@@ -41,12 +54,15 @@ namespace fs = boost::filesystem;
 namespace Slic3r::App::Desktop {
 
 namespace {
+
 #ifdef WIN32
+
 void register_win32_device_notification_event()
 {
     wxWindow::MSWRegisterMessageHandler(
         WM_COPYDATA,
-        [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam) {
+        [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam)
+        {
             auto* app_instance = dynamic_cast<Slic3r::App::Desktop::DesktopApp*>(wxTheApp);
             COPYDATASTRUCT* copy_data_structure = {0};
             copy_data_structure                 = (COPYDATASTRUCT*) lParam;
@@ -55,6 +71,68 @@ void register_win32_device_notification_event()
                 std::string args  = WX::into_u8(arguments);
                 SPDLOG_INFO("MSG {}", args);
                 app_instance->handle_app_instance_message(args);
+            }
+            return true;
+        }
+    );
+
+    wxWindow::MSWRegisterMessageHandler(
+        WM_DEVICECHANGE,
+        [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam)
+        {
+            auto* app_instance      = dynamic_cast<Slic3r::App::Desktop::DesktopApp*>(wxTheApp);
+            PDEV_BROADCAST_HDR lpdb = (PDEV_BROADCAST_HDR) lParam;
+            switch (wParam) {
+            case DBT_DEVICEARRIVAL:
+                if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME) {
+                    app_instance->handle_volumes_changed_event();
+                } else if (lpdb->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE) {
+                    PDEV_BROADCAST_DEVICEINTERFACE lpdbi = (PDEV_BROADCAST_DEVICEINTERFACE) lpdb;
+                    if (lpdbi->dbcc_classguid == GUID_DEVINTERFACE_HID) {
+                        app_instance->handle_HID_device_attached_event(WX::into_u8(lpdbi->dbcc_name));
+                    }
+                }
+                break;
+            case DBT_DEVICEREMOVECOMPLETE:
+                if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME) {
+                    app_instance->handle_volumes_changed_event();
+                } else if (lpdb->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE) {
+                    PDEV_BROADCAST_DEVICEINTERFACE lpdbi = (PDEV_BROADCAST_DEVICEINTERFACE) lpdb;
+                    if (lpdbi->dbcc_classguid == GUID_DEVINTERFACE_HID) {
+                        app_instance->handle_HID_device_detached_event(WX::into_u8(lpdbi->dbcc_name));
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+            return true;
+        }
+    );
+
+    wxWindow::MSWRegisterMessageHandler(
+        WM_USER_MEDIACHANGED,
+        [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam)
+        {
+            auto* app_instance = dynamic_cast<Slic3r::App::Desktop::DesktopApp*>(wxTheApp);
+            wchar_t sPath[MAX_PATH];
+            if (lParam == SHCNE_MEDIAINSERTED || lParam == SHCNE_MEDIAREMOVED) {
+                struct _ITEMIDLIST* pidl = *reinterpret_cast<struct _ITEMIDLIST**>(wParam);
+                if (!SHGetPathFromIDList(pidl, sPath)) {
+                    return false;
+                }
+            }
+            switch (lParam) {
+            case SHCNE_MEDIAINSERTED: {
+                app_instance->handle_volumes_changed_event();
+                break;
+            }
+            case SHCNE_MEDIAREMOVED: {
+                app_instance->handle_volumes_changed_event();
+                break;
+            }
+            default:
+                break;
             }
             return true;
         }
@@ -70,9 +148,7 @@ int run(const Slic3r::App::InitParams& init_params)
     if (AppInstance::instance_check(init_params, single_instance_app_config)) {
         return 1;
     }
-    Render::TextureManager::set_resource_resolver(
-        std::make_unique<ResourceResolver>(Slic3r::resources_dir())
-    );
+    Render::TextureManager::set_resource_resolver(std::make_unique<ResourceResolver>(resources_dir()));
     auto* app = new Slic3r::App::Desktop::DesktopApp();
     Slic3r::App::Desktop::DesktopApp::SetInstance(app);
     int argc    = init_params.argc;
@@ -136,29 +212,23 @@ bool DesktopApp::OnInit()
     using Platform::WX::WXMainThreadDispatcher;
 
     auto& platform_services{PlatformServices::instance()};
+    auto& app_services{AppServices::instance()};
 
     platform_services.set_main_thread_dispatcher(std::make_unique<WXMainThreadDispatcher>());
 
     platform_services.set_secret_store(SecretStoreFactory::create_secret_store());
 
-    platform_services.set_job_manager(
-        std::make_unique<JobManager>(platform_services.main_thread_dispatcher())
+    platform_services.set_job_manager(std::make_unique<JobManager>(platform_services.main_thread_dispatcher()));
+
+    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{std::make_shared<Plater::ThumbnailImageGenerator>(
+    )};
+
+    m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench, platform_services.main_thread_dispatcher(), *thumbnail_image_generator);
+
+    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(*m_project_interactor
     );
 
-    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{std::make_shared<Plater::ThumbnailImageGenerator>()};
-
-    m_project_interactor = std::make_unique<Biz::ProjectInteractor>(
-        m_workbench,
-        platform_services.main_thread_dispatcher(),
-        *thumbnail_image_generator
-    );
-
-    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(
-        *m_project_interactor
-    );
-
-    std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<
-        App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
+    std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
 
     auto& preset_interactor = m_project_interactor->preset_interactor();
 
@@ -167,31 +237,35 @@ bool DesktopApp::OnInit()
     fs::path config_dir        = fs::path{data_dir()} / "configs";
     preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
+    std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator = std::make_shared<App::SharedThumbnailImageGenerator>(
+    );
+    app_services.set_dialog_manager(std::make_unique<WX::DialogManager>());
+    app_services.set_pop_notification_center(
+        std::make_unique<PopNotification::PopNotificationCenter>(*m_project_interactor.get())
+    );
+    app_services.set_file_explorer_handler(std::make_unique<WX::FileExplorerHandler>());
+    platform_services.job_manager().add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
+        &app_services.pop_notification_center()
+    );
+    m_project_interactor->user_account_interactor()
+        .add_listener<Biz::UserAccount::IUserAccountListener>(&app_services.pop_notification_center());
     if (scrn && is_editor)
         scrn->SetText(L("Preparing Plater") + "...");
 
-    m_plater_module = std::make_unique<Plater::PlaterRenderModule>(
-        m_workbench,
-        *m_project_interactor,
-        thumbnail_store,
-        thumbnail_store_updater,
-        thumbnail_image_generator
-    );
+    m_plater_module = std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
 
     if (scrn && is_editor)
         scrn->SetText(L("Preparing Preview") + "...");
 
-    m_preview_module = std::make_unique<Preview::PreviewRenderModule>(
-        m_workbench,
-        *m_project_interactor,
-        thumbnail_store,
-        thumbnail_store_updater,
-        thumbnail_image_generator
-    );
+    m_preview_module = std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
 
-    DialogManagerProvider::instance().set_dialog_manager_implementation(
-        std::make_unique<WX::DialogManager>()
+    m_project_interactor->slicing_interactor().add_listener<Biz::Slicing::IStatusListener>(
+        &app_services.pop_notification_center()
     );
+    m_project_interactor->print_host_interactor().add_print_host_listener(&app_services.pop_notification_center(
+    ));
+    m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center(
+    ));
 
     m_project_interactor->new_project();
 
@@ -208,9 +282,12 @@ bool DesktopApp::OnInit()
 
     m_main_frame->Show();
 
-    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(
-        m_project_interactor->preset_updater_interactor()
-    );
+    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(m_project_interactor->preset_updater_interactor(
+    ));
+
+#ifdef WIN32
+    m_main_frame->register_win32_callbacks();
+#endif
 
 #if !defined(__linux)
     // Initial repaint
@@ -251,21 +328,14 @@ void DesktopApp::init_translations()
     // Get the active language from PrusaSlicer.ini, or empty string if the key does not exist.
     std::string language = ""; // app_config->get("translation_language");
     if (!language.empty())
-        BOOST_LOG_TRIVIAL(trace)
-            << boost::format("translation_language provided by PrusaSlicer.ini: %1%") % language;
+        BOOST_LOG_TRIVIAL(trace) << boost::format("translation_language provided by PrusaSlicer.ini: %1%") % language;
 
     if (!localization().set_language(language)) {
         // Loading the language dictionary failed.
         wxString message = WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language);
 #if !defined(_WIN32) && !defined(__APPLE__)
         // likely some linux system
-        message += "\n"
-            + WX::format_wxstr(
-                       ("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"
-                       ),
-                       "\"locale-gen\"",
-                       "\"dpkg-reconfigure locales\""
-            );
+        message += "\n" + WX::format_wxstr(("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"), "\"locale-gen\"", "\"dpkg-reconfigure locales\"");
 #endif
         message += WX::from_u8("\n\nApplication will close.");
         wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language failed"), wxOK | wxICON_ERROR);
@@ -274,12 +344,11 @@ void DesktopApp::init_translations()
     } else if (!language.empty() && language != localization().active_language()) {
         // Loading the language dictionary failed.
         wxString message = WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language);
-        message += WX::from_u8("\n\n")
+        message +=
+            WX::from_u8("\n\n")
             + WX::format_wxstr(
-                       localization().is_alternative_language() ?
-                           "Application is started in alternative language %1%." :
-                           "Application is started in system language %1%.",
-                       localization().active_language()
+                localization().is_alternative_language() ? "Application is started in alternative language %1%." : "Application is started in system language %1%.",
+                localization().active_language()
             );
         wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language"), wxOK | wxICON_WARNING);
     }
@@ -288,6 +357,21 @@ void DesktopApp::init_translations()
 void DesktopApp::handle_app_instance_message(const std::string& message)
 {
     m_project_interactor->handle_app_instance_message(message);
+}
+
+void DesktopApp::handle_HID_device_detached_event(const std::string& message)
+{
+    // TODO: Add 3d mouse control
+}
+
+void DesktopApp::handle_HID_device_attached_event(const std::string& message)
+{
+    // TODO: Add 3d mouse control
+}
+
+void DesktopApp::handle_volumes_changed_event()
+{
+    m_project_interactor->handle_volumes_changed_event();
 }
 
 #ifdef __APPLE__

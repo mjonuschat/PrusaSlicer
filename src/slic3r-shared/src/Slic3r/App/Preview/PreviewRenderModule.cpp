@@ -15,6 +15,7 @@
 #include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/ThumbnailStore.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
+#include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 
@@ -67,11 +68,7 @@ void PreviewRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
 static void render_imgui_debug_viewer(Wrapper& viewer)
 {
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
-    if (ImGui::Begin(
-            "Preview debug",
-            nullptr,
-            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoFocusOnAppearing
-        ))
+    if (ImGui::Begin("Preview debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoFocusOnAppearing))
     {
         if (ImGui::Button("COG marker scale factor", {-1.0f, 0.0f}))
             viewer.set_scale_factor_popup_type(Biz::libpgcode::OptionType::CenterOfGravity);
@@ -118,25 +115,14 @@ static void render_imgui_debug_viewer(Wrapper& viewer)
 #endif // ENABLED_DEBUG_VIEWER
 
 #if ENABLED_DEBUG_LOAD_DATA
-static void render_imgui_debug_load_data(
-    Wrapper& viewer,
-    Biz::ProjectInteractor& project_interactor,
-    std::function<void(const std::string&)> cb
-)
+static void
+render_imgui_debug_load_data(Wrapper& viewer, Biz::ProjectInteractor& project_interactor, std::function<void(const std::string&)> cb)
 {
     // currently the call to slice_all() works only the 1st time
     static bool sliced = false;
 
-    ImGui::SetNextWindowPos(
-        {ImGui::GetMainViewport()->GetCenter().x, 2.5f * ImGui::GetTextLineHeight()},
-        ImGuiCond_Always,
-        {0.5f, 0.0f}
-    );
-    if (ImGui::Begin(
-            "Load data",
-            nullptr,
-            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoFocusOnAppearing
-        ))
+    ImGui::SetNextWindowPos({ImGui::GetMainViewport()->GetCenter().x, 2.5f * ImGui::GetTextLineHeight()}, ImGuiCond_Always, {0.5f, 0.0f});
+    if (ImGui::Begin("Load data", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoFocusOnAppearing))
     {
         bool disabled = sliced || viewer.mode() != FdmViewerWrapperMode::EditorGCode;
         if (disabled)
@@ -153,15 +139,7 @@ static void render_imgui_debug_load_data(
 
         ImGui::SeparatorText("Test files");
 
-        const char* files[] = {
-            "test.gcode",
-            "test.bgcode",
-            "test_colors.bgcode",
-            "test_v_slider.bgcode",
-            "test_multimaterial.gcode",
-            "test_sequential.gcode",
-            "test_vase.gcode"
-        };
+        const char* files[] = {"test.gcode", "test.bgcode", "test_colors.bgcode", "test_v_slider.bgcode", "test_multimaterial.gcode", "test_sequential.gcode", "test_vase.gcode"};
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Select file");
         ImGui::SameLine();
@@ -178,20 +156,8 @@ static void render_imgui_debug_load_data(
 #if ENABLED_DEBUG_VIEWER_MODE
 static void render_imgui_debug_viewer_mode(Wrapper& viewer)
 {
-    ImGui::SetNextWindowPos(
-        {ImGui::GetMainViewport()->GetCenter().x, 0.0f},
-        ImGuiCond_Always,
-        {0.5f, 0.0f}
-    );
-    if (ImGui::Begin(
-            "Type debug",
-            nullptr,
-            ImGuiWindowFlags_NoTitleBar
-                | ImGuiWindowFlags_AlwaysAutoResize
-                | ImGuiWindowFlags_NoResize
-                | ImGuiWindowFlags_NoFocusOnAppearing
-                | ImGuiWindowFlags_NoBackground
-        ))
+    ImGui::SetNextWindowPos({ImGui::GetMainViewport()->GetCenter().x, 0.0f}, ImGuiCond_Always, {0.5f, 0.0f});
+    if (ImGui::Begin("Type debug", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBackground))
     {
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Mode:");
@@ -202,10 +168,7 @@ static void render_imgui_debug_viewer_mode(Wrapper& viewer)
         ImGui::SetNextItemWidth(100.0f);
         if (ImGui::Combo("##modes", &item_current, items, IM_ARRAYSIZE(items))) {
             viewer.reset();
-            viewer.set_mode(
-                (item_current == 0) ? FdmViewerWrapperMode::EditorGCode :
-                                      FdmViewerWrapperMode::GCodeViewer
-            );
+            viewer.set_mode((item_current == 0) ? FdmViewerWrapperMode::EditorGCode : FdmViewerWrapperMode::GCodeViewer);
         }
 
         ImGui::SameLine();
@@ -291,16 +254,7 @@ void imgui_scenegraph_node_info(const Scene::Node& node)
     if (node.children().empty())
         node_flags |= ImGuiTreeNodeFlags_Leaf;
     const std::string& name = node.debug_name();
-    if (ImGui::TreeNodeEx(
-            &node,
-            node_flags,
-            "%s %s%s%s%s",
-            name.empty() ? "Node" : name.c_str(),
-            node.has_render_component() ? "(R)" : "",
-            node.has_material_override() ? "(M)" : "",
-            node.has_imgui_render_component() ? "(I)" : "",
-            node.has_raycast_component() ? "(C)" : ""
-        ))
+    if (ImGui::TreeNodeEx(&node, node_flags, "%s %s%s%s%s", name.empty() ? "Node" : name.c_str(), node.has_render_component() ? "(R)" : "", node.has_material_override() ? "(M)" : "", node.has_imgui_render_component() ? "(I)" : "", node.has_raycast_component() ? "(C)" : ""))
     {
         static const Scene::Node* opened_node = nullptr;
 
@@ -333,9 +287,10 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         m_thumbnail_image_generator->handle_enqueued_requests();
     }
 
-    m_thumbnail_store_updater->update(*m_device, [this](const Plater::BedThumbnailTextures& textures) {
-        update_bed_instances();
-    });
+    m_thumbnail_store_updater->update(
+        *m_device,
+        [this](const Plater::BedThumbnailTextures& textures) { update_bed_instances(); }
+    );
 
     // temporary to allow to switch yoga layout on/off
     if (m_use_yoga_layout) {
@@ -350,10 +305,7 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
             m_slider_gcode->set_visible(m_fdm_viewer.has_data());
         }
 
-        m_cube_view->set_camera_data(
-            m_scene_presenter->scene().camera(),
-            m_scene_presenter->scene().camera_trackball()
-        );
+        m_cube_view->set_camera_data(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 
         m_layout->render({m_screen_info.logical_width(), m_screen_info.logical_height()});
 
@@ -364,9 +316,8 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     } else {
         const libvgcode::Interval& visible_range = m_fdm_viewer.view_visible_range();
         const libvgcode::Interval& enabled_range = m_fdm_viewer.view_enabled_range();
-        bool gcode_window_enabled = m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode
-            && m_fdm_viewer.has_data()
-            && visible_range[1] != enabled_range[1];
+        bool gcode_window_enabled =
+            m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode && m_fdm_viewer.has_data() && visible_range[1] != enabled_range[1];
         m_fdm_viewer.set_tool_marker_enabled(gcode_window_enabled);
         WrapperLayoutData layout;
         // TODO: setup layout if needed
@@ -382,11 +333,16 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     render_imgui_debug_viewer(m_fdm_viewer);
 #endif // ENABLED_DEBUG_VIEWER
 #if ENABLED_DEBUG_LOAD_DATA
-    render_imgui_debug_load_data(m_fdm_viewer, m_project_interactor, [this](const std::string& filename) {
-        m_fdm_viewer.reset();
-        send_data_to_viewer_from_file(Slic3r::resources_dir() + "/test_data/" + filename);
-        m_layout->layout_toolbars_sizer();
-    });
+    render_imgui_debug_load_data(
+        m_fdm_viewer,
+        m_project_interactor,
+        [this](const std::string& filename)
+        {
+            m_fdm_viewer.reset();
+            send_data_to_viewer_from_file(Slic3r::resources_dir() + "/test_data/" + filename);
+            m_layout->layout_toolbars_sizer();
+        }
+    );
 #endif // ENABLED_DEBUG_LOAD_DATA
 #if ENABLED_DEBUG_VIEWER_MODE
     render_imgui_debug_viewer_mode(m_fdm_viewer);
@@ -410,10 +366,7 @@ void PreviewRenderModule::set_navigator(Navigator* navigator)
     m_render_module_navigator = navigator;
 }
 
-void PreviewRenderModule::on_selected_bed_instances_changed(
-    Domain::SelectionId project_id,
-    const Biz::Scene::BedSelection& selection
-)
+void PreviewRenderModule::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
 {
     DEBUG_ASSERT(m_project_interactor.selected_project_id() == project_id);
 
@@ -429,14 +382,13 @@ void PreviewRenderModule::on_selected_bed_instances_changed(
             m_viewer->clear_scene();
         m_viewer = &m_sla_viewer;
         m_viewer->set_scene(m_scene_presenter->scene());
-        update_sla_viewer_data({ project_id, bed_instance_id });
-    }
-    else {
+        update_sla_viewer_data({project_id, bed_instance_id});
+    } else {
         if (m_viewer != &m_fdm_viewer)
             m_viewer->clear_scene();
         m_viewer = &m_fdm_viewer;
         m_viewer->set_scene(m_scene_presenter->scene());
-        update_fdm_viewer_data({ project_id, bed_instance_id });
+        update_fdm_viewer_data({project_id, bed_instance_id});
     }
 
     update_bed_instances();
@@ -462,8 +414,7 @@ void PreviewRenderModule::on_status_cache_changed(const Domain::SlicingId id)
 void PreviewRenderModule::on_selected_project_changed(size_t project_id)
 {
     update_bed_instances();
-    const Biz::Scene::BedSelection& bed_selection = m_project_interactor.scene_interactor()
-                                                        .bed_selection();
+    const Biz::Scene::BedSelection& bed_selection = m_project_interactor.scene_interactor().bed_selection();
     if (m_viewer == &m_fdm_viewer) {
         m_fdm_viewer.set_scene(m_scene_presenter->scene());
         if (!bed_selection.empty()) {
@@ -488,17 +439,13 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
 {
     AbstractRenderModule::on_init(device, imgui_render);
     Yoga::Item::set_imgui_render(&imgui_render); // Todo: move this somewhere where it is invoked once
-    m_scene_presenter = std::make_unique<PreviewScenePresenter>(
-        m_workbench,
-        m_project_interactor,
-        *m_device
-    );
+    m_scene_presenter = std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device);
 
-    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>( this );
-    m_project_interactor.fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>( this );
-    m_project_interactor.sla_result_cache().add_listener<Biz::ISLAResultCacheChangedListener>( this );
-    m_project_interactor.sla_object_cache().add_listener<Biz::ISLAObjectCacheChangedListener>( this );
-    m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>( this );
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(this);
+    m_project_interactor.fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>(this);
+    m_project_interactor.sla_result_cache().add_listener<Biz::ISLAResultCacheChangedListener>(this);
+    m_project_interactor.sla_object_cache().add_listener<Biz::ISLAObjectCacheChangedListener>(this);
+    m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
     init_gizmos();
@@ -508,10 +455,8 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
     m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
 
     // select active viewer with respect to the printer technology of selected config container
-    Domain::SelectionId config_container_id = m_project_interactor.scene_interactor()
-                                                  .selected_config_container_id();
-    const Domain::ConfigContainer* cc = m_project_interactor.selected_project()
-                                            .find_config_container(config_container_id);
+    Domain::SelectionId config_container_id = m_project_interactor.scene_interactor().selected_config_container_id();
+    const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(config_container_id);
     DEBUG_ASSERT(cc != nullptr);
     if (cc->print_technology() == Domain::PrinterTechnology::SLA)
         m_viewer = &m_sla_viewer;
@@ -557,9 +502,12 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            std::make_unique<Platform::FuncCommand>("toggle-gcodewindow-visibility", [this]() {
-        m_button_gcode->callbacks().action();
-    }, nullptr, Platform::KeyboardShortcut{0, Platform::KeyCode::G})
+            std::make_unique<Platform::FuncCommand>(
+                "toggle-gcodewindow-visibility",
+                [this]() { m_button_gcode->callbacks().action(); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::G}
+            )
         );
 
     m_command_registry
@@ -584,10 +532,7 @@ void PreviewRenderModule::register_commands()
                 "slider-gcode-increase-medium",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(5); },
                 nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                    Platform::KeyCode::Right
-                }
+                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Right}
             )
         )
         .register_command(
@@ -595,10 +540,7 @@ void PreviewRenderModule::register_commands()
                 "slider-gcode-decrease-medium",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(-5); },
                 nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                    Platform::KeyCode::Left
-                }
+                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Left}
             )
         )
         .register_command(
@@ -606,10 +548,7 @@ void PreviewRenderModule::register_commands()
                 "slider-gcode-increase-fast",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(10); },
                 nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                    Platform::KeyCode::Right
-                }
+                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Right}
             )
         )
         .register_command(
@@ -617,10 +556,7 @@ void PreviewRenderModule::register_commands()
                 "slider-gcode-decrease-fast",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(-10); },
                 nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                    Platform::KeyCode::Left
-                }
+                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Left}
             )
         )
         .register_command(
@@ -644,10 +580,7 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-increase-medium",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(5); },
                 nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                    Platform::KeyCode::Up
-                }
+                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Up}
             )
         )
         .register_command(
@@ -655,10 +588,7 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-decrease-medium",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-5); },
                 nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                    Platform::KeyCode::Down
-                }
+                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Down}
             )
         )
         .register_command(
@@ -666,10 +596,7 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-increase-fast",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(10); },
                 nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                    Platform::KeyCode::Up
-                }
+                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Up}
             )
         )
         .register_command(
@@ -677,10 +604,7 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-decrease-fast",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-10); },
                 nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                    Platform::KeyCode::Down
-                }
+                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Down}
             )
         )
         .register_command(
@@ -688,10 +612,7 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-jump-to_value",
                 [this]() { m_fdm_viewer.slider_layers_jump_to_value(); },
                 nullptr,
-                Platform::KeyboardShortcut{
-                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
-                    Platform::KeyCode::G
-                }
+                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::G}
             )
         )
         .register_command(
@@ -727,19 +648,19 @@ void PreviewRenderModule::register_commands()
             )
         )
         // temporary to allow to switch yoga layout on/off
-        .register_command(std::make_unique<Platform::FuncCommand>("use-yoga-layout", [this]() {
-        m_use_yoga_layout = !m_use_yoga_layout;
-    }, nullptr, Platform::KeyboardShortcut{0, Platform::KeyCode::Y}));
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                "use-yoga-layout",
+                [this]() { m_use_yoga_layout = !m_use_yoga_layout; },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Y}
+            )
+        );
 }
 
 void PreviewRenderModule::init_gizmos()
 {
-    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(
-        *m_device,
-        *m_scene_presenter,
-        m_project_interactor,
-        nullptr
-    );
+    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter, m_project_interactor, nullptr);
     m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(m_workbench, *m_scene_presenter);
 }
 
@@ -759,15 +680,8 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     base_settings.slider_layers_show_ruler_bg        = show_ruler_bg_in_dbl_slider;
     base_settings.slider_layers_show_estimated_times = show_estimated_times_in_dbl_slider;
     // set layers slider callbacks
-    base_settings.cb_slider_layers_on_thumb_move = std::bind(
-        &PreviewRenderModule::on_slider_layers_on_thumb_move,
-        this
-    );
-    base_settings.cb_request_extra_frames = std::bind(
-        &PreviewRenderModule::on_request_extra_frames,
-        this,
-        std::placeholders::_1
-    );
+    base_settings.cb_slider_layers_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
+    base_settings.cb_request_extra_frames = std::bind(&PreviewRenderModule::on_request_extra_frames, this, std::placeholders::_1);
 
     if (m_sla_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory())
         && m_sla_viewer.set_settings(base_settings))
@@ -790,75 +704,31 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     settings.slider_layers_use_default_colors = use_default_colors_in_dbl_slider;
     settings.seq_top_layer_only               = seq_top_layer_only;
     // set wrapper callbacks
-    settings.cb_invalidate_slice     = std::bind(&PreviewRenderModule::on_invalidate_slice, this);
-    settings.cb_update_layers_slider = std::bind(
-        &PreviewRenderModule::on_update_layers_slider,
-        this,
-        std::placeholders::_1
-    );
-    settings.cb_gcode_view_type_changed = std::bind(
-        &PreviewRenderModule::on_gcode_view_type_changed,
-        this
-    );
+    settings.cb_invalidate_slice = std::bind(&PreviewRenderModule::on_invalidate_slice, this);
+    settings.cb_update_layers_slider = std::bind(&PreviewRenderModule::on_update_layers_slider, this, std::placeholders::_1);
+    settings.cb_gcode_view_type_changed = std::bind(&PreviewRenderModule::on_gcode_view_type_changed, this);
     // set layers slider callbacks
-    settings.cb_slider_layers_on_thumb_move = std::bind(
-        &PreviewRenderModule::on_slider_layers_on_thumb_move,
-        this
-    );
-    settings.cb_slider_layers_ticks_changed = std::bind(
-        &PreviewRenderModule::on_slider_layers_ticks_changed,
-        this
-    );
-    settings.cb_slider_layers_auto_color_change = std::bind(
-        &PreviewRenderModule::on_slider_layers_auto_color_change,
-        this
-    );
-    settings.cb_slider_layers_notify_empty_auto_color_change = std::bind(
-        &PreviewRenderModule::on_slider_layers_notify_empty_auto_color_change,
-        this
-    );
-    settings.cb_slider_layers_notify_empty_color_change_gcode = std::bind(
-        &PreviewRenderModule::on_slider_layers_notify_empty_color_change_gcode,
-        this
-    );
-    settings.cb_slider_layers_get_extruders_sequence = std::bind(
-        &PreviewRenderModule::on_slider_layers_get_extruders_sequence,
-        this,
-        std::placeholders::_1
-    );
-    settings.cb_slider_layers_show_info_msg = std::bind(
-        &PreviewRenderModule::on_slider_layers_show_info_msg,
-        this,
-        std::placeholders::_1,
-        std::placeholders::_2
-    );
-    settings.cb_slider_layers_get_used_extruders_in_print = std::bind(
-        &PreviewRenderModule::on_slider_layers_get_used_extruders_in_print,
-        this,
-        std::placeholders::_1
-    );
-    settings.cb_slider_layers_app_config_changed = std::bind(
-        &PreviewRenderModule::on_slider_layers_app_config_changed,
-        this,
-        std::placeholders::_1,
-        std::placeholders::_2
-    );
+    settings.cb_slider_layers_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
+    settings.cb_slider_layers_ticks_changed = std::bind(&PreviewRenderModule::on_slider_layers_ticks_changed, this);
+    settings.cb_slider_layers_auto_color_change = std::bind(&PreviewRenderModule::on_slider_layers_auto_color_change, this);
+    settings.cb_slider_layers_notify_empty_auto_color_change = std::bind(&PreviewRenderModule::on_slider_layers_notify_empty_auto_color_change, this);
+    settings.cb_slider_layers_notify_empty_color_change_gcode = std::bind(&PreviewRenderModule::on_slider_layers_notify_empty_color_change_gcode, this);
+    settings.cb_slider_layers_get_extruders_sequence = std::bind(&PreviewRenderModule::on_slider_layers_get_extruders_sequence, this, std::placeholders::_1);
+    settings.cb_slider_layers_show_info_msg = std::
+        bind(&PreviewRenderModule::on_slider_layers_show_info_msg, this, std::placeholders::_1, std::placeholders::_2);
+    settings.cb_slider_layers_get_used_extruders_in_print = std::
+        bind(&PreviewRenderModule::on_slider_layers_get_used_extruders_in_print, this, std::placeholders::_1);
+    settings.cb_slider_layers_app_config_changed = std::
+        bind(&PreviewRenderModule::on_slider_layers_app_config_changed, this, std::placeholders::_1, std::placeholders::_2);
     // set gcode slider callbacks
-    settings.cb_slider_gcode_on_thumb_move = std::bind(
-        &PreviewRenderModule::on_slider_gcode_on_thumb_move,
-        this
-    );
+    settings.cb_slider_gcode_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_gcode_on_thumb_move, this);
 
     if (mode == FdmViewerWrapperMode::EditorGCode || mode == FdmViewerWrapperMode::EditorPreGCode) {
         // legend's custom options
         CustomOption& shells_option = settings.custom_options.emplace_back(CustomOption());
         shells_option.name          = _u8L("Shells");
         shells_option.icon          = Render::Icon::LegendShells;
-        shells_option.cb_action     = std::bind(
-            &PreviewRenderModule::on_legend_shells_action,
-            this,
-            std::placeholders::_1
-        );
+        shells_option.cb_action = std::bind(&PreviewRenderModule::on_legend_shells_action, this, std::placeholders::_1);
     }
 
     if (m_fdm_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory())
@@ -883,9 +753,12 @@ void PreviewRenderModule::init_scene_layout()
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, false));
 
-    m_cube_view            = std::make_unique<CubeView>();
-    m_sidebar_bed          = std::make_unique<SidebarBed>(m_project_interactor);
-    m_sidebar_print        = std::make_unique<SidebarPrint>(m_project_interactor);
+    m_cube_view                  = std::make_unique<CubeView>();
+    m_sidebar_bed                = std::make_unique<SidebarBed>(m_project_interactor);
+    m_sidebar_print              = std::make_unique<SidebarPrint>(m_project_interactor);
+    m_pop_notification_list_view = std::make_unique<PopNotification::PopNotificationListView>(
+        AppServices::instance().pop_notification_center()
+    );
     m_sidebar_auto_reslice = std::make_unique<SidebarAutoReslice>();
 
     m_sidebar_action_buttons = std::make_unique<SidebarPreviewActionButtons>(m_render_module_navigator);
@@ -895,6 +768,7 @@ void PreviewRenderModule::init_scene_layout()
         m_top_bar.release(),
         m_object_list.release(),
         m_cube_view.release(),
+        m_pop_notification_list_view.release(),
         m_sidebar_bed.release(),
         m_sidebar_print.release(),
         m_sidebar_action_buttons.release(),
@@ -912,10 +786,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendTravel,
         to_string(OptionType::Travels),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::Travels);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Travels); }},
         m_fdm_viewer.is_option_visible(OptionType::Travels)
     );
 
@@ -924,10 +795,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendWipe,
         to_string(OptionType::Wipes),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::Wipes);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Wipes); }},
         m_fdm_viewer.is_option_visible(OptionType::Wipes)
     );
 
@@ -936,10 +804,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendRetract,
         to_string(OptionType::Retractions),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::Retractions);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Retractions); }},
         m_fdm_viewer.is_option_visible(OptionType::Retractions)
     );
 
@@ -948,10 +813,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendDeretract,
         to_string(OptionType::Unretractions),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::Unretractions);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Unretractions); }},
         m_fdm_viewer.is_option_visible(OptionType::Unretractions)
     );
 
@@ -960,10 +822,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendSeams,
         to_string(OptionType::Seams),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::Seams);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Seams); }},
         m_fdm_viewer.is_option_visible(OptionType::Seams)
     );
 
@@ -972,10 +831,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendToolChanges,
         to_string(OptionType::ToolChanges),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::ToolChanges);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ToolChanges); }},
         m_fdm_viewer.is_option_visible(OptionType::ToolChanges)
     );
 
@@ -984,10 +840,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendColorChanges,
         to_string(OptionType::ColorChanges),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::ColorChanges);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ColorChanges); }},
         m_fdm_viewer.is_option_visible(OptionType::ColorChanges)
     );
 
@@ -996,10 +849,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendPausePrints,
         to_string(OptionType::PausePrints),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::PausePrints);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::PausePrints); }},
         m_fdm_viewer.is_option_visible(OptionType::PausePrints)
     );
 
@@ -1008,10 +858,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendCustomGCodes,
         to_string(OptionType::CustomGCodes),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::CustomGCodes);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CustomGCodes); }},
         m_fdm_viewer.is_option_visible(OptionType::CustomGCodes)
     );
 
@@ -1020,10 +867,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendCOG,
         to_string(OptionType::CenterOfGravity),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::CenterOfGravity);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CenterOfGravity); }},
         m_fdm_viewer.is_option_visible(OptionType::CenterOfGravity)
     );
 
@@ -1032,10 +876,7 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendToolMarker,
         to_string(OptionType::ToolMarker),
         "",
-        {.action =
-             [this]() {
-        m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker);
-    }},
+        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker); }},
         m_fdm_viewer.is_option_visible(OptionType::ToolMarker)
     );
 
@@ -1044,9 +885,12 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendShells,
         "Shells",
         "",
-        {.action = [this]() { /* TODO */ }, .checked_changed = [this](bool checked) {
-        return m_viewer == &m_fdm_viewer && m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer;
-    }}
+        {.action = [this]() { /* TODO */ },
+         .checked_changed =
+             [this](bool checked)
+         {
+             return m_viewer == &m_fdm_viewer && m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer;
+         }}
     );
 
     // m_layout->set_layer_slider_render_fn([this](Vec2f size, Vec2f pos) {
@@ -1203,11 +1047,9 @@ static std::pair<ProcessorConfig, std::string> extract_from_gcode(const std::str
 void PreviewRenderModule::update_toolbar_visibility()
 {
     const OptionTypes& options = m_fdm_viewer.options();
-    auto fdm_has_option        = [&](OptionType type) {
-        return std::find(options.begin(), options.end(), type) != options.end();
-    };
-    const bool fdm_has_gcode = m_fdm_viewer.has_data()
-        && m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode;
+    auto fdm_has_option        = [&](OptionType type)
+    { return std::find(options.begin(), options.end(), type) != options.end(); };
+    const bool fdm_has_gcode = m_fdm_viewer.has_data() && m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode;
 
     m_button_travels->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Travels));
     m_button_retractions->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Retractions));
@@ -1219,13 +1061,10 @@ void PreviewRenderModule::update_toolbar_visibility()
     m_button_custom_gcodes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::CustomGCodes));
     m_button_center_of_gravity->set_visible(fdm_has_gcode);
     m_button_tool_marker->set_visible(fdm_has_gcode);
-    m_button_shells
-        ->set_visible(fdm_has_gcode /*m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer*/);
+    m_button_shells->set_visible(fdm_has_gcode /*m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer*/);
     m_button_wipes->set_visible(fdm_has_gcode);
 
-    m_button_legend->set_visible(
-        m_fdm_viewer.has_data() && m_fdm_viewer.mode() == FdmViewerWrapperMode::EditorGCode
-    );
+    m_button_legend->set_visible(m_fdm_viewer.has_data() && m_fdm_viewer.mode() == FdmViewerWrapperMode::EditorGCode);
     m_button_gcode->set_visible(fdm_has_gcode);
 
     m_layout->set_bottom_toolbar_visible(m_button_legend->is_visible() || m_button_gcode->is_visible());
@@ -1236,9 +1075,7 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
 
-    const std::optional<Biz::FDMResultRef> fdm_result{
-        m_project_interactor.fdm_result_cache().get_result(id)
-    };
+    const std::optional<Biz::FDMResultRef> fdm_result{m_project_interactor.fdm_result_cache().get_result(id)};
     if (!fdm_result) {
         m_fdm_viewer.reset();
         return;
@@ -1258,12 +1095,14 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
 
     const GCodeEvents& gcode_events = m_fdm_viewer.gcode_events();
     m_fdm_viewer.set_view_type(
-        m_fdm_viewer.used_extruders_count() > 1 ? ViewType::Tool :
-            gcode_events.empty()                ? ViewType::FeatureType :
-                                                  ViewType::ColorPrint
+        m_fdm_viewer.used_extruders_count() > 1 ?
+            ViewType::Tool :
+            gcode_events.empty() ?
+            ViewType::FeatureType :
+            ViewType::ColorPrint
     );
 
-    // hbFIXME -> This code is commented out until @barzto fixes 
+    // hbFIXME -> This code is commented out until @barzto fixes
     // the order of on_select_project and on_select_config_container calls.
     // center_camera_on_selected_bed();
 }
@@ -1272,9 +1111,7 @@ void PreviewRenderModule::update_sla_viewer_result_data(const Domain::SlicingId 
 {
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
-    const std::optional<Biz::SLAResultRef> sla_result{
-        m_project_interactor.sla_result_cache().get_result(id)
-    };
+    const std::optional<Biz::SLAResultRef> sla_result{m_project_interactor.sla_result_cache().get_result(id)};
     if (!sla_result) {
         m_sla_viewer.reset_result();
     } else {
@@ -1282,17 +1119,12 @@ void PreviewRenderModule::update_sla_viewer_result_data(const Domain::SlicingId 
     }
 }
 
-void PreviewRenderModule::update_sla_viewer_object_data(
-    const Domain::SlicingId id,
-    Domain::ObjectID instance_id
-)
+void PreviewRenderModule::update_sla_viewer_object_data(const Domain::SlicingId id, Domain::ObjectID instance_id)
 {
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
 
-    const std::optional<Biz::SLAObjectRef> sla_object_result{
-        m_project_interactor.sla_object_cache().get_instance({id, instance_id})
-    };
+    const std::optional<Biz::SLAObjectRef> sla_object_result{m_project_interactor.sla_object_cache().get_instance({id, instance_id})};
     if (sla_object_result)
         m_sla_viewer.load_from_object(sla_object_result->get());
     else
@@ -1307,8 +1139,7 @@ void PreviewRenderModule::update_sla_viewer_data(const Domain::SlicingId id)
     m_sla_viewer.reset();
     update_sla_viewer_result_data(id);
 
-    const std::vector<Slic3r::Domain::ObjectID> object_ids = m_project_interactor.sla_object_cache()
-                                                                 .get_object_ids(id);
+    const std::vector<Slic3r::Domain::ObjectID> object_ids = m_project_interactor.sla_object_cache().get_object_ids(id);
 
     for (const Slic3r::Domain::ObjectID& obj_id : object_ids) {
         update_sla_viewer_object_data(id, obj_id);
@@ -1358,12 +1189,12 @@ bool PreviewRenderModule::on_slider_layers_auto_color_change()
 
 void PreviewRenderModule::on_slider_layers_notify_empty_auto_color_change()
 {
-    // TODO -> fire notification NotificationType::EmptyAutoColorChange
+    // TODO -> fire notification PopNotificationType::EmptyAutoColorChange
 }
 
 void PreviewRenderModule::on_slider_layers_notify_empty_color_change_gcode()
 {
-    // TODO -> fire notification NotificationType::EmptyColorChangeCode
+    // TODO -> fire notification PopNotificationType::EmptyColorChangeCode
 }
 
 bool PreviewRenderModule::on_slider_layers_get_extruders_sequence(ExtrudersSequence& sequence)
@@ -1385,9 +1216,12 @@ std::set<int> PreviewRenderModule::on_slider_layers_get_used_extruders_in_print(
 
     std::vector<uint8_t> ids = m_fdm_viewer.used_extruders_ids();
     std::set<int> ret;
-    std::transform(ids.begin(), ids.end(), std::inserter(ret, ret.begin()), [](uint8_t id) {
-        return id + 1;
-    });
+    std::transform(
+        ids.begin(),
+        ids.end(),
+        std::inserter(ret, ret.begin()),
+        [](uint8_t id) { return id + 1; }
+    );
 
     return ret;
 }
@@ -1447,8 +1281,7 @@ void PreviewRenderModule::update_bed_instances()
     Domain::BedRefs beds;
     beds.reserve(thumbnails.size());
     for (const auto& t : thumbnails) {
-        const auto cc = m_workbench.project(t.project_id)
-                            .find_config_container_by_bed_instance_id(t.bed_instance_id);
+        const auto cc = m_workbench.project(t.project_id).find_config_container_by_bed_instance_id(t.bed_instance_id);
         DEBUG_ASSERT(cc != nullptr);
         beds.emplace_back(cc->id().id, t.bed_instance_id);
     }

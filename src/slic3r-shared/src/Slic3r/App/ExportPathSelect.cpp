@@ -1,8 +1,7 @@
 #include "Slic3r/App/ExportPathSelect.hpp"
-#include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/App/AppServices.hpp"
 
 namespace Slic3r::App {
-
 
 void ExportPathSelect::set_wildcards(const std::string wildcard)
 {
@@ -11,17 +10,10 @@ void ExportPathSelect::set_wildcards(const std::string wildcard)
 
 void ExportPathSelect::show_modal_dialog(const boost::filesystem::path& default_folder, const std::string& default_filename, const IDialogManager::FileCallback& callback)
 {
-    DialogManagerProvider::instance().get().show_file_dialog(
-        FileDialogType::Save,
-        "Export as",
-        default_folder,
-        default_filename,
-        m_wildcards,
-        callback);
+    AppServices::instance().dialog_manager().show_file_dialog(FileDialogType::Save, "Export as", default_folder, default_filename, m_wildcards, callback);
 }
 
-GCodeExportPathSelect::GCodeExportPathSelect(bool bgcode_compatible)
-    : ExportPathSelect()
+GCodeExportPathSelect::GCodeExportPathSelect(bool bgcode_compatible) : ExportPathSelect()
 {
     if (bgcode_compatible) {
         set_wildcards("G-code (*.gcode)|*.gcode|Binary G-code (*.bgcode)|*.bgcode");

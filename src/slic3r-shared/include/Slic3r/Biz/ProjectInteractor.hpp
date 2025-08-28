@@ -23,6 +23,7 @@
 #include "Slic3r/Biz/ObservableProjectList.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
+#include "Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -53,11 +54,7 @@ class ProjectInteractor final :
     public WithListeners<ISelectedProjectChangedListener, IProjectsChangedListener, ISelectedConfigContainerChangedListener>
 {
 public:
-    ProjectInteractor(
-        Domain::Workbench& workbench,
-        Platform::IMainThreadDispatcher& dispatcher,
-        Biz::Slicing::IThumbnailImageGenerator& thumbnail_image_generator
-    ) :
+    ProjectInteractor(Domain::Workbench& workbench, Platform::IMainThreadDispatcher& dispatcher, Biz::Slicing::IThumbnailImageGenerator& thumbnail_image_generator) :
         m_workbench(workbench),
         m_preset_interactor(workbench),
         m_scene_interactor(workbench),
@@ -66,8 +63,9 @@ public:
         m_print_host_interactor(dispatcher),
         m_user_account_interactor(dispatcher),
         m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)),
+        m_project_list(*this),
         m_preset_updater_interactor(dispatcher),
-        m_project_list(*this)
+        m_removable_drive_service(dispatcher)
     {
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
@@ -82,8 +80,7 @@ public:
         m_slicing_interactor.set_listener<Slicing::ISLAObjectListener>(&m_sla_object_cache);
         m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
         m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
-        m_app_instance_message_handler
-            ->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
+        m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
     }
 
     const Domain::Workbench& workbench() const
@@ -91,10 +88,7 @@ public:
         return m_workbench;
     }
 
-    void initialize_bed(
-        Domain::ConfigContainer& config_container,
-        Domain::BedContainer& bed_container
-    );
+    void initialize_bed(Domain::ConfigContainer& config_container, Domain::BedContainer& bed_container);
 
     /**
      * @name Project manipulation
@@ -196,17 +190,13 @@ public:
     const Domain::ConfigContainer& selected_config_container() const
     {
         DEBUG_ASSERT(m_selection.config_container_id != Domain::INVALID_ID);
-        return *DEBUG_ASSERT_VAL(
-            selected_project().find_config_container(m_selection.config_container_id)
-        );
+        return *DEBUG_ASSERT_VAL(selected_project().find_config_container(m_selection.config_container_id));
     }
 
     Domain::ConfigContainer& selected_config_container()
     {
         DEBUG_ASSERT(m_selection.config_container_id != Domain::INVALID_ID);
-        return *DEBUG_ASSERT_VAL(
-            selected_project().find_config_container(m_selection.config_container_id)
-        );
+        return *DEBUG_ASSERT_VAL(selected_project().find_config_container(m_selection.config_container_id));
     }
 
     /** @} */
@@ -283,19 +273,15 @@ public:
      * @name ISelectedBedInstancesChangedListener interface implementation
      * @{
      */
-    void on_selected_bed_instances_changed(
-        Domain::SelectionId project_id,
-        const Scene::BedSelection& selection
-    ) override;
+    void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Scene::BedSelection& selection) override;
     /** @} */
 
     /**
      * @brief Creates PrintHostConfig and PrintHostData and passes it to PrintHostInteractor to start export.
      * PrintHostData copies gcode data from m_fdm_result_cache.
      * PrintHostConfig origin is yet to be decided.
-     * to_removable parameter is placeholder until more robust logic takes place.
      */
-    void do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path, bool to_removable);
+    void do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path);
 
     /**
      * @brief Creates PrintHostConfig and PrintHostData and passes it to PrintHostInteractor to start upload.
@@ -330,30 +316,28 @@ public:
      * @brief Called on every successful login to user account and token renewal.
      * Notifies all other running apps to read token store.
      */
-    void on_user_account_id_success(bool is_refresh) override
+    void on_user_account_id_success(bool is_refresh, const std::string& username) override
     {
-        m_app_instance_message_handler->multicast_message(
-            "STORE_READ",
-            {},
-            Biz::Platform::PlatformServices::instance().app_hash()
-        );
+        m_app_instance_message_handler
+            ->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
     }
 
     /**
      * @brief Called on performed log out.
      * Notifies all other running apps to read token store.
-     * This function should be called only when logout was NOT caused by accepted STORE_READ.
+     * This listener should be triggered from UserAccount only when logout was NOT caused by accepted STORE_READ.
      */
     void on_user_account_logged_out() override
     {
-        m_app_instance_message_handler->multicast_message(
-            "STORE_READ",
-            {},
-            Biz::Platform::PlatformServices::instance().app_hash()
-        );
+        m_app_instance_message_handler
+            ->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
     }
 
     void on_user_account_will_refresh() override
+    { /*unused*/
+    }
+
+    void on_user_account_action_retry(const Network::IHttp::Retry& retry, std::function<void(void)> cancel_callback) override
     { /*unused*/
     }
 
@@ -396,6 +380,14 @@ public:
         return m_user_account_interactor;
     }
 
+    /**
+     * @brief Getter for exporting / uploading logic.
+     */
+    PrintHost::PrintHostInteractor& print_host_interactor()
+    {
+        return m_print_host_interactor;
+    }
+
     std::string get_project_name(Domain::SelectionId project_id) const;
 
     boost::filesystem::path last_export_path(bool only_removable) const
@@ -416,6 +408,22 @@ public:
     PresetUpdater::PresetUpdaterInteractor& preset_updater_interactor()
     {
         return m_preset_updater_interactor;
+    }
+
+    /**
+     * @brief Getter for RemovableDriveService.
+     */
+    RemovableDrive::RemovableDriveService& removable_drive_service()
+    {
+        return m_removable_drive_service;
+    }
+
+    /**
+     * @brief Passing information from system about changed volumes to Removable Drive service.
+     */
+    void handle_volumes_changed_event()
+    {
+        m_removable_drive_service.handle_volumes_changed_event();
     }
 
 private:
@@ -448,6 +456,7 @@ private:
     UserAccount::UserAccountInteractor m_user_account_interactor;
     std::unique_ptr<AppInstance::AbstractAppInstanceMessageHandler> m_app_instance_message_handler;
     PresetUpdater::PresetUpdaterInteractor m_preset_updater_interactor;
+    RemovableDrive::RemovableDriveService m_removable_drive_service;
 
     ObservableProjectList m_project_list;
 };

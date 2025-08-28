@@ -29,6 +29,7 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/I18N.cpp
         include/Slic3r/App/WX/DialogManager.hpp
         src/Slic3r/App/WX/DialogManager.cpp
+        include/Slic3r/App/WX/FileExplorerHandler.hpp
 
         include/Slic3r/App/WX/WebView/WebView.hpp
         src/Slic3r/App/WX/WebView/WebView.cpp
@@ -73,6 +74,7 @@ if (WIN32)
         include/Slic3r/Biz/WX/SingleInstanceChecker.hpp
         src/Slic3r/Biz/WX/SingleInstanceChecker.cpp
  	    src/Slic3r/App/WX/WebView/WebViewPlatformUtilsWin32.cpp
+        src/Slic3r/App/WX/FileExplorerHandlerWin32.cpp
     )
 elseif (APPLE)
     list(APPEND SLIC3R_SHARED_WX_FILES
@@ -80,10 +82,12 @@ elseif (APPLE)
         include/Slic3r/Biz/WX/SecretStore.hpp
         src/Slic3r/Biz/WX/SecretStore.cpp
  	    src/Slic3r/App/WX/WebView/WebViewPlatformUtilsMac.mm
+        src/Slic3r/App/WX/FileExplorerHandlerMac.cpp
     )
 else ()
     list(APPEND SLIC3R_SHARED_WX_FILES
  	    src/Slic3r/App/WX/WebView/WebViewPlatformUtilsLinux.cpp
+        src/Slic3r/App/WX/FileExplorerHandlerLinux.cpp
     )
 endif ()
 

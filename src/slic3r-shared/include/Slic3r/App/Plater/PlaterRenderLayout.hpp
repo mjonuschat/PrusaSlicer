@@ -17,6 +17,7 @@ public:
         std::unique_ptr<TopBar> top_bar,
         std::unique_ptr<ObjectListWindow> object_list,
         std::unique_ptr<CubeView> cube_view,
+        std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
         std::unique_ptr<SidebarBed> sidebar_bed,
         std::unique_ptr<SidebarPrint> sidebar_print,
         std::unique_ptr<SidebarPlaterActionButtons> sidebar_action_buttons,

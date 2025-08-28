@@ -15,12 +15,11 @@
 
 #include "Slic3r/Directories.hpp"
 
+#include <boost/filesystem/path.hpp>
+
 namespace Slic3r::Biz {
 
-void ProjectInteractor::initialize_bed(
-    Domain::ConfigContainer& config_container,
-    Domain::BedContainer& bed_container
-)
+void ProjectInteractor::initialize_bed(Domain::ConfigContainer& config_container, Domain::BedContainer& bed_container)
 {
     const auto& selected_printer_preset{config_container.selected_preset()};
     Domain::Bed& bed{bed_container.get_or_create_bed(selected_printer_preset, Slic3r::resources_dir())};
@@ -50,14 +49,12 @@ Domain::SelectionId ProjectInteractor::new_project()
     return project_id;
 }
 
-static Domain::Preset::EvaluatedPrinterPreset evaluated_from_selected(
-    const Domain::Preset::SelectedPreset& selected_preset
-)
+static Domain::Preset::EvaluatedPrinterPreset evaluated_from_selected(const Domain::Preset::SelectedPreset& selected_preset)
 {
     using namespace Domain::Preset;
 
     EvaluatedPrintPreset print_preset;
-    print_preset.preset = selected_preset.print;
+    print_preset.preset              = selected_preset.print;
     print_preset.preset.runtime_only = true;
 
     AllToolsEvaluatedToolPrintPresets tools;
@@ -76,9 +73,9 @@ static Domain::Preset::EvaluatedPrinterPreset evaluated_from_selected(
 
     EvaluatedPrinterPreset result;
 
-    result.hw_config = selected_preset.hw_config;
-    result.preset    = selected_preset.printer;
-    result.prints    = EvaluatedPrintPresets{std::move(print_preset)};
+    result.hw_config           = selected_preset.hw_config;
+    result.preset              = selected_preset.printer;
+    result.prints              = EvaluatedPrintPresets{std::move(print_preset)};
     result.preset.runtime_only = true;
 
     return result;
@@ -94,27 +91,25 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
 
             Domain::Preset::Bundle& preset_bundle{m_workbench.preset_bundle()};
             for (auto& config_container : added_project.config_containers()) {
-                const Domain::Preset::SelectedPreset& selected_preset{
-                    config_container->selected_preset()
+                const Domain::Preset::SelectedPreset& selected_preset{config_container->selected_preset()};
+                auto printer_config_inserted{
+                    preset_bundle.printer_configs
+                        .insert({selected_preset.hw_config.id, selected_preset.hw_config})
+                        .second
                 };
-                auto printer_config_inserted{preset_bundle.printer_configs.insert(
-                    {selected_preset.hw_config.id, selected_preset.hw_config}
-                ).second};
-                auto evaluated_preset_inserted{preset_bundle.evaluated_presets.insert(
-                    {selected_preset.hw_config.id, {evaluated_from_selected(selected_preset)}}
-                ).second};
+                auto evaluated_preset_inserted{
+                    preset_bundle.evaluated_presets
+                        .insert({selected_preset.hw_config.id, {evaluated_from_selected(selected_preset)}})
+                        .second
+                };
 
                 // This requires a matching and diffing mechanism.
                 ASSERT(printer_config_inserted && evaluated_preset_inserted, "TODO, this codepath");
             }
 
             if (added_project.config_containers().empty()) {
-                added_project.config_containers().emplace_back(
-                    std::make_unique<Domain::ConfigContainer>()
-                );
-                m_preset_interactor.initialize_config_container(
-                    *added_project.config_containers().back()
-                );
+                added_project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
+                m_preset_interactor.initialize_config_container(*added_project.config_containers().back());
             }
 
             for (auto& config_container : added_project.config_containers()) {
@@ -133,8 +128,7 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         .job_manager()
         .create_job(
             "project_load",
-            [](Biz::JThread::StopToken stop_token,
-               const boost::filesystem::path file_path) -> Domain::Project
+            [](Biz::JThread::StopToken stop_token, const boost::filesystem::path file_path) -> Domain::Project
             { return FileLoadingLogic::load_file_as_project(file_path); },
             file_path
         )
@@ -146,7 +140,7 @@ void ProjectInteractor::save_project(const std::string& file_path, const Store3m
 {
     auto& selected_project = this->selected_project();
     selected_project.increment_version();
-    selected_project.set_file_name(file_path);
+    selected_project.set_file_name(boost::filesystem::path(file_path).stem().string());
     store_3mf(file_path, selected_project, params);
 
     invoke_listeners<IProjectsChangedListener>([this](auto* l) {
@@ -176,10 +170,7 @@ Domain::SlicingId ProjectInteractor::selected_bed_slicing_id() const
     return {selected_project_id(), m_scene_interactor.bed_selection().last_selected_bed().instance_id};
 }
 
-void ProjectInteractor::on_selected_bed_instances_changed(
-    Domain::SelectionId project_id,
-    const Scene::BedSelection& selection
-)
+void ProjectInteractor::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Scene::BedSelection& selection)
 {
     const Domain::BedRef last_selected_bed{selection.last_selected_bed()};
     const Domain::SelectionId container_id{last_selected_bed.config_container_id};
@@ -191,13 +182,9 @@ void ProjectInteractor::on_selected_bed_instances_changed(
 void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_instance)
 {
     auto& project = selected_project();
-    const Domain::BedInstance* instance{
-        project.find_bed_instance_by_id(bed_instance.instance_id)
-    };
+    const Domain::BedInstance* instance{project.find_bed_instance_by_id(bed_instance.instance_id)};
     ASSERT(instance);
-    const auto* config_container{
-        project.find_config_container(bed_instance.config_container_id)
-    };
+    const auto* config_container{project.find_config_container(bed_instance.config_container_id)};
     ASSERT(config_container);
 
     const auto& selected_preset = config_container->selected_preset();
@@ -220,18 +207,19 @@ void ProjectInteractor::do_select_project(Domain::SelectionId project_id)
 {
     m_selection.project_id = project_id;
 
-    invoke_listeners<ISelectedProjectChangedListener>([project_id](auto* l) {
-        l->on_selected_project_changed(project_id);
-    });
+    invoke_listeners<ISelectedProjectChangedListener>(
+        [project_id](auto* l) { l->on_selected_project_changed(project_id); }
+    );
 }
 
 void ProjectInteractor::do_select_config_container(Domain::SelectionId container_id)
 {
     m_selection.config_container_id = container_id;
     Domain::SelectionId project_id  = m_selection.project_id;
-    invoke_listeners<ISelectedConfigContainerChangedListener>([container_id, project_id](auto* l) {
-        l->on_selected_config_container_changed(project_id, container_id);
-    });
+    invoke_listeners<ISelectedConfigContainerChangedListener>(
+        [container_id, project_id](auto* l)
+        { l->on_selected_config_container_changed(project_id, container_id); }
+    );
 }
 
 Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
@@ -239,9 +227,9 @@ Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
     auto& projects                 = m_workbench.projects();
     Domain::SelectionId project_id = m_workbench.next_project_id();
     projects.emplace(project_id, std::move(p));
-    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
-        l->on_project_added(project_id);
-    });
+    invoke_listeners<IProjectsChangedListener>(
+        [project_id](auto* l) { l->on_project_added(project_id); }
+    );
     // select project
     do_select_project(project_id);
     return project_id;
@@ -254,15 +242,15 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
 
     ASSERT(it != projects.end());
 
-    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
-        l->on_project_will_be_removed(project_id);
-    });
+    invoke_listeners<IProjectsChangedListener>(
+        [project_id](auto* l) { l->on_project_will_be_removed(project_id); }
+    );
 
     it = projects.erase(it);
 
-    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
-        l->on_project_removed(project_id);
-    });
+    invoke_listeners<IProjectsChangedListener>(
+        [project_id](auto* l) { l->on_project_removed(project_id); }
+    );
 
     // At least one project need to exist at all times
     if (projects.empty()) {
@@ -281,15 +269,12 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
     }
 }
 
-void ProjectInteractor::do_export(
-    const Domain::SlicingId id,
-    const boost::filesystem::path& dest_path,
-    bool to_removable
-)
+void ProjectInteractor::do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
 {
     const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
     if (!fdm_result)
         return;
+    bool to_removable = m_removable_drive_service.is_path_on_removable_drive(dest_path);
     m_last_export_path_storage.set_last_export_path(dest_path, to_removable);
     PrintHost::PrintHostConfig config{Domain::PrintHostType::Local, ""};
     PrintHost::PrintHostJobData data{
@@ -309,9 +294,7 @@ void ProjectInteractor::do_upload(const Domain::SlicingId id, const std::string&
     PrintHost::PrintHostJobData data{
         fdm_result.value().get().const_gcode(),
         filename,
-        PrintHost::get_export_format_from_extension(
-            boost::filesystem::path(filename).extension().string()
-        )
+        PrintHost::get_export_format_from_extension(boost::filesystem::path(filename).extension().string())
     };
     m_print_host_interactor.upload_gcode(std::move(config), std::move(data));
 }
@@ -322,10 +305,8 @@ void ProjectInteractor::do_upload_connect(const Domain::SlicingId id, const std:
     if (!fdm_result)
         return;
 
-    PrintHost::PrintHostConfig config{
-        Domain::PrintHostType::PrusaConnect,
-        Network::ServiceConfig::instance().connect_url()
-    };
+    PrintHost::PrintHostConfig
+        config{Domain::PrintHostType::PrusaConnect, Network::ServiceConfig::instance().connect_url()};
     config.access_token = m_user_account_interactor.access_token();
     std::string filename;
     std::string body_json;
@@ -336,9 +317,7 @@ void ProjectInteractor::do_upload_connect(const Domain::SlicingId id, const std:
     PrintHost::PrintHostJobData data{
         fdm_result.value().get().const_gcode(),
         filename,
-        PrintHost::get_export_format_from_extension(
-            boost::filesystem::path(filename).extension().string()
-        )
+        PrintHost::get_export_format_from_extension(boost::filesystem::path(filename).extension().string())
     };
     data.request_body_json = std::move(body_json);
     m_print_host_interactor.upload_gcode(std::move(config), std::move(data));

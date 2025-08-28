@@ -57,11 +57,7 @@ PrintHostInteractor::PrintHostInteractor(Platform::IMainThreadDispatcher& dispat
 
 void PrintHostInteractor::on_print_host_progress(size_t id, int progress)
 {
-    SPDLOG_INFO(
-        "ProjectInteractor::on_print_host_progress id:{} progress: {}",
-        std::to_string(id),
-        std::to_string(progress)
-    );
+    SPDLOG_INFO("ProjectInteractor::on_print_host_progress id:{} progress: {}", std::to_string(id), std::to_string(progress));
 }
 
 void PrintHostInteractor::on_print_host_error(size_t id, const std::string& msg)
@@ -81,12 +77,7 @@ void PrintHostInteractor::on_print_host_done(size_t id)
 
 void PrintHostInteractor::on_print_host_info(size_t id, const std::string& tag, const std::string& msg)
 {
-    SPDLOG_INFO(
-        "ProjectInteractor::on_print_host_info id:{} tag: {} msg: {}",
-        std::to_string(id),
-        tag,
-        msg
-    );
+    SPDLOG_INFO("ProjectInteractor::on_print_host_info id:{} tag: {} msg: {}", std::to_string(id), tag, msg);
 
     if (tag == "storage" && m_storage_callbacks_map.find(id) != m_storage_callbacks_map.end()) {
         m_storage_callbacks_map[id](msg);
@@ -120,7 +111,8 @@ void PrintHostInteractor::upload_gcode_with_storage_choice(PrintHostConfig confi
     auto config_ptr = std::make_shared<PrintHostConfig>(std::move(config));
     auto data_ptr   = std::make_shared<PrintHostJobData>(std::move(data));
 
-    StorageInfoFn callback = [this, config_ptr, data_ptr](const std::string& json) mutable {
+    StorageInfoFn callback = [this, config_ptr, data_ptr](const std::string& json) mutable
+    {
         std::vector<PrintHostStorageInfo> storage_list;
         get_storage_choices_from_json(json, storage_list);
         // TODO: here user should choose storage
@@ -143,10 +135,7 @@ void PrintHostInteractor::upload_gcode_with_storage_choice(PrintHostConfig confi
     storage_config.username               = config_ptr->username;
     storage_config.password               = config_ptr->password;
 
-    size_t id = m_print_host_job_manager.emplace_job(
-        std::move(storage_config),
-        {nullptr, data_ptr->dest_path, PrintHostExportFormat::Undefined}
-    );
+    size_t id = m_print_host_job_manager.emplace_job(std::move(storage_config), {nullptr, data_ptr->dest_path, PrintHostExportFormat::Undefined});
 
     m_storage_callbacks_map[id] = std::move(callback);
 }
@@ -159,6 +148,11 @@ void PrintHostInteractor::on_print_host_binarize_success(PrintHostConfig config,
 void PrintHostInteractor::on_print_host_binarize_fail(const std::string& msg)
 {
     SPDLOG_ERROR("PrintHostDataFinalizer has failed: {}", msg);
+}
+
+void PrintHostInteractor::add_print_host_listener(IPrintHostListener* listener)
+{
+    m_print_host_job_manager.add_listener<IPrintHostListener>(listener);
 }
 
 } // namespace Slic3r::Biz::PrintHost

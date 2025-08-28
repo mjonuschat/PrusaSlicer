@@ -29,13 +29,14 @@ namespace Slic3r::App::Preview {
 struct ExtrudersSequence;
 class SidebarPreviewActionButtons;
 
-class PreviewRenderModule final : public Platform::AbstractRenderModule,
-                                  public Biz::ISelectedBedInstancesChangedListener,
-                                  public Biz::IFDMResultCacheChangedListener,
-                                  public Biz::ISelectedProjectChangedListener,
-                                  public Biz::ISLAResultCacheChangedListener,
-                                  public Biz::ISLAObjectCacheChangedListener,
-                                  public Biz::IStatusCacheChangedListener
+class PreviewRenderModule final :
+    public Platform::AbstractRenderModule,
+    public Biz::ISelectedBedInstancesChangedListener,
+    public Biz::IFDMResultCacheChangedListener,
+    public Biz::ISelectedProjectChangedListener,
+    public Biz::ISLAResultCacheChangedListener,
+    public Biz::ISLAObjectCacheChangedListener,
+    public Biz::IStatusCacheChangedListener
 {
 public:
     PreviewRenderModule(
@@ -63,10 +64,7 @@ public:
     void set_navigator(Navigator* navigator) override;
     /**@}*/
 
-    void on_selected_bed_instances_changed(
-        Domain::SelectionId project_id,
-        const Biz::Scene::BedSelection& selection
-    ) override;
+    void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection) override;
 
     void on_fdm_result_cache_changed(const Domain::SlicingId id) override
     {
@@ -124,6 +122,7 @@ private:
     Yoga::Passthrough<TopBar> m_top_bar;
     Yoga::Passthrough<ObjectListWindow> m_object_list;
     Yoga::Passthrough<CubeView> m_cube_view;
+    Yoga::Passthrough<PopNotification::PopNotificationListView> m_pop_notification_list_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
     Yoga::Passthrough<SidebarPreviewActionButtons> m_sidebar_action_buttons;
