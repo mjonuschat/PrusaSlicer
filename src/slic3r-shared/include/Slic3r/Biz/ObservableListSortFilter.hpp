@@ -77,7 +77,7 @@ public:
 
     void on_updated(const Biz::IndexRange& index_range) override
     {
-        for (size_t index = index_range.from; index < index_range.to; ++index) {
+        for (size_t index = index_range.from; index <= index_range.to; ++index) {
             IndexMap::const_iterator it = m_index_map.find(index);
             if (it != m_index_map.cend()) {
                 this->template invoke_listeners<IListObserver<Data>>([it](auto* l) {

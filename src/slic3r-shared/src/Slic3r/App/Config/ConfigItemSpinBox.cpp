@@ -30,7 +30,14 @@ ConfigItemSpinBox::ConfigItemSpinBox(
     on_data_update();
 
     callbacks().text_edited = [this]() {
-        m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{m_value_validator->value()});
+        if (*m_state->def().type == typeid(int)) {
+            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{value()});
+        } else if (*m_state->def().type == typeid(std::optional<int>)) {
+            if (m_state->get<std::optional<int>>().has_value()) {
+                m_preset_interactor
+                    .set_item_value(*m_state, Domain::ConfigValue{std::optional<int>(value())});
+            }
+        }
     };
 
     set_tooltip(data.def().tooltip);
@@ -38,9 +45,22 @@ ConfigItemSpinBox::ConfigItemSpinBox(
     m_tooltip.content_item()->set_width(350);
 }
 
+int ConfigItemSpinBox::value() const
+{
+    return m_value_validator->value();
+}
+
 void ConfigItemSpinBox::on_data_update()
 {
-    set_text(std::to_string(m_state->get<int>()));
+    if (*m_state->def().type == typeid(int)) {
+        set_text(std::to_string(m_state->get<int>()));
+    } else if (*m_state->def().type == typeid(std::optional<int>)) {
+        std::optional<int> val = m_state->get<std::optional<int>>();
+        set_enabled(val.has_value());
+        if (val.has_value()) {
+            set_text(std::to_string(val.value()));
+        }
+    }
 }
 
 } // namespace Slic3r::App

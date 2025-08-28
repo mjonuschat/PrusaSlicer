@@ -15,9 +15,9 @@ public:
     // parameters for action functions is a bounding box of item
     struct Callbacks
     {
-        std::function<void()> action{nullptr};
-        std::function<void(bool hovered)> hovered_changed{nullptr};
-        std::function<void(bool pressed)> pressed_changed{nullptr};
+        std::function<void()> action{nullptr}; ///< Always user action
+        std::function<void(bool hovered)> hovered_changed{nullptr}; ///< Always user action
+        std::function<void(bool pressed)> pressed_changed{nullptr}; ///< Always user action
         std::function<void(bool checked)> checked_changed{nullptr};
     };
 

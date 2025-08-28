@@ -15,6 +15,8 @@
 #include "Slic3r/App/Config/ConfigItemSpinBoxes.hpp"
 #include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
 
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
@@ -29,8 +31,29 @@ ConfigRowItem::ConfigRowItem(
 {
     set_flex_shrink(0);
 
-    m_label = emplace_back<Text>(data.def().label);
-    m_label->set_width(175);
+    Item* left_side = emplace_back<Item>();
+    left_side->set_width(175);
+    left_side->set_max_size({175, YGUndefined});
+
+    if (*m_state->def().type == typeid(std::optional<int>)) {
+        m_toggle_enable = left_side->emplace_back<ToggleButton>();
+        m_toggle_enable->set_margin(Margins(0, 0, 5, 0));
+
+        std::optional<int> value = m_state->value().get<std::optional<int>>();
+        m_toggle_enable->set_checked(value.has_value());
+        m_toggle_enable->callbacks().action = [this]() {
+            // We are using action to make sure this callbacks comes from user
+            std::optional<int> value;
+            if (m_toggle_enable->checked()) {
+                value = m_config_item_spin_box->value();
+            }
+
+            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{value});
+        };
+    }
+
+    m_label = left_side->emplace_back<Text>(data.def().label);
+    m_label->set_flex_grow(1);
     m_label->set_wrap(true);
 
     switch (data.def().gui_type) {
@@ -58,7 +81,11 @@ ConfigRowItem::ConfigRowItem(
         m_input = emplace_back<ConfigItemColorPicker>(index, data);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinbox:
-        m_input = emplace_back<ConfigItemSpinBox>(index, data, m_preset_interactor);
+        m_input = m_config_item_spin_box = emplace_back<ConfigItemSpinBox>(
+            index,
+            data,
+            m_preset_interactor
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinboxes:
         m_input = emplace_back<ConfigItemSpinBoxes>(index, data, m_preset_interactor);
@@ -80,9 +107,15 @@ ConfigRowItem::ConfigRowItem(
 
 void ConfigRowItem::on_data_update()
 {
-    m_label->set_text(m_state->name());
+    m_label->set_text(m_state->def().label);
     m_sidetext->set_text(m_state->def().sidetext);
-    if (m_input_value) { // Todo: handle all cases
+
+    if (*m_state->def().type == typeid(std::optional<int>)) {
+        std::optional<int> value = m_state->value().get<std::optional<int>>();
+        m_toggle_enable->set_checked(value.has_value());
+    }
+
+    if (m_input_value) {
         m_input_value->set_state(*m_state);
     }
 }

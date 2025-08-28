@@ -14,9 +14,12 @@ class PresetInteractor;
 
 namespace Slic3r::App::Yoga {
 class Text;
+class ToggleButton;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
+
+class ConfigItemSpinBox;
 
 class ConfigRowItem : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
 {
@@ -36,6 +39,9 @@ private:
     Yoga::Text* m_label{nullptr};
     Yoga::Text* m_sidetext{nullptr};
     Yoga::Item* m_input{nullptr};
+    Yoga::ToggleButton* m_toggle_enable{nullptr};
+
+    ConfigItemSpinBox* m_config_item_spin_box{nullptr}; ///< valid only if ConfigItem gui type is spinbox
 
     Biz::DataObserver<Domain::ConfigItem>* m_input_value{nullptr};
 };

@@ -42,6 +42,11 @@ public:
 
     void set_default(double default_value);
 
+    void set_text(const std::string& text);
+
+private:
+    void set_last_value();
+
 private:
     void increase_value();
     void decrease_value();

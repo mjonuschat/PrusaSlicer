@@ -28,7 +28,7 @@ InputTextWithSpin::InputTextWithSpin(
 
     InputTextField::callbacks().text_edited = [this]() {
         try {
-            m_last_value = boost::get<double>(m_eval.eval(m_parser.parse(text())));
+            set_last_value();
         } catch ([[maybe_unused]] const Biz::Expr::ParseError& error) {
         } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
         }
@@ -90,6 +90,12 @@ void InputTextWithSpin::set_default(double default_value)
     InputTextField::set_default(default_value);
 }
 
+void InputTextWithSpin::set_text(const std::string &text)
+{
+    InputTextField::set_text(text);
+    set_last_value();
+}
+
 void InputTextWithSpin::increase_value()
 {
     m_last_value += GImGui->IO.KeyCtrl ? m_step_fast : m_step;
@@ -109,6 +115,10 @@ void InputTextWithSpin::text_updated_internal()
     } catch ([[maybe_unused]] const Biz::Expr::ParseError& error) {
     } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
     }
+}
+
+void InputTextWithSpin::set_last_value() {
+    m_last_value = boost::get<double>(m_eval.eval(m_parser.parse(text())));
 }
 
 } // namespace Slic3r::App::Yoga

@@ -27,6 +27,8 @@ public:
         Biz::Preset::PresetInteractor& preset_interactor
     );
 
+    int value() const;
+
 protected:
     void on_data_update() override;
 

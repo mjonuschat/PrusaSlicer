@@ -4652,7 +4652,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Idle temperature");
     def->option_group = L("Temperature");
     def->category = ConfigItemDef::Category::Material;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Nozzle temperature when the tool is currently not used in multi-tool setups."
                      "This is only used when 'Ooze prevention' is active in Print Settings.");
     def->sidetext = L("°C");
