@@ -99,7 +99,8 @@ static bool YGBeginCombo(
     if (editable) {
         ImGui::SetItemAllowOverlap();
         ImGui::SetCursorScreenPos(cursor_pos);
-        edited |= ImGui::InputTextEx("##foo", "", buffer, buf_size, ImVec2(value_x2 - bb.Min.x, bb.Max.y - bb.Min.y), ImGuiInputTextFlags_AutoSelectAll, nullptr);
+        const std::string lab = std::string(label) + "##inputtext";
+        edited |= ImGui::InputTextEx(lab.c_str(), "", buffer, buf_size, ImVec2(value_x2 - bb.Min.x, bb.Max.y - bb.Min.y), ImGuiInputTextFlags_AutoSelectAll, nullptr);
         if (edited && ImGui::IsItemDeactivatedAfterEdit()) {
             edited = false;
             if (validator) {
