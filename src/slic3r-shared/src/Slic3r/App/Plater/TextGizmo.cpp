@@ -7,6 +7,7 @@
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/TextDialog.hpp"
 #include <Slic3r/App/Plater/SceneNodeTag.hpp>
+#include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
@@ -33,6 +34,7 @@ struct Drag {
 
     // volume world transformation before draggig
     Domain::Transform3d to_world;
+    Domain::Transform3d instance;
     Domain::Transform3d instance_inv;
     Domain::Transform3d volume_inv;
 
@@ -43,14 +45,13 @@ struct Drag {
     // fixed during dragging
     Domain::Vec2d volume_offset;
 
-    Domain::SquareMatrix4d last_tr; // for rendring
+    Domain::SquareMatrix4d last_tr = Domain::SquareMatrix4d::Identity(); // for rendring
 
     // True on hit object surface otherwise false. (cross hair color)
     bool valid = true;
 };
-}
+} // namespace
 
-using namespace Slic3r::App::Yoga;
 namespace Slic3r::Biz::Emboss {
 // TODO: made shape by current selected preset and text
 class TextShapeProvider : public ShapeProvider
@@ -98,8 +99,24 @@ private:
 };
 } // namespace Slic3r::Biz::Emboss
 
+namespace {
+template<typename T>
+bool set_opt(std::optional<T>& val_opt, double new_value, double scale) {
+    T scaled_new = static_cast<T>(new_value / scale);
+    if (scaled_new == val_opt.value_or(T(0)))
+        return false; // no change
+    else if (scaled_new == 0)
+        val_opt.reset();
+    else
+        val_opt = scaled_new;
+    return true;
+}
+
+// Stamp for Scene object -> Node
 struct EmbossTag {};
 struct CrossHairTag: EmbossTag {};
+
+} // namespace
 
 namespace Slic3r::App::Plater {
 
@@ -121,7 +138,9 @@ TextGizmo::TextGizmo(
         font_manager,
         ImGui::GetIO().Fonts->GetGlyphRangesDefault(),
         Slic3r::data_dir() + "/text_emboss_presets.cereal"
-    )
+    ),
+    m_drag(nullptr),
+    m_last_loaded_volume_id(0) // invalid value
 {
     // Initialize font descriptor to font copied with application
     m_preset_manager.get_preset().emboss_style.descriptor = Domain::FontDescriptor{
@@ -134,6 +153,8 @@ TextGizmo::TextGizmo(
     m_dialog = std::make_unique<TextDialog>();
     m_dialog->callbacks().text_changed = [this](const std::string& text) {
         m_text = text; 
+        bool is_multiline = Biz::Emboss::get_count_lines(m_text) > 1;
+        m_dialog->set_enable_line_gap(Biz::Emboss::get_count_lines(m_text));
         update_volume();
     };
     m_dialog->callbacks().font_selection_changed = [this](const Domain::FontDescriptor& font_descriptor){
@@ -157,43 +178,46 @@ TextGizmo::TextGizmo(
         update_volume();
     };
     m_dialog->callbacks().per_glyph_checked = [this](bool check) {
-        m_preset_manager.get_preset().emboss_style.prop.per_glyph = check;
+        m_preset_manager.get_font_prop().per_glyph = check;
         update_volume();
     };
     m_dialog->callbacks().align_changed = [this](const Domain::FontProp::Align& align) {
-        m_preset_manager.get_preset().emboss_style.prop.align = align;
+        m_preset_manager.get_font_prop().align = align;
         update_volume();
     };
-    m_dialog->callbacks().char_gap_changed = [this](double value) {
-        m_preset_manager.get_preset().emboss_style.prop.char_gap = value;
-        update_volume();
+    auto set_optional = [this](std::optional<int>& val_opt, double new_value, double scale) {
+        if (set_opt(val_opt, new_value, scale)) {        
+            m_preset_manager.clear_glyphs_cache();
+            update_volume();
+        }
     };
-    m_dialog->callbacks().line_gap_changed = [this](double value) {
-        m_preset_manager.get_preset().emboss_style.prop.line_gap = value;
-        update_volume();
+    m_dialog->callbacks().char_gap_changed = [this, set_optional](double value) {
+        set_optional(m_preset_manager.get_font_prop().char_gap, value, m_volume_scale.char_gap);
+    };
+    m_dialog->callbacks().line_gap_changed = [this, set_optional](double value) {
+        set_optional(m_preset_manager.get_font_prop().line_gap, value, m_volume_scale.line_gap);
     };
     m_dialog->callbacks().boldness_changed = [this](double value) {
-        m_preset_manager.get_preset().emboss_style.prop.boldness = value;
-        m_preset_manager.clear_glyphs_cache();
-        update_volume();
+        if (set_opt(m_preset_manager.get_font_prop().boldness, value, m_volume_scale.char_gap)) {
+            m_preset_manager.clear_glyphs_cache();
+            update_volume();        
+        }
     };
     m_dialog->callbacks().skew_ratio_changed = [this](double value) {
-        m_preset_manager.get_preset().emboss_style.prop.skew = value;
-        m_preset_manager.clear_glyphs_cache();
-        update_volume();
+        if (set_opt(m_preset_manager.get_font_prop().skew, value, 1.)) {
+            m_preset_manager.clear_glyphs_cache();
+            update_volume();
+        }
     };
     m_dialog->callbacks().surface_distance_changed = [this](double value) {
         // TODO: implement
     };
-    m_dialog->callbacks().rotation_changed = [this](double value) {
-        // TODO: implement
-    };
+    m_dialog->callbacks().rotation_changed = [this](double value) { rotate(value); };
     m_dialog->callbacks().unlock_rotation = [this](bool check) {
         // TODO: implement
     };
     m_dialog->callbacks().set_on_face_camera = [this]() {
         // TODO: implement
-        m_dialog->set_enable_line_gap(false); // test
     };
 
     // Presets
@@ -220,10 +244,14 @@ TextGizmo::TextGizmo(
     };
 }
 
+TextGizmo::~TextGizmo() {}
+
 bool TextGizmo::enabled() const { return true; };
 Scene::ToolType TextGizmo::type() const { return Scene::ToolType::TextGizmo; }
 
-Yoga::GizmoWindowPtr TextGizmo::release_ui_window()
+TextGizmo::~TextGizmo() {}
+
+Yoga::Dialog* TextGizmo::unload_ui_dialog()
 {
     return m_dialog.release();
 }
@@ -282,7 +310,6 @@ void draw_cross_hair(const Drag& drag) {
     );
     draw_cross_hair(position, color);
 }
-
 } // namespace
 
 bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
@@ -313,11 +340,15 @@ bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
 
         m_drag = std::make_unique<Drag>();
         m_drag->to_world = instance_ptr->get_matrix() * volume.get_matrix();
+        m_drag->instance = instance_ptr->get_matrix();
         m_drag->instance_inv = instance_ptr->get_matrix().inverse();
         m_drag->volume_inv = volume.get_matrix().inverse();
         Domain::Vec3d volume_center = m_drag->to_world.translation();
         // volume center screen coordinate
-        m_drag->volume_center = camera.project_to_screen_space(volume_center);
+
+        Domain::Vec2d center_neg_y = camera.project_to_screen_space(volume_center);
+        center_neg_y.y() = camera.viewport().height - center_neg_y.y(); // fix negative direction of y
+        m_drag->volume_center = center_neg_y;
         Domain::Vec2d mouse_coor(ctx.screen_mouse_x(), ctx.screen_mouse_y());
         m_drag->volume_offset = m_drag->volume_center - mouse_coor;
         // TODO: Not working ImGui Node
@@ -390,8 +421,8 @@ Domain::Transform3d get_volume_transformation(
         return Domain::Transform3d::Identity();
 
     // Check that scale in world did not changed
-    assert(!calc_scale(world_linear, world_new_linear, Vec3d::UnitY()).has_value());
-    assert(!calc_scale(world_linear, world_new_linear, Vec3d::UnitZ()).has_value());
+    //assert(!calc_scale(world_linear, world_new_linear, Domain::Vec3d::UnitY()).has_value());
+    //assert(!calc_scale(world_linear, world_new_linear, Domain::Vec3d::UnitZ()).has_value());
 
     // apply move in Z direction and rotation by up vector
     //Emboss::apply_transformation(current_angle, {}, volume_new);
@@ -404,7 +435,7 @@ Domain::SquareMatrix4d get_drag_tr(
     const Domain::Vec3d& world_dir, // wanted new direction
     const Drag& drag) {
     Domain::Transform3d new_volume_tr = get_volume_transformation(drag.to_world, world_dir, world_position, drag.instance_inv);
-    Domain::Transform3d volume_relative = new_volume_tr * drag.volume_inv;
+    Domain::Transform3d volume_relative = drag.instance * new_volume_tr * drag.volume_inv * drag.instance_inv;
     return volume_relative.matrix();
 }
 
@@ -476,6 +507,8 @@ void TextGizmo::on_drag_finish(){
     m_project_interactor.scene_interactor()
         .finalize_transform_selection(m_drag->memento, false);
     m_drag = nullptr;
+    if (m_preset_manager.get_preset().projection.use_surface)
+        update_volume();
 }
 void TextGizmo::on_drag_cancel(){
     m_project_interactor.scene_interactor()
@@ -544,7 +577,7 @@ void TextGizmo::render_imgui()
         ImGui::EndCombo();
     }
         
-    ImGui::InputFloat("size_in_mm", &m_preset_manager.get_preset().emboss_style.prop.size_in_mm);
+    ImGui::InputFloat("size_in_mm", &m_preset_manager.get_font_prop().size_in_mm);
     ImGui::InputDouble("depth", &m_preset_manager.get_preset().projection.depth);
     ImGui::Checkbox("use surface", &m_preset_manager.get_preset().projection.use_surface);
     ImGui::Checkbox("per glyph", &m_preset_manager.get_font_prop().per_glyph);
@@ -553,16 +586,6 @@ void TextGizmo::render_imgui()
     if (ImGui::Button("Update")) update_volume();
     ImGui::SameLine();
     if (ImGui::Button("Close")) close();
-    ImGui::Separator();
-    if (ImGui::Button("Move X by 10 mm")) {
-        Biz::Scene::TransformMemento memento;        ;
-        Domain::SquareMatrix4d tr = Domain::SquareMatrix4d::Identity();
-        tr.block<3, 1>(0, 3) = Domain::Vec3d(10., 0., 0.);
-        m_project_interactor.scene_interactor()
-            .transform_selection(tr, memento); // relative transformation
-        m_project_interactor.scene_interactor()
-            .finalize_transform_selection(memento, false);
-    }
 
     // Till imgui node not working
     if (m_drag != nullptr)
@@ -618,15 +641,13 @@ const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor
 }
 } // namespace
 
-
-
 void TextGizmo::on_activated()
 {
     if (m_preset_manager.get_presets().empty())
         m_preset_manager.init();
 
-    bool use_inch = false; // wxGetApp().app_config->get_bool("use_inches");
-    m_dialog->update_units(use_inch);
+    // m_use_inch = wxGetApp().app_config->get_bool("use_inches");
+    m_dialog->update_units(m_use_inch);
 
     // Re-load installed fonts
     // NOTE: Version 2.9.2 do it on dialog open, now it is on gizmo activation
@@ -670,7 +691,12 @@ Scene::ToolType TextGizmo::type() const {
 }
 
 namespace {
-void activate_preset(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager)
+void activate_preset(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager,
+    double scale_char_gap,
+    double scale_line_gap,
+    bool use_inch = false,
+    bool use_deg = true // otherwise radians
+    )
 {    
     bool exist_stored = preset_manager.exist_stored_style();
     const Biz::Emboss::TextPresetManager::Preset& preset = preset_manager.get_preset();
@@ -706,23 +732,22 @@ void activate_preset(TextDialog& dialog, const Biz::Emboss::TextPresetManager& p
     dialog.set_per_glyph(prop.per_glyph, prop_.per_glyph);
     dialog.set_align(prop.align, prop_.align);
 
-    double scale = 1e-3; // font points to mm
-    double char_gap_max = 3.62;
-    double char_gap_step = 0.01;
-    double char_gap_in_mm = prop.char_gap.value_or(0) * scale;
-    double char_gap_in_mm_ = prop_.char_gap.value_or(0) * scale;
+    double char_gap_in_mm = prop.char_gap.value_or(0) * scale_char_gap;
+    double char_gap_in_mm_ = prop_.char_gap.value_or(0) * scale_char_gap;
+    double char_gap_max = use_inch ? .2 /* inch */ : 5. /* mm */;
+    double char_gap_step = use_inch ? .005 /* inch */ : .1 /* mm */;
     dialog.set_char_gap(char_gap_max, char_gap_step, char_gap_in_mm, char_gap_in_mm_);
 
-    double line_gap_max = 3.62;
-    double line_gap_step = 0.01;
-    double line_gap_in_mm = prop.line_gap.value_or(0) * scale;
-    double line_gap_in_mm_ = prop_.line_gap.value_or(0) * scale;
+    double line_gap_max = char_gap_max;
+    double line_gap_step = char_gap_step;
+    double line_gap_in_mm = prop.line_gap.value_or(0) * scale_line_gap;
+    double line_gap_in_mm_ = prop_.line_gap.value_or(0) * scale_line_gap;
     dialog.set_line_gap(line_gap_max, line_gap_step, line_gap_in_mm, line_gap_in_mm_);
 
-    double boldness_max = 0.8;
-    double boldness_step = 0.1;
-    double boldness_in_mm = prop.boldness.value_or(0) * scale;
-    double boldness_in_mm_ = prop_.boldness.value_or(0) * scale;
+    double boldness_max = use_inch ? .2 /* inch */ : 5. /* mm */;
+    double boldness_step = use_inch ? .005 /* inch */ : .1 /* mm */;
+    double boldness_in_mm = prop.boldness.value_or(0) * scale_char_gap;
+    double boldness_in_mm_ = prop_.boldness.value_or(0) * scale_char_gap;
     dialog.set_boldness(boldness_max, boldness_step, boldness_in_mm, boldness_in_mm_);
 
     double skew_ratio_max = 1.;
@@ -733,16 +758,14 @@ void activate_preset(TextDialog& dialog, const Biz::Emboss::TextPresetManager& p
 
     double surface_distance_max = 2.;
     double surface_distance_step = 0.01;
-    double surface_distance = 0.;
+    double surface_distance = preset.distance.value_or(0.f);
     double surface_distance_ = preset_.distance.value_or(0.f);
     dialog.set_surface_distance(surface_distance_max, surface_distance_step, surface_distance, surface_distance_);
-    bool allowe_surface_distance = !preset.projection.use_surface;// && !m_volume->is_the_only_one_part();
-    dialog.set_enable_surface_distance(allowe_surface_distance);
 
     double rotation_max = 180.;
     double rotation_step = 0.1;
-    double rotation = 92.;
-    double rotation_ = preset_.angle.value_or(0.f);
+    double rotation = preset.angle.value_or(0.f) * 180 / M_PI;
+    double rotation_ = preset_.angle.value_or(0.f) * 180 / M_PI;
     dialog.set_rotation(rotation_max, rotation_step, rotation, rotation_);    
 
     // NOTE: not neccessary to write pressets names every time when volume loads
@@ -760,19 +783,24 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
     const Domain::ModelVolume& volume = *volume_ptr;
 
     bool is_part = volume.get_object()->volumes.size() != 1;
+    bool use_surface = volume.emboss_shape->projection.use_surface;
     m_dialog->show_part_specific_panel(is_part);
+    m_dialog->set_enable_surface_distance(is_part && !use_surface);
+    m_dialog->set_enable_use_surface(is_part);
+    m_dialog->set_enable_per_glyph(is_part);
     if (is_part)
-        m_dialog->set_operation(volume.type());    
-
+        m_dialog->set_operation(volume.type());
+    
     // load current settings
     const Domain::TextConfiguration& tc = *volume.text_configuration;
+    m_text = tc.text;
     const Domain::EmbossStyle& style = tc.style;
 
-    Biz::Emboss::TextPresetManager::Preset preset{
+    Biz::Emboss::TextPresetManager::Preset preset {
         .emboss_style = style,
-        .projection = volume.emboss_shape->projection
-        // .distance = calc_distance(),
-        // .angle = calc_angle(selection)
+        .projection = volume.emboss_shape->projection,
+        .distance = calc_distance(),
+        .angle = calc_rotation(project, selection.elements.front())
     };
     const auto& presets = m_preset_manager.get_presets();
     auto preset_it = std::find_if(presets.begin(), presets.end(),
@@ -788,15 +816,80 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
         m_preset_manager.get_preset() = preset;
     }
 
+    calc_scale(project, selection.elements.front()); // volume scale for each axis
+
     // Update dialog data
     m_dialog->set_editor(m_text);
-    activate_preset(*m_dialog, m_preset_manager);
+    bool is_multiline = Biz::Emboss::get_count_lines(m_text) > 1;
+    m_dialog->set_enable_line_gap(is_multiline);
+    m_use_deg = true; // or radians
+    activate_preset(*m_dialog, m_preset_manager, m_volume_scale.char_gap, m_volume_scale.line_gap, m_use_inch, m_use_deg);
 
     // Do not use focused input value when switch volume(it must swith value)
     //ImGuiPureWrap::left_inputs();
 
     // remove_notification_not_valid_font();
     m_last_loaded_volume_id = volume.id();
+}
+
+namespace {
+Domain::Transform3d world_tr(const Domain::Project& project, const Domain::ElementRef& ref) {
+    const Domain::ModelInstance& instance = *project.find_instance_by_id(ref.object_id, ref.instance_id);
+    const Domain::ModelVolume& volume = (ref.volume_id != 0) ?
+        *project.find_volume_by_id(ref.object_id, ref.volume_id) :
+        *project.find_object_by_id(ref.object_id)->volumes.front();
+    return instance.get_matrix() * volume.get_matrix();
+}
+}
+
+// return exist change
+bool TextGizmo::calc_scale(const Domain::Project& project, const Domain::ElementRef& ref) {
+    Domain::Transform3d to_world = world_tr(project, ref);
+    auto to_world_linear = to_world.linear();
+    auto calc = [&to_world_linear](const Domain::Vec3d& axe, std::optional<float>& scale) {
+        Domain::Vec3d  axe_world = to_world_linear * axe;
+        double norm_sq = axe_world.squaredNorm();
+        if (Domain::is_approx(norm_sq, 1.)) {
+            if (scale.has_value())
+                scale.reset();
+            else
+                return false;
+        }
+        else {
+            scale = sqrt(norm_sq);
+        }
+        return true;
+    };
+
+    bool exist_change = calc(Domain::Vec3d::UnitY(), m_volume_scale.height);
+    exist_change |= calc(Domain::Vec3d::UnitX(), m_volume_scale.width);
+    exist_change |= calc(Domain::Vec3d::UnitZ(), m_volume_scale.depth);
+
+    auto font_point_to_world = [this](const std::optional<float>& scale)->double {
+        const Domain::FontFile& ff = *m_preset_manager.get_font_file_with_cache().font_file; /* not const */
+        const Domain::FontProp& fp = m_preset_manager.get_font_prop();
+        const Domain::FontFile::Info& font_info = Biz::Emboss::get_font_info(ff, fp);
+        double font_point_to_volume_mm = fp.size_in_mm / (double)font_info.unit_per_em;
+        double font_point_to_world_mm = font_point_to_volume_mm * scale.value_or(1.f);
+        if (m_use_inch)
+            return font_point_to_world_mm / 25.4; // * mm_to_inch;
+        return font_point_to_world_mm;
+    };
+
+    // TODO: solve first initialization and than recaluculate only when exist change
+    m_volume_scale.char_gap = font_point_to_world(m_volume_scale.width);
+    m_volume_scale.line_gap = font_point_to_world(m_volume_scale.height);
+    
+    return exist_change;
+}
+
+std::optional<float> calc_rotation(const Domain::Project& project, const Domain::ElementRef& ref) {
+    Domain::Transform3d to_world = world_tr(project, ref);
+    return Biz::Emboss::calc_up(to_world); // , UP_LIMIT);
+}
+
+std::optional<float> calc_distance() {
+    return {};
 }
 
 bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
@@ -877,6 +970,42 @@ bool TextGizmo::update_volume(const UpdateParams& update_params) {
 void TextGizmo::close()
 {
     m_gizmo_manager.deactivate_current_tool();
+}
+
+void TextGizmo::rotate(double absolut_angle) {
+    double value = absolut_angle;
+    if (m_use_deg)
+        value *= M_PI / 180;
+    double current = m_preset_manager.get_preset().angle.value_or(0.f);
+    if (Domain::is_approx(current, value, 1e-3))
+        return; // approx same
+
+    // get current transformation of the volume
+    const Domain::Project& project = m_project_interactor.selected_project();
+    const Domain::ElementRef& el = m_project_interactor.scene_interactor()
+        .object_selection().elements.front();
+    Domain::Transform3d instance_tr = project.find_instance_by_id(el.object_id, el.instance_id)->get_matrix();
+    const Domain::ModelVolume& volume = (el.volume_id != 0) ?
+        *project.find_volume_by_id(el.object_id, el.volume_id) :
+        *project.find_object_by_id(el.object_id)->volumes.front();
+    Domain::Transform3d volume_tr = volume.get_matrix();
+
+    double diff_angle = value - current;
+    Domain::Transform3d new_volume_tr = volume_tr * Eigen::AngleAxisd(diff_angle, Domain::Vec3d::UnitZ());
+
+    Domain::Transform3d world_relative = instance_tr * new_volume_tr * volume_tr.inverse() * instance_tr.inverse();
+    m_project_interactor.scene_interactor().transform_selection(world_relative.matrix());
+
+    // recalculate current rotation
+    m_preset_manager.get_preset().angle = calc_rotation(project, el);
+
+    // Is set what was wanted?
+    assert(Domain::is_approx(m_preset_manager.get_preset().angle.value_or(0.f), (float)value, 1e-3f));
+
+    // update shape when needed
+    if (m_preset_manager.get_preset().projection.use_surface ||
+        m_preset_manager.get_font_prop().per_glyph)
+        update_volume();
 }
 
 bool TextGizmo::init_create(Domain::ModelVolumeType volume_type)

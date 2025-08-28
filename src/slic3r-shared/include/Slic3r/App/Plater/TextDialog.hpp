@@ -14,6 +14,29 @@
 #include "Slic3r/Domain/ModelVolume.hpp" // ModelVolumeType
 #include <vector>
 
+namespace Slic3r {
+// Limits for inputs
+template<typename T> struct MinMax { T min; T max; };
+template<typename T>
+static bool apply(std::optional<T>& val, const MinMax<T>& limit) {
+    if (!val.has_value()) return false;
+    return apply<T>(*val, limit);
+}
+template<typename T>
+static bool apply(T& val, const MinMax<T>& limit)
+{
+    if (val > limit.max) {
+        val = limit.max;
+        return true;
+    }
+    if (val < limit.min) {
+        val = limit.min;
+        return true;
+    }
+    return false;
+}
+}
+
 namespace Slic3r::App::Yoga {
 class LayoutButton;
 class InputTextField;
@@ -106,6 +129,7 @@ private:
     Yoga::LayoutButton* m_editor_warning{nullptr};
 
     Yoga::Passthrough<Yoga::ComboBox> m_font;
+    // current OS enumerated fonts with styles(italic/bold) sorted alphanumericaly
     Domain::FontList m_fonts;
     Yoga::Passthrough<Yoga::ComboBox> m_style;
 

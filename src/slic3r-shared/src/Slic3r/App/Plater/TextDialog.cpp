@@ -38,7 +38,7 @@ TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
     m_editor = content()->emplace_back<InputTextField>();
     m_editor->set_height(100); // set multi-line mode
     m_editor->set_flags(m_editor->flags() | ImGuiInputTextFlags_Multiline);
-    m_editor->callbacks().text_edited = [this]() {
+    m_editor->callbacks().text_changed = [this]() {
         if (m_callbacks.text_changed)
             m_callbacks.text_changed(m_editor->text());
     };
@@ -571,7 +571,7 @@ void TextDialog::set_align(const Domain::FontProp::Align& align, const Domain::F
     m_align->set_align(align);
     m_align->set_default(align_default);
 }
-
+namespace {
 static void set_slider(SliderWithInput* slider, double max_val, double step, double value, double default_value)
 {
     slider->set_begin_value(-max_val);
@@ -580,6 +580,7 @@ static void set_slider(SliderWithInput* slider, double max_val, double step, dou
     slider->set_value(value);
     slider->set_default(default_value);
 }
+} // namespace
 
 void TextDialog::set_char_gap(double max_val, double step, double value, double default_value)
 {

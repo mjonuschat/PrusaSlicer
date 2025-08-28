@@ -6,6 +6,8 @@
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
+#include <Slic3r/App/AppServices.hpp> // singleton for dialog
+
 #include <optional>
 #include <GL/glew.h> // Imgui texture
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
@@ -88,7 +90,7 @@ bool TextPresetManager::store_presets(bool use_modification, bool store_active_i
 }
 
 void TextPresetManager::save_preset_as() {
-    auto& dlg_manager = App::DialogManagerProvider::instance().get();
+    auto& dlg_manager = App::AppServices::instance().dialog_manager();
     App::IDialogManager::YesNoCallback callback;
     auto save_preset_as_fn = [this, &dlg_manager, &callback]() {
         std::string name = dlg_manager.show_input_dialog(_u8L("New presset name") + ':', _u8L("Type unique presset name to save current settings"),
@@ -114,7 +116,7 @@ void TextPresetManager::save_preset_as() {
 
 void TextPresetManager::rename_preset()
 {
-    auto& dlg_manager = App::DialogManagerProvider::instance().get();
+    auto& dlg_manager = App::AppServices::instance().dialog_manager();
     App::IDialogManager::YesNoCallback callback;
     auto rename_preset_fn = [this, &dlg_manager, &callback]() {
         std::string name = dlg_manager.show_input_dialog(_u8L("Re name presset") + ':', _u8L("Type unique presset name to save current settings"),

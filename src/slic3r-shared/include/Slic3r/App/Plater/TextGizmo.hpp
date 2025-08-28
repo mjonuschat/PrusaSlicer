@@ -4,7 +4,7 @@
 ///|/
 #pragma once
 #include <optional>
-#include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo
+#include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo, forward-declaration of Slic3r::App::Yoga::Dialog
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Scene/MouseDragDetector.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
@@ -12,10 +12,6 @@
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneSelectionChangedListener
-
-namespace Slic3r::App::Yoga {
-class Dialog;
-} // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::Plater {
 class TextDialog;
@@ -41,11 +37,13 @@ public:
         Biz::Emboss::IFontManager& font_manager,
         Scene::GizmoManager& gizmo_manager
     );
+    ~TextGizmo();
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
 
     /**
      * @name Implementation of IGizmo interface
      */
+    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
     void register_commands(Platform::CommandRegistry& registry) override;
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
 
@@ -87,7 +85,7 @@ private:
     // Call every time when param of emboss change
     bool update_volume(const UpdateParams& params = UpdateParams{});
     void close();
-
+    void rotate(double absolut_angle);
     bool init_create(Domain::ModelVolumeType volume_type);
     bool emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results);
 
@@ -102,11 +100,29 @@ private:
     std::string m_text; // embossed text
     Yoga::Passthrough<TextDialog> m_dialog;
 
+    struct Scale {
+        std::optional<float> width;
+        std::optional<float> height;
+        std::optional<float> depth;
+        double char_gap = 1.;
+        double line_gap = 1.;
+    };
+    Scale m_volume_scale;
+    bool calc_scale(const Domain::Project& project, const Domain::ElementRef& ref); // True when exist change in scale otherwise false
+
+    bool m_use_inch = false;
+    bool m_use_deg = true;
+
     struct Drag; // like pimpl
-    std::unique_ptr<Drag> m_drag = nullptr; // exist only during drag operation
+    std::unique_ptr<Drag> m_drag; // exist only during drag operation
 
     // only for check
     Domain::ObjectID m_last_loaded_volume_id;
 };
+
+// TODO: move function to surface drag utility
+// Calculate volume rotation around embossed axis VRT Y as up vector(zero angle)
+std::optional<float> calc_rotation(const Domain::Project& project, const Domain::ElementRef& ref);
+std::optional<float> calc_distance();
 
 } // namespace Slic3r::App::Plater

@@ -1039,7 +1039,7 @@ bool Scene::pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results,
     auto ret = visit_conditional_transform<RaycastResult>(n, [&ray](const Node& n, RaycastResult& res) {
         if (!n.has_raycast_component())
             return false;
-        return n.raycast_component()->raycast(n.world_transform(), ray, res);
+        return n.raycast_component()->raycast(n.world_transform().matrix(), ray, res);
     });
     results.reserve(results.size() + ret.size());
     std::transform(

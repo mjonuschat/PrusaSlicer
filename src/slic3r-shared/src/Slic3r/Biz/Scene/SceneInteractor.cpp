@@ -568,7 +568,7 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::Selectio
 
     update_object(obj);
     if (project.file_name().empty()) {
-        const boost::filesystem::path filename_path(vol->name);
+        const boost::filesystem::path filename_path(vol.name);
         const std::string stem_name = filename_path.stem().string();
         project.set_file_name(stem_name);
     }
