@@ -50,4 +50,19 @@ const Progress& ProgressTracker::get_progress() const
 {
     return *m_progress;
 }
+
+void ProgressTracker::set_progress_detail(Domain::ProgressDetail progress_detail)
+{
+    if (!m_dispatcher.get().dispatch_on_main_thread(
+            [on_change = m_on_change, progress = m_progress, pd = std::move(progress_detail)]() mutable
+            {
+                progress->progress_detail = std::move(pd);
+                on_change(*progress);
+            }
+        ))
+    {
+        SPDLOG_WARN("progress detail not emitted");
+    }
+}
+
 } // namespace Slic3r::Biz::Platform::JobManager

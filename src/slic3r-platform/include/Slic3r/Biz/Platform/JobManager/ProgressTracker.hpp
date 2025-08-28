@@ -23,6 +23,7 @@ public:
     void set_status_unsafe(const Domain::JobStatus status);
     void set(Domain::Percentage percentage);
     const Progress& get_progress() const;
+    void set_progress_detail(Domain::ProgressDetail progress_detail);
 
 private:
     // All these data must only be accessed from the main thread!
