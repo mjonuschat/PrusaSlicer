@@ -154,7 +154,7 @@ void TopBar::add_save_project_btn(Item* parent)
                                 m_project_interactor->save_project(file_paths.front().string(), params);
                         };
                         auto& dlg_manager = AppServices::instance().dialog_manager();
-                        dlg_manager.show_file_dialog(FileDialogType::Save, _u8L("Save Project"), "", "", "*.3mf", callback);
+                        dlg_manager.show_file_dialog(FileDialogType::Save, _u8L("Save Project"), "", project_name, "*.3mf", callback);
                     } else {
                         // Saving an existing project - just save.
                         m_project_interactor->save_project(project_name, params);
