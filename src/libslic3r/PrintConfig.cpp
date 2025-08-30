@@ -3689,6 +3689,18 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionString(""));
 
+    def = this->add("autoemit_toolchange_commands", coBool);
+    def->label = L("Emit toolchange commands automatically");
+    def->tooltip = L("When enabled, PrusaSlicer verifies if your custom Toolchange G-Code includes G-codes to "
+                     "switch to the next extruder (T0, T1, etc.). If no toolchange commands are found, they are "
+                     "automatically appended to the custom Toolchange G-Code. Conversely, when disabled, the "
+                     "presence of toolchange commands is not checked, allowing you to customize the order of "
+                     "toolchange operations and other custom actions. Note that you can use placeholder variables "
+                     "for all PrusaSlicer settings, enabling you to insert a \"T[next_extruder]\" command wherever "
+                     "desired.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(true));
+
     def = this->add("preheat_time", coFloat);
     def->label = L("Preheat time");
     def->tooltip = L("To reduce the waiting time after tool change, the next tool can be preheated while the current "
