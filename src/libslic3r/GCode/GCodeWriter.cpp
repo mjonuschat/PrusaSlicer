@@ -601,6 +601,21 @@ std::string GCodeWriter::unretract()
     return gcode;
 }
 
+std::string GCodeWriter::prime()
+{
+    if (m_extruder->prime().second <= 0) {
+        return "";
+    }
+
+    GCodeG1Formatter w;
+
+    w.emit_e(m_extrusion_axis, m_extruder->prime().second);
+    w.emit_f(m_extruder->deretract_speed() * 60.);
+    w.emit_comment(this->config.gcode_comments, "Prime extruder at initial print position");
+
+    return w.string();
+}
+
 void GCodeWriter::update_position(const Vec3d &new_pos)
 {
     m_pos = new_pos;
