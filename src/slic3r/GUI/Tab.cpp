@@ -2162,6 +2162,8 @@ std::vector<std::pair<std::string, std::vector<std::string>>> filament_overrides
         "filament_retract_layer_change",
         "filament_wipe",
         "filament_retract_before_wipe",
+        // BOSS
+        "filament_prime_length_at_start",
     }},
     {"Retraction when tool is disabled", {
         "filament_retract_length_toolchange",
@@ -3378,6 +3380,8 @@ const std::vector<std::string> extruder_options = {
     "retract_layer_change", "wipe", "retract_before_wipe", "travel_ramping_lift",
     "travel_slope", "travel_max_lift", "travel_lift_before_obstacle", "nozzle_high_flow",
     "retract_length_toolchange", "retract_restart_extra_toolchange",
+    // BOSS
+    "prime_length_at_start",
 };
 
 void TabPrinter::build_extruder_pages(size_t n_before_extruders)
@@ -3578,6 +3582,7 @@ void TabPrinter::build_extruder_pages(size_t n_before_extruders)
         optgroup->append_single_option_line("retract_speed", "", extruder_idx);
         optgroup->append_single_option_line("deretract_speed", "", extruder_idx);
         optgroup->append_single_option_line("retract_restart_extra", "", extruder_idx);
+        optgroup->append_single_option_line("prime_length_at_start", "", extruder_idx);
         optgroup->append_single_option_line("retract_before_travel", "", extruder_idx);
         optgroup->append_single_option_line("retract_layer_change", "", extruder_idx);
         optgroup->append_single_option_line("wipe", "", extruder_idx);
