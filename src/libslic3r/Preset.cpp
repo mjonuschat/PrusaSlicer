@@ -645,6 +645,7 @@ static std::vector<std::string> s_Preset_printer_options {
     "nozzle_high_flow", "extruder_clearance_radius", "extruder_clearance_height",
     // BOSS
     "init_z_rotate",
+    "autoemit_toolchange_commands",
 };
 
 static std::vector<std::string> s_Preset_sla_print_options {
