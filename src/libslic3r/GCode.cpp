@@ -3338,6 +3338,9 @@ std::string GCodeGenerator::travel_to_first_position(const Vec3crd& point, const
         gcode += this->writer().travel_to_xy_force(gcode_point.head<2>(), comment);
         gcode += this->writer().travel_to_z_force(gcode_point.z(), comment);
 
+        // BOSS
+        gcode += this->writer().prime();
+
         this->m_avoid_crossing_perimeters.reset_once_modifiers();
         this->last_position = point.head<2>();
         this->writer().update_position(gcode_point);

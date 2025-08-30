@@ -617,6 +617,7 @@ static std::vector<std::string> s_Preset_filament_options {
     "filament_seam_gap_distance",
     // BOSS
     "filament_max_speed",
+    "filament_prime_length_at_start",
 };
 
 static std::vector<std::string> s_Preset_machine_limits_options {
