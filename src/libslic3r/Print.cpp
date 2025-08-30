@@ -220,7 +220,9 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "wipe_tower_minimum_cruise_ratio",
         "wipe_tower_jerk",
         "first_layer_flow_ratio",
-        "top_layer_flow_ratio"
+        "top_layer_flow_ratio",
+        // BOSS
+        "autoemit_toolchange_commands",
     };
 
     static std::unordered_set<std::string> steps_ignore;
