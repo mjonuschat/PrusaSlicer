@@ -959,6 +959,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                 wipe_tower_disable_filament_ramming))
     ((ConfigOptionBool,                 wipe_tower_disable_cooling_moves))
     ((ConfigOptionBool,                 wipe_tower_disable_linear_advance))
+    ((ConfigOptionBool,                 autoemit_toolchange_commands))
 )
 
 static inline std::string get_extrusion_axis(const GCodeConfig &cfg)
