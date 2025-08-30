@@ -214,7 +214,9 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "wipe",
         "wipe_tower_acceleration",
         "wipe_tower_minimum_cruise_ratio",
-        "wipe_tower_jerk"
+        "wipe_tower_jerk",
+        // BOSS
+        "autoemit_toolchange_commands",
     };
 
     static std::unordered_set<std::string> steps_ignore;
