@@ -27,10 +27,11 @@ public:
 
     unsigned int id() const { return m_id; }
 
-    // Following three methods emit:
+    // Following four methods emit:
     // first  - extrusion delta
     // second - number to emit to G-code: This may be delta for relative mode or a distance from last reset_E() for absolute mode.
     // They also quantize the E axis to G-code resolution.
+    std::pair<double, double> prime();
     std::pair<double, double> extrude(double dE);
     std::pair<double, double> retract(double retract_length, double restart_extra);
     std::pair<double, double> unretract();
@@ -74,6 +75,8 @@ public:
     double retract_restart_extra() const;
     double retract_length_toolchange() const;
     double retract_restart_extra_toolchange() const;
+    // BOSS
+    double prime_length() const;
 
 private:
     // Private constructor to create a key for a search in std::set.

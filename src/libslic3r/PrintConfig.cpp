@@ -3276,6 +3276,15 @@ void PrintConfigDef::init_fff_params()
     def->sidetext = L("mm (zero to disable)");
     def->set_default_value(new ConfigOptionFloats { 2. });
 
+    def = this->add("prime_length_at_start", coFloats);
+    def->label = L("Prime length");
+    def->full_label = L("Prime Length (Print Start)");
+    def->tooltip = L("When this is the initial extruder, prime the nozzle when starting the print "
+                     "by the specified amount (the length is measured on raw filament, before it enters "
+                     "the extruder).");
+    def->sidetext = L("mm (zero to disable)");
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
     def = this->add("retract_length_toolchange", coFloats);
     def->label = L("Length");
     def->full_label = L("Retraction Length (Toolchange)");
@@ -4655,7 +4664,9 @@ void PrintConfigDef::init_fff_params()
         // bools
         "retract_layer_change", "wipe", "travel_lift_before_obstacle", "travel_ramping_lift",
         // percents
-        "retract_before_wipe", "travel_slope"}) {
+        "retract_before_wipe", "travel_slope",
+        // BOSS
+        "prime_length_at_start"}) {
         auto it_opt = options.find(opt_key);
         assert(it_opt != options.end());
         def = this->add_nullable(std::string("filament_") + opt_key, it_opt->second.type);
@@ -4720,7 +4731,9 @@ void PrintConfigDef::init_extruder_option_keys()
         "retract_before_wipe", "retract_restart_extra", "retract_before_travel", "wipe",
         "travel_slope", "travel_max_lift", "travel_ramping_lift", "travel_lift_before_obstacle",
         "retract_layer_change", "retract_length_toolchange", "retract_restart_extra_toolchange", "extruder_colour",
-        "default_filament_profile", "nozzle_high_flow"
+        "default_filament_profile", "nozzle_high_flow",
+        // BOSS
+        "prime_length_at_start",
     };
 
     m_extruder_retract_keys = {
@@ -4740,7 +4753,9 @@ void PrintConfigDef::init_extruder_option_keys()
         "travel_max_lift",
         "travel_ramping_lift",
         "travel_slope",
-        "wipe"
+        "wipe",
+        // BOSS
+        "prime_length_at_start",
     };
     assert(std::is_sorted(m_extruder_retract_keys.begin(), m_extruder_retract_keys.end()));
 }

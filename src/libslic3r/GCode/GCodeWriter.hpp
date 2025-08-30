@@ -120,6 +120,8 @@ public:
     std::string retract(bool before_wipe = false);
     std::string retract_for_toolchange(bool before_wipe = false);
     std::string unretract();
+    // BOSS
+    std::string prime();
 
     // Current position of the printer, in G-code coordinates.
     // Z coordinate of current position contains zhop. If zhop is applied (this->zhop() > 0),

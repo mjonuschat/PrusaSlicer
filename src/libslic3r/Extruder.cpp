@@ -30,6 +30,19 @@ Extruder::Extruder(unsigned int id, GCodeConfig *config) :
         m_e_per_mm3 /= this->filament_crossection();
 }
 
+std::pair<double, double> Extruder::prime()
+{
+    // in case of relative E distances we always reset to 0 before any output
+    if (m_config->use_relative_e_distances)
+        m_E = 0.;
+    // Quantize extruder delta to G-code resolution.
+    auto dE = GCodeFormatter::quantize_e(this->prime_length());
+    m_E          += dE;
+    m_absolute_E += dE;
+
+    return std::make_pair(dE, m_E);
+}
+
 std::pair<double, double> Extruder::extrude(double dE)
 {
     assert(! std::isnan(dE));
@@ -172,6 +185,11 @@ double Extruder::retract_length_toolchange() const
 double Extruder::retract_restart_extra_toolchange() const
 {
     return m_config->retract_restart_extra_toolchange.get_at(m_id);
+}
+
+double Extruder::prime_length() const
+{
+    return m_config->prime_length_at_start.get_at(m_id);
 }
 
 }
