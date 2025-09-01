@@ -267,6 +267,7 @@ void PlaterRenderModule::init_scene_layout()
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::Translation); }},
         m_translation_gizmo
     );
+    m_toolbar_move->set_enabled(false);
     m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::ToolbarRotation,
@@ -275,6 +276,7 @@ void PlaterRenderModule::init_scene_layout()
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }},
         m_rotation_gizmo
     );
+    m_toolbar_rotate->set_enabled(false);
     m_toolbar_arrange = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::ToolbarArrange,
@@ -1177,8 +1179,12 @@ void PlaterRenderModule::on_scene_selection_changed(Domain::SelectionId project_
             }
         }
     }
-    m_toolbar_add_volume->set_enabled(can_add_instance);
     m_toolbar_add_instance->set_enabled(can_add_instance);
+
+    m_toolbar_add_volume->set_enabled(can_add_instance);
+    if (!can_add_instance && m_add_volumes_menu->opened()) {
+        m_add_volumes_menu->close();
+    }
 }
 
 void PlaterRenderModule::on_screen_resized()

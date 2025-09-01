@@ -97,16 +97,18 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
 
     ImGui::PopID();
 
-    set_hovered(hovered);
-    set_pressed(held);
-    if (released) {
-        if (m_checkable) {
-            set_checked(!m_checked);
+    if (enabled()) {
+        set_hovered(hovered);
+        set_pressed(held);
+        if (released) {
+            if (m_checkable) {
+                set_checked(!m_checked);
+            }
+            if (m_callbacks.action) {
+                m_callbacks.action();
+            }
+            pressed_updated_internal();
         }
-        if (m_callbacks.action) {
-            m_callbacks.action();
-        }
-        pressed_updated_internal();
     }
 
     render_item_end(pos, size);
