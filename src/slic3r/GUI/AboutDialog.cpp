@@ -252,7 +252,7 @@ AboutDialog::AboutDialog()
     
     // version
     {
-        auto version_string = _L("Version") + " " + std::string(SLIC3R_VERSION);
+        auto version_string = _L("Version") + " " + std::string(SLIC3R_VERSION) + "+BOSS";
         wxStaticText* version = new wxStaticText(this, wxID_ANY, version_string.c_str(), wxDefaultPosition, wxDefaultSize);
         wxFont version_font = GetFont();
         #ifdef __WXMSW__
