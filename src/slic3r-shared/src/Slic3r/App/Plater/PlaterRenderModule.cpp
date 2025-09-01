@@ -51,6 +51,7 @@
 #include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 
 #include "Slic3r/Math.hpp"
@@ -185,14 +186,17 @@ void PlaterRenderModule::init_scene_layout()
              IDialogManager::FileCallback callback = [this](bool success, const std::vector<boost::filesystem::path>& file_paths)
              {
                  if (success) {
-                     const auto& cc = m_project_interactor.selected_project().config_containers().front();
-                     const auto& bed     = cc->bed();
+                     const auto& proj = m_workbench.project(m_project_interactor.selected_project_id());
+                     Domain::BedRef
+                         selected_bed = m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
+                     const Domain::ConfigContainer* cc = proj.find_config_container(selected_bed.config_container_id);
+                     const Domain::BedInstance& inst = cc->find_bed_instance(selected_bed.instance_id);
                      int nozzle_dmrs_cnt = cc->selected_preset().hw_config.tool_count;
                      Biz::FileLoadingLogic::import_files_and_add_to_scene(
                          file_paths,
                          nozzle_dmrs_cnt,
                          m_project_interactor.scene_interactor(),
-                         bed.center()
+                         cc->bed().center() + Biz::Algorithms::Point::to_2d(inst.transformation.get_offset())
                      );
 
                      m_scene_presenter->scene().log_nodes();
