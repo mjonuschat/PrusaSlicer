@@ -37,7 +37,7 @@ struct BedTrackingChanges
  * @param project Project to update
  * @param model_instance Model instance to be removed from bed instance
  */
-//void remove_instance_from_bed(Domain::Project& project, ModelInstance* model_instance);
+void remove_instance_from_bed(Domain::Project& project, Domain::ModelInstance* model_instance, BedTrackingChanges& changes);
 
 /**
  * @brief Rebuild all model-instance to bed links.

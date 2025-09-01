@@ -609,6 +609,8 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
     std::optional<std::string> last_solid_part_name;
     ObjectSelection new_selection = {};
 
+    BedTrackingChanges changes;
+
     // Remove selected elements from the model
 
     if (scene_selection.mode == SelectionMode::Instance) {
@@ -617,6 +619,7 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
             Domain::ModelObject* object = project.find_object_by_id(el.object_id);
             for (size_t idx = object->instances.size() - 1; idx != size_t(-1); idx--) {
                 if (object->instances[idx]->id().id == el.instance_id) {
+                    remove_instance_from_bed(project, object->instances[idx], changes);
                     object->delete_instance(idx);
                     break;
                 }
@@ -685,6 +688,8 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
         for (const Domain::ModelInstance* instance : object->instances) {
             new_selection.elements.emplace_back(Domain::ElementRef(object->id().id, instance->id().id));
         }
+
+        changes = update_instances_bed_placement(project, to_remove, scene_selection.mode == SelectionMode::Instance);
     }
 
     // Notify listeners on changes
@@ -700,6 +705,9 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
     invoke_listeners<ISceneSelectionChangedListener>([&](auto* l) {
         l->on_scene_selection_changed(m_selected_project_id, new_selection);
     });
+
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
 
     return last_solid_part_name;
 }
