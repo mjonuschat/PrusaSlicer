@@ -347,6 +347,7 @@ CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(EnsureVerticalShellThickness)
 static const t_config_enum_values s_keys_map_CoolingSlowdownLogicType {
     { "uniform_cooling",    int(CoolingSlowdownLogicType::UniformCooling)    },
     { "consistent_surface", int(CoolingSlowdownLogicType::ConsistentSurface) },
+    { "proportional",       int(CoolingSlowdownLogicType::Proportional)      },
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CoolingSlowdownLogicType)
 

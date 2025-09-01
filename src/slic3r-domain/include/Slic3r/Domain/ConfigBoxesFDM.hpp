@@ -16,9 +16,9 @@ enum class ArcFittingType {
 };
 enum class CoolingSlowdownLogicType
 {
-    Proportional,
     UniformCooling,
     ConsistentSurface,
+    Proportional,
 };
 enum class TopOnePerimeterType
 {

@@ -248,9 +248,9 @@ enum class EnsureVerticalShellThickness {
 
 enum class CoolingSlowdownLogicType
 {
-    Proportional,
     UniformCooling,
     ConsistentSurface,
+    Proportional,
 };
 
 #define CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NAME) \
