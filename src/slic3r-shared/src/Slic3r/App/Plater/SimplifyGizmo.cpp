@@ -479,8 +479,9 @@ void SimplifyGizmo::worker_finished()
 
     if (m_state.config != m_configuration || m_state.volume_ids != m_volume_ids) {
         // Settings were changed, restart the worker immediately.
-        process();
+        return process();
     }
+    update_configuration_on_count_change();
 }
 
 void SimplifyGizmo::create_mesh_name() {
@@ -549,8 +550,6 @@ void SimplifyGizmo::set_nodes(const NodeInputs& node_inputs)
     m_triangle_count = 0;
     for (const NodeInput& node_input : node_inputs)
         m_triangle_count += node_input.its->indices.size();
-
-    update_configuration_on_count_change();
 }
 
 void SimplifyGizmo::init_material(){
