@@ -215,25 +215,19 @@ GizmoActivationState SimplifyGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
 
 void SimplifyGizmo::on_cycle_prepare() {}
 
-void SimplifyGizmo::update_dialog_data()
-{
-    const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
-    const ObjectSelection& selection        = scene_interactor.object_selection();
+void SimplifyGizmo::on_selection_change(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection) {
     if (selection.elements.empty())
-        close(); // gizmo should not be open with empty selection
+        return close(); // gizmo should not be open with empty selection
 
-    const Project& project            = m_project_interactor.selected_project();
     std::set<ObjectID> act_volume_ids = get_volume_ids(selection, project);
     // Check selection of new volume (or change)
     // Do not reselect object when processing
-    if (m_volume_ids != act_volume_ids) {
-        init_model(act_volume_ids);
+    if (m_volume_ids == act_volume_ids)
+        return; // same selection
+        
+    init_model(act_volume_ids);
 
-        // Start processing. If we switched from another object, process will
-        // stop the background thread and it will restart itself later.
-        process();
-    }
-
+    // update dialog data
     m_dialog->set_mesh_name(m_mesh_name);
     m_dialog->set_triangles(m_original_triangle_count);
     m_dialog->set_use_count(m_configuration.use_count);
@@ -241,6 +235,10 @@ void SimplifyGizmo::update_dialog_data()
     m_dialog->set_decimate_ratio_step(100. / m_original_triangle_count);
     m_dialog->set_decimate_ratio(m_configuration.decimate_ratio);
     m_dialog->set_info_line(m_configuration.wanted_count);
+
+    // Start processing. If we switched from another object, process will
+    // stop the background thread and it will restart itself later.
+    process();
 }
 
 void SimplifyGizmo::update_configuration_on_count_change()
@@ -254,22 +252,44 @@ void SimplifyGizmo::update_configuration_on_count_change()
     }
 }
 
-void SimplifyGizmo::update_buttons_on_state_changed()
+void SimplifyGizmo::update_buttons_on_state_changed(bool enable_apply, bool enable_close)
 {
-    bool is_cancelling     = m_state.status == State::cancelling;
-    bool is_worker_running = m_state.status == State::running;
-    bool is_result_ready   = !m_state.result.empty();
-
-    m_dialog->set_enable_apply_button(!is_worker_running && is_result_ready);
-    m_dialog->set_enable_close_button(!is_cancelling);
+    m_dialog->set_enable_apply_button(enable_apply);
+    m_dialog->set_enable_close_button(enable_close);
 }
 
 void SimplifyGizmo::on_activated() 
 {
-    update_dialog_data();
+    SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    const Project& project = m_project_interactor.selected_project();
+    on_selection_change(project, scene_interactor.object_selection());
+    
+    // Register listener for selection changes
+    scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 }
 
 void SimplifyGizmo::on_deactivated() {
+    deactivate();
+
+    // UnRegister listener for selection changes
+    Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+}
+
+void SimplifyGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
+{
+    deactivate();
+
+    const Domain::Project& project = m_project_interactor.workbench().project(project_id);
+    on_selection_change(project, selection);
+}
+
+Yoga::Dialog* SimplifyGizmo::unload_ui_dialog()
+{
+    return m_dialog.get();
+}
+
+void SimplifyGizmo::deactivate() {
     stop_worker_thread_request();
 
     // Enable previously disabled node
@@ -281,7 +301,6 @@ void SimplifyGizmo::on_deactivated() {
     Node::NodeList simplify_nodes;
     scene.root().query(is_simplify_node, simplify_nodes);
 
-    
     // remove all simplify nodes
     for (Node* node : simplify_nodes)
         scene.remove_children(is_simplify_node, node->parent());
@@ -289,11 +308,6 @@ void SimplifyGizmo::on_deactivated() {
     // Free geometries
     m_phantoms.clear();
     m_volume_ids.clear();
-}
-
-Yoga::Dialog* SimplifyGizmo::unload_ui_dialog()
-{
-    return m_dialog.get();
 }
 
 void SimplifyGizmo::close(){ m_close_fn(); }
@@ -369,7 +383,7 @@ void SimplifyGizmo::process()
     m_state.config = m_configuration;
     m_state.volume_ids = m_volume_ids;
     m_state.status = State::running;
-    update_buttons_on_state_changed();
+    update_buttons_on_state_changed(false, true);
 
     // Create a copy of current meshes to pass to the worker thread.
     // Using unique_ptr instead of pass-by-value to avoid an extra
@@ -412,7 +426,6 @@ void SimplifyGizmo::process()
             m_dialog->set_progress(m_state.progress);
             m_state.result.clear();
             m_state.status = State::Status::running;
-            update_buttons_on_state_changed();
         }
 
         // Start the actual calculation.
@@ -426,7 +439,7 @@ void SimplifyGizmo::process()
         } catch (SimplifyCanceledException&) {
             std::lock_guard lk(m_state_mutex);
             m_state.status = State::idle;
-            update_buttons_on_state_changed();
+            update_buttons_on_state_changed(false, true);
         }
 
         std::lock_guard lk(m_state_mutex);
@@ -434,7 +447,7 @@ void SimplifyGizmo::process()
             // We were not cancelled, the result is valid.
             m_state.status = State::Status::idle;
             m_state.result = std::move(its);
-            update_buttons_on_state_changed();
+            update_buttons_on_state_changed(true, true);
         }
 
         // Update UI. Use CallAfter so the function is run on UI thread.
@@ -450,7 +463,7 @@ bool SimplifyGizmo::stop_worker_thread_request()
         return false;
 
     m_state.status = State::Status::cancelling;
-    update_buttons_on_state_changed();
+    update_buttons_on_state_changed(!m_state.result.empty(), false);
     return true;
 }
 
@@ -472,6 +485,7 @@ void SimplifyGizmo::worker_finished()
     const auto& result = m_state.result;
     if (!result.empty())
         update_model(result);
+    update_buttons_on_state_changed(!result.empty(), true);
 
     // rerender the UI to show result.
     PlatformServices::instance().render_request_handler().request_render();

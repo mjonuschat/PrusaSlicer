@@ -10,6 +10,7 @@
 #include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo
 #include "Slic3r/App/Scene/Node.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneSelectionChangedListener
 #include "Slic3r/Domain/ObjectID.hpp"
 
 namespace Slic3r::App::Yoga {
@@ -22,7 +23,7 @@ class SimplifyDialog;
 // Continue development for GLGizmoSimplify permanent link: 
 // https://github.com/prusa3d/PrusaSlicer/blob/6fd9846df131c671ac9f944c836536f04d354a53/src/slic3r/GUI/Gizmos/GLGizmoSimplify.hpp
 // https://github.com/prusa3d/PrusaSlicer/blob/6fd9846df131c671ac9f944c836536f04d354a53/src/slic3r/GUI/Gizmos/GLGizmoSimplify.cpp
-class SimplifyGizmo : public Scene::IToolGizmo
+class SimplifyGizmo : public Scene::IToolGizmo, public Biz::Scene::ISceneSelectionChangedListener
 {
 public:
     using CloseFn = std::function<void()>;
@@ -49,9 +50,13 @@ public:
     void on_deactivated() override;
     Scene::ToolType type() const override { return Scene::ToolType::Simplify; }
     /**@}*/
-    Yoga::Dialog* unload_ui_dialog() override;
-    void update_dialog_data();
 
+    /**
+     * @name Implementation of ISceneSelectionChangedListener interface
+     */
+    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
+
+    Yoga::Dialog* unload_ui_dialog() override;
 private:
     struct Configuration
     {
@@ -83,9 +88,11 @@ private:
         std::set<Domain::ObjectID> volume_ids; // is same as result keys - store separate for faster check
     };
 
+    void on_selection_change(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection);
+
     void update_configuration_on_count_change();
-    void update_buttons_on_state_changed();
-    void draw_tool();
+    void update_buttons_on_state_changed(bool enable_apply, bool enable_close);
+    void deactivate();
     void close();
 
     void apply_simplify();
