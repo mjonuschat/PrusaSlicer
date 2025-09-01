@@ -339,7 +339,7 @@ MoveVerticesPerLayer get_skirt_preview(
 
 MoveVerticesPerLayer get_brim_preview(const Slic3r::Print& print, const float height)
 {
-    if (!print.is_step_done(Slic3r::psSkirtBrim)) {
+    if (!print.is_step_done(Slic3r::psSkirtBrim) || print.brim().empty()) {
         return {};
     }
 
