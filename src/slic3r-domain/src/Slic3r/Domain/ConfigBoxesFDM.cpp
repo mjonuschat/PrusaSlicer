@@ -667,16 +667,20 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type     = ConfigItemDef::GUIType::combobox;
     def->tooltip      = L(
         "Determines how the printer slows down layer printing when the minimum layer time isn't reached. "
-             "'Preserve perimeters' first tries to preserve the print speeds of the first two perimeters by slowing all other features. "
+             "'Consistent surface' first tries to preserve the print speeds of the first two perimeters by slowing all other features. "
              "Only if this isn't sufficient, it also slows down those first two perimeters. "
-             "'All features' slows down all print features, including the first two perimeters."
+             "'Uniform cooling' slows down all print features, including the first two perimeters."
     );
     def->init_fn = init_with(
-        CoolingSlowdownLogicType::AllFeatures,
-        {{int(CoolingSlowdownLogicType::AllFeatures), "all_features", L("All features")},
-         {int(CoolingSlowdownLogicType::PreservePerimeters),
-          "preserve_perimeters",
-          L("Preserve perimeters")}}
+        CoolingSlowdownLogicType::UniformCooling,
+        {
+            {int(CoolingSlowdownLogicType::UniformCooling),
+             "uniform_cooling",
+             L("Uniform cooling")},
+            {int(CoolingSlowdownLogicType::ConsistentSurface),
+             "consistent_surface",
+             L("Consistent surface")},
+        }
     );
 
     def               = defs.add("cooling_perimeter_transition_distance", typeid(double));

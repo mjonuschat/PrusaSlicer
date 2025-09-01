@@ -178,7 +178,7 @@ struct CoolingLine
     size_t  line_end;
     // XY Euclidian length of the adjustable part of this segment.
     float   adjustable_length;
-    // XY Euclidian length of the non-adjustable part of this segment (for PreservePerimeters logic).
+    // XY Euclidian length of the non-adjustable part of this segment (for ConsistentSurface logic).
     float   non_adjustable_length;
     // Current feedrate, possibly adjusted.
     float   feedrate;
@@ -186,7 +186,7 @@ struct CoolingLine
     float   feedrate_original;
     // Current duration of the adjustable part of this segment.
     float   adjustable_time;
-    // Current duration of the non-adjustable part of this segment (for PreservePerimeters logic).
+    // Current duration of the non-adjustable part of this segment (for ConsistentSurface logic).
     float   non_adjustable_time;
     // Maximum duration of the adjustable part of this segment.
     float   adjustable_time_max;
@@ -443,7 +443,7 @@ struct PerExtruderAdjustments
     unsigned int                extruder_id         = 0;
     // Is the cooling slow down logic enabled for this extruder's material?
     bool                        cooling_slow_down_enabled = false;
-    CoolingSlowdownLogicType    cooling_slowdown_logic    = CoolingSlowdownLogicType::AllFeatures;
+    CoolingSlowdownLogicType    cooling_slowdown_logic    = CoolingSlowdownLogicType::UniformCooling;
     // Slow down the print down to min_print_speed if the total layer time is below slowdown_below_layer_time.
     float                       slowdown_below_layer_time = 0.f;
     // Minimum print speed allowed for this extruder.
@@ -465,7 +465,7 @@ struct PerExtruderAdjustments
     size_t                      idx_line_begin      = 0;
     size_t                      idx_line_end        = 0;
 
-    // Create non-adjustable segments that should not be slowed down into CoolingLine (for PreservePerimeters logic).
+    // Create non-adjustable segments that should not be slowed down into CoolingLine (for ConsistentSurface logic).
     void create_non_adjustable_segments(const float non_adjustable_length) {
         if (non_adjustable_length <= 0.f) {
             return;
@@ -1046,8 +1046,8 @@ float CoolingBuffer::calculate_layer_slowdown(std::vector<PerExtruderAdjustments
     float elapsed_time_total0 = 0.f;
     for (PerExtruderAdjustments &adj : per_extruder_adjustments) {
         const double perimeter_transition_distance = m_config.get<std::vector<double>>("cooling_perimeter_transition_distance").at(m_current_extruder);
-        if (adj.cooling_slowdown_logic == CoolingSlowdownLogicType::PreservePerimeters && perimeter_transition_distance >= 0.) {
-            // Create non-adjustable segments for PreservePerimeters logic before sorting.
+        if (adj.cooling_slowdown_logic == CoolingSlowdownLogicType::ConsistentSurface && perimeter_transition_distance >= 0.) {
+            // Create non-adjustable segments for ConsistentSurface logic before sorting.
             adj.create_non_adjustable_segments(static_cast<float>(perimeter_transition_distance));
         }
 
@@ -1086,7 +1086,7 @@ float CoolingBuffer::calculate_layer_slowdown(std::vector<PerExtruderAdjustments
             if (max_time > slowdown_below_layer_time) {
                 if (adj.cooling_slowdown_logic == CoolingSlowdownLogicType::Proportional) {
                     extruder_range_slow_down_proportional(cur_begin, by_slowdown_time.end(), elapsed_time_total0, total, slowdown_below_layer_time);
-                } else if (adj.cooling_slowdown_logic == CoolingSlowdownLogicType::PreservePerimeters) {
+                } else if (adj.cooling_slowdown_logic == CoolingSlowdownLogicType::ConsistentSurface) {
                     const float remaining_time_stretch = extruder_range_slow_down_non_proportional(cur_begin, by_slowdown_time.end(), slowdown_below_layer_time - total, AdjustableFeatureType::None);
                     if (remaining_time_stretch > 0.f) {
                         // We didn't achieve the requested time for the layer, so we allow a slowdown on the external and first internal perimeter.

@@ -2435,7 +2435,7 @@ void TabFilament::toggle_options()
             toggle_option("overhang_fan_speed_"+std::to_string(i),dynamic_fan_speeds);
         }
 
-        bool cooling_preserve_perimeters = cooling && static_cast<CoolingSlowdownLogicType>(m_config->option("cooling_slowdown_logic")->getInts().at(0)) == CoolingSlowdownLogicType::PreservePerimeters;
+        bool cooling_preserve_perimeters = cooling && static_cast<CoolingSlowdownLogicType>(m_config->option("cooling_slowdown_logic")->getInts().at(0)) == CoolingSlowdownLogicType::ConsistentSurface;
         toggle_option("cooling_perimeter_transition_distance", cooling_preserve_perimeters);
     }
 
