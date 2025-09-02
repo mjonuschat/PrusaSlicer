@@ -61,7 +61,7 @@
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
 
-#define ENABLED_DEBUG_IMGUI_FONT 0
+#define ENABLED_DEBUG_OUTLINE 0
 #define ENABLED_DEBUG_IMGUI_ICONS 0
 #define ENABLED_DEBUG_BEDS 0
 
@@ -489,6 +489,84 @@ void PlaterRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
     m_gizmo_manager->render_scene(cmd_buffer);
 
     cmd_buffer.submit();
+}
+
+class ImguiVecRender
+{
+public:
+    void operator()(const char* label, const Vec2f& v)
+    {
+        fill_data<2>(v);
+        ImGui::InputFloat2(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec2d& v)
+    {
+        fill_data<2>(v);
+        ImGui::InputFloat2(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec3d& v)
+    {
+        fill_data<3>(v);
+        ImGui::InputFloat3(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec4f& v)
+    {
+        fill_data<4>(v);
+        ImGui::InputFloat4(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec4d& v)
+    {
+        fill_data<4>(v);
+        ImGui::InputFloat4(label, m_data);
+    }
+
+private:
+    template <size_t N, typename VecT>
+    void fill_data(const VecT& data)
+    {
+        for (size_t i = 0; i < N; i++)
+            m_data[i] = static_cast<float>(data[i]);
+    }
+
+private:
+    float m_data[4];
+};
+
+void imgui_scenegraph_node_info(const Scene::Node& node)
+{
+    ImGuiTreeNodeFlags node_flags = 0; // ImGuiTreeNodeFlags_DefaultOpen;
+    if (node.children().empty())
+        node_flags |= ImGuiTreeNodeFlags_Leaf;
+    const std::string& name = node.debug_name();
+    if (ImGui::TreeNodeEx(&node, node_flags, "%s %s%s%s%s", name.empty() ? "Node" : name.c_str(), node.has_render_component() ? "(R)" : "", node.has_material_override() ? "(M)" : "", node.has_imgui_render_component() ? "(I)" : "", node.has_raycast_component() ? "(C)" : ""))
+    {
+        static const Scene::Node* opened_node = nullptr;
+
+        ImGui::SameLine();
+        if (ImGui::SmallButton("info")) {
+            opened_node = (opened_node == &node) ? nullptr : &node;
+        }
+
+        if (opened_node == &node) {
+            auto transform{node.world_transform()};
+
+            ImguiVecRender vec_render;
+            for (size_t i = 0; i < 4; i++) {
+                ImGui::PushID(i);
+                vec_render("##", Vec4d{transform.matrix().row(i)});
+                ImGui::PopID();
+            }
+        }
+
+        for (const auto& ch : node.children()) {
+            imgui_scenegraph_node_info(*ch);
+        }
+        ImGui::TreePop();
+    }
 }
 
 #if ENABLED_DEBUG_IMGUI_FONT
@@ -924,9 +1002,6 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     }
     ImGui::End();
 #endif // ENABLED_DEBUG_OUTLINE
-#if ENABLED_DEBUG_IMGUI_FONT
-    render_imgui_debug_input_font();
-#endif // ENABLED_DEBUG_IMGUI_FONT
 #if ENABLED_DEBUG_IMGUI_ICONS
     render_imgui_debug_icons();
 #endif // ENABLED_DEBUG_IMGUI_ICONS
