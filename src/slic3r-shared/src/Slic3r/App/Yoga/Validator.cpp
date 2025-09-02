@@ -103,7 +103,7 @@ std::string DoubleValidator::process(const std::string& input)
 
     m_value = std::clamp(value, m_from, m_to);
     return m_precision.has_value() ? fmt::format("{1:.{0}f}", m_precision.value(), m_value) :
-                                     fmt::format("{}", m_value);
+                                     fmt::format("{:.10g}", m_value);
 }
 
 std::optional<int> DoubleValidator::precision() const

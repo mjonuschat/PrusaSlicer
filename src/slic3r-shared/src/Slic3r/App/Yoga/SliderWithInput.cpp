@@ -49,7 +49,7 @@ SliderWithInput::SliderWithInput() : Item()
         {
             m_input->set_text(fmt::format("{1:.{0}f}", double_validator->precision().value(), value));
         } else {
-            m_input->set_text(fmt::format("{}", value));
+            m_input->set_text(fmt::format("{:.10g}", value));
         }
         if (callbacks().value_changed)
             callbacks().value_changed(value);

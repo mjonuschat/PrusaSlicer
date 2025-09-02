@@ -93,13 +93,13 @@ void InputTextWithSpin::set_default(double default_value)
 void InputTextWithSpin::increase_value()
 {
     m_last_value += GImGui->IO.KeyCtrl ? m_step_fast : m_step;
-    set_text(fmt::format("{}", m_last_value));
+    set_text(fmt::format("{:.12g}", m_last_value));
 }
 
 void InputTextWithSpin::decrease_value()
 {
     m_last_value -= GImGui->IO.KeyCtrl ? m_step_fast : m_step;
-    set_text(fmt::format("{}", m_last_value));
+    set_text(fmt::format("{:.12g}", m_last_value));
 }
 
 } // namespace Slic3r::App::Yoga
