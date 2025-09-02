@@ -10,6 +10,7 @@
 #include "Slic3r/App/Render/ImguiRender.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
+#include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/LightSetting.hpp"
@@ -296,11 +297,11 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     // temporary to allow to switch yoga layout on/off
     if (m_use_yoga_layout) {
         bool gcode_window_enabled = m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode
-            && m_fdm_viewer.has_data()
-            && m_gcode_window->is_visible();
+            && m_fdm_viewer.has_data();
 
         if (m_layout) {
-            m_gcode_window->set_visible(gcode_window_enabled);
+            m_legend->set_visible(gcode_window_enabled && m_button_legend->checked());
+            m_gcode_window->set_visible(gcode_window_enabled && m_button_gcode->checked());
             m_slider_layers->set_visible(m_fdm_viewer.has_data());
             m_sla_slider_layers->set_visible(m_sla_viewer.has_data());
             m_slider_gcode->set_visible(m_fdm_viewer.has_data());
@@ -473,15 +474,8 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
     init_scene_layout();
 
     m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
-
-    // select active viewer with respect to the printer technology of selected config container
-    Domain::SelectionId config_container_id = m_project_interactor.scene_interactor().selected_config_container_id();
-    const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(config_container_id);
-    DEBUG_ASSERT(cc != nullptr);
-    if (cc->print_technology() == Domain::PrinterTechnology::SLA)
-        m_viewer = &m_sla_viewer;
-    else
-        m_viewer = &m_fdm_viewer;
+    m_fdm_viewer.set_scene(m_scene_presenter->scene());
+    m_sla_viewer.set_scene(m_scene_presenter->scene());
 }
 
 void PreviewRenderModule::on_activated()
@@ -491,10 +485,16 @@ void PreviewRenderModule::on_activated()
 
     update_bed_instances();
 
-    if (m_viewer == &m_fdm_viewer)
-        m_fdm_viewer.set_scene(m_scene_presenter->scene());
-    else if (m_viewer == &m_sla_viewer)
-        m_sla_viewer.set_scene(m_scene_presenter->scene());
+    // select active viewer with respect to the printer technology of selected config container
+    Domain::SelectionId config_container_id = m_project_interactor.scene_interactor().selected_config_container_id();
+    const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(config_container_id);
+    DEBUG_ASSERT(cc != nullptr);
+    if (cc->print_technology() == Domain::PrinterTechnology::SLA) {
+        m_viewer = &m_sla_viewer;
+    }
+    else {
+        m_viewer = &m_fdm_viewer;
+    }
 }
 
 void PreviewRenderModule::on_deactivated()
@@ -1070,29 +1070,40 @@ void PreviewRenderModule::update_toolbar_visibility()
     { return std::find(options.begin(), options.end(), type) != options.end(); };
     const bool fdm_has_gcode = m_fdm_viewer.has_data() && m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode;
 
-    m_button_travels->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Travels));
-    m_button_retractions->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Retractions));
-    m_button_unretractions->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Unretractions));
-    m_button_seams->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Seams));
-    m_button_tool_changes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::ToolChanges));
-    m_button_color_changes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::ColorChanges));
-    m_button_pause_prints->set_visible(fdm_has_gcode && fdm_has_option(OptionType::PausePrints));
-    m_button_custom_gcodes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::CustomGCodes));
-    m_button_center_of_gravity->set_visible(fdm_has_gcode);
-    m_button_tool_marker->set_visible(fdm_has_gcode);
-    m_button_shells->set_visible(fdm_has_gcode /*m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer*/);
-    m_button_wipes->set_visible(fdm_has_gcode);
+    m_layout->middle_toolbar()->set_visible(fdm_has_gcode);
+    if (fdm_has_gcode) {
+        m_button_travels->set_visible(fdm_has_option(OptionType::Travels));
+        m_button_retractions->set_visible(fdm_has_option(OptionType::Retractions));
+        m_button_unretractions->set_visible(fdm_has_option(OptionType::Unretractions));
+        m_button_seams->set_visible(fdm_has_option(OptionType::Seams));
+        m_button_tool_changes->set_visible(fdm_has_option(OptionType::ToolChanges));
+        m_button_color_changes->set_visible(fdm_has_option(OptionType::ColorChanges));
+        m_button_pause_prints->set_visible(fdm_has_option(OptionType::PausePrints));
+        m_button_custom_gcodes->set_visible(fdm_has_option(OptionType::CustomGCodes));
+        m_button_center_of_gravity->set_visible(fdm_has_gcode);
+        m_button_tool_marker->set_visible(fdm_has_gcode);
+        m_button_shells->set_visible(fdm_has_gcode /*m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer*/);
+        m_button_wipes->set_visible(fdm_has_gcode);
 
-    m_button_legend->set_visible(m_fdm_viewer.has_data() && m_fdm_viewer.mode() == FdmViewerWrapperMode::EditorGCode);
-    m_button_gcode->set_visible(fdm_has_gcode);
-
-    m_layout->set_bottom_toolbar_visible(m_button_legend->is_visible() || m_button_gcode->is_visible());
+        m_button_legend->set_visible(m_fdm_viewer.has_data() && m_fdm_viewer.mode() == FdmViewerWrapperMode::EditorGCode);
+        m_button_gcode->set_visible(fdm_has_gcode);
+        m_layout->set_bottom_toolbar_visible(m_button_legend->is_visible() || m_button_gcode->is_visible());
+    } else {
+        m_layout->set_bottom_toolbar_visible(false);
+    }
 }
 
 void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
 {
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
+
+    if (m_sla_viewer.has_data()) {
+        // Indicates a switch from SLA to FDM printer; 
+        // SlaViewer must be reset and m_viewer set to FDM.
+        m_sla_viewer.reset();
+        m_viewer = &m_fdm_viewer;
+    }
 
     const std::optional<Biz::FDMResultRef> fdm_result{m_project_interactor.fdm_result_cache().get_result(id)};
     if (!fdm_result) {
@@ -1130,6 +1141,15 @@ void PreviewRenderModule::update_sla_viewer_result_data(const Domain::SlicingId 
 {
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
+
+    if (m_fdm_viewer.has_data()) {
+        // Indicates a switch from FDM to SLA printer; 
+        // FdmViewer must be reset and m_viewer set to SLA.
+        m_fdm_viewer.reset();
+        m_viewer = &m_sla_viewer;
+    }
+    update_toolbar_visibility();
+
     const std::optional<Biz::SLAResultRef> sla_result{m_project_interactor.sla_result_cache().get_result(id)};
     if (!sla_result) {
         m_sla_viewer.reset_result();
