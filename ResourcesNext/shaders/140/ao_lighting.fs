@@ -1,6 +1,7 @@
 #version 140
 
 #define MAX_LIGHTS 4
+#define MAX_MATERIALS 16
 #define PI 3.1415926535897932384626433832795
 
 struct Light
@@ -27,21 +28,28 @@ uniform bool apply_shadows;
 uniform float shadows_intensity;
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
+uniform Material materials[MAX_MATERIALS];
+uniform vec2 viewport_size;
 uniform mat4 view_matrix;
+uniform mat4 inverse_projection_matrix;
 uniform float ambient_intensity;
 
-uniform sampler2D g_eye_position;
+uniform sampler2D g_depth;
 uniform sampler2D g_light_position;
 uniform sampler2D g_eye_normal;
 uniform sampler2D g_color;
-uniform sampler2D g_material;
-uniform sampler2D g_eye_depth;
 uniform sampler2D ssao;
 uniform sampler2D shadowsmap;
 
 in vec2 tex_coord;
 
 out vec4 out_color;
+
+vec3 evaluate_eye_position(vec2 xy, float depth)
+{
+    vec4 eye = inverse_projection_matrix * vec4(vec3(xy, depth) * 2.0 - vec3(1.0), 1.0);
+    return eye.xyz / eye.w;
+}
 
 float shadow_pcf(vec4 position, float NdotL)
 {
@@ -76,7 +84,7 @@ vec3 light_direction(Light light)
 vec4 lighting_phong()
 {
     vec3 eye_normal = texture(g_eye_normal, tex_coord).xyz;
-    vec3 eye_position = texture(g_eye_position, tex_coord).xyz;
+    vec3 eye_position = evaluate_eye_position(gl_FragCoord.xy / viewport_size, texture(g_depth, tex_coord).r);
     vec4 light_position = texture(g_light_position, tex_coord);
     float ao = texture(ssao, tex_coord).r;
 
@@ -158,13 +166,10 @@ vec3 light_radiance(vec3 F0, vec3 v, vec3 n, vec3 l, float diffuse, Material mat
 
 vec4 lighting_pbr()
 {
-    vec3 v = normalize(-texture(g_eye_position, tex_coord).xyz);
-    vec3 n = texture(g_eye_normal, tex_coord).xyz;
-    vec3 m = texture(g_material, tex_coord).xyz;
-    Material material;
-    material.metal = m.x;
-    material.roughness = m.y;
-    material.ior = m.z;
+    vec3 v = normalize(-evaluate_eye_position(gl_FragCoord.xy / viewport_size, texture(g_depth, tex_coord).r));
+    vec4 n_m = texture(g_eye_normal, tex_coord);
+    vec3 n = n_m.xyz;
+    Material material = materials[int(n_m.w)];
 
     vec4 color = texture(g_color, tex_coord);
     color.xyz = pow(color.xyz, vec3(2.2));

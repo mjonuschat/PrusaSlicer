@@ -1,7 +1,6 @@
 #version 100
 
 #define MAX_LIGHTS 4
-#define PI 3.1415926535897932384626433832795
 
 const vec3 back_color_dark  = vec3(0.235, 0.235, 0.235);
 const vec3 back_color_light = vec3(0.365, 0.365, 0.365);

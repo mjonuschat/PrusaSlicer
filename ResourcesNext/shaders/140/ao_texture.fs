@@ -5,9 +5,10 @@ uniform float bias;
 uniform int kernel_size;
 uniform vec2 viewport_size;
 uniform mat4 projection_matrix;
+uniform mat4 inverse_projection_matrix;
 uniform vec3 kernel[256];
 
-uniform sampler2D g_eye_position;
+uniform sampler2D g_depth;
 uniform sampler2D g_eye_normal;
 uniform sampler2D tex_noise;
 
@@ -15,10 +16,16 @@ in vec2 tex_coord;
 
 out float out_color;
 
+vec3 evaluate_eye_position(vec2 xy, float depth)
+{
+    vec4 eye = inverse_projection_matrix * vec4(vec3(xy, depth) * 2.0 - vec3(1.0), 1.0);
+    return eye.xyz / eye.w;
+}
+
 void main()
 {
     // get input for SSAO algorithm
-    vec3 eye_position = texture(g_eye_position, tex_coord).xyz;
+    vec3 eye_position = evaluate_eye_position(gl_FragCoord.xy / viewport_size, texture(g_depth, tex_coord).r);
     vec3 eye_normal = normalize(texture(g_eye_normal, tex_coord).xyz);
     vec2 tex_noise_size = textureSize(tex_noise, 0);
     vec2 noise_scale = viewport_size / tex_noise_size; 
@@ -33,23 +40,22 @@ void main()
     float occlusion = 0.0;
     for (int i = 0; i < kernel_size; ++i) {
         // get sample position
-        vec3 sample_pos = TBN * kernel[i]; // from tangent to view-space
-        sample_pos = eye_position + sample_pos * radius; 
-        
+        vec3 sample_ref_pos = eye_position + TBN * kernel[i] * radius; // from tangent to view-space
+
         // project sample position (to sample texture) (to get position on screen/texture)
-        vec4 offset = vec4(sample_pos, 1.0);
-        offset = projection_matrix * offset; // from view to clip-space
+        vec4 offset = projection_matrix * vec4(sample_ref_pos, 1.0); // from view to clip-space
         offset.xyz /= offset.w; // perspective divide
         offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
-        
+
         // get sample depth
-        float sample_depth = texture(g_eye_position, offset.xy).z; // get depth value of kernel sample
-        
+        float sample_depth = texture(g_depth, offset.xy).r; // get depth value of kernel sample
+        vec3 sample_eye_position = evaluate_eye_position(offset.xy, sample_depth);        
+
         // range check & accumulate
-        float range_check = smoothstep(0.0, 1.0, radius / abs(eye_position.z - sample_depth));
-        occlusion += (sample_depth >= sample_pos.z + bias ? 1.0 : 0.0) * range_check;           
+        float range_check = smoothstep(0.0, 1.0, radius / abs(eye_position.z - sample_eye_position.z));
+        occlusion += (sample_eye_position.z >= sample_ref_pos.z + bias ? 1.0 : 0.0) * range_check;           
     }
     occlusion = 1.0 - (occlusion / kernel_size);
-    
+
     out_color = occlusion;
 }

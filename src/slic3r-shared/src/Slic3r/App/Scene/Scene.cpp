@@ -644,7 +644,8 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
     }
 }
 
-void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomizer* customizer, const Domain::Index2& viewport_size) const
+void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomizer* customizer, const Domain::Index2& viewport_size,
+    PBRParamsList& pbr_params_list) const
 {
     AmbientOcclusion& ao = s_graphics_settings.m_ao;
 
@@ -654,12 +655,10 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
         Render::FramebufferCreationData data;
         data.width = viewport_size[0];
         data.height = viewport_size[1];
-        data.color_attachments.resize(5);
-        data.color_attachments[AmbientOcclusion::EYE_POS_CLR_ATTR].format = Domain::PixelFormat::RGBA16F;
+        data.color_attachments.resize(3);
         data.color_attachments[AmbientOcclusion::LIGHT_POS_CLR_ATTR].format = Domain::PixelFormat::RGBA16F;
         data.color_attachments[AmbientOcclusion::EYE_NORM_CLR_ATTR].format = Domain::PixelFormat::RGBA16F;
         data.color_attachments[AmbientOcclusion::COLOR_CLR_ATTR].format = Domain::PixelFormat::RGBA8;
-        data.color_attachments[AmbientOcclusion::PBR_MATERIAL_ATTR].format = Domain::PixelFormat::RGBA16F;
         ao.gbuffer_fb = device.context().framebuffer_manager().create(data);
     }
 
@@ -708,8 +707,21 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
                 .set_shader(device.context().shader_manager().shader(shader_name))
                 .set_uniform("light_matrix", light_cam_matrix);
 
-            if (s_graphics_settings.pbr_enabled() && n->render_component()->has_pbr())
-                set_uniforms(*n->render_component()->pbr(), mat);
+            if (s_graphics_settings.pbr_enabled() && n->render_component()->has_pbr()) {
+                int id = -1;
+                if (pbr_params_list.size() == MAX_NUM_PBR_MATERIALS)
+                    id = int(pbr_params_list.size() - 1);
+                else {
+                    const PBRParams& params = *n->render_component()->pbr();
+                    auto it = std::find(pbr_params_list.begin(), pbr_params_list.end(), params);
+                    if (it == pbr_params_list.end()) {
+                        pbr_params_list.push_back(params);
+                        it = std::prev(pbr_params_list.end());
+                    }
+                    id = int(std::distance(pbr_params_list.begin(), it));
+                }
+                mat.set_uniform("material_id", id);
+            }
 
             n->render_component()->render(*n, m_camera, m_lighting, mat, *cmd_buffer);
         }
@@ -749,6 +761,7 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2&
 
     Vec2f v_size = { float(viewport_size[0]), float(viewport_size[1]) };
     SquareMatrix4f projection = m_camera.projection().cast<float>();
+    SquareMatrix4f inv_projection = projection.inverse();
 
     Render::Material material;
     material
@@ -758,10 +771,11 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2&
         .set_uniform("bias", ao.bias)
         .set_uniform("viewport_size", v_size)
         .set_uniform("projection_matrix", projection)
-        .set_uniform("g_eye_position", AmbientOcclusion::EYE_POS_TEX_UNIT)
+        .set_uniform("inverse_projection_matrix", inv_projection)
+        .set_uniform("g_depth", AmbientOcclusion::DEPTH_TEX_UNIT)
         .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
         .set_uniform("tex_noise", AmbientOcclusion::NOISE_TEX_UNIT)
-        .set_texture(AmbientOcclusion::EYE_POS_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_POS_CLR_ATTR))
+        .set_texture(AmbientOcclusion::DEPTH_TEX_UNIT, ao.gbuffer_fb->depth())
         .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
         .set_texture(AmbientOcclusion::NOISE_TEX_UNIT, ao.noise_tex);
 
@@ -776,13 +790,13 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2&
     cmd_buffer->unbind_framebuffer(*ao.ao_tex_fb);
 }
 
-void Scene::render_ao_texture_blur_pass(Render::Device& device, const Domain::Index2& viewport_size) const
+void Scene::render_ao_texture_hblur_pass(Render::Device& device, const Domain::Index2& viewport_size) const
 {
     AmbientOcclusion& ao = s_graphics_settings.m_ao;
 
-    if (ao.blur_fb == nullptr || ao.framebuffer_size != viewport_size) {
-        if (ao.blur_fb != nullptr)
-            device.context().framebuffer_manager().destroy(ao.blur_fb);
+    if (ao.hblur_fb == nullptr || ao.framebuffer_size != viewport_size) {
+        if (ao.hblur_fb != nullptr)
+            device.context().framebuffer_manager().destroy(ao.hblur_fb);
         Render::FramebufferCreationData data;
         data.width = viewport_size[0];
         data.height = viewport_size[1];
@@ -790,28 +804,64 @@ void Scene::render_ao_texture_blur_pass(Render::Device& device, const Domain::In
         Render::FramebufferColorAttachment color;
         color.format = Domain::PixelFormat::R32F;
         data.color_attachments.push_back(color);
-        ao.blur_fb = device.context().framebuffer_manager().create(data);
+        ao.hblur_fb = device.context().framebuffer_manager().create(data);
     }
 
     auto cmd_buffer = device.create_command_buffer();
-    cmd_buffer->bind_framebuffer(*ao.blur_fb);
+    cmd_buffer->bind_framebuffer(*ao.hblur_fb);
     cmd_buffer->set_viewport(m_camera.viewport());
     cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
     cmd_buffer->clear_buffers(true, false);
 
     Render::Material material;
     material
-        .set_shader(device.context().shader_manager().shader("ao_blur"))
+        .set_shader(device.context().shader_manager().shader("ao_hblur"))
         .set_uniform("in_tex", AmbientOcclusion::AO_TEX_UNIT)
         .set_uniform("filter_size", int(ao.blur_filter_size))
         .set_texture(AmbientOcclusion::AO_TEX_UNIT, ao.ao_tex_fb->color_attachment(0));
 
     cmd_buffer->bind_and_draw(*m_screen_quad, material);
 
-    cmd_buffer->unbind_framebuffer(*ao.blur_fb);
+    cmd_buffer->unbind_framebuffer(*ao.hblur_fb);
 }
 
-void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device) const
+void Scene::render_ao_texture_vblur_pass(Render::Device& device, const Domain::Index2& viewport_size) const
+{
+    AmbientOcclusion& ao = s_graphics_settings.m_ao;
+
+    if (ao.vblur_fb == nullptr || ao.framebuffer_size != viewport_size) {
+        if (ao.vblur_fb != nullptr)
+            device.context().framebuffer_manager().destroy(ao.vblur_fb);
+        Render::FramebufferCreationData data;
+        data.width = viewport_size[0];
+        data.height = viewport_size[1];
+        data.depth = false;
+        Render::FramebufferColorAttachment color;
+        color.format = Domain::PixelFormat::R32F;
+        data.color_attachments.push_back(color);
+        ao.vblur_fb = device.context().framebuffer_manager().create(data);
+    }
+
+    auto cmd_buffer = device.create_command_buffer();
+    cmd_buffer->bind_framebuffer(*ao.vblur_fb);
+    cmd_buffer->set_viewport(m_camera.viewport());
+    cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
+    cmd_buffer->clear_buffers(true, false);
+
+    Render::Material material;
+    material
+        .set_shader(device.context().shader_manager().shader("ao_vblur"))
+        .set_uniform("in_tex", AmbientOcclusion::AO_TEX_UNIT)
+        .set_uniform("filter_size", int(ao.blur_filter_size))
+        .set_texture(AmbientOcclusion::AO_TEX_UNIT, ao.hblur_fb->color_attachment(0));
+
+    cmd_buffer->bind_and_draw(*m_screen_quad, material);
+
+    cmd_buffer->unbind_framebuffer(*ao.vblur_fb);
+}
+
+void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, const Domain::Index2& viewport_size, Render::Device& device,
+    const PBRParamsList& pbr_params_list) const
 {
     cmd_buffer.set_depth_test_enabled(false);
     cmd_buffer.set_depth_write_enabled(false);
@@ -819,7 +869,9 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
     Render::Blending blending{ {Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha} };
     cmd_buffer.set_blending(blending);
 
+    Vec2f v_size = { float(viewport_size[0]), float(viewport_size[1]) };
     SquareMatrix4f view = camera().view().matrix().cast<float>();
+    SquareMatrix4f inv_projection = m_camera.projection().matrix().inverse().cast<float>();
 
     const AmbientOcclusion& ao = s_graphics_settings.m_ao;
     const Shadows& shadows = s_graphics_settings.m_shadows;
@@ -832,23 +884,24 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
         .set_uniform("pbr_intensity", s_graphics_settings.pbr_enabled() ? pbr.intensity : 1.0f)
         .set_uniform("apply_shadows", s_graphics_settings.shadows_enabled())
         .set_uniform("shadows_intensity", s_graphics_settings.shadows_enabled() ? shadows.intensity : 0.0f)
-        .set_uniform("g_eye_position", AmbientOcclusion::EYE_POS_TEX_UNIT)
+        .set_uniform("viewport_size", v_size)
+        .set_uniform("inverse_projection_matrix", inv_projection)
+        .set_uniform("g_depth", AmbientOcclusion::DEPTH_TEX_UNIT)
         .set_uniform("g_light_position", AmbientOcclusion::LIGHT_POS_TEX_UNIT)
         .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
         .set_uniform("g_color", AmbientOcclusion::COLOR_TEX_UNIT)
-        .set_uniform("g_material", AmbientOcclusion::PBR_MATERIAL_TEX_UNIT)
         .set_uniform("ssao", AmbientOcclusion::AO_TEX_UNIT)
         .set_uniform("shadowsmap", Shadows::SHADOWSMAP_TEX_UNIT)
         .set_uniform("view_matrix", view)
-        .set_texture(AmbientOcclusion::EYE_POS_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_POS_CLR_ATTR))
+        .set_texture(AmbientOcclusion::DEPTH_TEX_UNIT, ao.gbuffer_fb->depth())
         .set_texture(AmbientOcclusion::LIGHT_POS_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::LIGHT_POS_CLR_ATTR))
         .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
         .set_texture(AmbientOcclusion::COLOR_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::COLOR_CLR_ATTR))
-        .set_texture(AmbientOcclusion::PBR_MATERIAL_TEX_UNIT, ao.gbuffer_fb->color_attachment(AmbientOcclusion::PBR_MATERIAL_ATTR))
-        .set_texture(AmbientOcclusion::AO_TEX_UNIT, ao.blur_fb->color_attachment(0))
+        .set_texture(AmbientOcclusion::AO_TEX_UNIT, ao.vblur_fb->color_attachment(0))
         .set_texture(Shadows::SHADOWSMAP_TEX_UNIT, shadows.framebuffer->depth());
  
     set_uniforms(m_lighting, material);
+    set_uniforms(pbr_params_list, material);
 
     cmd_buffer.bind_and_draw(*m_screen_quad, material);
 
@@ -873,12 +926,14 @@ void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, IS
     if (s_graphics_settings.ao_enabled()) {
         const Render::Rect& viewport = m_camera.viewport();
         Domain::Index2 viewport_size = { viewport.width, viewport.height };
-        render_ao_gbuffer_pass(device, customizer, viewport_size);
+        PBRParamsList pbr_params_list;
+        render_ao_gbuffer_pass(device, customizer, viewport_size, pbr_params_list);
         generate_ao_kernel(device);
         generate_ao_noise(device);
         render_ao_texture_pass(device, viewport_size);
-        render_ao_texture_blur_pass(device, viewport_size);
-        render_ao_lighting_pass(cmd_buffer, device);
+        render_ao_texture_hblur_pass(device, viewport_size);
+        render_ao_texture_vblur_pass(device, viewport_size);
+        render_ao_lighting_pass(cmd_buffer, viewport_size, device, pbr_params_list);
         AmbientOcclusion& ao = s_graphics_settings.m_ao;
         cmd_buffer.blit_to_draw_framebuffer(*ao.gbuffer_fb, viewport.width, viewport.height,
             Render::BlitFramebufferMask::DepthBufferBit, Render::BlitFramebufferFilter::Nearest);

@@ -58,7 +58,8 @@ struct AmbientOcclusion
     mutable Domain::Index2 framebuffer_size{0, 0};
     mutable Render::Framebuffer* gbuffer_fb{nullptr};
     mutable Render::Framebuffer* ao_tex_fb{nullptr};
-    mutable Render::Framebuffer* blur_fb{nullptr};
+    mutable Render::Framebuffer* hblur_fb{nullptr};
+    mutable Render::Framebuffer* vblur_fb{nullptr};
 
     mutable std::optional<size_t> pending_kernel_size;
     mutable std::vector<Domain::Vec3f> kernel;
@@ -71,19 +72,16 @@ struct AmbientOcclusion
     mutable float bias{DEFAULT_BIAS};
     mutable size_t blur_filter_size{DEFAULT_BLUR_FILTER_SIZE};
 
-    static constexpr int EYE_POS_CLR_ATTR = 0;
-    static constexpr int LIGHT_POS_CLR_ATTR = 1;
-    static constexpr int EYE_NORM_CLR_ATTR = 2;
-    static constexpr int COLOR_CLR_ATTR = 3;
-    static constexpr int PBR_MATERIAL_ATTR = 4;
+    static constexpr int LIGHT_POS_CLR_ATTR = 0;
+    static constexpr int EYE_NORM_CLR_ATTR = 1;
+    static constexpr int COLOR_CLR_ATTR = 2;
 
     static constexpr int NOISE_TEX_UNIT = 8;
-    static constexpr int EYE_POS_TEX_UNIT = 9;
+    static constexpr int DEPTH_TEX_UNIT = 9;
     static constexpr int LIGHT_POS_TEX_UNIT = 10;
     static constexpr int EYE_NORM_TEX_UNIT = 11;
     static constexpr int COLOR_TEX_UNIT = 12;
-    static constexpr int PBR_MATERIAL_TEX_UNIT = 13;
-    static constexpr int AO_TEX_UNIT = 14;
+    static constexpr int AO_TEX_UNIT = 13;
 
     static constexpr int DEFAULT_KERNEL_SIZE = 32;
     static constexpr int DEFAULT_NOISE_SIZE = 4;

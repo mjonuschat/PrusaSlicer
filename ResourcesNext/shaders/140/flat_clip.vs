@@ -1,7 +1,6 @@
 #version 140
 
-uniform mat4 view_model_matrix;
-uniform mat4 projection_matrix;
+uniform mat4 projection_view_model_matrix;
 uniform mat4 volume_world_matrix;
 
 // Clipping plane, x = min z, y = max z. Used by the FFF and SLA previews to clip with a top / bottom plane.
@@ -19,5 +18,5 @@ void main()
     vec4 world_pos = volume_world_matrix * vec4(v_position, 1.0);
     clipping_planes_dots = vec3(dot(world_pos, clipping_plane), world_pos.z - z_range.x, z_range.y - world_pos.z);
 
-    gl_Position = projection_matrix * view_model_matrix * vec4(v_position, 1.0);
+    gl_Position = projection_view_model_matrix * vec4(v_position, 1.0);
 }

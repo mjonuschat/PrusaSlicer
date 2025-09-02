@@ -1,7 +1,6 @@
 #version 300 es
 
 #define MAX_LIGHTS 4
-#define PI 3.1415926535897932384626433832795
 
 struct Light
 {
@@ -51,7 +50,7 @@ float shadow_pcf(vec4 position, float NdotL)
         }    
     }
     shadow /= 9.0;
-    
+
     // if outside the light frustum -> lit
     return (proj_coords.z - bias > 1.0) ? 1.0 : 1.0 - shadows_intensity * shadow;
 }

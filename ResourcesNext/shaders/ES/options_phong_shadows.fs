@@ -1,7 +1,6 @@
 #version 300 es
 
 #define MAX_LIGHTS 4
-#define PI 3.1415926535897932384626433832795
 
 struct Light
 {

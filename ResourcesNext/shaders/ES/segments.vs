@@ -4,7 +4,28 @@ precision lowp usampler2D;
 
 #define MAX_LIGHTS 4
 
-const vec3 UP = vec3(0, 0, 1);
+const vec3 UP = vec3(0.0, 0.0, 1.0);
+
+const vec2 HORIZONTAL_VERTICAL_VIEW_SIGNS_ARRAY[16] = vec2[](
+    //horizontal view (from right)
+    vec2(1.0, 0.0),
+    vec2(0.0, 1.0),
+    vec2(0.0, 0.0),
+    vec2(0.0, -1.0),
+    vec2(0.0, -1.0),
+    vec2(1.0, 0.0),
+    vec2(0.0, 1.0),
+    vec2(0.0, 0.0),
+    // vertical view (from top)
+    vec2(0.0, 1.0),
+    vec2(-1.0, 0.0),
+    vec2(0.0, 0.0),
+    vec2(1.0, 0.0),
+    vec2(1.0, 0.0),
+    vec2(0.0, 1.0),
+    vec2(-1.0, 0.0),
+    vec2(0.0, 0.0)
+);
 
 struct Light
 {
@@ -39,8 +60,7 @@ vec3 decode_color(float color)
     int r = (c >> 16) & 0xFF;
     int g = (c >> 8) & 0xFF;
     int b = (c >> 0) & 0xFF;
-    float f = 1.0 / 255.0f;
-    return f * vec3(r, g, b);
+    return vec3(r, g, b) / 255.0;
 }
 
 vec3 light_direction(Light light)
@@ -99,26 +119,6 @@ void main()
     else
         line_right_dir = normalize(cross(line_dir, UP));
     vec3 line_up_dir = normalize(cross(line_right_dir, line_dir));
-    const vec2 horizontal_vertical_view_signs_array[16] = vec2[](
-        //horizontal view (from right)
-        vec2(1.0, 0.0),
-        vec2(0.0, 1.0),
-        vec2(0.0, 0.0),
-        vec2(0.0, -1.0),
-        vec2(0.0, -1.0),
-        vec2(1.0, 0.0),
-        vec2(0.0, 1.0),
-        vec2(0.0, 0.0),
-        // vertical view (from top)
-        vec2(0.0, 1.0),
-        vec2(-1.0, 0.0),
-        vec2(0.0, 0.0),
-        vec2(1.0, 0.0),
-        vec2(1.0, 0.0),
-        vec2(0.0, 1.0),
-        vec2(-1.0, 0.0),
-        vec2(0.0, 0.0)
-    );
     int id = vertex_id < 4 ? id_a : id_b;
     vec3 endpoint_pos = vertex_id < 4 ? pos_a : pos_b;
     vec3 height_width_angle = texelFetch(height_width_angle_tex, tex_coord(height_width_angle_tex, id), 0).xyz;
@@ -129,7 +129,7 @@ void main()
     vec3 diagonal_dir_border = normalize(closer_height_width_angle.x * line_up_dir + closer_height_width_angle.y * line_right_dir);
     bool is_vertical_view = abs(dot(camera_view_dir, line_up_dir)) / abs(dot(diagonal_dir_border, line_up_dir)) >
         abs(dot(camera_view_dir, line_right_dir)) / abs(dot(diagonal_dir_border, line_right_dir));
-    vec2 signs = horizontal_vertical_view_signs_array[vertex_id + 8 * int(is_vertical_view)];
+    vec2 signs = HORIZONTAL_VERTICAL_VIEW_SIGNS_ARRAY[vertex_id + 8 * int(is_vertical_view)];
     float view_right_sign = sign(dot(-camera_view_dir, line_right_dir));
     float view_top_sign = sign(dot(-camera_view_dir, line_up_dir));
     float half_height = 0.5 * height_width_angle.x;

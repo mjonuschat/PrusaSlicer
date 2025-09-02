@@ -35,11 +35,16 @@ void set_uniforms(const Lighting& lights, Render::Material& material)
     }
 }
 
-void set_uniforms(const PBRParams& pbr, Render::Material& material)
+void set_uniforms(const PBRParamsList& pbr_params, Render::Material& material)
 {
-    material.set_uniform("material.metal", pbr.metal)
-        .set_uniform("material.roughness", pbr.roughness)
-        .set_uniform("material.ior", pbr.ior);
+    for (size_t i = 0; i < pbr_params.size(); ++i) {
+        const PBRParams& params = pbr_params[i];
+        std::string material_str = format("materials[%zu]", i);
+        material
+            .set_uniform(material_str + ".metal", params.metal)
+            .set_uniform(material_str + ".roughness", params.roughness)
+            .set_uniform(material_str + ".ior", params.ior);
+    }
 }
 
 static std::pair<float, float> xyz_to_az(const Domain::Vec3f& xyz)

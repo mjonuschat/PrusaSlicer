@@ -16,6 +16,7 @@ namespace Slic3r::App::Scene {
 const std::string UNIFORM_VIEW_MODEL_MATRIX = "view_model_matrix";
 const std::string UNIFORM_VIEW_MATRIX = "view_matrix";
 const std::string UNIFORM_PROJECTION_MATRIX = "projection_matrix";
+const std::string UNIFORM_PROJECTION_VIEW_MODEL_MATRIX = "projection_view_model_matrix";
 const std::string UNIFORM_VIEW_NORMAL_MATRIX = "view_normal_matrix";
 
 void InstancedMeshRenderNodeComponent::render(
@@ -41,8 +42,10 @@ void InstancedMeshRenderNodeComponent::render(
     material.set_uniform(UNIFORM_VIEW_MATRIX, view_m);
     SquareMatrix4f model_view = (view * model).cast<float>();
     material.set_uniform(UNIFORM_VIEW_MODEL_MATRIX, model_view);
-    SquareMatrix4f value = camera.projection().cast<float>();
-    material.set_uniform(UNIFORM_PROJECTION_MATRIX, value);
+    SquareMatrix4f proj = camera.projection().cast<float>();
+    material.set_uniform(UNIFORM_PROJECTION_MATRIX, proj);
+    SquareMatrix4f pvm = proj * model_view;
+    material.set_uniform(UNIFORM_PROJECTION_VIEW_MODEL_MATRIX, pvm);
     SquareMatrix3f normal =
         (view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0)).inverse().transpose().cast<float>();
     material.set_uniform(UNIFORM_VIEW_NORMAL_MATRIX, normal);

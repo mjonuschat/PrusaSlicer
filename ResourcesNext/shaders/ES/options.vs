@@ -39,8 +39,7 @@ vec3 decode_color(float color)
     int r = (c >> 16) & 0xFF;
     int g = (c >> 8) & 0xFF;
     int b = (c >> 0) & 0xFF;
-    float f = 1.0 / 255.0f;
-    return f * vec3(r, g, b);
+    return vec3(r, g, b) / 255.0;
 }
 
 vec3 light_direction(Light light)
@@ -79,15 +78,11 @@ void main()
 {
     int id = int(texelFetch(segment_index_tex, tex_coord_u(segment_index_tex, gl_InstanceID), 0).r);
     vec2 height_width = texelFetch(height_width_angle_tex, tex_coord(height_width_angle_tex, id), 0).xy;
-    vec3 offset = texelFetch(position_tex, tex_coord(position_tex, id), 0).xyz - vec3(0.0, 0.0, 0.5 * height_width.x);
+    vec3 offset = texelFetch(position_tex, tex_coord(position_tex, id), 0).xyz;
+    offset.z -= 0.5 * height_width.x;
     height_width *= scaling_factor;
-    mat3 scale_matrix = mat3(
-        height_width.y, 0.0, 0.0,
-        0.0, height_width.y, 0.0,
-        0.0, 0.0, height_width.x);
-    vec3 eye_position = (view_model_matrix * vec4(scale_matrix * v_position + offset, 1.0)).xyz;
+    vec3 eye_position = (view_model_matrix * vec4(v_position * vec3(height_width.y, height_width.y, height_width.x) + offset, 1.0)).xyz;
     vec3 eye_normal = normalize(view_normal_matrix * v_normal);
-    vec3 color_base = decode_color(texelFetch(color_tex, tex_coord(color_tex, id), 0).r);
-    color = color_base * lighting(eye_position, eye_normal);
+    color = decode_color(texelFetch(color_tex, tex_coord(color_tex, id), 0).r) * lighting(eye_position, eye_normal);
     gl_Position = projection_matrix * vec4(eye_position, 1.0);
 }

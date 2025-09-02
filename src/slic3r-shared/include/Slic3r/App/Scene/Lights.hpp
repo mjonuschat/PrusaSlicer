@@ -8,6 +8,7 @@ namespace Slic3r::App::Scene {
 
 class Material;
 
+// The following value must match MAX_LIGHTS defined into the shaders
 static constexpr size_t MAX_NUM_LIGHTS = 4;
 
 enum class LightReferenceSystem

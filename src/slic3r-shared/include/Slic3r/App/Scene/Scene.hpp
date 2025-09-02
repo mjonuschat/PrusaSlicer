@@ -339,11 +339,13 @@ private:
         Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer
     ) const;
     void render_ao_gbuffer_pass(
-        Render::Device& device, ISceneRenderCustomizer* customizer, const Domain::Index2& viewport_size
+        Render::Device& device, ISceneRenderCustomizer* customizer, const Domain::Index2& viewport_size, PBRParamsList& pbr_params_list
     ) const;
     void render_ao_texture_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
-    void render_ao_texture_blur_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
-    void render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device) const;
+    void render_ao_texture_hblur_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
+    void render_ao_texture_vblur_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
+    void render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, const Domain::Index2& viewport_size, Render::Device& device,
+        const PBRParamsList& pbr_params_list) const;
 
 private:
     using NodeIdLookUp = std::unordered_map<size_t, Node*>;

@@ -108,7 +108,8 @@ std::pair<bool, std::string> ShaderManager::init()
     // used to render ao texture
     valid &= append_shader("ao_texture", { prefix + "ao_texture.vs", prefix + "ao_texture.fs" });
     // used to blur the ao texture
-    valid &= append_shader("ao_blur", { prefix + "ao_blur.vs", prefix + "ao_blur.fs" });
+    valid &= append_shader("ao_hblur", { prefix + "ao_blur.vs", prefix + "ao_hblur.fs" });
+    valid &= append_shader("ao_vblur", { prefix + "ao_blur.vs", prefix + "ao_vblur.fs" });
     // used to render ao lighting
     valid &= append_shader("ao_lighting", { prefix + "ao_lighting.vs", prefix + "ao_lighting.fs" });
     // used to render ao g-buffer for models

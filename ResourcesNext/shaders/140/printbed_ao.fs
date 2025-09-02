@@ -3,28 +3,18 @@
 const vec3 back_color_dark  = vec3(0.235, 0.235, 0.235);
 const vec3 back_color_light = vec3(0.365, 0.365, 0.365);
 
-struct Material
-{
-    float metal;
-    float roughness;
-    float ior;
-};
-
 uniform sampler2D in_texture;
-uniform Material material;
+uniform int material_id;
 uniform bool transparent_background;
 uniform bool svg_source;
 
-in vec3 eye_position;
 in vec4 light_position;
 in vec3 eye_normal;
 in vec2 tex_coord;
 
-layout (location = 0) out vec3 g_eye_position;
-layout (location = 1) out vec4 g_light_position;
-layout (location = 2) out vec3 g_eye_normal;
-layout (location = 3) out vec4 g_color;
-layout (location = 4) out vec3 g_material;
+layout (location = 0) out vec4 g_light_position;
+layout (location = 1) out vec4 g_eye_normal;
+layout (location = 2) out vec4 g_color;
 
 vec4 svg_color()
 {
@@ -53,9 +43,8 @@ void main()
     if (color.a == 0.0)
         discard;
 
-    g_eye_normal = normalize(eye_normal);
-    g_eye_position = eye_position;
+    g_eye_normal.xyz = normalize(eye_normal);
+    g_eye_normal.w = material_id;
     g_light_position = light_position;
     g_color = color;
-    g_material = vec3(material.metal, material.roughness, material.ior);
 }
