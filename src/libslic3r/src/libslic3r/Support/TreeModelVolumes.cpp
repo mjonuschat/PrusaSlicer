@@ -21,6 +21,7 @@
 #include <chrono>
 #include <limits>
 #include <numeric>
+#include <spdlog/spdlog.h>
 #include <string>
 #include <unordered_map>
 #include <cmath>
@@ -674,11 +675,12 @@ void TreeModelVolumes::calculateAvoidance(const std::vector<RadiusLayerPair> &ke
             assert(move_steps > 0);
             float last_move_step = max_move - (move_steps - 1) * move_step;
             if (last_move_step < scaled<float>(0.05)) {
-                assert(move_steps > 1);
                 if (move_steps > 1) {
                     // Avoid taking a very short last step, stretch the other steps a bit instead.
                     move_step = max_move / (-- move_steps);
                     last_move_step = move_step;
+                } else {
+                    SPDLOG_ERROR("Only one step and it is too short!");
                 }
             }
             // minDist as the delta was already added, also avoidance for layer 0 will return the collision.

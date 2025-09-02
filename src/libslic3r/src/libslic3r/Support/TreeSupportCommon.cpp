@@ -43,8 +43,20 @@ TreeSupportMeshGroupSettings::TreeSupportMeshGroupSettings(const PrintObject &pr
     this->resolution                = scaled<coord_t>(print_config.get<double>("gcode_resolution"));
 
     // Arache feature
-    // TODO: It is broken and assumes that the value is not percent. Now it at least asserts.
-    this->min_feature_size          = scaled<coord_t>(config.get<Domain::FloatOrPercentage>("min_feature_size").float_value());
+    const auto min_feature_size{config.get<Domain::FloatOrPercentage>("min_feature_size")};
+    if (min_feature_size.is_percentage()) {
+        const auto nozzle_diameter{config.get<std::vector<double>>("nozzle_diameter")};
+        const double max_nozzle_diameter{std::accumulate(
+            nozzle_diameter.begin(),
+            nozzle_diameter.end(),
+            0.0,
+            [](double a, double b) { return std::max(a, b); }
+        )};
+        ASSERT(max_nozzle_diameter > 0.0);
+        this->min_feature_size = scaled<coord_t>(min_feature_size.get_abs_value(max_nozzle_diameter));
+    } else {
+        this->min_feature_size = scaled<coord_t>(min_feature_size.float_value());
+    }
     // +1 makes the threshold inclusive
     this->support_angle             = 0.5 * M_PI - std::clamp<double>((config.get<int>("support_material_threshold") + 1) * M_PI / 180., 0., 0.5 * M_PI);
     this->support_line_width        = support_material_flow(&print_object, config.get<double>("layer_height")).scaled_width();

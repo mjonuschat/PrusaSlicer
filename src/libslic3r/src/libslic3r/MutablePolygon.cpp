@@ -5,6 +5,7 @@
 #include "MutablePolygon.hpp"
 
 #include <cstdint>
+#include <spdlog/spdlog.h>
 #include <utility>
 #include <cmath>
 
@@ -239,10 +240,10 @@ static bool clip_narrow_corner(
         // Circle intersects a line at two points, however because |p2 - p0| < shortcut_length,
         // only the second intersection is valid. Because |p2 - p02| > shortcut_length, such
         // intersection should always be found on (p0, p02).
-#ifndef NDEBUG
         auto dfar2 = (p02 - p2).squaredNorm();
-        assert(dfar2 >= shortcut_length2);
-#endif // NDEBUG
+        if (dfar2 < shortcut_length2) {
+            SPDLOG_ERROR("Impossible distance!");
+        }
         const Vec2d     v = (p02 - p0).cast<double>();
         const Vec2d     d = (p0 - p2).cast<double>();
         const double    a = v.squaredNorm();
@@ -251,7 +252,9 @@ static bool clip_narrow_corner(
         assert(u > 0.);
         u = sqrt(u);
         double t = (- b + u) / (2. * a);
-        assert(t > 0. && t < 1.);
+        if (t <= 0. || t >= 1.) {
+            SPDLOG_ERROR("Invalid parameter!");
+        }
         (backward == Far ? *it2 : *it0) += (v.cast<double>() * t).cast<coord_t>();
     } else {
         // The trapezoid (it0.prev(), it0, it2, it2.next()) is widening. Trim it.

@@ -4625,7 +4625,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip  = L("Minimum thickness of thin features. Model features that are thinner than this value will "
                        "not be printed, while features thicker than the Minimum feature size will be widened to "
                        "the Minimum perimeter width. "
-                       "If expressed as a percentage (for example 25%), it will be computed based on the nozzle diameter.");
+                       "If expressed as a percentage (for example 25%), it will be computed based on the biggest nozzle diameter.");
     def->sidetext = L("mm or %");
     def->mode = comExpert;
     def->min = 0;
