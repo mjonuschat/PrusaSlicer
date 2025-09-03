@@ -3,6 +3,10 @@
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
+namespace Slic3r::App::Platform {
+struct CameraSynchData;
+} // namespace Slic3r::App::Platform
+
 namespace Slic3r::App::Scene {
 
 static constexpr double DEFAULT_AZIMUTH = M_PI_4;
@@ -49,6 +53,9 @@ public:
 
     const Eigen::Quaterniond& view_rotation() const { return m_view_rotation; }
     void set_view_rotation(const Eigen::Quaterniond& view_rotation) { m_view_rotation = view_rotation; }
+
+    void update_synch_data(Platform::CameraSynchData& data);
+    void synchronize_from(const Platform::CameraSynchData& data);
 
 private:
     void set_camera_orientation();

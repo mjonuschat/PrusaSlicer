@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/App/Platform/CommandRegistry.hpp"
+#include "Slic3r/App/Platform/CameraSynchData.hpp"
 
 namespace Slic3r::App {
 class Navigator;
@@ -45,6 +46,13 @@ public:
             m_initialized = true;
         }
     }
+
+    virtual CameraSynchData camera_synch_data()
+    {
+        return CameraSynchData();
+    }
+
+    virtual void set_camera_synch_data(const CameraSynchData& data) {}
 
     void set_imgui_render(Render::ImguiRender* imgui_render);
     virtual void set_sidebars_visible(bool visible) {};

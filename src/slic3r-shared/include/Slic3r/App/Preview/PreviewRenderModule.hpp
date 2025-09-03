@@ -92,6 +92,9 @@ public:
 
     void set_sidebars_visible(bool hide) override;
 
+    Platform::CameraSynchData camera_synch_data() override;
+    void set_camera_synch_data(const Platform::CameraSynchData& data) override;
+
 protected:
     /**
      * @name Implementation of Platform::AbstractRenderModule protected interface

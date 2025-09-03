@@ -33,6 +33,7 @@
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
+#include "Slic3r/App/Scene/CameraHelper.hpp"
 
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/Plater/History.hpp"
@@ -63,7 +64,6 @@
 #define ENABLED_DEBUG_IMGUI_FONT 0
 #define ENABLED_DEBUG_IMGUI_ICONS 0
 #define ENABLED_DEBUG_BEDS 1
-#define ENABLED_DEBUG_CAMERA 0
 
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
@@ -457,6 +457,22 @@ void PlaterRenderModule::set_sidebars_visible(bool visible)
 
     // request redraw
     request_render();
+}
+
+Platform::CameraSynchData PlaterRenderModule::camera_synch_data()
+{
+    Platform::CameraSynchData ret;
+    m_scene_presenter->scene().camera().update_synch_data(ret);
+    m_scene_presenter->scene().camera_trackball().update_synch_data(ret);
+    return ret;
+}
+
+void PlaterRenderModule::set_camera_synch_data(const Platform::CameraSynchData& data)
+{
+    if (m_scene_presenter == nullptr)
+        return;
+
+    synchronize_camera(data, m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 }
 
 void PlaterRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
@@ -957,122 +973,6 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, P
     ImGui::End();
 }
 #endif // ENABLED_DEBUG_BEDS
-
-#if ENABLED_DEBUG_CAMERA
-static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::CameraTrackballController& trackball)
-{
-    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
-    if (ImGui::Begin("Camera debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        if (ImGui::BeginTable("Camera", 2, ImGuiTableFlags_Borders)) {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Position");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f, %.3f, %.3f", camera.position().x(), camera.position().y(), camera.position().z());
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Target");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f, %.3f, %.3f", trackball.target().x(), trackball.target().y(), trackball.target().z());
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Distance to target");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f", trackball.distance_to_target());
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Pivot");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f, %.3f, %.3f", trackball.pivot().x(), trackball.pivot().y(), trackball.pivot().z());
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Azimuth");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f", rad2deg(trackball.azimuth()));
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Zenith");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f", rad2deg(trackball.zenith()));
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Forward");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f, %.3f, %.3f", camera.forward().x(), camera.forward().y(), camera.forward().z());
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Right");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f, %.3f, %.3f", camera.right().x(), camera.right().y(), camera.right().z());
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Up");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f, %.3f, %.3f", camera.up().x(), camera.up().y(), camera.up().z());
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Near Z");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f", camera.cam_projection().z_near());
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Far Z");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f", camera.cam_projection().z_far());
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("View rotation");
-            ImGui::TableSetColumnIndex(1);
-            const Eigen::Quaterniond& view_rotation = trackball.view_rotation();
-            ImGui::Text(
-                "%.3f, %.3f, %.3f, %.3f",
-                view_rotation.x(),
-                view_rotation.y(),
-                view_rotation.z(),
-                view_rotation.w()
-            );
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Zoom");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%.3f", camera.zoom());
-
-            auto& proj = camera.cam_projection();
-            if (proj.type() == Scene::CameraProjectionType::Perspective) {
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Text("FOVy");
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Text("%.3f", dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy());
-
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Text("FOVy/Zoom");
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Text(
-                    "%.3f",
-                    dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy() / camera.zoom()
-                );
-            }
-
-            ImGui::EndTable();
-        }
-    }
-    ImGui::End();
-}
-#endif // ENABLED_DEBUG_CAMERA
 
 void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {

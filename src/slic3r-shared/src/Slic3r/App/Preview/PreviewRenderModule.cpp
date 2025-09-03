@@ -18,6 +18,7 @@
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
+#include "Slic3r/App/Scene/CameraHelper.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -347,6 +348,9 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 #if ENABLED_DEBUG_VIEWER_MODE
     render_imgui_debug_viewer_mode(m_fdm_viewer);
 #endif // ENABLED_DEBUG_VIEWER_MODE
+#if ENABLED_DEBUG_CAMERA
+    render_imgui_debug_camera(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+#endif // ENABLED_DEBUG_CAMERA
     Scene::render_imgui_graphics_settings_debug_window(*m_scene_presenter, *m_imgui_render);
 }
 
@@ -435,6 +439,22 @@ void PreviewRenderModule::set_sidebars_visible(bool hide)
     request_render();
 }
 
+Platform::CameraSynchData PreviewRenderModule::camera_synch_data()
+{
+    Platform::CameraSynchData ret;
+    m_scene_presenter->scene().camera().update_synch_data(ret);
+    m_scene_presenter->scene().camera_trackball().update_synch_data(ret);
+    return ret;
+}
+
+void PreviewRenderModule::set_camera_synch_data(const Platform::CameraSynchData& data)
+{
+    if (m_scene_presenter == nullptr)
+        return;
+
+    synchronize_camera(data, m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+}
+
 void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
     AbstractRenderModule::on_init(device, imgui_render);
@@ -470,7 +490,6 @@ void PreviewRenderModule::on_activated()
         m_scene_presenter->scene().set_lights(App::global_lighting());
 
     update_bed_instances();
-    center_camera_on_selected_bed();
 
     if (m_viewer == &m_fdm_viewer)
         m_fdm_viewer.set_scene(m_scene_presenter->scene());

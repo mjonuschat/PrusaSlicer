@@ -19,7 +19,9 @@ void PlaterCameraFrustumUpdater::update_scene_aabb(const Scene::Scene& scene)
 
     m_scene_aabb = Eigen::AlignedBox3d();
     for (const Scene::Node* n : nodes) {
-        m_scene_aabb.extend(n->raycast_component()->world_bounding_box(n->world_transform().matrix()).cast<double>());
+        m_scene_aabb.extend(
+            n->raycast_component()->world_bounding_box(n->world_transform().matrix()).cast<double>()
+        );
     }
 }
 
@@ -35,7 +37,8 @@ void PlaterCameraFrustumUpdater::update_camera_frustum(Scene::Camera& camera)
         z_min               = std::min(z_min, -v_eye.z());
         z_max               = std::max(z_max, -v_eye.z());
     }
-    camera.set_z_near_far(std::max(10.0, z_min), std::max(1000.0, z_max));
+    static constexpr double MARGIN = 1.0;
+    camera.set_z_near_far(std::max(10.0, z_min - MARGIN), std::max(1000.0, z_max + MARGIN));
 }
 
 #if ENABLE_DEBUG_RENDER_SCENE_AABB

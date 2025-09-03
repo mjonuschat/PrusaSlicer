@@ -3,6 +3,7 @@
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Scene/GraphicsSettings.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/App/Platform/CameraSynchData.hpp"
 
 #include <optional>
 
@@ -28,34 +29,23 @@ public:
     ~Scoped3mfThumbnailSceneCustomizer();
 
     Scoped3mfThumbnailSceneCustomizer(const Scoped3mfThumbnailSceneCustomizer& other) = delete;
-    Scoped3mfThumbnailSceneCustomizer(Scoped3mfThumbnailSceneCustomizer&& other) = delete;
-    Scoped3mfThumbnailSceneCustomizer& operator = (const Scoped3mfThumbnailSceneCustomizer& other) = delete;
-    Scoped3mfThumbnailSceneCustomizer& operator = (Scoped3mfThumbnailSceneCustomizer&& other) = delete;
+    Scoped3mfThumbnailSceneCustomizer(Scoped3mfThumbnailSceneCustomizer&& other)      = delete;
+    Scoped3mfThumbnailSceneCustomizer& operator=(const Scoped3mfThumbnailSceneCustomizer& other) = delete;
+    Scoped3mfThumbnailSceneCustomizer& operator=(Scoped3mfThumbnailSceneCustomizer&& other) = delete;
 
 private:
     Scene::Scene& m_scene;
+
     struct Cache
     {
-        Scene::Transform camera_model;
-        double camera_zoom;
-
-        Domain::Vec3d trackball_target;
-        Domain::Vec3d trackball_pivot;
-        double trackball_azimuth;
-        double trackball_zenith;
-        double trackball_distance;
-        Eigen::Quaterniond trackball_view_rotation;
-
+        Platform::CameraSynchData camera_synch_data;
         Eigen::AlignedBox3d shadows_aabb;
         bool background_enabled;
-
         Scene::ShadingType shading_type;
-
-        bool switch_camera_projection_type;
-
         std::vector<Scene::Node*> hidden_nodes;
         std::vector<std::pair<Scene::Node*, std::optional<Render::Material>>> materials;
     };
+
     Cache m_cache;
 };
 

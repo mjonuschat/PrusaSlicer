@@ -9,6 +9,10 @@
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
+namespace Slic3r::App::Platform {
+struct CameraSynchData;
+} // namespace Slic3r::App::Platform
+
 namespace Slic3r::App::Scene {
 
 class Camera;
@@ -264,6 +268,9 @@ public:
             position().z() < 0.0 :
             forward().z() >= 0.0;
     }
+
+    void update_synch_data(Platform::CameraSynchData& data);
+    void synchronize_from(const Platform::CameraSynchData& data);
 
 private:
     void update_projection();

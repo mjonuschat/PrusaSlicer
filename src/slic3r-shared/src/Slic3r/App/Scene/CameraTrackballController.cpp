@@ -5,6 +5,7 @@
 #include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/App/Platform/CameraSynchData.hpp"
 
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec3d;
@@ -48,6 +49,25 @@ void CameraTrackballController::add_azimuth_and_zenith(double delta_azimuth, dou
     Transform3d model = view.inverse();
     m_camera.set_model(model);
     m_target = model * old_eye_target;
+}
+
+void CameraTrackballController::update_synch_data(Platform::CameraSynchData& data)
+{
+    data.target        = target();
+    data.pivot         = pivot();
+    data.view_rotation = view_rotation();
+    data.distance      = distance_to_target();
+    data.azimuth       = azimuth();
+    data.zenith        = zenith();
+}
+
+void CameraTrackballController::synchronize_from(const Platform::CameraSynchData& data)
+{
+    set_target(data.target);
+    set_pivot(data.pivot);
+    set_distance_to_target(data.distance);
+    set_azimuth_and_zenith(data.azimuth, data.zenith);
+    set_view_rotation(data.view_rotation);
 }
 
 void CameraTrackballController::set_camera_orientation()

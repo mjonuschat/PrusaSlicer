@@ -4,6 +4,7 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Math.hpp"
+#include "Slic3r/App/Platform/CameraSynchData.hpp"
 
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Vec2d;
@@ -124,6 +125,22 @@ Vec2d Camera::project_to_screen_space(const Vec3d& world_pos) const
     double half_w = 0.5 * double(m_viewport.width);
     double half_h = 0.5 * double(m_viewport.height);
     return { half_w * ndc.x() + double(m_viewport.x) + half_w, half_h * ndc.y() + double(m_viewport.y) + half_h };
+}
+
+void Camera::update_synch_data(Platform::CameraSynchData& data)
+{
+    data.type  = uint8_t(cam_projection().type());
+    data.model = model();
+    data.zoom  = zoom();
+}
+
+void Camera::synchronize_from(const Platform::CameraSynchData& data)
+{
+    if (uint8_t(cam_projection().type()) != data.type)
+        switch_projection_type();
+
+    set_model(data.model);
+    set_zoom(data.zoom);
 }
 
 void Camera::update_projection()

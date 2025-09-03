@@ -30,12 +30,16 @@ void AbstractRenderCanvas::set_render_module(AbstractRenderModule* render_module
     if (m_render_module == render_module)
         return;
 
-    if (m_render_module)
+    CameraSynchData camera_data;
+    if (m_render_module) {
+        camera_data = m_render_module->camera_synch_data();
         m_render_module->deactivate();
+    }
     m_render_module = render_module;
     if (m_render_module) {
         m_render_module->set_screen_size(m_screen_info);
         m_render_module->activate(this);
+        m_render_module->set_camera_synch_data(camera_data);
     }
 }
 
@@ -64,7 +68,10 @@ void AbstractRenderCanvas::render()
 
     m_render_module->ensure_initialized(device(), imgui_render());
 
-    if (m_pending_language.has_value() || m_pending_font_size.has_value() || m_pending_font_global_scale.has_value()) {
+    if (m_pending_language.has_value()
+        || m_pending_font_size.has_value()
+        || m_pending_font_global_scale.has_value())
+    {
         m_imgui_render->set_font(m_pending_language, m_pending_font_size, m_pending_font_global_scale);
         m_pending_language.reset();
         m_pending_font_size.reset();
@@ -104,13 +111,13 @@ Render::ImguiRender& AbstractRenderCanvas::imgui_render()
     return *m_imgui_render;
 }
 
-AbstractRenderCanvas::AbstractRenderCanvas()
-    : m_main_thread_dispatcher{Biz::Platform::PlatformServices::instance().main_thread_dispatcher()}
+AbstractRenderCanvas::AbstractRenderCanvas() :
+    m_main_thread_dispatcher{Biz::Platform::PlatformServices::instance().main_thread_dispatcher()}
 {}
 
 void AbstractRenderCanvas::set_font_size(float font_size)
 {
-    // Magic number 1.777777=16/9, where 
+    // Magic number 1.777777=16/9, where
     // 16 is default size for ImGui::font for 100% scale
     // 9 is a font size for Windows for 100% scale
     m_pending_font_size = 1.777777 * font_size;
@@ -124,8 +131,8 @@ void AbstractRenderCanvas::begin_frame()
     ImGuiIO& io = ImGui::GetIO();
 
     double current_time = platform_time();
-    io.DeltaTime = m_last_time > 0 ? float(current_time - m_last_time) : (1.0f / 60.0f);
-    m_last_time = current_time;
+    io.DeltaTime        = m_last_time > 0 ? float(current_time - m_last_time) : (1.0f / 60.0f);
+    m_last_time         = current_time;
 
     /*
     assert_no_gl_error();
@@ -228,8 +235,9 @@ void AbstractRenderCanvas::emit_enqueued_events()
     for (const auto& e : m_enqueued_mouse_events)
         emit_mouse(e);
 
-    if (io.WantCaptureMouse &&
-        std::any_of(io.MouseDown, io.MouseDown + 5, [](bool val) { return val; })) {
+    if (io.WantCaptureMouse
+        && std::any_of(io.MouseDown, io.MouseDown + 5, [](bool val) { return val; }))
+    {
         request_render();
     }
     m_enqueued_mouse_events.clear();

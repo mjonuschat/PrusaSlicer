@@ -5,6 +5,7 @@
 #include "Slic3r/App/Scene/GraphicsSettings.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
+#include "Slic3r/App/Platform/CameraSynchData.hpp"
 
 #include <vector>
 
@@ -26,12 +27,7 @@ namespace Slic3r::App::Plater {
 class ScopedBedThumbnailSceneCustomizer
 {
 public:
-    ScopedBedThumbnailSceneCustomizer(
-        Scene::Scene& scene,
-        const Domain::Project& project,
-        Domain::SelectionId bed_instance_id,
-        Scene::CameraProjectionType camera_type
-    );
+    ScopedBedThumbnailSceneCustomizer(Scene::Scene& scene, const Domain::Project& project, Domain::SelectionId bed_instance_id, Scene::CameraProjectionType camera_type);
     ~ScopedBedThumbnailSceneCustomizer();
 
     ScopedBedThumbnailSceneCustomizer(const ScopedBedThumbnailSceneCustomizer& other) = delete;
@@ -44,22 +40,9 @@ private:
 
     struct Cache
     {
-        Scene::Transform camera_model;
-        double camera_zoom;
-
-        Domain::Vec3d trackball_target;
-        Domain::Vec3d trackball_pivot;
-        double trackball_azimuth;
-        double trackball_zenith;
-        double trackball_distance;
-        Eigen::Quaterniond trackball_view_rotation;
-
+        Platform::CameraSynchData camera_synch_data;
         Eigen::AlignedBox3d shadows_aabb;
-
         Scene::ShadingType shading_type;
-
-        bool switch_camera_projection_type;
-
         std::vector<Scene::Node*> hidden_nodes;
         std::vector<std::pair<Scene::Node*, Render::Material>> materials;
     };

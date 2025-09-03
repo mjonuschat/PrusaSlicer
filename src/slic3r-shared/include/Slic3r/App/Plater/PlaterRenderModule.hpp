@@ -60,6 +60,9 @@ public:
 
     void set_sidebars_visible(bool visible) override;
 
+    Platform::CameraSynchData camera_synch_data() override;
+    void set_camera_synch_data(const Platform::CameraSynchData& data) override;
+
 protected:
     void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
     void on_activated() override;
