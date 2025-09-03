@@ -246,7 +246,7 @@ otherwise, the whole text has the same orthogonal projection.")
     };
     // m_surface_distance->set_tooltip( _u8L("Distance of the center of the text to the model surface.");
     add_row(
-        _u8L("From surfave"),
+        _u8L("From surface"),
         m_surface_distance.release(),
         m_advanced_panel,
         _u8L("Undo translation"),
@@ -267,7 +267,7 @@ otherwise, the whole text has the same orthogonal projection.")
         _u8L("Undo rotation"),
         std::string("°")
     );
-    m_lock_offset_btn = row->emplace_back<LayoutButton>("", Render::Icon::Lock, "ertyui;;lbvcvbnm");
+    m_lock_offset_btn = row->emplace_back<LayoutButton>("", Render::Icon::Lock); // Note: for tooltip need externaly set value
     m_lock_offset_btn->set_self_align(YGAlignCenter);
     m_lock_offset_btn->set_checkable(true);
     m_lock_offset_btn->callbacks().checked_changed = [this](bool checked) {
@@ -610,6 +610,11 @@ void TextDialog::set_surface_distance(double max_val, double step, double value,
 void TextDialog::set_rotation(double max_val, double step, double value, double default_value)
 {
     set_slider(m_rotation.get(), max_val, step, value, default_value);
+}
+
+void TextDialog::set_rotation_lock(bool lock)
+{
+    m_lock_offset_btn->set_checked(lock);
 }
 
 void TextDialog::set_enable_all_except_font(bool enable)

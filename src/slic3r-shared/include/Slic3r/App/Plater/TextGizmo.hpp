@@ -85,7 +85,7 @@ private:
     // Call every time when param of emboss change
     bool update_volume(const UpdateParams& params = UpdateParams{});
     void close();
-    void rotate(double absolut_angle);
+    void rotate(double absolut_angle); // callback on_rotation_change
     bool init_create(Domain::ModelVolumeType volume_type);
     bool emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results);
 
@@ -98,6 +98,8 @@ private:
     Biz::Emboss::TextPresetManager m_preset_manager;
 
     std::string m_text; // embossed text
+    std::optional<double> m_up_limit; // when it has value, than lock of the up vector is set
+    
     Yoga::Passthrough<TextDialog> m_dialog;
 
     struct Scale {
@@ -112,8 +114,9 @@ private:
 
     bool m_use_inch = false;
     bool m_use_deg = true;
+    bool m_lock_up = true;
 
-    struct Drag; // like pimpl
+    struct Drag; // pimpl
     std::unique_ptr<Drag> m_drag; // exist only during drag operation
 
     // only for check
@@ -123,6 +126,6 @@ private:
 // TODO: move function to surface drag utility
 // Calculate volume rotation around embossed axis VRT Y as up vector(zero angle)
 std::optional<float> calc_rotation(const Domain::Project& project, const Domain::ElementRef& ref);
-std::optional<float> calc_distance();
+std::optional<float> calc_distance(const Domain::Project& project, const Domain::ElementRef& ref, Scene::Node& root);
 
 } // namespace Slic3r::App::Plater

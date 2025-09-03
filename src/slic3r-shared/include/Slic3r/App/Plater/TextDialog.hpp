@@ -100,6 +100,7 @@ public:
     void set_skew_ratio(double max_val, double step, double value, double default_value = 0.);
     void set_surface_distance(double max_val, double step, double value, double default_value = 0.);
     void set_rotation(double max_val, double step, double value, double default_value = 0.);
+    void set_rotation_lock(bool lock);
 
     void set_enable_use_surface(bool enable);
     void set_enable_per_glyph(bool enable);
