@@ -40,7 +40,11 @@ void RootItem::render(Vec2f pos, Vec2f size)
 
     render_item_end(pos, size);
 
-    for (Popup* popup : std::as_const(m_popups)) {
+    // Render can (and does) call open_popup which in turn calls m_popups.push_back()
+    // and so we are creating an immutable copy.
+    // TODO: a deffered popup insert/close should be implemented
+    const Popups popups = m_popups;
+    for (Popup* popup : popups) {
         popup->render(size);
     }
 
@@ -148,7 +152,7 @@ void RootItem::process_events(Vec2f pos, Vec2f size)
     // and so we are creating an immutable copy
     // TODO: a deffered popup insert/close should be implemented
     const Popups popups = m_popups;
-    for (Popup* popup : std::as_const(m_popups)) {
+    for (Popup* popup : popups) {
         popup->process_events(pos, size);
     }
 }

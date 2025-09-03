@@ -921,7 +921,10 @@ void Item::render_item_end(Vec2f pos, Vec2f size)
 {
     render_debug(pos, size);
 
-    for (Item* child : std::as_const(m_children_render_order)) {
+    // Render node can modify m_children_render_order,
+    // make a copy.
+    const std::vector<Item*> to_render = m_children_render_order;
+    for (Item* child : to_render) {
         render_node(pos, child);
     }
 }
