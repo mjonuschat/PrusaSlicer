@@ -50,6 +50,7 @@
 #include "libslic3r/Surface.hpp"
 #include "tcbspan/span.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Log.hpp"
 
 #define SUPPORT_USE_AGG_RASTERIZER
 
@@ -1842,11 +1843,17 @@ static inline SupportGeneratorLayer* detect_bottom_contacts(
             if (top_contacts[top_idx]->print_z > layer_new.print_z - support_params.support_layer_height_min - EPSILON) {
                 // A top layer has been found, which is close to the new bottom layer.
                 double diff = layer_new.print_z - top_contacts[top_idx]->print_z;
-                assert(std::abs(diff) <= support_params.support_layer_height_min + EPSILON);
+                if(std::abs(diff) > support_params.support_layer_height_min + EPSILON) {
+                    SPDLOG_ERROR("Top layer is not close to the new bottom layer!");
+                }
                 if (diff > 0.) {
                     // The top contact layer is below this layer. Make the bridging layer thinner to align with the existing top layer.
-                    assert(diff < layer_new.height + EPSILON);
-                    assert(layer_new.height - diff >= support_params.support_layer_height_min - EPSILON);
+                    if (diff >= layer_new.height + EPSILON) {
+                        SPDLOG_ERROR("Found diff is bigger than layer height!");
+                    }
+                    if (layer_new.height - diff < support_params.support_layer_height_min - EPSILON) {
+                        SPDLOG_ERROR("Support layer height min is not respected!");
+                    }
                     layer_new.print_z = top_contacts[top_idx]->print_z;
                     layer_new.height -= diff;
                 }
