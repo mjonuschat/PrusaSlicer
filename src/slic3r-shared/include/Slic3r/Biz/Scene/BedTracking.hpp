@@ -1,10 +1,13 @@
 #pragma once
 
+#include <chrono>
+#include <map>
 #include <set>
+#include <ranges>
+#include <iterator>
 
 #include <Slic3r/Domain/Project.hpp>
 #include <Slic3r/Domain/BedRef.hpp>
-
 
 namespace Slic3r::Biz {
 
@@ -39,35 +42,61 @@ struct BedTrackingChanges
  */
 void remove_instance_from_bed(Domain::Project& project, Domain::ModelInstance* model_instance, BedTrackingChanges& changes);
 
-/**
- * @brief Rebuild all model-instance to bed links.
- * @param project Project to update
- */
-BedTrackingChanges update_instances_bed_placement(Domain::Project& project);
 
-/**
- * @brief Rebuild model-instance to bed links for given instances
- * @param project Project to update
- * @param instances List of instances to update
- * @param remove_original_links If true the original links are removed before update,
- * if false it is assumed that the instances are newly added and has no original links.
- */
-BedTrackingChanges update_instances_bed_placement(
-    Domain::Project& project, const Domain::ElementRefs& instances, bool remove_original_links = true
-);
+class BedTracking
+{
+public:
+    /**
+     * @brief Rebuild all model-instance to bed links.
+     * @param project Project to update
+     */
+    BedTrackingChanges update_instances_bed_placement(Domain::Project& project);
 
-/**
- * @brief Rebuild model-instance to bed links for given instances
- * @param project Project to update
- * @param instances List of instances to update
- * @param remove_original_links If true the original links are removed before update,
- */
-BedTrackingChanges update_instances_bed_placement(
-    Domain::Project& project,
-    const Domain::ModelInstanceList& instances, bool remove_original_links = true
-);
+    /**
+     * @brief Rebuild model-instance to bed links for given instances
+     * @param project Project to update
+     * @param instances List of instances to update
+     * @param remove_original_links If true the original links are removed before update,
+     * if false it is assumed that the instances are newly added and has no original links.
+     */
+    BedTrackingChanges update_instances_bed_placement(
+        Domain::Project& project, const Domain::ElementRefs& instances, bool remove_original_links = true
+    );
+
+    /**
+     * @brief Rebuild model-instance to bed links for given instances
+     * @param project Project to update
+     * @param instances List of instances to update
+     * @param remove_original_links If true the original links are removed before update,
+     */
+    BedTrackingChanges update_instances_bed_placement(
+        Domain::Project& project,
+        const Domain::ModelInstanceList& instances, bool remove_original_links = true
+    );
+
+private:
+    void update_instance_bed_placement(Domain::Project& project, Domain::ModelInstance& inst, BedTrackingChanges& changes);
+    Domain::BoundingBox3d get_instance_bb(const Domain::Project& project, const Domain::ModelInstance& inst);
+
+    // The cache for transformed bounding boxes to allow quick lookup based on
+    // object_id and instance_id.
+    struct CacheInstanceEntry {
+        Domain::Transformation inst_trafo;
+        Domain::BoundingBox3d cached_bb;
+    };
+    struct VolData {
+        Domain::Transformation trafo;
+        size_t id;
+        Domain::ModelVolumeType type;
+    };
+    struct CacheObjectEntry {
+        std::vector<VolData> vol_data;
+        std::map<size_t, CacheInstanceEntry> instances;
+    };
+    std::map<size_t, CacheObjectEntry> m_cache;
+    std::chrono::steady_clock::time_point m_last_cache_clear_time = std::chrono::steady_clock::now();
+};
 
 
 
-}
-
+} // namespace Slic3r::Biz

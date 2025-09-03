@@ -2,7 +2,6 @@
 
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
-#include "Slic3r/Biz/Scene/BedTracking.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
@@ -292,7 +291,7 @@ void SceneInteractor::new_object_from_mesh(Domain::TriangleMesh&& mesh, const st
     auto& inst    = *obj.add_instance();
     const Domain::ElementRefs updated{{obj.id().id, inst.id().id}};
     // const Domain::ElementRefs updated_vols{{obj.id().id, inst.id().id, vol.id().id}};
-    auto changes = update_instances_bed_placement(project, updated);
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
 
     obj.name      = vol.name = name;
     if (project.file_name().empty()) {
@@ -369,7 +368,7 @@ void SceneInteractor::add_instance(const Vec2d& offset)
     inst.set_transformation(Transformation{trafo});
     updated.emplace_back(obj.id().id, inst.id().id);
 
-    auto changes = update_instances_bed_placement(project, updated);
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
 
@@ -390,7 +389,7 @@ void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& 
         for (const Domain::ModelInstance* inst : object->instances)
             updated.emplace_back(object->id().id, inst->id().id, 0);
 
-        auto changes = update_instances_bed_placement(project, updated);
+        auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
         for (const auto& bed_ref : changes.updated_beds)
             invoke_slicing_input_changed(bed_ref);
 
@@ -459,7 +458,7 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
             selection_ids.emplace_back(update_id.object_id, inst->id().id, update_id.volume_id);
     }
     set_object_selection({SelectionMode::Volume, selection_ids});
-    auto changes = update_instances_bed_placement(project, selection_ids);
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, selection_ids);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
 }
@@ -492,7 +491,7 @@ void SceneInteractor::set_printable(const Domain::ElementRef& id, bool is_printa
         updated                                                              = {id};
     }
 
-    auto changes = update_instances_bed_placement(project, updated);
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
 
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
@@ -661,7 +660,7 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
             new_selection.elements.emplace_back(Domain::ElementRef(object->id().id, instance->id().id));
         }
 
-        changes = update_instances_bed_placement(project, to_remove, scene_selection.mode == SelectionMode::Instance);
+        changes = m_bed_tracking.update_instances_bed_placement(project, to_remove, scene_selection.mode == SelectionMode::Instance);
     }
 
     // Notify listeners on changes
@@ -689,7 +688,7 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
 
 void SceneInteractor::prepare_loaded_project(Domain::Project& project)
 {
-    update_instances_bed_placement(project);
+    m_bed_tracking.update_instances_bed_placement(project);
 }
 
 Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_id)
@@ -705,7 +704,7 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     // make copy
     Domain::ModelInstanceList unplaced = project.unplaced_model_instances();
     project.unplaced_model_instances().clear();
-    auto changes = update_instances_bed_placement(project, unplaced, false);
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, unplaced, false);
     const Domain::BedRef updated{cc->id().id, ret.id().id};
     changes.updated_beds.insert(updated);
 
@@ -738,10 +737,11 @@ void SceneInteractor::layout_after_project_load(Domain::Project& added_project)
 {
     ASSERT(std::all_of(added_project.config_containers().begin(), added_project.config_containers().end(),
            [](const std::unique_ptr<Domain::ConfigContainer>& cc){ return ! cc->bed_instances().empty(); }));
+    m_bed_tracking.update_instances_bed_placement(added_project);
     auto updated = m_bed_placement.layout(added_project, BED_GAP);
 
     bed_selection().select_one(Domain::BedRef({added_project.config_containers().front()->id().id, added_project.config_containers().front()->bed_instances().front()->id().id}));
-    auto changes = update_instances_bed_placement(added_project);
+    auto changes = m_bed_tracking.update_instances_bed_placement(added_project);
 
     Domain::BedRefs bed_refs;
     for (auto& cc : added_project.config_containers()) {
@@ -800,7 +800,7 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
     );
 
     auto updated_instaces = m_bed_placement.layout(project, BED_GAP);
-    auto changes = update_instances_bed_placement(project, insts);
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, insts);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
 
@@ -837,7 +837,7 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
 
     auto updated = inst.model_instances;
     inst.model_instances.clear();
-    auto changes = update_instances_bed_placement(proj.project, updated, false);
+    auto changes = m_bed_tracking.update_instances_bed_placement(proj.project, updated, false);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
 
@@ -882,7 +882,7 @@ void SceneInteractor::update_config_container_bed(Domain::Project& project, cons
             project.bed_container().remove(previous_bed);
         }
 
-        auto changes = update_instances_bed_placement(project, changed_instances);
+        auto changes = m_bed_tracking.update_instances_bed_placement(project, changed_instances);
 
 
         invoke_listeners<ISceneChangedListener>(
@@ -1014,7 +1014,7 @@ void SceneInteractor::transform_instances(const InstanceTransforms& transformati
         elements.push_back(trafo.instance_ref);
     }
 
-    const BedTrackingChanges changes{update_instances_bed_placement(project, elements)};
+    const BedTrackingChanges changes{m_bed_tracking.update_instances_bed_placement(project, elements)};
     for (const auto& bed_ref : changes.updated_beds) {
         invoke_slicing_input_changed(bed_ref);
     }
@@ -1084,10 +1084,10 @@ BedTrackingChanges SceneInteractor::update_selection_instance_bed_placement(bool
             object_ids.insert(e.object_id);
         for (size_t obj_id : object_ids)
             changes.append(
-                update_instances_bed_placement(proj.project, proj.project.find_object_by_id(obj_id)->instances)
+                m_bed_tracking.update_instances_bed_placement(proj.project, proj.project.find_object_by_id(obj_id)->instances)
             );
     } else {
-        changes = update_instances_bed_placement(proj.project, proj.object_selection.elements);
+        changes = m_bed_tracking.update_instances_bed_placement(proj.project, proj.object_selection.elements);
     }
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);

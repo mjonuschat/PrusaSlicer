@@ -17,6 +17,8 @@
 #include "Slic3r/Domain/BedRef.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
+#include "Slic3r/Biz/Scene/BedTracking.hpp"
+
 namespace Slic3r::Domain { class Bed; }
 
 namespace Slic3r::Biz {
@@ -273,6 +275,7 @@ private:
     Domain::SelectionId m_selected_project_id {Domain::INVALID_ID};
     Domain::SelectionId m_selected_config_container_id {Domain::INVALID_ID};
     BedPlacement m_bed_placement;
+    BedTracking m_bed_tracking;
 };
 
 struct TransformMemento

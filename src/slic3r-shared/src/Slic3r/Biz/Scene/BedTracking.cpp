@@ -17,7 +17,7 @@ bool remove_instance(Domain::ModelInstanceList& instances, Domain::ModelInstance
     instances.erase(it);
     return true;
 }
-} // namespace
+} // anonymous namespace
 
 void remove_instance_from_bed(Domain::Project& project, Domain::ModelInstance* model_instance, BedTrackingChanges& changes)
 {
@@ -43,11 +43,107 @@ find_bed_instance_for_bounds(Domain::Project& project, const Domain::BoundingBox
     return std::make_pair(nullptr, nullptr);
 }
 
-void update_instance_bed_placement(Domain::Project& project, Domain::ModelInstance& inst, BedTrackingChanges& changes)
+Domain::BoundingBox3d BedTracking::get_instance_bb(const Domain::Project& project, const Domain::ModelInstance& inst)
 {
-    using Algorithms::ModelObject::instance_bounding_box;
+    // This function calculates an instance's 3D bounding box, using a cache to boost performance.
+    // The cache is invalidated if the instance's transform, its object's internal volume transforms,
+    // or any volume's ID or type are modified.
+    // It reuses cached geometry for instances sharing the same rotation to further optimize.
+    // The cache also periodically removes entries for instances that no longer exist.
 
-    const auto bb = instance_bounding_box(*inst.get_object(), inst);
+    CacheObjectEntry& obj_cache = m_cache[inst.get_object()->id().id];
+    
+    bool obj_cache_valid = true;
+    if (obj_cache.vol_data.size() != inst.get_object()->volumes.size())
+        obj_cache_valid = false;
+    if (obj_cache_valid) {
+        for (size_t i=0; i<obj_cache.vol_data.size(); ++i) {
+            if (obj_cache.vol_data[i].id != inst.get_object()->volumes[i]->id().id
+             || obj_cache.vol_data[i].type != inst.get_object()->volumes[i]->type()) {
+                obj_cache_valid = false;
+                break;
+            }
+            if (obj_cache.vol_data[i].type == Domain::ModelVolumeType::MODEL_PART
+             && ! obj_cache.vol_data[i].trafo.get_matrix().isApprox(inst.get_object()->volumes[i]->get_transformation().get_matrix())) {
+                obj_cache_valid = false;
+                break;
+            }
+        }
+    }
+    if (! obj_cache_valid) {
+        obj_cache.instances.clear();
+        obj_cache.vol_data.clear();
+        for (const Domain::ModelVolume* mv : inst.get_object()->volumes)
+            obj_cache.vol_data.emplace_back(mv->get_transformation(), mv->id().id, mv->type());
+    }
+
+    CacheInstanceEntry& cache_entry = obj_cache.instances[inst.id().id];
+    const Domain::Transformation& trafo = inst.get_transformation();
+
+    auto try_to_use_cache_entry = [](const CacheInstanceEntry& candidate, CacheInstanceEntry& cache_entry, const Domain::Transformation& trafo) -> bool {
+        if (! candidate.cached_bb.defined)
+            return false;
+        if (candidate.inst_trafo.get_rotation().isApprox(trafo.get_rotation())) {
+            // Rotation part is the same as before. We can just update the bounding box itself.
+            cache_entry.cached_bb = Algorithms::BoundingBox::transformed(cache_entry.cached_bb, cache_entry.inst_trafo.get_matrix().inverse());
+            cache_entry.cached_bb = Algorithms::BoundingBox::transformed(cache_entry.cached_bb, trafo.get_matrix());
+            cache_entry.inst_trafo = trafo;
+            return true;
+        }
+        return false;
+    };
+
+    bool cache_used = false;
+    if (! try_to_use_cache_entry(cache_entry, cache_entry, trafo)) {
+        // When the exact entry did not exist or differs in rotation, try all
+        // instances of the same object.
+        for (const auto& [inst_id, candidate] : obj_cache.instances) {
+            if (inst_id == inst.id().id)
+                continue;
+            if (try_to_use_cache_entry(candidate, cache_entry, trafo)) {
+                cache_used = true;
+                break;
+            }
+        }
+    } else
+        cache_used = true;
+
+    if (! cache_used) {
+        // We must calculate the transformed bounding box in this case.
+        cache_entry = { trafo, Algorithms::ModelObject::instance_bounding_box(*inst.get_object(), inst) };
+    }
+
+    // Clear the cache every now and then.
+    if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - m_last_cache_clear_time).count() > 20) {
+        m_last_cache_clear_time = std::chrono::steady_clock::now();
+        // Get list of all currently existing instances.
+        std::vector<size_t> existing_instances;
+        for (const Domain::ModelObject* mo : project.model().objects) {
+            for (const Domain::ModelInstance* mi : mo->instances)
+                existing_instances.emplace_back(mi->id().id);
+        }
+        std::ranges::sort(existing_instances);
+
+        // Erase all records for instances which no longer exist.
+        for (auto& [obj_id, obj_cache] : m_cache) {
+            std::erase_if(obj_cache.instances, [&existing_instances](const auto& item) {
+                auto it = std::lower_bound(existing_instances.begin(), existing_instances.end(), item.first);
+                return it == existing_instances.end() || *it != item.first;
+            });
+        }
+        // Remove all object entries which have empty instances vector.
+        std::erase_if(m_cache, [](const std::pair<size_t, CacheObjectEntry>& item) {
+            return item.second.instances.empty();
+        });
+    }
+
+    return cache_entry.cached_bb;
+}
+
+void BedTracking::update_instance_bed_placement(Domain::Project& project, Domain::ModelInstance& inst, BedTrackingChanges& changes)
+{
+    const Domain::BoundingBox3d& bb = get_instance_bb(project, inst);
+
     if (auto [cc, bi] = find_bed_instance_for_bounds(project, bb); bi != nullptr) {
         bi->model_instances.push_back(&inst);
         changes.updated_beds.insert(Domain::BedRef{cc->id().id, bi->id().id});
@@ -57,7 +153,9 @@ void update_instance_bed_placement(Domain::Project& project, Domain::ModelInstan
     }
 }
 
-BedTrackingChanges update_instances_bed_placement(Domain::Project& project)
+
+
+BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& project)
 {
     BedTrackingChanges changes;
 
@@ -80,7 +178,7 @@ BedTrackingChanges update_instances_bed_placement(Domain::Project& project)
     return changes;
 }
 
-BedTrackingChanges update_instances_bed_placement(Domain::Project& project, const Domain::ElementRefs& instances, bool remove_original_links)
+BedTrackingChanges BedTracking::update_instances_bed_placement(Domain::Project& project, const Domain::ElementRefs& instances, bool remove_original_links)
 {
     BedTrackingChanges changes;
     for (const auto& e : instances) {
@@ -95,7 +193,7 @@ BedTrackingChanges update_instances_bed_placement(Domain::Project& project, cons
 }
 
 BedTrackingChanges
-update_instances_bed_placement(Domain::Project& project, const Domain::ModelInstanceList& instances, bool remove_original_links)
+BedTracking::update_instances_bed_placement(Domain::Project& project, const Domain::ModelInstanceList& instances, bool remove_original_links)
 {
     BedTrackingChanges changes;
     for (auto* inst : instances) {
