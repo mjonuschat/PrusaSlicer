@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/PrintHost/IPrintHostListener.hpp"
 #include "Slic3r/Biz/RemovableDrive/IRemovableDriveStatusListener.hpp"
 #include "Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp"
+#include "Slic3r/Biz/StatusCache.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 
 #include <vector>
@@ -18,7 +19,7 @@ namespace Slic3r::App::PopNotification {
 class PopNotificationCenter :
     public PopNotificationObservableList,
     public Biz::Platform::JobManager::IJobManagerStatusChangedListener,
-    public Biz::Slicing::IStatusListener,
+    public Biz::IStatusCacheChangedListener,
     public Biz::PrintHost::IPrintHostListener,
     public Biz::RemovableDrive::IRemovableDriveStatusListener,
     public Biz::UserAccount::IUserAccountListener
@@ -26,13 +27,13 @@ class PopNotificationCenter :
 public:
     PopNotificationCenter(Biz::ProjectInteractor& project_interactor);
 
-    ~PopNotificationCenter() = default;
+    ~PopNotificationCenter();
 
     // Job
     void on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status) override;
 
     // Slicing
-    void on_status_changed(const Biz::Slicing::Status status, const Domain::SlicingId slicing_id) override;
+    void on_status_cache_changed(const Domain::SlicingId slicing_id) override;
 
     // Export / Upload
     void on_print_host_progress(size_t id, int progress) override;

@@ -12,10 +12,13 @@ namespace Slic3r::Biz::UserAccount {
 class IUserAccountListener
 {
 public:
-    virtual ~IUserAccountListener()                                                       = default;
-    virtual void on_user_account_id_success(bool is_refresh, const std::string& username) = 0;
-    virtual void on_user_account_logged_out()                                             = 0;
-    virtual void on_user_account_will_refresh()                                           = 0;
-    virtual void on_user_account_action_retry(const Network::IHttp::Retry& retry, std::function<void(void)> cancel_callback) = 0;
+    virtual ~IUserAccountListener() = default;
+    virtual void on_user_account_id_success(bool is_refresh, const std::string& username) {};
+    virtual void on_user_account_logged_out() {};
+    virtual void on_user_account_will_refresh() {};
+    virtual void on_user_account_action_retry(
+        const Network::IHttp::Retry& retry,
+        std::function<void(void)> cancel_callback
+    ) {};
 };
 } // namespace Slic3r::Biz::UserAccount

@@ -17,6 +17,11 @@ using Domain::SlicingId;
 SidebarPlaterActionButtons::SidebarPlaterActionButtons(Navigator* render_module_navigator) :
     SidebarActionButtons("sidebar_plater_action_buttons", Render::ModuleType::Plater, render_module_navigator)
 {
+    set_gap(5);
+    auto navigation_button{get_navigation_button()};
+    m_navigation_button = navigation_button.get();
+    append(std::move(navigation_button));
+
     m_button_slice = emplace_back<LayoutButton>("Slice");
     m_button_slice->set_flex_grow(1);
     m_button_slice->set_background_color(color_primary);
@@ -104,15 +109,6 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
         [](const auto& bed_status) { return bed_status.status == StatusCode::Modified; }
     )};
 
-    const bool previewable{std::ranges::any_of(
-        statuses,
-        [&](const auto& bed_status)
-        {
-            return bed_status.status == StatusCode::Finished
-                && bed_status.slicing_id.bed_instance_id == selection.last_selected_bed().instance_id;
-        }
-    )};
-
     const bool any_running{std::ranges::any_of(
         statuses,
         [](const auto& bed_status) { return bed_status.status == StatusCode::Running; }
@@ -123,12 +119,11 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
     m_button_slice->set_enabled(true);
     m_button_slice->set_tooltip("");
     m_button_slice->set_icon(Render::Icon::None);
+    m_navigation_button->set_visible(true);
 
     if (any_invalid) {
         m_button_slice->set_label("Invalid settings");
-        static constexpr ImColor button_color{ImVec4(0.79f, 0.18f, 0.14f, 1.0f)};
-        m_button_slice->set_background_color(button_color);
-        m_button_slice->set_icon(Render::Icon::EyeOpen);
+        m_button_slice->set_background_color(color_error);
 
         std::string error_mesage;
         for (const BedStatus& bed_status : statuses) {
@@ -171,10 +166,6 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
             }
             navigate_to_other();
         };
-    } else if (previewable) {
-        m_button_slice->set_label("Preview");
-        m_button_slice->callbacks().action = [this]() { navigate_to_other(); };
-        m_button_slice->set_background_color(color_secondary);
     } else if (any_running) {
         m_button_slice->set_label("Cancel");
         m_button_slice->callbacks().action = [this, statuses]()
@@ -187,8 +178,10 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
             navigate_to_other();
         };
     } else {
-        m_button_slice->set_label("Slice");
-        m_button_slice->set_enabled(false);
+        m_navigation_button->set_visible(false);
+        m_button_slice->set_label("Preview");
+        m_button_slice->callbacks().action = [this]() { navigate_to_other(); };
+        m_button_slice->set_background_color(color_secondary);
     }
 }
 

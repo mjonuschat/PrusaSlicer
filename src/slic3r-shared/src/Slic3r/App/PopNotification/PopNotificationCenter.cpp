@@ -18,7 +18,13 @@ namespace Slic3r::App::PopNotification {
 PopNotificationCenter::PopNotificationCenter(Biz::ProjectInteractor& project_interactor) :
     m_removable_drive_service(project_interactor.removable_drive_service()),
     m_project_interactor(project_interactor)
-{}
+{
+    m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
+}
+
+PopNotificationCenter::~PopNotificationCenter() {
+    m_project_interactor.status_cache().remove_listener<Biz::IStatusCacheChangedListener>(this);
+}
 
 namespace {
 std::string job_status_to_string(const JobStatus status)
@@ -110,17 +116,26 @@ std::string slicing_status_to_string(const SlicingStatusCode status)
         return "Stopped";
     case SlicingStatusCode::Removed:
         return "Removed";
+    case SlicingStatusCode::InvalidData:
+        return "Invalid settings";
     default:
         return "Unknown";
     }
 }
 } // namespace
 
-void PopNotificationCenter::on_status_changed(const Biz::Slicing::Status status, const SlicingId slicing_id)
+void PopNotificationCenter::on_status_cache_changed(const SlicingId slicing_id)
 {
+    auto optional_status{m_project_interactor.status_cache().get_status(slicing_id)};
+    if (!optional_status) {
+        return;
+    }
+    const Biz::Slicing::Status status{std::move(*optional_status)};
+
     if (status.code != SlicingStatusCode::Running
         && status.code != SlicingStatusCode::Finished
-        && status.code != SlicingStatusCode::Stopping)
+        && status.code != SlicingStatusCode::Stopping
+        && status.code != SlicingStatusCode::InvalidData)
     {
         return;
     }
@@ -139,6 +154,10 @@ void PopNotificationCenter::on_status_changed(const Biz::Slicing::Status status,
     );
     std::string header = "Slicing " + m_project_interactor.get_project_name(slicing_id.project_id);
     std::string text   = slicing_status_to_string(status.code);
+    if (status.code == SlicingStatusCode::InvalidData) {
+        header = "Slicing " + m_project_interactor.get_project_name(slicing_id.project_id) + " failed!";
+        text = status.error;
+    }
 
     if (it != m_notifications.end()) {
         auto* job_data = std::get_if<SlicingProgressNotificationData>(&(*it)->additional_data());

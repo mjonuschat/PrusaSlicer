@@ -28,6 +28,7 @@ public:
 
 private:
     Yoga::LayoutButton* m_button_slice = nullptr;
+    Yoga::LayoutButton* m_navigation_button = nullptr;
 
     void update_slice_button(const Biz::Scene::BedSelection& selection);
 };

@@ -1,5 +1,6 @@
 #include "Slic3r/App/SidebarActionButtons.hpp"
 
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
@@ -28,9 +29,17 @@ SidebarActionButtons::SidebarActionButtons(
     set_flex_shrink(0);
 }
 
-void SidebarActionButtons::on_init(Biz::ProjectInteractor* project_interactor)
+std::unique_ptr<Yoga::LayoutButton> SidebarActionButtons::get_navigation_button()
 {
-    m_project_interactor = project_interactor;
+    auto result{
+        std::make_unique<Yoga::LayoutButton>(m_navigator_name, Render::Icon::None, m_navigator_tooltip)
+    };
+    result->set_background_color(color_secondary);
+    result->set_label_font_type(Render::ImguiFontType::Bold);
+    result->set_min_size({navig_btn_width, button_height});
+
+    result->callbacks().action = [this]() { navigate_to_other(); };
+    return result;
 }
 
 Domain::SlicingId SidebarActionButtons::active_bed_slicing_id() const

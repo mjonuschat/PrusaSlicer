@@ -259,9 +259,6 @@ bool DesktopApp::OnInit()
 
     m_preview_module = std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
 
-    m_project_interactor->slicing_interactor().add_listener<Biz::Slicing::IStatusListener>(
-        &app_services.pop_notification_center()
-    );
     m_project_interactor->print_host_interactor().add_print_host_listener(&app_services.pop_notification_center(
     ));
     m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center(
