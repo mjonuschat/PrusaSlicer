@@ -78,6 +78,8 @@ add_library(slic3r-biz-algorithms STATIC
     include/Slic3r/Biz/Algorithms/Projection.hpp
     include/Slic3r/Biz/Algorithms/ImageUtils.hpp
     src/Slic3r/Biz/Algorithms/ImageUtils.cpp
+    include/Slic3r/Biz/Algorithms/Bed.hpp
+    src/Slic3r/Biz/Algorithms/Bed.cpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)

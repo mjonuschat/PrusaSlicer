@@ -3,6 +3,7 @@
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Domain/Model.hpp"
 
 namespace Slic3r::Biz {
@@ -16,7 +17,7 @@ bool remove_instance(Domain::ModelInstanceList& instances, Domain::ModelInstance
     instances.erase(it);
     return true;
 }
-}
+} // namespace
 
 void remove_instance_from_bed(Domain::Project& project, Domain::ModelInstance* model_instance, BedTrackingChanges& changes)
 {
@@ -32,28 +33,25 @@ void remove_instance_from_bed(Domain::Project& project, Domain::ModelInstance* m
             }
 }
 
-
-
-std::pair<Domain::ConfigContainer*, Domain::BedInstance*> find_bed_instance_for_bounds(Domain::Project& project, const Domain::BoundingBox2d& bounds)
+std::pair<Domain::ConfigContainer*, Domain::BedInstance*>
+find_bed_instance_for_bounds(Domain::Project& project, const Domain::BoundingBox3d& bounds)
 {
     for (auto& cc : project.config_containers())
         for (auto& bi : cc->bed_instances())
-            if (bi->contains(bounds))
+            if (Algorithms::Bed::contains_3d(*bi, bounds) == Algorithms::Bed::BedContainmentState::Inside)
                 return std::make_pair(cc.get(), bi.get());
     return std::make_pair(nullptr, nullptr);
 }
 
 void update_instance_bed_placement(Domain::Project& project, Domain::ModelInstance& inst, BedTrackingChanges& changes)
 {
-    using Algorithms::BoundingBox::to_2d;
     using Algorithms::ModelObject::instance_bounding_box;
 
-    const auto bb = to_2d(instance_bounding_box(*inst.get_object(), inst));
+    const auto bb = instance_bounding_box(*inst.get_object(), inst);
     if (auto [cc, bi] = find_bed_instance_for_bounds(project, bb); bi != nullptr) {
         bi->model_instances.push_back(&inst);
         changes.updated_beds.insert(Domain::BedRef{cc->id().id, bi->id().id});
-    }
-    else {
+    } else {
         project.unplaced_model_instances().push_back(&inst);
         changes.unplaced_instances_updated = true;
     }
@@ -96,7 +94,8 @@ BedTrackingChanges update_instances_bed_placement(Domain::Project& project, cons
     return changes;
 }
 
-BedTrackingChanges update_instances_bed_placement(Domain::Project& project, const Domain::ModelInstanceList& instances, bool remove_original_links)
+BedTrackingChanges
+update_instances_bed_placement(Domain::Project& project, const Domain::ModelInstanceList& instances, bool remove_original_links)
 {
     BedTrackingChanges changes;
     for (auto* inst : instances) {

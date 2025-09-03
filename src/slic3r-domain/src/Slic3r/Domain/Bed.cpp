@@ -13,32 +13,24 @@ namespace Slic3r::Domain {
 static bool check_texture(const std::string& filename)
 {
     boost::system::error_code ec; // so the exists call does not throw (e.g. after a permission problem)
-    return !filename.empty() &&
-           (boost::algorithm::iends_with(filename, ".png") ||
-            boost::algorithm::iends_with(filename, ".svg")) &&
-           boost::filesystem::exists(filename, ec);
+    return !filename.empty()
+        && (boost::algorithm::iends_with(filename, ".png") || boost::algorithm::iends_with(filename, ".svg"))
+        && boost::filesystem::exists(filename, ec);
 }
 
 static bool check_model(const std::string& filename)
 {
     boost::system::error_code ec;
-    return !filename.empty() && boost::algorithm::iends_with(filename, ".stl") &&
-        boost::filesystem::exists(filename, ec);
+    return !filename.empty() && boost::algorithm::iends_with(filename, ".stl") && boost::filesystem::exists(filename, ec);
 }
 
-Bed Bed::from(
-    const Vec2ds& contour,
-    float max_print_height,
-    const std::optional<Bed::Segments>& bed_segments,
-    const std::string& model_filename,
-    const std::string& texture_filename
-)
+Bed Bed::from(const Vec2ds& contour, float max_print_height, const std::optional<Bed::Segments>& bed_segments, const std::string& model_filename, const std::string& texture_filename)
 {
     Bed ret;
-    ret.m_contour = contour;
+    ret.m_contour          = contour;
     ret.m_max_print_height = max_print_height;
-    ret.m_segments = bed_segments;
-    ret.m_model_filename = model_filename;
+    ret.m_segments         = bed_segments;
+    ret.m_model_filename   = model_filename;
     ret.m_texture_filename = texture_filename;
 
     if (!ret.m_model_filename.empty() && !check_model(ret.m_model_filename)) {
@@ -62,29 +54,22 @@ Bed Bed::from(
     }
 
     ret.m_contour_aabb_extent = max - min;
-    ret.m_center = 0.5 * (min + max);
+    ret.m_center              = 0.5 * (min + max);
     // TODO: calculate offset as done in libslic3r BuildVolume
     // ret.m_offset = /*TODO*/;
     return ret;
 }
 
-
-bool Bed::contains(const Vec2d& bed_inst_position, const BoundingBox2d& object_bb) const
-{
-    Vec2d half_extent = m_contour_aabb_extent * 0.5;
-    Vec2d center = Vec2d{m_center.x(), m_center.y()} + bed_inst_position;
-    BoundingBox2d bed_bounds{center - half_extent, center + half_extent};
-    return bed_bounds.overlap(object_bb);
-}
-
 static bool vec2d_equal(const Vec2d& a, const Vec2d& b)
 {
-    return Domain::fuzzy_compare(a.x(), b.x()) &&
-           Domain::fuzzy_compare(a.y(), b.y());
+    return Domain::fuzzy_compare(a.x(), b.x()) && Domain::fuzzy_compare(a.y(), b.y());
 }
 
 bool Bed::operator==(const Bed& rhs) const
 {
+    if (m_type != rhs.m_type) {
+        return false;
+    }
     if (!vec2d_equal(m_center, rhs.m_center)) {
         return false;
     }
@@ -114,11 +99,17 @@ bool Bed::operator==(const Bed& rhs) const
             return false;
         }
     }
+    if (m_top_bottom_convex_hull_decomposition != rhs.m_top_bottom_convex_hull_decomposition) {
+        return false;
+    }
+    if (m_circle != rhs.m_circle) {
+        return false;
+    }
     return true;
 }
 
-bool operator==(const Bed::Segments& a, const Bed::Segments& b) {
+bool operator==(const Bed::Segments& a, const Bed::Segments& b)
+{
     return a.x_count == b.x_count && a.y_count == b.y_count;
 }
-
-}
+} // namespace Slic3r::Domain

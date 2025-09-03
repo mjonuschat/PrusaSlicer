@@ -89,7 +89,6 @@ public:
         return project_context().screen_space_sized_modifier();
     }
 
-    void update_objects_shadows_data();
     void update_beds_shadows_data();
 
     void on_project_loaded(Domain::SelectionId project_id) override;
@@ -127,11 +126,13 @@ private:
 
     void on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;
     void on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;
-    void on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, Biz::Scene::TransformState state) override;
+    void on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, Biz::Scene::TransformState state,
+        const Biz::BedTrackingChanges& bed_tracking_changes) override;
 
     void on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
     void on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
-    void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, Biz::Scene::TransformState state) override;
+    void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, Biz::Scene::TransformState state,
+        const Biz::BedTrackingChanges& bed_tracking_changes) override;
 
     void on_bed_instance_updated(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
     void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
@@ -149,6 +150,10 @@ private:
     BedInstances selected_bed_instances() const;
 
     void invoke_bed_visually_changed(Domain::SelectionId project_id);
+    void update_selection_aabb(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection);
+
+    void remove_beds(Domain::SelectionId project_id, const Domain::BedRefs& instances);
+    void update_volume_materials();
 
 private:
     const Domain::Workbench& m_workbench;
@@ -162,8 +167,7 @@ private:
     Scene::BedRenderUpdater m_bed_render_updater;
 
     bool m_freeze_selection_center{ false };
-
-    void remove_beds(Domain::SelectionId project_id, const Domain::BedRefs& instances);
+    bool m_volume_materials_dirty{ true };
 };
 
 } // namespace Slic3r::App::Plater

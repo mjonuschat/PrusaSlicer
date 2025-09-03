@@ -12,6 +12,7 @@
 
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
+#include "Slic3r/Biz/Scene/BedFactory.hpp"
 
 #include "Slic3r/Directories.hpp"
 
@@ -22,7 +23,7 @@ namespace Slic3r::Biz {
 void ProjectInteractor::initialize_bed(Domain::ConfigContainer& config_container, Domain::BedContainer& bed_container)
 {
     const auto& selected_printer_preset{config_container.selected_preset()};
-    Domain::Bed& bed{bed_container.get_or_create_bed(selected_printer_preset, Slic3r::resources_dir())};
+    Domain::Bed& bed{Scene::get_or_create_bed(bed_container, selected_printer_preset, resources_dir())};
     config_container.set_bed(bed);
     m_scene_interactor.add_bed_instance(config_container.id().id);
 }
@@ -143,9 +144,9 @@ void ProjectInteractor::save_project(const std::string& file_path, const Store3m
     selected_project.set_file_name(boost::filesystem::path(file_path).stem().string());
     store_3mf(file_path, selected_project, params);
 
-    invoke_listeners<IProjectsChangedListener>([this](auto* l) {
-        l->on_project_changed(selected_project_id());
-    });
+    invoke_listeners<IProjectsChangedListener>(
+        [this](auto* l) { l->on_project_changed(selected_project_id()); }
+    );
 }
 
 void ProjectInteractor::select_project(Domain::SelectionId project_id)

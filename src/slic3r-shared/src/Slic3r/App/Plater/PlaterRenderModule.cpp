@@ -345,7 +345,6 @@ void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
 void PlaterRenderModule::init_scene()
 {
     m_scene_presenter->scene().log_nodes();
-    m_scene_presenter->update_objects_shadows_data();
 }
 
 void PlaterRenderModule::init_gizmos()

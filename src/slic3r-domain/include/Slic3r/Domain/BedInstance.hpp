@@ -10,7 +10,7 @@
 namespace Slic3r::Domain {
 
 // TODO: move this to better place
-using ModelInstanceList = std::vector<ModelInstance*>;
+using ModelInstanceList      = std::vector<ModelInstance*>;
 using ConstModelInstanceList = std::vector<const ModelInstance*>;
 
 class Bed;
@@ -22,12 +22,6 @@ struct BedInstance : public ObjectBase
     const Transform3d& matrix() const
     {
         return transformation.get_matrix();
-    }
-
-    bool contains(const BoundingBox2d& bounds) const
-    {
-        Vec3d pos = transformation.get_offset();
-        return bed.get().contains(Vec2d{pos.x(), pos.y()}, bounds);
     }
 
     size_t index() const;

@@ -21,6 +21,7 @@ namespace Slic3r::Domain { class Bed; }
 
 namespace Slic3r::Biz {
 class ISelectedBedInstancesChangedListener;
+struct BedTrackingChanges;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::Biz::Scene {
@@ -64,8 +65,10 @@ public:
      * @param project_id Project the instances belong to
      * @param elements List of instances to transform
      * @param state Indicates whether the transform state is final (interactive incremental transform)
+     * @param bed_tracking_changes Information on changed bed instances
      */
-    virtual void on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state) = 0;
+    virtual void on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state,
+        const BedTrackingChanges& bed_tracking_changes) = 0;
 
     /**
      * @brief Called whenever volumes are added
@@ -88,8 +91,10 @@ public:
      * @param project_id Project the instances belong to
      * @param elements List of instances to transform
      * @param state Indicates whether the transform state is final (interactive incremental transform)
+     * @param bed_tracking_changes Information on changed bed instances
      */
-    virtual void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state) = 0;
+    virtual void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state,
+        const BedTrackingChanges& bed_tracking_changes) = 0;
 
     virtual void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) = 0;
     virtual void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) = 0;
@@ -252,7 +257,7 @@ public:
     /** @} */
 
 private:
-    void update_selection_instance_bed_placement(bool forced_volume_mode = false);
+    BedTrackingChanges update_selection_instance_bed_placement(bool forced_volume_mode = false);
     void invoke_slicing_input_changed(const Domain::BedRef& bed_instance);
     void update_config_container_bed(
         Domain::Project& project,

@@ -473,6 +473,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Scene/BedGeometry.cpp
         src/Slic3r/Biz/Scene/BedTracking.hpp
         src/Slic3r/Biz/Scene/BedTracking.cpp
+        src/Slic3r/Biz/Scene/BedFactory.hpp
+        src/Slic3r/Biz/Scene/BedFactory.cpp
 
 		include/Slic3r/Biz/Preset/IPresetChangedListener.hpp
         include/Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp
