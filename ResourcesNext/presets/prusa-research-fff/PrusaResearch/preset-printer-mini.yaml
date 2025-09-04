@@ -56,7 +56,7 @@ variants:
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
-    thumbnails: [16x16/QOI, ' 220x124/QOI', ' 200x240/QOI', ' 640x480/PNG']
+    thumbnails: [16x16/QOI, ' 220x124/QOI', ' 200x240/QOI', ' 380x285/PNG']
     use_firmware_retraction: 0
     use_relative_e_distances: 1
     use_volumetric_e: 0
@@ -72,7 +72,7 @@ variants:
       M862.1 P[nozzle_diameter] A{(filament_abrasive[0] ? 1 : 0)} F{(nozzle_high_flow[0] ? 1 : 0)} ; nozzle check
       M862.5 P2 ; g-code level check
       M862.6 P"Input shaper" ; FW feature check
-      M115 U6.2.2+8853
+      M115 U6.2.4+8909
       G90 ; use absolute coordinates
       M83 ; extruder relative mode
       M104 S170 ; set extruder temp for bed leveling
@@ -100,3 +100,4 @@ variants:
       M204 T[machine_max_acceleration_travel] ; restore travel acceleration
       M572 W0.06 ; set smooth time
       M221 S95 ; set flow
+

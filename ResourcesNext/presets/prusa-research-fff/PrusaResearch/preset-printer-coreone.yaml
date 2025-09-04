@@ -35,29 +35,29 @@ variants:
       ;AFTER_LAYER_CHANGE
       ;[layer_z]
     machine_limits_usage: emit_to_gcode
-    machine_max_acceleration_e: [5000.0, 2500.0]
-    machine_max_acceleration_extruding: [7000.0, 2500.0]
-    machine_max_acceleration_retracting: [2500.0, 1200.0]
-    machine_max_acceleration_travel: [7000.0, 2500.0]
-    machine_max_acceleration_x: [10000.0, 2500.0]
-    machine_max_acceleration_y: [10000.0, 2500.0]
-    machine_max_acceleration_z: [400.0, 200.0]
-    machine_max_feedrate_e: [100.0, 100.0]
-    machine_max_feedrate_x: [350.0, 160.0]
-    machine_max_feedrate_y: [350.0, 160.0]
-    machine_max_feedrate_z: [12.0, 12.0]
-    machine_max_jerk_e: [10.0, 10.0]
-    machine_max_jerk_x: [10.0, 8.0]
-    machine_max_jerk_y: [10.0, 8.0]
-    machine_max_jerk_z: [2.0, 2.0]
-    machine_min_extruding_rate: [0.0, 0.0]
-    machine_min_travel_rate: [0.0, 0.0]
+    machine_max_acceleration_e: [5000, 2500]
+    machine_max_acceleration_extruding: [7000, 2500]
+    machine_max_acceleration_retracting: [2500, 2500]
+    machine_max_acceleration_travel: [7000, 2500]
+    machine_max_acceleration_x: [10000, 2500]
+    machine_max_acceleration_y: [10000, 2500]
+    machine_max_acceleration_z: [400, 200]
+    machine_max_feedrate_e: [100, 100]
+    machine_max_feedrate_x: [350, 160]
+    machine_max_feedrate_y: [350, 160]
+    machine_max_feedrate_z: [12, 12]
+    machine_max_jerk_e: [10, 10]
+    machine_max_jerk_x: [10, 8]
+    machine_max_jerk_y: [10, 8]
+    machine_max_jerk_z: [2, 2]
+    machine_min_extruding_rate: [0, 0]
+    machine_min_travel_rate: [0, 0]
     max_print_height: 270
     printer_technology: FFF
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
-    thumbnails: [16x16/QOI, ' 313x173/QOI', ' 480x240/QOI', ' 380x285/PNG']
+    thumbnails: [16x16/QOI, '313x173/QOI', '480x240/QOI', '380x285/PNG']
     use_firmware_retraction: 0
     use_relative_e_distances: 1
     use_volumetric_e: 0
@@ -289,3 +289,13 @@ variants:
         M572 S0 ; reset PA
         M84 X Y E ; disable motors
         ; max_layer_z = [max_layer_z]
+    variants:
+      - condition: tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.3
+        values:
+          machine_max_jerk_x: [8, 8]
+          machine_max_jerk_y: [8, 8]    
+  - condition: tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.3
+    values:
+      machine_max_jerk_x: [8, 8]
+      machine_max_jerk_y: [8, 8]
+  

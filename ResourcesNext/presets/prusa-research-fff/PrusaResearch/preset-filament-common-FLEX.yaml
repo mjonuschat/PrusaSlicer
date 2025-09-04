@@ -71,7 +71,8 @@ values:
   min_print_speed: 15
   slowdown_below_layer_time: 10
   start_filament_gcode: M142 S36 ; set heatbreak target temp
-  pressure_advance: 0
+  pressure_advance_enable: true
+  pressure_advance_value: 0
   temperature: 230
 ## C1
 variants:

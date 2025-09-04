@@ -172,7 +172,7 @@ variants:
     support_material_contact_distance: 0.2
     support_material_enforce_layers: 0
     support_material_extruder: 0
-    support_material_extrusion_width: 0.36
+    support_material_extrusion_width: 0.4
     support_material_interface_contact_loops: 0
     support_material_interface_extruder: 0
     support_material_interface_layers: 3
@@ -207,6 +207,7 @@ variants:
     bottom_solid_min_thickness: 0.5
     wipe_tower_extra_spacing: 110%
     wipe_tower_extra_flow: 250%
+    travel_short_distance_acceleration: 250
   variants:
   - name: '*non-MMU branch*'
     variants:
@@ -262,9 +263,9 @@ variants:
             id: 0.15mm STRUCTURAL @COREONE 0.4HF
             values:
               bottom_solid_layers: 5
-              perimeter_speed: 80
-              external_perimeter_speed: 45
-              small_perimeter_speed: 45
+              perimeter_speed: 70
+              external_perimeter_speed: 50
+              small_perimeter_speed: 50
               infill_speed: 120
               solid_infill_speed: 140
               gap_fill_speed: 60
@@ -276,6 +277,22 @@ variants:
               infill_acceleration: 6000
               overhang_speed_2: 45
               overhang_speed_3: 90%
+          - name: 0.15mm BALANCED @COREONE 0.4HF
+            values:
+              perimeter_speed: 150
+              external_perimeter_speed: 200
+              small_perimeter_speed: 170
+              infill_speed: 150
+              gap_fill_speed: 120
+              solid_infill_speed: 150
+              external_perimeter_acceleration: 2500
+              perimeter_acceleration: 3000
+              solid_infill_acceleration: 5000
+              infill_acceleration: 5000
+              default_acceleration: 3000
+              overhang_speed_2: 50
+              overhang_speed_3: 60%
+              over_bridge_speed: 0
           - name: 0.15mm SPEED @COREONE 0.4HF
             values:
               perimeter_speed: 250
@@ -309,6 +326,22 @@ variants:
               support_material_contact_distance: 0.2
               support_material_interface_speed: 50
               bridge_speed: 50
+          - name: 0.20mm BALANCED @COREONE 0.4HF
+            values:
+              perimeter_speed: 150
+              external_perimeter_speed: 200
+              small_perimeter_speed: 170
+              infill_speed: 150
+              gap_fill_speed: 120
+              solid_infill_speed: 150
+              external_perimeter_acceleration: 2500
+              perimeter_acceleration: 3000
+              solid_infill_acceleration: 5000
+              infill_acceleration: 5000
+              default_acceleration: 3000
+              overhang_speed_2: 50
+              overhang_speed_3: 60%
+              over_bridge_speed: 0
           - name: 0.20mm SPEED @COREONE 0.4HF
             values:
               perimeter_speed: 250
@@ -333,9 +366,9 @@ variants:
           variants:
           - name: 0.25mm STRUCTURAL @COREONE 0.4HF
             values:
-              perimeter_speed: 80
-              external_perimeter_speed: 45
-              small_perimeter_speed: 45
+              perimeter_speed: 70
+              external_perimeter_speed: 50
+              small_perimeter_speed: 50
               infill_speed: 120
               solid_infill_speed: 140
               gap_fill_speed: 60
@@ -348,6 +381,22 @@ variants:
               infill_acceleration: 6000
               overhang_speed_2: 45
               overhang_speed_3: 90%
+          - name: 0.25mm BALANCED @COREONE 0.4HF
+            values:
+              perimeter_speed: 150
+              external_perimeter_speed: 200
+              small_perimeter_speed: 170
+              infill_speed: 150
+              gap_fill_speed: 120
+              solid_infill_speed: 150
+              external_perimeter_acceleration: 2500
+              perimeter_acceleration: 3000
+              solid_infill_acceleration: 5000
+              infill_acceleration: 5000
+              default_acceleration: 3000
+              overhang_speed_2: 50
+              overhang_speed_3: 60%
+              over_bridge_speed: 0
           - name: 0.25mm SPEED @COREONE 0.4HF
             values:
               perimeter_speed: 220
@@ -423,9 +472,9 @@ variants:
           - name: 0.10mm STRUCTURAL @COREONE 0.5HF
             id: 0.10mm STRUCTURAL @COREONE 0.5HF
             values:
-              perimeter_speed: 80
-              small_perimeter_speed: 45
-              external_perimeter_speed: 45
+              perimeter_speed: 70
+              small_perimeter_speed: 50
+              external_perimeter_speed: 50
               infill_speed: 200
               solid_infill_speed: 200
               top_solid_infill_speed: 70
@@ -438,7 +487,7 @@ variants:
               solid_infill_acceleration: 2500
               infill_acceleration: 3000
               bridge_acceleration: 1000
-              default_acceleration: 2000
+              default_acceleration: 3000
               extrusion_width: 0.55
               perimeter_extrusion_width: 0.5
               external_perimeter_extrusion_width: 0.5
@@ -446,6 +495,7 @@ variants:
               solid_infill_extrusion_width: 0.5
               top_infill_extrusion_width: 0.45
               support_material_contact_distance: 0.2
+              overhang_speed_2: 30
 # 0.5HF/0.15mm layer
         - condition: print.layer_height == 0.15
           values:
@@ -457,9 +507,9 @@ variants:
           - name: 0.15mm STRUCTURAL @COREONE 0.5HF
             id: 0.15mm STRUCTURAL @COREONE 0.5HF
             values:
-              perimeter_speed: 80
-              small_perimeter_speed: 45
-              external_perimeter_speed: 45
+              perimeter_speed: 70
+              small_perimeter_speed: 50
+              external_perimeter_speed: 50
               infill_speed: 200
               solid_infill_speed: 180
               top_solid_infill_speed: 70
@@ -486,9 +536,9 @@ variants:
           - name: 0.20mm STRUCTURAL @COREONE 0.5HF
             id: 0.20mm STRUCTURAL @COREONE 0.5HF
             values:
-              perimeter_speed: 80
-              small_perimeter_speed: 45
-              external_perimeter_speed: 45
+              perimeter_speed: 70
+              small_perimeter_speed: 50
+              external_perimeter_speed: 50
               infill_speed: 200
               solid_infill_speed: 120
               bridge_speed: 40
@@ -503,7 +553,7 @@ variants:
               perimeter_speed: 200
               small_perimeter_speed: 170
               external_perimeter_speed: 200
-              infill_speed: 200
+              infill_speed: 220
               solid_infill_speed: 220
               bridge_speed: 40
               support_material_speed: 120
@@ -521,9 +571,9 @@ variants:
           - name: 0.25mm STRUCTURAL @COREONE 0.5HF
             id: 0.25mm STRUCTURAL @COREONE 0.5HF
             values:
-              perimeter_speed: 80
-              small_perimeter_speed: 45
-              external_perimeter_speed: 45
+              perimeter_speed: 70
+              small_perimeter_speed: 50
+              external_perimeter_speed: 50
               infill_speed: 200
               solid_infill_speed: 110
               top_solid_infill_speed: 70
@@ -535,6 +585,23 @@ variants:
               solid_infill_acceleration: 4000
               infill_acceleration: 6000
               overhang_speed_2: 45
+          - name: 0.25mm BALANCED @COREONE 0.5HF
+            values:
+              perimeter_speed: 150
+              small_perimeter_speed: 170
+              external_perimeter_speed: 200
+              infill_speed: 150
+              solid_infill_speed: 150
+              top_solid_infill_speed: 70
+              bridge_speed: 40
+              gap_fill_speed: 70
+              support_material_speed: 120
+              over_bridge_speed: 40%
+              overhang_speed_2: 50
+              perimeter_acceleration: 3000
+              external_perimeter_acceleration: 2500
+              infill_acceleration: 5000
+              solid_infill_acceleration: 5000
           - name: 0.25mm SPEED @COREONE 0.5HF
             values:
               perimeter_speed: 200
@@ -559,9 +626,9 @@ variants:
           - name: 0.32mm STRUCTURAL @COREONE 0.5HF
             id: 0.32mm STRUCTURAL @COREONE 0.5HF
             values:
-              perimeter_speed: 80
-              small_perimeter_speed: 45
-              external_perimeter_speed: 45
+              perimeter_speed: 70
+              small_perimeter_speed: 50
+              external_perimeter_speed: 50
               infill_speed: 200
               solid_infill_speed: 110
               top_solid_infill_speed: 70
@@ -571,8 +638,26 @@ variants:
               support_material_interface_speed: 50%
               external_perimeter_acceleration: 1500
               perimeter_acceleration: 2500
+              infill_acceleration: 6000
               solid_infill_acceleration: 4000
               overhang_speed_2: 45
+          - name: 0.32mm BALANCED @COREONE 0.5HF
+            values:
+              perimeter_speed: 150
+              small_perimeter_speed: 160
+              external_perimeter_speed: 160
+              infill_speed: 150
+              solid_infill_speed: 150
+              top_solid_infill_speed: 70
+              bridge_speed: 40
+              gap_fill_speed: 70
+              support_material_speed: 120
+              over_bridge_speed: 40%
+              overhang_speed_2: 50
+              perimeter_acceleration: 3000
+              external_perimeter_acceleration: 2500
+              infill_acceleration: 5000
+              solid_infill_acceleration: 5000
           - name: 0.32mm SPEED @COREONE 0.5HF
             values:
               perimeter_speed: 160
@@ -633,13 +718,13 @@ variants:
             id: 0.15mm STRUCTURAL @COREONE 0.6HF
             values:
               perimeter_speed: 70
-              external_perimeter_speed: 45
-              small_perimeter_speed: 45
+              external_perimeter_speed: 50
+              small_perimeter_speed: 50
               solid_infill_speed: 160
               infill_speed: 100
               top_solid_infill_speed: 70
               bridge_speed: 30
-              gap_fill_speed: 80
+              gap_fill_speed: 70
               external_perimeter_acceleration: 1500
               perimeter_acceleration: 2500
               solid_infill_acceleration: 4000
@@ -673,9 +758,9 @@ variants:
           - name: 0.20mm STRUCTURAL @COREONE 0.6HF
             id: 0.20mm STRUCTURAL @COREONE 0.6HF
             values:
-              perimeter_speed: 80
-              external_perimeter_speed: 45
-              small_perimeter_speed: 45
+              perimeter_speed: 70
+              external_perimeter_speed: 50
+              small_perimeter_speed: 50
               solid_infill_speed: 110
               infill_speed: 100
               bridge_speed: 30
@@ -683,8 +768,23 @@ variants:
               external_perimeter_acceleration: 1500
               perimeter_acceleration: 2500
               solid_infill_acceleration: 4000
-              overhang_speed_2: 45
+              top_solid_infill_acceleration: 2000
+              infill_acceleration: 6000
+              overhang_speed_2: 30
               overhang_speed_3: 80%
+          - name: 0.20mm BALANCED @COREONE 0.6HF
+            values:
+              perimeter_speed: 150
+              external_perimeter_speed: 200
+              small_perimeter_speed: 170
+              solid_infill_speed: 150
+              infill_speed: 150
+              bridge_speed: 40
+              gap_fill_speed: 80
+              support_material_speed: 110
+              support_material_interface_speed: 50%
+              overhang_speed_2: 30
+              overhang_speed_3: 70%
           - name: 0.20mm SPEED @COREONE 0.6HF
             values:
               perimeter_speed: 200
@@ -705,7 +805,7 @@ variants:
             top_solid_layers: 4
             support_material_contact_distance: 0.25
             raft_contact_distance: 0.25
-            top_solid_infill_acceleration: 1500
+            top_solid_infill_acceleration: 2000
             gap_fill_speed: 70
             top_solid_infill_speed: 60
             support_material_speed: 80
@@ -713,19 +813,32 @@ variants:
           - name: 0.25mm STRUCTURAL @COREONE 0.6HF
             id: 0.25mm STRUCTURAL @COREONE 0.6HF
             values:
-              perimeter_speed: 80
-              small_perimeter_speed: 45
-              external_perimeter_speed: 45
-              infill_speed: 200
-              solid_infill_speed: 110
+              perimeter_speed: 70
+              small_perimeter_speed: 50
+              external_perimeter_speed: 50
+              infill_speed: 100
+              solid_infill_speed: 90
               bridge_speed: 30
               external_perimeter_acceleration: 1500
               perimeter_acceleration: 2500
-              bridge_acceleration: 1000
+              bridge_acceleration: 1500
               infill_acceleration: 6000
               solid_infill_acceleration: 4000
               overhang_speed_2: 30
               overhang_speed_3: 80%
+          - name: 0.25mm BALANCED @COREONE 0.6HF
+            values:
+              perimeter_speed: 150
+              external_perimeter_speed: 180
+              small_perimeter_speed: 170
+              solid_infill_speed: 150
+              infill_speed: 150
+              bridge_speed: 40
+              gap_fill_speed: 80
+              support_material_speed: 110
+              support_material_interface_speed: 50%
+              overhang_speed_2: 30
+              overhang_speed_3: 70%
           - name: 0.25mm SPEED @COREONE 0.6HF
             values:
               perimeter_speed: 180
@@ -757,27 +870,42 @@ variants:
             id: 0.32mm STRUCTURAL @COREONE 0.6HF
             values:
               perimeter_speed: 70
-              external_perimeter_speed: 45
-              small_perimeter_speed: 45
-              infill_speed: 70
-              bridge_speed: 30
-              infill_acceleration: 6000
+              external_perimeter_speed: 50
+              small_perimeter_speed: 50
+              infill_speed: 120
+              bridge_speed: 40
+              infill_acceleration: 7000
               solid_infill_acceleration: 4000
               external_perimeter_acceleration: 1500
-              perimeter_acceleration: 2000
+              perimeter_acceleration: 2500
               overhang_speed_2: 35
-              overhang_speed_3: 80%
+              overhang_speed_3: 50
               support_material_speed: 110
               support_material_interface_speed: 50%
+          - name: 0.32mm BALANCED @COREONE 0.6HF
+            values:
+              perimeter_speed: 145
+              external_perimeter_speed: 145
+              small_perimeter_speed: 145
+              solid_infill_speed: 120
+              infill_speed: 120
+              bridge_speed: 40
+              gap_fill_speed: 80
+              support_material_speed: 110
+              support_material_interface_speed: 50%
+              overhang_speed_2: 35
+              overhang_speed_3: 70%
           - name: 0.32mm SPEED @COREONE 0.6HF
             values:
               perimeter_speed: 145
               external_perimeter_speed: 145
               small_perimeter_speed: 145
               infill_speed: 145
+              solid_infill_speed: 140
               bridge_speed: 40
               top_solid_infill_speed: 60
               support_material_speed: 110
+              top_solid_infill_acceleration: 2000
               support_material_interface_speed: 50%
               overhang_speed_2: 35
               overhang_speed_3: 70%
@@ -796,9 +924,9 @@ variants:
           variants:
           - name: 0.40mm STRUCTURAL @COREONE 0.6HF
             values:
-              perimeter_speed: 80
-              external_perimeter_speed: 45
-              small_perimeter_speed: 45
+              perimeter_speed: 70
+              external_perimeter_speed: 50
+              small_perimeter_speed: 50
               infill_speed: 100
               solid_infill_speed: 100
               top_solid_infill_speed: 60
@@ -873,9 +1001,9 @@ variants:
           variants:
           - name: 0.30mm STRUCTURAL @COREONE 0.8HF
             values:
-              perimeter_speed: 80
-              external_perimeter_speed: 45
-              small_perimeter_speed: 45
+              perimeter_speed: 70
+              external_perimeter_speed: 50
+              small_perimeter_speed: 50
               infill_speed: 120
               solid_infill_speed: 120
               top_solid_infill_speed: 60
@@ -914,9 +1042,9 @@ variants:
           variants:
           - name: 0.40mm STRUCTURAL @COREONE 0.8HF
             values:
-              perimeter_speed: 80
-              external_perimeter_speed: 45
-              small_perimeter_speed: 45
+              perimeter_speed: 70
+              external_perimeter_speed: 50
+              small_perimeter_speed: 50
               infill_speed: 100
               solid_infill_speed: 100
               top_solid_infill_speed: 65
@@ -931,8 +1059,8 @@ variants:
           - name: 0.40mm SPEED @COREONE 0.8HF
             values:
               perimeter_speed: 100
-              external_perimeter_speed: 90
-              small_perimeter_speed: 90
+              external_perimeter_speed: 85
+              small_perimeter_speed: 85
               infill_speed: 105
               solid_infill_speed: 100
               top_solid_infill_speed: 75
@@ -956,9 +1084,9 @@ variants:
           variants:
           - name: 0.55mm STRUCTURAL @COREONE 0.8HF
             values:
-              perimeter_speed: 75
-              external_perimeter_speed: 45
-              small_perimeter_speed: 45
+              perimeter_speed: 70
+              external_perimeter_speed: 50
+              small_perimeter_speed: 50
               infill_speed: 75
               solid_infill_speed: 65
               top_solid_infill_speed: 45
@@ -967,6 +1095,7 @@ variants:
               external_perimeter_acceleration: 1500
               perimeter_acceleration: 2500
               infill_acceleration: 6000
+              solid_infill_acceleration: 4000
               overhang_speed_2: 40
           - name: 0.55mm SPEED @COREONE 0.8HF
             values:
@@ -1034,23 +1163,25 @@ variants:
             top_solid_infill_speed: 60
             support_material_contact_distance: 0.1
             perimeter_speed: 60
-            small_perimeter_speed: 40
-            external_perimeter_speed: 40
-            gap_fill_speed: 40
-            support_material_speed: 40
+            small_perimeter_speed: 45
+            external_perimeter_speed: 45
+            gap_fill_speed: 45
+            support_material_speed: 60
             external_perimeter_acceleration: 800
             perimeter_acceleration: 1200
             top_solid_infill_acceleration: 1000
             solid_infill_acceleration: 2000
             infill_acceleration: 2500
             bridge_acceleration: 1000
-            default_acceleration: 1500
+            default_acceleration: 3000
             perimeter_extrusion_width: 0.25
             external_perimeter_extrusion_width: 0.25
             infill_extrusion_width: 0.25
             solid_infill_extrusion_width: 0.25
             solid_infill_speed: 100
             bridge_speed: 25
+            raft_contact_distance: 0.1
+            overhang_speed_2: 30
 # 0.25n/0.07mm layer
       - condition: print.layer_height == 0.07
         values:
@@ -1062,23 +1193,25 @@ variants:
             top_solid_infill_speed: 60
             support_material_contact_distance: 0.1
             perimeter_speed: 60
-            small_perimeter_speed: 40
-            external_perimeter_speed: 40
-            gap_fill_speed: 40
-            support_material_speed: 40
+            small_perimeter_speed: 45
+            external_perimeter_speed: 45
+            gap_fill_speed: 45
+            support_material_speed: 60
             external_perimeter_acceleration: 800
             perimeter_acceleration: 1200
             top_solid_infill_acceleration: 1000
             solid_infill_acceleration: 2000
             infill_acceleration: 2500
             bridge_acceleration: 1000
-            default_acceleration: 1500
+            default_acceleration: 3000
             perimeter_extrusion_width: 0.25
             external_perimeter_extrusion_width: 0.25
             infill_extrusion_width: 0.25
             solid_infill_extrusion_width: 0.25
             solid_infill_speed: 140
             bridge_speed: 30
+            raft_contact_distance: 0.1
+            overhang_speed_2: 30
 # 0.25n/0.12mm layer
       - condition: print.layer_height == 0.12
         values:
@@ -1086,21 +1219,22 @@ variants:
           top_solid_layers: 9
           support_material_contact_distance: 0.09
           raft_contact_distance: 0.08
-          infill_acceleration: 2500
-          solid_infill_acceleration: 2000
+          infill_acceleration: 3000
+          solid_infill_acceleration: 2500
+          overhang_speed_2: 30
         variants:
         - name: 0.12mm STRUCTURAL @COREONE 0.25
           values:
             perimeter_speed: 70
-            external_perimeter_speed: 40
-            small_perimeter_speed: 40
+            external_perimeter_speed: 45
+            small_perimeter_speed: 45
             external_perimeter_acceleration: 1000
             perimeter_acceleration: 1500
         - name: 0.12mm SPEED @COREONE 0.25
           values:
-            perimeter_speed: 120
-            external_perimeter_speed: 120
-            small_perimeter_speed: 120
+            perimeter_speed: 130
+            external_perimeter_speed: 130
+            small_perimeter_speed: 130
             external_perimeter_acceleration: 1500
             perimeter_acceleration: 2000
             travel_acceleration: 6000
@@ -1111,21 +1245,22 @@ variants:
           top_solid_layers: 7
           support_material_contact_distance: 0.09
           raft_contact_distance: 0.08
-          infill_acceleration: 2500
-          solid_infill_acceleration: 2000
+          infill_acceleration: 3000
+          solid_infill_acceleration: 2500
+          overhang_speed_2: 30
         variants:
         - name: 0.15mm STRUCTURAL @COREONE 0.25
           values:
             perimeter_speed: 70
-            external_perimeter_speed: 40
-            small_perimeter_speed: 40
+            external_perimeter_speed: 45
+            small_perimeter_speed: 45
             external_perimeter_acceleration: 1000
             perimeter_acceleration: 1500
         - name: 0.15mm SPEED @COREONE 0.25
           values:
-            perimeter_speed: 120
-            external_perimeter_speed: 120
-            small_perimeter_speed: 120
+            perimeter_speed: 130
+            external_perimeter_speed: 130
+            small_perimeter_speed: 130
             external_perimeter_acceleration: 1500
             perimeter_acceleration: 2000
             travel_acceleration: 6000
@@ -1133,6 +1268,12 @@ variants:
     - condition: tool.nozzle_diameter == 0.3
       values:
         extrusion_width: 0.34
+        solid_infill_extrusion_width: 0.34
+        top_infill_extrusion_width: 0.3
+        brim_separation: 0
+        infill_extrusion_width: 0.34
+        support_material_extrusion_width: 0.3
+        elefant_foot_compensation: 0.1
         first_layer_extrusion_width: 0.4
         perimeter_extrusion_width: 0.34
         external_perimeter_extrusion_width: 0.34
@@ -1154,6 +1295,8 @@ variants:
         gap_fill_speed: 50
         top_solid_min_thickness: 0.7
         bottom_solid_min_thickness: 0.5
+        first_layer_infill_speed: 60
+        overhang_speed_2: 30
       variants:
 # 0.3n/0.12mm layer
       - condition: print.layer_height == 0.12
@@ -1165,12 +1308,12 @@ variants:
         variants:
         - name: 0.12mm STRUCTURAL @COREONE 0.3
           values:
-            perimeter_speed: 80
-            small_perimeter_speed: 40
-            external_perimeter_speed: 40
+            perimeter_speed: 70
+            small_perimeter_speed: 45
+            external_perimeter_speed: 45
             infill_speed: 100
             solid_infill_speed: 200
-            top_solid_infill_speed: 40
+            top_solid_infill_speed: 45
             support_material_speed: 70
             external_perimeter_acceleration: 1200
             perimeter_acceleration: 1500
@@ -1192,9 +1335,9 @@ variants:
         variants:
         - name: 0.16mm STRUCTURAL @COREONE 0.3
           values:
-            perimeter_speed: 80
-            small_perimeter_speed: 45
-            external_perimeter_speed: 45
+            perimeter_speed: 70
+            small_perimeter_speed: 50
+            external_perimeter_speed: 50
             top_solid_infill_speed: 50
             support_material_speed: 70
             external_perimeter_acceleration: 1500
@@ -1203,8 +1346,8 @@ variants:
         - name: 0.16mm SPEED @COREONE 0.3
           values:
             perimeter_speed: 140
-            small_perimeter_speed: 120
-            external_perimeter_speed: 120
+            small_perimeter_speed: 130
+            external_perimeter_speed: 130
             top_solid_infill_speed: 50
             support_material_speed: 100
             support_material_interface_speed: 45%
@@ -1227,9 +1370,9 @@ variants:
         - name: 0.20mm STRUCTURAL @COREONE 0.3
           values:
             bottom_solid_layers: 4
-            perimeter_speed: 80
-            small_perimeter_speed: 45
-            external_perimeter_speed: 45
+            perimeter_speed: 70
+            small_perimeter_speed: 50
+            external_perimeter_speed: 50
             solid_infill_speed: 200
             support_material_speed: 70
             external_perimeter_acceleration: 1500
@@ -1238,8 +1381,8 @@ variants:
         - name: 0.20mm SPEED @COREONE 0.3
           values:
             perimeter_speed: 140
-            small_perimeter_speed: 120
-            external_perimeter_speed: 120
+            small_perimeter_speed: 130
+            external_perimeter_speed: 130
             solid_infill_speed: 200
             support_material_speed: 100
             support_material_interface_speed: 45%
@@ -1269,9 +1412,11 @@ variants:
             perimeter_acceleration: 3000
             solid_infill_acceleration: 4000
             top_solid_infill_acceleration: 1500
+            infill_acceleration: 6000
             infill_speed: 140
             perimeters: 3
             top_infill_extrusion_width: 0.4
+            overhang_speed_2: 30
             overhang_speed_3: 80%
             bridge_speed: 40
 # 0.4n/0.15mm layer
@@ -1391,7 +1536,7 @@ variants:
           raft_contact_distance: 0.25
           infill_acceleration: 4000
           bridge_acceleration: 1000
-          default_acceleration: 2500
+          default_acceleration: 3000
         variants:
         - name: 0.25mm STRUCTURAL @COREONE 0.5
           unconditional_inherits:
@@ -1408,6 +1553,8 @@ variants:
             gap_fill_speed: 70
             support_material_speed: 120
             overhang_speed_2: 50
+            infill_acceleration: 7000
+            
 # 0.6 nozzle
     - condition: tool.nozzle_diameter == 0.6
       values:
@@ -1467,16 +1614,19 @@ variants:
           infill_extrusion_width: 0.65
           solid_infill_extrusion_width: 0.65
           top_infill_extrusion_width: 0.5
-          top_solid_infill_acceleration: 1500
+          top_solid_infill_acceleration: 2000
         variants:
         - name: 0.20mm STRUCTURAL @COREONE 0.6
           unconditional_inherits:
           - 0.20mm STRUCTURAL @COREONE 0.6HF
+          values:
+            infill_acceleration: 6000
+            overhang_speed_2: 30
         - name: 0.20mm SPEED @COREONE 0.6
           values:
-            perimeter_speed: 125
-            external_perimeter_speed: 125
-            small_perimeter_speed: 125
+            perimeter_speed: 130
+            external_perimeter_speed: 130
+            small_perimeter_speed: 130
             solid_infill_speed: 110
             infill_speed: 110
             bridge_speed: 40
@@ -1499,14 +1649,14 @@ variants:
           - 0.25mm STRUCTURAL @COREONE 0.6HF
         - name: 0.25mm SPEED @COREONE 0.6
           values:
-            perimeter_speed: 90
-            external_perimeter_speed: 80
-            small_perimeter_speed: 80
+            perimeter_speed: 95
+            external_perimeter_speed: 75
+            small_perimeter_speed: 75
             infill_speed: 100
             solid_infill_speed: 90
             bridge_speed: 40
-            external_perimeter_acceleration: 2500
-            perimeter_acceleration: 3000
+            external_perimeter_acceleration: 3000
+            perimeter_acceleration: 6000
             bridge_acceleration: 1500
             overhang_speed_2: 30
             overhang_speed_3: 70%
@@ -1526,6 +1676,14 @@ variants:
         - name: 0.32mm STRUCTURAL @COREONE 0.6
           unconditional_inherits:
           - 0.32mm STRUCTURAL @COREONE 0.6HF
+          values:
+            infill_acceleration: 6000
+            infill_speed: 70
+            bridge_speed: 30
+            overhang_speed_2: 30
+            overhang_speed_3: 80%
+            perimeter_speed: 70
+            support_material_speed: 70
         - name: 0.32mm SPEED @COREONE 0.6
           values:
             perimeter_speed: 70
@@ -1533,8 +1691,8 @@ variants:
             small_perimeter_speed: 70
             infill_speed: 100
             bridge_speed: 40
-            external_perimeter_acceleration: 2500
-            perimeter_acceleration: 3000
+            external_perimeter_acceleration: 3000
+            perimeter_acceleration: 6000
             overhang_speed_2: 30
             overhang_speed_3: 70%
 # 0.8 nozzle
@@ -1587,10 +1745,10 @@ variants:
             solid_infill_speed: 50
             top_solid_infill_speed: 35
             support_material_speed: 60
-            gap_fill_speed: 40
+            gap_fill_speed: 45
             external_perimeter_acceleration: 1500
             perimeter_acceleration: 2500
-            top_solid_infill_acceleration: 1500
+            top_solid_infill_acceleration: 2000
             solid_infill_acceleration: 4000
             infill_acceleration: 6000
             bridge_acceleration: 1000
@@ -1616,7 +1774,7 @@ variants:
             external_perimeter_acceleration: 1500
             perimeter_acceleration: 2500
             top_solid_infill_acceleration: 2000
-            solid_infill_acceleration: 3000
+            solid_infill_acceleration: 4000
             infill_acceleration: 7000
             bridge_acceleration: 1000
             default_acceleration: 3000
@@ -1630,7 +1788,7 @@ variants:
         variants:
         - name: 0.55mm DRAFT @COREONE 0.8
           values:
-            perimeter_speed: 40
+            perimeter_speed: 45
             external_perimeter_speed: 35
             small_perimeter_speed: 35
             infill_speed: 60
@@ -1641,7 +1799,7 @@ variants:
             external_perimeter_acceleration: 1500
             perimeter_acceleration: 2500
             top_solid_infill_acceleration: 2000
-            solid_infill_acceleration: 3000
+            solid_infill_acceleration: 4000
             infill_acceleration: 7000
             bridge_acceleration: 1000
             top_infill_extrusion_width: 0.75

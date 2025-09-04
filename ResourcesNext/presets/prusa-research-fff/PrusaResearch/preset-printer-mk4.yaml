@@ -35,29 +35,29 @@ variants:
       ;[layer_z]
       {if ! spiral_vase}M74 W[extruded_weight_total]{endif}
     machine_limits_usage: emit_to_gcode
-    machine_max_acceleration_e: [2500.0, 2500.0]
-    machine_max_acceleration_extruding: [4000.0, 2500.0]
-    machine_max_acceleration_retracting: [1200.0, 1200.0]
-    machine_max_acceleration_travel: [4000.0, 2500.0]
-    machine_max_acceleration_x: [4000.0, 2500.0]
-    machine_max_acceleration_y: [4000.0, 2500.0]
-    machine_max_acceleration_z: [200.0, 200.0]
-    machine_max_feedrate_e: [100.0, 100.0]
-    machine_max_feedrate_x: [300.0, 160.0]
-    machine_max_feedrate_y: [300.0, 160.0]
-    machine_max_feedrate_z: [40.0, 40.0]
-    machine_max_jerk_e: [10.0, 10.0]
-    machine_max_jerk_x: [8.0, 8.0]
-    machine_max_jerk_y: [8.0, 8.0]
-    machine_max_jerk_z: [2.0, 2.0]
-    machine_min_extruding_rate: [0.0, 0.0]
-    machine_min_travel_rate: [0.0, 0.0]
+    machine_max_acceleration_e: [2500, 2500]
+    machine_max_acceleration_extruding: [4000, 2500]
+    machine_max_acceleration_retracting: [2500, 2500]
+    machine_max_acceleration_travel: [4000, 2500]
+    machine_max_acceleration_x: [4000, 2500]
+    machine_max_acceleration_y: [4000, 2500]
+    machine_max_acceleration_z: [200, 200]
+    machine_max_feedrate_e: [100, 100]
+    machine_max_feedrate_x: [300, 160]
+    machine_max_feedrate_y: [300, 160]
+    machine_max_feedrate_z: [40, 40]
+    machine_max_jerk_e: [10, 10]
+    machine_max_jerk_x: [8, 8]
+    machine_max_jerk_y: [8, 8]
+    machine_max_jerk_z: [2, 2]
+    machine_min_extruding_rate: [0, 0]
+    machine_min_travel_rate: [0, 0]
     max_print_height: 220
     printer_technology: FFF
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
-    thumbnails: [16x16/QOI, ' 313x173/QOI', ' 440x240/QOI', ' 480x240/QOI', ' 640x480/PNG']
+    thumbnails: [16x16/QOI, '313x173/QOI', '480x240/QOI', '380x285/PNG']
     use_firmware_retraction: 0
     use_relative_e_distances: 1
     use_volumetric_e: 0
@@ -74,7 +74,7 @@ variants:
       M862.3 P "MK4" ; printer model check
       M862.5 P2 ; g-code level check
       M862.6 P"Input shaper" ; FW feature check
-      M115 U6.2.2+8853
+      M115 U6.2.4+8909
 
       M555 X{(min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)} Y{(max(0, first_layer_print_min[1]) - 4)} W{((min(print_bed_max[0], max(first_layer_print_min[0] + 32, first_layer_print_max[0])))) - ((min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))} H{((first_layer_print_max[1])) - ((max(0, first_layer_print_min[1]) - 4))}
 
@@ -82,8 +82,8 @@ variants:
       M83 ; extruder relative mode
 
       M140 S[first_layer_bed_temperature] ; set bed temp
-      M104 T0 S{((filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
-      M109 T0 R{((filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
+      M104 T0 S{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
+      M109 T0 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
 
       M84 E ; turn off E motor
 
@@ -91,7 +91,7 @@ variants:
 
       G1 X42 Y-4 Z5 F4800
 
-      M302 S160 ; lower cold extrusion limit to 160C
+      M302 S155 ; lower cold extrusion limit to 155C
 
       {if filament_type[initial_tool]=="FLEX"}
       G1 E-4 F2400 ; retraction
@@ -148,8 +148,8 @@ variants:
     name: Original Prusa MK4
     values:
       machine_max_acceleration_extruding: [4000.0, 2500.0]
-      machine_max_acceleration_x: [7000.0, 2500.0]
-      machine_max_acceleration_y: [7000.0, 2500.0]
+      machine_max_acceleration_x: [4000.0, 2500.0]
+      machine_max_acceleration_y: [4000.0, 2500.0]
       printer_model: MK4
     variants:
     - condition: feeder.base_model == "MMU"
@@ -162,7 +162,7 @@ variants:
           M862.5 P2 ; g-code level check
           M862.6 P "Input shaper" ; FW feature check
           M862.6 P "MMU3" ; FW feature check
-          M115 U6.2.2+8853
+          M115 U6.2.4+8909
 
           ; setup MMU
           M708 A0x0b X5   ; extra load distance
@@ -177,8 +177,8 @@ variants:
           M83 ; extruder relative mode
 
           M140 S[first_layer_bed_temperature] ; set bed temp
-          M104 S{((filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
-          M109 R{((filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
+          M104 S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
+          M109 R{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
 
           M84 E ; turn off E motor
 
@@ -186,7 +186,7 @@ variants:
 
           G1 X42 Y-4 Z5 F4800
 
-          M302 S160 ; lower cold extrusion limit to 160C
+          M302 S155 ; lower cold extrusion limit to 155C
 
           {if filament_type[initial_tool]=="FLEX"}
           G1 E-4 F2400 ; retraction
@@ -256,7 +256,6 @@ variants:
           M84 X Y E ; disable motors
           ; max_layer_z = [max_layer_z]
 
-
           # variants:
             # - condition: 'tool.nozzle_high_flow'     ;;;;; needs to be specified in preset-tool
               # values:
@@ -264,9 +263,9 @@ variants:
   - condition: printer.model == "MK4S"
     name: Original Prusa MK4S
     values:
-      machine_max_acceleration_extruding: [4000.0, 2500.0]
-      machine_max_acceleration_x: [7000.0, 2500.0]
-      machine_max_acceleration_y: [7000.0, 2500.0]
+      machine_max_acceleration_extruding: [4000, 2500]
+      machine_max_acceleration_x: [4000, 2500]
+      machine_max_acceleration_y: [4000, 2500]
       printer_model: MK4S
     variants:
     - condition: feeder.base_model == "MMU"
@@ -275,11 +274,11 @@ variants:
         start_gcode: |-
           M17 ; enable steppers
           M862.1 P[nozzle_diameter] A{((is_extruder_used[0] and filament_abrasive[0]) ? 1 : (is_extruder_used[1] and filament_abrasive[1]) ? 1 : (is_extruder_used[2] and filament_abrasive[2]) ? 1 : (is_extruder_used[3] and filament_abrasive[3]) ? 1 : (is_extruder_used[4] and filament_abrasive[4]) ? 1 : 0)} F{(nozzle_high_flow[0] ? 1 : 0)} ; nozzle check
-          M862.3 P "MK4" ; printer model check
+          M862.3 P "MK4S" ; printer model check
           M862.5 P2 ; g-code level check
           M862.6 P "Input shaper" ; FW feature check
           M862.6 P "MMU3" ; FW feature check
-          M115 U6.2.2+8853
+          M115 U6.2.4+8909
 
           ; setup MMU
           M708 A0x0b X5   ; extra load distance
@@ -294,8 +293,8 @@ variants:
           M83 ; extruder relative mode
 
           M140 S[first_layer_bed_temperature] ; set bed temp
-          M104 S{((filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
-          M109 R{((filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
+          M104 S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
+          M109 R{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
 
           M84 E ; turn off E motor
 
@@ -303,7 +302,7 @@ variants:
 
           G1 X42 Y-4 Z5 F4800
 
-          M302 S160 ; lower cold extrusion limit to 160C
+          M302 S155 ; lower cold extrusion limit to 155C
 
           {if filament_type[initial_tool]=="FLEX"}
           G1 E-4 F2400 ; retraction
@@ -375,9 +374,9 @@ variants:
   - condition: printer.model == "MK3.9"
     name: Original Prusa MK3.9
     values:
-      machine_max_acceleration_extruding: [4000.0, 2500.0]
-      machine_max_acceleration_x: [7000.0, 2500.0]
-      machine_max_acceleration_y: [7000.0, 2500.0]
+      machine_max_acceleration_extruding: [4000, 2500]
+      machine_max_acceleration_x: [4000, 2500]
+      machine_max_acceleration_y: [4000, 2500]
       printer_model: MK3.9
     variants:
     - condition: feeder.base_model == "MMU"
@@ -390,7 +389,7 @@ variants:
           M862.5 P2 ; g-code level check
           M862.6 P "Input shaper" ; FW feature check
           M862.6 P "MMU3" ; FW feature check
-          M115 U6.2.2+8853
+          M115 U6.2.4+8909
 
           ; setup MMU
           M708 A0x0b X5   ; extra load distance
@@ -405,8 +404,8 @@ variants:
           M83 ; extruder relative mode
 
           M140 S[first_layer_bed_temperature] ; set bed temp
-          M104 S{((filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
-          M109 R{((filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
+          M104 S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
+          M109 R{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
 
           M84 E ; turn off E motor
 
@@ -414,7 +413,7 @@ variants:
 
           G1 X42 Y-4 Z5 F4800
 
-          M302 S160 ; lower cold extrusion limit to 160C
+          M302 S155 ; lower cold extrusion limit to 155C
 
           {if filament_type[initial_tool]=="FLEX"}
           G1 E-4 F2400 ; retraction
