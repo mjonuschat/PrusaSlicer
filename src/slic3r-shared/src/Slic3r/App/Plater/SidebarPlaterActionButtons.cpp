@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -34,7 +35,8 @@ SidebarPlaterActionButtons::~SidebarPlaterActionButtons()
 {
     if (m_project_interactor != nullptr) {
         m_project_interactor->status_cache().remove_listener<Biz::IStatusCacheChangedListener>(this);
-        m_project_interactor->scene_interactor().remove_listener<Biz::ISelectedBedInstancesChangedListener>(this);
+        m_project_interactor->scene_interactor()
+            .remove_listener<Biz::ISelectedBedInstancesChangedListener>(this);
     }
 }
 
@@ -42,7 +44,9 @@ void SidebarPlaterActionButtons::on_init(Biz::ProjectInteractor* project_interac
 {
     m_project_interactor = project_interactor;
     m_project_interactor->status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
-    m_project_interactor->scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(this);
+    m_project_interactor->scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
+        this
+    );
 }
 
 void SidebarPlaterActionButtons::on_status_cache_changed(const Domain::SlicingId slicing_id)
@@ -51,7 +55,10 @@ void SidebarPlaterActionButtons::on_status_cache_changed(const Domain::SlicingId
     update_slice_button(selection);
 }
 
-void SidebarPlaterActionButtons::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& bed_selection)
+void SidebarPlaterActionButtons::on_selected_bed_instances_changed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::BedSelection& bed_selection
+)
 {
     update_slice_button(bed_selection);
 }
@@ -72,7 +79,9 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
     }
 
     const Domain::SelectionId project_id{m_project_interactor->selected_project_id()};
-    const BedInstances instances{get_selected_beds(project_id, selection, m_project_interactor->workbench())};
+    const BedInstances instances{
+        get_selected_beds(project_id, selection, m_project_interactor->workbench())
+    };
 
     std::vector<BedStatus> statuses;
     for (const auto& bed_instance_ref : instances) {
@@ -90,7 +99,13 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
             );
         } else {
             statuses.push_back(
-                BedStatus{.slicing_id = slicing_id, .bed_index = bed_instance_ref.get().index(), .status = StatusCode::InvalidData, .error = "Missing status!", .warrnings = {}}
+                BedStatus{
+                    .slicing_id = slicing_id,
+                    .bed_index  = bed_instance_ref.get().index(),
+                    .status     = StatusCode::InvalidData,
+                    .error      = "Missing status!",
+                    .warrnings  = {}
+                }
             );
         }
     }
@@ -99,43 +114,43 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
         return;
     }
 
-    const bool any_invalid{std::ranges::any_of(
-        statuses,
-        [](const auto& bed_status) { return bed_status.status == StatusCode::InvalidData; }
-    )};
+    const bool any_invalid{std::ranges::any_of(statuses, [](const auto& bed_status) {
+        return bed_status.status == StatusCode::InvalidData;
+    })};
 
-    const bool any_modified{std::ranges::any_of(
-        statuses,
-        [](const auto& bed_status) { return bed_status.status == StatusCode::Modified; }
-    )};
+    const bool any_modified{std::ranges::any_of(statuses, [](const auto& bed_status) {
+        return bed_status.status == StatusCode::Modified;
+    })};
 
-    const bool any_running{std::ranges::any_of(
-        statuses,
-        [](const auto& bed_status) { return bed_status.status == StatusCode::Running; }
-    )};
+    const bool any_running{std::ranges::any_of(statuses, [](const auto& bed_status) {
+        return bed_status.status == StatusCode::Running;
+    })};
 
-    m_button_slice->set_background_color(color_primary);
-    m_button_slice->callbacks().action = []() {};
+    m_button_slice->callbacks().action = []() {
+    };
     m_button_slice->set_enabled(true);
-    m_button_slice->set_tooltip("");
-    m_button_slice->set_icon(Render::Icon::None);
+
+    std::string label;
+    std::string tooltip;
+    Render::Icon icon = Render::Icon::None;
     m_navigation_button->set_visible(true);
+    ImColor button_color = color_primary;
 
     if (any_invalid) {
-        m_button_slice->set_label("Invalid settings");
-        m_button_slice->set_background_color(color_error);
+        label        = _u8L("Invalid settings");
+        button_color = color_error;
+        icon         = Render::Icon::EyeOpen;
 
         std::string error_mesage;
         for (const BedStatus& bed_status : statuses) {
             if (bed_status.status == StatusCode::InvalidData) {
-                const std::string error{bed_status.error.empty() ? "Unknown issue" : bed_status.error};
+                const std::string error{bed_status.error.empty() ? _u8L("Unknown issue") : bed_status.error};
                 error_mesage += fmt::format("Bed {}: issue: {}\n", bed_status.bed_index, error);
             }
         }
 
-        m_button_slice->callbacks().action = [error_mesage]()
-        {
-            AppServices::instance().dialog_manager().show_error_dialog(error_mesage, "Invalid settings");
+        m_button_slice->callbacks().action = [error_mesage, label]() {
+            AppServices::instance().dialog_manager().show_error_dialog(error_mesage, label);
         };
     } else if (any_modified) {
         std::string warning_tooltip;
@@ -147,18 +162,17 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
                     bed_warning += warning + "\n";
                 }
                 bed_warning += bed_warning.empty() ? "" : "\n";
-                warning_tooltip += bed_warning;
+                tooltip += bed_warning;
             }
         }
 
-        m_button_slice->set_label("Slice");
-        if (!warning_tooltip.empty()) {
-            m_button_slice->set_tooltip(warning_tooltip);
-            m_button_slice->set_icon(Render::Icon::WarningMarkerWhite);
+        if (!tooltip.empty()) {
+            icon = Render::Icon::WarningMarkerWhite;
         }
 
-        m_button_slice->callbacks().action = [this, statuses]()
-        {
+        label = _u8L("Slice");
+
+        m_button_slice->callbacks().action = [this, statuses]() {
             for (const BedStatus& bed_status : statuses) {
                 if (bed_status.status == StatusCode::Modified) {
                     m_project_interactor->slicing_interactor().slice_bed(bed_status.slicing_id);
@@ -167,9 +181,8 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
             navigate_to_other();
         };
     } else if (any_running) {
-        m_button_slice->set_label("Cancel");
-        m_button_slice->callbacks().action = [this, statuses]()
-        {
+        label                              = _u8L("Cancel");
+        m_button_slice->callbacks().action = [this, statuses]() {
             for (const BedStatus& bed_status : statuses) {
                 if (bed_status.status == StatusCode::Running) {
                     m_project_interactor->slicing_interactor().stop_slicing_bed(bed_status.slicing_id);
@@ -179,10 +192,17 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
         };
     } else {
         m_navigation_button->set_visible(false);
-        m_button_slice->set_label("Preview");
-        m_button_slice->callbacks().action = [this]() { navigate_to_other(); };
-        m_button_slice->set_background_color(color_secondary);
+        label                              = _u8L("Preview");
+        m_button_slice->callbacks().action = [this]() {
+            navigate_to_other();
+        };
+        button_color = color_secondary;
     }
+
+    m_button_slice->set_icon(icon);
+    m_button_slice->set_label(label);
+    m_button_slice->set_tooltip(tooltip);
+    m_button_slice->set_background_color(button_color);
 }
 
 } // namespace Slic3r::App::Plater

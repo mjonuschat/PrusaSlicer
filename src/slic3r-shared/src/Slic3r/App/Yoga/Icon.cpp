@@ -170,6 +170,12 @@ void Icon::update_texture()
             m_texture = m_imgui_render->image_texture(m_image, m_max_texture_size);
         }
     }
+    if (m_texture) {
+        // There is a chance that Icon::set_icon would be called several times in a single
+        // loop before Icon::render, in those cases, let us cache all images that we are
+        // creating, all unused ones will be cleared in the next frame.
+        m_imgui_render->use_texture(m_texture);
+    }
 }
 
 } // namespace Slic3r::App::Yoga

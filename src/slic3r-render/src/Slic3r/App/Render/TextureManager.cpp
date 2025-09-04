@@ -76,7 +76,7 @@ TexturePtr TextureManager::get_or_create_image(
 
     std::unique_ptr<Texture> tex = m_device.create_texture();
     for (size_t level = 0; level < images.size(); level++) {
-        const auto& img = images[level];
+        const Image& img = images[level];
         tex->set_data(img.format(), level, img.width(), img.height(), img.pixels.data());
     }
 
