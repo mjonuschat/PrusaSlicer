@@ -80,7 +80,7 @@ Transformation transform_product(const SceneInteractor::Transform& orig_xform, c
  * Scaling along the Z-axis is permitted for instance-level transforms.
  *
  * @param xform The relative transformation matrix to check.
- * @return True if the transform has X/Y rotation, false otherwise.
+ * @return True if the transform has X/Y rotation or a delta z different from zero, false otherwise.
  */
 bool requires_volume_transform(const Eigen::Matrix4d& xform)
 {
@@ -97,10 +97,13 @@ bool requires_volume_transform(const Eigen::Matrix4d& xform)
     // Normalize the vector to get its direction, ignoring any scaling.
     transformed_z.normalize();
 
-    // Check if the direction is still parallel to the original Z-axis.
+    // variation in z direction
+    double dz = xform(2, 3);
+
+    // Check if the direction is still parallel to the original Z-axis and if there is a delta z.
     // We use isApprox() for safe floating-point comparison. A dot product
     // check like `abs(transformed_z.dot(Eigen::Vector3d::UnitZ()))` could also work.
-    return !transformed_z.isApprox(Eigen::Vector3d::UnitZ());
+    return !transformed_z.isApprox(Eigen::Vector3d::UnitZ()) || std::abs(dz) > Domain::EPSILON;
 }
 
 SelectionMode
