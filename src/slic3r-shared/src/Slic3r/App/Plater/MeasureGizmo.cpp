@@ -1206,7 +1206,7 @@ void MeasureGizmo::update_linear_dimensioning()
         );
     }
     DEBUG_ASSERT(stem_render_component != nullptr);
-    stem_render_component->set_layer_index(int(PlaterSceneLayer::AlwaysOnTop));
+    stem_render_component->set_layer_index(Scene::RenderLayerId(PlaterSceneLayer::AlwaysOnTop));
 
     // arrow children
     auto q_billboard = Eigen::Quaternion<double>::FromTwoVectors(
@@ -1351,7 +1351,7 @@ void MeasureGizmo::update_arc_edge_edge_dimensioning(
         render_component = dynamic_cast<Scene::MeshRenderNodeComponent*>(node->render_component());
     }
     DEBUG_ASSERT(render_component != nullptr);
-    render_component->set_layer_index(int(PlaterSceneLayer::AlwaysOnTop));
+    render_component->set_layer_index(Scene::RenderLayerId(PlaterSceneLayer::AlwaysOnTop));
 }
 
 void MeasureGizmo::update_arc_edge_plane_dimensioning(
@@ -1764,7 +1764,7 @@ void MeasureGizmo::build_point_feature(
     Domain::Transform3d xform = Domain::Transform3d::Identity();
     xform.translate(point);
 
-    builder.set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
+    builder.set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
         .set_aabb(trimesh->aabb_mesh())
         .set_transform(xform);
 }
@@ -1804,7 +1804,7 @@ void MeasureGizmo::build_edge_feature(
     xform.matrix().block<3, 3>(0, 0) = q.toRotationMatrix();
     xform.matrix().block<3, 1>(0, 3) = from;
 
-    builder.set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
+    builder.set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
         .set_aabb(trimesh->aabb_mesh())
         .set_transform(xform);
 }
@@ -1843,7 +1843,7 @@ void MeasureGizmo::build_circle_feature(
     xform.matrix().block<3, 3>(0, 0) = q.toRotationMatrix();
     xform.matrix().block<3, 1>(0, 3) = center;
 
-    builder.set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
+    builder.set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
         .set_aabb(trimesh->aabb_mesh())
         .set_transform(xform);
 }
@@ -1894,7 +1894,7 @@ void MeasureGizmo::build_plane_feature(
                                     )
                                     .set_uniform("uniform_color", color);
 
-    builder.set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
+    builder.set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
         .set_aabb(trimesh->aabb_mesh());
 }
 
@@ -1960,7 +1960,7 @@ void MeasureGizmo::build_linear_dimensioning_node(Scene::NodeBuilder& builder)
             inner_bldr
                 .set_tag(MeasureGizmoNodeTag{MeasureGizmoElementType::DimensioningLinearArrow1})
                 .set_debug_name("arrow 1")
-                .set_mesh(arrow_geom, dimensioning_material(), int(PlaterSceneLayer::AlwaysOnTop))
+                .set_mesh(arrow_geom, dimensioning_material(), Scene::RenderLayerId(PlaterSceneLayer::AlwaysOnTop))
                 .set_screen_space_sized_modifier(SCALE_FACTOR);
         });
 
@@ -1968,7 +1968,7 @@ void MeasureGizmo::build_linear_dimensioning_node(Scene::NodeBuilder& builder)
             inner_bldr
                 .set_tag(MeasureGizmoNodeTag{MeasureGizmoElementType::DimensioningLinearArrow2})
                 .set_debug_name("arrow 2")
-                .set_mesh(arrow_geom, dimensioning_material(), int(PlaterSceneLayer::AlwaysOnTop))
+                .set_mesh(arrow_geom, dimensioning_material(), Scene::RenderLayerId(PlaterSceneLayer::AlwaysOnTop))
                 .set_screen_space_sized_modifier(SCALE_FACTOR);
         });
 

@@ -96,7 +96,7 @@ void MinimalSceneRenderCustomizer::on_render_begin(Render::CommandBuffer& cmd_bu
 }
 
 void MinimalSceneRenderCustomizer::on_opaque_pass_begin(
-    Render::CommandBuffer& cmd_buf, size_t layer_index
+    Render::CommandBuffer& cmd_buf, RenderLayerId layer_index
 )
 {
     cmd_buf.set_blending_enabled(false);
@@ -107,7 +107,7 @@ void MinimalSceneRenderCustomizer::on_opaque_pass_begin(
 
 
 void MinimalSceneRenderCustomizer::on_transparent_pass_begin(
-    Render::CommandBuffer& cmd_buf, size_t layer_index
+    Render::CommandBuffer& cmd_buf, RenderLayerId layer_index
 )
 {
     cmd_buf.set_depth_test_enabled(true);
@@ -119,7 +119,7 @@ void MinimalSceneRenderCustomizer::on_transparent_pass_begin(
 }
 
 void MinimalSceneRenderCustomizer::on_transparent_pass_end(
-    Render::CommandBuffer& cmd_buf, size_t layer_index
+    Render::CommandBuffer& cmd_buf, RenderLayerId layer_index
 )
 {
     cmd_buf.set_blending_enabled(false);

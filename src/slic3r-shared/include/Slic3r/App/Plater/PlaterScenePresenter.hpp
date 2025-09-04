@@ -142,7 +142,7 @@ private:
     void on_wipe_tower_removed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id) override;
     void on_wipe_tower_transformed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id, Biz::Scene::TransformState state) override;
 
-    void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) override;
+    void on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx) override;
 
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::ModelInstance* inst, const Domain::ModelVolume* vol,
         std::optional<Domain::ColorRGBA> color = std::nullopt);

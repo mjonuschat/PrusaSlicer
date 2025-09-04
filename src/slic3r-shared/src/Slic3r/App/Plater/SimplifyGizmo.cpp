@@ -520,7 +520,7 @@ void SimplifyGizmo::set_nodes(const NodeInputs& node_inputs)
     m_phantoms.clear();
     m_phantoms.reserve(node_inputs.size());
 
-    int layer_index = int(PlaterSceneLayer::GizmoHandles);
+    Scene::RenderLayerId layer_index = Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles);
 
     Scene::Scene& scene = m_scene_presenter.scene(); 
     const Project& project = m_project_interactor.selected_project();

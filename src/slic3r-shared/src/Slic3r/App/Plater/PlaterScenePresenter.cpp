@@ -365,7 +365,7 @@ PlaterScenePresenter::build_volume_node(Scene::NodeBuilder& builder, Domain::Sel
     builder.set_debug_name(fmt::format("vol: {}", vol->id().id))
         .transform([vol](auto& xform) { xform = vol->get_matrix(); })
         .set_tag(SceneNodeTag{vol->get_object()->id().id, vol->id().id, inst->id().id, vol->type()})
-        .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
+        .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects))
         .set_aabb(trimesh->aabb_mesh())
         // FIXME: for fff printers the pbr data should be set in dependence of the volume filament
         // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type'
@@ -624,7 +624,7 @@ void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_i
         Scene::BedNodeTag tag = {instance.config_container_id, instance.instance_id};
 
         Scene::NodeBuilder builder(scn);
-        Scene::BedNodeBuilder::bed_node(builder, inst, tag, m_device, m_projects[project_id], int(PlaterSceneLayer::DocumentObjects));
+        Scene::BedNodeBuilder::bed_node(builder, inst, tag, m_device, m_projects[project_id], Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects));
 
         scn.add_child(builder.build().release());
     }
@@ -675,13 +675,13 @@ void PlaterScenePresenter::on_wipe_tower_transformed(Domain::SelectionId project
     m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
-void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx)
+void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
 {
     cmd_buf.set_depth_write_enabled(true);
-    if (layer_idx == int(PlaterSceneLayer::GizmoHandles))
+    if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
         // clear depth buffer so all gizmo handles are rendered over document objects
         cmd_buf.clear_buffers(false, true);
-    else if (layer_idx == int(PlaterSceneLayer::AlwaysOnTop))
+    else if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::AlwaysOnTop))
         // clear depth buffer to ensure geometry belonging to this layer is always rendered over any other object
         cmd_buf.clear_buffers(false, true);
 }

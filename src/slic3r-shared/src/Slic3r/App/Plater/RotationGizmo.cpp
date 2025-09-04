@@ -301,7 +301,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
         bldr
             .set_debug_name("circle")
             .set_tag(RotationGizmoNodeTag{ axis })
-            .set_mesh(data_factory.geometry(Scene::GeometryDataId::Circle), material, int(PlaterSceneLayer::GizmoHandles))
+            .set_mesh(data_factory.geometry(Scene::GeometryDataId::Circle), material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
             .transform([](Transform3d& xform) {
                 xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
             });
@@ -315,7 +315,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
         bldr
             .set_debug_name("graded circle")
             .set_tag(RotationGizmoNodeTag{ axis, AxisType::None, 2 })
-            .set_mesh(data_factory.geometry(Scene::GeometryDataId::GradedCircle), material, int(PlaterSceneLayer::GizmoHandles))
+            .set_mesh(data_factory.geometry(Scene::GeometryDataId::GradedCircle), material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
             .set_enabled(false)
             .transform([](Transform3d& xform) {
                 xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
@@ -335,7 +335,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
             child_bldr
                 .set_debug_name("stem")
                 .set_tag(RotationGizmoNodeTag{ axis })
-                .set_mesh(data_factory.geometry(Scene::GeometryDataId::Segment), material, int(PlaterSceneLayer::GizmoHandles))
+                .set_mesh(data_factory.geometry(Scene::GeometryDataId::Segment), material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
                 .transform([](Transform3d& xform) {
                     xform.scale(HANDLE_STEM_LENGTH * Vec3d::UnitX());
                 });
@@ -352,7 +352,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
             child_bldr
                 .set_debug_name("cube")
                 .set_tag(RotationGizmoNodeTag{ axis })
-                .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
+                .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
                 .set_aabb(mesh->aabb_mesh())
                 .transform([](Transform3d& xform) {
                     xform
@@ -372,7 +372,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
             child_bldr
                 .set_debug_name("cone ccw")
                 .set_tag(RotationGizmoNodeTag{ axis })
-                .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
+                .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
                 .set_aabb(mesh->aabb_mesh())
                 .transform([](Transform3d& xform) {
                     xform
@@ -393,7 +393,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
             child_bldr
                 .set_debug_name("cone cw")
                 .set_tag(RotationGizmoNodeTag{ axis })
-                .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
+                .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
                 .set_aabb(mesh->aabb_mesh())
                 .transform([](Transform3d& xform) {
                     xform

@@ -3,7 +3,7 @@
 
 namespace Slic3r::App::Preview {
 
-  void PreviewSceneRenderCustomizer::on_opaque_pass_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx)
+void PreviewSceneRenderCustomizer::on_opaque_pass_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
 {
     PreviewSceneLayer id = PreviewSceneLayer(layer_idx);
 
@@ -15,7 +15,7 @@ namespace Slic3r::App::Preview {
   }
 
 void PreviewSceneRenderCustomizer::on_transparent_pass_begin(
-    Render::CommandBuffer& cmd_buf, size_t layer_index
+    Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_index
 )
 {
     cmd_buf.set_depth_test_enabled(true);
@@ -27,14 +27,14 @@ void PreviewSceneRenderCustomizer::on_transparent_pass_begin(
 }
 
 void PreviewSceneRenderCustomizer::on_transparent_pass_end(
-    Render::CommandBuffer& cmd_buf, size_t layer_index
+    Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_index
 )
 {
     cmd_buf.set_blending_enabled(false);
     cmd_buf.set_depth_write_enabled(true);
 }
 
-void PreviewSceneRenderCustomizer::on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx)
+void PreviewSceneRenderCustomizer::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
 {
     PreviewSceneLayer id = PreviewSceneLayer(layer_idx);
     cmd_buf.set_depth_test_enabled(id != PreviewSceneLayer::CogMarker);
@@ -42,7 +42,7 @@ void PreviewSceneRenderCustomizer::on_layer_begin(Render::CommandBuffer& cmd_buf
     cmd_buf.set_cull_face_enabled(id != PreviewSceneLayer::Toolpaths);
 }
 
-void PreviewSceneRenderCustomizer::on_layer_end(Render::CommandBuffer& cmd_buf, size_t layer_idx)
+void PreviewSceneRenderCustomizer::on_layer_end(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
 {
     cmd_buf.set_depth_test_enabled(true);
     cmd_buf.set_cull_face_enabled(true);

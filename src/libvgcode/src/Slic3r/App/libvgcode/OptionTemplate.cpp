@@ -30,7 +30,7 @@ void OptionTemplate::init(Render::Device& device, Scene::NodeBuilder& builder, S
         .set_debug_name("gcode_options")
         .set_tag(GCodeNodeTag{ GCodeElementType::Options })
         .set_mesh_instanced(data_factory.geometry(Scene::GeometryDataId::CandyButton), material, 0,
-            Render::PrimitiveType::Triangles, int(Preview::PreviewSceneLayer::Options))
+            Render::PrimitiveType::Triangles, Scene::RenderLayerId(Preview::PreviewSceneLayer::Options))
         .set_shadows(Render::Shadows{ true, true })
         .set_pbr(Scene::DEFAULT_GCODE_OPTIONS_PBRPARAMS);
 }

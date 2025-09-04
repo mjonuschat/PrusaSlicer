@@ -49,7 +49,7 @@ ScopedGCodeThumbnailSceneCustomizer::ScopedGCodeThumbnailSceneCustomizer(Scene::
         m_scene.root(),
         [&](Scene::Node& n)
         {
-            if (n.has_render_component() && n.render_component()->layer_index() == int(PlaterSceneLayer::GizmoHandles))
+            if (n.has_render_component() && n.render_component()->layer_index() == Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
             {
                 n.set_enabled(false);
                 m_cache.hidden_nodes.push_back(&n);

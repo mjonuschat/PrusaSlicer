@@ -82,7 +82,7 @@ void PreviewScenePresenter::add_bed_instances(const Domain::BedRefs& instances)
 
         Scene::NodeBuilder builder(scn);
         Scene::BedNodeBuilder::bed_node(builder, inst, tag, m_device,
-            m_projects[m_selected_project_id], int(PreviewSceneLayer::Bed));
+            m_projects[m_selected_project_id], Scene::RenderLayerId(PreviewSceneLayer::Bed));
 
         scn.add_child(builder.build().release());
     }
