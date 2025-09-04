@@ -2,6 +2,8 @@
 
 #define MAX_LIGHTS 4
 
+const float THRESHOLD_Z = -0.15;
+
 struct Light
 {
     int system;
@@ -18,17 +20,24 @@ uniform vec4 uniform_color;
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
 uniform mat4 view_matrix;
+uniform bool enable_out_of_bed_detection_z;
 
 uniform sampler2D shadowsmap;
 
-varying vec3 eye_position;
 varying vec3 eye_normal;
+varying vec3 eye_position;
 varying vec4 light_position;
+varying float world_z;
 
 vec3 light_direction(Light light)
 {
     // return light direction in eye coordinates
     return (light.system == 0) ? (view_matrix * vec4(-light.direction, 0.0)).xyz : -light.direction;
+}
+
+vec4 select_color()
+{
+    return (!enable_out_of_bed_detection_z || world_z >= THRESHOLD_Z) ? uniform_color : vec4(mix(uniform_color.rgb, vec3(0.0), 0.333), uniform_color.a);
 }
 
 float shadow_pcf(vec4 position, float NdotL)
@@ -71,7 +80,8 @@ vec4 lighting_phong()
          specular += shadow * lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-dir, normal)), 0.0), lights[i].shininess);
      }
 
-     return vec4(uniform_color.rgb * (ambient + diffuse + specular), uniform_color.a);
+     vec4 color = select_color();
+     return vec4(color.rgb * (ambient + diffuse + specular), color.a);
 }
 
 void main()

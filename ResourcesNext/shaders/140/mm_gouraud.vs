@@ -2,7 +2,7 @@
 
 uniform mat4 view_model_matrix;
 uniform mat4 projection_matrix;
-uniform mat4 volume_world_matrix;
+uniform mat4 model_matrix;
 
 // Clipping plane, x = min z, y = max z. Used by the FFF and SLA previews to clip with a top / bottom plane.
 uniform vec2 z_range;
@@ -18,7 +18,7 @@ void main()
 {
     model_pos = vec4(v_position, 1.0);
     // Point in homogenous coordinates.
-    vec4 world_pos = volume_world_matrix * model_pos;
+    vec4 world_pos = model_matrix * model_pos;
 
     gl_Position = projection_matrix * view_model_matrix * model_pos;
     // Fill in the scalars for fragment shader clipping. Fragments with any of these components lower than zero are discarded.

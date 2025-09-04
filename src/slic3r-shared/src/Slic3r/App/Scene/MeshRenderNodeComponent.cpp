@@ -13,12 +13,12 @@ using Slic3r::Domain::SquareMatrix4f;
 
 namespace Slic3r::App::Scene {
 
-const std::string UNIFORM_VIEW_MODEL_MATRIX = "view_model_matrix";
-const std::string UNIFORM_VIEW_MATRIX = "view_matrix";
-const std::string UNIFORM_PROJECTION_MATRIX = "projection_matrix";
+const std::string UNIFORM_MODEL_MATRIX                 = "model_matrix";
+const std::string UNIFORM_VIEW_MODEL_MATRIX            = "view_model_matrix";
+const std::string UNIFORM_VIEW_MATRIX                  = "view_matrix";
+const std::string UNIFORM_PROJECTION_MATRIX            = "projection_matrix";
 const std::string UNIFORM_PROJECTION_VIEW_MODEL_MATRIX = "projection_view_model_matrix";
-const std::string UNIFORM_VIEW_NORMAL_MATRIX = "view_normal_matrix";
-const std::string UNIFORM_VOLUME_WORLD_MATRIX = "volume_world_matrix";
+const std::string UNIFORM_VIEW_NORMAL_MATRIX           = "view_normal_matrix";
 
 void MeshRenderNodeComponent::render(
     const Node& node,
@@ -28,28 +28,25 @@ void MeshRenderNodeComponent::render(
     Render::CommandBuffer& cmd_buffer
 ) const
 {
-    const Render::Shader& shader = *resolved_material.shader();
     Render::Material material = resolved_material;
 
     // Set transform uniforms
-    Domain::SquareMatrix4d view = camera.view().matrix();
-    const Domain::SquareMatrix4d& model = node.world_transform().matrix();
+    SquareMatrix4f view       = camera.view().matrix().cast<float>();
+    SquareMatrix4f model      = node.world_transform().matrix().cast<float>();
+    SquareMatrix4f proj       = camera.projection().cast<float>();
+    SquareMatrix4f model_view = view * model;
+    SquareMatrix4f pvm        = proj * model_view;
+    SquareMatrix3f normal     = (view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0)).inverse().transpose();
 
     // update per-node uniforms
-    SquareMatrix4f view_m = view.cast<float>();
-    material.set_uniform(UNIFORM_VIEW_MATRIX, view_m);
-    SquareMatrix4f model_view = (view * model).cast<float>();
+    material.set_uniform(UNIFORM_MODEL_MATRIX, model);
+    material.set_uniform(UNIFORM_VIEW_MATRIX, view);
     material.set_uniform(UNIFORM_VIEW_MODEL_MATRIX, model_view);
-    SquareMatrix4f proj = camera.projection().cast<float>();
     material.set_uniform(UNIFORM_PROJECTION_MATRIX, proj);
-    SquareMatrix4f pvm = proj * model_view;
     material.set_uniform(UNIFORM_PROJECTION_VIEW_MODEL_MATRIX, pvm);
-    SquareMatrix3f normal =
-        (view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0)).inverse().transpose().cast<float>();
     material.set_uniform(UNIFORM_VIEW_NORMAL_MATRIX, normal);
-    SquareMatrix4f vol_world = node.world_transform().matrix().cast<float>();
-    material.set_uniform(UNIFORM_VOLUME_WORLD_MATRIX, vol_world);
 
+    // update lights uniforms
     set_uniforms(lights, material);
 
     cmd_buffer.bind_and_draw(*m_geometry, material);

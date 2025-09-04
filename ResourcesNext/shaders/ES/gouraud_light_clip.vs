@@ -17,7 +17,7 @@ const vec3 LIGHT_FRONT_DIR = vec3(0.6985074, 0.1397015, 0.6985074);
 uniform mat4 view_model_matrix;
 uniform mat4 projection_matrix;
 uniform mat3 view_normal_matrix;
-uniform mat4 volume_world_matrix;
+uniform mat4 model_matrix;
 
 // Clipping plane - general orientation. Used by the SLA gizmo.
 uniform vec4 clipping_plane;
@@ -50,5 +50,5 @@ void main()
     gl_Position = projection_matrix * eye_position;
 	
     // Fill in the scalar for fragment shader clipping. Fragments with this value lower than zero are discarded.
-    clipping_planes_dot = dot(volume_world_matrix * vec4(v_position, 1.0), clipping_plane);
+    clipping_planes_dot = dot(model_matrix * vec4(v_position, 1.0), clipping_plane);
 }

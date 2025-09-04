@@ -203,17 +203,17 @@ void PlaterScenePresenter::update_volume_materials()
             const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
             if (tag != nullptr && n.has_render_component()) {
                 const auto* obj = proj.find_object_by_id(tag->object_id);
-                const auto* vol = proj.find_volume_by_id(tag->object_id, tag->volume_id);
                 const auto* inst = proj.find_instance_by_id(tag->object_id, tag->instance_id);
                 bool on_bed = std::find(instances.begin(), instances.end(), inst) != instances.end();
                 bool on_selected_bed = std::find(sel_instances.begin(), sel_instances.end(), inst) != sel_instances.end();
-                n.render_component()->set_shadows((vol->is_model_part() && on_selected_bed) ?
+                bool is_model_part = tag->volume_type == Domain::ModelVolumeType::MODEL_PART;
+                n.render_component()->set_shadows((is_model_part && on_selected_bed) ?
                     Render::Shadows{true, true} : Render::Shadows{false, false});
 
                 if (on_bed) {
-                    Domain::ElementRef el{ obj->id().id, inst->id().id, vol->id().id };
+                    Domain::ElementRef el{ obj->id().id, inst->id().id, tag->volume_id };
                     if (selection.is_selected(el)) {
-                        ColorRGBA color = vol->is_model_part() ? SELECTED_OPAQUE_COLOR : SELECTED_TRANSPARENT_COLOR;
+                        ColorRGBA color = is_model_part ? SELECTED_OPAQUE_COLOR : SELECTED_TRANSPARENT_COLOR;
                         Render::Material mat = Render::Material{}.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
                         n.set_material_override(mat);
                     }
@@ -222,13 +222,22 @@ void PlaterScenePresenter::update_volume_materials()
                 }
                 else {
                     ColorRGBA color;
-                    Domain::ElementRef el{ obj->id().id, inst->id().id, vol->id().id };
+                    Domain::ElementRef el{ obj->id().id, inst->id().id, tag->volume_id };
                     if (selection.is_selected(el))
-                        color = vol->is_model_part() ? OUTSIDE_SELECTED_OPAQUE_COLOR : OUTSIDE_SELECTED_TRANSPARENT_COLOR;
+                        color = is_model_part ? OUTSIDE_SELECTED_OPAQUE_COLOR : OUTSIDE_SELECTED_TRANSPARENT_COLOR;
                     else
-                        color = vol->is_model_part() ? OUTSIDE_OPAQUE_COLOR : OUTSIDE_TRANSPARENT_COLOR;
+                        color = is_model_part ? OUTSIDE_OPAQUE_COLOR : OUTSIDE_TRANSPARENT_COLOR;
                     Render::Material mat = Render::Material{}.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
                     n.set_material_override(mat);
+                }
+
+                Render::Material mat = n.render_component()->material();
+                mat.set_uniform("enable_out_of_bed_detection_z", is_model_part);
+                n.render_component()->replace_material(mat);
+                if (n.has_material_override()) {
+                    Render::Material ov_mat = *n.material_override();
+                    ov_mat.set_uniform("enable_out_of_bed_detection_z", is_model_part);
+                    n.set_material_override(ov_mat);
                 }
             }
         },
@@ -357,16 +366,11 @@ PlaterScenePresenter::build_volume_node(Scene::NodeBuilder& builder, Domain::Sel
         .transform([vol](auto& xform) { xform = vol->get_matrix(); })
         .set_tag(SceneNodeTag{vol->get_object()->id().id, vol->id().id, inst->id().id, vol->type()})
         .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
-        .set_aabb(trimesh->aabb_mesh());
-    if (vol->type() == Domain::ModelVolumeType::MODEL_PART) {
-        builder
-            .set_shadows(Render::Shadows{true, true})
-            // FIXME: the pbr data should be set in dependence of the volume filament
-            // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type'
-            .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
-    } else {
-        builder.set_shadows(Render::Shadows{false, false});
-    }
+        .set_aabb(trimesh->aabb_mesh())
+        // FIXME: for fff printers the pbr data should be set in dependence of the volume filament
+        // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type'
+        // and for sla printers it should be set in dependence of the resin type
+        .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
 }
 
 PlaterScenePresenter::BedInstances PlaterScenePresenter::selected_bed_instances() const
