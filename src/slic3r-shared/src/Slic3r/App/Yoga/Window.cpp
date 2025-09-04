@@ -34,14 +34,27 @@ void Window::render(Vec2f pos, Vec2f size)
 
     render_debug(pos, size);
 
-    if (m_position_by_yoga) {
-        ImGui::SetNextWindowPos(to_im(pos));
+    ImVec2 next_pos;
+    if (m_position_by_yoga || !m_requested_position.has_value()) {
+        next_pos = to_im(pos);
     } else if (m_requested_position.has_value()) {
-        ImGui::SetNextWindowPos(to_im(m_requested_position.value()));
+        next_pos = to_im(m_requested_position.value());
         m_requested_position = {};
     }
-    ImGui::SetNextWindowSize(to_im(size));
+
+    ImVec2 sz = to_im(size);
+    if (!m_position_by_yoga) {
+        // clamp
+        ImVec2 vp = ImGui::GetMainViewport()->Size;
+        ImVec2 max = ImVec2(vp.x - sz.x, vp.y - sz.y);
+        next_pos.x = std::clamp(next_pos.x, 0.f, std::max(0.f, max.x));
+        next_pos.y = std::clamp(next_pos.y, 0.f, std::max(0.f, max.y));
+    }
+
+
+    ImGui::SetNextWindowSize(sz);
     ImGui::SetNextWindowBgAlpha(m_alpha);
+    ImGui::SetNextWindowPos(next_pos);
 
     // Discard current paddings and spacing of the window to corect apply of sizer's margins
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
@@ -51,23 +64,12 @@ void Window::render(Vec2f pos, Vec2f size)
 
     ImGui::Begin(m_item_name.c_str(), nullptr, m_flags);
 
-    ImVec2 pos_to_render = ImGui::GetWindowPos();
+    m_last_pos = from_im(ImGui::GetWindowPos());
 
-    if (!m_position_by_yoga) {
-        ImVec2 xy = pos_to_render;
-        m_last_pos = from_im(xy);
-        ImVec2 sz = ImGui::GetWindowSize();
-        ImVec2 max = ImGui::GetMainViewport()->Size - sz;
-        ImVec2 pos = {std::clamp(xy.x, 0.f, max.x), std::clamp(xy.y, 0.f, max.y)};
-        ImGui::SetWindowPos(pos);
-    }
-
-    Vec2f window_pos = from_im(pos_to_render);
-
-    render_body(window_pos, size);
+    render_body(m_last_pos, size);
 
     for (const ItemPtr& child : std::as_const(m_children)) {
-        render_node(window_pos, child.get());
+        render_node(m_last_pos, child.get());
     }
 
     ImGui::End();

@@ -6,8 +6,6 @@
 
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
-#include "Slic3r/Assert.hpp"
-#include "Slic3r/Log.hpp"
 
 #include <utility>
 #include <imgui_internal.h>
@@ -23,25 +21,23 @@ Toolbar::Toolbar(const std::string& name) : Window(name)
     m_button_more->set_visible(false);
 }
 
-void Toolbar::process_events(Vec2f pos, Vec2f size)
+Toolbar::Callbacks& Toolbar::callbacks()
+{
+    return m_callbacks;
+}
+
+void Toolbar::render_body(Vec2f pos, Vec2f size)
 {
     ImRect button_bb(to_im(pos), to_im(pos) + to_im(size));
 
-    // Check if the button is clicked or hovered
-    bool hovered = ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max, false);
+    bool hovered = ImGui::IsWindowHovered()
+        && ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max, true);
     if (m_hovered != hovered) {
         m_hovered = hovered;
         if (m_callbacks.hovered_changed) {
             m_callbacks.hovered_changed();
         }
     }
-
-    Window::process_events(pos, size);
-}
-
-Toolbar::Callbacks& Toolbar::callbacks()
-{
-    return m_callbacks;
 }
 
 void Toolbar::append(std::unique_ptr<ToolbarButton> button)

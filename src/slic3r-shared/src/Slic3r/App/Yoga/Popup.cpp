@@ -315,6 +315,7 @@ void Popup::process_events(Vec2f pos, Vec2f size)
 
 void Popup::set_content_item(WindowPtr content_item)
 {
+    ASSERT(content_item.get());
     YGNodeRemoveAllChildren(m_popup_node);
     m_content_item = std::move(content_item);
     if (m_content_item) {

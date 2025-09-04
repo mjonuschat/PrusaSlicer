@@ -24,8 +24,13 @@ Vec2f AbstractRenderLayout::frame_padding() const
     return Vec2f(GImGui->Style.FramePadding.x, GImGui->Style.FramePadding.y);
 }
 
-ToolbarButton*
-AbstractRenderLayout::add_toolbar_item(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, AbstractButton::Callbacks callbacks)
+ToolbarButton* AbstractRenderLayout::add_toolbar_item(
+    ToolbarID id,
+    Render::Icon icon,
+    const std::string& tooltip,
+    const std::string& shortcut,
+    AbstractButton::Callbacks callbacks
+)
 {
     Toolbar* toolbar = find_toolbar(id);
     ASSERT(toolbar);
@@ -43,8 +48,14 @@ AbstractRenderLayout::add_toolbar_item(ToolbarID id, Render::Icon icon, const st
     return button.get();
 }
 
-ToolbarButton*
-AbstractRenderLayout::add_toolbar_item_checkable(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, AbstractButton::Callbacks callbacks, bool checked)
+ToolbarButton* AbstractRenderLayout::add_toolbar_item_checkable(
+    ToolbarID id,
+    Render::Icon icon,
+    const std::string& tooltip,
+    const std::string& shortcut,
+    AbstractButton::Callbacks callbacks,
+    bool checked
+)
 {
     ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
     ASSERT(button);
@@ -55,8 +66,14 @@ AbstractRenderLayout::add_toolbar_item_checkable(ToolbarID id, Render::Icon icon
     return button;
 }
 
-ToolbarButton*
-AbstractRenderLayout::add_toolbar_item_gizmo(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks, Scene::IToolGizmo* tool)
+ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
+    ToolbarID id,
+    Render::Icon icon,
+    const std::string& tooltip,
+    const std::string& shortcut,
+    Yoga::AbstractButton::Callbacks callbacks,
+    Scene::IToolGizmo* tool
+)
 {
     ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
     ASSERT(button);
@@ -69,8 +86,14 @@ AbstractRenderLayout::add_toolbar_item_gizmo(ToolbarID id, Render::Icon icon, co
     return button;
 }
 
-ToolbarButton*
-AbstractRenderLayout::add_toolbar_item_panel(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks, Yoga::Item* panel)
+ToolbarButton* AbstractRenderLayout::add_toolbar_item_panel(
+    ToolbarID id,
+    Render::Icon icon,
+    const std::string& tooltip,
+    const std::string& shortcut,
+    Yoga::AbstractButton::Callbacks callbacks,
+    Yoga::Item* panel
+)
 {
     ASSERT(panel);
 

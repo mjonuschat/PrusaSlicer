@@ -25,6 +25,7 @@ Tooltip::Tooltip(
 
     window->set_gap(5);
     window->set_padding(4);
+    window->set_alpha(0.8);
     m_text = window->emplace_back<Text>(text);
     m_text->set_visible(!text.empty());
     m_shortcut = window->emplace_back<Text>(shortcut);

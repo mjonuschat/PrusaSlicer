@@ -23,9 +23,9 @@ public:
 
     explicit Toolbar(const std::string& name);
 
-    void process_events(Vec2f pos, Vec2f size) override;
-
     Callbacks& callbacks();
+
+    void render_body(Vec2f pos, Vec2f size) override;
 
     void append(std::unique_ptr<ToolbarButton> button);
     std::unique_ptr<ToolbarButton> remove(ToolbarButton* button);
