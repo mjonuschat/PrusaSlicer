@@ -1,0 +1,8 @@
+kind: filament
+id: Prusa PLA
+inherits:
+- '*PLA*'
+name: Prusa PLA
+values:
+  filament_cost: '19.99'
+  filament_vendor: Made for Prusa

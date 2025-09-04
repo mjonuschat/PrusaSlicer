@@ -1,0 +1,8 @@
+kind: filament
+id: Buddy3D ASA
+inherits:
+- 'Prusament ASA'
+name: Buddy3D ASA
+values:
+  filament_cost: '23.99'
+  filament_vendor: Buddy3D

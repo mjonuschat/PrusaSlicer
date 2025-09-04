@@ -1,0 +1,12 @@
+kind: filament
+id: eSun ABS
+inherits:
+- '*ABS*'
+name: eSun ABS
+values:
+  filament_cost: '45.10'
+  filament_vendor: eSun
+  filament_density: 1.01
+  filament_spool_weight: 265
+  first_layer_temperature: 255
+  temperature: 255

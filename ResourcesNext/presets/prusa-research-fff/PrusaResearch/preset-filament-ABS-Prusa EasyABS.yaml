@@ -1,0 +1,14 @@
+kind: filament
+id: Prusa EasyABS
+inherits:
+- '*ABS*'
+name: Prusa EasyABS
+values:
+  filament_cost: 26.99
+  filament_vendor: Made for Prusa
+  filament_density: 1.08
+  filament_spool_weight: 230
+  first_layer_temperature: 255
+  temperature: 255
+ 
+  

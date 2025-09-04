@@ -1,0 +1,11 @@
+kind: filament
+id: Filament PM ABS
+inherits:
+- '*ABS*'
+name: Filament PM ABS
+values:
+  filament_cost: '25'
+  filament_vendor: Filament PM
+  filament_density: 1.08
+  first_layer_temperature: 255
+  temperature: 255
