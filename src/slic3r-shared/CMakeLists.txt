@@ -826,6 +826,7 @@ target_link_libraries(slic3r-shared PUBLIC
         TBB::tbb
         TBB::tbbmalloc
         pugixml::pugixml
+		range-v3::range-v3
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)
