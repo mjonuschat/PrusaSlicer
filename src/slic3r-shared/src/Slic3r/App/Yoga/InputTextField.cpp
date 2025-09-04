@@ -52,7 +52,11 @@ const std::string& InputTextField::text() const
 
 void InputTextField::set_text(const std::string& text)
 {
+    if (text == m_input_text->text()) {
+        return;
+    }
     m_input_text->set_text(text);
+    text_updated_internal();
 }
 
 ImGuiInputTextFlags InputTextField::flags() const

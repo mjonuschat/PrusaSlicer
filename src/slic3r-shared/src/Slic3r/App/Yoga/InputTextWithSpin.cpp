@@ -102,4 +102,13 @@ void InputTextWithSpin::decrease_value()
     set_text(fmt::format("{:.12g}", m_last_value));
 }
 
+void InputTextWithSpin::text_updated_internal()
+{
+    try {
+        m_last_value = boost::get<double>(m_eval.eval(m_parser.parse(text())));
+    } catch ([[maybe_unused]] const Biz::Expr::ParseError& error) {
+    } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
+    }
+}
+
 } // namespace Slic3r::App::Yoga

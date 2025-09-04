@@ -45,6 +45,7 @@ public:
 private:
     void increase_value();
     void decrease_value();
+    void text_updated_internal() override;
 
     SpinButton* m_increase_button{nullptr};
     SpinButton* m_decrease_button{nullptr};

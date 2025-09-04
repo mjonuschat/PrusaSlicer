@@ -47,6 +47,7 @@ public:
 
 protected:
     InputText* input_text() const;
+    virtual void text_updated_internal() {}
 
 protected:
     Tooltip m_tooltip;
