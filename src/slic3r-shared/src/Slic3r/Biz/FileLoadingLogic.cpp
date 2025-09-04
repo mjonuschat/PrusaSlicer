@@ -251,6 +251,103 @@ static void remove_objects_with_zero_volume(Model& model, const std::string& fil
     }
 }
 
+
+// The following is only used to convert projects from PS 2.x.
+static std::array<int, 2> index2grid_coords(size_t index)
+{
+    std::array<int, 2> result{0, 0};
+    if (index == 0) {
+        return result;
+    }
+
+    int id = index;
+    ++id;
+    int a = 1;
+    while ((a+1)*(a+1) < id)
+        ++a;
+    id = id - a*a;
+    result[0]=a;
+    result[1]=a;
+    if (id <= a)
+        result[1] = id-1;
+    else
+        result[0] = id-a-1;
+
+    return result;
+}
+
+
+// The following is only used to convert projects from PS 2.x.
+static Domain::Vec3d get_bed_translation(int id, double size_x, double size_y, bool legacy_layout)
+{
+    if (id == 0)
+        return Vec3d::Zero();
+    int x = 0;
+    int y = 0;
+    if (legacy_layout)
+        x = id;
+    else {
+        std::array<int, 2> coords{index2grid_coords(id)};
+        x = coords[0];
+        y = coords[1];
+    }
+
+    // As for the m_legacy_layout switch, see comments at definition of bed_gap_relative.
+    Vec2d  gap = Vec2d::Ones() * std::min(100., std::hypot(size_x, size_y) * (3./10.));
+    double gap_x = (legacy_layout ? size_x * (2./10.) : gap.x());
+    return Vec3d(x * (size_x + gap_x),
+                 y * (size_y + gap.y()), // When using legacy layout, y is zero anyway.
+                 0.);
+}
+
+// The following is only used to convert projects from PS 2.x.
+// The function fills in bed_offsets in Loaded3MF based on
+// instance positions, just like PS 2.x would.
+static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
+{
+    if (loaded_3mf.config_containers_data.size() != 1)
+        return;
+    const auto& cp = loaded_3mf.config_containers_data.front().config_pack;
+    std::vector<Vec2d> pts;
+    double max_height = 0.;
+    if (std::holds_alternative<Domain::ConfigPackFDM>(cp)) {
+        pts = std::get<Domain::ConfigPackFDM>(cp).printer.items.opt("bed_shape").get<std::vector<Vec2d>>();
+        max_height = std::get<Domain::ConfigPackFDM>(cp).printer.items.opt("max_print_height").get<double>();
+    }
+    else {
+        pts = std::get<Domain::ConfigPackSLA>(cp).sla_printer_settings.items.opt("bed_shape").get<std::vector<Vec2d>>();
+        max_height = std::get<Domain::ConfigPackFDM>(cp).printer.items.opt("max_print_height").get<double>();
+    }
+
+    using namespace Biz::Algorithms::Bed;
+
+    auto bed = Domain::Bed::from(pts, max_height, std::nullopt, "", "");
+    bed.set_type(detect_bed_type(bed));
+    double size_x = bed.contour_aabb_extent().x();
+    double size_y = bed.contour_aabb_extent().y();
+    
+    std::vector<Domain::BedInstance> bed_instances;
+    for (size_t i=0; i<9; ++i) {
+        bed_instances.emplace_back(bed);
+        bed_instances.back().transformation.set_offset(get_bed_translation(i, size_x, size_y, false));
+    }
+
+    for (ModelObject* mo : loaded_3mf.model.objects) {
+        for (ModelInstance* mi : mo->instances) {
+            const auto bb = Algorithms::ModelObject::instance_bounding_box(*mo, *mi);
+
+            for (int i=0; i<9; ++i) {
+                if (contains_2d(bed_instances[i], Biz::Algorithms::BoundingBox::to_2d(bb)) == BedContainmentState::Inside) {
+                    const Vec3d& bed_offset = bed_instances[i].transformation.get_offset();
+                    loaded_3mf.config_containers_data.front().bed_offsets.emplace_back(bed_offset.x(), bed_offset.y());
+                    break;
+                }
+            }
+        }
+    }
+}
+
+// The following function is used to load projects from PS 2.x.
 static Loaded3MF load_legacy_project(const std::string& file_path)
 {
     Loaded3MF loaded_3mf;
@@ -258,7 +355,6 @@ static Loaded3MF load_legacy_project(const std::string& file_path)
 
     Domain::WipeTowersOnBeds wipe_towers;
     Domain::CustomGCodesOnBeds custom_gcodes;
-    std::optional<Semver> version;
 
     if (!Slic3rLegacy::load_3mf_legacy(
             file_path.c_str(),
@@ -270,6 +366,17 @@ static Loaded3MF load_legacy_project(const std::string& file_path)
             custom_gcodes
         ))
         throw Loaded3MFException(Read3mfIssue(Read3mfIssueType::legacy_loader_failed, "Loading of legacy 3MF failed."));
+
+    // TODO: The old slicer did not store HW configuration in the current sense. We must heuristically
+    // construct a meaningful SelectedPresetMetadata here by doing something like
+    //
+    // loaded_3mf.config_containers_data.front().preset = reconstruct_hw_config_from_legacy_config(loaded_3mf.config_containers_data.front().config_pack);
+    //
+    // This will provide enough info to create a complete Preset further down the road.
+
+    // Old project did not store bed positions explicitly.
+    if (loaded_3mf.version && *loaded_3mf.version < Semver(3,0,0))
+        infer_bed_positions_and_create_beds(loaded_3mf);
 
     loaded_3mf.filepath_3mf = file_path;
     return loaded_3mf;

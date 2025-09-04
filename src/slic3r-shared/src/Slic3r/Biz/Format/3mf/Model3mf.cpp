@@ -146,8 +146,7 @@ constexpr const char *PROD_NS = "p:";
 constexpr const char *PATH_ATTR = "path";
 constexpr const char *UUID_ATTR = "UUID";
 
-// TODO: fill version before merge to master
-const Slic3r::Semver last_old_stored_version = *Semver::parse("2.9.1"); 
+const Slic3r::Semver last_old_stored_version = *Semver::parse("2.99.1"); // last version to be parsed by "legacy" parser
 
 using UnitToName = boost::bimap<ST_Unit, std::string_view>;
 const UnitToName unit_to_name = boost::assign::list_of<UnitToName::relation>
