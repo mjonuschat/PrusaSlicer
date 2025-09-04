@@ -7,6 +7,12 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
+
+#include "Slic3r/Biz/Algorithms/Bed.hpp"
+#include "Slic3r/Biz/Scene/BedFactory.hpp"
+
+#include "Slic3r/Directories.hpp"
+
 #include "tl/expected.hpp"
 
 #include <boost/filesystem.hpp>
@@ -434,8 +440,20 @@ static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
 
     for (const Loaded3MF::ConfigContainerData& cc_data : loaded_3mf.config_containers_data) {
         project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
-        auto& mutable_selected_preset = project.config_containers().back()->mutable_selected_preset();
+        ConfigContainer& cc = *project.config_containers().back().get();
+        auto& mutable_selected_preset = cc.mutable_selected_preset();
         mutable_selected_preset = Domain::Preset::SelectedPreset::make(cc_data.preset, cc_data.config_pack);
+
+        // Always add one bed instance.
+        cc.set_bed(Scene::get_or_create_bed(project.bed_container(), mutable_selected_preset, resources_dir()));
+        cc.add_bed_instance();
+
+        for (size_t bed_idx = 0; bed_idx < cc_data.bed_offsets.size(); ++bed_idx) {
+            const Vec2d& bed_offset = cc_data.bed_offsets[bed_idx];
+            if (bed_idx != 0)
+                cc.add_bed_instance();
+            cc.bed_instances().back().get()->transformation.set_offset(Domain::Vec3d(bed_offset.x(), bed_offset.y(), 0.));
+        }
     }
 
     return project;

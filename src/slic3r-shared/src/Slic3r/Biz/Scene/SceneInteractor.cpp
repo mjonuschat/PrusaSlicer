@@ -722,6 +722,26 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     return ret;
 }
 
+void SceneInteractor::layout_after_project_load(Domain::Project& added_project)
+{
+    ASSERT(std::all_of(added_project.config_containers().begin(), added_project.config_containers().end(),
+           [](const std::unique_ptr<Domain::ConfigContainer>& cc){ return ! cc->bed_instances().empty(); }));
+    update_instances_bed_placement(added_project);
+    m_bed_placement.layout(added_project, BED_GAP);
+
+    bed_selection().select_one(Domain::BedRef({added_project.config_containers().front()->id().id, added_project.config_containers().front()->bed_instances().front()->id().id}));
+    update_instances_bed_placement(added_project);
+
+    Domain::BedRefs bed_refs;
+    for (auto& cc : added_project.config_containers()) {
+        for (auto& bed_instance : cc->bed_instances())
+            bed_refs.push_back({cc->id().id, bed_instance->id().id});
+    }
+    invoke_listeners<ISceneBedInstanceChangedListener>(
+        [&](auto* l) { l->on_bed_instance_updated(m_selected_project_id, bed_refs); }
+    );
+}
+
 void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
 {
     auto& project               = m_projects.find(m_selected_project_id)->second.project;

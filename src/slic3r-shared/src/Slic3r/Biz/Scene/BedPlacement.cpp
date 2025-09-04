@@ -39,7 +39,10 @@ void BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
             if (j > 0)
                 pos.x() += size.x() + gap.x();
             Transform3d xform = Domain::translation_transform(Algorithms::Point::to_3d(pos, 0.0));
+            Transform3d old_bed_trafo = instances[j]->matrix();
             instances[j]->transformation = Domain::Transformation(xform);
+            for (Domain::ModelInstance* mi : instances[j]->model_instances)
+                mi->set_transformation(Domain::Transformation(mi->get_transformation().get_matrix() * xform * old_bed_trafo.inverse()));
         }
 
         offset_y += size.y() + gap.y();

@@ -198,6 +198,7 @@ public:
     BedSelection& bed_selection();
     const BedSelection* bed_selection(const Domain::SelectionId project_id) const;
     BedSelection* bed_selection(const Domain::SelectionId project_id);
+    void layout_after_project_load(Domain::Project& added_project);
 
     /**
      * @name Transforming selection

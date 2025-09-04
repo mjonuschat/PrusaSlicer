@@ -111,12 +111,10 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
             if (added_project.config_containers().empty()) {
                 added_project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
                 m_preset_interactor.initialize_config_container(*added_project.config_containers().back());
+                initialize_bed(*added_project.config_containers().back(), added_project.bed_container());
             }
 
-            for (auto& config_container : added_project.config_containers()) {
-                initialize_bed(*config_container, added_project.bed_container());
-            }
-
+            m_scene_interactor.layout_after_project_load(added_project);
             m_scene_interactor.notify_listener_on_objects();
 
             invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
