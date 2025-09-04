@@ -473,7 +473,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Scene/BedPlacement.cpp
         include/Slic3r/Biz/Scene/BedGeometry.hpp
         src/Slic3r/Biz/Scene/BedGeometry.cpp
-        src/Slic3r/Biz/Scene/BedTracking.hpp
+        include/Slic3r/Biz/Scene/BedTracking.hpp
         src/Slic3r/Biz/Scene/BedTracking.cpp
         src/Slic3r/Biz/Scene/BedFactory.hpp
         src/Slic3r/Biz/Scene/BedFactory.cpp
