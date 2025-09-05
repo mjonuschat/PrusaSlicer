@@ -34,6 +34,7 @@ protected:
 private:
     void reconstruct_fields();
     void update_values();
+    void send_data();
 
 private:
     struct Field {

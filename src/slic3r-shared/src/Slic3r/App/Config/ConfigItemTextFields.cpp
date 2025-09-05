@@ -6,6 +6,8 @@
 
 #include "Slic3r/App/Yoga/InputTextField.hpp"
 
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+
 #include <fmt/format.h>
 
 using namespace Slic3r::App::Yoga;
@@ -55,8 +57,11 @@ void ConfigItemTextFields::reconstruct_fields()
         );
         field.textfield = emplace_back<InputTextField>("ConfigItemTextField");
         field.textfield->set_validator(field.double_validator.release());
-        field.textfield->set_text(fmt::format("{}", value));
+        field.textfield->set_text(fmt::format("{:.10g}", value));
         field.textfield->set_flex_grow(1);
+        field.textfield->callbacks().text_edited = [this]() {
+            send_data();
+        };
     }
 }
 
@@ -66,6 +71,15 @@ void ConfigItemTextFields::update_values()
     for (size_t i = 0; i < values.size(); ++i) {
         m_fields.at(i).textfield->set_text(fmt::format("{}", values.at(i)));
     }
+}
+
+void ConfigItemTextFields::send_data()
+{
+    std::vector<double> values(m_fields.size());
+    for (size_t i = 0; i < values.size(); ++i) {
+        values[i] = m_fields.at(i).double_validator->value();
+    }
+    m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{values});
 }
 
 } // namespace Slic3r::App
