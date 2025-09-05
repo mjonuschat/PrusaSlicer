@@ -10,7 +10,7 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
+#include "Slic3r/App/Plater/PlaterScenePresenterProjectContext.hpp"
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
@@ -39,7 +39,7 @@ class PlaterScenePresenter :
     public Scene::IProjectSceneProvider
 {
 public:
-    using ProjectContexts = std::unordered_map<Domain::SelectionId, Scene::ScenePresenterProjectContext>;
+    using ProjectContexts = std::unordered_map<Domain::SelectionId, PlaterScenePresenterProjectContext>;
 
     void load_selected_project();
     PlaterScenePresenter(
@@ -51,13 +51,13 @@ public:
 
     bool project_ready() const { return !m_projects.empty(); }
 
-    Scene::ScenePresenterProjectContext& project_context()
+    PlaterScenePresenterProjectContext& project_context()
     {
         ASSERT(m_selected_project_id != Domain::INVALID_ID);
         return m_projects[m_selected_project_id];
     }
 
-    const Scene::ScenePresenterProjectContext& project_context() const
+    const PlaterScenePresenterProjectContext& project_context() const
     {
         ASSERT(m_selected_project_id != Domain::INVALID_ID);
         return m_projects.find(m_selected_project_id)->second;

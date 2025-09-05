@@ -22,26 +22,25 @@ namespace Slic3r::App::Scene {
 
 static double z_offset(BedElementType type)
 {
-    static constexpr double Z_OFFSET = -0.05;
     switch (type) {
     default:
     case BedElementType::Axis: {
-        return 0.0 * Z_OFFSET;
+        return 0.0 * BED_OFFSET_Z;
     }
     case BedElementType::Label: {
-        return 1.0 * Z_OFFSET;
+        return 1.0 * BED_OFFSET_Z;
     }
     case BedElementType::Contour:
     case BedElementType::Grid:
     case BedElementType::PrintVolume: {
-        return 2.0 * Z_OFFSET;
+        return 2.0 * BED_OFFSET_Z;
     }
     case BedElementType::PlateDefault:
     case BedElementType::PlateTextured: {
-        return 3.0 * Z_OFFSET;
+        return 3.0 * BED_OFFSET_Z;
     }
     case BedElementType::Model: {
-        return 4.0 * Z_OFFSET;
+        return 4.0 * BED_OFFSET_Z;
     }
     }
 }

@@ -2,8 +2,6 @@
 
 #define MAX_LIGHTS 4
 
-const float THRESHOLD_Z = -0.15;
-
 struct Light
 {
     int system;
@@ -20,7 +18,7 @@ uniform vec4 uniform_color;
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
 uniform mat4 view_matrix;
-uniform bool enable_out_of_bed_detection_z;
+uniform float out_of_bed_threshold_z;
 
 uniform sampler2D shadowsmap;
 
@@ -37,7 +35,7 @@ vec3 light_direction(Light light)
 
 vec4 select_color()
 {
-    return (!enable_out_of_bed_detection_z || world_z >= THRESHOLD_Z) ? uniform_color : vec4(mix(uniform_color.rgb, vec3(0.0), 0.333), uniform_color.a);
+    return (world_z >= out_of_bed_threshold_z) ? uniform_color : vec4(mix(uniform_color.rgb, vec3(0.0), 0.333), uniform_color.a);
 }
 
 float shadow_pcf(vec4 position, float NdotL)

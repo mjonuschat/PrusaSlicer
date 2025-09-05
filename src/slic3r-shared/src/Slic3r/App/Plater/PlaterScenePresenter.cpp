@@ -232,11 +232,11 @@ void PlaterScenePresenter::update_volume_materials()
                 }
 
                 Render::Material mat = n.render_component()->material();
-                mat.set_uniform("enable_out_of_bed_detection_z", is_model_part);
+                mat.set_uniform("out_of_bed_threshold_z", is_model_part ? float(Scene::BED_OFFSET_Z) : -FLT_MAX);
                 n.render_component()->replace_material(mat);
                 if (n.has_material_override()) {
                     Render::Material ov_mat = *n.material_override();
-                    ov_mat.set_uniform("enable_out_of_bed_detection_z", is_model_part);
+                    ov_mat.set_uniform("out_of_bed_threshold_z", is_model_part ? float(Scene::BED_OFFSET_Z) : -FLT_MAX);
                     n.set_material_override(ov_mat);
                 }
             }
@@ -480,6 +480,7 @@ void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, con
     }
 
     invoke_bed_visually_changed(project_id);
+    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scn, instances );
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -493,6 +494,7 @@ void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, c
     );
 
     invoke_bed_visually_changed(project_id);
+    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scene(), instances);
     m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
@@ -528,6 +530,7 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
 
+    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scn, elements);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -562,6 +565,7 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
     });
 
     invoke_bed_visually_changed(project_id);
+    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scn, volumes);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -579,6 +583,7 @@ void PlaterScenePresenter::on_volume_removed(
     );
 
     invoke_bed_visually_changed(project_id);
+    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scene(), volumes);
     m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
@@ -606,6 +611,7 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
 
+    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scn, elements);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 

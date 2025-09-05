@@ -15,7 +15,9 @@ namespace Slic3r::App::Plater {
 enum class PlaterSceneLayer : Scene::RenderLayerId
 {
     DocumentObjects = 0,
-    GizmoHandles = 1,
+    ObjectAccessoriesRegular = 1,
+    ObjectAccessoriesOnTop = 2,
+    GizmoHandles = 3,
     AlwaysOnTop = std::numeric_limits<int8_t>::max()
 };
 

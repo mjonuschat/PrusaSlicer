@@ -97,7 +97,6 @@ bool requires_volume_transform(const Eigen::Matrix4d& xform)
     // Normalize the vector to get its direction, ignoring any scaling.
     transformed_z.normalize();
 
-    // variation in z direction
     double dz = xform(2, 3);
 
     // Check if the direction is still parallel to the original Z-axis and if there is a delta z.

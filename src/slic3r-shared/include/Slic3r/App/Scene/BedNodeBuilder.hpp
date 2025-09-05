@@ -12,6 +12,8 @@ namespace Slic3r::App::Scene {
 class NodeBuilder;
 struct BedNodeTag;
 
+static constexpr double BED_OFFSET_Z = -0.025;
+
 class BedNodeBuilder
 {
 public:
