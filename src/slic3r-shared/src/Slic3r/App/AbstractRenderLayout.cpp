@@ -30,6 +30,11 @@ AbstractRenderLayout::add_toolbar_item(ToolbarID id, Render::Icon icon, const st
     Toolbar* toolbar = find_toolbar(id);
     ASSERT(toolbar);
 
+    toolbar->set_visible(true);
+    if (toolbar == m_bottom_toolbar) {
+        m_bottom_dummy_toolbar->set_visible(false);
+    }
+
     Passthrough<ToolbarButton> button = Passthrough(std::make_unique<ToolbarButton>(icon, tooltip));
     toolbar->append(button.release());
     button->set_shortcut(shortcut);
@@ -261,6 +266,7 @@ void AbstractRenderLayout::init_toolbar_column()
     m_top_toolbar->set_button_max_size({max_tt_size, max_tt_size});
     m_top_toolbar->set_self_align(YGAlign::YGAlignFlexStart);
     m_top_toolbar->set_orientation(Orientation::Vertical);
+    m_top_toolbar->set_visible(false);
 
     m_middle_toolbar = m_layout_left_toolbar_column->emplace_back<Toolbar>("middle_toolbar");
     m_middle_toolbar->set_button_min_size({min_tt_size, min_tt_size});
@@ -268,15 +274,17 @@ void AbstractRenderLayout::init_toolbar_column()
     m_middle_toolbar->set_self_align(YGAlign::YGAlignCenter);
     m_middle_toolbar->set_orientation(Orientation::Vertical);
     m_middle_toolbar->set_collapsible(true);
+    m_middle_toolbar->set_visible(false);
 
     m_bottom_toolbar = m_layout_left_toolbar_column->emplace_back<Toolbar>("bottom_toolbar");
     m_bottom_toolbar->set_button_min_size({min_tt_size, min_tt_size});
     m_bottom_toolbar->set_button_max_size({max_tt_size, max_tt_size});
     m_bottom_toolbar->set_self_align(YGAlign::YGAlignFlexEnd);
     m_bottom_toolbar->set_orientation(Orientation::Vertical);
+    m_bottom_toolbar->set_visible(false);
 
     m_bottom_dummy_toolbar = m_layout_left_toolbar_column->emplace_back<Item>();
-    m_bottom_dummy_toolbar->set_visible(false);
+    m_bottom_dummy_toolbar->set_visible(true);
 
     m_top_toolbar->callbacks().hovered_changed      = [this]() { update_toolbar_tooltip(); };
     m_middle_toolbar->callbacks().hovered_changed   = [this]() { update_toolbar_tooltip(); };

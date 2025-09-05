@@ -19,11 +19,11 @@ LeftBarCtrl::LeftBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus)
     auto add_btn = [this](Button* btn) -> void {
         m_second_sizer->Add(btn, 0, wxALIGN_CENTER_HORIZONTAL | wxALL, m_btn_margin); };
 
-    message_btn = new Button(this, { wxEmptyString, "lb_message_smile", m_action_btn_sz });
-    add_btn(message_btn);
+    // message_btn = new Button(this, { wxEmptyString, "lb_message_smile", m_action_btn_sz });
+    // add_btn(message_btn);
 
-    notifications_btn = new Button(this, { wxEmptyString, "lb_notifications", m_action_btn_sz });
-    add_btn(notifications_btn);
+    // notifications_btn = new Button(this, { wxEmptyString, "lb_notifications", m_action_btn_sz });
+    // add_btn(notifications_btn);
 
     m_account_btn = new ButtonWithPopup(this, "user", orient, m_login_icon_sz);
     add_btn(m_account_btn);
@@ -39,8 +39,8 @@ void LeftBarCtrl::OnColorsChanged()
     TabsBarCtrl::OnColorsChanged();
 
     m_account_btn->sys_color_changed();
-    message_btn->sys_color_changed();
-    notifications_btn->sys_color_changed();
+    // message_btn->sys_color_changed();
+    // notifications_btn->sys_color_changed();
 
     UpdateAccountButton(true);
 }

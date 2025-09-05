@@ -59,13 +59,13 @@ TopBar::TopBar(Biz::ProjectInteractor* project_interactor, Platform::AbstractRen
 
     Rectangle* right_wrapper = emplace_back<Rectangle>();
     right_wrapper->set_flex_shrink(0);
-    m_search = right_wrapper->emplace_back<Rectangle>();
-    m_search->set_min_size({200.f, YGUndefined});
-    m_search->set_rounding(0.f);
+    // m_search = right_wrapper->emplace_back<Rectangle>();
+    // m_search->set_min_size({200.f, YGUndefined});
+    // m_search->set_rounding(0.f);
 
-    Text* shortcut = right_wrapper->emplace_back<Text>("Ctrl+F");
-    shortcut->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
-    shortcut->set_self_align(YGAlignCenter);
+    // Text* shortcut = right_wrapper->emplace_back<Text>("Ctrl+F");
+    // shortcut->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
+    // shortcut->set_self_align(YGAlignCenter);
 
     for (LayoutButton* btn : std::initializer_list<LayoutButton*>{
              m_load_btn,

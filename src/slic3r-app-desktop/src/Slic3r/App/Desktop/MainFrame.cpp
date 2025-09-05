@@ -118,7 +118,9 @@ static void add_experimets_page(TabsBar* top_bar, MainFrame* main_frame)
 
     lang_selection_btn->Bind(wxEVT_BUTTON, [=](wxCommandEvent& e) { main_frame->select_language(); });
 
+#ifdef DEBUG
     top_bar->AddPage(test_panel, from_u8("UI - test"));
+#endif
 }
 
 MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
@@ -278,16 +280,16 @@ void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
     //! experiments just for UI testing
     add_experimets_page(m_left_bar, this);
 
-    m_left_bar->message_button()->Bind(
-        wxEVT_BUTTON,
-        [](wxCommandEvent&)
-        { wxMessageBox(from_u8("Message Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION); }
-    );
-    m_left_bar->notifications_button()->Bind(
-        wxEVT_BUTTON,
-        [](wxCommandEvent&)
-        { wxMessageBox(from_u8("Notifications Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION); }
-    );
+    // m_left_bar->message_button()->Bind(
+    //     wxEVT_BUTTON,
+    //     [](wxCommandEvent&)
+    //     { wxMessageBox(from_u8("Message Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION); }
+    // );
+    // m_left_bar->notifications_button()->Bind(
+    //     wxEVT_BUTTON,
+    //     [](wxCommandEvent&)
+    //     { wxMessageBox(from_u8("Notifications Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION); }
+    // );
 }
 
 // !!! temporary function just for testing

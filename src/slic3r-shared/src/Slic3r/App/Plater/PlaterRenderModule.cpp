@@ -60,10 +60,10 @@
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
 
-#define ENABLED_DEBUG_OUTLINE 1
+#define ENABLED_DEBUG_OUTLINE 0
 #define ENABLED_DEBUG_IMGUI_FONT 0
 #define ENABLED_DEBUG_IMGUI_ICONS 0
-#define ENABLED_DEBUG_BEDS 1
+#define ENABLED_DEBUG_BEDS 0
 
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
@@ -167,14 +167,14 @@ void PlaterRenderModule::init_scene_layout()
         m_object_list.get()
     );
 
-    m_layout->add_toolbar_item_panel(
-        ToolbarID::Bottom,
-        Render::Icon::ToolbarHistory,
-        "Actions History",
-        "Shift + Alt + H",
-        {},
-        m_history.get()
-    );
+    // m_layout->add_toolbar_item_panel(
+    //     ToolbarID::Bottom,
+    //     Render::Icon::ToolbarHistory,
+    //     "Actions History",
+    //     "Shift + Alt + H",
+    //     {},
+    //     m_history.get()
+    // );
 
     m_layout->add_toolbar_item(
         ToolbarID::Middle,
@@ -806,6 +806,7 @@ static void render_imgui_debug_icons()
 #if ENABLED_DEBUG_BEDS
 static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, PlaterScenePresenter& scene_presenter, Render::Device& device)
 {
+
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("Bed test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         auto& proj                       = project_interactor.selected_project();

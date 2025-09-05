@@ -32,6 +32,7 @@
 #include <boost/nowide/cstdio.hpp>
 #include <boost/filesystem/operations.hpp>
 
+#define ENABLED_DEBUG_OUTLINE 0
 #define ENABLED_DEBUG_VIEWER 0
 #define ENABLED_DEBUG_LOAD_DATA 0
 #define ENABLED_DEBUG_VIEWER_MODE 0
@@ -326,10 +327,12 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         m_fdm_viewer.render_gui(layout);
     }
 
+#ifdef ENABLED_DEBUG_OUTLINE
     if (ImGui::Begin("Outline", nullptr)) {
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
     }
     ImGui::End();
+#endif
 
 #if ENABLED_DEBUG_VIEWER
     render_imgui_debug_viewer(m_fdm_viewer);
