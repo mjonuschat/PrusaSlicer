@@ -34,14 +34,16 @@ void RectangleSelection::update(const MousePosition& curr_mouse_pos)
     float bottom = -2.0f * ((rect.y + rect.height) / scr_h - 0.5f);
 
     Render::GeometryBuilder<Render::VertexP3> builder;
-    auto* shader = m_device.context().shader_manager().shader("flat");
-    DEBUG_ASSERT(shader != nullptr);
+    SquareMatrix4f vm = SquareMatrix4f::Identity();
+    m_material = Render::Material{}
+        .set_uniform("projection_view_model_matrix", vm)
+        .set_shader(m_device.context().shader_manager().shader("flat"));
     builder
         .add_vertex({ {left,  bottom, 0.0f} })
         .add_vertex({ {right, bottom, 0.0f} })
         .add_vertex({ {right, top,    0.0f} })
         .add_vertex({ {left,  top,    0.0f} })
-        .add_draw_command({ Render::PrimitiveType::LineLoop, 0, 4, Render::Material{}.set_shader(shader) });
+        .add_draw_command({ Render::PrimitiveType::LineLoop, 0, 4, m_material });
     builder.update(m_geometry);
 
     m_frustum = Scene::Frustum::from(m_scene_provider.scene().camera(), m_screen_info, rect);
@@ -108,13 +110,9 @@ void RectangleSelection::render(Render::CommandBuffer& cmd_buffer)
     default:            { color = ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f); break; }
     }
 
-    Render::Material mat;
-    SquareMatrix4f vm = SquareMatrix4f::Identity();
-    mat
-        .set_uniform("view_model_matrix", vm)
-        .set_uniform("projection_matrix", vm)
+    m_material
         .set_uniform("uniform_color", color);
-    cmd_buffer.bind_and_draw(m_geometry, mat);
+    cmd_buffer.bind_and_draw(m_geometry, m_material);
 }
 
 Scene::Node::NodeList RectangleSelection::collect_contained_nodes()

@@ -3,6 +3,7 @@
 #include <chrono>
 
 #include "Slic3r/App/Render/Geometry.hpp"
+#include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
@@ -66,6 +67,7 @@ private:
     bool m_defined{ false };
     MousePosition m_initial_mouse_pos;
     Render::Geometry m_geometry;
+    Render::Material m_material;
     Scene::Frustum m_frustum;
 };
 
