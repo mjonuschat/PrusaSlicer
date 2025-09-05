@@ -99,13 +99,19 @@ void InputTextWithSpin::set_text(const std::string &text)
 void InputTextWithSpin::increase_value()
 {
     m_last_value += GImGui->IO.KeyCtrl ? m_step_fast : m_step;
-    set_text(fmt::format("{:.12g}", m_last_value));
+    set_text(fmt::format("{:.10g}", m_last_value));
+    if (m_callbacks.text_edited) {
+        m_callbacks.text_edited();
+    }
 }
 
 void InputTextWithSpin::decrease_value()
 {
     m_last_value -= GImGui->IO.KeyCtrl ? m_step_fast : m_step;
-    set_text(fmt::format("{:.12g}", m_last_value));
+    set_text(fmt::format("{:.10g}", m_last_value));
+    if (m_callbacks.text_edited) {
+        m_callbacks.text_edited();
+    }
 }
 
 void InputTextWithSpin::text_updated_internal()

@@ -72,7 +72,7 @@ ConfigRowItem::ConfigRowItem(
         m_input = emplace_back<ConfigItemComboBoxes>(index, data, m_preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::points:
-        m_input = emplace_back<ConfigItemPoints>(index, data);
+        m_input = emplace_back<ConfigItemPoints>(index, data, m_preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::color:
         m_input = emplace_back<ConfigItemColorPicker>(index, data);
