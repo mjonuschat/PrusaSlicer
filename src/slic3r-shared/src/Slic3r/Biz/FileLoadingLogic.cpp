@@ -778,4 +778,37 @@ void import_volumes_into_selected_object(
     }
 }
 
+tl::expected<Domain::Model, std::string>
+read_model_from_file(const std::string& input_file, IMessageDialogProvider* dialog_provider)
+{
+    const boost::filesystem::path input_file_path = boost::filesystem::path(input_file);
+    tl::expected<ReturnData, std::string> processed_file =
+        read_and_process_file(input_file, 1, dialog_provider);
+    if (!processed_file) {
+        return tl::make_unexpected(processed_file.error());
+    }
+
+    Domain::Model model;
+    if (processed_file.value().model.has_value()) {
+        model = std::move(processed_file.value().model.value());
+        model.add_default_instances();
+    } else if (processed_file.value().mesh.has_value()) {
+        ModelObject* new_object = model.add_object();
+        new_object->name        = input_file_path.filename().string();
+        new_object->input_file  = input_file_path.string();
+        Algorithms::ModelObject::add_volume(new_object, processed_file.value().mesh.value());
+        model.add_default_instances();
+    } else {
+        return tl::make_unexpected(_u8L("There is no data for either the mesh or the model."));
+    }
+
+    return model;
+}
+
+bool is_project_file(const std::string& input_file)
+{
+    return boost::algorithm::iends_with(input_file, ".3mf")
+        || boost::algorithm::iends_with(input_file, ".zip");
+}
+
 } // namespace Slic3r::Biz::FileLoadingLogic
