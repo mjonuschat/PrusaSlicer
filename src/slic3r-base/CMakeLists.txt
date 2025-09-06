@@ -49,8 +49,9 @@ elseif (UNIX)
 	)
 endif ()
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/Slic3r/Version.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/Slic3r/Version.hpp @ONLY)
 
-add_library(slic3r-base STATIC ${SLIC3R_BASE_FILES})
+add_library(slic3r-base STATIC ${SLIC3R_BASE_FILES} ${CMAKE_CURRENT_BINARY_DIR}/include/Slic3r/Version.hpp)
 # wxString conversions only with explicit encoding stated for all slic3r-* targets
 if ((NOT UNIX) OR APPLE)
 	# The wxNO_IMPLICIT_WXSTRING_ENCODING cannot be used along with wxUSE_UTF8_LOCALE_ONLY which gets defined on Linux
@@ -61,7 +62,7 @@ endif ()
 find_package(tl-expected REQUIRED)
 find_package(spdlog REQUIRED)
 slic3r_remap_configs(spdlog::spdlog RelWithDebInfo Release)
-target_include_directories(slic3r-base PUBLIC include)
+target_include_directories(slic3r-base PUBLIC include ${CMAKE_CURRENT_BINARY_DIR}/include)
 target_include_directories(slic3r-base PRIVATE src)
 target_link_libraries(slic3r-base PUBLIC
     spdlog::spdlog

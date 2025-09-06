@@ -7,10 +7,33 @@ add_executable(slic3r-app-launcher
     src/Slic3r/App/Launcher/main.cpp
     src/Slic3r/App/Launcher/ReadCLI.cpp
     src/Slic3r/App/Launcher/ReadCLI.hpp
+    src/Slic3r/App/Launcher/SentryScope.hpp
+    src/Slic3r/App/Launcher/SentryScope.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/slic3r-app-launcher.rc
 )
 
 target_link_libraries(slic3r-app-launcher PRIVATE slic3r-app-cli)
+
+# sentry integration
+if (SLIC3R_SENTRY)
+    find_package(sentry REQUIRED COMPONENTS crashpad)
+    target_compile_definitions(slic3r-app-launcher PRIVATE -DSLIC3R_SENTRY -DSLIC3R_SENTRY_DSN=${SLIC3R_SENTRY_DSN})
+
+    target_link_libraries(slic3r-app-launcher PRIVATE sentry::sentry)
+    if(TARGET sentry_crashpad::crashpad_handler)
+        message(STATUS "SENTRY crashpad handler target present")
+    endif ()
+
+    add_custom_command(
+            TARGET slic3r-app-launcher POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "$<TARGET_FILE:sentry_crashpad::crashpad_handler>"
+            "$<TARGET_FILE_DIR:slic3r-app-launcher>"
+            COMMENT "Copying crashpad_handler to build directory"
+    )
+endif (SLIC3R_SENTRY)
+#end of sentry integration part
+
 if (SLIC3R_GUI)
     target_link_libraries(slic3r-app-launcher PRIVATE slic3r-app-desktop)
     target_compile_definitions(slic3r-app-launcher PRIVATE SLIC3R_GUI)

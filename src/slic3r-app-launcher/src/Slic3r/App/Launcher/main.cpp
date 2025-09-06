@@ -8,6 +8,7 @@
 #include "Slic3r/App/CLI/CLIApp.hpp"
 #include "ReadCLI.hpp"
 #include "Slic3r/Log.hpp"
+#include "SentryScope.hpp"
 
 #include "boost/nowide/args.hpp"
 
@@ -32,6 +33,7 @@ extern "C" {
 
 int main(int argc, char* argv[])
 {
+    Slic3r::App::Launcher::SentryScope sentry;
     boost::nowide::args args(argc, argv); // RAII converting argv to UTF-8.
 
     Slic3r::App::InitParams init_params = Slic3r::App::Launcher::read_cli(argc, argv);

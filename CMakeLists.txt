@@ -21,6 +21,17 @@ option(SLIC3R_REPO_URL "Preset repo URL")
 option(SLIC3R_BUILD_TESTS "Build unit tests" ON)
 option(SLIC3R_GUI "Compile PrusaSlicer with GUI components (OpenGL, wxWidgets)" ON)
 option(SLIC3R_OPENGL_ES "Use OpenGL ES" OFF)
+
+option(SLIC3R_SENTRY_DSN "Use sentry crash reporting at given DSN (if filled)" "")
+
+if ("${SLIC3R_SENTRY_DSN}")
+    set(SLIC3R_SENTRY ON)
+    message(STATUS "Enabling sentry")
+else ()
+    set(SLIC3R_SENTRY OFF)
+    message(STATUS "Disabling sentry")
+endif ()
+
 set(SLIC3R_YAML yaml-cpp CACHE STRING "YAML library to use (allowed: libfyaml, yaml-cpp)")
 
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
