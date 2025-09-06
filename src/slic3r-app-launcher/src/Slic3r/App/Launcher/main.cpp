@@ -6,11 +6,12 @@
 #endif
 
 #include "Slic3r/App/CLI/CLIApp.hpp"
+#include "Slic3r/App/Launcher/ReadCLI.hpp"
 #include "Slic3r/Assert.hpp"
-#include "ReadCLI.hpp"
-#include "Slic3r/Log.hpp"
-#include "SentryScope.hpp"
 #include "Slic3r/Directories.hpp"
+#include "Slic3r/Log.hpp"
+
+#include "SentryScope.hpp"
 
 #include <boost/nowide/args.hpp>
 #include <boost/filesystem/path.hpp>
