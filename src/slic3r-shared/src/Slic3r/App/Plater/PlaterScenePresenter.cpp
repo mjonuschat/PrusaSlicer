@@ -425,7 +425,8 @@ void PlaterScenePresenter::update_selection_aabb(Domain::SelectionId project_id,
                 const auto* tag = n->tag_of_type<SceneNodeTag>();
                 if (tag == nullptr)
                     return false;
-                return tag->matches_element(e);
+                  return (selection.mode == Biz::Scene::SelectionMode::Instance) ?
+                      tag->matches_element(e) : tag->object_id == e.object_id && tag->volume_id == e.volume_id;
             },
             found_nodes
         );
