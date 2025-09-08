@@ -276,6 +276,6 @@ private:
         std::vector<Percentage>
     > m_value;
 
-    void assert_types_equal(const ConfigValue& other) const;
+    static void assert_types_equal(const ConfigValue& a, const ConfigValue& b);
 };
 }

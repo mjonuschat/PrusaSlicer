@@ -126,22 +126,22 @@ bool EnumWrapper::operator==(const EnumWrapper&) const = default;
 
 ConfigValue::ConfigValue(const char* str): ConfigValue(std::string{str}) {}
 
-ConfigValue::ConfigValue(const ConfigValue& other): m_value{other.m_value} {
-    assert_types_equal(other);
-}
+ConfigValue::ConfigValue(const ConfigValue& other) :
+    m_value{other.m_value}
+{}
 
-ConfigValue::ConfigValue(ConfigValue&& other) noexcept: m_value{std::move(other.m_value)} {
-    assert_types_equal(other);
-}
+ConfigValue::ConfigValue(ConfigValue&& other) noexcept :
+    m_value{std::move(other.m_value)}
+{}
 
 ConfigValue& ConfigValue::operator=(const ConfigValue& other) {
-    assert_types_equal(other);
+    assert_types_equal(*this, other);
     m_value = other.m_value;
     return *this;
 }
 
 ConfigValue& ConfigValue::operator=(ConfigValue&& other) noexcept {
-    assert_types_equal(other);
+    assert_types_equal(*this, other);
     m_value = std::move(other.m_value);
     return *this;
 }
@@ -150,18 +150,58 @@ ConfigValue::~ConfigValue() = default;
 
 bool ConfigValue::operator==(const ConfigValue& rhs) const = default;
 
-void ConfigValue::assert_types_equal(const ConfigValue& other) const {
-    return;
-    ASSERT(m_value.index() == other.m_value.index(), "Only a value of the same type can be assigned to ConfigItem!");
-    if (std::holds_alternative<EnumWrapper>(m_value)) {
+void ConfigValue::assert_types_equal(const ConfigValue& a, const ConfigValue& b) {
+    // TODO: Vectors are now "convertible" to scalars, to allow backend to have scalars where it used to have them.
+    // This is a temporary hack, until we solve the issue with backend using scalar values in places
+    // where there are now vectors.
+
+    if (std::holds_alternative<EnumVectorWrapper>(a.m_value)) {
+        ASSERT(a.m_value.index() == b.m_value.index() || std::holds_alternative<EnumWrapper>(b.m_value));
+        return;
+    }
+    if (std::holds_alternative<std::vector<bool>>(a.m_value)) {
+        ASSERT(a.m_value.index() == b.m_value.index() || std::holds_alternative<bool>(b.m_value));
+        return;
+    }
+    if (std::holds_alternative<std::vector<int>>(a.m_value)) {
+        ASSERT(a.m_value.index() == b.m_value.index() || std::holds_alternative<int>(b.m_value));
+        return;
+    }
+    if (std::holds_alternative<std::vector<std::optional<int>>>(a.m_value)) {
+        ASSERT(a.m_value.index() == b.m_value.index() || std::holds_alternative<std::optional<int>>(b.m_value));
+        return;
+    }
+    if (std::holds_alternative<std::vector<double>>(a.m_value)) {
+        ASSERT(a.m_value.index() == b.m_value.index() || std::holds_alternative<double>(b.m_value));
+        return;
+    }
+    if (std::holds_alternative<std::vector<std::string>>(a.m_value)) {
+        ASSERT(a.m_value.index() == b.m_value.index() || std::holds_alternative<std::string>(b.m_value));
+        return;
+    }
+    if (std::holds_alternative<std::vector<Domain::Vec2d>>(a.m_value)) {
+        ASSERT(a.m_value.index() == b.m_value.index() || std::holds_alternative<Domain::Vec2d>(b.m_value));
+        return;
+    }
+    if (std::holds_alternative<std::vector<FloatOrPercentage>>(a.m_value)) {
+        ASSERT(a.m_value.index() == b.m_value.index() || std::holds_alternative<FloatOrPercentage>(b.m_value));
+        return;
+    }
+    if (std::holds_alternative<std::vector<Percentage>>(a.m_value)) {
+        ASSERT(a.m_value.index() == b.m_value.index() || std::holds_alternative<Percentage>(b.m_value));
+        return;
+    }
+
+    ASSERT(a.m_value.index() == b.m_value.index(), "Only a value of the same type can be assigned to ConfigItem!");
+    if (std::holds_alternative<EnumWrapper>(a.m_value)) {
         ASSERT(
-            std::get<EnumWrapper>(m_value).type() == std::get<EnumWrapper>(other.m_value).type(),
+            std::get<EnumWrapper>(a.m_value).type() == std::get<EnumWrapper>(b.m_value).type(),
             "Enum types must be the same!"
         );
     }
-    if (std::holds_alternative<EnumVectorWrapper>(m_value)) {
+    if (std::holds_alternative<EnumVectorWrapper>(a.m_value)) {
         ASSERT(
-            std::get<EnumVectorWrapper>(m_value).type() == std::get<EnumVectorWrapper>(other.m_value).type(),
+            std::get<EnumVectorWrapper>(a.m_value).type() == std::get<EnumVectorWrapper>(b.m_value).type(),
             "Types of enums in vector must be the same!"
         );
     }

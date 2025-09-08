@@ -46,8 +46,9 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, ConfigLocation location)
 ConfigItems::ConfigItems(const ConfigDefinitions& defs, const ConfigLocation& location)
 {
     for (const ConfigItemDef& def : defs.defs()) {
-        if (def.location == location)
-            m_items.emplace_back(ConfigItem(def, location));
+        if (def.location == location) {
+            m_items.push_back(ConfigItem(def, location));
+        }
     }
 }
 
