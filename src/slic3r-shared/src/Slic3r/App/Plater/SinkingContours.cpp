@@ -35,18 +35,18 @@ static Domain::ElementRefs collect_selected_volumes_refs(const Domain::Project& 
 {
     Domain::ElementRefs ret;
     for (const auto& e : elements) {
-        if (!e.has_volume()) {
-            const Domain::ModelObject* obj = project.find_object_by_id(e.object_id);
-            if (obj != nullptr) {
+        const Domain::ModelObject* obj = project.find_object_by_id(e.object_id);
+        if (obj != nullptr) {
+            if (!e.has_volume()) {
                 for (const auto& v : obj->volumes) {
-                    if (v->is_model_part())
-                        ret.emplace_back(e.object_id, e.instance_id, v->id().id);
+                    if (v->is_model_part()){
+                        for (const Domain::ModelInstance* inst : obj->instances) {
+                            ret.emplace_back(e.object_id, inst->id().id, v->id().id);
+                        }
+                    }
                 }
             }
-        }
-        else if (!e.has_instance() && e.has_volume()) {
-            const Domain::ModelObject* obj = project.find_object_by_id(e.object_id);
-            if (obj != nullptr) {
+            else {
                 const Domain::ModelVolume* vol = project.find_volume_by_id(e.object_id, e.volume_id);
                 if (vol != nullptr && vol->is_model_part()) {
                     for (const Domain::ModelInstance* inst : obj->instances) {
@@ -55,16 +55,9 @@ static Domain::ElementRefs collect_selected_volumes_refs(const Domain::Project& 
                 }
             }
         }
-        else {
-            const Domain::ModelVolume* vol = project.find_volume_by_id(e.object_id, e.volume_id);
-            if (vol != nullptr && vol->is_model_part())
-                ret.emplace_back(e);
-        }
     }
-
     std::sort(ret.begin(), ret.end(), [](const Domain::ElementRef& a, const Domain::ElementRef& b) { return a < b; });
     ret.erase(std::unique(ret.begin(), ret.end(), [](const Domain::ElementRef& a, const Domain::ElementRef& b) { return a == b; }), ret.end());
-
     return ret;
 }
 
