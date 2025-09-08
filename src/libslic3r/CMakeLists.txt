@@ -389,7 +389,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/TriangleSetSampling.hpp
     src/libslic3r/TriangulateWall.hpp
     src/libslic3r/utils.cpp
-    #src/libslic3r/Utils/DirectoriesUtils.cpp
     src/libslic3r/Utils/JsonUtils.cpp
     src/libslic3r/Utils/JsonUtils.hpp
     src/libslic3r/Zipper.cpp
@@ -401,12 +400,6 @@ set(SLIC3R_SOURCES
 
     ${OpenVDBUtils_SOURCES}
 )
-
-if (APPLE)
-    list(APPEND SLIC3R_SOURCES
-        src/libslic3r/MacUtils.mm
-    )
-endif ()
 
 set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/AABBMesh.hpp
@@ -456,7 +449,6 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/SupportSpotsGenerator.hpp
     include/libslic3r/TriangleMeshSlicer.hpp
     include/libslic3r/Utils.hpp
-    #include/libslic3r/Utils/DirectoriesUtils.hpp
 
     "${CMAKE_CURRENT_BINARY_DIR}/include/libslic3r/libslic3r_version.h"
 )

@@ -8,7 +8,6 @@
 #include <boost/dll/runtime_symbol_info.hpp>
 
 #include <libslic3r/Utils.hpp>
-#include <libslic3r/Utils/DirectoriesUtils.hpp>
 
 namespace Slic3r::App {
 void init_paths()
