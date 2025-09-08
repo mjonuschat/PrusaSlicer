@@ -178,13 +178,23 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
     complete_and_bind_left_bar();
 
     m_tabs_bar_menus.set_account_menu_callbacks(
-        [&project_interactor]()
+        [this, &project_interactor]()
         {
             if (!project_interactor.user_account_interactor().is_logged_in()) {
                 AppServices::instance().dialog_manager().show_webview_dialog(
                     std::make_unique<Browser::BrowserLogicLogInRedirect>(project_interactor.user_account_interactor()),
                     &project_interactor
                 );
+                bool was_maximized = IsMaximized();
+                bool was_iconsized = IsIconized();
+                this->Show(true);
+                this->Restore();
+                this->Raise();
+                this->SetFocus();
+                // Maximize call fixes 2 issues.
+                // - On windows the window did de-maximize without reason.
+                // - On linux the windows did not come forward at all.
+                this->Maximize(was_maximized);
             } else {
                 project_interactor.user_account_interactor().do_log_out(true);
             }
@@ -206,15 +216,6 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
         {
             m_tabs_bar_menus.UpdateAccountMenu();
             m_left_bar->GetLeftBarCtrl()->UpdateAccountButton(avatar);
-        }
-    );
-
-    project_interactor.user_account_interactor().set_on_logged_in_callback(
-        [this]()
-        {
-            this->Show(true);
-            this->Raise();
-            this->SetFocus();
         }
     );
 

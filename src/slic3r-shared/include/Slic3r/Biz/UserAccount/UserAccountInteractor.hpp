@@ -73,14 +73,6 @@ public:
         update_menu_callback = std::move(cb);
     }
 
-    /**
-     * @brief Sets callback when account switches to logged in stage.
-     */
-    void set_on_logged_in_callback(std::function<void(void)> cb)
-    {
-        on_logged_in_callback = std::move(cb);
-    }
-
     void cancel_ongoing_session_action()
     {
         m_communication.cancel_ongoing_session_action();
@@ -109,6 +101,5 @@ private:
     std::map<std::string, std::string> m_account_user_data;
 
     std::function<void(bool)> update_menu_callback;
-    std::function<void(void)> on_logged_in_callback;
 };
 } // namespace Slic3r::Biz::UserAccount
