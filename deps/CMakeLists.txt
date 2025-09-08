@@ -232,7 +232,10 @@ if (DEP_DEBUG AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Making a separate debug build on Unix of wx is a nightmare
     list(APPEND DEP_DEBUG_EXCLUDES wxWidgets)
   endif ()
-  
+  # sentry does not build in debug mode, but it is only linked when used.
+  # Do not build the debug version on the assumption that it is only used in release mode anyway.
+  list(APPEND DEP_DEBUG_EXCLUDES sentry)
+
   # Create the list of targets needed in debug mode
   set(_build_list_dbg "")
   set(_build_list_filt ${_build_list})
