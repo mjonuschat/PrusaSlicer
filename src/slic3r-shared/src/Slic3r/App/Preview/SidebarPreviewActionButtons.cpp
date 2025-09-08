@@ -247,7 +247,7 @@ void SidebarPreviewActionButtons::on_init(Biz::ProjectInteractor* project_intera
     );
     m_layout_with_connect.layout_raw = m_layout_with_connect.layout.get();
 
-    switch_layout(ActionButtonsLayoutType::WithoutConnect);
+    update_buttons();
 }
 
 void SidebarPreviewActionButtons::switch_layout(ActionButtonsLayoutType layout_type)
@@ -282,13 +282,11 @@ void SidebarPreviewActionButtons::switch_layout(ActionButtonsLayoutType layout_t
 
 void SidebarPreviewActionButtons::on_user_account_id_success(bool, const std::string&)
 {
-    switch_layout(ActionButtonsLayoutType::WithConnect);
     update_buttons();
 }
 
 void SidebarPreviewActionButtons::on_user_account_logged_out()
 {
-    switch_layout(ActionButtonsLayoutType::WithoutConnect);
     update_buttons();
 }
 
@@ -324,6 +322,11 @@ void SidebarPreviewActionButtons::on_status_cache_changed(const Domain::SlicingI
 
 void SidebarPreviewActionButtons::update_buttons()
 {
+    const bool logged_in{m_project_interactor->user_account_interactor().is_logged_in()};
+    switch_layout(
+        logged_in ? ActionButtonsLayoutType::WithConnect : ActionButtonsLayoutType::WithoutConnect
+    );
+
     const Domain::SlicingId slicing_id{m_project_interactor->selected_bed_slicing_id()};
     const auto optional_status{m_project_interactor->status_cache().get_status(slicing_id)};
     if (!optional_status) {
