@@ -22,13 +22,6 @@
 #include "Slic3r/Utils.hpp"
 #include "Slic3r/Math.hpp"
 
-// Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
-   #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY
-// #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY "-alpha"
-// #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY "-beta"
-
-
-
 #define GCODEVIEWER_APP_NAME "PrusaSlicer G-code Viewer"
 #define GCODEVIEWER_APP_KEY  "PrusaSlicerGcodeViewer"
 
