@@ -10,6 +10,15 @@
 
 using namespace Slic3r::App::Yoga;
 
+namespace {
+double parse_percentage(const std::string& data)
+{
+    std::string const parsed_value = std::regex_replace(data, std::regex("%"), "");
+
+    return std::stod(parsed_value);
+}
+} // namespace
+
 namespace Slic3r::App {
 
 ConfigItemComboBox::ConfigItemComboBox(
@@ -34,28 +43,95 @@ ConfigItemComboBox::ConfigItemComboBox(
     m_tooltip.content_item()->set_width(350);
     m_tooltip.set_text_wrap(true);
 
+    // TODO: The callbacks are disgusting, clean them up
+
     callbacks().selection_changed = [this](int selected) {
         if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
-            m_preset_interactor
-                .set_item_value(*m_state, Domain::ConfigValue{m_double_validator->value()});
+            if (*m_state->def().type == typeid(double)) {
+                m_preset_interactor.set_item_value(
+                    *m_state,
+                    Domain::ConfigValue{
+                        std::get<double>(m_state->def().choices.at(current_index()).first)
+                    }
+                );
+            } else if (*m_state->def().type == typeid(Domain::Percentage)) {
+                m_preset_interactor.set_item_value(
+                    *m_state,
+                    Domain::ConfigValue{Domain::Percentage{
+                        std::get<double>(m_state->def().choices.at(current_index()).first)
+                    }}
+                );
+            } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
+                // Assume it is always Float :((
+                m_preset_interactor.set_item_value(
+                    *m_state,
+                    Domain::ConfigValue{Domain::FloatOrPercentage{
+                        std::get<double>(m_state->def().choices.at(current_index()).first)
+                    }}
+                );
+            }
         } else if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
-            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{m_int_validator->value()});
+            m_preset_interactor.set_item_value(
+                *m_state,
+                Domain::ConfigValue{std::get<int>(m_state->def().choices.at(current_index()).first)}
+            );
         } else if (*m_state->def().type == typeid(Domain::EnumWrapper)) {
             Domain::EnumWrapper values = m_state->get<Domain::EnumWrapper>();
             values.set_string(values.def().at(static_cast<size_t>(selected)).str_serialized);
             m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{values});
         }
     };
+
+    callbacks().text_edited = [this]() {
+        // TODO: Unify this with ConfigItemTextField
+        if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
+            if (*m_state->def().type == typeid(double)) {
+                m_preset_interactor
+                    .set_item_value(*m_state, Domain::ConfigValue{m_double_validator->value()});
+            } else if (*m_state->def().type == typeid(Domain::Percentage)) {
+                m_preset_interactor.set_item_value(
+                    *m_state,
+                    Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}}
+                );
+            } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
+                if (m_percentage_validator->percentage_symbol()) {
+                    m_preset_interactor.set_item_value(
+                        *m_state,
+                        Domain::ConfigValue{Domain::FloatOrPercentage{
+                            Domain::Percentage{m_percentage_validator->value()}
+                        }}
+                    );
+                } else {
+                    m_preset_interactor.set_item_value(
+                        *m_state,
+                        Domain::ConfigValue{Domain::FloatOrPercentage{m_percentage_validator->value()}}
+                    );
+                }
+            }
+        } else if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
+            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{m_int_validator->value()});
+        }
+    };
 }
 
 void ConfigItemComboBox::on_data_update()
 {
+    // TODO: the validators gets constantly recreated, clean this up
+
     std::vector<std::string> items;
 
     if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
         set_editable(true);
-        m_double_validator = std::make_unique<DoubleValidator>();
-        set_validator(m_double_validator.release());
+
+        if (*m_state->def().type == typeid(Domain::Percentage)
+            || *m_state->def().type == typeid(Domain::FloatOrPercentage))
+        {
+            m_percentage_validator = std::make_unique<PercentageValidator>();
+            set_validator(m_percentage_validator.release());
+        } else {
+            m_double_validator = std::make_unique<DoubleValidator>();
+            set_validator(m_double_validator.release());
+        }
 
         for (const auto& choice : m_state->def().choices) {
             items.push_back(choice.second);

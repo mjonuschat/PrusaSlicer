@@ -9,6 +9,24 @@
 #include <fmt/format.h>
 #include <cmath>
 
+namespace {
+std::string_view trim(std::string_view string)
+{
+    auto begin = std::find_if_not(string.begin(), string.end(), [](unsigned char ch) {
+        return std::isspace(ch);
+    });
+
+    auto end = std::find_if_not(string.rbegin(), string.rend(), [](unsigned char ch) {
+        return std::isspace(ch);
+    }).base();
+
+    if (begin >= end) {
+        return {}; // empty view
+    }
+    return std::string_view(&*begin, static_cast<size_t>(end - begin));
+}
+} // namespace
+
 namespace Slic3r::App::Yoga {
 
 Validator::~Validator() {}
@@ -114,6 +132,27 @@ std::optional<int> DoubleValidator::precision() const
 void DoubleValidator::set_precision(int precision)
 {
     m_precision = precision;
+}
+
+PercentageValidator::PercentageValidator(double from, double to) : DoubleValidator(from, to) {}
+
+std::string PercentageValidator::process(const std::string& input)
+{
+    std::string_view trimmed_view = trim(input);
+    if (trimmed_view.back() == '%') {
+        m_percentage_symbol = true;
+        trimmed_view.remove_suffix(1); // so it would confuse parser
+    } else {
+        m_percentage_symbol = false;
+    }
+
+    const std::string trimmed_string{trimmed_view};
+    return DoubleValidator::process(trimmed_string);
+}
+
+bool PercentageValidator::percentage_symbol() const
+{
+    return m_percentage_symbol;
 }
 
 } // namespace Slic3r::App::Yoga

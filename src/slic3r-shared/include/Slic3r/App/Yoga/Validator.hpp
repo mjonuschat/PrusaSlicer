@@ -74,4 +74,20 @@ private:
     double m_to    = 0;
     std::optional<int> m_precision;
 };
+
+class PercentageValidator : public DoubleValidator
+{
+public:
+    PercentageValidator(
+        double from = std::numeric_limits<double>::lowest(),
+        double to   = std::numeric_limits<double>::max()
+    );
+
+    std::string process(const std::string& input) override;
+
+    bool percentage_symbol() const;
+
+private:
+    bool m_percentage_symbol = false;
+};
 } // namespace Slic3r::App::Yoga
