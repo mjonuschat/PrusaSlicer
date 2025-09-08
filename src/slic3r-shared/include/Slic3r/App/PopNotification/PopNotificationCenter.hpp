@@ -27,8 +27,6 @@ class PopNotificationCenter :
 public:
     PopNotificationCenter(Biz::ProjectInteractor& project_interactor);
 
-    ~PopNotificationCenter();
-
     // Job
     void on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status) override;
 

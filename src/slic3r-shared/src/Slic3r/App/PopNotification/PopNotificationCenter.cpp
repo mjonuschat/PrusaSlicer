@@ -22,10 +22,6 @@ PopNotificationCenter::PopNotificationCenter(Biz::ProjectInteractor& project_int
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
 }
 
-PopNotificationCenter::~PopNotificationCenter() {
-    m_project_interactor.status_cache().remove_listener<Biz::IStatusCacheChangedListener>(this);
-}
-
 namespace {
 std::string job_status_to_string(const JobStatus status)
 {
