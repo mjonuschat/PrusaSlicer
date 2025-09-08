@@ -10,6 +10,8 @@
 
 #include "Slic3r/Assert.hpp"
 
+#include <cfloat>
+
 using Slic3r::Domain::ColorRGBA;
 
 namespace Slic3r::App::Scene {
