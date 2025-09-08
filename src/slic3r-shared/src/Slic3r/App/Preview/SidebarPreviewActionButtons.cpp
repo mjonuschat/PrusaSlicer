@@ -56,6 +56,39 @@ std::function<void()> get_export_action(Biz::ProjectInteractor* project_interact
     };
 }
 
+std::function<void()> get_export_flash_action(Biz::ProjectInteractor* project_interactor)
+{
+    auto call_do_export{
+        [=]()
+        {
+            GCodeExportPathSelect export_path_select(true);
+            export_path_select.show_modal_dialog(
+                project_interactor->removable_drive_service().get_path_on_removable_drive(
+                    project_interactor->last_export_path(true)
+                ),
+                project_interactor->get_project_name(project_interactor->selected_project_id()),
+                [=](bool result, const std::vector<boost::filesystem::path>& file_paths)
+                {
+                    if (result) {
+                        project_interactor->do_export(
+                            project_interactor->selected_bed_slicing_id(),
+                            file_paths.front()
+                        );
+                    }
+                }
+            );
+        }
+    };
+
+    return [=]()
+    {
+        IMainThreadDispatcher& dispatcher{PlatformServices::instance().main_thread_dispatcher()};
+        if (!dispatcher.dispatch_on_main_thread_after(call_do_export)) {
+            SPDLOG_INFO("Export request not dispatched!");
+        }
+    };
+}
+
 std::function<void()> get_send_to_connect_action(Biz::ProjectInteractor* project_interactor)
 {
     auto send_to_connect{
@@ -92,10 +125,10 @@ std::unique_ptr<LayoutButton> get_export_flash_button(Biz::ProjectInteractor* pr
     auto result{std::make_unique<LayoutButton>(
         "",
         Render::Icon::SavePrintToFlash,
-        "Export to flash drive\nInsert a flash drive to enable.\n(WIP)"
+        "Export to a flash drive"
     )};
     style_secondary_button(result.get());
-    result->set_enabled(false);
+    result->callbacks().action = get_export_flash_action(project_interactor);
     return result;
 }
 
@@ -104,7 +137,7 @@ std::unique_ptr<LayoutButton> get_send_directly_button(Biz::ProjectInteractor* p
     auto result{std::make_unique<LayoutButton>(
         "",
         Render::Icon::SavePrintToLocal,
-        "Send directly to printer\nAdd a physical printer to enable.\n(WIP)"
+        "Send directly to a printer\nAdd a physical printer to enable.\n(WIP)"
     )};
     style_secondary_button(result.get());
     result->set_enabled(false);
@@ -198,6 +231,7 @@ void SidebarPreviewActionButtons::on_init(Biz::ProjectInteractor* project_intera
     m_project_interactor->scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
         this
     );
+    m_project_interactor->removable_drive_service().add_status_listener(this);
 
     const float gap{5};
 
@@ -320,6 +354,14 @@ void SidebarPreviewActionButtons::on_status_cache_changed(const Domain::SlicingI
     update_buttons();
 }
 
+void SidebarPreviewActionButtons::on_removable_drive_status_changed(
+    const boost::filesystem::path&,
+    Biz::RemovableDrive::RemovableDriveStatus s
+)
+{
+    update_buttons();
+}
+
 void SidebarPreviewActionButtons::update_buttons()
 {
     const bool logged_in{m_project_interactor->user_account_interactor().is_logged_in()};
@@ -389,6 +431,12 @@ void SidebarPreviewActionButtons::update_buttons()
             primary_button->set_enabled(true);
             primary_button->set_tooltip(export_tooltip);
             primary_button->callbacks().action = get_export_action(m_project_interactor);
+
+            if (m_project_interactor->removable_drive_service().has_removable_drives()) {
+                secondary_buttons.at(1)->set_enabled(true);
+                secondary_buttons.at(1)->callbacks().action = get_export_flash_action(m_project_interactor);
+            }
+
         } else if (layout_type == ActionButtonsLayoutType::WithConnect) {
             primary_button->set_label("Send to Connect");
             primary_button->set_tooltip("Send to Connect");
@@ -396,6 +444,10 @@ void SidebarPreviewActionButtons::update_buttons()
 
             secondary_buttons.at(0)->set_enabled(true);
             secondary_buttons.at(0)->callbacks().action = get_export_action(m_project_interactor);
+            if (m_project_interactor->removable_drive_service().has_removable_drives()) {
+                secondary_buttons.at(2)->set_enabled(true);
+                secondary_buttons.at(2)->callbacks().action = get_export_flash_action(m_project_interactor);
+            }
         } else {
             PANIC("Unreachable!");
         }

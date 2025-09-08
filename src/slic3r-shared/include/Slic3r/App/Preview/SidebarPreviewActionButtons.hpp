@@ -28,7 +28,8 @@ class SidebarPreviewActionButtons :
     public SidebarActionButtons,
     public Biz::UserAccount::IUserAccountListener,
     public Biz::IStatusCacheChangedListener,
-    public Biz::ISelectedBedInstancesChangedListener
+    public Biz::ISelectedBedInstancesChangedListener,
+    public Biz::RemovableDrive::IRemovableDriveStatusListener
 {
 public:
     SidebarPreviewActionButtons(Navigator* render_module_navigator);
@@ -48,6 +49,11 @@ public:
         const Biz::Scene::BedSelection& bed_selection
     ) override;
     void on_status_cache_changed(const Domain::SlicingId slicing_id) override;
+
+    void on_removable_drive_status_changed(
+        const boost::filesystem::path&,
+        Biz::RemovableDrive::RemovableDriveStatus
+    ) override;
 
 private:
     ActionButtonsLayout m_layout_with_connect;
