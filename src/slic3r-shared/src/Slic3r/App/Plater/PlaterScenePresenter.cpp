@@ -458,6 +458,11 @@ void PlaterScenePresenter::update_selection_aabb(Domain::SelectionId project_id,
     }
 }
 
+void PlaterScenePresenter::update_sinking_contours_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info)
+{
+    project_context().sinking_contours().update_visibility(e, screen_info, m_workbench.project(m_selected_project_id), scene());
+}
+
 void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
 {
     auto& scn                      = scene();
@@ -480,7 +485,7 @@ void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, con
     }
 
     invoke_bed_visually_changed(project_id);
-    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scn, instances );
+    project_context().sinking_contours().update_scene(m_device, project, scn, instances);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -530,7 +535,8 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
 
-    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scn, elements);
+    project_context().sinking_contours().update_scene(m_device, proj, scn, elements);
+    project_context().sinking_contours().set_selection(elements);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -543,12 +549,13 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
     for (const auto& v : volumes)
         object_ids.insert(v.object_id);
     auto& scn = scene();
+    const Domain::Project& project = m_workbench.project(project_id);
 
     Scene::visit_conditional(scn.root(), [&](Scene::Node& n) {
         const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
         if (t != nullptr && t->volume_id == 0 && object_ids.contains(t->object_id)) {
             // root of the instance
-            const auto* obj = m_workbench.project(project_id).find_object_by_id(t->object_id);
+            const auto* obj = project.find_object_by_id(t->object_id);
             const auto* inst = Domain::find_by_id<Domain::ModelInstance>(obj->instances, t->instance_id);
             Scene::NodeBuilder builder{scn};
             for (const auto& e : volumes) {
@@ -565,7 +572,7 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
     });
 
     invoke_bed_visually_changed(project_id);
-    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scn, volumes);
+    project_context().sinking_contours().update_scene(m_device, project, scn, volumes);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -611,7 +618,8 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
 
-    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scn, elements);
+    project_context().sinking_contours().update_scene(m_device, proj, scn, elements);
+    project_context().sinking_contours().set_selection(elements);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -687,9 +695,25 @@ void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene:
     if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
         // clear depth buffer so all gizmo handles are rendered over document objects
         cmd_buf.clear_buffers(false, true);
+    else if (layer_idx == int(PlaterSceneLayer::ObjectAccessoriesOnTop))
+        cmd_buf.set_depth_test_enabled(false);
     else if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::AlwaysOnTop))
         // clear depth buffer to ensure geometry belonging to this layer is always rendered over any other object
         cmd_buf.clear_buffers(false, true);
+}
+
+void PlaterScenePresenter::on_opaque_pass_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
+{
+    MinimalSceneRenderCustomizer::on_opaque_pass_begin(cmd_buf, layer_idx);
+    if (layer_idx == int(PlaterSceneLayer::ObjectAccessoriesOnTop))
+        cmd_buf.set_depth_test_enabled(false);
+}
+
+void PlaterScenePresenter::on_transparent_pass_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
+{
+    MinimalSceneRenderCustomizer::on_transparent_pass_begin(cmd_buf, layer_idx);
+    if (layer_idx == int(PlaterSceneLayer::ObjectAccessoriesOnTop))
+        cmd_buf.set_depth_test_enabled(false);
 }
 
 void PlaterScenePresenter::remove_beds(Domain::SelectionId project_id, const Domain::BedRefs& instances)

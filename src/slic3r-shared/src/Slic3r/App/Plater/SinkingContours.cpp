@@ -240,7 +240,10 @@ static void add_newly_sinking(Render::Device& device, const Domain::Project& pro
                 .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::ObjectAccessoriesRegular))
                 .set_shadows({ false, false });
 
-            scene.add_child(builder.build().release(), n);
+            Scene::Node* child = builder.build().release();
+            // set also the override material to avoid the material being replaced by the parent's one
+            child->set_material_override(material);
+            scene.add_child(child, n);
         }
     }
 }
@@ -280,7 +283,8 @@ void SinkingContours::update_scene(Render::Device& device, const Domain::Project
     add_newly_sinking(device, project, scene, nodes, material, m_model_geometry_manager, processed_volumes);
 }
 
-void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info, Scene::Scene& scene)
+void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info, const Domain::Project& project,
+    Scene::Scene& scene)
 {
     if (e.type() == Platform::MouseEvent::Type::Move) {
 
@@ -293,15 +297,17 @@ void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Ren
             dynamic_cast<Scene::MeshRenderNodeComponent*>(n->render_component())->set_layer_index(Scene::RenderLayerId(PlaterSceneLayer::ObjectAccessoriesRegular));
         }
 
-        Scene::NodePickResults pick_results;
-        Scene::Ray pick_ray;
-        scene.pick_at(
-            screen_info.mouse_to_screen(e.x()),
-            screen_info.mouse_to_screen(e.y()),
-            pick_results, &pick_ray
-        );
+        Scene::Node::NodeList highlight_nodes;
 
-        if (!pick_results.empty()) {
+        if (m_selection.empty()) {
+            Scene::NodePickResults pick_results;
+            Scene::Ray pick_ray;
+            scene.pick_at(
+                screen_info.mouse_to_screen(e.x()),
+                screen_info.mouse_to_screen(e.y()),
+                pick_results, &pick_ray
+            );
+
             for (auto& [n, t] : pick_results) {
                 const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
                 if (tag != nullptr) {
@@ -310,10 +316,30 @@ void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Ren
                         return tag != nullptr;
                     }, true);
                     if (child != nullptr)
-                        dynamic_cast<Scene::MeshRenderNodeComponent*>(child->render_component())->set_layer_index(Scene::RenderLayerId(PlaterSceneLayer::ObjectAccessoriesOnTop));
+                        highlight_nodes.push_back(child);
                     break;
                 }
             }
+        }
+        else {
+            Domain::ElementRefs selected_volumes_refs = collect_selected_volumes_refs(project, m_selection);
+            Scene::Node::NodeList nodes = collect_selected_nodes(scene, selected_volumes_refs);
+            DEBUG_ASSERT(selected_volumes_refs.size() == nodes.size());
+
+            for (Scene::Node* n : nodes) {
+                Scene::Node* child = n->query_first([](const Scene::Node* c) {
+                    const SinkingSceneNodeTag* tag = c->tag_of_type<SinkingSceneNodeTag>();
+                      return tag != nullptr;
+                    }, true);
+                if (child != nullptr)
+                    highlight_nodes.push_back(child);
+            }
+
+            m_selection.clear();
+        }
+
+        for (auto n : highlight_nodes) {
+            dynamic_cast<Scene::MeshRenderNodeComponent*>(n->render_component())->set_layer_index(Scene::RenderLayerId(PlaterSceneLayer::ObjectAccessoriesOnTop));
         }
     }
 }

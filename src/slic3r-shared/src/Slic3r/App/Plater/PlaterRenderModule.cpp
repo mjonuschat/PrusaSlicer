@@ -794,6 +794,7 @@ void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::Al
 void PlaterRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
 {
     m_gizmo_manager->on_scene_mouse_event(e, m_screen_info);
+    m_scene_presenter->update_sinking_contours_visibility(e, m_screen_info);
 }
 
 void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& e)

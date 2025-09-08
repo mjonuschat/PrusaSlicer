@@ -21,10 +21,6 @@ class Device;
 class ScreenInfo;
 } // namespace Slic3r::App::Render
 
-namespace Slic3r::Biz::Scene {
-struct ObjectSelection;
-} // namespace Slic3r::Biz::Scene
-
 namespace Slic3r::App::Plater {
 
 class SinkingContours
@@ -33,13 +29,13 @@ public:
     using ModelGeometryManager = Render::GeometryManager<SinkingAuxiliaryElementId>;
 
     void update_scene(Render::Device& device, const Domain::Project& project, Scene::Scene& scene, const Domain::ElementRefs& elements);
-    void update_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info, Scene::Scene& scene);
+    void update_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info, const Domain::Project& project, Scene::Scene& scene);
 
-    void set_selection(Biz::Scene::ObjectSelection* selection) { m_selection = selection; }
+    void set_selection(const Domain::ElementRefs& selection) { m_selection = selection; }
 
 private:
     ModelGeometryManager m_model_geometry_manager;
-    Biz::Scene::ObjectSelection* m_selection{ nullptr };
+    Domain::ElementRefs m_selection;
 };
 
 } // namespace Slic3r::App::Plater
