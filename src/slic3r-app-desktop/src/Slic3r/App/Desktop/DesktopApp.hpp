@@ -14,7 +14,6 @@
 
 #include <Slic3r/Biz/ProjectInteractor.hpp>
 #include "Slic3r/App/Navigator.hpp"
-#include "Slic3r/App/AppConfig.hpp"
 
 namespace Slic3r::App::Desktop {
 class MainFrame;
@@ -51,8 +50,6 @@ public:
 
 private:
     void init_translations();
-
-    std::unique_ptr<AppConfig> m_appconfig;
 
     std::unique_ptr<wxGLContext> m_gl_context; // do NOT change order of this attribute
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;

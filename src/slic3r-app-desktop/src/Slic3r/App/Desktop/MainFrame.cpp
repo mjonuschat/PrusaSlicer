@@ -6,12 +6,14 @@
 
 #include <Slic3r/Biz/Platform/Termination.hpp>
 #include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/AppConfig.hpp"
+#include "Slic3r/App/IDialogManager.hpp"
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/format.hpp>
 #include <Slic3r/App/WX/I18N.hpp>
 #include <Slic3r/App/WX/MsgDialog.hpp>
-#include <Slic3r/App/WX/WebView/WebViewPanel.hpp>
+#include <Slic3r/App/WX/WebView/WebViewFactory.hpp>
 
 #include <Slic3r/App/Localization.hpp>
 #include "Slic3r/App/Browser/BrowserLogicPrintables.hpp"
@@ -318,10 +320,15 @@ static wxPanel* tmp_panel(wxWindow* parent, const wxString& info_text)
 
 void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
 {
+    if (!AppServices::instance().app_config().is_connect_enabled()) {
+        return;
+    }
+    assert(!m_printers_page_added);
     std::unique_ptr<App::Browser::BrowserLogicConnectPage> logic = std::make_unique<App::Browser::BrowserLogicConnectPage>(project_interactor);
-    WebView::WebViewPanel* webview_panel = new WX::WebView::WebViewPanel(m_left_bar, std::move(logic), false);
+    WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, std::move(logic), false);
     project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
-    m_left_bar->AddNewPage(webview_panel, from_u8(L("Printers")), "lb_printers");
+    m_left_bar->InsertNewPage(0, webview_panel, from_u8(L("Printers")), "lb_printers");
+    m_printers_page_added = true;
 }
 
 void MainFrame::init_projects_page()
@@ -338,10 +345,15 @@ void MainFrame::init_slicing_page()
 
 void MainFrame::init_printables_page(Biz::ProjectInteractor& project_interactor)
 {
+    if (!AppServices::instance().app_config().is_printables_enabled()) {
+        return;
+    }
+    assert(!m_printables_page_added);
     std::unique_ptr<App::Browser::BrowserLogicPrintables> logic = std::make_unique<App::Browser::BrowserLogicPrintables>(project_interactor);
-    WebView::WebViewPanel* webview_panel = new WX::WebView::WebViewPanel(m_left_bar, std::move(logic), false);
+    WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, std::move(logic), false);
     project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
     m_left_bar->AddNewPage(webview_panel, from_u8(L("Printables")), "lb_printables");
+    m_printables_page_added = true;
 }
 
 void MainFrame::complete_and_bind_left_bar()
@@ -350,6 +362,36 @@ void MainFrame::complete_and_bind_left_bar()
     m_left_bar->SetSelection(slicing_page_id);
 
     m_left_bar->Bind(wxEVT_BOOKCTRL_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {});
+}
+
+void MainFrame::update_left_bar()
+{
+    assert(m_left_bar);
+    
+    if (m_printables_page_added && !AppServices::instance().app_config().is_printables_enabled()) {
+        // Expecting Printeables tab is always last
+        int printables_page_index = m_left_bar->GetPageCount() - 1;
+        if (m_left_bar->GetSelection() == printables_page_index) {
+            m_left_bar->SetSelection(printables_page_index == 0 ? 1 : 0);
+        }
+        m_left_bar->RemovePage(printables_page_index);
+        m_printables_page_added = false;
+    } else if (!m_printables_page_added && AppServices::instance().app_config().is_printables_enabled()) {
+        init_printables_page(m_project_interactor);
+    }
+
+    if (m_printers_page_added && !AppServices::instance().app_config().is_connect_enabled()) {
+        // Expecting Printers tab is always first
+        if (m_left_bar->GetSelection() == 0) {
+            m_left_bar->SetSelection(1);
+        }
+        m_left_bar->RemovePage(0);
+        m_printers_page_added = false;
+    } else if (!m_printers_page_added && AppServices::instance().app_config().is_connect_enabled()) {
+        init_printer_page(m_project_interactor);
+    }  
+
+    m_left_bar->ShowUserAccount(AppServices::instance().app_config().is_prusa_account_enabled());
 }
 
 void MainFrame::sys_color_changed()

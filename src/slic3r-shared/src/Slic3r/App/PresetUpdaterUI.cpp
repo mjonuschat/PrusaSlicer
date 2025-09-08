@@ -2,6 +2,7 @@
 
 #include "Slic3r/Log.hpp"
 #include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/IDialogManager.hpp"
 
 #include <fmt/format.h>
 

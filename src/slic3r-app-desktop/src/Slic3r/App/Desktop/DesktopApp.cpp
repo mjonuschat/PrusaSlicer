@@ -19,6 +19,7 @@
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
 #include <Slic3r/App/PopNotification/PopNotificationCenter.hpp>
 #include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/AppConfig.hpp"
 #include <Slic3r/App/WX/FileExplorerHandler.hpp>
 
 #include "Slic3r/Directories.hpp"
@@ -157,17 +158,7 @@ int run(const Slic3r::App::InitParams& init_params)
 
 bool DesktopApp::OnInit()
 {
-    {
-        const std::string appconfig_filename = Slic3r::data_dir() + "/PrusaSlicer.json";
-        if (auto apc = AppConfig::load_appconfig(appconfig_filename); apc)
-            m_appconfig = std::make_unique<AppConfig>(apc.value());
-        else {
-            SPDLOG_ERROR("Failed to parse app config. Creating a new one from default.");
-            m_appconfig = std::make_unique<AppConfig>();
-        }
-        m_appconfig->set_filename(appconfig_filename);
-    }
-    
+    std::unique_ptr<AppConfig> app_config = AppConfig::create_app_config();
 
     // Set initialization of image handlers before any UI actions - See GH issue #7469
     wxInitAllImageHandlers();
@@ -180,7 +171,7 @@ bool DesktopApp::OnInit()
 
     bool is_editor     = true; // is_editor();
     SplashScreen* scrn = nullptr;
-    if (m_appconfig->get<bool>("show_splash_screen")) {
+    if (app_config->get<bool>("show_splash_screen")) {
         // Detect position (display) to show the splash screen
         // Now this position is equal to the mainframe position
         wxPoint splashscreen_pos      = wxDefaultPosition;
@@ -220,6 +211,8 @@ bool DesktopApp::OnInit()
 
     auto& platform_services{PlatformServices::instance()};
     auto& app_services{AppServices::instance()};
+
+    app_services.set_app_config(std::move(app_config));
 
     platform_services.set_main_thread_dispatcher(std::make_unique<WXMainThreadDispatcher>());
 

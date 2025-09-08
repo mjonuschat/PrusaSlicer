@@ -21,7 +21,7 @@
 namespace Slic3r::App::WX::WebView {
 
 WebViewPanel::WebViewPanel(wxWindow* parent, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create) :
-    wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize),
+    AbstractWebViewPanel(parent),
     m_logic(std::move(logic))
 {
     topsizer    = new wxBoxSizer(wxVERTICAL);

@@ -1,6 +1,6 @@
 #include "Slic3r/App/WX/DialogManager.hpp"
 
-#include "Slic3r/App/WX/WebView/WebViewDialog.hpp"
+#include "Slic3r/App/WX/WebView/WebViewFactory.hpp"
 #include "Slic3r/App/WX/MsgDialog.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
@@ -78,12 +78,13 @@ DialogManager::show_file_dialog(FileDialogType dialog_type, const std::string& d
     callback(true, out_paths);
 }
 
+
 void DialogManager::show_webview_dialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, Biz::ProjectInteractor* project_interactor)
 {
-    WebView::WebViewDialog dlg(std::move(logic));
-    project_interactor->user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(&dlg);
-    dlg.ShowModal();
-    project_interactor->user_account_interactor().remove_listener<Biz::UserAccount::IUserAccountListener>(&dlg);
+    std::unique_ptr<WebView::AbstractWebViewDialog> dlg = WebView::new_web_view_dialog(std::move(logic));
+    project_interactor->user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(dlg.get());
+    dlg->ShowModal();
+    project_interactor->user_account_interactor().remove_listener<Biz::UserAccount::IUserAccountListener>(dlg.get());
 }
 
 void DialogManager::show_yesno_dialog(const std::string& title, const std::string& text, const YesNoCallback& callback)

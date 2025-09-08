@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/MaterialSettingsDialog.hpp"
 #include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/IDialogManager.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/ConfigSubcategoryListView.hpp"

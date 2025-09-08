@@ -11,6 +11,7 @@ namespace Slic3r::Biz::UserAccount::TokenStore {
 
 bool save_tokens(const StoreData& secrets)
 {
+#ifdef SLIC3R_HAS_WEBKIT
     std::string at = secrets.access_token;
     if (!at.empty())
         at = at.substr(0,5) + "..." + at.substr(at.size()-5);
@@ -28,11 +29,17 @@ bool save_tokens(const StoreData& secrets)
          return false;
     }
     return true;
+#else
+    SPDLOG_WARN("Saving User Account tokens is not allowed by SLIC3R_ENABLE_WEBKIT.");
+    return false;
+#endif // SLIC3R_HAS_WEBKIT
+
 }
 
 
 bool load_tokens(StoreData& result)
 {
+#ifdef SLIC3R_HAS_WEBKIT
     std::string key0, tokens;
     if (!Platform::PlatformServices::instance().secret_store().load_secret("PrusaAccount", key0, tokens))
     {
@@ -58,6 +65,11 @@ bool load_tokens(StoreData& result)
     result.master_pid =         token_list.size() > 4 ? token_list[4] : std::string();
 
     return true;
+#else
+    SPDLOG_WARN("Loading User Account tokens is not allowed by SLIC3R_ENABLE_WEBKIT.");
+    return false;
+#endif // SLIC3R_HAS_WEBKIT
+
 }
 
 }

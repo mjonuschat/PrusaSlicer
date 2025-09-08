@@ -1,6 +1,7 @@
 #include "Slic3r/App/Browser/BrowserLogicPrintables.hpp"
 
 #include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/Browser/BrowserLogicPrintablesToConnect.hpp"
 
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"

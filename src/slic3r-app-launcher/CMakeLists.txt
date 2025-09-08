@@ -50,7 +50,7 @@ if (SLIC3R_GUI)
     target_link_libraries(slic3r-app-launcher PRIVATE slic3r-app-desktop)
     target_compile_definitions(slic3r-app-launcher PRIVATE SLIC3R_GUI)
 
-    if (MSVC)
+    if (MSVC AND SLIC3R_ENABLE_WEBKIT)
         find_file(WEBVIEW2_DLL_PATH
             NAMES WebView2Loader.dll
             PATH_SUFFIXES bin

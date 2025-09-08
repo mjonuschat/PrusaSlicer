@@ -50,6 +50,8 @@ public:
     void register_win32_callbacks();
 #endif // WIN32
 
+    void update_left_bar();
+    
 private:
     // Move to BasicAppConfig
     /*ConfigOptionMode*/ int m_mode{1 /*comAdvanced*/};
@@ -92,6 +94,10 @@ private:
     void* m_hDeviceNotify{nullptr};
     uint32_t m_ulSHChangeNotifyRegister{0};
 #endif // WIN32
+
+    bool m_printables_page_added {false};
+    bool m_printers_page_added {false};
+
 };
 
 } // namespace Slic3r::App::Desktop

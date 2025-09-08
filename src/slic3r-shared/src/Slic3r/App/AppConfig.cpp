@@ -4,6 +4,8 @@
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Log.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include "nlohmann/json.hpp"
 #include "boost/filesystem.hpp"
@@ -33,11 +35,34 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->label = L("Show splashscreen");
     def->tooltip = L("Show splashscreen during application start.");
     def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("allow_web_services", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->label = L("Allow Web Services");
+    def->tooltip = L("Master switch for enabling services like Prusa Account, Prusa Connect, Printables.");
+    def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("enable_prusa_account", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->label = L("Enable Prusa Account");
+    def->tooltip = L("Enable logging to Prusa Account and sending files to Connect. Works only if allow_web_services is enabled.");
+    def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("enable_connect", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->label = L("Enable Prusa Connect");
+    def->tooltip = L("Enable Connect tab and uploading slicing results. Works only if allow_web_services and enable_prusa_account is enabled.");
+    def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("enable_printables", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->label = L("Enable Printables");
+    def->tooltip = L("Enable Printables tab. Works only if allow_web_services is enabled.");
+    def->init_fn = []() { return Domain::ConfigValue(true); };
 }
-
-
+ 
 tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)
-{
+{ 
     namespace fs = boost::filesystem;
     AppConfig app_config;
     try {
@@ -54,10 +79,22 @@ tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string
     } catch (...) {
         return tl::unexpected(L("Unable to read application settings."));
     }
-    return app_config;
+    return app_config;   
 }
 
-
+std::unique_ptr<AppConfig> AppConfig::create_app_config()
+{
+    std::unique_ptr<AppConfig> app_config;
+    const boost::filesystem::path appconfig_filename = boost::filesystem::path(Slic3r::data_dir()) / "shared_runtime" / "PrusaSlicer.json";
+    if (auto apc = AppConfig::load_appconfig(appconfig_filename.string()); apc)
+        app_config = std::make_unique<AppConfig>(apc.value());
+    else {
+        SPDLOG_ERROR("Failed to parse app config. Creating a new one from default.");
+        app_config = std::make_unique<AppConfig>();
+    }
+    app_config->set_filename(appconfig_filename.string());
+    return std::move(app_config);
+}
 
 bool AppConfig::save() const
 {
@@ -74,6 +111,33 @@ bool AppConfig::save() const
     return true;
 }
 
+bool AppConfig::is_printables_enabled() const
+{
+#ifndef SLIC3R_HAS_WEBKIT
+    return false;
+#endif // SLIC3R_HAS_WEBKIT
 
+    return get<bool>("allow_web_services") && get<bool>("enable_printables");
+}
+
+bool AppConfig::is_connect_enabled() const
+{
+#ifndef SLIC3R_HAS_WEBKIT
+    return false;
+#endif // SLIC3R_HAS_WEBKIT
+
+    return get<bool>("allow_web_services")
+        && get<bool>("enable_prusa_account")
+        && get<bool>("enable_connect");
+}
+
+bool AppConfig::is_prusa_account_enabled() const
+{
+#ifndef SLIC3R_HAS_WEBKIT
+    return false;
+#endif // SLIC3R_HAS_WEBKIT
+
+    return get<bool>("allow_web_services") && get<bool>("enable_prusa_account");
+}
 
 } // namespace Slic3r::App

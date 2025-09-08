@@ -98,3 +98,7 @@ if (UNIX AND NOT APPLE)
     find_package(GTK3 REQUIRED)
     target_link_libraries(slic3r-app-desktop PUBLIC GTK3::GTK3)
 endif ()
+
+if (SLIC3R_ENABLE_WEBKIT)
+   target_compile_definitions(slic3r-app-desktop PRIVATE SLIC3R_HAS_WEBKIT) 
+endif()

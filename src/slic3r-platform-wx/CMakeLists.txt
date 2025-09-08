@@ -20,7 +20,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set (wxWidgets_CONFIG_OPTIONS "--toolkit=gtk${SLIC3R_GTK}")
 endif ()
 find_package(NanoSVG REQUIRED)
-find_package(wxWidgets 3.2 CONFIG REQUIRED COMPONENTS base core adv html gl webview)
+
+set(WX_COMPONENTS base core adv html gl)
+if(SLIC3R_ENABLE_WEBKIT)
+    list(APPEND WX_COMPONENTS webview)
+endif()
+find_package(wxWidgets 3.2 CONFIG REQUIRED COMPONENTS ${WX_COMPONENTS})
 
 slic3r_remap_configs(wx::wxhtml wx::wxadv wx::wxgl wx::wxcore wx::wxbase RelWithDebInfo Release)
 

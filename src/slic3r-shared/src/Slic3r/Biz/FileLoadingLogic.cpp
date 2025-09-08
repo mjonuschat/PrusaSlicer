@@ -19,6 +19,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/IDialogManager.hpp"
 
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"

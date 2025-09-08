@@ -41,14 +41,6 @@ set(SLIC3R_SHARED_WX_FILES
         include/Slic3r/App/WX/LongStringsDiffDialog.hpp
         src/Slic3r/App/WX/LongStringsDiffDialog.cpp
 
-        include/Slic3r/App/WX/WebView/WebView.hpp
-        src/Slic3r/App/WX/WebView/WebView.cpp
-        include/Slic3r/App/WX/WebView/WebViewDialog.hpp
-        src/Slic3r/App/WX/WebView/WebViewDialog.cpp
-	    src/Slic3r/App/WX/WebView/WebViewPlatformUtils.hpp
-        include/Slic3r/App/WX/WebView/WebViewPanel.hpp
-        src/Slic3r/App/WX/WebView/WebViewPanel.cpp
-
 	    # our widgets
         include/Slic3r/App/WX/Widgets/UIColors.hpp
         include/Slic3r/App/WX/Widgets/StateColor.hpp
@@ -75,6 +67,10 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/Widgets/BitmapComboBox.cpp
         include/Slic3r/App/WX/Widgets/SwitchButton.hpp
         src/Slic3r/App/WX/Widgets/SwitchButton.cpp
+
+        include/Slic3r/App/WX/WebView/WebViewFactory.hpp
+        include/Slic3r/App/WX/WebView/AbstractWebViewPanel.hpp
+        include/Slic3r/App/WX/WebView/AbstractWebViewDialog.hpp
 )
 
 if (WIN32)
@@ -83,7 +79,6 @@ if (WIN32)
         src/Slic3r/Biz/WX/SecretStore.cpp
         include/Slic3r/Biz/WX/SingleInstanceChecker.hpp
         src/Slic3r/Biz/WX/SingleInstanceChecker.cpp
- 	    src/Slic3r/App/WX/WebView/WebViewPlatformUtilsWin32.cpp
         src/Slic3r/App/WX/FileExplorerHandlerWin32.cpp
     )
 elseif (APPLE)
@@ -91,15 +86,43 @@ elseif (APPLE)
         src/Slic3r/App/WX/MacUtils.mm
         include/Slic3r/Biz/WX/SecretStore.hpp
         src/Slic3r/Biz/WX/SecretStore.cpp
- 	    src/Slic3r/App/WX/WebView/WebViewPlatformUtilsMac.mm
         src/Slic3r/App/WX/FileExplorerHandlerMac.cpp
     )
 else ()
     list(APPEND SLIC3R_SHARED_WX_FILES
- 	    src/Slic3r/App/WX/WebView/WebViewPlatformUtilsLinux.cpp
         src/Slic3r/App/WX/FileExplorerHandlerLinux.cpp
     )
 endif ()
+
+if (SLIC3R_ENABLE_WEBKIT)
+    list(APPEND SLIC3R_SHARED_WX_FILES
+        include/Slic3r/App/WX/WebView/WebView.hpp
+        src/Slic3r/App/WX/WebView/WebView.cpp
+        src/Slic3r/App/WX/WebView/WebViewDialog.hpp
+        src/Slic3r/App/WX/WebView/WebViewDialog.cpp
+        src/Slic3r/App/WX/WebView/WebViewPlatformUtils.hpp
+        src/Slic3r/App/WX/WebView/WebViewPanel.hpp
+        src/Slic3r/App/WX/WebView/WebViewPanel.cpp
+        src/Slic3r/App/WX/WebView/WebViewFactoryWithLibs.cpp
+    )
+    if (WIN32)
+        list(APPEND SLIC3R_SHARED_WX_FILES
+            src/Slic3r/App/WX/WebView/WebViewPlatformUtilsWin32.cpp
+        )
+    elseif (APPLE)
+        list(APPEND SLIC3R_SHARED_WX_FILES
+            src/Slic3r/App/WX/WebView/WebViewPlatformUtilsMac.mm
+        )
+    else ()
+        list(APPEND SLIC3R_SHARED_WX_FILES
+            src/Slic3r/App/WX/WebView/WebViewPlatformUtilsLinux.cpp
+        )
+    endif ()
+else ()
+    list(APPEND SLIC3R_SHARED_WX_FILES
+       src/Slic3r/App/WX/WebView/WebViewFactoryNoLibs.cpp
+    )
+endif()
 
 add_library(slic3r-shared-wx STATIC ${SLIC3R_SHARED_WX_FILES})
 target_include_directories(slic3r-shared-wx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -112,12 +135,26 @@ target_link_libraries(slic3r-shared-wx PUBLIC
 if (UNIX AND NOT APPLE)
     find_package(GTK${SLIC3R_GTK} REQUIRED)
     target_include_directories(slic3r-shared-wx PRIVATE ${GTK${SLIC3R_GTK}_INCLUDE_DIRS})
-    pkg_search_module(WEBKIT2GTK REQUIRED IMPORTED_TARGET webkit2gtk-4.0 webkit2gtk-4.1)
-    target_link_libraries(slic3r-shared-wx PUBLIC ${GTK${SLIC3R_GTK}_LIBRARIES} fontconfig PkgConfig::WEBKIT2GTK)
+
+    set(WEBKIT_LINK_LIBS "")
+    if (SLIC3R_ENABLE_WEBKIT)
+        pkg_search_module(WEBKIT2GTK REQUIRED IMPORTED_TARGET webkit2gtk-4.0 webkit2gtk-4.1)
+        set(WEBKIT_LINK_LIBS PkgConfig::WEBKIT2GTK)
+    endif()
+
+    target_link_libraries(slic3r-shared-wx PUBLIC
+        ${GTK${SLIC3R_GTK}_LIBRARIES}
+        fontconfig
+        ${WEBKIT_LINK_LIBS}
+    )
 endif ()
     
-if (WIN32)
+if (WIN32 AND SLIC3R_ENABLE_WEBKIT)
     target_link_libraries(slic3r-shared-wx PRIVATE webview2)
+endif()
+
+if (SLIC3R_ENABLE_WEBKIT)
+   target_compile_definitions(slic3r-shared-wx PRIVATE SLIC3R_HAS_WEBKIT) 
 endif()
 
 # Doxygen

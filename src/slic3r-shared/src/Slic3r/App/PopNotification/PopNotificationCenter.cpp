@@ -1,5 +1,6 @@
 #include "Slic3r/App/PopNotification/PopNotificationCenter.hpp"
 #include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/Platform/IFileExplorerHandler.hpp"
 #include "Slic3r/App/DisplayStrings.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"

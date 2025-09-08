@@ -1,17 +1,16 @@
 #pragma once
 
 #include "Slic3r/App/Browser/AbstractBrowserLogic.hpp"
-#include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
+#include "Slic3r/App/WX/WebView/AbstractWebViewPanel.hpp"
 #include "Slic3r/App/Browser/AbstractBrowserLogicCommandHandler.hpp"
 
 #include <wx/webview.h>
-#include <wx/panel.h>
 #include <wx/sizer.h>
 #include <memory>
 
 namespace Slic3r::App::WX::WebView {
 
-class WebViewPanel : public wxPanel, public Biz::UserAccount::IUserAccountListener, public App::Browser::AbstractBrowserLogicCommandHandler
+class WebViewPanel : public AbstractWebViewPanel, public App::Browser::AbstractBrowserLogicCommandHandler
 {
 public:
     WebViewPanel(wxWindow* parent, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create);

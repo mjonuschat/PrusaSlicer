@@ -1,6 +1,7 @@
 #include "Slic3r/App/Desktop/LeftBarCtrl.hpp"
 #include "Slic3r/App/Desktop/TabsBarMenus.hpp"
-
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/AppConfig.hpp"
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/BitmapGetters.hpp>
 #include <Slic3r/App/WX/StringConversions.hpp>
@@ -32,6 +33,8 @@ LeftBarCtrl::LeftBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus)
         m_account_btn->set_selected(true);
         m_menus->Popup(this, &m_menus->account, m_account_btn->get_popup_pos());
     });
+
+    ShowUserAccount(AppServices::instance().app_config().is_prusa_account_enabled());
 }
 
 void LeftBarCtrl::OnColorsChanged()

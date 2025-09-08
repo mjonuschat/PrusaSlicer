@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/PrinterAdvancedSettingsDialog.hpp"
 #include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/IDialogManager.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"

@@ -6,6 +6,7 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/ExportPathSelect.hpp"
 #include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/Browser/BrowserLogicConnectSelect.hpp"
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 

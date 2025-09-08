@@ -47,8 +47,10 @@ target_include_directories(stb_image INTERFACE stb_image)
 add_library(tcbspan INTERFACE)
 target_include_directories(tcbspan INTERFACE tcbspan)
 
-add_library(webview2 INTERFACE)
-target_include_directories(webview2 INTERFACE webview2)
+if(SLIC3R_ENABLE_WEBKIT)
+    add_library(webview2 INTERFACE)
+    target_include_directories(webview2 INTERFACE webview2)
+endif()
 
 if (SLIC3R_GUI)
     add_subdirectory(imgui)

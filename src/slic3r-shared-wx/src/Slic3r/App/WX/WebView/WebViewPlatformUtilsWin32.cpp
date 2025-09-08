@@ -63,7 +63,6 @@ void setup_webview_with_credentials(wxWebView* webview, const std::string& usern
     } else {
         g_basic_auth_handler_tokens[webView2] = basicAuthenticationRequestedToken;
     }
-       
 }
 
 void remove_webview_credentials(wxWebView* webview)

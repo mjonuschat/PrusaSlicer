@@ -9,6 +9,7 @@
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/ThumbnailStore.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"

@@ -929,6 +929,10 @@ if (SLIC3R_REPO_URL)
     target_compile_definitions(slic3r-shared PRIVATE SLIC3R_REPO_URL="${SLIC3R_REPO_URL}")
 endif()
 
+if (SLIC3R_ENABLE_WEBKIT)
+   target_compile_definitions(slic3r-shared PRIVATE SLIC3R_HAS_WEBKIT) 
+endif()
+
 add_target_to_doxygen(slic3r-shared)
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)

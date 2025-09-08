@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
     Slic3r::App::InitParams init_params = Slic3r::App::Launcher::read_cli(argc, argv);
 
     Slic3r::App::init_paths();
-    boost::filesystem::path log_path = boost::filesystem::path{Slic3r::get_default_datadir()} / "log.txt";
+    boost::filesystem::path log_path = boost::filesystem::path{Slic3r::get_default_datadir()} / "shared_runtime" / "log.txt";
     Slic3r::FileLogConfig file_log_config;
     file_log_config.log_file = log_path.string();
     file_log_config.log_file_size = 1 * 1024 * 1024;

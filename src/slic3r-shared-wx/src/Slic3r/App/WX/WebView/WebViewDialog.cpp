@@ -20,7 +20,7 @@
 namespace Slic3r::App::WX::WebView {
 
 WebViewDialog::WebViewDialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic) :
-    wxDialog(
+    AbstractWebViewDialog(
         nullptr,
         wxID_ANY,
         from_u8(logic->title()),
