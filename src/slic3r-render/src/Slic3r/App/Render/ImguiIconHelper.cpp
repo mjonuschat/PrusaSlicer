@@ -69,6 +69,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::InstancesIcon, "instances_icon"},
     {Icon::SceneMap, "map"},
     {Icon::AddBedIcon, "add_bed"},
+    {Icon::DelBedIcon, "del_bed"},
     {Icon::OverridesMarker, "overrides_marker"},
     {Icon::AllBeds, "all_beds"},
     {Icon::Lock, "lock_closed"},

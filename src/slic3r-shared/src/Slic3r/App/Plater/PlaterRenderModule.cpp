@@ -104,6 +104,7 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(this);
     m_project_interactor.add_listener<Biz::IProjectsChangedListener>(m_scene_presenter.get());
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
     // Set our color styles before gizmos initialization
     // to use them during GiymoDialogs creation
@@ -1095,5 +1096,10 @@ void PlaterRenderModule::on_screen_resized()
 }
 
 void PlaterRenderModule::on_set_imgui_render() {}
+
+void PlaterRenderModule::on_selected_project_changed(size_t index)
+{
+    m_object_list->update_del_button();
+}
 
 } // namespace Slic3r::App::Plater

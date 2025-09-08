@@ -137,6 +137,7 @@ enum class Icon : wchar_t
     OverridesMarker,
     SceneMap,
     AddBedIcon,
+    DelBedIcon,
     AllBeds,
     // icon for help
     MouseLeft,

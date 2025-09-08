@@ -11,6 +11,7 @@
 #include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
 #include "Slic3r/App/SharedThumbnailImageGenerator.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 
 namespace Slic3r::Biz {
@@ -37,7 +38,8 @@ class TextGizmo;
 class MeasureGizmo;
 class PlaterCameraGizmo;
 
-class PlaterRenderModule final : public Platform::AbstractRenderModule, public Biz::IStatusCacheChangedListener, public Biz::Scene::ISceneSelectionChangedListener, private Scene::IGizmoActiveToolListener
+class PlaterRenderModule final : public Platform::AbstractRenderModule, public Biz::IStatusCacheChangedListener, public Biz::Scene::ISceneSelectionChangedListener, private Scene::IGizmoActiveToolListener,
+    public Biz::ISelectedProjectChangedListener
 {
 public:
     PlaterRenderModule(
@@ -69,6 +71,12 @@ protected:
     void on_deactivated() override;
     void on_screen_resized() override;
     void on_set_imgui_render() override;
+    /**
+     * @name Implementation of Biz::ISelectedProjectChangedListener public interface
+     * @{
+     */
+    void on_selected_project_changed(size_t index) override;
+    /**@}*/
 
 private:
     void init_scene();
