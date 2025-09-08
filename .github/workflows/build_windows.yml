@@ -12,6 +12,11 @@ on:
         description: 'Create installer'
         default: false
         type: boolean
+      enable_sentry:
+        description: 'Enable sentry'
+        default: false
+        type: boolean
+
 
 jobs:
   build_win:
@@ -21,3 +26,4 @@ jobs:
       actions_branch: slic3r3_prototype
       create_pdb: ${{ inputs.create_pdb || false }}
       create_installer: ${{ inputs.create_installer || false }}
+      enable_sentry: ${{ inputs.enable_sentry || false }}
