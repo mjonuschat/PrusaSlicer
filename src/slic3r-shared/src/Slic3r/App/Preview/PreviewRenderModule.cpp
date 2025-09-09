@@ -282,7 +282,7 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 #if ENABLED_DEBUG_CAMERA
     render_imgui_debug_camera(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 #endif // ENABLED_DEBUG_CAMERA
-    Scene::render_imgui_graphics_settings_debug_window(*m_scene_presenter, *m_imgui_render);
+    Scene::render_imgui_graphics_settings_debug_window(m_project_interactor.selected_project(), *m_device, *m_scene_presenter, *m_imgui_render);
 }
 
 void PreviewRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
