@@ -20,13 +20,8 @@ const std::string UNIFORM_PROJECTION_MATRIX            = "projection_matrix";
 const std::string UNIFORM_PROJECTION_VIEW_MODEL_MATRIX = "projection_view_model_matrix";
 const std::string UNIFORM_VIEW_NORMAL_MATRIX           = "view_normal_matrix";
 
-void MeshRenderNodeComponent::render(
-    const Node& node,
-    const Camera& camera,
-    const Lighting& lights,
-    const Render::Material& resolved_material,
-    Render::CommandBuffer& cmd_buffer
-) const
+void MeshRenderNodeComponent::render(const Node& node, const Camera& camera, const Render::Material& resolved_material,
+    Render::CommandBuffer& cmd_buffer) const
 {
     Render::Material material = resolved_material;
 
@@ -45,9 +40,6 @@ void MeshRenderNodeComponent::render(
     material.set_uniform(UNIFORM_PROJECTION_MATRIX, proj);
     material.set_uniform(UNIFORM_PROJECTION_VIEW_MODEL_MATRIX, pvm);
     material.set_uniform(UNIFORM_VIEW_NORMAL_MATRIX, normal);
-
-    // update lights uniforms
-    set_uniforms(lights, material);
 
     cmd_buffer.bind_and_draw(*m_geometry, material);
 }

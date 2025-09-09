@@ -62,9 +62,9 @@ static std::pair<float, float> xyz_to_az(const Domain::Vec3f& xyz)
 
 void render_imgui_graphics_settings_debug_window(ISceneProvider& scene_provider, Render::ImguiRender& imgui_render)
 {
-#ifndef DEBUG
+#ifdef NDEBUG
     return;
-#endif
+#endif // NDEBUG
 
     float items_width = 150.0f;
 

@@ -38,13 +38,7 @@ public:
     const Render::Material& material() const override { return m_material; }
     void replace_material(const Render::Material& material) override { m_material = material; }
 
-    void render(
-        const Node& node,
-        const Camera& camera,
-        const Lighting& lights,
-        const Render::Material& resolved_material,
-        Render::CommandBuffer& cmd_buffer
-    ) const override;
+    void render(const Node& node, const Camera& camera, const Render::Material& resolved_material, Render::CommandBuffer& cmd_buffer) const override;
 
     RenderLayerId layer_index() const override { return m_layer;}
     void set_layer_index(RenderLayerId layer) { m_layer = layer; }
