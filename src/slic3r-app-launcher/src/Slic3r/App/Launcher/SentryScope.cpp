@@ -1,4 +1,5 @@
 #include "SentryScope.hpp"
+#include <Slic3r/Log.hpp>
 
 #ifdef SLIC3R_SENTRY
 #include "Slic3r/Version.hpp"
@@ -34,6 +35,10 @@ SentryScope::SentryScope()
         1
 #endif
     );
+    const auto& file_logging = get_file_log_config();
+    if (!file_logging.log_file.empty()) {
+        sentry_options_add_attachment(options, file_logging.log_file.c_str());
+    }
     sentry_init(options);
 #endif
 }

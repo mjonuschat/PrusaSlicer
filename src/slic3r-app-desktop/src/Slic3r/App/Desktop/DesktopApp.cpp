@@ -162,9 +162,6 @@ bool DesktopApp::OnInit()
     // Set initialization of image handlers before any UI actions - See GH issue #7469
     wxInitAllImageHandlers();
 
-    init_logging();
-    set_log_level(4);
-
     init_translations();
 
     const bool is_dark             = true;

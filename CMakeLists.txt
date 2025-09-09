@@ -23,7 +23,7 @@ option(SLIC3R_GUI "Compile PrusaSlicer with GUI components (OpenGL, wxWidgets)" 
 option(SLIC3R_OPENGL_ES "Use OpenGL ES" OFF)
 set(SLIC3R_SENTRY_DSN "" CACHE STRING "Sentry DSN (leave empty to disable)")
 
-if (NOT SLIC3R_SENTRY_DSN STREQUAL "")
+if (SLIC3R_SENTRY_DSN)
     set(SLIC3R_SENTRY ON)
     message(STATUS "Enabling sentry")
 else ()

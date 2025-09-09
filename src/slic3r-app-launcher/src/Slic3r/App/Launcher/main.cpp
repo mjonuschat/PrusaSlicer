@@ -9,6 +9,7 @@
 #include "ReadCLI.hpp"
 #include "Slic3r/Log.hpp"
 #include "SentryScope.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include "boost/nowide/args.hpp"
 
@@ -33,10 +34,15 @@ extern "C" {
 
 int main(int argc, char* argv[])
 {
-    Slic3r::App::Launcher::SentryScope sentry;
     boost::nowide::args args(argc, argv); // RAII converting argv to UTF-8.
 
     Slic3r::App::InitParams init_params = Slic3r::App::Launcher::read_cli(argc, argv);
+
+    Slic3r::set_file_log_config({.log_file = Slic3r::get_default_datadir() + "/log.txt", .log_file_size = 1 * 1024 * 1024});
+    Slic3r::init_logging();
+    Slic3r::set_log_level(4);
+
+    Slic3r::App::Launcher::SentryScope sentry;
 
     if (init_params.start_gui) {
 #ifdef SLIC3R_GUI
