@@ -6,18 +6,12 @@
 #include <fmt/format.h>
 #endif
 
+
 namespace Slic3r::App::Launcher {
 
 #ifdef SLIC3R_SENTRY
-
 constexpr bool SENTRY_ENABLED = true;
-
-#define STRINGIZE(x) #x
-constexpr const char* SENTRY_DSN = STRINGIZE(SLIC3R_SENTRY_DSN);
-#undef STRINGIZE
-
 #else
-
 constexpr bool SENTRY_ENABLED = false;
 #endif // SLIC3R_SENTRY
 
@@ -27,7 +21,7 @@ SentryScope::SentryScope()
     static std::string release = fmt::format("{}@{}", APP_NAME, VERSION);
 
     sentry_options_t* options = sentry_options_new();
-    sentry_options_set_dsn(options, SENTRY_DSN);
+    sentry_options_set_dsn(options, SLIC3R_SENTRY_DSN);
     // This is also the default-path. For further information and recommendations:
     // https://docs.sentry.io/platforms/native/configuration/options/#database-path
     sentry_options_set_database_path(options, ".sentry-native");

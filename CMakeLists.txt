@@ -21,10 +21,9 @@ option(SLIC3R_REPO_URL "Preset repo URL")
 option(SLIC3R_BUILD_TESTS "Build unit tests" ON)
 option(SLIC3R_GUI "Compile PrusaSlicer with GUI components (OpenGL, wxWidgets)" ON)
 option(SLIC3R_OPENGL_ES "Use OpenGL ES" OFF)
+set(SLIC3R_SENTRY_DSN "" CACHE STRING "Sentry DSN (leave empty to disable)")
 
-option(SLIC3R_SENTRY_DSN "Use sentry crash reporting at given DSN (if filled)" "")
-
-if ("${SLIC3R_SENTRY_DSN}")
+if (NOT SLIC3R_SENTRY_DSN STREQUAL "")
     set(SLIC3R_SENTRY ON)
     message(STATUS "Enabling sentry")
 else ()
