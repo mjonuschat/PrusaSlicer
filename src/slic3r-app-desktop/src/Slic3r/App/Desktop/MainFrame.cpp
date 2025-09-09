@@ -1,5 +1,7 @@
 #include "MainFrame.hpp"
 
+#include "Slic3r/Version.hpp"
+
 #include "Slic3r/App/Desktop/LeftBar.hpp"
 
 #include <Slic3r/Biz/Platform/Termination.hpp>
@@ -18,6 +20,8 @@
 
 #include "Slic3r/App/WX/Scalable.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+
+#include "boost/algorithm/string.hpp"
 
 #include <wx/panel.h>
 #include <wx/notebook.h>
@@ -124,14 +128,16 @@ static void add_experimets_page(TabsBar* top_bar, MainFrame* main_frame)
 }
 
 MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
-    // PrusaSlicer as a window title here is temporary. When being changed - mind that
-    // AppInstanceCheck on Windows expects "PrusaSlicer" in the title.
     :
-    wxFrame(nullptr, wxID_ANY, L"PrusaSlicer"),
+    wxFrame(nullptr, wxID_ANY, from_u8(::Slic3r::BUILD_ID)),
     m_workbench(workbench),
     m_project_interactor(project_interactor),
     m_preset_interactor(project_interactor.preset_interactor())
 {
+    // AppInstanceCheck on Windows expects "PrusaSlicer" in the title
+    // (in AppInstanceMessageHandlerWin32.cpp). Better check it.
+    ASSERT(boost::contains(into_u8(this->GetTitle()), "PrusaSlicer"));
+
     localization().add_listener<ILanguageChangedListener>(this);
     auto em = w_config()->em_unit();
 
