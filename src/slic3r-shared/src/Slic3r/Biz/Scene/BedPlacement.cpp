@@ -19,10 +19,10 @@ Vec2d max(const Vec2d& v1, const Vec2d& v2)
     return { std::max(v1.x(), v2.x()), std::max(v1.y(), v2.y()) };
 }
 
-void BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
+Domain::ElementRefs BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
 {
     using Algorithms::BoundingBox::sizes;
-
+    Domain::ElementRefs ret;
     Domain::Project::ConfigContainerList& ccs = project.config_containers();
     double offset_y = 0.0;
     for (size_t i = 0; i < ccs.size(); ++i) {
@@ -41,12 +41,19 @@ void BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
             Transform3d xform = Domain::translation_transform(Algorithms::Point::to_3d(pos, 0.0));
             Transform3d old_bed_trafo = instances[j]->matrix();
             instances[j]->transformation = Domain::Transformation(xform);
-            for (Domain::ModelInstance* mi : instances[j]->model_instances)
-                mi->set_transformation(Domain::Transformation(mi->get_transformation().get_matrix() * xform * old_bed_trafo.inverse()));
+            for (Domain::ModelInstance* mi : instances[j]->model_instances) {
+                mi->set_transformation(
+                    Domain::Transformation(
+                        mi->get_transformation().get_matrix() * xform * old_bed_trafo.inverse()
+                    )
+                );
+                ret.emplace_back(mi->get_object()->id().id, mi->id().id);
+            }
         }
 
         offset_y += size.y() + gap.y();
     }
+    return ret;
 }
 
 } // namespace Slic3r::Biz::Scene

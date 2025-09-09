@@ -700,7 +700,7 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     Domain::BedInstance& ret    = cc->add_bed_instance();
     ret.set_index(cc->bed_instances().size());
 
-    m_bed_placement.layout(project, BED_GAP);
+    auto changed_elements = m_bed_placement.layout(project, BED_GAP);
 
     // make copy
     Domain::ModelInstanceList unplaced = project.unplaced_model_instances();
@@ -708,6 +708,18 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     auto changes = update_instances_bed_placement(project, unplaced, false);
     const Domain::BedRef updated{cc->id().id, ret.id().id};
     changes.updated_beds.insert(updated);
+
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto* l)
+        {
+            l->on_instance_transformed(
+                m_selected_project_id,
+                changed_elements,
+                TransformState::Completed,
+                changes
+            );
+        }
+    );
 
     if (project_context.bed_selection.empty()) {
         project_context.bed_selection.select_one(Domain::BedRef{cc->id().id, ret.id().id});
@@ -726,17 +738,29 @@ void SceneInteractor::layout_after_project_load(Domain::Project& added_project)
 {
     ASSERT(std::all_of(added_project.config_containers().begin(), added_project.config_containers().end(),
            [](const std::unique_ptr<Domain::ConfigContainer>& cc){ return ! cc->bed_instances().empty(); }));
-    update_instances_bed_placement(added_project);
-    m_bed_placement.layout(added_project, BED_GAP);
+    auto updated = m_bed_placement.layout(added_project, BED_GAP);
 
     bed_selection().select_one(Domain::BedRef({added_project.config_containers().front()->id().id, added_project.config_containers().front()->bed_instances().front()->id().id}));
-    update_instances_bed_placement(added_project);
+    auto changes = update_instances_bed_placement(added_project);
 
     Domain::BedRefs bed_refs;
     for (auto& cc : added_project.config_containers()) {
         for (auto& bed_instance : cc->bed_instances())
             bed_refs.push_back({cc->id().id, bed_instance->id().id});
     }
+
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto* l)
+        {
+            l->on_instance_transformed(
+                m_selected_project_id,
+                updated,
+                TransformState::Completed,
+                changes
+            );
+        }
+    );
+
     invoke_listeners<ISceneBedInstanceChangedListener>(
         [&](auto* l) { l->on_bed_instance_updated(m_selected_project_id, bed_refs); }
     );
@@ -780,10 +804,22 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
         bed_selection().select_one({ cc->id().id, cc->bed_instances().front()->id().id });
     }
 
-    m_bed_placement.layout(project, BED_GAP);
+    auto updated_instaces = m_bed_placement.layout(project, BED_GAP);
     auto changes = update_instances_bed_placement(project, insts);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
+
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto* l)
+        {
+            l->on_instance_transformed(
+                m_selected_project_id,
+                updated_instaces,
+                TransformState::Completed,
+                changes
+            );
+        }
+    );
 
     invoke_listeners<ISlicingInputChangedListener>(
         [&](auto* l) { l->on_slicing_input_removed(instance); }
@@ -832,11 +868,15 @@ void SceneInteractor::update_config_container_bed(Domain::Project& project, cons
         config_container->set_bed(bed);
 
         Domain::BedRefs bed_refs;
+        Domain::ElementRefs changed_instances;
         for (auto& bed_instance : config_container->bed_instances()) {
             bed_instance->bed = bed;
             bed_refs.push_back({config_container->id().id, bed_instance->id().id});
+            for (const auto* mi : bed_instance->model_instances) {
+                changed_instances.emplace_back(mi->get_object()->id().id, mi->id().id);
+            }
         }
-        m_bed_placement.layout(project, BED_GAP);
+        auto updated = m_bed_placement.layout(project, BED_GAP);
 
         const auto it{std::ranges::find_if(
             project.config_containers(),
@@ -846,6 +886,21 @@ void SceneInteractor::update_config_container_bed(Domain::Project& project, cons
         if (it == project.config_containers().end()) {
             project.bed_container().remove(previous_bed);
         }
+
+        auto changes = update_instances_bed_placement(project, changed_instances);
+
+
+        invoke_listeners<ISceneChangedListener>(
+            [&](auto* l)
+            {
+                l->on_instance_transformed(
+                    m_selected_project_id,
+                    updated,
+                    TransformState::Completed,
+                    changes
+                );
+            }
+        );
 
         invoke_listeners<ISceneBedInstanceChangedListener>(
             [&](auto* l) { l->on_bed_instance_updated(m_selected_project_id, bed_refs); }

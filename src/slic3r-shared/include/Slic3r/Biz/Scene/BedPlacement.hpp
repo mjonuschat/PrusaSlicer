@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/ElementRef.hpp"
 
 namespace Slic3r::Domain {
 class BedContainer;
@@ -17,8 +18,9 @@ public:
      *
      * @param project The project containing the bed instances to layout.
      * @param gap The space to leave between two adjacent instances.
+     * @return References to changed instances.
      */
-    void layout(Domain::Project& project, const Domain::Vec2d& gap);
+    [[nodiscard]] Domain::ElementRefs layout(Domain::Project& project, const Domain::Vec2d& gap);
 
 
 };
