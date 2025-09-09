@@ -3,15 +3,17 @@
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <spdlog/sinks/msvc_sink.h>
 #endif
-
+#include <spdlog/sinks/rotating_file_sink.h>
 
 namespace Slic3r {
 
 static spdlog::level::level_enum s_current_log_level = spdlog::level::info;
+static FileLogConfig file_log_config;
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 static std::shared_ptr<spdlog::sinks::msvc_sink_mt> msvc_sink;
 #endif
+static std::shared_ptr<spdlog::sinks::rotating_file_sink_mt> file_logger;
 
 static spdlog::level::level_enum log_level_to_spdlog(unsigned int level)
 {
@@ -47,6 +49,10 @@ void init_logging()
     spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) { l->sinks().push_back(msvc_sink); });
 #endif
     spdlog::set_level(s_current_log_level);
+    if (!file_log_config.log_file.empty()) {
+        file_logger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(file_log_config.log_file, file_log_config.log_file_size, 1);
+        spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) { l->sinks().push_back(file_logger); });
+    }
 }
 
 void set_log_level(unsigned level) 
@@ -55,6 +61,17 @@ void set_log_level(unsigned level)
     s_current_log_level = lvl;
     spdlog::set_level(lvl); 
 }
+
+const FileLogConfig& get_file_log_config()
+{
+    return file_log_config;
+}
+
+void set_file_log_config(const FileLogConfig& config)
+{
+    file_log_config = config;
+}
+
 
 
 }
