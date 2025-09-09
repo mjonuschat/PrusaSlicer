@@ -32,7 +32,7 @@ static Transform3d axis_transform(AxisType axis)
     }
     case AxisType::YAxis:
     {
-        ret.rotate(Eigen::AngleAxisd(HALF_PI, Vec3d::UnitX()));
+        ret.rotate(Eigen::AngleAxisd(-HALF_PI, Vec3d::UnitX()));
         break;
     }
     default:
