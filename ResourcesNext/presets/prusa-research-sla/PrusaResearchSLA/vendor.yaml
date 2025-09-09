@@ -23,6 +23,11 @@ model:
   base_model: SL1
   model: SL1S
 tool_count: 1
+visual:
+  bed_model: sl1s_bed.stl
+  bed_texture: sl1s.svg
+  thumbnail: SL1S_thumbnail.png
+
 ---
 kind: tool
 technology: SLA

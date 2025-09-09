@@ -362,17 +362,19 @@ void PresetInteractor::fill_config_container_with_selected_preset(
 
     std::vector<Domain::Preset::EvaluatedToolPrintPreset::Preset> tools;
 
-    for (size_t n = hw_config.tool_count, tool_idx = 0; tool_idx < n; ++tool_idx) {
-        // TODO: better choose tool-print preset + ask for config values transfer
-        ToolPrintPresetProjectView tool_view(
-            preset_bundle,
-            p.runtime_presets,
-            printer_hw_config_id,
-            printer_preset_id,
-            print.get().id,
-            tool_idx
-        );
-        tools.emplace_back(get_first_from_range(tool_view.items()).first.get());
+    if (hw_config.technology == Domain::PrinterTechnology::FFF) {
+        for (size_t n = hw_config.tool_count, tool_idx = 0; tool_idx < n; ++tool_idx) {
+            // TODO: better choose tool-print preset + ask for config values transfer
+            ToolPrintPresetProjectView tool_view(
+                preset_bundle,
+                p.runtime_presets,
+                printer_hw_config_id,
+                printer_preset_id,
+                print.get().id,
+                tool_idx
+            );
+            tools.emplace_back(get_first_from_range(tool_view.items()).first.get());
+        }
     }
 
     std::vector<Domain::Preset::EvaluatedMaterialPreset::Preset> materials;
@@ -512,39 +514,45 @@ void PresetInteractor::fill_tools_presets(Domain::Preset::SelectedPreset& select
         hw_config.technology != Domain::PrinterTechnology::FFF || tool_count > 0,
         selected_preset.print.id
     );
-    ASSERT(tool_count == selected_preset.tools.size());
-
+    const bool has_tool_prints = hw_config.technology == Domain::PrinterTechnology::FFF;
     std::vector<std::optional<size_t>> changed_selected_indices;
 
-    const auto& p = get_or_fail_project_context(m_selected_project_id);
-    for (size_t n = selected_preset.hw_config.tool_count, tool_index = 0; tool_index < n;
-         ++tool_index)
-    {
-        PresetItemObservableList items;
-        ToolPrintPresetProjectView view(
-            m_workbench.preset_bundle(),
-            p.runtime_presets,
-            hw_config.id,
-            selected_preset.printer.id,
-            selected_preset.print.id,
-            tool_index
-        );
+    if (has_tool_prints) {
+        ASSERT(tool_count == selected_preset.tools.size());
 
-        auto changes_selected_index =
-            set_items(items, view, hw_config.id, hw_config.name, selected_preset.tools[tool_index]);
+        const auto& p = get_or_fail_project_context(m_selected_project_id);
+        for (size_t n = selected_preset.hw_config.tool_count, tool_index = 0; tool_index < n;
+             ++tool_index)
+        {
+            PresetItemObservableList items;
+            ToolPrintPresetProjectView view(
+                m_workbench.preset_bundle(),
+                p.runtime_presets,
+                hw_config.id,
+                selected_preset.printer.id,
+                selected_preset.print.id,
+                tool_index
+            );
 
-        tools.emplace_back(std::move(items));
-        changed_selected_indices.emplace_back(changes_selected_index);
+            auto changes_selected_index =
+                set_items(items, view, hw_config.id, hw_config.name, selected_preset.tools[tool_index]);
+
+            tools.emplace_back(std::move(items));
+            changed_selected_indices.emplace_back(changes_selected_index);
+        }
     }
+
     m_tool_print_presets.set_items(std::move(tools));
-    for (size_t n = selected_preset.hw_config.tool_count, tool_index = 0; tool_index < n;
-         ++tool_index)
-    {
-        const auto changed_selected_index = changed_selected_indices.at(tool_index);
-        if (changed_selected_index.has_value()) {
-            const auto& item =
-                m_tool_print_presets.at(tool_index).items().at(changed_selected_index.value());
-            select_tool_print_preset(tool_index, item.id);
+    if (has_tool_prints) {
+        for (size_t n = selected_preset.hw_config.tool_count, tool_index = 0; tool_index < n;
+             ++tool_index)
+        {
+            const auto changed_selected_index = changed_selected_indices.at(tool_index);
+            if (changed_selected_index.has_value()) {
+                const auto& item =
+                    m_tool_print_presets.at(tool_index).items().at(changed_selected_index.value());
+                select_tool_print_preset(tool_index, item.id);
+            }
         }
     }
 
