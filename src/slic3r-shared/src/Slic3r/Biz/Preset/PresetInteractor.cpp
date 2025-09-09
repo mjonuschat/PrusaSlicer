@@ -694,6 +694,10 @@ void PresetInteractor::select_printer_preset(
     fill_config_container_with_selected_preset(*cc, printer_hw_config_id, printer_preset_id);
 
     Domain::Preset::SelectedPreset& selected_preset = mutable_selected_printer_presets();
+
+    fill_tool_items(selected_preset.hw_config);
+    fill_sheet_items(selected_preset.hw_config);
+
     fill_print_presets(selected_preset);
 
     m_printer_presets.set_selected(
@@ -705,9 +709,6 @@ void PresetInteractor::select_printer_preset(
     );
     m_printer_cbi.set_config_box(&selected_preset.printer.config_box());
     m_print_cbi.set_config_box(&selected_preset.print.config_box());
-
-    fill_tool_items(selected_preset.hw_config);
-    fill_sheet_items(selected_preset.hw_config);
 
     fill_tools_presets(selected_preset);
     fill_materials_presets(selected_preset);
