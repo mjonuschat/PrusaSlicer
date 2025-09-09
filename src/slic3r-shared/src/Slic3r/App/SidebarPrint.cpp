@@ -135,6 +135,8 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor) :
         }
     };
 
+    return; // To hide UI mock items.
+
     const Vec2f button_size{24.f, 24.f};
     constexpr float gap_size = 10;
 
@@ -222,24 +224,6 @@ void SidebarPrint::create_favorite_params_page(Item* container)
     combo_density->set_editable(true);
     m_combo_density = combo_density.get();
     add_row(page, "Density", std::move(combo_density));
-
-    std::unique_ptr<InputTextWithSpin> spin = std::make_unique<InputTextWithSpin>(
-        std::make_unique<IntValidator>(-3, 20),
-        1,
-        8
-    );
-    InputTextWithSpin* m_spin_perimeters = spin.get();
-    m_spin_perimeters->set_flags(ImGuiInputTextFlags_CharsDecimal);
-    add_row(page, "Spin test", std::move(spin));
-
-    std::unique_ptr<InputTextWithSpin> spin_double = std::make_unique<InputTextWithSpin>(
-        std::make_unique<DoubleValidator>(0.4, 7.8),
-        0.2,
-        2.
-    );
-    InputTextWithSpin* m_spin_double_perimeters = spin_double.get();
-    m_spin_double_perimeters->set_flags(ImGuiInputTextFlags_CharsDecimal);
-    add_row(page, "Spin double test", std::move(spin_double));
 }
 
 } // namespace Slic3r::App

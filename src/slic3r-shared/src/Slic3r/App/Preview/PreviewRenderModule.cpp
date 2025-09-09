@@ -327,7 +327,7 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         m_fdm_viewer.render_gui(layout);
     }
 
-#ifdef ENABLED_DEBUG_OUTLINE
+#if ENABLED_DEBUG_OUTLINE
     if (ImGui::Begin("Outline", nullptr)) {
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
     }
@@ -401,6 +401,8 @@ void PreviewRenderModule::on_selected_bed_instances_changed(Domain::SelectionId 
 
     update_bed_instances();
     center_camera_on_selected_bed();
+
+    m_object_list->update_sliced_info();
 
     request_render();
 }
