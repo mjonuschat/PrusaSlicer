@@ -37,8 +37,8 @@ public:
         Biz::Emboss::IFontManager& font_manager,
         Scene::GizmoManager& gizmo_manager
     );
-    ~TextGizmo();
-    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+    // NOTE: Destructor is defined because Lin&Mac need it for Drag pimpl idiom
+    ~TextGizmo() override; 
 
     /**
      * @name Implementation of IGizmo interface

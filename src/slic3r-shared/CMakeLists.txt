@@ -808,10 +808,12 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Emboss/Emboss.hpp
         include/Slic3r/Biz/Emboss/EmbossJob.hpp
         include/Slic3r/Biz/Emboss/TextPresetManager.hpp
+        include/Slic3r/Biz/Emboss/TextLines.hpp
         include/Slic3r/Biz/Emboss/stbtt_FlattenCurves.hpp
         src/Slic3r/Biz/Emboss/Emboss.cpp
         src/Slic3r/Biz/Emboss/EmbossJob.cpp
         src/Slic3r/Biz/Emboss/TextPresetManager.cpp
+        src/Slic3r/Biz/Emboss/TextLines.cpp
         src/Slic3r/Biz/Emboss/stbtt_FlattenCurves.cpp
 
         include/Slic3r/Biz/Network/IHttp.hpp
