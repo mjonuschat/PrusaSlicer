@@ -44,6 +44,22 @@ endif (SLIC3R_SENTRY)
 if (SLIC3R_GUI)
     target_link_libraries(slic3r-app-launcher PRIVATE slic3r-app-desktop)
     target_compile_definitions(slic3r-app-launcher PRIVATE SLIC3R_GUI)
+
+    if (MSVC)
+        find_file(WEBVIEW2_DLL_PATH
+            NAMES WebView2Loader.dll
+            PATH_SUFFIXES bin
+        )
+        if(NOT WEBVIEW2_DLL_PATH)
+            message(FATAL_ERROR "WebView2Loader.dll not found!")
+        endif()
+
+        add_custom_command(TARGET slic3r-app-launcher POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${WEBVIEW2_DLL_PATH}"
+            "$<TARGET_FILE_DIR:slic3r-app-launcher>"
+        )
+    endif()
 endif()
 
 if (MSVC)
