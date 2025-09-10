@@ -10,6 +10,7 @@ BrowserLogicLogIn::BrowserLogicLogIn(const std::string& url, Biz::UserAccount::U
     : AbstractBrowserLogic(url, {})
     , m_user_account(user_account)
 {
+    set_title("Log in");
 }
     
 std::vector<BrowserLogicCommand> BrowserLogicLogIn::on_navigation_request_webview_event(const std::string& url, const std::string& current_url)

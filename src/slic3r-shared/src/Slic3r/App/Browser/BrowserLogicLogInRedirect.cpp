@@ -11,7 +11,9 @@ namespace Slic3r::App::Browser {
 BrowserLogicLogInRedirect::BrowserLogicLogInRedirect(Biz::UserAccount::UserAccountInteractor& user_account) :
     AbstractBrowserLogic({}, {"PrusaSlicerWebviewMessage"}, "login_before_redirect"),
     m_user_account(user_account)
-{}
+{
+    set_title("Log in");
+}
 
 std::vector<BrowserLogicCommand> BrowserLogicLogInRedirect::on_loaded_webview_event(const std::string& url)
 {

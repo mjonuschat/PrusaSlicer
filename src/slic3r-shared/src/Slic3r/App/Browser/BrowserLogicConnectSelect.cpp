@@ -7,12 +7,16 @@
 
 namespace Slic3r::App::Browser {
 
-
-BrowserLogicConnectSelect::BrowserLogicConnectSelect(Biz::ProjectInteractor& project_interactor)
-    : AbstractBrowserLogic(Biz::Network::ServiceConfig::instance().connect_select_printer_url(), {"_prusaSlicer"}, "connect_loading", "connect_error")
-    , AbstractConnectRequestHandler(project_interactor)
-{
-}
+BrowserLogicConnectSelect::BrowserLogicConnectSelect(Biz::ProjectInteractor& project_interactor) :
+    AbstractBrowserLogic(
+        Biz::Network::ServiceConfig::instance().connect_select_printer_url(),
+        {"_prusaSlicer"},
+        "connect_loading",
+        "connect_error",
+        "Select printer"
+    ),
+    AbstractConnectRequestHandler(project_interactor)
+{}
 
 std::vector<BrowserLogicCommand> BrowserLogicConnectSelect::on_script_message_webview_event(const std::string& message) 
 {

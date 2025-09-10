@@ -10,13 +10,19 @@ namespace Slic3r::App::Browser {
 
 class AbstractBrowserLogic {
 public:
-    AbstractBrowserLogic(const std::string& url, std::vector<std::string>&& message_handler_names, const std::string& loading_html ="other_loading", const std::string& error_html ="other_error")
-        : m_url(url)
-        , m_script_message_handler_names(std::move(message_handler_names))
-        , m_loading_html(loading_html)
-        , m_error_html(error_html)
-    {
-    }
+    AbstractBrowserLogic(
+        const std::string& url,
+        std::vector<std::string>&& message_handler_names,
+        const std::string& loading_html = "other_loading",
+        const std::string& error_html   = "other_error",
+        const std::string& title        = "title"
+    ) :
+        m_url(url),
+        m_script_message_handler_names(std::move(message_handler_names)),
+        m_loading_html(loading_html),
+        m_error_html(error_html),
+        m_component_title(title)
+    {}
     virtual ~AbstractBrowserLogic() = default;
     
     std::string title() const { return m_component_title; }
@@ -40,6 +46,8 @@ public:
     virtual std::vector<BrowserLogicCommand> on_user_account_will_refresh() {return {};}
 
     void set_next_show_url(std::string url) {m_next_show_url = url;}
+    void set_title(const std::string& title) { m_component_title = title; }
+
 protected:
     std::string m_url;
     std::string m_loading_html;
@@ -47,7 +55,7 @@ protected:
     std::string m_next_show_url;
 
 private:
-    std::string m_component_title {"title"};
+    std::string m_component_title;
     std::vector<std::string> m_script_message_handler_names;
 };
 } // namespace Slic3r::App::Browser 
