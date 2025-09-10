@@ -891,12 +891,12 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for external perimeters. "
                    "If left zero, default extrusion width will be used if set, otherwise 1.125 x nozzle diameter will be used. "
-                   "If expressed as percentage (for example 200%), it will be computed over layer height.");
+                   "If expressed as percentage (for example 200%), it will be computed over nozzle diameter.");
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    def->ratio_over = "layer_height";
+    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("external_perimeter_speed", typeid(FloatOrPercentage));
@@ -1057,13 +1057,13 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("Set this to a non-zero value to allow a manual extrusion width. "
                    "If left to zero, Slic3r derives extrusion widths from the nozzle diameter "
                    "(see the tooltips for perimeter extrusion width, infill extrusion width etc). "
-                   "If expressed as percentage (for example: 230%), it will be computed over layer height.");
+                   "If expressed as percentage (for example: 230%), it will be computed over nozzle diameter.");
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max = 1000;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    def->ratio_over = "layer_height";
+    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("fan_always_on", typeid(bool));
@@ -1648,15 +1648,14 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for first layer. "
                    "You can use this to force fatter extrudates for better adhesion. If expressed "
-                   "as percentage (for example 120%) it will be computed over first layer height. "
+                   "as percentage (for example 120%) it will be computed over nozzle_diameter. "
                    "If set to zero, it will use the default extrusion width.");
     def->sidetext = L("mm or %");
-    def->ratio_over = "first_layer_height";
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    def->ratio_over = "first_layer_layer_height";
-    def->init_fn = init_with(FloatOrPercentage(Percentage{200.}));
+    def->ratio_over = "nozzle_diameter";
+    def->init_fn = init_with(FloatOrPercentage(Percentage{150.}));
 
     def = defs.add("first_layer_height", typeid(FloatOrPercentage));
     def->location = Print;
@@ -2067,12 +2066,12 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for infill. "
                    "If left zero, default extrusion width will be used if set, otherwise 1.125 x nozzle diameter will be used. "
                    "You may want to use fatter extrudates to speed up the infill and make your parts stronger. "
-                   "If expressed as percentage (for example 90%) it will be computed over layer height.");
+                   "If expressed as percentage (for example 90%) it will be computed over nozzle diameter.");
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    def->ratio_over = "layer_height";
+    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("infill_first", typeid(bool));
@@ -2812,13 +2811,13 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for perimeters. "
                    "You may want to use thinner extrudates to get more accurate surfaces. "
                    "If left zero, default extrusion width will be used if set, otherwise 1.125 x nozzle diameter will be used. "
-                   "If expressed as percentage (for example 200%) it will be computed over layer height.");
+                   "If expressed as percentage (for example 200%) it will be computed over nozzle diameter.");
     def->sidetext = L("mm or %");
     def->aliases = { "perimeters_extrusion_width" };
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    def->ratio_over = "layer_height";
+    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("perimeter_speed", typeid(double));
@@ -3513,12 +3512,12 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for infill for solid surfaces. "
                    "If left zero, default extrusion width will be used if set, otherwise 1.125 x nozzle diameter will be used. "
-                   "If expressed as percentage (for example 90%) it will be computed over layer height.");
+                   "If expressed as percentage (for example 90%) it will be computed over nozzle diameter.");
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    def->ratio_over = "layer_height";
+    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("solid_infill_speed", typeid(FloatOrPercentage));
@@ -3844,12 +3843,12 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for support material. "
                    "If left zero, default extrusion width will be used if set, otherwise nozzle diameter will be used. "
-                   "If expressed as percentage (for example 90%) it will be computed over layer height.");
+                   "If expressed as percentage (for example 90%) it will be computed over nozzle diameter.");
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    def->ratio_over = "layer_height";
+    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("support_material_interface_contact_loops", typeid(bool));
@@ -4276,12 +4275,12 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for infill for top surfaces. "
                    "You may want to use thinner extrudates to fill all narrow regions and get a smoother finish. "
                    "If left zero, default extrusion width will be used if set, otherwise nozzle diameter will be used. "
-                   "If expressed as percentage (for example 90%) it will be computed over layer height.");
+                   "If expressed as percentage (for example 90%) it will be computed over nozzle diameter.");
     def->sidetext = L("mm or %");
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    def->ratio_over = "layer_height";
+    def->ratio_over = "nozzle_diameter";
     def->init_fn = init_with(FloatOrPercentage{0.});
 
     def = defs.add("top_solid_infill_speed", typeid(FloatOrPercentage));

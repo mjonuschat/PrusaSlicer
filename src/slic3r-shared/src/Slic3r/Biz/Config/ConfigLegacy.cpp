@@ -527,15 +527,85 @@ void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg,
     fill_config_box_from_legacy(cfg, box, legacy);
 }
 
+/**
+ * Converts a percentage-based extrusion width option to absolute value.
+ *
+ * @param config The legacy configuration to modify.
+ * @param width_option_name Name of the extrusion width option to convert.
+ * @param layer_height The layer height used as reference for percentage calculations (layer height or first layer height).
+ */
+void convert_percentage_extrusion_width_to_absolute(
+    Slic3rLegacy::DynamicPrintConfig& config,
+    const std::string& extrusion_width_option_name,
+    const double layer_height
+)
+{
+    if (!config.has(extrusion_width_option_name)) {
+        return;
+    }
+
+    Slic3rLegacy::ConfigOptionFloatOrPercent* extrusion_width_option =
+        config.option<Slic3rLegacy::ConfigOptionFloatOrPercent>(extrusion_width_option_name);
+    if (extrusion_width_option->percent) {
+        const double absolute_extrusion_width = extrusion_width_option->get_abs_value(layer_height);
+        extrusion_width_option->percent       = false;
+        extrusion_width_option->value         = absolute_extrusion_width;
+    }
+}
+
+/**
+ * Converts all percentage-based extrusion width options to absolute values.
+ *
+ * @param config The legacy configuration to modify.
+ */
+void convert_legacy_extrusion_width_options(Slic3rLegacy::DynamicPrintConfig& config)
+{
+    if (!config.has("layer_height") || !config.has("first_layer_height")) {
+        return;
+    }
+
+    const double layer_height =
+        config.option<Slic3rLegacy::ConfigOptionFloat>("layer_height")->value;
+    const double first_layer_height =
+        config.option<Slic3rLegacy::ConfigOptionFloatOrPercent>("first_layer_height")
+            ->get_abs_value(layer_height);
+
+    // Convert extrusion width options that use layer_height as a reference.
+    for (const std::string extrusion_width_option_name :
+         {"external_perimeter_extrusion_width",
+          "extrusion_width",
+          "infill_extrusion_width",
+          "perimeter_extrusion_width",
+          "solid_infill_extrusion_width",
+          "support_material_extrusion_width",
+          "top_infill_extrusion_width"})
+    {
+        convert_percentage_extrusion_width_to_absolute(
+            config,
+            extrusion_width_option_name,
+            layer_height
+        );
+    }
+
+    // Convert the first layer extrusion width separately as it uses first_layer_height as a reference.
+    convert_percentage_extrusion_width_to_absolute(
+        config,
+        "first_layer_extrusion_width",
+        first_layer_height
+    );
+}
 
 static int get_extruder_num(const Slic3rLegacy::DynamicPrintConfig& cfg)
 {
     return cfg.has("nozzle_diameter") ? int(cfg.option<Slic3rLegacy::ConfigOptionFloats>("nozzle_diameter")->size()) : 1;
 }
 
-
 ConfigPack convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig& cfg)
 {
+    // Since PrusaSlicer 3.0.0, all extrusion width options are related to nozzle diameter instead of layer height,
+    // so we need to convert them into absolute values to preserve backward compatibility.
+    convert_legacy_extrusion_width_options(cfg);
+
     if (cfg.has("printer_technology")) {
         if (auto pt = cfg.opt_enum<Slic3rLegacy::PrinterTechnology>("printer_technology"); pt == Slic3rLegacy::ptFFF) {
             int extruder_num = get_extruder_num(cfg);
