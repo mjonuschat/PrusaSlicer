@@ -14,6 +14,44 @@ using Slic3r::Domain::ColorRGBA;
 
 namespace Slic3r::App::Plater {
 
+RectangleSelection::RectangleSelection(const Render::ScreenInfo& screen_info, Render::Device& device, Scene::ISceneProvider& scene_provider,
+    Biz::Scene::SceneInteractor& scene_interactor)
+    : m_screen_info(screen_info)
+    , m_device(device)
+    , m_scene_provider(scene_provider)
+    , m_scene_interactor(scene_interactor)
+    , m_geometry(device)
+{
+    m_material = Render::Material{}
+        .set_shader(m_device.context().shader_manager().shader("flat"));
+
+    Render::GeometryBuilder<Render::VertexP3> builder;
+    builder
+        .add_vertex({ {0.0f, 0.0f, 0.0f} })
+        .add_vertex({ {1.0f, 0.0f, 0.0f} })
+        .add_vertex({ {1.0f, 1.0f, 0.0f} })
+        .add_vertex({ {0.0f, 1.0f, 0.0f} })
+        .add_draw_command({ Render::PrimitiveType::LineLoop, 0, 4, m_material });
+    builder.update(m_geometry);
+}
+
+void RectangleSelection::activate(Type type, const MousePosition& initial_mouse_pos) {
+    m_active = true;
+    m_type = type;
+    m_initial_mouse_pos = initial_mouse_pos;
+
+    ColorRGBA color;
+    switch (m_type)
+    {
+    case Type::Replace:
+    case Type::Add:    { color = ColorRGBA(0.3f, 1.0f, 0.3f, 1.0f); break; }
+    case Type::Remove: { color = ColorRGBA(1.0f, 0.3f, 0.3f, 1.0f); break; }
+    default:           { color = ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f); break; }
+    }
+
+    m_material.set_uniform("uniform_color", color);
+}
+
 void RectangleSelection::update(const MousePosition& curr_mouse_pos)
 {
     Render::Rect rect{
@@ -33,18 +71,12 @@ void RectangleSelection::update(const MousePosition& curr_mouse_pos)
     float top    = -2.0f * (rect.y / scr_h - 0.5f);
     float bottom = -2.0f * ((rect.y + rect.height) / scr_h - 0.5f);
 
-    Render::GeometryBuilder<Render::VertexP3> builder;
     SquareMatrix4f vm = SquareMatrix4f::Identity();
-    m_material = Render::Material{}
-        .set_uniform("projection_view_model_matrix", vm)
-        .set_shader(m_device.context().shader_manager().shader("flat"));
-    builder
-        .add_vertex({ {left,  bottom, 0.0f} })
-        .add_vertex({ {right, bottom, 0.0f} })
-        .add_vertex({ {right, top,    0.0f} })
-        .add_vertex({ {left,  top,    0.0f} })
-        .add_draw_command({ Render::PrimitiveType::LineLoop, 0, 4, m_material });
-    builder.update(m_geometry);
+    vm(0, 0) = right - left;
+    vm(1, 1) = top - bottom;
+    vm(0, 3) = left;
+    vm(1, 3) = bottom;
+    m_material.set_uniform("projection_view_model_matrix", vm);
 
     m_frustum = Scene::Frustum::from(m_scene_provider.scene().camera(), m_screen_info, rect);
     m_defined = m_initial_mouse_pos != curr_mouse_pos;
@@ -100,18 +132,6 @@ void RectangleSelection::render(Render::CommandBuffer& cmd_buffer)
 {
     if (!(m_active && m_defined))
         return;
-
-    ColorRGBA color;
-    switch (m_type)
-    {
-    case Type::Replace:
-    case Type::Add:     { color = ColorRGBA(0.3f, 1.0f, 0.3f, 1.0f); break; }
-    case Type::Remove:  { color = ColorRGBA(1.0f, 0.3f, 0.3f, 1.0f); break; }
-    default:            { color = ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f); break; }
-    }
-
-    m_material
-        .set_uniform("uniform_color", color);
     cmd_buffer.bind_and_draw(m_geometry, m_material);
 }
 

@@ -27,20 +27,9 @@ public:
     };
 
     RectangleSelection(const Render::ScreenInfo& screen_info, Render::Device& device, Scene::ISceneProvider& scene_provider,
-       Biz::Scene::SceneInteractor& scene_interactor)
-        : m_screen_info(screen_info)
-        , m_device(device)
-        , m_scene_provider(scene_provider)
-        , m_scene_interactor(scene_interactor)
-        , m_geometry(device, Render::BufferUsage::DynamicDraw)
-    {}
+       Biz::Scene::SceneInteractor& scene_interactor);
 
-    void activate(Type type, const MousePosition& initial_mouse_pos) {
-        m_active = true;
-        m_type = type;
-        m_initial_mouse_pos = initial_mouse_pos;
-    }
-
+    void activate(Type type, const MousePosition& initial_mouse_pos);
     void deactivate() {
         m_active = false;
         m_defined = false;
