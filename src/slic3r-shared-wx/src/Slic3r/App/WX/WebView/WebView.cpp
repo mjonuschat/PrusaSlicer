@@ -3,6 +3,8 @@
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/App/WX/format.hpp"
+#include "Slic3r/Version.hpp"
+#include "Slic3r/Platform.hpp"
 
 #include <wx/webview.h>
 #include <wx/window.h>
@@ -37,7 +39,8 @@ void web_view_create(
 {
     assert(webView);
     wxString correct_url = url.empty() ? wxString(L"") : wxURI(url).BuildURI();
-    wxString user_agent  = L"PrusaSlicer/2.9.9 (Windows)"; // TODO
+    wxString user_agent  = format_wxstr("%1%/%2% (%3%)",SLIC3R_APP_NAME, SLIC3R_VERSION, platform_to_string(platform()));
+
 #ifdef __WIN32__
     webView->SetUserAgent(user_agent);
     webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
