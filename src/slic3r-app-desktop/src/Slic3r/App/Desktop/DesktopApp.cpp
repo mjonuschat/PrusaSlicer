@@ -143,7 +143,6 @@ void register_win32_device_notification_event()
 
 int run(const Slic3r::App::InitParams& init_params)
 {
-    init_paths(); // instance_check needs data_dir()
     bool single_instance_app_config = false; // TODO: read app config for this value
     if (AppInstance::instance_check(init_params, single_instance_app_config)) {
         return 1;

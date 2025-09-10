@@ -11,7 +11,8 @@
 #include "SentryScope.hpp"
 #include "Slic3r/Directories.hpp"
 
-#include "boost/nowide/args.hpp"
+#include <boost/nowide/args.hpp>
+#include <boost/filesystem/path.hpp>
 
 #if !defined(__has_feature)
 #define __has_feature(x) 0
@@ -38,7 +39,12 @@ int main(int argc, char* argv[])
 
     Slic3r::App::InitParams init_params = Slic3r::App::Launcher::read_cli(argc, argv);
 
-    Slic3r::set_file_log_config({.log_file = Slic3r::get_default_datadir() + "/log.txt", .log_file_size = 1 * 1024 * 1024});
+    Slic3r::App::init_paths();
+    boost::filesystem::path log_path = boost::filesystem::path{Slic3r::get_default_datadir()} / "log.txt";
+    Slic3r::FileLogConfig file_log_config;
+    file_log_config.log_file = log_path.string();
+    file_log_config.log_file_size = 1 * 1024 * 1024;
+    Slic3r::set_file_log_config(file_log_config);
     Slic3r::init_logging();
     Slic3r::set_log_level(4);
 
