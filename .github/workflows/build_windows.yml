@@ -16,6 +16,10 @@ on:
         description: 'Enable sentry'
         default: false
         type: boolean
+      release_build:
+        description: 'Release build'
+        default: false
+        type: boolean
 
 
 jobs:
@@ -27,3 +31,4 @@ jobs:
       create_pdb: ${{ inputs.create_pdb || false }}
       create_installer: ${{ inputs.create_installer || false }}
       enable_sentry: ${{ inputs.enable_sentry || false }}
+      release_build: ${{ inputs.release_build || startsWith(github.ref, 'refs/tags/version_') }}
