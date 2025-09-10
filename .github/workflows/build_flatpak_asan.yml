@@ -13,4 +13,6 @@ jobs:
     with:
       with_asan: true
       debug_symbols: true
+      enable_sentry:  false
+      release_build: false
       actions_branch: slic3r3_prototype
