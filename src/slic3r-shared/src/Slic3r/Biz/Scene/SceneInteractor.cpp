@@ -777,11 +777,7 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
 
     auto& selection = bed_selection();
     selection.remove(instance);
-    auto it = cc->remove_bed_instance_by_id(instance.instance_id);
-
-    if (it != cc->bed_instances().end()) {
-        selection.select_one({cc->id().id, it->get()->id().id});
-    }
+    cc->remove_bed_instance_by_id(instance.instance_id);
 
     // update bed_instance index
     size_t idx = 1;
@@ -793,16 +789,15 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
             updated.emplace_back(cc->id().id, inst->id().id);
         }
     }
-    invoke_listeners<ISceneBedInstanceChangedListener>(
-        [&](auto* l) { l->on_bed_instance_updated(m_selected_project_id, updated); }
-    );
-
-
     if (bed_selection().empty()) {
         // ensure one bed instance is selected
         ASSERT(!cc->bed_instances().empty());
-        bed_selection().select_one({ cc->id().id, cc->bed_instances().front()->id().id });
+        selection.select_one({ cc->id().id, cc->bed_instances().front()->id().id });
     }
+
+    invoke_listeners<ISceneBedInstanceChangedListener>(
+        [&](auto* l) { l->on_bed_instance_updated(m_selected_project_id, updated); }
+    );
 
     auto updated_instaces = m_bed_placement.layout(project, BED_GAP);
     auto changes = update_instances_bed_placement(project, insts);
