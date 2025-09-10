@@ -38,6 +38,11 @@ if (SLIC3R_SENTRY)
             "$<TARGET_FILE_DIR:slic3r-app-launcher>"
             COMMENT "Copying crashpad_handler to build directory"
     )
+
+    install(
+        FILES "$<TARGET_FILE:sentry_crashpad::crashpad_handler>"
+        DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    )
 endif (SLIC3R_SENTRY)
 #end of sentry integration part
 
