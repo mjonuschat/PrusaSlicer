@@ -1,31 +1,41 @@
 #include "SentryScope.hpp"
 #include <Slic3r/Log.hpp>
+#include <boost/filesystem.hpp>
 
 #ifdef SLIC3R_SENTRY
 #include "Slic3r/Version.hpp"
 #include <sentry.h>
 #include <fmt/format.h>
+#include "Slic3r/Biz/Network/HttpCurl.hpp"
+#include "Slic3r/Directories.hpp"
 #endif
-
 
 namespace Slic3r::App::Launcher {
 
 #ifdef SLIC3R_SENTRY
-constexpr bool SENTRY_ENABLED = true;
-#else
-constexpr bool SENTRY_ENABLED = false;
-#endif // SLIC3R_SENTRY
+namespace fs = boost::filesystem;
+static fs::path get_database_path() {
+    const fs::path cache_path{cache_dir()};
+    return cache_path / ".sentry-native";
+}
+#endif
 
 SentryScope::SentryScope()
 {
 #ifdef SLIC3R_SENTRY
+#ifdef __linux__
+    Biz::Network::HttpCurl::tls_global_init();
+#endif
+
     static std::string release = fmt::format("{}@{}", APP_NAME, VERSION);
 
     sentry_options_t* options = sentry_options_new();
     sentry_options_set_dsn(options, SLIC3R_SENTRY_DSN);
     // This is also the default-path. For further information and recommendations:
     // https://docs.sentry.io/platforms/native/configuration/options/#database-path
-    sentry_options_set_database_path(options, ".sentry-native");
+
+    const fs::path database_path{get_database_path()};
+    sentry_options_set_database_path(options, database_path.c_str());
     sentry_options_set_release(options, release.c_str());
     sentry_options_set_debug(
         options,

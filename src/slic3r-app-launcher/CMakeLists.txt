@@ -29,20 +29,20 @@ if (SLIC3R_SENTRY)
     target_link_libraries(slic3r-app-launcher PRIVATE sentry::sentry)
     if(TARGET sentry_crashpad::crashpad_handler)
         message(STATUS "SENTRY crashpad handler target present")
+        add_custom_command(
+                TARGET slic3r-app-launcher POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                "$<TARGET_FILE:sentry_crashpad::crashpad_handler>"
+                "$<TARGET_FILE_DIR:slic3r-app-launcher>"
+                COMMENT "Copying crashpad_handler to build directory"
+        )
+        install(
+            PROGRAMS "$<TARGET_FILE:sentry_crashpad::crashpad_handler>"
+            DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        )
+    else()
+        message(STATUS "SENTRY crashpad handler target not present")
     endif ()
-
-    add_custom_command(
-            TARGET slic3r-app-launcher POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy
-            "$<TARGET_FILE:sentry_crashpad::crashpad_handler>"
-            "$<TARGET_FILE_DIR:slic3r-app-launcher>"
-            COMMENT "Copying crashpad_handler to build directory"
-    )
-
-    install(
-        FILES "$<TARGET_FILE:sentry_crashpad::crashpad_handler>"
-        DESTINATION "${CMAKE_INSTALL_BINDIR}"
-    )
 endif (SLIC3R_SENTRY)
 #end of sentry integration part
 

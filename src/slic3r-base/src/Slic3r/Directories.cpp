@@ -6,6 +6,7 @@
 
 #include <boost/filesystem/path.hpp>
 #include <boost/nowide/convert.hpp>
+#include "Slic3r/Assert.hpp"
 
 #if defined(_WIN32)
 
@@ -220,5 +221,40 @@ std::string get_default_datadir()
     std::string data_dir = (boost::filesystem::path(config_dir) / datadir_name).make_preferred().string();
     return data_dir;
 }
+
+static std::string g_cache_dir;
+
+void set_cache_dir(const std::string& path) {
+    g_cache_dir = path;
+}
+
+const std::string& cache_dir() {
+    ASSERT(!g_cache_dir.empty());
+    return g_cache_dir;
+}
+
+#if defined(__linux__)
+namespace fs = boost::filesystem;
+static fs::path get_xdg_cache_home() {
+    const char* cache_path_raw{::getenv("XDG_CACHE_HOME")};
+    if (cache_path_raw != nullptr) {
+        return fs::path{cache_path_raw};
+    }
+    const char* home_raw{::getenv("HOME")};
+    if (home_raw != nullptr) {
+        return fs::path{home_raw} / ".cache";
+    }
+    return fs::path{".cache"};
+}
+
+std::string get_default_cachedir() {
+    const fs::path cache_path{get_xdg_cache_home()};
+    return (cache_path / "prusa-slicer").string();
+}
+#else
+std::string get_default_cachedir() {
+    return data_dir();
+}
+#endif
 
 } // namespace Slic3r::Biz

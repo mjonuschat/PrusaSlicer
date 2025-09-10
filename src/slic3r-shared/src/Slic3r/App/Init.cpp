@@ -57,6 +57,7 @@ void init_paths()
 
     // Data/config dir
     Slic3r::set_data_dir(Slic3r::get_default_datadir());
+    Slic3r::set_cache_dir(Slic3r::get_default_cachedir());
 
     set_resources_dir(path_resources.string());
     set_var_dir((path_resources / "icons").string());

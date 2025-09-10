@@ -41,4 +41,10 @@ const std::string& data_dir();
 
 std::string get_default_datadir();
 
+void set_cache_dir(const std::string& path);
+
+const std::string& cache_dir();
+
+std::string get_default_cachedir();
+
 } // namespace Slic3r::Biz
