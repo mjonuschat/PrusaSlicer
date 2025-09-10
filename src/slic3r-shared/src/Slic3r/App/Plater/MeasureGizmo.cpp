@@ -213,7 +213,7 @@ std::optional<FeatureItem> MeasureGizmo::detect_current_feature()
                     ret = {
                         m_feature_detection_data->hovered_instance->ref,
                         SurfaceFeature(hit_position),
-                        feature
+                        feature->type() == SurfaceFeatureType::Point ? std::nullopt : feature
                     };
                 } else
                     ret = {m_feature_detection_data->hovered_instance->ref, *feature};
