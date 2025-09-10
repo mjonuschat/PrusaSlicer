@@ -15,7 +15,10 @@ void PlaterCameraFrustumUpdater::update_scene_aabb(const Scene::Scene& scene)
     Scene::Node::ConstNodeList nodes;
     scene.root().query([](const Scene::Node* n) { return n->has_raycast_component(); }, nodes);
 
-    DEBUG_ASSERT(!nodes.empty());
+    if (nodes.empty()) {
+        m_scene_aabb = {Domain::Vec3d{-1., -1.0, -1.0}, Domain::Vec3d{1.0, 1.0, 1.0}};
+        return;
+    }
 
     m_scene_aabb = Eigen::AlignedBox3d();
     for (const Scene::Node* n : nodes) {

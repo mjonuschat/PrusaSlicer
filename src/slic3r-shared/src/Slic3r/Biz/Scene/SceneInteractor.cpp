@@ -709,6 +709,10 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     const Domain::BedRef updated{cc->id().id, ret.id().id};
     changes.updated_beds.insert(updated);
 
+    if (project_context.bed_selection.empty()) {
+        project_context.bed_selection.select_one(Domain::BedRef{cc->id().id, ret.id().id});
+    }
+
     invoke_listeners<ISceneChangedListener>(
         [&](auto* l)
         {
@@ -720,10 +724,6 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
             );
         }
     );
-
-    if (project_context.bed_selection.empty()) {
-        project_context.bed_selection.select_one(Domain::BedRef{cc->id().id, ret.id().id});
-    }
 
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
