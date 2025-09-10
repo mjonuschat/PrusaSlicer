@@ -25,7 +25,8 @@ MaterialSettingsButton::MaterialSettingsButton(
     m_project_interactor(project_interactor)
 {
     set_checkable(true);
-    set_max_size({YGUndefined, 40.f});
+    set_min_size({YGUndefined, 25.f});
+    set_max_size({YGUndefined, 25.f});
     set_flex_shrink(0);
 
     // invalidate vertical padding to use whole button height for separators
