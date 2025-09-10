@@ -11,6 +11,7 @@
 #include <wx/filedlg.h>
 #include <wx/string.h>
 #include <wx/tokenzr.h>
+#include <wx/app.h>
 
 namespace Slic3r::App::WX {
 
@@ -107,8 +108,11 @@ void DialogManager::show_rich_yesno_dialog(const std::string& title, const std::
 
 void DialogManager::show_info_dialog(const std::string& text, const std::string& title)
 {
-    MessageDialog(nullptr, from_u8(text), title.empty() ? _L("Information") : from_u8(title), wxICON_INFORMATION | wxOK)
-        .ShowModal();
+    // Use CallAfter because most of InfoDialog call we have from the thread.
+    wxTheApp->CallAfter([text, title] {
+        MessageDialog(nullptr, from_u8(text), title.empty() ? _L("Information") : from_u8(title), wxICON_INFORMATION | wxOK)
+            .ShowModal();
+        });
 }
 
 void DialogManager::show_warning_dialog(const std::string& text, const std::string& title)

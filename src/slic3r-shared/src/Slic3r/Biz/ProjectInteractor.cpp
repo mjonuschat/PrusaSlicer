@@ -55,6 +55,9 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
     auto on_result{
         [&](Domain::Project&& project)
         {
+            if (project.config_containers().empty())
+                return;
+
             const Domain::SelectionId project_id{add_project(std::move(project))};
             Domain::Project& added_project{m_workbench.project(project_id)};
 

@@ -541,6 +541,16 @@ std::vector<ReturnData> import_files(const std::vector<boost::filesystem::path>&
 static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
 {
     Domain::Project project;
+    if (loaded_3mf.config_containers_data.front().preset.hw_config.id.empty()) {
+        // If we are here, than legacy project was loaded.
+        // Implementation of the config loading is not completed jet, so we can't create a correct project
+        auto& dlg_manager = App::AppServices::instance().dialog_manager();
+        dlg_manager.show_info_dialog(_u8L("It's not possible to load legacy 3mf temporary."),
+            _u8L("Load legacy 3mf file.")
+        );
+        return project;
+    }
+
     project.set_metadata(loaded_3mf.metadata);
     project.set_file_name(boost::filesystem::path(loaded_3mf.filepath_3mf).stem().string());
     project.model() = std::move(loaded_3mf.model);
