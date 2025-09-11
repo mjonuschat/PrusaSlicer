@@ -205,6 +205,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Minus, "minus"},
     {Icon::ChevronRight, "chevron_right"},
     {Icon::ChevronLeft, "chevron_left"},
+    {Icon::Compare, "compare"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {Icon::BedThumbnail, Icon::PrinterNEXT};
@@ -227,8 +228,9 @@ std::string ImguiIconHelper::icon_path(Icon icon)
 std::string ImguiIconHelper::icon_name(Icon icon)
 {
     std::unordered_map<Icon, const char*>::const_iterator it = ICON_FILENAMES.find(icon);
-    ASSERT(it != ICON_FILENAMES.cend(), "Icon doesn't have defined filename!", icon);
-
+    if (it == ICON_FILENAMES.cend()) {
+        return std::string();
+    }
     return it->second;
 }
 

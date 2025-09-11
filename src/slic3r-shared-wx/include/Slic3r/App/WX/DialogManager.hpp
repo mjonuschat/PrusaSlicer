@@ -29,6 +29,7 @@ public:
     void show_info_dialog(const std::string& text, const std::string& title = std::string()) override;
     void show_warning_dialog(const std::string& text, const std::string& title = std::string()) override;
     void show_error_dialog(const std::string& text, const std::string& title = std::string()) override;
+    void show_diff_dialog(const Slic3r::Biz::Preset::PresetInteractor& preset_interactor, std::optional<Domain::Preset::PresetKind> kind = std::nullopt) override;
 };
 
 } //namespace Slic3r::App::WX

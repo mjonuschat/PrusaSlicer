@@ -4,8 +4,10 @@
 #include "Slic3r/App/WX/MsgDialog.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/DiffDialog.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/WX/I18N.hpp>
+#include "Slic3r/Domain/Preset/Types.hpp"
 
 #include <wx/msgdlg.h>
 #include <wx/filedlg.h>
@@ -125,5 +127,10 @@ void DialogManager::show_error_dialog(const std::string& text, const std::string
 {
     MessageDialog(nullptr, from_u8(text), title.empty() ? _L("Error") : from_u8(title), wxICON_ERROR | wxOK)
         .ShowModal();
+}
+
+void DialogManager::show_diff_dialog(const Slic3r::Biz::Preset::PresetInteractor& preset_interactor, std::optional<Domain::Preset::PresetKind> kind)
+{
+    DiffDialog(preset_interactor, kind).ShowModal();
 }
 } // namespace Slic3r::App::WX

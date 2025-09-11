@@ -15,6 +15,7 @@
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 
 #include "Slic3r/App/PrinterAddDialog.hpp"
+#include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -117,16 +118,23 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
 
     m_page_list->emplace_back<Separator>(Orientation::Horizontal);
 
-    // LayoutButton* add_printer_button = m_page_list->emplace_back<LayoutButton>(
-    //     _u8L("Add logical printer")
-    // );
-    // add_printer_button->set_self_align(YGAlignFlexEnd);
-    // add_printer_button->callbacks().action = [this] {
-    //     m_printer_add_dialog->attach_to_item(content_item(), Position::Left);
-    //     m_printer_add_dialog->set_root_item(get_or_find_root_item());
-    //     m_printer_add_dialog->set_current_tab(0);
-    //     m_printer_add_dialog->open();
-    // };
+    Item* row = m_page_list->emplace_back<Item>();
+    row->set_justify_content(YGJustifySpaceBetween);
+
+    LayoutButton* show_diff_dialog = row->emplace_back<LayoutButton>(_u8L("Compare presets"));
+    show_diff_dialog->callbacks().action = [this] {
+        auto& dlg_manager = App::AppServices::instance().dialog_manager();
+        dlg_manager.show_diff_dialog(m_project_interactor.preset_interactor());
+        };
+/*
+    LayoutButton* add_printer_button = row->emplace_back<LayoutButton>(_u8L("Add logical printer"));
+    //    add_printer_button->set_self_align(YGAlignFlexEnd);
+    add_printer_button->callbacks().action = [this] {
+        m_printer_add_dialog->attach_to_item(content_item(), Position::Left);
+        m_printer_add_dialog->set_root_item(get_or_find_root_item());
+        m_printer_add_dialog->set_current_tab(0);
+        m_printer_add_dialog->open();
+    };*/
 }
 
 void Slic3r::App::PrinterSettingsDialog::create_page_settings()

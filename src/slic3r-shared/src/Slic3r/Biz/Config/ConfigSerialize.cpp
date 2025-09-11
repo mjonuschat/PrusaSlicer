@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <set>
+#include <fmt/format.h>
 
 static std::vector<std::string> to_strings(const std::vector<std::string_view>& strings)
 {
@@ -128,15 +129,14 @@ static std::string trim_quotes(const std::string& json_str)
     return out;
 }
 
-
-std::variant<std::string, std::vector<std::string>> serialize_to_string(const ConfigItem& item)
+std::variant<std::string, std::vector<std::string>> value_as_string(const ConfigItem& item)
 {
     nlohmann::ordered_json j;
     j[item.name()] = item;
 
-    ASSERT(! j.empty());
+    ASSERT(!j.empty());
 
-    auto it = j.begin(); // Get the first (and assumed to be only) key-value pair
+    auto it           = j.begin(); // Get the first (and assumed to be only) key-value pair
     const auto& value = it.value();
 
     if (value.is_array()) {
@@ -145,11 +145,15 @@ std::variant<std::string, std::vector<std::string>> serialize_to_string(const Co
             serialized_elements.push_back(trim_quotes(element.dump(-1, ' ', false)));
         }
         return serialized_elements;
-    } else
-        return trim_quotes(value.dump(-1, ' ', false));
+    } else if (value.is_object()) {
+        if (value.find("value") != value.end() && value.find("is_percent") != value.end()) {
+            const auto d_value{value["value"].get<double>()};
+            const auto is_percentage{value["is_percent"].get<bool>()};
+            return is_percentage ? fmt::format("{}%", d_value) : fmt::format("{}", d_value);
+        }
+    }
+    return trim_quotes(value.dump(-1, ' ', false));
 }
-
-
 
 std::string beautify_json(const Domain::BoxOrBoxesVector& box_or_boxes_vector, int indent)
 {

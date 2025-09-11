@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/PrintSettingsDialog.hpp"
+#include <Slic3r/App/AppServices.hpp>
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/ConfigSubcategoryListView.hpp"
@@ -30,7 +31,14 @@ PrintSettingsDialog::PrintSettingsDialog(Biz::ProjectInteractor& project_interac
         )
     );
 
-    m_footer->emplace_back<LayoutButton>(_u8("Save preset"));
+    Item* footer_items = m_footer->emplace_back<Item>();
+    footer_items->set_gap(5.f);
+    footer_items->emplace_back<LayoutButton>(_u8("Compare"), Render::Icon::Compare)->callbacks().action = [this]
+    {
+        auto& dlg_manager = App::AppServices::instance().dialog_manager();
+        dlg_manager.show_diff_dialog(m_project_interactor.preset_interactor(), Domain::Preset::PresetKind::FdmPrint);
+    };
+    footer_items->emplace_back<LayoutButton>(_u8("Save preset"));
 
     m_tool_cbi_list.add_listener<Biz::IListObserver<Biz::ConfigBoxInteractor>>(this);
 

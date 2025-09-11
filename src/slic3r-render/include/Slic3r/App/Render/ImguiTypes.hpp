@@ -222,7 +222,8 @@ enum class Icon : wchar_t
     AddVolume,
     Minus,
     ChevronRight,
-    ChevronLeft
+    ChevronLeft,
+    Compare
 };
 
 } // namespace Slic3r::App::Render

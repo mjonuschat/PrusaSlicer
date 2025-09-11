@@ -30,6 +30,16 @@ set(SLIC3R_SHARED_WX_FILES
         include/Slic3r/App/WX/DialogManager.hpp
         src/Slic3r/App/WX/DialogManager.cpp
         include/Slic3r/App/WX/FileExplorerHandler.hpp
+        include/Slic3r/App/WX/DiffDialog.hpp
+        src/Slic3r/App/WX/DiffDialog.cpp
+        src/Slic3r/App/WX/DiffNamespace.hpp
+        src/Slic3r/App/WX/DiffNamespace.cpp
+        include/Slic3r/App/WX/DiffDVCModel.hpp
+        src/Slic3r/App/WX/DiffDVCModel.cpp
+        include/Slic3r/App/WX/DiffViewCtrl.hpp
+        src/Slic3r/App/WX/DiffViewCtrl.cpp
+        include/Slic3r/App/WX/LongStringsDiffDialog.hpp
+        src/Slic3r/App/WX/LongStringsDiffDialog.cpp
 
         include/Slic3r/App/WX/WebView/WebView.hpp
         src/Slic3r/App/WX/WebView/WebView.cpp

@@ -8,7 +8,16 @@
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
+
+namespace Preset {
+class PresetInteractor;
+} // namespace Preset
+
 } // namespace Slic3r::Biz
+
+namespace Slic3r::Domain::Preset {
+enum class PresetKind : uint8_t;
+} // namespace Slic3r::Domain::Preset
 
 namespace Slic3r::App {
 
@@ -39,6 +48,8 @@ public:
     virtual void show_info_dialog(const std::string& text, const std::string& title = std::string()) = 0;
     virtual void show_warning_dialog(const std::string& text, const std::string& title = std::string()) = 0;
     virtual void show_error_dialog(const std::string& text, const std::string& title = std::string()) = 0;
+
+    virtual void show_diff_dialog(const Slic3r::Biz::Preset::PresetInteractor& preset_interactor, std::optional<Domain::Preset::PresetKind> kind = std::nullopt) = 0;
 };
 
 } // namespace Slic3r::App
