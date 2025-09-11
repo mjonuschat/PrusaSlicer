@@ -30,7 +30,10 @@ void Text::render(Vec2f pos, Vec2f size)
 
     // TODO: Resolve elipsis/elide
     if (m_wrap) {
-        ImGui::PushTextWrapPos(width());
+        // When text wrapping is applied, the text gets truncated on the right due to its offset from the parent window.
+        // To fix this, we need to increase wrapping_size by ImGui::GetCursorPos().x.
+        // Note: This feels like a hack, but a similar use of PushTextWrapPos can be found in imgui_demo.cpp (line 1281).
+        ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + width());
         ImGui::TextUnformatted(m_text.c_str());
         ImGui::PopTextWrapPos();
     } else {
