@@ -141,7 +141,7 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
     localization().add_listener<ILanguageChangedListener>(this);
     auto em = w_config()->em_unit();
 
-    const wxSize min_size = FromDIP(wxSize(90 * em, 60 * em));
+    const wxSize min_size = FromDIP(wxSize(110 * em, 60 * em));
     this->SetMinSize(min_size);
     this->SetSize(min_size);
 

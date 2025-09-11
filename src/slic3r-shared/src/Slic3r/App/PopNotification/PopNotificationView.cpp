@@ -133,17 +133,16 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
     set_margin(5.);
     // set_padding(5.);
     set_max_size({TotalWidth, MaxHeight});
-    set_min_size({TotalWidth, MinHeight});
 
     set_orientation(Yoga::Orientation::Horizontal);
     set_justify_content(YGJustifyFlexStart); // razeni itemu uvnitr
-    set_self_align(YGAlignFlexEnd); // razeni sebe v listu, end = napravo
 
     m_left_column  = emplace_back<Yoga::Item>();
     m_mid_column   = emplace_back<Yoga::Item>();
     m_right_column = emplace_back<Yoga::Item>();
 
     basic_left_layout(icon_override);
+    m_mid_column->set_flex_grow(1.f);
 
     /*
     m_right_column->set_orientation(Yoga::Orientation::Vertical);
@@ -154,7 +153,6 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
     m_right_column->set_orientation(Yoga::Orientation::Horizontal);
     m_right_column->set_justify_content(YGJustifyFlexEnd);
     // m_right_column->set_self_align(YGAlignFlexEnd);
-    m_right_column->set_flex_grow(1);
     m_right_column->set_min_size({25, MinHeight});
 
     m_mid_column->set_self_align(YGAlignStretch);
@@ -204,8 +202,6 @@ void PopNotificationView::basic_mid_layout()
 {
     m_mid_column->set_orientation(Yoga::Orientation::Vertical);
     m_mid_column->set_justify_content(YGJustifyCenter);
-    int w = TotalWidth - (m_left_column->min_size().x() + 25 + 25 + 10);
-    m_mid_column->set_min_size({w, MinHeight});
 }
 
 void PopNotificationView::basic_mid_header_layout(const std::string& header)
