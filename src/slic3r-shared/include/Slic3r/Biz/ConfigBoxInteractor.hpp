@@ -22,16 +22,22 @@ public:
     class SetAccessor
     {
     public:
+        using ConfigBoxSetter = std::function<void(Domain::ConfigBox*)>;
+
         void set_source(
             std::weak_ptr<ConfigBoxObservableList> config_box_list,
-            std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list
+            std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list,
+            ConfigBoxSetter config_box_setter
         );
 
         void set_value(const std::string& key, const Domain::ConfigValue& value);
 
+        void set_config_box(Domain::ConfigBox* config_box);
+
     private:
         std::weak_ptr<ConfigBoxObservableList> m_config_box_list;
         std::weak_ptr<ConfigBoxOverridesObservableList> m_config_box_overrides_list;
+        ConfigBoxSetter m_config_box_setter;
     };
 
     ConfigBoxInteractor();

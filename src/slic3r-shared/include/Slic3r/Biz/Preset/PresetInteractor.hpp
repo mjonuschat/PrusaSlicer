@@ -226,6 +226,9 @@ private:
     void fill_tool_items(const Domain::Preset::HwPrinterConfig& hw_config);
     void fill_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);
 
+    void fill_selected_tool_print_cbis(Domain::Preset::SelectedPreset& selected_preset);
+    void fill_selected_material_cbis(Domain::Preset::SelectedPreset& selected_preset);
+
     void duplicate_hw_config_if_is_runtime(Domain::Preset::SelectedPreset& selected_preset);
 
     void invoke_slicing_input_changed();

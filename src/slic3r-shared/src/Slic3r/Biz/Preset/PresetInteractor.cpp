@@ -556,23 +556,7 @@ void PresetInteractor::fill_tools_presets(Domain::Preset::SelectedPreset& select
         }
     }
 
-    // Remove previous tool accessors
-    for (size_t tool_index = 0; tool_index < m_tool_cbi_list.size(); ++tool_index) {
-        m_cbi_accessors.erase(&m_tool_cbi_list.at(tool_index));
-    }
-
-    std::vector<Domain::ConfigBox*> tool_cbs;
-    tool_cbs.reserve(selected_preset.tools.size());
-    std::transform(
-        selected_preset.tools.begin(),
-        selected_preset.tools.end(),
-        std::back_inserter(tool_cbs),
-        [](Domain::Preset::EvaluatedToolPrintPreset::Preset& preset)
-        { return &preset.config_box(); }
-    );
-
-    SetAccessorMap accessors = m_tool_cbi_list.set_items(tool_cbs);
-    m_cbi_accessors.insert(accessors.begin(), accessors.end());
+    fill_selected_tool_print_cbis(selected_preset);
 }
 
 void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& selected_preset)
@@ -598,6 +582,8 @@ void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& se
     }
     m_material_presets.set_items(std::move(materials));
 
+    fill_selected_material_cbis(selected_preset);
+
     for (size_t n = hw_config.tool_count, slot_index = 0; slot_index < n; ++slot_index) {
         const auto changed_selected_index = changed_selected_indices.at(slot_index);
         if (changed_selected_index.has_value()) {
@@ -606,23 +592,6 @@ void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& se
             select_material_preset(slot_index, item.id);
         }
     }
-
-    // Remove previous material accessors
-    for (size_t material_index = 0; material_index < m_material_cbi_list.size(); ++material_index) {
-        m_cbi_accessors.erase(&m_material_cbi_list.at(material_index));
-    }
-
-    std::vector<Domain::ConfigBox*> material_cbs;
-    material_cbs.reserve(selected_preset.materials.size());
-    std::transform(
-        selected_preset.materials.begin(),
-        selected_preset.materials.end(),
-        std::back_inserter(material_cbs),
-        [](Domain::Preset::EvaluatedMaterialPreset::Preset& preset) { return &preset.config_box(); }
-    );
-
-    SetAccessorMap accessors = m_material_cbi_list.set_items(material_cbs);
-    m_cbi_accessors.insert(accessors.begin(), accessors.end());
 }
 
 void PresetInteractor::fill_tool_items(const Domain::Preset::HwPrinterConfig& hw_config)
@@ -688,6 +657,49 @@ void PresetInteractor::fill_sheet_items(const Domain::Preset::HwPrinterConfig& h
         m_sheet_items.set_selected_index(selected_index);
     }
 }
+
+void PresetInteractor::fill_selected_tool_print_cbis(Domain::Preset::SelectedPreset& selected_preset)
+{
+    // Remove previous tool accessors
+    for (size_t tool_index = 0; tool_index < m_tool_cbi_list.size(); ++tool_index) {
+        m_cbi_accessors.erase(&m_tool_cbi_list.at(tool_index));
+    }
+
+    std::vector<Domain::ConfigBox*> tool_cbs;
+    tool_cbs.reserve(selected_preset.tools.size());
+    std::transform(
+        selected_preset.tools.begin(),
+        selected_preset.tools.end(),
+        std::back_inserter(tool_cbs),
+        [](Domain::Preset::EvaluatedToolPrintPreset::Preset& preset)
+        { return &preset.config_box(); }
+    );
+
+    SetAccessorMap accessors = m_tool_cbi_list.set_items(tool_cbs);
+    m_cbi_accessors.insert(accessors.begin(), accessors.end());
+}
+
+void PresetInteractor::fill_selected_material_cbis(Domain::Preset::SelectedPreset& selected_preset)
+{
+    // Remove previous material accessors
+    for (size_t material_index = 0; material_index < m_material_cbi_list.size(); ++material_index) {
+        m_cbi_accessors.erase(&m_material_cbi_list.at(material_index));
+    }
+
+    std::vector<Domain::ConfigBox*> material_cbs;
+    material_cbs.reserve(selected_preset.materials.size());
+    std::transform(
+        selected_preset.materials.begin(),
+        selected_preset.materials.end(),
+        std::back_inserter(material_cbs),
+        [](Domain::Preset::EvaluatedMaterialPreset::Preset& preset) { return &preset.config_box(); }
+    );
+
+    SetAccessorMap accessors = m_material_cbi_list.set_items(material_cbs);
+    m_cbi_accessors.insert(accessors.begin(), accessors.end());
+
+}
+
 
 void PresetInteractor::select_printer_preset(
     const std::string& printer_hw_config_id,
@@ -779,6 +791,10 @@ void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::st
         { item.set_selected([&id](const PresetItem& item) { return item.id == id; }); }
     );
 
+    m_cbi_accessors.at(&m_tool_cbi_list.at(tool_index))
+        .set_config_box(&selected_preset.tools.at(tool_index).config_box());
+
+
     const auto& ccc = selected_config_container_context();
     const Domain::SelectionId config_container_id{ccc.config_container_id};
     invoke_listeners<IPresetChangedListener>(
@@ -812,6 +828,9 @@ void PresetInteractor::select_material_preset(size_t material_index, const std::
         [&id](auto& item)
         { item.set_selected([&id](const PresetItem& item) { return item.id == id; }); }
     );
+
+    m_cbi_accessors.at(&m_material_cbi_list.at(material_index))
+        .set_config_box(&selected_preset.materials.at(material_index).config_box());
 
     const auto& ccc = selected_config_container_context();
     const Domain::SelectionId config_container_id{ccc.config_container_id};

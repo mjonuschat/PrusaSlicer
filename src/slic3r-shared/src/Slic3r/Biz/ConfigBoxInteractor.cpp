@@ -14,7 +14,11 @@ ConfigBoxInteractor::ConfigBoxInteractor() :
 ConfigBoxInteractor::ConfigBoxInteractor(SetAccessor& set_accessor, Domain::ConfigBox* config_box) :
     ConfigBoxInteractor()
 {
-    set_accessor.set_source(m_config_box_list.get(), m_config_box_overrides_list.get());
+    set_accessor.set_source(
+        m_config_box_list.get(),
+        m_config_box_overrides_list.get(),
+        [&](Domain::ConfigBox* config_box) { set_config_box(config_box); }
+    );
     set_config_box(config_box);
 }
 
@@ -36,17 +40,25 @@ void ConfigBoxInteractor::set_config_box(Domain::ConfigBox* config_box)
 
 void ConfigBoxInteractor::SetAccessor::set_source(
     std::weak_ptr<ConfigBoxObservableList> config_box_list,
-    std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list
+    std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list,
+    ConfigBoxSetter config_box_setter
 )
 {
     m_config_box_list           = config_box_list;
     m_config_box_overrides_list = config_box_overrides_list;
+    m_config_box_setter         = std::move(config_box_setter);
 }
 
 void ConfigBoxInteractor::SetAccessor::set_value(const std::string& key, const Domain::ConfigValue& value)
 {
     m_config_box_list.lock()->set_value(key, value);
     m_config_box_overrides_list.lock()->set_value(key, value);
+}
+
+void ConfigBoxInteractor::SetAccessor::set_config_box(Domain::ConfigBox* config_box)
+{
+    ASSERT(m_config_box_setter != nullptr);
+    m_config_box_setter(config_box);
 }
 
 } // namespace Slic3r::Biz
