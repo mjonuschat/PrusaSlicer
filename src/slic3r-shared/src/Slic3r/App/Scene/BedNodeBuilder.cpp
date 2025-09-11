@@ -303,8 +303,7 @@ label_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
 {
     Render::Material material = BedMaterials::label_material(device, instance.label());
 
-    auto& geom_mgr    = ctx.model_geometry_manager();
-    auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
+    auto& geom_mgr = ctx.model_geometry_manager();
 
     // adapt label geometry to the extents of the label texture
     DEBUG_ASSERT(!material.textures().empty());
@@ -318,10 +317,9 @@ label_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
     DEBUG_ASSERT(!triangles.empty());
 
     AuxiliaryElementId id{AuxiliaryElementId::Type::BedLabel, tag.instance_id};
-    const auto* geom = geom_mgr.get_or_create(
-        id,
-        [&]() { return Render::geometry_from_triangles(device, triangles); }
-    );
+    // do not use get_or_create() because the label texture may change size, so does the geometry used to render it
+    geom_mgr.set(id, Render::geometry_from_triangles(device, triangles));
+    const auto* geom = geom_mgr.get(id);
 
     builder.child(
         [&](NodeBuilder& bldr)
