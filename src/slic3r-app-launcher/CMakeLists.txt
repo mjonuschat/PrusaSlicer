@@ -73,6 +73,7 @@ if (MSVC)
 endif ()
 
 slic3r_link_resources(slic3r-app-launcher ${SLIC3R_RESOURCES_DIR})
+slic3r_app_extract_symbols(slic3r-app-launcher)
 
 if (WIN32)
     prusaslicer_copy_dlls(slic3r-app-launcher)

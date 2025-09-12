@@ -88,3 +88,40 @@ function(prusaslicer_copy_dlls target)
         COMMENT "Copy mpfr runtime to build tree"
         VERBATIM)
 endfunction()
+
+function(slic3r_app_extract_symbols target)
+    # This entire process is only relevant on Apple platforms.
+    if(NOT APPLE OR NOT SLIC3R_RELEASE_DEBUG_SYMBOLS)
+        return()
+    endif()
+
+    # Find the necessary command-line tools.
+    find_program(DSYMUTIL_PROGRAM dsymutil)
+    find_program(STRIP_PROGRAM strip)
+
+    if(DSYMUTIL_PROGRAM AND STRIP_PROGRAM)
+        message(STATUS "dSYM generation and stripping enabled for ${target}")
+
+        # 1. Add a post-build command to generate the .dSYM bundle.
+        # This command runs *before* the stripping command.
+        add_custom_command(
+                TARGET ${target}
+                POST_BUILD
+                COMMAND ${DSYMUTIL_PROGRAM} "$<TARGET_FILE:${target}>"
+                COMMENT "Generating dSYM for ${target}..."
+                VERBATIM
+        )
+
+        # 2. Add a post-build command to strip the symbols from the executable.
+        # This runs *after* dSYM generation.
+        add_custom_command(
+                TARGET ${target}
+                POST_BUILD
+                COMMAND ${STRIP_PROGRAM} -S "$<TARGET_FILE:${target}>"
+                COMMENT "Stripping ${target}..."
+                VERBATIM
+        )
+    else()
+        message(WARNING "dsymutil or strip not found. Symbol extraction for ${target} will be skipped.")
+    endif()
+endfunction()
