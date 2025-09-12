@@ -15,6 +15,7 @@
 #include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
@@ -60,6 +61,7 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::arr2 {
 namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
+namespace mv = Slic3r::Biz::Algorithms::ModelVolume;
 
 coord_t get_skirt_inset(const Print &fffprint)
 {
@@ -126,7 +128,7 @@ Domain::BoundingBox3d instance_bounding_box(const Domain::ModelInstance &mi,
 
     for (Domain::ModelVolume *v : mi.get_object()->volumes) {
         if (v->is_model_part()) {
-            bb = merge(bb, tm::transformed_bounding_box(v->mesh(), tr * inst_matrix * v->get_matrix()));
+            bb = merge(bb, mv::transformed_bounding_box(*v, tr * inst_matrix * v->get_matrix()));
         }
     }
 

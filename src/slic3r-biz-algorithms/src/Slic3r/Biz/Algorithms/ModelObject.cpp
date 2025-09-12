@@ -206,7 +206,7 @@ const Domain::BoundingBox3d& raw_bounding_box(const Domain::ModelObject& model_o
         const Domain::Transform3d inst_matrix = model_object.instances.front()->get_transformation().get_matrix_no_offset();
         for (const Domain::ModelVolume* v : model_object.volumes) {
             if (v->is_model_part()) {
-                model_object.m_raw_bounding_box = BoundingBox::merge(model_object.m_raw_bounding_box, TriangleMesh::transformed_bounding_box(v->mesh(), inst_matrix * v->get_matrix()));
+                model_object.m_raw_bounding_box = BoundingBox::merge(model_object.m_raw_bounding_box, ModelVolume::transformed_bounding_box(*v, inst_matrix * v->get_matrix()));
             }
         }
     }
@@ -228,7 +228,7 @@ Domain::BoundingBox3d instance_bounding_box(const Domain::ModelObject& model_obj
 
     for (Domain::ModelVolume* v : model_object.volumes) {
         if (v->is_model_part()) {
-            bb = BoundingBox::merge(bb, TriangleMesh::transformed_bounding_box(v->mesh(), inst_matrix * v->get_matrix()));
+            bb = BoundingBox::merge(bb, ModelVolume::transformed_bounding_box(*v, inst_matrix * v->get_matrix()));
         }
     }
 
@@ -242,7 +242,7 @@ const Domain::BoundingBox3d& raw_mesh_bounding_box(const Domain::ModelObject& mo
         model_object.m_raw_mesh_bounding_box = {};
         for (const Domain::ModelVolume* v : model_object.volumes) {
             if (v->is_model_part()) {
-                model_object.m_raw_mesh_bounding_box = BoundingBox::merge(model_object.m_raw_mesh_bounding_box, TriangleMesh::transformed_bounding_box(v->mesh(), v->get_matrix()));
+                model_object.m_raw_mesh_bounding_box = BoundingBox::merge(model_object.m_raw_mesh_bounding_box, ModelVolume::transformed_bounding_box(*v, v->get_matrix()));
             }
         }
     }
@@ -254,7 +254,7 @@ Domain::BoundingBox3d full_raw_mesh_bounding_box(const Domain::ModelObject& mode
 {
     Domain::BoundingBox3d bb;
     for (const Domain::ModelVolume* v : model_object.volumes) {
-        bb = BoundingBox::merge(bb, TriangleMesh::transformed_bounding_box(v->mesh(), v->get_matrix()));
+        bb = BoundingBox::merge(bb, ModelVolume::transformed_bounding_box(*v, v->get_matrix()));
     }
 
     return bb;

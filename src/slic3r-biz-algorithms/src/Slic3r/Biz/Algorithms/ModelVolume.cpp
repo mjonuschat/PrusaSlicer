@@ -143,4 +143,11 @@ void calculate_convex_hull(Domain::ModelVolume& model_volume)
     assert(model_volume.m_convex_hull.get());
 }
 
+Domain::BoundingBox3d transformed_bounding_box(const Domain::ModelVolume& model_volume, const Domain::Transform3d& trafo)
+{
+    const auto ch = model_volume.get_convex_hull_shared_ptr();
+    const Domain::TriangleMesh* m = (ch != nullptr) ? ch.get() : &model_volume.mesh();
+    return TriangleMesh::transformed_bounding_box(*m, trafo);
+}
+
 } // namespace Slic3r::Biz::Algorithms::ModelVolume

@@ -60,7 +60,7 @@ bool is_splittable(const Domain::TriangleMesh& mesh);
 Domain::Polygon convex_hull(const Domain::TriangleMesh& mesh);
 Domain::TriangleMesh convex_hull_3d(const Domain::TriangleMesh& mesh);
 std::vector<Domain::TriangleMesh> split(const Domain::TriangleMesh& mesh);
-// Returns the bbox of this TriangleMesh transformed by the given transformation
+// Returns the bbox of the given TriangleMesh transformed by the given transformation
 Domain::BoundingBox3d transformed_bounding_box(
     const Domain::TriangleMesh& mesh,
     const Domain::Transform3d& trafo

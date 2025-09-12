@@ -39,6 +39,9 @@ void center_geometry_after_creation(Domain::ModelVolume& model_volume, bool upda
 
 void calculate_convex_hull(Domain::ModelVolume& model_volume);
 
+// Returns the bbox of the given ModelVolume transformed by the given transformation
+Domain::BoundingBox3d transformed_bounding_box(const Domain::ModelVolume& model_volume, const Domain::Transform3d& trafo);
+
 } // namespace Slic3r::Biz::Algorithms::ModelVolume
 
 namespace cereal {
