@@ -12,7 +12,7 @@ diff --git a/src/slic3r/GUI/GUI_App.cpp b/src/slic3r/GUI/GUI_App.cpp
 index 4e343939c..864a32168 100644
 --- a/src/slic3r/GUI/GUI_App.cpp
 +++ b/src/slic3r/GUI/GUI_App.cpp
-@@ -3566,12 +3566,12 @@ bool GUI_App::config_wizard_startup()
+@@ -3329,12 +3329,12 @@ bool GUI_App::config_wizard_startup()
          run_wizard(ConfigWizard::RR_DATA_LEGACY);
          return true;
      } 
