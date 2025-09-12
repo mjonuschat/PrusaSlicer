@@ -1,5 +1,6 @@
 set(SLIC3R_BASE_FILES
 		include/Slic3r/Assert.hpp
+		src/Slic3r/Assert.cpp
 		include/Slic3r/Log.hpp
 		src/Slic3r/Log.cpp
 		include/Slic3r/PlatformInfo.hpp

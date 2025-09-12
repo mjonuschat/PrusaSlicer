@@ -10,6 +10,10 @@
 
 #include "libassert/assert.hpp"
 
+namespace Slic3r {
+void init_assert();
+}
+
 #else // #ifndef __EMSCRIPTEN__
 
 // As we cannot use libassert in emscripten follows minimal implementation of the libassert API:

@@ -6,6 +6,7 @@
 #endif
 
 #include "Slic3r/App/CLI/CLIApp.hpp"
+#include "Slic3r/Assert.hpp"
 #include "ReadCLI.hpp"
 #include "Slic3r/Log.hpp"
 #include "SentryScope.hpp"
@@ -47,6 +48,8 @@ int main(int argc, char* argv[])
     Slic3r::set_file_log_config(file_log_config);
     Slic3r::init_logging();
     Slic3r::set_log_level(4);
+
+    Slic3r::init_assert();
 
     Slic3r::App::Launcher::SentryScope sentry;
 
