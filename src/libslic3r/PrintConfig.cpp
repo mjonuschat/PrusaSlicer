@@ -5213,6 +5213,203 @@ void PrintConfigDef::init_sla_params()
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(15));
 
+    def = this->add("light_off_time", coFloat);
+    def->label = L("Normal layers light off time");
+    def->tooltip = L("Normal layers light off time");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(2));
+
+    def = this->add("bot_light_off_time", coFloat);
+    def->label = L("Bottom layers light off time");
+    def->tooltip = L("Bottom layers light off time");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(3));
+
+    def = this->add("bot_lift_distance", coFloat);
+    def->full_label = L("Bottom layers lift distance");
+    def->label = L("First Stage");
+    def->tooltip = L("Bottom layers lift distance");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(8));
+
+    def = this->add("retract_height", coFloat);
+    def->full_label = L("Normal layers retract height");
+    def->label = L("First Stage");
+    def->tooltip = L("Normal layers retract height");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(8));
+
+    def = this->add("bot_retract_height", coFloat);
+    def->full_label = L("Bottom layers retract height");
+    def->label = L("First Stage");
+    def->tooltip = L("Bottom layers retract height");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(8));
+
+    def = this->add("lift_distance", coFloat);
+    def->full_label = L("Normal layers lift distance");
+    def->label = L("First Stage");
+    def->tooltip = L("Normal layers lift distance");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(8));
+
+
+    def = this->add("bot_lift_speed", coFloat);
+    def->full_label = L("Bottom layers lift speed");
+    def->label = L("First Stage");
+    def->tooltip = L("Bottom layers lift speed");
+    def->sidetext = L("mm/m");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(45));
+
+    def = this->add("lift_speed", coFloat);
+    def->full_label = L("Normal layers lift speed");
+    def->label = L("First Stage");
+    def->tooltip = L("Normal layers lift speed");
+    def->sidetext = L("mm/m");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(45));
+
+    def = this->add("sla_bot_retract_speed", coFloat);
+    def->full_label = L("Bottom layers retract speed");
+    def->label = L("First Stage");
+    def->tooltip = L("Bottom layers retract speed");
+    def->sidetext = L("mm/m");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(45));
+
+    def = this->add("sla_retract_speed", coFloat);
+    def->full_label = L("Normal layers retract speed");
+    def->label = L("First Stage");
+    def->tooltip = L("Normal layers retract speed");
+    def->sidetext = L("mm/m");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(45));
+
+    def = this->add("bot_light_intensity", coPercent);
+    def->label = L("Bottom layers light intensity");
+    def->tooltip = L("Bottom layers light_intensity");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionPercent(100));
+
+    def = this->add("light_intensity", coPercent);
+    def->label = L("Normal layers light intensity");
+    def->tooltip = L("Normal layers light_intensity");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionPercent(100));
+
+    def = this->add("rest_time_after_lift", coFloat);
+    def->full_label = L("Rest time after lifting the build plate");
+    def->label = L("First Stage");
+    def->tooltip = L("Rest time after lifting the build plate");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(1));
+
+    def = this->add("rest_time_after_retract", coFloat);
+    def->label = L("Rest time after retracting the build plate");
+    def->tooltip = L("Rest time after retracting the build plate");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(1));
+
+
+
+    // TSMC
+    def = this->add("tsmc_bot_enable", coBool);
+    def->label = L("Enable Two-Stage Motor Control");
+    def->tooltip = L("Enable two stage motor control for bottom layers");
+    def->category = L("Bottom tsmc");
+    def->mode = comSimple;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("tsmc_enable", coBool);
+    def->label = L("Enable Two-Stage Motor Control");
+    def->tooltip = L("Enable two stage motor control for normal layers");
+    def->category = L("tsmc");
+    def->mode = comSimple;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("tsmc_bot_lift_distance", coFloat);
+    def->label = L("Second Stage");
+    def->tooltip = L("Bottom layers second stage lift distance");
+    def->category = L("Bottom tsmc");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("tsmc_lift_distance", coFloat);
+    def->label = L("Second Stage");
+    def->tooltip = L("Normal layers second stage lift distance");
+    def->category = L("tsmc");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("tsmc_bot_lift_speed", coFloat);
+    def->label = L("Second Stage");
+    def->tooltip = L("Bottom layers second stage lift speed");
+    def->category = L("Bottom tsmc");
+    def->sidetext = L("mm/m");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("tsmc_lift_speed", coFloat);
+    def->label = L("Second Stage");
+    def->tooltip = L("Normal layers second stage lift speed");
+    def->category = L("tsmc");
+    def->sidetext = L("mm/m");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("tsmc_sla_bot_retract_speed", coFloat);
+    def->label = L("Second Stage");
+    def->tooltip = L("Bottom layers second stage retract speed");
+    def->category = L("Bottom tsmc");
+    def->sidetext = L("mm/m");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("tsmc_sla_retract_speed", coFloat);
+    def->label = L("Second Stage");
+    def->tooltip = L("Normal layers second stage retract speed");
+    def->category = L("tsmc");
+    def->sidetext = L("mm/m");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("tsmc_bot_retract_height", coFloat);
+    def->label = L("Second Stage");
+    def->tooltip = L("Bottom layers second stage retract height");
+    def->category = L("Bottom tsmc");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("tsmc_retract_height", coFloat);
+    def->label = L("Second Stage");
+    def->tooltip = L("Normal layers second stage retract height");
+    def->category = L("tsmc");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("tsmc_rest_time_after_lift", coFloat);
+    def->label = L("Second Stage");
+    def->tooltip = L("Second stage rest time after lifting the build plate");
+    def->category = ("tsmc");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
     def = this->add("material_correction", coFloats);
     def->full_label = L("Correction for expansion");
     def->tooltip  = L("Correction for expansion");
@@ -5513,8 +5710,8 @@ void PrintConfigDef::init_sla_params()
     // Declare retract values for material profile, overriding the print and printer profiles.
     for (const char* opt_key : {
         // float
-        "support_head_front_diameter", "branchingsupport_head_front_diameter", 
-        "support_head_penetration", "branchingsupport_head_penetration", 
+        "support_head_front_diameter", "branchingsupport_head_front_diameter",
+        "support_head_penetration", "branchingsupport_head_penetration",
         "support_head_width", "branchingsupport_head_width",
         "support_pillar_diameter", "branchingsupport_pillar_diameter",
         "elefant_foot_compensation", "absolute_correction",
@@ -5571,7 +5768,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats({ 0., 0.}));
 
-    def = this->add("tower_speed", coEnums); 
+    def = this->add("tower_speed", coEnums);
     def->full_label = L("Tower speed");
     def->tooltip = L("Tower speed used for tower raise.");
     def->mode = comExpert;
@@ -5608,7 +5805,7 @@ void PrintConfigDef::init_sla_tilt_params()
         { "move8000",   "8000"  },
     };
 
-    def = this->add("tilt_down_initial_speed", coEnums); 
+    def = this->add("tilt_down_initial_speed", coEnums);
     def->full_label = L("Tilt down initial speed");
     def->tooltip = L("Tilt speed used for an initial portion of tilt down move.");
     def->mode = comExpert;
@@ -5616,7 +5813,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->set_enum<TiltSpeeds>(tilt_speeds_il);
     def->set_default_value(new ConfigOptionEnums<TiltSpeeds>({ tsLayer1750, tsLayer1750 }));
 
-    def = this->add("tilt_down_finish_speed", coEnums); 
+    def = this->add("tilt_down_finish_speed", coEnums);
     def->full_label = L("Tilt down finish speed");
     def->tooltip = L("Tilt speed used for the rest of the tilt down move.");
     def->mode = comExpert;
@@ -5624,7 +5821,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->set_enum<TiltSpeeds>(tilt_speeds_il);
     def->set_default_value(new ConfigOptionEnums<TiltSpeeds>({ tsLayer1750, tsLayer1750 }));
 
-    def = this->add("tilt_up_initial_speed", coEnums); 
+    def = this->add("tilt_up_initial_speed", coEnums);
     def->full_label = L("Tilt up initial speed");
     def->tooltip = L("Tilt speed used for an initial portion of tilt up move.");
     def->mode = comExpert;
@@ -5632,7 +5829,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->set_enum<TiltSpeeds>(tilt_speeds_il);
     def->set_default_value(new ConfigOptionEnums<TiltSpeeds>({ tsMove8000, tsMove8000 }));
 
-    def = this->add("tilt_up_finish_speed", coEnums); 
+    def = this->add("tilt_up_finish_speed", coEnums);
     def->full_label = L("Tilt up finish speed");
     def->tooltip = L("Tilt speed used for the rest of the tilt-up.");
     def->mode = comExpert;
@@ -6004,7 +6201,7 @@ void DynamicPrintConfig::normalize_fdm()
         opt_wall_transition_length->value = std::max(opt_wall_transition_length->value, 0.001);
 }
 
-// Default values containe option pair of values (Below and Above) for each titl modes 
+// Default values containe option pair of values (Below and Above) for each titl modes
 // (Slow, Fast, HighViscosity and NoTilt) -> used for SL1S and other vendors printers
 
 const std::map<std::string, ConfigOptionFloats> tilt_options_floats_defs =
@@ -6044,7 +6241,7 @@ const std::map<std::string, ConfigOptionEnums<TiltSpeeds>> tilt_options_enums_de
     {"tilt_up_finish_speed",      ConfigOptionEnums<TiltSpeeds>({ tsLayer1750, tsLayer1750, tsLayer1750, tsLayer1750, tsLayer800, tsLayer800, tsMove120, tsMove120 }) } ,
 };
 
-// Default values containe option pair of values (Below and Above) for each titl modes 
+// Default values containe option pair of values (Below and Above) for each titl modes
 // (Slow, Fast, HighViscosity and NoTilt) -> used for SL1 printer
 
 const std::map<std::string, ConfigOptionFloats> tilt_options_floats_sl1_defs =
@@ -6457,7 +6654,7 @@ CLIActionsConfigDef::CLIActionsConfigDef()
 {
     ConfigOptionDef* def;
 
-    // doesn't need any aditional input 
+    // doesn't need any aditional input
 
     def = this->add("help", coBool);
     def->label = L("Help");
