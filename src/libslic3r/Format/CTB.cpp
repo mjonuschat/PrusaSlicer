@@ -5,8 +5,6 @@
 #include <fstream>
 #include <cstdint>
 #include <chrono>
-#include "openssl/sha.h"
-#include "openssl/evp.h"
 
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/SLA/RasterBase.hpp"
