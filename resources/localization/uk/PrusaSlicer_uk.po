@@ -785,6 +785,7 @@ msgstr "Частина деталі в повітрі"
 msgid "Thin fragile part"
 msgstr "Тонка крихка частина"
 
+# DrFOXUA: do not translate
 #. TRN this translation rule is used to translate lists of uknown size on single line. The first argument is element of the list,
 #. the second argument may be element or rest of the list. For most languages, this does not need translation, but some use different
 #. separator than comma and some use blank space in front of the separator.
@@ -1267,6 +1268,7 @@ msgstr ""
 "Температура столу для останніх шарів після першого. Установіть 0, щоб "
 "відключити команди керування температурою столу на виході."
 
+# DrFOXUA: do not translate
 #: src/libslic3r/PrintConfig.cpp:597 src/libslic3r/PrintConfig.cpp:609
 #: src/libslic3r/PrintConfig.cpp:622 src/libslic3r/PrintConfig.cpp:1631
 #: src/libslic3r/PrintConfig.cpp:1698 src/libslic3r/PrintConfig.cpp:3610
@@ -1433,6 +1435,7 @@ msgstr ""
 "автоматично. Інакше передбачений кут буде використаний для всіх мостів. "
 "Використовуйте 180° для нульового кута."
 
+# DrFOXUA: do not translate
 #: src/libslic3r/PrintConfig.cpp:692 src/libslic3r/PrintConfig.cpp:1550
 #: src/libslic3r/PrintConfig.cpp:2059 src/libslic3r/PrintConfig.cpp:2733
 #: src/libslic3r/PrintConfig.cpp:2929 src/libslic3r/PrintConfig.cpp:2939
@@ -1796,7 +1799,7 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:948
 msgid "Cooling slowdown logic"
-msgstr ""
+msgstr "Логіка уповільнення охолодження"
 
 #: src/libslic3r/PrintConfig.cpp:949
 msgid ""
@@ -1807,18 +1810,26 @@ msgid ""
 "'Uniform cooling' slows down all print features, including the first two "
 "perimeters."
 msgstr ""
+"Визначає, як принтер уповільнює друк шарів, якщо мінімальний час друку шару "
+"не досягнуто. \n"
+"- 'Постійна поверхня' спочатку намагається зберегти швидкість друку перших "
+"двох периметрів, сповільнюючи всі інші характеристики. \n"
+"   Тільки якщо цього недостатньо, він також уповільнює ці перші два "
+"периметри. \n"
+"- 'Рівномірне охолодження' уповільнює всі елементи друку, включно з першими "
+"двома периметрами."
 
 #: src/libslic3r/PrintConfig.cpp:954
 msgid "Uniform cooling"
-msgstr ""
+msgstr "Рівномірне охолодження"
 
 #: src/libslic3r/PrintConfig.cpp:955
 msgid "Consistent surface"
-msgstr ""
+msgstr "Постійна поверхня"
 
 #: src/libslic3r/PrintConfig.cpp:960
 msgid "Perimeter transition distance"
-msgstr ""
+msgstr "Відстань переходу по периметру"
 
 #: src/libslic3r/PrintConfig.cpp:961
 msgid ""
@@ -1826,6 +1837,10 @@ msgid ""
 "unslowed print speed is restored. This reduces print quality issues when "
 "transitioning from heavily slowed feature to fast perimeter printing."
 msgstr ""
+"Відстань у міліметрах перед несповільненими периметрами, де відновлюється "
+"початкова швидкість друку без сповільнення. \n"
+"Це зменшує проблеми з якістю друку під час переходу від сильно сповільненої "
+"функції до швидкого друку по периметру."
 
 #: src/libslic3r/PrintConfig.cpp:968
 msgid "Cooling tube position"
@@ -3181,13 +3196,15 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:1869
 msgid "Travel short distance acceleration"
-msgstr ""
+msgstr "Прискорення на короткі дистанції"
 
 #: src/libslic3r/PrintConfig.cpp:1870
 msgid ""
 "Acceleration used for short travel moves. Short travel distance is "
 "determined by the retract_before_travel setting."
 msgstr ""
+"Прискорення використовується для коротких переміщень. Відстань короткого "
+"переміщення визначається налаштуванням retract_before_travel."
 
 #: src/libslic3r/PrintConfig.cpp:1877
 msgid "Combine infill every"
@@ -3874,7 +3891,7 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:2409
 msgid "Custom print parameters"
-msgstr ""
+msgstr "Користувацькі параметри друку"
 
 #: src/libslic3r/PrintConfig.cpp:2411
 #, boost-format
@@ -3887,6 +3904,14 @@ msgid ""
 "The JSON must be single level (no arrays and objects). All value types are "
 "allowed, but nulls will be rejected by the parser."
 msgstr ""
+"Закодований у JSON рядок, що визначає додаткові параметри, які згодом можуть "
+"бути розширені в макромові Користувацького G-коду. \n"
+"Перед передачею в парсер до кожного з параметрів додається префікс %1%. "
+"Наприклад, визначаючи '{\"my_key\": \"my_value\"}' дає змогу використовувати "
+"'%1%_my_key'.\n"
+"\n"
+"JSON має бути однорівневим (без масивів і об'єктів). Допускаються всі типи "
+"значень, але нулі будуть відхилені парсером."
 
 #: src/libslic3r/PrintConfig.cpp:2425 src/slic3r/GUI/Tab.cpp:3259
 msgid "Nozzle diameter"
@@ -4892,7 +4917,7 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:3113
 msgid "Custom printer parameters"
-msgstr ""
+msgstr "Користувацькі параметри принтера"
 
 #: src/libslic3r/PrintConfig.cpp:3123
 msgid ""
@@ -4905,7 +4930,7 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:3132
 msgid "Custom filament parameters"
-msgstr ""
+msgstr "Користувацькі параметри філаменту"
 
 #: src/libslic3r/PrintConfig.cpp:3142
 msgid ""
@@ -7118,7 +7143,7 @@ msgstr "Вирівняйте модель за заданою точкою."
 
 #: src/libslic3r/PrintConfig.cpp:5883 src/slic3r/GUI/Gizmos/GLGizmoCut.cpp:1252
 msgid "Cut"
-msgstr "Розрізати"
+msgstr "Вирізати"
 
 #: src/libslic3r/PrintConfig.cpp:5884
 msgid "Cut model at the given Z."
@@ -7127,7 +7152,7 @@ msgstr "Розрізати модель за заданим Z."
 #: src/libslic3r/PrintConfig.cpp:5888
 #: src/slic3r/GUI/ArrangeSettingsDialogImgui.cpp:95
 msgid "Center"
-msgstr "Центр"
+msgstr "По центру"
 
 #: src/libslic3r/PrintConfig.cpp:5889
 msgid "Center the print around the given center."
@@ -8754,7 +8779,7 @@ msgstr "Експертний"
 
 #: src/slic3r/GUI/ButtonsDescription.cpp:186
 msgid "Revert color"
-msgstr "Скидання кольору"
+msgstr "Скинути кольор"
 
 #: src/slic3r/GUI/ButtonsDescription.cpp:204
 msgid "Buttons And Text Colors Description"
@@ -9229,7 +9254,7 @@ msgstr "Дозволити вбудований завантажувач"
 #. "For a list of supported websites, follow this link"
 #: src/slic3r/GUI/ConfigWizard.cpp:1658
 msgid "link"
-msgstr ""
+msgstr "посилання"
 
 #. TRN ConfigWizard : Downloader : %1% = "printables.com", "%2%" = "link"
 #: src/slic3r/GUI/ConfigWizard.cpp:1661
@@ -9238,6 +9263,9 @@ msgid ""
 "Enable this option to open models from supported websites (e.g. %1%) with a "
 "single click. For a list of supported websites, follow this %2%."
 msgstr ""
+"Увімкніть цю опцію, щоб відкривати моделі з підтримуваних веб-сайтів "
+"(наприклад, %1%) одним клацанням миші. Щоб побачити список підтримуваних веб-"
+"сайтів, перейдіть за цим посиланням %2%."
 
 #: src/slic3r/GUI/ConfigWizard.cpp:1681
 msgid ""
@@ -10378,7 +10406,7 @@ msgstr "Якесь розширення у вхідних даних є неді
 
 #: src/slic3r/GUI/FileArchiveDialog.cpp:174
 msgid "Archive preview"
-msgstr "Попередній перегляд архіву"
+msgstr "Перегляд архіву"
 
 #: src/slic3r/GUI/FileArchiveDialog.cpp:277
 #: src/slic3r/GUI/FileArchiveDialog.cpp:290
@@ -11469,7 +11497,7 @@ msgstr "Застосувати"
 
 #: src/slic3r/GUI/Gizmos/GLGizmoEmboss.cpp:1734
 msgid "Revert font changes."
-msgstr "Скидання шрифту."
+msgstr "Скинути зміни шрифту."
 
 #: src/slic3r/GUI/Gizmos/GLGizmoEmboss.cpp:1840
 #, boost-format
@@ -11680,7 +11708,7 @@ msgstr "Скинути розмір тексту."
 
 #: src/slic3r/GUI/Gizmos/GLGizmoEmboss.cpp:2649
 msgid "Revert embossed depth."
-msgstr "Скинути висоту рельєфу шрифту."
+msgstr "Скинути глибину тиснення."
 
 #: src/slic3r/GUI/Gizmos/GLGizmoEmboss.cpp:2708
 msgid ""
@@ -12187,7 +12215,7 @@ msgstr "Випорожнити цей об'єкт"
 
 #: src/slic3r/GUI/Gizmos/GLGizmoHollow.cpp:35
 msgid "Preview hollowed and drilled model"
-msgstr "Попередній перегляд порожнистої та просвердленої моделі"
+msgstr "Перегляд порожнистої та просвердленої моделі"
 
 #: src/slic3r/GUI/Gizmos/GLGizmoHollow.cpp:36
 msgid "Offset"
@@ -12854,7 +12882,7 @@ msgstr "Правка: Інструмент - SVG"
 #: src/slic3r/GUI/Gizmos/GLGizmoSVG.cpp:391
 #: src/slic3r/GUI/GUI_Factories.cpp:621
 msgid "SVG"
-msgstr ""
+msgstr "Файл .SVG"
 
 #: src/slic3r/GUI/Gizmos/GLGizmoSVG.cpp:1057
 #: src/slic3r/GUI/Gizmos/GLGizmoSVG.cpp:1094
@@ -13049,7 +13077,7 @@ msgstr "Віддзеркалити"
 
 #: src/slic3r/GUI/Gizmos/GLGizmoSVG.cpp:2178
 msgid "Choose SVG file for emboss:"
-msgstr "Вибрати файл .SVG для рельєфного тексту:"
+msgstr "Вибрати файл .SVG для тиснення:"
 
 #: src/slic3r/GUI/Gizmos/GLGizmoSVG.cpp:2232
 #, boost-format
@@ -13069,7 +13097,7 @@ msgstr "Парсер NanoSVG не може прочитати файл (%1%)."
 #: src/slic3r/GUI/Gizmos/GLGizmoSVG.cpp:2252
 #, boost-format
 msgid "SVG file does NOT contain a single path to be embossed (%1%)."
-msgstr "Файл .SVG не містить жодного шляху для рельєфного тексту (%1%)."
+msgstr "SVG-файл НЕ містить жодного шляху для тиснення (%1%)."
 
 #: src/slic3r/GUI/Gizmos/GLGizmosManager.cpp:214
 msgid ""
@@ -14066,6 +14094,10 @@ msgid ""
 "\n"
 "Downloads can be registered for only 1 executable at a time."
 msgstr ""
+"Ви бажаєте зареєструвати завантаження з підтримуваних веб-сайтів \n"
+"для цього виконуваного файла <b>%1% %2%</b>?\n"
+"\n"
+"Завантаження можна зареєструвати лише для 1 виконуваного файла за один раз."
 
 #: src/slic3r/GUI/GUI_App.cpp:3447
 msgid "Select a gcode file:"
@@ -15247,7 +15279,7 @@ msgstr "Додати об'єкт Рельєфного тексту"
 #. It is same for Text and SVG.
 #: src/slic3r/GUI/Jobs/EmbossJob.cpp:1035
 msgid "Emboss attribute change"
-msgstr "Змінити параметри рельєфу"
+msgstr "Змінити параметри тиснення"
 
 #: src/slic3r/GUI/Jobs/EmbossJob.cpp:1093
 msgid "Add Emboss text Volume"
@@ -15898,7 +15930,7 @@ msgstr "Встановити активним правий повзунок"
 
 #: src/slic3r/GUI/KBShortcutsDialog.cpp:266
 msgid "Horizontal Slider"
-msgstr "Горизонтальний повзунок"
+msgstr "Горизонтальний Повзунок"
 
 #: src/slic3r/GUI/KBShortcutsDialog.cpp:266
 msgid ""
@@ -16889,6 +16921,8 @@ msgid ""
 "PrusaSlicer received a download request from supported website, but it's not "
 "allowed. You can allow it"
 msgstr ""
+"PrusaSlicer отримав запит на завантаження з підтримуваного веб-сайту, але це "
+"заборонено. Ви можете дозволити його"
 
 #: src/slic3r/GUI/NotificationManager.hpp:966
 msgid "here."
@@ -18686,11 +18720,14 @@ msgstr ""
 #: src/slic3r/GUI/Preferences.cpp:643
 msgid "Allow downloads from supported websites (e.g. Printables.com)"
 msgstr ""
+"Дозволити завантаження з підтримуваних веб-сайтів (наприклад, Printables.com)"
 
 #: src/slic3r/GUI/Preferences.cpp:644
 msgid ""
 "If enabled, PrusaSlicer can download and open files from supported websites"
 msgstr ""
+"Якщо увімкнено, PrusaSlicer може завантажувати та відкривати файли з "
+"підтримуваних веб-сайтів"
 
 #: src/slic3r/GUI/Preferences.cpp:654
 msgid "Render"
@@ -18783,7 +18820,7 @@ msgstr "Розмір шрифту програми"
 
 #: src/slic3r/GUI/Preferences.cpp:1135
 msgid "Revert font to default"
-msgstr "Скидання шрифту за замовчуванням"
+msgstr "Відновити шрифт за замовчуванням"
 
 #: src/slic3r/GUI/Preferences.cpp:1147
 msgid "Font size"
@@ -19033,7 +19070,7 @@ msgstr "Об'ємний"
 # Ограничение скорости печати: 2
 #: src/slic3r/GUI/PresetHints.cpp:193
 msgid "flow rate is maximized"
-msgstr "швидкість потоку максимізується"
+msgstr "швидкість потоку збільшується"
 
 # Ограничение скорости печати:
 #: src/slic3r/GUI/PresetHints.cpp:196
@@ -19156,6 +19193,7 @@ msgstr "Завантажити в Чергу"
 msgid "Upload and Simulate"
 msgstr "Завантажити та змоделювати"
 
+# DrFOXUA: do not translate
 #: src/slic3r/GUI/PrintHostDialogs.cpp:302
 msgid "ID"
 msgstr ""
@@ -19596,7 +19634,7 @@ msgstr "Використано Матеріалу (мл)"
 msgid "object"
 msgid_plural "objects"
 msgstr[0] "об'єкт"
-msgstr[1] "об'єкт"
+msgstr[1] "об'єкта"
 msgstr[2] "об'єктів"
 
 #: src/slic3r/GUI/Sidebar.cpp:972
@@ -19773,7 +19811,7 @@ msgstr "символічне ім'я профілю"
 
 #: src/slic3r/GUI/Tab.cpp:1419
 msgid "Unable to parse custom parameters."
-msgstr ""
+msgstr "Неможливо розібрати користувацькі параметри."
 
 #: src/slic3r/GUI/Tab.cpp:1431 src/slic3r/GUI/Tab.cpp:5982
 msgid "Layers and perimeters"
@@ -19821,7 +19859,7 @@ msgstr "Органічні підтримки"
 
 #: src/slic3r/GUI/Tab.cpp:1597
 msgid "Speed for print moves"
-msgstr "Швидкість друкарських рухів"
+msgstr "Швидкість переміщення під час друку"
 
 #: src/slic3r/GUI/Tab.cpp:1611
 msgid "Dynamic overhang speed"
@@ -19829,7 +19867,7 @@ msgstr "Динамічна швидкість під час нависань"
 
 #: src/slic3r/GUI/Tab.cpp:1618
 msgid "Speed for non-print moves"
-msgstr "Швидкість недрукарських рухів"
+msgstr "Швидкість переміщення без друку"
 
 #: src/slic3r/GUI/Tab.cpp:1622
 msgid "Modifiers"
@@ -19874,7 +19912,7 @@ msgstr "Генератор периметра движка Arachne"
 #: src/slic3r/GUI/Tab.cpp:1721 src/slic3r/GUI/Tab.cpp:2386
 #: src/slic3r/GUI/Tab.cpp:2984
 msgid "Custom parameters"
-msgstr ""
+msgstr "Користувацькі параметри"
 
 #: src/slic3r/GUI/Tab.cpp:1729 src/slic3r/GUI/Tab.cpp:6030
 msgid "Output options"
@@ -21338,6 +21376,7 @@ msgstr ""
 "Примітка: Цей файл міститиме ім'я мережі (SSID) і пароль у вигляді "
 "звичайного тексту."
 
+# DrFOXUA: do not translate
 #. TRN SSID of WiFi network. It is a standard abbreviation which should probably not change in most languages.
 #: src/slic3r/GUI/WifiConfigDialog.cpp:61
 msgid "SSID"

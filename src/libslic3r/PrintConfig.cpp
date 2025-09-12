@@ -690,6 +690,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for bridges.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -1058,6 +1059,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable all Minimum Cruise Ratio controls.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -1809,6 +1811,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for first_layer.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -1836,6 +1839,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for first layer of object above raft interface.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -2061,6 +2065,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for infill.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -2088,6 +2093,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for solid infill.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -2115,6 +2121,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for top solid infill.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -2142,6 +2149,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for the wipe tower.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -2169,6 +2177,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for travel.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -2195,6 +2204,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for short travel moves.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -3029,6 +3039,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for perimeters.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -3054,6 +3065,7 @@ void PrintConfigDef::init_fff_params()
                    "Set zero to disable control for bridges.");
     def->sidetext = L("mm");
     def->min = 0;
+    def->max = 0.999999;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 

@@ -5923,11 +5923,20 @@ msgid ""
 "'Uniform cooling' slows down all print features, including the first two "
 "perimeters."
 msgstr ""
-"最小レイヤー時間に達しない場合に、プリンターがどのようにレイヤー印刷を遅くす"
-"るかを決定します。一貫したサーフェス」はまず、他のすべてのフィーチャを遅くす"
-"ることで、最初の2つのペリメータの印刷速度を維持しようとします。これが十分でな"
-"い場合のみ、最初の2つの周縁の印刷速度も遅くする。均一冷却」は、最初の2つの周"
-"囲を含むすべての印刷フィーチャを遅くします。"
+"最小レイヤータイムが達成されない場合に、プリンタがそのレイヤーのプリントをど"
+"のように減速させるかを決定します。「均一的な表面」は、まず他のすべてのフィー"
+"チャーを減速させることで、最初の2つのペリメーターのプリント速度を維持しようと"
+"します。これが不十分な場合にのみ、最初の2つのペリメターも減速させます。「均一"
+"的な冷却」は、最初の2つのペリメーターを含むすべてのプリント動作を減速させま"
+"す。"
+
+#: src/libslic3r/PrintConfig.cpp:954
+msgid "Uniform cooling"
+msgstr "均一的な冷却"
+
+#: src/libslic3r/PrintConfig.cpp:955
+msgid "Consistent surface"
+msgstr "均一的な表面"
 
 #: src/libslic3r/PrintConfig.cpp:872
 msgid "Outer brim only"
@@ -9920,6 +9929,23 @@ msgid ""
 msgstr ""
 "以下のインストール済みプリンターのみが、選択したフィラメントと互換性がありま"
 "す"
+
+#. TRN ConfigWizard : "link" is a word from phrase
+#. "For a list of supported websites, follow this link"
+#: src/slic3r/GUI/ConfigWizard.cpp:1658
+msgid "link"
+msgstr "リンク"
+
+#. TRN ConfigWizard : Downloader : %1% = "printables.com", "%2%" = "link"
+#: src/slic3r/GUI/ConfigWizard.cpp:1661
+#, boost-format
+msgid ""
+"Enable this option to open models from supported websites (e.g. %1%) with a "
+"single click. For a list of supported websites, follow this %2%."
+msgstr ""
+"このオプションを有効にすると、対応しているウェブサイト（例： %1% ）からモデル"
+"をワンクリックで開くことができます。対応しているウェブサイトのリストについて"
+"は、こちらの %2% をご覧ください。"
 
 #: src/slic3r/GUI/ConfigWizard.cpp:1029
 msgid ""
@@ -18317,6 +18343,12 @@ msgstr ""
 #: src/slic3r/GUI/Preferences.cpp:437 src/slic3r/GUI/Preferences.cpp:438
 msgid "Show splash screen"
 msgstr "スプラッシュ画面を表示する"
+
+#: src/slic3r/GUI/Preferences.cpp:643
+msgid "Allow downloads from supported websites (e.g. Printables.com)"
+msgstr ""
+"サポートされているウェブサイト（例：Printables.com）からのダウンロードを許可"
+"する"
 
 #: src/slic3r/GUI/Preferences.cpp:443
 msgid "If enabled, PrusaSlicer will be open at the position it was closed"
