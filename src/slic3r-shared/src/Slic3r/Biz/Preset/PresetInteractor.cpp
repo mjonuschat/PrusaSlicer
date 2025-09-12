@@ -8,7 +8,6 @@
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
-#include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 
 #include <vector>
 #include <string>
@@ -256,7 +255,7 @@ const std::string& PresetInteractor::selected_hw_config_id() const
 
 const Domain::Preset::HwPrinterConfig& PresetInteractor::current_printer_config() const
 {
-    return get_printer_config((selected_hw_config_id()));
+    return get_printer_config((selected_hw_config_id())).first.get();
 }
 
 const Domain::Preset::EvaluatedPrinterPreset::Preset&
@@ -270,7 +269,7 @@ PresetInteractor::current_printer_preset() const
     const auto& selected_preset = cc->selected_preset();
     const auto& hw_config_id    = selected_preset.hw_config.id;
     const auto& printer_id      = selected_preset.printer.id;
-    return get_printer_preset(hw_config_id, printer_id);
+    return get_printer_preset(hw_config_id, printer_id).first.get();
 }
 
 const Domain::Preset::SelectedPreset& PresetInteractor::selected_printer_preset() const
@@ -350,8 +349,8 @@ void PresetInteractor::fill_config_container_with_selected_preset(
     const std::string& printer_preset_id
 )
 {
-    const auto& hw_config      = get_printer_config(printer_hw_config_id);
-    const auto& printer_preset = get_printer_preset(printer_hw_config_id, printer_preset_id);
+    const auto& hw_config      = get_printer_config(printer_hw_config_id).first.get();
+    const auto& printer_preset = get_printer_preset(printer_hw_config_id, printer_preset_id).first.get();
 
     const auto& p = get_or_create_project_context(m_selected_project_id);
 
@@ -455,7 +454,8 @@ void PresetInteractor::fill_printer_presets()
     const auto& selected_preset = selected_printer_preset();
     const HwPrinterConfigProjectView config_view(preset_bundle, p.runtime_presets);
     size_t idx = 0;
-    for (const auto& hw_config : config_view.items()) {
+    for (const auto& [hw_config_rw, runtime] : config_view.items()) {
+        const auto& hw_config = hw_config_rw.get();
         const PrinterPresetProjectView printer_view(preset_bundle, p.runtime_presets, hw_config.id);
         for (const auto& [printer_rw, is_runtime] : printer_view.items()) {
             const auto& printer = printer_rw.get();
@@ -746,9 +746,9 @@ void PresetInteractor::select_print_preset(const std::string& id)
 {
     Domain::Preset::SelectedPreset& selected_preset = mutable_selected_printer_presets();
     const auto& hw_config                           = selected_preset.hw_config;
-    const auto& printer = get_printer_preset(hw_config.id, selected_preset.printer.id);
+    const auto& printer = get_printer_preset(hw_config.id, selected_preset.printer.id).first.get();
 
-    const auto& p = get_print_preset(hw_config.id, printer.id, id);
+    const auto& p = get_print_preset(hw_config.id, printer.id, id).first.get();
 
     selected_preset.print = p;
 
@@ -782,7 +782,7 @@ void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::st
         selected_preset.print.id,
         tool_index,
         id
-    );
+    ).first.get();
     selected_preset.tools[tool_index] = t;
 
     m_tool_print_presets_writer.mutate_at(
@@ -819,7 +819,7 @@ void PresetInteractor::select_material_preset(size_t material_index, const std::
         selected_preset.print.id,
         material_index,
         id
-    );
+    ).first.get();
 
     selected_preset.materials[material_index] = m;
 
@@ -1268,21 +1268,25 @@ void PresetInteractor::load_selected_preset_from_3mf(
     }
 }
 
-const Domain::Preset::HwPrinterConfig& PresetInteractor::get_printer_config(
+PresetInteractor::ConstRefBoolPair<Domain::Preset::HwPrinterConfig>
+PresetInteractor::get_printer_config(
+    Domain::SelectionId project_id,
     const std::string& hw_config_id
 ) const
 {
     const auto& printer_configs = m_workbench.preset_bundle().printer_configs;
     if (auto it = printer_configs.find(hw_config_id); it != printer_configs.end())
-        return it->second;
-    const auto& p   = get_or_fail_project_context(m_selected_project_id);
+        return {std::cref(it->second), false};
+    const auto& p   = get_or_fail_project_context(project_id);
     const auto* cfg = p.runtime_presets.find_printer_config_by_id(hw_config_id);
 
     ASSERT(cfg != nullptr, hw_config_id);
-    return *cfg;
+    return {std::cref(*cfg), true};
 }
 
-const Domain::Preset::EvaluatedPrinterPreset::Preset& PresetInteractor::get_printer_preset(
+PresetInteractor::ConstRefBoolPair<Domain::Preset::EvaluatedPrinterPreset::Preset>
+PresetInteractor::get_printer_preset(
+    Domain::SelectionId project_id,
     const std::string& hw_config_id,
     const std::string& printer_preset_id
 ) const
@@ -1290,16 +1294,18 @@ const Domain::Preset::EvaluatedPrinterPreset::Preset& PresetInteractor::get_prin
     const auto* printer_preset =
         m_workbench.preset_bundle().find_printer_preset(hw_config_id, printer_preset_id);
     if (printer_preset != nullptr)
-        return printer_preset->preset;
+        return {std::cref(printer_preset->preset), false};
 
-    const auto& p = get_or_fail_project_context(m_selected_project_id);
+    const auto& p = get_or_fail_project_context(project_id);
     const auto* runtime_printer_preset =
         p.runtime_presets.find_printer_preset_by_id(hw_config_id, printer_preset_id);
     ASSERT(runtime_printer_preset != nullptr, std::tuple{hw_config_id, printer_preset_id});
-    return *runtime_printer_preset;
+    return {std::cref(*runtime_printer_preset), true};
 }
 
-const Domain::Preset::EvaluatedPrintPreset::Preset& PresetInteractor::get_print_preset(
+PresetInteractor::ConstRefBoolPair<Domain::Preset::EvaluatedPrintPreset::Preset>
+PresetInteractor::get_print_preset(
+    Domain::SelectionId project_id,
     const std::string& hw_config_id,
     const std::string& printer_preset_id,
     const std::string& print_id
@@ -1310,16 +1316,17 @@ const Domain::Preset::EvaluatedPrintPreset::Preset& PresetInteractor::get_print_
     if (printer_preset != nullptr) {
         const auto* print = find_by_id(printer_preset->prints, print_id);
         if (print != nullptr)
-            return print->preset;
+            return {std::cref(print->preset), false};
     }
-    const auto& p = get_or_fail_project_context(m_selected_project_id);
+    const auto& p = get_or_fail_project_context(project_id);
     const auto* print =
         p.runtime_presets.find_print_preset_by_id({hw_config_id, printer_preset_id}, print_id);
     ASSERT(print != nullptr, std::tuple{hw_config_id, printer_preset_id, print_id});
-    return *print;
+    return {std::cref(*print), true};
 }
 
-const Domain::Preset::EvaluatedToolPrintPreset::Preset& PresetInteractor::get_tool_print_preset(
+PresetInteractor::ConstRefBoolPair<Domain::Preset::EvaluatedToolPrintPreset::Preset> PresetInteractor::get_tool_print_preset(
+    Domain::SelectionId project_id,
     const std::string& hw_config_id,
     const std::string& printer_preset_id,
     const std::string& print_preset_id,
@@ -1334,11 +1341,11 @@ const Domain::Preset::EvaluatedToolPrintPreset::Preset& PresetInteractor::get_to
         if (print != nullptr) {
             const auto* tool_print = find_by_id(print->tools[tool_index], tool_print_preset_id);
             if (tool_print != nullptr) {
-                return tool_print->preset;
+                return {std::cref(tool_print->preset), false};
             }
         }
     }
-    const auto& p          = get_or_fail_project_context(m_selected_project_id);
+    const auto& p          = get_or_fail_project_context(project_id);
     const auto* tool_print = p.runtime_presets.find_tool_print_preset_by_id(
         {hw_config_id, printer_preset_id, print_preset_id},
         tool_index,
@@ -1348,10 +1355,12 @@ const Domain::Preset::EvaluatedToolPrintPreset::Preset& PresetInteractor::get_to
         tool_print != nullptr,
         std::tuple{hw_config_id, printer_preset_id, print_preset_id, tool_print_preset_id}
     );
-    return *tool_print;
+    return {std::cref(*tool_print), true};
 }
 
-const Domain::Preset::EvaluatedMaterialPreset::Preset& PresetInteractor::get_material_preset(
+PresetInteractor::ConstRefBoolPair<Domain::Preset::EvaluatedMaterialPreset::Preset>
+PresetInteractor::get_material_preset(
+    Domain::SelectionId project_id,
     const std::string& hw_config_id,
     const std::string& printer_preset_id,
     const std::string& print_preset_id,
@@ -1366,11 +1375,11 @@ const Domain::Preset::EvaluatedMaterialPreset::Preset& PresetInteractor::get_mat
         if (print != nullptr) {
             const auto* material = find_by_id(print->materials[slot_index], material_preset_id);
             if (material != nullptr) {
-                return material->preset;
+                return {std::cref(material->preset), false};
             }
         }
     }
-    const auto& p        = get_or_fail_project_context(m_selected_project_id);
+    const auto& p        = get_or_fail_project_context(project_id);
     const auto* material = p.runtime_presets.find_material_preset_by_id(
         {hw_config_id, printer_preset_id, print_preset_id},
         slot_index,
@@ -1380,7 +1389,7 @@ const Domain::Preset::EvaluatedMaterialPreset::Preset& PresetInteractor::get_mat
         material != nullptr,
         std::tuple{hw_config_id, printer_preset_id, print_preset_id, material_preset_id}
     );
-    return *material;
+    return {std::cref(*material), true};
 }
 
 } // namespace Slic3r::Biz::Preset

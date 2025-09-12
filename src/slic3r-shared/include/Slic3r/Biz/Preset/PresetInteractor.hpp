@@ -11,8 +11,8 @@
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/CBIObservableList.hpp"
-
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
+#include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 
 namespace Slic3r::Biz::Preset {
 
@@ -34,7 +34,8 @@ using PresetItemObservableList         = ObservableListWithSelection<PresetItem>
 using PresetItemCompoundObservableList = MutableBatchObservableList<PresetItemObservableList>;
 
 using ToolConfigItemObservableList = ObservableListWithSelection<Domain::Preset::HwToolConfigDef>;
-using ToolConfigItemCompoundObservableList = MutableBatchObservableList<ToolConfigItemObservableList>;
+using ToolConfigItemCompoundObservableList =
+    MutableBatchObservableList<ToolConfigItemObservableList>;
 
 using SheetConfigItemObservableList = ObservableListWithSelection<Domain::Preset::HwSheetConfigDef>;
 
@@ -43,7 +44,10 @@ using SheetConfigItemObservableList = ObservableListWithSelection<Domain::Preset
  */
 class PresetInteractor final :
     public ISelectedConfigContainerChangedListener,
-    public WithListeners<IPresetChangedListener, IBedPresetSwitchedListener, ISlicingInputChangedListener>
+    public WithListeners<
+        IPresetChangedListener,
+        IBedPresetSwitchedListener,
+        ISlicingInputChangedListener>
 {
 public:
     explicit PresetInteractor(Domain::Workbench& workbench);
@@ -66,7 +70,10 @@ public:
      * @note The ID of selected_preset's hw_config may change if it collides with already existing
      * having different values (config changed without changing its ID).
      */
-    void load_selected_preset_from_3mf(Domain::SelectionId project_id, Domain::Preset::SelectedPreset& selected_preset);
+    void load_selected_preset_from_3mf(
+        Domain::SelectionId project_id,
+        Domain::Preset::SelectedPreset& selected_preset
+    );
 
     const PresetInteractorConfigContainerContext& selected_config_container_context() const;
 
@@ -169,18 +176,359 @@ public:
     CBIObservableList& material_cbi_list();
     CBIObservableList& tool_cbi_list();
 
-    void set_item_value(const Domain::ConfigItem& item, const Domain::ConfigValue& value, size_t index = 0);
+    void set_item_value(
+        const Domain::ConfigItem& item,
+        const Domain::ConfigValue& value,
+        size_t index = 0
+    );
 
-    const Domain::Preset::HwPrinterConfig& get_printer_config(const std::string& hw_config_id) const;
-    const Domain::Preset::EvaluatedPrinterPreset::Preset&
-    get_printer_preset(const std::string& hw_config_id, const std::string& printer_preset_id) const;
-    const Domain::Preset::EvaluatedPrintPreset::Preset&
-    get_print_preset(const std::string& hw_config_id, const std::string& printer_preset_id, const std::string& print_id) const;
-    const Domain::Preset::EvaluatedToolPrintPreset::Preset&
-    get_tool_print_preset(const std::string& hw_config_id, const std::string& printer_preset_id, const std::string& print_preset_id, size_t tool_index, const std::string& tool_print_preset_id) const;
-    const Domain::Preset::EvaluatedMaterialPreset::Preset&
-    get_material_preset(const std::string& hw_config_id, const std::string& printer_preset_id, const std::string& print_preset_id, size_t slot_index, const std::string& material_preset_id) const;
+    template <typename T>
+    using ConstRefBoolPair = std::pair<std::reference_wrapper<const T>, bool>;
 
+    [[nodiscard]] ConstRefBoolPair<Domain::Preset::HwPrinterConfig>
+    get_printer_config(Domain::SelectionId project_id, const std::string& hw_config_id) const;
+    [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedPrinterPreset::Preset>
+    get_printer_preset(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id
+    ) const;
+    [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedPrintPreset::Preset> get_print_preset(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_id
+    ) const;
+    [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedToolPrintPreset::Preset>
+    get_tool_print_preset(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t tool_index,
+        const std::string& tool_print_preset_id
+    ) const;
+    [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedMaterialPreset::Preset>
+    get_material_preset(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t slot_index,
+        const std::string& material_preset_id
+    ) const;
+
+    [[nodiscard]] ConstRefBoolPair<Domain::Preset::HwPrinterConfig> get_printer_config(
+        const std::string& hw_config_id
+    ) const
+    {
+        return get_printer_config(m_selected_project_id, hw_config_id);
+    }
+
+    [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedPrinterPreset::Preset>
+    get_printer_preset(const std::string& hw_config_id, const std::string& printer_preset_id) const
+    {
+        return get_printer_preset(m_selected_project_id, hw_config_id, printer_preset_id);
+    }
+
+    [[nodiscard]] ConstRefBoolPair<const Domain::Preset::EvaluatedPrintPreset::Preset>
+    get_print_preset(
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_id
+    ) const
+    {
+        return get_print_preset(m_selected_project_id, hw_config_id, printer_preset_id, print_id);
+    }
+
+    [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedToolPrintPreset::Preset>
+    get_tool_print_preset(
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t tool_index,
+        const std::string& tool_print_preset_id
+    ) const
+    {
+        return get_tool_print_preset(
+            m_selected_project_id,
+            hw_config_id,
+            printer_preset_id,
+            print_preset_id,
+            tool_index,
+            tool_print_preset_id
+        );
+    }
+
+    [[nodiscard]] ConstRefBoolPair<Domain::Preset::EvaluatedMaterialPreset::Preset>
+    get_material_preset(
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t slot_index,
+        const std::string& material_preset_id
+    ) const
+    {
+        return get_material_preset(
+            m_selected_project_id,
+            hw_config_id,
+            printer_preset_id,
+            print_preset_id,
+            slot_index,
+            material_preset_id
+        );
+    }
+
+    /**
+     * @brief Get iterator-like view over hw printer configs.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<HwPrinterConfig>, bool>`
+     * where the bool indicates if it is a runtime hw config.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * for (const auto [ref, is_runtime] : preset_interactor.get_printer_configs(...)) {
+     *     const auto& hw_config = ref.get();
+     *     // do stuff with hw_config and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto get_printer_configs(Domain::SelectionId project_id) const
+    {
+        auto view = HwPrinterConfigProjectView(
+            m_workbench.preset_bundle(),
+            get_or_fail_project_context(project_id).runtime_presets
+        );
+        return view.items();
+    }
+
+    /**
+     * @brief Get iterator-like view over printer presets.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedPrinterPreset::Preset&>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * for (const auto [ref, is_runtime] : preset_interactor.get_printer_presets(...)) {
+     *     const auto& printer_preset = ref.get();
+     *     // do stuff with printer_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto
+    get_printer_presets(Domain::SelectionId project_id, const std::string& hw_config_id) const
+    {
+        auto view = PrinterPresetProjectView(
+            m_workbench.preset_bundle(),
+            get_or_fail_project_context(project_id).runtime_presets,
+            hw_config_id
+        );
+        return view.items();
+    }
+
+    /**
+     * @brief Get iterator-like view over print presets.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedPrintPreset::Preset&>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * for (const auto [ref, is_runtime] : preset_interactor.get_print_presets(...)) {
+     *     const auto& print_preset = ref.get();
+     *     // do stuff with print_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto get_print_presets(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id
+    ) const
+    {
+        auto view = PrintPresetProjectView(
+            m_workbench.preset_bundle(),
+            get_or_fail_project_context(project_id).runtime_presets,
+            hw_config_id,
+            printer_preset_id
+        );
+        return view.items();
+    }
+
+    /**
+     * @brief Get iterator-like view over tool-print presets.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedToolPrintPreset::Preset&>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * for (const auto [ref, is_runtime] : preset_interactor.get_tool_print_presets(...)) {
+     *     const auto& tool_print_preset = ref.get();
+     *     // do stuff with tool_print_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto get_tool_print_presets(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t tool_index
+    ) const
+    {
+        auto view = ToolPrintPresetProjectView(
+            m_workbench.preset_bundle(),
+            get_or_fail_project_context(project_id).runtime_presets,
+            hw_config_id,
+            printer_preset_id,
+            print_preset_id,
+            tool_index
+        );
+        return view.items();
+    }
+
+    /**
+     * @brief Get iterator-like view over material presets.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedMaterialPreset::Preset&>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * for (const auto [ref, is_runtime] : preset_interactor.get_material_presets(...)) {
+     *     const auto& material_preset = ref.get();
+     *     // do stuff with material_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto get_material_presets(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t slot_index
+    ) const
+    {
+        auto view = MaterialPresetProjectView(
+            m_workbench.preset_bundle(),
+            get_or_fail_project_context(project_id).runtime_presets,
+            hw_config_id,
+            printer_preset_id,
+            print_preset_id,
+            slot_index
+        );
+        return view.items();
+    }
+
+    /**
+     * @brief Get iterator-like view over hw printer configs for selected project.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<HwPrinterConfig>, bool>`
+     * where the bool indicates if it is a runtime hw config.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * for (const auto [ref, is_runtime] : preset_interactor.get_printer_configs(...)) {
+     *     const auto& hw_config = ref.get();
+     *     // do stuff with hw_config and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto get_printer_configs() const
+    {
+        return get_printer_configs(m_selected_project_id);
+    }
+
+    /**
+     * @brief Get iterator-like view over printer presets for selected project.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedPrinterPreset::Preset&>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * for (const auto [ref, is_runtime] : preset_interactor.get_printer_presets(...)) {
+     *     const auto& printer_preset = ref.get();
+     *     // do stuff with printer_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto get_printer_presets(const std::string& hw_config_id) const
+    {
+        return get_printer_presets(m_selected_project_id, hw_config_id);
+    }
+
+    /**
+     * @brief Get iterator-like view over print presets for selected project.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedPrintPreset::Preset&>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * for (const auto [ref, is_runtime] : preset_interactor.get_print_presets(...)) {
+     *     const auto& print_preset = ref.get();
+     *     // do stuff with print_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto
+    get_print_presets(const std::string& hw_config_id, const std::string& printer_preset_id) const
+    {
+        return get_print_presets(m_selected_project_id, hw_config_id, printer_preset_id);
+    }
+
+    /**
+     * @brief Get iterator-like view over tool-print presets for selected project.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedToolPrintPreset::Preset&>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * for (const auto [ref, is_runtime] : preset_interactor.get_tool_print_presets(...)) {
+     *     const auto& tool_print_preset = ref.get();
+     *     // do stuff with tool_print_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto get_tool_print_presets(
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t tool_index
+    ) const
+    {
+        return get_tool_print_presets(
+            m_selected_project_id,
+            hw_config_id,
+            printer_preset_id,
+            print_preset_id,
+            tool_index
+        );
+    }
+
+    /**
+     * @brief Get iterator-like view over material presets for selected project.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedMaterialPreset::Preset&>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * for (const auto [ref, is_runtime] : preset_interactor.get_material_presets(...)) {
+     *     const auto& material_preset = ref.get();
+     *     // do stuff with material_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto get_material_presets(
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t slot_index
+    ) const
+    {
+        return get_material_presets(
+            m_selected_project_id,
+            hw_config_id,
+            printer_preset_id,
+            print_preset_id,
+            slot_index
+        );
+    }
 
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
@@ -198,7 +546,9 @@ private:
         return m_project_contexts.find(project_id);
     }
 
-    const PresetInteractorProjectContext& get_or_fail_project_context(Domain::SelectionId project_id) const
+    const PresetInteractorProjectContext& get_or_fail_project_context(
+        Domain::SelectionId project_id
+    ) const
     {
         auto it = m_project_contexts.find(project_id);
         ASSERT(it != m_project_contexts.end());

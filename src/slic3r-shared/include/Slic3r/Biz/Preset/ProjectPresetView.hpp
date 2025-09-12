@@ -38,12 +38,25 @@ public:
     {}
 
     /**
-     * @brief Get iterator over printer covner.
-     * @return For-range iterable of `HwPritnerConfig`
+     * @brief Get iterator-like view over printer config.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<HwPrinterConfig>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * HwPrinterConfigProjectView view =  ...;
+     * for (const auto [hw_config_ref, is_runtime] : view.items()) {
+     *     const auto& hw_config = hw_config_ref.get();
+     *     // do stuff with hw_config and is_runtime
+     * }
+     * @endcode
      */
-    auto items() const
+    [[nodiscard]] auto items() const
     {
-        return ranges::views::concat(ranges::views::values(m_bundle.printer_configs), ranges::views::values(m_runtime.printer_configs));
+        return ranges::views::concat(
+            ranges::views::values(m_bundle.printer_configs) | Details::view_pack_as_pair<Value, false>(),
+            ranges::views::values(m_runtime.printer_configs) | Details::view_pack_as_pair<Value, true>()
+        );
     }
 
 private:
@@ -52,7 +65,9 @@ private:
 };
 
 /**
- * @brief
+ * @brief Unified view at printer presets either loaded from preset_bundle
+ * or loaded into runtime as part of the project. Use `items()` function to get for-range friendly
+ * iterator over items of `const EvaluatedPrinterPreset::Preset&` type.
  */
 class PrinterPresetProjectView
 {
@@ -66,7 +81,21 @@ public:
         m_hw_config_id(std::move(hw_config_id))
     {}
 
-    auto items() const
+    /**
+     * @brief Get iterator-like view over printer presets.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedPrinterPreset::Preset>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * PrinterPresetProjectView view =  ...;
+     * for (const auto [printer_preset_ref, is_runtime] : view.items()) {
+     *     const auto& printer_preset = printer_preset.get();
+     *     // do stuff with printer_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto items() const
     {
         auto bundle_it = m_bundle.evaluated_presets.find(m_hw_config_id);
         auto runtime_it = m_runtime.printer.find(m_hw_config_id);
@@ -90,6 +119,11 @@ private:
 };
 
 
+/**
+ * @brief Unified view at print presets either loaded from preset_bundle
+ * or loaded into runtime as part of the project. Use `items()` function to get for-range friendly
+ * iterator over items of `const EvaluatedPrintPreset::Preset&` type.
+ */
 class PrintPresetProjectView
 {
 public:
@@ -103,7 +137,21 @@ public:
         m_printer_id(std::move(printer_id))
     {}
 
-    auto items() const
+    /**
+     * @brief Get iterator-like view over print presets.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedPrintPreset::Preset>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * PrintPresetProjectView view =  ...;
+     * for (const auto [print_preset_ref, is_runtime] : view.items()) {
+     *     const auto& print_preset = print_preset.get();
+     *     // do stuff with print_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto items() const
     {
         auto bundle_printer = m_bundle.find_printer_preset(m_hw_config_id, m_printer_id);
         auto runtime_it = m_runtime.print.find({m_hw_config_id, m_printer_id});
@@ -126,6 +174,11 @@ private:
     const std::string m_printer_id;
 };
 
+/**
+ * @brief Unified view at tool-print presets either loaded from preset_bundle
+ * or loaded into runtime as part of the project. Use `items()` function to get for-range friendly
+ * iterator over items of `const EvaluatedToolPrintPreset::Preset&` type.
+ */
 class ToolPrintPresetProjectView
 {
 public:
@@ -142,7 +195,21 @@ public:
         m_tool_index(tool_index)
     {}
 
-    auto items() const
+    /**
+     * @brief Get iterator-like view over tool-print presets.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<EvaluatedToolPrintPreset::Preset>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * ToolPrintPresetProjectView view =  ...;
+     * for (const auto [tool_print_preset_ref, is_runtime] : view.items()) {
+     *     const auto& tool_print_preset = tool_print_preset.get();
+     *     // do stuff with tool_print_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto items() const
     {
         auto bundle_printer = m_bundle.find_printer_preset(m_hw_config_id, m_printer_id);
         auto bundle_print = bundle_printer ? bundle_printer->find_print_preset_by_id(m_print_id) : nullptr;
@@ -168,6 +235,11 @@ private:
     size_t m_tool_index;
 };
 
+/**
+ * @brief Unified view at material presets either loaded from preset_bundle
+ * or loaded into runtime as part of the project. Use `items()` function to get for-range friendly
+ * iterator over items of `const EvaluatedMaterialPreset::Preset&` type.
+ */
 class MaterialPresetProjectView
 {
 public:
@@ -183,7 +255,21 @@ public:
         m_slot_index(slot_index)
     {}
 
-    auto items() const
+    /**
+     * @brief Get iterator-like view over material presets.
+     * @return For-range iterable of `std::pair<std::ref_wrapper<MaterialPrintPreset::Preset>, bool>`
+     * where the bool indicates if it is a runtime preset.
+     *
+     * Intended usage
+     * @code{.cpp}
+     * MaterialPresetProjectView view =  ...;
+     * for (const auto [material_preset_ref, is_runtime] : view.items()) {
+     *     const auto& material_preset = material_preset.get();
+     *     // do stuff with material_preset and is_runtime
+     * }
+     * @endcode
+     */
+    [[nodiscard]] auto items() const
     {
         const auto bundle_printer = m_bundle.find_printer_preset(m_hw_config_id, m_printer_id);
         const auto bundle_print = bundle_printer ? bundle_printer->find_print_preset_by_id(m_print_id) : nullptr;
