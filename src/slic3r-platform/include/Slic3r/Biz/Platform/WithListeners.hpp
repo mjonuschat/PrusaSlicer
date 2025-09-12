@@ -42,11 +42,15 @@ public:
     }
 
 protected:
-    template<typename L>
-    void invoke_listeners(std::function<void(L*)> func) {
+    template <typename L>
+    void invoke_listeners(std::function<void(L*)> func)
+    {
         constexpr std::size_t I{WithListeners::index_in_tuple<L>()};
-        std::get<I>(m_listener_lists).invoke(func);
+        // Make a copy to enable adding and removing listeners inside invoke.
+        Slic3r::Biz::ListenerList<L> list{std::get<I>(m_listener_lists)};
+        list.invoke(func);
     }
+
 private:
     using Tuple = std::tuple<Slic3r::Biz::ListenerList<Args>...>;
 protected:
