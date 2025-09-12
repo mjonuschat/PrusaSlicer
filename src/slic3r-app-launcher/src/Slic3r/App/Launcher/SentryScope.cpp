@@ -4,13 +4,44 @@
 
 #ifdef SLIC3R_SENTRY
 #include "Slic3r/Version.hpp"
+#include "Slic3r/Directories.hpp"
+
 #include <sentry.h>
 #include <fmt/format.h>
+#include <boost/filesystem/path.hpp>
+
+#ifdef __APPLE__
+#include <string>
+#include <vector>
+#include <mach-o/dyld.h>
+#endif
+
 #include "Slic3r/Biz/Network/HttpCurl.hpp"
 #include "Slic3r/Directories.hpp"
 #endif
 
 namespace Slic3r::App::Launcher {
+
+#if defined(__APPLE__) && defined(SLIC3R_SENTRY)
+namespace {
+boost::filesystem::path get_executable_dir() {
+    uint32_t buffer_size = 0;
+    // Get buffer size first
+    _NSGetExecutablePath(nullptr, &buffer_size);
+
+    std::vector<char> buffer(buffer_size);
+    if (_NSGetExecutablePath(buffer.data(), &buffer_size) != 0) {
+        // Handle error: Failed to get the executable path.
+        return "";
+    }
+
+    using boost::filesystem::path;
+    path exe_path{buffer.data()};
+    return exe_path.parent_path();
+}
+
+} // namespace
+#endif
 
 #ifdef SLIC3R_SENTRY
 namespace fs = boost::filesystem;
@@ -31,11 +62,11 @@ SentryScope::SentryScope()
 
     sentry_options_t* options = sentry_options_new();
     sentry_options_set_dsn(options, SLIC3R_SENTRY_DSN);
-    // This is also the default-path. For further information and recommendations:
-    // https://docs.sentry.io/platforms/native/configuration/options/#database-path
 
     const fs::path database_path{get_database_path()};
+    SPDLOG_INFO("Setting Sentry database path: {}", database_path.string());
     sentry_options_set_database_path(options, database_path.c_str());
+
     sentry_options_set_release(options, release.c_str());
     sentry_options_set_debug(
         options,
@@ -49,6 +80,16 @@ SentryScope::SentryScope()
     if (!file_logging.log_file.empty()) {
         sentry_options_add_attachment(options, file_logging.log_file.c_str());
     }
+
+#ifdef __APPLE__
+    using boost::filesystem::path;
+    if (const auto exe_dir = get_executable_dir(); !exe_dir.empty()) {
+        path handler_path = exe_dir / "crashpad_handler";
+        sentry_options_set_handler_path(options, handler_path.c_str());
+        SPDLOG_INFO("Setting crashpad handler: {}", handler_path.string());
+    }
+#endif
+
     sentry_init(options);
 #endif
 }

@@ -251,6 +251,11 @@ std::string get_default_cachedir() {
     const fs::path cache_path{get_xdg_cache_home()};
     return (cache_path / "prusa-slicer").string();
 }
+#elif defined(__APPLE__)
+std::string get_default_cachedir() {
+    return get_platform_cache_dir();
+}
+
 #else
 std::string get_default_cachedir() {
     return data_dir();

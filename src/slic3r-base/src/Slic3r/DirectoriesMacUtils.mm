@@ -14,4 +14,14 @@ std::string get_platform_data_dir()
 
     return std::string([url.path UTF8String]);
 }
+
+std::string get_platform_cache_dir()
+{
+    NSURL* url = [[NSFileManager defaultManager] URLForDirectory:NSCachesDirectory
+                                                 inDomain:NSUserDomainMask
+                                                 appropriateForURL:nil create:NO error:nil];
+
+    return std::string([url.path UTF8String]);
 }
+
+} // namespace Slic3r
