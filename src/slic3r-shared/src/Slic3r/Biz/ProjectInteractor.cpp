@@ -220,7 +220,7 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
                 next_selected_project_id = projects.begin()->first;
             }
 
-            do_select_project(next_selected_project_id);
+            select_project(next_selected_project_id);
         }
     }
 }
