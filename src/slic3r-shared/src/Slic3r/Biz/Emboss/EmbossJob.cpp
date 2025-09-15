@@ -56,8 +56,6 @@ emboss_data is moved out soo it can't be const
 */
 bool start_create_object_job(CreateVolumeParams& input, const Domain::Vec2d& coor);
 
-Domain::ModelVolumePtrs prepare_volumes_to_slice(const Domain::ModelObject& mo);
-
 using namespace Slic3r::Biz::Emboss;
 using Biz::JThread::StopToken;
 
@@ -285,7 +283,7 @@ bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_
 
             // Create text lines for Per Glyph projection when needed
             const Domain::ModelObject& object = *volume->get_object();
-            input.base.shape_provider->create_text_lines(tr, ::prepare_volumes_to_slice(object));
+            input.base.shape_provider->create_text_lines(tr, prepare_volumes_to_slice(object));
 
             return ::start_create_volume_job(object, tr, input.base, input.volume_type);
         }
@@ -1089,14 +1087,6 @@ OrthoProject3d create_emboss_projection(bool is_outside, float emboss, Domain::T
     return OrthoProject3d(from_front_to_back);
 }
 
-/**
-@brief Check whether transformation matrix contains odd number of mirroring.
-NOTE: In code is sometime function named is_left_handed
-@param transform Transformation to check
-@return Is positive determinant
-*/
-bool has_reflection(const Domain::Transform3d& transform) { return transform.linear().determinant() < 0; }
-
 indexed_triangle_set
 cut_surface_to_its(const Domain::ExPolygons& shapes, const Domain::Transform3d& tr, const ModelSources& sources, BaseData& input, std::function<bool()> was_canceled)
 {
@@ -1256,7 +1246,7 @@ Domain::TriangleMesh cut_per_glyph_surface(BaseData& input1, const SurfaceVolume
         return {};
     if (result.empty())
         throw JobException(_u8L("There is no valid surface for text projection.").c_str());
-    return Domain::TriangleMesh(std::move(result));
+    return Biz::Algorithms::TriangleMesh::construct(std::move(result));
 }
 
 // input can't be const - cache of font
@@ -1373,22 +1363,6 @@ bool start_create_object_job(CreateVolumeParams& input, const Domain::Vec2d& coo
     DataCreateObject data{.base = std::move(input.base), .bed_coor = coor, .angle = input.angle};
     auto job = std::make_unique<CreateObjectJob>(std::move(data));
     return queue_job(std::move(job));
-}
-
-// for creation volume
-Domain::ModelVolumePtrs prepare_volumes_to_slice(const Domain::ModelObject& mo)
-{
-    const Domain::ModelVolumePtrs& volumes = mo.volumes;
-    Domain::ModelVolumePtrs result;
-    result.reserve(volumes.size());
-    for (Domain::ModelVolume* volume : volumes) {
-        // only part could be surface for volumes
-        if (!volume->is_model_part())
-            continue;
-
-        result.push_back(volume);
-    }
-    return result;
 }
 
 void create_message(const std::string& message)

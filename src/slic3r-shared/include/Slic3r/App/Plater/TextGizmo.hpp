@@ -11,6 +11,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
+#include <Slic3r/Biz/Emboss/TextLines.hpp>
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneSelectionChangedListener
 
 namespace Slic3r::App::Plater {
@@ -96,6 +97,7 @@ private:
     Scene::GizmoManager& m_gizmo_manager;
 
     Biz::Emboss::TextPresetManager m_preset_manager;
+    Biz::Emboss::TextLinesModel m_text_lines;
 
     std::string m_text; // embossed text
     std::optional<double> m_up_limit; // when it has value, than lock of the up vector is set

@@ -2,61 +2,63 @@
 #define slic3r_TextLines_hpp_
 
 #include <vector>
-#include <libslic3r/Polygon.hpp>
-#include <libslic3r/Point.hpp>
-#include <libslic3r/Emboss.hpp>
-#include "slic3r/GUI/GLModel.hpp"
-#include "slic3r/Utils/EmbossStyleManager.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Emboss/Emboss.hpp" // TextLines
+#include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
+#include "Slic3r/Domain/ModelVolume.hpp" // ModelVolumePtrs
+#include "Slic3r/App/Render/Geometry.hpp"
+#include "Slic3r/App/Render/Material.hpp"
+#include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 
-namespace Slic3r {
-class ModelVolume;
-typedef std::vector<ModelVolume *> ModelVolumePtrs;
-struct FontProp;
-}
+namespace Slic3r::Biz::Emboss {
 
-namespace Slic3r::GUI {
-class TextLinesModel
-{
-public:
-    /// <summary>
-    /// Initialize model and lines
-    /// </summary>
-    /// <param name="text_tr">Transformation of text volume inside object (aka inside of instance)</param>
-    /// <param name="volumes_to_slice">Vector of volumes to be sliced</param>
-    /// <param name="style_manager">Contain Font file, size and align</param>
-    /// <param name="count_lines">Count lines of embossed text(for veritcal alignment)</param>
-    void init(const Transform3d &text_tr, const ModelVolumePtrs &volumes_to_slice, /*const*/ Emboss::StyleManager &style_manager, unsigned count_lines);
-
-    void render(const Transform3d &text_world);
-
-    bool is_init() const { return m_model.is_initialized(); }
-    void reset() { m_model.reset(); m_lines.clear(); }
-    const Slic3r::Emboss::TextLines &get_lines() const { return m_lines; }
-
-private:
-    Slic3r::Emboss::TextLines m_lines;
-
-    // Keep model for visualization text lines
-    GLModel m_model;
-};
-} // namespace Slic3r::GUI
-
-namespace Slic3r::Emboss{
 /// <summary>
-/// creation line without model for backend only
+/// Creation line without model for backend only
 /// </summary>
-/// <param name="text_tr">Transformation of text volume inside object (aka inside of
-/// instance)</param> <param name="volumes_to_slice">Vector of volumes to be sliced</param> <param
-/// name="ff"></param> <param name="fp"></param> <param name="count_lines">Count lines of embossed
-/// text(for veritcal alignment)</param> <param name="line_height_mm_ptr">[output] line height in
-/// mm</param> <returns></returns>
+/// <param name="text_tr">Transformation of text volume inside object (aka inside of instance)</param> 
+/// <param name="volumes_to_slice">Vector of volumes to be sliced</param> 
+/// <param name="ff"></param> 
+/// <param name="fp"></param> 
+/// <param name="count_lines">Count lines of embossed text(for veritcal alignment)</param>
+/// <param name="line_height_mm_ptr">[output] line height in mm</param>
+/// <returns></returns>
 TextLines create_text_lines(
-    const Transform3d &text_tr,
-    const ModelVolumePtrs &volumes_to_slice,
-    const FontFile &ff,
-    const FontProp &fp,
+    const Domain::Transform3d &text_tr,
+    const Domain::ModelVolumePtrs &volumes_to_slice,
+    const Domain::FontFile &ff,
+    const Domain::FontProp &fp,
     unsigned count_lines = 1,
     double *line_height_mm_ptr = nullptr
 );
-}
+
+/// <summary>
+/// Keep text lines and creation of Scene node together for use with frontend
+/// </summary>
+class TextLinesModel {
+    TextPresetManager& m_preset_manager;
+    Biz::ProjectInteractor& m_project_interactor; // current selection
+    App::Plater::PlaterScenePresenter& m_scene_presenter; // ability to append node with text lines preview
+    App::Render::Device& m_device; // to create geometry from triangles
+
+    TextLines m_lines;
+    std::unique_ptr<App::Render::Geometry> m_geometry;
+    App::Render::Material m_material;
+public:
+    TextLinesModel(TextPresetManager& preset_manager,
+        Biz::ProjectInteractor& project_interactor,
+        App::Plater::PlaterScenePresenter& scene_presenter,
+        App::Render::Device& device);
+    const TextLines& get_lines() { return m_lines; }
+
+    // Create lines from current selected text volume for current cached preset inside scene
+    // Text transformation(inside object not world) is set when no text volume exist for selected object
+    void create_text_lines(unsigned count_lines = 1, const Domain::Transform3d* text_tr = nullptr);
+    bool exist_lines() const { return !m_lines.empty(); }
+    void reset();
+};
+
+const Domain::ModelVolume* get_selected_text_volume(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection);
+const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor& project_interactor);
+} // Slic3r::Biz::Emboss
 #endif // slic3r_TextLines_hpp_

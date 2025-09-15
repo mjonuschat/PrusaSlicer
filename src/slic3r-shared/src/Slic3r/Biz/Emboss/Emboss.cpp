@@ -775,6 +775,46 @@ Domain::HealedExPolygons text2shapes(
     float delta = static_cast<float>(1. / SHAPE_SCALE);
     return ::union_with_delta(vshapes, delta, MAX_HEAL_ITERATION_OF_TEXT);
 }
+
+bool has_reflection(const Domain::Transform3d& transform){ 
+    return transform.linear().determinant() < 0; 
+}
+
+// for creation volume
+Domain::ModelVolumePtrs prepare_volumes_to_slice(const Domain::ModelObject& mo)
+{
+    const Domain::ModelVolumePtrs& volumes = mo.volumes;
+    Domain::ModelVolumePtrs result;
+    result.reserve(volumes.size());
+    for (Domain::ModelVolume* volume : volumes) {
+        // only part could be surface for volumes
+        if (!volume->is_model_part())
+            continue;
+
+        result.push_back(volume);
+    }
+    return result;
+}
+
+Domain::ModelVolumePtrs prepare_volumes_to_slice(const Domain::ModelVolume& mv)
+{
+    const Domain::ModelVolumePtrs& volumes = mv.get_object()->volumes;
+    Domain::ModelVolumePtrs result;
+    result.reserve(volumes.size());
+    for (Domain::ModelVolume* volume : volumes) {
+        // only part could be surface for volumes
+        if (!volume->is_model_part())
+            continue;
+
+        // is selected volume
+        if (mv.id() == volume->id())
+            continue;
+
+        result.push_back(volume);
+    }
+    return result;
+}
+
 } // namespace Slic3r::Biz::Emboss
 
 namespace {

@@ -25,6 +25,8 @@
 #include "Slic3r/Domain/ExPolygon.hpp" // also Polygon and Points
 #include "Slic3r/Domain/EmbossShape.hpp" // ExPolygonsWithIds, HealedExpolygons
 #include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ModelObject.hpp"
+#include "Slic3r/Domain/ModelVolume.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Biz/Algorithms/Projection.hpp"
 
@@ -441,6 +443,22 @@ std::vector<double> calculate_angles(
 // delta .. safe offset before union (use as boolean close)
 // NOTE: remove unprintable spaces between neighbor curves (made by linearization of curve)
 Domain::ExPolygons union_with_delta(Domain::EmbossShape& shape, float delta, unsigned max_heal_iteration);
+
+/**
+ *  @brief  Check whether transformation matrix contains odd number of mirroring.
+ *          @note In code is sometime function named is_left_handed
+ *  @param  transform - Transformation to check
+ *  @retval           - Is positive determinant
+ */
+bool has_reflection(const Domain::Transform3d& transform);
+
+/**
+ *  @brief  select volume parts (Neccessary for per glyph slicing)
+ *  @param  mo - object to slice(Part+Negative+Modifiers)
+ *  @retval    - List of parts
+ */
+Domain::ModelVolumePtrs prepare_volumes_to_slice(const Domain::ModelObject& mo);
+Domain::ModelVolumePtrs prepare_volumes_to_slice(const Domain::ModelVolume& mv);
 
 } // namespace Slic3r::Biz::Emboss
 #endif // slic3r_Emboss_hpp_

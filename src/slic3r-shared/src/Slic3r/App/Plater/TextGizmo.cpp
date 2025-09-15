@@ -62,12 +62,14 @@ public:
     TextShapeProvider(
         const Domain::TextConfiguration& text_configuration,
         const Domain::EmbossProjection& projection,
+        const Biz::Emboss::TextLines& text_lines,
         FontFileWithCache& font_with_cache
     ) 
         : m_text_configuration(text_configuration)
         , m_font_with_cache(font_with_cache)
     {
         m_shape.projection = projection; // copy current projection
+        m_text_lines = text_lines; // copy
     }
 
     Domain::EmbossShape& get_shape() override
@@ -90,8 +92,13 @@ public:
         ASSERT(volume.emboss_shape.has_value());
 
         // Fix for object: stored attribute that volume is embossed per glyph when it is object
-        if (m_text_configuration.style.prop.per_glyph && volume.is_the_only_one_part())
-            volume.text_configuration->style.prop.per_glyph = false;
+        // Removing object without text gizmo
+        if (volume.is_the_only_one_part()) {
+            if (m_text_configuration.style.prop.per_glyph)
+                volume.text_configuration->style.prop.per_glyph = false;
+            if (m_shape.projection.use_surface)
+                volume.emboss_shape->projection.use_surface = false;
+        }
     }
 
 private:
@@ -167,6 +174,7 @@ TextGizmo::TextGizmo(
         ImGui::GetIO().Fonts->GetGlyphRangesDefault(),
         Slic3r::data_dir() + "/text_emboss_presets.cereal"
     ),
+    m_text_lines(m_preset_manager, project_interactor, scene_presenter, device),
     m_drag(nullptr),
     m_last_loaded_volume_id(0) // invalid value
 {
@@ -180,9 +188,15 @@ TextGizmo::TextGizmo(
     // Dialog callback settings (order follow UI)
     m_dialog = std::make_unique<TextDialog>();
     m_dialog->callbacks().text_changed = [this](const std::string& text) {
+        if (m_preset_manager.get_font_prop().per_glyph) { 
+            // update text lines when change count of lines
+            unsigned prev_count_lines = Biz::Emboss::get_count_lines(m_text);
+            unsigned now_count_lines = Biz::Emboss::get_count_lines(text);
+            if (prev_count_lines != now_count_lines)
+                m_text_lines.create_text_lines(now_count_lines);
+        }
+        m_dialog->set_enable_line_gap(Biz::Emboss::get_count_lines(text) > 1);
         m_text = text; 
-        bool is_multiline = Biz::Emboss::get_count_lines(m_text) > 1;
-        m_dialog->set_enable_line_gap(Biz::Emboss::get_count_lines(m_text));
         update_volume();
     };
     m_dialog->callbacks().font_selection_changed = [this](const Domain::FontDescriptor& font_descriptor){
@@ -192,6 +206,8 @@ TextGizmo::TextGizmo(
     // NOTE: style is only subcategory of font    
     m_dialog->callbacks().height_changed = [this](double value) {
         m_preset_manager.get_font_prop().size_in_mm = m_use_inch? value * inch_to_mm : value;
+        if (m_preset_manager.get_font_prop().per_glyph) // change size of line visualization
+            m_text_lines.create_text_lines(m_text_lines.get_lines().size());
         update_volume();
     };
     m_dialog->callbacks().depth_changed = [this](double value) {
@@ -206,10 +222,17 @@ TextGizmo::TextGizmo(
     };
     m_dialog->callbacks().per_glyph_checked = [this](bool check) {
         m_preset_manager.get_font_prop().per_glyph = check;
+        if (check) {
+            m_text_lines.create_text_lines(Biz::Emboss::get_count_lines(m_text));
+        } else {
+            m_text_lines.reset();
+        }
         update_volume();
     };
     m_dialog->callbacks().align_changed = [this](const Domain::FontProp::Align& align) {
         m_preset_manager.get_font_prop().align = align;
+        if (m_preset_manager.get_font_prop().per_glyph) // change position of the line visualization
+            m_text_lines.create_text_lines(m_text_lines.get_lines().size());
         update_volume();
     };
     auto set_optional = [this](std::optional<int>& val_opt, double new_value, double scale) {
@@ -293,6 +316,9 @@ TextGizmo::TextGizmo(
             set_dialog_rotation(*m_dialog, m_preset_manager, m_use_deg);
         }
 
+        if (m_preset_manager.get_font_prop().per_glyph) // change position of the text line
+            m_text_lines.create_text_lines(m_text_lines.get_lines().size());
+
         // update shape when needed
         if (m_preset_manager.get_preset().projection.use_surface ||
             m_preset_manager.get_font_prop().per_glyph)
@@ -302,6 +328,8 @@ TextGizmo::TextGizmo(
     // Presets
     m_dialog->callbacks().preset_selection_changed = [this](int id) {
         m_preset_manager.load_preset(static_cast<size_t>(id));
+        if (m_preset_manager.get_font_prop().per_glyph) // new preset contain per_glyph
+            m_text_lines.create_text_lines(Biz::Emboss::get_count_lines(m_text));
         update_volume();
     };
     m_dialog->callbacks().save_preset_as = [this]() {
@@ -314,6 +342,8 @@ TextGizmo::TextGizmo(
     m_dialog->callbacks().delete_preset = [this]() { 
         if (m_preset_manager.delete_preset()) {
             m_dialog->set_presets(m_preset_manager.get_presets_names(), m_preset_manager.get_preset_index());
+            if (m_preset_manager.get_font_prop().per_glyph) // new preset contain per_glyph
+                m_text_lines.create_text_lines(Biz::Emboss::get_count_lines(m_text));
             update_volume();
         }
     };
@@ -472,7 +502,6 @@ bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx)
     }
     size_t last_loaded_object_id = embossed_volume_ptr->get_object()->id().id;
     
-
     for (const Scene::NodePickResult& pick : pick_results) {
         if (!pick.node->has_tag_of_type<SceneNodeTag>())
             continue; // only node tag
@@ -507,6 +536,9 @@ bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx)
             set_dialog_rotation(*m_dialog, m_preset_manager, m_use_deg);
         }
 
+        if (m_preset_manager.get_font_prop().per_glyph) // recalculate lines
+            m_text_lines.create_text_lines(m_text_lines.get_lines().size());
+
         m_drag->valid = true;
         return true;
     }
@@ -522,7 +554,8 @@ void TextGizmo::on_drag_finish(){
     m_project_interactor.scene_interactor()
         .finalize_transform_selection(m_drag->memento, false);
     m_drag = nullptr;
-    if (m_preset_manager.get_preset().projection.use_surface)
+    if (m_preset_manager.get_preset().projection.use_surface ||
+        m_preset_manager.get_font_prop().per_glyph)
         update_volume();
 }
 void TextGizmo::on_drag_cancel(){
@@ -616,55 +649,12 @@ void TextGizmo::render_imgui()
         from_surface = calc_distance(project, ref, root).value_or(0.f);
     }
 
-    ImGui::End();
-}
-
-namespace {
-size_t get_index(const Domain::FontList& fonts, const std::string& path)
-{
-    auto it_font = std::find_if(
-        fonts.begin(),
-        fonts.end(),
-        [&path](const Domain::FontDescriptor& fd) {
-            return fd.path == path;
-        }
-    );
-    return (it_font == fonts.end()) ? 0 : (it_font - fonts.begin());
-}
-
-const Domain::ModelVolume* get_selected_text_volume(const Domain::Project& project, const Biz::Scene::ObjectSelection& selection) {
-    if (selection.elements.size() != 1)
-        return nullptr; // multiple volumes selected
-
-    const Domain::ElementRef& selected = selection.elements.front();    
-    const Domain::ModelVolume* volume_ptr = nullptr;
-    if (selected.has_volume()) {
-        volume_ptr = project.find_volume_by_id(selected.object_id, selected.volume_id);    
-    } else {
-        // Check is selected object contain only volume with text
-        const Domain::ModelObject* object_ptr = project.find_object_by_id(selected.object_id);
-        if (object_ptr == nullptr)
-            return nullptr; // after delete volume
-        if (object_ptr->volumes.size() != 1)
-            return nullptr;
-        volume_ptr = object_ptr->volumes.front();
+    if (ImGui::Button("create line")) {
+        m_text_lines.create_text_lines(1);
     }
 
-    if (volume_ptr == nullptr)
-        return nullptr;
-
-    if (!volume_ptr->text_configuration.has_value())
-        return nullptr; // selected volume is not text
-
-    return volume_ptr;
+    ImGui::End();
 }
-
-const Domain::ModelVolume* get_selected_text_volume(const Biz::ProjectInteractor& project_interactor) {
-    const Domain::Project& project = project_interactor.selected_project();
-    const Biz::Scene::ObjectSelection& selection = project_interactor.scene_interactor().object_selection();
-    return get_selected_text_volume(project, selection);
-}
-} // namespace
 
 void TextGizmo::on_activated()
 {
@@ -689,7 +679,7 @@ void TextGizmo::on_activated()
     scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
     // when text volume is not selected, create new one
-    if (get_selected_text_volume(m_project_interactor) == nullptr) {
+    if (Biz::Emboss::get_selected_text_volume(m_project_interactor) == nullptr) {
         // create new text volume
         m_preset_manager.discard_preset_changes();
         // TRN: default text embossed from model
@@ -822,14 +812,12 @@ void activate_preset(TextDialog& dialog, const Biz::Emboss::TextPresetManager& p
     // NOTE: not neccessary to write pressets names every time when volume loads
     dialog.set_presets(preset_manager.get_presets_names(), preset_manager.get_preset_index());
 }
-
-
 } // namespace
 
 void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
 {
     const Domain::Project& project = m_project_interactor.workbench().project(project_id);
-    const Domain::ModelVolume* volume_ptr = get_selected_text_volume(project, selection);
+    const Domain::ModelVolume* volume_ptr = Biz::Emboss::get_selected_text_volume(project, selection);
     if (volume_ptr == nullptr)
         return close(); // unselection text volume
 
@@ -842,15 +830,6 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
     m_dialog->callbacks() = TextDialog::Callbacks{};
     ScopeGuard sg_callbacks([this, &temp_callbacks]() { m_dialog->callbacks() = std::move(temp_callbacks); });
 
-    bool is_part = volume.get_object()->volumes.size() != 1;
-    bool use_surface = volume.emboss_shape->projection.use_surface;
-    m_dialog->show_part_specific_panel(is_part);
-    m_dialog->set_enable_surface_distance(is_part && !use_surface);
-    m_dialog->set_enable_use_surface(is_part);
-    m_dialog->set_enable_per_glyph(is_part);
-    if (is_part)
-        m_dialog->set_operation(volume.type());
-    
     // load current settings
     const Domain::TextConfiguration& tc = *volume.text_configuration;
     m_text = tc.text;
@@ -862,6 +841,23 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
         .projection = volume.emboss_shape->projection,
         .angle = calc_rotation(project, ref)
     };
+
+    bool is_part = volume.get_object()->volumes.size() != 1;
+    if (!is_part) { // is object
+        // Appear after deleting object after adding part
+        if (volume.text_configuration->style.prop.per_glyph)
+            preset.emboss_style.prop.per_glyph = false;
+        if (volume.emboss_shape->projection.use_surface)
+            preset.projection.use_surface = false;
+    }
+    bool use_surface = preset.projection.use_surface;
+    m_dialog->show_part_specific_panel(is_part);
+    m_dialog->set_enable_surface_distance(is_part && !use_surface);
+    m_dialog->set_enable_use_surface(is_part);
+    m_dialog->set_enable_per_glyph(is_part);
+    if (is_part)
+        m_dialog->set_operation(volume.type());
+
     set_dialog_rotation(*m_dialog, m_preset_manager, m_use_deg);
 
     const auto& presets = m_preset_manager.get_presets();
@@ -880,7 +876,8 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
 
     // Update dialog data
     m_dialog->set_editor(m_text);
-    bool is_multiline = Biz::Emboss::get_count_lines(m_text) > 1;
+    unsigned count_lines = Biz::Emboss::get_count_lines(m_text);
+    bool is_multiline = count_lines > 1;
     m_dialog->set_enable_line_gap(is_multiline);
     m_use_deg = true; // or radians
     activate_preset(*m_dialog, m_preset_manager, m_volume_scale.char_gap, m_volume_scale.line_gap, m_use_inch, m_use_deg);   
@@ -888,9 +885,13 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
     calc_scale(project, ref); // volume scale for each axis
     if (is_part) {
         Scene::Node& root = m_scene_presenter.scene().root();
-        preset.distance = calc_distance(project, ref, root);
+        m_preset_manager.get_preset().distance = calc_distance(project, ref, root);
         set_dialog_surface_distance(*m_dialog, m_preset_manager, m_use_inch);
     }
+
+    if (m_preset_manager.get_font_prop().per_glyph && !m_text_lines.exist_lines())
+        m_text_lines.create_text_lines(count_lines);
+
     m_last_loaded_volume_id = volume.id();
 }
 
@@ -1019,7 +1020,8 @@ Biz::Emboss::BaseData create_base_data(
     const std::string& text,
     Domain::ModelVolumeType volume_type,
     Biz::Emboss::TextPresetManager& preset_manager,
-    Biz::ProjectInteractor& project_interactor
+    Biz::ProjectInteractor& project_interactor,
+    const Biz::Emboss::TextLines& text_lines
 ) {
     const Biz::Emboss::TextPresetManager::Preset& preset = preset_manager.get_preset();
     Domain::TextConfiguration text_config{ .style = preset.emboss_style, .text = text };
@@ -1029,6 +1031,7 @@ Biz::Emboss::BaseData create_base_data(
         .shape_provider = std::make_unique<Biz::Emboss::TextShapeProvider>(
             std::move(text_config),
             preset.projection,
+            text_lines,
             font_file
         ),
         .project_interactor = project_interactor,
@@ -1042,7 +1045,7 @@ Biz::Emboss::BaseData create_base_data(
 } // namespace
 
 bool TextGizmo::update_volume(const UpdateParams& update_params) {
-    const Domain::ModelVolume* volume_ptr = get_selected_text_volume(m_project_interactor);
+    const Domain::ModelVolume* volume_ptr = Biz::Emboss::get_selected_text_volume(m_project_interactor);
     if (volume_ptr == nullptr)
         return false; // no volume selected
 
@@ -1061,7 +1064,7 @@ bool TextGizmo::update_volume(const UpdateParams& update_params) {
 
     Domain::ModelVolumeType new_type = update_params.volume_type.value_or(volume_ptr->type());
     Biz::Emboss::UpdateVolumeParams params{
-        .base = create_base_data(m_text, new_type, m_preset_manager, m_project_interactor),
+        .base = create_base_data(m_text, new_type, m_preset_manager, m_project_interactor, m_text_lines.get_lines()),
         .volume_id = volume.id(),
         .volume_trmat = update_params.volume_transformation,
         .volume_type = update_params.volume_type
@@ -1096,6 +1099,9 @@ void TextGizmo::rotate(double absolut_angle) {
     // Is set what was wanted?
     // assert(Domain::is_approx(m_preset_manager.get_preset().angle.value_or(0.f), (float)value, 1e-3f));
 
+    if (m_preset_manager.get_font_prop().per_glyph) // recalculate lines
+        m_text_lines.create_text_lines(m_text_lines.get_lines().size());
+
     // update shape when needed
     if (m_preset_manager.get_preset().projection.use_surface ||
         m_preset_manager.get_font_prop().per_glyph)
@@ -1116,7 +1122,7 @@ bool TextGizmo::init_create(Domain::ModelVolumeType volume_type)
 bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results)
 {
     Biz::Emboss::CreateVolumeParams params{
-        .base = create_base_data(m_text, volume_type, m_preset_manager, m_project_interactor),
+        .base = create_base_data(m_text, volume_type, m_preset_manager, m_project_interactor, m_text_lines.get_lines()),
         .volume_type = volume_type
     };
     return Biz::Emboss::start_create_volume(params, ray, results);
@@ -1189,4 +1195,4 @@ Domain::Transform3d get_volume_transformation(
     }
     return volume_new;
 }
-}
+} // namespace
