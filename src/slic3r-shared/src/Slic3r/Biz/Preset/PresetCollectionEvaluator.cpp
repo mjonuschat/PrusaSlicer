@@ -113,6 +113,8 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             context.id = Domain::Preset::derive_name(node.id, context.id);
         if (node.name.has_value())
             context.name = Domain::Preset::derive_name(node.name.value(), context.name);
+        if (node.match_mode.has_value())
+            context.match_mode = node.match_mode.value();
         if (node.name.has_value() && node.id.empty()) {
             context.id = Domain::Preset::derive_name(node.name.value(), context.id);
             SPDLOG_WARN(
@@ -121,7 +123,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 node.source_location.to_string(),
                 node.name.value(),
                 context.id
-            );
+             );
         }
         if (node.condition.has_value())
             context.conditions.push_back(*node.condition.value());
@@ -136,6 +138,22 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     size_t unconditional_variants = 0;
 
     PresetEvaluator::EvalPresetContexts var_contexts;
+
+    const bool first_match_only = std::ranges::all_of(
+        ret,
+        [](const auto& ctx)
+        { return *ctx.match_mode == Domain::Preset::ConditionMatchMode::FirstMatch; }
+    );
+
+    // make sure that the match_mode is same for contexts
+    ASSERT(
+        first_match_only
+        || std::ranges::none_of(
+            ret,
+            [](const auto& ctx)
+            { return *ctx.match_mode == Domain::Preset::ConditionMatchMode::FirstMatch; }
+        )
+    );
 
     for (const auto& var : node.variants) {
         const bool conditional = var.condition.has_value();
@@ -153,7 +171,16 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             ASSERT(unconditional_variants == 1);
         }
 
-        auto var_ctx = eval_preset(var, root_id, {{root_id}}, overrides, expr_combine, true);
+        auto var_ctx = eval_preset(
+            var,
+            root_id,
+            {{.root_id    = root_id,
+              .match_mode = first_match_only ? Domain::Preset::ConditionMatchMode::FirstMatch :
+                                               Domain::Preset::ConditionMatchMode::AllMatches}},
+            overrides,
+            expr_combine,
+            true
+        );
         var_contexts.insert(
             var_contexts.end(),
             std::make_move_iterator(var_ctx.begin()),
@@ -161,12 +188,12 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         );
 
         // first successful condition met, break (switch-like statement behavior)
-        if (conditional)
+        if (conditional && first_match_only)
             break;
     }
 
     if (var_contexts.empty())
-        return ret;
+        return PresetEvaluator::merged_same_presets(ret);
 
     // resolve variants
     PresetEvaluator::EvalPresetContexts product;
@@ -177,6 +204,8 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 context.id   = Domain::Preset::derive_name(var_ctx.id, context.id);
             if (!var_ctx.name.empty())
                 context.name = Domain::Preset::derive_name(var_ctx.name, context.name);
+            if (var_ctx.match_mode.has_value())
+                context.match_mode = var_ctx.match_mode;
             context.conditions.insert(
                 context.conditions.end(),
                 var_ctx.conditions.begin(),
@@ -190,7 +219,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         }
     }
 
-    return product;
+    return PresetEvaluator::merged_same_presets(product);
 }
 
 struct BoolCaster

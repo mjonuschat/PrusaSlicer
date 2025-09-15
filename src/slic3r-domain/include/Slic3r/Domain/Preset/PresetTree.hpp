@@ -7,6 +7,12 @@
 
 namespace Slic3r::Domain::Preset {
 
+enum class ConditionMatchMode
+{
+    FirstMatch,
+    AllMatches
+};
+
 struct PresetNode
 {
     std::string id;
@@ -14,6 +20,7 @@ struct PresetNode
     std::vector<std::string> inherits;
     std::vector<std::string> unconditional_inherits;
     std::optional<SourceLocatedExpr> condition;
+    std::optional<ConditionMatchMode> match_mode;
     PresetValueMap values;
     FeatureValueMap features;
     std::vector<PresetNode> variants;

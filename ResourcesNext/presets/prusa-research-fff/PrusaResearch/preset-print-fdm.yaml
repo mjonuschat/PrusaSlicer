@@ -1,6 +1,7 @@
 kind: print
 inherits:
 - '*common*'
+match_mode: all_matches
 # C1
 variants:
 - condition: printer.base_model == "COREONE" or printer.base_model == "MK4" or printer.base_model == "XL" or printer.base_model == "MK3.5"

@@ -280,6 +280,17 @@ typename Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType>::PresetVa
 
 } // namespace
 
+bool PresetEvaluator::EvalPresetContext::has_same_values(const EvalPresetContext& rhs) const
+{
+    // last_node_location and conditions left intentionally
+    return root_id == rhs.root_id
+        && id == rhs.id
+        && name == rhs.name
+        && match_mode == rhs.match_mode
+        && values == rhs.values
+        && features == rhs.features;
+}
+
 template <typename FdmConfigType, typename SlaConfigType>
 Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::preset_from_context(
     Domain::PrinterTechnology technology,
@@ -297,6 +308,26 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
         .conditions = context.conditions,
         .last_node_location = context.last_node_location
     };
+}
+
+PresetEvaluator::EvalPresetContexts PresetEvaluator::merged_same_presets(const EvalPresetContexts& presets)
+{
+    EvalPresetContexts ret;
+
+    for (const auto& p : presets) {
+        const bool is_unique =
+            std::ranges::none_of(ret, [&p](const auto& other) { return p.has_same_values(other); });
+        if (is_unique) {
+            ret.emplace_back(p);
+        }
+    }
+    std::ranges::sort(
+        ret,
+        [](const auto& a, const auto& b)
+        { return a.name < b.name || (a.name == b.name && a.id < b.id); }
+    );
+
+    return ret;
 }
 
 void PresetEvaluator::build_named_presets()
@@ -454,8 +485,21 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             }
 
             // For FFF add only prints with tools filled
-            if (hw_config.technology != Domain::PrinterTechnology::FFF || !tools.empty())
-                ep.prints.emplace_back(std::move(evaluated_print_preset), std::move(tools), std::move(materials));
+            if (hw_config.technology != Domain::PrinterTechnology::FFF
+                || std::ranges::all_of(tools, [](const auto& t) { return !t.empty(); }))
+            {
+                ep.prints.emplace_back(
+                    std::move(evaluated_print_preset),
+                    std::move(tools),
+                    std::move(materials)
+                );
+            } else if (hw_config.technology != Domain::PrinterTechnology::FFF) {
+                SPDLOG_WARN(
+                    "Print preset {} for printer {} was removed as it has at least one tool without tool print presets",
+                    evaluated_print_preset.name,
+                    printer_preset.name
+                );
+            }
         }
         ret.emplace_back(std::move(ep));
     }

@@ -46,9 +46,13 @@ struct EvaluatedPreset
 
     bool has_same_values(const EvaluatedPreset& rhs) const
     {
-        const EvaluatedPreset& lhs = *this;
         // last_node_location and conditions intentionally left
-        return lhs.kind == rhs.kind && lhs.root_id == rhs.root_id && lhs.id == rhs.id && lhs.name == rhs.name && lhs.values == rhs.values && lhs.features == rhs.features /*&& lhs.conditions == rhs.conditions*/;
+        return kind == rhs.kind
+            && root_id == rhs.root_id
+            && id == rhs.id
+            && name == rhs.name
+            && values == rhs.values
+            && features == rhs.features /*&& lhs.conditions == rhs.conditions*/;
     }
     static EvaluatedPreset make(PresetKind kind, const EvaluatedPresetMetadata& metadata, PresetValues values)
     {

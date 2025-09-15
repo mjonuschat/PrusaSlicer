@@ -403,7 +403,7 @@ void add_unique(VolumeMap& volume_map, const PathId& path_id, ModelVolume* mv)
     }
     ModelVolumePtrs& ptrs = it->second;
     auto bound            = std::upper_bound(ptrs.begin(), ptrs.end(), mv);
-    if (*bound == mv)
+    if (bound != ptrs.end() && *bound == mv)
         return; // second insertation
     // sorted insert
     ptrs.insert(bound, mv);
