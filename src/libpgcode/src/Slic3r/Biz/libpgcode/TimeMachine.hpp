@@ -45,6 +45,7 @@ struct TimeMachineState
     float safe_feedrate{ 0.0f }; // mm/s
     Domain::Vec4f axis_feedrate{ Domain::Vec4f::Zero() }; // mm/s
     Domain::Vec4f abs_axis_feedrate{ Domain::Vec4f::Zero() }; // mm/s
+    Domain::Vec4f jd_unit_vec;
 
     void reset();
 };

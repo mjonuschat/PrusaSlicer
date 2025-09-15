@@ -7,6 +7,7 @@
 #include "ProcessorImpl.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Math.hpp"
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
@@ -545,6 +546,21 @@ static float extract_absolute_position_on_axis(Axis axis, std::optional<float> v
         return start_position[axis];
 }
 
+float calc_junction_acceleration(const TimeBlock &block, const Vec4f &junction_vector, const TimeProcessor &time_processor, TimeMode mode)
+{
+    float junction_acceleration = block.acceleration;
+    for (unsigned char axis_idx = X; axis_idx <= E; ++axis_idx) {
+        if (junction_vector[axis_idx] == 0.f) {
+            continue;
+        }
+
+        const float axis_max_acceleration = time_processor.axis_max_acceleration(mode, Axis(axis_idx));
+        junction_acceleration = std::min(junction_acceleration, std::abs(axis_max_acceleration / junction_vector[axis_idx]));
+    }
+
+    return junction_acceleration;
+}
+
 static float move_length(const Vec4f& delta_pos)
 {
     float sq_xyz_length = sqr(delta_pos[X]) + sqr(delta_pos[Y]) + sqr(delta_pos[Z]);
@@ -554,6 +570,16 @@ static float move_length(const Vec4f& delta_pos)
 static bool is_extrusion_only_move(const Vec4f& delta_pos)
 {
     return delta_pos[X] == 0.0f && delta_pos[Y] == 0.0f && delta_pos[Z] == 0.0f && delta_pos[E] != 0.0f;
+}
+
+static Vec4f normalized_junction_vector(const Vec4f& junction_vector)
+{
+    float magnitude_sq = 0.f;
+    for (unsigned char axis_idx = X; axis_idx <= E; ++axis_idx) {
+        magnitude_sq += Slic3r::sqr(junction_vector[axis_idx]);
+    }
+
+    return junction_vector / std::sqrt(magnitude_sq);
 }
 
 void ProcessorImpl::process_G1(const std::array<std::optional<float>, 4>& axes, const std::optional<float>& feedrate,
@@ -704,78 +730,127 @@ void ProcessorImpl::process_G1(const std::array<std::optional<float>, 4>& axes, 
 
         block.acceleration = acceleration;
 
-        // calculates block exit feedrate
-        curr.safe_feedrate = block.feedrate_profile.cruise;
-
-        for (uint8_t a = X; a <= E; ++a) {
-            float axis_max_jerk = m_time_processor.axis_max_jerk(TimeMode(i), Axis(a));
-            if (curr.abs_axis_feedrate[a] > axis_max_jerk)
-                curr.safe_feedrate = std::min(curr.safe_feedrate, axis_max_jerk);
-        }
-
-        block.feedrate_profile.exit = curr.safe_feedrate;
-
         static const float PREVIOUS_FEEDRATE_THRESHOLD = 0.0001f;
 
-        // calculates block entry feedrate
-        float vmax_junction = curr.safe_feedrate;
-        if (!blocks.empty() && prev.feedrate > PREVIOUS_FEEDRATE_THRESHOLD) {
-            bool prev_speed_larger = prev.feedrate > block.feedrate_profile.cruise;
-            float smaller_speed_factor = prev_speed_larger ? (block.feedrate_profile.cruise / prev.feedrate) : (prev.feedrate / block.feedrate_profile.cruise);
-            // Pick the smaller of the nominal speeds. Higher speed shall not be achieved at the junction during coasting.
-            vmax_junction = prev_speed_larger ? block.feedrate_profile.cruise : prev.feedrate;
+        float vmax_junction = 0.f; // Init entry speed to zero. Assume it starts from rest. Planner will correct this later.
+        if (const float junction_deviation = m_time_processor.junction_deviation(TimeMode(i)); junction_deviation > 0.f) {
+            // Junction deviation.
 
-            float v_factor = 1.0f;
-            bool limited = false;
+            curr.jd_unit_vec = Vec4f(
+                static_cast<float>(delta_pos[X]) / block.distance,
+                static_cast<float>(delta_pos[Y]) / block.distance,
+                static_cast<float>(delta_pos[Z]) / block.distance,
+                static_cast<float>(delta_pos[E]) / block.distance
+            );
 
-            for (uint8_t a = X; a <= E; ++a) {
-                // Limit an axis. We have to differentiate coasting from the reversal of an axis movement, or a full stop.
-                float v_exit = prev.axis_feedrate[a];
-                float v_entry = curr.axis_feedrate[a];
+            // Skip first block or when previous_nominal_speed is used as a flag for homing and offset cycles.
+            if (!blocks.empty() && prev.feedrate > PREVIOUS_FEEDRATE_THRESHOLD) {
+                // Compute cosine of angle between previous and current path. (prev.jd_unit_vec is negative)
+                // NOTE: Max junction velocity is computed without sin() or acos() by trig half angle identity.
+                float junction_cos_theta = (-prev.jd_unit_vec).dot(curr.jd_unit_vec);
 
-                if (prev_speed_larger)
-                    v_exit *= smaller_speed_factor;
+                // NOTE: Computed without any expensive trig, sin() or acos(), by trig half angle identity of cos(theta).
+                // For a 0 degree acute junction, just set (already set before) minimum junction speed.
+                if (junction_cos_theta <= 0.999999f) {
+                    junction_cos_theta = std::max(junction_cos_theta, -0.999999f); // Check for numerical round-off to avoid divide by zero.
 
-                if (limited) {
-                    v_exit *= v_factor;
-                    v_entry *= v_factor;
-                }
+                    // Convert delta vector to unit vector
+                    const Vec4f junction_unit_vec = normalized_junction_vector(curr.jd_unit_vec - prev.jd_unit_vec);
 
-                // Calculate the jerk depending on whether the axis is coasting in the same direction or reversing a direction.
-                float jerk =
-                  (v_exit > v_entry) ?
-                  ((v_entry > 0.0f || v_exit < 0.0f) ?
-                    // coasting
-                    (v_exit - v_entry) :
-                    // axis reversal
-                    std::max(v_exit, -v_entry)) :
-                  // v_exit <= v_entry
-                  ((v_entry < 0.0f || v_exit > 0.0f) ?
-                    // coasting
-                    (v_entry - v_exit) :
-                    // axis reversal
-                    std::max(-v_exit, v_entry));
+                    const float junction_acceleration = calc_junction_acceleration(block, junction_unit_vec, m_time_processor, TimeMode(i));
+                    const float sin_theta_d2 = std::sqrt(0.5f * (1.f - junction_cos_theta)); // Trig half angle identity. Always positive.
 
-                const float axis_max_jerk = m_time_processor.axis_max_jerk(TimeMode(i), Axis(a));
-                if (jerk > axis_max_jerk) {
-                    v_factor *= axis_max_jerk / jerk;
-                    limited = true;
+                    float vmax_junction_sqr = (junction_acceleration * junction_deviation * sin_theta_d2) / (1.f - sin_theta_d2);
+                    if (block.distance < 1.f) {
+                        // Fast acos approximation, minus the error bar to be safe
+                        const float junction_theta = (Slic3r::deg2rad(-40.f) * Slic3r::sqr(junction_cos_theta) - Slic3r::deg2rad(50.f)) * junction_cos_theta + Slic3r::deg2rad(90.f) - 0.18f;
+
+                        // If angle is greater than 135 degrees (octagon), find speed for approximate arc
+                        if (junction_theta > Slic3r::deg2rad(135.f)) {
+                            const float limit_sqr = block.distance / (Slic3r::deg2rad(180.f) - junction_theta) * junction_acceleration;
+                            vmax_junction_sqr = std::min(vmax_junction_sqr, limit_sqr);
+                        }
+                    }
+
+                    // Get the lowest speed
+                    vmax_junction_sqr = std::min(vmax_junction_sqr, std::min(Slic3r::sqr(block.feedrate_profile.cruise), Slic3r::sqr(prev.feedrate)));
+                    vmax_junction = std::sqrt(vmax_junction_sqr);
                 }
             }
+        } else {
+            // Classic jerk.
 
-            if (limited)
-                vmax_junction *= v_factor;
+            // calculates block exit feedrate
+            curr.safe_feedrate = block.feedrate_profile.cruise;
 
-            // Now the transition velocity is known, which maximizes the shared exit / entry velocity while
-            // respecting the jerk factors, it may be possible, that applying separate safe exit / entry velocities will achieve faster prints.
-            float vmax_junction_threshold = vmax_junction * 0.99f;
+            for (uint8_t a = X; a <= E; ++a) {
+                const float axis_max_jerk = m_time_processor.axis_max_jerk(TimeMode(i), Axis(a));
+                if (curr.abs_axis_feedrate[a] > axis_max_jerk)
+                    curr.safe_feedrate = std::min(curr.safe_feedrate, axis_max_jerk);
+            }
 
-            // Not coasting. The machine will stop and start the movements anyway, better to start the segment from start.
-            if (prev.safe_feedrate > vmax_junction_threshold && curr.safe_feedrate > vmax_junction_threshold)
-                vmax_junction = curr.safe_feedrate;
+            block.feedrate_profile.exit = curr.safe_feedrate;
+
+            // calculates block entry feedrate
+            vmax_junction = curr.safe_feedrate;
+            if (!blocks.empty() && prev.feedrate > PREVIOUS_FEEDRATE_THRESHOLD) {
+                const bool prev_speed_larger = prev.feedrate > block.feedrate_profile.cruise;
+                const float smaller_speed_factor = prev_speed_larger ? (block.feedrate_profile.cruise / prev.feedrate) : (prev.feedrate / block.feedrate_profile.cruise);
+                // Pick the smaller of the nominal speeds. Higher speed shall not be achieved at the junction during coasting.
+                vmax_junction = prev_speed_larger ? block.feedrate_profile.cruise : prev.feedrate;
+
+                float v_factor = 1.0f;
+                bool limited = false;
+
+                for (uint8_t a = X; a <= E; ++a) {
+                    // Limit an axis. We have to differentiate coasting from the reversal of an axis movement, or a full stop.
+                    float v_exit = prev.axis_feedrate[a];
+                    float v_entry = curr.axis_feedrate[a];
+
+                    if (prev_speed_larger)
+                        v_exit *= smaller_speed_factor;
+
+                    if (limited) {
+                        v_exit *= v_factor;
+                        v_entry *= v_factor;
+                    }
+
+                    // Calculate the jerk depending on whether the axis is coasting in the same direction or reversing a direction.
+                    const float jerk =
+                      (v_exit > v_entry) ?
+                      ((v_entry > 0.0f || v_exit < 0.0f) ?
+                        // coasting
+                        (v_exit - v_entry) :
+                        // axis reversal
+                        std::max(v_exit, -v_entry)) :
+                      // v_exit <= v_entry
+                      ((v_entry < 0.0f || v_exit > 0.0f) ?
+                        // coasting
+                        (v_entry - v_exit) :
+                        // axis reversal
+                        std::max(-v_exit, v_entry));
+
+                    const float axis_max_jerk = m_time_processor.axis_max_jerk(TimeMode(i), Axis(a));
+                    if (jerk > axis_max_jerk) {
+                        v_factor *= axis_max_jerk / jerk;
+                        limited = true;
+                    }
+                }
+
+                if (limited)
+                    vmax_junction *= v_factor;
+
+                // Now the transition velocity is known, which maximizes the shared exit / entry velocity while
+                // respecting the jerk factors, it may be possible, that applying separate safe exit / entry velocities will achieve faster prints.
+                const float vmax_junction_threshold = vmax_junction * 0.99f;
+
+                // Not coasting. The machine will stop and start the movements anyway, better to start the segment from start.
+                if (prev.safe_feedrate > vmax_junction_threshold && curr.safe_feedrate > vmax_junction_threshold)
+                    vmax_junction = curr.safe_feedrate;
+            }
         }
 
-        float v_allowable = max_allowable_speed(-acceleration, curr.safe_feedrate, block.distance);
+        const float v_allowable = max_allowable_speed(-acceleration, curr.safe_feedrate, block.distance);
         block.feedrate_profile.entry = std::min(vmax_junction, v_allowable);
 
         block.max_entry_speed = vmax_junction;

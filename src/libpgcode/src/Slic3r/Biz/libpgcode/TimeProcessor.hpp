@@ -45,6 +45,7 @@ struct TimeProcessor
     float acceleration(TimeMode mode) const;
     float travel_acceleration(TimeMode mode) const;
     float retract_acceleration(TimeMode mode) const;
+    float junction_deviation(TimeMode mode) const;
 
     float axis_max_acceleration(TimeMode mode, Domain::Axis axis) const;
     float axis_max_jerk(TimeMode mode, Domain::Axis axis) const;
