@@ -359,4 +359,21 @@ std::string ProjectInteractor::get_project_name(Domain::SelectionId project_id) 
     return "default_filename";
 }
 
+void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::path> paths)
+{
+    const auto& proj            = m_workbench.project(selected_project_id());
+    Domain::BedRef selected_bed = scene_interactor().bed_selection().last_selected_bed();
+    const Domain::ConfigContainer* cc =
+        proj.find_config_container(selected_bed.config_container_id);
+    const Domain::BedInstance& inst = cc->find_bed_instance(selected_bed.instance_id);
+    int nozzle_dmrs_cnt             = cc->selected_preset().hw_config.tool_count;
+    FileLoadingLogic::import_files_and_add_to_scene(
+        paths,
+        nozzle_dmrs_cnt,
+        scene_interactor(),
+        cc->bed().center(),
+        nullptr // TODO
+    );
+}
+
 } // namespace Slic3r::Biz

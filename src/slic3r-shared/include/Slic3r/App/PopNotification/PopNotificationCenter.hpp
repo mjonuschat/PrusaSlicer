@@ -9,6 +9,7 @@
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostJobInfoTag.hpp"
+#include "Slic3r/App/LeftBarTabs.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -31,6 +32,7 @@ public:
     // Job
     void on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status) override;
     void on_job_print_host(const std::string& string, const  Biz::Platform::JobManager::Progress& progress);
+    void on_download_job_status_changed(const std::string& string, const Biz::Platform::JobManager::Progress& progress);
     // Slicing
     void on_status_cache_status_code_changed(const Domain::SlicingId slicing_id) override;
     void on_status_cache_progress_changed(const Domain::SlicingId slicing_id) override;
@@ -59,11 +61,16 @@ public:
     PopNotificationObservableList& observable_list() {return m_notification_list;}
     Biz::ObservableListSortFilter<PopNotificationData>& source_list() { return m_list_sort_filter; }
 
+    void set_switch_left_tab_fn(std::function<void(LeftBarTabs, const std::string&)> switch_left_tab_fn)
+    {
+        m_switch_left_tab_fn = switch_left_tab_fn;
+    }
 private:
     PopNotificationObservableList m_notification_list;
     Biz::ObservableListSortFilter<PopNotificationData> m_list_sort_filter;
     Biz::RemovableDrive::RemovableDriveService& m_removable_drive_service;
     Biz::ProjectInteractor& m_project_interactor;
+    std::function<void(LeftBarTabs, const std::string&)> m_switch_left_tab_fn;
 };
 
 } // namespace Slic3r::App::PopNotification

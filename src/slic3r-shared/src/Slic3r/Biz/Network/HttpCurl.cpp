@@ -3,6 +3,7 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Exception.hpp"
+#include "Slic3r/Log.hpp"
 
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r_version.h"
@@ -85,7 +86,7 @@ struct CurlGlobalInit
                 "CURL init has failed. PrusaSlicer will be unable to establish "
                 "network connections. See logs for additional details.";
 
-            BOOST_LOG_TRIVIAL(error) << ::curl_easy_strerror(ec);
+            SPDLOG_ERROR("{}",::curl_easy_strerror(ec));
         }
     }
 
@@ -175,6 +176,15 @@ size_t HttpCurl::writecb(void* data, size_t size, size_t nmemb, void* userp)
 
     return realsize;
 }
+
+size_t HttpCurl::headercb(void *data, size_t size, size_t nmemb, void *userp)
+{
+    std::string header(reinterpret_cast<char*>(data), size * nmemb);
+    std::string *header_data = static_cast<std::string*>(userp);
+    header_data->append(header);
+    return size * nmemb;
+}
+
 
 int HttpCurl::xfercb(void* userp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
 {
@@ -314,6 +324,10 @@ void HttpCurl::perform_sync(const HttpRetryOpt& retry_opts)
 
     ::curl_easy_setopt(m_curl.get(), CURLOPT_VERBOSE, get_logging_level() >= 5);
 
+    std::string header_data;
+    curl_easy_setopt(m_curl.get(), CURLOPT_HEADERFUNCTION, headercb);
+    curl_easy_setopt(m_curl.get(), CURLOPT_HEADERDATA, &header_data);
+
     if (m_header_list) {
         ::curl_easy_setopt(m_curl.get(), CURLOPT_HTTPHEADER, m_header_list.get());
     }
@@ -382,15 +396,7 @@ void HttpCurl::perform_sync(const HttpRetryOpt& retry_opts)
             retry = false;
         if (retry) {
             num_retries++;
-            BOOST_LOG_TRIVIAL(error)
-                << "HTTP Transient error (code="
-                << res
-                << ", http_status="
-                << http_status
-                << "), retrying in "
-                << delay.count() / 1000.0f
-                << " s";
-
+            SPDLOG_ERROR("HTTP Transient error (code={}, http_status={}), retrying in {}s", std::to_string(res), std::to_string(http_status), std::to_string(delay.count() / 1000.0f));
             std::this_thread::sleep_for(delay);
 
             auto start_time = std::chrono::steady_clock::now();
@@ -446,6 +452,9 @@ void HttpCurl::perform_sync(const HttpRetryOpt& retry_opts)
                 errorfn(std::move(m_buffer), std::string(), http_status);
             }
         } else {
+            if (headersfn && !header_data.empty()) {
+                headersfn(header_data);
+            }
             if (completefn) {
                 completefn(std::move(m_buffer), http_status);
             }
@@ -597,11 +606,7 @@ IHttp& HttpCurl::set_post_body(const fs::path& path)
 {
     boost::system::error_code ec;
     if (!fs::exists(path, ec) || ec) {
-        BOOST_LOG_TRIVIAL(error)
-            << "Failed to set POST body. File "
-            << path.string()
-            << " does not exists. "
-            << ec.message();
+        SPDLOG_ERROR("Failed to set POST body. File {} does not exists. {}", path.string(), ec.message());
         return *this;
     }
     boost::nowide::ifstream file(path.string());
@@ -631,11 +636,7 @@ IHttp& HttpCurl::set_put_body(const fs::path& path)
         ::curl_easy_setopt(m_curl.get(), CURLOPT_READDATA, (void*) (m_put_file.get()));
         ::curl_easy_setopt(m_curl.get(), CURLOPT_INFILESIZE, file_size);
     } else {
-        BOOST_LOG_TRIVIAL(error)
-            << "Failed to set PUT body with file "
-            << path.string()
-            << ". "
-            << ec.message();
+        SPDLOG_ERROR("Failed to set PUT body with file {}. {}", path.string(), ec.message());
     }
     return *this;
 }
@@ -662,19 +663,19 @@ std::string HttpCurl::extract_host_from_url(const std::string& url_in)
     }
     CURLU* curlu = curl_url();
     if (!curlu) {
-        BOOST_LOG_TRIVIAL(error) << "extract_host_from_url: Failed to allocate CURLU handle";
+        SPDLOG_ERROR("extract_host_from_url: Failed to allocate CURLU handle");
         return url_in;
     }
 
     std::string host;
     if (curl_url_set(curlu, CURLUPART_URL, url.c_str(), 0) != CURLUE_OK) {
-        BOOST_LOG_TRIVIAL(error) << "extract_host_from_url: Failed to parse URL: " << url;
+        SPDLOG_ERROR("extract_host_from_url: Failed to parse URL: {}", url);
         curl_url_cleanup(curlu);
         return url_in;
     }
     char* host_cstr = nullptr;
     if (curl_url_get(curlu, CURLUPART_HOST, &host_cstr, 0) != CURLUE_OK) {
-        BOOST_LOG_TRIVIAL(error) << "extract_host_from_url: Failed to extract host from URL: " << url;
+        SPDLOG_ERROR("extract_host_from_url: Failed to extract host from URL: ", url);
         curl_url_cleanup(curlu);
         return url_in;
     }
@@ -694,7 +695,7 @@ std::string HttpCurl::substitute_host(const std::string& orig_addr, std::string 
 
     CURLU* curlu = curl_url();
     if (!curlu) {
-        BOOST_LOG_TRIVIAL(error) << "substitute_host: Failed to allocate CURLU handle";
+        SPDLOG_ERROR("substitute_host: Failed to allocate CURLU handle");
         return orig_addr;
     }
 
@@ -702,18 +703,14 @@ std::string HttpCurl::substitute_host(const std::string& orig_addr, std::string 
 
     // Parse the input URL
     if (curl_url_set(curlu, CURLUPART_URL, orig_addr.c_str(), 0) != CURLUE_OK) {
-        BOOST_LOG_TRIVIAL(error) << "substitute_host: Failed to parse URL: " << orig_addr;
+        SPDLOG_ERROR("substitute_host: Failed to parse URL: {}", orig_addr);
         curl_url_cleanup(curlu);
         return orig_addr;
     }
 
     // Replace the host
     if (curl_url_set(curlu, CURLUPART_HOST, sub_addr.c_str(), 0) != CURLUE_OK) {
-        BOOST_LOG_TRIVIAL(error)
-            << "substitute_host: Failed to substitute host: "
-            << sub_addr
-            << " in URL: "
-            << orig_addr;
+        SPDLOG_ERROR("substitute_host: Failed to substitute host: {} in URL: {}", sub_addr, orig_addr);
         curl_url_cleanup(curlu);
         return orig_addr;
     }
@@ -724,7 +721,7 @@ std::string HttpCurl::substitute_host(const std::string& orig_addr, std::string 
         result = new_url;
         curl_free(new_url);
     } else {
-        BOOST_LOG_TRIVIAL(error) << "substitute_host: Failed to extract modified URL";
+        SPDLOG_ERROR("substitute_host: Failed to extract modified URL");
     }
 
     curl_url_cleanup(curlu);
@@ -766,6 +763,55 @@ std::string HttpCurl::escape_string(const std::string& str)
     std::string ret_val = escape_string_inner(str, curl);
     curl_easy_cleanup(curl);
     return ret_val;
+}
+
+std::string HttpCurl::unescape_string(const std::string& str)
+{
+    std::string ret_val;
+    int decodelen;
+    char* decoded = curl_easy_unescape(nullptr, str.c_str(), str.size(), &decodelen);
+    if (decoded) {
+        ret_val = std::string(decoded);
+        curl_free(decoded);
+    }
+    return ret_val;
+}
+
+bool HttpCurl::is_subdomain(const std::string& url, const std::string& domain)
+{
+    // domain should be f.e. printables.com (.com including)
+	char* host;
+	std::string host_string;
+	CURLUcode rc;
+	CURLU* curl = curl_url();
+	if (!curl) {
+		SPDLOG_ERROR("Failed to init Curl library in function is_domain.");
+		return false;
+	}
+	rc = curl_url_set(curl, CURLUPART_URL, url.c_str(), 0);
+	if (rc != CURLUE_OK) {
+		curl_url_cleanup(curl);
+		return false;
+	}
+	rc = curl_url_get(curl, CURLUPART_HOST, &host, 0);
+	if (rc != CURLUE_OK || !host) {
+		curl_url_cleanup(curl);
+		return false;
+	}
+	host_string = std::string(host);
+	curl_free(host);
+	// now host should be subdomain.domain or just domain
+	if (domain == host_string) {
+		curl_url_cleanup(curl);
+		return true;
+	}
+    const std::string suffix = "." + domain;
+	if(host_string.ends_with(suffix)) {
+		curl_url_cleanup(curl);
+		return true;
+	}
+	curl_url_cleanup(curl);
+	return false;
 }
 
 bool HttpCurl::ca_file_supported()

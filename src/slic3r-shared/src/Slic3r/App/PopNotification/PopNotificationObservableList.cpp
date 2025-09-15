@@ -70,8 +70,11 @@ void PopNotificationObservableList::erase_notification(const PopNotificationData
         [to_erase](const PopNotificationDataPtr& notification)
         { return notification.get() == to_erase; }
     )};
-    const auto index{std::distance(m_notifications.begin(), it)};
-    erase_notification_by_index(index);
+    if (it != m_notifications.end()) {
+        const auto index{std::distance(m_notifications.begin(), it)};
+        erase_notification_by_index(index);
+    }
+    
 }
 
 void PopNotificationObservableList::erase_notification_by_index(size_t index)

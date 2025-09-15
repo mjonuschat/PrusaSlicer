@@ -12,6 +12,7 @@ enum class PopNotificationType
     JobProgress,
     SlicingProgress,
     PrintHostProgress,
+    DownloadProgress,
     Eject,
     UserAccountLogin,
     UserAccountTransientError,

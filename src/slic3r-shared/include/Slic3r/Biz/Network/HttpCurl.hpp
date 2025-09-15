@@ -138,6 +138,16 @@ public:
     static std::string escape_string(const std::string& str);
 
     /**
+	 * @brief Converts the given URL-encoded string to plain string.
+	 */
+    static std::string unescape_string(const std::string& str);
+
+    /*
+     * @brief Returns true if 'domain' is subdomain of 'url'
+     */
+    static bool is_subdomain(const std::string& url, const std::string& domain);
+
+    /**
      * @brief Tells whether current backend supports setting up a CA file using ca_file()
      */
 	static bool ca_file_supported();
@@ -185,6 +195,7 @@ private:
 
 	static bool ca_file_supported_inner(::CURL *curl);
 	static size_t writecb(void *data, size_t size, size_t nmemb, void *userp);
+    static size_t headercb(void *data, size_t size, size_t nmemb, void *userp);
 	static int xfercb(void *userp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow);
 	static int xfercb_legacy(void *userp, double dltotal, double dlnow, double ultotal, double ulnow);
 	static size_t form_file_read_cb(char *buffer, size_t size, size_t nitems, void *userp);

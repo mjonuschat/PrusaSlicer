@@ -1,6 +1,7 @@
 #include "Slic3r/App/PopNotification/PopNotificationCenter.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/Platform/IFileExplorerHandler.hpp"
+#include "Slic3r/Biz/FileDownloader/FileDownloaderJob.hpp"
 #include "Slic3r/App/DisplayStrings.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
@@ -15,6 +16,7 @@ using SlicingStatusCode = Slic3r::Biz::Slicing::StatusCode;
 using Slic3r::Biz::PrintHost::PrintHostJobProgressPayload;
 using Slic3r::Biz::PrintHost::PrintHostJobProgressState;
 using Slic3r::Biz::PrintHost::PrintHostJobInfoTag;
+using Slic3r::Biz::FileDownloader::FileDownloaderJobProgressPayload;
 using Slic3r::Domain::SlicingId;
 
 using namespace Slic3r::Biz;
@@ -100,6 +102,11 @@ void PopNotificationCenter::on_job_manager_status_changed(const JobManagerStatus
             continue;
         }
 
+        if (job_name.starts_with("file_download")) {
+            on_download_job_status_changed(job_name, progress);
+            continue;
+        }
+
         // Follows generic job notification logic. 
         const std::string text{job_status_to_string(progress.status, job_name)};
 
@@ -170,6 +177,114 @@ void PopNotificationCenter::on_job_print_host(const std::string& string, const P
         break;
     }
     
+}
+
+const auto download_job_matcher{cmp<DownloadProgressNotificationData>( //
+    [](const DownloadProgressNotificationData& a, const DownloadProgressNotificationData& b)
+    { return a.download_id == b.download_id; }
+)};
+
+void PopNotificationCenter::on_download_job_status_changed(
+    const std::string& string,
+    const Biz::Platform::JobManager::Progress& progress
+)
+{
+    size_t download_id;
+    std::string filename;
+    boost::filesystem::path dest_path;
+    std::string printables_url;
+    bool is_loaded;
+    if (const auto* payload =
+            std::any_cast<FileDownloaderJobProgressPayload>(&progress.progress_detail.payload))
+    {
+        download_id = payload->download_id;
+        filename    = payload->filename;
+        dest_path   = payload->final_path;
+        printables_url = payload->project_url;
+        is_loaded = payload->load_count > 0;
+    } else {
+        // Ignore progress without payload
+        return;
+    }
+
+    std::string text = job_status_to_string(progress.status, fmt::format("Downloading {}", filename));
+    PopNotificationLayout layout;
+    PopNotificationLevel level = PopNotificationLevel::ProgressWithClose;
+    if (progress.status == JobStatus::Finished) {
+        if (!is_loaded) {
+            layout = PopNotificationLayoutTextButtons{
+                text,
+                {{_u8L("Load"),
+                  [this, dest_path]()
+                  {
+                      m_project_interactor.open_downloaded_file(dest_path, false);
+                      return true;
+                  }},
+                 {_u8L("Load as New Project"),
+                  [this, dest_path]()
+                  {
+                      m_project_interactor.open_downloaded_file(dest_path, true);
+                      return true;
+                  }}}
+            };
+        } else {
+            std::vector<PopNotificationButtonData> buttons;
+            if (!printables_url.empty()) {
+                buttons.emplace_back(
+                    PopNotificationButtonData{
+                        _u8L("Printables"),
+                        [this, printables_url]()
+                        {
+                            if (m_switch_left_tab_fn) {
+                                m_switch_left_tab_fn(LeftBarTabs::Printables, printables_url);
+                            }
+                            return true;
+                        }
+                    }
+                );
+            }
+            if (!dest_path.empty()) {
+                buttons.emplace_back(
+                    PopNotificationButtonData{
+                        _u8L("Open Folder"),
+                        [this, dest_path]()
+                        {
+                            ASSERT(!dest_path.empty() && dest_path.has_parent_path());
+                            AppServices::instance().file_explorer_handler().open_folder(
+                                dest_path.parent_path().string()
+                            );
+                            return true;
+                        }
+                    }
+                );
+            }
+            if (buttons.empty()) {
+                layout = PopNotificationLayoutText{text};
+            } else {
+                layout = PopNotificationLayoutTextButtons{text, std::move(buttons)};
+            } 
+        }
+        
+    } else if (progress.status == JobStatus::Finished) {
+        layout = PopNotificationLayoutText{text};
+    } else if (progress.percent) {
+        int perc = (int) (progress.percent.value().value * 100);
+        layout   = PopNotificationLayoutTextProgress(text, perc);
+        level    = PopNotificationLevel::ProgressNoClose;
+    } else {
+        layout = PopNotificationLayoutText(text);
+    }
+
+    m_notification_list.upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::DownloadProgress,
+            level,
+            progress.status == JobStatus::Finished ? 20s : 0s,
+            std::move(layout),
+            DownloadProgressNotificationData(download_id)
+        },
+        download_job_matcher
+    );
 }
 
 namespace {
@@ -822,7 +937,7 @@ void PopNotificationCenter::on_project_load_failed(const std::string& error)
             0s,
             PopNotificationLayoutText{error}
         },
-        never_equal
+        never_equal_matcher
     );
 }
 

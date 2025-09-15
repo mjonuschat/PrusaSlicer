@@ -24,6 +24,9 @@
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
 #include "Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp"
+#include "Slic3r/Biz/FileDownloader/FileDownloaderInteractor.hpp"
+
+#include "Slic3r/Biz/FileLoadingLogic.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -53,6 +56,7 @@ class ProjectInteractor final :
     public UserAccount::IUserAccountListener,
     public AppInstance::IAppInstanceMessageContentListener,
     public Scene::ISceneChangedListener,
+    public FileDownloader::IFileDownloaderListener,
     public WithListeners<ISelectedProjectChangedListener, IProjectsChangedListener, ISelectedConfigContainerChangedListener>
 {
 public:
@@ -67,7 +71,8 @@ public:
         m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)),
         m_preset_updater_interactor(dispatcher),
         m_removable_drive_service(dispatcher),
-        m_project_list(*this)
+        m_project_list(*this),
+        m_file_downloader_interactor(dispatcher)
     {
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
@@ -84,6 +89,7 @@ public:
         m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
         m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
         m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
+        m_file_downloader_interactor.add_listener<FileDownloader::IFileDownloaderListener>(this);
         m_scene_interactor.add_listener<Scene::ISceneSelectionChangedListener>(
             &m_preset_interactor.object_settings_interactor()
         );
@@ -360,15 +366,51 @@ public:
     { /*unused*/
     }
 
-    /**
-     * @brief Callback from AppInstanceMessageHandler.
-     */
-    void on_open_models(std::vector<boost::filesystem::path> message) override {}
+    void load_models_to_project(std::vector<boost::filesystem::path> paths);
 
     /**
      * @brief Callback from AppInstanceMessageHandler.
      */
-    void on_download_models(std::vector<std::string> message) override {}
+    void on_open_models(std::vector<boost::filesystem::path> paths) override
+    {
+        load_models_to_project(paths);
+    }
+
+    /**
+     * @brief Callback from AppInstanceMessageHandler.
+     */
+    void on_download_models(std::vector<std::string> message) override 
+    {
+        if (raise_app_fn) {
+            raise_app_fn();
+        }
+        m_file_downloader_interactor.download_files_prusaslicer_url(message);
+    }
+
+    void download_model_from_printables_tab(FileDownloader::FileDownloaderJobInput data)
+    {
+        if (data.new_project) {
+            new_project();
+        }
+        m_file_downloader_interactor.init_download_job(std::move(data));
+    }
+
+    /**
+     * @brief Callback from FileDownloader.
+     */
+
+    void on_model_downloaded(const boost::filesystem::path& path) override
+    {
+        load_models_to_project({path});
+    }
+
+    void open_downloaded_file(const boost::filesystem::path& path, bool in_new_project)
+    {
+        if (in_new_project) {
+            new_project();
+        }        
+        load_models_to_project({path});
+    }
 
     /**
      * @brief Callback from AppInstanceMessageHandler.
@@ -447,6 +489,14 @@ public:
 
     void set_dialog_provider(IMessageDialogProvider* dialog_provider);
 
+    /*
+     * @brief Sets callback to mainframe to bring application forward.
+     */
+    void set_raise_app_fn(std::function<void(void)> fn)
+    {
+        raise_app_fn = fn;
+    }
+
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
@@ -478,9 +528,15 @@ private:
     std::unique_ptr<AppInstance::AbstractAppInstanceMessageHandler> m_app_instance_message_handler;
     PresetUpdater::PresetUpdaterInteractor m_preset_updater_interactor;
     RemovableDrive::RemovableDriveService m_removable_drive_service;
+    FileDownloader::FileDownloaderInteractor m_file_downloader_interactor;
 
     ObservableProjectList m_project_list;
     IMessageDialogProvider* m_dialog_provider{ nullptr };
+
+    /*
+     * @brief Callback to mainframe to bring application forward.
+     */
+    std::function<void(void)> raise_app_fn;
 };
 
 } // namespace Slic3r::Biz

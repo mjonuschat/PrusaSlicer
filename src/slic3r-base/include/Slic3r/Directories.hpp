@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <boost/filesystem/path.hpp>
 
 namespace Slic3r {
 
@@ -47,4 +48,5 @@ const std::string& cache_dir();
 
 std::string get_default_cachedir();
 
+boost::filesystem::path system_downloads_dir();
 } // namespace Slic3r::Biz

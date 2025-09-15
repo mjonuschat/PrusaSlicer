@@ -161,6 +161,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/RenderModuleHelper.cpp
         include/Slic3r/App/DialogNavigation.hpp
         src/Slic3r/App/DialogNavigation.cpp
+        include/Slic3r/App/LeftBarTabs.hpp
         include/Slic3r/App/SearchBar.hpp
         src/Slic3r/App/SearchBar.cpp
         include/Slic3r/App/SearchPopup.hpp
@@ -801,6 +802,13 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/PrusaLinkStorageListener.hpp
         src/Slic3r/App/PrusaLinkStorageListener.cpp
+
+        include/Slic3r/Biz/FileDownloader/FileDownloaderInteractor.hpp
+        src/Slic3r/Biz/FileDownloader/FileDownloaderInteractor.cpp
+        include/Slic3r/Biz/FileDownloader/FileDownloaderJob.hpp
+        src/Slic3r/Biz/FileDownloader/FileDownloaderJob.cpp
+        include/Slic3r/Biz/FileDownloader/IFileDownloaderListener.hpp
+        include/Slic3r/Biz/FileDownloader/FileDownloaderJobData.hpp
 )
 
 if (WIN32)

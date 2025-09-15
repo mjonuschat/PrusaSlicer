@@ -24,6 +24,7 @@ enum class BrowserLogicCommandType
     RegisterPrusaSlicerURL,
     SetLoadDefaultURLOnErrorTrue,
     SetLoadDefaultURLOnErrorFalse,
+    SwitchToSlicing,
 };
 
 struct BrowserLogicCommand

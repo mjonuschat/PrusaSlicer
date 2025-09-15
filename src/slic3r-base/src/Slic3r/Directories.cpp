@@ -11,15 +11,20 @@
 #if defined(_WIN32)
 
 #include <shlobj.h>
+#include <comdef.h>
 
 #elif defined(__linux__)
 
 #include <stdlib.h>
 #include <pwd.h>
+#include <unistd.h>
 
 #elif defined(__APPLE__)
 
 #include "Slic3r/DirectoriesMacUtils.hpp"
+#include <sys/types.h>
+#include <unistd.h>
+#include <pwd.h>
 
 #endif
 
@@ -259,6 +264,53 @@ std::string get_default_cachedir() {
 #else
 std::string get_default_cachedir() {
     return data_dir();
+}
+#endif
+
+#ifdef _WIN32
+boost::filesystem::path system_downloads_dir()
+{
+    PWSTR path = NULL;
+    HRESULT hr = SHGetKnownFolderPath(FOLDERID_Downloads, 0, NULL, &path);
+    if (SUCCEEDED(hr)) {
+        boost::filesystem::path result(path);
+        CoTaskMemFree(path);
+        return result;
+    }
+    SPDLOG_ERROR("Failed to read path at FOLDERID_Downloads.");
+    return {};
+}
+#elif  __APPLE__
+boost::filesystem::path system_downloads_dir()
+{
+    const char* home_dir = getenv("HOME");
+    if (home_dir == nullptr) {
+        // Fallback for when HOME is not set
+        passwd* pw = getpwuid(getuid());
+        if(pw) {
+            home_dir = pw->pw_dir;
+        } else {
+             SPDLOG_ERROR("Failed to read default downloads path.");
+             return {};
+        }
+    }
+    return boost::filesystem::path(home_dir) / "Downloads";
+}
+#else
+boost::filesystem::path system_downloads_dir()
+{
+    const char* home_dir = getenv("HOME");
+    if (home_dir == nullptr) {
+        // Fallback for when HOME is not set
+        passwd* pw = getpwuid(getuid());
+        if(pw) {
+            home_dir = pw->pw_dir;
+        } else {
+             SPDLOG_ERROR("Failed to read default downloads path.");
+             return {};
+        }
+    }
+    return boost::filesystem::path(home_dir) / "Downloads";
 }
 #endif
 

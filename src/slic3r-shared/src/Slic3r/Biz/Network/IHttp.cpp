@@ -42,6 +42,16 @@ std::string IHttp::escape_string(const std::string& str)
     return HttpFactory::escape_string(str);
 }
 
+std::string IHttp::unescape_string(const std::string& str)
+{
+    return HttpFactory::unescape_string(str);
+}
+
+bool IHttp::is_subdomain(const std::string& url, const std::string& domain)
+{
+    return HttpFactory::is_subdomain(url, domain);
+}
+
 bool IHttp::ca_file_supported()
 {
     return HttpFactory::ca_file_supported();
@@ -78,6 +88,13 @@ IHttp& IHttp::on_ip_resolve(IPResolveFn fn)
 	ipresolvefn = std::move(fn);
 	return *this;
 }
+
+IHttp& IHttp::on_headers_read(HeadersReadFn fn)
+{
+    headersfn = std::move(fn);
+	return *this;
+}
+
 
 std::ostream& operator<<(std::ostream &os, const IHttp::Progress &progress)
 {

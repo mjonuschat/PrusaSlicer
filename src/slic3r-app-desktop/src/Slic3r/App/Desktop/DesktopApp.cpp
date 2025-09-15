@@ -294,6 +294,7 @@ bool DesktopApp::OnInit()
             m_prusalink_storage_listener.get()
         );
 
+    app_services.pop_notification_center().set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, m_main_frame, std::placeholders::_1, std::placeholders::_2));
 #ifdef WIN32
     m_main_frame->register_win32_callbacks();
 #endif
@@ -306,6 +307,13 @@ bool DesktopApp::OnInit()
 #ifdef WIN32
     register_win32_device_notification_event();
 #endif // WIN32
+
+    for (int i = 0; i < m_init_params.argc; ++i) {
+        std::string arg(m_init_params.argv[i]);
+        if (boost::starts_with(arg, "prusaslicer://open")) {
+            m_project_interactor->on_download_models({std::move(arg)});
+        }
+    }
 
     return true;
 }

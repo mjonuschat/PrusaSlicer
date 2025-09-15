@@ -220,6 +220,21 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
         }
     );
 
+    project_interactor.set_raise_app_fn(
+        [this]()
+        {
+            bool was_maximized = IsMaximized();
+            this->Show(true);
+            this->Restore();
+            this->Raise();
+            this->SetFocus();
+            // Maximize call fixes 2 issues.
+            // - On windows the window did de-maximize without reason.
+            // - On linux the windows did not come forward at all.
+            this->Maximize(was_maximized);
+        }
+    );
+
     this->Bind(
         wxEVT_SYS_COLOUR_CHANGED,
         [this](wxSysColourChangedEvent& event)
@@ -301,9 +316,9 @@ void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
 }
 
 // !!! temporary function just for testing
-static wxPanel* tmp_panel(wxWindow* parent, const wxString& info_text)
+static wxPanel* tmp_panel(wxWindow* parent, int id, const wxString& info_text)
 {
-    wxPanel* test_panel = new wxPanel(parent);
+    wxPanel* test_panel = new wxPanel(parent, id);
     w_config()->UpdateDarkUI(test_panel);
     wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
     test_panel->SetSizer(main_sizer);
@@ -325,7 +340,7 @@ void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
     }
     assert(!m_printers_page_added);
     std::unique_ptr<App::Browser::BrowserLogicConnectPage> logic = std::make_unique<App::Browser::BrowserLogicConnectPage>(project_interactor);
-    WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, std::move(logic), false);
+    WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, static_cast<int>(LeftBarTabs::Printers), std::move(logic), false);
     project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
     m_left_bar->InsertNewPage(0, webview_panel, WX::_L("Printers"), "lb_printers");
     m_printers_page_added = true;
@@ -333,13 +348,13 @@ void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
 
 void MainFrame::init_projects_page()
 {
-    wxPanel* projects_page = tmp_panel(m_left_bar, from_u8("Here will be shown all projects"));
+    wxPanel* projects_page = tmp_panel(m_left_bar, static_cast<int>(LeftBarTabs::Projects), from_u8("Here will be shown all projects"));
     m_left_bar->AddNewPage(projects_page, WX::_L("Projects"), "lb_projects");
 }
 
 void MainFrame::init_slicing_page()
 {
-    m_canvas = std::make_unique<Platform::WX::WXRenderCanvas>(m_left_bar);
+    m_canvas = std::make_unique<Platform::WX::WXRenderCanvas>(m_left_bar,  static_cast<int>(LeftBarTabs::Slicing));
     m_left_bar->AddNewPage(m_canvas.get(), WX::_L("Slicing"), "lb_slicing");
 }
 
@@ -350,9 +365,10 @@ void MainFrame::init_printables_page(Biz::ProjectInteractor& project_interactor)
     }
     assert(!m_printables_page_added);
     std::unique_ptr<App::Browser::BrowserLogicPrintables> logic = std::make_unique<App::Browser::BrowserLogicPrintables>(project_interactor);
-    WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, std::move(logic), false);
+    WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, static_cast<int>(LeftBarTabs::Printables), std::move(logic), false);
     project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
     m_left_bar->AddNewPage(webview_panel, WX::_L("Printables"), "lb_printables");
+    webview_panel->set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, this, std::placeholders::_1, std::placeholders::_2));
     m_printables_page_added = true;
 }
 
@@ -392,6 +408,21 @@ void MainFrame::update_left_bar()
     }  
 
     m_left_bar->ShowUserAccount(AppServices::instance().app_config().is_prusa_account_enabled());
+}
+
+void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)
+{
+    ASSERT(m_left_bar);
+    for (size_t i = 0; i < m_left_bar->GetPageCount(); ++i) {
+        if (m_left_bar->GetPage(i)->GetId() == static_cast<int>(id)) {
+            if (id == LeftBarTabs::Printables) {
+                 WebView::AbstractWebViewPanel* webview_panel = dynamic_cast<WebView::AbstractWebViewPanel*>(m_left_bar->GetPage(i));
+                 webview_panel->set_next_show_url(data);
+            }
+            m_left_bar->SetSelection(i);
+            return;
+        }
+    }
 }
 
 void MainFrame::sys_color_changed()

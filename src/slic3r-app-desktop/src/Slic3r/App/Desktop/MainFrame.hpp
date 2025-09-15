@@ -10,6 +10,7 @@
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Desktop/TabsBarMenus.hpp"
+#include "Slic3r/App/LeftBarTabs.hpp"
 
 namespace Slic3r::App::Desktop::Preset {
 class AbstractEditor;
@@ -52,6 +53,8 @@ public:
 
     void update_left_bar();
     
+    void switch_left_tab(LeftBarTabs id, const std::string& data);
+
 private:
     // Move to BasicAppConfig
     /*ConfigOptionMode*/ int m_mode{1 /*comAdvanced*/};

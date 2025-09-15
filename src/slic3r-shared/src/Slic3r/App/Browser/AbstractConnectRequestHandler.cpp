@@ -49,7 +49,11 @@ std::vector<BrowserLogicCommand> AbstractConnectRequestHandler::handle_message(c
     }
 
     SPDLOG_INFO("Connect Request: {}", action_string);
-    DEBUG_ASSERT(m_actions.find(action_string) != m_actions.end(), "There is an action that has no handling function.");
+    if (m_actions.find(action_string) == m_actions.end())
+    {
+        SPDLOG_WARN("There is Connect Request that has no handling function. Action: {}", action_string);
+        return {};
+    }
     return m_actions[action_string](message);
 }
 

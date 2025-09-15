@@ -579,4 +579,10 @@ bool WebViewDialog::handle_logic_command_SetLoadDefaultURLOnErrorFalse(const std
     return true;
 }
 
+bool WebViewDialog::handle_logic_command_SwitchToSlicing(const std::string& data)
+{
+    DEBUG_ASSERT(false, "Command not implmented on WebViewDialog.");
+    return true;
+}
+
 } // namespace Slic3r::App::WX::WebView

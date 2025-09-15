@@ -8,12 +8,19 @@
 #include <wx/sizer.h>
 #include <memory>
 
+#ifdef DEBUG_URL_PANEL
+#include <wx/textctrl.h>
+#include <wx/infobar.h>
+#include <wx/button.h>
+#include <wx/menu.h>
+#endif
+
 namespace Slic3r::App::WX::WebView {
 
 class WebViewPanel : public AbstractWebViewPanel, public App::Browser::AbstractBrowserLogicCommandHandler
 {
 public:
-    WebViewPanel(wxWindow* parent, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create);
+    WebViewPanel(wxWindow* parent, int id, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create);
     ~WebViewPanel() = default;
 
     // IUserAccountListener;
@@ -25,11 +32,22 @@ public:
     { /*unused*/
     }
 
+    App::Browser::AbstractBrowserLogic* browser_logic()
+    {
+        return m_logic.get();
+    }
+
+    void set_next_show_url(const std::string url) override
+    {
+        browser_logic()->set_next_show_url(url);
+    }
+
 private:
     std::unique_ptr<App::Browser::AbstractBrowserLogic> m_logic;
     wxWebView* m_web_view{nullptr};
 
     std::vector<std::string> m_script_message_hadler_names;
+
 
     bool m_do_late_webview_create{false};
 
@@ -38,12 +56,11 @@ private:
     bool m_load_default_url_on_next_error{false};
 
     void late_create();
-    void load_url(const wxString& url);
     void load_error_page();
     void load_default_url();
     void run_script(const wxString& javascript);
     void do_reload();
-
+    void load_url(const wxString& url);
     // Let WebViewPanel do on_show so it can create webview properly
     // and load default page
     void on_show(wxShowEvent& evt);
@@ -111,6 +128,7 @@ protected:
     bool handle_logic_command_RegisterPrusaSlicerURL(const std::string& data) override;
     bool handle_logic_command_SetLoadDefaultURLOnErrorTrue(const std::string& data) override;
     bool handle_logic_command_SetLoadDefaultURLOnErrorFalse(const std::string& data) override;
+    bool handle_logic_command_SwitchToSlicing(const std::string& data) override;
 };
 
 } // namespace Slic3r::App::WX::WebView
