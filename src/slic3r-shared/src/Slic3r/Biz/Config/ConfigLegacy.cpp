@@ -90,7 +90,7 @@ namespace {
                 "machine_max_acceleration_extruding", "machine_max_acceleration_retracting", "machine_max_acceleration_travel",
                 "machine_max_acceleration_x", "machine_max_acceleration_y", "machine_max_acceleration_z", "machine_max_feedrate_e",
                 "machine_max_feedrate_x", "machine_max_feedrate_y", "machine_max_feedrate_z", "machine_max_jerk_e",
-                "machine_max_jerk_x", "machine_max_jerk_y", "machine_max_jerk_z", "machine_min_extruding_rate",
+                "machine_max_jerk_x", "machine_max_jerk_y", "machine_max_jerk_z", "machine_max_junction_deviation", "machine_min_extruding_rate",
                 "machine_min_travel_rate", "max_fan_speed", "max_layer_height", "max_print_height", "max_print_speed",
                 "max_volumetric_extrusion_rate_slope_negative", "max_volumetric_extrusion_rate_slope_positive",
                 "max_volumetric_speed", "min_bead_width", "min_fan_speed", "min_feature_size", "min_layer_height", "min_print_speed",

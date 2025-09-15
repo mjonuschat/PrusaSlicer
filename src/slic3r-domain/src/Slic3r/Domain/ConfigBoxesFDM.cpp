@@ -2473,6 +2473,19 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comAdvanced;
     def->init_fn = init_with(std::vector{ 0., 0. });
 
+    // M205 J... [mm] machine junction deviation limits
+    def = defs.add("machine_max_junction_deviation", typeid(std::vector<double>));
+    def->location = Printer;
+    def->label = L("Maximum junction deviation");
+    def->option_group = L("Junction deviation");
+    def->category = ConfigItemDef::Category::MachineLimits;
+    def->gui_type = ConfigItemDef::GUIType::textfields;
+    def->tooltip = L("Maximum junction deviation (M205 J, only apply if JD > 0 for Marlin Firmware).");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->init_fn = init_with(std::vector{ 0., 0. });
+
     // M205 T... [mm/sec]
     def = defs.add("machine_min_travel_rate", typeid(std::vector<double>));
     def->location = Printer;

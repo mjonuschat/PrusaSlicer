@@ -83,6 +83,10 @@ std::vector<std::string> MachineLimitsConfig::validate()
         max_acceleration_travel = { 1500.0f, 1250.0f };
         ret.push_back("max acceleration travel");
     }
+    if (max_junction_deviation.empty()) {
+        max_junction_deviation = {0.0f, 0.0f};
+        ret.push_back("max junction deviation");
+    }
     if (min_travel_rate.empty()) {
         min_travel_rate = { 0.0f, 0.0f };
         ret.push_back("min travel rate");
@@ -112,6 +116,7 @@ void MachineLimitsConfig::reset()
     max_acceleration_extruding.clear();
     max_acceleration_retracting.clear();
     max_acceleration_travel.clear();
+    max_junction_deviation.clear();
     min_travel_rate.clear();
     min_extruding_rate.clear();
 }
@@ -214,6 +219,7 @@ static const std::vector<std::pair<std::string_view, KeyType>> KEYS = {
     { "machine_max_acceleration_extruding"sv,  KeyType::Vector_of_floats },
     { "machine_max_acceleration_retracting"sv, KeyType::Vector_of_floats },
     { "machine_max_acceleration_travel"sv,     KeyType::Vector_of_floats },
+    { "machine_max_junction_deviation"sv,      KeyType::Vector_of_floats },
     { "machine_min_extruding_rate"sv,          KeyType::Vector_of_floats },
     { "machine_min_travel_rate"sv,             KeyType::Vector_of_floats },
     { "color_change_gcode"sv,                  KeyType::String },
@@ -476,6 +482,7 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
                             else if (key_it->first == "machine_max_acceleration_extruding"sv)  machine_limits.max_acceleration_extruding = values;
                             else if (key_it->first == "machine_max_acceleration_retracting"sv) machine_limits.max_acceleration_retracting = values;
                             else if (key_it->first == "machine_max_acceleration_travel"sv)     machine_limits.max_acceleration_travel = values;
+                            else if (key_it->first == "machine_max_junction_deviation"sv)      machine_limits.max_junction_deviation = values;
                             else if (key_it->first == "machine_min_extruding_rate"sv)          machine_limits.min_extruding_rate = values;
                             else if (key_it->first == "machine_min_travel_rate"sv)             machine_limits.min_travel_rate = values;
                         }

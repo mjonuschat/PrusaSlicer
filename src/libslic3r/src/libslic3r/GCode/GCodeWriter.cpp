@@ -18,11 +18,13 @@
 #include <string_view>
 #include <cassert>
 #include <cinttypes>
+#include <iomanip>
 
 #include "Slic3r/Domain/GCodeFlavor.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/ConfigUtils.hpp"
 #include "libslic3r/ConfigViews.hpp"
 
 #ifdef __APPLE__
@@ -42,6 +44,7 @@ using Slic3r::Domain::GCodeFlavor::gcfSailfish;
 using Slic3r::Domain::GCodeFlavor::gcfMach3;
 using Slic3r::Domain::GCodeFlavor::gcfMachinekit;
 using Slic3r::Domain::GCodeFlavor::gcfSmoothie;
+using Slic3r::Domain::MachineLimitsUsage;
 
 #define FLAVOR_IS(val) this->config.get<GCodeFlavor>("gcode_flavor") == val
 #define FLAVOR_IS_NOT(val) this->config.get<GCodeFlavor>("gcode_flavor") != val
@@ -54,6 +57,35 @@ namespace Slic3r {
 bool GCodeWriter::supports_separate_travel_acceleration(GCodeFlavor flavor)
 {
     return (flavor == gcfRepetier || flavor == gcfMarlinFirmware ||  flavor == gcfRepRapFirmware);
+}
+
+void GCodeWriter::apply_print_config(const PrintConfigView& print_config)
+{
+    this->config                     = print_config;
+    m_extrusion_axis                 = get_extrusion_axis(this->config);
+    m_single_extruder_multi_material = print_config.get<bool>("single_extruder_multi_material");
+
+    const GCodeFlavor gcode_flavor = print_config.get<GCodeFlavor>("gcode_flavor");
+    const bool use_mach_limits     = gcode_flavor == gcfMarlinLegacy
+        || gcode_flavor == gcfMarlinFirmware
+        || gcode_flavor == gcfRepRapFirmware;
+    const bool emit_limits = use_mach_limits
+        && print_config.get<MachineLimitsUsage>("machine_limits_usage")
+            == MachineLimitsUsage::EmitToGCode;
+
+    m_max_acceleration        = static_cast<unsigned int>(std::round(
+        emit_limits ?
+            print_config.get<std::vector<double>>("machine_max_acceleration_extruding").front() :
+            0
+    ));
+    m_max_travel_acceleration = static_cast<unsigned int>(std::round(
+        (emit_limits && supports_separate_travel_acceleration(gcode_flavor)) ?
+            print_config.get<std::vector<double>>("machine_max_acceleration_travel").front() :
+            0
+    ));
+    m_max_junction_deviation  = emit_limits ?
+         print_config.get<std::vector<double>>("machine_max_junction_deviation").front() :
+         0.;
 }
 
 void GCodeWriter::set_extruders(std::vector<unsigned int> extruder_ids)
@@ -233,6 +265,24 @@ std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned i
     if (this->config.get<bool>("gcode_comments")) gcode << " ; adjust acceleration";
     gcode << "\n";
     
+    return gcode.str();
+}
+
+std::string GCodeWriter::set_junction_deviation(const double junction_deviation)
+{
+    std::ostringstream gcode;
+    if (FLAVOR_IS(gcfMarlinFirmware) && junction_deviation > 0. && m_max_junction_deviation > 0.) {
+        // Clamp the junction deviation to the allowed maximum.
+        gcode << "M205 J";
+        if (junction_deviation <= m_max_junction_deviation) {
+            gcode << std::fixed << std::setprecision(3) << junction_deviation;
+        } else {
+            gcode << std::fixed << std::setprecision(3) << m_max_junction_deviation;
+        }
+
+        gcode << " ; sets the junction deviation, mm\n";
+    }
+
     return gcode.str();
 }
 
