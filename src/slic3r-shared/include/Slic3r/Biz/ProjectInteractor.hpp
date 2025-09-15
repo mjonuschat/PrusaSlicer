@@ -63,9 +63,9 @@ public:
         m_print_host_interactor(dispatcher),
         m_user_account_interactor(dispatcher),
         m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)),
-        m_project_list(*this),
         m_preset_updater_interactor(dispatcher),
-        m_removable_drive_service(dispatcher)
+        m_removable_drive_service(dispatcher),
+        m_project_list(*this)
     {
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);

@@ -414,11 +414,18 @@ void PreviewRenderModule::on_activated()
     update_bed_instances();
     update_viewer();
     update_scene_aabb();
+
+    if (m_sidebar_auto_reslice->is_enabled()) {
+        m_project_interactor.slicing_interactor().enable_auto_slicing(
+            m_project_interactor.selected_bed_slicing_id()
+        );
+    }
 }
 
 void PreviewRenderModule::on_deactivated()
 {
     Slic3r::App::set_global_lighting(m_scene_presenter->scene().lights());
+    m_project_interactor.slicing_interactor().disable_auto_slicing();
 }
 
 void PreviewRenderModule::on_screen_resized()
@@ -699,7 +706,7 @@ void PreviewRenderModule::init_scene_layout()
     m_pop_notification_list_view = std::make_unique<PopNotification::PopNotificationListView>(
         AppServices::instance().pop_notification_center()
     );
-    m_sidebar_auto_reslice = std::make_unique<SidebarAutoReslice>();
+    m_sidebar_auto_reslice = std::make_unique<SidebarAutoReslice>(m_project_interactor);
 
     m_sidebar_action_buttons =
         std::make_unique<SidebarPreviewActionButtons>(m_render_module_navigator);

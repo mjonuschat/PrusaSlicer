@@ -76,7 +76,7 @@ void PreviewRenderLayout::init_right_column()
 {
     AbstractRenderLayout::init_right_column();
 
-    // m_layout_right_column->append(m_sidebar_auto_reslice.release());
+    m_layout_right_column->append(m_sidebar_auto_reslice.release());
 
     m_layout_right_column->append(m_sidebar_action_buttons.release());
 }

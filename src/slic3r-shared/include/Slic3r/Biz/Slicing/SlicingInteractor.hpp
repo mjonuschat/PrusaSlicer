@@ -103,6 +103,8 @@ public:
     void stop_slicing_bed(const Domain::SlicingId slicing_id);
     void slice_all();
     void stop_all();
+    void enable_auto_slicing(Domain::SlicingId slicing_id);
+    void disable_auto_slicing();
 
     void on_selected_project_changed(size_t index) override;
 
@@ -133,6 +135,7 @@ private:
     // WARNING: Do not reorder, if you do not know what you are doing!
     // Any members accessed by the threads must be destroyed after
     // the threads!
+    std::optional<Domain::SlicingId> m_autoslicing_id;
     mutable std::mutex m_status_mutex;
     std::map<Domain::SlicingId, StatusCode> m_statuses;
 

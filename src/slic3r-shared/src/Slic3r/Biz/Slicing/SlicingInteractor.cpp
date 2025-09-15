@@ -86,6 +86,10 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id)
 {
     const SlicingId id{get_process_id(bed_instance_id)};
 
+    if (id == m_autoslicing_id) {
+        m_autoslicing_id = std::nullopt;
+    }
+
     stop_slicing_bed(id);
     m_processes.erase(id);
     {
@@ -147,6 +151,18 @@ void SlicingInteractor::stop_all()
         BackgroundProcess& process{pair.second};
         process.stop();
     }
+}
+
+void SlicingInteractor::enable_auto_slicing(Domain::SlicingId slicing_id) {
+    m_autoslicing_id = slicing_id;
+    process_slicing_queue();
+}
+void SlicingInteractor::disable_auto_slicing() {
+    if (!m_autoslicing_id) {
+        return;
+    }
+    stop_slicing_bed(*m_autoslicing_id);
+    m_autoslicing_id = std::nullopt;
 }
 
 void SlicingInteractor::on_selected_project_changed(size_t index)
@@ -289,6 +305,16 @@ void SlicingInteractor::on_wipe_tower_geometry(
 void SlicingInteractor::process_slicing_queue()
 {
     process_update_requests();
+
+    if (m_autoslicing_id && m_processes.contains(*m_autoslicing_id)) {
+        const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
+        if (m_statuses.at(*m_autoslicing_id) == Slicing::StatusCode::Modified) {
+            const auto it{std::ranges::find(m_slicing_queue, *m_autoslicing_id)};
+            if (it == m_slicing_queue.end()) {
+                m_slicing_queue.push_front(*m_autoslicing_id);
+            }
+        }
+    }
 
     if (m_slicing_queue.empty()) {
         return;

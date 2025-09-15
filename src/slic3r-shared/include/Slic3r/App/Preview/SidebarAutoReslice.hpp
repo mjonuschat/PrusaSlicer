@@ -6,12 +6,18 @@ namespace Slic3r::App::Yoga {
     class ToggleButton;
 }
 
+namespace Slic3r::Biz {
+    class ProjectInteractor;
+}
+
 namespace Slic3r::App::Preview {
 
 class SidebarAutoReslice : public Yoga::Window
 {
 public:
-    SidebarAutoReslice();
+    SidebarAutoReslice(Biz::ProjectInteractor& project_interactor);
+
+    bool is_enabled() const;
 
 public:
     Yoga::ToggleButton* m_auto_reslice_chb { nullptr };
