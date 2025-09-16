@@ -1660,7 +1660,7 @@ void FdmViewer::render_tool_marker()
     if (!enabled)
         return;
 
-    Vec3f origin = get_current_vertex().position + m_tool_marker.offset_z() * Vec3f::UnitZ();
+    Vec3f origin = current_vertex().position + m_tool_marker.offset_z() * Vec3f::UnitZ();
     ColorRGBA color = to_rgba(m_tool_marker.color(), m_tool_marker.alpha());
 
     Render::Material material;

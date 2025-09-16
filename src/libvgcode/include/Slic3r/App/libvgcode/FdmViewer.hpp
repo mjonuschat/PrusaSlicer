@@ -229,10 +229,6 @@ public:
     bool has_gcode_events_to_show() const;
 
 private:
-    const Biz::libpgcode::MoveVertex& get_current_vertex() const { return vertex_at(get_current_vertex_id()); }
-    std::size_t get_current_vertex_id() const { return size_t(m_view_range.visible()[1]); }
-
-private:
     //
     // Settings used to render the toolpaths
     //
