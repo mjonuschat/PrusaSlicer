@@ -1,4 +1,4 @@
-#include "Slic3r/App/Plater/PlaterCameraFrustumUpdater.hpp"
+#include "Slic3r/App/Scene/CameraFrustumUpdater.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
@@ -8,12 +8,12 @@
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App::Scene {
 
-void PlaterCameraFrustumUpdater::update_scene_aabb(const Scene::Scene& scene)
+void CameraFrustumUpdater::update_scene_aabb(const Scene& scene)
 {
-    Scene::Node::ConstNodeList nodes;
-    scene.root().query([](const Scene::Node* n) { return n->has_raycast_component(); }, nodes);
+    Node::ConstNodeList nodes;
+    scene.root().query([](const Node* n) { return n->has_raycast_component(); }, nodes);
 
     if (nodes.empty()) {
         m_scene_aabb = {Domain::Vec3d{-1., -1.0, -1.0}, Domain::Vec3d{1.0, 1.0, 1.0}};
@@ -21,14 +21,14 @@ void PlaterCameraFrustumUpdater::update_scene_aabb(const Scene::Scene& scene)
     }
 
     m_scene_aabb = Eigen::AlignedBox3d();
-    for (const Scene::Node* n : nodes) {
+    for (const Node* n : nodes) {
         m_scene_aabb.extend(
             n->raycast_component()->world_bounding_box(n->world_transform().matrix()).cast<double>()
         );
     }
 }
 
-void PlaterCameraFrustumUpdater::update_camera_frustum(Scene::Camera& camera)
+void CameraFrustumUpdater::update_camera_frustum(Camera& camera)
 {
     DEBUG_ASSERT(!m_scene_aabb.isEmpty());
 
@@ -45,11 +45,11 @@ void PlaterCameraFrustumUpdater::update_camera_frustum(Scene::Camera& camera)
 }
 
 #if ENABLE_DEBUG_RENDER_SCENE_AABB
-void PlaterCameraFrustumUpdater::update_scene_aabb_node(Scene::ScenePresenterProjectContext& ctx, Render::Device& device)
+void CameraFrustumUpdater::update_scene_aabb_node(ScenePresenterProjectContext& ctx, Render::Device& device)
 {
-    Scene::Scene& scene = ctx.scene();
+    Scene& scene = ctx.scene();
 
-    Scene::AuxiliaryElementId id{Scene::AuxiliaryElementId::Type::Volume, INT_MAX};
+    AuxiliaryElementId id{AuxiliaryElementId::Type::Volume, INT_MAX};
 
     auto& geom_mgr = ctx.model_geometry_manager();
     if (m_scene_aabb_node != nullptr) {
@@ -77,12 +77,12 @@ void PlaterCameraFrustumUpdater::update_scene_aabb_node(Scene::ScenePresenterPro
     Render::Material material;
     material.set_shader(device.context().shader_manager().shader("flat")).set_uniform("uniform_color", Domain::ColorRGBA::YELLOW());
 
-    Scene::NodeBuilder builder(scene);
-    builder.set_debug_name("scene_aabb").set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
+    NodeBuilder builder(scene);
+    builder.set_debug_name("scene_aabb").set_mesh(geom, material, int(Plater::PlaterSceneLayer::DocumentObjects));
 
     m_scene_aabb_node = builder.build().release();
     scene.add_child(m_scene_aabb_node);
 }
 #endif // ENABLE_DEBUG_RENDER_SCENE_AABB
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App::Scene

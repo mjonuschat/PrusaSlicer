@@ -17,7 +17,7 @@
 #include "Slic3r/App/Scene/IProjectSceneProvider.hpp"
 #include "Slic3r/App/Scene/BedRenderUpdater.hpp"
 #include "Slic3r/App/Plater/IBedVisuallyChangedListener.hpp"
-#include "Slic3r/App/Plater/PlaterCameraFrustumUpdater.hpp"
+#include "Slic3r/App/Scene/CameraFrustumUpdater.hpp"
 
 namespace Slic3r::App::Scene {
 class NodeBuilder;
@@ -160,11 +160,11 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     Render::Device& m_device;
     Render::Rect m_viewport;
-    PlaterCameraFrustumUpdater m_camera_frustum_updater;
 
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
     ProjectContexts m_projects;
     Scene::BedRenderUpdater m_bed_render_updater;
+    Scene::CameraFrustumUpdater m_camera_frustum_updater;
 
     bool m_freeze_selection_center{ false };
     bool m_volume_materials_dirty{ true };

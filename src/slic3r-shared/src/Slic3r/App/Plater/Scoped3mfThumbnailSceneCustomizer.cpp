@@ -7,7 +7,7 @@
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/Project.hpp"
-#include "Slic3r/App/Plater/PlaterCameraFrustumUpdater.hpp"
+#include "Slic3r/App/Scene/CameraFrustumUpdater.hpp"
 
 using Slic3r::Domain::ColorRGBA;
 
@@ -162,7 +162,7 @@ Scoped3mfThumbnailSceneCustomizer::Scoped3mfThumbnailSceneCustomizer(Scene::Scen
     Scene::zoom_to_box(camera, world_aabb);
 
     // setup camera frustum
-    PlaterCameraFrustumUpdater camera_frustum_updater;
+    Scene::CameraFrustumUpdater camera_frustum_updater;
     camera_frustum_updater.update_scene_aabb(m_scene);
     camera_frustum_updater.update_camera_frustum(camera);
 }

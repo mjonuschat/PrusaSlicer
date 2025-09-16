@@ -5,8 +5,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/PlaterRenderModule.cpp
         include/Slic3r/App/Plater/PlaterCameraGizmo.hpp
         src/Slic3r/App/Plater/PlaterCameraGizmo.cpp
-        include/Slic3r/App/Plater/PlaterCameraFrustumUpdater.hpp
-        src/Slic3r/App/Plater/PlaterCameraFrustumUpdater.cpp
         include/Slic3r/App/Plater/GizmoNodeTag.hpp
         include/Slic3r/App/Plater/SceneNodeTag.hpp
         include/Slic3r/App/Plater/NodePredicates.hpp
@@ -252,6 +250,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/ISceneChangedListener.hpp
         include/Slic3r/App/Scene/GraphicsSettings.hpp
         src/Slic3r/App/Scene/GraphicsSettings.cpp
+        include/Slic3r/App/Scene/CameraFrustumUpdater.hpp
+        src/Slic3r/App/Scene/CameraFrustumUpdater.cpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp
