@@ -279,6 +279,8 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
         camera.add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
         camera.set_viewport(m_viewport);
     }
+
+    m_camera_frustum_updater.update_scene_aabb(project_context().scene());
 }
 
 void PlaterScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
