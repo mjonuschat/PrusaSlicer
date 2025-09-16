@@ -75,8 +75,8 @@ public:
     void execute(SLAPrintObjectStep step, SLAPrintObject &obj);
     void execute(SLAPrintStep step);
 
-    static std::string label(SLAPrintObjectStep step);
-    static std::string label(SLAPrintStep step);
+    static Biz::Slicing::ProgressInfo label(SLAPrintObjectStep step);
+    static Biz::Slicing::ProgressInfo label(SLAPrintStep step);
 
     double progressrange(SLAPrintObjectStep step) const;
     double progressrange(SLAPrintStep step) const;

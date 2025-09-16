@@ -280,10 +280,10 @@ public:
         float time_step() const { return time / float(steps); }
     };
 
-    PostProcessor(const PostProcessorConfig& config, ProcessorResult& result, ActiveStepAddWarningCallback active_step_add_warning_callback)
+    PostProcessor(const PostProcessorConfig& config, ProcessorResult& result, WarningCallback warning_callback)
     : m_config(config)
     , m_result(result) 
-    , m_active_step_add_warning_callback(active_step_add_warning_callback)
+    , m_warning_callback(warning_callback)
     {
         apply_config();
         setup_filament_data();
@@ -309,7 +309,7 @@ private:
     std::vector<EditingItem> m_editing_items;
     FilamentData m_filament_data;
 
-    ActiveStepAddWarningCallback m_active_step_add_warning_callback{ nullptr };
+    WarningCallback m_warning_callback{ nullptr };
     // Backtrace data for Tx gcode lines
     static const Backtrace s_BACKTRACE_T;
 
@@ -401,7 +401,7 @@ private:
             else if (m_config.backtrace_enabled && GCodeLine::cmd_starts_with(line, "T")) {
                 // add lines M104 where needed
                 const auto& [insertions, replacements] =
-                    process_line_T(line, i, m_active_step_add_warning_callback);
+                    process_line_T(line, i, m_warning_callback);
                 bool processed = false;
                 if (!insertions.empty()) {
                     for (auto it = insertions.rbegin(); it != insertions.rend(); ++it) {
@@ -684,7 +684,7 @@ private:
     // add lines M104 to exported gcode
     std::pair<std::vector<std::pair<size_t, std::string>>, std::vector<std::pair<size_t, std::string>>>
     process_line_T(const std::string& gcode_line, size_t lines_counter,
-        ActiveStepAddWarningCallback active_step_add_warning_callback) {
+        WarningCallback warning_callback) {
 
         std::pair<std::vector<std::pair<size_t, std::string>>, std::vector<std::pair<size_t, std::string>>> ret;
 
@@ -701,13 +701,15 @@ private:
                 if (tool_number < 0 || int(extruder_temps_config.size()) <= tool_number) {
                     // found an invalid value, clamp it to a valid one
                     tool_number = std::clamp<int>(0, extruder_temps_config.size() - 1, tool_number);
-                    // emit warning
-                    std::string warning = _u8L("GCode Post-Processor encountered an invalid toolchange, maybe from a custom gcode:");
-                    warning += "\n> ";
-                    warning += gcode_line;
-                    warning += _u8L("Generated M104 lines may be incorrect.");
-                    BOOST_LOG_TRIVIAL(error) << warning;
-                    active_step_add_warning_callback(PrintStateBase::WarningLevel::CRITICAL, warning, 0);
+
+                    warning_callback(
+                        Biz::Slicing::Warning{
+                            Biz::Slicing::WarningCode::InvalidToolchange,
+                            {},
+                            std::nullopt,
+                            Biz::Slicing::InvalidToolchangeWarningPayload{gcode_line}
+                        }
+                    );
                 }
             }
 
@@ -801,7 +803,7 @@ private:
 
 const PostProcessor::Backtrace PostProcessor::s_BACKTRACE_T = { 120.0f, 10 };
 
-ProcessorResult post_process(const PostProcessorConfig& config, ProcessorResult&& result, ActiveStepAddWarningCallback active_step_add_warning_callback)
+ProcessorResult post_process(const PostProcessorConfig& config, ProcessorResult&& result, WarningCallback active_step_add_warning_callback)
 {
     ProcessorResult ret = std::move(result);
     PostProcessor pp(config, ret, active_step_add_warning_callback);

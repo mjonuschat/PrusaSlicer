@@ -93,22 +93,29 @@ const std::array<unsigned, slaposCount> OBJ_STEP_LEVELS = {
     11, // slaposSliceSupports,
 };
 
-std::string OBJ_STEP_LABELS(size_t idx)
+Biz::Slicing::ProgressInfo OBJ_STEP_LABELS(size_t idx)
 {
+    using Info = Biz::Slicing::ProgressInfo;
     switch (idx) {
-                                            // TRN Status of the SLA print calculation
-    case slaposAssembly:             return _u8L("Assembling model from parts");
-    case slaposHollowing:            return _u8L("Hollowing model");
-    case slaposDrillHoles:           return _u8L("Drilling holes into model.");
-    case slaposObjectSlice:          return _u8L("Slicing model");
-    case slaposSupportPoints:        return _u8L("Generating support points");
-    case slaposSupportTree:          return _u8L("Generating support tree");
-    case slaposPad:                  return _u8L("Generating pad");
-    case slaposSliceSupports:        return _u8L("Slicing supports");
-    default:;
+    case slaposAssembly:
+        return Info::AssemblingModel;
+    case slaposHollowing:
+        return Info::HollowingModel;
+    case slaposDrillHoles:
+        return Info::DrillingHoles;
+    case slaposObjectSlice:
+        return Info::SlicingModel;
+    case slaposSupportPoints:
+        return Info::GeneratingSupportPoints;
+    case slaposSupportTree:
+        return Info::GeneratingSupportTree;
+    case slaposPad:
+        return Info::GeneratingPad;
+    case slaposSliceSupports:
+        return Info::SlicingSupports;
+    default:
+        PANIC("Invalid object step");
     }
-    assert(false);
-    return "Out of bounds!";
 }
 
 const std::array<unsigned, slapsCount> PRINT_STEP_LEVELS = {
@@ -116,14 +123,17 @@ const std::array<unsigned, slapsCount> PRINT_STEP_LEVELS = {
     90, // slapsRasterize
 };
 
-std::string PRINT_STEP_LABELS(size_t idx)
+Biz::Slicing::ProgressInfo PRINT_STEP_LABELS(size_t idx)
 {
+    using Info = Biz::Slicing::ProgressInfo;
     switch (idx) {
-    case slapsMergeSlicesAndEval:   return _u8L("Merging slices and calculating statistics");
-    case slapsRasterize:            return _u8L("Rasterizing layers");
-    default:;
+    case slapsMergeSlicesAndEval:
+        return Info::MergingSlicesAndCalculatingStatistics;
+    case slapsRasterize:
+        return Info::RasterizingLayers;
+    default:
+        PANIC("Invalid print step");
     }
-    assert(false); return "Out of bounds!";
 }
 
 using namespace sla;
@@ -918,15 +928,14 @@ void SLAPrint::Steps::support_tree(SLAPrintObject &po)
     double init = current_status();
     sla::JobController ctl;
 
-    ctl.statuscb = [this, d, init](unsigned st, const std::string &logmsg) {
+    ctl.statuscb = [this, d, init](unsigned st, std::string) {
         double current = init + st * d;
         if (std::round(current_status()) < std::round(current))
-            report_status(current, OBJ_STEP_LABELS(slaposSupportTree),
-                          SlicingStatus::DEFAULT, logmsg);
+            report_status(current, OBJ_STEP_LABELS(slaposSupportTree));
     };
     ctl.stopcondition = [this]() { return canceled(); };
     ctl.cancelfn = [this]() { throw_if_canceled(); };
-        
+
     indexed_triangle_set tree_its = sla::create_support_tree(*po.m_supportable_mesh, ctl);
     TriangleMeshStats stats = Biz::Algorithms::TriangleMesh::calculate_stats(tree_its);
     po.m_preview->support_structure = std::make_shared<TriangleMesh>(std::move(tree_its), std::move(stats));
@@ -963,9 +972,11 @@ void SLAPrint::Steps::generate_pad(SLAPrintObject& po)
 
     const indexed_triangle_set& tree_its = po.m_preview->support_structure->its;
     indexed_triangle_set its = sla::create_pad(*po.m_supportable_mesh, tree_its, ctl);
-    if (!validate_pad(its, po.m_supportable_mesh->pad_cfg))
-        throw Slic3r::SlicingError(
-            _u8L("No pad can be generated for this model with the current configuration"));
+    if (!validate_pad(its, po.m_supportable_mesh->pad_cfg)) {
+        throw Biz::Slicing::Exception{
+            Biz::Slicing::Error{Biz::Slicing::ErrorCode::NoPadGenerated}
+        };
+    }
 
     TriangleMeshStats stats = Biz::Algorithms::TriangleMesh::calculate_stats(its);
     po.m_preview->pad = std::make_shared<TriangleMesh>(std::move(its), std::move(stats));
@@ -1078,11 +1089,11 @@ void SLAPrint::Steps::initialize_printer_input()
     for(SLAPrintObject * o : m_print->m_objects) {
         coord_t gndlvl = o->m_slice_index.front().print_level() - ilhs;
         for (const SliceRecord& slicerecord : o->m_slice_index) {
-            if (!slicerecord.is_valid())
-                throw Slic3r::SlicingError(
-                    _u8L("There are unprintable objects. Try to "
-                      "adjust support settings to make the "
-                      "objects printable."));
+            if (!slicerecord.is_valid()) {
+                throw Biz::Slicing::Exception{
+                    Biz::Slicing::Error{Biz::Slicing::ErrorCode::UnprintableObjects}
+                };
+            }
 
             coord_t lvlid = slicerecord.print_level() - gndlvl;
 
@@ -1500,8 +1511,6 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
 
     print_statistics.hollowing_enable = hollowing_enable;
 
-    report_status(-2, "", SlicingStatus::RELOAD_SLA_PREVIEW);
-
     // Send print statistics to frontend    
     std::vector<ExPolygons> slices;
     std::vector<float> heights;
@@ -1589,7 +1598,9 @@ void SLAPrint::Steps::rasterize()
         case FileDataType::sl1_png: rasterizer_ptr = create_sl1_rasterizer(printer_config); break;
         case FileDataType::sl1_svg: rasterizer_ptr = create_sl1_svg_rasterizer(printer_config); break;
         default:
-            throw SlicingError(_u8L("Unsupported output format"));
+            throw Biz::Slicing::Exception{
+                Biz::Slicing::Error{Biz::Slicing::ErrorCode::UnsupportedOutputFormat}
+            };
     }
 
     FilesData files(layers.size());
@@ -1614,12 +1625,12 @@ void SLAPrint::Steps::rasterize()
     });
 }
 
-std::string SLAPrint::Steps::label(SLAPrintObjectStep step)
+Biz::Slicing::ProgressInfo SLAPrint::Steps::label(SLAPrintObjectStep step)
 {
     return OBJ_STEP_LABELS(step);
 }
 
-std::string SLAPrint::Steps::label(SLAPrintStep step)
+Biz::Slicing::ProgressInfo SLAPrint::Steps::label(SLAPrintStep step)
 {
     return PRINT_STEP_LABELS(step);
 }

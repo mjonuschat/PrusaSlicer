@@ -2,14 +2,12 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/matchers/catch_matchers_vector.hpp>
 #include <span>
-#include <fstream>
 
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 
 #include "Slic3r/Biz/Slicing/TestUtils.hpp"
 #include "Slic3r/Biz/Slicing/GCodeUtils.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
-#include "Slic3r/Log.hpp"
 
 #include "libslic3r/SLA/SLAResult.hpp"
 
@@ -20,7 +18,6 @@ using Catch::Matchers::UnorderedEquals;
 using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::chrono::high_resolution_clock;
-using Slic3r::Biz::Slicing::Status;
 using Slic3r::Biz::Slicing::StatusCode;
 using Slic3r::Tests::get_cubes_model;
 using Slic3r::Tests::ModelOnBed;
@@ -41,7 +38,6 @@ using Slic3r::Biz::Slicing::Sla::ResultType;
 using Slic3r::Biz::Slicing::Sla::Object;
 using Slic3r::Tests::ResultListener;
 using Slic3r::Biz::Slicing::IFDMResultListener;
-using Slic3r::Domain::ObjectID;
 using Slic3r::Domain::ConfigPackSLA;
 
 TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]")
@@ -69,7 +65,7 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]"
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 5s, [](const StatusEvents &events){
         return beds_count == std::ranges::count_if(events, [](const StatusEvent& event){
-            return event.status.code == StatusCode::Finished;
+            return event.status_code == StatusCode::Finished;
         });
     }));
 
@@ -89,11 +85,11 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]"
     StatusEvents expected_slicing_events;
     for (const ModelOnBed& model_on_bed : bed_models) {
         const SelectionId bed_id{model_on_bed.bed_instance.id().id};
-        expected_update_events.push_back({{StatusCode::Updating}, SlicingId{0, bed_id}});
-        expected_update_events.push_back({{StatusCode::Modified}, SlicingId{0, bed_id}});
+        expected_update_events.push_back({StatusCode::Updating, SlicingId{0, bed_id}});
+        expected_update_events.push_back({StatusCode::Modified, SlicingId{0, bed_id}});
 
-        expected_slicing_events.push_back({{StatusCode::Running}, SlicingId{0, bed_id}});
-        expected_slicing_events.push_back({{StatusCode::Finished}, SlicingId{0, bed_id}});
+        expected_slicing_events.push_back({StatusCode::Running, SlicingId{0, bed_id}});
+        expected_slicing_events.push_back({StatusCode::Finished, SlicingId{0, bed_id}});
     }
 
     CHECK_THAT(update_events, Equals(expected_update_events));
@@ -147,7 +143,7 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
     slicing.slice_all();
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 5s, [](const StatusEvents &events){
-        return events.back().status.code == StatusCode::Finished;
+        return events.back().status_code == StatusCode::Finished;
     }));
 
     REQUIRE(wipe_tower_geometry_listener.geometry);
@@ -220,7 +216,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer te
     slicing.slice_all();
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 15s, [](const StatusEvents &events){
-        return events.back().status.code == StatusCode::Finished;
+        return events.back().status_code == StatusCode::Finished;
     }));
 
     CHECK(result_listener.result_recieved);

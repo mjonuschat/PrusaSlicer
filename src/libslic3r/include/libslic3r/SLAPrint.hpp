@@ -399,7 +399,7 @@ public:
 
 	std::string                 output_filename(const std::string &filename_base = std::string()) const override;
 
-    std::string validate(std::vector<std::string>* warnings = nullptr) const override;
+    std::string validate(std::vector<std::string>* warnings = nullptr) const;
 
     // An aggregation of SliceRecord-s from all the print objects for each
     // occupied layer. Slice record levels dont have to match exactly.
@@ -467,22 +467,21 @@ public:
 
     // Ready-made data for rasterization.
     PrintLayers m_printer_input;
-        
+
     class StatusReporter
     {
         double m_st = 0;
-        
+
     public:
-        void operator()(SLAPrint &         p,
-                        double             st,
-                        const std::string &msg,
-                        unsigned           flags = SlicingStatus::DEFAULT,
-                        const std::string &logmsg = "");
-        
-        double status() const { return m_st; }
+        void operator()(SLAPrint& p, double st, Biz::Slicing::ProgressInfo msg);
+
+        double status() const
+        {
+            return m_st;
+        }
     } m_report_status;
 
-	friend SLAPrintObject;
+    friend SLAPrintObject;
 };
 
 /// <summary>

@@ -72,17 +72,19 @@ ModelOnBed get_cubes_model(const int count, const int row_size) {
     return {generate_cubes(count, row_size), get_config()};
 }
 
-std::ostream& operator<<(std::ostream& output, const StatusEvent& status_event) {
-    return output << "{status: " << status_event.status
-                  << ", slicing_id: " << status_event.slicing_id << "}";
+std::ostream& operator<<(std::ostream& output, const StatusEvent& status_event)
+{
+    return output
+        << "{status_code: "
+        << status_event.status_code
+        << ", slicing_id: "
+        << status_event.slicing_id
+        << "}";
 }
 
 bool operator==(const StatusEvent& a, const StatusEvent& b)
 {
-    return a.status.code == b.status.code
-        && a.status.error == b.status.error
-        && a.status.warrnings == b.status.warrnings
-        && a.slicing_id == b.slicing_id;
+    return a.status_code == b.status_code && a.slicing_id == b.slicing_id;
 }
 
 using StatusEvents = std::vector<StatusEvent>;

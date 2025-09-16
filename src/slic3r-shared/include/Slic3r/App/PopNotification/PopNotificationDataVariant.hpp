@@ -15,9 +15,20 @@ struct JobProgressNotificationData
     Biz::Platform::JobManager::Progress progress;
 };
 
-struct SlicingProgressNotificationData
+struct SlicingStatusNotificationData
 {
-    Biz::Slicing::Status status;
+    Domain::SlicingId slicing_id;
+};
+
+struct SlicingErrorNotificationData
+{
+    Biz::Slicing::ErrorCode error_code;
+    Domain::SlicingId slicing_id;
+};
+
+struct SlicingWarningNotificationData
+{
+    Biz::Slicing::WarningCode warning_code;
     Domain::SlicingId slicing_id;
 };
 
@@ -51,7 +62,9 @@ struct EjectNotificationData
 using PopNotificationPayload = std::variant<
     std::monostate,
     JobProgressNotificationData,
-    SlicingProgressNotificationData,
+    SlicingStatusNotificationData,
+    SlicingErrorNotificationData,
+    SlicingWarningNotificationData,
     PrintHostProgressNotificationData,
     EjectNotificationData>;
 

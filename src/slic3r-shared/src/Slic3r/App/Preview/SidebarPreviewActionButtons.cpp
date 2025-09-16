@@ -1,6 +1,7 @@
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
 
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
+#include "Slic3r/App/DisplayStrings.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/ExportPathSelect.hpp"
@@ -345,7 +346,7 @@ void SidebarPreviewActionButtons::on_selected_bed_instances_changed(
     update_buttons();
 }
 
-void SidebarPreviewActionButtons::on_status_cache_changed(const Domain::SlicingId slicing_id)
+void SidebarPreviewActionButtons::on_status_cache_status_code_changed(const Domain::SlicingId slicing_id)
 {
     const Domain::SlicingId current_id{m_project_interactor->selected_bed_slicing_id()};
     if (current_id != slicing_id) {
@@ -416,14 +417,26 @@ void SidebarPreviewActionButtons::update_buttons()
         { m_project_interactor->slicing_interactor().stop_slicing_bed(slicing_id); };
     } break;
     case StatusCode::InvalidData: {
+        ASSERT(!status.errors.empty());
         primary_button->set_label("Invalid settings");
         primary_button->set_background_color(color_error);
         primary_button->set_enabled(true);
 
-        const std::string error{status.error.empty() ? "Unknown issue" : status.error};
+        const Domain::Project& project{
+            m_project_interactor->workbench().project(slicing_id.project_id)
+        };
+        std::string error_message;
+        for (const Biz::Slicing::Error& error : status.errors) {
+            error_message += to_display_string(error, project) + "\n";
+        }
 
-        primary_button->callbacks().action = [error]()
-        { AppServices::instance().dialog_manager().show_error_dialog(error, "Invalid settings"); };
+        primary_button->callbacks().action = [error_message]()
+        {
+            AppServices::instance().dialog_manager().show_error_dialog(
+                error_message,
+                "Invalid settings"
+            );
+        };
     } break;
     case StatusCode::Finished: {
         if (layout_type == ActionButtonsLayoutType::WithoutConnect) {

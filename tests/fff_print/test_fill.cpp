@@ -211,14 +211,14 @@ TEST_CASE("Infill does not exceed perimeters", "[Fill]")
         TestConfig config{4};
         for (auto& tool_settings : config.tool) {
             tool_settings.items.opt("nozzle_diameter").set(0.4);
+            tool_settings.items.opt("fill_pattern").set(pattern);
+            tool_settings.items.opt("perimeters").set(1);
+            tool_settings.items.opt("fill_density").set(Percentage{20.0});
         }
 
-        config.tool.at(0).items.opt("fill_pattern").set(pattern);
         config.print.items.opt("top_fill_pattern").set(top_bottom_pattern);
         config.print.items.opt("bottom_fill_pattern").set(top_bottom_pattern);
-        config.tool.at(0).items.opt("perimeters").set(1 );
         config.print.items.opt("skirts").set(0);
-        config.tool.at(0).items.opt("fill_density").set(Percentage{20.0});
         config.print.items.opt("layer_height").set(0.05);
         config.print.items.opt("perimeter_extruder").set(1);
         config.print.items.opt("infill_extruder").set(2);
@@ -406,16 +406,16 @@ SCENARIO("Combine infill", "[Fill]")
         Test::TestConfig config{4};
         for (auto& tool_settings : config.tool) {
             tool_settings.items.opt("nozzle_diameter").set(0.5);
+            tool_settings.items.opt("top_solid_layers").set(0);
+            tool_settings.items.opt("bottom_solid_layers").set(0);
+            tool_settings.items.opt("infill_every_layers").set(2);
+            tool_settings.items.opt("support_material_extruder").set(3);
+            tool_settings.items.opt("support_material_interface_extruder").set(3);
         }
         config.print.items.opt("layer_height").set(0.2);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
-        config.tool.at(0).items.opt("infill_every_layers").set(2);
         config.print.items.opt("perimeter_extruder").set(1);
         config.print.items.opt("infill_extruder").set(2);
-        config.tool.at(0).items.opt("support_material_extruder").set(3);
-        config.tool.at(0).items.opt("support_material_interface_extruder").set(3);
-        config.tool.at(0).items.opt("top_solid_layers").set(0);
-        config.tool.at(0).items.opt("bottom_solid_layers").set(0);
 
         test(config);
 
@@ -512,18 +512,18 @@ SCENARIO("Infill density zero", "[Fill]")
         Test::TestConfig config{4};
         for (auto& tool_settings : config.tool) {
             tool_settings.items.opt("nozzle_diameter").set(0.35);
+            tool_settings.items.opt("perimeters").set(3);
+            tool_settings.items.opt("fill_density").set(Percentage{0});
+            tool_settings.items.opt("infill_extrusion_width").set(FloatOrPercentage{0.52});
+            tool_settings.items.opt("solid_infill_extrusion_width").set(FloatOrPercentage{0.52});
+            tool_settings.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
         }
 
         config.print.items.opt("skirts").set(0);
-        config.tool.at(0).items.opt("perimeters").set(3);
-        config.tool.at(0).items.opt("fill_density").set(Percentage{0});
         config.print.items.opt("layer_height").set(0.2);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
         config.print.items.opt("infill_extruder").set(2);
         config.print.items.opt("solid_infill_extruder").set(2);
-        config.tool.at(0).items.opt("infill_extrusion_width").set(FloatOrPercentage{0.52});
-        config.tool.at(0).items.opt("solid_infill_extrusion_width").set(FloatOrPercentage{0.52});
-        config.tool.at(0).items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
 
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::A }, config);
         THEN("gcode not empty") {

@@ -110,24 +110,32 @@ Biz::Print::ApplyStatus::Status Print::update(
 
     ApplyStatus::Status result{ApplyStatus::Unchanged{}};
     Biz::Slicing::with_limited_instances(model, bed.model_instances, [&]() {
-
-        const bool changed{this->apply(
+        const auto slicing_input{prepare_slicing_input(std::get<ConfigPackFDM>(config))};
+        if (!slicing_input.has_value()) {
+            result = ApplyStatus::InvalidData{std::move(slicing_input.error())};
+            return;
+        }
+        result = this->apply(
             model,
-            prepare_slicing_input(std::get<ConfigPackFDM>(config)),
+            slicing_input.value(),
             serialized_config,
             hw_config,
             bed.wipe_tower,
             bed.custom_gcode
-        )};
-        if (!changed) {
-            return;
+        );
+        if (std::holds_alternative<ApplyStatus::Changed>(result)) {
+            Biz::Print::ValidationResult validation_result{validate()};
+            if (!validation_result.errors.empty()) {
+                result = ApplyStatus::InvalidData{std::move(validation_result.errors)};
+                return;
+            }
+            for (const Biz::Slicing::Warning& warning : validation_result.warnings) {
+                std::get<ApplyStatus::Changed>(result).warrnings.push_back(warning);
+            }
         }
-        std::vector<std::string> warrnings;
-        const std::string error{validate(&warrnings)};
-        if (!error.empty()) {
-            result = ApplyStatus::InvalidData{error};
-        } else {
-            result = ApplyStatus::Changed{warrnings};
+        if (model.objects.empty()) {
+            result = ApplyStatus::Empty{};
+            return;
         }
     });
 
@@ -272,180 +280,312 @@ bool Print::has_brim() const
 boost::regex regex_g92e0 { "^[ \\t]*[gG]92[ \\t]*[eE](0(\\.0*)?|\\.0+)[ \\t]*(;.*)?$" };
 
 // Precondition: Print::validate() requires the Print::apply() to be called its invocation.
-std::string Print::validate(std::vector<std::string>* warnings) const
+Biz::Print::ValidationResult Print::validate() const
 {
+    using Biz::Slicing::Error;
+    using Biz::Slicing::ErrorCode;
+    using Biz::Slicing::Warning;
+    using Biz::Slicing::WarningCode;
+
+    Biz::Print::ValidationResult result;
+
+    std::vector<Warning>& warnings{result.warnings};
+    std::vector<Error>& errors{result.errors};
+
     std::vector<unsigned int> extruders = this->extruders();
 
-    if (warnings) {
-        if (m_config.get<int>("bed_temperature_extruder") == 0) {
-            for (size_t a = 0; a < extruders.size(); ++a) {
-                for (size_t b = a + 1; b < extruders.size(); ++b) {
-                    if (std::abs(m_config.get<std::vector<int>>("bed_temperature").at(extruders[a]) - m_config.get<std::vector<int>>("bed_temperature").at(extruders[b])) > 15
-                     || std::abs(m_config.get<std::vector<int>>("first_layer_bed_temperature").at(extruders[a]) - m_config.get<std::vector<int>>("first_layer_bed_temperature").at(extruders[b])) > 15) {
-                        warnings->emplace_back("_BED_TEMPS_DIFFER");
-                        goto DONE;
-                    }
+    if (m_config.get<int>("bed_temperature_extruder") == 0) {
+        for (size_t a = 0; a < extruders.size(); ++a) {
+            for (size_t b = a + 1; b < extruders.size(); ++b) {
+                if (std::abs(
+                        m_config.get<std::vector<int>>("bed_temperature").at(extruders[a])
+                        - m_config.get<std::vector<int>>("bed_temperature").at(extruders[b])
+                    ) > 15
+                    || std::abs(
+                           m_config.get<std::vector<int>>("first_layer_bed_temperature")
+                               .at(extruders[a])
+                           - m_config.get<std::vector<int>>("first_layer_bed_temperature")
+                                 .at(extruders[b])
+                       ) > 15)
+                {
+                    warnings.emplace_back(Warning{WarningCode::BedTempsDiffer});
+                    goto DONE;
                 }
             }
-
-            DONE:;
         }
 
-        if (!this->has_same_shrinkage_compensations())
-            warnings->emplace_back("_FILAMENT_SHRINKAGE_DIFFER");
+DONE:;
     }
 
-    if (m_objects.empty())
-        return _u8L("All objects are outside of the print volume.");
+    if (!this->has_same_shrinkage_compensations())
+        warnings.emplace_back(Warning{WarningCode::FilamentShrinkageDiffer});
 
-    if (extruders.empty())
-        return _u8L("The supplied settings will cause an empty print.");
+    if (extruders.empty() && !m_objects.empty()) {
+        errors.push_back(Error{ErrorCode::NoExtruders});
+    }
 
-    if (m_config.get<bool>("avoid_crossing_perimeters") && m_config.get<bool>("avoid_crossing_curled_overhangs")) {
-        return _u8L("Avoid crossing perimeters option and avoid crossing curled overhangs option cannot be both enabled together.");
+    if (m_config.get<bool>("avoid_crossing_perimeters")
+        && m_config.get<bool>("avoid_crossing_curled_overhangs"))
+    {
+        errors.push_back(
+            Error{
+                ErrorCode::AvoidCrossingPerimetersAndAvoidCurledOverhangs,
+                {"avoid_crossing_perimeters", "avoid_crossing_curled_overhangs"}
+            }
+        );
     }
 
     if (m_config.get<bool>("spiral_vase")) {
         size_t total_copies_count = 0;
-        for (const PrintObject *object : m_objects)
+        for (const PrintObject* object : m_objects)
             total_copies_count += object->instances().size();
         // #4043
-        if (total_copies_count > 1 && ! m_config.get<bool>("complete_objects"))
-            return _u8L("Only a single object may be printed at a time in Spiral Vase mode. "
-                     "Either remove all but the last object, or enable sequential mode by \"complete_objects\".");
-        assert(m_objects.size() == 1);
-        if (m_objects.front()->all_regions().size() > 1)
-            return _u8L("The Spiral Vase option can only be used when printing single material objects.");
+        if (total_copies_count > 1 && !m_config.get<bool>("complete_objects")) {
+            errors.push_back(Error{ErrorCode::SpiralVaseMultipleObjects, {"spiral_vase"}});
+        }
+        ASSERT(m_objects.size() == 1);
+        if (m_objects.front()->all_regions().size() > 1) {
+            errors.push_back(Error{ErrorCode::SpiralVaseMultipleMaterials, {"spiral_vase"}});
+        }
     }
 
-    if (m_config.get<Domain::MachineLimitsUsage>("machine_limits_usage") == Domain::MachineLimitsUsage::EmitToGCode && m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfKlipper)
-        return L("Machine limits cannot be emitted to G-Code when Klipper firmware flavor is used. "
-                 "Change the value of machine_limits_usage.");
+    if (m_config.get<Domain::MachineLimitsUsage>("machine_limits_usage")
+            == Domain::MachineLimitsUsage::EmitToGCode
+        && m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfKlipper)
+    {
+        errors.push_back(
+            Error{ErrorCode::MachineLimitsWithKlipper, {"machine_limits_usage", "gcode_flavor"}}
+        );
+    }
 
     // Cache of layer height profiles for checking:
     // 1) Whether all layers are synchronized if printing with wipe tower and / or unsynchronized supports.
     // 2) Whether layer height is constant for Organic supports.
     // 3) Whether build volume Z is not violated.
     std::vector<std::vector<double>> layer_height_profiles;
-    auto layer_height_profile = [this, &layer_height_profiles](const size_t print_object_idx) -> const std::vector<double>& {
-        const PrintObject       &print_object = *m_objects[print_object_idx];
+    auto layer_height_profile =
+        [this, &layer_height_profiles](const size_t print_object_idx) -> const std::vector<double>&
+    {
+        const PrintObject& print_object = *m_objects[print_object_idx];
         if (layer_height_profiles.empty())
             layer_height_profiles.assign(m_objects.size(), std::vector<double>());
-        std::vector<double>   &profile      = layer_height_profiles[print_object_idx];
+        std::vector<double>& profile = layer_height_profiles[print_object_idx];
         if (profile.empty())
-            PrintObject::update_layer_height_profile(*print_object.model_object(), print_object.slicing_parameters(), profile);
+            PrintObject::update_layer_height_profile(
+                *print_object.model_object(),
+                print_object.slicing_parameters(),
+                profile
+            );
         return profile;
     };
 
     // Checks that the print does not exceed the max print height
-    for (size_t print_object_idx = 0; print_object_idx < m_objects.size(); ++ print_object_idx) {
-        const PrintObject &print_object = *m_objects[print_object_idx];
-        //FIXME It is quite expensive to generate object layers just to get the print height!
-        if (auto layers = generate_object_layers(print_object.slicing_parameters(), layer_height_profile(print_object_idx));
-            ! layers.empty() && layers.back() > this->config().get<double>("max_print_height") + EPSILON) {
-
+    for (size_t print_object_idx = 0; print_object_idx < m_objects.size(); ++print_object_idx) {
+        const PrintObject& print_object = *m_objects[print_object_idx];
+        // FIXME It is quite expensive to generate object layers just to get the print height!
+        if (auto layers = generate_object_layers(
+                print_object.slicing_parameters(),
+                layer_height_profile(print_object_idx)
+            );
+            !layers.empty()
+            && layers.back() > this->config().get<double>("max_print_height") + EPSILON)
+        {
             const double shrinkage_compensation_z = this->shrinkage_compensation().z();
-            if (shrinkage_compensation_z != 1. && layers.back() > (this->config().get<double>("max_print_height") / shrinkage_compensation_z + EPSILON)) {
+            if (shrinkage_compensation_z != 1.
+                && layers.back()
+                    > (this->config().get<double>("max_print_height") / shrinkage_compensation_z
+                       + EPSILON))
+            {
                 // The object exceeds the maximum build volume height because of shrinkage compensation.
-                return format(_u8L("While the object %1% itself fits the build volume, it exceeds the maximum build volume height because of material shrinkage compensation."), print_object.model_object()->name);
-            } else if (0.5 * (layers[layers.size() - 2] + layers.back()) > this->config().get<double>("max_print_height") + EPSILON) {
+                errors.push_back(
+                    Error{
+                        ErrorCode::ShrinkageCompensationExceedsHeight,
+                        {"max_print_height", "filament_shrinkage_compensation_z"},
+                        print_object.model_object()->id()
+                    }
+                );
+            } else if (0.5 * (layers[layers.size() - 2] + layers.back())
+                       > this->config().get<double>("max_print_height") + EPSILON)
+            {
                 // The last slicing plane is below the print volume.
-                return format(_u8L("The object %1% exceeds the maximum build volume height."), print_object.model_object()->name);
+                errors.push_back(
+                    Error{
+                        ErrorCode::ObjectExceedsHeight,
+                        {"max_print_height"},
+                        print_object.model_object()->id()
+                    }
+                );
             } else {
                 // The last slicing plane is above the print volume.
-                return format(_u8L("While the object %1% itself fits the build volume, its last layer exceeds the maximum build volume height."), print_object.model_object()->name) +
-                    " " + _u8L("You might want to reduce the size of your model or change current print settings and retry.");
+                errors.push_back(
+                    Error{
+                        ErrorCode::LayerExceedsHeight,
+                        {"max_print_height"},
+                        print_object.model_object()->id()
+                    }
+                );
             }
         }
     }
 
     // Some of the objects has variable layer height applied by painting or by a table.
-    bool has_custom_layering = std::find_if(m_objects.begin(), m_objects.end(), 
-        [](const PrintObject *object) { return object->model_object()->has_custom_layering(); }) 
+    bool has_custom_layering =
+        std::find_if(
+            m_objects.begin(),
+            m_objects.end(),
+            [](const PrintObject* object) { return object->model_object()->has_custom_layering(); }
+        )
         != m_objects.end();
 
     // Custom layering is not allowed for tree supports as of now.
-    for (size_t print_object_idx = 0; print_object_idx < m_objects.size(); ++ print_object_idx)
-        if (const PrintObject &print_object = *m_objects[print_object_idx];
-            print_object.has_support_material() && print_object.config().get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic &&
-            print_object.model_object()->has_custom_layering()) {
-            if (const std::vector<double> &layers = layer_height_profile(print_object_idx); ! layers.empty())
-                if (! check_object_layers_fixed(print_object.slicing_parameters(), layers))
-                    return _u8L("Variable layer height is not supported with Organic supports.");
+    for (size_t print_object_idx = 0; print_object_idx < m_objects.size(); ++print_object_idx) {
+        if (const PrintObject& print_object = *m_objects[print_object_idx];
+            print_object.has_support_material()
+            && print_object.config().get<Domain::SupportMaterialStyle>("support_material_style")
+                == Domain::SupportMaterialStyle::smsOrganic
+            && print_object.model_object()->has_custom_layering())
+        {
+            if (const std::vector<double>& layers = layer_height_profile(print_object_idx);
+                !layers.empty())
+            {
+                if (!check_object_layers_fixed(print_object.slicing_parameters(), layers)) {
+                    errors.push_back(
+                        Error{
+                            ErrorCode::VariableLayerHeightAndOrganicSupports,
+                            {"support_material_style"}
+                        }
+                    );
+                }
+            }
         }
+    }
 
-    if (this->has_wipe_tower() && ! m_objects.empty()) {
+    if (this->has_wipe_tower() && !m_objects.empty()) {
         // Make sure all extruders use same diameter filament and have the same nozzle diameter
         // EPSILON comparison is used for nozzles and 10 % tolerance is used for filaments
-        double first_nozzle_diam   = m_config.get<std::vector<double>>("nozzle_diameter").at(extruders.front());
-        double first_filament_diam = m_config.get<std::vector<double>>("filament_diameter").at(extruders.front());
+        double first_nozzle_diam =
+            m_config.get<std::vector<double>>("nozzle_diameter").at(extruders.front());
+        double first_filament_diam =
+            m_config.get<std::vector<double>>("filament_diameter").at(extruders.front());
 
-        bool allow_nozzle_diameter_differ_warning = (warnings != nullptr);
+        bool nozzle_diameter_warning_emitted = true;
         for (const auto& extruder_idx : extruders) {
-            double nozzle_diam   = m_config.get<std::vector<double>>("nozzle_diameter").at(extruder_idx);
-            double filament_diam = m_config.get<std::vector<double>>("filament_diameter").at(extruder_idx);
-            if (allow_nozzle_diameter_differ_warning && (nozzle_diam - EPSILON > first_nozzle_diam || nozzle_diam + EPSILON < first_nozzle_diam)) {
-                allow_nozzle_diameter_differ_warning = false;
-                warnings->emplace_back("_WIPE_TOWER_NOZZLE_DIAMETER_DIFFER");
-            } else if (std::abs((filament_diam - first_filament_diam) / first_filament_diam) > 0.1) {
-                return _u8L("The wipe tower is only supported if all extruders use filaments of the same diameter.");
+            double nozzle_diam =
+                m_config.get<std::vector<double>>("nozzle_diameter").at(extruder_idx);
+            double filament_diam =
+                m_config.get<std::vector<double>>("filament_diameter").at(extruder_idx);
+            if (nozzle_diameter_warning_emitted
+                && (nozzle_diam - EPSILON > first_nozzle_diam
+                    || nozzle_diam + EPSILON < first_nozzle_diam))
+            {
+                nozzle_diameter_warning_emitted = false;
+                warnings.emplace_back(Warning{WarningCode::WipeTowerNozzleDiameterDiffer});
+            } else if (std::abs((filament_diam - first_filament_diam) / first_filament_diam) > 0.1)
+            {
+                errors.push_back(
+                    Error{
+                        ErrorCode::WipeTowerDifferentExtruderDiameters,
+                        {"nozzle_diameter", "filament_diameter"}
+                    }
+                );
             }
         }
 
-        if (m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfRepRapSprinter && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfRepRapFirmware &&
-            m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfRepetier && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfMarlinLegacy &&
-            m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfMarlinFirmware && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfKlipper)
-            return _u8L("The Wipe Tower is currently only supported for the Marlin, Klipper, RepRap/Sprinter, RepRapFirmware and Repetier G-code flavors.");
-        if (! m_config.get<bool>("use_relative_e_distances"))
-            return _u8L("The Wipe Tower is currently only supported with the relative extruder addressing (use_relative_e_distances=1).");
-        if (m_config.get<bool>("ooze_prevention") && m_config.get<bool>("single_extruder_multi_material"))
-            return _u8L("Ooze prevention is only supported with the wipe tower when 'single_extruder_multi_material' is off.");
-        if (m_config.get<bool>("use_volumetric_e"))
-            return _u8L("The Wipe Tower currently does not support volumetric E (use_volumetric_e=0).");
-        if (m_config.get<bool>("complete_objects") && extruders.size() > 1)
-            return _u8L("The Wipe Tower is currently not supported for multimaterial sequential prints.");
+        if (m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfRepRapSprinter
+            && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfRepRapFirmware
+            && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfRepetier
+            && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfMarlinLegacy
+            && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfMarlinFirmware
+            && m_config.get<GCodeFlavor>("gcode_flavor") != GCodeFlavor::gcfKlipper)
+        {
+            errors.push_back(Error{ErrorCode::WipeTowerGCodeFlavor, {"gcode_flavor"}});
+        }
+
+        if (!m_config.get<bool>("use_relative_e_distances")) {
+            errors.push_back(
+                Error{ErrorCode::WipeTowerAbsoluteDistances, {"use_relative_e_distances"}}
+            );
+        }
+        if (m_config.get<bool>("ooze_prevention")
+            && m_config.get<bool>("single_extruder_multi_material"))
+        {
+            errors.push_back(
+                Error{
+                    ErrorCode::WipeTowerOozePreventionSingleExtruderMultiMaterial,
+                    {"ooze_prevention", "single_extruder_multi_material"}
+                }
+            );
+        }
+        if (m_config.get<bool>("use_volumetric_e")) {
+            errors.push_back(Error{ErrorCode::WipeTowerVolumetricE, {"use_volumetric_e"}});
+        }
+        if (m_config.get<bool>("complete_objects") && extruders.size() > 1) {
+            errors.push_back(Error{ErrorCode::WipeTowerSequentialPrint, {"complete_objects"}});
+        }
 
         if (m_objects.size() > 1) {
-            const SlicingParameters     &slicing_params0       = m_objects.front()->slicing_parameters();
-            size_t                       tallest_object_idx    = 0;
-            for (size_t i = 1; i < m_objects.size(); ++ i) {
-                const PrintObject       *object         = m_objects[i];
-                const SlicingParameters &slicing_params = object->slicing_parameters();
-                if (std::abs(slicing_params.first_print_layer_height - slicing_params0.first_print_layer_height) > EPSILON ||
-                    std::abs(slicing_params.layer_height             - slicing_params0.layer_height            ) > EPSILON)
-                    return _u8L("The Wipe Tower is only supported for multiple objects if they have equal layer heights");
-                if (slicing_params.raft_layers() != slicing_params0.raft_layers())
-                    return _u8L("The Wipe Tower is only supported for multiple objects if they are printed over an equal number of raft layers");
-                if (slicing_params0.gap_object_support != slicing_params.gap_object_support ||
-                    slicing_params0.gap_support_object != slicing_params.gap_support_object)
-                    return _u8L("The Wipe Tower is only supported for multiple objects if they are printed with the same support_material_contact_distance");
-                if (! equal_layering(slicing_params, slicing_params0))
-                    return _u8L("The Wipe Tower is only supported for multiple objects if they are sliced equally.");
+            const SlicingParameters& slicing_params0 = m_objects.front()->slicing_parameters();
+            size_t tallest_object_idx                = 0;
+            for (size_t i = 1; i < m_objects.size(); ++i) {
+                const PrintObject* object               = m_objects[i];
+                const SlicingParameters& slicing_params = object->slicing_parameters();
+                if (std::abs(
+                        slicing_params.first_print_layer_height
+                        - slicing_params0.first_print_layer_height
+                    ) > EPSILON
+                    || std::abs(slicing_params.layer_height - slicing_params0.layer_height)
+                        > EPSILON)
+                {
+                    errors.push_back(Error{ErrorCode::WipeTowerDifferentObjectsLayerHeights});
+                }
+                if (slicing_params.raft_layers() != slicing_params0.raft_layers()) {
+                    errors.push_back(Error{ErrorCode::WipeTowerDifferentObjectsRaftLayerCounts});
+                }
+                if (slicing_params0.gap_object_support != slicing_params.gap_object_support
+                    || slicing_params0.gap_support_object != slicing_params.gap_support_object)
+                {
+                    errors.push_back(
+                        Error{ErrorCode::WipeTowerDifferentObjectsSupportContactDistance}
+                    );
+                }
+                if (!equal_layering(slicing_params, slicing_params0)) {
+                    errors.push_back(Error{ErrorCode::WipeTowerDifferentObjectsSlicing});
+                }
                 if (has_custom_layering) {
-                    auto &lh         = layer_height_profile(i);
-                    auto &lh_tallest = layer_height_profile(tallest_object_idx);
-                    if (*(lh.end()-2) > *(lh_tallest.end()-2))
+                    auto& lh         = layer_height_profile(i);
+                    auto& lh_tallest = layer_height_profile(tallest_object_idx);
+                    if (*(lh.end() - 2) > *(lh_tallest.end() - 2))
                         tallest_object_idx = i;
                 }
-           }
+            }
 
             if (has_custom_layering) {
-                for (size_t idx_object = 0; idx_object < m_objects.size(); ++ idx_object) {
+                for (size_t idx_object = 0; idx_object < m_objects.size(); ++idx_object) {
                     if (idx_object == tallest_object_idx)
                         continue;
                     // Check that the layer height profiles are equal. This will happen when one object is
                     // a copy of another, or when a layer height modifier is used the same way on both objects.
                     // The latter case might create a floating point inaccuracy mismatch, so compare
                     // element-wise using an epsilon check.
-                    size_t i = 0;
-                    const double eps = 0.5 * EPSILON; // layers closer than EPSILON will be merged later. Let's make
+                    size_t i         = 0;
+                    const double eps = 0.5
+                        * EPSILON; // layers closer than EPSILON will be merged later. Let's make
                     // this check a bit more sensitive to make sure we never consider two different layers as one.
                     while (i < layer_height_profiles[idx_object].size()
-                        && i < layer_height_profiles[tallest_object_idx].size()) {
-                        if (i%2 == 0 && layer_height_profiles[tallest_object_idx][i] > layer_height_profiles[idx_object][layer_height_profiles[idx_object].size() - 2 ])
+                           && i < layer_height_profiles[tallest_object_idx].size())
+                    {
+                        if (i % 2 == 0
+                            && layer_height_profiles[tallest_object_idx][i] > layer_height_profiles
+                                    [idx_object][layer_height_profiles[idx_object].size() - 2])
                             break;
-                        if (std::abs(layer_height_profiles[idx_object][i] - layer_height_profiles[tallest_object_idx][i]) > eps)
-                            return _u8L("The Wipe tower is only supported if all objects have the same variable layer height");
+                        if (std::abs(
+                                layer_height_profiles[idx_object][i]
+                                - layer_height_profiles[tallest_object_idx][i]
+                            )
+                            > eps)
+                            errors.push_back(
+                                Error{ErrorCode::WipeTowerDifferentObjectsVariableHeight}
+                            );
                         ++i;
                     }
                 }
@@ -453,131 +593,235 @@ std::string Print::validate(std::vector<std::string>* warnings) const
         }
     }
 
-	{
-		// Find the smallest used nozzle diameter and the number of unique nozzle diameters.
-		double min_nozzle_diameter = std::numeric_limits<double>::max();
-		double max_nozzle_diameter = 0;
-		for (unsigned int extruder_id : extruders) {
-			double dmr = m_config.get<std::vector<double>>("nozzle_diameter").at(extruder_id);
-			min_nozzle_diameter = std::min(min_nozzle_diameter, dmr);
-			max_nozzle_diameter = std::max(max_nozzle_diameter, dmr);
-		}
+    {
+        // Find the smallest used nozzle diameter and the number of unique nozzle diameters.
+        double min_nozzle_diameter = std::numeric_limits<double>::max();
+        double max_nozzle_diameter = 0;
+        for (unsigned int extruder_id : extruders) {
+            double dmr = m_config.get<std::vector<double>>("nozzle_diameter").at(extruder_id);
+            min_nozzle_diameter = std::min(min_nozzle_diameter, dmr);
+            max_nozzle_diameter = std::max(max_nozzle_diameter, dmr);
+        }
 
-        auto validate_extrusion_width = [/*min_nozzle_diameter,*/ max_nozzle_diameter](const Domain::ConfigView &config, const char *opt_key, double layer_height, std::string &err_msg) -> bool {
+        auto validate_extrusion_width = [/*min_nozzle_diameter,*/ max_nozzle_diameter](
+                                            const Domain::ConfigView& config,
+                                            const char* opt_key,
+                                            double layer_height,
+                                            Error& error
+                                        ) -> bool
+        {
             // This may change in the future, if we switch to "extrusion width wrt. nozzle diameter"
             // instead of currently used logic "extrusion width wrt. layer height", see GH issues #1923 #2829.
-//        	double extrusion_width_min = config.get_abs_value(opt_key, min_nozzle_diameter);
-//        	double extrusion_width_max = config.get_abs_value(opt_key, max_nozzle_diameter);
-            double extrusion_width_min = config.get<Domain::FloatOrPercentage>(opt_key).get_abs_value(layer_height);
+            // 	double extrusion_width_min = config.get_abs_value(opt_key, min_nozzle_diameter);
+            // 	double extrusion_width_max = config.get_abs_value(opt_key, max_nozzle_diameter);
+            double extrusion_width_min =
+                config.get<Domain::FloatOrPercentage>(opt_key).get_abs_value(layer_height);
             double extrusion_width_max = extrusion_width_min;
-        	if (extrusion_width_min == 0) {
-        		// Default "auto-generated" extrusion width is always valid.
-        	} else if (extrusion_width_min <= layer_height) {
-        		err_msg = (boost::format(_u8L("%1%=%2% mm is too low to be printable at a layer height %3% mm")) % opt_key % extrusion_width_min % layer_height).str();
-				return false;
-			} else if (extrusion_width_max >= max_nozzle_diameter * 3.) {
-				err_msg = (boost::format(_u8L("Excessive %1%=%2% mm to be printable with a nozzle diameter %3% mm")) % opt_key % extrusion_width_max % max_nozzle_diameter).str();
-				return false;
-			}
-			return true;
-		};
-        for (PrintObject *object : m_objects) {
+            if (extrusion_width_min == 0) {
+                // Default "auto-generated" extrusion width is always valid.
+            } else if (extrusion_width_min <= layer_height) {
+                error = Error{ErrorCode::InsufficientExtrusionWidth, {opt_key}};
+                return false;
+            } else if (extrusion_width_max >= max_nozzle_diameter * 3.) {
+                error = Error{ErrorCode::ExcesiveExtrusionWidth, {opt_key}};
+                return false;
+            }
+            return true;
+        };
+
+        for (PrintObject* object : m_objects) {
             if (object->has_support_material()) {
-				if (warnings != nullptr && (object->config().get<int>("support_material_extruder") == 0 || object->config().get<int>("support_material_interface_extruder") == 0) && max_nozzle_diameter - min_nozzle_diameter > EPSILON) {
+                if ((object->config().get<int>("support_material_extruder") == 0
+                     || object->config().get<int>("support_material_interface_extruder") == 0)
+                    && max_nozzle_diameter - min_nozzle_diameter > EPSILON)
+                {
                     // The object has some form of support and either support_material_extruder or support_material_interface_extruder
                     // will be printed with the current tool without a forced tool change.
                     // Notify the user that printing supports with different nozzle diameters is experimental and requires caution.
-                    warnings->emplace_back("_SUPPORT_NOZZLE_DIAMETER_DIFFER");
+                    warnings.emplace_back(Warning{WarningCode::SupportNozzleDiameterDiffer});
                 }
-                if (this->has_wipe_tower() && object->config().get<Domain::SupportMaterialStyle>("support_material_style") != Domain::SupportMaterialStyle::smsOrganic) {
-    				if (object->config().get<double>("support_material_contact_distance") == 0) {
-    					// Soluble interface
-    					if (! object->config().get<bool>("support_material_synchronize_layers"))
-    						return _u8L("For the Wipe Tower to work with the soluble supports, the support layers need to be synchronized with the object layers.");
-    				} else {
-    					// Non-soluble interface
-    					if (object->config().get<int>("support_material_extruder") != 0 || object->config().get<int>("support_material_interface_extruder") != 0)
-    						return _u8L("The Wipe Tower currently supports the non-soluble supports only if they are printed with the current extruder without triggering a tool change. "
-    							     "(both support_material_extruder and support_material_interface_extruder need to be set to 0).");
-    				}
+                if (this->has_wipe_tower()
+                    && object->config().get<Domain::SupportMaterialStyle>("support_material_style")
+                        != Domain::SupportMaterialStyle::smsOrganic)
+                {
+                    if (object->config().get<double>("support_material_contact_distance") == 0) {
+                        // Soluble interface
+                        if (!object->config().get<bool>("support_material_synchronize_layers")) {
+                            errors.push_back(
+                                Error{
+                                    ErrorCode::WipeTowerSoluableUnsynchronizedLayers,
+                                    {"support_material_synchronize_layers"}
+                                }
+                            );
+                        }
+                    } else {
+                        // Non-soluble interface
+                        if (object->config().get<int>("support_material_extruder") != 0
+                            || object->config().get<int>("support_material_interface_extruder")
+                                != 0)
+                        {
+                            errors.push_back(
+                                Error{
+                                    ErrorCode::WipeTowerSupporMaterialExtruderSet,
+                                    {"support_material_extruder",
+                                     "support_material_interface_extruder"}
+                                }
+                            );
+                        }
+                    }
                 }
-                if (object->config().get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic) {
+                if (object->config().get<Domain::SupportMaterialStyle>("support_material_style")
+                    == Domain::SupportMaterialStyle::smsOrganic)
+                {
                     float extrusion_width = std::min(
                         support_material_flow(object).width(),
-                        support_material_interface_flow(object).width());
-                    if (object->config().get<double>("support_tree_tip_diameter") < extrusion_width - EPSILON)
-                        return _u8L("Organic support tree tip diameter must not be smaller than support material extrusion width.");
-                    if (object->config().get<double>("support_tree_branch_diameter") < 2. * extrusion_width - EPSILON)
-                        return _u8L("Organic support branch diameter must not be smaller than 2x support material extrusion width.");
-                    if (object->config().get<double>("support_tree_branch_diameter") < object->config().get<double>("support_tree_tip_diameter"))
-                        return _u8L("Organic support branch diameter must not be smaller than support tree tip diameter.");
+                        support_material_interface_flow(object).width()
+                    );
+                    if (object->config().get<double>("support_tree_tip_diameter")
+                        < extrusion_width - EPSILON)
+                    {
+                        errors.push_back(
+                            Error{
+                                ErrorCode::OrganicSupportTipTooSmall,
+                                {"support_tree_tip_diameter"}
+                            }
+                        );
+                    }
+                    if (object->config().get<double>("support_tree_branch_diameter")
+                        < 2. * extrusion_width - EPSILON)
+                    {
+                        errors.push_back(
+                            Error{
+                                ErrorCode::OrganicSupportBranchDiameterSmallerThanSupportMaterial,
+                                {"support_tree_branch_diameter"}
+                            }
+                        );
+                    }
+                    if (object->config().get<double>("support_tree_branch_diameter")
+                        < object->config().get<double>("support_tree_tip_diameter"))
+                    {
+                        errors.push_back(
+                            Error{
+                                ErrorCode::OrganicSupportBranchDiameterSmallerThanTreeTip,
+                                {"support_tree_branch_diameter"}
+                            }
+                        );
+                    }
                 }
             }
 
             // Do we have custom support data that would not be used?
             // Notify the user in that case.
-            if (! object->has_support() && warnings) {
+            if (!object->has_support()) {
                 for (const Domain::ModelVolume* mv : object->model_object()->volumes) {
-                    bool has_enforcers = mv->is_support_enforcer() || 
-                        (mv->is_model_part() && Algorithms::FacetsAnnotation::has_facets(mv->supported_facets, Domain::TriangleSelector::TriangleStateType::ENFORCER));
+                    bool has_enforcers = mv->is_support_enforcer()
+                        || (mv->is_model_part()
+                            && Algorithms::FacetsAnnotation::has_facets(
+                                mv->supported_facets,
+                                Domain::TriangleSelector::TriangleStateType::ENFORCER
+                            ));
                     if (has_enforcers) {
-                        warnings->emplace_back("_SUPPORTS_OFF");
+                        warnings.emplace_back(Warning{WarningCode::SupportsTurnedOff});
                         break;
                     }
                 }
             }
 
             // validate first_layer_height
-            assert(! m_config.get<Domain::FloatOrPercentage>("first_layer_height").is_percentage());
+            assert(!m_config.get<Domain::FloatOrPercentage>("first_layer_height").is_percentage());
             double layer_height = m_config.get<double>("layer_height");
-            double first_layer_height = m_config.get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height);
+            double first_layer_height =
+                m_config.get<Domain::FloatOrPercentage>("first_layer_height")
+                    .get_abs_value(layer_height);
             double first_layer_min_nozzle_diameter;
             if (object->has_raft()) {
                 // if we have raft layers, only support material extruder is used on first layer
-                size_t first_layer_extruder = object->config().get<int>("raft_layers") == 1
-                    ? object->config().get<int>("support_material_interface_extruder")-1
-                    : object->config().get<int>("support_material_extruder")-1;
-                first_layer_min_nozzle_diameter = (first_layer_extruder == size_t(-1)) ? 
-                    min_nozzle_diameter : 
+                size_t first_layer_extruder     = object->config().get<int>("raft_layers") == 1 ?
+                        object->config().get<int>("support_material_interface_extruder") - 1 :
+                        object->config().get<int>("support_material_extruder") - 1;
+                first_layer_min_nozzle_diameter = (first_layer_extruder == size_t(-1)) ?
+                    min_nozzle_diameter :
                     m_config.get<std::vector<double>>("nozzle_diameter").at(first_layer_extruder);
             } else {
                 // if we don't have raft layers, any nozzle diameter is potentially used in first layer
                 first_layer_min_nozzle_diameter = min_nozzle_diameter;
             }
-            if (first_layer_height > first_layer_min_nozzle_diameter)
-                return _u8L("First layer height can't be greater than nozzle diameter");
+            if (first_layer_height > first_layer_min_nozzle_diameter) {
+                errors.push_back(
+                    Error{ErrorCode::FirstLayerHeightTooLarge, {"first_layer_height"}}
+                );
+            }
 
             // validate layer_height
-            if (layer_height > min_nozzle_diameter)
-                return _u8L("Layer height can't be greater than nozzle diameter");
+            if (layer_height > min_nozzle_diameter) {
+                errors.push_back(Error{ErrorCode::LayerHeightTooLarge, {"layer_height"}});
+            }
 
             // Validate extrusion widths.
-            std::string err_msg;
-            if (! validate_extrusion_width(object->config(), "extrusion_width", layer_height, err_msg))
-            	return err_msg;
-            if ((object->has_support() || object->has_raft()) && ! validate_extrusion_width(object->config(), "support_material_extrusion_width", layer_height, err_msg))
-            	return err_msg;
-            for (const char *opt_key : { "perimeter_extrusion_width", "external_perimeter_extrusion_width", "infill_extrusion_width", "solid_infill_extrusion_width", "top_infill_extrusion_width" })
-				for (const PrintRegion &region : object->all_regions())
-            		if (! validate_extrusion_width(region.config(), opt_key, layer_height, err_msg))
-		            	return err_msg;
+            Error error;
+            if (!validate_extrusion_width(object->config(), "extrusion_width", layer_height, error))
+            {
+                errors.push_back(error);
+            }
+            if ((object->has_support() || object->has_raft())
+                && !validate_extrusion_width(
+                    object->config(),
+                    "support_material_extrusion_width",
+                    layer_height,
+                    error
+                ))
+            {
+                errors.push_back(error);
+            }
+            for (const char* opt_key :
+                 {"perimeter_extrusion_width",
+                  "external_perimeter_extrusion_width",
+                  "infill_extrusion_width",
+                  "solid_infill_extrusion_width",
+                  "top_infill_extrusion_width"})
+            {
+                for (const PrintRegion& region : object->all_regions()) {
+                    if (!validate_extrusion_width(region.config(), opt_key, layer_height, error)) {
+                        errors.push_back(error);
+                    }
+                }
+            }
         }
     }
     {
-        bool before_layer_gcode_resets_extruder = boost::regex_search(m_config.get<std::string>("before_layer_gcode"), regex_g92e0);
-        bool layer_gcode_resets_extruder        = boost::regex_search(m_config.get<std::string>("layer_gcode"), regex_g92e0);
+        bool before_layer_gcode_resets_extruder =
+            boost::regex_search(m_config.get<std::string>("before_layer_gcode"), regex_g92e0);
+        bool layer_gcode_resets_extruder =
+            boost::regex_search(m_config.get<std::string>("layer_gcode"), regex_g92e0);
         if (m_config.get<bool>("use_relative_e_distances")) {
             // See GH issues #6336 #5073
-            if ((m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinLegacy || m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinFirmware) &&
-                ! before_layer_gcode_resets_extruder && ! layer_gcode_resets_extruder)
-                return _u8L("Relative extruder addressing requires resetting the extruder position at each layer to prevent loss of floating point accuracy. Add \"G92 E0\" to layer_gcode.");
-        } else if (before_layer_gcode_resets_extruder)
-            return _u8L("\"G92 E0\" was found in before_layer_gcode, which is incompatible with absolute extruder addressing.");
-        else if (layer_gcode_resets_extruder)
-                return _u8L("\"G92 E0\" was found in layer_gcode, which is incompatible with absolute extruder addressing.");
+            if ((m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinLegacy
+                 || m_config.get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinFirmware)
+                && !before_layer_gcode_resets_extruder
+                && !layer_gcode_resets_extruder)
+            {
+                errors.push_back(
+                    Error{ErrorCode::MissingG92E0, {"use_relative_e_distances", "layer_gcode"}}
+                );
+            }
+        } else if (before_layer_gcode_resets_extruder) {
+            errors.push_back(
+                Error{
+                    ErrorCode::FoundG92E0InBeforeLayerGCode,
+                    {"use_relative_e_distances", "before_layer_gcode"}
+                }
+            );
+        } else if (layer_gcode_resets_extruder) {
+            errors.push_back(
+                Error{
+                    ErrorCode::FoundG92E0InLayerGCode,
+                    {"use_relative_e_distances", "layer_gcode"}
+                }
+            );
+        }
     }
 
-    return std::string();
+    return result;
 }
 
 double Print::skirt_first_layer_height() const
@@ -696,14 +940,17 @@ void Print::process()
         } else if (! this->config().get<bool>("complete_objects")) {
         	// Initialize the tool ordering, so it could be used by the G-code preview slider for planning tool changes and filament switches.
         	m_tool_ordering = ToolOrdering(*this, -1, false);
-            if (m_tool_ordering.empty() || m_tool_ordering.last_extruder() == unsigned(-1))
-                throw Slic3r::SlicingError("The print is empty. The model is not printable with current print settings.");
+            if (m_tool_ordering.empty() || m_tool_ordering.last_extruder() == unsigned(-1)) {
+                throw Biz::Slicing::Exception{
+                    Biz::Slicing::Error{Biz::Slicing::ErrorCode::EmptyPrint}
+                };
+            }
         }
         m_on_wipe_tower_geometry(get_wipe_tower_geometry(m_wipe_tower_data));
         this->set_done(psWipeTower);
     }
     if (this->set_started(psSkirtBrim)) {
-        this->set_status(88, _u8L("Generating skirt and brim"));
+        this->set_status(Domain::Percentage{88}, Biz::Slicing::ProgressInfo::GeneratingSkirtAndBrim);
 
         m_skirt.clear();
         m_skirt_convex_hull.clear();
@@ -764,7 +1011,7 @@ Biz::libpgcode::ProcessorResult Print::process_gcode()
     // output everything to a G-code file
     // The following call may die if the output_filename_format template substitution fails.
     std::string message = _u8L("Generating G-code");
-    this->set_status(90, message);
+    this->set_status(Domain::Percentage{90}, Biz::Slicing::ProgressInfo::GeneratingGCode);
 
     // Create GCode on heap, it has quite a lot of data.
     std::unique_ptr<GCodeGenerator> gcode(new GCodeGenerator(const_cast<const Print*>(this)));
@@ -810,6 +1057,24 @@ Thumbnails request_thumbnails(
 
     return {thumbnail_generator.enqueue_thumbnail_requests({request}), request_data->formats};
 }
+
+void check_result(
+    const Biz::libpgcode::ProcessorResult& result,
+    const PrintConfigView& config,
+    std::function<void(Biz::Slicing::Warning)> append_warning_callback
+)
+{
+    const BuildVolume build_volume(
+        config.get<std::vector<Vec2d>>("bed_shape"),
+        config.get<double>("max_print_height")
+    );
+    if (!build_volume.all_paths_inside(*result.const_moves())) {
+        append_warning_callback(
+            Biz::Slicing::Warning{Biz::Slicing::WarningCode::ToolpathOutsideBuildVolume}
+        );
+    }
+}
+
 } // namespace
 
 void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator& thumbnail_generator)
@@ -823,6 +1088,8 @@ void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGen
     this->process();
     m_on_fdm_result(Biz::Print::get_result_preview(*this));
     Biz::libpgcode::ProcessorResult result{this->process_gcode()};
+    check_result(result, config(), append_warning_callback);
+
     m_on_fdm_result(std::move(result));
     this->finalize();
     this->cleanup();
@@ -1041,7 +1308,7 @@ void Print::alert_when_supports_needed()
 {
     if (this->set_started(psAlertWhenSupportsNeeded)) {
         BOOST_LOG_TRIVIAL(debug) << "psAlertWhenSupportsNeeded - start";
-        set_status(69, _u8L("Alert if supports needed"));
+        set_status(Domain::Percentage{69}, Biz::Slicing::ProgressInfo::CheckingStability);
 
         auto issue_to_alert_message = [](SupportSpotsGenerator::SupportPointCause cause, bool critical) {
             std::string message;
@@ -1178,10 +1445,17 @@ void Print::alert_when_supports_needed()
         }
 
         // TRN Alert message for detected print issues. first argument is a list of detected issues.
-        auto message = Slic3r::format(_u8L("Detected print stability issues:\n%1%"), elements_to_translated_list(lines, multiline_list_rule));
+        auto message = elements_to_translated_list(lines, multiline_list_rule);
 
         if (objects_isssues.size() > 0) {
-            this->active_step_add_warning(PrintStateBase::WarningLevel::NON_CRITICAL, message);
+            this->append_warning_callback(
+                Biz::Slicing::Warning{
+                    Biz::Slicing::WarningCode::StabilityIssues,
+                    {},
+                    std::nullopt,
+                    Biz::Slicing::StabilityWarningPayload{recommend_brim, message}
+                }
+            );
         }
 
         BOOST_LOG_TRIVIAL(debug) << "psAlertWhenSupportsNeeded - end";

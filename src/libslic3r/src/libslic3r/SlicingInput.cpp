@@ -18,6 +18,8 @@ using Domain::VolumeSettings;
 using Domain::ConfigValue;
 using Domain::EnumVectorWrapper;
 using Domain::EnumWrapper;
+using Biz::Slicing::Error;
+using Biz::Slicing::ErrorCode;
 
 
 namespace {
@@ -132,39 +134,54 @@ namespace ToolSettings {
     };
 };
 
-void replace_impl(const ConfigValue value, const std::string& key, SquashedConfig& config) {
-    value.visit([&](auto&& value){
+bool replace_impl(const ConfigValue value, const std::string& key, SquashedConfig& config) {
+    return value.visit([&](auto&& value) -> bool {
         using ValueType = std::remove_cvref_t<decltype(value)>;
         if constexpr (Domain::is_std_vector_v<ValueType>) {
             ASSERT(!value.empty());
+            const bool all_equal{
+                std::ranges::all_of(value, [&](const auto& item) { return item == value.front(); })
+            };
+            if (!all_equal) {
+                return false;
+            }
             if constexpr (std::is_same_v<typename ValueType::value_type, bool>) {
                 config.set(key, bool{value.front()});
             } else {
                 config.set(key, value.front());
             }
+            return true;
         } else if constexpr (std::is_same_v<ValueType, EnumVectorWrapper>) {
             ASSERT(!value.values().empty());
+            const bool all_equal{
+                std::ranges::all_of(value.values(), [&](const auto& item) { return item == value.values().front(); })
+            };
+            if (!all_equal) {
+                return false;
+            }
             const EnumWrapper enum_value{value.values().front(), value.type(), value.def()};
             config.set(key, enum_value);
+            return true;
         }
+        return true;
     });
 }
 
-void replace_with_first_element(const std::string& key, FullConfig& full_config) {
+bool replace_with_first_element(const std::string& key, FullConfig& full_config) {
     const ConfigValue value{full_config.values().at(key)};
-    replace_impl(value, key, full_config);
+    return replace_impl(value, key, full_config);
 }
 
-void replace_with_first_element(const std::string& key, PartialConfig& partial_config) {
+bool replace_with_first_element(const std::string& key, PartialConfig& partial_config) {
     const auto it{partial_config.values().find(key)};
     if (it == partial_config.values().end()) {
-        return;
+        return true;
     }
     const ConfigValue value{it->second};
-    replace_impl(value, key, partial_config);
+    return replace_impl(value, key, partial_config);
 }
 
-void transform_to_legacy_input(FullConfig& full_config) {
+std::vector<Error> transform_to_legacy_input(FullConfig& full_config) {
     const auto keys{std::ranges::join_view(
         std::vector<std::vector<std::string>>{
             ToolSettings::object_and_volume_overrides,
@@ -172,32 +189,56 @@ void transform_to_legacy_input(FullConfig& full_config) {
             ToolSettings::no_overrides,
         }
     )};
+
+    std::vector<std::string> invalid_keys;
     for (const std::string& key : keys) {
-        replace_with_first_element(key, full_config);
+        if (!replace_with_first_element(key, full_config)) {
+            invalid_keys.push_back(key);
+        }
     }
+    if (!invalid_keys.empty()) {
+        return {Error{ErrorCode::SettingMustBeEqualForAllExtruders, invalid_keys}};
+    }
+    return {};
 }
 
-void transform_to_legacy_input(PartialObjectConfigFDM& object_config) {
+std::vector<Error> transform_to_legacy_input(PartialObjectConfigFDM& object_config) {
     const auto keys{std::ranges::join_view(
         std::vector<std::vector<std::string>>{
             ToolSettings::object_and_volume_overrides,
             ToolSettings::object_overrides,
         }
     )};
+
+    std::vector<std::string> invalid_keys;
     for (const std::string& key : keys) {
-        replace_with_first_element(key, object_config);
+        if (!replace_with_first_element(key, object_config)) {
+            invalid_keys.push_back(key);
+        }
     }
+    if (!invalid_keys.empty()) {
+        return {Error{ErrorCode::SettingMustBeEqualForAllExtruders, invalid_keys}};
+    }
+    return {};
 }
 
-void transform_to_legacy_input(PartialVolumeConfigFDM& volume_config) {
+std::vector<Error> transform_to_legacy_input(PartialVolumeConfigFDM& volume_config) {
     const auto keys{std::ranges::join_view(
         std::vector<std::vector<std::string>>{
             ToolSettings::object_and_volume_overrides,
         }
     )};
+
+    std::vector<std::string> invalid_keys;
     for (const std::string& key : keys) {
-        replace_with_first_element(key, volume_config);
+        if (!replace_with_first_element(key, volume_config)) {
+            invalid_keys.push_back(key);
+        }
     }
+    if (!invalid_keys.empty()) {
+        return {Error{ErrorCode::SettingMustBeEqualForAllExtruders, invalid_keys}};
+    }
+    return {};
 }
 
 void set_extruders(PartialConfig& partial_config)
@@ -210,14 +251,19 @@ void set_extruders(PartialConfig& partial_config)
 }
 } // namespace
 
-FullConfigFDMPtr prepare_slicing_input(const ConfigPackFDM& config_pack)
+tl::expected<FullConfigFDMPtr, std::vector<Error>> prepare_slicing_input(
+    const ConfigPackFDM& config_pack
+)
 {
     FullConfigFDM result{config_pack};
-    transform_to_legacy_input(result);
+    std::vector<Error> errors{transform_to_legacy_input(result)};
+    if (!errors.empty()) {
+        return tl::unexpected{std::move(errors)};
+    }
     return std::make_shared<const FullConfigFDM>(std::move(result));
 }
 
-PartialObjectConfigFDMPtr prepare_slicing_object_input(
+tl::expected<PartialObjectConfigFDMPtr, std::vector<Error>> prepare_slicing_object_input(
     const ObjectSettings& object_settings,
     const std::size_t tools_count,
     const std::size_t filaments_count
@@ -225,11 +271,14 @@ PartialObjectConfigFDMPtr prepare_slicing_object_input(
 {
     PartialObjectConfigFDM result{object_settings, tools_count, filaments_count};
     set_extruders(result);
-    transform_to_legacy_input(result);
+    std::vector<Error> errors{transform_to_legacy_input(result)};
+    if (!errors.empty()) {
+        return tl::unexpected{std::move(errors)};
+    }
     return std::make_shared<PartialObjectConfigFDM>(std::move(result));
 };
 
-PartialVolumeConfigFDMPtr prepare_slicing_volume_input(
+tl::expected<PartialVolumeConfigFDMPtr, std::vector<Error>> prepare_slicing_volume_input(
     const VolumeSettings& volume_settings,
     const std::size_t tools_count,
     const std::size_t filaments_count
@@ -237,7 +286,10 @@ PartialVolumeConfigFDMPtr prepare_slicing_volume_input(
 {
     PartialVolumeConfigFDM result{volume_settings, tools_count, filaments_count};
     set_extruders(result);
-    transform_to_legacy_input(result);
+    std::vector<Error> errors{transform_to_legacy_input(result)};
+    if (!errors.empty()) {
+        return tl::unexpected{std::move(errors)};
+    }
     return std::make_shared<const PartialVolumeConfigFDM>(std::move(result));
 }
 } // namespace Slic3r

@@ -48,7 +48,7 @@ public:
         Domain::SelectionId project_id,
         const Biz::Scene::BedSelection& bed_selection
     ) override;
-    void on_status_cache_changed(const Domain::SlicingId slicing_id) override;
+    void on_status_cache_status_code_changed(const Domain::SlicingId slicing_id) override;
 
     void on_removable_drive_status_changed(
         const boost::filesystem::path&,

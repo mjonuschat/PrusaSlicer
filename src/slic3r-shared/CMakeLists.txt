@@ -705,7 +705,7 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/ArrangeInteractor.hpp
         src/Slic3r/Biz/ArrangeInteractor.cpp
-        
+
         include/Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp
@@ -726,7 +726,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterUtils.cpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterFileHash.hpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterFileHash.cpp
-        
+
         include/Slic3r/App/PresetUpdaterUI.hpp
         src/Slic3r/App/PresetUpdaterUI.cpp
         include/Slic3r/App/AppConfig.hpp
@@ -736,6 +736,9 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/RemovableDrive/IRemovableDriveMonitor.hpp
         include/Slic3r/Biz/RemovableDrive/RemovableDriveData.hpp
         include/Slic3r/Biz/RemovableDrive/IRemovableDriveStatusListener.hpp
+
+        include/Slic3r/App/DisplayStrings.hpp
+        src/Slic3r/App/DisplayStrings.cpp
 )
 
 if (WIN32)

@@ -81,7 +81,7 @@ public:
         update_sla_viewer_object_data(id, instance_id);
     }
 
-    void on_status_cache_changed(const Domain::SlicingId id) override;
+    void on_status_cache_status_code_changed(const Domain::SlicingId id) override;
 
     /**
      * @name Implementation of Biz::ISelectedProjectChangedListener public interface

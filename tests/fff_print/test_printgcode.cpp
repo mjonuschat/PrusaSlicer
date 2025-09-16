@@ -250,8 +250,10 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
                 config.print.items.opt("infill_extruder").set(2);
                 config.print.items.opt("solid_infill_extruder").set(2);
                 config.print.items.opt("perimeter_extruder").set(2);
-                config.tool.at(0).items.opt("support_material_extruder").set(2);
-                config.tool.at(0).items.opt("support_material_interface_extruder").set(2);
+                for (auto& tool_settings : config.tool) {
+                    tool_settings.items.opt("support_material_extruder").set(2);
+                    tool_settings.items.opt("support_material_interface_extruder").set(2);
+                }
 
                 std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
                 THEN("current_extruder is processed in the start gcode and set for second extruder") {

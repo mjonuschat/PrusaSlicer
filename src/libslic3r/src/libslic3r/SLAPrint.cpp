@@ -1175,12 +1175,9 @@ void SLAPrint::process()
             throw_if_canceled();
             set_done(currentstep);
         }
-        
+
         st += printsteps.progressrange(currentstep);
     }
-
-    // If everything vent well
-    m_report_status(*this, 100, _u8L("Slicing done"));
 
 #ifdef SLAPRINT_DO_BENCHMARK
     std::string csvbenchstr;
@@ -1531,18 +1528,14 @@ Domain::SLA::DrainHoles SLAPrintObject::transformed_drainhole_points() const
     return drainholes;
 }
 
-void SLAPrint::StatusReporter::operator()(SLAPrint &         p,
-                                          double             st,
-                                          const std::string &msg,
-                                          unsigned           flags,
-                                          const std::string &logmsg)
+void SLAPrint::StatusReporter::operator()(
+    SLAPrint& p,
+    double st,
+    Biz::Slicing::ProgressInfo msg
+)
 {
     m_st = st;
-    BOOST_LOG_TRIVIAL(info)
-        << st << "% " << msg << (logmsg.empty() ? "" : ": ") << logmsg
-        << log_memory_info();
-
-    p.set_status(int(std::round(st)), msg, flags);
+    p.set_status(Percentage{std::round(st)}, msg);
 }
 
 namespace csg {

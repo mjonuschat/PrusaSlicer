@@ -527,7 +527,7 @@ void PrintObject::slice()
 {
     if (! this->set_started(posSlice))
         return;
-    m_print->set_status(10, _u8L("Processing triangulated mesh"));
+    m_print->set_status(Domain::Percentage{10}, Biz::Slicing::ProgressInfo::ProcessingTriangulatedMesh);
     std::vector<double> layer_height_profile;
     this->update_layer_height_profile(*this->model_object(), m_slicing_params, layer_height_profile);
     m_print->throw_if_canceled();
@@ -571,8 +571,11 @@ void PrintObject::slice()
                 Layer::build_up_down_graph(*m_layers[layer_idx - 1], *m_layers[layer_idx]);
             }
         });
-    if (m_layers.empty())
-        throw Slic3r::SlicingError("No layers were detected. You might want to repair your STL file(s) or check their size or thickness and retry.\n");    
+    if (m_layers.empty()) {
+        throw Biz::Slicing::Exception{
+            Biz::Slicing::Error{Biz::Slicing::ErrorCode::NoLayers}
+        };
+    }
     this->set_done(posSlice);
 }
 

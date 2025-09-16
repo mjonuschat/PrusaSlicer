@@ -15,6 +15,8 @@ enum class PopNotificationType
     Eject,
     UserAccountLogin,
     UserAccountTransientError,
+    SlicingWarning,
+    SlicingError,
 };
 
 enum class PopNotificationLevel : int

@@ -374,9 +374,15 @@ GCodeGenerator::ObjectsLayerToPrint GCodeGenerator::collect_layers_to_print(cons
         // Check that there are extrusions on the very first layer. The case with empty
         // first layer may result in skirt/brim in the air and maybe other issues.
         if (layers_to_print.size() == 1u) {
-            if (!has_extrusions)
-                throw Slic3r::SlicingError(_u8L("There is an object with no extrusions in the first layer.") + "\n" +
-                                           _u8L("Object name") + ": " + object.model_object()->name);
+            if (!has_extrusions) {
+                throw Biz::Slicing::Exception{
+                    Biz::Slicing::Error{
+                        Biz::Slicing::ErrorCode::NoExtrusionInFirstLayer,
+                        {},
+                        object.model_object()->id()
+                    }
+                };
+            }
         }
 
         // In case there are extrusions on this layer, check there is a layer to lay it on.
@@ -403,20 +409,15 @@ GCodeGenerator::ObjectsLayerToPrint GCodeGenerator::collect_layers_to_print(cons
     }
 
     if (! warning_ranges.empty()) {
-        std::string warning;
-        size_t i = 0;
-        for (i = 0; i < std::min(warning_ranges.size(), size_t(3)); ++i)
-            warning += Slic3r::format(_u8L("Empty layer between %1% and %2%."),
-                                      warning_ranges[i].first, warning_ranges[i].second) + "\n";
-        if (i < warning_ranges.size())
-            warning += _u8L("(Some lines not shown)") + "\n";
-        warning += "\n";
-        warning += Slic3r::format(_u8L("Object name: %1%"), object.model_object()->name) + "\n\n"
-            + _u8L("Make sure the object is printable. This is usually caused by negligibly small extrusions or by a faulty model. "
-                "Try to repair the model or change its orientation on the bed.");
-
-        const_cast<Print*>(object.print())->active_step_add_warning(
-            PrintStateBase::WarningLevel::CRITICAL, warning);
+        const_cast<Print*>(object.print())
+            ->append_warning_callback(
+                Biz::Slicing::Warning{
+                    Biz::Slicing::WarningCode::EmptyLayers,
+                    {},
+                    object.model_object()->id(),
+                    Biz::Slicing::EmptyLayersWarningPayload{warning_ranges}
+                }
+            );
     }
 
     return layers_to_print;
@@ -738,10 +739,14 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
         for (const auto& [source, keyword] : validation_res) {
             reports += source + ": \"" + keyword + "\"\n";
         }
-        print->active_step_add_warning(PrintStateBase::WarningLevel::NON_CRITICAL,
-            _u8L("In the custom G-code were found reserved keywords:") + "\n" +
-            reports +
-            _u8L("This may cause problems in g-code visualization and printing time estimation."));
+        print->append_warning_callback(
+            Biz::Slicing::Warning{
+                Biz::Slicing::WarningCode::CustomGCodeReservedKeywords,
+                {},
+                std::nullopt,
+                Biz::Slicing::CustomGCodeReservedKeywordsWarningPayload{reports}
+            }
+        );
     }
 
     BOOST_LOG_TRIVIAL(info) << "Exporting G-code..." << log_memory_info();
@@ -771,8 +776,8 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
     ProcessorResult result{processor.finalize()};
     PostProcessorConfig post_processor_config = processor.post_processor_config();
     result = GCode::post_process(post_processor_config, std::move(result),
-        [print](PrintStateBase::WarningLevel warning_level, const std::string& message, int message_id) {
-            print->active_step_add_warning(warning_level, message, message_id);
+        [print](Biz::Slicing::Warning warning) {
+            print->append_warning_callback(std::move(warning));
         });
     const bool stealth_time_estimator_enabled = (print->config().get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinLegacy || print->config().get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinFirmware) && print->config().get<bool>("silent_mode");
     DoExport::update_print_estimated_stats(result, m_writer.extruders(), stealth_time_estimator_enabled, print->m_print_statistics);
@@ -1173,9 +1178,12 @@ void GCodeGenerator::_do_export(
             if ((initial_extruder_id = tool_ordering.first_extruder()) != static_cast<unsigned int>(-1))
                 break;
         }
-        if (initial_extruder_id == static_cast<unsigned int>(-1))
+        if (initial_extruder_id == static_cast<unsigned int>(-1)) {
             // No object to print was found, cancel the G-code export.
-            throw Slic3r::SlicingError(_u8L("No extrusions were generated for objects."));
+            throw Biz::Slicing::Exception{
+                Biz::Slicing::Error{Biz::Slicing::ErrorCode::NoExtrusions}
+            };
+        }
         // We don't allow switching of extruders per layer by Model::custom_gcode_per_print_z in sequential mode.
         // Use the extruder IDs collected from Regions.
         this->set_extruders(print.extruders(), print.config());
@@ -1184,9 +1192,12 @@ void GCodeGenerator::_do_export(
         // If the tool ordering has been pre-calculated by Print class for wipe tower already, reuse it.
         tool_ordering = print.tool_ordering();
         tool_ordering.assign_custom_gcodes(print);
-        if (tool_ordering.all_extruders().empty())
+        if (tool_ordering.all_extruders().empty()) {
             // No object to print was found, cancel the G-code export.
-            throw Slic3r::SlicingError(_u8L("No extrusions were generated for objects."));
+            throw Biz::Slicing::Exception{
+                Biz::Slicing::Error{Biz::Slicing::ErrorCode::NoExtrusions}
+            };
+        }
         has_wipe_tower = print.has_wipe_tower() && tool_ordering.has_wipe_tower();
         initial_extruder_id = (has_wipe_tower && ! print.config().get<bool>("single_extruder_multi_material_priming")) ?
             // The priming towers will be skipped.
@@ -1412,9 +1423,11 @@ void GCodeGenerator::_do_export(
                     // This is not Marlin, M1 command is probably not supported.
                     // (See https://github.com/prusa3d/PrusaSlicer/issues/5441.)
                     if (overlap) {
-                        print.active_step_add_warning(PrintStateBase::WarningLevel::CRITICAL,
-                            _u8L("Your print is very close to the priming regions. "
-                              "Make sure there is no collision."));
+                        print.append_warning_callback(
+                            Biz::Slicing::Warning{
+                                Biz::Slicing::WarningCode::CloseToPrimingRegions
+                            }
+                        );
                     } else {
                         // Just continue printing, no action necessary.
                     }

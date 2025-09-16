@@ -41,7 +41,7 @@ void SlicingInteractor::create_process(
 )
 {
     SPDLOG_INFO("{}: create process", fmt::streamed(id));
-    update_status(id, {StatusCode::Modified});
+    update_status(id, StatusCode::Modified);
     m_processes.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(id),
@@ -130,7 +130,7 @@ void SlicingInteractor::slice_all()
     m_slicing_queue = {};
     for (const auto& pair : m_processes) {
         const SlicingId id{pair.first};
-        const StatusCode status{get_status(id).code};
+        const StatusCode status{get_status(id)};
         if (status == StatusCode::Empty || status == StatusCode::Finished) {
             continue;
         }
@@ -160,30 +160,36 @@ SlicingId SlicingInteractor::get_process_id(const Domain::SelectionId bed_instan
     return {m_current_project_id, bed_instance_id};
 }
 
-void SlicingInteractor::on_status(const Status status, const SlicingId id)
+void SlicingInteractor::on_status(const StatusUpdate status_update, const SlicingId id)
 {
-    SPDLOG_INFO("{}: status: {}", fmt::streamed(id), fmt::streamed(status));
+    const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
 
-    {
-        const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
-        if (m_statuses.contains(id)) {
-            m_statuses[id] = status;
-        }
+    SPDLOG_INFO("{}: status_update: {}", fmt::streamed(id), fmt::streamed(status_update));
+
+    if (!m_statuses.contains(id)) {
+        return;
     }
 
-    if (status.code == StatusCode::InvalidData) {
+    const bool status_code_udpated{status_update.code && status_update.code != m_statuses.at(id)};
+    if (status_update.code) {
+        m_statuses.at(id) = *status_update.code;
+    }
+
+    if (status_update.code == StatusCode::InvalidData) {
         on_fdm_result({}, id);
         on_sla_result(id, {});
     }
 
-    if (!m_dispatcher.dispatch_on_main_thread([this, status, id]() {
-        process_slicing_queue();
+    if (!m_dispatcher.dispatch_on_main_thread([this, status_update, id, status_code_udpated]() {
+        if (status_code_udpated) {
+            process_slicing_queue();
+        }
         invoke_listeners<IStatusListener>([&](auto* listener) {
-            listener->on_status_changed(status, id);
+            listener->on_status_changed(status_update, id);
         });
     }))
     {
-        SPDLOG_INFO("{}: status not dispatched", fmt::streamed(id), fmt::streamed(status));
+        SPDLOG_INFO("{}: status update dispatched", fmt::streamed(id), fmt::streamed(status_update));
     }
 }
 
@@ -321,7 +327,7 @@ void SlicingInteractor::process_update_requests()
     std::set<SlicingId> to_remove;
     for (auto& [id, request] : m_update_requests) {
         BackgroundProcess& process{m_processes.at(id)};
-        if (is_thread_active(get_status(id).code)) {
+        if (is_thread_active(get_status(id))) {
             continue;
         }
 
@@ -353,7 +359,7 @@ void SlicingInteractor::process_update_requests()
     });
 }
 
-void SlicingInteractor::update_status(const SlicingId id, const Status status)
+void SlicingInteractor::update_status(const SlicingId id, const StatusCode status)
 {
     const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
     m_statuses[id] = status;
@@ -363,12 +369,12 @@ int64_t SlicingInteractor::get_active_processes_count() const
 {
     const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
     return std::ranges::count_if(m_statuses, [](const auto& pair) {
-        const StatusCode status{pair.second.code};
+        const StatusCode status{pair.second};
         return is_thread_active(status);
     });
 }
 
-Status SlicingInteractor::get_status(const SlicingId id) const
+StatusCode SlicingInteractor::get_status(const SlicingId id) const
 {
     const LoggingScopeLock lock{m_status_mutex, "slicing statuses"};
     ASSERT(m_statuses.contains(id));

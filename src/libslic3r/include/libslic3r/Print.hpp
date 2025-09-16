@@ -590,14 +590,13 @@ public:
         const Domain::Preset::HwPrinterConfig& hw_config
     ) override;
 
-    bool apply(
+    Biz::Print::ApplyStatus::Status apply(
         const Domain::Model& model,
         const Domain::FullConfigFDMPtr& new_full_config_ptr,
         const Biz::Print::SerializedConfig& serialized_config,
         const Domain::Preset::HwPrinterConfig& hw_config,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
-        const std::optional<Domain::CustomGCode::Info>& custom_gcode,
-        std::vector<std::string>* warnings = nullptr
+        const std::optional<Domain::CustomGCode::Info>& custom_gcode
     );
 
     SlicingSync::PrintAndObjectSteps update_config(
@@ -636,7 +635,7 @@ public:
     bool                has_brim() const;
 
     // Returns an empty string if valid, otherwise returns an error message.
-    std::string         validate(std::vector<std::string>* warnings = nullptr) const override;
+    Biz::Print::ValidationResult validate() const;
     double              skirt_first_layer_height() const;
     Flow                brim_flow() const;
     Flow                skirt_flow() const;

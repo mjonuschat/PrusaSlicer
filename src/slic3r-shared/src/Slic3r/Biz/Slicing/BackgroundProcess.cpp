@@ -15,6 +15,7 @@
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/Utils.hpp"
 #include "Slic3r/Time.hpp"
+#include <boost/algorithm/string.hpp>
 
 namespace {
 using namespace Slic3r;
@@ -82,28 +83,6 @@ LoggingScopeLock::~LoggingScopeLock() {
     m_mutex.unlock();
 }
 
-std::ostream& operator<<(std::ostream& output, const StatusCode& status_code) {
-    switch(status_code) {
-        case StatusCode::Empty: return output << "Empty";
-        case StatusCode::Updating: return output << "Updating";
-        case StatusCode::Running: return output << "Running";
-        case StatusCode::Finished: return output << "Finished";
-        case StatusCode::Modified: return output << "Modified";
-        case StatusCode::Stopping: return output << "Stopping";
-        case StatusCode::Removed: return output << "Removed";
-        default: return output << "Unknown";
-    }
-}
-
-std::ostream& operator<<(std::ostream& output, const Status& status) {
-    output << "{code: ";
-    output << status.code;
-    output << ", has_error: " << !status.error.empty();
-    output << ", has_warrnings: " << !status.warrnings.empty();
-    output << "}";
-    return output;
-}
-
 bool is_thread_active(const StatusCode status) {
     return status == StatusCode::Running
         || status == StatusCode::Stopping
@@ -131,7 +110,7 @@ BackgroundProcess::BackgroundProcess(
 ) :
     m_printer_technology{Slicing::get_printer_technology(config)},
     m_print{init_print(m_printer_technology, callbacks, id)},
-    m_on_status{[call = std::reference_wrapper(callbacks), id](const Status status) {
+    m_on_status{[call = std::reference_wrapper(callbacks), id](const StatusUpdate status) {
         call.get().on_status(status, id);
     }},
     m_on_exception{[call = std::reference_wrapper(callbacks), id](std::exception_ptr exception) {
@@ -157,7 +136,7 @@ BackgroundProcess::BackgroundProcess(
 )
     : m_printer_technology{Slicing::get_printer_technology(config)}
     , m_print{std::move(print)}
-    , m_on_status{[call = std::reference_wrapper(callbacks), id](const Status status) {call.get().on_status(status, id); }}
+    , m_on_status{[call = std::reference_wrapper(callbacks), id](const StatusUpdate status) {call.get().on_status(status, id); }}
     , m_get_status{[call = std::reference_wrapper(callbacks), id]() { return call.get().get_status(id); }}
     , m_id{id}
 {
@@ -186,31 +165,43 @@ void BackgroundProcess::update(
 
     const LoggingScopeLock lock{m_mutex, "background process"};
 
-    const Status previous_status{m_get_status()};
-    ASSERT(!is_thread_active(previous_status.code), "Update must be called on stopped thread!");
+    const StatusCode previous_status{m_get_status()};
+    ASSERT(!is_thread_active(previous_status), "Update must be called on stopped thread!");
     std::optional<ApplyStatus::Status> apply_status;
     const ScopeGuard guard{[this, &previous_status, &apply_status]() {
         ASSERT(apply_status);
 
+        const bool invalid_data{std::holds_alternative<ApplyStatus::InvalidData>(*apply_status)};
         const bool unchanged{std::holds_alternative<ApplyStatus::Unchanged>(*apply_status)};
         const bool changed{std::holds_alternative<ApplyStatus::Changed>(*apply_status)};
-        const bool invalid_data{std::holds_alternative<ApplyStatus::InvalidData>(*apply_status)};
+        const bool empty{std::holds_alternative<ApplyStatus::Empty>(*apply_status)};
 
-        if (this->m_print->empty()) {
-            this->m_on_status({StatusCode::Empty});
-        } else if (previous_status.code == StatusCode::Finished && unchanged) {
-            this->m_on_status({StatusCode::Finished});
-        } else if (unchanged){
-            this->m_on_status({StatusCode::Modified, previous_status.error, previous_status.warrnings});
-        } else if (changed) {
-            const auto& changed_status{std::get<ApplyStatus::Changed>(*apply_status)};
-            this->m_on_status({StatusCode::Modified, "", changed_status.warrnings});
-        } else if (invalid_data) {
+        StatusUpdate status_update;
+        status_update.clear_progress = true;
+        status_update.clear_warnings = true;
+        status_update.clear_errors = true;
+        if (invalid_data) {
             const auto& invalid_data_status{std::get<ApplyStatus::InvalidData>(*apply_status)};
-            this->m_on_status({StatusCode::InvalidData, invalid_data_status.error, {} });
-        } else {
+            status_update.code = StatusCode::InvalidData;
+            status_update.errors_to_append = invalid_data_status.errors;
+        } else if (empty) {
+            status_update.code = StatusCode::Empty;
+        } else if (unchanged) {
+            if (previous_status == StatusCode::InvalidData) {
+                status_update.code = StatusCode::Modified;
+            } else {
+                status_update.code = previous_status;
+                status_update.clear_warnings = false;
+                status_update.clear_errors = false;
+            }
+        } else if (changed){
+            const auto& changed_status{std::get<ApplyStatus::Changed>(*apply_status)};
+            status_update.code = StatusCode::Modified;
+            status_update.warnings_to_append = changed_status.warrnings;
+        }  else {
             PANIC("Unreachable state!");
         }
+        this->m_on_status(status_update);
     }};
 
     this->m_on_status({StatusCode::Updating});
@@ -258,28 +249,49 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
     this->stop();
     this->queue_action([this, &thumbnail_generator]() {
         this->m_thread = {}; // Wait for join.
-        ASSERT(!is_thread_active(m_get_status().code), "The thread is stopped afterwards!");
+        ASSERT(!is_thread_active(m_get_status()), "The thread is stopped afterwards!");
 
         const LoggingScopeLock lock{m_mutex, "background process"};
 
-        if (m_get_status().code != StatusCode::Modified) {
+        if (m_get_status() != StatusCode::Modified) {
             return;
         }
-        m_on_status({StatusCode::Running});
+        StatusUpdate status_update;
+        status_update.code = StatusCode::Running;
+        status_update.progress = Biz::Slicing::Progress{
+            Domain::Percentage{0},
+            Biz::Slicing::ProgressInfo::Initializing
+        };
+        m_on_status(status_update);
         this->m_thread = JThread{
             [this, &thumbnail_generator](StopToken stop_token, IPrint* print) {
                 print->stop_token = stop_token;
+                print->progress_callback = [this](Biz::Slicing::Progress progress){
+                    StatusUpdate status_update;
+                    status_update.progress = progress;
+                    m_on_status(status_update);
+                };
+                print->append_warning_callback = [this](const Biz::Slicing::Warning& warning) {
+                    StatusUpdate status_update;
+                    status_update.warnings_to_append = {warning};
+                    m_on_status(status_update);
+                };
 
                 bool finished{false};
-                std::string slicing_error;
+                std::optional<Biz::Slicing::Error> slicing_error;
                 const ScopeGuard guard{[this, &finished, &slicing_error]() {
+
+                    StatusUpdate status_update;
+                    status_update.clear_progress = true;
                     if (finished) {
-                        m_on_status({StatusCode::Finished});
-                    } else if(!slicing_error.empty()) {
-                        m_on_status({StatusCode::InvalidData, slicing_error, {}});
+                        status_update.code = StatusCode::Finished;
+                    } else if(slicing_error) {
+                        status_update.code = StatusCode::InvalidData;
+                        status_update.errors_to_append = {*slicing_error};
                     } else {
-                        m_on_status({StatusCode::Modified});
+                        status_update.code = StatusCode::Modified;
                     }
+                    m_on_status(status_update);
                 }};
 
                 cpptrace::try_catch(
@@ -287,7 +299,7 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
                         print->slice(m_id, thumbnail_generator);
                         finished = true;
                     },
-                    [&](const SlicingError& error) { slicing_error = error.what(); },
+                    [&](const Biz::Slicing::Exception& exception) { slicing_error = exception.error(); },
                     [&](CanceledException&) { /* Intentionally pass. */ },
                     [&](){
                         SPDLOG_CRITICAL("Unhandled exception on background thread!");
@@ -304,7 +316,7 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
 void BackgroundProcess::stop()
 {
     this->queue_action([this]() {
-        if (m_get_status().code == StatusCode::Running) {
+        if (m_get_status() == StatusCode::Running) {
             SPDLOG_INFO("{}: stop", fmt::streamed(m_id));
             this->m_thread.request_stop();
             this->m_on_status({StatusCode::Stopping});

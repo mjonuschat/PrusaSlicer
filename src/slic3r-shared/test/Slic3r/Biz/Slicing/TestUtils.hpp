@@ -36,19 +36,20 @@ struct ModelOnBed {
 ModelOnBed get_cubes_model(const int count, const int row_size);
 
 struct StatusEvent {
-    Biz::Slicing::Status status;
+    Biz::Slicing::StatusCode status_code;
     Domain::SlicingId slicing_id;
 };
 
 std::ostream& operator<<(std::ostream& output, const StatusEvent& status_event);
 
 bool operator==(const StatusEvent& a, const StatusEvent& b);
-
 using StatusEvents = std::vector<StatusEvent>;
 
 struct StatusListener : public Biz::Slicing::IStatusListener {
-    virtual void on_status_changed(const Biz::Slicing::Status status, const Domain::SlicingId id) override {
-        status_events.push_back(StatusEvent{status, id});
+    virtual void on_status_changed(const Biz::Slicing::StatusUpdate status_update, const Domain::SlicingId id) override {
+        if (status_update.code) {
+            status_events.push_back(StatusEvent{*status_update.code, id});
+        }
     }
 
     std::vector<StatusEvent> status_events;

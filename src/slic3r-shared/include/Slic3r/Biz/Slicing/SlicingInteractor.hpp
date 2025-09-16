@@ -48,7 +48,7 @@ public:
 
 struct IStatusListener : ISlicingListener
 {
-    virtual void on_status_changed(const Status, const Domain::SlicingId) = 0;
+    virtual void on_status_changed(const StatusUpdate, const Domain::SlicingId) = 0;
 };
 
 struct IWipeTowerGeometryListener : ISlicingListener
@@ -109,10 +109,10 @@ public:
     void on_fdm_result(FDMResult&&, Domain::SlicingId) override;
     void on_sla_result(const Domain::SlicingId&, SLAResult&&) override;
     void on_sla_object(const Domain::SlicingId&, Sla::Object&&) override;
-    void on_status(const Status, Domain::SlicingId) override;
+    void on_status(const StatusUpdate, Domain::SlicingId) override;
     void on_exception(std::exception_ptr exception, Domain::SlicingId) override;
     void on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_tower_geometry, const Domain::SlicingId id) override;
-    Status get_status(const Domain::SlicingId id) const override;
+    StatusCode get_status(const Domain::SlicingId id) const override;
 
 private:
     Domain::SlicingId get_process_id(const Domain::SelectionId bed_instance_id) const;
@@ -120,7 +120,7 @@ private:
     void process_slicing_queue();
     void process_update_requests();
     int64_t get_active_processes_count() const;
-    void update_status(const Domain::SlicingId id, const Status status);
+    void update_status(const Domain::SlicingId id, const StatusCode status);
     void create_process(
         Domain::Model& model,
         const Domain::ProjectMetadata& project_metadata,
@@ -134,7 +134,7 @@ private:
     // Any members accessed by the threads must be destroyed after
     // the threads!
     mutable std::mutex m_status_mutex;
-    std::map<Domain::SlicingId, Status> m_statuses;
+    std::map<Domain::SlicingId, StatusCode> m_statuses;
 
     std::deque<Domain::SlicingId> m_slicing_queue;
     std::map<Domain::SlicingId, UpdateRequest> m_update_requests;

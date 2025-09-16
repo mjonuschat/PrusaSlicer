@@ -8,10 +8,7 @@
 #include <Slic3r/Domain/ConfigContainer.hpp>
 #include <Slic3r/Domain/GCodeMetadata.hpp>
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
-#include "Slic3r/Log.hpp"
-
-#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "libslic3r/SlicingStatus.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/SlicingId.hpp"
 
@@ -22,27 +19,6 @@
 namespace Slic3r::Biz::Slicing::Sla {
 struct Object;
 } // namespace Slic3r::Biz::Slicing::Sla
-
-/*
-struct SlicingProcessOutput {
-    std::optional<Polygons> clearance_contours;
-
-    // GUI::GLCanvas3D does some things with print->objects to determine
-    // the state of the following. All these values are per object.
-    std::shared_ptr<const TriangleMesh> sla_backend_mesh;
-    std::shared_ptr<const TriangleMesh> sla_supports_mesh;
-    std::shared_ptr<const TriangleMesh> sla_pad_mesh;
-    std::shared_ptr<const std::vector<sla::SupportPoint>> points;
-    double sla_print_z;
-
-    std::shared_ptr<const WipeTowerData> wipe_tower_data;
-    std::shared_ptr<const GCodeProcessorResult> gcode_processor_result;
-    std::optional<SLAPrintStatistics> sla_print_statistics;
-    std::optional<PrintStatistics> print_statistics; //maybe should be part of GCodeProcessorResult?
-
-    std::optional<ToolOrdering> tool_ordering; // TickCodesManager needs that for_get_used_extruders
-};
-*/
 
 namespace Slic3r::Biz::Slicing {
 struct SLAResult;
@@ -56,30 +32,6 @@ private:
     std::string m_id;
 };
 
-enum class StatusCode
-{
-    Empty,
-    Updating,
-    Running,
-    Finished,
-    Modified,
-    Stopping,
-    Removed,
-    InvalidData
-};
-
-struct Status {
-    StatusCode code;
-
-    // TODO: will be enum in the future.
-    std::string error;
-    // TODO: will be vector of enums in the future.
-    std::vector<std::string> warrnings;
-};
-
-std::ostream& operator<<(std::ostream& output, const StatusCode& status_code);
-std::ostream& operator<<(std::ostream& output, const Status& status);
-
 bool is_thread_active(const StatusCode status);
 
 Domain::PrinterTechnology get_printer_technology(const Domain::ConfigPack& config);
@@ -91,10 +43,10 @@ public:
     virtual void on_fdm_result(FDMResult &&, Domain::SlicingId) = 0;
     virtual void on_sla_result(const Domain::SlicingId&, SLAResult&&) = 0;
     virtual void on_sla_object(const Domain::SlicingId&, Sla::Object&&) = 0;
-    virtual void on_status(const Status, Domain::SlicingId) = 0;
+    virtual void on_status(const StatusUpdate, Domain::SlicingId) = 0;
     virtual void on_exception(std::exception_ptr exception, Domain::SlicingId) = 0;
     virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, Domain::SlicingId) = 0;
-    virtual Status get_status(const Domain::SlicingId) const = 0;
+    virtual StatusCode get_status(const Domain::SlicingId) const = 0;
     virtual ~IProcessCallbacks() = default;
 };
 
@@ -139,16 +91,15 @@ public:
 private:
     Domain::PrinterTechnology m_printer_technology;
     std::unique_ptr<Print::IPrint> m_print;
-    std::function<void(Status)> m_on_status;
+    std::function<void(StatusUpdate)> m_on_status;
     std::function<void(std::exception_ptr)> m_on_exception;
-    std::function<Status()> m_get_status;
+    std::function<StatusCode()> m_get_status;
     Domain::SlicingId m_id;
 
     JThread::JThread m_thread;
     JThread::JThread m_helper_thread;
 
     void queue_action(const std::function<void()>& action);
-    
 
     // Update and slice must not run at the same time.
     std::mutex m_mutex;

@@ -58,7 +58,7 @@ public:
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
     void set_navigator(Navigator* navigator) override;
 
-    void on_status_cache_changed(const Domain::SlicingId id) override;
+    void on_status_cache_status_code_changed(const Domain::SlicingId id) override;
 
     void set_sidebars_visible(bool visible) override;
 

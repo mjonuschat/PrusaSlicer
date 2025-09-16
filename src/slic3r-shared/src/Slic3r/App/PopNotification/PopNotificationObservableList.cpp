@@ -84,6 +84,17 @@ void PopNotificationObservableList::erase_notification_by_index(size_t index)
     );
 }
 
+void PopNotificationObservableList::erase_notification_by_predicate(
+    std::function<bool(const PopNotificationData&)> predicate
+)
+{
+    for (int i = m_notifications.size() - 1; i >= 0; --i) {
+        if (predicate(*m_notifications[i])) {
+            erase_notification_by_index((size_t) i);
+        }
+    }
+}
+
 void PopNotificationObservableList::notification_updated(size_t index)
 {
 }

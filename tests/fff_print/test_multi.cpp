@@ -38,12 +38,12 @@ SCENARIO("Basic tests", "[Multi]")
         Test::TestConfig config{4};
         for (auto& tool_settings : config.tool) {
             tool_settings.items.opt("nozzle_diameter").set(0.6);
+            tool_settings.items.opt("support_material_extruder").set(0);
         }
 
         config.print.items.opt("perimeter_extruder").set(2);
         config.print.items.opt("solid_infill_extruder").set(2);
         config.print.items.opt("infill_extruder").set(4);
-        config.tool.at(0).items.opt("support_material_extruder").set(0);
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("Sliced successfully") {
             REQUIRE(! gcode.empty());
@@ -57,13 +57,13 @@ SCENARIO("Basic tests", "[Multi]")
         Test::TestConfig config{4};
         for (auto& tool_settings : config.tool) {
             tool_settings.items.opt("nozzle_diameter").set(0.6);
+            tool_settings.items.opt("support_material_extruder").set(0);
+            tool_settings.items.opt("support_material_interface_extruder").set(2);
         }
 
         config.print.items.opt("perimeter_extruder").set(2);
         config.print.items.opt("solid_infill_extruder").set(2);
         config.print.items.opt("infill_extruder").set(4);
-        config.tool.at(0).items.opt("support_material_extruder").set(0);
-        config.tool.at(0).items.opt("support_material_interface_extruder").set(2);
 
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("Sliced successfully") {
@@ -78,11 +78,11 @@ TEST_CASE("Ooze prevention", "[Multi]")
 
     for (auto& tool_settings : config.tool) {
         tool_settings.items.opt("nozzle_diameter").set(0.6);
+        tool_settings.items.opt("support_material_extruder").set(4);
     }
     config.print.items.opt("raft_layers").set(2);
     config.print.items.opt("infill_extruder").set(2);
     config.print.items.opt("solid_infill_extruder").set(3);
-    config.tool.at(0).items.opt("support_material_extruder").set(4);
     config.print.items.opt("ooze_prevention").set(true);
 
     config.printer.items.opt("extruder_offset")
@@ -202,12 +202,13 @@ std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &
         }
     }
     Print print;
-    print.update(model, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
+    auto status{print.update(model, config, bed_instance, SerializedConfig{}, HwPrinterConfig{})};
+    REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(status));
     print.validate();
     return Test::gcode(print);
 }
 
-SCENARIO("Stacked cubes", "[Multi]")
+TEST_CASE("Stacked cubes", "[Multi]")
 {
     VolumeSettings lower_config;
 
@@ -226,18 +227,18 @@ SCENARIO("Stacked cubes", "[Multi]")
 
     for (auto& tool_settings : config.tool) {
         tool_settings.items.opt("nozzle_diameter").set(0.6);
+        tool_settings.items.opt("fill_density").set(Percentage{0});
+        tool_settings.items.opt("solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
+        tool_settings.items.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
+        // for preventing speeds from being altered
+        tool_settings.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
     }
-    config.tool.at(0).items.opt("fill_density").set(Percentage{0});
-    config.tool.at(0).items.opt("solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
-    config.tool.at(0).items.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
 
     // for preventing speeds from being altered
     for (auto& filament_settings : config.filament) {
         filament_settings.items.opt("cooling").set(false);
     }
 
-    // for preventing speeds from being altered
-    config.tool.at(0).items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
 
     auto test_shells = [](const std::string &gcode) {
         GCodeReader       parser;

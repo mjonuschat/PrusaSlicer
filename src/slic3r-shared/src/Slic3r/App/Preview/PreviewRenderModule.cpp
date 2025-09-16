@@ -329,7 +329,7 @@ void PreviewRenderModule::on_selected_bed_instances_changed(Domain::SelectionId 
     request_render();
 }
 
-void PreviewRenderModule::on_status_cache_changed(const Domain::SlicingId id)
+void PreviewRenderModule::on_status_cache_status_code_changed(const Domain::SlicingId id)
 {
     /*    if (m_project_interactor.selected_project_id() == id.project_id && m_viewer->has_data()) {
             const std::optional<Biz::Slicing::Status> status {

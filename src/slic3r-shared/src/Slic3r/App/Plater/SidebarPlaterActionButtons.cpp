@@ -1,5 +1,6 @@
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
 
+#include "Slic3r/App/DisplayStrings.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
@@ -49,7 +50,7 @@ void SidebarPlaterActionButtons::on_init(Biz::ProjectInteractor* project_interac
     );
 }
 
-void SidebarPlaterActionButtons::on_status_cache_changed(const Domain::SlicingId slicing_id)
+void SidebarPlaterActionButtons::on_status_cache_status_code_changed(const Domain::SlicingId slicing_id)
 {
     const BedSelection& selection{m_project_interactor->scene_interactor().bed_selection()};
     update_slice_button(selection);
@@ -68,7 +69,7 @@ struct BedStatus
     SlicingId slicing_id;
     std::size_t bed_index;
     StatusCode status;
-    std::string error;
+    std::vector<std::string> errors;
     std::vector<std::string> warrnings;
 };
 
@@ -79,6 +80,7 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
     }
 
     const Domain::SelectionId project_id{m_project_interactor->selected_project_id()};
+    const Domain::Project& project{m_project_interactor->workbench().project(project_id)};
     const BedInstances instances{
         get_selected_beds(project_id, selection, m_project_interactor->workbench())
     };
@@ -88,13 +90,24 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
         SlicingId slicing_id{project_id, bed_instance_ref.get().id().id};
         const auto status{m_project_interactor->status_cache().get_status(slicing_id)};
         if (status) {
+            using Biz::Slicing::Error;
+            std::vector<std::string> errors;
+            for (const Error& error : status->errors) {
+                errors.push_back(to_display_string(error, project));
+            }
+
+            using Biz::Slicing::Warning;
+            std::vector<std::string> warnings;
+            for (const Warning& warning : status->warrnings) {
+                warnings.push_back(to_display_string(warning, project));
+            }
             statuses.push_back(
                 BedStatus{
                     .slicing_id = slicing_id,
                     .bed_index  = bed_instance_ref.get().index(),
                     .status     = status->code,
-                    .error      = status->error,
-                    .warrnings  = status->warrnings
+                    .errors     = errors,
+                    .warrnings  = warnings
                 }
             );
         } else {
@@ -103,7 +116,7 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
                     .slicing_id = slicing_id,
                     .bed_index  = bed_instance_ref.get().index(),
                     .status     = StatusCode::InvalidData,
-                    .error      = "Missing status!",
+                    .errors     = {"Missing status!"},
                     .warrnings  = {}
                 }
             );
@@ -144,8 +157,13 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
         std::string error_mesage;
         for (const BedStatus& bed_status : statuses) {
             if (bed_status.status == StatusCode::InvalidData) {
-                const std::string error{bed_status.error.empty() ? _u8L("Unknown issue") : bed_status.error};
-                error_mesage += fmt::format("Bed {}: issue: {}\n", bed_status.bed_index, error);
+                std::string bed_error;
+                for (const std::string& error : bed_status.errors) {
+                    bed_error += fmt::format("Bed {}:\n", bed_status.bed_index);
+                    bed_error += error + "\n";
+                }
+                bed_error += bed_error.empty() ? "" : "\n";
+                error_mesage += bed_error;
             }
         }
 

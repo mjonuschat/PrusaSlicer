@@ -38,6 +38,7 @@ public:
 protected:
     void erase_notification(const PopNotificationData* to_erase);
     void erase_notification_by_index(size_t index);
+    void erase_notification_by_predicate(std::function<bool(const PopNotificationData&)>);
     void notification_updated(size_t index);
     void reset_notification_timeout(PopNotificationDataIt it);
     void stop_notification_timer(PopNotificationDataIt it) const;

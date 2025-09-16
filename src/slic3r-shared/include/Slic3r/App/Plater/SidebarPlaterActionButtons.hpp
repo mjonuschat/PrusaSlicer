@@ -19,7 +19,7 @@ public:
 
     void on_init(Biz::ProjectInteractor* project_interactor) override;
 
-    void on_status_cache_changed(const Domain::SlicingId id) override;
+    void on_status_cache_status_code_changed(const Domain::SlicingId id) override;
 
     void on_selected_bed_instances_changed(
         Domain::SelectionId project_id,

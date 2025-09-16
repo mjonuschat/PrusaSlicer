@@ -198,7 +198,7 @@ void PrintObject::make_perimeters()
     if (! this->set_started(posPerimeters))
         return;
 
-    m_print->set_status(20, _u8L("Generating perimeters"));
+    m_print->set_status(Domain::Percentage{20}, Biz::Slicing::ProgressInfo::GeneratingPerimeters);
     BOOST_LOG_TRIVIAL(info) << "Generating perimeters..." << log_memory_info();
     
     // Revert the typed slices into untyped slices.
@@ -305,7 +305,7 @@ void PrintObject::prepare_infill()
     if (! this->set_started(posPrepareInfill))
         return;
 
-    m_print->set_status(30, _u8L("Preparing infill"));
+    m_print->set_status(Domain::Percentage{30}, Biz::Slicing::ProgressInfo::PreparingInfill);
 
     if (m_typed_slices) {
         // To improve robustness of detect_surfaces_type() when reslicing (working with typed slices), see GH issue #7442.
@@ -465,7 +465,7 @@ void PrintObject::infill()
 
     if (this->set_started(posInfill)) {
         // TRN Status for the Print calculation 
-        m_print->set_status(45, _u8L("Making infill"));
+        m_print->set_status(Domain::Percentage{45}, Biz::Slicing::ProgressInfo::MakingInfill);
         const auto& adaptive_fill_octree = this->m_adaptive_fill_octrees.first;
         const auto& support_fill_octree = this->m_adaptive_fill_octrees.second;
 
@@ -514,7 +514,7 @@ void PrintObject::generate_support_spots()
 {
     if (this->set_started(posSupportSpotsSearch)) {
         BOOST_LOG_TRIVIAL(debug) << "Searching support spots - start";
-        m_print->set_status(65, _u8L("Searching support spots"));
+        m_print->set_status(Domain::Percentage{65}, Biz::Slicing::ProgressInfo::SearchingSupportSpots);
         if (!this->shared_regions()->generated_support_points.has_value()) {
             PrintTryCancel                cancel_func = m_print->make_try_cancel();
             SupportSpotsGenerator::Params params{this->print()->m_config.get<std::vector<std::string>>("filament_type"),
@@ -539,17 +539,9 @@ void PrintObject::generate_support_material()
     if (this->set_started(posSupportMaterial)) {
         this->clear_support_layers();
         if ((this->has_support() && m_layers.size() > 1) || (this->has_raft() && ! m_layers.empty())) {
-            m_print->set_status(70, _u8L("Generating support material"));    
+            m_print->set_status(Domain::Percentage{70}, Biz::Slicing::ProgressInfo::GeneratingSupportMaterial);
             this->_generate_support_material();
             m_print->throw_if_canceled();
-        } else {
-#if 0
-            // Printing without supports. Empty layer means some objects or object parts are levitating,
-            // therefore they cannot be printed without supports.
-            for (const Layer *layer : m_layers)
-                if (layer->empty())
-                    throw Slic3r::SlicingError("Levitating objects cannot be printed without supports.");
-#endif
         }
         this->set_done(posSupportMaterial);
     }
@@ -562,7 +554,7 @@ void PrintObject::estimate_curled_extrusions()
             std::any_of(this->print()->m_print_regions.begin(), this->print()->m_print_regions.end(),
                         [](const PrintRegion *region) { return region->config().get<bool>("enable_dynamic_overhang_speeds"); })) {
             BOOST_LOG_TRIVIAL(debug) << "Estimating areas with curled extrusions - start";
-            m_print->set_status(88, _u8L("Estimating curled extrusions"));
+            m_print->set_status(Domain::Percentage{88}, Biz::Slicing::ProgressInfo::EstimatingCurledExtrusions);
 
             // Estimate curling of support material and add it to the malformaition lines of each layer
             float                         support_flow_width = support_material_flow(this, this->config().get<double>("layer_height")).width();
@@ -583,7 +575,7 @@ void PrintObject::calculate_overhanging_perimeters()
 {
     if (this->set_started(posCalculateOverhangingPerimeters)) {
         BOOST_LOG_TRIVIAL(debug) << "Calculating overhanging perimeters - start";
-        m_print->set_status(89, _u8L("Calculating overhanging perimeters"));
+        m_print->set_status(Domain::Percentage{89}, Biz::Slicing::ProgressInfo::CalculatingOverhangingPerimeters);
         std::vector<unsigned int>               extruders;
         std::unordered_set<const PrintRegion *> regions_with_dynamic_speeds;
         for (const PrintRegion *pr : this->print()->m_print_regions) {

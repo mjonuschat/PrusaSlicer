@@ -388,23 +388,27 @@ BuildVolume::ObjectState BuildVolume::volume_state_bbox(const BoundingBoxf3 volu
     return state;
 }
 
-bool BuildVolume::all_paths_inside(const Biz::libpgcode::ProcessorResult& paths, const BoundingBoxf3& paths_bbox, bool ignore_bottom) const
+bool BuildVolume::all_paths_inside(const Biz::libpgcode::MoveVertices& moves) const
 {
     auto move_valid = [](const Biz::libpgcode::MoveVertex &move) {
         return move.type == Biz::libpgcode::MoveType::Extrude && move.extrusion_role != GCodeExtrusionRole::Custom && move.width != 0.f && move.height != 0.f;
     };
     static constexpr const double epsilon = BedEpsilon;
 
-    const Biz::libpgcode::MoveVertices& moves = *paths.const_moves();
-
     switch (m_type) {
     case Type::Rectangle:
     {
+        Domain::BoundingBox3d paths_bbox{};
+        for (const Biz::libpgcode::MoveVertex& move : moves) {
+            if (move_valid(move)) {
+                paths_bbox = BB::merge(paths_bbox, move.position.cast<double>());
+            }
+        }
         Domain::BoundingBox3d build_volume = BB::inflated(this->bounding_volume(), epsilon);
-        if (m_max_print_height == 0.0)
+        if (m_max_print_height == 0.0) {
             build_volume.max.z() = std::numeric_limits<double>::max();
-        if (ignore_bottom)
-            build_volume.min.z() = -std::numeric_limits<double>::max();
+        }
+        build_volume.min.z() = -std::numeric_limits<double>::max();
         return build_volume.contains(paths_bbox);
     }
     case Type::Circle:

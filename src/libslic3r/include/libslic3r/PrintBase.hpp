@@ -22,6 +22,7 @@
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 #include "Slic3r/Domain/SlicingId.hpp"
 
+#include "libslic3r/SlicingStatus.hpp"
 #include "libslic3r/IThumbnailImageGenerator.hpp"
 #include "libslic3r/SerializedConfig.hpp"
 
@@ -470,17 +471,20 @@ namespace ApplyStatus {
 struct Unchanged
 {};
 
+struct Empty
+{};
+
 struct Changed
 {
-    std::vector<std::string> warrnings;
+    std::vector<Biz::Slicing::Warning> warrnings;
 };
 
 struct InvalidData
 {
-    std::string error;
+    std::vector<Biz::Slicing::Error> errors;
 };
 
-using Status = std::variant<InvalidData, Unchanged, Changed>;
+using Status = std::variant<InvalidData, Unchanged, Changed, Empty>;
 } // namespace ApplyStatus
 
 
@@ -505,6 +509,17 @@ public:
     virtual ~IPrint() = default;
 
     JThread::StopToken stop_token;
+    std::function<void(Biz::Slicing::Progress)> progress_callback{
+        [](Biz::Slicing::Progress) {}
+    };
+    std::function<void(Biz::Slicing::Warning)> append_warning_callback{
+        [](Biz::Slicing::Warning) {}
+    };
+};
+
+struct ValidationResult {
+    std::vector<Biz::Slicing::Error> errors;
+    std::vector<Biz::Slicing::Warning> warnings;
 };
 }
 
@@ -531,9 +546,6 @@ public:
     virtual void            clear() = 0;
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
     virtual std::vector<Domain::ObjectID> print_object_ids() const = 0;
-
-    // Validate the print, return empty string if valid, return error if process() cannot (or should not) be started.
-    virtual std::string     validate(std::vector<std::string>* warnings = nullptr) const { return std::string(); }
 
     const Domain::Model&                  model() const { return m_model; }
     std::optional<Domain::ModelWipeTower> wipe_tower() const {
@@ -601,9 +613,8 @@ public:
     // Register a custom status callback.
     void                    set_status_callback(status_callback_type cb) { m_status_callback = cb; }
     // Calls a registered callback to update the status, or print out the default message.
-    void                    set_status(int percent, const std::string &message, unsigned int flags = SlicingStatus::DEFAULT) {
-		if (m_status_callback) m_status_callback(SlicingStatus(percent, message, flags));
-        else { printf("%d => %s\n", percent, message.c_str()); std::fflush(stdout); }
+    void                    set_status(Domain::Percentage percent, Biz::Slicing::ProgressInfo message) {
+        progress_callback(Biz::Slicing::Progress{percent, message});
     }
 
     typedef std::function<void()>  cancel_callback_type;
@@ -725,16 +736,6 @@ protected:
 
 	bool            is_step_started_unguarded(PrintStepEnum step) const { return m_state.is_started_unguarded(step); }
 	bool            is_step_done_unguarded(PrintStepEnum step) const { return m_state.is_done_unguarded(step); }
-
-    // Add a slicing warning to the active Print step and send a status notification.
-    // This method could be called multiple times between this->set_started() and this->set_done().
-    void            active_step_add_warning(PrintStateBase::WarningLevel warning_level, const std::string &message, int message_id = 0) {
-    	std::pair<PrintStepEnum, bool> active_step = m_state.active_step_add_warning(warning_level, message, message_id, this->state_mutex());
-    	if (active_step.second)
-    		// Update UI.
-            this->status_update_warnings(static_cast<int>(active_step.first), warning_level, message);
-    }
-
 
     // After calling the apply() function, set_task() may be called to limit the task to be processed by process().
     template<typename PrintObject>

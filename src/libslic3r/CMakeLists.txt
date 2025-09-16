@@ -393,6 +393,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/Utils/JsonUtils.hpp
     src/libslic3r/Zipper.cpp
     src/libslic3r/Zipper.hpp
+    src/libslic3r/SlicingStatus.cpp
 
     src/libslic3r/libslic3r.h
     src/libslic3r/pchheader.cpp
@@ -449,6 +450,7 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/SupportSpotsGenerator.hpp
     include/libslic3r/TriangleMeshSlicer.hpp
     include/libslic3r/Utils.hpp
+    include/libslic3r/SlicingStatus.hpp
 
     "${CMAKE_CURRENT_BINARY_DIR}/include/libslic3r/libslic3r_version.h"
 )

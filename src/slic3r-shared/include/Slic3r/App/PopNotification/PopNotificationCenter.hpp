@@ -29,7 +29,10 @@ public:
     void on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status) override;
 
     // Slicing
-    void on_status_cache_changed(const Domain::SlicingId slicing_id) override;
+    void on_status_cache_status_code_changed(const Domain::SlicingId slicing_id) override;
+    void on_status_cache_progress_changed(const Domain::SlicingId slicing_id) override;
+    void on_status_cache_errors_changed(const Domain::SlicingId slicing_id) override;
+    void on_status_cache_warnings_changed(const Domain::SlicingId slicing_id) override;
 
     // Export / Upload
     void on_print_host_progress(size_t id, int progress) override;

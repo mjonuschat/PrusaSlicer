@@ -100,7 +100,7 @@ public:
     static constexpr const double BedEpsilon = 3. * EPSILON;
     // Called on final G-code paths.
     //FIXME The test does not take the thickness of the extrudates into account!
-    bool         all_paths_inside(const Biz::libpgcode::ProcessorResult& paths, const BoundingBoxf3& paths_bbox, bool ignore_bottom = true) const;
+    bool all_paths_inside(const Biz::libpgcode::MoveVertices& moves) const;
 
     const std::pair<std::vector<Vec2d>, std::vector<Vec2d>>& top_bottom_convex_hull_decomposition_scene() const { return m_top_bottom_convex_hull_decomposition_scene; }
     const std::pair<std::vector<Vec2d>, std::vector<Vec2d>>& top_bottom_convex_hull_decomposition_bed() const { return m_top_bottom_convex_hull_decomposition_bed; }

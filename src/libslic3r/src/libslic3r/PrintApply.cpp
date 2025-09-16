@@ -52,17 +52,14 @@ using SlicingSync::StepsPerPrintObject;
 using Domain::ModelWipeTower;
 using Biz::Algorithms::TriangleStateType;
 using Domain::ObjectID;
-using Domain::FullConfigFDM;
-using Domain::PartialConfig;
 using Domain::FullConfigFDMPtr;
-using Domain::ObjectSettings;
-using Domain::PartialObjectConfigFDM;
 using Domain::PartialObjectConfigFDMPtr;
 using Domain::VolumeSettings;
 using Domain::PartialVolumeConfigFDM;
 using Domain::PartialVolumeConfigFDMPtr;
 using Biz::Parser::PlaceholderParser;
 using ParserConfig = Biz::Parser::IO::Config;
+using Errors = std::vector<Biz::Slicing::Error>;
 
 static inline bool transform3d_lower(const Transform3d &lhs, const Transform3d &rhs) 
 {
@@ -534,17 +531,18 @@ PrintRegionConfigView create_fuzzy_skin_painted_region_config(const PrintRegionC
 };
 
 // Generate PrintRegions from scratch.
-std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
+tl::expected<std::shared_ptr<PrintObjectRegions>, Errors>
+generate_print_object_regions(
     std::shared_ptr<PrintObjectRegions> print_object_regions_old,
-    const Domain::ModelVolumePtrs&      model_volumes,
-    const LayerRanges&                  model_layer_ranges,
-    const PartialObjectConfigFDMPtr&    new_object_settings,
-    const FullConfigFDMPtr&             new_full_config,
-    const Transform3d&                  trafo,
-    size_t                              num_extruders,
-    const float                         xy_size_compensation,
-    const std::vector<unsigned int>&    painting_extruders,
-    const bool                          has_painted_fuzzy_skin
+    const Domain::ModelVolumePtrs& model_volumes,
+    const LayerRanges& model_layer_ranges,
+    const PartialObjectConfigFDMPtr& new_object_settings,
+    const FullConfigFDMPtr& new_full_config,
+    const Transform3d& trafo,
+    size_t num_extruders,
+    const float xy_size_compensation,
+    const std::vector<unsigned int>& painting_extruders,
+    const bool has_painted_fuzzy_skin
 )
 {
     // Reuse the old object or generate a new one.
@@ -587,12 +585,15 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
                         if (layer_range.config) {
                             new_volume_settings.push_back(std::make_shared<const PartialVolumeConfigFDM>(*layer_range.config));
                         }
-                        const PartialVolumeConfigFDMPtr squashed_settings{prepare_slicing_volume_input(
+                        const auto squashed_settings{prepare_slicing_volume_input(
                             volume.volume_settings,
                             new_full_config->tools_count(),
                             new_full_config->filaments_count()
                         )};
-                        new_volume_settings.push_back(squashed_settings);
+                        if (!squashed_settings.has_value()) {
+                            return tl::unexpected{squashed_settings.error()};
+                        }
+                        new_volume_settings.push_back(squashed_settings.value());
 
                         const PrintRegionConfigView new_config{
                             new_full_config,
@@ -620,14 +621,17 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
                                 if (PrintObjectRegions::BoundingBox parent_bbox = find_modifier_volume_extents(layer_range, parent_region_id); parent_bbox.intersects(*bbox)) {
                                     PrintRegionConfigView new_config{parent_region.region->config()};
 
-                                    const PartialVolumeConfigFDMPtr squashed_settings{
+                                    const auto squashed_settings{
                                         prepare_slicing_volume_input(
                                             volume.volume_settings,
                                             new_full_config->tools_count(),
                                             new_full_config->filaments_count()
                                         )
                                     };
-                                    new_config.add_override(squashed_settings);
+                                    if (!squashed_settings.has_value()) {
+                                        return tl::unexpected{squashed_settings.error()};
+                                    }
+                                    new_config.add_override(squashed_settings.value());
                                     // Only create new region for a modifier, which actually modifies config of it's parent.
                                     if (new_config != parent_region.region->config()) {
                                         added = true;
@@ -689,12 +693,9 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
     return out;
 }
 
-void validate_print_config_change(const PrintConfigView &old_config, const PrintConfigView &new_config, std::vector<std::string> *warnings)
+std::vector<Biz::Slicing::Warning> validate_print_config_change(const PrintConfigView &old_config, const PrintConfigView &new_config)
 {
-    if (warnings == nullptr) {
-        return;
-    }
-
+    std::vector<Biz::Slicing::Warning> warnings;
     if (
         old_config.get<int>("bed_temperature_extruder") > 0
         && old_config.get<int>("bed_temperature_extruder")
@@ -704,9 +705,10 @@ void validate_print_config_change(const PrintConfigView &old_config, const Print
         if (old_config.get<std::vector<int>>("bed_temperature") != new_config.get<std::vector<int>>("bed_temperature")
          || old_config.get<std::vector<int>>("first_layer_bed_temperature") != new_config.get<std::vector<int>>("first_layer_bed_temperature")) {
             // When any bed temperature changes, we warn the user that the bed temperature extruder may need to be changed.
-            warnings->emplace_back("_BED_TEMPS_CHANGED");
+            warnings.emplace_back(Biz::Slicing::Warning{Biz::Slicing::WarningCode::BedTempsChanged});
         }
     }
+    return warnings;
 }
 
 PrintSteps get_custom_gcode_invalidated_steps(
@@ -1056,7 +1058,7 @@ struct PrintObjectsSyncResult {
     std::set<PrintObject*> reused_objects;
 };
 
-PrintObjectsSyncResult sync_print_objects(
+tl::expected<PrintObjectsSyncResult, Errors> sync_print_objects(
     const Domain::ModelObjectPtrs& model_objects,
     const std::map<PrintObjectUniqueId, PrintObject*>& reuse_candidates,
     const FullConfigFDMPtr& new_full_config,
@@ -1073,12 +1075,15 @@ PrintObjectsSyncResult sync_print_objects(
             shrinkage_compensation
         );
 
-        const auto object_settings_ptr{prepare_slicing_object_input(
+        const auto object_settings{prepare_slicing_object_input(
             model_object->object_settings,
             new_full_config->tools_count(),
             new_full_config->filaments_count()
         )};
-        const PrintObjectConfigView new_config{new_full_config, object_settings_ptr};
+        if (!object_settings.has_value()) {
+            return tl::unexpected{object_settings.error()};
+        }
+        const PrintObjectConfigView new_config{new_full_config, object_settings.value()};
 
         for (PrintObjectTrafoAndInstances& new_instances : print_instances) {
             const auto current_instace_it{
@@ -1135,7 +1140,7 @@ struct RegionsSyncResult
     std::vector<std::pair<PrintObject*, std::shared_ptr<PrintObjectRegions>>> regions;
 };
 
-RegionsSyncResult sync_regions(
+tl::expected<RegionsSyncResult, Errors> sync_regions(
     const PrintObjectPtrs& print_objects,
     const std::size_t num_extruders,
     const FullConfigFDMPtr& new_full_config
@@ -1152,7 +1157,7 @@ RegionsSyncResult sync_regions(
             print_object.model_object()->is_mm_painted()
         )};
 
-        const std::shared_ptr<PrintObjectRegions> new_regions{generate_print_object_regions(
+        const auto new_regions{generate_print_object_regions(
             nullptr,
             print_object.model_object()->volumes,
             LayerRanges(print_object.model_object()->layer_config_ranges, new_full_config->tools_count(), new_full_config->filaments_count()),
@@ -1164,6 +1169,9 @@ RegionsSyncResult sync_regions(
             painting_extruders,
             print_object.is_fuzzy_skin_painted()
         )};
+        if (!new_regions) {
+            return tl::unexpected{new_regions.error()};
+        }
 
         const PrintObjectRegions empty_regions;
         const PrintObjectRegions& current_regions{
@@ -1171,7 +1179,7 @@ RegionsSyncResult sync_regions(
         };
 
         const PrintAndObjectSteps invalidated_steps{
-            get_invalidated_steps(current_regions, *new_regions)
+            get_invalidated_steps(current_regions, **new_regions)
         };
 
         const auto print_objects_range_begin{it_print_object};
@@ -1184,7 +1192,7 @@ RegionsSyncResult sync_regions(
         result.invalidated_steps.print = invalidated_steps.first;
 
         for (auto it = print_objects_range_begin; it != print_objects_range_end; ++it) {
-            result.regions.push_back({*it, new_regions});
+            result.regions.push_back({*it, *new_regions});
             result.invalidated_steps.object.insert({*it, invalidated_steps.second});
         }
 
@@ -1243,7 +1251,7 @@ struct ModelSyncResult {
     InvalidatedSteps invalidated_steps;
 };
 
-ModelSyncResult sync_model(
+tl::expected<ModelSyncResult, Errors> sync_model(
     const Domain::Model& current_model,
     const Domain::Model& new_model,
     const PrintObjectPtrs& current_objects,
@@ -1279,7 +1287,7 @@ ModelSyncResult sync_model(
         get_reuse_candidates(model_objects_sync_result, object_map)
     };
 
-    const PrintObjectsSyncResult print_objects_sync_result{sync_print_objects(
+    const auto print_objects_sync_result{sync_print_objects(
         model_objects_sync_result.objects,
         reuse_candidates,
         new_full_config,
@@ -1287,20 +1295,26 @@ ModelSyncResult sync_model(
         shrinkage_compensation,
         print
     )};
+    if (!print_objects_sync_result) {
+        return tl::unexpected{print_objects_sync_result.error()};
+    }
 
-    const RegionsSyncResult regions_sync_result{
-        sync_regions(print_objects_sync_result.objects, num_extruders, new_full_config)
+    const auto regions_sync_result{
+        sync_regions(print_objects_sync_result->objects, num_extruders, new_full_config)
     };
+    if (!regions_sync_result) {
+        return tl::unexpected{regions_sync_result.error()};
+    }
 
     const InvalidatedSteps invalidated_steps{merge(
-        merge(model_objects_invalidated_steps, print_objects_sync_result.invalidated_steps),
-        regions_sync_result.invalidated_steps
+        merge(model_objects_invalidated_steps, print_objects_sync_result->invalidated_steps),
+        regions_sync_result->invalidated_steps
     )};
 
-    return {
-        print_objects_sync_result.objects,
+    return ModelSyncResult{
+        print_objects_sync_result->objects,
         model_objects_sync_result.objects,
-        regions_sync_result.regions,
+        regions_sync_result->regions,
         invalidated_steps
     };
 }
@@ -1364,14 +1378,13 @@ bool InvalidatedSteps::empty() const {
     return true;
 }
 
-bool Print::apply(
+Biz::Print::ApplyStatus::Status Print::apply(
     const Domain::Model& model,
     const FullConfigFDMPtr& new_full_config_ptr,
     const Biz::Print::SerializedConfig& serialized_config,
     const Domain::Preset::HwPrinterConfig& hw_config,
     const std::optional<Domain::ModelWipeTower>& wipe_tower,
-    const std::optional<Domain::CustomGCode::Info>& custom_gcode,
-    std::vector<std::string>* warnings
+    const std::optional<Domain::CustomGCode::Info>& custom_gcode
 )
 {
     PrintConfigView new_print_config{new_full_config_ptr};
@@ -1379,7 +1392,9 @@ bool Print::apply(
     m_serialized_config = serialized_config;
 
     // Check if the print config change will produce any warnings.
-    validate_print_config_change(m_config, new_print_config, warnings);
+    const std::vector<Biz::Slicing::Warning> warnings{
+        validate_print_config_change(m_config, new_print_config)
+    };
 
     // Grab the lock for the Print / PrintObject milestones.
     std::scoped_lock<std::mutex> lock(this->state_mutex());
@@ -1420,7 +1435,7 @@ bool Print::apply(
         m_model.copy_id(model);
     }
 
-    const ModelSyncResult model_sync_result{sync_model(
+    const auto model_sync_result{sync_model(
         m_model,
         model,
         m_objects,
@@ -1430,24 +1445,27 @@ bool Print::apply(
         num_extruders,
         num_extruders_changed
     )};
+    if (!model_sync_result) {
+        return Biz::Print::ApplyStatus::InvalidData{model_sync_result.error()};
+    }
 
-    delete_old_model_objects(m_model.objects, model_sync_result.model_objects);
-    m_model.objects = model_sync_result.model_objects;
+    delete_old_model_objects(m_model.objects, model_sync_result->model_objects);
+    m_model.objects = model_sync_result->model_objects;
 
     const InvalidatedSteps deleted_objects_invalidated_steps{
-        delete_old_print_objects(m_objects, model_sync_result.print_objects)
+        delete_old_print_objects(m_objects, model_sync_result->print_objects)
     };
 
     InvalidatedSteps changed_objects_invalidated_steps;
-    if (m_objects != model_sync_result.print_objects) {
+    if (m_objects != model_sync_result->print_objects) {
         changed_objects_invalidated_steps.print = AllSteps{};
-        m_objects = model_sync_result.print_objects;
+        m_objects = model_sync_result->print_objects;
     }
 
     // Modifies regions!
-    m_print_regions = update_print_region_ids(model_sync_result.regions);
+    m_print_regions = update_print_region_ids(model_sync_result->regions);
 
-    for (const auto& [print_object, new_regions] : model_sync_result.regions) {
+    for (const auto& [print_object, new_regions] : model_sync_result->regions) {
         print_object->set_shared_regions(new_regions);
     }
 
@@ -1462,7 +1480,7 @@ bool Print::apply(
         {to_invalidated_steps(config_invalidated_steps, m_objects),
          wipe_tower_invalidated_steps,
          custom_gcode_invalidated_steps,
-         model_sync_result.invalidated_steps,
+         model_sync_result->invalidated_steps,
          changed_objects_invalidated_steps,
          deleted_objects_invalidated_steps}
     )};
@@ -1475,9 +1493,9 @@ bool Print::apply(
     }
 
     if (invalidated || changed) {
-        return true;
+        return Biz::Print::ApplyStatus::Changed{warnings};
     }
-    return false;
+    return Biz::Print::ApplyStatus::Unchanged{};
 }
 
 void Print::cleanup()

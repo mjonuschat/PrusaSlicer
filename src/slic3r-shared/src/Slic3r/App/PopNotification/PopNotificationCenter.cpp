@@ -1,5 +1,7 @@
 #include "Slic3r/App/PopNotification/PopNotificationCenter.hpp"
 #include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/DisplayStrings.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <ranges>
@@ -108,63 +110,203 @@ std::string slicing_status_to_string(const SlicingStatusCode status)
         return "Unknown";
     }
 }
+
+std::string get_slicing_header(
+    const std::string& prefix,
+    const SlicingId slicing_id,
+    const Biz::ProjectInteractor& project_interactor
+)
+{
+    return prefix + " " + project_interactor.get_project_name(slicing_id.project_id);
+}
 } // namespace
 
-void PopNotificationCenter::on_status_cache_changed(const SlicingId slicing_id)
+
+const auto slicing_matcher{cmp<SlicingStatusNotificationData>( //
+    [](const SlicingStatusNotificationData& a, const SlicingStatusNotificationData& b)
+    { return a.slicing_id.project_id == b.slicing_id.project_id; }
+)};
+
+void PopNotificationCenter::on_status_cache_status_code_changed(const SlicingId slicing_id)
 {
     auto optional_status{m_project_interactor.status_cache().get_status(slicing_id)};
     if (!optional_status) {
         return;
     }
     const Biz::Slicing::Status status{std::move(*optional_status)};
-
     if (status.code != SlicingStatusCode::Running
         && status.code != SlicingStatusCode::Finished
         && status.code != SlicingStatusCode::Stopping
-        && status.code != SlicingStatusCode::InvalidData)
+        && status.code != SlicingStatusCode::InvalidData
+        )
     {
         return;
     }
 
-    std::string header = "Slicing " + m_project_interactor.get_project_name(slicing_id.project_id);
-    std::string text   = slicing_status_to_string(status.code);
+    using Payload = SlicingStatusNotificationData;
     if (status.code == SlicingStatusCode::InvalidData) {
-        header =
-            "Slicing " + m_project_interactor.get_project_name(slicing_id.project_id) + " failed!";
-        text = status.error;
+        erase_notification_by_predicate(
+            [slicing_id](const PopNotificationData& notification)
+            {
+                const auto payload{std::get_if<Payload>(&notification.payload)};
+                if (payload == nullptr) {
+                    return false;
+                }
+                return payload->slicing_id == slicing_id;
+            }
+        );
+        return;
     }
 
-    PopNotificationLayout layout;
-    if (status.code == SlicingStatusCode::Running) {
-        layout = PopNotificationLayoutHeaderTextButtons{
-            header,
-            text,
-            {{"Stop",
-              [this, slicing_id]()
-              {
-                  m_project_interactor.slicing_interactor().stop_slicing_bed(slicing_id);
-                  return true;
-              }}}
-        };
-    } else {
-        layout = PopNotificationLayoutHeaderText{header, text};
-    }
+    const std::string header{get_slicing_header(_u8L("Slicing"), slicing_id, m_project_interactor)};
+    const std::string text{slicing_status_to_string(status.code)};
 
-    using Payload = SlicingProgressNotificationData;
-    const auto matcher{cmp<Payload>( //
-        [](const Payload& a, const Payload& b)
-        { return a.slicing_id.project_id == b.slicing_id.project_id; }
-    )};
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::SlicingProgress,
+            PopNotificationLevel::Important,
+            status.code == Biz::Slicing::StatusCode::Finished ? 5s : 0s,
+            PopNotificationLayoutHeaderText{header, text},
+            SlicingStatusNotificationData{slicing_id}
+        },
+        slicing_matcher
+    );
+}
+
+void PopNotificationCenter::on_status_cache_progress_changed(const Domain::SlicingId slicing_id) {
+    auto optional_status{m_project_interactor.status_cache().get_status(slicing_id)};
+    if (!optional_status) {
+        return;
+    }
+    const Biz::Slicing::Status status{std::move(*optional_status)};
+    if (!status.progress) {
+        return;
+    }
+    const std::string header{
+        get_slicing_header(_u8L("Slicing in progress: "), slicing_id, m_project_interactor)
+        + "\n" + to_display_string(status.progress->progress_info)
+    };
+    const int progress{static_cast<int>(std::round(status.progress->progress.value))};
     upsert_notifcation(
         PopNotificationData{
             PopNotificationType::SlicingProgress,
             PopNotificationLevel::Important,
             0s,
-            layout,
-            SlicingProgressNotificationData{status, slicing_id}
+            PopNotificationLayoutTextProgress{header, progress},
+            SlicingStatusNotificationData{slicing_id}
         },
-        matcher
+        slicing_matcher
     );
+}
+
+void PopNotificationCenter::on_status_cache_errors_changed(const Domain::SlicingId slicing_id) {
+    using Biz::Slicing::Error;
+    using Biz::Slicing::ErrorCode;
+    using Payload = SlicingErrorNotificationData;
+
+    auto optional_status{m_project_interactor.status_cache().get_status(slicing_id)};
+    if (!optional_status) {
+        return;
+    }
+
+    std::set<ErrorCode> present_error_codes;
+    for (const Error& error : optional_status->errors) {
+        present_error_codes.insert(error.code);
+    }
+    erase_notification_by_predicate(
+        [&](const PopNotificationData& notification)
+        {
+            const auto payload{std::get_if<Payload>(&notification.payload)};
+            if (payload == nullptr) {
+                return false;
+            }
+            return payload->slicing_id == slicing_id
+                && !present_error_codes.contains(payload->error_code);
+        }
+    );
+
+    const std::vector<Error> errors{
+        m_project_interactor.status_cache().extract_latest_errors(slicing_id)
+    };
+
+    const auto matcher{cmp<Payload>( //
+        [](const Payload& a, const Payload& b)
+        {
+            return a.slicing_id.project_id == b.slicing_id.project_id
+                && a.error_code == b.error_code;
+        }
+    )};
+    const std::string header{
+        get_slicing_header(_u8L("Error: "), slicing_id, m_project_interactor)
+    };
+    const Domain::Project& project{m_project_interactor.workbench().project(slicing_id.project_id)};
+    for (const Error& error : errors) {
+        upsert_notifcation(
+            PopNotificationData{
+                PopNotificationType::SlicingError,
+                PopNotificationLevel::Error,
+                0s,
+                PopNotificationLayoutHeaderText{header, to_display_string(error, project)},
+                Payload{error.code, slicing_id}
+            },
+            matcher
+        );
+    }
+}
+
+void PopNotificationCenter::on_status_cache_warnings_changed(const Domain::SlicingId slicing_id) {
+    using Biz::Slicing::Warning;
+    using Biz::Slicing::WarningCode;
+    using Payload = SlicingWarningNotificationData;
+
+    auto optional_status{m_project_interactor.status_cache().get_status(slicing_id)};
+    if (!optional_status) {
+        return;
+    }
+
+    std::set<WarningCode> present_warning_codes;
+    for (const Warning& warning : optional_status->warrnings) {
+        present_warning_codes.insert(warning.code);
+    }
+    erase_notification_by_predicate(
+        [&](const PopNotificationData& notification)
+        {
+            const auto payload{std::get_if<Payload>(&notification.payload)};
+            if (payload == nullptr) {
+                return false;
+            }
+            return payload->slicing_id == slicing_id
+                && !present_warning_codes.contains(payload->warning_code);
+        }
+    );
+
+    const std::vector<Warning> warnings{
+        m_project_interactor.status_cache().extract_latest_warnings(slicing_id)
+    };
+
+    const auto matcher{cmp<Payload>( //
+        [](const Payload& a, const Payload& b)
+        {
+            return a.slicing_id.project_id == b.slicing_id.project_id
+                && a.warning_code == b.warning_code;
+        }
+    )};
+    const std::string header{
+        get_slicing_header(_u8L("Warning: "), slicing_id, m_project_interactor)
+    };
+    const Domain::Project& project{m_project_interactor.workbench().project(slicing_id.project_id)};
+    for (const Warning& warning : warnings) {
+        upsert_notifcation(
+            PopNotificationData{
+                PopNotificationType::SlicingWarning,
+                PopNotificationLevel::Warning,
+                0s,
+                PopNotificationLayoutHeaderText{header, to_display_string(warning, project)},
+                Payload{warning.code, slicing_id}
+            },
+            matcher
+        );
+    }
 }
 
 namespace {
