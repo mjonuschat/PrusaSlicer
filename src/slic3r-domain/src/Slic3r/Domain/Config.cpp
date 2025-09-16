@@ -40,7 +40,7 @@ namespace std {
 namespace Slic3r::Domain {
 
 ConfigItem::ConfigItem(const ConfigItemDef& def, ConfigLocation location)
-    : m_value{def.init_fn ? def.init_fn() : def.init_fn_ex(location)}, m_def{&def}
+    : m_value{def.init_fn ? def.init_fn() : def.init_fn_ex(location)}, m_current_location{location}, m_def{&def}
 {}
 
 ConfigItems::ConfigItems(const ConfigDefinitions& defs, const ConfigLocation& location) :

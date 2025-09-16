@@ -62,8 +62,13 @@ public:
         return m_def->name;
     }
 
+    ConfigLocation location() const {
+        return m_current_location;
+    }
+
 private:
     ConfigValue m_value;
+    ConfigLocation m_current_location;
 
     // Comparision operator, compares the defintion pointers.
     // It cannot be nullptr.
