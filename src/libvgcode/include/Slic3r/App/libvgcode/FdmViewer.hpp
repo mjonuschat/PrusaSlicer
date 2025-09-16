@@ -224,6 +224,7 @@ public:
     float tool_marker_alpha() const { return m_tool_marker.alpha(); }
     void set_tool_marker_alpha(float alpha) { m_tool_marker.set_alpha(alpha); }
     Domain::BoundingBox3d tool_marker_bounding_box() const;
+    Domain::Vec3f tool_marker_position() const { return current_vertex().position + m_tool_marker.offset_z() * Domain::Vec3f::UnitZ(); }
 
     bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params) const;
     bool has_gcode_events_to_show() const;

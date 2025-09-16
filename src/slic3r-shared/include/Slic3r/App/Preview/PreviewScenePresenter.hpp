@@ -8,6 +8,7 @@
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/App/Preview/PreviewSceneRenderCustomizer.hpp"
 #include "Slic3r/App/Scene/BedRenderUpdater.hpp"
+#include "Slic3r/App/Scene/CameraFrustumUpdater.hpp"
 
 namespace Slic3r::App::Preview {
 
@@ -65,6 +66,7 @@ public:
     void remove_all_bed_instances();
     void add_bed_instances(const Domain::BedRefs& instances);
     void update_bed_instances();
+    void update_scene_aabb();
 
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
@@ -78,6 +80,7 @@ private:
     Domain::SelectionId m_selected_project_id{ Domain::INVALID_ID };
     ProjectContexts m_projects;
     Scene::BedRenderUpdater m_bed_render_updater;
+    Scene::CameraFrustumUpdater m_camera_frustum_updater;
 };
 
 } // namespace Slic3r::App::Preview

@@ -247,7 +247,7 @@ axis_node(uint8_t axis_id, Render::Device& device, ScenePresenterProjectContext&
                 .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Axis})
                 .set_mesh(geom, material, layer_id)
                 // add collision geometry to let the axis be taken in account by camera frustum tighting,
-                // see: PlaterCameraFrustumUpdater::update_camera_frustum
+                // see: CameraFrustumUpdater::update_camera_frustum
                 .set_aabb(trimesh->aabb_mesh())
                 .transform(
                     [axis_id](Transform3d& xform)

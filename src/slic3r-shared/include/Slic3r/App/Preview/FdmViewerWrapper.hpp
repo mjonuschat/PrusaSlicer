@@ -136,6 +136,7 @@ public:
     void set_tool_marker_enabled(bool enabled) { m_viewer.set_tool_marker_enabled(enabled); }
     float tool_marker_scale_factor() const { return m_viewer.tool_marker_scale_factor(); }
     void set_tool_marker_scale_factor(float factor) { m_viewer.set_tool_marker_scale_factor(factor); }
+    Domain::Vec3f tool_marker_position() const { return m_viewer.tool_marker_position(); }
 
     bool is_top_layer_only_view_range() const { return m_viewer.is_top_layer_only_view_range(); }
     void toggle_top_layer_only_view_range() { m_viewer.toggle_top_layer_only_view_range(); }
@@ -179,6 +180,8 @@ public:
     void set_radius_popup_type(Biz::libpgcode::MoveType type);
     Biz::libpgcode::MoveType radius_popup_type() { return m_radius_popup_type; }
     void render_customize_radius_popup();
+
+    size_t current_vertex_id() const { return m_viewer.current_vertex_id(); }
 
 private:
     FdmViewerWrapperSettings m_settings;

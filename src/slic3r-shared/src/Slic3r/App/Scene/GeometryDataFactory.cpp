@@ -7,10 +7,10 @@
 #include <numbers>
 
 using Slic3r::Domain::Vec3f;
+using Slic3r::Domain::Index3;
+namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
 
 namespace Slic3r::App::Scene {
-
-namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
 namespace {
 
@@ -94,8 +94,8 @@ void GeometryDataFactory::create_data(GeometryDataId id)
         // creates a tool marker (union of a cone + a cylinder)
         // with the tip of the cone in the origin (0,0,0) and the cylinder on top of the cone.
         // The object is aligned with the Z axis
-        create_tool_marker();
-        return;
+        its = create_tool_marker();
+        break;
 
     case GeometryDataId::CandyButton:
         // creates a candy button-like shape centered in the origin (0,0,0)
@@ -177,40 +177,42 @@ void GeometryDataFactory::create_smooth_sphere(double radius, double fa)
     m_geometry_manager.set(GeometryDataId::SmoothSphere, builder.build(m_device));
 }
 
-void GeometryDataFactory::create_tool_marker()
+indexed_triangle_set GeometryDataFactory::create_tool_marker()
 {
-    Render::GeometryBuilder<Render::VertexP3N3> builder;
-
     static constexpr float RADIUS = 2.0f;
     static constexpr float CONE_HEIGHT = 4.0f;
     static constexpr float CYLINDER_HEIGHT = 8.0f;
     static constexpr uint8_t RESOLUTION = 32;
     static constexpr float STEP = float(TWO_PI) / RESOLUTION;
 
-    builder.add_vertex({ { 0.0f, 0.0f, 0.0f }, -Vec3f::UnitZ() });
+    indexed_triangle_set ret;
+    ret.vertices.reserve(2 + 3 * RESOLUTION);
+    ret.indices.reserve(4 * RESOLUTION);
+
+    ret.vertices.emplace_back(Vec3f::Zero());
     for (uint8_t i = 0; i < RESOLUTION; ++i) {
         float angle_i = i * STEP;
         float cos_i = cos(angle_i);
         float sin_i = sin(angle_i);
-        builder.add_vertex({ { RADIUS * cos_i, RADIUS * sin_i, CONE_HEIGHT }, { cos_i, sin_i, 0.0f } });
+        ret.vertices.emplace_back(Vec3f(RADIUS * cos_i, RADIUS * sin_i, CONE_HEIGHT));
     }
     for (uint8_t i = 0; i < RESOLUTION; ++i) {
         float angle_i = i * STEP;
         float cos_i = cos(angle_i);
         float sin_i = sin(angle_i);
-        builder.add_vertex({ { RADIUS * cos_i, RADIUS * sin_i, CONE_HEIGHT + CYLINDER_HEIGHT }, { cos_i, sin_i, 0.0f } });
+        ret.vertices.emplace_back(Vec3f(RADIUS * cos_i, RADIUS * sin_i, CONE_HEIGHT + CYLINDER_HEIGHT));
     }
-    builder.add_vertex({ { 0.0f, 0.0f, CONE_HEIGHT + CYLINDER_HEIGHT }, Vec3f::UnitZ() });
+    ret.vertices.emplace_back(Vec3f(0.0f, 0.0f, CONE_HEIGHT + CYLINDER_HEIGHT));
     for (uint8_t i = 0; i < RESOLUTION; ++i) {
         float angle_i = i * STEP;
         float cos_i = cos(angle_i);
         float sin_i = sin(angle_i);
-        builder.add_vertex({ { RADIUS * cos_i, RADIUS * sin_i, CONE_HEIGHT + CYLINDER_HEIGHT }, Vec3f::UnitZ() });
+        ret.vertices.emplace_back(Vec3f(RADIUS * cos_i, RADIUS * sin_i, CONE_HEIGHT + CYLINDER_HEIGHT));
     }
 
     // cone triangles
     for (uint8_t i = 0; i < RESOLUTION; ++i) {
-        builder.add_triangle_indices(0, (i == RESOLUTION - 1) ? 1 : i + 2, i + 1);
+        ret.indices.emplace_back(Index3{ int(0), (i == RESOLUTION - 1) ? int(1) : int(i + 2), int(i + 1)});
     }
     // cylinder triangles
     for (uint8_t i = 0; i < RESOLUTION; ++i) {
@@ -218,18 +220,16 @@ void GeometryDataFactory::create_tool_marker()
         uint32_t v2 = (i == RESOLUTION - 1) ? 1 : i + 2;
         uint32_t v3 = (i == RESOLUTION - 1) ? 1 + RESOLUTION : i + RESOLUTION + 2;
         uint32_t v4 = i + RESOLUTION + 1;
-        builder.add_triangle_indices(v1, v2, v3);
-        builder.add_triangle_indices(v1, v3, v4);
+        ret.indices.emplace_back(Index3{ int(v1), int(v2), int(v3) });
+        ret.indices.emplace_back(Index3{ int(v1), int(v3), int(v4) });
     }
     // cylinder cap triangles
     uint32_t base = 1 + 2 * RESOLUTION;
     for (uint8_t i = 0; i < RESOLUTION; ++i) {
-        builder.add_triangle_indices(base, base + i + 1, (i == RESOLUTION - 1) ? base + 1 : base + i + 2);
+        ret.indices.emplace_back(Index3{ int(base), int(base + i + 1), (i == RESOLUTION - 1) ? int(base + 1) : int(base + i + 2) });
     }
 
-    builder
-        .add_draw_command({ Render::PrimitiveType::Triangles, 0, builder.index_count(),  Render::Material{} });
-    m_geometry_manager.set(GeometryDataId::ToolMarker, builder.build(m_device));
+    return ret;
 }
 
 void GeometryDataFactory::create_candy_button()

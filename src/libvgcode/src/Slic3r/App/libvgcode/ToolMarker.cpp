@@ -21,10 +21,16 @@ void ToolMarker::init(Render::Device& device, Scene::NodeBuilder& builder, Scene
     Render::Material material = Render::Material{}
         .set_shader(device.context().shader_manager().shader("tool_marker"));
 
+    const auto* geom = data_factory.geometry(Scene::GeometryDataId::ToolMarker);
+    const auto& trimesh = data_factory.triangle_mesh(Scene::GeometryDataId::ToolMarker);
+
     builder
         .set_debug_name("gcode_tool_marker")
         .set_tag(GCodeNodeTag{ GCodeElementType::ToolMarker })
-        .set_mesh(data_factory.geometry(Scene::GeometryDataId::ToolMarker), material, int(Preview::PreviewSceneLayer::ToolMarker));
+        .set_mesh(geom, material, int(Preview::PreviewSceneLayer::ToolMarker))
+        // add collision geometry to let the tool marker be taken in account by camera frustum tighting,
+        // see: CameraFrustumUpdater::update_camera_frustum
+        .set_aabb(trimesh->aabb_mesh());
 }
 
 } // namespace Slic3r::App::libvgcode

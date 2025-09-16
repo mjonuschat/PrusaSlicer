@@ -29,6 +29,8 @@
 #include <LibBGCode/core/core.hpp>
 #include <LibBGCode/convert/convert.hpp>
 
+#include <Slic3r/App/libvgcode/GCodeNodeTag.hpp>
+
 #include <boost/nowide/cstdio.hpp>
 #include <boost/filesystem/operations.hpp>
 
@@ -315,7 +317,10 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         if (m_cube_view->require_render())
             request_render();
 
-        m_fdm_viewer.set_tool_marker_enabled(gcode_window_enabled);
+        if (gcode_window_enabled != m_fdm_viewer.tool_marker_enabled()) {
+            m_fdm_viewer.set_tool_marker_enabled(gcode_window_enabled);
+            update_scene_aabb();
+        }
     } else {
         const libvgcode::Interval& visible_range = m_fdm_viewer.view_visible_range();
         const libvgcode::Interval& enabled_range = m_fdm_viewer.view_enabled_range();
@@ -481,6 +486,7 @@ void PreviewRenderModule::on_activated()
 
     update_bed_instances();
     update_viewer();
+    update_scene_aabb();
 }
 
 void PreviewRenderModule::on_deactivated()
@@ -836,7 +842,10 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendToolChanges,
         to_string(OptionType::ToolChanges),
         "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ToolChanges); }},
+        {.action = [this]() {
+            m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker);
+            update_scene_aabb();
+        }},
         m_fdm_viewer.is_option_visible(OptionType::ToolChanges)
     );
 
@@ -1115,6 +1124,8 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
             ViewType::ColorPrint
     );
 
+    update_scene_aabb();
+
     // hbFIXME -> This code is commented out until @barzto fixes
     // the order of on_select_project and on_select_config_container calls.
     // center_camera_on_selected_bed();
@@ -1190,7 +1201,7 @@ void PreviewRenderModule::on_gcode_view_type_changed()
 
 void PreviewRenderModule::on_slider_layers_on_thumb_move()
 {
-    // TODO
+    update_scene_aabb();
 }
 
 void PreviewRenderModule::on_slider_layers_ticks_changed()
@@ -1263,7 +1274,7 @@ void PreviewRenderModule::on_slider_layers_app_config_changed(const std::string&
 
 void PreviewRenderModule::on_slider_gcode_on_thumb_move()
 {
-    // TODO
+    update_scene_aabb();
 }
 
 void PreviewRenderModule::on_legend_shells_action(bool visible)
@@ -1346,6 +1357,30 @@ void PreviewRenderModule::update_viewer()
     }
 
     m_viewer->set_scene(m_scene_presenter->scene());
+}
+
+void PreviewRenderModule::update_scene_aabb()
+{
+    if (m_viewer == &m_fdm_viewer) {
+        Scene::Scene& scene = m_scene_presenter->scene();
+        Scene::Node* node = scene.root().query_first([](const Scene::Node* n) {
+            const libvgcode::GCodeNodeTag* tag = n->tag_of_type<libvgcode::GCodeNodeTag>();
+            return tag != nullptr && tag->type == libvgcode::GCodeElementType::ToolMarker;
+        }, true);
+        DEBUG_ASSERT(node != nullptr);
+
+        bool enabled =
+            m_fdm_viewer.tool_marker_enabled() &&
+            m_fdm_viewer.is_option_visible(Biz::libpgcode::OptionType::ToolMarker);
+        node->set_enabled(enabled);
+        if (enabled && m_fdm_viewer.current_vertex_id() > 0) {
+            Scene::Transform xtrafo = Scene::Transform::Identity();
+            xtrafo.scale(m_fdm_viewer.tool_marker_scale_factor());
+            xtrafo.translate(m_fdm_viewer.tool_marker_position().cast<double>());
+            node->set_local_transform(xtrafo);
+        }
+    }
+    m_scene_presenter->update_scene_aabb();
 }
 
 } // namespace Slic3r::App::Preview

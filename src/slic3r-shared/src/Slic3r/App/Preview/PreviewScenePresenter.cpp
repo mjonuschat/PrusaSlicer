@@ -24,8 +24,14 @@ PreviewScenePresenter::PreviewScenePresenter(
 
 void PreviewScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 {
-    if (!m_projects.empty())
+    if (!m_projects.empty()) {
+#if ENABLE_DEBUG_RENDER_SCENE_AABB
+        m_camera_frustum_updater.update_scene_aabb_node(project_context(), m_device);
+#endif // ENABLE_DEBUG_RENDER_SCENE_AABB
+        m_camera_frustum_updater.update_camera_frustum(scene().camera());
+
         project_context().scene().render(m_device, command_buffer, this);
+    }
 }
 
 void PreviewScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
@@ -51,6 +57,8 @@ void PreviewScenePresenter::on_selected_project_changed(size_t index)
         camera.add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
         camera.set_viewport(m_viewport);
     }
+
+    update_scene_aabb();
 }
 
 void PreviewScenePresenter::remove_all_bed_instances()
@@ -109,6 +117,11 @@ void PreviewScenePresenter::update_bed_instances()
         },
         true
     );
+}
+
+void PreviewScenePresenter::update_scene_aabb()
+{
+    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PreviewScenePresenter::update_cameras(const std::function<void(Scene::Camera&)>& modifier)

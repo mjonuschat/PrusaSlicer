@@ -78,7 +78,7 @@ private:
     void create_circle();
     void create_graded_circle();
     void create_smooth_sphere(double radius, double fa);
-    void create_tool_marker();
+    indexed_triangle_set create_tool_marker();
     void create_candy_button();
 
 private:

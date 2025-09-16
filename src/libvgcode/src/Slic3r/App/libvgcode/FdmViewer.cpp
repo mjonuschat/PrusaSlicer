@@ -1095,15 +1095,15 @@ void FdmViewer::set_view_visible_range(Interval::value_type min, Interval::value
     //m_settings.update_colors = true;
     update_colors_texture();
 
-    if (is_option_visible(OptionType::ToolMarker)){
-        Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
-            const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
-            return tag != nullptr && tag->type == GCodeElementType::ToolMarker;
-        }, true);
-
-        assert(node != nullptr);
-        node->set_enabled(m_view_range.visible()[1] != m_view_range.enabled()[1]);
-    }
+//    if (is_option_visible(OptionType::ToolMarker)) {
+//        Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+//            const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+//            return tag != nullptr && tag->type == GCodeElementType::ToolMarker;
+//        }, true);
+//
+//        assert(node != nullptr);
+//        node->set_enabled(m_view_range.visible()[1] != m_view_range.enabled()[1]);
+//    }
 }
 
 float FdmViewer::estimated_time_at(size_t id) const
@@ -1660,18 +1660,20 @@ void FdmViewer::render_tool_marker()
     if (!enabled)
         return;
 
-    Vec3f origin = current_vertex().position + m_tool_marker.offset_z() * Vec3f::UnitZ();
+    Vec3f origin = tool_marker_position();
     ColorRGBA color = to_rgba(m_tool_marker.color(), m_tool_marker.alpha());
 
-    Render::Material material;
+    Render::Material material = node->render_component()->material();
     material
-        .set_shader(m_device->context().shader_manager().shader("tool_marker"))
-        .set_uniform("world_origin", origin)
-        .set_uniform("scale_factor", m_tool_marker.scale_factor())
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     Scene::set_uniforms(m_lights, material);
-    node->set_material_override(material);
+    node->render_component()->replace_material(material);
+
+    Scene::Transform xtrafo = Scene::Transform::Identity();
+    xtrafo.scale(m_tool_marker.scale_factor());
+    xtrafo.translate(origin.cast<double>());
+    node->set_local_transform(xtrafo);
 }
 
 bool FdmViewer::has_gcode_events_to_show() const

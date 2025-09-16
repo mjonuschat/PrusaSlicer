@@ -61,7 +61,7 @@ public:
     const Domain::BoundingBox3d& bounding_box() const { return m_bounding_box; }
 
 private:
-    bool m_enabled{ false };
+    bool m_enabled{ true };
     float m_offset_z{ 0.5f };
     Domain::ColorRGB m_color{ Domain::ColorRGB::WHITE() };
     float m_alpha{ 0.5f };

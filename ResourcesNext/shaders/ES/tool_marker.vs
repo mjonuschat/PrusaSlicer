@@ -16,8 +16,6 @@ uniform mat4 view_matrix;
 uniform mat4 view_model_matrix;
 uniform mat4 projection_matrix;
 uniform mat3 view_normal_matrix;
-uniform vec3 world_origin;
-uniform float scale_factor;
 uniform vec4 uniform_color;
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
@@ -48,8 +46,7 @@ float lighting(vec3 eye_position, vec3 eye_normal)
 }
 
 void main() {
-    vec3 world_position = scale_factor * v_position + world_origin;
-    vec3 eye_position = (view_model_matrix * vec4(world_position, 1.0)).xyz;
+    vec3 eye_position = (view_model_matrix * vec4(v_position, 1.0)).xyz;
     vec3 eye_normal = normalize(view_normal_matrix * v_normal);
     color = vec4(uniform_color.rgb * lighting(eye_position, eye_normal), uniform_color.a);
     gl_Position = projection_matrix * vec4(eye_position, 1.0);
