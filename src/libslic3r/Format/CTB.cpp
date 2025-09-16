@@ -204,8 +204,6 @@ void fill_header(
     const SLAPrint &print,
     std::uint32_t layer_count
 ) {
-    CNumericLocalesSetter locales_setter;
-
     auto &cfg = print.full_print_config();
 
     SLAPrintStatistics stats = print.print_statistics();
@@ -326,16 +324,14 @@ void fill_header_encrypted(
     const SLAPrint &print,
     std::uint32_t layer_count
 ) {
-    CNumericLocalesSetter locales_setter;
-
     auto &cfg = print.full_print_config();
 
     SLAPrintStatistics stats = print.print_statistics();
 
     // clang-format off
     u.magic = MAGIC_ENCRYPTED;
+    u.version = 4;
     u.unknown1 = 0;
-    u.unknown2 = 0;
     u.unknown3 = 0;
     u.unknown4 = 1;
     u.unknown5 = 1;
@@ -622,8 +618,9 @@ void CtbSLAArchive::export_print(
 
     auto &cfg = print.full_print_config();
     std::string machine_name = cfg.option("printer_model")->serialize();
+    std::string printer_notes = cfg.option("printer_notes")->serialize();
     uint8_t is_encrypted = 0;
-    if (machine_name == "MARS3PRO4K" || machine_name == "MARS3ULTRA4K") {
+    if (printer_notes.find("FILEFORMAT_ENCRYPTED.CTB") != std::string::npos) {
         is_encrypted = 1;
         fill_header_encrypted(unencrypted_header, decrypted_header.header_struct, print, layer_count);
         decrypted_header.header_struct.machine_name_size = machine_name.length();
