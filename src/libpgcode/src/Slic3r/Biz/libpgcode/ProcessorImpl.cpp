@@ -761,15 +761,23 @@ void ProcessorImpl::process_G1(const std::array<std::optional<float>, 4>& axes, 
                     const float sin_theta_d2 = std::sqrt(0.5f * (1.f - junction_cos_theta)); // Trig half angle identity. Always positive.
 
                     float vmax_junction_sqr = (junction_acceleration * junction_deviation * sin_theta_d2) / (1.f - sin_theta_d2);
-                    if (block.distance < 1.f) {
-                        // Fast acos approximation, minus the error bar to be safe
-                        const float junction_theta = (Slic3r::deg2rad(-40.f) * Slic3r::sqr(junction_cos_theta) - Slic3r::deg2rad(50.f)) * junction_cos_theta + Slic3r::deg2rad(90.f) - 0.18f;
 
-                        // If angle is greater than 135 degrees (octagon), find speed for approximate arc
-                        if (junction_theta > Slic3r::deg2rad(135.f)) {
-                            const float limit_sqr = block.distance / (Slic3r::deg2rad(180.f) - junction_theta) * junction_acceleration;
-                            vmax_junction_sqr = std::min(vmax_junction_sqr, limit_sqr);
-                        }
+                    // For small moves with >135° junction (octagon) find speed for approximate arc
+                    if (block.distance < 1 && junction_cos_theta < -0.7071067812f) {
+                        // Fast acos(-t) approximation (max. error +-0.033rad = 1.89°)
+                        // Based on MinMax polynomial published by W. Randolph Franklin, see
+                        // https://wrf.ecse.rpi.edu/Research/Short_Notes/arcsin/onlyelem.html
+                        //  acos( t) = pi / 2 - asin(x)
+                        //  acos(-t) = pi - acos(t) ... pi / 2 + asin(x)
+
+                        const float neg = junction_cos_theta < 0.f ? -1.f : 1.f;
+                        const float t = neg * junction_cos_theta;
+                        const float asinx = 0.032843707f + t * (-1.451838349f + t * (29.66153956f + t * (-131.1123477f + t * (262.8130562f + t * (-242.7199627f + t * (84.31466202f))))));
+                        const float junction_theta = Slic3r::deg2rad(90.f) + neg * asinx; // acos(-t)
+
+                        // NOTE: junction_theta bottoms out at 0.033 which avoids divide by 0.
+                        const float limit_sqr = (block.distance * junction_acceleration) / junction_theta;
+                        vmax_junction_sqr = std::min(vmax_junction_sqr, limit_sqr);
                     }
 
                     // Get the lowest speed
