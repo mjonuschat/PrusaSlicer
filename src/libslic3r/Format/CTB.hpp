@@ -161,6 +161,13 @@ typedef struct ctb_format_print_params_v4
     std::uint32_t disclaimer_len = 320; // pretty much always going to be 320
 } ctb_print_params_v4;
 
+typedef struct ctb_format_extra_settings
+{
+    float         bot_rest_time_after_retract;
+    float         bot_rest_time_after_lift;
+    float         bot_rest_time_before_lift;
+} ctb_format_extra_settings;
+
 typedef struct ctb_format_layer_data
 {
     float pos_z;

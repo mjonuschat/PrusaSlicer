@@ -5179,6 +5179,14 @@ void PrintConfigDef::init_sla_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInt(10));
 
+    def = this->add("bot_layers", coInt);
+    def->label = L("Bottom layers");
+    def->tooltip = L("Number of the layers for increased exposure");
+    def->min = 0;
+    def->max = 20;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInt(0));
+
     def = this->add("min_exposure_time", coFloat);
     def->label = L("Minimum exposure time");
     def->tooltip = L("Minimum exposure time");
@@ -5196,7 +5204,8 @@ void PrintConfigDef::init_sla_params()
     def->set_default_value(new ConfigOptionFloat(100));
 
     def = this->add("exposure_time", coFloat);
-    def->label = L("Exposure time");
+    def->full_label = L("Layer exposure time");
+    def->label = L("Normal Layers");
     def->tooltip = L("Exposure time");
     def->sidetext = L("s");
     def->min = 0;
@@ -5219,21 +5228,23 @@ void PrintConfigDef::init_sla_params()
     def->set_default_value(new ConfigOptionFloat(150));
 
     def = this->add("initial_exposure_time", coFloat);
-    def->label = L("Initial exposure time");
+    def->full_label = L("Layer exposure time");
+    def->label = L("Bottom Layers");
     def->tooltip = L("Initial exposure time");
     def->sidetext = L("s");
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(15));
 
     def = this->add("light_off_time", coFloat);
-    def->label = L("Normal layers light off time");
+    def->full_label = L("Light off delay");
+    def->label = L("Normal Layers");
     def->tooltip = L("Normal layers light off time");
     def->sidetext = L("s");
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(2));
 
     def = this->add("bot_light_off_time", coFloat);
-    def->label = L("Bottom layers light off time");
+    def->label = L("Bottom Layers");
     def->tooltip = L("Bottom layers light off time");
     def->sidetext = L("s");
     def->min = 0;
@@ -5305,33 +5316,64 @@ void PrintConfigDef::init_sla_params()
     def->set_default_value(new ConfigOptionFloat(45));
 
     def = this->add("bot_light_intensity", coPercent);
-    def->label = L("Bottom layers light intensity");
+    def->label = L("Bottom Layers");
     def->tooltip = L("Bottom layers light_intensity");
     def->sidetext = L("%");
     def->min = 0;
     def->set_default_value(new ConfigOptionPercent(100));
 
     def = this->add("light_intensity", coPercent);
-    def->label = L("Normal layers light intensity");
+    def->full_label = L("Light Intensity");
+    def->label = L("Normal Layers");
     def->tooltip = L("Normal layers light_intensity");
     def->sidetext = L("%");
     def->min = 0;
     def->set_default_value(new ConfigOptionPercent(100));
 
-    def = this->add("rest_time_after_lift", coFloat);
-    def->full_label = L("Rest time after lifting the build plate");
-    def->label = L("First Stage");
-    def->tooltip = L("Rest time after lifting the build plate");
+    def = this->add("bot_rest_time_before_lift", coFloat);
+    def->label = L("Bottom Layers");
+    def->tooltip = L("Bottom layers rest time before lifting the build plate");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(7));
+
+    def = this->add("bot_rest_time_after_lift", coFloat);
+    def->label = L("Bottom Layers");
+    def->tooltip = L("Bottom layers rest time after lifting the build plate");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("bot_rest_time_after_retract", coFloat);
+    def->label = L("Bottom Layers");
+    def->tooltip = L("Bottom layers rest time after retracting the build plate");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(15));
+
+    def = this->add("rest_time_before_lift", coFloat);
+    def->full_label = L("Rest time before lifting the build plate");
+    def->label = L("Normal Layers");
+    def->tooltip = L("Rest time before lifting the build plate");
     def->sidetext = L("s");
     def->min = 0;
     def->set_default_value(new ConfigOptionFloat(1));
 
+    def = this->add("rest_time_after_lift", coFloat);
+    def->full_label = L("Rest time after lifting the build plate");
+    def->label = L("Normal Layers");
+    def->tooltip = L("Rest time after lifting the build plate");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloat(0));
+
     def = this->add("rest_time_after_retract", coFloat);
-    def->label = L("Rest time after retracting the build plate");
+    def->full_label = L("Rest time after retracting the build plate");
+    def->label = L("Normal Layers");
     def->tooltip = L("Rest time after retracting the build plate");
     def->sidetext = L("s");
     def->min = 0;
-    def->set_default_value(new ConfigOptionFloat(1));
+    def->set_default_value(new ConfigOptionFloat(2));
 
 
 

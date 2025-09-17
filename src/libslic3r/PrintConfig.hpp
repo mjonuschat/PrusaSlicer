@@ -1119,6 +1119,7 @@ PRINT_CONFIG_CLASS_DEFINE(
 
     //Number of the layers needed for the exposure time fade [3;20]
     ((ConfigOptionInt,  faded_layers))/*= 10*/
+    ((ConfigOptionInt,  bot_layers))
 
     ((ConfigOptionFloat, slice_closing_radius))
     ((ConfigOptionEnum<SlicingMode>, slicing_mode))
@@ -1339,6 +1340,10 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,                       sla_retract_speed))
     ((ConfigOptionPercent,                     bot_light_intensity))
     ((ConfigOptionPercent,                     light_intensity))
+    ((ConfigOptionFloat,                       bot_rest_time_before_lift))
+    ((ConfigOptionFloat,                       bot_rest_time_after_lift))
+    ((ConfigOptionFloat,                       bot_rest_time_after_retract))
+    ((ConfigOptionFloat,                       rest_time_before_lift))
     ((ConfigOptionFloat,                       rest_time_after_lift))
     ((ConfigOptionFloat,                       rest_time_after_retract))
     ((ConfigOptionBool,                        tsmc_bot_enable))

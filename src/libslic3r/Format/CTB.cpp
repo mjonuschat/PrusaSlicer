@@ -203,6 +203,7 @@ void fill_header(
     ctb_format_print_params &print_params,
     ctb_format_slicer_info &slicer_info,
     ctb_format_print_params_v4 &print_params_v4,
+    ctb_format_extra_settings &extra_settings,
     const SLAPrint &print,
     std::uint32_t layer_count
 ) {
@@ -223,7 +224,7 @@ void fill_header(
     h.exposure             = get_cfg_value<float>(cfg, "exposure_time");
     h.bot_exposure         = get_cfg_value<float>(cfg, "initial_exposure_time");
     h.light_off_delay      = get_cfg_value<float>(cfg, "light_off_time");
-    h.bot_layer_count      = get_cfg_value<uint32_t>(cfg, "faded_layers");
+    h.bot_layer_count      = get_cfg_value<uint32_t>(cfg, "bot_layers");
     h.res_x                = get_cfg_value<uint32_t>(cfg, "display_pixels_x");
     h.res_y                = get_cfg_value<uint32_t>(cfg, "display_pixels_y");
     h.large_preview_offset = get_struct_size(h);
@@ -250,7 +251,7 @@ void fill_header(
     print_params.resin_cost = get_cfg_value<float>(cfg, "bottle_cost");
     print_params.bot_light_off_delay = get_cfg_value<float>(cfg, "bot_light_off_time");
     print_params.light_off_delay = get_cfg_value<float>(cfg, "light_off_time");
-    print_params.bot_layer_count = get_cfg_value<uint32_t>(cfg, "faded_layers");
+    print_params.bot_layer_count = get_cfg_value<uint32_t>(cfg, "bot_layers");
     print_params.zero_pad1 = 0;
     print_params.zero_pad2 = 0;
     print_params.zero_pad3 = 0;
@@ -314,6 +315,10 @@ void fill_header(
     print_params_v4.zero_pad6               = 0;
     print_params_v4.disclaimer_len          = 320;
 
+    extra_settings.bot_rest_time_after_retract = get_cfg_value<float>(cfg, "bot_rest_time_after_retract");
+    extra_settings.bot_rest_time_after_lift    = get_cfg_value<float>(cfg, "bot_rest_time_after_lift");
+    extra_settings.bot_rest_time_before_lift   = get_cfg_value<float>(cfg, "bot_rest_time_before_lift");
+
     if (layer_count < h.bot_layer_count) {
         h.bot_layer_count = layer_count;
     }
@@ -323,6 +328,7 @@ void fill_header(
 void fill_header_encrypted(
     unencrypted_format_header &u,
     decrypted_format_header &h,
+    ctb_format_extra_settings &extra_settings,
     const SLAPrint &print,
     std::uint32_t layer_count
 ) {
@@ -427,6 +433,10 @@ void fill_header_encrypted(
     h.zero_pad9                      = 0;
     h.zero_pad10                     = 0;
     h.zero_pad11                     = 0;
+
+    extra_settings.bot_rest_time_after_retract = get_cfg_value<float>(cfg, "bot_rest_time_after_retract");
+    extra_settings.bot_rest_time_after_lift    = get_cfg_value<float>(cfg, "bot_rest_time_after_lift");
+    extra_settings.bot_rest_time_before_lift   = get_cfg_value<float>(cfg, "bot_rest_time_before_lift");
 
     if (layer_count < h.bot_layer_count) {
         h.bot_layer_count = layer_count;
@@ -596,6 +606,7 @@ void CtbSLAArchive::export_print(
     ctb_format_print_params print_params{};
     ctb_format_slicer_info slicer_info{};
     ctb_format_print_params_v4 print_params_v4{};
+    ctb_format_extra_settings extra_settings{};
     ctb_format_layer_data layer_data{};
     ctb_format_layer_data_ex layer_data_ex{};
     std::vector<uint8_t> layer_images;
@@ -624,10 +635,10 @@ void CtbSLAArchive::export_print(
     uint8_t is_encrypted = 0;
     if (printer_notes.find("FILEFORMAT_ENCRYPTED.CTB") != std::string::npos) {
         is_encrypted = 1;
-        fill_header_encrypted(unencrypted_header, decrypted_header.header_struct, print, layer_count);
+        fill_header_encrypted(unencrypted_header, decrypted_header.header_struct, extra_settings, print, layer_count);
         decrypted_header.header_struct.machine_name_size = machine_name.length();
     } else {
-        fill_header(header, print_params, slicer_info, print_params_v4, print, layer_count);
+        fill_header(header, print_params, slicer_info, print_params_v4, extra_settings, print, layer_count);
         slicer_info.machine_name_size = machine_name.length();
     }
 
@@ -699,9 +710,6 @@ void CtbSLAArchive::export_print(
         layer_header.encrypted_data_length = 0;
         layer_header.unknown1 = 0;
         layer_header.unknown2 = 0;
-        layer_header.rest_time_before_lift = decrypted_header.header_struct.rest_time_before_lift;
-        layer_header.rest_time_after_lift = decrypted_header.header_struct.rest_time_after_lift;
-        layer_header.rest_time_after_retract = decrypted_header.header_struct.rest_time_after_retract;
 
         std::string decrypted_header_string{
             decrypted_header.buffer, get_struct_size(decrypted_header.header_struct)
@@ -730,11 +738,17 @@ void CtbSLAArchive::export_print(
             layer_data_offset = decrypted_header.header_struct.layer_table_offset +
                 get_struct_size(layer_pointers) * layer_count;
 
+            float exposure_transition = (decrypted_header.header_struct.bot_exposure - decrypted_header.header_struct.exposure)
+                                        / decrypted_header.header_struct.transition_layer_count;
+            exposure_transition = roundf(exposure_transition * 100) / 100;
+            float exposure_count = decrypted_header.header_struct.bot_exposure;
             // clang-format off
             for (const sla::EncodedRaster &rst : m_layers) {
                 if (i < decrypted_header.header_struct.bot_layer_count) {
-                    layer_header.exposure = decrypted_header.header_struct.bot_exposure;
                     layer_header.light_off_delay = decrypted_header.header_struct.bot_light_off_delay;
+                    layer_header.rest_time_before_lift = extra_settings.bot_rest_time_before_lift;
+                    layer_header.rest_time_after_lift = extra_settings.bot_rest_time_after_lift;
+                    layer_header.rest_time_after_retract = extra_settings.bot_rest_time_after_retract;
                     layer_header.lift_height     = decrypted_header.header_struct.bot_lift_height;
                     layer_header.lift_speed      = decrypted_header.header_struct.bot_lift_speed;
                     layer_header.lift_height2    = decrypted_header.header_struct.bot_lift_height2;
@@ -744,8 +758,10 @@ void CtbSLAArchive::export_print(
                     layer_header.retract_speed2 = decrypted_header.header_struct.bot_retract_speed2;
                     layer_header.light_pwm = decrypted_header.header_struct.bot_pwm_level;
                 } else {
-                    layer_header.exposure = decrypted_header.header_struct.exposure;
                     layer_header.light_off_delay = decrypted_header.header_struct.light_off_delay;
+                    layer_header.rest_time_before_lift = decrypted_header.header_struct.rest_time_before_lift;
+                    layer_header.rest_time_after_lift = decrypted_header.header_struct.rest_time_after_lift;
+                    layer_header.rest_time_after_retract = decrypted_header.header_struct.rest_time_after_retract;
                     layer_header.lift_height = decrypted_header.header_struct.lift_height;
                     layer_header.lift_speed = decrypted_header.header_struct.lift_speed;
                     layer_header.lift_height2 = decrypted_header.header_struct.lift_height2;
@@ -755,6 +771,15 @@ void CtbSLAArchive::export_print(
                     layer_header.retract_speed2 = decrypted_header.header_struct.retract_speed2;
                     layer_header.light_pwm = decrypted_header.header_struct.pwm_level;
                 }
+
+                if (i < decrypted_header.header_struct.bot_layer_count) {
+                    exposure_count = decrypted_header.header_struct.bot_exposure;
+                } else if (i < decrypted_header.header_struct.bot_layer_count + decrypted_header.header_struct.transition_layer_count) {
+                    exposure_count = exposure_count - exposure_transition;
+                } else {
+                    exposure_count = header.exposure;
+                }
+                layer_header.exposure = exposure_count;
                 // clang-format on
 
                 layer_pointers.page_num = layer_data_offset /
@@ -813,10 +838,7 @@ void CtbSLAArchive::export_print(
             get_struct_size(layer_data_ex); // 36 add LayerHeaderEx table_size if v4
         layer_data.unknown1 = 0;
         layer_data.unknown2 = 0;
-        layer_data_ex.rest_time_before_lift = print_params_v4.rest_time_before_lift;
-        layer_data_ex.rest_time_after_lift = print_params_v4.rest_time_after_lift;
-        layer_data_ex.rest_time_after_retract = print_params_v4.rest_time_after_retract;
-        // clang-format on
+                // clang-format on
 
         try {
             // open the file and write the contents
@@ -842,11 +864,16 @@ void CtbSLAArchive::export_print(
             layer_data_offset = header.layer_table_offset +
                 get_struct_size(layer_data) * layer_count;
 
+            float exposure_transition = (header.bot_exposure - header.exposure) / slicer_info.transition_layer_count;
+            exposure_transition = roundf(exposure_transition * 100) / 100;
+            float exposure_count = header.bot_exposure;
             // clang-format off
             for (const sla::EncodedRaster &rst : m_layers) {
                 if (i < header.bot_layer_count) {
-                    layer_data.exposure           = header.bot_exposure;
                     layer_data.light_off_delay    = print_params.bot_light_off_delay;
+                    layer_data_ex.rest_time_before_lift = extra_settings.bot_rest_time_before_lift;
+                    layer_data_ex.rest_time_after_lift = extra_settings.bot_rest_time_after_lift;
+                    layer_data_ex.rest_time_after_retract = extra_settings.bot_rest_time_after_retract;
                     layer_data_ex.lift_height     = print_params.bot_lift_height;
                     layer_data_ex.lift_speed      = print_params.bot_lift_speed;
                     layer_data_ex.lift_height2    = slicer_info.bot_lift_height2;
@@ -856,8 +883,10 @@ void CtbSLAArchive::export_print(
                     layer_data_ex.retract_speed2 = print_params_v4.bot_retract_speed2;
                     layer_data_ex.light_pwm = header.bot_pwm_level;
                 } else {
-                    layer_data.exposure = header.exposure;
                     layer_data.light_off_delay = print_params.light_off_delay;
+                    layer_data_ex.rest_time_before_lift = print_params_v4.rest_time_before_lift;
+                    layer_data_ex.rest_time_after_lift = print_params_v4.rest_time_after_lift;
+                    layer_data_ex.rest_time_after_retract = print_params_v4.rest_time_after_retract;
                     layer_data_ex.lift_height = print_params.lift_height;
                     layer_data_ex.lift_speed = print_params.lift_speed;
                     layer_data_ex.lift_height2 = slicer_info.lift_height2;
@@ -867,6 +896,15 @@ void CtbSLAArchive::export_print(
                     layer_data_ex.retract_speed2 = slicer_info.retract_speed2;
                     layer_data_ex.light_pwm = header.pwm_level;
                 }
+
+                if (i < header.bot_layer_count) {
+                    exposure_count = header.bot_exposure;
+                } else if (i < header.bot_layer_count + slicer_info.transition_layer_count) {
+                    exposure_count = exposure_count - exposure_transition;
+                } else {
+                    exposure_count = header.exposure;
+                }
+                layer_data.exposure = exposure_count;
                 // clang-format on
 
                 long curr_pos = out.tellp();

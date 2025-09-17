@@ -39,6 +39,7 @@
 #include "Search.hpp"
 #include "OG_CustomCtrl.hpp"
 
+#include <cstdio>
 #include <tuple>
 #include <wx/app.h>
 #include <wx/button.h>
@@ -5633,79 +5634,41 @@ void TabSLAMaterial::build()
         line.append_option(optgroup->get_option("tsmc_" + option_name));
         optgroup->append_line(line);
     };
-    optgroup->append_single_option_line("initial_exposure_time");
-    optgroup->append_single_option_line("bot_light_off_time");
 
     create_tsmc(optgroup, "bot_lift_distance");
     create_tsmc(optgroup, "bot_lift_speed");
     create_tsmc(optgroup, "bot_retract_height");
     create_tsmc(optgroup, "sla_bot_retract_speed");
-    optgroup->append_single_option_line("bot_light_intensity");
 
     optgroup = page->new_optgroup(L("Layers"));
     optgroup->append_single_option_line("tsmc_enable");
-    optgroup->append_single_option_line("exposure_time");
-    optgroup->append_single_option_line("initial_layer_height");
-    optgroup->append_single_option_line("light_off_time");
     create_tsmc(optgroup, "lift_distance");
     create_tsmc(optgroup, "lift_speed");
     create_tsmc(optgroup, "retract_height");
     create_tsmc(optgroup, "sla_retract_speed");
 
-    optgroup = page->new_optgroup(L("Exposure"));
-    optgroup->append_single_option_line("exposure_time");
-    optgroup->append_single_option_line("initial_exposure_time");
+    optgroup = page->new_optgroup(L("Exposure and Rest Times"));
+    optgroup->append_single_option_line("initial_layer_height");
 
-    optgroup->append_single_option_line("light_intensity");
-    optgroup->append_single_option_line("rest_time_after_lift");
-    optgroup->append_single_option_line("rest_time_after_retract");
+    auto exposure_option = optgroup->get_option("initial_exposure_time");
+    Line exposure_line = {exposure_option.opt.full_label, ""};
+    exposure_line.append_option(exposure_option);
+    exposure_line.append_option(optgroup->get_option("exposure_time"));
+    optgroup->append_line(exposure_line);
 
-    // TODO: Try to figure out how to make the config options disappear if TSMC disabled
-    optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
-        DynamicPrintConfig new_conf = *m_config;
-
-        if (opt_key == "tsmc_enable") {
-            if (boost::any_cast<bool>(value) == true) {
-                double new_height = new_conf.option("lift_distance")->getFloat() +
-                    new_conf.option("tsmc_lift_distance")->getFloat() -
-                    new_conf.option("tsmc_retract_height")->getFloat();
-                new_conf.set_key_value("retract_height", new ConfigOptionFloat(new_height));
-            }
-            /*
-            if (boost::any_cast<bool>(value) == true) {
-                auto option = new_conf.option("retract_height");
-                option->readonly = true;
-                //new_conf.set_key_value("retract_height", option);
-                auto show_opt = new_conf.def()->get("tsmc_retract_height");
-                show_opt->mode = comUndef;
-                //new_conf.set_key_value("tsmc_retract_height", option);
-                //new_conf.erase("tsmc_retract_height");
-                //new_conf.erase("tsmc_lift_speed");
-                //new_conf.erase("tsmc_lift_distance");
-                //new_conf.erase("tsmc_sla_retract_speed");
-            } else {
-                auto option = new_conf.option("tsmc_retract_height");
-                option->mode = comSimple;
-                new_conf.set_key_value("tsmc_retract_height", option);
-                //optgroup->hide_field("tsmc_retract_height");
-                //optgroup->hide_field("tsmc_lift_speed");
-                //optgroup->hide_field("tsmc_lift_distance");
-                //optgroup->hide_field("tsmc_sla_retract_speed");
-            }
-            */
-        }
-
-        if (opt_key == "tsmc_retract_height" && new_conf.option("tsmc_enable")->getBool()) {
-            double new_height = new_conf.option("lift_distance")->getFloat() +
-                new_conf.option("tsmc_lift_distance")->getFloat() - boost::any_cast<double>(value);
-            new_conf.set_key_value("retract_height", new ConfigOptionFloat(new_height));
-        }
-
-        load_config(new_conf);
-
-        update_dirty();
-        on_value_change(opt_key, value);
+    auto create_bot = [](auto &optgroup, std::string option_name) {
+        auto option = optgroup->get_option(option_name);
+        Line line = {option.opt.full_label, ""};
+        line.append_option(optgroup->get_option("bot_" + option_name));
+        line.append_option(option);
+        optgroup->append_line(line);
     };
+
+    create_bot(optgroup, "light_off_time");
+    create_bot(optgroup, "light_intensity");
+    create_bot(optgroup, "rest_time_before_lift");
+    create_bot(optgroup, "rest_time_after_lift");
+    create_bot(optgroup, "rest_time_after_retract");
 
     optgroup = page->new_optgroup(L("Corrections"));
     auto line = Line{ m_config->def()->get("material_correction")->full_label, "" };
@@ -5912,6 +5875,20 @@ void TabSLAMaterial::toggle_tilt_options(bool is_above)
 
 void TabSLAMaterial::toggle_options()
 {
+    if (m_active_page->title() == "Material") {
+        bool tsmc_enable = m_config->opt_bool("tsmc_enable");
+        toggle_option("tsmc_retract_height",    tsmc_enable);
+        toggle_option("tsmc_lift_speed",        tsmc_enable);
+        toggle_option("tsmc_lift_distance",     tsmc_enable);
+        toggle_option("tsmc_sla_retract_speed", tsmc_enable);
+
+        tsmc_enable = m_config->opt_bool("tsmc_bot_enable");
+        toggle_option("tsmc_bot_retract_height",    tsmc_enable);
+        toggle_option("tsmc_bot_lift_speed",        tsmc_enable);
+        toggle_option("tsmc_bot_lift_distance",     tsmc_enable);
+        toggle_option("tsmc_sla_bot_retract_speed", tsmc_enable);
+    }
+
     if (m_active_page->title() == "Material Overrides")
         update_material_overrides_page();
 }
@@ -6218,6 +6195,7 @@ void TabSLAPrint::build()
     auto optgroup = page->new_optgroup(L("Layers"));
     optgroup->append_single_option_line("layer_height");
     optgroup->append_single_option_line("faded_layers");
+    optgroup->append_single_option_line("bot_layers");
 
     page = add_options_page(L("Supports"), "support"/*"sla_supports"*/);
 
