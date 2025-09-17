@@ -8,7 +8,7 @@ jobs:
   build_flatpak:
     name: Compile & Bundle Flatpak
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-47
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
       options: --privileged
     strategy:
       matrix:
