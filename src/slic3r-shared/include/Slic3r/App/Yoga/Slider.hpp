@@ -12,7 +12,7 @@ public:
         std::function<void(double value)> value_changed{nullptr};
     };
 
-    explicit Slider(double begin, double end, double step = 1.f);
+    explicit Slider(double begin, double end, double step = 1.);
     explicit Slider();
 
     void render(Vec2f pos, Vec2f size) override;
@@ -47,10 +47,10 @@ private:
     Oval* m_area{ nullptr };
     Circle* m_thumb{ nullptr };
 
-    double m_begin_value{0.f};
-    double m_end_value{0.f};
-    double m_step{0.f};
-    double m_value{0.f};
+    double m_begin_value{0.};
+    double m_end_value{0.};
+    double m_step{0.};
+    double m_value{0.};
 
     bool m_dragging{ false };
     bool m_hovered{ false };
