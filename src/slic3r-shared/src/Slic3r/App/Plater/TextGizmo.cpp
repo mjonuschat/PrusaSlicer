@@ -8,6 +8,7 @@
 #include "Slic3r/App/Plater/TextDialog.hpp"
 #include <Slic3r/App/Plater/SceneNodeTag.hpp>
 #include <Slic3r/App/AppServices.hpp>
+#include <Slic3r/App/Render/ScreenInfo.hpp>
 #include <Slic3r/App/Scene/NodeVisitor.hpp> // visit_conditional_transform()
 
 #include "Slic3r/Domain/TextConfiguration.hpp"
@@ -40,12 +41,12 @@ struct Drag {
     Domain::Transform3d instance_inv;
     Domain::Transform3d volume_inv;
 
-    // screen coordinate volume center, change on the mouse drag(move)
-    Domain::Vec2d volume_center;
+    // Position of the cross hair
+    ImVec2 cross_hair_pos; // []
 
     // screen coordinate offset volume center from mouse at drag start
     // fixed during dragging
-    Domain::Vec2d volume_offset;
+    Domain::Vec2d logical_offset;
 
     Domain::SquareMatrix4d last_tr = Domain::SquareMatrix4d::Identity(); // for rendring
 
@@ -411,15 +412,37 @@ void draw_cross_hair(
 }
 
 void draw_cross_hair(const Drag& drag) {
-    const Domain::Vec2d& p = drag.volume_center;
-    ImVec2 position((float)p.x(), (float)p.y());
     ImU32 color = ImGui::GetColorU32(drag.valid ?
         ImVec4(1.f, 1.f, 1.f, .65f) : // transparent white (valid)
         ImVec4(1.f, .3f, .3f, .65f) // transparent redish (invalid)
     );
-    draw_cross_hair(position, color);
+    draw_cross_hair(drag.cross_hair_pos, color);
 }
 
+Domain::Vec2d logical_to_physical(const App::Render::ScreenInfo& screen_info, const Domain::Vec2d& logical) {
+    return Domain::Vec2d{
+        screen_info.logical_to_physical(logical.x()),
+        screen_info.logical_to_physical(logical.y()),
+    };
+}
+
+Domain::Vec2d physical_to_logical(const App::Render::ScreenInfo& screen_info, const Domain::Vec2d& physical) {
+    return Domain::Vec2d{
+        screen_info.physical_to_logical(physical.x()),
+        screen_info.physical_to_logical(physical.y()),
+    };
+}
+
+Domain::Vec2d get_mouse_coor(const Scene::GizmoEventContext& ctx) {
+    return Domain::Vec2d{
+        ctx.mouse_event().x(),
+        ctx.mouse_event().y()
+    }; // logical coordinate
+}
+
+ImVec2 to_imvec2(const Domain::Vec2d& v) {
+    return ImVec2(v.x(), v.y());
+}
 } // namespace
 
 bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
@@ -454,12 +477,13 @@ bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
         Domain::Vec3d volume_center = m_drag->to_world.translation();
         // volume center screen coordinate
 
-        const Scene::Camera& camera = m_scene_presenter.scene().camera();
-        Domain::Vec2d center_neg_y = camera.project_to_screen_space(volume_center);
-        center_neg_y.y() = camera.viewport().height - center_neg_y.y(); // fix negative direction of y
-        m_drag->volume_center = center_neg_y;
-        Domain::Vec2d mouse_coor(ctx.screen_mouse_x(), ctx.screen_mouse_y());
-        m_drag->volume_offset = m_drag->volume_center - mouse_coor;
+        // Settings for cross hair
+        const Scene::Camera& camera = m_scene_presenter.scene().camera();        
+        Domain::Vec2d scene_pos = camera.project_to_screen_space(volume_center); // physical position
+        scene_pos.y() = camera.viewport().height - scene_pos.y();
+        m_drag->logical_offset = physical_to_logical(ctx.screen_info(), scene_pos) - get_mouse_coor(ctx);
+        m_drag->cross_hair_pos = to_imvec2(get_mouse_coor(ctx) + m_drag->logical_offset);
+
         // TODO: Not working ImGui Node
         Scene::FuncImguiRenderNodeComponent::RenderFunc imgui_fn = 
             [this](const Scene::Node& node, const Eigen::AlignedBox<float,2>& box) {
@@ -485,9 +509,10 @@ bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx)
     if (m_drag == nullptr)
         return false;
 
-    Domain::Vec2d mouse_coor(ctx.screen_mouse_x(), ctx.screen_mouse_y());
-    Domain::Vec2d pick = mouse_coor + m_drag->volume_offset;        
-    m_drag->volume_center = pick;
+    Domain::Vec2d mouse_coor = get_mouse_coor(ctx);
+    Domain::Vec2d pick_logical = mouse_coor + m_drag->logical_offset;
+    m_drag->cross_hair_pos = to_imvec2(pick_logical);
+    Domain::Vec2d pick = logical_to_physical(ctx.screen_info(), pick_logical);
     Scene::NodePickResults pick_results;
     Scene::Ray pick_ray;
     // ignor return value
