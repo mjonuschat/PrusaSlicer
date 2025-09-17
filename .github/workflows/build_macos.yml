@@ -84,7 +84,7 @@ jobs:
 
       - name: Install zstd
         run: |
-          brew install zstd            
+          brew install zstd
 
       - name: Build PrusaSlicer (BOSS) ${{ matrix.arch }}
         working-directory: ${{ github.workspace }}
