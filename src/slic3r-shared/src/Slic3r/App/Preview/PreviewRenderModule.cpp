@@ -20,6 +20,7 @@
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
+#include "Slic3r/App/RenderModuleHelper.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -34,7 +35,6 @@
 #include <boost/nowide/cstdio.hpp>
 #include <boost/filesystem/operations.hpp>
 
-#define ENABLED_DEBUG_OUTLINE 0
 #define ENABLED_DEBUG_VIEWER 0
 #define ENABLED_DEBUG_LOAD_DATA 0
 #define ENABLED_DEBUG_VIEWER_MODE 0
@@ -207,84 +207,6 @@ static void render_imgui_debug_viewer_mode(Wrapper& viewer)
     ImGui::End();
 }
 #endif // ENABLED_DEBUG_VIEWER_MODE
-
-class ImguiVecRender
-{
-public:
-    void operator()(const char* label, const Vec2f& v)
-    {
-        fill_data<2>(v);
-        ImGui::InputFloat2(label, m_data);
-    }
-
-    void operator()(const char* label, const Vec2d& v)
-    {
-        fill_data<2>(v);
-        ImGui::InputFloat2(label, m_data);
-    }
-
-    void operator()(const char* label, const Vec3d& v)
-    {
-        fill_data<3>(v);
-        ImGui::InputFloat3(label, m_data);
-    }
-
-    void operator()(const char* label, const Vec4f& v)
-    {
-        fill_data<4>(v);
-        ImGui::InputFloat4(label, m_data);
-    }
-
-    void operator()(const char* label, const Vec4d& v)
-    {
-        fill_data<4>(v);
-        ImGui::InputFloat4(label, m_data);
-    }
-
-private:
-    template <size_t N, typename VecT>
-    void fill_data(const VecT& data)
-    {
-        for (size_t i = 0; i < N; i++)
-            m_data[i] = static_cast<float>(data[i]);
-    }
-
-private:
-    float m_data[4];
-};
-
-void imgui_scenegraph_node_info(const Scene::Node& node)
-{
-    ImGuiTreeNodeFlags node_flags = 0; // ImGuiTreeNodeFlags_DefaultOpen;
-    if (node.children().empty())
-        node_flags |= ImGuiTreeNodeFlags_Leaf;
-    const std::string& name = node.debug_name();
-    if (ImGui::TreeNodeEx(&node, node_flags, "%s %s%s%s%s", name.empty() ? "Node" : name.c_str(), node.has_render_component() ? "(R)" : "", node.has_material_override() ? "(M)" : "", node.has_imgui_render_component() ? "(I)" : "", node.has_raycast_component() ? "(C)" : ""))
-    {
-        static const Scene::Node* opened_node = nullptr;
-
-        ImGui::SameLine();
-        if (ImGui::SmallButton("info")) {
-            opened_node = (opened_node == &node) ? nullptr : &node;
-        }
-
-        if (opened_node == &node) {
-            auto transform{node.world_transform()};
-
-            ImguiVecRender vec_render;
-            for (size_t i = 0; i < 4; i++) {
-                ImGui::PushID(i);
-                vec_render("##", Vec4d{transform.matrix().row(i)});
-                ImGui::PopID();
-            }
-        }
-
-        for (const auto& ch : node.children()) {
-            imgui_scenegraph_node_info(*ch);
-        }
-        ImGui::TreePop();
-    }
-}
 
 void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {

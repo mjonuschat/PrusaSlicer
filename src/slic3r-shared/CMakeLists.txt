@@ -134,6 +134,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/SidebarToolHeadRow.cpp
         include/Slic3r/App/PrinterNozzleRow.hpp
         src/Slic3r/App/PrinterNozzleRow.cpp
+        include/Slic3r/App/RenderModuleHelper.hpp
+        src/Slic3r/App/RenderModuleHelper.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
