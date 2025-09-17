@@ -200,7 +200,7 @@ typedef struct unencrypted_format_header
     uint32_t encrypted_header_size;
     uint32_t encrypted_header_offset;
     uint32_t unknown1 = 0;
-    uint32_t unknown2 = 0;
+    uint32_t version = 0;
     uint32_t signature_size;
     uint32_t signature_offset;
     uint32_t unknown3 = 0;
