@@ -279,6 +279,9 @@ void SinkingContours::update_scene(Render::Device& device, const Domain::Project
 void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info, const Domain::Project& project,
     Scene::Scene& scene)
 {
+    if (is_empty())
+        return;
+
     if (e.type() == Platform::MouseEvent::Type::Move) {
 
         Scene::Node::NodeList nodes;
@@ -293,6 +296,9 @@ void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Ren
         Scene::Node::NodeList highlight_nodes;
 
         if (m_selection.empty()) {
+            /*          */
+            /* hovering */
+            /*          */
             Scene::NodePickResults pick_results;
             Scene::Ray pick_ray;
             scene.pick_at(
@@ -301,29 +307,47 @@ void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Ren
                 pick_results, &pick_ray
             );
 
-            for (auto& [n, t] : pick_results) {
-                const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
-                if (tag != nullptr) {
-                    Scene::Node* child = n->query_first([](const Scene::Node* c) {
-                        const SinkingSceneNodeTag* tag = c->tag_of_type<SinkingSceneNodeTag>();
-                        return tag != nullptr;
-                    }, true);
-                    if (child != nullptr)
-                        highlight_nodes.push_back(child);
-                    break;
+            Scene::Node* hovered_node = nullptr;
+            if (!pick_results.empty()){
+                if (scene.camera().pointing_upward()) {
+                    for (auto& [n, t] : pick_results) {
+                        const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+                        if (tag != nullptr) {
+                            hovered_node = n;
+                            break;
+                        }
+                    }
                 }
+                else {
+                    // take the first hit to avoid selecting part of the volume hidden by the bed
+                    Scene::Node* n = pick_results.front().node;
+                    if (n->tag_of_type<SceneNodeTag>() != nullptr)
+                        hovered_node = n;
+                }
+            }
+
+            if (hovered_node != nullptr) {
+                Scene::Node* child = hovered_node->query_first([](const Scene::Node* c) {
+                    const SinkingSceneNodeTag* tag = c->tag_of_type<SinkingSceneNodeTag>();
+                    return tag != nullptr;
+                }, true);
+                if (child != nullptr)
+                    highlight_nodes.push_back(child);
             }
         }
         else {
+            /*              */
+            /* transforming */
+            /*              */
             Domain::ElementRefs selected_volumes_refs = collect_selected_volumes_refs(project, m_selection);
-            Scene::Node::NodeList nodes = collect_selected_nodes(scene, selected_volumes_refs);
-            DEBUG_ASSERT(selected_volumes_refs.size() == nodes.size());
+            Scene::Node::NodeList selected_nodes = collect_selected_nodes(scene, selected_volumes_refs);
+            DEBUG_ASSERT(selected_volumes_refs.size() == selected_nodes.size());
 
-            for (Scene::Node* n : nodes) {
+            for (Scene::Node* n : selected_nodes) {
                 Scene::Node* child = n->query_first([](const Scene::Node* c) {
                     const SinkingSceneNodeTag* tag = c->tag_of_type<SinkingSceneNodeTag>();
-                      return tag != nullptr;
-                    }, true);
+                    return tag != nullptr;
+                }, true);
                 if (child != nullptr)
                     highlight_nodes.push_back(child);
             }

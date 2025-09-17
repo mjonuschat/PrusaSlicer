@@ -33,6 +33,8 @@ public:
 
     void set_selection(const Domain::ElementRefs& selection) { m_selection = selection; }
 
+    bool is_empty() const { return m_model_geometry_manager.is_empty(); }
+
 private:
     ModelGeometryManager m_model_geometry_manager;
     Domain::ElementRefs m_selection;
