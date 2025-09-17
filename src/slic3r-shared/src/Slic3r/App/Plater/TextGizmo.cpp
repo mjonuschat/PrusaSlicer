@@ -726,6 +726,8 @@ void TextGizmo::on_activated()
 void TextGizmo::on_deactivated() {
     Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.remove_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
+    m_text_lines.reset(); // remove scene node
+    m_last_loaded_volume_id.id = 0; // invalid
 }
 
 Scene::ToolType TextGizmo::type() const {
@@ -914,8 +916,10 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
         set_dialog_surface_distance(*m_dialog, m_preset_manager, m_use_inch);
     }
 
-    if (m_preset_manager.get_font_prop().per_glyph && !m_text_lines.exist_lines())
-        m_text_lines.create_text_lines(count_lines);
+    if (m_preset_manager.get_font_prop().per_glyph)
+        m_text_lines.create_text_lines(count_lines); // create current text lines on text change
+    else
+        m_text_lines.reset(); // remove previous text lines
 
     m_last_loaded_volume_id = volume.id();
 }
