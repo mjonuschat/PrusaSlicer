@@ -7,15 +7,22 @@ on:
 jobs:
   build_flatpak:
     name: Compile & Bundle Flatpak
-    runs-on: ubuntu-latest
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-47
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
       options: --privileged
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
     env:
       date: ""
       date_long: ""
       ver: ""
       ver_pure: ""
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +39,26 @@ jobs:
           echo "ver_pure=$ver_pure" >> $GITHUB_ENV
           echo "date=$(date +'%Y%m%d')" >> $GITHUB_ENV
           echo "date_long=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
         shell: bash
+
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.31'
+
+      - name: Determine Cache Keys
+        id: cache-keys
+        run: |
+          echo cache-path=${{ github.workspace }}/.flatpak-builder >> "$GITHUB_OUTPUT"
+          echo cache-key=flatpak-builder-prusaslicer-deps-${{ matrix.arch }}-${{ hashFiles('deps/**') }} >> "$GITHUB_OUTPUT"
+
+      - name: Restore build dependencies cache
+        id: cache-build-deps-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ steps.cache-keys.outputs.cache-path }}
+          key: ${{ steps.cache-keys.outputs.cache-key }}
 
       - name: Update version information
         if: startsWith(github.ref, 'refs/heads/release/')
@@ -46,16 +72,49 @@ jobs:
         run: |
           sed --in-place -e 's/2024-09-19/${{ env.date_long }}/g' .flatpak/io.github.mjonuschat.PrusaSlicer.metainfo.xml
 
-      - name: Build PrusaSlicer (BOSS) Linux Flatpak
-        uses: flathub-infra/flatpak-github-actions/flatpak-builder@master
+      - name: Update the build source
+        shell: bash
+        run: |
+          flatpak-builder --show-manifest .flatpak/io.github.mjonuschat.PrusaSlicer.yml | \
+            jq '.modules[] |= if .name == "PrusaSlicerDeps" or .name == "PrusaSlicer" then
+                (.sources[] |= if .type == "dir" and .path == ".." then
+                    {
+                        "type": "git",
+                        "url": "file://${{ env.GITHUB_WORKSPACE }}",
+                        "commit": "HEAD"
+                    }
+                else . end)
+            else . end' > .flatpak/io.github.mjonuschat.PrusaSlicer.json
+
+      - name: Build PrusaSlicer (BOSS) Linux Dependencies
+        if: steps.cache-build-deps-restore.outputs.cache-hit != 'true'
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.flatpak
-          manifest-path: .flatpak/io.github.mjonuschat.PrusaSlicer.yml
-          cache-key: flatpak-builder-${{ github.sha }}
+          bundle: PrusaSlicer-Dependencies-${{ env.ver }}+Linux-${{ env.date }}.${{ matrix.arch }}.flatpak
+          stop-at-module: PrusaSlicer
+          manifest-path: .flatpak/io.github.mjonuschat.PrusaSlicer.json
+          cache: false
+          arch: ${{ matrix.arch }}
+          upload-artifact: false
+
+      - name: Save build dependencies cache
+        id: cache-build-deps-save
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.cache-keys.outputs.cache-path }}
+          key: ${{ steps.cache-build-deps-restore.outputs.cache-primary-key }}
+
+      - name: Build PrusaSlicer (BOSS) Linux Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.${{ matrix.arch }}.flatpak
+          manifest-path: .flatpak/io.github.mjonuschat.PrusaSlicer.json
+          cache: false
+          arch: ${{ matrix.arch }}
           upload-artifact: false
 
       - uses: actions/upload-artifact@v4
         with:
-          name: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}
-          path: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.flatpak
+          name: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.${{ matrix.arch }}
+          path: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.${{ matrix.arch }}.flatpak
           if-no-files-found: error

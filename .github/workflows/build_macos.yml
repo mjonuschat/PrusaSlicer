@@ -37,6 +37,11 @@ jobs:
           echo "date=$(date +'%Y%m%d')" >> $GITHUB_ENV
         shell: bash
 
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.31'
+
       - name: Determine Cache Keys
         id: cache-keys
         run: |
@@ -79,7 +84,7 @@ jobs:
 
       - name: Install zstd
         run: |
-          brew install zstd            
+          brew install zstd
 
       - name: Build PrusaSlicer (BOSS) ${{ matrix.arch }}
         working-directory: ${{ github.workspace }}

@@ -38,6 +38,11 @@ jobs:
           echo "date: ${{ env.date }} version: ${{ env.ver }}"
         shell: pwsh
 
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.31'
+
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
@@ -49,7 +54,7 @@ jobs:
       - name: Install Strawberry Perl
         working-directory: ${{ github.workspace }}
         run: |
-            choco install strawberryperl   
+            choco install strawberryperl
 
       - name: Download Visual C++ 2022 Redistributable
         id: download-vcredist
@@ -86,7 +91,7 @@ jobs:
             .\build_win.bat -v=17 -d=.\deps\build\PrusaSlicer_dep -c=Release -r=none -s=deps
             .\build_win.bat -v=17 -d=.\deps\build\PrusaSlicer_dep -c=Release -r=none -s=pack
             cd ${{ github.workspace }}/deps/build
-          
+
       - name: Build PrusaSlicer (BOSS)
         working-directory: ${{ github.workspace }}
         run: |
