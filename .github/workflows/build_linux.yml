@@ -39,6 +39,7 @@ jobs:
           echo "ver_pure=$ver_pure" >> $GITHUB_ENV
           echo "date=$(date +'%Y%m%d')" >> $GITHUB_ENV
           echo "date_long=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
         shell: bash
 
       - name: Setup cmake
@@ -71,12 +72,27 @@ jobs:
         run: |
           sed --in-place -e 's/2024-09-19/${{ env.date_long }}/g' .flatpak/io.github.mjonuschat.PrusaSlicer.metainfo.xml
 
+      - name: Update the build source
+        shell: bash
+        run: |
+          flatpak-builder --show-manifest .flatpak/io.github.mjonuschat.PrusaSlicer.yml | \
+            jq '.modules[] |= if .name == "PrusaSlicerDeps" or .name == "PrusaSlicer" then
+                (.sources[] |= if .type == "dir" and .path == ".." then
+                    {
+                        "type": "git",
+                        "url": "file://${{ env.GITHUB_WORKSPACE }}",
+                        "commit": "HEAD"
+                    }
+                else . end)
+            else . end' > .flatpak/io.github.mjonuschat.PrusaSlicer.json
+
       - name: Build PrusaSlicer (BOSS) Linux Dependencies
+        if: steps.cache-build-deps-restore.outputs.cache-hit != 'true'
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: PrusaSlicer-Dependencies-${{ env.ver }}+Linux-${{ env.date }}.${{ matrix.arch }}.flatpak
           stop-at-module: PrusaSlicer
-          manifest-path: .flatpak/io.github.mjonuschat.PrusaSlicer.yml
+          manifest-path: .flatpak/io.github.mjonuschat.PrusaSlicer.json
           cache: false
           arch: ${{ matrix.arch }}
           upload-artifact: false
@@ -92,13 +108,13 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.${{ matrix.arch }}.flatpak
-          manifest-path: .flatpak/io.github.mjonuschat.PrusaSlicer.yml
+          manifest-path: .flatpak/io.github.mjonuschat.PrusaSlicer.json
           cache: false
           arch: ${{ matrix.arch }}
           upload-artifact: false
 
       - uses: actions/upload-artifact@v4
         with:
-          name: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}
-          path: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.flatpak
+          name: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.${{ matrix.arch }}
+          path: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.${{ matrix.arch }}.flatpak
           if-no-files-found: error
