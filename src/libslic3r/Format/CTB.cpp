@@ -107,6 +107,8 @@ template<typename T> T get_cfg_value(const DynamicConfig &cfg, const std::string
             else if (opt->type() == Slic3r::ConfigOptionType::coFloat ||
                      opt->type() == Slic3r::ConfigOptionType::coPercent)
                 ret = (T) opt->getFloat();
+            else if (opt->type() == Slic3r::ConfigOptionType::coBool)
+                ret = (T) opt->getBool();
         }
     }
 
@@ -204,8 +206,6 @@ void fill_header(
     const SLAPrint &print,
     std::uint32_t layer_count
 ) {
-    CNumericLocalesSetter locales_setter;
-
     auto &cfg = print.full_print_config();
 
     SLAPrintStatistics stats = print.print_statistics();
@@ -256,7 +256,7 @@ void fill_header(
     print_params.zero_pad3 = 0;
     print_params.zero_pad4 = 0;
 
-    if (get_cfg_value<bool>(cfg, "enable_tsmc") == true) {
+    if (get_cfg_value<bool>(cfg, "tsmc_enable") == true) {
         slicer_info.bot_lift_height2        = get_cfg_value<float>(cfg, "tsmc_bot_lift_distance");
         slicer_info.bot_lift_speed2         = get_cfg_value<float>(cfg, "tsmc_bot_lift_speed");
         slicer_info.lift_height2            = get_cfg_value<float>(cfg, "tsmc_lift_distance");
@@ -326,16 +326,14 @@ void fill_header_encrypted(
     const SLAPrint &print,
     std::uint32_t layer_count
 ) {
-    CNumericLocalesSetter locales_setter;
-
     auto &cfg = print.full_print_config();
 
     SLAPrintStatistics stats = print.print_statistics();
 
     // clang-format off
     u.magic = MAGIC_ENCRYPTED;
+    u.version = 4;
     u.unknown1 = 0;
-    u.unknown2 = 0;
     u.unknown3 = 0;
     u.unknown4 = 1;
     u.unknown5 = 1;
@@ -378,7 +376,7 @@ void fill_header_encrypted(
     h.layer_xor_key       = 0;
     // h.layer_xor_key       = 0xEFBEADDE;
     //  h.level_set_count            = 0;  // Useless unless antialiasing for cbddlp
-    if (get_cfg_value<bool>(cfg, "enable_tsmc") == true) {
+    if (get_cfg_value<bool>(cfg, "tsmc_enable") == true) {
         h.bot_lift_height2      = get_cfg_value<float>(cfg, "tsmc_bot_lift_distance");
         h.bot_lift_speed2       = get_cfg_value<float>(cfg, "tsmc_bot_lift_speed");
         h.lift_height2          = get_cfg_value<float>(cfg, "tsmc_lift_distance");
@@ -622,8 +620,9 @@ void CtbSLAArchive::export_print(
 
     auto &cfg = print.full_print_config();
     std::string machine_name = cfg.option("printer_model")->serialize();
+    std::string printer_notes = cfg.option("printer_notes")->serialize();
     uint8_t is_encrypted = 0;
-    if (machine_name == "MARS3PRO4K" || machine_name == "MARS3ULTRA4K") {
+    if (printer_notes.find("FILEFORMAT_ENCRYPTED.CTB") != std::string::npos) {
         is_encrypted = 1;
         fill_header_encrypted(unencrypted_header, decrypted_header.header_struct, print, layer_count);
         decrypted_header.header_struct.machine_name_size = machine_name.length();
@@ -733,18 +732,7 @@ void CtbSLAArchive::export_print(
 
             // clang-format off
             for (const sla::EncodedRaster &rst : m_layers) {
-                if (i < header.bot_layer_count) {
-                    layer_header.exposure = decrypted_header.header_struct.exposure;
-                    layer_header.light_off_delay = decrypted_header.header_struct.light_off_delay;
-                    layer_header.lift_height = decrypted_header.header_struct.lift_height;
-                    layer_header.lift_speed = decrypted_header.header_struct.lift_speed;
-                    layer_header.lift_height2 = decrypted_header.header_struct.lift_height2;
-                    layer_header.lift_speed2 = decrypted_header.header_struct.lift_speed2;
-                    layer_header.retract_speed = decrypted_header.header_struct.retract_speed;
-                    layer_header.retract_height2 = decrypted_header.header_struct.retract_height2;
-                    layer_header.retract_speed2 = decrypted_header.header_struct.retract_speed2;
-                    layer_header.light_pwm = decrypted_header.header_struct.pwm_level;
-                } else {
+                if (i < decrypted_header.header_struct.bot_layer_count) {
                     layer_header.exposure = decrypted_header.header_struct.bot_exposure;
                     layer_header.light_off_delay = decrypted_header.header_struct.bot_light_off_delay;
                     layer_header.lift_height     = decrypted_header.header_struct.bot_lift_height;
@@ -755,6 +743,17 @@ void CtbSLAArchive::export_print(
                     layer_header.retract_height2 = decrypted_header.header_struct.bot_retract_height2;
                     layer_header.retract_speed2 = decrypted_header.header_struct.bot_retract_speed2;
                     layer_header.light_pwm = decrypted_header.header_struct.bot_pwm_level;
+                } else {
+                    layer_header.exposure = decrypted_header.header_struct.exposure;
+                    layer_header.light_off_delay = decrypted_header.header_struct.light_off_delay;
+                    layer_header.lift_height = decrypted_header.header_struct.lift_height;
+                    layer_header.lift_speed = decrypted_header.header_struct.lift_speed;
+                    layer_header.lift_height2 = decrypted_header.header_struct.lift_height2;
+                    layer_header.lift_speed2 = decrypted_header.header_struct.lift_speed2;
+                    layer_header.retract_speed = decrypted_header.header_struct.retract_speed;
+                    layer_header.retract_height2 = decrypted_header.header_struct.retract_height2;
+                    layer_header.retract_speed2 = decrypted_header.header_struct.retract_speed2;
+                    layer_header.light_pwm = decrypted_header.header_struct.pwm_level;
                 }
                 // clang-format on
 
