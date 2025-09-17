@@ -11,7 +11,8 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
-#include <Slic3r/Biz/Emboss/TextLines.hpp>
+#include "Slic3r/Biz/Emboss/TextLines.hpp"
+#include "Slic3r/Biz/Emboss/SurfaceDrag.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneSelectionChangedListener
 
 namespace Slic3r::App::Plater {
@@ -97,6 +98,7 @@ private:
     Scene::GizmoManager& m_gizmo_manager;
 
     Biz::Emboss::TextPresetManager m_preset_manager;
+    Biz::Emboss::SurfaceDrag m_surface_drag;
     Biz::Emboss::TextLinesModel m_text_lines;
 
     std::string m_text; // embossed text
@@ -117,9 +119,6 @@ private:
     bool m_use_inch = false;
     bool m_use_deg = true;
     bool m_lock_up = true;
-
-    struct Drag; // pimpl
-    std::unique_ptr<Drag> m_drag; // exist only during drag operation
 
     // only for check
     Domain::ObjectID m_last_loaded_volume_id;

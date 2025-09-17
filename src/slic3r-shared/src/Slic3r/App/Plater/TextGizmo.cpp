@@ -31,85 +31,6 @@
 namespace {
 using namespace Slic3r;
 
-struct Drag {
-    // Project interactor transformation cache;
-    Biz::Scene::TransformMemento memento;
-
-    // volume world transformation before draggig
-    Domain::Transform3d to_world;
-    Domain::Transform3d instance;
-    Domain::Transform3d instance_inv;
-    Domain::Transform3d volume_inv;
-
-    // Position of the cross hair
-    ImVec2 cross_hair_pos; // []
-
-    // screen coordinate offset volume center from mouse at drag start
-    // fixed during dragging
-    Domain::Vec2d logical_offset;
-
-    Domain::SquareMatrix4d last_tr = Domain::SquareMatrix4d::Identity(); // for rendring
-
-    // True on hit object surface otherwise false. (cross hair color)
-    bool valid = true;
-};
-} // namespace
-
-namespace Slic3r::Biz::Emboss {
-// TODO: made shape by current selected preset and text
-class TextShapeProvider : public ShapeProvider
-{
-public:
-    TextShapeProvider(
-        const Domain::TextConfiguration& text_configuration,
-        const Domain::EmbossProjection& projection,
-        const Biz::Emboss::TextLines& text_lines,
-        FontFileWithCache& font_with_cache
-    ) 
-        : m_text_configuration(text_configuration)
-        , m_font_with_cache(font_with_cache)
-    {
-        m_shape.projection = projection; // copy current projection
-        m_text_lines = text_lines; // copy
-    }
-
-    Domain::EmbossShape& get_shape() override
-    {
-        if (!m_shape.final_shape.expolygons.empty())
-            return m_shape; // use cached value
-                
-        std::wstring text = boost::nowide::widen(m_text_configuration.text);
-        const Domain::FontProp& font_prop = m_text_configuration.style.prop;
-        m_shape.shapes_with_ids = text2vshapes(m_font_with_cache, text, font_prop);
-        const Domain::FontFile& ff = *m_font_with_cache.font_file;
-        m_shape.scale = get_text_shape_scale(font_prop, ff);
-        return m_shape;
-    }
-
-    void write(Domain::ModelVolume& volume) const override
-    {
-        ShapeProvider::write(volume);
-        volume.text_configuration = m_text_configuration; // copy
-        ASSERT(volume.emboss_shape.has_value());
-
-        // Fix for object: stored attribute that volume is embossed per glyph when it is object
-        // Removing object without text gizmo
-        if (volume.is_the_only_one_part()) {
-            if (m_text_configuration.style.prop.per_glyph)
-                volume.text_configuration->style.prop.per_glyph = false;
-            if (m_shape.projection.use_surface)
-                volume.emboss_shape->projection.use_surface = false;
-        }
-    }
-
-private:
-    // font item is not used for create object
-    Domain::TextConfiguration m_text_configuration;
-    FontFileWithCache& m_font_with_cache;
-};
-} // namespace Slic3r::Biz::Emboss
-
-namespace {
 template<typename T>
 bool set_opt(std::optional<T>& val_opt, double new_value, double scale) {
     T scaled_new = static_cast<T>(new_value / scale);
@@ -124,7 +45,6 @@ bool set_opt(std::optional<T>& val_opt, double new_value, double scale) {
 
 // Stamp for Scene object -> Node
 struct EmbossTag {};
-struct CrossHairTag: EmbossTag {};
 
 // work only with selected Text volume/object
 // NOTE: move function near SceneInteractor::transform_selection
@@ -147,7 +67,6 @@ double mm_to_inch = 25.4;
 double inch_to_mm = 1. / mm_to_inch;
 double UP_LIMIT = 0.9;
 
-Domain::Transform3d get_volume_transformation(Domain::Transform3d, const Domain::Vec3d&, const Domain::Vec3d&, const Domain::Transform3d&, const std::optional<float>&, const std::optional<float>&, const std::optional<double>& );
 } // namespace
 
 namespace Slic3r::App::Plater {
@@ -155,8 +74,6 @@ namespace Slic3r::App::Plater {
 namespace {
 void set_dialog_rotation(TextDialog& dialog, const Biz::Emboss::TextPresetManager& preset_manager, bool use_deg);    
 } // namespace
-
-struct TextGizmo::Drag : public ::Drag {};
 
 TextGizmo::TextGizmo(
     Render::Device& device,
@@ -175,8 +92,8 @@ TextGizmo::TextGizmo(
         ImGui::GetIO().Fonts->GetGlyphRangesDefault(),
         Slic3r::data_dir() + "/text_emboss_presets.cereal"
     ),
+    m_surface_drag(scene_presenter, project_interactor),
     m_text_lines(m_preset_manager, project_interactor, scene_presenter, device),
-    m_drag(nullptr),
     m_last_loaded_volume_id(0) // invalid value
 {
     // Initialize font descriptor to font copied with application
@@ -307,7 +224,7 @@ TextGizmo::TextGizmo(
 
         Domain::Vec3d world_position = to_world.translation();
         const Biz::Emboss::TextPresetManager::Preset& preset = m_preset_manager.get_preset();
-        Domain::Transform3d new_volume_tr = get_volume_transformation(to_world, wanted_dir, world_position, instance_tr_inv,
+        Domain::Transform3d new_volume_tr = Biz::Emboss::get_volume_transformation(to_world, wanted_dir, world_position, instance_tr_inv,
             preset.angle, preset.distance, m_up_limit);
         Domain::Transform3d volume_relative = instance_tr * new_volume_tr * volume_tr_inv * instance_tr_inv;
         scene_interactor.transform_selection(volume_relative.matrix());
@@ -393,204 +310,41 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
     return Scene::GizmoActivationState::Inactive;
 }
 
-namespace {
-void draw_cross_hair(
-    const ImVec2& position,
-    ImU32 color = ImGui::GetColorU32(ImVec4(1.f, 1.f, 1.f, .75f)),
-    float radius = 12.f,
-    int num_segments = 0,
-    float thickness = 3.f)
-{
-    auto draw_list = ImGui::GetForegroundDrawList();
-    draw_list->AddCircle(position, radius, color, num_segments, thickness);
-    auto dirs = { ImVec2{0, 1}, ImVec2{1, 0}, ImVec2{0, -1}, ImVec2{-1, 0} };
-    for (const ImVec2& dir : dirs) {
-        ImVec2 start(position.x + dir.x * 0.5 * radius, position.y + dir.y * 0.5 * radius);
-        ImVec2 end(position.x + dir.x * 1.5 * radius, position.y + dir.y * 1.5 * radius);
-        draw_list->AddLine(start, end, color, thickness);
-    }
-}
+bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx) { return m_surface_drag.on_drag_start(ctx); }
+bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx) {
+    const Biz::Emboss::TextPresetManager::Preset& preset = m_preset_manager.get_preset();
+    if (!m_surface_drag.on_dragging(ctx, preset.angle, preset.distance, m_up_limit))
+        return false;
 
-void draw_cross_hair(const Drag& drag) {
-    ImU32 color = ImGui::GetColorU32(drag.valid ?
-        ImVec4(1.f, 1.f, 1.f, .65f) : // transparent white (valid)
-        ImVec4(1.f, .3f, .3f, .65f) // transparent redish (invalid)
-    );
-    draw_cross_hair(drag.cross_hair_pos, color);
-}
+    if (!m_surface_drag.is_dragging())
+        return true; // out of surface but still dragging
 
-Domain::Vec2d logical_to_physical(const App::Render::ScreenInfo& screen_info, const Domain::Vec2d& logical) {
-    return Domain::Vec2d{
-        screen_info.logical_to_physical(logical.x()),
-        screen_info.logical_to_physical(logical.y()),
-    };
-}
-
-Domain::Vec2d physical_to_logical(const App::Render::ScreenInfo& screen_info, const Domain::Vec2d& physical) {
-    return Domain::Vec2d{
-        screen_info.physical_to_logical(physical.x()),
-        screen_info.physical_to_logical(physical.y()),
-    };
-}
-
-Domain::Vec2d get_mouse_coor(const Scene::GizmoEventContext& ctx) {
-    return Domain::Vec2d{
-        ctx.mouse_event().x(),
-        ctx.mouse_event().y()
-    }; // logical coordinate
-}
-
-ImVec2 to_imvec2(const Domain::Vec2d& v) {
-    return ImVec2(v.x(), v.y());
-}
-} // namespace
-
-bool TextGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
-{
-    for (const Scene::NodePickResult& pick : ctx.pick_results()) {
-        if (!pick.node->has_tag_of_type<SceneNodeTag>())
-            continue; // ignore staff(node) infront of text volume
-        
-        auto* tag = pick.node->tag_of_type<SceneNodeTag>();
-        // Only last seleceted Volume could be dragged over surface
-        if (tag->volume_id != m_last_loaded_volume_id.id)
-            return false;
-
+    if (!m_up_limit.has_value()) { // recalculate angle when not locked
         const Domain::Project& project = m_project_interactor.selected_project();
-        const Domain::ModelVolume* volume_ptr = 
-            project.find_volume_by_id(tag->object_id, tag->volume_id);
-        ASSERT(volume_ptr != nullptr);
-        const Domain::ModelVolume& volume = *volume_ptr;
-        if (volume.get_object()->volumes.size() == 1)
-            return false; // Object is moved by default drag
+        const Domain::ElementRef& element = 
+            m_project_interactor.scene_interactor().object_selection().elements.front();
 
-        // calc mouse offset to volume center
-        const Domain::ModelInstance* instance_ptr = 
-            project.find_instance_by_id(tag->object_id, tag->instance_id);
-        ASSERT(instance_ptr != nullptr);
-
-        m_drag = std::make_unique<Drag>();
-        m_drag->to_world = instance_ptr->get_matrix() * volume.get_matrix();
-        m_drag->instance = instance_ptr->get_matrix();
-        m_drag->instance_inv = instance_ptr->get_matrix().inverse();
-        m_drag->volume_inv = volume.get_matrix().inverse();
-        Domain::Vec3d volume_center = m_drag->to_world.translation();
-        // volume center screen coordinate
-
-        // Settings for cross hair
-        const Scene::Camera& camera = m_scene_presenter.scene().camera();        
-        Domain::Vec2d scene_pos = camera.project_to_screen_space(volume_center); // physical position
-        scene_pos.y() = camera.viewport().height - scene_pos.y();
-        m_drag->logical_offset = physical_to_logical(ctx.screen_info(), scene_pos) - get_mouse_coor(ctx);
-        m_drag->cross_hair_pos = to_imvec2(get_mouse_coor(ctx) + m_drag->logical_offset);
-
-        // TODO: Not working ImGui Node
-        Scene::FuncImguiRenderNodeComponent::RenderFunc imgui_fn = 
-            [this](const Scene::Node& node, const Eigen::AlignedBox<float,2>& box) {
-                if (m_drag == nullptr) return;
-                draw_cross_hair(*m_drag);
-            };
-        Scene::Scene& scene = m_scene_presenter.scene();
-        Scene::NodeBuilder builder{scene};
-        builder
-            .set_debug_name("Cross hair for volume center -> 2D")
-            //.set_transform(m_drag->to_world)
-            .set_tag(CrossHairTag{})
-            .set_imgui_func(imgui_fn);
-        scene.add_child(builder.build().release());
-        return true;
-    }
-    return false;
-}
-
-bool TextGizmo::on_dragging(const Scene::GizmoEventContext& ctx) 
-{
-    Domain::SquareMatrix4d tr = Domain::SquareMatrix4d::Identity();
-    if (m_drag == nullptr)
-        return false;
-
-    Domain::Vec2d mouse_coor = get_mouse_coor(ctx);
-    Domain::Vec2d pick_logical = mouse_coor + m_drag->logical_offset;
-    m_drag->cross_hair_pos = to_imvec2(pick_logical);
-    Domain::Vec2d pick = logical_to_physical(ctx.screen_info(), pick_logical);
-    Scene::NodePickResults pick_results;
-    Scene::Ray pick_ray;
-    // ignor return value
-    m_scene_presenter.scene().pick_at(pick.x(), pick.y(), pick_results, &pick_ray); 
-
-    const Domain::Project& project = m_project_interactor.selected_project();
-    const Domain::ModelVolume* embossed_volume_ptr = Biz::Emboss::get_volume(project, m_last_loaded_volume_id);
-    if (embossed_volume_ptr == nullptr) {
-        // cant find last loaded volume -> end dragging
-        m_drag = nullptr;
-        return false;
-    }
-    size_t last_loaded_object_id = embossed_volume_ptr->get_object()->id().id;
-    
-    for (const Scene::NodePickResult& pick : pick_results) {
-        if (!pick.node->has_tag_of_type<SceneNodeTag>())
-            continue; // only node tag
-        auto* tag = pick.node->tag_of_type<SceneNodeTag>();
-        if (tag->volume_id == m_last_loaded_volume_id.id)
-            continue; // skip itself
-
-        if (tag->object_id != last_loaded_object_id)
-            continue; // another object
-
-        const Domain::ModelVolume* volume_ptr =
-            project.find_volume_by_id(tag->object_id, tag->volume_id);
-        if (volume_ptr == nullptr)
-            continue; // weird
-        const Domain::ModelVolume& volume = *volume_ptr;
-        if (volume.type() != Domain::ModelVolumeType::MODEL_PART)
-            continue; // allowe only the model part
-
-        Domain::Vec3d n = pick.cast.normal;
-        Domain::Vec3d p = pick_ray.point_at(pick.cast.distance);
-        const Biz::Emboss::TextPresetManager::Preset& preset = m_preset_manager.get_preset();
-        Domain::Transform3d new_volume_tr = get_volume_transformation(m_drag->to_world, n, p, 
-            m_drag->instance_inv, preset.angle, preset.distance, m_up_limit);
-        Domain::Transform3d volume_relative = 
-            m_drag->instance * new_volume_tr * m_drag->volume_inv * m_drag->instance_inv;
-        Domain::SquareMatrix4d tr = volume_relative.matrix();
-        m_drag->last_tr = tr;
-        m_project_interactor.scene_interactor().transform_selection(tr, m_drag->memento);
-        if (!m_up_limit.has_value()) { // recalculate angle when not locked
-            Domain::ElementRef ref(tag->object_id, tag->instance_id, m_last_loaded_volume_id.id);
-            m_preset_manager.get_preset().angle = calc_rotation(project, ref);
-            set_dialog_rotation(*m_dialog, m_preset_manager, m_use_deg);
-        }
-
-        if (m_preset_manager.get_font_prop().per_glyph) // recalculate lines
-            m_text_lines.create_text_lines(m_text_lines.get_lines().size());
-
-        m_drag->valid = true;
-        return true;
+        m_preset_manager.get_preset().angle = calc_rotation(project, element);
+        set_dialog_rotation(*m_dialog, m_preset_manager, m_use_deg);
     }
 
-    // pick node not found
-    m_project_interactor.scene_interactor()
-        .transform_selection(m_drag->last_tr, m_drag->memento);
-    m_drag->valid = false;
+    if (m_preset_manager.get_font_prop().per_glyph) // recalculate lines
+        m_text_lines.create_text_lines(m_text_lines.get_lines().size());
+
     return true;
 }
-
-void TextGizmo::on_drag_finish(){
-    m_project_interactor.scene_interactor()
-        .finalize_transform_selection(m_drag->memento, false);
-    m_drag = nullptr;
+void TextGizmo::on_drag_finish() { 
+    m_surface_drag.on_drag_finish(); 
     if (m_preset_manager.get_preset().projection.use_surface ||
         m_preset_manager.get_font_prop().per_glyph)
         update_volume();
 }
-void TextGizmo::on_drag_cancel(){
-    m_project_interactor.scene_interactor()
-        .finalize_transform_selection(m_drag->memento, true);
-    m_drag = nullptr;
-}
+void TextGizmo::on_drag_cancel() { m_surface_drag.on_drag_cancel(); }
 
 void TextGizmo::render_imgui()
 {
+    m_surface_drag.imgui_draw(); // cross hair during drag
+
     if (!ImGui::Begin("Text Gizmo"))
         return ImGui::End();
      
@@ -659,10 +413,6 @@ void TextGizmo::render_imgui()
     if (ImGui::Button("Update")) update_volume();
     ImGui::SameLine();
     if (ImGui::Button("Close")) close();
-
-    // Till imgui node not working
-    if (m_drag != nullptr)
-        draw_cross_hair(*m_drag);
 
     static double from_surface = 1.3;
     ImGui::Text("from surf %f", from_surface);
@@ -1041,9 +791,57 @@ bool TextGizmo::add_text_by_view_direction(Domain::ModelVolumeType volume_type)
 }
 
 namespace {
-bool is_text_empty(std::string_view text) {
-    return text.empty() || text.find_first_not_of(" \n\t\r") == std::string::npos; 
-}
+
+class TextShapeProvider : public Biz::Emboss::ShapeProvider
+{
+public:
+    TextShapeProvider(
+        const Domain::TextConfiguration& text_configuration,
+        const Domain::EmbossProjection& projection,
+        const Biz::Emboss::TextLines& text_lines,
+        Biz::Emboss::FontFileWithCache& font_with_cache
+    ) 
+        : m_text_configuration(text_configuration)
+        , m_font_with_cache(font_with_cache)
+    {
+        m_shape.projection = projection; // copy current projection
+        m_text_lines = text_lines; // copy
+    }
+
+    Domain::EmbossShape& get_shape() override
+    {
+        if (!m_shape.final_shape.expolygons.empty())
+            return m_shape; // use cached value
+                
+        std::wstring text = boost::nowide::widen(m_text_configuration.text);
+        const Domain::FontProp& font_prop = m_text_configuration.style.prop;
+        m_shape.shapes_with_ids = Biz::Emboss::text2vshapes(m_font_with_cache, text, font_prop);
+        const Domain::FontFile& ff = *m_font_with_cache.font_file;
+        m_shape.scale = Biz::Emboss::get_text_shape_scale(font_prop, ff);
+        return m_shape;
+    }
+
+    void write(Domain::ModelVolume& volume) const override
+    {
+        ShapeProvider::write(volume);
+        volume.text_configuration = m_text_configuration; // copy
+        ASSERT(volume.emboss_shape.has_value());
+
+        // Fix for object: stored attribute that volume is embossed per glyph when it is object
+        // Removing object without text gizmo
+        if (volume.is_the_only_one_part()) {
+            if (m_text_configuration.style.prop.per_glyph)
+                volume.text_configuration->style.prop.per_glyph = false;
+            if (m_shape.projection.use_surface)
+                volume.emboss_shape->projection.use_surface = false;
+        }
+    }
+
+private:
+    // font item is not used for create object
+    Domain::TextConfiguration m_text_configuration;
+    Biz::Emboss::FontFileWithCache& m_font_with_cache;
+};
 
 Biz::Emboss::BaseData create_base_data(
     const std::string& text,
@@ -1057,7 +855,7 @@ Biz::Emboss::BaseData create_base_data(
     Domain::SelectionId project_id = project_interactor.selected_project_id();
     Biz::Emboss::FontFileWithCache& font_file = preset_manager.get_font_file_with_cache();
     return Biz::Emboss::BaseData{
-        .shape_provider = std::make_unique<Biz::Emboss::TextShapeProvider>(
+        .shape_provider = std::make_unique<TextShapeProvider>(
             std::move(text_config),
             preset.projection,
             text_lines,
@@ -1069,6 +867,10 @@ Biz::Emboss::BaseData create_base_data(
         .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
         .volume_name = "Embossed textik"
     };
+}
+
+bool is_text_empty(std::string_view text) {
+    return text.empty() || text.find_first_not_of(" \n\t\r") == std::string::npos;
 }
 
 } // namespace
@@ -1156,72 +958,4 @@ bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ra
     };
     return Biz::Emboss::start_create_volume(params, ray, results);
 }
-
 } // namespace Slic3r::App::Plater
-
-namespace {
-
-// function copied from file: src/slic3r/GUI/SurfaceDrag.cpp
-Domain::Transform3d get_volume_transformation(
-    Domain::Transform3d world, // from volume
-    const Domain::Vec3d& world_dir, // wanted new direction
-    const Domain::Vec3d& world_position, // wanted new position
-    // Invers transformation of text volume instance
-    // Help convert world transformation to instance space 
-    const Domain::Transform3d& instance_inv,
-    // initial rotation in Z axis
-    const std::optional<float>& current_angle,
-    const std::optional<float>& current_distance,
-    const std::optional<double>& up_limit)
-{
-    auto world_linear = world.linear();
-    // Calculate offset: transformation to wanted position
-    {
-        // Reset skew of the text Z axis:
-        // Project the old Z axis into a new Z axis, which is perpendicular to the old XY plane.
-        Domain::Vec3d old_z = world_linear.col(2);
-        Domain::Vec3d new_z = world_linear.col(0).cross(world_linear.col(1));
-        world_linear.col(2) = new_z * (old_z.dot(new_z) / new_z.squaredNorm());
-    }
-
-    Domain::Vec3d       text_z_world = world_linear.col(2); // world_linear * Vec3d::UnitZ()
-    auto        z_rotation = Eigen::Quaternion<double, Eigen::DontAlign>::FromTwoVectors(text_z_world, world_dir);
-    Domain::Transform3d world_new = z_rotation * world;
-    auto        world_new_linear = world_new.linear();
-
-    // Fix direction of up vector to zero initial rotation 
-    if (up_limit.has_value()) {
-        Domain::Vec3d z_world = world_new_linear.col(2);
-        z_world.normalize();
-        Domain::Vec3d wanted_up = Biz::Emboss::suggest_up(z_world, *up_limit);
-
-        Domain::Vec3d y_world = world_new_linear.col(1);
-        auto  y_rotation = Eigen::Quaternion<double, Eigen::DontAlign>::FromTwoVectors(y_world, wanted_up);
-
-        world_new = y_rotation * world_new;
-        world_new_linear = world_new.linear();
-    }
-
-    // Edit position from right
-    Domain::Transform3d volume_new{ Eigen::Translation<double, 3>(instance_inv * world_position) };
-    volume_new.linear() = instance_inv.linear() * world_new_linear;
-
-    // Check that transformation matrix is valid transformation
-    assert(volume_new.matrix()(0, 0) == volume_new.matrix()(0, 0)); // Check valid transformation not a NAN
-    if (volume_new.matrix()(0, 0) != volume_new.matrix()(0, 0))
-        return Domain::Transform3d::Identity();
-
-    // Check that scale in world did not changed
-    //assert(!calc_scale(world_linear, world_new_linear, Domain::Vec3d::UnitY()).has_value());
-    //assert(!calc_scale(world_linear, world_new_linear, Domain::Vec3d::UnitZ()).has_value());
-
-    // apply move in Z direction and rotation by up vector
-    if (up_limit.has_value()) {
-        Biz::Emboss::apply_transformation(current_angle, current_distance, volume_new);
-    } else {
-        // angle is allowed to change
-        Biz::Emboss::apply_transformation({}, current_distance, volume_new);
-    }
-    return volume_new;
-}
-} // namespace
