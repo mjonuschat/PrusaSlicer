@@ -789,6 +789,8 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
             updated.emplace_back(cc->id().id, inst->id().id);
         }
     }
+    auto updated_instances = m_bed_placement.layout(project, BED_GAP);
+
     if (bed_selection().empty()) {
         // ensure one bed instance is selected
         ASSERT(!cc->bed_instances().empty());
@@ -799,7 +801,6 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
         [&](auto* l) { l->on_bed_instance_updated(m_selected_project_id, updated); }
     );
 
-    auto updated_instaces = m_bed_placement.layout(project, BED_GAP);
     auto changes = m_bed_tracking.update_instances_bed_placement(project, insts);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
@@ -809,7 +810,7 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
         {
             l->on_instance_transformed(
                 m_selected_project_id,
-                updated_instaces,
+                updated_instances,
                 TransformState::Completed,
                 changes
             );
