@@ -358,6 +358,7 @@ values:
             REQUIRE(std::get<double>(p.features.find("f2")->second) == expected_d);
         }
     }
+
     SECTION("product inherits")
     {
         const char* yaml = R"(
@@ -446,5 +447,134 @@ features:
             REQUIRE(std::get<double>(p.features.find("f2")->second) == expected_f);
             REQUIRE(std::get<double>(p.features.find("f3")->second) == 2);
         }
+    }
+
+    SECTION("name inheriting")
+    {
+        const char* yaml = R"(
+kind: printer
+id: '*common*'
+name: '*common*'
+---
+kind: printer
+inherits:
+- '*common*'
+)";
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        auto evals = eval.eval_preset({}, false);
+        REQUIRE(evals.size() == 2);
+        for (const auto& epc : evals) {
+            REQUIRE(epc.name == "*common*");
+        }
+    }
+
+    SECTION("failing root condition in super-class preset stops eval of sub-class preset")
+    {
+        const char* yaml = R"(
+kind: printer
+id: '*common*'
+name: '*common*'
+condition: 'a == 1'
+values:
+  x: 3
+---
+kind: printer
+id: 'p1'
+name: 'p1'
+inherits:
+- '*common*'
+values:
+  y: 3
+)";
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        auto evals = eval.eval_preset({{{"a", 2.0}}}, false);
+        REQUIRE(evals.size() == 0);
+    }
+
+    SECTION("failing non-root condition in super-class preset will not stop eval of sub-class preset")
+    {
+        const char* yaml = R"(
+kind: printer
+id: '*common*'
+name: '*common*'
+variants:
+- condition: 'a == 1'
+  values:
+    x: 3
+---
+kind: printer
+id: 'p1'
+name: 'p1'
+inherits:
+- '*common*'
+values:
+  y: 3
+)";
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        auto evals = eval.eval_preset({{{"a", 2.0}}}, false);
+        REQUIRE(evals.size() == 2);
+        REQUIRE(evals[0].values.find("x") == evals[0].values.end());
+        REQUIRE(evals[1].values.find("x") == evals[1].values.end());
+        REQUIRE(evals[1].values.at("y") == PresetValue{3.0});
+    }
+
+    SECTION("root condition of super-class preset can be overriden in sub-class preset")
+    {
+        const char* yaml = R"(
+kind: printer
+id: '*common*'
+name: '*common*'
+condition: 'a == 1'
+values:
+  x: 3
+---
+kind: printer
+id: 'p1'
+name: 'p1'
+condition: 'a == 2'
+inherits:
+- '*common*'
+values:
+  y: 3
+)";
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        auto evals = eval.eval_preset({{{"a", 2.0}}}, false);
+        REQUIRE(evals.size() == 1);
     }
 }

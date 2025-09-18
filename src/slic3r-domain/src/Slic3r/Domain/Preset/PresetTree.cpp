@@ -10,11 +10,6 @@ std::string derive_name(const std::string& name, const std::string& parent_name)
     if (parent_separator_pos == std::string::npos)
         return name.empty() ? parent_name : name;
 
-    // const size_t name_separator_pos = name.find('@');
-    // return (
-    //     name_separator_pos == std::string::npos
-    //     ? name : name.substr(0, name_separator_pos)
-    // ) + parent_name.substr(parent_separator_pos);
     return name + parent_name.substr(parent_separator_pos);
 }
 

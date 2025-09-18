@@ -57,12 +57,25 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     }
     return ret;
 #else
-    auto joined_view = m_presets | std::views::transform([&](const auto& preset) {
-        return eval_preset(preset, preset.id, {{preset.id}}, overrides.empty() ? ValueMaps{{}} : overrides, expr_combine)
-            | std::views::filter([only_public](const auto& ep) {
-            return !only_public || Domain::Preset::is_public_name(ep.name);
-        });
-    }) | std::views::join;
+    auto joined_view =
+        m_presets
+        | std::views::transform(
+            [&](const auto& preset)
+            {
+                return eval_preset(
+                           preset,
+                           preset.id,
+                           {{preset.id}},
+                           overrides.empty() ? ValueMaps{{}} : overrides,
+                           expr_combine
+                       )
+                    | std::views::filter(
+                           [only_public](const auto& ep)
+                           { return !only_public || Domain::Preset::is_public_name(ep.name); }
+                    );
+            }
+        )
+        | std::views::join;
 
     PresetEvaluator::EvalPresetContexts ret;
     for (auto&& ep : joined_view)
@@ -93,7 +106,19 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         for (const auto& inh : node.inherits) {
             const auto& node_path = named_preset(inh);
             ASSERT(node_path.size() == 1);
-            ret = eval_preset(*node_path.front(), root_id, ret, overrides, expr_combine, skip_condition_eval);
+
+            // if this node has condition, it overrides the superclass condition
+            // (and hence we want to skip its evaluation)
+            const bool skip_superclass_condition_eval =
+                skip_condition_eval || node.condition.has_value();
+            ret = eval_preset(
+                *node_path.front(),
+                root_id,
+                ret,
+                overrides,
+                expr_combine,
+                skip_superclass_condition_eval
+            );
         }
     }
 
