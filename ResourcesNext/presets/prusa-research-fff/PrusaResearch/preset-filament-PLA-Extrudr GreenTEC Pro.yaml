@@ -1,0 +1,27 @@
+kind: filament
+id: Extrudr GreenTEC Pro
+inherits:
+- '*PLA220*'
+name: Extrudr GreenTEC Pro
+values:
+  filament_vendor: Extrudr
+  min_fan_speed: 30
+  max_fan_speed: 80
+  filament_cost: 56.23
+  filament_density: 1.35
+  filament_spool_weight: 230
+variants:
+ ## C1
+- condition: printer.base_model == "COREONE"
+  values:
+    min_fan_speed: 25
+    max_fan_speed: 60
+    bridge_fan_speed: 100
+    overgang_fan_speed_0: 80
+## MK4S
+- condition: printer.model == "MK4S"
+  values:
+    min_fan_speed: 25
+    max_fan_speed: 60
+    bridge_fan_speed: 100
+    overgang_fan_speed_0: 80

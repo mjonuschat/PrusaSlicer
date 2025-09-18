@@ -1,0 +1,8 @@
+kind: filament
+id: Floreon3D PLA
+inherits:
+- '*PLA*'
+name: Floreon3D PLA
+values:
+  filament_cost: '23.5'
+  filament_vendor: Floreon3D

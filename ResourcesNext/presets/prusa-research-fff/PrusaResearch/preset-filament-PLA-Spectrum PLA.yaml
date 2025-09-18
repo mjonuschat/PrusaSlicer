@@ -1,0 +1,37 @@
+kind: filament
+id: Spectrum PLA
+inherits:
+- '*PLA*'
+name: Spectrum PLA
+values:
+  filament_cost: '21.5'
+  filament_vendor: Spectrum
+variants:
+  ## C1
+- condition: printer.base_model == "COREONE"
+  variants:
+  # C1 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Spectrum PLA @COREONE 0.4'
+    values:
+      slowdown_below_layer_time: 7
+    variants:
+    # C1 HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'Spectrum PLA @COREONE HF0.4'
+      values:
+        slowdown_below_layer_time: 7
+## MK4S
+- condition: printer.model == "MK4S"
+  variants:
+  # MK4S 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Spectrum PLA @MK4S 0.4'
+    values:
+      slowdown_below_layer_time: 7
+    variants:
+    # MK4S HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'Spectrum PLA @MK4S HF0.4'
+      values:
+        slowdown_below_layer_time: 7

@@ -1,0 +1,9 @@
+kind: filament
+id: ROSA3D PLA Starter
+inherits:
+- '*PLA220*'
+name: ROSA3D PLA Starter
+values:
+  filament_cost: '74.9'
+  filament_vendor: ROSA3D
+  filament_spool_weight: 250

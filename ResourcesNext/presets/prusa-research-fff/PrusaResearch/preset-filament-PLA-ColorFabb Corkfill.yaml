@@ -1,0 +1,287 @@
+kind: filament
+id: ColorFabb Corkfill
+inherits:
+- '*PLAFILL*'
+name: ColorFabb Corkfill
+values:
+  filament_vendor: ColorFabb
+  extrusion_multiplier: 1.1
+  filament_cost: '53.17'
+  filament_density: 1.18
+  first_layer_temperature: 220
+  temperature: 220
+  filament_abrasive: true
+variants:
+  ## C1
+- condition: printer.base_model == "COREONE"
+  variants:
+  # C1 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'ColorFabb Corkfill @COREONE 0.4'
+    values:
+      filament_max_volumetric_speed: 6
+    variants:
+    # C1 HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @COREONE HF0.4'
+      values:
+        filament_max_volumetric_speed: 6
+  # C1 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'ColorFabb Corkfill @COREONE 0.5'
+    values:
+      filament_max_volumetric_speed: 8
+    variants:
+    # C1 HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @COREONE HF0.5'
+      values:
+        filament_max_volumetric_speed: 8
+  # C1 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'ColorFabb Corkfill @COREONE 0.6'
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # C1 HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @COREONE HF0.6'
+      values:
+        filament_max_volumetric_speed: 14
+  # C1 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'ColorFabb Corkfill @COREONE 0.8'
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # C1 HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @COREONE HF0.8'
+      values:
+        filament_max_volumetric_speed: 17
+## XL
+- condition: printer.base_model == "XL"
+  variants:
+  # XL 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'ColorFabb Corkfill @XL 0.4'
+    values:
+      filament_max_volumetric_speed: 6
+    variants:
+    # XL HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @XL HF0.4'
+      values:
+        filament_max_volumetric_speed: 6
+  # XL 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'ColorFabb Corkfill @XL 0.5'
+    values:
+      filament_max_volumetric_speed: 8
+    variants:
+    # XL HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @XL HF0.5'
+      values:
+        filament_max_volumetric_speed: 8
+  # XL 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'ColorFabb Corkfill @XL 0.6'
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # XL HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @XL HF0.6'
+      values:
+        filament_max_volumetric_speed: 14
+  # XL 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'ColorFabb Corkfill @XL 0.8'
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # XL HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @XL HF0.8'
+      values:
+        filament_max_volumetric_speed: 17
+## MK4
+- condition: printer.model == "MK4"
+  variants:
+  # MK4 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'ColorFabb Corkfill @MK4 0.4'
+    values:
+      filament_max_volumetric_speed: 6
+    variants:
+    # MK4 HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @MK4 HF0.4'
+      values:
+        filament_max_volumetric_speed: 6
+  # MK4 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'ColorFabb Corkfill @MK4 0.5'
+    values:
+      filament_max_volumetric_speed: 8
+    variants:
+    # MK4 HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @MK4 HF0.5'
+      values:
+        filament_max_volumetric_speed: 8
+  # MK4 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'ColorFabb Corkfill @MK4 0.6'
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # MK4 HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @MK4 HF0.6'
+      values:
+        filament_max_volumetric_speed: 14
+  # MK4 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'ColorFabb Corkfill @MK4 0.8'
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # MK4 HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @MK4 HF0.8'
+      values:
+        filament_max_volumetric_speed: 17
+## MK4S
+- condition: printer.model == "MK4S"
+  variants:
+  # MK4S 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'ColorFabb Corkfill @MK4S 0.4'
+    values:
+      filament_max_volumetric_speed: 6
+    variants:
+    # MK4S HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @MK4S HF0.4'
+      values:
+        filament_max_volumetric_speed: 6
+  # MK4S 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'ColorFabb Corkfill @MK4S 0.5'
+    values:
+      filament_max_volumetric_speed: 8
+    variants:
+    # MK4S HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @MK4S HF0.5'
+      values:
+        filament_max_volumetric_speed: 8
+  # MK4S 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'ColorFabb Corkfill @MK4S 0.6'
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # MK4S HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @MK4S HF0.6'
+      values:
+        filament_max_volumetric_speed: 14
+  # MK4S 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'ColorFabb Corkfill @MK4S 0.8'
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # C1 HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'ColorFabb Corkfill @MK4S HF0.8'
+      values:
+        filament_max_volumetric_speed: 17
+## MK3.5
+- condition: printer.base_model == "MK3.5"
+  variants:
+  # MK3.5 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'ColorFabb Corkfill @MK3.5 0.4'
+    values:
+      filament_max_volumetric_speed: 6
+  # MK3.5 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'ColorFabb Corkfill @MK3.5 0.5'
+    values:
+      filament_max_volumetric_speed: 8
+  # MK3.5 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'ColorFabb Corkfill @MK3.5 0.6'
+    values:
+      filament_max_volumetric_speed: 12
+  # MK3.5 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'ColorFabb Corkfill @MK3.5 0.8'
+    values:
+      filament_max_volumetric_speed: 15
+## MINI
+- condition: printer.base_model == "MINI"
+  variants:
+  # MINI 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'ColorFabb Corkfill @MINI 0.4'
+    values:
+      filament_max_volumetric_speed: 6
+  # MINI 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'ColorFabb Corkfill @MINI 0.6'
+    values:
+      filament_max_volumetric_speed: 12
+  # MINI 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'ColorFabb Corkfill @MINI 0.8'
+    values:
+      filament_max_volumetric_speed: 15
+## MK3, MK3S and MK2.5, MK2.5S
+- condition: printer.base_model == "MK3"
+  variants:
+  # MK3 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'ColorFabb Corkfill @MK3 0.4'
+    values:
+      filament_max_volumetric_speed: 6
+  # MK3 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'ColorFabb Corkfill @MK3 0.6'
+    values:
+      filament_max_volumetric_speed: 8
+  # MK3 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'ColorFabb Corkfill @MK3 0.8'
+    values:
+      filament_max_volumetric_speed: 15
+## MK2S
+- condition: printer.model == "MK2S"
+  variants:
+  # MK2 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'ColorFabb Corkfill @MK2 0.4'
+    values:
+      filament_max_volumetric_speed: 6
+  # MK2 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'ColorFabb Corkfill @MK2 0.6'
+    values:
+      filament_max_volumetric_speed: 10
+## MK2S MMU1
+- condition: printer.model == "MK2SMM"
+  variants:
+  # MK2SMM 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'ColorFabb Corkfill @MK2MMU1 0.4'
+    values:
+      filament_max_volumetric_speed: 6
+  # MK2SMM 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'ColorFabb Corkfill @MK2MMU1 0.6'
+    values:
+      filament_max_volumetric_speed: 7

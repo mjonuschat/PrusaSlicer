@@ -1,10 +1,10 @@
 kind: filament
-id: 3D-Fuel Pro PLA
+id: 3D-Fuel Standard PLA
 inherits:
 - '*PLA*'
-name: 3D-Fuel Pro PLA
+name: 3D-Fuel Standard PLA
 values:
   filament_vendor: 3D-Fuel
-  filament_cost: '26.57'
+  filament_cost: '22.14'
   filament_density: 1.22
   filament_spool_weight: 0
