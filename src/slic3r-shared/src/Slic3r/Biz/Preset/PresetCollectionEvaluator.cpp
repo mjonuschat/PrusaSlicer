@@ -80,6 +80,12 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     PresetEvaluator::EvalPresetContexts ret;
     for (auto&& ep : joined_view)
         ret.push_back(std::move(ep));
+    std::ranges::sort(
+        ret,
+        [](const auto& x, const auto& y)
+        { return x.name < y.name || (x.name == y.name && x.id < y.id); }
+    );
+
     return ret;
 #endif
 }

@@ -357,12 +357,6 @@ PresetEvaluator::EvalPresetContexts PresetEvaluator::merged_same_presets(const E
             ret.emplace_back(p);
         }
     }
-    std::ranges::sort(
-        ret,
-        [](const auto& a, const auto& b)
-        { return a.name < b.name || (a.name == b.name && a.id < b.id); }
-    );
-
     return ret;
 }
 
