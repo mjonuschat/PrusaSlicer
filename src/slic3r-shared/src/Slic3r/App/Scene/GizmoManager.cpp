@@ -2,6 +2,8 @@
 
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
+#include "Slic3r/App/Scene/BedNodeTag.hpp"
+#include "Slic3r/App/Plater/SceneNodeTag.hpp"
 // DEBUG ONLY: for MEASURE_GIZMO_DEBUG
 #include "Slic3r/App/Plater/MeasureGizmo.hpp"
 
@@ -78,6 +80,21 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         pick_results, &pick_ray
 
     );
+
+    // filters out hits on volumes below the bed if the camera is pointing downward
+    if (!scene.camera().pointing_upward()) {
+        auto it = std::find_if(pick_results.begin(), pick_results.end(),
+            [](const NodePickResult& r) {
+                return r.node->tag_of_type<BedNodeTag>() != nullptr;
+            }
+        );
+        if (it != pick_results.end()) {
+            pick_results.erase(std::remove_if(it, pick_results.end(),
+                [](const NodePickResult& r) { return r.node->tag_of_type<Plater::SceneNodeTag>() != nullptr; }),
+                pick_results.end());
+        }
+    }
+
     GizmoEventContext ctx{scene, e, pick_ray, pick_results, screen_info};
     if (m_mouse_drag_detector && 
         m_mouse_drag_detector->mouse_event(ctx, [this](){ return get_gizmos(m_base_gizmos, current_context().active_tool); }))

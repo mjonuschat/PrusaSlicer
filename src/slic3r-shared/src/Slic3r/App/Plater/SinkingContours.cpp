@@ -5,6 +5,7 @@
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
+#include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/Device.hpp"
@@ -307,32 +308,31 @@ void SinkingContours::update_visibility(const Platform::MouseEvent& e, const Ren
                 pick_results, &pick_ray
             );
 
-            Scene::Node* hovered_node = nullptr;
-            if (!pick_results.empty()){
-                if (scene.camera().pointing_upward()) {
-                    for (auto& [n, t] : pick_results) {
-                        const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
-                        if (tag != nullptr) {
-                            hovered_node = n;
-                            break;
-                        }
+            // filters out hits on volumes below the bed if the camera is pointing downward
+            if (!scene.camera().pointing_upward()) {
+                auto it = std::find_if(pick_results.begin(), pick_results.end(),
+                    [](const Scene::NodePickResult& r) {
+                        return r.node->tag_of_type<Scene::BedNodeTag>() != nullptr;
                     }
-                }
-                else {
-                    // take the first hit to avoid selecting part of the volume hidden by the bed
-                    Scene::Node* n = pick_results.front().node;
-                    if (n->tag_of_type<SceneNodeTag>() != nullptr)
-                        hovered_node = n;
+                );
+                if (it != pick_results.end()) {
+                    pick_results.erase(std::remove_if(it, pick_results.end(),
+                        [](const Scene::NodePickResult& r) { return r.node->tag_of_type<Plater::SceneNodeTag>() != nullptr; }),
+                        pick_results.end());
                 }
             }
 
-            if (hovered_node != nullptr) {
-                Scene::Node* child = hovered_node->query_first([](const Scene::Node* c) {
-                    const SinkingSceneNodeTag* tag = c->tag_of_type<SinkingSceneNodeTag>();
-                    return tag != nullptr;
-                }, true);
-                if (child != nullptr)
-                    highlight_nodes.push_back(child);
+            for (auto& [n, t] : pick_results) {
+                const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+                if (tag != nullptr) {
+                    Scene::Node* child = n->query_first([](const Scene::Node* c) {
+                        const SinkingSceneNodeTag* tag = c->tag_of_type<SinkingSceneNodeTag>();
+                        return tag != nullptr;
+                    }, true);
+                    if (child != nullptr)
+                        highlight_nodes.push_back(child);
+                    break;
+                }
             }
         }
         else {
