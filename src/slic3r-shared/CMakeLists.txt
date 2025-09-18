@@ -440,7 +440,6 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/PopNotification/PopNotificationCenter.hpp
         include/Slic3r/App/PopNotification/PopNotificationData.hpp
-        include/Slic3r/App/PopNotification/PopNotificationFactory.hpp
         include/Slic3r/App/PopNotification/PopNotificationView.hpp
         include/Slic3r/App/PopNotification/PopNotificationListView.hpp
         include/Slic3r/App/PopNotification/PopNotificationDataVariant.hpp

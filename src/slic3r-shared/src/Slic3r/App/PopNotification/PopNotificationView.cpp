@@ -15,11 +15,15 @@ constexpr int TotalWidth = 400;
 constexpr int MinHeight  = 40;
 constexpr int MaxHeight  = 200;
 
-PopNotificationView::PopNotificationView(size_t index, const PopNotificationData& data, PopNotificationObservableList& notification_list) :
-    Biz::DataObserver<PopNotificationData>(index, data),
+PopNotificationView::PopNotificationView(
+    size_t index,
+    const PopNotificationData& data,
+    PopNotificationObservableList& notification_list
+) :
     Yoga::Window("PopNotification"),
+    Biz::DataObserver<PopNotificationData>(index, data),
     m_notification_list(notification_list),
-    m_current_level(m_state->level())
+    m_current_level(m_state->level)
 {
     layout();
 }
@@ -51,81 +55,60 @@ void PopNotificationView::reset()
 
 void PopNotificationView::layout()
 {
-    switch (m_state->layout()) {
-    case PopNotificationLayout::Text:
-        layout_type_text();
-        break;
-    case PopNotificationLayout::HeaderText:
-        layout_type_header_text();
-        break;
-    case PopNotificationLayout::TextButtons:
-        layout_type_text_buttons();
-        break;
-    case PopNotificationLayout::HeaderTextButtons:
-        layout_type_header_text_buttons();
-        break;
-    case PopNotificationLayout::TextProgress:
-        layout_type_text_progress();
-        break;
-    default:
-        ASSERT(false, "Mising layout call");
-        break;
-    }
-    m_current_layout = m_state->layout();
+    std::visit(
+        Domain::overloaded{
+            [this](const PopNotificationLayoutText&) { layout_type_text(); },
+            [this](const PopNotificationLayoutHeaderText&) { layout_type_header_text(); },
+            [this](const PopNotificationLayoutTextButtons&) { layout_type_text_buttons(); },
+            [this](const PopNotificationLayoutHeaderTextButtons&)
+            { layout_type_header_text_buttons(); },
+            [this](const PopNotificationLayoutTextProgress&) { layout_type_text_progress(); }
+        },
+        m_state->layout
+    );
+
+    m_current_layout = m_state->layout;
 }
 
 void PopNotificationView::on_data_update()
 {
     ASSERT(m_state);
-    // rebuild whole notification if layout differs
-    if (m_current_layout != m_state->layout()) {
-        reset();
-        layout();
-        return;
-    }
-    if (m_current_level != m_state->level()) {
-        m_current_level = m_state->level();
-        reset();
-        layout();
-        return;
-    }
-    // otherwise check if children needs update
-    switch (m_current_layout) {
-    case PopNotificationLayout::Text: {
-        const auto* layout_data = std::get_if<PopNotificationLayoutText>(&m_state->layout_variant());
-        ASSERT(layout_data);
-        update_text(layout_data->text);
 
-    } break;
-    case PopNotificationLayout::HeaderText: {
-        const auto* layout_data = std::get_if<PopNotificationLayoutHeaderText>(&m_state->layout_variant());
-        ASSERT(layout_data);
-        update_header(layout_data->header);
-        update_text(layout_data->text);
-    } break;
-    case PopNotificationLayout::TextButtons: {
-        const auto* layout_data = std::get_if<PopNotificationLayoutTextButtons>(&m_state->layout_variant());
-        ASSERT(layout_data);
-        update_text(layout_data->text);
-        update_buttons(layout_data->buttons);
-    } break;
-    case PopNotificationLayout::HeaderTextButtons: {
-        const auto* layout_data = std::get_if<PopNotificationLayoutHeaderTextButtons>(&m_state->layout_variant());
-        ASSERT(layout_data);
-        update_header(layout_data->header);
-        update_text(layout_data->text);
-        update_buttons(layout_data->buttons);
-    } break;
-    case PopNotificationLayout::TextProgress: {
-        const auto* layout_data = std::get_if<PopNotificationLayoutTextProgress>(&m_state->layout_variant());
-        ASSERT(layout_data);
-        update_text(layout_data->text);
-        update_progress(layout_data->progress);
-    } break;
-    default:
-        ASSERT(false, "Mising update call");
-        break;
+    if (m_current_layout.index() != m_state->layout.index()) {
+        reset();
+        layout();
+        return;
     }
+
+    if (m_current_level != m_state->level) {
+        m_current_level = m_state->level;
+        reset();
+        layout();
+        return;
+    }
+
+    std::visit(Domain::overloaded{
+        [this](const PopNotificationLayoutText& d) {
+            update_text(d.text);
+        },
+        [this](const PopNotificationLayoutHeaderText& d) {
+            update_header(d.header);
+            update_text(d.text);
+        },
+        [this](const PopNotificationLayoutTextButtons& d) {
+            update_text(d.text);
+            update_buttons(d.buttons);
+        },
+        [this](const PopNotificationLayoutHeaderTextButtons& d) {
+            update_header(d.header);
+            update_text(d.text);
+            update_buttons(d.buttons);
+        },
+        [this](const PopNotificationLayoutTextProgress& d) {
+            update_text(d.text);
+            update_progress(d.progress);
+        }
+    }, m_state->layout);
 }
 
 void PopNotificationView::basic_layout(Render::Icon icon_override)
@@ -162,7 +145,7 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
     close_button->callbacks().action = [this]()
     {
         SPDLOG_INFO("Notification close button.");
-        m_notification_list.on_notification_close_button(m_state->id());
+        m_notification_list.on_notification_close_button(m_state);
     };
 
     int left_width  = m_left_column->min_size().x();
@@ -183,9 +166,9 @@ void PopNotificationView::basic_left_layout(Render::Icon icon_override)
     Render::Icon icon = Render::Icon::None;
     if (icon_override != Render::Icon::None) {
         icon = icon_override;
-    } else if (m_state->level() == PopNotificationLevel::Warning) {
+    } else if (m_state->level == PopNotificationLevel::Warning) {
         icon = Render::Icon::ErrorMarker;
-    } else if (m_state->level() == PopNotificationLevel::Error) {
+    } else if (m_state->level == PopNotificationLevel::Error) {
         icon = Render::Icon::WarningMarker;
     }
     if (icon == Render::Icon::None) {
@@ -236,7 +219,7 @@ void PopNotificationView::basic_mid_buttons_layout(const std::vector<PopNotifica
         {
             ASSERT(bdata.callback);
             if (bdata.callback()) {
-                m_notification_list.on_notification_close_button(m_state->id());
+                m_notification_list.on_notification_close_button(m_state);
             }
         };
         m_buttons.back()->set_background_color(button_color());
@@ -261,7 +244,7 @@ void PopNotificationView::basic_mid_progress_layout(int progress)
 
 void PopNotificationView::layout_type_text()
 {
-    const auto* layout_data = std::get_if<PopNotificationLayoutText>(&m_state->layout_variant());
+    const auto* layout_data = std::get_if<PopNotificationLayoutText>(&m_state->layout);
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
     basic_mid_layout();
@@ -270,7 +253,7 @@ void PopNotificationView::layout_type_text()
 
 void PopNotificationView::layout_type_header_text()
 {
-    const auto* layout_data = std::get_if<PopNotificationLayoutHeaderText>(&m_state->layout_variant());
+    const auto* layout_data = std::get_if<PopNotificationLayoutHeaderText>(&m_state->layout);
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
     basic_mid_layout();
@@ -280,7 +263,7 @@ void PopNotificationView::layout_type_header_text()
 
 void PopNotificationView::layout_type_text_buttons()
 {
-    const auto* layout_data = std::get_if<PopNotificationLayoutTextButtons>(&m_state->layout_variant());
+    const auto* layout_data = std::get_if<PopNotificationLayoutTextButtons>(&m_state->layout);
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
     basic_mid_layout();
@@ -290,7 +273,7 @@ void PopNotificationView::layout_type_text_buttons()
 
 void PopNotificationView::layout_type_header_text_buttons()
 {
-    const auto* layout_data = std::get_if<PopNotificationLayoutHeaderTextButtons>(&m_state->layout_variant());
+    const auto* layout_data = std::get_if<PopNotificationLayoutHeaderTextButtons>(&m_state->layout);
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
      basic_mid_layout();
@@ -301,7 +284,7 @@ void PopNotificationView::layout_type_header_text_buttons()
 
 void PopNotificationView::layout_type_text_progress()
 {
-    const auto* layout_data = std::get_if<PopNotificationLayoutTextProgress>(&m_state->layout_variant());
+    const auto* layout_data = std::get_if<PopNotificationLayoutTextProgress>(&m_state->layout);
     ASSERT(layout_data);
     basic_layout(Render::Icon::None);
     basic_mid_layout();
@@ -337,7 +320,7 @@ void PopNotificationView::update_buttons(const std::vector<PopNotificationButton
         {
             ASSERT(cb);
             if (cb()) {
-                m_notification_list.on_notification_close_button(m_state->id());
+                m_notification_list.on_notification_close_button(m_state);
             }
         };
     }
@@ -355,9 +338,9 @@ void PopNotificationView::update_progress(int progress)
 
 ImColor PopNotificationView::text_color()
 {
-    if (m_state->level() == PopNotificationLevel::Warning) {
+    if (m_state->level == PopNotificationLevel::Warning) {
         return {0.98f, 0.4f, 0.19f};
-    } else if (m_state->level() == PopNotificationLevel::Error) {
+    } else if (m_state->level == PopNotificationLevel::Error) {
         return {0.79f, 0.17f, 0.17f};
     }
 
@@ -366,9 +349,9 @@ ImColor PopNotificationView::text_color()
 
 ImColor PopNotificationView::button_color()
 {
-    if (m_state->level() == PopNotificationLevel::Warning) {
+    if (m_state->level == PopNotificationLevel::Warning) {
         return {0.98f, 0.4f, 0.19f};
-    } else if (m_state->level() == PopNotificationLevel::Error) {
+    } else if (m_state->level == PopNotificationLevel::Error) {
         return {0.79f, 0.17f, 0.17f};
     }
 

@@ -19,7 +19,6 @@
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
 #include <Slic3r/App/PopNotification/PopNotificationCenter.hpp>
 #include <Slic3r/App/AppServices.hpp>
-#include <Slic3r/App/PopNotification/PopNotificationFactory.hpp>
 #include <Slic3r/App/WX/FileExplorerHandler.hpp>
 
 #include "Slic3r/Directories.hpp"

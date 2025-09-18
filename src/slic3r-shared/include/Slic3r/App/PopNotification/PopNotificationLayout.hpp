@@ -2,17 +2,9 @@
 
 #include <string>
 #include <functional>
+#include <variant>
 
 namespace Slic3r::App::PopNotification {
-
-enum class PopNotificationLayout
-{
-    Text,
-    HeaderText,
-    TextButtons,
-    HeaderTextButtons,
-    TextProgress,
-};
 
 struct PopNotificationButtonData
 {
@@ -50,6 +42,11 @@ struct PopNotificationLayoutTextProgress
     int progress;
 };
 
-using PopNotificationLayoutVariant = std::variant<PopNotificationLayoutText, PopNotificationLayoutHeaderText, PopNotificationLayoutTextButtons, PopNotificationLayoutHeaderTextButtons, PopNotificationLayoutTextProgress>;
+using PopNotificationLayout = std::variant<
+    PopNotificationLayoutText,
+    PopNotificationLayoutHeaderText,
+    PopNotificationLayoutTextButtons,
+    PopNotificationLayoutHeaderTextButtons,
+    PopNotificationLayoutTextProgress>;
 
 } // namespace Slic3r::App::PopNotification

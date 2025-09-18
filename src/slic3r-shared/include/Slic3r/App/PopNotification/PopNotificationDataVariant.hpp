@@ -1,16 +1,13 @@
 #pragma once
 
 #include "Slic3r/Biz/Platform/JobManager/ProgressTracker.hpp"
-#include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/RemovableDrive/IRemovableDriveStatusListener.hpp"
+#include "Slic3r/Biz/Slicing/BackgroundProcess.hpp"
 
 #include <variant>
 #include <boost/filesystem/path.hpp>
 
 namespace Slic3r::App::PopNotification {
-
-struct DefaultNotificationData
-{};
 
 struct JobProgressNotificationData
 {
@@ -51,6 +48,11 @@ struct EjectNotificationData
 };
 
 // Define the variant type alias.
-using PopNotificationDataVariant = std::variant<DefaultNotificationData, JobProgressNotificationData, SlicingProgressNotificationData, PrintHostProgressNotificationData, EjectNotificationData>;
+using PopNotificationPayload = std::variant<
+    std::monostate,
+    JobProgressNotificationData,
+    SlicingProgressNotificationData,
+    PrintHostProgressNotificationData,
+    EjectNotificationData>;
 
 } // namespace Slic3r::App::PopNotification

@@ -21,7 +21,7 @@ private:
 public:
     struct TimerID {
         explicit TimerID(int id) : id(id) {}
-        explicit TimerID() : id(-1) {}
+        TimerID() : id(-1) {}
         bool operator==(const TimerID& other) const { return id == other.id; }
         int id;
     };

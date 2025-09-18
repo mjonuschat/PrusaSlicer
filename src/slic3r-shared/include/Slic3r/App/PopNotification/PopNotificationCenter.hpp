@@ -8,8 +8,6 @@
 #include "Slic3r/Biz/StatusCache.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 
-#include <vector>
-
 namespace Slic3r::Biz {
 class ProjectInteractor;
 }
