@@ -66,6 +66,24 @@ struct ValueCast<Domain::Percentage, Domain::FloatOrPercentage>
     }
 };
 
+template <typename FromScalarT, typename ToScalarT>
+    requires ValueCast<FromScalarT, ToScalarT>::defined
+struct ValueCast<std::vector<FromScalarT>, std::vector<ToScalarT>>
+{
+    static constexpr bool defined = true;
+
+    static constexpr std::vector<ToScalarT> cast(const std::vector<FromScalarT>& v)
+    {
+        std::vector<ToScalarT> dest;
+        dest.reserve(v.size());
+        for (const auto& vi : v)
+            dest.push_back(ValueCast<FromScalarT, ToScalarT>::cast(vi));
+        return dest;
+    }
+};
+
+static_assert(ValueCast<std::vector<double>, std::vector<bool>>::defined);
+
 #undef VALUE_CAST_DEF_STATIC
 
 template <typename FromType>
@@ -220,20 +238,38 @@ struct ConfigValueSetterVisitor
             Domain::Vec2d>::value
     bool operator()(const ValueType& v)
     {
-        if (!item.holds_alternative<ValueType>()) {
-            std::string dest_type_name = item.value().visit([](const auto& v) {
-                return type_name(v);
-            });
-            SPDLOG_ERROR(
-                "Type mismatched for item {}: source type: {}  dest type: {}",
-                item.name(),
-                type_name(v),
-                dest_type_name
-            );
-            return false;
+        if (item.holds_alternative<ValueType>()) {
+            item.set(v);
+            return true;
         }
-        item.set(v);
-        return true;
+
+
+        if constexpr (Domain::is_std_vector_v<ValueType>) {
+            const bool set = item.visit(
+                [&v, &item=this->item]<typename T>(const T&) -> bool
+                {
+                    if constexpr (Domain::is_std_vector_v<T> && ValueCast<ValueType, T>::defined) {
+                        item.set(ValueCast<ValueType, T>::cast(v));
+                        return true;
+                    }
+                    return false;
+                }
+            );
+            if (set)
+                return true;
+        }
+
+        std::string dest_type_name = item.value().visit([](const auto& v) {
+            return type_name(v);
+        });
+        SPDLOG_ERROR(
+            "Type mismatched for item {}: source type: {}  dest type: {}",
+            item.name(),
+            type_name(v),
+            dest_type_name
+        );
+        return false;
+
     }
 };
 
@@ -258,7 +294,7 @@ ConfigType config_values(const Domain::Preset::PresetValueMap& values)
 }
 
 template <typename FdmConfigType, typename SlaConfigType>
-typename Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType>::PresetValues config_values(
+Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType>::PresetValues config_values(
     Domain::PrinterTechnology technology,
     const Domain::Preset::PresetValueMap& values
 )
