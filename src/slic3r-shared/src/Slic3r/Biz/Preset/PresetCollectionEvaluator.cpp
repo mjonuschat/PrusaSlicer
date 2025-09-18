@@ -119,6 +119,17 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 expr_combine,
                 skip_superclass_condition_eval
             );
+
+            if (ret.empty()) {
+#if DEBUG_CONDITION_EVAL
+                SPDLOG_DEBUG(
+                    "Inherited node {} root condition fails => quitting evaluation of {}",
+                    inh,
+                    node.source_location.to_string()
+                );
+#endif
+                return {};
+            };
         }
     }
 

@@ -509,6 +509,46 @@ values:
         REQUIRE(evals.size() == 0);
     }
 
+    SECTION("failing root condition in super-class preset stops eval of sub-class preset (with multi-inheritance)")
+    {
+        const char* yaml = R"(
+kind: printer
+id: '*common*'
+name: '*common*'
+condition: 'a == 1'
+values:
+  x: 3
+---
+kind: printer
+id: '*common2*'
+name: '*common2*'
+values:
+  z: 3
+---
+kind: printer
+id: 'p1'
+name: 'p1'
+inherits:
+- '*common*'
+- '*common2*'
+values:
+  y: 3
+)";
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        auto evals = eval.eval_preset({{{"a", 2.0}}}, false);
+        REQUIRE(evals.size() == 1);
+        REQUIRE(evals[0].name == "*common2*");
+    }
+
     SECTION("failing non-root condition in super-class preset will not stop eval of sub-class preset")
     {
         const char* yaml = R"(
