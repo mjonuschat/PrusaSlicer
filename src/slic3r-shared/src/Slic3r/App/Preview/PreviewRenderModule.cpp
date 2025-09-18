@@ -385,17 +385,12 @@ void PreviewRenderModule::on_selected_bed_instances_changed(Domain::SelectionId 
     const Domain::ConfigContainer* cc{project.find_config_container(config_container_id)};
 
     DEBUG_ASSERT(cc != nullptr);
+
+    update_viewer();
+
     if (cc->print_technology() == Domain::PrinterTechnology::SLA) {
-        if (m_viewer != &m_sla_viewer)
-            m_viewer->clear_scene();
-        m_viewer = &m_sla_viewer;
-        m_viewer->set_scene(m_scene_presenter->scene());
         update_sla_viewer_data({project_id, bed_instance_id});
     } else {
-        if (m_viewer != &m_fdm_viewer)
-            m_viewer->clear_scene();
-        m_viewer = &m_fdm_viewer;
-        m_viewer->set_scene(m_scene_presenter->scene());
         update_fdm_viewer_data({project_id, bed_instance_id});
     }
 
@@ -424,17 +419,15 @@ void PreviewRenderModule::on_status_cache_changed(const Domain::SlicingId id)
 void PreviewRenderModule::on_selected_project_changed(size_t project_id)
 {
     update_bed_instances();
-    const Biz::Scene::BedSelection& bed_selection = m_project_interactor.scene_interactor().bed_selection();
-    if (m_viewer == &m_fdm_viewer) {
-        m_fdm_viewer.set_scene(m_scene_presenter->scene());
-        if (!bed_selection.empty()) {
-            update_fdm_viewer_data(m_project_interactor.selected_bed_slicing_id());
-        }
-    } else if (m_viewer == &m_sla_viewer) {
-        m_sla_viewer.set_scene(m_scene_presenter->scene());
-        if (!bed_selection.empty()) {
-            update_sla_viewer_data(m_project_interactor.selected_bed_slicing_id());
-        }
+    update_viewer();
+
+    const Biz::Scene::BedSelection& bed_selection =
+        m_project_interactor.scene_interactor().bed_selection();
+
+    if (m_viewer == &m_fdm_viewer && !bed_selection.empty()) {
+        update_fdm_viewer_data(m_project_interactor.selected_bed_slicing_id());
+    } else if (m_viewer == &m_sla_viewer && !bed_selection.empty()) {
+        update_sla_viewer_data(m_project_interactor.selected_bed_slicing_id());
     }
 }
 
@@ -479,8 +472,6 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
     init_scene_layout();
 
     m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
-    m_fdm_viewer.set_scene(m_scene_presenter->scene());
-    m_sla_viewer.set_scene(m_scene_presenter->scene());
 }
 
 void PreviewRenderModule::on_activated()
@@ -489,17 +480,7 @@ void PreviewRenderModule::on_activated()
         m_scene_presenter->scene().set_lights(App::global_lighting());
 
     update_bed_instances();
-
-    // select active viewer with respect to the printer technology of selected config container
-    Domain::SelectionId config_container_id = m_project_interactor.scene_interactor().selected_config_container_id();
-    const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(config_container_id);
-    DEBUG_ASSERT(cc != nullptr);
-    if (cc->print_technology() == Domain::PrinterTechnology::SLA) {
-        m_viewer = &m_sla_viewer;
-    }
-    else {
-        m_viewer = &m_fdm_viewer;
-    }
+    update_viewer();
 }
 
 void PreviewRenderModule::on_deactivated()
@@ -1103,11 +1084,8 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
 
-    if (m_sla_viewer.has_data()) {
-        // Indicates a switch from SLA to FDM printer; 
-        // SlaViewer must be reset and m_viewer set to FDM.
-        m_sla_viewer.reset();
-        m_viewer = &m_fdm_viewer;
+    if (m_viewer == &m_sla_viewer) {
+        update_viewer();
     }
 
     const std::optional<Biz::FDMResultRef> fdm_result{m_project_interactor.fdm_result_cache().get_result(id)};
@@ -1147,12 +1125,10 @@ void PreviewRenderModule::update_sla_viewer_result_data(const Domain::SlicingId 
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
 
-    if (m_fdm_viewer.has_data()) {
-        // Indicates a switch from FDM to SLA printer; 
-        // FdmViewer must be reset and m_viewer set to SLA.
-        m_fdm_viewer.reset();
-        m_viewer = &m_sla_viewer;
+    if (m_viewer == &m_fdm_viewer) {
+        update_viewer();
     }
+
     update_toolbar_visibility();
 
     const std::optional<Biz::SLAResultRef> sla_result{m_project_interactor.sla_result_cache().get_result(id)};
@@ -1332,6 +1308,44 @@ void PreviewRenderModule::update_bed_instances()
     m_scene_presenter->add_bed_instances(beds);
     m_scene_presenter->update_bed_instances();
     m_object_list->set_bed_instance_icons(thumbnails);
+}
+
+void PreviewRenderModule::update_viewer()
+{
+    Domain::SelectionId config_container_id =
+        m_project_interactor.scene_interactor().selected_config_container_id();
+    const Domain::ConfigContainer* cc =
+        m_project_interactor.selected_project().find_config_container(config_container_id);
+    if (!cc) {
+        const Biz::Scene::BedSelection& bed_selection =
+            m_project_interactor.scene_interactor().bed_selection();
+        if (!bed_selection.empty()) {
+            config_container_id = bed_selection.config_container_id();
+        }
+        ASSERT(config_container_id != Domain::INVALID_ID);
+        cc = m_project_interactor.selected_project().find_config_container(config_container_id);
+        if (!cc)
+            return;
+        ASSERT(cc);
+    }
+
+    if (cc->print_technology() == Domain::PrinterTechnology::SLA) {
+        if (m_fdm_viewer.has_data()) {
+            m_fdm_viewer.reset();
+            m_fdm_viewer.clear_scene();
+        }
+        if (m_viewer != &m_sla_viewer)
+            m_viewer = &m_sla_viewer;
+    } else {
+        if (m_sla_viewer.has_data()) {
+            m_sla_viewer.reset();
+            m_sla_viewer.clear_scene();
+        }
+        if (m_viewer != &m_fdm_viewer)
+            m_viewer = &m_fdm_viewer;
+    }
+
+    m_viewer->set_scene(m_scene_presenter->scene());
 }
 
 } // namespace Slic3r::App::Preview

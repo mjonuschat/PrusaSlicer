@@ -457,6 +457,7 @@ void FdmViewer::clear_scene()
 {
     if (m_scene != nullptr) {
         m_scene->remove_children([&](const Scene::Node* node) { return true; }, m_main_node);
+        m_scene->remove_child(m_main_node);
         m_main_node = nullptr;
     }
 }

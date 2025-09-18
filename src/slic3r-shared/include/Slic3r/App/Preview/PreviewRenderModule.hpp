@@ -186,6 +186,8 @@ private:
 
     void center_camera_on_selected_bed();
     void update_bed_instances();
+
+    void update_viewer();
 };
 
 } // namespace Slic3r::App::Preview
