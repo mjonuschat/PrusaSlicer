@@ -777,7 +777,7 @@ void CtbSLAArchive::export_print(
                 } else if (i < decrypted_header.header_struct.bot_layer_count + decrypted_header.header_struct.transition_layer_count) {
                     exposure_count = exposure_count - exposure_transition;
                 } else {
-                    exposure_count = header.exposure;
+                    exposure_count = decrypted_header.header_struct.exposure;
                 }
                 layer_header.exposure = exposure_count;
                 // clang-format on
