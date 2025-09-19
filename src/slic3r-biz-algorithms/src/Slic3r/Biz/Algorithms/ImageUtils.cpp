@@ -4,6 +4,8 @@
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_resize2.h"
+#define STB_DXT_IMPLEMENTATION
+#include "stb_dxt.h"
 
 #if ENABLE_DEBUG_EXPORT_TO_PNG
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -141,6 +143,23 @@ Image rescaled_with_preserved_ratio(const Image& image, const Size& target_size)
     }
 
     return {image.format(), target_size.width, target_size.height, std::move(result)};
+}
+
+Domain::Image compress(const Domain::Image& image)
+{
+    DEBUG_ASSERT(image.format() == PixelFormat::RGB8 || image.format() == PixelFormat::RGBA8);
+    PixelFormat out_format = (image.format() == PixelFormat::RGB8) ? PixelFormat::RGB_DXT1 : PixelFormat::RGBA_DXT5;
+
+    // stb_dxt library, despite claiming that the needed size of the destination buffer is equal to (source buffer size)/4,
+    // crashes if doing so, requiring a minimum of 64 bytes and up to a third of the source buffer size,
+    // so we set the destination buffer initial size to be half the source buffer size
+    std::vector<uint8_t> compressed_data = std::vector<uint8_t>(std::max<size_t>(64, image.pixels.size() / 2), 0);
+    int compressed_size = 0;
+    rygCompress(compressed_data.data(), (unsigned char*)image.pixels.data(), image.width(), image.height(),
+        (out_format == PixelFormat::RGBA_DXT5) ? 1 : 0, compressed_size);
+    compressed_data.resize(compressed_size);
+
+    return Domain::Image(out_format, image.width(), image.height(), std::move(compressed_data));
 }
 
 void flip_vertical(Image& image)

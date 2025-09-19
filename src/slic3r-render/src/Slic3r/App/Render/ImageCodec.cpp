@@ -182,6 +182,12 @@ std::vector<Image> PngReadCodec::load(
         }
     }
 
+    if (opts.compressed) {
+        for (auto& i : ret) {
+            i = Biz::Algorithms::ImageUtils::compress(i);
+        }
+    }
+
     return ret;
 }
 
@@ -207,7 +213,7 @@ std::vector<Image> SvgReadCodec::load(
 )
 {
     std::vector<Image> ret;
-    NSVGimagePtr image = load_svg(is);;
+    NSVGimagePtr image = load_svg(is);
 
     if (!image) {
         SPDLOG_ERROR("Failed parsing SVG file");
@@ -248,6 +254,7 @@ std::vector<Image> SvgReadCodec::load(
         } else {
             SPDLOG_INFO("Empty image with size {}x{} added", size.width, size.height);
         }
+
         ret.emplace_back(PixelFormat::RGBA8, size.width, size.height, std::move(pixels));
 
         if (opts.gen_mipmaps) {
@@ -263,6 +270,12 @@ std::vector<Image> SvgReadCodec::load(
             scale_h = (float) size.height / image->height;
         }
     } while (opts.gen_mipmaps);
+
+    if (opts.compressed) {
+        for (auto& i : ret) {
+            i = Biz::Algorithms::ImageUtils::compress(i);
+        }
+    }
 
     return ret;
 }

@@ -45,7 +45,7 @@ public:
      *
      * @return bed label texture instance.
      */
-    [[nodiscard]] static std::shared_ptr<Render::Texture> texture(const std::string& label, Render::TextureManager& manager,
+    [[nodiscard]] static std::shared_ptr<Render::Texture> label_texture(const std::string& label, Render::TextureManager& manager,
         const std::optional<Domain::ColorRGB>& color = std::nullopt);
 
     /**

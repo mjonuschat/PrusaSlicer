@@ -105,7 +105,7 @@ Render::Material BedMaterials::label_material(const Render::Device& device, cons
     Render::Material ret;
     ret
         .set_shader(device.context().shader_manager().shader("flat_texture"))
-        .set_texture(0, BedRenderHelper::texture(label, device.context().texture_manager(), Domain::ColorRGB::ORANGE()))
+        .set_texture(0, BedRenderHelper::label_texture(label, device.context().texture_manager(), Domain::ColorRGB::ORANGE()))
         .set_transparent(true);
     return ret;
 }
@@ -180,7 +180,7 @@ Render::Material BedMaterials::label_override_material(const Render::Device& dev
     Render::Material ret;
     ret
         .set_shader(device.context().shader_manager().shader("flat_texture"))
-        .set_texture(0, BedRenderHelper::texture(label, device.context().texture_manager(), color))
+        .set_texture(0, BedRenderHelper::label_texture(label, device.context().texture_manager(), color))
         .set_transparent(true);
     return ret;
 }
@@ -191,7 +191,7 @@ Render::Material BedMaterials::label_secondary_selection_material(const Render::
     Render::Material ret;
     ret
         .set_shader(device.context().shader_manager().shader("flat_texture"))
-        .set_texture(0, BedRenderHelper::texture(label, device.context().texture_manager(), color))
+        .set_texture(0, BedRenderHelper::label_texture(label, device.context().texture_manager(), color))
         .set_transparent(true);
     return ret;
 }

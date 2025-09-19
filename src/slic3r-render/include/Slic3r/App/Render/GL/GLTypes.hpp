@@ -216,6 +216,17 @@ const char* shader_input_name(VertexAttribType vat);
 GLenum texture_internal_format(Domain::PixelFormat format);
 GLenum texture_format(Domain::PixelFormat format);
 GLenum texture_format_type(Domain::PixelFormat format);
+
+inline bool is_compressed(Domain::PixelFormat format)
+{
+    switch (format)
+    {
+    case Domain::PixelFormat::RGB_DXT1:
+    case Domain::PixelFormat::RGBA_DXT5: return true;
+    default:                             return false;
+    }
+}
+
 GLenum type(BlendFactor type);
 GLenum type(BlendEquation type);
 

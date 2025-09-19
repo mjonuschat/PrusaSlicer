@@ -19,16 +19,19 @@ public:
     using Data = std::vector<uint8_t>;
 
     Image(PixelFormat format, int w, int h, Data&& data = Data()) noexcept :
-        pixels(data),
+        pixels(std::move(data)),
         m_width(w),
         m_height(h),
         m_pixel_format(format)
     {
-        const size_t bytes_per_pixel = pixel_format_bytes_per_pixel(format);
-        if (pixels.empty()) {
-            pixels.resize(w * h * bytes_per_pixel, 0);
+        if (format == PixelFormat::RGB_DXT1 || format == PixelFormat::RGBA_DXT5)
+            ASSERT(!pixels.empty());
+        else {
+            const size_t bytes_per_pixel = pixel_format_bytes_per_pixel(format);
+            if (pixels.empty())
+                pixels.resize(w * h * bytes_per_pixel, 0);
+            ASSERT(pixels.size() == w * h * bytes_per_pixel);
         }
-        ASSERT(pixels.size() == w * h * bytes_per_pixel);
     }
 
     PixelFormat format() const

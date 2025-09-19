@@ -428,7 +428,7 @@ void ImguiFontHelper::create_font_texture()
     }
 
     m_font_texture = m_device.context().texture_manager().get_or_create_dynamic("imgui_font", Domain::PixelFormat::RGBA8, width, height);
-    m_font_texture->set_data(Domain::PixelFormat::RGBA8, 0, width, height, pixels);
+    m_font_texture->set_data(Domain::PixelFormat::RGBA8, 0, width, height, pixels, size_t(4 * width * height));
 //    m_textures[TextureType::Font]->set_filtering(Texture::MinFilter::Linear, Texture::MagFilter::Linear);
     io.Fonts->SetTexID((ImTextureID)(intptr_t)m_font_texture.get());
 }

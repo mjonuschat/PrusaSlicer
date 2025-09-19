@@ -15,7 +15,7 @@ class Texture : public WithInternal {
 public:
     ~Texture() override;
 
-    void set_data(Domain::PixelFormat format, int level, int w, int h, const void* data);
+    void set_data(Domain::PixelFormat format, int level, int w, int h, const void* data, size_t data_size);
     void set_sub_data(Domain::PixelFormat format, int level, int offset_x, int offset_y, int w, int h, const void* data);
     void set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_filter);
 

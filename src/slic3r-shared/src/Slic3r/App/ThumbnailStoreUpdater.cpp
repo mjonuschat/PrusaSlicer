@@ -73,18 +73,9 @@ void ThumbnailStoreUpdater::update(Render::Device& device, ThumbnailUpdateCallba
                                 tex.project_id      = t.project_id;
                                 tex.bed_instance_id = t.bed_instance_id;
                                 tex.thumbnail = device.context().texture_manager().get_or_create_dynamic(
-                                    name,
-                                    image.format(),
-                                    image.width(),
-                                    image.height()
-                                );
+                                    name, image.format(), image.width(), image.height());
                                 tex.thumbnail->set_data(
-                                    image.format(),
-                                    0,
-                                    image.width(),
-                                    image.height(),
-                                    image.pixels.data()
-                                );
+                                    image.format(), 0, image.width(), image.height(), image.pixels.data(), image.pixels.size());
                             }
                         }
                         break;

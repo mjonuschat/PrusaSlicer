@@ -77,10 +77,8 @@ TexturePtr TextureManager::get_or_create_image(
     std::unique_ptr<Texture> tex = m_device.create_texture();
     for (size_t level = 0; level < images.size(); level++) {
         const Image& img = images[level];
-        tex->set_data(img.format(), level, img.width(), img.height(), img.pixels.data());
+        tex->set_data(img.format(), level, img.width(), img.height(), img.pixels.data(), img.pixels.size());
     }
-
-    // TODO: (Optional) Compress bitmap
 
     m_image_sizes[filename] = size;
 
@@ -109,7 +107,7 @@ TexturePtr TextureManager::get_or_create_dynamic(
     {
         std::vector<uint8_t> data;
         data.resize(w * h * pixel_format_bytes_per_pixel(pf), 0x7f);
-        tex->set_data(pf, 0, w, h, data.data());
+        tex->set_data(pf, 0, w, h, data.data(), data.size());
     }
 
     tex->set_object_name(name);

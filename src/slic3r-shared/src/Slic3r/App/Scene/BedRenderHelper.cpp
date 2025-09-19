@@ -49,13 +49,14 @@ std::shared_ptr<Render::Texture> BedRenderHelper::texture(const Domain::Bed& bed
     opts.max_size_px = s_bed_texture_size;
     opts.flip_y = true;
     opts.gen_mipmaps = true;
+    opts.compressed = true;
 
     std::shared_ptr<Render::Texture> tex = manager.get_or_create_image(texture_filename, opts);
     tex->set_filtering(Render::TextureMinFilter::MipMapLinearLinear, Render::TextureMagFilter::Linear);
     return tex;
 }
 
-std::shared_ptr<Render::Texture> BedRenderHelper::texture(const std::string& label, Render::TextureManager& manager,
+std::shared_ptr<Render::Texture> BedRenderHelper::label_texture(const std::string& label, Render::TextureManager& manager,
     const std::optional<Domain::ColorRGB>& color)
 {
     if (s_text_to_image == nullptr) {
@@ -86,7 +87,8 @@ std::shared_ptr<Render::Texture> BedRenderHelper::texture(const std::string& lab
     for (size_t i = 0; i < mipmaps.size(); ++i) {
         Image& image = mipmaps[i];
         flip_vertical(image);
-        tex->set_data(Domain::PixelFormat::RGBA8, int(i), image.width(), image.height(), image.pixels.data());
+        image = Biz::Algorithms::ImageUtils::compress(image);
+        tex->set_data(Domain::PixelFormat::RGBA_DXT5, int(i), image.width(), image.height(), image.pixels.data(), image.pixels.size());
     }
     return tex;
 }

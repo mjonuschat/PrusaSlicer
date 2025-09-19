@@ -102,6 +102,7 @@ target_link_libraries(slic3r-biz-algorithms PUBLIC
     libigl
     boost_libs
     stb_image
+    stb_dxt
 )
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)

@@ -70,7 +70,7 @@ Framebuffer::Framebuffer(Device& device, const FramebufferCreationData& data)
 
         for (size_t i = 0; i < data.color_attachments.size(); ++i) {
             const FramebufferColorAttachment& info = data.color_attachments[i];
-            m_textures[i]->set_data(info.format, 0, data.width, data.height, nullptr);
+            m_textures[i]->set_data(info.format, 0, data.width, data.height, nullptr, 0);
             m_textures[i]->set_filtering(info.min_filter, info.mag_filter);
             const auto& tex = m_textures[i]->get_internal_as<GL::GLTextureInternal>();
             glFramebufferTexture2D(self.m_target, GL_COLOR_ATTACHMENT0 + i, tex.m_target, tex.m_id, 0);
@@ -104,7 +104,7 @@ Framebuffer::Framebuffer(Device& device, const FramebufferCreationData& data)
             dvc.unbind_renderbuffer(rb);
         } 
         else {
-            m_textures.back()->set_data(PixelFormat::DepthComponent, 0, data.width, data.height, nullptr);
+            m_textures.back()->set_data(PixelFormat::DepthComponent, 0, data.width, data.height, nullptr, 0);
             m_textures.back()->set_filtering(TextureMinFilter::Linear, TextureMagFilter::Linear);
             std::array<float, 4> border_color = { 1.0f, 1.0f, 1.0f, 1.0f };
             m_textures.back()->set_border_color(border_color);

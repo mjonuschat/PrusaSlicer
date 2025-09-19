@@ -42,6 +42,8 @@ GLenum texture_internal_format(PixelFormat format)
     case PixelFormat::RGBA16F:        return GL_RGBA16F;
     case PixelFormat::RGB32F:         return GL_RGB32F;
     case PixelFormat::DepthComponent: return GL_DEPTH_COMPONENT24;
+    case PixelFormat::RGB_DXT1:       return GL_COMPRESSED_RGB;
+    case PixelFormat::RGBA_DXT5:      return GL_COMPRESSED_RGBA;
     default: {
         // Unsupported format
         throw std::runtime_error{"Unreachable code!"};
@@ -60,6 +62,8 @@ GLenum texture_format(PixelFormat format)
     case PixelFormat::RGBA16F:        return GL_RGBA;
     case PixelFormat::RGB32F:         return GL_RGB;
     case PixelFormat::DepthComponent: return GL_DEPTH_COMPONENT;
+    case PixelFormat::RGB_DXT1:       return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+    case PixelFormat::RGBA_DXT5:      return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
     default: {
         // Unsupported format
         throw std::runtime_error{"Unreachable code!"};
@@ -78,6 +82,8 @@ GLenum texture_format_type(PixelFormat format)
     case PixelFormat::RGBA16F:        return GL_FLOAT;
     case PixelFormat::RGB32F:         return GL_FLOAT;
     case PixelFormat::DepthComponent: return GL_FLOAT;
+    case PixelFormat::RGB_DXT1:       return GL_UNSIGNED_BYTE;
+    case PixelFormat::RGBA_DXT5:      return GL_UNSIGNED_BYTE;
     default:
         // Unsupported format
         ASSERT(false);

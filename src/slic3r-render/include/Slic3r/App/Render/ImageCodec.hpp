@@ -16,6 +16,7 @@ struct ImageLoadOptions
     bool force_power_of_two{false};
     bool gen_mipmaps{false};
     bool flip_y{false};
+    bool compressed{false};
 
     Domain::Size resolve_to_size(const Domain::Size& source_size) const;
 };

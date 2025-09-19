@@ -30,7 +30,7 @@ Texture::~Texture()
     glCheck();
 }
 
-void Texture::set_data(Domain::PixelFormat format, int level, int w, int h, const void* data)
+void Texture::set_data(Domain::PixelFormat format, int level, int w, int h, const void* data, size_t data_size)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_texture(0, *this);
@@ -41,7 +41,10 @@ void Texture::set_data(Domain::PixelFormat format, int level, int w, int h, cons
     GLenum gl_target = get_internal_as<GL::GLTextureInternal>().m_target;
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glCheck();
-    glTexImage2D(gl_target, level, gl_internal_format, w, h, 0, gl_format, gl_type, data);
+    if (GL::is_compressed(format))
+        glCompressedTexImage2D(gl_target, level, gl_format, w, h, 0, data_size, data);
+    else
+        glTexImage2D(gl_target, level, gl_internal_format, w, h, 0, gl_format, gl_type, data);
     glCheck();
     glTexParameteri(gl_target, GL_TEXTURE_MAX_LEVEL, level);
     glCheck();
@@ -54,6 +57,8 @@ void Texture::set_data(Domain::PixelFormat format, int level, int w, int h, cons
 
 void Texture::set_sub_data(Domain::PixelFormat format, int level, int offset_x, int offset_y, int w, int h, const void* data)
 {
+    // TODO : add support for compressed textures
+
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_texture(0, *this);
     GLenum gl_target = get_internal_as<GL::GLTextureInternal>().m_target;

@@ -334,7 +334,7 @@ void Scene::generate_ao_noise(Render::Device& device) const
         }
 
         ao.noise_tex = device.context().texture_manager().get_or_create_dynamic("ao_noise", Domain::PixelFormat::RGB32F, ao.noise_size, ao.noise_size);
-        ao.noise_tex->set_data(Domain::PixelFormat::RGB32F, 0, ao.noise_size, ao.noise_size, (void*)noise_data.data());
+        ao.noise_tex->set_data(Domain::PixelFormat::RGB32F, 0, ao.noise_size, ao.noise_size, (void*)noise_data.data(), noise_data.size() * sizeof(Vec3f));
 
         ao.pending_noise_size.reset();
     }
