@@ -1,0 +1,7 @@
+kind: filament
+id: Prusament PETG Carbon Fiber
+inherits:
+- '*PETCF*'
+name: Prusament PETG Carbon Fiber
+values:
+  filament_vendor: Prusa Polymers

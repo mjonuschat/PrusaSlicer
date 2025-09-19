@@ -7,6 +7,8 @@
 
 namespace Slic3r::Biz::Preset {
 
+bool expr_string_equals(const Domain::Preset::Expressions& lhs, const Domain::Preset::Expressions& rhs);
+
 class PresetCollectionEvaluator;
 
 class PresetEvaluator
@@ -40,10 +42,15 @@ private:
         std::string root_id;
         std::string id;
         std::string name;
+        std::optional<Domain::Preset::ConditionMatchMode> match_mode{
+            Domain::Preset::ConditionMatchMode::FirstMatch
+        };
         Domain::Preset::Expressions conditions;
         Domain::Preset::PresetValueMap values;
         Domain::Preset::FeatureValueMap features;
         SourceLocation last_node_location;
+
+        bool has_same_values(const EvalPresetContext& rhs) const;
     };
 
     using EvalPresetContexts = std::vector<EvalPresetContext>;
@@ -57,6 +64,8 @@ private:
         Domain::PrinterTechnology technology,
         Domain::Preset::PresetKind kind, const EvalPresetContext& context
     );
+
+    static EvalPresetContexts merged_same_presets(const EvalPresetContexts& presets);
 
 private:
     const Domain::Preset::PresetCollection& m_presets;

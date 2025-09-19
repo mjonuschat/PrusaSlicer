@@ -1,0 +1,9 @@
+kind: filament
+id: Prusa PETG
+inherits:
+- '*PET*'
+name: Prusa PETG
+values:
+  filament_cost: '19.99'
+  filament_vendor: Made for Prusa
+  filament_spool_weight: 230

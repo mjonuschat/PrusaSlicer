@@ -1,0 +1,9 @@
+kind: filament
+id: Filament PM PETG
+inherits:
+- '*PET*'
+name: Filament PM PETG
+values:
+  filament_cost: '19.99'
+  filament_vendor: Filament PM
+  filament_spool_weight: 230

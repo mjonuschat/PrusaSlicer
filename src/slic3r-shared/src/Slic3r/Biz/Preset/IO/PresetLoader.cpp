@@ -17,6 +17,11 @@ ENUM_DESC(Slic3r::Domain::Preset::PresetKind,
     ("sla_material", SlaMaterial)
 );
 
+ENUM_DESC(Slic3r::Domain::Preset::ConditionMatchMode,
+    ("first_match", FirstMatch),
+    ("all_matches", AllMatches)
+)
+
 #define PRESET_VARIANT_FIELDS                                                   \
     FIELD_DESC(id, FIELD_DEFAULT, {}, FIELD_DEFAULT),                           \
     FIELD_DESC_SIMPLE(name),                                                    \
@@ -25,6 +30,7 @@ ENUM_DESC(Slic3r::Domain::Preset::PresetKind,
     FIELD_DESC(values, FIELD_DEFAULT, {}, FIELD_DEFAULT),                       \
     FIELD_DESC(features, FIELD_DEFAULT, {}, FIELD_DEFAULT),                     \
     FIELD_DESC_SIMPLE(condition),                                               \
+    FIELD_DESC_SIMPLE(match_mode),                                              \
     FIELD_DESC(variants, FIELD_DEFAULT, {}, FIELD_DEFAULT),                     \
     FIELD_DESC(source_location, FIELD_NAME_SELF, FIELD_DEFAULT, FIELD_DEFAULT)
 

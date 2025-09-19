@@ -91,7 +91,7 @@ endfunction()
 
 function(slic3r_app_extract_symbols target)
     # This entire process is only relevant on Apple platforms.
-    if(NOT APPLE OR NOT SLIC3R_RELEASE_DEBUG_SYMBOLS)
+    if(NOT APPLE OR NOT SLIC3R_RELEASE_DEBUG_SYMBOLS OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
         return()
     endif()
 

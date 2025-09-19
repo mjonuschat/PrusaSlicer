@@ -1,0 +1,26 @@
+kind: filament
+id: Filament PM PLA+
+inherits:
+- '*PLA*'
+name: Filament PM PLA+
+values:
+  filament_vendor: Filament PM
+  min_fan_speed: 50
+  max_fan_speed: 70
+  filament_cost: 27.82
+  filament_density: 1.25
+variants:
+ ## C1
+- condition: printer.base_model == "COREONE"
+  values:
+    min_fan_speed: 35
+    max_fan_speed: 55
+    bridge_fan_speed: 100
+    overgang_fan_speed_0: 55
+## MK4S
+- condition: printer.model == "MK4S"
+  values:
+    min_fan_speed: 35
+    max_fan_speed: 55
+    bridge_fan_speed: 100
+    overgang_fan_speed_0: 55

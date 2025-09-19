@@ -50,8 +50,7 @@ values:
   min_print_speed: 15
   slowdown_below_layer_time: 15
   pressure_advance_enable: true
-  pressure_advance_value: 0.04
-  cooling_slowdown_logic: preserve_perimeters
+  cooling_slowdown_logic: consistent_surface
   cooling_perimeter_transition_distance: 10
 ## C1
 variants:
@@ -74,6 +73,7 @@ variants:
     fan_below_layer_time: 20
     filament_load_time: 10.9
     filament_unload_time: 8.9
+    start_filament_gcode: M142 S40 ; set heatbreak target temp
   variants:
   # C1 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -81,8 +81,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.09
       filament_infill_max_crossing_speed: 140
   # C1 0.3
@@ -91,8 +89,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
       filament_infill_max_crossing_speed: 140
   # C1 0.4
@@ -101,8 +97,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.02
       filament_infill_max_crossing_speed: 140
     variants:
@@ -112,8 +106,6 @@ variants:
       values:
         filament_max_volumetric_speed: 26
         filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.02
         filament_infill_max_crossing_speed: 200
         temperature: 265
@@ -124,8 +116,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 12
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
       filament_infill_max_crossing_speed: 140
     variants:
@@ -135,8 +125,6 @@ variants:
       values:
         filament_max_volumetric_speed: 27
         # filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.018
         filament_infill_max_crossing_speed: 200
         temperature: 265
@@ -148,8 +136,6 @@ variants:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
       fan_below_layer_time: 20
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
       filament_infill_max_crossing_speed: 0
     variants:
@@ -171,8 +157,6 @@ variants:
       max_fan_speed: 30
       bridge_fan_speed: 30
       overhang_fan_speed_3: 25
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
     variants:
     # C1 HF0.8
@@ -198,6 +182,7 @@ variants:
     min_print_speed: 15
     slowdown_below_layer_time: 15
     filament_minimal_purge_on_wipe_tower: 35
+    start_filament_gcode: M142 S40 ; set heatbreak target temp
   variants:
   # XL 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -205,8 +190,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.09
   # XL 0.3
   - condition: tool.nozzle_diameter == 0.3
@@ -214,8 +197,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
       filament_infill_max_crossing_speed: 140
   # XL 0.4
@@ -224,8 +205,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.05
       filament_infill_max_crossing_speed: 140
     variants:
@@ -234,8 +213,6 @@ variants:
       name: '*ASA* @XL HF0.4'
       values:
         filament_max_volumetric_speed: 26
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.02
         filament_infill_max_crossing_speed: 200
         first_layer_temperature: 265
@@ -246,8 +223,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 17
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
       filament_infill_max_crossing_speed: 140
     variants:
@@ -256,8 +231,6 @@ variants:
       name: '*ASA* @XL HF0.5'
       values:
         filament_max_volumetric_speed: 27
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.018
         filament_infill_max_crossing_speed: 200
         first_layer_temperature: 265
@@ -268,8 +241,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
       filament_infill_max_crossing_speed: 140
     variants:
@@ -287,8 +258,6 @@ variants:
     values:
       filament_max_volumetric_speed: 18
       slowdown_below_layer_time: 20
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
       filament_infill_max_crossing_speed: 140
     variants:
@@ -297,8 +266,6 @@ variants:
       name: '*ASA* @XL HF0.8'
       values:
         filament_max_volumetric_speed: 36
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.01
         filament_infill_max_crossing_speed: 0
         first_layer_temperature: 270
@@ -312,6 +279,7 @@ variants:
     bridge_fan_speed: 30
     filament_purge_multiplier: 100%
     fan_below_layer_time: 20
+    start_filament_gcode: M142 S40 ; set heatbreak target temp
   variants:
   # MK4 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -319,8 +287,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.09
       filament_infill_max_crossing_speed: 140
   # MK4 0.3
@@ -329,8 +295,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
       filament_infill_max_crossing_speed: 140
   # MK4 0.4
@@ -339,8 +303,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.02
       filament_infill_max_crossing_speed: 140
     variants:
@@ -350,8 +312,6 @@ variants:
       values:
         filament_max_volumetric_speed: 26
         filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.02
         filament_infill_max_crossing_speed: 200
         first_layer_temperature: 265
@@ -362,8 +322,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 17
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
       filament_infill_max_crossing_speed: 140
     variants:
@@ -373,8 +331,6 @@ variants:
       values:
         filament_max_volumetric_speed: 27
         # filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.035
         filament_infill_max_crossing_speed: 200
         first_layer_temperature: 265
@@ -386,8 +342,6 @@ variants:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 20
       fan_below_layer_time: 20
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
       filament_infill_max_crossing_speed: 0
     variants:
@@ -397,8 +351,6 @@ variants:
       values:
         filament_max_volumetric_speed: 34
         # filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.012
         filament_infill_max_crossing_speed: 130
         first_layer_temperature: 265
@@ -410,8 +362,6 @@ variants:
       filament_max_volumetric_speed: 18
       slowdown_below_layer_time: 20
       fan_below_layer_time: 20
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
     variants:
     # MK4 HF0.8
@@ -420,8 +370,6 @@ variants:
       values:
         filament_max_volumetric_speed: 36
         # filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.01
         first_layer_temperature: 270
         temperature: 270
@@ -438,6 +386,7 @@ variants:
     # overhang_fan_speed_1: 0
     filament_purge_multiplier: 100%
     fan_below_layer_time: 20
+    start_filament_gcode: M142 S40 ; set heatbreak target temp
   variants:
   # MK4S 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -445,8 +394,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.09
       filament_infill_max_crossing_speed: 140
   # MK4S 0.3
@@ -455,8 +402,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
       filament_infill_max_crossing_speed: 140
   # MK4S 0.4
@@ -465,8 +410,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.02
       filament_infill_max_crossing_speed: 140
     variants:
@@ -476,8 +419,6 @@ variants:
       values:
         filament_max_volumetric_speed: 26
         filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.02
         filament_infill_max_crossing_speed: 200
         first_layer_temperature: 265
@@ -488,8 +429,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 12
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
       filament_infill_max_crossing_speed: 140
     variants:
@@ -499,8 +438,6 @@ variants:
       values:
         filament_max_volumetric_speed: 27
         # filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.018
         filament_infill_max_crossing_speed: 200
         first_layer_temperature: 265
@@ -513,8 +450,6 @@ variants:
       slowdown_below_layer_time: 20
       fan_below_layer_time: 20
       bridge_fan_speed: 20
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
       filament_infill_max_crossing_speed: 0
     variants:
@@ -524,8 +459,6 @@ variants:
       values:
         filament_max_volumetric_speed: 34
         # filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.012
         filament_infill_max_crossing_speed: 0
         first_layer_temperature: 265
@@ -540,8 +473,6 @@ variants:
       min_fan_speed: 15
       max_fan_speed: 15
       bridge_fan_speed: 20
-      start_filament_gcode: M142 S40 ; set heatbreak target temp
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
     variants:
     # MK4S HF0.8
@@ -550,8 +481,6 @@ variants:
       values:
         filament_max_volumetric_speed: 36
         # filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M142 S40 ; set heatbreak target temp
-        pressure_advance_enable: true
         pressure_advance_value: 0.01
         first_layer_temperature: 270
         temperature: 270
@@ -578,14 +507,13 @@ variants:
     travel_max_lift: 1.5
     travel_ramping_lift: 0
     travel_slope: 1
-    cooling_slowdown_logic: all_features
+    cooling_slowdown_logic: uniform_cooling
   variants:
   # MK3.5 0.25
   - condition: tool.nozzle_diameter == 0.25
     name: '*ASA* @MK3.5 0.25'
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.09
     variants:
     # MK3.5 0.25 MMU
@@ -599,7 +527,6 @@ variants:
     name: '*ASA* @MK3.5 0.3'
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
@@ -607,7 +534,6 @@ variants:
     values:
       slowdown_below_layer_time: 15
       filament_max_volumetric_speed: 11
-      pressure_advance_enable: true
       pressure_advance_value: 0.02
       filament_infill_max_crossing_speed: 0
     variants:
@@ -622,7 +548,6 @@ variants:
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
@@ -630,7 +555,6 @@ variants:
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
     variants:
     # MK3.5 0.6 MMU
@@ -644,7 +568,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
 ## MINI
 - condition: printer.base_model == "MINI"
@@ -660,21 +583,19 @@ variants:
     # retract_speed: 45
     # deretract_speed: 25
     retract_before_travel: 2
-    cooling_slowdown_logic: all_features
+    cooling_slowdown_logic: uniform_cooling
   variants:
   # MINI 0.25
   - condition: tool.nozzle_diameter == 0.25
     name: '*ASA* @MINI 0.25'
     values:
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.55
   # MINI 0.4
   - condition: tool.nozzle_diameter == 0.4
     name: '*ASA* @MINI 0.4'
     values:
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.19
   # MINI 0.6
   - condition: tool.nozzle_diameter == 0.6
@@ -683,7 +604,6 @@ variants:
       filament_max_volumetric_speed: 9
       slowdown_below_layer_time: 20
       filament_infill_max_crossing_speed: 100
-      pressure_advance_enable: true
       pressure_advance_value: 0.1
   # MINI 0.8
   - condition: tool.nozzle_diameter == 0.8
@@ -693,7 +613,6 @@ variants:
       slowdown_below_layer_time: 20
       first_layer_temperature: 265
       temperature: 265
-      pressure_advance_enable: true
       pressure_advance_value: 0.07
 ## MK3, MK3S and MK2.5, MK2.5S
 - condition: printer.base_model == "MK3"
@@ -717,14 +636,13 @@ variants:
     retract_lift: 0.2
     travel_ramping_lift: 0
     retract_length: 1
-    cooling_slowdown_logic: all_features
+    cooling_slowdown_logic: uniform_cooling
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
     name: '*ASA* @MK3 0.25'
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.08
     variants:
     # MK3 0.25 MMU
@@ -738,7 +656,6 @@ variants:
     name: '*ASA* @MK3 0.4'
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.04
     variants:
     # MK3 0.4 MMU
@@ -752,7 +669,6 @@ variants:
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.04
     variants:
     # MK3 0.6 MMU
@@ -766,7 +682,6 @@ variants:
     values:
       filament_max_volumetric_speed: 20
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
       first_layer_temperature: 265
       temperature: 265
@@ -792,21 +707,19 @@ variants:
     filament_max_volumetric_speed: 11
     retract_lift: 0.2
     travel_ramping_lift: 0
-    cooling_slowdown_logic: all_features
+    cooling_slowdown_logic: uniform_cooling
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
     name: '*ASA* @MK2 0.25'
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 20
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
     name: '*ASA* @MK2 0.4'
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 20
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
@@ -814,7 +727,6 @@ variants:
     values:
       filament_max_volumetric_speed: 13
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 12
 ## MK2S MMU1
 - condition: printer.model == "MK2SMM"
@@ -836,21 +748,19 @@ variants:
     retract_lift: 0.2
     travel_ramping_lift: 0
     filament_max_volumetric_speed: 11
-    cooling_slowdown_logic: all_features
+    cooling_slowdown_logic: uniform_cooling
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
     name: '*ASA* @MK2MMU1 0.25'
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 200
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
     name: '*ASA* @MK2MMU1 0.4'
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 200
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
@@ -858,5 +768,4 @@ variants:
     values:
       filament_max_volumetric_speed: 13
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 200

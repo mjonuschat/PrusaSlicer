@@ -324,6 +324,11 @@ std::string to_string(const ExprAst& v)
     return os.str();
 }
 
+bool expr_string_equals(const ExprAst& lhs, const ExprAst& rhs)
+{
+    return to_string(lhs) == to_string(rhs);
+}
+
 Value Eval::eval(const Expr& expr, const ValueMap& extra_vars) const
 {
     ValueMap vars = m_vars;

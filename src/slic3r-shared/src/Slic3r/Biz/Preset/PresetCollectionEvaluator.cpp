@@ -57,16 +57,35 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     }
     return ret;
 #else
-    auto joined_view = m_presets | std::views::transform([&](const auto& preset) {
-        return eval_preset(preset, preset.id, {{preset.id}}, overrides.empty() ? ValueMaps{{}} : overrides, expr_combine)
-            | std::views::filter([only_public](const auto& ep) {
-            return !only_public || Domain::Preset::is_public_name(ep.name);
-        });
-    }) | std::views::join;
+    auto joined_view =
+        m_presets
+        | std::views::transform(
+            [&](const auto& preset)
+            {
+                return eval_preset(
+                           preset,
+                           preset.id,
+                           {{preset.id}},
+                           overrides.empty() ? ValueMaps{{}} : overrides,
+                           expr_combine
+                       )
+                    | std::views::filter(
+                           [only_public](const auto& ep)
+                           { return !only_public || Domain::Preset::is_public_name(ep.name); }
+                    );
+            }
+        )
+        | std::views::join;
 
     PresetEvaluator::EvalPresetContexts ret;
     for (auto&& ep : joined_view)
         ret.push_back(std::move(ep));
+    std::ranges::sort(
+        ret,
+        [](const auto& x, const auto& y)
+        { return x.name < y.name || (x.name == y.name && x.id < y.id); }
+    );
+
     return ret;
 #endif
 }
@@ -93,7 +112,30 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         for (const auto& inh : node.inherits) {
             const auto& node_path = named_preset(inh);
             ASSERT(node_path.size() == 1);
-            ret = eval_preset(*node_path.front(), root_id, ret, overrides, expr_combine, skip_condition_eval);
+
+            // if this node has condition, it overrides the superclass condition
+            // (and hence we want to skip its evaluation)
+            const bool skip_superclass_condition_eval =
+                skip_condition_eval || node.condition.has_value();
+            ret = eval_preset(
+                *node_path.front(),
+                root_id,
+                ret,
+                overrides,
+                expr_combine,
+                skip_superclass_condition_eval
+            );
+
+            if (ret.empty()) {
+#if DEBUG_CONDITION_EVAL
+                SPDLOG_DEBUG(
+                    "Inherited node {} root condition fails => quitting evaluation of {}",
+                    inh,
+                    node.source_location.to_string()
+                );
+#endif
+                return {};
+            };
         }
     }
 
@@ -113,6 +155,8 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             context.id = Domain::Preset::derive_name(node.id, context.id);
         if (node.name.has_value())
             context.name = Domain::Preset::derive_name(node.name.value(), context.name);
+        if (node.match_mode.has_value())
+            context.match_mode = node.match_mode.value();
         if (node.name.has_value() && node.id.empty()) {
             context.id = Domain::Preset::derive_name(node.name.value(), context.id);
             SPDLOG_WARN(
@@ -121,7 +165,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 node.source_location.to_string(),
                 node.name.value(),
                 context.id
-            );
+             );
         }
         if (node.condition.has_value())
             context.conditions.push_back(*node.condition.value());
@@ -136,6 +180,22 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     size_t unconditional_variants = 0;
 
     PresetEvaluator::EvalPresetContexts var_contexts;
+
+    const bool first_match_only = std::ranges::all_of(
+        ret,
+        [](const auto& ctx)
+        { return *ctx.match_mode == Domain::Preset::ConditionMatchMode::FirstMatch; }
+    );
+
+    // make sure that the match_mode is same for contexts
+    ASSERT(
+        first_match_only
+        || std::ranges::none_of(
+            ret,
+            [](const auto& ctx)
+            { return *ctx.match_mode == Domain::Preset::ConditionMatchMode::FirstMatch; }
+        )
+    );
 
     for (const auto& var : node.variants) {
         const bool conditional = var.condition.has_value();
@@ -153,7 +213,16 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             ASSERT(unconditional_variants == 1);
         }
 
-        auto var_ctx = eval_preset(var, root_id, {{root_id}}, overrides, expr_combine, true);
+        auto var_ctx = eval_preset(
+            var,
+            root_id,
+            {{.root_id    = root_id,
+              .match_mode = first_match_only ? Domain::Preset::ConditionMatchMode::FirstMatch :
+                                               Domain::Preset::ConditionMatchMode::AllMatches}},
+            overrides,
+            expr_combine,
+            true
+        );
         var_contexts.insert(
             var_contexts.end(),
             std::make_move_iterator(var_ctx.begin()),
@@ -161,12 +230,12 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         );
 
         // first successful condition met, break (switch-like statement behavior)
-        if (conditional)
+        if (conditional && first_match_only)
             break;
     }
 
     if (var_contexts.empty())
-        return ret;
+        return PresetEvaluator::merged_same_presets(ret);
 
     // resolve variants
     PresetEvaluator::EvalPresetContexts product;
@@ -177,6 +246,8 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 context.id   = Domain::Preset::derive_name(var_ctx.id, context.id);
             if (!var_ctx.name.empty())
                 context.name = Domain::Preset::derive_name(var_ctx.name, context.name);
+            if (var_ctx.match_mode.has_value())
+                context.match_mode = var_ctx.match_mode;
             context.conditions.insert(
                 context.conditions.end(),
                 var_ctx.conditions.begin(),
@@ -190,7 +261,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         }
     }
 
-    return product;
+    return PresetEvaluator::merged_same_presets(product);
 }
 
 struct BoolCaster

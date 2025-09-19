@@ -1,0 +1,395 @@
+kind: filament
+id: 'Elegoo Rapid PLA+'
+inherits:
+- '*PLA*'
+name: 'Elegoo Rapid PLA+'
+values:
+  filament_cost: '22'
+  filament_vendor: Elegoo
+  filament_density: 1.23
+  filament_spool_weight: 160
+  filament_infill_max_speed: 0
+  filament_infill_max_crossing_speed: 0
+variants:
+  ## C1
+- condition: printer.base_model == "COREONE"
+  variants:
+  # C1 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Elegoo Rapid PLA+ @COREONE 0.25'
+    values:
+      pressure_advance_value: 0.09
+  # C1 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: 'Elegoo Rapid PLA+ @COREONE 0.3'
+    values:
+      pressure_advance_value: 0.06
+  # C1 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Elegoo Rapid PLA+ @COREONE 0.4'
+    values:
+      pressure_advance_value: 0.027
+      slowdown_below_layer_time: 6
+      filament_max_volumetric_speed: 17
+    variants:
+    # C1 HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @COREONE HF0.4'
+      values:
+        slowdown_below_layer_time: 6
+        filament_max_volumetric_speed: 25
+  # C1 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'Elegoo Rapid PLA+ @COREONE 0.5'
+    values:
+      pressure_advance_value: 0.019
+      filament_max_volumetric_speed: 17
+    variants:
+    # C1 HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @COREONE HF0.5'
+      values:
+        filament_max_volumetric_speed: 26
+  # C1 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Elegoo Rapid PLA+ @COREONE 0.6'
+    values:
+      pressure_advance_value: 0.016
+      filament_max_volumetric_speed: 18
+    variants:
+    # C1 HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @COREONE HF0.6'
+      values:
+        filament_max_volumetric_speed: 32
+  # C1 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Elegoo Rapid PLA+ @COREONE 0.8'
+    values:
+      pressure_advance_value: 0.011
+      filament_max_volumetric_speed: 20
+    variants:
+    # C1 HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @COREONE HF0.8'
+      values:
+        filament_max_volumetric_speed: 37
+## XL
+- condition: printer.base_model == "XL"
+  variants:
+  # XL 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Elegoo Rapid PLA+ @XL 0.25'
+    values:
+      pressure_advance_value: 0.09
+      filament_max_volumetric_speed: 17
+  # XL 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: 'Elegoo Rapid PLA+ @XL 0.3'
+    values:
+      pressure_advance_value: 0.06
+      filament_max_volumetric_speed: 17
+  # XL 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Elegoo Rapid PLA+ @XL 0.4'
+    values:
+      pressure_advance_value: 0.027
+      slowdown_below_layer_time: 7
+      filament_max_volumetric_speed: 17
+    variants:
+    # XL HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @XL HF0.4'
+      values:
+        filament_max_volumetric_speed: 25
+  # XL 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'Elegoo Rapid PLA+ @XL 0.5'
+    values:
+      pressure_advance_value: 0.019
+      filament_max_volumetric_speed: 17
+    variants:
+    # XL HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @XL HF0.5'
+      values:
+        filament_max_volumetric_speed: 26
+  # XL 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Elegoo Rapid PLA+ @XL 0.6'
+    values:
+      pressure_advance_value: 0.016
+      filament_max_volumetric_speed: 18
+    variants:
+    # XL HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @XL HF0.6'
+      values:
+        filament_max_volumetric_speed: 32
+  # XL 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Elegoo Rapid PLA+ @XL 0.8'
+    values:
+      pressure_advance_value: 0.011
+      filament_max_volumetric_speed: 20
+    variants:
+    # XL HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @XL HF0.8'
+      values:
+        filament_max_volumetric_speed: 37
+## MK4
+- condition: printer.model == "MK4"
+  variants:
+  # MK4 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Elegoo Rapid PLA+ @MK4 0.25'
+    values:
+      pressure_advance_value: 0.09
+      filament_max_volumetric_speed: 17
+  # MK4 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: 'Elegoo Rapid PLA+ @MK4 0.3'
+    values:
+      pressure_advance_value: 0.06
+      filament_max_volumetric_speed: 17
+  # MK4 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Elegoo Rapid PLA+ @MK4 0.4'
+    values:
+      pressure_advance_value: 0.027
+      slowdown_below_layer_time: 6
+      filament_max_volumetric_speed: 17
+    variants:
+    # MK4 HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @MK4 HF0.4'
+      values:
+        pressure_advance_value: 0.02
+        slowdown_below_layer_time: 6
+        filament_max_volumetric_speed: 25
+  # MK4 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'Elegoo Rapid PLA+ @MK4 0.5'
+    values:
+      pressure_advance_value: 0.019
+      filament_max_volumetric_speed: 17
+    variants:
+    # MK4 HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @MK4 HF0.5'
+      values:
+        filament_max_volumetric_speed: 26
+  # MK4 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Elegoo Rapid PLA+ @MK4 0.6'
+    values:
+      pressure_advance_value: 0.016
+      filament_max_volumetric_speed: 18
+    variants:
+    # MK4 HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @MK4 HF0.6'
+      values:
+        filament_max_volumetric_speed: 32
+  # MK4 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Elegoo Rapid PLA+ @MK4 0.8'
+    values:
+      pressure_advance_value: 0.011
+      filament_max_volumetric_speed: 20
+    variants:
+    # MK4 HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @MK4 HF0.8'
+      values:
+        filament_max_volumetric_speed: 37
+## MK4S
+- condition: printer.model == "MK4S"
+  variants:
+  # MK4S 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Elegoo Rapid PLA+ @MK4S 0.25'
+    values:
+      pressure_advance_value: 0.09
+      filament_max_volumetric_speed: 17
+  # MK4S 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: 'Elegoo Rapid PLA+ @MK4S 0.3'
+    values:
+      pressure_advance_value: 0.06
+      filament_max_volumetric_speed: 17
+  # MK4S 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Elegoo Rapid PLA+ @MK4S 0.4'
+    values:
+      pressure_advance_value: 0.027
+      slowdown_below_layer_time: 4
+      filament_max_volumetric_speed: 17
+    variants:
+    # MK4S HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @MK4S HF0.4'
+      slowdown_below_layer_time: 4
+      values:
+        filament_max_volumetric_speed: 25
+  # MK4S 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'Elegoo Rapid PLA+ @MK4S 0.5'
+    values:
+      pressure_advance_value: 0.019
+      filament_max_volumetric_speed: 17
+    variants:
+    # MK4S HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @MK4S HF0.5'
+      values:
+        pressure_advance_value: 0.019
+        filament_max_volumetric_speed: 26
+  # MK4S 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Elegoo Rapid PLA+ @MK4S 0.6'
+    values:
+      pressure_advance_value: 0.016
+      filament_max_volumetric_speed: 18
+    variants:
+    # MK4S HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @MK4S HF0.6'
+      values:
+        pressure_advance_value: 0.016
+        filament_max_volumetric_speed: 32
+  # MK4S 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Elegoo Rapid PLA+ @MK4S 0.8'
+    values:
+      pressure_advance_value: 0.011
+      filament_max_volumetric_speed: 20
+    variants:
+    # C1 HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'Elegoo Rapid PLA+ @MK4S HF0.8'
+      values:
+        pressure_advance_value: 0.01
+        filament_max_volumetric_speed: 37
+## MK3.5
+- condition: printer.base_model == "MK3.5"
+  variants:
+  # MK3.5 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Elegoo Rapid PLA+ @MK3.5 0.25'
+    values:
+      pressure_advance_value: 0.09
+    variants:
+    # MK3.5 0.25 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Elegoo Rapid PLA+ @MK3.5 0.25 MMU'
+  # MK3.5 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: 'Elegoo Rapid PLA+ @MK3.5 0.3'
+    values:
+      pressure_advance_value: 0.06
+  # MK3.5 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Elegoo Rapid PLA+ @MK3.5 0.4'
+    values:
+      pressure_advance_value: 0.027
+    variants:
+    # MK3.5 0.4 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Elegoo Rapid PLA+ @MK3.5 0.4 MMU'
+  # MK3.5 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'Elegoo Rapid PLA+ @MK3.5 0.5'
+    values:
+      pressure_advance_value: 0.019
+  # MK3.5 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Elegoo Rapid PLA+ @MK3.5 0.6'
+    values:
+      pressure_advance_value: 0.015
+    variants:
+    # MK3.5 0.6 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Elegoo Rapid PLA+ @MK3.5 0.6 MMU'
+  # MK3.5 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Elegoo Rapid PLA+ @MK3.5 0.8'
+    values:
+      pressure_advance_value: 0.01
+## MINI
+- condition: printer.base_model == "MINI"
+  variants:
+  # MINI 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Elegoo Rapid PLA+ @MINI 0.25'
+    values:
+      pressure_advance_value: 0.63
+  # MINI 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Elegoo Rapid PLA+ @MINI 0.4'
+    values:
+      pressure_advance_value: 0.21
+  # MINI 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Elegoo Rapid PLA+ @MINI 0.6'
+    values:
+      pressure_advance_value: 0.13
+  # MINI 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Elegoo Rapid PLA+ @MINI 0.8'
+    values:
+      pressure_advance_value: 0.09
+## MK3, MK3S and MK2.5, MK2.5S
+- condition: printer.base_model == "MK3"
+  variants:
+  # MK3 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Elegoo Rapid PLA+ @MK3 0.25'
+    values:
+      pressure_advance_value: 0.04
+    variants:
+    # MK3 0.25 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Elegoo Rapid PLA+ @MK3 0.25 MMU'
+  # MK3 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Elegoo Rapid PLA+ @MK3 0.4'
+    values:
+      pressure_advance_value: 0.04
+    variants:
+    # MK3 0.4 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Elegoo Rapid PLA+ @MK3 0.4 MMU'
+  # MK3 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Elegoo Rapid PLA+ @MK3 0.6'
+    values:
+      pressure_advance_value: 0.03
+    variants:
+    # MK3 0.6 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Elegoo Rapid PLA+ @MK3 0.6 MMU'
+  # MK3 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Elegoo Rapid PLA+ @MK3 0.8'
+    values:
+      pressure_advance_value: 0.007
+## MK2S
+- condition: printer.model == "MK2S"
+  variants:
+  # MK2 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Elegoo Rapid PLA+ @MK2 0.25'
+    values:
+      pressure_advance_value: 22
+  # MK2 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Elegoo Rapid PLA+ @MK2 0.4'
+    values:
+      pressure_advance_value: 22
+  # MK2 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Elegoo Rapid PLA+ @MK2 0.6'
+    values:
+      pressure_advance_value: 13

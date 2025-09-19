@@ -1,0 +1,8 @@
+kind: filament
+id: Fillamentum PLA
+inherits:
+- '*PLA*'
+name: Fillamentum PLA
+values:
+  filament_cost: '35.48'
+  filament_vendor: Fillamentum

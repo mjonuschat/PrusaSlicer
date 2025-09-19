@@ -1,0 +1,441 @@
+kind: filament
+id: Verbatim PETG
+inherits:
+- '*PET*'
+name: Verbatim PETG
+values:
+  filament_vendor: Verbatim
+  first_layer_temperature: 240
+  temperature: 240
+  filament_cost: 27.9
+  filament_spool_weight: 235
+## C1
+variants:
+- condition: printer.base_model == "COREONE"
+  variants:
+  # C1 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Verbatim PETG @COREONE 0.25'
+    values:
+      filament_max_volumetric_speed: 12
+  # C1 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: 'Verbatim PETG @COREONE 0.3'
+    values:
+      filament_max_volumetric_speed: 12
+  # C1 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Verbatim PETG @COREONE 0.4'
+    values:
+      filament_max_volumetric_speed: 12
+    variants:
+    # C1 HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @COREONE HF0.4'
+      values:
+        filament_max_volumetric_speed: 21
+        first_layer_temperature: 245
+        temperature: 245
+  # C1 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'Verbatim PETG @COREONE 0.5'
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # C1 HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @COREONE HF0.5'
+      values:
+        filament_max_volumetric_speed: 24
+        first_layer_temperature: 245
+        temperature: 245
+  # C1 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Verbatim PETG @COREONE 0.6'
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # C1 HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @COREONE HF0.6'
+      values:
+        filament_max_volumetric_speed: 27
+        first_layer_temperature: 245
+        temperature: 245
+  # C1 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Verbatim PETG @COREONE 0.8'
+    values:
+      filament_max_volumetric_speed: 22
+      slowdown_below_layer_time: 20
+    variants:
+    # C1 HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @COREONE HF0.8'
+      values:
+        filament_max_volumetric_speed: 34
+        first_layer_temperature: 245
+        temperature: 245
+## XL
+- condition: printer.base_model == "XL"
+  variants:
+  # XL 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Verbatim PETG @XL 0.25'
+    values:
+      filament_max_volumetric_speed: 12
+  # XL 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: 'Verbatim PETG @XL 0.3'
+    values:
+      filament_max_volumetric_speed: 12
+  # XL 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Verbatim PETG @XL 0.4'
+    values:
+      filament_max_volumetric_speed: 12
+    variants:
+    # XL HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @XL HF0.4'
+      values:
+        filament_max_volumetric_speed: 24
+        first_layer_temperature: 245
+        temperature: 245
+  # XL 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'Verbatim PETG @XL 0.5'
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # XL HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @XL HF0.5'
+      values:
+        filament_max_volumetric_speed: 24
+        first_layer_temperature: 245
+        temperature: 245
+  # XL 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Verbatim PETG @XL 0.6'
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # XL HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @XL HF0.6'
+      values:
+        filament_max_volumetric_speed: 27
+        first_layer_temperature: 245
+        temperature: 245
+  # XL 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Verbatim PETG @XL 0.8'
+    values:
+      filament_max_volumetric_speed: 22
+    variants:
+    # XL HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @XL HF0.8'
+      values:
+        filament_max_volumetric_speed: 34
+        first_layer_temperature: 250
+        temperature: 250
+## MK4
+- condition: printer.model == "MK4"
+  values:
+    idle_temperature: 130
+  variants:
+  # MK4 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Verbatim PETG @MK4 0.25'
+    values:
+      filament_max_volumetric_speed: 9
+  # MK4 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: 'Verbatim PETG @MK4 0.3'
+    values:
+      filament_max_volumetric_speed: 9
+  # MK4 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Verbatim PETG @MK4 0.4'
+    values:
+      filament_max_volumetric_speed: 12
+    variants:
+    # MK4 HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @MK4 HF0.4'
+      values:
+        filament_max_volumetric_speed: 22
+        first_layer_temperature: 245
+        temperature: 245
+  # MK4 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'Verbatim PETG @MK4 0.5'
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # MK4 HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @MK4 HF0.5'
+      values:
+        filament_max_volumetric_speed: 24
+        first_layer_temperature: 245
+        temperature: 245
+  # MK4 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Verbatim PETG @MK4 0.6'
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # MK4 HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @MK4 HF0.6'
+      values:
+        filament_max_volumetric_speed: 27
+        first_layer_temperature: 245
+        temperature: 245
+  # MK4 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Verbatim PETG @MK4 0.8'
+    values:
+      filament_max_volumetric_speed: 22
+    variants:
+    # MK4 HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @MK4 HF0.8'
+      values:
+        filament_max_volumetric_speed: 34
+        first_layer_temperature: 250
+        temperature: 250
+## MK4S
+- condition: printer.model == "MK4S"
+  variants:
+  # MK4S 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Verbatim PETG @MK4S 0.25'
+    values:
+      filament_max_volumetric_speed: 9
+  # MK4S 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: 'Verbatim PETG @MK4S 0.3'
+    values:
+      filament_max_volumetric_speed: 9
+  # MK4S 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Verbatim PETG @MK4S 0.4'
+    values:
+      filament_max_volumetric_speed: 12
+    variants:
+    # MK4S HF0.4
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @MK4S HF0.4'
+      values:
+        filament_max_volumetric_speed: 22
+        first_layer_temperature: 245
+        temperature: 245
+  # MK4S 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'Verbatim PETG @MK4S 0.5'
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # MK4S HF0.5
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @MK4S HF0.5'
+      values:
+        filament_max_volumetric_speed: 24
+        first_layer_temperature: 245
+        temperature: 245
+  # MK4S 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Verbatim PETG @MK4S 0.6'
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # MK4S HF0.6
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @MK4S HF0.6'
+      values:
+        filament_max_volumetric_speed: 27
+        first_layer_temperature: 245
+        temperature: 245
+  # MK4S 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Verbatim PETG @MK4S 0.8'
+    values:
+      filament_max_volumetric_speed: 22
+      pressure_advance_value: 0.018
+    variants:
+    # MK4S HF0.8
+    - condition: tool.nozzle_high_flow
+      name: 'Verbatim PETG @MK4S HF0.8'
+      values:
+        filament_max_volumetric_speed: 34
+        first_layer_temperature: 250
+        temperature: 250
+## MK3.5
+- condition: printer.base_model == "MK3.5"
+  variants:
+  # MK3.5 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Verbatim PETG @MK3.5 0.25'
+    variants:
+    # MK3.5 0.25 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Verbatim PETG @MK3.5 0.25 MMU'
+      values:
+        temperature: 230
+        filament_max_volumetric_speed: 2
+  # MK3.5 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: 'Verbatim PETG @MK3.5 0.3'
+  # MK3.5 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Verbatim PETG @MK3.5 0.4'
+    values:
+      slowdown_below_layer_time: 15
+    variants:
+    # MK3.5 0.4 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Verbatim PETG @MK3.5 0.4 MMU'
+      values:
+        temperature: 230
+        filament_max_volumetric_speed: 7
+  # MK3.5 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: 'Verbatim PETG @MK3.5 0.5'
+    values:
+      filament_max_volumetric_speed: 14
+  # MK3.5 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Verbatim PETG @MK3.5 0.6'
+    values:
+      filament_max_volumetric_speed: 15
+    variants:
+    # MK3.5 0.6 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Verbatim PETG @MK3.5 0.6 MMU'
+      values:
+        temperature: 230
+        filament_max_volumetric_speed: 13
+  # MK3.5 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Verbatim PETG @MK3.5 0.8'
+    values:
+      filament_max_volumetric_speed: 20
+      first_layer_temperature: 245
+      temperature: 245
+## MINI
+- condition: printer.base_model == "MINI"
+  values:
+    first_layer_temperature: 240
+    temperature: 240
+  variants:
+  # MINI 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Verbatim PETG @MINI 0.25'
+    values:
+      slowdown_below_layer_time: 10
+  # MINI 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Verbatim PETG @MINI 0.4'
+    values:
+      slowdown_below_layer_time: 10
+  # MINI 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Verbatim PETG @MINI 0.6'
+    values:
+      filament_max_volumetric_speed: 15
+  # MINI 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Verbatim PETG @MINI 0.8'
+    values:
+      filament_max_volumetric_speed: 15
+      first_layer_temperature: 245
+      temperature: 245
+## MK3, MK3S and MK2.5, MK2.5S
+- condition: printer.base_model == "MK3"
+  variants:
+  # MK3 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Verbatim PETG @MK3 0.25'
+    values:
+      slowdown_below_layer_time: 10
+    variants:
+    # MK3 0.25 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Verbatim PETG @MK3 0.25 MMU'
+      values:
+        temperature: 230
+        filament_max_volumetric_speed: 2
+  # MK3 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Verbatim PETG @MK3 0.4'
+    values:
+      slowdown_below_layer_time: 12
+      pressure_advance_value: 0.08
+    variants:
+    # MK3 0.4 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Verbatim PETG @MK3 0.4 MMU'
+      values:
+        temperature: 230
+        filament_max_volumetric_speed: 7
+  # MK3 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Verbatim PETG @MK3 0.6'
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 17
+      pressure_advance_value: 0.04
+    variants:
+    # MK3 0.6 MMU
+    - condition: feeder.base_model == "MMU"
+      name: 'Verbatim PETG @MK3 0.6 MMU'
+      values:
+        temperature: 230
+        filament_max_volumetric_speed: 13
+  # MK3 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: 'Verbatim PETG @MK3 0.8'
+    values:
+      filament_max_volumetric_speed: 20
+      first_layer_temperature: 245
+      temperature: 245
+## MK2S
+- condition: printer.model == "MK2S"
+  values:
+    filament_max_volumetric_speed: 8
+  variants:
+  # MK2 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Verbatim PETG @MK2 0.25'
+    values:
+      slowdown_below_layer_time: 15
+  # MK2 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Verbatim PETG @MK2 0.4'
+    values:
+      slowdown_below_layer_time: 15
+  # MK2 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Verbatim PETG @MK2 0.6'
+    values:
+      filament_max_volumetric_speed: 15
+## MK2S MMU1
+- condition: printer.model == "MK2SMM"
+  values:
+    filament_max_volumetric_speed: 8
+  variants:
+  # MK2 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: 'Verbatim PETG @MK2MMU1 0.25'
+  # MK2 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: 'Verbatim PETG @MK2MMU1 0.4'
+  # MK2 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: 'Verbatim PETG @MK2MMU1 0.6'
+    values:
+      filament_max_volumetric_speed: 12

@@ -66,6 +66,24 @@ struct ValueCast<Domain::Percentage, Domain::FloatOrPercentage>
     }
 };
 
+template <typename FromScalarT, typename ToScalarT>
+    requires ValueCast<FromScalarT, ToScalarT>::defined
+struct ValueCast<std::vector<FromScalarT>, std::vector<ToScalarT>>
+{
+    static constexpr bool defined = true;
+
+    static constexpr std::vector<ToScalarT> cast(const std::vector<FromScalarT>& v)
+    {
+        std::vector<ToScalarT> dest;
+        dest.reserve(v.size());
+        for (const auto& vi : v)
+            dest.push_back(ValueCast<FromScalarT, ToScalarT>::cast(vi));
+        return dest;
+    }
+};
+
+static_assert(ValueCast<std::vector<double>, std::vector<bool>>::defined);
+
 #undef VALUE_CAST_DEF_STATIC
 
 template <typename FromType>
@@ -220,20 +238,38 @@ struct ConfigValueSetterVisitor
             Domain::Vec2d>::value
     bool operator()(const ValueType& v)
     {
-        if (!item.holds_alternative<ValueType>()) {
-            std::string dest_type_name = item.value().visit([](const auto& v) {
-                return type_name(v);
-            });
-            SPDLOG_ERROR(
-                "Type mismatched for item {}: source type: {}  dest type: {}",
-                item.name(),
-                type_name(v),
-                dest_type_name
-            );
-            return false;
+        if (item.holds_alternative<ValueType>()) {
+            item.set(v);
+            return true;
         }
-        item.set(v);
-        return true;
+
+
+        if constexpr (Domain::is_std_vector_v<ValueType>) {
+            const bool set = item.visit(
+                [&v, &item=this->item]<typename T>(const T&) -> bool
+                {
+                    if constexpr (Domain::is_std_vector_v<T> && ValueCast<ValueType, T>::defined) {
+                        item.set(ValueCast<ValueType, T>::cast(v));
+                        return true;
+                    }
+                    return false;
+                }
+            );
+            if (set)
+                return true;
+        }
+
+        std::string dest_type_name = item.value().visit([](const auto& v) {
+            return type_name(v);
+        });
+        SPDLOG_ERROR(
+            "Type mismatched for item {}: source type: {}  dest type: {}",
+            item.name(),
+            type_name(v),
+            dest_type_name
+        );
+        return false;
+
     }
 };
 
@@ -258,7 +294,7 @@ ConfigType config_values(const Domain::Preset::PresetValueMap& values)
 }
 
 template <typename FdmConfigType, typename SlaConfigType>
-typename Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType>::PresetValues config_values(
+Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType>::PresetValues config_values(
     Domain::PrinterTechnology technology,
     const Domain::Preset::PresetValueMap& values
 )
@@ -280,6 +316,17 @@ typename Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType>::PresetVa
 
 } // namespace
 
+bool PresetEvaluator::EvalPresetContext::has_same_values(const EvalPresetContext& rhs) const
+{
+    // last_node_location and conditions left intentionally
+    return root_id == rhs.root_id
+        && id == rhs.id
+        && name == rhs.name
+        && match_mode == rhs.match_mode
+        && values == rhs.values
+        && features == rhs.features;
+}
+
 template <typename FdmConfigType, typename SlaConfigType>
 Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::preset_from_context(
     Domain::PrinterTechnology technology,
@@ -297,6 +344,20 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
         .conditions = context.conditions,
         .last_node_location = context.last_node_location
     };
+}
+
+PresetEvaluator::EvalPresetContexts PresetEvaluator::merged_same_presets(const EvalPresetContexts& presets)
+{
+    EvalPresetContexts ret;
+
+    for (const auto& p : presets) {
+        const bool is_unique =
+            std::ranges::none_of(ret, [&p](const auto& other) { return p.has_same_values(other); });
+        if (is_unique) {
+            ret.emplace_back(p);
+        }
+    }
+    return ret;
 }
 
 void PresetEvaluator::build_named_presets()
@@ -454,8 +515,21 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
             }
 
             // For FFF add only prints with tools filled
-            if (hw_config.technology != Domain::PrinterTechnology::FFF || !tools.empty())
-                ep.prints.emplace_back(std::move(evaluated_print_preset), std::move(tools), std::move(materials));
+            if (hw_config.technology != Domain::PrinterTechnology::FFF
+                || std::ranges::all_of(tools, [](const auto& t) { return !t.empty(); }))
+            {
+                ep.prints.emplace_back(
+                    std::move(evaluated_print_preset),
+                    std::move(tools),
+                    std::move(materials)
+                );
+            } else if (hw_config.technology != Domain::PrinterTechnology::FFF) {
+                SPDLOG_WARN(
+                    "Print preset {} for printer {} was removed as it has at least one tool without tool print presets",
+                    evaluated_print_preset.name,
+                    printer_preset.name
+                );
+            }
         }
         ret.emplace_back(std::move(ep));
     }
