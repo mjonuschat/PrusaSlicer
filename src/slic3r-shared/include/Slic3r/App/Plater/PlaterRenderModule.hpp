@@ -38,7 +38,11 @@ class TextGizmo;
 class MeasureGizmo;
 class PlaterCameraGizmo;
 
-class PlaterRenderModule final : public Platform::AbstractRenderModule, public Biz::IStatusCacheChangedListener, public Biz::Scene::ISceneSelectionChangedListener, private Scene::IGizmoActiveToolListener,
+class PlaterRenderModule final :
+    public Platform::AbstractRenderModule,
+    public Biz::IStatusCacheChangedListener,
+    public Biz::Scene::ISceneSelectionChangedListener,
+    private Scene::IGizmoActiveToolListener,
     public Biz::ISelectedProjectChangedListener
 {
 public:
@@ -107,6 +111,7 @@ private:
     Yoga::Passthrough<PopNotification::PopNotificationListView> m_pop_notification_list_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
+    Yoga::Passthrough<SidebarObject> m_sidebar_object;
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<History> m_history;
 

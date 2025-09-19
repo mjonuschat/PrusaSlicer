@@ -32,6 +32,8 @@ public:
 
         void set_value(const std::string& key, const Domain::ConfigValue& value);
 
+        void set_override(const std::string& key, bool enable);
+
         void set_config_box(Domain::ConfigBox* config_box);
 
     private:
@@ -42,6 +44,8 @@ public:
 
     ConfigBoxInteractor();
     explicit ConfigBoxInteractor(SetAccessor& set_accessor, Domain::ConfigBox* config_box);
+
+    const Domain::ConfigValue* find(const std::string& name) const;
 
     std::weak_ptr<ConfigBoxObservableList> config_box_list();
 

@@ -464,7 +464,7 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
         ASSERT(! is_filament_override || boost::starts_with(old_key, legacy.override_prefix));
         std::string new_key(old_key.begin() + (is_filament_override ? legacy.override_prefix.size() : 0), old_key.end()); // trim prefix
 
-        const auto [item_ptr, new_is_override]{box.contains(new_key)};
+        const auto [item_ptr, new_is_override]{box.find(new_key)};
         if (!item_ptr)
             continue;
 
@@ -594,7 +594,7 @@ static std::string serialize_as_legacy_config(const std::variant<const ConfigPac
         Slic3rLegacy::ConfigOption* opt = cfg_old->option(key);
 
         for (const auto& [box, filament_id] : boxes) {
-            const auto [item, is_override]{box->contains(key)};
+            const auto [item, is_override]{box->find(key)};
             if (item && !is_override) {
                 convert_new_to_old(*item, opt, *cfg_old->def()->get(key), filament_id);
             }
@@ -605,7 +605,7 @@ static std::string serialize_as_legacy_config(const std::variant<const ConfigPac
                 ASSERT(boost::starts_with(key, legacy_data.override_prefix));
                 std::string new_key(key.begin() + legacy_data.override_prefix.size(), key.end());
 
-                const auto [over, must_be_override]{box->contains(new_key)};
+                const auto [over, must_be_override]{box->find(new_key)};
                 ASSERT(over && must_be_override);
                 const bool is_nil{!box->overrides.get(new_key)};
                 convert_new_to_old(*over, opt, *cfg_old->def()->get(new_key), filament_id, is_nil);

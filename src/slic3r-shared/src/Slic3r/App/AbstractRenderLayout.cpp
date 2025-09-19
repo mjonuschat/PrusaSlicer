@@ -256,6 +256,9 @@ void AbstractRenderLayout::init_right_column()
     m_layout_right_column->append(m_sidebar_bed.release());
 
     m_layout_right_column->append(m_sidebar_print.release());
+
+    m_layout_right_column->append(m_sidebar_object.release());
+    m_sidebar_object->set_visible(false);
 }
 
 void AbstractRenderLayout::init_toolbar_column()
@@ -403,14 +406,16 @@ AbstractRenderLayout::AbstractRenderLayout(
     std::unique_ptr<CubeView> cube_view,
     std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
     std::unique_ptr<SidebarBed> sidebar_bed,
-    std::unique_ptr<SidebarPrint> sidebar_print
+    std::unique_ptr<SidebarPrint> sidebar_print,
+    std::unique_ptr<SidebarObject> sidebar_object
 ) :
     m_top_bar(std::move(top_bar)),
     m_object_list(std::move(object_list)),
     m_cube_view(std::move(cube_view)),
     m_pop_notification_list_view(std::move(pop_notification_list_view)),
     m_sidebar_bed(std::move(sidebar_bed)),
-    m_sidebar_print(std::move(sidebar_print))
+    m_sidebar_print(std::move(sidebar_print)),
+    m_sidebar_object(std::move(sidebar_object))
 {}
 
 AbstractRenderLayout::~AbstractRenderLayout() {}

@@ -5,15 +5,9 @@
 #include "Slic3r/App/ConfigRowItem.hpp"
 
 #include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/App/Config/ConfigItemTextField.hpp"
-#include "Slic3r/App/Config/ConfigItemCheckBox.hpp"
-#include "Slic3r/App/Config/ConfigItemColorPicker.hpp"
-#include "Slic3r/App/Config/ConfigItemPoints.hpp"
-#include "Slic3r/App/Config/ConfigItemComboBox.hpp"
-#include "Slic3r/App/Config/ConfigItemTextFields.hpp"
+#include "Slic3r/App/Yoga/ToggleButton.hpp"
+#include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Config/ConfigItemSpinBox.hpp"
-#include "Slic3r/App/Config/ConfigItemSpinBoxes.hpp"
-#include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
@@ -53,44 +47,13 @@ ConfigRowItem::ConfigRowItem(
 
     m_label = left_side->emplace_back<Text>(data.def().label);
 
-    switch (data.def().gui_type) {
-    case Slic3r::Domain::ConfigItemDef::GUIType::textfield:
-        m_input = emplace_back<ConfigItemTextField>(index, data, m_preset_interactor);
-        break;
-    case Slic3r::Domain::ConfigItemDef::GUIType::textfields:
-        m_input = emplace_back<ConfigItemTextFields>(index, data, m_preset_interactor);
-        break;
-    case Slic3r::Domain::ConfigItemDef::GUIType::checkbox:
-        m_input = emplace_back<ConfigItemCheckBox>(index, data, m_preset_interactor);
-        break;
-    case Slic3r::Domain::ConfigItemDef::GUIType::f_enum_open:
-    case Slic3r::Domain::ConfigItemDef::GUIType::i_enum_open:
-    case Slic3r::Domain::ConfigItemDef::GUIType::combobox:
-        m_input = emplace_back<ConfigItemComboBox>(index, data, m_preset_interactor);
-        break;
-    case Slic3r::Domain::ConfigItemDef::GUIType::comboboxes:
-        m_input = emplace_back<ConfigItemComboBoxes>(index, data, m_preset_interactor);
-        break;
-    case Slic3r::Domain::ConfigItemDef::GUIType::points:
-        m_input = emplace_back<ConfigItemPoints>(index, data, m_preset_interactor);
-        break;
-    case Slic3r::Domain::ConfigItemDef::GUIType::color:
-        m_input = emplace_back<ConfigItemColorPicker>(index, data);
-        break;
-    case Slic3r::Domain::ConfigItemDef::GUIType::spinbox:
-        m_input = m_config_item_spin_box = emplace_back<ConfigItemSpinBox>(
-            index,
-            data,
-            m_preset_interactor
-        );
-        break;
-    case Slic3r::Domain::ConfigItemDef::GUIType::spinboxes:
-        m_input = emplace_back<ConfigItemSpinBoxes>(index, data, m_preset_interactor);
-        break;
-    }
+    m_control = ConfigItemControl::config_item_control_factory(this, index, data, m_preset_interactor);
 
-    if (m_input) { // Todo: handle all cases
-        m_input_value = dynamic_cast<Biz::DataObserver<Domain::ConfigItem>*>(m_input);
+    m_input = dynamic_cast<Yoga::Item*>(m_control);
+    ASSERT(m_input, "ConfigItem needs to derive from Yoga::Item");
+
+    if (data.def().gui_type == Slic3r::Domain::ConfigItemDef::GUIType::spinbox) {
+        m_config_item_spin_box = dynamic_cast<ConfigItemSpinBox*>(m_input);
     }
 
     m_sidetext = emplace_back<Text>(data.def().sidetext);
@@ -129,8 +92,8 @@ void ConfigRowItem::on_data_update()
         m_toggle_enable->set_checked(value.has_value());
     }
 
-    if (m_input_value) {
-        m_input_value->set_state(*m_state);
+    if (m_control) {
+        m_control->set_state(*m_state);
     }
 }
 

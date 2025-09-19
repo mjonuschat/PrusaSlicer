@@ -17,12 +17,12 @@ std::vector<size_t> BedContainer::beds_indices() const
 Bed& BedContainer::get_or_create_bed(const Preset::SelectedPreset& preset, const std::string& resources_dir_path)
 {
     const auto& printer_preset = preset.printer.config_box();
-    auto shape_item            = printer_preset.contains("bed_shape");
+    auto shape_item            = printer_preset.find("bed_shape");
     std::vector<Vec2d> shape;
     if (shape_item.item != nullptr)
         shape = shape_item.item->value().get<std::vector<Vec2d>>();
 
-    auto max_print_height_item = printer_preset.contains("max_print_height");
+    auto max_print_height_item = printer_preset.find("max_print_height");
     double max_print_height    = 0.0;
     if (max_print_height_item.item != nullptr)
         max_print_height = max_print_height_item.item->value().get<double>();
@@ -40,12 +40,12 @@ Bed& BedContainer::get_or_create_bed(const Preset::SelectedPreset& preset, const
     if (!preset.bed_texture().empty())
         texture_filename = assets_path + preset.bed_texture();
 
-    auto custom_model_filename_item = printer_preset.contains("bed_custom_model");
+    auto custom_model_filename_item = printer_preset.find("bed_custom_model");
     std::string custom_model_filename;
     if (custom_model_filename_item.item != nullptr)
         custom_model_filename = custom_model_filename_item.item->value().get<std::string>();
 
-    auto custom_texture_filename_item = printer_preset.contains("bed_custom_texture");
+    auto custom_texture_filename_item = printer_preset.find("bed_custom_texture");
     std::string custom_texture_filename;
     if (custom_texture_filename_item.item != nullptr)
         custom_texture_filename = custom_texture_filename_item.item->value().get<std::string>();

@@ -44,6 +44,8 @@ public:
 
     void set_text(const std::string& text);
 
+    void set_override_label(const std::string& override_label);
+
 private:
     void set_last_value();
 

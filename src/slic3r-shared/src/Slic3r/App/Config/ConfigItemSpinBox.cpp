@@ -27,8 +27,6 @@ ConfigItemSpinBox::ConfigItemSpinBox(
 {
     m_value_validator = dynamic_cast<IntValidator*>(validator());
 
-    on_data_update();
-
     callbacks().text_edited = [this]() {
         if (*m_state->def().type == typeid(int)) {
             m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{value()});
@@ -43,6 +41,8 @@ ConfigItemSpinBox::ConfigItemSpinBox(
     set_tooltip(tooltip_text());
     m_tooltip.set_text_wrap(true);
     m_tooltip.content_item()->set_width(350);
+
+    on_data_update();
 }
 
 int ConfigItemSpinBox::value() const
@@ -52,10 +52,27 @@ int ConfigItemSpinBox::value() const
 
 void ConfigItemSpinBox::on_data_update()
 {
+    if (mixed()) {
+        set_override_label("Mixed");
+        set_font_type(Render::ImguiFontType::Italic);
+        return;
+    }
+
+    set_override_label({});
+    set_font_type(Render::ImguiFontType::Regular);
+    if (!overriden().value_or(true)) {
+        update_value(*m_preset_interactor.get_override_origin(*m_state, location_index()));
+    } else {
+        update_value(m_state->value());
+    }
+}
+
+void ConfigItemSpinBox::update_value(const Domain::ConfigValue& value)
+{
     if (*m_state->def().type == typeid(int)) {
-        set_text(std::to_string(m_state->get<int>()));
+        set_text(std::to_string(value.get<int>()));
     } else if (*m_state->def().type == typeid(std::optional<int>)) {
-        std::optional<int> val = m_state->get<std::optional<int>>();
+        std::optional<int> val = value.get<std::optional<int>>();
         set_enabled(val.has_value());
         if (val.has_value()) {
             set_text(std::to_string(val.value()));

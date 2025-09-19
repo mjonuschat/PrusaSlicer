@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/Config/CategoryPageTransformer.hpp"
-#include "Slic3r/App/Config/CategoryPageGetters.hpp"
+#include "Slic3r/App/Config/CategoryUtils.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 namespace Slic3r::App {
@@ -17,7 +17,7 @@ CategoryPageTransformer::CategoryPageTransformer()
 
             Domain::PrinterTechnology
                 pt = m_project_interactor ? m_project_interactor->selected_config_container().print_technology() : Domain::PrinterTechnology::FFF;
-            Render::Icon icon = category_render_icon(category, pt);
+            Render::Icon icon = CategoryUtils::category_render_icon(category, pt);
 
             return PageEntry{Domain::ConfigItemDef::translate_category(category, pt), icon};
         }

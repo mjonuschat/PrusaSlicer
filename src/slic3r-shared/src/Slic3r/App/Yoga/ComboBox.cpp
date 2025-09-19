@@ -7,6 +7,7 @@
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/Yoga/ImGuiUtils.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
+#include "Slic3r/App/Render/ImguiRender.hpp"
 
 #include <imgui_internal.h>
 
@@ -27,7 +28,8 @@ static bool YGBeginCombo(
     bool& edited,
     Validator* validator,
     ComboBox::Callbacks& callbacks,
-    bool& hovered
+    bool& hovered,
+    ImFont* label_font
 )
 {
     ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
@@ -117,9 +119,11 @@ static bool YGBeginCombo(
         // Render preview and label
         if (preview_value != NULL && !(flags & ImGuiComboFlags_NoPreview))
         {
+            ImGui::PushFont(label_font);
             if (g.LogEnabled)
                 ImGui::LogSetNextTextDecoration("{", "}");
             ImGui::RenderTextClipped(bb.Min + style.FramePadding, ImVec2(value_x2, bb.Max.y), preview_value, NULL, NULL);
+            ImGui::PopFont();
         }
     }
 
@@ -162,11 +166,12 @@ void ComboBox::render(Vec2f pos, Vec2f size)
             ImGuiCol_Text,
             ImGui::GetColorU32(enabled() ? ImGuiCol_Text : ImGuiCol_TextDisabled)
         );
+
         const std::string id = "###" + m_item_name;
         bool new_hovered     = false;
         if (YGBeginCombo(
                 id.c_str(),
-                m_current_label.c_str(),
+                m_override_label.empty() ? m_current_label.c_str() : m_override_label.c_str(),
                 to_im(size),
                 m_flags,
                 m_editable,
@@ -176,12 +181,18 @@ void ComboBox::render(Vec2f pos, Vec2f size)
                 m_updated,
                 m_validator.get(),
                 m_callbacks,
-                new_hovered
+                new_hovered,
+                m_imgui_render->font(m_label_font_type)
             ))
         {
             const ImVec2 im_size = to_im(size);
             for (size_t index = 0; index < m_items.size(); ++index) {
-                if (ImGui::Selectable(m_items.at(index).c_str(), index == m_current_index, 0, im_size))
+                if (ImGui::Selectable(
+                        m_items.at(index).c_str(),
+                        m_override_label.empty() ? index == m_current_index : false,
+                        0,
+                        im_size
+                    ))
                 {
                     set_current_index(index);
                     if (m_callbacks.selection_changed) {
@@ -230,6 +241,26 @@ void ComboBox::set_items(const std::vector<std::string>& items)
 Vec2f ComboBox::get_item_size()
 {
     return {50, ImGui::GetTextLineHeight() + GImGui->Style.FramePadding.y * 2.0f};
+}
+
+Render::ImguiFontType ComboBox::label_font_type() const
+{
+    return m_label_font_type;
+}
+
+void ComboBox::set_label_font_type(Render::ImguiFontType label_font_type)
+{
+    m_label_font_type = label_font_type;
+}
+
+const std::string& ComboBox::override_label() const
+{
+    return m_override_label;
+}
+
+void ComboBox::set_override_label(const std::string& override_label)
+{
+    m_override_label = override_label;
 }
 
 Validator* ComboBox::validator() const
@@ -286,7 +317,12 @@ std::string ComboBox::current_label() const
 void ComboBox::set_current_label(const std::string& current_label)
 {
     ASSERT(m_editable);
-    m_current_label = current_label;
+    ASSERT(current_label.size() < 2'048);
+    if (m_current_label != current_label) {
+        m_current_label = current_label;
+        strncpy(m_buffer.data(), m_current_label.data(), m_current_label.size());
+        m_buffer[m_current_label.size()] = '\0';
+    }
 }
 
 int ComboBox::current_index() const
@@ -303,7 +339,8 @@ void ComboBox::set_current_index(int current_index)
     } else {
         m_current_index = std::clamp(current_index, 0, static_cast<int>(m_items.size()) - 1);
         m_current_label = m_items.at(m_current_index);
-        strcpy(m_buffer.data(), m_current_label.c_str());
+        strncpy(m_buffer.data(), m_current_label.c_str(), m_current_label.size());
+        m_buffer[m_current_label.size()] = '\0';
     }
     update_revert_button();
 }

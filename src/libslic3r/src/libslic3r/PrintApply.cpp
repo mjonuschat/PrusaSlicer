@@ -113,7 +113,7 @@ static bool layer_height_ranges_equal(const Domain::LayerConfigRanges &lr1, cons
         const auto &kvp2 = *it2 ++;
         if (std::abs(kvp1.first.first  - kvp2.first.first ) > EPSILON ||
             std::abs(kvp1.first.second - kvp2.first.second) > EPSILON ||
-            (check_layer_height && std::abs(kvp1.second.contains("layer_height").item->get<double>() - kvp2.second.contains("layer_height").item->get<double>()) > EPSILON))
+            (check_layer_height && std::abs(kvp1.second.find("layer_height").item->get<double>() - kvp2.second.find("layer_height").item->get<double>()) > EPSILON))
             return false;
     }
     return true;

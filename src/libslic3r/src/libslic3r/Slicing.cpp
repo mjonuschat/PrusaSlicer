@@ -51,7 +51,7 @@ inline double max_layer_height_from_nozzle(const Domain::ConfigView &print_confi
 // Minimum layer height for the variable layer height algorithm.
 double Slicing::min_layer_height_from_nozzle(const Domain::ConfigPackFDM& pack, int idx_nozzle)
 {
-    double min_layer_height = pack.tool.at(idx_nozzle - 1).contains("min_layer_height").item->get<double>();
+    double min_layer_height = pack.tool.at(idx_nozzle - 1).find("min_layer_height").item->get<double>();
     return (min_layer_height == 0.) ? MIN_LAYER_HEIGHT_DEFAULT : std::max(MIN_LAYER_HEIGHT, min_layer_height);
 }
 
@@ -61,8 +61,8 @@ double Slicing::max_layer_height_from_nozzle(const Domain::ConfigPackFDM& pack, 
 {
     double min_layer_height = min_layer_height_from_nozzle(pack, idx_nozzle);
     const auto& tool        = pack.tool.at(idx_nozzle - 1);
-    double max_layer_height = tool.contains("max_layer_height").item->get<double>();
-    double nozzle_dmr       = tool.contains("nozzle_diameter").item->get<double>();
+    double max_layer_height = tool.find("max_layer_height").item->get<double>();
+    double nozzle_dmr       = tool.find("nozzle_diameter").item->get<double>();
     return std::max(min_layer_height, (max_layer_height == 0.) ? (0.75 * nozzle_dmr) : max_layer_height);
 }
 
@@ -191,7 +191,7 @@ std::vector<double> layer_height_profile_from_ranges(
     for (Domain::LayerConfigRanges::const_iterator it_range = layer_config_ranges.begin(); it_range != layer_config_ranges.end(); ++it_range) {
         double lo = it_range->first.first;
         double hi = std::min(it_range->first.second, slicing_params.object_print_z_height());
-        double height = it_range->second.contains("layer_height").item->get<double>();
+        double height = it_range->second.find("layer_height").item->get<double>();
         if (! ranges_non_overlapping.empty())
             // Trim current low with the last high.
             lo = std::max(lo, ranges_non_overlapping.back().first.second);

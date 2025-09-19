@@ -14,44 +14,44 @@ ConfigPackFDM::ConfigPackFDM(const int extruder_count) :
 
 ConfigPackFDM::ConfigPackFDM() : ConfigPackFDM{1} {}
 
-ContainsResult ConfigPackFDM::contains(const std::string& key, size_t slot)
+FindResult ConfigPackFDM::contains(const std::string& key, size_t slot)
 {
     ASSERT(slot < tool.size());
     ASSERT(slot < filament.size());
     for (auto& box : ConfigBoxRefs{filament.at(slot), tool.at(slot), print, printer}) {
-        if (auto result = box.get().contains(key); result.item)
+        if (auto result = box.get().find(key); result.item)
             return result;
     }
     return {};
 }
 
-ConstContainsResult ConfigPackFDM::contains(const std::string& key, size_t slot) const
+ConstFindResult ConfigPackFDM::contains(const std::string& key, size_t slot) const
 {
     ASSERT(slot < tool.size());
     ASSERT(slot < filament.size());
     for (const auto& box : ConstConfigBoxRefs{filament.at(slot), tool.at(slot), print, printer}) {
-        if (const auto result = box.get().contains(key); result.item)
+        if (const auto result = box.get().find(key); result.item)
             return result;
     }
     return {};
 }
 
-ContainsResult ConfigPackSLA::contains(const std::string& key)
+FindResult ConfigPackSLA::contains(const std::string& key)
 {
     for (auto& box : ConfigBoxRefs{sla_material_settings, sla_print_settings, sla_printer_settings})
     {
-        if (const auto result = box.get().contains(key); result.item)
+        if (const auto result = box.get().find(key); result.item)
             return result;
     }
     return {};
 }
 
-ConstContainsResult ConfigPackSLA::contains(const std::string& key) const
+ConstFindResult ConfigPackSLA::contains(const std::string& key) const
 {
     for (const auto& box :
          ConstConfigBoxRefs{sla_material_settings, sla_print_settings, sla_printer_settings})
     {
-        if (const auto result = box.get().contains(key); result.item)
+        if (const auto result = box.get().find(key); result.item)
             return result;
     }
     return {};

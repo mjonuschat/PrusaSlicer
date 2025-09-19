@@ -47,7 +47,6 @@ ConfigItemPoints::ConfigItemPoints(size_t index, const Domain::ConfigItem& data,
 void ConfigItemPoints::on_data_update()
 {
     std::vector<Domain::Vec2d> data = m_state->get<std::vector<Domain::Vec2d>>();
-    ASSERT(data.size() == 1);
 
     m_input_x->set_text(fmt::format("{:.10g}", data.front().x()));
     m_input_y->set_text(fmt::format("{:.10g}", data.front().y()));

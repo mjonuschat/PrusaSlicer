@@ -4,6 +4,7 @@
 ///|/
 #pragma once
 
+#include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 
 namespace Slic3r::App::Yoga {
@@ -43,7 +44,7 @@ public:
         friend class InputTextField;
     };
 
-    explicit InputText(const std::string& name = "InputText");
+    explicit InputText(const std::string& name = {});
 
     void render(Vec2f pos, Vec2f size) override;
 
@@ -64,10 +65,19 @@ public:
     Validator* validator() const;
     void set_validator(std::unique_ptr<Validator> validator);
 
+    Render::ImguiFontType font_type() const;
+    void set_font_type(Render::ImguiFontType font_type);
+
+    const std::string& override_label() const;
+    void set_override_label(const std::string& override_label);
+
     /**
      * @return true if InputText is currently active (focused/edited)
      */
     bool active() const;
+
+protected:
+    Vec2f get_item_size() override;
 
 private:
     Callbacks m_callbacks;
@@ -79,15 +89,13 @@ private:
     std::unique_ptr<Validator> m_validator;
 
     std::string m_text;
+    std::string m_override_label; ///< If set, this text will display instead of m_text (but it's not real)
     ImGuiInputTextFlags m_flags = 0;
     std::string m_hint;
+    Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
 
-    bool m_active = false;
+    bool m_active  = false;
     bool m_updated = false; ///< Input was edited but not yet lost focus
-
-    // Item interface
-protected:
-    Vec2f get_item_size() override;
 };
 
 } // namespace Slic3r::App::Yoga

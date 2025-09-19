@@ -131,15 +131,15 @@ std::vector<K> diff_keys(
 }
 }
 
-ConfigItem* ConfigItems::contains(const std::string& key) {
+ConfigItem* ConfigItems::find(const std::string& key) {
     return find_item(m_items, key);
 }
 
-const ConfigItem* ConfigItems::contains(const std::string& key) const {
+const ConfigItem* ConfigItems::find(const std::string& key) const {
     return find_item(m_items, key);
 }
 
-const std::vector<ConfigItem> &ConfigItems::all_items() const
+const std::vector<ConfigItem>& ConfigItems::all_items() const
 {
     return m_items;
 }
@@ -178,7 +178,7 @@ void ConfigOverrides::disable(const std::string& key) {
 }
 
 void ConfigOverrides::enable(const std::string& key) {
-    const auto item_index{find(key)};
+    const auto item_index{find_item_by_index(key)};
     m_used_overrides.insert({key, item_index});
 }
 
@@ -198,10 +198,10 @@ std::optional<ConfigItem> ConfigOverrides::get(const std::string& key) const {
     return m_items.at(it->second);
 }
 
-ConfigItem* ConfigOverrides::contains(const std::string& key) {
+ConfigItem* ConfigOverrides::find(const std::string& key) {
     return find_item(m_items, key);
 }
-const ConfigItem* ConfigOverrides::contains(const std::string& key) const {
+const ConfigItem* ConfigOverrides::find(const std::string& key) const {
     return find_item(m_items, key);
 }
 
@@ -223,6 +223,12 @@ const std::vector<ConfigItem>& ConfigOverrides::all_items() const {
     return m_items;
 }
 
+std::size_t ConfigOverrides::find_item_by_index(const std::string& key) const {
+    const auto index{find_item_index(m_items, key)};
+    ASSERT(index, "The key does not belong to this!");
+    return *index;
+}
+
 std::vector<std::string> ConfigOverrides::diff_overriden_keys(const ConfigOverrides& other) const
 {
     return diff_keys<std::string, std::size_t>(
@@ -233,24 +239,20 @@ std::vector<std::string> ConfigOverrides::diff_overriden_keys(const ConfigOverri
     );
 }
 
-std::size_t ConfigOverrides::find(const std::string& key) {
-    const auto index{find_item_index(m_items, key)};
-    ASSERT(index, "The key does not belong to this!");
-    return *index;
-}
-
-ContainsResult ConfigBox::contains(const std::string& key) {
-    if (auto* item{overrides.contains(key)}) {
+FindResult ConfigBox::find(const std::string &key)
+{
+    if (auto* item{overrides.find(key)}) {
         return {item, true};
     }
-    return {items.contains(key), false};
+    return {items.find(key), false};
 }
 
-ConstContainsResult ConfigBox::contains(const std::string& key) const {
-    if (auto* item{overrides.contains(key)}) {
+ConstFindResult ConfigBox::find(const std::string &key) const
+{
+    if (auto* item{overrides.find(key)}) {
         return {item, true};
     }
-    return {items.contains(key), false};
+    return {items.find(key), false};
 }
 
 std::vector<std::string> ConfigBox::diff_keys(const ConfigBox& other) const
@@ -280,7 +282,6 @@ SquashedConfig::SquashedConfig(
         }, box_or_boxes);
     }
 }
-
 
 std::vector<std::string> SquashedConfig::diff_keys(const SquashedConfig& other) const {
     return ::Slic3r::Domain::diff_keys<std::string, ConfigValue>(

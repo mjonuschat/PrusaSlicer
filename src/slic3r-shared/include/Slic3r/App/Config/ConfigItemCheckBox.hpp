@@ -25,8 +25,6 @@ public:
 protected:
     void on_data_update() override;
 
-    void checked_updated_internal() override;
-
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
 };

@@ -411,6 +411,7 @@ void ImguiFontHelper::create_font_texture()
 
     m_fonts[ImguiFontType::Regular] = load_font("NotoSans-Regular.ttf", "NotoSansCJK-Regular.ttc", m_language_data, ranges, font_cjk);
     m_fonts[ImguiFontType::Bold]    = load_font("NotoSans-Bold.ttf", "NotoSansCJK-Bold.ttc", m_language_data, ranges, font_cjk);
+    m_fonts[ImguiFontType::Italic]  = load_font("NotoSans-Italic.ttf", "NotoSansCJK-Italic.ttc", m_language_data, ranges, font_cjk);
 
     int rect_id = ImGui::GetIO().Fonts->CustomRects.Size;  // id of the rectangle added next
     for (auto& [type, font] : m_fonts) {

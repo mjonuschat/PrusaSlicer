@@ -5,19 +5,11 @@
 #include "Slic3r/App/Config/ConfigItemComboBox.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
 
 #include <fmt/format.h>
 
 using namespace Slic3r::App::Yoga;
-
-namespace {
-double parse_percentage(const std::string& data)
-{
-    std::string const parsed_value = std::regex_replace(data, std::regex("%"), "");
-
-    return std::stod(parsed_value);
-}
-} // namespace
 
 namespace Slic3r::App {
 
@@ -30,9 +22,11 @@ ConfigItemComboBox::ConfigItemComboBox(
     ComboBox("ConfigItemCombo"),
     m_preset_interactor(preset_interactor)
 {
+    const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
     set_editable(
-        config_item.def().gui_type == Domain::ConfigItemDef::GUIType::f_enum_open
-        || config_item.def().gui_type == Domain::ConfigItemDef::GUIType::i_enum_open
+        gui_type == Domain::ConfigItemDef::GUIType::f_enum_open
+        || gui_type == Domain::ConfigItemDef::GUIType::i_enum_open
+        || gui_type == Domain::ConfigItemDef::GUIType::s_enum_open
     );
 
     set_width(150);
@@ -46,7 +40,8 @@ ConfigItemComboBox::ConfigItemComboBox(
     // TODO: The callbacks are disgusting, clean them up
 
     callbacks().selection_changed = [this](int selected) {
-        if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
+        const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
+        if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
             if (*m_state->def().type == typeid(double)) {
                 m_preset_interactor.set_item_value(
                     *m_state,
@@ -70,10 +65,17 @@ ConfigItemComboBox::ConfigItemComboBox(
                     }}
                 );
             }
-        } else if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
+        } else if (gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
             m_preset_interactor.set_item_value(
                 *m_state,
                 Domain::ConfigValue{std::get<int>(m_state->def().choices.at(current_index()).first)}
+            );
+        } else if (gui_type == Domain::ConfigItemDef::GUIType::s_enum_open) {
+            m_preset_interactor.set_item_value(
+                *m_state,
+                Domain::ConfigValue{
+                    std::get<std::string>(m_state->def().choices.at(current_index()).first)
+                }
             );
         } else if (*m_state->def().type == typeid(Domain::EnumWrapper)) {
             Domain::EnumWrapper values = m_state->get<Domain::EnumWrapper>();
@@ -83,8 +85,9 @@ ConfigItemComboBox::ConfigItemComboBox(
     };
 
     callbacks().text_edited = [this]() {
+        const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
         // TODO: Unify this with ConfigItemTextField
-        if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
+        if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
             if (*m_state->def().type == typeid(double)) {
                 m_preset_interactor
                     .set_item_value(*m_state, Domain::ConfigValue{m_double_validator->value()});
@@ -108,8 +111,10 @@ ConfigItemComboBox::ConfigItemComboBox(
                     );
                 }
             }
-        } else if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
+        } else if (gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
             m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{m_int_validator->value()});
+        } else if (gui_type == Domain::ConfigItemDef::GUIType::s_enum_open) {
+            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{current_label()});
         }
     };
 }
@@ -117,10 +122,61 @@ ConfigItemComboBox::ConfigItemComboBox(
 void ConfigItemComboBox::on_data_update()
 {
     // TODO: the validators gets constantly recreated, clean this up
+    if (mixed()) {
+        set_override_label(_u8L("Mixed"));
+        set_label_font_type(Render::ImguiFontType::Italic);
+        return;
+    }
+
+    set_override_label(std::string());
+    set_label_font_type(Render::ImguiFontType::Regular);
+    if (!overriden().value_or(true)) {
+        update_value(*m_preset_interactor.get_override_origin(*m_state, location_index()));
+    } else {
+        update_value(m_state->value());
+    }
+}
+
+void ConfigItemComboBox::update_value(const Domain::ConfigValue& value)
+{
+    if (!m_init) {
+        initialize();
+        m_init = true;
+    }
 
     std::vector<std::string> items;
+    const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
+    if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
+        if (*m_state->def().type == typeid(Domain::Percentage)) {
+            set_current_label(fmt::format("{:.10g}", value.get<Domain::Percentage>().value));
+        } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
+            Domain::FloatOrPercentage val = value.get<Domain::FloatOrPercentage>();
+            set_current_label(
+                val.is_percentage() ? fmt::format("{:.10g} %", val.percentage().value) :
+                                      fmt::format("{:.10g}", val.float_value())
+            );
 
-    if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
+        } else if (*m_state->def().type == typeid(double)) {
+            set_current_label(fmt::format("{:.10g}", value.get<double>()));
+        }
+
+    } else if (gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
+        set_current_label(std::to_string(value.get<int>()));
+    } else if (gui_type == Domain::ConfigItemDef::GUIType::s_enum_open) {
+        set_current_label(value.get<std::string>());
+    } else if (*m_state->def().type == typeid(Domain::EnumWrapper)) {
+        const Domain::EnumWrapper enum_wrapper = value.get<Domain::EnumWrapper>();
+        set_current_index(enum_wrapper.index_of_value(enum_wrapper.value()));
+    }
+}
+
+void ConfigItemComboBox::initialize()
+{
+    ASSERT(!m_init);
+
+    std::vector<std::string> items;
+    const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
+    if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
         set_editable(true);
 
         if (*m_state->def().type == typeid(Domain::Percentage)
@@ -136,10 +192,7 @@ void ConfigItemComboBox::on_data_update()
         for (const auto& choice : m_state->def().choices) {
             items.push_back(choice.second);
         }
-        set_items(items);
-        // set_current_label(fmt::format("{}", m_state->get<double>()));
-
-    } else if (m_state->def().gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
+    } else if (gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
         set_editable(true);
         m_int_validator = std::make_unique<IntValidator>();
         set_validator(m_int_validator.release());
@@ -147,9 +200,18 @@ void ConfigItemComboBox::on_data_update()
         for (const auto& choice : m_state->def().choices) {
             items.push_back(choice.second);
         }
-        set_items(items);
-        set_current_label(std::to_string(m_state->get<int>()));
 
+    } else if (gui_type == Domain::ConfigItemDef::GUIType::s_enum_open) {
+        ASSERT(
+            *m_state->def().type == typeid(std::string),
+            "We only support std::string<->s_enum_open for now"
+        );
+
+        set_editable(true);
+
+        for (const auto& choice : m_state->def().choices) {
+            items.push_back(choice.second);
+        }
     } else if (*m_state->def().type == typeid(Domain::EnumWrapper)) {
         set_editable(false);
         const Domain::EnumWrapper enum_wrapper = m_state->get<Domain::EnumWrapper>();
@@ -157,9 +219,9 @@ void ConfigItemComboBox::on_data_update()
         for (const Domain::EnumValueDef& value : enum_wrapper.def()) {
             items.push_back(std::string(value.str_ui));
         }
-        set_items(items);
-        set_current_index(enum_wrapper.index_of_value(enum_wrapper.value()));
     }
+
+    set_items(items);
 }
 
 } // namespace Slic3r::App

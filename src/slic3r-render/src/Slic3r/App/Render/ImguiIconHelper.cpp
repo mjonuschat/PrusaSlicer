@@ -202,12 +202,12 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Search, "search_gray"},
     {Icon::Fan, "cooling"},
     {Icon::AddVolume, "add_volume"},
+    {Icon::Minus, "minus"},
+    {Icon::ChevronRight, "chevron_right"},
+    {Icon::ChevronLeft, "chevron_left"},
 };
 
-static const std::unordered_set<Icon> ICON_PNG = {
-    Icon::BedThumbnail,
-    Icon::PrinterNEXT
-};
+static const std::unordered_set<Icon> ICON_PNG = {Icon::BedThumbnail, Icon::PrinterNEXT};
 
 std::string ImguiIconHelper::icon_path(Icon icon)
 {
@@ -232,4 +232,4 @@ std::string ImguiIconHelper::icon_name(Icon icon)
     return it->second;
 }
 
-}
+} // namespace Slic3r::App::Render

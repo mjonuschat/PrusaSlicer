@@ -22,6 +22,11 @@ ConfigBoxInteractor::ConfigBoxInteractor(SetAccessor& set_accessor, Domain::Conf
     set_config_box(config_box);
 }
 
+const Domain::ConfigValue* ConfigBoxInteractor::find(const std::string& name) const
+{
+    return m_config_box_list->find(name);
+}
+
 std::weak_ptr<ConfigBoxObservableList> ConfigBoxInteractor::config_box_list()
 {
     return m_config_box_list.get();
@@ -53,6 +58,11 @@ void ConfigBoxInteractor::SetAccessor::set_value(const std::string& key, const D
 {
     m_config_box_list.lock()->set_value(key, value);
     m_config_box_overrides_list.lock()->set_value(key, value);
+}
+
+void ConfigBoxInteractor::SetAccessor::set_override(const std::string& key, bool enable)
+{
+    m_config_box_overrides_list.lock()->set_override(key, enable);
 }
 
 void ConfigBoxInteractor::SetAccessor::set_config_box(Domain::ConfigBox* config_box)

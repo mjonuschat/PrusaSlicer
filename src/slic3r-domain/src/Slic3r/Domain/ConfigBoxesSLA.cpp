@@ -309,7 +309,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Hidden;
     def->tooltip = L("SLA material type");
     def->gui_flags = "show_value";
-    def->gui_type = ConfigItemDef::GUIType::select_open;
+    def->gui_type = ConfigItemDef::GUIType::s_enum_open;
     def->choices = {
         { std::string("Tough"),  std::string("Tough")   },
         { std::string("Flexible"),  std::string("Flexible")   },

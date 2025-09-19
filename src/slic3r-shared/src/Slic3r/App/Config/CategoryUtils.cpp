@@ -1,18 +1,25 @@
-#include "Slic3r/App/Config/CategoryPageGetters.hpp"
+#include "Slic3r/App/Config/CategoryUtils.hpp"
 #include "Slic3r/App/Render/ImguiIconHelper.hpp"
 
 namespace Slic3r::App {
 
-Render::Icon category_render_icon(const Domain::ConfigItemDef::Category category, const Domain::PrinterTechnology pt)
+namespace CategoryUtils {
+
+Render::Icon category_render_icon(
+    const Domain::ConfigItemDef::Category category,
+    const Domain::PrinterTechnology pt
+)
 {
     Render::Icon icon = Render::Icon::None;
 
     switch (category) {
     case Domain::ConfigItemDef::Category::General:
-        icon = pt == Domain::PrinterTechnology::FFF ? Render::Icon::PrinterIconMarker : Render::Icon::PrinterSlaIconMarker;
+        icon = pt == Domain::PrinterTechnology::FFF ? Render::Icon::PrinterIconMarker :
+                                                      Render::Icon::PrinterSlaIconMarker;
         break;
     case Domain::ConfigItemDef::Category::Material:
-        icon = pt == Domain::PrinterTechnology::FFF ? Render::Icon::FilamentIconMarker : Render::Icon::MaterialIconMarker;
+        icon = pt == Domain::PrinterTechnology::FFF ? Render::Icon::FilamentIconMarker :
+                                                      Render::Icon::MaterialIconMarker;
         break;
     case Domain::ConfigItemDef::Category::Advanced:
         icon = Render::Icon::Cogs;
@@ -61,10 +68,15 @@ Render::Icon category_render_icon(const Domain::ConfigItemDef::Category category
     return icon;
 }
 
-std::string category_icon_name(const Domain::ConfigItemDef::Category category, const Domain::PrinterTechnology pt)
+std::string category_icon_name(
+    const Domain::ConfigItemDef::Category category,
+    const Domain::PrinterTechnology pt
+)
 {
     Render::Icon icon = category_render_icon(category, pt);
     return Render::ImguiIconHelper::icon_name(icon);
 }
+
+} // namespace CategoryUtils
 
 } // namespace Slic3r::App

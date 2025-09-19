@@ -145,13 +145,13 @@ struct ConfigItemDef
 
     enum class GUIType { // TODO Go through this one after everything is ported and remove what we don't use.
         undefined,
-        i_enum_open,  // Open enums, integer value could be one of the enumerated values or something else.
-        f_enum_open,  // Open enums, float value could be one of the enumerated values or something else.
-        select_open,  // Open enums, string value could be one of the enumerated values or something else.
-        color,        // Color picker, string value.
-        one_string,   // Vector value, but edited as a single string.
-        select_close, // Close parameter, string value could be one of the list values.
-        password,     // Password, string vaule is hidden by asterisk.
+        i_enum_open,  ///< Open enums, integer value could be one of the enumerated values or something else.
+        f_enum_open,  ///< Open enums, float value could be one of the enumerated values or something else.
+        s_enum_open,  ///< Open enums, string value could be one of the enumerated values or something else.
+        color,        ///< Color picker, string value.
+        one_string,   ///< @deprecated Vector value, but edited as a single string.
+        select_close, ///< @deprecated Close parameter, string value could be one of the list values.
+        password,     ///< Password, string vaule is hidden by asterisk.
         textfield,
         textfields,
         checkbox,
@@ -160,7 +160,8 @@ struct ConfigItemDef
         spinboxes,
         combobox,
         comboboxes,
-        points
+        points,
+        substitutions
     };
     GUIType gui_type = GUIType::undefined;
 };

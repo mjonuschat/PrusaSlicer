@@ -127,7 +127,7 @@ struct ConfigValueSetterVisitor
     Domain::ConfigItem& item;
     const bool is_override;
 
-    explicit ConfigValueSetterVisitor(const Domain::ContainsResult& result) :
+    explicit ConfigValueSetterVisitor(const Domain::FindResult& result) :
         item(*result.item),
         is_override(result.is_override)
     {}
@@ -279,7 +279,7 @@ ConfigType config_values(const Domain::Preset::PresetValueMap& values)
 {
     ConfigType config;
     for (const auto& [k, v] : values) {
-        const auto q = config.contains(k);
+        const auto q = config.find(k);
         if (q.item == nullptr) {
             SPDLOG_ERROR("Invalid key {} for {}", k, type_name(config));
             continue;

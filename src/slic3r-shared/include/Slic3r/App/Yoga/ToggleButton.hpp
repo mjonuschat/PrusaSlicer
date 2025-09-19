@@ -32,6 +32,9 @@ public:
     bool is_changed_value() const override;
     void reset() override;
 
+    bool third_state() const;
+    void set_third_state(bool third_state);
+
 protected:
     void checked_updated_internal() override;
 

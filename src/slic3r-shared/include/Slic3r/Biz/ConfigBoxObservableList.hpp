@@ -20,6 +20,8 @@ public:
 
     void set_value(const std::string_view key, const Domain::ConfigValue& value);
 
+    const Domain::ConfigValue* find(const std::string& name) const;
+
 private:
     Domain::ConfigBox* m_config_box{nullptr};
 };
@@ -34,6 +36,8 @@ public:
     size_t size() const override;
 
     void set_value(const std::string& key, const Domain::ConfigValue& value);
+
+    void set_override(const std::string& key, bool enable);
 
 private:
     Domain::ConfigBox* m_config_box{nullptr};

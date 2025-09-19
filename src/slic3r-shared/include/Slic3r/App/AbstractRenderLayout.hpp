@@ -9,6 +9,7 @@
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "Slic3r/App/PopNotification/PopNotificationListView.hpp"
+#include "Slic3r/App/SidebarObject.hpp"
 
 #include <map>
 
@@ -46,7 +47,8 @@ public:
         std::unique_ptr<CubeView> cube_view,
         std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
         std::unique_ptr<SidebarBed> sidebar_bed,
-        std::unique_ptr<SidebarPrint> sidebar_print
+        std::unique_ptr<SidebarPrint> sidebar_print,
+        std::unique_ptr<SidebarObject> sidebar_object
     );
     virtual ~AbstractRenderLayout();
     AbstractRenderLayout(const AbstractRenderLayout& other)            = delete;
@@ -59,14 +61,37 @@ public:
     Vec2f win_padding() const;
     Vec2f frame_padding() const;
 
-    Yoga::ToolbarButton*
-    add_toolbar_item(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks);
-    Yoga::ToolbarButton*
-    add_toolbar_item_checkable(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks, bool checked = false);
-    Yoga::ToolbarButton*
-    add_toolbar_item_gizmo(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks, Scene::IToolGizmo* tool);
-    Yoga::ToolbarButton*
-    add_toolbar_item_panel(ToolbarID id, Render::Icon icon, const std::string& tooltip, const std::string& shortcut, Yoga::AbstractButton::Callbacks callbacks, Yoga::Item* panel);
+    Yoga::ToolbarButton* add_toolbar_item(
+        ToolbarID id,
+        Render::Icon icon,
+        const std::string& tooltip,
+        const std::string& shortcut,
+        Yoga::AbstractButton::Callbacks callbacks
+    );
+    Yoga::ToolbarButton* add_toolbar_item_checkable(
+        ToolbarID id,
+        Render::Icon icon,
+        const std::string& tooltip,
+        const std::string& shortcut,
+        Yoga::AbstractButton::Callbacks callbacks,
+        bool checked = false
+    );
+    Yoga::ToolbarButton* add_toolbar_item_gizmo(
+        ToolbarID id,
+        Render::Icon icon,
+        const std::string& tooltip,
+        const std::string& shortcut,
+        Yoga::AbstractButton::Callbacks callbacks,
+        Scene::IToolGizmo* tool
+    );
+    Yoga::ToolbarButton* add_toolbar_item_panel(
+        ToolbarID id,
+        Render::Icon icon,
+        const std::string& tooltip,
+        const std::string& shortcut,
+        Yoga::AbstractButton::Callbacks callbacks,
+        Yoga::Item* panel
+    );
 
     Yoga::Toolbar* top_toolbar() const;
     Yoga::Toolbar* middle_toolbar() const;
@@ -125,6 +150,7 @@ protected:
     Yoga::Passthrough<PopNotification::PopNotificationListView> m_pop_notification_list_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
+    Yoga::Passthrough<SidebarObject> m_sidebar_object;
 };
 
 } // namespace Slic3r::App

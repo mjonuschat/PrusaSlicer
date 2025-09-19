@@ -62,6 +62,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->label = L("Bed shape");
     def->option_group = L("Size and coordinates");
     def->category = ConfigItemDef::Category::General;
+    def->gui_type = ConfigItemDef::GUIType::points;
     def->mode = comAdvanced;
     def->init_fn = init_with((std::vector<Domain::Vec2d>{{0., 0.}, { 200., 0. }, { 200., 200. }, { 0., 200. }}));
 
@@ -113,7 +114,6 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->tooltip = L("Picture sizes to be stored into a .gcode / .bgcode and .sl1 / .sl1s files, in the following format: \"XxY/EXT, XxY/EXT, ...\"\n"
                      "Currently supported extensions are PNG, QOI and JPG.");
     def->mode = comExpert;
-    def->gui_type = ConfigItemDef::GUIType::one_string;
     def->init_fn = init_with("");
 
     def = defs.add("thumbnails_format", typeid(EnumWrapper));

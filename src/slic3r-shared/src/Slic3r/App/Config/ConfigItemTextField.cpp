@@ -6,6 +6,8 @@
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
+#include "Slic3r/App/I18N/I18N.hpp"
+
 #include <imgui_internal.h>
 #include <fmt/format.h>
 
@@ -76,20 +78,36 @@ ConfigItemTextField::ConfigItemTextField(
 
 void ConfigItemTextField::on_data_update()
 {
+    if (mixed()) {
+        set_override_label(_u8L("Mixed"));
+        set_font_type(Render::ImguiFontType::Italic);
+        return;
+    }
+
+    set_override_label(std::string());
+    set_font_type(Render::ImguiFontType::Regular);
+    if (!overriden().value_or(true)) {
+        update_value(*m_preset_interactor.get_override_origin(*m_state, location_index()));
+    } else {
+        update_value(m_state->value());
+    }
+}
+
+void ConfigItemTextField::update_value(const Domain::ConfigValue& value)
+{
     if (*m_state->def().type == typeid(std::string)) {
         set_text(m_state->value().get<std::string>());
     } else if (*m_state->def().type == typeid(double)) {
-        set_text(fmt::format("{}", m_state->value().get<double>()));
+        set_text(fmt::format("{:.10g}", m_state->value().get<double>()));
     } else if (*m_state->def().type == typeid(Domain::Percentage)) {
-        set_text(fmt::format("{} %", m_state->value().get<Domain::Percentage>().value));
+        set_text(fmt::format("{:.10g}", m_state->value().get<Domain::Percentage>().value));
     } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
         Domain::FloatOrPercentage value = m_state->value().get<Domain::FloatOrPercentage>();
         set_text(
-            value.is_percentage() ? fmt::format("{} %", value.percentage().value) :
-                                    fmt::format("{}", value.float_value())
+            value.is_percentage() ? fmt::format("{:.10g} %", value.percentage().value) :
+                                    fmt::format("{:.10g}", value.float_value())
         );
     }
-    // set_text(m_state->value().get())
 }
 
 } // namespace Slic3r::App

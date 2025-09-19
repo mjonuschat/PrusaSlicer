@@ -18,8 +18,8 @@ struct ConfigPackFDM
 
     bool operator==(const ConfigPackFDM&) const = default;
 
-    ContainsResult contains(const std::string& key, size_t slot);
-    ConstContainsResult contains(const std::string& key, size_t slot) const;
+    FindResult contains(const std::string& key, size_t slot);
+    ConstFindResult contains(const std::string& key, size_t slot) const;
 };
 
 struct ConfigPackSLA
@@ -30,8 +30,8 @@ struct ConfigPackSLA
 
     bool operator==(const ConfigPackSLA&) const = default;
 
-    ContainsResult contains(const std::string& key);
-    ConstContainsResult contains(const std::string& key) const;
+    FindResult contains(const std::string& key);
+    ConstFindResult contains(const std::string& key) const;
 };
 
 using ConfigPack = std::variant<ConfigPackFDM, ConfigPackSLA>;

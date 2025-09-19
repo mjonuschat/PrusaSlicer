@@ -79,6 +79,16 @@ void InputTextField::set_hint(const std::string& hint)
     m_input_text->set_hint(hint);
 }
 
+const std::string& InputTextField::override_label() const
+{
+    return m_input_text->override_label();
+}
+
+void InputTextField::set_override_label(const std::string& override_label)
+{
+    m_input_text->set_override_label(override_label);
+}
+
 Validator* InputTextField::validator() const
 {
     return m_input_text->validator();
@@ -97,6 +107,16 @@ void InputTextField::set_tooltip(const std::string& tooltip)
 void InputTextField::set_tooltip_position(Position position)
 {
     m_tooltip.set_preferred_position(position);
+}
+
+Render::ImguiFontType InputTextField::font_type() const
+{
+    return m_input_text->font_type();
+}
+
+void InputTextField::set_font_type(Render::ImguiFontType font_type)
+{
+    m_input_text->set_font_type(font_type);
 }
 
 bool InputTextField::hovered() const

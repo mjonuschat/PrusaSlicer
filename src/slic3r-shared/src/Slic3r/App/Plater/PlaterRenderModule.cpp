@@ -40,6 +40,7 @@
 #include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
+#include "Slic3r/App/SidebarObject.hpp"
 #include "Slic3r/App/SidebarActionButtons.hpp"
 #include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
@@ -133,16 +134,21 @@ void PlaterRenderModule::init_scene_layout()
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, true));
 
-    m_cube_view     = Passthrough{std::make_unique<CubeView>()};
-    m_sidebar_bed   = Passthrough(std::make_unique<SidebarBed>(m_project_interactor));
-    m_sidebar_print = Passthrough(std::make_unique<SidebarPrint>(m_project_interactor));
-    m_pop_notification_list_view = Passthrough{std::make_unique<PopNotification::PopNotificationListView>(
-        AppServices::instance().pop_notification_center()
-    )};
+    m_cube_view      = Passthrough{std::make_unique<CubeView>()};
+    m_sidebar_bed    = Passthrough(std::make_unique<SidebarBed>(m_project_interactor));
+    m_sidebar_print  = Passthrough(std::make_unique<SidebarPrint>(m_project_interactor));
+    m_sidebar_object = Passthrough(std::make_unique<SidebarObject>(m_project_interactor));
+    m_pop_notification_list_view = Passthrough{
+        std::make_unique<PopNotification::PopNotificationListView>(
+            AppServices::instance().pop_notification_center()
+        )
+    };
     m_history = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
 
-    m_sidebar_action_buttons = Passthrough{std::make_unique<SidebarPlaterActionButtons>(m_render_module_navigator)};
+    m_sidebar_action_buttons = Passthrough{
+        std::make_unique<SidebarPlaterActionButtons>(m_render_module_navigator)
+    };
     m_sidebar_action_buttons->on_init(&m_project_interactor);
 
     m_layout.reset(new PlaterRenderLayout(
@@ -152,6 +158,7 @@ void PlaterRenderModule::init_scene_layout()
         m_pop_notification_list_view.release(),
         m_sidebar_bed.release(),
         m_sidebar_print.release(),
+        m_sidebar_object.release(),
         m_sidebar_action_buttons.release(),
         m_history.release()
     ));
@@ -778,6 +785,10 @@ void PlaterRenderModule::on_scene_selection_changed(Domain::SelectionId project_
     if (!can_add_instance && m_add_volumes_menu->opened()) {
         m_add_volumes_menu->close();
     }
+
+    m_sidebar_bed->set_visible(empty_selection);
+    m_sidebar_print->set_visible(empty_selection);
+    m_sidebar_object->set_visible(!empty_selection);
 }
 
 void PlaterRenderModule::on_screen_resized()

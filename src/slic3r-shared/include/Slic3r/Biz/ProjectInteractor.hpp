@@ -56,8 +56,8 @@ class ProjectInteractor final :
 public:
     ProjectInteractor(Domain::Workbench& workbench, Platform::IMainThreadDispatcher& dispatcher, Biz::Slicing::IThumbnailImageGenerator& thumbnail_image_generator) :
         m_workbench(workbench),
-        m_preset_interactor(workbench),
         m_scene_interactor(workbench),
+        m_preset_interactor(workbench, m_scene_interactor),
         m_arrange_interactor(m_scene_interactor, workbench),
         m_slicing_interactor(dispatcher, thumbnail_image_generator),
         m_print_host_interactor(dispatcher),
@@ -81,6 +81,12 @@ public:
         m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
         m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
         m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
+        m_scene_interactor.add_listener<Scene::ISceneSelectionChangedListener>(
+            &m_preset_interactor.object_settings_interactor()
+        );
+        add_listener<ISelectedConfigContainerChangedListener>(
+            &m_preset_interactor.object_settings_interactor()
+        );
     }
 
     const Domain::Workbench& workbench() const
@@ -443,8 +449,8 @@ private:
     Domain::Workbench& m_workbench;
     Selection m_selection;
 
-    Preset::PresetInteractor m_preset_interactor;
     Scene::SceneInteractor m_scene_interactor;
+    Preset::PresetInteractor m_preset_interactor;
     ArrangeInteractor m_arrange_interactor;
     Slicing::SlicingInteractor m_slicing_interactor;
     FDMResultCache m_fdm_result_cache;

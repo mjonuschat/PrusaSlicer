@@ -7,7 +7,6 @@
 #include "Slic3r/Biz/DataObserver.hpp"
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
-#include "Slic3r/App/Yoga/ListView.hpp"
 
 namespace Slic3r::Biz::Preset {
 class PresetInteractor;
@@ -20,6 +19,7 @@ class ToggleButton;
 
 namespace Slic3r::App {
 
+class ConfigItemControl;
 class ConfigItemSpinBox;
 
 class ConfigRowItem : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
@@ -43,9 +43,8 @@ private:
     Yoga::Item* m_input{nullptr};
     Yoga::ToggleButton* m_toggle_enable{nullptr};
 
+    ConfigItemControl* m_control{nullptr};
     ConfigItemSpinBox* m_config_item_spin_box{nullptr}; ///< valid only if ConfigItem gui type is spinbox
-
-    Biz::DataObserver<Domain::ConfigItem>* m_input_value{nullptr};
 };
 
 } // namespace Slic3r::App

@@ -11,6 +11,8 @@
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/CBIObservableList.hpp"
+#include "Slic3r/Biz/ObjectSettingsInteractor.hpp"
+
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 
@@ -50,7 +52,7 @@ class PresetInteractor final :
         ISlicingInputChangedListener>
 {
 public:
-    explicit PresetInteractor(Domain::Workbench& workbench);
+    explicit PresetInteractor(Domain::Workbench& workbench, Scene::SceneInteractor& scene_interactor);
 
     PresetInteractor(PresetInteractor&&) = default;
 
@@ -147,6 +149,14 @@ public:
         return m_sheet_items;
     }
 
+    ObjectSettingsInteractor& object_settings_interactor() {
+        return m_object_settings_interactor;
+    }
+
+    const ObjectSettingsInteractor& object_settings_interactor() const {
+        return m_object_settings_interactor;
+    }
+
     void select_printer_preset(
         const std::string& printer_hw_config_id,
         const std::string& printer_preset_id
@@ -176,11 +186,15 @@ public:
     CBIObservableList& material_cbi_list();
     CBIObservableList& tool_cbi_list();
 
+    const Domain::ConfigValue* get_override_origin(const Domain::ConfigItem& item, size_t index = 0) const;
+
     void set_item_value(
         const Domain::ConfigItem& item,
         const Domain::ConfigValue& value,
         size_t index = 0
     );
+
+    void set_item_override(const Domain::ConfigItem& item, bool enable, size_t index = 0);
 
     template <typename T>
     using ConstRefBoolPair = std::pair<std::reference_wrapper<const T>, bool>;
@@ -598,6 +612,9 @@ private:
     ToolConfigItemCompoundObservableList::WriteAccessor m_tool_items_writer;
     ToolConfigItemCompoundObservableList m_tool_items{m_tool_items_writer};
     SheetConfigItemObservableList m_sheet_items;
+
+    ObjectSettingsInteractor::SetAccessor m_object_settings_interactor_accessor;
+    ObjectSettingsInteractor m_object_settings_interactor;
 
     ProjectContexts m_project_contexts;
 

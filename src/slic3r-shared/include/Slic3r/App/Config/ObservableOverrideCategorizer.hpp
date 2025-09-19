@@ -1,0 +1,26 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+#pragma once
+
+#include "Slic3r/Domain/ConfigDef.hpp"
+
+#include "Slic3r/Biz/OverrideItem.hpp"
+#include "Slic3r/Biz/ObservableListSortFilter.hpp"
+
+namespace Slic3r::App {
+
+class ObservableOverrideCategorizer :
+    public Biz::ObservableListSortFilter<Biz::OverrideItem, Domain::ConfigItemDef::Category>
+{
+public:
+    ObservableOverrideCategorizer();
+
+    bool allow_disabled() const;
+    void set_allow_disabled(bool allow_disabled);
+
+private:
+    bool m_allow_disabled = true;
+};
+} // namespace Slic3r::App

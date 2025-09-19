@@ -99,6 +99,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/SidebarBed.cpp
         include/Slic3r/App/SidebarPrint.hpp
         src/Slic3r/App/SidebarPrint.cpp
+        include/Slic3r/App/SidebarObject.hpp
+        src/Slic3r/App/SidebarObject.cpp
         include/Slic3r/App/SidebarActionButtons.hpp
         src/Slic3r/App/SidebarActionButtons.cpp
         include/Slic3r/App/SidebarGraphicsSettings.hpp
@@ -138,7 +140,24 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/SidebarToolHeadRow.cpp
         include/Slic3r/App/PrinterNozzleRow.hpp
         src/Slic3r/App/PrinterNozzleRow.cpp
-        include/Slic3r/App/RenderModuleHelper.hpp
+        src/Slic3r/App/MaterialSelectionDialog.cpp
+        include/Slic3r/App/MaterialSelectionDialog.hpp
+        include/Slic3r/App/MaterialSelectionRow.hpp
+        src/Slic3r/App/MaterialSelectionRow.cpp
+        include/Slic3r/App/Search.hpp
+        src/Slic3r/App/Search.cpp
+        include/Slic3r/App/OverrideItemRow.hpp
+        include/Slic3r/App/OverrideOptionGroup.hpp
+        src/Slic3r/App/OverrideItemRow.cpp
+        src/Slic3r/App/OverrideOptionGroup.cpp
+        include/Slic3r/App/ObjectConfigItem.hpp
+        src/Slic3r/App/ObjectConfigItem.cpp
+        include/Slic3r/App/OverrideSettingsDialog.hpp
+        src/Slic3r/App/OverrideSettingsDialog.cpp
+        include/Slic3r/App/OverrideCategoryRow.hpp
+        include/Slic3r/App/OverrideCategoryButton.hpp
+        src/Slic3r/App/OverrideCategoryButton.cpp
+	include/Slic3r/App/RenderModuleHelper.hpp
         src/Slic3r/App/RenderModuleHelper.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
@@ -159,8 +178,21 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Config/CategoryPageTransformer.hpp
         src/Slic3r/App/Config/CategoryPageTransformer.cpp
         src/Slic3r/App/Config/ObservableCategorizer.cpp
-        include/Slic3r/App/Config/CategoryPageGetters.hpp
-        src/Slic3r/App/Config/CategoryPageGetters.cpp
+        include/Slic3r/App/Config/CategoryUtils.hpp
+        src/Slic3r/App/Config/CategoryUtils.cpp
+        include/Slic3r/App/Config/ConfigItemSpinBoxes.hpp
+        include/Slic3r/App/Config/ConfigItemComboBoxes.hpp
+        src/Slic3r/App/Config/ConfigItemSpinBoxes.cpp
+        src/Slic3r/App/Config/ConfigItemComboBoxes.cpp
+        include/Slic3r/App/Config/ConfigItemCheckBoxes.hpp
+        src/Slic3r/App/Config/ConfigItemCheckBoxes.cpp
+        include/Slic3r/App/Config/ConfigItemControl.hpp
+        src/Slic3r/App/Config/ConfigItemControl.cpp
+        include/Slic3r/App/Config/ObservableOverrideCategorizer.hpp
+        src/Slic3r/App/Config/ObservableOverrideCategorizer.cpp
+        include/Slic3r/App/Config/ConfigItemSubstitutions.hpp
+        src/Slic3r/App/Config/ConfigItemSubstitutions.cpp
+
         include/Slic3r/App/SharedThumbnailImageGenerator.hpp
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp
@@ -470,6 +502,11 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ObservableListWithSelection.hpp
         src/Slic3r/Biz/Utils/CopyFile.cpp
         include/Slic3r/Biz/Utils/CopyFile.hpp
+        include/Slic3r/Biz/ObjectSettingsInteractor.hpp
+        src/Slic3r/Biz/ObjectSettingsInteractor.cpp
+        include/Slic3r/Biz/ObjectSettingsObservableList.hpp
+        src/Slic3r/Biz/ObjectSettingsObservableList.cpp
+        include/Slic3r/Biz/OverrideItem.hpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
@@ -816,22 +853,7 @@ find_package(range-v3 REQUIRED)
 
 slic3r_remap_configs("pugixml::static;yoga::yogacore;${YAML_LIB}" RelWithDebInfo Release)
 
-add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES}
-    include/Slic3r/App/Config/ConfigItemSpinBoxes.hpp
-    include/Slic3r/App/Config/ConfigItemComboBoxes.hpp
-    src/Slic3r/App/Config/ConfigItemSpinBoxes.cpp
-    src/Slic3r/App/Config/ConfigItemComboBoxes.cpp
-    include/Slic3r/App/Config/ConfigItemCheckBoxes.hpp
-    src/Slic3r/App/Config/ConfigItemCheckBoxes.cpp
-    src/Slic3r/App/MaterialSelectionDialog.cpp
-    include/Slic3r/App/MaterialSelectionDialog.hpp
-    include/Slic3r/App/MaterialSelectionRow.hpp
-    src/Slic3r/App/MaterialSelectionRow.cpp
-    include/Slic3r/App/Search.hpp
-    src/Slic3r/App/Search.cpp
-    include/Slic3r/App/Config/ConfigItemControl.hpp
-    src/Slic3r/App/Config/ConfigItemControl.cpp
-)
+add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
 
 target_link_libraries(slic3r-shared PUBLIC
         slic3r-platform

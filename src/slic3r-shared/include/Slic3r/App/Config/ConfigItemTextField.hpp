@@ -25,6 +25,7 @@ public:
 
 protected:
     void on_data_update() override;
+    void update_value(const Domain::ConfigValue& value);
 
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;

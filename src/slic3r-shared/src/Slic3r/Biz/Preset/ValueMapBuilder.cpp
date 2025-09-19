@@ -36,7 +36,7 @@ void append_printer_values(Expr::ValueMap& values, const Domain::Preset::HwPrint
 
 void append_print_values(Expr::ValueMap& values, const Domain::ConfigBox& print_preset)
 {
-    auto it = print_preset.contains("layer_height");
+    auto it = print_preset.find("layer_height");
     if (it.item)
         append_value(values, "print.layer_height", it.item->value().get<double>());
 }

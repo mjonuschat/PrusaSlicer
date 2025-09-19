@@ -5,6 +5,7 @@
 #include "Slic3r/App/Config/ConfigItemCheckBox.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
 
 namespace Slic3r::App {
 
@@ -16,25 +17,33 @@ ConfigItemCheckBox::ConfigItemCheckBox(
     ConfigItemControl(index, data),
     m_preset_interactor(preset_interactor)
 {
-    on_data_update();
-
     set_width(150);
     m_tooltip.set_text_wrap(true);
     m_tooltip.content_item()->set_width(350);
     set_tooltip(tooltip_text());
+
+    callbacks().action = [this] {
+        m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{checked()});
+    };
+
+    on_data_update();
 }
 
 void ConfigItemCheckBox::on_data_update()
 {
-    set_checked(m_state->value().get<bool>());
-}
+    if (mixed()) {
+        set_third_state(true);
+        set_label(_u8L("Mixed"));
+        set_font_type(Render::ImguiFontType::Italic);
+        return;
+    }
 
-void ConfigItemCheckBox::checked_updated_internal()
-{
-    ToggleButton::checked_updated_internal();
-
-    if (m_state->value().get<bool>() != checked()) {
-        m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{checked()});
+    set_label("");
+    set_font_type(Render::ImguiFontType::Regular);
+    if (!overriden().value_or(true)) {
+        set_checked(m_preset_interactor.get_override_origin(*m_state, location_index())->get<bool>());
+    } else {
+        set_checked(m_state->value().get<bool>());
     }
 }
 

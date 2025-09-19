@@ -5,7 +5,8 @@ namespace Slic3r::App::Render {
 enum class ImguiFontType
 {
     Regular,
-    Bold
+    Bold,
+    Italic
 };
 
 enum class Icon : wchar_t
@@ -218,7 +219,10 @@ enum class Icon : wchar_t
     CaretLeft,
     Search,
     Fan,
-    AddVolume
+    AddVolume,
+    Minus,
+    ChevronRight,
+    ChevronLeft
 };
 
 } // namespace Slic3r::App::Render

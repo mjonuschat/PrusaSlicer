@@ -16,7 +16,7 @@
 namespace Slic3r::Biz::Preset {
 
 namespace {
-Domain::ConstContainsResult contains(const Domain::ConfigPack& preset, const std::string& key, size_t slot)
+Domain::ConstFindResult contains(const Domain::ConfigPack& preset, const std::string& key, size_t slot)
 {
     return std::visit(
         [key, slot]<typename T>(const T& preset)
@@ -41,7 +41,7 @@ T get(const Domain::ConfigPack& preset, const std::string& key, const size_t slo
 template <typename T>
 T get(const Domain::ConfigBox& box, const std::string& key)
 {
-    const auto result = box.contains(key);
+    const auto result = box.find(key);
     ASSERT(result.item);
     return result.item->get<T>();
 }
@@ -120,7 +120,7 @@ std::string PresetHints::maximum_volumetric_flow_description(const Domain::Confi
 
     // Print config values
     double layer_height                     = get<double>(pack.print, "layer_height");
-    ASSERT(! pack.print.contains("first_layer_height").item->get<Domain::FloatOrPercentage>().is_percentage());
+    ASSERT(! pack.print.find("first_layer_height").item->get<Domain::FloatOrPercentage>().is_percentage());
     double first_layer_height               = get<double>(pack.print, "first_layer_height");
     double support_material_speed           = get<double>(pack.print, "support_material_speed");
     double support_material_interface_speed = get<Domain::FloatOrPercentage>(pack.print, "support_material_interface_speed").get_abs_value(support_material_speed);

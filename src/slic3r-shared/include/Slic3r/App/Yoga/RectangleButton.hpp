@@ -63,9 +63,9 @@ private:
 private:
     Rectangle* m_background = nullptr;
 
-    ImColor m_background_color = IM_COL32_WHITE;
-    ImColor m_background_color_hover = IM_COL32_WHITE;
-    ImColor m_background_color_checked = IM_COL32_WHITE;
+    ImColor m_background_color               = IM_COL32_WHITE;
+    ImColor m_background_color_hover         = IM_COL32_WHITE;
+    ImColor m_background_color_checked       = IM_COL32_WHITE;
     ImColor m_background_color_checked_hover = IM_COL32_WHITE;
 };
 

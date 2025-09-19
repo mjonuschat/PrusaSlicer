@@ -96,6 +96,11 @@ void InputTextWithSpin::set_text(const std::string &text)
     set_last_value();
 }
 
+void InputTextWithSpin::set_override_label(const std::string &override_label)
+{
+    input_text()->set_override_label(override_label);
+}
+
 void InputTextWithSpin::increase_value()
 {
     m_last_value += GImGui->IO.KeyCtrl ? m_step_fast : m_step;

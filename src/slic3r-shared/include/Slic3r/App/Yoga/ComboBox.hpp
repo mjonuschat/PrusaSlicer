@@ -7,6 +7,7 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/RevertableControl.hpp"
 #include "Slic3r/App/Yoga/Tooltip.hpp"
+#include "Slic3r/App/Render/ImguiTypes.hpp"
 
 namespace Slic3r::App::Yoga {
 
@@ -80,6 +81,12 @@ public:
     bool is_changed_value() const override;
     void reset() override;
 
+    const std::string& override_label() const;
+    void set_override_label(const std::string& override_label);
+
+    Render::ImguiFontType label_font_type() const;
+    void set_label_font_type(Render::ImguiFontType label_font_type);
+
 protected:
     Vec2f get_item_size() override;
 
@@ -105,6 +112,8 @@ private:
     std::unique_ptr<Validator> m_validator;
     bool m_updated = false;
     bool m_hovered = false;
+    std::string m_override_label;
+    Render::ImguiFontType m_label_font_type = Render::ImguiFontType::Regular;
 };
 
 } // namespace Slic3r::App::Yoga

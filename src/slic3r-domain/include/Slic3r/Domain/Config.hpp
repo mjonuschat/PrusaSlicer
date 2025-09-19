@@ -49,7 +49,7 @@ public:
         return m_value.visit(std::forward<Visitor>(visitor));
     }
 
-    ConfigValue value() const {
+    const ConfigValue& value() const {
         return m_value;
     }
 
@@ -83,8 +83,8 @@ public:
     const ConfigItem& opt(const std::string_view key) const;
     ConfigItem& opt(const std::string_view key);
 
-    ConfigItem* contains(const std::string& key);
-    const ConfigItem* contains(const std::string& key) const;
+    ConfigItem* find(const std::string& key);
+    const ConfigItem* find(const std::string& key) const;
 
     const std::vector<ConfigItem>& all_items() const;
     std::vector<ConfigItem>& all_items();
@@ -106,13 +106,13 @@ public:
 
     template <typename T>
     void set(const std::string& key, const T& value) {
-        const auto item_index{find(key)};
+        const auto item_index{find_item_by_index(key)};
         m_items.at(item_index).set(value);
         m_used_overrides.insert({key, item_index});
     }
 
     void set(const std::string& key, const ConfigValue& value) {
-        const auto item_index{find(key)};
+        const auto item_index{find_item_by_index(key)};
         m_items.at(item_index).set(value);
         m_used_overrides.insert({key, item_index});
     }
@@ -127,8 +127,8 @@ public:
 
     std::optional<ConfigItem> get(const std::string& key) const;
 
-    ConfigItem* contains(const std::string& key);
-    const ConfigItem* contains(const std::string& key) const;
+    ConfigItem* find(const std::string& key);
+    const ConfigItem* find(const std::string& key) const;
 
     std::vector<std::reference_wrapper<const ConfigItem>> overriden_items() const;
 
@@ -141,18 +141,18 @@ public:
     std::vector<std::string> diff_overriden_keys(const ConfigOverrides& other) const;
 
 private:
-    std::size_t find(const std::string& key);
+    std::size_t find_item_by_index(const std::string& key) const;
 
     std::map<std::string, std::size_t> m_used_overrides;
     std::vector<ConfigItem> m_items;
 };
 
-struct ContainsResult {
+struct FindResult {
     ConfigItem* item{nullptr};
     bool is_override{};
 };
 
-struct ConstContainsResult {
+struct ConstFindResult {
     const ConfigItem* item{nullptr};
     bool is_override{};
 };
@@ -163,9 +163,9 @@ struct ConfigBox
     ConfigOverrides overrides;
     ConfigLocation location;
 
-    ContainsResult contains(const std::string& key);
+    FindResult find(const std::string& key);
 
-    ConstContainsResult contains(const std::string& key) const;
+    ConstFindResult find(const std::string& key) const;
 
     bool operator==(const ConfigBox&) const = default;
 

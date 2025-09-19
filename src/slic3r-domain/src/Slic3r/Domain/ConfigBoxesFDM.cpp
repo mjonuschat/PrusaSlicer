@@ -1367,7 +1367,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Filament type");
     def->option_group = L("Filament properties");
     def->category = ConfigItemDef::Category::Advanced;
-    def->gui_type = ConfigItemDef::GUIType::one_string;
+    def->gui_type = ConfigItemDef::GUIType::s_enum_open;
     def->tooltip = L("The filament material type for use in custom G-codes.");
     def->gui_flags = "show_value";
     def->choices = {
@@ -1837,6 +1837,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("G-code substitutions");
     def->option_group = L("Other");
     def->category = ConfigItemDef::Category::OutputOptions;
+    def->gui_type = ConfigItemDef::GUIType::substitutions;
     def->tooltip = L("Find / replace patterns in G-code lines and substitute them.");
     def->mode = comExpert;
     def->init_fn = init_with(std::vector<std::string>{});
@@ -2007,6 +2008,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Infill");
     def->option_group = L("Extrusion width");
     def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for infill. "
                    "If left zero, default extrusion width will be used if set, otherwise 1.125 x nozzle diameter will be used. "
                    "You may want to use fatter extrudates to speed up the infill and make your parts stronger. "
@@ -4500,6 +4502,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Maximal bridging distance");
     def->option_group = L("Wipe tower");
     def->category = ConfigItemDef::Category::MultipleExtruders;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximal distance between supports on sparse infill sections.");
     def->sidetext = L("mm");
     def->mode = comAdvanced;

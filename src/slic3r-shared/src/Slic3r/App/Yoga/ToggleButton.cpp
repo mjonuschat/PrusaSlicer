@@ -10,8 +10,8 @@
 
 namespace Slic3r::App::Yoga {
 
-ToggleButton::ToggleButton(const std::string& label, const std::string& tooltip)
-    : AbstractButton(tooltip)
+ToggleButton::ToggleButton(const std::string& label, const std::string& tooltip) :
+    AbstractButton(tooltip)
 {
     set_orientation(Orientation::Horizontal);
     set_align_items(YGAlignCenter);
@@ -21,7 +21,7 @@ ToggleButton::ToggleButton(const std::string& label, const std::string& tooltip)
     m_toggler = emplace_back<Toggler>();
 
     m_label = emplace_back<Text>(label);
-    m_label->set_margin({ 5.f });
+    m_label->set_margin({5.f});
     m_label->set_visible(!label.empty());
 
     set_tooltip_position(Position::Bottom);
@@ -40,8 +40,7 @@ const std::string& ToggleButton::get_label() const
 
 void ToggleButton::set_font_type(Render::ImguiFontType font_type)
 {
-    if (m_label)
-        m_label->set_font_type(font_type);
+    m_label->set_font_type(font_type);
 }
 
 void ToggleButton::checked_updated_internal()
@@ -65,6 +64,16 @@ bool ToggleButton::is_changed_value() const
 void ToggleButton::reset()
 {
     set_checked(m_default_checked);
+}
+
+bool ToggleButton::third_state() const
+{
+    return m_toggler->third_state();
+}
+
+void ToggleButton::set_third_state(bool third_state)
+{
+    m_toggler->set_third_state(third_state);
 }
 
 } // namespace Slic3r::App::Yoga

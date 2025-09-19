@@ -8,6 +8,7 @@
 #include "Slic3r/Biz/IListObserver.hpp"
 
 #include <unordered_set>
+#include <list>
 
 namespace Slic3r::Biz {
 
@@ -70,26 +71,23 @@ public:
         invalidate();
     }
 
-    void on_removed(const Biz::IndexRange& index_range) override
+    void on_removed(const IndexRange& index_range) override
     {
         invalidate();
     }
 
-    void on_updated(const Biz::IndexRange& index_range) override
+    void on_updated(const IndexRange& index_range) override
     {
-        for (size_t index = index_range.from; index <= index_range.to; ++index) {
-            IndexMap::const_iterator it = m_index_map.find(index);
-            if (it != m_index_map.cend()) {
-                this->template invoke_listeners<IListObserver<Data>>([it](auto* l) {
-                    l->on_updated(it->second);
-                });
-            }
+        if (!invalidate() && size()) {
+            update_range(index_range);
         }
     }
 
     void on_reset() override
     {
-        invalidate();
+        if (!invalidate() && size()) {
+            update_range({0, m_source_model->size() - 1});
+        }
     }
 
     void on_moved(size_t from, size_t to) override
@@ -133,20 +131,30 @@ public:
         }
     }
 
-    void invalidate()
+    void rebuild_index_map()
     {
-        this->template invoke_listeners<IListObserver<Data>>([&](auto* l) { l->on_will_be_reset(); });
-
-        m_mapped_indexes.clear();
         m_index_map.clear();
+        for (size_t mapped_index = 0; mapped_index < m_mapped_indexes.size(); ++mapped_index) {
+            m_index_map[m_mapped_indexes.at(mapped_index)] = mapped_index;
+        }
+    }
 
+    /**
+     * @return true if indexes changed
+     */
+    bool invalidate()
+    {
         if (!m_source_model.is_valid()) {
+            m_mapped_indexes.clear();
+            m_index_map.clear();
             this->template invoke_listeners<IListObserver<Data>>([&](auto* l) { l->on_reset(); });
-        } else {
-            m_mapped_indexes.reserve(m_source_model->size());
+            return true;
+        }
 
+        std::vector<size_t> mapped_indexes;
+        mapped_indexes.reserve(m_source_model->size());
+        {
             std::unordered_set<GroupKey> group_keys_seen;
-
             for (size_t i = 0; i < m_source_model->size(); ++i) {
                 const Data& source_item = m_source_model->at(i);
 
@@ -158,24 +166,50 @@ public:
                     continue; // Skip subsequent items in the same group
                 }
 
-                m_mapped_indexes.push_back(i);
+                mapped_indexes.push_back(i);
             }
 
             if (m_sort_fn) {
                 std::sort(
-                    m_mapped_indexes.begin(),
-                    m_mapped_indexes.end(),
+                    mapped_indexes.begin(),
+                    mapped_indexes.end(),
                     [this](const std::optional<size_t>& lhs, const std::optional<size_t>& rhs) {
                     return m_sort_fn(m_source_model->at(lhs.value()), m_source_model->at(rhs.value()));
                 }
                 );
             }
+        }
 
-            for (size_t mapped_index = 0; mapped_index < m_mapped_indexes.size(); ++mapped_index) {
-                m_index_map[m_mapped_indexes.at(mapped_index)] = mapped_index;
-            }
+        if (m_mapped_indexes == mapped_indexes) {
+            // Nothing has changed, do not reset
+
+            return false;
+        } else {
+            // At least 1 index change, reset everything :((
+
+            this->template invoke_listeners<IListObserver<Data>>([&](auto* l) {
+                l->on_will_be_reset();
+            });
+
+            m_mapped_indexes = mapped_indexes;
+            rebuild_index_map();
 
             this->template invoke_listeners<IListObserver<Data>>([&](auto* l) { l->on_reset(); });
+
+            return true;
+        }
+    }
+
+private:
+    void update_range(const IndexRange& range)
+    {
+        for (size_t index = range.from; index <= range.to; ++index) {
+            IndexMap::const_iterator it = m_index_map.find(index);
+            if (it != m_index_map.cend()) {
+                this->template invoke_listeners<IListObserver<Data>>([it](auto* l) {
+                    l->on_updated(it->second);
+                });
+            }
         }
     }
 

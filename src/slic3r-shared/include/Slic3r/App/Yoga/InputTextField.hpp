@@ -32,11 +32,17 @@ public:
     const std::string& hint() const;
     void set_hint(const std::string& hint);
 
+    const std::string& override_label() const;
+    void set_override_label(const std::string& label_override);
+
     Validator* validator() const;
     void set_validator(std::unique_ptr<Validator> validator);
 
     void set_tooltip(const std::string& tooltip);
     void set_tooltip_position(Yoga::Position position);
+
+    Render::ImguiFontType font_type() const;
+    void set_font_type(Render::ImguiFontType font_type);
 
     bool hovered() const;
 

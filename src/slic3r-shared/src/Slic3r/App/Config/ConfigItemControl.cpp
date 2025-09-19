@@ -4,7 +4,18 @@
 ///|/
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/App/Config/ConfigItemTextField.hpp"
+#include "Slic3r/App/Config/ConfigItemCheckBox.hpp"
+#include "Slic3r/App/Config/ConfigItemColorPicker.hpp"
+#include "Slic3r/App/Config/ConfigItemPoints.hpp"
+#include "Slic3r/App/Config/ConfigItemComboBox.hpp"
+#include "Slic3r/App/Config/ConfigItemTextFields.hpp"
+#include "Slic3r/App/Config/ConfigItemSpinBox.hpp"
+#include "Slic3r/App/Config/ConfigItemSpinBoxes.hpp"
+#include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
+#include "Slic3r/App/Config/ConfigItemSubstitutions.hpp"
+
+#include <fmt/format.h>
 
 namespace Slic3r::App {
 
@@ -30,6 +41,36 @@ std::string ConfigItemControl::tooltip_text() const
     }
 
     return text;
+}
+
+int ConfigItemControl::location_index() const
+{
+    return m_location_index;
+}
+
+void ConfigItemControl::set_location_index(int location_index)
+{
+    m_location_index = location_index;
+}
+
+std::optional<bool> ConfigItemControl::overriden() const
+{
+    return m_overriden;
+}
+
+void ConfigItemControl::set_overriden(std::optional<bool> overriden)
+{
+    m_overriden = overriden;
+}
+
+bool ConfigItemControl::mixed() const
+{
+    return m_mixed;
+}
+
+void ConfigItemControl::set_mixed(bool mixed)
+{
+    m_mixed = mixed;
 }
 
 std::optional<std::string> ConfigItemControl::default_value() const
@@ -77,6 +118,54 @@ std::optional<std::string> ConfigItemControl::default_value() const
     }
 
     return {};
+}
+
+ConfigItemControl* ConfigItemControl::config_item_control_factory(
+    Yoga::Item* container,
+    size_t index,
+    const Domain::ConfigItem& item,
+    Biz::Preset::PresetInteractor& preset_interactor
+)
+{
+    ConfigItemControl* item_control = nullptr;
+
+    switch (item.def().gui_type) {
+    case Slic3r::Domain::ConfigItemDef::GUIType::textfield:
+        item_control = container->emplace_back<ConfigItemTextField>(index, item, preset_interactor);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::textfields:
+        item_control = container->emplace_back<ConfigItemTextFields>(index, item, preset_interactor);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::checkbox:
+        item_control = container->emplace_back<ConfigItemCheckBox>(index, item, preset_interactor);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::f_enum_open:
+    case Slic3r::Domain::ConfigItemDef::GUIType::i_enum_open:
+    case Slic3r::Domain::ConfigItemDef::GUIType::s_enum_open:
+    case Slic3r::Domain::ConfigItemDef::GUIType::combobox:
+        item_control = container->emplace_back<ConfigItemComboBox>(index, item, preset_interactor);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::comboboxes:
+        item_control = container->emplace_back<ConfigItemComboBoxes>(index, item, preset_interactor);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::points:
+        item_control = container->emplace_back<ConfigItemPoints>(index, item, preset_interactor);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::color:
+        item_control = container->emplace_back<ConfigItemColorPicker>(index, item);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::spinbox:
+        item_control = container->emplace_back<ConfigItemSpinBox>(index, item, preset_interactor);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::spinboxes:
+        item_control = container->emplace_back<ConfigItemSpinBoxes>(index, item, preset_interactor);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::substitutions:
+        item_control = container->emplace_back<ConfigItemSubstitutions>(index, item, preset_interactor);
+        break;
+    }
+
+    return item_control;
 }
 
 } // namespace Slic3r::App

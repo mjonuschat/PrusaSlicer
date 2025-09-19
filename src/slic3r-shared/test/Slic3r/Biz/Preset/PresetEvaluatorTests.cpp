@@ -42,7 +42,7 @@ TEST_CASE("Preset Evaluator", "[preset]")
     auto printer_preset  = printer_presets[0];
     // REQUIRE(printer_preset.preset.values.empty() == false);
     auto values = std::get<Slic3r::Domain::PrinterSettings>(printer_preset.preset.values);
-    REQUIRE(values.contains("single_extruder_multi_material").item->value().get<bool>() == false);
+    REQUIRE(values.find("single_extruder_multi_material").item->value().get<bool>() == false);
 
     REQUIRE(printer_preset.prints.empty() == false);
 

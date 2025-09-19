@@ -334,7 +334,7 @@ static ObjectSettingsType create_object_settings_from_volume_settings(const Doma
 {
     ObjectSettingsType object_settings;
     for (const Domain::ConfigItem& item : volume_settings.items.all_items()) {
-        if (!volume_settings.overrides.get(item.name()).has_value() || object_settings.items.contains(item.name()) == nullptr)
+        if (!volume_settings.overrides.get(item.name()).has_value() || object_settings.items.find(item.name()) == nullptr)
             continue;
 
         item.visit([&]<typename T>(const T& item_value) {

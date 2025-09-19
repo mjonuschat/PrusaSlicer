@@ -50,6 +50,12 @@ void ConfigBoxObservableList::set_value(const std::string_view key, const Domain
     }
 }
 
+const Domain::ConfigValue* ConfigBoxObservableList::find(const std::string& name) const
+{
+    Domain::ConfigItem* found_item = m_config_box->items.find(name);
+    return found_item ? &found_item->value() : nullptr;
+}
+
 void ConfigBoxOverridesObservableList::set_config_box(Domain::ConfigBox* config_box)
 {
     // if (m_config_box != config_box)
@@ -85,6 +91,28 @@ void ConfigBoxOverridesObservableList::set_value(const std::string& key, const D
 
     if (index != all_items.cend() && index->value() != value) {
         m_config_box->overrides.set(key, value);
+
+        invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l) {
+            l->on_updated(std::distance(all_items.cbegin(), index));
+        });
+    }
+}
+
+void ConfigBoxOverridesObservableList::set_override(const std::string& key, bool enable)
+{
+    const std::vector<Domain::ConfigItem>& all_items      = m_config_box->overrides.all_items();
+    std::vector<Domain::ConfigItem>::const_iterator index = std::find_if(
+        all_items.cbegin(),
+        all_items.cend(),
+        [key](const Domain::ConfigItem& item) { return item.def().name == key; }
+    );
+
+    if (index != all_items.cend()) {
+        if (enable) {
+            m_config_box->overrides.enable(key);
+        } else {
+            m_config_box->overrides.disable(key);
+        }
 
         invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l) {
             l->on_updated(std::distance(all_items.cbegin(), index));

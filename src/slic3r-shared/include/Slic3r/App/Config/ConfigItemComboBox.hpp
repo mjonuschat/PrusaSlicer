@@ -25,12 +25,16 @@ public:
 
 protected:
     void on_data_update() override;
+    void update_value(const Domain::ConfigValue& value);
+    void initialize();
 
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
     Yoga::Passthrough<Yoga::IntValidator> m_int_validator;
     Yoga::Passthrough<Yoga::DoubleValidator> m_double_validator;
     Yoga::Passthrough<Yoga::PercentageValidator> m_percentage_validator;
+
+    bool m_init = false;
 };
 
 } // namespace Slic3r::App

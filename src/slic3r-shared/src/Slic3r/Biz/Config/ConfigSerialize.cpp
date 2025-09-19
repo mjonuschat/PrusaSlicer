@@ -80,7 +80,7 @@ namespace Slic3r::Domain {
 
     // Remove all vectors which are full of nulls - but only for overrides.
     for (auto it = json_value.begin(); it != json_value.end(); ) {
-        if (!boxes.front().get().overrides.contains(it.key())) {
+        if (!boxes.front().get().overrides.find(it.key())) {
             ++it;
             continue; // Not an override, apparently an optional value.
         }

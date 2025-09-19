@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
-#include <iostream>
-
 
 /** @class WithListeners
  * @brief Subclass from WithListeners<A, B, C> to make your class have add_listener<L>
@@ -87,8 +85,9 @@ protected:
     template<typename L>
     void invoke_listener(std::function<void(L*)>&& func) {
         L* listener_ptr = std::get<L*>(m_listeners);
-        if (listener_ptr)
+        if (listener_ptr) {
             func(listener_ptr);
+        }
     }
 private:
     std::tuple<Args*...> m_listeners;

@@ -3,7 +3,7 @@
 namespace Slic3r::Domain::Preset {
 std::string SelectedPreset::bed_model() const
 {
-    auto it = printer.config_box().contains("bed_custom_model");
+    auto it = printer.config_box().find("bed_custom_model");
     if (it.item) {
         std::string filename = it.item->get<std::string>();
         if (!filename.empty())
@@ -14,7 +14,7 @@ std::string SelectedPreset::bed_model() const
 
 std::string SelectedPreset::bed_texture() const
 {
-    auto it = printer.config_box().contains("bed_custom_texture");
+    auto it = printer.config_box().find("bed_custom_texture");
     if (it.item) {
         std::string filename = it.item->get<std::string>();
         if (!filename.empty())
