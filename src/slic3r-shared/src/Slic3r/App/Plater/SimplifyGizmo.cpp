@@ -51,6 +51,7 @@ namespace {
 // Static variables
 const float wireframe_width = 0.5f;
 const ColorRGBA wireframe_color = ColorRGBA::BLUE();
+const ColorRGBA model_color = ColorRGBA::WHITE();
 
 struct SimplifyNodeTag {};
 bool is_simplify_node(const Node* n){
@@ -578,8 +579,10 @@ void SimplifyGizmo::init_material(){
             0.0f,   half_h, 0.0f, half_h, 
             0.0f,   0.0f,   1.0f, 0.0f,
             0.0f,   0.0f,   0.0f, 1.0f;
+
         m_material = Render::Material{}
             .set_shader(m_device.context().shader_manager().shader("gouraud_light_wireframe"))
+            .set_uniform("uniform_color", model_color)
             .set_uniform("wireframe_color", wireframe_color)
             .set_uniform("wireframe_width", wireframe_width)
             .set_uniform("viewport_matrix", viewport_matrix)
@@ -587,7 +590,8 @@ void SimplifyGizmo::init_material(){
     } else {
         m_material = Render::Material{}
             .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-            .set_transparent(false);    
+            .set_uniform("uniform_color", model_color)
+            .set_transparent(false);
     }
 }
 
