@@ -82,7 +82,8 @@ TexturePtr TextureManager::get_or_create_image(
 
     m_image_sizes[filename] = size;
 
-    TextureKey key{filename, size.width, size.height, PixelFormat::RGBA8};
+    Size scaled_size = opts.resolve_to_size(size);
+    TextureKey key{filename, scaled_size.width, scaled_size.height, PixelFormat::RGBA8};
     tex->set_object_name(key.key_name);
     TexturePtr shared_tex(tex.release(), [this, key](Texture* texture) {
         delete texture;

@@ -79,19 +79,27 @@ void Texture::set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_fi
     glCheck();
 }
 
-
-void Texture::set_object_name(const std::string &object_name)
+void Texture::set_object_name(const std::string& object_name)
 {
     // glObjectLabel is OpenGL 4.3, OpenGL version @ Mac is 4.1
     if (glObjectLabel == nullptr)
         return;
 
     std::string object_name_gl = object_name;
-    if (object_name.size() > GL_MAX_LABEL_LENGTH) {
-        object_name_gl.resize(GL_MAX_LABEL_LENGTH);
+
+    int max_label_length = 0;
+    glGetIntegerv(GL_MAX_LABEL_LENGTH, reinterpret_cast<GLint*>(&max_label_length));
+    glCheck();
+    if (object_name.size() > max_label_length) {
+        object_name_gl.resize(max_label_length);
     }
     m_device.get_internal_as<GL::GLDeviceInternal>().bind_texture(0, *this);
-    glObjectLabel(GL_TEXTURE, get_internal_as<GL::GLTextureInternal>().m_id, object_name_gl.size(), object_name_gl.data());
+    glObjectLabel(
+        GL_TEXTURE,
+        get_internal_as<GL::GLTextureInternal>().m_id,
+        object_name_gl.size(),
+        object_name_gl.data()
+    );
     glCheck();
 }
 
