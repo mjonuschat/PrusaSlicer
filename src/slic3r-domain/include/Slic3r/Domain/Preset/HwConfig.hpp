@@ -28,6 +28,34 @@ namespace Slic3r::Domain::Preset {
 using Address = std::vector<uint8_t>;
 
 /**
+ * @brief Convert address from Slicer internal (zero based) to public (one based)
+ * @param address Internal address representation
+ * @return Public address representation
+ */
+uint8_t address_to_public(uint8_t address);
+
+/**
+ * @brief Convert address from Slicer internal (zero based) to public (one based)
+ * @param address Internal address representation
+ * @return Public address representation
+ */
+Address address_to_public(const Address& address);
+
+/**
+ * @brief Convert address from public (one based) to Slicer internal (zero based)
+ * @param address Public address representation
+ * @return Internal address representation
+ */
+uint8_t address_from_public(uint8_t address);
+
+/**
+ * @brief Convert address from public (one based) to Slicer internal (zero based)
+ * @param address Public address representation
+ * @return Internal address representation
+ */
+Address address_from_public(const Address& address);
+
+/**
  * @brief Model information of a hardware component (like printer or feeder).
  */
 struct HwModel

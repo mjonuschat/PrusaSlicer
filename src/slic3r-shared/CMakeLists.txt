@@ -515,6 +515,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Yaml/Yaml.cpp
         src/Slic3r/Biz/Yaml/YamlAdapter.hpp
         src/Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp
+		src/Slic3r/Biz/Yaml/YamlSlic3rTypes.cpp
 
         include/Slic3r/Biz/Preset/PresetEvaluator.hpp
         src/Slic3r/Biz/Preset/PresetEvaluator.cpp
@@ -668,7 +669,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Config/ConfigLoad.cpp
         src/Slic3r/Biz/Config/ConfigJson.hpp
         src/Slic3r/Biz/Config/ConfigJson.cpp
-		src/Slic3r/Biz/Config/FeatureValueJson.hpp
+
+		src/Slic3r/Biz/JsonValueJson.cpp
+		src/Slic3r/Biz/JsonValueJson.hpp
 
 		src/Slic3r/Biz/ProjectMetadataJson.hpp
 		src/Slic3r/Biz/ProjectMetadataJson.cpp
@@ -678,6 +681,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Config/SelectedPresetJson.cpp
 		src/Slic3r/Biz/Config/GCodeMetadataJson.hpp
 		src/Slic3r/Biz/Config/GCodeMetadataJson.cpp
+		src/Slic3r/Biz/Config/FeatureStructurizer.cpp
+		src/Slic3r/Biz/Config/FeatureStructurizer.hpp
         include/Slic3r/Biz/Format/3mf.hpp
         include/Slic3r/Biz/Format/Metadata.hpp
         include/Slic3r/Biz/Format/ResultLoad3mf.hpp
@@ -927,7 +932,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
-			test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
+		test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
 
         test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp
@@ -939,6 +944,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Config/ConfigRoundtripTests.cpp
 
         test/Slic3r/Biz/Config/HwConfigJsonTests.cpp
+		test/Slic3r/Biz/Config/FeatureStructurizerTests.cpp
 
         test/Slic3r/Biz/ArrangeInteractorTests.cpp
     )

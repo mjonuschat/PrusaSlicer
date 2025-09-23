@@ -2,6 +2,8 @@ kind: filament
 id: '*PLA*'
 inherits:
 - '*sheets_PLA_common*'
+features:
+  $.type: 'PLA'
 values:
   bridge_fan_speed: 100
   cooling: 1

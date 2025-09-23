@@ -2,6 +2,10 @@ kind: filament
 id: '*PETCF*'
 inherits:
 - '*PET*'
+features:
+  $.type: 'PCTG'
+  $.tags: ['abrasive']
+  $.properties.min_nozzle_diameter: 0.4
 condition: 'tool.nozzle_diameter >= 0.4 and feeder.base_model != "MMU"'
 values:
   extrusion_multiplier: 1.03

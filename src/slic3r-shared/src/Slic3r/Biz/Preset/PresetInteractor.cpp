@@ -315,6 +315,7 @@ void update_hw_config_tools_and_materials_features_from_preset(
         auto& dest_mat =
             preset.hw_config.materials[Domain::Preset::Address{static_cast<uint8_t>(i)}];
         override_features(dest_mat.features, src_mat.features);
+        // TODO: maybe we should use '$.type.abbre'
         std::visit(
             overloaded{
                 [&dest_mat](const Domain::FilamentSettings& v)
@@ -328,10 +329,6 @@ void update_hw_config_tools_and_materials_features_from_preset(
             src_mat.values
         );
         dest_mat.id = src_mat.id;
-
-        // TODO: fill values from MatDB here
-        dest_mat.features["material_uuid"]  = "00000000-0000-0000-0000-000000000000";
-        dest_mat.features["material_color"] = "#0070D0";
     }
 }
 
@@ -496,7 +493,7 @@ void PresetInteractor::fill_print_presets(Domain::Preset::SelectedPreset& select
         ),
         hw_config_id,
         hw_config.name,
-        selected_preset.printer
+        selected_preset.print
     );
     if (changed_selection_index) {
         const auto& item = m_print_presets.items().at(changed_selection_index.value());
@@ -576,7 +573,7 @@ void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& se
             slot_index
         );
         auto changed_selected_index =
-            set_items(items, view, hw_config.id, hw_config.name, selected_preset.printer);
+            set_items(items, view, hw_config.id, hw_config.name, selected_preset.materials[slot_index]);
         changed_selected_indices.emplace_back(changed_selected_index);
         materials.emplace_back(std::move(items));
     }
@@ -822,6 +819,7 @@ void PresetInteractor::select_material_preset(size_t material_index, const std::
     ).first.get();
 
     selected_preset.materials[material_index] = m;
+    update_hw_config_tools_and_materials_features_from_preset(selected_preset);
 
     m_material_presets_writer.mutate_at(
         material_index,

@@ -3,8 +3,9 @@
 #include <fmt/ranges.h>
 #include <tl/expected.hpp>
 #include <variant>
+#include "Slic3r/Biz/JsonValueJson.hpp"
+#include "Slic3r/Biz/Config/FeatureStructurizer.hpp"
 #include "Slic3r/Biz/Config/ConfigJson.hpp"
-#include "Slic3r/Biz/Config/FeatureValueJson.hpp"
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Domain/Preset/Types.hpp"
 #include "fmt/format.h"
@@ -83,19 +84,6 @@ struct adl_serializer<PartiallyParsedFeederConfigs>
         for (const auto& [key, value] : j.items()) {
             if (value.contains("feeder"))
                 v.insert({key, value.get<HwFeederConfig>()});
-        }
-    }
-};
-
-template <>
-struct adl_serializer<PartiallyParsedMaterialConfigs>
-{
-    static void from_json(const ordered_json& j, PartiallyParsedMaterialConfigs& v)
-    {
-        v.clear();
-        for (const auto& [key, value] : j.items()) {
-            if (value.contains("material"))
-                v.insert({key, value.get<MaterialConfig>()});
         }
     }
 };
@@ -230,7 +218,8 @@ void tools_to_json(
 {
     for (size_t i = 0, n = tools.size(); i < n; ++i) {
         ordered_json ji      = tools[i];
-        j[std::to_string(i)] = ji;
+        // shift by +1
+        j[std::to_string(address_to_public(i))] = ji;
     }
 
     for (const auto& [k, v] : feeders) {
@@ -245,22 +234,16 @@ void tools_to_json(
     for (const auto& [k, v] : materials) {
         MaterialConfig mat = v;
 
-        for (const auto& kte : MATERIAL_KEYS_TO_EXTRACT) {
-            mat.features.erase(kte.key);
-        }
-
-        std::string key = to_string(k);
+        Biz::Config::remove_structurize_features(mat.features);
+        // shift by +1
+        std::string key = to_string(address_to_public(k));
         if (!j.contains(key)) {
             j[key] = ordered_json{};
         }
         auto& ji = j[key];
-        auto& jm = ji["material"];
-        jm       = mat;
-        for (const auto& kte : MATERIAL_KEYS_TO_EXTRACT) {
-            auto fit = v.features.find(kte.key);
-            if (fit != v.features.end())
-                jm[kte.json_key.value_or(kte.key)] = fit->second;
-        }
+        // decompose material
+        ji["slicer_material"] = mat;
+        ji["material"]        = Biz::Config::features_to_structure(v.features);
     }
 }
 
@@ -286,13 +269,24 @@ tl::expected<ToolsNodeLoadedResult, std::string> parse_tools(const ordered_json&
             ret.feeders.insert({k, v.at("feeder").get<HwFeederConfig>()});
             parsed = true;
         }
-        if (v.contains("material")) {
-            const auto& mat_node = v.at("material");
-            // read material definition
-            auto mat = mat_node.get<MaterialConfig>();
+
+        // compose material
+        if (v.contains("material") || v.contains("slicer_material")) {
+
+            MaterialConfig mat;
+            if (v.contains("slicer_material")) {
+                const auto& mat_node = v.at("slicer_material");
+                // read material definition
+                mat = mat_node.get<MaterialConfig>();
+            }
+            if (v.contains("material")) {
+                const auto& matdb_node = v.at("material");
+                Biz::Config::structure_to_features(matdb_node.get<JsonValue>());
+            }
             ret.materials.insert({k, mat});
             parsed = true;
         }
+
         if (!parsed)
             return tl::unexpected(fmt::format("Invalid tools config item with key \"{}\"", k));
     }
@@ -305,12 +299,12 @@ void to_json(ordered_json& j, const HwPrinterConfig& v)
     tools_to_json(tools, v.tools, v.feeders, v.materials);
 
     j = ordered_json{
-        {"id", v.id},
+        {"config_id", v.id},
         {"printer_id", v.printer_id},
         {"vendor_id", v.vendor_id},
         {"repo_id", v.repo_id},
         {"repo_version", v.repo_version},
-        {"name", v.name},
+        {"config_name", v.name},
         {"technology", magic_enum::enum_name(v.technology)},
         {"model", v.model.model},
         {"base_model", v.model.base_model},
@@ -351,12 +345,12 @@ template <>
 tl::expected<void, std::string> is_valid<HwPrinterConfig>(const nlohmann::ordered_json& json_value)
 {
     for (const auto& key : std::vector<std::string>{
-             "id",
+             "config_id",
              "printer_id",
              "vendor_id",
              "repo_id",
              "repo_version",
-             "name",
+             "config_name",
              "technology",
              "model",
              "base_model",
@@ -526,9 +520,9 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
         return tl::unexpected{"Invalid config structure: " + valid.error()};
     }
 
-    const auto id{parse<std::string>(json.at("id"))};
+    const auto id{parse<std::string>(json.at("config_id"))};
     if (!id) {
-        return tl::unexpected{"Invalid id: " + id.error()};
+        return tl::unexpected{"Invalid config_id: " + id.error()};
     }
     result.id = id.value();
 
@@ -555,9 +549,9 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
     }
     result.repo_version = repo_version.value();
 
-    const auto name{parse<std::string>(json.at("name"))};
+    const auto name{parse<std::string>(json.at("config_name"))};
     if (!name) {
-        return tl::unexpected{"Invalid name: " + name.error()};
+        return tl::unexpected{"Invalid config_name: " + name.error()};
     }
     result.name = name.value();
 
@@ -638,7 +632,8 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
                 address->size()
             )};
         }
-        tools[address->at(0)] = value;
+        // shift address by -1
+        tools[Domain::Preset::address_from_public(address->at(0))] = value;
     }
 
     HwFeederConfigs& feeders = result.feeders;
@@ -656,7 +651,8 @@ tl::expected<HwPrinterConfig, std::string> load_hw_config(const ordered_json& js
         if (!address) {
             return tl::unexpected{"Address could not be parsed from '" + key + "': " + address.error()};
         }
-        materials.insert({*address, value});
+        // shift address by -1
+        materials.insert({Domain::Preset::address_from_public(*address), value});
     }
 
     const auto sheet{parse<HwSheetConfig>(json.at("sheet"))};

@@ -1,5 +1,7 @@
 kind: filament
 id: '*ASA*'
+features:
+  $.type: 'ASA'
 values:
   temperature: 260
   bed_temperature: 110

@@ -128,4 +128,64 @@ struct TypeTraits<Slic3r::Domain::Percentage>
     }
 };
 
+template <>
+struct TypeTraits<Domain::JsonObject>;
+
+Result<Domain::JsonValue> parse_json_value(const YamlAdapter::NodeRef& node);
+
+template <>
+struct TypeTraits<Domain::JsonArray>
+{
+    using JsonArray = Domain::JsonArray;
+    static Result<JsonArray> parse(const YamlAdapter::NodeRef& node)
+    {
+        YAML_HANDLE_ENSURE(ensure_node_type(node, NodeType::Sequence));
+        JsonArray ret;
+        const size_t n = YamlAdapter::sequence_item_count(node);
+        ret.reserve(n);
+        for (size_t i = 0; i < n; ++i) {
+            auto node_ref = YamlAdapter::sequence_item_at(node, i);
+            auto parsed_value = parse_json_value(node_ref);
+            if (!parsed_value.has_value())
+                return unexpected{parsed_value.error()};
+            ret.push_back(parsed_value.value());
+        }
+        return ret;
+    }
+};
+
+template <>
+struct TypeTraits<Domain::JsonObject>
+{
+    using JsonObject = Domain::JsonObject;
+    static Result<JsonObject> parse(const YamlAdapter::NodeRef& node)
+    {
+        YAML_HANDLE_ENSURE(ensure_node_type(node, NodeType::Mapping));
+        JsonObject ret;
+        const size_t n = YamlAdapter::mapping_item_count(node);
+        for (size_t i = 0; i < n; ++i) {
+            auto key_value_pair = YamlAdapter::mapping_key_value_at(node, i);
+            YamlAdapter::NodeRef value_ref = YamlAdapter::value(key_value_pair, node);
+            auto parsed_value = parse_json_value(value_ref);
+            if (!parsed_value.has_value())
+                return unexpected{parsed_value.error()};
+            auto parsed_key = TypeTraits<std::string>::parse(YamlAdapter::key(key_value_pair, node));
+            if (!parsed_key.has_value())
+                return unexpected{parsed_key.error()};
+            ret.emplace(std::make_pair(parsed_key.value(), parsed_value.value()));
+        }
+        return ret;
+    }
+};
+
+template <>
+struct TypeTraits<Domain::JsonValue>
+{
+    static Result<Domain::JsonValue> parse(const YamlAdapter::NodeRef& node)
+    {
+        return parse_json_value(node);
+    }
+};
+
+
 } // namespace Slic3r::Biz::Yaml::Details

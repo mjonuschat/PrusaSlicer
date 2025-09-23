@@ -33,6 +33,8 @@ add_library(slic3r-domain STATIC
     include/Slic3r/Domain/Expr/ExprAst.hpp
     include/Slic3r/Domain/Expr/RegEx.hpp
 
+    include/Slic3r/Domain/JsonValue.hpp
+
     include/Slic3r/Domain/Preset/PresetTree.hpp
     include/Slic3r/Domain/Preset/SourceLocatedExpr.hpp
     include/Slic3r/Domain/Preset/Types.hpp

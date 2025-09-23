@@ -1,5 +1,7 @@
 kind: filament
 id: '*PC*'
+features:
+  $.type: 'PC'
 values:
   temperature: 275
   bed_temperature: 115

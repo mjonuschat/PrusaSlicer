@@ -1,5 +1,7 @@
 kind: filament
 id: '*ABS*'
+features:
+  $.type: 'ABS'
 values:
   temperature: 260
   bed_temperature: 110

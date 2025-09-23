@@ -9,6 +9,7 @@
 #include "Slic3r/Domain/PrinterTechnology.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Percentage.hpp"
+#include "Slic3r/Domain/JsonValue.hpp"
 
 namespace Slic3r::Domain::Preset {
 
@@ -36,7 +37,7 @@ inline PresetKind tool_print_kind(PrinterTechnology technology)
 inline PresetKind material_kind(PrinterTechnology technology)
 { return technology == PrinterTechnology::FFF ? PresetKind::FdmMaterial : PresetKind::SlaMaterial; }
 
-using FeatureValue = std::variant<bool, double, std::string>;
+using FeatureValue = JsonValue;
 using FeatureValueMap = std::map<std::string, FeatureValue>;
 
 using Bools = std::vector<bool>;

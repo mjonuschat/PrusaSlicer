@@ -1,5 +1,7 @@
 kind: filament
 id: '*PET*'
+features:
+  $.type: 'PETG'
 values:
   bed_temperature: 90
   bridge_fan_speed: 50

@@ -1,5 +1,8 @@
 kind: filament
 id: '*FLEX*'
+features:
+  # TODO: define with respect to mat db types (there is no general FLEX)
+  #$.type: 'FLEX'
 #condition: 'tool.nozzle_diameter >= 0.4'
 values:
   bed_temperature: 50
