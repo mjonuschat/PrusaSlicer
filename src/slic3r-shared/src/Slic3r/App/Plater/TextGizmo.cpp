@@ -621,7 +621,7 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
 
     bool is_part = volume.get_object()->volumes.size() != 1;
     if (!is_part) { // is object
-        // Appear after deleting object after adding part
+        // Appear after delete object ot the previously added text volume part
         if (volume.text_configuration->style.prop.per_glyph)
             preset.emboss_style.prop.per_glyph = false;
         if (volume.emboss_shape->projection.use_surface)
@@ -801,29 +801,39 @@ public:
         const Biz::Emboss::TextLines& text_lines,
         Biz::Emboss::FontFileWithCache& font_with_cache
     ) 
-        : m_text_configuration(text_configuration)
-        , m_font_with_cache(font_with_cache)
+        : m_text_configuration(text_configuration) // copy
+        , m_font_with_cache(font_with_cache) // copy shared pointers
     {
         m_shape.projection = projection; // copy current projection
+
+        const Domain::FontFile& ff = *m_font_with_cache.font_file;
+        const Domain::FontProp& fp = m_text_configuration.style.prop;
+        m_shape.scale = Biz::Emboss::get_text_shape_scale(fp, ff);
         m_text_lines = text_lines; // copy
     }
 
-    Domain::EmbossShape& get_shape() override
+    bool create_shape() override
     {
-        if (!m_shape.final_shape.expolygons.empty())
-            return m_shape; // use cached value
-                
+        ASSERT(m_shape.final_shape.expolygons.empty()); // already created                
         std::wstring text = boost::nowide::widen(m_text_configuration.text);
         const Domain::FontProp& font_prop = m_text_configuration.style.prop;
         m_shape.shapes_with_ids = Biz::Emboss::text2vshapes(m_font_with_cache, text, font_prop);
+        return true;
+    }
+
+    void create_text_lines(
+        const Domain::Transform3d& tr,
+        const Domain::ModelVolumePtrs& vols) override
+    {
         const Domain::FontFile& ff = *m_font_with_cache.font_file;
-        m_shape.scale = Biz::Emboss::get_text_shape_scale(font_prop, ff);
-        return m_shape;
+        const Domain::FontProp& fp = m_text_configuration.style.prop;
+        unsigned l = Biz::Emboss::get_count_lines(m_text_configuration.text); // SHOULD be 1
+        m_text_lines = Biz::Emboss::create_text_lines(tr, vols, ff, fp, l);
     }
 
     void write(Domain::ModelVolume& volume) const override
     {
-        ShapeProvider::write(volume);
+        ShapeProvider::write(volume); // write emboss_shape
         volume.text_configuration = m_text_configuration; // copy
         ASSERT(volume.emboss_shape.has_value());
 
@@ -840,7 +850,7 @@ public:
 private:
     // font item is not used for create object
     Domain::TextConfiguration m_text_configuration;
-    Biz::Emboss::FontFileWithCache& m_font_with_cache;
+    Biz::Emboss::FontFileWithCache m_font_with_cache;
 };
 
 Biz::Emboss::BaseData create_base_data(
@@ -863,7 +873,7 @@ Biz::Emboss::BaseData create_base_data(
         ),
         .project_interactor = project_interactor,
         .project_id = project_id,
-        .gizmo = static_cast<uint8_t>(App::Scene::ToolType::Text),
+        .gizmo = App::Scene::ToolType::Text,
         .is_outside = (volume_type == Domain::ModelVolumeType::MODEL_PART),
         .volume_name = "Embossed textik"
     };
@@ -872,7 +882,6 @@ Biz::Emboss::BaseData create_base_data(
 bool is_text_empty(std::string_view text) {
     return text.empty() || text.find_first_not_of(" \n\t\r") == std::string::npos;
 }
-
 } // namespace
 
 bool TextGizmo::update_volume(const UpdateParams& update_params) {
@@ -952,8 +961,9 @@ bool TextGizmo::init_create(Domain::ModelVolumeType volume_type)
 
 bool TextGizmo::emboss_text(Domain::ModelVolumeType volume_type, const Scene::Ray& ray, const Scene::NodePickResults& results)
 {
+    Biz::Emboss::TextLines text_lines;
     Biz::Emboss::CreateVolumeParams params{
-        .base = create_base_data(m_text, volume_type, m_preset_manager, m_project_interactor, m_text_lines.get_lines()),
+        .base = create_base_data(m_text, volume_type, m_preset_manager, m_project_interactor, text_lines),
         .volume_type = volume_type
     };
     return Biz::Emboss::start_create_volume(params, ray, results);

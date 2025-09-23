@@ -302,13 +302,8 @@ bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_
 
 bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& volume)
 {
-    // check cutting from source mesh
-    bool& use_surface = data.base.shape_provider->get_projection().use_surface;
-    if (use_surface && volume.is_the_only_one_part())
-        use_surface = false;
-
-    if (!use_surface) {
-        // Without surface
+    if (!data.base.shape_provider->get_projection().use_surface) {        
+        // Without cutting model surface
         return queue_job(std::make_unique<UpdateJob>(std::move(data)));
     }
 
@@ -316,8 +311,7 @@ bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& v
 
     // Model to cut surface from.
     ModelSources sources = create_volume_sources(volume);
-    if (sources.empty())
-        return false;
+    ASSERT(!sources.empty()); // volume can't be the only one part
 
     Domain::Transform3d volume_tr                     = volume.get_matrix();
     const std::optional<Domain::Transform3d>& fix_3mf = volume.emboss_shape->fix_3mf_tr;
@@ -362,7 +356,7 @@ bool check(const CreateSurfaceVolumeData& input);
 bool check(const UpdateSurfaceVolumeData& input);
 
 template <typename Fnc>
-static Domain::ExPolygons create_shape(ShapeProvider& input, Fnc was_canceled);
+static const Domain::ExPolygons& create_shape(ShapeProvider& input, Fnc was_canceled);
 
 // create sure that emboss object is bigger than source object [in mm]
 constexpr float safe_extension = 1.0f;
@@ -399,15 +393,12 @@ void final_update_volume(Domain::TriangleMesh&& mesh, UpdateVolumeParams& data);
 /**
 @brief Add new volume to object
 @param mesh triangles of new volume
-@param project_id Project containing object
 @param object_id Object where to add volume
 @param type Type of new volume
 @param trmat Transformation of volume inside of object
-@param data Text configuration and New VolumeName
-@param gizmo Gizmo to open
+@param data Project interactor + project_id + gizmo
 */
-void
-create_volume(Domain::TriangleMesh&& mesh, const Domain::SelectionId& project_id, const Domain::ObjectID& object_id, const Domain::ModelVolumeType type, const std::optional<Domain::Transform3d>& trmat, const BaseData& data, int /*GLGizmosManager::EType*/ gizmo);
+void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& object_id, const Domain::ModelVolumeType type, const std::optional<Domain::Transform3d>& trmat, const BaseData& data);
 
 /**
 @brief Create projection for cut surface from mesh
@@ -482,12 +473,10 @@ void CreateVolumeJob::finalize()
         return create_message("Can't create empty volume.");
     create_volume(
         std::move(m_result),
-        m_input.base.project_id,
         m_input.object_id,
         m_input.volume_type,
         m_input.trmat,
-        m_input.base,
-        m_input.base.gizmo
+        m_input.base
     );
 }
 
@@ -503,18 +492,13 @@ void CreateObjectJob::process(StopToken& stop)
     if (!check(m_input))
         throw JobException("Bad input data for EmbossCreateObjectJob.");
 
-    // can't create new object with using surface
-    Domain::EmbossShape& emboss_shape = m_input.base.shape_provider->get_shape();
-    if (emboss_shape.projection.use_surface)
-        emboss_shape.projection.use_surface = false;
-
     auto was_canceled = ::was_canceled(stop);
     m_result          = create_mesh(m_input.base, was_canceled);
     if (was_canceled())
         return;
 
     // check point is on build plate:
-    double z = emboss_shape.projection.depth / 2;
+    double z = m_input.base.shape_provider->get_projection().depth / 2;
     Domain::Vec3d offset(m_input.bed_coor.x(), m_input.bed_coor.y(), z);
 
     Domain::BoundingBox3d bb3 = m_result.bounding_box();
@@ -560,24 +544,18 @@ void CreateObjectJob::finalize()
 
 UpdateJob::UpdateJob(UpdateVolumeParams&& input) : m_input(std::move(input))
 {
-    assert(check(m_input, true));
+    ASSERT(check(m_input, true));
 }
 
 void UpdateJob::process(StopToken& stop)
 {
-    if (!check(m_input))
-        throw JobException("Bad input data for EmbossUpdateJob.");
-
-    auto was_canceled = ::was_canceled(stop);
-    m_result          = ::try_create_mesh(m_input.base, was_canceled);
-    if (was_canceled())
-        return;
-    if (m_result.its.empty())
-        throw JobException("Created text volume is empty. Change text or font.");
+    m_result = ::try_create_mesh(m_input.base, ::was_canceled(stop));
 }
 
 void UpdateJob::finalize()
 {
+    if (m_result.its.empty())
+        throw JobException("Created text volume is empty. Change text or font.");
     ::final_update_volume(std::move(m_result), m_input);
 }
 
@@ -631,12 +609,10 @@ void CreateSurfaceVolumeJob::finalize()
 {
     create_volume(
         std::move(m_result),
-        m_input.base.project_id,
         m_input.object_id,
         m_input.volume_type,
         m_input.transform,
-        m_input.base,
-        m_input.base.gizmo
+        m_input.base
     );
 }
 
@@ -691,7 +667,6 @@ bool check(const BaseData& base)
 {
     assert(base.shape_provider != nullptr);
     bool res = base.shape_provider != nullptr;
-    res &= check(base.gizmo);
     res &= (base.project_id != Domain::INVALID_ID);
     return res;
 }
@@ -754,8 +729,8 @@ bool check(const CreateSurfaceVolumeData& input)
     res &= check(input.object_id);
     assert(!input.sources.empty());
     res &= !input.sources.empty();
-    assert(input.base.shape_provider->get_shape().projection.use_surface);
-    res &= input.base.shape_provider->get_shape().projection.use_surface;
+    assert(input.base.shape_provider->get_projection().use_surface);
+    res &= input.base.shape_provider->get_projection().use_surface;
     return res;
 }
 
@@ -767,13 +742,13 @@ bool check(const UpdateSurfaceVolumeData& input)
 }
 
 template <typename Fnc>
-Domain::ExPolygons create_shape(ShapeProvider& input, Fnc was_canceled)
+const Domain::ExPolygons& create_shape(ShapeProvider& input, Fnc was_canceled)
 {
-    Domain::EmbossShape& es = input.get_shape();
-    // TODO: improve to use real size of volume
+    // IMPROVE: use real size of volume for union delta value
     // ... need world matrix for volume
     // ... printer resolution will be fine too
-    return union_with_delta(es, UNION_DELTA, UNION_MAX_ITERATIN);
+    input.create_shape_with_union();
+    return input.get_shape().final_shape.expolygons;
 }
 
 // #define STORE_SAMPLING
@@ -810,7 +785,12 @@ template <typename Fnc>
 Domain::TriangleMesh create_mesh_per_glyph(BaseData& input, Fnc was_canceled)
 {
     // method use square of coord stored into int64_t
-    // static_assert(std::is_same<Point::coord_type, int32_t>());
+    // Domain::Point::coord_type
+    static_assert(std::is_same<Domain::coord_t, int32_t>());
+
+    if(!input.shape_provider->create_shape())
+        return {};
+
     const Domain::EmbossShape& shape = input.shape_provider->get_shape();
     if (shape.shapes_with_ids.empty())
         return {};
@@ -907,14 +887,14 @@ Domain::TriangleMesh try_create_mesh(BaseData& input, const Fnc& was_canceled)
             return tm;
     }
 
-    Domain::ExPolygons shapes = create_shape(*input.shape_provider, was_canceled);
+    const Domain::ExPolygons& shapes = create_shape(*input.shape_provider, was_canceled);
     if (shapes.empty())
         return {};
     if (was_canceled())
         return {};
 
     // NOTE: SHAPE_SCALE is applied in ProjectZ
-    Domain::EmbossShape& es = input.shape_provider->get_shape();
+    const Domain::EmbossShape& es = input.shape_provider->get_shape();
     double scale    = es.scale;
     double depth    = es.projection.depth / scale;
     auto projectZ   = std::make_unique<ProjectZ>(depth);
@@ -998,14 +978,13 @@ void final_update_volume(Domain::TriangleMesh&& mesh, UpdateVolumeParams& data)
     UpdateJob::update_volume(volume, std::move(mesh), data.base);
 }
 
-void
-create_volume(Domain::TriangleMesh&& mesh, const Domain::SelectionId& project_id, const Domain::ObjectID& object_id, const Domain::ModelVolumeType type, const std::optional<Domain::Transform3d>& trmat, const BaseData& data, int /*GLGizmosManager::EType*/ gizmo)
+void create_volume(Domain::TriangleMesh&& mesh, const Domain::ObjectID& object_id, const Domain::ModelVolumeType type, const std::optional<Domain::Transform3d>& trmat, const BaseData& data)
 {
     /* TODO: find way to add volume into not selected project
     auto& project = data.project_interactor.workbench().project(data.project_id);
     /*/
     auto& project = data.project_interactor.selected_project();
-    ASSERT(data.project_interactor.selected_project_id() == project_id); // project does not match
+    ASSERT(data.project_interactor.selected_project_id() == data.project_id); // project does not match
     // */
 
     // create volume
@@ -1036,7 +1015,7 @@ create_volume(Domain::TriangleMesh&& mesh, const Domain::SelectionId& project_id
     if (trmat.has_value()) {
         vol->set_transformation(*trmat);
     } else {
-        assert(!data.shape_provider->get_shape().projection.use_surface);
+        ASSERT(!data.shape_provider->get_projection().use_surface);
         // Create transformation for volume near from object(defined by glVolume)
         // Transformation is inspired add generic volumes in ObjectList::load_generic_subobject
 
@@ -1256,7 +1235,7 @@ Domain::TriangleMesh cut_surface(BaseData& input1, const SurfaceVolumeData& inpu
     if (!input1.shape_provider->get_text_lines().empty())
         return cut_per_glyph_surface(input1, input2, was_canceled);
 
-    Domain::ExPolygons shapes = create_shape(*input1.shape_provider, was_canceled);
+    const Domain::ExPolygons& shapes = create_shape(*input1.shape_provider, was_canceled);
     if (was_canceled())
         return {};
     if (shapes.empty())
@@ -1335,13 +1314,13 @@ bool queue_job(std::unique_ptr<Job> job)
 
 bool start_create_volume_job(const Domain::ModelObject& object, const std::optional<Domain::Transform3d>& volume_tr, BaseData& data, Domain::ModelVolumeType volume_type)
 {
-    bool& use_surface = data.shape_provider->get_shape().projection.use_surface;
+    bool use_surface = data.shape_provider->get_projection().use_surface;
     std::unique_ptr<Job> job;
     if (use_surface) {
         // Model to cut surface from.
-        ModelSources sources = create_sources(object.volumes);
+        ModelSources sources = create_sources(object.volumes);        
         if (sources.empty() || !volume_tr.has_value()) {
-            use_surface = false;
+            use_surface = false; // can't use surface, try CreateVolumeJob
         } else {
             SurfaceVolumeData sfvd{*volume_tr, std::move(sources)};
             CreateSurfaceVolumeData

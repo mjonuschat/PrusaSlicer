@@ -753,7 +753,7 @@ namespace Slic3r::Biz::Emboss {
 Domain::ExPolygons union_with_delta(Domain::EmbossShape& shape, float delta, unsigned max_heal_iteration)
 {
     if (!shape.final_shape.expolygons.empty())
-        return shape.final_shape;
+        return shape.final_shape.expolygons;
 
     shape.final_shape = ::union_with_delta(shape.shapes_with_ids, delta, max_heal_iteration);
     for (const Domain::ExPolygonsWithId& e : shape.shapes_with_ids)
