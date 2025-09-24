@@ -39,8 +39,6 @@ namespace Slic3r {
 
 namespace CustomGCode = Domain::CustomGCode;
 
-using SlicingSync::diff_to_invalidated_steps;
-using SlicingSync::diff_to_print_invalidated_steps;
 using SlicingSync::get_invalidated_steps;
 using SlicingSync::PrintAndObjectSteps;
 using SlicingSync::PrintSteps;
@@ -430,26 +428,6 @@ void update_volume_bboxes(
             cached_volume_ids.emplace_back(v->id());
 }
 
-PrintAndObjectSteps Print::update_config(const PrintConfigView& new_full_config) {
-    const std::vector<std::string> diff_keys{new_full_config.full_config().diff_keys(m_config.full_config())};
-
-    PrintAndObjectSteps invalidated_steps{diff_to_print_invalidated_steps(diff_keys)};
-
-    m_config = new_full_config;
-    // If just a physical printer was changed, but printer preset is the same, then there is no need to apply whole print
-    // see https://github.com/prusa3d/PrusaSlicer/issues/8800
-    const bool only_settings_id_changed{diff_keys.size() == 1 && diff_keys[0] == "physical_printer_settings_id"};
-    if ( !diff_keys.empty()
-        && !only_settings_id_changed
-        && !std::holds_alternative<AllSteps>(invalidated_steps.first)
-    ) {
-        auto& print_steps{std::get<PrintSteps>(invalidated_steps.first)};
-        print_steps.insert(psGCodeExport);
-    }
-
-    return invalidated_steps;
-}
-
 Domain::ModelInstancePtrs Print::deep_copy_instances(const Domain::ModelInstancePtrs& instances, Domain::ModelObject* model_object)
 {
     Domain::ModelInstancePtrs result;
@@ -459,7 +437,6 @@ Domain::ModelInstancePtrs Print::deep_copy_instances(const Domain::ModelInstance
     }
     return result;
 }
-
 
 bool Print::invalidate_object_steps(
     const InvalidatedSteps& steps
@@ -1092,30 +1069,12 @@ tl::expected<PrintObjectsSyncResult, Errors> sync_print_objects(
 
             if (current_instace_it != reuse_candidates.end()) {
                 PrintObject* print_object{current_instace_it->second};
-
-                const std::vector<std::string> diff{
-                    print_object->config().object_settings()->diff_keys(*new_config.object_settings())
-                };
                 print_object->set_config(new_config);
-                PrintAndObjectSteps invalidated_steps{
-                    diff_to_invalidated_steps(print_object->config(), new_config, diff)
-                };
-
-                result.invalidated_steps.print = SlicingSync::merge(
-                    result.invalidated_steps.print,
-                    invalidated_steps.first
-                );
                 result.invalidated_steps.print = SlicingSync::merge(
                     result.invalidated_steps.print,
                     AllOrSome<PrintSteps>{print_object->set_instances(std::move(new_instances.instances))}
                 );
-                result.invalidated_steps.object[print_object] = SlicingSync::merge(
-                    result.invalidated_steps.object[print_object],
-                    invalidated_steps.second
-                );
-
                 result.reused_objects.insert(print_object);
-
                 result.objects.push_back(print_object);
             } else {
                 // This is a new instance (or a set of instances with the same trafo). Just add it.
@@ -1319,18 +1278,6 @@ tl::expected<ModelSyncResult, Errors> sync_model(
     };
 }
 
-InvalidatedSteps to_invalidated_steps(const PrintAndObjectSteps& steps, const PrintObjectPtrs& objects)
-{
-    InvalidatedSteps result;
-    result.print = steps.first;
-
-    for (PrintObject* print_object : objects) {
-        result.object[print_object] = steps.second;
-    }
-
-    return result;
-}
-
 void delete_old_model_objects(const Domain::ModelObjectPtrs& old_objects, const Domain::ModelObjectPtrs& new_objects) {
     const std::set<Domain::ModelObject*> model_objects_set{
         new_objects.begin(),
@@ -1405,9 +1352,7 @@ Biz::Print::ApplyStatus::Status Print::apply(
         != num_extruders
     };
 
-    const PrintAndObjectSteps config_invalidated_steps{
-        update_config(new_print_config)
-    };
+    m_config = new_print_config;
 
     m_placeholder_parser = init_placeholder_parser(
         Biz::Slicing::get_parser_config(*new_full_config_ptr),
@@ -1477,8 +1422,7 @@ Biz::Print::ApplyStatus::Status Print::apply(
     }
 
     const InvalidatedSteps invalidated_steps{SlicingSync::merge(
-        {to_invalidated_steps(config_invalidated_steps, m_objects),
-         wipe_tower_invalidated_steps,
+        {wipe_tower_invalidated_steps,
          custom_gcode_invalidated_steps,
          model_sync_result->invalidated_steps,
          changed_objects_invalidated_steps,

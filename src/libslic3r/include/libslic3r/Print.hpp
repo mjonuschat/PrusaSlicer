@@ -599,10 +599,6 @@ public:
         const std::optional<Domain::CustomGCode::Info>& custom_gcode
     );
 
-    SlicingSync::PrintAndObjectSteps update_config(
-        const PrintConfigView& new_full_config
-    );
-
     static Domain::ModelInstancePtrs deep_copy_instances(
         const Domain::ModelInstancePtrs& instances,
         Domain::ModelObject* model_object

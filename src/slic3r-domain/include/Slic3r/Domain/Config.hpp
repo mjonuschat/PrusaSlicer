@@ -198,8 +198,9 @@ public:
         m_values.insert_or_assign(key, ConfigValue{value});
     }
 
-protected:
     std::size_t hash() const;
+
+protected:
     std::map<std::string, ConfigValue> m_values;
 
 private:
@@ -214,16 +215,15 @@ public:
         return get_value(key).get<T>();
     }
 
-    std::vector<std::string> keys() const;
+    const ConfigValue& get_value(const std::string& key) const;
+
+    const std::vector<std::string>& keys() const;
 
     virtual ~FullConfig() = default;
 protected:
     FullConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes& location_sizes);
 
 private:
-    friend class ConfigView;
-    ConfigValue get_value(const std::string& key) const;
-
     std::vector<std::string> m_keys;
 };
 
@@ -265,6 +265,8 @@ public:
     bool operator==(const ConfigView& other) const;
 
     std::size_t hash() const;
+
+    std::vector<std::string> diff_keys(const ConfigView& other) const;
 
 protected:
     FullConfigPtr m_full_config;

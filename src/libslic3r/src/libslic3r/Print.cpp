@@ -148,11 +148,7 @@ Biz::Print::ApplyStatus::Status Print::update(
 
 bool Print::invalidate_step(PrintStep step)
 {
-	bool invalidated = Inherited::invalidate_step(step);
-    // Propagate to dependent steps.
-    if (step != psGCodeExport)
-        invalidated |= Inherited::invalidate_step(psGCodeExport);
-    return invalidated;
+	return Inherited::invalidate_step(step);
 }
 
 // returns true if an object step is done on all objects

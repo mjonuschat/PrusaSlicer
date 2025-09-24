@@ -16,6 +16,15 @@ using Domain::Percentage;
 using Domain::FloatOrPercentage;
 using Biz::Print::SerializedConfig;
 using Domain::Preset::HwPrinterConfig;
+using Slic3r::Domain::EnumWrapper;
+using Slic3r::Domain::EnumVectorWrapper;
+using Domain::FullConfig;
+using Domain::ConfigBox;
+using Domain::ConfigItem;
+using Domain::SlicingId;
+using Biz::Slicing::IThumbnailImageGenerator;
+using Biz::Slicing::ThumbnailImageResults;
+using Biz::Slicing::ThumbnailImageRequests;
 namespace BB = Biz::Algorithms::BoundingBox;
 
 SCENARIO("PrintObject: Perimeter generation", "[PrintObject]") {
@@ -207,4 +216,345 @@ TEST_CASE("Ported from Perl", "[Print]") {
             }
         }
     }
+}
+
+const Domain::overloaded change_value{
+    [](EnumWrapper& v)
+    {
+        ASSERT(v.def().size() > 1);
+        const std::size_t index{v.index_of_value(v.value())};
+        if (index == 0) {
+            v.set_index(1);
+        } else {
+            v.set_index(0);
+        }
+    },
+    [](bool& v) { v = !v; },
+    [](int& v) { v += 1; },
+    [](std::optional<int>& v)
+    {
+        if (v) {
+            *v += 1;
+        } else {
+            v = 1;
+        }
+    },
+    [](double& v) { v += 1.0; },
+    [](std::string& v) { v = "changed"; },
+    [](Domain::Vec2d& v)
+    {
+        v[0] += 1.0;
+        v[1] += 1.0;
+    },
+    [](FloatOrPercentage& v) { v = FloatOrPercentage{1.23}; },
+    [](Percentage& v) { v.value += 1.0; },
+    [](EnumVectorWrapper& v)
+    {
+        ASSERT(v.def().size() > 1);
+        const std::vector<std::size_t> indicies{v.get_indexes()};
+        std::vector<std::size_t> new_indicies;
+        std::ranges::transform(
+            indicies,
+            std::back_inserter(new_indicies),
+            [](std::size_t index)
+            {
+                if (index == 0) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        );
+        v.set_indexes(new_indicies);
+    },
+    [](std::vector<bool>& v)
+    {
+        if (!v.empty()) {
+            v[0] = !v[0];
+        } else {
+            v.push_back(true);
+        }
+    },
+    [](std::vector<int>& v)
+    {
+        if (!v.empty()) {
+            v[0] += 1;
+        } else {
+            v.push_back(1);
+        }
+    },
+    [](std::vector<std::optional<int>>& v)
+    {
+        if (!v.empty()) {
+            v[0] = 42;
+        } else {
+            v.push_back(42);
+        }
+    },
+    [](std::vector<double>& v)
+    {
+        if (!v.empty()) {
+            v[0] += 1.0;
+        } else {
+            v.push_back(1.0);
+        }
+    },
+    [](std::vector<std::string>& v)
+    {
+        if (!v.empty()) {
+            v[0] = "changed";
+        } else {
+            v.push_back("changed");
+        }
+    },
+    [](std::vector<Domain::Vec2d>& v)
+    {
+        if (!v.empty()) {
+            v[0][0] += 1.0;
+            v[0][1] += 1.0;
+        } else {
+            v.push_back(Domain::Vec2d(1.0, 1.0));
+        }
+    },
+    [](std::vector<FloatOrPercentage>& v)
+    {
+        if (!v.empty()) {
+            v[0] = FloatOrPercentage{2.34};
+        } else {
+            v.push_back(FloatOrPercentage{2.34});
+        }
+    },
+    [](std::vector<Percentage>& v)
+    {
+        if (!v.empty()) {
+            v[0].value += 1.0;
+        } else {
+            v.push_back(Percentage{1.0});
+        }
+    }
+};
+
+TEST_CASE("Changing all config values works", "[PrintApply]")
+{
+    TestConfig config{4};
+
+    Print print;
+    Domain::Model model;
+    Slic3r::Test::init_print({TestMesh::cube_20x20x20}, print, model, config);
+
+    auto full_config_result{prepare_slicing_input(config)};
+    REQUIRE(full_config_result.has_value());
+    auto& full_config{*full_config_result};
+    Biz::Print::SerializedConfig serialized_config{};
+    HwPrinterConfig hw_config;
+
+    auto apply_status{
+        print.apply(model, full_config, serialized_config, hw_config, std::nullopt, std::nullopt)
+    };
+    REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Unchanged>(apply_status));
+
+    std::vector<ConfigBox*> boxes{&config.print, &config.printer, &config.project};
+    for (auto& tool : config.tool) {
+        boxes.push_back(&tool);
+    }
+    for (auto& filament : config.filament) {
+        boxes.push_back(&filament);
+    }
+
+    for (ConfigBox* box : boxes) {
+        for (ConfigItem& item : box->items.all_items()) {
+            // Skip shrinkage compensation as it modifies the model.
+            if (item.name() == "filament_shrinkage_compensation_z"
+                || item.name() == "filament_shrinkage_compensation_xy")
+            {
+                continue;
+            }
+            item.visit(change_value);
+        }
+        for (ConfigItem& item : box->overrides.all_items()) {
+            item.visit(change_value);
+        }
+    }
+
+    full_config_result = prepare_slicing_input(config);
+    REQUIRE(full_config_result.has_value());
+    full_config = *full_config_result;
+
+    apply_status = print.apply(model, full_config, serialized_config, hw_config, std::nullopt, std::nullopt);
+    REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(apply_status));
+}
+
+class ThumbnailGenerator : public Biz::Slicing::IThumbnailImageGenerator
+{
+    virtual std::future<Biz::Slicing::ThumbnailImageResults> enqueue_thumbnail_requests(
+        const Slic3r::Biz::Slicing::ThumbnailImageRequests& requests
+    ) override
+    {
+        std::promise<Biz::Slicing::ThumbnailImageResults> promise;
+        promise.set_value(Biz::Slicing::ThumbnailImageResults{});
+        return promise.get_future();
+    }
+
+    void handle_enqueued_requests() override {}
+};
+
+using Step = std::variant<PrintStep, PrintObjectStep>;
+
+// Check that all other steps are done (hence the exclusive in the name).
+// Check only the first object.
+bool is_exclusively_undone(const Print& print, const std::set<Step>& steps)
+{
+    for (std::size_t i{}; i < PrintStep::psCount; ++i) {
+        const PrintStep step{static_cast<PrintStep>(i)};
+        if (steps.contains(step)) {
+            if (print.is_step_done(step)) {
+                return false;
+            }
+            continue;
+        }
+        if (!print.is_step_done(step)) {
+            return false;
+        }
+    }
+
+    ASSERT(print.objects().size() == 1);
+    const PrintObject& object{*print.objects().front()};
+
+    for (std::size_t i{}; i < PrintStep::psCount; ++i) {
+        const PrintObjectStep step{static_cast<PrintObjectStep>(i)};
+        if (steps.contains(step)) {
+            if (object.is_step_done(step)) {
+                return false;
+            }
+            continue;
+        }
+        if (!object.is_step_done(step)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+struct ApplyTestFixture
+{
+    TestConfig config{1};
+    Print print{};
+    Domain::Model model;
+
+    ApplyTestFixture()
+    {
+        Slic3r::Test::init_print({TestMesh::cube_20x20x20}, print, model, config);
+    }
+};
+
+void apply_and_check(
+    ApplyTestFixture& context,
+    const std::function<void(TestConfig&)>& modify_config,
+    const std::set<Step>& expected_undone
+)
+{
+    ThumbnailGenerator thumbnail_generator{};
+    Biz::Print::SerializedConfig serialized_config{};
+    HwPrinterConfig hw_config{};
+
+    context.print.slice(SlicingId{0, 0}, thumbnail_generator);
+    REQUIRE(is_exclusively_undone(context.print, {}));
+
+    modify_config(context.config);
+    const auto slicing_input{prepare_slicing_input(context.config)};
+    REQUIRE(slicing_input);
+    const auto full_config{*slicing_input};
+
+    const auto apply_status{context.print.apply(
+        context.model,
+        full_config,
+        serialized_config,
+        hw_config,
+        std::nullopt,
+        std::nullopt
+    )};
+    REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(apply_status));
+    REQUIRE(is_exclusively_undone(context.print, expected_undone));
+}
+
+TEST_CASE_METHOD(ApplyTestFixture, "Apply invalidates correct steps - silent_mode", "[PrintApply]")
+{
+    apply_and_check(
+        *this,
+        [](TestConfig& c) { c.printer.items.opt("silent_mode").set<bool>(false); },
+        {psGCodeExport}
+    );
+}
+
+TEST_CASE_METHOD(
+    ApplyTestFixture,
+    "Apply invalidates correct steps - brim separation",
+    "[PrintApply]"
+)
+{
+    apply_and_check(
+        *this,
+        [](TestConfig& c) { c.tool.at(0).items.opt("brim_separation").set<double>(2.0); },
+        {
+            posSupportSpotsSearch,
+            posSupportMaterial,
+            posEstimateCurledExtrusions,
+            psWipeTower,
+            psSkirtBrim,
+            psAlertWhenSupportsNeeded,
+            psWipeTower,
+            psGCodeExport,
+        }
+    );
+}
+
+TEST_CASE_METHOD(ApplyTestFixture, "Apply invalidates correct steps - layer height", "[PrintApply]")
+{
+    apply_and_check(
+        *this,
+        [](TestConfig& c) { c.print.items.opt("layer_height").set<double>(0.2); },
+        {
+            posSlice,
+            posPerimeters,
+            posPrepareInfill,
+            posInfill,
+            posIroning,
+            posSupportSpotsSearch,
+            posSupportMaterial,
+            posEstimateCurledExtrusions,
+            posCalculateOverhangingPerimeters,
+            psSkirtBrim,
+            psAlertWhenSupportsNeeded,
+            psWipeTower,
+            psGCodeExport,
+        }
+    );
+}
+
+TEST_CASE_METHOD(ApplyTestFixture, "Apply invalidates correct steps - fill density", "[PrintApply]")
+{
+    apply_and_check(
+        *this,
+        [](TestConfig& c) { c.tool.at(0).items.opt("fill_density").set(Percentage{40.0}); },
+        {
+            posPrepareInfill,
+            posInfill,
+            posIroning,
+            posSupportSpotsSearch,
+            psAlertWhenSupportsNeeded,
+            psWipeTower,
+            psGCodeExport,
+        }
+    );
+}
+
+TEST_CASE_METHOD(ApplyTestFixture, "Apply invalidates correct steps - GCode flavor", "[PrintApply]")
+{
+    apply_and_check(
+        *this,
+        [](TestConfig& c)
+        { c.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfKlipper); },
+        {psWipeTower, psSkirtBrim, psGCodeExport}
+    );
 }

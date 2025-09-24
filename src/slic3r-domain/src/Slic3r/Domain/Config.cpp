@@ -144,7 +144,7 @@ const std::vector<ConfigItem> &ConfigItems::all_items() const
     return m_items;
 }
 
-std::vector<ConfigItem> &ConfigItems::all_items()
+std::vector<ConfigItem>& ConfigItems::all_items()
 {
     return m_items;
 }
@@ -457,7 +457,7 @@ void SquashedConfig::add(const BoxRefs& boxes, const ConfigLocationSizes& locati
     }
 }
 
-std::vector<std::string> FullConfig::keys() const {
+const std::vector<std::string>& FullConfig::keys() const {
     return m_keys;
 }
 
@@ -467,7 +467,7 @@ FullConfig::FullConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes&
     });
 }
 
-ConfigValue FullConfig::get_value(const std::string& key) const {
+const ConfigValue& FullConfig::get_value(const std::string& key) const {
     const auto it{m_values.find(key)};
     ASSERT(it != m_values.end(), "The key '" + key + "' is not part of this config.");
     return it->second;
@@ -561,6 +561,19 @@ std::size_t ConfigView::hash() const {
         boost::hash_combine(seed, partial_config->hash());
     }
     return seed;
+}
+
+std::vector<std::string> ConfigView::diff_keys(const ConfigView& other) const
+{
+    std::vector<std::string> result;
+
+    for (const std::string& key : m_full_config->keys()) {
+        if (get_value(key) != other.get_value(key)) {
+            result.push_back(key);
+        }
+    }
+
+    return result;
 }
 
 ConfigValue ConfigView::get_value(const std::string& key) const {

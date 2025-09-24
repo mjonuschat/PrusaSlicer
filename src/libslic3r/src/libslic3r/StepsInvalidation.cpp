@@ -12,9 +12,596 @@ namespace Slic3r::SlicingSync {
 
 using Domain::ConfigView;
 using Domain::Percentage;
+using Domain::FloatOrPercentage;
+using Step = std::variant<PrintStep, PrintObjectStep>;
+
+std::vector<Step> propagate(Step step)
+{
+    return std::visit(
+        Domain::overloaded{
+            [](const PrintStep& step) -> std::vector<Step>
+            {
+                switch (step) {
+                case psWipeTower:
+                    return {psWipeTower, psGCodeExport};
+                case psAlertWhenSupportsNeeded:
+                    return {psAlertWhenSupportsNeeded, psGCodeExport};
+                case psSkirtBrim:
+                    return {psSkirtBrim, psGCodeExport};
+                case psGCodeExport:
+                    return {psGCodeExport};
+                default:
+                    PANIC("Unknown print step propagation!");
+                }
+            },
+            [](const PrintObjectStep& step) -> std::vector<Step>
+            {
+                switch (step) {
+                case posSlice:
+                    return {
+                        posSlice,
+                        posPerimeters,
+                        posPrepareInfill,
+                        posInfill,
+                        posIroning,
+                        posSupportSpotsSearch,
+                        posSupportMaterial,
+                        posEstimateCurledExtrusions,
+                        posCalculateOverhangingPerimeters,
+                        psSkirtBrim,
+                        psAlertWhenSupportsNeeded,
+                        psWipeTower,
+                        psGCodeExport
+                    };
+                case posPerimeters:
+                    return {
+                        posPerimeters,
+                        posPrepareInfill,
+                        posInfill,
+                        posIroning,
+                        posSupportSpotsSearch,
+                        posEstimateCurledExtrusions,
+                        posCalculateOverhangingPerimeters,
+                        psSkirtBrim,
+                        psAlertWhenSupportsNeeded,
+                        psWipeTower,
+                        psGCodeExport
+                    };
+                case posPrepareInfill:
+                    return {
+                        posPrepareInfill,
+                        posInfill,
+                        posIroning,
+                        posSupportSpotsSearch,
+                        psAlertWhenSupportsNeeded,
+                        psWipeTower,
+                        psGCodeExport
+                    };
+                case posInfill:
+                    return {
+                        posInfill,
+                        posIroning,
+                        posSupportSpotsSearch,
+                        psAlertWhenSupportsNeeded,
+                        psWipeTower,
+                        psGCodeExport
+                    };
+                case posIroning:
+                    return {posIroning, psAlertWhenSupportsNeeded, psWipeTower, psGCodeExport};
+                case posSupportSpotsSearch:
+                    return {
+                        posSupportSpotsSearch,
+                        psAlertWhenSupportsNeeded,
+                        psWipeTower,
+                        psGCodeExport
+                    };
+                case posSupportMaterial:
+                    return {
+                        posSupportMaterial,
+                        posEstimateCurledExtrusions,
+                        psSkirtBrim,
+                        psAlertWhenSupportsNeeded,
+                        psWipeTower,
+                        psGCodeExport
+                    };
+                case posEstimateCurledExtrusions:
+                    return {psAlertWhenSupportsNeeded, psWipeTower, psGCodeExport};
+                case posCalculateOverhangingPerimeters:
+                    return {psAlertWhenSupportsNeeded, psWipeTower, psGCodeExport};
+                default:
+                    PANIC("Unknown object step propagation!");
+                }
+            }
+        },
+        step
+    );
+}
+
+std::vector<Step> steps(const std::vector<std::vector<Step>>& steps)
+{
+    std::vector<Step> result;
+    for (const auto& _steps : steps) {
+        result.insert(result.end(), _steps.begin(), _steps.end());
+    }
+    std::ranges::sort(result);
+    std::ranges::unique(result);
+    return result;
+}
+
+std::vector<Step> all_steps()
+{
+    std::set<Step> result;
+    for (int i{}; i < psCount; ++i) {
+        result.insert(static_cast<PrintStep>(i));
+    }
+    for (int i{}; i < posCount; ++i) {
+        result.insert(static_cast<PrintObjectStep>(i));
+    }
+    return std::vector<Step>{result.begin(), result.end()};
+}
+
+const std::map<std::string, std::vector<Step>> invalidated_by{
+    {"arc_fitting", steps({propagate(posPerimeters)})},
+    {"autoemit_temperature_commands", steps({propagate(psGCodeExport)})},
+    {"automatic_extrusion_widths", steps({propagate(posPerimeters)})},
+    {"automatic_infill_combination", steps({propagate(posPrepareInfill)})},
+    {"automatic_infill_combination_max_layer_height", steps({propagate(posPrepareInfill)})},
+    {"avoid_crossing_curled_overhangs", steps({propagate(posEstimateCurledExtrusions)})},
+    {"avoid_crossing_perimeters", steps({propagate(psGCodeExport)})},
+    {"avoid_crossing_perimeters_max_detour", steps({propagate(psGCodeExport)})},
+    {"bed_custom_model", steps({})},
+    {"bed_custom_texture", steps({})},
+    {"bed_shape", steps({propagate(psGCodeExport)})},
+    {"bed_temperature", steps({propagate(psGCodeExport)})},
+    {"bed_temperature_extruder", steps({propagate(psGCodeExport)})},
+    {"before_layer_gcode", steps({propagate(psGCodeExport)})},
+    {"between_objects_gcode", steps({propagate(psGCodeExport)})},
+    {"binary_gcode", steps({propagate(psGCodeExport)})},
+    {"bottom_fill_pattern", steps({propagate(posInfill)})},
+    {"bottom_solid_layers", steps({propagate(posPrepareInfill)})},
+    {"bottom_solid_min_thickness", steps({propagate(posPrepareInfill)})},
+    {"bridge_acceleration", steps({propagate(psGCodeExport)})},
+    {"bridge_angle", steps({propagate(posPrepareInfill)})},
+    {"bridge_fan_speed", steps({propagate(psGCodeExport)})},
+    {"bridge_flow_ratio",
+     steps({propagate(posPerimeters), propagate(posInfill), propagate(posSupportMaterial)})},
+    {"bridge_speed", steps({propagate(psGCodeExport)})},
+    {"brim_separation", steps({propagate(posSupportSpotsSearch), propagate(posSupportMaterial)})},
+    {"brim_type", steps({propagate(posSupportSpotsSearch), propagate(posSupportMaterial)})},
+    {"brim_width", steps({propagate(posSupportSpotsSearch), propagate(posSupportMaterial)})},
+    {"chamber_minimal_temperature", steps({propagate(psGCodeExport)})},
+    {"chamber_temperature", steps({propagate(psGCodeExport)})},
+    {"color_change_gcode", steps({propagate(psGCodeExport)})},
+    {"colorprint_heights", steps({propagate(psGCodeExport)})},
+    {"complete_objects", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"cooling", steps({propagate(psGCodeExport)})},
+    {"cooling_tube_length", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"cooling_tube_retraction", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"default_acceleration", steps({propagate(psGCodeExport)})},
+    {"deretract_speed", steps({propagate(psGCodeExport)})},
+    {"disable_fan_first_layers", steps({propagate(psGCodeExport)})},
+    {"dont_support_bridges", steps({propagate(posSupportMaterial)})},
+    {"draft_shield", steps({propagate(psSkirtBrim)})},
+    {"duplicate_distance", steps({propagate(psGCodeExport)})},
+    {"elefant_foot_compensation", steps({propagate(posSlice)})},
+    {"enable_dynamic_fan_speeds", all_steps()}, // TODO: probably to harsh
+    {"enable_dynamic_overhang_speeds", all_steps()}, // TODO: probably to harsh
+    {"end_filament_gcode", steps({propagate(psGCodeExport)})},
+    {"end_gcode", steps({propagate(psGCodeExport)})},
+    {"ensure_vertical_shell_thickness", steps({propagate(posPrepareInfill)})},
+    {"external_perimeter_acceleration", steps({propagate(psGCodeExport)})},
+    {"external_perimeter_extrusion_width",
+     steps({propagate(posPerimeters), propagate(posSupportMaterial)})},
+    {"external_perimeter_speed", steps({propagate(psGCodeExport)})},
+    {"external_perimeters_first", steps({propagate(posPerimeters)})},
+    {"extra_loading_move", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"extra_perimeters", steps({propagate(posPerimeters)})},
+    {"extra_perimeters_on_overhangs", steps({propagate(posPerimeters)})},
+    {"extruder",
+     steps({propagate(posPrepareInfill), propagate(posPerimeters), propagate(posSupportMaterial)})},
+    {"extruder_clearance_height", steps({propagate(psGCodeExport)})},
+    {"extruder_clearance_radius", steps({propagate(psGCodeExport)})},
+    {"extruder_colour", steps({propagate(psGCodeExport)})},
+    {"extruder_offset", steps({propagate(psGCodeExport)})},
+    {"extrusion_axis", steps({propagate(psGCodeExport)})},
+    {"extrusion_multiplier", steps({propagate(psGCodeExport)})},
+    {"extrusion_width", all_steps()},
+    {"fan_always_on", steps({propagate(psGCodeExport)})},
+    {"fan_below_layer_time", steps({propagate(psGCodeExport)})},
+    {"filament_abrasive", steps({propagate(psGCodeExport)})},
+    {"filament_colour", steps({propagate(psGCodeExport)})},
+    {"filament_cooling_final_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_cooling_initial_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_cooling_moves", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_cost", steps({propagate(psGCodeExport)})},
+    {"filament_density", steps({propagate(psGCodeExport)})},
+    {"filament_diameter", steps({propagate(psGCodeExport)})},
+    {"filament_infill_max_crossing_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_infill_max_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_load_time", steps({propagate(psGCodeExport)})},
+    {"filament_loading_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_loading_speed_start", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_max_volumetric_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_minimal_purge_on_wipe_tower",
+     steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_multitool_ramming", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_multitool_ramming_flow", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_multitool_ramming_volume", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_notes", steps({propagate(psGCodeExport)})},
+    {"filament_purge_multiplier", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_ramming_parameters", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_shrinkage_compensation_xy", steps({propagate(posSlice)})},
+    {"filament_shrinkage_compensation_z", steps({propagate(posSlice)})},
+    {"filament_soluble", steps({propagate(psWipeTower), propagate(posSupportMaterial)})},
+    {"filament_spool_weight", steps({propagate(psGCodeExport)})},
+    {"filament_stamping_distance", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_stamping_loading_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_toolchange_delay", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_type", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_unload_time", steps({propagate(psGCodeExport)})},
+    {"filament_unloading_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_unloading_speed_start", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"filament_vendor", steps({})},
+    {"fill_angle", steps({propagate(posInfill)})},
+    {"fill_density", steps({propagate(posPrepareInfill)})},
+    {"fill_pattern", steps({propagate(posPrepareInfill)})},
+    {"first_layer_acceleration", steps({propagate(psGCodeExport)})},
+    {"first_layer_acceleration_over_raft", steps({propagate(psGCodeExport)})},
+    {"first_layer_bed_temperature", steps({propagate(psGCodeExport)})},
+    {"first_layer_extrusion_width",
+     steps(
+         {propagate(posSupportMaterial),
+          propagate(posPerimeters),
+          propagate(posInfill),
+          propagate(psSkirtBrim)}
+     )},
+    {"first_layer_height", steps({propagate(posSlice)})},
+    {"first_layer_infill_speed", steps({propagate(psGCodeExport)})},
+    {"first_layer_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"first_layer_speed_over_raft", steps({propagate(psGCodeExport)})},
+    {"first_layer_temperature", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"full_fan_speed_layer", steps({propagate(psGCodeExport)})},
+    {"fuzzy_skin", steps({propagate(posPerimeters), propagate(posSupportMaterial)})},
+    {"fuzzy_skin_point_dist", steps({propagate(posPerimeters), propagate(posSupportMaterial)})},
+    {"fuzzy_skin_thickness", steps({propagate(posPerimeters), propagate(posSupportMaterial)})},
+
+    // Filtering of unprintable regions in multi-material segmentation depends on if gap-fill is enabled or not.
+    // So step posSlice is invalidated when gap-fill was enabled/disabled by option "gap_fill_enabled" or by
+    // changing "gap_fill_speed" to force recomputation of the multi-material segmentation.
+    // For the sake of simplicity, just invalidate the slicing every time.
+    {
+        "gap_fill_enabled",
+        steps({propagate(posPerimeters), propagate(posSlice)})
+    }, // posSlice si only required for mm segmentation.
+    {
+        "gap_fill_speed",
+        steps({propagate(posPerimeters), propagate(posSlice)})
+    }, // posSlice si only required for mm segmentation.
+
+    {"gcode_comments", steps({propagate(psGCodeExport)})},
+    {"gcode_flavor", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"gcode_label_objects", steps({propagate(psGCodeExport)})},
+    {"gcode_resolution",
+     steps(
+         {propagate(posPerimeters),
+          propagate(posInfill),
+          propagate(posSupportMaterial),
+          propagate(psSkirtBrim)}
+     )},
+    {"gcode_substitutions", steps({propagate(psGCodeExport)})},
+    {"high_current_on_filament_swap", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"idle_temperature", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"infill_acceleration", steps({propagate(psGCodeExport)})},
+    {"infill_anchor", steps({propagate(posInfill)})},
+    {"infill_anchor_max", steps({propagate(posInfill)})},
+    {"infill_every_layers", steps({propagate(posPrepareInfill)})},
+    {"infill_extruder", steps({propagate(posPrepareInfill)})},
+    {"infill_extrusion_width", steps({propagate(posPrepareInfill)})},
+    {"infill_first", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"infill_overlap", steps({propagate(posPerimeters)})},
+    {"infill_speed", steps({propagate(psWipeTower), propagate(psGCodeExport)})},
+    {"inherits_cummulative", steps({})},
+    {"interface_shells", steps({propagate(posPrepareInfill)})},
+    {"interlocking_beam", all_steps()}, // TODO: Probably too harsh.
+    {"interlocking_beam_layer_count", all_steps()}, // TODO: Probably too harsh.
+    {"interlocking_beam_width", all_steps()}, // TODO: Probably too harsh.
+    {"interlocking_boundary_avoidance", all_steps()}, // TODO: Probably too harsh.
+    {"interlocking_depth", all_steps()}, // TODO: Probably too harsh.
+    {"interlocking_orientation", all_steps()}, // TODO: Probably too harsh.
+    {"ironing", all_steps()}, // TODO: Probably too harsh.
+    {"ironing_flowrate", all_steps()}, // TODO: Probably too harsh.
+    {"ironing_spacing", all_steps()}, // TODO: Probably too harsh.
+    {"ironing_speed", all_steps()}, // TODO: Probably too harsh.
+    {"ironing_type", all_steps()}, // TODO: Probably too harsh.
+    {"layer_gcode", steps({propagate(psGCodeExport)})},
+    {"layer_height", steps({propagate(posSlice)})},
+    {"machine_limits_usage", steps({propagate(psGCodeExport)})},
+    {"machine_max_acceleration_x", steps({propagate(psGCodeExport)})},
+    {"machine_max_acceleration_y", steps({propagate(psGCodeExport)})},
+    {"machine_max_acceleration_z", steps({propagate(psGCodeExport)})},
+    {"machine_max_acceleration_e", steps({propagate(psGCodeExport)})},
+    {"machine_max_acceleration_extruding", steps({propagate(psGCodeExport)})},
+    {"machine_max_acceleration_retracting", steps({propagate(psGCodeExport)})},
+    {"machine_max_acceleration_travel", steps({propagate(psGCodeExport)})},
+    {"machine_max_feedrate_x", steps({propagate(psGCodeExport)})},
+    {"machine_max_feedrate_y", steps({propagate(psGCodeExport)})},
+    {"machine_max_feedrate_z", steps({propagate(psGCodeExport)})},
+    {"machine_max_feedrate_e", steps({propagate(psGCodeExport)})},
+    {"machine_max_jerk_x", steps({propagate(psGCodeExport)})},
+    {"machine_max_jerk_y", steps({propagate(psGCodeExport)})},
+    {"machine_max_jerk_z", steps({propagate(psGCodeExport)})},
+    {"machine_max_jerk_e", steps({propagate(psGCodeExport)})},
+    {"machine_min_extruding_rate", steps({propagate(psGCodeExport)})},
+    {"machine_min_travel_rate", steps({propagate(psGCodeExport)})},
+    {"max_fan_speed", steps({propagate(psGCodeExport)})},
+    {"max_layer_height",
+     steps(
+         {propagate(posPerimeters),
+          propagate(posInfill),
+          propagate(posSupportMaterial),
+          propagate(psSkirtBrim)}
+     )},
+    {"max_print_height", steps({propagate(psGCodeExport)})},
+    {"max_print_speed", steps({propagate(psGCodeExport)})},
+    {"max_volumetric_extrusion_rate_slope_negative", steps({propagate(psGCodeExport)})},
+    {"max_volumetric_extrusion_rate_slope_positive", steps({propagate(psGCodeExport)})},
+    {"max_volumetric_speed", steps({propagate(psGCodeExport)})},
+    {"min_bead_width", steps({propagate(posSlice)})},
+    {"min_fan_speed", steps({propagate(psGCodeExport)})},
+    {"min_feature_size", steps({propagate(posSlice)})},
+    {"min_layer_height",
+     steps(
+         {propagate(posPerimeters),
+          propagate(posInfill),
+          propagate(posSupportMaterial),
+          propagate(psSkirtBrim)}
+     )},
+    {"min_print_speed", steps({propagate(psGCodeExport)})},
+    {"min_skirt_length", steps({propagate(psSkirtBrim)})},
+    {"mmu_segmented_region_interlocking_depth", steps({propagate(posSlice)})},
+    {"mmu_segmented_region_max_width", steps({propagate(posSlice)})},
+    {"multimaterial_purging", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"notes", steps({propagate(psGCodeExport)})},
+    {"nozzle_diameter", steps({propagate(posSlice)})},
+    {"nozzle_high_flow", steps({propagate(psGCodeExport)})},
+    {"only_one_perimeter_first_layer", steps({propagate(posPerimeters)})},
+    {"only_retract_when_crossing_perimeters", steps({propagate(psGCodeExport)})},
+    {"ooze_prevention", steps({propagate(psSkirtBrim)})},
+    {"output_filename_format", steps({propagate(psGCodeExport)})},
+    {"over_bridge_speed", steps({propagate(psGCodeExport)})},
+    {"overhangs", steps({propagate(posPerimeters), propagate(posSupportMaterial)})},
+    {"parking_pos_retraction", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"pause_print_gcode", steps({propagate(psGCodeExport)})},
+    {"perimeter_acceleration", steps({propagate(psGCodeExport)})},
+    {"perimeter_extruder", steps({propagate(posPerimeters), propagate(posSupportMaterial)})},
+    {"perimeter_extrusion_width", steps({propagate(posPerimeters)})},
+    {"perimeter_generator", steps({propagate(posSlice)})},
+    {"perimeter_speed", steps({propagate(psWipeTower), propagate(psGCodeExport)})},
+    {"perimeters", steps({propagate(posPerimeters)})},
+    {"post_process", steps({propagate(psGCodeExport)})},
+    {"prefer_clockwise_movements", steps({propagate(posSlice)})},
+    {"printer_model", steps({propagate(psGCodeExport)})},
+    {"printer_notes", steps({propagate(psGCodeExport)})},
+    {"printer_technology", all_steps()},
+    {"printer_variant", steps({})},
+    {"printer_vendor", steps({})},
+    {"raft_contact_distance", steps({propagate(posSlice)})},
+    {"raft_expansion", steps({propagate(posSupportMaterial)})},
+    {"raft_first_layer_density", steps({propagate(posSupportMaterial)})},
+    {"raft_first_layer_expansion", steps({propagate(posSupportMaterial)})},
+    {"raft_layers", steps({propagate(posSlice)})},
+    {"remaining_times", steps({propagate(psGCodeExport)})},
+    {"resolution", steps({propagate(posSlice)})},
+    {"retract_before_travel", steps({propagate(psGCodeExport)})},
+    {"retract_before_wipe", steps({propagate(psGCodeExport)})},
+    {"retract_layer_change", steps({propagate(psGCodeExport)})},
+    {"retract_length", steps({propagate(psGCodeExport)})},
+    {"retract_length_toolchange", steps({propagate(psGCodeExport)})},
+    {"retract_lift", steps({propagate(psGCodeExport)})},
+    {"retract_lift_above", steps({propagate(psGCodeExport)})},
+    {"retract_lift_below", steps({propagate(psGCodeExport)})},
+    {"retract_restart_extra", steps({propagate(psGCodeExport)})},
+    {"retract_restart_extra_toolchange", steps({propagate(psGCodeExport)})},
+    {"retract_speed", steps({propagate(psGCodeExport)})},
+    {"overhang_fan_speed_0", all_steps()}, // TODO: maybe to harsh
+    {"overhang_fan_speed_1", all_steps()}, // TODO: maybe to harsh
+    {"overhang_fan_speed_2", all_steps()}, // TODO: maybe to harsh
+    {"overhang_fan_speed_3", all_steps()}, // TODO: maybe to harsh
+    {"overhang_speed_0", all_steps()}, // TODO: maybe to harsh
+    {"overhang_speed_1", all_steps()}, // TODO: maybe to harsh
+    {"overhang_speed_2", all_steps()}, // TODO: maybe to harsh
+    {"overhang_speed_3", all_steps()}, // TODO: maybe to harsh
+    {"pressure_advance_enable", all_steps()}, // TODO: maybe to harsh
+    {"pressure_advance_value", all_steps()}, // TODO: maybe to harsh
+    {"scarf_seam_entire_loop", steps({propagate(psGCodeExport)})},
+    {"scarf_seam_length", steps({propagate(psGCodeExport)})},
+    {"scarf_seam_max_segment_length", steps({propagate(psGCodeExport)})},
+    {"scarf_seam_on_inner_perimeters", steps({propagate(psGCodeExport)})},
+    {"scarf_seam_only_on_smooth", steps({propagate(psGCodeExport)})},
+    {"scarf_seam_placement", steps({propagate(psGCodeExport)})},
+    {"scarf_seam_start_height", steps({propagate(psGCodeExport)})},
+    {"seam_gap_distance", steps({propagate(psGCodeExport)})},
+    {"seam_position", steps({propagate(psGCodeExport)})},
+    {"silent_mode", steps({propagate(psGCodeExport)})},
+    {"single_extruder_multi_material", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"single_extruder_multi_material_priming", steps({propagate(psGCodeExport)})},
+    {"skirt_distance", steps({propagate(psSkirtBrim)})},
+    {"skirt_height", steps({propagate(psSkirtBrim)})},
+    {"skirts", steps({propagate(psSkirtBrim)})},
+    {"slice_closing_radius", steps({propagate(posSlice)})},
+    {"slicing_mode", steps({propagate(posSlice)})},
+    {"slowdown_below_layer_time", steps({propagate(psGCodeExport)})},
+    {"small_perimeter_speed", steps({propagate(psGCodeExport)})},
+    {"solid_infill_acceleration", steps({propagate(psGCodeExport)})},
+    {"solid_infill_below_area", steps({propagate(posPrepareInfill)})},
+    {"solid_infill_every_layers", steps({propagate(posPrepareInfill)})},
+    {"solid_infill_extruder", steps({propagate(posPrepareInfill)})},
+    {"solid_infill_extrusion_width",
+     steps({propagate(posPrepareInfill), propagate(posPerimeters)})},
+    {"solid_infill_speed", steps({propagate(psGCodeExport)})},
+    {"spiral_vase", steps({propagate(posSlice)})},
+    {"staggered_inner_seams", steps({propagate(psGCodeExport)})},
+    {"standby_temperature_delta", steps({propagate(psGCodeExport)})},
+    {"start_filament_gcode", steps({propagate(psGCodeExport)})},
+    {"start_gcode", steps({propagate(psGCodeExport)})},
+    {"support_material", steps({propagate(posSupportMaterial)})},
+    {"support_material_angle", steps({propagate(posSupportMaterial)})},
+    {"support_material_auto", steps({propagate(posSupportMaterial)})},
+    {"support_material_bottom_contact_distance", steps({propagate(posSupportMaterial)})},
+    {"support_material_bottom_interface_layers", steps({propagate(posSupportMaterial)})},
+    {"support_material_buildplate_only", steps({propagate(posSupportMaterial)})},
+    {"support_material_closing_radius", steps({propagate(posSupportMaterial)})},
+    {"support_material_contact_distance", steps({propagate(posSlice)})},
+    {"support_material_enforce_layers", steps({propagate(posSupportMaterial)})},
+    {"support_material_extruder", steps({propagate(posSupportMaterial)})},
+    {"support_material_extrusion_width", steps({propagate(posSupportMaterial)})},
+    {"support_material_interface_contact_loops", steps({propagate(posSupportMaterial)})},
+    {"support_material_interface_extruder", steps({propagate(posSupportMaterial)})},
+    {"support_material_interface_layers", steps({propagate(posSupportMaterial)})},
+    {"support_material_interface_pattern", steps({propagate(posSupportMaterial)})},
+    {"support_material_interface_spacing", steps({propagate(posSupportMaterial)})},
+    {"support_material_interface_speed", steps({propagate(psGCodeExport)})},
+    {"support_material_pattern", steps({propagate(posSupportMaterial)})},
+    {"support_material_spacing", steps({propagate(posSupportMaterial)})},
+    {"support_material_speed", steps({propagate(psGCodeExport)})},
+    {"support_material_style", steps({propagate(posSupportMaterial)})},
+    {"support_material_synchronize_layers", steps({propagate(posSupportMaterial)})},
+    {"support_material_threshold", steps({propagate(posSupportMaterial)})},
+    {"support_material_with_sheath", steps({propagate(posSupportMaterial)})},
+    {"support_material_xy_spacing", steps({propagate(posSupportMaterial)})},
+    {"support_tree_angle", steps({propagate(posSupportMaterial)})},
+    {"support_tree_angle_slow", steps({propagate(posSupportMaterial)})},
+    {"support_tree_branch_diameter", steps({propagate(posSupportMaterial)})},
+    {"support_tree_branch_diameter_angle", steps({propagate(posSupportMaterial)})},
+    {"support_tree_branch_diameter_double_wall", steps({propagate(posSupportMaterial)})},
+    {"support_tree_branch_distance", steps({propagate(posSupportMaterial)})},
+    {"support_tree_tip_diameter", steps({propagate(posSupportMaterial)})},
+    {"support_tree_top_rate", steps({propagate(posSupportMaterial)})},
+    {"temperature", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"template_custom_gcode", steps({propagate(psGCodeExport)})},
+    {"thick_bridges", steps({propagate(posPerimeters), propagate(posSupportMaterial)})},
+    {"thin_walls", steps({propagate(posPerimeters), propagate(posSupportMaterial)})},
+    {"thumbnails", steps({propagate(psGCodeExport)})},
+    {"thumbnails_format", steps({propagate(psGCodeExport)})},
+    {"toolchange_gcode", steps({propagate(psGCodeExport)})},
+    {"top_fill_pattern", steps({propagate(posInfill)})},
+    {"top_infill_extrusion_width", steps({propagate(posInfill)})},
+    {"top_one_perimeter_type", steps({propagate(posInfill)})},
+    {"top_solid_infill_acceleration", steps({propagate(psGCodeExport)})},
+    {"top_solid_infill_speed", steps({propagate(psGCodeExport)})},
+    {"top_solid_layers", steps({propagate(posPrepareInfill)})},
+    {"top_solid_min_thickness", steps({propagate(posPrepareInfill)})},
+    {"travel_acceleration", steps({propagate(psGCodeExport)})},
+    {"travel_lift_before_obstacle", steps({propagate(psGCodeExport)})},
+    {"travel_max_lift", steps({propagate(psGCodeExport)})},
+    {"travel_ramping_lift", steps({propagate(psGCodeExport)})},
+    {"travel_slope", steps({propagate(psGCodeExport)})},
+    {"travel_speed", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"travel_speed_z", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"use_firmware_retraction", steps({propagate(psGCodeExport)})},
+    {"use_relative_e_distances", steps({propagate(psGCodeExport)})},
+    {"use_volumetric_e", steps({propagate(psGCodeExport)})},
+    {"variable_layer_height", steps({propagate(psGCodeExport)})},
+    {"wall_distribution_count", steps({propagate(posSlice)})},
+    {"wall_transition_angle", steps({propagate(posSlice)})},
+    {"wall_transition_filter_deviation", steps({propagate(posSlice)})},
+    {"wall_transition_length", steps({propagate(posSlice)})},
+    {"wipe", steps({propagate(psGCodeExport)})},
+    {"wipe_into_infill", steps({propagate(psWipeTower), propagate(psGCodeExport)})},
+    {"wipe_into_objects", steps({propagate(psWipeTower), propagate(psGCodeExport)})},
+    {"wipe_tower", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"wipe_tower_acceleration", steps({propagate(psGCodeExport)})},
+    {"wipe_tower_bridging", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"wipe_tower_brim_width", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"wipe_tower_cone_angle", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"wipe_tower_extra_flow", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"wipe_tower_extra_spacing", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"wipe_tower_extruder", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"wipe_tower_no_sparse_layers", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"wipe_tower_width", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"wiping_volumes_matrix", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"wiping_volumes_use_custom_matrix", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+    {"xy_size_compensation", steps({propagate(posSlice)})},
+    {"z_offset", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+};
+
+
+std::set<Step> handle_special_cases(
+    const ConfigView& old_config,
+    const ConfigView& new_config,
+    const std::vector<std::string>& diff
+)
+{
+    std::set<Step> result;
+    for (const std::string& opt_key : diff) {
+        if (opt_key == "support_material") {
+            if (new_config.get<double>("support_material_contact_distance") == 0.) {
+                // Enabling / disabling supports while soluble support interface is enabled.
+                // This changes the bridging logic (bridging enabled without supports, disabled with supports).
+                // Reset everything.
+                // See GH #1482 for details.
+                result.insert(posSlice);
+            }
+        } else if (opt_key == "over_bridge_speed") {
+            const auto old_speed = old_config.get<FloatOrPercentage>(opt_key);
+            const auto new_speed = new_config.get<FloatOrPercentage>(opt_key);
+            if (old_speed.is_zero() || new_speed.is_zero()) {
+                result.insert(posPrepareInfill);
+            }
+        } else if (opt_key == "fill_density") {
+            // One likely wants to reslice only when switching between zero infill to simulate boolean difference (subtracting volumes),
+            // normal infill and 100% (solid) infill.
+            const auto old_density = old_config.get<Percentage>(opt_key);
+            const auto new_density = new_config.get<Percentage>(opt_key);
+            // FIXME Vojtech is not quite sure about the 100% here, maybe it is not needed.
+            if (is_approx(old_density.value, 0.)
+                || is_approx(old_density.value, 100.)
+                || is_approx(new_density.value, 0.)
+                || is_approx(new_density.value, 100.))
+            {
+                result.insert(posPerimeters);
+            }
+        } else if (opt_key == "bridge_flow_ratio") {
+            if (new_config.get<double>("support_material_contact_distance") > 0.) {
+                // Only invalidate due to bridging if bridging is enabled.
+                // If later "support_material_contact_distance" is modified, the complete PrintObject is invalidated anyway.
+                result.insert({posPerimeters, posInfill, posSupportMaterial});
+            }
+        }
+    }
+    return result;
+}
+
+PrintAndObjectSteps diff_to_invalidated_steps(
+    const ConfigView& old_config,
+    const ConfigView& new_config,
+    const std::vector<std::string>& diff
+)
+{
+    std::set<Step> steps;
+    for (const std::string& opt_key : diff) {
+        const std::vector<Step>& invalidated_steps{invalidated_by.at(opt_key)};
+        steps.insert(invalidated_steps.begin(), invalidated_steps.end());
+    }
+    steps.merge(handle_special_cases(old_config, new_config, diff));
+
+    std::set<PrintStep> print_steps;
+    std::set<PrintObjectStep> print_object_steps;
+    for (const Step& step : steps) {
+        std::visit(
+            Domain::overloaded{
+                [&](const PrintStep& step) { print_steps.insert(step); },
+                [&](const PrintObjectStep& step) { print_object_steps.insert(step); }
+            },
+            step
+        );
+    }
+    return PrintAndObjectSteps{print_steps, print_object_steps};
+}
 
 template <typename Set>
-AllOrSome<Set> merge (const AllOrSome<Set>& a, const AllOrSome<Set>& b) {
+AllOrSome<Set> merge(const AllOrSome<Set>& a, const AllOrSome<Set>& b)
+{
     if (std::holds_alternative<AllSteps>(a) || std::holds_alternative<AllSteps>(b)) {
         return AllSteps{};
     }
@@ -24,10 +611,14 @@ AllOrSome<Set> merge (const AllOrSome<Set>& a, const AllOrSome<Set>& b) {
     values_a.merge(values_b);
     return values_a;
 }
-template AllOrSome<PrintSteps> merge(const AllOrSome<PrintSteps>& a, const AllOrSome<PrintSteps>& b);
-template AllOrSome<PrintObjectSteps> merge(const AllOrSome<PrintObjectSteps>& a, const AllOrSome<PrintObjectSteps>& b);
 
-StepsPerPrintObject merge(const StepsPerPrintObject& a, const StepsPerPrintObject& b) {
+template AllOrSome<PrintSteps>
+merge(const AllOrSome<PrintSteps>& a, const AllOrSome<PrintSteps>& b);
+template AllOrSome<PrintObjectSteps>
+merge(const AllOrSome<PrintObjectSteps>& a, const AllOrSome<PrintObjectSteps>& b);
+
+StepsPerPrintObject merge(const StepsPerPrintObject& a, const StepsPerPrintObject& b)
+{
     StepsPerPrintObject result{a};
     StepsPerPrintObject same_key_elements{b};
 
@@ -40,12 +631,13 @@ StepsPerPrintObject merge(const StepsPerPrintObject& a, const StepsPerPrintObjec
     return result;
 }
 
-InvalidatedSteps merge(const InvalidatedSteps& a, const InvalidatedSteps& b) {
+InvalidatedSteps merge(const InvalidatedSteps& a, const InvalidatedSteps& b)
+{
     return {merge(a.print, b.print), merge(a.object, b.object)};
 }
 
-
-InvalidatedSteps merge(const std::vector<InvalidatedSteps>& invalidated_steps) {
+InvalidatedSteps merge(const std::vector<InvalidatedSteps>& invalidated_steps)
+{
     InvalidatedSteps result;
     for (const InvalidatedSteps& steps : invalidated_steps) {
         result = merge(result, steps);
@@ -53,507 +645,21 @@ InvalidatedSteps merge(const std::vector<InvalidatedSteps>& invalidated_steps) {
     return result;
 }
 
-std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>> diff_to_invalidated_steps(
-    const ConfigView& old_config,
-    const ConfigView& new_config,
-    const std::vector<std::string>& diff
-)
+PrintAndObjectSteps merge(const PrintAndObjectSteps& a, const PrintAndObjectSteps& b)
 {
-    if (diff.empty()) {
-        return {PrintSteps{}, PrintObjectSteps{}};
-    }
-
-    PrintSteps print_steps{};
-    PrintObjectSteps object_steps{};
-    for (const std::string &opt_key : diff) {
-        if (   opt_key == "brim_width"
-            || opt_key == "brim_separation"
-            || opt_key == "brim_type") {
-            object_steps.insert(posSupportSpotsSearch);
-            // Brim is printed below supports, support invalidates brim and skirt.
-            object_steps.insert(posSupportMaterial);
-        } else if (
-               opt_key == "perimeters"
-            || opt_key == "extra_perimeters"
-            || opt_key == "extra_perimeters_on_overhangs"
-            || opt_key == "first_layer_extrusion_width"
-            || opt_key == "perimeter_extrusion_width"
-            || opt_key == "infill_overlap"
-            || opt_key == "external_perimeters_first"
-            || opt_key == "arc_fitting"
-            || opt_key == "top_one_perimeter_type"
-            || opt_key == "only_one_perimeter_first_layer") {
-            object_steps.insert(posPerimeters);
-        } else if (
-               opt_key == "gap_fill_enabled"
-            || opt_key == "gap_fill_speed") {
-            // Return true if gap-fill speed has changed from zero value to non-zero or from non-zero value to zero.
-            auto is_gap_fill_changed_state_due_to_speed = [&opt_key, &old_config, &new_config]() -> bool {
-                if (opt_key == "gap_fill_speed") {
-                    const auto old_gap_fill_speed = old_config.get<double>(opt_key);
-                    const auto new_gap_fill_speed = new_config.get<double>(opt_key);
-                    assert(old_gap_fill_speed && new_gap_fill_speed);
-                    return (old_gap_fill_speed > 0.f && new_gap_fill_speed == 0.f) ||
-                           (old_gap_fill_speed == 0.f && new_gap_fill_speed > 0.f);
-                }
-                return false;
-            };
-
-            // Filtering of unprintable regions in multi-material segmentation depends on if gap-fill is enabled or not.
-            // So step posSlice is invalidated when gap-fill was enabled/disabled by option "gap_fill_enabled" or by
-            // changing "gap_fill_speed" to force recomputation of the multi-material segmentation.
-
-            // TODO
-            //if (this->is_mm_painted() && (opt_key == "gap_fill_enabled" || (opt_key == "gap_fill_speed" && is_gap_fill_changed_state_due_to_speed())))
-            //    result.object_steps.insert(posSlice);
-
-            object_steps.insert(posPerimeters);
-        } else if (
-               opt_key == "layer_height"
-            || opt_key == "mmu_segmented_region_max_width"
-            || opt_key == "mmu_segmented_region_interlocking_depth"
-            || opt_key == "raft_layers"
-            || opt_key == "raft_contact_distance"
-            || opt_key == "slice_closing_radius"
-            || opt_key == "slicing_mode"
-            || opt_key == "interlocking_beam"
-            || opt_key == "interlocking_orientation"
-            || opt_key == "interlocking_beam_layer_count"
-            || opt_key == "interlocking_depth"
-            || opt_key == "interlocking_boundary_avoidance"
-            || opt_key == "interlocking_beam_width") {
-            object_steps.insert(posSlice);
-		} else if (
-               opt_key == "elefant_foot_compensation"
-            || opt_key == "support_material_contact_distance" 
-            || opt_key == "xy_size_compensation") {
-            object_steps.insert(posSlice);
-        } else if (opt_key == "support_material") {
-            object_steps.insert(posSupportMaterial);
-
-            // TODO
-            /*
-            if (m_config.support_material_contact_distance == 0.) {
-            	// Enabling / disabling supports while soluble support interface is enabled.
-            	// This changes the bridging logic (bridging enabled without supports, disabled with supports).
-            	// Reset everything.
-            	// See GH #1482 for details.
-	            result.object_steps.insert(posSlice);
-	        }
-            */
-        } else if (
-        	   opt_key == "support_material_auto"
-            || opt_key == "support_material_angle"
-            || opt_key == "support_material_buildplate_only"
-            || opt_key == "support_material_enforce_layers"
-            || opt_key == "support_material_extruder"
-            || opt_key == "support_material_extrusion_width"
-            || opt_key == "support_material_bottom_contact_distance"
-            || opt_key == "support_material_interface_layers"
-            || opt_key == "support_material_bottom_interface_layers"
-            || opt_key == "support_material_interface_pattern"
-            || opt_key == "support_material_interface_contact_loops"
-            || opt_key == "support_material_interface_extruder"
-            || opt_key == "support_material_interface_spacing"
-            || opt_key == "support_material_pattern"
-            || opt_key == "support_material_style"
-            || opt_key == "support_material_xy_spacing"
-            || opt_key == "support_material_spacing"
-            || opt_key == "support_material_closing_radius"
-            || opt_key == "support_material_synchronize_layers"
-            || opt_key == "support_material_threshold"
-            || opt_key == "support_material_with_sheath"
-            || opt_key == "support_tree_angle"
-            || opt_key == "support_tree_angle_slow"
-            || opt_key == "support_tree_branch_diameter"
-            || opt_key == "support_tree_branch_diameter_angle"
-            || opt_key == "support_tree_branch_diameter_double_wall"
-            || opt_key == "support_tree_top_rate"
-            || opt_key == "support_tree_branch_distance"
-            || opt_key == "support_tree_tip_diameter"
-            || opt_key == "raft_expansion"
-            || opt_key == "raft_first_layer_density"
-            || opt_key == "raft_first_layer_expansion"
-            || opt_key == "dont_support_bridges"
-            || opt_key == "first_layer_extrusion_width") {
-            object_steps.insert(posSupportMaterial);
-        } else if (opt_key == "bottom_solid_layers") {
-            object_steps.insert(posPrepareInfill);
-
-            //TODO
-            /*
-            if (m_print->config().spiral_vase) {
-                // Changing the number of bottom layers when a spiral vase is enabled requires re-slicing the object again.
-                // Otherwise, holes in the bottom layers could be filled, as is reported in GH #5528.
-                result.object_steps.insert(posSlice);
-            }
-            */
-        } else if (
-               opt_key == "interface_shells"
-            || opt_key == "infill_only_where_needed"
-            || opt_key == "infill_every_layers"
-            || opt_key == "automatic_infill_combination"
-            || opt_key == "automatic_infill_combination_max_layer_height"
-            || opt_key == "solid_infill_every_layers"
-            || opt_key == "ensure_vertical_shell_thickness"
-            || opt_key == "bottom_solid_min_thickness"
-            || opt_key == "top_solid_layers"
-            || opt_key == "top_solid_min_thickness"
-            || opt_key == "solid_infill_below_area"
-            || opt_key == "extruder"
-            || opt_key == "infill_extruder"
-            || opt_key == "solid_infill_extruder"
-            || opt_key == "infill_extrusion_width"
-            || opt_key == "bridge_angle") {
-            object_steps.insert(posPrepareInfill);
-        } else if (
-               opt_key == "top_fill_pattern"
-            || opt_key == "bottom_fill_pattern"
-            || opt_key == "external_fill_link_max_length"
-            || opt_key == "fill_angle"
-            || opt_key == "infill_anchor"
-            || opt_key == "infill_anchor_max"
-            || opt_key == "top_infill_extrusion_width"
-            || opt_key == "first_layer_extrusion_width") {
-            object_steps.insert(posInfill);
-        } else if (opt_key == "fill_pattern") {
-            object_steps.insert(posPrepareInfill);
-        } else if (opt_key == "over_bridge_speed") {
-            const auto old_speed = old_config.get<double>(opt_key);
-            const auto new_speed = new_config.get<double>(opt_key);
-            if ( old_speed == 0 || new_speed == 0) {
-                object_steps.insert(posPrepareInfill);
-            }
-            print_steps.insert(psGCodeExport);
-        } else if (opt_key == "fill_density") {
-            // One likely wants to reslice only when switching between zero infill to simulate boolean difference (subtracting volumes),
-            // normal infill and 100% (solid) infill.
-            const auto old_density = old_config.get<Percentage>(opt_key);
-            const auto new_density = new_config.get<Percentage>(opt_key);
-            //FIXME Vojtech is not quite sure about the 100% here, maybe it is not needed.
-            if (is_approx(old_density.value, 0.) || is_approx(old_density.value, 100.) ||
-                is_approx(new_density.value, 0.) || is_approx(new_density.value, 100.))
-                object_steps.insert(posPerimeters);
-            object_steps.insert(posPrepareInfill);
-        } else if (opt_key == "solid_infill_extrusion_width") {
-            // This value is used for calculating perimeter - infill overlap, thus perimeters need to be recalculated.
-            object_steps.insert(posPerimeters);
-            object_steps.insert(posPrepareInfill);
-        } else if (
-               opt_key == "external_perimeter_extrusion_width"
-            || opt_key == "extruder"
-            || opt_key == "perimeter_extruder"
-            || opt_key == "fuzzy_skin"
-            || opt_key == "fuzzy_skin_thickness"
-            || opt_key == "fuzzy_skin_point_dist"
-            || opt_key == "overhangs"
-            || opt_key == "thin_walls"
-            || opt_key == "thick_bridges") {
-            object_steps.insert(posPerimeters);
-            object_steps.insert(posSupportMaterial);
-        } else if (opt_key == "bridge_flow_ratio") {
-
-            // TODO
-            /*
-            if (m_config.support_material_contact_distance > 0.) {
-            	// Only invalidate due to bridging if bridging is enabled.
-            	// If later "support_material_contact_distance" is modified, the complete PrintObject is invalidated anyway.
-            	result.object_steps.insert(posPerimeters);
-            	result.object_steps.insert(posInfill);
-	            result.object_steps.insert(posSupportMaterial);
-	        }
-            */
-        } else if (
-            opt_key == "perimeter_generator"
-            || opt_key == "wall_transition_length"
-            || opt_key == "wall_transition_filter_deviation"
-            || opt_key == "wall_transition_angle"
-            || opt_key == "wall_distribution_count"
-            || opt_key == "min_feature_size"
-            || opt_key == "min_bead_width") {
-            object_steps.insert(posSlice);
-        } else if (
-               opt_key == "seam_position"
-            || opt_key == "scarf_seam_placement"
-            || opt_key == "scarf_seam_only_on_smooth"
-            || opt_key == "scarf_seam_start_height"
-            || opt_key == "scarf_seam_entire_loop"
-            || opt_key == "scarf_seam_length"
-            || opt_key == "scarf_seam_max_segment_length"
-            || opt_key == "scarf_seam_on_inner_perimeters"
-            || opt_key == "seam_preferred_direction"
-            || opt_key == "seam_preferred_direction_jitter"
-            || opt_key == "support_material_speed"
-            || opt_key == "support_material_interface_speed"
-            || opt_key == "bridge_speed"
-            || opt_key == "external_perimeter_speed"
-            || opt_key == "small_perimeter_speed"
-            || opt_key == "solid_infill_speed"
-            || opt_key == "first_layer_infill_speed"
-            || opt_key == "top_solid_infill_speed") {
-            print_steps.insert(psGCodeExport);
-        } else if (
-               opt_key == "wipe_into_infill"
-            || opt_key == "wipe_into_objects"
-            || opt_key == "infill_speed"
-            || opt_key == "perimeter_speed") {
-            print_steps.insert(psWipeTower);
-            print_steps.insert(psGCodeExport);
-        } else if (
-               opt_key == "enable_dynamic_overhang_speeds"
-            || opt_key == "overhang_speed_0"
-            || opt_key == "overhang_speed_1"
-            || opt_key == "overhang_speed_2"
-            || opt_key == "overhang_speed_3") {
-            object_steps.insert(posPerimeters);
-        } else {
-            PANIC("Unknown diff option: " + opt_key);
-        }
-    }
-
-    return {print_steps, object_steps};
-}
-
-const std::set<std::string> options_influencing_gcode{
-    "autoemit_temperature_commands",
-    "avoid_crossing_perimeters",
-    "avoid_crossing_perimeters_max_detour",
-    "bed_shape",
-    "bed_temperature",
-    "before_layer_gcode",
-    "between_objects_gcode",
-    "binary_gcode",
-    "bridge_acceleration",
-    "bridge_fan_speed",
-    "enable_dynamic_fan_speeds",
-    "overhang_fan_speed_0",
-    "overhang_fan_speed_1",
-    "overhang_fan_speed_2",
-    "overhang_fan_speed_3",
-    "chamber_temperature",
-    "chamber_minimal_temperature",
-    "colorprint_heights",
-    "cooling",
-    "default_acceleration",
-    "deretract_speed",
-    "disable_fan_first_layers",
-    "duplicate_distance",
-    "end_gcode",
-    "end_filament_gcode",
-    "external_perimeter_acceleration",
-    "extrusion_axis",
-    "extruder_clearance_height",
-    "extruder_clearance_radius",
-    "extruder_colour",
-    "extruder_offset",
-    "extrusion_multiplier",
-    "fan_always_on",
-    "fan_below_layer_time",
-    "full_fan_speed_layer",
-    "filament_abrasive",
-    "filament_colour",
-    "filament_diameter",
-    "filament_density",
-    "filament_notes",
-    "filament_cost",
-    "filament_seam_gap_distance",
-    "filament_spool_weight",
-    "first_layer_acceleration",
-    "first_layer_acceleration_over_raft",
-    "first_layer_bed_temperature",
-    "first_layer_speed_over_raft",
-    "gcode_comments",
-    "gcode_label_objects",
-    "nozzle_high_flow",
-    "infill_acceleration",
-    "layer_gcode",
-    "min_fan_speed",
-    "max_fan_speed",
-    "max_print_height",
-    "min_print_speed",
-    "max_print_speed",
-    "max_volumetric_speed",
-    "max_volumetric_extrusion_rate_slope_positive",
-    "max_volumetric_extrusion_rate_slope_negative",
-    "notes",
-    "only_retract_when_crossing_perimeters",
-    "output_filename_format",
-    "perimeter_acceleration",
-    "post_process",
-    "pressure_advance_enable",
-    "pressure_advance_value",
-    "gcode_substitutions",
-    "printer_notes",
-    "travel_ramping_lift",
-    "travel_initial_part_length",
-    "travel_slope",
-    "travel_max_lift",
-    "travel_lift_before_obstacle",
-    "retract_before_travel",
-    "retract_before_wipe",
-    "retract_layer_change",
-    "retract_length",
-    "retract_length_toolchange",
-    "retract_lift",
-    "retract_lift_above",
-    "retract_lift_below",
-    "retract_restart_extra",
-    "retract_restart_extra_toolchange",
-    "retract_speed",
-    "seam_gap_distance",
-    "single_extruder_multi_material_priming",
-    "slowdown_below_layer_time",
-    "solid_infill_acceleration",
-    "standby_temperature_delta",
-    "start_gcode",
-    "start_filament_gcode",
-    "toolchange_gcode",
-    "top_solid_infill_acceleration",
-    "travel_acceleration",
-    "thumbnails",
-    "thumbnails_format",
-    "use_firmware_retraction",
-    "use_relative_e_distances",
-    "use_volumetric_e",
-    "variable_layer_height",
-    "wipe",
-    "wipe_tower_acceleration",
-};
-
-const std::set<std::string> options_influencing_skirt_brim{
-    "skirts",
-    "skirt_height",
-    "draft_shield",
-    "skirt_distance",
-    "min_skirt_length",
-    "ooze_prevention",
-};
-
-const std::set<std::string> options_influencing_object_slicing{
-    "first_layer_height",
-    "nozzle_diameter",
-    "resolution",
-    "spiral_vase",
-    "filament_shrinkage_compensation_xy",
-    "filament_shrinkage_compensation_z",
-    "prefer_clockwise_movements",
-};
-
-const std::set<std::string> options_influencing_wipe_tower_and_skir_brim{
-    "complete_objects",
-    "filament_type",
-    "first_layer_temperature",
-    "filament_loading_speed",
-    "filament_loading_speed_start",
-    "filament_unloading_speed",
-    "filament_unloading_speed_start",
-    "filament_toolchange_delay",
-    "filament_cooling_moves",
-    "filament_stamping_loading_speed",
-    "filament_stamping_distance",
-    "filament_minimal_purge_on_wipe_tower",
-    "filament_cooling_initial_speed",
-    "filament_cooling_final_speed",
-    "filament_purge_multiplier",
-    "filament_ramming_parameters",
-    "filament_multitool_ramming",
-    "filament_multitool_ramming_volume",
-    "filament_multitool_ramming_flow",
-    "filament_max_volumetric_speed",
-    "filament_infill_max_speed",
-    "filament_infill_max_crossing_speed",
-    "gcode_flavor",
-    "high_current_on_filament_swap",
-    "infill_first",
-    "single_extruder_multi_material",
-    "temperature",
-    "idle_temperature",
-    "wipe_tower",
-    "wipe_tower_width",
-    "wipe_tower_brim_width",
-    "wipe_tower_cone_angle",
-    "wipe_tower_bridging",
-    "wipe_tower_extra_spacing",
-    "wipe_tower_extra_flow",
-    "wipe_tower_no_sparse_layers",
-    "wipe_tower_extruder",
-    "wiping_volumes_matrix",
-    "wiping_volumes_use_custom_matrix",
-    "parking_pos_retraction",
-    "cooling_tube_retraction",
-    "cooling_tube_length",
-    "extra_loading_move",
-    "multimaterial_purging",
-    "travel_speed",
-    "travel_speed_z",
-    "first_layer_speed",
-    "z_offset",
-};
-
-PrintAndObjectSteps diff_to_print_invalidated_steps(const std::vector<std::string>& option_keys)
-{
-    if (option_keys.empty())
-        return {};
-
-    const std::set<std::string> specific_keys{
-        "first_layer_extrusion_width",
-        "min_layer_height",
-        "max_layer_height",
-        "gcode_resolution",
-    };
-
-    PrintSteps print_steps;
-    PrintObjectSteps object_steps;
-
-    for (const std::string& option_key : option_keys) {
-        if (options_influencing_gcode.count(option_key) != 0) {
-            print_steps.insert(psGCodeExport);
-        } else if (options_influencing_skirt_brim.count(option_key) != 0) {
-            print_steps.insert(psSkirtBrim);
-        } else if (options_influencing_object_slicing.count(option_key) != 0) {
-            object_steps.insert(posSlice);
-        } else if (options_influencing_wipe_tower_and_skir_brim.count(option_key) != 0) {
-            print_steps.insert(psWipeTower);
-            print_steps.insert(psSkirtBrim);
-        } else if (option_key == "filament_soluble") {
-            print_steps.insert(psWipeTower);
-            // Soluble support interface / non-soluble base interface produces non-soluble interface layers below soluble interface layers.
-            // Thus switching between soluble / non-soluble interface layer material may require recalculation of supports.
-            // FIXME Killing supports on any change of "filament_soluble" is rough. We should check for each object whether that is necessary.
-            object_steps.insert(posSupportMaterial);
-        } else if (specific_keys.count(option_key) != 0) {
-            object_steps.insert(posPerimeters);
-            object_steps.insert(posInfill);
-            object_steps.insert(posSupportMaterial);
-            print_steps.insert(psSkirtBrim);
-        } else if (option_key == "avoid_crossing_curled_overhangs") {
-            object_steps.insert(posEstimateCurledExtrusions);
-        } else if (option_key == "automatic_extrusion_widths") {
-            object_steps.insert(posPerimeters);
-        } else {
-            // for legacy, if we can't handle this option let's invalidate all steps
-            return {AllSteps{}, AllSteps{}};
-            // Continue with the other opt_keys to possibly invalidate any object specific steps.
-        }
-    }
-
-    return {print_steps, object_steps};
+    PrintAndObjectSteps result;
+    result.first  = merge(a.first, b.first);
+    result.second = merge(a.second, b.second);
+    return result;
 }
 
 PrintAndObjectSteps get_invalidated_steps(const PrintRegion& current, const PrintRegion& next)
 {
     const std::vector<std::string> diff{
-        current.config().volume_settings().diff_keys(next.config().volume_settings())
+        current.config().diff_keys(next.config())
     };
-    return diff_to_invalidated_steps(current.config(), next.config(), diff);
-}
 
-PrintAndObjectSteps merge(const PrintAndObjectSteps& a, const PrintAndObjectSteps& b)
-{
-    PrintAndObjectSteps result;
-    result.first = merge(a.first, b.first);
-    result.second = merge(a.second, b.second);
-    return result;
+    return diff_to_invalidated_steps(current.config(), next.config(), diff);
 }
 
 bool is_all_steps(const PrintAndObjectSteps& steps)
@@ -616,8 +722,6 @@ PrintAndObjectSteps get_invalidated_steps(
             return {AllSteps{}, AllSteps{}};
         }
 
-        // ASSERT(current.region != nullptr);
-        // ASSERT(next.region != nullptr);
         result = merge(result, get_invalidated_steps(*current.region, *next.region));
         if (is_all_steps(result)) {
             return result;
@@ -675,14 +779,18 @@ PrintAndObjectSteps get_invalidated_steps(
             return result;
         }
 
-        result = merge(result, get_invalidated_steps(current.painted_regions, next.painted_regions));
+        result =
+            merge(result, get_invalidated_steps(current.painted_regions, next.painted_regions));
         if (is_all_steps(result)) {
             return result;
         }
 
         result = merge(
             result,
-            get_invalidated_steps(current.fuzzy_skin_painted_regions, next.fuzzy_skin_painted_regions)
+            get_invalidated_steps(
+                current.fuzzy_skin_painted_regions,
+                next.fuzzy_skin_painted_regions
+            )
         );
         if (is_all_steps(result)) {
             return result;
@@ -691,5 +799,4 @@ PrintAndObjectSteps get_invalidated_steps(
 
     return result;
 }
-
-}
+} // namespace Slic3r::SlicingSync

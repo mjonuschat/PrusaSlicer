@@ -724,37 +724,11 @@ SupportLayerPtrs::iterator PrintObject::insert_support_layer(SupportLayerPtrs::i
 
 bool PrintObject::invalidate_step(PrintObjectStep step)
 {
-	bool invalidated = Inherited::invalidate_step(step);
-    
-    // propagate to dependent steps
-    if (step == posPerimeters) {
-		invalidated |= this->invalidate_steps({ posPrepareInfill, posInfill, posIroning,  posSupportSpotsSearch, posEstimateCurledExtrusions, posCalculateOverhangingPerimeters });
-        invalidated |= m_print->invalidate_steps({ psSkirtBrim });
-    } else if (step == posPrepareInfill) {
-        invalidated |= this->invalidate_steps({ posInfill, posIroning, posSupportSpotsSearch});
-    } else if (step == posInfill) {
-        invalidated |= this->invalidate_steps({ posIroning, posSupportSpotsSearch });
-        invalidated |= m_print->invalidate_steps({ psSkirtBrim });
-    } else if (step == posSlice) {
-        invalidated |= this->invalidate_steps({posPerimeters, posPrepareInfill, posInfill, posIroning, posSupportSpotsSearch,
-                                               posSupportMaterial, posEstimateCurledExtrusions, posCalculateOverhangingPerimeters});
-        invalidated |= m_print->invalidate_steps({ psSkirtBrim });
-        m_slicing_params.valid = false;
-    } else if (step == posSupportMaterial) {
-        invalidated |= m_print->invalidate_steps({ psSkirtBrim,  });
-        invalidated |= this->invalidate_steps({ posEstimateCurledExtrusions });
+    if (step == posSlice || step == posSupportMaterial) {
         m_slicing_params.valid = false;
     }
 
-    // invalidate alerts step always, since it depends on everything (except supports, but with supports enabled it is skipped anyway.)
-    invalidated |= m_print->invalidate_step(psAlertWhenSupportsNeeded);
-    // Wipe tower depends on the ordering of extruders, which in turn depends on everything.
-    // It also decides about what the wipe_into_infill / wipe_into_object features will do,
-    // and that too depends on many of the settings.
-    invalidated |= m_print->invalidate_step(psWipeTower);
-    // Invalidate G-code export in any case.
-    invalidated |= m_print->invalidate_step(psGCodeExport);
-    return invalidated;
+	return Inherited::invalidate_step(step);
 }
 
 bool PrintObject::invalidate_all_steps()
