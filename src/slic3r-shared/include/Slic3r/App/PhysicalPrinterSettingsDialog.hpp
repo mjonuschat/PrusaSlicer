@@ -12,17 +12,22 @@
 
 namespace Slic3r::App::Yoga {
 class StackLayout;
-}
+} // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
+
+class Navigator;
 
 class PrinterAddDialog;
 
 class PhysicalPrinterSettingsDialog : public Yoga::Dialog
 {
 public:
-    PhysicalPrinterSettingsDialog(PrinterAddDialog* printer_add_dialog);
+    PhysicalPrinterSettingsDialog(PrinterAddDialog* printer_add_dialog, Navigator& navigator);
     ~PhysicalPrinterSettingsDialog();
+
+protected:
+    void close_action() override;
 
 private:
     void create_page_list();
@@ -32,10 +37,10 @@ private:
     using PrinterListView = Yoga::ListView<
         PhysicalPrinterSettingsButton,
         PhysicalPrinter,
-        Yoga::ViewFactory<
-            PhysicalPrinterSettingsButton,
-            PhysicalPrinter,
-            PhysicalPrinterSettingsButton::FnIndexClicked>>;
+        Yoga::ViewFactory<PhysicalPrinterSettingsButton, PhysicalPrinter, PhysicalPrinterSettingsButton::FnIndexClicked>>;
+
+    PrinterAddDialog* m_printer_add_dialog{nullptr};
+    Navigator& m_navigator;
 
     Biz::ObservableList<PhysicalPrinter> m_list_physical_printers;
     PrinterListView* m_printer_list_view{nullptr};
@@ -43,7 +48,6 @@ private:
     Yoga::Item* m_page_list{nullptr};
     Yoga::Item* m_page_settings{nullptr};
     Yoga::ButtonGroup m_group_keywords;
-    PrinterAddDialog* m_printer_add_dialog{nullptr};
 };
 
 } // namespace Slic3r::App

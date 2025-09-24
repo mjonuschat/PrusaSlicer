@@ -8,6 +8,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/PrinterSettingsButton.hpp"
 #include "Slic3r/App/Yoga/MaterialSettingsButton.hpp"
+#include "Slic3r/App/Navigator.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
@@ -17,20 +18,22 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
+SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& navigator) :
     Window("sidebar_bed"),
     m_project_interactor(project_interactor),
-    m_printer_settings_dialog(project_interactor, &m_printer_add_dialog),
-    m_physical_printer_settings_dialog(&m_printer_add_dialog),
-    m_material_settings_dialog(project_interactor)
+    m_navigator(navigator),
+    m_logical_printer_settings_dialog(project_interactor, &m_printer_add_dialog, m_navigator),
+    m_physical_printer_settings_dialog(&m_printer_add_dialog, m_navigator),
+    m_printer_add_dialog(m_navigator),
+    m_material_selection_dialog(project_interactor, m_navigator)
 {
     set_min_size({240, 60});
     set_orientation(Orientation::Vertical);
     set_gap(10);
     set_flex_shrink(0);
 
-    m_filament_button_group = std::make_shared<ButtonGroup>();
-    m_filament_button_group->set_always_checked(false);
+    m_material_button_group = std::make_shared<ButtonGroup>();
+    m_material_button_group->set_always_checked(false);
 
     m_bed_name = emplace_back<Text>("Unkown");
     m_bed_name->set_font_type(Render::ImguiFontType::Bold);
@@ -42,67 +45,68 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor) :
 
     m_logical_printer_button = emplace_back<PrinterSettingsButton>("Logical printer");
 
-    m_printer_settings_dialog.attach_to_item(this, Position::Left);
-    m_printer_settings_dialog.callbacks().closed = [this]() {
+    m_logical_printer_settings_dialog.attach_to_item(this, Position::Left);
+    m_logical_printer_settings_dialog.callbacks().opened = [this]() {
+        m_logical_printer_button->set_checked(true);
+    };
+    m_logical_printer_settings_dialog.callbacks().closed = [this]() {
         m_logical_printer_button->set_checked(false);
     };
 
     m_physical_printer_settings_dialog.attach_to_item(this, Position::Left);
+    m_physical_printer_settings_dialog.callbacks().opened = [this]() {
+        m_physical_printer_button->set_checked(true);
+    };
     m_physical_printer_settings_dialog.callbacks().closed = [this]() {
         m_physical_printer_button->set_checked(false);
     };
 
-    m_logical_printer_button->callbacks().checked_changed = [this](bool checked) {
-        if (checked) {
-            m_printer_settings_dialog.open();
-            m_physical_printer_settings_dialog.close();
+    m_logical_printer_button->callbacks().action = [this]() {
+        if (m_logical_printer_settings_dialog.opened()) {
+            m_navigator.set_opened_dialog(nullptr);
         } else {
-            m_printer_settings_dialog.close();
+            m_navigator.set_opened_dialog(&m_logical_printer_settings_dialog);
         }
     };
 
-    m_physical_printer_button->callbacks().checked_changed = [this](bool checked) {
-        if (checked) {
-            m_physical_printer_settings_dialog.open();
-            m_printer_settings_dialog.close();
+    m_physical_printer_button->callbacks().action = [this]() {
+        if (m_physical_printer_settings_dialog.opened()) {
+            m_navigator.set_opened_dialog(nullptr);
         } else {
-            m_physical_printer_settings_dialog.close();
+            m_navigator.set_opened_dialog(&m_physical_printer_settings_dialog);
         }
-    };
-
-    m_logical_printer_button->on_cog() = []() {
-        // ToDo open some other settings dialog
     };
 
     m_list_view = emplace_back<MaterialListView>(MaterialListViewFactory{
-        std::weak_ptr<ButtonGroup>(m_filament_button_group),
+        std::weak_ptr<ButtonGroup>(m_material_button_group),
         m_project_interactor
     });
     m_list_view->set_source_list(&m_project_interactor.preset_interactor().material_presets());
     m_list_view->set_orientation(Orientation::Vertical);
     m_list_view->set_gap(5);
 
-    m_material_settings_dialog.attach_to_item(this, Position::Left);
-    m_material_settings_dialog.callbacks().closed = [this]() {
-        for (AbstractButton* button : m_filament_button_group->buttons()) {
+    m_material_selection_dialog.attach_to_item(this, Position::Left);
+    m_material_selection_dialog.callbacks().closed = [this]() {
+        for (AbstractButton* button : m_material_button_group->buttons()) {
             button->set_checked(false);
         }
     };
 
-    m_material_settings_dialog.material_selection_callbacks().advanced_settings_tab_opened =
+    m_material_selection_dialog.material_selection_callbacks().advanced_settings_tab_opened =
         [this](size_t current_index) {
-        if (m_material_settings_dialog.opened()) {
+        if (m_material_selection_dialog.opened()) {
             dynamic_cast<AbstractButton*>(m_list_view->get_item(current_index))->set_checked(true);
         }
     };
 
-    m_filament_button_group->callbacks().checked_changed =
-        [this](AbstractButton* current_check, AbstractButton* last_check) {
-        if (current_check) {
-            m_material_settings_dialog.open();
-            m_material_settings_dialog.set_material_index(m_list_view->index_of(current_check).value());
+    m_material_button_group->callbacks().action = [this](AbstractButton* action_button) {
+        if (action_button->checked()) {
+            m_material_selection_dialog.set_material_index(
+                m_list_view->index_of(action_button).value()
+            );
+            m_navigator.set_opened_dialog(&m_material_selection_dialog);
         } else {
-            m_material_settings_dialog.close();
+            m_navigator.set_opened_dialog(nullptr);
         }
     };
 
@@ -137,8 +141,8 @@ void SidebarBed::on_list_selection_changed(Domain::SelectionId new_selection)
     m_logical_printer_button->set_printer_name(prefix + preset_item.name);
     m_logical_printer_button->set_preset_name(preset_item.hw_printer_config_name);
 
-    const Domain::Preset::HwPrinterConfig& printer_config =
-        m_project_interactor.preset_interactor().current_printer_config();
+    const Domain::Preset::HwPrinterConfig& printer_config = m_project_interactor.preset_interactor()
+                                                                .current_printer_config();
 
     if (printer_config.visual.thumbnail.has_value()) {
         const std::string image_path = printer_config.relative_path_to_assets()
@@ -165,6 +169,26 @@ void SidebarBed::on_selected_bed_instances_changed(
     ASSERT(bed_instance);
 
     m_bed_name->set_text(bed_instance->name());
+}
+
+PhysicalPrinterSettingsDialog& SidebarBed::physical_printer_settings_dialog()
+{
+    return m_physical_printer_settings_dialog;
+}
+
+LogicalPrinterSettingsDialog& SidebarBed::logical_printer_settings_dialog()
+{
+    return m_logical_printer_settings_dialog;
+}
+
+PrinterAddDialog& SidebarBed::printer_add_dialog()
+{
+    return m_printer_add_dialog;
+}
+
+MaterialSelectionDialog& SidebarBed::material_selection_dialog()
+{
+    return m_material_selection_dialog;
 }
 
 } // namespace Slic3r::App

@@ -67,7 +67,7 @@ Scene::ToolType TextGizmo::type() const
     return Scene::ToolType::TextGizmo;
 }
 
-Yoga::Dialog* TextGizmo::unload_ui_dialog()
+Yoga::GizmoDialog* TextGizmo::ui_dialog()
 {
     return m_dialog.get();
 }

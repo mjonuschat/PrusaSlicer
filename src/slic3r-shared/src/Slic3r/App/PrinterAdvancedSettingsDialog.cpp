@@ -9,15 +9,23 @@
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/App/Yoga/StackLayout.hpp"
 #include "Slic3r/App/ConfigSubcategoryListView.hpp"
+#include "Slic3r/App/Navigator.hpp"
+#include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(Biz::ProjectInteractor& project_interactor) :
+PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
+    Biz::ProjectInteractor& project_interactor,
+    Navigator& navigator,
+    LogicalPrinterSettingsDialog* logical_printer_settings_dialog
+) :
     AbstractSettingsDialog({"Printer"}, "PrinterAdvancedSettingsDialog"),
     m_project_interactor(project_interactor),
+    m_navigator(navigator),
+    m_logical_printer_settings_dialog(logical_printer_settings_dialog),
     m_cbi(project_interactor.preset_interactor().printer_cbi()),
     m_observable_categorizer(std::make_shared<ObservableCategorizer>()),
     m_category_page_transformer(std::make_shared<CategoryPageTransformer>())
@@ -47,6 +55,11 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(Biz::ProjectInterac
     footer_items->emplace_back<LayoutButton>(_u8("Save preset"));
 
     // dynamic_cast<PageEntryButton*>(m_page_list_view->get_item(0))->set_checked(true);
+}
+
+void PrinterAdvancedSettingsDialog::close_action()
+{
+    m_navigator.set_opened_dialog(m_logical_printer_settings_dialog);
 }
 
 } // namespace Slic3r::App

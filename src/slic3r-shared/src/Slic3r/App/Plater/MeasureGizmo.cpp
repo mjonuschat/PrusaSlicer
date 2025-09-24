@@ -138,7 +138,7 @@ Scene::ToolType MeasureGizmo::type() const
     return Scene::ToolType::MeasureGizmo;
 }
 
-Yoga::Dialog* MeasureGizmo::unload_ui_dialog()
+Yoga::GizmoDialog* MeasureGizmo::ui_dialog()
 {
     return m_dialog.get();
 }

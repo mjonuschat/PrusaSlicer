@@ -112,10 +112,10 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/IDialogManager.hpp
         include/Slic3r/App/PrintSettingsDialog.hpp
         src/Slic3r/App/PrintSettingsDialog.cpp
-        include/Slic3r/App/FilamentSettingsDialog.hpp
-        src/Slic3r/App/FilamentSettingsDialog.cpp
-        include/Slic3r/App/PrinterSettingsDialog.hpp
-        src/Slic3r/App/PrinterSettingsDialog.cpp
+        include/Slic3r/App/MaterialSettingsDialog.hpp
+        src/Slic3r/App/MaterialSettingsDialog.cpp
+        include/Slic3r/App/LogicalPrinterSettingsDialog.hpp
+        src/Slic3r/App/LogicalPrinterSettingsDialog.cpp
         include/Slic3r/App/PrinterAdvancedSettingsDialog.hpp
         src/Slic3r/App/PrinterAdvancedSettingsDialog.cpp
         include/Slic3r/App/PhysicalPrinterSettingsDialog.hpp
@@ -159,6 +159,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/OverrideCategoryButton.cpp
 	include/Slic3r/App/RenderModuleHelper.hpp
         src/Slic3r/App/RenderModuleHelper.cpp
+        include/Slic3r/App/DialogNavigation.hpp
+        src/Slic3r/App/DialogNavigation.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
@@ -931,6 +933,8 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-shared-tests
         test/main.cpp
 
+        test/Slic3r/App/DialogNavigationTests.cpp
+
         test/Slic3r/App/Scene/Node.cpp
         test/Slic3r/App/Scene/Ray.cpp
 
@@ -958,7 +962,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
-		test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
+        test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
 
         test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp
@@ -970,7 +974,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Config/ConfigRoundtripTests.cpp
 
         test/Slic3r/Biz/Config/HwConfigJsonTests.cpp
-		test/Slic3r/Biz/Config/FeatureStructurizerTests.cpp
+        test/Slic3r/Biz/Config/FeatureStructurizerTests.cpp
 
         test/Slic3r/Biz/ArrangeInteractorTests.cpp
     )

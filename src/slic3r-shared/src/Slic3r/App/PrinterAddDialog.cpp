@@ -13,6 +13,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/Navigator.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -36,8 +37,11 @@ void emplace_family(Item* container, const std::string& name, const std::vector<
     printers_grid->set_flex_wrap(YGWrapWrap);
 
     for (const Printer& printer : printers) {
-        LayoutButton* button =
-            printers_grid->emplace_back<LayoutButton>(printer.name, printer.icon, printer.name);
+        LayoutButton* button = printers_grid->emplace_back<LayoutButton>(
+            printer.name,
+            printer.icon,
+            printer.name
+        );
         button->set_width(180);
         button->set_height(160);
         button->set_content_orientation(Orientation::Vertical);
@@ -46,8 +50,9 @@ void emplace_family(Item* container, const std::string& name, const std::vector<
     }
 }
 
-PrinterAddDialog::PrinterAddDialog() :
-    Dialog({"Add logical printer", "Add physical printer"}, "PrinterAddDialog")
+PrinterAddDialog::PrinterAddDialog(Navigator& navigator) :
+    Dialog({"Add logical printer", "Add physical printer"}, "PrinterAddDialog"),
+    m_navigator(navigator)
 {
     content_item()->set_width(600);
     content_item()->set_height(500);
@@ -61,13 +66,19 @@ PrinterAddDialog::PrinterAddDialog() :
     create_add_physical_printer_page();
 }
 
-PrinterAddDialog::~PrinterAddDialog() {
+PrinterAddDialog::~PrinterAddDialog()
+{
     m_page_list_view->set_source_list(nullptr);
 }
 
 void PrinterAddDialog::on_tab_selected(int current_index)
 {
     m_stack_layout->set_current_index(current_index);
+}
+
+void PrinterAddDialog::close_action()
+{
+    // TODO: Implement
 }
 
 void PrinterAddDialog::create_add_logical_printer_page()
@@ -119,16 +130,16 @@ void PrinterAddDialog::create_add_logical_printer_page()
 
     auto factory = Yoga::ViewFactory<PageEntryButton, PageEntry, PageEntryButton::FnIndexClicked>(
         [this](size_t index) {
-            // m_pages_stack_layout->set_current_index(index);
-            for (size_t button_index = 0; button_index < m_page_list_view->item_count();
-                 ++button_index) {
-                PageEntryButton* button = dynamic_cast<PageEntryButton*>(
-                    m_page_list_view->get_item(button_index)
-                );
-                ASSERT(button);
-                button->set_checked(index == button_index);
-            }
+        // m_pages_stack_layout->set_current_index(index);
+        for (size_t button_index = 0; button_index < m_page_list_view->item_count(); ++button_index)
+        {
+            PageEntryButton* button = dynamic_cast<PageEntryButton*>(
+                m_page_list_view->get_item(button_index)
+            );
+            ASSERT(button);
+            button->set_checked(index == button_index);
         }
+    }
     );
     m_page_list_view = layout_logic_row->emplace_back<PageListView>(std::move(factory));
     m_page_list_view->set_orientation(Orientation::Vertical);

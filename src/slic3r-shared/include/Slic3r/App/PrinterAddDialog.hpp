@@ -16,20 +16,24 @@ class StackLayout;
 
 namespace Slic3r::App {
 
+class Navigator;
+
 class PrinterAddDialog : public Yoga::Dialog
 {
 public:
-    PrinterAddDialog();
+    PrinterAddDialog(Navigator& navigator);
     ~PrinterAddDialog();
 
 protected:
     void on_tab_selected(int current_index) override;
+    void close_action() override;
 
 private:
     void create_add_logical_printer_page();
     void create_add_physical_printer_page();
 
 private:
+    Navigator& m_navigator;
     Yoga::StackLayout* m_stack_layout{nullptr};
 
     Yoga::ButtonGroup m_group_search;

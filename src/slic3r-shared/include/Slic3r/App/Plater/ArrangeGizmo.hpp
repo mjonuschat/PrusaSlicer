@@ -53,7 +53,7 @@ public:
 
     Scene::ToolType type() const override;
 
-    Yoga::Dialog* unload_ui_dialog() override;
+    Yoga::GizmoDialog* ui_dialog() override;
 
 private:
     Biz::ArrangeInteractor& m_arrange_interactor;

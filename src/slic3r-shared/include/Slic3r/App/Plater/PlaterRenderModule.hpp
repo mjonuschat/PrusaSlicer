@@ -13,6 +13,8 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Navigator.hpp"
+#include "Slic3r/App/DialogNavigation.hpp"
 
 namespace Slic3r::Biz {
 class ThumbnailImageProvider;
@@ -21,7 +23,6 @@ class ThumbnailImageProvider;
 namespace Slic3r::App {
 struct ThumbnailStore;
 class ThumbnailStoreUpdater;
-class Navigator;
 
 namespace Yoga {
 class Menu;
@@ -59,7 +60,10 @@ public:
     void render_imgui(Render::CommandBuffer& cmd_buffer) override;
     void on_scene_mouse_event(const Platform::MouseEvent& e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent& e) override;
-    void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
+    void on_scene_selection_changed(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    ) override;
     void set_navigator(Navigator* navigator) override;
 
     void on_status_cache_status_code_changed(const Domain::SlicingId id) override;
@@ -68,6 +72,8 @@ public:
 
     Platform::CameraSynchData camera_synch_data() override;
     void set_camera_synch_data(const Platform::CameraSynchData& data) override;
+
+    void set_opened_dialog(Yoga::Dialog* opened_dialog);
 
 protected:
     void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
@@ -85,10 +91,11 @@ protected:
 private:
     void init_scene();
     void init_scene_layout();
-    void update_toolbar_tool_selection(Scene::ToolType current_tool_type);
+    void update_tool_selection(Scene::ToolType current_tool_type);
     void render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
     void toggle_activate_tool(Scene::ToolType tool_type);
     void active_tool_changed(Scene::IToolGizmo* active_tool) override;
+    void init_dialog_navigation();
 
     void init_gizmos();
     void init_add_volume_menu();
@@ -140,6 +147,9 @@ private:
     std::shared_ptr<Plater::ThumbnailImageGenerator> m_thumbnail_image_generator;
 
     Navigator* m_render_module_navigator{nullptr};
+
+    DialogNavigation m_dialog_navigation;
+    std::set<Yoga::Dialog*> m_gizmo_dialogs;
 };
 
 } // namespace Slic3r::App::Plater

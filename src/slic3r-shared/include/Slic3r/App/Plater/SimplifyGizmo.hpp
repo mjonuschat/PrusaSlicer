@@ -56,7 +56,7 @@ public:
      */
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
 
-    Yoga::Dialog* unload_ui_dialog() override;
+    Yoga::GizmoDialog* ui_dialog() override;
 private:
     struct Configuration
     {

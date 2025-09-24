@@ -2,10 +2,10 @@
 
 #include <imgui_internal.h>
 
-#include "Slic3r/App/Yoga/Dialog.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
+#include "Slic3r/App/Yoga/GizmoDialog.hpp"
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
@@ -61,11 +61,9 @@ AbstractRenderLayout::add_toolbar_item_gizmo(ToolbarID id, Render::Icon icon, co
     ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
     ASSERT(button);
 
-    Dialog* dialog = tool->unload_ui_dialog();
+    GizmoDialog* dialog = tool->ui_dialog();
     if (dialog) {
-        dialog->attach_to_item(button);
-        button->callbacks().checked_changed = [dialog](bool checked)
-        { checked ? dialog->open() : dialog->close(); };
+        dialog->attach_to_item(button, Position::Right);
     }
 
     return button;

@@ -13,6 +13,11 @@ namespace Slic3r::App::Yoga {
 
 GizmoDialog::GizmoDialog(const std::string& title) : Dialog({title}, "GizmoDialog") {}
 
+GizmoDialog::GizmoCallbacks& GizmoDialog::gizmo_callbacks()
+{
+    return m_gizmo_callback;
+}
+
 void GizmoDialog::add_separator(Item* item)
 {
     Separator* separator = item->emplace_back<Separator>(Orientation::Horizontal);
@@ -36,6 +41,13 @@ Item* GizmoDialog::add_new_row(const std::string& title, Yoga::ItemPtr controls,
     controls->set_width_percent(65);
     row->append(std::move(controls));
     return row;
+}
+
+void GizmoDialog::close_action()
+{
+    if (m_gizmo_callback.close_requested) {
+        m_gizmo_callback.close_requested();
+    }
 }
 
 } // namespace Slic3r::App::Yoga

@@ -8,7 +8,6 @@
 #include "Slic3r/App/Yoga/RectangleButton.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/InputTextField.hpp"
-#include "Slic3r/App/Yoga/InputTextWithSpin.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
@@ -16,6 +15,7 @@
 #include "Slic3r/App/Yoga/RadioButton.hpp"
 #include "Slic3r/App/Yoga/RadioExtruder.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/Navigator.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
@@ -28,10 +28,11 @@ using namespace Slic3r::App::Render;
 
 namespace Slic3r::App {
 
-SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor) :
+SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator& navigator) :
     Window("sidebar_print"),
     m_project_interactor(project_interactor),
-    m_print_settings_dialog(project_interactor)
+    m_navigator(navigator),
+    m_print_settings_dialog(project_interactor, m_navigator)
 {
     set_orientation(Orientation::Vertical);
     set_gap(5);
@@ -49,17 +50,16 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor) :
     m_content_area->set_gap(5);
 
     m_print_settings_dialog.attach_to_item(this, Position::Left, 20);
+    m_print_settings_dialog.callbacks().opened = [this]() {
+        print_dialog_tab_selected(m_print_settings_dialog.current_tab_index());
+    };
     m_print_settings_dialog.callbacks().closed = [this]() {
         for (AbstractButton* button : m_group_print_tools->buttons()) {
             button->set_checked(false);
         }
     };
     m_print_settings_dialog.dialog_callbacks().tab_selected = [this](size_t tab_index) {
-        if (tab_index == 0) {
-            m_settings_set_btn->set_checked(true);
-        } else {
-            m_tool_head_list_view->item_at(tab_index - 1)->cog_button()->set_checked(true);
-        }
+        print_dialog_tab_selected(tab_index);
     };
 
     Item* layer_height_row = m_content_area->emplace_back<Item>();
@@ -108,30 +108,24 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor) :
     m_tool_head_list_view->set_flex_shrink(0);
     m_tool_head_list_view->set_source_list(&m_project_interactor.preset_interactor().tool_presets());
 
-    m_group_print_tools->callbacks().checked_changed =
-        [this](AbstractButton* current_checked, AbstractButton* last_checked) {
-        if (current_checked) {
-            m_print_settings_dialog.open();
+    m_group_print_tools->callbacks().action = [this](AbstractButton* action_button) {
+        m_navigator.set_opened_dialog(&m_print_settings_dialog);
 
-            // This is really ugly, refactor this once we will settle on the final-ish design
-            if (current_checked == m_settings_set_btn) {
-                m_print_settings_dialog.set_current_tab(0);
-            } else {
-                for (size_t tool_index = 0; tool_index < m_tool_head_list_view->item_count();
-                     ++tool_index)
-                {
-                    AbstractButton* cog_button = dynamic_cast<SidebarToolHeadRow*>(
-                                                     m_tool_head_list_view->item_at(tool_index)
-                    )
-                                                     ->cog_button();
-                    if (cog_button == current_checked) {
-                        m_print_settings_dialog.set_current_tab(1 + tool_index);
-                        break;
-                    }
+        // This is really ugly, refactor this once we will settle on the final-ish design
+        if (action_button == m_settings_set_btn) {
+            m_print_settings_dialog.set_current_tab(0);
+        } else {
+            for (size_t tool_index = 0; tool_index < m_tool_head_list_view->item_count(); ++tool_index)
+            {
+                AbstractButton* cog_button = dynamic_cast<SidebarToolHeadRow*>(
+                                                 m_tool_head_list_view->item_at(tool_index)
+                )
+                                                 ->cog_button();
+                if (cog_button == action_button) {
+                    m_print_settings_dialog.set_current_tab(1 + tool_index);
+                    break;
                 }
             }
-        } else {
-            m_print_settings_dialog.close();
         }
     };
 
@@ -224,6 +218,20 @@ void SidebarPrint::create_favorite_params_page(Item* container)
     combo_density->set_editable(true);
     m_combo_density = combo_density.get();
     add_row(page, "Density", std::move(combo_density));
+}
+
+void SidebarPrint::print_dialog_tab_selected(size_t tab_index)
+{
+    if (tab_index == 0) {
+        m_settings_set_btn->set_checked(true);
+    } else {
+        m_tool_head_list_view->item_at(tab_index - 1)->cog_button()->set_checked(true);
+    }
+}
+
+PrintSettingsDialog& SidebarPrint::print_settings_dialog()
+{
+    return m_print_settings_dialog;
 }
 
 } // namespace Slic3r::App

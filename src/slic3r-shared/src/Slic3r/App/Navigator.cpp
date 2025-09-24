@@ -1,8 +1,15 @@
+///|/ Copyright (c) Prusa Research 2018 - 2025 Oleksandra Iushchenko @YuSanka, Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "Slic3r/App/Navigator.hpp"
-#include <Slic3r/App/Plater/PlaterRenderModule.hpp>
-#include <Slic3r/App/Preview/PreviewRenderModule.hpp>
+
+#include "Slic3r/App/Plater/PlaterRenderModule.hpp"
+#include "Slic3r/App/Preview/PreviewRenderModule.hpp"
 #include "Slic3r/App/Platform/AbstractRenderCanvas.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+
+#include "Slic3r/Log.hpp"
 
 namespace Slic3r::App {
 
@@ -25,9 +32,17 @@ void Navigator::on_init(
     project_interactor->add_listener<ISelectedProjectChangedListener>(this);
 }
 
+void Navigator::navigate_to_module_type(Render::ModuleType type)
+{
+    ProjectContext& context = m_project_contexts->selected();
+    context.opened_dialog   = nullptr;
+    set_render_module_type(type);
+}
+
 void Navigator::set_render_module_type(Render::ModuleType type)
 {
-    m_project_contexts->selected().type = type;
+    ProjectContext& context = m_project_contexts->selected();
+    context.type            = type;
 
     if (type == Render::ModuleType::Plater) {
         m_canvas->set_next_render_module(m_plater_module);
@@ -38,7 +53,25 @@ void Navigator::set_render_module_type(Render::ModuleType type)
 
 void Navigator::on_selected_project_changed(size_t index)
 {
-    set_render_module_type(m_project_contexts->selected().type);
+    ProjectContext& context = m_project_contexts->selected();
+    set_render_module_type(context.type);
+    set_opened_dialog(context.opened_dialog);
+}
+
+void Navigator::set_opened_dialog(Yoga::Dialog* opened_dialog)
+{
+    ProjectContext& context = m_project_contexts->selected();
+    context.opened_dialog   = opened_dialog;
+    switch (context.type) {
+    case Render::ModuleType::Plater:
+        m_plater_module->set_opened_dialog(opened_dialog);
+        break;
+    case Render::ModuleType::Preview:
+        m_preview_module->set_opened_dialog(opened_dialog);
+        break;
+    case Render::ModuleType::Undef:
+        break;
+    }
 }
 
 } // namespace Slic3r::App

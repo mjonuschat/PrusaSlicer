@@ -17,7 +17,10 @@ namespace Slic3r::App::Yoga {
 class AbstractSettingsDialog : public Dialog
 {
 public:
-    explicit AbstractSettingsDialog(const std::initializer_list<std::string>& tabs, const std::string& name = {});
+    explicit AbstractSettingsDialog(
+        const std::initializer_list<std::string>& tabs,
+        const std::string& name = {}
+    );
     ~AbstractSettingsDialog();
 
 protected:
@@ -52,11 +55,13 @@ protected:
     void remove_tab(size_t index);
 
 protected:
-    std::vector<std::unique_ptr<Tab>> m_tabs;
+    using TabPtr = std::unique_ptr<Tab>;
+    using Tabs   = std::vector<TabPtr>;
+    Tabs m_tabs;
     Item* m_footer                  = nullptr;
     Tab* m_current_tab              = nullptr;
     Yoga::StackLayout* m_stack_tabs = nullptr;
-    bool m_remove_in_progress        = false;
+    bool m_remove_in_progress       = false;
 };
 
 } // namespace Slic3r::App::Yoga

@@ -19,6 +19,7 @@ public:
     struct DialogCallbacks
     {
         std::function<void(size_t current_tab)> tab_selected{nullptr};
+        std::function<void()> close_requested{nullptr};
     };
 
     explicit Dialog(const std::string& name = {});
@@ -29,6 +30,7 @@ public:
     bool closable() const;
     void set_closable(bool closable);
 
+    size_t current_tab_index() const;
     void set_current_tab(size_t current_index);
 
 protected:
@@ -40,6 +42,11 @@ protected:
 
     virtual void on_tab_selected(int current_index);
 
+    virtual void close_action();
+
+private:
+    void set_current_tab_internal(size_t current_index);
+
 private:
     bool m_closable = true;
 
@@ -49,6 +56,7 @@ private:
     Item* m_content              = nullptr;
     Item* m_top_row              = nullptr;
     Item* m_tab_container        = nullptr;
+    size_t m_current_tab_index   = 0;
 
     ImColor m_color_bg           = ImColor(27, 27, 27);
     ImColor m_color_bg_alternate = ImColor(41, 41, 41);

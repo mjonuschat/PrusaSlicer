@@ -41,11 +41,7 @@ Dialog::Dialog(const std::string& name)
             }
 
             const size_t current_index = std::distance(m_tab_buttons.cbegin(), it);
-
-            on_tab_selected(current_index);
-            if (m_callbacks.tab_selected) {
-                m_callbacks.tab_selected(current_index);
-            }
+            set_current_tab(current_index);
         }
     };
 
@@ -60,7 +56,7 @@ Dialog::Dialog(const std::string& name)
     m_close_button = buttons_rect->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
     m_close_button->set_min_size({20, 20});
     m_close_button->callbacks().action = [this] {
-        close();
+        close_action();
     };
 
     m_content = window->emplace_back<Item>();
@@ -92,6 +88,11 @@ void Dialog::set_closable(bool closable)
         m_closable = closable;
         m_close_button->set_visible(m_closable);
     }
+}
+
+size_t Dialog::current_tab_index() const
+{
+    return m_current_tab_index;
 }
 
 Item* Dialog::content() const
@@ -143,9 +144,20 @@ void Dialog::remove_tab(size_t index)
 
 void Dialog::set_current_tab(size_t current_index)
 {
-    m_tab_buttons.at(current_index)->set_checked(true);
+    m_current_tab_index = current_index;
+    m_tab_buttons.at(current_index)->set_checked(true); // can be NOOP
+
+    on_tab_selected(current_index);
+    if (m_callbacks.tab_selected) {
+        m_callbacks.tab_selected(current_index);
+    }
 }
 
 void Dialog::on_tab_selected(int current_index) {}
+
+void Dialog::close_action()
+{
+    close();
+}
 
 } // namespace Slic3r::App::Yoga

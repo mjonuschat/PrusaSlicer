@@ -381,6 +381,11 @@ void PreviewRenderModule::set_camera_synch_data(const Platform::CameraSynchData&
     synchronize_camera(data, m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 }
 
+void PreviewRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
+{
+    m_dialog_navigation.open_dialog(opened_dialog);
+}
+
 void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
     AbstractRenderModule::on_init(device, imgui_render);
@@ -397,6 +402,7 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
     init_gizmos();
     init_viewers(device);
     init_scene_layout();
+    init_dialog_navigation();
 
     m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
 }
@@ -686,16 +692,18 @@ void PreviewRenderModule::init_scene_layout()
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, false));
 
-    m_cube_view                  = std::make_unique<CubeView>();
-    m_sidebar_bed                = std::make_unique<SidebarBed>(m_project_interactor);
-    m_sidebar_print              = std::make_unique<SidebarPrint>(m_project_interactor);
+    m_cube_view   = std::make_unique<CubeView>();
+    m_sidebar_bed = std::make_unique<SidebarBed>(m_project_interactor, *m_render_module_navigator);
+    m_sidebar_print =
+        std::make_unique<SidebarPrint>(m_project_interactor, *m_render_module_navigator);
     m_sidebar_object             = std::make_unique<SidebarObject>(m_project_interactor);
     m_pop_notification_list_view = std::make_unique<PopNotification::PopNotificationListView>(
         AppServices::instance().pop_notification_center()
     );
     m_sidebar_auto_reslice = std::make_unique<SidebarAutoReslice>();
 
-    m_sidebar_action_buttons = std::make_unique<SidebarPreviewActionButtons>(m_render_module_navigator);
+    m_sidebar_action_buttons =
+        std::make_unique<SidebarPreviewActionButtons>(m_render_module_navigator);
     m_sidebar_action_buttons->on_init(&m_project_interactor);
 
     m_layout.reset(new PreviewRenderLayout(
@@ -1010,6 +1018,28 @@ void PreviewRenderModule::update_toolbar_visibility()
     } else {
         m_layout->set_bottom_toolbar_visible(false);
     }
+}
+
+void PreviewRenderModule::init_dialog_navigation()
+{
+    // Init sidebar dialogs
+    m_dialog_navigation.insert_dialog(&m_sidebar_bed->logical_printer_settings_dialog());
+    m_dialog_navigation.insert_dialog(
+        &m_sidebar_bed->printer_add_dialog(),
+        &m_sidebar_bed->logical_printer_settings_dialog()
+        );
+    m_dialog_navigation.insert_dialog(
+        &m_sidebar_bed->logical_printer_settings_dialog().printer_advanced_settings_dialog(),
+        &m_sidebar_bed->logical_printer_settings_dialog()
+        );
+
+    m_dialog_navigation.insert_dialog(&m_sidebar_bed->material_selection_dialog());
+    m_dialog_navigation.insert_dialog(
+        &m_sidebar_bed->material_selection_dialog().material_settings_dialog(),
+        &m_sidebar_bed->material_selection_dialog()
+        );
+
+    m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
 }
 
 void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)

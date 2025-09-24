@@ -20,15 +20,20 @@ class PresetInteractor;
 
 namespace Slic3r::App {
 
+class Navigator;
+
 class PrintSettingsDialog :
     public Yoga::AbstractSettingsDialog,
     public Biz::IListObserver<Biz::ConfigBoxInteractor>
 {
 public:
-    explicit PrintSettingsDialog(Biz::ProjectInteractor& project_interactor);
+    explicit PrintSettingsDialog(Biz::ProjectInteractor& project_interactor, Navigator& navigator);
     ~PrintSettingsDialog();
 
     void on_reset() override;
+
+protected:
+    void close_action() override;
 
 private:
     struct PrintSettingsTab
@@ -46,6 +51,7 @@ private:
     };
 
     Biz::ProjectInteractor& m_project_interactor;
+    Navigator& m_navigator;
     Biz::CBIObservableList& m_tool_cbi_list;
 
     std::vector<std::unique_ptr<PrintSettingsTab>> m_tabs;

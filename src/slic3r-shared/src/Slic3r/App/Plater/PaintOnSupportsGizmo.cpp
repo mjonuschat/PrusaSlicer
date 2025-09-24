@@ -31,7 +31,7 @@ Scene::ToolType PaintOnSupportsGizmo::type() const
     return Scene::ToolType::PaintOnSupportsGizmo;
 }
 
-Yoga::Dialog* PaintOnSupportsGizmo::unload_ui_dialog()
+Yoga::GizmoDialog* PaintOnSupportsGizmo::ui_dialog()
 {
     return m_dialog.get();
 }

@@ -12,14 +12,19 @@
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
+#include "Slic3r/App/Navigator.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-PhysicalPrinterSettingsDialog::PhysicalPrinterSettingsDialog(PrinterAddDialog* printer_add_dialog) :
+PhysicalPrinterSettingsDialog::PhysicalPrinterSettingsDialog(
+    PrinterAddDialog* printer_add_dialog,
+    Navigator& navigator
+) :
     Dialog({"Physical printer"}, "PhysicalPrinterSettingsDialog"),
-    m_printer_add_dialog(printer_add_dialog)
+    m_printer_add_dialog(printer_add_dialog),
+    m_navigator(navigator)
 {
     content_item()->set_width(350);
 
@@ -39,6 +44,11 @@ PhysicalPrinterSettingsDialog::PhysicalPrinterSettingsDialog(PrinterAddDialog* p
 PhysicalPrinterSettingsDialog::~PhysicalPrinterSettingsDialog()
 {
     m_printer_list_view->set_source_list(nullptr);
+}
+
+void PhysicalPrinterSettingsDialog::close_action()
+{
+    m_navigator.set_opened_dialog(nullptr);
 }
 
 void PhysicalPrinterSettingsDialog::create_page_list()
@@ -103,10 +113,10 @@ void PhysicalPrinterSettingsDialog::create_page_list()
     // LayoutButton* add_printer_button = m_page_list->emplace_back<LayoutButton>("Add physical printer");
     // add_printer_button->set_self_align(YGAlignFlexEnd);
     // add_printer_button->callbacks().action = [this] {
-    //     m_printer_add_dialog->attach_to_item(content_item(), Position::Left);
-    //     m_printer_add_dialog->set_root_item(get_or_find_root_item());
-    //     m_printer_add_dialog->set_current_tab(1);
-    //     m_printer_add_dialog->open();
+    // m_printer_add_dialog->attach_to_item(content_item(), Position::Left);
+    // m_printer_add_dialog->set_root_item(get_or_find_root_item());
+    // m_printer_add_dialog->set_current_tab(1);
+    // m_printer_add_dialog->open();
     // };
 }
 

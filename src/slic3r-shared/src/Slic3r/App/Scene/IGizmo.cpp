@@ -4,14 +4,21 @@
 ///|/
 #include "Slic3r/App/Scene/IGizmo.hpp"
 
-#include "Slic3r/App/Yoga/Dialog.hpp"
-
 namespace Slic3r::App::Scene {
 
-bool IToolGizmo::supports_printer(Domain::PrinterTechnology pt) const { return true; }
+bool IToolGizmo::supports_printer(Domain::PrinterTechnology pt) const
+{
+    return true;
+}
 
-bool IToolGizmo::enabled() const { return true; }
+bool IToolGizmo::enabled() const
+{
+    return true;
+}
 
-Yoga::Dialog* IToolGizmo::unload_ui_dialog() { return nullptr; }
+Yoga::GizmoDialog* IToolGizmo::ui_dialog()
+{
+    return nullptr;
+}
 
 } // namespace Slic3r::App::Scene

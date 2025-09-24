@@ -18,6 +18,7 @@ class ProjectInteractor;
 namespace Slic3r::App {
 
 class PrintSettingsDialog;
+class Navigator;
 
 namespace Yoga {
 class LayoutButton;
@@ -29,7 +30,9 @@ class ScrollArea;
 class SidebarPrint : public Yoga::Window
 {
 public:
-    explicit SidebarPrint(Biz::ProjectInteractor& project_interactor);
+    explicit SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator& navigator);
+
+    PrintSettingsDialog& print_settings_dialog();
 
 private:
     void add_separator();
@@ -38,13 +41,20 @@ private:
     void create_favorite_params();
     void create_favorite_params_page(Item* container);
 
+    void print_dialog_tab_selected(size_t tab_index);
+
 private:
     using ToolHeadListView = Yoga::ListView<
         SidebarToolHeadRow,
         Biz::Preset::PresetItemObservableList,
-        Yoga::ViewFactory<SidebarToolHeadRow, Biz::Preset::PresetItemObservableList, std::weak_ptr<Yoga::ButtonGroup>, Biz::ProjectInteractor&>>;
+        Yoga::ViewFactory<
+            SidebarToolHeadRow,
+            Biz::Preset::PresetItemObservableList,
+            std::weak_ptr<Yoga::ButtonGroup>,
+            Biz::ProjectInteractor&>>;
 
     Biz::ProjectInteractor& m_project_interactor;
+    Navigator& m_navigator;
 
     Yoga::LayoutButton* m_settings_set_btn{nullptr};
     Yoga::ButtonGroup m_group_extruder;

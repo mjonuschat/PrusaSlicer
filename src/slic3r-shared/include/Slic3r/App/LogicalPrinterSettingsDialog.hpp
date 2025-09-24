@@ -20,11 +20,16 @@ class ProjectInteractor;
 
 namespace Slic3r::App {
 class PrinterAddDialog;
+class Navigator;
 
-class PrinterSettingsDialog : public Yoga::Dialog, public Biz::Preset::IPresetChangedListener
+class LogicalPrinterSettingsDialog : public Yoga::Dialog, public Biz::Preset::IPresetChangedListener
 {
 public:
-    PrinterSettingsDialog(Biz::ProjectInteractor& project_interactor, PrinterAddDialog* printer_add_dialog);
+    LogicalPrinterSettingsDialog(
+        Biz::ProjectInteractor& project_interactor,
+        PrinterAddDialog* printer_add_dialog,
+        Navigator& navigator
+    );
 
     void on_preset_selection_changed(
         Domain::SelectionId project_id,
@@ -32,12 +37,17 @@ public:
         Biz::Preset::PresetItemType type
     ) override;
 
+    PrinterAdvancedSettingsDialog& printer_advanced_settings_dialog();
+
 private:
     void create_page_list();
     void create_page_settings();
 
 private:
     void on_about_to_show() override;
+
+protected:
+    void close_action() override;
 
 private:
     using PrinterListViewFactory = Yoga::ViewFactory<
@@ -52,10 +62,12 @@ private:
         Biz::Preset::ToolConfigItemObservableList,
         Yoga::ViewFactory<PrinterNozzleRow, Biz::Preset::ToolConfigItemObservableList, Biz::Preset::PresetInteractor&>>;
 
-    Biz::ListenerScope<Biz::Preset::IPresetChangedListener, Biz::Preset::PresetInteractor, PrinterSettingsDialog>
+    Biz::ListenerScope<Biz::Preset::IPresetChangedListener, Biz::Preset::PresetInteractor, LogicalPrinterSettingsDialog>
         m_preset_changed_listener_scope;
 
     Biz::ProjectInteractor& m_project_interactor;
+    Navigator& m_navigator;
+
     PrinterListView* m_printer_list_view{nullptr};
     Yoga::StackLayout* m_stack_layout{nullptr};
     Yoga::Item* m_page_list{nullptr};

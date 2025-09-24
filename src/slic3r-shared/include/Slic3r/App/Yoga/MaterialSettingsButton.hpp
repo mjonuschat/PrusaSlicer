@@ -12,7 +12,7 @@ class ProjectInteractor;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::App {
-class FilamentSettingsDialog;
+class MaterialSettingsDialog;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Yoga {

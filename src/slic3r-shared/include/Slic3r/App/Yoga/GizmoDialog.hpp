@@ -16,7 +16,14 @@ class LayoutButton;
 class GizmoDialog : public Dialog
 {
 public:
+    struct GizmoCallbacks
+    {
+        std::function<void()> close_requested{nullptr};
+    };
+
     explicit GizmoDialog(const std::string& title);
+
+    GizmoCallbacks& gizmo_callbacks();
 
 protected:
     /*
@@ -27,8 +34,14 @@ protected:
     float gap_size() const;
     Item* add_new_row(const std::string& title, Yoga::ItemPtr controls, YGAlign label_align = YGAlignCenter);
 
+    void close_action() override;
+
 protected:
+    GizmoCallbacks m_gizmo_callback;
+
     GizmoDialogHelp m_help;
+
+    // Dialog interface
 };
 
 } // namespace Slic3r::App::Yoga

@@ -167,7 +167,7 @@ AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::strin
     Dialog::append_tab(tab);
 
     if (m_tabs.size() == 1) {
-        set_current_tab(0);
+        on_tab_selected(0);
     }
 
     return m_tabs.back().get();

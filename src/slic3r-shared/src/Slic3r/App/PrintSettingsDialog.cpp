@@ -9,6 +9,7 @@
 #include "Slic3r/App/ConfigSubcategoryListView.hpp"
 #include "Slic3r/App/Yoga/StackLayout.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/App/Navigator.hpp"
 
 #include <fmt/format.h>
 
@@ -17,9 +18,10 @@ using namespace Slic3r::App::Render;
 
 namespace Slic3r::App {
 
-PrintSettingsDialog::PrintSettingsDialog(Biz::ProjectInteractor& project_interactor) :
+PrintSettingsDialog::PrintSettingsDialog(Biz::ProjectInteractor& project_interactor, Navigator& navigator) :
     AbstractSettingsDialog({}, "PrintSettingsDialog"),
     m_project_interactor(project_interactor),
+    m_navigator(navigator),
     m_tool_cbi_list(project_interactor.preset_interactor().tool_cbi_list())
 {
     Tab* tab = append_tab(_u8L("Print"));
@@ -63,10 +65,13 @@ void PrintSettingsDialog::on_reset()
         );
 
         Tab* tab = append_tab(fmt::format("Tool {}", tool_cbi_index + 1));
-        m_tabs.emplace_back(
-            std::make_unique<PrintSettingsTab>(&cbi, tab, m_project_interactor)
-        );
+        m_tabs.emplace_back(std::make_unique<PrintSettingsTab>(&cbi, tab, m_project_interactor));
     }
+}
+
+void PrintSettingsDialog::close_action()
+{
+    m_navigator.set_opened_dialog(nullptr);
 }
 
 PrintSettingsDialog::PrintSettingsTab::PrintSettingsTab(

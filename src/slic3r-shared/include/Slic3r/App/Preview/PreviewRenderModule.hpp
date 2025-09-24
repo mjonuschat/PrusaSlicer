@@ -15,6 +15,7 @@
 #include <Slic3r/App/Preview/DoubleSliderForGCode.hpp>
 #include <Slic3r/App/Preview/DoubleSliderForLayers.hpp>
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/App/DialogNavigation.hpp"
 
 #include <memory>
 
@@ -95,6 +96,8 @@ public:
     Platform::CameraSynchData camera_synch_data() override;
     void set_camera_synch_data(const Platform::CameraSynchData& data) override;
 
+    void set_opened_dialog(Yoga::Dialog* opened_dialog);
+
 protected:
     /**
      * @name Implementation of Platform::AbstractRenderModule protected interface
@@ -113,6 +116,7 @@ private:
     std::unique_ptr<PreviewScenePresenter> m_scene_presenter;
     std::unique_ptr<Scene::GizmoManager> m_gizmo_manager;
     bool m_use_yoga_layout = true;
+    DialogNavigation m_dialog_navigation;
 
     FdmViewerWrapper m_fdm_viewer;
     SlaViewerWrapper m_sla_viewer;
@@ -168,6 +172,7 @@ private:
     void update_sla_viewer_data(const Domain::SlicingId id);
     void init_scene_layout();
     void update_toolbar_visibility();
+    void init_dialog_navigation();
 
     void on_invalidate_slice();
     void on_update_layers_slider(const Domain::CustomGCode::Info& info);

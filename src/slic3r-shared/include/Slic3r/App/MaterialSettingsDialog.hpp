@@ -15,33 +15,32 @@ class ProjectInteractor;
 class ConfigBoxInteractor;
 } // namespace Slic3r::Biz
 
-namespace Slic3r::Biz::Preset {
-class PresetInteractor;
-} // namespace Slic3r::Biz::Preset
-
 namespace Slic3r::App {
 
-/**
- * @todo Rename this to MaterialSettingsDialog
- */
-class FilamentSettingsDialog :
+class Navigator;
+class MaterialSelectionDialog;
+
+class MaterialSettingsDialog :
     public Yoga::AbstractSettingsDialog,
     public Biz::IListObserver<Biz::ConfigBoxInteractor>
 {
 public:
-    explicit FilamentSettingsDialog(Biz::ProjectInteractor& project_interactor);
-    ~FilamentSettingsDialog();
+    explicit MaterialSettingsDialog(
+        Biz::ProjectInteractor& project_interactor,
+        Navigator& navigator,
+        MaterialSelectionDialog* material_selection_dialog
+    );
+    ~MaterialSettingsDialog();
 
     void on_reset() override;
 
+protected:
+    void close_action() override;
+
 private:
-    struct FilamentTab
+    struct MaterialTab
     {
-        FilamentTab(
-            Biz::ConfigBoxInteractor* cbi,
-            Tab* tab,
-            Biz::ProjectInteractor& project_interactor
-        );
+        MaterialTab(Biz::ConfigBoxInteractor* cbi, Tab* tab, Biz::ProjectInteractor& project_interactor);
 
         Biz::ConfigBoxInteractor* cbi{nullptr};
         Tab* tab{nullptr};
@@ -50,9 +49,11 @@ private:
     };
 
     Biz::ProjectInteractor& m_project_interactor;
+    Navigator& m_navigator;
+    MaterialSelectionDialog* m_material_selection_dialog{nullptr};
     Biz::CBIObservableList& m_material_cbi_list;
 
-    std::vector<std::unique_ptr<FilamentTab>> m_filaments;
+    std::vector<std::unique_ptr<MaterialTab>> m_materials;
 };
 
 } // namespace Slic3r::App

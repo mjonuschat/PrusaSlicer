@@ -126,7 +126,7 @@ Scene::ToolType ArrangeGizmo::type() const
     return Scene::ToolType::ArrangeGizmo;
 }
 
-Yoga::Dialog* ArrangeGizmo::unload_ui_dialog()
+Yoga::GizmoDialog* ArrangeGizmo::ui_dialog()
 {
     return &m_dialog;
 }

@@ -52,7 +52,7 @@ Domain::SlicingId SidebarActionButtons::active_bed_slicing_id() const
 
 void SidebarActionButtons::navigate_to_other()
 {
-    m_render_module_navigator->set_render_module_type(m_navigate_to_type);
+    m_render_module_navigator->navigate_to_module_type(m_navigate_to_type);
 }
 
 } // namespace Slic3r::App

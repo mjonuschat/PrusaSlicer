@@ -1,4 +1,9 @@
+///|/ Copyright (c) Prusa Research 2018 - 2025 Oleksandra Iushchenko @YuSanka, Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #pragma once
+
 #include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 
@@ -19,6 +24,10 @@ class PreviewRenderModule;
 namespace Platform {
 class AbstractRenderCanvas;
 } // namespace Platform
+
+namespace Yoga {
+class Dialog;
+} // namespace Yoga
 
 namespace Render {
 enum class ModuleType
@@ -41,14 +50,20 @@ public:
         Biz::ProjectInteractor* project_interactor
     );
 
-    void set_render_module_type(Render::ModuleType type);
+    void navigate_to_module_type(Render::ModuleType type);
 
     void on_selected_project_changed(size_t index) override;
+
+    void set_opened_dialog(Yoga::Dialog* opened_dialog);
+
+private:
+    void set_render_module_type(Render::ModuleType type);
 
 private:
     struct ProjectContext
     {
         Render::ModuleType type{Render::ModuleType::Plater};
+        Yoga::Dialog* opened_dialog{nullptr}; ///< Dialog is considered exclusive
     };
 
     using ProjectContexts    = Biz::ProjectScoped<ProjectContext>;

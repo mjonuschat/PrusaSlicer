@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Slic3r/App/PrinterSettingsDialog.hpp"
+#include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
@@ -13,6 +13,7 @@
 #include "Slic3r/App/Yoga/StackLayout.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/Navigator.hpp"
 
 #include "Slic3r/App/PrinterAddDialog.hpp"
 #include <Slic3r/App/AppServices.hpp>
@@ -20,14 +21,16 @@
 
 using namespace Slic3r::App::Yoga;
 
-Slic3r::App::PrinterSettingsDialog::PrinterSettingsDialog(
+Slic3r::App::LogicalPrinterSettingsDialog::LogicalPrinterSettingsDialog(
     Biz::ProjectInteractor& project_interactor,
-    PrinterAddDialog* printer_add_dialog
+    PrinterAddDialog* printer_add_dialog,
+    Navigator& navigator
 ) :
-    Dialog({"Printers"}, "PrinterSettingsDialog"),
+    Dialog({"Printers"}, "LogicalPrinterSettingsDialog"),
     m_preset_changed_listener_scope(project_interactor.preset_interactor(), *this),
     m_project_interactor(project_interactor),
-    m_advanced_dialog(project_interactor),
+    m_navigator(navigator),
+    m_advanced_dialog(project_interactor, m_navigator, this),
     m_printer_add_dialog(printer_add_dialog)
 {
     content_item()->set_width(350);
@@ -45,7 +48,7 @@ Slic3r::App::PrinterSettingsDialog::PrinterSettingsDialog(
     m_stack_layout->set_current_index(0);
 }
 
-void Slic3r::App::PrinterSettingsDialog::on_preset_selection_changed(
+void Slic3r::App::LogicalPrinterSettingsDialog::on_preset_selection_changed(
     Domain::SelectionId project_id,
     Domain::SelectionId config_container_id,
     Biz::Preset::PresetItemType type
@@ -55,7 +58,9 @@ void Slic3r::App::PrinterSettingsDialog::on_preset_selection_changed(
         && m_project_interactor.selected_config_container_id() == config_container_id
         && type == Biz::Preset::PresetItemType::PrinterPreset)
     {
-        const Domain::Preset::HwPrinterConfig& printer_config = m_project_interactor.preset_interactor().current_printer_config();
+        const Domain::Preset::HwPrinterConfig& printer_config = m_project_interactor
+                                                                    .preset_interactor()
+                                                                    .current_printer_config();
 
         m_text_printer_name->set_text(printer_config.name);
 
@@ -68,7 +73,12 @@ void Slic3r::App::PrinterSettingsDialog::on_preset_selection_changed(
     }
 }
 
-void Slic3r::App::PrinterSettingsDialog::create_page_list()
+Slic3r::App::PrinterAdvancedSettingsDialog& Slic3r::App::LogicalPrinterSettingsDialog::printer_advanced_settings_dialog()
+{
+    return m_advanced_dialog;
+}
+
+void Slic3r::App::LogicalPrinterSettingsDialog::create_page_list()
 {
     m_page_list = m_stack_layout->emplace_back<Item>();
     m_page_list->set_orientation(Orientation::Vertical);
@@ -137,7 +147,7 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
     };*/
 }
 
-void Slic3r::App::PrinterSettingsDialog::create_page_settings()
+void Slic3r::App::LogicalPrinterSettingsDialog::create_page_settings()
 {
     m_page_settings = m_stack_layout->emplace_back<Item>();
     m_page_settings->set_orientation(Orientation::Vertical);
@@ -191,18 +201,27 @@ void Slic3r::App::PrinterSettingsDialog::create_page_settings()
     LayoutButton* button_advanced_setting = m_page_settings->emplace_back<LayoutButton>(
         _u8L("Advanced settings")
     );
-    button_advanced_setting->set_checkable(true);
-    button_advanced_setting->callbacks().checked_changed = [this](bool checked) {
-        if (checked) {
-            m_advanced_dialog.set_root_item(get_or_find_root_item());
-            m_advanced_dialog.open();
+    button_advanced_setting->callbacks().action = [this] {
+        if (m_advanced_dialog.opened()) {
+            m_navigator.set_opened_dialog(this);
         } else {
-            m_advanced_dialog.close();
+            m_navigator.set_opened_dialog(&m_advanced_dialog);
         }
+    };
+    m_advanced_dialog.callbacks().opened = [button_advanced_setting] {
+        button_advanced_setting->set_checked(true);
+    };
+    m_advanced_dialog.callbacks().closed = [button_advanced_setting] {
+        button_advanced_setting->set_checked(false);
     };
 }
 
-void Slic3r::App::PrinterSettingsDialog::on_about_to_show()
+void Slic3r::App::LogicalPrinterSettingsDialog::on_about_to_show()
 {
     m_stack_layout->set_current_index(0);
+}
+
+void Slic3r::App::LogicalPrinterSettingsDialog::close_action()
+{
+    m_navigator.set_opened_dialog(nullptr);
 }

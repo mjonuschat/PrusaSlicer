@@ -25,12 +25,19 @@ ItemPtr StackLayout::remove(Item* child)
     if (m_current_index >= index.value()) {
         m_current_index--;
     }
-    m_current_index = std::clamp(m_current_index, size_t{0}, item_count());
+    m_current_index = std::clamp(m_current_index, size_t{0}, item_count() - 1);
+    // It is valid that StackLayout has no children, therefore we have to check if any children exists
+    if (item_count()) {
+        get_item(m_current_index)->set_visible(true);
+    }
 
     return item;
 }
 
-size_t StackLayout::current_index() const { return m_current_index; }
+size_t StackLayout::current_index() const
+{
+    return m_current_index;
+}
 
 void StackLayout::set_current_index(size_t current_index)
 {
