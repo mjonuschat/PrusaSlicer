@@ -112,6 +112,22 @@ TEST_CASE("All overriden items can be obtained", "[Config]") {
     CHECK(box.overrides.overriden_items().at(0).get().get<int>() == 100);
 }
 
+TEST_CASE("Diff keys returns different overriden keys") {
+    TestFilamentSettings box_a;
+    box_a.overrides.set("print_config_item_with_filament_override", 100);
+    TestFilamentSettings box_b;
+    auto result{box_a.diff_keys(box_b)};
+    REQUIRE(result.size() == 1);
+    CHECK(result.front() == "print_config_item_with_filament_override");
+    box_b.overrides.set("print_config_item_with_filament_override", 100);
+    result = box_a.diff_keys(box_b);
+    REQUIRE(result.empty());
+    box_b.overrides.set("print_config_item_with_filament_override", 90);
+    result = box_a.diff_keys(box_b);
+    REQUIRE(result.size() == 1);
+    CHECK(result.front() == "print_config_item_with_filament_override");
+}
+
 namespace {
 template<typename T>
 BoxRefs convert_to_box_refs(

@@ -88,8 +88,11 @@ public:
 
     bool operator==(const ConfigItems&) const = default;
 
+    std::vector<std::string> diff_keys(const ConfigItems& other) const;
+
 private:
     std::vector<ConfigItem> m_items;
+    ConfigLocation m_location;
 };
 
 class ConfigOverrides {
@@ -130,6 +133,8 @@ public:
 
     bool operator==(const ConfigOverrides&) const = default;
 
+    std::vector<std::string> diff_overriden_keys(const ConfigOverrides& other) const;
+
 private:
     std::size_t find(const std::string& key);
 
@@ -153,21 +158,13 @@ struct ConfigBox
     ConfigOverrides overrides;
     ConfigLocation location;
 
-    ContainsResult contains(const std::string& key) {
-        if (auto* item{overrides.contains(key)}) {
-            return {item, true};
-        }
-        return {items.contains(key), false};
-    }
+    ContainsResult contains(const std::string& key);
 
-    ConstContainsResult contains(const std::string& key) const {
-        if (auto* item{overrides.contains(key)}) {
-            return {item, true};
-        }
-        return {items.contains(key), false};
-    }
+    ConstContainsResult contains(const std::string& key) const;
 
     bool operator==(const ConfigBox&) const = default;
+
+    std::vector<std::string> diff_keys(const ConfigBox& other) const;
 
 protected:
     ConfigBox(const ConfigDefinitions& defs, const ConfigLocation& location)

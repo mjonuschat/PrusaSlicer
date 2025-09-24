@@ -43,7 +43,8 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, ConfigLocation location)
     : m_value{def.init_fn ? def.init_fn() : def.init_fn_ex(location)}, m_def{&def}
 {}
 
-ConfigItems::ConfigItems(const ConfigDefinitions& defs, const ConfigLocation& location)
+ConfigItems::ConfigItems(const ConfigDefinitions& defs, const ConfigLocation& location) :
+    m_location{location}
 {
     for (const ConfigItemDef& def : defs.defs()) {
         if (def.location == location) {
@@ -83,6 +84,51 @@ auto find_item(Range& items, const std::string& key) -> decltype(&(*items.begin(
     }
     return nullptr;
 }
+
+template <typename K, typename V>
+std::vector<K> diff_keys(
+    const std::map<K, V>& a,
+    const std::map<K, V>& b,
+    std::function<bool(const V&, const V&)> equals_comp
+)
+{
+    std::vector<K> result;
+
+    auto a_it{a.begin()};
+    auto b_it{b.begin()};
+    const auto a_end{a.end()};
+    const auto b_end{b.end()};
+
+    while(a_it != a_end && b_it != b_end) {
+        const auto& [a_key, a_value]{*a_it};
+        const auto& [b_key, b_value]{*b_it};
+
+        if (a_key < b_key) {
+            result.push_back(a_key);
+            ++a_it;
+        } else if (a_key > b_key) {
+            result.push_back(b_key);
+            ++b_it;
+        } else {
+            if (!(equals_comp(a_value, b_value))) {
+                result.push_back(a_key);
+            }
+            ++a_it;
+            ++b_it;
+        }
+    }
+
+    while (a_it != a.end()) {
+        result.push_back(a_it->first);
+        ++a_it;
+    }
+    while (b_it != b.end()) {
+        result.push_back(b_it->first);
+        ++b_it;
+    }
+
+    return result;
+}
 }
 
 ConfigItem* ConfigItems::contains(const std::string& key) {
@@ -101,6 +147,22 @@ const std::vector<ConfigItem> &ConfigItems::all_items() const
 std::vector<ConfigItem> &ConfigItems::all_items()
 {
     return m_items;
+}
+
+std::vector<std::string> ConfigItems::diff_keys(const ConfigItems& other) const {
+    ASSERT(m_location == other.m_location && m_items.size() == other.m_items.size());
+
+    std::vector<std::string> result;
+
+    for (std::size_t i{}; i < m_items.size(); ++i) {
+        const ConfigItem& a{m_items[i]};
+        const ConfigItem& b{other.m_items[i]};
+        ASSERT(a.name() == b.name());
+        if (a != b) {
+            result.push_back(a.name());
+        }
+    }
+    return result;
 }
 
 ConfigOverrides::ConfigOverrides(const ConfigDefinitions& defs, const ConfigLocation location) {
@@ -161,10 +223,46 @@ const std::vector<ConfigItem>& ConfigOverrides::all_items() const {
     return m_items;
 }
 
+std::vector<std::string> ConfigOverrides::diff_overriden_keys(const ConfigOverrides& other) const
+{
+    return diff_keys<std::string, std::size_t>(
+        m_used_overrides,
+        other.m_used_overrides,
+        [&](std::size_t index_a, std::size_t index_b)
+        { return m_items.at(index_a) == other.m_items.at(index_b); }
+    );
+}
+
 std::size_t ConfigOverrides::find(const std::string& key) {
     const auto index{find_item_index(m_items, key)};
     ASSERT(index, "The key does not belong to this!");
     return *index;
+}
+
+ContainsResult ConfigBox::contains(const std::string& key) {
+    if (auto* item{overrides.contains(key)}) {
+        return {item, true};
+    }
+    return {items.contains(key), false};
+}
+
+ConstContainsResult ConfigBox::contains(const std::string& key) const {
+    if (auto* item{overrides.contains(key)}) {
+        return {item, true};
+    }
+    return {items.contains(key), false};
+}
+
+std::vector<std::string> ConfigBox::diff_keys(const ConfigBox& other) const
+{
+    std::vector<std::string> result{items.diff_keys(other.items)};
+    const std::vector<std::string> overriden_diff_keys{
+        overrides.diff_overriden_keys(other.overrides)
+    };
+
+    result.insert(result.end(), overriden_diff_keys.begin(), overriden_diff_keys.end());
+
+    return result;
 }
 
 SquashedConfig::SquashedConfig(
@@ -183,33 +281,13 @@ SquashedConfig::SquashedConfig(
     }
 }
 
+
 std::vector<std::string> SquashedConfig::diff_keys(const SquashedConfig& other) const {
-    std::vector<std::string> result;
-
-    auto a_it{m_values.begin()};
-    auto b_it{other.m_values.begin()};
-    const auto a_end{m_values.end()};
-    const auto b_end{other.m_values.end()};
-
-    while(a_it != a_end && b_it != b_end) {
-        const auto& [a_key, a_value]{*a_it};
-        const auto& [b_key, b_value]{*b_it};
-
-        if (a_key < b_key) {
-            result.push_back(a_key);
-            ++a_it;
-        } else if (a_key > b_key) {
-            result.push_back(b_key);
-            ++b_it;
-        } else {
-            if (a_value != b_value) {
-                result.push_back(a_key);
-            }
-            ++a_it;
-            ++b_it;
-        }
-    }
-    return result;
+    return ::Slic3r::Domain::diff_keys<std::string, ConfigValue>(
+        m_values,
+        other.m_values,
+        [](const ConfigValue& a, const ConfigValue& b) { return a == b; }
+    );
 }
 
 bool SquashedConfig::operator==(const SquashedConfig& other) const {
