@@ -107,7 +107,12 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
 
     def = defs.add("thumbnails", typeid(std::string));
     def->location = printer;
-    def->label = L("G-code thumbnails");
+    if (technology == FFF) {
+        def->label = L("G-code thumbnails");
+    }
+    else {
+        def->label = L("Thumbnails");
+    }
     def->option_group = L("Firmware");
     def->category = ConfigItemDef::Category::General;
     def->gui_type = ConfigItemDef::GUIType::textfield;

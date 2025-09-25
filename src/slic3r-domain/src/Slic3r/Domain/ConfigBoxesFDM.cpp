@@ -2341,7 +2341,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
             // Add the machine feedrate limits for XYZE axes. (M203)
             def = defs.add("machine_max_feedrate_" + axis.name, typeid(std::vector<double>));
             def->location = Printer;
-            def->full_label = (boost::format("Maximum feedrate %1%") % axis_upper).str();
+            def->label = (boost::format("Maximum feedrate %1%") % axis_upper).str();
             (void)L("Maximum feedrate X");
             (void)L("Maximum feedrate Y");
             (void)L("Maximum feedrate Z");
@@ -2363,7 +2363,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
             // Add the machine acceleration limits for XYZE axes (M201)
             def = defs.add("machine_max_acceleration_" + axis.name, typeid(std::vector<double>));
             def->location = Printer;
-            def->full_label = (boost::format("Maximum acceleration %1%") % axis_upper).str();
+            def->label = (boost::format("Maximum acceleration %1%") % axis_upper).str();
             (void)L("Maximum acceleration X");
             (void)L("Maximum acceleration Y");
             (void)L("Maximum acceleration Z");
@@ -2385,7 +2385,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
             // Add the machine jerk limits for XYZE axes (M205)
             def = defs.add("machine_max_jerk_" + axis.name, typeid(std::vector<double>));
             def->location = Printer;
-            def->full_label = (boost::format("Maximum jerk %1%") % axis_upper).str();
+            def->label = (boost::format("Maximum jerk %1%") % axis_upper).str();
             (void)L("Maximum jerk X");
             (void)L("Maximum jerk Y");
             (void)L("Maximum jerk Z");
@@ -2409,7 +2409,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     // M205 S... [mm/sec]
     def = defs.add("machine_min_extruding_rate", typeid(std::vector<double>));
     def->location = Printer;
-    def->full_label = L("Minimum feedrate when extruding");
+    def->label = L("Minimum feedrate when extruding");
     def->option_group = L("Minimum feedrates");
     def->category = ConfigItemDef::Category::MachineLimits;
     def->gui_type = ConfigItemDef::GUIType::textfields;
@@ -2422,7 +2422,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     // M205 T... [mm/sec]
     def = defs.add("machine_min_travel_rate", typeid(std::vector<double>));
     def->location = Printer;
-    def->full_label = L("Minimum travel feedrate");
+    def->label = L("Minimum travel feedrate");
     def->option_group = L("Minimum accelerations");
     def->category = ConfigItemDef::Category::MachineLimits;
     def->gui_type = ConfigItemDef::GUIType::textfields;
@@ -2436,7 +2436,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("machine_max_acceleration_extruding", typeid(std::vector<double>));
     def->location = Printer;
     def->option_group = L("Maximum accelerations");
-    def->full_label = L("Maximum acceleration when extruding");
+    def->label = L("Maximum acceleration when extruding");
     def->category = ConfigItemDef::Category::MachineLimits;
     def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Maximum acceleration when extruding");
@@ -2448,7 +2448,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     // M204 R... [mm/sec^2]
     def = defs.add("machine_max_acceleration_retracting", typeid(std::vector<double>));
     def->location = Printer;
-    def->full_label = L("Maximum acceleration when retracting");
+    def->label = L("Maximum acceleration when retracting");
     def->option_group = L("Maximum accelerations");
     def->category = ConfigItemDef::Category::MachineLimits;
     def->gui_type = ConfigItemDef::GUIType::textfields;
@@ -2463,7 +2463,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("machine_max_acceleration_travel", typeid(std::vector<double>));
     def->location = Printer;
     def->option_group = L("Maximum accelerations");
-    def->full_label = L("Maximum acceleration for travel moves");
+    def->label = L("Maximum acceleration for travel moves");
     def->category = ConfigItemDef::Category::MachineLimits;
     def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Maximum acceleration for travel moves.");

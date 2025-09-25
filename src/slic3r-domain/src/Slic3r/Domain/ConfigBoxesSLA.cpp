@@ -872,7 +872,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("delay_before_exposure", typeid(std::vector<double>));
     def->location = Material;
-    def->full_label = L("Delay before exposure");
+    def->label = L("Delay before exposure");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
@@ -885,7 +885,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("delay_after_exposure", typeid(std::vector<double>));
     def->location = Material;
-    def->full_label = L("Delay after exposure");
+    def->label = L("Delay after exposure");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
@@ -898,7 +898,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tower_hop_height", typeid(std::vector<double>));
     def->location = Material;
-    def->full_label = L("Tower hop height");
+    def->label = L("Tower hop height");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
@@ -911,7 +911,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tower_speed", typeid(EnumVectorWrapper));
     def->location = Material;
-    def->full_label = L("Tower speed");
+    def->label = L("Tower speed");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::comboboxes;
@@ -955,7 +955,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_down_initial_speed", typeid(EnumVectorWrapper));
     def->location = Material;
-    def->full_label = L("Tilt down initial speed");
+    def->label = L("Tilt down initial speed");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::comboboxes;
@@ -966,7 +966,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_down_finish_speed", typeid(EnumVectorWrapper));
     def->location = Material;
-    def->full_label = L("Tilt down finish speed");
+    def->label = L("Tilt down finish speed");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::comboboxes;
@@ -977,7 +977,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_up_initial_speed", typeid(EnumVectorWrapper));
     def->location = Material;
-    def->full_label = L("Tilt up initial speed");
+    def->label = L("Tilt up initial speed");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::comboboxes;
@@ -988,7 +988,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_up_finish_speed", typeid(EnumVectorWrapper));
     def->location = Material;
-    def->full_label = L("Tilt up finish speed");
+    def->label = L("Tilt up finish speed");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::combobox;
@@ -999,7 +999,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("use_tilt", typeid(std::vector<bool>));
     def->location = Material;
-    def->full_label = L("Use tilt");
+    def->label = L("Use tilt");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::checkboxes;
@@ -1009,7 +1009,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_down_offset_steps", typeid(std::vector<int>));
     def->location = Material;
-    def->full_label = L("Tilt down offset steps");
+    def->label = L("Tilt down offset steps");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::spinboxes;
@@ -1022,7 +1022,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_down_offset_delay", typeid(std::vector<double>));
     def->location = Material;
-    def->full_label = L("Tilt down offset delay");
+    def->label = L("Tilt down offset delay");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
@@ -1035,7 +1035,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_down_cycles", typeid(std::vector<int>));
     def->location = Material;
-    def->full_label = L("Tilt down cycles");
+    def->label = L("Tilt down cycles");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::spinboxes;
@@ -1047,7 +1047,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_down_delay", typeid(std::vector<double>));
     def->location = Material;
-    def->full_label = L("Tilt down delay");
+    def->label = L("Tilt down delay");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
@@ -1060,7 +1060,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_up_offset_steps", typeid(std::vector<int>));
     def->location = Material;
-    def->full_label = L("Tilt up offset steps");
+    def->label = L("Tilt up offset steps");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::spinboxes;
@@ -1073,7 +1073,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_up_offset_delay", typeid(std::vector<double>));
     def->location = Material;
-    def->full_label = L("Tilt up offset delay");
+    def->label = L("Tilt up offset delay");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
@@ -1086,7 +1086,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_up_cycles", typeid(std::vector<int>));
     def->location = Material;
-    def->full_label = L("Tilt up cycles");
+    def->label = L("Tilt up cycles");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::spinboxes;
@@ -1098,7 +1098,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("tilt_up_delay", typeid(std::vector<double>));
     def->location = Material;
-    def->full_label = L("Tilt up delay");
+    def->label = L("Tilt up delay");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
