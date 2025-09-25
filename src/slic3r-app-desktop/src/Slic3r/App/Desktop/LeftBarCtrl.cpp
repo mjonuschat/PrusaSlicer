@@ -55,7 +55,13 @@ void LeftBarCtrl::UpdateAccountButton(bool avatar/* = false*/)
     m_account_btn->SetToolTip(user_name);
     if (avatar) {
         if (user_account.is_logged) {
-            ScalableBitmap new_logo(this, user_account.avatar_path, wxSize(m_login_icon_sz, m_login_icon_sz));
+            // Icons obtained from avatar_path are expected to be PNG, JPG, or JPEG files, and not SVG.
+            ScalableBitmap new_logo = ScalableBitmap::create_from_png_or_jpg(
+                this,
+                user_account.avatar_path,
+                wxSize(m_login_icon_sz, m_login_icon_sz),
+                true
+            );
             if (new_logo.IsOk())
                 m_account_btn->SetBitmapBundle(new_logo.bmp());
             else
@@ -64,6 +70,7 @@ void LeftBarCtrl::UpdateAccountButton(bool avatar/* = false*/)
         else {
             m_account_btn->SetBitmapBundle(*get_bmp_bundle("user", m_login_icon_sz));
         }
+        m_account_btn->Refresh();
     }
 
     this->Layout();

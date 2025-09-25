@@ -9,11 +9,32 @@
 
 #include <set>
 
+
 namespace Slic3r::App::WX {
 
 // ----------------------------------------------------------------------------
 // ScalableBitmap
 // ----------------------------------------------------------------------------
+
+ScalableBitmap ScalableBitmap::create_from_svg(
+    wxWindow* parent,
+    boost::filesystem::path& icon_path,
+    const wxSize icon_size
+)
+{
+    return ScalableBitmap(parent, icon_path, icon_size);
+}
+
+ScalableBitmap ScalableBitmap::create_from_png_or_jpg(
+    wxWindow* parent,
+    boost::filesystem::path& icon_path,
+    const wxSize icon_size,
+    bool as_circle
+)
+{
+    return ScalableBitmap(parent, icon_path, icon_size, as_circle);
+}
+
 ScalableBitmap::ScalableBitmap( wxWindow *parent, 
                                 const std::string& icon_name,
                                 const int  width/* = 16*/,
@@ -34,8 +55,82 @@ ScalableBitmap(parent, icon_name, icon_size.x, icon_size.y, grayscale)
 {
 }
 
-ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_path, const wxSize icon_size)
-    :m_parent(parent), m_bmp_width(icon_size.x), m_bmp_height(icon_size.y)
+
+ScalableBitmap::ScalableBitmap(wxWindow* parent,
+    boost::filesystem::path& icon_path,
+    const  wxSize               icon_size) :
+    m_parent(parent),
+    m_bmp_width(icon_size.x),
+    m_bmp_height(icon_size.y)
+{
+    wxString path = from_u8(icon_path.string());
+    if (icon_path.extension().string() != "svg") {
+        SPDLOG_ERROR("Failed to load bitmap {}. Expected SVG file for loading.", into_u8(path));
+        return;
+    }
+
+    m_bmp = wxBitmapBundle::FromSVGFile(path, icon_size);
+}
+
+// Create a circular avatar using per-pixel alpha for a smooth edge.
+static wxBitmap create_circular_bitmap_anti_aliased(const wxBitmap& bmp_src, int size)
+{
+    if (!bmp_src.IsOk()) return wxNullBitmap;
+
+    // Scale source to target size (wxImage scaling)
+    wxImage img_src = bmp_src.ConvertToImage();
+    wxImage img_out = img_src.Scale(size, size, wxIMAGE_QUALITY_HIGH);
+
+    // Ensure alpha channel exists (we'll overwrite it)
+    img_out.InitAlpha();
+
+    const double cx = size / 2.0;
+    const double cy = size / 2.0;
+    const double radius = size / 2.0;
+    // Use pixel-center sampling and linear ramp over ~1 pixel for smoother edge
+    const double ramp = 1.0; // width of linear ramp (pixels) for AA
+
+    for (int y = 0; y < size; ++y)
+    {
+        for (int x = 0; x < size; ++x)
+        {
+            // compute distance from pixel center to circle center
+            double px = x + 0.5;
+            double py = y + 0.5;
+            double dx = px - cx;
+            double dy = py - cy;
+            double d = sqrt(dx * dx + dy * dy);
+
+            unsigned char a;
+            if (d <= radius - ramp * 0.5)
+                a = 255;
+            else if (d >= radius + ramp * 0.5)
+                a = 0;
+            else
+            {
+                // linear interpolation across the ramp => smooth alpha
+                double t = (radius + ramp * 0.5 - d) / ramp; // 0..1
+                if (t < 0.0) t = 0.0;
+                if (t > 1.0) t = 1.0;
+                a = static_cast<unsigned char>(t * 255.0 + 0.5);
+            }
+            img_out.SetAlpha(x, y, a);
+        }
+    }
+
+    // Convert to wxBitmap (preserves alpha)
+    return wxBitmap(img_out);
+}
+
+ScalableBitmap::ScalableBitmap(
+    wxWindow* parent,
+    boost::filesystem::path& icon_path,
+    const wxSize icon_size,
+    bool as_circle
+) :
+    m_parent(parent),
+    m_bmp_width(icon_size.x),
+    m_bmp_height(icon_size.y)
 {
     wxString path = from_u8(icon_path.string());
     wxBitmap bitmap;
@@ -52,21 +147,17 @@ ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_p
             const int bmp_side = std::min(sz.GetWidth(), sz.GetHeight());
 
             wxRect rc = sz.GetWidth() > sz.GetHeight() ?
-                        wxRect(int(0.5 * (sz.x - sz.y)), 0, bmp_side, bmp_side) :
-                        wxRect(0, int(0.5 * (sz.y - sz.x)), bmp_side, bmp_side);
+                wxRect(int(0.5 * (sz.x - sz.y)), 0, bmp_side, bmp_side) :
+                wxRect(0, int(0.5 * (sz.y - sz.x)), bmp_side, bmp_side);
 
+            // crop bitmap for square
             bitmap = bitmap.GetSubBitmap(rc);
         }
-
-        // set mask for circle shape
-
-        wxBitmapBundle mask_bmps = *get_bmp_bundle("user_mask", bitmap.GetSize().GetWidth());
-        wxMask* mask = new wxMask(mask_bmps.GetBitmap(bitmap.GetSize()), *wxBLACK);
-        bitmap.SetMask(mask);
+        assert(bitmap.IsOk());
 
         // get allowed scale factors
 
-        std::set<double> scales = { 1.0 };
+        std::set<double> scales = {1.0};
 #ifdef __APPLE__
         scales.emplace(mac_max_scaling_factor());
 #elif _WIN32
@@ -79,14 +170,20 @@ ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_p
 
         wxVector<wxBitmap> bmps;
         for (double scale : scales) {
-            wxBitmap bmp = bitmap;
-            wxBitmap::Rescale(bmp, icon_size * scale);
-            bmps.push_back(bmp);
+            int size = icon_size.x * scale;
+            if (as_circle) {
+                bmps.push_back(create_circular_bitmap_anti_aliased(bitmap, size));
+            }
+            else {
+                // Scale source to target size using wxImage scaling with high quality
+                wxImage img = bitmap.ConvertToImage().Scale(size, size, wxIMAGE_QUALITY_HIGH);
+                bmps.push_back(wxBitmap(img));
+            }
         }
         m_bmp = wxBitmapBundle::FromBitmaps(bmps);
     }
-    else if (ext == ".svg") {
-        m_bmp = wxBitmapBundle::FromSVGFile(path, icon_size);
+    else {
+        SPDLOG_ERROR("Failed to load bitmap {}. Expected PNG or JPG file for loading.", into_u8(path));
     }
 }
 

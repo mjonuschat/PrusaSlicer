@@ -17,6 +17,19 @@ namespace Slic3r::App::WX {
 class ScalableBitmap
 {
 public:
+    static ScalableBitmap create_from_svg(
+        wxWindow* parent, 
+        boost::filesystem::path& icon_path, 
+        const wxSize icon_size
+    );
+
+    static ScalableBitmap create_from_png_or_jpg(
+        wxWindow* parent,
+        boost::filesystem::path& icon_path,
+        const wxSize icon_size,
+        bool as_circle
+    );
+
     ScalableBitmap() {};
     ScalableBitmap( wxWindow *parent,
                     const std::string& icon_name,
@@ -28,10 +41,6 @@ public:
                     const std::string& icon_name,
                     const  wxSize icon_size,
                     const bool grayscale = false);
-
-    ScalableBitmap( wxWindow                    *parent,
-                    boost::filesystem::path&    icon_path,
-                    const  wxSize               icon_size);
 
     ~ScalableBitmap() {}
 
@@ -48,6 +57,27 @@ public:
     int                 GetHeight() const { return GetSize().GetHeight(); }
     bool                IsOk()      const { return m_bmp.IsOk(); }
     wxSize              GetSize()   const;
+
+private:
+    /**
+     * Create scalable bitmap from SVG file.
+     *
+     * @param icon_path path for SVG file.
+     */
+    ScalableBitmap( wxWindow                    *parent,
+                    boost::filesystem::path&    icon_path,
+                    const  wxSize               icon_size);
+    /**
+     * Creates a scalable bitmap from a PNG or JPG file.
+     *
+     * @param icon_path Path to the PNG or JPG file.
+     * @param as_circle Flag indicating whether the loaded bitmap should be displayed as a circle;
+                        otherwise, the bitmap will be displayed as a square.
+     */
+    ScalableBitmap( wxWindow                    *parent,
+                    boost::filesystem::path&    icon_path,
+                    const  wxSize               icon_size,
+                    bool                        as_circle);
 
 private:
     wxWindow*       m_parent{ nullptr };

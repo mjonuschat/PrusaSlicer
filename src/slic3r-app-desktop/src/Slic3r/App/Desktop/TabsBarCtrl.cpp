@@ -188,7 +188,13 @@ void TabsBarCtrl::Button::render()
         if (m_bmp_bundle.IsOk()) {
             wxSize szIcon = get_preferred_size(m_bmp_bundle, this);
             pt.x = (rc.width - szIcon.x) * 0.5;
-            pt.y = em * 1.5;
+            if (text.IsEmpty()) {
+                // button has no text, so icon should be aligned in the center
+                pt.y = (rc.height - szIcon.y) * 0.5;
+            }
+            else {
+                pt.y = em * 1.5;
+            }
             dc.DrawBitmap(m_bmp_bundle.GetBitmapFor(this), pt, true);
             pt.y += em + szIcon.y;
         }
