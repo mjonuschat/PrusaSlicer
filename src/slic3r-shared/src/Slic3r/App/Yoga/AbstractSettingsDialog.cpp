@@ -100,7 +100,7 @@ void AbstractSettingsDialog::emplace_subcategory(
 
     if (!description.empty()) {
         Text* desc = subcategory->emplace_back<Text>(description);
-        desc->set_wrap(true);
+        desc->set_wrap_mode(Text::WrapMode::Wrap);
     }
 }
 

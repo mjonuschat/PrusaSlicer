@@ -68,7 +68,10 @@ ConfigRowItem::ConfigRowItem(
         m_label->set_self_align(YGAlignCenter);
     } else {
         m_label->set_flex_grow(1);
-        m_label->set_wrap(true);
+        m_label->set_height(40);
+        m_label->set_wrap_mode(Text::WrapMode::WrapElide);
+        m_label->set_align({AlignH::Left, AlignV::Center});
+        m_label->set_padding(Paddings(0, 0, 5, 0));
 
         if (data.def().full_width) {
             m_input->set_flex_grow(1);

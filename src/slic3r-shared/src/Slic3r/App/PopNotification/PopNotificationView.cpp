@@ -138,7 +138,6 @@ void PopNotificationView::basic_layout(Render::Icon icon_override)
     // m_right_column->set_self_align(YGAlignFlexEnd);
     m_right_column->set_min_size({25, MinHeight});
 
-    m_mid_column->set_self_align(YGAlignStretch);
     Yoga::LayoutButton* close_button = m_right_column->emplace_back<Yoga::LayoutButton>("", Render::Icon::PrintIdle);
     close_button->set_min_size({20, 20});
     close_button->set_max_size({20, 20});
@@ -194,13 +193,12 @@ void PopNotificationView::basic_mid_header_layout(const std::string& header)
     m_header->set_text_color(text_color());
     m_header->set_margin({0.f, 0.f, 0.f, 5.f});
     m_header->set_flex_shrink(0.f);
-    m_header->set_wrap(true);
 }
 
 void PopNotificationView::basic_mid_text_layout(const std::string& text)
 {
     m_text = m_mid_column->emplace_back<Yoga::Text>(text);
-    m_text->set_wrap(true);
+    m_text->set_wrap_mode(Yoga::Text::WrapMode::Wrap);
     m_text->set_text_color(text_color());
     m_text->set_margin({0.f, 0.f, 0.f, 5.f});
     m_text->set_flex_shrink(0.f);

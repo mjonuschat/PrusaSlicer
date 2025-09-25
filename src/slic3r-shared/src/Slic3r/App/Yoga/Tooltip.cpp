@@ -46,7 +46,7 @@ void Tooltip::set_text(const std::string& text)
 
 void Tooltip::set_text_wrap(bool wrap)
 {
-    m_text->set_wrap(wrap);
+    m_text->set_wrap_mode(Text::WrapMode::Wrap);
     m_text->set_flex_grow(wrap ? 1 : 0);
 }
 

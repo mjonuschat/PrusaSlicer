@@ -356,51 +356,61 @@ void Item::set_visible(bool visible)
 void Item::set_width(float width)
 {
     YGNodeStyleSetWidth(m_node, width);
+    set_style_dirty();
 }
 
 void Item::set_height(float height)
 {
     YGNodeStyleSetHeight(m_node, height);
+    set_style_dirty();
 }
 
 void Item::set_width_percent(float width_percent)
 {
     YGNodeStyleSetWidthPercent(m_node, width_percent);
+    set_style_dirty();
 }
 
 void Item::set_height_percent(float height_percent)
 {
     YGNodeStyleSetHeightPercent(m_node, height_percent);
+    set_style_dirty();
 }
 
 void Item::set_left(float left)
 {
     YGNodeStyleSetPosition(m_node, YGEdgeLeft, left);
+    set_style_dirty();
 }
 
 void Item::set_right(float right)
 {
     YGNodeStyleSetPosition(m_node, YGEdgeRight, right);
+    set_style_dirty();
 }
 
 void Item::set_top(float top)
 {
     YGNodeStyleSetPosition(m_node, YGEdgeTop, top);
+    set_style_dirty();
 }
 
 void Item::set_bottom(float bottom)
 {
     YGNodeStyleSetPosition(m_node, YGEdgeBottom, bottom);
+    set_style_dirty();
 }
 
 void Item::set_flex(float flex)
 {
     YGNodeStyleSetFlex(m_node, flex);
+    set_style_dirty();
 }
 
 void Item::set_flex_wrap(YGWrap wrap)
 {
     YGNodeStyleSetFlexWrap(m_node, wrap);
+    set_style_dirty();
 }
 
 void Item::remove_later(Item* child)
