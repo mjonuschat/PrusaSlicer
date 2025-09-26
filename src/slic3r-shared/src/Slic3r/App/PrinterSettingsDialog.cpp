@@ -88,7 +88,7 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
     m_page_list->emplace_back<Separator>(Orientation::Horizontal);
 
     ScrollArea* scroll_area = m_page_list->emplace_back<ScrollArea>();
-    scroll_area->set_max_size({YGUndefined, 200});
+    scroll_area->set_max_size({YGUndefined, 275});
 
     // Create the ViewFactory explicitly:
     auto factory        = PrinterListViewFactory([this](size_t index) {
@@ -146,8 +146,8 @@ void Slic3r::App::PrinterSettingsDialog::create_page_settings()
     m_page_settings->emplace_back<Separator>(Orientation::Horizontal);
 
     m_printer_icon = m_page_settings->emplace_back<Icon>(Render::Icon::PrinterNEXT);
-    m_printer_icon->set_height(150);
-    m_printer_icon->set_margin({0, 10});
+    m_printer_icon->set_height(225);
+    m_printer_icon->set_margin({0, 5});
     m_printer_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
 
     m_page_settings->emplace_back<Text>(_u8L("Sheet"), Render::ImguiFontType::Bold);

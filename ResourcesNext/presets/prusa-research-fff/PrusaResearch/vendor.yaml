@@ -45,7 +45,7 @@ features:
 visual:
   bed_model: xl_bed.stl
   bed_texture: xl.svg
-  thumbnail: XL_thumbnail.png
+  thumbnail: XL_thumbnail.svg
 ---
 #kind: printer
 #technology: FFF
@@ -94,7 +94,7 @@ features:
 visual:
   bed_model: coreone_bed.stl
   bed_texture: coreone.svg
-  thumbnail: COREONE_thumbnail.png
+  thumbnail: COREONE_thumbnail.svg
 ---
 kind: printer
 technology: FFF
@@ -110,7 +110,7 @@ features:
 visual:
   bed_model: mk4_bed.stl
   bed_texture: mk4.svg
-  thumbnail: MK4_thumbnail.png
+  thumbnail: MK4_thumbnail.svg
 ---
 kind: printer
 technology: FFF
@@ -126,7 +126,7 @@ features:
 visual:
   bed_model: mk4_bed.stl
   bed_texture: mk4s.svg
-  thumbnail: MK4S_thumbnail.png
+  thumbnail: MK4S_thumbnail.svg
 ---
 kind: printer
 technology: FFF
@@ -181,7 +181,7 @@ features:
 visual:
   bed_model: mk3_bed.stl
   bed_texture: mk3.svg
-  thumbnail: MK3_thumbnail.png
+  thumbnail: MK3_thumbnail.svg
 ---
 kind: printer
 technology: FFF
@@ -203,7 +203,7 @@ features:
 visual:
   bed_model: mk3_bed.stl
   bed_texture: mk3.svg
-  thumbnail: MK3_thumbnail.png
+  thumbnail: MK3_thumbnail.svg
 ---
 kind: printer
 technology: FFF
@@ -227,7 +227,7 @@ features:
 visual:
   bed_model: mini_bed.stl
   bed_texture: mini.svg
-  thumbnail: MINI_thumbnail.png
+  thumbnail: MINI_thumbnail.svg
 ---
 kind: printer
 technology: FFF
@@ -493,7 +493,7 @@ tools:
 - tool: '0.4'
 sheet: satin
 visual:
-  thumbnail: XL2IS_thumbnail.png
+  thumbnail: XL2_thumbnail.svg
 ---
 kind: printer_config
 id: xl-5t
@@ -504,7 +504,7 @@ tools:
 - tool: '0.4'
 sheet: satin
 visual:
-  thumbnail: XL5IS_thumbnail.png
+  thumbnail: XL5_thumbnail.svg
 ---
 kind: printer_config
 id: c1

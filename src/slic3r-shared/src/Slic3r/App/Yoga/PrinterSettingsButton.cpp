@@ -11,6 +11,7 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip) : Recta
     set_checkable(true);
 
     m_icon = emplace_back<Icon>(Render::Icon::None);
+    m_icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
     m_icon->set_aspect_ratio(1);
 
     Item* texts_wrapper = emplace_back<Item>();
