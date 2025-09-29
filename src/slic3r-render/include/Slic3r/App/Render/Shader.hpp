@@ -58,6 +58,7 @@ public:
     void set_uniform(const char* name, const Domain::Vec2f& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const Domain::Vec2d& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const Domain::Vec3f& value) const { set_uniform(get_uniform_location(name), value); }
+    void set_uniform(const char* name, const Domain::Vec4f& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const Domain::Vec3d& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const Domain::ColorRGB& value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, const Domain::ColorRGBA& value) const { set_uniform(get_uniform_location(name), value); }
@@ -83,6 +84,7 @@ public:
     void set_uniform(int id, const Domain::Vec2f& value) const;
     void set_uniform(int id, const Domain::Vec2d& value) const;
     void set_uniform(int id, const Domain::Vec3f& value) const;
+    void set_uniform(int id, const Domain::Vec4f& value) const;
     void set_uniform(int id, const Domain::Vec3d& value) const;
     void set_uniform(int id, const Domain::ColorRGB& value) const;
     void set_uniform(int id, const Domain::ColorRGBA& value) const;

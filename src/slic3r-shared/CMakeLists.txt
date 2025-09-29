@@ -243,6 +243,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/Lights.hpp
         include/Slic3r/App/Scene/LightingHelper.hpp
         src/Slic3r/App/Scene/LightingHelper.cpp
+        include/Slic3r/App/Scene/PrintVolumeData.hpp
+        src/Slic3r/App/Scene/PrintVolumeData.cpp
         include/Slic3r/App/Scene/BedNodeBuilder.hpp
         src/Slic3r/App/Scene/BedNodeBuilder.cpp
         include/Slic3r/App/Scene/BedNodeTag.hpp

@@ -7,6 +7,7 @@
 #include "Slic3r/App/Render/Types.hpp"
 #include "Slic3r/App/Scene/Lights.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
+#include "Slic3r/App/Scene/PrintVolumeData.hpp"
 
 #include <optional>
 
@@ -55,6 +56,14 @@ public:
 
     virtual bool has_pbr() const = 0;
     virtual const std::optional<PBRParams>& pbr() const = 0;
+
+    /**
+     * @brief Set associated print volume data.
+     */
+    virtual void set_print_volume(const PrintVolumeData& print_volume) = 0;
+
+    virtual bool has_print_volume() const = 0;
+    virtual const std::optional<PrintVolumeData>& print_volume() const = 0;
 };
 
 } // namespace Slic3r::App::Scene

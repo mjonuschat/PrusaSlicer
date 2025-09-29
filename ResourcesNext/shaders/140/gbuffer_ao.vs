@@ -10,12 +10,12 @@ in vec3 v_normal;
 
 out vec3 eye_normal;
 out vec4 light_position;
-out float world_z;
+out vec3 world_position;
 
 void main()
 {
     eye_normal = view_normal_matrix * v_normal;
     light_position = light_matrix * vec4(v_position, 1.0);
-    world_z = (model_matrix * vec4(v_position, 1.0)).z;
+    world_position = (model_matrix * vec4(v_position, 1.0)).xyz;
     gl_Position = projection_view_model_matrix * vec4(v_position, 1.0);
 }

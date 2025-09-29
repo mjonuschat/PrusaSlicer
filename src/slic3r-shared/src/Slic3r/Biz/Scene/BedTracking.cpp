@@ -23,6 +23,12 @@ void remove_instance_from_bed(Domain::Project& project, Domain::ModelInstance* m
 {
     if (remove_instance(project.unplaced_model_instances(), model_instance)) {
         changes.unplaced_instances_updated = true;
+        for (auto& cc : project.config_containers()) {
+            for (auto& bi : cc->bed_instances()) {
+                if (remove_instance(bi->colliding_instances, model_instance))
+                    --changes.colliding_instances_updated_count;
+            }
+        }
         return;
     }
     for (auto& cc : project.config_containers())
@@ -33,14 +39,17 @@ void remove_instance_from_bed(Domain::Project& project, Domain::ModelInstance* m
             }
 }
 
-std::pair<Domain::ConfigContainer*, Domain::BedInstance*>
+std::tuple<Domain::ConfigContainer*, Domain::BedInstance*, Algorithms::Bed::BedContainmentState>
 find_bed_instance_for_bounds(Domain::Project& project, const Domain::BoundingBox3d& bounds)
 {
-    for (auto& cc : project.config_containers())
-        for (auto& bi : cc->bed_instances())
-            if (Algorithms::Bed::contains_3d(*bi, bounds) == Algorithms::Bed::BedContainmentState::Inside)
-                return std::make_pair(cc.get(), bi.get());
-    return std::make_pair(nullptr, nullptr);
+    for (auto& cc : project.config_containers()) {
+        for (auto& bi : cc->bed_instances()) {
+            Algorithms::Bed::BedContainmentState state = Algorithms::Bed::contains_3d(*bi, bounds);
+            if (state == Algorithms::Bed::BedContainmentState::Inside || state == Algorithms::Bed::BedContainmentState::Colliding)
+                return std::make_tuple(cc.get(), bi.get(), state);
+        }
+    }
+    return std::make_tuple(nullptr, nullptr, Algorithms::Bed::BedContainmentState::Outside);
 }
 
 Domain::BoundingBox3d BedTracking::get_instance_bb(const Domain::Project& project, const Domain::ModelInstance& inst)
@@ -81,7 +90,7 @@ Domain::BoundingBox3d BedTracking::get_instance_bb(const Domain::Project& projec
     const Domain::Transformation& trafo = inst.get_transformation();
 
     auto try_to_use_cache_entry = [](const CacheInstanceEntry& candidate, CacheInstanceEntry& cache_entry, const Domain::Transformation& trafo) -> bool {
-        if (! candidate.cached_bb.defined)
+        if (!candidate.cached_bb.defined || !cache_entry.cached_bb.defined)
             return false;
         if (candidate.inst_trafo.get_rotation().isApprox(trafo.get_rotation())) {
             // Rotation part is the same as before. We can just update the bounding box itself.
@@ -144,13 +153,20 @@ void BedTracking::update_instance_bed_placement(Domain::Project& project, Domain
 {
     const Domain::BoundingBox3d& bb = get_instance_bb(project, inst);
 
-    if (auto [cc, bi] = find_bed_instance_for_bounds(project, bb); bi != nullptr) {
-        bi->model_instances.push_back(&inst);
-        changes.updated_beds.insert(Domain::BedRef{cc->id().id, bi->id().id});
-    } else {
-        project.unplaced_model_instances().push_back(&inst);
-        changes.unplaced_instances_updated = true;
+    auto [cc, bi, state] = find_bed_instance_for_bounds(project, bb);
+    if (bi != nullptr) {
+        if (state == Algorithms::Bed::BedContainmentState::Inside) {
+            bi->model_instances.push_back(&inst);
+            changes.updated_beds.insert(Domain::BedRef{ cc->id().id, bi->id().id });
+            return;
+        }
+        else {
+            bi->colliding_instances.push_back(&inst);
+            ++changes.colliding_instances_updated_count;
+        }
     }
+    project.unplaced_model_instances().push_back(&inst);
+    changes.unplaced_instances_updated = true;
 }
 
 

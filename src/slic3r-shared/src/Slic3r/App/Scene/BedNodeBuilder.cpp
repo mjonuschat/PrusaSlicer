@@ -8,6 +8,7 @@
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
 
 #include <numbers>
 

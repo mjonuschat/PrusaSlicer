@@ -28,6 +28,7 @@ using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Vec2f;
 using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec3f;
+using Slic3r::Domain::Vec4f;
 
 namespace Slic3r::App::Render {
 
@@ -397,6 +398,14 @@ void Shader::set_uniform(int id, const Vec3f& value) const
 {
     if (id >= 0) {
         glUniform3fv(id, 1, value.data());
+        glCheck();
+    }
+}
+
+void Shader::set_uniform(int id, const Vec4f& value) const
+{
+    if (id >= 0) {
+        glUniform4fv(id, 1, value.data());
         glCheck();
     }
 }

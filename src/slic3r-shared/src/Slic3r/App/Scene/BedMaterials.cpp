@@ -23,7 +23,6 @@ Render::Material BedMaterials::plate_default_material(const Render::Device& devi
     ret
         .set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
-        .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
         .set_transparent(color.is_transparent());
     return ret;
 }
@@ -78,7 +77,6 @@ Render::Material BedMaterials::model_material(const Render::Device& device)
     Render::Material ret;
     ret
         .set_shader(device.context().shader_manager().shader("gouraud_light"))
-        .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;
@@ -99,7 +97,6 @@ Render::Material BedMaterials::axis_material(const Render::Device& device, uint8
     }
     Render::Material ret;
     ret.set_shader(device.context().shader_manager().shader("gouraud_light"))
-        .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;
@@ -121,7 +118,6 @@ Render::Material BedMaterials::plate_default_override_material(const Render::Dev
     Render::Material ret;
     ret
         .set_shader(device.context().shader_manager().shader("gouraud_light"))
-        .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;
@@ -175,7 +171,6 @@ Render::Material BedMaterials::model_override_material(const Render::Device& dev
     Render::Material ret;
     ret
         .set_shader(device.context().shader_manager().shader("gouraud_light"))
-        .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;

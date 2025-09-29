@@ -1757,7 +1757,6 @@ void MeasureGizmo::build_point_feature(
 
     Render::Material material = Render::Material{}
                                     .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-                                    .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
                                     .set_uniform("uniform_color", color);
 
     Domain::Transform3d xform = Domain::Transform3d::Identity();
@@ -1793,7 +1792,6 @@ void MeasureGizmo::build_edge_feature(
 
     Render::Material material = Render::Material{}
                                     .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-                                    .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
                                     .set_uniform("uniform_color", color);
 
     Domain::Vec3d unit_dir = (to - from).normalized();
@@ -1832,7 +1830,6 @@ void MeasureGizmo::build_circle_feature(
 
     Render::Material material = Render::Material{}
                                     .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-                                    .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
                                     .set_uniform("uniform_color", color);
 
     auto q                    = Eigen::Quaterniond{}.FromTwoVectors(Domain::Vec3d::UnitZ(), normal);
@@ -1887,7 +1884,6 @@ void MeasureGizmo::build_plane_feature(
 
     Render::Material material = Render::Material{}
                                     .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-                                    .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
                                     .set_uniform("uniform_color", color);
 
     builder.set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))

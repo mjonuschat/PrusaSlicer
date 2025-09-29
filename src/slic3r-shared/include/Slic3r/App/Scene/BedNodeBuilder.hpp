@@ -1,16 +1,20 @@
 #pragma once
 
-#include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
+#include "Slic3r/App/Scene/IRenderLayerObject.hpp"
 
 namespace Slic3r::Domain {
 struct BedInstance;
-class Bed;
 } // namespace Slic3r::Domain
+
+namespace Slic3r::App::Render {
+class Device;
+} // namespace Slic3r::App::Render
 
 namespace Slic3r::App::Scene {
 
 class NodeBuilder;
 struct BedNodeTag;
+class ScenePresenterProjectContext;
 
 static constexpr double BED_OFFSET_Z = -0.025;
 

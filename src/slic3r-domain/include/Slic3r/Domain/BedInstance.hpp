@@ -33,6 +33,7 @@ struct BedInstance : public ObjectBase
     std::reference_wrapper<const Bed> bed;
     Transformation transformation;
     ModelInstanceList model_instances;
+    ModelInstanceList colliding_instances;
     bool print_volume_enabled{false};
     std::optional<ModelWipeTower> wipe_tower;
     std::optional<CustomGCode::Info> custom_gcode;

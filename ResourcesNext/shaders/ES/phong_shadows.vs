@@ -12,13 +12,13 @@ attribute vec3 v_normal;
 varying vec3 eye_normal;
 varying vec3 eye_position;
 varying vec4 light_position;
-varying float world_z;
+varying vec3 world_position;
 
 void main()
 {
     eye_normal = view_normal_matrix * v_normal;
     eye_position = (view_model_matrix * vec4(v_position, 1.0)).xyz;
     light_position = light_matrix * vec4(v_position, 1.0);
-    world_z = (model_matrix * vec4(v_position, 1.0)).z;
+    world_position = (model_matrix * vec4(v_position, 1.0)).xyz;
     gl_Position = projection_matrix * vec4(eye_position, 1.0);
 }

@@ -28,10 +28,16 @@ struct BedTrackingChanges
      */
     bool unplaced_instances_updated{false};
 
+    /**
+     * @brief Indicates if BedInstance::colliding_instances gets updated too.
+     */
+    int colliding_instances_updated_count{ 0 };
+
     void append(const BedTrackingChanges& others)
     {
         std::ranges::copy(others.updated_beds, std::inserter(updated_beds, updated_beds.end()));
         unplaced_instances_updated = unplaced_instances_updated || others.unplaced_instances_updated;
+        colliding_instances_updated_count += others.colliding_instances_updated_count;
     }
 };
 

@@ -24,6 +24,7 @@
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
+#include "Slic3r/App/Scene/PrintVolumeData.hpp"
 
 using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::SquareMatrix4d;
@@ -42,13 +43,6 @@ static const std::unordered_map<Domain::ModelVolumeType, ColorRGBA> VOLUME_COLOR
     {Domain::ModelVolumeType::PARAMETER_MODIFIER, {1.0f, 1.0f, 0.0f, 0.5f}},
     {Domain::ModelVolumeType::INVALID,            {1.0f, 0.2f, 0.2f, 0.5f}},
 };
-
-static const ColorRGBA OUTSIDE_OPAQUE_COLOR = ColorRGBA(0.0f, 0.38f, 0.8f, 1.0f);
-static const ColorRGBA OUTSIDE_TRANSPARENT_COLOR = ColorRGBA(0.0f, 0.38f, 0.8f, 0.65f);
-static const ColorRGBA OUTSIDE_SELECTED_OPAQUE_COLOR = ColorRGBA(0.19f, 0.58f, 1.0f, 1.0f);
-static const ColorRGBA OUTSIDE_SELECTED_TRANSPARENT_COLOR = ColorRGBA(0.19f, 0.58f, 1.0f, 0.65f);
-static const ColorRGBA SELECTED_OPAQUE_COLOR = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-static const ColorRGBA SELECTED_TRANSPARENT_COLOR = ColorRGBA(1.0f, 1.0f, 1.0f, 0.65f);
 
 namespace {
 template <typename TagT, typename RefT>
@@ -168,33 +162,88 @@ void PlaterScenePresenter::update_cameras(const std::function<void(Scene::Camera
 }
 
 namespace {
-Domain::ModelInstanceList get_instances_on_beds(const PlaterScenePresenter::BedInstances& bed_instances)
+std::pair<Domain::ModelInstanceList, Domain::ModelInstanceList> get_instances_on_beds(const PlaterScenePresenter::BedInstances& bed_instances)
 {
-    Domain::ModelInstanceList result;
+    std::pair<Domain::ModelInstanceList, Domain::ModelInstanceList> result;
     for (const auto& bed_instance : bed_instances) {
         const Domain::ModelInstanceList& instances_on_bed{bed_instance.get().model_instances};
-        result.insert(result.end(), instances_on_bed.begin(), instances_on_bed.end());
+        result.first.insert(result.first.end(), instances_on_bed.begin(), instances_on_bed.end());
+        const Domain::ModelInstanceList& instances_colliding{ bed_instance.get().colliding_instances };
+        result.second.insert(result.second.end(), instances_colliding.begin(), instances_colliding.end());
     }
     return result;
 }
 } // namespace
+
+static std::unordered_map<Domain::SelectionId, const Domain::BedInstance*> model_instance_to_bed_instance_lookup_map(const Domain::Project& project)
+{
+    std::unordered_map<size_t, const Domain::BedInstance*> ret;
+    for (const auto& cc : project.config_containers()) {
+        for (const auto& bi : cc->bed_instances()) {
+            for (const auto& mi : bi->model_instances) {
+                ret[mi->id().id] = bi.get();
+            }
+        }
+    }
+    return ret;
+}
+
+static std::unordered_map<Domain::SelectionId, const Domain::BedInstance*> collision_instance_to_bed_instance_lookup_map(const Domain::Project& project)
+{
+    std::unordered_map<Domain::SelectionId, const Domain::BedInstance*> ret;
+    for (const auto& cc : project.config_containers()) {
+        for (const auto& bi : cc->bed_instances()) {
+            for (const auto& mi : bi->colliding_instances) {
+                ret[mi->id().id] = bi.get();
+            }
+        }
+    }
+    return ret;
+}
+
+static const Domain::BedInstance* find_bed_instance_by_model_instance_id(const std::unordered_map<size_t, const Domain::BedInstance*>& lookup_map,
+    Domain::SelectionId inst_id)
+{
+    auto it = lookup_map.find(inst_id);
+    return (it != lookup_map.end()) ? it->second : nullptr;
+}
+
+static ColorRGBA select_color(bool is_model_part, bool is_selected, bool is_outside)
+{
+    static const ColorRGBA OUTSIDE_COLOR = ColorRGBA(0.0f, 0.38f, 0.8f, 1.0f);
+    static const ColorRGBA OUTSIDE_SELECTED_COLOR = ColorRGBA(0.19f, 0.58f, 1.0f, 1.0f);
+    static const ColorRGBA SELECTED_COLOR = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
+
+    ColorRGBA ret = (is_outside && is_selected) ? OUTSIDE_SELECTED_COLOR :
+                    is_outside ? OUTSIDE_COLOR :
+                    is_selected ?  SELECTED_COLOR : ColorRGBA::BLACK();
+
+    if (!is_model_part)
+        ret.a(0.65f);
+
+    return ret;
+}
 
 void PlaterScenePresenter::update_volume_materials()
 {
     BedInstances bed_instances;
     for (auto& cc : m_project_interactor.scene_interactor().selected_project_config_containers()) {
         for (auto& bed_inst : cc->bed_instances()) {
-            if (!bed_inst->model_instances.empty())
+            if (!bed_inst->model_instances.empty() || !bed_inst->colliding_instances.empty())
                 bed_instances.push_back(*bed_inst);
         }
     }
-    Domain::ModelInstanceList instances{get_instances_on_beds(bed_instances)};
+
+    std::pair<Domain::ModelInstanceList, Domain::ModelInstanceList> instances = get_instances_on_beds(bed_instances);
 
     BedInstances sel_bed_instances = selected_bed_instances();
-    Domain::ModelInstanceList sel_instances{get_instances_on_beds(sel_bed_instances)};
+    std::pair<Domain::ModelInstanceList, Domain::ModelInstanceList> sel_instances = get_instances_on_beds(sel_bed_instances);
 
     const Domain::Project& proj = m_project_interactor.selected_project();
     const Biz::Scene::ObjectSelection& selection = m_project_interactor.scene_interactor().object_selection();
+
+    std::unordered_map<Domain::SelectionId, const Domain::BedInstance*> mi_to_bi_map = model_instance_to_bed_instance_lookup_map(proj);
+    std::unordered_map<Domain::SelectionId, const Domain::BedInstance*> ci_to_bi_map = collision_instance_to_bed_instance_lookup_map(proj);
 
     Scene::visit(
         scene().root(),
@@ -204,39 +253,76 @@ void PlaterScenePresenter::update_volume_materials()
             if (tag != nullptr && n.has_render_component()) {
                 const auto* obj = proj.find_object_by_id(tag->object_id);
                 const auto* inst = proj.find_instance_by_id(tag->object_id, tag->instance_id);
-                bool on_bed = std::find(instances.begin(), instances.end(), inst) != instances.end();
-                bool on_selected_bed = std::find(sel_instances.begin(), sel_instances.end(), inst) != sel_instances.end();
+                bool is_on_bed = std::find(instances.first.begin(), instances.first.end(), inst) != instances.first.end() ||
+                    std::find(instances.second.begin(), instances.second.end(), inst) != instances.second.end();
+                bool is_on_selected_bed = std::find(sel_instances.first.begin(), sel_instances.first.end(), inst) != sel_instances.first.end();
                 bool is_model_part = tag->volume_type == Domain::ModelVolumeType::MODEL_PART;
-                n.render_component()->set_shadows((is_model_part && on_selected_bed) ?
+                n.render_component()->set_shadows((is_model_part && is_on_selected_bed) ?
                     Render::Shadows{true, true} : Render::Shadows{false, false});
 
-                if (on_bed) {
-                    Domain::ElementRef el{ obj->id().id, inst->id().id, tag->volume_id };
-                    if (selection.is_selected(el)) {
-                        ColorRGBA color = is_model_part ? SELECTED_OPAQUE_COLOR : SELECTED_TRANSPARENT_COLOR;
-                        Render::Material mat = Render::Material{}.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
-                        n.set_material_override(mat);
+                const Domain::BedInstance* bed_inst = nullptr;
+                const Domain::Bed* bed = nullptr;
+                bool is_colliding = false;
+                bool is_selected = selection.is_selected({ obj->id().id, inst->id().id, tag->volume_id });
+
+                ColorRGBA color;
+                if (is_on_bed) {
+                    bed_inst = find_bed_instance_by_model_instance_id(mi_to_bi_map, inst->id().id);
+                    if (bed_inst == nullptr) {
+                        bed_inst = find_bed_instance_by_model_instance_id(ci_to_bi_map, inst->id().id);
+                        is_colliding = true;
                     }
-                    else
-                        n.remove_material_override();
+                    bed = &bed_inst->bed.get();
+
+                    color = select_color(is_model_part, is_selected, is_colliding);
                 }
+                else
+                    color = select_color(is_model_part, is_selected, true);
+
+                if (is_on_bed && !is_colliding && !is_selected)
+                    n.remove_material_override();
                 else {
-                    ColorRGBA color;
-                    Domain::ElementRef el{ obj->id().id, inst->id().id, tag->volume_id };
-                    if (selection.is_selected(el))
-                        color = is_model_part ? OUTSIDE_SELECTED_OPAQUE_COLOR : OUTSIDE_SELECTED_TRANSPARENT_COLOR;
-                    else
-                        color = is_model_part ? OUTSIDE_OPAQUE_COLOR : OUTSIDE_TRANSPARENT_COLOR;
                     Render::Material mat = Render::Material{}.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
                     n.set_material_override(mat);
                 }
 
+                Scene::PrintVolumeData print_volume;
+                if (bed != nullptr) {
+                    Domain::Vec2d offset = Biz::Algorithms::Point::to_2d(bed_inst->transformation.get_offset());
+                    print_volume.type = bed->type();
+                    print_volume.z_data = is_model_part ? Domain::Vec2f(float(Scene::BED_OFFSET_Z), bed->max_print_height()) : Domain::Vec2f(-FLT_MAX, FLT_MAX);
+                    if (print_volume.type == Domain::BedType::Circle) {
+                        std::optional<Domain::Bed::Circle> circle = bed->circle();
+                        print_volume.xy_data = Domain::Vec4f(
+                            float(offset.x() + circle->first.x()),
+                            float(offset.y() + circle->first.y()),
+                            is_model_part ? float(circle->second) : FLT_MAX,
+                            FLT_MAX
+                        );
+                    }
+                    else {
+                        Domain::Vec2d center = offset + bed->center();
+                        Domain::Vec2d half_bbox_size = 0.5 * bed->contour_aabb_extent();
+                        print_volume.xy_data = Domain::Vec4f(
+                            is_model_part ? float(center.x() - half_bbox_size.x()) : -FLT_MAX,
+                            is_model_part ? float(center.y() - half_bbox_size.y()) : -FLT_MAX,
+                            is_model_part ? float(center.x() + half_bbox_size.x()) : FLT_MAX,
+                            is_model_part ? float(center.y() + half_bbox_size.y()) : FLT_MAX
+                        );
+                    }
+                }
+                else {
+                    print_volume.type = Domain::BedType::Invalid;
+                    print_volume.z_data = Domain::Vec2f(-FLT_MAX, FLT_MAX);
+                    print_volume.xy_data = Domain::Vec4f(-FLT_MAX, -FLT_MAX, FLT_MAX, FLT_MAX);
+                }
+
                 Render::Material mat = n.render_component()->material();
-                mat.set_uniform("out_of_bed_threshold_z", is_model_part ? float(Scene::BED_OFFSET_Z) : -FLT_MAX);
+                set_uniforms(print_volume, mat);
                 n.render_component()->replace_material(mat);
                 if (n.has_material_override()) {
                     Render::Material ov_mat = *n.material_override();
-                    ov_mat.set_uniform("out_of_bed_threshold_z", is_model_part ? float(Scene::BED_OFFSET_Z) : -FLT_MAX);
+                    set_uniforms(print_volume, ov_mat);
                     n.set_material_override(ov_mat);
                 }
             }
@@ -508,7 +594,6 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
     Biz::Scene::TransformState state, const Biz::BedTrackingChanges& bed_tracking_changes)
 {
     const BedInstances bed_instances{selected_bed_instances()};
-    const Domain::ModelInstanceList instance{get_instances_on_beds(bed_instances)};
 
     auto& scn        = scene();
     const auto& proj = m_workbench.project(project_id);
@@ -530,7 +615,8 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
         }
     );
 
-    if (state == Biz::Scene::TransformState::Completed || (!bed_tracking_changes.updated_beds.empty() && bed_tracking_changes.unplaced_instances_updated))
+    if (state == Biz::Scene::TransformState::Completed ||
+        (!bed_tracking_changes.updated_beds.empty() && bed_tracking_changes.unplaced_instances_updated) || bed_tracking_changes.colliding_instances_updated_count != 0)
         m_volume_materials_dirty = true;
 
     if (state != Biz::Scene::TransformState::InProgress)
@@ -698,7 +784,7 @@ void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene:
     if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
         // clear depth buffer so all gizmo handles are rendered over document objects
         cmd_buf.clear_buffers(false, true);
-    else if (layer_idx == int(PlaterSceneLayer::ObjectAccessoriesOnTop))
+    else if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::ObjectAccessoriesOnTop))
         cmd_buf.set_depth_test_enabled(false);
     else if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::AlwaysOnTop))
         // clear depth buffer to ensure geometry belonging to this layer is always rendered over any other object

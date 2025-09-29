@@ -237,7 +237,6 @@ void SlaViewer::build_sla_object_mesh(
 
     auto material = Render::Material{}
         .set_shader(m_device->context().shader_manager().shader("gouraud_light"))
-        .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
 
@@ -282,7 +281,6 @@ void SlaViewer::build_clipping_plane_node(SlaMeshType plane_type, Scene::NodeBui
     ColorRGBA color = ColorRGBA{ 1.0f, 0.0f, 0.37f, 1.0f };
     auto material = Render::Material{}
         .set_shader(m_device->context().shader_manager().shader("gouraud_light"))
-        .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
 

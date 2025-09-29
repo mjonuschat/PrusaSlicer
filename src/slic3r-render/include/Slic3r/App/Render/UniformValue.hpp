@@ -18,6 +18,7 @@ using UniformValue = std::variant<
     , bool
     , Domain::Vec2f
     , Domain::Vec3f
+    , Domain::Vec4f
     , Domain::SquareMatrix3f
     , Domain::SquareMatrix4f
     , Domain::ColorRGB

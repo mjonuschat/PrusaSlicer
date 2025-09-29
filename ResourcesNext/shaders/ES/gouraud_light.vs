@@ -25,7 +25,7 @@ attribute vec3 v_normal;
 
 // x = tainted, y = specular;
 varying vec2 intensity;
-varying float world_z;
+varying vec3 world_position;
 
 vec3 light_direction(Light light)
 {
@@ -44,6 +44,6 @@ void main()
         intensity.x += lights[i].ambient + max(dot(eye_normal, dir), 0.0) * lights[i].diffuse;
         intensity.y += lights[i].specular * pow(max(dot(-normalize(eye_position.xyz), reflect(-dir, eye_normal)), 0.0), lights[i].shininess);    
     }
-    world_z = (model_matrix * vec4(v_position, 1.0)).z;
+    world_position = (model_matrix * vec4(v_position, 1.0)).xyz;
     gl_Position = projection_matrix * eye_position;
 }

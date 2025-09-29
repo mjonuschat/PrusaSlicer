@@ -58,11 +58,16 @@ public:
     void set_pbr(const PBRParams& pbr) override { m_pbr = pbr; }
     const std::optional<PBRParams>& pbr() const override { return m_pbr; }
 
+    void set_print_volume(const PrintVolumeData& print_volume) override { m_print_volume = print_volume; }
+    bool has_print_volume() const override { return m_print_volume.has_value(); }
+    const std::optional<PrintVolumeData>& print_volume() const override { return m_print_volume; }
+
 protected:
     const Render::Geometry* m_geometry{nullptr};
     Render::Material m_material;
     Render::Shadows m_shadows;
     std::optional<PBRParams> m_pbr;
+    std::optional<PrintVolumeData> m_print_volume;
     Render::PrimitiveType m_primitive_type{Render::PrimitiveType::Triangles};
     size_t m_vertex_offset{0};
     size_t m_vertex_count{0};
