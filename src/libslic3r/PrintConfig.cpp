@@ -192,6 +192,7 @@ static const t_config_enum_values s_keys_map_SeamPosition {
     { "random",         spRandom },
     { "nearest",        spNearest },
     { "aligned",        spAligned },
+    { "aligned_rear",   spAlignedRear },
     { "rear",           spRear }
 };
 
@@ -3423,10 +3424,11 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Position of perimeters starting points.");
     def->set_enum<SeamPosition>({
-        { "random",     L("Random") },
-        { "nearest",    L("Nearest") },
-        { "aligned",    L("Aligned") },
-        { "rear",       L("Rear") }
+        { "random",         L("Random") },
+        { "nearest",        L("Nearest") },
+        { "aligned",        L("Aligned") },
+        { "aligned_rear",   L("Aligned Rear") },
+        { "rear",           L("Rear") }
     });
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionEnum<SeamPosition>(spAligned));
