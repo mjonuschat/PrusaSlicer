@@ -62,7 +62,7 @@
             err = EINVAL;
         if (err == 0) {
             disk = DADiskCreateFromVolumePath(nullptr,session,(CFURLRef)volURL);
-            if (session == nullptr)
+            if (disk == nullptr)
                 err = EINVAL;
         }
         if (err == 0) {
@@ -86,6 +86,10 @@
         }
         if (descDict != nullptr)
             CFRelease(descDict);
+        if (session != nullptr)
+            CFRelease(session);
+        if (disk != nullptr)
+            CFRelease(disk);
     }
     return result;
 }
