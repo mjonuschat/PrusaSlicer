@@ -2,6 +2,11 @@
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Scene/Lights.hpp"
+#include "Slic3r/App/Scene/BedRenderHelper.hpp"
+#include "Slic3r/App/Scene/BedMaterials.hpp"
+#include "Slic3r/App/Scene/NodeVisitor.hpp"
+#include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
@@ -60,15 +65,16 @@ static std::pair<float, float> xyz_to_az(const Domain::Vec3f& xyz)
     return {za.second, za.first};
 }
 
-void render_imgui_graphics_settings_debug_window(ISceneProvider& scene_provider, Render::ImguiRender& imgui_render)
+void render_imgui_graphics_settings_debug_window(const Domain::Project& project, const Render::Device& device, ISceneProvider& scene_provider,
+    Render::ImguiRender& imgui_render)
 {
-#ifndef DEBUG
+#ifdef NDEBUG
     return;
-#endif
+#endif // NDEBUG
 
     float items_width = 150.0f;
 
-    const char* items[]          = {"Shading", "Lights"};
+    const char* items[]          = {"Shading", "Lights", "Bed"};
     static int item_selected_idx = 0;
 
     static bool reset_size = false;
@@ -484,8 +490,8 @@ void render_imgui_graphics_settings_debug_window(ISceneProvider& scene_provider,
                         ImGui::EndTable();
                     }
                 }
-
-            } else {
+            }  
+            else if (item_selected_idx == 1) {
                 Scene& scene    = scene_provider.scene();
                 Lighting lights = scene.lights();
 
@@ -602,6 +608,8 @@ void render_imgui_graphics_settings_debug_window(ISceneProvider& scene_provider,
                         lights.ambient_intensity = DEFAULT_LIGHT_AMBIENT;
                         modified                 = true;
                     }
+
+                    ImGui::Dummy({ 0.0f, 100.0f });
                 } else {
                     ImGui::Text("Light #%d", edit_id + 1);
 
@@ -767,6 +775,8 @@ void render_imgui_graphics_settings_debug_window(ISceneProvider& scene_provider,
                         edit_id    = -1;
                         reset_size = true;
                     }
+
+                    ImGui::Dummy({ 0.0f, 100.0f });
                 }
 
                 if (modified) {
@@ -781,6 +791,71 @@ void render_imgui_graphics_settings_debug_window(ISceneProvider& scene_provider,
 
                     scene.set_lights(lights);
                 }
+            }
+            else {
+                if (ImGui::BeginTable("Bed options", 2, ImGuiTableFlags_Borders)) {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Texture size");
+                    ImGui::TableSetColumnIndex(1);
+
+                    size_t texture_size = BedRenderHelper::bed_texture_size();
+                    size_t max_texture_size = Render::Context::instance().max_texture_size() / 2;
+
+                    std::vector<size_t> sizes;
+                    for (size_t i = 512; i <= max_texture_size; i *= 2) {
+                        sizes.push_back(i);
+                    }
+
+                    std::vector<std::string> sizes_str;
+                    std::transform(sizes.begin(), sizes.end(), std::back_inserter(sizes_str),
+                        [](size_t size) { return std::to_string(size) + "x" + std::to_string(size); }
+                    );
+
+                    auto it = std::find(sizes.begin(), sizes.end(), texture_size);
+                    DEBUG_ASSERT(it != sizes.end());
+                    int sel_size = int(std::distance(sizes.begin(), it));
+
+                    const char* preview_value = sizes_str[sel_size].c_str();
+
+                    ImGui::SetNextItemWidth(items_width);
+                    if (ImGui::BeginCombo("##texture_sizes", preview_value)) {
+                        for (int i = 0; i < int(sizes_str.size()); i++) {
+                            bool is_selected = (sel_size == i);
+                            if (ImGui::Selectable(sizes_str[i].c_str(), is_selected))
+                                sel_size = i;
+
+                            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                            if (is_selected)
+                                ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+
+                    // force bed textures reload with the new size
+                    if (sizes[sel_size] != texture_size) {
+                        BedRenderHelper::set_bed_texture_size(sizes[sel_size]);
+                        Scene& scene = scene_provider.scene();
+                        visit(scene.root(), [&](Node& n) {
+                                BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
+                                if (tag != nullptr) {
+                                    if (tag->type == BedElementType::PlateTextured) {
+                                        const Domain::ConfigContainer* cc = project.find_config_container(tag->config_container_id);
+                                        const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
+                                        n.render_component()->replace_material(BedMaterials::plate_textured_material(device, inst.bed.get()));
+                                        if (n.has_material_override())
+                                            n.set_material_override(BedMaterials::plate_textured_override_material(n.render_component()->material()));
+                                    }
+                                }
+                            }
+                        );
+                    }
+
+                    ImGui::EndTable();
+                }
+
+                ImGui::Dummy({ 0.0f, 100.0f });
             }
             ImGui::EndGroup();
         }

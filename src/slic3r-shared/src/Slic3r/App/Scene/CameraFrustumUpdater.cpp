@@ -78,7 +78,7 @@ void CameraFrustumUpdater::update_scene_aabb_node(ScenePresenterProjectContext& 
     material.set_shader(device.context().shader_manager().shader("flat")).set_uniform("uniform_color", Domain::ColorRGBA::YELLOW());
 
     NodeBuilder builder(scene);
-    builder.set_debug_name("scene_aabb").set_mesh(geom, material, int(Plater::PlaterSceneLayer::DocumentObjects));
+    builder.set_debug_name("scene_aabb").set_mesh(geom, material, Scene::RenderLayerId(Plater::PlaterSceneLayer::DocumentObjects));
 
     m_scene_aabb_node = builder.build().release();
     scene.add_child(m_scene_aabb_node);

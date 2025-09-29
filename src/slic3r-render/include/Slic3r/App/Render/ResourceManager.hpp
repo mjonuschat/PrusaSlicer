@@ -63,6 +63,8 @@ public:
         return count;
     }
 
+    bool is_empty() const { return m_resources.empty(); }
+
 private:
     using ResourceMap = std::unordered_map<K, std::unique_ptr<R>>;
 

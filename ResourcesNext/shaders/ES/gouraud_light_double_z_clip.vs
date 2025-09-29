@@ -16,9 +16,7 @@ uniform mat4 view_matrix;
 uniform mat4 view_model_matrix;
 uniform mat4 projection_matrix;
 uniform mat3 view_normal_matrix;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-uniform mat4 volume_world_matrix;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+uniform mat4 model_matrix;
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
 
@@ -48,5 +46,5 @@ void main()
     }
 
     gl_Position = projection_matrix * eye_position;
-    world_z = (volume_world_matrix * vec4(v_position, 1.0)).z;
+    world_z = (model_matrix * vec4(v_position, 1.0)).z;
 }

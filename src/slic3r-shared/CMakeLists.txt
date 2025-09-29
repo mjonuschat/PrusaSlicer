@@ -65,6 +65,10 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/MeasureUtils.hpp
         include/Slic3r/App/Plater/Measure.hpp
         src/Slic3r/App/Plater/Measure.cpp
+        include/Slic3r/App/Plater/SinkingContours.hpp
+        src/Slic3r/App/Plater/SinkingContours.cpp
+        include/Slic3r/App/Plater/SinkingContoursHelper.hpp
+        include/Slic3r/App/Plater/PlaterScenePresenterProjectContext.hpp
 
         include/Slic3r/App/View/IPanelView.hpp
 

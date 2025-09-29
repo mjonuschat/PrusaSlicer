@@ -27,9 +27,9 @@ public:
     NodeBuilder& transform(const std::function<void(Domain::Transform3d&)>& modifier);
     NodeBuilder& set_transform(const Domain::Transform3d&);
     NodeBuilder& set_transform(const Transform&);
-    NodeBuilder& set_mesh(const Render::Geometry* geometry, const Render::Material& material, int layer_index=0);
+    NodeBuilder& set_mesh(const Render::Geometry* geometry, const Render::Material& material, RenderLayerId layer_index = 0);
     NodeBuilder& set_mesh_instanced(const Render::Geometry* geometry, const Render::Material& material,
-        size_t instances_count, Render::PrimitiveType primitive_type = Render::PrimitiveType::Triangles, int layer_index = 0);
+        size_t instances_count, Render::PrimitiveType primitive_type = Render::PrimitiveType::Triangles, RenderLayerId layer_index = 0);
     NodeBuilder& set_material_override(const Render::Material& material);
     NodeBuilder& set_shadows(const Render::Shadows& shadows);
     NodeBuilder& set_pbr(const PBRParams& pbr);

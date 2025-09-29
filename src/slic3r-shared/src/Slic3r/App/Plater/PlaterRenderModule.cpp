@@ -61,8 +61,7 @@
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
 
-#define ENABLED_DEBUG_IMGUI_FONT 0
-#define ENABLED_DEBUG_IMGUI_ICONS 0
+#define ENABLED_DEBUG_OUTLINE 0
 #define ENABLED_DEBUG_BEDS 0
 
 using Slic3r::Domain::Transform3d;
@@ -491,240 +490,83 @@ void PlaterRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
     cmd_buffer.submit();
 }
 
-#if ENABLED_DEBUG_IMGUI_FONT
-static void render_imgui_debug_input_font()
+class ImguiVecRender
 {
-    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
-    if (ImGui::Begin("Fonts test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        if (ImGui::BeginTable("Fonts", 2, ImGuiTableFlags_Borders)) {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Czech");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("oddělitelné");
-            ImGui::Text("žádné otevřené kotvy");
-            ImGui::Text("Přerušit");
-            ImGui::Text("Přesné");
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Russian");
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("Неизвестно");
-            ImGui::Text("Внешний периметр");
-            ImGui::Text("Нависающие периметры");
-            ImGui::Text("Внутреннее заполнение");
-
-            ImGui::EndTable();
-        }
+public:
+    void operator()(const char* label, const Vec2f& v)
+    {
+        fill_data<2>(v);
+        ImGui::InputFloat2(label, m_data);
     }
-    ImGui::End();
-}
-#endif // ENABLED_DEBUG_IMGUI_FONT
 
-#if ENABLED_DEBUG_IMGUI_ICONS
-static void render_imgui_debug_icons()
+    void operator()(const char* label, const Vec2d& v)
+    {
+        fill_data<2>(v);
+        ImGui::InputFloat2(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec3d& v)
+    {
+        fill_data<3>(v);
+        ImGui::InputFloat3(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec4f& v)
+    {
+        fill_data<4>(v);
+        ImGui::InputFloat4(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec4d& v)
+    {
+        fill_data<4>(v);
+        ImGui::InputFloat4(label, m_data);
+    }
+
+private:
+    template <size_t N, typename VecT>
+    void fill_data(const VecT& data)
+    {
+        for (size_t i = 0; i < N; i++)
+            m_data[i] = static_cast<float>(data[i]);
+    }
+
+private:
+    float m_data[4];
+};
+
+void imgui_scenegraph_node_info(const Scene::Node& node)
 {
-    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
-    if (ImGui::Begin("ImGui icons test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        if (ImGui::BeginTable("Icons", 2, ImGuiTableFlags_Borders)) {
-            float font_scale = ImGui::GetTextLineHeight() / 15.0f;
-            int icon_sz      = lround(16 * font_scale);
+    ImGuiTreeNodeFlags node_flags = 0; // ImGuiTreeNodeFlags_DefaultOpen;
+    if (node.children().empty())
+        node_flags |= ImGuiTreeNodeFlags_Leaf;
+    const std::string& name = node.debug_name();
+    if (ImGui::TreeNodeEx(&node, node_flags, "%s %s%s%s%s", name.empty() ? "Node" : name.c_str(), node.has_render_component() ? "(R)" : "", node.has_material_override() ? "(M)" : "", node.has_imgui_render_component() ? "(I)" : "", node.has_raycast_component() ? "(C)" : ""))
+    {
+        static const Scene::Node* opened_node = nullptr;
 
-            int px = icon_sz;
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Icons %dx%d", px, px);
-            ImGui::TableSetColumnIndex(1);
-            static const std::vector<std::pair<wchar_t, std::string>> ICONS = {
-                {ImGui::PrintIconMarker, "cog"},
-                {ImGui::PrinterIconMarker, "printer"},
-                {ImGui::PrinterSlaIconMarker, "sla_printer"},
-                {ImGui::FilamentIconMarker, "spool"},
-                {ImGui::MaterialIconMarker, "resin"},
-                {ImGui::MinimalizeButton, "notification_minimalize"},
-                {ImGui::MinimalizeHoverButton, "notification_minimalize_hover"},
-                {ImGui::RightArrowButton, "notification_right"},
-                {ImGui::RightArrowHoverButton, "notification_right_hover"},
-                {ImGui::PreferencesButton, "notification_preferences"},
-                {ImGui::PreferencesHoverButton, "notification_preferences_hover"},
-                {ImGui::SliderFloatEditBtnIcon, "edit_button"},
-                {ImGui::SliderFloatEditBtnPressedIcon, "edit_button_pressed"},
-                {ImGui::ClipboardBtnIcon, "copy_menu"},
-                {ImGui::ExpandBtn, "expand_btn"},
-                {ImGui::CollapseBtn, "collapse_btn"},
-                {ImGui::RevertButton, "undo"},
-                {ImGui::WarningMarkerSmall, "notification_warning"},
-                {ImGui::InfoMarkerSmall, "notification_info"},
-                {ImGui::PlugMarker, "plug"},
-                {ImGui::DowelMarker, "dowel"},
-                {ImGui::SnapMarker, "snap"},
-                {ImGui::HorizontalHide, "horizontal_hide"},
-                {ImGui::HorizontalShow, "horizontal_show"},
-                {ImGui::PrintIdle, "print_idle"},
-                {ImGui::PrintRunning, "print_running"},
-                {ImGui::PrintFinished, "print_finished"},
-            };
-
-            ImGui::PushItemWidth(200.0f);
-            if (ImGui::BeginCombo("##icons", nullptr, ImGuiComboFlags_HeightRegular)) {
-                for (size_t i = 0; i < ICONS.size(); ++i) {
-                    ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 0.0f});
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
-                    Imgui::icon_button(ICONS[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
-                    ImGui::PopStyleColor(3);
-                    if (ImGui::IsItemHovered()) {
-                        ImGui::BeginTooltip();
-                        ImGui::Text("%s", ICONS[i].second.c_str());
-                        ImGui::EndTooltip();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            ImGui::PopItemWidth();
-
-            px = int(1.25f * icon_sz);
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Icons medium %dx%d", px, px);
-            ImGui::TableSetColumnIndex(1);
-            static const std::vector<std::pair<wchar_t, std::string>> ICONS_MEDIUM = {
-                {ImGui::Lock, "lock_closed"},
-                {ImGui::LockHovered, "lock_closed_f"},
-                {ImGui::Unlock, "lock_open"},
-                {ImGui::UnlockHovered, "lock_open_f"},
-                {ImGui::DSRevert, "undo_r"},
-                {ImGui::DSRevertHovered, "undo_f"},
-                {ImGui::DSRevertDisabled, "undo_disabled"},
-                {ImGui::DSSettings, "cog"},
-                {ImGui::DSSettingsHovered, "cog_f"},
-                {ImGui::ErrorTick, "error_tick"},
-                {ImGui::ErrorTickHovered, "error_tick_f"},
-                {ImGui::PausePrint, "pause_print"},
-                {ImGui::PausePrintHovered, "pause_print_f"},
-                {ImGui::EditGCode, "edit_gcode"},
-                {ImGui::EditGCodeHovered, "edit_gcode_f"},
-                {ImGui::RemoveTick, "colorchange_del"},
-                {ImGui::RemoveTickHovered, "colorchange_del_f"},
-            };
-
-            ImGui::PushItemWidth(200.0f);
-            if (ImGui::BeginCombo("##icons_medium", nullptr, ImGuiComboFlags_HeightRegular)) {
-                for (size_t i = 0; i < ICONS_MEDIUM.size(); ++i) {
-                    ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 0.0f});
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
-                    Imgui::icon_button(ICONS_MEDIUM[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
-                    ImGui::PopStyleColor(3);
-                    if (ImGui::IsItemHovered()) {
-                        ImGui::BeginTooltip();
-                        ImGui::Text("%s", ICONS_MEDIUM[i].second.c_str());
-                        ImGui::EndTooltip();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            ImGui::PopItemWidth();
-
-            px = 2 * icon_sz;
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Icons large %dx%d", px, px);
-            ImGui::TableSetColumnIndex(1);
-            static const std::vector<std::pair<wchar_t, std::string>> ICONS_LARGE = {
-                {ImGui::LegendTravel, "legend_travel"},
-                {ImGui::LegendWipe, "legend_wipe"},
-                {ImGui::LegendRetract, "legend_retract"},
-                {ImGui::LegendDeretract, "legend_deretract"},
-                {ImGui::LegendSeams, "legend_seams"},
-                {ImGui::LegendToolChanges, "legend_toolchanges"},
-                {ImGui::LegendColorChanges, "legend_colorchanges"},
-                {ImGui::LegendPausePrints, "legend_pauseprints"},
-                {ImGui::LegendCustomGCodes, "legend_customgcodes"},
-                {ImGui::LegendCOG, "legend_cog"},
-                {ImGui::LegendShells, "legend_shells"},
-                {ImGui::LegendToolMarker, "legend_toolmarker"},
-                {ImGui::CloseNotifButton, "notification_close"},
-                {ImGui::CloseNotifHoverButton, "notification_close_hover"},
-                {ImGui::EjectButton, "notification_eject_sd"},
-                {ImGui::EjectHoverButton, "notification_eject_sd_hover"},
-                {ImGui::WarningMarker, "notification_warning"},
-                {ImGui::ErrorMarker, "notification_error"},
-                {ImGui::CancelButton, "notification_cancel"},
-                {ImGui::CancelHoverButton, "notification_cancel_hover"},
-                // { ImGui::SinkingObjectMarker,     "move" }, {
-                // ImGui::CustomSupportsMarker,    "fdm_supports" }, {
-                // ImGui::CustomSeamMarker,        "seam" }, {
-                // ImGui::MmuSegmentationMarker,   "mmu_segmentation" }, {
-                // ImGui::VarLayerHeightMarker,    "layers" },
-                {ImGui::DocumentationButton, "notification_documentation"},
-                {ImGui::DocumentationHoverButton, "notification_documentation_hover"},
-                {ImGui::InfoMarker, "notification_info"},
-                {ImGui::PlayButton, "notification_play"},
-                {ImGui::PlayHoverButton, "notification_play_hover"},
-                {ImGui::PauseButton, "notification_pause"},
-                {ImGui::PauseHoverButton, "notification_pause_hover"},
-                {ImGui::OpenButton, "notification_open"},
-                {ImGui::OpenHoverButton, "notification_open_hover"},
-                {ImGui::SlaViewOriginal, "sla_view_original"},
-                {ImGui::SlaViewProcessed, "sla_view_processed"},
-            };
-
-            ImGui::PushItemWidth(200.0f);
-            if (ImGui::BeginCombo("##icons_large", nullptr, ImGuiComboFlags_HeightRegular)) {
-                for (size_t i = 0; i < ICONS_LARGE.size(); ++i) {
-                    ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 0.0f});
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
-                    Imgui::icon_button(ICONS_LARGE[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
-                    ImGui::PopStyleColor(3);
-                    if (ImGui::IsItemHovered()) {
-                        ImGui::BeginTooltip();
-                        ImGui::Text("%s", ICONS_LARGE[i].second.c_str());
-                        ImGui::EndTooltip();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            ImGui::PopItemWidth();
-
-            px = 4 * icon_sz;
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("Icons extra large %dx%d", px, px);
-            ImGui::TableSetColumnIndex(1);
-            static const std::vector<std::pair<wchar_t, std::string>> ICONS_EXTRA_LARGE = {
-                {ImGui::ClippyMarker, "notification_clippy"},
-                {ImGui::SliceAllBtnIcon, "slice_all"},
-                {ImGui::WarningMarkerDisabled, "notification_warning_grey"},
-            };
-
-            ImGui::PushItemWidth(200.0f);
-            if (ImGui::BeginCombo("##icons_extra_large", nullptr, ImGuiComboFlags_HeightRegular)) {
-                for (size_t i = 0; i < ICONS_EXTRA_LARGE.size(); ++i) {
-                    ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 0.0f});
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.0f, 0.0f, 0.0f, 0.0f});
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.0f});
-                    Imgui::
-                        icon_button(ICONS_EXTRA_LARGE[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
-                    ImGui::PopStyleColor(3);
-                    if (ImGui::IsItemHovered()) {
-                        ImGui::BeginTooltip();
-                        ImGui::Text("%s", ICONS_EXTRA_LARGE[i].second.c_str());
-                        ImGui::EndTooltip();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            ImGui::PopItemWidth();
-
-            ImGui::EndTable();
+        ImGui::SameLine();
+        if (ImGui::SmallButton("info")) {
+            opened_node = (opened_node == &node) ? nullptr : &node;
         }
+
+        if (opened_node == &node) {
+            auto transform{node.world_transform()};
+
+            ImguiVecRender vec_render;
+            for (size_t i = 0; i < 4; i++) {
+                ImGui::PushID(i);
+                vec_render("##", Vec4d{transform.matrix().row(i)});
+                ImGui::PopID();
+            }
+        }
+
+        for (const auto& ch : node.children()) {
+            imgui_scenegraph_node_info(*ch);
+        }
+        ImGui::TreePop();
     }
-    ImGui::End();
 }
-#endif // ENABLED_DEBUG_IMGUI_ICONS
 
 #if ENABLED_DEBUG_BEDS
 static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, PlaterScenePresenter& scene_presenter, Render::Device& device)
@@ -825,73 +667,6 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, P
                     project_interactor.selected_config_container().id().id
                 );
         }
-
-        ImGui::Separator();
-
-        size_t texture_size = Scene::BedRenderHelper::bed_texture_size();
-        if (texture_size > 0) {
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Texture size");
-            ImGui::SameLine();
-
-            std::vector<size_t> sizes;
-            for (size_t i = 512; i <= Render::Context::instance().max_texture_size(); i *= 2) {
-                sizes.push_back(i);
-            }
-
-            std::vector<std::string> sizes_str;
-            std::transform(
-                sizes.begin(),
-                sizes.end(),
-                std::back_inserter(sizes_str),
-                [](size_t size) { return std::to_string(size) + "x" + std::to_string(size); }
-            );
-
-            auto it = std::find(sizes.begin(), sizes.end(), texture_size);
-            DEBUG_ASSERT(it != sizes.end());
-            int sel_size = int(std::distance(sizes.begin(), it));
-
-            const char* preview_value = sizes_str[sel_size].c_str();
-
-            if (ImGui::BeginCombo("##texture_sizes", preview_value)) {
-                for (int i = 0; i < int(sizes_str.size()); i++) {
-                    bool is_selected = (sel_size == i);
-                    if (ImGui::Selectable(sizes_str[i].c_str(), is_selected))
-                        sel_size = i;
-
-                    // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                    if (is_selected)
-                        ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-
-            // force bed textures reload with the new size
-            if (sizes[sel_size] != texture_size) {
-                Scene::BedRenderHelper::set_bed_texture_size(sizes[sel_size]);
-                Scene::visit(
-                    scene_presenter.scene().root(),
-                    [&](Scene::Node& n)
-                    {
-                        Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
-                        if (tag != nullptr) {
-                            if (tag->type == Scene::BedElementType::PlateTextured) {
-                                Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id);
-                                Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
-                                n.render_component()->replace_material(
-                                    Scene::BedMaterials::plate_textured_material(device, inst.bed.get())
-                                );
-                                if (n.has_material_override())
-                                    n.set_material_override(
-                                        Scene::BedMaterials::
-                                            plate_textured_override_material(n.render_component()->material())
-                                    );
-                            }
-                        }
-                    }
-                );
-            }
-        }
     }
     ImGui::End();
 }
@@ -924,12 +699,6 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     }
     ImGui::End();
 #endif // ENABLED_DEBUG_OUTLINE
-#if ENABLED_DEBUG_IMGUI_FONT
-    render_imgui_debug_input_font();
-#endif // ENABLED_DEBUG_IMGUI_FONT
-#if ENABLED_DEBUG_IMGUI_ICONS
-    render_imgui_debug_icons();
-#endif // ENABLED_DEBUG_IMGUI_ICONS
 
 #if ENABLED_DEBUG_BEDS
     // ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 50.f), ImGuiCond_Always);
@@ -939,7 +708,7 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 #if ENABLED_DEBUG_CAMERA
     render_imgui_debug_camera(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 #endif // ENABLED_DEBUG_CAMERA
-    Scene::render_imgui_graphics_settings_debug_window(*m_scene_presenter, *m_imgui_render);
+    Scene::render_imgui_graphics_settings_debug_window(m_project_interactor.selected_project(), *m_device, *m_scene_presenter, *m_imgui_render);
 }
 
 void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)
@@ -958,6 +727,7 @@ void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::Al
 void PlaterRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
 {
     m_gizmo_manager->on_scene_mouse_event(e, m_screen_info);
+    m_scene_presenter->update_sinking_contours_visibility(e, m_screen_info);
 }
 
 void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& e)

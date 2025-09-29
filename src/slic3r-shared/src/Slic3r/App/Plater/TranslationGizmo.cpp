@@ -156,7 +156,7 @@ static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::
         bldr
             .set_debug_name("stem")
             .set_tag(GizmoNodeTag{ axis })
-            .set_mesh(data_factory.geometry(Scene::GeometryDataId::Segment), material, int(PlaterSceneLayer::GizmoHandles))
+            .set_mesh(data_factory.geometry(Scene::GeometryDataId::Segment), material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
             .transform([](Transform3d& xform) {
                 xform.rotate(Eigen::AngleAxisd(-HALF_PI, Vec3d::UnitY()));
                 xform.scale(HANDLE_STEM_LENGTH * Vec3d::UnitX());
@@ -169,12 +169,13 @@ static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::
 
         Render::Material material = Render::Material{}
             .set_shader(device.context().shader_manager().shader("gouraud_light"))
+            .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
             .set_uniform("uniform_color", color);
 
         bldr
             .set_debug_name("cone")
             .set_tag(GizmoNodeTag{ axis })
-            .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
+            .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
             .set_aabb(mesh->aabb_mesh())
             .transform([](Transform3d& xform) {
                 xform

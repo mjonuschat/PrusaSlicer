@@ -27,7 +27,7 @@ void ToolMarker::init(Render::Device& device, Scene::NodeBuilder& builder, Scene
     builder
         .set_debug_name("gcode_tool_marker")
         .set_tag(GCodeNodeTag{ GCodeElementType::ToolMarker })
-        .set_mesh(geom, material, int(Preview::PreviewSceneLayer::ToolMarker))
+        .set_mesh(geom, material, Scene::RenderLayerId(Preview::PreviewSceneLayer::ToolMarker))
         // add collision geometry to let the tool marker be taken in account by camera frustum tighting,
         // see: CameraFrustumUpdater::update_camera_frustum
         .set_aabb(trimesh->aabb_mesh());

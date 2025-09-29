@@ -23,13 +23,7 @@ public:
     InstancedMeshRenderNodeComponent& operator=(const InstancedMeshRenderNodeComponent&) = default;
     InstancedMeshRenderNodeComponent& operator=(InstancedMeshRenderNodeComponent&&) = default;
 
-    void render(
-        const Node& node,
-        const Camera& camera,
-        const Lighting& lights,
-        const Render::Material& resolved_material,
-        Render::CommandBuffer& cmd_buffer
-    ) const override;
+    void render(const Node& node, const Camera& camera, const Render::Material& resolved_material, Render::CommandBuffer& cmd_buffer ) const override;
 
     size_t instances_count() const { return m_instances_count; }
     void set_instances_count(size_t count) { m_instances_count = count; }

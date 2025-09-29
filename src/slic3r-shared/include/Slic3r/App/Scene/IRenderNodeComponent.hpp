@@ -26,13 +26,8 @@ public:
      * @param material_override Potential material override coming for the node or its parents.
      * @param cmd_buffer Command buffer the render commands are passed to.
      */
-    virtual void render(
-        const Node& node,
-        const Camera& camera,
-        const Lighting& lights,
-        const Render::Material& material_override,
-        Render::CommandBuffer& cmd_buffer
-    ) const = 0;
+    virtual void render(const Node& node, const Camera& camera, const Render::Material& material_override,
+        Render::CommandBuffer& cmd_buffer) const = 0;
 
     /**
      * @brief Get associated material.

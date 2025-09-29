@@ -38,7 +38,7 @@ NodeBuilder& NodeBuilder::set_transform(const Transform& tr)
     return *this;
 }
 
-NodeBuilder& NodeBuilder::set_mesh(const Render::Geometry* geometry, const Render::Material& material, int layer_index)
+NodeBuilder& NodeBuilder::set_mesh(const Render::Geometry* geometry, const Render::Material& material, RenderLayerId layer_index)
 {
     ensure_current();
 
@@ -49,7 +49,7 @@ NodeBuilder& NodeBuilder::set_mesh(const Render::Geometry* geometry, const Rende
 }
 
 NodeBuilder& NodeBuilder::set_mesh_instanced(const Render::Geometry* geometry, const Render::Material& material,
-    size_t instances_count, Render::PrimitiveType primitive_type, int layer_index)
+    size_t instances_count, Render::PrimitiveType primitive_type, RenderLayerId layer_index)
 {
     ensure_current();
 

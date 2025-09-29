@@ -12,11 +12,13 @@ namespace Slic3r::App::Scene {
 class NodeBuilder;
 struct BedNodeTag;
 
+static constexpr double BED_OFFSET_Z = -0.025;
+
 class BedNodeBuilder
 {
 public:
     static void bed_node(NodeBuilder& builder, const Domain::BedInstance& instance, const BedNodeTag& tag, Render::Device& device,
-        ScenePresenterProjectContext& ctx, int layer_id);
+        ScenePresenterProjectContext& ctx, RenderLayerId layer_id);
 };
 
 } // namespace Slic3r::App::Scene

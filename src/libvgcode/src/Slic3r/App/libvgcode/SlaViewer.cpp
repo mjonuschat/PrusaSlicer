@@ -237,13 +237,14 @@ void SlaViewer::build_sla_object_mesh(
 
     auto material = Render::Material{}
         .set_shader(m_device->context().shader_manager().shader("gouraud_light"))
+        .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
 
     builder
         .set_debug_name(Slic3r::format("sla_obj: %1%, inst: %2%, %3%", object_id, instance_id, type_str))
         .set_tag(SlaObjectNodeTag{ object_id, instance_id, type })
-        .set_mesh(geom, material, int(0))
+        .set_mesh(geom, material, 0)
         .transform([trafo](auto& xform) { xform = trafo; })
         .set_aabb(trimesh->aabb_mesh())
         .set_shadows(Render::Shadows{ true, true })
@@ -281,12 +282,13 @@ void SlaViewer::build_clipping_plane_node(SlaMeshType plane_type, Scene::NodeBui
     ColorRGBA color = ColorRGBA{ 1.0f, 0.0f, 0.37f, 1.0f };
     auto material = Render::Material{}
         .set_shader(m_device->context().shader_manager().shader("gouraud_light"))
+        .set_uniform("out_of_bed_threshold_z", -FLT_MAX)
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
 
     builder.set_debug_name(Slic3r::format("sla_obj: clipping plane: %1%", type_str))
         .set_tag(SlaObjectNodeTag{0, 0, plane_type})
-        .set_mesh(geom, material, int(0))
+        .set_mesh(geom, material, 0)
         .set_shadows(Render::Shadows{true, true});
 }
 

@@ -203,17 +203,17 @@ void PlaterScenePresenter::update_volume_materials()
             const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
             if (tag != nullptr && n.has_render_component()) {
                 const auto* obj = proj.find_object_by_id(tag->object_id);
-                const auto* vol = proj.find_volume_by_id(tag->object_id, tag->volume_id);
                 const auto* inst = proj.find_instance_by_id(tag->object_id, tag->instance_id);
                 bool on_bed = std::find(instances.begin(), instances.end(), inst) != instances.end();
                 bool on_selected_bed = std::find(sel_instances.begin(), sel_instances.end(), inst) != sel_instances.end();
-                n.render_component()->set_shadows((vol->is_model_part() && on_selected_bed) ?
+                bool is_model_part = tag->volume_type == Domain::ModelVolumeType::MODEL_PART;
+                n.render_component()->set_shadows((is_model_part && on_selected_bed) ?
                     Render::Shadows{true, true} : Render::Shadows{false, false});
 
                 if (on_bed) {
-                    Domain::ElementRef el{ obj->id().id, inst->id().id, vol->id().id };
+                    Domain::ElementRef el{ obj->id().id, inst->id().id, tag->volume_id };
                     if (selection.is_selected(el)) {
-                        ColorRGBA color = vol->is_model_part() ? SELECTED_OPAQUE_COLOR : SELECTED_TRANSPARENT_COLOR;
+                        ColorRGBA color = is_model_part ? SELECTED_OPAQUE_COLOR : SELECTED_TRANSPARENT_COLOR;
                         Render::Material mat = Render::Material{}.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
                         n.set_material_override(mat);
                     }
@@ -222,13 +222,22 @@ void PlaterScenePresenter::update_volume_materials()
                 }
                 else {
                     ColorRGBA color;
-                    Domain::ElementRef el{ obj->id().id, inst->id().id, vol->id().id };
+                    Domain::ElementRef el{ obj->id().id, inst->id().id, tag->volume_id };
                     if (selection.is_selected(el))
-                        color = vol->is_model_part() ? OUTSIDE_SELECTED_OPAQUE_COLOR : OUTSIDE_SELECTED_TRANSPARENT_COLOR;
+                        color = is_model_part ? OUTSIDE_SELECTED_OPAQUE_COLOR : OUTSIDE_SELECTED_TRANSPARENT_COLOR;
                     else
-                        color = vol->is_model_part() ? OUTSIDE_OPAQUE_COLOR : OUTSIDE_TRANSPARENT_COLOR;
+                        color = is_model_part ? OUTSIDE_OPAQUE_COLOR : OUTSIDE_TRANSPARENT_COLOR;
                     Render::Material mat = Render::Material{}.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
                     n.set_material_override(mat);
+                }
+
+                Render::Material mat = n.render_component()->material();
+                mat.set_uniform("out_of_bed_threshold_z", is_model_part ? float(Scene::BED_OFFSET_Z) : -FLT_MAX);
+                n.render_component()->replace_material(mat);
+                if (n.has_material_override()) {
+                    Render::Material ov_mat = *n.material_override();
+                    ov_mat.set_uniform("out_of_bed_threshold_z", is_model_part ? float(Scene::BED_OFFSET_Z) : -FLT_MAX);
+                    n.set_material_override(ov_mat);
                 }
             }
         },
@@ -356,17 +365,12 @@ PlaterScenePresenter::build_volume_node(Scene::NodeBuilder& builder, Domain::Sel
     builder.set_debug_name(fmt::format("vol: {}", vol->id().id))
         .transform([vol](auto& xform) { xform = vol->get_matrix(); })
         .set_tag(SceneNodeTag{vol->get_object()->id().id, vol->id().id, inst->id().id, vol->type()})
-        .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
-        .set_aabb(trimesh->aabb_mesh());
-    if (vol->type() == Domain::ModelVolumeType::MODEL_PART) {
-        builder
-            .set_shadows(Render::Shadows{true, true})
-            // FIXME: the pbr data should be set in dependence of the volume filament
-            // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type'
-            .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
-    } else {
-        builder.set_shadows(Render::Shadows{false, false});
-    }
+        .set_mesh(geom, material, Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects))
+        .set_aabb(trimesh->aabb_mesh())
+        // FIXME: for fff printers the pbr data should be set in dependence of the volume filament
+        // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type'
+        // and for sla printers it should be set in dependence of the resin type
+        .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
 }
 
 PlaterScenePresenter::BedInstances PlaterScenePresenter::selected_bed_instances() const
@@ -421,7 +425,8 @@ void PlaterScenePresenter::update_selection_aabb(Domain::SelectionId project_id,
                 const auto* tag = n->tag_of_type<SceneNodeTag>();
                 if (tag == nullptr)
                     return false;
-                return tag->matches_element(e);
+                  return (selection.mode == Biz::Scene::SelectionMode::Instance) ?
+                      tag->matches_element(e) : tag->object_id == e.object_id && tag->volume_id == e.volume_id;
             },
             found_nodes
         );
@@ -454,6 +459,11 @@ void PlaterScenePresenter::update_selection_aabb(Domain::SelectionId project_id,
     }
 }
 
+void PlaterScenePresenter::update_sinking_contours_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info)
+{
+    project_context().sinking_contours().update_visibility(e, screen_info, m_workbench.project(m_selected_project_id), scene());
+}
+
 void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
 {
     auto& scn                      = scene();
@@ -476,6 +486,7 @@ void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, con
     }
 
     invoke_bed_visually_changed(project_id);
+    project_context().sinking_contours().update_scene(m_device, project, scn, instances);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -489,6 +500,7 @@ void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, c
     );
 
     invoke_bed_visually_changed(project_id);
+    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scene(), instances);
     m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
@@ -524,6 +536,9 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
 
+    auto& sinking_contours = project_context().sinking_contours();
+    sinking_contours.update_scene(m_device, proj, scn, elements);
+    sinking_contours.set_selection(elements);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -536,12 +551,13 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
     for (const auto& v : volumes)
         object_ids.insert(v.object_id);
     auto& scn = scene();
+    const Domain::Project& project = m_workbench.project(project_id);
 
     Scene::visit_conditional(scn.root(), [&](Scene::Node& n) {
         const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
         if (t != nullptr && t->volume_id == 0 && object_ids.contains(t->object_id)) {
             // root of the instance
-            const auto* obj = m_workbench.project(project_id).find_object_by_id(t->object_id);
+            const auto* obj = project.find_object_by_id(t->object_id);
             const auto* inst = Domain::find_by_id<Domain::ModelInstance>(obj->instances, t->instance_id);
             Scene::NodeBuilder builder{scn};
             for (const auto& e : volumes) {
@@ -558,6 +574,7 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
     });
 
     invoke_bed_visually_changed(project_id);
+    project_context().sinking_contours().update_scene(m_device, project, scn, volumes);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -575,6 +592,7 @@ void PlaterScenePresenter::on_volume_removed(
     );
 
     invoke_bed_visually_changed(project_id);
+    project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scene(), volumes);
     m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
@@ -602,6 +620,9 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
 
+    auto& sinking_contours = project_context().sinking_contours();
+    sinking_contours.update_scene(m_device, proj, scn, elements);
+    sinking_contours.set_selection(elements);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -620,7 +641,7 @@ void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_i
         Scene::BedNodeTag tag = {instance.config_container_id, instance.instance_id};
 
         Scene::NodeBuilder builder(scn);
-        Scene::BedNodeBuilder::bed_node(builder, inst, tag, m_device, m_projects[project_id], int(PlaterSceneLayer::DocumentObjects));
+        Scene::BedNodeBuilder::bed_node(builder, inst, tag, m_device, m_projects[project_id], Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects));
 
         scn.add_child(builder.build().release());
     }
@@ -671,15 +692,31 @@ void PlaterScenePresenter::on_wipe_tower_transformed(Domain::SelectionId project
     m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
-void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx)
+void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
 {
     cmd_buf.set_depth_write_enabled(true);
-    if (layer_idx == int(PlaterSceneLayer::GizmoHandles))
+    if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
         // clear depth buffer so all gizmo handles are rendered over document objects
         cmd_buf.clear_buffers(false, true);
-    else if (layer_idx == int(PlaterSceneLayer::AlwaysOnTop))
+    else if (layer_idx == int(PlaterSceneLayer::ObjectAccessoriesOnTop))
+        cmd_buf.set_depth_test_enabled(false);
+    else if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::AlwaysOnTop))
         // clear depth buffer to ensure geometry belonging to this layer is always rendered over any other object
         cmd_buf.clear_buffers(false, true);
+}
+
+void PlaterScenePresenter::on_opaque_pass_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
+{
+    MinimalSceneRenderCustomizer::on_opaque_pass_begin(cmd_buf, layer_idx);
+    if (layer_idx == int(PlaterSceneLayer::ObjectAccessoriesOnTop))
+        cmd_buf.set_depth_test_enabled(false);
+}
+
+void PlaterScenePresenter::on_transparent_pass_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
+{
+    MinimalSceneRenderCustomizer::on_transparent_pass_begin(cmd_buf, layer_idx);
+    if (layer_idx == int(PlaterSceneLayer::ObjectAccessoriesOnTop))
+        cmd_buf.set_depth_test_enabled(false);
 }
 
 void PlaterScenePresenter::remove_beds(Domain::SelectionId project_id, const Domain::BedRefs& instances)

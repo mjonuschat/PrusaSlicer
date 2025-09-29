@@ -7,7 +7,12 @@
 
 namespace Slic3r::App::Render {
 class Material;
+class Device;
 } // namespace Slic3r::App::Render
+
+namespace Slic3r::Domain {
+class Project;
+} // namespace Slic3r::Domain
 
 namespace Slic3r::App::Scene {
 
@@ -43,6 +48,7 @@ static constexpr size_t MAX_NUM_PBR_MATERIALS = 16;
 void set_uniforms(const Lighting& lights, Render::Material& material);
 void set_uniforms(const PBRParamsList& pbr_params, Render::Material& material);
 
-void render_imgui_graphics_settings_debug_window(ISceneProvider& scene_provider, Render::ImguiRender& imgui_render);
+void render_imgui_graphics_settings_debug_window(const Domain::Project& project, const Render::Device& device, ISceneProvider& scene_provider,
+    Render::ImguiRender& imgui_render);
 
 } // namespace Slic3r::App::Scene

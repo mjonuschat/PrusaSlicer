@@ -22,32 +22,31 @@ namespace Slic3r::App::Scene {
 
 static double z_offset(BedElementType type)
 {
-    static constexpr double Z_OFFSET = -0.05;
     switch (type) {
     default:
     case BedElementType::Axis: {
-        return 0.0 * Z_OFFSET;
+        return 0.0 * BED_OFFSET_Z;
     }
     case BedElementType::Label: {
-        return 1.0 * Z_OFFSET;
+        return 1.0 * BED_OFFSET_Z;
     }
     case BedElementType::Contour:
     case BedElementType::Grid:
     case BedElementType::PrintVolume: {
-        return 2.0 * Z_OFFSET;
+        return 2.0 * BED_OFFSET_Z;
     }
     case BedElementType::PlateDefault:
     case BedElementType::PlateTextured: {
-        return 3.0 * Z_OFFSET;
+        return 3.0 * BED_OFFSET_Z;
     }
     case BedElementType::Model: {
-        return 4.0 * Z_OFFSET;
+        return 4.0 * BED_OFFSET_Z;
     }
     }
 }
 
 static void
-plate_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, int layer_id)
+plate_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, RenderLayerId layer_id)
 {
     auto& geom_mgr    = ctx.model_geometry_manager();
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
@@ -101,7 +100,7 @@ plate_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
 }
 
 static void
-grid_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, int layer_id)
+grid_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, RenderLayerId layer_id)
 {
     auto& geom_mgr = ctx.model_geometry_manager();
 
@@ -127,7 +126,7 @@ grid_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder
 }
 
 static void
-contour_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, int layer_id)
+contour_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, RenderLayerId layer_id)
 {
     auto& geom_mgr = ctx.model_geometry_manager();
 
@@ -153,7 +152,7 @@ contour_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuil
 }
 
 static void
-print_volume_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, int layer_id)
+print_volume_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, RenderLayerId layer_id)
 {
     auto& geom_mgr = ctx.model_geometry_manager();
 
@@ -181,7 +180,7 @@ print_volume_node(Render::Device& device, ScenePresenterProjectContext& ctx, Nod
 }
 
 static void
-model_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, int layer_id)
+model_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, RenderLayerId layer_id)
 {
     Domain::TriangleMesh mesh = Biz::Scene::BedGeometry::model(bed);
     if (mesh.empty()) {
@@ -221,7 +220,8 @@ model_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
 }
 
 static void
-axis_node(uint8_t axis_id, Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag, int layer_id)
+axis_node(uint8_t axis_id, Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const BedNodeTag& tag,
+    RenderLayerId layer_id)
 {
     auto& geom_mgr    = ctx.model_geometry_manager();
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
@@ -299,7 +299,8 @@ axes_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder
 }
 
 static void
-label_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const Domain::BedInstance& instance, const BedNodeTag& tag, int layer_id)
+label_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed, const Domain::BedInstance& instance,
+    const BedNodeTag& tag, RenderLayerId layer_id)
 {
     Render::Material material = BedMaterials::label_material(device, instance.label());
 
@@ -333,7 +334,8 @@ label_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
     );
 }
 
-void BedNodeBuilder::bed_node(NodeBuilder& builder, const Domain::BedInstance& instance, const BedNodeTag& tag, Render::Device& device, ScenePresenterProjectContext& ctx, int layer_id)
+void BedNodeBuilder::bed_node(NodeBuilder& builder, const Domain::BedInstance& instance, const BedNodeTag& tag, Render::Device& device,
+    ScenePresenterProjectContext& ctx, RenderLayerId layer_id)
 {
     builder.set_debug_name(fmt::format("bed {}", tag.instance_id))
         .set_tag(tag)

@@ -4,6 +4,8 @@
 
 namespace Slic3r::App::Scene {
 
+using RenderLayerId = int8_t;
+
 /**
  * @brief Interface for an object placed to render layer.
  *
@@ -21,7 +23,7 @@ public:
      *
      * @return Layer index, the lower is rendered first the higher later.
      */
-    virtual int layer_index() const = 0;
+    virtual RenderLayerId layer_index() const = 0;
 };
 
 }

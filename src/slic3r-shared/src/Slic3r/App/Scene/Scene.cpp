@@ -96,7 +96,7 @@ void MinimalSceneRenderCustomizer::on_render_begin(Render::CommandBuffer& cmd_bu
 }
 
 void MinimalSceneRenderCustomizer::on_opaque_pass_begin(
-    Render::CommandBuffer& cmd_buf, size_t layer_index
+    Render::CommandBuffer& cmd_buf, RenderLayerId layer_index
 )
 {
     cmd_buf.set_blending_enabled(false);
@@ -107,7 +107,7 @@ void MinimalSceneRenderCustomizer::on_opaque_pass_begin(
 
 
 void MinimalSceneRenderCustomizer::on_transparent_pass_begin(
-    Render::CommandBuffer& cmd_buf, size_t layer_index
+    Render::CommandBuffer& cmd_buf, RenderLayerId layer_index
 )
 {
     cmd_buf.set_depth_test_enabled(true);
@@ -119,7 +119,7 @@ void MinimalSceneRenderCustomizer::on_transparent_pass_begin(
 }
 
 void MinimalSceneRenderCustomizer::on_transparent_pass_end(
-    Render::CommandBuffer& cmd_buf, size_t layer_index
+    Render::CommandBuffer& cmd_buf, RenderLayerId layer_index
 )
 {
     cmd_buf.set_blending_enabled(false);
@@ -481,7 +481,7 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
             mat
               .set_shader(device.context().shader_manager().shader(shader_name))
               .set_uniform("light_position", (Vec3f)world_light_pos.cast<float>());
-            n->render_component()->render(*n, shadows.light_cam, m_lighting, mat, *cmd_buffer);
+            n->render_component()->render(*n, shadows.light_cam, mat, *cmd_buffer);
         }
 
         if (customizer) {
@@ -530,7 +530,7 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
 
     constexpr int INITIAL_LAYER = std::numeric_limits<int>::min();
     int current_layer = INITIAL_LAYER;
-    for (const auto& [n, mat]  : nodes) {
+    for (auto& [n, mat]  : nodes) {
         const bool first_iteration = current_layer == INITIAL_LAYER;
 
         // did we start next layer
@@ -546,7 +546,8 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
             current_layer = layer;
         }
 
-        n->render_component()->render(*n, m_camera, m_lighting, mat, cmd_buffer);
+        set_uniforms(m_lighting, mat);
+        n->render_component()->render(*n, m_camera, mat, cmd_buffer);
     }
 
     if (customizer) {
@@ -594,7 +595,7 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
     int current_layer = INITIAL_LAYER;
     // set was_opaque as the opposite of the first element in list
     bool was_opaque = nodes.front().second.transparent();
-    for (const auto& [n, mat]  : nodes) {
+    for (auto& [n, mat]  : nodes) {
         const bool first_iteration = current_layer == INITIAL_LAYER;
 
         // did we start next layer
@@ -630,7 +631,8 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
             }
         }
 
-        n->render_component()->render(*n, m_camera, m_lighting, mat, cmd_buffer);
+        set_uniforms(m_lighting, mat);
+        n->render_component()->render(*n, m_camera, mat, cmd_buffer);
         was_opaque = is_opaque;
     }
 
@@ -723,7 +725,8 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
                 mat.set_uniform("material_id", id);
             }
 
-            n->render_component()->render(*n, m_camera, m_lighting, mat, *cmd_buffer);
+            set_uniforms(m_lighting, mat);
+            n->render_component()->render(*n, m_camera, mat, *cmd_buffer);
         }
 
         if (customizer) {

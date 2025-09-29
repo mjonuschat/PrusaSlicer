@@ -67,7 +67,7 @@ void SegmentTemplate::init(Render::Device& device, Scene::NodeBuilder& builder)
             material,
             0,
             Render::PrimitiveType::Triangles,
-            int(Preview::PreviewSceneLayer::Toolpaths)
+            Scene::RenderLayerId(Preview::PreviewSceneLayer::Toolpaths)
         )
         .set_shadows(Render::Shadows{true, true})
         .set_pbr(Scene::DEFAULT_GCODE_OPTIONS_PBRPARAMS);
