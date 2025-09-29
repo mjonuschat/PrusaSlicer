@@ -133,6 +133,12 @@ std::vector<float> raycast_visibility(
 
                     const Vec3f &center = samples.positions[s_idx];
                     const Vec3f &normal = samples.normals[s_idx];
+                    if (params.seam_position == spAlignedRear) {
+                        const float front_adjustment = std::clamp(
+                            (normal.dot(Vec3f(0.0f, -1.0f, 0.0f)) + 1.2f) * 0.5f, 0.0f, 1.0f
+                        );
+                        result[s_idx] += front_adjustment;
+                    }
                     // apply the local direction via Frame struct - the local_dir is with respect to +Z being forward
                     Frame f;
                     f.set_from_z(normal);
