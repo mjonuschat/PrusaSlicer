@@ -730,6 +730,8 @@ set(SLIC3R_SHARED_FILES
         
         include/Slic3r/App/PresetUpdaterUI.hpp
         src/Slic3r/App/PresetUpdaterUI.cpp
+        include/Slic3r/App/AppConfig.hpp
+        src/Slic3r/App/AppConfig.cpp
 
         include/Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp
         include/Slic3r/Biz/RemovableDrive/IRemovableDriveMonitor.hpp

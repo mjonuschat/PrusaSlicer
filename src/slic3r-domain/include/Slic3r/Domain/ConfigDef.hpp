@@ -39,7 +39,14 @@ struct PhysicalPrinterLocation {
     }
 };
 
-using ConfigLocation = std::variant<FDMConfigLocation, SLAConfigLocation, PhysicalPrinterLocation>;
+struct AppConfigLocation {
+    bool operator==(const AppConfigLocation&) const = default;
+    bool operator<(const AppConfigLocation&) const {
+        return false;
+    }
+};
+
+using ConfigLocation = std::variant<FDMConfigLocation, SLAConfigLocation, PhysicalPrinterLocation, AppConfigLocation>;
 
 std::string get_location_name(const ConfigLocation& location);
 

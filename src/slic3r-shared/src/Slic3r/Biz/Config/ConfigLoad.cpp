@@ -158,7 +158,8 @@ BoxesLoadResult<Settings> load_boxes(const ordered_json& json)
 
     BoxesLoadResult<Settings> result;
     for (const ordered_json& box_json : json_per_box) {
-        const auto [settings, issues]{load_box<Settings>(box_json)};
+        Settings settings;
+        const auto issues = load_box(box_json, settings);
         result.settings.push_back(settings);
         result.issues.push_back(issues);
     }
@@ -181,21 +182,18 @@ bool is_empty(const std::vector<BoxIssues>& issues)
 }
 } // namespace
 
-template<typename Settings>
-BoxLoadResult<Settings> load_box(const ordered_json& json)
+BoxIssues load_box(const ordered_json& json, Domain::ConfigBox& result)
 {
-    BoxLoadResult<Settings> result;
-
     ASSERT(json.is_object());
 
-    BoxIssues& issues{result.issues};
+    BoxIssues issues;
 
     std::set<std::string> json_keys;
     for (const auto& [key, _] : json.items()) {
         json_keys.insert(key);
     }
 
-    for (ConfigItem& item : result.settings.items.all_items()) {
+    for (ConfigItem& item : result.items.all_items()) {
         const auto it{json.find(item.name())};
         if (it != json.end()) {
             fill_item(item, *it).or_else([&](const ItemParsingIssue& issue) {
@@ -207,7 +205,7 @@ BoxLoadResult<Settings> load_box(const ordered_json& json)
         }
     }
 
-    Domain::ConfigOverrides& overrides{result.settings.overrides};
+    Domain::ConfigOverrides& overrides{result.overrides};
     for (ConfigItem& item : overrides.all_items()) {
         const auto it{json.find(item.name())};
         if (it != json.end()) {
@@ -224,7 +222,7 @@ BoxLoadResult<Settings> load_box(const ordered_json& json)
         issues[key] = {ItemParsingIssueType::ExtraKey};
     }
 
-    return result;
+    return issues;
 }
 
 tl::expected<LoadResult, GlobalParsingIssue> load_fdm(const ordered_json& json)
@@ -233,7 +231,8 @@ tl::expected<LoadResult, GlobalParsingIssue> load_fdm(const ordered_json& json)
     if (!is_object(printer_location_name, json)) {
         return tl::unexpected{GlobalParsingIssue::InvalidFDMPrinterSettings};
     }
-    const auto printer_load_result{load_box<PrinterSettings>(json[printer_location_name])};
+    PrinterSettings printer_settings;
+    const auto printer_issues = load_box(json[printer_location_name], printer_settings);
 
     const std::string tool_location_name{get_location_name(FDMConfigLocation::Tool)};
     if (!is_object(tool_location_name, json)) {
@@ -248,7 +247,8 @@ tl::expected<LoadResult, GlobalParsingIssue> load_fdm(const ordered_json& json)
     if (!is_object(print_location_name, json)) {
         return tl::unexpected{GlobalParsingIssue::InvalidFDMPrintSettings};
     }
-    const auto print_load_result{load_box<PrintSettings>(json[print_location_name])};
+    PrintSettings print_settings;
+    const auto print_issues = load_box(json[print_location_name], print_settings);
 
     const std::string filament_location_name{get_location_name(FDMConfigLocation::Filament)};
     if (!is_object(filament_location_name, json)) {
@@ -266,30 +266,31 @@ tl::expected<LoadResult, GlobalParsingIssue> load_fdm(const ordered_json& json)
     if (!is_object(project_location_name, json)) {
         return tl::unexpected{GlobalParsingIssue::InvalidFDMProjectSettings};
     }
-    const auto project_load_result{load_box<ProjectSettings>(json[project_location_name])};
+    ProjectSettings project_settings;
+    const auto project_issues = load_box(json[project_location_name], project_settings);
 
     ConfigPackFDM config;
-    config.printer = printer_load_result.settings;
+    config.printer = printer_settings;
     config.tool = tool_load_result.settings;
-    config.print = print_load_result.settings;
+    config.print = print_settings;
     config.filament = filament_load_result.settings;
-    config.project = project_load_result.settings;
+    config.project = project_settings;
 
     IssuesPerLocation issues;
-    if (!printer_load_result.issues.empty()) {
-        issues.insert({FDMConfigLocation::Printer, printer_load_result.issues});
+    if (!printer_issues.empty()) {
+        issues.insert({FDMConfigLocation::Printer, printer_issues});
     }
     if (!is_empty(tool_load_result.issues)) {
         issues.insert({FDMConfigLocation::Tool, tool_load_result.issues});
     }
-    if (!print_load_result.issues.empty()) {
-        issues.insert({FDMConfigLocation::Print, print_load_result.issues});
+    if (!print_issues.empty()) {
+        issues.insert({FDMConfigLocation::Print, print_issues});
     }
     if (!is_empty(filament_load_result.issues)) {
         issues.insert({FDMConfigLocation::Filament, filament_load_result.issues});
     }
-    if (!project_load_result.issues.empty()) {
-        issues.insert({FDMConfigLocation::Project, project_load_result.issues});
+    if (!project_issues.empty()) {
+        issues.insert({FDMConfigLocation::Project, project_issues});
     }
 
     return LoadResult{.config = std::move(config), .issues = std::move(issues)};
@@ -301,37 +302,40 @@ tl::expected<LoadResult, GlobalParsingIssue> load_sla(const ordered_json& json)
     if (!is_object(printer_location_name, json)) {
         return tl::unexpected{GlobalParsingIssue::InvalidSLAPrinterSettings};
     }
-    const auto printer_load_result{load_box<SLAPrinterSettings>(json[printer_location_name])};
+    SLAPrinterSettings printer_settings;
+    const auto printer_issues = load_box(json[printer_location_name], printer_settings);
 
     const std::string material_location_name{get_location_name(SLAConfigLocation::Material)};
     if (!is_object(material_location_name, json)) {
         return tl::unexpected{GlobalParsingIssue::InvalidSLAMaterialSettings};
     }
-    const auto material_load_result{load_box<SLAMaterialSettings>(json[material_location_name])};
+    SLAMaterialSettings material_settings;
+    const auto material_issues = load_box(json[material_location_name], material_settings);
 
     const std::string print_location_name{get_location_name(SLAConfigLocation::Print)};
     if (!is_object(print_location_name, json)) {
         return tl::unexpected{GlobalParsingIssue::InvalidSLAPrintSettings};
     }
-    const auto print_load_result{load_box<SLAPrintSettings>(json[print_location_name])};
+    SLAPrintSettings print_settings;
+    const auto print_issues = load_box(json[print_location_name], print_settings);
 
     IssuesPerLocation issues;
-    if (!printer_load_result.issues.empty()) {
-        issues.insert({SLAConfigLocation::Printer, printer_load_result.issues});
+    if (!printer_issues.empty()) {
+        issues.insert({SLAConfigLocation::Printer, printer_issues});
     }
-    if (!material_load_result.issues.empty()) {
-        issues.insert({SLAConfigLocation::Material, material_load_result.issues});
+    if (!material_issues.empty()) {
+        issues.insert({SLAConfigLocation::Material, material_issues});
     }
-    if (!print_load_result.issues.empty()) {
-        issues.insert({SLAConfigLocation::Print, print_load_result.issues});
+    if (!print_issues.empty()) {
+        issues.insert({SLAConfigLocation::Print, print_issues});
     }
 
     return LoadResult{
         .config =
             ConfigPackSLA{
-                .sla_printer_settings = printer_load_result.settings,
-                .sla_material_settings = material_load_result.settings,
-                .sla_print_settings = print_load_result.settings,
+                .sla_printer_settings = printer_settings,
+                .sla_material_settings = material_settings,
+                .sla_print_settings = print_settings,
             },
         .issues = std::move(issues)
     };
@@ -385,9 +389,5 @@ tl::expected<LoadResult, GlobalParsingIssue> load(const ordered_json& json)
         return tl::unexpected{GlobalParsingIssue::UnableToDeducePrinterTechnology};
     }
 }
-
-template BoxLoadResult<Domain::VolumeSettings> load_box(const nlohmann::ordered_json&);
-template BoxLoadResult<Domain::ObjectSettings> load_box(const nlohmann::ordered_json&);
-template BoxLoadResult<Domain::SLAObjectSettings> load_box(const nlohmann::ordered_json&);
 
 } // namespace Slic3r::Biz::Config

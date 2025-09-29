@@ -87,6 +87,9 @@ std::string get_location_name(const ConfigLocation& location) {
         [](const PhysicalPrinterLocation location) {
             return "physical_printer_settings";
         },
+        [](const AppConfigLocation location) {
+            return "app_config_settings";
+        },
     }, location);
 }
 
@@ -123,7 +126,8 @@ void ConfigDefinitions::check_valid() const
         std::visit(overloaded{
             [](const FDMConfigLocation location) {ASSERT(location != FDMConfigLocation::None);},
             [](const SLAConfigLocation location) {ASSERT(location != SLAConfigLocation::None);},
-            [](const PhysicalPrinterLocation location) {}
+            [](const PhysicalPrinterLocation location) {},
+            [](const AppConfigLocation location) {}
         }, def.location);
 
         ASSERT(!def.overrides_in.contains(def.location));

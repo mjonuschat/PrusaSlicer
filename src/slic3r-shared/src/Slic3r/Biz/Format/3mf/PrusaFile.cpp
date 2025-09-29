@@ -905,9 +905,10 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, Read3mfIs
 
     
     for (ModelVolume* mv : mvs) {
-        auto res = Biz::Config::load_box<Domain::VolumeSettings>(volume_json[VOLUME_SETTINGS]);
-        mv->volume_settings = res.settings;
-        if (! res.issues.empty()) {
+        Domain::VolumeSettings volume_settings;
+        auto issues = Biz::Config::load_box(volume_json[VOLUME_SETTINGS], volume_settings);
+        mv->volume_settings = volume_settings;
+        if (! issues.empty()) {
             // TODO Handle errors.
             // RT issue = RT::project_volume_config_issue;
         }
@@ -1080,9 +1081,10 @@ void ranges_from_json(const json &ranges_json, Domain::LayerConfigRanges &ranges
         }
 
         ASSERT(range_json.contains(CONFIGURATION));
-        auto res = Biz::Config::load_box<Domain::VolumeSettings>(range_json[CONFIGURATION]);
-        ranges[z_range] = res.settings;
-        if (! res.issues.empty()) {
+        Domain::VolumeSettings volume_settings;
+        auto issues = Biz::Config::load_box(range_json[CONFIGURATION], volume_settings);
+        ranges[z_range] = volume_settings;
+        if (! issues.empty()) {
             // TODO Handle errors.
             // RT issue = RT::project_object_range_config_issue;
         }
@@ -1269,9 +1271,10 @@ void load_objects(
         for (ModelObject* mo_ptr : mos) {
             if (! object_json.contains(OBJECT_SETTINGS) || ! object_json[OBJECT_SETTINGS].is_object())
                 continue;
-            auto res = Biz::Config::load_box<Domain::ObjectSettings>(object_json[OBJECT_SETTINGS]);
-            mo_ptr->object_settings = res.settings;
-            if (! res.issues.empty()) {
+            Domain::ObjectSettings object_settings;
+            auto issues = Biz::Config::load_box(object_json[OBJECT_SETTINGS], object_settings);
+            mo_ptr->object_settings = object_settings;
+            if (! issues.empty()) {
                 // TODO Handle errors.
                 // RT issue = RT::project_object_configuration_issue;
             }

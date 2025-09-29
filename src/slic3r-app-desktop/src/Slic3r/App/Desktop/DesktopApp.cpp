@@ -158,6 +158,18 @@ int run(const Slic3r::App::InitParams& init_params)
 
 bool DesktopApp::OnInit()
 {
+    {
+        const std::string appconfig_filename = Slic3r::data_dir() + "/PrusaSlicer.json";
+        if (auto apc = AppConfig::load_appconfig(appconfig_filename); apc)
+            m_appconfig = std::make_unique<AppConfig>(apc.value());
+        else {
+            SPDLOG_ERROR("Failed to parse app config. Creating a new one from default.");
+            m_appconfig = std::make_unique<AppConfig>();
+        }
+        m_appconfig->set_filename(appconfig_filename);
+    }
+    
+
     // Set initialization of image handlers before any UI actions - See GH issue #7469
     wxInitAllImageHandlers();
 
@@ -169,7 +181,7 @@ bool DesktopApp::OnInit()
 
     bool is_editor     = true; // is_editor();
     SplashScreen* scrn = nullptr;
-    if (1 /*app_config->get_bool("show_splash_screen")*/) {
+    if (m_appconfig->get<bool>("show_splash_screen")) {
         // Detect position (display) to show the splash screen
         // Now this position is equal to the mainframe position
         wxPoint splashscreen_pos      = wxDefaultPosition;
