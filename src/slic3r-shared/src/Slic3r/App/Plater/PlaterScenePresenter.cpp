@@ -536,8 +536,9 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
 
-    project_context().sinking_contours().update_scene(m_device, proj, scn, elements);
-    project_context().sinking_contours().set_selection(elements);
+    auto& sinking_contours = project_context().sinking_contours();
+    sinking_contours.update_scene(m_device, proj, scn, elements);
+    sinking_contours.set_selection(elements);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
@@ -619,8 +620,9 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
 
-    project_context().sinking_contours().update_scene(m_device, proj, scn, elements);
-    project_context().sinking_contours().set_selection(elements);
+    auto& sinking_contours = project_context().sinking_contours();
+    sinking_contours.update_scene(m_device, proj, scn, elements);
+    sinking_contours.set_selection(elements);
     m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
