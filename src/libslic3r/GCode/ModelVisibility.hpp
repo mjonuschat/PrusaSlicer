@@ -34,6 +34,8 @@ struct Visibility
         size_t fast_decimation_triangle_count_target{};
         // square of number of rays per sample point
         size_t sqr_rays_per_sample_point{};
+        // BOSS
+        SeamPosition seam_position;
     };
 
     Visibility(

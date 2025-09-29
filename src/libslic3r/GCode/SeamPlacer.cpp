@@ -74,6 +74,9 @@ ObjectSeams precalculate_seams(
 
     for (auto &[print_object, layer_perimeters] : seam_data) {
         switch (print_object->config().seam_position.value) {
+        case spAlignedRear: {
+            [[fallthrough]];
+        }
         case spAligned: {
             const Transform3d transformation{print_object->trafo_centered()};
             const ModelVolumePtrs &volumes{print_object->model_object()->volumes};
@@ -143,6 +146,8 @@ Params Placer::get_params(const DynamicPrintConfig &config) {
     params.visibility.raycasting_visibility_samples_count = 30000;
     params.visibility.fast_decimation_triangle_count_target = 16000;
     params.visibility.sqr_rays_per_sample_point = 5;
+    // // BOSS
+    params.visibility.seam_position = config.opt_enum<SeamPosition>("seam_position");
 
     return params;
 }
