@@ -1,0 +1,111 @@
+kind: filament
+id: Filament PM FRJet
+inherits:
+- '*PET*'
+- '*FRJet_MAXVOLSPEED*'      
+name: Filament PM FRJet
+values:
+  filament_vendor: Filament PM
+  extrusion_multiplier: 0.95
+  first_layer_temperature: 240
+  temperature: 240
+  bridge_fan_speed: 15
+  min_fan_speed: 10
+  max_fan_speed: 15
+  cooling: false
+  fan_always_on: false
+variants:
+- condition: printer.model=~/(COREONE|MK4S)/
+  values:
+    bridge_fan_speed: 12
+    enable_dynamic_fan_speeds: true
+    overhang_fan_speed_0: 12
+---        
+kind: filament
+# Maximum volumetric speed limits
+id: '*FRJet_MAXVOLSPEED*'      
+## C1, MK4, XL family
+variants:
+- condition: printer.base_model=~/(COREONE|MK4|XL)/
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 10
+  # 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    values:
+      filament_max_volumetric_speed: 10
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 10
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 14
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 17
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 22
+## MINI
+- condition: printer.base_model == "MINI"
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 10
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 10
+## MK3.5
+- condition: printer.base_model == "MK3.5"
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 10
+    variants:
+    # MK3.5 0.25 MMU
+    - condition: feeder.base_model == "MMU"
+      values:
+        filament_max_volumetric_speed: 2
+  # 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    values:
+      filament_max_volumetric_speed: 10
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 10
+    variants:
+    # MK3.5 0.4 MMU
+    - condition: feeder.base_model == "MMU"
+      values:
+        filament_max_volumetric_speed: 7
+## MK3
+- condition: printer.base_model=~/(MK3|MK2.5)/
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 10
+    variants:
+    # MK3 0.25 MMU
+    - condition: feeder.base_model == "MMU"
+      values:
+        filament_max_volumetric_speed: 2
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 10
+    variants:
+    # MK3 0.4 MMU
+    - condition: feeder.base_model == "MMU"
+      values:
+        filament_max_volumetric_speed: 7

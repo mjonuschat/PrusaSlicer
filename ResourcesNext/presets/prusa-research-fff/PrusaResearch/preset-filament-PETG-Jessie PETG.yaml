@@ -15,53 +15,45 @@ variants:
   variants:
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Jessie PETG @COREONE 0.4'
     values:
       filament_max_volumetric_speed: 12
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @COREONE HF0.4'
       values:
         filament_max_volumetric_speed: 21
         first_layer_temperature: 250
         temperature: 250
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Jessie PETG @COREONE 0.5'
     values:
       filament_max_volumetric_speed: 14
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @COREONE HF0.5'
       values:
         filament_max_volumetric_speed: 24
         first_layer_temperature: 250
         temperature: 250
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Jessie PETG @COREONE 0.6'
     values:
       filament_max_volumetric_speed: 17
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @COREONE HF0.6'
       values:
         filament_max_volumetric_speed: 27
         first_layer_temperature: 250
         temperature: 250
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Jessie PETG @COREONE 0.8'
     values:
       filament_max_volumetric_speed: 22
       slowdown_below_layer_time: 20
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @COREONE HF0.8'
       values:
         filament_max_volumetric_speed: 34
         first_layer_temperature: 250
@@ -71,163 +63,139 @@ variants:
   variants:
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Jessie PETG @XL 0.4'
     values:
       filament_max_volumetric_speed: 12
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @XL HF0.4'
       values:
         filament_max_volumetric_speed: 24
         first_layer_temperature: 250
         temperature: 250
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Jessie PETG @XL 0.5'
     values:
       filament_max_volumetric_speed: 14
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @XL HF0.5'
       values:
         filament_max_volumetric_speed: 24
         first_layer_temperature: 250
         temperature: 250
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Jessie PETG @XL 0.6'
     values:
       filament_max_volumetric_speed: 17
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @XL HF0.6'
       values:
         filament_max_volumetric_speed: 27
         first_layer_temperature: 250
         temperature: 250
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Jessie PETG @XL 0.8'
     values:
       filament_max_volumetric_speed: 22
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @XL HF0.8'
       values:
         filament_max_volumetric_speed: 34
         first_layer_temperature: 250
         temperature: 250
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   variants:
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Jessie PETG @MK4 0.4'
     values:
       filament_max_volumetric_speed: 12
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @MK4 HF0.4'
       values:
         filament_max_volumetric_speed: 21
         first_layer_temperature: 250
         temperature: 250
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Jessie PETG @MK4 0.5'
     values:
       filament_max_volumetric_speed: 14
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @MK4 HF0.5'
       values:
         filament_max_volumetric_speed: 24
         first_layer_temperature: 250
         temperature: 250
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Jessie PETG @MK4 0.6'
     values:
       filament_max_volumetric_speed: 17
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @MK4 HF0.6'
       values:
         filament_max_volumetric_speed: 27
         first_layer_temperature: 250
         temperature: 250
   # MK4 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Jessie PETG @MK4 0.8'
     values:
       filament_max_volumetric_speed: 22
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @MK4 HF0.8'
       values:
         filament_max_volumetric_speed: 34
         first_layer_temperature: 250
         temperature: 250
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   variants:
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Jessie PETG @MK4S 0.4'
     values:
       filament_max_volumetric_speed: 12
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @MK4S HF0.4'
       values:
         filament_max_volumetric_speed: 21
         first_layer_temperature: 250
         temperature: 250
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Jessie PETG @MK4S 0.5'
     values:
       filament_max_volumetric_speed: 14
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @MK4S HF0.5'
       values:
         filament_max_volumetric_speed: 24
         first_layer_temperature: 250
         temperature: 250
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Jessie PETG @MK4S 0.6'
     values:
       filament_max_volumetric_speed: 17
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @MK4S HF0.6'
       values:
         filament_max_volumetric_speed: 27
         first_layer_temperature: 250
         temperature: 250
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Jessie PETG @MK4S 0.8'
     values:
       filament_max_volumetric_speed: 22
       pressure_advance_value: 0.018
     variants:
     # MK4S HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Jessie PETG @MK4S HF0.8'
       values:
         filament_max_volumetric_speed: 34
         first_layer_temperature: 250

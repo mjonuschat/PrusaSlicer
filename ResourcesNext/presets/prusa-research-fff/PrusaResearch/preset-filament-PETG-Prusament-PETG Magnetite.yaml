@@ -19,7 +19,7 @@ values:
   max_fan_speed: 20
   fan_always_on: false
   filament_infill_max_crossing_speed: 150
----
+---        
 kind: filament
 id: '*sheet_PET_magnetite*'      
 variants:        

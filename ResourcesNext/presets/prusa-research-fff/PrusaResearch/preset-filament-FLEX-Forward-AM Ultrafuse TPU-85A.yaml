@@ -1,0 +1,135 @@
+kind: filament
+id: Forward-AM Ultrafuse TPU-85A
+inherits:
+- '*FLEX*'
+name: Forward-AM Ultrafuse TPU-85A
+condition: 'tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/ and printer.base_model != "MINI"'
+values:
+  filament_vendor: Forward-AM
+  first_layer_temperature: 220
+  temperature: 215
+  extrusion_multiplier: 1.1
+  filament_density: 1.11
+  fan_below_layer_time: 30
+  slowdown_below_layer_time: 15
+  filament_spool_weight: 0
+  min_fan_speed: 20
+  max_fan_speed: 100
+  retract_length: 3.5
+## C1
+variants:
+- condition: printer.base_model == "COREONE"
+  values:
+    min_fan_speed: 20
+    max_fan_speed: 80
+  variants:
+  # C1 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 3
+  # C1 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 3
+  # C1 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 4
+  # C1 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 7
+## XL
+- condition: printer.base_model == "XL"
+  values:
+    retract_length_toolchange: 3.5
+  variants:
+  # XL 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 3
+      filament_multitool_ramming_flow: 3
+  # XL 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 3
+      filament_multitool_ramming_flow: 3
+  # XL 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 4
+      filament_multitool_ramming_flow: 4
+  # XL 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 7
+      filament_multitool_ramming_flow: 7
+## MK4
+- condition: printer.model=~/(MK4|MK3.9)/
+  variants:
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 3
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 3
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 6
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 8.5
+## MK4S
+- condition: printer.model=~/(MK4S|MK3.9S)/
+  values:
+    min_fan_speed: 20
+    max_fan_speed: 80
+  variants:
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 3
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 3
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 6
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 8.5
+## MK3.5 and MK3 and MK2
+- condition: printer.base_model=~/(MK3.5|MK3|MK2.5|MK2)/
+  values:
+    extrusion_multiplier: 1.2
+    idle_temperature: 70
+    deretract_speed: 25
+    retract_length: 1.2
+    retract_speed: 25
+    retract_lift: 0
+    travel_ramping_lift: 0
+    filament_max_volumetric_speed: 3
+  variants:
+  # MK3.5 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 3
+  # MK3.5 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 3
+  # MK3.5 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 3
+  # MK3.5 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 4

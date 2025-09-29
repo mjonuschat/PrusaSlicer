@@ -263,7 +263,7 @@ variants:
         temperature: 230
         filament_notes: XL HF0.8
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   values:
     first_layer_temperature: 230
     min_print_speed: 20
@@ -354,7 +354,7 @@ variants:
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
         start_filament_gcode: M572 S0.015 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     enable_dynamic_fan_speeds: 1
     first_layer_temperature: 230
@@ -582,7 +582,7 @@ variants:
       start_filament_gcode: M572 S0.12 ; Filament gcode
       temperature: 225
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   values:
     first_layer_temperature: 215
     temperature: 215

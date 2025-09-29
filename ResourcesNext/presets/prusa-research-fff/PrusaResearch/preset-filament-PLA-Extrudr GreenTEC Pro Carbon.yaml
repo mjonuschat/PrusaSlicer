@@ -19,11 +19,11 @@ variants:
     min_fan_speed: 25
     max_fan_speed: 60
     bridge_fan_speed: 100
-    overgang_fan_speed_0: 80
+    overhang_fan_speed_0: 80
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     min_fan_speed: 25
     max_fan_speed: 60
     bridge_fan_speed: 100
-    overgang_fan_speed_0: 80
+    overhang_fan_speed_0: 80

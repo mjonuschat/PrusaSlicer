@@ -19,47 +19,39 @@ variants:
   variants:
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Fiberlogy Easy ABS @COREONE 0.4'
     values:
       first_layer_temperature: 255
       temperature: 255
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @COREONE HF0.4'
       values:
         first_layer_temperature: 255
         temperature: 255
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Fiberlogy Easy ABS @COREONE 0.5'
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @COREONE HF0.5'
       values:
         first_layer_temperature: 255
         temperature: 255
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Fiberlogy Easy ABS @COREONE 0.6'
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @COREONE HF0.6'
       values:
         first_layer_temperature: 255
         temperature: 255
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Fiberlogy Easy ABS @COREONE 0.8'
     values:
       first_layer_temperature: 255
       temperature: 255
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @COREONE HF0.8'
       values:
         temperature: 260
         first_layer_temperature: 260
@@ -68,136 +60,112 @@ variants:
   variants:
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Fiberlogy Easy ABS @XL 0.4'
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @XL HF0.4'
       values:
         first_layer_temperature: 255
         temperature: 255
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Fiberlogy Easy ABS @XL 0.5'
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @XL HF0.5'
       values:
         first_layer_temperature: 255
         temperature: 255
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Fiberlogy Easy ABS @XL 0.6'
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @XL HF0.6'
       values:
         first_layer_temperature: 255
         temperature: 255
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Fiberlogy Easy ABS @XL 0.8'
     values:
       first_layer_temperature: 255
       temperature: 255
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @XL HF0.8'
       values:
         first_layer_temperature: 260
         temperature: 260
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   variants:
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Fiberlogy Easy ABS @MK4 0.4'
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @MK4 HF0.4'
       values:
         first_layer_temperature: 255
         temperature: 255
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Fiberlogy Easy ABS @MK4 0.5'
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @MK4 HF0.5'
       values:
         first_layer_temperature: 255
         temperature: 255
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Fiberlogy Easy ABS @MK4 0.6'
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @MK4 HF0.6'
       values:
         first_layer_temperature: 255
         temperature: 255
   # MK4 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Fiberlogy Easy ABS @MK4 0.8'
     values:
       first_layer_temperature: 255
       temperature: 255
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @MK4 HF0.8'
       values:
         first_layer_temperature: 260
         temperature: 260
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   variants:
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Fiberlogy Easy ABS @MK4S 0.4'
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @MK4S HF0.4'
       values:
         first_layer_temperature: 255
         temperature: 255
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Fiberlogy Easy ABS @MK4S 0.5'
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @MK4S HF0.5'
       values:
         first_layer_temperature: 255
         temperature: 255
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Fiberlogy Easy ABS @MK4S 0.6'
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @MK4S HF0.6'
       values:
         first_layer_temperature: 255
         temperature: 255
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Fiberlogy Easy ABS @MK4S 0.8'
     values:
       first_layer_temperature: 255
       temperature: 255
     variants:
     # MK4S HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Fiberlogy Easy ABS @MK4S HF0.8'
       values:
         first_layer_temperature: 260
         temperature: 260

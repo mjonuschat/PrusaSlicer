@@ -191,7 +191,7 @@ variants:
     support_tree_angle_slow: 25
     support_tree_branch_diameter: 2
     support_tree_branch_diameter_angle: 5
-    support_tree_branch_diameter_double_wall: 3
+    support_tree_branch_diameter_double_wall: 8
     support_tree_branch_distance: 1
     support_tree_tip_diameter: 0.8
     support_tree_top_rate: 30%
@@ -293,6 +293,7 @@ variants:
               overhang_speed_2: 50
               overhang_speed_3: 60%
               over_bridge_speed: 0
+              support_material_threshold: 35
           - name: 0.15mm SPEED @COREONE 0.4HF
             values:
               perimeter_speed: 250
@@ -308,6 +309,7 @@ variants:
               overhang_speed_2: 50
               overhang_speed_3: 60%
               over_bridge_speed: 35%
+              support_material_threshold: 35
 # 0.4HF/0.20mm layer
         - condition: print.layer_height == 0.20
           values:
@@ -342,6 +344,7 @@ variants:
               overhang_speed_2: 50
               overhang_speed_3: 60%
               over_bridge_speed: 0
+              support_material_threshold: 35
           - name: 0.20mm SPEED @COREONE 0.4HF
             values:
               perimeter_speed: 250
@@ -351,6 +354,7 @@ variants:
               solid_infill_speed: 250
               overhang_speed_3: 70%
               over_bridge_speed: 35%
+              support_material_threshold: 35
 # 0.4HF/0.25mm layer
         - condition: print.layer_height == 0.25
           values:
@@ -397,6 +401,7 @@ variants:
               overhang_speed_2: 50
               overhang_speed_3: 60%
               over_bridge_speed: 0
+              support_material_threshold: 35
           - name: 0.25mm SPEED @COREONE 0.4HF
             values:
               perimeter_speed: 220
@@ -407,6 +412,7 @@ variants:
               overhang_speed_2: 50
               overhang_speed_3: 60%
               over_bridge_speed: 35%
+              support_material_threshold: 35
 # 0.4HF/0.28mm layer
         - condition: print.layer_height == 0.28
           values:
@@ -991,6 +997,7 @@ variants:
           first_layer_infill_speed: 55
           over_bridge_speed: 0
           bridge_speed: 22
+          support_tree_branch_diameter_double_wall: 0
         variants:
 # 0.8HF/0.30mm layer
         - condition: print.layer_height == 0.30
@@ -1441,6 +1448,7 @@ variants:
             gap_fill_speed: 120
             overhang_speed_2: 50
             overhang_speed_3: 80%
+            support_material_threshold: 35
 # 0.4n/0.20mm layer
       - condition: print.layer_height == 0.20
         values:
@@ -1455,6 +1463,7 @@ variants:
         - name: 0.20mm SPEED @COREONE 0.4
           values:
             overhang_speed_2: 50
+            support_material_threshold: 35
 # 0.5 nozzle
     - condition: tool.nozzle_diameter == 0.5
       values:
@@ -1729,6 +1738,7 @@ variants:
         first_layer_infill_speed: 55
         over_bridge_speed: 0
         bridge_speed: 22
+        support_tree_branch_diameter_double_wall: 0
       variants:
 # 0.8n/0.30mm layer
       - condition: print.layer_height == 0.30

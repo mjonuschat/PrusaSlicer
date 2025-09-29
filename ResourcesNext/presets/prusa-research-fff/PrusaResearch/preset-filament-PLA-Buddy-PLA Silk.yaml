@@ -12,404 +12,284 @@ variants:
   variants:
   # C1 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Buddy3D PLA Silk @COREONE 0.25'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.1
   # C1 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'Buddy3D PLA Silk @COREONE 0.3'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.07
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Buddy3D PLA Silk @COREONE 0.4'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.03
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @COREONE HF0.4'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.03
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Buddy3D PLA Silk @COREONE 0.5'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.021
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @COREONE HF0.5'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.021
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Buddy3D PLA Silk @COREONE 0.6'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @COREONE HF0.6'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.018
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Buddy3D PLA Silk @COREONE 0.8'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @COREONE HF0.8'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.012
 ## XL
 - condition: printer.base_model == "XL"
   variants:
   # XL 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Buddy3D PLA Silk @XL 0.25'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.1
   # XL 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'Buddy3D PLA Silk @XL 0.3'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.07
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Buddy3D PLA Silk @XL 0.4'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.03
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @XL HF0.4'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.03
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Buddy3D PLA Silk @XL 0.5'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.021
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @XL HF0.5'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.021
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Buddy3D PLA Silk @XL 0.6'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @XL HF0.6'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.018
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Buddy3D PLA Silk @XL 0.8'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @XL HF0.8'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.012
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   variants:
   # MK4 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Buddy3D PLA Silk @MK4 0.25'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.1
   # MK4 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'Buddy3D PLA Silk @MK4 0.3'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.07
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Buddy3D PLA Silk @MK4 0.4'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.03
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @MK4 HF0.4'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.03
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Buddy3D PLA Silk @MK4 0.5'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.021
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @MK4 HF0.5'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.021
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Buddy3D PLA Silk @MK4 0.6'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @MK4 HF0.6'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.018
   # MK4 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Buddy3D PLA Silk @MK4 0.8'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @MK4 HF0.8'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.012
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   variants:
   # MK4S 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Buddy3D PLA Silk @MK4S 0.25'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.1
   # MK4S 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'Buddy3D PLA Silk @MK4S 0.3'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.07
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Buddy3D PLA Silk @MK4S 0.4'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.03
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @MK4S HF0.4'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.03
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Buddy3D PLA Silk @MK4S 0.5'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.021
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @MK4S HF0.5'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.021
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Buddy3D PLA Silk @MK4S 0.6'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @MK4S HF0.6'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.018
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Buddy3D PLA Silk @MK4S 0.8'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Buddy3D PLA Silk @MK4S HF0.8'
       values:
-        pressure_advance_enable: true
         pressure_advance_value: 0.012
 ## MK3.5
 - condition: printer.base_model == "MK3.5"
   variants:
   # MK3.5 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Buddy3D PLA Silk @MK3.5 0.25'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.1
     variants:
     # MK3.5 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Buddy3D PLA Silk @MK3.5 0.25 MMU'
   # MK3.5 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'Buddy3D PLA Silk @MK3.5 0.3'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Buddy3D PLA Silk @MK3.5 0.4'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.03
     variants:
     # MK3.5 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Buddy3D PLA Silk @MK3.5 0.4 MMU'
   # MK3.5 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Buddy3D PLA Silk @MK3.5 0.5'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.02
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Buddy3D PLA Silk @MK3.5 0.6'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.017
     variants:
     # MK3.5 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Buddy3D PLA Silk @MK3.5 0.6 MMU'
   # MK3.5 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Buddy3D PLA Silk @MK3.5 0.8'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
 ## MINI
 - condition: printer.base_model == "MINI"
   variants:
   # MINI 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Buddy3D PLA Silk @MINI 0.25'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.8
   # MINI 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Buddy3D PLA Silk @MINI 0.4'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.23
   # MINI 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Buddy3D PLA Silk @MINI 0.6'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.16
   # MINI 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Buddy3D PLA Silk @MINI 0.8'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.11
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Buddy3D PLA Silk @MK3 0.25'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.12
     variants:
     # MK3 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Buddy3D PLA Silk @MK3 0.25 MMU'
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Buddy3D PLA Silk @MK3 0.4'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.045
     variants:
     # MK3 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Buddy3D PLA Silk @MK3 0.4 MMU'
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Buddy3D PLA Silk @MK3 0.6'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.033
     variants:
     # MK3 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Buddy3D PLA Silk @MK3 0.6 MMU'
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Buddy3D PLA Silk @MK3 0.8'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
 ## MK2S
 - condition: printer.model == "MK2S"
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Buddy3D PLA Silk @MK2 0.25'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 28
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Buddy3D PLA Silk @MK2 0.4'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 28
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Buddy3D PLA Silk @MK2 0.6'
     values:
-      pressure_advance_enable: true
       pressure_advance_value: 17

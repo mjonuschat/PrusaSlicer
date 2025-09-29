@@ -1,6 +1,7 @@
 kind: filament
 id: '*PLA220*'
 inherits:
+- '*common*'
 - '*PLA*'
 values:
   first_layer_temperature: 215
@@ -89,7 +90,7 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*PLA220* @XL HF0.8'
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   values:
     temperature: 220
   variants:
@@ -134,7 +135,7 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*PLA220* @MK4 HF0.8'
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     temperature: 220
   variants:
@@ -242,43 +243,43 @@ variants:
     values:
       temperature: 225
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   values:
     first_layer_temperature: 215
     temperature: 210
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PLA220* @MK3 0.25'
+    name: '*PLA220* @MK2.5_MK3 0.25'
     values:
       temperature: 210
     variants:
     # MK3 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PLA220* @MK3 0.25 MMU'
+      name: '*PLA220* @MK2.5_MK3 0.25 MMU'
       values:
         temperature: 205
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PLA220* @MK3 0.4'
+    name: '*PLA220* @MK2.5_MK3 0.4'
     variants:
     # MK3 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PLA220* @MK3 0.4 MMU'
+      name: '*PLA220* @MK2.5_MK3 0.4 MMU'
       values:
         temperature: 205
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PLA220* @MK3 0.6'
+    name: '*PLA220* @MK2.5_MK3 0.6'
     variants:
     # MK3 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PLA220* @MK3 0.6 MMU'
+      name: '*PLA220* @MK2.5_MK3 0.6 MMU'
       values:
         temperature: 205
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PLA220* @MK3 0.8'
+    name: '*PLA220* @MK2.5_MK3 0.8'
     values:
       temperature: 225
 ## MK2S

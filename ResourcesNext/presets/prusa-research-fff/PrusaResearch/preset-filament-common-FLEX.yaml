@@ -1,9 +1,9 @@
 kind: filament
 id: '*FLEX*'
-features:
-  # TODO: define with respect to mat db types (there is no general FLEX)
-  #$.type: 'FLEX'
-#condition: 'tool.nozzle_diameter >= 0.4'
+# TODO: define with respect to mat db types (there is no general FLEX)
+#features:
+#  $.type: 'FLEX'
+condition: 'printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/ and tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/'
 values:
   bed_temperature: 50
   bridge_fan_speed: 80
@@ -134,7 +134,6 @@ variants:
 ## XL
 - condition: printer.base_model == "XL"
   values:
-    filament_multitool_ramming_flow: 2.5
     filament_multitool_ramming_volume: 40
     retract_length_toolchange: 2.5
     idle_temperature: 70
@@ -148,6 +147,7 @@ variants:
     name: '*FLEX* @XL 0.4'
     values:
       filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
@@ -159,6 +159,7 @@ variants:
     name: '*FLEX* @XL 0.5'
     values:
       filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
@@ -190,7 +191,7 @@ variants:
       values:
         filament_max_volumetric_speed: 7.5
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   variants:
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
@@ -237,7 +238,7 @@ variants:
       values:
         filament_max_volumetric_speed: 9
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     bridge_fan_speed: 70
     max_fan_speed: 50
@@ -351,7 +352,7 @@ variants:
     values:
       filament_max_volumetric_speed: 4
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   values:
     extrusion_multiplier: 1.15
     first_layer_temperature: 240
@@ -370,17 +371,17 @@ variants:
   variants:
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*FLEX* @MK3 0.4'
+    name: '*FLEX* @MK2.5_MK3 0.4'
     values:
       filament_max_volumetric_speed: 1.2
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*FLEX* @MK3 0.6'
+    name: '*FLEX* @MK2.5_MK3 0.6'
     values:
       filament_max_volumetric_speed: 1.3
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*FLEX* @MK3 0.8'
+    name: '*FLEX* @MK2.5_MK3 0.8'
     values:
       filament_max_volumetric_speed: 4
 ## MK2S

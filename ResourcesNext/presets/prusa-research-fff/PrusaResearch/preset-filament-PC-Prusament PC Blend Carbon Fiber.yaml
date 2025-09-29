@@ -1,0 +1,7 @@
+kind: filament
+id: Prusament PC Blend Carbon Fiber
+inherits:
+- '*PCCF*'
+name: Prusament PC Blend Carbon Fiber
+values:
+  filament_vendor: Prusa Polymers

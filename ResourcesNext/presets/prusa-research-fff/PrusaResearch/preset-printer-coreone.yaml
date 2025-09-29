@@ -163,7 +163,7 @@ variants:
       G92 E0
       M221 S100 ; set flow to 100%
   variants:
-  - condition: feeder.base_model == "MMU"
+  - condition: feeder.base_model == "MMU3"
     values:
       single_extruder_multi_material: 1
       start_gcode: |-

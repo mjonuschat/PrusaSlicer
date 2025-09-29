@@ -12,7 +12,7 @@ values:
   filament_vendor: 3DJAKE
   filament_spool_weight: 200
 variants:
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   variants:
     - condition: tool.nozzle_diameter == 0.4
       values:
@@ -121,7 +121,7 @@ variants:
     values:
       pressure_advance_value: 0.012
 ## MK3
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -188,7 +188,7 @@ variants:
       values:
         filament_max_volumetric_speed: 7
 ## MK3
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # 0.4
   - condition: tool.nozzle_diameter == 0.4

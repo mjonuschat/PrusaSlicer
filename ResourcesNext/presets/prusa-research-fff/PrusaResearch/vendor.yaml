@@ -130,6 +130,38 @@ visual:
 ---
 kind: printer
 technology: FFF
+id: MK3.9
+name: Prusa MK3.9
+model:
+  base_model: MK4
+  model: MK3.9
+tool_count: 1
+features:
+  input_shaper:
+    default: true
+visual:
+  bed_model: mk4_bed.stl
+  bed_texture: mk4.svg
+  thumbnail: MK4_thumbnail.png
+---
+kind: printer
+technology: FFF
+id: MK3.9S
+name: Prusa MK3.9S
+model:
+  base_model: MK4
+  model: MK3.9S
+tool_count: 1
+features:
+  input_shaper:
+    default: true
+visual:
+  bed_model: mk4_bed.stl
+  bed_texture: mk4s.svg
+  thumbnail: MK4S_thumbnail.png
+---
+kind: printer
+technology: FFF
 id: MK3
 name: MK3
 model:
@@ -196,6 +228,74 @@ visual:
   bed_model: mini_bed.stl
   bed_texture: mini.svg
   thumbnail: MINI_thumbnail.png
+---
+kind: printer
+technology: FFF
+id: MK2.5S
+name: MK2.5S
+model:
+  base_model: MK2.5
+  model: MK2.5S
+tool_count: 1
+features:
+  supports_high_flow_nozzle:
+    default: false
+  input_shaper:
+    default: false
+  supports_03_nozzle:
+    default: false
+  supports_05_nozzle:
+    default: false
+visual:
+  bed_model: mk3_bed.stl
+  bed_texture: mk3.svg
+  thumbnail: MK2.5S_thumbnail.png
+---
+kind: printer
+technology: FFF
+id: MK2.5
+name: MK2.5
+model:
+  base_model: MK2.5
+  model: MK2.5
+tool_count: 1
+features:
+  supports_high_flow_nozzle:
+    default: false
+  input_shaper:
+    default: false
+  supports_03_nozzle:
+    default: false
+  supports_05_nozzle:
+    default: false
+visual:
+  bed_model: mk3_bed.stl
+  bed_texture: mk3.svg
+  thumbnail: MK2.5_thumbnail.png
+---
+kind: printer
+technology: FFF
+id: MK2S
+name: MK2S
+model:
+  base_model: MK2
+  model: MK2S
+tool_count: 1
+features:
+  supports_high_flow_nozzle:
+    default: false
+  input_shaper:
+    default: false
+  supports_03_nozzle:
+    default: false
+  supports_05_nozzle:
+    default: false
+  supports_08_nozzle:
+    default: false
+visual:
+  bed_model: mk2_bed.stl
+  bed_texture: mk2.svg
+  thumbnail: MK2S_thumbnail.png
 ---
 kind: tool
 technology: FFF
@@ -294,13 +394,47 @@ features:
 ---
 kind: feeder
 technology: FFF
-id: mmu
-name: MMU
+id: mmu3_32b
+name: MMU3
+condition: printer.base_model=~/(COREONE|MK4)/
 feeder_type: mmu
 model:
-  base_model: MMU
-  model: MMU3S
+  base_model: MMU3
+  model: MMU3_32bit
 slot_count: 5
+---
+kind: feeder
+technology: FFF
+id: mmu3_8b
+name: MMU3 8bit
+condition: printer.model=~/(MK3S|MK2.5S)/
+feeder_type: mmu
+model:
+  base_model: MMU3
+  model: MMU3_8bit
+slot_count: 5
+---
+kind: feeder
+technology: FFF
+id: mmu2s
+name: MMU2S
+condition: printer.model=~/(MK3S|MK2.5S)/
+feeder_type: mmu
+model:
+  base_model: MMU2
+  model: MMU2S
+slot_count: 5
+---
+kind: feeder
+technology: FFF
+id: mmu1
+name: MMU1
+condition: printer.model == "MK2S"
+feeder_type: mmu
+model:
+  base_model: MMU1
+  model: MMU1
+slot_count: 4
 ---
 #sheet.type == "pei_smooth"
 #sheet.type == "pei_grained"
@@ -397,12 +531,36 @@ tools:
 sheet: satin
 ---
 kind: printer_config
+id: mk3.9
+name: MK3.9
+printer: MK3.9
+tools:
+- tool: '0.4'
+sheet: pei_smooth
+---
+kind: printer_config
+id: mk3.9s
+name: MK3.9S
+printer: MK3.9S
+tools:
+- tool: '0.4HF'
+sheet: pei_smooth
+---
+kind: printer_config
 id: mk3s
 name: MK3S
 printer: MK3S
 tools:
 - tool: '0.4'
-sheet: satin
+sheet: pei_smooth
+---
+kind: printer_config
+id: mk3
+name: MK3
+printer: MK3
+tools:
+- tool: '0.4'
+sheet: pei_smooth
 ---
 kind: printer_config
 id: mini
@@ -410,6 +568,30 @@ name: MINI
 printer: MINI
 tools:
 - tool: '0.4'
-sheet: satin
+sheet: pei_smooth
+---
+kind: printer_config
+id: mk2.5s
+name: MK2.5S
+printer: MK2.5S
+tools:
+- tool: '0.4'
+sheet: pei_smooth
+---
+kind: printer_config
+id: mk2.5
+name: MK2.5
+printer: MK2.5
+tools:
+- tool: '0.4'
+sheet: pei_smooth
+---
+kind: printer_config
+id: mk2s
+name: MK2S
+printer: MK2S
+tools:
+- tool: '0.4'
+sheet: pei_smooth
 
 

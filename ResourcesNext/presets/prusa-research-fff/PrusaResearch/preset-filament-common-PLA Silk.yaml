@@ -1,6 +1,7 @@
 kind: filament
 id: '*PLASILK*'
 inherits:
+- '*common*'
 - '*PLA*'
 - '*sheets_PLA_common*'
 values:
@@ -181,7 +182,7 @@ variants:
         pressure_advance_value: 0.012
         temperature: 230
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   values:
     first_layer_temperature: 230
     temperature: 225
@@ -257,7 +258,7 @@ variants:
         filament_max_volumetric_speed: 12
         pressure_advance_value: 0.012
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     first_layer_temperature: 230
     temperature: 225
@@ -432,14 +433,14 @@ variants:
       pressure_advance_value: 0.12
       temperature: 230
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   values:
     first_layer_temperature: 215
     temperature: 215
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PLASILK* @MK3 0.25'
+    name: '*PLASILK* @MK2.5_MK3 0.25'
     values:
       filament_max_volumetric_speed: 7
       pressure_advance_value: 0.14
@@ -447,38 +448,38 @@ variants:
     variants:
     # MK3 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PLASILK* @MK3 0.25 MMU'
+      name: '*PLASILK* @MK2.5_MK3 0.25 MMU'
       values:
         temperature: 205
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PLASILK* @MK3 0.4'
+    name: '*PLASILK* @MK2.5_MK3 0.4'
     values:
       filament_max_volumetric_speed: 7
       pressure_advance_value: 0.05
     variants:
     # MK3 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PLASILK* @MK3 0.4 MMU'
+      name: '*PLASILK* @MK2.5_MK3 0.4 MMU'
       values:
         temperature: 205
         filament_max_volumetric_speed: 7
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PLASILK* @MK3 0.6'
+    name: '*PLASILK* @MK2.5_MK3 0.6'
     values:
       filament_max_volumetric_speed: 8
       pressure_advance_value: 0.035
     variants:
     # MK3 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PLASILK* @MK3 0.6 MMU'
+      name: '*PLASILK* @MK2.5_MK3 0.6 MMU'
       values:
         temperature: 205
         filament_max_volumetric_speed: 8
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PLASILK* @MK3 0.8'
+    name: '*PLASILK* @MK2.5_MK3 0.8'
     values:
       filament_max_volumetric_speed: 12
       pressure_advance_value: 0.01

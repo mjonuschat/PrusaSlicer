@@ -108,7 +108,7 @@ variants:
     values:
       pressure_advance_value: 0.012
 ## MK3
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -259,7 +259,7 @@ variants:
     values:
       filament_max_volumetric_speed: 15
 ## MK3
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # 0.25
   - condition: tool.nozzle_diameter == 0.25

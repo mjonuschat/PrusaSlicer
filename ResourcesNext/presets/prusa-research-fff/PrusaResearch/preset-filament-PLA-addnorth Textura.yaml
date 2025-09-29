@@ -23,61 +23,50 @@ variants:
     max_fan_speed: 30
     bridge_fan_speed: 45
     fan_below_layer_time: 25
-    pressure_advance_enable: true
     temperature: 220
   variants:
   # C1 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'addnorth Textura @COREONE 0.25'
     values:
       filament_max_volumetric_speed: 8
   # C1 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'addnorth Textura @COREONE 0.3'
     values:
       filament_max_volumetric_speed: 10
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'addnorth Textura @COREONE 0.4'
     values:
       filament_max_volumetric_speed: 12
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @COREONE HF0.4'
       values:
         filament_max_volumetric_speed: 20
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'addnorth Textura @COREONE 0.5'
     values:
       filament_max_volumetric_speed: 12
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @COREONE HF0.5'
       values:
         filament_max_volumetric_speed: 24
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'addnorth Textura @COREONE 0.6'
     values:
       filament_max_volumetric_speed: 15.5
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @COREONE HF0.6'
       values:
         filament_max_volumetric_speed: 27
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'addnorth Textura @COREONE 0.8'
     values:
       filament_max_volumetric_speed: 19
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @COREONE HF0.8'
       values:
         filament_max_volumetric_speed: 35
 ## XL
@@ -87,43 +76,36 @@ variants:
   variants:
   # XL 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'addnorth Textura @XL 0.25'
     values:
       filament_max_volumetric_speed: 8
       slowdown_below_layer_time: 7
   # XL 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'addnorth Textura @XL 0.3'
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 9
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'addnorth Textura @XL 0.4'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 10
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @XL HF0.4'
       values:
         filament_max_volumetric_speed: 20
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'addnorth Textura @XL 0.5'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 11
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @XL HF0.5'
       values:
         filament_max_volumetric_speed: 24
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'addnorth Textura @XL 0.6'
     values:
       filament_max_volumetric_speed: 15.5
       slowdown_below_layer_time: 15
@@ -131,87 +113,74 @@ variants:
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @XL HF0.6'
       values:
         filament_max_volumetric_speed: 27
         start_filament_gcode: M142 S36 ; set heatbreak target temp
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'addnorth Textura @XL 0.8'
     values:
       filament_max_volumetric_speed: 19
       slowdown_below_layer_time: 19
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @XL HF0.8'
       values:
         filament_max_volumetric_speed: 35
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   variants:
   # MK4 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'addnorth Textura @MK4 0.25'
     values:
       filament_max_volumetric_speed: 8
       slowdown_below_layer_time: 5
   # MK4 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'addnorth Textura @MK4 0.3'
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 6
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'addnorth Textura @MK4 0.4'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 8
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @MK4 HF0.4'
       values:
         filament_max_volumetric_speed: 20
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'addnorth Textura @MK4 0.5'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 10
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @MK4 HF0.5'
       values:
         filament_max_volumetric_speed: 25
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'addnorth Textura @MK4 0.6'
     values:
       filament_max_volumetric_speed: 15.5
       slowdown_below_layer_time: 15
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @MK4 HF0.6'
       values:
         filament_max_volumetric_speed: 28
   # MK4 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'addnorth Textura @MK4 0.8'
     values:
       filament_max_volumetric_speed: 19
       slowdown_below_layer_time: 17
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @MK4 HF0.8'
       values:
         filament_max_volumetric_speed: 35
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     enable_dynamic_fan_speeds: 1
     min_fan_speed: 15
@@ -223,43 +192,36 @@ variants:
   variants:
   # MK4S 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'addnorth Textura @MK4S 0.25'
     values:
       filament_max_volumetric_speed: 8
       slowdown_below_layer_time: 4
   # MK4S 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'addnorth Textura @MK4S 0.3'
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 5
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'addnorth Textura @MK4S 0.4'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 6
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @MK4S HF0.4'
       values:
         filament_max_volumetric_speed: 20
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'addnorth Textura @MK4S 0.5'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 8
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @MK4S HF0.5'
       values:
         filament_max_volumetric_speed: 25
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'addnorth Textura @MK4S 0.6'
     values:
       filament_max_volumetric_speed: 15.5
       fan_below_layer_time: 22
@@ -267,12 +229,10 @@ variants:
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @MK4S HF0.6'
       values:
         filament_max_volumetric_speed: 28
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'addnorth Textura @MK4S 0.8'
     values:
       filament_max_volumetric_speed: 19
       fan_below_layer_time: 25
@@ -280,7 +240,6 @@ variants:
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'addnorth Textura @MK4S HF0.8'
       values:
         filament_max_volumetric_speed: 35
 ## MK3.5
@@ -291,36 +250,30 @@ variants:
   variants:
   # MK3.5 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'addnorth Textura @MK3.5 0.25'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 10
   # MK3.5 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'addnorth Textura @MK3.5 0.3'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 12
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'addnorth Textura @MK3.5 0.4'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 12
   # MK3.5 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'addnorth Textura @MK3.5 0.5'
     values:
       filament_max_volumetric_speed: 12
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'addnorth Textura @MK3.5 0.6'
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 17
   # MK3.5 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'addnorth Textura @MK3.5 0.8'
     values:
       filament_max_volumetric_speed: 15
       temperature: 225
@@ -332,56 +285,48 @@ variants:
   variants:
   # MINI 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'addnorth Textura @MINI 0.25'
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 10
   # MINI 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'addnorth Textura @MINI 0.4'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 15
   # MINI 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'addnorth Textura @MINI 0.6'
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 18
   # MINI 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'addnorth Textura @MINI 0.8'
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 20
       temperature: 225
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   values:
     first_layer_temperature: 215
     temperature: 215
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'addnorth Textura @MK3 0.25'
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 10
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'addnorth Textura @MK3 0.4'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 12
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'addnorth Textura @MK3 0.6'
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 17
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'addnorth Textura @MK3 0.8'
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 20
@@ -394,19 +339,16 @@ variants:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'addnorth Textura @MK2 0.25'
     values:
       filament_max_volumetric_speed: 7
       slowdown_below_layer_time: 12
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'addnorth Textura @MK2 0.4'
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 15
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'addnorth Textura @MK2 0.6'
     values:
       filament_max_volumetric_speed: 13
       slowdown_below_layer_time: 20
@@ -418,19 +360,16 @@ variants:
   variants:
   # MK2SMM 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'addnorth Textura @MK2MMU1 0.25'
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 1210
   # MK2SMM 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'addnorth Textura @MK2MMU1 0.4'
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 15
   # MK2SMM 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'addnorth Textura @MK2MMU1 0.6'
     values:
       filament_max_volumetric_speed: 13
       slowdown_below_layer_time: 20

@@ -1,0 +1,37 @@
+kind: filament
+id: Polymaker PC-Max
+inherits:
+- '*PC*'
+name: Polymaker PC-Max
+values:
+  filament_vendor: Polymaker
+  filament_cost: 77.3
+  cooling: false
+  bridge_fan_speed: 0
+  disable_fan_first_layers: 3
+  max_fan_speed: 30
+  fan_below_layer_time: 20
+  filament_density: 1.2
+  first_layer_temperature: 270
+  temperature: 270
+variants:
+- condition: printer.model=~/(COREONE|MK4S)/
+  values:
+    max_fan_speed: 20
+  variants:
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 8
+    variants:
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 18
+- condition: printer.model=~/(MK4|XL)/
+  variants:
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 8
+    variants:
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 18

@@ -1,0 +1,141 @@
+kind: filament
+id: addnorth OBC Polyethylene
+inherits:
+- '*FLEX*'
+name: addnorth OBC Polyethylene
+condition: 'tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/ and printer.base_model != "MINI"'
+values:
+  filament_vendor: addnorth
+  first_layer_bed_temperature: 100
+  bed_temperature: 100
+  first_layer_temperature: 195
+  temperature: 200
+  extrusion_multiplier: 1
+  bridge_fan_speed: 40
+  min_fan_speed: 20
+  max_fan_speed: 30
+  fan_below_layer_time: 15
+  min_print_speed: 20
+  slowdown_below_layer_time: 5
+  retract_length: 1.5
+## C1
+variants:
+- condition: printer.base_model == "COREONE"
+  values:
+    bridge_fan_speed: 25
+    min_fan_speed: 15
+    max_fan_speed: 20
+  variants:
+  # C1 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 4
+  # C1 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 4
+  # C1 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 6
+  # C1 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 10
+## XL
+- condition: printer.base_model == "XL"
+  values:
+    retract_length_toolchange: 1.5
+  variants:
+  # XL 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 4
+      filament_multitool_ramming_flow: 4
+  # XL 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 4
+      filament_multitool_ramming_flow: 4
+  # XL 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 6
+      filament_multitool_ramming_flow: 6
+  # XL 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 10
+      filament_multitool_ramming_flow: 10
+## MK4
+- condition: printer.model=~/(MK4|MK3.9)/
+  variants:
+  # MK4 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 4
+  # MK4 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 4
+  # MK4 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 6
+  # MK4 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 10
+## MK4S
+- condition: printer.model=~/(MK4S|MK3.9S)/
+  values:
+    bridge_fan_speed: 25
+    min_fan_speed: 15
+    max_fan_speed: 20
+  variants:
+  # MK4S 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 4
+  # MK4S 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 4
+  # MK4S 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 6
+  # MK4S 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 10
+## MK3.5 and MK3 and MK2
+- condition: printer.base_model=~/(MK3.5|MK3|MK2.5|MK2)/
+  values:
+    extrusion_multiplier: 1
+    first_layer_temperature: 195
+    temperature: 200
+    idle_temperature: 70
+    deretract_speed: 25
+    retract_speed: 40
+    retract_length: 1
+    retract_lift: 0
+    travel_ramping_lift: 0
+    filament_max_volumetric_speed: 4
+  variants:
+  # MK3.5 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 4
+  # MK3.5 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 4
+  # MK3.5 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 5
+  # MK3.5 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 7

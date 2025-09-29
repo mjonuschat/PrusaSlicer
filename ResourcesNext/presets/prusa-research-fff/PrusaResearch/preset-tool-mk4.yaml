@@ -101,7 +101,7 @@ inherits:
 - '*common MK4*'
 # This is derived from print profile
 variants:
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   values:
     bottom_solid_layers: 4
     bridge_acceleration: 1500

@@ -1,0 +1,117 @@
+kind: filament
+id: Sunlu PETG
+inherits:
+- '*PET*'
+- '*sunluPETG_P_ADVANCE*'
+- '*sunluPETG_MAXVOLSPEED*'
+name: Sunlu PETG
+values:
+  filament_vendor: Sunlu
+  filament_cost: 25
+  filament_density: 1.23
+  filament_spool_weight: 162
+  filament_infill_max_crossing_speed: 100
+---        
+kind: filament
+# Pressure advance values
+id: '*sunluPETG_P_ADVANCE*'      
+## C1, MK4, XL family
+variants:
+- condition: printer.base_model=~/(COREONE|MK4|XL)/
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      pressure_advance_value: 0.17
+  # 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    values:
+      pressure_advance_value: 0.1
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      pressure_advance_value: 0.048
+    variants:
+    # HF0.4
+    - condition: tool.nozzle_high_flow
+      values:
+        pressure_advance_value: 0.048
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      pressure_advance_value: 0.042
+    variants:
+    # HF0.5
+    - condition: tool.nozzle_high_flow
+      values:
+        pressure_advance_value: 0.042
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      pressure_advance_value: 0.032
+    variants:
+    # HF0.6
+    - condition: tool.nozzle_high_flow
+      values:
+        pressure_advance_value: 0.032
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      pressure_advance_value: 0.018
+    variants:
+    # HF0.8
+    - condition: tool.nozzle_high_flow
+      values:
+        pressure_advance_value: 0.018
+---        
+kind: filament
+# Maximum volumetric speed limits
+id: '*sunluPETG_MAXVOLSPEED*'      
+## C1, MK4, XL family
+variants:
+- condition: printer.base_model=~/(COREONE|MK4|XL)/
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 11
+  # 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    values:
+      filament_max_volumetric_speed: 11
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 11
+    variants:
+    # HF0.4
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 20
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # HF0.5
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 24
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # HF0.6
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 28
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 22
+    variants:
+    # HF0.8
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 35

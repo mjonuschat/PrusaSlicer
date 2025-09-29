@@ -21,7 +21,7 @@ variants:
       first_layer_temperature: 200
       temperature: 200
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   variants:
   - condition: tool.nozzle_diameter == 0.8
     values:
@@ -42,7 +42,7 @@ variants:
       first_layer_temperature: 200
       temperature: 200
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   - condition: tool.nozzle_diameter == 0.8
     values:
@@ -162,7 +162,7 @@ variants:
     values:
       filament_max_volumetric_speed: 14
 ## MK3
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # 0.25
   - condition: tool.nozzle_diameter == 0.25

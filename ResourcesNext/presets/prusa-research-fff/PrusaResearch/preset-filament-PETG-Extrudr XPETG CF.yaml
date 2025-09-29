@@ -1,0 +1,71 @@
+kind: filament
+id: Extrudr XPETG CF
+inherits:
+- '*PETCF*'
+- '*sheets_PET_XPETG*'
+name: Extrudr XPETG CF
+values:
+  filament_vendor: Extrudr
+  first_layer_temperature: 235
+  temperature: 235
+  extrusion_multiplier: 1
+  filament_cost: 62.49
+  filament_density: 1.29
+  filament_spool_weight: 230
+variants:
+- condition: printer.base_model=~/(COREONE|MK4|XL)/
+  variants:
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 9
+    variants:
+    # HF0.4
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 9
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 10
+    variants:
+    # HF0.5
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 10
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 13
+    variants:
+    # HF0.6
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 13
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 18
+      first_layer_temperature: 245
+      temperature: 245
+    variants:
+    # HF0.8
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 18
+        first_layer_temperature: 245
+        temperature: 245
+---        
+kind: filament
+id: '*sheets_PET_XPETG*'      
+variants:        
+# STANDARD sheet
+- condition: sheet.type != "cold"        
+  values:
+    first_layer_bed_temperature: 70
+    bed_temperature: 70
+# COLD sheet
+- condition: sheet.type == "cold"
+  values:
+    first_layer_bed_temperature: 55
+    bed_temperature: 55

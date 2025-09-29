@@ -37,41 +37,34 @@ variants:
   variants:
   # C1 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @COREONE 0.25'
     values:
       slowdown_below_layer_time: 5
       filament_infill_max_crossing_speed: 100
   # C1 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: '*PET* @COREONE 0.3'
     values:
       slowdown_below_layer_time: 6
       filament_infill_max_crossing_speed: 100
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @COREONE 0.4'
     values:
       slowdown_below_layer_time: 9
       filament_infill_max_crossing_speed: 110
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
-      name: '*PET* @COREONE HF0.4'
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: '*PET* @COREONE 0.5'
     values:
       slowdown_below_layer_time: 10
       filament_infill_max_crossing_speed: 110
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
-      name: '*PET* @COREONE HF0.5'
       values:
         filament_infill_max_crossing_speed: 120
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @COREONE 0.6'
     values:
       slowdown_below_layer_time: 15
       fan_below_layer_time: 30
@@ -79,17 +72,14 @@ variants:
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
-      name: '*PET* @COREONE HF0.6'
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PET* @COREONE 0.8'
     values:
       slowdown_below_layer_time: 20
       fan_below_layer_time: 35
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      name: '*PET* @COREONE HF0.8'
 ## XL
 - condition: printer.base_model == "XL"
   values:
@@ -98,99 +88,82 @@ variants:
   variants:
   # XL 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @XL 0.25'
     values:
       slowdown_below_layer_time: 7
   # XL 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: '*PET* @XL 0.3'
     values:
       slowdown_below_layer_time: 9
       filament_infill_max_crossing_speed: 100
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @XL 0.4'
     values:
       slowdown_below_layer_time: 9
       filament_infill_max_crossing_speed: 110
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
-      name: '*PET* @XL HF0.4'
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: '*PET* @XL 0.5'
     values:
       slowdown_below_layer_time: 14
       filament_infill_max_crossing_speed: 110
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
-      name: '*PET* @XL HF0.5'
       values:
         filament_infill_max_crossing_speed: 120
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @XL 0.6'
     values:
       slowdown_below_layer_time: 15
       filament_infill_max_crossing_speed: 140
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
-      name: '*PET* @XL HF0.6'
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PET* @XL 0.8'
     values:
       slowdown_below_layer_time: 18
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
-      name: '*PET* @XL HF0.8'
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   values:
     idle_temperature: 130
     start_filament_gcode: M142 S40 ; set heatbreak target temp
   variants:
   # MK4 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @MK4 0.25'
     values:
       slowdown_below_layer_time: 7
       filament_infill_max_crossing_speed: 100
   # MK4 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: '*PET* @MK4 0.3'
     values:
       slowdown_below_layer_time: 8
       filament_infill_max_crossing_speed: 100
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MK4 0.4'
     values:
       slowdown_below_layer_time: 9
       filament_infill_max_crossing_speed: 110
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
-      name: '*PET* @MK4 HF0.4'
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: '*PET* @MK4 0.5'
     values:
       slowdown_below_layer_time: 9
       filament_infill_max_crossing_speed: 110
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
-      name: '*PET* @MK4 HF0.5'
       values:
         filament_infill_max_crossing_speed: 120
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MK4 0.6'
     values:
       slowdown_below_layer_time: 14
       fan_below_layer_time: 20
@@ -198,59 +171,49 @@ variants:
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
-      name: '*PET* @MK4 HF0.6'
   # MK4 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PET* @MK4 0.8'
     values:
       slowdown_below_layer_time: 18
       fan_below_layer_time: 22
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
-      name: '*PET* @MK4 HF0.8'
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     idle_temperature: 70
     start_filament_gcode: M142 S40 ; set heatbreak target temp
   variants:
   # MK4S 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @MK4S 0.25'
     values:
       slowdown_below_layer_time: 6
   # MK4S 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: '*PET* @MK4S 0.3'
     values:
       slowdown_below_layer_time: 6
       filament_infill_max_crossing_speed: 100
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MK4S 0.4'
     values:
       slowdown_below_layer_time: 7
       filament_infill_max_crossing_speed: 110
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
-      name: '*PET* @MK4S HF0.4'
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: '*PET* @MK4S 0.5'
     values:
       slowdown_below_layer_time: 8
       filament_infill_max_crossing_speed: 110
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
-      name: '*PET* @MK4S HF0.5'
       values:
         filament_infill_max_crossing_speed: 120
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MK4S 0.6'
     values:
       slowdown_below_layer_time: 10
       fan_below_layer_time: 22
@@ -258,70 +221,58 @@ variants:
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
-      name: '*PET* @MK4S HF0.6'
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PET* @MK4S 0.8'
     values:
       slowdown_below_layer_time: 18
       fan_below_layer_time: 25
     variants:
     # MK4S HF0.8
     - condition: tool.nozzle_high_flow
-      name: '*PET* @MK4S HF0.8'
 ## MK3.5
 - condition: printer.base_model == "MK3.5"
   variants:
   # MK3.5 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @MK3.5 0.25'
     values:
       slowdown_below_layer_time: 10
     variants:
     # MK3.5 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PET* @MK3.5 0.25 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 2
   # MK3.5 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: '*PET* @MK3.5 0.3'
     values:
       slowdown_below_layer_time: 12
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MK3.5 0.4'
     values:
       slowdown_below_layer_time: 15
     variants:
     # MK3.5 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PET* @MK3.5 0.4 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 7
   # MK3.5 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: '*PET* @MK3.5 0.5'
     values:
       slowdown_below_layer_time: 16
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MK3.5 0.6'
     values:
       slowdown_below_layer_time: 17
       max_fan_speed: 60
     variants:
     # MK3.5 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PET* @MK3.5 0.6 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 13
   # MK3.5 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PET* @MK3.5 0.8'
     values:
       slowdown_below_layer_time: 20
       max_fan_speed: 60
@@ -330,65 +281,54 @@ variants:
   variants:
   # MINI 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @MINI 0.25'
     values:
       slowdown_below_layer_time: 10
   # MINI 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MINI 0.4'
     values:
       slowdown_below_layer_time: 10
   # MINI 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MINI 0.6'
     values:
       slowdown_below_layer_time: 17
   # MINI 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PET* @MINI 0.8'
     values:
       slowdown_below_layer_time: 20
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @MK3 0.25'
     values:
       slowdown_below_layer_time: 10
     variants:
     # MK3 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PET* @MK3 0.25 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 2
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MK3 0.4'
     values:
       slowdown_below_layer_time: 12
     variants:
     # MK3 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PET* @MK3 0.4 MMU'
       values:
         temperature: 230
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MK3 0.6'
     values:
       slowdown_below_layer_time: 17
     variants:
     # MK3 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PET* @MK3 0.6 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 13
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PET* @MK3 0.8'
     values:
       slowdown_below_layer_time: 20
 ## MK2S
@@ -396,17 +336,14 @@ variants:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @MK2 0.25'
     values:
       slowdown_below_layer_time: 15
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MK2 0.4'
     values:
       slowdown_below_layer_time: 15
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MK2 0.6'
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 17
@@ -415,17 +352,14 @@ variants:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @MK2MMU1 0.25'
     values:
       slowdown_below_layer_time: 15
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MK2MMU1 0.4'
     values:
       slowdown_below_layer_time: 15
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MK2MMU1 0.6'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 20
@@ -528,7 +462,7 @@ variants:
     values:
       pressure_advance_value: 0.018
 ## MK3
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -679,7 +613,7 @@ variants:
     values:
       filament_max_volumetric_speed: 10
 ## MK3
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # 0.25
   - condition: tool.nozzle_diameter == 0.25

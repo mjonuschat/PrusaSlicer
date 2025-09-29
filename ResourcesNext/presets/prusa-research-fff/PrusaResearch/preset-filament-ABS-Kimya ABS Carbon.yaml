@@ -1,0 +1,53 @@
+kind: filament
+id: Kimya ABS Carbon
+inherits:
+- '*ABSCF*'
+- '*KimyaABSCarbon_MAXVOLSPEED*'
+name: Kimya ABS Carbon
+values:
+  filament_cost: 140.34
+  filament_vendor: Kimya
+  filament_density: 1.032
+---
+kind: filament
+# Maximum volumetric speed limits
+id: '*KimyaABSCarbon_MAXVOLSPEED*'      
+## C1, MK4, XL family
+variants:
+- condition: printer.base_model=~/(COREONE|MK4|XL)/
+  variants:
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 6
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 8
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 10
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 14
+- condition: printer.base_model=~/(MK3|MK3.5|MINI|MK2)/
+  variants:
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 6
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 7
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 10
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 13
+  

@@ -1,0 +1,237 @@
+kind: filament
+id: addnorth ESD-PETG
+inherits:
+- '*PET*'
+- '*addnorthESDPETG_MAXVOLSPEED*'
+- '*sheets_PET_addnorthESDPETG*'
+name: addnorth ESD-PETG
+values:
+  filament_vendor: addnorth
+  extrusion_multiplier: 0.98
+  filament_cost: 29.99
+  bridge_fan_speed: 35
+  min_fan_speed: 15
+  max_fan_speed: 30
+  fan_below_layer_time: 8
+variants:
+- condition: printer.model=~/(COREONE|MK4S)/
+  values:
+    min_fan_speed: 12
+    max_fan_speed: 20
+    bridge_fan_speed: 25
+  variants:
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      fan_below_layer_time: 10
+      slowdown_below_layer_time: 9
+      overhang_fan_speed_0: 20
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      slowdown_below_layer_time: 11
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      fan_below_layer_time: 18
+      slowdown_below_layer_time: 14
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      fan_below_layer_time: 25
+      slowdown_below_layer_time: 18
+---        
+kind: filament
+# Maximum volumetric speed limits
+id: '*addnorthESDPETG_MAXVOLSPEED*'      
+## C1, MK4, XL family
+variants:
+- condition: printer.base_model=~/(COREONE|MK4|XL)/
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 2
+  # 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    values:
+      filament_max_volumetric_speed: 2
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 2
+    variants:
+    # HF0.4
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 2
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 3
+    variants:
+    # HF0.5
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 3
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 3.5
+    variants:
+    # HF0.6
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 3.5
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 6
+    variants:
+    # HF0.8
+    - condition: tool.nozzle_high_flow
+      values:
+        filament_max_volumetric_speed: 6
+## MINI
+- condition: printer.base_model == "MINI"
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 2
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 2
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 3.5
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 6
+## MK3.5
+- condition: printer.base_model == "MK3.5"
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 2
+    variants:
+    # MK3.5 0.25 MMU
+    - condition: feeder.base_model == "MMU"
+      values:
+        filament_max_volumetric_speed: 2
+  # 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    values:
+      filament_max_volumetric_speed: 2
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 2
+    variants:
+    # MK3.5 0.4 MMU
+    - condition: feeder.base_model == "MMU"
+      values:
+        filament_max_volumetric_speed: 2
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 2
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 3.5
+    variants:
+    # MK3.5 0.6 MMU
+    - condition: feeder.base_model == "MMU"
+      values:
+        filament_max_volumetric_speed: 3.5
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 6
+## MK3
+- condition: printer.base_model=~/(MK3|MK2.5)/
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 2
+    variants:
+    # MK3 0.25 MMU
+    - condition: feeder.base_model == "MMU"
+      values:
+        filament_max_volumetric_speed: 2
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 2
+    variants:
+    # MK3 0.4 MMU
+    - condition: feeder.base_model == "MMU"
+      values:
+        filament_max_volumetric_speed: 2
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 3.5
+    variants:
+    # MK3 0.6 MMU
+    - condition: feeder.base_model == "MMU"
+      values:
+        filament_max_volumetric_speed: 3.5
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 6
+## MK2
+- condition: printer.base_model == "MK2"
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 2
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 2
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 3.5
+## MK2 MMU1 
+- condition: printer.base_model == "MK2MMU1"
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    values:
+      filament_max_volumetric_speed: 2
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 2
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 3.5
+---        
+kind: filament
+id: '*sheets_PET_addnorthESDPETG*'      
+variants:        
+# STANDARD sheet
+- condition: sheet.type != "cold"        
+  values:
+    first_layer_bed_temperature: 85
+    bed_temperature: 85
+  variants:
+  - condition: printer.base_model == "XL"
+    values:
+      first_layer_bed_temperature: 80
+      bed_temperature: 80
+  - condition: printer.base_model=~/(MK3|MK2)/
+    values:
+      bed_temperature: 90
+# COLD sheet
+- condition: sheet.type == "cold"
+  values:
+    first_layer_bed_temperature: 65
+    bed_temperature: 65

@@ -21,16 +21,16 @@ variants:
     min_fan_speed: 25
     max_fan_speed: 80
     bridge_fan_speed: 45
-    overgang_fan_speed_0: 80
+    overhang_fan_speed_0: 80
     first_layer_temperature: 215
     temperature: 215
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     min_fan_speed: 25
     max_fan_speed: 80
     bridge_fan_speed: 45
-    overgang_fan_speed_0: 80
+    overhang_fan_speed_0: 80
     first_layer_temperature: 215
     temperature: 215
 ## MK3.5
@@ -176,7 +176,7 @@ variants:
     values:
       filament_max_volumetric_speed: 14
 ## MK3
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # 0.25
   - condition: tool.nozzle_diameter == 0.25

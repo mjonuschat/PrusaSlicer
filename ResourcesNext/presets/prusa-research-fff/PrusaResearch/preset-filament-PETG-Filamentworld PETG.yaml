@@ -21,64 +21,54 @@ variants:
   variants:
   # C1 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Filamentworld PETG @COREONE 0.25'
     values:
       filament_max_volumetric_speed: 12
       temperature: 230
   # C1 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'Filamentworld PETG @COREONE 0.3'
     values:
       filament_max_volumetric_speed: 12
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Filamentworld PETG @COREONE 0.4'
     values:
       filament_max_volumetric_speed: 12
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @COREONE HF0.4'
       values:
         filament_max_volumetric_speed: 21
         first_layer_temperature: 245
         temperature: 245
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Filamentworld PETG @COREONE 0.5'
     values:
       filament_max_volumetric_speed: 14
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @COREONE HF0.5'
       values:
         filament_max_volumetric_speed: 24
         first_layer_temperature: 245
         temperature: 245
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Filamentworld PETG @COREONE 0.6'
     values:
       filament_max_volumetric_speed: 17
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @COREONE HF0.6'
       values:
         filament_max_volumetric_speed: 27
         first_layer_temperature: 245
         temperature: 245
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Filamentworld PETG @COREONE 0.8'
     values:
       filament_max_volumetric_speed: 22
       slowdown_below_layer_time: 20
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @COREONE HF0.8'
       values:
         filament_max_volumetric_speed: 34
         first_layer_temperature: 250
@@ -93,193 +83,164 @@ variants:
   variants:
   # XL 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Filamentworld PETG @XL 0.25'
     values:
       filament_max_volumetric_speed: 12
       temperature: 235
   # XL 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'Filamentworld PETG @XL 0.3'
     values:
       filament_max_volumetric_speed: 12
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Filamentworld PETG @XL 0.4'
     values:
       filament_max_volumetric_speed: 12
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @XL HF0.4'
       values:
         filament_max_volumetric_speed: 24
         first_layer_temperature: 245
         temperature: 245
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Filamentworld PETG @XL 0.5'
     values:
       filament_max_volumetric_speed: 14
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @XL HF0.5'
       values:
         filament_max_volumetric_speed: 24
         first_layer_temperature: 245
         temperature: 245
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Filamentworld PETG @XL 0.6'
     values:
       filament_max_volumetric_speed: 17
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @XL HF0.6'
       values:
         filament_max_volumetric_speed: 27
         first_layer_temperature: 245
         temperature: 245
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Filamentworld PETG @XL 0.8'
     values:
       filament_max_volumetric_speed: 22
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @XL HF0.8'
       values:
         filament_max_volumetric_speed: 34
         first_layer_temperature: 250
         temperature: 250
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   values:
     idle_temperature: 130
   variants:
   # MK4 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Filamentworld PETG @MK4 0.25'
     values:
       filament_max_volumetric_speed: 9
       temperature: 235
   # MK4 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'Filamentworld PETG @MK4 0.3'
     values:
       filament_max_volumetric_speed: 9
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Filamentworld PETG @MK4 0.4'
     values:
       filament_max_volumetric_speed: 12
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @MK4 HF0.4'
       values:
         filament_max_volumetric_speed: 21
         first_layer_temperature: 245
         temperature: 245
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Filamentworld PETG @MK4 0.5'
     values:
       filament_max_volumetric_speed: 14
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @MK4 HF0.5'
       values:
         filament_max_volumetric_speed: 24
         first_layer_temperature: 245
         temperature: 245
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Filamentworld PETG @MK4 0.6'
     values:
       filament_max_volumetric_speed: 17
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @MK4 HF0.6'
       values:
         filament_max_volumetric_speed: 27
         first_layer_temperature: 245
         temperature: 245
   # MK4 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Filamentworld PETG @MK4 0.8'
     values:
       filament_max_volumetric_speed: 22
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @MK4 HF0.8'
       values:
         filament_max_volumetric_speed: 34
         first_layer_temperature: 250
         temperature: 250
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     idle_temperature: 70
   variants:
   # MK4S 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Filamentworld PETG @MK4S 0.25'
     values:
       filament_max_volumetric_speed: 9
       temperature: 235
   # MK4S 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'Filamentworld PETG @MK4S 0.3'
     values:
       filament_max_volumetric_speed: 9
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Filamentworld PETG @MK4S 0.4'
     values:
       filament_max_volumetric_speed: 12
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @MK4S HF0.4'
       values:
         filament_max_volumetric_speed: 21
         first_layer_temperature: 245
         temperature: 245
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Filamentworld PETG @MK4S 0.5'
     values:
       filament_max_volumetric_speed: 14
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @MK4S HF0.5'
       values:
         filament_max_volumetric_speed: 24
         first_layer_temperature: 245
         temperature: 245
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Filamentworld PETG @MK4S 0.6'
     values:
       filament_max_volumetric_speed: 17
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @MK4S HF0.6'
       values:
         filament_max_volumetric_speed: 27
         first_layer_temperature: 245
         temperature: 245
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Filamentworld PETG @MK4S 0.8'
     values:
       filament_max_volumetric_speed: 22
       max_fan_speed: 40
@@ -288,7 +249,6 @@ variants:
     variants:
     # MK4S HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'Filamentworld PETG @MK4S HF0.8'
       values:
         filament_max_volumetric_speed: 34
         first_layer_temperature: 250
@@ -303,54 +263,45 @@ variants:
   variants:
   # MK3.5 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Filamentworld PETG @MK3.5 0.25'
     values:
       temperature: 235
     variants:
     # MK3.5 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Filamentworld PETG @MK3.5 0.25 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 2
   # MK3.5 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'Filamentworld PETG @MK3.5 0.3'
     values:
       temperature: 235
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Filamentworld PETG @MK3.5 0.4'
     values:
       slowdown_below_layer_time: 15
     variants:
     # MK3.5 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Filamentworld PETG @MK3.5 0.4 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 7
   # MK3.5 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'Filamentworld PETG @MK3.5 0.5'
     values:
       filament_max_volumetric_speed: 14
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Filamentworld PETG @MK3.5 0.6'
     values:
       filament_max_volumetric_speed: 15
       max_fan_speed: 45
     variants:
     # MK3.5 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Filamentworld PETG @MK3.5 0.6 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 13
   # MK3.5 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Filamentworld PETG @MK3.5 0.8'
     values:
       filament_max_volumetric_speed: 20
       max_fan_speed: 50
@@ -365,58 +316,49 @@ variants:
   variants:
   # MINI 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Filamentworld PETG @MINI 0.25'
     values:
       slowdown_below_layer_time: 10
       temperature: 235
   # MINI 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Filamentworld PETG @MINI 0.4'
     values:
       slowdown_below_layer_time: 10
   # MINI 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Filamentworld PETG @MINI 0.6'
     values:
       filament_max_volumetric_speed: 15
   # MINI 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Filamentworld PETG @MINI 0.8'
     values:
       filament_max_volumetric_speed: 15
       first_layer_temperature: 245
       temperature: 245
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Filamentworld PETG @MK3 0.25'
     values:
       slowdown_below_layer_time: 10
     variants:
     # MK3 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Filamentworld PETG @MK3 0.25 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 2
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Filamentworld PETG @MK3 0.4'
     values:
       slowdown_below_layer_time: 12
       pressure_advance_value: 0.08
     variants:
     # MK3 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Filamentworld PETG @MK3 0.4 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 7
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Filamentworld PETG @MK3 0.6'
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 17
@@ -424,13 +366,11 @@ variants:
     variants:
     # MK3 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: 'Filamentworld PETG @MK3 0.6 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 13
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'Filamentworld PETG @MK3 0.8'
     values:
       filament_max_volumetric_speed: 20
       first_layer_temperature: 245
@@ -442,17 +382,14 @@ variants:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Filamentworld PETG @MK2 0.25'
     values:
       slowdown_below_layer_time: 15
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Filamentworld PETG @MK2 0.4'
     values:
       slowdown_below_layer_time: 15
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Filamentworld PETG @MK2 0.6'
     values:
       filament_max_volumetric_speed: 15
 ## MK2S MMU1
@@ -462,12 +399,9 @@ variants:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'Filamentworld PETG @MK2MMU1 0.25'
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'Filamentworld PETG @MK2MMU1 0.4'
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'Filamentworld PETG @MK2MMU1 0.6'
     values:
       filament_max_volumetric_speed: 12

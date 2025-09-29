@@ -1,0 +1,7 @@
+kind: filament
+id: Generic PA
+inherits:
+- '*PA*'
+name: Generic PA
+values:
+  filament_vendor: Generic

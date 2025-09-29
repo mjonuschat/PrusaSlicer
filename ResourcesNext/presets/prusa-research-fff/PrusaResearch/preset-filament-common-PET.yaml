@@ -1,5 +1,7 @@
 kind: filament
 id: '*PET*'
+inherits:
+- '*common*'
 features:
   $.type: 'PETG'
 values:
@@ -281,7 +283,7 @@ variants:
         first_layer_temperature: 255
         temperature: 255
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   values:
     enable_dynamic_fan_speeds: 0
     first_layer_temperature: 245
@@ -389,7 +391,7 @@ variants:
         first_layer_temperature: 255
         temperature: 255
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     enable_dynamic_fan_speeds: 1
     first_layer_temperature: 245
@@ -643,7 +645,7 @@ variants:
       first_layer_temperature: 250
       temperature: 250
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   values:
     first_layer_temperature: 240
     temperature: 240
@@ -670,34 +672,34 @@ variants:
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PET* @MK3 0.25'
+    name: '*PET* @MK2.5_MK3 0.25'
     values:
       slowdown_below_layer_time: 10
       pressure_advance_value: 0.1
     variants:
     # MK3 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PET* @MK3 0.25 MMU'
+      name: '*PET* @MK2.5_MK3 0.25 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 2
         filament_ramming_parameters: 200 140 4.70968 4.74194 4.77419 4.80645 4.83871 4.87097 4.90323 5 5.25806 5.67742 6.29032 7.06452 7.83871 8.3871| 0.05 4.72901 0.45 4.73545 0.95 4.83226 1.45 4.88067 1.95 5.05483 2.45 5.93553 2.95 7.53556 3.45 8.6323 3.95 7.6 4.45 7.6 4.95 7.6
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PET* @MK3 0.4'
+    name: '*PET* @MK2.5_MK3 0.4'
     values:
       slowdown_below_layer_time: 12
       pressure_advance_value: 0.08
     variants:
     # MK3 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PET* @MK3 0.4 MMU'
+      name: '*PET* @MK2.5_MK3 0.4 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 7
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PET* @MK3 0.6'
+    name: '*PET* @MK2.5_MK3 0.6'
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 17
@@ -705,13 +707,13 @@ variants:
     variants:
     # MK3 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PET* @MK3 0.6 MMU'
+      name: '*PET* @MK2.5_MK3 0.6 MMU'
       values:
         temperature: 230
         filament_max_volumetric_speed: 13
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PET* @MK3 0.8'
+    name: '*PET* @MK2.5_MK3 0.8'
     values:
       filament_max_volumetric_speed: 20
       slowdown_below_layer_time: 20
@@ -813,6 +815,9 @@ variants:
     values:
       first_layer_bed_temperature: 80
       bed_temperature: 80
+  - condition: printer.base_model=~/(MK3|MK2)/
+    values:
+      bed_temperature: 90
 # COLD sheet
 - condition: sheet.type == "cold"
   values:

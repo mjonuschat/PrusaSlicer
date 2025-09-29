@@ -65,7 +65,7 @@ variants:
       values:
         filament_max_volumetric_speed: 7
 ## MK3
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # 0.4
   - condition: tool.nozzle_diameter == 0.4

@@ -1,0 +1,7 @@
+kind: filament
+id: Generic HIPS
+inherits:
+- '*HIPS*'
+name: Generic HIPS
+values:
+  filament_vendor: Generic

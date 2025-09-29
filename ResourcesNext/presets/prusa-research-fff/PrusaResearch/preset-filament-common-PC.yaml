@@ -1,5 +1,7 @@
 kind: filament
 id: '*PC*'
+inherits:
+- '*common*'
 features:
   $.type: 'PC'
 values:
@@ -251,7 +253,7 @@ variants:
         filament_max_volumetric_speed: 36
         pressure_advance_value: 0.016
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   values:
     enable_dynamic_fan_speeds: 0
     idle_temperature: 130
@@ -347,7 +349,7 @@ variants:
         # filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
         pressure_advance_value: 0.016
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     enable_dynamic_fan_speeds: 0
     idle_temperature: 100
@@ -581,7 +583,7 @@ variants:
       slowdown_below_layer_time: 20
       pressure_advance_value: 0.09
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   values:
     filament_ramming_parameters: 130 120 2.70968 2.93548 3.32258 3.83871 4.58065 5.54839 6.51613 7.35484 7.93548 8.16129| 0.05 2.66451 0.45 3.05805 0.95 4.05807 1.45 5.97742 1.95 7.69999 2.45 8.1936 2.95 11.342 3.45 11.4065 3.95 7.6 4.45 7.6 4.95 7.6
     filament_load_time: 15
@@ -606,34 +608,34 @@ variants:
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*PC* @MK3 0.25'
+    name: '*PC* @MK2.5_MK3 0.25'
     values:
       slowdown_below_layer_time: 20
       pressure_advance_value: 0.1
     variants:
     # MK3 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PC* @MK3 0.25 MMU'
+      name: '*PC* @MK2.5_MK3 0.25 MMU'
       values:
         temperature: 265
         filament_max_volumetric_speed: 2
         filament_ramming_parameters: 200 120 2.70968 2.93548 3.32258 3.83871 4.58065 5.54839 6.51613 7.35484 7.93548 8.16129| 0.05 2.66451 0.45 3.05805 0.95 4.05807 1.45 5.97742 1.95 7.69999 2.45 8.1936 2.95 11.342 3.45 11.4065 3.95 7.6 4.45 7.6 4.95 7.6
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*PC* @MK3 0.4'
+    name: '*PC* @MK2.5_MK3 0.4'
     values:
       slowdown_below_layer_time: 20
       pressure_advance_value: 0.07
     variants:
     # MK3 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PC* @MK3 0.4 MMU'
+      name: '*PC* @MK2.5_MK3 0.4 MMU'
       values:
         temperature: 265
         filament_max_volumetric_speed: 7
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*PC* @MK3 0.6'
+    name: '*PC* @MK2.5_MK3 0.6'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 20
@@ -641,13 +643,13 @@ variants:
     variants:
     # MK3 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*PC* @MK3 0.6 MMU'
+      name: '*PC* @MK2.5_MK3 0.6 MMU'
       values:
         temperature: 265
         filament_max_volumetric_speed: 10
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*PC* @MK3 0.8'
+    name: '*PC* @MK2.5_MK3 0.8'
     values:
       filament_max_volumetric_speed: 20
       slowdown_below_layer_time: 20

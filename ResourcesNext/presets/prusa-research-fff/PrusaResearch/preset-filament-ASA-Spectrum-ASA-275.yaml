@@ -39,28 +39,24 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      pressure_advance_enable: true
       pressure_advance_value: 0.09
   # C1 0.3
   - condition: tool.nozzle_diameter == 0.3
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      pressure_advance_enable: true
       pressure_advance_value: 0.02
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 26
-        pressure_advance_enable: true
         pressure_advance_value: 0.02
         temperature: 240
         first_layer_temperature: 240
@@ -69,14 +65,12 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 12
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 27
-        pressure_advance_enable: true
         pressure_advance_value: 0.018
         temperature: 240
         first_layer_temperature: 240
@@ -86,7 +80,6 @@ variants:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
       fan_below_layer_time: 35
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
     variants:
     # C1 HF0.6
@@ -104,7 +97,6 @@ variants:
       max_fan_speed: 30
       bridge_fan_speed: 30
       overhang_fan_speed_3: 25
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
     variants:
     # C1 HF0.8
@@ -133,28 +125,24 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.09
   # XL 0.3
   - condition: tool.nozzle_diameter == 0.3
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.05
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 26
-        pressure_advance_enable: true
         pressure_advance_value: 0.02
         first_layer_temperature: 240
         temperature: 240
@@ -163,14 +151,12 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 17
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 27
-        pressure_advance_enable: true
         pressure_advance_value: 0.018
         first_layer_temperature: 240
         temperature: 240
@@ -179,7 +165,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
     variants:
     # XL HF0.6
@@ -193,20 +178,18 @@ variants:
     values:
       filament_max_volumetric_speed: 18
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 36
-        pressure_advance_enable: true
         pressure_advance_value: 0.01
         filament_infill_max_crossing_speed: 0
         first_layer_temperature: 240
         temperature: 240
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   values:
     enable_dynamic_fan_speeds: 0
     idle_temperature: 130
@@ -219,28 +202,24 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.09
   # MK4 0.3
   - condition: tool.nozzle_diameter == 0.3
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.02
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 26
-        pressure_advance_enable: true
         pressure_advance_value: 0.02
         first_layer_temperature: 240
         temperature: 240
@@ -249,14 +228,12 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 17
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 27
-        pressure_advance_enable: true
         pressure_advance_value: 0.035
         first_layer_temperature: 240
         temperature: 240
@@ -266,14 +243,12 @@ variants:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 20
       fan_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 34
-        pressure_advance_enable: true
         pressure_advance_value: 0.012
         filament_infill_max_crossing_speed: 130
         first_layer_temperature: 240
@@ -284,19 +259,17 @@ variants:
       filament_max_volumetric_speed: 18
       slowdown_below_layer_time: 20
       fan_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 36
-        pressure_advance_enable: true
         pressure_advance_value: 0.01
         first_layer_temperature: 240
         temperature: 240
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     enable_dynamic_fan_speeds: 0
     idle_temperature: 100
@@ -312,28 +285,24 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      pressure_advance_enable: true
       pressure_advance_value: 0.09
   # MK4S 0.3
   - condition: tool.nozzle_diameter == 0.3
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      pressure_advance_enable: true
       pressure_advance_value: 0.02
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 26
-        pressure_advance_enable: true
         pressure_advance_value: 0.02
         first_layer_temperature: 240
         temperature: 240
@@ -342,14 +311,12 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 12
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 27
-        pressure_advance_enable: true
         pressure_advance_value: 0.018
         first_layer_temperature: 240
         temperature: 240
@@ -360,14 +327,12 @@ variants:
       slowdown_below_layer_time: 20
       fan_below_layer_time: 20
       bridge_fan_speed: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 34
-        pressure_advance_enable: true
         pressure_advance_value: 0.012
         filament_infill_max_crossing_speed: 0
         first_layer_temperature: 240
@@ -381,14 +346,12 @@ variants:
       min_fan_speed: 15
       max_fan_speed: 15
       bridge_fan_speed: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
     variants:
     # MK4S HF0.8
     - condition: tool.nozzle_high_flow
       values:
         filament_max_volumetric_speed: 36
-        pressure_advance_enable: true
         pressure_advance_value: 0.01
         first_layer_temperature: 240
         temperature: 240
@@ -399,7 +362,6 @@ variants:
   - condition: tool.nozzle_diameter == 0.25
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.09
     variants:
     # MK3.5 0.25 MMU
@@ -410,14 +372,12 @@ variants:
   - condition: tool.nozzle_diameter == 0.3
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.065
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
     values:
       slowdown_below_layer_time: 15
       filament_max_volumetric_speed: 11
-      pressure_advance_enable: true
       pressure_advance_value: 0.02
       filament_infill_max_crossing_speed: 0
     variants:
@@ -430,14 +390,12 @@ variants:
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.018
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.012
     variants:
     # MK3.5 0.6 MMU
@@ -449,7 +407,6 @@ variants:
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
 ## MINI
 - condition: printer.base_model == "MINI"
@@ -461,20 +418,17 @@ variants:
   - condition: tool.nozzle_diameter == 0.25
     values:
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.55
   # MINI 0.4
   - condition: tool.nozzle_diameter == 0.4
     values:
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.19
   # MINI 0.6
   - condition: tool.nozzle_diameter == 0.6
     values:
       filament_max_volumetric_speed: 9
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.1
   # MINI 0.8
   - condition: tool.nozzle_diameter == 0.8
@@ -483,16 +437,14 @@ variants:
       slowdown_below_layer_time: 20
       first_layer_temperature: 240
       temperature: 240
-      pressure_advance_enable: true
       pressure_advance_value: 0.07
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.08
     variants:
     # MK3 0.25 MMU
@@ -503,7 +455,6 @@ variants:
   - condition: tool.nozzle_diameter == 0.4
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.04
     variants:
     # MK3 0.4 MMU
@@ -515,7 +466,6 @@ variants:
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 0.04
     variants:
     # MK3 0.6 MMU
@@ -527,7 +477,6 @@ variants:
     values:
       filament_max_volumetric_speed: 20
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 0.01
       first_layer_temperature: 240
       temperature: 240
@@ -541,20 +490,17 @@ variants:
   - condition: tool.nozzle_diameter == 0.25
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 20
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 20
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
     values:
       filament_max_volumetric_speed: 13
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 12
 ## MK2S MMU1
 - condition: printer.model == "MK2SMM"
@@ -563,18 +509,15 @@ variants:
   - condition: tool.nozzle_diameter == 0.25
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 200
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
     values:
       slowdown_below_layer_time: 15
-      pressure_advance_enable: true
       pressure_advance_value: 200
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
     values:
       filament_max_volumetric_speed: 13
       slowdown_below_layer_time: 20
-      pressure_advance_enable: true
       pressure_advance_value: 200

@@ -13,203 +13,163 @@ variants:
   variants:
   # C1 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'eSun PLA @COREONE 0.25'
     values:
       pressure_advance_value: 0.1
   # C1 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'eSun PLA @COREONE 0.3'
     values:
       pressure_advance_value: 0.07
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'eSun PLA @COREONE 0.4'
     values:
       pressure_advance_value: 0.03
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @COREONE HF0.4'
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'eSun PLA @COREONE 0.5'
     values:
       pressure_advance_value: 0.021
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @COREONE HF0.5'
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'eSun PLA @COREONE 0.6'
     values:
       pressure_advance_value: 0.018
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @COREONE HF0.6'
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'eSun PLA @COREONE 0.8'
     values:
       pressure_advance_value: 0.01
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @COREONE HF0.8'
 ## XL
 - condition: printer.base_model == "XL"
   variants:
   # XL 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'eSun PLA @XL 0.25'
     values:
       pressure_advance_value: 0.1
   # XL 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'eSun PLA @XL 0.3'
     values:
       pressure_advance_value: 0.07
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'eSun PLA @XL 0.4'
     values:
       pressure_advance_value: 0.03
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @XL HF0.4'
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'eSun PLA @XL 0.5'
     values:
       pressure_advance_value: 0.021
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @XL HF0.5'
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'eSun PLA @XL 0.6'
     values:
       pressure_advance_value: 0.018
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @XL HF0.6'
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'eSun PLA @XL 0.8'
     values:
       pressure_advance_value: 0.01
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @XL HF0.8'
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   variants:
   # MK4 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'eSun PLA @MK4 0.25'
     values:
       pressure_advance_value: 0.1
   # MK4 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'eSun PLA @MK4 0.3'
     values:
       pressure_advance_value: 0.07
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'eSun PLA @MK4 0.4'
     values:
       pressure_advance_value: 0.03
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @MK4 HF0.4'
       values:
         pressure_advance_value: 0.03
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'eSun PLA @MK4 0.5'
     values:
       pressure_advance_value: 0.021
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @MK4 HF0.5'
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'eSun PLA @MK4 0.6'
     values:
       pressure_advance_value: 0.018
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @MK4 HF0.6'
   # MK4 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'eSun PLA @MK4 0.8'
     values:
       pressure_advance_value: 0.01
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @MK4 HF0.8'
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   variants:
   # MK4S 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: 'eSun PLA @MK4S 0.25'
     values:
       pressure_advance_value: 0.1
   # MK4S 0.3
   - condition: tool.nozzle_diameter == 0.3
-    name: 'eSun PLA @MK4S 0.3'
     values:
       pressure_advance_value: 0.07
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: 'eSun PLA @MK4S 0.4'
     values:
       pressure_advance_value: 0.03
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @MK4S HF0.4'
 
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
-    name: 'eSun PLA @MK4S 0.5'
     values:
       pressure_advance_value: 0.021
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @MK4S HF0.5'
       values:
         pressure_advance_value: 0.021
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: 'eSun PLA @MK4S 0.6'
     values:
       pressure_advance_value: 0.018
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @MK4S HF0.6'
       values:
         pressure_advance_value: 0.018
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: 'eSun PLA @MK4S 0.8'
     values:
       pressure_advance_value: 0.01
     variants:
     # MK4S HF0.8
     - condition: tool.nozzle_high_flow
-      name: 'eSun PLA @MK4S HF0.8'
       values:
         pressure_advance_value: 0.01

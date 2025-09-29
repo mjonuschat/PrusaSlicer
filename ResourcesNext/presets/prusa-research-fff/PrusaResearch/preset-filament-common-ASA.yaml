@@ -1,5 +1,7 @@
 kind: filament
 id: '*ASA*'
+inherits:
+- '*common*'
 features:
   $.type: 'ASA'
 values:
@@ -273,7 +275,7 @@ variants:
         first_layer_temperature: 270
         temperature: 270
 ## MK4
-- condition: printer.model == "MK4"
+- condition: printer.model=~/(MK4|MK3.9)/
   values:
     enable_dynamic_fan_speeds: 0
     idle_temperature: 130
@@ -376,7 +378,7 @@ variants:
         first_layer_temperature: 270
         temperature: 270
 ## MK4S
-- condition: printer.model == "MK4S"
+- condition: printer.model=~/(MK4S|MK3.9S)/
   values:
     enable_dynamic_fan_speeds: 0
     idle_temperature: 100
@@ -617,7 +619,7 @@ variants:
       temperature: 265
       pressure_advance_value: 0.07
 ## MK3, MK3S and MK2.5, MK2.5S
-- condition: printer.base_model == "MK3"
+- condition: printer.base_model=~/(MK3|MK2.5)/
   values:
     filament_ramming_parameters: 120 110 5.32258 5.45161 5.67742 6 6.48387 7.12903 7.90323 8.70968 9.3871 9.83871 10.0968 10.2258| 0.05 5.30967 0.45 5.50967 0.95 6.1871 1.45 7.39677 1.95 9.05484 2.45 10 2.95 10.3098 3.45 13.0839 3.95 7.6 4.45 7.6 4.95 7.6
     filament_load_time: 15
@@ -642,32 +644,32 @@ variants:
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
-    name: '*ASA* @MK3 0.25'
+    name: '*ASA* @MK2.5_MK3 0.25'
     values:
       slowdown_below_layer_time: 15
       pressure_advance_value: 0.08
     variants:
     # MK3 0.25 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*ASA* @MK3 0.25 MMU'
+      name: '*ASA* @MK2.5_MK3 0.25 MMU'
       values:
         filament_max_volumetric_speed: 2
         filament_ramming_parameters: 200 110 3.41935 3.6129 3.93548 4.35484 4.87097 5.51613 6.25806 7.06452 7.80645 8.35484 8.70968 8.83871| 0.05 3.37419 0.45 3.70322 0.95 4.5742 1.45 5.78387 1.95 7.44194 2.45 8.58065 2.95 8.89045 3.45 13.0839 3.95 7.6 4.45 7.6 4.95 7.6
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    name: '*ASA* @MK3 0.4'
+    name: '*ASA* @MK2.5_MK3 0.4'
     values:
       slowdown_below_layer_time: 15
       pressure_advance_value: 0.04
     variants:
     # MK3 0.4 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*ASA* @MK3 0.4 MMU'
+      name: '*ASA* @MK2.5_MK3 0.4 MMU'
       values:
         filament_max_volumetric_speed: 11
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    name: '*ASA* @MK3 0.6'
+    name: '*ASA* @MK2.5_MK3 0.6'
     values:
       filament_max_volumetric_speed: 12
       slowdown_below_layer_time: 15
@@ -675,12 +677,12 @@ variants:
     variants:
     # MK3 0.6 MMU
     - condition: feeder.base_model == "MMU"
-      name: '*ASA* @MK3 0.6 MMU'
+      name: '*ASA* @MK2.5_MK3 0.6 MMU'
       values:
         filament_max_volumetric_speed: 12
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    name: '*ASA* @MK3 0.8'
+    name: '*ASA* @MK2.5_MK3 0.8'
     values:
       filament_max_volumetric_speed: 20
       slowdown_below_layer_time: 20

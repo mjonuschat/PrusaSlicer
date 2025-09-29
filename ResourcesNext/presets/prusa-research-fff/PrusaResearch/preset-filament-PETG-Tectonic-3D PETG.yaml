@@ -1,0 +1,10 @@
+kind: filament
+id: Tectonic-3D AURA PETG
+inherits:
+- '*PET*'   
+name: Tectonic-3D AURA PETG
+values:
+  filament_vendor: Tectonic-3D
+  filament_cost: 25
+  filament_density: 1.29
+  filament_spool_weight: 155
