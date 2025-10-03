@@ -255,11 +255,10 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     }
 
 #if ENABLED_DEBUG_OUTLINE
-    if (ImGui::Begin("Outline", nullptr)) {
+    if (ImGui::Begin("Outline", nullptr))
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
-    }
     ImGui::End();
-#endif
+#endif // ENABLED_DEBUG_OUTLINE
 
 #if ENABLED_DEBUG_VIEWER
     render_imgui_debug_viewer(m_fdm_viewer);
