@@ -336,11 +336,6 @@ void PlaterScenePresenter::update_beds_shadows_data()
     m_bed_render_updater.update_shadows(project_context().scene().camera());
 }
 
-void PlaterScenePresenter::on_project_loaded(Domain::SelectionId project_id)
-{
-    center_camera_on_selected_bed();
-}
-
 void PlaterScenePresenter::center_camera_on_selected_bed()
 {
     // Center the camera on the selected bed
@@ -734,6 +729,13 @@ void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_i
 
     update_beds();
     m_volume_materials_dirty = true;
+
+    Domain::BedRef selected_bed = m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
+    if (std::find_if(instances.begin(), instances.end(),
+        [&](const Domain::BedRef& br) { return br.instance_id == selected_bed.instance_id; }) != instances.end()) {
+        center_camera_on_selected_bed();
+    }
+
     m_camera_frustum_updater.update_scene_aabb(scn);
 
     invoke_bed_visually_changed(project_id);

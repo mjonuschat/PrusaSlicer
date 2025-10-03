@@ -265,7 +265,7 @@ void SinkingContours::update_scene(Render::Device& device, const Domain::Project
         .set_uniform("uniform_color", Domain::ColorRGBA::WHITE());
 
     Scene::Node::NodeList nodes = collect_selected_nodes(scene, selected_volumes_refs);
-    DEBUG_ASSERT(selected_volumes_refs.size() == nodes.size());
+    DEBUG_ASSERT(nodes.empty() || selected_volumes_refs.size() == nodes.size());
 
     Domain::ElementRefs sinking_volumes = detect_sinking_volumes(project, selected_volumes_refs);
     nodes = remove_no_more_sinking(scene, nodes, sinking_volumes, m_model_geometry_manager);

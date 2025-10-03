@@ -103,7 +103,6 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_scene_presenter = std::make_unique<PlaterScenePresenter>(m_workbench, m_project_interactor, *m_device);
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(this);
-    m_project_interactor.add_listener<Biz::IProjectsChangedListener>(m_scene_presenter.get());
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
 
     // Set our color styles before gizmos initialization
@@ -113,8 +112,6 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     init_gizmos();
     init_scene();
     init_scene_layout();
-
-    m_scene_presenter->center_camera_on_selected_bed();
 
     if (!m_thumbnail_image_generator->initialized()) {
         m_thumbnail_image_generator->init(m_workbench, *m_device, *m_scene_presenter);

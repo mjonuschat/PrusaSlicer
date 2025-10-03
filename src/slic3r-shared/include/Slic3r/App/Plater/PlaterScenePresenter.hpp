@@ -6,7 +6,6 @@
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
-#include "Slic3r/Biz/IProjectsChangedListener.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -29,7 +28,6 @@ namespace Slic3r::App::Plater {
 class PlaterScenePresenter :
     public WithListeners<Plater::IBedVisuallyChangedListener>,
     public Biz::ISelectedProjectChangedListener,
-    public Biz::IProjectsChangedListener,
     public Biz::Scene::ISceneSelectionChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
     public Biz::Scene::ISceneChangedListener,
@@ -91,7 +89,6 @@ public:
 
     void update_beds_shadows_data();
 
-    void on_project_loaded(Domain::SelectionId project_id) override;
     void center_camera_on_selected_bed();
 
     /**
