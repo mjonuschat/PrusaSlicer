@@ -1239,13 +1239,17 @@ void PreviewRenderModule::center_camera_on_selected_bed()
 void PreviewRenderModule::update_bed_instances()
 {
     m_scene_presenter->remove_all_bed_instances();
-    Plater::BedThumbnailTextures& thumbnails = m_thumbnail_store->projects.selected().thumbnails;
+    const Plater::BedThumbnailTextures& store_thumbnails = m_thumbnail_store->projects.selected().thumbnails;
     Domain::BedRefs beds;
-    beds.reserve(thumbnails.size());
-    for (const auto& t : thumbnails) {
+    beds.reserve(store_thumbnails.size());
+    Plater::BedThumbnailTextures thumbnails;
+    thumbnails.reserve(store_thumbnails.size());
+    for (const auto& t : store_thumbnails) {
         const auto cc = m_workbench.project(t.project_id).find_config_container_by_bed_instance_id(t.bed_instance_id);
-        DEBUG_ASSERT(cc != nullptr);
-        beds.emplace_back(cc->id().id, t.bed_instance_id);
+        if (cc != nullptr) {
+            beds.emplace_back(cc->id().id, t.bed_instance_id);
+            thumbnails.emplace_back(t);
+        }
     }
     m_scene_presenter->add_bed_instances(beds);
     m_scene_presenter->update_bed_instances();
