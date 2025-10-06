@@ -169,8 +169,6 @@ void BackgroundProcess::update(
     ASSERT(!is_thread_active(previous_status), "Update must be called on stopped thread!");
     std::optional<ApplyStatus::Status> apply_status;
     const ScopeGuard guard{[this, &previous_status, &apply_status]() {
-        ASSERT(apply_status);
-
         const bool invalid_data{std::holds_alternative<ApplyStatus::InvalidData>(*apply_status)};
         const bool unchanged{std::holds_alternative<ApplyStatus::Unchanged>(*apply_status)};
         const bool changed{std::holds_alternative<ApplyStatus::Changed>(*apply_status)};
