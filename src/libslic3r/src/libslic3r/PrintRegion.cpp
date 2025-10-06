@@ -94,12 +94,10 @@ void PrintRegion::collect_object_printing_extruders(const Print &print, std::vec
 {
     // PrintRegion, if used by some PrintObject, shall have all the extruders set to an existing printer extruder.
     // If not, then there must be something wrong with the Print::apply() function.
-#ifndef NDEBUG
     auto num_extruders = int(print.config().get<std::vector<double>>("nozzle_diameter").size());
-    assert(this->config().get<int>("perimeter_extruder")    <= num_extruders);
-    assert(this->config().get<int>("infill_extruder")       <= num_extruders);
-    assert(this->config().get<int>("solid_infill_extruder") <= num_extruders);
-#endif
+    ASSERT(this->config().get<int>("perimeter_extruder") <= num_extruders);
+    ASSERT(this->config().get<int>("infill_extruder") <= num_extruders);
+    ASSERT(this->config().get<int>("solid_infill_extruder") <= num_extruders);
     collect_object_printing_extruders(this->config(), print.has_brim(), object_extruders);
 }
 

@@ -16,6 +16,8 @@ std::string to_display_string(Biz::Slicing::ErrorCode code)
         return _u8L("No error.");
     case ErrorCode::NoExtruders:
         return _u8L("The supplied settings will cause an empty print.");
+    case ErrorCode::InvalidExtruders:
+        return _u8L("Some extruder settings refer to non-existent tools.");
     case ErrorCode::AvoidCrossingPerimetersAndAvoidCurledOverhangs:
         return _u8L(
             "Avoid crossing perimeters option and avoid crossing curled overhangs option cannot be "

@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_vector.hpp>
 
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/libslic3r.h"
@@ -561,6 +562,73 @@ TEST_CASE_METHOD(ApplyTestFixture, "Apply invalidates correct steps - GCode flav
         { c.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfKlipper); },
         {psWipeTower, psSkirtBrim, psGCodeExport}
     );
+}
+
+TEST_CASE("Apply rejects invalid extruders", "[PrintApply]") {
+    using Biz::Print::ApplyStatus::Status;
+    using Biz::Print::ApplyStatus::InvalidData;
+    using Biz::Print::ApplyStatus::Changed;
+    using Biz::Slicing::ErrorCode;
+
+    Print print{};
+    Domain::Model model;
+    TestConfig config{3};
+    Slic3r::Test::init_print({TestMesh::cube_20x20x20}, print, model, config);
+
+    Domain::Bed bed{};
+    Domain::BedInstance bed_instance{bed};
+    bed_instance.model_instances = {model.objects.front()->instances.front()};
+    Biz::Print::SerializedConfig serialized_config{};
+    HwPrinterConfig hw_config{};
+
+    // Can be <1, 3> on print, object and volume.
+    config.print.items.opt("infill_extruder").set(4);
+    model.objects.front()->object_settings.overrides.set("perimeter_extruder", 0);
+    model.objects.front()->volumes.front()->volume_settings.overrides.set("solid_infill_extruder", 0);
+
+    // Can be <0, 3> on print.
+    config.print.items.opt("wipe_tower_extruder").set(-1);
+
+    // Can be <0, 3> on print and object.
+    for (auto& tool : config.tool) {
+        tool.items.opt("support_material_extruder").set(4);
+    }
+    model.objects.front()->object_settings.overrides.set("support_material_interface_extruder", 4);
+
+    Status status{print.update(model, config, bed_instance, serialized_config, hw_config)};
+    REQUIRE(std::holds_alternative<InvalidData>(status));
+    const auto errors{std::get<InvalidData>(status).errors};
+    REQUIRE(errors.size() == 1);
+    const auto error{errors.front()};
+    CHECK(error.code == ErrorCode::InvalidExtruders);
+    CHECK_THAT(
+        error.item_keys,
+        Catch::Matchers::UnorderedEquals(
+            std::vector<std::string>{
+                "infill_extruder",
+                "perimeter_extruder",
+                "solid_infill_extruder",
+                "wipe_tower_extruder",
+                "support_material_extruder",
+                "support_material_interface_extruder"
+
+            }
+        )
+    );
+
+    config.print.items.opt("infill_extruder").set(3);
+    model.objects.front()->object_settings.overrides.set("perimeter_extruder", 2);
+    model.objects.front()->volumes.front()->volume_settings.overrides.set("solid_infill_extruder", 1);
+
+    config.print.items.opt("wipe_tower_extruder").set(0);
+
+    for (auto& tool : config.tool) {
+        tool.items.opt("support_material_extruder").set(0);
+    }
+    model.objects.front()->object_settings.overrides.set("support_material_interface_extruder", 2);
+
+    status = print.update(model, config, bed_instance, serialized_config, hw_config);
+    REQUIRE(std::holds_alternative<Changed>(status));
 }
 
 using SLAStep = std::variant<SLAPrintStep, SLAPrintObjectStep>;

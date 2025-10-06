@@ -127,6 +127,68 @@ static void restore_instance_transformations(
     }
 }
 
+// Extruders are indexed from 1.
+bool in_range(const Domain::ConfigItem& extruder_item, int min, int max)
+{
+    const int extruder{extruder_item.get<int>()};
+    return min <= extruder && extruder <= max;
+}
+
+static std::optional<Biz::Slicing::Error>
+check_extruders(const Domain::Model& model, const Domain::ConfigPackFDM& config)
+{
+    const int tool_count{static_cast<int>(config.tool.size())};
+
+    std::vector<std::string> result;
+
+    for (const char* key : {"perimeter_extruder", "infill_extruder", "solid_infill_extruder"}) {
+        if (!in_range(config.print.items.opt(key), 1, tool_count)) {
+            result.push_back(key);
+        }
+
+        for (const Domain::ModelObject* object : model.objects) {
+            const auto object_extruder{object->object_settings.overrides.get(key)};
+            if (object_extruder && !in_range(*object_extruder, 1, tool_count)) {
+                result.push_back(key);
+            }
+            for (const Domain::ModelVolume* volume : object->volumes) {
+                const auto volume_extruder{volume->volume_settings.overrides.get(key)};
+                if (volume_extruder && !in_range(*volume_extruder, 1, tool_count)) {
+                    result.push_back(key);
+                }
+            }
+        }
+    }
+
+    if (!in_range(config.print.items.opt("wipe_tower_extruder"), 0, tool_count)) {
+        result.push_back("wipe_tower_extruder");
+    }
+
+    for (const char* key : {"support_material_extruder", "support_material_interface_extruder"}) {
+        for (const Domain::ToolPrintSettings& tool : config.tool) {
+            if (!in_range(tool.items.opt(key), 0, tool_count)) {
+                result.push_back(key);
+            }
+        }
+        for (const Domain::ModelObject* object : model.objects) {
+            const auto object_extruder{object->object_settings.overrides.get(key)};
+            if (object_extruder && !in_range(*object_extruder, 0, tool_count)) {
+                result.push_back(key);
+            }
+        }
+    }
+
+    if (result.empty()) {
+        return std::nullopt;
+    }
+
+    sort_remove_duplicates(result);
+
+    using Biz::Slicing::Error;
+    using Biz::Slicing::ErrorCode;
+    return Error{ErrorCode::InvalidExtruders, result};
+}
+
 Biz::Print::ApplyStatus::Status Print::update(
     Domain::Model& model,
     const ConfigPack& config,
@@ -148,7 +210,12 @@ Biz::Print::ApplyStatus::Status Print::update(
             }
         };
 
-        const auto slicing_input{prepare_slicing_input(std::get<ConfigPackFDM>(config))};
+        const auto& config_fdm{std::get<ConfigPackFDM>(config)};
+        if (auto error{check_extruders(model, config_fdm)}) {
+            result = ApplyStatus::InvalidData{{std::move(*error)}};
+            return;
+        }
+        const auto slicing_input{prepare_slicing_input(config_fdm)};
         if (!slicing_input.has_value()) {
             result = ApplyStatus::InvalidData{std::move(slicing_input.error())};
             return;
@@ -327,6 +394,14 @@ Biz::Print::ValidationResult Print::validate() const
     std::vector<Error>& errors{result.errors};
 
     std::vector<unsigned int> extruders = this->extruders();
+
+    const auto tool_count{
+        static_cast<unsigned>(config().get<std::vector<double>>("nozzle_diameter").size())
+    };
+    for (const unsigned extruder : extruders) {
+        // Invalid extruders should be hard rejected right away, this is just a sanity check.
+        ASSERT(0 <= extruder && extruder <= tool_count);
+    }
 
     if (m_config.get<int>("bed_temperature_extruder") == 0) {
         for (size_t a = 0; a < extruders.size(); ++a) {
