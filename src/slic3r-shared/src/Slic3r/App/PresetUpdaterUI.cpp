@@ -28,7 +28,10 @@ void PresetUpdaterUI::on_preset_updater_error(const std::string& body)
     DEBUG_ASSERT(false);
 }
 
-void PresetUpdaterUI::on_preset_updater_reconfigurations_list(const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations)
+void PresetUpdaterUI::on_preset_updater_reconfigurations_list(
+    const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
+    const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+)
 {
     SPDLOG_INFO(__FUNCTION__);
     SPDLOG_INFO(
@@ -75,7 +78,9 @@ void PresetUpdaterUI::on_preset_updater_reconfigurations_list(const Biz::PresetU
     AppServices::instance().dialog_manager().show_yesno_dialog("Preset Updater reconfigurations", dialog_msg, after_dialog);
 }
 
-void PresetUpdaterUI::on_preset_updater_reconfigurations_perfomed()
+void PresetUpdaterUI::on_preset_updater_reconfigurations_perfomed(
+    const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+)
 {
     SPDLOG_INFO(__FUNCTION__);
 }
@@ -85,7 +90,10 @@ void PresetUpdaterUI::on_preset_updater_status(const std::string& target, int at
     SPDLOG_INFO("PRESET UPDATER STATUS: target:{} attempt:{} delay:{}", target, std::to_string(attempt), std::to_string(delay));
 }
 
-void PresetUpdaterUI::on_preset_updater_repository_info_vector(const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor)
+void PresetUpdaterUI::on_preset_updater_repository_info_vector(
+    const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& descriptor,
+    const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
+)
 {
     std::string dialog_msg = "Preset Updater Sources\n\n";
 

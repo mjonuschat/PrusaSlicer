@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/PrintHost/PrintHostDataFinalizer.hpp"
 #include "Slic3r/Biz/libpgcode/LineView.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include <LibBGCode/convert/convert.hpp>
 #include <jthread/JThread.hpp>
@@ -106,7 +107,7 @@ void process_line_view(const libpgcode::LineView& input, const boost::filesystem
 
 boost::filesystem::path get_temporary_file_path(const std::string& extension)
 {
-    boost::filesystem::path temp_path = boost::filesystem::temp_directory_path();
+    boost::filesystem::path temp_path = Slic3r::temp_dir();
     boost::uuids::random_generator generator;
     boost::uuids::uuid uuid = generator();
     return temp_path / (to_string(uuid) + extension);

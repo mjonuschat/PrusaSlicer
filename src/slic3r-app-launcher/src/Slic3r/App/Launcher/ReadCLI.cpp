@@ -460,6 +460,74 @@ void add_action_options(CLI::App& app, App::InitParams& params)
         params.action.slice,
         "Slice the model as FFF or SLA based on the printer_technology configuration value and export the result."
     );
+
+   // Allow using at most one action simultaneously from this group.
+    auto& preset_updater_action_group = *app.add_option_group("Preset Updater");
+    preset_updater_action_group.required(false);
+    preset_updater_action_group.require_option(0, 1);
+
+    preset_updater_action_group.add_flag(
+        "--preset-update",
+        params.action.preset_updater_perform,
+        "Preset Updater performs all available reconfigurations. This action includes downloading possible update files from servers for all currently selected sources. After this action all profiles should be up-to-date."
+    );
+
+    preset_updater_action_group.add_flag(
+        "--preset-update-list",
+        params.action.preset_updater_sync,
+        "Preset Updater performs check of reconfigurations and prints result in json format. This includes downloading possible update files from servers for all currently selected sources."
+    );
+
+    preset_updater_action_group.add_option_function<std::string>(
+           "--preset-update-add-local",
+           [&params](const std::string& file)
+           {
+               params.action.preset_updater_add_local = true;
+               if (!params.misc.output.has_value()) {
+                   params.misc.output = file;
+               }
+           },
+           "Adds local source to Preset Updater sources. The source is specified by a path to a zip file."
+    )
+        ->option_text("ABCD");
+
+    preset_updater_action_group.add_option_function<std::string>(
+           "--preset-update-remove-local",
+           [&params](const std::string& file)
+           {
+               params.action.preset_updater_remove_local = true;
+               if (!params.misc.output.has_value()) {
+                   params.misc.output = file;
+               }
+           },
+           "Removes local source from Preset Updater by UUID."
+    )
+        ->option_text("ABCD");
+
+    preset_updater_action_group.add_flag(
+        "--preset-update-sources",
+        params.action.preset_updater_list_repos,
+        "Lists all sources of Preset Updater in json format."
+    );
+
+    preset_updater_action_group.add_option_function<std::string>(
+           "--preset-update-select-source",
+           [&params](const std::string& file)
+           {
+               params.action.preset_updater_switch_repo = true;
+               if (!params.misc.output.has_value()) {
+                   params.misc.output = file;
+               }
+           },
+           "Selects or unselects Preset Updater Source by given UUID. If source is selected, automatically unselects other sources with same id."
+    )
+        ->option_text("ABCD");
+
+    preset_updater_action_group.add_flag(
+        "--preset-update-cleanup",
+        params.action.preset_updater_cleanup,
+        "Deletes all files previously staged for update by preset-update-list."
+    );
 }
 
 void add_config_item_override(

@@ -5,6 +5,7 @@
 #include "Slic3r/App/CLI/ProfilesSharingUtils.hpp"
 #include "Slic3r/App/Init.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+#include "Slic3r/App/PresetUpdaterCLI.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
@@ -707,6 +708,45 @@ bool process_actions(
         }
 
         dispatcher.close();
+    }
+
+    if (action.has_preset_updater_action()) {
+        if (!misc.loglevel) {
+            Slic3r::set_log_level(0);
+        }
+        const std::string additional_data =
+            misc.output.has_value() ? misc.output.value() : std::string();
+
+        Biz::Platform::PlatformServices& platform_services =
+            Biz::Platform::PlatformServices::instance();
+        platform_services.set_secret_store(std::make_unique<Biz::SecretStoreDummy>());
+        platform_services.set_main_thread_dispatcher(
+            std::make_unique<App::Platform::StdMainThreadDispatcher>()
+        );
+        platform_services.set_job_manager(
+            std::make_unique<Biz::Platform::JobManager::JobManager>(
+                platform_services.main_thread_dispatcher()
+            )
+        );
+
+        // Potentially here we can only create standalone PresetUpdaterInteractor (without ProjectInteractor).
+        // Currently every method of PresetUpdaterInteractor works only on data in filesystem and there are no listeners added in ProjectInteractor.
+        Biz::Platform::IMainThreadDispatcher& dispatcher =
+            platform_services.main_thread_dispatcher();
+        Domain::Workbench workbench;
+        CLIThumbnailImageGenerator thumbnail_image_generator;
+        ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
+
+        PresetUpdaterCLI pu(project_interactor.preset_updater_interactor());
+        pu.start(action, additional_data);
+        while (true) {
+            dispatcher.dispatch_enqueued();
+            if (pu.has_result()) {
+                dispatcher.close();
+                return true;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
     }
 
     return true;

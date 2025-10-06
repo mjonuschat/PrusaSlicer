@@ -1,6 +1,9 @@
 #pragma once
 
+#include "Slic3r/Biz/PresetUpdater/PresetUpdaterWarning.hpp"
+
 #include "Slic3r/Biz/Network/IHttp.hpp"
+#include "Slic3r/Log.hpp"
 
 #include <memory>
 #include <string>
@@ -14,14 +17,6 @@ namespace Slic3r::Biz::PresetUpdater {
 class PresetUpdaterProcessStatus
 {
 public:
-    struct Warning
-    {
-        std::string text;
-        std::string repo;
-        std::string vendor;
-    };
-
-public:
     typedef std::function<void(const std::string& /* target */, int /* attempt */, unsigned /* delay */)>
         StatusChangedFn;
     enum class PresetUpdaterRetryPolicy
@@ -31,9 +26,10 @@ public:
     };
 
     // called from PresetUpdaterWrapper
-    PresetUpdaterProcessStatus(JThread::StopToken& stop_token, StatusChangedFn status_fn) :
+    PresetUpdaterProcessStatus(JThread::StopToken& stop_token, StatusChangedFn status_fn, bool ignore_hash = false) :
         m_dispatch_status_fn(status_fn),
-        m_stop_token(stop_token)
+        m_stop_token(stop_token),
+        m_ignore_file_hash(ignore_hash)
     {}
 
     PresetUpdaterProcessStatus(PresetUpdaterProcessStatus&&)                 = delete;
@@ -44,7 +40,12 @@ public:
 
     bool get_canceled() const
     {
-        return m_stop_token.stop_requested();
+        bool canceled = m_stop_token.stop_requested();
+        if (canceled)
+        {
+            SPDLOG_ERROR("CANCELED");
+        }
+        return canceled;
     }
 
     void set_error(const std::string& error_msg)
@@ -72,7 +73,7 @@ public:
         return !m_warnings.empty();
     }
 
-    std::vector<PresetUpdaterProcessStatus::Warning>& get_warings()
+    std::vector<PresetUpdaterWarning>& warnings()
     {
         return m_warnings;
     }
@@ -80,8 +81,8 @@ public:
     std::string warnings_dump() const
     {
         std::string ret;
-        for (const Warning& w : m_warnings)
-            ret += w.repo + "/" + w.vendor + ": " + w.text + "\n";
+        for (const PresetUpdaterWarning& w : m_warnings)
+            ret += w.string() + "\n";
         return ret;
     }
 
@@ -131,9 +132,11 @@ public:
         return false;
     }
 
+    bool ignore_file_hash () { return m_ignore_file_hash; }
+
 private:
     std::string m_error;
-    std::vector<Warning> m_warnings;
+    std::vector<PresetUpdaterWarning> m_warnings;
     std::string m_warning_target_repo;
     std::string m_warning_target_vendor;
     std::string m_target;
@@ -144,6 +147,8 @@ private:
     StatusChangedFn m_dispatch_status_fn;
 
     JThread::StopToken& m_stop_token;
+
+    bool m_ignore_file_hash;
 };
 
 } // namespace Slic3r::Biz::PresetUpdater

@@ -76,7 +76,7 @@ FileDownloaderJobData perform_job(
             }
             final_filename = fmt::format("{}({})", just_filename, std::to_string(version));
         }
-    } catch (const boost::filesystem::filesystem_error& e) {
+    } catch (const boost::filesystem::filesystem_error&) {
         throw FileDownloadFailed{""};
     }
 
@@ -156,7 +156,7 @@ FileDownloaderJobData perform_job(
                             std::string part_for_write =
                                 progress.buffer.substr(written_this_session, progress.dlnow);
                             fwrite(part_for_write.c_str(), 1, part_for_write.size(), file);
-                        } catch (const std::exception& e) {
+                        } catch (const std::exception&) {
                             // TODO: something went wrong - dispatch error
                             cancel = true;
                             return;
@@ -201,7 +201,7 @@ FileDownloaderJobData perform_job(
                          final_filename =
                              fmt::format("{}({})", just_filename, std::to_string(version));
                      }
-                 } catch (const boost::filesystem::filesystem_error& e) {
+                 } catch (const boost::filesystem::filesystem_error&) {
                      SPDLOG_ERROR("Failed to resolved filename from headers.");
                      return;
                  }

@@ -11,6 +11,7 @@
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include "libslic3r/miniz_extension.hpp"
 
@@ -29,11 +30,11 @@ namespace fs = boost::filesystem;
 namespace Slic3r::Biz::PresetUpdater {
 
 namespace {
-void create_temp_dir(fs::path& temp_dir /* = fs::path()*/)
+fs::path create_temp_dir()
 {
     boost::uuids::random_generator generator;
     const std::string dirname = boost::uuids::to_string(generator());
-    temp_dir                  = boost::filesystem::temp_directory_path() / dirname;
+    fs::path temp_dir         = Slic3r::temp_dir() / dirname;
 
     boost::system::error_code ec;
 
@@ -46,13 +47,13 @@ void create_temp_dir(fs::path& temp_dir /* = fs::path()*/)
             "Failed to create temp directory " + temp_dir.string() + ". " + ec.message()
         );
     }
-    ec.clear();
 
     if (!fs::create_directory(temp_dir, ec)) {
         throw Slic3r::RuntimeError(
             "Failed to create temp directory " + temp_dir.string() + ". " + ec.message()
         );
     }
+    return temp_dir;
 }
 
 bool is_vendor_installed(const std::string& vendor_id, const std::string& repo_id)
@@ -77,6 +78,52 @@ bool is_vendor_installed(const std::string& vendor_id, const std::string& repo_i
     return true;
 }
 
+bool check_resouces_vendor_sanity(
+    const boost::filesystem::path& source_dir,
+    const AbstractPresetUpdaterRepository* repo,
+    PresetUpdaterProcessStatus* process_status,
+    const PresetUpdaterIndex& source_index
+)
+{
+    const fs::path source_vendor_dir  = source_dir / source_index.vendor();
+    const fs::path source_vendor_yaml = source_vendor_dir / "vendor.yaml";
+
+    const PresetUpdaterIndex::const_iterator recommended = source_index.recommended();
+    PresetUpdaterIndex update_sync_index;
+    if (recommended == source_index.end()) {
+        process_status->set_error(
+            fmt::format(
+                "No recommended version for vendor: {}, Index file might be corrupted.",
+                source_index.vendor()
+            )
+        );
+        return false;
+    }
+
+    Domain::Preset::VendorData source_vendor_data;
+    try {
+        Preset::IO::HwConfigLoader hw_config_loader;
+        source_vendor_data = hw_config_loader.load(source_vendor_yaml.string());
+        Semver version = Semver(source_vendor_data.info.version);
+        if (version != recommended->config_version) {
+            process_status->set_error(
+                fmt::format("Vendor data in resources failed sanity check. Its version is not recommended by its index. Vendor: {}. This installation of app is probably corrupted.", source_index.vendor())
+            );
+            return false;
+        }
+    } catch (const std::exception& e) {
+        process_status->set_error(
+            fmt::format("Failed to load vendor file {}: {}. This installation of app is probably corrupted.", source_vendor_yaml.string(), e.what())
+        );
+        return false;
+    }
+
+    return true;
+}
+
+
+
+
 } // namespace
 
 void PresetUpdaterRepositorySync::sync(
@@ -91,7 +138,7 @@ void PresetUpdaterRepositorySync::sync(
     const fs::path resources_dir = fs::path(Slic3r::resources_dir()) / "presets";
 
     try {
-        create_temp_dir(temp_dir);
+        temp_dir = create_temp_dir();
     } catch (const Slic3r::RuntimeError& e) {
         process_status->set_error(std::string("Preset Archive Sync has failed. ") + e.what());
         return;
@@ -110,6 +157,20 @@ void PresetUpdaterRepositorySync::sync(
             break;
         }
         this->sync_repository(temp_dir / repo->descriptor().id, repo, process_status);
+
+        // remove empty directories
+        const fs::path update_sync_repo_dir = fs::path(data_dir()) / "update_sync" / repo->descriptor().id;
+        boost::system::error_code ec;
+        if (fs::is_directory(update_sync_repo_dir, ec)) {
+            if (!fs::remove(update_sync_repo_dir, ec) && ec) {
+                if (ec != boost::system::errc::directory_not_empty) {
+                    process_status->set_warning(
+                        "Failed to remove empty repo dir " + update_sync_repo_dir.string() + ". " + ec.message()
+                    );
+                    return;
+                }
+            }
+        }
     }
 
     boost::system::error_code ec;
@@ -122,6 +183,7 @@ void PresetUpdaterRepositorySync::sync(
         SPDLOG_ERROR(msg);
         process_status->set_warning(msg);
     }
+
 }
 
 void PresetUpdaterRepositorySync::stage_rencofigurations_from_resources(
@@ -143,7 +205,6 @@ void PresetUpdaterRepositorySync::stage_rencofigurations_from_resources(
     }
 
     const fs::path update_sync_repo_dir = fs::path(data_dir()) / "update_sync" / repo->descriptor().id;
-    ec.clear();
     if (!fs::create_directory(update_sync_repo_dir, ec) && ec) {
         process_status->set_error(
             "Failed to create repo dir " + update_sync_repo_dir.string() + ". " + ec.message()
@@ -169,6 +230,9 @@ void PresetUpdaterRepositorySync::stage_rencofigurations_from_resources(
         process_status->set_warning_target(repo->descriptor().id, source_index.vendor());
         if (process_status->get_canceled()) {
             return;
+        }
+        if (!check_resouces_vendor_sanity(source_dir, repo, process_status, source_index)) {
+            continue;
         }
         if (!is_vendor_installed(source_index.vendor(), repo->descriptor().id)) {
             stage_not_installed_vendor_from_resources(source_dir, repo, process_status, source_index);
@@ -206,7 +270,7 @@ void PresetUpdaterRepositorySync::stage_not_installed_vendor_from_resources(
     ASSERT(fs::exists(source_vendor_yaml) && fs::is_regular_file(source_vendor_yaml));
 
     // Recommended version of vendor
-    PresetUpdaterIndex::const_iterator recommended = source_index.recommended();
+    const PresetUpdaterIndex::const_iterator recommended = source_index.recommended();
     PresetUpdaterIndex update_sync_index; // recommneded is an iterator - once its index object stops existing it ivalidates.
     if (recommended == source_index.end()) {
         process_status->set_error(
@@ -219,67 +283,68 @@ void PresetUpdaterRepositorySync::stage_not_installed_vendor_from_resources(
     }
 
     // Check version staged in update_sync
-    if (fs::exists(update_sync_index_path, ec) && !ec && fs::exists(update_sync_vendor_yaml, ec) && !ec)
-    {
-        PresetUpdaterIndex update_sync_index;
-        update_sync_index.load(update_sync_index_path);
-        const PresetUpdaterIndex::const_iterator update_sync_recommended = update_sync_index
-                                                                               .recommended();
-        if (update_sync_recommended->config_version > recommended->config_version) {
-            recommended = update_sync_recommended;
-        }
-
-        // read version of staged
-        Preset::IO::HwConfigLoader hw_config_loader;
-        Domain::Preset::VendorData update_sync_vendor_data;
-        bool loaded = false;
+    if (fs::exists(update_sync_index_path, ec) && !ec && fs::exists(update_sync_vendor_yaml, ec) && !ec) {
+        bool loaded_update_sync_index = false;
         try {
-            update_sync_vendor_data = hw_config_loader.load(update_sync_vendor_yaml.string());
-            loaded                  = true;
-        } catch (const std::exception& e) {
-            std::string msg = fmt::format(
-                "Failed to load vendor file {}: {}",
-                update_sync_vendor_yaml.string(),
-                e.what()
+            update_sync_index.load(update_sync_index_path);
+            loaded_update_sync_index = true;
+        } catch (const std::runtime_error&) {
+            process_status->set_warning(
+                "Failed to load index " + update_sync_index_path.string()
             );
-            SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
         }
-        if (loaded) {
-            Semver update_sync_version = Semver(update_sync_vendor_data.info.version);
-
-            if (update_sync_version == recommended->config_version) {
-                // staged version is recommended - nothing to do here
+        if (loaded_update_sync_index) {
+            const PresetUpdaterIndex::const_iterator update_sync_recommended = update_sync_index.recommended();
+            if (update_sync_recommended->config_version > recommended->config_version) {
+                // Update sync has some more recent data - nothing to do here
                 return;
-            }
 
-            // Now we know that data in update_sync are not the recommended version
-            // We also know that data in source (resources) are usable data - they came with the installation of this binary.
-            // We simply delete data in update_sync and replace them with source.
-
-            ec.clear();
-            if (!fs::remove(update_sync_index_path, ec)) {
-                process_status->set_warning(
-                    fmt::format(
-                        "Failed to remove file {}: {}",
-                        update_sync_index_path.string(),
-                        ec.message()
-                    )
-                );
             }
-            ec.clear();
-            if (!fs::remove_all(update_sync_vendor_dir, ec)) {
-                process_status->set_warning(
-                    fmt::format(
-                        "Failed to remove file {}: {}",
-                        update_sync_index_path.string(),
-                        ec.message()
-                    )
+            // read version of staged
+            Domain::Preset::VendorData update_sync_vendor_data;
+            try {
+                Preset::IO::HwConfigLoader hw_config_loader;
+                update_sync_vendor_data = hw_config_loader.load(update_sync_vendor_yaml.string());
+                Semver update_sync_version = Semver(update_sync_vendor_data.info.version);
+                if (update_sync_version == recommended->config_version) {
+                    // staged version is recommended - nothing to do here
+                    return;
+                }
+            } catch (const std::exception& e) {
+                SPDLOG_ERROR(
+                    "Failed to load vendor file {}: {}",
+                    update_sync_vendor_yaml.string(),
+                    e.what()
                 );
             }
         }
-        // Continue to copy data from source.
     }
+
+    // Now we know that data in update_sync are not the recommended version
+    // We also know that data in source (resources) are usable data - they came with the installation of this binary.
+    // We simply delete data in update_sync and replace them with source.
+    if (!fs::remove(update_sync_index_path, ec) && ec) {
+        process_status->set_warning(
+            fmt::format(
+                "Failed to remove file {}: {}",
+                update_sync_index_path.string(),
+                ec.message()
+            )
+        );
+    }
+    if (!fs::remove_all(update_sync_vendor_dir, ec) && ec) {
+        process_status->set_warning(
+            fmt::format(
+                "Failed to remove file {}: {}",
+                update_sync_vendor_dir.string(),
+                ec.message()
+            )
+        );
+    }
+   
+
+    // Perform check of
+
 
     // Copy source to update_sync
 
@@ -339,12 +404,6 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
         / "vendor"
         / repo->descriptor().id
         / source_index.vendor();
-    const fs::path installed_index_path = fs::path(data_dir())
-        / "profiles"
-        / "local"
-        / "vendor"
-        / repo->descriptor().id
-        / (source_index.vendor() + ".idx"); // index is outside vendor folder.
     const fs::path installed_vendor_yaml = installed_vendor_dir / "vendor.yaml";
 
     const fs::path update_sync_vendor_dir = fs::path(data_dir())
@@ -368,7 +427,7 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
     ASSERT(fs::exists(source_vendor_yaml) && fs::is_regular_file(source_vendor_yaml));
 
     // Recommended version of vendor
-    PresetUpdaterIndex::const_iterator recommended = source_index.recommended();
+    const PresetUpdaterIndex::const_iterator recommended = source_index.recommended();
     PresetUpdaterIndex installed_index; // recommneded is an iterator - once its index object stops existing it ivalidates.
     PresetUpdaterIndex update_sync_index;
     if (recommended == source_index.end()) {
@@ -382,76 +441,31 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
     }
 
     // Check if installed version is recommended
-    if (fs::exists(installed_index_path, ec) && !ec && fs::exists(installed_vendor_yaml, ec) && !ec)
-    {
-        installed_index.load(installed_index_path);
-        const PresetUpdaterIndex::const_iterator installed_recommended = installed_index.recommended();
-        if (installed_recommended->config_version > recommended->config_version) {
-            recommended = installed_index.recommended();
-        }
-
-        // read version of staged
+    ASSERT (fs::exists(installed_vendor_yaml));
+    try {
         Domain::Preset::VendorData installed_vendor_data;
-        bool loaded = false;
-        try {
-            installed_vendor_data = hw_config_loader.load(installed_vendor_yaml.string());
-            loaded                = true;
-        } catch (const std::exception& e) {
-            std::string msg = fmt::format(
-                "Failed to load vendor file {}: {}",
-                installed_vendor_yaml.string(),
-                e.what()
-            );
-            SPDLOG_ERROR(msg);
-            process_status->set_warning(msg);
-        }
-        if (loaded) {
-            Semver installed_version = Semver(installed_vendor_data.info.version);
-
-            if (installed_version == recommended->config_version) {
-                // installed version is recommended - nothing to do here
-                return;
-            }
-        }
-    }
-
-    // Check version staged in update_sync
-    if (fs::exists(update_sync_index_path, ec) && !ec && fs::exists(update_sync_vendor_yaml, ec) && !ec)
-    {
-        update_sync_index.load(update_sync_index_path);
-        const PresetUpdaterIndex::const_iterator update_sync_recommended = update_sync_index
-                                                                               .recommended();
-        if (update_sync_recommended->config_version > recommended->config_version) {
-            recommended = update_sync_recommended;
-        }
-
-        // read version of staged
-        bool loaded = false;
-        Domain::Preset::VendorData update_sync_vendor_data;
-        try {
-            update_sync_vendor_data = hw_config_loader.load(update_sync_vendor_yaml.string());
-            loaded                  = true;
-        } catch (const std::exception& e) {
-            SPDLOG_ERROR(
-                "Failed to load vendor file {}: {}",
-                update_sync_vendor_yaml.string(),
-                e.what()
-            );
-        }
-        if (loaded) {
-            Semver update_sync_version = Semver(update_sync_vendor_data.info.version);
-
-            if (update_sync_version == recommended->config_version) {
-                // staged version is recommended - nothing to do here
-                return;
-            }
-
-            // Now we know that data in update_sync are not the recommended version
-            // We also know that data in source (resources) are usable data - they came with the installation of this binary.
-            // We simply delete data in update_sync and replace them with source.
-
-            ec.clear();
-            if (!fs::remove(update_sync_index_path, ec)) {
+        installed_vendor_data = hw_config_loader.load(installed_vendor_yaml.string());
+        Semver installed_version = Semver(installed_vendor_data.info.version);
+        if (installed_version == recommended->config_version) {
+            // installed version is recommended - nothing to do here
+            // Check version staged in update_sync - if its not higher than index recommended - delete it.
+            if (fs::exists(update_sync_vendor_yaml, ec) && !ec) {
+                Domain::Preset::VendorData update_sync_vendor_data;
+                try {
+                    update_sync_vendor_data = hw_config_loader.load(update_sync_vendor_yaml.string());
+                    Semver update_sync_version = Semver(update_sync_vendor_data.info.version);
+                    if (update_sync_version > recommended->config_version) {
+                        // staged version is recommended - nothing to do here
+                        return;
+                    }
+                } catch (const std::exception& e) {
+                    SPDLOG_ERROR(
+                        "Failed to load vendor file {}: {}",
+                        update_sync_vendor_yaml.string(),
+                        e.what()
+                    );
+                }
+                if (!fs::remove(update_sync_index_path, ec) && ec) {
                 process_status->set_warning(
                     fmt::format(
                         "Failed to remove file {}: {}",
@@ -459,13 +473,92 @@ void PresetUpdaterRepositorySync::stage_installed_vendor_from_resources(
                         ec.message()
                     )
                 );
+                }
+                if (!fs::remove_all(update_sync_vendor_dir, ec) && ec) {
+                    process_status->set_warning(
+                        fmt::format(
+                            "Failed to remove file {}: {}",
+                            update_sync_vendor_dir.string(),
+                            ec.message()
+                        )
+                    );
+                }
             }
+
+            return;
         }
-        // Continue to copy data from source.
+    } catch (const std::exception& e) {
+        std::string msg = fmt::format(
+            "Failed to load vendor file {}: {}",
+            installed_vendor_yaml.string(),
+            e.what()
+        );
+        SPDLOG_ERROR(msg);
+        process_status->set_warning(msg);
     }
 
+
+    // Check version staged in update_sync
+    if (fs::exists(update_sync_index_path, ec) && !ec && fs::exists(update_sync_vendor_yaml, ec) && !ec) {
+        bool loaded_update_sync_index = false;
+        try {
+            update_sync_index.load(update_sync_index_path);
+            loaded_update_sync_index = true;
+        } catch (const std::runtime_error&) {
+            process_status->set_warning(
+                "Failed to load index " + update_sync_index_path.string()
+            );
+        }
+        if (loaded_update_sync_index) {
+            const PresetUpdaterIndex::const_iterator update_sync_recommended = update_sync_index.recommended();
+            if (update_sync_recommended->config_version > recommended->config_version) {
+                // Update sync has some more recent data - nothing to do here
+                return;
+
+            }
+            // read version of staged
+            Domain::Preset::VendorData update_sync_vendor_data;
+            try {
+                update_sync_vendor_data = hw_config_loader.load(update_sync_vendor_yaml.string());
+                Semver update_sync_version = Semver(update_sync_vendor_data.info.version);
+                if (update_sync_version == recommended->config_version) {
+                    // staged version is recommended - nothing to do here
+                    return;
+                }
+            } catch (const std::exception& e) {
+                SPDLOG_ERROR(
+                    "Failed to load vendor file {}: {}",
+                    update_sync_vendor_yaml.string(),
+                    e.what()
+                );
+            }
+        }
+    }
+
+    // Now we know that data in update_sync are not the recommended version
+    // We also know that data in source (resources) are usable data - they came with the installation of this binary.
+    // We simply delete data in update_sync and replace them with source. 
+    if (!fs::remove(update_sync_index_path, ec) && ec) {
+        process_status->set_warning(
+            fmt::format(
+                "Failed to remove file {}: {}",
+                update_sync_index_path.string(),
+                ec.message()
+            )
+        );
+    }
+    if (!fs::remove_all(update_sync_vendor_dir, ec) && ec) {
+        process_status->set_warning(
+            fmt::format(
+                "Failed to remove file {}: {}",
+                update_sync_vendor_dir.string(),
+                ec.message()
+            )
+        );
+    }
+    // Continue to copy data from source.
+
     // delete previous content of update_sync_vendor_dir
-    ec.clear();
     fs::remove_all(update_sync_vendor_dir, ec);
 
     // Copy source to update_sync
@@ -525,7 +618,6 @@ void PresetUpdaterRepositorySync::sync_repository(
     boost::system::error_code ec;
 
     // Each repo has its own subdir.
-    ec.clear();
     if (!fs::create_directory(temp_dir, ec) && ec) {
         std::string msg = fmt::format(
             "Failed to check updates for source {}. Failed to create temp directory {}: {}.",
@@ -619,7 +711,6 @@ void PresetUpdaterRepositorySync::sync_repository(
                     }
                     // create file from buffer
                     fs::path tmp_path(temp_dir / (name + ".tmp"));
-                    ec.clear();
                     if (!fs::exists(tmp_path.parent_path(), ec) || ec) {
                         std::string msg = fmt::format(
                             "Failed to unzip file {}. Directories are not supported. Skipping file.",
@@ -716,6 +807,8 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     const fs::path temp_manifest_path = temp_vendor_dir_path / (index.vendor() + ".manifest");
     const fs::path update_sync_manifest_path = update_sync_vendor_dir_path
         / (index.vendor() + ".manifest");
+    const fs::path index_update_sync_path = update_sync_vendor_dir_path.parent_path()
+        / index.path().filename();
     boost::system::error_code ec;
 
     ASSERT(fs::exists(index.path()));
@@ -734,7 +827,6 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     }
 
     // Create directory in temp. Delete all previous content if already extists.
-    ec.clear();
     if (fs::create_directories(temp_vendor_dir_path, ec) || !ec) {
         for (fs::directory_iterator it(temp_vendor_dir_path); it != fs::directory_iterator(); ++it) {
             fs::remove_all(it->path());
@@ -840,7 +932,6 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     for (const std::string& filename : files_to_delete) {
         fs::path path(update_sync_vendor_dir_path / filename);
         ASSERT(fs::exists(path) && fs::is_regular_file(path));
-        ec.clear();
         if (!fs::remove(path, ec) || ec) {
             std::string msg = fmt::format(
                 "{}: Failed to remove file {}",
@@ -910,8 +1001,6 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     }
 
     // Move index to stage_sync
-    fs::path index_update_sync_path = update_sync_vendor_dir_path.parent_path()
-        / index.path().filename();
     fs::rename(index.path(), index_update_sync_path, ec);
     if (ec) {
         std::string msg = fmt::format(
@@ -938,7 +1027,6 @@ void PresetUpdaterRepositorySync::sync_not_installed_vendor(
     }
 
     // Cleanup temp
-    ec.clear();
     if (!fs::remove_all(temp_vendor_dir_path, ec) || ec) {
         std::string msg = fmt::format(
             "{}: Failed to delete directory {}.",
@@ -971,6 +1059,9 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     const fs::path temp_manifest_path   = temp_vendor_dir_path / (index.vendor() + ".manifest");
     const fs::path update_sync_manifest_path = update_sync_vendor_dir_path
         / (index.vendor() + ".manifest");
+    const fs::path update_sync_vendor_yaml_path = update_sync_vendor_dir_path / "vendor.yaml";
+    const fs::path index_update_sync_path = update_sync_vendor_dir_path.parent_path()
+        / index.path().filename();
     const fs::path installed_vendor_yaml_path = installed_vendor_dir_path / "vendor.yaml";
     boost::system::error_code ec;
 
@@ -978,7 +1069,7 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     ASSERT(fs::exists(installed_vendor_dir_path) && fs::is_directory(installed_vendor_dir_path));
     ASSERT(fs::exists(installed_vendor_yaml_path));
 
-    // Current version
+    // Current installed version
     Preset::IO::HwConfigLoader hw_config_loader;
     Domain::Preset::VendorData vendor_data;
     try {
@@ -1010,11 +1101,30 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
             repo->descriptor().id,
             index.vendor()
         );
+
+        // Delete staged in update_sync. It is not needed.
+        if (!fs::remove(index_update_sync_path, ec) && ec) {
+            process_status->set_warning(
+                fmt::format(
+                    "Failed to remove file {}: {}",
+                    index_update_sync_path.string(),
+                    ec.message()
+                )
+            );
+        }
+        if (!fs::remove_all(update_sync_vendor_dir_path, ec) && ec) {
+            process_status->set_warning(
+                fmt::format(
+                    "Failed to remove file {}: {}",
+                    installed_vendor_dir_path.string(),
+                    ec.message()
+                )
+            );
+        }   
         return;
     }
 
     // Create directory in temp. Delete all previous content if already extists.
-    ec.clear();
     if (fs::create_directories(temp_vendor_dir_path, ec) || !ec) {
         for (fs::directory_iterator it(temp_vendor_dir_path); it != fs::directory_iterator(); ++it) {
             fs::remove_all(it->path());
@@ -1152,7 +1262,6 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     for (const std::string& filename : files_to_delete) {
         fs::path path(update_sync_vendor_dir_path / filename);
         ASSERT(fs::exists(path) && fs::is_regular_file(path));
-        ec.clear();
         if (!fs::remove(path, ec) || ec) {
             std::string msg = fmt::format(
                 "{}: Failed to remove file {}",
@@ -1222,8 +1331,6 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     }
 
     // Move index to update_sync
-    fs::path index_update_sync_path = update_sync_vendor_dir_path.parent_path()
-        / index.path().filename();
     fs::rename(index.path(), index_update_sync_path, ec);
     if (ec) {
         std::string msg = fmt::format(
@@ -1250,7 +1357,6 @@ void PresetUpdaterRepositorySync::sync_installed_vendor(
     }
 
     // Cleanup temp
-    ec.clear();
     if (!fs::remove_all(temp_vendor_dir_path, ec) || ec) {
         std::string msg = fmt::format(
             "{}: Failed to delete directory {}.",

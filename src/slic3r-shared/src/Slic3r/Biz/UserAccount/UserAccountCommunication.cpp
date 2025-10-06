@@ -101,7 +101,7 @@ boost::filesystem::path UserAccountCommunication::avatar() const
         const std::string filename = "slic3r3-avatar-"
             + std::to_string(Platform::PlatformServices::instance().app_hash())
             + m_avatar_extension;
-        return boost::filesystem::temp_directory_path() / filename;
+        return Slic3r::temp_dir() / filename;
     } else {
         return boost::filesystem::path(resources_dir()) / "icons" / "user.svg";
     }

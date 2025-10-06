@@ -2,6 +2,7 @@
 
 #include <string>
 #include <boost/filesystem/path.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 namespace Slic3r::Biz::PresetUpdater {
 
@@ -11,6 +12,8 @@ struct PresetUpdaterRepositoryDescriptor
     std::string id;
     std::string name;
     std::string url;
+    // mandatory in runtime but optional in manifest
+    std::string uuid;
     // optional
     std::string index_url;
     std::string description;
@@ -26,6 +29,7 @@ struct PresetUpdaterRepositoryDescriptor
         const std::string& id,
         const std::string& name,
         const std::string& url,
+        const std::string& uuid,
         const std::string& index_url               = "",
         const std::string& description             = "",
         const std::string& visibility              = "",
@@ -35,6 +39,7 @@ struct PresetUpdaterRepositoryDescriptor
         id(id),
         name(name),
         url(url),
+        uuid(uuid),
         index_url(index_url),
         description(description),
         visibility(visibility),
@@ -51,12 +56,13 @@ struct PresetUpdaterRepositoryDescriptor
 struct SharedPresetUpdaterRepositoryInfo
 {
     const PresetUpdaterRepositoryDescriptor descriptor;
-    const std::string uuid;
     bool selected;
 };
 
 // This are readonly creadentials of all repositories with setable bool - selected by user.
 // This is all UI should need to construct Repository Sources Selection.
 typedef std::vector<SharedPresetUpdaterRepositoryInfo> SharedPresetUpdaterRepositoryInfoVector;
+
+void to_json(nlohmann::json& j, const SharedPresetUpdaterRepositoryInfo& i);
 
 } // namespace Slic3r::Biz::PresetUpdater

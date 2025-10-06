@@ -49,4 +49,8 @@ const std::string& cache_dir();
 std::string get_default_cachedir();
 
 boost::filesystem::path system_downloads_dir();
+
+boost::filesystem::path temp_dir();
+// set_temp_dir is test only - it is used to provide temp dir in test enviroment when filesystem with real temp is not available.  
+void set_temp_dir(const boost::filesystem::path& path);
 } // namespace Slic3r::Biz

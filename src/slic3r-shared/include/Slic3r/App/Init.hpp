@@ -27,6 +27,13 @@ struct ActionParams
     bool export_gcode                       = false;
     bool export_sla                         = false;
     bool gcode_viewer                       = false;
+    bool preset_updater_sync                = false;
+    bool preset_updater_perform             = false;
+    bool preset_updater_add_local           = false;
+    bool preset_updater_remove_local        = false;
+    bool preset_updater_list_repos          = false;
+    bool preset_updater_switch_repo         = false;
+    bool preset_updater_cleanup             = false;
 
     bool has_any_action() const
     {
@@ -42,7 +49,25 @@ struct ActionParams
             || export_3mf
             || export_gcode
             || export_sla
-            || gcode_viewer;
+            || gcode_viewer
+            || preset_updater_sync
+            || preset_updater_perform
+            || preset_updater_add_local
+            || preset_updater_remove_local
+            || preset_updater_list_repos
+            || preset_updater_switch_repo
+            || preset_updater_cleanup;
+    }
+
+    bool has_preset_updater_action() const
+    {
+        return preset_updater_sync
+            || preset_updater_perform
+            || preset_updater_add_local
+            || preset_updater_remove_local
+            || preset_updater_list_repos
+            || preset_updater_switch_repo
+            || preset_updater_cleanup;
     }
 };
 

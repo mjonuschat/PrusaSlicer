@@ -110,6 +110,9 @@ bool AbstractPresetUpdaterRepository::extract_repository_header(
         json.at("url").get_to(data.url);
 
         // Optional attributes
+        if (json.contains("uuid")) {
+            json.at("uuid").get_to(data.uuid);
+        }
         if (json.contains("index_url")) {
             json.at("index_url").get_to(data.index_url);
         }
@@ -124,8 +127,8 @@ bool AbstractPresetUpdaterRepository::extract_repository_header(
             json.at("offline_archive_url").get_to(data.offline_archive_url);
         }
         if (json.contains("unzipped_data_path")) {
-            std::string path_str = json.at("unzipped_data_path").get<std::string>();
-            data.zip_path        = boost::filesystem::path(path_str);
+            std::string path_str    = json.at("unzipped_data_path").get<std::string>();
+            data.unzipped_data_path = boost::filesystem::path(path_str);
         }
         if (json.contains("zip_path")) {
             std::string path_str = json.at("zip_path").get<std::string>();
@@ -153,15 +156,18 @@ bool OnlinePresetUpdaterRepository::get_file_inner(
     fs::path tmp_path = target_path;
     tmp_path += fmt::format(".{}{}", boost::uuids::to_string(generator()), TMP_EXTENSION);
 
-    SPDLOG_INFO(
+    SPDLOG_DEBUG(
         "Get: `{}`\n\t-> `{}`\n\tvia tmp path `{}`",
         url,
         target_path.string(),
         tmp_path.string()
     );
 
-    auto retry_fn = [process_status](Network::IHttp::Retry retry, bool& cancel) {
+    auto retry_fn = [process_status, url](Network::IHttp::Retry retry, bool& cancel) {
         cancel = process_status->on_attempt(retry.attempt, retry.ms_to_next_attempt);
+        if (cancel) {
+            SPDLOG_ERROR("Download canceled {}", url);
+        }
     };
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(
@@ -181,6 +187,9 @@ bool OnlinePresetUpdaterRepository::get_file_inner(
         })
         .on_complete([&](std::string body, unsigned /* http_status */) {
             if (body.empty()) {
+                std::string msg = fmt::format("Error getting: `{}`: Body is empty.", url);
+                SPDLOG_ERROR(msg);
+                process_status->set_warning(msg);
                 return;
             }
             boost::nowide::fstream file(tmp_path, std::ios::out | std::ios::binary | std::ios::trunc);
@@ -222,10 +231,10 @@ bool OnlinePresetUpdaterRepository::get_file(
     if (!get_file_inner(m_data.url + escaped_source_subpath, target_path, process_status)) {
         return false;
     }
-
-    if (PresetUpdater::file_hash(target_path, process_status) != file_hash_string) {
+    
+    if (PresetUpdaterFileHash file_hash = PresetUpdater::file_hash(target_path, process_status); !process_status->ignore_file_hash() && file_hash != file_hash_string) {
         std::string msg = fmt::format(
-            "File {} has failed file hash test after download. File is probably corupted.",
+            "File {} has failed file hash test after download. File is probably corrupted.",
             target_path.string()
         );
         SPDLOG_ERROR(msg);
@@ -269,7 +278,6 @@ bool LocalPresetUpdaterRepository::get_file_inner(
         // remove target file, even if it was there before
         boost::system::error_code ec;
         if (fs::exists(target_path, ec) && !ec) {
-            ec.clear();
             fs::remove(target_path, ec);
             if (ec) {
                 SPDLOG_ERROR("Failed to delete file: {}", ec.message());
@@ -299,7 +307,7 @@ bool LocalPresetUpdaterRepository::get_file(
         return false;
     }
 
-    if (PresetUpdater::file_hash(target_path, process_status) != file_hash_string) {
+    if (PresetUpdaterFileHash file_hash = PresetUpdater::file_hash(target_path, process_status); !process_status->ignore_file_hash() && file_hash != file_hash_string) {
         std::string msg = fmt::format(
             "File {} has failed file hash test after download. File is probably corupted.",
             target_path.string()
@@ -354,7 +362,8 @@ bool LocalPresetUpdaterRepository::extract_local_archive_repository(
 
     // Unzip repository zip to unique path in temp directory.
     if (!unzip_repository(descriptor.zip_path, descriptor.unzipped_data_path)) {
-        process_status->set_error(fmt::format("Failed to unzip repository {}.", descriptor.id));
+        process_status->set_error(fmt::format("Failed to unzip repository on path \"{}\".", descriptor.zip_path.string()));
+        delete_path_recursive(descriptor.unzipped_data_path);
         return false;
     }
     // Read the manifest file.
@@ -364,12 +373,14 @@ bool LocalPresetUpdaterRepository::extract_local_archive_repository(
         boost::nowide::ifstream file_stream(manifest_path.c_str());
         if (!file_stream.is_open()) {
             SPDLOG_ERROR("Failed to open manifest file: {}", manifest_path.string());
+            delete_path_recursive(descriptor.unzipped_data_path);
             return false;
         }
 
         nlohmann::json j = nlohmann::json::parse(file_stream, nullptr, false);
         if (j.is_discarded()) {
             SPDLOG_ERROR("Failed to parse manifest as JSON: {}", manifest_path.string());
+            delete_path_recursive(descriptor.unzipped_data_path);
             return false;
         }
 
@@ -377,6 +388,7 @@ bool LocalPresetUpdaterRepository::extract_local_archive_repository(
             process_status->set_error(
                 fmt::format("Failed to process repository data of source: {}", descriptor.id)
             );
+            delete_path_recursive(descriptor.unzipped_data_path);
             return false;
         }
     } catch (const nlohmann::json::exception& e) {
@@ -387,8 +399,41 @@ bool LocalPresetUpdaterRepository::extract_local_archive_repository(
                 e.what()
             )
         );
+        delete_path_recursive(descriptor.unzipped_data_path);
         return false;
     }
+    return true;
+}
+
+bool LocalPresetUpdaterRepository::data_structure_check(
+    const boost::filesystem::path& unzipped_path,
+    PresetUpdaterProcessStatus* process_status
+)
+{
+    boost::system::error_code ec;
+    if (!fs::exists(unzipped_path, ec) || ec || !fs::is_directory(unzipped_path, ec) || ec) {
+        process_status->set_error(
+            fmt::format("Directory \"{}\" does not exists.", unzipped_path.string())
+        );
+        return false;
+    }
+
+    const fs::path manifest_path = unzipped_path / "manifest.json";
+    if (!fs::exists(manifest_path, ec) || ec || !fs::is_regular_file(manifest_path, ec) || ec) {
+        process_status->set_error(
+            fmt::format("Missing manifest file at \"{}\".", manifest_path.string())
+        );
+        return false;
+    }
+
+    const fs::path index_archive_path = unzipped_path / "vendor_indices.zip";
+    if (!fs::exists(index_archive_path, ec) || ec || !fs::is_regular_file(index_archive_path, ec) || ec) {
+        process_status->set_error(
+            fmt::format("Missing index archive at \"{}\".", index_archive_path.string())
+        );
+        return false;
+    }
+
     return true;
 }
 

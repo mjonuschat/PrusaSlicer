@@ -25,7 +25,7 @@ namespace Slic3r::Biz::PresetUpdater {
 PresetUpdaterRepositoryDatabase::PresetUpdaterRepositoryDatabase(PresetUpdaterProcessStatus* process_status)
 {
     boost::system::error_code ec;
-    m_unq_tmp_path = fs::temp_directory_path() / fs::unique_path();
+    m_unq_tmp_path = Slic3r::temp_dir() / fs::unique_path();
     if (!fs::create_directories(m_unq_tmp_path, ec) && ec) {
         process_status->set_error(
             fmt::format("Failed to create temp directory {}: {}.", m_unq_tmp_path.string(), ec.what())
@@ -46,6 +46,7 @@ PresetUpdaterRepositoryDatabase::~PresetUpdaterRepositoryDatabase()
 
 void PresetUpdaterRepositoryDatabase::add_local_repository(
     const boost::filesystem::path& zip_path,
+    bool unselect_others,
     PresetUpdaterProcessStatus* process_status
 )
 {
@@ -55,9 +56,19 @@ void PresetUpdaterRepositoryDatabase::add_local_repository(
     header_data.unzipped_data_path = fs::path(data_dir()) / "local_repositories" / uuid;
     boost::system::error_code ec;
 
-    if (!LocalPresetUpdaterRepository::extract_local_archive_repository(header_data, process_status))
-    {
+    if (!LocalPresetUpdaterRepository::extract_local_archive_repository(header_data, process_status)) {
         return;
+    }
+    if (!LocalPresetUpdaterRepository::data_structure_check(header_data.unzipped_data_path, process_status)) {
+        return;
+    }
+    if (unselect_others) {
+        for (auto& repo : m_all_repositories) {
+            if (repo.get()->descriptor().id == header_data.id)
+            {
+                repo.get()->set_selected(false);
+            }
+        }
     }
     m_all_repositories.emplace_back(
         std::make_unique<LocalPresetUpdaterRepository>(uuid, std::move(header_data), true)
@@ -75,7 +86,15 @@ void PresetUpdaterRepositoryDatabase::remove_local_repository(
     };
 
     auto archives_it = std::find_if(m_all_repositories.begin(), m_all_repositories.end(), compare_repo);
-    ASSERT(archives_it != m_all_repositories.end());
+    if (archives_it == m_all_repositories.end()) {
+        process_status->set_error(
+            fmt::format(
+                "Failed to remove repository. Could not find repository with matching UUID \"{}\".",
+                uuid
+            )
+        );
+        return;
+    }
     ASSERT(!archives_it->get()->descriptor().unzipped_data_path.empty());
 
     boost::system::error_code ec;
@@ -120,7 +139,6 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                 path.string()
             )
         );
-        ec.clear();
         fs::remove(path, ec);
         return;
     }
@@ -128,7 +146,6 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
         process_status->set_error(
             "The Repository Source Manifest file is empty. The file is being deleted to prevent this error in future."
         );
-        ec.clear();
         fs::remove(path, ec);
         return;
     }
@@ -140,14 +157,13 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
             process_status->set_error(
                 "Failed to parse Repository Source Manifest JSON: Input is not a valid JSON array. The file is being deleted to prevent this error in future."
             );
-            ec.clear();
             fs::remove(path, ec);
             return;
         }
 
         for (const auto& repo_json : j) {
-            // if "source_path" exists, it's a local repo, else it's an online repo
-            if (repo_json.contains("source_path")) {
+            // if "zip_path in repo_json is not empty, it's a local repo, else it's an online repo
+            if (repo_json.contains("zip_path") && !repo_json["zip_path"].is_null() && !repo_json["zip_path"].get<std::string>().empty()) {
                 PresetUpdaterRepositoryDescriptor descriptor;
                 if (!AbstractPresetUpdaterRepository::extract_repository_header(
                         repo_json,
@@ -157,9 +173,8 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                 {
                     continue;
                 }
-                ASSERT(descriptor.unzipped_data_path.empty());
-                ec.clear();
-                if (!fs::exists(descriptor.unzipped_data_path, ec)
+                if (descriptor.unzipped_data_path.empty()
+                    || !fs::exists(descriptor.unzipped_data_path, ec)
                     || ec
                     || !fs::is_directory(descriptor.unzipped_data_path, ec)
                     || ec)
@@ -174,20 +189,21 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                     );
                     continue;
                 }
-                // We use same uuid as it was assigned at time of creation - its same as its directory name.
-                // (New uuid would work too)
-                std::string uuid = descriptor.unzipped_data_path.filename().string();
+
+                if (descriptor.uuid.empty()) {
+                    descriptor.uuid = descriptor.unzipped_data_path.filename().string();
+                }
+                std::string uuid = descriptor.uuid;
                 bool selected    = repo_json.value("selected", true);
                 m_all_repositories.emplace_back(
                     std::make_unique<LocalPresetUpdaterRepository>(
-                        std::move(uuid),
+                        uuid,
                         std::move(descriptor),
                         selected
                     )
                 );
             } else {
                 // Online repo
-                std::string uuid = get_next_uuid();
                 PresetUpdaterRepositoryDescriptor descriptor;
                 if (!AbstractPresetUpdaterRepository::extract_repository_header(
                         repo_json,
@@ -197,10 +213,14 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                 {
                     continue;
                 }
+                if (descriptor.uuid.empty()) {
+                    descriptor.uuid = get_next_uuid();
+                }
+                std::string uuid = descriptor.uuid;
                 bool selected = repo_json.value("selected", true);
                 m_all_repositories.emplace_back(
                     std::make_unique<OnlinePresetUpdaterRepository>(
-                        std::move(uuid),
+                        uuid,
                         std::move(descriptor),
                         selected
                     )
@@ -214,7 +234,6 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                 e.what()
             )
         );
-        ec.clear();
         fs::remove(path, ec);
         return;
     }
@@ -269,6 +288,7 @@ void PresetUpdaterRepositoryDatabase::save_app_manifest_json(PresetUpdaterProces
         const PresetUpdaterRepositoryDescriptor& descriptor = repo.get()->descriptor();
         if (!repo->descriptor().unzipped_data_path.empty()) {
             nlohmann::json sub = {
+                {"uuid", descriptor.uuid},
                 {"name", descriptor.name},
                 {"description", descriptor.description},
                 {"visibility", descriptor.visibility},
@@ -283,6 +303,7 @@ void PresetUpdaterRepositoryDatabase::save_app_manifest_json(PresetUpdaterProces
             json.push_back(sub);
         } else {
             nlohmann::json sub = {
+                {"uuid", descriptor.uuid},
                 {"name", descriptor.name},
                 {"description", descriptor.description},
                 {"visibility", descriptor.visibility},
@@ -442,7 +463,7 @@ SharedPresetUpdaterRepositoryInfoVector PresetUpdaterRepositoryDatabase::get_all
     SharedPresetUpdaterRepositoryInfoVector result;
     result.reserve(m_all_repositories.size());
     for (const auto& repo_ptr : m_all_repositories) {
-        result.emplace_back(repo_ptr->descriptor(), repo_ptr->uuid(), repo_ptr->is_selected());
+        result.emplace_back(repo_ptr->descriptor(), repo_ptr->is_selected());
     }
     return result;
 }
@@ -464,12 +485,29 @@ void PresetUpdaterRepositoryDatabase::apply_selection(
     PresetUpdaterProcessStatus* process_status
 )
 {
+    // first confirm no more than 1 selected repo of same id
+    for (size_t i = 0; i < repos.size(); i++) {
+        if (!repos[i].selected) {
+            continue;
+        }
+        for (size_t k = i + 1; k < repos.size(); k++) {
+            if (repos[i].descriptor.id == repos[k].descriptor.id && repos[k].selected) {
+                process_status->set_error(
+                    fmt::format(
+                        "Can't apply selection. Two repositories of same id ({}) are selected.",
+                        repos[i].descriptor.id
+                    )
+                );
+                return;
+            }
+        }
+    }
     for (const SharedPresetUpdaterRepositoryInfo& info : repos) {
         auto repo_it = std::find_if(
             m_all_repositories.begin(),
             m_all_repositories.end(),
             [info](const std::unique_ptr<AbstractPresetUpdaterRepository>& ptr) {
-                return ptr->uuid() == info.uuid;
+                return ptr->uuid() == info.descriptor.uuid;
             }
         );
         ASSERT(repo_it != m_all_repositories.end());

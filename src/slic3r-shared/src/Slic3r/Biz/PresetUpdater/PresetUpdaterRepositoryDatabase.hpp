@@ -58,10 +58,13 @@ public:
     /**
      * @brief Creates new local repository, unzips it to its newly created directory.
      * Unzipped data lives in datadir until removal of local repo.
+     * @param unselect_others means other repos with same id will be unselected. Otherwise more than one repo with same id might be selected.
      */
     void add_local_repository(
         const boost::filesystem::path& zip_path,
+        bool unselect_others,
         PresetUpdaterProcessStatus* process_status
+
     );
 
     /**

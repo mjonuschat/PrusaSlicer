@@ -683,14 +683,15 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Network/Bonjour.hpp
         include/Slic3r/Biz/Network/TCPConsole.hpp
         include/Slic3r/Biz/Network/ServiceConfig.hpp
-        include/Slic3r/Biz/Network/Jwt.hpp        
+        include/Slic3r/Biz/Network/Jwt.hpp  
+        include/Slic3r/Biz/Network/HttpCurlFactory.hpp
         src/Slic3r/Biz/Network/IHttp.cpp
         src/Slic3r/Biz/Network/HttpCurl.cpp
-        src/Slic3r/Biz/Network/HttpCurlFactory.cpp
         src/Slic3r/Biz/Network/Bonjour.cpp
         src/Slic3r/Biz/Network/TCPConsole.cpp
         src/Slic3r/Biz/Network/ServiceConfig.cpp
         src/Slic3r/Biz/Network/Jwt.cpp
+        src/Slic3r/Biz/Network/HttpCurlFactory.cpp
 
         include/Slic3r/Biz/SLAResultCache.hpp
         src/Slic3r/Biz/SLAResultCache.cpp
@@ -792,6 +793,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDescriptor.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterWarning.hpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.hpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.cpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepository.hpp
@@ -808,6 +810,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterUtils.cpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterFileHash.hpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterFileHash.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDescriptor.cpp
 
         include/Slic3r/App/PresetUpdaterUI.hpp
         src/Slic3r/App/PresetUpdaterUI.cpp
@@ -816,6 +819,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/AppConfigInteractor.hpp
         src/Slic3r/App/AppConfigInteractor.cpp
         include/Slic3r/App/IAppConfigChangedListener.hpp
+        include/Slic3r/App/PresetUpdaterCLI.hpp
+        src/Slic3r/App/PresetUpdaterCLI.cpp
 
         include/Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp
         include/Slic3r/Biz/RemovableDrive/IRemovableDriveMonitor.hpp
@@ -874,6 +879,15 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
         src/Slic3r/Biz/RemovableDrive/RemovableDriveMonitorLinux.cpp
     )
 endif ()
+
+
+if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+    list(APPEND SLIC3R_SHARED_FILES
+        test/Slic3r/Biz/Network/MockHttp.hpp
+        test/Slic3r/Biz/Network/MockHttpFactory.cpp
+        test/Slic3r/Biz/Network/MockHttpFactory.hpp
+    )  
+endif()
 
 find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
@@ -1042,6 +1056,11 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Config/FeatureStructurizerTests.cpp
 
         test/Slic3r/Biz/ArrangeInteractorTests.cpp
+
+        test/Slic3r/Biz/PresetUpdater/PresetUpdaterStageTests.cpp
+        test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.hpp
+        test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.cpp
+
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 

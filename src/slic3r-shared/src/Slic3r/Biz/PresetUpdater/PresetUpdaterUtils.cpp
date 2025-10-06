@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/Utils/CopyFile.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
+#include "Slic3r/Biz/PresetUpdater/PresetUpdaterRepository.hpp"
 
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Assert.hpp"
@@ -16,6 +17,7 @@
 #include <boost/nowide/fstream.hpp>
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
+#include <type_traits>
 
 namespace fs = boost::filesystem;
 
@@ -60,7 +62,6 @@ std::vector<PresetUpdaterIndex> load_vendors_db(const fs::path& archive_path)
     if (!fs::is_directory(archive_path, ec) || ec) {
         throw Slic3r::RuntimeError(archive_path.string() + " is not directory. " + ec.message());
     }
-    ec.clear();
     for (auto& dir_entry : fs::directory_iterator(archive_path, ec)) {
         if (is_idx_file(dir_entry)) {
             PresetUpdaterIndex idx;
@@ -152,7 +153,6 @@ std::map<std::string, std::string> read_version_manifest(
         process_status->set_warning(msg);
         return {};
     }
-
     nlohmann::json data;
     try {
         // Parse the JSON directly from the file stream
@@ -166,7 +166,7 @@ std::map<std::string, std::string> read_version_manifest(
 
     if (!data.is_array()) {
         std::string msg = fmt::format(
-            "Failed to read version manifest {}. Uexpected json formating.",
+            "Failed to read version manifest {}. Unexpected json formating.",
             path.string()
         );
         SPDLOG_ERROR(msg);
@@ -270,7 +270,6 @@ void perform_update_no_source_manifest(
     ASSERT(fs::exists(vendor_source_dir_path) && fs::is_directory(vendor_source_dir_path));
     ASSERT(fs::exists(vendor_source_idx_path) && fs::is_regular_file(vendor_source_idx_path));
 
-    ec.clear();
     if (!fs::create_directories(vendor_dest_dir_path, ec) && ec) {
         process_status->set_error(
             fmt::format("Failed to create directory {}: {}", vendor_dest_dir_path.string(), ec.message())
@@ -282,7 +281,6 @@ void perform_update_no_source_manifest(
     for (const auto& entry : fs::directory_iterator(vendor_dest_dir_path, ec)) {
         const fs::path& path = entry.path();
         SPDLOG_INFO("Deleting {}", path.string());
-        ec.clear();
         if (!fs::remove_all(path, ec) || ec) {
             process_status->set_error(
                 fmt::format("Failed to remove file {}: {}", path.string(), ec.message())
@@ -346,7 +344,6 @@ void perform_update_no_source_manifest(
     }
 
     // move index
-    ec.clear();
     fs::rename(vendor_source_idx_path, vendor_dest_idx_path, ec);
     if (ec) {
         process_status->set_error(
@@ -361,7 +358,6 @@ void perform_update_no_source_manifest(
     }
 
     // cleanup source
-    ec.clear();
     if (!fs::remove_all(vendor_source_dir_path, ec) || ec) {
         process_status->set_error(
             fmt::format("Failed to remove {}: {}", vendor_source_dir_path.string(), ec.message())
@@ -379,11 +375,10 @@ void perform_update_with_source_manifest(
 
     const fs::path profile_local_path = fs::path(data_dir()) / "profiles" / "local" / "vendor";
     const fs::path update_sync_path   = fs::path(data_dir()) / "update_sync";
-
-    const fs::path vendor_dest_dir_path = profile_local_path / update.vendor_repo_id / update.vendor_id;
-    const fs::path vendor_dest_idx_path = profile_local_path
-        / update.vendor_repo_id
-        / (update.vendor_id + ".idx");
+    
+    const fs::path repo_dest_dir_path = profile_local_path / update.vendor_repo_id;
+    const fs::path vendor_dest_dir_path = repo_dest_dir_path / update.vendor_id;
+    const fs::path vendor_dest_idx_path = repo_dest_dir_path / (update.vendor_id + ".idx");
 
     const fs::path vendor_source_dir_path = update_sync_path / update.vendor_repo_id / update.vendor_id;
     const fs::path vendor_source_idx_path = update_sync_path
@@ -398,7 +393,15 @@ void perform_update_with_source_manifest(
         fs::exists(vendor_source_manifest_path) && fs::is_regular_file(vendor_source_manifest_path, ec)
     );
 
-    ec.clear();
+
+    // in case of new vendor, repo_dest_dir_path needs to be created
+    if (!fs::create_directory(repo_dest_dir_path, ec) && ec) {
+        process_status->set_error(
+            fmt::format("Failed to create directory {}: {}", repo_dest_dir_path.string(), ec.message())
+        );
+        return;
+    }
+
     if (!fs::create_directory(vendor_dest_dir_path, ec) && ec) {
         process_status->set_error(
             fmt::format("Failed to create directory {}: {}", vendor_dest_dir_path.string(), ec.message())
@@ -474,7 +477,6 @@ void perform_update_with_source_manifest(
         }
     }
     // move index
-    ec.clear();
     fs::rename(vendor_source_idx_path, vendor_dest_idx_path, ec);
     if (ec) {
         process_status->set_error(
@@ -489,7 +491,6 @@ void perform_update_with_source_manifest(
     }
 
     // cleanup source
-    ec.clear();
     if (!fs::remove_all(vendor_source_dir_path, ec) || ec) {
         process_status->set_error(
             fmt::format("Failed to remove {}: {}", vendor_source_dir_path.string(), ec.message())
@@ -512,7 +513,6 @@ void perform_updates(
             / update.vendor_repo_id
             / update.vendor_id
             / (update.vendor_id + ".manifest");
-        ec.clear();
         if (fs::exists(vendor_source_manifest_path, ec)
             && !ec
             && fs::is_regular_file(vendor_source_manifest_path, ec)
@@ -522,38 +522,47 @@ void perform_updates(
         } else {
             perform_update_no_source_manifest(update, process_status);
         }
+        // cleanup the repo dir
+        const fs::path repo_path = update_sync_path / update.vendor_repo_id;
+        if (fs::is_empty(repo_path, ec) && !ec) {
+            fs::remove(repo_path, ec);
+        }
     }
 }
 } // namespace
 
-void check_forced_reconfigurations(
-    PresetUpdaterReconfigurationList& results,
+PresetUpdaterReconfigurationList check_forced_reconfigurations(
+    const SharedRepositoryVector& repos,
     PresetUpdaterProcessStatus* process_status
 )
 {
+    PresetUpdaterReconfigurationList results;
     const fs::path profile_local_path = fs::path(data_dir()) / "profiles" / "local" / "vendor";
     boost::system::error_code ec;
 
     if (!fs::exists(profile_local_path, ec) || ec) {
         process_status->set_error(profile_local_path.string() + " does not exists. " + ec.message());
-        return;
+        return {};
     }
     if (!fs::is_directory(profile_local_path, ec) || ec) {
         process_status->set_error(profile_local_path.string() + " is not directory. " + ec.message());
-        return;
+        return {};
     }
 
     // vendors are inside repo_id dir
-    ec.clear();
     for (auto& archive_dir : fs::directory_iterator(profile_local_path, ec)) {
         if (process_status->get_canceled()) {
-            return;
+            return {};
         }
-        ec.clear();
         if (!fs::is_directory(archive_dir.path(), ec) || ec) {
             continue;
         }
         const std::string repo_id = archive_dir.path().filename().string();
+
+        const auto repo_it = std::find_if(repos.begin(), repos.end(), [repo_id](const AbstractPresetUpdaterRepository* repo){ return repo_id == repo->descriptor().id;});
+        if(repo_it == repos.end()){
+            continue;
+        }
 
         std::vector<PresetUpdaterIndex> index_db;
         try {
@@ -562,13 +571,12 @@ void check_forced_reconfigurations(
             std::string msg = fmt::format("Loading index db of {} has failed {}", repo_id, e.what());
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
-            return;
+            return {};
         }
         for (const auto& index : index_db) {
             const fs::path installed_vendor_yaml_path = archive_dir.path()
                 / index.vendor()
                 / "vendor.yaml";
-            ec.clear();
 
             if (!fs::exists(installed_vendor_yaml_path, ec) || ec) {
                 process_status->set_warning(
@@ -643,9 +651,7 @@ void check_forced_reconfigurations(
                     repo_id,
                     Slic3r::Semver(),
                     recommended->config_version,
-                    recommended->comment,
-                    std::string(),
-                    std::string()
+                    recommended->comment
                 );
                 continue;
             }
@@ -679,9 +685,7 @@ void check_forced_reconfigurations(
                     repo_id,
                     vendor_current_version_it->config_version,
                     recommended->config_version,
-                    recommended->comment,
-                    std::string(),
-                    std::string()
+                    recommended->comment
                 );
                 continue;
             }
@@ -703,52 +707,55 @@ void check_forced_reconfigurations(
                 repo_id,
                 vendor_current_version_it->config_version,
                 recommended->config_version,
-                recommended->comment,
-                std::string(),
-                std::string()
+                recommended->comment
             );
         }
     }
+    return results;
 }
 
-void check_reconfigurations(
-    PresetUpdaterReconfigurationList& results,
+PresetUpdaterReconfigurationList check_reconfigurations(
+    const SharedRepositoryVector& repos,
     PresetUpdaterProcessStatus* process_status
 )
 {
     // SPDLOG_INFO(__FUNCTION__);
-
+    PresetUpdaterReconfigurationList results;
     const fs::path profile_local_path = fs::path(data_dir()) / "profiles" / "local" / "vendor";
     const fs::path update_sync_path   = fs::path(data_dir()) / "update_sync";
     boost::system::error_code ec;
 
     if (!fs::exists(profile_local_path, ec) || ec) {
         process_status->set_error(profile_local_path.string() + " does not exists. " + ec.message());
-        return;
+        return {};
     }
     if (!fs::is_directory(profile_local_path, ec) || ec) {
         process_status->set_error(profile_local_path.string() + " is not directory. " + ec.message());
-        return;
+        return {};
     }
     if (!fs::exists(update_sync_path, ec) || ec) {
         process_status->set_error(update_sync_path.string() + " does not exists. " + ec.message());
-        return;
+        return {};
     }
     if (!fs::is_directory(update_sync_path, ec) || ec) {
         process_status->set_error(update_sync_path.string() + " is not directory. " + ec.message());
-        return;
+        return {};
     }
 
     // vendors are inside repo_id dir
     for (auto& archive_dir : fs::directory_iterator(profile_local_path, ec)) {
         if (process_status->get_canceled()) {
-            return;
+            return {};
         }
-        ec.clear();
         if (!fs::is_directory(archive_dir.path(), ec) || ec) {
             continue;
         }
         const std::string repo_id = archive_dir.path().filename().string();
+
+        const auto repo_it = std::find_if(repos.begin(), repos.end(), [repo_id](const AbstractPresetUpdaterRepository* repo){ return repo_id == repo->descriptor().id;});
+        if(repo_it == repos.end()){
+            continue;
+        }
 
         std::vector<PresetUpdaterIndex> index_db;
         try {
@@ -757,23 +764,19 @@ void check_reconfigurations(
             std::string msg = fmt::format("Loading index db of {} has failed {}", repo_id, e.what());
             SPDLOG_ERROR(msg);
             process_status->set_warning(msg);
-            return;
+            continue;
         }
         for (const auto& index : index_db) {
             // the installed bundles are in / "profiles" / "local"
             // the most recent index file should be in / "update_sync"
-            // if index in / "profiles" / "local" is more recent use it instead
-            // (should the index  in / "profiles" / "local" be rewritten if not most recent?)
             // then check installed bundles version and decide if and what type of reconfiguration
 
             // Compare update_sync index and index
             const fs::path update_sync_index_path = update_sync_path
                 / archive_dir.path().filename()
                 / index.path().filename();
-            PresetUpdaterIndex most_recent_index;
-            ec.clear();
+            PresetUpdaterIndex update_sync_index;
             if (fs::exists(update_sync_index_path, ec) && !ec) {
-                PresetUpdaterIndex update_sync_index;
                 try {
                     update_sync_index.load(update_sync_index_path);
                 } catch (const std::runtime_error& err) {
@@ -782,15 +785,11 @@ void check_reconfigurations(
                     );
                     continue;
                 }
-                if (update_sync_index.version() > index.version()) {
-                    most_recent_index = std::move(update_sync_index);
-                } else {
-                    most_recent_index = index;
-                }
             } else {
-                most_recent_index = index;
+                // There is no index in update_sync - no reconfiguration
+                continue;
             }
-            // use most_recent_index from now
+            // use update_sync_index from now
             const fs::path installed_vendor_yaml_path = archive_dir.path()
                 / index.vendor()
                 / "vendor.yaml";
@@ -813,8 +812,8 @@ void check_reconfigurations(
             Semver current_version = Semver(vendor_data.info.version);
 
             // Recommended version of vendor
-            const PresetUpdaterIndex::const_iterator recommended = most_recent_index.recommended();
-            if (recommended == most_recent_index.end()) {
+            const PresetUpdaterIndex::const_iterator recommended = update_sync_index.recommended();
+            if (recommended == update_sync_index.end()) {
                 std::string msg = fmt::format(
                     "No recommended version for vendor: {}, Index file might be corrupted.",
                     index.vendor()
@@ -824,10 +823,10 @@ void check_reconfigurations(
                 DEBUG_ASSERT(false);
                 continue;
             }
-            const PresetUpdaterIndex::const_iterator vendor_current_version_it = most_recent_index.find(
+            const PresetUpdaterIndex::const_iterator vendor_current_version_it = update_sync_index.find(
                 current_version
             );
-            const bool current_found = vendor_current_version_it != most_recent_index.end();
+            const bool current_found = vendor_current_version_it != update_sync_index.end();
             SPDLOG_INFO(
                 "Vendor: {}, version installed: {}{}, recommended version: {}",
                 vendor_data.info.name,
@@ -836,31 +835,34 @@ void check_reconfigurations(
                 recommended->config_version.to_string()
             );
             if (!current_found) {
-                SPDLOG_WARN(
+                SPDLOG_INFO(
                     "Current installed version for vendor: {} ({}) was not found in index %3%",
                     vendor_data.info.id,
                     current_version.to_string(),
-                    most_recent_index.path().string()
+                    update_sync_index.path().string()
                 );
-                // If current is not found in index, we need forced reconfiguration
-                if (process_status->has_warning(repo_id, vendor_data.info.id)) {
-                    SPDLOG_ERROR(
-                        "Vendor {} of {} repository is not added to reconfigurations due to previous warnings.",
+
+                // If the installed index does not support installed version, we have to downgrade
+                const PresetUpdaterIndex::const_iterator installed_index_version_it = index.find(current_version);
+                if (installed_index_version_it != index.end() && !installed_index_version_it->is_current_slic3r_supported()) {
+                    results.emplace_back(
+                        VendorReconfigurationState::ForcedDowngrade,
                         vendor_data.info.id,
-                        repo_id
+                        repo_id,
+                        current_version,
+                        recommended->config_version,
+                        recommended->comment
                     );
-                    continue;
+                } else {
+                    results.emplace_back(
+                        VendorReconfigurationState::NotInIndex,
+                        vendor_data.info.id,
+                        repo_id,
+                        current_version,
+                        recommended->config_version,
+                        recommended->comment
+                    );
                 }
-                results.emplace_back(
-                    VendorReconfigurationState::NotInIndex,
-                    vendor_data.info.id,
-                    repo_id,
-                    Slic3r::Semver(),
-                    recommended->config_version,
-                    recommended->comment,
-                    std::string(),
-                    std::string()
-                );
                 continue;
             }
             if (vendor_current_version_it->is_current_slic3r_supported()) {
@@ -888,9 +890,7 @@ void check_reconfigurations(
                         repo_id,
                         vendor_current_version_it->config_version,
                         recommended->config_version,
-                        recommended->comment,
-                        std::string(),
-                        std::string()
+                        recommended->comment
                     );
                 }
                 continue;
@@ -916,9 +916,7 @@ void check_reconfigurations(
                     repo_id,
                     vendor_current_version_it->config_version,
                     recommended->config_version,
-                    recommended->comment,
-                    std::string(),
-                    std::string()
+                    recommended->comment
                 );
                 continue;
             }
@@ -941,29 +939,167 @@ void check_reconfigurations(
                 repo_id,
                 vendor_current_version_it->config_version.to_string(),
                 recommended->config_version.to_string(),
-                recommended->comment,
-                std::string(),
-                std::string()
+                recommended->comment
             );
         }
     }
+
+    // Find new vendors in vendor_sync - they are not in profiles/local/vendor 
+    for (const AbstractPresetUpdaterRepository* repository : repos)
+    {
+        if (process_status->get_canceled()) {
+            return {};
+        }
+        const std::string repo_id = repository->descriptor().id;
+        const fs::path archive_dir_path = profile_local_path / repo_id;
+        const fs::path update_sync_repo_path = update_sync_path / repo_id;
+        if (!fs::exists(update_sync_repo_path, ec)) {
+            continue;
+        }
+
+        // load installed index_db
+        std::vector<PresetUpdaterIndex> index_db;
+        if (fs::is_directory(archive_dir_path, ec) && !ec) {
+            try {
+                index_db = load_vendors_db(archive_dir_path);
+            } catch (const std::exception& e) {
+                std::string msg = fmt::format("Loading index db of {} has failed {}", repo_id, e.what());
+                SPDLOG_ERROR(msg);
+                process_status->set_warning(msg);
+            }
+        }        
+
+        // load staged index_db
+        std::vector<PresetUpdaterIndex> update_sync_index_db;
+        try {
+            update_sync_index_db = load_vendors_db(update_sync_repo_path);
+        } catch (const std::exception& e) {
+            std::string msg = fmt::format(
+                "Loading index db of {} from update_sync has failed {}",
+                repo_id,
+                e.what()
+            );
+            SPDLOG_ERROR(msg);
+            process_status->set_warning(msg);
+            continue;
+        }
+        
+        // compare to find missing vendors
+        for (const auto& update_sync_index : update_sync_index_db) {
+            const auto it = std::find_if(
+                index_db.begin(),
+                index_db.end(),
+                [update_sync_index](const PresetUpdaterIndex& index)
+                { return index.vendor() == update_sync_index.vendor(); }
+            );
+            if (it != index_db.end()) {
+                continue;
+            }
+
+            // check if present version is recommended.
+
+            const PresetUpdaterIndex::const_iterator recommended = update_sync_index.recommended();
+            if (recommended == update_sync_index.end()) {
+                process_status->set_warning(
+                    fmt::format(
+                        "No recommended version for vendor: {}, Index file might be corrupted. {}",
+                        update_sync_index.vendor(), update_sync_index.path().string()
+                    )
+                );
+                continue;
+            }
+            const fs::path vendor_yaml = update_sync_index.path().parent_path() / update_sync_index.vendor() / "vendor.yaml";
+            Domain::Preset::VendorData vendor_data;
+            try {
+                Preset::IO::HwConfigLoader hw_config_loader;
+                vendor_data = hw_config_loader.load(vendor_yaml.string());
+                Semver update_sync_version = Semver(vendor_data.info.version);
+                if (update_sync_version != recommended->config_version) {
+                    process_status->set_warning(
+                        fmt::format("Vendor data in update_sync failed sanity check. Its version is not recommended by its index. Vendor: {}", update_sync_index.vendor())
+                    );
+                    continue;
+                }
+            } catch (const std::exception& e) {
+                process_status->set_warning(
+                    fmt::format("Failed to load vendor file {}: {}", vendor_yaml.string(), e.what())
+                );
+                continue;
+            }
+            // update_sync_index is new vendor
+            results.emplace_back(
+                VendorReconfigurationState::NewVendor,
+                update_sync_index.vendor(),
+                repo_id,
+                Slic3r::Semver(),
+                recommended->config_version,
+                recommended->comment
+            );
+        }
+    }
+
+    return results;
+}
+
+// Enable bitwise operations for ReconfigurationType
+// This would enable bitwise operations for all enums - so its defined only here in cpp file.
+template <typename T>
+concept Enum = std::is_enum_v<T>;
+
+constexpr Enum auto operator|(Enum auto lhs, Enum auto rhs) {
+    using Underlying = std::underlying_type_t<decltype(lhs)>;
+    return static_cast<decltype(lhs)>(
+        static_cast<Underlying>(lhs) | static_cast<Underlying>(rhs));
+}
+
+constexpr Enum auto operator&(Enum auto lhs, Enum auto rhs) {
+    using Underlying = std::underlying_type_t<decltype(lhs)>;
+    return static_cast<decltype(lhs)>(
+        static_cast<Underlying>(lhs) & static_cast<Underlying>(rhs));
+}
+
+constexpr bool has_flag(Enum auto flags, Enum auto flag) {
+    return (flags & flag) != static_cast<decltype(flags)>(0);
 }
 
 void perform_reconfigurations(
     const PresetUpdaterReconfigurationList& reconfigurations,
+    ReconfigurationType types_to_perform,
     PresetUpdaterProcessStatus* process_status
-)
-{
-    if (!reconfigurations.forced_downgrades().empty()) {
-        // In case of existing downgrade, we only perform downgrade.
-        // The rest will be done in following wizard.
+) {
+    if (has_flag(types_to_perform, ReconfigurationType::ForcedDowngrades)) {
         perform_updates(reconfigurations.forced_downgrades(), process_status);
-        return;
     }
-    // Forced and regular updates are now the same.
-    // The difference was if this functions "must" or "should" be called.
-    perform_updates(reconfigurations.forced_updates(), process_status);
-    perform_updates(reconfigurations.regular_updates(), process_status);
+
+    if (has_flag(types_to_perform, ReconfigurationType::ForcedUpdates)) {
+        perform_updates(reconfigurations.forced_updates(), process_status);
+    }
+
+    if (has_flag(types_to_perform, ReconfigurationType::RegularUpdates)) {
+        perform_updates(reconfigurations.regular_updates(), process_status);
+    }
+
+    if (has_flag(types_to_perform, ReconfigurationType::NotInIndex)) {
+        perform_updates(reconfigurations.not_in_index(), process_status);
+    }
+
+    if (has_flag(types_to_perform, ReconfigurationType::NewVendors)) {
+        perform_updates(reconfigurations.new_vendors(), process_status);
+    }
 }
 
+void cleanup_update_sync(PresetUpdaterProcessStatus* process_status)
+{
+    const fs::path update_sync_path = fs::path(data_dir()) / "update_sync";
+    boost::system::error_code ec;
+    for (const auto& entry : fs::directory_iterator(update_sync_path, ec)) {
+        const fs::path& path = entry.path();
+        SPDLOG_INFO("Deleting {}", path.string());
+        if (!fs::remove_all(path, ec) || ec) {
+            process_status->set_error(
+                fmt::format("Failed to remove file {}: {}", path.string(), ec.message())
+            );
+        }
+    }
+}
 } // namespace Slic3r::Biz::PresetUpdater

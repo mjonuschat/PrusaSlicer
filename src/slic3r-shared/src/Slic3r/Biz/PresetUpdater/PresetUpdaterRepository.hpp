@@ -2,7 +2,7 @@
 
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDescriptor.hpp"
 #include "PresetUpdaterFileHash.hpp"
-
+#include "Slic3r/Assert.hpp"
 #include <string>
 #include <boost/filesystem/path.hpp>
 
@@ -24,7 +24,13 @@ public:
         m_data(std::move(data)),
         m_uuid(uuid),
         m_selected(selected)
-    {}
+    {
+        if (m_data.uuid.empty())
+        {
+            m_data.uuid = m_uuid;
+        }
+        DEBUG_ASSERT(m_data.uuid == m_uuid);
+    }
 
     AbstractPresetUpdaterRepository(const AbstractPresetUpdaterRepository&)            = default;
     AbstractPresetUpdaterRepository(AbstractPresetUpdaterRepository&&) noexcept        = default;
@@ -76,7 +82,7 @@ public:
         m_data = std::move(descriptor);
     }
 
-    bool is_selected()
+    bool is_selected() const
     {
         return m_selected;
     }
@@ -204,6 +210,11 @@ public:
 
     static bool extract_local_archive_repository(
         PresetUpdaterRepositoryDescriptor& manifest_data,
+        PresetUpdaterProcessStatus* process_status
+    );
+
+    static bool data_structure_check(
+        const boost::filesystem::path& unzipped_path,
         PresetUpdaterProcessStatus* process_status
     );
 

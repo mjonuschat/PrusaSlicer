@@ -35,7 +35,7 @@ public:
      * Results are dispatched to IPresetUpdaterResultListener.
      * None of the resources are shared. All objects needed for preset management are created only inside the worker thread.
      */
-    void build_update_sync_and_reconfiguration_check();
+    void build_update_sync_and_reconfiguration_check(bool ignore_hash = false);
 
     /**
      * @brief Performs all reconfigurations in ReconfigurationList. Success is dispatch_reconfigurations_performed.
@@ -59,8 +59,9 @@ public:
      * All public methods of PresetUpdaterInteractor runs in worker thread (max 1 in time).
      * Results are dispatched to IPresetUpdaterResultListener.
      * None of the resources are shared. All objects needed for preset management are created only inside the worker thread.
+     * @param unselect_others means other repos with same id will be unselected. Otherwise more than one repo with same id might be selected.
      */
-    void add_local_repository(const boost::filesystem::path& zip_path);
+    void add_local_repository(const boost::filesystem::path& zip_path, bool unselect_others);
 
     /**
      * @brief Removes local repository to app manifest file. Success is dispatch_repository_info_vector.
@@ -70,15 +71,22 @@ public:
      */
     void remove_local_repository(const std::string& uuid);
 
+    void list_repositories();
+
+    void cleanup_update_sync();
+
 private:
     JThread::JThread m_thread;
     Platform::IMainThreadDispatcher& m_dispatcher;
 
+    // Error - operation has failed
     void dispatch_error(const std::string& body);
-    void dispatch_reconfigurations_list(const PresetUpdaterReconfigurationList& reconfigurations);
-    void dispatch_reconfigurations_performed();
+    // Status - operation is ongoing
     void dispatch_status(const std::string& target, int attempt, unsigned delay);
-    void dispatch_repository_info_vector(const SharedPresetUpdaterRepositoryInfoVector& descriptor);
+    // Success - operation has finished
+    void dispatch_reconfigurations_list(const PresetUpdaterReconfigurationList& reconfigurations, const std::vector<PresetUpdaterWarning>& warnings);
+    void dispatch_reconfigurations_performed(const std::vector<PresetUpdaterWarning>& warnings);
+    void dispatch_repository_info_vector(const SharedPresetUpdaterRepositoryInfoVector& descriptor, const std::vector<PresetUpdaterWarning>& warnings);
 };
 
 } // namespace Slic3r::Biz::PresetUpdater

@@ -20,49 +20,49 @@ const HttpRetryOpt& HttpRetryOpt::default_retry()
 
 std::unique_ptr<IHttp> IHttp::create(RequestMethod request_method, std::string url, RetryFn fn)
 {
-    return HttpFactory::create(request_method, std::move(url), std::move(fn));
+    return HttpFactory::instance().create(request_method, std::move(url), std::move(fn));
 }
 
 std::string IHttp::extract_host_from_url(const std::string& url)
 {
-    return HttpFactory::extract_host_from_url(url);
+    return HttpFactory::instance().extract_host_from_url(url);
 }
 std::string IHttp::substitute_host(const std::string& orig_addr, std::string sub_addr)
 {
-    return HttpFactory::substitute_host(orig_addr, sub_addr);
+    return HttpFactory::instance().substitute_host(orig_addr, sub_addr);
 }
 
 std::string IHttp::escape_path_by_element(const boost::filesystem::path& path)
 {
-    return HttpFactory::escape_path_by_element(path);
+    return HttpFactory::instance().escape_path_by_element(path);
 }
 
 std::string IHttp::escape_string(const std::string& str)
 {
-    return HttpFactory::escape_string(str);
+    return HttpFactory::instance().escape_string(str);
 }
 
 std::string IHttp::unescape_string(const std::string& str)
 {
-    return HttpFactory::unescape_string(str);
+    return HttpFactory::instance().unescape_string(str);
 }
 
 bool IHttp::is_subdomain(const std::string& url, const std::string& domain)
 {
-    return HttpFactory::is_subdomain(url, domain);
+    return HttpFactory::instance().is_subdomain(url, domain);
 }
 
 bool IHttp::ca_file_supported()
 {
-    return HttpFactory::ca_file_supported();
+    return HttpFactory::instance().ca_file_supported();
 }
 std::string IHttp::tls_global_init()
 {
-    return HttpFactory::tls_global_init();
+    return HttpFactory::instance().tls_global_init();
 }
 std::string IHttp::tls_system_cert_store()
 {
-    return HttpFactory::tls_system_cert_store();
+    return HttpFactory::instance().tls_system_cert_store();
 }
 
 IHttp& IHttp::on_complete(CompleteFn fn)

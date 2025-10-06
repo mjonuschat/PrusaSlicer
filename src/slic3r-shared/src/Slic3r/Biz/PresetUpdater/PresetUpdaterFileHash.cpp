@@ -41,7 +41,7 @@ bool PresetUpdaterFileHash::compare(const std::string& hash_string) const
 PresetUpdaterFileHash file_hash(const fs::path& path, PresetUpdaterProcessStatus* process_status)
 {
     ASSERT(fs::exists(path) && fs::is_regular_file(path));
-    boost::nowide::ifstream file(path, std::ios::in | std::ios::binary);
+    boost::nowide::ifstream file(path.string(), std::ios::in | std::ios::binary);
     if (!file.is_open()) {
         std::string msg = fmt::format(
             "Failed to open file {} when calculating file hash.",

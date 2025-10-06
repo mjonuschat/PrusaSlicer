@@ -5,6 +5,7 @@
 #include "Slic3r/Semver.hpp"
 
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <boost/nowide/convert.hpp>
 #include "Slic3r/Assert.hpp"
 
@@ -313,5 +314,21 @@ boost::filesystem::path system_downloads_dir()
     return boost::filesystem::path(home_dir) / "Downloads";
 }
 #endif
+
+static boost::filesystem::path temp_dir_override;
+
+boost::filesystem::path temp_dir()
+{
+    if (temp_dir_override.empty())
+    {
+        return boost::filesystem::temp_directory_path();
+    }
+    return temp_dir_override;
+}
+
+void set_temp_dir(const boost::filesystem::path& path)
+{
+    temp_dir_override = path;
+}
 
 } // namespace Slic3r::Biz

@@ -13,6 +13,8 @@ namespace Slic3r::Biz::PresetUpdater {
 class PresetUpdaterIndex;
 class PresetUpdaterProcessStatus;
 class PresetUpdaterReconfigurationList;
+class AbstractPresetUpdaterRepository;
+typedef std::vector<const AbstractPresetUpdaterRepository*> SharedRepositoryVector;
 
 bool copy_file_wrapper(
     const boost::filesystem::path& source,
@@ -30,17 +32,31 @@ std::map<std::string, std::string> read_version_manifest(
     PresetUpdaterProcessStatus* process_status
 );
 
-void check_forced_reconfigurations(
-    PresetUpdaterReconfigurationList& results,
+PresetUpdaterReconfigurationList check_forced_reconfigurations(
+    const SharedRepositoryVector& repos,
     PresetUpdaterProcessStatus* process_status
 );
-void check_reconfigurations(
-    PresetUpdaterReconfigurationList& results,
+PresetUpdaterReconfigurationList check_reconfigurations(
+    const SharedRepositoryVector& repos,
     PresetUpdaterProcessStatus* process_status
 );
+
+enum class ReconfigurationType : unsigned int {
+    None             = 0,
+    ForcedDowngrades = 1 << 0,
+    ForcedUpdates    = 1 << 1,
+    RegularUpdates   = 1 << 2,
+    NotInIndex       = 1 << 3,
+    NewVendors       = 1 << 4,
+    All              = ForcedDowngrades | ForcedUpdates | RegularUpdates | NotInIndex |NewVendors
+};
+
 void perform_reconfigurations(
     const PresetUpdaterReconfigurationList& reconfigurations,
+    ReconfigurationType types_to_perform,
     PresetUpdaterProcessStatus* process_status
 );
+
+void cleanup_update_sync(PresetUpdaterProcessStatus* process_status);
 
 } // namespace Slic3r::Biz::PresetUpdater
