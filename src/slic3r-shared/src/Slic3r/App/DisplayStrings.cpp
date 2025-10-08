@@ -171,6 +171,8 @@ std::string to_display_string(Biz::Slicing::ErrorCode code)
         return _u8L("The value needs to be the same for all extruders.");
     case ErrorCode::PlaceholderParser:
         return _u8L("Placeholder parser substitution failed.");
+    case ErrorCode::FailedToParseCustomParameters:
+        return _u8L("Unable to parse custom parameters.");
     case ErrorCode::UnsupportedOutputFormat:
         return _u8L("Unsupported output format.");
     }

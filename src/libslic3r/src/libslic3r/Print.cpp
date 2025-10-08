@@ -44,6 +44,7 @@
 #include "libslic3r/PrePreview.hpp"
 #include "libslic3r/ModelUtils.hpp"
 #include "libslic3r/SlicingInput.hpp"
+#include "libslic3r/CustomParametersHandling.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <float.h>
@@ -490,6 +491,9 @@ DONE:;
             Error{ErrorCode::MachineLimitsWithKlipper, {"machine_limits_usage", "gcode_flavor"}}
         );
     }
+
+    if (! check_custom_parameters(m_config.get<std::string>("custom_parameters_print"), m_config.get<std::string>("custom_parameters_printer"), m_config.get<std::vector<std::string>>("custom_parameters_filament")))
+        errors.push_back(Error{ErrorCode::FailedToParseCustomParameters});
 
     // Cache of layer height profiles for checking:
     // 1) Whether all layers are synchronized if printing with wipe tower and / or unsynchronized supports.

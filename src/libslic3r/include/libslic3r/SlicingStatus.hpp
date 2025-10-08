@@ -82,6 +82,7 @@ enum class ErrorCode
     FoundG92E0InLayerGCode, // _u8L("\"G92 E0\" was found in layer_gcode, which is incompatible with absolute extruder addressing.")
     SettingMustBeEqualForAllExtruders,
     PlaceholderParser,
+    FailedToParseCustomParameters,
 
     // FDM
     NoLayers, // "No layers were detected. You might want to repair your STL file(s) or check their size or thickness and retry.\n"

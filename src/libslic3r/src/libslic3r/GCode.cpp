@@ -46,6 +46,7 @@
 #include "LocalesUtils.hpp"
 #include "libslic3r/format.hpp"
 #include "Slic3r/Time.hpp"
+#include "libslic3r/CustomParametersHandling.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -1278,6 +1279,14 @@ void GCodeGenerator::_do_export(
         for (unsigned int extruder_id : tool_ordering.all_extruders())
             is_extruder_used[extruder_id] = true;
         this->placeholder_parser().set("is_extruder_used", is_extruder_used);
+
+        // Now the custom parameters:
+        add_custom_parameters_into_placeholder_parser(
+            print.config().get<std::string>("custom_parameters_print"),
+            print.config().get<std::string>("custom_parameters_printer"),
+            print.config().get<std::vector<std::string>>("custom_parameters_filament"),
+            this->placeholder_parser()
+        );
     }
 
     // Enable ooze prevention if configured so.
