@@ -1,0 +1,42 @@
+id: Siraya Tech Fast Grey
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Siraya Tech
+  material_type: Tough
+  material_colour: '#C0C0C0'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: a25a7876-225f-4a40-81cb-ad490fbcfc3b
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: d2c23677-8102-4c67-8937-8a5c4b9da211
+    name: Siraya Tech Fast Grey @SL1 0.025
+    values:
+      exposure_time: 6
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 1ab2f90f-9f6f-48da-b3b8-da4738837003
+    name: Siraya Tech Fast Grey @SL1 0.05
+    values:
+      exposure_time: 10
+      initial_exposure_time: 35
+## SL1S
+- condition: printer.model == "SL1S"
+  id: d7ef385a-9495-46e0-b92a-35b70a2b8cf0
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 77303f04-0861-4f2c-90cf-11022b7d965e
+    name: Siraya Tech Fast Grey @SL1S 0.05
+    values:
+      exposure_time: 3.3
+      initial_exposure_time: 28

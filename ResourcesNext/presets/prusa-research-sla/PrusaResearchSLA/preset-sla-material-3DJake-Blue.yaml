@@ -1,0 +1,36 @@
+id: 3DJake Blue
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: 3DJake
+  material_type: Model
+  material_colour: '#007EFD'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 26f93452-367c-4118-aba8-0913272f31b3
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: a69d1ae6-b3a4-407f-8565-28967109323a
+    name: 3DJake Blue @SL1S 0.025
+    values:
+      exposure_time: 1.8
+      initial_exposure_time: 25
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 3207e755-b653-4533-a683-f18814dd616f
+    name: 3DJake Blue @SL1S 0.05
+    values:
+      exposure_time: 2
+      initial_exposure_time: 25
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 9322fa3f-cf36-4804-b7dd-64a83a0b424e
+    name: 3DJake Blue @SL1S 0.1
+    values:
+      exposure_time: 3
+      initial_exposure_time: 25

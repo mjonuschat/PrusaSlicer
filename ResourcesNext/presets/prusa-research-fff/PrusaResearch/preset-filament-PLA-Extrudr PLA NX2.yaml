@@ -13,6 +13,7 @@ values:
 variants:
  ## C1
 - condition: printer.base_model == "COREONE"
+  id: 0ab4b2bb-ecb2-4781-bb88-2a6c19293fa0
   values:
     min_fan_speed: 25
     max_fan_speed: 75
@@ -20,6 +21,7 @@ variants:
     overhang_fan_speed_0: 75
 ## MK4S
 - condition: printer.model=~/(MK4S|MK3.9S)/
+  id: 6de9942d-1c63-4859-a7ce-53860e9e9db6
   values:
     min_fan_speed: 25
     max_fan_speed: 75

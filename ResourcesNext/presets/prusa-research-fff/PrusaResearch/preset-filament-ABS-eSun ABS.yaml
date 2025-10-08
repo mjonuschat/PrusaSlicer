@@ -9,4 +9,4 @@ values:
   filament_density: 1.01
   filament_spool_weight: 265
   filament_infill_max_crossing_speed: 200
-  
+

@@ -1,8 +1,8 @@
 kind: filament
-id: 'VOXELPETG+'
+id: VOXELPETG+
 inherits:
 - '*PET*'
-name: 'VOXELPETG+'
+name: VOXELPETG+
 values:
   filament_cost: '22'
   filament_density: 1.27

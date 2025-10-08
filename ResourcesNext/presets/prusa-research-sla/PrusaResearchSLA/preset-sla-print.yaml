@@ -1,10 +1,8 @@
 id: '*common*'
 kind: sla_print
-name: '*common*'
+# name: '*common*'
 values:
-  compatible_printers_condition: printer_model=="SL1"
   layer_height: 0.05
-  output_filename_format: '[input_filename_base].sl1'
   pad_edge_radius: 0.5
   pad_enable: 1.0
   pad_max_merge_distance: 50.0
@@ -29,9 +27,10 @@ values:
   support_small_pillar_diameter_percent: 60%
   supports_enable: 1.0
 ---
+id: 343eff08-9c4b-4813-9144-cff449c129c3
+kind: sla_print
 inherits:
 - '*common*'
-kind: sla_print
 values:
   pad_edge_radius: 0.5
   pad_enable: 1.0
@@ -54,47 +53,55 @@ values:
   supports_enable: 1.0
 variants:
 - condition: printer.model == "SL1S"
+  id: b013852e-cdaa-43ec-bb4c-e62e9a758b90
   values:
     compatible_printers_condition: printer_model=="SL1S"
     output_filename_format: '[input_filename_base].sl1s'
     support_head_width: 3.0
     support_pillar_diameter: 1.0
   variants:
-  - name: 0.025 UltraDetail @SL1S
+  - id: ea7dbdca-0093-4b69-acad-801fe2a8cffd
+    name: 0.025 UltraDetail @SL1S
     values:
       layer_height: 0.025
       support_head_front_diameter: 0.5
       support_head_penetration: 0.5
-  - name: 0.05 Normal @SL1S
+  - id: da1064ac-9447-45dc-b2a5-0d8cbf996c55
+    name: 0.05 Normal @SL1S
     values:
       layer_height: 0.05
       support_head_front_diameter: 0.5
       support_head_penetration: 0.5
-  - name: 0.1 Fast @SL1S
+  - id: ede19d17-93ed-4560-84af-97cba98fced7
+    name: 0.1 Fast @SL1S
     values:
       layer_height: 0.1
       support_head_front_diameter: 0.6
       support_head_penetration: 0.6
 - condition: printer.model == "SL1"
+  id: 85ab44d5-6cd4-4f7e-b6ef-37dc43d688c1
   values:
     compatible_printers_condition: printer_model=="SL1"
     output_filename_format: '[input_filename_base].sl1'
   variants:
-  - name: 0.025 UltraDetail
+  - id: 94f1f1b8-4482-43ab-9b10-ffac53ee0801
+    name: 0.025 UltraDetail
     values:
       layer_height: 0.025
       support_head_front_diameter: 0.4
       support_head_penetration: 0.4
       support_head_width: 2.0
       support_pillar_diameter: 1.0
-  - name: 0.05 Normal
+  - id: 2a6fb48f-fdb4-4872-99b5-95d3ae757037
+    name: 0.05 Normal
     values:
       layer_height: 0.05
       support_head_front_diameter: 0.4
       support_head_penetration: 0.4
       support_head_width: 3.0
       support_pillar_diameter: 1.0
-  - name: 0.1 Fast
+  - id: 5f8400b5-cdb2-4d41-8803-fe40fc9c3eff
+    name: 0.1 Fast
     values:
       layer_height: 0.1
       support_head_front_diameter: 0.5

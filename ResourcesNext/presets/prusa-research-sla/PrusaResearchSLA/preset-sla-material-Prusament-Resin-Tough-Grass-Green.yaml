@@ -1,0 +1,63 @@
+id: Prusament Resin Tough Grass Green
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Tough
+  material_colour: '#37823F'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: cfa29433-ac9c-4000-9d2d-5a1a292be81e
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 9224bf3e-292c-414c-8d7d-95b3c652c4c8
+    name: Prusament Resin Tough Grass Green @SL1 0.025
+    values:
+      exposure_time: 4
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 7195764c-8c05-4c86-ba93-65f6beb8aecb
+    name: Prusament Resin Tough Grass Green @SL1 0.05
+    values:
+      exposure_time: 6
+      initial_exposure_time: 35
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: d1d10f60-d343-4e89-88c6-10584ecc1bf4
+    name: Prusament Resin Tough Grass Green @SL1 0.1
+    values:
+      exposure_time: 13
+      initial_exposure_time: 45
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 6f5c00ad-f7b1-4fd1-a9c4-4339988d9958
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 625e21e0-6214-406d-9410-c532f489d45a
+    name: Prusament Resin Tough Grass Green @SL1S 0.025
+    values:
+      exposure_time: 1.8
+      initial_exposure_time: 25
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: a6204d11-eb22-41fb-85bf-b7a145c8fd47
+    name: Prusament Resin Tough Grass Green @SL1S 0.05
+    values:
+      exposure_time: 2
+      initial_exposure_time: 25
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 7ccae191-b5aa-4681-a79e-9a520bf4172d
+    name: Prusament Resin Tough Grass Green @SL1S 0.1
+    values:
+      exposure_time: 2.6
+      initial_exposure_time: 25

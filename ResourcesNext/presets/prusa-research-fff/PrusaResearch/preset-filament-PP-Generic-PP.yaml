@@ -1,0 +1,7 @@
+kind: filament
+id: Generic PP
+inherits:
+- '*PP*'
+name: Generic PP
+values:
+  filament_vendor: Generic

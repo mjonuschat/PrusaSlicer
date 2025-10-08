@@ -1,10 +1,10 @@
 kind: filament
-id: Forward-AM Ultrafuse HIPS
+id: Forward AM Ultrafuse HIPS
 inherits:
 - '*HIPS*'
-name: Forward-AM Ultrafuse HIPS
+name: Forward AM Ultrafuse HIPS
 values:
-  filament_vendor: Forward-AM
+  filament_vendor: Forward AM
   filament_density: 1.02
   bridge_fan_speed: 25
   fan_always_on: false

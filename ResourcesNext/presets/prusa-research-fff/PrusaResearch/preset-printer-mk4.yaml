@@ -1,6 +1,8 @@
+id: 3f01562c-7f74-465a-a3ac-dd63329faa57
 kind: printer
 variants:
 - condition: printer.base_model == "MK4"
+  id: 45f2e0b9-2176-4215-80b1-215e3e27a7fd
   values:
     bed_shape:
     - '0x0'
@@ -57,7 +59,7 @@ variants:
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
-    thumbnails: [16x16/QOI, '313x173/QOI', '480x240/QOI', '380x285/PNG']
+    thumbnails: [16x16/QOI, 313x173/QOI, 480x240/QOI, 380x285/PNG]
     use_firmware_retraction: 0
     use_relative_e_distances: 1
     use_volumetric_e: 0
@@ -145,6 +147,7 @@ variants:
       M221 S100 ; set flow to 100%
   variants:
   - condition: printer.model == "MK4"
+    id: 18b3f3d2-9518-45ed-8615-747d1a06e4cc
     name: Original Prusa MK4
     values:
       machine_max_acceleration_extruding: [4000.0, 2500.0]
@@ -153,6 +156,7 @@ variants:
       printer_model: MK4
     variants:
     - condition: feeder.base_model == "MMU3"
+      id: b143d763-a0b4-4dfd-98cc-147a36c2a492
       values:
         single_extruder_multi_material: 1
         start_gcode: |-
@@ -261,6 +265,7 @@ variants:
               # values:
                 # multimaterial_purging: '240'
   - condition: printer.model == "MK4S"
+    id: 23d2d049-4444-4baf-93c4-616e0c1755ff
     name: Original Prusa MK4S
     values:
       machine_max_acceleration_extruding: [4000, 2500]
@@ -344,6 +349,7 @@ variants:
         M221 S100 ; set flow to 100%
     variants:
     - condition: feeder.base_model == "MMU3"
+      id: 11b252ee-fb90-4686-98bf-f946203400b2
       values:
         single_extruder_multi_material: 1
         start_gcode: |-
@@ -447,6 +453,7 @@ variants:
           M84 X Y E ; disable motors
           ; max_layer_z = [max_layer_z]
   - condition: printer.model == "MK3.9"
+    id: 99a6ee62-f941-453c-b367-26b3bb49d27b
     name: Original Prusa MK3.9
     values:
       machine_max_acceleration_extruding: [4000, 2500]
@@ -530,6 +537,7 @@ variants:
         M221 S100 ; set flow to 100%
     variants:
     - condition: feeder.base_model == "MMU3"
+      id: bb130fe0-7ced-49c7-8895-c5f011d61158
       values:
         single_extruder_multi_material: 1
         start_gcode: |-
@@ -633,6 +641,7 @@ variants:
           M84 X Y E ; disable motors
           ; max_layer_z = [max_layer_z]
   - condition: printer.model == "MK3.9S"
+    id: 0faad158-509e-4c89-ae70-d1829c672c30
     name: Original Prusa MK3.9S
     values:
       machine_max_acceleration_extruding: [4000, 2500]
@@ -716,6 +725,7 @@ variants:
         M221 S100 ; set flow to 100%
     variants:
     - condition: feeder.base_model == "MMU3"
+      id: 65813d50-0cec-489b-9157-cf4a60000b61
       values:
         single_extruder_multi_material: 1
         start_gcode: |-

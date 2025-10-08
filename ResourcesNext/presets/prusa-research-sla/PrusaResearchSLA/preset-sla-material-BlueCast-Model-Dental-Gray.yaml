@@ -1,0 +1,29 @@
+id: BlueCast Model Dental Gray
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: BlueCast
+  material_type: Medical
+  material_colour: '#C0C0C0'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 181cd913-6abd-4b2a-bed8-701b5ef1de8c
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: a82978a6-134f-45c5-a8a1-371f562b20fc
+    name: BlueCast Model Dental Gray @SL1 0.025
+    values:
+      exposure_time: 6
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 8506cbe9-2ec4-4bf0-a802-d8445a16a104
+    name: BlueCast Model Dental Gray @SL1 0.05
+    values:
+      exposure_time: 8
+      initial_exposure_time: 35

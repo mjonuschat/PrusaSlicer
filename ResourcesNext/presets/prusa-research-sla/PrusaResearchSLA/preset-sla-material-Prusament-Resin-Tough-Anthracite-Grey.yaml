@@ -1,0 +1,63 @@
+id: Prusament Resin Tough Anthracite Grey
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Tough
+  material_colour: '#808080'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 3b496f26-8183-4d80-93e2-f5f3c8cf92e5
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: ba9c99e4-c9c3-4aa3-bae5-78898df33622
+    name: Prusament Resin Tough Anthracite Grey @SL1 0.025
+    values:
+      exposure_time: 6
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: bac7127e-618d-4c8f-9340-cd1af37b3c97
+    name: Prusament Resin Tough Anthracite Grey @SL1 0.05
+    values:
+      exposure_time: 7
+      initial_exposure_time: 35
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: ba2e403d-9d5e-48ae-9ec4-34865f62d6d9
+    name: Prusament Resin Tough Anthracite Grey @SL1 0.1
+    values:
+      exposure_time: 14
+      initial_exposure_time: 45
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 65b612d5-3da1-4182-aabf-01e0c721fec6
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: a283ec25-2d84-40d2-af6e-81dfe539ce26
+    name: Prusament Resin Tough Anthracite Grey @SL1S 0.025
+    values:
+      exposure_time: 2
+      initial_exposure_time: 25
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: bf8bfe6c-3b22-4453-8958-57e42ef51501
+    name: Prusament Resin Tough Anthracite Grey @SL1S 0.05
+    values:
+      exposure_time: 2.4
+      initial_exposure_time: 25
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 6056a963-402b-418c-bb41-a957a636cd00
+    name: Prusament Resin Tough Anthracite Grey @SL1S 0.1
+    values:
+      exposure_time: 3
+      initial_exposure_time: 25

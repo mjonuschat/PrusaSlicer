@@ -1,0 +1,63 @@
+id: PrimaCreator Flex Clear
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: PrimaCreator
+  material_type: Flexible
+  material_colour: '#F8F8F8'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: d261d49f-b898-4b9b-a1de-e4650b22a47a
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: a29311eb-0a3f-4d76-84ef-b5ea239874fd
+    name: PrimaCreator Flex Clear @SL1 0.025
+    values:
+      exposure_time: 4.5
+      initial_exposure_time: 30
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 40c9347a-8d2d-424a-b25c-659c72ecb213
+    name: PrimaCreator Flex Clear @SL1 0.05
+    values:
+      exposure_time: 6.5
+      initial_exposure_time: 30
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 07cd3169-b735-4bbf-bba1-77f41fe274ff
+    name: PrimaCreator Flex Clear @SL1 0.1
+    values:
+      exposure_time: 12
+      initial_exposure_time: 35
+## SL1S
+- condition: printer.model == "SL1S"
+  id: f7b3f722-382b-4776-89c0-50c4de3abf45
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: b3f2ba55-64bc-406d-b028-5e428d37ee2f
+    name: PrimaCreator Flex Clear @SL1S 0.025
+    values:
+      exposure_time: 1.8
+      initial_exposure_time: 25
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 9f01068f-bab3-47d3-96b8-b8fa019240c2
+    name: PrimaCreator Flex Clear @SL1S 0.05
+    values:
+      exposure_time: 2
+      initial_exposure_time: 25
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 8f64b563-8179-411b-b205-3b246b91c087
+    name: PrimaCreator Flex Clear @SL1S 0.1
+    values:
+      exposure_time: 2.6
+      initial_exposure_time: 25

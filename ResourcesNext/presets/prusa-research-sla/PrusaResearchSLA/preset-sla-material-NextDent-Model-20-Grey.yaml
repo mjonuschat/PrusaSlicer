@@ -1,0 +1,42 @@
+id: NextDent Model 2.0 Grey
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: NextDent
+  material_type: Medical
+  material_colour: '#808080'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 1de2bb25-5a70-4d91-b27d-60aa6d5a089d
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: d3e1a54f-2def-4266-8096-937ba202e20c
+    name: NextDent Model 2.0 Grey @SL1 0.025
+    values:
+      exposure_time: 14
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: f99b2526-3683-477d-a2d4-f7852142c0bc
+    name: NextDent Model 2.0 Grey @SL1 0.05
+    values:
+      exposure_time: 12
+      initial_exposure_time: 35
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 921cf82b-263c-4dd0-b498-8caf1d86109e
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 0a7ca7bb-4477-4788-b12b-ab22a8d1005a
+    name: NextDent Model 2.0 Grey @SL1S 0.05
+    values:
+      exposure_time: 4
+      initial_exposure_time: 28

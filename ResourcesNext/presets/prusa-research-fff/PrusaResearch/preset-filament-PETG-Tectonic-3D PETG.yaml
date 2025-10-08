@@ -1,7 +1,7 @@
 kind: filament
 id: Tectonic-3D AURA PETG
 inherits:
-- '*PET*'   
+- '*PET*'
 name: Tectonic-3D AURA PETG
 values:
   filament_vendor: Tectonic-3D

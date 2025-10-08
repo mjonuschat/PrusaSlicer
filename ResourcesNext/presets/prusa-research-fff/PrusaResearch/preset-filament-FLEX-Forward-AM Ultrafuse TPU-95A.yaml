@@ -1,11 +1,11 @@
 kind: filament
-id: Forward-AM Ultrafuse TPU-95A
+id: Forward AM Ultrafuse TPU-95A
 inherits:
 - '*FLEX*'
-name: Forward-AM Ultrafuse TPU-95A
-condition: 'tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/ and printer.base_model != "MINI"'
+name: Forward AM Ultrafuse TPU-95A
+condition: tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/ and printer.base_model != "MINI"
 values:
-  filament_vendor: Forward-AM
+  filament_vendor: Forward AM
   first_layer_temperature: 230
   temperature: 225
   extrusion_multiplier: 1
@@ -19,94 +19,115 @@ values:
 ## C1
 variants:
 - condition: printer.base_model == "COREONE"
+  id: 8fe2df82-9953-40fc-a9d0-0e862f2c67cd
   values:
     min_fan_speed: 20
     max_fan_speed: 75
   variants:
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: f334d796-c80a-415a-be05-b46bef6e4214
     values:
       filament_max_volumetric_speed: 2.5
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 132e74cf-6dbf-4da6-a63f-9d0382029fbc
     values:
       filament_max_volumetric_speed: 2.5
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: e6e60bb9-65f0-4358-a340-25726ef319e9
     values:
       filament_max_volumetric_speed: 2.5
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 1fd5b354-00ec-41a6-9070-d923149698e6
     values:
       filament_max_volumetric_speed: 5
 ## XL
 - condition: printer.base_model == "XL"
+  id: d00abb15-c14a-47ad-a17d-ec9eb36299c2
   values:
     retract_length_toolchange: 3
   variants:
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 5aee02b2-c233-45f9-b8fd-0cbd255f401c
     values:
       filament_max_volumetric_speed: 2.5
       filament_multitool_ramming_flow: 2.5
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 281b2934-ad19-4143-827a-2257b1aa937c
     values:
       filament_max_volumetric_speed: 2.5
       filament_multitool_ramming_flow: 2.5
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 0d3bb7e6-0b9c-4335-9acf-a806a3a7f635
     values:
       filament_max_volumetric_speed: 2.5
       filament_multitool_ramming_flow: 2.5
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: babc703c-bf16-457b-a6e5-b413f61af3ae
     values:
       filament_max_volumetric_speed: 5
       filament_multitool_ramming_flow: 5
 ## MK4
 - condition: printer.model=~/(MK4|MK3.9)/
+  id: 187024dc-2e08-49a9-9745-07e03e4c949b
   variants:
   # 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 7163413d-7d8a-4d4e-a55e-abfe4c1bbc45
     values:
       filament_max_volumetric_speed: 2.5
   # 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 9feaf2de-53d7-4298-ba2c-7534b52db733
     values:
       filament_max_volumetric_speed: 2.5
   # 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 17f27088-9236-4d75-8ed6-17e202f0f465
     values:
       filament_max_volumetric_speed: 3
   # 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 726ac15b-bd2c-421a-ad4a-76d87084393f
     values:
       filament_max_volumetric_speed: 6
 ## MK4S
 - condition: printer.model=~/(MK4S|MK3.9S)/
+  id: d2f5dacb-210e-475d-85f3-0a2a3d4c8941
   values:
     min_fan_speed: 20
     max_fan_speed: 75
   variants:
   # 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: c4be8832-be4b-46f5-ad3a-75312e77ffbb
     values:
       filament_max_volumetric_speed: 2.5
   # 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 4243d2c3-0f3a-455a-865e-4fc7e3a374fc
     values:
       filament_max_volumetric_speed: 2.5
   # 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 9428bb27-cef7-4d7d-8d25-f9e16e7e69e8
     values:
       filament_max_volumetric_speed: 3
   # 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 205392ab-a445-4566-8be6-ab20df6e825c
     values:
       filament_max_volumetric_speed: 6
 ## MK3.5 and MK3 and MK2
 - condition: printer.base_model=~/(MK3.5|MK3|MK2.5|MK2)/
+  id: 3c192389-dce2-4833-a5f0-e9263363c6ae
   values:
     extrusion_multiplier: 1.2
     idle_temperature: 70
@@ -119,17 +140,21 @@ variants:
   variants:
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: d08c7b3e-dad6-48c1-aa0b-0bbec23b00e0
     values:
       filament_max_volumetric_speed: 2
   # MK3.5 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 9e0cd66f-4ca0-4d3b-b0cf-f14d13be202a
     values:
       filament_max_volumetric_speed: 2
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 480f2e9e-ec41-41c7-8a87-135d20ca3e7f
     values:
       filament_max_volumetric_speed: 2
   # MK3.5 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 9dda7146-5d2f-4bbc-a4fe-9c8c0580d7cd
     values:
       filament_max_volumetric_speed: 3.5

@@ -1,0 +1,45 @@
+id: Prusament Resin Model Prusa Orange
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Model
+  material_colour: '#FF8040'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 1391b767-987b-40d8-9a01-eeb46b38bef9
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  values:
+    area_fill: 20
+    delay_before_exposure: [1, 10]
+    tilt_down_initial_speed: layer1750,layer1750
+    tilt_down_offset_steps: [0, 1200]
+    tilt_down_finish_speed: move8000,move5120
+    tilt_up_initial_speed: move8000,move8000
+    tilt_up_offset_steps: [600, 600]
+    tilt_up_finish_speed: layer1750,layer1750
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 46c5cd78-a5ab-4489-9a6b-85dc26dd2bc3
+    name: Prusament Resin Model Prusa Orange @SL1S 0.025
+    values:
+      exposure_time: 2.2
+      initial_exposure_time: 5
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 810f7cbb-65b4-4053-9d4c-cf70a9623b8d
+    name: Prusament Resin Model Prusa Orange @SL1S 0.05
+    values:
+      exposure_time: 2.4
+      initial_exposure_time: 6
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 2b7e41b3-d04d-4c79-abe0-c9216f782dab
+    name: Prusament Resin Model Prusa Orange @SL1S 0.1
+    values:
+      exposure_time: 2.9
+      initial_exposure_time: 8

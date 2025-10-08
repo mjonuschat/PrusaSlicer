@@ -1,0 +1,63 @@
+id: Prusament Resin Tough Classic Red
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Tough
+  material_colour: '#EC0000'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 7f530c08-d6d4-4372-85b7-264595bda179
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 824e738d-2a8b-4802-8fec-d6f656ee917b
+    name: Prusament Resin Tough Classic Red @SL1 0.025
+    values:
+      exposure_time: 3
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 18bf4484-db3b-4489-bd57-bd813ecc9ded
+    name: Prusament Resin Tough Classic Red @SL1 0.05
+    values:
+      exposure_time: 4
+      initial_exposure_time: 35
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: fba8d848-b80a-445a-a42e-b32e5d05c671
+    name: Prusament Resin Tough Classic Red @SL1 0.1
+    values:
+      exposure_time: 6
+      initial_exposure_time: 45
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 4ab65adf-f870-4ab0-a126-876c27105e88
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: d475d542-2c8b-43af-bac3-172e9b9f0cfe
+    name: Prusament Resin Tough Classic Red @SL1S 0.025
+    values:
+      exposure_time: 1.8
+      initial_exposure_time: 25
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: e8b06970-ff62-4abd-8d05-3258de364259
+    name: Prusament Resin Tough Classic Red @SL1S 0.05
+    values:
+      exposure_time: 2
+      initial_exposure_time: 25
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 5b4936be-caa9-4434-822d-4a45466e1aef
+    name: Prusament Resin Tough Classic Red @SL1S 0.1
+    values:
+      exposure_time: 2.6
+      initial_exposure_time: 25

@@ -11,59 +11,74 @@ values:
 variants:
   ## C1
 - condition: printer.base_model == "COREONE"
+  id: 784a122d-e477-47d9-ac3e-4487461429a7
   variants:
   # C1 0.25
   - condition: tool.nozzle_diameter == 0.25
+    id: 5385117d-6913-4b1c-a759-214944a03846
     values:
       pressure_advance_value: 0.072
   # C1 0.3
   - condition: tool.nozzle_diameter == 0.3
+    id: f4134949-6e9c-4af0-a5b0-e860f9f0ff7f
     values:
       pressure_advance_value: 0.045
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: a9f0c168-97fa-4419-988f-b236bc64b605
     values:
       pressure_advance_value: 0.02
       slowdown_below_layer_time: 6
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
+      id: 2cf74f15-4777-4820-9a5a-f9a13accdb1d
       values:
         slowdown_below_layer_time: 6
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: ad3770ae-e30d-4f35-9ad2-a1d3f3d5a9e6
     values:
       pressure_advance_value: 0.016
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
   # C1 0.6
+      id: e939ec71-0482-476f-8b2e-6981c8ceee38
   - condition: tool.nozzle_diameter == 0.6
+    id: d6a2347e-8eba-4f36-a483-3b0e51611c82
     values:
       pressure_advance_value: 0.014
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
   # C1 0.8
+      id: 042e78d0-890e-469c-983f-1dd9d724a52b
   - condition: tool.nozzle_diameter == 0.8
+    id: 71db8a6f-efd4-429c-b76b-a2198169a155
     values:
       pressure_advance_value: 0.01
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
 ## XL
+      id: 7588bf92-7260-488e-be7e-26cbb7ae762b
 - condition: printer.base_model == "XL"
+  id: 87cb944c-f5fd-4fdd-8112-3063db419e01
   variants:
   # XL 0.25
   - condition: tool.nozzle_diameter == 0.25
+    id: 1d900ab5-24a9-4d64-9b8c-76e6b7eb10e4
     values:
       pressure_advance_value: 0.072
   # XL 0.3
   - condition: tool.nozzle_diameter == 0.3
+    id: a8267d71-7f33-490e-bf98-e587e56959ca
     values:
       pressure_advance_value: 0.045
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 0c64a7a7-b620-41f5-8bc8-e0a8b725ca91
     values:
       pressure_advance_value: 0.02
       slowdown_below_layer_time: 7
@@ -71,212 +86,268 @@ variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
   # XL 0.5
+      id: 39276b0b-437f-4974-b4eb-38c70663cbb0
   - condition: tool.nozzle_diameter == 0.5
+    id: 1506b1de-a1e5-4501-bd0a-6776d595be80
     values:
       pressure_advance_value: 0.016
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
   # XL 0.6
+      id: 832d2718-63d1-4dc4-967b-d2d0205a29a5
   - condition: tool.nozzle_diameter == 0.6
+    id: c58a56e8-7535-4ef4-a09f-6ca6bb743fea
     values:
       pressure_advance_value: 0.014
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
   # XL 0.8
+      id: 55043f08-3e6a-40ab-8235-56a71007f012
   - condition: tool.nozzle_diameter == 0.8
+    id: effa64dc-4b05-4698-a8ec-c33a4c03c99a
     values:
       pressure_advance_value: 0.01
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
 ## MK4
+      id: 03a198e0-2d21-4939-a28c-bcf6b97024ac
 - condition: printer.model=~/(MK4|MK3.9)/
+  id: 03e6d52d-2db6-4d76-9d4d-d7b622801653
   variants:
   # MK4 0.25
   - condition: tool.nozzle_diameter == 0.25
+    id: 279547a7-da47-4306-bd6c-17d471ce64b3
     values:
       pressure_advance_value: 0.072
   # MK4 0.3
   - condition: tool.nozzle_diameter == 0.3
+    id: 16e75afe-05e8-4372-a0bc-71375e215580
     values:
       pressure_advance_value: 0.045
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: d4cd5fef-f49d-425e-9522-db955b8e21f7
     values:
       pressure_advance_value: 0.02
       slowdown_below_layer_time: 6
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
+      id: 38283c66-f1c9-4257-af8e-56a2d347cd1f
       values:
         pressure_advance_value: 0.02
         slowdown_below_layer_time: 6
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: b8bf3002-64ec-4add-89fb-07821748171e
     values:
       pressure_advance_value: 0.016
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
   # MK4 0.6
+      id: 8dbb0fd9-b09f-4f32-8872-cfc360d6c558
   - condition: tool.nozzle_diameter == 0.6
+    id: cb51af4c-6b75-42c1-a68c-5acec9f2b7b3
     values:
       pressure_advance_value: 0.014
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
   # MK4 0.8
+      id: e1dedbc3-efd1-42d6-ac8e-d4c5ab8332a0
   - condition: tool.nozzle_diameter == 0.8
+    id: 871c43aa-f7ac-490e-91ff-8c1a054e3585
     values:
       pressure_advance_value: 0.01
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
 ## MK4S
+      id: fb237c46-f854-4ba6-a507-4a86e97f16e0
 - condition: printer.model=~/(MK4S|MK3.9S)/
+  id: 3679d4ad-6be1-4f13-8829-44724840fbd5
   variants:
   # MK4S 0.25
   - condition: tool.nozzle_diameter == 0.25
+    id: cccd4f08-d30c-44e7-9434-701eed088ca7
     values:
       pressure_advance_value: 0.072
   # MK4S 0.3
   - condition: tool.nozzle_diameter == 0.3
+    id: 90ab8807-222f-468e-b8a9-058beb9ef48b
     values:
       pressure_advance_value: 0.045
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 978cc4ca-64ce-439f-9910-f35087fad251
     values:
       pressure_advance_value: 0.02
       slowdown_below_layer_time: 4
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
+      id: 131033c0-d818-4440-b7b8-32490eb41fec
       slowdown_below_layer_time: 4
 
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 2aea7b14-4153-46e4-ad07-7eeee31dee6c
     values:
       pressure_advance_value: 0.016
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
+      id: 03a4cf46-ad98-4d61-9ef5-012df4453094
       values:
         pressure_advance_value: 0.016
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 6c66a09f-ae21-44e0-b73e-68fb6b9e85ce
     values:
       pressure_advance_value: 0.014
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
+      id: e0687513-9920-476c-b16d-825f437c0f02
       values:
         pressure_advance_value: 0.014
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 390d0096-6876-42a8-be87-aa4a9842cdb6
     values:
       pressure_advance_value: 0.01
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
+      id: 471ed301-a2f5-4c1e-9dba-44d56d12c623
       values:
         pressure_advance_value: 0.01
 ## MK3.5
 - condition: printer.base_model == "MK3.5"
+  id: 6eeea867-dce9-4932-9f3d-ace5673ac27d
   variants:
   # MK3.5 0.25
   - condition: tool.nozzle_diameter == 0.25
+    id: 5a3592e0-6e2b-4655-b0f9-31a111c79951
     values:
       pressure_advance_value: 0.08
     variants:
     # MK3.5 0.25 MMU
-    - condition: feeder.base_model == "MMU"
+    - condition: feeder.base_model=~/.*MMU.*/
   # MK3.5 0.3
+      id: c0560b33-7007-4420-b2f6-c0a29582cdc5
   - condition: tool.nozzle_diameter == 0.3
+    id: 4ef072bf-1baf-4679-be31-aa9709ced8c0
     values:
       pressure_advance_value: 0.055
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 00efeb36-7cc3-4b1b-9140-334ea725a849
     values:
       pressure_advance_value: 0.025
     variants:
     # MK3.5 0.4 MMU
-    - condition: feeder.base_model == "MMU"
+    - condition: feeder.base_model=~/.*MMU.*/
   # MK3.5 0.5
+      id: 278117f9-d4d0-4cf3-81da-bd1ce47d83c1
   - condition: tool.nozzle_diameter == 0.5
+    id: f38cca36-1b53-41fb-839f-a69c3c8d1202
     values:
       pressure_advance_value: 0.017
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: da2c1636-3d9c-4133-8100-362ce6a81351
     values:
       pressure_advance_value: 0.015
     variants:
     # MK3.5 0.6 MMU
-    - condition: feeder.base_model == "MMU"
+    - condition: feeder.base_model=~/.*MMU.*/
   # MK3.5 0.8
+      id: 8ee62184-cf70-4738-a989-aafb340ebf3b
   - condition: tool.nozzle_diameter == 0.8
+    id: 60a8d275-65ee-4f22-a9cd-3a70d97d0da7
     values:
       pressure_advance_value: 0.01
 ## MINI
 - condition: printer.base_model == "MINI"
+  id: d789349d-452a-4812-afa0-7f87ea794652
   variants:
   # MINI 0.25
   - condition: tool.nozzle_diameter == 0.25
+    id: f9fb0af3-1b86-4d68-8a71-cfaf061bf860
     values:
       pressure_advance_value: 0.59
   # MINI 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: e3139fd8-07a2-4221-bed4-835387d937df
     values:
       pressure_advance_value: 0.19
   # MINI 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: bfe1d062-6c79-495d-8279-e249360c2cca
     values:
       pressure_advance_value: 0.12
   # MINI 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 07ec56f4-1e12-4b3a-9e5d-5c18b88d6f27
     values:
       pressure_advance_value: 0.08
 ## MK3, MK3S and MK2.5, MK2.5S
 - condition: printer.base_model=~/(MK3|MK2.5)/
+  id: b5560749-51b0-4855-9414-48c325835386
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
+    id: f3a95ca6-dacc-4c4b-9980-67b46ee34182
     values:
       pressure_advance_value: 0.04
     variants:
     # MK3 0.25 MMU
-    - condition: feeder.base_model == "MMU"
+    - condition: feeder.base_model=~/.*MMU.*/
   # MK3 0.4
+      id: 8ce6dfa6-f198-4dc1-bd18-2c54950171ec
   - condition: tool.nozzle_diameter == 0.4
+    id: 4be99fd1-15b8-44b8-b79a-2d914bd387e0
     values:
       pressure_advance_value: 0.04
     variants:
     # MK3 0.4 MMU
-    - condition: feeder.base_model == "MMU"
+    - condition: feeder.base_model=~/.*MMU.*/
   # MK3 0.6
+      id: ccafc45f-1f8d-42a4-98b0-d60f934e84f8
   - condition: tool.nozzle_diameter == 0.6
+    id: 4c645734-e8d1-4768-ac0e-8bd9a6f09e20
     values:
       pressure_advance_value: 0.03
     variants:
     # MK3 0.6 MMU
-    - condition: feeder.base_model == "MMU"
+    - condition: feeder.base_model=~/.*MMU.*/
   # MK3 0.8
+      id: ec182070-3539-4342-9c60-b341102e5fec
   - condition: tool.nozzle_diameter == 0.8
+    id: e17749c7-d23c-4876-ac5c-5f2c1d6ea76c
     values:
       pressure_advance_value: 0.007
 ## MK2S
 - condition: printer.model == "MK2S"
+  id: bdccee37-4676-4262-a3ef-be890cb629e5
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
+    id: ae6d9338-51f8-44e7-b4e0-d8f7910b9db3
     values:
       pressure_advance_value: 22
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 409560f3-4f6e-4427-8cdb-2b22fb15103e
     values:
       pressure_advance_value: 22
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 641b97dc-142e-4324-9b2a-dd00803af950
     values:
       pressure_advance_value: 13

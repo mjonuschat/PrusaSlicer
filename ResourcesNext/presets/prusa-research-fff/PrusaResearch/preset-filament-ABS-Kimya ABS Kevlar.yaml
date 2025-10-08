@@ -11,43 +11,53 @@ values:
 ---
 kind: filament
 # Maximum volumetric speed limits
-id: '*KimyaABSKevlar_MAXVOLSPEED*'      
+id: '*KimyaABSKevlar_MAXVOLSPEED*'
 ## C1, MK4, XL family
 variants:
 - condition: printer.base_model=~/(COREONE|MK4|XL)/
+  id: 9059dfe2-ecef-4d45-bb96-e813582e6465
   variants:
   # 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 6a479404-0f5f-4012-b850-fc909acbc32d
     values:
       filament_max_volumetric_speed: 6
   # 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 3578d8d5-1a9b-45d0-94ec-efa2b8b911df
     values:
       filament_max_volumetric_speed: 8
   # 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 5e5b2dd5-11a5-4261-b038-dfc511a5a3e6
     values:
       filament_max_volumetric_speed: 10
   # 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: de4cae18-8b77-47a7-978d-968613b2f674
     values:
       filament_max_volumetric_speed: 14
 - condition: printer.base_model=~/(MK3|MK3.5|MINI|MK2)/
+  id: d82852d2-3b82-49ce-bb43-c2ba083fe7ce
   variants:
   # 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 227dfb61-e8b7-4ba5-9c3a-ed4fc2d6ecda
     values:
       filament_max_volumetric_speed: 6
   # 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 39dcaeeb-ac5d-4106-9f8e-a526ab27548b
     values:
       filament_max_volumetric_speed: 7
   # 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 5c0ace5b-94a8-42fa-94a4-cb1c8dc1d2b6
     values:
       filament_max_volumetric_speed: 10
   # 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 4ac846b5-9316-4277-be06-4faa66fd7261
     values:
       filament_max_volumetric_speed: 13
-  
+

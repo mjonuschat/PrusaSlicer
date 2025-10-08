@@ -1,0 +1,49 @@
+id: BlueCast EcoGray
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: BlueCast
+  material_type: Tough
+  material_colour: '#808080'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: e387c98c-75e9-4063-82e9-704dbd01aaa9
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 11d8fa19-4703-4959-bdea-2478e3dfe792
+    name: BlueCast EcoGray @SL1 0.025
+    values:
+      exposure_time: 6
+      initial_exposure_time: 40
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 97533694-2969-4e4a-bed8-b273377dc289
+    name: BlueCast EcoGray @SL1 0.05
+    values:
+      exposure_time: 7
+      initial_exposure_time: 35
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: cd1f181d-a314-43b9-84ad-d449e7b34c68
+    name: BlueCast EcoGray @SL1 0.1
+    values:
+      exposure_time: 10
+      initial_exposure_time: 35
+## SL1S
+- condition: printer.model == "SL1S"
+  id: bb59146c-aa6d-4fa5-969d-035d7479fbd8
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 788eb3a5-daa0-4c45-99bd-551ac7cd9096
+    name: BlueCast EcoGray @SL1S 0.05
+    values:
+      exposure_time: 2.3
+      initial_exposure_time: 28

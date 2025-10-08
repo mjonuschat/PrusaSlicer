@@ -1,6 +1,8 @@
+id: f856b455-0ebe-4401-bb50-81278cfd3808
 kind: printer
 variants:
 - condition: printer.base_model == "COREONE"
+  id: 9c7e1d0a-bc85-4ed2-887c-38e4b64f8f23
   name: Prusa CORE One
   values:
     bed_shape:
@@ -57,7 +59,7 @@ variants:
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
-    thumbnails: [16x16/QOI, '313x173/QOI', '480x240/QOI', '380x285/PNG']
+    thumbnails: [16x16/QOI, 313x173/QOI, 480x240/QOI, 380x285/PNG]
     use_firmware_retraction: 0
     use_relative_e_distances: 1
     use_volumetric_e: 0
@@ -164,6 +166,7 @@ variants:
       M221 S100 ; set flow to 100%
   variants:
   - condition: feeder.base_model == "MMU3"
+    id: 239530e6-20e5-422e-b8e5-c5f0082bbc43
     values:
       single_extruder_multi_material: 1
       start_gcode: |-
@@ -290,12 +293,13 @@ variants:
         M84 X Y E ; disable motors
         ; max_layer_z = [max_layer_z]
     variants:
-      - condition: tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.3
-        values:
-          machine_max_jerk_x: [8, 8]
-          machine_max_jerk_y: [8, 8]    
+    - condition: tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.3
+      id: 015ef87b-b753-4b3c-aa5e-c700177d7b4e
+      values:
+        machine_max_jerk_x: [8, 8]
+        machine_max_jerk_y: [8, 8]
   - condition: tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.3
+    id: 8064c920-14e4-4a26-a580-f3a7505d70b0
     values:
       machine_max_jerk_x: [8, 8]
       machine_max_jerk_y: [8, 8]
-  

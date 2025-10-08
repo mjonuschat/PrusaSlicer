@@ -3,6 +3,7 @@ id: '*common COREONE*'
 
 variants:
 - condition: printer.model == "COREONE"
+  id: 550a787d-54ae-43e5-8d74-e47ffe0b0f37
   values:
     retract_before_travel: 1.5
     retract_layer_change: 1
@@ -18,6 +19,7 @@ variants:
   variants:
 # 0.25    
   - condition: tool.nozzle_diameter == 0.25
+    id: 14a8d9c5-07a7-47a8-877a-941fe0fef3c0
     values:
       deretract_speed: 25
       max_layer_height: 0.15
@@ -29,6 +31,7 @@ variants:
       retract_speed: 45
 # 0.3    
   - condition: tool.nozzle_diameter == 0.3
+    id: b9f0950c-313f-465b-944b-36d31a7fa635
     values:
       deretract_speed: 25
       max_layer_height: 0.22
@@ -40,6 +43,7 @@ variants:
       retract_speed: 45
 # 0.4    
   - condition: tool.nozzle_diameter == 0.4
+    id: 789da7fd-5a61-49b5-b494-9b972d5bac5b
     values:
       deretract_speed: 25
       max_layer_height: 0.30
@@ -63,6 +67,7 @@ variants:
              # retract_speed: 45
 # 0.5    
   - condition: tool.nozzle_diameter == 0.5
+    id: 4cf73c50-e43b-42f3-bb47-e8853b4aa99e
     values:
       deretract_speed: 25
       max_layer_height: 0.32
@@ -75,6 +80,7 @@ variants:
       wipe: 1
 # 0.6    
   - condition: tool.nozzle_diameter == 0.6
+    id: b023ef1e-fceb-446d-b5eb-c5a6ab1c8c15
     values:
       deretract_speed: 25
       max_layer_height: 0.40
@@ -87,6 +93,7 @@ variants:
       wipe: 1
 # 0.8    
   - condition: tool.nozzle_diameter == 0.8
+    id: a42a6157-c311-4a2f-9b75-23532b0810b3
     values:
       deretract_speed: 15
       max_layer_height: 0.6
@@ -98,12 +105,14 @@ variants:
       retract_speed: 25
       wipe: 1
 ---
+id: ee0f184a-2eb3-4cd3-8a47-eacb0fb68f0b
 kind: tool_print
 inherits:
 - '*common COREONE*'
 # This is derived from print profile
 variants:
 - condition: printer.model == "COREONE"
+  id: bb7f8751-02d3-40d4-a1f9-b2800fa06bc3
   values:
     bottom_solid_layers: 4
     bridge_acceleration: 1500
@@ -155,7 +164,7 @@ variants:
     raft_contact_distance: 0.15
     raft_expansion: 1.5
     raft_first_layer_density: 80%
-    raft_first_layer_expansion: 3.5
+    raft_first_layer_expansion: 3
     seam_position: aligned
     small_perimeter_speed: 170
     solid_infill_acceleration: 6000
@@ -209,17 +218,21 @@ variants:
     wipe_tower_extra_flow: 250%
     travel_short_distance_acceleration: 250
   variants:
-  - name: '*non-MMU branch*'
+  - id: 60e0228f-b1d1-407f-acc5-9882f71ddbe6
+    name: '*non-MMU branch*'
     variants:
     - condition: tool.nozzle_high_flow
+      id: 7d176524-cf8e-46d1-ae18-ce848d7c01d4
       values:
         max_print_speed: 300
 # 0.4 high-flow nozzle
       variants:
       - condition: tool.nozzle_diameter == 0.4
 # 0.4HF/0.10mm layer
+        id: 7507525f-0d95-419f-9b85-6ce90430bdaa
         variants:
         - condition: print.layer_height == 0.10
+          id: 7a4a9fa3-dd55-40d8-a989-4f2d8efab91d
           values:
             bottom_solid_layers: 7
             top_solid_layers: 8
@@ -249,6 +262,7 @@ variants:
               bridge_speed: 40
 # 0.4HF/0.15mm layer
         - condition: print.layer_height == 0.15
+          id: 37ef9084-a753-4458-b595-1547310d1d6a
           values:
             bottom_solid_layers: 4
             top_solid_layers: 6
@@ -277,7 +291,8 @@ variants:
               infill_acceleration: 6000
               overhang_speed_2: 45
               overhang_speed_3: 90%
-          - name: 0.15mm BALANCED @COREONE 0.4HF
+          - id: ea350a30-dfda-4cd2-8f92-e2da81eacccc
+            name: 0.15mm BALANCED @COREONE 0.4HF
             values:
               perimeter_speed: 150
               external_perimeter_speed: 200
@@ -294,7 +309,8 @@ variants:
               overhang_speed_3: 60%
               over_bridge_speed: 0
               support_material_threshold: 35
-          - name: 0.15mm SPEED @COREONE 0.4HF
+          - id: f4bbdac6-4f1b-4808-8567-16dc58c0484b
+            name: 0.15mm SPEED @COREONE 0.4HF
             values:
               perimeter_speed: 250
               external_perimeter_speed: 200
@@ -312,6 +328,7 @@ variants:
               support_material_threshold: 35
 # 0.4HF/0.20mm layer
         - condition: print.layer_height == 0.20
+          id: 1f735415-322f-4e72-95cb-1677fe1c7b30
           values:
             bottom_solid_layers: 3
             top_solid_layers: 5
@@ -328,7 +345,8 @@ variants:
               support_material_contact_distance: 0.2
               support_material_interface_speed: 50
               bridge_speed: 50
-          - name: 0.20mm BALANCED @COREONE 0.4HF
+          - id: 9045d312-43d3-4685-93f7-8c08935d66b0
+            name: 0.20mm BALANCED @COREONE 0.4HF
             values:
               perimeter_speed: 150
               external_perimeter_speed: 200
@@ -345,7 +363,8 @@ variants:
               overhang_speed_3: 60%
               over_bridge_speed: 0
               support_material_threshold: 35
-          - name: 0.20mm SPEED @COREONE 0.4HF
+          - id: 29468e4a-8047-42c8-ba57-018dba6753f1
+            name: 0.20mm SPEED @COREONE 0.4HF
             values:
               perimeter_speed: 250
               external_perimeter_speed: 200
@@ -357,6 +376,7 @@ variants:
               support_material_threshold: 35
 # 0.4HF/0.25mm layer
         - condition: print.layer_height == 0.25
+          id: 4c2cc3a1-f5dc-41c3-a4bd-3ace35cd1310
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -368,7 +388,8 @@ variants:
             solid_infill_extrusion_width: 0.5
             support_material_extrusion_width: 0.4
           variants:
-          - name: 0.25mm STRUCTURAL @COREONE 0.4HF
+          - id: ef1bdfaa-dba5-4e0a-9c83-754e3cbbecab
+            name: 0.25mm STRUCTURAL @COREONE 0.4HF
             values:
               perimeter_speed: 70
               external_perimeter_speed: 50
@@ -385,7 +406,8 @@ variants:
               infill_acceleration: 6000
               overhang_speed_2: 45
               overhang_speed_3: 90%
-          - name: 0.25mm BALANCED @COREONE 0.4HF
+          - id: ffe82b53-fe62-48b7-9909-ab08baaca5a0
+            name: 0.25mm BALANCED @COREONE 0.4HF
             values:
               perimeter_speed: 150
               external_perimeter_speed: 200
@@ -402,7 +424,8 @@ variants:
               overhang_speed_3: 60%
               over_bridge_speed: 0
               support_material_threshold: 35
-          - name: 0.25mm SPEED @COREONE 0.4HF
+          - id: bf191d4f-7515-42ef-b023-fe3a77dae794
+            name: 0.25mm SPEED @COREONE 0.4HF
             values:
               perimeter_speed: 220
               external_perimeter_speed: 200
@@ -415,6 +438,7 @@ variants:
               support_material_threshold: 35
 # 0.4HF/0.28mm layer
         - condition: print.layer_height == 0.28
+          id: 5a85d573-8f07-4ba7-8329-de27832f8375
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -422,7 +446,8 @@ variants:
             raft_contact_distance: 0.25
             support_material_extrusion_width: 0.4
           variants:
-          - name: 0.28mm DRAFT @COREONE 0.4HF
+          - id: 853b8c4c-07a2-4732-9a18-512296d3c553
+            name: 0.28mm DRAFT @COREONE 0.4HF
             values:
               perimeter_speed: 200
               external_perimeter_speed: 180
@@ -443,6 +468,7 @@ variants:
               over_bridge_speed: 50%
 # 0.5 high-flow nozzle
       - condition: tool.nozzle_diameter == 0.5
+        id: f7234066-d7d4-4695-ac65-77cc4b6f75e9
         values:
           extrusion_width: 0.55
           first_layer_extrusion_width: 0.55
@@ -469,6 +495,7 @@ variants:
 # 0.5HF/0.10mm layer
         variants:
         - condition: print.layer_height == 0.10
+          id: 6f414c99-9912-44f6-bf1d-77c58a96e972
           values:
             bottom_solid_layers: 7
             top_solid_layers: 8
@@ -504,6 +531,7 @@ variants:
               overhang_speed_2: 30
 # 0.5HF/0.15mm layer
         - condition: print.layer_height == 0.15
+          id: e4ad9f27-5faf-492c-9fbe-6185deb17e75
           values:
             bottom_solid_layers: 4
             top_solid_layers: 6
@@ -530,6 +558,7 @@ variants:
               overhang_speed_2: 45
 # 0.5HF/0.20mm layer
         - condition: print.layer_height == 0.20
+          id: ef2c96b7-579e-4632-96b6-9280db9a1388
           values:
             bottom_solid_layers: 3
             top_solid_layers: 5
@@ -554,7 +583,8 @@ variants:
               solid_infill_acceleration: 4000
               infill_acceleration: 6000
               overhang_speed_2: 45
-          - name: 0.20mm SPEED @COREONE 0.5HF
+          - id: 8db4bbe0-6c91-4c3a-8ba2-bd7a58201b78
+            name: 0.20mm SPEED @COREONE 0.5HF
             values:
               perimeter_speed: 200
               small_perimeter_speed: 170
@@ -567,6 +597,7 @@ variants:
               overhang_speed_2: 50
 # 0.5HF/0.25mm layer
         - condition: print.layer_height == 0.25
+          id: db21688f-13f5-4303-9d08-f1d4a76e6d1c
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -591,7 +622,8 @@ variants:
               solid_infill_acceleration: 4000
               infill_acceleration: 6000
               overhang_speed_2: 45
-          - name: 0.25mm BALANCED @COREONE 0.5HF
+          - id: 527bec24-a10a-44ea-938b-f3fdbe32f3a5
+            name: 0.25mm BALANCED @COREONE 0.5HF
             values:
               perimeter_speed: 150
               small_perimeter_speed: 170
@@ -608,7 +640,8 @@ variants:
               external_perimeter_acceleration: 2500
               infill_acceleration: 5000
               solid_infill_acceleration: 5000
-          - name: 0.25mm SPEED @COREONE 0.5HF
+          - id: 2438ab12-d8a2-456c-95eb-7285becaf582
+            name: 0.25mm SPEED @COREONE 0.5HF
             values:
               perimeter_speed: 200
               small_perimeter_speed: 170
@@ -623,6 +656,7 @@ variants:
               overhang_speed_2: 50
 # 0.5HF/0.32mm layer
         - condition: print.layer_height == 0.32
+          id: 4ccfe340-86e6-4774-aad1-b9383bb01008
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -647,7 +681,8 @@ variants:
               infill_acceleration: 6000
               solid_infill_acceleration: 4000
               overhang_speed_2: 45
-          - name: 0.32mm BALANCED @COREONE 0.5HF
+          - id: 8921f15c-05be-4ac9-a835-ab5519c51096
+            name: 0.32mm BALANCED @COREONE 0.5HF
             values:
               perimeter_speed: 150
               small_perimeter_speed: 160
@@ -664,7 +699,8 @@ variants:
               external_perimeter_acceleration: 2500
               infill_acceleration: 5000
               solid_infill_acceleration: 5000
-          - name: 0.32mm SPEED @COREONE 0.5HF
+          - id: 398a576b-f385-42e7-90d0-ddd339b05685
+            name: 0.32mm SPEED @COREONE 0.5HF
             values:
               perimeter_speed: 160
               small_perimeter_speed: 160
@@ -681,6 +717,7 @@ variants:
               support_material_interface_speed: 50%
 # 0.6 high-flow nozzle
       - condition: tool.nozzle_diameter == 0.6
+        id: 0e3bb668-24ba-4781-900a-e863bebdf0ff
         values:
           extrusion_width: 0.68
           first_layer_extrusion_width: 0.68
@@ -715,6 +752,7 @@ variants:
         variants:
 # 0.6HF/0.15mm layer
         - condition: print.layer_height == 0.15
+          id: d73883d4-776f-439f-9fd2-a7ba2ef12038
           values:
             bottom_solid_layers: 4
             top_solid_layers: 6
@@ -747,6 +785,7 @@ variants:
               overhang_speed_3: 70%
 # 0.6HF/0.20mm layer
         - condition: print.layer_height == 0.20
+          id: 3a8ff4c6-c29c-4bbb-9799-2aa30223c8e1
           values:
             bottom_solid_layers: 3
             top_solid_layers: 5
@@ -778,7 +817,8 @@ variants:
               infill_acceleration: 6000
               overhang_speed_2: 30
               overhang_speed_3: 80%
-          - name: 0.20mm BALANCED @COREONE 0.6HF
+          - id: 8c88e809-0c82-454b-8e48-021da9a611b9
+            name: 0.20mm BALANCED @COREONE 0.6HF
             values:
               perimeter_speed: 150
               external_perimeter_speed: 200
@@ -791,7 +831,8 @@ variants:
               support_material_interface_speed: 50%
               overhang_speed_2: 30
               overhang_speed_3: 70%
-          - name: 0.20mm SPEED @COREONE 0.6HF
+          - id: 249de4c4-d052-480b-aa9a-fe7e468726ca
+            name: 0.20mm SPEED @COREONE 0.6HF
             values:
               perimeter_speed: 200
               external_perimeter_speed: 200
@@ -806,6 +847,7 @@ variants:
               overhang_speed_3: 70%
 # 0.6HF/0.25mm layer
         - condition: print.layer_height == 0.25
+          id: fc5fdbc5-ca45-4197-bab9-52dcf4ed55fb
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -832,7 +874,8 @@ variants:
               solid_infill_acceleration: 4000
               overhang_speed_2: 30
               overhang_speed_3: 80%
-          - name: 0.25mm BALANCED @COREONE 0.6HF
+          - id: a38e97e4-b3a4-4bc9-bbbb-dd4920b16a5c
+            name: 0.25mm BALANCED @COREONE 0.6HF
             values:
               perimeter_speed: 150
               external_perimeter_speed: 180
@@ -845,7 +888,8 @@ variants:
               support_material_interface_speed: 50%
               overhang_speed_2: 30
               overhang_speed_3: 70%
-          - name: 0.25mm SPEED @COREONE 0.6HF
+          - id: f3cf5a9c-1be5-48ec-a5fb-4ec475b273fe
+            name: 0.25mm SPEED @COREONE 0.6HF
             values:
               perimeter_speed: 180
               external_perimeter_speed: 180
@@ -860,6 +904,7 @@ variants:
               overhang_speed_3: 70%
 # 0.6HF/0.32mm layer
         - condition: print.layer_height == 0.32
+          id: 99f3960f-0184-4a63-9539-d1c68a00a517
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -888,7 +933,8 @@ variants:
               overhang_speed_3: 50
               support_material_speed: 110
               support_material_interface_speed: 50%
-          - name: 0.32mm BALANCED @COREONE 0.6HF
+          - id: ac1e1991-e8ac-44be-be53-006dda2fac5c
+            name: 0.32mm BALANCED @COREONE 0.6HF
             values:
               perimeter_speed: 145
               external_perimeter_speed: 145
@@ -901,7 +947,8 @@ variants:
               support_material_interface_speed: 50%
               overhang_speed_2: 35
               overhang_speed_3: 70%
-          - name: 0.32mm SPEED @COREONE 0.6HF
+          - id: 9a67faa5-8fdb-416e-9fad-3971c6a76208
+            name: 0.32mm SPEED @COREONE 0.6HF
             values:
               perimeter_speed: 145
               external_perimeter_speed: 145
@@ -917,6 +964,7 @@ variants:
               overhang_speed_3: 70%
 # 0.6HF/0.40mm layer
         - condition: print.layer_height == 0.4
+          id: 612fffb5-35aa-432b-818f-dcc7be793a48
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -928,7 +976,8 @@ variants:
             bridge_acceleration: 1500
             top_solid_infill_speed: 60
           variants:
-          - name: 0.40mm STRUCTURAL @COREONE 0.6HF
+          - id: 547b376e-ae86-4dff-a786-67a171099030
+            name: 0.40mm STRUCTURAL @COREONE 0.6HF
             values:
               perimeter_speed: 70
               external_perimeter_speed: 50
@@ -947,7 +996,8 @@ variants:
               bridge_acceleration: 1500
               over_bridge_speed: 70%
               overhang_speed_2: 35
-          - name: 0.40mm SPEED @COREONE 0.6HF
+          - id: 6dbd8e46-7d65-4bef-917b-5387728daeb5
+            name: 0.40mm SPEED @COREONE 0.6HF
             values:
               perimeter_speed: 120
               external_perimeter_speed: 115
@@ -965,6 +1015,7 @@ variants:
               overhang_speed_3: 70%
 # 0.8 high-flow nozzle
       - condition: tool.nozzle_diameter == 0.8
+        id: e4e39133-50d3-4b64-b5ef-2f8ad0529479
         values:
           fill_pattern: rectilinear
           thick_bridges: 1
@@ -1001,12 +1052,14 @@ variants:
         variants:
 # 0.8HF/0.30mm layer
         - condition: print.layer_height == 0.30
+          id: d0388543-c706-4bfb-b7bb-a7dce9cc2b5e
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
             bridge_acceleration: 1000
           variants:
-          - name: 0.30mm STRUCTURAL @COREONE 0.8HF
+          - id: bd5fab8b-94d6-424b-a1e9-360dc13f782f
+            name: 0.30mm STRUCTURAL @COREONE 0.8HF
             values:
               perimeter_speed: 70
               external_perimeter_speed: 50
@@ -1023,7 +1076,8 @@ variants:
               solid_infill_acceleration: 4000
               top_infill_extrusion_width: 0.7
               overhang_speed_2: 40
-          - name: 0.30mm SPEED @COREONE 0.8HF
+          - id: 50743aaf-db6e-4050-9a52-c78a6b41f931
+            name: 0.30mm SPEED @COREONE 0.8HF
             values:
               perimeter_speed: 125
               external_perimeter_speed: 125
@@ -1042,12 +1096,14 @@ variants:
               over_bridge_speed: 60%
 # 0.8HF/0.40mm layer
         - condition: print.layer_height == 0.40
+          id: b4d25039-9cbb-47b1-974d-84b6edeb74d5
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
             bridge_acceleration: 1000
           variants:
-          - name: 0.40mm STRUCTURAL @COREONE 0.8HF
+          - id: 611ce347-d4ef-4881-88fc-134581984c93
+            name: 0.40mm STRUCTURAL @COREONE 0.8HF
             values:
               perimeter_speed: 70
               external_perimeter_speed: 50
@@ -1063,7 +1119,8 @@ variants:
               infill_acceleration: 6000
               top_infill_extrusion_width: 0.75
               overhang_speed_2: 40
-          - name: 0.40mm SPEED @COREONE 0.8HF
+          - id: c6328606-0871-4c2b-aea8-47172207ab23
+            name: 0.40mm SPEED @COREONE 0.8HF
             values:
               perimeter_speed: 100
               external_perimeter_speed: 85
@@ -1081,6 +1138,7 @@ variants:
               over_bridge_speed: 70%
 # 0.8HF/0.55mm layer
         - condition: print.layer_height == 0.55
+          id: 131c1fa2-013b-4a53-b5ca-1b57dd40a81e
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -1089,7 +1147,8 @@ variants:
             perimeter_extrusion_width: 1
             external_perimeter_extrusion_width: 1
           variants:
-          - name: 0.55mm STRUCTURAL @COREONE 0.8HF
+          - id: 28bb2ac7-8165-43a5-a7a1-103797ea14a2
+            name: 0.55mm STRUCTURAL @COREONE 0.8HF
             values:
               perimeter_speed: 70
               external_perimeter_speed: 50
@@ -1104,7 +1163,8 @@ variants:
               infill_acceleration: 6000
               solid_infill_acceleration: 4000
               overhang_speed_2: 40
-          - name: 0.55mm SPEED @COREONE 0.8HF
+          - id: ee063b63-b7bc-4a2f-a11f-592889138d04
+            name: 0.55mm SPEED @COREONE 0.8HF
             values:
               perimeter_speed: 75
               external_perimeter_speed: 70
@@ -1120,6 +1180,7 @@ variants:
               overhang_speed_2: 45
 # 0.25 nozzle
     - condition: tool.nozzle_diameter == 0.25
+      id: a0a76e72-8740-4977-b008-d2dc9d9ebd09
       values:
         extrusion_width: 0.27
         first_layer_extrusion_width: 0.32
@@ -1161,11 +1222,13 @@ variants:
 # 0.25n/0.05mm layer
       variants:
       - condition: print.layer_height == 0.05
+        id: 22103ea6-433a-40f3-be3a-02d990fdc978
         values:
           bottom_solid_layers: 10
           top_solid_layers: 13
         variants:
-        - name: 0.05mm DETAIL @COREONE 0.25
+        - id: b1a6c3cc-2675-456c-a95c-e1bfbd593dd0
+          name: 0.05mm DETAIL @COREONE 0.25
           values:
             top_solid_infill_speed: 60
             support_material_contact_distance: 0.1
@@ -1191,11 +1254,13 @@ variants:
             overhang_speed_2: 30
 # 0.25n/0.07mm layer
       - condition: print.layer_height == 0.07
+        id: 569f6051-1bea-48a6-b24e-47ea9715c118
         values:
           bottom_solid_layers: 9
           top_solid_layers: 11
         variants:
-        - name: 0.07mm DETAIL @COREONE 0.25
+        - id: 71309841-657b-476b-8eb8-71293e2e673f
+          name: 0.07mm DETAIL @COREONE 0.25
           values:
             top_solid_infill_speed: 60
             support_material_contact_distance: 0.1
@@ -1221,6 +1286,7 @@ variants:
             overhang_speed_2: 30
 # 0.25n/0.12mm layer
       - condition: print.layer_height == 0.12
+        id: 570b4d7e-8c30-4bff-8599-abbaa4f154d3
         values:
           bottom_solid_layers: 6
           top_solid_layers: 9
@@ -1230,14 +1296,16 @@ variants:
           solid_infill_acceleration: 2500
           overhang_speed_2: 30
         variants:
-        - name: 0.12mm STRUCTURAL @COREONE 0.25
+        - id: e0167935-602d-4e52-bb99-ac75656cf2a1
+          name: 0.12mm STRUCTURAL @COREONE 0.25
           values:
             perimeter_speed: 70
             external_perimeter_speed: 45
             small_perimeter_speed: 45
             external_perimeter_acceleration: 1000
             perimeter_acceleration: 1500
-        - name: 0.12mm SPEED @COREONE 0.25
+        - id: bef25062-0b7a-4fc7-88eb-57d17444719b
+          name: 0.12mm SPEED @COREONE 0.25
           values:
             perimeter_speed: 130
             external_perimeter_speed: 130
@@ -1247,6 +1315,7 @@ variants:
             travel_acceleration: 6000
 # 0.25n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: d7d4e618-c58c-46c3-8c58-45ad2485811e
         values:
           bottom_solid_layers: 6
           top_solid_layers: 7
@@ -1256,14 +1325,16 @@ variants:
           solid_infill_acceleration: 2500
           overhang_speed_2: 30
         variants:
-        - name: 0.15mm STRUCTURAL @COREONE 0.25
+        - id: 02c1fac7-0bd1-4453-823e-c1fa58c8e45e
+          name: 0.15mm STRUCTURAL @COREONE 0.25
           values:
             perimeter_speed: 70
             external_perimeter_speed: 45
             small_perimeter_speed: 45
             external_perimeter_acceleration: 1000
             perimeter_acceleration: 1500
-        - name: 0.15mm SPEED @COREONE 0.25
+        - id: 4e2f6703-189b-4733-96bc-af1c854aebbd
+          name: 0.15mm SPEED @COREONE 0.25
           values:
             perimeter_speed: 130
             external_perimeter_speed: 130
@@ -1273,6 +1344,7 @@ variants:
             travel_acceleration: 6000
 # 0.3 nozzle
     - condition: tool.nozzle_diameter == 0.3
+      id: 6577e750-c0ac-4749-aed8-9a68a8d17ef0
       values:
         extrusion_width: 0.34
         solid_infill_extrusion_width: 0.34
@@ -1307,13 +1379,15 @@ variants:
       variants:
 # 0.3n/0.12mm layer
       - condition: print.layer_height == 0.12
+        id: 34df66d2-3ab5-47bc-b783-1ef461e9e150
         values:
           bottom_solid_layers: 6
           top_solid_layers: 7
           support_material_contact_distance: 0.12
           raft_contact_distance: 0.12
         variants:
-        - name: 0.12mm STRUCTURAL @COREONE 0.3
+        - id: 096ae4d3-b9a0-4342-a8cd-d5bebfd9e3e1
+          name: 0.12mm STRUCTURAL @COREONE 0.3
           values:
             perimeter_speed: 70
             small_perimeter_speed: 45
@@ -1329,6 +1403,7 @@ variants:
             bridge_acceleration: 1000
 # 0.3n/0.16mm layer              
       - condition: print.layer_height == 0.16
+        id: 20b413c1-d495-494a-a233-8a29f7740dbf
         values:
           bottom_solid_layers: 5
           top_solid_layers: 6
@@ -1340,7 +1415,8 @@ variants:
           bridge_acceleration: 1000
           top_solid_infill_acceleration: 1500
         variants:
-        - name: 0.16mm STRUCTURAL @COREONE 0.3
+        - id: 18ee953c-21ea-4c15-944e-90138a7ce938
+          name: 0.16mm STRUCTURAL @COREONE 0.3
           values:
             perimeter_speed: 70
             small_perimeter_speed: 50
@@ -1350,7 +1426,8 @@ variants:
             external_perimeter_acceleration: 1500
             perimeter_acceleration: 2000
             solid_infill_acceleration: 2500
-        - name: 0.16mm SPEED @COREONE 0.3
+        - id: 14f070b0-9f7c-4427-97e8-20a5117b17d4
+          name: 0.16mm SPEED @COREONE 0.3
           values:
             perimeter_speed: 140
             small_perimeter_speed: 130
@@ -1363,6 +1440,7 @@ variants:
             solid_infill_acceleration: 3000
 # 0.3n/0.20mm layer
       - condition: print.layer_height == 0.20
+        id: 9b3b1f3c-780c-43ea-a5b8-ffd1809b94f6
         values:
           bottom_solid_layers: 3
           top_solid_layers: 5
@@ -1374,7 +1452,8 @@ variants:
           infill_acceleration: 6000
           bridge_acceleration: 1000
         variants:
-        - name: 0.20mm STRUCTURAL @COREONE 0.3
+        - id: 775e1b1d-ce9c-4283-a739-4ac5bd3d1f57
+          name: 0.20mm STRUCTURAL @COREONE 0.3
           values:
             bottom_solid_layers: 4
             perimeter_speed: 70
@@ -1385,7 +1464,8 @@ variants:
             external_perimeter_acceleration: 1500
             perimeter_acceleration: 2000
             solid_infill_acceleration: 2500
-        - name: 0.20mm SPEED @COREONE 0.3
+        - id: 9994bcd6-37cc-45c1-9e6f-0f078176a67d
+          name: 0.20mm SPEED @COREONE 0.3
           values:
             perimeter_speed: 140
             small_perimeter_speed: 130
@@ -1399,15 +1479,18 @@ variants:
 # 0.4 nozzle
     - condition: tool.nozzle_diameter == 0.4
 # 0.4n/0.10mm layer
+      id: bb99827e-6ef5-4365-a604-188ea0cbb2cb
       variants:
       - condition: print.layer_height == 0.10
+        id: 84694591-de4b-4661-a5da-3ec66b04d28f
         values:
           bottom_solid_layers: 7
           top_solid_layers: 8
           support_material_contact_distance: 0.17
           raft_contact_distance: 0.15
         variants:
-        - name: 0.10mm FAST DETAIL @COREONE 0.4
+        - id: 25ff4061-f35e-4690-89b1-142ee16369d4
+          name: 0.10mm FAST DETAIL @COREONE 0.4
           values:
             perimeter_speed: 140
             external_perimeter_speed: 140
@@ -1428,6 +1511,7 @@ variants:
             bridge_speed: 40
 # 0.4n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: c6996132-d77c-4035-a0eb-4b343e49d13d
         values:
           bottom_solid_layers: 4
           top_solid_layers: 6
@@ -1437,10 +1521,12 @@ variants:
           support_material_speed: 120
           support_material_interface_speed: 50
         variants:
-        - name: 0.15mm STRUCTURAL @COREONE 0.4
+        - id: ae1f243c-4dfc-431c-be81-c0e1875460e6
+          name: 0.15mm STRUCTURAL @COREONE 0.4
           unconditional_inherits:
           - 0.15mm STRUCTURAL @COREONE 0.4HF
-        - name: 0.15mm SPEED @COREONE 0.4
+        - id: 422a3127-a727-4052-9a0c-7d221a8f788b
+          name: 0.15mm SPEED @COREONE 0.4
           values:
             perimeter_speed: 170
             external_perimeter_speed: 170
@@ -1451,21 +1537,25 @@ variants:
             support_material_threshold: 35
 # 0.4n/0.20mm layer
       - condition: print.layer_height == 0.20
+        id: 235e1047-fcab-4513-8fe1-1b57cf1d1cf0
         values:
           bottom_solid_layers: 3
           top_solid_layers: 5
           support_material_contact_distance: 0.2
           raft_contact_distance: 0.2
         variants:
-        - name: 0.20mm STRUCTURAL @COREONE 0.4
+        - id: e9d4fec6-f23d-4d42-84d5-ff6758bedee7
+          name: 0.20mm STRUCTURAL @COREONE 0.4
           unconditional_inherits:
           - 0.20mm STRUCTURAL @COREONE 0.4HF
-        - name: 0.20mm SPEED @COREONE 0.4
+        - id: 6ba7ad1c-f897-400d-b7ab-77ad4520c4ed
+          name: 0.20mm SPEED @COREONE 0.4
           values:
             overhang_speed_2: 50
             support_material_threshold: 35
 # 0.5 nozzle
     - condition: tool.nozzle_diameter == 0.5
+      id: d717e588-87ab-40c0-8029-22d6321822b5
       values:
         extrusion_width: 0.55
         first_layer_extrusion_width: 0.55
@@ -1492,28 +1582,33 @@ variants:
 # 0.5n/0.10mm layer
       variants:
       - condition: print.layer_height == 0.10
+        id: c58cb663-b30d-444c-a60c-f0d6df5d7169
         values:
           bottom_solid_layers: 7
           top_solid_layers: 8
           support_material_contact_distance: 0.17
           raft_contact_distance: 0.15
         variants:
-        - name: 0.10mm STRUCTURAL @COREONE 0.5
+        - id: f2d7cc41-f0ab-4ec9-a3af-3cd720246858
+          name: 0.10mm STRUCTURAL @COREONE 0.5
           unconditional_inherits:
           - 0.10mm STRUCTURAL @COREONE 0.5HF
 # 0.5n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: a32e3d53-88ea-4e5a-b5f7-e7bcf6b0c175
         values:
           bottom_solid_layers: 4
           top_solid_layers: 6
           support_material_contact_distance: 0.2
           raft_contact_distance: 0.17
         variants:
-        - name: 0.15mm STRUCTURAL @COREONE 0.5
+        - id: f221ce81-34b9-438a-9bf3-cefabfc7b666
+          name: 0.15mm STRUCTURAL @COREONE 0.5
           unconditional_inherits:
           - 0.15mm STRUCTURAL @COREONE 0.5HF
 # 0.5n/0.20mm layer
       - condition: print.layer_height == 0.20
+        id: dab1cdb4-172d-4823-b1e4-6d0ce66ca6af
         values:
           bottom_solid_layers: 3
           top_solid_layers: 5
@@ -1523,10 +1618,12 @@ variants:
           gap_fill_speed: 70
           bridge_acceleration: 1000
         variants:
-        - name: 0.20mm STRUCTURAL @COREONE 0.5
+        - id: d616a003-7344-46cf-b9de-447f50b7303b
+          name: 0.20mm STRUCTURAL @COREONE 0.5
           unconditional_inherits:
           - 0.20mm STRUCTURAL @COREONE 0.5HF
-        - name: 0.20mm SPEED @COREONE 0.5
+        - id: 706683b7-f084-468f-9b96-4aee74b09aec
+          name: 0.20mm SPEED @COREONE 0.5
           values:
             perimeter_speed: 140
             small_perimeter_speed: 140
@@ -1538,6 +1635,7 @@ variants:
             overhang_speed_2: 50
 # 0.5n/0.25mm layer
       - condition: print.layer_height == 0.25
+        id: 624ddb19-033e-4247-a8e1-f77f72debf11
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
@@ -1547,10 +1645,12 @@ variants:
           bridge_acceleration: 1000
           default_acceleration: 3000
         variants:
-        - name: 0.25mm STRUCTURAL @COREONE 0.5
+        - id: 81aea59b-a0d6-421d-a44d-62408f2b8676
+          name: 0.25mm STRUCTURAL @COREONE 0.5
           unconditional_inherits:
           - 0.25mm STRUCTURAL @COREONE 0.5HF
-        - name: 0.25mm SPEED @COREONE 0.5
+        - id: 08734323-0e7b-4876-881e-d3f77f04df52
+          name: 0.25mm SPEED @COREONE 0.5
           values:
             perimeter_speed: 140
             small_perimeter_speed: 140
@@ -1563,9 +1663,10 @@ variants:
             support_material_speed: 120
             overhang_speed_2: 50
             infill_acceleration: 7000
-            
+
 # 0.6 nozzle
     - condition: tool.nozzle_diameter == 0.6
+      id: 4618d51a-2cc1-4c28-a12a-6f7eeba188cd
       values:
         extrusion_width: 0.68
         first_layer_extrusion_width: 0.68
@@ -1600,16 +1701,19 @@ variants:
       variants:
 # 0.6n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: 87a497b0-3e59-4073-aed2-edcad333c8dc
         values:
           bottom_solid_layers: 4
           top_solid_layers: 6
           support_material_contact_distance: 0.22
         variants:
-        - name: 0.15mm STRUCTURAL @COREONE 0.6
+        - id: 9a972c99-8a79-40f3-826f-25cab16e310a
+          name: 0.15mm STRUCTURAL @COREONE 0.6
           unconditional_inherits:
           - 0.15mm STRUCTURAL @COREONE 0.6HF
 # 0.6n/0.20mm layer
       - condition: print.layer_height == 0.20
+        id: 5b296dc6-edcb-44c6-a551-c76b926bee05
         values:
           bottom_solid_layers: 3
           top_solid_layers: 5
@@ -1625,13 +1729,15 @@ variants:
           top_infill_extrusion_width: 0.5
           top_solid_infill_acceleration: 2000
         variants:
-        - name: 0.20mm STRUCTURAL @COREONE 0.6
+        - id: 026946e8-c10e-4e9d-89c1-948b2baa19d9
+          name: 0.20mm STRUCTURAL @COREONE 0.6
           unconditional_inherits:
           - 0.20mm STRUCTURAL @COREONE 0.6HF
           values:
             infill_acceleration: 6000
             overhang_speed_2: 30
-        - name: 0.20mm SPEED @COREONE 0.6
+        - id: f39cf79d-be44-495f-b973-3b9d7c23487e
+          name: 0.20mm SPEED @COREONE 0.6
           values:
             perimeter_speed: 130
             external_perimeter_speed: 130
@@ -1644,6 +1750,7 @@ variants:
             overhang_speed_3: 70%
 # 0.6n/0.25mm layer
       - condition: print.layer_height == 0.25
+        id: a131c616-7f19-4ceb-bde1-8a8ec229e650
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
@@ -1653,10 +1760,12 @@ variants:
           top_solid_infill_speed: 60
           support_material_speed: 80
         variants:
-        - name: 0.25mm STRUCTURAL @COREONE 0.6
+        - id: a3cbd7aa-c8b8-454c-bfb9-260201de3d90
+          name: 0.25mm STRUCTURAL @COREONE 0.6
           unconditional_inherits:
           - 0.25mm STRUCTURAL @COREONE 0.6HF
-        - name: 0.25mm SPEED @COREONE 0.6
+        - id: 00e636da-5786-4086-90d4-77bf2930ad8e
+          name: 0.25mm SPEED @COREONE 0.6
           values:
             perimeter_speed: 95
             external_perimeter_speed: 75
@@ -1671,6 +1780,7 @@ variants:
             overhang_speed_3: 70%
 # 0.6n/0.32mm layer
       - condition: print.layer_height == 0.32
+        id: 2c0741bd-3aac-436b-b06f-9ddbb70a315d
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
@@ -1682,7 +1792,8 @@ variants:
           bridge_acceleration: 1500
           top_solid_infill_speed: 60
         variants:
-        - name: 0.32mm STRUCTURAL @COREONE 0.6
+        - id: 130ce81e-6b7a-4954-9af6-a22c07bdaec8
+          name: 0.32mm STRUCTURAL @COREONE 0.6
           unconditional_inherits:
           - 0.32mm STRUCTURAL @COREONE 0.6HF
           values:
@@ -1693,7 +1804,8 @@ variants:
             overhang_speed_3: 80%
             perimeter_speed: 70
             support_material_speed: 70
-        - name: 0.32mm SPEED @COREONE 0.6
+        - id: 8dc2504a-2bab-4a42-ba81-78416adb1860
+          name: 0.32mm SPEED @COREONE 0.6
           values:
             perimeter_speed: 70
             external_perimeter_speed: 70
@@ -1706,6 +1818,7 @@ variants:
             overhang_speed_3: 70%
 # 0.8 nozzle
     - condition: tool.nozzle_diameter == 0.8
+      id: b83316cf-3991-412b-bf5a-4c1a3344f8fd
       values:
         fill_pattern: rectilinear
         thick_bridges: 1
@@ -1742,11 +1855,13 @@ variants:
       variants:
 # 0.8n/0.30mm layer
       - condition: print.layer_height == 0.30
+        id: 44eedfc5-63a6-4263-b28b-97610c057fa8
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
         variants:
-        - name: 0.30mm DETAIL @COREONE 0.8
+        - id: d1f50279-93c4-4860-8f71-7601f5ed191c
+          name: 0.30mm DETAIL @COREONE 0.8
           values:
             perimeter_speed: 70
             external_perimeter_speed: 45
@@ -1767,11 +1882,13 @@ variants:
             overhang_speed_2: 35
 # 0.8n/0.40mm layer
       - condition: print.layer_height == 0.40
+        id: f2c86ec3-a24a-458a-8472-6dcde4e796e9
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
         variants:
-        - name: 0.40mm QUALITY @COREONE 0.8
+        - id: be86860d-c569-4e80-9057-d20e290533e9
+          name: 0.40mm QUALITY @COREONE 0.8
           values:
             perimeter_speed: 50
             external_perimeter_speed: 45
@@ -1792,11 +1909,13 @@ variants:
             overhang_speed_2: 35
 # 0.8n/0.55mm layer
       - condition: print.layer_height == 0.55
+        id: 69b0bb5c-a23e-4e41-a265-2599b66d417d
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
         variants:
-        - name: 0.55mm DRAFT @COREONE 0.8
+        - id: 716c2c39-a320-48c8-b8cf-173168db2d75
+          name: 0.55mm DRAFT @COREONE 0.8
           values:
             perimeter_speed: 45
             external_perimeter_speed: 35
@@ -1816,14 +1935,18 @@ variants:
             perimeter_extrusion_width: 1
             external_perimeter_extrusion_width: 1
 # MMU branch
-  - name: '*MMU branch*'
+  - id: 5ea1173a-ed32-44ec-8222-d9d91cc0e985
+    name: '*MMU branch*'
     variants:
-    - condition: feeder.base_model == "MMU"
+    - condition: feeder.base_model=~/.*MMU.*/
+      id: 249eccc5-f72b-4093-8b10-60224d0b39e7
       variants:
       - condition: tool.nozzle_diameter == 0.4
+        id: aba33f46-fe54-439d-9873-3ac071d9367e
         variants:
 # 0.4n/0.20mm/MMU SOLUBLE
         - condition: print.layer_height == 0.20
+          id: 58e13737-95e0-4282-820a-12a38391220b
           values:
             bottom_solid_layers: 3
             top_solid_layers: 5
@@ -1866,8 +1989,10 @@ variants:
                     #support_material_speed: 120
                     #support_material_interface_speed: 50
           variants:
-          - name: 0.20mm SOLUBLE FULL @COREONE 0.4
-          - name: 0.20mm SOLUBLE INTERFACE @COREONE 0.4
+          - id: 5c53092f-86a1-4ad5-80e2-923fb24dddc4
+            name: 0.20mm SOLUBLE FULL @COREONE 0.4
+          - id: 9dfad95a-7fce-48e3-838f-1f37e1ec4e45
+            name: 0.20mm SOLUBLE INTERFACE @COREONE 0.4
             values:
               support_material_extruder: 0
               support_material_interface_layers: 3

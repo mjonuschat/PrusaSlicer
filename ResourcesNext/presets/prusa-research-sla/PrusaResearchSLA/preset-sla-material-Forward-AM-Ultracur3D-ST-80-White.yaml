@@ -1,0 +1,36 @@
+id: Forward AM Ultracur3D ST 80 White
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Forward AM
+  material_type: Engineering
+  material_colour: '#FFFFFF'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 0515c845-c54a-4e43-81f6-71ffbad24bf2
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 7b6c41ac-1b65-4dca-9354-9f46b44a0f09
+    name: Forward AM Ultracur3D ST 80 White @SL1S 0.025
+    values:
+      exposure_time: 4.5
+      initial_exposure_time: 25
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 11b6cf0f-9706-41ea-8c64-2e83834d0fa0
+    name: Forward AM Ultracur3D ST 80 White @SL1S 0.05
+    values:
+      exposure_time: 5.9
+      initial_exposure_time: 25
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: c5739869-17ee-432d-b784-64f84cdf8fdc
+    name: Forward AM Ultracur3D ST 80 White @SL1S 0.1
+    values:
+      exposure_time: 9
+      initial_exposure_time: 25

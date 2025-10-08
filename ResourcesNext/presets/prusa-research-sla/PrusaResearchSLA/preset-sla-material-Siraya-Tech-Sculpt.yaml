@@ -1,0 +1,42 @@
+id: Siraya Tech Sculpt
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Siraya Tech
+  material_type: Tough
+  material_colour: '#C0C0C0'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: ae7c218a-b88f-48a8-9049-a2d10dc6ecd9
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: dc8d9cda-aa51-422f-b287-cad410b34c96
+    name: Siraya Tech Sculpt @SL1 0.025
+    values:
+      exposure_time: 7
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: fe9df80d-c788-404e-87a7-c289763d2a18
+    name: Siraya Tech Sculpt @SL1 0.05
+    values:
+      exposure_time: 8
+      initial_exposure_time: 35
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 4d1406c2-d92f-4272-92a4-91d436012d2a
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 09a0dc0c-922d-4a78-8c63-3d658c4d5fc5
+    name: Siraya Tech Sculpt @SL1S 0.05
+    values:
+      exposure_time: 2.7
+      initial_exposure_time: 28

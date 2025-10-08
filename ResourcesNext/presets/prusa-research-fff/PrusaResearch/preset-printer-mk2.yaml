@@ -1,13 +1,15 @@
+id: b95ea7b7-a6c1-4bf5-87b9-641b15aed070
 kind: printer
 variants:
 - condition: printer.base_model=~/(MK2|MK2.5)/
+  id: 90af905f-078a-4cbd-8b18-aaf2431b0eac
   values:
     bed_shape:
     - '0x0'
     - 250x0
     - 250x210
     - '0x210'
-    before_layer_gcode: |+
+    before_layer_gcode: |
       ;BEFORE_LAYER_CHANGE
       G92 E0.0
       ;[layer_z]
@@ -89,6 +91,7 @@ variants:
     multimaterial_purging: '140'
   variants:
   - condition: printer.model == "MK2.5"
+    id: 717c48b3-a0dc-4bfa-adad-046ca853820d
     name: Original Prusa i3 MK2.5
 ## MK2.5 MMU2 (non-S)
     # variants:
@@ -169,10 +172,12 @@ variants:
           # ; max_layer_z = [max_layer_z]
     # - values: {}
   - condition: printer.model == "MK2.5S"
+    id: 82c95731-9b23-43d9-a838-7b681f0c7d62
     name: Original Prusa i3 MK2.5S
     variants:
 ## MK2.5S MMU2S/MMU3
     - condition: feeder.base_model=~/(MMU2|MMU3)/
+      id: 1dc8aad6-5548-4bd8-b2a5-43fda96186c8
       values:
         single_extruder_multi_material: true
         start_gcode: |-
@@ -247,9 +252,11 @@ variants:
           M900 K0 ; reset LA
           M84 ; disable motors
           ; max_layer_z = [max_layer_z]
-    - values: {}
+    - id: d81c1b08-a45a-4a4c-8d9b-5ab581130f1d
+      values: {}
 ## MK2S MMU1
   - condition: printer.model == "MK2S"
+    id: 425bd91c-c8ae-4386-983e-75d5a613e137
     name: Original Prusa i3 MK2S
     values:
       start_gcode: |-
@@ -275,6 +282,7 @@ variants:
       thumbnails: ''
     variants:
     - condition: feeder.base_model == "MMU1"
+      id: 3c84637a-b5ac-4623-96c4-c301dd90f377
       values:
         single_extruder_multi_material: true
         high_current_on_filament_swap: true

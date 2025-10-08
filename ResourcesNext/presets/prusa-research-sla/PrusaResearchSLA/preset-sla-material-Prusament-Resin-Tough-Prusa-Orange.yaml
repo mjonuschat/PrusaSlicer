@@ -1,0 +1,63 @@
+id: Prusament Resin Tough Prusa Orange
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Tough
+  material_colour: '#FF8040'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 19612f16-b8df-4d28-bb28-689d04f34dbb
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 23e275ef-d4b6-4aea-8c62-c2398bbf39a0
+    name: Prusament Resin Tough Prusa Orange @SL1 0.025
+    values:
+      exposure_time: 5
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: c3dabc1a-839b-4cdf-b9b4-e65e3c3b2912
+    name: Prusament Resin Tough Prusa Orange @SL1 0.05
+    values:
+      exposure_time: 6
+      initial_exposure_time: 35
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: ad660dfc-29b8-485a-8dae-eb9db3906e87
+    name: Prusament Resin Tough Prusa Orange @SL1 0.1
+    values:
+      exposure_time: 13
+      initial_exposure_time: 45
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 135f5f23-a844-46bc-8b7f-78cdacbc35c3
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 7acd93a6-1005-41fb-962f-1ec1e1404d60
+    name: Prusament Resin Tough Prusa Orange @SL1S 0.025
+    values:
+      exposure_time: 1.8
+      initial_exposure_time: 25
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 7cf03e0d-5bc9-4984-af5c-db77cc304757
+    name: Prusament Resin Tough Prusa Orange @SL1S 0.05
+    values:
+      exposure_time: 2
+      initial_exposure_time: 25
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 22c46eb1-91c1-4ff6-acb6-b25714afbc84
+    name: Prusament Resin Tough Prusa Orange @SL1S 0.1
+    values:
+      exposure_time: 2.6
+      initial_exposure_time: 25

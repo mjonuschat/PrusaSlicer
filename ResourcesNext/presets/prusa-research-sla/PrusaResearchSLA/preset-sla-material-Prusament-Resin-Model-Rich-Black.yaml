@@ -1,0 +1,45 @@
+id: Prusament Resin Model Rich Black
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Model
+  material_colour: '#595959'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: bad2b427-9685-4915-a8f0-244f81188f48
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  values:
+    area_fill: 20
+    delay_before_exposure: [1, 10]
+    tilt_down_initial_speed: layer1750,layer1750
+    tilt_down_offset_steps: [0, 1200]
+    tilt_down_finish_speed: move8000,move5120
+    tilt_up_initial_speed: move8000,move8000
+    tilt_up_offset_steps: [600, 600]
+    tilt_up_finish_speed: layer1750,layer1750
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: f3fe98b2-394c-48fd-b21d-7ef7671bc779
+    name: Prusament Resin Model Rich Black @SL1S 0.025
+    values:
+      exposure_time: 2
+      initial_exposure_time: 5
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: ea1ed4ac-be7c-4dec-82ae-bfd111128454
+    name: Prusament Resin Model Rich Black @SL1S 0.05
+    values:
+      exposure_time: 2.4
+      initial_exposure_time: 6
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 06329270-fbba-4ada-aebc-29224d483d2f
+    name: Prusament Resin Model Rich Black @SL1S 0.1
+    values:
+      exposure_time: 2.9
+      initial_exposure_time: 8

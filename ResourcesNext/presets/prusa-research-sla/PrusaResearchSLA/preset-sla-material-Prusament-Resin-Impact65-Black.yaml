@@ -1,0 +1,44 @@
+id: Prusament Resin Impact65 Black
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Engineering
+  material_colour: '#595959'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: d55c569b-6380-4345-9f21-d24cfa8fe6e0
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  values:
+    area_fill: 20
+    delay_before_exposure: [3, 15]
+    tilt_down_initial_speed: layer1500,layer1000
+    tilt_down_offset_steps: [1500, 1500]
+    tilt_down_finish_speed: move8000,layer2250
+    tilt_up_initial_speed: move8000,move8000
+    tilt_up_offset_steps: [400, 800]
+    tilt_up_finish_speed: layer400,layer400
+  variants:
+  - condition: print.layer_height == 0.01
+    id: f4ca9914-f3fb-47b3-8ad8-93c2856bc283
+    name: Prusament Resin Impact65 Black @SL1S 0.01
+    values:
+      exposure_time: 3.6
+      initial_exposure_time: 9
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 26adfa7d-4331-46a1-81c5-e45c191a7b46
+    name: Prusament Resin Impact65 Black @SL1S 0.025
+    values:
+      exposure_time: 2.7
+      initial_exposure_time: 5
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 6cc34b78-86b7-4b43-a1cd-0b61f7decbfb
+    name: Prusament Resin Impact65 Black @SL1S 0.05
+    values:
+      exposure_time: 3
+      initial_exposure_time: 6

@@ -1,3 +1,5 @@
 kind: filament
 id: '*common*'
-condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/ and feeder.base_model!~/.*MMU.*/
+values:
+  pressure_advance_enable: true

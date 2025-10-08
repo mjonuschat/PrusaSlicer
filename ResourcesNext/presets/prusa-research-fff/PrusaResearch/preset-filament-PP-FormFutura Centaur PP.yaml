@@ -1,0 +1,49 @@
+kind: filament
+id: FormFutura Centaur PP
+inherits:
+- '*PP*'
+- '*sheets_PP_centaurPP*'
+name: FormFutura Centaur PP
+values:
+  filament_vendor: FormFutura
+  bridge_fan_speed: 100
+  min_fan_speed: 70
+  max_fan_speed: 70
+variants:
+- condition: printer.base_model == "COREONE"
+  id: a279de3d-654e-44ee-907e-d65b8f4b2151
+  values:
+    bridge_fan_speed: 85
+    min_fan_speed: 60
+    max_fan_speed: 60
+- condition: printer.model == "MK4S"
+  id: 5bf6f799-a678-46fe-bbc7-df31abf0e77e
+  values:
+    bridge_fan_speed: 70
+    min_fan_speed: 50
+    max_fan_speed: 50
+---
+kind: filament
+id: '*sheets_PP_centaurPP*'
+variants:
+# STANDARD sheet
+- condition: sheet.type != "PP"
+  id: 016bedd0-6d4c-44bd-a3db-ba7260d53935
+  values:
+    first_layer_bed_temperature: 85
+    bed_temperature: 85
+  # variants:
+  # - condition: printer.model == "MINI"
+    # values:
+      # first_layer_bed_temperature: 100
+      # bed_temperature: 100
+  # - condition: printer.base_model == "XL"
+    # values:
+      # first_layer_bed_temperature: 105
+      # bed_temperature: 105
+# PP sheet
+- condition: sheet.type == "PP"
+  id: cbd01efd-109a-45f3-ad8f-8c233a2d92dd
+  values:
+    first_layer_bed_temperature: 90
+    bed_temperature: 90

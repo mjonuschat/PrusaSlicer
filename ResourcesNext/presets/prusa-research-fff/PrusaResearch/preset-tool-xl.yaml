@@ -2,6 +2,7 @@ kind: tool_print
 id: '*common XL*'
 variants:
 - condition: printer.base_model == "XL"
+  id: 51f3f31d-9300-4be5-9715-936f9a8c20da
   values:
     retract_layer_change: 1
     retract_length_toolchange: 0
@@ -16,6 +17,7 @@ variants:
   variants:
 # 0.25    
   - condition: tool.nozzle_diameter == 0.25
+    id: 6a855d90-25e5-4e53-9fbf-c0c5634b38e3
     values:
       deretract_speed: 25
       max_layer_height: 0.15
@@ -27,6 +29,7 @@ variants:
       retract_speed: 35
 # 0.3    
   - condition: tool.nozzle_diameter == 0.3
+    id: d2bfd8b3-cebf-4d37-b21d-648bc773427e
     values:
       deretract_speed: 25
       max_layer_height: 0.22
@@ -38,6 +41,7 @@ variants:
       retract_speed: 35
 # 0.4    
   - condition: tool.nozzle_diameter == 0.4
+    id: 594bf3fc-1fb8-4fe4-b6d5-07eeb66caaa3
     values:
       deretract_speed: 25
       max_layer_height: 0.30
@@ -61,6 +65,7 @@ variants:
              # retract_speed: 35
 # 0.5    
   - condition: tool.nozzle_diameter == 0.5
+    id: ccf9586b-034a-4b4f-9875-ab9fbdefa0e4
     values:
       deretract_speed: 25
       max_layer_height: 0.32
@@ -72,6 +77,7 @@ variants:
       retract_speed: 35
 # 0.6    
   - condition: tool.nozzle_diameter == 0.6
+    id: 63e9572e-7ea0-4c18-9224-0a04039ce38f
     values:
       deretract_speed: 25
       max_layer_height: 0.40
@@ -83,6 +89,7 @@ variants:
       retract_speed: 35
 # 0.8    
   - condition: tool.nozzle_diameter == 0.8
+    id: 5dee04e2-9e8c-4c7a-ad72-5ed74d872dc9
     values:
       deretract_speed: 15
       max_layer_height: 0.6
@@ -97,18 +104,22 @@ kind: tool_print
 id: '*XL_toolchange_retract*'
 variants:
 - condition: printer.tool_count == 1
+  id: 5323f933-2b7a-4a8d-9751-e7691f727e7a
   values:
     retract_length_toolchange: 0
 - condition: printer.tool_count > 1
+  id: 70d4c94c-8efb-4736-81dd-25466d2a12d1
   values:
     retract_length_toolchange: 1.2
 ---
+id: 5bdaafbc-71df-49c9-8e9d-57cf37c65cff
 kind: tool_print
 inherits:
 - '*common XL*'
 - '*XL_toolchange_retract*'
 variants:
 - condition: printer.base_model == "XL"
+  id: 87b0d61a-8445-403a-b657-d932f39bc31f
   values:
     bottom_solid_layers: 4
     bridge_acceleration: 1500
@@ -160,7 +171,7 @@ variants:
     raft_contact_distance: 0.15
     raft_expansion: 1.5
     raft_first_layer_density: 80%
-    raft_first_layer_expansion: 3.5
+    raft_first_layer_expansion: 3
     seam_position: aligned
     small_perimeter_speed: 170
     solid_infill_acceleration: 4000
@@ -215,17 +226,21 @@ variants:
     wipe_tower_extra_spacing: 150
     travel_short_distance_acceleration: 250
   variants:
-  - name: '*single tool branch*'
+  - id: 578402ca-2ef3-49e0-b5ab-55a688f4fbe8
+    name: '*single tool branch*'
     variants:
     - condition: tool.nozzle_high_flow
+      id: d09c9b67-9bf3-4f6c-9f82-cd2ec24c1f81
       values:
         max_print_speed: 250
 # 0.4 high-flow nozzle
       variants:
       - condition: tool.nozzle_diameter == 0.4
 # 0.4HF/0.10mm layer
+        id: 72b463d1-3fdb-4595-8fca-e06ff35b224f
         variants:
         - condition: print.layer_height == 0.10
+          id: 9edc4293-d524-450e-bfea-ba25d5e0c471
           values:
             bottom_solid_layers: 7
             top_solid_layers: 8
@@ -253,6 +268,7 @@ variants:
               bridge_speed: 40
 # 0.4HF/0.15mm layer
         - condition: print.layer_height == 0.15
+          id: 0101d108-5e24-4b1d-9387-bb0a7a1f1b1b
           values:
             bottom_solid_layers: 4
             top_solid_layers: 6
@@ -279,7 +295,8 @@ variants:
               solid_infill_acceleration: 3000
               default_acceleration: 2500
               overhang_speed_3: 90%
-          - name: 0.15mm SPEED @XL 0.4HF
+          - id: db9ee8ff-9c3e-4355-9130-04a4eed37c8c
+            name: 0.15mm SPEED @XL 0.4HF
             values:
               perimeter_speed: 250
               external_perimeter_speed: 200
@@ -296,6 +313,7 @@ variants:
               over_bridge_speed: 35%
 # 0.4HF/0.20mm layer
         - condition: print.layer_height == 0.20
+          id: c59d7347-8214-4064-89a1-05055d83a41f
           values:
             bottom_solid_layers: 3
             top_solid_layers: 5
@@ -315,7 +333,8 @@ variants:
               raft_contact_distance: 0.2
               support_material_speed: 120
               support_material_interface_speed: 50
-          - name: 0.20mm SPEED @XL 0.4HF
+          - id: f0b72cb0-bb59-4eea-a425-3ae9e05823bb
+            name: 0.20mm SPEED @XL 0.4HF
             values:
               perimeter_speed: 250
               external_perimeter_speed: 200
@@ -327,6 +346,7 @@ variants:
               over_bridge_speed: 35%
 # 0.4HF/0.25mm layer
         - condition: print.layer_height == 0.25
+          id: 80adcc30-3898-4aec-95f3-1c49fc269cd0
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -338,7 +358,8 @@ variants:
             solid_infill_extrusion_width: 0.5
             support_material_extrusion_width: 0.4
           variants:
-          - name: 0.25mm STRUCTURAL @XL 0.4HF
+          - id: be11bb7c-163b-4636-a589-f263fa081eb1
+            name: 0.25mm STRUCTURAL @XL 0.4HF
             values:
               perimeter_speed: 80
               external_perimeter_speed: 45
@@ -354,7 +375,8 @@ variants:
               solid_infill_acceleration: 3000
               default_acceleration: 2500
               overhang_speed_3: 90%
-          - name: 0.25mm SPEED @XL 0.4HF
+          - id: a4bdeaa7-d324-43be-8c87-2011f07cbc44
+            name: 0.25mm SPEED @XL 0.4HF
             values:
               perimeter_speed: 220
               external_perimeter_speed: 200
@@ -366,13 +388,15 @@ variants:
               over_bridge_speed: 35%
 # 0.4HF/0.28mm layer
         - condition: print.layer_height == 0.28
+          id: 7ed53225-4882-4c95-9e3c-df3877b4a0b6
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
             support_material_contact_distance: 0.28
             raft_contact_distance: 0.25
           variants:
-          - name: 0.28mm SPEED @XL 0.4HF
+          - id: 57da9e45-a2b0-402f-8bcd-794b9fd6dd4f
+            name: 0.28mm SPEED @XL 0.4HF
             values:
               perimeter_speed: 200
               external_perimeter_speed: 180
@@ -391,6 +415,7 @@ variants:
               over_bridge_speed: 50%
 # 0.5 high-flow nozzle
       - condition: tool.nozzle_diameter == 0.5
+        id: 4190622e-9c2f-4c7c-930a-83e4719b8860
         values:
           extrusion_width: 0.55
           first_layer_extrusion_width: 0.55
@@ -419,6 +444,7 @@ variants:
 # 0.5HF/0.10mm layer
         variants:
         - condition: print.layer_height == 0.10
+          id: 1af3aa58-46ec-412a-b748-0c9bb31e8470
           values:
             bottom_solid_layers: 7
             top_solid_layers: 8
@@ -453,6 +479,7 @@ variants:
               support_material_contact_distance: 0.2
 # 0.5HF/0.15mm layer
         - condition: print.layer_height == 0.15
+          id: d4457982-1a82-40e3-b6f7-30ac1bb306b8
           values:
             bottom_solid_layers: 4
             top_solid_layers: 6
@@ -480,6 +507,7 @@ variants:
               default_acceleration: 2000
 # 0.5HF/0.20mm layer
         - condition: print.layer_height == 0.20
+          id: 0e4ce0b7-b662-42de-af19-60421e68d4f1
           values:
             bottom_solid_layers: 3
             top_solid_layers: 5
@@ -508,7 +536,8 @@ variants:
               perimeter_acceleration: 2000
               top_solid_infill_acceleration: 1000
               solid_infill_acceleration: 2500
-          - name: 0.20mm SPEED @XL 0.5HF
+          - id: bfa9ac42-417d-42e5-b53c-9b36c5bbf9fd
+            name: 0.20mm SPEED @XL 0.5HF
             values:
               perimeter_speed: 200
               small_perimeter_speed: 170
@@ -525,6 +554,7 @@ variants:
 
 # 0.5HF/0.25mm layer
         - condition: print.layer_height == 0.25
+          id: 3a48571b-dbdc-48f1-a57c-266b4cfea0a7
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -550,7 +580,8 @@ variants:
               perimeter_acceleration: 2000
               top_solid_infill_acceleration: 1000
               solid_infill_acceleration: 2500
-          - name: 0.25mm SPEED @XL 0.5HF
+          - id: 3968148a-da4c-4532-98fc-2c7c1ff2ea1f
+            name: 0.25mm SPEED @XL 0.5HF
             values:
               perimeter_speed: 200
               small_perimeter_speed: 170
@@ -568,6 +599,7 @@ variants:
               over_bridge_speed: 40%
 # 0.5HF/0.32mm layer
         - condition: print.layer_height == 0.32
+          id: 12732c82-dc80-4b0f-b316-0908f5b5061b
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -591,7 +623,8 @@ variants:
               top_solid_infill_acceleration: 1000
               solid_infill_acceleration: 2500
               bridge_acceleration: 1000
-          - name: 0.32mm SPEED @XL 0.5HF
+          - id: 06883394-b26d-486d-a806-1479eb3d5183
+            name: 0.32mm SPEED @XL 0.5HF
             values:
               perimeter_speed: 150
               small_perimeter_speed: 150
@@ -609,6 +642,7 @@ variants:
               over_bridge_speed: 40%
 # 0.6 high-flow nozzle
       - condition: tool.nozzle_diameter == 0.6
+        id: 7a3d1b45-0187-4b30-b46f-a1c8bc187089
         values:
           extrusion_width: 0.68
           first_layer_extrusion_width: 0.68
@@ -645,6 +679,7 @@ variants:
         variants:
 # 0.6HF/0.15mm layer
         - condition: print.layer_height == 0.15
+          id: a1f0f6db-c35e-4130-98d8-f62fa4ce1f13
           values:
             bottom_solid_layers: 4
             top_solid_layers: 6
@@ -677,6 +712,7 @@ variants:
               overhang_speed_3: 90%
 # 0.6HF/0.20mm layer
         - condition: print.layer_height == 0.20
+          id: fd8eb7bb-9055-48db-ac27-524ba9035c2f
           values:
             bottom_solid_layers: 3
             top_solid_layers: 5
@@ -715,7 +751,8 @@ variants:
               solid_infill_extrusion_width: 0.6
               top_infill_extrusion_width: 0.5
               overhang_speed_3: 90%
-          - name: 0.20mm SPEED @XL 0.6HF
+          - id: 7b19ebc9-8621-4923-be1c-5c3e554fa5bd
+            name: 0.20mm SPEED @XL 0.6HF
             values:
               perimeter_speed: 200
               external_perimeter_speed: 200
@@ -732,6 +769,7 @@ variants:
               solid_infill_acceleration: 3000
 # 0.6HF/0.25mm layer
         - condition: print.layer_height == 0.25
+          id: d6ba9754-ad5d-43d3-a671-a412cd966ad0
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -758,7 +796,8 @@ variants:
               perimeter_acceleration: 2500
               bridge_acceleration: 1500
               overhang_speed_3: 80%
-          - name: 0.25mm SPEED @XL 0.6HF
+          - id: e4e71667-b234-45e8-b212-5d503ea824d6
+            name: 0.25mm SPEED @XL 0.6HF
             values:
               perimeter_speed: 180
               external_perimeter_speed: 180
@@ -774,6 +813,7 @@ variants:
               top_solid_infill_acceleration: 2000
 # 0.6HF/0.32mm layer
         - condition: print.layer_height == 0.32
+          id: 15214f37-b0b6-4dd1-a19c-92db294f1d9a
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -802,7 +842,8 @@ variants:
               perimeter_acceleration: 2500
               bridge_acceleration: 1500
               overhang_speed_3: 50
-          - name: 0.32mm SPEED @XL 0.6HF
+          - id: 7ab7fe27-c025-4f7a-8c70-d00a9435c509
+            name: 0.32mm SPEED @XL 0.6HF
             values:
               perimeter_speed: 140
               external_perimeter_speed: 140
@@ -819,6 +860,7 @@ variants:
               solid_infill_speed: 140
 # 0.6HF/0.40mm layer
         - condition: print.layer_height == 0.4
+          id: 9317399d-9a52-4022-81be-50dffe74b8ef
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -834,7 +876,8 @@ variants:
             default_acceleration: 2500
             top_solid_infill_speed: 60
           variants:
-          - name: 0.40mm STRUCTURAL @XL 0.6HF
+          - id: fe62f3e7-1fab-4558-b76a-368bebd61152
+            name: 0.40mm STRUCTURAL @XL 0.6HF
             values:
               perimeter_speed: 80
               external_perimeter_speed: 45
@@ -855,7 +898,8 @@ variants:
               default_acceleration: 2000
               support_material_contact_distance: 0.25
               over_bridge_speed: 70%
-          - name: 0.40mm SPEED @XL 0.6HF
+          - id: 571605dd-cca2-4545-a8ea-400a39965643
+            name: 0.40mm SPEED @XL 0.6HF
             values:
               perimeter_speed: 115
               external_perimeter_speed: 115
@@ -878,6 +922,7 @@ variants:
               over_bridge_speed: 70%
 # 0.8 high-flow nozzle
       - condition: tool.nozzle_diameter == 0.8
+        id: e47cc49b-2db7-438c-9777-63c1f46696d6
         values:
           fill_pattern: rectilinear
           thick_bridges: 1
@@ -913,6 +958,7 @@ variants:
         variants:
 # 0.8HF/0.30mm layer
         - condition: print.layer_height == 0.30
+          id: 3bb8c924-b882-469a-ac4f-56056fd2002b
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -920,7 +966,8 @@ variants:
             bridge_acceleration: 1000
             default_acceleration: 2000
           variants:
-          - name: 0.30mm STRUCTURAL @XL 0.8HF
+          - id: cd03e391-d26d-4795-8a9e-7a2db1acb628
+            name: 0.30mm STRUCTURAL @XL 0.8HF
             values:
               perimeter_speed: 80
               external_perimeter_speed: 45
@@ -936,7 +983,8 @@ variants:
               solid_infill_acceleration: 3000
               top_infill_extrusion_width: 0.7
               overhang_speed_2: 20
-          - name: 0.30mm SPEED @XL 0.8HF
+          - id: 66ab7a89-2e3f-483e-a2dd-4a1ce0aa9034
+            name: 0.30mm SPEED @XL 0.8HF
             values:
               perimeter_speed: 125
               external_perimeter_speed: 125
@@ -956,6 +1004,7 @@ variants:
               over_bridge_speed: 60%
 # 0.8HF/0.40mm layer
         - condition: print.layer_height == 0.40
+          id: ee25f7e9-a8b2-49c3-b0d0-a49e7ad3a360
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -963,7 +1012,8 @@ variants:
             bridge_acceleration: 1000
             default_acceleration: 2000
           variants:
-          - name: 0.40mm STRUCTURAL @XL 0.8HF
+          - id: 97bacac6-f5fa-4951-99d4-fc5cda5659bc
+            name: 0.40mm STRUCTURAL @XL 0.8HF
             values:
               perimeter_speed: 80
               external_perimeter_speed: 45
@@ -978,7 +1028,8 @@ variants:
               top_solid_infill_acceleration: 1200
               solid_infill_acceleration: 3000
               top_infill_extrusion_width: 0.75
-          - name: 0.40mm SPEED @XL 0.8HF
+          - id: 23bf726c-994b-4224-9e26-a3e1571dcc13
+            name: 0.40mm SPEED @XL 0.8HF
             values:
               perimeter_speed: 100
               external_perimeter_speed: 95
@@ -996,6 +1047,7 @@ variants:
               over_bridge_speed: 70%
 # 0.8HF/0.55mm layer
         - condition: print.layer_height == 0.55
+          id: 4627b0dd-3c00-4dc4-ac0b-76493a2b2e1c
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -1007,7 +1059,8 @@ variants:
             perimeter_extrusion_width: 1
             external_perimeter_extrusion_width: 1
           variants:
-          - name: 0.55mm STRUCTURAL @XL 0.8HF
+          - id: c2587e5d-fb1b-44cb-bdbd-6cdb20865528
+            name: 0.55mm STRUCTURAL @XL 0.8HF
             values:
               perimeter_speed: 75
               external_perimeter_speed: 45
@@ -1020,7 +1073,8 @@ variants:
               external_perimeter_acceleration: 1500
               perimeter_acceleration: 2000
               top_solid_infill_acceleration: 1200
-          - name: 0.55mm SPEED @XL 0.8HF
+          - id: 54571459-bf4b-4c52-b8fb-2b993584eb83
+            name: 0.55mm SPEED @XL 0.8HF
             values:
               perimeter_speed: 75
               external_perimeter_speed: 70
@@ -1035,6 +1089,7 @@ variants:
               top_solid_infill_acceleration: 1200
 # 0.25 nozzle
     - condition: tool.nozzle_diameter == 0.25
+      id: 75373e4f-1c5a-4071-8a32-d10542401f19
       values:
         extrusion_width: 0.27
         first_layer_extrusion_width: 0.32
@@ -1075,11 +1130,13 @@ variants:
 # 0.25n/0.05mm layer
       variants:
       - condition: print.layer_height == 0.05
+        id: 832aac54-fec6-4fca-9110-755a3089938e
         values:
           bottom_solid_layers: 10
           top_solid_layers: 13
         variants:
-        - name: 0.05mm DETAIL @XL 0.25
+        - id: 2fe60779-70df-420b-a69f-760dcd21d231
+          name: 0.05mm DETAIL @XL 0.25
           unconditional_inherits:
           - 0.07mm DETAIL @XL 0.25
           values:
@@ -1090,6 +1147,7 @@ variants:
             bridge_speed: 25
 # 0.25n/0.07mm layer
       - condition: print.layer_height == 0.07
+        id: db936b57-9f6c-4839-9863-ad74211120cf
         values:
           bottom_solid_layers: 9
           top_solid_layers: 11
@@ -1120,6 +1178,7 @@ variants:
             bridge_speed: 30
 # 0.25n/0.12mm layer
       - condition: print.layer_height == 0.12
+        id: 347163f2-7db9-4ebb-ae60-373012b8302f
         values:
           bottom_solid_layers: 6
           top_solid_layers: 9
@@ -1128,14 +1187,16 @@ variants:
           infill_acceleration: 2500
           solid_infill_acceleration: 2500
         variants:
-        - name: 0.12mm STRUCTURAL @XL 0.25
+        - id: 5c39be34-7bea-4d40-a48c-2a7c6389503d
+          name: 0.12mm STRUCTURAL @XL 0.25
           values:
             perimeter_speed: 70
             external_perimeter_speed: 40
             small_perimeter_speed: 40
             external_perimeter_acceleration: 1000
             perimeter_acceleration: 1500
-        - name: 0.12mm SPEED @XL 0.25
+        - id: c3cd8559-6208-4b6c-b58a-9208e499aad1
+          name: 0.12mm SPEED @XL 0.25
           values:
             perimeter_speed: 120
             external_perimeter_speed: 120
@@ -1145,6 +1206,7 @@ variants:
             infill_acceleration: 3000
 # 0.25n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: 761fa059-fa29-4c05-b5bc-fe10f792a799
         values:
           bottom_solid_layers: 6
           top_solid_layers: 7
@@ -1153,14 +1215,16 @@ variants:
           infill_acceleration: 3000
           solid_infill_acceleration: 2500
         variants:
-        - name: 0.15mm STRUCTURAL @XL 0.25
+        - id: d9dafade-1ed2-49b0-aa6e-9c1f18b8f28f
+          name: 0.15mm STRUCTURAL @XL 0.25
           values:
             perimeter_speed: 70
             external_perimeter_speed: 40
             small_perimeter_speed: 40
             external_perimeter_acceleration: 1000
             perimeter_acceleration: 1500
-        - name: 0.15mm SPEED @XL 0.25
+        - id: 464871e9-f468-44f0-8fc3-345c546f3296
+          name: 0.15mm SPEED @XL 0.25
           values:
             perimeter_speed: 120
             external_perimeter_speed: 120
@@ -1169,6 +1233,7 @@ variants:
             perimeter_acceleration: 2000
 # 0.3 nozzle
     - condition: tool.nozzle_diameter == 0.3
+      id: 4044663b-1b13-487c-ad17-51cce964e2a7
       values:
         extrusion_width: 0.34
         first_layer_extrusion_width: 0.4
@@ -1206,13 +1271,15 @@ variants:
       variants:
 # 0.3n/0.12mm layer
       - condition: print.layer_height == 0.12
+        id: 2e26dfc1-9373-4677-bfdb-30cb998f112c
         values:
           bottom_solid_layers: 6
           top_solid_layers: 7
           support_material_contact_distance: 0.12
           raft_contact_distance: 0.12
         variants:
-        - name: 0.12mm STRUCTURAL @XL 0.3
+        - id: 9800453c-7cd8-4af0-b3e6-c2d771b25b53
+          name: 0.12mm STRUCTURAL @XL 0.3
           values:
             perimeter_speed: 80
             small_perimeter_speed: 40
@@ -1230,6 +1297,7 @@ variants:
             default_acceleration: 1500
 # 0.3n/0.16mm layer              
       - condition: print.layer_height == 0.16
+        id: 25d4757d-f3ca-44f3-b2c2-29417299e41b
         values:
           bottom_solid_layers: 5
           top_solid_layers: 6
@@ -1241,7 +1309,8 @@ variants:
           bridge_acceleration: 1000
           default_acceleration: 2000
         variants:
-        - name: 0.16mm STRUCTURAL @XL 0.3
+        - id: e664bcdc-bd87-40b4-94b3-331ab3afdb9e
+          name: 0.16mm STRUCTURAL @XL 0.3
           values:
             perimeter_speed: 80
             small_perimeter_speed: 45
@@ -1252,7 +1321,8 @@ variants:
             perimeter_acceleration: 2000
             top_solid_infill_acceleration: 1000
             solid_infill_acceleration: 2500
-        - name: 0.16mm SPEED @XL 0.3
+        - id: f361489f-f71c-40d3-a5a0-bb199807ffd3
+          name: 0.16mm SPEED @XL 0.3
           values:
             perimeter_speed: 140
             small_perimeter_speed: 120
@@ -1266,6 +1336,7 @@ variants:
             solid_infill_acceleration: 3000
 # 0.3n/0.20mm layer
       - condition: print.layer_height == 0.20
+        id: eb8b71f6-b720-43db-ad19-c1d3eb4adac9
         values:
           bottom_solid_layers: 3
           top_solid_layers: 5
@@ -1278,7 +1349,8 @@ variants:
           bridge_acceleration: 1000
           default_acceleration: 2000
         variants:
-        - name: 0.20mm STRUCTURAL @XL 0.3
+        - id: b9952bfd-6bae-46d5-95d6-9cd474f5967a
+          name: 0.20mm STRUCTURAL @XL 0.3
           values:
             bottom_solid_layers: 4
             perimeter_speed: 80
@@ -1289,7 +1361,8 @@ variants:
             external_perimeter_acceleration: 1500
             perimeter_acceleration: 2000
             solid_infill_acceleration: 2500
-        - name: 0.20mm SPEED @XL 0.3
+        - id: 67eb6779-c3eb-4841-a18f-aa360a75bb43
+          name: 0.20mm SPEED @XL 0.3
           values:
             perimeter_speed: 140
             small_perimeter_speed: 120
@@ -1303,15 +1376,18 @@ variants:
 # 0.4 nozzle
     - condition: tool.nozzle_diameter == 0.4
 # 0.4n/0.10mm layer
+      id: 5f7d9a62-25bb-43ac-bcc2-2377f1fe0737
       variants:
       - condition: print.layer_height == 0.10
+        id: 092d9d61-273a-449a-ba34-cc58738c4968
         values:
           bottom_solid_layers: 7
           top_solid_layers: 8
           support_material_contact_distance: 0.17
           raft_contact_distance: 0.15
         variants:
-        - name: 0.10mm FAST DETAIL @XL 0.4
+        - id: 0003030c-43f8-41a4-8b7e-6243812c20c4
+          name: 0.10mm FAST DETAIL @XL 0.4
           values:
             perimeter_speed: 140
             external_perimeter_speed: 140
@@ -1331,6 +1407,7 @@ variants:
             bridge_speed: 40
 # 0.4n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: f66fa815-0ec8-47e3-bbc5-6016fedc5cb5
         values:
           bottom_solid_layers: 4
           top_solid_layers: 6
@@ -1340,10 +1417,12 @@ variants:
           support_material_speed: 120
           support_material_interface_speed: 50
         variants:
-        - name: 0.15mm STRUCTURAL @XL 0.4
+        - id: 9ca67047-ee7c-47bc-bd49-e3ac025b536f
+          name: 0.15mm STRUCTURAL @XL 0.4
           unconditional_inherits:
           - 0.15mm STRUCTURAL @XL 0.4HF
-        - name: 0.15mm SPEED @XL 0.4
+        - id: cdf7c85d-6112-46c6-bbe0-2699c7907560
+          name: 0.15mm SPEED @XL 0.4
           values:
             perimeter_speed: 170
             external_perimeter_speed: 170
@@ -1360,20 +1439,24 @@ variants:
             bridge_speed: 45
 # 0.4n/0.20mm layer
       - condition: print.layer_height == 0.20
+        id: 4bbf6846-4bdb-47fe-b54d-80380f0c1ce1
         values:
           bottom_solid_layers: 3
           top_solid_layers: 5
           support_material_contact_distance: 0.2
           raft_contact_distance: 0.2
         variants:
-        - name: 0.20mm STRUCTURAL @XL 0.4
+        - id: bbf709b1-8300-4938-b4b0-8106c1c66668
+          name: 0.20mm STRUCTURAL @XL 0.4
           unconditional_inherits:
           - 0.20mm STRUCTURAL @XL 0.4HF
-        - name: 0.20mm SPEED @XL 0.4
+        - id: 7232fd5b-4876-4bb2-adab-eafdb0cf6da5
+          name: 0.20mm SPEED @XL 0.4
           values:
             top_solid_infill_acceleration: 1500
 # 0.5 nozzle
     - condition: tool.nozzle_diameter == 0.5
+      id: 7bf62c4c-1fa4-46e1-aa4d-c7278d407bf3
       values:
         extrusion_width: 0.55
         first_layer_extrusion_width: 0.55
@@ -1402,28 +1485,33 @@ variants:
 # 0.5n/0.10mm layer
       variants:
       - condition: print.layer_height == 0.10
+        id: 3d3d6c06-f522-4ad2-84d2-5c965b3eb8a5
         values:
           bottom_solid_layers: 7
           top_solid_layers: 8
           support_material_contact_distance: 0.17
           raft_contact_distance: 0.15
         variants:
-        - name: 0.10mm STRUCTURAL @XL 0.5
+        - id: 12ffaca4-c091-42e8-b93a-656d2535832c
+          name: 0.10mm STRUCTURAL @XL 0.5
           unconditional_inherits:
           - 0.10mm STRUCTURAL @XL 0.5HF
 # 0.5n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: 8ac168eb-e828-444f-be09-519779cabe25
         values:
           bottom_solid_layers: 4
           top_solid_layers: 6
           support_material_contact_distance: 0.2
           raft_contact_distance: 0.17
         variants:
-        - name: 0.15mm STRUCTURAL @XL 0.5
+        - id: 869357f9-5dd5-48fe-9f2e-b105f8363686
+          name: 0.15mm STRUCTURAL @XL 0.5
           unconditional_inherits:
           - 0.15mm STRUCTURAL @XL 0.5HF
 # 0.5n/0.20mm layer
       - condition: print.layer_height == 0.20
+        id: 32fd51de-924b-4181-b0d9-ef33b2dee6d0
         values:
           bottom_solid_layers: 3
           top_solid_layers: 5
@@ -1436,10 +1524,12 @@ variants:
           bridge_acceleration: 1000
           default_acceleration: 2500
         variants:
-        - name: 0.20mm STRUCTURAL @XL 0.5
+        - id: 8778fba7-979f-4079-87f5-5e99a90227a4
+          name: 0.20mm STRUCTURAL @XL 0.5
           unconditional_inherits:
           - 0.20mm STRUCTURAL @XL 0.5HF
-        - name: 0.20mm SPEED @XL 0.5
+        - id: 22a8b791-dd37-491d-a41a-9f8dc2a67b03
+          name: 0.20mm SPEED @XL 0.5
           values:
             perimeter_speed: 140
             small_perimeter_speed: 140
@@ -1453,6 +1543,7 @@ variants:
             solid_infill_acceleration: 3000
 # 0.5n/0.25mm layer
       - condition: print.layer_height == 0.25
+        id: 778ceaa0-928a-49c9-810d-27132926b0b1
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
@@ -1462,7 +1553,8 @@ variants:
           bridge_acceleration: 1000
           default_acceleration: 2500
         variants:
-        - name: 0.25mm STRUCTURAL @XL 0.5
+        - id: 00304201-6095-498e-92bb-b9c88fa7dae9
+          name: 0.25mm STRUCTURAL @XL 0.5
           unconditional_inherits:
           - 0.15mm STRUCTURAL @XL 0.5HF
           values:
@@ -1470,7 +1562,8 @@ variants:
             infill_acceleration: 4000
             gap_fill_speed: 70
             solid_infill_speed: 110
-        - name: 0.25mm SPEED @XL 0.5
+        - id: c743a472-0679-4023-a0ea-d0e790d09216
+          name: 0.25mm SPEED @XL 0.5
           values:
             perimeter_speed: 140
             small_perimeter_speed: 140
@@ -1485,6 +1578,7 @@ variants:
             top_solid_infill_speed: 70
 # 0.6 nozzle
     - condition: tool.nozzle_diameter == 0.6
+      id: f3604b18-a381-49f1-9cd0-79522233d979
       values:
         extrusion_width: 0.68
         first_layer_extrusion_width: 0.68
@@ -1521,16 +1615,19 @@ variants:
       variants:
 # 0.6n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: a2037faa-0355-4f43-afbc-3c6c26c754b0
         values:
           bottom_solid_layers: 4
           top_solid_layers: 6
           support_material_contact_distance: 0.22
         variants:
-        - name: 0.15mm STRUCTURAL @XL 0.6
+        - id: 8bbc8603-15bf-435d-bdbd-c96b92d93522
+          name: 0.15mm STRUCTURAL @XL 0.6
           unconditional_inherits:
           - 0.15mm STRUCTURAL @XL 0.6HF
 # 0.6n/0.20mm layer
       - condition: print.layer_height == 0.20
+        id: a243e709-84c2-4ca3-91fa-b43e5964199a
         values:
           bottom_solid_layers: 3
           top_solid_layers: 5
@@ -1548,10 +1645,12 @@ variants:
           top_infill_extrusion_width: 0.5
           top_solid_infill_acceleration: 1500
         variants:
-        - name: 0.20mm STRUCTURAL @XL 0.6
+        - id: 9c1916b5-47d8-4fa5-86f2-02a45b148195
+          name: 0.20mm STRUCTURAL @XL 0.6
           unconditional_inherits:
           - 0.20mm STRUCTURAL @XL 0.6HF
-        - name: 0.20mm SPEED @XL 0.6
+        - id: ccb759c8-687a-403e-9289-b68a2f2a617e
+          name: 0.20mm SPEED @XL 0.6
           values:
             perimeter_speed: 120
             external_perimeter_speed: 120
@@ -1566,6 +1665,7 @@ variants:
             solid_infill_acceleration: 3000
 # 0.6n/0.25mm layer
       - condition: print.layer_height == 0.25
+        id: 7df9d276-b118-4c4c-9e5f-e73eb77debcc
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
@@ -1579,7 +1679,8 @@ variants:
           top_solid_infill_speed: 60
           support_material_speed: 80
         variants:
-        - name: 0.25mm STRUCTURAL @XL 0.6
+        - id: 8342f927-1f39-4c8e-ae83-78cc22361b6f
+          name: 0.25mm STRUCTURAL @XL 0.6
           unconditional_inherits:
           - 0.25mm STRUCTURAL @XL 0.6HF
           values:
@@ -1588,7 +1689,8 @@ variants:
             top_solid_infill_speed: 70
             solid_infill_speed: 95
             infill_speed: 100
-        - name: 0.25mm SPEED @XL 0.6
+        - id: 95532664-3234-4810-aaad-45fb1b1fda64
+          name: 0.25mm SPEED @XL 0.6
           values:
             perimeter_speed: 80
             external_perimeter_speed: 80
@@ -1603,6 +1705,7 @@ variants:
             bridge_acceleration: 1500
 # 0.6n/0.32mm layer
       - condition: print.layer_height == 0.32
+        id: 25daf205-5bdb-4f93-a897-c54f96d1ad36
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
@@ -1618,7 +1721,8 @@ variants:
           default_acceleration: 2500
           top_solid_infill_speed: 60
         variants:
-        - name: 0.32mm STRUCTURAL @XL 0.6
+        - id: 92819a22-4b6c-4c0a-9437-1b6b56063b3f
+          name: 0.32mm STRUCTURAL @XL 0.6
           unconditional_inherits:
           - 0.32mm STRUCTURAL @XL 0.6HF
           values:
@@ -1627,7 +1731,8 @@ variants:
             top_solid_infill_speed: 70
             support_material_speed: 80
             gap_fill_speed: 70
-        - name: 0.32mm SPEED @XL 0.6
+        - id: ea5c4c6a-361e-499e-b080-41e200c1bb62
+          name: 0.32mm SPEED @XL 0.6
           values:
             perimeter_speed: 70
             external_perimeter_speed: 70
@@ -1643,6 +1748,7 @@ variants:
 
 # 0.8 nozzle
     - condition: tool.nozzle_diameter == 0.8
+      id: a26c3d9c-741b-43eb-adda-6b5c84f279ef
       values:
         fill_pattern: rectilinear
         thick_bridges: 1
@@ -1677,11 +1783,13 @@ variants:
       variants:
 # 0.8n/0.30mm layer
       - condition: print.layer_height == 0.30
+        id: e6fce27a-cb06-43e9-b428-5678a834e9b4
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
         variants:
-        - name: 0.30mm DETAIL @XL 0.8
+        - id: 55ba7c76-9928-4e02-b1bc-ed85aafae6f8
+          name: 0.30mm DETAIL @XL 0.8
           values:
             perimeter_speed: 70
             external_perimeter_speed: 45
@@ -1702,11 +1810,13 @@ variants:
             top_infill_extrusion_width: 0.7
 # 0.8n/0.40mm layer
       - condition: print.layer_height == 0.40
+        id: 93c2ad2e-f7dd-43e6-87cc-945784ab8d89
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
         variants:
-        - name: 0.40mm QUALITY @XL 0.8
+        - id: 66f8cbf4-453e-44ec-bc70-1a88176770ec
+          name: 0.40mm QUALITY @XL 0.8
           values:
             perimeter_speed: 50
             external_perimeter_speed: 45
@@ -1728,11 +1838,13 @@ variants:
 
 # 0.8n/0.55mm layer
       - condition: print.layer_height == 0.55
+        id: 85bdd6f1-66eb-43b2-8ca3-259262c8fa5c
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
         variants:
-        - name: 0.55mm DRAFT @XL 0.8
+        - id: 8d77d6a7-ec84-49ce-b4b8-2d7b8094b72b
+          name: 0.55mm DRAFT @XL 0.8
           values:
             perimeter_speed: 40
             external_perimeter_speed: 35
@@ -1755,14 +1867,18 @@ variants:
             external_perimeter_extrusion_width: 1
 
 # multi-tool branch
-  - name: '*multi-tool branch*'
+  - id: a292c906-a840-4bfe-859d-a5a960344dda
+    name: '*multi-tool branch*'
     variants:
     - condition: printer.tool_count > 1
+      id: b4dcd1ae-eed6-4660-8478-a77c9e71dfc1
       variants:
       - condition: tool.nozzle_diameter == 0.4
+        id: 4dfd74cf-1a85-4b00-9fe3-ac5576442a1b
         variants:
 # 0.4n/0.20mm/multitool SOLUBLE
         - condition: print.layer_height == 0.20
+          id: 9569f0ea-8255-46f5-ba83-227d53ac7e02
           values:
             bottom_solid_layers: 4
             top_solid_layers: 5
@@ -1799,24 +1915,30 @@ variants:
             support_material_speed: 100
             support_material_interface_speed: 40
           variants:
-          - name: 0.20mm SOLUBLE FULL @XL 0.4
-          - name: 0.20mm SOLUBLE INTERFACE @XL 0.4
+          - id: 6ba1daa7-f28b-4818-9eb9-d42822aee15a
+            name: 0.20mm SOLUBLE FULL @XL 0.4
+          - id: 56789b68-c95b-407e-bca0-1190590134cf
+            name: 0.20mm SOLUBLE INTERFACE @XL 0.4
             values:
               support_material_extruder: 0
               support_material_interface_layers: 3
               support_material_with_sheath: 0
-          - name: 0.20mm BREAKAWAY FULL @XL 0.4
+          - id: c5a4bd99-eca8-4a4b-8105-462de21e09b6
+            name: 0.20mm BREAKAWAY FULL @XL 0.4
             values:
               support_material_with_sheath: 0
-          - name: 0.20mm BREAKAWAY INTERFACE @XL 0.4
+          - id: dbc82e4b-8eb5-4d3d-a292-3eb2e203d212
+            name: 0.20mm BREAKAWAY INTERFACE @XL 0.4
             values:
               support_material_extruder: 0
               support_material_interface_layers: 3
               support_material_with_sheath: 0
       - condition: tool.nozzle_diameter == 0.6
+        id: 5fbd9cc9-1ba8-4926-ac8c-bbd794101183
         variants:
 # 0.6n/0.25mm/multitool SOLUBLE
         - condition: print.layer_height == 0.25
+          id: 44198ac0-2fa2-4568-abe7-2cf1f7cbb977
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -1872,16 +1994,20 @@ variants:
             first_layer_infill_speed: 70
             gcode_resolution: 0.0125
           variants:
-          - name: 0.20mm SOLUBLE FULL @XL 0.6
-          - name: 0.20mm SOLUBLE INTERFACE @XL 0.6
+          - id: 6690ca31-566b-4535-8f46-47bde1fba6ec
+            name: 0.20mm SOLUBLE FULL @XL 0.6
+          - id: e37138f9-d413-4dfb-8513-c9027d364b8b
+            name: 0.20mm SOLUBLE INTERFACE @XL 0.6
             values:
               support_material_extruder: 0
               support_material_interface_layers: 3
               support_material_with_sheath: 0
-          - name: 0.20mm BREAKAWAY FULL @XL 0.6
+          - id: 9cb59666-2aec-4114-be99-fd21806c7e8b
+            name: 0.20mm BREAKAWAY FULL @XL 0.6
             values:
               support_material_with_sheath: 0
-          - name: 0.20mm BREAKAWAY INTERFACE @XL 0.6
+          - id: bce4f258-20bb-4a24-9aae-d0b7a926c3c9
+            name: 0.20mm BREAKAWAY INTERFACE @XL 0.6
             values:
               support_material_extruder: 0
               support_material_interface_layers: 3

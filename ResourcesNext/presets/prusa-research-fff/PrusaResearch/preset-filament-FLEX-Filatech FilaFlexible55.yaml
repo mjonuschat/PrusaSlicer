@@ -3,7 +3,7 @@ id: Filatech FilaFlexible55
 inherits:
 - '*FLEX*'
 name: Filatech FilaFlexible55
-condition: 'tool.nozzle_diameter >= 0.4 and printer.base_model=~/(MK3.5|MK3|MK2.5|MK2)/ and feeder.base_model!~/.*MMU.*/'
+condition: tool.nozzle_diameter >= 0.4 and printer.base_model=~/(MK3.5|MK3|MK2.5|MK2)/ and feeder.base_model!~/.*MMU.*/
 values:
   filament_vendor: Filatech
   first_layer_temperature: 235
@@ -22,6 +22,7 @@ values:
 variants:
 ## MK3.5 and MK3 and MK2
 - condition: printer.base_model=~/(MK3.5|MK3|MK2.5|MK2)/
+  id: 64457fac-1c30-4619-ade8-ffceacf66fae
   values:
     first_layer_temperature: 235
     temperature: 230
@@ -39,17 +40,21 @@ variants:
   variants:
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: eb981d43-f922-482d-aaf5-b344d9b9f13e
     values:
       filament_max_volumetric_speed: 2.5
   # MK3.5 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 628e2ac3-2854-4d20-a4e1-4672c9a6136b
     values:
       filament_max_volumetric_speed: 2.5
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 2db436db-9229-4ccc-adf5-7979a671e082
     values:
       filament_max_volumetric_speed: 3
   # MK3.5 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: bdf05cae-7f15-409f-b0d3-e1c07800a983
     values:
       filament_max_volumetric_speed: 4.5

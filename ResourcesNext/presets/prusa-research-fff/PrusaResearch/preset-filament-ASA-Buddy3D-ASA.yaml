@@ -1,8 +1,9 @@
 kind: filament
 id: Buddy3D ASA
 inherits:
-- 'Prusament ASA'
+- Prusament ASA
 name: Buddy3D ASA
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/
 values:
   filament_cost: '23.99'
   filament_vendor: Buddy3D

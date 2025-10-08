@@ -14,22 +14,25 @@ values:
   min_fan_speed: 0
   max_fan_speed: 0
   bridge_fan_speed: 50
----        
+---
 kind: filament
-id: '*sheets_PET_CPEHT*'      
-variants:        
+id: '*sheets_PET_CPEHT*'
+variants:
 # STANDARD sheet
-- condition: sheet.type != "cold"        
+- condition: sheet.type != "cold"
+  id: 2ee248a3-c086-4469-9b2d-946e904a7ff1
   values:
     first_layer_bed_temperature: 105
     bed_temperature: 100
   variants:
   - condition: printer.base_model == "XL"
+    id: 3fc20591-99f4-451f-9d3b-1905a96edea0
     values:
       first_layer_bed_temperature: 100
       bed_temperature: 100
 # COLD sheet
 - condition: sheet.type == "cold"
+  id: 073d2ea8-0222-4133-9c70-e7c654afed8e
   values:
     first_layer_bed_temperature: 80
     bed_temperature: 80

@@ -1,0 +1,42 @@
+id: Esun Standard Resin Black
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Esun
+  material_type: Tough
+  material_colour: '#595959'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 99be62d1-086b-45ee-8d95-5eb49af41a5d
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 0da5a96c-3180-465f-b5bc-fc27162ffb6a
+    name: Esun Standard Resin Black @SL1 0.025
+    values:
+      exposure_time: 6
+      initial_exposure_time: 30
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 0c32a267-90e3-4b33-a337-7835d42d8fc4
+    name: Esun Standard Resin Black @SL1 0.05
+    values:
+      exposure_time: 7
+      initial_exposure_time: 30
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 64f6a305-03b6-49bc-8079-600c5b516b85
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 4ddbf4b3-ff33-4f59-b130-c56bae0a6aca
+    name: Esun Standard Resin Black @SL1S 0.05
+    values:
+      exposure_time: 2.3
+      initial_exposure_time: 24

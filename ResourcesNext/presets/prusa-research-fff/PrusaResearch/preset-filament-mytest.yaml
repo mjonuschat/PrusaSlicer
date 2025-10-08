@@ -1,9 +1,0 @@
-kind: filament
-id: My PLA
-inherits:
-- '*PLA*'
-name: My PLA
-condition: 'printer.model == "COREONE"'
-values:
-  filament_cost: '19.99'
-  filament_vendor: Generic

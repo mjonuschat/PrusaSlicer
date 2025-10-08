@@ -1,8 +1,8 @@
 kind: filament
-id: 'VOXELPLA+'
+id: VOXELPLA+
 inherits:
 - '*PLA*'
-name: 'VOXELPLA+'
+name: VOXELPLA+
 values:
   filament_vendor: VOXELPLA
   filament_density: 1.23

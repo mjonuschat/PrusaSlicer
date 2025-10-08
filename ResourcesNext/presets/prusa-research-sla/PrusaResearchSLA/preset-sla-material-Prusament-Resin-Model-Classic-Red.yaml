@@ -1,0 +1,45 @@
+id: Prusament Resin Model Classic Red
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Model
+  material_colour: '#EC0000'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: aab70d2c-8bea-4206-bed8-1bd4100a1d7a
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  values:
+    area_fill: 20
+    delay_before_exposure: [1, 10]
+    tilt_down_initial_speed: layer1750,layer1750
+    tilt_down_offset_steps: [0, 1200]
+    tilt_down_finish_speed: move8000,move5120
+    tilt_up_initial_speed: move8000,move8000
+    tilt_up_offset_steps: [600, 600]
+    tilt_up_finish_speed: layer1750,layer1750
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 0c75a07a-d62a-4462-9c23-2cb25d8f3fe1
+    name: Prusament Resin Model Classic Red @SL1S 0.025
+    values:
+      exposure_time: 2
+      initial_exposure_time: 5
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: b41544e5-fed9-4c90-9a6d-b4910d1ce962
+    name: Prusament Resin Model Classic Red @SL1S 0.05
+    values:
+      exposure_time: 2.2
+      initial_exposure_time: 6
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: f81d2b1c-0edb-4351-97db-328ab81eb0d8
+    name: Prusament Resin Model Classic Red @SL1S 0.1
+    values:
+      exposure_time: 2.6
+      initial_exposure_time: 8

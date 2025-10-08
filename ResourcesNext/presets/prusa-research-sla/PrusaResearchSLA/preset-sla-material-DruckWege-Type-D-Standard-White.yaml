@@ -1,0 +1,29 @@
+id: DruckWege Type D Standard White
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: DruckWege
+  material_type: Model
+  material_colour: '#FFFFFF'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 86cd765d-961c-4512-b3f6-31ea40cd3992
+  unconditional_inherits:
+  - '*sl1s_slow*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 281c24cc-d784-4303-9667-03cb503a6ed2
+    name: DruckWege Type D Standard White @SL1S 0.025
+    values:
+      exposure_time: 1.6
+      initial_exposure_time: 15
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 572e61bc-c25c-4089-a1b3-80db92aa2bb1
+    name: DruckWege Type D Standard White @SL1S 0.05
+    values:
+      exposure_time: 2
+      initial_exposure_time: 15

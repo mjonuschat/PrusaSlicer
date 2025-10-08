@@ -30,6 +30,9 @@ features:
     cold:
       default: false
       user_editable: false
+  feeder:
+    single_mode:
+      default: false
 ---
 kind: printer
 technology: FFF
@@ -47,39 +50,6 @@ visual:
   bed_texture: xl.svg
   thumbnail: XL_thumbnail.svg
 ---
-#kind: printer
-#technology: FFF
-#id: 'xl-1t'
-#name: 'XL 1T'
-#base_model: 'XL'
-#model: 'XL 1T'
-#tool_count: 1
-#features:
-#  input_shaper:
-#    default: true
-#---
-#kind: printer
-#technology: FFF
-#id: 'xl-2t'
-#name: 'XL 2T'
-#base_model: 'XL'
-#model: 'XL 2T'
-#tool_count: 2
-#features:
-#  input_shaper:
-#    default: true
-#---
-#kind: printer
-#technology: FFF
-#id: 'xl-5t'
-#name: 'XL 5T'
-#base_model: 'XL'
-#model: 'XL 5T'
-#tool_count: 5
-#features:
-#  input_shaper:
-#    default: true
-#---
 kind: printer
 technology: FFF
 id: COREONE
@@ -141,8 +111,8 @@ features:
     default: true
 visual:
   bed_model: mk4_bed.stl
-  bed_texture: mk4.svg
-  thumbnail: MK4_thumbnail.png
+  bed_texture: mk39.svg
+  thumbnail: MK4_thumbnail.svg
 ---
 kind: printer
 technology: FFF
@@ -157,8 +127,26 @@ features:
     default: true
 visual:
   bed_model: mk4_bed.stl
-  bed_texture: mk4s.svg
-  thumbnail: MK4S_thumbnail.png
+  bed_texture: mk39s.svg
+  thumbnail: MK4S_thumbnail.svg
+---
+kind: printer
+technology: FFF
+id: MK3.5
+name: Prusa MK3.5
+model:
+  base_model: MK3.5
+  model: MK3.5
+tool_count: 1
+features:
+  supports_high_flow_nozzle:
+    default: false
+  input_shaper:
+    default: true
+visual:
+  bed_model: mk3_bed.stl
+  bed_texture: mk35.svg
+  thumbnail: MK3.5S_thumbnail.svg
 ---
 kind: printer
 technology: FFF
@@ -249,7 +237,7 @@ features:
 visual:
   bed_model: mk3_bed.stl
   bed_texture: mk3.svg
-  thumbnail: MK2.5S_thumbnail.png
+  thumbnail: MK2.5S_thumbnail.svg
 ---
 kind: printer
 technology: FFF
@@ -271,7 +259,7 @@ features:
 visual:
   bed_model: mk3_bed.stl
   bed_texture: mk3.svg
-  thumbnail: MK2.5_thumbnail.png
+  thumbnail: MK2.5_thumbnail.svg
 ---
 kind: printer
 technology: FFF
@@ -295,7 +283,31 @@ features:
 visual:
   bed_model: mk2_bed.stl
   bed_texture: mk2.svg
-  thumbnail: MK2S_thumbnail.png
+  thumbnail: MK2S_thumbnail.svg
+# ---
+# kind: printer
+# technology: FFF
+# id: MK2S MMU1
+# name: MK2S MMU1
+# model:
+  # base_model: MK2
+  # model: MK2SMM
+# tool_count: 4
+# features:
+  # supports_high_flow_nozzle:
+    # default: false
+  # input_shaper:
+    # default: false
+  # supports_03_nozzle:
+    # default: false
+  # supports_05_nozzle:
+    # default: false
+  # supports_08_nozzle:
+    # default: false
+# visual:
+  # bed_model: mk2_bed.stl
+  # bed_texture: mk2.svg
+  # thumbnail: MK2SMM_thumbnail.svg
 ---
 kind: tool
 technology: FFF
@@ -396,7 +408,7 @@ kind: feeder
 technology: FFF
 id: mmu3_32b
 name: MMU3
-condition: printer.base_model=~/(COREONE|MK4)/
+condition: printer.base_model=~/(COREONE|MK4)/ and tool.nozzle_diameter >= 0.4
 feeder_type: mmu
 model:
   base_model: MMU3
@@ -407,7 +419,7 @@ kind: feeder
 technology: FFF
 id: mmu3_8b
 name: MMU3 8bit
-condition: printer.model=~/(MK3S|MK2.5S)/
+condition: printer.model=~/(MK3S|MK2.5S|MK3.5)/
 feeder_type: mmu
 model:
   base_model: MMU3
@@ -511,7 +523,7 @@ id: c1
 name: CORE One
 printer: COREONE
 tools:
-- tool: '0.4HF'
+- tool: 0.4HF
 sheet: satin
 ---
 kind: printer_config
@@ -527,7 +539,7 @@ id: mk4s
 name: MK4S
 printer: MK4S
 tools:
-- tool: '0.4HF'
+- tool: 0.4HF
 sheet: satin
 ---
 kind: printer_config
@@ -543,7 +555,15 @@ id: mk3.9s
 name: MK3.9S
 printer: MK3.9S
 tools:
-- tool: '0.4HF'
+- tool: 0.4HF
+sheet: pei_smooth
+---
+kind: printer_config
+id: mk3.5
+name: MK3.5
+printer: MK3.5
+tools:
+- tool: '0.4'
 sheet: pei_smooth
 ---
 kind: printer_config

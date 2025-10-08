@@ -1,0 +1,42 @@
+id: Resinworks 3D Violet
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Resinworks 3D
+  material_type: Casting
+  material_colour: '#E800E8'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 483888b4-4fcd-4fad-a1a5-30e5e5d3a16c
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 36624306-2a3e-409d-b8dc-7d140d25ae14
+    name: Resinworks 3D Violet @SL1 0.025
+    values:
+      exposure_time: 15
+      initial_exposure_time: 30
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 5b85a9ff-471e-4db1-80fc-293c9eb18ac8
+    name: Resinworks 3D Violet @SL1 0.05
+    values:
+      exposure_time: 17
+      initial_exposure_time: 30
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 1bc73d68-172d-4200-b015-8cd652db89f2
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 7757b591-58f0-407f-a500-9482e5dca585
+    name: Resinworks 3D Violet @SL1S 0.05
+    values:
+      exposure_time: 5.7
+      initial_exposure_time: 24

@@ -1,0 +1,29 @@
+id: Photocentric Ash Grey
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Photocentric
+  material_type: Tough
+  material_colour: '#C0C0C0'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: d7cb7d28-eec5-4ea6-b269-64be0a4f962f
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: c6e275d6-193e-41fa-9052-b37d270fed23
+    name: Photocentric Ash Grey @SL1 0.025
+    values:
+      exposure_time: 9
+      initial_exposure_time: 30
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: de36acb1-8c3f-4753-acb2-2568acc73ec1
+    name: Photocentric Ash Grey @SL1 0.05
+    values:
+      exposure_time: 10
+      initial_exposure_time: 30

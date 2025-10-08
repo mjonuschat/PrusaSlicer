@@ -1,0 +1,29 @@
+id: NextDent Surgical Guide
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: NextDent
+  material_type: Medical
+  material_colour: '#FF8040'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: abb6b317-be4c-4b7f-bbbd-9086bc1bc855
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 92eb0814-1d93-424e-a957-22579c50b7b7
+    name: NextDent Surgical Guide @SL1 0.025
+    values:
+      exposure_time: 6
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: a61d5134-231e-4e5a-842c-67f6019818b9
+    name: NextDent Surgical Guide @SL1 0.05
+    values:
+      exposure_time: 7
+      initial_exposure_time: 35

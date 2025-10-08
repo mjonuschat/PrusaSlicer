@@ -1,0 +1,42 @@
+id: NextDent Cast Purple
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: NextDent
+  material_type: Casting
+  material_colour: '#E800E8'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 375452d5-c250-477d-96e9-8baf548a1d9f
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 259daed8-ad8b-465a-b2dd-ead67d4b9bc3
+    name: NextDent Cast Purple @SL1 0.025
+    values:
+      exposure_time: 7
+      initial_exposure_time: 20
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 2268e19d-bed5-4829-bc1c-3bd3b2436739
+    name: NextDent Cast Purple @SL1 0.05
+    values:
+      exposure_time: 9
+      initial_exposure_time: 20
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 58a7d5a9-f3fc-4b7b-9f17-ad80871e919b
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: b3888e81-21ce-414b-95c4-aa038acae841
+    name: NextDent Cast Purple @SL1S 0.05
+    values:
+      exposure_time: 3
+      initial_exposure_time: 16

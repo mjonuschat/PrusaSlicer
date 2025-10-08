@@ -1,0 +1,66 @@
+id: Prusament Resin Flex80 White
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Flexible
+  material_colour: '#E2D3DB'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: dc95c131-5e75-4901-83c6-b96f3ab49608
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 0962ee92-597c-4e1a-b170-4c076d77495c
+    name: Prusament Resin Flex80 White @SL1 0.025
+    values:
+      exposure_time: 5.5
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 26ea4644-2aac-43ad-9885-cca804602a74
+    name: Prusament Resin Flex80 White @SL1 0.05
+    values:
+      exposure_time: 6.5
+      initial_exposure_time: 35
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 424092ee-2bca-46d0-abce-1254db7a7de5
+    name: Prusament Resin Flex80 White @SL1 0.1
+    values:
+      exposure_time: 7.5
+      initial_exposure_time: 45
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 5b831cb1-5e9d-45c1-8377-c060b1ddafdd
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  values:
+    area_fill: 20
+    delay_before_exposure: [1, 10]
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 9d5dee24-ab15-414b-88a5-51608e461881
+    name: Prusament Resin Flex80 White @SL1S 0.025
+    values:
+      exposure_time: 1.8
+      initial_exposure_time: 6
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: c52ec546-0cc1-486d-9ff7-09b3cc7939f0
+    name: Prusament Resin Flex80 White @SL1S 0.05
+    values:
+      exposure_time: 3
+      initial_exposure_time: 9
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: d5115b03-7c71-4335-9672-5e133c42a926
+    name: Prusament Resin Flex80 White @SL1S 0.1
+    values:
+      exposure_time: 3.5
+      initial_exposure_time: 12

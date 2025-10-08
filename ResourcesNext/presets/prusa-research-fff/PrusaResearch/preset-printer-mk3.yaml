@@ -1,8 +1,10 @@
+id: 3cdf7725-8849-4a1e-adf7-f0071dbedb8d
 kind: printer
 inherits:
 - '*MK3_nozzle_variant*'
 variants:
 - condition: printer.base_model == "MK3"
+  id: c4c0d35c-cf8c-49ae-9f9c-bdea075b3704
   values:
     bed_shape:
     - '0x0'
@@ -68,9 +70,11 @@ variants:
     multimaterial_purging: '140'
   variants:
   - condition: printer.model == "MK3S"
+    id: c1750310-813b-4941-8926-2f5646885eb2
     name: Original Prusa i3 MK3S & MK3S+
     variants:
     - condition: feeder.base_model=~/(MMU2|MMU3)/
+      id: e5e8884c-1cc3-4085-9bc7-de91a746f375
       values:
         single_extruder_multi_material: 1
         start_gcode: |-
@@ -134,14 +138,17 @@ variants:
           M593 Y T2 F0 ; disable IS
           M84 X Y E ; disable motors
           ; max_layer_z = [max_layer_z]
-    - values: {}
+    - id: 16a3955f-8b01-4ce3-a453-13c8996ffab8
+      values: {}
   - condition: printer.model == "MK3"
+    id: 3b2a60f8-f411-4bab-9319-8757aa0a6406
     name: Original Prusa i3 MK3
 ---
 kind: printer
 id: '*MK3_nozzle_variant*'
 variants:
 - condition: printer.base_model == "MK3"
+  id: 5b81e35f-2c1b-4cfa-80d0-cead0b402408
   values:
     start_gcode: |-
       M862.3 P "[printer_model]" ; printer model check
@@ -173,6 +180,7 @@ variants:
   variants:
 # 0.25 nozzle
   - condition: tool.nozzle_diameter == 0.25
+    id: ca12d4d4-9d98-4131-ab03-e047bf72c35f
     values:
       start_gcode: |-
         M862.3 P "[printer_model]" ; printer model check
@@ -199,6 +207,7 @@ variants:
       color_change_gcode: "M600\nG1 E0.3 F1500 ; prime after color change"
 # 0.4 nozzle
   - condition: tool.nozzle_diameter == 0.4
+    id: 18261556-bd4e-4149-81d6-a6043a6173e9
     values:
       start_gcode: |-
         M862.3 P "[printer_model]" ; printer model check
@@ -234,9 +243,11 @@ variants:
       color_change_gcode: "M600\nG1 E0.3 F1500 ; prime after color change"
 # 0.6 nozzle
   - condition: tool.nozzle_diameter == 0.6
+    id: 68300f1b-1c54-40b8-8279-6914e11da0c1
     values:
       color_change_gcode: "M600\nG1 E0.4 F1500 ; prime after color change"
 # 0.8 nozzle
   - condition: tool.nozzle_diameter == 0.8
+    id: bc2e25f9-c6f2-44e6-bd53-c279c8f05c9d
     values:
       color_change_gcode: "M600\nG1 E0.5 F1500 ; prime after color change"

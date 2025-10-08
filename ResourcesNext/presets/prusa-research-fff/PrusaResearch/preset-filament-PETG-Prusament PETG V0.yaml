@@ -11,55 +11,66 @@ values:
   filament_spool_weight: 193
   first_layer_temperature: 230
   temperature: 230
----        
+---
 kind: filament
 # Maximum volumetric speed limits
-id: '*PrusamentPETGV0_MAXVOLSPEED*'      
+id: '*PrusamentPETGV0_MAXVOLSPEED*'
 ## C1, MK4, XL family
 variants:
 - condition: printer.base_model=~/(COREONE|MK4|XL)/
+  id: 5b097461-9abe-4acf-b9e8-dcdbc3e71e8f
   variants:
   # 0.25
   - condition: tool.nozzle_diameter == 0.25
+    id: cc11f515-47bc-4186-a874-ea8d828bc9cf
     values:
       filament_max_volumetric_speed: 10
   # 0.3
   - condition: tool.nozzle_diameter == 0.3
+    id: 9ce55288-e042-4fa4-a809-b5383c63d3e7
     values:
       filament_max_volumetric_speed: 10
   # 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: cc915a71-cd5d-4ce0-812c-5a925fba2c51
     values:
       filament_max_volumetric_speed: 10
     variants:
     # HF0.4
     - condition: tool.nozzle_high_flow
+      id: cb28b7bb-4218-4767-8df5-1908c61cf761
       values:
         filament_max_volumetric_speed: 16
   # 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: d9731673-226a-4776-b91c-ffacda5d986d
     values:
       filament_max_volumetric_speed: 14
     variants:
     # HF0.5
     - condition: tool.nozzle_high_flow
+      id: 34024c9a-66d4-46df-878d-0fb834502adc
       values:
         filament_max_volumetric_speed: 18
   # 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 09ee704d-16db-415f-bf7d-ca3d18d50070
     values:
       filament_max_volumetric_speed: 17
     variants:
     # HF0.6
     - condition: tool.nozzle_high_flow
+      id: 4866339b-2eab-4ec6-ad73-75f98f85d6b2
       values:
         filament_max_volumetric_speed: 22
   # 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: b412390f-949f-4d66-bb3f-03a333792e15
     values:
       filament_max_volumetric_speed: 22
     variants:
     # HF0.8
     - condition: tool.nozzle_high_flow
+      id: 32ff2d5f-4c39-451c-8533-dcd4b5a8f08e
       values:
         filament_max_volumetric_speed: 27

@@ -1,0 +1,45 @@
+id: Prusament Resin Model Sandstone
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Model
+  material_colour: '#EEA061'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 84015c11-9a90-4370-8438-30293eabfc0b
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  values:
+    area_fill: 20
+    delay_before_exposure: [1, 10]
+    tilt_down_initial_speed: layer1750,layer1750
+    tilt_down_offset_steps: [0, 1200]
+    tilt_down_finish_speed: move8000,move5120
+    tilt_up_initial_speed: move8000,move8000
+    tilt_up_offset_steps: [600, 600]
+    tilt_up_finish_speed: layer1750,layer1750
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 9df8205f-ba37-41ef-a773-7e521e8293ae
+    name: Prusament Resin Model Sandstone @SL1S 0.025
+    values:
+      exposure_time: 2
+      initial_exposure_time: 5
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: c182f8ad-8882-408f-a753-6ba1e6ba76d5
+    name: Prusament Resin Model Sandstone @SL1S 0.05
+    values:
+      exposure_time: 2.2
+      initial_exposure_time: 6
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: c76cb0c7-d6eb-4376-9582-b0f3742a3744
+    name: Prusament Resin Model Sandstone @SL1S 0.1
+    values:
+      exposure_time: 2.6
+      initial_exposure_time: 8

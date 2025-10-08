@@ -1,0 +1,29 @@
+id: 3DJake High Precision Blue
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: 3DJake
+  material_type: Tough
+  material_colour: '#007EFD'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 3cd0fe91-c722-4576-8142-721677fda86a
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: f2b21745-4ee2-43db-9f4e-b040aa02cb99
+    name: 3DJake High Precision Blue @SL1 0.025
+    values:
+      exposure_time: 6.5
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 2491e743-2a68-4534-9545-b9516d532c61
+    name: 3DJake High Precision Blue @SL1 0.05
+    values:
+      exposure_time: 7
+      initial_exposure_time: 35

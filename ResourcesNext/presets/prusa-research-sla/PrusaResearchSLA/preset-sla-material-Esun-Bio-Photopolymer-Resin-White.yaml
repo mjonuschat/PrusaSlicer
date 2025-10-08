@@ -1,0 +1,42 @@
+id: Esun Bio-Photopolymer Resin White
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Esun
+  material_type: Tough
+  material_colour: '#FFFFFF'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 115be639-d4e7-47d0-9e47-704e309086d4
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: b6e59848-fafe-4332-962a-fb14add62972
+    name: Esun Bio-Photopolymer Resin White @SL1 0.025
+    values:
+      exposure_time: 5
+      initial_exposure_time: 30
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 3ffd37ae-53a7-44e3-8237-2b4608cbfb3a
+    name: Esun Bio-Photopolymer Resin White @SL1 0.05
+    values:
+      exposure_time: 8
+      initial_exposure_time: 30
+## SL1S
+- condition: printer.model == "SL1S"
+  id: f0d9e486-f981-408b-bcef-4c5c0e25bb4b
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 253365f7-14e7-476a-bdac-9b6cc470e180
+    name: Esun Bio-Photopolymer Resin White @SL1S 0.05
+    values:
+      exposure_time: 2.7
+      initial_exposure_time: 24

@@ -1,6 +1,8 @@
+id: 03f050cf-f650-4aeb-b8cc-4970570d146e
 kind: printer
 variants:
 - condition: printer.base_model == "XL"
+  id: b18380bb-c617-4219-a147-73503de65097
   values:
     bed_shape:
     - '0x0'
@@ -49,7 +51,7 @@ variants:
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
-    thumbnails: [16x16/QOI, '313x173/QOI', '480x240/QOI', '380x285/PNG']
+    thumbnails: [16x16/QOI, 313x173/QOI, 480x240/QOI, 380x285/PNG]
     use_firmware_retraction: 0
     use_relative_e_distances: 1
     use_volumetric_e: 0
@@ -57,6 +59,7 @@ variants:
     z_offset: 0
   variants:
   - condition: printer.tool_count == 1
+    id: 31b3e95b-798e-41ce-9b04-f862f2c27c2f
     name: Original Prusa XL
     values:
       machine_max_acceleration_extruding: [4000, 2500]
@@ -130,6 +133,7 @@ variants:
         G0 X76 Z0.2 F8000 ; wipe, move quickly away from the bed
         G92 E0 ; reset extruder position
   - condition: printer.tool_count > 1
+    id: ad873b2b-df72-4740-a165-fb5075bc31bf
     name: Original Prusa XL
     values:
       start_gcode: |

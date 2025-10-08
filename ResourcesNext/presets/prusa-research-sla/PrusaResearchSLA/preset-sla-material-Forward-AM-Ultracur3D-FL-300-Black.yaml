@@ -1,0 +1,36 @@
+id: Forward AM Ultracur3D FL 300 Black
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Forward AM
+  material_type: Flexible
+  material_colour: '#595959'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: cf9a7faa-c6e6-411c-b6db-24a76e0dc000
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 32f4ff0c-046a-4e75-b221-a44373000ab9
+    name: Forward AM Ultracur3D FL 300 Black @SL1S 0.025
+    values:
+      exposure_time: 3
+      initial_exposure_time: 25
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: c59043e9-fb15-44d7-95dc-633ba276b4ef
+    name: Forward AM Ultracur3D FL 300 Black @SL1S 0.05
+    values:
+      exposure_time: 4.8
+      initial_exposure_time: 25
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 4a36b929-526f-4f8b-82d3-a569375e467e
+    name: Forward AM Ultracur3D FL 300 Black @SL1S 0.1
+    values:
+      exposure_time: 6
+      initial_exposure_time: 25

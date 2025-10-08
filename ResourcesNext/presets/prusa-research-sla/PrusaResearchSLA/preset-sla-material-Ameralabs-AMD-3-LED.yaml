@@ -1,0 +1,35 @@
+id: Ameralabs AMD 3 LED
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Ameralabs
+  material_type: Tough
+  material_colour: '#808080'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 267eec83-96da-4c03-b15a-fab116c7af85
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 92d08655-b170-479e-8f8f-8e9cbfc09c8e
+    name: Ameralabs AMD 3 LED @SL1 0.05
+    values:
+      exposure_time: 5
+      initial_exposure_time: 30
+## SL1S
+- condition: printer.model == "SL1S"
+  id: b41911c9-47ad-4849-b216-4a5e44ca3c64
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 1cb402df-7cf5-4237-b12d-9b988133ae6f
+    name: Ameralabs AMD 3 LED @SL1S 0.05
+    values:
+      exposure_time: 1.7
+      initial_exposure_time: 24

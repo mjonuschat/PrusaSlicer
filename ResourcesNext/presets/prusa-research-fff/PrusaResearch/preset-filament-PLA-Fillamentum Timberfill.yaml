@@ -14,228 +14,283 @@ values:
 variants:
   ## C1
 - condition: printer.base_model == "COREONE"
+  id: 8c92f2fd-73b7-4582-adf5-18417996c421
   variants:
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 6813e6b8-a8ac-423c-ab59-c13cbf55f0be
     values:
       filament_max_volumetric_speed: 11
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
+      id: 1f953af4-4510-499d-ad0e-ba5ad5d16225
       values:
         filament_max_volumetric_speed: 11
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 5a1d6962-5eba-4182-b001-d21f0a9761db
     values:
       filament_max_volumetric_speed: 11
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
+      id: 0713c491-c9b5-4825-8248-b01298673dd3
       values:
         filament_max_volumetric_speed: 11
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 962db98f-85a7-424d-b6f1-fdb76c5b4d67
     values:
       filament_max_volumetric_speed: 13
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
+      id: daa970d8-8305-4d65-a12d-5c7af2c646d6
       values:
         filament_max_volumetric_speed: 13
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 68505dff-8220-4754-a8e2-4d9e964f78a2
     values:
       filament_max_volumetric_speed: 17
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
+      id: c2084432-eb86-4007-a314-897c572b5ed4
       values:
         filament_max_volumetric_speed: 17
 ## XL
 - condition: printer.base_model == "XL"
+  id: c8b1e8db-dc1b-40fe-872d-09759e7bf87f
   variants:
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 2a6e7ec9-722d-4ac6-a084-7aa47e338505
     values:
       filament_max_volumetric_speed: 11
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
+      id: 5ce267ab-879a-4d9b-af62-e2b256a02007
       values:
         filament_max_volumetric_speed: 11
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 0673f4a2-b22d-4ba8-ba65-5f83ab7a2443
     values:
       filament_max_volumetric_speed: 11
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
+      id: 4356b6ad-becc-4095-9527-b05f5d129a11
       values:
         filament_max_volumetric_speed: 11
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: d0b95fad-72c1-489a-85c6-85a3634f631c
     values:
       filament_max_volumetric_speed: 13
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
+      id: 408be89c-e4a9-4634-b371-46c25553927b
       values:
         filament_max_volumetric_speed: 13
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 0ce66824-09c5-4d52-8408-12a7550f14c4
     values:
       filament_max_volumetric_speed: 17
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
+      id: 4970349f-4282-49bf-bebc-a52fbc555ed6
       values:
         filament_max_volumetric_speed: 17
 ## MK4
 - condition: printer.model=~/(MK4|MK3.9)/
+  id: d8cf52e4-566f-4ae8-b06d-3c7488421261
   variants:
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 8dec7b82-89cc-4a46-a3d1-9f1a886cc3c5
     values:
       filament_max_volumetric_speed: 11
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
+      id: e40f155e-9ac8-4190-8b43-2621827fc567
       values:
         filament_max_volumetric_speed: 11
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 0a069cb2-ab85-4ae1-85e3-02f07a3f8900
     values:
       filament_max_volumetric_speed: 11
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
+      id: cd03e58d-c936-4707-8bd0-a6606f59772f
       values:
         filament_max_volumetric_speed: 11
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 4b44b8bf-31eb-4045-b0d7-20eb4ab038cc
     values:
       filament_max_volumetric_speed: 13
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
+      id: 27390541-1d7e-4474-baa5-66cc99a609a4
       values:
         filament_max_volumetric_speed: 13
   # MK4 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: e479cda4-244f-4520-9d05-57e8ddf92968
     values:
       filament_max_volumetric_speed: 17
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
+      id: 4e015ea4-dd6c-4c05-b0dd-a5e0f653fcf9
       values:
         filament_max_volumetric_speed: 17
 ## MK4S
 - condition: printer.model=~/(MK4S|MK3.9S)/
+  id: 23003013-2ddd-4c5f-9f3d-5a313724a01a
   variants:
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: da30333d-1f6a-46a3-809b-0fe0f4aac023
     values:
       filament_max_volumetric_speed: 11
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
+      id: 84ffc3f6-db72-4bc6-ac8c-f26523731c47
       values:
         filament_max_volumetric_speed: 11
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 9711f8f8-fbe7-46ec-bbae-6c4a84694de6
     values:
       filament_max_volumetric_speed: 11
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
+      id: 7e00daf3-904d-4d11-bbc5-189ff79a62fc
       values:
         filament_max_volumetric_speed: 11
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: c674d651-886d-4d46-a49f-bfcd2955059b
     values:
       filament_max_volumetric_speed: 13
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
+      id: 2634df18-ab05-4637-8683-2ec094ad0101
       values:
         filament_max_volumetric_speed: 13
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 5f14cefd-7ff1-4b53-bdfd-46d529ef3722
     values:
       filament_max_volumetric_speed: 17
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
+      id: a127866c-f887-408f-bc51-c888d66c804c
       values:
         filament_max_volumetric_speed: 17
 ## MK3.5
 - condition: printer.base_model == "MK3.5"
+  id: 6b717cfb-f50c-4909-9df9-e6249ac050e7
   variants:
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: ab68202b-1578-4fdf-92f3-8da8b4d1904c
     values:
       filament_max_volumetric_speed: 11
   # MK3.5 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 640ebdbe-92fb-40a1-98c4-fddbcb62f51e
     values:
       filament_max_volumetric_speed: 11
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: a47ae2a3-27ee-4576-b0ba-5c34726b4f5c
     values:
       filament_max_volumetric_speed: 12
   # MK3.5 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 4c440137-f1a0-4a55-b3a2-5f3f7c465831
     values:
       filament_max_volumetric_speed: 15
 ## MINI
 - condition: printer.base_model == "MINI"
+  id: 9ed3781e-d833-4151-a81f-06ae56c5bf2a
   variants:
   # MINI 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 81529397-456f-48e7-9c43-50628616acc0
     values:
       filament_max_volumetric_speed: 9
   # MINI 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 2de8ee7b-f7f8-466d-bf5f-4db400f37791
     values:
       filament_max_volumetric_speed: 12
   # MINI 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 62ac132e-4611-4819-a47b-a77ce7dce1ea
     values:
       filament_max_volumetric_speed: 15
 ## MK3, MK3S and MK2.5, MK2.5S
 - condition: printer.base_model=~/(MK3|MK2.5)/
+  id: ff09323b-96c2-4e78-9547-64df6d04c4fe
   variants:
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 3525ac33-1774-49bf-abda-e0cbe43477f6
     values:
       filament_max_volumetric_speed: 10
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 4202127d-e8d6-41d2-bacf-ff8804226a77
     values:
       filament_max_volumetric_speed: 12
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 9e290b77-816c-45c9-920c-e9302a19c9e9
     values:
       filament_max_volumetric_speed: 15
 ## MK2S
 - condition: printer.model == "MK2S"
+  id: 27aa98ae-07b0-481e-96d3-c78768d6dc6f
   variants:
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 9950afc4-8e99-400d-b6f7-3426bdf70ba6
     values:
       filament_max_volumetric_speed: 10
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 761c832b-e3ab-41f7-8903-a1a15738ab20
     values:
       filament_max_volumetric_speed: 10
 ## MK2S MMU1
 - condition: printer.model == "MK2SMM"
+  id: 1add0742-73b7-4d08-8512-4261ca32fb16
   variants:
   # MK2SMM 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: dec9ec18-d0aa-4e7b-b763-09881e9db11a
     values:
       filament_max_volumetric_speed: 8
   # MK2SMM 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: cc3a5104-7542-4109-b570-a690a4a895f6
     values:
       filament_max_volumetric_speed: 8

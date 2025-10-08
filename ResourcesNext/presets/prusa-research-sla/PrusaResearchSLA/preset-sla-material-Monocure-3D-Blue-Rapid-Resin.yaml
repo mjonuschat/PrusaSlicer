@@ -1,0 +1,42 @@
+id: Monocure 3D Blue Rapid Resin
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Monocure
+  material_type: Tough
+  material_colour: '#007EFD'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 5ee69e1f-3035-49e6-b371-293d4a76d747
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: c4397a86-5bf3-4d72-ab2f-ae312dea8768
+    name: Monocure 3D Blue Rapid Resin @SL1 0.025
+    values:
+      exposure_time: 4
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: e1f721b1-1304-4e07-94e1-5847a82719e9
+    name: Monocure 3D Blue Rapid Resin @SL1 0.05
+    values:
+      exposure_time: 7
+      initial_exposure_time: 35
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 44c613a6-6cbb-4075-9d42-a740e099766c
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: f1ebb8bd-7a96-4747-85b7-320ad8d546af
+    name: Monocure 3D Blue Rapid Resin @SL1S 0.05
+    values:
+      exposure_time: 2.3
+      initial_exposure_time: 28

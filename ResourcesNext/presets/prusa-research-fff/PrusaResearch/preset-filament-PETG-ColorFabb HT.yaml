@@ -17,31 +17,36 @@ values:
   fan_always_on: false
   fan_below_layer_time: 10
 variants:
-  - condition: printer.model=~/(COREONE|MK4S)/
-    values:
-      min_fan_speed: 10
-      max_fan_speed: 15
-      bridge_fan_speed: 25
-      overhang_fan_speed_0: 25
----        
+- condition: printer.model=~/(COREONE|MK4S)/
+  id: 02c79f01-e0c4-4593-81d7-ab92d85ff175
+  values:
+    min_fan_speed: 10
+    max_fan_speed: 15
+    bridge_fan_speed: 25
+    overhang_fan_speed_0: 25
+---
 kind: filament
-id: '*sheets_PET_ColorFabbHT*'      
-variants:        
+id: '*sheets_PET_ColorFabbHT*'
+variants:
 # STANDARD sheet
-- condition: sheet.type != "cold"        
+- condition: sheet.type != "cold"
+  id: e148cc05-5a77-4dee-931e-c1034a0432fa
   values:
     first_layer_bed_temperature: 105
     bed_temperature: 105
   variants:
   - condition: printer.base_model=~/(XL|MINI)/
+    id: 68f8c97d-a84c-4672-a543-ab9732fd3a9c
     values:
       first_layer_bed_temperature: 95
       bed_temperature: 95
   - condition: printer.base_model=~/(MK3|MK2)/
+    id: df80b025-a426-4246-8612-deea83d0c954
     values:
       bed_temperature: 110
 # COLD sheet
 - condition: sheet.type == "cold"
+  id: db6a5d3b-38bc-4ecd-8765-5d548f08ede5
   values:
     first_layer_bed_temperature: 65
     bed_temperature: 65

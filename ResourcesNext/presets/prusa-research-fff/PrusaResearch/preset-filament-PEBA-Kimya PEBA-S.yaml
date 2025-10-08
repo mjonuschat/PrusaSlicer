@@ -1,0 +1,7 @@
+kind: filament
+id: Kimya PEBA-S
+inherits:
+- '*PEBA*'
+name: Kimya PEBA-S
+values:
+  filament_vendor: Kimya

@@ -1,0 +1,41 @@
+id: Liqcreate Flexible-X
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Liqcreate
+  material_type: Flexible
+  material_colour: '#595959'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 7038e3c7-ec6d-4446-812d-b4e60c439fc6
+  unconditional_inherits:
+  - '*sl1s_slow*'
+  variants:
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 38600fa0-699e-43a5-8dbf-e6500be42d3d
+    name: Liqcreate Flexible-X @SL1S 0.05
+    values:
+      exposure_time: 15
+      initial_exposure_time: 40
+      material_correction_x: 1.01
+      material_correction_y: 1.01
+      material_ow_support_pillar_diameter: 1.5
+      material_ow_support_head_front_diameter: 1
+      material_ow_support_head_penetration: 1
+      material_ow_support_head_width: 3
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 0e906464-0cd6-491b-9ae6-10ae67de7c77
+    name: Liqcreate Flexible-X @SL1S 0.1
+    values:
+      exposure_time: 17
+      initial_exposure_time: 40
+      material_correction_x: 1.01
+      material_correction_y: 1.01
+      material_ow_support_pillar_diameter: 1.5
+      material_ow_support_head_front_diameter: 1
+      material_ow_support_head_penetration: 1
+      material_ow_support_head_width: 3

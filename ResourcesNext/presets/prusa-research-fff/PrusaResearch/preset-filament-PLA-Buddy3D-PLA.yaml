@@ -3,6 +3,7 @@ id: Buddy3D PLA
 inherits:
 - Prusament PLA
 name: Buddy3D PLA
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/
 values:
   filament_cost: '19.99'
   filament_vendor: Buddy3D

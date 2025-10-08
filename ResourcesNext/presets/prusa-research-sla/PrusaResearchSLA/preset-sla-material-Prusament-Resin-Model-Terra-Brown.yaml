@@ -1,0 +1,45 @@
+id: Prusament Resin Model Terra Brown
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Model
+  material_colour: '#7A5C45'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 24c9baf8-b4f9-42ba-933c-a6ff04322544
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  values:
+    area_fill: 20
+    delay_before_exposure: [1, 10]
+    tilt_down_initial_speed: layer1750,layer1750
+    tilt_down_offset_steps: [0, 1200]
+    tilt_down_finish_speed: move8000,move5120
+    tilt_up_initial_speed: move8000,move8000
+    tilt_up_offset_steps: [600, 600]
+    tilt_up_finish_speed: layer1750,layer1750
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 632e92c2-2782-4cba-9cb1-bac55321596c
+    name: Prusament Resin Model Terra Brown @SL1S 0.025
+    values:
+      exposure_time: 2
+      initial_exposure_time: 5
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 9f01bd23-7d08-45e8-9816-f5a12fe17d88
+    name: Prusament Resin Model Terra Brown @SL1S 0.05
+    values:
+      exposure_time: 2.2
+      initial_exposure_time: 6
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 2e965f4b-fcd4-4c2e-a291-eb10227db838
+    name: Prusament Resin Model Terra Brown @SL1S 0.1
+    values:
+      exposure_time: 2.6
+      initial_exposure_time: 8

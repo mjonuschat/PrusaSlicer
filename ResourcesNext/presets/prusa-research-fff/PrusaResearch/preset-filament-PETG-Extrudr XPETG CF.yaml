@@ -14,36 +14,44 @@ values:
   filament_spool_weight: 230
 variants:
 - condition: printer.base_model=~/(COREONE|MK4|XL)/
+  id: 90b4b6e0-b2a1-434b-8e85-22eec5f355e3
   variants:
   # 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 23485bc0-9965-4433-8195-36135b880d4a
     values:
       filament_max_volumetric_speed: 9
     variants:
     # HF0.4
     - condition: tool.nozzle_high_flow
+      id: 3d41876e-efdc-45eb-b8d8-0b89f5c9822d
       values:
         filament_max_volumetric_speed: 9
   # 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: b70a4446-6f30-4424-8c29-bf751c81691d
     values:
       filament_max_volumetric_speed: 10
     variants:
     # HF0.5
     - condition: tool.nozzle_high_flow
+      id: fb139c80-341f-46fb-95a3-fa7a35c0c901
       values:
         filament_max_volumetric_speed: 10
   # 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 0b2d0e01-fc88-4c6b-b744-b052ead4807d
     values:
       filament_max_volumetric_speed: 13
     variants:
     # HF0.6
     - condition: tool.nozzle_high_flow
+      id: cebed564-428a-4b1f-a868-36a44a52f711
       values:
         filament_max_volumetric_speed: 13
   # 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 211095a5-f2bc-4b91-b91e-ade8f0665126
     values:
       filament_max_volumetric_speed: 18
       first_layer_temperature: 245
@@ -51,21 +59,24 @@ variants:
     variants:
     # HF0.8
     - condition: tool.nozzle_high_flow
+      id: 0b76dc7b-326d-4011-bc63-dc9180a2e234
       values:
         filament_max_volumetric_speed: 18
         first_layer_temperature: 245
         temperature: 245
----        
+---
 kind: filament
-id: '*sheets_PET_XPETG*'      
-variants:        
+id: '*sheets_PET_XPETG*'
+variants:
 # STANDARD sheet
-- condition: sheet.type != "cold"        
+- condition: sheet.type != "cold"
+  id: f978edc5-94ae-4bb1-8d08-b827ce44b975
   values:
     first_layer_bed_temperature: 70
     bed_temperature: 70
 # COLD sheet
 - condition: sheet.type == "cold"
+  id: dbec941f-5359-4f3e-8812-ada7cfd7214d
   values:
     first_layer_bed_temperature: 55
     bed_temperature: 55

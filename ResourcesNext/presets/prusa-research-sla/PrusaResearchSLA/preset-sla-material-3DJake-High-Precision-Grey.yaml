@@ -1,0 +1,29 @@
+id: 3DJake High Precision Grey
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: 3DJake
+  material_type: Tough
+  material_colour: '#C0C0C0'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 6283bc1b-4b1c-4b8a-8cf6-7a16e5527ee6
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 42523fd0-fdce-45c4-a0b0-152e3c0ede67
+    name: 3DJake High Precision Grey @SL1 0.025
+    values:
+      exposure_time: 8.5
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 8f9e5bc0-09d9-4478-bfaa-d40c37acb12c
+    name: 3DJake High Precision Grey @SL1 0.05
+    values:
+      exposure_time: 9
+      initial_exposure_time: 35

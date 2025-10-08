@@ -1,0 +1,45 @@
+id: Prusament Resin Model Brick Red
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Model
+  material_colour: '#B46056'
+variants:
+## SL1S
+- condition: printer.model == "SL1S"
+  id: e94546bf-9316-42c9-9f7a-99a81b69091f
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  values:
+    area_fill: 20
+    delay_before_exposure: [1, 10]
+    tilt_down_initial_speed: layer1750,layer1750
+    tilt_down_offset_steps: [0, 1200]
+    tilt_down_finish_speed: move8000,move5120
+    tilt_up_initial_speed: move8000,move8000
+    tilt_up_offset_steps: [600, 600]
+    tilt_up_finish_speed: layer1750,layer1750
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 02704f6d-e288-41bf-bff9-ff5340dec770
+    name: Prusament Resin Model Brick Red @SL1S 0.025
+    values:
+      exposure_time: 2
+      initial_exposure_time: 5
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 8c6ec692-59ae-4e21-a00f-c4a737d5f8ec
+    name: Prusament Resin Model Brick Red @SL1S 0.05
+    values:
+      exposure_time: 2.4
+      initial_exposure_time: 6
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 9c0ddb5e-18c8-42cb-9528-a40f51c08522
+    name: Prusament Resin Model Brick Red @SL1S 0.1
+    values:
+      exposure_time: 3.3
+      initial_exposure_time: 8

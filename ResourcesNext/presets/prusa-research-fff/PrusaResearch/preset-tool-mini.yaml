@@ -2,6 +2,7 @@ kind: tool_print
 id: '*common MINI*'
 variants:
 - condition: printer.model == "MINI"
+  id: e5340a39-a060-4686-a597-214e1aa7c178
   values:
     retract_layer_change: 1
     retract_length_toolchange: 0
@@ -19,6 +20,7 @@ variants:
   variants:
 # 0.25    
   - condition: tool.nozzle_diameter == 0.25
+    id: a161a9a0-b8db-4671-baa2-b6f134b62c04
     values:
       max_layer_height: 0.15
       min_layer_height: 0.05
@@ -26,6 +28,7 @@ variants:
       retract_lift: 0.15
 # 0.4    
   - condition: tool.nozzle_diameter == 0.4
+    id: 6e015e98-9c95-479c-ae70-165af340555f
     values:
       max_layer_height: 0.25
       min_layer_height: 0.07
@@ -34,6 +37,7 @@ variants:
       retract_before_travel: 1.5
 # 0.6    
   - condition: tool.nozzle_diameter == 0.6
+    id: b56f2070-2cc7-4e68-9ebf-46b3dac3c213
     values:
       max_layer_height: 0.40
       min_layer_height: 0.15
@@ -43,6 +47,7 @@ variants:
 
 # 0.8    
   - condition: tool.nozzle_diameter == 0.8
+    id: 1c335140-a63a-4b65-8a83-298256afa95e
     values:
       deretract_speed: 20
       max_layer_height: 0.55
@@ -52,11 +57,13 @@ variants:
       retract_lift: 0.25
       retract_speed: 45
 ---
+id: 65ea900f-3cdd-4587-bc7f-5271ea1e7923
 kind: tool_print
 inherits:
 - '*common MINI*'
 variants:
 - condition: printer.model == "MINI"
+  id: 3d44e4ac-aeba-4e08-9175-e8ac03ee8836
   values:
     bottom_solid_layers: 4
     bridge_acceleration: 1500
@@ -108,7 +115,7 @@ variants:
     raft_contact_distance: 0.15
     raft_expansion: 1.5
     raft_first_layer_density: 80%
-    raft_first_layer_expansion: 3.5
+    raft_first_layer_expansion: 3
     seam_position: aligned
     small_perimeter_speed: 140
     solid_infill_acceleration: 4000
@@ -144,7 +151,7 @@ variants:
     support_tree_angle_slow: 25
     support_tree_branch_diameter: 2
     support_tree_branch_diameter_angle: 5
-    support_tree_branch_diameter_double_wall: 3
+    support_tree_branch_diameter_double_wall: 8
     support_tree_branch_distance: 1
     support_tree_tip_diameter: 0.8
     support_tree_top_rate: 30%
@@ -162,10 +169,12 @@ variants:
     wipe_tower_extra_flow: 250%
     travel_short_distance_acceleration: 250
   variants:
-  - name: '*non-MMU branch*'
+  - id: 3d64b2ea-1e88-4b7e-83f0-33b377a184ca
+    name: '*non-MMU branch*'
     variants:
 # 0.25 nozzle
     - condition: tool.nozzle_diameter == 0.25
+      id: a26803be-33a4-4550-84de-ba28dc65b67c
       values:
         extrusion_width: 0.27
         first_layer_extrusion_width: 0.32
@@ -210,11 +219,13 @@ variants:
 # 0.25n/0.05mm layer
       variants:
       - condition: print.layer_height == 0.05
+        id: dcd812a9-f013-45bf-850f-983343d2c52e
         values:
           bottom_solid_layers: 10
           top_solid_layers: 13
         variants:
-        - name: 0.05mm DETAIL @MINI 0.25
+        - id: 9487c06d-e23b-4a30-be50-ae9d79131e9d
+          name: 0.05mm DETAIL @MINI 0.25
           values:
             top_solid_infill_speed: 60
             support_material_contact_distance: 0.1
@@ -239,11 +250,13 @@ variants:
             raft_contact_distance: 0.1
 # 0.25n/0.07mm layer
       - condition: print.layer_height == 0.07
+        id: 5c55801d-4fa7-4de1-bad8-598ac2d69d82
         values:
           bottom_solid_layers: 9
           top_solid_layers: 11
         variants:
-        - name: 0.07mm DETAIL @MINI 0.25
+        - id: 3af2b9b6-0f9e-4c52-bfe0-dfef7ea499f0
+          name: 0.07mm DETAIL @MINI 0.25
           values:
             top_solid_infill_speed: 60
             support_material_contact_distance: 0.1
@@ -268,6 +281,7 @@ variants:
             raft_contact_distance: 0.1
 # 0.25n/0.12mm layer
       - condition: print.layer_height == 0.12
+        id: 6886a927-951f-46f4-b99c-f8cc59f41ba7
         values:
           bottom_solid_layers: 6
           top_solid_layers: 9
@@ -276,7 +290,8 @@ variants:
           infill_acceleration: 2500
           solid_infill_acceleration: 2000
         variants:
-        - name: 0.12mm STRUCTURAL @MINI 0.25
+        - id: 5cbb1879-1a1c-42e6-819b-12ed2babcb09
+          name: 0.12mm STRUCTURAL @MINI 0.25
           values:
             perimeter_speed: 70
             external_perimeter_speed: 40
@@ -285,7 +300,8 @@ variants:
             perimeter_acceleration: 2000
             infill_acceleration: 3000
             solid_infill_acceleration: 2500
-        - name: 0.12mm SPEED @MINI 0.25
+        - id: df9370d0-da4f-4a1b-9b7a-03bc221e2c68
+          name: 0.12mm SPEED @MINI 0.25
           values:
             perimeter_speed: 120
             external_perimeter_speed: 120
@@ -295,6 +311,7 @@ variants:
             solid_infill_acceleration: 2500
 # 0.25n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: e37de7ba-d673-4a00-afa3-c5dfd5666b90
         values:
           bottom_solid_layers: 6
           top_solid_layers: 7
@@ -303,14 +320,16 @@ variants:
           infill_acceleration: 2500
           solid_infill_acceleration: 2000
         variants:
-        - name: 0.15mm STRUCTURAL @MINI 0.25
+        - id: 7653564e-9869-411c-8f69-1bca1f91db3b
+          name: 0.15mm STRUCTURAL @MINI 0.25
           values:
             perimeter_speed: 70
             external_perimeter_speed: 40
             small_perimeter_speed: 40
             external_perimeter_acceleration: 1500
             perimeter_acceleration: 2000
-        - name: 0.15mm SPEED @MINI 0.25
+        - id: fdc6df4f-5dc8-4348-acd8-ba6fc2204b0b
+          name: 0.15mm SPEED @MINI 0.25
           values:
             perimeter_speed: 120
             external_perimeter_speed: 120
@@ -320,15 +339,18 @@ variants:
 # 0.4 nozzle
     - condition: tool.nozzle_diameter == 0.4
 # 0.4n/0.10mm layer
+      id: 912ad7ea-b18c-440a-927b-b7d8275bcaff
       variants:
       - condition: print.layer_height == 0.10
+        id: 267641f6-6680-4eda-b4cb-2adf9a8f80be
         values:
           bottom_solid_layers: 6
           top_solid_layers: 7
           support_material_contact_distance: 0.17
           raft_contact_distance: 0.15
         variants:
-        - name: 0.10mm FAST DETAIL @MINI 0.4
+        - id: cea890a7-ae7d-40a1-ac12-5b23001c512f
+          name: 0.10mm FAST DETAIL @MINI 0.4
           values:
             perimeter_speed: 140
             external_perimeter_speed: 140
@@ -348,6 +370,7 @@ variants:
             bridge_speed: 35
 # 0.4n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: fbc5e055-2395-4240-b05f-b63a2b01d6a6
         values:
           bottom_solid_layers: 4
           top_solid_layers: 6
@@ -357,7 +380,8 @@ variants:
           support_material_speed: 100
           support_material_interface_speed: 50
         variants:
-        - name: 0.15mm STRUCTURAL @MINI 0.4
+        - id: a43920af-8327-477a-a71f-ad050b10d2ab
+          name: 0.15mm STRUCTURAL @MINI 0.4
           values:
             bottom_solid_layers: 5
             perimeter_speed: 80
@@ -372,7 +396,8 @@ variants:
             solid_infill_acceleration: 3000
             overhang_speed_3: 80%
             support_material_speed: 100
-        - name: 0.15mm SPEED @MINI 0.4
+        - id: 64a7b577-884d-43a9-9e8b-e6c460923db5
+          name: 0.15mm SPEED @MINI 0.4
           values:
             perimeter_speed: 140
             external_perimeter_speed: 140
@@ -384,6 +409,7 @@ variants:
             top_solid_infill_acceleration: 1000
 # 0.4n/0.20mm layer
       - condition: print.layer_height == 0.20
+        id: d4aa3165-b24f-4779-bcc9-e74e0639bb68
         values:
           bottom_solid_layers: 4
           top_solid_layers: 5
@@ -391,7 +417,8 @@ variants:
           raft_contact_distance: 0.2
           top_solid_infill_acceleration: 1000
         variants:
-        - name: 0.20mm STRUCTURAL @MINI 0.4
+        - id: 21e5d049-60e1-4fa5-84c8-b68d1b3a1b29
+          name: 0.20mm STRUCTURAL @MINI 0.4
           values:
             perimeter_speed: 80
             small_perimeter_speed: 45
@@ -406,9 +433,11 @@ variants:
             perimeter_acceleration: 2000
             solid_infill_acceleration: 3000
             overhang_speed_3: 90%
-        - name: 0.20mm SPEED @MINI 0.4
+        - id: 8b69a039-2f6e-4af8-96ad-3afdd06add7b
+          name: 0.20mm SPEED @MINI 0.4
 # 0.6 nozzle
     - condition: tool.nozzle_diameter == 0.6
+      id: 63700b59-9d79-485a-9072-8574331071d3
       values:
         extrusion_width: 0.68
         first_layer_extrusion_width: 0.68
@@ -446,12 +475,14 @@ variants:
       variants:
 # 0.6n/0.15mm layer
       - condition: print.layer_height == 0.15
+        id: 21cbb19f-25dd-4202-9f46-cee5beef0834
         values:
           bottom_solid_layers: 5
           top_solid_layers: 6
           support_material_contact_distance: 0.22
         variants:
-        - name: 0.15mm STRUCTURAL @MINI 0.6
+        - id: 4a75bf66-8279-448f-805b-ebca9f44435d
+          name: 0.15mm STRUCTURAL @MINI 0.6
           values:
             perimeter_speed: 70
             external_perimeter_speed: 45
@@ -477,6 +508,7 @@ variants:
             overhang_speed_3: 80%
 # 0.6n/0.20mm layer
       - condition: print.layer_height == 0.20
+        id: 0696b361-6419-44cf-a8d9-a5e19481721f
         values:
           bottom_solid_layers: 4
           top_solid_layers: 5
@@ -493,7 +525,8 @@ variants:
           top_infill_extrusion_width: 0.5
           top_solid_infill_acceleration: 1500
         variants:
-        - name: 0.20mm SPEED @MINI 0.6
+        - id: b76fde9c-a192-4b70-9878-c6048d0a6f6d
+          name: 0.20mm SPEED @MINI 0.6
           values:
             perimeter_speed: 115
             external_perimeter_speed: 115
@@ -508,6 +541,7 @@ variants:
             support_material_speed: 90
 # 0.6n/0.25mm layer
       - condition: print.layer_height == 0.25
+        id: 4804552d-8814-41d2-a62f-4f3ee3eb9411
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
@@ -522,7 +556,8 @@ variants:
           support_material_speed: 80
           bridge_acceleration: 1500
         variants:
-        - name: 0.25mm STRUCTURAL @MINI 0.6
+        - id: a1f5ec03-d3b5-4010-95e5-a7581377eaab
+          name: 0.25mm STRUCTURAL @MINI 0.6
           values:
             perimeter_speed: 80
             small_perimeter_speed: 45
@@ -534,7 +569,8 @@ variants:
             perimeter_acceleration: 2000
             gap_fill_speed: 60
             overhang_speed_3: 80%
-        - name: 0.25mm SPEED @MINI 0.6
+        - id: d3273483-972a-410c-84db-c8f3a5f3da10
+          name: 0.25mm SPEED @MINI 0.6
           values:
             perimeter_speed: 80
             external_perimeter_speed: 70
@@ -548,6 +584,7 @@ variants:
             gap_fill_speed: 60
 # 0.6n/0.35mm layer
       - condition: print.layer_height == 0.35
+        id: 05bcbd0c-e7b5-44c9-b05c-dfba70ffcf0d
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
@@ -563,7 +600,8 @@ variants:
           default_acceleration: 2000
           top_solid_infill_speed: 60
         variants:
-        - name: 0.35mm STRUCTURAL @MINI 0.6
+        - id: d799ebd6-710c-487b-844a-50733fe8ef80
+          name: 0.35mm STRUCTURAL @MINI 0.6
           values:
             perimeter_speed: 60
             external_perimeter_speed: 45
@@ -578,6 +616,7 @@ variants:
             overhang_speed_3: 80%
 # 0.8 nozzle
     - condition: tool.nozzle_diameter == 0.8
+      id: c9f9db7d-3c35-4d31-828f-84a8c38bc6ac
       values:
         fill_pattern: rectilinear
         thick_bridges: 1
@@ -613,12 +652,14 @@ variants:
       variants:
 # 0.8n/0.30mm layer
       - condition: print.layer_height == 0.30
+        id: be72bdd0-1c3e-435a-ba1a-43df5395cd64
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
           first_layer_speed: 40
         variants:
-        - name: 0.30mm DETAIL @MINI 0.8
+        - id: 3e451b23-4703-40b9-8756-bd5fef0ab4f5
+          name: 0.30mm DETAIL @MINI 0.8
           values:
             perimeter_speed: 60
             external_perimeter_speed: 45
@@ -637,11 +678,13 @@ variants:
             top_infill_extrusion_width: 0.7
 # 0.8n/0.40mm layer
       - condition: print.layer_height == 0.40
+        id: 4c7ad5a6-8020-45e8-a8fe-d63e02e8aaed
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
         variants:
-        - name: 0.40mm QUALITY @MINI 0.8
+        - id: c6ebe7c1-b3de-408b-9d8f-1469a09dfde9
+          name: 0.40mm QUALITY @MINI 0.8
           values:
             perimeter_speed: 40
             external_perimeter_speed: 40
@@ -660,11 +703,13 @@ variants:
             top_infill_extrusion_width: 0.75
 # 0.8n/0.50mm layer
       - condition: print.layer_height == 0.50
+        id: 35da86cc-87bf-4a8e-87f2-730886f8bd32
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
         variants:
-        - name: 0.50mm DRAFT @MINI 0.8
+        - id: 37824ef4-c010-4e0c-a5a4-5e4a01476e6a
+          name: 0.50mm DRAFT @MINI 0.8
           values:
             perimeter_speed: 35
             external_perimeter_speed: 30

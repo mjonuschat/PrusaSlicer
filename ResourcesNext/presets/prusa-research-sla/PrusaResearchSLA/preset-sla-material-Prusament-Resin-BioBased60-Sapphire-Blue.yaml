@@ -1,0 +1,66 @@
+id: Prusament Resin BioBased60 Sapphire Blue
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Tough
+  material_colour: '#2196F3'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 5cd67587-101b-4aa3-ae90-2b09e00d5ef6
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: d66be719-a882-42c7-a62a-e4a09f6e364d
+    name: Prusament Resin BioBased60 Sapphire Blue @SL1 0.025
+    values:
+      exposure_time: 7.7
+      initial_exposure_time: 35
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: b24b73a0-148e-4571-ae2e-26b8032dfa85
+    name: Prusament Resin BioBased60 Sapphire Blue @SL1 0.05
+    values:
+      exposure_time: 8
+      initial_exposure_time: 35
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: e82d4b00-a399-4657-9148-bb0263dd710f
+    name: Prusament Resin BioBased60 Sapphire Blue @SL1 0.1
+    values:
+      exposure_time: 9
+      initial_exposure_time: 35
+## SL1S
+- condition: printer.model == "SL1S"
+  id: da96986e-4e61-4f7d-a2de-4404b1202444
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  values:
+    area_fill: 20
+    delay_before_exposure: [2, 15]
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 718acd70-a12d-47c8-b66e-8dd396b78a54
+    name: Prusament Resin BioBased60 Sapphire Blue @SL1S 0.025
+    values:
+      exposure_time: 3
+      initial_exposure_time: 10
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: a4653a1f-9d78-4137-ab46-15927990a467
+    name: Prusament Resin BioBased60 Sapphire Blue @SL1S 0.05
+    values:
+      exposure_time: 3.2
+      initial_exposure_time: 10
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 466f9ea9-9f4b-4ae3-9be9-e05989e405b5
+    name: Prusament Resin BioBased60 Sapphire Blue @SL1S 0.1
+    values:
+      exposure_time: 4.2
+      initial_exposure_time: 13

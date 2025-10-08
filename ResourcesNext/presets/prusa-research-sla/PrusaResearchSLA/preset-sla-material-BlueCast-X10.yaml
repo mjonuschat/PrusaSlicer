@@ -1,0 +1,29 @@
+id: BlueCast X10
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: BlueCast
+  material_type: Tough
+  material_colour: '#007EFD'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 81904d21-7f9a-4325-8a30-67c43520213c
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 65c1577e-3c08-4862-ad0c-76da260c1dd3
+    name: BlueCast X10 @SL1 0.025
+    values:
+      exposure_time: 4
+      initial_exposure_time: 100
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 1996dd6b-9e86-4191-95bf-ebb021b3486b
+    name: BlueCast X10 @SL1 0.05
+    values:
+      exposure_time: 6
+      initial_exposure_time: 100

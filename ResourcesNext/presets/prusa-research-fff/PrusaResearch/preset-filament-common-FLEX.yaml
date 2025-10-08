@@ -3,7 +3,7 @@ id: '*FLEX*'
 # TODO: define with respect to mat db types (there is no general FLEX)
 #features:
 #  $.type: 'FLEX'
-condition: 'printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/ and tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/'
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/ and tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/
 values:
   bed_temperature: 50
   bridge_fan_speed: 80
@@ -77,9 +77,11 @@ values:
   pressure_advance_enable: true
   pressure_advance_value: 0
   temperature: 230
+  cooling_slowdown_logic: uniform_cooling
 ## C1
 variants:
 - condition: printer.base_model == "COREONE"
+  id: 6c2579aa-b266-40fc-930a-9a5db754fb0b
   values:
     chamber_minimal_temperature: 0
     chamber_temperature: 30
@@ -89,51 +91,61 @@ variants:
   variants:
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 26fb8185-5587-4ce1-9a90-8fcae3bdc55b
     name: '*FLEX* @COREONE 0.4'
     values:
       filament_max_volumetric_speed: 2.5
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
+      id: c8c2f552-ee01-4493-97cf-b2d9f81bddfe
       name: '*FLEX* @COREONE HF0.4'
       values:
         filament_max_volumetric_speed: 2.5
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: f1c84580-1959-4672-9772-1345c84128ad
     name: '*FLEX* @COREONE 0.5'
     values:
       filament_max_volumetric_speed: 2.5
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
+      id: 7f50ecd7-081f-4fd6-a337-a34f5985f6c9
       name: '*FLEX* @COREONE HF0.5'
       values:
         filament_max_volumetric_speed: 2.5
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: f8cf98a8-3c47-40d0-adbc-47add19d9209
     name: '*FLEX* @COREONE 0.6'
     values:
       filament_max_volumetric_speed: 3.5
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
+      id: 29a72bb5-f5c0-4c3f-9c32-fbbcbcf4a72a
       name: '*FLEX* @COREONE HF0.6'
       values:
         filament_max_volumetric_speed: 3.5
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 5d988665-b240-44e3-9c07-a8cd62dc2003
     name: '*FLEX* @COREONE 0.8'
     values:
       filament_max_volumetric_speed: 7.5
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
+      id: b3ca0f47-1a34-4f6c-936c-11f8641f3d1f
       name: '*FLEX* @COREONE HF0.8'
       values:
         filament_max_volumetric_speed: 7.5
 ## XL
 - condition: printer.base_model == "XL"
+  id: 862c06bc-6ce2-46c9-b13e-94d38865c35b
   values:
+    filament_multitool_ramming: false
     filament_multitool_ramming_volume: 40
     retract_length_toolchange: 2.5
     idle_temperature: 70
@@ -144,6 +156,7 @@ variants:
   variants:
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: a9e2f930-ef2a-40bd-9384-0bcda11ea7ff
     name: '*FLEX* @XL 0.4'
     values:
       filament_max_volumetric_speed: 2.5
@@ -151,11 +164,13 @@ variants:
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
+      id: 1ead90fd-99e4-4a11-9fc0-ebbf1e05a971
       name: '*FLEX* @XL HF0.4'
       values:
         filament_max_volumetric_speed: 2.5
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 9a0c1814-0b0c-4a09-ab7a-9decb74c1633
     name: '*FLEX* @XL 0.5'
     values:
       filament_max_volumetric_speed: 2.5
@@ -163,11 +178,13 @@ variants:
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
+      id: 334b46e1-e5f1-4ef0-ba30-d68b81a01c73
       name: '*FLEX* @XL HF0.5'
       values:
         filament_max_volumetric_speed: 2.5
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: b7bae192-e410-492f-80d7-b403873d5a15
     name: '*FLEX* @XL 0.6'
     values:
       filament_max_volumetric_speed: 3.5
@@ -175,11 +192,13 @@ variants:
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
+      id: 884805a3-3c6b-4cdb-a328-f211d57a8fca
       name: '*FLEX* @XL HF0.6'
       values:
         filament_max_volumetric_speed: 3.5
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 6e9e2b2f-2c62-447e-b3fd-2b2c0955925c
     name: '*FLEX* @XL 0.8'
     values:
       filament_max_volumetric_speed: 7.5
@@ -187,108 +206,128 @@ variants:
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
+      id: cd4de8f7-376c-4dff-b270-1db102f40c33
       name: '*FLEX* @XL HF0.8'
       values:
         filament_max_volumetric_speed: 7.5
 ## MK4
 - condition: printer.model=~/(MK4|MK3.9)/
+  id: af2c5d12-141e-4a5a-b32a-2b29352e1088
   variants:
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: bd490eb4-e753-4a3f-9745-5cc783a7bafa
     name: '*FLEX* @MK4 0.4'
     values:
       filament_max_volumetric_speed: 3
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
+      id: 0dc41bb2-0787-4ab4-bbb8-27bdedc1f946
       name: '*FLEX* @MK4 HF0.4'
       values:
         filament_max_volumetric_speed: 3
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 4b73d456-33a5-4172-a524-8f665a25bd66
     name: '*FLEX* @MK4 0.5'
     values:
       filament_max_volumetric_speed: 3.5
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
+      id: 693b2376-fb80-460e-aa40-de2446a2fddd
       name: '*FLEX* @MK4 HF0.5'
       values:
         filament_max_volumetric_speed: 3.5
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 55be1116-ff65-4da3-8348-f9c0727e68e8
     name: '*FLEX* @MK4 0.6'
     values:
       filament_max_volumetric_speed: 5
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
+      id: 5ffdc672-b114-402f-b695-72845e84baf6
       name: '*FLEX* @MK4 HF0.6'
       values:
         filament_max_volumetric_speed: 5
   # MK4 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: affb0723-111f-4a26-99ba-b7c84db416ef
     name: '*FLEX* @MK4 0.8'
     values:
       filament_max_volumetric_speed: 9
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
+      id: 1152e36c-478c-429b-85aa-2a885f10a61f
       name: '*FLEX* @MK4 HF0.8'
       values:
         filament_max_volumetric_speed: 9
 ## MK4S
 - condition: printer.model=~/(MK4S|MK3.9S)/
+  id: 1c1ee425-0d46-4f5c-b22c-854c1a460d33
   values:
     bridge_fan_speed: 70
     max_fan_speed: 50
   variants:
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: e0a792b8-8958-46ed-b514-89a9312ddd4f
     name: '*FLEX* @MK4S 0.4'
     values:
       filament_max_volumetric_speed: 3
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
+      id: b86ef765-d3ba-4601-8966-17e6f7b6f7d6
       name: '*FLEX* @MK4S HF0.4'
       values:
         filament_max_volumetric_speed: 3
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: 9d7c8ee9-f8c9-476f-8844-d415cd9a4de6
     name: '*FLEX* @MK4S 0.5'
     values:
       filament_max_volumetric_speed: 3.5
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
+      id: 5f57e3ab-bb4f-41dd-ac0a-b75cacc74dfd
       name: '*FLEX* @MK4S HF0.5'
       values:
         filament_max_volumetric_speed: 3.5
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 5aac1e29-2fe0-42e9-826e-a0b311cb16d7
     name: '*FLEX* @MK4S 0.6'
     values:
       filament_max_volumetric_speed: 5
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
+      id: d8d9b032-593a-44ea-af75-5e241de0f2ed
       name: '*FLEX* @MK4S HF0.6'
       values:
         filament_max_volumetric_speed: 5
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: d041cfeb-6269-4d5d-88e3-abbbc041de01
     name: '*FLEX* @MK4S 0.8'
     values:
       filament_max_volumetric_speed: 9
     variants:
     # MK4S HF0.8
     - condition: tool.nozzle_high_flow
+      id: d63eade5-7b4b-43dc-ac13-c7fcb30979b0
       name: '*FLEX* @MK4S HF0.8'
       values:
         filament_max_volumetric_speed: 9
 ## MK3.5
 - condition: printer.base_model == "MK3.5"
+  id: c25f9dd6-859f-4b42-a19e-2fc367e25326
   values:
     extrusion_multiplier: 1.15
     first_layer_temperature: 240
@@ -304,26 +343,31 @@ variants:
   variants:
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: a439d814-5dc5-4c2b-8666-8e7c97a9cd88
     name: '*FLEX* @MK3.5 0.4'
     values:
       filament_max_volumetric_speed: 1.2
   # MK3.5 0.5
   - condition: tool.nozzle_diameter == 0.5
+    id: b4954e35-31f7-45ab-987a-1d0755858365
     name: '*FLEX* @MK3.5 0.5'
     values:
       filament_max_volumetric_speed: 1.3
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 40a9a025-7762-4584-b84d-f4e38cfe179b
     name: '*FLEX* @MK3.5 0.6'
     values:
       filament_max_volumetric_speed: 1.5
   # MK3.5 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 27033921-8228-4731-8659-95080d2284c1
     name: '*FLEX* @MK3.5 0.8'
     values:
       filament_max_volumetric_speed: 4
 ## MINI
 - condition: printer.base_model == "MINI"
+  id: c4f2ac2c-aa00-46ee-8dbc-2b9507dc5b41
   values:
     extrusion_multiplier: 1.15
     first_layer_temperature: 240
@@ -338,21 +382,25 @@ variants:
   variants:
   # MINI 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: fde53e25-34cf-448c-8a8c-e021034115c4
     name: '*FLEX* @MINI 0.4'
     values:
       filament_max_volumetric_speed: 1.35
   # MINI 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 4fc2f7ad-0f2a-4c96-a3bf-a3456a1233a9
     name: '*FLEX* @MINI 0.6'
     values:
       filament_max_volumetric_speed: 1.35
   # MINI 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 9680e8a1-6598-4c8d-bcfd-a9c644dd4104
     name: '*FLEX* @MINI 0.8'
     values:
       filament_max_volumetric_speed: 4
 ## MK3, MK3S and MK2.5, MK2.5S
 - condition: printer.base_model=~/(MK3|MK2.5)/
+  id: 33cd09e4-9c69-49bc-9613-007c555acb51
   values:
     extrusion_multiplier: 1.15
     first_layer_temperature: 240
@@ -371,21 +419,25 @@ variants:
   variants:
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 2d1964c5-7f88-4698-a6db-c21fcab2d4bf
     name: '*FLEX* @MK2.5_MK3 0.4'
     values:
       filament_max_volumetric_speed: 1.2
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: 1939d7f6-f6cf-41a1-a2b7-469f99663a85
     name: '*FLEX* @MK2.5_MK3 0.6'
     values:
       filament_max_volumetric_speed: 1.3
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
+    id: 1964c063-b165-4d4c-8da4-2085c34dcb0a
     name: '*FLEX* @MK2.5_MK3 0.8'
     values:
       filament_max_volumetric_speed: 4
 ## MK2S
 - condition: printer.model == "MK2S"
+  id: 4183ab5b-99b7-436c-a553-c220edbf6513
   values:
     extrusion_multiplier: 1.15
     first_layer_temperature: 240
@@ -404,11 +456,13 @@ variants:
   variants:
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
+    id: 6c774dcd-59f6-4e8c-bc0f-b9593820a848
     name: '*FLEX* @MK2 0.4'
     values:
       filament_max_volumetric_speed: 1.2
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
+    id: c882058a-6ac2-48e3-9ab9-2da6eb085e2f
     name: '*FLEX* @MK2 0.6'
     values:
       filament_max_volumetric_speed: 1.2

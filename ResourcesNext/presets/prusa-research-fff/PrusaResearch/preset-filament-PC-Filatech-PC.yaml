@@ -13,24 +13,30 @@ values:
   filament_spool_weight: 0
 variants:
 - condition: printer.model=~/(COREONE|MK4S)/
+  id: 7a19b86e-6859-4419-9478-fa44c96e0a65
   values:
     min_fan_speed: 12
     max_fan_speed: 12
     bridge_fan_speed: 20
   variants:
   - condition: tool.nozzle_diameter == 0.4
+    id: e4ae64fb-0196-4eec-8686-34fe944ee817
     values:
       filament_max_volumetric_speed: 8
     variants:
     - condition: tool.nozzle_high_flow
+      id: 66ced641-1ea7-4a58-9b18-9e111321bdbc
       values:
         filament_max_volumetric_speed: 20
 - condition: printer.model=~/(MK4|XL)/
+  id: cb4e5755-927c-45c6-9751-3fd7225e018c
   variants:
   - condition: tool.nozzle_diameter == 0.4
+    id: 4ace28d7-6f8c-4f67-9d52-b51986cceea7
     values:
       filament_max_volumetric_speed: 8
     variants:
     - condition: tool.nozzle_high_flow
+      id: 3f16c5fe-cbcd-443c-b031-80c2396a96d4
       values:
         filament_max_volumetric_speed: 20

@@ -1,0 +1,72 @@
+id: Prusament Resin Model Alabaster White
+kind: sla_material
+inherits:
+- '*common*'
+values:
+  material_vendor: Prusa Polymers
+  material_type: Tough
+  material_colour: '#D6D7D8'
+variants:
+## SL1
+- condition: printer.model == "SL1"
+  id: 6d74c8f0-21d9-4ff5-a439-c8501f38838a
+  unconditional_inherits:
+  - '*sl1_fast*'
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: 545c67bc-4d2e-4d7c-85ec-d5dd663f6aab
+    name: Prusament Resin Model Alabaster White @SL1 0.025
+    values:
+      exposure_time: 4.5
+      initial_exposure_time: 30
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: 757328a8-ee8b-42f0-a5bf-5f7a71fef806
+    name: Prusament Resin Model Alabaster White @SL1 0.05
+    values:
+      exposure_time: 5
+      initial_exposure_time: 30
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 58445d21-e1aa-4996-9cb3-ffbc0c8b6710
+    name: Prusament Resin Model Alabaster White @SL1 0.1
+    values:
+      exposure_time: 13
+      initial_exposure_time: 45
+## SL1S
+- condition: printer.model == "SL1S"
+  id: 5e2ca1fb-00e0-4a93-9a28-f0e6865936cc
+  unconditional_inherits:
+  - '*sl1s_fast*'
+  values:
+    area_fill: 20
+    delay_before_exposure: [1, 10]
+    tilt_down_initial_speed: layer1750,layer1750
+    tilt_down_offset_steps: [0, 1200]
+    tilt_down_finish_speed: move8000,move5120
+    tilt_up_initial_speed: move8000,move8000
+    tilt_up_offset_steps: [600, 600]
+    tilt_up_finish_speed: layer1750,layer1750
+  variants:
+# 0.025
+  - condition: print.layer_height == 0.025
+    id: b10b0cdd-5534-4fc0-9e1d-67d65a739786
+    name: Prusament Resin Model Alabaster White @SL1S 0.025
+    values:
+      exposure_time: 2.2
+      initial_exposure_time: 5
+# 0.05
+  - condition: print.layer_height == 0.05
+    id: c4f0b182-8715-4897-bbe8-e2c0a027ca07
+    name: Prusament Resin Model Alabaster White @SL1S 0.05
+    values:
+      exposure_time: 2.4
+      initial_exposure_time: 6
+# 0.1
+  - condition: print.layer_height == 0.1
+    id: 3a13f025-34b3-40a7-851c-d6b0e8d4e001
+    name: Prusament Resin Model Alabaster White @SL1S 0.1
+    values:
+      exposure_time: 3.1
+      initial_exposure_time: 8
