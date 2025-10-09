@@ -98,6 +98,35 @@ void Print::clear()
 
 using Domain::FullConfigFDMPtr;
 
+using InstanceTransformations = std::map<Domain::ModelInstance*, Domain::Transformation>;
+
+// Returns original transformations.
+static InstanceTransformations
+transform_instances(Domain::Model& model, const Domain::Transform3d& transform)
+{
+    InstanceTransformations result;
+    for (Domain::ModelObject* object : model.objects) {
+        for (Domain::ModelInstance* instance : object->instances) {
+            const Domain::Transformation& original_transformation{instance->get_transformation()};
+            result[instance] = original_transformation;
+            instance->set_transformation(
+                Domain::Transformation{transform * original_transformation.get_matrix()}
+            );
+        }
+    }
+    return result;
+}
+
+static void restore_instance_transformations(
+    Domain::Model& model,
+    const InstanceTransformations& original_transformations
+)
+{
+    for (auto& [instance, trafo] : original_transformations) {
+        instance->set_transformation(trafo);
+    }
+}
+
 Biz::Print::ApplyStatus::Status Print::update(
     Domain::Model& model,
     const ConfigPack& config,
@@ -110,6 +139,15 @@ Biz::Print::ApplyStatus::Status Print::update(
 
     ApplyStatus::Status result{ApplyStatus::Unchanged{}};
     Biz::Slicing::with_limited_instances(model, bed.model_instances, [&]() {
+        const InstanceTransformations original_transformations{
+            transform_instances(model, bed.transformation.get_matrix().inverse())
+        };
+        ScopeGuard guard{
+            [&]() {
+                restore_instance_transformations(model, original_transformations);
+            }
+        };
+
         const auto slicing_input{prepare_slicing_input(std::get<ConfigPackFDM>(config))};
         if (!slicing_input.has_value()) {
             result = ApplyStatus::InvalidData{std::move(slicing_input.error())};

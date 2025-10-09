@@ -136,7 +136,11 @@ void FdmViewerWrapper::reset()
     m_gcode_window_data.reset();
 }
 
-void FdmViewerWrapper::load(FdmViewerWrapperInputData&& wrapper_data, FdmViewerInputData&& data)
+void FdmViewerWrapper::load(
+    FdmViewerWrapperInputData&& wrapper_data,
+    FdmViewerInputData&& data,
+    const Scene::Transform& transform
+)
 {
     m_loading = true;
 
@@ -148,7 +152,7 @@ void FdmViewerWrapper::load(FdmViewerWrapperInputData&& wrapper_data, FdmViewerI
         set_mode(FdmViewerWrapperMode::EditorGCode);
 
     m_gcode_window_data.set_gcode(data.gcode);
-    m_viewer.load(std::move(data));
+    m_viewer.load(std::move(data), transform);
 
     update_legend_type_selector();
     update_slider_layers();
@@ -248,12 +252,13 @@ static FdmViewerWrapperInputData extract_wrapper_input_data_from_result(const Pr
     return ret;
 }
 
-void FdmViewerWrapper::load_from_result(const ProcessorResult& result)
+void
+FdmViewerWrapper::load_from_result(const ProcessorResult& result, const Scene::Transform& transform)
 {
     FdmViewerInputData viewer_data = extract_viewer_input_data_from_result(result);
     FdmViewerWrapperInputData wrapper_data = extract_wrapper_input_data_from_result(result);
 
-    load(std::move(wrapper_data), std::move(viewer_data));
+    load(std::move(wrapper_data), std::move(viewer_data), transform);
 }
 
 void FdmViewerWrapper::render_toolpaths()

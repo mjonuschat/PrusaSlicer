@@ -39,6 +39,18 @@ using Slic3r::Biz::Slicing::Sla::Object;
 using Slic3r::Tests::ResultListener;
 using Slic3r::Biz::Slicing::IFDMResultListener;
 using Slic3r::Domain::ConfigPackSLA;
+using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::ModelInstance;
+using Slic3r::Domain::ModelObject;
+using Slic3r::Domain::Model;
+
+void translate_instances(Model& model, const Vec3d& translation) {
+    for (ModelObject* object : model.objects) {
+        for (ModelInstance* instance : object->instances) {
+            instance->set_offset(instance->get_offset() + translation);
+        }
+    }
+}
 
 TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]")
 {
@@ -47,11 +59,13 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]"
     using namespace std::chrono_literals;
 
     std::vector<Slic3r::Tests::ModelOnBed> bed_models;
-
     const int beds_count{5};
     for (std::size_t i{}; i < beds_count; ++i) {
+        const Vec3d bed_offset{i * Vec3d{200.0, 150.0, 0.0}};
         const auto cube_count{static_cast<int>(i + 1)};
         bed_models.emplace_back(get_cubes_model(cube_count, 5));
+        bed_models.back().bed_instance.transformation.set_offset(bed_offset);
+        translate_instances(bed_models.back().model, bed_offset);
         slicing.update_process(
             bed_models.back().model,
             bed_models.back().project_metadata,
@@ -59,6 +73,7 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]"
             bed_models.back().config,
             bed_models.back().bed_instance
         );
+        translate_instances(bed_models.back().model, -bed_offset);
     }
 
     slicing.slice_all();

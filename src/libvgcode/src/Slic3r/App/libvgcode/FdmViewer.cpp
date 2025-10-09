@@ -558,7 +558,7 @@ static void extract_pos_and_or_hwa(const MoveVertices& vertices, float travels_r
     }
 }
 
-void FdmViewer::load(FdmViewerInputData&& gcode_data)
+void FdmViewer::load(FdmViewerInputData&& gcode_data, const Scene::Transform& transform)
 {
     if (! gcode_data.vertices || gcode_data.vertices->empty())
         return;
@@ -688,13 +688,24 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data)
     m_aabb.first.translate(bbox.min.cast<float>());
     m_aabb.second = AABBMesh(m_aabb.first);
 
-    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+    Scene::Node* toolpaths_node = m_scene->root().query_first([](const Scene::Node* n)->bool {
         const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
         return tag != nullptr && tag->type == GCodeElementType::Toolpaths;
     }, true);
 
-    assert(node != nullptr);
-    node->set_raycast_component(new Scene::AabbRaycastNodeComponent(&m_aabb.second));
+    ASSERT(toolpaths_node != nullptr);
+
+    toolpaths_node->set_raycast_component(new Scene::AabbRaycastNodeComponent(&m_aabb.second));
+
+    Scene::Node::NodeList nodes;
+    m_scene->root().query([](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr;
+    }, nodes);
+
+    for (Scene::Node* gcode_node : nodes) {
+        gcode_node->set_world_transform(transform);
+    }
 }
 
 void FdmViewer::update_enabled_entities()

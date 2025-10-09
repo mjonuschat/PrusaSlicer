@@ -22,6 +22,7 @@
 
 #include <Slic3r/App/Render/Buffer.hpp>
 #include <Slic3r/App/Scene/AabbRaycastNodeComponent.hpp>
+#include "Slic3r/App/Scene/Transform.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
 
@@ -65,7 +66,7 @@ public:
     // Setup all the variables used for visualization of the toolpaths
     // from the given gcode data.
     //
-    void load(FdmViewerInputData&& gcode_data);
+    void load(FdmViewerInputData&& gcode_data, const Scene::Transform& transform);
 
     //
     // Update the visibility property of toolpaths in dependence

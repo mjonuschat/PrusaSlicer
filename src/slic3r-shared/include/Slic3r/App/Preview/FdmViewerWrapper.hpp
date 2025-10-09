@@ -94,8 +94,15 @@ public:
     FdmViewerWrapperMode mode() const { return m_settings.mode; }
     void set_mode(FdmViewerWrapperMode mode);
 
-    void load(FdmViewerWrapperInputData&& wrapper_data, libvgcode::FdmViewerInputData&& data);
-    void load_from_result(const Biz::libpgcode::ProcessorResult& result);
+    void load(
+        FdmViewerWrapperInputData&& wrapper_data,
+        libvgcode::FdmViewerInputData&& data,
+        const Scene::Transform& transform
+    );
+    void load_from_result(
+        const Biz::libpgcode::ProcessorResult& result,
+        const Scene::Transform& transform
+    );
 
     void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const Domain::ColorRGB& color) { return m_viewer.set_extrusion_role_color(role, color); }
     

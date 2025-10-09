@@ -1027,7 +1027,14 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
         return;
     }
 
-    m_fdm_viewer.load_from_result(*fdm_result);
+    const Domain::Project& project{m_project_interactor.workbench().project(id.project_id)};
+    const Domain::BedInstance* bed_instance{project.find_bed_instance_by_id(id.bed_instance_id)};
+
+    if (bed_instance == nullptr) {
+        return;
+    }
+
+    m_fdm_viewer.load_from_result(*fdm_result, bed_instance->transformation.get_matrix());
 
     update_toolbar_visibility();
 

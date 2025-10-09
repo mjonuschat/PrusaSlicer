@@ -1,9 +1,5 @@
 #pragma once
 
-#include <charconv>
-#include <regex>
-#include <vector>
-
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
