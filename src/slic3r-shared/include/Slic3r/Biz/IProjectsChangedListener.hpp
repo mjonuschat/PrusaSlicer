@@ -13,6 +13,7 @@ public:
     virtual void on_project_removed(Domain::SelectionId project_id) {}
     virtual void on_project_changed(Domain::SelectionId project_id) {}
     virtual void on_project_loaded(Domain::SelectionId project_id) {}
+    virtual void on_project_load_failed(const std::string& error) {}
 };
 
 } // namespace Slic3r::Biz

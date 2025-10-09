@@ -798,6 +798,8 @@ struct StructTraits<Struct> {                                                   
 #define FIELD_NAME_SELF nullptr
 #define FIELD_DESC(field, opt_field_name, opt_implicit_value, opt_validation) \
     (field, opt_field_name, opt_implicit_value, opt_validation)
+#define FIELD_DESC_IMPLICIT_VALUE(field, implicit_value) \
+        (field, FIELD_DEFAULT, implicit_value, FIELD_DEFAULT)
 
 #define DETAILS_ENUM_VALUE_IF(r, data, elem)                \
     if (value == BOOST_PP_TUPLE_ELEM(0, elem))              \

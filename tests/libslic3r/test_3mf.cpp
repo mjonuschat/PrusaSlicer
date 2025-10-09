@@ -14,6 +14,7 @@
 #include "Slic3r/Domain/ConfigPack.hpp"
 
 #include "Slic3r/Math.hpp"
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 
 using namespace Slic3r;
 using Slic3r::Domain::Point;
@@ -32,10 +33,11 @@ SCENARIO("Reading 3mf file", "[3mf]") {
         WHEN("3mf model is read") {
         	std::string path = std::string(TEST_DATA_DIR) + "/test_3mf/Geräte/Büchse.3mf";
         	Domain::ConfigPack config;
+            Biz::LegacyPresetMetadata preset_metadata;
             boost::optional<Semver> version;
             Domain::WipeTowersOnBeds wipe_towers;
             Domain::CustomGCodesOnBeds custom_gcodes;
-            bool ret = Slic3rLegacy::load_3mf_legacy(path.c_str(), config, &model, false, version, wipe_towers, custom_gcodes);
+            bool ret = Slic3rLegacy::load_3mf_legacy(path.c_str(), config, preset_metadata, &model, false, version, wipe_towers, custom_gcodes);
             THEN("load should succeed") {
                 REQUIRE(ret);
             }
@@ -97,11 +99,12 @@ TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
             // load back the model from the 3mf file
             Domain::Model dst_model;
             Domain::ConfigPack dst_config;
+            Biz::LegacyPresetMetadata dst_preset_metadata;
             Domain::WipeTowersOnBeds dst_wipe_towers;
             Domain::CustomGCodesOnBeds dst_custom_gcodes;
             {
                 boost::optional<Semver> version;
-                Slic3rLegacy::load_3mf_legacy(test_file.c_str(), dst_config, &dst_model, false, version, dst_wipe_towers, dst_custom_gcodes);
+                Slic3rLegacy::load_3mf_legacy(test_file.c_str(), dst_config, dst_preset_metadata, &dst_model, false, version, dst_wipe_towers, dst_custom_gcodes);
             }
             boost::filesystem::remove(test_file);
 

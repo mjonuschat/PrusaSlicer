@@ -58,6 +58,7 @@ STRUCT_DESC(
     FIELD_DESC_SIMPLE(name),
     FIELD_DESC_SIMPLE(model),
     FIELD_DESC_SIMPLE(technology),
+    FIELD_DESC_IMPLICIT_VALUE(legacy_printer_model, {}),
     FIELD_DESC(features, FIELD_DEFAULT, {}, FIELD_DEFAULT),
     FIELD_DESC(tool_count, FIELD_DEFAULT, 1, FIELD_DEFAULT),
     FIELD_DESC(visual, FIELD_DEFAULT, {}, FIELD_DEFAULT)
@@ -111,6 +112,7 @@ STRUCT_DESC(
     FIELD_DESC_SIMPLE(id),
     FIELD_DESC_SIMPLE(name),
     FIELD_DESC_SIMPLE(printer),
+    FIELD_DESC_IMPLICIT_VALUE(legacy_printer_model, {}),
     FIELD_DESC_SIMPLE(sheet),
     FIELD_DESC_SIMPLE(tool_count),
     FIELD_DESC(features, FIELD_DEFAULT, {}, FIELD_DEFAULT),

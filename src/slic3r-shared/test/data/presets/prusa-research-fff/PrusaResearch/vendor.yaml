@@ -214,6 +214,7 @@ kind: printer_config
 printer: xl
 id: 'xl-1t'
 name: 'XL 1T'
+legacy_printer_model: [XLIS, XL]
 tool_count: 1
 tools:
   - tool: '0.4'
@@ -223,6 +224,7 @@ kind: printer_config
 printer: xl
 id: 'xl-2t'
 name: 'XL 2T'
+legacy_printer_model: [XL2IS, XL2]
 tool_count: 2
 tools:
   - tool: '0.4'

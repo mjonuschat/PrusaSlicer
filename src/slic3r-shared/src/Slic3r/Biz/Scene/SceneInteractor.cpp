@@ -150,7 +150,7 @@ transform_selection_instance_mode(const SceneInteractorProjectContext& proj, con
         const SceneInteractor::Transform
             volume_relative_transform = (parent.inverse() * relative_transform * parent).matrix();
         for (auto* vol : obj->volumes) {
-            Domain::ElementRef e{object_id, 0, vol->id().id};
+            Domain::ElementRef e{object_id, first_inst->id().id, vol->id().id};
             if (!memento.elements.contains(e))
                 memento.elements.insert({e, {e, vol->get_matrix().matrix()}});
             vol->set_transformation(transform_product(memento.elements[e].original_xform, volume_relative_transform));
@@ -678,9 +678,7 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
         }
     );
 
-    invoke_listeners<ISceneSelectionChangedListener>(
-        [&](auto* l) { l->on_scene_selection_changed(m_selected_project_id, new_selection); }
-    );
+    set_object_selection(new_selection);
 
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);

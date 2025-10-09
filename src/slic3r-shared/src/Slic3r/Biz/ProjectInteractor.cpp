@@ -81,15 +81,37 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         }
     };
 
+    auto on_error{[&](std::exception_ptr eptr, cpptrace::stacktrace)
+    {
+        std::string description = "Unknown error";
+        try {
+            std::rethrow_exception(eptr);
+        } catch (Loaded3MFException& e) {
+            description = fmt::format("Loading file failed: {}", e.issue.msg);
+        } catch (std::exception& e) {
+            description = fmt::format("Loading file failed: {}", e.what());
+        } catch (...) {
+        }
+        SPDLOG_ERROR(description);
+        invoke_listeners<IProjectsChangedListener>([&description](IProjectsChangedListener* l)
+        {
+            l->on_project_load_failed(description);
+        });
+    }};
+
     Platform::PlatformServices::instance()
         .job_manager()
         .create_job(
             "project_load",
-            [](Biz::JThread::StopToken stop_token, const boost::filesystem::path file_path) -> Domain::Project
-            { return FileLoadingLogic::load_file_as_project(file_path); },
+            // TODO: preset_bundle may change, making its copy wouldn't help
+            [&preset_bundle = m_workbench.preset_bundle()](Biz::JThread::StopToken stop_token, const boost::filesystem::path file_path) -> Domain::Project
+            {
+                return FileLoadingLogic::load_file_as_project(file_path, preset_bundle);
+            },
             file_path
         )
         .on_result(on_result)
+        .on_exception(on_error)
         .start();
 }
 

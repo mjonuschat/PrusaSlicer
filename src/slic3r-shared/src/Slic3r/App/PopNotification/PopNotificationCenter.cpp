@@ -18,6 +18,7 @@ PopNotificationCenter::PopNotificationCenter(Biz::ProjectInteractor& project_int
     m_project_interactor(project_interactor)
 {
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
+    m_project_interactor.add_listener<Biz::IProjectsChangedListener>(this);
 }
 
 namespace {
@@ -740,5 +741,19 @@ void PopNotificationCenter::on_user_account_action_retry(
         never_equal
     );
 }
+
+void PopNotificationCenter::on_project_load_failed(const std::string& error)
+{
+    upsert_notifcation(
+        PopNotificationData{
+            PopNotificationType::LoadError,
+            PopNotificationLevel::Warning,
+            0s,
+            PopNotificationLayoutText{error}
+        },
+        never_equal
+    );
+}
+
 
 } // namespace Slic3r::App::PopNotification

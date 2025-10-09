@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
+#include "Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoader.hpp"
 
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
@@ -20,6 +21,8 @@
 #include <Slic3r/App/AppServices.hpp>
 
 #include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
+
 #include <fmt/format.h>
 
 namespace Slic3r::Biz::FileLoadingLogic {
@@ -347,8 +350,10 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
     }
 }
 
+using OptionalPresetBundle = std::optional<std::reference_wrapper<const Domain::Preset::Bundle>>;
+
 // The following function is used to load projects from PS 2.x.
-static Loaded3MF load_legacy_project(const std::string& file_path)
+static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPresetBundle bundle)
 {
     Loaded3MF loaded_3mf;
     loaded_3mf.config_containers_data.emplace_back();
@@ -356,9 +361,12 @@ static Loaded3MF load_legacy_project(const std::string& file_path)
     Domain::WipeTowersOnBeds wipe_towers;
     Domain::CustomGCodesOnBeds custom_gcodes;
 
+    auto& config_pack = loaded_3mf.config_containers_data.front().config_pack;
+    LegacyPresetMetadata hw_printer;
     if (!Slic3rLegacy::load_3mf_legacy(
             file_path.c_str(),
-            loaded_3mf.config_containers_data.front().config_pack,
+            config_pack,
+            hw_printer,
             &loaded_3mf.model,
             false,
             loaded_3mf.version,
@@ -367,10 +375,30 @@ static Loaded3MF load_legacy_project(const std::string& file_path)
         ))
         throw Loaded3MFException(Read3mfIssue(Read3mfIssueType::legacy_loader_failed, "Loading of legacy 3MF failed."));
 
-    // TODO: The old slicer did not store HW configuration in the current sense. We must heuristically
+    // The old slicer did not store HW configuration in the current sense. We must heuristically
     // construct a meaningful SelectedPresetMetadata here by doing something like
     //
-    // loaded_3mf.config_containers_data.front().preset = reconstruct_hw_config_from_legacy_config(loaded_3mf.config_containers_data.front().config_pack);
+    if (bundle.has_value()) {
+        auto result = Preset::IO::load_legacy_preset_metadata(
+            hw_printer,
+            config_pack,
+            bundle->get()
+        );
+        if (result.has_value()) {
+            auto& preset_metadata = loaded_3mf.config_containers_data.front().preset;
+            // FIXME: get relevant metadata from DynamicPrintConfig
+            //preset_metadata.printer.name = config_pack;
+            preset_metadata = result.value();
+            ASSERT(preset_metadata.tools.size() == preset_metadata.hw_config.tool_count);
+            // while (preset_metadata.tools.size() < preset_metadata.hw_config.tool_count)
+            //     preset_metadata.tools.emplace_back();
+            ASSERT(preset_metadata.materials.size() == preset_metadata.hw_config.tool_count);
+            // while (preset_metadata.materials.size() < preset_metadata.hw_config.tool_count)
+            //     preset_metadata.materials.emplace_back();
+        }
+        else
+            throw Loaded3MFException(Read3mfIssue(Read3mfIssueType::legacy_loader_failed, result.error()));
+    }
     //
     // This will provide enough info to create a complete Preset further down the road.
 
@@ -382,7 +410,7 @@ static Loaded3MF load_legacy_project(const std::string& file_path)
     return loaded_3mf;
 }
 
-Loaded3MF load_from_project(const boost::filesystem::path& project_file_path)
+Loaded3MF load_from_project(const boost::filesystem::path& project_file_path, OptionalPresetBundle bundle)
 {
     Loaded3MF loaded_3mf;
     const std::string project_file_name = project_file_path.string();
@@ -392,7 +420,7 @@ Loaded3MF load_from_project(const boost::filesystem::path& project_file_path)
         if (e.issue.type != Read3mfIssueType::legacy_loader_required)
             throw;
     }
-    return load_legacy_project(project_file_name);
+    return load_legacy_project(project_file_name, bundle);
 }
 
 tl::expected<ReturnData, std::string> read_data_from_file(const boost::filesystem::path& input_file_path)
@@ -409,7 +437,7 @@ tl::expected<ReturnData, std::string> read_data_from_file(const boost::filesyste
         }
         return tl::make_unexpected(loaded_mesh.error());
     } else if (boost::algorithm::iends_with(input_file_path.string(), ".3mf")) {
-        Loaded3MF loaded_3mf = load_from_project(input_file_path);
+        Loaded3MF loaded_3mf = load_from_project(input_file_path, std::nullopt);
         if (loaded_3mf.model.objects.empty()) {
             return tl::make_unexpected(fmt::vformat(_u8L("Model from {} couldn't be read because it's empty"), fmt::make_format_args(ret.file_name)));
         }
@@ -542,7 +570,7 @@ static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
 {
     Domain::Project project;
     if (loaded_3mf.config_containers_data.front().preset.hw_config.id.empty()) {
-        // If we are here, than legacy project was loaded.
+        // If we are here, then legacy project was loaded.
         // Implementation of the config loading is not completed jet, so we can't create a correct project
         auto& dlg_manager = App::AppServices::instance().dialog_manager();
         dlg_manager.show_info_dialog(_u8L("It's not possible to load legacy 3mf temporary."),
@@ -576,9 +604,9 @@ static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
     return project;
 }
 
-Domain::Project load_file_as_project(const boost::filesystem::path& project_file_path)
+Domain::Project load_file_as_project(const boost::filesystem::path& project_file_path, const Domain::Preset::Bundle& bundle)
 {
-    Loaded3MF loaded_3mf = load_from_project(project_file_path);
+    Loaded3MF loaded_3mf = load_from_project(project_file_path, bundle);
     if (!loaded_3mf.model.objects.empty()) {
         remove_objects_with_zero_volume(loaded_3mf.model, project_file_path.filename().string());
     };

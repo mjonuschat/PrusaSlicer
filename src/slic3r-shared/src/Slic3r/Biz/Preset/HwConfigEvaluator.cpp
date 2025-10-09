@@ -36,6 +36,38 @@ HwSheetConfigIterator HwConfigEvaluator::iterate_sheets(
     return HwSheetConfigIterator{sheets, m_eval, std::move(values)};
 }
 
+Domain::Preset::HwPrinterConfig from_def(
+    const Domain::Preset::VendorData& vendor_data,
+    const Domain::Preset::HwPrinterConfigDef& printer_def,
+    const Domain::Preset::HwPrinterConfigTemplate* templ
+)
+{
+    auto features = build_features(vendor_data.info.features.printer);
+    Domain::Preset::override_features(features, printer_def.features);
+    if (templ)
+        Domain::Preset::override_features(features, templ->features);
+
+    Domain::Preset::VisualRepresentation visual = printer_def.visual;
+    if (templ)
+        Domain::Preset::override_visual(visual, templ->visual);
+
+    Domain::Preset::HwPrinterConfig printer_config = {
+        .id           = generate_uuid(),
+        .printer_id   = printer_def.id,
+        .vendor_id    = vendor_data.info.id,
+        .repo_id      = vendor_data.info.repo_id,
+        .repo_version = vendor_data.info.version,
+        .name         = templ == nullptr || templ->name.empty() ? printer_def.name : templ->name,
+        .technology   = printer_def.technology,
+        .model        = printer_def.model,
+        .tool_count =
+            templ && templ->tool_count.has_value() ? templ->tool_count.value() : printer_def.tool_count,
+        .features = features,
+        .visual   = visual
+    };
+    return printer_config;
+}
+
 Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
     const Domain::Preset::HwPrinterConfigTemplate& templ,
     const Domain::Preset::VendorData& vendor_data
@@ -44,27 +76,7 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
     const auto* printer_def = vendor_data.find_printer_config_def_by_id(templ.printer);
     ASSERT(printer_def != nullptr, "Printer config not found", templ.printer);
 
-    auto features = build_features(vendor_data.info.features.printer);
-    Domain::Preset::override_features(features, printer_def->features);
-    Domain::Preset::override_features(features, templ.features);
-
-    Domain::Preset::VisualRepresentation visual = printer_def->visual;
-    Domain::Preset::override_visual(visual, templ.visual);
-
-    Domain::Preset::HwPrinterConfig printer_config{
-        .id           = generate_uuid(),
-        .printer_id   = printer_def->id,
-        .vendor_id    = vendor_data.info.id,
-        .repo_id      = vendor_data.info.repo_id,
-        .repo_version = vendor_data.info.version,
-        .name         = templ.name.empty() ? printer_def->name : templ.name,
-        .technology   = printer_def->technology,
-        .model        = printer_def->model,
-        .tool_count   = templ.tool_count.has_value() ? templ.tool_count.value() :
-                                                       printer_def->tool_count,
-        .features     = features,
-        .visual       = visual
-    };
+    Domain::Preset::HwPrinterConfig printer_config = from_def(vendor_data, *printer_def, &templ);
 
     ASSERT(templ.tools.size() == templ.tool_count || templ.tools.size() == 1, templ.id);
     for (const auto& tool_templ : templ.tools) {
@@ -149,5 +161,41 @@ from_def(const Domain::Preset::VendorData& vendor_data, const Domain::Preset::Hw
         .features = sheet_features,
     };
 
+}
+
+Domain::Preset::HwPrinterConfig from_def(
+    const Domain::Preset::VendorData& vendor_data,
+    const Domain::Preset::HwPrinterConfigDef& printer_def
+)
+{
+    auto config = from_def(vendor_data, printer_def, nullptr);
+    if (config.technology == Domain::PrinterTechnology::FFF) {
+        config.tools.resize(config.tool_count, {});
+    }
+    return config;
+}
+
+Domain::Preset::HwPrinterConfig
+new_scratch_config(Domain::PrinterTechnology technology, const std::string& name, size_t tool_count)
+{
+    Domain::Preset::HwPrinterConfig config = {
+        .id           = generate_uuid(),
+        // .printer_id   = printer_def.id,
+        // .vendor_id    = vendor_data.info.id,
+        // .repo_id      = vendor_data.info.repo_id,
+        // .repo_version = vendor_data.info.version,
+        .name         = name,
+        .technology   = technology,
+        //.model        = printer_def.model,
+        .tool_count = static_cast<uint8_t>(tool_count),
+        .features = {},
+        //.visual   = visual
+    };
+
+    if (config.technology == Domain::PrinterTechnology::FFF) {
+        config.tools.resize(config.tool_count, {});
+    }
+
+    return config;
 }
 } // namespace Slic3r::Biz::Preset

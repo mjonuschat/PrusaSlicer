@@ -7,6 +7,7 @@
 #include <boost/optional.hpp>
 
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/OnBeds.hpp"
@@ -29,12 +30,13 @@ namespace Tests {
         REQUIRE(boost::filesystem::exists(path));
 
         Domain::ConfigPack config;
+        Biz::LegacyPresetMetadata preset_metadata;
         Domain::Model model;
         Slic3r::Domain::WipeTowersOnBeds wipe_towers;
         Slic3r::Domain::CustomGCodesOnBeds custom_gcodes;
 
         boost::optional<Semver> version;
-        Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, &model, false, version, wipe_towers, custom_gcodes);
+        Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, preset_metadata, &model, false, version, wipe_towers, custom_gcodes);
 
         return {model, std::move(config), std::move(wipe_towers)};
     }

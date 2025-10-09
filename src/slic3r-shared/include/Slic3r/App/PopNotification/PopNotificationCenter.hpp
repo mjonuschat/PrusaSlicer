@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp"
 #include "Slic3r/Biz/StatusCache.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
+#include "Slic3r/Biz/IProjectsChangedListener.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -20,7 +21,8 @@ class PopNotificationCenter :
     public Biz::IStatusCacheChangedListener,
     public Biz::PrintHost::IPrintHostListener,
     public Biz::RemovableDrive::IRemovableDriveStatusListener,
-    public Biz::UserAccount::IUserAccountListener
+    public Biz::UserAccount::IUserAccountListener,
+    public Biz::IProjectsChangedListener
 {
 public:
     PopNotificationCenter(Biz::ProjectInteractor& project_interactor);
@@ -49,6 +51,9 @@ public:
     void on_user_account_logged_out() override;
     void on_user_account_will_refresh() override;
     void on_user_account_action_retry(const Biz::Network::IHttp::Retry& retry, std::function<void(void)> cancel_callback) override;
+
+    // Projects Changed
+    void on_project_load_failed(const std::string& error) override;
 
 private:
     Biz::RemovableDrive::RemovableDriveService& m_removable_drive_service;

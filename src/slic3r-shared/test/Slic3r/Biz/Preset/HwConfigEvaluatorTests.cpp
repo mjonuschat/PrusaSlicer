@@ -57,7 +57,7 @@ TEST_CASE("HwConfigEvaluator", "[preset]")
             Slic3r::Domain::Preset::HwPrinterConfig config = {
                 .model      = {.model = model, .base_model = base_model},
                 .tool_count = 1,
-                .tools = {{.features = {{"nozzle_diameter", 0.4f}, {"nozzle_high_flow", false}}}}
+                .tools = {{.features = {{"nozzle_diameter", 0.4}, {"nozzle_high_flow", false}}}}
             };
             try {
                 for (const auto& t :
@@ -72,6 +72,30 @@ TEST_CASE("HwConfigEvaluator", "[preset]")
 
             REQUIRE(ids == std::vector<std::string>{expected_feeder_id});
         }
+    }
+
+    SECTION("empty iterator")
+    {
+        Slic3r::Domain::Preset::HwPrinterConfig config = {
+            .model      = {.model = "MK1", .base_model = "MK1"},
+            .tool_count = 1,
+            .tools = {{.features = {{"nozzle_diameter", 0.4}, {"nozzle_high_flow", false}}}}
+        };
+        std::vector<std::string> ids;
+
+        try {
+            std::map<std::string, Slic3r::Domain::Preset::HwFeederConfigDef> feeders;
+            for (const auto& t :
+                 cfg_eval.iterate_feeders(config, config.tools[0], feeders))
+            {
+                ids.push_back(t.id);
+            }
+        } catch (const std::runtime_error& e) {
+            INFO("Exception: " << e.what());
+            FAIL(e.what());
+        }
+
+        REQUIRE(ids == std::vector<std::string>{});
     }
 
     SECTION("Evaluate printer_config templates")

@@ -219,6 +219,20 @@ TEST_CASE("Parser tests")
                 REQUIRE(boost::get<VarRef>(node.right).name == "b");
             }
         }
+
+        expr = parser.parse("printer.base_model=~/(COREONE|MK4)/ and (tool.nozzle_diameter == 0.4 or tool.nozzle_diameter == 0.6) and ! (tool.nozzle_diameter == 0.6 and tool.nozzle_high_flow)");
+        {
+            const auto root = boost::get<Binary>(expr);
+            REQUIRE(root.op == BinaryOp::And);
+            const auto left = boost::get<Binary>(root.left);
+            REQUIRE(left.op == BinaryOp::And);
+            const auto right = boost::get<Unary>(root.right);
+            REQUIRE(right.op == UnaryOp::Not);
+            const auto left_left = boost::get<Binary>(left.left);
+            REQUIRE(left_left.op == BinaryOp::RegExMatch);
+            const auto left_right = boost::get<Binary>(left.right);
+            REQUIRE(left_right.op == BinaryOp::Or);
+        }
     }
 
     SECTION("error reporting")

@@ -601,6 +601,7 @@ namespace Slic3rLegacy {
             const std::string& filename,
             Domain::Model& model,
             ConfigPack& config,
+            LegacyPresetMetadata& preset_metadata,
             Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             bool check_version,
             Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
@@ -626,6 +627,7 @@ namespace Slic3rLegacy {
             const std::string& filename,
             Domain::Model& model,
             ConfigPack& config,
+            LegacyPresetMetadata& preset_metadata,
             Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
             Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
@@ -648,7 +650,7 @@ namespace Slic3rLegacy {
             ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
         );
 
-        void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigPack& config, Slic3rLegacy::ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
+        void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigPack& config, LegacyPresetMetadata& preset_metadata, Slic3rLegacy::ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
         bool _extract_model_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Domain::Model& model);
         void _extract_embossed_svg_shape_file(const std::string &filename, mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
 
@@ -761,6 +763,7 @@ namespace Slic3rLegacy {
         const std::string& filename,
         Domain::Model& model,
         ConfigPack& config,
+        LegacyPresetMetadata& preset_metadata,
         Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         bool check_version,
         Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
@@ -790,7 +793,7 @@ namespace Slic3rLegacy {
         m_start_part_path = MODEL_FILE; // set default value for invalid .rel file
         clear_errors();
 
-        return _load_model_from_file(filename, model, config, config_substitutions, wipe_towers, custom_gcodes);
+        return _load_model_from_file(filename, model, config, preset_metadata, config_substitutions, wipe_towers, custom_gcodes);
     }
 
     void _3MF_Importer::_destroy_xml_parser()
@@ -815,6 +818,7 @@ namespace Slic3rLegacy {
         const std::string& filename,
         Domain::Model& model,
         ConfigPack& config,
+        LegacyPresetMetadata& preset_metadata,
         Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
         Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
@@ -924,7 +928,7 @@ namespace Slic3rLegacy {
                 }
                 else if (boost::algorithm::iequals(name, PRINT_CONFIG_FILE)) {
                     // extract slic3r print config file
-                    _extract_print_config_from_archive(archive, stat, config, config_substitutions, filename);
+                    _extract_print_config_from_archive(archive, stat, config, preset_metadata, config_substitutions, filename);
                 }
                 else if (boost::algorithm::iequals(name, CUSTOM_GCODE_PER_PRINT_Z_FILE)) {
                     // extract slic3r layer config ranges file
@@ -1327,7 +1331,7 @@ namespace Slic3rLegacy {
 
     void _3MF_Importer::_extract_print_config_from_archive(
         mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, 
-        ConfigPack& config, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions, 
+        ConfigPack& config, LegacyPresetMetadata& preset_metadata, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         const std::string& archive_filename)
     {
         if (stat.m_uncomp_size > 0) {
@@ -1349,6 +1353,7 @@ namespace Slic3rLegacy {
             Slic3rLegacy::ConfigBase::load_from_gcode_string_legacy(dpc, buffer.data(), config_substitutions);
             handle_legacy_project_loaded(dpc, this->prusaslicer_generator_version());
             config = Slic3r::Biz::convert_dynamic_print_config_to_new(dpc);
+            preset_metadata = extract_legacy_preset_metadata(dpc);
         }
     }
 
@@ -4481,6 +4486,7 @@ namespace Slic3rLegacy {
 bool load_3mf_legacy(
     const char* path,
     ConfigPack& config,
+    Slic3r::Biz::LegacyPresetMetadata& preset_metadata,
     Domain::Model* model,
     bool check_version,
     boost::optional<Semver> &prusaslicer_generator_version,
@@ -4497,7 +4503,7 @@ bool load_3mf_legacy(
     // All import should use "C" locales for number formatting.
     CNumericLocalesSetter locales_setter;
     Slic3rLegacy::_3MF_Importer         importer;
-    bool res = importer.load_model_from_file(path, *model, config, config_substitutions, check_version, wipe_towers, custom_gcodes);
+    bool res = importer.load_model_from_file(path, *model, config, preset_metadata, config_substitutions, check_version, wipe_towers, custom_gcodes);
     importer.log_errors();
     prusaslicer_generator_version = importer.prusaslicer_generator_version();
 

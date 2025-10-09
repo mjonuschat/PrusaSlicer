@@ -14,7 +14,10 @@
 #include <map>
 
 namespace Slic3r {
-    struct ConfigSubstitutionContext;
+namespace Biz {
+struct LegacyPresetMetadata;
+} // namespace Biz
+struct ConfigSubstitutionContext;
     class DynamicPrintConfig;
     namespace Domain {
         class Image;
@@ -63,6 +66,7 @@ namespace Slic3rLegacy {
     extern bool load_3mf_legacy(
         const char* path,
         Slic3r::Domain::ConfigPack& config,
+        Slic3r::Biz::LegacyPresetMetadata& preset_metadata,
         Slic3r::Domain::Model* model,
         bool check_version,
         boost::optional<Slic3r::Semver> &prusaslicer_generator_version,

@@ -323,11 +323,12 @@ TEST_CASE("Legacy FDM 3MF roundtrip", "[config]")
     for (const std::string& filename : std::vector<std::string>{"fdm_roundtrip1.3mf", "fdm_roundtrip2.3mf"}) {
         Domain::Model model;
         Domain::ConfigPack cfg;
+        Biz::LegacyPresetMetadata preset_metadata;
         boost::optional<Slic3r::Semver> prusaslicer_generator_version;
         Domain::WipeTowersOnBeds wipe_towers;
         Domain::CustomGCodesOnBeds custom_gcodes;
         const fs::path test_file_path{(fs::path(TEST_DATA_DIR) / fs::path{filename})};
-        Slic3rLegacy::load_3mf_legacy(test_file_path.string().c_str(), cfg, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes);
+        Slic3rLegacy::load_3mf_legacy(test_file_path.string().c_str(), cfg, preset_metadata, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes);
 
         TempFile tmp_file;
         const std::string file_path{debug_files ? "new_fdm.3mf" : tmp_file.get_path()};
@@ -345,11 +346,12 @@ TEST_CASE("Legacy SLA 3MF roundtrip", "[config]")
     for (const std::string& filename : std::vector<std::string>{"sla_roundtrip1.3mf", "sla_roundtrip2.3mf"}) {
         Domain::Model model;
         Domain::ConfigPack cfg;
+        Biz::LegacyPresetMetadata preset_metadata;
         boost::optional<Slic3r::Semver> prusaslicer_generator_version;
         Domain::WipeTowersOnBeds wipe_towers;
         Domain::CustomGCodesOnBeds custom_gcodes;
         const fs::path test_file_path{(fs::path(TEST_DATA_DIR) / fs::path{filename})};
-        Slic3rLegacy::load_3mf_legacy(test_file_path.string().c_str(), cfg, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes);
+        Slic3rLegacy::load_3mf_legacy(test_file_path.string().c_str(), cfg, preset_metadata, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes);
 
         TempFile tmp_file;
         const std::string file_path{debug_files ? "new_sla.3mf" : tmp_file.get_path()};

@@ -1,6 +1,9 @@
 #include <functional>
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Log.hpp"
+
+#include <ranges>
 
 namespace Slic3r::Domain::Preset {
 
@@ -112,6 +115,21 @@ const HwPrinterConfigDef* VendorData::find_printer_config_def_by_id(const std::s
     );
 }
 
+const HwPrinterConfigDef* VendorData::find_printer_config_def_by_legacy_printer_model(const std::string& id) const
+{
+    for (const auto& tech_defs : defs | std::views::values) {
+        const auto printer_defs = tech_defs.printers | std::views::values;
+        auto it = std::ranges::find_if(
+           printer_defs,
+           [&](const HwPrinterConfigDef& pc)
+           { return std::ranges::find(pc.legacy_printer_model, id) != pc.legacy_printer_model.end(); }
+       );
+        if (it != printer_defs.end())
+            return &*it;
+    }
+    return nullptr;
+}
+
 const HwToolConfigDef* VendorData::find_tool_config_def_by_id(const std::string& id) const
 {
     return find_element_by_id<HwToolConfigDef>(
@@ -144,6 +162,16 @@ const HwPrinterConfigTemplate* VendorData::find_printer_config_template_by_id(co
     auto it = std::find_if(printer_configs.begin(), printer_configs.end(), [&](const auto& pc) {
         return pc.id == id;
     });
+    return it == printer_configs.end() ? nullptr : &*it;
+}
+
+const HwPrinterConfigTemplate* VendorData::find_printer_config_template_by_legacy_printer_model(const std::string& id) const
+{
+    auto it = std::ranges::find_if(
+        printer_configs,
+        [&](const HwPrinterConfigTemplate& pc)
+        { return std::ranges::find(pc.legacy_printer_model, id) != pc.legacy_printer_model.end(); }
+    );
     return it == printer_configs.end() ? nullptr : &*it;
 }
 
@@ -274,5 +302,78 @@ std::string HwPrinterConfig::relative_path_to_assets() const
 {
     return "/presets/" + repo_id + "/" + vendor_id + "/assets/";
 }
+
+
+bool HwPrinterConfig::has_same_values(const HwPrinterConfig& other) const
+{
+#ifndef NDEBUG
+    SPDLOG_INFO("HwPrinterConfig::has_same_values id: {}, name: {}", id, name);
+    if (printer_id != other.printer_id) {
+        SPDLOG_INFO("printer_id mismatched {} != {}", printer_id, other.printer_id);
+    }
+    if (vendor_id != other.vendor_id) {
+        SPDLOG_INFO("vendor_id mismatched {} != {}", vendor_id, other.vendor_id);
+    }
+    if (repo_id != other.repo_id) {
+        SPDLOG_INFO("repo_id mismatched {} != {}", repo_id, other.repo_id);
+    }
+    if (repo_version != other.repo_version) {
+        SPDLOG_INFO("repo_version mismatched {} != {}", repo_version, other.repo_version);
+    }
+    if (name != other.name) {
+        SPDLOG_INFO("name mismatched {} != {}", name, other.name);
+    }
+    if (technology != other.technology) {
+        SPDLOG_INFO("technology mismatched {} != {}", int(technology), int(other.technology));
+    }
+    if (model != other.model) {
+        SPDLOG_INFO(
+            "model mismatched {}/{} != {}/{}",
+            model.base_model,
+            model.model,
+            other.model.base_model,
+            other.model.model
+        );
+    }
+    if (tool_count != other.tool_count) {
+        SPDLOG_INFO("tool_count mismatched {} != {}", tool_count, other.tool_count);
+    }
+    if (features != other.features) {
+        SPDLOG_INFO("features mismatched |{}| != |{}|", features.size(), other.features.size());
+    }
+    if (visual != other.visual) {
+        SPDLOG_INFO("visual mismatched");
+    }
+    if (tools != other.tools) {
+        SPDLOG_INFO("tools mismatched");
+    }
+    if (feeders != other.feeders) {
+        SPDLOG_INFO("feeders mismatched |{}| != |{}|", feeders.size(), other.feeders.size());
+    }
+    if (materials != other.materials) {
+        SPDLOG_INFO("materials mismatched |{}| != |{}|", materials.size(), other.materials.size());
+    }
+    if (sheet != other.sheet) {
+        SPDLOG_INFO("sheet mismatched");
+    }
+
+#endif // NDEBUG
+
+    return printer_id == other.printer_id
+        && vendor_id == other.vendor_id
+        && repo_id == other.repo_id
+        && repo_version == other.repo_version
+        && name == other.name
+        && technology == other.technology
+        && model == other.model
+        && tool_count == other.tool_count
+        && features == other.features
+        && visual == other.visual
+        && tools == other.tools
+        && feeders == other.feeders
+        && materials == other.materials
+        && sheet == other.sheet;
+}
+
 
 } // namespace Slic3r::Domain::Preset

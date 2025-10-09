@@ -105,6 +105,7 @@ name: Prusa MK3.9
 model:
   base_model: MK4
   model: MK3.9
+legacy_printer_model: [MK3.9]
 tool_count: 1
 features:
   input_shaper:
@@ -487,10 +488,45 @@ features:
   cold:
     default: true
 ---
+# Legacy printer models to address
+# - [x] COREONE
+# - [ ] COREONEMMU3
+# - [x] MINI
+# - [x] MINIIS
+# - [x] MK2.5
+# - [ ] MK2.5MMU2
+# - [x] MK2.5S
+# - [ ] MK2.5SMMU2S
+# - [x] MK2S
+# - [ ] MK2SMM
+# - [x] MK3
+# - [x] MK3.5
+# - [ ] MK3.5MMU3
+# - [x] MK3.9
+# - [ ] MK3.9MMU3
+# - [x] MK3.9S
+# - [ ] MK3.9SMMU3
+# - [ ] MK3MMU2
+# - [x] MK3S
+# - [ ] MK3SMMU2S
+# - [ ] MK3SMMU3
+# - [x] MK4
+# - [x] MK4IS
+# - [ ] MK4ISMMU3
+# - [x] MK4S
+# - [ ] MK4SMMU3
+# - [x] XL
+# - [x] XL2
+# - [x] XL2IS
+# - [x] XL5
+# - [x] XL5IS
+# - [x] XLIS
+
 kind: printer_config
 id: xl-1t
 name: XL 1T
 printer: xl
+legacy_printer_model: [XLIS, XL]
 tool_count: 1
 tools:
 - tool: '0.4'
@@ -500,6 +536,7 @@ kind: printer_config
 id: xl-2t
 name: XL 2T
 printer: xl
+legacy_printer_model: [XL2IS, XL2]
 tool_count: 2
 tools:
 - tool: '0.4'
@@ -511,6 +548,7 @@ kind: printer_config
 id: xl-5t
 name: XL 5T
 printer: xl
+legacy_printer_model: [XL5, XL5IS]
 tool_count: 5
 tools:
 - tool: '0.4'
@@ -522,6 +560,7 @@ kind: printer_config
 id: c1
 name: CORE One
 printer: COREONE
+legacy_printer_model: [COREONE]
 tools:
 - tool: 0.4HF
 sheet: satin
@@ -530,6 +569,7 @@ kind: printer_config
 id: mk4
 name: MK4
 printer: MK4
+legacy_printer_model: [MK4, MK4IS]
 tools:
 - tool: '0.4'
 sheet: satin
@@ -538,6 +578,7 @@ kind: printer_config
 id: mk4s
 name: MK4S
 printer: MK4S
+legacy_printer_model: [MK4S]
 tools:
 - tool: 0.4HF
 sheet: satin
@@ -546,6 +587,7 @@ kind: printer_config
 id: mk3.9
 name: MK3.9
 printer: MK3.9
+legacy_printer_model: [MK3.9]
 tools:
 - tool: '0.4'
 sheet: pei_smooth
@@ -554,6 +596,7 @@ kind: printer_config
 id: mk3.9s
 name: MK3.9S
 printer: MK3.9S
+legacy_printer_model: [MK3.9S]
 tools:
 - tool: 0.4HF
 sheet: pei_smooth
@@ -562,6 +605,7 @@ kind: printer_config
 id: mk3.5
 name: MK3.5
 printer: MK3.5
+legacy_printer_model: [MK3.5]
 tools:
 - tool: '0.4'
 sheet: pei_smooth
@@ -570,6 +614,7 @@ kind: printer_config
 id: mk3s
 name: MK3S
 printer: MK3S
+legacy_printer_model: [MK3S]
 tools:
 - tool: '0.4'
 sheet: pei_smooth
@@ -578,6 +623,7 @@ kind: printer_config
 id: mk3
 name: MK3
 printer: MK3
+legacy_printer_model: [MK3]
 tools:
 - tool: '0.4'
 sheet: pei_smooth
@@ -586,6 +632,7 @@ kind: printer_config
 id: mini
 name: MINI
 printer: MINI
+legacy_printer_model: [MINI,MINIIS]
 tools:
 - tool: '0.4'
 sheet: pei_smooth
@@ -594,6 +641,7 @@ kind: printer_config
 id: mk2.5s
 name: MK2.5S
 printer: MK2.5S
+legacy_printer_model: [MK2.5S]
 tools:
 - tool: '0.4'
 sheet: pei_smooth
@@ -602,6 +650,7 @@ kind: printer_config
 id: mk2.5
 name: MK2.5
 printer: MK2.5
+legacy_printer_model: [MK2.5]
 tools:
 - tool: '0.4'
 sheet: pei_smooth
@@ -610,6 +659,7 @@ kind: printer_config
 id: mk2s
 name: MK2S
 printer: MK2S
+legacy_printer_model: [MK2S]
 tools:
 - tool: '0.4'
 sheet: pei_smooth

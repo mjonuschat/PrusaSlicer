@@ -1,5 +1,7 @@
 #pragma once
 
+#include "PresetEvaluator.hpp"
+
 #include <unordered_map>
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"

@@ -509,6 +509,87 @@ values:
         REQUIRE(evals.size() == 0);
     }
 
+    SECTION("failing root condition in super-super-class preset stops eval of sub-class preset")
+    {
+        const char* yaml = R"(
+kind: printer
+id: '*common*'
+name: '*common*'
+condition: 'a == 1'
+values:
+  x: 3
+---
+kind: printer
+id: 'p1'
+name: 'p1'
+inherits:
+- '*common*'
+values:
+  y: 3
+---
+kind: printer
+id: 'p2'
+name: 'p2'
+inherits:
+- 'p1'
+values:
+  y: 4
+)";
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        auto evals = eval.eval_preset({{{"a", 2.0}}}, false);
+        REQUIRE(evals.size() == 0);
+    }
+
+    SECTION("failing root condition in super-super-class preset can be overridden in top-level sub-class preset")
+    {
+        const char* yaml = R"(
+kind: printer
+id: '*common*'
+name: '*common*'
+condition: 'a == 1'
+values:
+  x: 3
+---
+kind: printer
+id: 'p1'
+name: 'p1'
+inherits:
+- '*common*'
+values:
+  y: 3
+---
+kind: printer
+id: 'p2'
+name: 'p2'
+condition: 'a == 2'
+inherits:
+- 'p1'
+values:
+  y: 4
+)";
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        auto evals = eval.eval_preset({{{"a", 2.0}}}, false);
+        REQUIRE(evals.size() == 1);
+    }
+
     SECTION("failing root condition in super-class preset stops eval of sub-class preset (with multi-inheritance)")
     {
         const char* yaml = R"(
@@ -585,7 +666,7 @@ values:
         REQUIRE(evals[1].values.at("y") == PresetValue{3.0});
     }
 
-    SECTION("root condition of super-class preset can be overriden in sub-class preset")
+    SECTION("root condition of super-class preset can be overridden in sub-class preset")
     {
         const char* yaml = R"(
 kind: printer

@@ -150,4 +150,14 @@ from_def(const Domain::Preset::VendorData& vendor_data, const Domain::Preset::Hw
 Domain::Preset::HwSheetConfig
 from_def(const Domain::Preset::VendorData& vendor_data, const Domain::Preset::HwSheetConfigDef& def);
 
+Domain::Preset::HwPrinterConfig from_def(
+    const Domain::Preset::VendorData& vendor_data,
+    const Domain::Preset::HwPrinterConfigDef& printer_def
+);
+
+Domain::Preset::HwPrinterConfig new_scratch_config(
+    Domain::PrinterTechnology technology,
+    const std::string& name,
+    size_t tool_count
+);
 }

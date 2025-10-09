@@ -30,6 +30,8 @@ public:
         if (m_thread.joinable()) {
             m_thread.request_stop();
             m_thread_stop_condition.notify_all();
+            // we don't want to destroy mutexes (member variables) if the thread can still run (and use them)
+            m_thread.join();
         }
     }
 

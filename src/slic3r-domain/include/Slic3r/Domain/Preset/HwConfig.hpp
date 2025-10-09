@@ -245,23 +245,7 @@ struct HwPrinterConfig
 
     std::string relative_path_to_assets() const;
 
-    bool has_same_values(const HwPrinterConfig& other) const
-    {
-        return printer_id == other.printer_id
-            && vendor_id == other.vendor_id
-            && repo_id == other.repo_id
-            && repo_version == other.repo_version
-            && name == other.name
-            && technology == other.technology
-            && model == other.model
-            && tool_count == other.tool_count
-            && features == other.features
-            && visual == other.visual
-            && tools == other.tools
-            && feeders == other.feeders
-            && materials == other.materials
-            && sheet == other.sheet;
-    }
+    bool has_same_values(const HwPrinterConfig& other) const;
 };
 
 using HwPrinterConfigs = std::vector<HwPrinterConfig>;
@@ -295,6 +279,7 @@ struct HwPrinterConfigDef
     std::string name;
     PrinterTechnology technology;
     HwModel model;
+    std::vector<std::string> legacy_printer_model;
     FeatureDefs features;
     uint8_t tool_count;
     VisualRepresentation visual;
@@ -397,6 +382,7 @@ struct HwPrinterConfigTemplate
     std::string id;
     std::string name;
     std::string printer;
+    std::vector<std::string> legacy_printer_model;
     std::optional<std::string> sheet;
     std::optional<uint8_t> tool_count;
     FeatureValueMap features;
@@ -451,10 +437,12 @@ struct VendorData
     }
 
     const HwPrinterConfigDef* find_printer_config_def_by_id(const std::string& id) const;
+    const HwPrinterConfigDef* find_printer_config_def_by_legacy_printer_model(const std::string& id) const;
     const HwToolConfigDef* find_tool_config_def_by_id(const std::string& id) const;
     const HwFeederConfigDef* find_feeder_config_def_by_id(const std::string& id) const;
     const HwSheetConfigDef* find_sheet_config_def_by_id(const std::string& id) const;
     const HwPrinterConfigTemplate* find_printer_config_template_by_id(const std::string& id) const;
+    const HwPrinterConfigTemplate* find_printer_config_template_by_legacy_printer_model(const std::string& id) const;
 };
 
 class MaterialIterator

@@ -517,12 +517,17 @@ void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg,
 }
 
 
+static int get_extruder_num(const Slic3rLegacy::DynamicPrintConfig& cfg)
+{
+    return cfg.has("nozzle_diameter") ? int(cfg.option<Slic3rLegacy::ConfigOptionFloats>("nozzle_diameter")->size()) : 1;
+}
+
 
 ConfigPack convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig& cfg)
 {
     if (cfg.has("printer_technology")) {
         if (auto pt = cfg.opt_enum<Slic3rLegacy::PrinterTechnology>("printer_technology"); pt == Slic3rLegacy::ptFFF) {
-            int extruder_num = cfg.has("nozzle_diameter") ? int(cfg.option<Slic3rLegacy::ConfigOptionFloats>("nozzle_diameter")->size()) : 1;
+            int extruder_num = get_extruder_num(cfg);
             LegacyKeysAndOverrides legacy_data = legacy_fdm_data();
             ConfigPackFDM out;
             out.tool.resize(extruder_num);
@@ -553,6 +558,65 @@ ConfigPack convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig&
         }
     }
     throw std::runtime_error("Loading legacy config failed: missing or incorrect printer technology.");
+}
+
+
+LegacyPresetMetadata extract_legacy_preset_metadata(Slic3rLegacy::DynamicPrintConfig& cfg)
+{
+    LegacyPresetMetadata ret;
+    if (!cfg.has("printer_technology"))
+        throw std::runtime_error("Loading legacy config failed: missing or incorrect printer technology.");
+    auto pt = cfg.opt_enum<Slic3rLegacy::PrinterTechnology>("printer_technology");
+
+    ret.technology = pt == Slic3rLegacy::ptFFF ? Domain::PrinterTechnology::FFF : Domain::PrinterTechnology::SLA;
+
+    auto get_string = [&cfg](const std::string& name, std::string& out)
+    {
+        if (cfg.has(name)) {
+            out = cfg.opt_string(name);
+        }
+    };
+
+    auto get_strings = [&cfg](const std::string& name, std::vector<std::string>& out)
+    {
+        if (cfg.has(name)) {
+            const auto* opt = cfg.option<Slic3rLegacy::ConfigOptionStrings>(name);
+            out = opt->values;
+        }
+    };
+
+    get_string("printer_model", ret.printer_model);
+    get_string("printer_notes", ret.printer_notes);
+    get_string("printer_settings_id", ret.printer_settings_id);
+
+    if (ret.technology == Domain::PrinterTechnology::FFF) {
+        get_string("print_settings_id", ret.print_settings_id);
+        get_strings("filament_settings_id", ret.material_settings_id);
+
+        const int num = get_extruder_num(cfg);
+        const auto* nozzle_diameter = cfg.option<Slic3rLegacy::ConfigOptionFloats>("nozzle_diameter");
+        const auto* nozzle_high_flow = cfg.option<Slic3rLegacy::ConfigOptionBools>("nozzle_high_flow");
+        for (int i = 0; i < num; ++i) {
+            LegacyHwToolConfig tool_config;
+            if (nozzle_diameter) {
+                tool_config.nozzle_diameter = nozzle_diameter->get_at(i);
+            }
+            if (nozzle_high_flow) {
+                tool_config.nozzle_high_flow = nozzle_high_flow->get_at(i);
+            }
+            ret.tools.emplace_back(tool_config);
+        }
+    } else if (ret.technology == Domain::PrinterTechnology::SLA) {
+        get_string("sla_print_settings_id", ret.print_settings_id);
+        std::string mat_id;
+        get_string("sla_material_settings_id", mat_id);
+        ret.material_settings_id = {mat_id};
+    }
+    else {
+        UNREACHABLE("Unknown printer technology");
+    }
+
+    return ret;
 }
 
 
