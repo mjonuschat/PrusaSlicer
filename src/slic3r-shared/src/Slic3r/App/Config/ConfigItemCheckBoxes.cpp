@@ -57,7 +57,9 @@ void ConfigItemCheckBoxes::reconstruct_buttons()
     for (size_t index = 0; index < size; ++index) {
         ToggleButton* button = emplace_back<ToggleButton>();
         m_toggle_buttons.push_back(button);
-        button->callbacks().checked_changed = [this, index](bool checked) {
+        button->callbacks().action = [this, index, button]
+        {
+            bool checked           = button->checked();
             std::vector<bool> data = get_data();
             data[index]            = checked;
             m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{data});

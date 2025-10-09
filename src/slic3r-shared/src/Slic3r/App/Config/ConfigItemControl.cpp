@@ -6,6 +6,7 @@
 
 #include "Slic3r/App/Config/ConfigItemTextField.hpp"
 #include "Slic3r/App/Config/ConfigItemCheckBox.hpp"
+#include "Slic3r/App/Config/ConfigItemCheckBoxes.hpp"
 #include "Slic3r/App/Config/ConfigItemColorPicker.hpp"
 #include "Slic3r/App/Config/ConfigItemPoints.hpp"
 #include "Slic3r/App/Config/ConfigItemComboBox.hpp"
@@ -138,6 +139,9 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::checkbox:
         item_control = container->emplace_back<ConfigItemCheckBox>(index, item, preset_interactor);
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::checkboxes:
+        item_control = container->emplace_back<ConfigItemCheckBoxes>(index, item, preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::f_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::i_enum_open:
