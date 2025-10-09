@@ -2838,18 +2838,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     def->init_fn = init_with(0.);
 
-    def = defs.add("printer_notes", typeid(std::string));
-    def->location = Printer;
-    def->label = L("Printer notes");
-    def->category = ConfigItemDef::Category::Notes;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
-    def->tooltip = L("You can put your notes regarding the printer here.");
-    def->multiline = true;
-    def->full_width = true;
-    def->height = 13;
-    def->mode = comAdvanced;
-    def->init_fn = init_with("");
-
     def = defs.add("printer_vendor", typeid(std::string));
     def->location = Printer;
     def->label = L("Printer vendor");
@@ -4498,7 +4486,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("wipe_tower_bridging", typeid(double));
-    def->location = Print;
+    def->location = Tool;
     def->label = L("Maximal bridging distance");
     def->option_group = L("Wipe tower");
     def->category = ConfigItemDef::Category::MultipleExtruders;

@@ -517,11 +517,13 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->mode = comSimple;
     def->init_fn = init_with("");
 
-    /* TODO: what about this?
-    def = defs.add("material_vendor", cotypeid(std::string));
-    def->set_default_value(new ConfigOptionString(L("(Unknown)")));
-    def->cli = ConfigOptionDef::nocli;
+    def = defs.add("material_vendor", typeid(std::string));
+    def->location = Material;
+    def->category = ConfigItemDef::Category::Hidden;
+    def->cli = ConfigItemDef::nocli;
+    def->init_fn = init_with(L("(Unknown)"));
 
+    /* TODO: what about this?
     def = defs.add("default_sla_material_profile", cotypeid(std::string));
     def->label = L("Default SLA material profile");
     def->tooltip = L("Default print profile associated with the current printer profile. "

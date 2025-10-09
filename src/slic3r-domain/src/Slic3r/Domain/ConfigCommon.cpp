@@ -86,7 +86,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
 
     def = defs.add("elefant_foot_compensation", typeid(double));
     if (technology == SLA) {
-        def->location = print;
+        def->location = printer;
         def->overrides_in = Locations{ sla_material, sla_object};
         def->option_group = L("Corrections");
     }
@@ -220,6 +220,18 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->label = L("Printer variant");
     def->category = ConfigItemDef::Category::Hidden;
     def->tooltip = L("Name of the printer variant. For example, the printer variants may be differentiated by a nozzle diameter.");
+    def->init_fn = init_with("");
+
+    def = defs.add("printer_notes", typeid(std::string));
+    def->location = printer;
+    def->label = L("Printer notes");
+    def->category = ConfigItemDef::Category::Notes;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->tooltip = L("You can put your notes regarding the printer here.");
+    def->multiline = true;
+    def->full_width = true;
+    def->height = 13;
+    def->mode = comAdvanced;
     def->init_fn = init_with("");
 
 }

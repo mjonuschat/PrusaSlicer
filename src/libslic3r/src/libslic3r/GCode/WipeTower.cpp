@@ -559,7 +559,7 @@ WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfigVie
     m_travel_speed(config.get<double>("travel_speed")),
     m_infill_speed(config.get<double>("infill_speed")),
     m_perimeter_speed(config.get<double>("perimeter_speed")),
-    m_bridging(float(config.get<double>("wipe_tower_bridging"))),
+    m_bridging(config.get<double>("wipe_tower_bridging")),
     m_no_sparse_layers(config.get<bool>("wipe_tower_no_sparse_layers")),
     m_gcode_flavor(config.get<GCodeFlavor>("gcode_flavor")),
     m_current_tool(initial_tool),
@@ -581,7 +581,6 @@ WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfigVie
         m_infill_speed = 80.f;
     if (m_perimeter_speed == 0.f)
         m_perimeter_speed = 80.f;
-
 
     // If this is a single extruder MM printer, we will use all the SE-specific config values.
     // Otherwise, the defaults will be used to turn off the SE stuff.
