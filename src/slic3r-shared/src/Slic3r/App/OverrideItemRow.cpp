@@ -33,7 +33,7 @@ OverrideItemRow::OverrideItemRow(
     m_label = emplace_back<Text>(std::string());
     m_label->set_width(120);
     m_label->set_max_size({120, YGUndefined});
-    m_label->set_wrap(true);
+    m_label->set_wrap_mode(Text::WrapMode::Wrap);
     m_label->set_flex_shrink(0);
 
     m_control = ConfigItemControl::config_item_control_factory(
