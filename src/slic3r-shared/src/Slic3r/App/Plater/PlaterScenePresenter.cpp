@@ -783,9 +783,11 @@ void PlaterScenePresenter::on_wipe_tower_transformed(Domain::SelectionId project
 void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
 {
     cmd_buf.set_depth_write_enabled(true);
-    if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
+    if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles)) {
         // clear depth buffer so all gizmo handles are rendered over document objects
         cmd_buf.clear_buffers(false, true);
+        cmd_buf.set_depth_test_enabled(true);
+    }
     else if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::ObjectAccessoriesOnTop))
         cmd_buf.set_depth_test_enabled(false);
     else if (layer_idx == Scene::RenderLayerId(PlaterSceneLayer::AlwaysOnTop))
