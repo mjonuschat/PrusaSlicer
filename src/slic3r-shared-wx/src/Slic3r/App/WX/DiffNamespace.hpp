@@ -36,6 +36,7 @@ class BCB : public Widgets::BitmapComboBox
 {
 public:
     BCB(wxWindow* parent, std::function<void(int selection, Location location)> fn, Location location);
+    ~BCB();
 
     void SetSelection(int n) override;
 

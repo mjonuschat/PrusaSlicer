@@ -51,6 +51,11 @@ BCB::BCB(
     );
 }
 
+BCB::~BCB()
+{
+    Clear();
+}
+
 void BCB::SetSelection(int n)
 {
     if (this->HasClientObjectData()) {
