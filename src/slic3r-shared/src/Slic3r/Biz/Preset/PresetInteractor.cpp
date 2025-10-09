@@ -9,6 +9,9 @@
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 
+#include "tbb/parallel_for.h"
+#include "tbb/blocked_range.h"
+
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
@@ -96,19 +99,27 @@ void PresetInteractor::load_preset_bundle(
     }
 
     preset_bundle.evaluated_presets.clear();
+    std::mutex mut;
+
     for (const auto& [vendor_id, vendor_bundle] : preset_bundle.vendor_bundles) {
         PresetEvaluator preset_evaluator{vendor_bundle.presets};
-        for (const auto& p : vendor_bundle.printer_configs) {
-            try {
-                auto epps = preset_evaluator.evaluate(p);
-                for (auto& epp : epps) {
-                    dump_ep_info(epp);
-                    preset_bundle.evaluated_presets[epp.hw_config.id].emplace_back(std::move(epp));
+        tbb::parallel_for(
+            tbb::blocked_range<size_t>(0, vendor_bundle.printer_configs.size()),
+            [&](const tbb::blocked_range<size_t>& r) {
+                for (size_t i = r.begin(); i != r.end(); ++i) {
+                    try {
+                        auto epps = preset_evaluator.evaluate(vendor_bundle.printer_configs[i]);
+                        for (auto& epp : epps) {
+                            std::lock_guard<std::mutex> guard(mut);
+                            dump_ep_info(epp);
+                            preset_bundle.evaluated_presets[epp.hw_config.id].emplace_back(std::move(epp));
+                        }
+                    } catch (const std::exception& e) {
+                        SPDLOG_ERROR("{}", e.what());
+                    }
                 }
-            } catch (const std::exception& e) {
-                SPDLOG_ERROR("{}", e.what());
             }
-        }
+        );
     }
     // do not save it now, as we create it anyway again
     // IO::save_bundle_configs(preset_bundle, config_path);
