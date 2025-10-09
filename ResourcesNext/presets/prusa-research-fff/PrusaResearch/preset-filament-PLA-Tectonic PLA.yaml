@@ -14,7 +14,7 @@ variants:
   id: f01c0888-c5db-46ba-8588-b647521a5b49
   values:
     chamber_temperature: 23
-    minimal_chamber_temperature: 0
+    chamber_minimal_temperature: 0
 ---
 kind: filament
 # Pressure advance values

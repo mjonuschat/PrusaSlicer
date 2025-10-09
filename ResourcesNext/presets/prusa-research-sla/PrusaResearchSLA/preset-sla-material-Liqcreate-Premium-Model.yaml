@@ -15,7 +15,7 @@ variants:
   values:
     material_correction_x: 1.0073
     material_correction_y: 1.0073
-    material_ow_support_head_width: 3
+    support_head_width: 3
   variants:
 # 0.025
   - condition: print.layer_height == 0.025

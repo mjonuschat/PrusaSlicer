@@ -19,8 +19,8 @@ values:
   fan_always_on: false
   fan_below_layer_time: 60
   min_print_speed: 10
-  wipe: nil
-  retract_lift: nil
+  wipe: null
+  retract_lift: null
 variants:
 - condition: printer.model=~/(COREONE|MK4S)/
   id: ed9d97d8-f48c-4fbc-81ae-1a0275b455f3

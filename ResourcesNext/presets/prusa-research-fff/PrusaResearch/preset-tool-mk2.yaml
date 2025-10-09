@@ -196,7 +196,6 @@ variants:
     bottom_solid_min_thickness: 0.5
     wipe_tower_extra_spacing: 100%
     wipe_tower_extra_flow: 100%
-    single_extruder_multi_material_priming: true
   variants:
   - id: b8e04377-844a-43c4-8688-eb520142a9e3
     name: '*non-MMU branch*'

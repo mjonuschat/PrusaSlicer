@@ -16,4 +16,4 @@ variants:
   id: f777dd42-ef81-40a3-b992-3dd5cba85d50
   values:
     chamber_temperature: 0
-    minimal_chamber_temperature: 0
+    chamber_minimal_temperature: 0

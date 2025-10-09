@@ -24,7 +24,7 @@ values:
   first_layer_bed_temperature: 100
   bed_temperature: 95
   pressure_advance_value: 0
-  travel_ramping_lift: nil
+  travel_ramping_lift: null
   retract_length: 2
   retract_speed: 60
   deretract_speed: 20
@@ -36,7 +36,7 @@ variants:
   id: c6cf4c30-874a-4c9c-8c63-2f0894586f95
   values:
     chamber_temperature: 0
-    minimal_chamber_temperature: 0
+    chamber_minimal_temperature: 0
     min_fan_speed: 10
     max_fan_speed: 15
     bridge_fan_speed: 70
@@ -54,7 +54,7 @@ variants:
     filament_multitool_ramming_flow: 5
     filament_multitool_ramming_volume: 40
     retract_length_toolchange: 2
-    retract_before_wipe: nil
+    retract_before_wipe: null
     min_fan_speed: 10
     max_fan_speed: 25
     bridge_fan_speed: 70

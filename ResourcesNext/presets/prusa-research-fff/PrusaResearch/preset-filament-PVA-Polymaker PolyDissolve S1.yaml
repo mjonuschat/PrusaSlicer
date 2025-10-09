@@ -33,4 +33,4 @@ variants:
     max_fan_speed: 25
     bridge_fan_speed: 30
     chamber_temperature: 0
-    minimal_chamber_temperature: 0
+    chamber_minimal_temperature: 0

@@ -22,10 +22,10 @@ variants:
       initial_exposure_time: 40
       material_correction_x: 1.005
       material_correction_y: 1.005
-      material_ow_support_pillar_diameter: 1.5
-      material_ow_support_head_front_diameter: 1
-      material_ow_support_head_penetration: 0.75
-      material_ow_support_head_width: 3
+      support_pillar_diameter: 1.5
+      support_head_front_diameter: 1
+      support_head_penetration: 0.75
+      support_head_width: 3
 # 0.1
   - condition: print.layer_height == 0.1
     id: 955bdfe6-38d3-4822-97ac-53ac485d7e5f
@@ -35,7 +35,7 @@ variants:
       initial_exposure_time: 50
       material_correction_x: 1.005
       material_correction_y: 1.005
-      material_ow_support_pillar_diameter: 1.5
-      material_ow_support_head_front_diameter: 1
-      material_ow_support_head_penetration: 0.75
-      material_ow_support_head_width: 3
+      support_pillar_diameter: 1.5
+      support_head_front_diameter: 1
+      support_head_penetration: 0.75
+      support_head_width: 3

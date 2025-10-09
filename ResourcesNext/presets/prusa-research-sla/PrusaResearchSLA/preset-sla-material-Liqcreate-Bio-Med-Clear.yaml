@@ -22,10 +22,10 @@ variants:
       initial_exposure_time: 40
       material_correction_x: 1.02
       material_correction_y: 1.02
-      material_ow_support_pillar_diameter: 1
-      material_ow_support_head_front_diameter: 0.5
-      material_ow_support_head_penetration: 0.5
-      material_ow_support_head_width: 3
+      support_pillar_diameter: 1
+      support_head_front_diameter: 0.5
+      support_head_penetration: 0.5
+      support_head_width: 3
 # 0.1
   - condition: print.layer_height == 0.1
     id: bd0a2f63-f11c-42a3-96d9-7200d7f8f221

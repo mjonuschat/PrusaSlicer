@@ -27,7 +27,7 @@ variants:
   id: c5f0e976-298e-44de-991b-2322ccdb693d
   values:
     chamber_temperature: 50
-    minimal_chamber_temperature: 0
+    chamber_minimal_temperature: 0
     filament_shrinkage_compensation_xy: 0%
     filament_shrinkage_compensation_z: 0.24%
 ---

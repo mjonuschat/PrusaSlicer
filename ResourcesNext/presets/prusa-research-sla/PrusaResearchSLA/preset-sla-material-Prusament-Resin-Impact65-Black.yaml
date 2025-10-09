@@ -15,12 +15,12 @@ variants:
   values:
     area_fill: 20
     delay_before_exposure: [3, 15]
-    tilt_down_initial_speed: layer1500,layer1000
+    tilt_down_initial_speed: [layer1500,layer1000]
     tilt_down_offset_steps: [1500, 1500]
-    tilt_down_finish_speed: move8000,layer2250
-    tilt_up_initial_speed: move8000,move8000
+    tilt_down_finish_speed: [move8000,layer2250]
+    tilt_up_initial_speed: [move8000,move8000]
     tilt_up_offset_steps: [400, 800]
-    tilt_up_finish_speed: layer400,layer400
+    tilt_up_finish_speed: [layer400,layer400]
   variants:
   - condition: print.layer_height == 0.01
     id: f4ca9914-f3fb-47b3-8ad8-93c2856bc283

@@ -18,7 +18,7 @@ values:
   max_fan_speed: 25
   fan_below_layer_time: 100
   fan_always_on: true
-  wipe: nil
+  wipe: null
 variants:
 - condition: printer.base_model == "COREONE"
   id: ce68ae08-99a9-4932-8275-c6d49f95ebb6

@@ -601,8 +601,8 @@ variants:
       values:
         layer_height: 0.50
 
-# MK2 and MK2.5             
-- condition: printer.base_model=~/(MK2|MK2.5)/
+# MK2.5             
+- condition: printer.base_model == "MK2.5"
   id: 01ce12c1-c9c8-4faa-bd05-0953d716c521
   variants:
 # MK2 and MK2.5 0.25
@@ -677,34 +677,81 @@ variants:
       name: 0.55mm
       values:
         layer_height: 0.55
-
-
-
-
-
-
-
-# ---
-# kind: print
-# variants:
-  # - condition: 'printer.model == "COREONE"'
-    # name: '0.20mm'
-    # values:
-      # arc_fitting: emit_center
-      # extra_perimeters: 0
-      # interface_shells: 0
-      # layer_height: 0.2
-      # min_skirt_length: 4
-      # ooze_prevention: 1
-      # perimeter_extruder: 1
-      # seam_position: aligned
-      # single_extruder_multi_material_priming: 0
-      # skirts: 0
-      # solid_infill_below_area: 0
-      # solid_infill_every_layers: 0
-      # standby_temperature_delta: '-110'
-      # thin_walls: 0
-      # wipe_tower: 1
-      # wipe_tower_brim_width: 3
-      # wipe_tower_cone_angle: 25
-      # # wipe_tower_rotation_angle: 90
+# MK2
+- condition: printer.base_model == "MK2"
+  id: MK2_print_global
+  values:
+    single_extruder_multi_material_priming: true
+  variants:
+# MK2
+  - condition: tool.nozzle_diameter == 0.25
+    id: MK2_print_0.25
+    variants:
+    - id: MK2_print_0.25_0.05
+      name: 0.05mm
+      values:
+        layer_height: 0.05
+    - id: MK2_print_0.25_0.1
+      name: 0.10mm
+      values:
+        layer_height: 0.10
+    - id: MK2_print_0.25_0.15
+      name: 0.15mm
+      values:
+        layer_height: 0.15
+# MK2
+  - condition: tool.nozzle_diameter == 0.4
+    id: MK2_print_0.4
+    variants:
+    - id: MK2_print_0.4_0.05
+      name: 0.05mm
+      values:
+        layer_height: 0.05
+    - id: MK2_print_0.4_0.1
+      name: 0.10mm
+      values:
+        layer_height: 0.10
+    - id: MK2_print_0.4_0.10
+      name: 0.15mm
+      values:
+        layer_height: 0.15
+    - id: MK2_print_0.4_0.15
+      name: 0.20mm
+      values:
+        layer_height: 0.20
+    - id: MK2_print_0.4_0.35
+      name: 0.35mm
+      values:
+        layer_height: 0.35
+# MK2
+  - condition: tool.nozzle_diameter == 0.6
+    id: MK2_print_0.6
+    variants:
+    - id: MK2_print_0.6_0.15
+      name: 0.15mm
+      values:
+        layer_height: 0.15
+    - id: MK2_print_0.6_0.2
+      name: 0.20mm
+      values:
+        layer_height: 0.20
+    - id: MK2_print_0.6_0.35
+      name: 0.35mm
+      values:
+        layer_height: 0.35
+# MK2
+  - condition: tool.nozzle_diameter == 0.8
+    id: MK2_print_0.8
+    variants:
+    - id: MK2_print_0.8_0.30
+      name: 0.30mm
+      values:
+        layer_height: 0.30
+    - id: MK2_print_0.8_0.40
+      name: 0.40mm
+      values:
+        layer_height: 0.40
+    - id: MK2_print_0.8_0.55
+      name: 0.55mm
+      values:
+        layer_height: 0.55

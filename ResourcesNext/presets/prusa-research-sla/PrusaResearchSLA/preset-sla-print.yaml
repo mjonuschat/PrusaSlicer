@@ -3,7 +3,6 @@ kind: sla_print
 # name: '*common*'
 values:
   layer_height: 0.05
-  pad_edge_radius: 0.5
   pad_enable: 1.0
   pad_max_merge_distance: 50.0
   pad_wall_height: 0.0
@@ -13,13 +12,10 @@ values:
   support_base_diameter: 3.0
   support_base_height: 1.0
   support_critical_angle: 45.0
-  support_density_at_45: 250.0
-  support_density_at_horizontal: 500.0
   support_head_front_diameter: 0.4
   support_head_penetration: 0.4
   support_head_width: 3.0
   support_max_bridge_length: 10.0
-  support_minimal_z: 0.0
   support_object_elevation: 5.0
   support_pillar_connection_mode: zigzag
   support_pillar_diameter: 1.0
@@ -32,7 +28,6 @@ kind: sla_print
 inherits:
 - '*common*'
 values:
-  pad_edge_radius: 0.5
   pad_enable: 1.0
   pad_max_merge_distance: 50.0
   pad_wall_height: 0.0
@@ -42,10 +37,7 @@ values:
   support_base_diameter: 3.0
   support_base_height: 1.0
   support_critical_angle: 45.0
-  support_density_at_45: 250.0
-  support_density_at_horizontal: 500.0
   support_max_bridge_length: 10.0
-  support_minimal_z: 0.0
   support_object_elevation: 5.0
   support_pillar_connection_mode: zigzag
   support_pillar_widening_factor: 0.0
@@ -55,7 +47,6 @@ variants:
 - condition: printer.model == "SL1S"
   id: b013852e-cdaa-43ec-bb4c-e62e9a758b90
   values:
-    compatible_printers_condition: printer_model=="SL1S"
     output_filename_format: '[input_filename_base].sl1s'
     support_head_width: 3.0
     support_pillar_diameter: 1.0
@@ -81,7 +72,6 @@ variants:
 - condition: printer.model == "SL1"
   id: 85ab44d5-6cd4-4f7e-b6ef-37dc43d688c1
   values:
-    compatible_printers_condition: printer_model=="SL1"
     output_filename_format: '[input_filename_base].sl1'
   variants:
   - id: 94f1f1b8-4482-43ab-9b10-ffac53ee0801
