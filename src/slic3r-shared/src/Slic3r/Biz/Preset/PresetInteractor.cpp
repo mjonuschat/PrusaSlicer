@@ -186,12 +186,12 @@ void PresetInteractor::on_selected_config_container_changed(
     fill_printer_presets();
     Domain::Preset::SelectedPreset& selected_preset = mutable_selected_printer_presets();
 
+    fill_tool_items(selected_preset.hw_config);
+    fill_sheet_items(selected_preset.hw_config);
+
     fill_print_presets(selected_preset);
     fill_tools_presets(selected_preset);
     fill_materials_presets(selected_preset);
-
-    fill_tool_items(selected_preset.hw_config);
-    fill_sheet_items(selected_preset.hw_config);
 
     // notify listeners on changes
     invoke_listeners<IPresetChangedListener>(
