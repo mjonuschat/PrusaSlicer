@@ -316,7 +316,7 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
     }
     else {
         pts = std::get<Domain::ConfigPackSLA>(cp).sla_printer_settings.items.opt("bed_shape").get<std::vector<Vec2d>>();
-        max_height = std::get<Domain::ConfigPackFDM>(cp).printer.items.opt("max_print_height").get<double>();
+        max_height = std::get<Domain::ConfigPackSLA>(cp).sla_printer_settings.items.opt("max_print_height").get<double>();
     }
 
     using namespace Biz::Algorithms::Bed;

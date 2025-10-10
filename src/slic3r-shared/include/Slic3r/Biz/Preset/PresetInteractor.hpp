@@ -293,6 +293,33 @@ public:
         );
     }
 
+    [[nodiscard]] HwPrinterConfigProjectView get_printer_configs_view(Domain::SelectionId project_id) const;
+
+    [[nodiscard]] PrinterPresetProjectView
+    get_printer_presets_view(Domain::SelectionId project_id, const std::string& hw_config_id) const;
+
+    [[nodiscard]] PrintPresetProjectView get_print_presets_view(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id
+    ) const;
+
+    [[nodiscard]] ToolPrintPresetProjectView get_tool_print_presets_view(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t tool_index
+    ) const;
+
+    [[nodiscard]] MaterialPresetProjectView get_material_presets_view(
+        Domain::SelectionId project_id,
+        const std::string& hw_config_id,
+        const std::string& printer_preset_id,
+        const std::string& print_preset_id,
+        size_t slot_index
+    ) const;
+
     /**
      * @brief Get iterator-like view over hw printer configs.
      * @return For-range iterable of `std::pair<std::ref_wrapper<HwPrinterConfig>, bool>`
@@ -308,11 +335,7 @@ public:
      */
     [[nodiscard]] auto get_printer_configs(Domain::SelectionId project_id) const
     {
-        auto view = HwPrinterConfigProjectView(
-            m_workbench.preset_bundle(),
-            get_or_fail_project_context(project_id).runtime_presets
-        );
-        return view.items();
+        return get_printer_configs_view(project_id).items();
     }
 
     /**
@@ -331,12 +354,7 @@ public:
     [[nodiscard]] auto
     get_printer_presets(Domain::SelectionId project_id, const std::string& hw_config_id) const
     {
-        auto view = PrinterPresetProjectView(
-            m_workbench.preset_bundle(),
-            get_or_fail_project_context(project_id).runtime_presets,
-            hw_config_id
-        );
-        return view.items();
+        return get_printer_presets_view(project_id, hw_config_id).items();
     }
 
     /**
@@ -358,13 +376,7 @@ public:
         const std::string& printer_preset_id
     ) const
     {
-        auto view = PrintPresetProjectView(
-            m_workbench.preset_bundle(),
-            get_or_fail_project_context(project_id).runtime_presets,
-            hw_config_id,
-            printer_preset_id
-        );
-        return view.items();
+        return get_print_presets_view(project_id, hw_config_id, printer_preset_id).items();
     }
 
     /**
@@ -388,15 +400,14 @@ public:
         size_t tool_index
     ) const
     {
-        auto view = ToolPrintPresetProjectView(
-            m_workbench.preset_bundle(),
-            get_or_fail_project_context(project_id).runtime_presets,
-            hw_config_id,
-            printer_preset_id,
-            print_preset_id,
-            tool_index
-        );
-        return view.items();
+        return get_tool_print_presets_view(
+                   project_id,
+                   hw_config_id,
+                   printer_preset_id,
+                   print_preset_id,
+                   tool_index
+        )
+            .items();
     }
 
     /**
@@ -420,15 +431,14 @@ public:
         size_t slot_index
     ) const
     {
-        auto view = MaterialPresetProjectView(
-            m_workbench.preset_bundle(),
-            get_or_fail_project_context(project_id).runtime_presets,
-            hw_config_id,
-            printer_preset_id,
-            print_preset_id,
-            slot_index
-        );
-        return view.items();
+        return get_material_presets_view(
+                   project_id,
+                   hw_config_id,
+                   printer_preset_id,
+                   print_preset_id,
+                   slot_index
+        )
+            .items();
     }
 
     /**

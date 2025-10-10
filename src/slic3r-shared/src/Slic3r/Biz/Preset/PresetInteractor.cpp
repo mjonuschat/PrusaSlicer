@@ -211,6 +211,7 @@ void PresetInteractor::update_changed_selected_preset_hw_config()
     ASSERT(cc != nullptr);
     const auto& hw_config                       = cc->selected_preset().hw_config;
     auto& preset_bundle                         = m_workbench.preset_bundle();
+    //FIXME: this will fail if config is runtime one (i.e. loaded from project)
     preset_bundle.printer_configs[hw_config.id] = hw_config;
     auto& vendor_bundle = preset_bundle.vendor_bundles.at(hw_config.vendor_id);
     auto* vb_config     = vendor_bundle.find_printer_config(hw_config.id);
@@ -1253,13 +1254,14 @@ void PresetInteractor::load_selected_preset_from_3mf(
     const auto& preset_bundle = m_workbench.preset_bundle();
     // 1. Reconcile HwPrinterConfig
     // deduplicate existing hw configuration (same_values())
+    const auto printer_configs_view = get_printer_configs_view(m_selected_project_id);
     const auto* same_hw_config =
-        preset_bundle.find_config_with_same_values(selected_preset.hw_config);
+        printer_configs_view.find_with_same_values(selected_preset.hw_config);
     if (same_hw_config != nullptr) {
         selected_preset.hw_config = *same_hw_config;
     } else {
         // check for duplicate id, if conflict update to new ID and update selected_preset with that ID
-        if (preset_bundle.printer_configs.contains(selected_preset.hw_config.id))
+        if (printer_configs_view.has_conflicting_id(selected_preset.hw_config.id))
             selected_preset.hw_config.id = generate_uuid();
         runtime_presets.printer_configs.emplace(
             std::pair{selected_preset.hw_config.id, selected_preset.hw_config}
@@ -1270,15 +1272,16 @@ void PresetInteractor::load_selected_preset_from_3mf(
 
     // 2. Reconcile PrinterPreset
     // deduplicate existing printer preset (check for config box differences)
-    const Domain::Preset::EvaluatedPrinterPreset* ep_printer =
-        preset_bundle.find_printer_preset_with_same_values(config_id, selected_preset.printer);
+    const auto printer_presets_view = get_printer_presets_view(m_selected_project_id, config_id);
+    const Domain::Preset::EvaluatedPrinterPreset::Preset* ep_printer =
+        printer_presets_view
+            .find_with_same_values(selected_preset.printer);
+
     if (ep_printer != nullptr) {
-        selected_preset.printer = ep_printer->preset;
+        selected_preset.printer = *ep_printer;
     } else {
         // check for duplicate id, if conflict update to new ID and update selected_preset with that ID
-        const auto* conflict =
-            preset_bundle.find_printer_preset(config_id, selected_preset.printer.id);
-        if (conflict != nullptr) {
+        if (printer_presets_view.has_conflicting_id(selected_preset.printer.id)) {
             selected_preset.printer.id = generate_uuid();
         }
         runtime_presets.printer[config_id].push_back(selected_preset.printer);
@@ -1287,17 +1290,15 @@ void PresetInteractor::load_selected_preset_from_3mf(
 
     // 3. Reconcile PrintPreset
     // deduplicate existing print preset (check for config box differences)
+    const auto print_presets_view = get_print_presets_view(m_selected_project_id, config_id, printer_id);
     const auto* ep_print = ep_printer == nullptr ?
         nullptr :
-        Domain::Preset::find_preset_with_same_value(selected_preset.print, ep_printer->prints);
+        print_presets_view.find_with_same_values(selected_preset.print);
     if (ep_print != nullptr) {
-        selected_preset.print = ep_print->preset;
+        selected_preset.print = *ep_print;
     } else {
         // check for duplicate id, if conflict update to new ID and update selected_preset with that ID
-        const auto* conflict = ep_printer == nullptr ?
-            nullptr :
-            find_by_id(ep_printer->prints, selected_preset.print.id);
-        if (conflict != nullptr) {
+        if (print_presets_view.has_conflicting_id(selected_preset.print.id)) {
             selected_preset.print.id = generate_uuid();
         }
         const RuntimePresets::HwConfigPrinterKey printer_key{config_id, printer_id};
@@ -1312,31 +1313,35 @@ void PresetInteractor::load_selected_preset_from_3mf(
         print_id
     };
 
-    for (size_t tool_index = 0; tool_index < selected_preset.hw_config.tool_count; ++tool_index) {
-        auto& selected_tool_print = selected_preset.tools.at(tool_index);
-        // deduplicate existing tool_print preset (check for config box differences)
-        const auto* ep_tool_print = ep_print == nullptr ?
-            nullptr :
-            Domain::Preset::find_preset_with_same_value(
-                selected_tool_print,
-                ep_print->tools[tool_index]
+    if (selected_preset.hw_config.technology == Domain::PrinterTechnology::FFF) {
+        for (size_t tool_index = 0; tool_index < selected_preset.hw_config.tool_count; ++tool_index) {
+            auto& selected_tool_print = selected_preset.tools.at(tool_index);
+            // deduplicate existing tool_print preset (check for config box differences)
+            const auto tool_print_presets_view = get_tool_print_presets_view(
+                m_selected_project_id,
+                config_id,
+                printer_id,
+                print_id,
+                tool_index
             );
-        if (ep_tool_print != nullptr) {
-            selected_tool_print = ep_tool_print->preset;
-        } else {
-            // check for duplicate id, if conflict update to new ID and update selected_preset with that ID
-            const auto* conflict = ep_print == nullptr ?
+            const auto* ep_tool_print = ep_print == nullptr ?
                 nullptr :
-                find_by_id(ep_print->tools[tool_index], selected_tool_print.id);
-            if (conflict != nullptr) {
-                selected_tool_print.id = generate_uuid();
+                tool_print_presets_view.find_with_same_values(selected_tool_print);
+
+            if (ep_tool_print != nullptr) {
+                selected_tool_print = *ep_tool_print;
+            } else {
+                // check for duplicate id, if conflict update to new ID and update selected_preset with that ID
+                if (tool_print_presets_view.has_conflicting_id(selected_tool_print.id)) {
+                    selected_tool_print.id = generate_uuid();
+                }
+                runtime_presets.add_tool_print(
+                    printer_print_key,
+                    selected_preset.hw_config,
+                    tool_index,
+                    selected_tool_print
+                );
             }
-            runtime_presets.add_tool_print(
-                printer_print_key,
-                selected_preset.hw_config,
-                tool_index,
-                selected_tool_print
-            );
         }
     }
 
@@ -1345,17 +1350,21 @@ void PresetInteractor::load_selected_preset_from_3mf(
         auto& selected_material = selected_preset.materials.at(slot_index);
 
         // deduplicate existing tool_print preset (check for config box differences)
-        const auto* ep_material = ep_print == nullptr ? nullptr :
-                                                        Domain::Preset::find_preset_with_same_value(
-                                                            selected_material,
-                                                            ep_print->materials[slot_index]
-                                                        );
+        const auto material_presets_view = get_material_presets_view(
+            m_selected_project_id,
+            config_id,
+            printer_id,
+            print_id,
+            slot_index
+        );
+        const auto* ep_material = ep_print == nullptr ?
+            nullptr :
+            material_presets_view.find_with_same_values(selected_material);
         if (ep_material != nullptr) {
-            selected_material = ep_material->preset;
+            selected_material = *ep_material;
         } else {
             // check for duplicate id, if conflict update to new ID and update selected_preset with that ID
-            const auto* conflict = ep_print == nullptr ? nullptr :find_by_id(ep_print->materials[slot_index], selected_material.id);
-            if (conflict != nullptr) {
+            if (material_presets_view.has_conflicting_id(selected_material.id)) {
                 selected_material.id = generate_uuid();
             }
             runtime_presets.add_material(
@@ -1491,6 +1500,78 @@ PresetInteractor::get_material_preset(
         std::tuple{hw_config_id, printer_preset_id, print_preset_id, material_preset_id}
     );
     return {std::cref(*material), true};
+}
+
+HwPrinterConfigProjectView PresetInteractor::get_printer_configs_view(
+    Domain::SelectionId project_id
+) const
+{
+    return {
+        m_workbench.preset_bundle(),
+        get_or_fail_project_context(project_id).runtime_presets
+    };
+}
+
+[[nodiscard]] PrinterPresetProjectView PresetInteractor::get_printer_presets_view(
+    Domain::SelectionId project_id,
+    const std::string& hw_config_id
+) const
+{
+    return {
+        m_workbench.preset_bundle(),
+        get_or_fail_project_context(project_id).runtime_presets,
+        hw_config_id
+    };
+}
+
+PrintPresetProjectView PresetInteractor::get_print_presets_view(
+    Domain::SelectionId project_id,
+    const std::string& hw_config_id,
+    const std::string& printer_preset_id
+) const
+{
+    return {
+        m_workbench.preset_bundle(),
+        get_or_fail_project_context(project_id).runtime_presets,
+        hw_config_id,
+        printer_preset_id
+    };
+}
+
+ToolPrintPresetProjectView PresetInteractor::get_tool_print_presets_view(
+    Domain::SelectionId project_id,
+    const std::string& hw_config_id,
+    const std::string& printer_preset_id,
+    const std::string& print_preset_id,
+    size_t tool_index
+) const
+{
+    return {
+        m_workbench.preset_bundle(),
+        get_or_fail_project_context(project_id).runtime_presets,
+        hw_config_id,
+        printer_preset_id,
+        print_preset_id,
+        tool_index
+    };
+}
+
+MaterialPresetProjectView PresetInteractor::get_material_presets_view(
+    Domain::SelectionId project_id,
+    const std::string& hw_config_id,
+    const std::string& printer_preset_id,
+    const std::string& print_preset_id,
+    size_t slot_index
+) const
+{
+    return {
+        m_workbench.preset_bundle(),
+        get_or_fail_project_context(project_id).runtime_presets,
+        hw_config_id,
+        printer_preset_id,
+        print_preset_id,
+        slot_index
+    };
 }
 
 } // namespace Slic3r::Biz::Preset

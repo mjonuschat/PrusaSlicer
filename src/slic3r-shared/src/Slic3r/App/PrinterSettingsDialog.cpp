@@ -105,7 +105,7 @@ void Slic3r::App::PrinterSettingsDialog::create_page_list()
         auto& preset_interactor = m_project_interactor.preset_interactor();
         const auto& item        = preset_interactor.printer_presets().items().at(index);
         preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
-    }, m_project_interactor.workbench());
+    }, m_project_interactor.preset_interactor());
     m_printer_list_view = scroll_area->emplace_back<PrinterListView>(std::move(factory));
     m_printer_list_view->set_flex_grow(1);
     m_printer_list_view->set_padding(Paddings(0, 0, 10, 0));

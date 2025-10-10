@@ -8,9 +8,9 @@
 #include "Slic3r/Biz/DataObserver.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
-namespace Slic3r::Domain {
-class Workbench;
-} // namespace Slic3r::Domain
+namespace Slic3r::Biz::Preset {
+class PresetInteractor;
+} // namespace Slic3r::Biz::Preset
 
 namespace Slic3r::App {
 
@@ -25,7 +25,7 @@ public:
         size_t index,
         const Biz::Preset::PresetItem& logical_printer_preset,
         FnIndexClicked on_clicked,
-        const Domain::Workbench& workbench
+        const Biz::Preset::PresetInteractor& preset_interactor
     );
 
 protected:
@@ -33,7 +33,7 @@ protected:
 
 private:
     FnIndexClicked m_on_clicked;
-    const Domain::Workbench& m_workbench;
+    const Biz::Preset::PresetInteractor& m_preset_interactor;
 };
 
 } // namespace Slic3r::App

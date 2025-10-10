@@ -5,6 +5,7 @@
 #include <range/v3/view/concat.hpp>
 #include <range/v3/view/map.hpp>
 #include <range/v3/view/transform.hpp>
+#include <range/v3/algorithm/find_if.hpp>
 
 #include "Slic3r/Domain/Preset/Bundle.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp"
@@ -20,6 +21,28 @@ auto view_pack_as_pair()
         { return {v, second_value}; }
     );
 }
+
+template <typename Value>
+const Value* find_with_same_value(const auto items, const Value& v)
+{
+    const auto it = ranges::find_if(
+        items,
+        [&v](const auto& pair) { return pair.first.get().has_same_values(v); }
+    );
+
+    return it == items.end() ? nullptr : &(*it).first.get();
+}
+
+bool has_conflicting_id(const auto items, const std::string& id)
+{
+    const auto it = ranges::find_if(
+        items,
+        [&id](const auto& pair) { return pair.first.get().id == id; }
+    );
+
+    return it != items.end();
+}
+
 } // namespace Details
 
 /**
@@ -57,6 +80,16 @@ public:
             ranges::views::values(m_bundle.printer_configs) | Details::view_pack_as_pair<Value, false>(),
             ranges::views::values(m_runtime.printer_configs) | Details::view_pack_as_pair<Value, true>()
         );
+    }
+
+    [[nodiscard]] const Value* find_with_same_values(const Value& v) const
+    {
+        return Details::find_with_same_value(items(), v);
+    }
+
+    [[nodiscard]] bool has_conflicting_id(const std::string& id) const
+    {
+        return Details::has_conflicting_id(items(), id);
     }
 
 private:
@@ -109,7 +142,16 @@ public:
             bundle_view | Details::view_pack_as_pair<Value, false>(),
             runtime_span | Details::view_pack_as_pair<Value, true>()
         );
+    }
 
+    [[nodiscard]] const Value* find_with_same_values(const Value& v) const
+    {
+        return Details::find_with_same_value(items(), v);
+    }
+
+    [[nodiscard]] bool has_conflicting_id(const std::string& id) const
+    {
+        return Details::has_conflicting_id(items(), id);
     }
 
 private:
@@ -165,6 +207,16 @@ public:
             bundle_view | Details::view_pack_as_pair<Value, false>(),
             runtime_span | Details::view_pack_as_pair<Value, true>()
         );
+    }
+
+    [[nodiscard]] const Value* find_with_same_values(const Value& v) const
+    {
+        return Details::find_with_same_value(items(), v);
+    }
+
+    [[nodiscard]] bool has_conflicting_id(const std::string& id) const
+    {
+        return Details::has_conflicting_id(items(), id);
     }
 
 private:
@@ -226,6 +278,16 @@ public:
         );
     }
 
+    [[nodiscard]] const Value* find_with_same_values(const Value& v) const
+    {
+        return Details::find_with_same_value(items(), v);
+    }
+
+    [[nodiscard]] bool has_conflicting_id(const std::string& id) const
+    {
+        return Details::has_conflicting_id(items(), id);
+    }
+
 private:
     const Domain::Preset::Bundle& m_bundle;
     const RuntimePresets& m_runtime;
@@ -284,6 +346,16 @@ public:
             bundle_view | Details::view_pack_as_pair<Value, false>(),
             runtime_span | Details::view_pack_as_pair<Value, true>()
         );
+    }
+
+    [[nodiscard]] const Value* find_with_same_values(const Value& v) const
+    {
+        return Details::find_with_same_value(items(), v);
+    }
+
+    [[nodiscard]] bool has_conflicting_id(const std::string& id) const
+    {
+        return Details::has_conflicting_id(items(), id);
     }
 
 private:

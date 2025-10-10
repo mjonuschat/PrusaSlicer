@@ -44,7 +44,7 @@ private:
         LogicalPrinterSettingsButton,
         Biz::Preset::PresetItem,
         LogicalPrinterSettingsButton::FnIndexClicked,
-        const Domain::Workbench&>;
+        const Biz::Preset::PresetInteractor&>;
     using PrinterListView = Yoga::ListView<LogicalPrinterSettingsButton, Biz::Preset::PresetItem, PrinterListViewFactory>;
 
     using NozzleListView = Yoga::ListView<

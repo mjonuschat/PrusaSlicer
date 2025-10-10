@@ -8,8 +8,6 @@
 
 namespace Slic3r::Biz {
 
-class PresetInteractor;
-
 /**
  * @brief The ConfigBoxInteractor class acts as Wrapper around ConfigBox
  * and provides IObservableList functionality.

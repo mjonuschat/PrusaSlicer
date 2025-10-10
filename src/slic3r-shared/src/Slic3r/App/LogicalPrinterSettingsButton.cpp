@@ -5,7 +5,7 @@
 #include "Slic3r/App/LogicalPrinterSettingsButton.hpp"
 
 #include "Slic3r/App/I18N/I18N.hpp"
-
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Log.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -16,11 +16,11 @@ LogicalPrinterSettingsButton::LogicalPrinterSettingsButton(
     size_t index,
     const Biz::Preset::PresetItem& logical_printer,
     FnIndexClicked on_clicked,
-    const Domain::Workbench& workbench
+    const Biz::Preset::PresetInteractor& preset_interactor
 ) :
     Biz::DataObserver<Biz::Preset::PresetItem>(index, logical_printer),
     m_on_clicked(on_clicked),
-    m_workbench(workbench)
+    m_preset_interactor(preset_interactor)
 {
     on_data_update();
     set_flex_shrink(0);
@@ -37,10 +37,7 @@ void LogicalPrinterSettingsButton::on_data_update()
     set_printer_name(prefix + m_state->name);
     set_preset_name(m_state->hw_printer_config_name);
 
-    const Domain::Preset::HwPrinterConfig& printer_config = m_workbench.preset_bundle()
-                                                                .printer_configs.at(
-                                                                    m_state->hw_printer_config_id
-                                                                );
+    const Domain::Preset::HwPrinterConfig& printer_config = m_preset_interactor.get_printer_config(m_state->hw_printer_config_id).first.get();
 
     if (printer_config.visual.thumbnail.has_value()) {
         const std::string image_path = printer_config.relative_path_to_assets()
