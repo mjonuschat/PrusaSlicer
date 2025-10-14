@@ -9,6 +9,7 @@
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
+#include "Slic3r/App/Scene/CameraFrustumUpdater.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -189,6 +190,11 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(Scene::Scen
 
     // setup camera zoom
     Scene::zoom_to_box(camera, world_aabb);
+
+    // setup camera frustum
+    Scene::CameraFrustumUpdater camera_frustum_updater;
+    camera_frustum_updater.update_scene_aabb(m_scene);
+    camera_frustum_updater.update_camera_frustum(camera);
 }
 
 ScopedBedThumbnailSceneCustomizer::~ScopedBedThumbnailSceneCustomizer()
