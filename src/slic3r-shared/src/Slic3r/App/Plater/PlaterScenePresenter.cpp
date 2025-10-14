@@ -398,7 +398,7 @@ void PlaterScenePresenter::on_scene_selection_transformed(Domain::SelectionId pr
 
 void PlaterScenePresenter::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
 {
-    m_bed_render_updater.update_all(project_context().scene().camera());
+    update_beds();
 
     Eigen::AlignedBox3d bed_aabb;
     for (const auto& bed_instance : selected_bed_instances()) {
@@ -732,7 +732,7 @@ void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_i
         scn.add_child(builder.build().release());
     }
 
-    m_bed_render_updater.update_all(scn.camera());
+    update_beds();
     m_volume_materials_dirty = true;
     m_camera_frustum_updater.update_scene_aabb(scn);
 
@@ -743,7 +743,7 @@ void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_i
 {
     remove_beds(project_id, instances);
 
-    m_bed_render_updater.update_all(scene().camera());
+    update_beds();
     m_camera_frustum_updater.update_scene_aabb(scene());
 
     m_volume_materials_dirty = true;
