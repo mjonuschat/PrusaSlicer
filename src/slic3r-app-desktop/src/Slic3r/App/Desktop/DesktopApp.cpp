@@ -285,6 +285,8 @@ bool DesktopApp::OnInit()
     canvas.set_render_module(m_plater_module.get());
 
     m_main_frame->Show();
+    if (scrn)
+        scrn->Destroy();
 
     m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(m_project_interactor->preset_updater_interactor(
     ));
