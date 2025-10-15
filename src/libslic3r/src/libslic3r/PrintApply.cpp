@@ -379,9 +379,12 @@ void update_volume_bboxes(
                     auto it = lower_bound_by_predicate(volumes_old.begin(), volumes_old.end(), [model_volume](PrintObjectRegions::VolumeExtents &l) { return l.volume_id < model_volume->id(); });
                     if (it != volumes_old.end() && it->volume_id == model_volume->id())
                         layer_range.volumes.emplace_back(*it);
-                } else
+                } else {
+                    const auto ch = model_volume->get_convex_hull_shared_ptr();
+                    const Domain::TriangleMesh* mesh = (ch != nullptr) ? ch.get() : &model_volume->mesh();
                     layer_range.volumes.push_back({ model_volume->id(),
-                        transformed_its_bbox2d(model_volume->mesh().its, trafo_for_bbox(object_trafo, model_volume->get_matrix()), offset) });
+                        transformed_its_bbox2d(mesh->its, trafo_for_bbox(object_trafo, model_volume->get_matrix()), offset) });
+                }
             }
     } else {
         std::vector<std::vector<PrintObjectRegions::VolumeExtents>> volumes_old;
