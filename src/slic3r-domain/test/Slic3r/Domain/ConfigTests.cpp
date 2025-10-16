@@ -71,18 +71,21 @@ void init(ConfigDefinitions& defs) {
     def->init_fn = []() { return ConfigValue{EnumWrapper{TestEnum::Two, &test_enum_def}}; };
 }
 
-const ConfigDefinitions defs{{Print, Filament, Object}, init};
+const ConfigDefinitions& defs() {
+    static ConfigDefinitions defs_var{{Print, Filament, Object}, init};
+    return defs_var;
+}
 
 struct TestPrintSettings : ConfigBox {
-    TestPrintSettings(): ConfigBox(defs, Print) {}
+    TestPrintSettings(): ConfigBox(defs(), Print) {}
 };
 
 struct TestFilamentSettings : ConfigBox {
-    TestFilamentSettings(): ConfigBox(defs, Filament) {}
+    TestFilamentSettings(): ConfigBox(defs(), Filament) {}
 };
 
 struct TestObjectSettings : ConfigBox {
-    TestObjectSettings(): ConfigBox(defs, Object) {}
+    TestObjectSettings(): ConfigBox(defs(), Object) {}
 };
 
 TEST_CASE("Config opt has default value and can be set", "[Config]") {

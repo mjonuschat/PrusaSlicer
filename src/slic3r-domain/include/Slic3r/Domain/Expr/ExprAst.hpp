@@ -3,8 +3,9 @@
 #include <regex>
 #include <vector>
 #include <boost/variant/recursive_variant.hpp>
-
 #include "Slic3r/Domain/Expr/RegEx.hpp"
+
+#include "Slic3r/Assert.hpp"
 
 /**
  * @brief Data structures for holding parsed expression if form of AST (abstract syntax tree).
@@ -54,6 +55,11 @@ struct Binary
     Binary(BinaryOp op, ExprAst left, ExprAst right)
         : op(op), left(std::move(left)), right(std::move(right))
     {}
+
+    template<class Archive> void serialize(Archive& archive)
+    {
+        archive(op, left, right);
+    }
 };
 
 enum class UnaryOp
@@ -76,6 +82,11 @@ struct Unary
     Unary(UnaryOp op, ExprAst expr)
         : op(op), expr(std::move(expr))
     {}
+
+    template<class Archive> void serialize(Archive& archive)
+    {
+        archive(op, expr);
+    }
 };
 
 struct FuncCall
@@ -93,6 +104,11 @@ struct FuncCall
     FuncCall(std::string name, std::vector<ExprAst> args)
         : name(std::move(name)), args(std::move(args))
     {}
+
+    template<class Archive> void serialize(Archive& archive)
+    {
+        archive(name, args);
+    }
 };
 
 struct VarRef
@@ -109,6 +125,11 @@ struct VarRef
     explicit VarRef(std::string name)
         : name(std::move(name))
     {}
+
+    template<class Archive> void serialize(Archive& archive)
+    {
+        archive(name);
+    }
 };
 
 } // namespace Slic3r::Domain::Expr

@@ -362,33 +362,4 @@ inline Domain::TriangleMesh make_torus(
 
 } // namespace Slic3r::Biz::Algorithms::TriangleMesh
 
-// Serialization through the Cereal library
-#include <cereal/access.hpp>
-
-namespace cereal {
-template <class Archive>
-struct specialize<Archive, Slic3r::Domain::TriangleMesh, cereal::specialization::non_member_load_save>
-{};
-
-template <class Archive>
-void load(Archive& archive, Slic3r::Domain::TriangleMesh& mesh)
-{
-    archive.loadBinary(
-        reinterpret_cast<char*>(const_cast<Slic3r::Domain::TriangleMeshStats*>(&mesh.stats())),
-        sizeof(Slic3r::Domain::TriangleMeshStats)
-    );
-    archive(mesh.its.indices, mesh.its.vertices);
-}
-
-template <class Archive>
-void save(Archive& archive, const Slic3r::Domain::TriangleMesh& mesh)
-{
-    archive.saveBinary(
-        reinterpret_cast<const char*>(&mesh.stats()),
-        sizeof(Slic3r::Domain::TriangleMeshStats)
-    );
-    archive(mesh.its.indices, mesh.its.vertices);
-}
-} // namespace cereal
-
 #endif

@@ -8,6 +8,17 @@
 #include <string>
 #include <type_traits>
 #include <variant>
+#include <algorithm>
+
+namespace Slic3r::Domain {
+    struct ConfigBox;
+}
+
+namespace cereal {
+    template<class Archive> void serialize(Archive& ar, Slic3r::Domain::ConfigBox&);
+    class BinaryInputArchive;
+    class BinaryOutputArchive;
+}
 
 namespace Slic3r::Domain {
 
@@ -34,6 +45,8 @@ struct EnumValueDef
 
 using EnumValueDefs = std::vector<EnumValueDef>;
 using EnumValueDefsPtr = std::unique_ptr<EnumValueDefs>;
+
+std::vector<EnumValueDefsPtr>& get_enum_defs();
 
 inline const EnumValueDefs* check_enum_def(const EnumValueDefs* def) {
     ASSERT(!ASSERT_VAL(def)->empty());
@@ -149,6 +162,7 @@ struct EnumWrapper
     std::string_view get_string() const;
 
     bool operator==(const EnumWrapper&) const;
+
 private:
     int m_value{};
     const std::type_info* m_type{nullptr};
@@ -156,8 +170,6 @@ private:
 };
 
 struct ConfigValue {
-    ConfigValue() = delete;
-
     template <typename T>
     explicit ConfigValue(const T& value): m_value{value} {}
 
@@ -274,7 +286,7 @@ private:
         std::vector<Domain::Vec2d>,
         std::vector<FloatOrPercentage>,
         std::vector<Percentage>
-    > m_value;
+    > m_value{bool{}};
 
     static void assert_types_equal(const ConfigValue& a, const ConfigValue& b);
 };

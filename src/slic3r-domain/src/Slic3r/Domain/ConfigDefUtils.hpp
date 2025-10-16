@@ -5,10 +5,7 @@
 #include <vector>
 
 namespace Slic3r::Domain {
-inline std::vector<EnumValueDefsPtr>& get_enum_defs() {
-    static std::vector<EnumValueDefsPtr> result;
-    return result;
-}
+std::vector<EnumValueDefsPtr>& get_enum_defs();
 
 template <typename T>
 requires std::is_enum_v<typename T::value_type>

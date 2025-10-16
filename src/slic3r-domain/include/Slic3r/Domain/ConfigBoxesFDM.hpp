@@ -4,7 +4,6 @@
 #include "Slic3r/Domain/GCodeFlavor.hpp"
 #include "Slic3r/Domain/ConfigCommon.hpp"
 
-
 namespace Slic3r::Domain {
 
 // This is an example of using Config infrastructure.
@@ -44,10 +43,6 @@ enum class FuzzySkinType {
     External,
     All,
 };
-
-
-//This is defined in a separate file:
-// enum class GCodeFlavor
 
 enum class LabelObjectsStyle {
     Disabled, Octoprint, Firmware

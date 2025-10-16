@@ -9,7 +9,7 @@ namespace Slic3r::Domain {
 
 // First, define a static object of ConfigDefinitions. This object will hold all
 // the definitions of the config items.
-extern ConfigDefinitions s_defs_physical;
+const ConfigDefinitions& get_defs_physical();
 
 // Next, define all enums that should be used in the config.
 enum class PrintHostAuthType {
@@ -38,7 +38,7 @@ enum PrintHostType {
 class PhysicalPrinterSettings : public ConfigItems
 {
 public:
-    PhysicalPrinterSettings() : ConfigItems(s_defs_physical, PhysicalPrinterLocation{}) {}
+    PhysicalPrinterSettings() : ConfigItems(get_defs_physical(), PhysicalPrinterLocation{}) {}
 };
 
 } // namespace Slic3r::Domain

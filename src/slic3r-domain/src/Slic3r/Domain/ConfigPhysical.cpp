@@ -14,7 +14,10 @@ void physical_printer_init_fn(ConfigDefinitions& defs);
 
 // Define the static object holding all definitions. Provide list of acceptable
 // boxes and the init function.
-ConfigDefinitions s_defs_physical({PhysicalPrinterLocation{}}, physical_printer_init_fn);
+const ConfigDefinitions& get_defs_physical() {
+    static ConfigDefinitions s_defs_physical({PhysicalPrinterLocation{}}, physical_printer_init_fn);
+    return s_defs_physical;
+}
 
 // JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.
 // Right now, let's just define the constants so the defs compile.

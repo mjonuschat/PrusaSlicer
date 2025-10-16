@@ -13,6 +13,8 @@
 
 namespace Slic3r::Domain {
 
+class ConfigDefinitions;
+
 enum class FDMConfigLocation {
     None,
     Printer,
@@ -172,6 +174,12 @@ struct ConfigItemDef
 class ConfigDefinitions
 {
 public:
+    ConfigDefinitions() = delete;
+    ConfigDefinitions(const ConfigDefinitions&) = delete;
+    ConfigDefinitions(ConfigDefinitions&&) = delete;
+    ConfigDefinitions& operator=(const ConfigDefinitions&) = delete;
+    ConfigDefinitions& operator=(ConfigDefinitions&&) = delete;
+
     ConfigDefinitions(const std::set<ConfigLocation>& acceptable_boxes, std::function<void(ConfigDefinitions&)> init_fn);
     const std::vector<ConfigItemDef>& defs() const { return m_defs; }
 

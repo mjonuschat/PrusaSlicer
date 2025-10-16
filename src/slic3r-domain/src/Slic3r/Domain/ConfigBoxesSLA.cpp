@@ -21,9 +21,11 @@ using SLAConfigLocation::Material;
 using SLAConfigLocation::Print;
 using SLAConfigLocation::Object;
 
+namespace {
 const ConfigDefinitions& get_defs_sla() {
     static ConfigDefinitions defs_sla({Printer, Print, Material, Object}, sla_config_init_fn);
     return defs_sla;
+}
 }
 
 SLAPrintSettings::SLAPrintSettings() : ConfigBox(get_defs_sla(), SLAConfigLocation::Print) {}

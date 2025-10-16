@@ -3,7 +3,6 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Biz/Config/HwConfigJson.hpp" // IWYU pragma: keep
 
-#include <fstream>
 #include <ranges>
 #include <set>
 
@@ -14,6 +13,7 @@
 #include <boost/filesystem/directory.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <boost/nowide/fstream.hpp>
 #include <fmt/ranges.h>
 
 using namespace Slic3r::Domain::Preset;
@@ -224,7 +224,7 @@ Domain::Preset::HwPrinterConfigs load_vendor_user_configs(
         if (p.extension() != ".json")
             continue;
 
-        std::ifstream f(p.string());
+        boost::nowide::ifstream f(p.string());
         const ordered_json j = ordered_json::parse(f);
         const auto loading_result{Config::load_hw_config(j)};
 
