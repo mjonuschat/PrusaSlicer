@@ -9,21 +9,21 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 07fecf08-3526-41e2-910e-644ab6f4995e
+  id: futdQ56PSX6NYQ4p+2JRZg
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: cda17547-da96-41d1-87f7-84e27876d2c9
     name: LOCTITE 3D IND475 @SL1S 0.05
+    id: SPzTPLUFSWeUDiOrSkEHng
     values:
       exposure_time: 4
       initial_exposure_time: 15
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 58d901a6-c48f-4e1f-98d7-09f788854ab0
     name: LOCTITE 3D IND475 @SL1S 0.1
+    id: tVyZjCX/SgigM2/Fii/v0Q
     values:
       exposure_time: 6.5
       initial_exposure_time: 15

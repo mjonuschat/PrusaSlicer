@@ -9,55 +9,55 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 19b665d9-7999-48fc-b0ee-78fa6951d8c7
+  id: S7ToVRrEQ/SW5majh7HiAA
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: c170b10f-f399-46f0-99dd-1350418af4a6
     name: PrimaCreator Tough White @SL1 0.025
+    id: mQWUPnucTIquDf/NdntKxQ
     values:
       exposure_time: 5
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: ae9deea7-1277-4b12-b3d9-01ed3c9c30fc
     name: PrimaCreator Tough White @SL1 0.05
+    id: 8mI7VIL8Q8GQINg1UQr9yw
     values:
       exposure_time: 7.5
       initial_exposure_time: 35
 # 0.1
   - condition: print.layer_height == 0.1
-    id: a37580af-4156-436f-8187-4b9bb2d8db59
     name: PrimaCreator Tough White @SL1 0.1
+    id: VGppZynMQ6engGf0YS7Kag
     values:
       exposure_time: 13
       initial_exposure_time: 45
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: d8581f1b-41da-48b9-8586-67c82605f42d
+  id: ErMpO7H7THyXszqUuaAgOg
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: e5e5f657-ffdf-4224-b5ec-7142247a4040
     name: PrimaCreator Tough White @SL1S 0.025
+    id: RUkZ7No8Qz6hhxzqSJyPLw
     values:
       exposure_time: 1.8
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: c849b648-12e0-440c-bbd6-777ad9ba669c
     name: PrimaCreator Tough White @SL1S 0.05
+    id: y7xKdjWOQNyG3rpNBUz3+Q
     values:
       exposure_time: 2
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: a305b850-ae3d-4044-9f8a-9d1c0e7cc3dc
     name: PrimaCreator Tough White @SL1S 0.1
+    id: +9w+l6B2RnacvK953bSjAg
     values:
       exposure_time: 2.6
       initial_exposure_time: 25

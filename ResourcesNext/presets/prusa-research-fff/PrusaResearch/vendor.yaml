@@ -13,11 +13,11 @@ features:
     planetary_gearbox:
       default: true
       user_editable: false
-    supports_03_nozzle: # temporary
+    supports_03_nozzle:
       default: true
-    supports_05_nozzle: # temporary
+    supports_05_nozzle:
       default: true
-    supports_08_nozzle: # temporary
+    supports_08_nozzle:
       default: true
   tool:
     nozzle_high_flow:
@@ -36,8 +36,8 @@ features:
 ---
 kind: printer
 technology: FFF
-id: xl
 name: XL
+id: xl
 model:
   base_model: XL
   model: XL
@@ -52,8 +52,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: COREONE
 name: CORE One
+id: COREONE
 model:
   base_model: COREONE
   model: COREONE
@@ -68,8 +68,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MK4
 name: Prusa MK4
+id: MK4
 model:
   base_model: MK4
   model: MK4
@@ -84,8 +84,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MK4S
 name: Prusa MK4S
+id: MK4S
 model:
   base_model: MK4
   model: MK4S
@@ -100,8 +100,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MK3.9
 name: Prusa MK3.9
+id: MK3.9
 model:
   base_model: MK4
   model: MK3.9
@@ -117,8 +117,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MK3.9S
 name: Prusa MK3.9S
+id: MK3.9S
 model:
   base_model: MK4
   model: MK3.9S
@@ -133,8 +133,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MK3.5
 name: Prusa MK3.5
+id: MK3.5
 model:
   base_model: MK3.5
   model: MK3.5
@@ -151,8 +151,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MK3
 name: MK3
+id: MK3
 model:
   base_model: MK3
   model: MK3
@@ -174,8 +174,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MK3S
 name: MK3S
+id: MK3S
 model:
   base_model: MK3
   model: MK3S
@@ -196,8 +196,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MINI
 name: Prusa MINI
+id: MINI
 model:
   base_model: MINI
   model: MINI
@@ -220,8 +220,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MK2.5S
 name: MK2.5S
+id: MK2.5S
 model:
   base_model: MK2.5
   model: MK2.5S
@@ -242,8 +242,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MK2.5
 name: MK2.5
+id: MK2.5
 model:
   base_model: MK2.5
   model: MK2.5
@@ -264,8 +264,8 @@ visual:
 ---
 kind: printer
 technology: FFF
-id: MK2S
 name: MK2S
+id: MK2S
 model:
   base_model: MK2
   model: MK2S
@@ -409,7 +409,7 @@ kind: feeder
 technology: FFF
 id: mmu3_32b
 name: MMU3
-condition: printer.base_model=~/(COREONE|MK4)/ and tool.nozzle_diameter >= 0.4
+condition: printer.base_model=~/(COREONE|MK4)/ and (tool.nozzle_diameter == 0.4 or tool.nozzle_diameter == 0.6) and ! (tool.nozzle_diameter == 0.6 and tool.nozzle_high_flow)
 feeder_type: mmu
 model:
   base_model: MMU3
@@ -420,7 +420,7 @@ kind: feeder
 technology: FFF
 id: mmu3_8b
 name: MMU3 8bit
-condition: printer.model=~/(MK3S|MK2.5S|MK3.5)/
+condition: printer.model=~/(MK3S|MK3.5)/ and (tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.4 or tool.nozzle_diameter == 0.6)
 feeder_type: mmu
 model:
   base_model: MMU3
@@ -431,7 +431,7 @@ kind: feeder
 technology: FFF
 id: mmu2s
 name: MMU2S
-condition: printer.model=~/(MK3S|MK2.5S)/
+condition: printer.model=~/(MK3S|MK2.5S)/ and (tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.4 or tool.nozzle_diameter == 0.6)
 feeder_type: mmu
 model:
   base_model: MMU2
@@ -450,7 +450,7 @@ model:
 slot_count: 4
 ---
 #sheet.type == "pei_smooth"
-#sheet.type == "pei_grained"
+#sheet.type == "pei_textured"
 #sheet.type == "satin"
 #sheet.type == "pa_nylon"
 #sheet.type == "pp"
@@ -461,9 +461,9 @@ name: PEI Smooth
 type: pei_smooth
 ---
 kind: sheet
-name: PEI Grained
-id: pei_grained
-type: pei_grained
+name: PEI Textured
+id: pei_textured
+type: pei_textured
 ---
 kind: sheet
 name: Satin

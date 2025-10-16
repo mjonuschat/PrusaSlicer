@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 2a7fbe68-7680-45c8-b369-5a8af6bbd450
+  id: 2TBunmJYTLGl369kJmLCeg
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 8b439554-529e-4481-b068-5f099465ba4b
     name: FunToDo Snow White @SL1 0.025
+    id: iwCI8sikSuyTszqrXPCjKw
     values:
       exposure_time: 7
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 747cb6a9-4afe-4c6b-9b8c-f4e3af9fba4a
     name: FunToDo Snow White @SL1 0.05
+    id: D9HNoMMjSUWoEUeSytyUgQ
     values:
       exposure_time: 10
       initial_exposure_time: 35
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: de20ce3f-dcba-49ae-acb1-14927c6087cc
+  id: +csE8CpmRYmxj7ZZEC2pYQ
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: eafd551b-9138-47f7-a0a5-2ed6fd6aedf0
     name: FunToDo Snow White @SL1S 0.05
+    id: +dqfU5pIQmSm4tIlKnZkKg
     values:
       exposure_time: 3.3
       initial_exposure_time: 28

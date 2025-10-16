@@ -9,27 +9,27 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 73579451-0230-4f66-bf74-13fd2a935a39
+  id: 7kvTa2ekSiaK3prv4jASZQ
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 8bd400e1-53aa-4d01-97b7-52f139482bfe
     name: Dragon Resin Metalshine Brass @SL1 0.05
+    id: kUQ/KzQqRAuuwq89rU+n1w
     values:
       exposure_time: 30
       initial_exposure_time: 50
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: e80e2f93-863a-49dc-a752-81429b5ecbe1
+  id: yASdipPeTxaRRZSOnS8r8Q
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: f9471ab7-b885-4067-9854-4363fcb2f202
     name: Dragon Resin Metalshine Brass @SL1S 0.05
+    id: cADJGuqoS72OFvOb0fwmbg
     values:
       exposure_time: 10
       initial_exposure_time: 40

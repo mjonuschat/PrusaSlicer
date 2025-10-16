@@ -9,27 +9,27 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 0212f683-ab50-4dd6-b3b1-43cb5e4acc70
+  id: axCINuivT0e5gxNmvzjocQ
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 8623e8fb-99e3-40f0-bb0f-097e7fa79396
     name: FunToDo Ash Grey @SL1 0.05
+    id: PKol78XxTiycSQSAYpMYUA
     values:
       exposure_time: 9
       initial_exposure_time: 40
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: ba94a7c3-49be-4af3-8a5e-824885820b51
+  id: e4No4uNvT0yVkrrI1lpeYw
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 729ca78b-3c64-41a1-9a10-a5f272bbb5e6
     name: FunToDo Ash Grey @SL1S 0.05
+    id: KEu9mUgqQGeIwSy3PgJgHA
     values:
       exposure_time: 3
       initial_exposure_time: 32

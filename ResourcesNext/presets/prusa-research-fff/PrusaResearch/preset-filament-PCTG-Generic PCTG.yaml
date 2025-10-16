@@ -1,7 +1,0 @@
-kind: filament
-id: Generic PCTG
-inherits:
-- '*PCTG*'
-name: Generic PCTG
-values:
-  filament_vendor: Generic

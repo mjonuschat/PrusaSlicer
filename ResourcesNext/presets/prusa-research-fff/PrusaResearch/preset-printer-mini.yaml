@@ -1,9 +1,9 @@
-id: 3955c65b-aef0-4c33-85c6-873296c55f64
+id: SIQcB/YrR1S9QaXLihcl1Q
 kind: printer
 variants:
 - condition: printer.base_model == "MINI"
-  id: c2674cc1-00e6-419b-bc37-22d74ba97f0a
   name: Original Prusa MINI
+  id: 4TfihLJ8Q1+uJebMxFdmMw
   values:
     bed_shape:
     - '0x0'

@@ -1,7 +1,0 @@
-kind: filament
-id: Generic PEBA
-inherits:
-- '*PEBA*'
-name: Generic PEBA
-values:
-  filament_vendor: Generic

@@ -1,7 +1,7 @@
 kind: filament
-id: Generic PPCF
 inherits:
 - '*PPCF*'
 name: Generic PPCF
+id: Generic PPCF
 values:
   filament_vendor: Generic

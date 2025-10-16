@@ -9,48 +9,48 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: c21643fa-c265-4e62-820d-c513b8a461b1
+  id: P0jS5haORdiSyTJNJOwzEw
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: e9a68591-69f3-4367-b08d-6a6ac11183b5
     name: 3DM-TOUGH Clear @SL1 0.025
+    id: vF0PzhiXTzaDsgptcu3mIw
     values:
       exposure_time: 9
       initial_exposure_time: 30
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 96317daa-2168-4a83-b67f-eb7c1667ba2a
     name: 3DM-TOUGH Clear @SL1 0.05
+    id: iH8xcW5PSJSI12vKyXfPHA
     values:
       exposure_time: 15
       initial_exposure_time: 30
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 87859088-4912-4f6d-9b45-96cfc5f89b9f
+  id: 4nSMm1YEQTigPXIbWwAYxA
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 517e6818-390c-448b-b7dd-bcd1781b0028
     name: 3DM-TOUGH Clear @SL1S 0.025
+    id: yrJCIGW2SMmhQFhui0QGPw
     values:
       exposure_time: 1.8
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 825fbc94-5b9c-415d-aee5-02c7628650fc
     name: 3DM-TOUGH Clear @SL1S 0.05
+    id: S7kVfWHCQO2x4pc+0wuJYQ
     values:
       exposure_time: 2.6
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 5c1a9017-48ef-4966-a1a8-e3dcade3bd12
     name: 3DM-TOUGH Clear @SL1S 0.1
+    id: VDNys1vnRUS/KaxRMK6d5A
     values:
       exposure_time: 3
       initial_exposure_time: 25

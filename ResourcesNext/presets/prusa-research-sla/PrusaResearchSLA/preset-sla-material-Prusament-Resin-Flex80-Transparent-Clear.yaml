@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 7ccfee1f-8d7b-4a18-a638-4d9c8c081511
+  id: kdwfblzyRu6VmG4h3DWFBQ
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 7e03bde4-cfa5-42a7-99b5-eb938eeb2e53
     name: Prusament Resin Flex80 Transparent Clear @SL1 0.025
+    id: OvsSORKQS8ytvA7DMnwugA
     values:
       exposure_time: 10
       initial_exposure_time: 30
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 77dcf145-33d7-4fa6-8a5f-b6d80a8ad82c
     name: Prusament Resin Flex80 Transparent Clear @SL1 0.05
+    id: ERwLTfNmTrmKWLzUcdbTUg
     values:
       exposure_time: 15
       initial_exposure_time: 30
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 1ca99347-5dad-4782-8b0c-56e9b850c2f3
     name: Prusament Resin Flex80 Transparent Clear @SL1 0.1
+    id: XIGmmK4kQFyJsJ+vNi5NPQ
     values:
       exposure_time: 20
       initial_exposure_time: 30
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 60e0c9d4-fa2e-4b11-863a-7d9078430c78
+  id: QXYEE2dCRMinkTcH+7onTg
   unconditional_inherits:
   - '*sl1s_slow*'
   values:
@@ -45,22 +45,22 @@ variants:
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: ac342223-642b-458b-a144-736ef1add180
     name: Prusament Resin Flex80 Transparent Clear @SL1S 0.025
+    id: uoh6RSIxQSycaSQekU4hGg
     values:
       exposure_time: 4
       initial_exposure_time: 12
 # 0.05
   - condition: print.layer_height == 0.05
-    id: fed5f999-5d5d-42e9-8cdb-ee2d0f693d40
     name: Prusament Resin Flex80 Transparent Clear @SL1S 0.05
+    id: t47j6hAVSYaKDJyda9Bltw
     values:
       exposure_time: 5
       initial_exposure_time: 15
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 96b8bcf3-e3d0-4e41-8d07-e1c1dcca7235
     name: Prusament Resin Flex80 Transparent Clear @SL1S 0.1
+    id: QOSyOZ++TB67imqec86OcA
     values:
       exposure_time: 6
       initial_exposure_time: 18

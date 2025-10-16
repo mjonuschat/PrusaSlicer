@@ -14,8 +14,8 @@ features:
 ---
 kind: printer
 technology: SLA
-id: sl1s
 name: SL1S SPEED
+id: sl1s
 model:
   base_model: SL1
   model: SL1S
@@ -27,8 +27,8 @@ visual:
 ---
 kind: printer
 technology: SLA
-id: sl1
 name: SL1
+id: sl1
 model:
   base_model: SL1
   model: SL1

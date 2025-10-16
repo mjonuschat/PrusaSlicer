@@ -9,7 +9,7 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: c7e7eab1-c492-46da-9a38-504f9bfe2d30
+  id: ovtyzwfOQ6C0RECiTtGOPw
   unconditional_inherits:
   - '*sl1s_slow*'
   values:
@@ -18,22 +18,22 @@ variants:
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 0bbfd670-752b-4f40-9d1f-e80d9a2da85a
     name: Prusament Resin Flex Gingiva Mask @SL1S 0.025
+    id: 5Bq29nLaQjS83MXBRsfl0g
     values:
       exposure_time: 2.6
       initial_exposure_time: 9
 # 0.05
   - condition: print.layer_height == 0.05
-    id: ae4fdbad-4f4e-4b41-a05f-ca2d8a91e12a
     name: Prusament Resin Flex Gingiva Mask @SL1S 0.05
+    id: Hbq2LigETLmACrUpTuOkKg
     values:
       exposure_time: 3
       initial_exposure_time: 9
 # 0.1
   - condition: print.layer_height == 0.1
-    id: c1492d06-ef0c-4447-887a-36401063c623
     name: Prusament Resin Flex Gingiva Mask @SL1S 0.1
+    id: 3Nrx3yCZQ1ObYbhwyzystQ
     values:
       exposure_time: 3.5
       initial_exposure_time: 12

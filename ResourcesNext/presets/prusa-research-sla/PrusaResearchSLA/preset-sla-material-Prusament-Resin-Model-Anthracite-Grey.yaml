@@ -9,37 +9,37 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 59f04020-8041-4576-bf65-1726ff34a20e
+  id: hC+4R6UOTwGqrbtg0jWgZA
   unconditional_inherits:
   - '*sl1s_fast*'
   values:
     area_fill: 20
     delay_before_exposure: [1, 10]
-    tilt_down_initial_speed: [layer1750,layer1750]
+    tilt_down_initial_speed: [layer1750, layer1750]
     tilt_down_offset_steps: [0, 1200]
-    tilt_down_finish_speed: [move8000,move5120]
-    tilt_up_initial_speed: [move8000,move8000]
+    tilt_down_finish_speed: [move8000, move5120]
+    tilt_up_initial_speed: [move8000, move8000]
     tilt_up_offset_steps: [600, 600]
-    tilt_up_finish_speed: [layer1750,layer1750]
+    tilt_up_finish_speed: [layer1750, layer1750]
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 9342c13e-eb12-4d74-9731-f8e560055be1
     name: Prusament Resin Model Anthracite Grey @SL1S 0.025
+    id: YRvFNzOGRQO3T1/zeGubjg
     values:
       exposure_time: 2
       initial_exposure_time: 5
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 24ed3c2e-9a56-4476-994e-48bfff74f331
     name: Prusament Resin Model Anthracite Grey @SL1S 0.05
+    id: 6Yx+pR+KRQ+87QyU/q/bbw
     values:
       exposure_time: 2.2
       initial_exposure_time: 6
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 66fc9c53-5658-4feb-9b74-5ab087ecf4dc
     name: Prusament Resin Model Anthracite Grey @SL1S 0.1
+    id: 90eo9WldTBOJySopv1Zzpg
     values:
       exposure_time: 2.9
       initial_exposure_time: 8

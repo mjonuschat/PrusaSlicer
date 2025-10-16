@@ -9,14 +9,14 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 1efa5984-cd3f-4231-9a03-549997d4d9ff
+  id: lHcJL9sRSfaNsWNw1ec7og
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 30435988-d0d2-47e4-8a49-5993ca14cd09
     name: ALTANA Cubic Ink High Performance 4-2100 VP @SL1S 0.05
+    id: AewO6bQRQ1udfyQiO3GZ+Q
     values:
       exposure_time: 4
       initial_exposure_time: 10
@@ -25,8 +25,8 @@ variants:
       zcorrection_layers: 3
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 6b5623dd-0687-46d4-aa60-fbcc2c5d235f
     name: ALTANA Cubic Ink High Performance 4-2100 VP @SL1S 0.1
+    id: r30QGuC4Soa45VMEOBU0+w
     values:
       exposure_time: 4.5
       initial_exposure_time: 10

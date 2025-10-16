@@ -1,8 +1,0 @@
-kind: filament
-id: Spectrum PLA Pro
-inherits:
-- '*PLA*'
-name: Spectrum PLA Pro
-values:
-  filament_vendor: Spectrum
-  filament_density: 1.22

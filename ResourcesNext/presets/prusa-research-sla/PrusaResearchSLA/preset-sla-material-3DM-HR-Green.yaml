@@ -9,27 +9,27 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 13863f47-bca6-4ef2-975d-0280b8eeac70
+  id: LOcK9D5NS4iv0Vx2PzDWHg
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 89cbe952-0811-4fcd-948d-aec75da0cbd4
     name: 3DM-HR Green @SL1 0.05
+    id: +K8JqaB5QzylXHgCQfMZtw
     values:
       exposure_time: 15
       initial_exposure_time: 40
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: a0d47ebd-5f80-4b62-a259-4f718cbfd65b
+  id: 8VM+qSNsRKeZigpxjZWLgA
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 144a404f-d1cd-48c4-b0ab-77827bf65cde
     name: 3DM-HR Green @SL1S 0.05
+    id: FATqD5j2RTWyiD0IR0iWFw
     values:
       exposure_time: 5
       initial_exposure_time: 28

@@ -9,14 +9,14 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 40467577-1a66-49c2-a4a9-4ffc0f02b444
+  id: Fpr1azg5Rn+uL+Axd5rp1Q
   unconditional_inherits:
   - '*sl1s_slow*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 2206ad16-021e-4a41-ad42-56fef381b861
     name: Liqcreate Tough-X @SL1S 0.05
+    id: 0aTh4Xm8TyWpRT0kuOjsuw
     values:
       exposure_time: 12
       initial_exposure_time: 40
@@ -28,8 +28,8 @@ variants:
       support_head_width: 3
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 955bdfe6-38d3-4822-97ac-53ac485d7e5f
     name: Liqcreate Tough-X @SL1S 0.1
+    id: O4GriFUbSeyGy4EgKw9HoA
     values:
       exposure_time: 15
       initial_exposure_time: 50

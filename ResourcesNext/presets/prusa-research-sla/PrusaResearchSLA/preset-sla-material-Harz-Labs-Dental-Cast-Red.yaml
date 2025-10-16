@@ -9,21 +9,21 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 94deec82-67d7-44df-b7f3-40f0ec101817
+  id: 9VQdhzDeRP+vUK/eHZpGsQ
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 73213b84-180a-4f23-8ee6-6baa4a56031e
     name: Harz Labs Dental Cast Red @SL1 0.025
+    id: ATuB3VhTRTKN+QNokwKPow
     values:
       exposure_time: 10
       initial_exposure_time: 20
 # 0.05
   - condition: print.layer_height == 0.05
-    id: b2a9fea7-e34e-440a-9e17-3dfa7e4f2abd
     name: Harz Labs Dental Cast Red @SL1 0.05
+    id: qIpGGbtkR6eKfZA0rbDP4g
     values:
       exposure_time: 13
       initial_exposure_time: 20

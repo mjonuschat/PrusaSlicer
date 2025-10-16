@@ -9,55 +9,55 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 292dacbc-18ba-460e-b532-9e355e850895
+  id: 1B58KwXPSdOjDAZsFW8p+A
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 63d9a5ec-a37e-4638-afbe-22e99171d446
     name: PrimaCreator Tough Light Grey @SL1 0.025
+    id: YloW+6kkTA+ni3HlEhl60A
     values:
       exposure_time: 6
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 3b89faeb-dabb-44e7-aed6-5795dca54cf4
     name: PrimaCreator Tough Light Grey @SL1 0.05
+    id: 3NZQykm6R+mKPpYjcpVopg
     values:
       exposure_time: 8.5
       initial_exposure_time: 35
 # 0.1
   - condition: print.layer_height == 0.1
-    id: c15eeb59-a033-4ed2-bbdc-5b0100c9b753
     name: PrimaCreator Tough Light Grey @SL1 0.1
+    id: CHd4U8FLStinL5gYQp+IAw
     values:
       exposure_time: 14
       initial_exposure_time: 45
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 2b1bf8dc-38ea-40cb-af69-de02b984144c
+  id: j+nNb2G8To2WQThRnrawRA
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: a562b07a-81c1-4469-a54c-e163e783d347
     name: PrimaCreator Tough Light Grey @SL1S 0.025
+    id: 7Rp221haQq2fevy38oXRag
     values:
       exposure_time: 1.8
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 49993a5e-607b-41c8-a6a5-f003f5256372
     name: PrimaCreator Tough Light Grey @SL1S 0.05
+    id: xXDZfcFmTA6C+wby4QF9rw
     values:
       exposure_time: 2.4
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 423056f3-8efa-488f-88a9-1917367bb924
     name: PrimaCreator Tough Light Grey @SL1S 0.1
+    id: u92vq9INTvWpZRtf4xsviQ
     values:
       exposure_time: 3
       initial_exposure_time: 25

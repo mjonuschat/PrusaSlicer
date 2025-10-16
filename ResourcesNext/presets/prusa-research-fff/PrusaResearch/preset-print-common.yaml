@@ -33,16 +33,16 @@ values:
   # wipe_tower_rotation_angle: 90
 variants:
 - condition: printer.base_model != "XL"
-  id: c34aac36-a3d9-4637-9ad7-a82aae440d08
+  id: 4Q2iSdXzQhKi32/XvDcJrQ
   values:
     ooze_prevention: 0
   variants:
   - condition: printer.base_model == "MK3"
-    id: 39f81acf-a254-4fd9-8b45-344809bdbaab
+    id: vxQ+RPW8Q1KX9+WkGU7e0w
     values:
       skirts: 1
       wipe_tower_cone_angle: 0
-  - id: 0a819e4e-e8c4-4481-aa08-75d3bd13fac4
+  - id: MAV5tQDgSPW6cF/U/UIReA
     values: {}
-- id: 81ad1cc0-d707-4a07-8a93-26aa209c40c3
+- id: WaotVsmFQrqamsssfdNlbQ
   values: {}

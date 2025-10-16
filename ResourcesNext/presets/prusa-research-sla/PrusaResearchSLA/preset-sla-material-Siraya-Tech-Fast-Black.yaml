@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 563375da-9d73-4010-b79c-981626e48fb3
+  id: yTFdf663TJ+htB9wyAVr5g
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 6278de10-2b3d-47cc-828a-a861b766bc13
     name: Siraya Tech Fast Black @SL1 0.025
+    id: KoG1XzZ/RzGlNDSXDqwJMA
     values:
       exposure_time: 6
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: bf1c6da9-b51e-47b5-af33-5006e7840d02
     name: Siraya Tech Fast Black @SL1 0.05
+    id: SZh4KJXiSwigFt2zF3zLyw
     values:
       exposure_time: 9
       initial_exposure_time: 35
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 92c9c101-d9c0-4211-8a10-3c6d07917044
+  id: A7ag5+cIS2CWPq8R+dZT1A
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: a08e622d-75f1-40f5-84dd-6e180bffece8
     name: Siraya Tech Fast Black @SL1S 0.05
+    id: h3dHECFfTB2MvmeUPthz0A
     values:
       exposure_time: 3
       initial_exposure_time: 28

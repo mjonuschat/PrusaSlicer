@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: f6094e3a-7eb1-465a-9b83-64a69cfe767f
+  id: uVipeDAjQaa1FUohXSwrxQ
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 1b2feed4-1eb9-4df5-a8c3-0db53d085feb
     name: BlueCast Phrozen Wax @SL1 0.025
+    id: +DnQ0HkfQ2emvPGKOi5wAg
     values:
       exposure_time: 15
       initial_exposure_time: 50
 # 0.05
   - condition: print.layer_height == 0.05
-    id: a84681ae-5506-45e5-882d-fe5b3c673cb6
     name: BlueCast Phrozen Wax @SL1 0.05
+    id: Gs/3YhHWQ4qLF2yrHXqL+A
     values:
       exposure_time: 16
       initial_exposure_time: 50
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: d3fd4ed1-b955-44fd-a328-8f553574cc37
+  id: SmXTDa1uS1iws9PF2BSeaA
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 71e0b90c-0732-4985-8935-db129750df32
     name: BlueCast Phrozen Wax @SL1S 0.05
+    id: PqqTJp+fS9uBW8J44hM8Fw
     values:
       exposure_time: 5.3
       initial_exposure_time: 40

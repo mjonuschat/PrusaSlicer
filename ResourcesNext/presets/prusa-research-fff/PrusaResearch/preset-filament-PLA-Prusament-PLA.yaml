@@ -1,7 +1,7 @@
 kind: filament
-id: Prusament PLA
 name: Prusament PLA
 condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/
+id: Prusament PLA
 inherits:
 - '*sheets_Prusament_PLA*'
 values:
@@ -55,7 +55,7 @@ values:
 ## C1
 variants:
 - condition: printer.base_model == "COREONE"
-  id: cb78d193-8327-4ea2-979b-93a373710d5f
+  id: 8jNB9jdLQb2gFgDU7iRZyg
   values:
     chamber_minimal_temperature: 0
     chamber_temperature: 20
@@ -75,102 +75,103 @@ variants:
     fan_below_layer_time: 40
     filament_load_time: 10.9
     filament_unload_time: 8.9
+    start_filament_gcode: M142 S36 ; set heatbreak target temp
   variants:
   # C1 0.25
   - condition: tool.nozzle_diameter == 0.25
-    id: 3485d83c-4951-49ae-b09b-080fc586dd14
     name: Prusament PLA @COREONE 0.25
+    id: 83y8BehATACVa0PH4GsGbw
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 5
-      start_filament_gcode: M572 S0.12 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.12
       temperature: 220
   # C1 0.3
   - condition: tool.nozzle_diameter == 0.3
-    id: db88bacd-a9a8-4e5d-990f-b8208b228992
     name: Prusament PLA @COREONE 0.3
+    id: eIoN52eUSjOmZdGYpXFH8g
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 6
-      start_filament_gcode: M572 S0.08 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.08
       temperature: 220
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: ad66f3ec-f94d-4e18-8e36-836d3666e681
     name: Prusament PLA @COREONE 0.4
+    id: CX9s0mIBRPi+c09LfxG2aw
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 8
-      start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.036
     variants:
     # C1 HF0.4
     - condition: tool.nozzle_high_flow
-      id: 5f7abcec-a7ba-478e-af58-fcaea522f2df
       name: Prusament PLA @COREONE HF0.4
+      id: 9ql4eJIDTX+KVNeIbbae2g
       values:
         filament_max_volumetric_speed: 24
         filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.036
         temperature: 230
   # C1 0.5
   - condition: tool.nozzle_diameter == 0.5
-    id: 1224e01e-3f66-4148-9c37-a4b9ecf1666c
     name: Prusament PLA @COREONE 0.5
+    id: YY8ACU8IQoCk7mzN6eI7cQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.026
     variants:
     # C1 HF0.5
     - condition: tool.nozzle_high_flow
-      id: 0dea7e91-b6a9-458a-b483-d8e1272bb83c
       name: Prusament PLA @COREONE HF0.5
+      id: 1CfipAtmT/qGEzfvkB2LiQ
       values:
         filament_max_volumetric_speed: 27
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.026
         temperature: 230
   # C1 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: 91fec0d9-7fd6-4fb9-ad53-5959f1bd814a
     name: Prusament PLA @COREONE 0.6
+    id: MDCdjhN2Q8KvLqTV04Aogg
     values:
       filament_max_volumetric_speed: 15.5
       slowdown_below_layer_time: 15
       min_print_speed: 15
-      start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.022
     variants:
     # C1 HF0.6
     - condition: tool.nozzle_high_flow
-      id: 3571ef65-3064-4f2d-974e-0b18bab12ba6
       name: Prusament PLA @COREONE HF0.6
+      id: ivMBYcI6SmWYNg4Iq3m+hQ
       values:
         filament_max_volumetric_speed: 30
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.022
         temperature: 230
   # C1 0.8
   - condition: tool.nozzle_diameter == 0.8
-    id: f412b523-ca22-4185-a7a9-bdd0797bfd5f
     name: Prusament PLA @COREONE 0.8
+    id: BNdCtP0pT5KtL4SPY+iJ5w
     values:
       filament_max_volumetric_speed: 19
       slowdown_below_layer_time: 17
-      start_filament_gcode: M572 S0.015 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.015
       temperature: 230
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      id: 71fd8a58-3642-4dff-8321-b3c8c0860255
       name: Prusament PLA @COREONE HF0.8
+      id: yRUtwAfjRBuXGO3ls9dl7g
       values:
         filament_max_volumetric_speed: 37
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.015 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.015
 ## XL
 - condition: printer.base_model == "XL"
-  id: bb8ee7c1-f6db-4691-b26c-b42f75673e61
   name: Prusament PLA @XL TEST
+  id: 6l5DKxHBTsSvulS8ToXHhg
   values:
     fan_below_layer_time: 100
     filament_max_volumetric_speed: 15
@@ -184,110 +185,101 @@ variants:
     min_print_speed: 15
     slowdown_below_layer_time: 10
     temperature: 225
-    filament_notes: XL base branch
+    start_filament_gcode: M142 S36 ; set heatbreak target temp
   variants:
   # XL 0.25
   - condition: tool.nozzle_diameter == 0.25
-    id: 54316628-6887-4c0f-803a-6ff68c8ff988
     name: Prusament PLA @XL 0.25
+    id: of92DJpOQ5O23OPjXSZ6rw
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 7
-      start_filament_gcode: M572 S0.12 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.12
       temperature: 220
-      filament_notes: XL 0.25
   # XL 0.3
   - condition: tool.nozzle_diameter == 0.3
-    id: a50258f0-cf21-43eb-a30c-58d6020a0ebc
     name: Prusament PLA @XL 0.3
+    id: pMcT6EPOSrC3sOXEWqds0w
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 9
-      start_filament_gcode: M572 S0.08 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.08
       temperature: 220
-      filament_notes: XL 0.3
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: 1a06275e-167c-497d-8498-ccff47a3c6b2
     name: Prusament PLA @XL 0.4
+    id: cWiquKjmTPijZkIsQ977oQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.036
       filament_notes: XL 0.4
     variants:
     # XL HF0.4
     - condition: tool.nozzle_high_flow
-      id: d8f403fb-5fd0-4c8a-9af8-5436edd05a9f
       name: Prusament PLA @XL HF0.4
+      id: 6w+acz9ZT3iqzqAOgvlHYg
       values:
         filament_max_volumetric_speed: 22
-        start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.036
         temperature: 230
-        filament_notes: XL HF0.4
   # XL 0.5
   - condition: tool.nozzle_diameter == 0.5
-    id: 33a2fd73-9948-449a-8717-c08e1a986c49
     name: Prusament PLA @XL 0.5
+    id: d4s1NtTnTmuy1AYXRwaZsw
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 11
-      start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
-      filament_notes: XL 0.5
+      pressure_advance_value: 0.026
     variants:
     # XL HF0.5
     - condition: tool.nozzle_high_flow
-      id: 09d34e59-1d75-42a0-996b-ba32367136b3
       name: Prusament PLA @XL HF0.5
+      id: It4AMHUoS8aPHL3DC+jkfQ
       values:
         filament_max_volumetric_speed: 25
-        start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.026
         temperature: 230
-        filament_notes: XL HF0.5
   # XL 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: 14e0a2a9-da39-490a-9cdb-5c360011af88
     name: Prusament PLA @XL 0.6
+    id: 2gCxeoXCRuSccYgKBT1p3A
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
       min_print_speed: 15
-      start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.022
       temperature: 220
-      filament_notes: XL 0.6
     variants:
     # XL HF0.6
     - condition: tool.nozzle_high_flow
-      id: 93bc4313-8bfa-4376-9ab3-dac74e0b2f15
       name: Prusament PLA @XL HF0.6
+      id: 1/pwA/KbQzS+slayXzuRSA
       values:
         filament_max_volumetric_speed: 30
-        start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.022
         temperature: 230
-        filament_notes: XL HF0.6
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
-    id: 52b49f9d-ade1-4ecd-a862-1eb100c7d11d
     name: Prusament PLA @XL 0.8
+    id: jEC9L/W/QpSI5+VOoXNRTA
     values:
       filament_max_volumetric_speed: 19
       slowdown_below_layer_time: 19
-      start_filament_gcode: M572 S0.015 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.015
       temperature: 220
-      filament_notes: XL 0.8
     variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
-      id: 8c32da7b-18b4-4941-af44-47a58383c8aa
       name: Prusament PLA @XL HF0.8
+      id: 9RLYFtbAS1aQHX6B/kp0fQ
       values:
         filament_max_volumetric_speed: 37
-        start_filament_gcode: M572 S0.015 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.015
         temperature: 230
-        filament_notes: XL HF0.8
 ## MK4
 - condition: printer.model=~/(MK4|MK3.9)/
-  id: 8696bac6-fd1b-4050-854d-3c9f9603e2ec
+  id: CIV80XV5RzeXxu6+dgBpcQ
   values:
     first_layer_temperature: 230
     min_print_speed: 20
@@ -295,101 +287,102 @@ variants:
     filament_infill_max_crossing_speed: 200
     filament_infill_max_speed: 0
     filament_purge_multiplier: 81.25%
+    start_filament_gcode: M142 S36 ; set heatbreak target temp
   variants:
   # MK4 0.25
   - condition: tool.nozzle_diameter == 0.25
-    id: 1fad7703-351b-44d1-81cc-67457754b8d4
     name: Prusament PLA @MK4 0.25
+    id: dYNAcNnbSzGtr8wOb5quhA
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 5
-      start_filament_gcode: M572 S0.12 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.12
       temperature: 220
   # MK4 0.3
   - condition: tool.nozzle_diameter == 0.3
-    id: 394a8ba3-d18a-49d7-a3e8-8efa61a955bd
     name: Prusament PLA @MK4 0.3
+    id: q16WKfKzQHW9Zm1BCbF1Ew
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 6
-      start_filament_gcode: M572 S0.08 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.08
       temperature: 220
   # MK4 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: 1354434b-1287-4e60-b0e7-85d735c2476e
     name: Prusament PLA @MK4 0.4
+    id: 7pAnwBrTSPG+TH3iRrQTkQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 8
-      start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.036
     variants:
     # MK4 HF0.4
     - condition: tool.nozzle_high_flow
-      id: 6de127ab-7e65-44ca-a4bf-c2cdb85f7ef8
       name: Prusament PLA @MK4 HF0.4
+      id: z95EyigNSkeLqknKydu8lQ
       values:
         filament_max_volumetric_speed: 24
         filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.036
         temperature: 230
   # MK4 0.5
   - condition: tool.nozzle_diameter == 0.5
-    id: 7c845aac-b38b-4ad0-a6ca-a73552575102
     name: Prusament PLA @MK4 0.5
+    id: mxNQuwooRdGfSSv6VoGc+Q
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.026
     variants:
     # MK4 HF0.5
     - condition: tool.nozzle_high_flow
-      id: 35918015-35f5-4b88-8e8c-f0531e012e00
       name: Prusament PLA @MK4 HF0.5
+      id: p5FRfCiuRMunZ+iSStnE7Q
       values:
         filament_max_volumetric_speed: 27
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.026
         temperature: 230
   # MK4 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: 5a3528e8-90b6-4ce8-93fb-ad8ec104af7e
     name: Prusament PLA @MK4 0.6
+    id: Ct9VBAkzROiM8W+CcQalBQ
     values:
       filament_max_volumetric_speed: 15.5
       slowdown_below_layer_time: 15
       min_print_speed: 15
-      start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.022
     variants:
     # MK4 HF0.6
     - condition: tool.nozzle_high_flow
-      id: 7c17b85c-34e1-424f-ac41-02ad9a458590
       name: Prusament PLA @MK4 HF0.6
+      id: nTmQeR/rSGKh+HQH1Melxg
       values:
         filament_max_volumetric_speed: 30
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.022
         temperature: 230
   # MK4 0.8
   - condition: tool.nozzle_diameter == 0.8
-    id: 5028cf36-95eb-464e-a25b-8ad1d34bce34
     name: Prusament PLA @MK4 0.8
+    id: ON7vRSNzRduowRDjMsibZw
     values:
       filament_max_volumetric_speed: 19
       slowdown_below_layer_time: 17
-      start_filament_gcode: M572 S0.015 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.015
       temperature: 230
     variants:
     # MK4 HF0.8
     - condition: tool.nozzle_high_flow
-      id: d314cf59-295b-40b4-9a26-a9e5737fc2ff
       name: Prusament PLA @MK4 HF0.8
+      id: 0EdxxYj6R6uwyJ3JXDyy0Q
       values:
         filament_max_volumetric_speed: 37
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.015 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.015
 ## MK4S
 - condition: printer.model=~/(MK4S|MK3.9S)/
-  id: 6c85066b-fa91-4a24-8972-a78663355ccd
+  id: wOD5OkW8RcysjJXw7sI3pw
   values:
     enable_dynamic_fan_speeds: 1
     first_layer_temperature: 230
@@ -405,103 +398,104 @@ variants:
     filament_infill_max_speed: 0
     filament_purge_multiplier: 81.25%
     fan_below_layer_time: 17
+    start_filament_gcode: M142 S36 ; set heatbreak target temp
   variants:
   # MK4S 0.25
   - condition: tool.nozzle_diameter == 0.25
-    id: 5e6d1839-4b9a-4bde-b18a-5411c5f6fc14
     name: Prusament PLA @MK4S 0.25
+    id: pIHn6IRZTtuGS66I8+HnUw
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 4
-      start_filament_gcode: M572 S0.12 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.12
       temperature: 220
   # MK4S 0.3
   - condition: tool.nozzle_diameter == 0.3
-    id: 82618592-dcd4-4adc-905b-3147198810ce
     name: Prusament PLA @MK4S 0.3
+    id: 5kYunbH2SxKy5nqrv0JqpQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 5
-      start_filament_gcode: M572 S0.08 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.08
       temperature: 220
   # MK4S 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: 27383d93-f2e0-49a4-8562-801d5b78a7c0
     name: Prusament PLA @MK4S 0.4
+    id: jhtBeIpTQ7ynJJnVL2mFzQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 6
-      start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.036
     variants:
     # MK4S HF0.4
     - condition: tool.nozzle_high_flow
-      id: 3b1bc202-836f-41fd-a511-3bb8d58e1d4e
       name: Prusament PLA @MK4S HF0.4
+      id: Bjf6ElbJTLa4JQ5PXmdWxQ
       values:
         filament_max_volumetric_speed: 24
         filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.036
         temperature: 230
   # MK4S 0.5
   - condition: tool.nozzle_diameter == 0.5
-    id: 5356feb7-e440-4f29-8063-b7382ea3874e
     name: Prusament PLA @MK4S 0.5
+    id: g4TZZLCRSqa7K8lmRkGpPQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 8
-      start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.026
     variants:
     # MK4S HF0.5
     - condition: tool.nozzle_high_flow
-      id: 516637ef-debe-4450-88de-624cdad2278b
       name: Prusament PLA @MK4S HF0.5
+      id: +CnP+6ofTOOIcGTSgwsqDw
       values:
         filament_max_volumetric_speed: 27
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.026
         temperature: 230
   # MK4S 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: 78e8b41e-d861-4b59-8356-fbcee595db45
     name: Prusament PLA @MK4S 0.6
+    id: C2cqjyToSBSLvYTOGhJIXQ
     values:
       filament_max_volumetric_speed: 15.5
       fan_below_layer_time: 22
       slowdown_below_layer_time: 10
       min_print_speed: 15
-      start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.022
     variants:
     # MK4S HF0.6
     - condition: tool.nozzle_high_flow
-      id: ab2309b0-ab4f-49c0-a5bc-bff1eafcfaa3
       name: Prusament PLA @MK4S HF0.6
+      id: JODraQLVTVmcGVy11+pCxA
       values:
         filament_max_volumetric_speed: 30
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.022
         temperature: 230
   # MK4S 0.8
   - condition: tool.nozzle_diameter == 0.8
-    id: b31befdf-6f8b-49ad-bd7c-36f324f2b57b
     name: Prusament PLA @MK4S 0.8
+    id: rU7sdZ4FTUqPn8i9VQUbAw
     values:
       filament_max_volumetric_speed: 19
       fan_below_layer_time: 25
       slowdown_below_layer_time: 15
-      start_filament_gcode: M572 S0.015 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+      pressure_advance_value: 0.015
       temperature: 230
     variants:
     # C1 HF0.8
     - condition: tool.nozzle_high_flow
-      id: e72ff8f9-99df-4f67-879c-f62f205dee84
       name: Prusament PLA @MK4S HF0.8
+      id: cnHzYKldSe+tfQGFmlKnTg
       values:
         filament_max_volumetric_speed: 37
         # filament_ramming_parameters: 250 100 39.871 39.871| 0.05 39.9547 0.45 39.9547 0.95 39.9547 1.45 39.9547 1.95 39.9547 2.45 39.9547 2.95 39.9547 3.45 39.9547 3.95 39.9547 4.45 39.9547 4.95 39.9547
-        start_filament_gcode: M572 S0.015 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
+        pressure_advance_value: 0.015
 ## MK3.5
 - condition: printer.base_model == "MK3.5"
-  id: 21f8f6c7-649c-41d1-8da0-e43f405f988c
+  id: jCWFyS8DQ6SyTZ/HJQ1IZw
   values:
     first_layer_temperature: 230
     temperature: 225
@@ -524,83 +518,83 @@ variants:
   variants:
   # MK3.5 0.25
   - condition: tool.nozzle_diameter == 0.25
-    id: bbee8878-851c-4f9d-a0b1-ad3c40445e22
     name: Prusament PLA @MK3.5 0.25
+    id: rIHPCsxvRsSDRc/i35k7XQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M572 S0.12 ; Filament gcode
+      pressure_advance_value: 0.12
       temperature: 220
     variants:
     # MK3.5 0.25 MMU
-    - condition: feeder.base_model=~/.*MMU.*/
-      id: 95215e29-2579-48c6-9634-329efb2d008f
+    - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
       name: Prusament PLA @MK3.5 0.25 MMU
+      id: /gGIpvchR9ayK8yZ59siYA
       values:
         temperature: 205
         filament_max_volumetric_speed: 3
         filament_ramming_parameters: 200 120 2.70968 2.93548 3.29032 3.80645 4.58065 5.54839 6.54839 7.3871 7.93548 8.19355 8.16129 8.03226| 0.05 2.66451 0.45 3.05805 0.95 4.05807 1.45 5.97742 1.95 7.69999 2.45 8.1936 2.95 7.98716 3.45 11.4065 3.95 7.6 4.45 7.6 4.95 7.6
   # MK3.5 0.3
   - condition: tool.nozzle_diameter == 0.3
-    id: eaf0e778-7847-47f8-9e05-aaf064d44fc3
     name: Prusament PLA @MK3.5 0.3
+    id: 0f0ekomFT2Cs0pbk9v6yeQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 12
-      start_filament_gcode: M572 S0.08 ; Filament gcode
+      pressure_advance_value: 0.08
       temperature: 220
   # MK3.5 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: 37746840-6ad4-43e8-928b-61d237fbf664
     name: Prusament PLA @MK3.5 0.4
+    id: gbLiBAt3TYKbMByRO9QDag
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 12
-      start_filament_gcode: M572 S0.035 ; Filament gcode
+      pressure_advance_value: 0.035
     variants:
     # MK3.5 0.4 MMU
-    - condition: feeder.base_model=~/.*MMU.*/
-      id: 1ec0c83e-e446-41e5-89cc-3d670d1832e9
+    - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
       name: Prusament PLA @MK3.5 0.4 MMU
+      id: nmsRqT5USCq0OLjnfXLF/Q
       values:
         temperature: 205
         filament_max_volumetric_speed: 10
   # MK3.5 0.5
   - condition: tool.nozzle_diameter == 0.5
-    id: 0ab0ab15-6a2a-4101-8d07-541d6ca73628
     name: Prusament PLA @MK3.5 0.5
+    id: XdKisA0YTcicwdMu56IZdA
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      start_filament_gcode: M572 S0.025 ; Filament gcode
+      pressure_advance_value: 0.025
   # MK3.5 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: b9cb91bf-eb40-49a2-ab74-a8e856e4376a
     name: Prusament PLA @MK3.5 0.6
+    id: 6y5WrHJETrm7w2/rnDtYZA
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 17
-      start_filament_gcode: M572 S0.02 ; Filament gcode
+      pressure_advance_value: 0.02
     variants:
     # MK3.5 0.6 MMU
-    - condition: feeder.base_model=~/.*MMU.*/
-      id: 7ca46dc0-69c7-4ab6-a923-346773482ca8
+    - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
       name: Prusament PLA @MK3.5 0.6 MMU
+      id: oeaSZLmlSSSMayOkGdE3xw
       values:
         temperature: 205
         filament_max_volumetric_speed: 10
   # MK3.5 0.8
   - condition: tool.nozzle_diameter == 0.8
-    id: b4ee705f-f6aa-4cab-a024-b9c17efa993f
     name: Prusament PLA @MK3.5 0.8
+    id: zteEU7+HS1uBy0DjFgFHDw
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 20
-      start_filament_gcode: M572 S0.014 ; Filament gcode
+      pressure_advance_value: 0.014
       temperature: 225
 ## MINI
 - condition: printer.base_model == "MINI"
-  id: d023959b-a498-4bfa-ad5a-8b65d4a26e18
+  id: U0rhVMCgRSSYrG4P+NO2IA
   values:
     first_layer_temperature: 230
     temperature: 225
@@ -609,41 +603,41 @@ variants:
   variants:
   # MINI 0.25
   - condition: tool.nozzle_diameter == 0.25
-    id: 9dbcdc99-5394-4322-a81d-0ba52113fdce
     name: Prusament PLA @MINI 0.25
+    id: alk6Z/t/RqiOOk6bFn0SjQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M572 S0.85 ; Filament gcode
+      pressure_advance_value: 0.85
       temperature: 215
   # MINI 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: 40ffb6a6-7cff-4cde-bed2-986d725d122e
     name: Prusament PLA @MINI 0.4
+    id: sFKqRDTTSgCK5uQeeDZjkg
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 15
-      start_filament_gcode: M572 S0.27 ; Filament gcode
+      pressure_advance_value: 0.27
   # MINI 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: 5cc2e9c3-fafc-4ed4-bdbe-3e7d906f5744
     name: Prusament PLA @MINI 0.6
+    id: 8c132dAqSVONycY2N03Odw
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 18
-      start_filament_gcode: M572 S0.17 ; Filament gcode
+      pressure_advance_value: 0.17
   # MINI 0.8
   - condition: tool.nozzle_diameter == 0.8
-    id: afdfba65-cac4-41be-8f3d-e3b5679b7cd0
     name: Prusament PLA @MINI 0.8
+    id: U1CN7LKhThSz0uX9sskRAQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 20
-      start_filament_gcode: M572 S0.12 ; Filament gcode
+      pressure_advance_value: 0.12
       temperature: 225
 ## MK3, MK3S and MK2.5, MK2.5S
 - condition: printer.base_model=~/(MK3|MK2.5)/
-  id: 686104d8-e7c1-46eb-b98c-27b5365ddd1f
+  id: GZEMtGziRm6YuV3XJkjP7Q
   values:
     first_layer_temperature: 215
     temperature: 215
@@ -666,66 +660,66 @@ variants:
   variants:
   # MK3 0.25
   - condition: tool.nozzle_diameter == 0.25
-    id: 93119a84-fe1d-4e53-84f1-934bd3e14845
     name: Prusament PLA @MK3 0.25
+    id: oy6eFjtsQBGWf5jlAskLpQ
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 10
-      start_filament_gcode: M900 K0.14 ; Filament gcode
+      pressure_advance_value: 0.14
       temperature: 210
     variants:
     # MK3 0.25 MMU
-    - condition: feeder.base_model=~/.*MMU.*/
-      id: 59d8dc3d-e0de-4d89-817c-d16d397d45b0
-      name: Prusament PLA @MK3 0.25 MMU
+    - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
+      name: Prusament PLA @MK2.5_MK3 0.25 MMU
+      id: EDapWc9cQxyOykPotecmCg
       values:
         temperature: 205
         filament_max_volumetric_speed: 3
         filament_ramming_parameters: 200 120 2.70968 2.93548 3.29032 3.80645 4.58065 5.54839 6.54839 7.3871 7.93548 8.19355 8.16129 8.03226| 0.05 2.66451 0.45 3.05805 0.95 4.05807 1.45 5.97742 1.95 7.69999 2.45 8.1936 2.95 7.98716 3.45 11.4065 3.95 7.6 4.45 7.6 4.95 7.6
   # MK3 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: 54b531e1-ee2c-4949-b11d-53849638428a
-    name: Prusament PLA @MK3 0.4
+    name: Prusament PLA @MK2.5_MK3 0.4
+    id: t9vhk8akQY+WPb/WGscTog
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 12
-      start_filament_gcode: M900 K0.05 ; Filament gcode
+      pressure_advance_value: 0.05
     variants:
     # MK3 0.4 MMU
-    - condition: feeder.base_model=~/.*MMU.*/
-      id: d7f22c62-3244-4906-865f-6f51084c08ac
-      name: Prusament PLA @MK3 0.4 MMU
+    - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
+      name: Prusament PLA @MK2.5_MK3 0.4 MMU
+      id: zxs8T9l2SkuwSCLktWCcBA
       values:
         temperature: 205
         filament_max_volumetric_speed: 10
   # MK3 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: 8d136731-61e9-4b44-8a65-d8f2471a9188
-    name: Prusament PLA @MK3 0.6
+    name: Prusament PLA @MK2.5_MK3 0.6
+    id: ocXpfZSiR5OAUZU3LIH/SA
     values:
       filament_max_volumetric_speed: 15.5
       slowdown_below_layer_time: 17
-      start_filament_gcode: M900 K0.03 ; Filament gcode
+      pressure_advance_value: 0.03
     variants:
     # MK3 0.6 MMU
-    - condition: feeder.base_model=~/.*MMU.*/
-      id: bb39a3c6-7c2a-429f-b83a-ac52f9b2447f
-      name: Prusament PLA @MK3 0.6 MMU
+    - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
+      name: Prusament PLA @MK2.5_MK3 0.6 MMU
+      id: GPWu4mhoQAuBwAluj5u34w
       values:
         temperature: 205
         filament_max_volumetric_speed: 10
   # MK3 0.8
   - condition: tool.nozzle_diameter == 0.8
-    id: 451a202a-0e41-4131-bcb8-89ed2ce330e5
-    name: Prusament PLA @MK3 0.8
+    name: Prusament PLA @MK2.5_MK3 0.8
+    id: k+fYxd4pROKxEeE+aPoOkw
     values:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 20
-      start_filament_gcode: M900 K0.01 ; Filament gcode
+      pressure_advance_value: 0.01
       temperature: 225
 ## MK2S
 - condition: printer.model == "MK2S"
-  id: 83c11e53-2dd4-46c0-9b1c-6621d6e2ed15
+  id: 95X7b4bSRICyi0gTxavcJg
   values:
     first_layer_temperature: 215
     temperature: 215
@@ -747,32 +741,32 @@ variants:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
-    id: e7bab32f-aee9-4700-8c13-514f9c5f4353
     name: Prusament PLA @MK2 0.25
+    id: s7cllSYOQ7iAGxYYAdVShQ
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 12
-      start_filament_gcode: M900 K30 ; Filament gcode
+      pressure_advance_value: 30
       temperature: 210
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: b1d239c4-99bf-4186-9201-a78ab45093b2
     name: Prusament PLA @MK2 0.4
+    id: YaGKjN2zTGywdbOcfZwQ1Q
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 15
-      start_filament_gcode: M900 K30 ; Filament gcode
+      pressure_advance_value: 30
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: 4285662a-c29c-4d21-b0ac-1652f9bd6bff
     name: Prusament PLA @MK2 0.6
+    id: k5OsAMnASbStVy6w4RwifA
     values:
       filament_max_volumetric_speed: 13
       slowdown_below_layer_time: 20
-      start_filament_gcode: M900 K18 ; Filament gcode
+      pressure_advance_value: 18
 ## MK2S MMU1
 - condition: printer.model == "MK2SMM"
-  id: 7d8f62e5-b750-4a79-8720-637c3e9ca7dd
+  id: wpelndtsSuq5TxDo2znASA
   values:
     first_layer_temperature: 215
     temperature: 215
@@ -794,36 +788,36 @@ variants:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
-    id: 1fa509b1-ae2c-4638-ad3e-e1050d90bf3b
     name: Prusament PLA @MK2 0.25
+    id: N0jrqYfcRZ+niyeJ/gErCw
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 12
-      start_filament_gcode: M900 K200 ; Filament gcode
+      pressure_advance_value: 200
       temperature: 210
   # MK2 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: d5032d16-248f-4187-9a01-27e3158d28f9
     name: Prusament PLA @MK2 0.4
+    id: mPoHJGUIQ4+EVLcOx95bRw
     values:
       filament_max_volumetric_speed: 10
       slowdown_below_layer_time: 15
-      start_filament_gcode: M900 K200 ; Filament gcode
+      pressure_advance_value: 200
   # MK2 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: b142e3a7-910d-482d-97c4-20632e4f3b38
     name: Prusament PLA @MK2 0.6
+    id: 6CFbfo+nStGxhw0hs1BCuw
     values:
       filament_max_volumetric_speed: 13
       slowdown_below_layer_time: 20
-      start_filament_gcode: M900 K200 ; Filament gcode
+      pressure_advance_value: 200
 ---
 kind: filament
 id: '*sheets_Prusament_PLA*'
 variants:
 # STANDARD sheet
 - condition: sheet.type != "cold"
-  id: e5bc6a76-2e50-4f6a-8f58-6e257e7b55f2
+  id: p4BEggzKQXGBOYA+QzyFhw
   values:
     first_layer_bed_temperature: 60
     bed_temperature: 60
@@ -834,7 +828,7 @@ variants:
       # bed_temperature: 60
 # COLD sheet
 - condition: sheet.type == "cold"
-  id: d282d277-150c-4191-91a3-7c5a44047ea4
+  id: DjcOG9FhSpmeFq1T1xZNwQ
   values:
     first_layer_bed_temperature: 30
     bed_temperature: 30

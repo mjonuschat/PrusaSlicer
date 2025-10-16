@@ -1,8 +1,0 @@
-kind: filament
-id: Forward AM Ultrafuse PLA
-inherits:
-- '*PLA220*'
-name: Forward AM Ultrafuse PLA
-values:
-  filament_vendor: Forward AM
-  filament_density: 1.25

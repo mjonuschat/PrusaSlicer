@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: c79ec9d6-9f5d-4f7e-a38a-f44a36353ea3
+  id: amJ7BidZQL61fvJ3eD42mA
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 859c810f-6160-422d-b37b-4f9edae55854
     name: Siraya Tech Simple Clear @SL1 0.025
+    id: dRYhnPfMQHWiiockSTwA2Q
     values:
       exposure_time: 8
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 9dda1289-f2a4-4e5d-8bae-1f3e3a3e78ca
     name: Siraya Tech Simple Clear @SL1 0.05
+    id: pZnHFwczQqOZCIWdyh2nng
     values:
       exposure_time: 10
       initial_exposure_time: 35
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: d2385de5-83f3-4f50-b436-fe94eb70a037
+  id: sd1SWtBKRVa1XS1SGTF9DQ
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 034907fc-fbc8-4813-b732-8fe010351bda
     name: Siraya Tech Simple Clear @SL1S 0.05
+    id: jw/A4sJlSAq5Fkqgq/o3CA
     values:
       exposure_time: 3.3
       initial_exposure_time: 28

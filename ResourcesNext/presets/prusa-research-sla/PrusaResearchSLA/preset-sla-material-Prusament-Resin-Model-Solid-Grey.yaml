@@ -9,64 +9,64 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: fd63d993-aaa1-47d3-8101-3bcbf8b8aff9
+  id: oknCKBNgQcqtX9PWR9Xzvg
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: e30233d6-0889-4222-99bf-136ce7371ea6
     name: Prusament Resin Model Solid Grey @SL1 0.025
+    id: /mFcBG9cSW6uLChDykP8pg
     values:
       exposure_time: 4.5
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 530b7b2f-4fd7-48a9-b510-87768811de11
     name: Prusament Resin Model Solid Grey @SL1 0.05
+    id: 5X3E6b9LQpONQZGJcipltw
     values:
       exposure_time: 5
       initial_exposure_time: 35
 # 0.1
   - condition: print.layer_height == 0.1
-    id: a9ec6c12-6868-4b79-aefb-ca658d4da606
     name: Prusament Resin Model Solid Grey @SL1 0.1
+    id: 0knjPc+tTrWIWCm0bi+DuQ
     values:
       exposure_time: 13
       initial_exposure_time: 45
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 7286500f-801b-4b35-a49b-1743311a8809
+  id: AOGp9PpsRhSJ/7jtgg/35Q
   unconditional_inherits:
   - '*sl1s_fast*'
   values:
     area_fill: 20
     delay_before_exposure: [1, 10]
-    tilt_down_initial_speed: [layer1750,layer1750]
+    tilt_down_initial_speed: [layer1750, layer1750]
     tilt_down_offset_steps: [0, 1200]
-    tilt_down_finish_speed: [move8000,move5120]
-    tilt_up_initial_speed: [move8000,move8000]
+    tilt_down_finish_speed: [move8000, move5120]
+    tilt_up_initial_speed: [move8000, move8000]
     tilt_up_offset_steps: [600, 600]
-    tilt_up_finish_speed: [layer1750,layer1750]
+    tilt_up_finish_speed: [layer1750, layer1750]
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 5b64ed17-7371-4396-86b7-1921adb11186
     name: Prusament Resin Model Solid Grey @SL1S 0.025
+    id: 2qnIez27TYi3tgshuggsYg
     values:
       exposure_time: 2.2
       initial_exposure_time: 5
 # 0.05
   - condition: print.layer_height == 0.05
-    id: ca42b89d-2bad-442e-b293-9c3663e11ea0
     name: Prusament Resin Model Solid Grey @SL1S 0.05
+    id: 5RtDvJpQTWmT4ppOdz4KHA
     values:
       exposure_time: 2.4
       initial_exposure_time: 6
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 82b49aca-7eac-4ac7-89d3-b7a893c4fa99
     name: Prusament Resin Model Solid Grey @SL1S 0.1
+    id: efcgp48HTSehCAmRwqqp7g
     values:
       exposure_time: 3.1
       initial_exposure_time: 8

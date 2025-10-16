@@ -9,14 +9,14 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 2ba82858-7ada-476a-a502-0ed3b1207223
+  id: SIp9mX6BSuq1sYCNhzd46Q
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 573e1600-dfb8-4852-adde-ab3f8dec19f2
     name: BlueCast 23LS @SL1 0.05
+    id: O7YtP973S26XjPZ+G3TmWQ
     values:
       exposure_time: 8
       initial_exposure_time: 50

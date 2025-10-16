@@ -1,4 +1,4 @@
-id: Prusament Resin BioBased60 Magma Red
+id: pkanEek1RN6nEQoqcIzyMQ
 kind: sla_material
 inherits:
 - '*common*'
@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: f9bca879-b929-43b1-8769-2c7cfc61541a
+  id: dXp1xDHKTwq7VHAhxXkQTw
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 3bdec81d-c10c-44e3-8b98-efd855723919
     name: Prusament Resin BioBased60 Magma Red @SL1 0.025
+    id: iPkcHf9PTMyar9OJXz18Cw
     values:
       exposure_time: 7
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 11776331-6e32-4315-bf2d-02e220389376
     name: Prusament Resin BioBased60 Magma Red @SL1 0.05
+    id: H9N6/3yHRbuHPb/ihmAWOw
     values:
       exposure_time: 8
       initial_exposure_time: 35
 # 0.1
   - condition: print.layer_height == 0.1
-    id: a5b37938-9362-4065-9d57-dff5e690dc60
     name: Prusament Resin BioBased60 Magma Red @SL1 0.1
+    id: 8j2blcUTTliHbjpxGub9NA
     values:
       exposure_time: 13
       initial_exposure_time: 45
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 60d254dc-e769-413a-8435-3d8b2e4d1c7c
+  id: bcDw4t0kTxyLysoKtidVRA
   unconditional_inherits:
   - '*sl1s_fast*'
   values:
@@ -45,22 +45,22 @@ variants:
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: ae333785-c982-4675-923b-4fb3ff721408
     name: Prusament Resin BioBased60 Magma Red @SL1S 0.025
+    id: vwp4rCcOTdGIAeWaL+gmUw
     values:
       exposure_time: 3.7
       initial_exposure_time: 12
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 24e716bb-0db7-4eb1-ba1d-d8e2f89a2eeb
     name: Prusament Resin BioBased60 Magma Red @SL1S 0.05
+    id: dTM+i0KTSsq1ewQfScw07Q
     values:
       exposure_time: 4.2
       initial_exposure_time: 12
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 5da1c340-57ff-4116-801d-839aedcad62f
     name: Prusament Resin BioBased60 Magma Red @SL1S 0.1
+    id: CN1EA2jSQWa6FeTuVzoRUA
     values:
       exposure_time: 5.3
       initial_exposure_time: 16

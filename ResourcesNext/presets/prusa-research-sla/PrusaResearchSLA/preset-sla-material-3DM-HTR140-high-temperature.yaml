@@ -9,14 +9,14 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: ff4c5b68-d2b4-4520-8754-c3ba56db45b5
+  id: vE+Q9/DZQvC98jx7jZiPYQ
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 730abd20-8e48-4852-8600-86da6cc53108
     name: 3DM-HTR140 (high temperature) @SL1 0.05
+    id: Bc79PPD1RJyk09O6kCsxRQ
     values:
       exposure_time: 12
       initial_exposure_time: 45

@@ -9,55 +9,55 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 780189b3-e815-4aee-970b-2a8528dd42cd
+  id: A4wDylYdQBim5GVo8lSjWw
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: e4ce56cc-ae69-4960-a27b-e3a0436990ea
     name: Prusament Resin Tough Bright Yellow @SL1 0.025
+    id: eob0+L3+TgOkyUSHxz/wFg
     values:
       exposure_time: 4
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 050a76fd-5bb8-4332-8eb1-3a62b6dcd5b3
     name: Prusament Resin Tough Bright Yellow @SL1 0.05
+    id: 9fVf9FjNSZyZjVGNReHT/w
     values:
       exposure_time: 6
       initial_exposure_time: 35
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 2c87f8c5-cfea-47cc-8205-fda06f4ad0a8
     name: Prusament Resin Tough Bright Yellow @SL1 0.1
+    id: MjJI2fRyQtmxkpP4IboxlQ
     values:
       exposure_time: 13
       initial_exposure_time: 45
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: aaf539e3-306d-4d5a-87ba-c57c3dab8166
+  id: DM+t8LBNSgiSFJpjF1xTJA
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 0a03ecd6-83fe-4a55-a1ba-ff91adee7908
     name: Prusament Resin Tough Bright Yellow @SL1S 0.025
+    id: HyINY4CCRkaPrQSR5FIKQw
     values:
       exposure_time: 1.8
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 98bb7c9c-66ef-47da-a17c-2d373ecde42f
     name: Prusament Resin Tough Bright Yellow @SL1S 0.05
+    id: qru4mKE9RlqV0YNTUVsV8A
     values:
       exposure_time: 2
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: daed892c-42b6-4c12-9f3a-60ca459a94c6
     name: Prusament Resin Tough Bright Yellow @SL1S 0.1
+    id: 8SsvfJJHT3q4KF+s5WvZ2Q
     values:
       exposure_time: 2.6
       initial_exposure_time: 25
