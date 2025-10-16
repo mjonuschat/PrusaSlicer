@@ -9,28 +9,28 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 3c63554b-a714-4ba8-8719-cc8434620f1b
+  id: 58+argPERDWgLReQdsVJug
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: b92cf7e5-92e1-4309-8fc6-cda3f510570c
     name: Forward AM Ultracur3D EL 150 Black @SL1S 0.025
+    id: bqDmk7YARJadDRLkL0hfsA
     values:
       exposure_time: 2
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 0f05cc58-feeb-4d7b-a0f7-299948694e05
     name: Forward AM Ultracur3D EL 150 Black @SL1S 0.05
+    id: 8hegm20CRHqf6o6yOeR8ig
     values:
       exposure_time: 3.8
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: b73ab069-d613-4401-8305-1fd742281510
     name: Forward AM Ultracur3D EL 150 Black @SL1S 0.1
+    id: DYgiQcoiQLabm+g4SYMSHg
     values:
       exposure_time: 5
       initial_exposure_time: 25

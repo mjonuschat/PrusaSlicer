@@ -9,37 +9,37 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 72e4e18c-08cb-4b6f-899e-208121c909ea
+  id: h6J3N9icR/WqXlSOZIrnCQ
   unconditional_inherits:
   - '*sl1s_fast*'
   values:
     area_fill: 20
     delay_before_exposure: [1, 10]
-    tilt_down_initial_speed: [layer1750,layer1750]
+    tilt_down_initial_speed: [layer1750, layer1750]
     tilt_down_offset_steps: [0, 1200]
-    tilt_down_finish_speed: [move8000,move5120]
-    tilt_up_initial_speed: [move8000,move8000]
+    tilt_down_finish_speed: [move8000, move5120]
+    tilt_up_initial_speed: [move8000, move8000]
     tilt_up_offset_steps: [600, 600]
-    tilt_up_finish_speed: [layer1750,layer1750]
+    tilt_up_finish_speed: [layer1750, layer1750]
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: afc9757c-b99f-4069-ad65-a75a6854a534
     name: Prusament Resin Model Transparent Green @SL1S 0.025
+    id: +8xWRVcGQviD8kgKNu2qLw
     values:
       exposure_time: 1.8
       initial_exposure_time: 5
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 5e501fac-690b-4742-b3e4-6bfc3aaaac7e
     name: Prusament Resin Model Transparent Green @SL1S 0.05
+    id: Jl1YrJlTQJqCLMQ23rX5/g
     values:
       exposure_time: 2.2
       initial_exposure_time: 6
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 09249643-0545-4129-96d4-c47eb6fab101
     name: Prusament Resin Model Transparent Green @SL1S 0.1
+    id: Rhp4xHyfRG+V8I4y9X+BjQ
     values:
       exposure_time: 2.6
       initial_exposure_time: 8

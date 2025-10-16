@@ -9,27 +9,27 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 990a9021-841b-43b1-b49b-17d41774bcaf
+  id: gqFEokC/TQuA6uPUaL0UDw
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 457a6463-585b-484a-b64f-ab0753e13408
     name: Monocure 3D Clear Rapid Resin @SL1 0.05
+    id: Ruw2/ZTiQRq9eunnaiINMg
     values:
       exposure_time: 8
       initial_exposure_time: 40
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: bd90b29a-f34a-44d1-97ea-96ee1176931d
+  id: iWY4MUs0RuecgJfayIsoaQ
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 62a51ee9-8245-48ba-a259-32af571639e3
     name: Monocure 3D Clear Rapid Resin @SL1S 0.05
+    id: f0qgnCqDTQ+vc3S/1qbiig
     values:
       exposure_time: 2.7
       initial_exposure_time: 32

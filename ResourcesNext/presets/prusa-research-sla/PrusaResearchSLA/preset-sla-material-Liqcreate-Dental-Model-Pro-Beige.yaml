@@ -9,14 +9,14 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: de024539-41e1-417e-8744-313295c3e77a
+  id: iLfWdMenSNazaPVjeh7T2w
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 1c7b0f69-a059-4865-b09e-5cc4e7c8bc29
     name: Liqcreate Dental Model Pro Beige @SL1S 0.05
+    id: KwM7hdcYSDmAVEg60F9KeQ
     values:
       exposure_time: 4.5
       initial_exposure_time: 20
@@ -28,8 +28,8 @@ variants:
       support_head_width: 3
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 550b27e4-33aa-44b6-a626-272adb9d685d
     name: Liqcreate Dental Model Pro Beige @SL1S 0.1
+    id: OzWpJm9oT8itQowLXfl5KA
     values:
       exposure_time: 5.5
       initial_exposure_time: 25

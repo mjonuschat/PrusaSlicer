@@ -1,7 +1,7 @@
-id: sl1
 kind: sla_printer
 name: Original Prusa SL1
 condition: printer.model == "SL1"
+id: sl1
 values:
   bed_shape:
   - 1.48x1.02
@@ -26,10 +26,10 @@ values:
   - 400x400
   - 800x480
 ---
-id: sl1s
 kind: sla_printer
 name: Original Prusa SL1S SPEED
 condition: printer.model == "SL1S"
+id: sl1s
 values:
   bed_shape:
   - 0.5x0.5

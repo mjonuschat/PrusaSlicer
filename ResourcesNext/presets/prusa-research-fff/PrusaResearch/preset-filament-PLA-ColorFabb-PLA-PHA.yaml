@@ -1,0 +1,9 @@
+kind: filament
+inherits:
+- '*PLA*'
+name: ColorFabb PLA-PHA
+id: ColorFabb PLA-PHA
+values:
+  filament_cost: '39.98'
+  filament_vendor: ColorFabb
+  filament_spool_weight: 236

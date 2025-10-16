@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: e20da03f-6bac-45c3-b65e-162ce834f540
+  id: a3QWfK62Q82bAzdHo/+bJg
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: ccecb41c-d156-4150-b4ad-47051206e83e
     name: Siraya Tech Blu Blue @SL1 0.025
+    id: 48tXny3oS0a10xwVz7vqeQ
     values:
       exposure_time: 6
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 7d7fe8fd-2dd4-4491-a2ad-5cf06cf92f12
     name: Siraya Tech Blu Blue @SL1 0.05
+    id: bSG+GcD1QOOmd77emrX36g
     values:
       exposure_time: 12
       initial_exposure_time: 35
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 27119a7f-7769-41a2-8fb2-284c12707757
+  id: /oFmMGGyRJW2HFBKk6ZIqg
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 0e3c899d-2ea7-447f-99df-d89ee541be83
     name: Siraya Tech Blu Blue @SL1S 0.05
+    id: JgKIfYlkTU6gHH4kgqPYzA
     values:
       exposure_time: 4
       initial_exposure_time: 28

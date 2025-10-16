@@ -2,7 +2,7 @@ kind: tool_print
 id: '*common MK25*'
 variants:
 - condition: printer.model=~/(MK2.5|MK2.5S)/
-  id: 3333d108-57b9-4d91-895b-76405a1e86ea
+  id: glz2CaUwRLWxDEmWqqjM1A
   values:
     retract_layer_change: 1
     retract_length_toolchange: 0
@@ -20,7 +20,7 @@ variants:
   variants:
 # 0.25    
   - condition: tool.nozzle_diameter == 0.25
-    id: 94736b31-9003-4801-9685-4cdb1c63e5da
+    id: KNoVwGbIR+S9f2zorspf/w
     values:
       max_layer_height: 0.15
       min_layer_height: 0.05
@@ -28,7 +28,7 @@ variants:
       retract_lift: 0.15
 # 0.4    
   - condition: tool.nozzle_diameter == 0.4
-    id: 082c0c9d-9563-433f-8523-9d550ad52d9d
+    id: eURnlJ0eSI27mQniqkYJxA
     values:
       max_layer_height: 0.30
       min_layer_height: 0.07
@@ -37,7 +37,7 @@ variants:
       retract_before_travel: 1.5
 # 0.6    
   - condition: tool.nozzle_diameter == 0.6
-    id: 5ad67c5c-1517-4c2a-b803-65cce27e8c36
+    id: ewIrBWUoSWSHb8ylYB7lkQ
     values:
       max_layer_height: 0.40
       min_layer_height: 0.15
@@ -48,7 +48,7 @@ variants:
 
 # 0.8    
   - condition: tool.nozzle_diameter == 0.8
-    id: 5f729366-b3b8-4d8f-908b-f611903b2096
+    id: gQ9qmsJFSC6S9fUzDUlDkA
     values:
       deretract_speed: 20
       max_layer_height: 0.6
@@ -57,13 +57,13 @@ variants:
       retract_length: 0.7
       retract_lift: 0.25
 ---
-id: 8ae29036-b163-4ee9-bea4-71d09a55af2e
+id: l39DV1FmQ+SaT75hsCAYnA
 kind: tool_print
 inherits:
 - '*common MK25*'
 variants:
 - condition: printer.model=~/(MK2.5|MK2.5S)/
-  id: 955874b7-5abf-43f2-92d4-9d54a50ddee1
+  id: hYgYCsxvSL6K3s7Oz+PcpQ
   values:
     bottom_solid_layers: 4
     bridge_acceleration: 1000
@@ -169,12 +169,12 @@ variants:
     wipe_tower_extra_spacing: 100%
     wipe_tower_extra_flow: 100%
   variants:
-  - id: 5f74e884-b66f-4df1-9c79-788e00f344f7
-    name: '*non-MMU branch*'
+  - name: '*non-MMU branch*'
+    id: dacY1d7CTMCx4ZpTAEwWIQ
     variants:
 # 0.25 nozzle
     - condition: tool.nozzle_diameter == 0.25
-      id: c3f19702-0a59-4709-a28a-f3e2b287285c
+      id: GZliKoQuRlKccprmBYJALA
       values:
         extrusion_width: 0.25
         first_layer_extrusion_width: 0.3
@@ -222,13 +222,13 @@ variants:
 # 0.25n/0.05mm layer
       variants:
       - condition: print.layer_height == 0.05
-        id: ddaec0c8-0dca-4cbe-8569-9807542b0d18
+        id: IBMiDOVyRjCMFWh9mDeBEA
         values:
           bottom_solid_layers: 10
           top_solid_layers: 14
         variants:
-        - id: f062a592-5051-44e4-8960-3d4fd834cb50
-          name: 0.05mm ULTRADETAIL @MK2.5 0.25
+        - name: 0.05mm ULTRADETAIL @MK2.5 0.25
+          id: f9SdpvgRTyuR4K5zHiMrEw
           values:
             perimeters: 3
             bridge_acceleration: 300
@@ -242,19 +242,19 @@ variants:
             top_solid_infill_speed: 20
 # 0.25n/0.1mm layer
       - condition: print.layer_height == 0.10
-        id: 865b9abc-71ad-46ca-ad1c-c40c3496781c
+        id: nk3ffbV8Tvutu1Rb/X/OsQ
         variants:
-        - id: 68299ef6-693a-4b23-8b0f-7e915f1ef5d6
-          name: 0.10mm DETAIL @MK2.5 0.25
+        - name: 0.10mm DETAIL @MK2.5 0.25
 # 0.25n/0.15mm layer
+          id: 0Gln7gQbQ1SPAwT7akGcBg
       - condition: print.layer_height == 0.15
-        id: 9cb5f769-20c4-4984-8e01-3de108312670
+        id: QIv8sGnSRsO023DyETkRUA
         values:
           bottom_solid_layers: 5
           top_solid_layers: 6
         variants:
-        - id: 73fa549e-dc08-44f9-b5f2-a6987fb75de3
-          name: 0.15mm OPTIMAL @MK2.5 0.25
+        - name: 0.15mm OPTIMAL @MK2.5 0.25
+          id: QUMObXGWQXKlytCoS9dIcA
           values:
             bridge_flow_ratio: 0.8
             support_material_contact_distance: 0.08
@@ -268,18 +268,18 @@ variants:
 # 0.4 nozzle
     - condition: tool.nozzle_diameter == 0.4
 # 0.4n/0.05mm layer
-      id: 9e505c6a-e9f3-40f5-aa8d-648b58983afb
+      id: E25hjmuNTsWJsxAG+4RGcQ
       variants:
       - condition: print.layer_height == 0.05
-        id: 15806adb-c61b-4402-a25e-afc4707b2a71
+        id: 2C3N/IftSBeelGOSWvNG3w
         values:
           bottom_solid_layers: 10
           top_solid_layers: 14
           support_material_contact_distance: 0.1
           raft_contact_distance: 0.1
         variants:
-        - id: 14860a53-1ae2-45a0-9b3a-a75a3d127e90
-          name: 0.05mm ULTRADETAIL @MK2.5 0.4
+        - name: 0.05mm ULTRADETAIL @MK2.5 0.4
+          id: Lupnp8baRdGfY+M+O1GO1g
           values:
             perimeters: 3
             thick_bridges: 1
@@ -303,15 +303,15 @@ variants:
             fill_density: 20%
 # 0.4n/0.10mm layer
       - condition: print.layer_height == 0.10
-        id: f276951f-f776-49a2-b96d-a0d595dbe221
+        id: zO+OTDdiQama0pwIsvnoXQ
         values:
           bottom_solid_layers: 7
           top_solid_layers: 8
           support_material_contact_distance: 0.17
           raft_contact_distance: 0.15
         variants:
-        - id: c850e70c-9e05-4fad-9481-91bcb6839195
-          name: 0.10mm DETAIL @MK2.5 0.4
+        - name: 0.10mm DETAIL @MK2.5 0.4
+          id: m98Ppq+NQsK7ePh77MUvPA
           values:
             perimeters: 3
             bridge_acceleration: 800
@@ -321,17 +321,17 @@ variants:
             wipe_tower_bridging: 5
 # 0.4n/0.15mm layer
       - condition: print.layer_height == 0.15
-        id: f5cd0460-1766-42a6-9269-10928d7bf6b3
+        id: ITtfS0HFTTWUqaybahnlrQ
         values:
           bottom_solid_layers: 5
           top_solid_layers: 6
           support_material_contact_distance: 0.2
           raft_contact_distance: 0.15
         variants:
-        - id: 0e6d87e0-39ce-4438-94f2-aaa03e842138
-          name: 0.15mm OPTIMAL @MK2.5 0.4
-        - id: b566e034-acb5-48f2-9c9e-6cc95cf86c6d
-          name: 0.15mm 100mms LA @MK2.5 0.4
+        - name: 0.15mm OPTIMAL @MK2.5 0.4
+          id: 1vn2COArSh+2t2DbbxOjhg
+        - name: 0.15mm 100mms LA @MK2.5 0.4
+          id: KI7If1kLRVaHzDT2iBthVg
           values:
             external_perimeter_speed: 50
             infill_speed: 100
@@ -344,7 +344,7 @@ variants:
             top_infill_extrusion_width: 0.4
 # 0.4n/0.20mm layer
       - condition: print.layer_height == 0.20
-        id: 2b705421-2be8-4088-974e-b9ffd6653874
+        id: Trljdgp+T2mm4KAEqR6gZw
         values:
           raft_contact_distance: 0.2
           bottom_solid_layers: 4
@@ -352,10 +352,10 @@ variants:
           bridge_flow_ratio: 0.95
           top_infill_extrusion_width: 0.4
         variants:
-        - id: fa7f6dc9-e76a-47f7-a25e-e86fb6d03e79
-          name: 0.20mm NORMAL @MK2.5 0.4
-        - id: c216a0d6-dbb4-4018-94ff-6b48337ec565
-          name: 0.20mm 100mms LA @MK2.5 0.4
+        - name: 0.20mm NORMAL @MK2.5 0.4
+          id: n7WjHxZvQ5C13M8Qvt489g
+        - name: 0.20mm 100mms LA @MK2.5 0.4
+          id: NYy34bobTTSBbpaq40Q5BA
           values:
             external_perimeter_speed: 50
             infill_speed: 100
@@ -367,13 +367,13 @@ variants:
             max_print_speed: 150
 # 0.4n/0.35mm layer
       - condition: print.layer_height == 0.35
-        id: 3e60ab02-365a-418d-914f-0a24ad290e1d
+        id: ITuYsQLCStWHiuuePWTfZA
         values:
           raft_contact_distance: 0.2
           support_material_contact_distance: 0.1
         variants:
-        - id: fa9e6815-9334-4fd2-b3a2-855eab9a5518
-          name: 0.35mm FAST @MK2.5 0.4
+        - name: 0.35mm FAST @MK2.5 0.4
+          id: xTP57hOQSweRkE9jrmEiRg
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -389,7 +389,7 @@ variants:
 
 # 0.6 nozzle
     - condition: tool.nozzle_diameter == 0.6
-      id: 7ce29cea-4ecd-4dd0-8086-147521e3e3da
+      id: duLgSb9qQDifTPWPPhfzug
       values:
         bottom_solid_min_thickness: 0.6
         top_solid_min_thickness: 0.9
@@ -424,25 +424,25 @@ variants:
       variants:
 # 0.6n/0.15mm layer
       - condition: print.layer_height == 0.15
-        id: d982b3ba-d96b-4822-9407-01a24c1b89fe
+        id: olMGJNciTre3vtYWhJ5P0w
         values:
           bottom_solid_layers: 5
           top_solid_layers: 6
         variants:
-        - id: c60837eb-fbf4-4c52-bf88-cb23e94c9edc
-          name: 0.15mm OPTIMAL @MK2.5 0.6
+        - name: 0.15mm OPTIMAL @MK2.5 0.6
 # 0.6n/0.20mm layer
+          id: 9nVnXkeBQsiHSTrf3FsaNA
       - condition: print.layer_height == 0.20
-        id: b7afa4d6-ec2c-442c-b9e9-a01a498424a7
+        id: OaceeP+DThuAwjy2P/LsPQ
         variants:
-        - id: 0e6060ae-4bfe-4230-828c-79aa11912909
-          name: 0.20mm NORMAL @MK2.5 0.6
+        - name: 0.20mm NORMAL @MK2.5 0.6
 # 0.6n/0.35mm layer
+          id: WwQq/J2oTxaDJdKXGL4t8w
       - condition: print.layer_height == 0.35
-        id: 07fd6036-d9f6-45bc-ab0f-f4f28dc2539b
+        id: n7nJ8mxBSpu4Frnxo1lMBA
         variants:
-        - id: 466d0e04-85d1-48c0-a489-1ace1342574f
-          name: 0.35mm FAST @MK2.5 0.6
+        - name: 0.35mm FAST @MK2.5 0.6
+          id: f/gC8lawSaObMgwSZn9NEw
           values:
             bottom_solid_layers: 3
             top_solid_layers: 4
@@ -450,7 +450,7 @@ variants:
             top_solid_infill_speed: 50
 # 0.8 nozzle
     - condition: tool.nozzle_diameter == 0.8
-      id: 0d79d7e2-b994-4bd0-a4e0-277ac7170340
+      id: hGl7Ya7gTIeKW+7YoveuzQ
       values:
         # first_layer_height: 0.3
         bottom_solid_layers: 3
@@ -492,51 +492,51 @@ variants:
       variants:
 # 0.8n/0.30mm layer
       - condition: print.layer_height == 0.30
-        id: 2fb4d9e3-6ac6-4622-aba0-478386f89479
+        id: 3yx+WozuSDSpFMokX4HZXQ
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
         variants:
-        - id: 4d0d3f1e-de6e-455d-9a58-dce84de4086a
-          name: 0.30mm DETAIL @MK2.5 0.8
+        - name: 0.30mm DETAIL @MK2.5 0.8
+          id: oWzFq1SJQ8G3BW8FkA/x0A
           values:
             max_print_speed: 80
             solid_infill_speed: 50
 # 0.8n/0.40mm layer
       - condition: print.layer_height == 0.40
-        id: e702a025-9eb0-4c12-9bbb-3ceba53e122c
+        id: Shlo53CRTb6APyGS7qZEPA
         variants:
-        - id: 17edad9d-ad0e-46a4-ac40-c4d00689b9af
-          name: 0.40mm QUALITY @MK2.5 0.8
+        - name: 0.40mm QUALITY @MK2.5 0.8
 # 0.8n/0.55mm layer
+          id: yzZsU7L7R52KkpfZvk1v/A
       - condition: print.layer_height == 0.55
-        id: 3c382037-698f-4efe-9973-71a50bd3b586
+        id: SlGkmHgsQ3mmIEYdxZQwIA
         values:
           bottom_solid_layers: 3
           top_solid_layers: 4
           external_perimeter_extrusion_width: 1
           perimeter_extrusion_width: 1
         variants:
-        - id: f7abd728-40e8-41ef-986e-7568d937b218
-          name: 0.55mm DRAFT @MK2.5 0.8
+        - name: 0.55mm DRAFT @MK2.5 0.8
+          id: pg6i7VDVS6CN4WhXmxy1Dw
           values:
             perimeter_speed: 30
             solid_infill_speed: 40
             support_material_speed: 35
             top_solid_infill_speed: 30
 # MMU branch
-  - id: adc976eb-7955-4489-a8ba-8451d1214088
-    name: MMU branch
+  - name: MMU branch
+    id: MR1e3RdlTBOnC5o9369UsQ
     variants:
-    - condition: feeder.base_model=~/.*MMU.*/
-      id: 00a3d3a8-57a3-44b8-b9c5-59e1ad5e652d
+    - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
+      id: HkhOiWzqTK2agWf9uWYXrg
       variants:
       - condition: tool.nozzle_diameter == 0.4
-        id: 63c67c7a-6e55-44c2-993d-ec18395940ab
+        id: KQq+fuziSv6nF9IeqSjZrA
         variants:
 # 0.4n/0.20mm/MMU SOLUBLE
         - condition: print.layer_height == 0.20
-          id: b9003759-a879-4053-b012-01b23020ba3f
+          id: FWUteBvPQdWlDd3RXqExcw
           values:
             bridge_speed: 30
             external_perimeter_speed: 35
@@ -564,20 +564,20 @@ variants:
             thick_bridges: 1
             raft_contact_distance: 0.2
           variants:
-          - id: f74c9a1e-1667-4ea9-acdd-8898f3526f15
-            name: 0.20mm SOLUBLE FULL @MK2.5 0.4
-          - id: e1eb4837-00e0-4301-bb66-0229b70f3d9c
-            name: 0.20mm SOLUBLE INTERFACE @MK2.5 0.4
+          - name: 0.20mm SOLUBLE FULL @MK2.5 0.4
+            id: sFwwwOhjR16IaCqvVVWGiQ
+          - name: 0.20mm SOLUBLE INTERFACE @MK2.5 0.4
+            id: IN4SPgqVTPiB4GcIP1v4Ww
             values:
               support_material_extruder: 0
               support_material_interface_layers: 3
               support_material_with_sheath: 0
       - condition: tool.nozzle_diameter == 0.6
-        id: dad14b2d-689a-4d46-8a02-af0dee91f4de
+        id: 56uMilIaTJuuBUkLtxId3g
         variants:
 # 0.6n/0.30mm/MMU SOLUBLE
         - condition: print.layer_height == 0.30
-          id: 50a0d2fd-eac5-4fe5-80bd-d869183577ab
+          id: 9EER5Qx3T8Gug5vy8kTDjw
           values:
             top_solid_layers: 4
             bridge_speed: 25
@@ -620,10 +620,10 @@ variants:
             max_print_speed: 100
             bridge_flow_ratio: 1
           variants:
-          - id: 4ce8abdb-1d22-4bd8-977a-bf33a26afc3c
-            name: 0.30mm SOLUBLE FULL @MK2.5 0.6
-          - id: 07ed3413-4277-4376-890b-75c8ddb0c21d
-            name: 0.30mm SOLUBLE INTERFACE @MK2.5 0.6
+          - name: 0.30mm SOLUBLE FULL @MK2.5 0.6
+            id: J3INb/MNRfqjfGj94jYV6Q
+          - name: 0.30mm SOLUBLE INTERFACE @MK2.5 0.6
+            id: FlWknt+nTR6xtJHriPPRWw
             values:
               support_material_extruder: 0
               support_material_interface_layers: 3

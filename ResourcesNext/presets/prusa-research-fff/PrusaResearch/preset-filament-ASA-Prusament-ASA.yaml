@@ -1,9 +1,9 @@
 kind: filament
-id: Prusament ASA
 inherits:
 - '*ASA*'
 name: Prusament ASA
 condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/
+id: Prusament ASA
 values:
   filament_cost: '35.28'
   filament_vendor: Prusa Polymers

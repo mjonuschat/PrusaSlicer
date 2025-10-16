@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 7f18dbe6-76df-4292-8cd1-716ca568bee8
+  id: j9+aUvpBRw2bW2am2Pt1OQ
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 622af83a-369a-4233-8943-935949cbb5dc
     name: Harz Labs Basic Resin Red @SL1 0.025
+    id: MAwi/LWpQ/ujIHhDvXo4Sg
     values:
       exposure_time: 10
       initial_exposure_time: 20
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 5635eb04-39fd-4a9b-95d1-663c6094aec0
     name: Harz Labs Basic Resin Red @SL1 0.05
+    id: WAUnJrbATjKc4VlOfdLSgQ
     values:
       exposure_time: 13
       initial_exposure_time: 20
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: d8e18e9c-83a4-4867-8da6-ecc1f5917920
+  id: 7BLTIqR1QY2LTTLYOECoeg
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 0ee8ca48-6fae-4f4a-940d-e00bd427e720
     name: Harz Labs Basic Resin Red @SL1S 0.05
+    id: OGkZoEnfSkKEG4vkAOL9oA
     values:
       exposure_time: 4.3
       initial_exposure_time: 16

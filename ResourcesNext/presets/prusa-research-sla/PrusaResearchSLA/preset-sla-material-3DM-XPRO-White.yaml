@@ -9,27 +9,27 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 0f7d9269-be8c-442b-a6e1-ac39c7f4ee24
+  id: AbzHW07CRUey2pcSmcYcrQ
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: f8665839-d41d-468a-aac3-4036c6a90e5f
     name: 3DM-XPRO White @SL1 0.05
+    id: B44Pxay0Sfi9/3sRc94t9g
     values:
       exposure_time: 9
       initial_exposure_time: 35
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 0326e474-874e-46d7-80d0-a3254392083c
+  id: 6yG/C3/lRnOJcqQ0eGhONA
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 5143ea11-3f02-48c5-b68d-f0ce2a18669a
     name: 3DM-XPRO White @SL1S 0.05
+    id: 29ETXj7qSMisyvehQ9EXig
     values:
       exposure_time: 3
       initial_exposure_time: 28

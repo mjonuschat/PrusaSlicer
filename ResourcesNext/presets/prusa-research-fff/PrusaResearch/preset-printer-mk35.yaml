@@ -1,9 +1,9 @@
-id: 0da58893-4cfd-4e42-827d-d6e967ae4d4f
+id: PGPofKx2RmaV17VXi9flMA
 kind: printer
 variants:
 - condition: printer.model == "MK3.5"
-  id: 865468f2-1dcf-4d38-84b1-03150f0032e3
   name: Original Prusa MK3.5 & MK3.5S
+  id: l9xLkSlFTDaUIXmHfFQ2iw
   values:
     bed_shape:
     - '0x0'
@@ -70,8 +70,8 @@ variants:
     extra_loading_move: '-25'
     multimaterial_purging: '140'
   variants:
-  - condition: feeder.base_model=~/(MMU2|MMU3)/
-    id: 464fe43e-f6ac-47ab-af0b-02ce8d6822ae
+  - condition: feeder.base_model=~/(MMU2|MMU3)/ and ! feeder.single_mode
+    id: gkDGQai3R3GuH7PTLuzxvA
     values:
       start_gcode: |-
         M17 ; enable steppers

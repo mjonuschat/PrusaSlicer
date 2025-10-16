@@ -9,55 +9,55 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: a2a20df1-3278-427c-8b46-0b0a53234c15
+  id: Awxm+qWzQ4OJTIhcqSL/jg
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: b681f903-98d0-422d-8ce6-9fc325f1ece2
     name: Prusament Resin Tough Transparent Green @SL1 0.025
+    id: b0uySr3CQnmmjg9udn3RuQ
     values:
       exposure_time: 5
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 3cb4a038-16e7-43f7-92ec-4481313d3d3e
     name: Prusament Resin Tough Transparent Green @SL1 0.05
+    id: gEwwF6csRT6e2jcRy6xFLA
     values:
       exposure_time: 6
       initial_exposure_time: 35
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 95271b85-ef68-4b65-922e-8140322e1c4c
     name: Prusament Resin Tough Transparent Green @SL1 0.1
+    id: kVZufxlzQZyXbwcE0Wgzjw
     values:
       exposure_time: 13
       initial_exposure_time: 45
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 71387099-7624-4dbb-b966-07fbb7d8f4eb
+  id: +QJjvwxEQwSHYI8V/Wi+tw
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 2409cb2a-dd31-4598-b09c-64bdb32e3fd3
     name: Prusament Resin Tough Transparent Green @SL1S 0.025
+    id: A4hX6uLIQzWTyPKEguHJEg
     values:
       exposure_time: 1.8
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 8c4b128f-b48b-4392-b479-2bb7588c9902
     name: Prusament Resin Tough Transparent Green @SL1S 0.05
+    id: IEe4r4wtQ4ueZ8ICuR0Yxw
     values:
       exposure_time: 2
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 63482cd2-e666-4b71-932b-21a14cc058a1
     name: Prusament Resin Tough Transparent Green @SL1S 0.1
+    id: 5vA2Vw+eS6y7f4kynh+h6w
     values:
       exposure_time: 2.6
       initial_exposure_time: 25

@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 09b1dd71-40c3-4e61-9b56-257d3bcdec87
+  id: 8LYd7VEWT12o6TknyfWUHQ
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 1293a157-ab85-4582-848f-19bf513713a5
     name: 3DM-ABS @SL1 0.025
+    id: KgPM9r6GRsyT2vN4w3CFug
     values:
       exposure_time: 12
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 522c343d-e8c1-4671-b8ef-797c20c50b2a
     name: 3DM-ABS @SL1 0.05
+    id: Dqida9r3S4mv+a6S4QlQVA
     values:
       exposure_time: 13
       initial_exposure_time: 25
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: d6d3fcce-836b-4d27-b850-60b70706c9dc
+  id: L7R/kUrhS42De6Jeq0sW1A
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 8abfb09f-9df5-4ae1-9cf1-a83dba204513
     name: 3DM-ABS @SL1S 0.05
+    id: dlDQg0XnTDecdndTGNW/xA
     values:
       exposure_time: 2.6
       initial_exposure_time: 25

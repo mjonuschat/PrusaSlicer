@@ -1,9 +1,9 @@
-id: f856b455-0ebe-4401-bb50-81278cfd3808
+id: 30Cuhu/1Tcyc37Ia6EsFBA
 kind: printer
 variants:
 - condition: printer.base_model == "COREONE"
-  id: 9c7e1d0a-bc85-4ed2-887c-38e4b64f8f23
   name: Prusa CORE One
+  id: 2clJ4GxITzaQ1Vu4gqG2eQ
   values:
     bed_shape:
     - '0x0'
@@ -165,8 +165,8 @@ variants:
       G92 E0
       M221 S100 ; set flow to 100%
   variants:
-  - condition: feeder.base_model == "MMU3"
-    id: 239530e6-20e5-422e-b8e5-c5f0082bbc43
+  - condition: feeder.base_model == "MMU3" and ! feeder.single_mode
+    id: OTUkt1FfQZmO75o7Q6hcew
     values:
       single_extruder_multi_material: 1
       start_gcode: |-
@@ -294,12 +294,7 @@ variants:
         ; max_layer_z = [max_layer_z]
     variants:
     - condition: tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.3
-      id: 015ef87b-b753-4b3c-aa5e-c700177d7b4e
+      id: 152LA/JPTNSdnOYOh/AwoA
       values:
         machine_max_jerk_x: [8, 8]
         machine_max_jerk_y: [8, 8]
-  - condition: tool.nozzle_diameter == 0.25 or tool.nozzle_diameter == 0.3
-    id: 8064c920-14e4-4a26-a580-f3a7505d70b0
-    values:
-      machine_max_jerk_x: [8, 8]
-      machine_max_jerk_y: [8, 8]

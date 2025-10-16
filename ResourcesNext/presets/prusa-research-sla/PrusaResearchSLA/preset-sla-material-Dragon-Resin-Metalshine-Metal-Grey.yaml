@@ -9,27 +9,27 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: fa8b3c22-bc79-45d5-bb88-63584c698133
+  id: +KXa8q94Qsed70r7DKpI5Q
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: b5e556bc-e060-4154-a9d6-70845aa0986f
     name: Dragon Resin Metalshine Metal Grey @SL1 0.05
+    id: yrN1bma/SUmWWidp/leRVA
     values:
       exposure_time: 30
       initial_exposure_time: 50
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 2309ec71-e46a-4920-af00-84c49875361b
+  id: G/FBEP71RDyUKnl1qJODYg
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 985c0480-4b0e-4c4d-b948-c1778e7fa63d
     name: Dragon Resin Metalshine Metal Grey @SL1S 0.05
+    id: 29LT451TRhyZlppNBRfyLw
     values:
       exposure_time: 10
       initial_exposure_time: 40

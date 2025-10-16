@@ -1,8 +1,48 @@
 kind: filament
-id: Generic PLA
 inherits:
 - '*PLA*'
+- '*genericpla_P_ADVANCE_PLA*'
 name: Generic PLA
+id: Generic PLA
 values:
   filament_cost: '19.99'
   filament_vendor: Generic
+---
+kind: filament
+# Pressure advance values
+id: '*genericpla_P_ADVANCE_PLA*'
+## C1, MK4, XL family
+variants:
+- condition: printer.base_model=~/(COREONE|MK4|XL)/
+  id: Jg2rm/79TFid9CbaihHqGg
+  variants:
+  # 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    id: 1WjlOy5bR528dpm2PsToGQ
+    values:
+      pressure_advance_value: 0.1
+  # 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    id: 8HPzz6LHRaux0tzzw76hCg
+    values:
+      pressure_advance_value: 0.07
+  # 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: TWyTnVg5QziImFdJGCejJw
+    values:
+      pressure_advance_value: 0.03
+  # 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: jiltGv5ARz6xKPHUDBa5tg
+    values:
+      pressure_advance_value: 0.022
+  # 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: DjxZbbksSJWQSU+eYlUXPA
+    values:
+      pressure_advance_value: 0.019
+  # 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: BUEg+wsqQ46hshXr3SJ+Pg
+    values:
+      pressure_advance_value: 0.013

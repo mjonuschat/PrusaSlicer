@@ -1,9 +1,0 @@
-kind: filament
-id: Extrudr PLA NX1
-inherits:
-- '*PLA220*'
-name: Extrudr PLA NX1
-values:
-  filament_cost: '22.76'
-  filament_vendor: Extrudr
-  filament_spool_weight: 262

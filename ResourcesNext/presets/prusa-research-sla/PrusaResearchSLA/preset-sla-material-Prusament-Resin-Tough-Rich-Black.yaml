@@ -9,55 +9,55 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 277b68c8-7cde-463c-aa7e-7d72c376c6f8
+  id: P/kFca4XSlilSx6vrm0H0A
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: a9a87b7a-adc7-418d-9315-e922de108290
     name: Prusament Resin Tough Rich Black @SL1 0.025
+    id: yyCkXd5VRfGjSfHFHmRzHQ
     values:
       exposure_time: 5
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 6ccb71f6-92ec-4612-9de2-ce7cde7525c0
     name: Prusament Resin Tough Rich Black @SL1 0.05
+    id: Xd7BA4k4QBmOncy6Tz9N+w
     values:
       exposure_time: 6
       initial_exposure_time: 35
 # 0.1
   - condition: print.layer_height == 0.1
-    id: a6a9bf0f-0f9a-4941-9366-b77480443ca8
     name: Prusament Resin Tough Rich Black @SL1 0.1
+    id: t6OpUuZURIGmS1hpTYyZDA
     values:
       exposure_time: 13
       initial_exposure_time: 45
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: fdb617c8-482a-4009-9ed6-5f8b089e2076
+  id: kTeYb9YsTYCdgY5o/54mjw
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 6736f764-fea4-49f6-a586-9d50791b670b
     name: Prusament Resin Tough Rich Black @SL1S 0.025
+    id: 1K9KIljySMKpP87ob0pYCQ
     values:
       exposure_time: 1.8
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: d81d15f8-1c4f-4cab-8f6f-fd29e7fbaecf
     name: Prusament Resin Tough Rich Black @SL1S 0.05
+    id: +B6ev+PeSrW3JP6q8j9bJg
     values:
       exposure_time: 2
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: dae689fa-9dd8-4558-9562-9b9c3a4b9f52
     name: Prusament Resin Tough Rich Black @SL1S 0.1
+    id: Ij0nRKwLTimPZGhQBuDhHw
     values:
       exposure_time: 2.6
       initial_exposure_time: 25

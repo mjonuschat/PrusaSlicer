@@ -9,7 +9,7 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: adcf2a26-9a9f-457a-8774-e5463f7859b7
+  id: zb7z5xIyRuS5IEt5d71pog
   unconditional_inherits:
   - '*sl1s_slow*'
   values:
@@ -22,22 +22,22 @@ variants:
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 760ffce5-b596-4949-b5cd-881b3a8a890f
     name: Liqcreate Wax Castable @SL1S 0.025
+    id: 2GoR133cT1WBnlGqikWshw
     values:
       exposure_time: 3.5
       initial_exposure_time: 20
 # 0.05
   - condition: print.layer_height == 0.05
-    id: a38b18d1-bf21-4075-8d09-8d91c6c71bd4
     name: Liqcreate Wax Castable @SL1S 0.05
+    id: RMae3c/FS+SuVxRuNqj/fw
     values:
       exposure_time: 4.5
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 50e1b53a-d0eb-4e3d-a8db-99ec383b9bcf
     name: Liqcreate Wax Castable @SL1S 0.1
+    id: qK/OcduxSLKbtxHl5LrZQg
     values:
       exposure_time: 5.5
       initial_exposure_time: 30

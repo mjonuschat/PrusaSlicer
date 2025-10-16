@@ -1,9 +1,9 @@
 kind: filament
-id: Spectrum ASA Kevlar
 inherits:
 - '*ASACF*'
 - '*SASAKevlar_MAXVOLSPEED*'
 name: Spectrum ASA Kevlar
+id: Spectrum ASA Kevlar
 values:
   filament_vendor: Spectrum
   extrusion_multiplier: 1.04
@@ -18,49 +18,49 @@ id: '*SASAKevlar_MAXVOLSPEED*'
 ## C1, MK4, XL family
 variants:
 - condition: printer.base_model=~/(COREONE|MK4|XL)/
-  id: 1b24c773-5e87-40bf-9789-4abccdbb86e5
+  id: ZDh4TaxjTAO+S+xtnRWqlA
   variants:
   # 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: 8ec170bd-e91d-4744-af17-987708855aad
+    id: 8pFpgyKWQtC3tWXLZvs5/A
     values:
       filament_max_volumetric_speed: 6
   # 0.5
   - condition: tool.nozzle_diameter == 0.5
-    id: f4227ef5-259d-4569-b813-88b4ef5c4da2
+    id: qPkXcnMzQ5WEh/PKesgVDQ
     values:
       filament_max_volumetric_speed: 8
   # 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: 5234eb94-43e0-45b6-8058-a0e6846a710c
+    id: EVcB9rL4QDmxniLujleFEg
     values:
       filament_max_volumetric_speed: 10
   # 0.8
   - condition: tool.nozzle_diameter == 0.8
-    id: 3ab73426-809c-497a-a635-ba8a25e58525
+    id: 3NVA34FJQAeH7l2l6PZoyg
     values:
       filament_max_volumetric_speed: 14
 - condition: printer.base_model=~/(MK3|MK3.5|MINI|MK2)/
-  id: 02fc6721-34eb-44c1-aaf0-e2433bb2761d
+  id: gS22gBsdS3irykawETo6PQ
   variants:
   # 0.4
   - condition: tool.nozzle_diameter == 0.4
-    id: 5dd26db7-f1aa-4bc2-981b-da19a942a3ec
+    id: N74WMkSqQGWfYUQQhF5npg
     values:
       filament_max_volumetric_speed: 6
   # 0.5
   - condition: tool.nozzle_diameter == 0.5
-    id: d568e260-16b7-4042-9b72-26dd34463c13
+    id: 3pgoCGx9QXuxGwOvzwfudw
     values:
       filament_max_volumetric_speed: 7
   # 0.6
   - condition: tool.nozzle_diameter == 0.6
-    id: 6612c3d3-e5d1-4c96-b689-f928d8e2d710
+    id: uaTuz1ihSye7azO6hSFeJg
     values:
       filament_max_volumetric_speed: 10
   # 0.8
   - condition: tool.nozzle_diameter == 0.8
-    id: c5e63cb1-7393-4a6a-a0c9-6a1ec988ca50
+    id: zJd1WFiZRYuDxFGo31iw0A
     values:
       filament_max_volumetric_speed: 13
 

@@ -9,21 +9,21 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 560228ff-cd2b-419c-89bf-fd054130a6f3
+  id: UnjGWMIGRcqOBNzsTU2qFg
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 372a6173-91ed-46f8-98d2-33274abd7c01
     name: DruckWege Type D High Temp @SL1 0.025
+    id: wtT5HWI6QdW+rgmLcPiJ1Q
     values:
       exposure_time: 6
       initial_exposure_time: 20
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 64f25e8f-91ee-4649-8661-58fd767d7149
     name: DruckWege Type D High Temp @SL1 0.05
+    id: B5b7M382R6CUGnK1NPJGjQ
     values:
       exposure_time: 10
       initial_exposure_time: 20

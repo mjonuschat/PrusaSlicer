@@ -9,28 +9,28 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 64a5a2ae-70ee-4356-b11a-957e4188df76
+  id: gaJfcA+pSiy7h+lwXoYmNw
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: a0051142-7d83-4ed9-ab78-b3eab5d853af
     name: BlueCast Kera Master Dental @SL1 0.025
+    id: 61f3vakST+C/pu4FamDeHQ
     values:
       exposure_time: 6
       initial_exposure_time: 45
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 0cadec4f-d311-466f-9668-12a9a60545ee
     name: BlueCast Kera Master Dental @SL1 0.05
+    id: f/E6C0E6SYedxxhtBfaM0A
     values:
       exposure_time: 7
       initial_exposure_time: 50
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 8af7cea7-2414-4ff3-aa25-1967398cf7ed
     name: BlueCast Kera Master Dental @SL1 0.1
+    id: p8pwo1NPTWObuNEQ7+VW3Q
     values:
       exposure_time: 13
       initial_exposure_time: 50

@@ -9,14 +9,14 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: bc679829-dba0-4d67-8d94-b5dad9f95114
+  id: fEQRQBjqTNmrX2Wg1QeIrQ
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: ecb7cd76-92fb-4fd7-8a92-d5b7bcf4e0be
     name: Liqcreate Bio-Med Clear @SL1S 0.05
+    id: etKOMuFmQxmX5iBOHl/1ug
     values:
       exposure_time: 5
       initial_exposure_time: 40
@@ -28,8 +28,8 @@ variants:
       support_head_width: 3
 # 0.1
   - condition: print.layer_height == 0.1
-    id: bd0a2f63-f11c-42a3-96d9-7200d7f8f221
     name: Liqcreate Bio-Med Clear @SL1S 0.1
+    id: 95osRpcRQn6IhHbD8mqpFQ
     values:
       exposure_time: 8
       initial_exposure_time: 60

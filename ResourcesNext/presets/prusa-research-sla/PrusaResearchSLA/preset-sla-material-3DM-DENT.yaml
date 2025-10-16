@@ -9,27 +9,27 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 521e47ea-6426-4c8a-b863-aadce6f9c861
+  id: Tul+klthSJqDZGj1Wyygnw
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 23351012-9d11-4885-90a5-81a39604d895
     name: 3DM-DENT @SL1 0.05
+    id: 6Rtm4HOMSsm2c9w46LPvIw
     values:
       exposure_time: 7
       initial_exposure_time: 45
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 83739e60-b820-4f41-a51e-3f52ddb2a043
+  id: osJ0wfgNR+amrUwlXItgYA
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: e8cda9b2-cb61-4bd7-88f8-2874c5e97247
     name: 3DM-DENT @SL1S 0.05
+    id: p6OtrzJEQ56Naqp8q2X7vA
     values:
       exposure_time: 2.3
       initial_exposure_time: 36

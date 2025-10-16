@@ -1,9 +1,0 @@
-kind: filament
-id: Devil Design PLA
-inherits:
-- '*PLA*'
-name: Devil Design PLA
-values:
-  filament_cost: '20.99'
-  filament_vendor: Devil Design
-  filament_spool_weight: 250

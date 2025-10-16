@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 7515f864-c8cf-42ba-92d0-d32996934b52
+  id: ZEy0yCj3QBimvY5JZHNlzg
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 48a35fa6-bc39-4104-9557-c24683068d84
     name: Prusament Resin Flex80 Black @SL1 0.025
+    id: V7ESyP3PQq6u0HjxEhbtRQ
     values:
       exposure_time: 8
       initial_exposure_time: 30
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 82e259a6-c0a1-4f02-beb8-b3296a9f4328
     name: Prusament Resin Flex80 Black @SL1 0.05
+    id: oLD3n+kVTaihLx21ORJq8Q
     values:
       exposure_time: 10
       initial_exposure_time: 30
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 30831875-43f5-4708-a9d7-1d10c86449dc
     name: Prusament Resin Flex80 Black @SL1 0.1
+    id: HMPX1CHLSJePZog2V5SDeg
     values:
       exposure_time: 13
       initial_exposure_time: 30
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 6c5d3660-5129-4749-9325-aa2551d4dd99
+  id: TF0YuPQcQFm7Ui6nLLIFqQ
   unconditional_inherits:
   - '*sl1s_slow*'
   values:
@@ -45,22 +45,22 @@ variants:
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: ce7b09f2-6d2e-43b8-a4f6-210b278056c7
     name: Prusament Resin Flex80 Black @SL1S 0.025
+    id: 1mv50nHYRi2j9AeDePYA3Q
     values:
       exposure_time: 2.6
       initial_exposure_time: 9
 # 0.05
   - condition: print.layer_height == 0.05
-    id: abac5a17-0fa0-476e-8107-a3ef882dc780
     name: Prusament Resin Flex80 Black @SL1S 0.05
+    id: PD4gXerQT4ie0NmFZnun0Q
     values:
       exposure_time: 3
       initial_exposure_time: 9
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 24e0f4ca-841a-4064-be71-ba2747b4b702
     name: Prusament Resin Flex80 Black @SL1S 0.1
+    id: tD11ZbVBSLSQ5mffGJbIbQ
     values:
       exposure_time: 3.5
       initial_exposure_time: 12

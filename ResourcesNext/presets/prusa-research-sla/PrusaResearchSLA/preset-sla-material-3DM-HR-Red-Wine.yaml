@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 760b0c9a-f22d-4b32-bd9a-1515ec9009ae
+  id: xOwYeRRPSOmrYHhn8yjrxw
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: e322a6d2-4565-460a-86e7-6ce4f8096426
     name: 3DM-HR Red Wine @SL1 0.025
+    id: 8xu3sD8+Qua9Rcv35JPOUg
     values:
       exposure_time: 14
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 2f9dca82-6df2-4a0d-8a42-9e2149dad7d1
     name: 3DM-HR Red Wine @SL1 0.05
+    id: El/U8rVlRkS+wY9dJk3Juw
     values:
       exposure_time: 18
       initial_exposure_time: 35
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: b074ffc5-3c4f-4157-a4c6-00fa035ef19b
+  id: 79BXxbegQJ6R0h9r34s2Yg
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: dc1dad56-3012-4b49-b85b-0f16e0dd977d
     name: 3DM-HR Red Wine @SL1S 0.05
+    id: Yhy6+duuQS+EV4TPf4eBkw
     values:
       exposure_time: 6
       initial_exposure_time: 32

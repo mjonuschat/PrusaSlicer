@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 9492510a-1dde-445a-9d49-15224caa5041
+  id: GOXThFX5TaaGorssVpdLgA
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: a738f543-30c3-412a-9754-1526d8fcaf3e
     name: Prusament Resin BioBased60 Obsidian Black @SL1 0.025
+    id: FWdp/jQBQKOaOIzufXEMgw
     values:
       exposure_time: 10
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: d20e64bc-d01b-4f7f-8ee5-1bbc61eb8d3c
     name: Prusament Resin BioBased60 Obsidian Black @SL1 0.05
+    id: ToilXOllTFaD65k6rhtFFg
     values:
       exposure_time: 12
       initial_exposure_time: 35
 # 0.1
   - condition: print.layer_height == 0.1
-    id: e330749d-9b05-4dc2-a761-ed42377498cb
     name: Prusament Resin BioBased60 Obsidian Black @SL1 0.1
+    id: Fiin3IwGQz6Sol5w2eHs9g
     values:
       exposure_time: 16
       initial_exposure_time: 35
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: be10da78-56a9-4bae-8c36-83fea40014c8
+  id: nR30cFugRhGGNSBfxgMZaQ
   unconditional_inherits:
   - '*sl1s_fast*'
   values:
@@ -45,22 +45,22 @@ variants:
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: aba01564-4f5e-46fd-b297-d7260d1507cc
     name: Prusament Resin BioBased60 Obsidian Black @SL1S 0.025
+    id: j95DT0frRrGR4MUAqvmNMA
     values:
       exposure_time: 4.7
       initial_exposure_time: 15
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 856ff229-2a0a-48ca-b608-71fca5a5be79
     name: Prusament Resin BioBased60 Obsidian Black @SL1S 0.05
+    id: /4N7n/7PSbWl01rodwb8eA
     values:
       exposure_time: 6.3
       initial_exposure_time: 19
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 9420abd6-89da-4313-83d9-2cd515e32478
     name: Prusament Resin BioBased60 Obsidian Black @SL1S 0.1
+    id: R4qkS+r+TbKoQ9Vl5DvIuA
     values:
       exposure_time: 7.9
       initial_exposure_time: 24

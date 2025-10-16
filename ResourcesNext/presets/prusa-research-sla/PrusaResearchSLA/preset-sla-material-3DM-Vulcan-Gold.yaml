@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 754e681a-319d-4431-bb0e-b0849103db77
+  id: QhKYHoPBS0a9oI0WtUCEQg
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 6e78b9e2-bfea-4036-9a64-95533fc82b19
     name: 3DM-Vulcan Gold @SL1 0.025
+    id: TvVgJuTpSCuCOwrmE2xo1w
     values:
       exposure_time: 12
       initial_exposure_time: 30
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 0b8302f2-85ac-461d-afd5-15b28a8ca613
     name: 3DM-Vulcan Gold @SL1 0.05
+    id: 9CLFJDasQ5iP4PxzaE4csQ
     values:
       exposure_time: 15
       initial_exposure_time: 30
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: bf85dd78-de99-4d5d-802b-02c9160a1ee0
+  id: JG+nOkNlTweR8Y6BonpJ6Q
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 4039e27c-8c0d-49c5-8d14-6ab1f087642e
     name: 3DM-Vulcan Gold @SL1S 0.05
+    id: pjyb4GH4S5qOx67q29PjfQ
     values:
       exposure_time: 5
       initial_exposure_time: 24

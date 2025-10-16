@@ -9,55 +9,55 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 39d20f0f-ec44-4d68-90ac-36738649ebfb
+  id: oBn1MMwvRPmADJnpiD7z4w
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: bdde26fe-8350-4c4c-b4a4-ce0dd91b2f72
     name: Prusament Resin Tough Sandstone Model @SL1 0.025
+    id: r90B7t2rQSybXIvQ9+NFCQ
     values:
       exposure_time: 4
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 1f8dfb9f-6d6a-480f-87ba-462d1786e1be
     name: Prusament Resin Tough Sandstone Model @SL1 0.05
+    id: a45UEvP7RtOxYyfNQEacsg
     values:
       exposure_time: 6
       initial_exposure_time: 35
 # 0.1
   - condition: print.layer_height == 0.1
-    id: cb472728-d0c5-4fac-8989-78a113479edd
     name: Prusament Resin Tough Sandstone Model @SL1 0.1
+    id: 8K8FnC/gSjiQN0yjwfw88w
     values:
       exposure_time: 13
       initial_exposure_time: 45
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 6b6a8576-ec6e-49dd-bf05-d024f4caaf63
+  id: WFdQKgq4Ttidtn3/yJWhig
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: c7294910-962b-457e-abea-44a6ee2e294a
     name: Prusament Resin Tough Sandstone Model @SL1S 0.025
+    id: wzfVFumkTgaMCAF+CyU2Zg
     values:
       exposure_time: 2
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 844b8bcd-7bcd-4683-acc0-cd3b56876a50
     name: Prusament Resin Tough Sandstone Model @SL1S 0.05
+    id: o2TsIhcRRsOHKnbqjZtYMg
     values:
       exposure_time: 2.4
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: c61d81e6-d53e-4522-a181-ab96219c316b
     name: Prusament Resin Tough Sandstone Model @SL1S 0.1
+    id: 2mkYPFGUSxCGiE0n5XSxCg
     values:
       exposure_time: 3
       initial_exposure_time: 25

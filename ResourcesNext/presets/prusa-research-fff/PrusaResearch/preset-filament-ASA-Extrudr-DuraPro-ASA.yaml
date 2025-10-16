@@ -1,8 +1,8 @@
 kind: filament
-id: Extrudr DuraPro ASA
 inherits:
 - '*ASA*'
 name: Extrudr DuraPro ASA
+id: Extrudr DuraPro ASA
 values:
   filament_cost: '34.64'
   filament_vendor: Extrudr

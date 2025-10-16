@@ -9,34 +9,34 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: d48c2344-450d-4066-aa53-fd2b16021f15
+  id: nSCHcc3NT9KoO3Z/jq9RjA
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 4aba019f-2c66-4add-95f7-115cc8809e37
     name: Monocure 3D Black Rapid Resin @SL1 0.025
+    id: KaW0rZORQdCNOVifrL7eeA
     values:
       exposure_time: 4
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 7e4ecf66-e5df-4f75-950e-4462bb294afa
     name: Monocure 3D Black Rapid Resin @SL1 0.05
+    id: TDAdxi2qRVmfWwNPw3C5Nw
     values:
       exposure_time: 6
       initial_exposure_time: 35
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 9849522a-1732-4836-9f18-71b1389c1189
+  id: GPpz0pskSqq7YSDMotB8pQ
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 98c0b1d6-3d3c-4ddc-9a45-0899eaeeaa81
     name: Monocure 3D Black Rapid Resin @SL1S 0.05
+    id: OaWaIW6yQjqbQ6x5r01sCA
     values:
       exposure_time: 2
       initial_exposure_time: 28

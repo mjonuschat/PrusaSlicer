@@ -9,28 +9,28 @@ values:
 variants:
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: ff99a83e-9097-4041-a522-7b45234f9ea4
+  id: 6RrjhczaTMKT4F/epovZCg
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: cf3ae961-3076-4f86-82bd-3af38fec0706
     name: Peopoly Deft White @SL1S 0.025
+    id: 3/LVo41nTHqqZ8vv9CAPAA
     values:
       exposure_time: 1.8
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 8b5273ee-66b5-4701-ac79-f8294f98f224
     name: Peopoly Deft White @SL1S 0.05
+    id: a92GmtP6R9OBcgksAcGWWQ
     values:
       exposure_time: 2
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 046504ce-0303-4795-82c9-7089fd7b7abc
     name: Peopoly Deft White @SL1S 0.1
+    id: 4I24OuVsSumOfudBNf7mCA
     values:
       exposure_time: 2.6
       initial_exposure_time: 25

@@ -9,48 +9,48 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: d5f7de2f-df5f-4a43-841c-006d820daf94
+  id: nEhjYev7RjqotxsnWjUX0g
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: ce9df309-890e-4534-8f06-145cf35114d3
     name: Resinworks 3D Green @SL1 0.025
+    id: OtBSYte9ScGKcCrljXv4jg
     values:
       exposure_time: 17
       initial_exposure_time: 30
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 9c2bbd65-6a49-426e-8ee0-d6fb242dbaae
     name: Resinworks 3D Green @SL1 0.05
+    id: AbMpSX+9RmyiQ6YCgqdLUg
     values:
       exposure_time: 21
       initial_exposure_time: 35
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: f53aed0c-d41d-4642-8be6-900cc6e199a6
+  id: oPtjufI7TUW/FAbjhCDbmQ
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: 245f0519-cb5b-436d-880d-0ff61ee0be8e
     name: Resinworks 3D Green @SL1S 0.025
+    id: Q7D5jFAAQAW9wqt12K7AEg
     values:
       exposure_time: 5
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 25e5bfe0-6a3f-4e6f-bd4d-2110713c1955
     name: Resinworks 3D Green @SL1S 0.05
+    id: lKj3xjXuQj2RuSVYJsfJCw
     values:
       exposure_time: 7
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 03c8b45a-810f-4d49-b88d-272e9ec7deb4
     name: Resinworks 3D Green @SL1S 0.1
+    id: ftlgtOEJTwCthzLJn0qAiQ
     values:
       exposure_time: 13
       initial_exposure_time: 25

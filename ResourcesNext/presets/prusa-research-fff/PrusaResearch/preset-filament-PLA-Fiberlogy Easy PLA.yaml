@@ -1,9 +1,0 @@
-kind: filament
-id: Fiberlogy Easy PLA
-inherits:
-- '*PLA220*'
-name: Fiberlogy Easy PLA
-values:
-  filament_cost: '20'
-  filament_vendor: Fiberlogy
-  filament_spool_weight: 330

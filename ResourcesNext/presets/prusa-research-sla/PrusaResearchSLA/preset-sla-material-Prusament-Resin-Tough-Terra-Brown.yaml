@@ -9,55 +9,55 @@ values:
 variants:
 ## SL1
 - condition: printer.model == "SL1"
-  id: 573ad349-6a5f-4d20-a317-7ba0cad38750
+  id: 3UaNYPX/SHy0wxfWY1xFCw
   unconditional_inherits:
   - '*sl1_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: c7868cc6-74d4-4ac2-928d-efba43d5ba3b
     name: Prusament Resin Tough Terra Brown @SL1 0.025
+    id: UajU5nepR2u6pFlTaJFa6w
     values:
       exposure_time: 4
       initial_exposure_time: 35
 # 0.05
   - condition: print.layer_height == 0.05
-    id: 505c3bcd-cd1e-4470-9dd2-c49ed6c2316a
     name: Prusament Resin Tough Terra Brown @SL1 0.05
+    id: erwVrxIzTsyzDXOhA9/NbQ
     values:
       exposure_time: 6
       initial_exposure_time: 35
 # 0.1
   - condition: print.layer_height == 0.1
-    id: b16a314c-1a46-4ba7-95c0-c4fe6e081182
     name: Prusament Resin Tough Terra Brown @SL1 0.1
+    id: JVHfgzRuS16RzRO5hwHWnA
     values:
       exposure_time: 13
       initial_exposure_time: 45
 ## SL1S
 - condition: printer.model == "SL1S"
-  id: 8e1534f7-3968-4f12-91f6-86e8d3f407c1
+  id: rZVNAQfEQE2Jq4b3h2F7kA
   unconditional_inherits:
   - '*sl1s_fast*'
   variants:
 # 0.025
   - condition: print.layer_height == 0.025
-    id: f3e23454-a9a4-44d3-bbc6-0f1e6bc897ef
     name: Prusament Resin Tough Terra Brown @SL1S 0.025
+    id: OpI7Tn0xS3672JhLUtjiMQ
     values:
       exposure_time: 1.8
       initial_exposure_time: 25
 # 0.05
   - condition: print.layer_height == 0.05
-    id: cda88e56-4e22-499c-a50f-8b351d2a6e08
     name: Prusament Resin Tough Terra Brown @SL1S 0.05
+    id: x+uwyhd5Rd2n0+mgjoaT+Q
     values:
       exposure_time: 2
       initial_exposure_time: 25
 # 0.1
   - condition: print.layer_height == 0.1
-    id: 0d8eed2f-e182-4f8f-9c88-6d12a2b9677b
     name: Prusament Resin Tough Terra Brown @SL1S 0.1
+    id: 7LVHgTNzTTmtvN2CQL4Igw
     values:
       exposure_time: 2.6
       initial_exposure_time: 25
