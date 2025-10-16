@@ -16,17 +16,35 @@ Window::Window(const std::string& window_name) : Item(), m_alpha(GImGui->Style.A
     set_padding(10);
 }
 
-float Window::rounding() const { return m_rounding; }
+float Window::rounding() const
+{
+    return m_rounding;
+}
 
-void Window::set_rounding(float newRounding) { m_rounding = newRounding; }
+void Window::set_rounding(float newRounding)
+{
+    m_rounding = newRounding;
+}
 
-int Window::flags() const { return m_flags; }
+int Window::flags() const
+{
+    return m_flags;
+}
 
-void Window::set_flags(int flags) { m_flags = flags; }
+void Window::set_flags(int flags)
+{
+    m_flags = flags;
+}
 
-float Window::alpha() const { return m_alpha; }
+float Window::alpha() const
+{
+    return m_alpha;
+}
 
-void Window::set_alpha(float alpha) { m_alpha = alpha; }
+void Window::set_alpha(float alpha)
+{
+    m_alpha = alpha;
+}
 
 void Window::render(Vec2f pos, Vec2f size)
 {
@@ -34,27 +52,14 @@ void Window::render(Vec2f pos, Vec2f size)
 
     render_debug(pos, size);
 
-    ImVec2 next_pos;
-    if (m_position_by_yoga || !m_requested_position.has_value()) {
-        next_pos = to_im(pos);
+    if (m_position_by_yoga) {
+        ImGui::SetNextWindowPos(to_im(pos));
     } else if (m_requested_position.has_value()) {
-        next_pos = to_im(m_requested_position.value());
+        ImGui::SetNextWindowPos(to_im(m_requested_position.value()));
         m_requested_position = {};
     }
-
-    ImVec2 sz = to_im(size);
-    if (!m_position_by_yoga) {
-        // clamp
-        ImVec2 vp = ImGui::GetMainViewport()->Size;
-        ImVec2 max = ImVec2(vp.x - sz.x, vp.y - sz.y);
-        next_pos.x = std::clamp(next_pos.x, 0.f, std::max(0.f, max.x));
-        next_pos.y = std::clamp(next_pos.y, 0.f, std::max(0.f, max.y));
-    }
-
-
-    ImGui::SetNextWindowSize(sz);
+    ImGui::SetNextWindowSize(to_im(size));
     ImGui::SetNextWindowBgAlpha(m_alpha);
-    ImGui::SetNextWindowPos(next_pos);
 
     // Discard current paddings and spacing of the window to corect apply of sizer's margins
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
@@ -64,12 +69,36 @@ void Window::render(Vec2f pos, Vec2f size)
 
     ImGui::Begin(m_item_name.c_str(), nullptr, m_flags);
 
-    m_last_pos = from_im(ImGui::GetWindowPos());
+    ImVec2 pos_to_render = ImGui::GetWindowPos();
 
-    render_body(m_last_pos, size);
+    if (!m_position_by_yoga) {
+        ImVec2 xy  = pos_to_render;
+        m_last_pos = from_im(xy);
+        ImVec2 sz  = ImGui::GetWindowSize();
+        ImVec2 max = ImGui::GetMainViewport()->Size - sz;
+        ImVec2 pos = {std::clamp(xy.x, 0.f, max.x), std::clamp(xy.y, 0.f, max.y)};
+        ImGui::SetWindowPos(pos);
+    }
+
+    Vec2f window_pos = from_im(pos_to_render);
+
+    render_body(window_pos, size);
 
     for (const ItemPtr& child : std::as_const(m_children)) {
-        render_node(m_last_pos, child.get());
+        render_node(window_pos, child.get());
+    }
+
+    bool hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
+    if (m_hovered != hovered) {
+        m_hovered = hovered;
+        if (m_callbacks.hovered_changed) {
+            m_callbacks.hovered_changed(m_hovered);
+        }
+    }
+
+    if (m_requested_bring_to_front) {
+        m_requested_bring_to_front = false;
+        ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
     }
 
     ImGui::End();
@@ -84,30 +113,44 @@ void Window::process_events(Vec2f pos, Vec2f size)
     Item::process_events(m_position_by_yoga ? pos : m_last_pos, size);
 }
 
-Vec2f Window::get_item_size()
+void Window::set_style_dirty()
 {
-    ImVec2 old_pos = ImGui::GetCursorScreenPos();
-    ImGui::SetCursorScreenPos({});
-
-    // render widget with 0 alpha and store their size
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
-    render({}, {});
-    ImGui::PopStyleVar();
-
-    ImVec2 size = ImGui::GetCursorScreenPos();
-
-    Vec2f result = Vec2f{ImMax(0.f, size.x), ImMax(0.f, size.y)};
-
-    // reset cursor pos
-    ImGui::SetCursorScreenPos(old_pos);
-
-    return result;
+    if (m_parent) {
+        m_parent->set_style_dirty();
+    } else if (m_callbacks.set_dirty_requested) {
+        m_callbacks.set_dirty_requested();
+    }
 }
 
-bool Window::position_by_yoga() const { return m_position_by_yoga; }
+Window::Callbacks& Window::callbacks()
+{
+    return m_callbacks;
+}
 
-void Window::set_position_by_yoga(bool position_by_yoga) { m_position_by_yoga = position_by_yoga; }
+bool Window::position_by_yoga() const
+{
+    return m_position_by_yoga;
+}
 
-void Window::request_position(Vec2f position) { m_requested_position = position; }
+void Window::set_position_by_yoga(bool position_by_yoga)
+{
+    m_position_by_yoga = position_by_yoga;
+}
+
+void Window::request_position(Vec2f position)
+{
+    m_requested_position = position;
+}
+
+void Window::bring_to_front()
+{
+    m_requested_bring_to_front = true;
+    set_style_dirty();
+}
+
+bool Window::hovered() const
+{
+    return m_hovered;
+}
 
 } // namespace Slic3r::App::Yoga

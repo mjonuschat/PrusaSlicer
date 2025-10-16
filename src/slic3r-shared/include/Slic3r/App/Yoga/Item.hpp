@@ -57,6 +57,8 @@ public:
      */
     virtual void process_events(Vec2f pos, Vec2f size);
 
+    virtual void set_style_dirty();
+
     YGNodeRef node() const;
 
     Item* parent() const;
@@ -198,8 +200,6 @@ protected:
 
     virtual Vec2f get_item_size();
 
-    virtual void set_style_dirty();
-
     virtual void push_event(std::unique_ptr<Event> event);
 
     virtual void enabled_updated_internal();
@@ -242,6 +242,9 @@ protected:
      * It should be called only when the content has changed in a way that might affect the item's size.
      */
     void invalidate_min_size_calculation();
+
+private:
+    void update_enabled();
 
 protected:
     // I will burn in hell for this

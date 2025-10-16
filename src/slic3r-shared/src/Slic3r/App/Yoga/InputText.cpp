@@ -89,10 +89,7 @@ void InputText::render(Vec2f pos, Vec2f size)
         const std::string id = "###" + m_item_name;
 
         ImU32 text_color = ImGui::GetColorU32(enabled() ? ImGuiCol_Text : ImGuiCol_TextDisabled);
-        ImGui::PushStyleColor(
-            ImGuiCol_Text,
-            text_color
-        );
+        ImGui::PushStyleColor(ImGuiCol_Text, text_color);
 
         ImGui::PushFont(m_imgui_render->font(m_font_type));
 
@@ -101,6 +98,11 @@ void InputText::render(Vec2f pos, Vec2f size)
         // Query before rendering
         bool activated = ImGui::GetActiveID() == input_id;
         bool changed   = false;
+
+        if (m_request_focus) {
+            m_request_focus = false;
+            ImGui::SetKeyboardFocusHere();
+        }
 
         if (!activated && !m_override_label.empty()) {
             // We are overriding hint label
@@ -136,7 +138,8 @@ void InputText::render(Vec2f pos, Vec2f size)
 
         if (m_updated) {
             if (ImGui::IsItemDeactivatedAfterEdit()) {
-                m_updated = false;
+                m_updated   = false;
+                m_has_focus = false;
                 if (m_validator) {
                     m_text = m_validator->process(m_text);
                 }
@@ -146,10 +149,34 @@ void InputText::render(Vec2f pos, Vec2f size)
                 if (m_callbacks.text_edited) {
                     m_callbacks.text_edited();
                 }
+                if (m_callbacks.focus_lost) {
+                    m_callbacks.focus_lost();
+                }
             }
-            if (changed && m_callbacks.text_changed) {
+
+            if (ImGui::IsItemEdited() && m_callbacks.text_changed) {
                 m_callbacks.text_changed();
             }
+        }
+
+        if (m_has_focus && ImGui::IsItemDeactivated()) {
+            m_has_focus = false;
+            if (m_callbacks.focus_lost) {
+                m_callbacks.focus_lost();
+            }
+        }
+        if (!m_has_focus && ImGui::IsItemActivated()) {
+            m_has_focus = true;
+            if (m_callbacks.focus_gained) {
+                m_callbacks.focus_gained();
+            }
+        }
+
+        if (m_active
+            && (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter))
+            && m_callbacks.text_entered)
+        {
+            m_callbacks.text_entered();
         }
 
         ImGuiWindow* window = ImGui::GetCurrentWindow();
@@ -221,6 +248,17 @@ void InputText::set_validator(std::unique_ptr<Validator> validator)
 bool InputText::active() const
 {
     return m_active;
+}
+
+bool InputText::has_focus() const
+{
+    return m_has_focus;
+}
+
+void InputText::request_focus()
+{
+    m_request_focus = true;
+    set_style_dirty(); // request a new render loop
 }
 
 Vec2f InputText::get_item_size()

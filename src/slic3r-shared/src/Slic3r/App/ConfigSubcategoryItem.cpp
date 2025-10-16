@@ -34,28 +34,31 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     m_background->set_padding(10);
     m_background->set_flex_shrink(0);
 
-    m_label = m_background->emplace_back<Text>(m_state->def().option_group, Render::ImguiFontType::Bold);
+    m_label =
+        m_background->emplace_back<Text>(m_state->def().option_group, Render::ImguiFontType::Bold);
 
     const std::string option_group = m_state->def().option_group; // Intentional copy
     const Domain::ConfigItemDef::Category category = m_state->def().category; // Intentional copy
-    m_rows_filter_list->set_filter_fn([option_group, category](const Domain::ConfigItem& item) -> bool {
-        return item.def().option_group == option_group && item.def().category == category;
-    });
+    m_rows_filter_list->set_filter_fn(
+        [option_group, category](const Domain::ConfigItem& item) -> bool
+        { return item.def().option_group == option_group && item.def().category == category; }
+    );
     // also group by row_group
     m_rows_filter_list->set_group_by_fn(
-        [](const Domain::ConfigItem& item, std::unordered_set<std::string>& seen_keys) -> bool {
-        const std::string& row_group = item.def().row_group;
-        if (row_group.empty()) {
-            return false;
-        } else {
-            if (seen_keys.contains(row_group)) {
-                return true;
-            } else {
-                seen_keys.insert(row_group);
+        [](const Domain::ConfigItem& item, std::unordered_set<std::string>& seen_keys) -> bool
+        {
+            const std::string& row_group = item.def().row_group;
+            if (row_group.empty()) {
                 return false;
+            } else {
+                if (seen_keys.contains(row_group)) {
+                    return true;
+                } else {
+                    seen_keys.insert(row_group);
+                    return false;
+                }
             }
         }
-    }
     );
     m_rows_filter_list->set_source_model(m_cbi.config_box_list());
 
@@ -65,9 +68,27 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     m_rows_list_view->set_source_list(m_rows_filter_list.get());
     m_rows_list_view->set_orientation(Orientation::Vertical);
     m_rows_list_view->set_gap(5);
-    m_rows_list_view->set_padding(10);
+    m_rows_list_view->set_padding(5);
 
     on_index_update();
+}
+
+void ConfigSubcategoryItem::navigate_to_item(const Domain::ConfigItem* config_item)
+{
+    const std::string& name = config_item->name();
+    for (size_t row_index = 0; row_index < m_rows_filter_list->size(); ++row_index) {
+        if (m_rows_filter_list->at(row_index).name() == name) {
+            m_rows_list_view->item_at(row_index)->navigate_to_item(config_item);
+            break;
+        }
+    }
+}
+
+void ConfigSubcategoryItem::clear_navigation()
+{
+    for (size_t row_index = 0; row_index < m_rows_list_view->item_count(); ++row_index) {
+        m_rows_list_view->item_at(row_index)->clear_navigation();
+    }
 }
 
 void ConfigSubcategoryItem::on_data_update()

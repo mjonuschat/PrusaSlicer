@@ -11,6 +11,12 @@ namespace Slic3r::App::Yoga {
 class Window : public Item
 {
 public:
+    struct Callbacks
+    {
+        std::function<void()> set_dirty_requested{nullptr};
+        std::function<void(bool hovered)> hovered_changed{nullptr};
+    };
+
     explicit Window(const std::string& name);
 
     float rounding() const;
@@ -34,14 +40,22 @@ public:
     bool position_by_yoga() const;
     void set_position_by_yoga(bool position_by_yoga);
     void request_position(Vec2f position);
+    void bring_to_front();
+
+    Callbacks& callbacks();
+
+    bool hovered() const;
 
 protected:
-    Vec2f get_item_size() override;
+    void set_style_dirty() override;
 
 private:
+    Callbacks m_callbacks;
 
-    int m_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing;
+    int m_flags = ImGuiWindowFlags_NoDecoration
+        | ImGuiWindowFlags_NoMove
+        | ImGuiWindowFlags_NoBringToFrontOnFocus
+        | ImGuiWindowFlags_NoFocusOnAppearing;
     float m_rounding = 5;
 
     float m_alpha = 1.f;
@@ -49,6 +63,8 @@ private:
     bool m_position_by_yoga = true;
     std::optional<Vec2f> m_requested_position;
     Vec2f m_last_pos;
+    bool m_hovered = false;
+    bool m_requested_bring_to_front = false;
 };
 
 } // namespace Slic3r::App::Yoga

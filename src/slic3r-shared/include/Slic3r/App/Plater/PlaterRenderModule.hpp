@@ -75,12 +75,17 @@ public:
 
     void set_opened_dialog(Yoga::Dialog* opened_dialog);
 
+    void navigate_to_item(const Domain::ConfigItem* config_item);
+
+    void open_search();
+
 protected:
     void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
     void on_activated() override;
     void on_deactivated() override;
     void on_screen_resized() override;
     void on_set_imgui_render() override;
+    void register_commands() override;
     /**
      * @name Implementation of Biz::ISelectedProjectChangedListener public interface
      * @{

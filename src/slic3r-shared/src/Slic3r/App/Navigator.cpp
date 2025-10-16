@@ -74,4 +74,18 @@ void Navigator::set_opened_dialog(Yoga::Dialog* opened_dialog)
     }
 }
 
+void Navigator::navigate_to_item(const Domain::ConfigItem *config_item)
+{
+    ASSERT(config_item);
+
+    set_render_module_type(Render::ModuleType::Plater);
+    m_plater_module->navigate_to_item(config_item);
+}
+
+void Navigator::request_search()
+{
+    set_render_module_type(Render::ModuleType::Plater);
+    m_plater_module->open_search();
+}
+
 } // namespace Slic3r::App

@@ -23,8 +23,10 @@ public:
 
     std::unique_ptr<View> create(size_t index, const Data& data)
     {
-        return std::
-            apply([&](auto&&... args) { return std::make_unique<View>(index, data, args...); }, m_args);
+        return std::apply(
+            [&](auto&&... args) { return std::make_unique<View>(index, data, args...); },
+            m_args
+        );
     }
 
 private:
@@ -38,7 +40,11 @@ private:
  * handled already. If you need to supply some global attributes to your Views, simply define a
  * ViewFactory and pass it in the constructor.
  */
-template <class View, class Data, class ViewFactoryT = ViewFactory<View, Data>, class BaseItem = Item>
+template <
+    class View,
+    class Data,
+    class ViewFactoryT = ViewFactory<View, Data>,
+    class BaseItem     = Item>
 class ListView : public Biz::IListObserver<Data>, public BaseItem
 {
     using Items = std::vector<View*>;
@@ -51,6 +57,11 @@ public:
         if (m_source_list.is_valid()) {
             m_source_list->template remove_listener<Biz::IListObserver<Data>>(this);
         }
+    }
+
+    size_t list_item_count() const
+    {
+        return m_items.size();
     }
 
     View* item_at(size_t index) const
@@ -136,12 +147,15 @@ public:
         set_source_list(Biz::WeakerPointer<Biz::IObservableList<Data>>{source_list});
     }
 
-    template <typename Derived, typename = std::enable_if_t<std::is_base_of_v<Biz::IObservableList<Data>, Derived>>>
+    template <
+        typename Derived,
+        typename = std::enable_if_t<std::is_base_of_v<Biz::IObservableList<Data>, Derived>>>
     void set_source_list(const std::weak_ptr<Derived>& source_list)
     {
         set_source_list(
-            Biz::WeakerPointer<Biz::IObservableList<Data>>{std::static_pointer_cast<
-                Biz::IObservableList<Data>>(source_list.lock())}
+            Biz::WeakerPointer<Biz::IObservableList<Data>>{
+                std::static_pointer_cast<Biz::IObservableList<Data>>(source_list.lock())
+            }
         );
     }
 

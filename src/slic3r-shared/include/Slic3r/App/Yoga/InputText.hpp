@@ -35,6 +35,21 @@ public:
          */
         std::function<void()> text_changed{nullptr};
 
+        /**
+         * @brief text_entered is fired when user press key Enter/Return
+         */
+        std::function<void()> text_entered{nullptr};
+
+        /**
+         * @brief focus_lost, input text lost focus either by clicking outside, finishing editation,
+         * or perhaps hiting ESC
+         */
+        std::function<void()> focus_lost{};
+        /**
+         * @brief focus_gained, input text got focus, most probably by clicking on it
+         */
+        std::function<void()> focus_gained{};
+
     protected:
         /**
          * @brief update_revert_button is used only by fiend InputTextField class to prodagate update_revert_button here
@@ -76,6 +91,9 @@ public:
      */
     bool active() const;
 
+    bool has_focus() const;
+    void request_focus();
+
 protected:
     Vec2f get_item_size() override;
 
@@ -89,13 +107,16 @@ private:
     std::unique_ptr<Validator> m_validator;
 
     std::string m_text;
-    std::string m_override_label; ///< If set, this text will display instead of m_text (but it's not real)
+    std::string
+        m_override_label; ///< If set, this text will display instead of m_text (but it's not real)
     ImGuiInputTextFlags m_flags = 0;
     std::string m_hint;
     Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
 
-    bool m_active  = false;
-    bool m_updated = false; ///< Input was edited but not yet lost focus
+    bool m_active        = false;
+    bool m_updated       = false; ///< Input was edited but not yet lost focus
+    bool m_request_focus = false;
+    bool m_has_focus     = false;
 };
 
 } // namespace Slic3r::App::Yoga

@@ -4,9 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/AbstractSettingsDialog.hpp"
-#include "Slic3r/App/Config/ObservableCategorizer.hpp"
-#include "Slic3r/App/Config/CategoryPageTransformer.hpp"
+#include "Slic3r/App/ConfigSettingsDialog.hpp"
 #include "Slic3r/Biz/CBIObservableList.hpp"
 
 namespace Slic3r::Biz {
@@ -23,7 +21,7 @@ namespace Slic3r::App {
 class Navigator;
 
 class PrintSettingsDialog :
-    public Yoga::AbstractSettingsDialog,
+    public ConfigSettingsDialog,
     public Biz::IListObserver<Biz::ConfigBoxInteractor>
 {
 public:
@@ -32,29 +30,14 @@ public:
 
     void on_reset() override;
 
+    void navigate_to_item(const Domain::ConfigItem *config_item) override;
+    void clear_navigation() override;
+
 protected:
     void close_action() override;
 
 private:
-    struct PrintSettingsTab
-    {
-        PrintSettingsTab(
-            Biz::ConfigBoxInteractor* cbi,
-            Yoga::AbstractSettingsDialog::Tab* tab,
-            Biz::ProjectInteractor& project_interactor
-        );
-
-        Biz::ConfigBoxInteractor* cbi{nullptr};
-        Yoga::AbstractSettingsDialog::Tab* tab{nullptr};
-        Biz::UnsharedPointer<ObservableCategorizer> observable_categorizer;
-        Biz::UnsharedPointer<CategoryPageTransformer> category_page_transformer;
-    };
-
-    Biz::ProjectInteractor& m_project_interactor;
-    Navigator& m_navigator;
     Biz::CBIObservableList& m_tool_cbi_list;
-
-    std::vector<std::unique_ptr<PrintSettingsTab>> m_tabs;
 };
 
 } // namespace Slic3r::App

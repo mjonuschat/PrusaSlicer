@@ -221,14 +221,14 @@ void PresetInteractor::on_selected_config_container_changed(
     fill_tools_presets(selected_preset);
     fill_materials_presets(selected_preset);
 
+    m_printer_cbi.set_config_box(&selected_preset.printer.config_box());
+    m_print_cbi.set_config_box(&selected_preset.print.config_box());
+
     // notify listeners on changes
     invoke_listeners<IPresetChangedListener>(
         [&](auto* l) { l->on_config_container_selection_changed(project_id, container_id); }
-    );
+        );
     invoke_slicing_input_changed();
-
-    m_printer_cbi.set_config_box(&selected_preset.printer.config_box());
-    m_print_cbi.set_config_box(&selected_preset.print.config_box());
 }
 
 void PresetInteractor::update_changed_selected_preset_hw_config()

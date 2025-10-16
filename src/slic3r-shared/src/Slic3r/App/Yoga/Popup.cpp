@@ -130,6 +130,8 @@ void Popup::set_root_item(RootItem* root_item)
 
 void Popup::on_about_to_show() {}
 
+void Popup::on_about_to_close() {}
+
 Popup::Callbacks& Popup::callbacks()
 {
     return m_callbacks;
@@ -204,6 +206,7 @@ void Popup::close()
     }
 
     if (m_root_item) {
+        on_about_to_close();
         m_root_item->close_popup(this);
         m_opened = false;
 
@@ -256,15 +259,14 @@ void Popup::resize(const Vec2f& size)
         const Vec2f attachee_global_pos = m_parent->get_global_pos();
         const ImRect size_rect(0, 0, size.x(), size.y());
         const ImVec2 target_pos{attachee_global_pos.x(), attachee_global_pos.y()};
-        const ImRect target_rect{target_pos, target_pos + ImVec2{m_parent->width(), m_parent->height()}};
+        const ImRect target_rect{
+            target_pos,
+            target_pos + ImVec2{m_parent->width(), m_parent->height()}
+        };
         const ImVec2 attachee_size(m_content_item->width(), m_content_item->height());
 
-        std::list<Position> available_positions{
-            Position::Left,
-            Position::Right,
-            Position::Top,
-            Position::Bottom
-        };
+        std::list<Position>
+            available_positions{Position::Left, Position::Right, Position::Top, Position::Bottom};
         std::erase(available_positions, m_preferred_position);
 
         std::pair<bool, ImRect> placed = try_to_place_popup(
@@ -322,11 +324,22 @@ void Popup::set_content_item(WindowPtr content_item)
         YGNodeInsertChild(m_popup_node, m_content_item.get()->node(), 0);
         m_content_item->set_position_type(YGPositionTypeAbsolute);
         m_content_item->set_parent_popup(this);
+
+        m_content_item->callbacks().set_dirty_requested = [this]
+        {
+            if (m_root_item) {
+                m_root_item->set_style_dirty();
+            }
+        };
     }
 }
 
 void Popup::find_root_item()
 {
+    if (m_root_item) {
+        return;
+    }
+
     Item* parent = m_parent;
     while (parent) {
         // TODO: OOF, this won't work in the destructor, RootItem needs a more

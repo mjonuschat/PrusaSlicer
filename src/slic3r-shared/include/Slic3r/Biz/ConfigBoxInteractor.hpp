@@ -47,6 +47,8 @@ public:
 
     std::weak_ptr<ConfigBoxObservableList> config_box_list();
 
+    std::weak_ptr<const ConfigBoxObservableList> config_box_list() const;
+
     std::weak_ptr<ConfigBoxOverridesObservableList> config_box_overrides_list();
 
     void set_config_box(Domain::ConfigBox* config_box);

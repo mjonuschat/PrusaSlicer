@@ -8,6 +8,10 @@
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/PageEntryButton.hpp"
 
+namespace Slic3r::Domain {
+class ConfigItem;
+} // namespace Slic3r::Domain
+
 namespace Slic3r::App::Yoga {
 class StackLayout;
 } // namespace Slic3r::App::Yoga
@@ -52,7 +56,7 @@ protected:
     void on_tab_selected(int current_index) override;
 
     Tab* append_tab(const std::string& tab);
-    void remove_tab(size_t index);
+    virtual void remove_tab(size_t index);
 
 protected:
     using TabPtr = std::unique_ptr<Tab>;

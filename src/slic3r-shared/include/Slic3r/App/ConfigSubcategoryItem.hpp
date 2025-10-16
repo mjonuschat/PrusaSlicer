@@ -43,6 +43,9 @@ public:
         Biz::ConfigBoxInteractor& cbi
     );
 
+    void navigate_to_item(const Domain::ConfigItem* config_item);
+    void clear_navigation();
+
 private:
     void on_data_update() override;
 

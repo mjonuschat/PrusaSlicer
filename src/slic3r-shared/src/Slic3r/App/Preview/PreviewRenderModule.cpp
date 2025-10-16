@@ -478,7 +478,10 @@ void PreviewRenderModule::register_commands()
                 "slider-gcode-increase-medium",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(5); },
                 nullptr,
-                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Right}
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                    Platform::KeyCode::Right
+                }
             )
         )
         .register_command(
@@ -486,7 +489,10 @@ void PreviewRenderModule::register_commands()
                 "slider-gcode-decrease-medium",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(-5); },
                 nullptr,
-                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Left}
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                    Platform::KeyCode::Left
+                }
             )
         )
         .register_command(
@@ -494,7 +500,10 @@ void PreviewRenderModule::register_commands()
                 "slider-gcode-increase-fast",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(10); },
                 nullptr,
-                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Right}
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                    Platform::KeyCode::Right
+                }
             )
         )
         .register_command(
@@ -502,7 +511,10 @@ void PreviewRenderModule::register_commands()
                 "slider-gcode-decrease-fast",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(-10); },
                 nullptr,
-                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Left}
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                    Platform::KeyCode::Left
+                }
             )
         )
         .register_command(
@@ -526,7 +538,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-increase-medium",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(5); },
                 nullptr,
-                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Up}
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                    Platform::KeyCode::Up
+                }
             )
         )
         .register_command(
@@ -534,7 +549,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-decrease-medium",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-5); },
                 nullptr,
-                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Down}
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                    Platform::KeyCode::Down
+                }
             )
         )
         .register_command(
@@ -542,7 +560,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-increase-fast",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(10); },
                 nullptr,
-                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Up}
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                    Platform::KeyCode::Up
+                }
             )
         )
         .register_command(
@@ -550,7 +571,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-decrease-fast",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-10); },
                 nullptr,
-                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Down}
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                    Platform::KeyCode::Down
+                }
             )
         )
         .register_command(
@@ -558,7 +582,10 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-jump-to_value",
                 [this]() { m_fdm_viewer.slider_layers_jump_to_value(); },
                 nullptr,
-                Platform::KeyboardShortcut{Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::G}
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift),
+                    Platform::KeyCode::G
+                }
             )
         )
         .register_command(
@@ -600,6 +627,17 @@ void PreviewRenderModule::register_commands()
                 [this]() { m_use_yoga_layout = !m_use_yoga_layout; },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Y}
+            )
+        )
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                "search",
+                [this]() { m_render_module_navigator->request_search(); },
+                nullptr,
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                    Platform::KeyCode::F
+                }
             )
         );
 }
@@ -695,7 +733,7 @@ void PreviewRenderModule::init_scene_layout()
 {
     ASSERT(m_render_module_navigator);
     // >> This code is same for Plater/PreviewRenderModule
-    m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this, *m_thumbnail_store);
+    m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this, *m_thumbnail_store, *m_render_module_navigator);
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, false));
 

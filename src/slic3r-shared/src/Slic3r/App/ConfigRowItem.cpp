@@ -25,7 +25,10 @@ ConfigRowItem::ConfigRowItem(
     m_preset_interactor(preset_interactor)
 {
     set_flex_shrink(0);
-
+    set_padding(5);
+    set_fill(IM_COL32_BLACK_TRANS);
+    set_border_width(2);
+    set_border_color(IM_COL32_BLACK_TRANS);
     Item* left_side = emplace_back<Item>();
 
     if (*m_state->def().type == typeid(std::optional<int>)) {
@@ -34,7 +37,8 @@ ConfigRowItem::ConfigRowItem(
 
         std::optional<int> value = m_state->value().get<std::optional<int>>();
         m_toggle_enable->set_checked(value.has_value());
-        m_toggle_enable->callbacks().action = [this]() {
+        m_toggle_enable->callbacks().action = [this]()
+        {
             // We are using action to make sure this callbacks comes from user
             std::optional<int> value;
             if (m_toggle_enable->checked()) {
@@ -47,7 +51,8 @@ ConfigRowItem::ConfigRowItem(
 
     m_label = left_side->emplace_back<Text>(data.def().label);
 
-    m_control = ConfigItemControl::config_item_control_factory(this, index, data, m_preset_interactor);
+    m_control =
+        ConfigItemControl::config_item_control_factory(this, index, data, m_preset_interactor);
 
     m_input = dynamic_cast<Yoga::Item*>(m_control);
     ASSERT(m_input, "ConfigItem needs to derive from Yoga::Item");
@@ -98,6 +103,20 @@ void ConfigRowItem::on_data_update()
     if (m_control) {
         m_control->set_state(*m_state);
     }
+}
+
+void ConfigRowItem::navigate_to_item(const Domain::ConfigItem* config_item)
+{
+    if (m_state == config_item) {
+        set_border_color(ImColor(250, 104, 45));
+    } else {
+        set_border_color(IM_COL32_BLACK_TRANS);
+    }
+}
+
+void ConfigRowItem::clear_navigation()
+{
+    set_border_color(IM_COL32_BLACK_TRANS);
 }
 
 } // namespace Slic3r::App

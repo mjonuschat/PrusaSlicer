@@ -23,15 +23,19 @@ class Rectangle;
 
 namespace Slic3r::App {
 
-class ConfigSubcategoryListView : public Yoga::ScrollArea
-{
-    using SubcategoryListViewFactory = Yoga::ViewFactory<
+using ConfigSubcategoryListViewFactory = Yoga::ViewFactory<
+    ConfigSubcategoryItem,
+    Domain::ConfigItem,
+    Biz::Preset::PresetInteractor&,
+    Biz::ConfigBoxInteractor&>;
+
+class ConfigSubcategoryListView :
+    public Yoga::ListView<
         ConfigSubcategoryItem,
         Domain::ConfigItem,
-        Biz::Preset::PresetInteractor&,
-        Biz::ConfigBoxInteractor&>;
-    using SubcategoryListView = Yoga::ListView<ConfigSubcategoryItem, Domain::ConfigItem, SubcategoryListViewFactory>;
-
+        ConfigSubcategoryListViewFactory,
+        Yoga::ScrollArea>
+{
 public:
     explicit ConfigSubcategoryListView(
         Domain::ConfigItemDef::Category category,
@@ -40,10 +44,12 @@ public:
     );
     ~ConfigSubcategoryListView();
 
+    void navigate_to_item(const Domain::ConfigItem* config_item);
+    void clear_navigation();
+
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
     Biz::ConfigBoxInteractor& m_cbi;
-    SubcategoryListView* m_list_view{nullptr};
     Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_category_filter;
     Yoga::Rectangle* m_background{nullptr};
 };

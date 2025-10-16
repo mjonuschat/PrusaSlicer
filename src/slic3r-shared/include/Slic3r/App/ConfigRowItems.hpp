@@ -26,9 +26,10 @@ class ConfigItemSpinBox;
 
 class ConfigRowItems : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
 {
-    using ConfigRowListViewFactory = Yoga::
-        ViewFactory<ConfigRowItem, Domain::ConfigItem, Biz::Preset::PresetInteractor&, bool>;
-    using ConfigRowListView = Yoga::ListView<ConfigRowItem, Domain::ConfigItem, ConfigRowListViewFactory>;
+    using ConfigRowListViewFactory =
+        Yoga::ViewFactory<ConfigRowItem, Domain::ConfigItem, Biz::Preset::PresetInteractor&, bool>;
+    using ConfigRowListView =
+        Yoga::ListView<ConfigRowItem, Domain::ConfigItem, ConfigRowListViewFactory>;
 
 public:
     ConfigRowItems(
@@ -37,6 +38,9 @@ public:
         Biz::Preset::PresetInteractor& preset_interactor,
         Biz::ConfigBoxInteractor& cbi
     );
+
+    void navigate_to_item(const Domain::ConfigItem* config_item);
+    void clear_navigation();
 
 private:
     void on_data_update() override;

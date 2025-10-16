@@ -22,10 +22,10 @@ class AbstractButton;
 class ButtonGroup
 {
 public:
-
     struct Callbacks
     {
         std::function<void(AbstractButton*)> action{nullptr};
+        std::function<void(AbstractButton* button, bool pressed)> pressed{nullptr};
         std::function<void(AbstractButton* current_checked, AbstractButton* last_checked)>
             checked_changed{nullptr};
     };
@@ -57,6 +57,7 @@ public:
 private:
     void on_button_action(AbstractButton* button);
     void on_button_checked(AbstractButton* button);
+    void on_button_pressed(AbstractButton* button, bool pressed);
     void check_one_button(AbstractButton* button);
 
     void set_button_callbacks(AbstractButton* button);

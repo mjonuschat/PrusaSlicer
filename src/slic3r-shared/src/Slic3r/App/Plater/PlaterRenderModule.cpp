@@ -108,6 +108,73 @@ void PlaterRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
     m_dialog_navigation.open_dialog(opened_dialog);
 }
 
+void PlaterRenderModule::navigate_to_item(const Domain::ConfigItem* config_item)
+{
+    m_sidebar_bed->logical_printer_settings_dialog()
+        .printer_advanced_settings_dialog()
+        .clear_navigation();
+    m_sidebar_print->print_settings_dialog().clear_navigation();
+    m_sidebar_bed->material_selection_dialog().material_settings_dialog().clear_navigation();
+    m_sidebar_print->print_settings_dialog().clear_navigation();
+
+    std::visit(
+        [=, this](auto&& location)
+        {
+            using T = std::decay_t<decltype(location)>;
+
+            ConfigSettingsDialog* dialog_to_open = nullptr;
+
+            if constexpr (std::is_same_v<T, Domain::FDMConfigLocation>) {
+                switch (location) {
+                case Domain::FDMConfigLocation::Printer:
+                    dialog_to_open = &m_sidebar_bed->logical_printer_settings_dialog()
+                                          .printer_advanced_settings_dialog();
+                    break;
+                case Domain::FDMConfigLocation::Print:
+                    dialog_to_open = &m_sidebar_print->print_settings_dialog();
+                    break;
+                case Domain::FDMConfigLocation::Filament: {
+                    dialog_to_open =
+                        &m_sidebar_bed->material_selection_dialog().material_settings_dialog();
+                } break;
+                case Domain::FDMConfigLocation::Tool: {
+                    dialog_to_open = &m_sidebar_print->print_settings_dialog();
+                } break;
+                default:
+                    break;
+                }
+            } else if constexpr (std::is_same_v<T, Domain::SLAConfigLocation>) {
+                switch (location) {
+                case Domain::SLAConfigLocation::Printer:
+                    dialog_to_open = &m_sidebar_bed->logical_printer_settings_dialog()
+                                          .printer_advanced_settings_dialog();
+                    break;
+                case Domain::SLAConfigLocation::Print:
+                    dialog_to_open = &m_sidebar_print->print_settings_dialog();
+                    break;
+                case Domain::SLAConfigLocation::Material: {
+                    dialog_to_open =
+                        &m_sidebar_bed->material_selection_dialog().material_settings_dialog();
+                } break;
+                default:
+                    break;
+                }
+            }
+
+            if (dialog_to_open) {
+                m_render_module_navigator->set_opened_dialog(dialog_to_open);
+                dialog_to_open->navigate_to_item(config_item);
+            }
+        },
+        config_item->location()
+    );
+}
+
+void PlaterRenderModule::open_search()
+{
+    m_top_bar->focus_search();
+}
+
 void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
     AbstractRenderModule::on_init(device, imgui_render);
@@ -142,11 +209,31 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
 }
 
+void PlaterRenderModule::register_commands()
+{
+    m_command_registry.register_command(
+        std::make_unique<Platform::FuncCommand>(
+            "search",
+            [this]() { m_render_module_navigator->request_search(); },
+            nullptr,
+            Platform::KeyboardShortcut{
+                Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                Platform::KeyCode::F
+            }
+        )
+    );
+}
+
 void PlaterRenderModule::init_scene_layout()
 {
     ASSERT(m_render_module_navigator);
     // >> This code is same for Plater/PreviewRenderModule
-    m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this, *m_thumbnail_store);
+    m_top_bar = std::make_unique<TopBar>(
+        &m_project_interactor,
+        this,
+        *m_thumbnail_store,
+        *m_render_module_navigator
+    );
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, true));
 
@@ -709,7 +796,8 @@ static void render_imgui_debug_bed(
                 {
                     Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
                     if (tag != nullptr) {
-                        Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id);
+                        Domain::ConfigContainer* cc =
+                            proj.find_config_container(tag->config_container_id);
                         DEBUG_ASSERT(cc != nullptr);
                         Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
                         if (tag->type == Scene::BedElementType::Undefined) {
@@ -718,7 +806,10 @@ static void render_imgui_debug_bed(
 
                             ImGui::TableNextRow();
                             if (active)
-                                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_TableHeaderBg));
+                                ImGui::TableSetBgColor(
+                                    ImGuiTableBgTarget_RowBg0,
+                                    ImGui::GetColorU32(ImGuiCol_TableHeaderBg)
+                                );
 
                             ImGui::TableSetColumnIndex(0);
                             ImGui::AlignTextToFramePadding();
@@ -733,7 +824,11 @@ static void render_imgui_debug_bed(
                             ImGui::TableSetColumnIndex(3);
                             bool print_volume = inst.print_volume_enabled;
                             if (ImGui::Checkbox(
-                                    fmt::format("##print_volume{}/{}", tag->config_container_id, tag->instance_id)
+                                    fmt::format(
+                                        "##print_volume{}/{}",
+                                        tag->config_container_id,
+                                        tag->instance_id
+                                    )
                                         .c_str(),
                                     &print_volume
                                 ))
@@ -745,7 +840,11 @@ static void render_imgui_debug_bed(
                             if (total_instances_count > 1) {
                                 ImGui::TableSetColumnIndex(4);
                                 if (ImGui::Button(
-                                        fmt::format("Remove##{}/{}", tag->config_container_id, tag->instance_id)
+                                        fmt::format(
+                                            "Remove##{}/{}",
+                                            tag->config_container_id,
+                                            tag->instance_id
+                                        )
                                             .c_str()
                                     ))
                                     remove_tag = {tag->config_container_id, tag->instance_id};
@@ -801,8 +900,9 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     m_scene_presenter->render_imgui(m_screen_info);
     m_gizmo_manager->render_imgui();
 #if ENABLED_DEBUG_OUTLINE
-    if (ImGui::Begin("Outline", nullptr))
+    if (ImGui::Begin("Outline", nullptr)) {
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
+    }
     ImGui::End();
 #endif // ENABLED_DEBUG_OUTLINE
 

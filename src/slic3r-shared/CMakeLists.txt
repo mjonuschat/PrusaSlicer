@@ -161,6 +161,16 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/RenderModuleHelper.cpp
         include/Slic3r/App/DialogNavigation.hpp
         src/Slic3r/App/DialogNavigation.cpp
+        include/Slic3r/App/SearchBar.hpp
+        src/Slic3r/App/SearchBar.cpp
+        include/Slic3r/App/SearchPopup.hpp
+        src/Slic3r/App/SearchPopup.cpp
+        include/Slic3r/App/SearchObservableList.hpp
+        src/Slic3r/App/SearchObservableList.cpp
+        include/Slic3r/App/SearchResultRow.hpp
+        src/Slic3r/App/SearchResultRow.cpp
+        include/Slic3r/App/ConfigSettingsDialog.hpp
+        src/Slic3r/App/ConfigSettingsDialog.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp

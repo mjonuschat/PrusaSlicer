@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/DataObserver.hpp"
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Yoga/Rectangle.hpp"
 
 namespace Slic3r::Biz::Preset {
 class PresetInteractor;
@@ -22,7 +23,7 @@ namespace Slic3r::App {
 class ConfigItemControl;
 class ConfigItemSpinBox;
 
-class ConfigRowItem : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
+class ConfigRowItem : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Rectangle
 {
 public:
     ConfigRowItem(
@@ -31,6 +32,9 @@ public:
         Biz::Preset::PresetInteractor& preset_interactor,
         bool small
     );
+
+    void navigate_to_item(const Domain::ConfigItem* config_item);
+    void clear_navigation();
 
 private:
     void on_data_update() override;

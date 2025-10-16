@@ -75,6 +75,7 @@ private:
     void find_root_item();
 
     virtual void on_about_to_show();
+    virtual void on_about_to_close();
 
 private:
     Callbacks m_callbacks;

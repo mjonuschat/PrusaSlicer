@@ -32,6 +32,11 @@ std::weak_ptr<ConfigBoxObservableList> ConfigBoxInteractor::config_box_list()
     return m_config_box_list.get();
 }
 
+std::weak_ptr<const ConfigBoxObservableList> ConfigBoxInteractor::config_box_list() const
+{
+    return m_config_box_list.get();
+}
+
 std::weak_ptr<ConfigBoxOverridesObservableList> ConfigBoxInteractor::config_box_overrides_list()
 {
     return m_config_box_overrides_list.get();

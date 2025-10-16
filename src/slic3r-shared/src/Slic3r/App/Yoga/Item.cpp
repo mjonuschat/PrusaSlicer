@@ -329,7 +329,7 @@ void Item::set_enabled(bool enabled)
 {
     if (m_enabled != enabled) {
         m_enabled = enabled;
-        enabled_updated_internal();
+        update_enabled();
     }
 }
 
@@ -472,23 +472,30 @@ std::string Item::debug_dump_tree() const
     // dump += "maxHeight: " + std::to_string(YGNodeStyleGetMaxHeight(m_node).value) + ", ";
     // }
     if (m_padding.left > 0)
-        dump += "paddingLeft: " + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeLeft).value) + ", ";
+        dump += "paddingLeft: "
+            + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeLeft).value)
+            + ", ";
     if (m_padding.right > 0)
         dump += "paddingRight: "
             + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeRight).value)
             + ", ";
     if (m_padding.left > 0)
-        dump += "paddingTop: " + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeTop).value) + ", ";
+        dump +=
+            "paddingTop: " + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeTop).value) + ", ";
     if (m_padding.bottom > 0)
         dump += "paddingBottom: "
             + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeBottom).value)
             + ", ";
     if (m_margin.left > 0)
-        dump += "marginLeft: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeLeft).value) + ", ";
+        dump +=
+            "marginLeft: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeLeft).value) + ", ";
     if (m_margin.right > 0)
-        dump += "marginRight: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeRight).value) + ", ";
+        dump += "marginRight: "
+            + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeRight).value)
+            + ", ";
     if (m_margin.top > 0)
-        dump += "marginTop: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeTop).value) + ", ";
+        dump +=
+            "marginTop: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeTop).value) + ", ";
     if (m_margin.bottom > 0)
         dump += "marginBottom: "
             + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeBottom).value)
@@ -523,6 +530,14 @@ void Item::invalidate_min_size_calculation()
     m_min_size            = Vec2f();
 }
 
+void Item::update_enabled()
+{
+    enabled_updated_internal();
+    for (ItemPtr& child : m_children) {
+        child->update_enabled();
+    }
+}
+
 ImVec2 Item::to_im(const Vec2f& val)
 {
     return ImVec2(val.x(), val.y());
@@ -546,30 +561,7 @@ bool Item::is_node_visible(YGNodeRef node)
 
 Vec2f Item::get_item_size()
 {
-    ImVec2 old_pos = ImGui::GetCursorPos();
-    ImGui::SetCursorPos({});
-
-    // render widget with 0 alpha and store thems size
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
-    render({}, {});
-    ImGui::PopStyleVar();
-
-    // for non-single items (panels) we are interesting in height of content
-    ImVec2 cur_pos_prev = ImGui::GetCursorPos();
-    ImGui::SameLine();
-    ImVec2 cur_pos = ImGui::GetCursorPos();
-
-    // if we render literally nothing, set our size to nothing, otherwise use whatever ImGui gave us
-    ImVec2 size = cur_pos_prev.x == 0 && cur_pos_prev.y == 0 ?
-        cur_pos_prev :
-        ImVec2{cur_pos.x, cur_pos_prev.y + GImGui->Style.ItemSpacing.y};
-
-    Vec2f result = Vec2f{ImMax(10.f, size.x), ImMax(10.f, size.y)};
-
-    // reset cursor pos
-    ImGui::SetCursorPos(old_pos);
-
-    return result;
+    return {};
 }
 
 void Item::push_event(std::unique_ptr<Event> event)
@@ -785,9 +777,9 @@ void Item::set_position_type(YGPositionType position_type)
 void Item::set_orientation(Orientation orientation)
 {
     if (m_orientation != orientation) {
-        m_orientation    = orientation;
-        m_flex_direction = orientation == Orientation::Horizontal ? YGFlexDirectionRow :
-                                                                    YGFlexDirectionColumn;
+        m_orientation = orientation;
+        m_flex_direction =
+            orientation == Orientation::Horizontal ? YGFlexDirectionRow : YGFlexDirectionColumn;
         YGNodeStyleSetFlexDirection(m_node, m_flex_direction);
         set_style_dirty();
     }
@@ -1016,7 +1008,14 @@ void Item::render_image(
     const ImVec4& border_col
 )
 {
-    ImGui::Image((ImTextureID) (intptr_t) texture.get(), image_size, uv0, uv1, tint_col, border_col);
+    ImGui::Image(
+        (ImTextureID) (intptr_t) texture.get(),
+        image_size,
+        uv0,
+        uv1,
+        tint_col,
+        border_col
+    );
     m_imgui_render->use_texture(texture);
 }
 

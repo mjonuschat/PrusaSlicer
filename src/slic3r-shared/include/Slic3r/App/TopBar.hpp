@@ -25,6 +25,8 @@ class ScrollArea;
 } // namespace Yoga
 
 struct ThumbnailStore;
+class SearchBar;
+class Navigator;
 
 class TopBar : public Yoga::Window, public Biz::ISelectedProjectChangedListener
 {
@@ -32,10 +34,13 @@ public:
     TopBar(
         Biz::ProjectInteractor* project_interactor,
         Platform::AbstractRenderModule* render_module,
-        ThumbnailStore& thumbnail_store
+        ThumbnailStore& thumbnail_store,
+        Navigator& navigator
     );
 
     void on_selected_project_changed(size_t index) override;
+
+    void focus_search();
 
 private:
     void add_load_project_btn(Item* parent);
@@ -61,11 +66,12 @@ private:
     Yoga::LayoutButton* m_save_btn{nullptr};
     Yoga::LayoutButton* m_show_ui_btn{nullptr};
 
-    Yoga::Rectangle* m_search{nullptr};
+    SearchBar* m_search_bar{nullptr};
 
     Biz::ProjectInteractor* m_project_interactor{nullptr};
     Platform::AbstractRenderModule* m_render_module{nullptr};
     ThumbnailStore& m_thumbnail_store;
+    Navigator& m_navigator;
 };
 
 } // namespace Slic3r::App

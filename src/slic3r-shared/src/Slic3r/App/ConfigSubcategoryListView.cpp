@@ -3,9 +3,9 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/ConfigSubcategoryListView.hpp"
+
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
-#include "Slic3r/App/Yoga/Text.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -16,6 +16,11 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     Biz::Preset::PresetInteractor& preset_interactor,
     Biz::ConfigBoxInteractor& cbi
 ) :
+    ListView<
+        ConfigSubcategoryItem,
+        Domain::ConfigItem,
+        ConfigSubcategoryListViewFactory,
+        ScrollArea>(ConfigSubcategoryListViewFactory{preset_interactor, cbi}),
     m_preset_interactor(preset_interactor),
     m_cbi(cbi),
     m_category_filter(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())
@@ -25,33 +30,53 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     set_flex_grow(1);
     set_min_size({0, 100});
 
-    m_category_filter->set_filter_fn([=](const Domain::ConfigItem& config_item) {
-        return config_item.def().category == category;
-    });
+    m_category_filter->set_filter_fn([=](const Domain::ConfigItem& config_item)
+                                     { return config_item.def().category == category; });
 
-    m_category_filter->set_group_by_fn([](const Domain::ConfigItem& config_item,
-                                          std::unordered_set<std::string>& seen_keys) {
-        if (seen_keys.contains(config_item.def().option_group)) {
-            return true;
-        } else {
-            seen_keys.insert(config_item.def().option_group);
-            return false;
+    m_category_filter->set_group_by_fn(
+        [](const Domain::ConfigItem& config_item, std::unordered_set<std::string>& seen_keys)
+        {
+            if (seen_keys.contains(config_item.def().option_group)) {
+                return true;
+            } else {
+                seen_keys.insert(config_item.def().option_group);
+                return false;
+            }
         }
-    });
+    );
 
     m_category_filter->set_source_model(m_cbi.config_box_list());
 
-    m_list_view = emplace_back<SubcategoryListView>(
-        SubcategoryListViewFactory{m_preset_interactor, m_cbi}
-    );
-    m_list_view->set_orientation(Orientation::Vertical);
-    m_list_view->set_source_list(m_category_filter.get());
-    m_list_view->set_gap(5);
+    set_source_list(m_category_filter.get());
 }
 
 ConfigSubcategoryListView::~ConfigSubcategoryListView()
 {
-    m_list_view->set_source_list(nullptr);
+    set_source_list(nullptr);
+}
+
+void ConfigSubcategoryListView::navigate_to_item(const Domain::ConfigItem* config_item)
+{
+    const std::string& option_group = config_item->def().option_group;
+    for (size_t subcategory_index = 0; subcategory_index < m_category_filter->size();
+         ++subcategory_index)
+    {
+        if (m_category_filter->at(subcategory_index).def().option_group == option_group) {
+            ConfigSubcategoryItem* found_item = item_at(subcategory_index);
+            found_item->navigate_to_item(config_item);
+            scroll_at_item(found_item);
+            break;
+        }
+    }
+}
+
+void ConfigSubcategoryListView::clear_navigation()
+{
+    for (size_t subcategory_index = 0; subcategory_index < m_category_filter->size();
+         ++subcategory_index)
+    {
+        item_at(subcategory_index)->clear_navigation();
+    }
 }
 
 } // namespace Slic3r::App

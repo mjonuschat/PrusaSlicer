@@ -12,7 +12,12 @@ using namespace Slic3r::App::Yoga;
 using namespace Slic3r::App::Render;
 
 namespace {
-void emplace_row(Item* container, ItemPtr input, const std::string& label, const std::string& symbol = {})
+void emplace_row(
+    Item* container,
+    ItemPtr input,
+    const std::string& label,
+    const std::string& symbol = {}
+)
 {
     ASSERT(container);
     ASSERT(input);
@@ -140,18 +145,20 @@ AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::strin
 
     // Create the ViewFactory explicitly:
     auto factory = Yoga::ViewFactory<PageEntryButton, PageEntry, PageEntryButton::FnIndexClicked>(
-        [this](size_t index) {
-        m_current_tab->pages_stack_layout->set_current_index(index);
-        for (size_t button_index = 0; button_index < m_current_tab->page_list_view->item_count();
-             ++button_index)
+        [this](size_t index)
         {
-            PageEntryButton* button = dynamic_cast<PageEntryButton*>(
-                m_current_tab->page_list_view->get_item(button_index)
-            );
-            ASSERT(button);
-            button->set_checked(index == button_index);
+            m_current_tab->pages_stack_layout->set_current_index(index);
+            for (size_t button_index = 0;
+                 button_index < m_current_tab->page_list_view->item_count();
+                 ++button_index)
+            {
+                PageEntryButton* button = dynamic_cast<PageEntryButton*>(
+                    m_current_tab->page_list_view->get_item(button_index)
+                );
+                ASSERT(button);
+                button->set_checked(index == button_index);
+            }
         }
-    }
     );
     PageListView* page_list_view = tab_item->emplace_back<PageListView>(std::move(factory));
     page_list_view->set_orientation(Orientation::Vertical);

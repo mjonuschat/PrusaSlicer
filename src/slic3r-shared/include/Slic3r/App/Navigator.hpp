@@ -56,6 +56,10 @@ public:
 
     void set_opened_dialog(Yoga::Dialog* opened_dialog);
 
+    void navigate_to_item(const Domain::ConfigItem* config_item);
+
+    void request_search();
+
 private:
     void set_render_module_type(Render::ModuleType type);
 
