@@ -124,7 +124,7 @@ std::vector<Step> steps(const std::vector<std::vector<Step>>& steps)
         result.insert(result.end(), _steps.begin(), _steps.end());
     }
     std::ranges::sort(result);
-    std::ranges::unique(result);
+    result.erase(std::unique(result.begin(), result.end()), result.end());
     return result;
 }
 
