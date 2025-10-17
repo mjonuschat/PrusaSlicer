@@ -219,7 +219,10 @@ void CutDialog::init_cut_plane_input_panel()
     m_add_connectors_btn->set_background_color(buttons_color);
     m_add_connectors_btn->callbacks().action = [this]()
     {
-        m_connectors_editing = true;
+        connectors_editing = true;
+        if (callbacks().connectors_editing_changed) {
+            callbacks().connectors_editing_changed(connectors_editing);
+        }
         update_panels_visibility();
     };
 
@@ -438,8 +441,8 @@ void CutDialog::update_state()
 
 void CutDialog::update_panels_visibility()
 {
-    m_connectors_input_panel->set_visible(m_connectors_editing);
-    m_cut_plane_input_panel->set_visible(!m_connectors_editing);
+    m_connectors_input_panel->set_visible(connectors_editing);
+    m_cut_plane_input_panel->set_visible(!connectors_editing);
     m_groove_input_panel->set_visible(!is_planar_cut_mode);
 }
 
@@ -550,7 +553,10 @@ void CutDialog::init_connectors_input_panel()
     confirm_connectors_btn->set_background_color(buttons_color);
     confirm_connectors_btn->callbacks().action = [this]()
     {
-        m_connectors_editing = false;
+        connectors_editing = false;
+        if (callbacks().connectors_editing_changed) {
+            callbacks().connectors_editing_changed(connectors_editing);
+        }
         update_panels_visibility();
     };
 
@@ -558,7 +564,10 @@ void CutDialog::init_connectors_input_panel()
     cancel_btn->set_background_color(buttons_color);
     cancel_btn->callbacks().action = [this]()
     {
-        m_connectors_editing = false;
+        connectors_editing = false;
+        if (callbacks().connectors_editing_changed) {
+            callbacks().connectors_editing_changed(connectors_editing);
+        }
         update_panels_visibility();
         if (callbacks().reset_connectors) {
             callbacks().reset_connectors();
@@ -651,12 +660,9 @@ void CutDialog::set_build_size(Domain::Vec3d size)
     m_build_volume->set_text(
         fmt::format("{0:.5g} {3}, {1:.5g} {3}, {2:.5g} {3}", size.x(), size.y(), size.z(), unit_str)
     );
-
-    const double def_cut_pos = 0.5 * size.z();
-    m_cut_position->set_default(def_cut_pos);
 }
 
-void Plater::CutDialog::set_cut_z_position(double cut_z_position)
+void CutDialog::set_cut_z_position(double cut_z_position)
 {
     m_cut_position->set_default(cut_z_position);
 }

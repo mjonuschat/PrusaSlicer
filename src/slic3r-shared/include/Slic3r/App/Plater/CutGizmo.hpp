@@ -92,15 +92,17 @@ private:
 
     void build_cut_plane_node(Scene::NodeBuilder& builder);
     void build_handles_nodes(Scene::NodeBuilder& builder);
-    void build_clipping_plane_node(Scene::NodeBuilder& builder);
+
+    void rotate_vec3d_around_plane_center(Vec3d& vec);
 
     void update_cut_plane_mesh();
     void update_cut_plane_trafo();
 
     void update_handles_nodes(Handle hovered_handle = Handle());
-
     void update_handles_material_and_enability(Handle hovered_handle);
     void update_handles_local_fransform(Handle hovered_handle);
+    void update_clipping_nodes_enability(bool connectors_editing);
+    void update_clipped_mesh_material();
 
     void build_cut_part_mesh(
         CutPartNodeTag::Type type,
@@ -116,6 +118,7 @@ private:
     void set_enabled_scene_nodes(bool enabled);
 
     Domain::Transform3d get_cut_matrix();
+    void flip_cut_plane();
 
     bool can_perform_cut() const;
     bool has_valid_groove() const;
@@ -127,7 +130,6 @@ private:
     void process_contours();
 
     void apply_connectors_in_model(Domain::ModelObject* mo, int& dowels_count);
-
     void apply_cut_connectors(Domain::ModelObject* mo, const std::string& connector_name);
 
     bool is_planar_mode() const;
@@ -149,11 +151,14 @@ private:
     ModelTriangleMeshManager m_model_triangle_mesh_manager;
     Scene::Node* m_main_node{nullptr};
     Scene::Node* m_handles_node{nullptr};
-    Scene::Node* m_graded_circle_node{nullptr};
 
     Domain::Vec3d m_plane_center;
     Domain::Vec3d m_old_center;
     Domain::Vec3d m_cut_normal;
+
+    // workaround for using of the clipping plane normal
+    Domain::Vec3d m_clp_normal{ Vec3d::Ones() };
+
 
     // transformed boundign box of selected inxtance
     Domain::BoundingBox3d m_transformed_bbox;
@@ -165,6 +170,8 @@ private:
     // used by dragging
     Handle m_hovered_handle;
     bool m_is_plane_hovered{false};
+
+    bool m_can_flip_plane{ false };// indicates if plane was just clicked without dragging
 
     Domain::Transform3d m_rotation_m{Domain::Transform3d::Identity()};
     double m_snap_step{1.0};

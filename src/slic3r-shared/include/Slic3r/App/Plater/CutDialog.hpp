@@ -84,6 +84,8 @@ public:
         std::function<void(double value)> groove_width_tolerance_changed{nullptr};
         std::function<void(double value)> flap_angle_changed{nullptr};
         std::function<void(double value)> groove_angle_changed{nullptr};
+
+        std::function<void(bool connectors_editing)> connectors_editing_changed{nullptr};
     };
 
     Callbacks& callbacks();
@@ -105,6 +107,7 @@ public:
     bool place_on_cut_lower{ false };
     bool flip_upper{ false };
     bool flip_lower{ false };
+    bool connectors_editing{false};
 
 private:
     void init_connectors_input_panel();
@@ -173,7 +176,6 @@ private:
     std::vector<Yoga::Text*> m_units;
 
     bool m_imperial_units{false};
-    bool m_connectors_editing{false};
 
     Domain::CutConnectorType m_current_connetor_type{Domain::CutConnectorType::Plug};
     Domain::CutConnectorStyle m_current_connetor_style{Domain::CutConnectorStyle::Prism};
