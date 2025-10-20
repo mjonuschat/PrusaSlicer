@@ -196,10 +196,6 @@ void UserAccountInteractor::on_user_id(const std::string& body)
         [was_logged, public_username](auto* listener)
         { listener->on_user_account_id_success(was_logged, public_username); }
     );
-
-    if (!was_logged && on_logged_in_callback) {
-        on_logged_in_callback();
-    }
 }
 
 } // namespace Slic3r::Biz::UserAccount
