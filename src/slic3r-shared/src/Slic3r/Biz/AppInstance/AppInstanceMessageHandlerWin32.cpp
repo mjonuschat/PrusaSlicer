@@ -3,6 +3,7 @@
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Version.hpp"
 
 #include "fmt/format.h"
 #include <boost/nowide/convert.hpp>
@@ -83,7 +84,7 @@ BOOL AppInstanceMessageSenderWin32::enum_windows_process_multicast(_In_ HWND hwn
     std::wstring classNameString(className);
     std::wstring wndTextString(wndText);
 
-    if (wndTextString.find(L"PrusaSlicer") != std::wstring::npos && classNameString == L"wxWindowNR")
+    if (wndTextString.find(boost::nowide::widen(Slic3r::BUILD_ID).c_str()) != std::wstring::npos && classNameString == L"wxWindowNR")
     {
         // Get the instance hash properties.
         uint64_t other_instance_hash_minor = PtrToUint(GetProp(hwnd, L"Instance_Hash_Minor"));
@@ -145,7 +146,7 @@ BOOL AppInstanceMessageSenderWin32::enum_windows_process_broadcast(_In_ HWND hwn
     std::wstring classNameString(className);
     std::wstring wndTextString(wndText);
 
-    if (wndTextString.find(L"PrusaSlicer") != std::wstring::npos && classNameString == L"wxWindowNR")
+    if (wndTextString.find(boost::nowide::widen(Slic3r::BUILD_ID).c_str()) != std::wstring::npos && classNameString == L"wxWindowNR")
     {
         // Get the instance hash properties.
         uint64_t other_instance_hash_minor = PtrToUint(GetProp(hwnd, L"Instance_Hash_Minor"));
