@@ -905,7 +905,7 @@ void MeasureGizmo::update_scene_selection_cache_measuring_geometry()
                             * project
                                   .find_volume_by_id(vol_item.ref.object_id, vol_item.ref.volume_id)
                                   ->get_matrix();
-                        vol_item.face_offset             = int(composite_mesh.facets_count());
+                        vol_item.face_offset = int(composite_mesh.its.indices.size());
                         Domain::TriangleMesh volume_mesh = *vol_item.mesh;
                         volume_mesh.transform(vol_item.world_trafo);
                         composite_mesh.merge(volume_mesh);
