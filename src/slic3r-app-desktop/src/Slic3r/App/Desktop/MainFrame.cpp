@@ -186,7 +186,6 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
                     &project_interactor
                 );
                 bool was_maximized = IsMaximized();
-                bool was_iconsized = IsIconized();
                 this->Show(true);
                 this->Restore();
                 this->Raise();
