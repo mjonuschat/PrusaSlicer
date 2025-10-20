@@ -443,7 +443,7 @@ void process_metadata_attr(LoadedModelFile &model, const Attributes &attributes,
     }
 }
 
-Domain::Transform3d parse_transformation(const XML_Char *data) {
+Domain::Transform3d parse_transformation(const XML_Char *data, Read3mfIssues& collected_issues, Read3mfIssueType issue_type) {
     // check: https://3mf.io/3d-manufacturing-format/ 
     // or https://github.com/3MFConsortium/spec_core/blob/master/3MF%20Core%20Specification.md 
     // to see how matrices are stored inside 3mf according to specifications
@@ -453,9 +453,11 @@ Domain::Transform3d parse_transformation(const XML_Char *data) {
         return Domain::Transform3d::Identity();
 
     std::vector<std::string> mat_elements_str = split_by_space(data);
-    if (mat_elements_str.size() != 12)
+    if (mat_elements_str.size() != 12) {
+        collected_issues.add_issue(Read3mfIssue(issue_type, std::string(data)));
         // invalid data, return identity matrix
         return Domain::Transform3d::Identity();
+    }
 
     auto ret = Domain::Transform3d::Identity();
     unsigned int i = 0;
@@ -463,8 +465,13 @@ Domain::Transform3d parse_transformation(const XML_Char *data) {
     // we need to transpose them
     for (unsigned int c = 0; c < 4; ++c) {
         for (unsigned int r = 0; r < 3; ++r) {
-            ret(r, c) = ::atof(mat_elements_str[i++].c_str());
-            // TODO: check fast_float::from_chars<double>()
+            const std::string& element_str = mat_elements_str[i++];
+            fast_float::from_chars_result res = 
+                fast_float::from_chars<double>(&*element_str.cbegin(), &*element_str.cend(), ret(r, c));
+            if (res.ec != std::errc()) {
+                collected_issues.add_issue(Read3mfIssue(issue_type, std::to_string(static_cast<int>(res.ec))));
+                return Domain::Transform3d::Identity();
+            }
         }
     }
     return ret;
@@ -618,7 +625,7 @@ void process_component_attr(LoadedModelFile &model, const Attributes &attributes
                 collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_component_unknown_objectid, 
                     std::to_string(parent_object_id), std::to_string(component.object_id)));            
         } else if (::strcmp(attr.name, TRANSFORM_ATTR) == 0) {
-            component.transform = parse_transformation(attr.value);
+            component.transform = parse_transformation(attr.value, collected_issues, Read3mfIssueType::model_component_bad_transformation_format);
         } else if (!model.model->prod_ns.empty()) {
             if (::strcmp(attr.name, (model.model->prod_ns + ':' + PATH_ATTR).c_str()) == 0) {
                 component.path = std::string(attr.value);
@@ -653,7 +660,7 @@ void process_item_attr(LoadedModelFile &model, const Attributes &attributes, Rea
             else if (!exists(item.object_id, model.model->resource.objects))
                 collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_item_unknown_objectid));            
         } else if (::strcmp(attr.name, TRANSFORM_ATTR) == 0) {
-            item.transform = parse_transformation(attr.value);
+            item.transform = parse_transformation(attr.value, collected_issues, Read3mfIssueType::model_item_bad_transformation_format);
         } else if (::strcmp(attr.name, PARTNUMBER_ATTR) == 0) {
             item.part_number = std::string(attr.value);
         } else if (!model.model->prod_ns.empty()) {

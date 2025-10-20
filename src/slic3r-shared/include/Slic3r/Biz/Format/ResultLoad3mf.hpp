@@ -77,6 +77,7 @@ enum class Read3mfIssueType: unsigned short {
     model_component_bad_objectid,
     model_component_has_parent_objectid, // component reference on parent Object (self recursion)
     model_component_require_uuid_attr,
+    model_component_bad_transformation_format, // transformation matrix has issue
 
     model_unknown_language,
     model_unknown_attr,
@@ -102,6 +103,7 @@ enum class Read3mfIssueType: unsigned short {
     model_item_require_uuid_attr,
     model_item_unknown_objectid,
     model_item_unknown_attr,
+    model_item_bad_transformation_format, // transformation matrix has issue
 
     model_object_unknown_tag,
     model_object_require_id_attr,
