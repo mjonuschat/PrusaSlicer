@@ -665,6 +665,11 @@ Loaded3MF load_3mf(const std::string& filepath_3mf)
     } else {
         // When not PS 3mf convert model_3mf into model by general rules
         model_map = move_model(loaded_model, model, collected_issues);
+
+        // Set the source file path for each loaded model object.
+        for (ModelObject* model_object : model.objects) {
+            model_object->input_file = filepath_3mf;
+        }
     }
 
     PrusaFilesResult prusa_files_result = load_prusa_files(archive, model_map, model, collected_issues);
