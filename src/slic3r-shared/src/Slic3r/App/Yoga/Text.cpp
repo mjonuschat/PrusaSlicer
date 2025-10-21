@@ -8,6 +8,7 @@
 
 #include <imgui_internal.h>
 
+#include <map>
 #include <cmath>
 
 namespace Slic3r::App::Yoga {
@@ -78,7 +79,10 @@ public:
 
     void set_font_type(Render::ImguiFontType font_type)
     {
-        m_font_type = font_type;
+        if (m_font_type != font_type) {
+            m_font_type = font_type;
+            invalidate_size();
+        }
     }
 
     const std::string& source_text() const
@@ -114,66 +118,65 @@ protected:
 
     Vec2f get_item_size() override
     {
+        Vec2f result;
+        ImGui::PushFont(m_imgui_render->font(m_font_type));
         if (m_wrap_mode == Text::WrapMode::Wrap) {
             m_rendered_text = m_source_text;
 
             // While wrapping enforce ONLY Y axis, let as assume the width that is set by parent or
             // external sources
             if (std::isnan(width())) {
-                return {0, ImGui::CalcTextSize(m_source_text.c_str()).y};
+                result = Vec2f{0, ImGui::CalcTextSize(m_source_text.c_str()).y};
             } else {
                 const float target_width = available_width();
-                if (std::isnan(target_width) || target_width <= 0) {
-                    return {};
+                if (!std::isnan(target_width) && target_width > 0) {
+                    result = Vec2f{
+                        target_width,
+                        from_im(
+                            ImGui::CalcTextSize(m_source_text.c_str(), nullptr, false, target_width)
+                        )
+                            .y()
+                    };
                 }
-
-                return {
-                    target_width,
-                    from_im(ImGui::CalcTextSize(m_source_text.c_str(), nullptr, false, target_width))
-                        .y()
-                };
             }
         } else if (m_wrap_mode == Text::WrapMode::WrapElide) {
             ImVec2 target_size{available_width(), available_height()};
-            if (std::isnan(target_size.x)
-                || std::isnan(target_size.y)
-                || target_size.x <= 0
-                || target_size.y <= 0)
+            if (!std::isnan(target_size.x)
+                && !std::isnan(target_size.y)
+                && target_size.x > 0
+                && target_size.y > 0)
             {
-                return {};
-            }
-            target_size.y = std::max(GImGui->FontSize, target_size.y);
+                target_size.y = std::max(GImGui->FontSize, target_size.y);
 
-            std::string_view elided_text = m_source_text;
-            m_rendered_text              = elided_text;
-            ImVec2 current_size          = ImGui::CalcTextSize(
-                elided_text.data(),
-                elided_text.data() + elided_text.size(),
-                false,
-                target_size.x
-            );
-            while (current_size.y > target_size.y && !elided_text.empty()) {
-                if (std::isspace(elided_text.back())) {
-                    while (std::isspace(elided_text.back())) {
-                        elided_text.remove_suffix(1);
-                    }
-                } else {
-                    elided_text.remove_suffix(1);
-                }
-                m_rendered_text = std::string(elided_text) + "...";
-                current_size    = ImGui::CalcTextSize(
-                    m_rendered_text.c_str(),
-                    nullptr,
+                std::string_view elided_text = m_source_text;
+                m_rendered_text              = elided_text;
+                ImVec2 current_size          = ImGui::CalcTextSize(
+                    elided_text.data(),
+                    elided_text.data() + elided_text.size(),
                     false,
                     target_size.x
                 );
-            }
+                while (current_size.y > target_size.y && !elided_text.empty()) {
+                    if (std::isspace(elided_text.back())) {
+                        while (std::isspace(elided_text.back())) {
+                            elided_text.remove_suffix(1);
+                        }
+                    } else {
+                        elided_text.remove_suffix(1);
+                    }
+                    m_rendered_text = std::string(elided_text) + "...";
+                    current_size =
+                        ImGui::CalcTextSize(m_rendered_text.c_str(), nullptr, false, target_size.x);
+                }
 
-            return from_im(current_size);
+                result = from_im(current_size);
+            }
         } else {
             m_rendered_text = m_source_text;
-            return from_im(ImGui::CalcTextSize(m_source_text.c_str()));
+            result          = from_im(ImGui::CalcTextSize(m_source_text.c_str()));
         }
+        ImGui::PopFont();
+        return result;
     }
 
     void on_resized() override
