@@ -31,6 +31,9 @@ std::vector<Domain::Vec2d> triangulate_expolygons_2d(
 std::vector<Domain::Vec2f> triangulate_expolygon_2f(
     const Domain::ExPolygon& poly, bool flip = NORMALS_UP
 );
+std::vector<Domain::Vec2f> triangulate_expolygons_2f(
+    const Domain::ExPolygons& polys, bool flip = NORMALS_UP
+);
 
 indexed_triangle_set wall_strip(const Domain::Polygon& poly, double lower_z_mm, double upper_z_mm);
 

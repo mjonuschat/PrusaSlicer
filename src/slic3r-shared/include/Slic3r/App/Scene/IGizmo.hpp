@@ -12,6 +12,8 @@ class GizmoDialog;
 
 namespace Slic3r::App::Scene {
 
+class Clipper;
+
 /**
  * @brief State of event procession for specific IGizmo.
  */
@@ -98,6 +100,13 @@ public:
      * @{
      */
     virtual void render_scene(Render::CommandBuffer& cmd_buffer) {}
+    /**@}*/
+
+    /**
+     * @name Clipper providing
+     * @{
+     */
+    virtual void provide_clipper(Clipper& clipper) {}
     /**@}*/
 };
 

@@ -511,6 +511,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ObjectSettingsObservableList.hpp
         src/Slic3r/Biz/ObjectSettingsObservableList.cpp
         include/Slic3r/Biz/OverrideItem.hpp
+        src/Slic3r/Biz/Utils/MeshClipper.cpp
+        include/Slic3r/Biz/Utils/MeshClipper.hpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp

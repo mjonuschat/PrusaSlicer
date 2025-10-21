@@ -23,6 +23,11 @@
 
 namespace Slic3r::App::Scene {
 
+class Clipper {
+public:
+    Clipper() {};
+};
+
 class IGizmoActiveToolListener {
 public:
     virtual ~IGizmoActiveToolListener() = default;
@@ -50,6 +55,7 @@ public:
         auto& ptr = m_base_gizmos.back();
         m_mouse_drag_detector->add_listener(ptr.get());
         ptr->register_commands(m_command_registry);
+        ptr->provide_clipper(m_clipper);
         return *static_cast<G*>(ptr.get());
     }
 
@@ -61,6 +67,7 @@ public:
         m_command_registry.set_registering_tool_gizmo(*ptr);
         m_mouse_drag_detector->add_listener(ptr.get());
         ptr->register_commands(m_command_registry);
+        ptr->provide_clipper(m_clipper);
         return *static_cast<G*>(ptr.get());
     }
 
@@ -125,6 +132,8 @@ private:
     GizmoList m_base_gizmos;
     ToolGizmoList m_tool_gizmos;
     GizmoCommandRegistry m_command_registry;
+
+    Clipper m_clipper;
 
 #if DEBUG_GIZMO_MANAGER
     constexpr static size_t NUM_DEBUG_ACTIVATION_LAST_STEPS = 63;
