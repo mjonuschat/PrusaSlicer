@@ -12,21 +12,38 @@
 
 namespace Slic3r::App {
 
-enum class ActionType
+struct ActionParams
 {
-    HelpFFF,
-    HelpSLA,
-    ModelInfo,
-    ConfigurationSave,
-    QueryPrinterModels,
-    QueryPrintToolFilamentProfiles,
-    Slice,
-    ExportSTL,
-    ExportOBJ,
-    Export3MF,
-    ExportGCode,
-    ExportSLA,
-    GCodeViewer
+    bool help_fff                           = false;
+    bool help_sla                           = false;
+    bool model_info                         = false;
+    bool configuration_save                 = false;
+    bool query_printer_models               = false;
+    bool query_print_tool_filament_profiles = false;
+    bool slice                              = false;
+    bool export_stl                         = false;
+    bool export_obj                         = false;
+    bool export_3mf                         = false;
+    bool export_gcode                       = false;
+    bool export_sla                         = false;
+    bool gcode_viewer                       = false;
+
+    bool has_any_action() const
+    {
+        return help_fff
+            || help_sla
+            || model_info
+            || configuration_save
+            || query_printer_models
+            || query_print_tool_filament_profiles
+            || slice
+            || export_stl
+            || export_obj
+            || export_3mf
+            || export_gcode
+            || export_sla
+            || gcode_viewer;
+    }
 };
 
 struct InputParams
@@ -86,8 +103,7 @@ public:
     InitParams() = default;
     InitParams(int argc, char** argv);
 
-    std::optional<ActionType> action;
-
+    ActionParams action;
     InputParams input;
     TransformParams transform;
     MiscParams misc;

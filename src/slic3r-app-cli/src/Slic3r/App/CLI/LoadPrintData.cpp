@@ -255,7 +255,7 @@ static bool load_print_config(
 }
 
 static bool process_input_files(
-    std::vector<Domain::Model>& models,
+    std::vector<Domain::Project>& projects,
     Domain::ConfigPack& config_pack,
     std::optional<Domain::PrinterTechnology>& printer_technology,
     InitParams& init_params
@@ -271,7 +271,7 @@ static bool process_input_files(
             return false;
         }
 
-        Domain::Model model;
+        Domain::Project project;
         try {
             if (has_full_config_from_profiles(init_params)
                 || !FileLoadingLogic::is_project_file(file))
@@ -283,7 +283,7 @@ static bool process_input_files(
                 {
                     boost::nowide::cerr << "Error: " + model_data.error() << std::endl;
                 } else {
-                    model = std::move(model_data.value());
+                    project.model() = std::move(model_data.value());
                 }
             } else {
                 assert(FileLoadingLogic::is_project_file(file));
@@ -328,7 +328,7 @@ static bool process_input_files(
                     return false;
                 }
 
-                model = std::move(loaded_project.model());
+                project = std::move(loaded_project);
                 // Config is applied with config_pack loaded before.
                 merge_config_pack(config_pack, loaded_config);
             }
@@ -346,12 +346,12 @@ static bool process_input_files(
             return false;
         }
 
-        if (model.objects.empty()) {
+        if (project.model().objects.empty()) {
             boost::nowide::cerr << "Error: file is empty: " << file << std::endl;
             continue;
         }
 
-        models.push_back(model);
+        projects.emplace_back(std::move(project));
     }
 
     return true;
@@ -364,9 +364,8 @@ static bool finalize_print_config(
 )
 {
     if (!printer_technology.has_value()) {
-        printer_technology = init_params.action == ActionType::ExportSLA ?
-            Domain::PrinterTechnology::SLA :
-            Domain::PrinterTechnology::FFF;
+        printer_technology = init_params.action.export_sla ? Domain::PrinterTechnology::SLA :
+                                                             Domain::PrinterTechnology::FFF;
     }
 
     if (std::holds_alternative<Domain::ConfigPackFDM>(config_pack)
@@ -461,7 +460,7 @@ static bool finalize_print_config(
 }
 
 bool load_print_data(
-    std::vector<Domain::Model>& models,
+    std::vector<Domain::Project>& projects,
     Domain::ConfigPack& config_pack,
     std::optional<Domain::PrinterTechnology>& printer_technology,
     InitParams& init_params
@@ -471,7 +470,7 @@ bool load_print_data(
         return false;
     }
 
-    if (!process_input_files(models, config_pack, printer_technology, init_params)) {
+    if (!process_input_files(projects, config_pack, printer_technology, init_params)) {
         return false;
     }
 

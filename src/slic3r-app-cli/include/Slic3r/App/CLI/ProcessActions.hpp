@@ -6,7 +6,7 @@
 namespace Slic3r::Domain {
 struct ConfigPackFDM;
 struct ConfigPackSLA;
-class Model;
+class Project;
 
 using ConfigPack = std::variant<ConfigPackFDM, ConfigPackSLA>;
 } // namespace Slic3r::Domain
@@ -22,7 +22,7 @@ bool has_full_config_from_profiles(const InitParams& init_params);
 bool process_actions(
     const InitParams& init_params,
     const Domain::ConfigPack& config_pack,
-    std::vector<Domain::Model>& models
+    std::vector<Domain::Project>& projects
 );
 
 bool process_profiles_sharing(const InitParams& init_params);

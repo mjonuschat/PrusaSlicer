@@ -10,7 +10,7 @@
 namespace Slic3r::Domain {
 struct ConfigPackFDM;
 struct ConfigPackSLA;
-class Model;
+class Project;
 
 using ConfigPack = std::variant<ConfigPackFDM, ConfigPackSLA>;
 } // namespace Slic3r::Domain
@@ -26,7 +26,7 @@ std::optional<Domain::PrinterTechnology> get_printer_technology(const InitParams
 Domain::PrinterTechnology get_printer_technology(const Domain::ConfigPack& config_pack);
 
 bool load_print_data(
-    std::vector<Domain::Model>& models,
+    std::vector<Domain::Project>& projects,
     Domain::ConfigPack& config_pack,
     std::optional<Domain::PrinterTechnology>& printer_technology,
     InitParams& init_params

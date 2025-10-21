@@ -14,6 +14,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
+#include "Slic3r/Biz/Utils/CopyFile.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Domain/FullConfigFDM.hpp"
 #include "Slic3r/Domain/FullConfigSLA.hpp"
@@ -50,6 +51,8 @@ namespace fs = boost::filesystem;
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 
+using Slic3r::Domain::Model;
+using Slic3r::Domain::Project;
 using Slic3r::Domain::Vec2crd;
 using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Vec2ds;
@@ -112,9 +115,16 @@ struct ExportFinishedListener : Biz::PrintHost::IPrintHostListener
     void on_print_host_info(size_t id, const std::string& tag, const std::string& msg) override {}
 };
 
-static std::string
-output_filename(const Domain::Model& model, const Domain::ConfigPack& config_pack)
+static std::string output_filename_and_path(
+    const Project& project,
+    const Domain::ConfigPack& config_pack,
+    const std::optional<std::string>& output_path
+)
 {
+    const boost::filesystem::path model_proposed_filename_and_path{
+        Algorithms::Model::propose_export_file_name_and_path(project.model())
+    };
+
     const std::string extension = [&config_pack]() -> std::string
     {
         if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)) {
@@ -130,18 +140,53 @@ output_filename(const Domain::Model& model, const Domain::ConfigPack& config_pac
         }
     }();
 
-    return boost::filesystem::path(Algorithms::Model::propose_export_file_name_and_path(model))
-        .replace_extension(extension)
-        .string();
+    const boost::filesystem::path output_dir =
+        [&output_path, &model_proposed_filename_and_path]() -> boost::filesystem::path
+    {
+        if (output_path.has_value()) {
+            const boost::filesystem::path path(output_path.value());
+            if (boost::filesystem::is_directory(path)) {
+                return path;
+            } else if (!path.parent_path().empty()) {
+                return path.parent_path();
+            }
+        }
+
+        if (!model_proposed_filename_and_path.parent_path().empty()) {
+            return model_proposed_filename_and_path.parent_path();
+        }
+
+        return fs::current_path();
+    }();
+
+    const std::string filename =
+        [&project, &output_path, &model_proposed_filename_and_path]() -> std::string
+    {
+        if (output_path.has_value()) {
+            const boost::filesystem::path path(output_path.value());
+            if (!boost::filesystem::is_directory(path) && !path.filename().empty()) {
+                return path.filename().string();
+            }
+        }
+
+        if (!project.file_name().empty()) {
+            return project.file_name();
+        }
+
+        return model_proposed_filename_and_path.filename().string();
+    }();
+
+    return (output_dir / filename).replace_extension(extension).string();
 }
 
 std::optional<std::string> slice_single_model_project(
-    Domain::Model&& model,
+    Domain::Project&& project_to_slice,
     ProjectInteractor& project_interactor,
     const Domain::ConfigPack& config_pack,
     const std::optional<std::string>& output_path
 )
 {
+    Domain::Model& model = project_to_slice.model();
     // Remove all projects before slicing another one.
     const Domain::Workbench& workbench = project_interactor.workbench();
     for (const Domain::SelectionId selection_id : workbench.projects() | std::views::keys) {
@@ -156,6 +201,7 @@ std::optional<std::string> slice_single_model_project(
 
     Domain::Project& project = project_interactor.selected_project();
     project.model()          = std::move(model);
+    project.set_file_name(project_to_slice.file_name());
 
     // Apply the provided config_pack.
     Domain::ConfigContainer& config_container       = *project.config_containers().front();
@@ -190,23 +236,7 @@ std::optional<std::string> slice_single_model_project(
         return future_slicing_status_update.get().second;
     }();
 
-    const std::string dest_path =
-        [&output_path, &project_interactor, &project_id, &project, &config_pack]() -> std::string
-    {
-        std::string dest_path = output_path.has_value() ?
-            output_path.value() :
-            project_interactor.get_project_name(project_id);
-        if (dest_path.empty()) {
-            dest_path = output_filename(project.model(), config_pack);
-        }
-
-        const std::string parent_path = boost::filesystem::path(dest_path).parent_path().string();
-        if (parent_path.empty()) {
-            return (fs::current_path() / dest_path).string();
-        }
-
-        return dest_path;
-    }();
+    const std::string dest_path = output_filename_and_path(project, config_pack, output_path);
 
     if (slicing_status_update.code == Biz::Slicing::StatusCode::Finished) {
         ExportFinishedListener export_finished_listener;
@@ -241,15 +271,35 @@ std::optional<std::string> slice_single_model_project(
         return oss.str();
     }
 
-    boost::nowide::cout << "Slicing result exported to " << dest_path << std::endl;
+    const std::string dest_path_final = [&output_path, &dest_path]() -> std::string
+    {
+        if (output_path.has_value()) {
+            const boost::filesystem::path path(output_path.value());
+            if (!boost::filesystem::is_directory(path)) {
+                return path.string();
+            }
+        }
+
+        return dest_path;
+    }();
+
+    if (dest_path != dest_path_final) {
+        if (Utils::rename_file(dest_path, dest_path_final)) {
+            return "Renaming file " + dest_path + " to " + dest_path_final + " failed";
+        }
+
+        boost::nowide::cout << "Slicing result exported to " << dest_path_final << std::endl;
+    } else {
+        boost::nowide::cout << "Slicing result exported to " << dest_path << std::endl;
+    }
 
     return std::nullopt;
 }
 
 static bool has_profile_sharing_action(const InitParams& init_params)
 {
-    return init_params.action == ActionType::QueryPrinterModels
-        || init_params.action == ActionType::QueryPrintToolFilamentProfiles;
+    return init_params.action.query_printer_models
+        || init_params.action.query_print_tool_filament_profiles;
 }
 
 bool has_full_config_from_profiles(const InitParams& init_params)
@@ -270,9 +320,9 @@ bool process_profiles_sharing(const InitParams& init_params)
     }
 
     std::string ret;
-    if (init_params.action == ActionType::QueryPrinterModels) {
+    if (init_params.action.query_printer_models) {
         ret = get_json_printer_models(get_printer_technology(init_params));
-    } else if (init_params.action == ActionType::QueryPrintToolFilamentProfiles) {
+    } else if (init_params.action.query_print_tool_filament_profiles) {
         if (init_params.input.printer_profile_preset.has_value()) {
             const std::string& printer_profile = init_params.input.printer_profile_preset.value();
             ret = get_json_print_tool_filament_profiles(printer_profile);
@@ -340,7 +390,7 @@ enum ExportFormat : int
 } // namespace IO
 
 static std::string output_filepath(
-    const Domain::Model& model,
+    const Project& project,
     IO::ExportFormat format,
     const std::string& cmdline_param
 )
@@ -361,8 +411,14 @@ static std::string output_filepath(
         break;
     };
 
-    auto proposed_path =
-        boost::filesystem::path(Algorithms::Model::propose_export_file_name_and_path(model, ext));
+    boost::filesystem::path proposed_path = boost::filesystem::path(
+        Algorithms::Model::propose_export_file_name_and_path(project.model(), ext)
+    );
+
+    if (!project.file_name().empty() && !proposed_path.parent_path().empty()) {
+        proposed_path = proposed_path.parent_path() / (project.file_name() + ext);
+    }
+
     // use --output when available
     if (!cmdline_param.empty()) {
         // if we were supplied a directory, use it and append our automatically generated filename
@@ -377,28 +433,26 @@ static std::string output_filepath(
     return proposed_path.string();
 }
 
-static bool export_models(
-    std::vector<Domain::Model>& models,
+static bool export_projects(
+    std::vector<Project>& projects,
     IO::ExportFormat format,
     const std::string& cmdline_param
 )
 {
-    for (Domain::Model& model : models) {
-        const std::string path = output_filepath(model, format, cmdline_param);
+    for (Domain::Project& project : projects) {
+        const std::string path = output_filepath(project, format, cmdline_param);
         bool success           = false;
         switch (format) {
         case IO::OBJ: {
-            success = Slic3r::store_obj(path.c_str(), &model);
+            success = Slic3r::store_obj(path.c_str(), &project.model());
             break;
         }
         case IO::STL: {
-            success = store_stl(path, Algorithms::Model::flatten_to_mesh(model), true);
+            success = store_stl(path, Algorithms::Model::flatten_to_mesh(project.model()), true);
             break;
         }
         case IO::TMF: {
             try {
-                Domain::Project project;
-                project.model() = std::move(model);
                 store_3mf(path, project, Store3mfParam{.fullpath_sources = false});
 
                 success = true;
@@ -471,31 +525,32 @@ static Domain::Image resize_and_crop(
 bool process_actions(
     const InitParams& init_params,
     const Domain::ConfigPack& config_pack,
-    std::vector<Domain::Model>& models
+    std::vector<Project>& projects
 )
 {
-    if (!init_params.action.has_value()) {
+    if (!init_params.action.has_any_action()) {
         return true;
     }
 
-    const ActionType action          = init_params.action.value();
-    const MiscParams misc            = init_params.misc;
+    const ActionParams& action       = init_params.action;
+    const MiscParams& misc           = init_params.misc;
     const TransformParams& transform = init_params.transform;
 
-    if (action == ActionType::ModelInfo) {
-        if (models.empty()) {
-            SPDLOG_ERROR("Cannot show info for empty models.");
+    if (action.model_info) {
+        if (projects.empty()) {
+            SPDLOG_ERROR("Cannot show info for empty projects.");
             return true;
         }
 
         // --info works on unrepaired model
-        for (Domain::Model& model : models) {
+        for (Project& project : projects) {
+            Model &model = project.model();
             model.add_default_instances();
             Algorithms::Model::print_info(model);
         }
     }
 
-    if (action == ActionType::ConfigurationSave) {
+    if (action.configuration_save) {
         // FIXME check for mixing the FFF / SLA parameters.
         // or better save fff_print_config vs. sla_print_config
 
@@ -526,59 +581,50 @@ bool process_actions(
         }
     }
 
-    if (models.empty()
-        && (action == ActionType::ExportSTL
-            || action == ActionType::ExportOBJ
-            || action == ActionType::Export3MF))
-    {
-        SPDLOG_ERROR("Cannot export empty models.");
+    if (projects.empty() && (action.export_stl || action.export_obj || action.export_3mf)) {
+        SPDLOG_ERROR("Cannot export empty projects.");
         return true;
     }
 
     const std::string output =
         init_params.misc.output.has_value() ? init_params.misc.output.value() : "";
 
-    if (action == ActionType::ExportSTL) {
-        for (Domain::Model& model : models) {
+    if (action.export_stl) {
+        for (Project& project : projects) {
+            Model& model = project.model();
             model.add_default_instances();
         }
 
-        if (!export_models(models, IO::STL, output)) {
+        if (!export_projects(projects, IO::STL, output)) {
             return true;
         }
     }
 
-    if (action == ActionType::ExportOBJ) {
-        for (Domain::Model& model : models) {
+    if (action.export_obj) {
+        for (Project& project : projects) {
+            Model& model = project.model();
             model.add_default_instances();
         }
 
-        if (!export_models(models, IO::OBJ, output)) {
+        if (!export_projects(projects, IO::OBJ, output)) {
             return true;
         }
     }
 
-    if (action == ActionType::Export3MF) {
-        if (!export_models(models, IO::TMF, output)) {
+    if (action.export_3mf) {
+        if (!export_projects(projects, IO::TMF, output)) {
             return true;
         }
     }
 
-    if (action == ActionType::Slice
-        || action == ActionType::ExportGCode
-        || action == ActionType::ExportSLA)
-    {
+    if (action.slice || action.export_gcode || action.export_sla) {
         Domain::PrinterTechnology printer_technology = get_printer_technology(config_pack);
-        if (action == ActionType::ExportGCode
-            && printer_technology == Domain::PrinterTechnology::SLA)
-        {
+        if (action.export_gcode && printer_technology == Domain::PrinterTechnology::SLA) {
             boost::nowide::cerr
                 << "Error: Cannot export G-code for an FFF configuration."
                 << std::endl;
             return true;
-        } else if (action == ActionType::ExportSLA
-                   && printer_technology == Domain::PrinterTechnology::FFF)
-        {
+        } else if (action.export_sla && printer_technology == Domain::PrinterTechnology::FFF) {
             boost::nowide::cerr
                 << "error: Cannot export SLA slices for a SLA configuration."
                 << std::endl;
@@ -615,7 +661,8 @@ bool process_actions(
         fs::path config_dir        = fs::path{Slic3r::data_dir()} / "configs";
         preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
-        for (Domain::Model& model : models) {
+        for (Project& project : projects) {
+            Model &model = project.model();
             // If all objects have defined instances, their relative positions will be
             // honored when printing (they will be only centered, unless --dont-arrange
             // is supplied); if any object has no instances, it will get a default one
@@ -634,7 +681,7 @@ bool process_actions(
             }
 
             const std::optional<std::string> slicing_errors = slice_single_model_project(
-                std::move(model),
+                std::move(project),
                 project_interactor,
                 config_pack,
                 init_params.misc.output

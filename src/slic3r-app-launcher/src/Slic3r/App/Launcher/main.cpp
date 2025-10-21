@@ -116,9 +116,7 @@ int main(int argc, char** argv)
     }
 #endif
 
-    if (!init_params.action.has_value()
-        || init_params.action.value() == Slic3r::App::ActionType::GCodeViewer)
-    {
+    if (!init_params.action.has_any_action() || init_params.action.gcode_viewer) {
         if constexpr (has_gui_support) {
             return Slic3r::App::Desktop::run(init_params);
         } else {

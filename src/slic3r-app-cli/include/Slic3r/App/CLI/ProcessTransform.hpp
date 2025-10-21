@@ -8,7 +8,7 @@
 namespace Slic3r::Domain {
 struct ConfigPackFDM;
 struct ConfigPackSLA;
-class Model;
+class Project;
 
 using ConfigPack = std::variant<ConfigPackFDM, ConfigPackSLA>;
 } // namespace Slic3r::Domain
@@ -26,7 +26,7 @@ double min_object_distance(const Domain::ConfigPack& config_pack);
 bool process_transform(
     const InitParams& init_params,
     const Domain::ConfigPack& config_pack,
-    std::vector<Domain::Model>& models
+    std::vector<Domain::Project>& projects
 );
 
 } // namespace Slic3r::App::CLI

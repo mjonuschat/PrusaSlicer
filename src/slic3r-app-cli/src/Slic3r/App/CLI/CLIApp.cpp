@@ -6,6 +6,7 @@
 #include "Slic3r/App/Init.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/Project.hpp"
 
 namespace Slic3r::App::CLI {
 
@@ -81,9 +82,9 @@ int run(InitParams& init_params)
         get_printer_technology(init_params);
 
     Domain::ConfigPack config_pack;
-    std::vector<Domain::Model> models;
+    std::vector<Domain::Project> projects;
 
-    if (!load_print_data(models, config_pack, printer_technology, init_params)) {
+    if (!load_print_data(projects, config_pack, printer_technology, init_params)) {
         return EXIT_FAILURE;
     }
 
@@ -91,11 +92,11 @@ int run(InitParams& init_params)
         return EXIT_SUCCESS;
     }
 
-    if (!process_transform(init_params, config_pack, models)) {
+    if (!process_transform(init_params, config_pack, projects)) {
         return EXIT_FAILURE;
     }
 
-    if (!process_actions(init_params, config_pack, models)) {
+    if (!process_actions(init_params, config_pack, projects)) {
         return EXIT_FAILURE;
     }
 

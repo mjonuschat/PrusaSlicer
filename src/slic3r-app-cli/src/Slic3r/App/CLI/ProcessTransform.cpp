@@ -8,6 +8,7 @@
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/ModelInstance.hpp"
 #include "Slic3r/Domain/ModelObject.hpp"
+#include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
@@ -24,6 +25,7 @@ using Slic3r::Domain::Model;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelObjectPtrs;
+using Slic3r::Domain::Project;
 using Slic3r::Domain::translation_transform;
 using Slic3r::Domain::Vec2crd;
 using Slic3r::Domain::Vec3d;
@@ -91,7 +93,7 @@ double min_object_distance(const Domain::ConfigPack& config_pack)
 bool process_transform(
     const InitParams& init_params,
     const Domain::ConfigPack& config_pack,
-    std::vector<Domain::Model>& models
+    std::vector<Project>& projects
 )
 
 {
@@ -105,30 +107,31 @@ bool process_transform(
         arrange_cfg.set_distance_from_objects(static_cast<float>(min_object_distance(config_pack)));
     }
 
-    if (transform.merge.has_value() && transform.merge.value()) {
-        Model m;
-        for (Model& model : models) {
-            for (ModelObject* o : model.objects) {
-                m.add_object(*o);
+    if (transform.merge.has_value() && transform.merge.value() && !projects.empty()) {
+        Project& merged_project = projects.front();
+        Model& merged_model     = merged_project.model();
+        for (Project& project : std::ranges::subrange(projects.begin() + 1, projects.end())) {
+            for (ModelObject* o : project.model().objects) {
+                merged_model.add_object(*o);
             }
         }
 
         // Rearrange instances unless --dont-arrange is supplied
         if (!transform.dont_arrange.has_value() && !transform.dont_arrange.value()) {
-            m.add_default_instances();
-            if (init_params.action == App::ActionType::Slice) {
-                arrange_objects(m, bed, arrange_cfg);
+            merged_model.add_default_instances();
+            if (init_params.action.slice) {
+                arrange_objects(merged_model, bed, arrange_cfg);
             } else {
-                arrange_objects(m, arr2::InfiniteBed{}, arrange_cfg); //??????
+                arrange_objects(merged_model, arr2::InfiniteBed{}, arrange_cfg); //??????
             }
         }
 
-        models.clear();
-        models.emplace_back(std::move(m));
+        projects.resize(1);
     }
 
     if (transform.duplicate.has_value()) {
-        for (Model& model : models) {
+        for (Project& project : projects) {
+            Model &model = project.model();
             const bool all_objects_have_instances = std::none_of(
                 model.objects.begin(),
                 model.objects.end(),
@@ -159,9 +162,9 @@ bool process_transform(
         const int x                         = ints.size() > 0 ? ints.at(0) : 1;
         const int y                         = ints.size() > 1 ? ints.at(1) : 1;
         const double distance = 6.; // TODO: duplicate_distance was removed in the new configs.
-        for (auto& model : models) {
+        for (Project& project : projects) {
             Algorithms::Model::duplicate_objects_grid(
-                model,
+                project.model(),
                 x,
                 y,
                 (distance > 0) ? distance : 6
@@ -170,7 +173,8 @@ bool process_transform(
     }
 
     if (transform.center.has_value()) {
-        for (Model& model : models) {
+        for (Project& project : projects) {
+            Model &model = project.model();
             model.add_default_instances();
             // this affects instances:
             Algorithms::Model::center_instances_around_point(model, transform.center.value());
@@ -199,7 +203,8 @@ bool process_transform(
 
     if (transform.align_xy.has_value()) {
         const Vec2d& p = transform.align_xy.value();
-        for (Model& model : models) {
+        for (Project& project : projects) {
+            Model &model = project.model();
             BoundingBoxf3 bb = Algorithms::Model::bounding_box_exact(model);
             // this affects volumes:
             Algorithms::Model::translate(
@@ -213,8 +218,8 @@ bool process_transform(
 
     if (transform.rotation.has_value()) {
         const Vec3d& rotation = transform.rotation.value();
-        for (Model& model : models) {
-            for (ModelObject* o : model.objects) {
+        for (Project& project : projects) {
+            for (ModelObject* o : project.model().objects) {
                 // This all affects volumes.
                 if (rotation.z() != 0.) {
                     Algorithms::ModelObject::rotate(*o, deg2rad(rotation[2]), Domain::Z);
@@ -232,8 +237,8 @@ bool process_transform(
     }
 
     if (transform.scale.has_value()) {
-        for (Model& model : models) {
-            for (ModelObject* o : model.objects) {
+        for (Project& project : projects) {
+            for (ModelObject* o : project.model().objects) {
                 // this affects volumes:
                 Algorithms::ModelObject::scale(*o, transform.scale->get_abs_value(1.));
             }
@@ -241,8 +246,8 @@ bool process_transform(
     }
 
     if (transform.scale_to_fit.has_value()) {
-        for (Model& model : models) {
-            for (ModelObject* o : model.objects) {
+        for (Project& project : projects) {
+            for (ModelObject* o : project.model().objects) {
                 // this affects volumes:
                 Algorithms::ModelObject::scale_to_fit(*o, transform.scale_to_fit.value());
             }
@@ -250,9 +255,9 @@ bool process_transform(
     }
 
     if (transform.cut_z.has_value()) {
-        std::vector<Model> new_models;
         const Vec3d plane_center = transform.cut_z.value() * Vec3d::UnitZ();
-        for (auto& model : models) {
+        for (Project& project : projects) {
+            Model &model = project.model();
             Model new_model;
             Algorithms::Model::translate(
                 model,
@@ -280,15 +285,13 @@ bool process_transform(
                 model.delete_object(size_t(0));
             }
 
-            new_models.push_back(new_model);
+            project.model() = new_model;
         }
-
-        // TODO: copy less stuff around using pointers
-        models = new_models;
     }
 
     if (transform.split.has_value() && transform.split.value()) {
-        for (Model& model : models) {
+        for (Project& project : projects) {
+            Model &model = project.model();
             size_t num_objects = model.objects.size();
             for (size_t i = 0; i < num_objects; ++i) {
                 ModelObjectPtrs new_objects;
@@ -301,8 +304,8 @@ bool process_transform(
     // All transforms have been dealt with. Now ensure that the objects are on bed.
     // (Unless the user said otherwise.)
     if (!transform.ensure_on_bed.has_value() || transform.ensure_on_bed.value()) {
-        for (Model& model : models) {
-            for (ModelObject* o : model.objects) {
+        for (Project& project : projects) {
+            for (ModelObject* o : project.model().objects) {
                 Algorithms::ModelObject::ensure_on_bed(*o);
             }
         }

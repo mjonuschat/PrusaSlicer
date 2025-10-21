@@ -382,100 +382,82 @@ void add_action_options(CLI::App& app, App::InitParams& params)
 {
     app.option_defaults()->group("Actions");
 
-    // Allow using at most one action simultaneously from this group.
-    auto& action_group = *app.add_option_group("Actions");
-    action_group.required(false);
-    action_group.require_option(0, 1);
-
     // Export options
-    action_group.add_flag_callback(
-        "--export-3mf",
-        [&params]() { params.action = App::ActionType::Export3MF; },
-        "Export the model(s) as 3MF."
-    );
+    app.add_flag("--export-3mf", params.action.export_3mf, "Export the model(s) as 3MF.");
 
-    action_group.add_flag_callback(
+    app.add_flag(
         "--export-gcode,--gcode,-g",
-        [&params]() { params.action = App::ActionType::ExportGCode; },
+        params.action.export_gcode,
         "Slice the model and export toolpaths as G-code."
     );
 
-    action_group.add_flag_callback(
-        "--export-obj",
-        [&params]() { params.action = App::ActionType::ExportOBJ; },
-        "Export the model(s) as OBJ."
-    );
+    app.add_flag("--export-obj", params.action.export_obj, "Export the model(s) as OBJ.");
 
-    action_group.add_flag_callback(
+    app.add_flag(
         "--export-sla,--sla",
-        [&params]() { params.action = App::ActionType::ExportSLA; },
+        params.action.export_sla,
         "Slice the model and export SLA printing layers as PNG."
     );
 
-    action_group.add_flag_callback(
-        "--export-stl",
-        [&params]() { params.action = App::ActionType::ExportSTL; },
-        "Export the model(s) as STL."
-    );
+    app.add_flag("--export-stl", params.action.export_stl, "Export the model(s) as STL.");
 
-    action_group.add_flag_callback(
+    app.add_flag(
         "--gcodeviewer",
-        [&params]() { params.action = App::ActionType::GCodeViewer; },
+        params.action.gcode_viewer,
         "Visualize an already sliced and saved G-code."
     );
 
     // Help options
-    action_group.add_flag_callback(
+    app.add_flag(
         "--help-fff",
-        [&params]() { params.action = App::ActionType::HelpFFF; },
+        params.action.help_fff,
         "Show the full list of print/G-code configuration options."
     );
 
-    action_group.add_flag_callback(
+    app.add_flag(
         "--help-sla",
-        [&params]() { params.action = App::ActionType::HelpSLA; },
+        params.action.help_sla,
         "Show the full list of SLA print configuration options."
     );
 
     // Other actions
-    action_group.add_flag_callback(
+    app.add_flag(
         "--info",
-        [&params]() { params.action = App::ActionType::ModelInfo; },
+        params.action.model_info,
         "Write information about the model to the console."
     );
 
-    action_group.add_flag_callback(
+    app.add_flag(
         "--query-print-tool-filament-profiles",
-        [&params]() { params.action = App::ActionType::QueryPrintToolFilamentProfiles; },
+        params.action.query_print_tool_filament_profiles,
         "Get list of print profiles, tool print profiles and filament profiles for the selected 'printer-profile' into JSON. "
         "Note: To print out JSON into file use 'output' option. To specify configuration folder use 'datadir' option."
     );
 
-    action_group.add_flag_callback(
+    app.add_flag(
         "--query-printer-models",
-        [&params]() { params.action = App::ActionType::QueryPrinterModels; },
+        params.action.query_printer_models,
         "Get list of installed printer models into JSON. Note: To print printer models for required technology "
         "use 'printer-technology' option with value FFF or SLA. By default printer_technology is FFF. "
         "To print out JSON into file use 'output' option. To specify configuration folder use 'datadir' option."
     );
 
-    action_group
-        .add_option_function<std::string>(
-            "--save",
-            [&params](const std::string& file)
-            {
-                params.action = App::ActionType::ConfigurationSave;
-                if (!params.misc.output.has_value()) {
-                    params.misc.output = file;
-                }
-            },
-            "Save configuration to the specified file."
-        )
+    app.add_option_function<std::string>(
+           "--save",
+           [&params](const std::string& file)
+           {
+               params.action.configuration_save = true;
+               if (!params.misc.output.has_value()) {
+                   params.misc.output = file;
+               }
+           },
+           "Save configuration to the specified file."
+    )
         ->option_text("ABCD");
 
-    action_group.add_flag_callback(
+    app.add_flag(
         "--slice,-s",
-        [&params]() { params.action = App::ActionType::Slice; },
+        params.action.slice,
         "Slice the model as FFF or SLA based on the printer_technology configuration value and export the result."
     );
 }
@@ -726,16 +708,16 @@ InitParams read_cli(::CLI::App& app, const std::string& app_version, const int a
         return init_params;
     }
 
-    if (init_params.action == ActionType::HelpFFF || init_params.action == ActionType::HelpSLA) {
-        custom_formatter->set_show_full_fdm_help(init_params.action == ActionType::HelpFFF);
-        custom_formatter->set_show_full_sla_help(init_params.action == ActionType::HelpSLA);
+    if (init_params.action.help_fff || init_params.action.help_sla) {
+        custom_formatter->set_show_full_fdm_help(init_params.action.help_fff);
+        custom_formatter->set_show_full_sla_help(init_params.action.help_sla);
         std::cerr << app.help() << std::endl;
         init_params.exit_code = 0;
     }
 
-    if (init_params.transform.cut_z.has_value() && !init_params.action.has_value()) {
+    if (init_params.transform.cut_z.has_value() && !init_params.action.has_any_action()) {
         // Cutting transformations are setting an "export" action.
-        init_params.action = Slic3r::App::ActionType::ExportSTL;
+        init_params.action.export_stl = true;
     }
 
     return init_params;
