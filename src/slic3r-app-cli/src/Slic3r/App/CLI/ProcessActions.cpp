@@ -205,24 +205,25 @@ std::optional<std::string> slice_single_model_project(
     Biz::Platform::IMainThreadDispatcher& dispatcher =
         Biz::Platform::PlatformServices::instance().main_thread_dispatcher();
 
-    const Domain::SelectionId project_id = project_interactor.new_project();
-    project_interactor.select_project(project_id);
+    project_interactor.new_project_with_modification(
+        [&](Project& project)
+        {
+            project.model() = std::move(model);
+            project.set_file_name(project_to_slice.file_name());
 
-    Domain::Project& project = project_interactor.selected_project();
-    project.model()          = std::move(model);
-    project.set_file_name(project_to_slice.file_name());
+            // Apply the provided config_pack.
+            Domain::ConfigContainer& config_container = *project.config_containers().front();
+            Domain::Preset::SelectedPresetMetadata metadata =
+                config_container.selected_preset().metadata();
+            if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)) {
+                metadata.hw_config.technology = Domain::PrinterTechnology::SLA;
+            }
 
-    // Apply the provided config_pack.
-    Domain::ConfigContainer& config_container       = *project.config_containers().front();
-    Domain::Preset::SelectedPresetMetadata metadata = config_container.selected_preset().metadata();
-    if (std::holds_alternative<Domain::ConfigPackSLA>(config_pack)) {
-        metadata.hw_config.technology = Domain::PrinterTechnology::SLA;
-    }
-
-    config_container.mutable_selected_preset() =
-        Domain::Preset::SelectedPreset::make(metadata, config_pack);
-
-    project_interactor.scene_interactor().notify_listener_on_objects();
+            config_container.mutable_selected_preset() =
+                Domain::Preset::SelectedPreset::make(metadata, config_pack);
+        }
+    );
+    const Project& project = project_interactor.selected_project();
 
     Slicing::SlicingInteractor& slicing_interactor = project_interactor.slicing_interactor();
     SlicingStatusChangeListener slicing_status_change_listener;

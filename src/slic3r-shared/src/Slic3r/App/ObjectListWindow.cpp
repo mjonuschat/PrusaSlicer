@@ -15,6 +15,9 @@
 #include "libslic3r/format.hpp"
 #include "libslic3r/Utils.hpp"
 
+#include <boost/nowide/convert.hpp>
+#include <boost/nowide/iostream.hpp>
+
 using namespace Slic3r::Biz;
 
 namespace Slic3r::App {
@@ -46,6 +49,20 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
     m_label->set_flex_grow(1.f);
 
     const ObjectList::Mode mode = for_plater ? ObjectList::Mode::Plater : ObjectList::Mode::Preview;
+    if (mode == ObjectList::Mode::Plater) {
+        m_add_container_button = main_bg->emplace_back<Yoga::LayoutButton>(
+            _u8L("Add Printer Container"),
+            Render::Icon::ConfigContainer
+        );
+        m_add_container_button->set_background_color(ImColor(41, 41, 41));
+        m_add_container_button->callbacks().action = [this]()
+        {
+            m_project_interactor->add_config_container();
+            if (on_config_container_added != nullptr)
+                on_config_container_added();
+        };
+    }
+
     m_object_list = main_bg->emplace_back<ObjectList>(project_interactor, mode);
     m_object_list->set_flex_grow(1.f);
 
@@ -55,21 +72,6 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
         show_details_button->callbacks().checked_changed = [this](bool checked) {
             m_object_list->selected_project_context().show_details = checked;            
         };
-
-        LayoutButton* add_bed_button = header->emplace_back<LayoutButton>("", Render::Icon::AddBedIcon, _u8L("Add bed"));
-        add_bed_button->callbacks().action = [this]() {
-            m_project_interactor->scene_interactor().add_bed_instance(m_project_interactor->selected_config_container().id().id);
-            update_del_button();
-        };
-
-        m_del_bed_button = header->emplace_back<LayoutButton>("", Render::Icon::DelBedIcon, _u8L("Delete bed"));
-        m_del_bed_button->callbacks().action = [this]() {
-            auto& scene_interactor = m_project_interactor->scene_interactor();
-            scene_interactor.remove_bed_instance(scene_interactor.bed_selection().last_selected_bed());
-            update_del_button();
-        };
-
-        update_del_button();
     }
     else {
         LayoutButton* scene_map_button = header->emplace_back<LayoutButton>("", Render::Icon::SceneMap, _u8L("Show scene map"));
@@ -215,19 +217,6 @@ void ObjectListWindow::update_sliced_info()
 void ObjectListWindow::set_bed_instance_icons(const Plater::BedThumbnailTextures& icons)
 {
     m_object_list->set_bed_instance_icons(icons);
-}
-
-void ObjectListWindow::update_del_button()
-{
-    if (!m_del_bed_button)
-        return;
-
-    const Domain::Project::ConfigContainerList& ccs = m_project_interactor->selected_project().config_containers();
-    size_t total_instances_count = 0;
-    for (auto& cc : ccs) {
-        total_instances_count += cc->bed_instances().size();
-    }
-    m_del_bed_button->set_enabled(total_instances_count > 1);
 }
 
 } // namespace Slic3r::App

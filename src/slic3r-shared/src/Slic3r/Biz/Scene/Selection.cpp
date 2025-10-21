@@ -17,6 +17,22 @@ bool ObjectSelection::is_selected(const Domain::ElementRef& ref) const
     });
 }
 
+bool ObjectSelection::only_single_object() const
+{
+    const size_t n = elements.size();
+    if (n == 0)
+        return false;
+    if (n == 1)
+        return true;
+    auto it = elements.cbegin();
+    const auto obj_id = it->object_id;
+    return std::all_of(
+        ++it,
+        elements.cend(),
+        [obj_id](const Domain::ElementRef& r) { return r.object_id == obj_id; }
+    );
+}
+
 bool ObjectSelection::remove(const Domain::ElementRef& ref)
 {
     auto it = std::remove_if(elements.begin(), elements.end(), [ref](const auto& r) {

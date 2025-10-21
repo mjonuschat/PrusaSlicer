@@ -28,15 +28,15 @@ public:
 
     ObjectListWindow(Biz::ProjectInteractor* project_interactor, bool for_plater);
     void update_sliced_info();
-    void update_del_button();
 
     void set_bed_instance_icons(const Plater::BedThumbnailTextures& icons);
 
+    std::function<void()> on_config_container_added;
+
 private:
     Yoga::Text* m_label{ nullptr };
+    Yoga::LayoutButton* m_add_container_button{ nullptr };
     ObjectList* m_object_list{ nullptr };
-
-    Yoga::LayoutButton* m_del_bed_button{ nullptr };
 
     Yoga::Item* m_scene_map{ nullptr };
     Yoga::Rectangle* m_sliced_info{ nullptr };

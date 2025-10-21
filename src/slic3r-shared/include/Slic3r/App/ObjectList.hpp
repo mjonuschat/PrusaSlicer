@@ -63,7 +63,7 @@ private:
     void render_all_beds_node();
     bool render_out_of_beds();
     void render_drop_target_area();
-    bool render_bed_node(const Domain::BedInstance* bed, size_t config_container_id);
+    bool render_bed_node(const Domain::BedInstance* bed, size_t config_container_id, bool can_be_deleted);
     bool render_object_node(const Domain::ModelObject* object, const Domain::BedInstance* bed = nullptr, bool is_sla_config = false);
     bool render_connectors_node(const Domain::ModelObject* object, size_t bed_id);
     bool render_volumes(const Domain::ModelObject* object, size_t bed_id, bool is_sla_config);
@@ -75,6 +75,7 @@ private:
 
     void render_edited(const char* init_name, const Domain::ElementRef& sel_element);
     void render_printable_icon(const Domain::ElementRef& sel_element, bool is_printable);
+    bool render_delete_button(const std::string& id);
     void render_extruder_marker(size_t extruder_id, const std::vector<std::string>& colors);
     void render_slicing_state_marker(size_t bed_instance_id);
     void render_infos_selectable(const std::set<Render::Icon>& infos, const Domain::ModelObject* object, bool force_render);
@@ -96,6 +97,8 @@ private:
     void extruder_clicked(const Domain::ElementRef& sel_element, bool is_bed);
     void show_layer_ranges(const Domain::ElementRef& id);
     void show_gizmo(const Domain::ElementRef& id, Render::Icon gizmo_id);
+    void add_bed(size_t config_container_id);
+    void remove_bed(size_t config_container_id, size_t bed_id);
 
     struct ProjectContext;
     ProjectContext& selected_project_context();
@@ -120,6 +123,7 @@ private:
     };
     using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
     using ProjectContextsPtr = std::unique_ptr<ProjectContexts>;
+    using DeferredActionList = std::list<std::function<void()>>;
 
     Biz::ProjectInteractor*         m_project_interactor{ nullptr };
     Biz::Scene::SceneInteractor*    m_scene_interactor  { nullptr };
@@ -132,6 +136,7 @@ private:
     ImGuiMultiSelectFlags           m_multi_selection_flags;
     ImGuiTreeNodeFlags              m_node_flags;
     ImGuiTableFlags                 m_table_flags;
+    DeferredActionList              m_deferred_actions;
 
     friend class ObjectListWindow;
 };

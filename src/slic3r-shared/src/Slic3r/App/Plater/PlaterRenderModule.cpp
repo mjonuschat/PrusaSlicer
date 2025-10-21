@@ -239,6 +239,10 @@ void PlaterRenderModule::init_scene_layout()
     );
 
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, true));
+    m_object_list->on_config_container_added = [this]()
+    {
+        m_render_module_navigator->set_opened_dialog(&m_sidebar_bed->logical_printer_settings_dialog());
+    };
 
     m_cube_view   = Passthrough{std::make_unique<CubeView>()};
     m_sidebar_bed = Passthrough(
@@ -892,7 +896,6 @@ void PlaterRenderModule::on_set_imgui_render() {}
 
 void PlaterRenderModule::on_selected_project_changed(size_t index)
 {
-    m_object_list->update_del_button();
     update_object_selection();
 }
 

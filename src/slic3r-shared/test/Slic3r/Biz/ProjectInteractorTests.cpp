@@ -46,30 +46,44 @@ void outp(const T& arg, const ArgsT&... args)
     outp(args...);
 }
 
-TEST_CASE("Project Interactor Listeners")
+struct ProjectInteractorFixture
+{
+    ProjectInteractorFixture()
+    {
+        using namespace Slic3r::Biz;
+        namespace fs = boost::filesystem;
+
+        boost::nowide::nowide_filesystem();
+
+        Platform::PlatformServices::instance().set_secret_store(std::move(store_dummy));
+
+        Slic3r::set_data_dir(Tests::get_datadir().string());
+
+        auto data_dir              = Tests::get_datadir();
+        fs::path preset_bundle_dir = data_dir / "presets";
+        fs::path config_dir        = data_dir / "configs";
+
+        project_interactor.preset_interactor()
+            .load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
+    }
+
+    ~ProjectInteractorFixture()
+    {
+        // Queue must be clear before ProjectInteractor can be destroyed.
+        dispatcher.close();
+    }
+
+    std::unique_ptr<Slic3r::Biz::SecretStoreDummy> store_dummy = std::make_unique<Slic3r::Biz::SecretStoreDummy>();
+    Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
+    Slic3r::App::Plater::ThumbnailImageGenerator thumbnail_image_generator;
+    Slic3r::Domain::Workbench workbench;
+    Slic3r::Biz::ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
+};
+
+TEST_CASE_METHOD(ProjectInteractorFixture, "Project Interactor Listeners", "[ProjectInteractor]")
 {
     using namespace Slic3r::Biz;
     using namespace trompeloeil;
-    namespace fs = boost::filesystem;
-
-    boost::nowide::nowide_filesystem();
-
-    std::unique_ptr<SecretStoreDummy> store_dummy = std::make_unique<SecretStoreDummy>();
-    Platform::PlatformServices::instance().set_secret_store(std::move(store_dummy));
-
-    Slic3r::Domain::Workbench workbench;
-    Slic3r::set_data_dir(Tests::get_datadir().string());
-
-    Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
-    Slic3r::App::Plater::ThumbnailImageGenerator thumbnail_image_generator;
-    ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
-
-    auto data_dir              = Tests::get_datadir();
-    fs::path preset_bundle_dir = data_dir / "presets";
-    fs::path config_dir        = data_dir / "configs";
-
-    project_interactor.preset_interactor()
-        .load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
     Mock::SelectedProjectChangedListener selected_project_changed_listener;
     Mock::SelectedConfigContainerChangedListener selected_config_container_listener;
@@ -125,6 +139,7 @@ TEST_CASE("Project Interactor Listeners")
                 auto capStr = std::string("selected_project: ") + std::to_string(_1);
                 UNSCOPED_INFO(capStr);
             );
+        // TODO: this is temporary behavior, will be removed
         REQUIRE_CALL(selected_config_container_listener, on_selected_config_container_changed(0, gt(0)))
             .SIDE_EFFECT(
                 auto capStr = std::string("selected_config_container( cc: ") + std::to_string(_2) + " )";
@@ -134,6 +149,32 @@ TEST_CASE("Project Interactor Listeners")
         project_interactor.select_project(0);
     }
 
-    // Queue must be clear before ProjectInteractor can be destroyed.
-    dispatcher.close();
+}
+
+TEST_CASE_METHOD(ProjectInteractorFixture, "Project Interactor Config Container", "[ProjectInteractor]")
+{
+    project_interactor.new_project();
+    const auto& p0 = project_interactor.selected_project();
+
+    REQUIRE(p0.config_containers().size() == 1);
+    const auto& cc0 = *p0.config_containers().at(0);
+    const auto cc0_id = cc0.id().id;
+    REQUIRE(project_interactor.selected_config_container_id() == cc0_id);
+
+    const auto cc1_id = project_interactor.add_config_container();
+    REQUIRE(project_interactor.selected_config_container_id() == cc1_id);
+
+    project_interactor.select_config_container(cc0_id);
+    REQUIRE(project_interactor.selected_config_container_id() == cc0_id);
+
+    project_interactor.remove_config_container(cc0_id);
+    REQUIRE(project_interactor.selected_config_container_id() == cc1_id);
+    REQUIRE(p0.config_containers().size() == 1);
+
+    const auto& cc2_id = project_interactor.add_config_container();
+    REQUIRE(project_interactor.selected_config_container_id() == cc2_id);
+    REQUIRE(p0.config_containers().size() == 2);
+
+    const auto& p1_id = project_interactor.new_project();
+
 }

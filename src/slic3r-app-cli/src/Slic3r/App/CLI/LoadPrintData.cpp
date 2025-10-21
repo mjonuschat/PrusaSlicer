@@ -311,7 +311,7 @@ static bool process_input_files(
                     loaded_project.config_containers().emplace_back(
                         std::make_unique<Domain::ConfigContainer>()
                     );
-                    preset_interactor.initialize_config_container(
+                    preset_interactor.initialize_config_container_with_default(
                         *loaded_project.config_containers().back()
                     );
                 }

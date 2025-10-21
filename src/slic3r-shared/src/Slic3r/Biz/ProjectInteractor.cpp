@@ -20,6 +20,21 @@
 
 namespace Slic3r::Biz {
 
+Domain::SelectionId ProjectInteractor::Selection::config_container_id() const
+{
+    if (project_id == Domain::INVALID_ID)
+        return Domain::INVALID_ID;
+    auto it = project_config_container.find(project_id);
+    if (it == project_config_container.end())
+        return Domain::INVALID_ID;
+    return it->second;
+}
+
+void ProjectInteractor::Selection::set_config_container_id(Domain::SelectionId container_id)
+{
+    project_config_container[project_id] = container_id;
+}
+
 void ProjectInteractor::initialize_bed(Domain::ConfigContainer& config_container, Domain::BedContainer& bed_container)
 {
     const auto& selected_printer_preset{config_container.selected_preset()};
@@ -30,6 +45,13 @@ void ProjectInteractor::initialize_bed(Domain::ConfigContainer& config_container
 
 Domain::SelectionId ProjectInteractor::new_project()
 {
+    return new_project_with_modification([](auto& _){});
+}
+
+Domain::SelectionId ProjectInteractor::new_project_with_modification(
+    const std::function<void(Domain::Project&)>& modifier
+)
+{
     Domain::Project project;
 
     project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
@@ -39,9 +61,12 @@ Domain::SelectionId ProjectInteractor::new_project()
 
     Domain::Project& added_project{m_workbench.project(project_id)};
 
-    m_preset_interactor.initialize_config_container(config_container);
+    m_preset_interactor.initialize_config_container_with_default(config_container);
     initialize_bed(config_container, added_project.bed_container());
-    m_scene_interactor.notify_listener_on_objects();
+
+    modifier(added_project);
+
+    m_scene_interactor.prepare_added_project(added_project);
 
     invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
         l->on_project_loaded(project_id);
@@ -67,13 +92,12 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
 
             if (added_project.config_containers().empty()) {
                 added_project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
-                m_preset_interactor.initialize_config_container(*added_project.config_containers().back());
+                m_preset_interactor.initialize_config_container_with_default(*added_project.config_containers().back());
                 initialize_bed(*added_project.config_containers().back(), added_project.bed_container());
             }
             do_select_config_container(added_project.config_containers().front()->id().id);
 
-            m_scene_interactor.notify_listener_on_objects();
-            m_scene_interactor.layout_after_project_load(added_project);
+            m_scene_interactor.prepare_added_project(added_project);
 
             invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
                 l->on_project_loaded(project_id);
@@ -139,10 +163,20 @@ void ProjectInteractor::select_project(Domain::SelectionId project_id)
     if (project_id != m_selection.project_id) {
         do_select_project(project_id);
 
-        auto& projects               = m_workbench.projects();
-        const auto& config_container = projects.at(project_id).config_containers().front();
-        const Domain::SelectionId first_container_id = config_container->id().id;
-        do_select_config_container(first_container_id);
+        if (m_selection.config_container_id() == Domain::INVALID_ID) {
+            const auto& projects         = m_workbench.projects();
+            const auto& config_container = projects.at(project_id).config_containers().front();
+            const Domain::SelectionId first_container_id = config_container->id().id;
+            do_select_config_container(first_container_id);
+        } else {
+            // TODO: remove this once the right side panel elements are correctly storing selected
+            // config container per project
+            auto container_id = m_selection.config_container_id();
+            invoke_listeners<ISelectedConfigContainerChangedListener>(
+                [container_id, project_id](auto* l)
+                { l->on_selected_config_container_changed(project_id, container_id); }
+            );
+        }
     }
 }
 
@@ -183,7 +217,7 @@ void ProjectInteractor::on_selected_bed_instances_changed(Domain::SelectionId pr
     const Domain::BedRef last_selected_bed{selection.last_selected_bed()};
     const Domain::SelectionId container_id{last_selected_bed.config_container_id};
 
-    if (container_id != m_selection.config_container_id)
+    if (container_id != m_selection.config_container_id())
         do_select_config_container(container_id);
 }
 
@@ -227,7 +261,7 @@ void ProjectInteractor::do_select_project(Domain::SelectionId project_id)
 
 void ProjectInteractor::do_select_config_container(Domain::SelectionId container_id)
 {
-    m_selection.config_container_id = container_id;
+    m_selection.set_config_container_id(container_id);
     Domain::SelectionId project_id  = m_selection.project_id;
     invoke_listeners<ISelectedConfigContainerChangedListener>(
         [container_id, project_id](auto* l)
@@ -374,6 +408,41 @@ void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::pa
         cc->bed().center(),
         m_dialog_provider
     );
+}
+
+Domain::SelectionId ProjectInteractor::add_config_container()
+{
+    auto& p = m_workbench.project(m_selection.project_id);
+    p.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
+    auto& cc = *p.config_containers().back();
+
+    m_preset_interactor.initialize_config_container_with_selected(cc);
+    initialize_bed(cc, p.bed_container());
+
+    auto id = cc.id().id;
+    select_config_container(id);
+    return id;
+}
+
+void ProjectInteractor::remove_config_container(Domain::SelectionId config_container_id)
+{
+    auto& p = m_workbench.project(m_selection.project_id);
+    auto& ccs = p.config_containers();
+
+    ASSERT(ccs.size() > 1);
+
+    auto it = std::find_if(ccs.begin(), ccs.end(), [config_container_id](const auto& cc_ptr) { return cc_ptr->id().id == config_container_id; });
+    ASSERT(it != ccs.end());
+    it = ccs.erase(it);
+    if (it == ccs.end())
+        it = ccs.begin();
+    select_config_container((*it)->id().id);
+}
+
+void ProjectInteractor::select_config_container(Domain::SelectionId container_id)
+{
+    if (container_id != m_selection.config_container_id())
+        do_select_config_container(container_id);
 }
 
 } // namespace Slic3r::Biz

@@ -351,21 +351,7 @@ static std::set<Render::Icon> get_infos(const Domain::ModelObject* object, bool 
 
 static bool hovered_current_row()
 {
-    // get cursor position for the first cell in the row
-    ImGui::TableSetColumnIndex(ciTree);
-    ImVec2 row_begin = ImGui::GetCursorScreenPos();
-    // !Strange effect: It returns differs values for rows with Selectable() and TreeNode() controls
-    // it looks like for Selectable() it's a LeftBottom of the cell instead of LeftTop.
-    // So let's update row_begin.y value from the last cell of the row
-
-    // get cursor position for the last cell in the row
-    ImGui::TableSetColumnIndex(ciCount - 1);
-    ImVec2 row_end = ImGui::GetCursorScreenPos();
-    row_begin.y    = row_end.y; // update row_begin.y
-    // get RightBottom for the row
-    row_end += ImGui::CalcTextSize(icon_str(Render::Icon::PrintIconMarker).c_str());
-
-    return ImGui::IsMouseHoveringRect(row_begin, row_end, false);
+    return ImGui::TableGetRowIndex() == ImGui::TableGetHoveredRow();
 }
 
 // object is simple: has just one instance, one volume and no aditional information
@@ -428,6 +414,12 @@ void ObjectList::render(Yoga::Vec2f pos, Yoga::Vec2f size)
     process_dragging_start();
 
     render_item_end(pos, size);
+
+    while (!m_deferred_actions.empty()) {
+        const auto action = m_deferred_actions.front();
+        action();
+        m_deferred_actions.pop_front();
+    }
 }
 
 // hendle selection from the tree nodes
@@ -706,19 +698,30 @@ bool ObjectList::render_config_containers()
     for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
         render_group_name(get_cc_name(cc->selected_preset()));
 
+        ImGui::SameLine();
+        std::string add_button_id = fmt::format("btn_add_bed_{}", cc->id().id);
+        ImGui::PushID(add_button_id.c_str());
+        if (button_aligned(
+                1.f,
+                icon_str(Render::Icon::AddBedIcon),
+                ImVec2(),
+                ImGuiButtonFlags_AlignTextBaseLine
+            ))
+        {
+            add_bed(cc->id().id);
+        }
+        ImGui::PopID();
+
         BedsTable table;
         if (table.begin(cc->id().id, m_table_flags)) {
             IndentGuard ig(m_inner_padding.x());
 
+            const bool can_delete_a_bed = cc->bed_instances().size() > 1;
             for (auto& bed_inst : cc->bed_instances()) {
                 if (!bed_inst->model_instances.empty())
                     beds_cnt++;
-                is_changed_selection |= render_bed_node(bed_inst.get(), cc->id().id);
-            }
-
-            // check bed selection
-            if (ctx.selected_bed_instance_id != 0) {
-                ctx.selected_container_id = cc->id().id;
+                is_changed_selection |=
+                    render_bed_node(bed_inst.get(), cc->id().id, can_delete_a_bed);
             }
         }
     }
@@ -833,7 +836,7 @@ void ObjectList::render_drop_target_area()
     }
 }
 
-bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_container_id)
+bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_container_id, bool can_be_deleted)
 {
     auto& ctx          = selected_project_context();
     size_t bed_id      = bed->id().id;
@@ -883,13 +886,21 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     bool is_changed_selection = false;
     // check bed selection
     if (!ctx.is_dragging && is_imgui_item_just_selected()) {
-        ctx.selected_bed_instance_id = bed->id().id;
+        ctx.selected_container_id    = config_container_id;
+        ctx.selected_bed_instance_id = bed_id;
         is_changed_selection         = true;
     }
 
     render_slicing_state_marker(bed_id);
-    if (!is_sla_config)
+    const bool row_hovered = hovered_current_row();
+
+    if (row_hovered && can_be_deleted) {
+        if (render_delete_button(fmt::format("delete_bed_{}", bed_id))) {
+            remove_bed(config_container_id,bed_id);
+        }
+    } else if (!is_sla_config) {
         render_extruder_marker(0, {"#E74840"});
+    }
 
     if (is_open) {
         bg.set_next();
@@ -1327,6 +1338,25 @@ void ObjectList::render_printable_icon(const Domain::ElementRef& sel_id, bool is
     ImGui::PopStyleVar();
 }
 
+bool ObjectList::render_delete_button(const std::string& id)
+{
+    Render::Icon icon = Render::Icon::DelBedIcon;
+    ImGui::TableSetColumnIndex(ciExtruder);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2());
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetColorU32(ImGuiCol_Button));
+    ImGui::PushID(id.c_str()); // Ensure unique ID
+
+    bool pressed = button_aligned(1.f, icon_str(icon), ImVec2(), ImGuiButtonFlags_AlignTextBaseLine);
+
+    ImGui::PopID();
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
+
+    return pressed;
+}
+
+
 void ObjectList::render_extruder_marker(size_t extruder_id, const std::vector<std::string>& str_colors)
 {
     ImGui::TableSetColumnIndex(ciExtruder);
@@ -1495,5 +1525,24 @@ const ObjectList::ProjectContext& ObjectList::selected_project_context() const
 {
     return m_project_contexts->selected();
 }
+
+void ObjectList::add_bed(size_t config_container_id)
+{
+    m_deferred_actions.emplace_back([this, config_container_id]()
+                                    { m_scene_interactor->add_bed_instance(config_container_id); });
+}
+
+void ObjectList::remove_bed(size_t config_container_id, size_t bed_id)
+{
+    m_deferred_actions.emplace_back(
+        [this, config_container_id, bed_id]()
+        {
+            m_scene_interactor->remove_bed_instance(
+                {.config_container_id = config_container_id, .instance_id = bed_id}
+            );
+        }
+    );
+}
+
 
 } // namespace Slic3r::App

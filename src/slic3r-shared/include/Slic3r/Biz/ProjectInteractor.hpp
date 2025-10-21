@@ -114,6 +114,9 @@ public:
      * @return Returns ID of newly created project
      */
     Domain::SelectionId new_project();
+    Domain::SelectionId new_project_with_modification(
+        const std::function<void(Domain::Project&)>& modifier
+    );
 
     /**
      * @name Project manipulation
@@ -167,8 +170,9 @@ public:
      * @{
      */
 
-    void add_config_container();
+    Domain::SelectionId add_config_container();
     void remove_config_container(Domain::SelectionId config_container_id);
+    void select_config_container(Domain::SelectionId config_container_id);
 
     /** @} */
 
@@ -190,7 +194,7 @@ public:
      */
     Domain::SelectionId selected_config_container_id() const
     {
-        return m_selection.config_container_id;
+        return m_selection.config_container_id();
     }
 
     /** @} */
@@ -212,14 +216,14 @@ public:
 
     const Domain::ConfigContainer& selected_config_container() const
     {
-        DEBUG_ASSERT(m_selection.config_container_id != Domain::INVALID_ID);
-        return *DEBUG_ASSERT_VAL(selected_project().find_config_container(m_selection.config_container_id));
+        DEBUG_ASSERT(m_selection.config_container_id() != Domain::INVALID_ID);
+        return *DEBUG_ASSERT_VAL(selected_project().find_config_container(m_selection.config_container_id()));
     }
 
     Domain::ConfigContainer& selected_config_container()
     {
-        DEBUG_ASSERT(m_selection.config_container_id != Domain::INVALID_ID);
-        return *DEBUG_ASSERT_VAL(selected_project().find_config_container(m_selection.config_container_id));
+        DEBUG_ASSERT(m_selection.config_container_id() != Domain::INVALID_ID);
+        return *DEBUG_ASSERT_VAL(selected_project().find_config_container(m_selection.config_container_id()));
     }
 
     /** @} */
@@ -508,7 +512,10 @@ private:
     struct Selection
     {
         Domain::SelectionId project_id{Domain::INVALID_ID};
-        Domain::SelectionId config_container_id{Domain::INVALID_ID};
+        std::map<Domain::SelectionId, Domain::SelectionId> project_config_container;
+
+        Domain::SelectionId config_container_id() const;
+        void set_config_container_id(Domain::SelectionId container_id);
     };
 
     Domain::Workbench& m_workbench;

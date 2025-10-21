@@ -61,10 +61,9 @@ PrintSettingsDialog::~PrintSettingsDialog()
 
 void PrintSettingsDialog::on_reset()
 {
-    for (size_t tab_index = 1; tab_index < m_tabs.size(); ++tab_index) {
+    while (m_tabs.size() > 1) {
         remove_tab(1);
     }
-    m_tabs.erase(m_tabs.cbegin() + 1, m_tabs.cend());
 
     for (size_t tool_cbi_index = 0; tool_cbi_index < m_tool_cbi_list.size(); ++tool_cbi_index) {
         Biz::ConfigBoxInteractor& cbi =

@@ -122,6 +122,10 @@ SplashScreen::SplashScreen(bool is_editor, wxPoint pos) :
 
 void SplashScreen::SetText(const wxString& text)
 {
+    // It crashes here when the splash is about to be hidden but the SetText is called
+    // The m_main_bitmap is already in invalid state, so prevent setting text in such case
+    if (!m_main_bitmap.IsOk())
+        return;
     // This method creates a temporary copy of the main bitmap to draw on.
     wxBitmap bitmap(m_main_bitmap);
     if (!text.empty()) {

@@ -165,8 +165,6 @@ public:
         const Transform& xform  = Domain::SquareMatrix4d::Identity()
     );
     void add_instance(const Domain::Vec2d& offset);
-    void notify_listener_on_objects(const std::vector<Domain::ModelObject*>& objects);
-    void notify_listener_on_objects();
 
     using RefMesh = std::pair<Domain::ElementRef, Domain::TriangleMesh>;
     using RefMeshes = std::vector<RefMesh>;
@@ -182,7 +180,7 @@ public:
      */
     std::optional<std::string> delete_selected_elements();
 
-    void prepare_loaded_project(Domain::Project& project);
+    void prepare_added_project(Domain::Project& project);
 
     Domain::BedInstance& add_bed_instance(size_t config_container_id);
     void remove_bed_instance(const Domain::BedRef& instance);
@@ -222,7 +220,6 @@ public:
     BedSelection& bed_selection();
     const BedSelection* bed_selection(const Domain::SelectionId project_id) const;
     BedSelection* bed_selection(const Domain::SelectionId project_id);
-    void layout_after_project_load(Domain::Project& added_project);
 
     /**
      * @name Transforming selection
@@ -282,6 +279,10 @@ public:
     /** @} */
 
 private:
+    void layout_after_project_load(Domain::Project& added_project);
+    void notify_listener_on_objects(const std::vector<Domain::ModelObject*>& objects);
+    void notify_listener_on_objects(const Domain::Project& project);
+
     BedTrackingChanges update_selection_instance_bed_placement(bool forced_volume_mode = false);
     void invoke_slicing_input_changed(const Domain::BedRef& bed_instance);
     void update_config_container_bed(

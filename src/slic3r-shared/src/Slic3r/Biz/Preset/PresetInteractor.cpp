@@ -180,7 +180,7 @@ PresetInteractorConfigContainerContext& PresetInteractor::initialize_config_cont
     return it->second;
 }
 
-void PresetInteractor::initialize_config_container(Domain::ConfigContainer& cc)
+void PresetInteractor::initialize_config_container_with_default(Domain::ConfigContainer& cc)
 {
     const static std::string selected_printer_name =
         "CORE One 0.4 HF"; //"SL1S SPEED";//"Prusa MK4S";
@@ -201,6 +201,13 @@ void PresetInteractor::initialize_config_container(Domain::ConfigContainer& cc)
 
     fill_config_container_with_selected_preset(cc, config_it->first, printer_it->preset.id, false);
 }
+
+void PresetInteractor::initialize_config_container_with_selected(Domain::ConfigContainer& cc)
+{
+    auto& selected_preset = cc.mutable_selected_preset();
+    selected_preset = this->selected_printer_preset();
+}
+
 
 void PresetInteractor::on_selected_config_container_changed(
     Domain::SelectionId project_id,
