@@ -84,6 +84,7 @@ struct Row : public wxBoxSizer
     void set_checkbox_callback(std::function<void()> fn);
     bool is_checked_checkbox() const;
     void show_checkbox(bool show);
+    void rescale();
 
 private:
     Widgets::CheckBox* m_checkbox{nullptr};

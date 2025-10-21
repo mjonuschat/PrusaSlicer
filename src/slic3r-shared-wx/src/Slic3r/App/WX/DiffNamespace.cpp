@@ -202,4 +202,10 @@ void Row::show_checkbox(bool show)
     m_checkbox->Show(show);
 }
 
+void Row::rescale()
+{
+    m_left->Rescale();
+    m_right->Rescale();
+}
+
 } // namespace Slic3r::App::WX::Diff

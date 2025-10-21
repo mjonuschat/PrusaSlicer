@@ -166,6 +166,14 @@ DiffDialog::DiffDialog(
     w_config()->UpdateDlgDarkUI(this);
 
     init_from_selection();
+
+    this->Bind(wxEVT_DPI_CHANGED, [this](wxDPIChangedEvent& evt) {
+        m_printers->rescale();
+        m_prints->rescale();
+        m_tools_prints->rescale();
+        m_tool_materials->rescale();
+        m_tree->model->Rescale();
+    });
 }
 
 void DiffDialog::init_from_selection()
@@ -363,8 +371,6 @@ void DiffDialog::select_print(
     }
 
     select_tool_print(0, tool_print_selection, location, material_selection);
-
-    this->Layout();
 }
 
 void DiffDialog::select_tool_print(
@@ -426,6 +432,7 @@ void DiffDialog::select_material(int selection, Location location)
     if (!(*m_prints)[Location::Right]->IsEmpty()) {
         // for the correct comparation all comboboxes should be filled
         compare();
+        Layout();
     }
 }
 
@@ -451,7 +458,6 @@ void DiffDialog::compare()
     if (!m_can_compare) {
         // clear tree_view and hide it
         m_tree->Hide();
-        this->Layout();
         return;
     }
 
