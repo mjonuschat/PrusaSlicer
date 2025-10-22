@@ -13,6 +13,8 @@
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
 
+#include "Slic3r/Version.hpp"
+
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
@@ -84,7 +86,7 @@ void PresetInteractor::load_preset_bundle(
 #ifndef NDEBUG
     namespace fs = boost::filesystem; 
     const std::string bundle_cache_filename = fs::path(fs::path(Slic3r::data_dir()) / "cache" / "bundle_cache").string();
-    preset_bundle_opt = IO::deserialize_bundle(bundle_cache_filename, preset_bundle_path, config_path);
+    preset_bundle_opt = IO::deserialize_bundle(bundle_cache_filename, preset_bundle_path, config_path, Slic3r::VERSION);
 #endif
     if (! preset_bundle_opt) {
         preset_bundle_opt = std::make_optional(IO::load_bundle(preset_bundle_path, config_path));
@@ -132,7 +134,7 @@ void PresetInteractor::load_preset_bundle(
             );
         }
     #ifndef NDEBUG
-        IO::serialize_bundle(bundle_cache_filename, *preset_bundle_opt, preset_bundle_path, config_path);
+        IO::serialize_bundle(bundle_cache_filename, *preset_bundle_opt, preset_bundle_path, config_path, Slic3r::VERSION);
     #endif
     }
 

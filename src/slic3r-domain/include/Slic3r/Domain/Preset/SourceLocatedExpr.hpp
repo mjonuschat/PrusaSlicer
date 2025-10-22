@@ -29,8 +29,8 @@ struct SourceLocated
     const T& operator*() const { return value; }
     T& operator*() { return value; }
 
-    template<class Archive> void serialize(Archive& ar){
-        ar(value, source_location);
+    template<class Archive> void serialize(Archive& archive){
+        archive(value, source_location);
     }
 };
 

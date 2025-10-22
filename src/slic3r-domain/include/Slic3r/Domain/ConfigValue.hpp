@@ -15,7 +15,7 @@ namespace Slic3r::Domain {
 }
 
 namespace cereal {
-    template<class Archive> void serialize(Archive& ar, Slic3r::Domain::ConfigBox&);
+    template<class Archive> void serialize(Archive&, Slic3r::Domain::ConfigBox&);
     class BinaryInputArchive;
     class BinaryOutputArchive;
 }
@@ -45,8 +45,6 @@ struct EnumValueDef
 
 using EnumValueDefs = std::vector<EnumValueDef>;
 using EnumValueDefsPtr = std::unique_ptr<EnumValueDefs>;
-
-std::vector<EnumValueDefsPtr>& get_enum_defs();
 
 inline const EnumValueDefs* check_enum_def(const EnumValueDefs* def) {
     ASSERT(!ASSERT_VAL(def)->empty());
@@ -170,6 +168,8 @@ private:
 };
 
 struct ConfigValue {
+    ConfigValue() = delete;
+
     template <typename T>
     explicit ConfigValue(const T& value): m_value{value} {}
 

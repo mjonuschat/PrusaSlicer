@@ -109,6 +109,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-biz-algorithms-tests
         test/Slic3r/Biz/Algorithms/ScalingTests.cpp
         test/Slic3r/Biz/Algorithms/BoundingBoxTests.cpp
+        test/Slic3r/Biz/Algorithms/BundleCacheTests.cpp
     )
     target_include_directories(slic3r-biz-algorithms-tests PRIVATE test)
 

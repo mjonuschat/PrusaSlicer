@@ -82,7 +82,10 @@ void save_bundle_configs(const Domain::Preset::Bundle& bundle, const std::string
 }
 
 
-#ifndef NDEBUG
+static size_t combine_hashes(size_t hash1, size_t hash2)
+{
+    return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
+}
 
 static size_t get_file_hash(const std::string& path)
 {
@@ -99,7 +102,7 @@ static size_t hash_folder_recursive(const fs::path& path)
     try {
         for (const auto& entry : fs::recursive_directory_iterator(path)) {
             if (fs::is_regular_file(entry))
-                seed ^= get_file_hash(entry.path().string()) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                seed ^= combine_hashes(get_file_hash(entry.path().string()), seed);
         }
     } catch (const fs::filesystem_error& e) {
         throw std::runtime_error(std::string("Error iterating directory ") + path.string() + ": " + e.what());
@@ -107,7 +110,7 @@ static size_t hash_folder_recursive(const fs::path& path)
     return seed;
 }
 
-static size_t get_cache_footprint(const std::string& preset_bundle_path, const std::string& config_path)
+static size_t get_cache_footprint(const std::string& preset_bundle_path, const std::string& config_path, const std::string& slicer_version)
 {
     size_t hash1 = 0;
     boost::system::error_code ec;
@@ -116,12 +119,16 @@ static size_t get_cache_footprint(const std::string& preset_bundle_path, const s
     size_t hash2 = 0;
     if (fs::exists(config_path, ec))
         hash2 = hash_folder_recursive(config_path);
-    // Combine the two hashes
-    return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
+    // Combine the two hashes and a hash of slicer version
+    size_t hash = combine_hashes(combine_hashes(hash1, hash2), std::hash<std::string>{}(slicer_version));
+
+    // Increment the following value to enforce invalidation of caches from older versions:
+    size_t cache_epoch = 1;
+    return combine_hashes(hash, std::hash<int>{}(cache_epoch));
 }
 
 void serialize_bundle(const std::string& filename, const Domain::Preset::Bundle& bundle,
-    const std::string& preset_bundle_path, const std::string& config_path)
+    const std::string& preset_bundle_path, const std::string& config_path, const std::string& slicer_version)
 {
     SPDLOG_DEBUG("Saving currently loaded bundle into cache file...");
     try {
@@ -133,7 +140,7 @@ void serialize_bundle(const std::string& filename, const Domain::Preset::Bundle&
     boost::nowide::ofstream os(filename, std::ios::binary);
     if (os) {
         try {
-            os << get_cache_footprint(preset_bundle_path, config_path);
+            os << get_cache_footprint(preset_bundle_path, config_path, slicer_version);
         } catch (const std::runtime_error&) {
             SPDLOG_ERROR("Unable to calculate current bundle hash.");
         }
@@ -145,7 +152,7 @@ void serialize_bundle(const std::string& filename, const Domain::Preset::Bundle&
 }
 
 std::optional<Domain::Preset::Bundle> deserialize_bundle(const std::string& filename,
-    const std::string& preset_bundle_path, const std::string& config_path)
+    const std::string& preset_bundle_path, const std::string& config_path, const std::string& slicer_version)
 {
     SPDLOG_DEBUG("Running in debug mode - will try to recover bundle from cache...");
     if (boost::nowide::ifstream is(filename, std::ios::binary); is) {
@@ -154,7 +161,7 @@ std::optional<Domain::Preset::Bundle> deserialize_bundle(const std::string& file
         is >> cache_hash;
         size_t cur_hash = 0;
         try {
-            cur_hash = get_cache_footprint(preset_bundle_path, config_path);
+            cur_hash = get_cache_footprint(preset_bundle_path, config_path, slicer_version);
         } catch (const std::runtime_error&) {
             SPDLOG_ERROR("Unable to calculate current bundle hash.");
             return std::nullopt;
@@ -177,6 +184,5 @@ std::optional<Domain::Preset::Bundle> deserialize_bundle(const std::string& file
         SPDLOG_DEBUG("Bundle cache file not found.");
     return std::nullopt;
 }
-#endif
 
 }

@@ -29,26 +29,26 @@ namespace cereal {
     template<class Archive> void serialize(Archive& archive, Slic3r::Domain::SquareMatrix4d &m){ archive(binary_data(m.data(), 4*4*sizeof(double))); }
     template<class Archive, class T, int N> inline void serialize(Archive& archive, Eigen::Transform<T, N, Eigen::Affine, Eigen::DontAlign>& t){ archive(t.matrix()); }
 
-    template<class Archive> void serialize(Archive& ar, Slic3r::Domain::ConfigBox& box)
+    template<class Archive> void serialize(Archive& archive, Slic3r::Domain::ConfigBox& box)
     {
         using namespace Slic3r::Domain;
 
-        auto archive_item = [&ar](ConfigItem& item) {
+        auto archive_item = [&archive](ConfigItem& item) {
             item.visit(overloaded(
-                [&ar](EnumWrapper& ew) {
+                [&archive](EnumWrapper& ew) {
                     int val = ew.value();
-                    ar(val);
+                    archive(val);
                     if constexpr (Archive::is_loading::value)
                         ew.set_index(ew.index_of_value(val));
                 },
-                [&ar](EnumVectorWrapper& evw) {
+                [&archive](EnumVectorWrapper& evw) {
                     auto vals = evw.get_indexes();
-                    ar(vals);
+                    archive(vals);
                     if constexpr (Archive::is_loading::value)
                         evw.set_indexes(vals);
                 },
-                [&ar](auto& sth_else) {
-                    ar(sth_else);
+                [&archive](auto& sth_else) {
+                    archive(sth_else);
                 }
             ));
         };
@@ -65,7 +65,7 @@ namespace cereal {
                 for (const ConfigItem& item : overridden_items)
                     overridden_names.emplace_back(item.name());
             }
-            ar(overridden_names);
+            archive(overridden_names);
             if (Archive::is_loading::value) {
                 for (const std::string& name : overridden_names)
                     box.overrides.enable(name);

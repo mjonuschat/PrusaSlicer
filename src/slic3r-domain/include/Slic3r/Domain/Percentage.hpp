@@ -9,8 +9,8 @@ public:
     double get_abs_value(double ratio_over) const { return (value / 100.) * ratio_over; }
 
     double value = 0.;
-    template<class Archive> void serialize(Archive& ar){
-        ar(value);
+    template<class Archive> void serialize(Archive& archive){
+        archive(value);
     }
 };
 
@@ -47,8 +47,8 @@ public:
         return m_value == other.m_value && m_is_percentage == other.m_is_percentage;
     }
 
-    template<class Archive> void serialize(Archive& ar) {
-        ar(m_value, m_is_percentage);
+    template<class Archive> void serialize(Archive& archive) {
+        archive(m_value, m_is_percentage);
     }
 
 private:

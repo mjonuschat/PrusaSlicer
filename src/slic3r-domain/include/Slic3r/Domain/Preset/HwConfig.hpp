@@ -344,8 +344,8 @@ struct HwSheetConfigDef
     std::optional<SourceLocatedExpr> condition;
     FeatureDefs features;
 
-    template<class Archive> void serialize(Archive& ar){
-        ar(id, name, type, condition, features);
+    template<class Archive> void serialize(Archive& archive){
+        archive(id, name, type, condition, features);
     }
 };
 
