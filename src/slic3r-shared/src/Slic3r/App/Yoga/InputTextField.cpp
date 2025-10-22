@@ -18,26 +18,18 @@ InputTextField::InputTextField(const std::string& name) : m_tooltip(this, "", ""
     m_input_text = emplace_back<InputText>(name);
     m_input_text->set_flex_grow(1);
 
-    callbacks().update_revert_button = [this]() {
-        update_revert_button();
-    };
-}
+    callbacks().update_revert_button = [this]() { update_revert_button(); };
 
-void InputTextField::process_events(Vec2f pos, Vec2f size)
-{
-    ImRect button_bb(to_im(pos), to_im(pos + size));
-
-    bool hovered = ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max, false);
-    if (m_hovered != hovered) {
-        m_hovered = hovered;
+    m_input_text->callbacks().hovered_changed = [this](bool hovered)
+    {
         if (!m_tooltip.text().empty()) {
-            m_hovered ? m_tooltip.open() : m_tooltip.close();
+            hovered ? m_tooltip.open() : m_tooltip.close();
         }
-    }
+        update_fill();
+    };
+    m_input_text->callbacks().active_changed = [this](bool active) { update_fill(); };
 
-    set_fill(m_hovered || m_input_text->active() ? ImColor(60, 60, 60) : ImColor(41, 41, 41));
-
-    Item::process_events(pos, size);
+    update_fill();
 }
 
 InputText::Callbacks& InputTextField::callbacks()
@@ -121,7 +113,7 @@ void InputTextField::set_font_type(Render::ImguiFontType font_type)
 
 bool InputTextField::hovered() const
 {
-    return m_hovered;
+    return m_input_text->hovered();
 }
 
 InputText* InputTextField::input_text() const
@@ -129,12 +121,20 @@ InputText* InputTextField::input_text() const
     return m_input_text;
 }
 
+void InputTextField::update_fill()
+{
+    set_fill(
+        m_input_text->active() || m_input_text->active() ? ImColor(60, 60, 60) : ImColor(41, 41, 41)
+    );
+}
+
 void InputTextField::set_default(double default_value)
 {
     if (DoubleValidator* double_validator = dynamic_cast<DoubleValidator*>(validator());
         double_validator && double_validator->precision().has_value())
     {
-        m_default_text = fmt::format("{1:.{0}f}", double_validator->precision().value(), default_value);
+        m_default_text =
+            fmt::format("{1:.{0}f}", double_validator->precision().value(), default_value);
     } else {
         m_default_text = fmt::format("{:.10g}", default_value);
     }

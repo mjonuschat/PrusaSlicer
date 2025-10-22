@@ -56,6 +56,13 @@ void ScrollArea::render(Vec2f pos, Vec2f size)
         render_node(pos, child);
     }
 
+    if (!m_children_render_order.empty()) {
+        Item* last_child = m_children_render_order.back();
+        Vec2f cell_pos   = pos + Vec2f(last_child->left(), last_child->top());
+        Vec2f cell_size  = Vec2f(last_child->width(), last_child->height());
+        ImGui::SetCursorScreenPos(to_im(cell_pos + cell_size));
+    }
+
     m_scroll_max = Vec2f{ImGui::GetScrollMaxX(), ImGui::GetScrollMaxY()};
 
     ImGui::EndChild();
@@ -99,19 +106,14 @@ void ScrollArea::set_remap_horizontal_scroll(bool remap_horizontal_scroll)
     m_remap_horizontal_scroll = remap_horizontal_scroll;
 }
 
-const Vec2f& ScrollArea::content_pos() const
+const Vec2f& ScrollArea::scroll_pos() const
 {
     return m_last_scroll;
 }
 
-const Vec2f& ScrollArea::content_size() const
+const Vec2f& ScrollArea::scroll_size() const
 {
     return m_scroll_max;
-}
-
-void ScrollArea::set_content_pos(const Vec2f& scroll)
-{
-    // m_requested_pos = scroll;
 }
 
 void ScrollArea::scroll_at_item(Item* item)

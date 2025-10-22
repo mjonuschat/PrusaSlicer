@@ -6,39 +6,9 @@
 
 #include "Slic3r/App/Yoga/StackLayout.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
-#include "Slic3r/App/Yoga/Text.hpp"
 
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::App::Render;
-
-namespace {
-void emplace_row(
-    Item* container,
-    ItemPtr input,
-    const std::string& label,
-    const std::string& symbol = {}
-)
-{
-    ASSERT(container);
-    ASSERT(input);
-
-    Item* row = container->emplace_back<Item>();
-
-    row->set_flex_grow(1);
-    row->set_flex_shrink(0);
-    row->set_align_items(YGAlign::YGAlignCenter);
-
-    Text* text = row->emplace_back<Text>(label);
-    text->set_width(175);
-
-    input->set_width(150);
-    row->append(std::move(input));
-
-    if (!symbol.empty()) {
-        row->emplace_back<Text>(symbol);
-    }
-}
-} // namespace
 
 namespace Slic3r::App::Yoga {
 
@@ -81,34 +51,6 @@ AbstractSettingsDialog::~AbstractSettingsDialog()
     }
 }
 
-void AbstractSettingsDialog::emplace_subcategory(
-    Item* container,
-    const std::string& name,
-    const std::string& description,
-    std::vector<RowItem>&& row_items
-)
-{
-    Item* subcategory = container->emplace_back<Item>();
-    subcategory->set_orientation(Orientation::Vertical);
-    subcategory->emplace_back<Text>(name, ImguiFontType::Bold);
-    subcategory->set_flex_shrink(0);
-    subcategory->set_margin(Margins(0, 0, 0, 10));
-
-    Item* inputs = subcategory->emplace_back<Item>();
-    inputs->set_orientation(Orientation::Vertical);
-    inputs->set_margin(20);
-    inputs->set_gap(5);
-
-    for (RowItem& item : row_items) {
-        emplace_row(inputs, std::move(item.input), item.label, item.symbol);
-    }
-
-    if (!description.empty()) {
-        Text* desc = subcategory->emplace_back<Text>(description);
-        desc->set_wrap_mode(Text::WrapMode::Wrap);
-    }
-}
-
 void AbstractSettingsDialog::on_tab_selected(int current_index)
 {
     if (m_remove_in_progress) {
@@ -142,23 +84,22 @@ AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::strin
 {
     Item* tab_item = m_stack_tabs->emplace_back<Item>();
     tab_item->set_orientation(Orientation::Horizontal);
+    tab_item->set_flex_grow(1);
 
     // Create the ViewFactory explicitly:
     auto factory = Yoga::ViewFactory<PageEntryButton, PageEntry, PageEntryButton::FnIndexClicked>(
-        [this](size_t index)
+        [this](size_t index) {
+        m_current_tab->pages_stack_layout->set_current_index(index);
+        for (size_t button_index = 0; button_index < m_current_tab->page_list_view->item_count();
+             ++button_index)
         {
-            m_current_tab->pages_stack_layout->set_current_index(index);
-            for (size_t button_index = 0;
-                 button_index < m_current_tab->page_list_view->item_count();
-                 ++button_index)
-            {
-                PageEntryButton* button = dynamic_cast<PageEntryButton*>(
-                    m_current_tab->page_list_view->get_item(button_index)
-                );
-                ASSERT(button);
-                button->set_checked(index == button_index);
-            }
+            PageEntryButton* button = dynamic_cast<PageEntryButton*>(
+                m_current_tab->page_list_view->get_item(button_index)
+            );
+            ASSERT(button);
+            button->set_checked(index == button_index);
         }
+    }
     );
     PageListView* page_list_view = tab_item->emplace_back<PageListView>(std::move(factory));
     page_list_view->set_orientation(Orientation::Vertical);
@@ -167,6 +108,7 @@ AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::strin
     tab_item->emplace_back<Separator>(Orientation::Vertical);
 
     StackLayout* pages_stack_layout = tab_item->emplace_back<StackLayout>();
+    pages_stack_layout->set_orientation(Orientation::Vertical);
     pages_stack_layout->set_flex_grow(1);
 
     m_tabs.emplace_back(std::make_unique<Tab>(page_list_view, pages_stack_layout));

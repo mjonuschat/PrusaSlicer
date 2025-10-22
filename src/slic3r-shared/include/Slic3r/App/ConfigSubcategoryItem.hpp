@@ -4,16 +4,17 @@
 ///|/
 #pragma once
 
+#include "Slic3r/Domain/Config.hpp"
+
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
+#include "Slic3r/Biz/DataObserver.hpp"
+
 #include "Slic3r/App/ConfigRowItems.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
-#include "Slic3r/Domain/Config.hpp"
-#include "Slic3r/Biz/DataObserver.hpp"
-#include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Yoga/Rectangle.hpp"
 
 namespace Slic3r::App::Yoga {
 class Text;
-class Rectangle;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::Biz {
@@ -26,14 +27,15 @@ class PresetInteractor;
 
 namespace Slic3r::App {
 
-class ConfigSubcategoryItem : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
+class ConfigSubcategoryItem : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Rectangle
 {
     using ConfigRowListViewFactory = Yoga::ViewFactory<
         ConfigRowItems,
         Domain::ConfigItem,
         Biz::Preset::PresetInteractor&,
         Biz::ConfigBoxInteractor&>;
-    using ConfigRowListView = Yoga::ListView<ConfigRowItems, Domain::ConfigItem, ConfigRowListViewFactory>;
+    using ConfigRowListView =
+        Yoga::ListView<ConfigRowItems, Domain::ConfigItem, ConfigRowListViewFactory>;
 
 public:
     ConfigSubcategoryItem(
@@ -58,7 +60,6 @@ private:
     ConfigRowListView* m_rows_list_view{nullptr};
     Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_rows_filter_list;
     Yoga::Text* m_label{nullptr};
-    Yoga::Rectangle* m_background{nullptr};
 };
 
 } // namespace Slic3r::App

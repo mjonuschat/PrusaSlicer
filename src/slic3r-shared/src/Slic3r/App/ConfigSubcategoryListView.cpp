@@ -25,14 +25,15 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     m_cbi(cbi),
     m_category_filter(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())
 {
+    set_item_name("ConfigSubcategoryListView");
     set_orientation(Orientation::Vertical);
+    set_flex_grow(1);
     set_gap(5);
     set_flex_grow(1);
     set_min_size({0, 100});
 
-    m_category_filter->set_filter_fn([=](const Domain::ConfigItem& config_item)
+    m_category_filter->set_filter_fn([category](const Domain::ConfigItem& config_item)
                                      { return config_item.def().category == category; });
-
     m_category_filter->set_group_by_fn(
         [](const Domain::ConfigItem& config_item, std::unordered_set<std::string>& seen_keys)
         {
@@ -44,7 +45,6 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
             }
         }
     );
-
     m_category_filter->set_source_model(m_cbi.config_box_list());
 
     set_source_list(m_category_filter.get());

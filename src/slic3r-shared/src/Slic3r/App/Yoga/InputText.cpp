@@ -130,6 +130,15 @@ void InputText::render(Vec2f pos, Vec2f size)
             );
         }
 
+        bool hovered = ImGui::IsItemHovered();
+        if (m_hovered != hovered) {
+            m_hovered = hovered;
+            hovered_updated_internal();
+            if (m_callbacks.hovered_changed) {
+                m_callbacks.hovered_changed(m_hovered);
+            }
+        }
+
         ImGui::PopFont();
 
         ImGui::PopStyleColor();
@@ -180,7 +189,14 @@ void InputText::render(Vec2f pos, Vec2f size)
         }
 
         ImGuiWindow* window = ImGui::GetCurrentWindow();
-        m_active            = ImGui::GetActiveID() == window->GetID(id.c_str());
+        bool active         = ImGui::GetActiveID() == window->GetID(id.c_str());
+        if (m_active != active) {
+            m_active = active;
+            active_updated_internal();
+            if (m_callbacks.active_changed) {
+                m_callbacks.active_changed(active);
+            }
+        }
     }
 
     render_item_end(pos, size);
@@ -266,6 +282,10 @@ Vec2f InputText::get_item_size()
     return {50, ImGui::GetTextLineHeight() + GImGui->Style.FramePadding.y * 2.0f};
 }
 
+void InputText::hovered_updated_internal() {}
+
+void InputText::active_updated_internal() {}
+
 const std::string& InputText::override_label() const
 {
     return m_override_label;
@@ -274,6 +294,11 @@ const std::string& InputText::override_label() const
 void InputText::set_override_label(const std::string& override_label)
 {
     m_override_label = override_label;
+}
+
+bool InputText::hovered() const
+{
+    return m_hovered;
 }
 
 Render::ImguiFontType InputText::font_type() const

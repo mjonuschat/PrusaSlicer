@@ -26,9 +26,8 @@ public:
     bool remap_horizontal_scroll() const;
     void set_remap_horizontal_scroll(bool remap_horizontal_scroll);
 
-    const Vec2f& content_pos() const;
-    const Vec2f& content_size() const;
-    void set_content_pos(const Vec2f& content_pos);
+    const Vec2f& scroll_pos() const;
+    const Vec2f& scroll_size() const;
     void scroll_at_item(Item* item);
 
 private:

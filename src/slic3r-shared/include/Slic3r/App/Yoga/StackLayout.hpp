@@ -16,6 +16,8 @@ namespace Slic3r::App::Yoga {
 class StackLayout : public Item {
 public:
 
+    StackLayout();
+
     void insert(ItemPtr child, size_t index) override;
     ItemPtr remove(Item *child) override;
 

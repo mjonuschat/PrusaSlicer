@@ -34,7 +34,7 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
     }
 
     bool pressed  = ImGui::InvisibleButton("##btn", to_im(size.cwiseMax(10)), m_flags);
-    bool hovered  = ImGui::IsItemHovered();
+    bool hovered  = ImGui::IsItemHovered() && ImGui::IsItemVisible();
     bool held     = ImGui::IsItemActive();
 
     ImRect bb(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());

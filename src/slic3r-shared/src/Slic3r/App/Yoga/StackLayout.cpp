@@ -6,6 +6,11 @@
 
 namespace Slic3r::App::Yoga {
 
+StackLayout::StackLayout()
+{
+    set_item_name("StackLayout");
+}
+
 void StackLayout::insert(ItemPtr child, size_t index)
 {
     if (!m_children.empty()) {

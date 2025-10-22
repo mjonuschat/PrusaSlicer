@@ -976,6 +976,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::General;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->label = L("Extruder Color");
+    def->option_group = L("Preview");
     def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
     def->gui_type = ConfigItemDef::GUIType::color;
     def->init_fn = init_with(""); // Empty string means no color assigned yet.
@@ -2671,6 +2672,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("notes", typeid(std::string));
     def->location = Print;
     def->label = L("Configuration notes");
+    def->option_group = L("Notes");
     def->category = ConfigItemDef::Category::Notes;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("You can put here your personal notes. This text will be added to the G-code "

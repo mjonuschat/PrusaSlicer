@@ -6,7 +6,6 @@
 
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/App/Yoga/Rectangle.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -23,19 +22,15 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     m_preset_interactor(preset_interactor),
     m_rows_filter_list(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())
 {
+    set_item_name("ConfigSubcategoryItem");
     set_orientation(Orientation::Vertical);
     set_flex_shrink(0);
+    set_flags(ImDrawFlags_None);
+    set_rounding(0);
+    set_gap(10);
+    set_padding(10);
 
-    m_background = emplace_back<Rectangle>();
-    m_background->set_flags(ImDrawFlags_None);
-    m_background->set_rounding(0);
-    m_background->set_orientation(Orientation::Vertical);
-    m_background->set_gap(10);
-    m_background->set_padding(10);
-    m_background->set_flex_shrink(0);
-
-    m_label =
-        m_background->emplace_back<Text>(m_state->def().option_group, Render::ImguiFontType::Bold);
+    m_label = emplace_back<Text>(m_state->def().option_group, Render::ImguiFontType::Bold);
 
     const std::string option_group = m_state->def().option_group; // Intentional copy
     const Domain::ConfigItemDef::Category category = m_state->def().category; // Intentional copy
@@ -62,13 +57,12 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     );
     m_rows_filter_list->set_source_model(m_cbi.config_box_list());
 
-    m_rows_list_view = m_background->emplace_back<ConfigRowListView>(
-        ConfigRowListViewFactory{m_preset_interactor, m_cbi}
-    );
+    m_rows_list_view =
+        emplace_back<ConfigRowListView>(ConfigRowListViewFactory{m_preset_interactor, m_cbi});
     m_rows_list_view->set_source_list(m_rows_filter_list.get());
     m_rows_list_view->set_orientation(Orientation::Vertical);
     m_rows_list_view->set_gap(5);
-    m_rows_list_view->set_padding(5);
+    m_rows_list_view->set_padding(10);
 
     on_index_update();
 }
@@ -98,7 +92,7 @@ void ConfigSubcategoryItem::on_data_update()
 
 void ConfigSubcategoryItem::on_index_update()
 {
-    m_background->set_fill(m_index % 2 == 0 ? ImColor(27, 27, 27) : ImColor(22, 22, 22));
+    set_fill(m_index % 2 == 0 ? ImColor(27, 27, 27) : ImColor(22, 22, 22));
 }
 
 } // namespace Slic3r::App

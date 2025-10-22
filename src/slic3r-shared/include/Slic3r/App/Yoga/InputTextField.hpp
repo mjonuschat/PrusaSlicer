@@ -16,8 +16,6 @@ class InputTextField : public Rectangle, public Yoga::RevertableControl
 public:
     explicit InputTextField(const std::string& name = "InputText");
 
-    void process_events(Vec2f pos, Vec2f size) override;
-
     InputText::Callbacks& callbacks();
 
     /**
@@ -52,8 +50,12 @@ public:
     void reset() override;
 
 protected:
-    InputText* input_text() const;
     virtual void text_updated_internal() {}
+
+    InputText* input_text() const;
+
+private:
+    void update_fill();
 
 protected:
     Tooltip m_tooltip;
@@ -61,8 +63,6 @@ protected:
 private:
     InputText* m_input_text{nullptr};
     std::string m_default_text;
-
-    bool m_hovered = false;
 };
 
 } // namespace Slic3r::App::Yoga

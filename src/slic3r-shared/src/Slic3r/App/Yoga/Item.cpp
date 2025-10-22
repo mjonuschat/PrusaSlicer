@@ -604,7 +604,7 @@ Vec2f Item::get_global_pos() const
     if (m_parent) {
         ScrollArea* scroll_area = dynamic_cast<ScrollArea*>(m_parent);
         if (scroll_area) {
-            pos -= scroll_area->content_pos();
+            pos -= scroll_area->scroll_pos();
         }
         pos += m_parent->get_global_pos();
     }
@@ -938,8 +938,8 @@ void Item::render_node(Vec2f pos, Item* child)
         return;
     }
 
-    Vec2f cell_pos  = pos + Vec2f(YGNodeLayoutGetLeft(child_node), YGNodeLayoutGetTop(child_node));
-    Vec2f cell_size = Vec2f(YGNodeLayoutGetWidth(child_node), YGNodeLayoutGetHeight(child_node));
+    Vec2f cell_pos  = pos + Vec2f(child->left(), child->top());
+    Vec2f cell_size = Vec2f(child->width(), child->height());
 
     if (isnan(cell_size.x()) || isnan(cell_size.y())) {
         return;

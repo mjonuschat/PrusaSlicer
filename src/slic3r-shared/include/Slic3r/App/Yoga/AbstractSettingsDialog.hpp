@@ -40,13 +40,6 @@ protected:
         std::string symbol;
     };
 
-    void emplace_subcategory(
-        Item* container,
-        const std::string& name,
-        const std::string& description,
-        std::vector<RowItem>&& row_items
-    );
-
     struct Tab
     {
         PageListView* page_list_view          = nullptr;

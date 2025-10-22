@@ -24,6 +24,8 @@ class InputText : public Item
 public:
     struct Callbacks
     {
+        std::function<void(bool hovered)> hovered_changed{nullptr};
+        std::function<void(bool active)> active_changed{nullptr};
         /**
          * @brief text_edited is fired only after editing is finished (e.g. Enter/ESC or item lost
          * it's focus) This is due to optional validator which is invoked just before this callback
@@ -86,6 +88,7 @@ public:
     const std::string& override_label() const;
     void set_override_label(const std::string& override_label);
 
+    bool hovered() const;
     /**
      * @return true if InputText is currently active (focused/edited)
      */
@@ -96,6 +99,9 @@ public:
 
 protected:
     Vec2f get_item_size() override;
+
+    virtual void hovered_updated_internal();
+    virtual void active_updated_internal();
 
 private:
     Callbacks m_callbacks;
@@ -117,6 +123,7 @@ private:
     bool m_updated       = false; ///< Input was edited but not yet lost focus
     bool m_request_focus = false;
     bool m_has_focus     = false;
+    bool m_hovered       = false;
 };
 
 } // namespace Slic3r::App::Yoga
