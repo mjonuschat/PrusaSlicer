@@ -28,16 +28,21 @@ ConfigItemTextField::ConfigItemTextField(
         set_height(100);
     }
 
-    if (*m_state->def().type == typeid(double)
-        || *m_state->def().type == typeid(Domain::Percentage)
-        || *m_state->def().type == typeid(Domain::FloatOrPercentage))
-    {
-        m_validator = std::make_unique<DoubleValidator>(
+    if (*m_state->def().type == typeid(double)) {
+        m_double_validator = std::make_unique<DoubleValidator>(
             m_state->def().min.value_or(std::numeric_limits<double>::lowest()),
             m_state->def().max.value_or(std::numeric_limits<double>::max())
         );
-
-        set_validator(m_validator.release());
+        set_validator(m_double_validator.release());
+    } else if (*m_state->def().type == typeid(double)
+               || *m_state->def().type == typeid(Domain::Percentage)
+               || *m_state->def().type == typeid(Domain::FloatOrPercentage))
+    {
+        m_percentage_validator = std::make_unique<PercentageValidator>(
+            m_state->def().min.value_or(std::numeric_limits<double>::lowest()),
+            m_state->def().max.value_or(std::numeric_limits<double>::max())
+        );
+        set_validator(m_percentage_validator.release());
     }
 
     set_min_size({150, 0});
@@ -47,29 +52,33 @@ ConfigItemTextField::ConfigItemTextField(
 
     on_data_update();
 
-    callbacks().text_edited = [this]() {
+    callbacks().text_edited = [this]()
+    {
         if (*m_state->def().type == typeid(std::string)) {
             m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{text()});
         } else if (*m_state->def().type == typeid(double)) {
-            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{m_validator->value()});
+            m_preset_interactor.set_item_value(
+                *m_state,
+                Domain::ConfigValue{m_double_validator->value()}
+            );
         } else if (*m_state->def().type == typeid(Domain::Percentage)) {
             m_preset_interactor.set_item_value(
                 *m_state,
-                Domain::ConfigValue{Domain::Percentage{m_validator->value()}}
+                Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}}
             );
         } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
             const std::string value_text = text();
-            if (value_text.find('%') != std::string::npos) {
+            if (m_percentage_validator->percentage_symbol()) {
                 m_preset_interactor.set_item_value(
                     *m_state,
-                    Domain::ConfigValue{
-                        Domain::FloatOrPercentage{Domain::Percentage{m_validator->value()}}
-                    }
+                    Domain::ConfigValue{Domain::FloatOrPercentage{
+                        Domain::Percentage{m_percentage_validator->value()}
+                    }}
                 );
             } else {
                 m_preset_interactor.set_item_value(
                     *m_state,
-                    Domain::ConfigValue{Domain::FloatOrPercentage{m_validator->value()}}
+                    Domain::ConfigValue{Domain::FloatOrPercentage{m_percentage_validator->value()}}
                 );
             }
         }

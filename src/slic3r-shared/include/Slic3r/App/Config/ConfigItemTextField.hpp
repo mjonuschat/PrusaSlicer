@@ -29,7 +29,8 @@ protected:
 
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
-    Yoga::Passthrough<Yoga::DoubleValidator> m_validator;
+    Yoga::Passthrough<Yoga::DoubleValidator> m_double_validator;
+    Yoga::Passthrough<Yoga::PercentageValidator> m_percentage_validator;
 };
 
 } // namespace Slic3r::App
