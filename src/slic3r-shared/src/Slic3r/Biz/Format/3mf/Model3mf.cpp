@@ -467,7 +467,7 @@ Domain::Transform3d parse_transformation(const XML_Char *data, Read3mfIssues& co
         for (unsigned int r = 0; r < 3; ++r) {
             const std::string& element_str = mat_elements_str[i++];
             fast_float::from_chars_result res = 
-                fast_float::from_chars<double>(&*element_str.cbegin(), &*element_str.cend(), ret(r, c));
+                fast_float::from_chars<double>(element_str.data(), element_str.data() + element_str.size(), ret(r, c));
             if (res.ec != std::errc()) {
                 collected_issues.add_issue(Read3mfIssue(issue_type, std::to_string(static_cast<int>(res.ec))));
                 return Domain::Transform3d::Identity();
