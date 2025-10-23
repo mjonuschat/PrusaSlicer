@@ -25,6 +25,11 @@ struct PresetNode
     FeatureValueMap features;
     std::vector<PresetNode> variants;
     SourceLocation source_location;
+
+    template<class Archive> void serialize(Archive& archive)
+    {
+        archive(id, name, inherits, unconditional_inherits, condition, match_mode, values, features, variants, source_location);
+    }
 };
 
 struct RootPresetNode : PresetNode

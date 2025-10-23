@@ -4,14 +4,21 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Uuid.hpp"
+#include "Slic3r/Directories.hpp"
 #include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 
+#include "tbb/parallel_for.h"
+#include "tbb/blocked_range.h"
+
+#include "Slic3r/Version.hpp"
+
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
+#include "boost/filesystem/path.hpp"
 #include <Slic3r/Log.hpp>
 
 using Slic3r::Domain::Vec2d;
@@ -75,45 +82,66 @@ void PresetInteractor::load_preset_bundle(
     const std::string& config_path
 )
 {
-    auto preset_bundle = IO::load_bundle(preset_bundle_path, config_path);
+    std::optional<Domain::Preset::Bundle> preset_bundle_opt;
+#ifndef NDEBUG
+    namespace fs = boost::filesystem; 
+    const std::string bundle_cache_filename = fs::path(fs::path(Slic3r::data_dir()) / "cache" / "bundle_cache").string();
+    preset_bundle_opt = IO::deserialize_bundle(bundle_cache_filename, preset_bundle_path, config_path, Slic3r::VERSION);
+#endif
+    if (! preset_bundle_opt) {
+        preset_bundle_opt = std::make_optional(IO::load_bundle(preset_bundle_path, config_path));
+        Domain::Preset::Bundle& preset_bundle = *preset_bundle_opt;
 
-    // TODO: remove this when config wizard is ready
-    if (preset_bundle.printer_configs.empty()) {
-        HwConfigEvaluator config_eval;
-        for (const auto& vendor : {"PrusaResearch", "PrusaResearchSLA"}) {
-            auto vendor_bundle_it = preset_bundle.vendor_bundles.find(vendor);
-            ASSERT(vendor_bundle_it != preset_bundle.vendor_bundles.end());
-            auto& vendor_bundle = vendor_bundle_it->second;
-            for (const auto& hw_printer_template : vendor_bundle.vendor_data.printer_configs) {
-                auto printer_config = config_eval.create_printer_config(
-                    hw_printer_template,
-                    vendor_bundle.vendor_data
-                );
-                preset_bundle.printer_configs.emplace(printer_config.id, printer_config);
-                vendor_bundle.printer_configs.emplace_back(std::move(printer_config));
-            }
-        }
-    }
-
-    preset_bundle.evaluated_presets.clear();
-    for (const auto& [vendor_id, vendor_bundle] : preset_bundle.vendor_bundles) {
-        PresetEvaluator preset_evaluator{vendor_bundle.presets};
-        for (const auto& p : vendor_bundle.printer_configs) {
-            try {
-                auto epps = preset_evaluator.evaluate(p);
-                for (auto& epp : epps) {
-                    dump_ep_info(epp);
-                    preset_bundle.evaluated_presets[epp.hw_config.id].emplace_back(std::move(epp));
+        // TODO: remove this when config wizard is ready
+        if (preset_bundle.printer_configs.empty()) {
+            HwConfigEvaluator config_eval;
+            for (const auto& vendor : {"PrusaResearch", "PrusaResearchSLA"}) {
+                auto vendor_bundle_it = preset_bundle.vendor_bundles.find(vendor);
+                ASSERT(vendor_bundle_it != preset_bundle.vendor_bundles.end());
+                auto& vendor_bundle = vendor_bundle_it->second;
+                for (const auto& hw_printer_template : vendor_bundle.vendor_data.printer_configs) {
+                    auto printer_config = config_eval.create_printer_config(
+                        hw_printer_template,
+                        vendor_bundle.vendor_data
+                    );
+                    preset_bundle.printer_configs.emplace(printer_config.id, printer_config);
+                    vendor_bundle.printer_configs.emplace_back(std::move(printer_config));
                 }
-            } catch (const std::exception& e) {
-                SPDLOG_ERROR("{}", e.what());
             }
         }
+
+        preset_bundle.evaluated_presets.clear();
+        std::mutex mut;
+
+        for (const auto& [vendor_id, vendor_bundle] : preset_bundle.vendor_bundles) {
+            PresetEvaluator preset_evaluator{vendor_bundle.presets};
+            tbb::parallel_for(
+                tbb::blocked_range<size_t>(0, vendor_bundle.printer_configs.size()),
+                [&](const tbb::blocked_range<size_t>& r) {
+                    for (size_t i = r.begin(); i != r.end(); ++i) {
+                        try {
+                            auto epps = preset_evaluator.evaluate(vendor_bundle.printer_configs[i]);
+                            for (auto& epp : epps) {
+                                std::lock_guard<std::mutex> guard(mut);
+                                dump_ep_info(epp);
+                                preset_bundle.evaluated_presets[epp.hw_config.id].emplace_back(std::move(epp));
+                            }
+                        } catch (const std::exception& e) {
+                            SPDLOG_ERROR("{}", e.what());
+                        }
+                    }
+                }
+            );
+        }
+    #ifndef NDEBUG
+        IO::serialize_bundle(bundle_cache_filename, *preset_bundle_opt, preset_bundle_path, config_path, Slic3r::VERSION);
+    #endif
     }
+
     // do not save it now, as we create it anyway again
     // IO::save_bundle_configs(preset_bundle, config_path);
 
-    m_workbench.set_preset_bundle(std::move(preset_bundle));
+    m_workbench.set_preset_bundle(std::move(*preset_bundle_opt));
     if (m_selected_project_id != Domain::INVALID_ID)
         fill_printer_presets();
 }

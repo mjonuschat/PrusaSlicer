@@ -78,13 +78,11 @@ Fill* Fill::new_from_type(const Domain::InfillPattern type)
     }
 }
 
-// Force initialization of the Fill::use_bridge_flow() internal static map in a thread safe fashion even on compilers
-// not supporting thread safe non-static data member initializers.
-static bool use_bridge_flow_initializer = Fill::use_bridge_flow(Domain::InfillPattern::ipGrid);
-
 bool Fill::use_bridge_flow(const Domain::InfillPattern type)
 {
-	static std::vector<unsigned char> cached;
+    // Since C++11, static local variables are initialized in thread-safe manner.
+    // https://isocpp.org/files/papers/N4860.pdf (section 8.8, subsection 4).
+    static std::vector<unsigned char> cached;
 	if (cached.empty()) {
 		cached.assign(size_t(Domain::InfillPattern::ipCount), 0);
 		for (size_t i = 0; i < cached.size(); ++ i) {

@@ -23,7 +23,6 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <cereal/cereal.hpp>
 #include <Eigen/Geometry>
 #include <cmath>
 #include <string>

@@ -5,6 +5,7 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/ExPolygon.hpp"
+#include "Slic3r/Biz/Algorithms/CerealUtils.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;

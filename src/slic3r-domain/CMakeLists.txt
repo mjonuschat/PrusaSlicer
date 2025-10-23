@@ -159,6 +159,8 @@ add_library(slic3r-domain STATIC
     src/Slic3r/Domain/Size.cpp
 
     include/Slic3r/Domain/JobStatus.hpp
+
+    src/Slic3r/Domain/ConfigDefUtils.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

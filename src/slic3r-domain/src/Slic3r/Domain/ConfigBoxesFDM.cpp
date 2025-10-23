@@ -24,9 +24,9 @@ using FDMConfigLocation::Project;
 using FDMConfigLocation::Object;
 using FDMConfigLocation::Volume;
 
-namespace {
 // Define the static object holding all definitions. Provide list of acceptable
 // boxes and the init function.
+namespace {
 const ConfigDefinitions& get_defs_fdm() {
     static ConfigDefinitions defs_fdm(
         {Printer, Filament, Print, Tool, Object, Volume, Project}, fdm_config_init_fn

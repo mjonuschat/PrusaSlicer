@@ -42,6 +42,14 @@ struct RegEx
 
     const std::string& source() const { return m_source; }
 
+    template<class Archive> void save(Archive& archive) const {
+        archive(m_source);
+    }
+    template<class Archive> void load(Archive& archive) {
+        archive(m_source);
+        m_regex = m_source;
+    }
+
 private:
     std::regex m_regex;
     std::string m_source;

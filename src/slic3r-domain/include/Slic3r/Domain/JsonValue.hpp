@@ -5,6 +5,7 @@
 #include <vector>
 #include <variant>
 
+
 namespace Slic3r::Domain {
 
 struct JsonValue;

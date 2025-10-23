@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp" // only debug visualization
 #include "Slic3r/Domain/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/CerealUtils.hpp"
 
 #include <optional>
 #include <Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp>

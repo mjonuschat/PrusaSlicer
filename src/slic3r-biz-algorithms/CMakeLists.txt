@@ -55,7 +55,6 @@ add_library(slic3r-biz-algorithms STATIC
     include/Slic3r/Biz/Algorithms/ModelVolume.hpp
     src/Slic3r/Biz/Algorithms/Color.cpp
     include/Slic3r/Biz/Algorithms/Color.hpp
-    include/Slic3r/Biz/Algorithms/Types.hpp
     include/Slic3r/Biz/Algorithms/StringUtils.hpp
     src/Slic3r/Biz/Algorithms/StringUtils.cpp
     include/Slic3r/Biz/Algorithms/ExPolygonsIndex.hpp
@@ -80,6 +79,7 @@ add_library(slic3r-biz-algorithms STATIC
     src/Slic3r/Biz/Algorithms/ImageUtils.cpp
     include/Slic3r/Biz/Algorithms/Bed.hpp
     src/Slic3r/Biz/Algorithms/Bed.cpp
+    include/Slic3r/Biz/Algorithms/CerealUtils.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
@@ -109,6 +109,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-biz-algorithms-tests
         test/Slic3r/Biz/Algorithms/ScalingTests.cpp
         test/Slic3r/Biz/Algorithms/BoundingBoxTests.cpp
+        test/Slic3r/Biz/Algorithms/BundleCacheTests.cpp
     )
     target_include_directories(slic3r-biz-algorithms-tests PRIVATE test)
 
