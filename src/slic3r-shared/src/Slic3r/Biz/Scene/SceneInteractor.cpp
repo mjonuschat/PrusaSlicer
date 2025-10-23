@@ -386,7 +386,7 @@ void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& 
     auto& project = m_workbench.project(m_selected_project_id);
     Domain::ElementRefs updated;
     for (const Domain::ModelObject* object : objects) {
-        SPDLOG_DEBUG("Notify listner obj {}", object->id().id);
+        SPDLOG_DEBUG("Notify listener obj {}", object->id().id);
 
         for (const Domain::ModelInstance* inst : object->instances)
             updated.emplace_back(object->id().id, inst->id().id, 0);
@@ -395,11 +395,11 @@ void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& 
         for (const auto& bed_ref : changes.updated_beds)
             invoke_slicing_input_changed(bed_ref);
 
-        SPDLOG_DEBUG("- on_instance_added: {}", fmt::join(updated, ", "));
-        invoke_listeners<ISceneChangedListener>(
-            [&](auto* l) { l->on_instance_added(m_selected_project_id, updated); }
-        );
     }
+    SPDLOG_DEBUG("- on_instance_added: {}", fmt::join(updated, ", "));
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto* l) { l->on_instance_added(m_selected_project_id, updated); }
+    );
     set_object_selection({SelectionMode::Instance, {updated}});
 }
 

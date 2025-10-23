@@ -335,19 +335,27 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
         bed_instances.back().transformation.set_offset(get_bed_translation(i, size_x, size_y, false));
     }
 
+    // Find the max index of occupied beds
+    // If there is none occupied, leave at least one bed (index 0)
+    int max_bed_index = 0;
     for (ModelObject* mo : loaded_3mf.model.objects) {
         for (ModelInstance* mi : mo->instances) {
             const auto bb = Algorithms::ModelObject::instance_bounding_box(*mo, *mi);
 
             for (int i=0; i<9; ++i) {
                 if (contains_2d(bed_instances[i], Biz::Algorithms::BoundingBox::to_2d(bb)) == BedContainmentState::Inside) {
-                    const Vec3d& bed_offset = bed_instances[i].transformation.get_offset();
-                    loaded_3mf.config_containers_data.front().bed_offsets.emplace_back(bed_offset.x(), bed_offset.y());
+                    max_bed_index = std::max(max_bed_index, i);
                     break;
                 }
             }
         }
     }
+
+    for (int i=0; i<=max_bed_index; ++i) {
+        const Vec3d& bed_offset = bed_instances[i].transformation.get_offset();
+        loaded_3mf.config_containers_data.front().bed_offsets.emplace_back(bed_offset.x(), bed_offset.y());
+    }
+
 }
 
 using OptionalPresetBundle = std::optional<std::reference_wrapper<const Domain::Preset::Bundle>>;

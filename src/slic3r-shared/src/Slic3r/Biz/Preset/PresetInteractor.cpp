@@ -123,7 +123,7 @@ void PresetInteractor::load_preset_bundle(
                             auto epps = preset_evaluator.evaluate(vendor_bundle.printer_configs[i]);
                             for (auto& epp : epps) {
                                 std::lock_guard<std::mutex> guard(mut);
-                                dump_ep_info(epp);
+                                //dump_ep_info(epp);
                                 preset_bundle.evaluated_presets[epp.hw_config.id].emplace_back(std::move(epp));
                             }
                         } catch (const std::exception& e) {
