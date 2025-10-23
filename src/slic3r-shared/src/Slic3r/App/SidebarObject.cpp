@@ -39,42 +39,44 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_text_object_name->set_flex_shrink(0);
 
     m_config_item_filter = std::make_shared<ConfigItemFilter>();
-    m_config_item_filter->set_filter_fn([this](const Biz::OverrideItem& item) -> bool {
-        return !item.is_override()
-            && m_project_interactor.preset_interactor().tool_cbi_list().size() > 1;
-    });
-
-    m_config_item_list_view = scroll_area->emplace_back<ConfigItemListView>(
-        m_project_interactor.preset_interactor()
+    m_config_item_filter->set_filter_fn(
+        [this](const Biz::OverrideItem& item) -> bool
+        {
+            return !item.is_override()
+                && m_project_interactor.preset_interactor().tool_cbi_list().size() > 1;
+        }
     );
+
+    m_config_item_list_view =
+        scroll_area->emplace_back<ConfigItemListView>(m_project_interactor.preset_interactor());
     m_config_item_list_view->set_orientation(Orientation::Vertical);
     m_config_item_list_view->set_gap(5);
     m_config_item_list_view->set_flex_shrink(0);
     m_config_item_list_view->set_source_list(m_config_item_filter.get());
 
-    std::weak_ptr<Biz::ObjectSettingsObservableList>
-        object_settings_observable_list = m_project_interactor.preset_interactor()
-                                              .object_settings_interactor()
-                                              .object_observable_list();
+    std::weak_ptr<Biz::ObjectSettingsObservableList> object_settings_observable_list =
+        m_project_interactor.preset_interactor()
+            .object_settings_interactor()
+            .object_observable_list();
     m_config_item_filter->set_source_model(object_settings_observable_list);
 
-    LayoutButton* add_settings_button = scroll_area->emplace_back<LayoutButton>(
-        _u8L("Add object settings")
-    );
-    add_settings_button->set_self_align(YGAlignCenter);
-    add_settings_button->callbacks().action = [this] {
+    m_add_settings_button = scroll_area->emplace_back<LayoutButton>(std::string{});
+    m_add_settings_button->set_self_align(YGAlignCenter);
+    m_add_settings_button->callbacks().action = [this]
+    {
         if (m_override_settings_dialog.opened()) {
             m_override_settings_dialog.close();
         } else {
             m_override_settings_dialog.open();
         }
     };
-    add_settings_button->set_flex_shrink(0);
+    m_add_settings_button->set_flex_shrink(0);
 
     m_override_group_filter = std::make_shared<ObservableOverrideCategorizer>();
     m_override_group_filter->set_allow_disabled(false);
 
-    m_override_group_list_view = scroll_area->emplace_back<OverrideGroupListView>(m_project_interactor);
+    m_override_group_list_view =
+        scroll_area->emplace_back<OverrideGroupListView>(m_project_interactor);
     m_override_group_list_view->set_orientation(Orientation::Vertical);
     m_override_group_list_view->set_gap(5);
     m_override_group_list_view->set_flex_shrink(0);
@@ -83,12 +85,10 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_override_group_filter->set_source_model(object_settings_observable_list);
 
     m_override_settings_dialog.attach_to_item(this, Position::Left);
-    m_override_settings_dialog.callbacks().opened = [add_settings_button] {
-        add_settings_button->set_checked(true);
-    };
-    m_override_settings_dialog.callbacks().closed = [add_settings_button] {
-        add_settings_button->set_checked(false);
-    };
+    m_override_settings_dialog.callbacks().opened = [this]
+    { m_add_settings_button->set_checked(true); };
+    m_override_settings_dialog.callbacks().closed = [this]
+    { m_add_settings_button->set_checked(false); };
 }
 
 void SidebarObject::on_scene_selection_changed(
@@ -102,6 +102,11 @@ void SidebarObject::on_scene_selection_changed(
 
     m_selection = selection;
     update_object_name();
+    update_enable_modifiers();
+    m_add_settings_button->set_label(
+        m_selection.mode == Biz::Scene::SelectionMode::Instance ? _u8L("Add object settings") :
+                                                                  _u8L("Add volume settings")
+    );
 }
 
 void SidebarObject::visible_updated_internal()
@@ -136,6 +141,36 @@ void SidebarObject::update_object_name()
     }
 
     m_text_object_name->set_text(text);
+}
+
+void SidebarObject::update_enable_modifiers()
+{
+    bool enable = true;
+
+    if (m_selection.mode == Biz::Scene::SelectionMode::Volume) {
+        // std::any_of(m_selection.elements.cbegin(), m_selection.elements.cend(), [this]())
+        if (std::any_of(
+                m_selection.elements.cbegin(),
+                m_selection.elements.cend(),
+                [this](const Domain::ElementRef& element)
+                {
+                    Domain::ModelVolume* volume =
+                        m_project_interactor.selected_project().find_volume_by_id(
+                            element.object_id,
+                            element.volume_id
+                        );
+                    return volume->type() != Domain::ModelVolumeType::MODEL_PART
+                        && volume->type() != Domain::ModelVolumeType::PARAMETER_MODIFIER;
+                }
+            ))
+        {
+            enable = false;
+        }
+    }
+
+    m_add_settings_button->set_enabled(enable);
+    m_config_item_list_view->set_visible(enable);
+    m_override_group_list_view->set_visible(enable);
 }
 
 } // namespace Slic3r::App

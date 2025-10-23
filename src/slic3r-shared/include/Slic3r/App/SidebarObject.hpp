@@ -21,6 +21,7 @@ class ProjectInteractor;
 
 namespace Slic3r::App::Yoga {
 class Text;
+class LayoutButton;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
@@ -40,6 +41,7 @@ protected:
 
 private:
     void update_object_name();
+    void update_enable_modifiers();
 
 private:
     using ConfigItemListViewFactory = Yoga::ViewFactory<
@@ -68,6 +70,7 @@ private:
     Biz::UnsharedPointer<ObservableOverrideCategorizer> m_override_group_filter;
 
     Yoga::Text* m_text_object_name{nullptr};
+    Yoga::LayoutButton* m_add_settings_button{nullptr};
     Biz::Scene::ObjectSelection m_selection;
 
     OverrideSettingsDialog m_override_settings_dialog;

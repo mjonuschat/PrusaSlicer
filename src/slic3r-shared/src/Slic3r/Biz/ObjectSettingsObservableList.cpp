@@ -24,10 +24,17 @@ void ObjectSettingsObservableList::set_sources(const std::vector<Domain::ConfigB
     std::unordered_map<OverrideItem*, std::set<Domain::ConfigBox*>> new_item_sources;
     ItemMap new_item_index;
 
+    auto find_item_new = [&](const std::string& name) -> OverrideItem*
+    {
+        ItemMap::const_iterator it = new_item_index.find(name);
+
+        return it == new_item_index.end() ? nullptr : new_items.at(it->second).get();
+    };
+
     // 1. Go through all Config Boxes and populate m_item_sources, m_items and m_item_index
     for (Domain::ConfigBox* box : sources) {
         for (const Domain::ConfigItem& config_item : box->items.all_items()) {
-            OverrideItem* item = find_item(config_item.name());
+            OverrideItem* item = find_item_new(config_item.name());
             if (!item) {
                 OverrideItemPtr& item_ptr = new_items.emplace_back(
                     std::make_unique<OverrideItem>(
@@ -45,7 +52,7 @@ void ObjectSettingsObservableList::set_sources(const std::vector<Domain::ConfigB
         }
 
         for (const Domain::ConfigItem& config_item : box->overrides.all_items()) {
-            OverrideItem* item = find_item(config_item.name());
+            OverrideItem* item = find_item_new(config_item.name());
             if (!item) {
                 OverrideItemPtr& item_ptr = new_items.emplace_back(
                     std::make_unique<OverrideItem>(

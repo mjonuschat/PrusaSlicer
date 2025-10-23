@@ -41,9 +41,9 @@ void ObjectSettingsInteractor::on_selected_config_container_changed(
     Domain::SelectionId container_id
 )
 {
-    Domain::Project& project                   = m_workbench.project(project_id);
-    Domain::PrinterTechnology print_technology = project.find_config_container(container_id)
-                                                     ->print_technology();
+    Domain::Project& project = m_workbench.project(project_id);
+    Domain::PrinterTechnology print_technology =
+        project.find_config_container(container_id)->print_technology();
 
     m_current_print_technology = print_technology;
     m_project_id               = project_id;
@@ -69,11 +69,13 @@ void ObjectSettingsInteractor::update_sources()
             }
         } else if (m_current_selection.mode == Scene::SelectionMode::Volume) {
             for (const Domain::ElementRef& ref : std::as_const(m_current_selection.elements)) {
-                Domain::ModelVolume* model_volume = project.find_volume_by_id(
-                    ref.object_id,
-                    ref.volume_id
-                );
-                sources.push_back(&model_volume->volume_settings);
+                Domain::ModelVolume* model_volume =
+                    project.find_volume_by_id(ref.object_id, ref.volume_id);
+                if (model_volume->type() == Domain::ModelVolumeType::MODEL_PART
+                    || model_volume->type() == Domain::ModelVolumeType::PARAMETER_MODIFIER)
+                {
+                    sources.push_back(&model_volume->volume_settings);
+                }
             }
         }
     }
