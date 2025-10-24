@@ -4,7 +4,8 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <fmt/format.h>
 #include <imgui/imgui_internal.h>

@@ -5,11 +5,11 @@
 #include "Slic3r/App/OverrideOptionGroup.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -35,7 +35,7 @@ OverrideOptionGroup::OverrideOptionGroup(
     LayoutButton* remove_group_button = label_row->emplace_back<LayoutButton>(
         std::string(),
         Render::Icon::Minus,
-        _u8L("Remove override group")
+        Biz::_u8L("Remove override group")
     );
     remove_group_button->callbacks().action = [this] {
         for (int index = m_override_config_filter->size() - 1; index >= 0; --index) {

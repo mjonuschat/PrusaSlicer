@@ -2,7 +2,8 @@
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/Platform/IFileExplorerHandler.hpp"
 #include "Slic3r/App/DisplayStrings.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <ranges>
@@ -11,6 +12,8 @@ using Slic3r::Biz::Platform::JobManager::JobManagerStatus;
 using Slic3r::Domain::JobStatus;
 using SlicingStatusCode = Slic3r::Biz::Slicing::StatusCode;
 using Slic3r::Domain::SlicingId;
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::PopNotification {
 

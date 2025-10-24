@@ -7,11 +7,12 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
-#include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/IDialogManager.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/ThumbnailStore.hpp"
+
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
 
 #include <imgui/imgui_internal.h>
@@ -19,6 +20,7 @@
 namespace Slic3r::App {
 
 using namespace Yoga;
+using namespace Slic3r::Biz;
 
 TopBar::TopBar(Biz::ProjectInteractor* project_interactor, Platform::AbstractRenderModule* render_module, ThumbnailStore& thumbnail_store) :
     Window("top_bar"),

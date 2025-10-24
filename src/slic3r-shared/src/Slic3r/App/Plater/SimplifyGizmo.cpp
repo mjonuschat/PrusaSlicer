@@ -4,18 +4,21 @@
 #include <exception>
 #include <chrono>
 
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
+
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher + render_request_handler
 #include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
-#include "Slic3r/Domain/Color.hpp"
 
+#include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 #include "imgui/imgui.h"
+
+using namespace Slic3r::Biz;
 
 // TODO: 
 // 1. add Notification: there is volume with a lot of small triangles and suggest simplify

@@ -4,9 +4,10 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App {
 

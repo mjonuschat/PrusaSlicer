@@ -40,7 +40,7 @@ const std::string Localization::active_language() const
     return m_translations.active_language();
 }
 
-const std::vector<LanguageShortInfo>& Localization::languages() const
+const std::vector<Biz::LanguageShortInfo>& Localization::languages() const
 {
     return m_translations.languages();
 }

@@ -1,4 +1,4 @@
-#include "Slic3r/App/I18N/LanguageInfo.hpp"
+#include "Slic3r/Biz/I18N/LanguageInfo.hpp"
 
 // ----------------------------------------------------------------------------
 // default languages table & initialization

@@ -120,7 +120,7 @@ SplashScreen::SplashScreen(bool is_editor, wxPoint pos) :
     set_bitmap(m_main_bitmap);
 }
 
-void SplashScreen::SetText(const std::string& text)
+void SplashScreen::SetText(const wxString& text)
 {
     // This method creates a temporary copy of the main bitmap to draw on.
     wxBitmap bitmap(m_main_bitmap);
@@ -132,7 +132,7 @@ void SplashScreen::SetText(const std::string& text)
         memDC.SetTextForeground(wxColour(237, 107, 33));
 
         // Draw text at a center of the remained banner place.
-        memDC.DrawLabel(WX::from_u8(text), m_state_text_rect, wxALIGN_CENTER);
+        memDC.DrawLabel(text, m_state_text_rect, wxALIGN_CENTER);
 
         memDC.SelectObject(wxNullBitmap);
     }
@@ -176,21 +176,21 @@ void SplashScreen::Decorate(wxBitmap& bmp)
     memDc.SetTextForeground(wxColour(255, 255, 255));
 
     memDc.SetFont(m_constant_text.title_font);
-    memDc.DrawLabel(WX::from_u8(m_constant_text.title), banner_rect, wxALIGN_TOP | wxALIGN_LEFT);
+    memDc.DrawLabel(m_constant_text.title, banner_rect, wxALIGN_TOP | wxALIGN_LEFT);
 
-    int title_height = memDc.GetTextExtent(WX::from_u8(m_constant_text.title)).GetY();
+    int title_height = memDc.GetTextExtent(m_constant_text.title).GetY();
     banner_rect.SetTop(banner_rect.GetTop() + title_height);
     banner_rect.SetHeight(banner_rect.GetHeight() - title_height);
 
     memDc.SetFont(m_constant_text.version_font);
-    memDc.DrawLabel(WX::from_u8(m_constant_text.version), banner_rect, wxALIGN_TOP | wxALIGN_LEFT);
-    int version_height = memDc.GetTextExtent(WX::from_u8(m_constant_text.version)).GetY() + margin;
+    memDc.DrawLabel(m_constant_text.version, banner_rect, wxALIGN_TOP | wxALIGN_LEFT);
+    int version_height = memDc.GetTextExtent(m_constant_text.version).GetY() + margin;
     banner_rect.SetTop(banner_rect.GetTop() + version_height);
     banner_rect.SetHeight(banner_rect.GetHeight() - version_height);
 
     memDc.SetFont(m_constant_text.credits_font);
-    memDc.DrawLabel(WX::from_u8(m_constant_text.credits), banner_rect, wxALIGN_BOTTOM | wxALIGN_LEFT);
-    int credits_height = memDc.GetMultiLineTextExtent(WX::from_u8(m_constant_text.credits)).GetY();
+    memDc.DrawLabel(m_constant_text.credits, banner_rect, wxALIGN_BOTTOM | wxALIGN_LEFT);
+    int credits_height = memDc.GetMultiLineTextExtent(m_constant_text.credits).GetY();
     banner_rect.SetBottom(banner_rect.GetBottom() - credits_height);
 
     // save remained place for the text with application state
@@ -214,24 +214,35 @@ void SplashScreen::set_bitmap(wxBitmap& bmp)
 
 void SplashScreen::ConstantText::init(const wxFont& init_font, bool is_editor, int text_banner_width)
 {
+    using namespace WX;
+
+    const wxString space = from_u8(" ");
+    const wxString br    = from_u8("\n");
+    const wxString brbr  = from_u8("\n\n");
+
     // title
-    title = SLIC3R_APP_NAME; // is_editor ? SLIC3R_APP_NAME : GCODEVIEWER_APP_NAME;
+    title = from_u8(SLIC3R_APP_NAME); // is_editor ? SLIC3R_APP_NAME : GCODEVIEWER_APP_NAME;
 
     // dynamically get the version to display
-    version = L("Version") + " " + std::string(SLIC3R_VERSION);
+    version = _L("Version") + space + from_u8(SLIC3R_VERSION);
 
     // credits infornation
-    credits = "\n" + title + " " + L("is based on Slic3r by Alessandro Ranellucci and the RepRap community.") + "\n\n" + L("Developed by Prusa Research.") + "\n\n" + L("Licensed under GNU AGPLv3.");
+    credits = br
+        + title
+        + space
+        + _L("is based on Slic3r by Alessandro Ranellucci and the RepRap community.")
+        + brbr
+        + _L("Developed by Prusa Research.")
+        + brbr
+        + _L("Licensed under GNU AGPLv3.");
 
     // Use a temporary DC to measure text extents with the correct fonts.
     wxMemoryDC memDC;
 
     // The width of the credits information string doesn't respect to the banner width some times.
     // So, scale credits_font in the respect to the longest string width
-    wxString wx_credits = WX::from_u8(credits);
     memDC.SetFont(init_font);
-    int longest_string_width = word_wrap_string(wx_credits, memDC);
-    credits                  = WX::into_u8(wx_credits);
+    int longest_string_width = word_wrap_string(credits, memDC);
     float credits_font_scale = (float) text_banner_width / longest_string_width;
 
     // init fonts
@@ -240,7 +251,7 @@ void SplashScreen::ConstantText::init(const wxFont& init_font, bool is_editor, i
     title_font   = credits_font.Scaled(3.5f);
 
     memDC.SetFont(credits_font);
-    float version_font_scale = (float)text_banner_width / memDC.GetTextExtent(WX::from_u8(version)).GetX();
+    float version_font_scale = (float) text_banner_width / memDC.GetTextExtent(version).GetX();
     version_font = credits_font.Scaled(version_font_scale > 2.f ? 2.f : version_font_scale);
 }
 

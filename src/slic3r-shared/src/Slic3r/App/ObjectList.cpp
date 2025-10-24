@@ -10,7 +10,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/Plater/BedThumbnailTexture.hpp"
 
 #include "Slic3r/Assert.hpp"
@@ -31,6 +31,8 @@ using Slic3r::Domain::Vec2f;
 
 using Slic3r::Biz::Algorithms::Color::can_decode_color;
 using Slic3r::Biz::Algorithms::Color::decode_color;
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App {
 

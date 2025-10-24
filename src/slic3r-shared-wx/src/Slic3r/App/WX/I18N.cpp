@@ -1,5 +1,7 @@
 #include "Slic3r/App/WX/StringConversions.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::WX {
 

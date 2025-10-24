@@ -1,11 +1,12 @@
 #include "Slic3r/App/Preview/Legend.hpp"
-#include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
-#include "Slic3r/App/Render/ImguiRender.hpp"
 
-#include <Slic3r/Biz/libpgcode/Utils.hpp>
+#include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
+#include "Slic3r/App/Render/ImguiRender.hpp"
 #include <Slic3r/App/libvgcode/FdmViewer.hpp>
 #include <Slic3r/App/libvgcode/ColorRange.hpp>
+
+#include "Slic3r/Biz/I18N/I18N.hpp"
+#include <Slic3r/Biz/libpgcode/Utils.hpp>
 
 #include "libslic3r/format.hpp"
 

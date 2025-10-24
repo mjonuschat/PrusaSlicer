@@ -6,7 +6,7 @@
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <imgui_internal.h>
 #include <fmt/format.h>
@@ -79,7 +79,7 @@ ConfigItemTextField::ConfigItemTextField(
 void ConfigItemTextField::on_data_update()
 {
     if (mixed()) {
-        set_override_label(_u8L("Mixed"));
+        set_override_label(Biz::_u8L("Mixed"));
         set_font_type(Render::ImguiFontType::Italic);
         return;
     }

@@ -1,7 +1,7 @@
 #include <Slic3r/Biz/PrintHost/PrintHostLocal.hpp>
 
 #include "Slic3r/Biz/Utils/CopyFile.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "fmt/format.h"
 #include <boost/filesystem.hpp>

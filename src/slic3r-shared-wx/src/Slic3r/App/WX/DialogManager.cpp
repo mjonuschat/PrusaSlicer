@@ -2,7 +2,6 @@
 
 #include "Slic3r/App/WX/WebView/WebViewFactory.hpp"
 #include "Slic3r/App/WX/MsgDialog.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/DiffDialog.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"

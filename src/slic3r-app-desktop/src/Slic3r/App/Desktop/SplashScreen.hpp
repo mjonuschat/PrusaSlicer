@@ -10,15 +10,15 @@ class SplashScreen : public wxSplashScreen
 public:
     SplashScreen(bool is_editor, wxPoint pos = wxDefaultPosition);
 
-    void SetText(const std::string& text);
+    void SetText(const wxString& text);
     void Decorate(wxBitmap& bmp);
 
 private:
     struct ConstantText
     {
-        std::string title;
-        std::string version;
-        std::string credits;
+        wxString title;
+        wxString version;
+        wxString credits;
 
         wxFont title_font;
         wxFont version_font;

@@ -1,6 +1,6 @@
 #include "Slic3r/App/AppConfig.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Config/ConfigLoad.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Assert.hpp"
@@ -11,6 +11,8 @@
 #include "boost/filesystem.hpp"
 #include "boost/system/error_code.hpp"
 #include "boost/nowide/fstream.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App {
 

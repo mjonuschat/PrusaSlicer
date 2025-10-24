@@ -8,11 +8,13 @@
 
 #include <Slic3r/App/libvgcode/Types.hpp>
 #include <Slic3r/App/libvgcode/FdmViewer.hpp>
-#include "Slic3r/App/I18N/I18N.hpp"
+
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 namespace Slic3r::App::Preview {
 
 using namespace Slic3r::App::Yoga;
+using namespace Slic3r::Biz;
 
 LegendWindow::LegendWindow(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapper)
     : Window("legend")

@@ -327,20 +327,20 @@ void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
     std::unique_ptr<App::Browser::BrowserLogicConnectPage> logic = std::make_unique<App::Browser::BrowserLogicConnectPage>(project_interactor);
     WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, std::move(logic), false);
     project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
-    m_left_bar->InsertNewPage(0, webview_panel, from_u8(L("Printers")), "lb_printers");
+    m_left_bar->InsertNewPage(0, webview_panel, WX::_L("Printers"), "lb_printers");
     m_printers_page_added = true;
 }
 
 void MainFrame::init_projects_page()
 {
     wxPanel* projects_page = tmp_panel(m_left_bar, from_u8("Here will be shown all projects"));
-    m_left_bar->AddNewPage(projects_page, from_u8(L("Projects")), "lb_projects");
+    m_left_bar->AddNewPage(projects_page, WX::_L("Projects"), "lb_projects");
 }
 
 void MainFrame::init_slicing_page()
 {
     m_canvas = std::make_unique<Platform::WX::WXRenderCanvas>(m_left_bar);
-    m_left_bar->AddNewPage(m_canvas.get(), from_u8(L("Slicing")), "lb_slicing");
+    m_left_bar->AddNewPage(m_canvas.get(), WX::_L("Slicing"), "lb_slicing");
 }
 
 void MainFrame::init_printables_page(Biz::ProjectInteractor& project_interactor)
@@ -352,7 +352,7 @@ void MainFrame::init_printables_page(Biz::ProjectInteractor& project_interactor)
     std::unique_ptr<App::Browser::BrowserLogicPrintables> logic = std::make_unique<App::Browser::BrowserLogicPrintables>(project_interactor);
     WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, std::move(logic), false);
     project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
-    m_left_bar->AddNewPage(webview_panel, from_u8(L("Printables")), "lb_printables");
+    m_left_bar->AddNewPage(webview_panel, WX::_L("Printables"), "lb_printables");
     m_printables_page_added = true;
 }
 

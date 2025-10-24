@@ -5,6 +5,7 @@
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
@@ -18,9 +19,9 @@
 #include "Slic3r/App/PrinterAddDialog.hpp"
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/IDialogManager.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
+using namespace Slic3r::Biz;
 
 Slic3r::App::LogicalPrinterSettingsDialog::LogicalPrinterSettingsDialog(
     Biz::ProjectInteractor& project_interactor,

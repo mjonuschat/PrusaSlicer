@@ -1,8 +1,9 @@
 #include "Slic3r/App/Preview/GCodeWindow.hpp"
-#include "Slic3r/App/Preview/GCodeDisplay.hpp"
 
+#include "Slic3r/App/Preview/GCodeDisplay.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/Assert.hpp"
 
@@ -54,7 +55,7 @@ GCodeWindow::GCodeWindow(libvgcode::FdmViewer* viewer, GCodeWindowData* data) :
     set_min_size({ 330.f, 0.f });
     set_orientation(Yoga::Orientation::Vertical);
 
-    emplace_back<Yoga::Text>(_u8L("G-code viewer"))
+    emplace_back<Yoga::Text>(Biz::_u8L("G-code viewer"))
         ->set_font_type(App::Render::ImguiFontType::Bold);
 
     m_gcode = emplace_back<GCodeDisplay>(viewer, data);

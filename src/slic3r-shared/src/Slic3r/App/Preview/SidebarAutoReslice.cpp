@@ -1,8 +1,9 @@
 #include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
-#include "Slic3r/App/Yoga/ToggleButton.hpp"
-#include "Slic3r/Biz/ProjectInteractor.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/App/Yoga/ToggleButton.hpp"
+
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 namespace Slic3r::App::Preview {
 using Biz::ProjectInteractor;
@@ -17,8 +18,8 @@ SidebarAutoReslice::SidebarAutoReslice(ProjectInteractor& project_interactor) :
     row->set_orientation(Yoga::Orientation::Horizontal);
 
     m_auto_reslice_chb = row->emplace_back<Yoga::ToggleButton>(
-        L("Auto-reslice"),
-        L("Automatically runs slicing after any settings change.")
+        Biz::L("Auto-reslice"),
+        Biz::L("Automatically runs slicing after any settings change.")
     );
     m_auto_reslice_chb->set_font_type(Render::ImguiFontType::Bold);
     m_auto_reslice_chb->callbacks().checked_changed = [&](bool checked)

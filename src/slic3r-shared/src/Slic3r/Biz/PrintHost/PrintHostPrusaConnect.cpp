@@ -1,8 +1,8 @@
 #include "Slic3r/Biz/PrintHost/PrintHostPrusaConnect.hpp"
 
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Log.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 
 #include "fmt/format.h"
 #include <boost/nowide/convert.hpp>

@@ -9,7 +9,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/locale/generator.hpp>
 
-namespace Slic3r {
+namespace Slic3r::Biz {
 
 struct LanguageShortInfo
 {

@@ -1,7 +1,6 @@
 #include "Slic3r/App/Preview/DoubleSliderForLayers.hpp"
 
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Assert.hpp"
 
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
@@ -10,6 +9,7 @@
 
 #include "Slic3r/Biz/Algorithms/Color.hpp"
 #include "Slic3r/Biz/GCodeReader/Utils.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/Types.hpp"
 

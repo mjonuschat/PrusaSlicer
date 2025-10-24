@@ -5,8 +5,8 @@
 #include "Slic3r/App/OverrideSettingsDialog.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Yoga/StackLayout.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
@@ -16,7 +16,7 @@ using namespace Slic3r::App::Yoga;
 namespace Slic3r::App {
 
 OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_interactor) :
-    Dialog({_u8L("Settings")}, "OverrideSettingsDialog"),
+    Dialog({Biz::_u8L("Settings")}, "OverrideSettingsDialog"),
     m_project_interactor(project_interactor)
 {
     content()->set_width(380);

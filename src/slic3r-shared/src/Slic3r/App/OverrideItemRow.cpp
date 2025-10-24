@@ -9,7 +9,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -58,7 +58,7 @@ OverrideItemRow::OverrideItemRow(
         LayoutButton* remove_button = container->emplace_back<LayoutButton>(
             std::string(),
             Render::Icon::Minus,
-            _u8L("Remove override")
+            Biz::_u8L("Remove override")
         );
         remove_button->set_flex_shrink(0);
         remove_button->callbacks().action = [this] {

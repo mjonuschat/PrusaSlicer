@@ -1,5 +1,5 @@
-#include "Slic3r/App/I18N/Translation.hpp"
-#include "Slic3r/App/I18N/LanguageInfo.hpp"
+#include "Slic3r/Biz/I18N/Translation.hpp"
+#include "Slic3r/Biz/I18N/LanguageInfo.hpp"
 
 #include "Slic3r/Assert.hpp"
 
@@ -20,7 +20,7 @@
 #include <regex>
 #endif // __linux__
 
-namespace Slic3r {
+namespace Slic3r::Biz {
 
 static std::string language(const std::string& locale_str)
 {

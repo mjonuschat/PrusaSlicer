@@ -13,7 +13,7 @@
 #include "Slic3r/Semver.hpp"
 #include "Slic3r/Time.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 
 #include <limits>

@@ -1,6 +1,6 @@
 #include "Slic3r/Biz/Network/HttpCurl.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Exception.hpp"
 

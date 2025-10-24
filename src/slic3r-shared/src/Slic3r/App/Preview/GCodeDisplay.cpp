@@ -1,8 +1,10 @@
-#include "Slic3r/App/Preview/GCodeWindow.hpp"
 #include "Slic3r/App/Preview/GCodeDisplay.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 
+#include "Slic3r/App/Preview/GCodeWindow.hpp"
 #include <Slic3r/App/libvgcode/FdmViewer.hpp>
+
+#include "Slic3r/Biz/I18N/I18N.hpp"
+
 #include <imgui/imgui_internal.h>
 
 namespace Slic3r::App::Preview {
@@ -34,7 +36,7 @@ void GCodeDisplay::render(Yoga::Vec2f pos, Yoga::Vec2f size)
     ImGuiWindow* window = ImGui::GetCurrentWindow();
 
     if (!m_data->has_data()) {
-        static std::string msg = _u8L("No data available");
+        static std::string msg = Biz::_u8L("No data available");
         ImGui::RenderText(to_im(pos), msg.c_str());
     }
     else {

@@ -4,7 +4,7 @@
 ///|/
 #include "Slic3r/App/LogicalPrinterSettingsButton.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -33,7 +33,7 @@ LogicalPrinterSettingsButton::LogicalPrinterSettingsButton(
 
 void LogicalPrinterSettingsButton::on_data_update()
 {
-    const std::string prefix{m_state->runtime_only ? _u8L("(From 3mf) ") : ""};
+    const std::string prefix{m_state->runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
     set_printer_name(prefix + m_state->name);
     set_preset_name(m_state->hw_printer_config_name);
 

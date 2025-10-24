@@ -11,12 +11,13 @@
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/ProgressBar.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "libslic3r/format.hpp"
 
 #include <imgui_internal.h>
 
 using namespace Slic3r::App::Yoga;
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Plater {
 

@@ -25,6 +25,7 @@
 namespace Slic3r::App::WX {
 
 using namespace Diff;
+using namespace Biz;
 
 static std::string get_preset_name(const std::string& name, bool is_runtime_only)
 {

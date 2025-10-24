@@ -1,7 +1,7 @@
 #include "Slic3r/Biz/PrintHost/PrintHostMKS.hpp"
 
 #include "Slic3r/Log.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Network/TCPConsole.hpp"
 
 #include "fmt/format.h"

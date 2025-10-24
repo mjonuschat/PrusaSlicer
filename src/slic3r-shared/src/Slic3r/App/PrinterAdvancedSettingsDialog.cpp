@@ -12,9 +12,11 @@
 #include "Slic3r/App/ConfigSubcategoryListView.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App {
 

@@ -1,6 +1,7 @@
 #include "Slic3r/App/Preview/Types.hpp"
+
 #include "Slic3r/Biz/Units.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::App::libvgcode;

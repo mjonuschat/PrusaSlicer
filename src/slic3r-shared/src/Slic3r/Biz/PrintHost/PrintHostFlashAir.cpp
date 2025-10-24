@@ -1,7 +1,7 @@
 #include "Slic3r/Biz/PrintHost/PrintHostFlashAir.hpp"
 
 #include "Slic3r/Log.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "fmt/format.h"
 #include <boost/filesystem.hpp>

@@ -5,15 +5,16 @@
 #include "Slic3r/App/SidebarObject.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/App/Yoga/Text.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 
 #include <fmt/format.h>
 
 using namespace Slic3r::App::Yoga;
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App {
 

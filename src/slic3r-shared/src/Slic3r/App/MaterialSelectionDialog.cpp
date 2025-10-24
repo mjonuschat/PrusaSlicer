@@ -7,15 +7,16 @@
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/InputText.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Search.hpp"
 #include "Slic3r/App/Navigator.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <boost/locale.hpp>
 
 using namespace Slic3r::App::Yoga;
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App {
 

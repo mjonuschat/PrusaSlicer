@@ -1,14 +1,16 @@
 #include "Slic3r/App/Yoga/MaterialSettingsButton.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include "libslic3r/format.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Yoga {
 

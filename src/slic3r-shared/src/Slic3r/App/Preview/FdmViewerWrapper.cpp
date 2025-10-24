@@ -1,14 +1,13 @@
 #include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
+
 #include "Slic3r/App/Preview/LegendWindow.hpp"
-
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include <Slic3r/App/libvgcode/ColorRange.hpp>
 
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include <Slic3r/Biz/Algorithms/Color.hpp>
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
 #include <Slic3r/Domain/Color.hpp>
-
-#include <Slic3r/App/libvgcode/ColorRange.hpp>
 
 #include "Slic3r/Domain/Constants.hpp"
 

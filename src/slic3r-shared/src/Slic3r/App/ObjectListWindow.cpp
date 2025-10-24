@@ -11,9 +11,11 @@
 
 #include "Slic3r/App/Plater/BedThumbnailTexture.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "libslic3r/format.hpp"
 #include "libslic3r/Utils.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App {
 

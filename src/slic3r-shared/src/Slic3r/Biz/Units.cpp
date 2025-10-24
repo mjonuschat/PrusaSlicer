@@ -1,5 +1,5 @@
 #include "Slic3r/Biz/Units.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/Assert.hpp"
 

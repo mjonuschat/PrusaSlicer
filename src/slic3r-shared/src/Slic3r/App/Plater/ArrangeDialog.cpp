@@ -1,7 +1,6 @@
 #include "Slic3r/App/Yoga/SegmentedControl.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Yoga/Slider.hpp"
@@ -9,9 +8,12 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Domain/BedRef.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/App/Plater/ArrangeDialog.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Plater {
 
@@ -126,7 +128,7 @@ ArrangeDialog::ArrangeDialog(
     OnModeSelected on_mode_selected,
     const Settings& settings
 ) :
-    Yoga::GizmoDialog{_u8L("Arrange")},
+    Yoga::GizmoDialog{ Biz::_u8L("Arrange")},
     m_on_arrange{on_arrange},
     m_on_cancel{on_cancel}
 {
@@ -139,12 +141,12 @@ ArrangeDialog::ArrangeDialog(
     auto segments = {
         Segment{
             .icon               = Icon::Circle,
-            .tooltip            = _u8L("All beds"),
+            .tooltip            = Biz::_u8L("All beds"),
             .initially_selected = settings.mode == Mode::Global,
         },
         Segment{
             .icon               = Icon::Sphere,
-            .tooltip            = _u8L("Selected beds"),
+            .tooltip            = Biz::_u8L("Selected beds"),
             .initially_selected = settings.mode == Mode::Local,
         },
     };
@@ -226,6 +228,7 @@ void ArrangeDialog::set_bed_segments(const std::optional<Domain::Bed::Segments>&
 
 void ArrangeDialog::update_status(const ArrangeTaskStatus status)
 {
+    using namespace Biz;
     if (status == ArrangeTaskStatus::Running) {
         m_arrange_button->set_label(_u8L("Cancel"));
         m_arrange_button->callbacks().action = [this]() {

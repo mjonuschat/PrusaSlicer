@@ -10,8 +10,7 @@
 #include "libslic3r/Slicing.hpp"
 
 #include "Slic3r/Biz/Preset/PresetHints.hpp"
-
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 namespace Slic3r::Biz::Preset {
 

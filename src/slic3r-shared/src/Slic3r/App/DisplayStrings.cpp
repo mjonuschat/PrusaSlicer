@@ -1,7 +1,9 @@
 #include "Slic3r/App/DisplayStrings.hpp"
 #include <boost/algorithm/string/join.hpp>
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Domain/Project.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App {
 

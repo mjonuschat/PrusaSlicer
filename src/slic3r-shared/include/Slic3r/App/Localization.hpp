@@ -1,9 +1,9 @@
 #pragma once
 
-#include "I18N/Translation.hpp"
 #include "ILanguageChangedListener.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
+#include "Slic3r/Biz/I18N/Translation.hpp"
 
 // ! Singleton Class  
 
@@ -19,13 +19,13 @@ public:
     bool set_language(const std::string& language);
     bool is_alternative_language() const;
     const std::string   active_language() const;
-    const std::vector<LanguageShortInfo>& languages() const;
+    const std::vector<Biz::LanguageShortInfo>& languages() const;
 
 private:
     Localization();
 
 private:
-    Translations m_translations;
+    Biz::Translations m_translations;
 };
 
 Localization& localization();

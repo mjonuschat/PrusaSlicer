@@ -5,7 +5,6 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/CommandBuffer.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Preview/Types.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
 #include "Slic3r/App/Navigator.hpp"
@@ -17,15 +16,17 @@
 #include "Slic3r/App/ThumbnailStore.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
 #include "Slic3r/App/AppServices.hpp"
-#include "Slic3r/Biz/Algorithms/Point.hpp"
-#include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/App/RenderModuleHelper.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
 #include <Slic3r/App/libvgcode/FdmViewerInputData.hpp>
+
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include <Slic3r/Biz/libpgcode/Processor.hpp>
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <LibBGCode/core/core.hpp>
 #include <LibBGCode/convert/convert.hpp>

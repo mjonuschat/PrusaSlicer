@@ -10,7 +10,7 @@
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Math.hpp"
 
 #include "libslic3r/format.hpp"
@@ -27,6 +27,8 @@ static constexpr size_t RESTART_ITEM_ID  = 2;
 static const ImColor NEUTRAL_COLOR   = ImColor(255, 255, 255);
 static const ImColor FEATURE_1_COLOR = ImColor(64, 191, 191);
 static const ImColor FEATURE_2_COLOR = ImColor(191, 64, 191);
+
+using namespace Biz;
 
 MeasureDialog::MeasureDialog() : GizmoDialog(_u8L("Measure"))
 {

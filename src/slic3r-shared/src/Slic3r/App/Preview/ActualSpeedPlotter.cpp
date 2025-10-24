@@ -1,6 +1,7 @@
 #include "Slic3r/App/Preview/ActualSpeedPlotter.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Domain/Color.hpp"
 
 namespace Slic3r::App::Preview {
@@ -44,7 +45,7 @@ int plot_actual_speed_profile(const ActualSpeedPlotData& data, const ImVec2& siz
     int idx_hovered = -1;
 
     if (values_count < 2 || data.data.back().position - data.data.front().position <= 0.0f) {
-        static const std::string msg = _u8L("No data available");
+        static const std::string msg = Biz::_u8L("No data available");
         ImGui::RenderText(frame_bb.Min + (frame_bb.GetSize() - ImGui::CalcTextSize(msg.c_str())) * 0.5f, msg.c_str());
     }
     else {

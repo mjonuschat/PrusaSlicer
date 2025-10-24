@@ -169,6 +169,8 @@ bool DesktopApp::OnInit()
     const bool is_sys_menu         = true;
     WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
 
+    const wxString dots = WX::from_u8("...");
+
     bool is_editor     = true; // is_editor();
     SplashScreen* scrn = nullptr;
     if (app_config->get<bool>("show_splash_screen")) {
@@ -202,7 +204,7 @@ bool DesktopApp::OnInit()
 #ifndef __linux__
         wxYield();
 #endif
-        scrn->SetText(L("Loading configurations") + "...");
+        scrn->SetText(WX::_L("Loading configurations") + dots);
     }
 
     using Biz::Platform::PlatformServices;
@@ -250,12 +252,12 @@ bool DesktopApp::OnInit()
     m_project_interactor->user_account_interactor()
         .add_listener<Biz::UserAccount::IUserAccountListener>(&app_services.pop_notification_center());
     if (scrn && is_editor)
-        scrn->SetText(L("Preparing Plater") + "...");
+        scrn->SetText(WX::_L("Preparing Plater") + dots);
 
     m_plater_module = std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
 
     if (scrn && is_editor)
-        scrn->SetText(L("Preparing Preview") + "...");
+        scrn->SetText(WX::_L("Preparing Preview") + dots);
 
     m_preview_module = std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
 

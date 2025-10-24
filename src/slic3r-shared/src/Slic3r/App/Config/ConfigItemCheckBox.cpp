@@ -5,7 +5,7 @@
 #include "Slic3r/App/Config/ConfigItemCheckBox.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 namespace Slic3r::App {
 
@@ -33,7 +33,7 @@ void ConfigItemCheckBox::on_data_update()
 {
     if (mixed()) {
         set_third_state(true);
-        set_label(_u8L("Mixed"));
+        set_label(Biz::_u8L("Mixed"));
         set_font_type(Render::ImguiFontType::Italic);
         return;
     }

@@ -48,7 +48,6 @@
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/RenderModuleHelper.hpp"
 
 #include "Slic3r/Biz/Format/STL.hpp"
@@ -56,6 +55,7 @@
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/Math.hpp"
 
@@ -70,6 +70,7 @@ using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec4d;
 
 using namespace Slic3r::App::Yoga;
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Plater {
 

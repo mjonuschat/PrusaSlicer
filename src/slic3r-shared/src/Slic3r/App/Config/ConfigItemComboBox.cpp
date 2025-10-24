@@ -5,7 +5,7 @@
 #include "Slic3r/App/Config/ConfigItemComboBox.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <fmt/format.h>
 
@@ -123,7 +123,7 @@ void ConfigItemComboBox::on_data_update()
 {
     // TODO: the validators gets constantly recreated, clean this up
     if (mixed()) {
-        set_override_label(_u8L("Mixed"));
+        set_override_label(Biz::_u8L("Mixed"));
         set_label_font_type(Render::ImguiFontType::Italic);
         return;
     }
