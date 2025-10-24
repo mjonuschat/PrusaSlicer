@@ -13,6 +13,7 @@
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/Platform/ListenerScope.hpp"
+#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -22,7 +23,11 @@ namespace Slic3r::App {
 class PrinterAddDialog;
 class Navigator;
 
-class LogicalPrinterSettingsDialog : public Yoga::Dialog, public Biz::Preset::IPresetChangedListener
+class LogicalPrinterSettingsDialog :
+    public Yoga::Dialog,
+    public Biz::Preset::IPresetChangedListener,
+    public Biz::IListSelectionChangedListener,
+    public Biz::ISelectedProjectChangedListener
 {
 public:
     LogicalPrinterSettingsDialog(
@@ -36,6 +41,10 @@ public:
         Domain::SelectionId config_container_id,
         Biz::Preset::PresetItemType type
     ) override;
+
+    void on_list_selection_changed(Domain::SelectionId new_selection) override;
+
+    void on_selected_project_changed(size_t index) override;
 
     PrinterAdvancedSettingsDialog& printer_advanced_settings_dialog();
 
@@ -55,15 +64,34 @@ private:
         Biz::Preset::PresetItem,
         LogicalPrinterSettingsButton::FnIndexClicked,
         const Biz::Preset::PresetInteractor&>;
-    using PrinterListView = Yoga::ListView<LogicalPrinterSettingsButton, Biz::Preset::PresetItem, PrinterListViewFactory>;
+    using PrinterListView = Yoga::
+        ListView<LogicalPrinterSettingsButton, Biz::Preset::PresetItem, PrinterListViewFactory>;
 
     using NozzleListView = Yoga::ListView<
         PrinterNozzleRow,
         Biz::Preset::ToolConfigItemObservableList,
-        Yoga::ViewFactory<PrinterNozzleRow, Biz::Preset::ToolConfigItemObservableList, Biz::Preset::PresetInteractor&>>;
+        Yoga::ViewFactory<
+            PrinterNozzleRow,
+            Biz::Preset::ToolConfigItemObservableList,
+            Biz::Preset::PresetInteractor&>>;
 
-    Biz::ListenerScope<Biz::Preset::IPresetChangedListener, Biz::Preset::PresetInteractor, LogicalPrinterSettingsDialog>
+    Biz::ListenerScope<
+        Biz::Preset::IPresetChangedListener,
+        Biz::Preset::PresetInteractor,
+        LogicalPrinterSettingsDialog>
         m_preset_changed_listener_scope;
+
+    Biz::ListenerScope<
+        Biz::IListSelectionChangedListener,
+        Biz::Preset::PresetItemObservableList,
+        LogicalPrinterSettingsDialog>
+        m_preset_list_selection_changed_listener_scope;
+
+    Biz::ListenerScope<
+        Biz::ISelectedProjectChangedListener,
+        Biz::ProjectInteractor,
+        LogicalPrinterSettingsDialog>
+        m_selected_project_changed_listener_scope;
 
     Biz::ProjectInteractor& m_project_interactor;
     Navigator& m_navigator;
