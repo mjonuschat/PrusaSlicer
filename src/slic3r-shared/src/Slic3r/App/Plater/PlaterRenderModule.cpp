@@ -1,9 +1,20 @@
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
-#include "Slic3r/App/Plater/ArrangeGizmo.hpp"
+
+#include "Slic3r/Domain/Bed.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/Image.hpp"
+
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/FileLoadingLogic.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
+
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/Scene/MouseDragDetector.hpp"
+#include "Slic3r/App/Scene/BedMaterials.hpp"
+#include "Slic3r/App/Scene/BedRenderHelper.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
@@ -24,12 +35,12 @@
 #include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
 #include "Slic3r/App/Plater/MeasureGizmo.hpp"
 #include "Slic3r/App/Plater/MeasureDialog.hpp"
-#include "Slic3r/App/Plater/TextGizmo.hpp"
 #include "Slic3r/App/Plater/TextDialog.hpp"
-#include "Slic3r/Domain/Bed.hpp"
-#include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/Domain/Types.hpp"
-#include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/App/Plater/TextGizmo.hpp"
+#include "Slic3r/App/Plater/ArrangeGizmo.hpp"
+#include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
+#include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
+#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
@@ -49,15 +60,7 @@
 #include "Slic3r/App/Yoga/MenuItem.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/RenderModuleHelper.hpp"
-
-#include "Slic3r/Biz/Format/STL.hpp"
-#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
-#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
-#include "Slic3r/Biz/Algorithms/Point.hpp"
-#include "Slic3r/Biz/FileLoadingLogic.hpp"
-#include "Slic3r/Biz/I18N/I18N.hpp"
-
-#include "Slic3r/Math.hpp"
+#include "Slic3r/App/TopBar.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -506,6 +509,43 @@ void PlaterRenderModule::init_dialog_navigation()
     init_gizmo_dialog(m_text_gizmo->ui_dialog());
 }
 
+void PlaterRenderModule::update_object_selection()
+{
+    const Biz::Scene::ObjectSelection& selection = m_project_interactor.scene_interactor().object_selection();
+
+    const bool empty_selection = selection.empty();
+    m_toolbar_move->set_enabled(!empty_selection);
+    m_toolbar_rotate->set_enabled(!empty_selection);
+    m_toolbar_simplify->set_enabled(!empty_selection);
+    m_toolbar_delete->set_enabled(!empty_selection);
+
+    m_text_gizmo->update_layout(
+        !empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume
+        );
+
+    bool can_add_instance = !empty_selection;
+    if (can_add_instance) {
+        const size_t obj_id = selection.elements[0].object_id;
+        for (const Domain::ElementRef& el : selection.elements) {
+            if (el.object_id != obj_id) {
+                // We can’t add instances for multiple objects simultaneously.
+                can_add_instance = false;
+                break;
+            }
+        }
+    }
+    m_toolbar_add_instance->set_enabled(can_add_instance);
+
+    m_toolbar_add_volume->set_enabled(can_add_instance);
+    if (!can_add_instance && m_add_volumes_menu->opened()) {
+        m_add_volumes_menu->close();
+    }
+
+    m_sidebar_bed->set_visible(empty_selection);
+    m_sidebar_print->set_visible(empty_selection);
+    m_sidebar_object->set_visible(!empty_selection);
+}
+
 void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type)
 {
     m_toolbar_move->set_checked(current_tool_type == Scene::ToolType::Translation);
@@ -753,126 +793,6 @@ void PlaterRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
     cmd_buffer.submit();
 }
 
-#if ENABLED_DEBUG_BEDS
-static void render_imgui_debug_bed(
-    Biz::ProjectInteractor& project_interactor,
-    PlaterScenePresenter& scene_presenter,
-    Render::Device& device
-)
-{
-
-    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
-    if (ImGui::Begin("Bed test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        auto& proj                       = project_interactor.selected_project();
-        auto& scene_interactor           = project_interactor.scene_interactor();
-        const Domain::BedRef& active_tag = scene_interactor.bed_selection().last_selected_bed();
-
-        size_t total_instances_count                    = 0;
-        const Domain::Project::ConfigContainerList& ccs = proj.config_containers();
-        for (auto& cc : ccs) {
-            total_instances_count += cc->bed_instances().size();
-        }
-
-        Domain::BedRef remove_tag{Domain::INVALID_ID, Domain::INVALID_ID};
-
-        if (ImGui::BeginTable("Beds", (total_instances_count > 1) ? 5 : 4, ImGuiTableFlags_Borders))
-        {
-            ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
-            ImGui::TableSetupColumn("Container ID");
-            ImGui::TableSetupColumn("Instance ID");
-            ImGui::TableSetupColumn("Model Insts");
-            ImGui::TableSetupColumn("Print Volume");
-            ImGui::TableHeadersRow();
-
-            Scene::visit(
-                scene_presenter.scene().root(),
-                [&](Scene::Node& n)
-                {
-                    Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
-                    if (tag != nullptr) {
-                        Domain::ConfigContainer* cc =
-                            proj.find_config_container(tag->config_container_id);
-                        DEBUG_ASSERT(cc != nullptr);
-                        Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
-                        if (tag->type == Scene::BedElementType::Undefined) {
-                            bool active = active_tag.config_container_id == tag->config_container_id
-                                && active_tag.instance_id == tag->instance_id;
-
-                            ImGui::TableNextRow();
-                            if (active)
-                                ImGui::TableSetBgColor(
-                                    ImGuiTableBgTarget_RowBg0,
-                                    ImGui::GetColorU32(ImGuiCol_TableHeaderBg)
-                                );
-
-                            ImGui::TableSetColumnIndex(0);
-                            ImGui::AlignTextToFramePadding();
-                            ImGui::Text("%zu", tag->config_container_id);
-
-                            ImGui::TableSetColumnIndex(1);
-                            ImGui::Text("%zu", tag->instance_id);
-
-                            ImGui::TableSetColumnIndex(2);
-                            ImGui::Text("%zu", inst.model_instances.size());
-
-                            ImGui::TableSetColumnIndex(3);
-                            bool print_volume = inst.print_volume_enabled;
-                            if (ImGui::Checkbox(
-                                    fmt::format(
-                                        "##print_volume{}/{}",
-                                        tag->config_container_id,
-                                        tag->instance_id
-                                    )
-                                        .c_str(),
-                                    &print_volume
-                                ))
-                            {
-                                inst.print_volume_enabled = print_volume;
-                                scene_presenter.update_beds();
-                            }
-
-                            if (total_instances_count > 1) {
-                                ImGui::TableSetColumnIndex(4);
-                                if (ImGui::Button(
-                                        fmt::format(
-                                            "Remove##{}/{}",
-                                            tag->config_container_id,
-                                            tag->instance_id
-                                        )
-                                            .c_str()
-                                    ))
-                                    remove_tag = {tag->config_container_id, tag->instance_id};
-                            }
-                        }
-                    }
-                }
-            );
-
-            ImGui::EndTable();
-        }
-
-        if (remove_tag.config_container_id != Domain::INVALID_ID) {
-            const Domain::BedRef& active = scene_interactor.bed_selection().last_selected_bed();
-            scene_interactor.remove_bed_instance(remove_tag);
-            if (active == remove_tag) {
-                auto& cc{project_interactor.selected_config_container()};
-                auto& inst{cc.bed_instances().front()};
-                scene_interactor.bed_selection().select_one(Domain::BedRef{cc.id().id, inst->id().id});
-            }
-            --total_instances_count;
-        }
-
-        if (total_instances_count < 9) {
-            if (ImGui::Button("Add instance"))
-                scene_interactor.add_bed_instance(
-                    project_interactor.selected_config_container().id().id
-                );
-        }
-    }
-    ImGui::End();
-}
-#endif // ENABLED_DEBUG_BEDS
-
 void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {
     if (!m_scene_presenter->project_ready())
@@ -899,11 +819,6 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     }
     ImGui::End();
 #endif // ENABLED_DEBUG_OUTLINE
-
-#if ENABLED_DEBUG_BEDS
-    // ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 50.f), ImGuiCond_Always);
-    render_imgui_debug_bed(m_project_interactor, *m_scene_presenter, *m_device);
-#endif // ENABLED_DEBUG_BEDS
 
 #if ENABLED_DEBUG_CAMERA
     render_imgui_debug_camera(
@@ -966,34 +881,7 @@ void PlaterRenderModule::on_scene_selection_changed(
     const Biz::Scene::ObjectSelection& selection
 )
 {
-    const bool empty_selection = selection.empty();
-    m_toolbar_move->set_enabled(!empty_selection);
-    m_toolbar_rotate->set_enabled(!empty_selection);
-    m_toolbar_simplify->set_enabled(!empty_selection);
-    m_toolbar_delete->set_enabled(!empty_selection);
-
-    m_text_gizmo->update_layout(
-        !empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume
-    );
-
-    bool can_add_instance = !empty_selection;
-    if (can_add_instance) {
-        const size_t obj_id = selection.elements[0].object_id;
-        for (const Domain::ElementRef& el : selection.elements) {
-            if (el.object_id != obj_id) {
-                // We can’t add instances for multiple objects simultaneously.
-                can_add_instance = false;
-                break;
-            }
-        }
-    }
-    m_toolbar_add_instance->set_enabled(can_add_instance);
-
-    m_toolbar_add_volume->set_enabled(can_add_instance);
-
-    m_sidebar_bed->set_visible(empty_selection);
-    m_sidebar_print->set_visible(empty_selection);
-    m_sidebar_object->set_visible(!empty_selection);
+    update_object_selection();
 }
 
 void PlaterRenderModule::on_screen_resized()
@@ -1008,6 +896,7 @@ void PlaterRenderModule::on_set_imgui_render() {}
 void PlaterRenderModule::on_selected_project_changed(size_t index)
 {
     m_object_list->update_del_button();
+    update_object_selection();
 }
 
 } // namespace Slic3r::App::Plater

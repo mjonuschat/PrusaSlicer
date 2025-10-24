@@ -2,19 +2,12 @@
 
 #include <memory>
 
-#include "Slic3r/App/Plater/ArrangeGizmo.hpp"
-#include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
-#include "Slic3r/App/Platform/AbstractRenderModule.hpp"
-#include "Slic3r/App/Scene/Scene.hpp"
-#include "Slic3r/App/Scene/GizmoManager.hpp"
-#include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
-#include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
-#include "Slic3r/App/SharedThumbnailImageGenerator.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
-#include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/DialogNavigation.hpp"
+#include "Slic3r/App/Scene/GizmoManager.hpp"
 
 namespace Slic3r::Biz {
 class ThumbnailImageProvider;
@@ -23,12 +16,23 @@ class ThumbnailImageProvider;
 namespace Slic3r::App {
 struct ThumbnailStore;
 class ThumbnailStoreUpdater;
-
-namespace Yoga {
-class Menu;
-} // namespace Yoga
-
+class Navigator;
+class ObjectListWindow;
+class SidebarBed;
+class SidebarObject;
+class SidebarPrint;
+class CubeView;
+class TopBar;
 } // namespace Slic3r::App
+
+namespace Slic3r::App::Yoga {
+class Menu;
+class ToolbarButton;
+} // namespace Slic3r::App::Yoga
+
+namespace Slic3r::App::PopNotification {
+class PopNotificationListView;
+} // namespace Slic3r::App::PopNotification
 
 namespace Slic3r::App::Plater {
 class TranslationGizmo;
@@ -38,6 +42,12 @@ class SimplifyGizmo;
 class TextGizmo;
 class MeasureGizmo;
 class PlaterCameraGizmo;
+class ArrangeGizmo;
+class PlaterScenePresenter;
+class PlaterRenderLayout;
+class SidebarPlaterActionButtons;
+class History;
+class ThumbnailImageGenerator;
 
 class PlaterRenderModule final :
     public Platform::AbstractRenderModule,
@@ -52,7 +62,7 @@ public:
         Biz::ProjectInteractor& project_interactor,
         std::shared_ptr<ThumbnailStore> thumbnail_store,
         std::shared_ptr<ThumbnailStoreUpdater> thumbnail_store_updater,
-        std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator
+        std::shared_ptr<ThumbnailImageGenerator> thumbnail_image_generator
     );
     ~PlaterRenderModule();
 
@@ -97,10 +107,12 @@ private:
     void init_scene();
     void init_scene_layout();
     void update_tool_selection(Scene::ToolType current_tool_type);
-    void render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
+    void
+    render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
     void toggle_activate_tool(Scene::ToolType tool_type);
     void active_tool_changed(Scene::IToolGizmo* active_tool) override;
     void init_dialog_navigation();
+    void update_object_selection();
 
     void init_gizmos();
     void init_add_volume_menu(Yoga::Item* parent);
