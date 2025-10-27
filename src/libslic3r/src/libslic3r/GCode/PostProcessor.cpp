@@ -13,7 +13,7 @@
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/format.hpp"
-#include "libslic3r/I18N.hpp"
+#include "libslic3r/I18N_private.hpp"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include <boost/algorithm/string.hpp>

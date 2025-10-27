@@ -8,7 +8,7 @@
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Zipper.hpp"
 #include "libslic3r/miniz_extension.hpp"
-#include "libslic3r/I18N.hpp"
+#include "libslic3r/I18N_private.hpp"
 #include "miniz.h"
 
 #if defined(_MSC_VER) &&  _MSC_VER <= 1800 || __cplusplus < 201103L

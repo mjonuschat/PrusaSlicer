@@ -15,7 +15,7 @@
 #include <features.h>
 #endif
 
-#include "libslic3r/I18N.hpp"
+#include "libslic3r/I18N_private.hpp"
 
 namespace Slic3r {
 

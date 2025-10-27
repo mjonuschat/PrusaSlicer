@@ -13,7 +13,7 @@
 #include <libslic3r/Model.hpp>
 #include "Slic3r/Biz/CGAL/Algorithms/MeshBoolean.hpp"
 #include <boost/log/trivial.hpp>
-#include <libslic3r/I18N.hpp>
+#include "libslic3r/I18N_private.hpp"
 #include <functional>
 #include <numeric>
 #include <unordered_set>

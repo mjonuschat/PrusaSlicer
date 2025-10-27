@@ -25,7 +25,7 @@
 #include "Slic3r/Domain/enum_bitmask.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
-#include "libslic3r/I18N.hpp"
+#include "libslic3r/I18N_private.hpp"
 #include "libslic3r/GCode.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"

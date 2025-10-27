@@ -16,7 +16,7 @@
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ElephantFootCompensation.hpp"
-#include "libslic3r/I18N.hpp"
+#include "libslic3r/I18N_private.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/MultiMaterialSegmentation.hpp"
 #include "libslic3r/Print.hpp"

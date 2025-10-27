@@ -32,7 +32,7 @@
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
-#include "libslic3r/I18N.hpp"
+#include "libslic3r/I18N_private.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/Thread.hpp"
 #include "libslic3r/GCode.hpp"

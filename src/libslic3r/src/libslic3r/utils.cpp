@@ -5,7 +5,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "libslic3r/Utils.hpp"
-#include "libslic3r/I18N.hpp"
+#include "libslic3r/I18N_private.hpp"
 
 #include <atomic>
 #include <locale>
@@ -186,9 +186,6 @@ void enforce_thread_count(const std::size_t count)
     UNUSED(tbb_init);
 #endif // TBB_HAS_GLOBAL_CONTROL
 }
-
-// Translate function callback, to call wxWidgets translate function to convert non-localized UTF8 string to a localized one.
-Slic3r::I18N::translate_fn_type Slic3r::I18N::translate_fn = nullptr;
 
 static std::atomic<bool> debug_out_path_called(false);
 

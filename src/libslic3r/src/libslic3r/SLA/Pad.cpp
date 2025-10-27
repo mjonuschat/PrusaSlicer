@@ -17,7 +17,7 @@
 #include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include "libslic3r/MTUtils.hpp"
 #include "libslic3r/TriangulateWall.hpp"
-#include "libslic3r/I18N.hpp"
+#include "libslic3r/I18N_private.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"

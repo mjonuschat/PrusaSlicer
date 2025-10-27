@@ -394,6 +394,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/Zipper.cpp
     src/libslic3r/Zipper.hpp
     src/libslic3r/SlicingStatus.cpp
+    src/libslic3r/I18N_private.cpp
 
     src/libslic3r/libslic3r.h
     src/libslic3r/pchheader.cpp

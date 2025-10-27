@@ -42,11 +42,7 @@
 #include <libnest2d/tools/benchmark.h>
 #endif
 
-#include "libslic3r/I18N.hpp"
-
-//! macro used to mark string used at localization,
-//! return same string
-#define _u8L(s) Slic3r::I18N::translate(s)
+#include "libslic3r/I18N_private.hpp"
 
 namespace Slic3r {
 

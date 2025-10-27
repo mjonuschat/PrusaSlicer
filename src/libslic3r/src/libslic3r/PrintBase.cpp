@@ -11,7 +11,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include "libslic3r/I18N.hpp"
+#include "libslic3r/I18N_private.hpp"
 #include "libslic3r/libslic3r_version.h"
 
 using namespace Slic3r::Biz;

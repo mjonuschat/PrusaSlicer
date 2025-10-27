@@ -3,6 +3,8 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Assert.hpp"
 #include "libslic3r/SLA/SLAResult.hpp"
+#include "libslic3r/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <fmt/core.h>
 #include <fmt/ostream.h>
@@ -20,7 +22,9 @@ SlicingInteractor::SlicingInteractor(
 ) :
     m_dispatcher(dispatcher),
     m_thumbnail_image_generator(thumbnail_image_generator)
-{}
+{
+    Slic3r::I18N_libslic3r::set_translate_callback(Biz::_u8);
+}
 
 SlicingInteractor::~SlicingInteractor()
 {
