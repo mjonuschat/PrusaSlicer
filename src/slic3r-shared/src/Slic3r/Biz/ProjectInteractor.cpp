@@ -156,6 +156,28 @@ Domain::SlicingId ProjectInteractor::selected_bed_slicing_id() const
     return {selected_project_id(), m_scene_interactor.bed_selection().last_selected_bed().instance_id};
 }
 
+void ProjectInteractor::on_instance_added(
+    Domain::SelectionId project_id,
+    const Domain::ElementRefs& instances
+)
+{
+    ASSERT(instances.size());
+
+    Domain::Workbench::ProjectMap& projects    = m_workbench.projects();
+    Domain::Workbench::ProjectMap::iterator it = projects.find(project_id);
+
+    ASSERT(it != projects.end());
+
+    if (it->second.file_name().empty()) {
+        const boost::filesystem::path filename_path(
+            it->second.find_object_by_id(instances.front().object_id)->name
+        );
+        const std::string stem_name = filename_path.stem().string();
+
+        rename_project(project_id, stem_name);
+    }
+}
+
 void ProjectInteractor::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Scene::BedSelection& selection)
 {
     const Domain::BedRef last_selected_bed{selection.last_selected_bed()};
@@ -258,6 +280,19 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
             select_project(next_selected_project_id);
         }
     }
+}
+
+void ProjectInteractor::rename_project(Domain::SelectionId project_id, const std::string& new_name)
+{
+    Domain::Workbench::ProjectMap& projects    = m_workbench.projects();
+    Domain::Workbench::ProjectMap::iterator it = projects.find(project_id);
+
+    ASSERT(it != projects.end());
+
+    it->second.set_file_name(new_name);
+
+    invoke_listeners<IProjectsChangedListener>([project_id](auto* l)
+                                               { l->on_project_changed(project_id); });
 }
 
 void ProjectInteractor::do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)

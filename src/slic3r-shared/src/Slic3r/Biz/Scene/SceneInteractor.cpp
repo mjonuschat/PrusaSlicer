@@ -1,11 +1,13 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 
+#include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
-#include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
@@ -192,6 +194,8 @@ void transform_selection_volume_mode(const SceneInteractorProjectContext& proj, 
 
 } // namespace
 
+SceneInteractor::SceneInteractor(Domain::Workbench& workbench) : m_workbench(workbench) {}
+
 void SceneInteractor::on_selected_project_changed(size_t index)
 {
     BedSelection selection{};
@@ -296,14 +300,10 @@ void SceneInteractor::new_object_from_mesh(Domain::TriangleMesh&& mesh, const st
     auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
 
     obj.name      = vol.name = name;
-    if (project.file_name().empty()) {
-        const boost::filesystem::path filename_path(name);
-        const std::string stem_name = filename_path.stem().string();
-        project.set_file_name(stem_name);
-    }
 
-    for (const auto& bed_ref : changes.updated_beds)
+    for (const auto& bed_ref : changes.updated_beds) {
         invoke_slicing_input_changed(bed_ref);
+    }
     invoke_listeners<ISceneChangedListener>(
         [&](auto* l) { l->on_instance_added(m_selected_project_id, updated); }
     );
@@ -318,12 +318,6 @@ void SceneInteractor::add_new_objects(const std::vector<Domain::ModelObject*>& o
     Domain::ModelObjectPtrs new_objects;
     for (Domain::ModelObject* object : objects) {
         new_objects.emplace_back(project.model().add_object(*object));
-    }
-
-    if (project.file_name().empty()) {
-        const boost::filesystem::path filename_path(objects.front()->name);
-        const std::string stem_name = filename_path.stem().string();
-        project.set_file_name(stem_name);
     }
 
     notify_listener_on_objects(new_objects);
@@ -371,8 +365,9 @@ void SceneInteractor::add_instance(const Vec2d& offset)
     updated.emplace_back(obj.id().id, inst.id().id);
 
     auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
-    for (const auto& bed_ref : changes.updated_beds)
+    for (const auto& bed_ref : changes.updated_beds) {
         invoke_slicing_input_changed(bed_ref);
+    }
 
     invoke_listeners<ISceneChangedListener>(
         [&](auto* l) { l->on_instance_added(m_selected_project_id, updated); }
@@ -396,10 +391,12 @@ void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& 
             invoke_slicing_input_changed(bed_ref);
 
     }
-    SPDLOG_DEBUG("- on_instance_added: {}", fmt::join(updated, ", "));
-    invoke_listeners<ISceneChangedListener>(
-        [&](auto* l) { l->on_instance_added(m_selected_project_id, updated); }
-    );
+    if (updated.size()) {
+        SPDLOG_DEBUG("- on_instance_added: {}", fmt::join(updated, ", "));
+        invoke_listeners<ISceneChangedListener>(
+            [&](auto* l) { l->on_instance_added(m_selected_project_id, updated); }
+        );
+    }
     set_object_selection({SelectionMode::Instance, {updated}});
 }
 

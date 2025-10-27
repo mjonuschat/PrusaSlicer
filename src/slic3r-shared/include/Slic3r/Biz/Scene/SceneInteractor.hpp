@@ -54,13 +54,18 @@ public:
      * @param project_id Project the new instances belong to
      * @param instances List of instances to add
      */
-    virtual void on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances) = 0;
+    virtual void
+    on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
+    {}
+
     /**
      * @brief Called whenever instances are removed.
      * @param project_id Project the instances belong to
      * @param instances List of instances to remove
      */
-    virtual void on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances) = 0;
+    virtual void
+    on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
+    {}
 
     /**
      * @brief Called whenever instances are transformed.
@@ -69,8 +74,13 @@ public:
      * @param state Indicates whether the transform state is final (interactive incremental transform)
      * @param bed_tracking_changes Information on changed bed instances
      */
-    virtual void on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state,
-        const BedTrackingChanges& bed_tracking_changes) = 0;
+    virtual void on_instance_transformed(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& elements,
+        TransformState state,
+        const BedTrackingChanges& bed_tracking_changes
+    )
+    {}
 
     /**
      * @brief Called whenever volumes are added
@@ -78,7 +88,8 @@ public:
      * @param project_id Project the volumes belong to
      * @param volumes Set of volumes to add.
      */
-    virtual void on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) = 0;
+    virtual void on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
+    {}
 
     /**
      * @brief Called whenever volumes are removed
@@ -86,7 +97,9 @@ public:
      * @param project_id Project the volumes belong to
      * @param volumes Set of volumes to add.
      */
-    virtual void on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) = 0;
+    virtual void
+    on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
+    {}
 
     /**
      * @brief Called whenever volumes are tranformed.
@@ -95,12 +108,21 @@ public:
      * @param state Indicates whether the transform state is final (interactive incremental transform)
      * @param bed_tracking_changes Information on changed bed instances
      */
-    virtual void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, TransformState state,
-        const BedTrackingChanges& bed_tracking_changes) = 0;
+    virtual void on_volume_transformed(
+        Domain::SelectionId project_id,
+        const Domain::ElementRefs& elements,
+        TransformState state,
+        const BedTrackingChanges& bed_tracking_changes
+    )
+    {}
 
-    virtual void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) = 0;
-    virtual void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) = 0;
-    virtual void on_wipe_tower_transformed(Domain::SelectionId project_id, size_t idx, TransformState state) = 0;
+    virtual void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) {}
+
+    virtual void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) {}
+
+    virtual void
+    on_wipe_tower_transformed(Domain::SelectionId project_id, size_t idx, TransformState state)
+    {}
 };
 
 class ISceneBedInstanceChangedListener
@@ -129,7 +151,7 @@ class SceneInteractor final :
 public:
     using Transform = Domain::SquareMatrix4d;
 
-    explicit SceneInteractor(Domain::Workbench& workbench) : m_workbench(workbench) {}
+    explicit SceneInteractor(Domain::Workbench& workbench);
 
     void on_selected_project_changed(size_t index) override;
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id) override;

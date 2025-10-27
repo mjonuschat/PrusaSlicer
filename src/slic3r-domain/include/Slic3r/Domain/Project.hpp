@@ -39,6 +39,10 @@ public:
         m_metadata.increment_version();
     }
 
+    /**
+     * @warning Do not call this method directly if project is already handled by ProjectInteractor
+     * UI would not be notified
+     */
     void set_file_name(const std::string& file_name)
     {
         m_file_name = file_name;

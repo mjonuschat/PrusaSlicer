@@ -2,6 +2,8 @@
 
 #include "Slic3r/Domain/SelectionId.hpp"
 
+#include <string>
+
 namespace Slic3r::Biz {
 
 class IProjectsChangedListener {
