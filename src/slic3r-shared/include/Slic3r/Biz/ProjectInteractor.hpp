@@ -35,6 +35,7 @@ namespace Slic3r::Biz {
 class ISelectedProjectChangedListener;
 class ISelectedConfigContainerChangedListener;
 class IProjectsChangedListener;
+class IMessageDialogProvider;
 
 /**
  * @brief Top level interactor managing list of projects and their bed selection.
@@ -432,6 +433,8 @@ public:
         m_removable_drive_service.handle_volumes_changed_event();
     }
 
+    void set_dialog_provider(IMessageDialogProvider* dialog_provider);
+
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
@@ -465,6 +468,7 @@ private:
     RemovableDrive::RemovableDriveService m_removable_drive_service;
 
     ObservableProjectList m_project_list;
+    IMessageDialogProvider* m_dialog_provider{ nullptr };
 };
 
 } // namespace Slic3r::Biz

@@ -104,9 +104,16 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         .create_job(
             "project_load",
             // TODO: preset_bundle may change, making its copy wouldn't help
-            [&preset_bundle = m_workbench.preset_bundle()](Biz::JThread::StopToken stop_token, const boost::filesystem::path file_path) -> Domain::Project
+            [&preset_bundle = m_workbench.preset_bundle(), dialog_provider = m_dialog_provider](
+                Biz::JThread::StopToken stop_token,
+                const boost::filesystem::path file_path
+            ) -> Domain::Project
             {
-                return FileLoadingLogic::load_file_as_project(file_path, preset_bundle);
+                return FileLoadingLogic::load_file_as_project(
+                    file_path,
+                    preset_bundle,
+                    dialog_provider
+                );
             },
             file_path
         )
@@ -156,6 +163,11 @@ void ProjectInteractor::on_selected_bed_instances_changed(Domain::SelectionId pr
 
     if (container_id != m_selection.config_container_id)
         do_select_config_container(container_id);
+}
+
+void ProjectInteractor::set_dialog_provider(IMessageDialogProvider* dialog_provider)
+{
+    m_dialog_provider = dialog_provider;
 }
 
 void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_instance)

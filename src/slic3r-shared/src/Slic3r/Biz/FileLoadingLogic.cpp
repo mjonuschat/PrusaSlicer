@@ -18,9 +18,8 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <Slic3r/App/AppServices.hpp>
-#include "Slic3r/App/IDialogManager.hpp"
 
+#include "Slic3r/Biz/IMessageDialogProvider.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 
@@ -54,7 +53,8 @@ static bool looks_like_saved_in_meters(const TriangleMeshStats& stats)
 static bool has_zero_volume(const TriangleMeshStats& stats)
 {
     return stats.volume < zero_volume //
-        && stats.volume > 0.f; // temporary check for the non-legacy project files, where volume is incorrect
+        && stats.volume
+        > 0.f; // temporary check for the non-legacy project files, where volume is incorrect
 }
 
 static void convert_from_imperial_units(TriangleMesh& mesh)
@@ -89,7 +89,8 @@ static TriangleMeshStats get_object_mesh_stats(const ModelObject* object)
             Transform3d trans = object->instances.empty() ?
                 volume->get_matrix() :
                 (volume->get_matrix() * object->instances[0]->get_matrix());
-            full_stats.volume += stats.volume * std::fabs(trans.matrix().block(0, 0, 3, 3).determinant());
+            full_stats.volume +=
+                stats.volume * std::fabs(trans.matrix().block(0, 0, 3, 3).determinant());
             full_stats.number_of_parts += stats.number_of_parts;
         }
     }
@@ -143,7 +144,8 @@ static void convert_to_multipart_object(Model& model, unsigned int max_extruders
             } else {
                 for (const ModelInstance* i : o->instances)
                     // ...so, transform everything to a common reference system (world)
-                    copy_volume(object->add_volume(*v))->set_transformation(i->get_transformation() * trafo_volume);
+                    copy_volume(object->add_volume(*v))
+                        ->set_transformation(i->get_transformation() * trafo_volume);
             }
         }
     }
@@ -162,32 +164,39 @@ enum class Answer
     No
 };
 
-static void process_mesh(TriangleMesh& mesh, const std::string& input_file, Answer* answer_convert_from_meters, Answer* answer_convert_from_imperial_units)
+static void process_mesh(
+    TriangleMesh& mesh,
+    const std::string& input_file,
+    Answer* answer_convert_from_meters,
+    Answer* answer_convert_from_imperial_units,
+    IMessageDialogProvider* dialog_provider
+)
 {
     const TriangleMeshStats& stats = mesh.stats();
 
     if (looks_like_saved_in_meters(stats)) {
         Answer answer = answer_convert_from_meters ? *answer_convert_from_meters : Answer::Default;
         if (answer_convert_from_meters && *answer_convert_from_meters == Answer::Default) {
-            auto& dlg_manager = App::AppServices::instance().dialog_manager();
-            dlg_manager.show_rich_yesno_dialog(
-                _u8L("The object is too small"),
-                fmt::vformat(
-                    _u8L(
-                        "The dimensions of the object from file {} seem to be defined in meters.\n"
-                        "The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate the dimensions of the object?"
-                    ),
-                    fmt::make_format_args(input_file)
-                ) + "\n",
+            if (dialog_provider) {
+                dialog_provider->show_rich_yesno_dialog(
+                    _u8L("The object is too small"),
+                    fmt::vformat(
+                        _u8L(
+                            "The dimensions of the object from file {} seem to be defined in meters.\n"
+                            "The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate the dimensions of the object?"
+                        ),
+                        fmt::make_format_args(input_file)
+                    ) + "\n",
 
-                _u8L("Apply to all the remaining small objects being loaded."),
-                [&](bool dlg_answer) { answer = dlg_answer ? Answer::Yes : Answer::No; },
-                [&](bool checked)
-                {
-                    if (checked)
-                        *answer_convert_from_meters = answer;
-                }
-            );
+                    _u8L("Apply to all the remaining small objects being loaded."),
+                    [&](bool dlg_answer) { answer = dlg_answer ? Answer::Yes : Answer::No; },
+                    [&](bool checked)
+                    {
+                        if (checked)
+                            *answer_convert_from_meters = answer;
+                    }
+                );
+            }
         }
         if (answer == Answer::Yes) {
             convert_from_meters(mesh);
@@ -195,28 +204,31 @@ static void process_mesh(TriangleMesh& mesh, const std::string& input_file, Answ
             // volume->source.is_converted_from_meters = true;
         }
     } else if (looks_like_imperial_units(stats)) {
-        Answer answer = answer_convert_from_imperial_units ? *answer_convert_from_imperial_units : Answer::Default;
-        if (answer_convert_from_imperial_units && *answer_convert_from_imperial_units == Answer::Default)
+        Answer answer = answer_convert_from_imperial_units ? *answer_convert_from_imperial_units :
+                                                             Answer::Default;
+        if (answer_convert_from_imperial_units
+            && *answer_convert_from_imperial_units == Answer::Default)
         {
-            auto& dlg_manager = App::AppServices::instance().dialog_manager();
-            dlg_manager.show_rich_yesno_dialog(
-                _u8L("The object is too small"),
-                fmt::vformat(
-                    _u8L(
-                        "The dimensions of the object from file {} seem to be defined in inches.\n"
-                        "The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate the dimensions of the object?"
-                    ),
-                    fmt::make_format_args(input_file)
-                ) + "\n",
+            if (dialog_provider) {
+                dialog_provider->show_rich_yesno_dialog(
+                    _u8L("The object is too small"),
+                    fmt::vformat(
+                        _u8L(
+                            "The dimensions of the object from file {} seem to be defined in inches.\n"
+                            "The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate the dimensions of the object?"
+                        ),
+                        fmt::make_format_args(input_file)
+                    ) + "\n",
 
-                _u8L("Apply to all the remaining small objects being loaded."),
-                [&](bool dlg_answer) { answer = dlg_answer ? Answer::Yes : Answer::No; },
-                [&](bool checked)
-                {
-                    if (checked)
-                        *answer_convert_from_imperial_units = answer;
-                }
-            );
+                    _u8L("Apply to all the remaining small objects being loaded."),
+                    [&](bool dlg_answer) { answer = dlg_answer ? Answer::Yes : Answer::No; },
+                    [&](bool checked)
+                    {
+                        if (checked)
+                            *answer_convert_from_imperial_units = answer;
+                    }
+                );
+            }
         }
         if (answer == Answer::Yes) {
             convert_from_imperial_units(mesh);
@@ -226,7 +238,11 @@ static void process_mesh(TriangleMesh& mesh, const std::string& input_file, Answ
     }
 }
 
-static void remove_objects_with_zero_volume(Model& model, const std::string& file_name)
+static void remove_objects_with_zero_volume(
+    Model& model,
+    const std::string& file_name,
+    IMessageDialogProvider* dialog_provider
+)
 {
     if (model.objects.size() == 0)
         return;
@@ -237,9 +253,8 @@ static void remove_objects_with_zero_volume(Model& model, const std::string& fil
             model.delete_object(size_t(i));
             removed++;
         }
-    if (removed > 0) {
-        auto& dlg_manager = App::AppServices::instance().dialog_manager();
-        dlg_manager.show_info_dialog(
+    if (removed > 0 && dialog_provider) {
+        dialog_provider->show_info_dialog(
             fmt::vformat(
                 _L_PLURAL_u8(
                     "Some object size from file {} appears to be zero.\n"
@@ -255,7 +270,6 @@ static void remove_objects_with_zero_volume(Model& model, const std::string& fil
     }
 }
 
-
 // The following is only used to convert projects from PS 2.x.
 static std::array<int, 2> index2grid_coords(size_t index)
 {
@@ -267,19 +281,18 @@ static std::array<int, 2> index2grid_coords(size_t index)
     int id = index;
     ++id;
     int a = 1;
-    while ((a+1)*(a+1) < id)
+    while ((a + 1) * (a + 1) < id)
         ++a;
-    id = id - a*a;
-    result[0]=a;
-    result[1]=a;
+    id        = id - a * a;
+    result[0] = a;
+    result[1] = a;
     if (id <= a)
-        result[1] = id-1;
+        result[1] = id - 1;
     else
-        result[0] = id-a-1;
+        result[0] = id - a - 1;
 
     return result;
 }
-
 
 // The following is only used to convert projects from PS 2.x.
 static Domain::Vec3d get_bed_translation(int id, double size_x, double size_y, bool legacy_layout)
@@ -297,11 +310,13 @@ static Domain::Vec3d get_bed_translation(int id, double size_x, double size_y, b
     }
 
     // As for the m_legacy_layout switch, see comments at definition of bed_gap_relative.
-    Vec2d  gap = Vec2d::Ones() * std::min(100., std::hypot(size_x, size_y) * (3./10.));
-    double gap_x = (legacy_layout ? size_x * (2./10.) : gap.x());
-    return Vec3d(x * (size_x + gap_x),
-                 y * (size_y + gap.y()), // When using legacy layout, y is zero anyway.
-                 0.);
+    Vec2d gap    = Vec2d::Ones() * std::min(100., std::hypot(size_x, size_y) * (3. / 10.));
+    double gap_x = (legacy_layout ? size_x * (2. / 10.) : gap.x());
+    return Vec3d(
+        x * (size_x + gap_x),
+        y * (size_y + gap.y()), // When using legacy layout, y is zero anyway.
+        0.
+    );
 }
 
 // The following is only used to convert projects from PS 2.x.
@@ -315,12 +330,18 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
     std::vector<Vec2d> pts;
     double max_height = 0.;
     if (std::holds_alternative<Domain::ConfigPackFDM>(cp)) {
-        pts = std::get<Domain::ConfigPackFDM>(cp).printer.items.opt("bed_shape").get<std::vector<Vec2d>>();
-        max_height = std::get<Domain::ConfigPackFDM>(cp).printer.items.opt("max_print_height").get<double>();
-    }
-    else {
-        pts = std::get<Domain::ConfigPackSLA>(cp).sla_printer_settings.items.opt("bed_shape").get<std::vector<Vec2d>>();
-        max_height = std::get<Domain::ConfigPackSLA>(cp).sla_printer_settings.items.opt("max_print_height").get<double>();
+        pts = std::get<Domain::ConfigPackFDM>(cp)
+                  .printer.items.opt("bed_shape")
+                  .get<std::vector<Vec2d>>();
+        max_height =
+            std::get<Domain::ConfigPackFDM>(cp).printer.items.opt("max_print_height").get<double>();
+    } else {
+        pts = std::get<Domain::ConfigPackSLA>(cp)
+                  .sla_printer_settings.items.opt("bed_shape")
+                  .get<std::vector<Vec2d>>();
+        max_height = std::get<Domain::ConfigPackSLA>(cp)
+                         .sla_printer_settings.items.opt("max_print_height")
+                         .get<double>();
     }
 
     using namespace Biz::Algorithms::Bed;
@@ -329,11 +350,13 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
     bed.set_type(detect_bed_type(bed));
     double size_x = bed.contour_aabb_extent().x();
     double size_y = bed.contour_aabb_extent().y();
-    
+
     std::vector<Domain::BedInstance> bed_instances;
-    for (size_t i=0; i<9; ++i) {
+    for (size_t i = 0; i < 9; ++i) {
         bed_instances.emplace_back(bed);
-        bed_instances.back().transformation.set_offset(get_bed_translation(i, size_x, size_y, false));
+        bed_instances.back().transformation.set_offset(
+            get_bed_translation(i, size_x, size_y, false)
+        );
     }
 
     // Find the max index of occupied beds
@@ -343,8 +366,10 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
         for (ModelInstance* mi : mo->instances) {
             const auto bb = Algorithms::ModelObject::instance_bounding_box(*mo, *mi);
 
-            for (int i=0; i<9; ++i) {
-                if (contains_2d(bed_instances[i], Biz::Algorithms::BoundingBox::to_2d(bb)) == BedContainmentState::Inside) {
+            for (int i = 0; i < 9; ++i) {
+                if (contains_2d(bed_instances[i], Biz::Algorithms::BoundingBox::to_2d(bb))
+                    == BedContainmentState::Inside)
+                {
                     max_bed_index = std::max(max_bed_index, i);
                     break;
                 }
@@ -352,11 +377,13 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
         }
     }
 
-    for (int i=0; i<=max_bed_index; ++i) {
+    for (int i = 0; i <= max_bed_index; ++i) {
         const Vec3d& bed_offset = bed_instances[i].transformation.get_offset();
-        loaded_3mf.config_containers_data.front().bed_offsets.emplace_back(bed_offset.x(), bed_offset.y());
+        loaded_3mf.config_containers_data.front().bed_offsets.emplace_back(
+            bed_offset.x(),
+            bed_offset.y()
+        );
     }
-
 }
 
 using OptionalPresetBundle = std::optional<std::reference_wrapper<const Domain::Preset::Bundle>>;
@@ -382,44 +409,45 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
             wipe_towers,
             custom_gcodes
         ))
-        throw Loaded3MFException(Read3mfIssue(Read3mfIssueType::legacy_loader_failed, "Loading of legacy 3MF failed."));
+        throw Loaded3MFException(
+            Read3mfIssue(Read3mfIssueType::legacy_loader_failed, "Loading of legacy 3MF failed.")
+        );
 
     // The old slicer did not store HW configuration in the current sense. We must heuristically
     // construct a meaningful SelectedPresetMetadata here by doing something like
     //
     if (bundle.has_value()) {
-        auto result = Preset::IO::load_legacy_preset_metadata(
-            hw_printer,
-            config_pack,
-            bundle->get()
-        );
+        auto result =
+            Preset::IO::load_legacy_preset_metadata(hw_printer, config_pack, bundle->get());
         if (result.has_value()) {
             auto& preset_metadata = loaded_3mf.config_containers_data.front().preset;
             // FIXME: get relevant metadata from DynamicPrintConfig
-            //preset_metadata.printer.name = config_pack;
+            // preset_metadata.printer.name = config_pack;
             preset_metadata = result.value();
             ASSERT(preset_metadata.tools.size() == preset_metadata.hw_config.tool_count);
             // while (preset_metadata.tools.size() < preset_metadata.hw_config.tool_count)
-            //     preset_metadata.tools.emplace_back();
+            // preset_metadata.tools.emplace_back();
             ASSERT(preset_metadata.materials.size() == preset_metadata.hw_config.tool_count);
             // while (preset_metadata.materials.size() < preset_metadata.hw_config.tool_count)
-            //     preset_metadata.materials.emplace_back();
-        }
-        else
-            throw Loaded3MFException(Read3mfIssue(Read3mfIssueType::legacy_loader_failed, result.error()));
+            // preset_metadata.materials.emplace_back();
+        } else
+            throw Loaded3MFException(
+                Read3mfIssue(Read3mfIssueType::legacy_loader_failed, result.error())
+            );
     }
     //
     // This will provide enough info to create a complete Preset further down the road.
 
     // Old project did not store bed positions explicitly.
-    if (loaded_3mf.version && *loaded_3mf.version < Semver(3,0,0))
+    if (loaded_3mf.version && *loaded_3mf.version < Semver(3, 0, 0))
         infer_bed_positions_and_create_beds(loaded_3mf);
 
     loaded_3mf.filepath_3mf = file_path;
     return loaded_3mf;
 }
 
-Loaded3MF load_from_project(const boost::filesystem::path& project_file_path, OptionalPresetBundle bundle)
+Loaded3MF
+load_from_project(const boost::filesystem::path& project_file_path, OptionalPresetBundle bundle)
 {
     Loaded3MF loaded_3mf;
     const std::string project_file_name = project_file_path.string();
@@ -432,7 +460,9 @@ Loaded3MF load_from_project(const boost::filesystem::path& project_file_path, Op
     return load_legacy_project(project_file_name, bundle);
 }
 
-tl::expected<ReturnData, std::string> read_data_from_file(const boost::filesystem::path& input_file_path)
+tl::expected<ReturnData, std::string> read_data_from_file(
+    const boost::filesystem::path& input_file_path
+)
 {
     ReturnData ret = {input_file_path.filename().string()};
 
@@ -448,19 +478,31 @@ tl::expected<ReturnData, std::string> read_data_from_file(const boost::filesyste
     } else if (boost::algorithm::iends_with(input_file_path.string(), ".3mf")) {
         Loaded3MF loaded_3mf = load_from_project(input_file_path, std::nullopt);
         if (loaded_3mf.model.objects.empty()) {
-            return tl::make_unexpected(fmt::vformat(_u8L("Model from {} couldn't be read because it's empty"), fmt::make_format_args(ret.file_name)));
+            return tl::make_unexpected(
+                fmt::vformat(
+                    _u8L("Model from {} couldn't be read because it's empty"),
+                    fmt::make_format_args(ret.file_name)
+                )
+            );
         }
 
         ret.model = loaded_3mf.model;
         return ret;
     }
 
-    return tl::make_unexpected(_u8L("Unknown file format. Input file must have .stl, .obj, .step/.stp, .svg, .amf(.xml) or extension .3mf(.zip)."));
+    return tl::make_unexpected(_u8L(
+        "Unknown file format. Input file must have .stl, .obj, .step/.stp, .svg, .amf(.xml) or extension .3mf(.zip)."
+    ));
 }
 
 // Loading model from a file, it may be a simple geometry file as STL or OBJ, however it may be a project file as well.
-static tl::expected<ReturnData, std::string>
-read_and_process_file(const boost::filesystem::path& input_file_path, int tool_count, Answer* answer_convert_from_meters = nullptr, Answer* answer_convert_from_imperial_units = nullptr)
+static tl::expected<ReturnData, std::string> read_and_process_file(
+    const boost::filesystem::path& input_file_path,
+    int tool_count,
+    IMessageDialogProvider* dialog_provider,
+    Answer* answer_convert_from_meters         = nullptr,
+    Answer* answer_convert_from_imperial_units = nullptr
+)
 {
     auto data = read_data_from_file(input_file_path);
     if (!data) {
@@ -470,13 +512,24 @@ read_and_process_file(const boost::filesystem::path& input_file_path, int tool_c
     const std::string file_name = input_file_path.filename().string();
     if (data.value().model) {
         Model& model = data.value().model.value();
-        remove_objects_with_zero_volume(model, file_name);
+        remove_objects_with_zero_volume(model, file_name, dialog_provider);
     } else if (data.value().mesh) {
         TriangleMesh& mesh = data.value().mesh.value();
         if (has_zero_volume(mesh.stats())) {
-            return tl::make_unexpected(fmt::vformat(_u8L("Mesh from file {} has zero volume. It will not be loaded."), fmt::make_format_args(file_name)));
+            return tl::make_unexpected(
+                fmt::vformat(
+                    _u8L("Mesh from file {} has zero volume. It will not be loaded."),
+                    fmt::make_format_args(file_name)
+                )
+            );
         }
-        process_mesh(mesh, file_name, answer_convert_from_meters, answer_convert_from_imperial_units);
+        process_mesh(
+            mesh,
+            file_name,
+            answer_convert_from_meters,
+            answer_convert_from_imperial_units,
+            dialog_provider
+        );
     } else {
         return tl::make_unexpected(_u8L("There is no data for either the mesh or the model."));
     }
@@ -485,7 +538,11 @@ read_and_process_file(const boost::filesystem::path& input_file_path, int tool_c
 }
 
 // Loading vector of meshs(from simple geometry file as STL or OBJ) or models(from a 3mf-file) from several files
-std::vector<ReturnData> import_files(const std::vector<boost::filesystem::path>& input_file_paths, int tool_count = 1)
+static std::vector<ReturnData> import_files(
+    const std::vector<boost::filesystem::path>& input_file_paths,
+    IMessageDialogProvider* dialog_provider,
+    int tool_count = 1
+)
 {
     Answer answer_convert_from_meters         = Answer::Default;
     Answer answer_convert_from_imperial_units = Answer::Default;
@@ -514,7 +571,13 @@ std::vector<ReturnData> import_files(const std::vector<boost::filesystem::path>&
     }
 
     for (const auto& path : input_file_paths) {
-        auto data = read_and_process_file(path, tool_count, &answer_convert_from_meters, &answer_convert_from_imperial_units);
+        auto data = read_and_process_file(
+            path,
+            tool_count,
+            dialog_provider,
+            &answer_convert_from_meters,
+            &answer_convert_from_imperial_units
+        );
 
         if (!data) {
             errors += data.error() + "\n";
@@ -535,17 +598,18 @@ std::vector<ReturnData> import_files(const std::vector<boost::filesystem::path>&
         if (extra_model->objects.size() > 1) {
             extra_model->add_default_instances();
 
-            // Check if the user actually wants to apply the conversion.
-            auto& dlg_manager = App::AppServices::instance().dialog_manager();
-            dlg_manager.show_yesno_dialog(
-                _u8L("Multi-part object detected"),
-                _u8L(
-                    "Multiple objects were loaded for a multi-material printer.\n"
-                    "Instead of considering them as multiple objects, should I consider\n"
-                    "these files to represent a single object having multiple parts?"
-                ),
-                [&](bool answer) { convert = answer; }
-            );
+            if (dialog_provider) {
+                // Check if the user actually wants to apply the conversion.
+                dialog_provider->show_yesno_dialog(
+                    _u8L("Multi-part object detected"),
+                    _u8L(
+                        "Multiple objects were loaded for a multi-material printer.\n"
+                        "Instead of considering them as multiple objects, should I consider\n"
+                        "these files to represent a single object having multiple parts?"
+                    ),
+                    [&](bool answer) { convert = answer; }
+                );
+            }
 
             if (convert) {
                 // Perform a conversion and return processed model
@@ -567,24 +631,26 @@ std::vector<ReturnData> import_files(const std::vector<boost::filesystem::path>&
         }
     }
 
-    if (!errors.empty()) {
-        auto& dlg_manager = App::AppServices::instance().dialog_manager();
-        dlg_manager.show_error_dialog(errors, _u8L("Files import") + ":");
+    if (!errors.empty() && dialog_provider) {
+        dialog_provider->show_error_dialog(errors, _u8L("Files import") + ":");
     }
 
     return ret;
 }
 
-static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
+static Domain::Project
+convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider* dialog_provider)
 {
     Domain::Project project;
     if (loaded_3mf.config_containers_data.front().preset.hw_config.id.empty()) {
         // If we are here, then legacy project was loaded.
         // Implementation of the config loading is not completed jet, so we can't create a correct project
-        auto& dlg_manager = App::AppServices::instance().dialog_manager();
-        dlg_manager.show_info_dialog(_u8L("It's not possible to load legacy 3mf temporary."),
-            _u8L("Load legacy 3mf file.")
-        );
+        if (dialog_provider) {
+            dialog_provider->show_info_dialog(
+                _u8L("It's not possible to load legacy 3mf temporary."),
+                _u8L("Load legacy 3mf file.")
+            );
+        }
         return project;
     }
 
@@ -594,37 +660,60 @@ static Domain::Project convert_to_project(Loaded3MF&& loaded_3mf)
 
     for (const Loaded3MF::ConfigContainerData& cc_data : loaded_3mf.config_containers_data) {
         project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
-        ConfigContainer& cc = *project.config_containers().back().get();
+        ConfigContainer& cc           = *project.config_containers().back().get();
         auto& mutable_selected_preset = cc.mutable_selected_preset();
-        mutable_selected_preset = Domain::Preset::SelectedPreset::make(cc_data.preset, cc_data.config_pack);
+        mutable_selected_preset =
+            Domain::Preset::SelectedPreset::make(cc_data.preset, cc_data.config_pack);
 
         // Always add one bed instance.
-        cc.set_bed(Scene::get_or_create_bed(project.bed_container(), mutable_selected_preset, resources_dir()));
+        cc.set_bed(
+            Scene::get_or_create_bed(
+                project.bed_container(),
+                mutable_selected_preset,
+                resources_dir()
+            )
+        );
         cc.add_bed_instance();
 
         for (size_t bed_idx = 0; bed_idx < cc_data.bed_offsets.size(); ++bed_idx) {
             const Vec2d& bed_offset = cc_data.bed_offsets[bed_idx];
             if (bed_idx != 0)
                 cc.add_bed_instance();
-            cc.bed_instances().back().get()->transformation.set_offset(Domain::Vec3d(bed_offset.x(), bed_offset.y(), 0.));
+            cc.bed_instances().back().get()->transformation.set_offset(
+                Domain::Vec3d(bed_offset.x(), bed_offset.y(), 0.)
+            );
         }
     }
 
     return project;
 }
 
-Domain::Project load_file_as_project(const boost::filesystem::path& project_file_path, const Domain::Preset::Bundle& bundle)
+Domain::Project load_file_as_project(
+    const boost::filesystem::path& project_file_path,
+    const Domain::Preset::Bundle& bundle,
+    IMessageDialogProvider* dialog_provider
+)
 {
     Loaded3MF loaded_3mf = load_from_project(project_file_path, bundle);
     if (!loaded_3mf.model.objects.empty()) {
-        remove_objects_with_zero_volume(loaded_3mf.model, project_file_path.filename().string());
+        remove_objects_with_zero_volume(
+            loaded_3mf.model,
+            project_file_path.filename().string(),
+            dialog_provider
+        );
     };
-    return convert_to_project(std::move(loaded_3mf));
+    return convert_to_project(std::move(loaded_3mf), dialog_provider);
 }
 
-void import_files_and_add_to_scene(const std::vector<boost::filesystem::path>& file_paths, int tool_count, Scene::SceneInteractor& scene_interactor, const Domain::Vec2d& bed_center)
+void import_files_and_add_to_scene(
+    const std::vector<boost::filesystem::path>& file_paths,
+    int tool_count,
+    Scene::SceneInteractor& scene_interactor,
+    const Domain::Vec2d& bed_center,
+    IMessageDialogProvider* dialog_provider
+)
 {
-    auto data = Biz::FileLoadingLogic::import_files(file_paths, tool_count);
+    auto data = Biz::FileLoadingLogic::import_files(file_paths, dialog_provider, tool_count);
 
     for (Biz::FileLoadingLogic::ReturnData& file_data : data) {
         Domain::BoundingBox3d bbox;
@@ -659,15 +748,21 @@ void import_files_and_add_to_scene(const std::vector<boost::filesystem::path>& f
 /**
  * Load meshes from multiple source files and add them into selected object
  */
-void import_volumes_into_selected_object(const std::vector<boost::filesystem::path>& file_paths, const Domain::ModelVolumeType& volume_type, Scene::SceneInteractor& scene_interactor)
+void import_volumes_into_selected_object(
+    const std::vector<boost::filesystem::path>& file_paths,
+    const Domain::ModelVolumeType& volume_type,
+    Scene::SceneInteractor& scene_interactor,
+    IMessageDialogProvider* dialog_provider
+)
 {
-    auto data = Biz::FileLoadingLogic::import_files(file_paths);
+    auto data = Biz::FileLoadingLogic::import_files(file_paths, dialog_provider);
 
     for (Biz::FileLoadingLogic::ReturnData& file_data : data) {
         Domain::BoundingBox3d bbox;
         if (file_data.mesh) {
             auto mesh = file_data.mesh;
-            scene_interactor.add_volume_from_mesh(std::move(mesh.value()), volume_type, file_data.file_name);
+            scene_interactor
+                .add_volume_from_mesh(std::move(mesh.value()), volume_type, file_data.file_name);
 
             bbox = mesh->bounding_box();
         } else if (file_data.model) {
@@ -677,7 +772,8 @@ void import_volumes_into_selected_object(const std::vector<boost::filesystem::pa
             for (const ModelObject* object : model.objects) {
                 mesh.merge(Biz::Algorithms::ModelObject::mesh(*object));
             }
-            scene_interactor.add_volume_from_mesh(std::move(mesh), volume_type, file_data.file_name);
+            scene_interactor
+                .add_volume_from_mesh(std::move(mesh), volume_type, file_data.file_name);
         }
     }
 }

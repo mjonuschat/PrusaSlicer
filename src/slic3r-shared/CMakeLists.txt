@@ -302,6 +302,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/AppServices.hpp
         src/Slic3r/App/AppServices.cpp
 
+        include/Slic3r/Biz/IMessageDialogProvider.hpp
+
         src/Slic3r/Biz/I18N/LanguageInfo.cpp
         include/Slic3r/Biz/I18N/LanguageInfo.hpp
         src/Slic3r/Biz/I18N/I18N.cpp

@@ -226,7 +226,8 @@ void PlaterRenderModule::init_scene_layout()
                     nozzle_dmrs_cnt,
                     m_project_interactor.scene_interactor(),
                     cc->bed().center()
-                        + Biz::Algorithms::Point::to_2d(inst.transformation.get_offset())
+                        + Biz::Algorithms::Point::to_2d(inst.transformation.get_offset()),
+                    &App::AppServices::instance().dialog_manager()
                 );
 
                 m_scene_presenter->scene().log_nodes();
@@ -588,7 +589,8 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
             Biz::FileLoadingLogic::import_volumes_into_selected_object(
                 file_paths,
                 type,
-                m_project_interactor.scene_interactor()
+                m_project_interactor.scene_interactor(),
+                &AppServices::instance().dialog_manager()
             );
 
             m_scene_presenter->scene().log_nodes();
