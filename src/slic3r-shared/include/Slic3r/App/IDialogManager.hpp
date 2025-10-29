@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Browser/AbstractBrowserLogic.hpp"
 #include "Slic3r/Biz/IMessageDialogProvider.hpp"
+#include "Slic3r/Biz/Preset/IPresetDialogManager.hpp"
 #include "Slic3r/Assert.hpp"
 #include <memory>
 #include <vector>
@@ -29,7 +30,7 @@ enum class FileDialogType
     Save
 };
 
-class IDialogManager : public Biz::IMessageDialogProvider
+class IDialogManager : public Biz::IMessageDialogProvider, public Slic3r::Biz::Preset::IPresetDialogManager
 {
 public:
     using FileCallback =

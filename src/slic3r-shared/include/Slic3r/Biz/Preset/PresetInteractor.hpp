@@ -24,6 +24,7 @@ class IBedPresetSwitchedListener;
 class IPresetChangedListener;
 
 class PresetInteractor;
+class IPresetDialogManager;
 
 struct PresetItem
 {
@@ -556,6 +557,14 @@ public:
         );
     }
 
+    void set_dialog_manager(IPresetDialogManager* dialog_manager) {
+        m_dialog_manager = dialog_manager;
+    }
+
+    IPresetDialogManager* dialog_manager() {
+        return m_dialog_manager;
+    }
+
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
     PresetInteractorConfigContainerContext& mutable_selected_config_container_context();
@@ -637,5 +646,7 @@ private:
     SetAccessorMap m_cbi_accessors; ///< Contains All SetAccessors currently in use
 
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
+
+    IPresetDialogManager* m_dialog_manager{ nullptr };
 };
 } // namespace Slic3r::Biz::Preset

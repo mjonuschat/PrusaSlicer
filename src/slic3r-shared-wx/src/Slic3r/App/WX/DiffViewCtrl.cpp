@@ -33,7 +33,7 @@ DiffViewCtrl::DiffViewCtrl(wxWindow* parent, wxSize size) :
 
     this->Bind(wxEVT_DATAVIEW_ITEM_CONTEXT_MENU, &DiffViewCtrl::context_menu, this);
     this->Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, &DiffViewCtrl::context_menu, this);
-    // this->Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DiffViewCtrl::item_value_changed, this);
+    this->Bind(wxEVT_DATAVIEW_ITEM_VALUE_CHANGED, &DiffViewCtrl::item_value_changed, this);
 }
 
 DiffViewCtrl::~DiffViewCtrl()
@@ -168,6 +168,24 @@ void DiffViewCtrl::context_menu(wxDataViewEvent& event)
         parent->Show();
     }
 #endif // __WXOSX__
+}
+
+void DiffViewCtrl::item_value_changed(wxDataViewEvent& event)
+{
+    if (event.GetColumn() != DiffDVCModel::colToggle)
+        return;
+
+    wxDataViewItem item = event.GetItem();
+    update_item_enabling(item);
+}
+
+void DiffViewCtrl::update_item_enabling(wxDataViewItem item)
+{
+    model->UpdateItemEnabling(item);
+    Refresh();
+
+    // update an enabling of the "save/move" buttons
+//    m_empty_selection = selected_options().empty();
 }
 
 } // namespace Slic3r::App::WX

@@ -30,6 +30,13 @@ public:
     void show_warning_dialog(const std::string& text, const std::string& title = std::string()) override;
     void show_error_dialog(const std::string& text, const std::string& title = std::string()) override;
     void show_diff_dialog(const Slic3r::Biz::Preset::PresetInteractor& preset_interactor, std::optional<Domain::Preset::PresetKind> kind = std::nullopt) override;
+    Biz::Preset::PresetDiffOperation show_unsaved_changes_dialog(
+        const Domain::ConfigPack& config_original,
+        const Domain::ConfigPack& config_selected,
+        Domain::ConfigPack* config_new_selected,
+        const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
+        const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new
+    ) override;
 };
 
 } //namespace Slic3r::App::WX

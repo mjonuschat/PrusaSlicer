@@ -555,6 +555,11 @@ set(SLIC3R_SHARED_FILES
 		src/Slic3r/Biz/Preset/PresetInteractorProjectContext.cpp
         include/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp
         src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.cpp
+        include/Slic3r/Biz/Preset/PresetSelectionCheck.hpp
+        src/Slic3r/Biz/Preset/PresetSelectionCheck.cpp
+        include/Slic3r/Biz/Preset/PresetSelectionNames.hpp
+        include/Slic3r/Biz/Preset/PresetDiffOperation.hpp
+        include/Slic3r/Biz/Preset/IPresetDialogManager.hpp
         include/Slic3r/Biz/Preset/PresetHints.hpp
         src/Slic3r/Biz/Preset/PresetHints.cpp
 		include/Slic3r/Biz/Preset/ProjectPresetView.hpp

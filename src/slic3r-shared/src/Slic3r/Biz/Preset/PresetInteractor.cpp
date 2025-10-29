@@ -9,6 +9,8 @@
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
+#include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
@@ -739,6 +741,16 @@ void PresetInteractor::select_printer_preset(
     const std::string& printer_preset_id
 )
 {
+    if (m_dialog_manager
+        && !PresetSelectionCheck::can_select_printer_preset(
+            *(this),
+            printer_hw_config_id,
+            printer_preset_id
+        ))
+    {
+        return;
+    }
+
     auto& project   = m_workbench.project(m_selected_project_id);
     const auto& ccc = selected_config_container_context();
     auto* cc        = project.find_config_container(ccc.config_container_id);
@@ -777,6 +789,10 @@ void PresetInteractor::select_printer_preset(
 
 void PresetInteractor::select_print_preset(const std::string& id)
 {
+    if (m_dialog_manager && !PresetSelectionCheck::can_select_print_preset(*(this), id)) {
+        return;
+    }
+
     Domain::Preset::SelectedPreset& selected_preset = mutable_selected_printer_presets();
     const auto& hw_config                           = selected_preset.hw_config;
     const auto& printer = get_printer_preset(hw_config.id, selected_preset.printer.id).first.get();
@@ -808,6 +824,12 @@ void PresetInteractor::select_print_preset(const std::string& id)
 
 void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::string& id)
 {
+    if (m_dialog_manager
+        && !PresetSelectionCheck::can_select_tool_print_preset(*this, tool_index, id))
+    {
+        return;
+    }
+
     auto& selected_preset = mutable_selected_printer_presets();
     const auto& t         = get_tool_print_preset(
         selected_preset.hw_config.id,
@@ -845,6 +867,12 @@ void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::st
 
 void PresetInteractor::select_material_preset(size_t material_index, const std::string& id)
 {
+    if (m_dialog_manager
+        && !PresetSelectionCheck::can_select_material_preset(*this, material_index, id))
+    {
+        return;
+    }
+
     auto& selected_preset = mutable_selected_printer_presets();
     const auto& m         = get_material_preset(
         selected_preset.hw_config.id,
