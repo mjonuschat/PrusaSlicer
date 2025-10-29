@@ -593,7 +593,8 @@ private:
     void fill_config_container_with_selected_preset(
         Domain::ConfigContainer& cc,
         const std::string& printer_hw_config_id,
-        const std::string& printer_preset_id
+        const std::string& printer_preset_id,
+        bool printer_only
     );
     void fill_printer_presets();
     void fill_print_presets(Domain::Preset::SelectedPreset& selected_preset);

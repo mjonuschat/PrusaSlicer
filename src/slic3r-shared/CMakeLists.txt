@@ -1003,6 +1003,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
+		test/Slic3r/Biz/Preset/PresetInteractorTests.cpp
 
         test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp

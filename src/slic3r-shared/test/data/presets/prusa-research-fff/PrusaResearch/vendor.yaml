@@ -211,6 +211,15 @@ tools:
 default_sheet: 'pei_smooth'
 ---
 kind: printer_config
+printer: COREONE
+id: 'c1-hf0.6'
+name: 'CORE One'
+tool_count: 1
+tools:
+  - tool: '0.6HF'
+default_sheet: 'pei_smooth'
+---
+kind: printer_config
 printer: xl
 id: 'xl-1t'
 name: 'XL 1T'

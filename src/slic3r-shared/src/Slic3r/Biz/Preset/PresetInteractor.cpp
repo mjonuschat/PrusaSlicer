@@ -197,7 +197,7 @@ void PresetInteractor::initialize_config_container(Domain::ConfigContainer& cc)
     const auto printer_it       = printer_presets.begin();
     ASSERT(printer_it != printer_presets.end());
 
-    fill_config_container_with_selected_preset(cc, config_it->first, printer_it->preset.id);
+    fill_config_container_with_selected_preset(cc, config_it->first, printer_it->preset.id, false);
 }
 
 void PresetInteractor::on_selected_config_container_changed(
@@ -327,6 +327,8 @@ Domain::Preset::SelectedPreset& PresetInteractor::mutable_selected_printer_prese
     return cc->mutable_selected_preset();
 }
 
+namespace {
+
 void update_hw_config_tools_and_materials_features_from_preset(
     Domain::Preset::SelectedPreset& preset
 )
@@ -371,14 +373,41 @@ auto get_first_from_range(R&& range)
     PANIC("Empty range");
 }
 
+template <typename T>
+void resize_tool_dependant_presets(
+    const Domain::Preset::HwPrinterConfig& hw_config,
+    std::vector<T>& presets
+)
+{
+    if (presets.size() > hw_config.tool_count)
+        presets.resize(hw_config.tool_count);
+    ASSERT(!presets.empty());
+    while (presets.size() < hw_config.tool_count)
+        presets.push_back(presets.back());
+}
+
+} // namespace
+
 void PresetInteractor::fill_config_container_with_selected_preset(
     Domain::ConfigContainer& cc,
     const std::string& printer_hw_config_id,
-    const std::string& printer_preset_id
+    const std::string& printer_preset_id,
+    bool printer_only
 )
 {
     const auto& hw_config      = get_printer_config(printer_hw_config_id).first.get();
     const auto& printer_preset = get_printer_preset(printer_hw_config_id, printer_preset_id).first.get();
+
+    if (printer_only) {
+        auto& selected_preset     = cc.mutable_selected_preset();
+        selected_preset.hw_config = hw_config;
+        selected_preset.printer   = printer_preset;
+
+        resize_tool_dependant_presets(hw_config, selected_preset.tools);
+        resize_tool_dependant_presets(hw_config, selected_preset.materials);
+
+        return;
+    }
 
     const auto& p = get_or_create_project_context(m_selected_project_id);
 
@@ -460,7 +489,7 @@ std::optional<size_t> set_items(
         items.emplace_back(item.id, std::move(name), hw_config_id, hw_config_name, is_runtime);
         if (item.id == selected.id)
             selected_index = idx;
-        if (item.name == selected.short_name())
+        if (item.short_name() == selected.short_name())
             selected_by_name_index = idx;
         idx++;
     }
@@ -573,6 +602,7 @@ void PresetInteractor::fill_tools_presets(Domain::Preset::SelectedPreset& select
         }
     }
 
+    fill_selected_tool_print_cbis(selected_preset);
     m_tool_print_presets.set_items(std::move(tools));
     if (has_tool_prints) {
         for (size_t n = selected_preset.hw_config.tool_count, tool_index = 0; tool_index < n;
@@ -587,7 +617,6 @@ void PresetInteractor::fill_tools_presets(Domain::Preset::SelectedPreset& select
         }
     }
 
-    fill_selected_tool_print_cbis(selected_preset);
 }
 
 void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& selected_preset)
@@ -744,7 +773,7 @@ void PresetInteractor::select_printer_preset(
     auto* cc        = project.find_config_container(ccc.config_container_id);
     ASSERT(cc != nullptr, ccc.config_container_id);
 
-    fill_config_container_with_selected_preset(*cc, printer_hw_config_id, printer_preset_id);
+    fill_config_container_with_selected_preset(*cc, printer_hw_config_id, printer_preset_id, true);
 
     Domain::Preset::SelectedPreset& selected_preset = mutable_selected_printer_presets();
 
