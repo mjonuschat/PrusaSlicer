@@ -372,7 +372,7 @@ void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::pa
         nozzle_dmrs_cnt,
         scene_interactor(),
         cc->bed().center(),
-        nullptr // TODO
+        m_dialog_provider
     );
 }
 
