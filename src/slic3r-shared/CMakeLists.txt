@@ -977,6 +977,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
         test/Slic3r/Biz/WeakerPointerTests.cpp
+        test/Slic3r/Biz/ObservableListSortFilterTests.cpp
 
         test/Slic3r/Biz/Expr/ParserTests.cpp
         test/Slic3r/Biz/Expr/EvalTests.cpp
@@ -984,7 +985,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Yaml/YamlTests.cpp
         test/Slic3r/Biz/Preset/IO/HwConfigDefLoaderTests.cpp
         test/Slic3r/Biz/Preset/IO/PresetLoaderTests.cpp
-		test/Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoaderTests.cpp
+        test/Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoaderTests.cpp
         test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp

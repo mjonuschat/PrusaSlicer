@@ -8,7 +8,6 @@
 #include "Slic3r/Biz/IListObserver.hpp"
 
 #include <unordered_set>
-#include <list>
 
 namespace Slic3r::Biz {
 
@@ -26,7 +25,8 @@ public:
     // Returns lhs < rhs operation
     using SortFn = std::function<int(const Data& lhs, const Data& rhs)>;
     // Returns true if item is groupped and should NOT be included
-    using GroupByFn = std::function<bool(const Data& item, std::unordered_set<GroupKey>& seen_keys)>;
+    using GroupByFn =
+        std::function<bool(const Data& item, std::unordered_set<GroupKey>& seen_keys)>;
 
     virtual ~ObservableListSortFilter()
     {
@@ -105,7 +105,9 @@ public:
         set_source_model(WeakerPointer<IObservableList<Data>>{source_model});
     }
 
-    template <typename Derived, typename = std::enable_if_t<std::is_base_of_v<IObservableList<Data>, Derived>>>
+    template <
+        typename Derived,
+        typename = std::enable_if_t<std::is_base_of_v<IObservableList<Data>, Derived>>>
     void set_source_model(const std::weak_ptr<Derived>& source_model)
     {
         set_source_model(
@@ -173,9 +175,13 @@ public:
                 std::sort(
                     mapped_indexes.begin(),
                     mapped_indexes.end(),
-                    [this](const std::optional<size_t>& lhs, const std::optional<size_t>& rhs) {
-                    return m_sort_fn(m_source_model->at(lhs.value()), m_source_model->at(rhs.value()));
-                }
+                    [this](const std::optional<size_t>& lhs, const std::optional<size_t>& rhs)
+                    {
+                        return m_sort_fn(
+                            m_source_model->at(lhs.value()),
+                            m_source_model->at(rhs.value())
+                        );
+                    }
                 );
             }
         }
@@ -187,9 +193,9 @@ public:
         } else {
             // At least 1 index change, reset everything :((
 
-            this->template invoke_listeners<IListObserver<Data>>([&](auto* l) {
-                l->on_will_be_reset();
-            });
+            this->template invoke_listeners<IListObserver<Data>>(
+                [&](auto* l) { l->on_will_be_reset(); }
+            );
 
             m_mapped_indexes = mapped_indexes;
             rebuild_index_map();
@@ -206,9 +212,9 @@ private:
         for (size_t index = range.from; index <= range.to; ++index) {
             IndexMap::const_iterator it = m_index_map.find(index);
             if (it != m_index_map.cend()) {
-                this->template invoke_listeners<IListObserver<Data>>([it](auto* l) {
-                    l->on_updated(it->second);
-                });
+                this->template invoke_listeners<IListObserver<Data>>(
+                    [it](auto* l) { l->on_updated(it->second); }
+                );
             }
         }
     }

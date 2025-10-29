@@ -34,7 +34,9 @@ class DummyItem : public Item, public Slic3r::Biz::DataObserver<DummyState>
 public:
     explicit DummyItem(size_t index, const DummyState& state) :
         Slic3r::Biz::DataObserver<DummyState>(index, state)
-    {}
+    {
+        constructed++;
+    }
 
     int foo() const
     {
@@ -46,6 +48,8 @@ public:
         return m_updated;
     }
 
+    static size_t constructed;
+
 protected:
     void on_data_update()
     {
@@ -55,10 +59,16 @@ protected:
     bool m_updated = false;
 };
 
+size_t DummyItem::constructed = 0;
+
 class DummyItemWithContext : public Item, public Slic3r::Biz::DataObserver<DummyState>
 {
 public:
-    explicit DummyItemWithContext(size_t index, const DummyState& state, DummyFactoryContext* context) :
+    explicit DummyItemWithContext(
+        size_t index,
+        const DummyState& state,
+        DummyFactoryContext* context
+    ) :
         Slic3r::Biz::DataObserver<DummyState>(index, state),
         m_context(context)
     {}
@@ -96,7 +106,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView after ObservableList")
 
         list.reset({{1}, {2}, {3}});
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
         tree.process_loop_events();
@@ -113,7 +124,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView before ObservableList")
     {
         TestRootItem tree;
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
         list.reset({{1}, {2}, {3}});
@@ -133,7 +145,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::insert")
     {
         TestRootItem tree;
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
         REQUIRE(view->item_count() == 0);
@@ -156,7 +169,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove single")
     {
         TestRootItem tree;
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
         list.reset({{1}, {2}, {3}});
@@ -179,7 +193,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove multiple")
     {
         TestRootItem tree;
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
         list.reset({{1}, {2}, {3}});
@@ -204,7 +219,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove range")
     {
         TestRootItem tree;
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
         list.reset({{1}, {2}, {3}});
@@ -227,7 +243,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove all")
     {
         TestRootItem tree;
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
         list.reset({{1}, {2}, {3}});
@@ -251,7 +268,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::move begin->end")
     {
         TestRootItem tree;
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
         list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
 
@@ -271,7 +289,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::move begin<-end")
     {
         TestRootItem tree;
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
         list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
@@ -292,7 +311,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::move same index")
     {
         TestRootItem tree;
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
         list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
@@ -312,7 +332,8 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::update")
     {
         TestRootItem tree;
 
-        ListView<DummyItem, DummyState>* view = tree.emplace_back<ListView<DummyItem, DummyState>>();
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
         list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
@@ -338,7 +359,10 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView with context")
 
         DummyFactoryContext context;
 
-        ListView<DummyItemWithContext, DummyState, ViewFactory<DummyItemWithContext, DummyState, DummyFactoryContext*>>
+        ListView<
+            DummyItemWithContext,
+            DummyState,
+            ViewFactory<DummyItemWithContext, DummyState, DummyFactoryContext*>>
             view(&context);
         view.set_source_list(&list);
 
@@ -349,5 +373,77 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView with context")
             REQUIRE(item->m_context);
             REQUIRE(item->m_context->bar == 42);
         }
+    }
+}
+
+TEST_CASE_METHOD(ImGuiFixture, "ListView reset reuse, only update")
+{
+    Slic3r::Biz::ObservableList<DummyState> list;
+
+    {
+        TestRootItem tree;
+
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
+        view->set_source_list(&list);
+
+        DummyItem::constructed = 0;
+        list.reset({{1}, {2}, {3}});
+        list.reset({{1}, {2}, {3}});
+
+        REQUIRE(DummyItem::constructed == 3);
+
+        tree.process_loop_events();
+
+        REQUIRE(list.size() == 3);
+        compare_list_view(list, view);
+    }
+}
+
+TEST_CASE_METHOD(ImGuiFixture, "ListView reset reuse, insert")
+{
+    Slic3r::Biz::ObservableList<DummyState> list;
+
+    {
+        TestRootItem tree;
+
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
+        view->set_source_list(&list);
+
+        DummyItem::constructed = 0;
+        list.reset({{1}, {2}, {3}});
+        list.reset({{1}, {2}, {4}, {3}, {5}});
+
+        REQUIRE(DummyItem::constructed == 5);
+
+        tree.process_loop_events();
+
+        REQUIRE(list.size() == 5);
+        compare_list_view(list, view);
+    }
+}
+
+TEST_CASE_METHOD(ImGuiFixture, "ListView reset reuse, remove")
+{
+    Slic3r::Biz::ObservableList<DummyState> list;
+
+    {
+        TestRootItem tree;
+
+        ListView<DummyItem, DummyState>* view =
+            tree.emplace_back<ListView<DummyItem, DummyState>>();
+        view->set_source_list(&list);
+
+        DummyItem::constructed = 0;
+        list.reset({{1}, {2}, {4}, {3}, {5}});
+        list.reset({{1}, {2}, {3}});
+
+        REQUIRE(DummyItem::constructed == 5);
+
+        tree.process_loop_events();
+
+        REQUIRE(list.size() == 3);
+        compare_list_view(list, view);
     }
 }

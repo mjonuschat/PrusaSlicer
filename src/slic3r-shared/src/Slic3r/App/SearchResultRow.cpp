@@ -68,11 +68,6 @@ SearchResultRow::~SearchResultRow()
     }
 }
 
-void SearchResultRow::render(Yoga::Vec2f pos, Yoga::Vec2f size)
-{
-    RectangleButton::render(pos, size);
-}
-
 void SearchResultRow::on_data_update()
 {
     Domain::PrinterTechnology technology =
@@ -92,7 +87,9 @@ void SearchResultRow::on_data_update()
 void SearchResultRow::hovered_updated_internal()
 {
     RectangleButton::hovered_updated_internal();
-    set_checked(true);
+    if (hovered()) {
+        set_checked(true);
+    }
 }
 
 void SearchResultRow::pressed_updated_internal()

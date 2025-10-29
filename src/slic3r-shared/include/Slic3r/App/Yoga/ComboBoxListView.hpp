@@ -18,27 +18,34 @@ public:
     using GetNameFn = std::function<std::string(const Data* item)>;
     using Items     = std::vector<std::unique_ptr<Biz::DataObserver<Data>>>;
 
-    ComboBoxListView(const std::string& name = "ComboBox") : ComboBox(name) {}
+    ComboBoxListView(const std::string& name = "ComboBoxListView") : ComboBox(name) {}
 
     void set_get_name_fn(const GetNameFn& get_name_fn)
     {
         m_get_name_fn = get_name_fn;
     }
 
-    Biz::IObservableList<Data>* source_list() const
+    template <
+        typename Derived,
+        typename = std::enable_if_t<std::is_base_of_v<Biz::IObservableList<Data>, Derived>>>
+    void set_source_list(const std::weak_ptr<Derived>& source_list)
     {
-        return m_source_list;
+        set_source_list(
+            Biz::WeakerPointer<Biz::IObservableList<Data>>{
+                std::static_pointer_cast<Biz::IObservableList<Data>>(source_list.lock())
+            }
+        );
     }
 
-    void set_source_list(Biz::IObservableList<Data>* source_list)
+    void set_source_list(const Biz::WeakerPointer<Biz::IObservableList<Data>>& source_list)
     {
         if (m_source_list != source_list) {
-            if (m_source_list) {
+            if (m_source_list.is_valid()) {
                 m_source_list->template remove_listener<Biz::IListObserver<Data>>(this);
             }
 
             m_source_list = source_list;
-            if (m_source_list) {
+            if (m_source_list.get()) {
                 m_source_list->template add_listener<Biz::IListObserver<Data>>(this);
             }
 
@@ -90,7 +97,7 @@ public:
             on_removed({0, m_list_items.size() - 1});
         }
 
-        if (m_source_list) {
+        if (m_source_list.is_valid()) {
             for (size_t index = 0; index < m_source_list->size(); ++index) {
                 on_inserted(m_source_list->at(index), index);
             }
@@ -128,7 +135,7 @@ private:
     }
 
 private:
-    Biz::IObservableList<Data>* m_source_list = nullptr;
+    Biz::WeakerPointer<Biz::IObservableList<Data>> m_source_list = nullptr;
     Items m_list_items;
 
     GetNameFn m_get_name_fn;

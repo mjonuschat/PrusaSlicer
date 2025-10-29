@@ -29,11 +29,12 @@ PrinterNozzleRow::PrinterNozzleRow(
     m_text_index = id_background->emplace_back<Text>("");
 
     m_combo_box = emplace_back<ComboBoxTools>();
-    m_combo_box->set_get_name_fn([](const Domain::Preset::HwToolConfigDef* data) -> std::string {
-        return data->name;
-    });
+    m_combo_box->set_get_name_fn(
+        [](const Domain::Preset::HwToolConfigDef* data) -> std::string { return data->name; }
+    );
     m_combo_box->set_flex_grow(1);
-    m_combo_box->callbacks().selection_changed = [this](int nozzle_index) {
+    m_combo_box->callbacks().selection_changed = [this](int nozzle_index)
+    {
         if (nozzle_index >= 0) {
             m_preset_interactor.select_printer_tool_item(
                 m_index,
@@ -56,6 +57,11 @@ void PrinterNozzleRow::on_data_update()
 void PrinterNozzleRow::on_index_update()
 {
     m_text_index->set_text(std::to_string(m_index + 1));
+}
+
+void PrinterNozzleRow::on_will_be_removed()
+{
+    m_combo_box->set_source_list(nullptr);
 }
 
 } // namespace Slic3r::App

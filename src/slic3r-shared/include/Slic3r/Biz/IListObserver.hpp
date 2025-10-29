@@ -145,7 +145,7 @@ public:
      */
     virtual void on_updated(const IndexRange& index_range) {};
     /**
-     * @brief on_will_be_reset - all data will be removed, last chance to do something smart
+     * @param new_size - size which will the model have after reset
      */
     virtual void on_will_be_reset() {};
     /**

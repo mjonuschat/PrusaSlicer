@@ -114,20 +114,45 @@ public:
 
     void on_will_be_reset() override
     {
-        for (View* view : std::as_const(m_items)) {
-            view->on_will_be_removed();
-        }
+        // Todo: probably rename
+        // notify all views that we were reset
+        std::ranges::for_each(m_items, [](View* view) { view->on_will_be_removed(); });
     }
 
     void on_reset() override
     {
-        if (!m_items.empty()) {
-            on_removed({0, m_items.size() - 1});
+        // source list became invalid, reset itself
+        if (!m_source_list.is_valid()) {
+            if (m_items.size()) {
+                on_removed({0, m_items.size() - 1});
+            }
+            return;
         }
 
-        if (m_source_list.is_valid()) {
-            for (size_t index = 0; index < m_source_list->size(); ++index) {
-                on_inserted(m_source_list->at(index), index);
+        // reuse existing elements, only remove uncessary, insert not-existing
+        // otherwise simply update Views
+        const size_t new_size = m_source_list->size();
+        if (new_size < m_items.size()) {
+            on_removed({new_size, m_items.size() - 1});
+
+            if (m_items.size()) {
+                // update all elements
+                on_updated({0, m_items.size() - 1});
+            }
+        } else if (new_size > m_items.size()) {
+            if (m_items.size()) {
+                // update existing
+                on_updated({0, m_items.size() - 1});
+            }
+
+            // insert new
+            for (size_t new_index = m_items.size(); new_index < new_size; ++new_index) {
+                on_inserted(m_source_list->at(new_index), new_index);
+            }
+        } else { // new_size == m_items.size()
+            if (m_items.size()) {
+                // update all elements
+                on_updated({0, m_items.size() - 1});
             }
         }
     }

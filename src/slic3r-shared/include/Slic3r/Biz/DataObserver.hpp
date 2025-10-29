@@ -12,6 +12,11 @@ template <class Data>
 class DataObserver
 {
 public:
+    /**
+     * @warning do not assume index or data as static, both are updated by their
+     * respective methods on_data_update & on_index_update, assume everything can and
+     * will change
+     */
     DataObserver(size_t index, const Data& data) : m_index(index), m_state(&data) {}
 
     virtual ~DataObserver() {}

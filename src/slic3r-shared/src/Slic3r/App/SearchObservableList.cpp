@@ -160,22 +160,24 @@ void SearchObservableList::refresh_search()
 
     std::list<ScoreItem> scored_items;
 
-    for (const Domain::ConfigItem* item : std::as_const(m_source_items)) {
-        const int score = score_item(item);
-        if (!score) {
-            continue;
-        }
-        if (scored_items.size() < MaxFoundItems) {
-            ScoreItem score_item{item, score};
-            std::list<ScoreItem>::iterator pos =
-                std::ranges::lower_bound(scored_items, score_item, cmp);
-            scored_items.insert(pos, score_item);
-        } else if (score > scored_items.back().score) {
-            scored_items.pop_back();
-            ScoreItem score_item{item, score};
-            std::list<ScoreItem>::iterator pos =
-                std::ranges::lower_bound(scored_items, score_item, cmp);
-            scored_items.insert(pos, score_item);
+    if (!m_search_text_cleaned.empty()) {
+        for (const Domain::ConfigItem* item : std::as_const(m_source_items)) {
+            const int score = score_item(item);
+            if (!score) {
+                continue;
+            }
+            if (scored_items.size() < MaxFoundItems) {
+                ScoreItem score_item{item, score};
+                std::list<ScoreItem>::iterator pos =
+                    std::ranges::lower_bound(scored_items, score_item, cmp);
+                scored_items.insert(pos, score_item);
+            } else if (score > scored_items.back().score) {
+                scored_items.pop_back();
+                ScoreItem score_item{item, score};
+                std::list<ScoreItem>::iterator pos =
+                    std::ranges::lower_bound(scored_items, score_item, cmp);
+                scored_items.insert(pos, score_item);
+            }
         }
     }
 

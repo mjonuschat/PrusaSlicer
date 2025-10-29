@@ -34,8 +34,6 @@ public:
     );
     ~SearchResultRow();
 
-    void render(Yoga::Vec2f pos, Yoga::Vec2f size) override;
-
 protected:
     void on_data_update() override;
 

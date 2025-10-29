@@ -22,6 +22,7 @@ public:
 
     void on_data_update() override;
     void on_index_update() override;
+    void on_will_be_removed() override;
 
 private:
     using ComboBoxTools = Yoga::ComboBoxListViewSelection<Domain::Preset::HwToolConfigDef>;

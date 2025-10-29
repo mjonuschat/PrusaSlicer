@@ -69,7 +69,7 @@ public:
 
     void set_items(const Items& data)
     {
-        IObservableList<T>::template invoke_listeners<IListObserver<T>>([](IListObserver<T>* l) {
+        IObservableList<T>::template invoke_listeners<IListObserver<T>>([&](IListObserver<T>* l) {
             l->on_will_be_reset();
         });
         m_items = data;
@@ -80,7 +80,7 @@ public:
 
     void set_items(Items&& data)
     {
-        IObservableList<T>::template invoke_listeners<IListObserver<T>>([](IListObserver<T>* l) {
+        IObservableList<T>::template invoke_listeners<IListObserver<T>>([&](IListObserver<T>* l) {
             l->on_will_be_reset();
         });
         m_items = data;

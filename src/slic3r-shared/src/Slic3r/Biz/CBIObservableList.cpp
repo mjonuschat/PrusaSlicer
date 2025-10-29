@@ -20,9 +20,9 @@ std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor> CBIObserv
     const std::vector<Domain::ConfigBox*>& config_boxes
 )
 {
-    invoke_listeners<IListObserver<ConfigBoxInteractor>>([](IListObserver<ConfigBoxInteractor>* l) {
-        l->on_will_be_reset();
-    });
+    invoke_listeners<IListObserver<ConfigBoxInteractor>>(
+        [&](IListObserver<ConfigBoxInteractor>* l) { l->on_will_be_reset(); }
+    );
 
     m_items.clear();
     m_items.reserve(config_boxes.size());
@@ -35,9 +35,8 @@ std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor> CBIObserv
         accessor_map[&m_items.back()] = accessor;
     }
 
-    invoke_listeners<IListObserver<ConfigBoxInteractor>>([](IListObserver<ConfigBoxInteractor>* l) {
-        l->on_reset();
-    });
+    invoke_listeners<IListObserver<ConfigBoxInteractor>>([](IListObserver<ConfigBoxInteractor>* l)
+                                                         { l->on_reset(); });
 
     return accessor_map;
 }

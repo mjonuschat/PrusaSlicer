@@ -327,6 +327,10 @@ void Popup::set_content_item(WindowPtr content_item)
 
         m_content_item->callbacks().set_dirty_requested = [this]
         {
+            if (!m_root_item) {
+                find_root_item();
+            }
+
             if (m_root_item) {
                 m_root_item->set_style_dirty();
             }

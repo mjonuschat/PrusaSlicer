@@ -9,13 +9,13 @@ namespace Slic3r::Biz {
 void ConfigBoxObservableList::set_config_box(Domain::ConfigBox* config_box)
 {
     // if (m_config_box != config_box) {
-    invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l) {
-        l->on_will_be_reset();
-    });
+    invoke_listeners<IListObserver<Domain::ConfigItem>>(
+        [&](IListObserver<Domain::ConfigItem>* l)
+        { l->on_will_be_reset(); }
+    );
     m_config_box = config_box;
-    invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l) {
-        l->on_reset();
-    });
+    invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l)
+                                                        { l->on_reset(); });
     // }
 }
 
@@ -59,13 +59,13 @@ const Domain::ConfigValue* ConfigBoxObservableList::find(const std::string& name
 void ConfigBoxOverridesObservableList::set_config_box(Domain::ConfigBox* config_box)
 {
     // if (m_config_box != config_box)
-    invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l) {
-        l->on_will_be_reset();
-    });
+    invoke_listeners<IListObserver<Domain::ConfigItem>>(
+        [&](IListObserver<Domain::ConfigItem>* l)
+        { l->on_will_be_reset(); }
+    );
     m_config_box = config_box;
-    invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l) {
-        l->on_reset();
-    });
+    invoke_listeners<IListObserver<Domain::ConfigItem>>([&](IListObserver<Domain::ConfigItem>* l)
+                                                        { l->on_reset(); });
     // }
 }
 

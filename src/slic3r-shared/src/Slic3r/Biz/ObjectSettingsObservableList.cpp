@@ -20,35 +20,34 @@ size_t ObjectSettingsObservableList::size() const
 
 void ObjectSettingsObservableList::set_sources(const std::vector<Domain::ConfigBox*>& sources)
 {
-    invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l) {
-        l->on_will_be_reset();
-    });
-
-    m_sources = sources;
-
-    m_items.clear();
-    m_item_index.clear();
-    m_item_sources.clear();
+    std::vector<OverrideItemPtr> new_items;
+    std::unordered_map<OverrideItem*, std::set<Domain::ConfigBox*>> new_item_sources;
+    ItemMap new_item_index;
 
     // 1. Go through all Config Boxes and populate m_item_sources, m_items and m_item_index
     for (Domain::ConfigBox* box : sources) {
         for (const Domain::ConfigItem& config_item : box->items.all_items()) {
             OverrideItem* item = find_item(config_item.name());
             if (!item) {
-                OverrideItemPtr& item_ptr = m_items.emplace_back(
-                    std::make_unique<OverrideItem>(config_item.name(), false, std::optional<bool>(), &config_item)
+                OverrideItemPtr& item_ptr = new_items.emplace_back(
+                    std::make_unique<OverrideItem>(
+                        config_item.name(),
+                        false,
+                        std::optional<bool>(),
+                        &config_item
+                    )
                 );
-                m_item_sources[item_ptr.get()].insert(box);
-                m_item_index.insert({config_item.name(), m_items.size() - 1});
+                new_item_sources[item_ptr.get()].insert(box);
+                new_item_index.insert({config_item.name(), new_items.size() - 1});
             } else {
-                m_item_sources[item].insert(box);
+                new_item_sources[item].insert(box);
             }
         }
 
         for (const Domain::ConfigItem& config_item : box->overrides.all_items()) {
             OverrideItem* item = find_item(config_item.name());
             if (!item) {
-                OverrideItemPtr& item_ptr = m_items.emplace_back(
+                OverrideItemPtr& item_ptr = new_items.emplace_back(
                     std::make_unique<OverrideItem>(
                         config_item.name(),
                         false,
@@ -56,27 +55,36 @@ void ObjectSettingsObservableList::set_sources(const std::vector<Domain::ConfigB
                         &config_item
                     )
                 );
-                m_item_sources[item_ptr.get()].insert(box);
-                m_item_index.insert({config_item.name(), m_items.size() - 1});
+                new_item_sources[item_ptr.get()].insert(box);
+                new_item_index.insert({config_item.name(), new_items.size() - 1});
             } else {
-                m_item_sources[item].insert(box);
-                item->overriden = item->overriden.value()
-                    || box->overrides.get(item->name).has_value();
+                new_item_sources[item].insert(box);
+                item->overriden =
+                    item->overriden.value() || box->overrides.get(item->name).has_value();
             }
         }
     }
 
+    invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l)
+                                                  { l->on_will_be_reset(); });
+
+    m_sources = sources;
+
+    m_items        = std::move(new_items);
+    m_item_index   = std::move(new_item_index);
+    m_item_sources = std::move(new_item_sources);
+
     // 2. Go through all items and cache if the item values are mixed
-    for (OverrideItemPtr& item : m_items) {
+    for (OverrideItemPtr& item : new_items) {
         update_overriden(item.get());
     }
 
-    invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l) {
-        l->on_reset();
-    });
+    invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l)
+                                                  { l->on_reset(); });
 }
 
-void ObjectSettingsObservableList::set_value(const std::string& key, const Domain::ConfigValue& value)
+void
+ObjectSettingsObservableList::set_value(const std::string& key, const Domain::ConfigValue& value)
 {
     OverrideItem* item = find_item(key);
 
@@ -93,9 +101,8 @@ void ObjectSettingsObservableList::set_value(const std::string& key, const Domai
         }
     }
 
-    invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l) {
-        l->on_updated({m_item_index.at(key)});
-    });
+    invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l)
+                                                  { l->on_updated({m_item_index.at(key)}); });
 }
 
 void ObjectSettingsObservableList::set_override(const std::string& key, bool enabled)
@@ -110,9 +117,8 @@ void ObjectSettingsObservableList::set_override(const std::string& key, bool ena
         enabled ? box->overrides.enable(key) : box->overrides.disable(key);
     }
 
-    invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l) {
-        l->on_updated({m_item_index.at(key)});
-    });
+    invoke_listeners<IListObserver<OverrideItem>>([&](IListObserver<OverrideItem>* l)
+                                                  { l->on_updated({m_item_index.at(key)}); });
 }
 
 OverrideItem* ObjectSettingsObservableList::find_item(const std::string& name)
