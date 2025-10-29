@@ -837,7 +837,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
          {int(EnsureVerticalShellThickness::Enabled), "enabled", L("Enabled")}}
     );
 
-    auto def_top_fill_pattern = def = defs.add("top_fill_pattern", typeid(EnumWrapper));
+    def = defs.add("top_fill_pattern", typeid(EnumWrapper));
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
     def->label = L("Top fill pattern");
@@ -869,7 +869,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Fill pattern for bottom infill. This only affects the bottom external visible layer, and not its adjacent solid shells.");
     def->cli = "bottom-fill-pattern|external-fill-pattern|solid-fill-pattern";
-    def->aliases = def_top_fill_pattern->aliases;
+    def->aliases = { "solid_fill_pattern", "external_fill_pattern" };
     def->init_fn = init_with(
         InfillPattern::ipMonotonic,
         {{int(InfillPattern::ipRectilinear), "rectilinear", L("Rectilinear")},
