@@ -5,6 +5,7 @@
 #include "Slic3r/Exception.hpp"
 #include <ostream>
 #include <variant>
+#include <map>
 
 
 namespace Slic3r::Biz::Slicing {
@@ -80,6 +81,7 @@ enum class ErrorCode
     FoundG92E0InBeforeLayerGCode, // _u8L("\"G92 E0\" was found in before_layer_gcode, which is incompatible with absolute extruder addressing.")
     FoundG92E0InLayerGCode, // _u8L("\"G92 E0\" was found in layer_gcode, which is incompatible with absolute extruder addressing.")
     SettingMustBeEqualForAllExtruders,
+    PlaceholderParser,
 
     // FDM
     NoLayers, // "No layers were detected. You might want to repair your STL file(s) or check their size or thickness and retry.\n"
@@ -93,12 +95,20 @@ enum class ErrorCode
     UnsupportedOutputFormat, // _u8L("Unsupported output format")
 };
 
+using PlaceholderParserErrorPayload = std::map<std::string, std::string>;
+
+using ErrorPayload = std::variant<
+    std::monostate,
+    PlaceholderParserErrorPayload
+    >;
+
 struct Error {
     ErrorCode code{ErrorCode::None};
 
     // Empty means general error.
     std::vector<std::string> item_keys;
     std::optional<Domain::ObjectID> model_object_id;
+    ErrorPayload payload;
 };
 
 enum class WarningCode

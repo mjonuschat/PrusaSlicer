@@ -169,6 +169,8 @@ std::string to_display_string(Biz::Slicing::ErrorCode code)
         );
     case ErrorCode::SettingMustBeEqualForAllExtruders:
         return _u8L("The value needs to be the same for all extruders.");
+    case ErrorCode::PlaceholderParser:
+        return _u8L("Placeholder parser substitution failed.");
     case ErrorCode::UnsupportedOutputFormat:
         return _u8L("Unsupported output format.");
     }
@@ -188,7 +190,19 @@ std::string to_display_string(Biz::Slicing::Error error, const Domain::Project& 
     };
     const std::string object_info{object != nullptr ? _u8L("\nObject: ") + object->name : ""};
 
-    return to_display_string(error.code) + item_keys_info + object_info;
+    switch (error.code) {
+    case Biz::Slicing::ErrorCode::PlaceholderParser: {
+        std::string partial_msg;
+        for (const auto& [name, error] : std::get<Biz::Slicing::PlaceholderParserErrorPayload>(error.payload))
+            partial_msg += name + "\n" + error + "\n";
+        const std::string start_tag = "        !!!!! Failed to process the custom G-code template ...";
+        const std::string end_tag = "        !!!!! End of an error report for the custom G-code template ...";
+        return to_display_string(error.code) + fmt::format(fmt::runtime(_u8L("G-code processing failed due to invalid custom G-code sections:\n\n{}\n"
+            "Please inspect the file for error messages enclosed between\n{}\nand\n{}\nfor all macro processing errors.")),
+            partial_msg, start_tag, end_tag);
+        }
+    default: return to_display_string(error.code) + item_keys_info + object_info;
+    }
 }
 
 std::string to_display_string(Biz::Slicing::Warning warning, const Domain::Project& project)
