@@ -48,6 +48,7 @@ public:
 
 protected:
     void set_style_dirty() override;
+    Vec2f get_item_size() override;
 
 private:
     Callbacks m_callbacks;

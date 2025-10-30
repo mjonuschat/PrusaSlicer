@@ -52,14 +52,27 @@ void Window::render(Vec2f pos, Vec2f size)
 
     render_debug(pos, size);
 
-    if (m_position_by_yoga) {
-        ImGui::SetNextWindowPos(to_im(pos));
+    ImVec2 next_pos;
+    if (m_position_by_yoga || !m_requested_position.has_value()) {
+        next_pos = to_im(pos);
     } else if (m_requested_position.has_value()) {
-        ImGui::SetNextWindowPos(to_im(m_requested_position.value()));
+        next_pos             = to_im(m_requested_position.value());
         m_requested_position = {};
     }
-    ImGui::SetNextWindowSize(to_im(size));
+
+    ImVec2 sz = to_im(size);
+    if (!m_position_by_yoga) {
+        // clamp
+        ImVec2 vp  = ImGui::GetMainViewport()->Size;
+        ImVec2 max = ImVec2(vp.x - sz.x, vp.y - sz.y);
+        next_pos.x = std::clamp(next_pos.x, 0.f, std::max(0.f, max.x));
+        next_pos.y = std::clamp(next_pos.y, 0.f, std::max(0.f, max.y));
+    }
+
+
+    ImGui::SetNextWindowSize(sz);
     ImGui::SetNextWindowBgAlpha(m_alpha);
+    ImGui::SetNextWindowPos(next_pos);
 
     // Discard current paddings and spacing of the window to corect apply of sizer's margins
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
@@ -120,6 +133,26 @@ void Window::set_style_dirty()
     } else if (m_callbacks.set_dirty_requested) {
         m_callbacks.set_dirty_requested();
     }
+}
+
+Vec2f Window::get_item_size()
+{
+    ImVec2 old_pos = ImGui::GetCursorScreenPos();
+    ImGui::SetCursorScreenPos({});
+
+    // render widget with 0 alpha and store their size
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
+    render({}, {});
+    ImGui::PopStyleVar();
+
+    ImVec2 size = ImGui::GetCursorScreenPos();
+
+    Vec2f result = Vec2f{ImMax(0.f, size.x), ImMax(0.f, size.y)};
+
+    // reset cursor pos
+    ImGui::SetCursorScreenPos(old_pos);
+
+    return result;
 }
 
 Window::Callbacks& Window::callbacks()

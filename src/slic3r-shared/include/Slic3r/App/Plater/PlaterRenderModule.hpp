@@ -103,7 +103,7 @@ private:
     void init_dialog_navigation();
 
     void init_gizmos();
-    void init_add_volume_menu();
+    void init_add_volume_menu(Yoga::Item* parent);
     void add_volume(const Domain::ModelVolumeType& type);
 
 private:
@@ -113,7 +113,7 @@ private:
     std::unique_ptr<Scene::GizmoManager> m_gizmo_manager;
 
     // tmp menu for add volume
-    std::unique_ptr<Yoga::Menu> m_add_volumes_menu;
+    Yoga::Menu* m_add_volumes_menu = nullptr;
     // main window layout
     std::unique_ptr<PlaterRenderLayout> m_layout;
     // Layout objects

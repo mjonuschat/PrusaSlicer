@@ -8,30 +8,46 @@
 
 namespace Slic3r::App::Yoga {
 
-MenuItem::MenuItem(const std::string& label, Render::Icon icon, const std::string& shortcut, bool has_sub_menu)
-: RectangleButton()
+MenuItem::MenuItem(
+    const std::string& label,
+    Render::Icon icon,
+    const std::string& shortcut,
+    bool has_sub_menu
+) :
+    RectangleButton()
 {
     create(label, icon, IM_COL32_BLACK_TRANS, shortcut, has_sub_menu);
 }
 
-MenuItem::MenuItem(const std::string& label, ImColor color_icon_rect, const std::string& shortcut, bool has_sub_menu)
-: RectangleButton()
+MenuItem::MenuItem(
+    const std::string& label,
+    ImColor color_icon_rect,
+    const std::string& shortcut,
+    bool has_sub_menu
+) :
+    RectangleButton()
 {
     create(label, Render::Icon::None, color_icon_rect, shortcut, has_sub_menu);
 }
 
-void MenuItem::create(const std::string& label, Render::Icon icon, ImColor color_icon_rect, const std::string& shortcut, bool has_sub_menu)
+void MenuItem::create(
+    const std::string& label,
+    Render::Icon icon,
+    ImColor color_icon_rect,
+    const std::string& shortcut,
+    bool has_sub_menu
+)
 {
     if (has_sub_menu) {
-        m_sub_menu = std::make_unique<Menu>(this, label, Position::Right);
+        m_sub_menu = emplace_back<Menu>(label, Position::Right);
         m_sub_menu->set_offset(3.f);
     }
     set_background_color(IM_COL32_BLACK_TRANS);
 
     m_icon = emplace_back<Icon>(icon);
     m_icon->set_aspect_ratio(1);
-    //if (icon == Render::Icon::None)
-    //    render_filled_icon(color_icon_rect);
+    // if (icon == Render::Icon::None)
+    // render_filled_icon(color_icon_rect);
 
     m_label = emplace_back<Text>(label);
     m_label->set_flex_grow(1.f);
@@ -49,7 +65,12 @@ void MenuItem::create(const std::string& label, Render::Icon icon, ImColor color
     expander_icon->set_self_align(YGAlignCenter);
 }
 
-MenuItem* MenuItem::append_sub_menu_item(const std::string& label, bool* init_checkable_value, Render::Icon icon, const std::string& shortcut)
+MenuItem* MenuItem::append_sub_menu_item(
+    const std::string& label,
+    bool* init_checkable_value,
+    Render::Icon icon,
+    const std::string& shortcut
+)
 {
     return m_sub_menu->append_item(label, init_checkable_value, icon, shortcut);
 }
@@ -59,23 +80,24 @@ void MenuItem::clear_submenu()
     // !!? add this as a clear() method fo rthe Item !!?
     // No :))
     for (Item* child : items()) {
-        m_sub_menu->content_item()->remove(child);
+        m_sub_menu->remove(child);
     }
 }
 
 void MenuItem::pressed_updated_internal()
 {
-    if (m_sub_menu)
-        m_sub_menu->close();
-    else {
+    if (m_sub_menu) {
+        m_sub_menu->open();
+    } else {
         Item* parent = this->parent();
-        Menu* parent_menu = dynamic_cast<Menu*>(parent);
         while (parent) {
-            if (dynamic_cast<Menu*>(parent))
-                parent->set_visible(false);
+            Menu* parent_menu = dynamic_cast<Menu*>(parent);
+            if (parent_menu) {
+                parent_menu->close();
+            }
             parent = parent->parent();
         }
     }
 }
 
-} //namespace Slic3r::App::Yoga 
+} // namespace Slic3r::App::Yoga

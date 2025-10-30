@@ -446,6 +446,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/ComboBoxListViewSelection.hpp
         include/Slic3r/App/Yoga/SegmentedControl.hpp
         src/Slic3r/App/Yoga/SegmentedControl.cpp
+        include/Slic3r/App/Yoga/ContextPopup.hpp
+        src/Slic3r/App/Yoga/ContextPopup.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp

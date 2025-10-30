@@ -117,7 +117,7 @@ private:
 
     void extra_render();
 
-    void create_cog_menu();
+    void create_cog_menu(Item* parent);
 
     void update_visibility_cog_menu_items();
 
@@ -190,7 +190,7 @@ private:
     Yoga::LayoutButton* m_lock_btn{ nullptr };
     Yoga::LayoutButton* m_cog_btn{ nullptr };
 
-    std::unique_ptr<Yoga::Menu> m_cog_menu;
+    Yoga::Menu* m_cog_menu{nullptr};
 
     Yoga::MenuItem* m_edit_extruder_sequence_menu_item{ nullptr };
     Yoga::MenuItem* m_seq_top_layer_only_item{ nullptr };

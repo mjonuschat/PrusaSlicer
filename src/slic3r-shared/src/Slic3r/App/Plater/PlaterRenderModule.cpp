@@ -341,7 +341,7 @@ void PlaterRenderModule::init_scene_layout()
     }}
     );
     m_toolbar_add_volume->set_enabled(false);
-    init_add_volume_menu();
+    init_add_volume_menu(m_toolbar_add_volume);
 
     m_toolbar_delete = m_layout->add_toolbar_item(
         ToolbarID::Middle,
@@ -630,10 +630,9 @@ void PlaterRenderModule::init_gizmos()
     );
 }
 
-void PlaterRenderModule::init_add_volume_menu()
+void PlaterRenderModule::init_add_volume_menu(Yoga::Item* parent)
 {
-    m_add_volumes_menu = std::make_unique<Yoga::Menu>(
-        m_toolbar_add_volume,
+    m_add_volumes_menu = parent->emplace_back<Yoga::Menu>(
         "add_volume_menu",
         Yoga::Position::Right
     );
@@ -669,9 +668,6 @@ void PlaterRenderModule::init_add_volume_menu()
 
 void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
 {
-    assert(m_add_volumes_menu->opened());
-    m_add_volumes_menu->close();
-
     IDialogManager::FileCallback callback =
         [this, type](bool success, const std::vector<boost::filesystem::path>& file_paths) {
         if (success) {
@@ -994,9 +990,6 @@ void PlaterRenderModule::on_scene_selection_changed(
     m_toolbar_add_instance->set_enabled(can_add_instance);
 
     m_toolbar_add_volume->set_enabled(can_add_instance);
-    if (!can_add_instance && m_add_volumes_menu->opened()) {
-        m_add_volumes_menu->close();
-    }
 
     m_sidebar_bed->set_visible(empty_selection);
     m_sidebar_print->set_visible(empty_selection);
