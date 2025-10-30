@@ -47,6 +47,7 @@ enum class ErrorCode
     None,
     NoExtruders, // _u8L("The supplied settings will cause an empty print.")
     InvalidExtruders,
+    InvalidExtruderOffset,
     AvoidCrossingPerimetersAndAvoidCurledOverhangs, // _u8L("Avoid crossing perimeters option and avoid crossing curled overhangs option cannot be both enabled together.")
     SpiralVaseMultipleObjects, // _u8L("Only a single object may be printed at a time in Spiral Vase mode. Either remove all but the last object, or enable sequential mode by \"complete_objects\".")
     SpiralVaseMultipleMaterials, // _u8L("The Spiral Vase option can only be used when printing single material objects.")

@@ -135,6 +135,18 @@ bool in_range(const Domain::ConfigItem& extruder_item, int min, int max)
 }
 
 static std::optional<Biz::Slicing::Error>
+check_extruder_offset(const Domain::Model& model, const Domain::ConfigPackFDM& config) {
+    const int tool_count{static_cast<int>(config.tool.size())};
+    const auto extruder_offset{config.printer.items.opt("extruder_offset").get<std::vector<Vec2d>>()};
+    if (extruder_offset.size() != tool_count) {
+        using Biz::Slicing::Error;
+        using Biz::Slicing::ErrorCode;
+        return Error{ErrorCode::InvalidExtruderOffset, {"extruder_offset"}};
+    }
+    return std::nullopt;
+}
+
+static std::optional<Biz::Slicing::Error>
 check_extruders(const Domain::Model& model, const Domain::ConfigPackFDM& config)
 {
     const int tool_count{static_cast<int>(config.tool.size())};
@@ -189,6 +201,17 @@ check_extruders(const Domain::Model& model, const Domain::ConfigPackFDM& config)
     return Error{ErrorCode::InvalidExtruders, result};
 }
 
+std::vector<Biz::Slicing::Error> validate_input(const Domain::Model& model, const Domain::ConfigPackFDM& config) {
+    std::vector<Biz::Slicing::Error> errors;
+    if (auto error{check_extruder_offset(model, config)}) {
+        errors.push_back(std::move(*error));
+    }
+    if (auto error{check_extruders(model, config)}) {
+        errors.push_back(std::move(*error));
+    }
+    return errors;
+}
+
 Biz::Print::ApplyStatus::Status Print::update(
     Domain::Model& model,
     const ConfigPack& config,
@@ -211,8 +234,9 @@ Biz::Print::ApplyStatus::Status Print::update(
         };
 
         const auto& config_fdm{std::get<ConfigPackFDM>(config)};
-        if (auto error{check_extruders(model, config_fdm)}) {
-            result = ApplyStatus::InvalidData{{std::move(*error)}};
+        std::vector<Biz::Slicing::Error> errors{validate_input(model, config_fdm)};
+        if (!errors.empty()) {
+            result = ApplyStatus::InvalidData{std::move(errors)};
             return;
         }
         const auto slicing_input{prepare_slicing_input(config_fdm)};
