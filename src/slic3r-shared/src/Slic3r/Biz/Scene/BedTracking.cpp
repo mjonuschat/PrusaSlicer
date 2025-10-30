@@ -89,38 +89,22 @@ Domain::BoundingBox3d BedTracking::get_instance_bb(const Domain::Project& projec
     CacheInstanceEntry& cache_entry = obj_cache.instances[inst.id().id];
     const Domain::Transformation& trafo = inst.get_transformation();
 
-    auto try_to_use_cache_entry = [](const CacheInstanceEntry& candidate, CacheInstanceEntry& cache_entry, const Domain::Transformation& trafo) -> bool {
-        if (!candidate.cached_bb.defined || !cache_entry.cached_bb.defined)
-            return false;
-        if (candidate.inst_trafo.get_rotation().isApprox(trafo.get_rotation())) {
-            // Rotation part is the same as before. We can just update the bounding box itself.
-            cache_entry.cached_bb = Algorithms::BoundingBox::transformed(cache_entry.cached_bb, cache_entry.inst_trafo.get_matrix().inverse());
-            cache_entry.cached_bb = Algorithms::BoundingBox::transformed(cache_entry.cached_bb, trafo.get_matrix());
-            cache_entry.inst_trafo = trafo;
-            return true;
-        }
-        return false;
-    };
-
+    // Try to use the cache
     bool cache_used = false;
-    if (! try_to_use_cache_entry(cache_entry, cache_entry, trafo)) {
-        // When the exact entry did not exist or differs in rotation, try all
-        // instances of the same object.
-        for (const auto& [inst_id, candidate] : obj_cache.instances) {
-            if (inst_id == inst.id().id)
-                continue;
-            if (try_to_use_cache_entry(candidate, cache_entry, trafo)) {
-                cache_used = true;
-                break;
-            }
+    if (cache_entry.cached_bb.defined) {
+        if (cache_entry.inst_trafo.get_rotation().isApprox(trafo.get_rotation()) &&
+            cache_entry.inst_trafo.get_scaling_factor().isApprox(trafo.get_scaling_factor())) {
+            // Rotation and scale parts are the same as before. We can just translate the bounding box itself.
+            Domain::Vec3d shift = trafo.get_offset() - cache_entry.inst_trafo.get_offset();
+            cache_entry.cached_bb = Algorithms::BoundingBox::translated(cache_entry.cached_bb, shift);
+            cache_entry.inst_trafo = trafo;
+            cache_used = true;
         }
-    } else
-        cache_used = true;
+    }
 
-    if (! cache_used) {
+    if (! cache_used)
         // We must calculate the transformed bounding box in this case.
         cache_entry = { trafo, Algorithms::ModelObject::instance_bounding_box(*inst.get_object(), inst) };
-    }
 
     // Clear the cache every now and then.
     if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - m_last_cache_clear_time).count() > 20) {
