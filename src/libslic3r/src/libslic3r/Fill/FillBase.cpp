@@ -80,17 +80,18 @@ Fill* Fill::new_from_type(const Domain::InfillPattern type)
 
 bool Fill::use_bridge_flow(const Domain::InfillPattern type)
 {
+    auto init_cache = []() -> std::vector<unsigned char> {
+        std::vector<unsigned char> out;
+        out.assign(size_t(Domain::InfillPattern::ipCount), 0);
+        for (size_t i = 0; i < out.size(); ++ i) {
+            std::unique_ptr<Fill> fill(Fill::new_from_type((Domain::InfillPattern)i));
+            out[i] = fill->use_bridge_flow();
+        }
+        return out;
+    };
     // Since C++11, static local variables are initialized in thread-safe manner.
     // https://isocpp.org/files/papers/N4860.pdf (section 8.8, subsection 4).
-    static std::vector<unsigned char> cached;
-	if (cached.empty()) {
-		cached.assign(size_t(Domain::InfillPattern::ipCount), 0);
-		for (size_t i = 0; i < cached.size(); ++ i) {
-			auto *fill = Fill::new_from_type((Domain::InfillPattern)i);
-			cached[i] = fill->use_bridge_flow();
-			delete fill;
-		}
-	}
+    static std::vector<unsigned char> cached = init_cache();
 	return cached[int(type)] != 0;
 }
 
