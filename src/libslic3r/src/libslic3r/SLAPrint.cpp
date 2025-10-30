@@ -7,15 +7,10 @@
 #include "libslic3r/SLAPrintSteps.hpp" // IWYU pragma: keep
 #include "libslic3r/CSGMesh/CSGMeshCopy.hpp"
 #include "libslic3r/CSGMesh/PerformCSGMeshBooleans.hpp"
-#include "libslic3r/format.hpp"
-#include "libslic3r/StaticMap.hpp"
 
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Thread.hpp"
-
-#include <unordered_set>
-#include <numeric>
 
 #include <tbb/parallel_for.h>
 #include <boost/filesystem/path.hpp>
@@ -61,7 +56,6 @@ using Domain::ConfigPack;
 using Domain::ConfigPackSLA;
 using Domain::FullConfigSLA;
 using Domain::FullConfigSLAPtr;
-using Domain::SLAObjectSettings;
 using Domain::Percentage;
 using Domain::PartialObjectConfigSLA;
 using Biz::Algorithms::Scaling::unscaled;
@@ -413,203 +407,265 @@ void delete_old_model_objects(const Domain::ModelObjectPtrs& old_objects, const 
     }
 }
 
-AllOrSome<PrintSteps> get_steps_invalidated_by_config_options(const std::vector<std::string> &opt_keys)
+using Step = std::variant<SLAPrintStep, SLAPrintObjectStep>;
+
+std::vector<Step> propagate(Step step)
 {
-    using namespace std::string_view_literals;
+    return std::visit(
+        Domain::overloaded{
+            [](const SLAPrintStep& step) -> std::vector<Step>
+            {
+                if (step == slapsMergeSlicesAndEval) {
+                    return {slapsMergeSlicesAndEval, slapsRasterize};
+                } else {
+                    return {step};
+                }
+            },
+            [](const SLAPrintObjectStep& step) -> std::vector<Step>
+            {
+                switch (step) {
+                case slaposAssembly:
+                    return {
+                        slaposAssembly,
+                        slapsMergeSlicesAndEval,
+                        slapsRasterize,
+                        slaposHollowing,
+                        slaposDrillHoles,
+                        slaposObjectSlice,
+                        slaposSupportPoints,
+                        slaposSupportTree,
+                        slaposPad,
+                        slaposSliceSupports,
+                    };
+                case slaposHollowing:
+                    return {
+                        slaposHollowing,
+                        slaposDrillHoles,
+                        slaposObjectSlice,
+                        slaposSupportPoints,
+                        slaposSupportTree,
+                        slaposPad,
+                        slaposSliceSupports,
+                        slapsMergeSlicesAndEval
+                    };
+                case slaposDrillHoles:
+                    return {
+                        slaposDrillHoles,
+                        slaposObjectSlice,
+                        slaposSupportPoints,
+                        slaposSupportTree,
+                        slaposPad,
+                        slaposSliceSupports,
+                        slapsMergeSlicesAndEval
+                    };
+                case slaposObjectSlice:
+                    return {
+                        slaposObjectSlice,
+                        slaposSupportPoints,
+                        slaposSupportTree,
+                        slaposPad,
+                        slaposSliceSupports,
+                        slapsMergeSlicesAndEval
+                    };
+                case slaposSupportPoints:
+                    return {
+                        slaposSupportPoints,
+                        slaposSupportTree,
+                        slaposPad,
+                        slaposSliceSupports,
+                        slapsMergeSlicesAndEval
+                    };
+                case slaposSupportTree:
+                    return {slaposSupportTree, slaposPad, slaposSliceSupports, slapsMergeSlicesAndEval};
+                case slaposPad:
+                    return {slaposPad, slaposSliceSupports, slapsMergeSlicesAndEval};
+                case slaposSliceSupports:
+                    return {slaposSliceSupports, slapsMergeSlicesAndEval};
+                default:
+                    PANIC("Unknown step!");
+                }
+            }
+        },
+        step
+    );
+};
 
-    if (opt_keys.empty())
-        return PrintSteps{};
-
-    static constexpr StaticSet steps_full = {
-        "initial_layer_height"sv,
-        "material_correction"sv,
-        "material_correction_x"sv,
-        "material_correction_y"sv,
-        "material_correction_z"sv,
-        "material_print_speed"sv,
-        "relative_correction"sv,
-        "relative_correction_x"sv,
-        "relative_correction_y"sv,
-        "relative_correction_z"sv,
-        "absolute_correction"sv,
-        "elefant_foot_compensation"sv,
-        "elefant_foot_min_width"sv,
-        "zcorrection_layers"sv,
-        "gamma_correction"sv,
-    };
-
-    // Cache the plenty of parameters, which influence the final rasterization only,
-    // or they are only notes not influencing the rasterization step.
-    static constexpr StaticSet steps_rasterize = {
-        "min_exposure_time"sv,
-        "max_exposure_time"sv,
-        "exposure_time"sv,
-        "min_initial_exposure_time"sv,
-        "max_initial_exposure_time"sv,
-        "initial_exposure_time"sv,
-        "display_width"sv,
-        "display_height"sv,
-        "display_pixels_x"sv,
-        "display_pixels_y"sv,
-        "display_mirror_x"sv,
-        "display_mirror_y"sv,
-        "display_orientation"sv,
-        "sla_archive_format"sv,
-        "sla_output_precision"sv,
-        // tilt params
-        "delay_before_exposure"sv,
-        "delay_after_exposure"sv,
-        "tower_hop_height"sv,
-        "tower_speed"sv,
-        "use_tilt"sv,
-        "tilt_down_initial_speed"sv,
-        "tilt_down_offset_steps"sv,
-        "tilt_down_offset_delay"sv,
-        "tilt_down_finish_speed"sv,
-        "tilt_down_cycles"sv,
-        "tilt_down_delay"sv,
-        "tilt_up_initial_speed"sv,
-        "tilt_up_offset_steps"sv,
-        "tilt_up_offset_delay"sv,
-        "tilt_up_finish_speed"sv,
-        "tilt_up_cycles"sv,
-        "tilt_up_delay"sv,
-        "area_fill"sv,
-    };
-
-    static StaticSet steps_ignore = {
-        "bed_shape"sv,
-        "max_print_height"sv,
-        "printer_technology"sv,
-        "output_filename_format"sv,
-        "fast_tilt_time"sv,
-        "slow_tilt_time"sv,
-        "high_viscosity_tilt_time"sv,
-        "bottle_cost"sv,
-        "bottle_volume"sv,
-        "bottle_weight"sv,
-        "material_density"sv,
-        "material_ow_support_pillar_diameter"sv,
-        "material_ow_support_head_front_diameter"sv,
-        "material_ow_support_head_penetration"sv,
-        "material_ow_support_head_width"sv,
-        "material_ow_branchingsupport_pillar_diameter"sv,
-        "material_ow_branchingsupport_head_front_diameter"sv,
-        "material_ow_branchingsupport_head_penetration"sv,
-        "material_ow_branchingsupport_head_width"sv,
-        "material_ow_elefant_foot_compensation"sv,
-        "material_ow_support_points_density_relative"sv,
-        "material_ow_absolute_correction"sv,
-        "printer_model"sv,
-    };
-
-    std::set<SLAPrintStep> steps;
-
-    for (std::string_view opt_key : opt_keys) {
-        if (steps_rasterize.find(opt_key) != steps_rasterize.end()) {
-            // These options only affect the final rasterization, or they are just notes without influence on the output,
-            // so there is nothing to invalidate.
-            steps.insert(slapsMergeSlicesAndEval);
-        } else if (steps_ignore.find(opt_key) != steps_ignore.end()) {
-            // These steps have no influence on the output. Just ignore them.
-        } else if (steps_full.find(opt_key) != steps_full.end()) {
-            return AllSteps{};
-        } else {
-            // All values should be covered.
-            assert(false);
-        }
+std::vector<Step> steps(const std::vector<std::vector<Step>>& steps)
+{
+    std::vector<Step> result;
+    for (const auto& _steps : steps) {
+        result.insert(result.end(), _steps.begin(), _steps.end());
     }
-
-    return steps;
+    std::ranges::sort(result);
+    result.erase(std::unique(result.begin(), result.end()), result.end());
+    return result;
 }
 
-PrintObjectSteps get_object_steps_invalidated_by_config_options(const std::vector<std::string> &opt_keys)
+std::vector<Step> all_steps()
 {
-    if (opt_keys.empty()) {
-        return {};
+    std::set<Step> result;
+    for (int i{}; i < slapsCount; ++i) {
+        result.insert(static_cast<SLAPrintStep>(i));
+    }
+    for (int i{}; i < slaposCount; ++i) {
+        result.insert(static_cast<SLAPrintObjectStep>(i));
+    }
+    return std::vector<Step>{result.begin(), result.end()};
+}
+
+const std::map<std::string, std::vector<Step>> invalidated_by{
+    {"absolute_correction", all_steps()},
+    {"area_fill", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"bed_custom_model", all_steps()},
+    {"bed_custom_texture", steps({})},
+    {"bed_shape", steps({})},
+    {"bottle_cost", steps({})},
+    {"bottle_volume", steps({})},
+    {"bottle_weight", steps({})},
+    {"branchingsupport_base_diameter", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_base_height", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_base_safety_distance", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_buildplate_only", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_critical_angle", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_head_front_diameter", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_head_penetration", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_head_width", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_max_bridge_length", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_max_bridges_on_pillar", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_max_pillar_link_distance", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_max_weight_on_model", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_object_elevation", steps({propagate(slaposObjectSlice)})},
+    {"branchingsupport_pillar_connection_mode", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_pillar_diameter", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_pillar_widening_factor", steps({propagate(slaposSupportTree)})},
+    {"branchingsupport_small_pillar_diameter_percent", steps({propagate(slaposSupportTree)})},
+    {"delay_after_exposure", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"delay_before_exposure", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"display_height", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"display_mirror_x", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"display_mirror_y", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"display_orientation", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"display_pixels_x", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"display_pixels_y", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"display_width", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"elefant_foot_compensation", all_steps()},
+    {"elefant_foot_min_width", all_steps()},
+    {"exposure_time", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"faded_layers", steps({propagate(slaposObjectSlice)})},
+    {"fast_tilt_time", steps({})},
+    {"gamma_correction", all_steps()},
+    {"high_viscosity_tilt_time", steps({})},
+    {"hollowing_closing_distance", steps({propagate(slaposHollowing)})},
+    {"hollowing_enable", steps({propagate(slaposHollowing)})},
+    {"hollowing_min_thickness", steps({propagate(slaposHollowing)})},
+    {"hollowing_quality", steps({propagate(slaposHollowing)})},
+    {"initial_exposure_time", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"initial_layer_height", all_steps()},
+    {"layer_height", steps({propagate(slaposObjectSlice)})},
+    {"material_colour", steps({})},
+    {"material_correction", all_steps()},
+    {"material_correction_x", all_steps()},
+    {"material_correction_y", all_steps()},
+    {"material_correction_z", all_steps()},
+    {"material_density", steps({})},
+    {"material_notes", steps({})},
+    {"material_print_speed", all_steps()},
+    {"material_type", steps({})},
+    {"material_vendor", steps({})},
+    {"max_exposure_time", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"max_initial_exposure_time", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"max_print_height", steps({})},
+    {"min_exposure_time", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"min_initial_exposure_time", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"output_filename_format", steps({})},
+    {"pad_around_object", steps({propagate(slaposObjectSlice)})},
+    {"pad_around_object_everywhere", steps({propagate(slaposObjectSlice)})},
+    {"pad_brim_size", steps({propagate(slaposPad)})},
+    {"pad_enable", steps({propagate(slaposObjectSlice)})},
+    {"pad_max_merge_distance", steps({propagate(slaposPad)})},
+    {"pad_object_connector_penetration", steps({propagate(slaposPad)})},
+    {"pad_object_connector_stride", steps({propagate(slaposPad)})},
+    {"pad_object_connector_width", steps({propagate(slaposPad)})},
+    {"pad_object_gap", steps({propagate(slaposSupportTree)})},
+    {"pad_wall_height", steps({propagate(slaposPad)})},
+    {"pad_wall_slope", steps({propagate(slaposPad)})},
+    {"pad_wall_thickness", steps({propagate(slaposObjectSlice)})},
+    {"printer_model", steps({})},
+    {"printer_notes", steps({})},
+    {"printer_technology", steps({})},
+    {"printer_variant", steps({})},
+    {"relative_correction", all_steps()},
+    {"relative_correction_x", all_steps()},
+    {"relative_correction_y", all_steps()},
+    {"relative_correction_z", all_steps()},
+    {"sla_archive_format", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"sla_output_precision", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"slice_closing_radius", steps({propagate(slaposObjectSlice)})},
+    {"slicing_mode", steps({propagate(slaposObjectSlice)})},
+    {"slow_tilt_time", steps({})},
+    {"support_base_diameter", steps({propagate(slaposSupportTree)})},
+    {"support_base_height", steps({propagate(slaposSupportTree)})},
+    {"support_base_safety_distance", steps({propagate(slaposSupportTree)})},
+    {"support_buildplate_only", steps({propagate(slaposSupportTree)})},
+    {"support_critical_angle", steps({propagate(slaposSupportTree)})},
+    {"support_enforcers_only", steps({propagate(slaposSupportPoints)})},
+    {"support_head_front_diameter", steps({propagate(slaposSupportTree)})},
+    {"support_head_penetration", steps({propagate(slaposSupportTree)})},
+    {"support_head_width", steps({propagate(slaposSupportTree)})},
+    {"support_max_bridge_length", steps({propagate(slaposSupportTree)})},
+    {"support_max_bridges_on_pillar", steps({propagate(slaposSupportTree)})},
+    {"support_max_pillar_link_distance", steps({propagate(slaposSupportTree)})},
+    {"support_max_weight_on_model", steps({propagate(slaposSupportTree)})},
+    {"support_object_elevation", steps({propagate(slaposObjectSlice)})},
+    {"support_pillar_connection_mode", steps({propagate(slaposSupportTree)})},
+    {"support_pillar_diameter", steps({propagate(slaposSupportTree)})},
+    {"support_pillar_widening_factor", steps({propagate(slaposSupportTree)})},
+    {"support_points_density_relative", steps({propagate(slaposSupportPoints)})},
+    {"support_small_pillar_diameter_percent", steps({propagate(slaposSupportTree)})},
+    {"support_tree_type", steps({propagate(slaposObjectSlice)})},
+    {"supports_enable", steps({propagate(slaposObjectSlice)})},
+    {"thumbnails", steps({})},
+    {"thumbnails_format", steps({})},
+    {"tilt_down_cycles", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_down_delay", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_down_finish_speed", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_down_initial_speed", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_down_offset_delay", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_down_offset_steps", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_up_cycles", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_up_delay", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_up_finish_speed", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_up_initial_speed", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_up_offset_delay", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tilt_up_offset_steps", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tower_hop_height", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"tower_speed", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"use_tilt", steps({propagate(slapsMergeSlicesAndEval)})},
+    {"zcorrection_layers", all_steps()},
+};
+
+PrintAndObjectSteps diff_to_invalidated_steps(
+    const std::vector<std::string>& diff
+)
+{
+    std::set<Step> steps;
+    for (const std::string& opt_key : diff) {
+        const std::vector<Step>& invalidated_steps{invalidated_by.at(opt_key)};
+        steps.insert(invalidated_steps.begin(), invalidated_steps.end());
     }
 
-    PrintObjectSteps result;
-    for (const std::string &opt_key : opt_keys) {
-        if (   opt_key == "hollowing_enable"
-            || opt_key == "hollowing_min_thickness"
-            || opt_key == "hollowing_quality"
-            || opt_key == "hollowing_closing_distance"
-            ) {
-            result.insert(slaposHollowing);
-        } else if (
-               opt_key == "layer_height"
-            || opt_key == "faded_layers"
-            || opt_key == "pad_enable"
-            || opt_key == "pad_wall_thickness"
-            || opt_key == "supports_enable"
-            || opt_key == "support_tree_type"
-            || opt_key == "support_object_elevation"
-            || opt_key == "branchingsupport_object_elevation"
-            || opt_key == "pad_around_object"
-            || opt_key == "pad_around_object_everywhere"
-            || opt_key == "slice_closing_radius"
-            || opt_key == "slicing_mode") {
-            result.insert(slaposObjectSlice);
-        } else if (
-               opt_key == "support_points_density_relative"
-            || opt_key == "support_enforcers_only"
-            ) {
-            result.insert(slaposSupportPoints);
-        } else if (
-               opt_key == "support_head_front_diameter"
-            || opt_key == "support_head_penetration"
-            || opt_key == "support_head_width"
-            || opt_key == "support_pillar_diameter"
-            || opt_key == "support_pillar_widening_factor"
-            || opt_key == "support_small_pillar_diameter_percent"
-            || opt_key == "support_max_weight_on_model"
-            || opt_key == "support_max_bridges_on_pillar"
-            || opt_key == "support_pillar_connection_mode"
-            || opt_key == "support_buildplate_only"
-            || opt_key == "support_base_diameter"
-            || opt_key == "support_base_height"
-            || opt_key == "support_critical_angle"
-            || opt_key == "support_max_bridge_length"
-            || opt_key == "support_max_pillar_link_distance"
-            || opt_key == "support_base_safety_distance"
-            || opt_key == "branchingsupport_head_front_diameter"
-            || opt_key == "branchingsupport_head_penetration"
-            || opt_key == "branchingsupport_head_width"
-            || opt_key == "branchingsupport_pillar_diameter"
-            || opt_key == "branchingsupport_pillar_widening_factor"
-            || opt_key == "branchingsupport_small_pillar_diameter_percent"
-            || opt_key == "branchingsupport_max_weight_on_model"
-            || opt_key == "branchingsupport_max_bridges_on_pillar"
-            || opt_key == "branchingsupport_pillar_connection_mode"
-            || opt_key == "branchingsupport_buildplate_only"
-            || opt_key == "branchingsupport_base_diameter"
-            || opt_key == "branchingsupport_base_height"
-            || opt_key == "branchingsupport_critical_angle"
-            || opt_key == "branchingsupport_max_bridge_length"
-            || opt_key == "branchingsupport_max_pillar_link_distance"
-            || opt_key == "branchingsupport_base_safety_distance"
-            || opt_key == "pad_object_gap"
-            ) {
-            result.insert(slaposSupportTree);
-        } else if (
-               opt_key == "pad_wall_height"
-            || opt_key == "pad_brim_size"
-            || opt_key == "pad_max_merge_distance"
-            || opt_key == "pad_wall_slope"
-            || opt_key == "pad_edge_radius"
-            || opt_key == "pad_object_connector_stride"
-            || opt_key == "pad_object_connector_width"
-            || opt_key == "pad_object_connector_penetration"
-            ) {
-            result.insert(slaposPad);
-        } else {
-            // All keys should be covered.
-            assert(false);
-        }
+    std::set<SLAPrintStep> print_steps;
+    std::set<SLAPrintObjectStep> print_object_steps;
+    for (const Step& step : steps) {
+        std::visit(
+            Domain::overloaded{
+                [&](const SLAPrintStep& step) { print_steps.insert(step); },
+                [&](const SLAPrintObjectStep& step) { print_object_steps.insert(step); }
+            },
+            step
+        );
     }
-
-    return result;
+    return PrintAndObjectSteps{print_steps, print_object_steps};
 }
 
 void delete_old_print_objects(const PrintObjects& old_objects, const PrintObjects& new_objects)
@@ -667,17 +723,16 @@ PrintObjectsSyncResult sync_print_objects(
         SLAPrintObject* reused_print_object{it->second};
 
         // Synchronize Object's config.
-        std::vector<std::string> diff = reused_print_object->config().object_settings().diff_keys(new_config.object_settings());
-        if (! diff.empty()) {
-            AllOrSome<PrintObjectSteps>& steps{
-                result.invalidated_steps.object[reused_print_object]
-            };
-            if (std::holds_alternative<PrintObjectSteps>(steps)) {
-                auto& object_steps{std::get<PrintObjectSteps>(steps)};
-                object_steps.merge(get_object_steps_invalidated_by_config_options(diff));
-            }
-            reused_print_object->set_config(new_config);
-        }
+        std::vector<std::string> diff = reused_print_object->config().diff_keys(new_config);
+        AllOrSome<PrintObjectSteps>& object_steps{
+            result.invalidated_steps.object[reused_print_object]
+        };
+        AllOrSome<PrintSteps>& print_steps{result.invalidated_steps.print};
+        const PrintAndObjectSteps invalidated_steps{diff_to_invalidated_steps(diff)};
+        print_steps  = merge(print_steps, invalidated_steps.first);
+        object_steps = merge(object_steps, invalidated_steps.second);
+
+        reused_print_object->set_config(new_config);
 
         if (new_instances != reused_print_object->instances()) {
             // Instances changed.
@@ -887,30 +942,17 @@ InvalidatedSteps SLAPrint::apply(
     m_hw_config         = hw_config;
     m_serialized_config = serialized_config;
 
-    // Collect changes to print config.
-    const std::vector<std::string> config_diff{new_print_config.full_config().diff_keys(m_print_config.full_config())};
 
     // Grab the lock for the Print / PrintObject milestones.
     std::scoped_lock<std::mutex> lock(this->state_mutex());
-
-    const InvalidatedSteps config_invalidated_steps{
-        merge(
-            std::vector<AllOrSome<PrintSteps>>{
-                get_steps_invalidated_by_config_options(config_diff),
-            }
-        ),
-        {}
-    };
 
     m_placeholder_parser = PlaceholderParser{Biz::Slicing::get_parser_config(config_pack)};
 
     // It is also safe to change m_config now after this->invalidate_state_by_config_options() call.
     m_print_config = new_print_config;
 
-    const bool all_invalidated{std::holds_alternative<AllSteps>(config_invalidated_steps.print)};
-
     std::map<ObjectID, Domain::ModelObject*> reuse_candidates;
-    if (model.id() == m_model.id() && !all_invalidated) {
+    if (model.id() == m_model.id()) {
         for (Domain::ModelObject* model_object: m_model.objects) {
             reuse_candidates.insert({model_object->id(), model_object});
         }
@@ -928,11 +970,6 @@ InvalidatedSteps SLAPrint::apply(
         this
     )};
 
-    const InvalidatedSteps invalidated_steps{merge({
-        config_invalidated_steps,
-        model_sync_result.invalidated_steps
-    })};
-
     m_model.objects = model_sync_result.model_objects;
     m_objects = model_sync_result.print_objects;
 
@@ -940,7 +977,7 @@ InvalidatedSteps SLAPrint::apply(
         m_printer_input = {};
     }
 
-    return invalidated_steps;
+    return model_sync_result.invalidated_steps;
 }
 
 namespace {
@@ -1072,18 +1109,6 @@ bool SLAPrint::is_prusa_print(const std::string& printer_model)
     return false;
 }
 
-bool SLAPrint::invalidate_step(SLAPrintStep step)
-{
-    bool invalidated = Inherited::invalidate_step(step);
-
-    // propagate to dependent steps
-    if (step == slapsMergeSlicesAndEval) {
-        invalidated |= this->invalidate_all_steps();
-    }
-
-    return invalidated;
-}
-
 void SLAPrint::process()
 {
     if (m_objects.empty())
@@ -1197,129 +1222,8 @@ void SLAPrint::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImage
     this->cleanup();
 };
 
-bool SLAPrint::invalidate_state_by_config_options(const std::vector<std::string> &opt_keys, bool &invalidate_all_model_objects)
-{
-    using namespace std::string_view_literals;
-
-    if (opt_keys.empty())
-        return false;
-
-    static constexpr StaticSet steps_full = {
-        "initial_layer_height"sv,
-        "material_correction"sv,
-        "material_correction_x"sv,
-        "material_correction_y"sv,
-        "material_correction_z"sv,
-        "material_print_speed"sv,
-        "relative_correction"sv,
-        "relative_correction_x"sv,
-        "relative_correction_y"sv,
-        "relative_correction_z"sv,
-        "absolute_correction"sv,
-        "elefant_foot_compensation"sv,
-        "elefant_foot_min_width"sv,
-        "zcorrection_layers"sv,
-        "gamma_correction"sv,
-    };
-
-    // Cache the plenty of parameters, which influence the final rasterization only,
-    // or they are only notes not influencing the rasterization step.
-    static constexpr StaticSet steps_rasterize = {
-        "min_exposure_time"sv,
-        "max_exposure_time"sv,
-        "exposure_time"sv,
-        "min_initial_exposure_time"sv,
-        "max_initial_exposure_time"sv,
-        "initial_exposure_time"sv,
-        "display_width"sv,
-        "display_height"sv,
-        "display_pixels_x"sv,
-        "display_pixels_y"sv,
-        "display_mirror_x"sv,
-        "display_mirror_y"sv,
-        "display_orientation"sv,
-        "sla_archive_format"sv,
-        "sla_output_precision"sv,
-        // tilt params
-        "delay_before_exposure"sv,
-        "delay_after_exposure"sv,
-        "tower_hop_height"sv,
-        "tower_speed"sv,
-        "use_tilt"sv,
-        "tilt_down_initial_speed"sv,
-        "tilt_down_offset_steps"sv,
-        "tilt_down_offset_delay"sv,
-        "tilt_down_finish_speed"sv,
-        "tilt_down_cycles"sv,
-        "tilt_down_delay"sv,
-        "tilt_up_initial_speed"sv,
-        "tilt_up_offset_steps"sv,
-        "tilt_up_offset_delay"sv,
-        "tilt_up_finish_speed"sv,
-        "tilt_up_cycles"sv,
-        "tilt_up_delay"sv,
-        "area_fill"sv,
-    };
-
-    static StaticSet steps_ignore = {
-        "bed_shape"sv,
-        "max_print_height"sv,
-        "printer_technology"sv,
-        "output_filename_format"sv,
-        "fast_tilt_time"sv,
-        "slow_tilt_time"sv,
-        "high_viscosity_tilt_time"sv,
-        "bottle_cost"sv,
-        "bottle_volume"sv,
-        "bottle_weight"sv,
-        "material_density"sv,
-        "material_ow_support_pillar_diameter"sv,
-        "material_ow_support_head_front_diameter"sv,
-        "material_ow_support_head_penetration"sv,
-        "material_ow_support_head_width"sv,
-        "material_ow_branchingsupport_pillar_diameter"sv,
-        "material_ow_branchingsupport_head_front_diameter"sv,
-        "material_ow_branchingsupport_head_penetration"sv,
-        "material_ow_branchingsupport_head_width"sv,
-        "material_ow_elefant_foot_compensation"sv,
-        "material_ow_support_points_density_relative"sv,
-        "material_ow_absolute_correction"sv,
-        "printer_model"sv,
-    };
-
-    std::vector<SLAPrintStep> steps;
-    std::vector<SLAPrintObjectStep> osteps;
-    bool invalidated = false;
-
-    for (std::string_view opt_key : opt_keys) {
-        if (steps_rasterize.find(opt_key) != steps_rasterize.end()) {
-            // These options only affect the final rasterization, or they are just notes without influence on the output,
-            // so there is nothing to invalidate.
-            steps.emplace_back(slapsMergeSlicesAndEval);
-        } else if (steps_ignore.find(opt_key) != steps_ignore.end()) {
-            // These steps have no influence on the output. Just ignore them.
-        } else if (steps_full.find(opt_key) != steps_full.end()) {
-            steps.emplace_back(slapsMergeSlicesAndEval);
-            osteps.emplace_back(slaposObjectSlice);
-            invalidate_all_model_objects = true;
-        } else {
-            // All values should be covered.
-            assert(false);
-        }
-    }
-
-    sort_remove_duplicates(steps);
-    for (SLAPrintStep step : steps)
-        invalidated |= this->invalidate_step(step);
-    sort_remove_duplicates(osteps);
-    for (SLAPrintObjectStep ostep : osteps)
-        for (SLAPrintObject *object : m_objects)
-            invalidated |= object->invalidate_step(ostep);
-    return invalidated;
-}
-
 // Returns true if an object step is done on all objects and there's at least one object.
-bool SLAPrint::is_step_done(SLAPrintObjectStep step) const
+bool SLAPrint::is_object_step_done(SLAPrintObjectStep step) const
 {
     if (m_objects.empty())
         return false;
@@ -1336,36 +1240,6 @@ SLAPrintObject::SLAPrintObject(
     : Inherited(print, model_object),
     m_config(config)
 {}
-
-bool SLAPrintObject::invalidate_step(SLAPrintObjectStep step)
-{
-    bool invalidated = Inherited::invalidate_step(step);
-    // propagate to dependent steps
-    if (step == slaposAssembly) {
-        invalidated |= this->invalidate_all_steps();
-    } else if (step == slaposHollowing) {
-        invalidated |= this->invalidate_steps({ slaposDrillHoles, slaposObjectSlice, slaposSupportPoints, slaposSupportTree, slaposPad, slaposSliceSupports });
-        invalidated |= m_print->invalidate_step(slapsMergeSlicesAndEval);
-    } else if (step == slaposDrillHoles) {
-        invalidated |= this->invalidate_steps({ slaposObjectSlice, slaposSupportPoints, slaposSupportTree, slaposPad, slaposSliceSupports });
-        invalidated |= m_print->invalidate_step(slapsMergeSlicesAndEval);
-    } else if (step == slaposObjectSlice) {
-        invalidated |= this->invalidate_steps({ slaposSupportPoints, slaposSupportTree, slaposPad, slaposSliceSupports });
-        invalidated |= m_print->invalidate_step(slapsMergeSlicesAndEval);
-    } else if (step == slaposSupportPoints) {
-        invalidated |= this->invalidate_steps({ slaposSupportTree, slaposPad, slaposSliceSupports });
-        invalidated |= m_print->invalidate_step(slapsMergeSlicesAndEval);
-    } else if (step == slaposSupportTree) {
-        invalidated |= this->invalidate_steps({ slaposPad, slaposSliceSupports });
-        invalidated |= m_print->invalidate_step(slapsMergeSlicesAndEval);
-    } else if (step == slaposPad) {
-        invalidated |= this->invalidate_steps({slaposSliceSupports});
-        invalidated |= m_print->invalidate_step(slapsMergeSlicesAndEval);
-    } else if (step == slaposSliceSupports) {
-        invalidated |= m_print->invalidate_step(slapsMergeSlicesAndEval);
-    }
-    return invalidated;
-}
 
 bool SLAPrintObject::invalidate_all_steps()
 {

@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Layer.hpp"
@@ -22,9 +23,12 @@ using Domain::FullConfig;
 using Domain::ConfigBox;
 using Domain::ConfigItem;
 using Domain::SlicingId;
+using Domain::ConfigPackSLA;
 using Biz::Slicing::IThumbnailImageGenerator;
 using Biz::Slicing::ThumbnailImageResults;
 using Biz::Slicing::ThumbnailImageRequests;
+using Domain::TriangleMesh;
+using Biz::Algorithms::ModelObject::add_volume;
 namespace BB = Biz::Algorithms::BoundingBox;
 
 SCENARIO("PrintObject: Perimeter generation", "[PrintObject]") {
@@ -556,5 +560,176 @@ TEST_CASE_METHOD(ApplyTestFixture, "Apply invalidates correct steps - GCode flav
         [](TestConfig& c)
         { c.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfKlipper); },
         {psWipeTower, psSkirtBrim, psGCodeExport}
+    );
+}
+
+using SLAStep = std::variant<SLAPrintStep, SLAPrintObjectStep>;
+
+// Check that all other steps are done (hence the exclusive in the name).
+// Check only the first object.
+bool is_exclusively_undone(const SLAPrint& print, const std::set<SLAStep>& steps)
+{
+    for (std::size_t i{}; i < SLAPrintStep::slapsCount; ++i) {
+        const SLAPrintStep step{static_cast<SLAPrintStep>(i)};
+        if (steps.contains(step)) {
+            if (print.is_step_done(step)) {
+                return false;
+            }
+            continue;
+        }
+        if (!print.is_step_done(step)) {
+            return false;
+        }
+    }
+
+    ASSERT(print.objects().size() == 1);
+    const SLAPrintObject& object{*print.objects().front()};
+
+    for (std::size_t i{}; i < SLAPrintObjectStep::slaposCount; ++i) {
+        const SLAPrintObjectStep step{static_cast<SLAPrintObjectStep>(i)};
+        if (steps.contains(step)) {
+            if (object.is_step_done(step)) {
+                return false;
+            }
+            continue;
+        }
+        if (!object.is_step_done(step)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+struct SLAApplyTestFixture
+{
+    ConfigPackSLA config{};
+    SLAPrint print{[](Biz::Slicing::SLAResult&&) {}, [](const Biz::Slicing::Sla::Object&) {}};
+    Domain::Model model;
+    Domain::Bed model_bed;
+    Domain::BedInstance bed_instance{model_bed};
+
+    SLAApplyTestFixture()
+    {
+        TriangleMesh mesh{Biz::Algorithms::TriangleMesh::make_cube(5.0, 5.0, 0.5)};
+        Domain::ModelObject* object = model.add_object();
+        object->name += "object.stl";
+        add_volume(object, mesh);
+        object->add_instance();
+
+        for (const Domain::ModelObject* object : model.objects) {
+            for (Domain::ModelInstance* instance : object->instances) {
+                bed_instance.model_instances.push_back(instance);
+            }
+        }
+        print.update(model, config, bed_instance, SerializedConfig{}, HwPrinterConfig{});
+    }
+};
+
+void apply_and_check(
+    SLAApplyTestFixture& context,
+    const std::function<void(ConfigPackSLA&)>& modify_config,
+    const std::set<SLAStep>& expected_undone
+)
+{
+    ThumbnailGenerator thumbnail_generator{};
+    Biz::Print::SerializedConfig serialized_config{};
+    HwPrinterConfig hw_config{};
+
+    context.print.slice(SlicingId{0, 0}, thumbnail_generator);
+    REQUIRE(is_exclusively_undone(context.print, {}));
+
+    modify_config(context.config);
+
+    const auto apply_status{context.print.update(
+        context.model,
+        context.config,
+        context.bed_instance,
+        serialized_config,
+        hw_config
+    )};
+    REQUIRE(is_exclusively_undone(context.print, expected_undone));
+}
+
+TEST_CASE_METHOD(
+    SLAApplyTestFixture,
+    "SLA Apply invalidates correct steps - layer_height",
+    "[SLAPrintApply]"
+)
+{
+    apply_and_check(
+        *this,
+        [](ConfigPackSLA& c) { c.sla_print_settings.items.opt("layer_height").set<double>(0.11); },
+        {slaposObjectSlice,
+         slaposSupportPoints,
+         slaposSupportTree,
+         slaposPad,
+         slaposSliceSupports,
+         slapsMergeSlicesAndEval}
+    );
+}
+
+TEST_CASE_METHOD(
+    SLAApplyTestFixture,
+    "Apply invalidates correct steps - absolute_correction",
+    "[SLAPrintApply]"
+)
+{
+    apply_and_check(
+        *this,
+        [](ConfigPackSLA& c) { c.sla_material_settings.overrides.set("absolute_correction", 0.42); },
+        {slapsMergeSlicesAndEval,
+         slapsRasterize,
+         slaposAssembly,
+         slaposHollowing,
+         slaposDrillHoles,
+         slaposObjectSlice,
+         slaposSupportPoints,
+         slaposSupportTree,
+         slaposPad,
+         slaposSliceSupports
+        }
+    );
+}
+
+TEST_CASE_METHOD(
+    SLAApplyTestFixture,
+    "SLA Apply invalidates correct steps - display_width",
+    "[SLAPrintApply]"
+)
+{
+    apply_and_check(
+        *this,
+        [](ConfigPackSLA& c)
+        { c.sla_printer_settings.items.opt("display_width").set<double>(121.0); },
+        {slapsMergeSlicesAndEval, slapsRasterize}
+    );
+}
+
+TEST_CASE_METHOD(
+    SLAApplyTestFixture,
+    "SLA Apply invalidates correct steps - branchingsupport_base_diameter",
+    "[SLAPrintApply]"
+)
+{
+    apply_and_check(
+        *this,
+        [](ConfigPackSLA& c)
+        { c.sla_print_settings.items.opt("branchingsupport_base_diameter").set<double>(5.0); },
+        {slaposSupportTree, slaposPad, slaposSliceSupports, slapsMergeSlicesAndEval}
+    );
+}
+
+TEST_CASE_METHOD(
+    SLAApplyTestFixture,
+    "SLA Apply invalidates correct steps - fast_tilt_time",
+    "[SLAPrintApply]"
+)
+{
+    apply_and_check(
+        *this,
+        [](ConfigPackSLA& c)
+        { c.sla_printer_settings.items.opt("fast_tilt_time").set<double>(6.0); },
+        {}
     );
 }

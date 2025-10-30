@@ -239,7 +239,6 @@ public:
     inline void set_instances(Instances&& instances) { m_instances = std::move(instances); }
 
     // Invalidates the step, and its depending steps in SLAPrintObject and SLAPrint.
-    bool                    invalidate_step(SLAPrintObjectStep step);
     bool                    invalidate_all_steps();
     // Invalidate steps based on a set of parameters changed.
     bool                    invalidate_state_by_config_options(const std::vector<std::string> &opt_keys);
@@ -370,9 +369,9 @@ public:
     void slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGenerator&) override;
 
     // Returns true if an object step is done on all objects and there's at least one object.
-    bool                is_step_done(SLAPrintObjectStep step) const;
+    bool                is_object_step_done(SLAPrintObjectStep step) const;
     // Returns true if the last step was finished with success.
-    bool                finished() const override { return this->is_step_done(slaposSliceSupports) && this->Inherited::is_step_done(slapsRasterize); }
+    bool                finished() const override { return this->is_object_step_done(slaposSliceSupports) && this->Inherited::is_step_done(slapsRasterize); }
 
     const PrintObjects& objects() const { return m_objects; }
     // PrintObject by its ObjectID, to be used to uniquely bind slicing warnings to their source PrintObjects
@@ -447,10 +446,6 @@ public:
     static bool is_prusa_print(const std::string& printer_model);
     
 public:
-    
-    // Implement same logic as in SLAPrintObject
-    bool invalidate_step(SLAPrintStep st);
-
     // Invalidate steps based on a set of parameters changed.
     bool invalidate_state_by_config_options(const std::vector<std::string> &opt_keys, bool &invalidate_all_model_objects);
 
