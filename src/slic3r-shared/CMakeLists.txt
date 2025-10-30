@@ -294,6 +294,11 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/GraphicsSettings.cpp
         include/Slic3r/App/Scene/CameraFrustumUpdater.hpp
         src/Slic3r/App/Scene/CameraFrustumUpdater.cpp
+        include/Slic3r/App/Scene/Clipper.hpp
+        src/Slic3r/App/Scene/Clipper.cpp
+        include/Slic3r/App/Scene/ClipperPresenter.hpp
+        include/Slic3r/App/Scene/ClipperPresenterHelper.hpp
+        src/Slic3r/App/Scene/ClipperPresenter.cpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

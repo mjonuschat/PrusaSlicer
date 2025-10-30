@@ -13,6 +13,7 @@
 #include "Slic3r/App/Scene/MouseDragDetector.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/App/Scene/GizmoCommandRegistry.hpp"
+#include "Slic3r/App/Scene/Clipper.hpp"
 #include "Slic3r/Domain/PrinterTechnology.hpp"
 
 
@@ -22,11 +23,6 @@
 
 
 namespace Slic3r::App::Scene {
-
-class Clipper {
-public:
-    Clipper() {};
-};
 
 class IGizmoActiveToolListener {
 public:
