@@ -105,9 +105,9 @@ std::vector<Step> propagate(Step step)
                         psGCodeExport
                     };
                 case posEstimateCurledExtrusions:
-                    return {psAlertWhenSupportsNeeded, psWipeTower, psGCodeExport};
+                    return {posEstimateCurledExtrusions, psAlertWhenSupportsNeeded, psWipeTower, psGCodeExport};
                 case posCalculateOverhangingPerimeters:
-                    return {psAlertWhenSupportsNeeded, psWipeTower, psGCodeExport};
+                    return {posCalculateOverhangingPerimeters, psAlertWhenSupportsNeeded, psWipeTower, psGCodeExport};
                 default:
                     PANIC("Unknown object step propagation!");
                 }
