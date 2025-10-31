@@ -15,6 +15,11 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Plater {
 
+PaintOnSupportsDialog::Callbacks& PaintOnSupportsDialog::callbacks()
+{
+    return m_callbacks;
+}
+
 PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports")
 {
     const Vec2f button_size{50.f, 50.f};
@@ -73,11 +78,17 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
     Dialog::add_separator();
 
     std::unique_ptr<SliderWithInput> clipping_of_view = std::make_unique<SliderWithInput>();
-    clipping_of_view->set_begin_value(2.5);
-    clipping_of_view->set_end_value(7.5);
-    clipping_of_view->set_step(0.25);
-    clipping_of_view->set_value(3.);
+    clipping_of_view->set_begin_value(0.);
+    clipping_of_view->set_end_value(1.);
+    clipping_of_view->set_step(0.01);
+    clipping_of_view->set_value(0.5);
     clipping_of_view->set_input_width(slider_text_size);
+    clipping_of_view->callbacks().value_changed = [this](double value) {
+        if (callbacks().clipping_view_ratio_changed) {
+            callbacks().clipping_view_ratio_changed(value);
+        }
+    };
+
     add_new_row("Clipping of view", std::move(clipping_of_view));
 
     std::unique_ptr<SliderWithInput> show_overhangs = std::make_unique<SliderWithInput>();
