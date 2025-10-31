@@ -40,8 +40,8 @@ bool instance_check(const Slic3r::App::InitParams& init_params, bool app_config_
 
     // Parameters from init params override app config value
     bool should_send_and_exit = app_config_single_instance;
-    if (init_params.single_instance.has_value()) {
-        should_send_and_exit = *init_params.single_instance;
+    if (init_params.misc.single_instance.has_value()) {
+        should_send_and_exit = *init_params.misc.single_instance;
     }
 
     // The path in second parameter should change, once the new data dir structure is set.

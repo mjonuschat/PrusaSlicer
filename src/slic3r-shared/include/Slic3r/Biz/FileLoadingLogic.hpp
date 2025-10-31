@@ -6,6 +6,7 @@
 
 #include <string>
 #include <boost/filesystem/path.hpp>
+#include <tl/expected.hpp>
 
 namespace Slic3r::Biz {
 class IMessageDialogProvider;
@@ -50,5 +51,32 @@ void import_volumes_into_selected_object(
     Scene::SceneInteractor& scene_interactor,
     IMessageDialogProvider* dialog_provider
 );
+
+/**
+ * Reads a 3D model from the specified input file and processes it.
+ *
+ * The input file may be a simple geometry file (e.g., STL, OBJ) or a more complex project file.
+ * This function attempts to load the file, process its data, and construct a `Domain::Model` object.
+ * If the file contains valid model data, a `Domain::Model` is returned. If it contains a valid mesh,
+ * the mesh will be added to the model and default instances are created. If neither valid model nor mesh
+ * data is found, an error message is returned instead.
+ *
+ * @param input_file A string specifying the path to the input file to be read and processed.
+ * @return A `tl::expected` object containing the `Domain::Model` object on success, or an error string
+ *         on failure.
+ */
+tl::expected<Domain::Model, std::string>
+read_model_from_file(const std::string& input_file, IMessageDialogProvider* dialog_provider);
+
+/**
+ * Checks if the given file is a project file.
+ *
+ * A project file is defined as a file with a ".3mf" or ".zip" extension.
+ * The check is case-insensitive.
+ *
+ * @param input_file The name of the file to check.
+ * @return True if the input_file has a ".3mf" or ".zip" extension, false otherwise.
+ */
+bool is_project_file(const std::string& input_file);
 
 } // namespace Slic3r::Biz::FileLoadingLogic

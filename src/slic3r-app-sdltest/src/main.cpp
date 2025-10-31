@@ -94,7 +94,8 @@ void init_system()
     //    MessageBoxW(NULL, text.c_str(), L"Warning"/*L"Incopatible library found"*/, MB_OK);
     //}
 #endif
-    App::init_paths();
+    App::init_common();
+    App::init_paths(App::InitParams{});
     Slic3r::App::Render::TextureManager::set_resource_resolver(std::make_unique<Slic3r::App::ResourceResolver>(resources_dir()));
 
 }

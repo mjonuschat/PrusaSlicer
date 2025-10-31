@@ -1149,6 +1149,11 @@ namespace Slic3rLegacy {
             }
         }
 
+        // Set the source file path for each loaded model object.
+        for (Domain::ModelObject* model_object : model.objects) {
+            model_object->input_file = filename;
+        }
+
         // We support our 3mf contains only configuration without mesh,
         // others MUST contain mesh (triangles and vertices).
         if (!m_prusaslicer_generator_version.has_value() && model.objects.empty()) {

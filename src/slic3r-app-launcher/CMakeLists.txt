@@ -16,7 +16,10 @@ if (MSVC)
 target_link_options(slic3r-app-launcher PRIVATE "$<$<CONFIG:RELEASE>:/DEBUG>")
 endif ()
 
-target_link_libraries(slic3r-app-launcher PRIVATE slic3r-app-cli)
+find_package(CLI11 CONFIG REQUIRED)
+
+target_include_directories(slic3r-app-launcher PRIVATE src)
+target_link_libraries(slic3r-app-launcher PRIVATE slic3r-app-cli CLI11::CLI11)
 
 # sentry integration
 if (SLIC3R_SENTRY)
