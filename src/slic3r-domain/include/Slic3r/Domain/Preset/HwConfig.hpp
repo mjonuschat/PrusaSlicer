@@ -286,7 +286,7 @@ struct HwPrinterConfigDef
 
     template<class Archive> void serialize(Archive& archive)
     {
-        archive(id, name, technology, model, features, tool_count, visual);
+        archive(id, name, technology, model, features, legacy_printer_model, tool_count, visual);
     }
 };
 
@@ -392,7 +392,7 @@ struct HwPrinterConfigTemplate
 
     template<class Archive> void serialize(Archive& archive)
     {
-        archive(id, name, printer, sheet, tool_count, features, tools, feeders, visual);
+        archive(id, name, printer, legacy_printer_model, sheet, tool_count, features, tools, feeders, visual);
     }
 };
 
