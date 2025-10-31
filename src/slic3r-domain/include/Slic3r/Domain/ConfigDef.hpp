@@ -123,6 +123,8 @@ struct ConfigItemDef
     std::optional<double> min; // <min, max> limit of a numeric input.
     std::optional<double> max; // If not set, the <min, max> is set to <INT_MIN, INT_MAX>
 
+    bool require_tool_parity = false; // Requires number of elements to be same as number of tools
+
     static constexpr const char* nocli = "~~nocli";
 
     // ARE THE FOLLOWING EVER USED?

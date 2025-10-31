@@ -993,6 +993,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm");
     def->mode = comAdvanced;
     def->init_fn = init_with(std::vector{Vec2d(0,0)});
+    def->require_tool_parity = true;
 
     /* TODO: shouldn't we remove this crap?
     def = defs.add("extrusion_axis", typeid(std::string));

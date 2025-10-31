@@ -123,7 +123,7 @@ static size_t get_cache_footprint(const std::string& preset_bundle_path, const s
     size_t hash = combine_hashes(combine_hashes(hash1, hash2), std::hash<std::string>{}(slicer_version));
 
     // Increment the following value to enforce invalidation of caches from older versions:
-    size_t cache_epoch = 2;
+    size_t cache_epoch = 3;
     return combine_hashes(hash, std::hash<int>{}(cache_epoch));
 }
 

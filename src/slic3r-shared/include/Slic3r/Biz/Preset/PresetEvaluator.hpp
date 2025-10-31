@@ -61,7 +61,7 @@ private:
 
     template <typename FdmConfigType, typename SlaConfigType>
     static Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> preset_from_context(
-        Domain::PrinterTechnology technology,
+        const Domain::Preset::HwPrinterConfig& hw_config,
         Domain::Preset::PresetKind kind, const EvalPresetContext& context
     );
 

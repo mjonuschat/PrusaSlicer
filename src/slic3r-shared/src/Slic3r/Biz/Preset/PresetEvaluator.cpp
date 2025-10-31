@@ -275,7 +275,10 @@ struct ConfigValueSetterVisitor
 
 template <typename ConfigType>
     requires std::is_base_of_v<Domain::ConfigBox, ConfigType>
-ConfigType config_values(const Domain::Preset::PresetValueMap& values)
+ConfigType config_values(
+    const Domain::Preset::HwPrinterConfig& hw_config,
+    const Domain::Preset::PresetValueMap& values
+)
 {
     ConfigType config;
     for (const auto& [k, v] : values) {
@@ -285,9 +288,35 @@ ConfigType config_values(const Domain::Preset::PresetValueMap& values)
             continue;
         }
 
-        // if value was written and this is override, we need to enable that override
-        if (std::visit(ConfigValueSetterVisitor{q}, v) && q.is_override) {
-            config.overrides.enable(q.item->name());
+        if (std::visit(ConfigValueSetterVisitor{q}, v) ) {
+            // if value was written and this is override, we need to enable that override
+            if (q.is_override) {
+                config.overrides.enable(q.item->name());
+            }
+            if (q.item->def().require_tool_parity) {
+                q.item->visit(
+                    Domain::overloaded{
+                        [n = hw_config.tool_count]<typename T>(std::vector<T>& val)
+                        {
+                            if (val.size() > n) {
+                                // shrink original values
+                                val.resize(n);
+                            } else if (val.size() < n) {
+                                // repeat original values
+                                const size_t original_size = val.size();
+                                while (val.size() < n) {
+                                    const size_t idx = (val.size() - original_size) % original_size;
+                                    val.push_back(val.at(idx));
+                                }
+                            }
+                        },
+                        [](auto& val)
+                        {
+                            PANIC("Unsupported type for tool_parity: {}", type_name(val));
+                        }
+                    }
+                );
+            }
         }
     }
     return config;
@@ -295,21 +324,21 @@ ConfigType config_values(const Domain::Preset::PresetValueMap& values)
 
 template <typename FdmConfigType, typename SlaConfigType>
 Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType>::PresetValues config_values(
-    Domain::PrinterTechnology technology,
+    const Domain::Preset::HwPrinterConfig& hw_config,
     const Domain::Preset::PresetValueMap& values
 )
 {
-    if (technology == Domain::PrinterTechnology::FFF) {
+    if (hw_config.technology == Domain::PrinterTechnology::FFF) {
         if constexpr (std::is_same_v<FdmConfigType, std::monostate>)
             PANIC("Unsupported config type");
         else
-            return config_values<FdmConfigType>(values);
+            return config_values<FdmConfigType>(hw_config, values);
     }
-    if (technology == Domain::PrinterTechnology::SLA) {
+    if (hw_config.technology == Domain::PrinterTechnology::SLA) {
         if constexpr (std::is_same_v<SlaConfigType, std::monostate>)
             PANIC("Unsupported config type");
         else
-            return config_values<SlaConfigType>(values);
+            return config_values<SlaConfigType>(hw_config, values);
     }
     PANIC("Unsupported printer technology");
 }
@@ -329,7 +358,7 @@ bool PresetEvaluator::EvalPresetContext::has_same_values(const EvalPresetContext
 
 template <typename FdmConfigType, typename SlaConfigType>
 Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::preset_from_context(
-    Domain::PrinterTechnology technology,
+    const Domain::Preset::HwPrinterConfig& hw_config,
     Domain::Preset::PresetKind kind,
     const EvalPresetContext& context
 )
@@ -339,7 +368,7 @@ Domain::Preset::EvaluatedPreset<FdmConfigType, SlaConfigType> PresetEvaluator::p
         .root_id   = context.root_id,
         .id         = context.id.empty() ? generate_uuid() : context.id,
         .name       = context.name,
-        .values     = config_values<FdmConfigType, SlaConfigType>(technology, context.values),
+        .values     = config_values<FdmConfigType, SlaConfigType>(hw_config, context.values),
         .features   = context.features,
         .conditions = context.conditions,
         .last_node_location = context.last_node_location
@@ -433,7 +462,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
     for (const auto& printer_preset : printer_presets) {
         EvaluatedPrinterPreset ep{.hw_config = hw_config};
         ep.preset = preset_from_context<Domain::PrinterSettings, Domain::SLAPrinterSettings>(
-            hw_config.technology,
+            hw_config,
             printer_kind,
             printer_preset
         );
@@ -456,7 +485,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
 
         for (const auto& print_preset : print_presets) {
             auto evaluated_print_preset = preset_from_context<Domain::PrintSettings, Domain::SLAPrintSettings>(
-                hw_config.technology,
+                hw_config,
                 print_kind,
                 print_preset
             );
@@ -479,7 +508,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                     for (const auto& tool_variant : tool_preset_variants)
                         eval_variants.emplace_back(
                             preset_from_context<Domain::ToolPrintSettings, std::monostate>(
-                                hw_config.technology,
+                                hw_config,
                                 tool_kind,
                                 tool_variant
                             )
@@ -505,7 +534,7 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                 for (const auto& mat : mat_presets) {
                     variants.emplace_back(
                         preset_from_context<Domain::FilamentSettings, Domain::SLAMaterialSettings>(
-                            hw_config.technology,
+                            hw_config,
                             mat_kind,
                             mat
                         )
