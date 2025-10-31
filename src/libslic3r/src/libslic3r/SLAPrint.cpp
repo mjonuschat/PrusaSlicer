@@ -765,7 +765,11 @@ void SLAPrint::invalidate_object_steps(
         this->invalidate_all_steps();
     }
 
+    const std::set<SLAPrintObject*> existing_objects{m_objects.begin(), m_objects.end()};
     for (const auto& [print_object, invalidated_steps] : steps.object) {
+        if (!existing_objects.contains(print_object)) {
+            continue;
+        }
         if (std::holds_alternative<PrintObjectSteps>(invalidated_steps)) {
             const auto object_steps{std::get<PrintObjectSteps>(invalidated_steps)};
             for (const SLAPrintObjectStep& step : object_steps) {

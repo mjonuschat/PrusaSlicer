@@ -459,7 +459,11 @@ bool Print::invalidate_object_steps(
         }
     }
 
+    const std::set<PrintObject*> existing_objects{m_objects.begin(), m_objects.end()};
     for (const auto& [print_object, invalidated_steps] : steps.object) {
+        if (!existing_objects.contains(print_object)) {
+            continue;
+        }
         if (std::holds_alternative<PrintObjectSteps>(invalidated_steps)) {
             const auto object_steps{std::get<PrintObjectSteps>(invalidated_steps)};
             for (const PrintObjectStep& step : object_steps) {
@@ -1433,15 +1437,13 @@ Biz::Print::ApplyStatus::Status Print::apply(
     )};
 
     const bool changed{!invalidated_steps.empty()};
-    const bool invalidated{this->invalidate_object_steps(invalidated_steps)};
+    this->invalidate_object_steps(invalidated_steps);
 
     if (changed) {
         this->cleanup();
-    }
-
-    if (invalidated || changed) {
         return Biz::Print::ApplyStatus::Changed{warnings};
     }
+
     return Biz::Print::ApplyStatus::Unchanged{};
 }
 
