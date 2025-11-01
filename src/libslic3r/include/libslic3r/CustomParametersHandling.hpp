@@ -32,4 +32,6 @@ bool check_custom_parameters(
     std::string* error = nullptr
 );
 
+std::string merge_json(const std::string& base_json, const std::string& override_json);
+
 } // namespace Slic3r

@@ -4,6 +4,8 @@
 #include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
 
+#include "nlohmann/json.hpp"
+
 using namespace Slic3r::Domain::Preset;
 using namespace Slic3r::Biz::Preset;
 using namespace Slic3r::Biz;
@@ -697,5 +699,48 @@ values:
 
         auto evals = eval.eval_preset({{{"a", 2.0}}}, false);
         REQUIRE(evals.size() == 1);
+    }
+
+    SECTION("custom parameters")
+    {
+        const char* yaml = R"(
+kind: printer
+id: '*common*'
+values:
+  custom_parameters_printer: '{"key1": 1, "key2": true, "key3": null, "key4": null}'
+features:
+  f1: 1
+  f2: 1
+---
+kind: printer
+id: 'Printer'
+name: 'Printer'
+inherits:
+  - '*common*'
+values:
+  custom_parameters_printer: '{"key1": 2, "key3": "ahoj", "key5": null}'
+features:
+  f2: 2
+)"; 
+
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        auto evals = eval.eval_preset({}, false);
+        auto it = std::find_if(evals.begin(), evals.end(), [](const auto& p){ return p.name == "Printer"; });
+        const auto& cp = std::get<std::string>(it->values.at("custom_parameters_printer"));
+        auto json = nlohmann::json::parse(cp);
+        REQUIRE(json.at("key1").get<int>() == 2);
+        REQUIRE(json.at("key2").get<bool>() == true);
+        REQUIRE(json.at("key3").get<std::string>() == "ahoj");
+        REQUIRE(json.at("key4").is_null());
+        REQUIRE(json.at("key5").is_null());
     }
 }
