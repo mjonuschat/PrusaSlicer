@@ -93,8 +93,9 @@ Domain::BoundingBox3d BedTracking::get_instance_bb(const Domain::Project& projec
     bool cache_used = false;
     if (cache_entry.cached_bb.defined) {
         if (cache_entry.inst_trafo.get_rotation().isApprox(trafo.get_rotation()) &&
-            cache_entry.inst_trafo.get_scaling_factor().isApprox(trafo.get_scaling_factor())) {
-            // Rotation and scale parts are the same as before. We can just translate the bounding box itself.
+            cache_entry.inst_trafo.get_scaling_factor().isApprox(trafo.get_scaling_factor()) &&
+            cache_entry.inst_trafo.get_mirror().isApprox(trafo.get_mirror())) {
+            // Rotation, scale and mirror are the same as before. We can just translate the bounding box itself.
             Domain::Vec3d shift = trafo.get_offset() - cache_entry.inst_trafo.get_offset();
             cache_entry.cached_bb = Algorithms::BoundingBox::translated(cache_entry.cached_bb, shift);
             cache_entry.inst_trafo = trafo;
