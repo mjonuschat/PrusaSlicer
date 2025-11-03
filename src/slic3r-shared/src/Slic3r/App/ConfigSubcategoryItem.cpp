@@ -15,11 +15,13 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     size_t index,
     const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor,
-    Biz::ConfigBoxInteractor& cbi
+    Biz::ConfigBoxInteractor& cbi,
+    size_t cbi_index
 ) :
     Biz::DataObserver<Domain::ConfigItem>(index, data),
     m_cbi(cbi),
     m_preset_interactor(preset_interactor),
+    m_cbi_index(cbi_index),
     m_rows_filter_list(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())
 {
     set_item_name("ConfigSubcategoryItem");
@@ -57,7 +59,7 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     m_rows_filter_list->set_source_model(m_cbi.config_box_list());
 
     m_rows_list_view =
-        emplace_back<ConfigRowListView>(ConfigRowListViewFactory{m_preset_interactor, m_cbi});
+        emplace_back<ConfigRowListView>(ConfigRowListViewFactory{m_preset_interactor, m_cbi, m_cbi_index});
     m_rows_list_view->set_source_list(m_rows_filter_list.get());
     m_rows_list_view->set_orientation(Orientation::Vertical);
     m_rows_list_view->set_gap(5);

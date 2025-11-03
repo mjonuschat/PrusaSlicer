@@ -44,7 +44,8 @@ void ObjectConfigItem::on_data_update()
             1,
             m_index,
             *m_state->config_item,
-            m_preset_interactor
+            m_preset_interactor,
+	    0 // Object and Volume are always index 0
         );
         m_control_item = dynamic_cast<Item*>(m_control);
         ASSERT(m_control_item, "ConfigItem needs to derive from Yoga::Item");

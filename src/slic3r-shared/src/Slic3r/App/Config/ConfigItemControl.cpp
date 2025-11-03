@@ -126,67 +126,107 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
     size_t child_index,
     size_t data_index,
     const Domain::ConfigItem& item,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::Preset::PresetInteractor& preset_interactor,
+    size_t cbi_index
 )
 {
     ConfigItemControl* item_control = nullptr;
 
     switch (item.def().gui_type) {
     case Slic3r::Domain::ConfigItemDef::GUIType::textfield:
-        item_control =
-            container
-                ->emplace<ConfigItemTextField>(child_index, data_index, item, preset_interactor);
+        item_control = container->emplace<ConfigItemTextField>(
+            child_index,
+            data_index,
+            item,
+            preset_interactor,
+            cbi_index
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::textfields:
-        item_control =
-            container
-                ->emplace<ConfigItemTextFields>(child_index, data_index, item, preset_interactor);
+        item_control = container->emplace<ConfigItemTextFields>(
+            child_index,
+            data_index,
+            item,
+            preset_interactor,
+            cbi_index
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::checkbox:
-        item_control =
-            container
-                ->emplace<ConfigItemCheckBox>(child_index, data_index, item, preset_interactor);
+        item_control = container->emplace<ConfigItemCheckBox>(
+            child_index,
+            data_index,
+            item,
+            preset_interactor,
+            cbi_index
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::checkboxes:
-        item_control =
-            container
-                ->emplace<ConfigItemCheckBoxes>(child_index, data_index, item, preset_interactor);
+        item_control = container->emplace<ConfigItemCheckBoxes>(
+            child_index,
+            data_index,
+            item,
+            preset_interactor,
+            cbi_index
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::f_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::i_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::s_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::combobox:
-        item_control =
-            container
-                ->emplace<ConfigItemComboBox>(child_index, data_index, item, preset_interactor);
+        item_control = container->emplace<ConfigItemComboBox>(
+            child_index,
+            data_index,
+            item,
+            preset_interactor,
+            cbi_index
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::comboboxes:
-        item_control =
-            container
-                ->emplace<ConfigItemComboBoxes>(child_index, data_index, item, preset_interactor);
+        item_control = container->emplace<ConfigItemComboBoxes>(
+            child_index,
+            data_index,
+            item,
+            preset_interactor,
+            cbi_index
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::points:
-        item_control =
-            container->emplace<ConfigItemPoints>(child_index, data_index, item, preset_interactor);
+        item_control = container->emplace<ConfigItemPoints>(
+            child_index,
+            data_index,
+            item,
+            preset_interactor,
+            cbi_index
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::color:
         item_control = container->emplace<ConfigItemColorPicker>(child_index, data_index, item);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinbox:
-        item_control =
-            container->emplace<ConfigItemSpinBox>(child_index, data_index, item, preset_interactor);
+        item_control = container->emplace<ConfigItemSpinBox>(
+            child_index,
+            data_index,
+            item,
+            preset_interactor,
+            cbi_index
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinboxes:
-        item_control =
-            container
-                ->emplace<ConfigItemSpinBoxes>(child_index, data_index, item, preset_interactor);
+        item_control = container->emplace<ConfigItemSpinBoxes>(
+            child_index,
+            data_index,
+            item,
+            preset_interactor,
+            cbi_index
+        );
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::substitutions:
         item_control = container->emplace<ConfigItemSubstitutions>(
             child_index,
             data_index,
             item,
-            preset_interactor
+            preset_interactor,
+            cbi_index
         );
         break;
     }

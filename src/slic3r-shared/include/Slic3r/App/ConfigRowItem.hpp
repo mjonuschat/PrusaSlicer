@@ -30,6 +30,7 @@ public:
         size_t index,
         const Domain::ConfigItem& data,
         Biz::Preset::PresetInteractor& preset_interactor,
+        size_t cbi_index,
         bool small
     );
 
@@ -42,6 +43,7 @@ private:
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
     bool m_small{false};
+    size_t m_cbi_index{0};
 
     Domain::ConfigItemDef::GUIType m_created_gui_type{Domain::ConfigItemDef::GUIType::undefined};
     const std::type_info* m_created_value_type{nullptr};

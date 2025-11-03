@@ -33,7 +33,8 @@ class ConfigSubcategoryItem : public Biz::DataObserver<Domain::ConfigItem>, publ
         ConfigRowItems,
         Domain::ConfigItem,
         Biz::Preset::PresetInteractor&,
-        Biz::ConfigBoxInteractor&>;
+        Biz::ConfigBoxInteractor&,
+        size_t>;
     using ConfigRowListView =
         Yoga::ListView<ConfigRowItems, Domain::ConfigItem, ConfigRowListViewFactory>;
 
@@ -42,7 +43,8 @@ public:
         size_t index,
         const Domain::ConfigItem& data,
         Biz::Preset::PresetInteractor& preset_interactor,
-        Biz::ConfigBoxInteractor& cbi
+        Biz::ConfigBoxInteractor& cbi,
+        size_t cbi_index
     );
 
     void navigate_to_item(const Domain::ConfigItem* config_item);
@@ -56,6 +58,7 @@ private:
 private:
     Biz::ConfigBoxInteractor& m_cbi;
     Biz::Preset::PresetInteractor& m_preset_interactor;
+    size_t m_cbi_index{0};
 
     ConfigRowListView* m_rows_list_view{nullptr};
     Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_rows_filter_list;

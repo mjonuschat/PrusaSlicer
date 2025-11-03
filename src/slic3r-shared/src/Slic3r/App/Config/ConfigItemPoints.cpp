@@ -15,9 +15,15 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-ConfigItemPoints::ConfigItemPoints(size_t index, const Domain::ConfigItem& data, Biz::Preset::PresetInteractor& preset_interactor) :
+ConfigItemPoints::ConfigItemPoints(
+    size_t index,
+    const Domain::ConfigItem& data,
+    Biz::Preset::PresetInteractor& preset_interactor,
+    size_t cbi_index
+) :
     ConfigItemControl(index, data),
-    m_preset_interactor(preset_interactor)
+    m_preset_interactor(preset_interactor),
+    m_cbi_index(cbi_index)
 {
     set_orientation(Orientation::Horizontal);
     set_gap(5);
@@ -58,7 +64,7 @@ void ConfigItemPoints::send_data()
         Domain::Vec2d(m_validator_x->value(), m_validator_y->value())
     };
 
-    m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{data});
+    m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{data}, m_cbi_index);
 }
 
 } // namespace Slic3r::App

@@ -18,10 +18,12 @@ namespace Slic3r::App {
 ConfigItemTextField::ConfigItemTextField(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::Preset::PresetInteractor& preset_interactor,
+    size_t cbi_index
 ) :
     ConfigItemControl(index, data),
-    m_preset_interactor(preset_interactor)
+    m_preset_interactor(preset_interactor),
+    m_cbi_index(cbi_index)
 {
     if (data.def().multiline) {
         set_flags(flags() | ImGuiInputTextFlags_Multiline);
@@ -55,16 +57,18 @@ ConfigItemTextField::ConfigItemTextField(
     callbacks().text_edited = [this]()
     {
         if (*m_state->def().type == typeid(std::string)) {
-            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{text()});
+            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{text()}, m_cbi_index);
         } else if (*m_state->def().type == typeid(double)) {
             m_preset_interactor.set_item_value(
                 *m_state,
-                Domain::ConfigValue{m_double_validator->value()}
+                Domain::ConfigValue{m_double_validator->value()},
+                m_cbi_index
             );
         } else if (*m_state->def().type == typeid(Domain::Percentage)) {
             m_preset_interactor.set_item_value(
                 *m_state,
-                Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}}
+                Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}},
+                m_cbi_index
             );
         } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
             const std::string value_text = text();
@@ -73,12 +77,14 @@ ConfigItemTextField::ConfigItemTextField(
                     *m_state,
                     Domain::ConfigValue{Domain::FloatOrPercentage{
                         Domain::Percentage{m_percentage_validator->value()}
-                    }}
+                    }},
+                    m_cbi_index
                 );
             } else {
                 m_preset_interactor.set_item_value(
                     *m_state,
-                    Domain::ConfigValue{Domain::FloatOrPercentage{m_percentage_validator->value()}}
+                    Domain::ConfigValue{Domain::FloatOrPercentage{m_percentage_validator->value()}},
+                    m_cbi_index
                 );
             }
         }

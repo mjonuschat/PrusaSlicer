@@ -26,8 +26,12 @@ class ConfigItemSpinBox;
 
 class ConfigRowItems : public Biz::DataObserver<Domain::ConfigItem>, public Yoga::Item
 {
-    using ConfigRowListViewFactory =
-        Yoga::ViewFactory<ConfigRowItem, Domain::ConfigItem, Biz::Preset::PresetInteractor&, bool>;
+    using ConfigRowListViewFactory = Yoga::ViewFactory<
+        ConfigRowItem,
+        Domain::ConfigItem,
+        Biz::Preset::PresetInteractor&,
+        size_t,
+        bool>;
     using ConfigRowListView =
         Yoga::ListView<ConfigRowItem, Domain::ConfigItem, ConfigRowListViewFactory>;
 
@@ -36,7 +40,8 @@ public:
         size_t index,
         const Domain::ConfigItem& data,
         Biz::Preset::PresetInteractor& preset_interactor,
-        Biz::ConfigBoxInteractor& cbi
+        Biz::ConfigBoxInteractor& cbi,
+        size_t cbi_index
     );
 
     void navigate_to_item(const Domain::ConfigItem* config_item);
@@ -56,6 +61,7 @@ private:
 
     Biz::Preset::PresetInteractor& m_preset_interactor;
     Biz::ConfigBoxInteractor& m_cbi;
+    size_t m_cbi_index{0};
 
     Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_row_items_filter;
     ConfigRowListView* m_row_group_list_view{nullptr};

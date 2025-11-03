@@ -15,10 +15,12 @@ namespace Slic3r::App {
 ConfigItemSpinBoxes::ConfigItemSpinBoxes(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::Preset::PresetInteractor& preset_interactor,
+    size_t cbi_index
 ) :
     ConfigItemControl(index, data),
-    m_preset_interactor(preset_interactor)
+    m_preset_interactor(preset_interactor),
+    m_cbi_index(cbi_index)
 {
     set_orientation(Orientation::Horizontal);
     set_gap(5);
@@ -51,17 +53,17 @@ void ConfigItemSpinBoxes::reconstruct_spin_buttons()
     const std::string tooltip = tooltip_text();
 
     for (size_t index = 0; index < size; ++index) {
-        Box& box                 = m_boxes.emplace_back();
-        InputTextWithSpin* input = emplace_back<InputTextWithSpin>(
-            std::make_unique<IntValidator>(min, max)
-        );
+        Box& box = m_boxes.emplace_back();
+        InputTextWithSpin* input =
+            emplace_back<InputTextWithSpin>(std::make_unique<IntValidator>(min, max));
         box.spinbox         = input;
         box.value_validator = dynamic_cast<IntValidator*>(input->validator());
 
-        input->callbacks().text_edited = [this, index]() {
+        input->callbacks().text_edited = [this, index]()
+        {
             std::vector<int> data = m_state->get<std::vector<int>>();
             data[index]           = m_boxes.at(index).value_validator->value();
-            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{data});
+            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{data}, m_cbi_index);
         };
         input->set_tooltip(tooltip);
     }

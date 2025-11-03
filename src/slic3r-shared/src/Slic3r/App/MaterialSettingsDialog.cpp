@@ -74,9 +74,8 @@ void MaterialSettingsDialog::on_reset()
     for (size_t material_cbi_index = 0; material_cbi_index < m_material_cbi_list.size();
          ++material_cbi_index)
     {
-        Biz::ConfigBoxInteractor& cbi = const_cast<Biz::ConfigBoxInteractor&>(
-            m_material_cbi_list.at(material_cbi_index)
-        );
+        Biz::ConfigBoxInteractor& cbi =
+            const_cast<Biz::ConfigBoxInteractor&>(m_material_cbi_list.at(material_cbi_index));
 
         std::string tab_name = m_project_interactor.selected_config_container().print_technology()
                 == Domain::PrinterTechnology::FFF ?
@@ -84,7 +83,9 @@ void MaterialSettingsDialog::on_reset()
             _u8L("Material");
 
         Tab* tab = append_tab(fmt::format("{} {}", tab_name, material_cbi_index + 1));
-        m_config_tabs.emplace_back(std::make_unique<ConfigTab>(&cbi, tab, m_project_interactor));
+        m_config_tabs.emplace_back(
+            std::make_unique<ConfigTab>(&cbi, tab, m_project_interactor, material_cbi_index)
+        );
     }
 
     if (current_index.has_value()) {

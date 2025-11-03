@@ -43,7 +43,8 @@ protected:
         ConfigTab(
             Biz::ConfigBoxInteractor* cbi,
             Tab* tab,
-            Biz::ProjectInteractor& project_interactor
+            Biz::ProjectInteractor& project_interactor,
+            size_t cbi_index
         );
 
         void navigate_to_item(const Domain::ConfigItem* config_item);
@@ -52,6 +53,7 @@ protected:
         Biz::ConfigBoxInteractor* cbi{nullptr};
         Tab* tab{nullptr};
         Biz::ProjectInteractor& project_interactor;
+        size_t cbi_index{0};
         Biz::UnsharedPointer<ObservableCategorizer> observable_categorizer;
         Biz::UnsharedPointer<CategoryPageTransformer> category_page_transformer;
     };

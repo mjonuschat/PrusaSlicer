@@ -28,7 +28,8 @@ public:
         size_t child_index,
         size_t data_index,
         const Domain::ConfigItem& item,
-        Biz::Preset::PresetInteractor& preset_interactor
+        Biz::Preset::PresetInteractor& preset_interactor,
+        size_t cbi_index
     );
 
     bool mixed() const;

@@ -17,10 +17,12 @@ namespace Slic3r::App {
 ConfigItemTextFields::ConfigItemTextFields(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::Preset::PresetInteractor& preset_interactor,
+    size_t cbi_index
 ) :
     ConfigItemControl(index, data),
-    m_preset_interactor(preset_interactor)
+    m_preset_interactor(preset_interactor),
+    m_cbi_index(cbi_index)
 {
     set_orientation(Orientation::Horizontal);
     set_gap(5);
@@ -61,9 +63,7 @@ void ConfigItemTextFields::reconstruct_fields()
         field.textfield->set_validator(field.double_validator.release());
         field.textfield->set_text(fmt::format("{:.10g}", value));
         field.textfield->set_flex_grow(1);
-        field.textfield->callbacks().text_edited = [this]() {
-            send_data();
-        };
+        field.textfield->callbacks().text_edited = [this]() { send_data(); };
         field.textfield->set_tooltip(tooltip);
     }
 }
@@ -82,7 +82,7 @@ void ConfigItemTextFields::send_data()
     for (size_t i = 0; i < values.size(); ++i) {
         values[i] = m_fields.at(i).double_validator->value();
     }
-    m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{values});
+    m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{values}, m_cbi_index);
 }
 
 } // namespace Slic3r::App

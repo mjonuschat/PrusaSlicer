@@ -27,7 +27,8 @@ using ConfigSubcategoryListViewFactory = Yoga::ViewFactory<
     ConfigSubcategoryItem,
     Domain::ConfigItem,
     Biz::Preset::PresetInteractor&,
-    Biz::ConfigBoxInteractor&>;
+    Biz::ConfigBoxInteractor&,
+    size_t>;
 
 class ConfigSubcategoryListView :
     public Yoga::ListView<
@@ -42,7 +43,8 @@ public:
         size_t index,
         const Domain::ConfigItem& data,
         Biz::Preset::PresetInteractor& preset_interactor,
-        Biz::ConfigBoxInteractor& cbi
+        Biz::ConfigBoxInteractor& cbi,
+        size_t cbi_index
     );
     ~ConfigSubcategoryListView();
 
@@ -55,6 +57,8 @@ protected:
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
     Biz::ConfigBoxInteractor& m_cbi;
+    size_t m_cbi_index{0};
+
     Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_category_filter;
     Yoga::Rectangle* m_background{nullptr};
     Domain::ConfigItemDef::Category m_category{Domain::ConfigItemDef::Category::Unkown};

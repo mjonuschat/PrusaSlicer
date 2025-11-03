@@ -14,10 +14,12 @@ namespace Slic3r::App {
 ConfigItemComboBoxes::ConfigItemComboBoxes(
     size_t index,
     const Domain::ConfigItem& config_item,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::Preset::PresetInteractor& preset_interactor,
+    size_t cbi_index
 ) :
     ConfigItemControl(index, config_item),
-    m_preset_interactor(preset_interactor)
+    m_preset_interactor(preset_interactor),
+    m_cbi_index(cbi_index)
 {
     set_width(150);
     set_orientation(Orientation::Horizontal);
@@ -66,14 +68,16 @@ void ConfigItemComboBoxes::reconstruct_boxes()
         tooltip.content_item()->set_width(350);
         tooltip.set_text_wrap(true);
 
-        combo->callbacks().selection_changed = [this, combo](int index) {
+        combo->callbacks().selection_changed = [this, combo](int index)
+        {
             Domain::EnumVectorWrapper vector_wrapper = m_state->get<Domain::EnumVectorWrapper>();
             std::vector<size_t> current_indexes      = vector_wrapper.get_indexes();
             current_indexes[index_of(combo).value()] = index;
 
             vector_wrapper.set_indexes(current_indexes);
 
-            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{vector_wrapper});
+            m_preset_interactor
+                .set_item_value(*m_state, Domain::ConfigValue{vector_wrapper}, m_cbi_index);
         };
     }
 }

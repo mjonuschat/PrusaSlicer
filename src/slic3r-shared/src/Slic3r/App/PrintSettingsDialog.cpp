@@ -31,7 +31,8 @@ PrintSettingsDialog::PrintSettingsDialog(
         std::make_unique<ConfigTab>(
             &project_interactor.preset_interactor().print_cbi(),
             tab,
-            project_interactor
+            project_interactor,
+            0
         )
     );
 
@@ -70,7 +71,9 @@ void PrintSettingsDialog::on_reset()
             const_cast<Biz::ConfigBoxInteractor&>(m_tool_cbi_list.at(tool_cbi_index));
 
         Tab* tab = append_tab(fmt::format("Tool {}", tool_cbi_index + 1));
-        m_config_tabs.emplace_back(std::make_unique<ConfigTab>(&cbi, tab, m_project_interactor));
+        m_config_tabs.emplace_back(
+            std::make_unique<ConfigTab>(&cbi, tab, m_project_interactor, tool_cbi_index)
+        );
     }
 }
 

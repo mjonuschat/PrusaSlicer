@@ -15,16 +15,18 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     size_t index,
     const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor,
-    Biz::ConfigBoxInteractor& cbi
+    Biz::ConfigBoxInteractor& cbi,
+    size_t cbi_index
 ) :
     ListView<
         ConfigSubcategoryItem,
         Domain::ConfigItem,
         ConfigSubcategoryListViewFactory,
-        ScrollArea>(ConfigSubcategoryListViewFactory{preset_interactor, cbi}),
+        ScrollArea>(ConfigSubcategoryListViewFactory{preset_interactor, cbi, cbi_index}),
     Biz::DataObserver<Domain::ConfigItem>(index, data),
     m_preset_interactor(preset_interactor),
     m_cbi(cbi),
+    m_cbi_index(cbi_index),
     m_category_filter(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())
 {
     set_item_name("ConfigSubcategoryListView");

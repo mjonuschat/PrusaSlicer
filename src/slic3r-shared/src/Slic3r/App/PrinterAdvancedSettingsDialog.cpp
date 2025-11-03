@@ -31,7 +31,8 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
         std::make_unique<ConfigTab>(
             &project_interactor.preset_interactor().printer_cbi(),
             tab,
-            project_interactor
+            project_interactor,
+            0
         )
     );
 

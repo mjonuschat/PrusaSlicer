@@ -39,12 +39,19 @@ private:
         Biz::OverrideItem,
         Biz::ProjectInteractor&,
         SelectCategoryFn&>;
-    using OverrideCategoryListView = Yoga::ListView<OverrideCategoryButton, Biz::OverrideItem, OverrideCategoryFactory>;
+    using OverrideCategoryListView =
+        Yoga::ListView<OverrideCategoryButton, Biz::OverrideItem, OverrideCategoryFactory>;
 
-    using OverrideConfigListViewFactory = Yoga::
-        ViewFactory<OverrideItemRow, Biz::OverrideItem, Biz::Preset::PresetInteractor&, bool>;
-    using OverrideConfigListView = Yoga::
-        ListView<OverrideItemRow, Biz::OverrideItem, OverrideConfigListViewFactory, Yoga::ScrollArea>;
+    using OverrideConfigListViewFactory = Yoga::ViewFactory<
+        OverrideItemRow,
+        Biz::OverrideItem,
+        Biz::Preset::PresetInteractor&,
+        bool>;
+    using OverrideConfigListView = Yoga::ListView<
+        OverrideItemRow,
+        Biz::OverrideItem,
+        OverrideConfigListViewFactory,
+        Yoga::ScrollArea>;
     using OverrideConfigFilter = Biz::ObservableListSortFilter<Biz::OverrideItem>;
 
     Biz::ProjectInteractor& m_project_interactor;
