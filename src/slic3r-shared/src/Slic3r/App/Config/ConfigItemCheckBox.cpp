@@ -12,10 +12,12 @@ namespace Slic3r::App {
 ConfigItemCheckBox::ConfigItemCheckBox(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::Preset::PresetInteractor& preset_interactor,
+    size_t cbi_index
 ) :
     ConfigItemControl(index, data),
-    m_preset_interactor(preset_interactor)
+    m_preset_interactor(preset_interactor),
+    m_cbi_index(cbi_index)
 {
     set_width(150);
     m_tooltip.set_text_wrap(true);
@@ -23,7 +25,7 @@ ConfigItemCheckBox::ConfigItemCheckBox(
     set_tooltip(tooltip_text());
 
     callbacks().action = [this] {
-        m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{checked()});
+        m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{checked()}, m_cbi_index);
     };
 
     on_data_update();
@@ -38,7 +40,7 @@ void ConfigItemCheckBox::on_data_update()
         return;
     }
 
-    set_label("");
+    set_label({});
     set_font_type(Render::ImguiFontType::Regular);
     if (!overriden().value_or(true)) {
         set_checked(m_preset_interactor.get_override_origin(*m_state, location_index())->get<bool>());

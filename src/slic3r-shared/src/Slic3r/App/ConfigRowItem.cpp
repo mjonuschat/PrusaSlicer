@@ -19,13 +19,14 @@ ConfigRowItem::ConfigRowItem(
     size_t index,
     const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor,
+    size_t cbi_index,
     bool small
 ) :
     Biz::DataObserver<Domain::ConfigItem>(index, data),
     m_preset_interactor(preset_interactor),
+    m_cbi_index(cbi_index),
     m_small(small)
 {
-    set_item_name("ConfigRowItem");
     set_flex_shrink(0);
     set_padding(5);
     set_fill(IM_COL32_BLACK_TRANS);
@@ -75,7 +76,8 @@ void ConfigRowItem::on_data_update()
             1,
             m_index,
             *m_state,
-            m_preset_interactor
+            m_preset_interactor,
+            m_cbi_index
         );
 
         m_input = dynamic_cast<Yoga::Item*>(m_control);
@@ -117,7 +119,7 @@ void ConfigRowItem::on_data_update()
                     value = m_config_item_spin_box->value();
                 }
 
-                m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{value});
+                m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{value}, m_cbi_index);
             };
         } else {
             if (m_toggle_enable) {

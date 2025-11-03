@@ -10,15 +10,17 @@ using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
 
-Slic3r::App::ConfigRowItems::ConfigRowItems(
+ConfigRowItems::ConfigRowItems(
     size_t index,
     const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor,
-    Biz::ConfigBoxInteractor& cbi
+    Biz::ConfigBoxInteractor& cbi,
+    size_t cbi_index
 ) :
     DataObserver<Domain::ConfigItem>(index, data),
     m_preset_interactor(preset_interactor),
-    m_cbi(cbi)
+    m_cbi(cbi),
+    m_cbi_index(cbi_index)
 {
     on_data_update();
 }
@@ -45,7 +47,7 @@ void ConfigRowItems::clear_navigation()
     }
 }
 
-void Slic3r::App::ConfigRowItems::on_data_update()
+void ConfigRowItems::on_data_update()
 {
     const std::string row_group                    = m_state->def().row_group;
     const std::string option_group                 = m_state->def().option_group;
@@ -64,8 +66,13 @@ void Slic3r::App::ConfigRowItems::on_data_update()
 
             if (m_initialized_type != InitializedType::Single) {
                 m_initialized_type = InitializedType::Single;
-                m_single_item =
-                    emplace_back<ConfigRowItem>(m_index, *m_state, m_preset_interactor, false);
+                m_single_item      = emplace_back<ConfigRowItem>(
+                    m_index,
+                    *m_state,
+                    m_preset_interactor,
+                    m_cbi_index,
+                    false
+                );
                 m_single_item->set_flex_grow(1);
             }
 
@@ -99,7 +106,7 @@ void Slic3r::App::ConfigRowItems::on_data_update()
                 m_row_items_filter->set_source_model(m_cbi.config_box_list());
 
                 m_row_group_list_view = emplace_back<ConfigRowListView>(
-                    ConfigRowListViewFactory{m_preset_interactor, true}
+                    ConfigRowListViewFactory{m_preset_interactor, m_cbi_index, true}
                 );
                 m_row_group_list_view->set_align_items(YGAlignCenter);
                 m_row_group_list_view->set_gap(5);

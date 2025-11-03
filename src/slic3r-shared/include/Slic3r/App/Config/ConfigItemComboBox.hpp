@@ -20,7 +20,8 @@ public:
     ConfigItemComboBox(
         size_t index,
         const Domain::ConfigItem& config_item,
-        Biz::Preset::PresetInteractor& preset_interactor
+        Biz::Preset::PresetInteractor& preset_interactor,
+        size_t cbi_index
     );
 
 protected:
@@ -30,6 +31,8 @@ protected:
 
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
+    size_t m_cbi_index = 0;
+
     Yoga::Passthrough<Yoga::IntValidator> m_int_validator;
     Yoga::Passthrough<Yoga::DoubleValidator> m_double_validator;
     Yoga::Passthrough<Yoga::PercentageValidator> m_percentage_validator;

@@ -14,7 +14,8 @@ namespace Slic3r::App {
 ConfigItemSpinBox::ConfigItemSpinBox(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::Preset::PresetInteractor& preset_interactor,
+    size_t cbi_index
 ) :
     ConfigItemControl(index, data),
     InputTextWithSpin(
@@ -23,17 +24,22 @@ ConfigItemSpinBox::ConfigItemSpinBox(
             data.def().max.value_or(std::numeric_limits<int>::max())
         )
     ),
-    m_preset_interactor(preset_interactor)
+    m_preset_interactor(preset_interactor),
+    m_cbi_index(cbi_index)
 {
     m_value_validator = dynamic_cast<IntValidator*>(validator());
 
-    callbacks().text_edited = [this]() {
+    callbacks().text_edited = [this]()
+    {
         if (*m_state->def().type == typeid(int)) {
-            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{value()});
+            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{value()}, m_cbi_index);
         } else if (*m_state->def().type == typeid(std::optional<int>)) {
             if (m_state->get<std::optional<int>>().has_value()) {
-                m_preset_interactor
-                    .set_item_value(*m_state, Domain::ConfigValue{std::optional<int>(value())});
+                m_preset_interactor.set_item_value(
+                    *m_state,
+                    Domain::ConfigValue{std::optional<int>(value())},
+                    m_cbi_index
+                );
             }
         }
     };

@@ -24,7 +24,8 @@ public:
     ConfigItemTextFields(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::Preset::PresetInteractor& preset_interactor
+        Biz::Preset::PresetInteractor& preset_interactor,
+        size_t cbi_index
     );
 
 protected:
@@ -42,6 +43,7 @@ private:
     };
 
     Biz::Preset::PresetInteractor& m_preset_interactor;
+    size_t m_cbi_index{0};
     std::vector<Field> m_fields;
 };
 

@@ -21,7 +21,12 @@ namespace Slic3r::App {
 class ConfigItemPoints : public ConfigItemControl, public Yoga::Item
 {
 public:
-    ConfigItemPoints(size_t index, const Domain::ConfigItem& data, Biz::Preset::PresetInteractor& preset_interactor);
+    ConfigItemPoints(
+        size_t index,
+        const Domain::ConfigItem& data,
+        Biz::Preset::PresetInteractor& preset_interactor,
+        size_t cbi_index
+    );
 
 protected:
     void on_data_update() override;
@@ -29,6 +34,8 @@ protected:
 
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
+    size_t m_cbi_index{0};
+
     Yoga::InputTextField* m_input_x{nullptr};
     Yoga::InputTextField* m_input_y{nullptr};
     Yoga::Passthrough<Yoga::DoubleValidator> m_validator_x;

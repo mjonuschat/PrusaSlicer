@@ -46,11 +46,13 @@ void ConfigSettingsDialog::on_about_to_close()
 ConfigSettingsDialog::ConfigTab::ConfigTab(
     Biz::ConfigBoxInteractor* cbi,
     Tab* tab,
-    Biz::ProjectInteractor& project_interactor
+    Biz::ProjectInteractor& project_interactor,
+    size_t cbi_index
 ) :
     cbi(cbi),
     tab(tab),
     project_interactor(project_interactor),
+    cbi_index(cbi_index),
     observable_categorizer(std::make_shared<ObservableCategorizer>()),
     category_page_transformer(std::make_shared<CategoryPageTransformer>())
 {
@@ -62,7 +64,8 @@ ConfigSettingsDialog::ConfigTab::ConfigTab(
         ConfigSubcategoryListView,
         Domain::ConfigItem,
         Biz::Preset::PresetInteractor&,
-        Biz::ConfigBoxInteractor&>;
+        Biz::ConfigBoxInteractor&,
+	size_t>;
     using CategoryListView = ListView<
         ConfigSubcategoryListView,
         Domain::ConfigItem,
@@ -70,7 +73,7 @@ ConfigSettingsDialog::ConfigTab::ConfigTab(
         StackLayout>;
 
     std::unique_ptr<CategoryListView> category_list_view = std::make_unique<CategoryListView>(
-        CategoryListViewFactory{project_interactor.preset_interactor(), *cbi}
+        CategoryListViewFactory{project_interactor.preset_interactor(), *cbi, cbi_index}
     );
 
     category_list_view->set_source_list(observable_categorizer.get());
