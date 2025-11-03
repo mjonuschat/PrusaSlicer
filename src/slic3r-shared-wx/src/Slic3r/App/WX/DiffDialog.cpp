@@ -21,6 +21,8 @@
 #include <wx/scrolwin.h>
 #include <fmt/format.h>
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r::App::WX {
 
 using namespace Diff;
@@ -39,7 +41,7 @@ DiffDialog::DiffDialog(
     wxDialog(
         wxTheApp->GetTopWindow(),
         wxID_ANY,
-        _L("DiffDialog"),
+        _L("Compare Presets"),
         wxDefaultPosition,
         wxDefaultSize,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER

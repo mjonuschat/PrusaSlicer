@@ -5,6 +5,8 @@
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
+
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/App/Yoga/ComboBox.hpp"
@@ -142,12 +144,20 @@ void LogicalPrinterSettingsDialog::create_page_list()
     scroll_area->set_max_size({YGUndefined, 275});
 
     // Create the ViewFactory explicitly:
-    auto factory = PrinterListViewFactory(
+    auto factory        = PrinterListViewFactory(
         [this](size_t index)
         {
-            m_stack_layout->set_current_index(1);
             auto& preset_interactor = m_project_interactor.preset_interactor();
             const auto& item        = preset_interactor.printer_presets().items().at(index);
+
+            if (!Biz::Preset::PresetSelectionCheck::can_select_printer_preset(
+                preset_interactor,
+                item.hw_printer_config_id,
+                item.id)) {
+                return;
+            }
+
+            m_stack_layout->set_current_index(1);
             preset_interactor.select_printer_preset(item.hw_printer_config_id, item.id);
         },
         m_project_interactor.preset_interactor()

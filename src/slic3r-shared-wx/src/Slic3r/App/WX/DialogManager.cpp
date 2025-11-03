@@ -135,7 +135,8 @@ void DialogManager::show_diff_dialog(const Slic3r::Biz::Preset::PresetInteractor
     DiffDialog(preset_interactor, kind).ShowModal();
 }
 
-Biz::Preset::PresetDiffOperation DialogManager::show_unsaved_changes_dialog(
+Biz::Preset::IPresetDialogManager::PresetsSwitchStates DialogManager::show_unsaved_changes_dialog(
+    const std::string& dialog_name,
     const Domain::ConfigPack& config_original,
     const Domain::ConfigPack& config_selected,
     Domain::ConfigPack* config_new_selected,
@@ -143,8 +144,15 @@ Biz::Preset::PresetDiffOperation DialogManager::show_unsaved_changes_dialog(
     const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new
 )
 {
-    UnsavedChangesDialog dlg(config_original, config_selected, config_new_selected, preset_names, preset_names_new);
+    UnsavedChangesDialog dlg(
+        dialog_name,
+        config_original,
+        config_selected,
+        config_new_selected,
+        preset_names,
+        preset_names_new
+    );
     dlg.ShowModal();
-    return dlg.exit_operation();
+    return dlg.exit_states();
 }
 } // namespace Slic3r::App::WX

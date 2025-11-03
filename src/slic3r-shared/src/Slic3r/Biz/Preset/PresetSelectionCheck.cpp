@@ -3,12 +3,15 @@
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetSelectionNames.hpp"
 #include "Slic3r/Biz/Preset/IPresetDialogManager.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
 #include "Slic3r/Domain/FullConfigFDM.hpp"
 #include "Slic3r/Domain/FullConfigSLA.hpp"
 
 namespace Slic3r::Biz::Preset::PresetSelectionCheck {
+
+using PresetsSwitchStates = IPresetDialogManager::PresetsSwitchStates;
 
 static Domain::ConfigPack config(
     const Domain::Preset::EvaluatedPrinterPreset::Preset& printer_preset,
@@ -245,6 +248,11 @@ static size_t tool_count(const Domain::Preset::HwPrinterConfig& hw_printer_confi
         hw_printer_config.tool_count;
 }
 
+static std::string dialog_name()
+{
+    return Biz::_u8L("Switching Presets: Unsaved Changes");
+}
+
 bool can_select_printer_preset(
     PresetInteractor& preset_interactor,
     const std::string& printer_hw_config_id,
@@ -263,19 +271,18 @@ bool can_select_printer_preset(
 
     if (selected_preset.technology() != hw_printer_config.technology) {
         // if printer technology is changed, there is no need to get new selected configuration and show it in dialog
-        if (dlg_manager->show_unsaved_changes_dialog(
-                original_config(preset_interactor),
-                selected_preset.config(),
-                nullptr,
-                selected_preset_names(preset_interactor),
-                PresetSelectionNames()
-            )
-            == PresetDiffOperation::Undef)
-        {
-            return false;
-        }
+        PresetsSwitchStates exit_states = dlg_manager->show_unsaved_changes_dialog(
+            dialog_name(),
+            original_config(preset_interactor),
+            selected_preset.config(),
+            nullptr,
+            selected_preset_names(preset_interactor),
+            PresetSelectionNames()
+        );
 
-        return true;
+        const bool ret = !exit_states.empty();
+        preset_interactor.set_unsaved_changes(std::move(exit_states));
+        return ret;
     }
 
     std::vector<const Domain::Preset::EvaluatedToolPrintPreset::Preset*> tools;
@@ -305,17 +312,18 @@ bool can_select_printer_preset(
 
     Domain::ConfigPack config_new = config(printer_preset, print_preset, tools, materials);
 
-    if (dlg_manager->show_unsaved_changes_dialog(
-            original_config(preset_interactor),
-            selected_preset.config(),
-            &config_new,
-            selected_preset_names(preset_interactor),
-            names_new
-        )
-        == PresetDiffOperation::Undef)
-        return false;
-
-    return true;
+    PresetsSwitchStates exit_states = dlg_manager->show_unsaved_changes_dialog(
+        dialog_name(),
+        original_config(preset_interactor),
+        selected_preset.config(),
+        &config_new,
+        selected_preset_names(preset_interactor),
+        names_new
+    );
+    
+    const bool ret = !exit_states.empty();
+    preset_interactor.set_unsaved_changes(std::move(exit_states));
+    return ret;
 }
 
 bool can_select_print_preset(PresetInteractor& preset_interactor, const std::string& print_id)
@@ -363,16 +371,18 @@ bool can_select_print_preset(PresetInteractor& preset_interactor, const std::str
     Domain::ConfigPack config_new = config(printer_preset, print_preset, tools, materials);
 
     IPresetDialogManager* dlg_manager = preset_interactor.dialog_manager();
-    if (dlg_manager->show_unsaved_changes_dialog(
-            original_config(preset_interactor, true),
-            selected_preset.config(),
-            &config_new,
-            selected_preset_names(preset_interactor),
-            names_new
-        )
-        == PresetDiffOperation::Undef)
-        return false;
-    return true;
+    PresetsSwitchStates exit_states            = dlg_manager->show_unsaved_changes_dialog(
+        dialog_name(),
+        original_config(preset_interactor, true),
+        selected_preset.config(),
+        &config_new,
+        selected_preset_names(preset_interactor),
+        names_new
+    );
+
+    const bool ret = !exit_states.empty();
+    preset_interactor.set_unsaved_changes(std::move(exit_states));
+    return ret;
 }
 
 bool can_select_tool_print_preset(
@@ -444,16 +454,18 @@ bool can_select_tool_print_preset(
     Domain::ConfigPack config_new = config(printer_preset, print_preset, tools, materials);
 
     IPresetDialogManager* dlg_manager = preset_interactor.dialog_manager();
-    if (dlg_manager->show_unsaved_changes_dialog(
-            original_config(preset_interactor, true, true),
-            selected_preset.config(),
-            &config_new,
-            selected_preset_names(preset_interactor),
-            names_new
-        )
-        == PresetDiffOperation::Undef)
-        return false;
-    return true;
+    PresetsSwitchStates exit_states            = dlg_manager->show_unsaved_changes_dialog(
+        dialog_name(),
+        original_config(preset_interactor, true, true),
+        selected_preset.config(),
+        &config_new,
+        selected_preset_names(preset_interactor),
+        names_new
+    );
+
+    const bool ret = !exit_states.empty();
+    preset_interactor.set_unsaved_changes(std::move(exit_states));
+    return ret;
 }
 
 bool can_select_material_preset(
@@ -511,16 +523,18 @@ bool can_select_material_preset(
     Domain::ConfigPack config_new = config(printer_preset, print_preset, tools, materials);
 
     IPresetDialogManager* dlg_manager = preset_interactor.dialog_manager();
-    if (dlg_manager->show_unsaved_changes_dialog(
-            original_config(preset_interactor, true, true, true),
-            selected_preset.config(),
-            &config_new,
-            selected_preset_names(preset_interactor),
-            names_new
-        )
-        == PresetDiffOperation::Undef)
-        return false;
-    return true;
+    PresetsSwitchStates exit_states            = dlg_manager->show_unsaved_changes_dialog(
+        dialog_name(),
+        original_config(preset_interactor, true, true, true),
+        selected_preset.config(),
+        &config_new,
+        selected_preset_names(preset_interactor),
+        names_new
+    );
+
+    const bool ret = !exit_states.empty();
+    preset_interactor.set_unsaved_changes(std::move(exit_states));
+    return ret;
 }
 
 } // namespace Slic3r::Biz::Preset::PresetSelectionCheck

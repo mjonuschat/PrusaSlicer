@@ -10,6 +10,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -42,12 +43,22 @@ SidebarToolHeadRow::SidebarToolHeadRow(
     });
     m_combo_box->set_flex_grow(1);
     m_combo_box->set_source_list(&const_cast<Biz::Preset::PresetItemObservableList&>(data).items());
-    m_combo_box->callbacks().selection_changed = [this](int index) {
+    m_combo_box->callbacks().selection_changed = [this](int index)
+    {
         if (index >= 0) {
-            m_project_interactor.preset_interactor().select_tool_print_preset(
-                m_index,
-                m_state->items().at(static_cast<size_t>(index)).id
-            );
+            auto& preset_interactor = m_project_interactor.preset_interactor();
+            const std::string& preset_id = m_state->items().at(static_cast<size_t>(index)).id;
+            if (Biz::Preset::PresetSelectionCheck::can_select_tool_print_preset(
+                    preset_interactor,
+                    m_index,
+                    preset_id
+                ))
+            {
+                preset_interactor.select_tool_print_preset(m_index, preset_id);
+                m_last_selected_index = index;
+            } else {
+                m_combo_box->set_current_index(m_last_selected_index);
+            }
         }
     };
     const_cast<Biz::Preset::PresetItemObservableList*>(m_state)

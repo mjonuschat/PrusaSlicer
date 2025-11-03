@@ -71,6 +71,8 @@ private:
     ToolHeadListView* m_tool_head_list_view{nullptr};
 
     PrintSettingsDialog m_print_settings_dialog;
+
+    int m_last_selected_index{ -1 };
 };
 
 } // namespace Slic3r::App

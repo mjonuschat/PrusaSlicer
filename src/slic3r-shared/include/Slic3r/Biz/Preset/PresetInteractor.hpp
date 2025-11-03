@@ -11,6 +11,8 @@
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp"
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
+#include "Slic3r/Biz/Preset/PresetDiffOperation.hpp"
+#include "Slic3r/Biz/Preset/IPresetDialogManager.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 #include "Slic3r/Biz/CBIObservableList.hpp"
 #include "Slic3r/Biz/ObjectSettingsInteractor.hpp"
@@ -24,7 +26,6 @@ class IBedPresetSwitchedListener;
 class IPresetChangedListener;
 
 class PresetInteractor;
-class IPresetDialogManager;
 
 struct PresetItem
 {
@@ -43,6 +44,8 @@ using ToolConfigItemCompoundObservableList =
     MutableBatchObservableList<ToolConfigItemObservableList>;
 
 using SheetConfigItemObservableList = ObservableListWithSelection<Domain::Preset::HwSheetConfigDef>;
+
+using PresetsSwitchStates = Biz::Preset::IPresetDialogManager::PresetsSwitchStates;
 
 /**
  * Manipulates presets associated with config containers.
@@ -565,6 +568,8 @@ public:
         return m_dialog_manager;
     }
 
+    void set_unsaved_changes(PresetsSwitchStates&& unsaved_changes);
+
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
     PresetInteractorConfigContainerContext& mutable_selected_config_container_context();
@@ -618,6 +623,12 @@ private:
 
     void invoke_slicing_input_changed();
     void invoke_on_preset_value_changed(const Domain::ConfigItem& config_item);
+    void process_operation_from_unsaved_changes(
+        Domain::Preset::SelectedPreset& selected_preset,
+        PresetDiffOperation operation,
+        std::optional<Domain::Preset::PresetKind> kind = std::nullopt,
+        std::optional<size_t> tool_id = std::nullopt
+    );
 
 private:
     using SetAccessorMap = std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor>;
@@ -648,5 +659,6 @@ private:
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
 
     IPresetDialogManager* m_dialog_manager{ nullptr };
+    PresetsSwitchStates m_unsaved_changes;
 };
 } // namespace Slic3r::Biz::Preset

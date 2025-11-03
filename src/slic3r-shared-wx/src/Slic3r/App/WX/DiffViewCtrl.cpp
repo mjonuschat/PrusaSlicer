@@ -185,7 +185,45 @@ void DiffViewCtrl::update_item_enabling(wxDataViewItem item)
     Refresh();
 
     // update an enabling of the "save/move" buttons
-//    m_empty_selection = selected_options().empty();
+    m_empty_selection = selected_options().empty();
+}
+
+std::vector<std::string> DiffViewCtrl::options(Slic3r::Domain::Preset::PresetKind kind, bool selected)
+{
+    std::vector<std::string> ret;
+
+    for (auto item : m_items_map) {
+        if (item.second.kind == kind && model->IsEnabledItem(item.first) == selected) {
+            ret.emplace_back(item.second.opt_key);
+        }
+    }
+
+    return ret;
+}
+
+std::vector<std::string> DiffViewCtrl::selected_options()
+{
+    std::vector<std::string> ret;
+
+    for (auto item : m_items_map) {
+        if (model->IsEnabledItem(item.first)) {
+            ret.emplace_back(item.second.opt_key);
+        }
+    }
+
+    return ret;
+}
+
+std::vector<std::string> DiffViewCtrl::unselected_options()
+{
+    std::vector<std::string> ret;
+
+    for (auto item : m_items_map) {
+        if (!model->IsEnabledItem(item.first)) {
+            ret.emplace_back(item.second.opt_key);
+        }
+    }
+    return std::vector<std::string>();
 }
 
 } // namespace Slic3r::App::WX

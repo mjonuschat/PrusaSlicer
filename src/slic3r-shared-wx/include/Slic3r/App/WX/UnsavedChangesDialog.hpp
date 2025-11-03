@@ -8,6 +8,7 @@
 #include "Slic3r/Domain/Preset/EvaluatedPreset.hpp"
 #include "Slic3r/Biz/Preset/PresetDiffOperation.hpp"
 #include "Slic3r/Biz/Preset/PresetSelectionNames.hpp"
+#include "Slic3r/Biz/Preset/IPresetDialogManager.hpp"
 
 #include <wx/dialog.h>
 
@@ -20,9 +21,12 @@ class ScalableButton;
 class UnsavedChangesDialog : public wxDialog
 {
 public:
-    using PresetKind = Domain::Preset::PresetKind;
+    using PresetKind          = Domain::Preset::PresetKind;
+    using PresetDiffOperation = Biz::Preset::PresetDiffOperation;
+    using PresetsSwitchStates = Biz::Preset::IPresetDialogManager::PresetsSwitchStates;
 
     UnsavedChangesDialog(
+        const std::string& dialog_name,
         const Domain::ConfigPack& config_original,
         const Domain::ConfigPack& config_selected,
         Domain::ConfigPack* config_new_selected,
@@ -31,18 +35,20 @@ public:
     );
     ~UnsavedChangesDialog() = default;
 
-    Biz::Preset::PresetDiffOperation exit_operation() const
+    PresetsSwitchStates exit_states() const
     {
-        return m_exit_operation;
+        return m_exit_states;
     }
 
 private:
     void create_tree();
     void add_buttons(wxBoxSizer* sizer);
     void compare();
-    void update_tree();
+    void show_current_diffs();
+    void update_transfer_button(PresetKind kind, size_t tool_id = 0);
+    void update_tree(PresetKind kind, const std::vector<std::string>& diff_keys);
     void append_diff_keys(
-        Domain::Preset::PresetKind kind,
+        PresetKind kind,
         const std::string& preset_name,
         const std::string& new_preset_name,
         const Domain::ConfigBox* config_left,
@@ -50,14 +56,9 @@ private:
         const Domain::ConfigBox* config_right,
         const std::vector<std::string>& diff_keys
     );
-    void show_info_line(Biz::Preset::PresetDiffOperation operation, std::string preset_name = "");
+    void show_info_line(PresetDiffOperation operation, std::string preset_name = "");
 
-    void close(Biz::Preset::PresetDiffOperation operation);
-
-    bool show_printers() const;
-    bool show_prints() const;
-    bool show_tool_prints() const;
-    bool show_materials() const;
+    void process_button_click(PresetDiffOperation operation);
 
 private:
     wxStaticText* m_top_info_line{nullptr};
@@ -65,12 +66,13 @@ private:
 
     DiffViewCtrl* m_tree{nullptr};
 
+    ScalableButton* m_back_btn{nullptr};
     ScalableButton* m_save_btn{nullptr};
     ScalableButton* m_transfer_btn{nullptr};
     ScalableButton* m_discard_btn{nullptr};
 
     int m_save_btn_id{wxID_ANY};
-    int m_move_btn_id{wxID_ANY};
+    int m_transfer_btn_id{wxID_ANY};
     int m_continue_btn_id{wxID_ANY};
 
     Biz::Preset::PresetSelectionNames m_preset_names;
@@ -84,7 +86,10 @@ private:
     using DiffsPerKind = std::map<PresetKind, std::vector<std::string>>;
     DiffsPerKind m_diffs_per_kind;
 
-    Biz::Preset::PresetDiffOperation m_exit_operation{Biz::Preset::PresetDiffOperation::Undef};
+    PresetsSwitchStates m_exit_states;
+
+    // Indicates a count of preset checkes in queue before close the dialog
+    int m_exit_queue{0};
 };
 
 } // namespace Slic3r::App::WX

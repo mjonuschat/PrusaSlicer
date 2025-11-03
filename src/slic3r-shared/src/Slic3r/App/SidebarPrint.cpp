@@ -18,6 +18,7 @@
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 
 #include <Slic3r/Log.hpp>
 
@@ -79,11 +80,22 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     });
     m_combo_print->set_source_list(&m_project_interactor.preset_interactor().print_presets().items());
     m_combo_print->set_flex_grow(1);
-    m_combo_print->callbacks().selection_changed = [this](int print_index) {
+    m_combo_print->callbacks().selection_changed = [this](int print_index)
+    {
         if (print_index >= 0) {
-            m_project_interactor.preset_interactor().select_print_preset(
-                m_project_interactor.preset_interactor().print_presets().items().at(print_index).id
-            );
+            auto& preset_interactor = m_project_interactor.preset_interactor();
+            const std::string& preset_id =
+                preset_interactor.print_presets().items().at(print_index).id;
+            if (Biz::Preset::PresetSelectionCheck::can_select_print_preset(
+                    preset_interactor,
+                    preset_id
+                ))
+            {
+                preset_interactor.select_print_preset(preset_id);
+                m_last_selected_index = print_index;
+            } else {
+                m_combo_print->set_current_index(m_last_selected_index);
+            }
         }
     };
     m_project_interactor.preset_interactor()
