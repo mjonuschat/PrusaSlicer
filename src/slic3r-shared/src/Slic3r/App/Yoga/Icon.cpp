@@ -136,18 +136,20 @@ void Icon::update_draw_sizes()
         return;
     }
 
-    ImVec2 component_size(YGNodeLayoutGetWidth(m_node), YGNodeLayoutGetHeight(m_node));
+    if (m_cached_size.isZero()) {
+        return;
+    }
 
     if (m_fill_mode == FillMode::Stretch) {
-        m_draw_size = component_size;
+        m_draw_size = to_im(m_cached_size);
     } else {
         Domain::Size size(m_texture->width(), m_texture->height());
-        size.scale(Domain::Size(component_size.x, component_size.y));
+        size.scale(Domain::Size(m_cached_size.x(), m_cached_size.y()));
         m_draw_size.x = size.width;
         m_draw_size.y = size.height;
         if (m_fill_mode == FillMode::PreservedAspectCentered) {
-            m_offset.x = (component_size.x - size.width) * 0.5f;
-            m_offset.y = (component_size.y - size.height) * 0.5f;
+            m_offset.x = (m_cached_size.x() - size.width) * 0.5f;
+            m_offset.y = (m_cached_size.y() - size.height) * 0.5f;
         } else { // FillMode::PreservedAspect
             m_offset.x = 0;
             m_offset.y = 0;
