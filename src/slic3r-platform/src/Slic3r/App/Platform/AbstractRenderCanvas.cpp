@@ -30,16 +30,17 @@ void AbstractRenderCanvas::set_render_module(AbstractRenderModule* render_module
     if (m_render_module == render_module)
         return;
 
-    CameraSynchData camera_data;
+    std::optional<CameraSynchData> camera_data;
     if (m_render_module) {
-        camera_data = m_render_module->camera_synch_data();
         m_render_module->deactivate();
+        camera_data = m_render_module->camera_synch_data();
     }
     m_render_module = render_module;
     if (m_render_module) {
         m_render_module->set_screen_size(m_screen_info);
         m_render_module->activate(this);
-        m_render_module->set_camera_synch_data(camera_data);
+        if (camera_data.has_value())
+            m_render_module->set_camera_synch_data(*camera_data);
     }
 }
 

@@ -6,6 +6,7 @@
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
+#include "Slic3r/App/Platform/CameraSynchData.hpp"
 
 #define ENABLE_DEBUG_RENDER_SCENE_AABB 0
 
@@ -50,6 +51,9 @@ public:
     ModelGeometryManager& model_geometry_manager() { return m_model_geometry_manager; }
     ModelTriangleMeshManager& model_triangle_mesh_manager() { return m_model_triangle_mesh_manager; }
 
+    const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return m_camera_synch_data; }
+    void set_camera_synch_data(const Platform::CameraSynchData& data) { m_camera_synch_data = data; }
+
     double screen_space_sized_modifier() const { return 0.0075; }
 
 #if ENABLE_DEBUG_RENDER_SCENE_AABB
@@ -74,6 +78,7 @@ private:
     ModelTriangleMeshManager m_model_triangle_mesh_manager;
     Node* m_selection_root{nullptr};
     Eigen::AlignedBox3f m_selection_bounding_box;
+    std::optional<Platform::CameraSynchData> m_camera_synch_data;
 #if ENABLE_DEBUG_RENDER_SCENE_AABB
     struct SceneAABBNode
     {

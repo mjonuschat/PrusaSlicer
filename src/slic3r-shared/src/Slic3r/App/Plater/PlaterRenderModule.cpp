@@ -769,12 +769,9 @@ void PlaterRenderModule::set_sidebars_visible(bool visible)
     request_render();
 }
 
-Platform::CameraSynchData PlaterRenderModule::camera_synch_data()
+const std::optional<Platform::CameraSynchData>& PlaterRenderModule::camera_synch_data() const
 {
-    Platform::CameraSynchData ret;
-    m_scene_presenter->scene().camera().update_synch_data(ret);
-    m_scene_presenter->scene().camera_trackball().update_synch_data(ret);
-    return ret;
+    return m_scene_presenter->camera_synch_data();
 }
 
 void PlaterRenderModule::set_camera_synch_data(const Platform::CameraSynchData& data)
@@ -782,11 +779,8 @@ void PlaterRenderModule::set_camera_synch_data(const Platform::CameraSynchData& 
     if (m_scene_presenter == nullptr)
         return;
 
-    synchronize_camera(
-        data,
-        m_scene_presenter->scene().camera(),
-        m_scene_presenter->scene().camera_trackball()
-    );
+    synchronize_camera(data, m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+    m_scene_presenter->set_camera_synch_data(data);
 }
 
 void PlaterRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
@@ -886,6 +880,11 @@ void PlaterRenderModule::on_activated()
 void PlaterRenderModule::on_deactivated()
 {
     App::set_global_lighting(m_scene_presenter->scene().lights());
+
+    Platform::CameraSynchData data;
+    m_scene_presenter->scene().camera().update_synch_data(data);
+    m_scene_presenter->scene().camera_trackball().update_synch_data(data);
+    m_scene_presenter->set_camera_synch_data(data);
 }
 
 void PlaterRenderModule::on_scene_selection_changed(

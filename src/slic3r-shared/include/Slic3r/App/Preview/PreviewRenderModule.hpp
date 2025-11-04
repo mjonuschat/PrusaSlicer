@@ -93,7 +93,7 @@ public:
 
     void set_sidebars_visible(bool hide) override;
 
-    Platform::CameraSynchData camera_synch_data() override;
+    const std::optional<Platform::CameraSynchData>& camera_synch_data() const override;
     void set_camera_synch_data(const Platform::CameraSynchData& data) override;
 
     void set_opened_dialog(Yoga::Dialog* opened_dialog);

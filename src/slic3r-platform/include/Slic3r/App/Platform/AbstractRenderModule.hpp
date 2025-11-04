@@ -47,12 +47,8 @@ public:
         }
     }
 
-    virtual CameraSynchData camera_synch_data()
-    {
-        return CameraSynchData();
-    }
-
-    virtual void set_camera_synch_data(const CameraSynchData& data) {}
+    virtual const std::optional<CameraSynchData>& camera_synch_data() const = 0;
+    virtual void set_camera_synch_data(const CameraSynchData& data) = 0;
 
     void set_imgui_render(Render::ImguiRender* imgui_render);
     virtual void set_sidebars_visible(bool visible) {};

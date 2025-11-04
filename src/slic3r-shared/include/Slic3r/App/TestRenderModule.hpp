@@ -37,6 +37,9 @@ protected:
     void remove_highlighted();
     void reset_highlighted(const Scene::Node::NodeList& nodes_to_highlight, const Render::Material& material);
 
+    const std::optional<Platform::CameraSynchData>& camera_synch_data() const override { return std::nullopt; }
+    void set_camera_synch_data(const Platform::CameraSynchData& data) override {}
+
 private:
     std::unique_ptr<Render::Geometry> m_geometry;
     std::unique_ptr<Render::Geometry> m_geometry2;

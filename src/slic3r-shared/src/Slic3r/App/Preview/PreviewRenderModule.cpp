@@ -365,12 +365,9 @@ void PreviewRenderModule::set_sidebars_visible(bool hide)
     request_render();
 }
 
-Platform::CameraSynchData PreviewRenderModule::camera_synch_data()
+const std::optional<Platform::CameraSynchData>& PreviewRenderModule::camera_synch_data() const
 {
-    Platform::CameraSynchData ret;
-    m_scene_presenter->scene().camera().update_synch_data(ret);
-    m_scene_presenter->scene().camera_trackball().update_synch_data(ret);
-    return ret;
+    return m_scene_presenter->camera_synch_data();
 }
 
 void PreviewRenderModule::set_camera_synch_data(const Platform::CameraSynchData& data)
@@ -379,6 +376,7 @@ void PreviewRenderModule::set_camera_synch_data(const Platform::CameraSynchData&
         return;
 
     synchronize_camera(data, m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+    m_scene_presenter->set_camera_synch_data(data);
 }
 
 void PreviewRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
@@ -427,6 +425,14 @@ void PreviewRenderModule::on_deactivated()
 {
     Slic3r::App::set_global_lighting(m_scene_presenter->scene().lights());
     m_project_interactor.slicing_interactor().disable_auto_slicing();
+
+    // update the camera synch data only if the preview was already synchronized with the plater
+    if (m_scene_presenter->camera_synch_data().has_value()) {
+        Platform::CameraSynchData data;
+        m_scene_presenter->scene().camera().update_synch_data(data);
+        m_scene_presenter->scene().camera_trackball().update_synch_data(data);
+        m_scene_presenter->set_camera_synch_data(data);
+    }
 }
 
 void PreviewRenderModule::on_screen_resized()

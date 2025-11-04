@@ -116,6 +116,9 @@ public:
     void camera_updated(const Scene::Camera& cam) override { set_scene_aabb_as_dirty(); }
     /**@}*/
 
+    const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return project_context().camera_synch_data(); }
+    void set_camera_synch_data(const Platform::CameraSynchData& data) { project_context().set_camera_synch_data(data); }
+
     // At startup the scene initialization happens in the constructor, which means before any IBedVisuallyChangedListener
     // can be registered, see PlaterRenderModule::on_init()
     // Call this function to force bed thumbnails generation after the listeners are registered, for example to ensure
