@@ -537,9 +537,6 @@ void PlaterRenderModule::update_object_selection()
     m_toolbar_add_instance->set_enabled(can_add_instance);
 
     m_toolbar_add_volume->set_enabled(can_add_instance);
-    if (!can_add_instance && m_add_volumes_menu->opened()) {
-        m_add_volumes_menu->close();
-    }
 
     m_sidebar_bed->set_visible(empty_selection);
     m_sidebar_print->set_visible(empty_selection);
