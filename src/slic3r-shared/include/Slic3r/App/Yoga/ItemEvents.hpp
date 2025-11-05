@@ -42,6 +42,7 @@ public:
 protected:
     Item* m_item = nullptr;
     ItemHeartBeat m_item_heartbeat;
+    ItemHeartBeat m_parent_heartbeat;
 };
 
 using EventPtr = std::unique_ptr<Event>;
@@ -62,8 +63,6 @@ public:
     ChangeList process() override;
 
     void affected(const ChangeList& change_list) override;
-
-    bool is_valid() const override;
 
 private:
     Item* m_new_parent = nullptr;

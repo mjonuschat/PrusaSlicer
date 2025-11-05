@@ -46,7 +46,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     using Locations = std::set<ConfigLocation>;
     ConfigItemDef* def = nullptr;
 
-    /* TODO: These were common for FDM and SLA. Do we want to 
+    /* TODO: These were common for FDM and SLA. Do we want to
     separate them or keep them together? They are not defined here
     at this point.
     def = defs.add("printer_technology", typeid(EnumWrapper));
@@ -255,7 +255,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm");
     def->mode = comExpert;
     def->init_fn = init_with(0.);
-    
+
     def = defs.add("elefant_foot_min_width", typeid(double));
     def->location = Printer;
     def->label = L("Elephant foot minimum width");
@@ -381,7 +381,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Faded layers");
     def->option_group = L("Layers");
     def->category = ConfigItemDef::Category::LayersAndPerimeters;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("Number of the layers needed for the exposure time fade from initial exposure time to the exposure time");
     def->min = 3;
     def->max = 20;
@@ -515,7 +515,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->full_width = true;
     def->height = 13;
     // TODO currently notes are the only way to pass data
-    // for non-PrusaResearch printers. We therefore need to always show them 
+    // for non-PrusaResearch printers. We therefore need to always show them
     def->mode = comSimple;
     def->init_fn = init_with("");
 
@@ -643,7 +643,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->max = 30;
     def->mode = comExpert;
     def->init_fn = init_with(0.);
-    
+
     def = defs.add("pad_brim_size", typeid(double));
     def->location = Print;
     def->overrides_in = Locations{ Object };
@@ -706,18 +706,18 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Pad around object");
     def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Create pad around object and ignore the support elevation");
     def->mode = comSimple;
     def->init_fn = init_with(false);
-    
+
     def = defs.add("pad_around_object_everywhere", typeid(bool));
     def->location = Print;
     def->overrides_in = Locations{ Object };
     def->label = L("Pad around object everywhere");
     def->option_group = L("Pad");
     def->category = ConfigItemDef::Category::Pad;
-    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Force pad around object everywhere");
     def->mode = comSimple;
     def->init_fn = init_with(false);
@@ -776,7 +776,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->mode = comExpert;
     def->init_fn = init_with(0.3);
-    
+
     def = defs.add("hollowing_enable", typeid(bool));
     def->location = Print;
     def->overrides_in = Locations{ Object };
@@ -787,7 +787,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("Hollow out a model to have an empty interior");
     def->mode = comSimple;
     def->init_fn = init_with(false);
-    
+
     def = defs.add("hollowing_min_thickness", typeid(double));
     def->location = Print;
     def->overrides_in = Locations{ Object };
@@ -801,7 +801,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->max = 10;
     def->mode = comSimple;
     def->init_fn = init_with(3.);
-    
+
     def = defs.add("hollowing_quality", typeid(double));
     def->location = Print;
     def->overrides_in = Locations{ Object };
@@ -814,7 +814,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->max = 1;
     def->mode = comExpert;
     def->init_fn = init_with(0.5);
-    
+
     def = defs.add("hollowing_closing_distance", typeid(double));
     def->location = Print;
     def->overrides_in = Locations{ Object };
@@ -993,7 +993,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Tilt up finish speed");
     def->option_group = L("Profile settings");
     def->category = ConfigItemDef::Category::MaterialPrintingProfile;
-    def->gui_type = ConfigItemDef::GUIType::combobox;
+    def->gui_type = ConfigItemDef::GUIType::comboboxes;
     def->tooltip = L("Tilt speed used for the rest of the tilt-up.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
@@ -1111,11 +1111,12 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     def->init_fn = init_with((std::vector<double>{ 0., 0. }));
 
-    for (const std::string& prefix : { "", "branching" }) {
-        def = defs.add(prefix + "support_head_front_diameter", typeid(double));
+    for (const std::pair<std::string, std::string>& prefix : { std::make_pair("", L("Default")), std::make_pair("branching", L("Branching")) }) {
+        def = defs.add(prefix.first + "support_head_front_diameter", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
-        def->label = L("Pinhead front diameter");
+        def->row_group = L("Pinhead front diameter");
         def->option_group = L("Support head");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1125,10 +1126,11 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comAdvanced;
         def->init_fn = init_with(0.4);
 
-        def = defs.add(prefix + "support_head_penetration", typeid(double));
+        def = defs.add(prefix.first + "support_head_penetration", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
-        def->label = L("Head penetration");
+        def->row_group = L("Head penetration");
         def->option_group = L("Support head");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1138,10 +1140,11 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->min = 0;
         def->init_fn = init_with(0.2);
 
-        def = defs.add(prefix + "support_head_width", typeid(double));
+        def = defs.add(prefix.first + "support_head_width", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
-        def->label = L("Pinhead width");
+        def->row_group = L("Pinhead width");
         def->option_group = L("Support head");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1152,10 +1155,10 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comAdvanced;
         def->init_fn = init_with(1.);
 
-        def = defs.add(prefix + "support_pillar_diameter", typeid(double));
+        def = defs.add(prefix.first + "support_pillar_diameter", typeid(double));
         def->location = Print;
         def->overrides_in = Locations{ Material, Object };
-        def->label = L("Pillar diameter");
+        def->row_group = L("Pillar diameter");
         def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1166,10 +1169,11 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comSimple;
         def->init_fn = init_with(1.);
 
-        def = defs.add(prefix + "support_small_pillar_diameter_percent", typeid(Percentage));
+        def = defs.add(prefix.first + "support_small_pillar_diameter_percent", typeid(Percentage));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Small pillar diameter percent");
+        def->row_group = L("Small pillar diameter percent");
         def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1181,28 +1185,30 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comExpert;
         def->init_fn = init_with(Percentage{50.});
 
-        def = defs.add(prefix + "support_max_bridges_on_pillar", typeid(int));
+        def = defs.add(prefix.first + "support_max_bridges_on_pillar", typeid(int));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Max bridges on a pillar");
+        def->row_group = L("Max bridges on a pillar");
         def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
-        def->gui_type = ConfigItemDef::GUIType::textfield;
+        def->gui_type = ConfigItemDef::GUIType::spinbox;
         def->tooltip = L(
             "Maximum number of bridges that can be placed on a pillar. Bridges "
             "hold support point pinheads and connect to pillars as small branches.");
         def->min = 0;
         def->max = 50;
         def->mode = comExpert;
-        if (prefix == "branching")
+        if (prefix.first == "branching")
             def->init_fn = init_with(2);
         else
             def->init_fn = init_with(3);
 
-        def = defs.add(prefix + "support_max_weight_on_model", typeid(double));
+        def = defs.add(prefix.first + "support_max_weight_on_model", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Max weight on model");
+        def->row_group = L("Max weight on model");
         def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1214,10 +1220,11 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comExpert;
         def->init_fn = init_with(10.);
 
-        def = defs.add(prefix + "support_pillar_connection_mode", typeid(EnumWrapper));
+        def = defs.add(prefix.first + "support_pillar_connection_mode", typeid(EnumWrapper));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Pillar connection mode");
+        def->row_group = L("Pillar connection mode");
         def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::combobox;
@@ -1233,21 +1240,23 @@ void sla_config_init_fn(ConfigDefinitions& defs)
              {int(sla::PillarConnectionMode::dynamic), "dynamic", L("Dynamic")}}
         );
 
-        def = defs.add(prefix + "support_buildplate_only", typeid(bool));
+        def = defs.add(prefix.first + "support_buildplate_only", typeid(bool));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Support on build plate only");
+        def->row_group = L("Support on build plate only");
         def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
-        def->gui_type = ConfigItemDef::GUIType::combobox;
+        def->gui_type = ConfigItemDef::GUIType::checkbox;
         def->tooltip = L("Only create support if it lies on a build plate. Don't create support on a print.");
         def->mode = comSimple;
         def->init_fn = init_with(false);
 
-        def = defs.add(prefix + "support_pillar_widening_factor", typeid(double));
+        def = defs.add(prefix.first + "support_pillar_widening_factor", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Pillar widening factor");
+        def->row_group = L("Pillar widening factor");
         def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1261,10 +1270,11 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comExpert;
         def->init_fn = init_with(0.5);
 
-        def = defs.add(prefix + "support_base_diameter", typeid(double));
+        def = defs.add(prefix.first + "support_base_diameter", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Support base diameter");
+        def->row_group = L("Support base diameter");
         def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1275,10 +1285,11 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comAdvanced;
         def->init_fn = init_with(4.);
 
-        def = defs.add(prefix + "support_base_height", typeid(double));
+        def = defs.add(prefix.first + "support_base_height", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Support base height");
+        def->row_group = L("Support base height");
         def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1288,10 +1299,11 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comAdvanced;
         def->init_fn = init_with(1.);
 
-        def = defs.add(prefix + "support_base_safety_distance", typeid(double));
+        def = defs.add(prefix.first + "support_base_safety_distance", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Support base safety distance");
+        def->row_group = L("Support base safety distance");
         def->option_group = L("Support pillar");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1305,10 +1317,11 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comExpert;
         def->init_fn = init_with(1.);
 
-        def = defs.add(prefix + "support_critical_angle", typeid(double));
+        def = defs.add(prefix.first + "support_critical_angle", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Critical angle");
+        def->row_group = L("Critical angle");
         def->option_group = L("Connection of the support sticks and junctions");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1319,10 +1332,11 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comExpert;
         def->init_fn = init_with(45.);
 
-        def = defs.add(prefix + "support_max_bridge_length", typeid(double));
+        def = defs.add(prefix.first + "support_max_bridge_length", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Max bridge length");
+        def->row_group = L("Max bridge length");
         def->option_group = L("Connection of the support sticks and junctions");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1330,15 +1344,16 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->sidetext = L("mm");
         def->min = 0;
         def->mode = comAdvanced;
-        if (prefix == "branching")
+        if (prefix.first == "branching")
             def->init_fn = init_with(5.0);
         else
             def->init_fn = init_with(15.0);
 
-        def = defs.add(prefix + "support_max_pillar_link_distance", typeid(double));
+        def = defs.add(prefix.first + "support_max_pillar_link_distance", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Max pillar linking distance");
+        def->row_group = L("Max pillar linking distance");
         def->option_group = L("Connection of the support sticks and junctions");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
@@ -1349,10 +1364,11 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->mode = comAdvanced;
         def->init_fn = init_with(10.);
 
-        def = defs.add(prefix + "support_object_elevation", typeid(double));
+        def = defs.add(prefix.first + "support_object_elevation", typeid(double));
+        def->label = prefix.second;
         def->location = Print;
         def->overrides_in = Locations{ Object };
-        def->label = L("Object elevation");
+        def->row_group = L("Object elevation");
         def->category = ConfigItemDef::Category::Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("How much the supports should lift up the supported object. "

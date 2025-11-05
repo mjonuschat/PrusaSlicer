@@ -207,6 +207,8 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::ChevronRight, "chevron_right"},
     {Icon::ChevronLeft, "chevron_left"},
     {Icon::Compare, "compare"},
+    {Icon::Hollowing, "hollowing"},
+    {Icon::Pad, "pad"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {Icon::BedThumbnail, Icon::PrinterNEXT};

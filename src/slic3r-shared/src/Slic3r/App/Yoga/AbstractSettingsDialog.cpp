@@ -88,18 +88,20 @@ AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::strin
 
     // Create the ViewFactory explicitly:
     auto factory = Yoga::ViewFactory<PageEntryButton, PageEntry, PageEntryButton::FnIndexClicked>(
-        [this](size_t index) {
-        m_current_tab->pages_stack_layout->set_current_index(index);
-        for (size_t button_index = 0; button_index < m_current_tab->page_list_view->item_count();
-             ++button_index)
+        [this](size_t index)
         {
-            PageEntryButton* button = dynamic_cast<PageEntryButton*>(
-                m_current_tab->page_list_view->get_item(button_index)
-            );
-            ASSERT(button);
-            button->set_checked(index == button_index);
+            m_current_tab->pages_stack_layout->set_current_index(index);
+            for (size_t button_index = 0;
+                 button_index < m_current_tab->page_list_view->item_count();
+                 ++button_index)
+            {
+                PageEntryButton* button = dynamic_cast<PageEntryButton*>(
+                    m_current_tab->page_list_view->get_item(button_index)
+                );
+                ASSERT(button);
+                button->set_checked(index == button_index);
+            }
         }
-    }
     );
     PageListView* page_list_view = tab_item->emplace_back<PageListView>(std::move(factory));
     page_list_view->set_orientation(Orientation::Vertical);
@@ -111,7 +113,7 @@ AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::strin
     pages_stack_layout->set_orientation(Orientation::Vertical);
     pages_stack_layout->set_flex_grow(1);
 
-    m_tabs.emplace_back(std::make_unique<Tab>(page_list_view, pages_stack_layout));
+    m_tabs.emplace_back(std::make_unique<Tab>(page_list_view, pages_stack_layout, tab_item));
 
     Dialog::append_tab(tab);
 
@@ -120,6 +122,18 @@ AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::strin
     }
 
     return m_tabs.back().get();
+}
+
+void AbstractSettingsDialog::Tab::replace_stack_layout(std::unique_ptr<StackLayout> stack_layout)
+{
+    ASSERT(stack_layout);
+
+    tab_item->remove(pages_stack_layout);
+    pages_stack_layout = stack_layout.get();
+    tab_item->insert(std::move(stack_layout), tab_item->item_count());
+
+    pages_stack_layout->set_orientation(Orientation::Vertical);
+    pages_stack_layout->set_flex_grow(1);
 }
 
 } // namespace Slic3r::App::Yoga

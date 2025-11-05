@@ -37,16 +37,18 @@ SidebarToolHeadRow::SidebarToolHeadRow(
     rect->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersBottomLeft);
 
     m_combo_box = emplace_back<ComboBoxListViewSelection<Biz::Preset::PresetItem>>();
-    m_combo_box->set_get_name_fn([](const Biz::Preset::PresetItem* item) -> std::string {
-        const std::string prefix{item->runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
-        return prefix + item->name;
-    });
+    m_combo_box->set_get_name_fn(
+        [](const Biz::Preset::PresetItem* item) -> std::string
+        {
+            const std::string prefix{item->runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
+            return prefix + item->name;
+        }
+    );
     m_combo_box->set_flex_grow(1);
-    m_combo_box->set_source_list(&const_cast<Biz::Preset::PresetItemObservableList&>(data).items());
     m_combo_box->callbacks().selection_changed = [this](int index)
     {
         if (index >= 0) {
-            auto& preset_interactor = m_project_interactor.preset_interactor();
+            auto& preset_interactor      = m_project_interactor.preset_interactor();
             const std::string& preset_id = m_state->items().at(static_cast<size_t>(index)).id;
             if (Biz::Preset::PresetSelectionCheck::can_select_tool_print_preset(
                     preset_interactor,
@@ -61,12 +63,12 @@ SidebarToolHeadRow::SidebarToolHeadRow(
             }
         }
     };
-    const_cast<Biz::Preset::PresetItemObservableList*>(m_state)
-        ->add_listener<Biz::IListSelectionChangedListener>(m_combo_box);
 
     m_cog_button = emplace_back<LayoutButton>("", Render::Icon::Cog);
     m_cog_button->set_checkable(true);
     m_button_group.lock()->insert_button(m_cog_button);
+
+    on_data_update();
 }
 
 SidebarToolHeadRow::~SidebarToolHeadRow()
@@ -83,7 +85,27 @@ LayoutButton* SidebarToolHeadRow::cog_button() const
 
 void SidebarToolHeadRow::on_data_update()
 {
-    // m_combo_box.set_source_list(&m_state->items());
+    Biz::Preset::PresetItemObservableList* preset_item_observable_list =
+        &m_project_interactor.preset_interactor().tool_presets().at(m_index);
+
+    if (m_last_preset_item_observable_list != preset_item_observable_list) {
+        on_view_will_be_removed();
+
+        m_last_preset_item_observable_list = preset_item_observable_list;
+        m_combo_box->set_source_list(&preset_item_observable_list->items());
+        preset_item_observable_list->add_listener<Biz::IListSelectionChangedListener>(m_combo_box);
+    }
+}
+
+void SidebarToolHeadRow::on_view_will_be_removed()
+{
+    if (m_last_preset_item_observable_list) {
+        m_last_preset_item_observable_list->remove_listener<Biz::IListSelectionChangedListener>(
+            m_combo_box
+        );
+        m_combo_box->set_source_list(nullptr);
+        m_last_preset_item_observable_list = nullptr;
+    }
 }
 
 } // namespace Slic3r::App

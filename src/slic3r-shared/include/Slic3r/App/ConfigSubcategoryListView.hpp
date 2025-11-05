@@ -34,11 +34,13 @@ class ConfigSubcategoryListView :
         ConfigSubcategoryItem,
         Domain::ConfigItem,
         ConfigSubcategoryListViewFactory,
-        Yoga::ScrollArea>
+        Yoga::ScrollArea>,
+    public Biz::DataObserver<Domain::ConfigItem>
 {
 public:
     explicit ConfigSubcategoryListView(
-        Domain::ConfigItemDef::Category category,
+        size_t index,
+        const Domain::ConfigItem& data,
         Biz::Preset::PresetInteractor& preset_interactor,
         Biz::ConfigBoxInteractor& cbi
     );
@@ -47,11 +49,15 @@ public:
     void navigate_to_item(const Domain::ConfigItem* config_item);
     void clear_navigation();
 
+protected:
+    void on_data_update() override;
+
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
     Biz::ConfigBoxInteractor& m_cbi;
     Biz::UnsharedPointer<Biz::ObservableListSortFilter<Domain::ConfigItem>> m_category_filter;
     Yoga::Rectangle* m_background{nullptr};
+    Domain::ConfigItemDef::Category m_category{Domain::ConfigItemDef::Category::Unkown};
 };
 
 } // namespace Slic3r::App

@@ -30,7 +30,7 @@ protected:
     void on_data_update() override;
 
 private:
-    void reconstruct_buttons();
+    void reconstruct_boxes();
     void update_values();
 
 private:

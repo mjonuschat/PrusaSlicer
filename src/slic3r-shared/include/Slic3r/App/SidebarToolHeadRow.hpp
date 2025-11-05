@@ -38,6 +38,8 @@ public:
 
     Yoga::LayoutButton* cog_button() const;
 
+    void on_view_will_be_removed() override;
+
 protected:
     void on_data_update() override;
 
@@ -46,8 +48,9 @@ private:
     std::weak_ptr<Yoga::ButtonGroup> m_button_group;
     Yoga::ComboBoxListViewSelection<Biz::Preset::PresetItem>* m_combo_box{nullptr};
     Yoga::LayoutButton* m_cog_button{nullptr};
+    Biz::Preset::PresetItemObservableList* m_last_preset_item_observable_list{nullptr};
 
-    int m_last_selected_index{ -1 };
+    int m_last_selected_index{-1};
 };
 
 } // namespace Slic3r::App

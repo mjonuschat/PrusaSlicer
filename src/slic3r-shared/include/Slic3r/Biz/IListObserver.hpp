@@ -110,6 +110,10 @@ public:
 
     UnsharedPointer(std::shared_ptr<Data> ptr) : m_ptr(ptr) {}
 
+    operator bool() const noexcept {
+        return m_ptr != nullptr;
+    }
+
     Data* operator->() const
     {
         return m_ptr.get();
@@ -118,6 +122,10 @@ public:
     std::weak_ptr<Data> get() const
     {
         return m_ptr;
+    }
+
+    void reset(std::shared_ptr<Data> ptr = nullptr) {
+        m_ptr = ptr;
     }
 
 private:

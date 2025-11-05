@@ -85,7 +85,7 @@ public:
         ASSERT(index_range.to <= m_items.size());
 
         for (size_t i = index_range.from; i <= index_range.to; ++i) {
-            m_items.at(i)->on_will_be_removed();
+            m_items.at(i)->on_view_will_be_removed();
         }
     }
 
@@ -116,7 +116,7 @@ public:
     {
         // Todo: probably rename
         // notify all views that we were reset
-        std::ranges::for_each(m_items, [](View* view) { view->on_will_be_removed(); });
+        std::ranges::for_each(m_items, [](View* view) { view->on_view_will_be_removed(); });
     }
 
     void on_reset() override

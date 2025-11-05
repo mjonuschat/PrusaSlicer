@@ -35,7 +35,7 @@ public:
 
     void on_selected_project_changed(size_t index) override;
 
-    void on_will_be_removed() override;
+    void on_view_will_be_removed() override;
 
 protected:
     void set_selected(bool selected);

@@ -224,7 +224,9 @@ enum class Icon : wchar_t
     Minus,
     ChevronRight,
     ChevronLeft,
-    Compare
+    Compare,
+    Hollowing,
+    Pad
 };
 
 } // namespace Slic3r::App::Render

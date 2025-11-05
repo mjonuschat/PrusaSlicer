@@ -40,7 +40,7 @@ public:
         on_data_update();
     }
 
-    virtual void on_will_be_removed() {}
+    virtual void on_view_will_be_removed() {}
 
 protected:
     virtual void on_data_update() {}

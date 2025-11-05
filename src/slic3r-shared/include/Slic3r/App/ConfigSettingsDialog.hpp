@@ -8,6 +8,8 @@
 #include "Slic3r/App/Config/ObservableCategorizer.hpp"
 #include "Slic3r/App/Config/CategoryPageTransformer.hpp"
 
+#include <Slic3r/Biz/IListObserver.hpp>
+
 namespace Slic3r::Biz {
 class ConfigBoxInteractor;
 } // namespace Slic3r::Biz
