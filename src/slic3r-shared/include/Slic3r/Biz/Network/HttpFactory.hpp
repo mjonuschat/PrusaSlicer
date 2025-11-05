@@ -16,6 +16,8 @@ std::string extract_host_from_url(const std::string& url_in);
 std::string substitute_host(const std::string& orig_addr, std::string sub_addr);
 std::string escape_path_by_element(const boost::filesystem::path& path);
 std::string escape_string(const std::string& str);
+std::string unescape_string(const std::string& str);
+bool is_subdomain(const std::string& url, const std::string& domain);
 bool ca_file_supported();
 std::string tls_global_init();
 std::string tls_system_cert_store();

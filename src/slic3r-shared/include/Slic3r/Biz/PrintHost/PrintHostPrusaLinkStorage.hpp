@@ -26,6 +26,8 @@ public:
 
     const char* get_name() const override { return "PrusaLink"; }
     bool test(std::string& msg, RetryFn retry_fn) const override {return false; }
+
+    std::string operation_type() const override { return "storage"; }
 private:
     std::string make_url(const std::string& path) const;
     void set_auth(Network::IHttp* http) const;

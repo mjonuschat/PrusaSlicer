@@ -13,7 +13,9 @@
 #include <Slic3r/App/PresetUpdaterUI.hpp>
 
 #include <Slic3r/Biz/ProjectInteractor.hpp>
-#include "Slic3r/App/Navigator.hpp"
+#include <Slic3r/App/Navigator.hpp>
+#include <Slic3r/App/PrusaLinkStorageListener.hpp>
+#include "Slic3r/App/AppConfig.hpp"
 
 namespace Slic3r::App::Desktop {
 class MainFrame;
@@ -61,6 +63,7 @@ private:
     Domain::Workbench m_workbench;
     InitParams m_init_params;
     Navigator m_navigator;
+    std::unique_ptr<PrintHost::PrusaLinkStorageListener> m_prusalink_storage_listener;
 };
 
 } // namespace Slic3r::App::Desktop

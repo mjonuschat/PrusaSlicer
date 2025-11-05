@@ -145,7 +145,7 @@ bool PrintHostRepetier::test(std::string& msg, RetryFn retry_fn) const
                         (soft ? *soft : (text ? *text : "Repetier"))
                     );
                 }
-            } catch (const std::exception&) {
+            } catch (const nlohmann::json::exception&) {
                 res = false;
                 msg = "Could not parse server response";
             }

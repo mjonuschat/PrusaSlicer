@@ -32,6 +32,11 @@ struct SlicingWarningNotificationData
     Domain::SlicingId slicing_id;
 };
 
+struct DownloadProgressNotificationData
+{
+    size_t download_id;
+};
+
 enum class PrintHostJobStatus
 {
     None,
@@ -66,6 +71,7 @@ using PopNotificationPayload = std::variant<
     SlicingErrorNotificationData,
     SlicingWarningNotificationData,
     PrintHostProgressNotificationData,
-    EjectNotificationData>;
+    EjectNotificationData,
+    DownloadProgressNotificationData>;
 
 } // namespace Slic3r::App::PopNotification

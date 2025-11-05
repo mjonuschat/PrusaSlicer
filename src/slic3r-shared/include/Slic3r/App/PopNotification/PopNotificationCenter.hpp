@@ -1,13 +1,15 @@
 #pragma once
 
 #include "Slic3r/App/PopNotification/PopNotificationObservableList.hpp"
+#include "Slic3r/Biz/ObservableListSortFilter.hpp"
 #include "Slic3r/Biz/Platform/JobManager/IJobManagerStatusChangedListener.hpp"
-#include "Slic3r/Biz/PrintHost/IPrintHostListener.hpp"
 #include "Slic3r/Biz/RemovableDrive/IRemovableDriveStatusListener.hpp"
 #include "Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp"
 #include "Slic3r/Biz/StatusCache.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
+#include "Slic3r/Biz/PrintHost/PrintHostJobInfoTag.hpp"
+#include "Slic3r/App/LeftBarTabs.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -16,10 +18,8 @@ class ProjectInteractor;
 namespace Slic3r::App::PopNotification {
 
 class PopNotificationCenter :
-    public PopNotificationObservableList,
     public Biz::Platform::JobManager::IJobManagerStatusChangedListener,
     public Biz::IStatusCacheChangedListener,
-    public Biz::PrintHost::IPrintHostListener,
     public Biz::RemovableDrive::IRemovableDriveStatusListener,
     public Biz::UserAccount::IUserAccountListener,
     public Biz::IProjectsChangedListener
@@ -27,9 +27,12 @@ class PopNotificationCenter :
 public:
     PopNotificationCenter(Biz::ProjectInteractor& project_interactor);
 
+    void upsert_notifcation(PopNotificationData data, PopNotificationObservableList::Matcher matcher);
+
     // Job
     void on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status) override;
-
+    void on_job_print_host(const std::string& string, const  Biz::Platform::JobManager::Progress& progress);
+    void on_download_job_status_changed(const std::string& string, const Biz::Platform::JobManager::Progress& progress);
     // Slicing
     void on_status_cache_status_code_changed(const Domain::SlicingId slicing_id) override;
     void on_status_cache_progress_changed(const Domain::SlicingId slicing_id) override;
@@ -37,11 +40,11 @@ public:
     void on_status_cache_warnings_changed(const Domain::SlicingId slicing_id) override;
 
     // Export / Upload
-    void on_print_host_progress(size_t id, int progress) override;
-    void on_print_host_error(size_t id, const std::string& msg) override;
-    void on_print_host_cancel(size_t id) override;
-    void on_print_host_done(size_t id) override;
-    void on_print_host_info(size_t id, const std::string& tag, const std::string& msg) override;
+    void on_print_host_progress(size_t id, int progress);
+    void on_print_host_error(size_t id, const std::string& msg);
+    void on_print_host_cancel(size_t id);
+    void on_print_host_done(size_t id);
+    void on_print_host_info(size_t id, const Biz::PrintHost::PrintHostJobInfoTag& tag, const std::string& msg);
 
     // Removable Drive
     void on_removable_drive_status_changed(const boost::filesystem::path& drive_path, Biz::RemovableDrive::RemovableDriveStatus status) override;
@@ -55,9 +58,19 @@ public:
     // Projects Changed
     void on_project_load_failed(const std::string& error) override;
 
+    PopNotificationObservableList& observable_list() {return m_notification_list;}
+    Biz::ObservableListSortFilter<PopNotificationData>& source_list() { return m_list_sort_filter; }
+
+    void set_switch_left_tab_fn(std::function<void(LeftBarTabs, const std::string&)> switch_left_tab_fn)
+    {
+        m_switch_left_tab_fn = switch_left_tab_fn;
+    }
 private:
+    PopNotificationObservableList m_notification_list;
+    Biz::ObservableListSortFilter<PopNotificationData> m_list_sort_filter;
     Biz::RemovableDrive::RemovableDriveService& m_removable_drive_service;
     Biz::ProjectInteractor& m_project_interactor;
+    std::function<void(LeftBarTabs, const std::string&)> m_switch_left_tab_fn;
 };
 
 } // namespace Slic3r::App::PopNotification

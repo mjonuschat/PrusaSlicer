@@ -100,6 +100,7 @@ protected:
     bool handle_logic_command_RegisterPrusaSlicerURL(const std::string& data) override;
     bool handle_logic_command_SetLoadDefaultURLOnErrorTrue(const std::string& data) override;
     bool handle_logic_command_SetLoadDefaultURLOnErrorFalse(const std::string& data) override;
+    bool handle_logic_command_SwitchToSlicing(const std::string& data) override;
 };
 
 } // namespace Slic3r::App::WX::WebView

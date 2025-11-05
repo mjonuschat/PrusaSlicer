@@ -29,6 +29,8 @@ public:
     Render::Icon icon() const;
     void set_icon(Render::Icon icon);
 
+    Text* text() const;
+
 private:
     Icon* m_icon = nullptr;
     Text* m_text = nullptr;

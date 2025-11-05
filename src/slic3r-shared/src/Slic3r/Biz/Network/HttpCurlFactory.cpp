@@ -27,6 +27,16 @@ std::string escape_string(const std::string& str)
     return HttpCurl::escape_string(str);
 }
 
+std::string unescape_string(const std::string& str)
+{
+    return HttpCurl::unescape_string(str);
+}
+
+bool is_subdomain(const std::string& url, const std::string& domain)
+{
+    return HttpCurl::is_subdomain(url, domain);
+}
+
 bool ca_file_supported()
 {
     return HttpCurl::ca_file_supported();

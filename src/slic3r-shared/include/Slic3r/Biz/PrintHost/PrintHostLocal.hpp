@@ -24,6 +24,7 @@ public:
     const char* get_name() const override { return "Local Export"; }
     bool test(std::string& msg, RetryFn retry_fn) const override { return true; }
 
+    std::string operation_type() const override { return "export"; }
 private:
     bool move_file(const boost::filesystem::path& source, const boost::filesystem::path& dest, std::string& msg) const;
 };

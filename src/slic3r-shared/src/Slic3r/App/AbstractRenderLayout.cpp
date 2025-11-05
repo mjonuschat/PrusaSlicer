@@ -261,7 +261,7 @@ void AbstractRenderLayout::init_middle_column()
     m_pop_notification_list_view->set_max_size({ 400.f, YGUndefined });
     m_pop_notification_list_view->set_margin(10.);
     m_pop_notification_list_view->set_self_align(YGAlignFlexEnd);
-    m_pop_notification_list_view->set_source_list(&AppServices::instance().pop_notification_center());
+    m_pop_notification_list_view->set_source_list(&AppServices::instance().pop_notification_center().source_list());
 
     //notifications_wrap->set_debug_border(true);
     //m_pop_notification_list_view->set_debug_border(true);

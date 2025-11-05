@@ -61,6 +61,7 @@ enum class Icon : wchar_t
     OpenHoverButton,
     SlaViewOriginal,
     SlaViewProcessed,
+    NotificationCloseGray,
 
     LegendTravel,
     LegendWipe,

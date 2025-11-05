@@ -8,6 +8,7 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Network/IHttp.hpp"
+#include "Slic3r/Biz/FileDownloader/FileDownloaderJobData.hpp"
 #include "Slic3r/Assert.hpp"
 
 #include <nlohmann/json.hpp>
@@ -23,6 +24,7 @@ BrowserLogicPrintables::BrowserLogicPrintables(Biz::ProjectInteractor& project_i
     m_events["printGcode"] = std::bind(&BrowserLogicPrintables::on_printables_event_print_gcode, this, std::placeholders::_1);
     m_events["downloadFile"] = std::bind(&BrowserLogicPrintables::on_printables_event_download_file, this, std::placeholders::_1);
     m_events["sliceFile"] = std::bind(&BrowserLogicPrintables::on_printables_event_slice_file, this, std::placeholders::_1);
+    m_events["sliceFiles"] = std::bind(&BrowserLogicPrintables::on_printables_event_slice_files, this, std::placeholders::_1);
     m_events["requiredLogin"] = std::bind(&BrowserLogicPrintables::on_printables_event_required_login, this, std::placeholders::_1);
     m_events["openExternalUrl"] = std::bind(&BrowserLogicPrintables::on_printables_event_open_url, this, std::placeholders::_1);
     m_events["ready"] = std::bind(&BrowserLogicPrintables::on_printables_event_dummy, this, std::placeholders::_1);
@@ -163,7 +165,11 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_script_message_webvi
     }
 
     SPDLOG_INFO("Printables Request: {}", event_string);
-    ASSERT(m_events.find(event_string) != m_events.end(), "There is an event that has no handling function.");
+    if (m_events.find(event_string) == m_events.end())
+    {
+        SPDLOG_WARN("There is Printables Request that has no handling function. Event: {}", event_string);
+        return {};
+    }
     return m_events[event_string](message);
 }
 
@@ -227,10 +233,12 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_dow
     }
     DEBUG_ASSERT(!download_url.empty() && !model_url.empty(), "Faulty printables message.");
 
-    std::string final_url = Biz::Network::ServiceConfig::instance().connect_printables_print_url() + "?url=" + Biz::Network::IHttp::escape_string(download_url);
-    // TODO use final_url
-
-    return {};
+    Biz::FileDownloader::FileDownloaderJobInput info;
+    info.file_url = download_url;
+    info.project_url = model_url;
+    info.load_count = 0;
+    m_project_interactor.download_model_from_printables_tab(std::move(info));
+    return {{BrowserLogicCommandType::SwitchToSlicing, {}}};;
 }
 
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_slice_file(const std::string& message_data)
@@ -252,10 +260,64 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_sli
     }
     DEBUG_ASSERT(!download_url.empty() && !model_url.empty(), "Faulty printables message.");
 
-    std::string final_url = Biz::Network::ServiceConfig::instance().connect_printables_print_url() + "?url=" + Biz::Network::IHttp::escape_string(download_url);
-    // TODO use final_url
+    Biz::FileDownloader::FileDownloaderJobInput info;
+    info.file_url = download_url;
+    info.project_url = model_url;
+    info.load_count = 1;
+    m_project_interactor.download_model_from_printables_tab(std::move(info));
+    return {{BrowserLogicCommandType::SwitchToSlicing, {}}};
+}
 
-    return {};
+std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_slice_files(const std::string& message_data)
+{
+
+    std::vector<Biz::FileDownloader::FileDownloaderJobInput> sources;
+
+    try {
+        nlohmann::json j = nlohmann::json::parse(message_data);
+        bool new_project{false};
+        if (j.contains("new_project") && j["new_project"].is_boolean()) {
+            new_project = j["new_project"].get<bool>();
+        }
+        if (j.contains("objects") && j["objects"].is_array()) {
+            for (const auto& obj : j["objects"]) {
+                Biz::FileDownloader::FileDownloaderJobInput info;
+                info.new_project = new_project;
+                if (obj.contains("name") && obj["name"].is_string()) {
+                    info.file_name = obj["name"].get<std::string>();
+                }
+                if (obj.contains("count") && obj["count"].is_number_integer()) {
+                    info.load_count = obj["count"].get<int>();
+                }
+                if (obj.contains("source")) {
+                    const auto& source = obj["source"];
+                    if (source.contains("fileUrl") && source["fileUrl"].is_string()) {
+                        info.file_url = source["fileUrl"].get<std::string>();
+                    }
+                    if (source.contains("name") && source["name"].is_string()) {
+                        info.project_name = source["name"].get<std::string>();
+                    }
+                    if (source.contains("url") && source["url"].is_string()) {
+                        info.project_url = source["url"].get<std::string>();
+                    }
+                    if (source.contains("imageUrl") && source["imageUrl"].is_string()) {
+                        info.image_url = source["imageUrl"].get<std::string>();
+                    }
+                }
+                sources.emplace_back(std::move(info));
+            }
+        }
+    } catch (const nlohmann::json::parse_error& e) {
+        SPDLOG_ERROR("Could not parse Printables message. {}", e.what());
+        return {};
+    }
+
+    DEBUG_ASSERT(!sources.empty(), "Faulty printables message.");
+    for (auto& info : sources) {
+        m_project_interactor.download_model_from_printables_tab(std::move(info));        
+    }
+   
+    return {{BrowserLogicCommandType::SwitchToSlicing, {}}};
 }
 
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_required_login(const std::string& message_data)

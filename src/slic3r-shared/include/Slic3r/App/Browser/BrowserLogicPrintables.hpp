@@ -34,7 +34,8 @@ private:
     std::vector<BrowserLogicCommand> on_printables_event_access_token_expired(const std::string& message_data);
     std::vector<BrowserLogicCommand> on_printables_event_print_gcode(const std::string& message_data);
     std::vector<BrowserLogicCommand> on_printables_event_download_file(const std::string& message_data);
-    std::vector<BrowserLogicCommand> on_printables_event_slice_file(const std::string& message_data);
+    std::vector<BrowserLogicCommand> on_printables_event_slice_file(const std::string& message_data); // Old 1 by 1 event. Used in PS2.
+    std::vector<BrowserLogicCommand> on_printables_event_slice_files(const std::string& message_data); // New event with multiple files in 1 message. Since PS3.0.0.
     std::vector<BrowserLogicCommand> on_printables_event_required_login(const std::string& message_data);
     std::vector<BrowserLogicCommand> on_printables_event_open_url(const std::string& message_data);
     std::vector<BrowserLogicCommand> on_webview_reload_event(const std::string& message_data);

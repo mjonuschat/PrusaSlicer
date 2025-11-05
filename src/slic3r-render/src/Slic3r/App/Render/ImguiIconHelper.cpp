@@ -126,6 +126,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::OpenHoverButton, "notification_open_hover"},
     {Icon::SlaViewOriginal, "sla_view_original"},
     {Icon::SlaViewProcessed, "sla_view_processed"},
+    {Icon::NotificationCloseGray, "notification_close_gray"},
 
     {Icon::MouseLeft, "mouse_left"},
     {Icon::MouseRight, "mouse_right"},

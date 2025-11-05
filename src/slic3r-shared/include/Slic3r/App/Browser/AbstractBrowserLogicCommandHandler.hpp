@@ -32,6 +32,7 @@ protected:
     virtual bool handle_logic_command_RegisterPrusaSlicerURL(const std::string& data) = 0;
     virtual bool handle_logic_command_SetLoadDefaultURLOnErrorTrue(const std::string& data) = 0;
     virtual bool handle_logic_command_SetLoadDefaultURLOnErrorFalse(const std::string& data) = 0;
+    virtual bool handle_logic_command_SwitchToSlicing(const std::string& data) = 0;
 
     bool process_logic_command_vector(std::vector<BrowserLogicCommand>&& command)
     {
@@ -47,23 +48,24 @@ protected:
         switch (command.type)
         {
         case BrowserLogicCommandType::None:                          return true;
-        case BrowserLogicCommandType::LoadURL:                       return handle_logic_command_LoadURL(command. data);
-        case BrowserLogicCommandType::LoadRequest:                   return handle_logic_command_LoadRequest(command. data);
-        case BrowserLogicCommandType::RunScript:                     return handle_logic_command_RunScript(command. data);
-        case BrowserLogicCommandType::EndModalOK:                    return handle_logic_command_EndModalOK(command. data);
-        case BrowserLogicCommandType::EndModalCancel:                return handle_logic_command_EndModalCancel(command. data);
-        case BrowserLogicCommandType::DeleteCookies:                 return handle_logic_command_DeleteCookies(command. data);
-        case BrowserLogicCommandType::DeleteCookiesWithCounter:      return handle_logic_command_DeleteCookiesWithCounter(command. data);
-        case BrowserLogicCommandType::Veto:                          return handle_logic_command_Veto(command. data);
-        case BrowserLogicCommandType::DoReload:                      return handle_logic_command_DoReload(command. data);
-        case BrowserLogicCommandType::AddUserScript:                 return handle_logic_command_AddUserScript(command. data);
-        case BrowserLogicCommandType::AddRequestAuthorization:       return handle_logic_command_AddRequestAuthorization(command. data);
-        case BrowserLogicCommandType::RemoveRequestAuthorization:    return handle_logic_command_RemoveRequestAuthorization(command. data);
-        case BrowserLogicCommandType::LoadResourcesPage:             return handle_logic_command_LoadResourcesPage(command. data);
-        case BrowserLogicCommandType::OpenExternalBrowser:           return handle_logic_command_OpenExternalBrowser(command. data);
-        case BrowserLogicCommandType::RegisterPrusaSlicerURL:        return handle_logic_command_RegisterPrusaSlicerURL(command. data);
-        case BrowserLogicCommandType::SetLoadDefaultURLOnErrorTrue:  return handle_logic_command_SetLoadDefaultURLOnErrorTrue(command. data);
-        case BrowserLogicCommandType::SetLoadDefaultURLOnErrorFalse: return handle_logic_command_SetLoadDefaultURLOnErrorFalse(command. data);
+        case BrowserLogicCommandType::LoadURL:                       return handle_logic_command_LoadURL(command.data);
+        case BrowserLogicCommandType::LoadRequest:                   return handle_logic_command_LoadRequest(command.data);
+        case BrowserLogicCommandType::RunScript:                     return handle_logic_command_RunScript(command.data);
+        case BrowserLogicCommandType::EndModalOK:                    return handle_logic_command_EndModalOK(command.data);
+        case BrowserLogicCommandType::EndModalCancel:                return handle_logic_command_EndModalCancel(command.data);
+        case BrowserLogicCommandType::DeleteCookies:                 return handle_logic_command_DeleteCookies(command.data);
+        case BrowserLogicCommandType::DeleteCookiesWithCounter:      return handle_logic_command_DeleteCookiesWithCounter(command.data);
+        case BrowserLogicCommandType::Veto:                          return handle_logic_command_Veto(command.data);
+        case BrowserLogicCommandType::DoReload:                      return handle_logic_command_DoReload(command.data);
+        case BrowserLogicCommandType::AddUserScript:                 return handle_logic_command_AddUserScript(command.data);
+        case BrowserLogicCommandType::AddRequestAuthorization:       return handle_logic_command_AddRequestAuthorization(command.data);
+        case BrowserLogicCommandType::RemoveRequestAuthorization:    return handle_logic_command_RemoveRequestAuthorization(command.data);
+        case BrowserLogicCommandType::LoadResourcesPage:             return handle_logic_command_LoadResourcesPage(command.data);
+        case BrowserLogicCommandType::OpenExternalBrowser:           return handle_logic_command_OpenExternalBrowser(command.data);
+        case BrowserLogicCommandType::RegisterPrusaSlicerURL:        return handle_logic_command_RegisterPrusaSlicerURL(command.data);
+        case BrowserLogicCommandType::SetLoadDefaultURLOnErrorTrue:  return handle_logic_command_SetLoadDefaultURLOnErrorTrue(command.data);
+        case BrowserLogicCommandType::SetLoadDefaultURLOnErrorFalse: return handle_logic_command_SetLoadDefaultURLOnErrorFalse(command.data);
+        case BrowserLogicCommandType::SwitchToSlicing:               return handle_logic_command_SwitchToSlicing(command.data);
         }
         DEBUG_ASSERT(false, "Missing BrowserLogicCommand handling");
         return true;

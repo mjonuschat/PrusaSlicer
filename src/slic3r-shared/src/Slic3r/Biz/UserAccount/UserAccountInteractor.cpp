@@ -170,7 +170,7 @@ void UserAccountInteractor::on_user_id(const std::string& body)
                 m_account_user_data[key] = value.get<std::string>();
             }
         }
-    } catch (const std::exception&) {
+    } catch (const nlohmann::json::exception&) {
         SPDLOG_INFO("UserIDUserAction Could not parse server response.");
         return;
     }

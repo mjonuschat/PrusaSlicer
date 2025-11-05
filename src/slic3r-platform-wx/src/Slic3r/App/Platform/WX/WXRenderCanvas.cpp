@@ -365,8 +365,8 @@ auto catching_handler(Class* instance, void (Class::*handler)(EventType&))
     };
 }
 
-WXRenderCanvas::WXRenderCanvas(wxWindow* parent) :
-    wxGLCanvas(parent, create_wxglattributes(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS),
+WXRenderCanvas::WXRenderCanvas(wxWindow* parent, int id) :
+    wxGLCanvas(parent, create_wxglattributes(), id, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS),
     m_start_time(Clock::now())
 {
     wxGLContextAttrs attrs;

@@ -14,7 +14,7 @@ namespace Slic3r::App::Platform::WX {
 class WXRenderCanvas : public Platform::AbstractRenderCanvas, public wxGLCanvas
 {
 public:
-    WXRenderCanvas(wxWindow* parent);
+    WXRenderCanvas(wxWindow* parent, int id);
     ~WXRenderCanvas();
 
     WXRenderCanvas(const WXRenderCanvas&) = delete;

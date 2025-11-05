@@ -379,7 +379,7 @@ bool LocalPresetUpdaterRepository::extract_local_archive_repository(
             );
             return false;
         }
-    } catch (const std::exception& e) {
+    } catch (const nlohmann::json::exception& e) {
         process_status->set_error(
             fmt::format(
                 "Failed to read source manifest JSON {}. Reason: {}",

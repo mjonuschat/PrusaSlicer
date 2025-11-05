@@ -127,7 +127,7 @@ PrintHostDuet::ConnectionType PrintHostDuet::connect(std::string& msg, RetryFn r
                             msg = json["sessionKey"].get<std::string>();
                         }
                         res = ConnectionType::dsf;
-                    } catch (const std::exception&) {
+                    } catch (const nlohmann::json::exception&) {
                         SPDLOG_ERROR(
                             "Failed to parse serverKey from Duet reply to Connect request: {}",
                             body
@@ -304,7 +304,7 @@ int PrintHostDuet::get_err_code_from_body(const std::string& body) const
     try {
         nlohmann::json json = nlohmann::json::parse(body);
         return json.value("err", 0);
-    } catch (const std::exception& e) {
+    } catch (const nlohmann::json::exception& e) {
         SPDLOG_ERROR("JSON parsing error: {}", e.what());
         return 0;
     }

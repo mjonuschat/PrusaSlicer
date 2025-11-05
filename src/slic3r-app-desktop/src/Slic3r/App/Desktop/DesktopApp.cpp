@@ -262,8 +262,6 @@ bool DesktopApp::OnInit()
 
     m_preview_module = std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
 
-    m_project_interactor->print_host_interactor().add_print_host_listener(&app_services.pop_notification_center(
-    ));
     m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center(
     ));
 
@@ -289,6 +287,14 @@ bool DesktopApp::OnInit()
     m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(m_project_interactor->preset_updater_interactor(
     ));
 
+    m_prusalink_storage_listener =
+        std::make_unique<PrintHost::PrusaLinkStorageListener>(*m_project_interactor.get());
+    platform_services.job_manager()
+        .add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
+            m_prusalink_storage_listener.get()
+        );
+
+    app_services.pop_notification_center().set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, m_main_frame, std::placeholders::_1, std::placeholders::_2));
 #ifdef WIN32
     m_main_frame->register_win32_callbacks();
 #endif
@@ -301,6 +307,13 @@ bool DesktopApp::OnInit()
 #ifdef WIN32
     register_win32_device_notification_event();
 #endif // WIN32
+
+    for (int i = 0; i < m_init_params.argc; ++i) {
+        std::string arg(m_init_params.argv[i]);
+        if (boost::starts_with(arg, "prusaslicer://open")) {
+            m_project_interactor->on_download_models({std::move(arg)});
+        }
+    }
 
     return true;
 }

@@ -5,6 +5,7 @@
 
 #include "Slic3r/App/Yoga/ProgressBar.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/Log.hpp"
 
 #include "imgui/imgui_internal.h"
 
@@ -78,5 +79,13 @@ void ProgressBar::set_overlay_color(const ImColor& color) const
 }
 
 void ProgressBar::update_area_width() {}
+
+void ProgressBar::on_resized()
+{
+    if (!m_progress_set_on_resized && width() > 0){
+        m_progress_area->set_width(std::lerp(height(), width(), 0.01 * m_value));
+        m_progress_set_on_resized = true;
+    }
+}
 
 } // namespace Slic3r::App::Yoga

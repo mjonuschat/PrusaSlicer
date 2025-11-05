@@ -20,8 +20,8 @@
 
 namespace Slic3r::App::WX::WebView {
 
-WebViewPanel::WebViewPanel(wxWindow* parent, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create) :
-    AbstractWebViewPanel(parent),
+WebViewPanel::WebViewPanel(wxWindow* parent,  int id, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create) :
+    AbstractWebViewPanel(parent, id),
     m_logic(std::move(logic))
 {
     topsizer    = new wxBoxSizer(wxVERTICAL);
@@ -73,6 +73,7 @@ WebViewPanel::WebViewPanel(wxWindow* parent, std::unique_ptr<App::Browser::Abstr
     Bind(wxEVT_IDLE, &WebViewPanel::on_idle, this);
 
 #ifdef DEBUG_URL_PANEL
+    /*
     // Create the Tools menu
     m_tools_menu         = new wxMenu();
     wxMenuItem* viewText = m_tools_menu->Append(wxID_ANY, "View Text");
@@ -103,6 +104,7 @@ WebViewPanel::WebViewPanel(wxWindow* parent, std::unique_ptr<App::Browser::Abstr
 
     Bind(wxEVT_MENU, &WebViewPanel::on_run_script_custom, this, m_script_custom->GetId());
     Bind(wxEVT_MENU, &WebViewPanel::on_add_user_script, this, addUserScript->GetId());
+    */
 #endif
 
     // Create the webview
@@ -150,6 +152,12 @@ void WebViewPanel::late_create()
     Layout();
     bool b = process_logic_command_vector(m_logic->on_webview_created());
     DEBUG_ASSERT(b, "False return value signals Veto which cannot be done here.");
+
+    // TODO: Read --webdev switch from CLA
+#ifdef DEBUG_URL_PANEL
+    m_web_view->EnableContextMenu();
+    m_web_view->EnableAccessToDevTools();
+#endif
 }
 
 void WebViewPanel::on_user_account_id_success(bool is_refresh, const std::string& username)
@@ -276,6 +284,9 @@ void WebViewPanel::on_loaded(wxWebViewEvent& evt)
     {
         evt.Veto();
     }
+#ifdef DEBUG_URL_PANEL
+    m_url->SetLabelText(evt.GetURL());
+#endif
 }
 
 void WebViewPanel::on_page_will_load()
@@ -613,6 +624,14 @@ bool WebViewPanel::handle_logic_command_SetLoadDefaultURLOnErrorTrue(const std::
 bool WebViewPanel::handle_logic_command_SetLoadDefaultURLOnErrorFalse(const std::string& data)
 {
     m_load_default_url_on_next_error = false;
+    return true;
+}
+
+bool WebViewPanel::handle_logic_command_SwitchToSlicing(const std::string& data)
+{
+    if (m_switch_left_tab_fn) {
+        m_switch_left_tab_fn(LeftBarTabs::Slicing, {});
+    }
     return true;
 }
 

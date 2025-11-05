@@ -207,7 +207,7 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProces
                 );
             }
         }
-    } catch (const std::exception& e) {
+    } catch (const nlohmann::json::exception& e) {
         process_status->set_error(
             fmt::format(
                 "Failed to read Repository Source Manifest JSON. Reason: {}. The file is being deleted to prevent this error in future.",

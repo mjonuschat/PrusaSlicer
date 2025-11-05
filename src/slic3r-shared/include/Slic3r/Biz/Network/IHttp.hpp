@@ -89,6 +89,11 @@ public:
      */
     typedef std::function<void(Retry, bool& /* cancel */)> RetryFn;
 
+    /**
+     * @brief Callback when headers are read.
+     */
+    typedef std::function<void(const std::string&)> HeadersReadFn;
+
     virtual ~IHttp() = default;
     IHttp(IHttp&& other) = delete;
 	IHttp(const IHttp& ) = delete;
@@ -221,9 +226,19 @@ public:
     static std::string escape_path_by_element(const boost::filesystem::path& path);
 
     /**
-	 * @brief Converts the given string to a URL-encoded string.
+	 * @brief Converts the given string to URL-encoded string.
 	 */
     static std::string escape_string(const std::string& str);
+
+    /**
+	 * @brief Converts the given URL-encoded string to plain string.
+	 */
+    static std::string unescape_string(const std::string& str);
+
+    /*
+     * @brief Returns true if 'domain' is subdomain of 'url'
+     */
+    static bool is_subdomain(const std::string& url, const std::string& domain);
 
     /**
      * @brief Tells whether current backend supports setting up a CA file using ca_file()
@@ -265,6 +280,11 @@ public:
 	 */
 	IHttp& on_ip_resolve(IPResolveFn fn);
 
+    /**
+	 * @brief Callback called after headers are read and written into a string.
+	 */
+    IHttp& on_headers_read(HeadersReadFn fn);
+
 protected:
 	
     /**
@@ -284,6 +304,7 @@ protected:
 	IHttp::ProgressFn   	progressfn;
 	IHttp::IPResolveFn  	ipresolvefn;
     IHttp::RetryFn      	retryfn;
+    IHttp::HeadersReadFn    headersfn;
 
 };
 

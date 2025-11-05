@@ -19,7 +19,6 @@ public:
     {}
 
     ~PopNotificationListView() = default;
-
 private:
 };
 } // namespace Slic3r::App::PopNotification

@@ -12,6 +12,7 @@ enum class PopNotificationType
     JobProgress,
     SlicingProgress,
     PrintHostProgress,
+    DownloadProgress,
     Eject,
     UserAccountLogin,
     UserAccountTransientError,
@@ -20,12 +21,16 @@ enum class PopNotificationType
     LoadError,
 };
 
+/*
+ * @brief Tells how notification should look in UI
+ */
 enum class PopNotificationLevel : int
 {
-    Regular = 1,
-    Important,
-    Warning,
-    Error,
+    Regular = 1, // Standart colors, closing button
+    ProgressNoClose, // Standart colors, no closing button
+    ProgressWithClose,
+    Warning, // orange colors, left picture
+    Error, // red colors, left picture
 };
 
 struct PopNotificationData

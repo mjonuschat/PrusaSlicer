@@ -9,9 +9,9 @@ std::unique_ptr<AbstractWebViewDialog> new_web_view_dialog(std::unique_ptr<App::
     return std::make_unique<WebViewDialog>(std::move(logic));
 }
 
-AbstractWebViewPanel* new_web_view_panel(wxWindow* parent, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create)
+AbstractWebViewPanel* new_web_view_panel(wxWindow* parent, int id, std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, bool do_create)
 {
-    return new WebViewPanel(parent, std::move(logic), do_create);
+    return new WebViewPanel(parent, id, std::move(logic), do_create);
 }
 
 } // namespace Slic3r::App::WX::WebView

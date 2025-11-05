@@ -10,7 +10,6 @@
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Format/STL.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
-#include "Slic3r/Biz/PrintHost/IPrintHostListener.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
@@ -94,25 +93,35 @@ struct SlicingStatusChangeListener : Slicing::IStatusListener
     }
 };
 
-struct ExportFinishedListener : Biz::PrintHost::IPrintHostListener
+struct ExportFinishedJobManagerStatusListener : public Biz::Platform::JobManager::IJobManagerStatusChangedListener
 {
     std::promise<std::optional<std::string>> promise_export_error;
 
-    void on_print_host_error(size_t id, const std::string& msg) override
+    void on_job_manager_status_changed(
+        const Slic3r::Biz::Platform::JobManager::JobManagerStatus& job_manager_status
+    ) override
     {
-        promise_export_error.set_value(msg);
+        for (const auto& [job_name, progress] : job_manager_status) {
+            if (!job_name.starts_with("printhost")) {
+                continue;
+            }
+
+            std::string payload_message;
+            if (const auto* payload =
+                    std::any_cast<Biz::PrintHost::PrintHostJobProgressPayload>(&progress.progress_detail.payload))
+            {
+                payload_message = payload->message;
+            }
+
+            if (progress.status == Slic3r::Domain::JobStatus::Failed)
+            {
+                promise_export_error.set_value(payload_message);
+            } else if (progress.status == Slic3r::Domain::JobStatus::Finished)
+            {
+                promise_export_error.set_value(std::nullopt);
+            }
+        }
     }
-
-    void on_print_host_done(size_t id) override
-    {
-        promise_export_error.set_value(std::nullopt);
-    }
-
-    void on_print_host_progress(size_t id, int progress) override {}
-
-    void on_print_host_cancel(size_t id) override {}
-
-    void on_print_host_info(size_t id, const std::string& tag, const std::string& msg) override {}
 };
 
 static std::string output_filename_and_path(
@@ -239,10 +248,14 @@ std::optional<std::string> slice_single_model_project(
     const std::string dest_path = output_filename_and_path(project, config_pack, output_path);
 
     if (slicing_status_update.code == Biz::Slicing::StatusCode::Finished) {
-        ExportFinishedListener export_finished_listener;
-        project_interactor.print_host_interactor().add_print_host_listener(
-            &export_finished_listener
+        Biz::Platform::PlatformServices& platform_services =
+            Biz::Platform::PlatformServices::instance();
+        platform_services.set_job_manager(
+            std::make_unique<Biz::Platform::JobManager::JobManager>(dispatcher)
         );
+        ExportFinishedJobManagerStatusListener export_finished_listener;
+        platform_services.job_manager().add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(&export_finished_listener);
+
         project_interactor.do_export(slicing_id, dest_path);
 
         std::optional<std::string> export_error = [&export_finished_listener, &dispatcher]()

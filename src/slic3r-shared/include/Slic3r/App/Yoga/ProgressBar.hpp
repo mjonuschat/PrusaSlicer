@@ -26,6 +26,8 @@ public:
     void set_progress_fill(const ImColor& fill);
     void set_overlay_color(const ImColor& color) const;
 
+    void on_resized() override;
+
 private:
     void update_area_width();
 
@@ -35,6 +37,7 @@ private:
 
     int m_value{0};
     bool m_show_overlay{false};
+    bool m_progress_set_on_resized{false};
 };
 
 } // namespace Slic3r::App::Yoga

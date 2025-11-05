@@ -2,6 +2,7 @@
 
 #include "Slic3r/Biz/Network/IHttp.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostConfig.hpp"
+#include "Slic3r/Biz/PrintHost/PrintHostJobInfoTag.hpp"
 #include "Slic3r/Assert.hpp"
 
 #include <string>
@@ -34,7 +35,7 @@ public:
     typedef Network::IHttp::ProgressFn ProgressFn;
     typedef Network::IHttp::RetryFn RetryFn;
     typedef std::function<void(std::string /* error */)> ErrorFn;
-    typedef std::function<void(std::string /* tag */, std::string /* status */)> InfoFn;
+    typedef std::function<void(PrintHostJobInfoTag /* tag */, std::string /* status */)> InfoFn;
 
     /**
      * Delivers data to given path on host specified in config.
@@ -51,6 +52,11 @@ public:
     {
         return m_upload_data;
     }
+
+    // "upload" - PrusaLink, Octoprint etc.
+    // "export" - Export to memory
+    // "storage" - Storage query for PrusaLink
+    virtual std::string operation_type() const { return "upload"; }
 
 protected:
     PrintHostConfig m_print_host_config;

@@ -48,7 +48,7 @@ boost::optional<double> get_exp(const std::string& token)
         if (j.contains("exp")) {
             return j["exp"].get<double>();
         }
-    } catch (const std::exception&) {
+    } catch (const nlohmann::json::exception&) {
         return boost::none;
     }
     return boost::none;

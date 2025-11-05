@@ -35,15 +35,21 @@ public:
 
     size_t size() const override;
 
-protected:
-    void erase_notification(const PopNotificationData* to_erase);
-    void erase_notification_by_index(size_t index);
     void erase_notification_by_predicate(std::function<bool(const PopNotificationData&)>);
+    void erase_notification(const PopNotificationData* to_erase);
+
+protected:
+    void erase_notification_by_index(size_t index);
     void notification_updated(size_t index);
     void reset_notification_timeout(PopNotificationDataIt it);
     void stop_notification_timer(PopNotificationDataIt it) const;
 
     std::vector<PopNotificationDataPtr> m_notifications;
+};
+
+inline const PopNotificationObservableList::Matcher never_equal_matcher = 
+    [](const PopNotificationPayload&, const PopNotificationPayload&) {
+    return false;
 };
 
 } // namespace Slic3r::App::PopNotification
