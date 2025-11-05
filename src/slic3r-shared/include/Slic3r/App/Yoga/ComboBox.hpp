@@ -33,19 +33,15 @@ public:
         requires std::convertible_to<std::ranges::range_value_t<Container>, std::string>
     ComboBox(Container&& data, const std::string& name = {}) : ComboBox(name)
     {
-        m_items.insert(
-            m_items.end(),
-            std::make_move_iterator(std::begin(data)),
-            std::make_move_iterator(std::end(data))
-        );
-        set_current_index(0);
-    }
-
-    template <std::ranges::range Container>
-        requires std::convertible_to<std::ranges::range_value_t<Container>, std::string>
-    ComboBox(const Container& data, const std::string& name = {}) : ComboBox(name)
-    {
-        m_items.insert(m_items.end(), std::begin(data), std::end(data));
+        if constexpr (std::is_rvalue_reference_v<Container&&>) {
+            m_items.insert(
+                m_items.end(),
+                std::make_move_iterator(std::begin(data)),
+                std::make_move_iterator(std::end(data))
+            );
+        } else {
+            m_items.insert(m_items.end(), std::begin(data), std::end(data));
+        }
         set_current_index(0);
     }
 
@@ -103,7 +99,7 @@ private:
      * std::array because otherwise we would have to set up ImGui callbacks
      * in order to use std::string
      */
-    std::array<char, 2048> m_buffer = {0};
+    std::array<char, 2'048> m_buffer = {0};
     int m_current_index              = 0;
     int m_default_index              = 0;
     std::string m_current_label;

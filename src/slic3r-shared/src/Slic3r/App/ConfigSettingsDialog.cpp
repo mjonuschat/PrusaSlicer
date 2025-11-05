@@ -57,15 +57,26 @@ ConfigSettingsDialog::ConfigTab::ConfigTab(
     observable_categorizer->set_source_model(cbi->config_box_list());
     category_page_transformer->set_project_interactor(&project_interactor);
     category_page_transformer->set_source_model(observable_categorizer.get());
-    for (size_t i = 0; i < category_page_transformer->size(); ++i) {
-        const Domain::ConfigItemDef::Category category =
-            observable_categorizer->at(i).def().category;
-        tab->pages_stack_layout->emplace_back<ConfigSubcategoryListView>(
-            category,
-            project_interactor.preset_interactor(),
-            *cbi
-        );
-    }
+
+    using CategoryListViewFactory = ViewFactory<
+        ConfigSubcategoryListView,
+        Domain::ConfigItem,
+        Biz::Preset::PresetInteractor&,
+        Biz::ConfigBoxInteractor&>;
+    using CategoryListView = ListView<
+        ConfigSubcategoryListView,
+        Domain::ConfigItem,
+        CategoryListViewFactory,
+        StackLayout>;
+
+    std::unique_ptr<CategoryListView> category_list_view = std::make_unique<CategoryListView>(
+        CategoryListViewFactory{project_interactor.preset_interactor(), *cbi}
+    );
+
+    category_list_view->set_source_list(observable_categorizer.get());
+
+    tab->replace_stack_layout(std::move(category_list_view));
+
     tab->page_list_view->set_source_list(category_page_transformer.get());
 }
 

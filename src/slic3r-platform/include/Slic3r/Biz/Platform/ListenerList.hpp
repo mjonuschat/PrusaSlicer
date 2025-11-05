@@ -1,6 +1,6 @@
 #pragma once
 
-#include <deque>
+#include <list>
 #include <functional>
 #include <algorithm>
 
@@ -35,7 +35,7 @@ public:
         std::for_each(m_listeners.begin(), m_listeners.end(), func);
     }
 private:
-    std::deque<L*> m_listeners;
+    std::list<L*> m_listeners;
 
 };
 }

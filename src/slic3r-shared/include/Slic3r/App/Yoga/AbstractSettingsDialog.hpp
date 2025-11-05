@@ -44,6 +44,9 @@ protected:
     {
         PageListView* page_list_view          = nullptr;
         Yoga::StackLayout* pages_stack_layout = nullptr;
+        Yoga::Item* tab_item                  = nullptr;
+
+        void replace_stack_layout(std::unique_ptr<Yoga::StackLayout> stack_layout);
     };
 
     void on_tab_selected(int current_index) override;

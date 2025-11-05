@@ -61,7 +61,11 @@ Render::Icon category_render_icon(
     case Domain::ConfigItemDef::Category::SingleExtruderMMSetup:
         icon = Render::Icon::PrinterIconMarker;
         break;
-    default:
+    case Domain::ConfigItemDef::Category::Hollowing:
+        icon = Render::Icon::Hollowing;
+        break;
+    case Domain::ConfigItemDef::Category::Pad:
+        icon = Render::Icon::Pad;
         break;
     }
 

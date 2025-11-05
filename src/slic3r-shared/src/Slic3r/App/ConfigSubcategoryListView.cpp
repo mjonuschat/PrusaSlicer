@@ -12,7 +12,8 @@ using namespace Slic3r::App::Yoga;
 namespace Slic3r::App {
 
 ConfigSubcategoryListView::ConfigSubcategoryListView(
-    Domain::ConfigItemDef::Category category,
+    size_t index,
+    const Domain::ConfigItem& data,
     Biz::Preset::PresetInteractor& preset_interactor,
     Biz::ConfigBoxInteractor& cbi
 ) :
@@ -21,6 +22,7 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
         Domain::ConfigItem,
         ConfigSubcategoryListViewFactory,
         ScrollArea>(ConfigSubcategoryListViewFactory{preset_interactor, cbi}),
+    Biz::DataObserver<Domain::ConfigItem>(index, data),
     m_preset_interactor(preset_interactor),
     m_cbi(cbi),
     m_category_filter(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())
@@ -32,8 +34,8 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     set_flex_grow(1);
     set_min_size({0, 100});
 
-    m_category_filter->set_filter_fn([category](const Domain::ConfigItem& config_item)
-                                     { return config_item.def().category == category; });
+    m_category_filter->set_filter_fn([this](const Domain::ConfigItem& config_item)
+                                     { return config_item.def().category == m_category; });
     m_category_filter->set_group_by_fn(
         [](const Domain::ConfigItem& config_item, std::unordered_set<std::string>& seen_keys)
         {
@@ -45,9 +47,12 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
             }
         }
     );
+
     m_category_filter->set_source_model(m_cbi.config_box_list());
 
     set_source_list(m_category_filter.get());
+
+    on_data_update();
 }
 
 ConfigSubcategoryListView::~ConfigSubcategoryListView()
@@ -76,6 +81,15 @@ void ConfigSubcategoryListView::clear_navigation()
          ++subcategory_index)
     {
         item_at(subcategory_index)->clear_navigation();
+    }
+}
+
+void ConfigSubcategoryListView::on_data_update()
+{
+    Domain::ConfigItemDef::Category category = m_state->def().category;
+    if (m_category != category) {
+        m_category = category;
+        m_category_filter->invalidate();
     }
 }
 

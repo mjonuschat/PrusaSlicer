@@ -20,37 +20,7 @@ Slic3r::App::ConfigRowItems::ConfigRowItems(
     m_preset_interactor(preset_interactor),
     m_cbi(cbi)
 {
-    if (m_state->def().row_group.empty()) {
-        m_single_item = emplace_back<ConfigRowItem>(index, data, m_preset_interactor, false);
-        m_single_item->set_flex_grow(1);
-    } else {
-        m_label = emplace_back<Text>(m_state->def().row_group);
-        m_label->set_width(150);
-        m_label->set_self_align(YGAlignCenter);
-
-        m_row_items_filter = std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>();
-        const std::string option_group = m_state->def().option_group; // Intentional copy
-        const std::string row_group    = m_state->def().row_group; // intentional copy
-        const Domain::ConfigItemDef::Category category =
-            m_state->def().category; // Intentional copy
-
-        m_row_items_filter->set_filter_fn(
-            [option_group, category, row_group](const Domain::ConfigItem& item) -> bool
-            {
-                return item.def().option_group == option_group
-                    && item.def().category == category
-                    && item.def().row_group == row_group;
-            }
-        );
-        m_row_items_filter->set_source_model(m_cbi.config_box_list());
-
-        m_row_group_list_view =
-            emplace_back<ConfigRowListView>(ConfigRowListViewFactory{m_preset_interactor, true});
-        m_row_group_list_view->set_align_items(YGAlignCenter);
-        m_row_group_list_view->set_gap(5);
-        m_row_group_list_view->set_flex_grow(1);
-        m_row_group_list_view->set_source_list(m_row_items_filter.get());
-    }
+    on_data_update();
 }
 
 void ConfigRowItems::navigate_to_item(const Domain::ConfigItem* config_item)
@@ -77,6 +47,79 @@ void ConfigRowItems::clear_navigation()
 
 void Slic3r::App::ConfigRowItems::on_data_update()
 {
+    const std::string row_group                    = m_state->def().row_group;
+    const std::string option_group                 = m_state->def().option_group;
+    const Domain::ConfigItemDef::Category category = m_state->def().category;
+    if (m_row_group != row_group || m_initialized_type == InitializedType::None) {
+        m_row_group = row_group;
+        if (row_group.empty()) {
+            if (m_initialized_type == InitializedType::Multiple) {
+                // Cleanup if we used to have row_group
+                remove(m_label);
+                m_label = nullptr;
+                remove(m_row_group_list_view);
+                m_row_group_list_view = nullptr;
+                m_row_items_filter.reset();
+            }
+
+            if (m_initialized_type != InitializedType::Single) {
+                m_initialized_type = InitializedType::Single;
+                m_single_item =
+                    emplace_back<ConfigRowItem>(m_index, *m_state, m_preset_interactor, false);
+                m_single_item->set_flex_grow(1);
+            }
+
+        } else {
+            if (m_initialized_type == InitializedType::Single) {
+                // Cleanup if we used to have single item
+                remove(m_single_item);
+                m_single_item = nullptr;
+            }
+
+            if (m_initialized_type != InitializedType::Multiple) {
+                m_initialized_type = InitializedType::Multiple;
+                m_label            = emplace_back<Text>(m_state->def().row_group);
+                m_label->set_width(150);
+                m_label->set_self_align(YGAlignCenter);
+
+                m_row_items_filter =
+                    std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>();
+
+                m_category  = category;
+                m_row_group = row_group;
+
+                m_row_items_filter->set_filter_fn(
+                    [this](const Domain::ConfigItem& item) -> bool
+                    {
+                        return item.def().option_group == m_option_group
+                            && item.def().category == m_category
+                            && item.def().row_group == m_row_group;
+                    }
+                );
+                m_row_items_filter->set_source_model(m_cbi.config_box_list());
+
+                m_row_group_list_view = emplace_back<ConfigRowListView>(
+                    ConfigRowListViewFactory{m_preset_interactor, true}
+                );
+                m_row_group_list_view->set_align_items(YGAlignCenter);
+                m_row_group_list_view->set_gap(5);
+                m_row_group_list_view->set_flex_grow(1);
+                m_row_group_list_view->set_source_list(m_row_items_filter.get());
+            } else {
+                m_row_items_filter->invalidate();
+            }
+        }
+    }
+
+    if (m_initialized_type == InitializedType::Multiple) {
+        // just check if option_group, category or row_group is updated
+        if (m_option_group != option_group || m_category != category) {
+            m_option_group = option_group;
+            m_category     = category;
+            m_row_items_filter->invalidate();
+        }
+    }
+
     if (m_single_item) {
         m_single_item->set_state(*m_state);
     }

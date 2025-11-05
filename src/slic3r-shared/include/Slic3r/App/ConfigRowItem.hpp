@@ -41,14 +41,20 @@ private:
 
 private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
+    bool m_small{false};
 
+    Domain::ConfigItemDef::GUIType m_created_gui_type{Domain::ConfigItemDef::GUIType::undefined};
+    const std::type_info* m_created_value_type{nullptr};
+    Yoga::Item* m_left_side{nullptr};
     Yoga::Text* m_label{nullptr};
     Yoga::Text* m_sidetext{nullptr};
     Yoga::Item* m_input{nullptr};
     Yoga::ToggleButton* m_toggle_enable{nullptr};
 
     ConfigItemControl* m_control{nullptr};
-    ConfigItemSpinBox* m_config_item_spin_box{nullptr}; ///< valid only if ConfigItem gui type is spinbox
+    ConfigItemSpinBox* m_config_item_spin_box{
+        nullptr
+    }; ///< valid only if ConfigItem gui type is spinbox
 };
 
 } // namespace Slic3r::App

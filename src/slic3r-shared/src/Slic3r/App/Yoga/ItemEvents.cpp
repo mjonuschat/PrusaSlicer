@@ -9,7 +9,10 @@
 
 namespace Slic3r::App::Yoga {
 
-Event::Event(Item* item) : m_item(item), m_item_heartbeat(item->heartbeat())
+Event::Event(Item* item) :
+    m_item(item),
+    m_item_heartbeat(item->heartbeat()),
+    m_parent_heartbeat(item->parent()->heartbeat())
 {
     ASSERT(item);
 }
@@ -20,7 +23,7 @@ void Event::affected(const ChangeList& change_list) {}
 
 bool Event::is_valid() const
 {
-    return !m_item_heartbeat.expired();
+    return !m_item_heartbeat.expired() && !m_parent_heartbeat.expired();
 }
 
 RemoveEvent::RemoveEvent(Item* item) : Event(item) {}
@@ -111,11 +114,6 @@ void MoveEvent::affected(const ChangeList& change_list)
             break;
         }
     }
-}
-
-bool MoveEvent::is_valid() const
-{
-    return Event::is_valid() && !m_item_heartbeat.expired();
 }
 
 } // namespace Slic3r::App::Yoga

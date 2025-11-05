@@ -194,8 +194,9 @@ private:
     Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
 };
 
-Text::Text(const std::string& text, Render::ImguiFontType font_type) : Item()
+Text::Text(const std::string& text, Render::ImguiFontType font_type)
 {
+    set_item_name("Text");
     m_content_item = emplace_back<TextInternal>();
     m_content_item->set_font_type(font_type);
     m_content_item->set_source_text(text);

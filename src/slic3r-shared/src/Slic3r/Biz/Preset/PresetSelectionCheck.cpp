@@ -124,8 +124,14 @@ static bool is_dirty_selected_preset(
     std::vector<std::string> diff_keys;
 
     Domain::ConfigPack config_selected = preset_interactor.selected_printer_preset().config();
-    Domain::ConfigPack config_initial =
-        original_config(preset_interactor, ignore_printer, ignore_print, ignore_tool_print);
+    Domain::ConfigPack config_initial  = original_config(
+        preset_interactor,
+        ignore_printer,
+        ignore_print,
+        ignore_tool_print
+            || preset_interactor.selected_printer_preset().technology()
+                == Domain::PrinterTechnology::SLA
+    );
 
     if (preset_interactor.selected_printer_preset().technology() == Domain::PrinterTechnology::FFF)
     {

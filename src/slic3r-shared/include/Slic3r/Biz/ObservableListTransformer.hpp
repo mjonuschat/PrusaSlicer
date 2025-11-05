@@ -10,7 +10,9 @@
 namespace Slic3r::Biz {
 
 template <class SourceData, class TargetData>
-class ObservableListTransformer : public IObservableList<TargetData>, public IListObserver<SourceData>
+class ObservableListTransformer :
+    public IObservableList<TargetData>,
+    public IListObserver<SourceData>
 {
 public:
     virtual ~ObservableListTransformer()
@@ -85,21 +87,24 @@ public:
 
         m_transformed_items.insert(m_transformed_items.cbegin() + index, m_transform_fn(data));
 
-        this->template invoke_listeners<IListObserver<TargetData>>([&](auto* l) {
-            l->on_inserted(m_transformed_items.at(index), index);
-        });
+        this->template invoke_listeners<IListObserver<TargetData>>(
+            [&](auto* l) { l->on_inserted(m_transformed_items.at(index), index); }
+        );
     }
 
     void on_removed(const IndexRange& index_range) override
     {
+        this->template invoke_listeners<IListObserver<TargetData>>(
+            [index_range](auto* l) { l->on_will_be_removed(index_range); }
+        );
+
         m_transformed_items.erase(
             m_transformed_items.begin() + index_range.from,
             m_transformed_items.begin() + index_range.to + 1
         );
 
-        this->template invoke_listeners<IListObserver<TargetData>>([index_range](auto* l) {
-            l->on_removed(index_range);
-        });
+        this->template invoke_listeners<IListObserver<TargetData>>([index_range](auto* l)
+                                                                   { l->on_removed(index_range); });
     }
 
     void on_updated(const IndexRange& index_range) override
@@ -109,14 +114,17 @@ public:
                 m_transformed_items[i] = m_transform_fn(m_source_model->at(i));
             }
 
-            this->template invoke_listeners<IListObserver<TargetData>>([&](auto* l) {
-                l->on_updated({index_range});
-            });
+            this->template invoke_listeners<IListObserver<TargetData>>(
+                [&](auto* l) { l->on_updated({index_range}); }
+            );
         }
     }
 
     void on_reset() override
     {
+        this->template invoke_listeners<IListObserver<TargetData>>([&](IListObserver<TargetData>* l)
+                                                                   { l->on_will_be_reset(); });
+
         m_transformed_items.clear();
 
         if (m_transform_fn && m_source_model.is_valid()) {
@@ -127,9 +135,8 @@ public:
             }
         }
 
-        this->template invoke_listeners<IListObserver<TargetData>>([&](IListObserver<TargetData>* l) {
-            l->on_reset();
-        });
+        this->template invoke_listeners<IListObserver<TargetData>>([&](IListObserver<TargetData>* l)
+                                                                   { l->on_reset(); });
     }
 
     void on_moved(size_t from, size_t to) override
@@ -152,9 +159,8 @@ public:
             );
         }
 
-        this->template invoke_listeners<IListObserver<TargetData>>([&](IListObserver<TargetData>* l) {
-            l->on_moved(from, to);
-        });
+        this->template invoke_listeners<IListObserver<TargetData>>([&](IListObserver<TargetData>* l)
+                                                                   { l->on_moved(from, to); });
     }
 
 private:

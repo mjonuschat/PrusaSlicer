@@ -46,6 +46,14 @@ private:
     void on_data_update() override;
 
 private:
+    enum class InitializedType
+    {
+        None,
+        Single,
+        Multiple
+    };
+    InitializedType m_initialized_type{InitializedType::None};
+
     Biz::Preset::PresetInteractor& m_preset_interactor;
     Biz::ConfigBoxInteractor& m_cbi;
 
@@ -53,6 +61,10 @@ private:
     ConfigRowListView* m_row_group_list_view{nullptr};
     ConfigRowItem* m_single_item{nullptr};
     Yoga::Text* m_label{nullptr};
+
+    std::string m_option_group;
+    std::string m_row_group;
+    Domain::ConfigItemDef::Category m_category{Domain::ConfigItemDef::Category::Unkown};
 };
 
 } // namespace Slic3r::App

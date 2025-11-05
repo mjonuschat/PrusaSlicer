@@ -123,7 +123,7 @@ void ProjectButton::on_data_update()
     set_selected(m_project_interactor.selected_project_id() == *m_state);
 }
 
-void ProjectButton::on_will_be_removed()
+void ProjectButton::on_view_will_be_removed()
 {
     m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
 }

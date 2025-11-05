@@ -29,13 +29,13 @@ ConfigItemComboBoxes::ConfigItemComboBoxes(
 void ConfigItemComboBoxes::on_data_update()
 {
     if (m_combo_boxes.size() != m_state->get<Domain::EnumVectorWrapper>().values().size()) {
-        reconstruct_buttons();
+        reconstruct_boxes();
     } else {
         update_values();
     }
 }
 
-void ConfigItemComboBoxes::reconstruct_buttons()
+void ConfigItemComboBoxes::reconstruct_boxes()
 {
     for (size_t child_index = 0; child_index < item_count(); ++child_index) {
         remove(get_item(0));
