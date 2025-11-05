@@ -14,13 +14,18 @@
 #include "Slic3r/App/Scene/Node.hpp"
 #include <Slic3r/App/Scene/NodeBuilder.hpp>
 #include <Slic3r/App/Scene/NodeVisitor.hpp>
+#include "Slic3r/App/Scene/GeometryDataFactory.hpp"
+#include "Slic3r/App/Scene/AabbRaycastNodeComponent.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
+#include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
+#include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Utils/CutUtils.hpp"
@@ -40,109 +45,19 @@ static const ColorRGBA LOWER_PART_COLOR    = ColorRGBA(1.0f, 0.0f, 1.0f, 1.0f);
 static const ColorRGBA CUT_PLANE_DEF_COLOR = ColorRGBA(0.9f, 0.9f, 0.9f, 0.5f);
 static const ColorRGBA CUT_PLANE_ERR_COLOR = ColorRGBA(1.0f, 0.8f, 0.8f, 0.5f);
 
-namespace Slic3r::App::Plater {
+const unsigned int ScaleStepsCount  = 72;
+const unsigned int SnapRegionsCount = 8;
 
 using namespace Slic3r::Domain;
 using namespace Slic3r::Biz;
-using namespace Biz::Algorithms::Geometry;
+using namespace Slic3r::Biz::Algorithms;
+using namespace Slic3r::Biz::Algorithms::Geometry;
 
-CutGizmo::CutGizmo(
-    Render::Device& device,
-    PlaterScenePresenter& scene_presenter,
-    Biz::ProjectInteractor* project_interactor
-) :
-    m_device(device),
-    m_scene_presenter(scene_presenter),
-    m_project_interactor(project_interactor)
-{
-    m_dialog                      = std::make_unique<CutDialog>();
-    m_dialog->callbacks().perform = [this]() { perform_cut(); };
-
-    m_dialog->callbacks().z_changed = [this](double new_Z)
-    {
-        m_plane_center.z() = new_Z;
-        update_cut_plane_trafo();
-
-        process_contours();
-    };
-
-    m_dialog->callbacks().mode_changed = [this]()
-    {
-        update_cut_plane_mesh();
-        update_cut_plane_trafo();
-    };
-
-    m_dialog->callbacks().groove_depth_value_changed = [this](double value)
-    {
-        m_groove.depth = value;
-        update_cut_plane_mesh();
-    };
-    m_dialog->callbacks().groove_depth_tolerance_changed = [this](double value)
-    {
-        m_groove.depth_tolerance = value;
-        update_cut_plane_mesh();
-    };
-    m_dialog->callbacks().groove_width_value_changed = [this](double value)
-    {
-        m_groove.width = value;
-        update_cut_plane_mesh();
-    };
-    m_dialog->callbacks().groove_width_tolerance_changed = [this](double value)
-    {
-        m_groove.width_tolerance = value;
-        update_cut_plane_mesh();
-    };
-    m_dialog->callbacks().flap_angle_changed = [this](double value)
-    {
-        // Convert the degree value to an angle in radians.
-        m_groove.flaps_angle = deg2rad(value);
-        update_cut_plane_mesh();
-    };
-    m_dialog->callbacks().groove_angle_changed = [this](double value)
-    {
-        // Convert the degree value to an angle in radians.
-        m_groove.angle = deg2rad(value);
-        update_cut_plane_mesh();
-    };
-}
-
-void CutGizmo::on_activated()
-{
-    init_scene_nodes();
-
-    m_dialog->set_current_connetor_shape(Domain::CutConnectorShape::Circle);
-    m_dialog->set_current_connetor_style(Domain::CutConnectorStyle::Prism);
-    m_dialog->set_current_connetor_type(Domain::CutConnectorType::Snap);
-
-    update_scene_nodes();
-    set_enabled_scene_nodes(false);
-}
-
-void CutGizmo::on_deactivated()
-{
-    reset();
-    set_enabled_scene_nodes(true);
-}
-
-Scene::ToolType CutGizmo::type() const
-{
-    return Scene::ToolType::CutGizmo;
-}
-
-Yoga::GizmoDialog* CutGizmo::ui_dialog()
-{
-    return m_dialog.get();
-}
-
-Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
-{
-    return Scene::GizmoActivationState();
-}
+namespace Slic3r::App::Plater {
 
 // code is borrowed from:
 // #include <arrange-wrapper/SceneBuilder.hpp>
-
-Domain::BoundingBox3d instance_bounding_box(
+static Domain::BoundingBox3d instance_bounding_box(
     const Domain::ModelInstance& mi,
     const Domain::Transform3d& tr = Domain::Transform3d::Identity(),
     bool dont_translate           = false
@@ -170,17 +85,29 @@ Domain::BoundingBox3d instance_bounding_box(
     return bb;
 }
 
+static double get_handle_mean_size(const BoundingBox3d& bb)
+{
+    Domain::Vec3d bb_size = Biz::Algorithms::BoundingBox::sizes(bb);
+    return (bb_size.x() + bb_size.y() + bb_size.z()) / 30.;
+}
+
+static double get_half_size(double size)
+{
+    return std::max(size * 0.5, 0.05);
+}
+
 static indexed_triangle_set its_make_groove_plane(
     Biz::Cut::Groove& groove,
     std::vector<Domain::Vec3d>& groove_vertices,
+    const BoundingBox3d& bb,
     double radius
 )
 {
     // values for calculation
 
-    const float side_width  = static_cast<float>(is_approx(groove.flaps_angle, 0.) ?
-         groove.depth :
-         (groove.depth / sin(groove.flaps_angle)));
+    const float side_width = static_cast<float>(
+        is_approx(groove.flaps_angle, 0.) ? groove.depth : (groove.depth / sin(groove.flaps_angle))
+    );
     const float flaps_width = 2.f * side_width * static_cast<float>(cos(groove.flaps_angle));
 
     const float groove_half_width_upper = 0.5f * static_cast<float>(groove.width);
@@ -204,8 +131,7 @@ static indexed_triangle_set its_make_groove_plane(
     float nar_upper_x = groove_half_width_upper - proj; // upper_x narrowing
     float nar_lower_x = groove_half_width_lower - proj; // lower_x narrowing
 
-    const float cut_plane_thiknes =
-        0.02f; // 0.02f * (float)get_grabber_mean_size(m_bounding_box);   // cut_plane_thiknes
+    const float cut_plane_thiknes = 0.02f * (float) get_handle_mean_size(bb); // cut_plane_thiknes
 
     // Vertices of the groove used to detection if groove is valid
     // They are written as:
@@ -334,7 +260,7 @@ static indexed_triangle_set its_make_groove_plane(
     }
 
     const float tan_groove_angle = static_cast<float>(tan(groove.angle));
-    float cross_pt_upper_y = groove_half_width_upper / tan_groove_angle;
+    float cross_pt_upper_y       = groove_half_width_upper / tan_groove_angle;
 
     // groove is closed
 
@@ -552,16 +478,347 @@ static indexed_triangle_set its_make_groove_plane(
     return mesh;
 }
 
-static double get_grabber_mean_size(Domain::Vec3d bb_size)
+static Vec3d extract_position(const App::Scene::Transform& xform)
 {
-    return (bb_size.x() + bb_size.y() + bb_size.z()) / 30.;
+    return xform.matrix().block<3, 1>(0, 3);
 }
 
-void CutGizmo::on_scene_selection_changed(
-    Domain::SelectionId project_id,
-    const Biz::Scene::ObjectSelection& selection
-)
-{}
+CutGizmo::CutGizmo(
+    Render::Device& device,
+    Scene::GeometryDataFactory& data_factory,
+    PlaterScenePresenter& scene_presenter,
+    Biz::ProjectInteractor* project_interactor
+) :
+    m_device(device),
+    m_data_factory(data_factory),
+    m_scene_presenter(scene_presenter),
+    m_project_interactor(project_interactor)
+{
+    m_dialog                      = std::make_unique<CutDialog>();
+    m_dialog->callbacks().perform = [this]() { perform_cut(); };
+
+    m_dialog->callbacks().z_changed = [this](double new_Z)
+    {
+        m_plane_center.z() = new_Z;
+        update_cut_plane_trafo();
+
+        process_contours();
+    };
+
+    m_dialog->callbacks().mode_changed = [this]()
+    {
+        update_cut_plane_mesh();
+        update_cut_plane_trafo();
+    };
+
+    m_dialog->callbacks().groove_depth_value_changed = [this](double value)
+    {
+        m_groove.depth = value;
+        update_cut_plane_mesh();
+    };
+    m_dialog->callbacks().groove_depth_tolerance_changed = [this](double value)
+    {
+        m_groove.depth_tolerance = value;
+        update_cut_plane_mesh();
+    };
+    m_dialog->callbacks().groove_width_value_changed = [this](double value)
+    {
+        m_groove.width = value;
+        update_cut_plane_mesh();
+    };
+    m_dialog->callbacks().groove_width_tolerance_changed = [this](double value)
+    {
+        m_groove.width_tolerance = value;
+        update_cut_plane_mesh();
+    };
+    m_dialog->callbacks().flap_angle_changed = [this](double value)
+    {
+        // Convert the degree value to an angle in radians.
+        m_groove.flaps_angle = deg2rad(value);
+        update_cut_plane_mesh();
+    };
+    m_dialog->callbacks().groove_angle_changed = [this](double value)
+    {
+        // Convert the degree value to an angle in radians.
+        m_groove.angle = deg2rad(value);
+        update_cut_plane_mesh();
+    };
+
+    m_dialog->callbacks().reset_connectors = []() {};
+
+    m_dialog->callbacks().reset_cut_plane = [this]()
+    {
+        m_transformed_bounding_box = transformed_bounding_box(m_bb_center);
+        // set_center(m_bb_center);
+        set_plane_center(m_bb_center, true);
+        m_start_dragging_m = m_rotation_m = Transform3d::Identity();
+        // m_ar_plane_center = m_plane_center;
+
+        update_cut_plane_mesh();
+        update_cut_plane_trafo();
+    };
+}
+
+void CutGizmo::on_activated()
+{
+    init_scene_nodes();
+
+    m_dialog->set_current_connetor_shape(Domain::CutConnectorShape::Circle);
+    m_dialog->set_current_connetor_style(Domain::CutConnectorStyle::Prism);
+    m_dialog->set_current_connetor_type(Domain::CutConnectorType::Snap);
+
+    update_scene_nodes();
+    set_enabled_scene_nodes(false);
+}
+
+void CutGizmo::on_deactivated()
+{
+    reset_cut_part_meshes();//reset();
+    set_enabled_scene_nodes(true);
+}
+
+Scene::ToolType CutGizmo::type() const
+{
+    return Scene::ToolType::CutGizmo;
+}
+
+Yoga::GizmoDialog* CutGizmo::ui_dialog()
+{
+    return m_dialog.get();
+}
+
+Vec3d CutGizmo::mouse_position_in_local_plane(AxisType axis, const Domain::Line3d& mouse_ray) const
+{
+    double half_pi = 0.5 * PI;
+
+    Transform3d m = Transform3d::Identity();
+
+    switch (axis) {
+    case AxisType::XAxis: {
+        m.rotate(Eigen::AngleAxisd(half_pi, Vec3d::UnitZ()));
+        m.rotate(Eigen::AngleAxisd(-half_pi, Vec3d::UnitY()));
+        break;
+    }
+    case AxisType::YAxis: {
+        m.rotate(Eigen::AngleAxisd(half_pi, Vec3d::UnitY()));
+        m.rotate(Eigen::AngleAxisd(half_pi, Vec3d::UnitZ()));
+        break;
+    }
+    case AxisType::ZAxis:
+    default: {
+        // no rotation applied
+        break;
+    }
+    }
+
+    m = m * m_start_dragging_m.inverse();
+    m.translate(-m_plane_center);
+
+    return Biz::Algorithms::Line::intersect_plane(
+        Biz::Algorithms::Line::transformed(mouse_ray, m),
+        0.
+    );
+}
+
+void CutGizmo::dragging_handle_rotation(const Domain::Line3d& mouse_ray)
+{
+    const AxisType axis = m_hovered_handle.axis;
+    const Vec2d mouse_pos =
+        Biz::Algorithms::Point::to_2d(mouse_position_in_local_plane(axis, mouse_ray));
+
+    const Vec2d orig_dir = Vec2d::UnitX();
+    const Vec2d new_dir  = mouse_pos.normalized();
+
+    const double two_pi = 2.0 * PI;
+
+    double theta = ::acos(std::clamp(new_dir.dot(orig_dir), -1.0, 1.0));
+    if (cross2(orig_dir, new_dir) < 0.0)
+        theta = two_pi - theta;
+
+    const double len = mouse_pos.norm();
+    // snap to coarse snap region
+    if (m_snap_coarse_in_radius <= len && len <= m_snap_coarse_out_radius) {
+        const double step = two_pi / double(SnapRegionsCount);
+        theta             = step * std::round(theta / step);
+    }
+    // snap to fine snap region (scale)
+    else if (m_snap_fine_in_radius <= len && len <= m_snap_fine_out_radius)
+    {
+        const double step = two_pi / double(ScaleStepsCount);
+        theta             = step * std::round(theta / step);
+    }
+
+    if (is_approx(theta, two_pi))
+        theta = 0.0;
+    if (axis != AxisType::YAxis)
+        theta += 0.5 * PI;
+
+    if (!is_approx(theta, 0.0))
+        reset_cut_by_contours();
+
+    Vec3d rotation                       = Vec3d::Zero();
+    rotation[static_cast<int>(axis) - 1] = theta;
+
+    const Transform3d rotation_tmp = m_start_dragging_m * rotation_transform(rotation);
+    const bool update_tbb          = !m_rotation_m.rotation().isApprox(rotation_tmp.rotation());
+    m_rotation_m                   = rotation_tmp;
+    if (update_tbb)
+        m_transformed_bounding_box = transformed_bounding_box(m_plane_center, m_rotation_m);
+
+    m_angle = theta;
+    while (m_angle > two_pi)
+        m_angle -= two_pi;
+    if (m_angle < 0.0)
+        m_angle += two_pi;
+
+    update_cut_plane_mesh();
+    update_cut_plane_trafo();
+}
+
+Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
+{
+    const auto event_type = ctx.mouse_event().type();
+    if (event_type != Platform::MouseEvent::Type::ButtonDown
+        && event_type != Platform::MouseEvent::Type::Move
+        && event_type != Platform::MouseEvent::Type::ButtonUp)
+    {
+        on_stop_dragging();
+        return Scene::GizmoActivationState::Inactive;
+    }
+
+    const auto& pick_ray = ctx.pick_ray();
+    if (event_type == Platform::MouseEvent::Type::ButtonDown) {
+        if (const Scene::Node* handle_node =
+                ctx.pick_result_node_with_tag_of_type<CutHandleNodeTag>())
+        {
+            const CutHandleNodeTag& tag = *handle_node->tag_of_type<CutHandleNodeTag>();
+            ASSERT(tag.type == CutHandleNodeTag::Type::Handle);
+            m_hovered_handle   = Handle(tag.handle_type, tag.primary_axis);
+            m_is_plane_hovered = false;
+
+            m_translation_ray.direction = m_rotation_m * tag.primary_axis_dir();
+        } else if (const Scene::Node* node =
+                       ctx.pick_result_node_with_tag_of_type<CutPlaneNodeTag>())
+        {
+            ASSERT(node->tag_of_type<CutPlaneNodeTag>()->type == CutPlaneNodeTag::Type::Plane);
+            m_is_plane_hovered          = true;
+            m_translation_ray.direction = m_rotation_m * Vec3d::UnitZ();
+        } else {
+            on_stop_dragging();
+            return Scene::GizmoActivationState::Inactive;
+        }
+
+        m_translation_ray.origin =
+            extract_position(m_scene_presenter.selection_root().world_transform());
+    }
+
+    double t;
+    if (!m_translation_ray.closest_point_from_ray(pick_ray, t)) {
+        m_dragging = false;
+        return Scene::GizmoActivationState::Inactive;
+    }
+
+    if (event_type == Platform::MouseEvent::Type::ButtonDown
+        && (m_is_plane_hovered || !m_hovered_handle.is_undef()))
+    {
+        m_dragging         = true;
+        m_start_t          = t;
+        m_start_dragging_m = m_rotation_m;
+        return Scene::GizmoActivationState::Active;
+    }
+
+    if (!m_dragging)
+        return Scene::GizmoActivationState::Inactive;
+
+    if (m_is_plane_hovered || m_hovered_handle.is_move()) {
+        Vec3d delta = m_translation_ray.point_at(t) - m_translation_ray.point_at(m_start_t);
+        m_start_t   = t;
+        set_plane_center(m_plane_center + delta, true);
+        if (m_hovered_handle.is_move_x()) {
+            update_cut_plane_mesh();
+            update_cut_plane_trafo();
+        }
+    } else if (m_hovered_handle.is_rotation()) {
+        dragging_handle_rotation(Domain::Line3d(pick_ray.origin, pick_ray.point_at(10.0)));
+    }
+
+    if (event_type == Platform::MouseEvent::Type::ButtonUp) {
+        m_dragging = false;
+        clear_highlight();
+
+        m_is_plane_hovered = false;
+        m_hovered_handle   = Handle();
+
+        update_handles_nodes();
+
+        return Scene::GizmoActivationState::Done;
+    }
+
+    return Scene::GizmoActivationState();
+}
+
+void CutGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
+{
+    if (m_dragging)
+        return;
+
+    const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<CutHandleNodeTag>();
+    if (node) {
+        const CutHandleNodeTag& tag = *node->tag_of_type<CutHandleNodeTag>();
+        ASSERT(tag.type == CutHandleNodeTag::Type::Handle);
+        update_handles_nodes(tag.handle());
+        return;
+    }
+
+    clear_highlight();
+}
+
+void CutGizmo::on_cycle_prepare() {}
+
+void CutGizmo::clear_highlight()
+{
+    if (m_handles_node) {
+        update_handles_nodes();
+    }
+}
+
+void CutGizmo::on_stop_dragging()
+{
+    m_dragging = false;
+}
+
+void CutGizmo::set_plane_center(const Vec3d& center_pos, bool update_tbb /*=false*/)
+{
+    BoundingBoxf3 tbb = m_transformed_bounding_box;
+    if (update_tbb) {
+        Vec3d normal = m_rotation_m.inverse() * Vec3d(m_plane_center - center_pos);
+        tbb          = Slic3r::Biz::Algorithms::BoundingBox::translated<BoundingBoxf3>(
+            tbb,
+            normal.z() * Vec3d::UnitZ()
+        );
+    }
+
+    bool can_set_center_pos = false;
+    {
+        double limit_val = is_planar_mode() ? 0.5 : 0.5 * m_groove.depth;
+        if (tbb.max.z() > -limit_val && tbb.min.z() < limit_val)
+            can_set_center_pos = true;
+        else {
+            const double old_dist = (m_bb_center - m_plane_center).norm();
+            const double new_dist = (m_bb_center - center_pos).norm();
+            // check if forcing is reasonable
+            if (new_dist < old_dist)
+                can_set_center_pos = true;
+        }
+    }
+
+    if (can_set_center_pos) {
+        m_transformed_bounding_box = tbb;
+        m_plane_center             = center_pos;
+        m_center_offset            = m_plane_center - m_bb_center;
+    }
+    m_dialog->set_cut_z_position(m_plane_center.z());
+}
 
 void CutGizmo::update_scene_nodes()
 {
@@ -574,7 +831,7 @@ void CutGizmo::update_scene_nodes()
     if (selection.empty() || selection.mode != Slic3r::Biz::Scene::SelectionMode::Instance) {
         // on_deactivated();
 
-        // We can’t perform a cut for multiple objects simultaneously.
+        // We can't perform a cut for multiple objects simultaneously.
         return;
     }
 
@@ -587,15 +844,8 @@ void CutGizmo::update_scene_nodes()
 
     for (const Domain::ElementRef& element : selection.elements) {
         assert(element.volume_id == 0); // is object
-        m_selected_object     = project.find_object_by_id(element.object_id);
-        m_selected_instance   = project.find_instance_by_id(element.object_id, element.instance_id);
-        m_transformed_bbox    = instance_bounding_box(*m_selected_instance);
-        Domain::Vec3d bb_size = m_transformed_bbox.max - m_transformed_bbox.min;
-        m_mean_size =
-            (bb_size.x() + bb_size.y() + bb_size.z()) / 9.0 * (m_imperial_units ? mm_to_in : 1.);
-
-        m_plane_center = (m_transformed_bbox.min + m_transformed_bbox.max) * 0.5;
-
+        m_selected_object   = project.find_object_by_id(element.object_id);
+        m_selected_instance = project.find_instance_by_id(element.object_id, element.instance_id);
         // get instance index
         m_instance_idx = 0;
         for (const auto* inst : m_selected_object->instances) {
@@ -605,46 +855,71 @@ void CutGizmo::update_scene_nodes()
         }
         ASSERT(m_instance_idx < m_selected_object->instances.size());
 
+        // update ui values
+        m_bounding_box = instance_bounding_box(*m_selected_instance);
+
+        using namespace Slic3r::Biz::Algorithms::BoundingBox;
+
+        m_max_pos   = m_bounding_box.max;
+        m_min_pos   = m_bounding_box.min;
+        m_bb_center = center(m_bounding_box);
+
+        m_transformed_bounding_box = transformed_bounding_box(m_bb_center);
+
+        Domain::Vec3d bb_size = sizes(m_bounding_box);
+        m_mean_size =
+            (bb_size.x() + bb_size.y() + bb_size.z()) / 9.0 * (m_imperial_units ? mm_to_in : 1.);
+
+        // m_plane_center = (m_bounding_box.min + m_bounding_box.max) * 0.5;
+
+        m_contour_width = is_planar_mode() ? 0.4f : 0.f;
+
         m_radius = 0.5 * bb_size.norm();
 
+        m_handle_connection_len = 0.5 * m_radius; // std::min<double>(0.75 * m_radius, 35.0);
+        m_handle_radius         = m_handle_connection_len * 0.85;
+
+        m_snap_coarse_in_radius  = m_handle_radius / 3.0;
+        m_snap_coarse_out_radius = m_snap_coarse_in_radius * 2.;
+        m_snap_fine_in_radius    = m_handle_connection_len * 0.85;
+        m_snap_fine_out_radius   = m_handle_connection_len * 1.15;
+
         m_groove.depth = m_groove.depth_init =
-            std::max(1.f, 0.5f * float(get_grabber_mean_size(bb_size)));
-        m_groove.width = m_groove.width_init = 4.0f * m_groove.depth;
-        m_groove.flaps_angle                 = m_groove.flaps_angle_init =
-            float(Biz::Algorithms::Geometry::PI) / 3.f;
-        m_groove.angle = m_groove.angle_init = 0.f;
+            std::max(1., 0.5 * get_handle_mean_size(m_bounding_box));
+        m_groove.width = m_groove.width_init = 4.0 * m_groove.depth;
+        m_groove.flaps_angle = m_groove.flaps_angle_init = Biz::Algorithms::Geometry::PI / 3.;
+        m_groove.angle = m_groove.angle_init = 0.;
 
         m_dialog->set_build_size(bb_size);
         m_dialog->set_groove_values(m_groove, m_mean_size);
+
+        if (m_bounding_box.contains(m_center_offset))
+            set_plane_center(m_bb_center + m_center_offset);
+        else
+            set_plane_center(m_bb_center);
 
         update_cut_plane_mesh();
         update_cut_plane_trafo();
     }
 }
 
-static const std::unordered_map<CutMeshType, ColorRGBA> MESH_COLORS = {
-    {CutMeshType::UpperPart, {1.f, 0.5f, 0.f, 1.f}},
-    {CutMeshType::LowerPart, {0.5f, 0.5f, 0.5f, 1.f}},
-    {CutMeshType::Plane, {0.6f, 0.2f, 1.0f, 0.21f}},
-};
-
 void CutGizmo::build_cut_part_mesh(
-    CutMeshType type,
+    CutPartNodeTag::Type type,
     size_t part_id,
     std::shared_ptr<const Slic3r::Domain::TriangleMesh> mesh,
     const Transform3d& trafo,
     Scene::NodeBuilder& builder
 )
 {
-    const std::string type_str = type == CutMeshType::UpperPart ? "UpperPart" :
-        type == CutMeshType::LowerPart                          ? "LowerPart" :
-                                                                  "UNDEF";
+    const std::string type_str = type == CutPartNodeTag::Type::Upper ? "UpperPart" :
+        type == CutPartNodeTag::Type::Lower                          ? "LowerPart" :
+                                                                       "UNDEF";
     SPDLOG_DEBUG("build_volume type:{}", type_str);
 
     auto& geom_mgr    = m_model_geometry_manager;
     auto& trimesh_mgr = m_model_triangle_mesh_manager;
 
-    Scene::AuxiliaryElementId::Type aei_type = type == CutMeshType::UpperPart ?
+    Scene::AuxiliaryElementId::Type aei_type = type == CutPartNodeTag::Type::Upper ?
         Scene::AuxiliaryElementId::Type::CutUpperPart :
         Scene::AuxiliaryElementId::Type::CutLowerPart;
 
@@ -658,9 +933,9 @@ void CutGizmo::build_cut_part_mesh(
         id,
         [&]() { return Render::geometry_from_triangle_mesh(m_device, trimesh->triangles()); }
     );
-    ColorRGBA color = type == CutMeshType::UpperPart ? UPPER_PART_COLOR :
-        type == CutMeshType::LowerPart               ? LOWER_PART_COLOR :
-                                                       ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f};
+    ColorRGBA color = type == CutPartNodeTag::Type::Upper ? UPPER_PART_COLOR :
+        type == CutPartNodeTag::Type::Lower               ? LOWER_PART_COLOR :
+                                                            ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f};
 
     auto material = Render::Material{}
                         .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
@@ -668,10 +943,9 @@ void CutGizmo::build_cut_part_mesh(
                         .set_transparent(color.is_transparent());
 
     builder.set_debug_name(fmt::format("cut type: {}", type_str))
-        .set_tag(CutNodeTag{type, part_id})
+        .set_tag(CutPartNodeTag(type, part_id))
         .set_mesh(geom, material, int(0))
         .transform([trafo](auto& xform) { xform = trafo; })
-        .set_aabb(trimesh->aabb_mesh())
         .set_shadows(Render::Shadows{true, true})
         .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
 }
@@ -683,18 +957,18 @@ void CutGizmo::reset_cut_part_meshes()
     m_scene_presenter.scene().remove_children(
         [&](const Scene::Node* node)
         {
-            const CutNodeTag* t = node->tag_of_type<CutNodeTag>();
-            bool ret            = t != nullptr;
+            const CutPartNodeTag* t = node->tag_of_type<CutPartNodeTag>();
+            bool ret                = t != nullptr;
             if (ret) {
                 Scene::AuxiliaryElementId id;
-                if (t->type == CutMeshType::UpperPart) {
+                if (t->type == CutPartNodeTag::Type::Upper) {
                     id.type = Scene::AuxiliaryElementId::Type::CutUpperPart;
-                } else if (t->type == CutMeshType::LowerPart) {
+                } else if (t->type == CutPartNodeTag::Type::Lower) {
                     id.type = Scene::AuxiliaryElementId::Type::CutLowerPart;
                 } else {
                     return false;
                 }
-                id.id = t->cut_part_id;
+                id.id = t->id;
                 geometry_ids.push_back(id);
             }
             return ret;
@@ -708,28 +982,38 @@ void CutGizmo::reset_cut_part_meshes()
     }
 }
 
+void CutGizmo::reset_handles_nodes()
+{
+    m_scene_presenter.scene().remove_children(
+        [&](const Scene::Node* node) { return node->tag_of_type<CutHandleNodeTag>() != nullptr; },
+        m_main_node
+    );
+
+    m_handles_node       = nullptr;
+    m_graded_circle_node = nullptr;
+}
+
 void CutGizmo::reset()
 {
-//    reset_cut_part_meshes();
+    // completetly reset cut nodes
+    reset_cut_part_meshes();
+    reset_handles_nodes();
 
     // Remove all cut parts Scene::Nodes
     std::vector<Scene::AuxiliaryElementId> geometry_ids;
     m_scene_presenter.scene().remove_children(
         [&](const Scene::Node* node)
         {
-            const CutNodeTag* t = node->tag_of_type<CutNodeTag>();
-            bool ret = t != nullptr;
-            if (ret) {
-                Scene::AuxiliaryElementId id;
-                id.type = t->type == CutMeshType::UpperPart ? Scene::AuxiliaryElementId::Type::CutUpperPart :
-                    t->type == CutMeshType::LowerPart ? Scene::AuxiliaryElementId::Type::CutLowerPart :
-                    t->type == CutMeshType::Connector ? Scene::AuxiliaryElementId::Type::CutConnector :
-                    t->type == CutMeshType::Clip ? Scene::AuxiliaryElementId::Type::CutClip : Scene::AuxiliaryElementId::Type::CutPlane;
-                id.id = t->type == CutMeshType::UpperPart || t->type == CutMeshType::LowerPart ? t->cut_part_id :
-                    t->type == CutMeshType::Connector ? t->connector_id : 0;
-                geometry_ids.push_back(id);
+            if (const CutPlaneNodeTag* t = node->tag_of_type<CutPlaneNodeTag>()) {
+                if (t->type == CutPlaneNodeTag::Type::Plane) {
+                    geometry_ids.push_back({Scene::AuxiliaryElementId::Type::CutPlane});
+                    return true;
+                }
+            } else if (const CutConnectorNodeTag* t = node->tag_of_type<CutConnectorNodeTag>()) {
+                geometry_ids.push_back({Scene::AuxiliaryElementId::Type::CutConnector, t->id});
+                return true;
             }
-            return ret;
+            return false;
         },
         m_main_node
     );
@@ -738,6 +1022,8 @@ void CutGizmo::reset()
         m_model_geometry_manager.release(id);
         m_model_triangle_mesh_manager.release(id);
     }
+
+    m_main_node = nullptr;
 }
 
 void CutGizmo::set_enabled_scene_nodes(bool enabled)
@@ -750,8 +1036,10 @@ void CutGizmo::set_enabled_scene_nodes(bool enabled)
             if (tag != nullptr) {
                 node.set_enabled(enabled);
             }
-        }
+        },
+        true
     );
+    m_main_node->set_enabled(!enabled);
 }
 
 void CutGizmo::build_cut_plane_node(Scene::NodeBuilder& builder)
@@ -759,7 +1047,7 @@ void CutGizmo::build_cut_plane_node(Scene::NodeBuilder& builder)
     SPDLOG_DEBUG("build_volume type:Cut plane");
 
     // Make default mesh as small as possible.
-    // Its geometry will be updated on layers move
+    // Its geometry will be updated on plane mode change
     indexed_triangle_set mesh_its = Biz::Algorithms::TriangleMesh::its_make_cube(0.1f, 0.1f, 0.1f);
 
     Scene::AuxiliaryElementId id{Scene::AuxiliaryElementId::Type::CutPlane};
@@ -777,31 +1065,186 @@ void CutGizmo::build_cut_plane_node(Scene::NodeBuilder& builder)
     ColorRGBA color = CUT_PLANE_DEF_COLOR;
     auto material   = Render::Material{}
                         .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-                        .set_uniform("uniform_color", color)
-        // .set_transparent(color.is_transparent())
-        ;
+                        .set_uniform("uniform_color", color);
 
     builder.set_debug_name("cut: cut plane:")
-        .set_tag(CutNodeTag{CutMeshType::Plane})
-        .set_mesh(geom, material, int(0))
-        .set_shadows(Render::Shadows{false, false})
-        .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
-    ;
+        .set_tag(CutPlaneNodeTag(CutPlaneNodeTag::Type::Plane))
+        .set_mesh(geom, material, int(0));
+}
+
+void CutGizmo::build_handles_nodes(Scene::NodeBuilder& builder)
+{
+    SPDLOG_DEBUG("build_volume type:Cut plane handles");
+
+    builder.set_debug_name("Handles");
+    builder.set_tag(CutHandleNodeTag());
+
+    // Add GradedCircle as a helper for rotation handles
+
+    builder.child(
+        [&](Scene::NodeBuilder& child_bldr)
+        {
+            Render::Material material =
+                Render::Material{}
+                    .set_shader(m_device.context().shader_manager().shader("flat"))
+                    .set_uniform("uniform_color", ColorRGBA::WHITE());
+
+            child_bldr.set_debug_name("GradedCircle")
+                .set_tag(
+                    CutHandleNodeTag(CutHandleNodeTag::Type::GradedCircle, Handle::Type::Rotation)
+                )
+                .set_mesh(
+                    m_data_factory.geometry(Scene::GeometryDataId::GradedCircle),
+                    material,
+                    Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles)
+                );
+        }
+    );
+
+    // Add Stems as a helpers for Z/X move and Z rotation handles
+
+    auto create_stem_node =
+        [&](Scene::NodeBuilder& child_bldr, Handle::Type handle_type, AxisType axis)
+    {
+        Render::Material material =
+            Render::Material{}
+                .set_shader(m_device.context().shader_manager().shader("flat"))
+                .set_uniform("uniform_color", ColorRGBA::YELLOW());
+
+        child_bldr.set_debug_name("stem")
+            .set_tag(CutHandleNodeTag(CutHandleNodeTag::Type::Stem, handle_type, axis))
+            .set_mesh(
+                m_data_factory.geometry(Scene::GeometryDataId::Segment),
+                material,
+                Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles)
+            );
+    };
+
+    builder.child([&](Scene::NodeBuilder& child_bldr)
+                  { create_stem_node(child_bldr, Handle::Type::Move, AxisType::ZAxis); });
+
+    builder.child([&](Scene::NodeBuilder& child_bldr)
+                  { create_stem_node(child_bldr, Handle::Type::Move, AxisType::XAxis); });
+
+    builder.child([&](Scene::NodeBuilder& child_bldr)
+                  { create_stem_node(child_bldr, Handle::Type::Rotation, AxisType::ZAxis); });
+
+    auto create_sphere_node = [&](Scene::NodeBuilder& child_bldr,
+                                  Handle::Type handle_type,
+                                  AxisType axis,
+                                  const std::string& debug_name)
+    {
+        Render::Material material =
+            Render::Material{}
+                .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
+                .set_uniform("uniform_color", ColorRGBA::WHITE());
+
+        child_bldr.set_debug_name(debug_name)
+            .set_tag(CutHandleNodeTag(CutHandleNodeTag::Type::Handle, handle_type, axis))
+            .set_mesh(
+                m_data_factory.geometry(Scene::GeometryDataId::Sphere),
+                material,
+                Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles)
+            )
+            .set_aabb(m_data_factory.triangle_mesh(Scene::GeometryDataId::Sphere)->aabb_mesh());
+    };
+
+    // Add Handle for is_move_z
+
+    builder.child(
+        [&](Scene::NodeBuilder& child_bldr)
+        { create_sphere_node(child_bldr, Handle::Type::Move, AxisType::ZAxis, "HandleZMove"); }
+    );
+
+    // Add Handle for is_move_x
+
+    builder.child(
+        [&](Scene::NodeBuilder& child_bldr)
+        { create_sphere_node(child_bldr, Handle::Type::Move, AxisType::XAxis, "HandleXMove"); }
+    );
+
+    // Add handles for rotation
+
+    auto create_cone_node = [&](Scene::NodeBuilder& internal_bldr, AxisType axis, bool is_cw)
+    {
+        Render::Material material =
+            Render::Material{}
+                .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
+                .set_uniform("uniform_color", axis_color(axis));
+
+        internal_bldr.set_debug_name("Cone")
+            .set_tag(CutHandleNodeTag(
+                CutHandleNodeTag::Type::Handle,
+                Handle::Type::Rotation,
+                axis,
+                is_cw
+            ))
+            .set_mesh(
+                m_data_factory.geometry(Scene::GeometryDataId::Cone),
+                material,
+                Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles)
+            )
+            .set_aabb(m_data_factory.triangle_mesh(Scene::GeometryDataId::Cone)->aabb_mesh());
+    };
+
+    auto create_rotation_handle_nodes =
+        [&](Scene::NodeBuilder& child_bldr, AxisType axis, const std::string& debug_name)
+    {
+        child_bldr.set_debug_name(debug_name);
+        child_bldr.set_tag(
+            CutHandleNodeTag(CutHandleNodeTag::Type::Handle, Handle::Type::Rotation, axis)
+        );
+
+        child_bldr.child([&](Scene::NodeBuilder& internal_bldr)
+                         { create_cone_node(internal_bldr, axis, true); });
+
+        child_bldr.child([&](Scene::NodeBuilder& internal_bldr)
+                         { create_cone_node(internal_bldr, axis, false); });
+    };
+
+    builder.child(
+        [&](Scene::NodeBuilder& child_bldr)
+        { create_rotation_handle_nodes(child_bldr, AxisType::XAxis, "HandleXRotation"); }
+    );
+
+    builder.child(
+        [&](Scene::NodeBuilder& child_bldr)
+        { create_rotation_handle_nodes(child_bldr, AxisType::YAxis, "HandleYRotation"); }
+    );
+
+    builder.child(
+        [&](Scene::NodeBuilder& child_bldr)
+        {
+            create_rotation_handle_nodes(child_bldr, AxisType::ZAxis, "HandleZRotation");
+
+            child_bldr.child(
+                [&](Scene::NodeBuilder& internal_bldr)
+                {
+                    create_sphere_node(
+                        internal_bldr,
+                        Handle::Type::Rotation,
+                        AxisType::ZAxis,
+                        "HandleZRotation"
+                    );
+                }
+            );
+        }
+    );
 }
 
 void CutGizmo::update_cut_plane_mesh()
 {
-    const double cp_width    = 0.02 * 10.; // get_grabber_mean_size(m_bounding_box);
+    const double cp_width    = 0.02 * 10.; // get_handle_mean_size(m_bounding_box);
     indexed_triangle_set its = is_planar_mode() ?
         Biz::Algorithms::TriangleMesh::its_make_frustum_dowel(1.2 * m_radius, cp_width, 4) :
-        its_make_groove_plane(m_groove, m_groove_vertices, m_radius);
+        its_make_groove_plane(m_groove, m_groove_vertices, m_bounding_box, m_radius);
 
     Scene::visit(
         *m_main_node,
         [&](Scene::Node& n)
         {
-            CutNodeTag* tag = n.tag_of_type<CutNodeTag>();
-            if (tag != nullptr && tag->type == CutMeshType::Plane) {
+            CutPlaneNodeTag* tag = n.tag_of_type<CutPlaneNodeTag>();
+            if (tag && tag->type == CutPlaneNodeTag::Type::Plane) {
                 Scene::AuxiliaryElementId id{Scene::AuxiliaryElementId::Type::CutPlane};
 
                 m_model_triangle_mesh_manager.release(id);
@@ -820,6 +1263,8 @@ void CutGizmo::update_cut_plane_mesh()
 
                 static_cast<Scene::MeshRenderNodeComponent*>(n.render_component())
                     ->set_geometry(geom);
+
+                n.set_raycast_component(new Scene::AabbRaycastNodeComponent(&trimesh->aabb_mesh()));
             }
         }
     );
@@ -834,8 +1279,8 @@ void CutGizmo::update_cut_plane_trafo()
         *m_main_node,
         [&](Scene::Node& node)
         {
-            CutNodeTag* tag = node.tag_of_type<CutNodeTag>();
-            if (tag != nullptr && tag->type == CutMeshType::Plane) {
+            CutPlaneNodeTag* tag = node.tag_of_type<CutPlaneNodeTag>();
+            if (tag && tag->type == CutPlaneNodeTag::Type::Plane) {
                 Render::Material material = node.render_component()->material();
                 ColorRGBA cp_clr = can_perform_cut() && has_valid_groove() ? CUT_PLANE_DEF_COLOR :
                                                                              CUT_PLANE_ERR_COLOR;
@@ -849,6 +1294,240 @@ void CutGizmo::update_cut_plane_trafo()
             }
         }
     );
+
+    update_handles_nodes();
+}
+
+void CutGizmo::update_handles_material_and_enability(Handle hovered_handle)
+{
+    const bool disabled_handles = m_dragging && m_is_plane_hovered;
+    m_handles_node->set_enabled(!disabled_handles);
+    if (disabled_handles)
+        return;
+
+    bool is_groove_mode          = !is_planar_mode();
+    bool is_undef_hovered_handle = hovered_handle.is_undef();
+
+    Scene::visit(
+        *m_handles_node,
+        [&](Scene::Node& node)
+        {
+            if (&node == m_handles_node)
+                return;
+            CutHandleNodeTag* tag = node.tag_of_type<CutHandleNodeTag>();
+            if (!tag)
+                return;
+            const Handle tag_handle = tag->handle();
+
+            if (tag->type == CutHandleNodeTag::Type::Stem) {
+                if (tag_handle.is_move_z()) {
+                    node.set_enabled(
+                        !hovered_handle.is_move_x() && !hovered_handle.is_rotation_z()
+                    );
+                } else if (tag_handle.is_move_x()) {
+                    node.set_enabled(
+                        is_groove_mode && (hovered_handle.is_move_x() || is_undef_hovered_handle)
+                    );
+                } else if (tag_handle.is_rotation_z()) {
+                    node.set_enabled(is_groove_mode && hovered_handle.is_rotation_z());
+                }
+            } else if (tag->type == CutHandleNodeTag::Type::GradedCircle) {
+                node.set_enabled(hovered_handle.is_rotation());
+            } else if (tag_handle.is_move()) {
+                Render::Material material = node.render_component()->material();
+                bool is_enabled{false};
+
+                if (tag_handle.is_z_axis()) {
+                    is_enabled = !hovered_handle.is_move_x() && !hovered_handle.is_rotation_z();
+
+                    ColorRGBA color = hovered_handle.is_move_z() ? ColorRGBA::YELLOW() :
+                        hovered_handle.is_rotation_x()           ? ColorRGBA::CYAN() :
+                        hovered_handle.is_rotation_y()           ? ColorRGBA::MAGENTA() :
+                                                                   ColorRGBA::GRAY();
+                    material.set_uniform("uniform_color", color);
+                } else if (tag_handle.is_x_axis()) {
+                    is_enabled =
+                        is_groove_mode && (hovered_handle.is_move_x() || is_undef_hovered_handle);
+
+                    material.set_uniform(
+                        "uniform_color",
+                        hovered_handle.is_move_z() ? ColorRGBA::YELLOW() : ColorRGBA::GRAY()
+                    );
+                }
+
+                node.set_enabled(is_enabled);
+                node.set_material_override(material);
+            } else if (tag_handle.is_rotation_z()) {
+                for (const auto& node_child : node.children()) {
+                    CutHandleNodeTag* tag = node_child.get()->tag_of_type<CutHandleNodeTag>();
+                    assert(tag);
+                    if (tag->is_cw) {
+                        // cones for is_rotation_z don't need a changed color, just set_enabled
+                        node_child->set_enabled(is_groove_mode && hovered_handle.is_rotation_z());
+                    } else {
+                        node_child->set_enabled(
+                            is_groove_mode
+                            && (hovered_handle.is_rotation_z() || is_undef_hovered_handle)
+                        );
+                        Render::Material material = node_child->render_component()->material();
+                        material.set_uniform(
+                            "uniform_color",
+                            hovered_handle.is_rotation_z() ? ColorRGBA::BLUE() : ColorRGBA::GRAY()
+                        );
+                        node_child->set_material_override(material);
+                    }
+                }
+            } else {
+                for (const auto& node_child : node.children()) {
+                    CutHandleNodeTag* tag = node_child.get()->tag_of_type<CutHandleNodeTag>();
+                    assert(tag && tag->is_cw);
+                    const bool hovered_axis =
+                        hovered_handle.is_rotation() && hovered_handle.axis == tag->primary_axis;
+                    node_child->set_enabled(is_undef_hovered_handle || hovered_axis);
+                    Render::Material material = node_child->render_component()->material();
+
+                    ColorRGBA color = !hovered_axis          ? axis_color(tag->primary_axis) :
+                        tag->primary_axis == AxisType::XAxis ? ColorRGBA::CYAN() :
+                                                               ColorRGBA::MAGENTA();
+
+                    material.set_uniform("uniform_color", color);
+                    node_child->set_material_override(material);
+                }
+            }
+        },
+        true
+    );
+}
+
+void CutGizmo::update_handles_local_fransform(Handle hovered_handle)
+{
+    const Transform3d trafo = translation_transform(m_plane_center) * m_rotation_m;
+
+    const double size = get_half_size(get_handle_mean_size(m_bounding_box));
+    Vec3d scale       = Vec3d(0.75 * size, 0.75 * size, size);
+
+    Scene::visit(
+        *m_handles_node,
+        [&](Scene::Node& node)
+        {
+            CutHandleNodeTag* tag = node.tag_of_type<CutHandleNodeTag>();
+            if (!tag)
+                return;
+            Handle tag_h = tag->handle();
+
+            if (tag->type == CutHandleNodeTag::Type::Stem) {
+                Vec3d rotate       = Vec3d::Zero();
+                double length_koef = 1.;
+                if (tag_h.is_move_z()) {
+                    rotate = -0.5 * PI * Vec3d::UnitY();
+                } else if (tag_h.is_move_x()) {
+                    // length_koef = 0.75;
+                } else if (tag_h.is_rotation_z()) {
+                    rotate      = -0.5 * PI * Vec3d::UnitZ();
+                    length_koef = 1.75;
+                }
+                node.set_local_transform(
+                    trafo
+                    * rotation_transform(rotate)
+                    * scale_transform(length_koef * m_handle_connection_len * Vec3d::UnitX())
+                );
+            } else if (tag->type == CutHandleNodeTag::Type::GradedCircle) {
+                Transform3d rotate_trafo = hovered_handle.is_x_axis() ?
+                    rotation_transform(0.5 * PI * Vec3d::UnitY())
+                        * rotation_transform(-PI * Vec3d::UnitZ()) :
+                    hovered_handle.is_y_axis() ? rotation_transform(-0.5 * PI * Vec3d::UnitZ())
+                        * rotation_transform(-0.5 * PI * Vec3d::UnitY()) :
+                    hovered_handle.is_y_axis() ? rotation_transform(-0.5 * PI * Vec3d::UnitZ()) :
+                                                 Transform3d::Identity();
+
+                node.set_local_transform(
+                    translation_transform(m_plane_center)
+                    * (m_dragging ? m_start_dragging_m : m_rotation_m)
+                    * rotate_trafo
+                    * scale_transform(2.0 * m_handle_radius * Vec3d::Ones())
+                );
+            } else if (tag_h.is_move()) {
+                node.set_local_transform(
+                    trafo
+                    * translation_transform(m_handle_connection_len * tag->primary_axis_dir())
+                    * scale_transform(size)
+                );
+            } else if (tag_h.is_rotation()) {
+                if (tag_h.is_x_axis()) {
+                    for (const auto& node_child : node.children()) {
+                        CutHandleNodeTag* tag = node_child.get()->tag_of_type<CutHandleNodeTag>();
+                        assert(tag && tag->is_cw);
+                        Vec3d offset = Vec3d(
+                            0.0,
+                            (tag->is_cw.value() ? 1. : -1.) * size,
+                            m_handle_connection_len
+                        );
+                        Vec3d rotation =
+                            0.5 * (tag->is_cw.value() ? -1. : 1.) * PI * Vec3d::UnitX();
+                        node_child->set_local_transform(
+                            trafo
+                            * translation_transform(offset)
+                            * rotation_transform(rotation)
+                            * scale_transform(scale)
+                        );
+                    }
+                } else if (tag_h.is_y_axis()) {
+                    for (const auto& node_child : node.children()) {
+                        CutHandleNodeTag* tag = node_child.get()->tag_of_type<CutHandleNodeTag>();
+                        assert(tag && tag->is_cw);
+                        Vec3d offset = Vec3d(
+                            (tag->is_cw.value() ? 1. : -1.) * size,
+                            0.0,
+                            m_handle_connection_len
+                        );
+                        Vec3d rotation =
+                            0.5 * (tag->is_cw.value() ? 1. : -1.) * PI * Vec3d::UnitY();
+                        node_child->set_local_transform(
+                            trafo
+                            * translation_transform(offset)
+                            * rotation_transform(rotation)
+                            * scale_transform(scale)
+                        );
+                    }
+                } else if (tag_h.is_z_axis()) {
+                    double handle_y_shift = -1.75 * m_handle_connection_len;
+                    for (const auto& node_child : node.children()) {
+                        CutHandleNodeTag* tag = node_child.get()->tag_of_type<CutHandleNodeTag>();
+                        assert(tag);
+                        if (tag->is_cw) {
+                            Vec3d offset =
+                                Vec3d((tag->is_cw.value() ? 1. : -1.) * size, handle_y_shift, 0.);
+                            Vec3d rotation =
+                                0.5 * (tag->is_cw.value() ? 1. : -1.) * PI * Vec3d::UnitY();
+                            node_child->set_local_transform(
+                                trafo
+                                * translation_transform(offset)
+                                * rotation_transform(rotation)
+                                * scale_transform(scale)
+                            );
+                        } else {
+                            node_child->set_local_transform(
+                                trafo
+                                * translation_transform(handle_y_shift * Vec3d::UnitY())
+                                * scale_transform(size)
+                            );
+                        }
+                    }
+                }
+            }
+        },
+        false // process trafos just for enabled nodes
+    );
+}
+
+void CutGizmo::update_handles_nodes(Handle hovered_handle)
+{
+    if (hovered_handle.is_undef()) {
+        hovered_handle = m_hovered_handle;
+    }
+
+    update_handles_material_and_enability(hovered_handle);
+    update_handles_local_fransform(hovered_handle);
 }
 
 void CutGizmo::build_clipping_plane_node(Scene::NodeBuilder& builder)
@@ -877,37 +1556,41 @@ void CutGizmo::build_clipping_plane_node(Scene::NodeBuilder& builder)
                         .set_transparent(color.is_transparent());
 
     builder.set_debug_name("cut: clipping plane:")
-        .set_tag(CutNodeTag{CutMeshType::Clip})
+        .set_tag(CutPlaneNodeTag(CutPlaneNodeTag::Type::Clip))
         .set_mesh(geom, material, int(0))
         .set_shadows(Render::Shadows{true, true});
 }
 
+BoundingBoxf3 CutGizmo::transformed_bounding_box(
+    const Vec3d& plane_center,
+    const Transform3d& rotation_m /* = Transform3d::Identity()*/
+) const
+{
+    Vec3d instance_offset = m_selected_instance->get_offset();
+    //! instance_offset[Z] += m_selected_instance->get_sla_shift_z();
+
+    const auto trafo = Transform3d::Identity()
+        * rotation_m.inverse()
+        * translation_transform(instance_offset - plane_center);
+
+    return instance_bounding_box(*m_selected_instance, trafo);
+}
+
 void CutGizmo::init_scene_nodes()
 {
-    /* Create a tree
-     * -> "cut_sla"             {CutNodeTag{   SlaMeshType::Undefined }}
-     *       -> "upper_part_mesh"      {CutNodeTag{   SlaMeshType::UpperPart }}
-     *       -> "lower_part_mesh"      {CutNodeTag{   SlaMeshType::LowerPart }}
-     *       -> "clip_mesh"      {CutNodeTag{   SlaMeshType::Clip }}
-     *       -> "groove_mesh"      {CutNodeTag{   SlaMeshType::Groove }}
-     *       -> "plane_mesh"      {CutNodeTag{   SlaMeshType::Plane }}
-     *       -> "connectors_node"    {CutNodeTag{ SlaMeshType::Connector, connector_id=-1 }}
-     *               -> "connector_mesh"           {CutNodeTag{ SlaMeshType::Connector, connector_id }}
-     */
-
     Scene::Scene& scene = m_scene_presenter.scene();
     Scene::Node* node   = scene.root().query_first(
         [](const Scene::Node* n) -> bool
         {
             const CutNodeTag* tag = n->tag_of_type<CutNodeTag>();
-            return tag != nullptr && tag->type == CutMeshType::Undefined;
+            return tag != nullptr;
         },
         true
     );
 
     if (node != nullptr) {
         m_main_node = node;
-//        return;
+        return;
     }
 
     Scene::NodeBuilder builder{scene};
@@ -915,11 +1598,18 @@ void CutGizmo::init_scene_nodes()
     builder.set_tag(CutNodeTag());
 
     builder.child([&](Scene::NodeBuilder& bldr) { build_cut_plane_node(bldr); });
-
-    builder.child([&](Scene::NodeBuilder& bldr) { build_clipping_plane_node(bldr); });
+    builder.child([&](Scene::NodeBuilder& bldr) { build_handles_nodes(bldr); });
 
     scene.add_child(builder.build().release(), &scene.root());
-    m_main_node = scene.root().children().back().get();
+    m_main_node    = scene.root().children().back().get();
+    m_handles_node = m_main_node->query_first(
+        [](const Scene::Node* n) -> bool
+        {
+            const CutHandleNodeTag* tag = n->tag_of_type<CutHandleNodeTag>();
+            return tag != nullptr && tag->type == CutHandleNodeTag::Type::Undef;
+        },
+        true
+    );
 }
 
 Domain::Transform3d CutGizmo::get_cut_matrix()
@@ -1230,7 +1920,7 @@ void CutGizmo::perform_cut()
 
     // deactivate CutGizmo and than perform a cut
     if (m_callbacks.force_deactivation) {
-    // force gizmo deactivation and reset data
+        // force gizmo deactivation and reset data
         m_callbacks.force_deactivation();
     }
 
@@ -1334,11 +2024,11 @@ void CutGizmo::process_contours()
         }
     }
     Scene::Scene& scene = m_scene_presenter.scene();
-    size_t part_id{ 0 };
+    size_t part_id{0};
     for (const auto& part : m_part_selection.parts()) {
         Scene::NodeBuilder builder(scene);
         build_cut_part_mesh(
-            part.selected ? CutMeshType::UpperPart : CutMeshType::LowerPart,
+            part.selected ? CutPartNodeTag::Type::Upper : CutPartNodeTag::Type::Lower,
             part_id++,
             part.mesh,
             part.trafo,

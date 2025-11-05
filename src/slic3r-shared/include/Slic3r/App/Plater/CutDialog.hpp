@@ -74,6 +74,7 @@ public:
         std::function<void(double value)> z_changed{nullptr};
         std::function<void()> mode_changed{nullptr};
         std::function<void()> reset_connectors{nullptr};
+        std::function<void()> reset_cut_plane{nullptr};
         std::function<void()> flip_cut_plane{nullptr};
         std::function<void()> perform{nullptr};
 
@@ -88,6 +89,7 @@ public:
     Callbacks& callbacks();
 
     void set_build_size(Domain::Vec3d tbb_size);
+    void set_cut_z_position(double cut_z_position);
     void set_current_connetor_type(Domain::CutConnectorType type);
     void set_current_connetor_style(Domain::CutConnectorStyle style);
     void set_current_connetor_shape(Domain::CutConnectorShape shape);
@@ -122,6 +124,7 @@ private:
 
 private:
     Yoga::Item* m_connectors_input_panel{nullptr};
+    Yoga::LayoutButton* m_add_connectors_btn{nullptr};
     Yoga::ButtonGroup m_connector_type_group;
     Yoga::LayoutButton* m_plug_btn{nullptr};
     Yoga::LayoutButton* m_dowel_btn{nullptr};

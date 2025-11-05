@@ -177,6 +177,7 @@ void CutDialog::init_cut_plane_input_panel()
         // disable buttons for dovetail mode
         m_cut_into_objects_btn->set_enabled(is_planar_cut_mode);
         m_cut_into_parts_btn->set_enabled(is_planar_cut_mode);
+        m_add_connectors_btn->set_visible(is_planar_cut_mode);
     };
 
     Item* buid_volume_row = add_row(_u8L("Build Volume"), m_cut_plane_input_panel);
@@ -212,15 +213,18 @@ void CutDialog::init_cut_plane_input_panel()
     Item* buttons_row = m_cut_plane_input_panel->emplace_back<Item>();
     buttons_row->set_justify_content(YGJustifySpaceBetween);
 
-    LayoutButton* add_connectors_btn = buttons_row->emplace_back<LayoutButton>(
+    m_add_connectors_btn = buttons_row->emplace_back<LayoutButton>(
         /*has_connectors ? _u8L("Edit connectors") : */ _u8L("Add connectors")
     );
-    add_connectors_btn->set_background_color(buttons_color);
-    add_connectors_btn->callbacks().action = [this]()
+    m_add_connectors_btn->set_background_color(buttons_color);
+    m_add_connectors_btn->callbacks().action = [this]()
     {
         m_connectors_editing = true;
         update_panels_visibility();
     };
+
+    // Add empty item for correct layout, when "Add connectors" button is hidden
+    buttons_row->emplace_back<Item>();
 
     LayoutButton* reset_cut_btn = buttons_row->emplace_back<LayoutButton>(
         _u8L("Reset cut"),
@@ -228,6 +232,12 @@ void CutDialog::init_cut_plane_input_panel()
         _u8L("Reset cutting plane and remove connectors")
     );
     reset_cut_btn->set_background_color(buttons_color);
+    reset_cut_btn->callbacks().action = [this]()
+    {
+        if (callbacks().reset_cut_plane) {
+            callbacks().reset_cut_plane();
+        }
+    };
 
     add_groove_input_panel();
     add_cut_settings();
@@ -381,6 +391,8 @@ void CutDialog::add_cut_settings()
         keep_as_parts = btn == m_cut_into_parts_btn;
         m_part_A->set_as_part(keep_as_parts);
         m_part_B->set_as_part(keep_as_parts);
+
+        m_add_connectors_btn->set_visible(btn == m_cut_into_objects_btn);
     };
 
     // Text* text = m_cut_plane_input_panel->emplace_back<Text>(_u8L("Cut result") + ":");
@@ -398,7 +410,7 @@ void CutDialog::add_cut_settings()
     m_part_A->set_as_part(false);
     m_part_B->set_as_part(false);
 
-    m_part_A->callbacks().checked_changed = [this](bool checked) { keep_upper = checked; };
+    m_part_A->callbacks().checked_changed     = [this](bool checked) { keep_upper = checked; };
     m_part_A->callbacks().part_action_changed = [this](PartProcessingRow::Action action)
     {
         keep_upper         = m_part_A->is_checked() || action == PartProcessingRow::Action::Keep;
@@ -406,7 +418,7 @@ void CutDialog::add_cut_settings()
         flip_upper         = action == PartProcessingRow::Action::Flip;
     };
 
-    m_part_B->callbacks().checked_changed = [this](bool checked) { keep_lower = checked; };
+    m_part_B->callbacks().checked_changed     = [this](bool checked) { keep_lower = checked; };
     m_part_B->callbacks().part_action_changed = [this](PartProcessingRow::Action action)
     {
         keep_lower         = m_part_B->is_checked() || action == PartProcessingRow::Action::Keep;
@@ -428,7 +440,6 @@ void CutDialog::update_panels_visibility()
 {
     m_connectors_input_panel->set_visible(m_connectors_editing);
     m_cut_plane_input_panel->set_visible(!m_connectors_editing);
-    // m_groove_input_panel->set_visible(m_mode->current_index() == 1);
     m_groove_input_panel->set_visible(!is_planar_cut_mode);
 }
 
@@ -643,6 +654,11 @@ void CutDialog::set_build_size(Domain::Vec3d size)
 
     const double def_cut_pos = 0.5 * size.z();
     m_cut_position->set_default(def_cut_pos);
+}
+
+void Plater::CutDialog::set_cut_z_position(double cut_z_position)
+{
+    m_cut_position->set_default(cut_z_position);
 }
 
 void CutDialog::set_current_connetor_type(Domain::CutConnectorType type)
