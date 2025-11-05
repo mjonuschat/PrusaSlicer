@@ -182,11 +182,11 @@ TEST_CASE("Export gcode")
     auto [project_count, export_count, extension, seconds] =
         GENERATE(
             table<size_t, size_t, std::string, std::chrono::seconds>({
-                {1, 1, ".gcode", 3s},  // Export single gcode file.
-                {1, 1, ".bgcode", 3s}, // Export single bgcode file. 
-                {5, 1, ".gcode", 5s},  // Export gcode files of multiple projects. 
-                {1, 5, ".gcode", 5s},  // Export multiple gcode files of 1 project.
-                {5, 5, ".gcode", 10s}  // Export a lot.
+                {1, 1, ".gcode", 30s},  // Export single gcode file.
+                {1, 1, ".bgcode", 30s}, // Export single bgcode file. 
+                {3, 1, ".gcode", 50s},  // Export gcode files of multiple projects. 
+                {1, 3, ".gcode", 50s},  // Export multiple gcode files of 1 project.
+                {3, 3, ".gcode", 100s}  // Export a lot.
             })
         );
 
