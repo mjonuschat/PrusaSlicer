@@ -43,11 +43,6 @@ class ColorPolygon;
 
 using ColorPolygons = std::vector<ColorPolygon>;
 
-// Considering CCW orientation of this polygon, find all convex resp. concave points
-// with the angle at the vertex larger than a threshold.
-// Zero angle_threshold means to accept all convex resp. concave points.
-Points convex_points(const Polygon &polygon, double angle_threshold = 0.);
-Points concave_points(const Polygon &polygon, double angle_threshold = 0.);
 // Projection of a point onto the polygon.
 Point point_projection(const Polygon &polygon, const Point &point);
 

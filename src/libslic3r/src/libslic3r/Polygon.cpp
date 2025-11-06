@@ -34,58 +34,6 @@ namespace Slic3r {
 
 namespace BB = Biz::Algorithms::BoundingBox;
 
-// Filter points from poly to the output with the help of FilterFn.
-// filter function receives two vectors:
-// v1: this_point - previous_point
-// v2: next_point - this_point
-// and returns true if the point is to be copied to the output.
-template<typename FilterFn>
-Points filter_points_by_vectors(const Points &poly, FilterFn filter)
-{
-    // Last point is the first point visited.
-    Point p1 = poly.back();
-    // Previous vector to p1.
-    Vec2d v1 = (p1 - *(poly.end() - 2)).cast<double>();
-
-    Points out;
-    for (Point p2 : poly) {
-        // p2 is next point to the currently visited point p1.
-        Vec2d v2 = (p2 - p1).cast<double>();
-        if (filter(v1, v2))
-            out.emplace_back(p2);
-        v1 = v2;
-        p1 = p2;
-    }
-    
-    return out;
-}
-
-template<typename ConvexConcaveFilterFn>
-Points filter_convex_concave_points_by_angle_threshold(const Points &poly, double angle_threshold, ConvexConcaveFilterFn convex_concave_filter)
-{
-    assert(angle_threshold >= 0.);
-    if (angle_threshold < EPSILON) {
-        double cos_angle  = cos(angle_threshold);
-        return filter_points_by_vectors(poly, [convex_concave_filter, cos_angle](const Vec2d &v1, const Vec2d &v2){
-            return convex_concave_filter(v1, v2) && v1.normalized().dot(v2.normalized()) < cos_angle;
-        });
-    } else {
-        return filter_points_by_vectors(poly, [convex_concave_filter](const Vec2d &v1, const Vec2d &v2){
-            return convex_concave_filter(v1, v2);
-        });
-    }
-}
-
-Points convex_points(const Polygon &polygon, double angle_threshold)
-{
-    return filter_convex_concave_points_by_angle_threshold(polygon.points, angle_threshold, [](const Vec2d &v1, const Vec2d &v2){ return cross2(v1, v2) > 0.; });
-}
-
-Points concave_points(const Polygon &polygon, double angle_threshold)
-{
-    return filter_convex_concave_points_by_angle_threshold(polygon.points, angle_threshold, [](const Vec2d &v1, const Vec2d &v2){ return cross2(v1, v2) < 0.; });
-}
-
 // Projection of a point onto the polygon.
 Point point_projection(const Polygon &polygon, const Point &point)
 {
