@@ -40,7 +40,8 @@ ProjectButton::ProjectButton(
     m_label->set_self_align(YGAlignCenter);
 
     m_cross = m_background->emplace_back<LayoutButton>("", Render::Icon::TopBarCross);
-    m_cross->set_max_size({20.f, 20.f});
+    m_cross->set_width(20);
+    m_cross->set_height(20);
     m_cross->set_self_align(YGAlignCenter);
     m_cross->set_flex_shrink(0);
     m_cross->set_background_color(IM_COL32_BLACK_TRANS);
