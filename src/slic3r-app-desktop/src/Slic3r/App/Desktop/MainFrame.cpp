@@ -1,6 +1,7 @@
 #include "MainFrame.hpp"
 
 #include "Slic3r/Version.hpp"
+#include "Slic3r/Directories.hpp"
 
 #include "Slic3r/App/Desktop/LeftBar.hpp"
 
@@ -129,8 +130,22 @@ static void add_experimets_page(TabsBar* top_bar, MainFrame* main_frame)
 #endif
 }
 
-MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
-    :
+// Load the icon either from the exe, or from the ico file.
+static wxIcon main_frame_icon()
+{
+#if _WIN32
+    std::wstring path(size_t(MAX_PATH), wchar_t(0));
+    int len = int(::GetModuleFileName(nullptr, path.data(), MAX_PATH));
+    if (len > 0 && len < MAX_PATH) {
+        path.erase(path.begin() + len, path.end());
+    }
+    return wxIcon(path, wxBITMAP_TYPE_ICO);
+#else // _WIN32
+    return wxIcon(WX::from_u8(var("PrusaSlicer_128px.png")), wxBITMAP_TYPE_PNG);
+#endif // _WIN32
+}
+
+MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor) :
     wxFrame(nullptr, wxID_ANY, from_u8(::Slic3r::BUILD_ID)),
     m_workbench(workbench),
     m_project_interactor(project_interactor),
@@ -139,6 +154,9 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
     // AppInstanceCheck on Windows expects "PrusaSlicer" in the title
     // (in AppInstanceMessageHandlerWin32.cpp). Better check it.
     ASSERT(boost::contains(into_u8(this->GetTitle()), "PrusaSlicer"));
+
+    // Load the icon either from the exe, or from the ico file.
+    SetIcon(main_frame_icon());
 
     localization().add_listener<ILanguageChangedListener>(this);
     auto em = w_config()->em_unit();
@@ -152,29 +170,6 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
 
     this->SetFont(w_config()->normal_font());
     w_config()->UpdateDarkUI(this);
-
-#ifdef OLD_CODE
-    init_top_bar();
-    init_plater();
-    init_preset_editors();
-    complete_and_bind_top_bar();
-    update_preset_editors();
-
-#ifndef __WXOSX__
-    this->Bind(
-        wxEVT_DPI_CHANGED,
-        [this](wxDPIChangedEvent& event)
-        {
-            event.Skip();
-            m_top_bar->Rescale();
-            for (auto& [type, panel] : m_preset_editors)
-                panel->msw_rescale();
-
-            update_canvas_ui_settings();
-        }
-    );
-#endif
-#endif // OLD_CODE
 
     init_left_bar(project_interactor);
     complete_and_bind_left_bar();
