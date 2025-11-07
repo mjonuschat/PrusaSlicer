@@ -70,13 +70,12 @@ public:
     std::string get_short_string(const std::string& full_string);
 
     void context_menu(wxDataViewEvent& event);
-    // void item_value_changed(wxDataViewEvent& event);
+    void item_value_changed(wxDataViewEvent& event);
 
-    // bool has_unselected_options();
+    void update_item_enabling(wxDataViewItem item);
 
-    // void update_item_enabling(wxDataViewItem item);
-
-    // std::vector<std::string> options(Preset::Type type, bool selected);
-    // std::vector<std::string> selected_options();
+    std::vector<std::string> options(Slic3r::Domain::Preset::PresetKind kind, bool selected);
+    std::vector<std::string> selected_options();
+    std::vector<std::string> unselected_options();
 };
 } // namespace Slic3r::App::WX

@@ -46,6 +46,8 @@ private:
     std::weak_ptr<Yoga::ButtonGroup> m_button_group;
     Yoga::ComboBoxListViewSelection<Biz::Preset::PresetItem>* m_combo_box{nullptr};
     Yoga::LayoutButton* m_cog_button{nullptr};
+
+    int m_last_selected_index{ -1 };
 };
 
 } // namespace Slic3r::App

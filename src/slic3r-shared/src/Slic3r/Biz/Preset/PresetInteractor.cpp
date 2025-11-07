@@ -9,6 +9,8 @@
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
+#include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
@@ -311,6 +313,13 @@ const Domain::Preset::SelectedPreset& PresetInteractor::selected_printer_preset(
     return cc->selected_preset();
 }
 
+void PresetInteractor::set_unsaved_changes(
+    PresetsSwitchStates&& unsaved_changes
+)
+{
+    m_unsaved_changes = unsaved_changes;
+}
+
 PresetInteractorConfigContainerContext&
 PresetInteractor::mutable_selected_config_container_context()
 {
@@ -448,6 +457,10 @@ void PresetInteractor::fill_config_container_with_selected_preset(
     }
 
     auto& selected_preset = cc.mutable_selected_preset();
+
+    // process unsaved changes, if any exist before update selected preset
+    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save);
+
     selected_preset       = Domain::Preset::SelectedPreset{
               .hw_config = hw_config,
               .printer   = printer_preset,
@@ -455,6 +468,10 @@ void PresetInteractor::fill_config_container_with_selected_preset(
               .tools     = std::move(tools),
               .materials = std::move(materials)
     };
+
+    // Set transfered values after switch to new selected preset
+    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Transfer);
+
     update_hw_config_tools_and_materials_features_from_preset(selected_preset);
 }
 
@@ -812,7 +829,10 @@ void PresetInteractor::select_print_preset(const std::string& id)
 
     const auto& p = get_print_preset(hw_config.id, printer.id, id).first.get();
 
+    const Domain::Preset::PresetKind kind = Domain::Preset::print_kind(selected_preset.technology());
+    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save, kind);
     selected_preset.print = p;
+    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Transfer, kind);
 
     m_print_presets.set_selected([&id](const PresetItem& item) { return item.id == id; });
     m_print_cbi.set_config_box(&selected_preset.print.config_box());
@@ -845,7 +865,11 @@ void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::st
         tool_index,
         id
     ).first.get();
+
+    const Domain::Preset::PresetKind kind = Domain::Preset::tool_print_kind(selected_preset.technology());
+    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save, kind, tool_index);
     selected_preset.tools[tool_index] = t;
+    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Transfer, kind, tool_index);
 
     m_tool_print_presets_writer.mutate_at(
         tool_index,
@@ -883,7 +907,11 @@ void PresetInteractor::select_material_preset(size_t material_index, const std::
         id
     ).first.get();
 
+    const Domain::Preset::PresetKind kind = Domain::Preset::material_kind(selected_preset.technology());
+    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save, kind, material_index);
     selected_preset.materials[material_index] = m;
+    process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Transfer, kind, material_index);
+
     update_hw_config_tools_and_materials_features_from_preset(selected_preset);
 
     m_material_presets_writer.mutate_at(
@@ -1235,6 +1263,97 @@ void PresetInteractor::invoke_on_preset_value_changed(const Domain::ConfigItem& 
             );
         }
     );
+}
+
+void PresetInteractor::process_operation_from_unsaved_changes(
+    Domain::Preset::SelectedPreset& selected_preset,
+    PresetDiffOperation operation,
+    std::optional<Domain::Preset::PresetKind> kind /* = std::nullopt*/,
+    std::optional<size_t> tool_id /* = std::nullopt*/
+)
+{
+    auto process = [](Domain::Preset::SelectedPreset& selected_preset,
+                      const Biz::Preset::PresetSwitchKindId& preset_id,
+                      const PresetSwitchState& state)
+    {
+        if (preset_id.kind == Domain::Preset::printer_kind(selected_preset.technology())) {
+            for (const auto& [key, item_val] : state.items) {
+                selected_preset.printer.config_box().items.opt(key).set(item_val);
+            }
+            for (const auto& [key, override_val] : state.overrides) {
+                selected_preset.printer.config_box().items.opt(key).set(override_val);
+            }
+        }
+        if (preset_id.kind == Domain::Preset::print_kind(selected_preset.technology())) {
+            for (const auto& [key, item_val] : state.items) {
+                selected_preset.print.config_box().items.opt(key).set(item_val);
+            }
+            for (const auto& [key, override_val] : state.overrides) {
+                selected_preset.print.config_box().items.opt(key).set(override_val);
+            }
+        }
+        if (preset_id.kind == Domain::Preset::material_kind(selected_preset.technology())
+            && preset_id.id)
+        {
+            for (const auto& [key, item_val] : state.items) {
+                selected_preset.materials[preset_id.id.value()].config_box().items.opt(key).set(
+                    item_val
+                );
+            }
+            for (const auto& [key, override_val] : state.overrides) {
+                selected_preset.materials[preset_id.id.value()].config_box().items.opt(key).set(
+                    override_val
+                );
+            }
+        }
+        if (preset_id.kind == Domain::Preset::PresetKind::FdmToolPrint && preset_id.id) {
+            for (const auto& [key, item_val] : state.items) {
+                selected_preset.tools[preset_id.id.value()].config_box().items.opt(key).set(
+                    item_val
+                );
+            }
+            for (const auto& [key, override_val] : state.overrides) {
+                selected_preset.tools[preset_id.id.value()].config_box().items.opt(key).set(
+                    override_val
+                );
+            }
+        }
+
+        if (state.operation == Biz::Preset::PresetDiffOperation::Save) {
+            // save preset from selected_preset with state.new_preset_name
+            // ToDo !!!
+        }
+    };
+
+    if (kind) {
+        auto it = std::find_if(
+            m_unsaved_changes.begin(),
+            m_unsaved_changes.end(),
+            [&](const auto& item)
+            {
+                return item.first == Biz::Preset::PresetSwitchKindId(kind.value(), tool_id)
+                    && item.second.operation == operation;
+            }
+        );
+        if (it != m_unsaved_changes.end()) {
+            // Process current state
+            process(selected_preset, it->first, it->second);
+            // Remove it from the 
+            m_unsaved_changes.erase(it);
+        }
+        return;
+    }
+
+    for (const auto& [preset_id, state] : m_unsaved_changes) {
+        if (state.operation == operation) {
+            process(selected_preset, preset_id, state);
+        }
+    }
+
+    if (operation == PresetDiffOperation::Transfer) {
+        // We are done with all changes
+        m_unsaved_changes.clear();
+    }
 }
 
 PresetInteractorProjectContext& PresetInteractor::get_or_create_project_context(

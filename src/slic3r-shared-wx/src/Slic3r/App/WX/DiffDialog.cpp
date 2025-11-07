@@ -4,7 +4,6 @@
 ///|/
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
-#include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/App/Config/CategoryUtils.hpp"
 
 #include "Slic3r/Domain/Preset/Bundle.hpp"
@@ -21,6 +20,8 @@
 #include <wx/string.h>
 #include <wx/scrolwin.h>
 #include <fmt/format.h>
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::WX {
 
@@ -40,7 +41,7 @@ DiffDialog::DiffDialog(
     wxDialog(
         wxTheApp->GetTopWindow(),
         wxID_ANY,
-        _L("DiffDialog"),
+        _L("Compare Presets"),
         wxDefaultPosition,
         wxDefaultSize,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
@@ -585,24 +586,6 @@ void DiffDialog::compare()
     m_tree->Show(!m_diffs_per_kind.empty());
 }
 
-static std::string get_as_string(const Domain::ConfigItem& item)
-{
-    std::string val;
-    if (auto var = Slic3r::Biz::value_as_string(item); std::holds_alternative<std::string>(var)) {
-        return std::get<std::string>(var);
-    }
-    else {
-        auto values = std::get<std::vector<std::string>>(var);
-        for (size_t id = 0; id < values.size(); id++) {
-            val += values[id];
-            if (id < values.size() - 1) {
-                val += "; ";
-            }
-        }
-    }
-    return val;
-}
-
 static void append_diff_key_in_tree(
     DiffViewCtrl* tree,
     Domain::Preset::PresetKind kind,
@@ -623,15 +606,15 @@ static void append_diff_key_in_tree(
         std::string val_left, val_right = val_left = "N/A";
 
         if (const auto overide = config_left->overrides.get(key)) {
-            val_left = get_as_string(*overide);
+            val_left = Diff::get_as_string(*overide);
         } else if (const auto item = config_left->items.find(key)) {
-            val_left = get_as_string(*item);
+            val_left = Diff::get_as_string(*item);
         }
 
         if (const auto overide = config_right->overrides.get(key)) {
-            val_right = get_as_string(*overide);
+            val_right = Diff::get_as_string(*overide);
         } else if (const auto item = config_right->items.find(key)) {
-            val_right = get_as_string(*item);
+            val_right = Diff::get_as_string(*item);
         }
 
         const Domain::ConfigItem& item_left = *config_left->find(key).item;

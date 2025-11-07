@@ -7,6 +7,10 @@
 #include "Slic3r/App/WX/Widgets/BitmapComboBox.hpp"
 #include <wx/sizer.h>
 
+namespace Slic3r::Domain {
+class ConfigItem;
+} // namespace Slic3r::Domain
+
 namespace Slic3r::App::WX {
 
 namespace Widgets {
@@ -18,6 +22,8 @@ class ScalableButton;
 // This namespace contains classes used by DiffDialog
 
 namespace Diff {
+
+std::string get_as_string(const Domain::ConfigItem& item);
 
 enum class Location
 {

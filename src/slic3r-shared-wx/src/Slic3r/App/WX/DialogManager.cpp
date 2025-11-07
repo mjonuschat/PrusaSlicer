@@ -4,6 +4,7 @@
 #include "Slic3r/App/WX/MsgDialog.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/DiffDialog.hpp"
+#include "Slic3r/App/WX/UnsavedChangesDialog.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/WX/I18N.hpp>
 #include "Slic3r/Domain/Preset/Types.hpp"
@@ -132,5 +133,26 @@ void DialogManager::show_error_dialog(const std::string& text, const std::string
 void DialogManager::show_diff_dialog(const Slic3r::Biz::Preset::PresetInteractor& preset_interactor, std::optional<Domain::Preset::PresetKind> kind)
 {
     DiffDialog(preset_interactor, kind).ShowModal();
+}
+
+Biz::Preset::IPresetDialogManager::PresetsSwitchStates DialogManager::show_unsaved_changes_dialog(
+    const std::string& dialog_name,
+    const Domain::ConfigPack& config_original,
+    const Domain::ConfigPack& config_selected,
+    Domain::ConfigPack* config_new_selected,
+    const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
+    const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new
+)
+{
+    UnsavedChangesDialog dlg(
+        dialog_name,
+        config_original,
+        config_selected,
+        config_new_selected,
+        preset_names,
+        preset_names_new
+    );
+    dlg.ShowModal();
+    return dlg.exit_states();
 }
 } // namespace Slic3r::App::WX

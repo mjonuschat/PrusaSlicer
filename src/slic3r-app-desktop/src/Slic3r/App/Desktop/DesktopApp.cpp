@@ -267,6 +267,8 @@ bool DesktopApp::OnInit()
 
     m_project_interactor->set_dialog_provider(&app_services.dialog_manager());
 
+    preset_interactor.set_dialog_manager(&app_services.dialog_manager());
+
     m_project_interactor->new_project();
 
     m_main_frame = new MainFrame(m_workbench, *m_project_interactor);

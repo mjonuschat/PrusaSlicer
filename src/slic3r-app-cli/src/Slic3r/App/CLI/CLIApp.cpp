@@ -8,6 +8,10 @@
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Project.hpp"
 
+namespace Slic3r::Biz::Preset {
+struct PresetSelectionNames;
+} // namespace Slic3r::Biz::Preset
+
 namespace Slic3r::App::CLI {
 
 // Dummy implementation to pass 3MF loading and other steps.
@@ -65,6 +69,18 @@ public:
     void show_error_dialog(const std::string& text, const std::string& title) override
     {
         SPDLOG_ERROR("{}: {}", title, text);
+    }
+
+    PresetsSwitchStates show_unsaved_changes_dialog(
+        const std::string& dialog_name,
+        const Domain::ConfigPack& config_original,
+        const Domain::ConfigPack& config_selected,
+        Domain::ConfigPack* config_new_selected,
+        const Biz::Preset::PresetSelectionNames& preset_names,
+        const Biz::Preset::PresetSelectionNames& preset_names_new
+    ) override
+    {
+        return {};
     }
 };
 

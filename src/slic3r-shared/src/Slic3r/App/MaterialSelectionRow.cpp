@@ -4,6 +4,8 @@
 ///|/
 #include "Slic3r/App/MaterialSelectionRow.hpp"
 
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
+
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
@@ -24,8 +26,16 @@ MaterialSelectionRow::MaterialSelectionRow(
     set_expand_label(true);
     set_content_justify_content(YGJustifyFlexStart);
     set_content_direction(YGDirectionRTL);
-    callbacks().action = [this]() {
-        m_preset_interactor.select_material_preset(m_material_index, m_state->id);
+    callbacks().action = [this]()
+    {
+        if (Biz::Preset::PresetSelectionCheck::can_select_material_preset(
+                m_preset_interactor,
+                m_material_index,
+                m_state->id
+            ))
+        {
+            m_preset_interactor.select_material_preset(m_material_index, m_state->id);
+        }
     };
 }
 
