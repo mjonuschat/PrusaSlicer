@@ -561,7 +561,7 @@ CutGizmo::CutGizmo(
     m_dialog->callbacks().flip_cut_plane = [this]() { flip_cut_plane(); };
 
     m_dialog->callbacks().connectors_editing_changed = [this](bool connectors_editing)
-    { update_clipping_nodes_enability(connectors_editing); };
+    { update_nodes_enability(connectors_editing); };
 }
 
 void CutGizmo::on_activated()
@@ -574,12 +574,18 @@ void CutGizmo::on_activated()
 
     update_scene_nodes();
     set_enabled_scene_nodes(false);
+
+    m_clipper_presenter
+        .activate(&m_scene_presenter.scene(), m_selected_object, m_selected_instance);
+    m_clipper_presenter.set_behavior(true, true, 0.4);
+    m_clipper_presenter.deactivate(false);
 }
 
 void CutGizmo::on_deactivated()
 {
-    reset_cut_part_meshes();//reset();
+    reset_cut_part_meshes();
     set_enabled_scene_nodes(true);
+    m_clipper_presenter.deactivate();
 }
 
 Scene::ToolType CutGizmo::type() const
@@ -707,6 +713,11 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
             ASSERT(node);
             m_is_plane_hovered          = true;
             m_translation_ray.direction = m_rotation_m * Vec3d::UnitZ();
+        } else if (m_clipper_presenter.on_mouse(ctx, only_active)
+                   != Scene::GizmoActivationState::Inactive)
+        {
+            // check origin for this case
+            m_translation_ray.direction = m_rotation_m * Vec3d::UnitZ();
         } else {
             on_stop_dragging();
             return Scene::GizmoActivationState::Inactive;
@@ -719,6 +730,11 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
     double t;
     if (!m_translation_ray.closest_point_from_ray(pick_ray, t)) {
         m_dragging = false;
+        return Scene::GizmoActivationState::Inactive;
+    }
+
+    if (m_clipper_presenter.on_mouse(ctx, only_active) != Scene::GizmoActivationState::Inactive) {
+        add_connector(m_translation_ray.point_at(t));
         return Scene::GizmoActivationState::Inactive;
     }
 
@@ -784,6 +800,11 @@ void CutGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
 
 void CutGizmo::on_cycle_prepare() {}
 
+void CutGizmo::provide_clipper(Scene::Clipper& clipper)
+{
+    m_clipper_presenter = Scene::ClipperPresenter(&clipper, &m_device);
+}
+
 void CutGizmo::clear_highlight()
 {
     if (m_handles_node) {
@@ -843,11 +864,6 @@ void CutGizmo::update_scene_nodes()
         // We can't perform a cut for multiple objects simultaneously.
         return;
     }
-
-    // update cut_normal
-    Vec3d normal = m_rotation_m * Vec3d::UnitZ();
-    normal.normalize();
-    m_cut_normal = normal;
 
     Domain::Project& project = m_project_interactor->selected_project();
 
@@ -996,7 +1012,7 @@ void CutGizmo::reset_handles_nodes()
         m_main_node
     );
 
-    m_handles_node      = nullptr;
+    m_handles_node = nullptr;
 }
 
 void CutGizmo::reset()
@@ -1280,6 +1296,11 @@ void CutGizmo::update_cut_plane_mesh()
 
 void CutGizmo::update_cut_plane_trafo()
 {
+    // update cut_normal
+    Vec3d normal = m_rotation_m * Vec3d::UnitZ();
+    normal.normalize();
+    m_cut_normal = normal;
+
     Scene::visit(
         *m_main_node,
         [&](Scene::Node& node)
@@ -1536,50 +1557,65 @@ void CutGizmo::update_handles_nodes(Handle hovered_handle)
     update_handles_local_fransform(hovered_handle);
 }
 
-void CutGizmo::update_clipping_nodes_enability(bool connectors_editing)
+void CutGizmo::update_nodes_enability(bool connectors_editing)
 {
-    Scene::visit(
-        *m_main_node,
-        [&](Scene::Node& node)
-        {
-            const Scene::Node* node_ref = &node;
-            if (node_ref == m_main_node)
-                return;
-            if (node_ref == m_handles_node) {
-                update_handles_material_and_enability(m_hovered_handle);
-            }
-
-            CutPlaneNodeTag* clipped_tag = node.tag_of_type<CutPlaneNodeTag>();
-            if (!clipped_tag) {
-                node.set_enabled(!connectors_editing);
-                return;
-            }
-            node.set_enabled(connectors_editing);
-        },
-        true
-    );
+    m_main_node->set_enabled(!connectors_editing);
 
     if (connectors_editing) {
-        update_clipped_mesh_material();
+        m_clipper_presenter
+            .activate(&m_scene_presenter.scene(), m_selected_object, m_selected_instance);
+        m_clipper_presenter.set_behavior(true, true, 0.4);
+        update_clipper_presenter();
+    } else {
+        m_clipper_presenter.deactivate(false);
     }
 }
 
-void CutGizmo::update_clipped_mesh_material()
+void CutGizmo::update_clipper_presenter()
 {
-    Vec3d normal = m_rotation_m * (-Vec3d::UnitZ());
-    normal.normalize();
-    // m_cut_normal = normal;
+    Vec3d normal = m_cut_normal;
+    m_clp_normal = normal;
 
+    auto rotate_vec3d_around_plane_center = [&](Vec3d& vec) -> void
+    {
+        vec = Transformation(
+                  translation_transform(m_plane_center)
+                  * m_rotation_m
+                  * translation_transform(-m_plane_center)
+              )
+                  .get_matrix()
+            * vec;
+    };
     // calculate normal and offset for clipping plane
+    Vec3d beg = m_bb_center;
+    beg[Z] -= m_radius;
+    rotate_vec3d_around_plane_center(beg);
 
-    m_clp_normal  = normal;
-    double offset = m_cut_normal.dot(m_plane_center);
+    double offset = normal.dot(m_plane_center);
+    double dist   = normal.dot(beg);
 
-    Vec4f clipping_plane_data(normal.x(), normal.y(), normal.z(), offset);
+    /*
+        const bool is_looking_forward =
+            m_scene_presenter.scene().camera().forward().dot(m_clp_normal) < 0.05;
+        if (!is_looking_forward) {
+            // recalculate normal and offset for clipping plane, if camera is looking downward to cut plane
+            normal = m_rotation_m * (-1. * Vec3d::UnitZ());
+            normal.normalize();
 
-    const bool show_lower_part = m_clp_normal != m_cut_normal;
+            beg = m_bb_center;
+            beg[Z] += m_radius;
+            rotate_vec3d_around_plane_center(beg);
+
+            m_clp_normal = normal;
+            offset       = normal.dot(m_plane_center);
+            dist         = normal.dot(beg);
+        }
+    */
+    m_clipper_presenter.set_range_and_pos(m_clp_normal, offset, dist);
+
+    const bool show_lower_part = m_clp_normal == m_cut_normal;
     const ColorRGBA color      = show_lower_part ? LOWER_PART_COLOR : UPPER_PART_COLOR;
- //   material.set_uniform("uniform_color", color).set_uniform("clipping_plane", clipping_plane_data);
+    m_clipper_presenter.set_color_mesh(color);
 }
 
 BoundingBoxf3 CutGizmo::transformed_bounding_box(
@@ -1656,13 +1692,12 @@ void CutGizmo::flip_cut_plane()
     // Plater::TakeSnapshot snapshot(wxGetApp().plater(), _L("Flip cut plane"), UndoRedo::SnapshotType::GizmoAction);
     m_start_dragging_m = m_rotation_m;
 
-    // update cut_normal
-    Vec3d normal = m_rotation_m * Vec3d::UnitZ();
-    normal.normalize();
-    m_cut_normal = normal;
-
     if (m_dialog->connectors_editing) {
-        update_clipped_mesh_material();
+        // update cut_normal
+        Vec3d normal = m_rotation_m * Vec3d::UnitZ();
+        normal.normalize();
+        m_cut_normal = normal;
+        update_clipper_presenter();
     } else {
         update_cut_plane_mesh();
         update_cut_plane_trafo();
@@ -2118,6 +2153,211 @@ bool CutGizmo::is_planar_mode() const
 bool CutGizmo::keep_as_parts() const
 {
     return m_dialog->keep_as_parts;
+}
+
+bool CutGizmo::add_connector(Vec3d pos)
+{
+    if (!m_dialog->connectors_editing)
+        return false;
+
+    unselect_all_connectors();
+
+    CutConnectors& connectors = m_selected_object->cut_connectors;
+    connectors.emplace_back(
+        pos,
+        m_rotation_m,
+        connector_size() * 0.5f,
+        connector_depth_ratio(),
+        connector_size_tolerance() * 0.5f,
+        connector_depth_ratio_tolerance(),
+        connector_angle(),
+        connector_attributes()
+    );
+    m_selected.push_back(true);
+    m_selected_count = 1;
+    ASSERT(m_selected.size() == connectors.size());
+
+    // add connector node using get_connector_mesh(attribs)
+
+    check_and_update_connectors_state();
+
+    return true;
+}
+
+void CutGizmo::unselect_all_connectors()
+{
+    std::fill(m_selected.begin(), m_selected.end(), false);
+    m_selected_count = 0;
+    m_dialog->validate_connector_settings();
+}
+
+void CutGizmo::select_all_connectors()
+{
+    std::fill(m_selected.begin(), m_selected.end(), true);
+    m_selected_count = int(m_selected.size());
+}
+
+void CutGizmo::clear_selection()
+{
+    m_selected.clear();
+    m_selected_count = 0;
+}
+
+void CutGizmo::reset_connectors()
+{
+    m_selected_object->cut_connectors.clear();
+    clear_selection();
+    check_and_update_connectors_state();
+}
+
+bool CutGizmo::is_outside_of_cut_contour(
+    size_t idx,
+    const CutConnectors& connectors,
+    const Vec3d cur_pos
+)
+{
+    // check if connector pos is out of clipping plane
+    if (m_clipper_presenter.is_projection_inside_cut(cur_pos) == -1) {
+        m_info_stats.outside_cut_contour++;
+        return true;
+    }
+
+    // check if connector bottom contour is out of clipping plane
+    const CutConnector& cur_connector = connectors[idx];
+    const CutConnectorShape shape     = CutConnectorShape(cur_connector.attribs.shape);
+    const int   sectorCount = shape == CutConnectorShape::Triangle ? 3 :
+        shape == CutConnectorShape::Square ? 4 :
+        shape == CutConnectorShape::Circle ? 60 : // supposably, 60 points are enough for conflict detection
+        shape == CutConnectorShape::Hexagon ? 6 : 1;
+
+    indexed_triangle_set mesh;
+    auto& vertices = mesh.vertices;
+    vertices.reserve(sectorCount + 1);
+
+    float fa = 2 * PI / sectorCount;
+    auto vec = Eigen::Vector2f(0, cur_connector.radius);
+    for (float angle = 0; angle < 2.f * PI; angle += fa) {
+        Vec2f p = Eigen::Rotation2Df(angle) * vec;
+        vertices.emplace_back(Vec3f(p(0), p(1), 0.f));
+    }
+    its_transform(mesh, translation_transform(cur_pos) * m_rotation_m);
+
+    for (const Vec3f& vertex : vertices) {
+        int contour_idx = m_clipper_presenter.is_projection_inside_cut(vertex.cast<double>());
+        bool is_invalid = (contour_idx == -1);
+        if (m_part_selection.valid() && !is_invalid) {
+            assert(contour_idx >= 0);
+            const std::vector<size_t>& ignored = *(m_part_selection.get_ignored_contours_ptr());
+            is_invalid =
+                (std::find(ignored.begin(), ignored.end(), size_t(contour_idx)) != ignored.end());
+        }
+        if (is_invalid) {
+            m_info_stats.outside_cut_contour++;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool CutGizmo::is_conflict_for_connector(
+    size_t idx,
+    const CutConnectors& connectors,
+    const Vec3d cur_pos
+)
+{
+    if (is_outside_of_cut_contour(idx, connectors, cur_pos))
+        return true;
+
+    const CutConnector& cur_connector = connectors[idx];
+
+    const Transform3d matrix =
+        translation_transform(cur_pos)
+        * m_rotation_m
+        * scale_transform(
+            Vec3f(cur_connector.radius, cur_connector.radius, cur_connector.height).cast<double>()
+        );
+    // get tbb from cur_connector.attribs mesh
+    /*const*/ BoundingBoxf3 cur_tbb;
+    cur_tbb = Algorithms::BoundingBox::transformed(cur_tbb, matrix);
+
+    // check if connector's bounding box is inside the object's bounding box
+    if (!m_bounding_box.contains(cur_tbb)) {
+        m_info_stats.outside_bb++;
+        return true;
+    }
+
+    // check if connectors are overlapping
+    for (size_t i = 0; i < connectors.size(); ++i) {
+        if (i == idx)
+            continue;
+        const CutConnector& connector = connectors[i];
+
+        if ((connector.pos - cur_connector.pos).norm()
+            < double(connector.radius + cur_connector.radius))
+        {
+            m_info_stats.is_overlap = true;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void CutGizmo::check_and_update_connectors_state()
+{
+    m_info_stats.invalidate();
+    m_invalid_connectors_idxs.clear();
+    if (!is_planar_mode())
+        return;
+    const ModelObject* mo           = m_selected_object;
+    const CutConnectors& connectors = mo->cut_connectors;
+    const ModelInstance* mi         = m_selected_instance;
+    const Vec3d& instance_offset    = mi->get_offset();
+    const double sla_shift          = 0; // double(m_c->selection_info()->get_sla_shift());
+
+    for (size_t i = 0; i < connectors.size(); ++i) {
+        const CutConnector& connector = connectors[i];
+        Vec3d pos                     = connector.pos
+            + instance_offset
+            + sla_shift * Vec3d::UnitZ(); // recalculate connector position to world position
+        if (is_conflict_for_connector(i, connectors, pos))
+            m_invalid_connectors_idxs.emplace_back(i);
+    }
+}
+
+CutConnectorAttributes CutGizmo::connector_attributes() const
+{
+    return CutConnectorAttributes(
+        CutConnectorType(m_dialog->current_connector_type),
+        CutConnectorStyle(m_dialog->current_connector_style),
+        CutConnectorShape(m_dialog->current_connector_shape)
+    );
+}
+
+double CutGizmo::connector_depth_ratio() const
+{
+    return m_dialog->connector_depth_ratio;
+}
+
+double CutGizmo::connector_size() const
+{
+    return m_dialog->connector_size;
+}
+
+double CutGizmo::connector_angle() const
+{
+    return m_dialog->connector_angle;
+}
+
+double CutGizmo::connector_depth_ratio_tolerance() const
+{
+    return m_dialog->connector_depth_ratio_tolerance;
+}
+
+double CutGizmo::connector_size_tolerance() const
+{
+    return m_dialog->connector_size_tolerance;
 }
 
 } // namespace Slic3r::App::Plater

@@ -24,20 +24,26 @@ ClipperPresenter::ClipperPresenter(Clipper* clipper, Render::Device* device) :
     m_device(device)
 {}
 
-static void
-set_enabled_scene_nodes(Scene* scene, bool enabled_scene_nodes, Node* main_presenter_node)
+static void set_enabled_scene_nodes(
+    Scene* scene,
+    bool enabled_scene_nodes,
+    Node* main_presenter_node,
+    bool force_enabled_scene_nodes = true
+)
 {
-    visit(
-        scene->root(),
-        [&](Node& node)
-        {
-            Plater::SceneNodeTag* tag = node.tag_of_type<Plater::SceneNodeTag>();
-            if (tag != nullptr) {
-                node.set_enabled(enabled_scene_nodes);
-            }
-        },
-        true
-    );
+    if (force_enabled_scene_nodes) {
+        visit(
+            scene->root(),
+            [&](Node& node)
+            {
+                Plater::SceneNodeTag* tag = node.tag_of_type<Plater::SceneNodeTag>();
+                if (tag != nullptr) {
+                    node.set_enabled(enabled_scene_nodes);
+                }
+            },
+            true
+        );
+    }
     if (main_presenter_node) {
         main_presenter_node->set_enabled(!enabled_scene_nodes);
     }
@@ -45,8 +51,8 @@ set_enabled_scene_nodes(Scene* scene, bool enabled_scene_nodes, Node* main_prese
 
 void ClipperPresenter::activate(
     Scene* scene,
-    Domain::ModelObject* selected_object,
-    Domain::ModelInstance* selected_instance,
+    const Domain::ModelObject* selected_object,
+    const Domain::ModelInstance* selected_instance,
     double sla_shift
 )
 {
@@ -64,10 +70,10 @@ void ClipperPresenter::activate(
     set_enabled_scene_nodes(m_scene, false, m_main_node);
 }
 
-void ClipperPresenter::deactivate()
+void ClipperPresenter::deactivate(bool force_enabled_scene_nodes /*= true*/)
 {
     reset();
-    set_enabled_scene_nodes(m_scene, true, m_main_node);
+    set_enabled_scene_nodes(m_scene, true, m_main_node, force_enabled_scene_nodes);
 }
 
 void ClipperPresenter::reset()
@@ -184,9 +190,10 @@ void ClipperPresenter::build_non_mesh_node(
     );
 
     const bool is_palne = type == ClipperElementType::Plane;
-    auto material = Render::Material{}
-                        .set_shader(m_device->context().shader_manager().shader(/*"gouraud_light"*/"flat"))
-                        .set_uniform("uniform_color", is_palne ? m_plane_color : m_contour_color);
+    auto material =
+        Render::Material{}
+            .set_shader(m_device->context().shader_manager().shader(/*"gouraud_light"*/ "flat"))
+            .set_uniform("uniform_color", is_palne ? m_plane_color : m_contour_color);
 
     NodeBuilder bldr(*m_scene);
     bldr.set_debug_name(
@@ -253,9 +260,20 @@ void ClipperPresenter::update_nodes()
             for (const Biz::MeshClipper::CutIsland& island :
                  mesh_clipper->result.value().cut_islands)
             {
-                if (std::find(m_ignored_ids.begin(), m_ignored_ids.end(), ClipperId{ clipper_id, island_id }) == m_ignored_ids.end()) {
+                if (std::find(
+                        m_ignored_ids.begin(),
+                        m_ignored_ids.end(),
+                        ClipperId{clipper_id, island_id}
+                    )
+                    == m_ignored_ids.end())
+                {
                     // Add Plane
-                    build_non_mesh_node(ClipperElementType::Plane, island.model, clipper_id, island_id);
+                    build_non_mesh_node(
+                        ClipperElementType::Plane,
+                        island.model,
+                        clipper_id,
+                        island_id
+                    );
 
                     // Add Contour
                     build_non_mesh_node(
@@ -394,6 +412,61 @@ void ClipperPresenter::set_behavior(bool hide_clipped, bool fill_cut, double con
         m_clipper->set_behavior(hide_clipped, fill_cut, contour_width);
         update_nodes();
     }
+}
+
+int ClipperPresenter::is_projection_inside_cut(const Domain::Vec3d& point_in) const
+{
+    if (m_clipper) {
+        return m_clipper->is_projection_inside_cut(point_in);
+    }
+    return -1;
+}
+
+
+GizmoActivationState ClipperPresenter::on_mouse(GizmoEventContext& ctx, bool only_active)
+{
+    const auto event_type = ctx.mouse_event().type();
+    if (event_type != Platform::MouseEvent::Type::ButtonDown
+        && event_type != Platform::MouseEvent::Type::Move
+        && event_type != Platform::MouseEvent::Type::ButtonUp)
+    {
+        return GizmoActivationState::Inactive;
+    }
+
+    const auto& pick_ray = ctx.pick_ray();
+    if (event_type == Platform::MouseEvent::Type::ButtonDown) {
+        if (const Node* handle_node =
+            ctx.pick_result_node_with_tag_of_type<ClipperElement>())
+        {
+            const ClipperElement& tag = *handle_node->tag_of_type<ClipperElement>();
+            ASSERT(tag.type == ClipperElementType::Plane);
+
+            return GizmoActivationState::Active;
+        }
+        else {
+            return GizmoActivationState::Inactive;
+        }
+
+        //const App::Scene::Transform& xform = m_scene_presenter.selection_root().world_transform();
+        //m_translation_ray.origin = xform.matrix().block<3, 1>(0, 3);
+    }
+
+    //double t;
+    //if (!m_translation_ray.closest_point_from_ray(pick_ray, t)) {
+    //    return GizmoActivationState::Inactive;
+    //}
+
+    if (event_type == Platform::MouseEvent::Type::ButtonDown)
+    {
+        return GizmoActivationState::Active;
+    }
+/*
+    if (event_type == Platform::MouseEvent::Type::ButtonUp) {
+        // fill clicked position 
+        return GizmoActivationState::Done;
+    }*/
+
+    return GizmoActivationState();
 }
 
 } // namespace Slic3r::App::Scene

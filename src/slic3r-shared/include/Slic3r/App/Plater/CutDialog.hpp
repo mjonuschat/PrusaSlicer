@@ -97,17 +97,28 @@ public:
     void set_current_connetor_shape(Domain::CutConnectorShape shape);
     void set_groove_values(const Biz::Cut::Groove& m_groove, double m_max_elements_size);
 
-public:
+    void validate_connector_settings();
 
-    bool is_planar_cut_mode{ true };
-    bool keep_as_parts{ false };
-    bool keep_upper{ true };
-    bool keep_lower{ true };
-    bool place_on_cut_upper{ true };
-    bool place_on_cut_lower{ false };
-    bool flip_upper{ false };
-    bool flip_lower{ false };
+public:
+    bool is_planar_cut_mode{true};
+    bool keep_as_parts{false};
+    bool keep_upper{true};
+    bool keep_lower{true};
+    bool place_on_cut_upper{true};
+    bool place_on_cut_lower{false};
+    bool flip_upper{false};
+    bool flip_lower{false};
     bool connectors_editing{false};
+
+    Domain::CutConnectorType current_connector_type{Domain::CutConnectorType::Plug};
+    Domain::CutConnectorStyle current_connector_style{Domain::CutConnectorStyle::Prism};
+    Domain::CutConnectorShape current_connector_shape{Domain::CutConnectorShape::Circle};
+
+    double connector_depth_ratio{3.};
+    double connector_depth_ratio_tolerance{0.1};
+    double connector_size{2.5};
+    double connector_size_tolerance{0.};
+    double connector_angle{0.};
 
 private:
     void init_connectors_input_panel();
@@ -176,9 +187,5 @@ private:
     std::vector<Yoga::Text*> m_units;
 
     bool m_imperial_units{false};
-
-    Domain::CutConnectorType m_current_connetor_type{Domain::CutConnectorType::Plug};
-    Domain::CutConnectorStyle m_current_connetor_style{Domain::CutConnectorStyle::Prism};
-    Domain::CutConnectorShape m_current_connetor_shape{Domain::CutConnectorShape::Circle};
 };
 } // namespace Slic3r::App::Plater

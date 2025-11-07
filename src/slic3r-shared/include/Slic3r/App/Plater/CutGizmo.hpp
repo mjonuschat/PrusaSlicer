@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/App/Scene/ClipperPresenter.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneSelectionChangedListener
 #include "Slic3r/App/Plater/CutPartSelection.hpp"
 #include "Slic3r/App/Render/GeometryManager.hpp"
@@ -32,6 +33,7 @@ class ModelInstance;
 namespace Slic3r::App::Scene {
 class NodeBuilder;
 class GeometryDataFactory;
+class Clipper;
 } // namespace Slic3r::App::Scene
 
 namespace Slic3r::App::Plater {
@@ -61,6 +63,7 @@ public:
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void on_transient_mouse(Scene::GizmoEventContext& ctx) override;
     void on_cycle_prepare() override;
+    void provide_clipper(Scene::Clipper& clipper) override;
     /**@}*/
 
     /**
@@ -92,16 +95,14 @@ private:
     void build_cut_plane_node(Scene::NodeBuilder& builder);
     void build_handles_nodes(Scene::NodeBuilder& builder);
 
-    void rotate_vec3d_around_plane_center(Vec3d& vec);
-
     void update_cut_plane_mesh();
     void update_cut_plane_trafo();
 
     void update_handles_nodes(Handle hovered_handle = Handle());
     void update_handles_material_and_enability(Handle hovered_handle);
     void update_handles_local_fransform(Handle hovered_handle);
-    void update_clipping_nodes_enability(bool connectors_editing);
-    void update_clipped_mesh_material();
+    void update_nodes_enability(bool connectors_editing);
+    void update_clipper_presenter();
 
     void build_cut_part_mesh(
         CutPartNodeTag::Type type,
@@ -143,6 +144,25 @@ private:
     void clear_highlight();
     void on_stop_dragging();
 
+    bool add_connector(Domain::Vec3d pos);
+    void unselect_all_connectors();
+    void select_all_connectors();
+
+    void clear_selection();
+    void reset_connectors();
+    bool
+    is_outside_of_cut_contour(size_t idx, const CutConnectors& connectors, const Vec3d cur_pos);
+    bool
+    is_conflict_for_connector(size_t idx, const CutConnectors& connectors, const Vec3d cur_pos);
+    void check_and_update_connectors_state();
+
+    CutConnectorAttributes connector_attributes() const;
+    double connector_depth_ratio() const;
+    double connector_size() const;
+    double connector_angle() const;
+    double connector_depth_ratio_tolerance() const;
+    double connector_size_tolerance() const;
+
 private:
     std::unique_ptr<CutDialog> m_dialog;
 
@@ -156,8 +176,7 @@ private:
     Domain::Vec3d m_cut_normal;
 
     // workaround for using of the clipping plane normal
-    Domain::Vec3d m_clp_normal{ Vec3d::Ones() };
-
+    Domain::Vec3d m_clp_normal{Vec3d::Ones()};
 
     // transformed boundign box of selected inxtance
     Domain::BoundingBox3d m_transformed_bbox;
@@ -170,7 +189,7 @@ private:
     Handle m_hovered_handle;
     bool m_is_plane_hovered{false};
 
-    bool m_can_flip_plane{ false };// indicates if plane was just clicked without dragging
+    bool m_can_flip_plane{false}; // indicates if plane was just clicked without dragging
 
     Domain::Transform3d m_rotation_m{Domain::Transform3d::Identity()};
     double m_snap_step{1.0};
@@ -235,6 +254,29 @@ private:
     double m_start_t{0};
 
     Scene::Node::NodeList m_handles; // list of handles
+
+    Scene::ClipperPresenter m_clipper_presenter;
+
+    // Connectors
+
+    struct InvalidConnectorsStatistics
+    {
+        unsigned int outside_cut_contour;
+        unsigned int outside_bb;
+        bool is_overlap;
+
+        void invalidate()
+        {
+            outside_cut_contour = 0;
+            outside_bb          = 0;
+            is_overlap          = false;
+        }
+    } m_info_stats;
+
+    std::vector<size_t> m_invalid_connectors_idxs;
+
+    mutable std::vector<bool> m_selected; // which pins are currently selected
+    int m_selected_count{0};
 };
 
 } // namespace Slic3r::App::Plater

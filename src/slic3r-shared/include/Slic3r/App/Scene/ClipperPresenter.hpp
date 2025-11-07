@@ -3,6 +3,7 @@
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/ClipperPresenterHelper.hpp"
+#include "Slic3r/App/Scene/IGizmo.hpp"
 
 namespace Slic3r::Domain {
 class ModelObject;
@@ -30,17 +31,18 @@ public:
 
     void activate(
         Scene* scene,
-        Domain::ModelObject* selected_object,
-        Domain::ModelInstance* selected_instance,
+        const Domain::ModelObject* selected_object,
+        const Domain::ModelInstance* selected_instance,
         double sla_shift = 0.
     );
-    void deactivate();
+    void deactivate(bool force_enabled_scene_nodes = true);
     void reset();
     void show_clipper(bool show);
 
     void set_position_by_ratio(double pos, bool keep_normal);
     void set_range_and_pos(const Domain::Vec3d& cpl_normal, double cpl_offset, double pos);
     void set_behavior(bool hide_clipped, bool fill_cut, double contour_width);
+    int is_projection_inside_cut(const Domain::Vec3d& point_in) const;
 
     void set_clickable_plane(bool clickable);
     void set_enable_mesh(bool enable);
@@ -52,6 +54,8 @@ public:
 
     void reset_ignored();
     void add_ignored(size_t volume_id, size_t island_id);
+
+    GizmoActivationState on_mouse(GizmoEventContext& ctx, bool only_active);
 
 private:
     void init_main_node();
@@ -97,5 +101,9 @@ private:
     bool m_mesh_enabled{true};
     bool m_plane_enabled{true};
     bool m_contour_enabled{true};
+
+    Ray m_translation_ray;
+    double m_start_t{ 0 };
+
 };
 } // namespace Slic3r::App::Scene

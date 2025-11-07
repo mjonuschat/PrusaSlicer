@@ -669,7 +669,7 @@ void CutDialog::set_cut_z_position(double cut_z_position)
 
 void CutDialog::set_current_connetor_type(Domain::CutConnectorType type)
 {
-    m_current_connetor_type = type;
+    current_connector_type = type;
     switch (type) {
     case Domain::CutConnectorType::Dowel:
         m_dowel_btn->set_checked(true);
@@ -687,7 +687,7 @@ void CutDialog::set_current_connetor_type(Domain::CutConnectorType type)
 
 void CutDialog::set_current_connetor_style(Domain::CutConnectorStyle style)
 {
-    m_current_connetor_style = style;
+    current_connector_style = style;
     switch (style) {
     case Domain::CutConnectorStyle::Frustum:
         m_frustum_btn->set_checked(true);
@@ -702,7 +702,7 @@ void CutDialog::set_current_connetor_style(Domain::CutConnectorStyle style)
 
 void CutDialog::set_current_connetor_shape(Domain::CutConnectorShape shape)
 {
-    m_current_connetor_shape = shape;
+    current_connector_shape = shape;
     switch (shape) {
     case Domain::CutConnectorShape::Triangle:
         m_triangle_btn->set_checked(true);
@@ -775,6 +775,27 @@ void CutDialog::set_groove_values(const Biz::Cut::Groove& m_groove, double max_e
         rad2deg(m_groove.flaps_angle_init)
     );
     set_slider(m_groove_angle, 0., 15., 1., rad2deg(m_groove.angle), rad2deg(m_groove.angle_init));
+}
+
+void CutDialog::validate_connector_settings()
+{
+    if (connector_depth_ratio < 0.f)
+        connector_depth_ratio = 3.f;
+    if (connector_depth_ratio_tolerance < 0.f)
+        connector_depth_ratio_tolerance = 0.1f;
+    if (connector_size < 0.f)
+        connector_size = 2.5f;
+    if (connector_size_tolerance < 0.f)
+        connector_size_tolerance = 0.f;
+    if (connector_angle < 0.f || connector_angle > std::numbers::pi)
+        connector_angle = 0.f;
+
+    if (current_connector_type == Domain::CutConnectorType::Undef)
+        current_connector_type = Domain::CutConnectorType::Plug;
+    if (current_connector_style == Domain::CutConnectorStyle::Undef)
+        current_connector_style = Domain::CutConnectorStyle::Prism;
+    if (current_connector_shape == Domain::CutConnectorShape::Undef)
+        current_connector_shape = Domain::CutConnectorShape::Circle;
 }
 
 } // namespace Slic3r::App::Plater
