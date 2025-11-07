@@ -26,7 +26,6 @@
 using Slic3r::Domain::Vec2d;
 
 namespace Slic3r::Biz::Preset {
-
 namespace {
 
 void dump_ep_info(const Domain::Preset::EvaluatedPrinterPreset& preset)
@@ -135,17 +134,18 @@ void PresetInteractor::load_preset_bundle(
                 }
             );
         }
-    #ifndef NDEBUG
+#ifndef NDEBUG
         IO::serialize_bundle(bundle_cache_filename, *preset_bundle_opt, preset_bundle_path, config_path, Slic3r::VERSION);
-    #endif
+#endif
     }
 
     // do not save it now, as we create it anyway again
     // IO::save_bundle_configs(preset_bundle, config_path);
 
     m_workbench.set_preset_bundle(std::move(*preset_bundle_opt));
+    ListenerInvokeLaterBag bag;
     if (m_selected_project_id != Domain::INVALID_ID)
-        fill_printer_presets();
+        fill_printer_presets(bag);
 }
 
 const PresetInteractorConfigContainerContext& PresetInteractor::config_container_context(
@@ -220,24 +220,28 @@ void PresetInteractor::on_selected_config_container_changed(
     // update selected config
     get_or_create_config_container_context(m_selected_project_id, container_id);
 
-    fill_printer_presets();
+    ListenerInvokeLaterBag bag;
+
+    fill_printer_presets(bag);
     Domain::Preset::SelectedPreset& selected_preset = mutable_selected_printer_presets();
 
     fill_tool_items(selected_preset.hw_config);
     fill_sheet_items(selected_preset.hw_config);
 
-    fill_print_presets(selected_preset);
-    fill_tools_presets(selected_preset);
-    fill_materials_presets(selected_preset);
+    fill_print_presets(selected_preset, bag);
+    fill_tools_presets(selected_preset, bag);
+    fill_materials_presets(selected_preset, bag);
 
     m_printer_cbi.set_config_box(&selected_preset.printer.config_box());
     m_print_cbi.set_config_box(&selected_preset.print.config_box());
 
-    // notify listeners on changes
-    invoke_listeners<IPresetChangedListener>(
-        [&](auto* l) { l->on_config_container_selection_changed(project_id, container_id); }
-        );
-    invoke_slicing_input_changed();
+    bag.add([this, project_id, container_id]{
+        // notify listeners on changes
+        invoke_listeners<IPresetChangedListener>(
+            [&](auto* l) { l->on_config_container_selection_changed(project_id, container_id); }
+            );
+    });
+    bag.add([this] { invoke_slicing_input_changed(); });
 }
 
 void PresetInteractor::update_changed_selected_preset_hw_config()
@@ -280,8 +284,9 @@ void PresetInteractor::update_changed_selected_preset_hw_config()
         SPDLOG_ERROR("{}", e.what());
     }
 
-    fill_printer_presets();
-    select_printer_preset(hw_config.id, selected_printer_preset_id);
+    ListenerInvokeLaterBag bag;
+    fill_printer_presets(bag);
+    select_printer_preset_internal(hw_config.id, selected_printer_preset_id, bag);
 }
 
 const std::string& PresetInteractor::selected_hw_config_id() const
@@ -395,11 +400,17 @@ void resize_tool_dependant_presets(
     std::vector<T>& presets
 )
 {
-    if (presets.size() > hw_config.tool_count)
-        presets.resize(hw_config.tool_count);
-    ASSERT(!presets.empty());
-    while (presets.size() < hw_config.tool_count)
-        presets.push_back(presets.back());
+    constexpr bool is_tool = std::is_same_v<T, Domain::Preset::EvaluatedToolPrintPreset::Preset>;
+
+    // tool print presets for SLA are always empty
+    const size_t slot_count = hw_config.technology == Domain::PrinterTechnology::SLA && is_tool ?
+        0 :
+        hw_config.tool_count;
+
+    if (presets.size() > slot_count)
+        presets.resize(slot_count);
+    while (presets.size() < slot_count)
+        presets.push_back(presets.empty() ? T{} : presets.back());
 }
 
 } // namespace
@@ -469,12 +480,12 @@ void PresetInteractor::fill_config_container_with_selected_preset(
     process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Save);
 
     selected_preset       = Domain::Preset::SelectedPreset{
-              .hw_config = hw_config,
-              .printer   = printer_preset,
-              .print     = print,
-              .tools     = std::move(tools),
-              .materials = std::move(materials)
-    };
+        .hw_config = hw_config,
+        .printer   = printer_preset,
+        .print     = print,
+        .tools     = std::move(tools),
+        .materials = std::move(materials)
+};
 
     // Set transfered values after switch to new selected preset
     process_operation_from_unsaved_changes(selected_preset, PresetDiffOperation::Transfer);
@@ -525,7 +536,7 @@ std::optional<size_t> set_items(
 
 } // namespace
 
-void PresetInteractor::fill_printer_presets()
+void PresetInteractor::fill_printer_presets(ListenerInvokeLaterBag& bag)
 {
     const auto& preset_bundle = m_workbench.preset_bundle();
     const auto& p             = get_or_create_project_context(m_selected_project_id);
@@ -561,11 +572,11 @@ void PresetInteractor::fill_printer_presets()
     // make sure the new selection is propagated
     if (!selected_index.has_value()) {
         const auto& selected_item = m_printer_presets.items().at(selected_index_val);
-        select_printer_preset(selected_item.hw_printer_config_id, selected_item.id);
+        select_printer_preset_internal(selected_item.hw_printer_config_id, selected_item.id, bag);
     }
 }
 
-void PresetInteractor::fill_print_presets(Domain::Preset::SelectedPreset& selected_preset)
+void PresetInteractor::fill_print_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag)
 {
     const auto& p                      = get_or_fail_project_context(m_selected_project_id);
     const auto& hw_config              = selected_preset.hw_config;
@@ -584,16 +595,17 @@ void PresetInteractor::fill_print_presets(Domain::Preset::SelectedPreset& select
     );
     if (changed_selection_index) {
         const auto& item = m_print_presets.items().at(changed_selection_index.value());
-        select_print_preset(item.id);
+        select_print_preset_internal(item.id, bag);
     }
 }
 
-void PresetInteractor::fill_tools_presets(Domain::Preset::SelectedPreset& selected_preset)
+void PresetInteractor::fill_tools_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag)
 {
     const Domain::Preset::HwPrinterConfig& hw_config = selected_preset.hw_config;
     std::vector<PresetItemObservableList> tools;
 
-    const size_t tool_count = hw_config.tool_count;
+    const size_t tool_count =
+        hw_config.technology == Domain::PrinterTechnology::SLA ? 0 : hw_config.tool_count;
     ASSERT(
         hw_config.technology != Domain::PrinterTechnology::FFF || tool_count > 0,
         selected_preset.print.id
@@ -636,14 +648,14 @@ void PresetInteractor::fill_tools_presets(Domain::Preset::SelectedPreset& select
             if (changed_selected_index.has_value()) {
                 const auto& item =
                     m_tool_print_presets.at(tool_index).items().at(changed_selected_index.value());
-                select_tool_print_preset(tool_index, item.id);
+                select_tool_print_preset_internal(tool_index, item.id, bag);
             }
         }
     }
 
 }
 
-void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& selected_preset)
+void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag)
 {
     std::vector<PresetItemObservableList> materials;
     std::vector<std::optional<size_t>> changed_selected_indices;
@@ -673,7 +685,7 @@ void PresetInteractor::fill_materials_presets(Domain::Preset::SelectedPreset& se
         if (changed_selected_index.has_value()) {
             const auto& item =
                 m_material_presets.at(slot_index).items().at(changed_selected_index.value());
-            select_material_preset(slot_index, item.id);
+            select_material_preset_internal(slot_index, item.id, bag);
         }
     }
 }
@@ -787,9 +799,10 @@ void PresetInteractor::fill_selected_material_cbis(Domain::Preset::SelectedPrese
 }
 
 
-void PresetInteractor::select_printer_preset(
+void PresetInteractor::select_printer_preset_internal(
     const std::string& printer_hw_config_id,
-    const std::string& printer_preset_id
+    const std::string& printer_preset_id,
+    ListenerInvokeLaterBag& bag
 )
 {
     auto& project   = m_workbench.project(m_selected_project_id);
@@ -804,7 +817,7 @@ void PresetInteractor::select_printer_preset(
     fill_tool_items(selected_preset.hw_config);
     fill_sheet_items(selected_preset.hw_config);
 
-    fill_print_presets(selected_preset);
+    fill_print_presets(selected_preset, bag);
 
     m_printer_presets.set_selected(
         [&printer_hw_config_id, &printer_preset_id](const PresetItem& item)
@@ -816,19 +829,31 @@ void PresetInteractor::select_printer_preset(
     m_printer_cbi.set_config_box(&selected_preset.printer.config_box());
     m_print_cbi.set_config_box(&selected_preset.print.config_box());
 
-    fill_tools_presets(selected_preset);
-    fill_materials_presets(selected_preset);
+    fill_tools_presets(selected_preset, bag);
+    fill_materials_presets(selected_preset, bag);
 
 
-    // notify on change
-    invoke_listeners<IPresetChangedListener>(
-        [project_id = m_selected_project_id, &cc](auto* l)
-        { l->on_preset_selection_changed(project_id, cc->id().id, PresetItemType::PrinterPreset); }
-    );
-    invoke_slicing_input_changed();
+    bag.add([this, project_id = m_selected_project_id, cc]{
+        // notify on change
+        invoke_listeners<IPresetChangedListener>(
+            [&cc, project_id](auto* l)
+            { l->on_preset_selection_changed(project_id, cc->id().id, PresetItemType::PrinterPreset); }
+        );
+    });
 }
 
-void PresetInteractor::select_print_preset(const std::string& id)
+void PresetInteractor::select_printer_preset(
+    const std::string& printer_hw_config_id,
+    const std::string& printer_preset_id
+)
+{
+    ListenerInvokeLaterBag bag;
+    select_printer_preset_internal(printer_hw_config_id, printer_preset_id, bag);
+    bag.add([this]{ invoke_slicing_input_changed(); });
+}
+
+void
+PresetInteractor::select_print_preset_internal(const std::string& id, ListenerInvokeLaterBag& bag)
 {
     Domain::Preset::SelectedPreset& selected_preset = mutable_selected_printer_presets();
     const auto& hw_config                           = selected_preset.hw_config;
@@ -844,25 +869,37 @@ void PresetInteractor::select_print_preset(const std::string& id)
     m_print_presets.set_selected([&id](const PresetItem& item) { return item.id == id; });
     m_print_cbi.set_config_box(&selected_preset.print.config_box());
 
-    fill_tools_presets(selected_preset);
-    fill_materials_presets(selected_preset);
+    fill_tools_presets(selected_preset, bag);
+    fill_materials_presets(selected_preset, bag);
 
     const auto& ccc = selected_config_container_context();
     const Domain::SelectionId config_container_id{ccc.config_container_id};
-    invoke_listeners<IPresetChangedListener>(
-        [project_id = m_selected_project_id, config_container_id](auto* l)
-        {
-            l->on_preset_selection_changed(
-                project_id,
-                config_container_id,
-                PresetItemType::PrintPreset
-            );
-        }
-    );
-    invoke_slicing_input_changed();
+    bag.add([this, project_id = m_selected_project_id, config_container_id]{
+        invoke_listeners<IPresetChangedListener>(
+            [project_id, config_container_id](auto* l)
+            {
+                l->on_preset_selection_changed(
+                    project_id,
+                    config_container_id,
+                    PresetItemType::PrintPreset
+                );
+            }
+        );
+    });
 }
 
-void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::string& id)
+void PresetInteractor::select_print_preset(const std::string& id)
+{
+    ListenerInvokeLaterBag bag;
+    select_print_preset_internal(id, bag);
+    bag.add([this]{ invoke_slicing_input_changed(); });
+}
+
+void PresetInteractor::select_tool_print_preset_internal(
+    size_t tool_index,
+    const std::string& id,
+    ListenerInvokeLaterBag& bag
+)
 {
     auto& selected_preset = mutable_selected_printer_presets();
     const auto& t         = get_tool_print_preset(
@@ -890,20 +927,32 @@ void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::st
 
     const auto& ccc = selected_config_container_context();
     const Domain::SelectionId config_container_id{ccc.config_container_id};
-    invoke_listeners<IPresetChangedListener>(
-        [project_id = m_selected_project_id, config_container_id](auto* l)
-        {
-            l->on_preset_selection_changed(
-                project_id,
-                config_container_id,
-                PresetItemType::ToolPrintPreset
-            );
-        }
-    );
-    invoke_slicing_input_changed();
+    bag.add([this, project_id = m_selected_project_id, config_container_id]{
+        invoke_listeners<IPresetChangedListener>(
+            [project_id, config_container_id](auto* l)
+            {
+                l->on_preset_selection_changed(
+                    project_id,
+                    config_container_id,
+                    PresetItemType::ToolPrintPreset
+                );
+            }
+        );
+    });
 }
 
-void PresetInteractor::select_material_preset(size_t material_index, const std::string& id)
+void PresetInteractor::select_tool_print_preset(size_t tool_index, const std::string& id)
+{
+    ListenerInvokeLaterBag bag;
+    select_tool_print_preset_internal(tool_index, id, bag);
+    bag.add([this] { invoke_slicing_input_changed(); });
+}
+
+void PresetInteractor::select_material_preset_internal(
+    size_t material_index,
+    const std::string& id,
+    ListenerInvokeLaterBag& bag
+)
 {
     auto& selected_preset = mutable_selected_printer_presets();
     const auto& m         = get_material_preset(
@@ -932,17 +981,25 @@ void PresetInteractor::select_material_preset(size_t material_index, const std::
 
     const auto& ccc = selected_config_container_context();
     const Domain::SelectionId config_container_id{ccc.config_container_id};
-    invoke_listeners<IPresetChangedListener>(
-        [project_id = m_selected_project_id, config_container_id](auto* l)
-        {
-            l->on_preset_selection_changed(
-                project_id,
-                config_container_id,
-                PresetItemType::MaterialPreset
-            );
-        }
-    );
-    invoke_slicing_input_changed();
+    bag.add([this, project_id = m_selected_project_id, config_container_id]{
+        invoke_listeners<IPresetChangedListener>(
+            [project_id, config_container_id](auto* l)
+            {
+                l->on_preset_selection_changed(
+                    project_id,
+                    config_container_id,
+                    PresetItemType::MaterialPreset
+                );
+            }
+        );
+    });
+}
+
+void PresetInteractor::select_material_preset(size_t material_index, const std::string& id)
+{
+    ListenerInvokeLaterBag bag;
+    select_material_preset_internal(material_index, id, bag);
+    bag.add([this] { invoke_slicing_input_changed(); });
 }
 
 void PresetInteractor::duplicate_hw_config_if_is_runtime(

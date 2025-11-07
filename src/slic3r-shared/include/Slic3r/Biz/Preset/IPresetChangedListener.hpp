@@ -48,7 +48,7 @@ public:
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id,
         HwItemType type
-        )
+    )
     {}
 };
 
