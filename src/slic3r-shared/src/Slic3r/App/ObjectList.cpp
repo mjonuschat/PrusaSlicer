@@ -1101,9 +1101,8 @@ void ObjectList::render_volume_node(
 )
 {
     auto& ctx = selected_project_context();
-    std::string
-        volume_name = (volume->name.empty() ? "Volume " + std::to_string(volume->id().id) : volume->name);
-    size_t volume_id = volume->id().id;
+    size_t volume_id        = volume->id().id;
+    std::string volume_name = volume->name.empty() ? _u8L("Volume") + " " : volume->name;
 
     if (ctx.edited_node_id == volume_id && !is_selected)
         ctx.edited_node_id = 0; // Exit edit mode
@@ -1134,7 +1133,7 @@ void ObjectList::render_volume_node(
     } else {
         // Display as a selectable label
         if (selectable(
-                (icon_str(volume) + volume_name).c_str(),
+                (icon_str(volume) + volume_name + "##" + std::to_string(volume_id)).c_str(),
                 is_selected,
                 ImGuiSelectableFlags_SpanAllColumns,
                 has_config_overrides
