@@ -6,6 +6,7 @@
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
+#include "Slic3r/Biz/Platform/InvokeLaterBag.hpp"
 #include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
@@ -573,6 +574,18 @@ public:
 
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
+
+    enum class ListenerType
+    {
+        IPresetChangedListener,
+        IBedPresetSwitchedListener,
+        ISlicingInputChangedListener
+    };
+
+    //using ListenerInvokeLaterBag = DeduplicatingInvokeLaterBag<ListenerType, PresetItemType, int>;
+    using ListenerInvokeLaterBag = InvokeLaterBag;
+
+
     PresetInteractorConfigContainerContext& mutable_selected_config_container_context();
 
     Domain::Preset::SelectedPreset& mutable_selected_printer_presets();
@@ -611,10 +624,28 @@ private:
         const std::string& printer_preset_id,
         bool printer_only
     );
-    void fill_printer_presets();
-    void fill_print_presets(Domain::Preset::SelectedPreset& selected_preset);
-    void fill_tools_presets(Domain::Preset::SelectedPreset& selected_preset);
-    void fill_materials_presets(Domain::Preset::SelectedPreset& selected_preset);
+
+    void select_printer_preset_internal(
+        const std::string& printer_hw_config_id,
+        const std::string& printer_preset_id,
+        ListenerInvokeLaterBag& bag
+    );
+    void select_print_preset_internal(const std::string& id, ListenerInvokeLaterBag& bag);
+    void select_tool_print_preset_internal(
+        size_t tool_index,
+        const std::string& id,
+        ListenerInvokeLaterBag& bag
+    );
+    void select_material_preset_internal(
+        size_t material_index,
+        const std::string& id,
+        ListenerInvokeLaterBag& bag
+    );
+
+    void fill_printer_presets(ListenerInvokeLaterBag& bag);
+    void fill_print_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
+    void fill_tools_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
+    void fill_materials_presets(Domain::Preset::SelectedPreset& selected_preset, ListenerInvokeLaterBag& bag);
     void fill_tool_items(const Domain::Preset::HwPrinterConfig& hw_config);
     void fill_sheet_items(const Domain::Preset::HwPrinterConfig& hw_config);
 

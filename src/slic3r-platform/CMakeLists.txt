@@ -21,6 +21,8 @@ set(SLIC3R_PLATFORM_FILES
     src/Slic3r/Biz/Platform/PlatformServices.cpp
     include/Slic3r/Biz/Platform/PlatformServices.hpp
     include/Slic3r/Biz/Platform/ListenerList.hpp
+    include/Slic3r/Biz/Platform/InvokeLaterBag.hpp
+    src/Slic3r/Biz/Platform/InvokeLaterBag.cpp
     include/Slic3r/Biz/Platform/Termination.hpp
     src/Slic3r/Biz/Platform/Termination.cpp
     include/Slic3r/Biz/Platform/TimerQueue.hpp
@@ -57,6 +59,7 @@ add_target_to_doxygen(slic3r-platform)
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-platform-tests
         test/Slic3r/Biz/Platform/JobManager/JobManagerTests.cpp
+        test/Slic3r/Biz/Platform/InvokeLaterBagTests.cpp
     )
     target_include_directories(slic3r-platform-tests PRIVATE test src)
     target_link_libraries(slic3r-platform-tests PRIVATE slic3r-platform Catch2::Catch2WithMain)
