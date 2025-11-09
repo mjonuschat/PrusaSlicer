@@ -4668,6 +4668,15 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("detect_narrow_internal_solid_infill", coBool);
+    def->label = L("Detect narrow internal solid infill");
+    def->category = L("Infill");
+    def->tooltip = L("This option will auto-detect narrow internal solid infill areas. "
+                     "If enabled, the concentric pattern will be used for the area to speed up printing. "
+                     "Otherwise, the rectilinear pattern will be used by default.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(true));
+
     // Declare retract values for filament profile, overriding the printer's extruder profile.
     for (const char *opt_key : {
         // floats

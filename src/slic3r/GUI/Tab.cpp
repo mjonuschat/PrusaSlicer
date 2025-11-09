@@ -1540,6 +1540,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("bridge_angle");
         optgroup->append_single_option_line("only_retract_when_crossing_perimeters");
         optgroup->append_single_option_line("infill_first");
+        optgroup->append_single_option_line("detect_narrow_internal_solid_infill");
 
         optgroup = page->new_optgroup(L("Small Area Infill Flow Compensation"));
         optgroup->append_single_option_line("small_area_infill_flow_compensation");

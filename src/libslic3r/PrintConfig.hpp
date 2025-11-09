@@ -699,6 +699,9 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionInt,                 interlocking_beam_layer_count))
     ((ConfigOptionInt,                 interlocking_depth))
     ((ConfigOptionInt,                 interlocking_boundary_avoidance))
+
+    // BOSS
+    ((ConfigOptionBool,                detect_narrow_internal_solid_infill))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
