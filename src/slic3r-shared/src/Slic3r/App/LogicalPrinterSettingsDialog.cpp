@@ -74,17 +74,7 @@ void LogicalPrinterSettingsDialog::on_preset_selection_changed(
         && m_project_interactor.selected_config_container_id() == config_container_id
         && type == Biz::Preset::PresetItemType::PrinterPreset)
     {
-        const Domain::Preset::HwPrinterConfig& printer_config =
-            m_project_interactor.preset_interactor().current_printer_config();
-
-        m_text_printer_name->set_text(printer_config.name);
-
-        if (printer_config.visual.thumbnail.has_value()) {
-            const std::string image_path =
-                printer_config.relative_path_to_assets() + printer_config.visual.thumbnail.value();
-
-            m_printer_icon->set_image(image_path);
-        }
+        update_settings_data();
     }
 }
 
@@ -102,6 +92,8 @@ void LogicalPrinterSettingsDialog::on_list_selection_changed(Domain::SelectionId
         ASSERT(button);
         button->set_checked(new_selection == button_index);
     }
+
+    update_settings_data();
 }
 
 void LogicalPrinterSettingsDialog::on_selected_project_changed(size_t index)
@@ -144,16 +136,18 @@ void LogicalPrinterSettingsDialog::create_page_list()
     scroll_area->set_max_size({YGUndefined, 275});
 
     // Create the ViewFactory explicitly:
-    auto factory        = PrinterListViewFactory(
+    auto factory = PrinterListViewFactory(
         [this](size_t index)
         {
             auto& preset_interactor = m_project_interactor.preset_interactor();
             const auto& item        = preset_interactor.printer_presets().items().at(index);
 
             if (!Biz::Preset::PresetSelectionCheck::can_select_printer_preset(
-                preset_interactor,
-                item.hw_printer_config_id,
-                item.id)) {
+                    preset_interactor,
+                    item.hw_printer_config_id,
+                    item.id
+                ))
+            {
                 return;
             }
 
@@ -265,6 +259,21 @@ void LogicalPrinterSettingsDialog::create_page_settings()
 void LogicalPrinterSettingsDialog::on_about_to_show()
 {
     m_stack_layout->set_current_index(0);
+}
+
+void LogicalPrinterSettingsDialog::update_settings_data()
+{
+    const Domain::Preset::HwPrinterConfig& printer_config =
+        m_project_interactor.preset_interactor().current_printer_config();
+
+    m_text_printer_name->set_text(printer_config.name);
+
+    if (printer_config.visual.thumbnail.has_value()) {
+        const std::string image_path =
+            printer_config.relative_path_to_assets() + printer_config.visual.thumbnail.value();
+
+        m_printer_icon->set_image(image_path);
+    }
 }
 
 void LogicalPrinterSettingsDialog::close_action()
