@@ -47,6 +47,13 @@ public:
         Preview,
     };
 
+    struct Callbacks
+    {
+        std::function<void(Domain::Vec2f open_pos, Domain::SelectionId config_container_id)> show_context_menu;
+    };
+
+    Callbacks& callbacks();
+
     ObjectList(Biz::ProjectInteractor* project_interactor, ObjectList::Mode mode);
     void init(Biz::ProjectInteractor* project_interactor, Mode mode);
 
@@ -137,6 +144,8 @@ private:
     ImGuiTreeNodeFlags              m_node_flags;
     ImGuiTableFlags                 m_table_flags;
     DeferredActionList              m_deferred_actions;
+
+    Callbacks m_callbacks;
 
     friend class ObjectListWindow;
 };

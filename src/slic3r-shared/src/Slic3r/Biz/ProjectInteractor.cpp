@@ -424,19 +424,38 @@ Domain::SelectionId ProjectInteractor::add_config_container()
     return id;
 }
 
+Domain::SelectionId ProjectInteractor::duplicate_config_container(Domain::SelectionId config_container_id)
+{
+    select_config_container(config_container_id); 
+    return add_config_container();
+}
+
 void ProjectInteractor::remove_config_container(Domain::SelectionId config_container_id)
 {
-    auto& p = m_workbench.project(m_selection.project_id);
-    auto& ccs = p.config_containers();
+    auto& project = m_workbench.project(m_selection.project_id);
+    auto& ccs = project.config_containers();
 
     ASSERT(ccs.size() > 1);
 
     auto it = std::find_if(ccs.begin(), ccs.end(), [config_container_id](const auto& cc_ptr) { return cc_ptr->id().id == config_container_id; });
     ASSERT(it != ccs.end());
+
+    // Remove all beds from container before its will be erased
+    Domain::ConfigContainer* cc_ptr = it->get();
+    while (!cc_ptr->bed_instances().empty()) {
+        const size_t bed_id = cc_ptr->bed_instances().back().get()->id().id;
+        scene_interactor().remove_bed_instance(
+            {.config_container_id = config_container_id, .instance_id = bed_id},
+            true
+        );
+    }
+
     it = ccs.erase(it);
     if (it == ccs.end())
         it = ccs.begin();
     select_config_container((*it)->id().id);
+
+    scene_interactor().on_removed_config_container(project);
 }
 
 void ProjectInteractor::select_config_container(Domain::SelectionId container_id)

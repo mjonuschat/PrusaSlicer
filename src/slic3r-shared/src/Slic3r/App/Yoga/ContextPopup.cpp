@@ -59,8 +59,6 @@ void ContextPopup::render(Vec2f pos, Vec2f size)
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
 
-    ImGui::OpenPopupOnItemClick();
-
     if (ImGui::BeginPopup(m_item_name.c_str(), m_flags)) {
         if (m_request_close) {
             ImGui::CloseCurrentPopup();
@@ -72,6 +70,22 @@ void ContextPopup::render(Vec2f pos, Vec2f size)
         }
 
         ImGui::EndPopup();
+    } else if (!m_id_on_right_click.empty()) {
+        // Force an OpenPopup on right-click using the given PopupID.
+        // Note: (otherwise the last item ID will be used).
+        const char* popup_id = m_id_on_right_click.c_str();
+        ImGui::OpenPopupOnItemClick(popup_id);
+
+        if (ImGui::BeginPopup(popup_id, m_flags)) {
+            for (const ItemPtr& child : std::as_const(m_children)) {
+                render_node(pos, child.get());
+            }
+            ImGui::EndPopup();
+
+            // This action is needed only once,
+            // so clear m_id_on_right_click after the first rendering.
+            m_id_on_right_click.clear();
+        }
     }
 
     // Revert current paddings and spacing
@@ -124,6 +138,7 @@ void ContextPopup::set_rounding(float rounding)
 void ContextPopup::open()
 {
     m_request_close = false;
+    m_id_on_right_click = m_item_name;
     ImGui::OpenPopup(m_item_name.c_str());
     set_style_dirty();
 }
