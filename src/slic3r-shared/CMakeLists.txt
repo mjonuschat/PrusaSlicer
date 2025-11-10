@@ -159,7 +159,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/ObjectConfigItem.cpp
         include/Slic3r/App/OverrideSettingsDialog.hpp
         src/Slic3r/App/OverrideSettingsDialog.cpp
-        include/Slic3r/App/OverrideCategoryRow.hpp
         include/Slic3r/App/OverrideCategoryButton.hpp
         src/Slic3r/App/OverrideCategoryButton.cpp
 	include/Slic3r/App/RenderModuleHelper.hpp

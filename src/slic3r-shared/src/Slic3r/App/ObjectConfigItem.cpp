@@ -23,21 +23,32 @@ ObjectConfigItem::ObjectConfigItem(
 
     m_label = emplace_back<Text>(std::string());
 
-    m_control = ConfigItemControl::config_item_control_factory(
-        this,
-        index,
-        *data.config_item,
-        m_preset_interactor
-    );
-    m_control_item = dynamic_cast<Item*>(m_control);
-    ASSERT(m_control_item, "ConfigItem needs to derive from Yoga::Item");
-
     on_data_update();
 }
 
 void ObjectConfigItem::on_data_update()
 {
     ASSERT(!m_state->is_override());
+
+    if (m_gui_type != m_state->config_item->def().gui_type) {
+        m_gui_type = m_state->config_item->def().gui_type;
+
+        if (m_control_item) {
+            remove(m_control_item);
+            m_control_item = nullptr;
+            m_control      = nullptr;
+        }
+
+        m_control = ConfigItemControl::config_item_control_factory(
+            this,
+            1,
+            m_index,
+            *m_state->config_item,
+            m_preset_interactor
+        );
+        m_control_item = dynamic_cast<Item*>(m_control);
+        ASSERT(m_control_item, "ConfigItem needs to derive from Yoga::Item");
+    }
 
     m_label->set_text(m_state->config_item->def().label);
 

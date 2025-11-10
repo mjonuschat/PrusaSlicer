@@ -37,20 +37,25 @@ OverrideOptionGroup::OverrideOptionGroup(
         Render::Icon::Minus,
         Biz::_u8L("Remove override group")
     );
-    remove_group_button->callbacks().action = [this] {
+    remove_group_button->callbacks().action = [this]
+    {
         for (int index = m_override_config_filter->size() - 1; index >= 0; --index) {
-            m_project_interactor.preset_interactor()
-                .set_item_override(*m_override_config_filter->at(index).config_item, false);
+            m_project_interactor.preset_interactor().set_item_override(
+                *m_override_config_filter->at(index).config_item,
+                false
+            );
         }
     };
 
-    m_override_config_filter                       = std::make_shared<OverrideConfigFilter>();
-    const Domain::ConfigItemDef::Category category = m_state->config_item->def().category;
-    m_override_config_filter->set_filter_fn([category](const Biz::OverrideItem& item) -> bool {
-        return item.is_override()
-            && item.config_item->def().category == category
-            && item.overriden.value();
-    });
+    m_override_config_filter = std::make_shared<OverrideConfigFilter>();
+    m_override_config_filter->set_filter_fn(
+        [this](const Biz::OverrideItem& item) -> bool
+        {
+            return item.is_override()
+                && item.config_item->def().category == m_category
+                && item.overriden.value();
+        }
+    );
 
     m_override_config_list_view = emplace_back<OverrideConfigListView>(
         OverrideConfigListViewFactory{m_project_interactor.preset_interactor(), true}
@@ -59,9 +64,9 @@ OverrideOptionGroup::OverrideOptionGroup(
     m_override_config_list_view->set_gap(5);
     m_override_config_list_view->set_source_list(m_override_config_filter.get());
 
-    m_override_config_filter->set_source_model(
-        m_project_interactor.preset_interactor().object_settings_interactor().object_observable_list()
-    );
+    m_override_config_filter->set_source_model(m_project_interactor.preset_interactor()
+                                                   .object_settings_interactor()
+                                                   .object_observable_list());
 
     m_separator = emplace_back<Separator>(Orientation::Horizontal);
 
@@ -76,6 +81,12 @@ void OverrideOptionGroup::on_data_update()
             m_project_interactor.selected_config_container().print_technology()
         )
     );
+
+    const Domain::ConfigItemDef::Category category = m_state->config_item->def().category;
+    if (m_category != category) {
+        m_category = category;
+        m_override_config_filter->invalidate();
+    }
 }
 
 } // namespace Slic3r::App

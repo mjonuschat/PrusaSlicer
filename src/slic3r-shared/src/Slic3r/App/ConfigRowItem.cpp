@@ -40,6 +40,9 @@ ConfigRowItem::ConfigRowItem(
     m_label->set_align({AlignH::Left, AlignV::Center});
     m_label->set_padding(Paddings(0, 0, 5, 0));
 
+    m_sidetext = emplace_back<Text>(m_state->def().sidetext);
+    m_sidetext->set_self_align(YGAlignCenter);
+
     if (m_small) {
         set_gap(5);
         set_width(175);
@@ -67,14 +70,9 @@ void ConfigRowItem::on_data_update()
             remove(m_input);
         }
 
-        // This should not be necessary, but until Popups are rewritten, we have
-        // to remove sidetext and create it again
-        if (m_sidetext) {
-            remove(m_sidetext);
-        }
-
         m_control = ConfigItemControl::config_item_control_factory(
             this,
+            1,
             m_index,
             *m_state,
             m_preset_interactor
@@ -82,9 +80,6 @@ void ConfigRowItem::on_data_update()
 
         m_input = dynamic_cast<Yoga::Item*>(m_control);
         ASSERT(m_input, "ConfigItem needs to derive from Yoga::Item");
-
-        m_sidetext = emplace_back<Text>(m_state->def().sidetext);
-        m_sidetext->set_self_align(YGAlignCenter);
 
         if (m_state->def().gui_type == Slic3r::Domain::ConfigItemDef::GUIType::spinbox) {
             m_config_item_spin_box = dynamic_cast<ConfigItemSpinBox*>(m_input);

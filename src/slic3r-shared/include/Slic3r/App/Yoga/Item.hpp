@@ -158,6 +158,15 @@ public:
         return item_raw;
     }
 
+    template<class T, class... Args>
+    T* emplace(size_t index, Args&&... __args)
+    {
+        std::unique_ptr<T> item = std::make_unique<T>(std::forward<Args>(__args)...);
+        T* item_raw = item.get();
+        insert(std::move(item), index);
+        return item_raw;
+    }
+
     /**
      * @warning Immediate remove Item from tree, for deffered use remove_later
      * @param child to remove

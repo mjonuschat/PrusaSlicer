@@ -123,7 +123,8 @@ std::optional<std::string> ConfigItemControl::default_value() const
 
 ConfigItemControl* ConfigItemControl::config_item_control_factory(
     Yoga::Item* container,
-    size_t index,
+    size_t child_index,
+    size_t data_index,
     const Domain::ConfigItem& item,
     Biz::Preset::PresetInteractor& preset_interactor
 )
@@ -132,40 +133,61 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
 
     switch (item.def().gui_type) {
     case Slic3r::Domain::ConfigItemDef::GUIType::textfield:
-        item_control = container->emplace_back<ConfigItemTextField>(index, item, preset_interactor);
+        item_control =
+            container
+                ->emplace<ConfigItemTextField>(child_index, data_index, item, preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::textfields:
-        item_control = container->emplace_back<ConfigItemTextFields>(index, item, preset_interactor);
+        item_control =
+            container
+                ->emplace<ConfigItemTextFields>(child_index, data_index, item, preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::checkbox:
-        item_control = container->emplace_back<ConfigItemCheckBox>(index, item, preset_interactor);
+        item_control =
+            container
+                ->emplace<ConfigItemCheckBox>(child_index, data_index, item, preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::checkboxes:
-        item_control = container->emplace_back<ConfigItemCheckBoxes>(index, item, preset_interactor);
+        item_control =
+            container
+                ->emplace<ConfigItemCheckBoxes>(child_index, data_index, item, preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::f_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::i_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::s_enum_open:
     case Slic3r::Domain::ConfigItemDef::GUIType::combobox:
-        item_control = container->emplace_back<ConfigItemComboBox>(index, item, preset_interactor);
+        item_control =
+            container
+                ->emplace<ConfigItemComboBox>(child_index, data_index, item, preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::comboboxes:
-        item_control = container->emplace_back<ConfigItemComboBoxes>(index, item, preset_interactor);
+        item_control =
+            container
+                ->emplace<ConfigItemComboBoxes>(child_index, data_index, item, preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::points:
-        item_control = container->emplace_back<ConfigItemPoints>(index, item, preset_interactor);
+        item_control =
+            container->emplace<ConfigItemPoints>(child_index, data_index, item, preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::color:
-        item_control = container->emplace_back<ConfigItemColorPicker>(index, item);
+        item_control = container->emplace<ConfigItemColorPicker>(child_index, data_index, item);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinbox:
-        item_control = container->emplace_back<ConfigItemSpinBox>(index, item, preset_interactor);
+        item_control =
+            container->emplace<ConfigItemSpinBox>(child_index, data_index, item, preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::spinboxes:
-        item_control = container->emplace_back<ConfigItemSpinBoxes>(index, item, preset_interactor);
+        item_control =
+            container
+                ->emplace<ConfigItemSpinBoxes>(child_index, data_index, item, preset_interactor);
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::substitutions:
-        item_control = container->emplace_back<ConfigItemSubstitutions>(index, item, preset_interactor);
+        item_control = container->emplace<ConfigItemSubstitutions>(
+            child_index,
+            data_index,
+            item,
+            preset_interactor
+        );
         break;
     }
 
