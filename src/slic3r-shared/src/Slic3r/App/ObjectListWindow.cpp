@@ -8,6 +8,8 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
+#include "Slic3r/App/Yoga/Menu.hpp"
+#include "Slic3r/App/Yoga/MenuItem.hpp"
 
 #include "Slic3r/App/Plater/BedThumbnailTexture.hpp"
 
@@ -46,6 +48,7 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
 
     m_label = header->emplace_back<Text>(_u8L("Object List"));
     m_label->set_font_type(App::Render::ImguiFontType::Bold);
+    m_label->set_self_align(YGAlignCenter);
     m_label->set_flex_grow(1.f);
 
     const ObjectList::Mode mode = for_plater ? ObjectList::Mode::Plater : ObjectList::Mode::Preview;
@@ -55,6 +58,7 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
             Render::Icon::ConfigContainer
         );
         m_add_container_button->set_background_color(ImColor(41, 41, 41));
+        m_add_container_button->set_padding(5);
         m_add_container_button->callbacks().action = [this]()
         {
             m_project_interactor->add_config_container();
@@ -65,6 +69,7 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
 
     m_object_list = main_bg->emplace_back<ObjectList>(project_interactor, mode);
     m_object_list->set_flex_grow(1.f);
+    init_cc_context_menu();
 
     if (mode == ObjectList::Mode::Plater) {
         LayoutButton* show_details_button = header->emplace_back<LayoutButton>("", Render::Icon::Details, _u8L("Show item details"));
@@ -217,6 +222,43 @@ void ObjectListWindow::update_sliced_info()
 void ObjectListWindow::set_bed_instance_icons(const Plater::BedThumbnailTextures& icons)
 {
     m_object_list->set_bed_instance_icons(icons);
+}
+
+void ObjectListWindow::init_cc_context_menu()
+{
+    // Create context menu
+
+    m_cc_context_menu =
+        m_object_list->emplace_back<Yoga::Menu>("cc_context_menu", Yoga::Position::Top);
+
+    m_delete_cc_menu_item =
+        m_cc_context_menu->append_item(_u8L("Delete"), nullptr, Render::Icon::DeleteBtnIcon);
+    m_delete_cc_menu_item->callbacks().action = [this]()
+    { m_project_interactor->remove_config_container(m_selected_config_container_id); };
+
+    m_cc_context_menu->append_item(_u8L("Duplicate"), nullptr, Render::Icon::CopyForGizmo)
+        ->callbacks()
+        .action = [this]()
+    { m_project_interactor->duplicate_config_container(m_selected_config_container_id); };
+
+    // Process callback for show context menu
+
+    m_object_list->callbacks().show_context_menu =
+        [&](Domain::Vec2f open_pos, Domain::SelectionId config_container_id)
+    {
+        ASSERT(config_container_id != Domain::INVALID_ID);
+
+        // Workaround till context menu doesn't allow to be shown on click position
+        m_cc_context_menu->set_offset(open_pos.y());
+
+        // Don't allow to delete last config container
+        const size_t containers_cnt =
+            m_project_interactor->scene_interactor().selected_project_config_containers().size();
+        m_delete_cc_menu_item->set_enabled(containers_cnt > 1);
+
+        m_selected_config_container_id = config_container_id;
+        m_cc_context_menu->open();
+    };
 }
 
 } // namespace Slic3r::App

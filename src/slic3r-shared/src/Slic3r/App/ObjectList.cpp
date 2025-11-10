@@ -385,6 +385,11 @@ static bool is_imgui_item_just_selected()
         && (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsKeyPressed(ImGuiKey_Enter));
 }
 
+ObjectList::Callbacks& ObjectList::callbacks()
+{
+    return m_callbacks;
+}
+
 ObjectList::ObjectList(Biz::ProjectInteractor* project_interactor, ObjectList::Mode mode) : Item()
 {
     init(project_interactor, mode);
@@ -689,6 +694,37 @@ static bool selectable(
     return ret;
 }
 
+struct RowHitBox
+{
+    ImRect rect = ImRect(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos());
+
+    void add_item()
+    {
+        rect.Add(ImGui::GetItemRectMin());
+        rect.Add(ImGui::GetItemRectMax());
+    }
+
+    bool is_hovered() const
+    {
+        return rect.Contains(ImGui::GetIO().MousePos);
+    }
+
+    bool is_mouse_right_licked() const
+    {
+        return ImGui::IsMouseClicked(ImGuiMouseButton_Right) && is_hovered();
+    }
+
+    void highlight_on_hover()
+    {
+        if (is_hovered())
+            ImGui::GetWindowDrawList()->AddRect(
+                rect.Min,
+                rect.Max,
+                ImGui::ColorConvertFloat4ToU32({0.32f, 0.48f, 0.84f, 0.65f})
+            );
+    }
+};
+
 bool ObjectList::render_config_containers()
 {
     auto& ctx                 = selected_project_context();
@@ -696,7 +732,9 @@ bool ObjectList::render_config_containers()
 
     size_t beds_cnt{0};
     for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
+        RowHitBox hit_row;
         render_group_name(get_cc_name(cc->selected_preset()));
+        hit_row.add_item();
 
         ImGui::SameLine();
         std::string add_button_id = fmt::format("btn_add_bed_{}", cc->id().id);
@@ -711,6 +749,15 @@ bool ObjectList::render_config_containers()
             add_bed(cc->id().id);
         }
         ImGui::PopID();
+        hit_row.add_item();
+
+        if (hit_row.is_mouse_right_licked()) {
+            if (callbacks().show_context_menu) {
+                const Vec2f pos = Vec2f(left(), top()) - Item::from_im(ImGui::GetIO().MousePos);
+                callbacks().show_context_menu(pos, cc->id().id);
+            }
+        }
+        hit_row.highlight_on_hover();
 
         BedsTable table;
         if (table.begin(cc->id().id, m_table_flags)) {
@@ -1397,7 +1444,7 @@ void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
 
     ImGui::TableSetColumnIndex(ciPrintable);
 
-    ImVec4 DARK_BLUE{};
+    ImVec4 DARK_BLUE{ 0.32f, 0.48f, 0.84f, 0.65f };
 
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.f, 1.f));
     if (status_code == StatusCode::Finished) {

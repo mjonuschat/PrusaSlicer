@@ -183,7 +183,7 @@ public:
     void prepare_added_project(Domain::Project& project);
 
     Domain::BedInstance& add_bed_instance(size_t config_container_id);
-    void remove_bed_instance(const Domain::BedRef& instance);
+    void remove_bed_instance(const Domain::BedRef& instance, bool allow_to_remove_last_one = false);
     void transform_bed_instance(const Domain::BedRef& instance, const Transform& xform);
 
     void on_preset_selection_changed(
@@ -278,6 +278,8 @@ public:
      */
     void finalize_transform_selection(TransformMemento& memento, bool canceled);
     /** @} */
+
+    void on_removed_config_container(Domain::Project& project);
 
 private:
     void layout_after_project_load(Domain::Project& added_project);

@@ -836,7 +836,7 @@ void SceneInteractor::layout_after_project_load(Domain::Project& added_project)
     );
 }
 
-void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
+void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance, bool allow_to_remove_last_one)
 {
     auto& project               = m_projects.find(m_selected_project_id)->second.project;
     Domain::ConfigContainer* cc = project.find_config_container(instance.config_container_id);
@@ -862,9 +862,27 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
     auto updated_instances = m_bed_placement.layout(project, BED_GAP);
 
     if (bed_selection().empty()) {
-        // ensure one bed instance is selected
-        ASSERT(!cc->bed_instances().empty());
-        selection.select_one({ cc->id().id, cc->bed_instances().front()->id().id });
+        if (allow_to_remove_last_one) {
+            if (cc->bed_instances().empty()) {
+                auto& ccs = project.config_containers();
+                ASSERT(ccs.size() > 1);
+                auto it = std::find_if(
+                    ccs.begin(),
+                    ccs.end(),
+                    [config_container_id = instance.config_container_id](const auto& cc_ptr)
+                    { return cc_ptr->id().id == config_container_id; }
+                );
+                if (++it == ccs.end())
+                    it = ccs.begin();
+                selection.select_one(
+                    {it->get()->id().id, it->get()->bed_instances().front()->id().id}
+                );
+            }
+        } else {
+            // ensure one bed instance is selected
+            ASSERT(!cc->bed_instances().empty());
+            selection.select_one({cc->id().id, cc->bed_instances().front()->id().id});
+        }
     }
 
     invoke_listeners<ISceneBedInstanceChangedListener>(
@@ -894,7 +912,7 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
         [&](auto* l) { l->on_bed_instance_removed(m_selected_project_id, {instance}); }
     );
 
-    if (cc->bed_instances().empty()) {
+    if (!allow_to_remove_last_one && cc->bed_instances().empty()) {
         add_bed_instance(cc->id().id);
     }
 }
@@ -1142,6 +1160,11 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
     }
 
     memento.reset();
+}
+
+void SceneInteractor::on_removed_config_container(Domain::Project& project)
+{
+    layout_after_project_load(project);
 }
 
 BedTrackingChanges SceneInteractor::update_selection_instance_bed_placement(bool forced_volume_mode)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Window.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
 #include <functional>
 
 namespace Slic3r::Biz {
@@ -18,6 +19,8 @@ namespace Yoga {
 class Text;
 class Rectangle;
 class LayoutButton;
+class Menu;
+class MenuItem;
 }
 
 class ObjectList;
@@ -32,6 +35,9 @@ public:
     void set_bed_instance_icons(const Plater::BedThumbnailTextures& icons);
 
     std::function<void()> on_config_container_added;
+
+private:
+    void init_cc_context_menu();
 
 private:
     Yoga::Text* m_label{ nullptr };
@@ -50,6 +56,11 @@ private:
     Yoga::Item* m_first_layer_time_row{ nullptr };
 
     Biz::ProjectInteractor* m_project_interactor{ nullptr };
+
+    // context menu for config containers
+    Yoga::Menu* m_cc_context_menu{ nullptr };
+    Yoga::MenuItem* m_delete_cc_menu_item{ nullptr };
+    Domain::SelectionId m_selected_config_container_id{ Domain::INVALID_ID };
 };
 
 } // namespace Slic3r::App

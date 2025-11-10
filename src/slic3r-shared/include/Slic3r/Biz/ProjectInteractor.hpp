@@ -171,6 +171,7 @@ public:
      */
 
     Domain::SelectionId add_config_container();
+    Domain::SelectionId duplicate_config_container(Domain::SelectionId config_container_id);
     void remove_config_container(Domain::SelectionId config_container_id);
     void select_config_container(Domain::SelectionId config_container_id);
 

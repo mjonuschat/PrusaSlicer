@@ -36,6 +36,8 @@ private:
     float m_rounding         = 5;
     ImGuiWindowFlags m_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove;
     bool m_request_close     = false;
+
+    std::string m_id_on_right_click;
 };
 
 } // namespace Slic3r::App::Yoga
