@@ -4720,6 +4720,49 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->max = max_temp;
     def->init_fn = init_with(std::optional<int>());
 
+    def = defs.add("custom_parameters_print", typeid(std::string));
+    def->location = Print;
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->label = L("Custom print parameters");
+    // FIXME: Translating the tooltip like this will likely not work.
+    const std::string custom_parameter_tooltip_templ =
+        L("JSON-encoded string defining extra parameters, which can later be expanded in Custom G-code macro language. "
+          "Each of the parameters is prepended by %1% prefix before it is passed into the parser. "
+          "For example, defining '{\"my_key\": \"my_value\"}' allows to use '%1%_my_key'.\n\n"
+          "The JSON must be single level (no arrays and objects). All value types are allowed, but nulls "
+          "will be rejected by the parser."
+    );
+    def->tooltip = (boost::format(custom_parameter_tooltip_templ) % "custom_parameter_print").str();
+    def->multiline = true;
+    def->full_width = true;
+    def->height = 13;
+    def->mode = comExpert;
+    def->init_fn = init_with("");
+
+    def = defs.add("custom_parameters_printer", typeid(std::string));
+    def->location = Printer;
+    def->category = ConfigItemDef::Category::CustomGcode;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->label = L("Custom printer parameters");
+    def->tooltip = (boost::format(custom_parameter_tooltip_templ) % "custom_parameter_printer").str();;
+    def->multiline = true;
+    def->full_width = true;
+    def->height = 12;
+    def->mode = comExpert;
+    def->init_fn = init_with("");
+
+    def = defs.add("custom_parameters_filament", typeid(std::string));
+    def->location = Filament;
+    def->category = ConfigItemDef::Category::Advanced;
+    def->gui_type = ConfigItemDef::GUIType::textfield;
+    def->label = L("Custom filament parameters");
+    def->tooltip = (boost::format(custom_parameter_tooltip_templ) % "custom_parameter_filament").str();
+    def->multiline = true;
+    def->full_width = true;
+    def->height = 12;
+    def->mode = comExpert;
+    def->init_fn = init_with("");
 }
 
 } // namespace Slic3r::Domain

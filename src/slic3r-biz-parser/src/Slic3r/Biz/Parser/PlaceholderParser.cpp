@@ -898,11 +898,8 @@ namespace client
                 ctx->throw_exception("Variable does not exist", opt_key);
             if (is_scalar(*opt)) {
                 const auto scalar{std::get<IO::Scalar>(*opt)};
-                if (scalar.type() == IO::Type::IntOptional) {
-                    const auto value{scalar.get<std::optional<int>>()};
-                    if (!value)
-                        ctx->throw_exception("Trying to reference an undefined (nil) optional variable", opt_key);
-                }
+                if (scalar.is_optional() && scalar.is_nil())
+                    ctx->throw_exception("Trying to reference an undefined (nil) optional variable", opt_key);
                 output = std::get<IO::Scalar>(*opt).serialize();
             } else {
                 const auto& vec = std::get<IO::Vector>(*opt);
@@ -910,12 +907,8 @@ namespace client
                     ctx->throw_exception("Indexing an empty vector variable", opt_key);
                 if (idx >= vec.size())
                     idx = 0;
-                if (vec.type() == IO::Type::IntOptionals) {
-                    const auto value{vec.get<std::optional<int>>()};
-                    if (!value.at(idx)) {
-                        ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt_key);
-                    }
-                }
+                if (vec.holds_optionals() && vec.is_nil_at(idx))
+                    ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt_key);
                 output = vec.at(idx).serialize();
             }
         }
@@ -955,12 +948,8 @@ namespace client
                 ctx->throw_exception("Negative vector index", opt_key);
             if (idx >= (int)vec.size())
                 idx = 0;
-            if (vec.type() == IO::Type::IntOptionals) {
-                const auto value{vec.get<std::optional<int>>()};
-                if (!value.at(idx)) {
-                    ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt_key);
-                }
-            }
+            if (vec.holds_optionals() && vec.is_nil_at(idx))
+                ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt_key);
 			output = vec.at(idx).serialize();
         }
 
@@ -1013,17 +1002,16 @@ namespace client
 
             const IO::Scalar& scalar{std::get<IO::Scalar>(*opt.opt)};
 
-            if (scalar.type() == IO::Type::IntOptional) {
-                const auto value{scalar.get<std::optional<int>>()};
-                if (!value) {
-                    ctx->throw_exception("Trying to reference an undefined (nil) optional variable", opt.it_range);
-                }
-            }
+            if (scalar.is_optional() && scalar.is_nil())
+                ctx->throw_exception("Trying to reference an undefined (nil) optional variable", opt.it_range);
 
             switch (scalar.type()) {
             case IO::Type::Float:   output.set_d(scalar.get<double>());   break;
             case IO::Type::Int:     output.set_i(scalar.get<int>());     break;
             case IO::Type::IntOptional: output.set_i(*scalar.get<std::optional<int>>());     break;
+            case IO::Type::FloatOptional: output.set_d(*scalar.get<std::optional<double>>());     break;
+            case IO::Type::StringOptional: output.set_s(*scalar.get<std::optional<std::string>>());     break;
+            case IO::Type::BoolOptional: output.set_b(*scalar.get<std::optional<bool>>());     break;
             case IO::Type::String:  output.set_s(scalar.get<std::string>());  break;
             case IO::Type::Percent: output.set_d(scalar.get<double>());   break;
             case IO::Type::Enum:
@@ -1095,16 +1083,16 @@ namespace client
                 ctx->throw_exception("Indexing an empty vector variable", opt.it_range);
             size_t idx = (opt.index < 0) ? 0 : (opt.index >= int(vec.size())) ? 0 : size_t(opt.index);
 
-            if (vec.type() == IO::Type::IntOptionals) {
-                const auto value{vec.get<std::optional<int>>()};
-                if (!value.at(idx))
-                    ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt.it_range);
-            }
+            if (vec.holds_optionals() && vec.is_nil_at(idx))
+                ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt.it_range);
 
             switch (vec.type()) {
             case IO::Type::Floats:   output.set_d(vec.get<double>()[idx]); break;
             case IO::Type::Ints:     output.set_i(vec.get<int>()[idx]); break;
             case IO::Type::IntOptionals: output.set_i(*vec.get<std::optional<int>>()[idx]); break;
+            case IO::Type::FloatOptionals: output.set_d(*vec.get<std::optional<double>>()[idx]); break;
+            case IO::Type::StringOptionals: output.set_s(*vec.get<std::optional<std::string>>()[idx]); break;
+            case IO::Type::BoolOptionals: output.set_b(*vec.get<std::optional<bool>>()[idx]); break;
             case IO::Type::Strings:  output.set_s(vec.get<std::string>()[idx]); break;
             case IO::Type::Percents: output.set_d(vec.get<Domain::Percentage>()[idx].get_abs_value(1.0)); break;
             case IO::Type::Points:   output.set_s(to_string(vec.get<Domain::Vec2d>()[idx])); break;
@@ -1252,21 +1240,16 @@ namespace client
                 const IO::Vector& vec = std::get<IO::Vector>(*opt.opt);
                 if (vec.empty())
                     ctx->throw_exception("Indexing an empty vector variable", opt.it_range);
-                if (vec.type() == IO::Type::IntOptionals) {
+                if (vec.holds_optionals()) {
                     const std::size_t index{opt.index >= int(vec.size()) ? 0 : size_t(opt.index)};
-                    const auto values{vec.get<std::optional<int>>()};
-                    output.set_b(bool{!values.at(index)});
+                    output.set_b(bool{vec.is_nil_at(index)});
                 } else {
                     output.set_b(false);
                 }
             } else {
                 assert(is_scalar(*opt.opt));
                 const auto scalar{std::get<IO::Scalar>(*opt.opt)};
-                if (scalar.type() == IO::Type::IntOptional) {
-                    output.set_b(!scalar.get<std::optional<int>>());
-                } else {
-                    output.set_b(false);
-                }
+                output.set_b(scalar.is_optional() && scalar.is_nil());
             }
             output.it_range = opt.it_range;
         }
@@ -1515,11 +1498,10 @@ namespace client
 
             const auto rhs_vec = std::get<IO::Vector>(*rhs.opt);
             const auto lhs_vec = std::get<IO::Vector>(*lhs.opt);
-            if (rhs_vec.type() == IO::Type::IntOptionals) {
-                const auto values{rhs_vec.get<std::optional<int>>()};
-                const auto is_nil{std::ranges::any_of(values, [](const auto& value){return !value;})};
-                if (is_nil) {
-                    ctx->throw_exception("Some elements of the right hand side vector variable of optional values are undefined (nil)", rhs.it_range);
+            if (rhs_vec.holds_optionals()) {
+                for (size_t idx = 0; idx < rhs_vec.size(); ++idx) {
+                    if (rhs_vec.is_nil_at(idx))
+                        ctx->throw_exception("Some elements of the right hand side vector variable of optional values are undefined (nil)", rhs.it_range);
                 }
             }
             if (lhs_vec.type() != rhs_vec.type()) {
@@ -1566,15 +1548,15 @@ namespace client
                     return false;
 
                 const auto& rhs_vec = std::get<IO::Vector>(*rhs.opt);
-                if (rhs_vec.type() == IO::Type::IntOptionals) {
-                    const auto values{rhs_vec.get<std::optional<int>>()};
-                    const auto is_nil{std::ranges::any_of(values, [](const auto& value){return !value;})};
-                    if (is_nil) {
+                if (rhs_vec.holds_optionals()) {
+                    for (size_t idx = 0; idx < rhs_vec.size(); ++idx) {
+                        if (rhs_vec.is_nil_at(idx))
                         ctx->throw_exception("Some elements of the right hand side vector variable of optional values are undefined (nil)", rhs.it_range);
                     }
                 }
                 // Clone the vector variable.
-                if (!contains({ IO::Type::Floats, IO::Type::Ints, IO::Type::IntOptionals, IO::Type::Strings, IO::Type::Bools, IO::Type::Percents }, rhs_vec.type()))
+                if (!contains({ IO::Type::Floats, IO::Type::Ints, IO::Type::IntOptionals, IO::Type::BoolOptionals, IO::Type::StringOptionals,
+                    IO::Type::FloatOptionals, IO::Type::Strings, IO::Type::Bools, IO::Type::Percents }, rhs_vec.type()))
                     ctx->throw_exception("Duplicating this type of vector variable is not supported", rhs.it_range);
 
                 const IO::Value opt_new{*rhs.opt};

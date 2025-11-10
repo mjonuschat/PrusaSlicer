@@ -314,3 +314,40 @@ TEST_CASE("Placeholder parser variables", "[PlaceholderParser]") {
     }
     SECTION("if else completely empty") { REQUIRE(parser.process("{if false then elsif false then else endif}", 0, nullptr, nullptr, nullptr) == ""); }
 }
+
+TEST_CASE("Placeholder parser - optionals and vectors of optionals", "[PlaceholderParser]") {
+    Config config;
+    config.set("opt_int", std::optional<int>{std::nullopt});
+    config.set("opt_bool", std::optional<bool>{true});
+    config.set("opt_double", std::optional<double>{std::nullopt});
+    config.set("opt_string", std::optional<std::string>{"ahoj"});
+    config.set("vec_ints", std::vector<std::optional<int>>{100, std::nullopt, 200});
+    config.set("vec_bools", std::vector<std::optional<bool>>{true, std::nullopt});
+    config.set("vec_strings", std::vector<std::optional<std::string>>{std::nullopt, "ahoj"});
+    config.set("vec_doubles", std::vector<std::optional<double>>{100.5, 200.5, std::nullopt});
+    
+
+    PlaceholderParser parser(config);
+    
+    REQUIRE_THROWS(parser.process("{opt_int}"));
+    REQUIRE(parser.process("{is_nil(opt_int)}") == "true");
+    REQUIRE(parser.process("{opt_bool}") == "true");
+    REQUIRE(parser.process("{is_nil(opt_bool)}") == "false");
+    REQUIRE_THROWS(parser.process("{opt_double}"));
+    REQUIRE(parser.process("{is_nil(opt_double)}") == "true");
+    REQUIRE(parser.process("{opt_string}") == "ahoj");
+    REQUIRE(parser.process("{is_nil(opt_string)}") == "false");
+
+    REQUIRE(parser.process("{vec_ints[0]}") == "100");
+    REQUIRE(parser.process("{vec_ints[0]+20}") == "120");
+    REQUIRE(parser.process("{vec_bools[0]}") == "true");
+    REQUIRE_THROWS(parser.process("{vec_bools[1]}"));
+    REQUIRE(parser.process("{vec_strings[1]}") == "ahoj");
+    REQUIRE_THROWS(parser.process("{vec_strings[0]}"));
+    REQUIRE(parser.process("{vec_doubles[1]}") == "200.5");
+    REQUIRE_THROWS(parser.process("{vec_doubles[2]}"));
+    REQUIRE(parser.process("{is_nil(vec_ints[0])}") == "false");
+    REQUIRE(parser.process("{is_nil(vec_ints[1])}") == "true");
+    REQUIRE(parser.process("{is_nil(vec_bools[0])}") == "false");
+    REQUIRE(parser.process("{is_nil(vec_bools[1])}") == "true");
+}

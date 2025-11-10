@@ -22,7 +22,13 @@ template<> struct get_option_type<std::vector<double>> { static constexpr auto v
 template<> struct get_option_type<int> { static constexpr auto value{Type::Int}; };
 template<> struct get_option_type<std::vector<int>> { static constexpr auto value{Type::Ints}; };
 template<> struct get_option_type<std::optional<int>> { static constexpr auto value{Type::IntOptional}; };
+template<> struct get_option_type<std::optional<double>> { static constexpr auto value{Type::FloatOptional}; };
+template<> struct get_option_type<std::optional<std::string>> { static constexpr auto value{Type::StringOptional}; };
+template<> struct get_option_type<std::optional<bool>> { static constexpr auto value{Type::BoolOptional}; };
 template<> struct get_option_type<std::vector<std::optional<int>>> { static constexpr auto value{Type::IntOptionals}; };
+template<> struct get_option_type<std::vector<std::optional<double>>> { static constexpr auto value{Type::FloatOptionals}; };
+template<> struct get_option_type<std::vector<std::optional<std::string>>> { static constexpr auto value{Type::StringOptionals}; };
+template<> struct get_option_type<std::vector<std::optional<bool>>> { static constexpr auto value{Type::BoolOptionals}; };
 template<> struct get_option_type<std::string> { static constexpr auto value{Type::String}; };
 template<> struct get_option_type<std::vector<std::string>> { static constexpr auto value{Type::Strings}; };
 template<> struct get_option_type<Percentage> { static constexpr auto value{Type::Percent}; };
@@ -34,6 +40,14 @@ template<> struct get_option_type<std::vector<Vec2d>> { static constexpr auto va
 template<> struct get_option_type<bool> { static constexpr auto value{Type::Bool}; };
 template<> struct get_option_type<std::vector<bool>> { static constexpr auto value{Type::Bools}; };
 // clang-format on
+
+static bool is_type_optional(Type type)
+{
+    return type == Type::FloatOptional || type == Type::IntOptional ||
+           type == Type::StringOptional || type == Type::BoolOptional ||
+           type == Type::FloatOptionals || type == Type::IntOptionals ||
+           type == Type::StringOptionals || type == Type::BoolOptionals;
+}
 
 template<typename T>
 constexpr Type get_option_type_v = get_option_type<T>::value;
@@ -55,6 +69,9 @@ Scalar::Scalar(const T& value, const std::string& ratio_over) : m_ratio_over{rat
 template Scalar::Scalar(const double&, const std::string&);
 template Scalar::Scalar(const int&, const std::string&);
 template Scalar::Scalar(const std::optional<int>&, const std::string&);
+template Scalar::Scalar(const std::optional<double>&, const std::string&);
+template Scalar::Scalar(const std::optional<std::string>&, const std::string&);
+template Scalar::Scalar(const std::optional<bool>&, const std::string&);
 template Scalar::Scalar(const std::string&, const std::string&);
 template Scalar::Scalar(const Percentage&, const std::string&);
 template Scalar::Scalar(const FloatOrPercentage&, const std::string&);
@@ -87,6 +104,7 @@ bool Scalar::operator==(const Scalar& rhs) const {
 }
 
 Type Scalar::type() const { return m_type; }
+bool Scalar::is_optional() const { return is_type_optional(m_type); }
 
 std::string Scalar::serialize() const {
     switch(m_type){
@@ -134,6 +152,9 @@ T Scalar::get() const
 template double Scalar::get() const;
 template int Scalar::get() const;
 template std::optional<int> Scalar::get() const;
+template std::optional<double> Scalar::get() const;
+template std::optional<std::string> Scalar::get() const;
+template std::optional<bool> Scalar::get() const;
 template std::string Scalar::get() const;
 template Percentage Scalar::get() const;
 template FloatOrPercentage Scalar::get() const;
@@ -154,6 +175,9 @@ Vector::Vector(const std::vector<T>& values)
 template Vector::Vector(const std::vector<double>&);
 template Vector::Vector(const std::vector<int>&);
 template Vector::Vector(const std::vector<std::optional<int>>&);
+template Vector::Vector(const std::vector<std::optional<double>>&);
+template Vector::Vector(const std::vector<std::optional<std::string>>&);
+template Vector::Vector(const std::vector<std::optional<bool>>&);
 template Vector::Vector(const std::vector<std::string>&);
 template Vector::Vector(const std::vector<Percentage>&);
 template Vector::Vector(const std::vector<FloatOrPercentage>&);
@@ -170,6 +194,7 @@ bool Vector::operator==(const Vector& rhs) const {
 Type Vector::type() const { return m_type; }
 std::size_t Vector::size() const { return m_values.size(); }
 bool Vector::empty() const { return m_values.empty(); }
+bool Vector::holds_optionals() const { return is_type_optional(m_type); }
 
 template<typename T>
 requires (!std::is_enum_v<T>)
@@ -184,6 +209,9 @@ std::vector<T> Vector::get() const
 template std::vector<double> Vector::get() const;
 template std::vector<int> Vector::get() const;
 template std::vector<std::optional<int>> Vector::get() const;
+template std::vector<std::optional<double>> Vector::get() const;
+template std::vector<std::optional<std::string>> Vector::get() const;
+template std::vector<std::optional<bool>> Vector::get() const;
 template std::vector<std::string> Vector::get() const;
 template std::vector<Percentage> Vector::get() const;
 template std::vector<FloatOrPercentage> Vector::get() const;
@@ -230,6 +258,9 @@ template void Config::set(const std::string&, const Value&);
 template void Config::set(const std::string&, const double&);
 template void Config::set(const std::string&, const int&);
 template void Config::set(const std::string&, const std::optional<int>&);
+template void Config::set(const std::string&, const std::optional<double>&);
+template void Config::set(const std::string&, const std::optional<std::string>&);
+template void Config::set(const std::string&, const std::optional<bool>&);
 template void Config::set(const std::string&, const std::string&);
 template void Config::set(const std::string&, const Percentage&);
 template void Config::set(const std::string&, const FloatOrPercentage&);
@@ -238,6 +269,9 @@ template void Config::set(const std::string&, const bool&);
 template void Config::set(const std::string&, const std::vector<double>&);
 template void Config::set(const std::string&, const std::vector<int>&);
 template void Config::set(const std::string&, const std::vector<std::optional<int>>&);
+template void Config::set(const std::string&, const std::vector<std::optional<bool>>&);
+template void Config::set(const std::string&, const std::vector<std::optional<double>>&);
+template void Config::set(const std::string&, const std::vector<std::optional<std::string>>&);
 template void Config::set(const std::string&, const std::vector<std::string>&);
 template void Config::set(const std::string&, const std::vector<Percentage>&);
 template void Config::set(const std::string&, const std::vector<FloatOrPercentage>&);
@@ -258,5 +292,44 @@ std::vector<std::string> Config::keys() const {
     });
     return keys;
 };
+
+bool Scalar::is_nil() const
+{
+    switch (m_type) {
+        case Type::BoolOptional :   return ! this->get<std::optional<bool>>().has_value();
+        case Type::IntOptional :    return ! this->get<std::optional<int>>().has_value();
+        case Type::FloatOptional :  return ! this->get<std::optional<double>>().has_value();
+        case Type::StringOptional : return ! this->get<std::optional<std::string>>().has_value();
+        default: return false;
+    }
+}
+
+static bool is_nullopt_at_or_all(const auto& vec, const std::optional<size_t> index) {
+    return index.has_value() ? ! vec[*index].has_value() : std::ranges::all_of(vec, [](const auto& val) { return ! val.has_value(); });
+}
+
+static bool is_nil_internal(const Vector& vector, std::optional<size_t> index)
+{
+    switch (vector.type()) {
+        case Type::BoolOptionals : return is_nullopt_at_or_all(vector.get<std::optional<bool>>(), index);
+        case Type::IntOptionals :  return is_nullopt_at_or_all(vector.get<std::optional<int>>(), index);
+        case Type::FloatOptionals : return is_nullopt_at_or_all(vector.get<std::optional<double>>(), index);
+        case Type::StringOptionals : return is_nullopt_at_or_all(vector.get<std::optional<std::string>>(), index);
+        default: return false;
+    }
+}
+
+bool Vector::is_all_nil() const
+{
+    return is_nil_internal(*this, std::nullopt);
+
+}
+
+bool Vector::is_nil_at(size_t index) const
+{
+    return is_nil_internal(*this, index);
+
+}
+
 
 } // namespace Slic3r::Parser::IO

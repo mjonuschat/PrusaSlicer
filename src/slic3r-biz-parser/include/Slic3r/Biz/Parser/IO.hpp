@@ -18,7 +18,13 @@ enum class Type
     Int,
     Ints,
     IntOptional,
+    FloatOptional,
+    StringOptional,
+    BoolOptional,
     IntOptionals,
+    FloatOptionals,
+    StringOptionals,
+    BoolOptionals,
     String,
     Strings,
     Percent,
@@ -51,6 +57,9 @@ struct Scalar
     Type type() const;
     std::string serialize() const;
     std::string ratio_over() const;
+    bool is_optional() const;
+    bool is_nil() const;
+    
 
     template<typename T>
     requires (!std::is_enum_v<T>)
@@ -107,6 +116,9 @@ struct Vector
     Type type() const;
     std::size_t size() const;
     bool empty() const;
+    bool holds_optionals() const;
+    bool is_all_nil() const;
+    bool is_nil_at(size_t index) const;
 
     template<typename T>
     requires (!std::is_enum_v<T>)

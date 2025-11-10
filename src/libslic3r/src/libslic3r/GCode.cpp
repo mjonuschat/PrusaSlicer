@@ -46,6 +46,7 @@
 #include "LocalesUtils.hpp"
 #include "libslic3r/format.hpp"
 #include "Slic3r/Time.hpp"
+#include "libslic3r/CustomParametersHandling.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -759,17 +760,16 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
 
     if (! m_placeholder_parser_integration.failed_templates.empty()) {
         // G-code export proceeded, but some of the PlaceholderParser substitutions failed.
-        //FIXME localize!
-        std::string msg = std::string{"G-code processing failed due to invalid custom G-code sections:\n\n"};
-        for (const auto &name_and_error : m_placeholder_parser_integration.failed_templates)
-            msg += name_and_error.first + "\n" + name_and_error.second + "\n";
-        msg += "\nPlease inspect the file ";
-        msg += "for error messages enclosed between\n";
-        msg += "        !!!!! Failed to process the custom G-code template ...\n";
-        msg += "and\n";
-        msg += "        !!!!! End of an error report for the custom G-code template ...\n";
-        msg += "for all macro processing errors.";
-        throw Slic3r::PlaceholderParserError(msg);
+        std::vector<std::string> failed_config_keys;
+        for (const auto& [name, error] : m_placeholder_parser_integration.failed_templates)
+            failed_config_keys.emplace_back(name);
+        throw Biz::Slicing::Exception{
+            Biz::Slicing::Error{
+                Biz::Slicing::ErrorCode::PlaceholderParser,
+                failed_config_keys,
+                {},
+                Biz::Slicing::PlaceholderParserErrorPayload{m_placeholder_parser_integration.failed_templates}
+        }}; 
     }
 
     BOOST_LOG_TRIVIAL(debug) << "Start processing gcode, " << log_memory_info();
@@ -1279,6 +1279,14 @@ void GCodeGenerator::_do_export(
         for (unsigned int extruder_id : tool_ordering.all_extruders())
             is_extruder_used[extruder_id] = true;
         this->placeholder_parser().set("is_extruder_used", is_extruder_used);
+
+        // Now the custom parameters:
+        add_custom_parameters_into_placeholder_parser(
+            print.config().get<std::string>("custom_parameters_print"),
+            print.config().get<std::string>("custom_parameters_printer"),
+            print.config().get<std::vector<std::string>>("custom_parameters_filament"),
+            this->placeholder_parser()
+        );
     }
 
     // Enable ooze prevention if configured so.
@@ -1795,7 +1803,7 @@ std::string GCodeGenerator::placeholder_parser_process(
 
         return output;
     } 
-    catch (std::runtime_error &err) 
+    catch (const std::runtime_error& err) 
     {
         // Collect the names of failed template substitutions for error reporting.
         auto it = ppi.failed_templates.find(name);

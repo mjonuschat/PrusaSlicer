@@ -111,6 +111,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/CSGMesh/SliceCSGMesh.hpp
     src/libslic3r/CSGMesh/TriangleMeshAdapter.hpp
     src/libslic3r/CustomGCode.cpp
+    src/libslic3r/CustomParametersHandling.cpp
     src/libslic3r/CutUtils.cpp
     src/libslic3r/CutUtils.hpp
     src/libslic3r/EdgeGrid.cpp
@@ -412,6 +413,7 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/CSGMesh/CSGMesh.hpp
     include/libslic3r/CSGMesh/VoxelizeCSGMesh.hpp
     include/libslic3r/CustomGCode.hpp
+    include/libslic3r/CustomParametersHandling.hpp
     include/libslic3r/ExtrusionEntity.hpp
     include/libslic3r/ExtrusionEntityCollection.hpp
     include/libslic3r/ExtrusionRole.hpp

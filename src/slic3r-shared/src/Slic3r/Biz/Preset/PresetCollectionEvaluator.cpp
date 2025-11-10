@@ -1,5 +1,7 @@
 #include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
 
+#include "libslic3r/CustomParametersHandling.hpp"
+
 // Xcode 15 has not finished ranges support we need here
 #include <version>
 #if !defined(__cpp_lib_ranges) \
@@ -18,6 +20,32 @@
 #define DEBUG_CONDITION_EVAL 0
 
 namespace Slic3r::Biz::Preset {
+
+namespace {
+    using namespace Domain::Preset;
+
+    void override_preset_values(PresetValueMap& dest, const PresetValueMap& overrides)
+    {
+        for (const auto& [key, value] : overrides) {
+            if (key.starts_with("custom_parameters_")) {
+                auto it = dest.find(key);
+                ASSERT(std::holds_alternative<std::string>(value));
+                if (it != dest.end()) {
+                    ASSERT(std::holds_alternative<std::string>(it->second));
+                    dest[key] = merge_json(std::get<std::string>(it->second), std::get<std::string>(value));
+                    continue;
+                }
+            }
+            dest[key] = value;
+        }
+    }
+
+    void override_feature_values(FeatureValueMap& dest, const FeatureValueMap& overrides)
+    {
+        for (const auto& [key, value] : overrides)
+            dest[key] = value;
+    }
+}
 
 PresetCollectionEvaluator::PresetCollectionEvaluator(
     const Domain::Preset::Presets& presets,
@@ -145,8 +173,8 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         const auto& node_path = named_preset(unc_inh);
 
         for (const auto& n : node_path) {
-            Domain::Preset::override_values(unconditional_inherited_values, n->values);
-            Domain::Preset::override_values(unconditional_inherited_features, n->features);
+            override_preset_values(unconditional_inherited_values, n->values);
+            override_feature_values(unconditional_inherited_features, n->features);
         }
     }
 
@@ -170,10 +198,10 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         if (node.condition.has_value())
             context.conditions.push_back(*node.condition.value());
         context.last_node_location = node.source_location;
-        Domain::Preset::override_values(context.values, unconditional_inherited_values);
-        Domain::Preset::override_values(context.values, node.values);
-        Domain::Preset::override_values(context.features, unconditional_inherited_features);
-        Domain::Preset::override_values(context.features, node.features);
+        override_preset_values(context.values, unconditional_inherited_values);
+        override_preset_values(context.values, node.values);
+        override_feature_values(context.features, unconditional_inherited_features);
+        override_feature_values(context.features, node.features);
     }
 
     size_t conditional_variants   = 0;
@@ -254,8 +282,8 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 var_ctx.conditions.end()
             );
             context.last_node_location = var_ctx.last_node_location;
-            Domain::Preset::override_values(context.values, var_ctx.values);
-            Domain::Preset::override_values(context.features, var_ctx.features);
+            override_preset_values(context.values, var_ctx.values);
+            override_feature_values(context.features, var_ctx.features);
 
             product.emplace_back(std::move(context));
         }

@@ -54,20 +54,4 @@ using PresetValue = std::variant<
 >;
 using PresetValueMap = std::map<std::string, PresetValue>;
 
-template <typename ValueT>
-void override_values(PresetValueMap& dest, const std::map<std::string, ValueT>& overrides)
-{
-    for (const auto& [key, value] : overrides)
-        dest[key] = value;
-}
-
-template <typename ValueT>
-void override_values(FeatureValueMap& dest, const std::map<std::string, ValueT>& overrides)
-{
-    for (const auto& [key, value] : overrides)
-        dest[key] = value;
-}
-
-
-
 }

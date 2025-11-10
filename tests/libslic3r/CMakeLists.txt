@@ -46,6 +46,7 @@ add_executable(${_TEST_NAME}_tests
     ../data/prusaparts.hpp
     test_static_map.cpp
     test_model_utils.cpp
+    test_custom_parameters_handling.cpp
 	)
 
 if (TARGET OpenVDB::openvdb)
