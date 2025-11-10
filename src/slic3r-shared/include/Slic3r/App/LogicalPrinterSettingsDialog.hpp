@@ -52,8 +52,8 @@ private:
     void create_page_list();
     void create_page_settings();
 
-private:
     void on_about_to_show() override;
+    void update_settings_data();
 
 protected:
     void close_action() override;
