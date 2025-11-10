@@ -212,7 +212,8 @@ public:
      * @{
      */
     const ObjectSelection& object_selection() const;
-    void set_object_selection(const ObjectSelection& selection);
+    void set_object_selection(const ObjectSelection& object_selection);
+    void clear_object_selection();
     void modify_selection(const std::function<void(ObjectSelection&)>& modifier);
     /** @} */
 
@@ -289,6 +290,8 @@ private:
         Domain::Project& project,
         const Domain::SelectionId& config_container_id
     );
+    void normalize_object_selection(ObjectSelection& object_selection) const;
+
 
     using ProjectContexts = std::unordered_map<Domain::SelectionId, SceneInteractorProjectContext>;
 

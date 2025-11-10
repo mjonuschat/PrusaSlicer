@@ -237,10 +237,14 @@ const ObjectSelection& SceneInteractor::object_selection() const
     return it->second.object_selection;
 }
 
-void SceneInteractor::set_object_selection(const ObjectSelection& selection)
+void SceneInteractor::set_object_selection(const ObjectSelection& raw_selection)
 {
     const auto it = m_projects.find(m_selected_project_id);
     ASSERT(it != m_projects.end());
+
+    ObjectSelection selection = raw_selection;
+    normalize_object_selection(selection);
+
     auto& project_context = it->second;
     ObjectSelection sel{.mode = selection.mode};
     for (const auto& e : selection.elements) {
@@ -259,6 +263,52 @@ void SceneInteractor::set_object_selection(const ObjectSelection& selection)
     invoke_listeners<ISceneSelectionChangedListener>(
         [&](auto* l) { l->on_scene_selection_changed(m_selected_project_id, sel); }
     );
+}
+
+void SceneInteractor::normalize_object_selection(ObjectSelection& selection) const
+{
+    ASSERT(m_selected_project_id != Domain::INVALID_ID);
+    const auto it = m_projects.find(m_selected_project_id);
+    ASSERT(it != m_projects.end());
+
+    selection.mode = SelectionMode::Volume;
+    if (selection.elements.empty())
+        return;
+
+    // verify if promoting to Instance mode is needed
+    const auto inst_id = selection.elements.front().instance_id;
+    bool requires_instance_mode = std::any_of(
+        selection.elements.begin(),
+        selection.elements.end(),
+        [inst_id](const auto& e) { return e.volume_id == 0 || e.instance_id != inst_id; }
+    );
+
+    if (!requires_instance_mode) {
+        // are all volumes of a single instance selected ?
+        bool single_instance = std::all_of(selection.elements.begin(), selection.elements.end(),
+            [inst_id](const auto& e) { return e.instance_id == inst_id; });
+        if (single_instance) {
+            const auto object = it->second.project.find_object_by_id(selection.elements.front().object_id);
+            if (object->volumes.size() == selection.elements.size())
+                requires_instance_mode = true;
+        }
+    }
+
+    if (requires_instance_mode) {
+        selection.mode = SelectionMode::Instance;
+        std::unordered_set<Domain::ElementRef> unique_inst_elements;
+
+        for (const auto& e : selection.elements)
+            unique_inst_elements.insert(Domain::ElementRef{e.object_id, e.instance_id, 0});
+
+        selection.elements.clear();
+        selection.elements.insert(selection.elements.end(), unique_inst_elements.begin(), unique_inst_elements.end());
+    }
+}
+
+void SceneInteractor::clear_object_selection()
+{
+    set_object_selection(ObjectSelection());
 }
 
 void SceneInteractor::modify_selection(const std::function<void(ObjectSelection&)>& modifier)

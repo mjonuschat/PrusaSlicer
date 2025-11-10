@@ -111,6 +111,12 @@ public:
     }
 
     /**
+     * @brief Returns true if any of the picked nodes is a GizmoNodeTag or a RotationGizmoNodeTag.
+     * @Note This method is temporary until we do not find a better way to handle gizmo picking.
+     */
+    bool pick_results_contains_gizmo_nodes() const;
+
+    /**
      * @name Implementation of App::Scene::ISceneChangedListener public interface
      * @{
      */

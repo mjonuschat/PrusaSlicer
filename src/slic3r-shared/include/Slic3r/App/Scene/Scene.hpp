@@ -77,7 +77,9 @@ public:
  *   and in-memory geometry (triangle_mesh_manager())
  * .
  */
-class Scene final : public WithListeners<ISceneChangedListener>, public IGraphicsSettingsChangedListener
+class Scene final : public WithListeners<ISceneChangedListener>,
+                    public IGraphicsSettingsChangedListener,
+                    public INodeChangedListener
 {
 public:
     Scene();
@@ -256,6 +258,13 @@ public:
      * @{
      */
     void on_shading_type_changed(ShadingType shading_type) override;
+    /** @} */
+
+    /**
+     * @name Implementation of INodeChangedListener public interface
+     * @{
+     */
+    void on_node_changed(Node* node) override;
     /** @} */
 
     /**

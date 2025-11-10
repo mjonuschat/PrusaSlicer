@@ -77,7 +77,7 @@ private:
     Domain::Vec3d m_selected_bed_center{ Domain::Vec3d::Zero() };
 #if CAMERA_GIZMO_DEBUG
     Render::DynamicGeometry<Render::VertexP3> m_dynamic_geometry;
-#endif
+#endif // CAMERA_GIZMO_DEBUG
 };
 
 } // namespace Slic3r::App::Scene

@@ -2,6 +2,11 @@
 
 #include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
 #include "Slic3r/App/Plater/SinkingContours.hpp"
+#include "Slic3r/App/Scene/Node.hpp"
+
+namespace Slic3r::Biz {
+class ProjectInteractor;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App::Plater {
 
@@ -23,8 +28,19 @@ public:
         return m_sinking_contours;
     }
 
+    void set_selection_aabb_node_as_dirty() { m_selection_aabb_node.dirty = true; }
+    void update_selection_aabb_node(Render::Device& device, const Biz::ProjectInteractor& project_interactor);
+
 private:
     SinkingContours m_sinking_contours;
+
+    struct SelectionAABBNode
+    {
+        Scene::Node* top_level_node{ nullptr };
+        bool dirty{ true };
+        Scene::Node* volume_nodes_parent{ nullptr };
+    };
+    SelectionAABBNode m_selection_aabb_node;
 };
 
 } // namespace Slic3r::App::Plater

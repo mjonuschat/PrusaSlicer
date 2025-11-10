@@ -66,7 +66,6 @@ void SegmentTemplate::init(Render::Device& device, Scene::NodeBuilder& builder)
             m_geometry.get(),
             material,
             0,
-            Render::PrimitiveType::Triangles,
             Scene::RenderLayerId(Preview::PreviewSceneLayer::Toolpaths)
         )
         .set_shadows(Render::Shadows{true, true})

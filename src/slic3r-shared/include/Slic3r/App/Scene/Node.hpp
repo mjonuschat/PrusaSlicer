@@ -12,6 +12,16 @@
 
 namespace Slic3r::App::Scene {
 
+class Node;
+
+class INodeChangedListener
+{
+public:
+    virtual ~INodeChangedListener() = default;
+
+    virtual void on_node_changed(Node* node) = 0;
+};
+
 /**
  * @brief Scenegraph node with transformation and set of node components.
  *
@@ -124,6 +134,8 @@ public:
     {
         m_local_xform = t;
         mark_world_transform_dirty();
+        if (m_node_changed_listener != nullptr)
+            m_node_changed_listener->on_node_changed(this);
     }
 
     /**
@@ -160,7 +172,14 @@ public:
      * @brief Set node enabled flag
      * @param enabled
      */
-    void set_enabled(bool enabled) { m_enabled = enabled; }
+    void set_enabled(bool enabled)
+    {
+        if (m_enabled != enabled) {
+            m_enabled = enabled;
+            if (m_node_changed_listener != nullptr)
+                m_node_changed_listener->on_node_changed(this);
+        }
+    }
     /** @} */
 
     /**
@@ -171,7 +190,11 @@ public:
     const INodeTransformModifier* transform_modifier() const { return m_transform_modifier.get(); }
     INodeTransformModifier* transform_modifier() { return m_transform_modifier.get(); }
     void set_transform_modifier(std::unique_ptr<INodeTransformModifier>&& modifier)
-    { m_transform_modifier = std::move(modifier); }
+    {
+        m_transform_modifier = std::move(modifier);
+        if (m_node_changed_listener != nullptr)
+            m_node_changed_listener->on_node_changed(this);
+    }
     /**@}*/
 
     /**
@@ -249,8 +272,15 @@ public:
      */
     bool has_raycast_component() const { return bool(m_raycast_component); }
     void set_raycast_component(std::unique_ptr<IRaycastNodeComponent>&& component) { m_raycast_component = std::move(component); }
-    void set_raycast_component(IRaycastNodeComponent* component) { m_raycast_component.reset(component); }
+    void set_raycast_component(IRaycastNodeComponent* component)
+    {
+        m_raycast_component.reset(component);
+        if (m_node_changed_listener != nullptr)
+            m_node_changed_listener->on_node_changed(this);
+    }
     const IRaycastNodeComponent* raycast_component() const { return m_raycast_component.get(); }
+    // returns true if this node or any of its children has a raycast component
+    bool contains_raycast_component() const;
     /**@}*/
 
     /**
@@ -339,6 +369,8 @@ private:
     void mark_world_transform_dirty() const;
     //void mark_children_world_transform_dirty() const;
 
+    void set_node_changed_listener(INodeChangedListener* listener) { m_node_changed_listener = listener; }
+
 
     friend void visit(const Node&, const ConstNodeVisitor &, bool);
     friend void visit(Node&, const NodeVisitor &, bool);
@@ -350,6 +382,8 @@ private:
     size_t m_id{0};
     Node* m_parent{nullptr};
     NodeOwningList m_children;
+
+    INodeChangedListener* m_node_changed_listener{ nullptr };
 
     Transform m_local_xform{Transform::Identity()};
     mutable Transform m_world_xform{Transform::Identity()};

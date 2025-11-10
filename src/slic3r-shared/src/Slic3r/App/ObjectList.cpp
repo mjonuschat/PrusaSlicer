@@ -1481,7 +1481,6 @@ void ObjectList::propagate_selection()
         ctx.selected_items.begin(),
         ctx.selected_items.end()
     );
-    sels.normalize();
     m_scene_interactor->set_object_selection(sels);
 }
 

@@ -45,24 +45,6 @@ static const Vec3d HANDLE_CONE_CW_OFFSET = { HANDLE_STEM_LENGTH, -(0.5 * HANDLE_
 
 } // namespace
 
-struct RotationGizmoNodeTag : public GizmoNodeTag
-{
-    uint8_t level{ 0 };
-    bool is_handle{ false };
-
-    explicit RotationGizmoNodeTag(
-        AxisType primary_axis,
-        AxisType secondary_axis = AxisType::None,
-        uint8_t level = 0,
-        bool is_handle = false
-    )
-      : GizmoNodeTag(primary_axis, secondary_axis)
-      , level(level)
-      , is_handle(is_handle)
-    {
-    }
-};
-
 static Transform3d axis_transform(AxisType axis)
 {
     Transform3d ret = Transform3d::Identity();
@@ -472,7 +454,7 @@ void RotationGizmo::on_deactivated()
 
 void RotationGizmo::clear_highlight()
 {
-    if (m_highlighted)
+    if (m_highlighted) {
         // show all axes
         // hide graded circle
         visit(
@@ -483,7 +465,8 @@ void RotationGizmo::clear_highlight()
             },
             true
         );
-    m_highlighted = false;
+        m_highlighted = false;
+    }
 }
 
 void RotationGizmo::on_stop_dragging()

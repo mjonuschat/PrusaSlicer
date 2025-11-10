@@ -1,12 +1,15 @@
 #pragma once
 
-#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Scene/Node.hpp"
+
+namespace Slic3r::Biz::Scene {
+class SceneInteractor;
+} // namespace Slic3r::Biz::Scene
 
 namespace Slic3r::App::Plater {
 
-
-class SelectionHandler {
+class SelectionHandler
+{
 public:
     explicit SelectionHandler(Biz::Scene::SceneInteractor& scene_interactor)
         : m_scene_interactor(scene_interactor)
@@ -20,4 +23,4 @@ private:
     Biz::Scene::SceneInteractor& m_scene_interactor;
 };
 
-}
+} // namespace Slic3r::App::Plater

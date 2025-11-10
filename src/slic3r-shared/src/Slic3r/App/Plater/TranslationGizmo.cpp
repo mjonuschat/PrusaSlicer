@@ -1,7 +1,10 @@
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"
+#include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
+#include "Slic3r/App/Scene/NodeBuilder.hpp"
+
 #include "Slic3r/Domain/Types.hpp"
 
 #include <numbers>
@@ -234,4 +237,4 @@ void TranslationGizmo::on_deactivated()
     scene.remove_children([](const Scene::Node*) { return true; }, &selection_root);
 }
 
-}
+} // namespace Slic3r::App::Plater

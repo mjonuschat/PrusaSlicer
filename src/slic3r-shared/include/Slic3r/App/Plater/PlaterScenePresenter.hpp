@@ -17,6 +17,9 @@
 #include "Slic3r/App/Scene/BedRenderUpdater.hpp"
 #include "Slic3r/App/Plater/IBedVisuallyChangedListener.hpp"
 #include "Slic3r/App/Scene/CameraFrustumUpdater.hpp"
+#include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
+#include "Slic3r/App/Scene/Camera.hpp"
+#include "Slic3r/App/Scene/ISceneChangedListener.hpp"
 
 namespace Slic3r::App::Scene {
 class NodeBuilder;
@@ -31,10 +34,13 @@ class PlaterScenePresenter :
     public Biz::Scene::ISceneSelectionChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
     public Biz::Scene::ISceneChangedListener,
+    public Scene::ISceneChangedListener,
     public Biz::Scene::ISceneBedInstanceChangedListener,
     public Scene::MinimalSceneRenderCustomizer,
     public Scene::ISceneProvider,
-    public Scene::IProjectSceneProvider
+    public Scene::IProjectSceneProvider,
+    public IHoverChangedListener,
+    public Scene::ICameraUpdateListener
 {
 public:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PlaterScenePresenterProjectContext>;
@@ -49,28 +55,11 @@ public:
 
     bool project_ready() const { return !m_projects.empty(); }
 
-    PlaterScenePresenterProjectContext& project_context()
-    {
-        ASSERT(m_selected_project_id != Domain::INVALID_ID);
-        return m_projects[m_selected_project_id];
-    }
-
-    const PlaterScenePresenterProjectContext& project_context() const
-    {
-        ASSERT(m_selected_project_id != Domain::INVALID_ID);
-        return m_projects.find(m_selected_project_id)->second;
-    }
-
     Scene::Scene& scene() override { return project_context().scene(); }
     const Scene::Scene& scene() const override { return project_context().scene(); }
     Scene::SceneChangeSession& selection_scene_changes() override
     {
         return project_context().selection_scene_changes();
-    }
-
-    void update_beds()
-    {
-        m_bed_render_updater.update_all(scene().camera());
     }
 
     Scene::Node& selection_root() override { return project_context().selection_root(); }
@@ -104,6 +93,29 @@ public:
     }
     /**@}*/
 
+    /**
+     * @name Implementation of IHoverChangedListener public interface
+     * @{
+     */
+    void on_hover_changed(const HoverData& hover_data) override;
+    /**@}*/
+
+    /**
+     * @name Implementation of App::Scene::ISceneChangedListener public interface
+     * @{
+     */
+    void on_node_added(Scene::Node* node) override;
+    void on_node_removed(Scene::Node* node) override;
+    void on_node_changed(Scene::Node* node) override;
+    /**@}*/
+
+    /**
+     * @name Implementation of Scene::ICameraUpdateListener public interface
+     * @{
+     */
+    void camera_updated(const Scene::Camera& cam) override { set_scene_aabb_as_dirty(); }
+    /**@}*/
+
     // At startup the scene initialization happens in the constructor, which means before any IBedVisuallyChangedListener
     // can be registered, see PlaterRenderModule::on_init()
     // Call this function to force bed thumbnails generation after the listeners are registered, for example to ensure
@@ -115,6 +127,21 @@ public:
     using BedInstances = std::vector<std::reference_wrapper<const Domain::BedInstance>>;
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
+    void update_beds() { m_bed_render_updater.update_all(scene().camera()); }
+
+    void set_scene_aabb_as_dirty() { m_camera_frustum_updater.set_scene_aabb_as_dirty(); }
+
+    PlaterScenePresenterProjectContext& project_context()
+    {
+        ASSERT(m_selected_project_id != Domain::INVALID_ID);
+        return m_projects[m_selected_project_id];
+    }
+
+    const PlaterScenePresenterProjectContext& project_context() const
+    {
+        ASSERT(m_selected_project_id != Domain::INVALID_ID);
+        return m_projects.find(m_selected_project_id)->second;
+    }
 
     void on_selected_project_changed(size_t index) override;
 
@@ -151,7 +178,7 @@ private:
     BedInstances selected_bed_instances() const;
 
     void invoke_bed_visually_changed(Domain::SelectionId project_id);
-    void update_selection_aabb(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection);
+    void update_selection_aabb(Domain::SelectionId project_id);
 
     void remove_beds(Domain::SelectionId project_id, const Domain::BedRefs& instances);
     void update_volume_materials();
@@ -166,6 +193,7 @@ private:
     ProjectContexts m_projects;
     Scene::BedRenderUpdater m_bed_render_updater;
     Scene::CameraFrustumUpdater m_camera_frustum_updater;
+    HoverData m_hover_data;
 
     bool m_freeze_selection_center{ false };
     bool m_volume_materials_dirty{ true };

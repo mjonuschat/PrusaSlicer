@@ -335,7 +335,7 @@ label_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
     );
 }
 
-void BedNodeBuilder::bed_node(NodeBuilder& builder, const Domain::BedInstance& instance, const BedNodeTag& tag, Render::Device& device,
+void build_bed_node(NodeBuilder& builder, const Domain::BedInstance& instance, const BedNodeTag& tag, Render::Device& device,
     ScenePresenterProjectContext& ctx, RenderLayerId layer_id)
 {
     builder.set_debug_name(fmt::format("bed {}", tag.instance_id))

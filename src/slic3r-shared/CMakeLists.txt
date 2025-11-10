@@ -52,6 +52,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/ThumbnailRenderer.cpp
         include/Slic3r/App/Plater/IBedVisuallyChangedListener.hpp
         include/Slic3r/App/Plater/BedThumbnailTextureRequest.hpp
+        include/Slic3r/App/Plater/ScopedThumbnailSceneCustomizerBase.hpp
+        src/Slic3r/App/Plater/ScopedThumbnailSceneCustomizerBase.cpp
         include/Slic3r/App/Plater/ScopedBedThumbnailSceneCustomizer.hpp
         src/Slic3r/App/Plater/ScopedBedThumbnailSceneCustomizer.cpp
         include/Slic3r/App/Plater/Scoped3mfThumbnailSceneCustomizer.hpp
@@ -69,6 +71,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/SinkingContours.cpp
         include/Slic3r/App/Plater/SinkingContoursHelper.hpp
         include/Slic3r/App/Plater/PlaterScenePresenterProjectContext.hpp
+        src/Slic3r/App/Plater/PlaterScenePresenterProjectContext.cpp
+        include/Slic3r/App/Plater/PlaterGizmosHelper.hpp
+        src/Slic3r/App/Plater/PlaterGizmosHelper.cpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -270,6 +275,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/IGizmo.hpp
         src/Slic3r/App/Scene/IGizmo.cpp
         include/Slic3r/App/Scene/GizmoEventContext.hpp
+        src/Slic3r/App/Scene/GizmoEventContext.cpp
         include/Slic3r/App/Scene/GizmoKeyEventContext.hpp
         include/Slic3r/App/Scene/AbstractCameraGizmo.hpp
         src/Slic3r/App/Scene/AbstractCameraGizmo.cpp
@@ -284,6 +290,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/ISceneProvider.hpp
         include/Slic3r/App/Scene/IProjectSceneProvider.hpp
         include/Slic3r/App/Scene/ScenePresenterProjectContext.hpp
+        src/Slic3r/App/Scene/ScenePresenterProjectContext.cpp
         src/Slic3r/App/Scene/Lights.cpp
         include/Slic3r/App/Scene/Lights.hpp
         include/Slic3r/App/Scene/LightingHelper.hpp
@@ -292,6 +299,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/PrintVolumeData.cpp
         include/Slic3r/App/Scene/BedNodeBuilder.hpp
         src/Slic3r/App/Scene/BedNodeBuilder.cpp
+        include/Slic3r/App/Scene/AABBNodeHelper.hpp
+        src/Slic3r/App/Scene/AABBNodeHelper.cpp
         include/Slic3r/App/Scene/BedNodeTag.hpp
         include/Slic3r/App/Scene/BedMaterials.hpp
         src/Slic3r/App/Scene/BedMaterials.cpp

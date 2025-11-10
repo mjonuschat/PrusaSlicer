@@ -13,6 +13,24 @@ namespace Slic3r::App::Plater {
 
 class PlaterScenePresenter;
 
+struct RotationGizmoNodeTag : public GizmoNodeTag
+{
+    uint8_t level{ 0 };
+    bool is_handle{ false };
+
+    explicit RotationGizmoNodeTag(
+        AxisType primary_axis,
+        AxisType secondary_axis = AxisType::None,
+        uint8_t level = 0,
+        bool is_handle = false
+    )
+        : GizmoNodeTag(primary_axis, secondary_axis)
+        , level(level)
+        , is_handle(is_handle)
+    {
+    }
+};
+
 class RotationGizmo : public Scene::IToolGizmo
 {
 public:

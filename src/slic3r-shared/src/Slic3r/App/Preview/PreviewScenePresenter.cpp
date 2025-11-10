@@ -26,7 +26,10 @@ void PreviewScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 {
     if (!m_projects.empty()) {
 #if ENABLE_DEBUG_RENDER_SCENE_AABB
+        m_camera_frustum_updater.update_scene_aabb(project_context());
         m_camera_frustum_updater.update_scene_aabb_node(project_context(), m_device);
+#else
+        m_camera_frustum_updater.update_scene_aabb(scene());
 #endif // ENABLE_DEBUG_RENDER_SCENE_AABB
         m_camera_frustum_updater.update_camera_frustum(scene().camera());
 
@@ -52,13 +55,32 @@ void PreviewScenePresenter::on_selected_project_changed(size_t index)
     if (m_projects.count(m_selected_project_id) == 0) {
         m_projects.try_emplace(index);
         m_bed_render_updater.on_selected_project_changed(m_selected_project_id);
-        // a new camera has been created, add the bed updater as listener
+        // a new camera has been created, add the camera update listeners
         auto& camera = project_context().scene().camera();
         camera.add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
+        camera.add_listener<Scene::ICameraUpdateListener>(this);
         camera.set_viewport(m_viewport);
+        project_context().scene().add_listener<Scene::ISceneChangedListener>(this);
     }
+    set_scene_aabb_as_dirty();
+}
 
-    update_scene_aabb();
+void PreviewScenePresenter::on_node_added(Scene::Node* node)
+{
+    if (node != nullptr && node->contains_raycast_component())
+        set_scene_aabb_as_dirty();
+}
+
+void PreviewScenePresenter::on_node_removed(Scene::Node* node)
+{
+    if (node != nullptr && node->contains_raycast_component())
+        set_scene_aabb_as_dirty();
+}
+
+void PreviewScenePresenter::on_node_changed(Scene::Node* node)
+{
+    if (node != nullptr && node->contains_raycast_component())
+        set_scene_aabb_as_dirty();
 }
 
 void PreviewScenePresenter::remove_all_bed_instances()
@@ -81,7 +103,7 @@ void PreviewScenePresenter::add_bed_instances(const Domain::BedRefs& instances)
         Scene::BedNodeTag tag = { instance.config_container_id, instance.instance_id };
 
         Scene::NodeBuilder builder(scn);
-        Scene::BedNodeBuilder::bed_node(builder, inst, tag, m_device,
+        Scene::build_bed_node(builder, inst, tag, m_device,
             m_projects[m_selected_project_id], Scene::RenderLayerId(PreviewSceneLayer::Bed));
 
         scn.add_child(builder.build().release());
@@ -117,11 +139,6 @@ void PreviewScenePresenter::update_bed_instances()
         },
         true
     );
-}
-
-void PreviewScenePresenter::update_scene_aabb()
-{
-    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PreviewScenePresenter::update_cameras(const std::function<void(Scene::Camera&)>& modifier)

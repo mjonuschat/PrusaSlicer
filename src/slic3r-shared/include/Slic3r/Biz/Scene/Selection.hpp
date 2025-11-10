@@ -31,7 +31,6 @@ struct ObjectSelection
     [[nodiscard]] bool only_single_object() const;
 
     [[nodiscard]] bool is_valid() const;
-    void normalize();
 };
 
 enum class BedSelectionMode

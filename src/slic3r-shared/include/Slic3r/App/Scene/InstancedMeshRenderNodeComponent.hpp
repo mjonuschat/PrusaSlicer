@@ -14,10 +14,9 @@ public:
     explicit InstancedMeshRenderNodeComponent(
         const Render::Geometry* geometry,
         const Render::Material& material,
-        Render::PrimitiveType primitive_type = Render::PrimitiveType::Triangles,
         size_t count = 0,
         size_t offset = 0
-    ) : MeshRenderNodeComponent(geometry, material, primitive_type, count, offset)
+    ) : MeshRenderNodeComponent(geometry, material, count, offset)
     {}
 
     InstancedMeshRenderNodeComponent& operator=(const InstancedMeshRenderNodeComponent&) = default;

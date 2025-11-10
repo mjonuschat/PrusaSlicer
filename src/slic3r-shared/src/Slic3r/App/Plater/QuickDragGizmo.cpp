@@ -4,6 +4,7 @@
 ///|/
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Plater/PlaterGizmosHelper.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 using Slic3r::Domain::SquareMatrix4d;
@@ -30,16 +31,16 @@ bool QuickDragGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
     const Scene::NodePickResult* n{nullptr};
     if (ctx.mouse_event().key_modifiers() != 0
         || (n = ctx.pick_result_with_tag_of_type<SceneNodeTag>()) == nullptr)
-    {
         return false;
-    }
 
     // Move the plane at same z-level as the node hit point is
     m_plane.d = -ctx.pick_ray().point_at(n->t).z();
 
-    if (!mouse_pos(ctx.screen_mouse_x(), ctx.screen_mouse_y(), m_initial_world_pos)) {
+    if (!mouse_pos(ctx.screen_mouse_x(), ctx.screen_mouse_y(), m_initial_world_pos))
         return false;
-    }
+
+    if (!can_be_added_to_object_selection(*n->node, m_scene_interactor.object_selection()))
+        return false;
 
     m_selection_handler.mark_selected(*n->node);
     return true;

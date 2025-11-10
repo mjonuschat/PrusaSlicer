@@ -153,8 +153,19 @@ void Scene::on_shading_type_changed(ShadingType shading_type)
     validate_lights(m_lighting.lights);
 }
 
+void Scene::on_node_changed(Node* node)
+{
+    invoke_listeners<ISceneChangedListener>([node](auto* listener) {
+        listener->on_node_changed(node);
+    });
+}
+
 void Scene::add_child(Node* node, Node* parent)
 {
+    invoke_listeners<ISceneChangedListener>([node](auto* listener) {
+        listener->on_node_added(node);
+    });
+    node->set_node_changed_listener(this);
     register_node(node);
     if (parent == nullptr)
         parent = &m_root;
@@ -168,6 +179,7 @@ bool Scene::remove_child(Node* node)
         return false;
 
     // remove all children of the node before removing the node itself
+    node->set_node_changed_listener(nullptr);
     remove_children([](const Node* child) { return true; }, node);
     return remove_children([node](const Node* child) {
         return child == node;

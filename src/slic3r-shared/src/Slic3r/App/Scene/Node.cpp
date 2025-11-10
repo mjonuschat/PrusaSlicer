@@ -103,4 +103,13 @@ void Node::mark_world_transform_dirty() const
     }, true);
 }
 
+bool Node::contains_raycast_component() const
+{
+    if (has_raycast_component())
+        return true;
+    return std::any_of(m_children.begin(), m_children.end(), [](NodeOwningList::const_reference n) {
+        return n->contains_raycast_component();
+    });
+}
+
 } // namespace Slic3r::App::Scene

@@ -29,7 +29,7 @@ public:
     NodeBuilder& set_transform(const Transform&);
     NodeBuilder& set_mesh(const Render::Geometry* geometry, const Render::Material& material, RenderLayerId layer_index = 0);
     NodeBuilder& set_mesh_instanced(const Render::Geometry* geometry, const Render::Material& material,
-        size_t instances_count, Render::PrimitiveType primitive_type = Render::PrimitiveType::Triangles, RenderLayerId layer_index = 0);
+        size_t instances_count, RenderLayerId layer_index = 0);
     NodeBuilder& set_material_override(const Render::Material& material);
     NodeBuilder& set_shadows(const Render::Shadows& shadows);
     NodeBuilder& set_pbr(const PBRParams& pbr);

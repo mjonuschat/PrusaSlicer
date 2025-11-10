@@ -1390,7 +1390,6 @@ void PreviewRenderModule::update_scene_aabb()
             node->set_local_transform(xtrafo);
         }
     }
-    m_scene_presenter->update_scene_aabb();
 }
 
 } // namespace Slic3r::App::Preview

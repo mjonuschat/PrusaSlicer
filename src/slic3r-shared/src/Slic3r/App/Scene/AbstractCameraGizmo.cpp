@@ -16,7 +16,9 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "zoom-in",
-                [this]() { m_scene_provider.scene().camera_trackball().update_zoom(1.); },
+                [this]() {
+                    m_scene_provider.scene().camera_trackball().update_zoom(1.);
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::I}
             )
@@ -24,7 +26,9 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "zoom-out",
-                [this]() { m_scene_provider.scene().camera_trackball().update_zoom(-1.); },
+                [this]() {
+                    m_scene_provider.scene().camera_trackball().update_zoom(-1.);
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::O}
             )
@@ -32,7 +36,9 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-projection-switch",
-                [this]() { m_scene_provider.scene().camera_trackball().switch_projection_type(); },
+                [this]() {
+                    m_scene_provider.scene().camera_trackball().switch_projection_type();
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::K}
             )
@@ -40,8 +46,9 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "look-at-active-bed",
-                [this]()
-                { m_scene_provider.scene().camera_trackball().set_target(m_selected_bed_center); },
+                [this]() {
+                    m_scene_provider.scene().camera_trackball().set_target(m_selected_bed_center);
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::B}
             )
@@ -49,8 +56,7 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-default-view",
-                [this]()
-                {
+                [this]() {
                     look_at(m_scene_provider.scene().camera_trackball().target(), DEFAULT_AZIMUTH, DEFAULT_ZENITH);
                 },
                 nullptr,
@@ -60,8 +66,9 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-top-view",
-                [this]()
-                { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI); },
+                [this]() {
+                    look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI);
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num1}
             )
@@ -69,8 +76,9 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-bottom-view",
-                [this]()
-                { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, 0.0); },
+                [this]() {
+                    look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, 0.0);
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num2}
             )
@@ -78,8 +86,9 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-front-view",
-                [this]()
-                { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI_2); },
+                [this]() {
+                      look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI_2);
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num3}
             )
@@ -87,8 +96,9 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-rear-view",
-                [this]()
-                { look_at(m_scene_provider.scene().camera_trackball().target(), -M_PI_2, M_PI_2); },
+                [this]() {
+                      look_at(m_scene_provider.scene().camera_trackball().target(), -M_PI_2, M_PI_2);
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num4}
             )
@@ -96,8 +106,9 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-left-view",
-                [this]()
-                { look_at(m_scene_provider.scene().camera_trackball().target(), 0.0, M_PI_2); },
+                [this]() {
+                    look_at(m_scene_provider.scene().camera_trackball().target(), 0.0, M_PI_2);
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num5}
             )
@@ -105,8 +116,9 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             std::make_unique<Platform::FuncCommand>(
                 "camera-right-view",
-                [this]()
-                { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI, M_PI_2); },
+                [this]() {
+                    look_at(m_scene_provider.scene().camera_trackball().target(), M_PI, M_PI_2);
+                },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Num6}
             )
@@ -219,10 +231,9 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
     const Platform::MouseEvent& event = ctx.mouse_event();
     const auto type                   = event.type();
     if (type == Platform::MouseEvent::Type::ButtonDown) {
-        if (any_draggable(ctx))
+        bool pan = event.button() == Platform::MouseButton::Right || event.button() == Platform::MouseButton::Middle;
+        if (!pan && any_draggable(ctx))
             return GizmoActivationState::Inactive;
-
-        const bool pan = event.button() == Platform::MouseButton::Right || event.button() == Platform::MouseButton::Middle;
 
         m_state  = pan ? State::Panning : State::Rotating;
         m_last_x = event.x();

@@ -214,17 +214,30 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
 
 void PlaterRenderModule::register_commands()
 {
-    m_command_registry.register_command(
-        std::make_unique<Platform::FuncCommand>(
-            "search",
-            [this]() { m_render_module_navigator->request_search(); },
-            nullptr,
-            Platform::KeyboardShortcut{
-                Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
-                Platform::KeyCode::F
-            }
+    m_command_registry
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                "search",
+                [this]() { m_render_module_navigator->request_search(); },
+                nullptr,
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl),
+                    Platform::KeyCode::F
+                }
+            )
         )
-    );
+        .register_command(
+            std::make_unique<Platform::FuncCommand>(
+                "clear-selection",
+                [this]() {
+                    auto& scene_interactor = m_project_interactor.scene_interactor();
+                    if (!scene_interactor.object_selection().empty())
+                        scene_interactor.clear_object_selection();
+                },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Escape}
+            )
+        );
 }
 
 void PlaterRenderModule::init_scene_layout()
@@ -611,16 +624,14 @@ void PlaterRenderModule::init_gizmos()
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
         m_camera_gizmo
     );
-    BedSelectGizmo& bed_select_gizmo{m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(
-        m_project_interactor.scene_interactor(),
-        *m_scene_presenter
-    )};
-    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(
+    m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
+    QuickSelectGizmo& quick_select_gizmo = m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(
         m_project_interactor.scene_interactor(),
         *m_device,
         *m_scene_presenter,
         m_screen_info
     );
+    quick_select_gizmo.add_listener<IHoverChangedListener>(m_scene_presenter.get());
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(
         m_project_interactor.scene_interactor(),
         *m_scene_presenter

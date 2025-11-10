@@ -9,12 +9,16 @@
 #include "Slic3r/App/Preview/PreviewSceneRenderCustomizer.hpp"
 #include "Slic3r/App/Scene/BedRenderUpdater.hpp"
 #include "Slic3r/App/Scene/CameraFrustumUpdater.hpp"
+#include "Slic3r/App/Scene/Camera.hpp"
+#include "Slic3r/App/Scene/ISceneChangedListener.hpp"
 
 namespace Slic3r::App::Preview {
 
 class PreviewScenePresenter : public Biz::ISelectedProjectChangedListener,
                               public PreviewSceneRenderCustomizer,
-                              public Scene::ISceneProvider
+                              public Scene::ISceneProvider,
+                              public Scene::ICameraUpdateListener,
+                              public Scene::ISceneChangedListener
 {
 public:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, Scene::ScenePresenterProjectContext>;
@@ -51,6 +55,27 @@ public:
     void on_selected_project_changed(size_t index) override;
     /**@}*/
 
+    /**
+     * @name Implementation of Scene::ICameraUpdateListener public interface
+     * @{
+     */
+    void camera_updated(const Scene::Camera& cam) override { set_scene_aabb_as_dirty(); }
+    /**@}*/
+
+    /**
+     * @name Implementation of App::Scene::ISceneChangedListener public interface
+     * @{
+     */
+    void on_node_added(Scene::Node* node) override;
+    void on_node_removed(Scene::Node* node) override;
+    void on_node_changed(Scene::Node* node) override;
+    /**@}*/
+
+    void remove_all_bed_instances();
+    void add_bed_instances(const Domain::BedRefs& instances);
+    void update_bed_instances();
+
+private:
     Scene::ScenePresenterProjectContext& project_context()
     {
         ASSERT(m_selected_project_id != Domain::INVALID_ID);
@@ -63,13 +88,9 @@ public:
         return m_projects.find(m_selected_project_id)->second;
     }
 
-    void remove_all_bed_instances();
-    void add_bed_instances(const Domain::BedRefs& instances);
-    void update_bed_instances();
-    void update_scene_aabb();
-
-private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
+
+    void set_scene_aabb_as_dirty() { m_camera_frustum_updater.set_scene_aabb_as_dirty(); }
 
 private:
     const Domain::Workbench& m_workbench;

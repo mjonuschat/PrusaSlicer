@@ -46,13 +46,11 @@ void MeshRenderNodeComponent::render(const Node& node, const Camera& camera, con
 
 void MeshRenderNodeComponent::set_geometry(
     const Render::Geometry* geometry,
-    Render::PrimitiveType primitive_type,
     size_t count,
     size_t offset
 )
 {
     m_geometry = geometry;
-    m_primitive_type = primitive_type;
     if (count == 0) {
         offset = 0;
         count = geometry->index_count();

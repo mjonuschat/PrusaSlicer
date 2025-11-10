@@ -15,7 +15,6 @@ public:
     explicit MeshRenderNodeComponent(
         const Render::Geometry* geometry,
         const Render::Material& material,
-        Render::PrimitiveType primitive_type = Render::PrimitiveType::Triangles,
         size_t count = 0,
         size_t offset = 0
     ) : m_material(material)
@@ -29,7 +28,7 @@ public:
                 ),
             "Shader must be specified for primary material"
         );
-        set_geometry(geometry, primitive_type, count, offset);
+        set_geometry(geometry, count, offset);
     }
 
     MeshRenderNodeComponent& operator=(const MeshRenderNodeComponent&) = default;
@@ -45,7 +44,6 @@ public:
 
     void set_geometry(
         const Render::Geometry* geometry,
-        Render::PrimitiveType primitive_type = Render::PrimitiveType::Triangles,
         size_t count = 0,
         size_t offset = 0
     );
@@ -68,7 +66,6 @@ protected:
     Render::Shadows m_shadows;
     std::optional<PBRParams> m_pbr;
     std::optional<PrintVolumeData> m_print_volume;
-    Render::PrimitiveType m_primitive_type{Render::PrimitiveType::Triangles};
     size_t m_vertex_offset{0};
     size_t m_vertex_count{0};
     RenderLayerId m_layer{0};

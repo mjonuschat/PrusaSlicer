@@ -22,6 +22,7 @@ struct AuxiliaryElementId
         SlaPad,
         SlaTopClip,
         SlaBottomClip,
+        AABB,
     };
 
     Type type;

@@ -9,7 +9,11 @@
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Plater/SelectionHandler.hpp"
 #include "Slic3r/App/Scene/Frustum.hpp"
-#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+#include "Slic3r/Biz/Platform/WithListeners.hpp"
+
+namespace Slic3r::Biz::Scene {
+class SceneInteractor;
+} // namespace Slic3r::Biz::Scene
 
 namespace Slic3r::App::Plater {
 
@@ -33,12 +37,19 @@ public:
     void deactivate() {
         m_active = false;
         m_defined = false;
+        m_already_processed = false;
     }
 
-    [[nodiscard]] bool is_active() { return m_active; }
+    [[nodiscard]] bool is_active() const { return m_active; }
+    Type type() const { return m_type; }
+
+    bool is_already_processed() const { return m_already_processed; }
 
     void update(const MousePosition& curr_mouse_pos);
-    [[nodiscard]] bool update_selection(SelectionHandler& selection_handler);
+    bool update_selection(SelectionHandler& selection_handler);
+
+    const Scene::Node::NodeList& contained_nodes() const { return m_contained_nodes; }
+    void set_contained_nodes(const Scene::Node::NodeList& nodes) { m_contained_nodes = nodes; }
 
     void render(Render::CommandBuffer& cmd_buffer);
 
@@ -54,13 +65,48 @@ private:
     Type m_type{ Type::Undefined };
     bool m_active{ false };
     bool m_defined{ false };
+    bool m_already_processed{ false };
     MousePosition m_initial_mouse_pos;
     Render::Geometry m_geometry;
     Render::Material m_material;
     Scene::Frustum m_frustum;
+    Scene::Node::NodeList m_contained_nodes;
 };
 
-class QuickSelectGizmo : public Scene::IGizmo
+enum class HoverType : uint8_t
+{
+    None,
+    Select,
+    Unselect
+};
+
+struct HoverData
+{
+    HoverType type{ HoverType::None };
+    Scene::Node::NodeList nodes;
+
+    bool operator==(const HoverData& other) const
+    {
+        if (type != other.type) return false;
+        if (nodes != other.nodes) return false;
+        return true;
+    }
+
+    bool operator!=(const HoverData& other) const
+    {
+        return !operator==(other);
+    }
+};
+
+class IHoverChangedListener
+{
+public:
+    virtual ~IHoverChangedListener() = default;
+    virtual void on_hover_changed(const HoverData& hover_data) = 0;
+};
+
+class QuickSelectGizmo : public Scene::IGizmo,
+                         public WithListeners<IHoverChangedListener>
 {
 public:
     QuickSelectGizmo(
@@ -70,26 +116,34 @@ public:
         const Render::ScreenInfo& screen_info
     )
         : m_scene_interactor(scene_interactor)
+        , m_scene_provider(scene_provider)
         , m_selection_handler(scene_interactor)
         , m_rectangle_selection(screen_info, device, scene_provider, scene_interactor)
     {}
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
+    void on_keyboard(Scene::GizmoKeyEventContext& ctx) override;
+
     void on_cycle_prepare() override { m_processing = false; }
 
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
+
+private:
+    void invoke_hover_changed(const HoverData& hover_data);
 
 private:
     using Clock = std::chrono::steady_clock;
     using TimePoint = std::chrono::time_point<Clock>;
 
     Biz::Scene::SceneInteractor& m_scene_interactor;
+    Scene::ISceneProvider& m_scene_provider;
     SelectionHandler m_selection_handler;
     TimePoint m_click_start;
 
     bool m_processing{false};
 
     RectangleSelection m_rectangle_selection;
+    HoverData m_hover_data;
 };
 
-}
+} // namespace Slic3r::App::Plater

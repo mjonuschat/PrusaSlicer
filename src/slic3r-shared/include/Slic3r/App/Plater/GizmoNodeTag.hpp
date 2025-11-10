@@ -26,6 +26,8 @@ struct GizmoNodeTag
         : primary_axis(primary_axis), secondary_axis(secondary_axis)
     {}
 
+    virtual ~GizmoNodeTag() = default;
+
     Domain::Vec3d primary_axis_dir() const { return axis_type_dir(primary_axis); }
     Domain::Vec3d secondary_axis_dir() const { return axis_type_dir(secondary_axis); }
 };

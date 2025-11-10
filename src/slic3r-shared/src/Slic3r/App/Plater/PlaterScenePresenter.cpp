@@ -26,6 +26,9 @@
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
 #include "Slic3r/App/Scene/PrintVolumeData.hpp"
 
+#define ENABLE_DEBUG_OBJECT_SELECTION 0
+#define ENABLE_DEBUG_HOVER 0
+
 using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::SquareMatrix4d;
 using Slic3r::Domain::Vec3d;
@@ -38,9 +41,9 @@ namespace Slic3r::App::Plater {
 static const std::unordered_map<Domain::ModelVolumeType, ColorRGBA> VOLUME_COLORS = {
     {Domain::ModelVolumeType::MODEL_PART,         {1.0f, 0.5f, 0.0f, 1.0f}},
     {Domain::ModelVolumeType::NEGATIVE_VOLUME,    {0.5f, 0.5f, 0.5f, 0.5f}},
-    {Domain::ModelVolumeType::SUPPORT_BLOCKER,    {0.6f, 0.2f, 1.0f, 0.5f}},
-    {Domain::ModelVolumeType::SUPPORT_ENFORCER,   {0.6f, 0.2f, 1.0f, 0.5f}},
-    {Domain::ModelVolumeType::PARAMETER_MODIFIER, {1.0f, 1.0f, 0.0f, 0.5f}},
+    {Domain::ModelVolumeType::SUPPORT_BLOCKER,    {1.0f, 0.2f, 0.2f, 0.5f}},
+    {Domain::ModelVolumeType::SUPPORT_ENFORCER,   {0.2f, 0.2f, 1.0f, 0.5f}},
+    {Domain::ModelVolumeType::PARAMETER_MODIFIER, {1.0f, 1.0f, 0.2f, 0.5f}},
     {Domain::ModelVolumeType::INVALID,            {1.0f, 0.2f, 0.2f, 0.5f}},
 };
 
@@ -88,7 +91,7 @@ PlaterScenePresenter::PlaterScenePresenter(const Domain::Workbench& workbench, B
     m_project_interactor.add_listener<ISelectedProjectChangedListener>(this);
 
     auto& scene_interactor = m_project_interactor.scene_interactor();
-    scene_interactor.add_listener<ISceneChangedListener>(this);
+    scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
     scene_interactor.add_listener<ISceneBedInstanceChangedListener>(this);
     scene_interactor.add_listener<ISceneSelectionChangedListener>(this);
     scene_interactor.add_listener<ISelectedBedInstancesChangedListener>(this);
@@ -127,24 +130,131 @@ void PlaterScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
             m_volume_materials_dirty = false;
         }
 
+        project_context().update_selection_aabb_node(m_device, m_project_interactor);
 #if ENABLE_DEBUG_RENDER_SCENE_AABB
+        m_camera_frustum_updater.update_scene_aabb(project_context());
         m_camera_frustum_updater.update_scene_aabb_node(project_context(), m_device);
+#else
+        m_camera_frustum_updater.update_scene_aabb(scene());
 #endif // ENABLE_DEBUG_RENDER_SCENE_AABB
         m_camera_frustum_updater.update_camera_frustum(scene().camera());
         scene().render(m_device, command_buffer, this);
     }
 }
 
+#if ENABLE_DEBUG_OBJECT_SELECTION
+void render_imgui_debug_object_selection(const Biz::Scene::ObjectSelection& selection)
+{
+    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+    if (ImGui::Begin("Object selection debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Selection");
+        if (ImGui::BeginTable("Selection", 2, ImGuiTableFlags_Borders)) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Mode");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", (selection.mode == Biz::Scene::SelectionMode::Instance) ? "Instance" : "Volume");
+
+            if (selection.elements.empty()) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Empty");
+            }
+            else {
+                for (size_t i = 0; i < selection.elements.size(); ++i) {
+                    const Domain::ElementRef& e = selection.elements[i];
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("Element %zu", i + 1);
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::Text("%zu, %zu, %zu", e.object_id, e.instance_id, e.volume_id);
+                }
+            }
+            ImGui::EndTable();
+        }
+    }
+    ImGui::End();
+}
+#endif // ENABLE_DEBUG_OBJECT_SELECTION
+
+#if ENABLE_DEBUG_HOVER
+void render_imgui_debug_hover(const HoverData& hover_data)
+{
+    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+    if (ImGui::Begin("Hover debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Hover");
+        if (ImGui::BeginTable("Hover", 2, ImGuiTableFlags_Borders)) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Mode");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", (hover_data.type == HoverType::Select) ? "Select" :
+                              (hover_data.type == HoverType::Unselect) ? "Unselect" : "None");
+
+            if (hover_data.nodes.empty()) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Empty");
+            }
+            else {
+                for (size_t i = 0; i < hover_data.nodes.size(); ++i) {
+                    const Scene::Node* n = hover_data.nodes[i];
+                    const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("Node %zu", i + 1);
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::Text("%zu, %zu, %zu", tag->object_id, tag->instance_id, tag->volume_id);
+                }
+            }
+            ImGui::EndTable();
+        }
+    }
+    ImGui::End();
+}
+#endif // ENABLE_DEBUG_HOVER
+
 void PlaterScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
 {
-    if (!m_projects.empty())
+    if (!m_projects.empty()) {
+#if ENABLE_DEBUG_OBJECT_SELECTION
+        render_imgui_debug_object_selection(m_project_interactor.scene_interactor().object_selection());
+#endif // ENABLE_DEBUG_OBJECT_SELECTION
+#if ENABLE_DEBUG_HOVER
+        render_imgui_debug_hover(m_hover_data);
+#endif // ENABLE_DEBUG_HOVER
         scene().render_imgui(screen_info);
+    }
 }
 
 void PlaterScenePresenter::screen_resized(const Render::Rect& viewport)
 {
     m_viewport = viewport;
     update_cameras([&viewport](auto& cam) { cam.set_viewport(viewport); });
+}
+
+void PlaterScenePresenter::on_hover_changed(const HoverData& hover_data)
+{
+    m_hover_data = hover_data;
+    m_volume_materials_dirty = true;
+}
+
+void PlaterScenePresenter::on_node_added(Scene::Node* node)
+{
+    if (node != nullptr && node->contains_raycast_component())
+        set_scene_aabb_as_dirty();
+}
+
+void PlaterScenePresenter::on_node_removed(Scene::Node* node)
+{
+    if (node != nullptr && node->contains_raycast_component())
+        set_scene_aabb_as_dirty();
+}
+
+void PlaterScenePresenter::on_node_changed(Scene::Node* node)
+{
+    if (node != nullptr && node->contains_raycast_component())
+        set_scene_aabb_as_dirty();
 }
 
 void PlaterScenePresenter::force_bed_thumbnails_generation()
@@ -208,18 +318,34 @@ static const Domain::BedInstance* find_bed_instance_by_model_instance_id(const s
     return (it != lookup_map.end()) ? it->second : nullptr;
 }
 
-static ColorRGBA select_color(bool is_model_part, bool is_selected, bool is_outside)
+static std::optional<ColorRGBA> select_color(bool is_model_part, bool is_selected, bool is_outside, bool is_disabled,
+    HoverType hover_type)
 {
-    static const ColorRGBA OUTSIDE_COLOR = ColorRGBA(0.0f, 0.38f, 0.8f, 1.0f);
+    static const ColorRGBA OUTSIDE_COLOR          = ColorRGBA(0.0f, 0.38f, 0.8f, 1.0f);
     static const ColorRGBA OUTSIDE_SELECTED_COLOR = ColorRGBA(0.19f, 0.58f, 1.0f, 1.0f);
-    static const ColorRGBA SELECTED_COLOR = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
+    static const ColorRGBA SELECTED_COLOR         = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
+    static const ColorRGBA HOVER_SELECT_COLOR     = ColorRGBA(0.75f, 0.75f, 0.75f, 1.0f);
+    static const ColorRGBA HOVER_UNSELECT_COLOR   = ColorRGBA(1.0f, 0.75f, 0.75f, 1.0f);
+    static const ColorRGBA DISABLED_COLOR         = ColorRGBA(0.25f, 0.25f, 0.25f, 1.0f);
 
-    ColorRGBA ret = (is_outside && is_selected) ? OUTSIDE_SELECTED_COLOR :
-                    is_outside ? OUTSIDE_COLOR :
-                    is_selected ?  SELECTED_COLOR : ColorRGBA::BLACK();
+    std::optional<ColorRGBA> ret;
+    if (is_disabled)
+        ret = DISABLED_COLOR;
+    else if (is_selected && hover_type == HoverType::Unselect)
+        ret = HOVER_UNSELECT_COLOR;
+    else if (is_outside && is_selected)
+        ret = OUTSIDE_SELECTED_COLOR;
+    else if (is_outside && hover_type == HoverType::Select)
+        ret = OUTSIDE_SELECTED_COLOR;
+    else if (!is_selected && hover_type == HoverType::Select)
+        ret = HOVER_SELECT_COLOR;
+    else if (is_outside)
+        ret = OUTSIDE_COLOR;
+    else if (is_selected)
+        ret = SELECTED_COLOR;
 
-    if (!is_model_part)
-        ret.a(0.65f);
+    if (ret.has_value() && !is_model_part)
+        ret->a(0.65f);
 
     return ret;
 }
@@ -263,9 +389,14 @@ void PlaterScenePresenter::update_volume_materials()
                 const Domain::BedInstance* bed_inst = nullptr;
                 const Domain::Bed* bed = nullptr;
                 bool is_colliding = false;
-                bool is_selected = selection.is_selected({ obj->id().id, inst->id().id, tag->volume_id });
+                bool is_selected = selection.is_selected({ tag->object_id, tag->instance_id, tag->volume_id });
+                bool is_disabled = (selection.mode == Biz::Scene::SelectionMode::Volume && !selection.empty()) ?
+                    tag->instance_id != selection.elements.front().instance_id : false;
+                bool is_hovered = std::find_if(m_hover_data.nodes.begin(), m_hover_data.nodes.end(),
+                    [&](const Scene::Node* h) { return h == &n; }) != m_hover_data.nodes.end();
+                HoverType hover_type = is_hovered ? m_hover_data.type : HoverType::None;
 
-                ColorRGBA color;
+                std::optional<ColorRGBA> color;
                 if (is_on_bed) {
                     bed_inst = find_bed_instance_by_model_instance_id(mi_to_bi_map, inst->id().id);
                     if (bed_inst == nullptr) {
@@ -274,15 +405,15 @@ void PlaterScenePresenter::update_volume_materials()
                     }
                     bed = &bed_inst->bed.get();
 
-                    color = select_color(is_model_part, is_selected, is_colliding);
+                    color = select_color(is_model_part, is_selected, is_colliding, is_disabled, hover_type);
                 }
                 else
-                    color = select_color(is_model_part, is_selected, true);
+                    color = select_color(is_model_part, is_selected, true, is_disabled, hover_type);
 
-                if (is_on_bed && !is_colliding && !is_selected)
+                if (!color.has_value())
                     n.remove_material_override();
                 else {
-                    Render::Material mat = Render::Material{}.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
+                    Render::Material mat = Render::Material{}.set_uniform("uniform_color", *color).set_transparent(color->is_transparent());
                     n.set_material_override(mat);
                 }
 
@@ -364,13 +495,14 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
     if (m_projects.count(m_selected_project_id) == 0) {
         m_projects.try_emplace(m_selected_project_id);
         m_bed_render_updater.on_selected_project_changed(m_selected_project_id);
-        // a new camera has been created, add the bed updater as listener
+        // a new camera has been created, add the camera update listeners
         auto& camera = project_context().scene().camera();
         camera.add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
+        camera.add_listener<Scene::ICameraUpdateListener>(this);
         camera.set_viewport(m_viewport);
+        project_context().scene().add_listener<App::Scene::ISceneChangedListener>(this);
     }
-
-    m_camera_frustum_updater.update_scene_aabb(project_context().scene());
+    set_scene_aabb_as_dirty();
 }
 
 void PlaterScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
@@ -380,15 +512,12 @@ void PlaterScenePresenter::on_scene_selection_changed(Domain::SelectionId projec
     bool selection_empty = selection.elements.empty();
     m_projects[project_id].selection_root().set_enabled(!selection_empty);
 
-    if (selection_empty)
-        return;
-
-    update_selection_aabb(project_id, selection);
+    update_selection_aabb(project_id);
 }
 
 void PlaterScenePresenter::on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
 {
-    update_selection_aabb(project_id, selection);
+    update_selection_aabb(project_id);
 }
 
 void PlaterScenePresenter::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
@@ -489,16 +618,17 @@ void PlaterScenePresenter::invoke_bed_visually_changed(Domain::SelectionId proje
     }
 }
 
-void PlaterScenePresenter::update_selection_aabb(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
+void PlaterScenePresenter::update_selection_aabb(Domain::SelectionId project_id)
 {
     // update selection root, so it is in the center of all selected objects
 
-    auto& proj              = m_projects[project_id];
-    auto& selection_changes = project_context().selection_scene_changes();
-    auto& scene             = proj.scene();
+    auto& proj  = m_projects[project_id];
+    auto& scene = proj.scene();
 
+    const auto& selection = m_project_interactor.scene_interactor().object_selection();
     Scene::Node::NodeList found_nodes;
     found_nodes.reserve(selection.elements.size());
+
     for (const auto& e : selection.elements) {
         scene.root().query(
             [&](const Scene::Node* n)
@@ -506,8 +636,7 @@ void PlaterScenePresenter::update_selection_aabb(Domain::SelectionId project_id,
                 const auto* tag = n->tag_of_type<SceneNodeTag>();
                 if (tag == nullptr)
                     return false;
-                  return (selection.mode == Biz::Scene::SelectionMode::Instance) ?
-                      tag->matches_element(e) : tag->object_id == e.object_id && tag->volume_id == e.volume_id;
+                return tag->matches_element(e);
             },
             found_nodes
         );
@@ -538,6 +667,7 @@ void PlaterScenePresenter::update_selection_aabb(Domain::SelectionId project_id,
         xform.col(3).head(3) = bounds.center().cast<double>();
         proj.selection_root().set_world_transform(Scene::Transform{xform});
     }
+    proj.set_selection_aabb_node_as_dirty();
 }
 
 void PlaterScenePresenter::update_sinking_contours_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info)
@@ -568,7 +698,6 @@ void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, con
 
     invoke_bed_visually_changed(project_id);
     project_context().sinking_contours().update_scene(m_device, project, scn, instances);
-    m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
 void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
@@ -582,7 +711,6 @@ void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, c
 
     invoke_bed_visually_changed(project_id);
     project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scene(), instances);
-    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements,
@@ -620,7 +748,6 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
     auto& sinking_contours = project_context().sinking_contours();
     sinking_contours.update_scene(m_device, proj, scn, elements);
     sinking_contours.set_selection(elements);
-    m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
 void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
@@ -656,7 +783,6 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
 
     invoke_bed_visually_changed(project_id);
     project_context().sinking_contours().update_scene(m_device, project, scn, volumes);
-    m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
 void PlaterScenePresenter::on_volume_removed(
@@ -674,7 +800,6 @@ void PlaterScenePresenter::on_volume_removed(
 
     invoke_bed_visually_changed(project_id);
     project_context().sinking_contours().update_scene(m_device, m_workbench.project(project_id), scene(), volumes);
-    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements, Biz::Scene::TransformState state,
@@ -704,7 +829,6 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
     auto& sinking_contours = project_context().sinking_contours();
     sinking_contours.update_scene(m_device, proj, scn, elements);
     sinking_contours.set_selection(elements);
-    m_camera_frustum_updater.update_scene_aabb(scn);
 }
 
 void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_id, const Domain::BedRefs& instances)
@@ -722,7 +846,7 @@ void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_i
         Scene::BedNodeTag tag = {instance.config_container_id, instance.instance_id};
 
         Scene::NodeBuilder builder(scn);
-        Scene::BedNodeBuilder::bed_node(builder, inst, tag, m_device, m_projects[project_id], Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects));
+        Scene::build_bed_node(builder, inst, tag, m_device, m_projects[project_id], Scene::RenderLayerId(PlaterSceneLayer::DocumentObjects));
 
         scn.add_child(builder.build().release());
     }
@@ -736,8 +860,6 @@ void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_i
         center_camera_on_selected_bed();
     }
 
-    m_camera_frustum_updater.update_scene_aabb(scn);
-
     invoke_bed_visually_changed(project_id);
 }
 
@@ -746,7 +868,6 @@ void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_i
     remove_beds(project_id, instances);
 
     update_beds();
-    m_camera_frustum_updater.update_scene_aabb(scene());
 
     m_volume_materials_dirty = true;
     invoke_bed_visually_changed(project_id);
@@ -756,28 +877,22 @@ void PlaterScenePresenter::on_bed_instance_transformed(Domain::SelectionId proje
 {
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
-
-    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_wipe_tower_added(Domain::SelectionId project_id, Domain::SelectionId wipe_tower_id)
 {
     invoke_bed_visually_changed(project_id);
-    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_wipe_tower_removed(Domain::SelectionId project_id, Domain::SelectionId wipe_tower_id)
 {
     invoke_bed_visually_changed(project_id);
-    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_wipe_tower_transformed(Domain::SelectionId project_id, Domain::SelectionId wipe_tower_id, Biz::Scene::TransformState state)
 {
     if (state != Biz::Scene::TransformState::InProgress)
         invoke_bed_visually_changed(project_id);
-
-    m_camera_frustum_updater.update_scene_aabb(scene());
 }
 
 void PlaterScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, Scene::RenderLayerId layer_idx)
