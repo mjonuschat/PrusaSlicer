@@ -36,18 +36,6 @@ OverrideItemRow::OverrideItemRow(
     m_label->set_wrap_mode(Text::WrapMode::Wrap);
     m_label->set_flex_shrink(0);
 
-    m_control = ConfigItemControl::config_item_control_factory(
-        this,
-        index,
-        *data.config_item,
-        m_preset_interactor
-    );
-    m_control_item = dynamic_cast<Item*>(m_control);
-    ASSERT(m_control_item, "ConfigItem has to derive from Yoga::Item");
-    m_control_item->set_min_size({100, m_control_item->min_size().y()});
-    m_control_item->set_max_size({100, YGUndefined});
-    m_control_item->set_flex_shrink(0);
-
     m_sidetext = emplace_back<Text>(std::string());
     m_sidetext->set_flex_shrink(0);
 
@@ -61,9 +49,8 @@ OverrideItemRow::OverrideItemRow(
             Biz::_u8L("Remove override")
         );
         remove_button->set_flex_shrink(0);
-        remove_button->callbacks().action = [this] {
-            m_preset_interactor.set_item_override(*m_state->config_item, false);
-        };
+        remove_button->callbacks().action = [this]
+        { m_preset_interactor.set_item_override(*m_state->config_item, false); };
     }
 
     on_data_update();
@@ -72,6 +59,30 @@ OverrideItemRow::OverrideItemRow(
 void OverrideItemRow::on_data_update()
 {
     ASSERT(m_state->is_override());
+
+    Domain::ConfigItemDef::GUIType gui_type = m_state->config_item->def().gui_type;
+    if (m_gui_type != gui_type) {
+        m_gui_type = gui_type;
+
+        if (m_control_item) {
+            remove(m_control_item);
+            m_control_item = nullptr;
+            m_control      = nullptr;
+        }
+
+        m_control = ConfigItemControl::config_item_control_factory(
+            this,
+            1,
+            m_index,
+            *m_state->config_item,
+            m_preset_interactor
+        );
+        m_control_item = dynamic_cast<Item*>(m_control);
+        ASSERT(m_control_item, "ConfigItem has to derive from Yoga::Item");
+        m_control_item->set_min_size({100, m_control_item->min_size().y()});
+        m_control_item->set_max_size({100, YGUndefined});
+        m_control_item->set_flex_shrink(0);
+    }
 
     m_label->set_text(m_state->config_item->def().label);
     m_control->set_mixed(m_state->mixed);

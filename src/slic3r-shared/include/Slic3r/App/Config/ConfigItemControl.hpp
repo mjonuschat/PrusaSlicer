@@ -25,7 +25,8 @@ public:
 
     static ConfigItemControl* config_item_control_factory(
         Yoga::Item* container,
-        size_t index,
+        size_t child_index,
+        size_t data_index,
         const Domain::ConfigItem& item,
         Biz::Preset::PresetInteractor& preset_interactor
     );

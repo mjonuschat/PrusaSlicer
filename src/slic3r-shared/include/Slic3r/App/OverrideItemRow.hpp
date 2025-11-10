@@ -4,6 +4,7 @@
 ///|/
 #pragma once
 
+#include "Slic3r/Domain/ConfigDef.hpp"
 #include "Slic3r/Biz/DataObserver.hpp"
 #include "Slic3r/Biz/OverrideItem.hpp"
 
@@ -42,6 +43,7 @@ private:
     Yoga::Item* m_control_item{nullptr};
     Yoga::Text* m_sidetext{nullptr};
     bool m_enable_remove{false};
+    Domain::ConfigItemDef::GUIType m_gui_type{Domain::ConfigItemDef::GUIType::undefined};
 };
 
 } // namespace Slic3r::App

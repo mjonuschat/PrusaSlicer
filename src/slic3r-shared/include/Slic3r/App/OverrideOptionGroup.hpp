@@ -58,6 +58,7 @@ private:
 
     Biz::UnsharedPointer<OverrideConfigFilter> m_override_config_filter;
     OverrideConfigListView* m_override_config_list_view{nullptr};
+    Domain::ConfigItemDef::Category m_category{Domain::ConfigItemDef::Category::Unkown};
 };
 
 } // namespace Slic3r::App
