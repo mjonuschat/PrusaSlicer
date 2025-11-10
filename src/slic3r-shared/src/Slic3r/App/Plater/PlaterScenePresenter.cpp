@@ -647,16 +647,11 @@ void PlaterScenePresenter::update_selection_aabb(Domain::SelectionId project_id)
         // visit all children to find all potential bounding boxes
         // this is important for instance-mode of selection where `n` itself has
         // no bounding box/raycast component
-        visit(
-            *n,
-            [&](const Scene::Node& ni)
-            {
+        visit(*n,
+            [&](const Scene::Node& ni) {
                 auto* collision = ni.raycast_component();
-                if (collision != nullptr) {
-                    auto wbb = collision->world_bounding_box(ni.world_transform().matrix());
-                    for (size_t i = 0; i < 8; i++)
-                        bounds.extend(wbb.corner(static_cast<decltype(wbb)::CornerType>(i)));
-                }
+                if (collision != nullptr)
+                    bounds.extend(collision->world_bounding_box(ni.world_transform().matrix()));
             }
         );
     }
@@ -785,10 +780,7 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
     project_context().sinking_contours().update_scene(m_device, project, scn, volumes);
 }
 
-void PlaterScenePresenter::on_volume_removed(
-    Domain::SelectionId project_id,
-    const Domain::ElementRefs& volumes
-)
+void PlaterScenePresenter::on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
 {
     remove_children<SceneNodeTag, Domain::ElementRef>(
         scene(),

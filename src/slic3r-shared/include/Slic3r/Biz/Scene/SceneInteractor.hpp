@@ -293,6 +293,10 @@ private:
     void normalize_object_selection(ObjectSelection& object_selection) const;
 
 
+    // Collapse the volume transform into the instance transforms, if the object constains only one volume.
+    // No change is made otherwise.
+    void normalize_single_volume_object(Domain::ModelObject& object);
+
     using ProjectContexts = std::unordered_map<Domain::SelectionId, SceneInteractorProjectContext>;
 
     Domain::Workbench& m_workbench;

@@ -158,22 +158,6 @@ void ModelObject::delete_volume(const size_t idx)
     ModelVolumePtrs::iterator i = this->volumes.begin() + idx;
     delete *i;
     this->volumes.erase(i);
-
-    if (this->volumes.size() == 1) {
-        // only one volume left
-        // we need to collapse the volume transform into the instances transforms because now when selecting this volume
-        // it will be seen as a single full instance ans so its volume transform may be ignored
-        ModelVolume* v = this->volumes.front();
-        Transform3d v_t = v->get_transformation().get_matrix();
-        for (ModelInstance* inst : this->instances) {
-            inst->set_transformation(Transformation(inst->get_transformation().get_matrix() * v_t));
-        }
-
-        Transformation t;
-        v->set_transformation(t);
-        v->set_new_unique_id();
-    }
-
     this->invalidate_bounding_box();
 }
 

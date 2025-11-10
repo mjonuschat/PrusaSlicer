@@ -701,6 +701,8 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
             }
         }
 
+//        normalize_single_volume_object(*object);
+
         if (last_solid_part_name && last_solid_part_name.has_value()) {
             // Don't remove last_solid_part_el from the scene graph
             to_remove.erase(
@@ -720,7 +722,7 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
             new_selection.elements.emplace_back(Domain::ElementRef(object->id().id, instance->id().id));
         }
 
-        changes = m_bed_tracking.update_instances_bed_placement(project, to_remove, scene_selection.mode == SelectionMode::Instance);
+        changes = m_bed_tracking.update_instances_bed_placement(project, to_remove);
     }
 
     // Notify listeners on changes
@@ -1162,6 +1164,35 @@ BedTrackingChanges SceneInteractor::update_selection_instance_bed_placement(bool
         invoke_slicing_input_changed(bed_ref);
 
     return changes;
+}
+
+void SceneInteractor::normalize_single_volume_object(Domain::ModelObject& object)
+{
+    if (object.volumes.size() != 1)
+        return;
+    
+    // if the object constains only one volume
+    // the volume transform is collapsed into the instance transforms
+
+    Domain::ModelVolume* vol = object.volumes.front();
+    Domain::Transform3d vol_trafo = vol->get_transformation().get_matrix();
+    Domain::ElementRefs instance_refs;
+    instance_refs.reserve(object.instances.size());
+    Domain::ElementRefs volume_refs;
+    volume_refs.reserve(object.instances.size());
+    for (Domain::ModelInstance* inst : object.instances) {
+        inst->set_transformation(Domain::Transformation(inst->get_transformation().get_matrix() * vol_trafo));
+        instance_refs.emplace_back(object.id().id, inst->id().id);
+        volume_refs.emplace_back(object.id().id, inst->id().id, vol->id().id);
+    }
+    vol->set_transformation(Domain::Transformation(Domain::Transform3d::Identity()));
+    const auto changes = m_bed_tracking.update_instances_bed_placement(m_workbench.project(m_selected_project_id), instance_refs);
+    invoke_listeners<ISceneChangedListener>(
+        [&](ISceneChangedListener* l) {
+            l->on_instance_transformed(m_selected_project_id, instance_refs, TransformState::Completed, changes);
+            l->on_volume_transformed(m_selected_project_id, volume_refs, TransformState::Completed, changes);
+        }
+    );
 }
 
 void SceneInteractor::invoke_slicing_input_changed(const Domain::BedRef& bed_instance)
