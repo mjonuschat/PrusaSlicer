@@ -82,7 +82,7 @@ void ObjectSettingsObservableList::set_sources(const std::vector<Domain::ConfigB
     m_item_sources = std::move(new_item_sources);
 
     // 2. Go through all items and cache if the item values are mixed
-    for (OverrideItemPtr& item : new_items) {
+    for (OverrideItemPtr& item : m_items) {
         update_overriden(item.get());
     }
 
