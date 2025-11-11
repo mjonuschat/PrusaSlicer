@@ -6,6 +6,8 @@
 #include "Slic3r/TypeInfo.hpp"
 #include "Slic3r/Log.hpp"
 
+#include <ranges>
+
 namespace Slic3r::Biz::Preset {
 
 namespace {
@@ -560,6 +562,44 @@ PresetEvaluator::EvaluatedPrinterPresets PresetEvaluator::evaluate(const HwPrint
                 );
             }
         }
+
+        // deduplicate print presets
+        std::map<
+            std::string,
+            std::vector<std::reference_wrapper<Domain::Preset::EvaluatedPrintPreset>>>
+            presets_to_deduplicate;
+        Domain::Preset::EvaluatedPrintPresets deduplicated_presets;
+
+        for (auto& print : ep.prints) {
+            presets_to_deduplicate[print.preset.name].push_back(std::ref(print));
+        }
+
+        const bool needs_deduplication = std::ranges::any_of(
+            presets_to_deduplicate | std::views::values,
+            [](const auto& ps) { return ps.size() > 1; }
+        );
+        if (needs_deduplication) {
+            //for (auto& [name, presets]: presets_to_deduplicate) {
+            for (auto& prints_to_dedup : presets_to_deduplicate | std::views::values) {
+                auto it = prints_to_dedup.begin();
+                Domain::Preset::EvaluatedPrintPreset& print = it->get();
+                std::for_each(++it, prints_to_dedup.end(), [&print](const auto& p)
+                {
+                    auto preset = p.get();
+                    // assert that all preset values for same
+                    DEBUG_ASSERT(print.preset.values == preset.preset.values);
+                    // assert that all tool print presets has same size
+                    ASSERT(print.tools.size() == preset.tools.size());
+                    for (size_t i = 0; i < print.tools.size(); ++i) {
+                        ASSERT(print.tools[i].size() == preset.tools[i].size());
+                    }
+                });
+
+                deduplicated_presets.emplace_back(std::move(print));
+            }
+            ep.prints = std::move(deduplicated_presets);
+        }
+
         ret.emplace_back(std::move(ep));
     }
     return ret;

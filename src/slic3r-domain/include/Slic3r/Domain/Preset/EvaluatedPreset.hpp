@@ -124,6 +124,9 @@ struct EvaluatedToolPrintPreset
     EvaluatedToolPrintPreset(const EvaluatedToolPrintPreset&)     = default;
     EvaluatedToolPrintPreset(EvaluatedToolPrintPreset&&) noexcept = default;
 
+    EvaluatedToolPrintPreset& operator=(const EvaluatedToolPrintPreset&) = default;
+    EvaluatedToolPrintPreset& operator=(EvaluatedToolPrintPreset&&) noexcept = default;
+
     explicit EvaluatedToolPrintPreset(Preset&& preset) : preset(std::move(preset)) {}
 
     template<class Archive> void serialize(Archive& archive)
@@ -150,6 +153,9 @@ struct EvaluatedMaterialPreset
     EvaluatedMaterialPreset(const EvaluatedMaterialPreset&)     = default;
     EvaluatedMaterialPreset(EvaluatedMaterialPreset&&) noexcept = default;
 
+    EvaluatedMaterialPreset& operator=(const EvaluatedMaterialPreset&) = default;
+    EvaluatedMaterialPreset& operator=(EvaluatedMaterialPreset&&) noexcept = default;
+
     explicit EvaluatedMaterialPreset(Preset&& preset) : preset(std::move(preset)) {}
 
     template<class Archive> void serialize(Archive& archive)
@@ -172,6 +178,9 @@ struct EvaluatedPrintPreset
     EvaluatedPrintPreset()                                = default;
     EvaluatedPrintPreset(const EvaluatedPrintPreset&)     = default;
     EvaluatedPrintPreset(EvaluatedPrintPreset&&) noexcept = default;
+
+    EvaluatedPrintPreset& operator=(const EvaluatedPrintPreset&) = default;
+    EvaluatedPrintPreset& operator=(EvaluatedPrintPreset&&) noexcept = default;
 
     EvaluatedPrintPreset(
         Preset&& preset,

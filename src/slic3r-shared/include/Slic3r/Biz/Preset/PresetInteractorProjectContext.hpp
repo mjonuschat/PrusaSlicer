@@ -57,6 +57,7 @@ struct RuntimePresets
     std::map<HwConfingPrinterPrintKey, AllSlotMaterials> material{};
 
     const Domain::Preset::HwPrinterConfig* find_printer_config_by_id(const std::string& hw_config_id) const;
+    Domain::Preset::HwPrinterConfig* find_printer_config_by_id(const std::string& hw_config_id);
     const PrinterPreset* find_printer_preset_by_id(const std::string& hw_config_id, const std::string& printer_preset_id) const;
     const PrintPreset* find_print_preset_by_id(const HwConfigPrinterKey& parent, const std::string& print_id) const;
     const ToolPrintPreset* find_tool_print_preset_by_id(const HwConfingPrinterPrintKey& parent, size_t tool_index, const std::string& tool_print_id) const;
@@ -77,6 +78,12 @@ struct PresetInteractorProjectContext
     RuntimePresets runtime_presets;
 
     ConfigContainerContexts  config_containers;
+    /**
+     * @brief Config being editted but not being valid (so it can be set to cc, but we still want
+     * to keep for editting, so we have some chance to make it valid
+     */
+    std::optional<Domain::Preset::HwPrinterConfig> invalid_hw_config;
+
 };
 
 }

@@ -78,6 +78,11 @@ void LogicalPrinterSettingsDialog::on_preset_selection_changed(
     }
 }
 
+void LogicalPrinterSettingsDialog::on_config_container_selection_changed(Domain::SelectionId project_id, Domain::SelectionId config_container_id)
+{
+    m_warning->set_visible(false);
+}
+
 void LogicalPrinterSettingsDialog::on_list_selection_changed(Domain::SelectionId new_selection)
 {
     if (new_selection == Domain::INVALID_ID) {
@@ -105,6 +110,7 @@ void LogicalPrinterSettingsDialog::on_selected_project_changed(size_t index)
     // Once we will start to implement remembering Dialog context in Navigator
     // This should be cleaned up to open proper page instead of defaulting to list
     m_stack_layout->set_current_index(0);
+    m_warning->set_visible(m_project_interactor.preset_interactor().has_invalid_hw_config());
 }
 
 PrinterAdvancedSettingsDialog& LogicalPrinterSettingsDialog::printer_advanced_settings_dialog()
@@ -197,7 +203,11 @@ void LogicalPrinterSettingsDialog::create_page_settings()
 
     Item* title_row           = m_page_settings->emplace_back<Item>();
     LayoutButton* back_button = title_row->emplace_back<LayoutButton>("", Render::Icon::CaretLeft);
-    back_button->callbacks().action = [this]() { m_stack_layout->set_current_index(0); };
+    back_button->callbacks().action = [this]()
+    {
+        m_stack_layout->set_current_index(0);
+        m_warning->set_visible(false);
+    };
     m_text_printer_name             = title_row->emplace_back<Text>("Unknown");
 
     m_page_settings->emplace_back<Separator>(Orientation::Horizontal);
@@ -232,11 +242,25 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     Text* label = m_page_settings->emplace_back<Text>(_u8L("Nozzles"), Render::ImguiFontType::Bold);
     label->set_margin(Margins(0, 10, 0, 0));
 
+    auto validation_updated = [this](bool valid)
+    {
+        m_warning->set_visible(!valid);
+    };
     m_nozzle_list_view =
-        m_page_settings->emplace_back<NozzleListView>(m_project_interactor.preset_interactor());
+        m_page_settings->emplace_back<NozzleListView>(NozzleListView::ViewFactoryType{
+            m_project_interactor.preset_interactor(),
+            validation_updated
+        });
     m_nozzle_list_view->set_orientation(Orientation::Vertical);
     m_nozzle_list_view->set_gap(5);
     m_nozzle_list_view->set_source_list(&m_project_interactor.preset_interactor().tool_items());
+
+    m_warning = m_page_settings->emplace_back<Text>(
+        _u8L("Invalid configuration"),
+        Render::ImguiFontType::Bold
+    );
+    m_warning->set_visible(false);
+    m_warning->set_text_color({0.98f, 0.4f, 0.19f});
 
     m_advanced_dialog.attach_to_item(content_item(), Position::Left);
 
@@ -259,6 +283,7 @@ void LogicalPrinterSettingsDialog::create_page_settings()
 void LogicalPrinterSettingsDialog::on_about_to_show()
 {
     m_stack_layout->set_current_index(0);
+    m_warning->set_visible(false);
 }
 
 void LogicalPrinterSettingsDialog::update_settings_data()

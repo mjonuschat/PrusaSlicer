@@ -39,13 +39,13 @@ public:
 
     size_t selected_index() const
     {
-        ASSERT(m_selected_index != Domain::INVALID_ID);
+        ASSERT(m_selected_index == Domain::INVALID_ID || m_selected_index < m_items.size());
         return m_selected_index;
     }
 
     void set_selected_index(size_t index)
     {
-        ASSERT(index < m_items.size());
+        ASSERT(index < m_items.size() || index == Domain::INVALID_ID);
         m_selected_index = index;
         invoke_listeners<IListSelectionChangedListener>([index](IListSelectionChangedListener* l) {
             l->on_list_selection_changed(index);

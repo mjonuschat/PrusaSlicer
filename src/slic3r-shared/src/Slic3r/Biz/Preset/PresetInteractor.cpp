@@ -208,6 +208,13 @@ void PresetInteractor::initialize_config_container_with_selected(Domain::ConfigC
     selected_preset = this->selected_printer_preset();
 }
 
+void PresetInteractor::on_selected_project_changed(size_t index)
+{
+    m_selected_project_id = index;
+    // ensure the project context is created
+    get_or_create_project_context(m_selected_project_id);
+}
+
 
 void PresetInteractor::on_selected_config_container_changed(
     Domain::SelectionId project_id,
@@ -219,6 +226,8 @@ void PresetInteractor::on_selected_config_container_changed(
 
     // update selected config
     get_or_create_config_container_context(m_selected_project_id, container_id);
+    auto& p = get_or_create_project_context(m_selected_project_id);
+    p.invalid_hw_config = std::nullopt;
 
     ListenerInvokeLaterBag bag;
 
@@ -244,49 +253,63 @@ void PresetInteractor::on_selected_config_container_changed(
     bag.add([this] { invoke_slicing_input_changed(); });
 }
 
-void PresetInteractor::update_changed_selected_preset_hw_config()
+bool PresetInteractor::update_changed_selected_preset_hw_config(Domain::Preset::HwPrinterConfig& hw_config)
 {
-    const auto& project = m_workbench.project(m_selected_project_id);
-    const auto& ccc     = selected_config_container_context();
-    const auto* cc      = project.find_config_container(ccc.config_container_id);
-    ASSERT(cc != nullptr);
-    const auto& hw_config                       = cc->selected_preset().hw_config;
-    auto& preset_bundle                         = m_workbench.preset_bundle();
-    //FIXME: this will fail if config is runtime one (i.e. loaded from project)
-    preset_bundle.printer_configs[hw_config.id] = hw_config;
-    auto& vendor_bundle = preset_bundle.vendor_bundles.at(hw_config.vendor_id);
-    auto* vb_config     = vendor_bundle.find_printer_config(hw_config.id);
-    if (vb_config == nullptr)
-        vendor_bundle.printer_configs.push_back(hw_config);
-    else
-        *vb_config = hw_config;
-
-    PresetEvaluator preset_evaluator{vendor_bundle.presets};
+    auto& p = get_or_fail_project_context(m_selected_project_id);
     const std::string& printer_root_id = selected_printer_preset().printer.root_id;
     std::string selected_printer_preset_id;
+    auto& preset_bundle = m_workbench.preset_bundle();
+    auto& vendor_bundle = preset_bundle.vendor_bundles.at(hw_config.vendor_id);
+    PresetEvaluator preset_evaluator{vendor_bundle.presets};
+    PresetEvaluator::EvaluatedPrinterPresets epps;
     try {
-        auto& evaluated_printer_presets = preset_bundle.evaluated_presets[hw_config.id];
-        evaluated_printer_presets.clear();
-        auto epps = preset_evaluator.evaluate(hw_config);
-        ASSERT(epps.size() > 0);
+        epps = preset_evaluator.evaluate(hw_config);
+        std::erase_if(
+            epps,
+            [](const Domain::Preset::EvaluatedPrinterPreset& epp) { return epp.prints.empty(); }
+        );
+
+        if (epps.empty()) {
+            p.invalid_hw_config = hw_config;
+            return false;
+        }
+
+        p.invalid_hw_config = std::nullopt;
+
         for (auto& epp : epps) {
-            //dump_ep_info(epp);
             if (epp.preset.root_id == printer_root_id)
                 selected_printer_preset_id = epp.preset.id;
-
-            evaluated_printer_presets.emplace_back(std::move(epp));
         }
         // we didn't find printer with same root_id, let's just select first one
         if (selected_printer_preset_id.empty())
-            selected_printer_preset_id = evaluated_printer_presets.front().preset.id;
+            selected_printer_preset_id = epps.front().preset.id;
 
     } catch (const std::exception& e) {
         SPDLOG_ERROR("{}", e.what());
     }
 
     ListenerInvokeLaterBag bag;
+
+    auto& project = m_workbench.project(m_selected_project_id);
+    const auto& ccc     = selected_config_container_context();
+    auto* cc            = project.find_config_container(ccc.config_container_id);
+    ASSERT(cc != nullptr);
+    duplicate_hw_config_if_needed_and_update(hw_config, bag);
+
+    auto* vb_config     = vendor_bundle.find_printer_config(hw_config.id);
+    if (vb_config == nullptr)
+        vendor_bundle.printer_configs.push_back(hw_config);
+    else
+        *vb_config = hw_config;
+
+    auto& evaluated_printer_presets = preset_bundle.evaluated_presets[hw_config.id];
+    ASSERT(epps.size() > 0);
+    evaluated_printer_presets = epps;
+
     fill_printer_presets(bag);
     select_printer_preset_internal(hw_config.id, selected_printer_preset_id, bag);
+
+    return true;
 }
 
 const std::string& PresetInteractor::selected_hw_config_id() const
@@ -498,7 +521,7 @@ namespace {
 void
 set_items(PresetItemObservableList& dest, std::vector<PresetItem>&& items, size_t selected_index)
 {
-    ASSERT(selected_index != Domain::INVALID_ID);
+    ASSERT(selected_index == Domain::INVALID_ID || !items.empty());
     dest.items().set_items(std::move(items));
     dest.set_selected_index(selected_index);
 }
@@ -529,7 +552,9 @@ std::optional<size_t> set_items(
         idx++;
     }
 
-    unsigned long selected_index_val = selected_index.value_or(selected_by_name_index.value_or(0));
+    unsigned long selected_index_val = selected_index.value_or(
+        selected_by_name_index.value_or(items.empty() ? Domain::INVALID_ID : 0)
+    );
     set_items(dest, std::move(items), selected_index_val);
     return selected_index.has_value() ? std::nullopt : std::optional{selected_index_val};
 }
@@ -1002,66 +1027,109 @@ void PresetInteractor::select_material_preset(size_t material_index, const std::
     bag.add([this] { invoke_slicing_input_changed(); });
 }
 
-void PresetInteractor::duplicate_hw_config_if_needed(
-    Domain::Preset::SelectedPreset& selected_preset
+void PresetInteractor::duplicate_hw_config_if_needed_and_update(
+    Domain::Preset::HwPrinterConfig& hw_config,
+    ListenerInvokeLaterBag& bag
 )
 {
-    const auto& p = get_or_create_project_context(m_selected_project_id);
+    auto& p = get_or_create_project_context(m_selected_project_id);
+    bool is_runtime = p.runtime_presets.printer_configs.contains(hw_config.id);
     const bool dup_needed =
-        p.runtime_presets.printer_configs.contains(selected_preset.hw_config.id)
+        is_runtime
         || std::ranges::count_if(
             m_workbench.project(p.project_id).config_containers(),
             [&](const auto& cc)
-            { return cc->selected_preset().hw_config.id == selected_preset.hw_config.id; }
+            { return cc->selected_preset().hw_config.id == hw_config.id; }
         ) > 1;
     if (dup_needed) {
-        auto new_config           = selected_preset.hw_config;
-        new_config.id             = generate_uuid();
-        selected_preset.hw_config = new_config;
+        auto new_config = hw_config;
+        new_config.id   = generate_uuid();
+        hw_config       = new_config;
     }
+    // update hw config
+    if (is_runtime) {
+        p.runtime_presets.printer_configs[hw_config.id] = hw_config;
+    } else {
+        auto& preset_bundle = m_workbench.preset_bundle();
+        preset_bundle.printer_configs[hw_config.id] = hw_config;
+        if (dup_needed)
+            preset_bundle.vendor_bundles[hw_config.vendor_id].printer_configs.push_back(hw_config);
+    }
+    fill_printer_presets(bag);
 }
 
-void PresetInteractor::select_printer_tool_item(size_t tool_index, const std::string& id)
+bool PresetInteractor::select_printer_tool_item(size_t tool_index, const std::string& id)
 {
     auto& selected_preset = mutable_selected_printer_presets();
-    duplicate_hw_config_if_needed(selected_preset);
+    auto& p = get_or_fail_project_context(m_selected_project_id);
 
-    auto& hw_config = selected_preset.hw_config;
+    // we continue with p.invalid_hw_config if it is set (e.g. from previous call)
+    // and it matches the id of selected config container (i.e. no printer was changed)
+    const bool use_invalid_hw_config =
+        p.invalid_hw_config.has_value() && selected_preset.hw_config.id == p.invalid_hw_config->id;
+    auto hw_config =
+        use_invalid_hw_config ? p.invalid_hw_config.value() : selected_preset.hw_config;
     const auto& vendor_data =
         m_workbench.preset_bundle().vendor_bundles.at(hw_config.vendor_id).vendor_data;
     const auto* tool_def = vendor_data.find_tool_config_def_by_id(id);
     ASSERT(tool_def != nullptr, id);
     hw_config.tools.at(tool_index) = from_def(vendor_data, *tool_def);
     hw_config.name                 = Domain::Preset::suggest_name(hw_config, vendor_data);
-    update_changed_selected_preset_hw_config();
 
-    const auto& ccc = selected_config_container_context();
-    const Domain::SelectionId config_container_id{ccc.config_container_id};
-    invoke_listeners<IPresetChangedListener>([project_id = m_selected_project_id,
-                                              config_container_id](auto* l) {
-        l->on_hw_item_selection_changed(project_id, config_container_id, HwItemType::ToolItem);
-    });
+    const bool successfully_changed = update_changed_selected_preset_hw_config(hw_config);
+    if (!successfully_changed) {
+        p.invalid_hw_config = hw_config;
+    } else {
+        selected_preset.hw_config = hw_config;
+        p.invalid_hw_config = std::nullopt;
+
+        const auto& ccc = selected_config_container_context();
+        const Domain::SelectionId config_container_id{ccc.config_container_id};
+        invoke_listeners<IPresetChangedListener>([project_id = m_selected_project_id,
+                                                  config_container_id](auto* l) {
+            l->on_hw_item_selection_changed(project_id, config_container_id, HwItemType::ToolItem);
+        });
+    }
+
+    return successfully_changed;
 }
 
-void PresetInteractor::select_printer_sheet(const std::string& id)
+bool PresetInteractor::select_printer_sheet(const std::string& id)
 {
+    auto& p = get_or_fail_project_context(m_selected_project_id);
     auto& selected_preset = mutable_selected_printer_presets();
-    duplicate_hw_config_if_needed(selected_preset);
 
     const auto& vendor_data = m_workbench.preset_bundle()
                                   .vendor_bundles.at(selected_preset.hw_config.vendor_id)
                                   .vendor_data;
     const auto* sheet_def = vendor_data.find_sheet_config_def_by_id(id);
     ASSERT(sheet_def != nullptr, id);
-    selected_preset.hw_config.sheet = from_def(vendor_data, *sheet_def);
-    update_changed_selected_preset_hw_config();
 
-    const auto& ccc = selected_config_container_context();
-    const Domain::SelectionId config_container_id{ccc.config_container_id};
-    invoke_listeners<IPresetChangedListener>([project_id = m_selected_project_id,
-                                              config_container_id](auto* l) {
-        l->on_hw_item_selection_changed(project_id, config_container_id, HwItemType::SheetItem);
-    });
+    // we continue with p.invalid_hw_config if it is set (e.g. from previous call)
+    // and it matches the id of selected config container (i.e. no printer was changed)
+    const bool use_invalid_hw_config =
+        p.invalid_hw_config.has_value() && selected_preset.hw_config.id == p.invalid_hw_config->id;
+    auto hw_config =
+        use_invalid_hw_config ? p.invalid_hw_config.value() : selected_preset.hw_config;
+
+    hw_config.sheet = from_def(vendor_data, *sheet_def);
+    const bool successfully_changed = update_changed_selected_preset_hw_config(hw_config);
+    if (!successfully_changed) {
+        p.invalid_hw_config = hw_config;
+    } else {
+        selected_preset.hw_config = hw_config;
+        p.invalid_hw_config = std::nullopt;
+
+        const auto& ccc = selected_config_container_context();
+        const Domain::SelectionId config_container_id{ccc.config_container_id};
+        invoke_listeners<IPresetChangedListener>([project_id = m_selected_project_id,
+                                                  config_container_id](auto* l) {
+            l->on_hw_item_selection_changed(project_id, config_container_id, HwItemType::SheetItem);
+        });
+
+    }
+
+    return successfully_changed;
 }
 
 void PresetInteractor::set_preset_value(
@@ -1407,7 +1475,7 @@ void PresetInteractor::process_operation_from_unsaved_changes(
         if (it != m_unsaved_changes.end()) {
             // Process current state
             process(selected_preset, it->first, it->second);
-            // Remove it from the 
+            // Remove it from the
             m_unsaved_changes.erase(it);
         }
         return;

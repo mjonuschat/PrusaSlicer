@@ -14,11 +14,19 @@ namespace Slic3r::App {
 class PrinterNozzleRow : public Biz::DataObserver<Biz::Preset::ToolConfigItemObservableList>, public Yoga::Item
 {
 public:
-    explicit PrinterNozzleRow(
+    struct Callbacks
+    {
+        std::function<void(bool)> validation_updated{nullptr};
+    };
+
+    PrinterNozzleRow(
         size_t index,
         const Biz::Preset::ToolConfigItemObservableList& data,
-        Biz::Preset::PresetInteractor& preset_interactor
+        Biz::Preset::PresetInteractor& preset_interactor,
+        const std::function<void(bool)>& validation_updated = nullptr
     );
+
+    Callbacks& callbacks();
 
     void on_data_update() override;
     void on_index_update() override;
@@ -30,6 +38,7 @@ private:
     Biz::Preset::PresetInteractor& m_preset_interactor;
     Yoga::Text* m_text_index   = nullptr;
     ComboBoxTools* m_combo_box = nullptr;
+    Callbacks m_callbacks;
 };
 
 } // namespace Slic3r::App

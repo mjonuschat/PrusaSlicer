@@ -24,10 +24,24 @@ public:
     std::unique_ptr<View> create(size_t index, const Data& data)
     {
         return std::apply(
-            [&](auto&&... args) { return std::make_unique<View>(index, data, args...); },
+            [&](auto&&... args)
+            {
+                auto view = std::make_unique<View>(index, data, args...);
+                if (view_customizer)
+                    view_customizer(*view);
+                return view;
+            },
             m_args
         );
     }
+
+
+    using ViewCustomizer = std::function<void(View& view)>;
+    /**
+     * @brief If set it will be called on every created new view, so it can be
+     * customized (modified) before used.
+     */
+     ViewCustomizer view_customizer{nullptr};
 
 private:
     std::tuple<Args...> m_args;
@@ -50,7 +64,9 @@ class ListView : public Biz::IListObserver<Data>, public BaseItem
     using Items = std::vector<View*>;
 
 public:
-    ListView(ViewFactoryT factory = {}) : m_factory(factory) {}
+    using ViewFactoryType = ViewFactoryT;
+
+    ListView(ViewFactoryType factory = {}) : m_factory(factory) {}
 
     ~ListView()
     {
@@ -198,6 +214,11 @@ public:
 
             on_reset();
         }
+    }
+
+    void set_view_customizer(ViewFactoryT::ViewCustomizer customizer)
+    {
+        m_factory.view_customizer = customizer;
     }
 
 private:

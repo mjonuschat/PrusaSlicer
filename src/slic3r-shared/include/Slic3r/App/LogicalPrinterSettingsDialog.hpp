@@ -55,6 +55,7 @@ private:
     void on_about_to_show() override;
     void update_settings_data();
 
+    void  on_config_container_selection_changed(Domain::SelectionId project_id, Domain::SelectionId config_container_id) override;
 protected:
     void close_action() override;
 
@@ -73,7 +74,8 @@ private:
         Yoga::ViewFactory<
             PrinterNozzleRow,
             Biz::Preset::ToolConfigItemObservableList,
-            Biz::Preset::PresetInteractor&>>;
+            Biz::Preset::PresetInteractor&,
+            std::function<void(bool)>>>;
 
     Biz::ListenerScope<
         Biz::Preset::IPresetChangedListener,
@@ -104,6 +106,7 @@ private:
     Yoga::Icon* m_printer_icon{nullptr};
     Yoga::ButtonGroup m_group_keywords;
     Yoga::ComboBoxListViewSelection<Domain::Preset::HwSheetConfigDef>* m_combo_sheets;
+    Yoga::Text* m_warning{nullptr};
     NozzleListView* m_nozzle_list_view{nullptr};
     PrinterAdvancedSettingsDialog m_advanced_dialog;
     PrinterAddDialog* m_printer_add_dialog{nullptr};

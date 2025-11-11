@@ -52,11 +52,13 @@ using PresetsSwitchStates = Biz::Preset::IPresetDialogManager::PresetsSwitchStat
  * Manipulates presets associated with config containers.
  */
 class PresetInteractor final :
+    public ISelectedProjectChangedListener,
     public ISelectedConfigContainerChangedListener,
     public WithListeners<
         IPresetChangedListener,
         IBedPresetSwitchedListener,
-        ISlicingInputChangedListener>
+        ISlicingInputChangedListener
+        >
 {
 public:
     explicit PresetInteractor(Domain::Workbench& workbench, Scene::SceneInteractor& scene_interactor);
@@ -172,8 +174,8 @@ public:
     void select_print_preset(const std::string& id);
     void select_tool_print_preset(size_t tool_index, const std::string& id);
     void select_material_preset(size_t material_index, const std::string& id);
-    void select_printer_tool_item(size_t tool_index, const std::string& id);
-    void select_printer_sheet(const std::string& id);
+    bool select_printer_tool_item(size_t tool_index, const std::string& id);
+    bool select_printer_sheet(const std::string& id);
 
     using ConfigItemModifyFn = std::function<void(Domain::ConfigItem&)>;
 
@@ -184,6 +186,7 @@ public:
         ConfigItemModifyFn modify_fn
     );
 
+    void on_selected_project_changed(size_t index) override;
     void on_selected_config_container_changed(
         Domain::SelectionId project_id,
         Domain::SelectionId bed_id
@@ -572,6 +575,12 @@ public:
 
     void set_unsaved_changes(PresetsSwitchStates&& unsaved_changes);
 
+    bool has_invalid_hw_config() const {
+        auto& p = get_or_fail_project_context(m_selected_project_id);
+        const auto& cc = m_workbench.project(m_selected_project_id).find_config_container(selected_config_container_context().config_container_id);
+        return p.invalid_hw_config.has_value() && p.invalid_hw_config->id == cc->selected_preset().hw_config.id;
+    }
+
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
 
@@ -584,6 +593,8 @@ private:
 
     //using ListenerInvokeLaterBag = DeduplicatingInvokeLaterBag<ListenerType, PresetItemType, int>;
     using ListenerInvokeLaterBag = InvokeLaterBag;
+    template <typename T>
+    using RefBoolPair = std::pair<std::reference_wrapper<T>, bool>;
 
 
     PresetInteractorConfigContainerContext& mutable_selected_config_container_context();
@@ -609,13 +620,25 @@ private:
         return it->second;
     }
 
+    PresetInteractorProjectContext& get_or_fail_project_context(Domain::SelectionId project_id)
+    {
+        auto it = m_project_contexts.find(project_id);
+        ASSERT(it != m_project_contexts.end());
+        return it->second;
+    }
+
     PresetInteractorProjectContext& get_or_create_project_context(Domain::SelectionId project_id);
     PresetInteractorConfigContainerContext& get_or_create_config_container_context(
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id
     );
 
-    void update_changed_selected_preset_hw_config();
+    /**
+     * @brief Updates presets for changed hw configuration
+     * @return Returns true if the updated presets are valid, otherwise false---the caller is then
+     * responsible to revert changes to changed hw_config of selected config container.
+     */
+    bool update_changed_selected_preset_hw_config(Domain::Preset::HwPrinterConfig& hw_config);
 
     const std::string& selected_hw_config_id() const;
     void fill_config_container_with_selected_preset(
@@ -652,7 +675,7 @@ private:
     void fill_selected_tool_print_cbis(Domain::Preset::SelectedPreset& selected_preset);
     void fill_selected_material_cbis(Domain::Preset::SelectedPreset& selected_preset);
 
-    void duplicate_hw_config_if_needed(Domain::Preset::SelectedPreset& selected_preset);
+    void duplicate_hw_config_if_needed_and_update(Domain::Preset::HwPrinterConfig& hw_config, ListenerInvokeLaterBag& bag);
 
     void invoke_slicing_input_changed();
     void invoke_on_preset_value_changed(const Domain::ConfigItem& config_item);
@@ -693,5 +716,6 @@ private:
 
     IPresetDialogManager* m_dialog_manager{ nullptr };
     PresetsSwitchStates m_unsaved_changes;
+
 };
 } // namespace Slic3r::Biz::Preset
