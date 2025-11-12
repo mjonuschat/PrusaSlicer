@@ -12,7 +12,6 @@ jobs:
     uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_windows.yml@slic3r3_prototype
     secrets: inherit
     with:
-      with_asan: false
       enable_sentry:  true
       release_build: ${{ startsWith(github.ref, 'refs/tags/version_') }}
       actions_branch: slic3r3_prototype
