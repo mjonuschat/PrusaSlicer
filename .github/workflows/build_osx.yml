@@ -2,6 +2,9 @@ name: Build osx
 
 on:
   push:
+    branches-ignore:
+      - master
+      - release
   workflow_dispatch:
     inputs:
       enable_sentry:
