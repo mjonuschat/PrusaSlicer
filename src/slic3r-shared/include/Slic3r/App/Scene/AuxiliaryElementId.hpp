@@ -23,12 +23,6 @@ struct AuxiliaryElementId
         SlaTopClip,
         SlaBottomClip,
         AABB,
-        CutUpperPart,
-        CutLowerPart,
-        CutConnector,
-        CutPlane,
-        CutGroove,
-        CutClip,
     };
 
     Type type;

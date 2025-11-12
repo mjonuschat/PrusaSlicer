@@ -704,7 +704,7 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         } else if (const Scene::Node* node =
                        ctx.pick_result_node_with_tag_of_type<CutPlaneNodeTag>())
         {
-            ASSERT(node->tag_of_type<CutPlaneNodeTag>()->type == CutPlaneNodeTag::Type::Plane);
+            ASSERT(node);
             m_is_plane_hovered          = true;
             m_translation_ray.direction = m_rotation_m * Vec3d::UnitZ();
         } else {
@@ -926,11 +926,11 @@ void CutGizmo::build_cut_part_mesh(
     auto& geom_mgr    = m_model_geometry_manager;
     auto& trimesh_mgr = m_model_triangle_mesh_manager;
 
-    Scene::AuxiliaryElementId::Type aei_type = type == CutPartNodeTag::Type::Upper ?
-        Scene::AuxiliaryElementId::Type::CutUpperPart :
-        Scene::AuxiliaryElementId::Type::CutLowerPart;
+    CutAuxiliaryElementId::Type aei_type = type == CutPartNodeTag::Type::Upper ?
+        CutAuxiliaryElementId::Type::UpperPart :
+        CutAuxiliaryElementId::Type::LowerPart;
 
-    Scene::AuxiliaryElementId id{aei_type, part_id};
+    CutAuxiliaryElementId id{aei_type, part_id};
     const auto& trimesh = trimesh_mgr.get_or_create(
         id,
         [&]() -> std::unique_ptr<Scene::TriangleMesh>
@@ -960,18 +960,18 @@ void CutGizmo::build_cut_part_mesh(
 void CutGizmo::reset_cut_part_meshes()
 {
     // Remove all cut parts Scene::Nodes
-    std::vector<Scene::AuxiliaryElementId> geometry_ids;
+    std::vector<CutAuxiliaryElementId> geometry_ids;
     m_scene_presenter.scene().remove_children(
         [&](const Scene::Node* node)
         {
             const CutPartNodeTag* t = node->tag_of_type<CutPartNodeTag>();
             bool ret                = t != nullptr;
             if (ret) {
-                Scene::AuxiliaryElementId id;
+                CutAuxiliaryElementId id;
                 if (t->type == CutPartNodeTag::Type::Upper) {
-                    id.type = Scene::AuxiliaryElementId::Type::CutUpperPart;
+                    id.type = CutAuxiliaryElementId::Type::UpperPart;
                 } else if (t->type == CutPartNodeTag::Type::Lower) {
-                    id.type = Scene::AuxiliaryElementId::Type::CutLowerPart;
+                    id.type = CutAuxiliaryElementId::Type::LowerPart;
                 } else {
                     return false;
                 }
@@ -983,7 +983,7 @@ void CutGizmo::reset_cut_part_meshes()
         m_main_node
     );
 
-    for (const Scene::AuxiliaryElementId& id : geometry_ids) {
+    for (const CutAuxiliaryElementId& id : geometry_ids) {
         m_model_geometry_manager.release(id);
         m_model_triangle_mesh_manager.release(id);
     }
@@ -1006,18 +1006,16 @@ void CutGizmo::reset()
     reset_handles_nodes();
 
     // Remove all cut parts Scene::Nodes
-    std::vector<Scene::AuxiliaryElementId> geometry_ids;
+    std::vector<CutAuxiliaryElementId> geometry_ids;
     m_scene_presenter.scene().remove_children(
         [&](const Scene::Node* node)
         {
             if (const CutPlaneNodeTag* t = node->tag_of_type<CutPlaneNodeTag>()) {
-                if (t->type == CutPlaneNodeTag::Type::Plane) {
-                    geometry_ids.push_back({Scene::AuxiliaryElementId::Type::CutPlane});
-                }
+                geometry_ids.push_back({CutAuxiliaryElementId::Type::CutPlane});
                 return true;
 
             } else if (const CutConnectorNodeTag* t = node->tag_of_type<CutConnectorNodeTag>()) {
-                geometry_ids.push_back({Scene::AuxiliaryElementId::Type::CutConnector, t->id});
+                geometry_ids.push_back({CutAuxiliaryElementId::Type::Connector, t->id});
                 return true;
             }
             return false;
@@ -1025,7 +1023,7 @@ void CutGizmo::reset()
         m_main_node
     );
 
-    for (const Scene::AuxiliaryElementId& id : geometry_ids) {
+    for (const CutAuxiliaryElementId& id : geometry_ids) {
         m_model_geometry_manager.release(id);
         m_model_triangle_mesh_manager.release(id);
     }
@@ -1057,7 +1055,7 @@ void CutGizmo::build_cut_plane_node(Scene::NodeBuilder& builder)
     // Its geometry will be updated on plane mode change
     indexed_triangle_set mesh_its = Biz::Algorithms::TriangleMesh::its_make_cube(0.1f, 0.1f, 0.1f);
 
-    Scene::AuxiliaryElementId id{Scene::AuxiliaryElementId::Type::CutPlane};
+    CutAuxiliaryElementId id{CutAuxiliaryElementId::Type::CutPlane};
 
     const auto& trimesh = m_model_triangle_mesh_manager.get_or_create(
         id,
@@ -1075,7 +1073,7 @@ void CutGizmo::build_cut_plane_node(Scene::NodeBuilder& builder)
                         .set_uniform("uniform_color", color);
 
     builder.set_debug_name("cut: cut plane:")
-        .set_tag(CutPlaneNodeTag(CutPlaneNodeTag::Type::Plane))
+        .set_tag(CutPlaneNodeTag())
         .set_mesh(geom, material, int(0));
 }
 
@@ -1251,8 +1249,8 @@ void CutGizmo::update_cut_plane_mesh()
         [&](Scene::Node& n)
         {
             CutPlaneNodeTag* tag = n.tag_of_type<CutPlaneNodeTag>();
-            if (tag && tag->type == CutPlaneNodeTag::Type::Plane) {
-                Scene::AuxiliaryElementId id{Scene::AuxiliaryElementId::Type::CutPlane};
+            if (tag) {
+                CutAuxiliaryElementId id{CutAuxiliaryElementId::Type::CutPlane};
 
                 m_model_triangle_mesh_manager.release(id);
                 m_model_geometry_manager.release(id);
@@ -1272,6 +1270,7 @@ void CutGizmo::update_cut_plane_mesh()
                     ->set_geometry(geom);
 
                 n.set_raycast_component(new Scene::AabbRaycastNodeComponent(&trimesh->aabb_mesh()));
+                return;
             }
         }
     );
@@ -1286,7 +1285,7 @@ void CutGizmo::update_cut_plane_trafo()
         [&](Scene::Node& node)
         {
             CutPlaneNodeTag* tag = node.tag_of_type<CutPlaneNodeTag>();
-            if (tag && tag->type == CutPlaneNodeTag::Type::Plane) {
+            if (tag) {
                 Render::Material material = node.render_component()->material();
                 ColorRGBA cp_clr = can_perform_cut() && has_valid_groove() ? CUT_PLANE_DEF_COLOR :
                                                                              CUT_PLANE_ERR_COLOR;
@@ -1297,6 +1296,7 @@ void CutGizmo::update_cut_plane_trafo()
                 node.set_local_transform(
                     Domain::translation_transform(m_plane_center) * m_rotation_m
                 );
+                return;
             }
         }
     );
@@ -1550,7 +1550,7 @@ void CutGizmo::update_clipping_nodes_enability(bool connectors_editing)
             }
 
             CutPlaneNodeTag* clipped_tag = node.tag_of_type<CutPlaneNodeTag>();
-            if (!clipped_tag || clipped_tag->type == CutPlaneNodeTag::Type::Plane) {
+            if (!clipped_tag) {
                 node.set_enabled(!connectors_editing);
                 return;
             }

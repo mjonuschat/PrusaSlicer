@@ -9,7 +9,6 @@
 #include "Slic3r/App/Plater/CutPartSelection.hpp"
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
-#include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
 #include "Slic3r/App/Plater/CutNodeTag.hpp"
 
 namespace Slic3r::App::Yoga {
@@ -44,8 +43,8 @@ using namespace Slic3r::Domain;
 // Please implement me!
 class CutGizmo : public Scene::IToolGizmo
 {
-    using ModelGeometryManager     = Render::GeometryManager<Scene::AuxiliaryElementId>;
-    using ModelTriangleMeshManager = Scene::TriangleMeshManager<Scene::AuxiliaryElementId>;
+    using ModelGeometryManager     = Render::GeometryManager<CutAuxiliaryElementId>;
+    using ModelTriangleMeshManager = Scene::TriangleMeshManager<CutAuxiliaryElementId>;
 
 public:
     CutGizmo(

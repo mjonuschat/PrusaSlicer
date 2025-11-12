@@ -1,6 +1,8 @@
 #pragma once
 #include "GizmoNodeTag.hpp"
 
+#include <boost/functional/hash.hpp>
+
 #include <cstdint>
 #include <optional>
 
@@ -16,31 +18,14 @@ namespace Slic3r::App::Plater {
  * @note All node types used by CutGizmo inherit from this structure.
  */
 struct CutNodeTag
-{
-};
+{};
 
 /**
- * @brief Node tag for CutGizmo used to represent the cutting plane and its visual elements.
- *
- * This tag identifies nodes that belong to the cutting plane visualization, including
- * the plane surface, clipping region, and contour outline.
+ * @brief Node tag for CutGizmo used to represent the cutting plane
  */
 struct CutPlaneNodeTag : public CutNodeTag
 {
-    enum class Type
-    {
-        Undef,   ///< Undefined type.
-        Plane,   ///< Represents the main cutting plane surface.
-        Clip,    ///< Represents the clipped region of the plane.
-        Contour, ///< Represents the contour or outline of the plane.
-    };
-
-    const Type type;
-
-    explicit CutPlaneNodeTag(Type type)
-        : CutNodeTag(), type(type)
-    {
-    }
+    explicit CutPlaneNodeTag() : CutNodeTag() {}
 };
 
 /**
@@ -54,17 +39,14 @@ struct CutPartNodeTag : public CutNodeTag
     enum class Type
     {
         Undef = 0, ///< Undefined part.
-        Upper,     ///< Upper part of the object.
-        Lower,     ///< Lower part of the object.
+        Upper, ///< Upper part of the object.
+        Lower, ///< Lower part of the object.
     };
 
-    Type type{ Type::Undef }; ///< Type of the part.
-    const size_t id;        ///< Unique identifier for the part.
+    Type type{Type::Undef}; ///< Type of the part.
+    const size_t id; ///< Unique identifier for the part.
 
-    explicit CutPartNodeTag(Type type, size_t id)
-        : CutNodeTag(), type(type), id(id)
-    {
-    }
+    explicit CutPartNodeTag(Type type, size_t id) : CutNodeTag(), type(type), id(id) {}
 };
 
 /**
@@ -92,31 +74,72 @@ struct Handle
         Rotation
     };
 
-    Type type{ Type::Undef };
-    AxisType axis{ AxisType::None };
+    Type type{Type::Undef};
+    AxisType axis{AxisType::None};
 
     // Equality operator
     bool operator==(const Handle& other) const
     {
         return type == other.type && axis == other.axis;
     }
-    bool is_undef() const { return type == Type::Undef && axis == AxisType::None; }
+
+    bool is_undef() const
+    {
+        return type == Type::Undef && axis == AxisType::None;
+    }
 
     // Type queries
-    bool is_move() const { return type == Type::Move; }
-    bool is_rotation() const { return type == Type::Rotation; }
+    bool is_move() const
+    {
+        return type == Type::Move;
+    }
+
+    bool is_rotation() const
+    {
+        return type == Type::Rotation;
+    }
 
     // Axis queries
-    bool is_x_axis() const { return axis == AxisType::XAxis; }
-    bool is_y_axis() const { return axis == AxisType::YAxis; }
-    bool is_z_axis() const { return axis == AxisType::ZAxis; }
+    bool is_x_axis() const
+    {
+        return axis == AxisType::XAxis;
+    }
+
+    bool is_y_axis() const
+    {
+        return axis == AxisType::YAxis;
+    }
+
+    bool is_z_axis() const
+    {
+        return axis == AxisType::ZAxis;
+    }
 
     // Combined type + axis queries (optional convenience)
-    bool is_move_x() const { return is_move() && is_x_axis(); }
-    bool is_move_z() const { return is_move() && is_z_axis(); }
-    bool is_rotation_x() const { return is_rotation() && is_x_axis(); }
-    bool is_rotation_y() const { return is_rotation() && is_y_axis(); }
-    bool is_rotation_z() const { return is_rotation() && is_z_axis(); }
+    bool is_move_x() const
+    {
+        return is_move() && is_x_axis();
+    }
+
+    bool is_move_z() const
+    {
+        return is_move() && is_z_axis();
+    }
+
+    bool is_rotation_x() const
+    {
+        return is_rotation() && is_x_axis();
+    }
+
+    bool is_rotation_y() const
+    {
+        return is_rotation() && is_y_axis();
+    }
+
+    bool is_rotation_z() const
+    {
+        return is_rotation() && is_z_axis();
+    }
 };
 
 /**
@@ -130,14 +153,14 @@ struct CutHandleNodeTag : public CutNodeTag, public GizmoNodeTag
 {
     enum class Type
     {
-        Undef,        ///< Undefined type.
-        Handle,       ///< Represents the main interactive handle.
+        Undef, ///< Undefined type.
+        Handle, ///< Represents the main interactive handle.
         GradedCircle, ///< Used by rotation handles to visualize rotation angles.
-        Stem,         ///< Used by both move and rotation handles as a connector line.
+        Stem, ///< Used by both move and rotation handles as a connector line.
     };
 
-    const Type type{ Type::Undef };
-    const Handle::Type handle_type{ Handle::Type::Undef };
+    const Type type{Type::Undef};
+    const Handle::Type handle_type{Handle::Type::Undef};
     const std::optional<bool> is_cw;
 
     explicit CutHandleNodeTag() : GizmoNodeTag(AxisType::None) {}
@@ -145,17 +168,69 @@ struct CutHandleNodeTag : public CutNodeTag, public GizmoNodeTag
     explicit CutHandleNodeTag(
         Type type,
         Handle::Type handle_type,
-        AxisType primary_axis = AxisType::None,
+        AxisType primary_axis     = AxisType::None,
         std::optional<bool> is_cw = std::nullopt
-    )
-        : GizmoNodeTag(primary_axis)
-        , type(type)
-        , handle_type(handle_type)
-        , is_cw(is_cw)
+    ) :
+        GizmoNodeTag(primary_axis),
+        type(type),
+        handle_type(handle_type),
+        is_cw(is_cw)
+    {}
+
+    Handle handle() const
     {
+        return Handle(handle_type, primary_axis);
+    }
+};
+
+/**
+ * @brief Struct used for tag of nodes for for Cut visual elements.
+ *
+ * It identifies nodes that belong to the cut parts and cut plane.
+ */
+struct CutAuxiliaryElementId
+{
+    enum class Type : uint8_t
+    {
+        Undef = 0,
+        CutPlane,
+        UpperPart,
+        LowerPart,
+        Connector
+    };
+
+    Type type;
+    size_t id;
+
+    /**
+     *
+     * @param rhs
+     * @return
+     */
+    bool operator==(const CutAuxiliaryElementId& rhs) const
+    {
+        return type == rhs.type && id == rhs.id;
     }
 
-    Handle handle() const { return Handle(handle_type, primary_axis); }
+    bool operator<(const CutAuxiliaryElementId& rhs) const
+    {
+        return type < rhs.type || (type == rhs.type && id < rhs.id);
+    }
 };
 
 } // namespace Slic3r::App::Plater
+
+namespace std {
+template <>
+struct hash<Slic3r::App::Plater::CutAuxiliaryElementId>
+{
+    using value_type = Slic3r::App::Plater::CutAuxiliaryElementId;
+
+    std::uint64_t operator()(const value_type& val) const
+    {
+        size_t ret = boost::hash_value(val.type);
+        boost::hash_combine(ret, val.id);
+        return ret;
+    }
+};
+} // namespace std
