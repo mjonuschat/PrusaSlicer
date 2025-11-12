@@ -1,0 +1,18 @@
+name: Build osx sentry
+
+on:
+  push:
+    branches:
+      - master
+      - release
+  workflow_dispatch:
+
+jobs:
+  build_osx_asan:
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@slic3r3_prototype
+    secrets: inherit
+    with:
+      with_asan: false
+      enable_sentry:  true
+      release_build: false
+      actions_branch: slic3r3_prototype
