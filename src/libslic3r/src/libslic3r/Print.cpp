@@ -154,6 +154,19 @@ check_extruders(const Domain::Model& model, const Domain::ConfigPackFDM& config)
 
     std::vector<std::string> result;
 
+    for (const Domain::ModelObject* object : model.objects) {
+        const auto object_extruder{object->object_settings.items.opt("extruder")};
+        if (!in_range(object_extruder, 0, tool_count)) {
+            result.push_back("extruder");
+        }
+        for (const Domain::ModelVolume* volume : object->volumes) {
+            const auto volume_extruder{volume->volume_settings.overrides.get("extruder")};
+            if (volume_extruder && !in_range(*volume_extruder, 0, tool_count)) {
+                result.push_back("extruder");
+            }
+        }
+    }
+
     for (const char* key : {"perimeter_extruder", "infill_extruder", "solid_infill_extruder"}) {
         if (!in_range(config.print.items.opt(key), 1, tool_count)) {
             result.push_back(key);
