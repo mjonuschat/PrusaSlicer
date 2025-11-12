@@ -135,14 +135,8 @@ std::optional<ArbitraryShape> extract_outline(const InstanceMeshes& meshes, cons
     for (const InstanceMesh& mesh : meshes.meshes) {
         try {
             const Polygons vol_outline{project_mesh(mesh.mesh_ptr->its, mesh.trafo, stop_condition)};
-            switch (mesh.type) {
-            case ModelVolumeType::MODEL_PART:
+            if (mesh.type == ModelVolumeType::MODEL_PART) {
                 result = union_ex(result, vol_outline);
-                break;
-            case ModelVolumeType::NEGATIVE_VOLUME:
-                result = diff_ex(result, vol_outline);
-                break;
-            default:;
             }
         } catch (const CanceledException&) {
             return std::nullopt;
