@@ -12,6 +12,10 @@ on:
         description: 'Release build'
         default: false
         type: boolean
+      debug_symbols:
+        description: 'Debug symbols'
+        default: false
+        type: boolean
 
 jobs:
   build_flatpak:
@@ -21,3 +25,4 @@ jobs:
       actions_branch: slic3r3_prototype
       enable_sentry: ${{ inputs.enable_sentry || false }}
       release_build: ${{ inputs.release_build || startsWith(github.ref, 'refs/tags/version_') }}
+      debug_symbols: ${{ inputs.debug_symbols || false }}
