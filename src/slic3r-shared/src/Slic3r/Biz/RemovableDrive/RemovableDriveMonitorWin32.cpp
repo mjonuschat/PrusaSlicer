@@ -118,7 +118,7 @@ void RemovableDriveMonitorWin32::update()
     }
 }
 
-boost::filesystem::path RemovableDriveMonitorWin32::get_path_on_removable_drive(const boost::filesystem::path& preferred_path)
+boost::filesystem::path RemovableDriveMonitorWin32::get_path_on_removable_drive(const boost::filesystem::path& preferred_path) const
 {
     boost::filesystem::path result = get_removable_drive_path_from_path(preferred_path);
     if (!result.empty()) {
@@ -133,7 +133,7 @@ boost::filesystem::path RemovableDriveMonitorWin32::get_path_on_removable_drive(
     }
 }
 
-boost::filesystem::path RemovableDriveMonitorWin32::get_removable_drive_path_from_path(const boost::filesystem::path& path)
+boost::filesystem::path RemovableDriveMonitorWin32::get_removable_drive_path_from_path(const boost::filesystem::path& path) const
 {
     {
         std::scoped_lock<std::mutex> lock(m_drives_mutex);
@@ -146,7 +146,7 @@ boost::filesystem::path RemovableDriveMonitorWin32::get_removable_drive_path_fro
     }
 }
 
-size_t RemovableDriveMonitorWin32::removable_drives_count()
+size_t RemovableDriveMonitorWin32::removable_drives_count() const
 {
     {
         std::scoped_lock<std::mutex> lock(m_drives_mutex);

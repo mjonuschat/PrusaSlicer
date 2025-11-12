@@ -78,7 +78,7 @@ Domain::SelectionId ProjectInteractor::new_project_with_modification(
 void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
 {
     auto on_result{
-        [&](Domain::Project&& project)
+        [this, file_path](Domain::Project&& project)
         {
             if (project.config_containers().empty())
                 return;
@@ -98,6 +98,8 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
             do_select_config_container(added_project.config_containers().front()->id().id);
 
             m_scene_interactor.prepare_added_project(added_project);
+
+            set_export_project_path(project_id, file_path);
 
             invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
                 l->on_project_loaded(project_id);
@@ -146,12 +148,14 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
         .start();
 }
 
-void ProjectInteractor::save_project(const std::string& file_path, const Store3mfParam& params)
+void ProjectInteractor::save_project(const boost::filesystem::path& file_path, const Store3mfParam& params)
 {
     auto& selected_project = this->selected_project();
     selected_project.increment_version();
-    selected_project.set_file_name(boost::filesystem::path(file_path).stem().string());
-    store_3mf(file_path, selected_project, params);
+    selected_project.set_file_name(file_path.stem().string());
+    store_3mf(file_path.string(), selected_project, params);
+
+    selected_project.export_path_storage().set_export_project_dir_path(file_path);
 
     invoke_listeners<IProjectsChangedListener>(
         [this](auto* l) { l->on_project_changed(selected_project_id()); }
@@ -334,8 +338,7 @@ void ProjectInteractor::do_export(const Domain::SlicingId id, const boost::files
     const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
     if (!fdm_result)
         return;
-    bool to_removable = m_removable_drive_service.is_path_on_removable_drive(dest_path);
-    m_last_export_path_storage.set_last_export_path(dest_path, to_removable);
+    set_export_result_path(selected_project_id(), dest_path);
     PrintHost::PrintHostConfig config{Domain::PrintHostType::Local, ""};
     PrintHost::PrintHostJobData data{
         fdm_result.value().get().const_gcode(),
@@ -387,10 +390,43 @@ std::string ProjectInteractor::get_project_name(Domain::SelectionId project_id) 
 {
     auto it = m_workbench.projects().find(project_id);
     ASSERT(it != m_workbench.projects().end());
-    if (it != m_workbench.projects().end()) {
-        return it->second.file_name();
+
+    return it->second.file_name();
+}
+
+const boost::filesystem::path& ProjectInteractor::export_project_path(Domain::SelectionId project_id) const
+{
+    auto it = m_workbench.projects().find(project_id);
+    ASSERT(it != m_workbench.projects().end());
+
+    return it->second.export_path_storage().export_project_dir_path();
+}
+
+void ProjectInteractor::set_export_project_path(Domain::SelectionId project_id, const boost::filesystem::path& path)
+{
+    auto it = m_workbench.projects().find(project_id);
+    ASSERT(it != m_workbench.projects().end());
+
+    it->second.export_path_storage().set_export_project_dir_path(path);
+}
+
+boost::filesystem::path ProjectInteractor::export_result_path(Domain::SelectionId project_id, bool only_removable) const
+{
+    auto it = m_workbench.projects().find(project_id);
+    ASSERT(it != m_workbench.projects().end());
+
+    if (only_removable) {
+        return m_removable_drive_service.get_path_on_removable_drive(it->second.export_path_storage().export_result_dir_path());
     }
-    return "default_filename";
+    return it->second.export_path_storage().export_result_dir_path();
+}
+
+void ProjectInteractor::set_export_result_path(Domain::SelectionId project_id, const boost::filesystem::path& path)
+{
+    auto it = m_workbench.projects().find(project_id);
+    ASSERT(it != m_workbench.projects().end());
+
+    it->second.export_path_storage().set_export_result_dir_path(path);
 }
 
 void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::path> paths)
@@ -408,6 +444,8 @@ void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::pa
         cc->bed().center(),
         m_dialog_provider
     );
+
+    set_export_project_path(selected_project_id(), paths.front());
 }
 
 Domain::SelectionId ProjectInteractor::add_config_container()

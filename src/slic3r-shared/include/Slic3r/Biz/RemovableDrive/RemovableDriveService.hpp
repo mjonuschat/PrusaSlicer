@@ -32,12 +32,12 @@ public:
     /**
      * @brief Returns path to removable drive if any exists. Prefarably one with preferred_path.
      */
-    boost::filesystem::path get_path_on_removable_drive(const boost::filesystem::path& preferred_path)
+    boost::filesystem::path get_path_on_removable_drive(const boost::filesystem::path& preferred_path) const
     {
         return m_monitor->get_path_on_removable_drive(preferred_path);
     }
 
-    bool is_path_on_removable_drive(const boost::filesystem::path& path)
+    bool is_path_on_removable_drive(const boost::filesystem::path& path) const
     {
         return !m_monitor->get_removable_drive_path_from_path(path).empty();
     }
@@ -59,7 +59,7 @@ public:
         eject_in_thread(drive_path);
     }
 
-    bool has_removable_drives()
+    bool has_removable_drives() const
     {
         return m_monitor->removable_drives_count() > 0;
     }

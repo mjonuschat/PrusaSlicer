@@ -14,7 +14,6 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostInteractor.hpp"
-#include "Slic3r/Biz/LastExportPathStorage.hpp"
 #include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 #include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
@@ -135,7 +134,7 @@ public:
     /**
      * @brief Save project into the file
      */
-    void save_project(const std::string& file_path, const Store3mfParam& params);
+    void save_project(const boost::filesystem::path& file_path, const Store3mfParam& params);
 
     /**
      * Select already opened project. If the project is already selected, do nothing.
@@ -457,15 +456,18 @@ public:
 
     std::string get_project_name(Domain::SelectionId project_id) const;
 
-    boost::filesystem::path last_export_path(bool only_removable) const
-    {
-        return m_last_export_path_storage.get_last_export_path(only_removable);
-    }
+    
+    /**
+     * @brief Getter for default path when exporting 3mf file.
+     */
+    const boost::filesystem::path& export_project_path(Domain::SelectionId project_id) const;
+    void set_export_project_path(Domain::SelectionId project_id, const boost::filesystem::path& path);
 
-    void set_last_export_path(const boost::filesystem::path& path, bool is_removable)
-    {
-        m_last_export_path_storage.set_last_export_path(path, is_removable);
-    }
+    /**
+     * @brief Getter for default path when exporting gcode.
+     */
+    boost::filesystem::path export_result_path(Domain::SelectionId project_id, bool only_removable) const;
+    void set_export_result_path(Domain::SelectionId project_id, const boost::filesystem::path& path);
 
     ObservableProjectList& observable_project_list();
 
@@ -532,7 +534,6 @@ private:
     SLAObjectCache m_sla_object_cache;
     StatusCache m_status_cache;
     PrintHost::PrintHostInteractor m_print_host_interactor;
-    LastExportPathStorage m_last_export_path_storage;
     UserAccount::UserAccountInteractor m_user_account_interactor;
     std::unique_ptr<AppInstance::AbstractAppInstanceMessageHandler> m_app_instance_message_handler;
     PresetUpdater::PresetUpdaterInteractor m_preset_updater_interactor;

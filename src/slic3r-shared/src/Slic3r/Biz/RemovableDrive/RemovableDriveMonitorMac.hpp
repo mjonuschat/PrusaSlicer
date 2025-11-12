@@ -38,12 +38,12 @@ public:
     /**
      * @brief Returns path to removable drive if any exists. Prefarably one with preferred_path.
      */
-    boost::filesystem::path get_path_on_removable_drive(const boost::filesystem::path& preferred_path) override;
+    boost::filesystem::path get_path_on_removable_drive(const boost::filesystem::path& preferred_path) const override;
 
     /**
      * @brief Returns path to removable drive if "path" is on removable.
      */
-    boost::filesystem::path get_removable_drive_path_from_path(const boost::filesystem::path& path) override;
+    boost::filesystem::path get_removable_drive_path_from_path(const boost::filesystem::path& path) const override;
 
     /**
      * @brief Called from outside to notify Monitor to re-enumerate drives.
@@ -57,7 +57,7 @@ public:
     /**
      * @brief Returns number of removable drives.
      */
-    size_t removable_drives_count() override;
+    size_t removable_drives_count() const override;
 
 private:
     Platform::IMainThreadDispatcher& m_dispatcher;

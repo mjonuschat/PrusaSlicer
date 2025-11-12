@@ -34,7 +34,7 @@ std::function<void()> get_export_action(Biz::ProjectInteractor* project_interact
         {
             GCodeExportPathSelect export_path_select(true);
             export_path_select.show_modal_dialog(
-                project_interactor->last_export_path(false),
+                project_interactor->export_result_path(project_interactor->selected_project_id(), false),
                 project_interactor->get_project_name(project_interactor->selected_project_id()),
                 [&](bool result, const std::vector<boost::filesystem::path>& file_paths)
                 {
@@ -65,9 +65,7 @@ std::function<void()> get_export_flash_action(Biz::ProjectInteractor* project_in
         {
             GCodeExportPathSelect export_path_select(true);
             export_path_select.show_modal_dialog(
-                project_interactor->removable_drive_service().get_path_on_removable_drive(
-                    project_interactor->last_export_path(true)
-                ),
+                project_interactor->export_result_path(project_interactor->selected_project_id(), true),
                 project_interactor->get_project_name(project_interactor->selected_project_id()),
                 [=](bool result, const std::vector<boost::filesystem::path>& file_paths)
                 {

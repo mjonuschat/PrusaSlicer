@@ -117,8 +117,14 @@ void TopBar::add_load_project_btn(Item* parent)
         };
 
         auto& dlg_manager = AppServices::instance().dialog_manager();
-        dlg_manager
-            .show_file_dialog(FileDialogType::Open, _u8L("Open Project"), "", "", "*.3mf", callback);
+        dlg_manager.show_file_dialog(
+            FileDialogType::Open,
+            _u8L("Open Project"),
+            m_project_interactor->export_project_path(m_project_interactor->selected_project_id()),
+            "",
+            "*.3mf",
+            callback
+        );
     };
 }
 
@@ -149,10 +155,11 @@ void TopBar::add_save_project_btn(Item* parent)
                     [this,
                      &params](bool success, const std::vector<boost::filesystem::path>& file_paths) {
                     if (success) {
-                        std::string file_path = file_paths.front().string();
+                        boost::filesystem::path file_path = file_paths.front();
+                        std::string ext_str = file_path.extension().string();
                         // file path could have locale dependent characters, do not use tolower
-                        if (!file_path.ends_with(".3mf") && !file_path.ends_with(".3MF")) {
-                            file_path.append(".3mf");
+                        if (ext_str != ".3mf" && ext_str != ".3MF") {
+                            file_path.replace_extension(".3mf");
                         }
 
                         m_project_interactor->save_project(file_path, params);
@@ -167,20 +174,21 @@ void TopBar::add_save_project_btn(Item* parent)
                             const std::vector<boost::filesystem::path>& file_paths
                         ) {
                         if (success)
-                            m_project_interactor->save_project(file_paths.front().string(), params);
+                            m_project_interactor->save_project(file_paths.front(), params);
                     };
                     auto& dlg_manager = AppServices::instance().dialog_manager();
                     dlg_manager.show_file_dialog(
                         FileDialogType::Save,
                         _u8L("Save Project"),
-                        "",
+                        m_project_interactor->export_project_path(m_project_interactor->selected_project_id()),
                         project_name,
                         "*.3mf",
                         callback
                     );
                 } else {
                     // Saving an existing project - just save.
-                    m_project_interactor->save_project(project_name, params);
+                    // DK: How this could work with just project_name?
+                    m_project_interactor->save_project(boost::filesystem::path(project_name), params);
                 }
             }
         }

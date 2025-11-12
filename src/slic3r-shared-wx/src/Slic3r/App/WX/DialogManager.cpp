@@ -8,6 +8,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/WX/I18N.hpp>
 #include "Slic3r/Domain/Preset/Types.hpp"
+#include "Slic3r/Log.hpp"
 
 #include <wx/msgdlg.h>
 #include <wx/filedlg.h>
@@ -15,10 +16,13 @@
 #include <wx/tokenzr.h>
 #include <wx/app.h>
 
+#include <boost/filesystem.hpp>
+#include <boost/system/error_code.hpp>
+
 namespace Slic3r::App::WX {
 
 void
-DialogManager::show_file_dialog(FileDialogType dialog_type, const std::string& dialog_title, const boost::filesystem::path& default_folder, const std::string& default_file_name, const std::string& wildcards, const FileCallback& callback)
+DialogManager::show_file_dialog(FileDialogType dialog_type, const std::string& dialog_title, const boost::filesystem::path& override_dir, const std::string& default_file_name, const std::string& wildcards, const FileCallback& callback)
 {
     ASSERT(callback);
 
@@ -36,7 +40,14 @@ DialogManager::show_file_dialog(FileDialogType dialog_type, const std::string& d
         break;
     }
 
-    wxFileDialog dlg(nullptr, from_u8(dialog_title), from_u8(default_folder.string()), from_u8(default_file_name), from_u8(wildcards), flags);
+    boost::filesystem::path dir;
+    boost::system::error_code ec; 
+    if (!override_dir.empty() && boost::filesystem::exists(override_dir, ec) && boost::filesystem::is_directory(override_dir, ec)) {
+        dir = override_dir;
+    } else if (!m_last_dir.empty() && boost::filesystem::exists(m_last_dir, ec) && boost::filesystem::is_directory(m_last_dir, ec)) {
+        dir = m_last_dir;
+    }
+    wxFileDialog dlg(nullptr, from_u8(dialog_title), from_u8(dir.string()), from_u8(default_file_name), from_u8(wildcards), flags);
 
     if (dlg.ShowModal() != wxID_OK) {
         callback(false, {});
@@ -75,6 +86,15 @@ DialogManager::show_file_dialog(FileDialogType dialog_type, const std::string& d
         }
     }
 
+    if (!out_paths.empty()) {
+        if (boost::filesystem::is_directory(out_paths.front(), ec)) {
+            m_last_dir = out_paths.front();
+        } else if (boost::filesystem::exists(out_paths.front().parent_path(), ec)) {
+            m_last_dir = out_paths.front().parent_path();
+        } else {
+            SPDLOG_ERROR("Failed to resolve new default dialog path: {}", ec.message());
+        }
+    }
     callback(true, out_paths);
 }
 

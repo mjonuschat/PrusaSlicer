@@ -11,6 +11,7 @@ add_library(slic3r-domain STATIC
     include/Slic3r/Domain/Workbench.hpp
     src/Slic3r/Domain/ConfigContainer.cpp
     include/Slic3r/Domain/ConfigContainer.hpp
+    include/Slic3r/Domain/ProjectExportPathStorage.hpp
 
     include/Slic3r/Domain/CustomGCode.hpp
     include/Slic3r/Domain/Line.hpp

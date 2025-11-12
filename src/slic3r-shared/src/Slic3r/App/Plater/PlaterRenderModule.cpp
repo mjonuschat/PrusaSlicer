@@ -335,6 +335,8 @@ void PlaterRenderModule::init_scene_layout()
                     &App::AppServices::instance().dialog_manager()
                 );
 
+                m_project_interactor.set_export_project_path(m_project_interactor.selected_project_id(), file_paths.front());
+
                 m_scene_presenter->scene().log_nodes();
             }
         };
@@ -343,7 +345,7 @@ void PlaterRenderModule::init_scene_layout()
         dlg_manager.show_file_dialog(
             FileDialogType::OpenMultiple,
             _u8L("Import File"),
-            "",
+            m_project_interactor.export_project_path(m_project_interactor.selected_project_id()),
             "",
             "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf",
             callback
@@ -738,7 +740,7 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
     dlg_manager.show_file_dialog(
         FileDialogType::OpenMultiple,
         _u8L("Import File"),
-        "",
+        m_project_interactor.export_project_path(m_project_interactor.selected_project_id()),
         "",
         "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf",
         callback

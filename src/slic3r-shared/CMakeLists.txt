@@ -613,7 +613,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/ProjectInteractor.cpp
         include/Slic3r/Biz/ProjectInteractor.hpp
         include/Slic3r/Biz/ProjectScoped.hpp
-        include/Slic3r/Biz/LastExportPathStorage.hpp
         include/Slic3r/Biz/ObservableProjectList.hpp
         src/Slic3r/Biz/ObservableProjectList.cpp
         src/Slic3r/Biz/Units.cpp

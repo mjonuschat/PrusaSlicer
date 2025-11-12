@@ -2,6 +2,8 @@
 
 #include <Slic3r/App/IDialogManager.hpp>
 
+#include <boost/filesystem/path.hpp>
+
 namespace Slic3r::App::WX {
 
 class DialogManager : public IDialogManager{
@@ -11,7 +13,7 @@ public:
     void show_file_dialog(
         FileDialogType dialog_type,
         const std::string& dialog_title, 
-        const boost::filesystem::path& default_folder,  
+        const boost::filesystem::path& override_dir,  
         const std::string& default_file_name, 
         const std::string& wildcards,
         const FileCallback& callback
@@ -38,6 +40,9 @@ public:
         const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
         const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new
     ) override;
+
+private:
+    boost::filesystem::path m_last_dir;
 };
 
 } //namespace Slic3r::App::WX
