@@ -45,6 +45,7 @@
 #include "libslic3r/ModelUtils.hpp"
 #include "libslic3r/SlicingInput.hpp"
 #include "libslic3r/CustomParametersHandling.hpp"
+#include "libslic3r/ShrinkageCompensation.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <float.h>
@@ -215,7 +216,11 @@ check_extruders(const Domain::Model& model, const Domain::ConfigPackFDM& config)
     return Error{ErrorCode::InvalidExtruders, result};
 }
 
-std::vector<Biz::Slicing::Error> validate_input(const Domain::Model& model, const Domain::ConfigPackFDM& config) {
+std::vector<Biz::Slicing::Error> validate_input(
+    const Domain::Model& model,
+    const Domain::ConfigPackFDM& config
+)
+{
     std::vector<Biz::Slicing::Error> errors;
     if (auto error{check_extruder_offset(model, config)}) {
         errors.push_back(std::move(*error));
@@ -258,8 +263,17 @@ Biz::Print::ApplyStatus::Status Print::update(
             result = ApplyStatus::InvalidData{std::move(slicing_input.error())};
             return;
         }
+
+        const std::optional<Vec3d> shrinkage_compensation_optional{
+            Biz::Slicing::get_shrinkage_compensation(model, config_fdm)
+        };
+        const Vec3d shrinkage_compensation{
+            shrinkage_compensation_optional.value_or(Vec3d{1.0, 1.0, 1.0})
+        };
+
         result = this->apply(
             model,
+            shrinkage_compensation,
             slicing_input.value(),
             serialized_config,
             hw_config,
@@ -274,6 +288,11 @@ Biz::Print::ApplyStatus::Status Print::update(
             }
             for (const Biz::Slicing::Warning& warning : validation_result.warnings) {
                 std::get<ApplyStatus::Changed>(result).warrnings.push_back(warning);
+            }
+            if (!shrinkage_compensation_optional) {
+                std::get<ApplyStatus::Changed>(result).warrnings.emplace_back(
+                    Biz::Slicing::Warning{Biz::Slicing::WarningCode::FilamentShrinkageDiffer}
+                );
             }
         }
         if (model.objects.empty()) {
@@ -464,9 +483,6 @@ Biz::Print::ValidationResult Print::validate() const
 DONE:;
     }
 
-    if (!this->has_same_shrinkage_compensations())
-        warnings.emplace_back(Warning{WarningCode::FilamentShrinkageDiffer});
-
     if (extruders.empty() && !m_objects.empty()) {
         errors.push_back(Error{ErrorCode::NoExtruders});
     }
@@ -540,7 +556,7 @@ DONE:;
             !layers.empty()
             && layers.back() > this->config().get<double>("max_print_height") + EPSILON)
         {
-            const double shrinkage_compensation_z = this->shrinkage_compensation().z();
+            const double shrinkage_compensation_z = this->m_shrinkage_compensation.z();
             if (shrinkage_compensation_z != 1.
                 && layers.back()
                     > (this->config().get<double>("max_print_height") / shrinkage_compensation_z
@@ -1810,40 +1826,6 @@ std::string Print::output_filename(const std::string &filename_base) const
         output_filename_format.erase(output_filename_format.end()-6);
 
     return this->PrintBase::output_filename(output_filename_format, ".gcode", filename_base, &config);
-}
-
-// Returns if all used filaments have same shrinkage compensations.
-bool Print::has_same_shrinkage_compensations() const {
-    const std::vector<unsigned int> extruders = this->extruders();
-    if (extruders.empty())
-        return false;
-
-    const Domain::Percentage filament_shrinkage_compensation_xy = m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_xy").at(extruders.front());
-    const Domain::Percentage filament_shrinkage_compensation_z  = m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_z").at(extruders.front());
-
-    for (unsigned int extruder : extruders) {
-        if (filament_shrinkage_compensation_xy != m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_xy").at(extruder) ||
-            filament_shrinkage_compensation_z  != m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_z").at(extruder)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-// Returns scaling for each axis representing shrinkage compensations in each axis.
-Vec3d Print::shrinkage_compensation() const
-{
-    if (!this->has_same_shrinkage_compensations())
-        return Vec3d::Ones();
-
-    const unsigned int first_extruder          = this->extruders().front();
-    const double       xy_compensation_percent = std::clamp(m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_xy").at(first_extruder).value, -99., 99.);
-    const double       z_compensation_percent  = std::clamp(m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_z").at(first_extruder).value, -99., 99.);
-    const double       xy_compensation         = 100. / (100. - xy_compensation_percent);
-    const double       z_compensation          = 100. / (100. - z_compensation_percent);
-
-    return { xy_compensation, xy_compensation, z_compensation };
 }
 
 const std::string PrintStatistics::FilamentUsedG     = "filament used [g]";

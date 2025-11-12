@@ -246,9 +246,15 @@ std::vector<Error> transform_to_legacy_input(PartialVolumeConfigFDM& volume_conf
 void set_extruders(PartialConfig& partial_config)
 {
     if (const auto extruder{partial_config.template get<int>("extruder")}; extruder > 0) {
-        partial_config.set("infill_extruder", *extruder);
-        partial_config.set("perimeter_extruder", *extruder);
-        partial_config.set("solid_infill_extruder", *extruder);
+        if (!partial_config.get<int>("infill_extruder")) {
+            partial_config.set("infill_extruder", *extruder);
+        }
+        if (!partial_config.get<int>("perimeter_extruder")) {
+            partial_config.set("perimeter_extruder", *extruder);
+        }
+        if (!partial_config.get<int>("solid_infill_extruder")) {
+            partial_config.set("solid_infill_extruder", *extruder);
+        }
     }
 }
 } // namespace

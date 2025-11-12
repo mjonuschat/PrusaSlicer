@@ -19,11 +19,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
 
-#include "Slic3r/Domain/TriangleSelector.hpp"
+#include "libslic3r/ExtruderCandidates.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Print.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/CustomGCode.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
@@ -48,7 +47,6 @@ using SlicingSync::AllSteps;
 using SlicingSync::AllOrSome;
 using SlicingSync::StepsPerPrintObject;
 using Domain::ModelWipeTower;
-using Biz::Algorithms::TriangleStateType;
 using Domain::ObjectID;
 using Domain::FullConfigFDMPtr;
 using Domain::PartialObjectConfigFDMPtr;
@@ -58,6 +56,7 @@ using Domain::PartialVolumeConfigFDMPtr;
 using Biz::Parser::PlaceholderParser;
 using ParserConfig = Biz::Parser::IO::Config;
 using Errors = std::vector<Biz::Slicing::Error>;
+using Biz::Slicing::get_painting_extruders;
 
 static inline bool transform3d_lower(const Transform3d &lhs, const Transform3d &rhs) 
 {
@@ -838,42 +837,6 @@ bool instance_ids_equal(const Domain::ModelInstancePtrs& current, const Domain::
     });
 }
 
-std::vector<unsigned int> get_painting_extruders(
-    const Domain::ModelVolumePtrs& volumes,
-    const std::size_t num_extruders,
-    const bool is_mm_painted
-)
-{
-    std::vector<unsigned int> result;
-
-    if (num_extruders > 1 && is_mm_painted) {
-        std::array<bool, static_cast<size_t>(TriangleStateType::Count)> used_facet_states{};
-        for (const Domain::ModelVolume* volume : volumes) {
-            if (volume->is_mm_painted()) {
-                const std::vector<bool>& volume_used_facet_states{
-                    volume->mm_segmentation_facets.get_data().used_states
-                };
-
-                assert(volume_used_facet_states.size() == used_facet_states.size());
-                for (size_t state_idx = 1;
-                     state_idx < std::min(volume_used_facet_states.size(), used_facet_states.size());
-                     ++state_idx) {
-                    used_facet_states[state_idx] |= volume_used_facet_states[state_idx];
-                }
-            }
-        }
-
-        for (size_t state_idx = static_cast<size_t>(TriangleStateType::Extruder1);
-             state_idx < used_facet_states.size();
-             ++state_idx) {
-            if (used_facet_states[state_idx]) {
-                result.emplace_back(state_idx);
-            }
-        }
-    }
-
-    return result;
-}
 
 using ModelObjectId = ObjectID;
 using ObjectMap = std::multimap<ModelObjectId, PrintObject*>;
@@ -1117,11 +1080,10 @@ tl::expected<RegionsSyncResult, Errors> sync_regions(
     for (auto it_print_object = print_objects.begin(); it_print_object != print_objects.end();) {
         const PrintObject& print_object = *(*it_print_object);
 
-        const std::vector<unsigned int> painting_extruders{get_painting_extruders(
-            print_object.model_object()->volumes,
-            num_extruders,
-            print_object.model_object()->is_mm_painted()
-        )};
+        const std::vector<unsigned int> painting_extruders{
+            num_extruders > 1 ? get_painting_extruders(*print_object.model_object()) :
+                                std::vector<unsigned int>{}
+        };
 
         const auto new_regions{generate_print_object_regions(
             nullptr,
@@ -1334,6 +1296,7 @@ bool InvalidatedSteps::empty() const {
 
 Biz::Print::ApplyStatus::Status Print::apply(
     const Domain::Model& model,
+    const Domain::Vec3d& shrinkage_compensation,
     const FullConfigFDMPtr& new_full_config_ptr,
     const Biz::Print::SerializedConfig& serialized_config,
     const Domain::Preset::HwPrinterConfig& hw_config,
@@ -1342,8 +1305,6 @@ Biz::Print::ApplyStatus::Status Print::apply(
 )
 {
     PrintConfigView new_print_config{new_full_config_ptr};
-    m_hw_config         = hw_config;
-    m_serialized_config = serialized_config;
 
     // Check if the print config change will produce any warnings.
     const std::vector<Biz::Slicing::Warning> warnings{
@@ -1359,6 +1320,27 @@ Biz::Print::ApplyStatus::Status Print::apply(
         != num_extruders
     };
 
+    if (model.id() != m_model.id()) {
+        m_model.copy_id(model);
+    }
+
+    const auto model_sync_result{sync_model(
+        m_model,
+        model,
+        m_objects,
+        new_full_config_ptr,
+        this,
+        shrinkage_compensation,
+        num_extruders,
+        num_extruders_changed
+    )};
+    if (!model_sync_result) {
+        return Biz::Print::ApplyStatus::InvalidData{model_sync_result.error()};
+    }
+
+    m_shrinkage_compensation = shrinkage_compensation;
+    m_hw_config         = hw_config;
+    m_serialized_config = serialized_config;
     m_config = new_print_config;
 
     m_placeholder_parser = init_placeholder_parser(
@@ -1379,27 +1361,8 @@ Biz::Print::ApplyStatus::Status Print::apply(
         num_extruders
     )};
 
-    this->call_cancel_callback();
-
     m_custom_gcode = custom_gcode;
 
-    if (model.id() != m_model.id()) {
-        m_model.copy_id(model);
-    }
-
-    const auto model_sync_result{sync_model(
-        m_model,
-        model,
-        m_objects,
-        new_full_config_ptr,
-        this,
-        this->shrinkage_compensation(),
-        num_extruders,
-        num_extruders_changed
-    )};
-    if (!model_sync_result) {
-        return Biz::Print::ApplyStatus::InvalidData{model_sync_result.error()};
-    }
 
     delete_old_model_objects(m_model.objects, model_sync_result->model_objects);
     m_model.objects = model_sync_result->model_objects;

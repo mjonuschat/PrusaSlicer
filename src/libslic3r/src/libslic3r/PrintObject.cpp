@@ -2428,13 +2428,10 @@ void PrintObject::set_shared_regions(const std::shared_ptr<PrintObjectRegions>& 
     m_shared_regions = regions;
 }
 
-const std::string                                                    key_extruder { "extruder" };
-static constexpr const std::initializer_list<const std::string_view> keys_extruders { "infill_extruder"sv, "solid_infill_extruder"sv, "perimeter_extruder"sv };
-
 void PrintObject::update_slicing_parameters() {
     if (!m_slicing_params.valid) {
         m_slicing_params = SlicingParameters::create_from_config(this->print()->config(), this->model_object()->max_z(),
-                                                                 this->object_extruders(), this->print()->shrinkage_compensation());
+                                                                 this->object_extruders(), this->print()->m_shrinkage_compensation);
     }
 }
 

@@ -16,6 +16,7 @@ add_executable(${_TEST_NAME}_tests
 	test_cut_surface.cpp
 	test_elephant_foot_compensation.cpp
 	test_expolygon.cpp
+	test_extruder_candidates.cpp
 	test_geometry.cpp
 	test_placeholder_parser.cpp
 	test_polygon.cpp

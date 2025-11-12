@@ -592,6 +592,7 @@ public:
 
     Biz::Print::ApplyStatus::Status apply(
         const Domain::Model& model,
+        const Domain::Vec3d& shrinkage_compensation,
         const Domain::FullConfigFDMPtr& new_full_config_ptr,
         const Biz::Print::SerializedConfig& serialized_config,
         const Domain::Preset::HwPrinterConfig& hw_config,
@@ -686,11 +687,7 @@ public:
     const PrintRegion&          get_print_region(size_t idx) const  { return *m_print_regions[idx]; }
     const ToolOrdering&         get_tool_ordering() const { return m_wipe_tower_data.tool_ordering; }
 
-    // Returns if all used filaments have same shrinkage compensations.
-    bool has_same_shrinkage_compensations() const;
-
-    // Returns scaling for each axis representing shrinkage compensations in each axis.
-    Domain::Vec3d shrinkage_compensation() const;
+    Domain::Vec3d m_shrinkage_compensation{Domain::Vec3d::Ones()};
 
     // Invalidates the step, and its depending steps in Print.
     bool                invalidate_step(PrintStep step);

@@ -216,8 +216,8 @@ TEST_CASE("Ported from Perl", "[Print]") {
                 REQUIRE(print.get_print_region(0).config().get<int>("infill_extruder") == 3);
             }
 
-            THEN("extruder setting *does* override explicitely specified extruders") {
-                REQUIRE(print.get_print_region(0).config().get<int>("perimeter_extruder") == 3);
+            THEN("extruder setting does not override explicitely specified extruders") {
+                REQUIRE(print.get_print_region(0).config().get<int>("perimeter_extruder") == 2);
             }
         }
     }
@@ -354,7 +354,7 @@ TEST_CASE("Changing all config values works", "[PrintApply]")
     HwPrinterConfig hw_config;
 
     auto apply_status{
-        print.apply(model, full_config, serialized_config, hw_config, std::nullopt, std::nullopt)
+        print.apply(model, Vec3d::Ones(), full_config, serialized_config, hw_config, std::nullopt, std::nullopt)
     };
     REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Unchanged>(apply_status));
 
@@ -385,7 +385,7 @@ TEST_CASE("Changing all config values works", "[PrintApply]")
     REQUIRE(full_config_result.has_value());
     full_config = *full_config_result;
 
-    apply_status = print.apply(model, full_config, serialized_config, hw_config, std::nullopt, std::nullopt);
+    apply_status = print.apply(model, Vec3d::Ones(), full_config, serialized_config, hw_config, std::nullopt, std::nullopt);
     REQUIRE(std::holds_alternative<Biz::Print::ApplyStatus::Changed>(apply_status));
 }
 
@@ -473,6 +473,7 @@ void apply_and_check(
 
     const auto apply_status{context.print.apply(
         context.model,
+        Vec3d::Ones(),
         full_config,
         serialized_config,
         hw_config,

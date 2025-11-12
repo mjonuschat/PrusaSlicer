@@ -125,6 +125,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/ExPolygonSerialize.hpp
     src/libslic3r/Extruder.cpp
     src/libslic3r/Extruder.hpp
+    src/libslic3r/ExtruderCandidates.cpp
     src/libslic3r/ExtrusionEntity.cpp
     src/libslic3r/ExtrusionEntityCollection.cpp
     src/libslic3r/ExtrusionRole.cpp
@@ -306,6 +307,8 @@ set(SLIC3R_SOURCES
     src/libslic3r/ShortEdgeCollapse.hpp
     src/libslic3r/ShortestPath.cpp
     src/libslic3r/ShortestPath.hpp
+    src/libslic3r/ShrinkageCompensation.hpp
+    src/libslic3r/ShrinkageCompensation.cpp
     src/libslic3r/SLA/AGGRaster.hpp
     src/libslic3r/SLA/BranchingTreeSLA.cpp
     src/libslic3r/SLA/BranchingTreeSLA.hpp
@@ -412,6 +415,7 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/CSGMesh/VoxelizeCSGMesh.hpp
     include/libslic3r/CustomGCode.hpp
     include/libslic3r/CustomParametersHandling.hpp
+    include/libslic3r/ExtruderCandidates.hpp
     include/libslic3r/ExtrusionEntity.hpp
     include/libslic3r/ExtrusionEntityCollection.hpp
     include/libslic3r/ExtrusionRole.hpp
