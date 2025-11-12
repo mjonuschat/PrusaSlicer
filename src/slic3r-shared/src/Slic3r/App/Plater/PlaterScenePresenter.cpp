@@ -743,6 +743,8 @@ void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_i
     auto& sinking_contours = project_context().sinking_contours();
     sinking_contours.update_scene(m_device, proj, scn, elements);
     sinking_contours.set_selection(elements);
+
+    update_selection_aabb(project_id);
 }
 
 void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
