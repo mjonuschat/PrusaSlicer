@@ -335,11 +335,16 @@ void DesktopApp::OnUnhandledException()
     try {
         throw;
     } catch (const std::exception& e) {
+        Biz::Platform::close();
         SPDLOG_ERROR("closing after unrecoverable exception: '{}'", e.what());
+        flush_logs();
+        throw;
     } catch (...) {
+        Biz::Platform::close();
         SPDLOG_ERROR("closing after unrecoverable unknown exception");
+        flush_logs();
+        throw;
     }
-    Biz::Platform::close();
 }
 
 void DesktopApp::init_translations()

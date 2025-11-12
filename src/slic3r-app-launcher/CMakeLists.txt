@@ -12,9 +12,9 @@ add_executable(slic3r-app-launcher
     ${CMAKE_CURRENT_BINARY_DIR}/slic3r-app-launcher.rc
 )
 
-if (MSVC)
-target_link_options(slic3r-app-launcher PRIVATE "$<$<CONFIG:RELEASE>:/DEBUG>")
-endif ()
+if (MSVC AND SLIC3R_RELEASE_DEBUG_SYMBOLS)
+    target_link_options(slic3r-app-launcher PRIVATE "$<$<CONFIG:RELEASE>:/DEBUG>")
+endif()
 
 find_package(CLI11 CONFIG REQUIRED)
 

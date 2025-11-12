@@ -22,9 +22,7 @@ option(SLIC3R_BUILD_TESTS "Build unit tests" ON)
 option(SLIC3R_GUI "Compile PrusaSlicer with GUI components (OpenGL, wxWidgets)" ON)
 option(SLIC3R_OPENGL_ES "Use OpenGL ES" OFF)
 option(SLIC3R_ENABLE_WEBKIT "Enables linking against WebKitGTK on Linux, Webkit on MacOs or WebView2 on Windows" ON)
-if (APPLE)
-    option(SLIC3R_RELEASE_DEBUG_SYMBOLS "Build release build with dSyms" ON)
-endif ()
+option(SLIC3R_RELEASE_DEBUG_SYMBOLS "Build release build with debug symbols" ON)
 set(SLIC3R_SENTRY_DSN "" CACHE STRING "Sentry DSN (leave empty to disable)")
 
 if (SLIC3R_SENTRY_DSN)
@@ -102,8 +100,11 @@ if (MSVC)
     add_compile_options(/MP)
     # /bigobj (Increase Number of Sections in .Obj file)
     # error C3859: virtual memory range for PCH exceeded; please recompile with a command line option of '-Zm90' or greater
-    # Generate symbols at every build target, even for the release.
-    add_compile_options(-bigobj -Zm520 /Zi)
+    add_compile_options(-bigobj -Zm520)
+    if (SLIC3R_RELEASE_DEBUG_SYMBOLS)
+        # Generate pdbs.
+        add_compile_options("$<$<CONFIG:RELEASE>:/Zi>")
+    endif()
     # Disable STL4007: Many result_type typedefs and all argument_type, first_argument_type, and second_argument_type typedefs are deprecated in C++17.
     #FIXME Remove this line after eigen library adapts to the new C++17 adaptor rules.
     add_compile_options(-D_SILENCE_CXX17_ADAPTOR_TYPEDEFS_DEPRECATION_WARNING)

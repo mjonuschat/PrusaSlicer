@@ -301,7 +301,9 @@ void BackgroundProcess::slice(IThumbnailImageGenerator& thumbnail_generator)
                     [&](CanceledException&) { /* Intentionally pass. */ },
                     [&](){
                         SPDLOG_CRITICAL("Unhandled exception on background thread!");
-                        cpptrace::from_current_exception().print();
+                        std::ostringstream oss;
+                        cpptrace::from_current_exception().print(oss, true);
+                        SPDLOG_CRITICAL("{}", oss.str());
                         m_on_exception(std::current_exception());
                     }
                 );
