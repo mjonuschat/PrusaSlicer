@@ -21,5 +21,6 @@ void set_log_level(unsigned level);
 const FileLogConfig& get_file_log_config();
 void set_file_log_config(const FileLogConfig& config);
 
+void flush_logs();
 
 }

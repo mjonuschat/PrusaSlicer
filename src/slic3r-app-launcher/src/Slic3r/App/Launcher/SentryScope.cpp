@@ -65,7 +65,13 @@ SentryScope::SentryScope()
 
     const fs::path database_path{get_database_path()};
     SPDLOG_INFO("Setting Sentry database path: {}", database_path.string());
+
+#ifdef _WIN32
+    // boost::fs::path::c_str() is UTF-16 encoded on Windows.
+    sentry_options_set_database_pathw(options, database_path.c_str());
+#else
     sentry_options_set_database_path(options, database_path.c_str());
+#endif
 
     sentry_options_set_release(options, release.c_str());
     sentry_options_set_debug(

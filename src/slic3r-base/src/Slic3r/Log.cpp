@@ -80,6 +80,8 @@ void set_file_log_config(const FileLogConfig& config)
     file_log_config = config;
 }
 
-
-
+void flush_logs()
+{
+    spdlog::apply_all([&](std::shared_ptr<spdlog::logger> logger) { logger->flush(); });
+}
 }

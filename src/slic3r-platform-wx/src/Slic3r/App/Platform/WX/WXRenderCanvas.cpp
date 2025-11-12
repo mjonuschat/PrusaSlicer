@@ -358,8 +358,10 @@ auto catching_handler(Class* instance, void (Class::*handler)(EventType&))
         }
         CPPTRACE_CATCH(const std::exception& e)
         {
-            SPDLOG_ERROR("unhandled exception: '{}'", e.what());
-            cpptrace::from_current_exception().print();
+            SPDLOG_ERROR("Unhandled exception: '{}'", e.what());
+            std::ostringstream oss;
+            cpptrace::from_current_exception().print(oss, true);
+            SPDLOG_ERROR("{}", oss.str());
             throw;
         }
     };
