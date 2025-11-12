@@ -4,6 +4,7 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ProgressBar.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
 
 #include "Slic3r/Directories.hpp"
 
@@ -181,8 +182,12 @@ void PopNotificationView::basic_right_layout()
         m_close_button->set_max_size({20, 20});
         m_close_button->callbacks().action = [this]()
         {
-            SPDLOG_INFO("Notification close button.");
-            m_notification_list.on_notification_close_button(m_state);
+            // This code is called from render function -> removing notification now might trigger destroying object that is rendering right now.
+            Biz::Platform::PlatformServices::instance()
+                .main_thread_dispatcher()
+                .dispatch_on_main_thread(
+                    [this]() { m_notification_list.on_notification_close_button(m_state); }
+                );
         };
         m_close_button->set_margin({10.f, 0.f, 0.f, 0.f});
     }
@@ -225,7 +230,12 @@ void PopNotificationView::basic_mid_buttons_layout(const std::vector<PopNotifica
         {
             ASSERT(bdata.callback);
             if (bdata.callback()) {
-                m_notification_list.on_notification_close_button(m_state);
+                // This code is called from render function -> removing notification now might trigger destroying object that is rendering right now.
+                Biz::Platform::PlatformServices::instance()
+                    .main_thread_dispatcher()
+                    .dispatch_on_main_thread(
+                        [this]() { m_notification_list.on_notification_close_button(m_state); }
+                    );
             }
         };
         m_buttons.back()->set_background_color(button_color());
@@ -342,7 +352,12 @@ void PopNotificationView::update_buttons(const std::vector<PopNotificationButton
         {
             ASSERT(cb);
             if (cb()) {
-                m_notification_list.on_notification_close_button(m_state);
+                // This code is called from render function -> removing notification now might trigger destroying object that is rendering right now.
+                Biz::Platform::PlatformServices::instance()
+                    .main_thread_dispatcher()
+                    .dispatch_on_main_thread(
+                        [this]() { m_notification_list.on_notification_close_button(m_state); }
+                    );
             }
         };
     }
