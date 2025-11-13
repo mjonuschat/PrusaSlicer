@@ -354,7 +354,7 @@ void add_misc_options(CLI::App& app, App::InitParams& params)
         ->type_name("ABCD");
 
     app.add_flag(
-        "--single-instance,!--no-single-instance",
+        "--single-instance,!--no-single-instance,--single-instance-on-url",
         params.misc.single_instance,
         "If enabled, the command line arguments are sent to an existing instance of GUI PrusaSlicer, "
         "or an existing PrusaSlicer window is activated. Overrides the \"single_instance\" configuration "
