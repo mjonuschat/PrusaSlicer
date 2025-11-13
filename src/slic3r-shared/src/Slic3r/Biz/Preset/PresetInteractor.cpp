@@ -183,13 +183,13 @@ PresetInteractorConfigContainerContext& PresetInteractor::initialize_config_cont
 void PresetInteractor::initialize_config_container_with_default(Domain::ConfigContainer& cc)
 {
     const static std::string selected_printer_name =
-        "CORE One 0.4 HF"; //"SL1S SPEED";//"Prusa MK4S";
+        "CORE One"; //"SL1S SPEED";//"Prusa MK4S";
     const auto& preset_bundle     = m_workbench.preset_bundle();
     const auto& evaluated_presets = preset_bundle.evaluated_presets;
     auto config_it                = preset_bundle.printer_configs.begin();
     while (config_it != preset_bundle.printer_configs.end()) {
         if (evaluated_presets.contains(config_it->second.id)
-            && config_it->second.name == selected_printer_name)
+            && config_it->second.name.starts_with(selected_printer_name))
             break;
         ++config_it;
     }

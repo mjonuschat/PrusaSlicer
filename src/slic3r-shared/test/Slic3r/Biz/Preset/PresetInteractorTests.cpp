@@ -46,12 +46,34 @@ TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[Pr
     const auto& printer_items = preset_interactor.printer_presets();
     REQUIRE(printer_items.items().size() > 0);
 
+    auto switch_pritner_and_verify = [&](const std::string& printer_name)     {
+        std::optional<size_t> printer_idx;
+        for (size_t i = 0, n = printer_items.items().size(); i < n; ++i) {
+            const auto& item = printer_items.items().at(i);
+            if (item.hw_printer_config_name == printer_name) {
+                printer_idx = i;
+                break;
+            }
+        }
+        REQUIRE(printer_idx.has_value() == true);
+        const auto& selected_printer = printer_items.items().at(printer_idx.value());
+        preset_interactor.select_printer_preset(selected_printer.hw_printer_config_id, selected_printer.id);
+
+        const auto selected_printer_idx = printer_items.selected_index();
+        REQUIRE(selected_printer_idx != Slic3r::Domain::INVALID_ID);
+        REQUIRE(printer_items.items().at(selected_printer_idx).hw_printer_config_name == printer_name);
+    };
+
+
     // Validate precondition: selected printer
     {
         const auto selected_printer_idx = printer_items.selected_index();
         REQUIRE(selected_printer_idx != Slic3r::Domain::INVALID_ID);
-        REQUIRE(printer_items.items().at(selected_printer_idx).hw_printer_config_name == "CORE One 0.4 HF");
+        REQUIRE(printer_items.items().at(selected_printer_idx).hw_printer_config_name.starts_with("CORE One"));
     }
+
+    // Make sure the printer is switched to Core ONE 0.4 HF
+    switch_pritner_and_verify("CORE One 0.4 HF");
 
     // Switch print to 0.20mm
     {
@@ -62,23 +84,7 @@ TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[Pr
     }
 
     // Switch printer to CORE One 0.6 HF
-    {
-        std::optional<size_t> printer_idx;
-        for (size_t i = 0, n = printer_items.items().size(); i < n; ++i) {
-            const auto& item = printer_items.items().at(i);
-            if (item.hw_printer_config_name == "CORE One 0.6 HF") {
-                printer_idx = i;
-                break;;
-            }
-        }
-        REQUIRE(printer_idx.has_value() == true);
-        const auto& selected_printer = printer_items.items().at(printer_idx.value());
-        preset_interactor.select_printer_preset(selected_printer.hw_printer_config_id, selected_printer.id);
-
-        const auto selected_printer_idx = printer_items.selected_index();
-        REQUIRE(selected_printer_idx != Slic3r::Domain::INVALID_ID);
-        REQUIRE(printer_items.items().at(selected_printer_idx).hw_printer_config_name == "CORE One 0.6 HF");
-    }
+    switch_pritner_and_verify("CORE One 0.6 HF");
 
     // Verify that printer preset stays 0.20mm
     {
