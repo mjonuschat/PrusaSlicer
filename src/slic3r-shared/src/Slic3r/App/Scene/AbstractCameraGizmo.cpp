@@ -1,6 +1,6 @@
 #include "Slic3r/App/Scene/AbstractCameraGizmo.hpp"
 #include "Slic3r/App/Scene/Plane.hpp"
-#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
 using Slic3r::Domain::Vec3d;
@@ -47,7 +47,7 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
             std::make_unique<Platform::FuncCommand>(
                 "look-at-active-bed",
                 [this]() {
-                    m_scene_provider.scene().camera_trackball().set_target(m_selected_bed_center);
+                    center_camera_on_selected_bed();
                 },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::B}
@@ -127,15 +127,8 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
 
 void AbstractCameraGizmo::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
 {
-    const Domain::BedRef last_selected_bed{selection.last_selected_bed()};
-    const Domain::SelectionId container_id{last_selected_bed.config_container_id};
-    const Domain::SelectionId bed_instance_id{last_selected_bed.instance_id};
-    const auto& proj                  = m_workbench.project(project_id);
-    const Domain::ConfigContainer* cc = proj.find_config_container(container_id);
-    DEBUG_ASSERT(cc != nullptr);
-    const Domain::BedInstance& inst = cc->find_bed_instance(bed_instance_id);
-    m_selected_bed_center = Algorithms::Point::to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset();
-    m_scene_provider.scene().camera_trackball().set_pivot(m_selected_bed_center);
+    m_selected_project_id = project_id;
+    m_selected_bed = selection.last_selected_bed();
 }
 
 // TODO: move these draw_* function into own module so they can be reused (+ add drawing-in-plane renderer utilizing x-axis and y-axis and origin on the plane)
@@ -200,6 +193,13 @@ bool AbstractCameraGizmo::pick_plane(double mouse_x, double mouse_y, const Rende
         return true;
     }
     return false;
+}
+
+void AbstractCameraGizmo::center_camera_on_selected_bed()
+{
+    DEBUG_ASSERT(m_selected_project_id != Domain::INVALID_ID);
+    DEBUG_ASSERT(m_selected_bed.config_container_id != Domain::INVALID_ID && m_selected_bed.instance_id != Domain::INVALID_ID);
+    center_camera_on_bed(m_workbench.project(m_selected_project_id), m_selected_bed, m_scene_provider.scene().camera_trackball());
 }
 
 GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)

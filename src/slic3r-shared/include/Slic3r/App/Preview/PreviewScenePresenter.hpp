@@ -75,6 +75,8 @@ public:
     void add_bed_instances(const Domain::BedRefs& instances);
     void update_bed_instances();
 
+    void center_camera_on_selected_bed();
+
     const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return project_context().camera_synch_data(); }
     void set_camera_synch_data(const Platform::CameraSynchData& data) { project_context().set_camera_synch_data(data); }
 

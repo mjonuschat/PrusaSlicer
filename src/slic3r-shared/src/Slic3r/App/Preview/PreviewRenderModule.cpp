@@ -23,8 +23,6 @@
 
 #include <Slic3r/App/libvgcode/FdmViewerInputData.hpp>
 
-#include "Slic3r/Biz/Algorithms/Point.hpp"
-#include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include <Slic3r/Biz/libpgcode/Processor.hpp>
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -322,7 +320,7 @@ void PreviewRenderModule::on_selected_bed_instances_changed(Domain::SelectionId 
     }
 
     update_bed_instances();
-    center_camera_on_selected_bed();
+    m_scene_presenter->center_camera_on_selected_bed();
 
     m_object_list->update_sliced_info();
 
@@ -651,7 +649,11 @@ void PreviewRenderModule::register_commands()
 void PreviewRenderModule::init_gizmos()
 {
     m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter, m_project_interactor, nullptr);
-    m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(m_workbench, *m_scene_presenter);
+    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(m_workbench, *m_scene_presenter);
+    // ensure camera gizmo is properly initialized
+    m_camera_gizmo->on_selected_bed_instances_changed(m_project_interactor.selected_project_id(),
+        m_project_interactor.scene_interactor().bed_selection());
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(m_camera_gizmo);
 }
 
 void PreviewRenderModule::init_viewers(Render::Device& device)
@@ -1292,29 +1294,6 @@ void PreviewRenderModule::on_slider_gcode_on_thumb_move()
 void PreviewRenderModule::on_legend_shells_action(bool visible)
 {
     // TODO
-}
-
-void PreviewRenderModule::center_camera_on_selected_bed()
-{
-    const Domain::BedInstance* bed_inst = Domain::find_by_id(
-        m_project_interactor.selected_config_container().bed_instances(),
-        m_project_interactor.scene_interactor().bed_selection().last_selected_bed().instance_id
-    );
-    if (bed_inst == nullptr)
-        return;
-
-    Domain::Vec3d bed_inst_offset           = bed_inst->transformation.get_offset();
-    const Domain::Bed& bed                  = bed_inst->bed.get();
-    std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed);
-    Eigen::AlignedBox3d bed_aabb;
-    for (const auto& v : print_volume) {
-        bed_aabb.extend(bed_inst_offset + v.cast<double>());
-    }
-    Scene::Scene::set_shadows_aabb(bed_aabb);
-    Scene::CameraTrackballController& trackball = m_scene_presenter->scene().camera_trackball();
-
-    trackball.set_target(bed_inst_offset + Algorithms::Point::to_3d(bed.center(), 0.0));
-    trackball.synchronize_pivot_with_target();
 }
 
 void PreviewRenderModule::update_bed_instances()

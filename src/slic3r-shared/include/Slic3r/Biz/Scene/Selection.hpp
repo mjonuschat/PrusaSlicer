@@ -39,6 +39,12 @@ enum class BedSelectionMode
     ConfigContainer
 };
 
+enum class CameraActionOnBedSelection : uint8_t
+{
+    None,
+    CenterOnBed
+};
+
 struct BedSelection
 {
     std::function<void(const BedSelection&)> on_change{[](const BedSelection&) {
@@ -53,7 +59,7 @@ struct BedSelection
     bool empty() const;
 
     /** @brief Replace the selection with one. */
-    bool select_one(const Domain::BedRef& bed_ref);
+    bool select_one(const Domain::BedRef& bed_ref, CameraActionOnBedSelection camera_action = CameraActionOnBedSelection::None);
 
     /** @brief Add or remove from active selection. */
     bool toggle(const Domain::BedRef& bed_ref);
@@ -62,11 +68,14 @@ struct BedSelection
 
     bool remove(const Domain::BedRef& bed_ref);
 
+    CameraActionOnBedSelection camera_action_on_selection() const { return m_camera_action_on_selection; }
+
 private:
     Domain::BedRefs m_selected_beds;
     Domain::SelectionId m_selected_config_container{Domain::INVALID_ID};
     Domain::BedRef m_last_selected_bed{Domain::INVALID_ID, Domain::INVALID_ID};
     BedSelectionMode m_mode{BedSelectionMode::SingleBed};
+    CameraActionOnBedSelection m_camera_action_on_selection{ CameraActionOnBedSelection::None };
 };
 
 using BedInstanceRefWrap = std::reference_wrapper<const Domain::BedInstance>;

@@ -64,6 +64,8 @@ private:
 
     bool pick_plane(double mouse_x, double mouse_y, const Render::ScreenInfo& screen_info, Domain::Vec3d& out_plane_point);
 
+    void center_camera_on_selected_bed();
+
 private:
     virtual bool any_draggable(GizmoEventContext& ctx) const = 0;
 
@@ -72,9 +74,10 @@ private:
 
     ISceneProvider& m_scene_provider;
     State m_state{State::Inactive};
-    float m_last_x{0};
-    float m_last_y{0};
-    Domain::Vec3d m_selected_bed_center{ Domain::Vec3d::Zero() };
+    float m_last_x{0.0f};
+    float m_last_y{0.0f};
+    Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
+    Domain::BedRef m_selected_bed{Domain::INVALID_ID, Domain::INVALID_ID};
 #if CAMERA_GIZMO_DEBUG
     Render::DynamicGeometry<Render::VertexP3> m_dynamic_geometry;
 #endif // CAMERA_GIZMO_DEBUG

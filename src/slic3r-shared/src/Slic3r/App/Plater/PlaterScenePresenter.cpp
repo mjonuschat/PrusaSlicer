@@ -25,6 +25,7 @@
 #include "Slic3r/Biz/Algorithms/Bed.hpp"
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
 #include "Slic3r/App/Scene/PrintVolumeData.hpp"
+#include "Slic3r/App/Scene/CameraHelper.hpp"
 
 #define ENABLE_DEBUG_OBJECT_SELECTION 0
 #define ENABLE_DEBUG_HOVER 0
@@ -89,6 +90,7 @@ PlaterScenePresenter::PlaterScenePresenter(const Domain::Workbench& workbench, B
 
     m_project_interactor.add_listener<ISelectedProjectChangedListener>(&m_bed_render_updater);
     m_project_interactor.add_listener<ISelectedProjectChangedListener>(this);
+    m_project_interactor.add_listener<Biz::IProjectsChangedListener>(this);
 
     auto& scene_interactor = m_project_interactor.scene_interactor();
     scene_interactor.add_listener<Biz::Scene::ISceneChangedListener>(this);
@@ -120,6 +122,8 @@ void PlaterScenePresenter::load_selected_project()
     if (!updated_obj_instances.empty()) {
         on_instance_added(project_id, updated_obj_instances);
     }
+
+    center_camera_on_selected_bed();
 }
 
 void PlaterScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
@@ -255,6 +259,11 @@ void PlaterScenePresenter::on_node_changed(Scene::Node* node)
 {
     if (node != nullptr && node->contains_raycast_component())
         set_scene_aabb_as_dirty();
+}
+
+void PlaterScenePresenter::on_project_loaded(Domain::SelectionId project_id)
+{
+    center_camera_on_selected_bed();
 }
 
 void PlaterScenePresenter::force_bed_thumbnails_generation()
@@ -462,22 +471,10 @@ void PlaterScenePresenter::update_volume_materials()
     );
 }
 
-void PlaterScenePresenter::update_beds_shadows_data()
-{
-    m_bed_render_updater.update_shadows(project_context().scene().camera());
-}
-
 void PlaterScenePresenter::center_camera_on_selected_bed()
 {
-    // Center the camera on the selected bed
-    Domain::BedRef selected_bed = m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
-    const auto& proj = m_workbench.project(m_project_interactor.selected_project_id());
-    const Domain::ConfigContainer* cc = proj.find_config_container(selected_bed.config_container_id);
-    DEBUG_ASSERT(cc != nullptr);
-    const Domain::BedInstance& inst = cc->find_bed_instance(selected_bed.instance_id);
-    Vec3d selected_bed_center = Biz::Algorithms::Point::to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset();
-    scene().camera_trackball().set_target(selected_bed_center);
-    scene().camera_trackball().synchronize_pivot_with_target();
+    center_camera_on_bed(m_workbench.project(m_project_interactor.selected_project_id()),
+        m_project_interactor.scene_interactor().bed_selection().last_selected_bed(), scene().camera_trackball());
 }
 
 static std::string bed_instance_thumbnail_name(size_t config_container_id, size_t instance_id)
@@ -536,6 +533,8 @@ void PlaterScenePresenter::on_selected_bed_instances_changed(Domain::SelectionId
     }
     Scene::Scene::set_shadows_aabb(bed_aabb);
     m_volume_materials_dirty = true;
+    if (selection.camera_action_on_selection() == Biz::Scene::CameraActionOnBedSelection::CenterOnBed)
+        center_camera_on_selected_bed();
 }
 
 void
@@ -847,13 +846,6 @@ void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_i
 
     update_beds();
     m_volume_materials_dirty = true;
-
-    Domain::BedRef selected_bed = m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
-    if (std::find_if(instances.begin(), instances.end(),
-        [&](const Domain::BedRef& br) { return br.instance_id == selected_bed.instance_id; }) != instances.end()) {
-        center_camera_on_selected_bed();
-    }
-
     invoke_bed_visually_changed(project_id);
 }
 

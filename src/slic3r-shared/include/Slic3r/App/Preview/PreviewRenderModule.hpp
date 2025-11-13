@@ -29,6 +29,7 @@ namespace Slic3r::App::Preview {
 
 struct ExtrudersSequence;
 class SidebarPreviewActionButtons;
+class PreviewCameraGizmo;
 
 class PreviewRenderModule final :
     public Platform::AbstractRenderModule,
@@ -118,6 +119,8 @@ private:
     bool m_use_yoga_layout = true;
     DialogNavigation m_dialog_navigation;
 
+    PreviewCameraGizmo* m_camera_gizmo{ nullptr };
+
     FdmViewerWrapper m_fdm_viewer;
     SlaViewerWrapper m_sla_viewer;
 
@@ -190,7 +193,6 @@ private:
     void on_slider_gcode_on_thumb_move();
     void on_legend_shells_action(bool visible);
 
-    void center_camera_on_selected_bed();
     void update_bed_instances();
     void update_viewer();
     void update_scene_aabb();
