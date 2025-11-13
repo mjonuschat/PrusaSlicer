@@ -122,7 +122,9 @@ void SlicingInteractor::slice_bed(const SlicingId id)
 
 void SlicingInteractor::stop_slicing_bed(const Domain::SlicingId id)
 {
-    ASSERT(m_processes.contains(id));
+    if (!m_processes.contains(id)) {
+        return;
+    }
 
     const auto it{std::ranges::find(m_slicing_queue, id)};
     if (it != m_slicing_queue.end()) {
