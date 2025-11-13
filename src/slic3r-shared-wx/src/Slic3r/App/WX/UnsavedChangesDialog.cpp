@@ -236,7 +236,15 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
 
     // "Save" button
     // if (ActionButtons::SAVE & m_buttons)
-    add_btn(&m_save_btn, m_save_btn_id, "save", Biz::Preset::PresetDiffOperation::Save, _L("Save"));
+    add_btn(
+        &m_save_btn,
+        m_save_btn_id,
+        "save",
+        Biz::Preset::PresetDiffOperation::Save,
+        _L("Save"),
+        false // Temporary: until save functionality is implemented
+    );
+    m_save_btn->Enable(false);// Temporary: until save functionality is implemented
 
     ScalableButton* cancel_btn = new ScalableButton(
         this,
