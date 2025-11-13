@@ -92,10 +92,13 @@ bool BedSelection::empty() const
     return m_selected_beds.empty();
 }
 
-bool BedSelection::select_one(const Domain::BedRef& bed_ref)
+bool BedSelection::select_one(const Domain::BedRef& bed_ref, CameraActionOnBedSelection camera_action)
 {
+    m_camera_action_on_selection = camera_action;
+
     if (m_mode == BedSelectionMode::SingleBed) {
-        if (m_selected_beds.size() == 1 && m_selected_beds.front() == bed_ref) {
+        if (m_selected_beds.size() == 1 && m_selected_beds.front() == bed_ref &&
+            camera_action != CameraActionOnBedSelection::CenterOnBed) {
             return false;
         }
         m_selected_beds     = {bed_ref};
@@ -119,6 +122,8 @@ bool BedSelection::select_one(const Domain::BedRef& bed_ref)
 
 bool BedSelection::toggle(const Domain::BedRef& bed_ref)
 {
+    m_camera_action_on_selection = CameraActionOnBedSelection::None;
+
     if (m_mode == BedSelectionMode::ConfigContainer) {
         return false;
     }

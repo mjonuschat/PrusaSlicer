@@ -2,6 +2,7 @@
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/BedNodeBuilder.hpp"
 #include "Slic3r/App/Preview/PreviewSceneLayer.hpp"
+#include "Slic3r/App/Scene/CameraHelper.hpp"
 
 namespace Slic3r::App::Preview {
 
@@ -139,6 +140,12 @@ void PreviewScenePresenter::update_bed_instances()
         },
         true
     );
+}
+
+void PreviewScenePresenter::center_camera_on_selected_bed()
+{
+    center_camera_on_bed(m_workbench.project(m_project_interactor.selected_project_id()),
+        m_project_interactor.scene_interactor().bed_selection().last_selected_bed(), scene().camera_trackball());
 }
 
 void PreviewScenePresenter::update_cameras(const std::function<void(Scene::Camera&)>& modifier)

@@ -4,6 +4,10 @@
 #include "Slic3r/Math.hpp"
 #include "Slic3r/App/Scene/CameraTrackballController.hpp"
 #include "Slic3r/App/Platform/CameraSynchData.hpp"
+#include "Slic3r/Domain/BedRef.hpp"
+#include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Domain/ConfigContainer.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 #if ENABLED_DEBUG_CAMERA
 #include <imgui/imgui.h>
@@ -60,6 +64,17 @@ void synchronize_camera(const Platform::CameraSynchData& data, Camera& camera, C
 {
     trackball.synchronize_from(data);
     camera.synchronize_from(data);
+}
+
+void center_camera_on_bed(const Domain::Project& project, const Domain::BedRef& bed_ref, CameraTrackballController& trackball)
+{
+    // Center the camera on the given bed
+    const Domain::ConfigContainer* cc = project.find_config_container(bed_ref.config_container_id);
+    DEBUG_ASSERT(cc != nullptr);
+    const Domain::BedInstance& inst = cc->find_bed_instance(bed_ref.instance_id);
+    Vec3d selected_bed_center = Biz::Algorithms::Point::to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset();
+    trackball.set_target(selected_bed_center);
+    trackball.synchronize_pivot_with_target();
 }
 
 #if ENABLED_DEBUG_CAMERA

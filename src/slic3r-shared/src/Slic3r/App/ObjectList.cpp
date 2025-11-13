@@ -1517,7 +1517,7 @@ void ObjectList::propagate_selection()
     const auto& ctx = selected_project_context();
     if (ctx.selected_bed_instance_id != 0) {
         m_scene_interactor->bed_selection().select_one(
-            {ctx.selected_container_id, ctx.selected_bed_instance_id}
+            {ctx.selected_container_id, ctx.selected_bed_instance_id}, Biz::Scene::CameraActionOnBedSelection::CenterOnBed
         );
         return;
     }

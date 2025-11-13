@@ -20,6 +20,7 @@
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Scene/ISceneChangedListener.hpp"
+#include "Slic3r/Biz/IProjectsChangedListener.hpp"
 
 namespace Slic3r::App::Scene {
 class NodeBuilder;
@@ -40,7 +41,8 @@ class PlaterScenePresenter :
     public Scene::ISceneProvider,
     public Scene::IProjectSceneProvider,
     public IHoverChangedListener,
-    public Scene::ICameraUpdateListener
+    public Scene::ICameraUpdateListener,
+    public Biz::IProjectsChangedListener
 {
 public:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PlaterScenePresenterProjectContext>;
@@ -75,8 +77,6 @@ public:
     double screen_space_sized_modifier() const {
         return project_context().screen_space_sized_modifier();
     }
-
-    void update_beds_shadows_data();
 
     void center_camera_on_selected_bed();
 
@@ -114,6 +114,13 @@ public:
      * @{
      */
     void camera_updated(const Scene::Camera& cam) override { set_scene_aabb_as_dirty(); }
+    /**@}*/
+
+    /**
+     * @name Partial implementation of Biz::IProjectsChangedListener public interface
+     * @{
+     */
+    void on_project_loaded(Domain::SelectionId project_id) override;
     /**@}*/
 
     const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return project_context().camera_synch_data(); }
