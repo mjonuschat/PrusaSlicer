@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_osx_asan:
+  build_osx_sentry:
     uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@slic3r3_prototype
     secrets: inherit
     with:

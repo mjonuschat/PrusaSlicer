@@ -1,4 +1,4 @@
-name: Build flatpak asan
+name: Build flatpak sentry
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_flatpak_asan:
+  build_flatpak_sentry:
     uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@slic3r3_prototype
     secrets: inherit
     with:
