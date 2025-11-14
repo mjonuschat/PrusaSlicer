@@ -14,11 +14,13 @@ namespace Slic3r::App {
 PrinterNozzleRow::PrinterNozzleRow(
     size_t index,
     const Biz::Preset::ToolConfigItemObservableList& data,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::Preset::PresetInteractor& preset_interactor,
+    const std::function<void(bool)>& validation_updated
 ) :
     Biz::DataObserver<Biz::Preset::ToolConfigItemObservableList>(index, data),
     m_preset_interactor(preset_interactor)
 {
+    m_callbacks.validation_updated = validation_updated;
     Rectangle* id_background = emplace_back<Rectangle>();
     id_background->set_fill(ImColor(41, 41, 41));
     id_background->set_flags(ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersBottomLeft);
@@ -36,16 +38,21 @@ PrinterNozzleRow::PrinterNozzleRow(
     m_combo_box->callbacks().selection_changed = [this](int nozzle_index)
     {
         if (nozzle_index >= 0) {
-            m_preset_interactor.select_printer_tool_item(
+            const bool valid = m_preset_interactor.select_printer_tool_item(
                 m_index,
                 m_preset_interactor.tool_items().at(m_index).items().at(nozzle_index).id
             );
+            if (m_callbacks.validation_updated) {
+                m_callbacks.validation_updated(valid);
+            }
         }
     };
 
     on_data_update();
     on_index_update();
 }
+
+PrinterNozzleRow::Callbacks& PrinterNozzleRow::callbacks() { return m_callbacks; }
 
 void PrinterNozzleRow::on_data_update()
 {

@@ -77,6 +77,7 @@ public:
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
         add_listener<ISelectedProjectChangedListener>(&m_scene_interactor);
+        add_listener<ISelectedProjectChangedListener>(&m_preset_interactor);
         m_scene_interactor.add_listener<ISelectedBedInstancesChangedListener>(this);
         m_scene_interactor.add_listener<Scene::ISceneChangedListener>(this);
         add_listener<ISelectedProjectChangedListener>(&m_slicing_interactor);

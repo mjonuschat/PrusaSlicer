@@ -51,6 +51,16 @@ const Domain::Preset::HwPrinterConfig* RuntimePresets::find_printer_config_by_id
     return it == printer_configs.end() ? nullptr : &it->second;
 }
 
+Domain::Preset::HwPrinterConfig* RuntimePresets::find_printer_config_by_id(const std::string& hw_config_id)
+{
+    auto it = std::find_if(
+        printer_configs.begin(),
+        printer_configs.end(),
+        [&hw_config_id](const auto& x) { return x.second.id == hw_config_id; }
+    );
+    return it == printer_configs.end() ? nullptr : &it->second;
+}
+
 const PrinterPreset* RuntimePresets::find_printer_preset_by_id(const std::string& hw_config_id, const std::string& printer_preset_id) const
 {
     return find_by_id(printer, hw_config_id, printer_preset_id);
