@@ -1002,14 +1002,19 @@ void PresetInteractor::select_material_preset(size_t material_index, const std::
     bag.add([this] { invoke_slicing_input_changed(); });
 }
 
-void PresetInteractor::duplicate_hw_config_if_is_runtime(
+void PresetInteractor::duplicate_hw_config_if_needed(
     Domain::Preset::SelectedPreset& selected_preset
 )
 {
     const auto& p = get_or_create_project_context(m_selected_project_id);
-    const bool is_runtime_config =
-        p.runtime_presets.printer_configs.contains(selected_preset.hw_config.id);
-    if (is_runtime_config) {
+    const bool dup_needed =
+        p.runtime_presets.printer_configs.contains(selected_preset.hw_config.id)
+        || std::ranges::count_if(
+            m_workbench.project(p.project_id).config_containers(),
+            [&](const auto& cc)
+            { return cc->selected_preset().hw_config.id == selected_preset.hw_config.id; }
+        ) > 1;
+    if (dup_needed) {
         auto new_config           = selected_preset.hw_config;
         new_config.id             = generate_uuid();
         selected_preset.hw_config = new_config;
@@ -1019,7 +1024,7 @@ void PresetInteractor::duplicate_hw_config_if_is_runtime(
 void PresetInteractor::select_printer_tool_item(size_t tool_index, const std::string& id)
 {
     auto& selected_preset = mutable_selected_printer_presets();
-    duplicate_hw_config_if_is_runtime(selected_preset);
+    duplicate_hw_config_if_needed(selected_preset);
 
     auto& hw_config = selected_preset.hw_config;
     const auto& vendor_data =
@@ -1041,7 +1046,7 @@ void PresetInteractor::select_printer_tool_item(size_t tool_index, const std::st
 void PresetInteractor::select_printer_sheet(const std::string& id)
 {
     auto& selected_preset = mutable_selected_printer_presets();
-    duplicate_hw_config_if_is_runtime(selected_preset);
+    duplicate_hw_config_if_needed(selected_preset);
 
     const auto& vendor_data = m_workbench.preset_bundle()
                                   .vendor_bundles.at(selected_preset.hw_config.vendor_id)

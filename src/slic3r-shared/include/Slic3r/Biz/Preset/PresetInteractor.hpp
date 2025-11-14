@@ -652,7 +652,7 @@ private:
     void fill_selected_tool_print_cbis(Domain::Preset::SelectedPreset& selected_preset);
     void fill_selected_material_cbis(Domain::Preset::SelectedPreset& selected_preset);
 
-    void duplicate_hw_config_if_is_runtime(Domain::Preset::SelectedPreset& selected_preset);
+    void duplicate_hw_config_if_needed(Domain::Preset::SelectedPreset& selected_preset);
 
     void invoke_slicing_input_changed();
     void invoke_on_preset_value_changed(const Domain::ConfigItem& config_item);
