@@ -56,6 +56,7 @@ public:
     void add_ignored(size_t volume_id, size_t island_id);
 
     GizmoActivationState on_mouse(GizmoEventContext& ctx, bool only_active);
+    bool unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos, Domain::Vec3d& pos_world, bool respect_contours = true);
 
 private:
     void init_main_node();

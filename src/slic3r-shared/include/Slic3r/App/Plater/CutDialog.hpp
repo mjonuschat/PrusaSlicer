@@ -86,6 +86,14 @@ public:
         std::function<void(double value)> groove_angle_changed{nullptr};
 
         std::function<void(bool connectors_editing)> connectors_editing_changed{nullptr};
+        std::function<void()> connector_settings_changed{nullptr};
+
+        std::function<void(double value)> connector_depth_changed{nullptr};
+        std::function<void(double value)> connector_depth_tolerance_changed{nullptr};
+        std::function<void(double value)> connector_size_changed{nullptr};
+        std::function<void(double value)> connector_size_tolerance_changed{nullptr};
+        std::function<void(double value)> connector_angle_changed{nullptr};
+        std::function<void()> snap_proportions_changed{nullptr};
     };
 
     Callbacks& callbacks();
@@ -95,7 +103,8 @@ public:
     void set_current_connetor_type(Domain::CutConnectorType type);
     void set_current_connetor_style(Domain::CutConnectorStyle style);
     void set_current_connetor_shape(Domain::CutConnectorShape shape);
-    void set_groove_values(const Biz::Cut::Groove& m_groove, double m_max_elements_size);
+    void set_groove_values(const Biz::Cut::Groove& groove, double max_elements_size);
+    void set_connector_values(double max_size);
 
     void validate_connector_settings();
 
@@ -110,15 +119,17 @@ public:
     bool flip_lower{false};
     bool connectors_editing{false};
 
-    Domain::CutConnectorType current_connector_type{Domain::CutConnectorType::Plug};
-    Domain::CutConnectorStyle current_connector_style{Domain::CutConnectorStyle::Prism};
-    Domain::CutConnectorShape current_connector_shape{Domain::CutConnectorShape::Circle};
+    Domain::CutConnectorType connector_type{Domain::CutConnectorType::Plug};
+    Domain::CutConnectorStyle connector_style{Domain::CutConnectorStyle::Prism};
+    Domain::CutConnectorShape connector_shape{Domain::CutConnectorShape::Circle};
 
-    double connector_depth_ratio{3.};
-    double connector_depth_ratio_tolerance{0.1};
+    double connector_depth{3.};
+    double connector_depth_tolerance{0.1};
     double connector_size{2.5};
     double connector_size_tolerance{0.};
     double connector_angle{0.};
+    int snap_bulge_proportion{ 15 };
+    int snap_space_proportion{ 30 };
 
 private:
     void init_connectors_input_panel();
@@ -156,6 +167,8 @@ private:
     Yoga::SliderWithInput* m_connector_size_value{nullptr};
     Yoga::SliderWithInput* m_connector_size_tolerance{nullptr};
     Yoga::SliderWithInput* m_connector_rotation{nullptr};
+    Yoga::SliderWithInput* m_snap_bulge_proportion{nullptr};
+    Yoga::SliderWithInput* m_snap_space_proportion{nullptr};
 
     Yoga::Item* m_cut_plane_input_panel{nullptr};
     Yoga::ButtonGroup m_mode_group;
@@ -179,6 +192,11 @@ private:
 
     Yoga::Text* m_warnings_line{nullptr};
     Yoga::LayoutButton* m_perform_btn{nullptr};
+
+    Yoga::Item* m_style_row{nullptr};
+    Yoga::Item* m_shape_row{nullptr};
+    Yoga::Item* m_snap_bulge_row{nullptr};
+    Yoga::Item* m_snap_space_row{nullptr};
 
     Callbacks m_callbacks;
 

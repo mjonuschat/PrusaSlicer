@@ -45,8 +45,10 @@ using namespace Slic3r::Domain;
 // Please implement me!
 class CutGizmo : public Scene::IToolGizmo
 {
-    using ModelGeometryManager     = Render::GeometryManager<CutAuxiliaryElementId>;
-    using ModelTriangleMeshManager = Scene::TriangleMeshManager<CutAuxiliaryElementId>;
+    using ModelGeometryManager         = Render::GeometryManager<CutAuxiliaryElementId>;
+    using ModelTriangleMeshManager     = Scene::TriangleMeshManager<CutAuxiliaryElementId>;
+    using ConnectorGeometryManager     = Render::GeometryManager<ConnectorAuxiliaryElementId>;
+    using ConnectorTriangleMeshManager = Scene::TriangleMeshManager<ConnectorAuxiliaryElementId>;
 
 public:
     CutGizmo(
@@ -94,6 +96,8 @@ private:
 
     void build_cut_plane_node(Scene::NodeBuilder& builder);
     void build_handles_nodes(Scene::NodeBuilder& builder);
+    void build_connector_node(Vec3d pos);
+    void build_connectors_nodes();
 
     void update_cut_plane_mesh();
     void update_cut_plane_trafo();
@@ -101,6 +105,9 @@ private:
     void update_handles_nodes(Handle hovered_handle = Handle());
     void update_handles_material_and_enability(Handle hovered_handle);
     void update_handles_local_fransform(Handle hovered_handle);
+    void update_connectors_nodes(size_t hovered_id = size_t(-1));
+    void update_connector_node(size_t id, Vec3d pos);
+    void update_connector(size_t id, Vec3d pos);
     void update_nodes_enability(bool connectors_editing);
     void update_clipper_presenter();
 
@@ -113,6 +120,7 @@ private:
     );
     void reset_cut_part_meshes();
     void reset_handles_nodes();
+    void reset_connectors_nodes();
     void reset();
 
     void set_enabled_scene_nodes(bool enabled);
@@ -157,19 +165,25 @@ private:
     void check_and_update_connectors_state();
 
     CutConnectorAttributes connector_attributes() const;
-    double connector_depth_ratio() const;
+    double connector_depth() const;
+    double connector_depth_tolerance() const;
     double connector_size() const;
-    double connector_angle() const;
-    double connector_depth_ratio_tolerance() const;
     double connector_size_tolerance() const;
+    double connector_angle() const;
+    double snap_bulge_proportion() const;
+    double snap_space_proportion() const;
 
 private:
     std::unique_ptr<CutDialog> m_dialog;
 
     ModelGeometryManager m_model_geometry_manager;
     ModelTriangleMeshManager m_model_triangle_mesh_manager;
+    ConnectorGeometryManager m_connector_geometry_manager;
+    ConnectorTriangleMeshManager m_connector_triangle_mesh_manager;
+
     Scene::Node* m_main_node{nullptr};
     Scene::Node* m_handles_node{nullptr};
+    Scene::Node* m_connectors_node{nullptr};
 
     Domain::Vec3d m_plane_center;
     Domain::Vec3d m_old_center;
@@ -188,6 +202,8 @@ private:
     // used by dragging
     Handle m_hovered_handle;
     bool m_is_plane_hovered{false};
+    std::optional<size_t> m_hovered_connector_id{std::nullopt};
+    bool m_is_connector_handled{false};
 
     bool m_can_flip_plane{false}; // indicates if plane was just clicked without dragging
 
@@ -230,10 +246,6 @@ private:
     // Vertices of the groove used to detection if groove is valid
     std::vector<Domain::Vec3d> m_groove_vertices;
 
-    // Input params for cut with snaps
-    float m_snap_bulge_proportion{0.15f};
-    float m_snap_space_proportion{0.3f};
-
     Domain::ModelObject* m_selected_object{nullptr};
     const Domain::ModelInstance* m_selected_instance{nullptr};
     size_t m_instance_idx{size_t(-1)};
@@ -275,8 +287,10 @@ private:
 
     std::vector<size_t> m_invalid_connectors_idxs;
 
+    double m_snap_bulge_proportion{0.15};
+    double m_snap_space_proportion{0.30};
+
     mutable std::vector<bool> m_selected; // which pins are currently selected
-    int m_selected_count{0};
 };
 
 } // namespace Slic3r::App::Plater

@@ -47,6 +47,7 @@ struct CutConnectorAttributes
     {}
 
     bool operator<(const CutConnectorAttributes& other) const;
+    bool operator==(const CutConnectorAttributes& other) const;
 
     template<class Archive>
     void serialize(Archive& ar);

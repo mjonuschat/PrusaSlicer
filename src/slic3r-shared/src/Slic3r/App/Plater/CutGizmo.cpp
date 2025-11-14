@@ -45,6 +45,17 @@ static const ColorRGBA LOWER_PART_COLOR    = ColorRGBA(1.0f, 0.0f, 1.0f, 1.0f);
 static const ColorRGBA CUT_PLANE_DEF_COLOR = ColorRGBA(0.9f, 0.9f, 0.9f, 0.5f);
 static const ColorRGBA CUT_PLANE_ERR_COLOR = ColorRGBA(1.0f, 0.8f, 0.8f, 0.5f);
 
+// connector colors
+static const ColorRGBA PLAG_COLOR           = ColorRGBA::YELLOW();
+static const ColorRGBA DOWEL_COLOR          = ColorRGBA::DARK_YELLOW();
+static const ColorRGBA HOVERED_PLAG_COLOR   = ColorRGBA::CYAN();
+static const ColorRGBA HOVERED_DOWEL_COLOR  = ColorRGBA(0.0f, 0.5f, 0.5f, 1.0f);
+static const ColorRGBA SELECTED_PLAG_COLOR  = ColorRGBA::GRAY();
+static const ColorRGBA SELECTED_DOWEL_COLOR = ColorRGBA::DARK_GRAY();
+static const ColorRGBA CONNECTOR_DEF_COLOR  = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f);
+static const ColorRGBA CONNECTOR_ERR_COLOR  = ColorRGBA(1.0f, 0.3f, 0.3f, 0.5f);
+static const ColorRGBA HOVERED_ERR_COLOR    = ColorRGBA(1.0f, 0.3f, 0.3f, 1.0f);
+
 const unsigned int ScaleStepsCount  = 72;
 const unsigned int SnapRegionsCount = 8;
 
@@ -562,6 +573,12 @@ CutGizmo::CutGizmo(
 
     m_dialog->callbacks().connectors_editing_changed = [this](bool connectors_editing)
     { update_nodes_enability(connectors_editing); };
+
+    m_dialog->callbacks().connector_depth_changed           = [this](double value) {};
+    m_dialog->callbacks().connector_depth_tolerance_changed = [this](double value) {};
+    m_dialog->callbacks().connector_size_changed            = [this](double value) {};
+    m_dialog->callbacks().connector_size_tolerance_changed  = [this](double value) {};
+    m_dialog->callbacks().connector_angle_changed           = [this](double value) {};
 }
 
 void CutGizmo::on_activated()
@@ -570,7 +587,7 @@ void CutGizmo::on_activated()
 
     m_dialog->set_current_connetor_shape(Domain::CutConnectorShape::Circle);
     m_dialog->set_current_connetor_style(Domain::CutConnectorStyle::Prism);
-    m_dialog->set_current_connetor_type(Domain::CutConnectorType::Snap);
+    m_dialog->set_current_connetor_type(Domain::CutConnectorType::Plug);
 
     update_scene_nodes();
     set_enabled_scene_nodes(false);
@@ -579,6 +596,8 @@ void CutGizmo::on_activated()
         .activate(&m_scene_presenter.scene(), m_selected_object, m_selected_instance);
     m_clipper_presenter.set_behavior(true, true, 0.4);
     m_clipper_presenter.deactivate(false);
+
+    m_selected.resize(m_selected_object->cut_connectors.size(), false);
 }
 
 void CutGizmo::on_deactivated()
@@ -586,6 +605,8 @@ void CutGizmo::on_deactivated()
     reset_cut_part_meshes();
     set_enabled_scene_nodes(true);
     m_clipper_presenter.deactivate();
+
+    m_selected.clear();
 }
 
 Scene::ToolType CutGizmo::type() const
@@ -696,6 +717,15 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         return Scene::GizmoActivationState::Inactive;
     }
 
+    if (const Scene::Node* connector_node =
+            ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>())
+    {
+        const CutConnectorNodeTag* tag = connector_node->tag_of_type<CutConnectorNodeTag>();
+        m_hovered_connector_id         = tag->id;
+    } else {
+        m_hovered_connector_id = std::nullopt;
+    }
+
     const auto& pick_ray = ctx.pick_ray();
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         if (const Scene::Node* handle_node =
@@ -710,14 +740,20 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         } else if (const Scene::Node* node =
                        ctx.pick_result_node_with_tag_of_type<CutPlaneNodeTag>())
         {
-            ASSERT(node);
             m_is_plane_hovered          = true;
+            m_translation_ray.origin    = m_plane_center;
             m_translation_ray.direction = m_rotation_m * Vec3d::UnitZ();
+        } else if (const Scene::Node* node =
+                       ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>())
+        {
+            m_is_connector_handled = true;
         } else if (m_clipper_presenter.on_mouse(ctx, only_active)
                    != Scene::GizmoActivationState::Inactive)
         {
-            // check origin for this case
-            m_translation_ray.direction = m_rotation_m * Vec3d::UnitZ();
+            Domain::Vec3d pos, pos_world;
+            m_clipper_presenter.unproject_on_cut_plane(pick_ray, pos, pos_world);
+            add_connector(pos /*_world*/);
+            return Scene::GizmoActivationState::Done;
         } else {
             on_stop_dragging();
             return Scene::GizmoActivationState::Inactive;
@@ -728,13 +764,8 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
     }
 
     double t;
-    if (!m_translation_ray.closest_point_from_ray(pick_ray, t)) {
+    if (!m_translation_ray.closest_point_from_ray(pick_ray, t) && !m_is_connector_handled) {
         m_dragging = false;
-        return Scene::GizmoActivationState::Inactive;
-    }
-
-    if (m_clipper_presenter.on_mouse(ctx, only_active) != Scene::GizmoActivationState::Inactive) {
-        add_connector(m_translation_ray.point_at(t));
         return Scene::GizmoActivationState::Inactive;
     }
 
@@ -746,6 +777,10 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         m_start_dragging_m = m_rotation_m;
         m_can_flip_plane   = m_is_plane_hovered;
         return Scene::GizmoActivationState::Active;
+    }
+
+    if (event_type == Platform::MouseEvent::Type::ButtonDown && m_is_connector_handled) {
+        m_dragging = true;
     }
 
     if (!m_dragging)
@@ -763,6 +798,15 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         }
     } else if (m_hovered_handle.is_rotation()) {
         dragging_handle_rotation(Domain::Line3d(pick_ray.origin, pick_ray.point_at(10.0)));
+    } else if (m_is_connector_handled && m_hovered_connector_id) {
+        Domain::Vec3d pos, pos_world;
+        m_clipper_presenter.unproject_on_cut_plane(pick_ray, pos, pos_world);
+        // move connector on new position
+        update_connector_node(m_hovered_connector_id.value(), pos);
+    }
+
+    if (m_hovered_connector_id) {
+        update_connectors_nodes();
     }
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
@@ -770,7 +814,14 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         m_is_plane_hovered = false;
         m_hovered_handle   = Handle();
 
-        if (m_can_flip_plane) {
+        if (m_is_connector_handled) {
+            m_is_connector_handled = false;
+            if (m_hovered_connector_id) {
+                Domain::Vec3d pos, pos_world;
+                m_clipper_presenter.unproject_on_cut_plane(pick_ray, pos, pos_world);
+                update_connector(m_hovered_connector_id.value(), pos);
+            }
+        } else if (m_can_flip_plane) {
             flip_cut_plane();
         } else {
             update_cut_plane_mesh();
@@ -868,7 +919,7 @@ void CutGizmo::update_scene_nodes()
     Domain::Project& project = m_project_interactor->selected_project();
 
     for (const Domain::ElementRef& element : selection.elements) {
-        assert(element.volume_id == 0); // is object
+        assert(element.volume_id == 0); // Whole object is selected
         m_selected_object   = project.find_object_by_id(element.object_id);
         m_selected_instance = project.find_instance_by_id(element.object_id, element.instance_id);
         // get instance index
@@ -915,6 +966,7 @@ void CutGizmo::update_scene_nodes()
 
         m_dialog->set_build_size(bb_size);
         m_dialog->set_groove_values(m_groove, m_mean_size);
+        m_dialog->set_connector_values(m_mean_size);
 
         if (m_bounding_box.contains(m_center_offset))
             set_plane_center(m_bb_center + m_center_offset);
@@ -1008,11 +1060,24 @@ void CutGizmo::reset_cut_part_meshes()
 void CutGizmo::reset_handles_nodes()
 {
     m_scene_presenter.scene().remove_children(
-        [&](const Scene::Node* node) { return node->tag_of_type<CutHandleNodeTag>() != nullptr; },
+        [&](const Scene::Node* node)
+        { return node->tag_of_type<CutConnectorNodeTag>() != nullptr; },
         m_main_node
     );
 
+    // rset geometry
+
     m_handles_node = nullptr;
+}
+
+void CutGizmo::reset_connectors_nodes()
+{
+    m_scene_presenter.scene().remove_children(
+        [&](const Scene::Node* node) { return node->tag_of_type<CutHandleNodeTag>() != nullptr; },
+        m_connectors_node
+    );
+
+    m_connectors_node = nullptr;
 }
 
 void CutGizmo::reset()
@@ -1020,6 +1085,7 @@ void CutGizmo::reset()
     // completetly reset cut nodes
     reset_cut_part_meshes();
     reset_handles_nodes();
+    reset_connectors_nodes();
 
     // Remove all cut parts Scene::Nodes
     std::vector<CutAuxiliaryElementId> geometry_ids;
@@ -1029,10 +1095,9 @@ void CutGizmo::reset()
             if (const CutPlaneNodeTag* t = node->tag_of_type<CutPlaneNodeTag>()) {
                 geometry_ids.push_back({CutAuxiliaryElementId::Type::CutPlane});
                 return true;
-
-            } else if (const CutConnectorNodeTag* t = node->tag_of_type<CutConnectorNodeTag>()) {
-                geometry_ids.push_back({CutAuxiliaryElementId::Type::Connector, t->id});
-                return true;
+                //} else if (const CutConnectorNodeTag* t = node->tag_of_type<CutConnectorNodeTag>()) {
+                // geometry_ids.push_back({CutAuxiliaryElementId::Type::Connector, t->id});
+                // return true;
             }
             return false;
         },
@@ -1044,7 +1109,8 @@ void CutGizmo::reset()
         m_model_triangle_mesh_manager.release(id);
     }
 
-    m_main_node = nullptr;
+    m_main_node       = nullptr;
+    m_connectors_node = nullptr;
 }
 
 void CutGizmo::set_enabled_scene_nodes(bool enabled)
@@ -1065,7 +1131,7 @@ void CutGizmo::set_enabled_scene_nodes(bool enabled)
 
 void CutGizmo::build_cut_plane_node(Scene::NodeBuilder& builder)
 {
-    SPDLOG_DEBUG("build_volume type:Cut plane");
+    SPDLOG_DEBUG("Cut element type:Cut plane");
 
     // Make default mesh as small as possible.
     // Its geometry will be updated on plane mode change
@@ -1317,7 +1383,6 @@ void CutGizmo::update_cut_plane_trafo()
                 node.set_local_transform(
                     Domain::translation_transform(m_plane_center) * m_rotation_m
                 );
-                return;
             }
         }
     );
@@ -1560,6 +1625,7 @@ void CutGizmo::update_handles_nodes(Handle hovered_handle)
 void CutGizmo::update_nodes_enability(bool connectors_editing)
 {
     m_main_node->set_enabled(!connectors_editing);
+    m_connectors_node->set_enabled(connectors_editing);
 
     if (connectors_editing) {
         m_clipper_presenter
@@ -1667,6 +1733,14 @@ void CutGizmo::init_scene_nodes()
         },
         true
     );
+
+    Scene::NodeBuilder connectors_builder{scene};
+    connectors_builder.set_debug_name("cut_connectors");
+    connectors_builder.set_tag(CutConnectorNodeTag());
+
+    scene.add_child(connectors_builder.build().release(), &scene.root());
+    m_connectors_node = scene.root().children().back().get();
+    build_connectors_nodes();
 }
 
 Domain::Transform3d CutGizmo::get_cut_matrix()
@@ -1749,7 +1823,7 @@ bool CutGizmo::has_valid_groove() const
 void CutGizmo::apply_connectors_in_model(ModelObject* mo, int& dowels_count)
 {
     if (is_planar_mode()) {
-        // clear_selection();
+        clear_selection();
 
         for (CutConnector& connector : mo->cut_connectors) {
             connector.rotation_m = m_rotation_m;
@@ -1769,8 +1843,8 @@ void CutGizmo::apply_connectors_in_model(ModelObject* mo, int& dowels_count)
 
 static indexed_triangle_set get_connector_mesh(
     CutConnectorAttributes connector_attributes,
-    float snap_bulge_proportion,
-    float snap_space_proportion
+    double snap_bulge_proportion,
+    double snap_space_proportion
 )
 {
     indexed_triangle_set connector_mesh;
@@ -1797,8 +1871,8 @@ static indexed_triangle_set get_connector_mesh(
         connector_mesh = Biz::Algorithms::TriangleMesh::its_make_snap(
             1.0,
             1.0,
-            snap_space_proportion,
-            snap_bulge_proportion
+            static_cast<float>(snap_space_proportion),
+            static_cast<float>(snap_bulge_proportion)
         );
     else if (connector_attributes.style == CutConnectorStyle::Prism)
         connector_mesh =
@@ -1811,6 +1885,180 @@ static indexed_triangle_set get_connector_mesh(
             Biz::Algorithms::TriangleMesh::its_make_frustum_dowel(1.0, 1.0, sectorCount);
 
     return connector_mesh;
+}
+
+void CutGizmo::build_connector_node(Vec3d pos)
+{
+    SPDLOG_DEBUG("Cut element type:Connector");
+
+    CutConnectorAttributes attribs = connector_attributes();
+
+    // FOR DISCUSE!!!
+    // How to change geometry for mode
+
+    ASSERT(m_selected.size() >= 1);
+    size_t connector_id = m_connectors_node->children().size(); // m_selected.size() - 1;
+    ConnectorAuxiliaryElementId id{attribs};
+
+    bool recreate_snaps{false};
+    if (attribs.type == CutConnectorType::Snap) {
+        if (!Domain::fuzzy_compare(m_snap_bulge_proportion, snap_bulge_proportion())) {
+            m_snap_bulge_proportion = snap_bulge_proportion();
+            recreate_snaps          = true;
+        }
+        if (!Domain::fuzzy_compare(m_snap_space_proportion, snap_space_proportion())) {
+            m_snap_space_proportion = snap_space_proportion();
+            recreate_snaps          = true;
+        }
+        if (recreate_snaps) {
+            // for snap connectors mesh have to be recreated, so remove it from connector managers
+            m_connector_triangle_mesh_manager.release(id);
+            m_connector_geometry_manager.release(id);
+        }
+    }
+
+    auto* trimesh = m_connector_triangle_mesh_manager.get_or_create(
+        id,
+        [&]() -> std::unique_ptr<Scene::TriangleMesh>
+        {
+            indexed_triangle_set mesh_its =
+                get_connector_mesh(attribs, m_snap_bulge_proportion, m_snap_space_proportion);
+            return std::make_unique<Scene::TriangleMesh>(std::move(mesh_its));
+        }
+    );
+
+    auto* geom = m_connector_geometry_manager.get_or_create(
+        id,
+        [&]() { return Render::geometry_from_triangle_mesh(m_device, trimesh->triangles()); }
+    );
+
+    if (recreate_snaps) {
+        // Update geometry for existed snap nodes
+        Scene::visit(
+            *m_connectors_node,
+            [&](Scene::Node& n)
+            {
+                CutConnectorNodeTag* tag = n.tag_of_type<CutConnectorNodeTag>();
+                if (tag && tag->is_snap) {
+                    static_cast<Scene::MeshRenderNodeComponent*>(n.render_component())
+                        ->set_geometry(geom);
+                    n.set_raycast_component(
+                        new Scene::AabbRaycastNodeComponent(&trimesh->aabb_mesh())
+                    );
+                }
+            }
+        );
+    }
+
+    ColorRGBA color = CONNECTOR_DEF_COLOR;
+    auto material   = Render::Material{}
+                        .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
+                        .set_uniform("uniform_color", color);
+
+    double height = connector_depth();
+    if (attribs.type == CutConnectorType::Dowel && attribs.style == CutConnectorStyle::Prism) {
+        height = 0.05f;
+        // if (!looking_forward)
+        pos += 0.05 * m_clp_normal;
+    }
+    pos[Z] += 0.; // sla_shift;
+    double xy_scale = 0.5 * connector_size();
+
+    const Transform3d scale_trafo =
+        scale_transform(Vec3f(xy_scale, xy_scale, height).cast<double>());
+
+    const Transform3d trafo = Domain::translation_transform(pos)
+        * m_rotation_m
+        * rotation_transform(-connector_angle() * Vec3d::UnitZ())
+        * scale_trafo;
+
+    Scene::Scene& scene = m_scene_presenter.scene();
+    Scene::NodeBuilder builder(scene);
+    builder.set_debug_name("cut: connector:")
+        .set_tag(CutConnectorNodeTag(connector_id, attribs.type == CutConnectorType::Snap))
+        .set_mesh(geom, material, int(0))
+        .transform([trafo](auto& xform) { xform = trafo; })
+        .set_aabb(trimesh->aabb_mesh());
+
+    scene.add_child(builder.build().release(), m_connectors_node);
+}
+
+void CutGizmo::build_connectors_nodes() {}
+
+void CutGizmo::update_connectors_nodes(size_t hovered_id)
+{
+    const CutConnectors& connectors = m_selected_object->cut_connectors;
+    // Update geometry for existed snap nodes
+    for (const auto& node : m_connectors_node->children()) {
+        CutConnectorNodeTag* tag = node.get()->tag_of_type<CutConnectorNodeTag>();
+
+        const CutConnector& connector = connectors[tag->id];
+
+        ColorRGBA color               = CONNECTOR_DEF_COLOR;
+        const bool conflict_connector = std::binary_search(
+            m_invalid_connectors_idxs.begin(),
+            m_invalid_connectors_idxs.end(),
+            tag->id
+        );
+        if (conflict_connector)
+            color = CONNECTOR_ERR_COLOR;
+        else // default connector color
+            color = connector.attribs.type == CutConnectorType::Dowel ? DOWEL_COLOR : PLAG_COLOR;
+
+        if (!m_dialog->connectors_editing)
+            color = CONNECTOR_ERR_COLOR;
+        else if (m_hovered_connector_id && m_hovered_connector_id.value() == tag->id)
+            color = conflict_connector                            ? HOVERED_ERR_COLOR :
+                connector.attribs.type == CutConnectorType::Dowel ? HOVERED_DOWEL_COLOR :
+                                                                    HOVERED_PLAG_COLOR;
+        else if (tag->is_selected)
+            color = connector.attribs.type == CutConnectorType::Dowel ? SELECTED_DOWEL_COLOR :
+                                                                        SELECTED_PLAG_COLOR;
+
+        Render::Material material = node.get()->render_component()->material();
+        material.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
+        node.get()->set_material_override(material);
+
+        // node.get()->set_local_transform(Domain::translation_transform(m_plane_center) * m_rotation_m);
+    }
+}
+
+void CutGizmo::update_connector_node(size_t id, Vec3d pos)
+{
+    for (const auto& node : m_connectors_node->children()) {
+        CutConnectorNodeTag* tag = node.get()->tag_of_type<CutConnectorNodeTag>();
+        if (tag && tag->id == id) {
+            const CutConnector& connector = m_selected_object->cut_connectors[id];
+
+            double height = connector.height;
+            if (connector.attribs.type == CutConnectorType::Dowel
+                && connector.attribs.style == CutConnectorStyle::Prism)
+            {
+                height = 0.05f;
+                // if (!looking_forward)
+                pos += 0.05 * m_clp_normal;
+            }
+            pos[Z] += 0.; // sla_shift;
+            double xy_scale = connector.radius;
+
+            const Transform3d scale_trafo =
+                scale_transform(Vec3f(xy_scale, xy_scale, height).cast<double>());
+
+            const Transform3d trafo = Domain::translation_transform(pos)
+                * m_rotation_m
+                * rotation_transform(-connector.z_angle * Vec3d::UnitZ())
+                * scale_trafo;
+
+            node.get()->set_local_transform(trafo);
+
+            break;
+        }
+    }
+}
+
+void CutGizmo::update_connector(size_t id, Vec3d pos)
+{
+    m_selected_object->cut_connectors[id].pos = pos;
 }
 
 void CutGizmo::apply_cut_connectors(ModelObject* mo, const std::string& connector_name)
@@ -2020,7 +2268,7 @@ void CutGizmo::perform_cut()
         int dowels_count          = 0;
         const bool has_connectors = !m_selected_object->cut_connectors.empty();
         // update connectors pos as offset of its center before cut performing
-        // apply_connectors_in_model(cut_mo , dowels_count);
+        apply_connectors_in_model(cut_mo, dowels_count);
 
         // ys_FIXME:: set wxBusyCursor ;
 
@@ -2167,17 +2415,16 @@ bool CutGizmo::add_connector(Vec3d pos)
         pos,
         m_rotation_m,
         connector_size() * 0.5f,
-        connector_depth_ratio(),
+        connector_depth(),
         connector_size_tolerance() * 0.5f,
-        connector_depth_ratio_tolerance(),
+        connector_depth_tolerance(),
         connector_angle(),
         connector_attributes()
     );
     m_selected.push_back(true);
-    m_selected_count = 1;
     ASSERT(m_selected.size() == connectors.size());
 
-    // add connector node using get_connector_mesh(attribs)
+    build_connector_node(pos);
 
     check_and_update_connectors_state();
 
@@ -2187,20 +2434,17 @@ bool CutGizmo::add_connector(Vec3d pos)
 void CutGizmo::unselect_all_connectors()
 {
     std::fill(m_selected.begin(), m_selected.end(), false);
-    m_selected_count = 0;
     m_dialog->validate_connector_settings();
 }
 
 void CutGizmo::select_all_connectors()
 {
     std::fill(m_selected.begin(), m_selected.end(), true);
-    m_selected_count = int(m_selected.size());
 }
 
 void CutGizmo::clear_selection()
 {
     m_selected.clear();
-    m_selected_count = 0;
 }
 
 void CutGizmo::reset_connectors()
@@ -2310,10 +2554,8 @@ void CutGizmo::check_and_update_connectors_state()
     m_invalid_connectors_idxs.clear();
     if (!is_planar_mode())
         return;
-    const ModelObject* mo           = m_selected_object;
-    const CutConnectors& connectors = mo->cut_connectors;
-    const ModelInstance* mi         = m_selected_instance;
-    const Vec3d& instance_offset    = mi->get_offset();
+    const CutConnectors& connectors = m_selected_object->cut_connectors;
+    const Vec3d& instance_offset    = m_selected_instance->get_offset();
     const double sla_shift          = 0; // double(m_c->selection_info()->get_sla_shift());
 
     for (size_t i = 0; i < connectors.size(); ++i) {
@@ -2328,16 +2570,23 @@ void CutGizmo::check_and_update_connectors_state()
 
 CutConnectorAttributes CutGizmo::connector_attributes() const
 {
+    if (m_dialog->connector_type == CutConnectorType::Snap)
+        return CutConnectorAttributes(
+            CutConnectorType::Snap,
+            CutConnectorStyle::Undef,
+            CutConnectorShape::Undef
+        );
+
     return CutConnectorAttributes(
-        CutConnectorType(m_dialog->current_connector_type),
-        CutConnectorStyle(m_dialog->current_connector_style),
-        CutConnectorShape(m_dialog->current_connector_shape)
+        m_dialog->connector_type,
+        m_dialog->connector_style,
+        m_dialog->connector_shape
     );
 }
 
-double CutGizmo::connector_depth_ratio() const
+double CutGizmo::connector_depth() const
 {
-    return m_dialog->connector_depth_ratio;
+    return m_dialog->connector_depth;
 }
 
 double CutGizmo::connector_size() const
@@ -2347,12 +2596,22 @@ double CutGizmo::connector_size() const
 
 double CutGizmo::connector_angle() const
 {
-    return m_dialog->connector_angle;
+    return deg2rad(m_dialog->connector_angle);
 }
 
-double CutGizmo::connector_depth_ratio_tolerance() const
+double CutGizmo::snap_bulge_proportion() const
 {
-    return m_dialog->connector_depth_ratio_tolerance;
+    return 0.01 * m_dialog->snap_bulge_proportion;
+}
+
+double CutGizmo::snap_space_proportion() const
+{
+    return 0.01 * m_dialog->snap_space_proportion;
+}
+
+double CutGizmo::connector_depth_tolerance() const
+{
+    return m_dialog->connector_depth_tolerance;
 }
 
 double CutGizmo::connector_size_tolerance() const

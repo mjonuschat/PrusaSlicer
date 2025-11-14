@@ -16,6 +16,7 @@ class TriangleMesh;
 namespace Slic3r::App::Scene {
     
 class Camera;
+struct Ray;
 
 class Clipper
 {
@@ -49,6 +50,8 @@ public:
     );
     void release();
     void recalculate_object_clippers();
+
+    bool unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos, Domain::Vec3d& pos_world, bool respect_contours = true);
 
     const std::vector<Domain::ModelVolume*>& volumes();
 

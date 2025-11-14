@@ -1,5 +1,6 @@
 #pragma once
 #include "GizmoNodeTag.hpp"
+#include "Slic3r/Domain/CutConnector.hpp"
 
 #include <boost/functional/hash.hpp>
 
@@ -57,7 +58,14 @@ struct CutPartNodeTag : public CutNodeTag
  */
 struct CutConnectorNodeTag : public CutNodeTag
 {
-    size_t id; ///< Unique identifier for the connector mesh.
+    const size_t id; ///< Unique identifier for the connector mesh.
+    bool is_selected{false};
+    bool is_snap{false};
+
+    explicit CutConnectorNodeTag(size_t id, bool is_snap=false) : CutNodeTag(), id(id), is_snap(is_snap)
+    {}
+    // used for connectors root node
+    explicit CutConnectorNodeTag() : CutNodeTag(), id(size_t(-1)) {}
 };
 
 /**
@@ -196,7 +204,6 @@ struct CutAuxiliaryElementId
         CutPlane,
         UpperPart,
         LowerPart,
-        Connector
     };
 
     Type type;
@@ -218,6 +225,31 @@ struct CutAuxiliaryElementId
     }
 };
 
+/**
+ * @brief Struct used for tag of nodes for for CutConnectors elements.
+ *
+ * It identifies nodes that belong to the cut parts and cut plane.
+ */
+struct ConnectorAuxiliaryElementId
+{
+    Domain::CutConnectorAttributes attributes;
+
+    /**
+     *
+     * @param rhs
+     * @return
+     */
+    bool operator==(const ConnectorAuxiliaryElementId& rhs) const
+    {
+        return attributes == rhs.attributes;
+    }
+
+    bool operator<(const ConnectorAuxiliaryElementId& rhs) const
+    {
+        return attributes < rhs.attributes;
+    }
+};
+
 } // namespace Slic3r::App::Plater
 
 namespace std {
@@ -230,6 +262,20 @@ struct hash<Slic3r::App::Plater::CutAuxiliaryElementId>
     {
         size_t ret = boost::hash_value(val.type);
         boost::hash_combine(ret, val.id);
+        return ret;
+    }
+};
+
+template <>
+struct hash<Slic3r::App::Plater::ConnectorAuxiliaryElementId>
+{
+    using value_type = Slic3r::App::Plater::ConnectorAuxiliaryElementId;
+
+    std::uint64_t operator()(const value_type& val) const
+    {
+        size_t ret = boost::hash_value(val.attributes.type);
+        boost::hash_combine(ret, val.attributes.shape);
+        boost::hash_combine(ret, val.attributes.style);
         return ret;
     }
 };

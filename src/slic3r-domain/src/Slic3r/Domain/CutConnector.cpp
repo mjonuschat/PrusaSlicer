@@ -11,6 +11,11 @@ bool CutConnectorAttributes::operator<(const CutConnectorAttributes& other) cons
           (this->type == other.type &&  this->style == other.style && this->shape < other.shape);
 }
 
+bool CutConnectorAttributes::operator==(const CutConnectorAttributes& other) const
+{
+    return this->type == other.type && this->style == other.style && this->shape == other.shape;
+}
+
 template<class Archive>
 void CutConnectorAttributes::serialize(Archive& ar)
 {
