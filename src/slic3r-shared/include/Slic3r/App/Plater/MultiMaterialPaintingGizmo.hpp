@@ -18,22 +18,22 @@ class ProjectInteractor;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::App::Plater {
-class PaintOnSupportsDialog;
+class MultiMaterialPaintingDialog;
 class PlaterScenePresenter;
 
-class PaintOnSupportsGizmo : public PaintOnGizmoBase
+class MultiMaterialPaintingGizmo : public PaintOnGizmoBase
 {
 public:
-    PaintOnSupportsGizmo() = delete;
+    MultiMaterialPaintingGizmo() = delete;
 
-    PaintOnSupportsGizmo(
+    MultiMaterialPaintingGizmo(
         Render::Device& device,
         Scene::GeometryDataFactory& data_factory,
         Biz::ProjectInteractor& project_interactor,
         PlaterScenePresenter& scene_presenter
     );
 
-    ~PaintOnSupportsGizmo() override;
+    ~MultiMaterialPaintingGizmo() override;
 
     Scene::ToolType type() const override;
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
@@ -54,11 +54,16 @@ protected:
     void on_smart_fill_angle_changed(float value) override;
     void on_clipping_of_view_changed(double value) override;
 
-private:
-    void select_facets_by_angle(float threshold_deg);
-    void auto_generate_support_painting();
+    Domain::ColorRGBA get_cursor_sphere_left_button_color() const override;
+    Domain::ColorRGBA get_cursor_sphere_right_button_color() const override;
 
-    Yoga::Passthrough<PaintOnSupportsDialog> m_dialog;
+    std::vector<Domain::ColorRGBA> create_painting_colors() const override;
+
+private:
+    Yoga::Passthrough<MultiMaterialPaintingDialog> m_dialog;
+
+    size_t m_first_brush_color_idx  = 0;
+    size_t m_second_brush_color_idx = 1;
 };
 
 } // namespace Slic3r::App::Plater

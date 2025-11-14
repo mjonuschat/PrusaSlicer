@@ -18,22 +18,22 @@ class ProjectInteractor;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::App::Plater {
-class PaintOnSupportsDialog;
+class PaintOnFuzzySkinDialog;
 class PlaterScenePresenter;
 
-class PaintOnSupportsGizmo : public PaintOnGizmoBase
+class PaintOnFuzzySkinGizmo : public PaintOnGizmoBase
 {
 public:
-    PaintOnSupportsGizmo() = delete;
+    PaintOnFuzzySkinGizmo() = delete;
 
-    PaintOnSupportsGizmo(
+    PaintOnFuzzySkinGizmo(
         Render::Device& device,
         Scene::GeometryDataFactory& data_factory,
         Biz::ProjectInteractor& project_interactor,
         PlaterScenePresenter& scene_presenter
     );
 
-    ~PaintOnSupportsGizmo() override;
+    ~PaintOnFuzzySkinGizmo() override;
 
     Scene::ToolType type() const override;
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
@@ -55,10 +55,7 @@ protected:
     void on_clipping_of_view_changed(double value) override;
 
 private:
-    void select_facets_by_angle(float threshold_deg);
-    void auto_generate_support_painting();
-
-    Yoga::Passthrough<PaintOnSupportsDialog> m_dialog;
+    Yoga::Passthrough<PaintOnFuzzySkinDialog> m_dialog;
 };
 
 } // namespace Slic3r::App::Plater

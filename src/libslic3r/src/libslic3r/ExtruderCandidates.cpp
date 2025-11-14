@@ -2,7 +2,8 @@
 
 namespace Slic3r::Biz::Slicing {
 
-std::vector<unsigned int> get_painting_extruders(const Domain::ModelObject& model_object)
+std::vector<unsigned int>
+get_painting_extruders(const Domain::ModelObject& model_object, const unsigned int num_extruders)
 {
     if (!model_object.is_mm_painted()) {
         return {};
@@ -31,7 +32,7 @@ std::vector<unsigned int> get_painting_extruders(const Domain::ModelObject& mode
          state_idx < used_facet_states.size();
          ++state_idx)
     {
-        if (used_facet_states[state_idx]) {
+        if (used_facet_states[state_idx] && state_idx <= num_extruders) {
             result.emplace_back(state_idx);
         }
     }
@@ -152,7 +153,9 @@ get_extruder_candidates(const Domain::Model& model, const Domain::ConfigPackFDM&
                 get_extruder_candidates(volume->volume_settings, object_settings, print_settings)
             );
         }
-        const std::vector<unsigned> painting_extruders{get_painting_extruders(*object)};
+        const std::vector<unsigned> painting_extruders{
+            get_painting_extruders(*object, config.tool.size())
+        };
         for (unsigned extruder : painting_extruders) {
             extruders.insert(extruder - 1);
         }

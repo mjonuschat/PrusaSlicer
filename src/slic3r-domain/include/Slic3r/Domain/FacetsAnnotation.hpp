@@ -19,6 +19,8 @@ public:
 
     const Domain::TriangleSelector::TriangleSplittingData &get_data() const noexcept;
 
+    bool set_data(TriangleSelector::TriangleSplittingData&& new_triangle_splitting_data);
+
     bool empty() const;
 
     // Following method clears the config and increases its timestamp, so the deleted

@@ -644,6 +644,37 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
         invoke_slicing_input_changed(bed_ref);
 }
 
+void SceneInteractor::notify_facets_annotations_changed(
+    const Domain::ElementRefs& changed_volume_refs
+)
+{
+    if (changed_volume_refs.empty()) {
+        return;
+    }
+
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+
+    Domain::ElementRefs updated_instances;
+    for (const Domain::ElementRef& changed_volume_ref : changed_volume_refs) {
+        Domain::ModelObject* model_object = project.find_object_by_id(changed_volume_ref.object_id);
+
+        ASSERT(model_object != nullptr);
+        for (const Domain::ModelInstance* model_instance : model_object->instances) {
+            updated_instances.emplace_back(
+                changed_volume_ref.object_id,
+                model_instance->id().id,
+                changed_volume_ref.volume_id
+            );
+        }
+    }
+
+    BedTrackingChanges changes =
+        m_bed_tracking.update_instances_bed_placement(project, updated_instances);
+    for (const Domain::BedRef& bed_ref : changes.updated_beds) {
+        invoke_slicing_input_changed(bed_ref);
+    }
+}
+
 void SceneInteractor::edit_name(const Domain::ElementRef& id, const std::string& new_name)
 {
     Domain::Project& project = m_workbench.project(m_selected_project_id);

@@ -1080,8 +1080,9 @@ tl::expected<RegionsSyncResult, Errors> sync_regions(
         const PrintObject& print_object = *(*it_print_object);
 
         const std::vector<unsigned int> painting_extruders{
-            num_extruders > 1 ? get_painting_extruders(*print_object.model_object()) :
-                                std::vector<unsigned int>{}
+            num_extruders > 1 ?
+                get_painting_extruders(*print_object.model_object(), num_extruders) :
+                std::vector<unsigned int>{}
         };
 
         const auto new_regions{generate_print_object_regions(

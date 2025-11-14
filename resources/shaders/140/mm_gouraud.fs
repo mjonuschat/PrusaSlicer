@@ -37,9 +37,6 @@ void main()
     float alpha = uniform_color.a;
 
     vec3 triangle_normal = normalize(cross(dFdx(model_pos.xyz), dFdy(model_pos.xyz)));
-#ifdef FLIP_TRIANGLE_NORMALS
-    triangle_normal = -triangle_normal;
-#endif
 
     if (volume_mirrored)
         triangle_normal = -triangle_normal;

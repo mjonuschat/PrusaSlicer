@@ -4,6 +4,7 @@
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/DialogNavigation.hpp"
@@ -40,6 +41,9 @@ class TranslationGizmo;
 class RotationGizmo;
 class ScaleGizmo;
 class PaintOnSupportsGizmo;
+class PaintOnSeamsGizmo;
+class PaintOnFuzzySkinGizmo;
+class MultiMaterialPaintingGizmo;
 class SimplifyGizmo;
 class TextGizmo;
 class MeasureGizmo;
@@ -57,7 +61,8 @@ class PlaterRenderModule final :
     public Biz::IStatusCacheChangedListener,
     public Biz::Scene::ISceneSelectionChangedListener,
     private Scene::IGizmoActiveToolListener,
-    public Biz::ISelectedProjectChangedListener
+    public Biz::ISelectedProjectChangedListener,
+    public Biz::Preset::IPresetChangedListener
 {
 public:
     PlaterRenderModule(
@@ -110,6 +115,12 @@ protected:
     void on_selected_project_changed(size_t index) override;
     /**@}*/
 
+    void on_preset_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Biz::Preset::PresetItemType type
+    ) override;
+
 private:
     void active_tool_changed(Scene::IToolGizmo* active_tool) override;
 
@@ -122,6 +133,7 @@ private:
     void init_dialog_navigation();
     void update_object_selection();
     void update_current_right_sidebar();
+    void update_toolbar_visibility();
 
     void init_gizmos();
     void init_add_volume_menu(Yoga::Item* parent);
@@ -149,29 +161,35 @@ private:
     Yoga::Passthrough<History> m_history;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
 
-    Yoga::ToolbarButton* m_toolbar_add_volume        = nullptr;
-    Yoga::ToolbarButton* m_toolbar_delete            = nullptr;
-    Yoga::ToolbarButton* m_toolbar_add_instance      = nullptr;
-    Yoga::ToolbarButton* m_toolbar_move              = nullptr;
-    Yoga::ToolbarButton* m_toolbar_rotate            = nullptr;
-    Yoga::ToolbarButton* m_toolbar_scale             = nullptr;
-    Yoga::ToolbarButton* m_toolbar_simplify          = nullptr;
-    Yoga::ToolbarButton* m_toolbar_arrange           = nullptr;
-    Yoga::ToolbarButton* m_toolbar_paint_on_supports = nullptr;
-    Yoga::ToolbarButton* m_toolbar_text              = nullptr;
-    Yoga::ToolbarButton* m_toolbar_measure           = nullptr;
-    Yoga::ToolbarButton* m_toolbar_cut               = nullptr;
+    Yoga::ToolbarButton* m_toolbar_add_volume              = nullptr;
+    Yoga::ToolbarButton* m_toolbar_delete                  = nullptr;
+    Yoga::ToolbarButton* m_toolbar_add_instance            = nullptr;
+    Yoga::ToolbarButton* m_toolbar_move                    = nullptr;
+    Yoga::ToolbarButton* m_toolbar_rotate                  = nullptr;
+    Yoga::ToolbarButton* m_toolbar_scale                   = nullptr;
+    Yoga::ToolbarButton* m_toolbar_simplify                = nullptr;
+    Yoga::ToolbarButton* m_toolbar_arrange                 = nullptr;
+    Yoga::ToolbarButton* m_toolbar_paint_on_supports       = nullptr;
+    Yoga::ToolbarButton* m_toolbar_paint_on_seams          = nullptr;
+    Yoga::ToolbarButton* m_toolbar_paint_on_fuzzy_skin     = nullptr;
+    Yoga::ToolbarButton* m_toolbar_multi_material_painting = nullptr;
+    Yoga::ToolbarButton* m_toolbar_text                    = nullptr;
+    Yoga::ToolbarButton* m_toolbar_measure                 = nullptr;
+    Yoga::ToolbarButton* m_toolbar_cut                     = nullptr;
 
-    TranslationGizmo* m_translation_gizmo           = nullptr;
-    RotationGizmo* m_rotation_gizmo                 = nullptr;
-    ScaleGizmo* m_scale_gizmo                    = nullptr;
-    ArrangeGizmo* m_arrange_gizmo                   = nullptr;
-    SimplifyGizmo* m_simplify_gizmo                 = nullptr;
-    PaintOnSupportsGizmo* m_paint_on_supports_gizmo = nullptr;
-    TextGizmo* m_text_gizmo                         = nullptr;
-    MeasureGizmo* m_measure_gizmo                   = nullptr;
-    PlaterCameraGizmo* m_camera_gizmo               = nullptr;
-    CutGizmo* m_cut_gizmo                         = nullptr;
+    TranslationGizmo* m_translation_gizmo                       = nullptr;
+    RotationGizmo* m_rotation_gizmo                             = nullptr;
+    ScaleGizmo* m_scale_gizmo                                   = nullptr;
+    ArrangeGizmo* m_arrange_gizmo                               = nullptr;
+    SimplifyGizmo* m_simplify_gizmo                             = nullptr;
+    PaintOnSupportsGizmo* m_paint_on_supports_gizmo             = nullptr;
+    PaintOnSeamsGizmo* m_paint_on_seams_gizmo                   = nullptr;
+    PaintOnFuzzySkinGizmo* m_paint_on_fuzzy_skin_gizmo          = nullptr;
+    MultiMaterialPaintingGizmo* m_multi_material_painting_gizmo = nullptr;
+    TextGizmo* m_text_gizmo                                     = nullptr;
+    MeasureGizmo* m_measure_gizmo                               = nullptr;
+    PlaterCameraGizmo* m_camera_gizmo                           = nullptr;
+    CutGizmo* m_cut_gizmo                                       = nullptr;
 
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;

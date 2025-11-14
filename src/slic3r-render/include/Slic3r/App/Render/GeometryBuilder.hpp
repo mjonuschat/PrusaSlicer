@@ -124,6 +124,18 @@ public:
         return *this;
     }
 
+    GeometryBuilder& add_indices(std::vector<I>&& indices)
+    {
+        std::move(
+            std::make_move_iterator(indices.begin()),
+            std::make_move_iterator(indices.end()),
+            std::back_inserter(m_indices)
+        );
+        indices.clear();
+
+        return *this;
+    }
+
     GeometryBuilder& add_triangle_indices(I i0, I i1, I i2)
     {
         m_indices.push_back(i0);

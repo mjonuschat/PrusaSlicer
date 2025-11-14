@@ -34,6 +34,12 @@
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
+#include "Slic3r/App/Plater/PaintOnSeamsGizmo.hpp"
+#include "Slic3r/App/Plater/PaintOnSeamsDialog.hpp"
+#include "Slic3r/App/Plater/PaintOnFuzzySkinGizmo.hpp"
+#include "Slic3r/App/Plater/PaintOnFuzzySkinDialog.hpp"
+#include "Slic3r/App/Plater/MultiMaterialPaintingGizmo.hpp"
+#include "Slic3r/App/Plater/MultiMaterialPaintingDialog.hpp"
 #include "Slic3r/App/Plater/MeasureGizmo.hpp"
 #include "Slic3r/App/Plater/MeasureDialog.hpp"
 #include "Slic3r/App/Plater/TextDialog.hpp"
@@ -221,6 +227,7 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
     m_project_interactor.fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>(m_scene_presenter.get());
     m_project_interactor.sla_result_cache().add_listener<Biz::ISLAResultCacheChangedListener>(m_scene_presenter.get());
+    m_project_interactor.preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(this);
 
     // Set our color styles before gizmos initialization
     // to use them during GiymoDialogs creation
@@ -470,6 +477,33 @@ void PlaterRenderModule::init_scene_layout()
         m_paint_on_supports_gizmo
     );
 
+    m_toolbar_paint_on_seams = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle,
+        Render::Icon::PaintSeams,
+        _u8L("Paint-on seams"),
+        "P",
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSeamsGizmo); }},
+        m_paint_on_seams_gizmo
+    );
+
+    m_toolbar_paint_on_fuzzy_skin = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle,
+        Render::Icon::PaintFuzzySkin,
+        _u8L("Paint-on fuzzy skin"),
+        "H",
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnFuzzySkinGizmo); }},
+        m_paint_on_fuzzy_skin_gizmo
+    );
+
+    m_toolbar_multi_material_painting = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle,
+        Render::Icon::PaintMultiMaterial,
+        _u8L("Multimaterial painting"),
+        "N",
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::MultiMaterialPaintingGizmo); }},
+        m_multi_material_painting_gizmo
+    );
+
     m_toolbar_text = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Text,
@@ -521,6 +555,8 @@ void PlaterRenderModule::init_scene_layout()
          { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Preview); }},
         Yoga::ToolbarSwitchButton::SwitchPosition::Right
     );
+
+    this->update_toolbar_visibility();
 }
 
 void PlaterRenderModule::init_dialog_navigation()
@@ -561,6 +597,18 @@ void PlaterRenderModule::init_dialog_navigation()
     init_gizmo_dialog(
         Scene::ToolType::PaintOnSupportsGizmo,
         m_paint_on_supports_gizmo->release_ui_window()
+    );
+    init_gizmo_dialog(
+        Scene::ToolType::PaintOnSeamsGizmo,
+        m_paint_on_seams_gizmo->release_ui_window()
+    );
+    init_gizmo_dialog(
+        Scene::ToolType::PaintOnFuzzySkinGizmo,
+        m_paint_on_fuzzy_skin_gizmo->release_ui_window()
+    );
+    init_gizmo_dialog(
+        Scene::ToolType::MultiMaterialPaintingGizmo,
+        m_multi_material_painting_gizmo->release_ui_window()
     );
     init_gizmo_dialog(Scene::ToolType::Simplify, m_simplify_gizmo->release_ui_window());
     init_gizmo_dialog(Scene::ToolType::TextGizmo, m_text_gizmo->release_ui_window());
@@ -623,6 +671,42 @@ void PlaterRenderModule::update_current_right_sidebar()
     }
 }
 
+void PlaterRenderModule::update_toolbar_visibility()
+{
+    Domain::SelectionId config_container_id =
+        m_project_interactor.scene_interactor().selected_config_container_id();
+    const Domain::ConfigContainer* config_container =
+        m_project_interactor.selected_project().find_config_container(config_container_id);
+    if (config_container == nullptr) {
+        if (const Biz::Scene::BedSelection& bed_selection =
+                m_project_interactor.scene_interactor().bed_selection();
+            !bed_selection.empty())
+        {
+            config_container_id = bed_selection.config_container_id();
+        }
+
+        ASSERT(config_container_id != Domain::INVALID_ID);
+        config_container =
+            m_project_interactor.selected_project().find_config_container(config_container_id);
+        if (config_container == nullptr) {
+            return;
+        }
+    }
+
+    const Domain::PrinterTechnology print_technology = config_container->print_technology();
+    const Domain::ConfigPack& print_config           = config_container->print_config();
+    const size_t tool_count = std::holds_alternative<Domain::ConfigPackFDM>(print_config) ?
+        std::get<Domain::ConfigPackFDM>(print_config).tool.size() :
+        1;
+
+    m_toolbar_paint_on_supports->set_visible(print_technology == Domain::PrinterTechnology::FFF);
+    m_toolbar_paint_on_seams->set_visible(print_technology == Domain::PrinterTechnology::FFF);
+    m_toolbar_paint_on_fuzzy_skin->set_visible(print_technology == Domain::PrinterTechnology::FFF);
+    m_toolbar_multi_material_painting->set_visible(
+        print_technology == Domain::PrinterTechnology::FFF && tool_count > 1
+    );
+}
+
 void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type)
 {
     m_toolbar_move->set_checked(current_tool_type == Scene::ToolType::Translation);
@@ -632,6 +716,13 @@ void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type
     m_toolbar_arrange->set_checked(current_tool_type == Scene::ToolType::ArrangeGizmo);
     m_toolbar_paint_on_supports->set_checked(
         current_tool_type == Scene::ToolType::PaintOnSupportsGizmo
+    );
+    m_toolbar_paint_on_seams->set_checked(current_tool_type == Scene::ToolType::PaintOnSeamsGizmo);
+    m_toolbar_paint_on_fuzzy_skin->set_checked(
+        current_tool_type == Scene::ToolType::PaintOnFuzzySkinGizmo
+    );
+    m_toolbar_multi_material_painting->set_checked(
+        current_tool_type == Scene::ToolType::MultiMaterialPaintingGizmo
     );
     m_toolbar_text->set_checked(current_tool_type == Scene::ToolType::TextGizmo);
     m_toolbar_measure->set_checked(current_tool_type == Scene::ToolType::MeasureGizmo);
@@ -719,8 +810,27 @@ void PlaterRenderModule::init_gizmos()
     );
     m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>(
         *m_device,
-        *m_scene_presenter,
-        &m_project_interactor
+        m_gizmo_manager->data_factory(),
+        m_project_interactor,
+        *m_scene_presenter
+    );
+    m_paint_on_seams_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSeamsGizmo>(
+        *m_device,
+        m_gizmo_manager->data_factory(),
+        m_project_interactor,
+        *m_scene_presenter
+    );
+    m_paint_on_fuzzy_skin_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnFuzzySkinGizmo>(
+        *m_device,
+        m_gizmo_manager->data_factory(),
+        m_project_interactor,
+        *m_scene_presenter
+    );
+    m_multi_material_painting_gizmo = &m_gizmo_manager->add_tool_gizmo<MultiMaterialPaintingGizmo>(
+        *m_device,
+        m_gizmo_manager->data_factory(),
+        m_project_interactor,
+        *m_scene_presenter
     );
     m_text_gizmo              = &m_gizmo_manager->add_tool_gizmo<TextGizmo>();
     m_measure_gizmo           = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(
@@ -974,7 +1084,8 @@ void PlaterRenderModule::on_scene_selection_changed(
     const Biz::Scene::ObjectSelection& selection
 )
 {
-    update_object_selection();
+    this->update_object_selection();
+    this->update_toolbar_visibility();
 }
 
 void PlaterRenderModule::on_screen_resized()
@@ -988,9 +1099,19 @@ void PlaterRenderModule::on_set_imgui_render() {}
 
 void PlaterRenderModule::on_selected_project_changed(size_t index)
 {
-    update_object_selection();
+    this->update_object_selection();
+    this->update_toolbar_visibility();
     m_scene_presenter->update_bed_instances();
     m_animation_manager->terminate_all();
+}
+
+void PlaterRenderModule::on_preset_selection_changed(
+    SelectionId project_id,
+    SelectionId config_container_id,
+    Biz::Preset::PresetItemType type
+)
+{
+    this->update_toolbar_visibility();
 }
 
 } // namespace Slic3r::App::Plater
