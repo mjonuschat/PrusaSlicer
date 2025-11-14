@@ -225,7 +225,7 @@ void SceneInteractor::on_selected_config_container_changed(Domain::SelectionId p
     auto& selection           = bed_selection();
     if (selection.empty() || selection.last_selected_bed().config_container_id != container_id) {
         // Select CC's first bed if not already selected any of CC's
-        selection.select_one({container_id, bed_instances.front()->id().id});
+        selection.select_one({container_id, bed_instances.front()->id().id}, CameraActionOnBedSelection::CenterOnBed);
     }
 }
 
@@ -875,7 +875,7 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance, bool a
                 if (++it == ccs.end())
                     it = ccs.begin();
                 selection.select_one(
-                    {it->get()->id().id, it->get()->bed_instances().front()->id().id}
+                    {it->get()->id().id, it->get()->bed_instances().front()->id().id}, CameraActionOnBedSelection::CenterOnBed
                 );
             }
         } else {

@@ -1,13 +1,17 @@
 #include "Slic3r/App/Plater/BedSelectGizmo.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/App/Scene/ISceneProvider.hpp"
 
 namespace Slic3r::App::Plater {
 
 BedSelectGizmo::BedSelectGizmo(
-    Biz::Scene::SceneInteractor& scene_interactor,
+    Biz::ProjectInteractor& project_interactor,
     Scene::ISceneProvider& scene_provider
 ) :
-    m_scene_interactor(scene_interactor),
+    m_project_interactor(project_interactor),
+    m_scene_interactor(project_interactor.scene_interactor()),
     m_scene_provider(scene_provider)
 { }
 
@@ -60,6 +64,12 @@ Scene::GizmoActivationState BedSelectGizmo::on_mouse(Scene::GizmoEventContext& c
         }
     } else {
         if (m_scene_interactor.bed_selection().select_one(instance)) {
+            // Center the camera pivot on the bed
+            const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(instance.config_container_id);
+            DEBUG_ASSERT(cc != nullptr);
+            const Domain::BedInstance& inst = cc->find_bed_instance(instance.instance_id);
+            m_scene_provider.scene().camera_trackball()
+                .set_pivot(Biz::Algorithms::Point::to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset());
             return Scene::GizmoActivationState::Done;
         }
     }
