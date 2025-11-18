@@ -114,15 +114,17 @@ static void process_connector_cut(Domain::ModelVolume* volume, const Transform3d
         if (attributes.keep_upper) {
             Domain::ModelVolume* vol = nullptr;
             if (volume->cut_info.connector_type == Domain::CutConnectorType::Snap) {
-                namespace TriMesh = Biz::Algorithms::TriangleMesh;
-                TriangleMesh mesh = TriMesh::make_cylinder(1.0, 1.0, PI / 180.);
-
-                vol = Algorithms::ModelObject::add_volume(upper, std::move(mesh));
+                Domain::TriangleMesh mesh = Domain::TriangleMesh(
+                    Biz::Algorithms::TriangleMesh::its_make_cylinder(1.0, 1.0, (PI / 180.))
+                );
+                vol = Biz::Algorithms::ModelObject::add_volume(
+                    upper,
+                    std::move(mesh),
+                    ModelVolumeType::NEGATIVE_VOLUME
+                );
                 vol->set_transformation(volume->get_transformation());
-                vol->set_type(Domain::ModelVolumeType::NEGATIVE_VOLUME);
-
                 vol->cut_info = volume->cut_info;
-                vol->name = volume->name;
+                vol->name     = volume->name;
             }
             else
                 vol = upper->add_volume(*volume);

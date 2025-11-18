@@ -597,7 +597,7 @@ void CutGizmo::on_activated()
     m_clipper_presenter.set_behavior(true, true, 0.4);
     m_clipper_presenter.deactivate(false);
 
-    m_selected.resize(m_selected_object->cut_connectors.size(), false);
+    // build connectors nodes from object's connectors
 }
 
 void CutGizmo::on_deactivated()
@@ -606,7 +606,7 @@ void CutGizmo::on_deactivated()
     set_enabled_scene_nodes(true);
     m_clipper_presenter.deactivate();
 
-    m_selected.clear();
+    // reset m_connectors_node
 }
 
 Scene::ToolType CutGizmo::type() const
@@ -717,13 +717,8 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         return Scene::GizmoActivationState::Inactive;
     }
 
-    if (const Scene::Node* connector_node =
-            ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>())
-    {
-        const CutConnectorNodeTag* tag = connector_node->tag_of_type<CutConnectorNodeTag>();
-        m_hovered_connector_id         = tag->id;
-    } else {
-        m_hovered_connector_id = std::nullopt;
+    if (m_dialog->connectors_editing) {
+        return on_mouse_for_connectors(ctx, only_active);
     }
 
     const auto& pick_ray = ctx.pick_ray();
@@ -733,27 +728,14 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         {
             const CutHandleNodeTag& tag = *handle_node->tag_of_type<CutHandleNodeTag>();
             ASSERT(tag.type == CutHandleNodeTag::Type::Handle);
-            m_hovered_handle   = Handle(tag.handle_type, tag.primary_axis);
-            m_is_plane_hovered = false;
-
+            m_hovered_handle            = Handle(tag.handle_type, tag.primary_axis);
+            m_is_plane_hovered          = false;
             m_translation_ray.direction = m_rotation_m * tag.primary_axis_dir();
         } else if (const Scene::Node* node =
                        ctx.pick_result_node_with_tag_of_type<CutPlaneNodeTag>())
         {
             m_is_plane_hovered          = true;
-            m_translation_ray.origin    = m_plane_center;
             m_translation_ray.direction = m_rotation_m * Vec3d::UnitZ();
-        } else if (const Scene::Node* node =
-                       ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>())
-        {
-            m_is_connector_handled = true;
-        } else if (m_clipper_presenter.on_mouse(ctx, only_active)
-                   != Scene::GizmoActivationState::Inactive)
-        {
-            Domain::Vec3d pos, pos_world;
-            m_clipper_presenter.unproject_on_cut_plane(pick_ray, pos, pos_world);
-            add_connector(pos /*_world*/);
-            return Scene::GizmoActivationState::Done;
         } else {
             on_stop_dragging();
             return Scene::GizmoActivationState::Inactive;
@@ -779,10 +761,6 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         return Scene::GizmoActivationState::Active;
     }
 
-    if (event_type == Platform::MouseEvent::Type::ButtonDown && m_is_connector_handled) {
-        m_dragging = true;
-    }
-
     if (!m_dragging)
         return Scene::GizmoActivationState::Inactive;
 
@@ -798,15 +776,6 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         }
     } else if (m_hovered_handle.is_rotation()) {
         dragging_handle_rotation(Domain::Line3d(pick_ray.origin, pick_ray.point_at(10.0)));
-    } else if (m_is_connector_handled && m_hovered_connector_id) {
-        Domain::Vec3d pos, pos_world;
-        m_clipper_presenter.unproject_on_cut_plane(pick_ray, pos, pos_world);
-        // move connector on new position
-        update_connector_node(m_hovered_connector_id.value(), pos);
-    }
-
-    if (m_hovered_connector_id) {
-        update_connectors_nodes();
     }
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
@@ -814,14 +783,7 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         m_is_plane_hovered = false;
         m_hovered_handle   = Handle();
 
-        if (m_is_connector_handled) {
-            m_is_connector_handled = false;
-            if (m_hovered_connector_id) {
-                Domain::Vec3d pos, pos_world;
-                m_clipper_presenter.unproject_on_cut_plane(pick_ray, pos, pos_world);
-                update_connector(m_hovered_connector_id.value(), pos);
-            }
-        } else if (m_can_flip_plane) {
+        if (m_can_flip_plane) {
             flip_cut_plane();
         } else {
             update_cut_plane_mesh();
@@ -838,15 +800,98 @@ void CutGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
     if (m_dragging)
         return;
 
-    const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<CutHandleNodeTag>();
-    if (node) {
-        const CutHandleNodeTag& tag = *node->tag_of_type<CutHandleNodeTag>();
+    if (const Scene::Node* handle_node = ctx.pick_result_node_with_tag_of_type<CutHandleNodeTag>())
+    {
+        const CutHandleNodeTag& tag = *handle_node->tag_of_type<CutHandleNodeTag>();
         ASSERT(tag.type == CutHandleNodeTag::Type::Handle);
         update_handles_nodes(tag.handle());
         return;
     }
 
+    if (m_dialog->connectors_editing) {
+        const Scene::Node* connector_node =
+            ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>();
+        std::optional<size_t> hovered_connector_id = connector_node ?
+            std::optional<size_t>(connector_node->tag_of_type<CutConnectorNodeTag>()->id) :
+            std::nullopt;
+
+        if (m_hovered_connector_id != hovered_connector_id) {
+            m_hovered_connector_id = hovered_connector_id;
+            update_connectors_nodes_colors();
+        }
+    }
+
     clear_highlight();
+}
+
+Scene::GizmoActivationState
+CutGizmo::on_mouse_for_connectors(Scene::GizmoEventContext& ctx, bool only_active)
+{
+    const auto event_type          = ctx.mouse_event().type();
+    const auto event_button        = ctx.mouse_event().button();
+    const auto event_key_modifiers = ctx.mouse_event().key_modifiers();
+    const auto& pick_ray           = ctx.pick_ray();
+
+    if (event_type == Platform::MouseEvent::Type::ButtonDown) {
+        if (const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<CutConnectorNodeTag>())
+        {
+            if (event_button == Platform::MouseButton::Right) {
+                select_hovered_connector(true);
+                remove_selected_connectors();
+
+                return Scene::GizmoActivationState::Done;
+            }
+
+            m_is_connector_handled = m_dragging = true;
+            Domain::Vec3d pos_world;
+            m_clipper_presenter.unproject_on_cut_plane(pick_ray, m_btn_down_pos, pos_world);
+
+            return Scene::GizmoActivationState::Active;
+        }
+        const Scene::Node* clipper_plane_node =
+            ctx.pick_result_node_with_tag_of_type<Scene::ClipperElement>();
+        if (clipper_plane_node && event_button == Platform::MouseButton::Left) {
+            if (clipper_plane_node->tag_of_type<Scene::ClipperElement>()->type
+                == Scene::ClipperElementType::Plane)
+            {
+                Domain::Vec3d pos, pos_world;
+                m_clipper_presenter.unproject_on_cut_plane(pick_ray, pos, pos_world);
+                add_connector(pos, pos_world);
+
+                return Scene::GizmoActivationState::Done;
+            }
+        }
+    }
+
+    if (!m_dragging)
+        return Scene::GizmoActivationState::Inactive;
+
+    if (m_is_connector_handled) {
+        Domain::Vec3d pos, pos_world;
+        m_clipper_presenter.unproject_on_cut_plane(pick_ray, pos, pos_world);
+
+        if (m_btn_down_pos != pos) {
+            // move connector on new position
+            update_connector_node(m_hovered_connector_id.value(), pos_world);
+        } else if (event_type == Platform::MouseEvent::Type::ButtonUp) {
+            if (event_key_modifiers & Platform::KeyModifiers(Platform::KeyModifier::Alt)) {
+                unselect_hovered_connector();
+            } else {
+                bool add_to_selection =
+                    event_key_modifiers & Platform::KeyModifiers(Platform::KeyModifier::Shift);
+                select_hovered_connector(!add_to_selection);
+            }
+            update_connectors_nodes_colors();
+        }
+    }
+
+    if (m_is_connector_handled && event_type == Platform::MouseEvent::Type::ButtonUp) {
+        m_is_connector_handled = m_dragging = false;
+        m_btn_down_pos                      = Vec3d::Zero();
+        return Scene::GizmoActivationState::Done;
+    }
+
+    return Scene::GizmoActivationState();
 }
 
 void CutGizmo::on_cycle_prepare() {}
@@ -1637,6 +1682,31 @@ void CutGizmo::update_nodes_enability(bool connectors_editing)
     }
 }
 
+void CutGizmo::put_connectors_on_cut_plane(const Vec3d& cp_normal, double cp_offset)
+{
+    ModelObject* mo = m_selected_object;
+    if (CutConnectors& connectors = mo->cut_connectors; !connectors.empty()) {
+        const float sla_shift        = 0.; // m_c->selection_info()->get_sla_shift();
+        const Vec3d& instance_offset = m_selected_instance->get_offset();
+
+        for (size_t id = 0; id < connectors.size(); id++) {
+            auto& connector = connectors[id];
+            // convert connetor pos to the world coordinates
+            Vec3d pos_world = connector.pos + instance_offset;
+            pos_world[Z] += sla_shift;
+
+            // scalar distance from point to plane along the normal
+            double distance = -cp_normal.dot(pos_world) + cp_offset;
+            // move connector
+            connector.pos += distance * cp_normal;
+
+            // update connector node trafos
+            pos_world += distance * cp_normal;
+            update_connector_node(id, pos_world);
+        }
+    }
+}
+
 void CutGizmo::update_clipper_presenter()
 {
     Vec3d normal = m_cut_normal;
@@ -1682,6 +1752,8 @@ void CutGizmo::update_clipper_presenter()
     const bool show_lower_part = m_clp_normal == m_cut_normal;
     const ColorRGBA color      = show_lower_part ? LOWER_PART_COLOR : UPPER_PART_COLOR;
     m_clipper_presenter.set_color_mesh(color);
+
+    put_connectors_on_cut_plane(m_clp_normal, offset);
 }
 
 BoundingBoxf3 CutGizmo::transformed_bounding_box(
@@ -1832,9 +1904,6 @@ void CutGizmo::apply_connectors_in_model(ModelObject* mo, int& dowels_count)
                 if (connector.attribs.style == CutConnectorStyle::Prism)
                     connector.height *= 2;
                 dowels_count++;
-            } else {
-                // calculate shift of the connector center regarding to the position on the cut plane
-                connector.pos += m_cut_normal * 0.5 * double(connector.height);
             }
         }
         apply_cut_connectors(mo, _u8L("Connector"));
@@ -1893,11 +1962,7 @@ void CutGizmo::build_connector_node(Vec3d pos)
 
     CutConnectorAttributes attribs = connector_attributes();
 
-    // FOR DISCUSE!!!
-    // How to change geometry for mode
-
-    ASSERT(m_selected.size() >= 1);
-    size_t connector_id = m_connectors_node->children().size(); // m_selected.size() - 1;
+    size_t connector_id = m_connectors_node->children().size();
     ConnectorAuxiliaryElementId id{attribs};
 
     bool recreate_snaps{false};
@@ -1985,7 +2050,7 @@ void CutGizmo::build_connector_node(Vec3d pos)
 
 void CutGizmo::build_connectors_nodes() {}
 
-void CutGizmo::update_connectors_nodes(size_t hovered_id)
+void CutGizmo::update_connectors_nodes_colors()
 {
     const CutConnectors& connectors = m_selected_object->cut_connectors;
     // Update geometry for existed snap nodes
@@ -2018,42 +2083,32 @@ void CutGizmo::update_connectors_nodes(size_t hovered_id)
         Render::Material material = node.get()->render_component()->material();
         material.set_uniform("uniform_color", color).set_transparent(color.is_transparent());
         node.get()->set_material_override(material);
-
-        // node.get()->set_local_transform(Domain::translation_transform(m_plane_center) * m_rotation_m);
     }
 }
 
-void CutGizmo::update_connector_node(size_t id, Vec3d pos)
+void CutGizmo::update_connector_node(size_t id, Domain::Vec3d pos_world)
 {
-    for (const auto& node : m_connectors_node->children()) {
-        CutConnectorNodeTag* tag = node.get()->tag_of_type<CutConnectorNodeTag>();
-        if (tag && tag->id == id) {
-            const CutConnector& connector = m_selected_object->cut_connectors[id];
-
-            double height = connector.height;
-            if (connector.attribs.type == CutConnectorType::Dowel
-                && connector.attribs.style == CutConnectorStyle::Prism)
-            {
-                height = 0.05f;
-                // if (!looking_forward)
-                pos += 0.05 * m_clp_normal;
-            }
-            pos[Z] += 0.; // sla_shift;
-            double xy_scale = connector.radius;
-
-            const Transform3d scale_trafo =
-                scale_transform(Vec3f(xy_scale, xy_scale, height).cast<double>());
-
-            const Transform3d trafo = Domain::translation_transform(pos)
-                * m_rotation_m
-                * rotation_transform(-connector.z_angle * Vec3d::UnitZ())
-                * scale_trafo;
-
-            node.get()->set_local_transform(trafo);
-
-            break;
-        }
+    const CutConnector& connector = m_selected_object->cut_connectors[id];
+    double height = connector.height;
+    if (connector.attribs.type == CutConnectorType::Dowel
+        && connector.attribs.style == CutConnectorStyle::Prism)
+    {
+        height = 0.05f;
+        // if (!looking_forward)
+        pos_world += 0.05 * m_clp_normal;
     }
+    pos_world[Z] += 0.; // sla_shift;
+    double xy_scale = connector.radius;
+
+    const Transform3d scale_trafo =
+        scale_transform(Vec3f(xy_scale, xy_scale, height).cast<double>());
+
+    const Transform3d trafo = Domain::translation_transform(pos_world)
+        * m_rotation_m
+        * rotation_transform(-connector.z_angle * Vec3d::UnitZ())
+        * scale_trafo;
+
+    m_connectors_node->children()[id].get()->set_local_transform(trafo);
 }
 
 void CutGizmo::update_connector(size_t id, Vec3d pos)
@@ -2403,7 +2458,7 @@ bool CutGizmo::keep_as_parts() const
     return m_dialog->keep_as_parts;
 }
 
-bool CutGizmo::add_connector(Vec3d pos)
+bool CutGizmo::add_connector(Vec3d pos, Domain::Vec3d pos_world)
 {
     if (!m_dialog->connectors_editing)
         return false;
@@ -2421,25 +2476,95 @@ bool CutGizmo::add_connector(Vec3d pos)
         connector_angle(),
         connector_attributes()
     );
-    m_selected.push_back(true);
-    ASSERT(m_selected.size() == connectors.size());
 
-    build_connector_node(pos);
+    build_connector_node(pos_world);
 
     check_and_update_connectors_state();
 
     return true;
 }
 
+bool CutGizmo::remove_selected_connectors()
+{
+    CutConnectors& connectors = m_selected_object->cut_connectors;
+    if (connectors.empty())
+        return false;
+
+    // Plater::TakeSnapshot snapshot(wxGetApp().plater(), _L("Delete connector"), UndoRedo::SnapshotType::GizmoAction);
+
+    const Scene::Node::NodeOwningList& connectors_nodes = m_connectors_node->children();
+    ASSERT(connectors.size() == connectors_nodes.size());
+
+    Scene::Scene& scene = m_scene_presenter.scene();
+
+    for (int i = int(connectors.size()) - 1; i >= 0; i--) {
+        Scene::Node* node = connectors_nodes[i].get();
+        if (node->tag_of_type<CutConnectorNodeTag>()->is_selected) {
+            // remove connector from the object
+            connectors.erase(connectors.begin() + i);
+            // remove connector from connector_nodes
+            scene.remove_child(node);
+        }
+    }
+
+    ASSERT(connectors.size() == m_connectors_node->children().size());
+
+    // update ids for connector nodes
+
+    size_t id = 0;
+    for (const auto& node : m_connectors_node->children()) {
+        node.get()->tag_of_type<CutConnectorNodeTag>()->id = id++;
+    }
+
+    return true;
+}
+
+void CutGizmo::select_hovered_connector(bool force_unique_selection)
+{
+    ASSERT(
+        m_hovered_connector_id
+        && m_connectors_node->children().size() > m_hovered_connector_id.value()
+    );
+
+    if (force_unique_selection) {
+        // unselect all nodes except of hovered one
+        for (const auto& node : m_connectors_node->children()) {
+            CutConnectorNodeTag* tag = node.get()->tag_of_type<CutConnectorNodeTag>();
+            tag->is_selected         = tag->id == m_hovered_connector_id.value();
+        }
+    } else {
+        // just select hovered node
+        const auto& node = m_connectors_node->children()[m_hovered_connector_id.value()];
+        node.get()->tag_of_type<CutConnectorNodeTag>()->is_selected = true;
+    }
+}
+
+void CutGizmo::unselect_hovered_connector()
+{
+    ASSERT(
+        m_hovered_connector_id
+        && m_connectors_node->children().size() > m_hovered_connector_id.value()
+    );
+
+    // just unselect hovered node
+
+    const auto& node = m_connectors_node->children()[m_hovered_connector_id.value()];
+    node.get()->tag_of_type<CutConnectorNodeTag>()->is_selected = false;
+}
+
 void CutGizmo::unselect_all_connectors()
 {
-    std::fill(m_selected.begin(), m_selected.end(), false);
+    for (const auto& node : m_connectors_node->children()) {
+        node.get()->tag_of_type<CutConnectorNodeTag>()->is_selected = false;
+    }
     m_dialog->validate_connector_settings();
 }
 
 void CutGizmo::select_all_connectors()
 {
-    std::fill(m_selected.begin(), m_selected.end(), true);
+    for (const auto& node : m_connectors_node->children()) {
+        node.get()->tag_of_type<CutConnectorNodeTag>()->is_selected = true;
+    }
 }
 
 void CutGizmo::clear_selection()

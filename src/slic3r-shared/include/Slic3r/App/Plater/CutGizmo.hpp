@@ -105,8 +105,8 @@ private:
     void update_handles_nodes(Handle hovered_handle = Handle());
     void update_handles_material_and_enability(Handle hovered_handle);
     void update_handles_local_fransform(Handle hovered_handle);
-    void update_connectors_nodes(size_t hovered_id = size_t(-1));
-    void update_connector_node(size_t id, Vec3d pos);
+    void update_connectors_nodes_colors();
+    void update_connector_node(size_t id, Domain::Vec3d pos_world);
     void update_connector(size_t id, Vec3d pos);
     void update_nodes_enability(bool connectors_editing);
     void update_clipper_presenter();
@@ -134,6 +134,7 @@ private:
     void perform_cut();
 
     void reset_cut_by_contours();
+    void put_connectors_on_cut_plane(const Vec3d& cp_normal, double cp_offset);
 
     void process_contours();
 
@@ -152,7 +153,10 @@ private:
     void clear_highlight();
     void on_stop_dragging();
 
-    bool add_connector(Domain::Vec3d pos);
+    bool add_connector(Domain::Vec3d pos, Domain::Vec3d pos_world);
+    bool remove_selected_connectors();
+    void select_hovered_connector(bool force_unique_selection);
+    void unselect_hovered_connector();
     void unselect_all_connectors();
     void select_all_connectors();
 
@@ -163,6 +167,8 @@ private:
     bool
     is_conflict_for_connector(size_t idx, const CutConnectors& connectors, const Vec3d cur_pos);
     void check_and_update_connectors_state();
+
+    Scene::GizmoActivationState on_mouse_for_connectors(Scene::GizmoEventContext& ctx, bool only_active);
 
     CutConnectorAttributes connector_attributes() const;
     double connector_depth() const;
@@ -204,6 +210,7 @@ private:
     bool m_is_plane_hovered{false};
     std::optional<size_t> m_hovered_connector_id{std::nullopt};
     bool m_is_connector_handled{false};
+    Vec3d m_btn_down_pos{ Vec3d::Zero() };
 
     bool m_can_flip_plane{false}; // indicates if plane was just clicked without dragging
 

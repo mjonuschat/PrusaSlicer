@@ -58,12 +58,16 @@ struct CutPartNodeTag : public CutNodeTag
  */
 struct CutConnectorNodeTag : public CutNodeTag
 {
-    const size_t id; ///< Unique identifier for the connector mesh.
-    bool is_selected{false};
+    size_t id; ///< Unique identifier for the connector mesh.
+    bool is_selected{true};
     bool is_snap{false};
 
-    explicit CutConnectorNodeTag(size_t id, bool is_snap=false) : CutNodeTag(), id(id), is_snap(is_snap)
+    explicit CutConnectorNodeTag(size_t id, bool is_snap = false) :
+        CutNodeTag(),
+        id(id),
+        is_snap(is_snap)
     {}
+
     // used for connectors root node
     explicit CutConnectorNodeTag() : CutNodeTag(), id(size_t(-1)) {}
 };

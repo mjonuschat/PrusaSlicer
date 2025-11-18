@@ -492,6 +492,7 @@ void CutDialog::init_connectors_input_panel()
             btn == m_dowel_btn                                  ? Domain::CutConnectorType::Dowel :
                                                                   Domain::CutConnectorType::Snap;
         set_current_connetor_type(type);
+        m_frustum_btn->set_enabled(type != Domain::CutConnectorType::Dowel);
 
         if (callbacks().connector_settings_changed) {
             callbacks().connector_settings_changed();
