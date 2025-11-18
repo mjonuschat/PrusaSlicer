@@ -290,8 +290,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/PointGrid.hpp
     src/libslic3r/Polygon.cpp
     src/libslic3r/Polygon.hpp
-    src/libslic3r/PolygonTrimmer.cpp
-    src/libslic3r/PolygonTrimmer.hpp
     src/libslic3r/Polyline.cpp
     src/libslic3r/Polyline.hpp
     src/libslic3r/PrePreview.cpp
