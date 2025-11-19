@@ -86,27 +86,28 @@ public:
         std::function<void(double value)> groove_angle_changed{nullptr};
 
         std::function<void(bool connectors_editing)> connectors_editing_changed{nullptr};
-        std::function<void()> connector_settings_changed{nullptr};
 
-        std::function<void(double value)> connector_depth_changed{nullptr};
-        std::function<void(double value)> connector_depth_tolerance_changed{nullptr};
-        std::function<void(double value)> connector_size_changed{nullptr};
-        std::function<void(double value)> connector_size_tolerance_changed{nullptr};
-        std::function<void(double value)> connector_angle_changed{nullptr};
-        std::function<void()> snap_proportions_changed{nullptr};
+        std::function<void()> snap_settings_changed{nullptr};
+        std::function<void()> connector_attributes_changed{nullptr};
+        std::function<void()> connector_transformations_changed{nullptr};
     };
 
     Callbacks& callbacks();
 
     void set_build_size(Domain::Vec3d tbb_size);
     void set_cut_z_position(double cut_z_position);
-    void set_current_connetor_type(Domain::CutConnectorType type);
-    void set_current_connetor_style(Domain::CutConnectorStyle style);
-    void set_current_connetor_shape(Domain::CutConnectorShape shape);
+    void set_connector_type(Domain::CutConnectorType type);
+    void set_connector_style(Domain::CutConnectorStyle style);
+    void set_connector_shape(Domain::CutConnectorShape shape);
     void set_groove_values(const Biz::Cut::Groove& groove, double max_elements_size);
     void set_connector_values(double max_size);
-
-    void validate_connector_settings();
+    void set_connector_values(
+        std::optional<double> depth,
+        std::optional<double> depth_tolerance,
+        std::optional<double> half_size,
+        std::optional<double> half_size_tolerance,
+        std::optional<double> angle
+    );
 
 public:
     bool is_planar_cut_mode{true};
@@ -128,8 +129,8 @@ public:
     double connector_size{2.5};
     double connector_size_tolerance{0.};
     double connector_angle{0.};
-    int snap_bulge_proportion{ 15 };
-    int snap_space_proportion{ 30 };
+    int snap_bulge_proportion{15};
+    int snap_space_proportion{30};
 
 private:
     void init_connectors_input_panel();
@@ -193,8 +194,10 @@ private:
     Yoga::Text* m_warnings_line{nullptr};
     Yoga::LayoutButton* m_perform_btn{nullptr};
 
+    Yoga::Item* m_type_row{nullptr};
     Yoga::Item* m_style_row{nullptr};
     Yoga::Item* m_shape_row{nullptr};
+    Yoga::Item* m_rotation_row{nullptr};
     Yoga::Item* m_snap_bulge_row{nullptr};
     Yoga::Item* m_snap_space_row{nullptr};
 

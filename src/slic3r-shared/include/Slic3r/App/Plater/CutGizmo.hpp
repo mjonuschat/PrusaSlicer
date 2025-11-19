@@ -96,18 +96,27 @@ private:
 
     void build_cut_plane_node(Scene::NodeBuilder& builder);
     void build_handles_nodes(Scene::NodeBuilder& builder);
-    void build_connector_node(Vec3d pos);
-    void build_connectors_nodes();
-
+    void build_connector_node(const CutConnector& connector);
+    void get_connector_geometry(
+        const Domain::CutConnectorAttributes& connector_attributes,
+        Scene::TriangleMesh** trimesh,
+        Render::Geometry** geom
+    );
     void update_cut_plane_mesh();
     void update_cut_plane_trafo();
 
     void update_handles_nodes(Handle hovered_handle = Handle());
     void update_handles_material_and_enability(Handle hovered_handle);
     void update_handles_local_fransform(Handle hovered_handle);
+
+    void update_connectors_nodes();
     void update_connectors_nodes_colors();
-    void update_connector_node(size_t id, Domain::Vec3d pos_world);
-    void update_connector(size_t id, Vec3d pos);
+    void update_connector_node(size_t id, bool force_geometry_update = false);
+    void update_snap_nodes();
+    Vec3d get_local_pos(Domain::Vec3d pos_world);
+    Vec3d get_world_pos(Domain::Vec3d pos);
+    void update_dialog_on_selection_changed();
+
     void update_nodes_enability(bool connectors_editing);
     void update_clipper_presenter();
 
@@ -153,14 +162,17 @@ private:
     void clear_highlight();
     void on_stop_dragging();
 
-    bool add_connector(Domain::Vec3d pos, Domain::Vec3d pos_world);
+    bool add_connector(Domain::Vec3d pos_world);
     bool remove_selected_connectors();
     void select_hovered_connector(bool force_unique_selection);
     void unselect_hovered_connector();
     void unselect_all_connectors();
     void select_all_connectors();
 
-    void clear_selection();
+    // apply connector parameters from Dilaog onto selected connectors
+    // force_geometry_update is true, when connector attributes are changed and there is need to reset geometry
+    void update_selected_connectors(bool force_geometry_update);
+
     void reset_connectors();
     bool
     is_outside_of_cut_contour(size_t idx, const CutConnectors& connectors, const Vec3d cur_pos);
@@ -168,7 +180,8 @@ private:
     is_conflict_for_connector(size_t idx, const CutConnectors& connectors, const Vec3d cur_pos);
     void check_and_update_connectors_state();
 
-    Scene::GizmoActivationState on_mouse_for_connectors(Scene::GizmoEventContext& ctx, bool only_active);
+    Scene::GizmoActivationState
+    on_mouse_for_connectors(Scene::GizmoEventContext& ctx, bool only_active);
 
     CutConnectorAttributes connector_attributes() const;
     double connector_depth() const;
@@ -210,7 +223,7 @@ private:
     bool m_is_plane_hovered{false};
     std::optional<size_t> m_hovered_connector_id{std::nullopt};
     bool m_is_connector_handled{false};
-    Vec3d m_btn_down_pos{ Vec3d::Zero() };
+    Vec3d m_btn_down_pos{Vec3d::Zero()};
 
     bool m_can_flip_plane{false}; // indicates if plane was just clicked without dragging
 
@@ -296,8 +309,6 @@ private:
 
     double m_snap_bulge_proportion{0.15};
     double m_snap_space_proportion{0.30};
-
-    mutable std::vector<bool> m_selected; // which pins are currently selected
 };
 
 } // namespace Slic3r::App::Plater

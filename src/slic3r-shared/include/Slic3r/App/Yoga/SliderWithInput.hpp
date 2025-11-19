@@ -57,6 +57,9 @@ public:
     void validate_default(bool is_valid) override;
     void reset() override;
 
+    /* @note this function just set control into invalid state, when input is empty*/
+    void set_undef_value();
+
 private:
     Slider* m_slider = nullptr;
     InputTextField* m_input = nullptr;

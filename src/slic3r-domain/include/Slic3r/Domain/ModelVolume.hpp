@@ -91,11 +91,11 @@ public:
         bool                is_connector{ false };
         bool                is_processed{ true };
         CutConnectorType connector_type{ CutConnectorType::Plug };
-        float               radius_tolerance{ 0.f };// [0.f : 1.f]
-        float               height_tolerance{ 0.f };// [0.f : 1.f]
+        double              radius_tolerance{ 0. };// [0. : 1.]
+        double              height_tolerance{ 0. };// [0. : 1.]
 
         CutInfo() = default;
-        CutInfo(CutConnectorType type, float rad_tolerance, float h_tolerance, bool processed = false) :
+        CutInfo(CutConnectorType type, double rad_tolerance, double h_tolerance, bool processed = false) :
             is_connector(true),
             is_processed(processed),
             connector_type(type),

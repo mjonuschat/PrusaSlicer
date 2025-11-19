@@ -479,23 +479,23 @@ void CutDialog::init_connectors_input_panel()
         }
     };
 
-    Item* type_row = add_row(_u8L("Type"), m_connectors_input_panel);
+    m_type_row = add_row(_u8L("Type"), m_connectors_input_panel);
 
-    m_plug_btn  = add_button(type_row, Render::Icon::PlugMarker, _u8L("Plug"));
-    m_dowel_btn = add_button(type_row, Render::Icon::DowelMarker, _u8L("Dowel"));
-    m_snap_btn  = add_button(type_row, Render::Icon::SnapMarker, _u8L("Snap"));
+    m_plug_btn  = add_button(m_type_row, Render::Icon::PlugMarker, _u8L("Plug"));
+    m_dowel_btn = add_button(m_type_row, Render::Icon::DowelMarker, _u8L("Dowel"));
+    m_snap_btn  = add_button(m_type_row, Render::Icon::SnapMarker, _u8L("Snap"));
 
     m_connector_type_group.set_buttons({m_plug_btn, m_dowel_btn, m_snap_btn});
+    m_connector_type_group.set_always_checked(false);
     m_connector_type_group.callbacks().action = [this](AbstractButton* btn)
     {
         const Domain::CutConnectorType type = btn == m_plug_btn ? Domain::CutConnectorType::Plug :
             btn == m_dowel_btn                                  ? Domain::CutConnectorType::Dowel :
                                                                   Domain::CutConnectorType::Snap;
-        set_current_connetor_type(type);
-        m_frustum_btn->set_enabled(type != Domain::CutConnectorType::Dowel);
+        set_connector_type(type);
 
-        if (callbacks().connector_settings_changed) {
-            callbacks().connector_settings_changed();
+        if (callbacks().connector_attributes_changed) {
+            callbacks().connector_attributes_changed();
         }
     };
 
@@ -503,14 +503,15 @@ void CutDialog::init_connectors_input_panel()
     m_prism_btn   = add_button(m_style_row, Render::Icon::Prism, _u8L("Prism"));
     m_frustum_btn = add_button(m_style_row, Render::Icon::Frustum, _u8L("Frustum"));
     m_connector_style_group.set_buttons({m_prism_btn, m_frustum_btn});
+    m_connector_style_group.set_always_checked(false);
     m_connector_style_group.callbacks().action = [this](AbstractButton* btn)
     {
-        set_current_connetor_style(
+        set_connector_style(
             btn == m_prism_btn ? Domain::CutConnectorStyle::Prism :
                                  Domain::CutConnectorStyle::Frustum
         );
-        if (callbacks().connector_settings_changed) {
-            callbacks().connector_settings_changed();
+        if (callbacks().connector_attributes_changed) {
+            callbacks().connector_attributes_changed();
         }
     };
 
@@ -522,16 +523,17 @@ void CutDialog::init_connectors_input_panel()
     m_connector_shape_group.set_buttons(
         {m_triangle_btn, m_square_btn, m_hexagon_btn, m_circle_btn}
     );
+    m_connector_shape_group.set_always_checked(false);
     m_connector_shape_group.callbacks().action = [this](AbstractButton* btn)
     {
-        set_current_connetor_shape(
+        set_connector_shape(
             btn == m_triangle_btn   ? Domain::CutConnectorShape::Triangle :
                 btn == m_square_btn ? Domain::CutConnectorShape::Square :
                 btn == m_circle_btn ? Domain::CutConnectorShape::Circle :
                                       Domain::CutConnectorShape::Hexagon
         );
-        if (callbacks().connector_settings_changed) {
-            callbacks().connector_settings_changed();
+        if (callbacks().connector_attributes_changed) {
+            callbacks().connector_attributes_changed();
         }
     };
 
@@ -542,15 +544,15 @@ void CutDialog::init_connectors_input_panel()
     m_connector_depth_value->callbacks().value_changed = [this](double value)
     {
         connector_depth = value;
-        if (callbacks().connector_depth_changed)
-            callbacks().connector_depth_changed(value);
+        if (callbacks().connector_transformations_changed)
+            callbacks().connector_transformations_changed();
     };
     m_connector_depth_tolerance = depth_row->emplace_back<SliderWithInput>();
     m_connector_depth_tolerance->callbacks().value_changed = [this](double value)
     {
         connector_depth_tolerance = value;
-        if (callbacks().connector_depth_tolerance_changed)
-            callbacks().connector_depth_tolerance_changed(value);
+        if (callbacks().connector_transformations_changed)
+            callbacks().connector_transformations_changed();
     };
     m_connector_depth_value->set_revert_button(revert_depth_btn);
     m_connector_depth_tolerance->set_revert_button(revert_depth_btn);
@@ -562,33 +564,33 @@ void CutDialog::init_connectors_input_panel()
     m_connector_size_value->callbacks().value_changed = [this](double value)
     {
         connector_size = value;
-        if (callbacks().connector_size_changed)
-            callbacks().connector_size_changed(value);
+        if (callbacks().connector_transformations_changed)
+            callbacks().connector_transformations_changed();
     };
     m_connector_size_tolerance = size_row->emplace_back<SliderWithInput>();
     m_connector_size_tolerance->callbacks().value_changed = [this](double value)
     {
         connector_size_tolerance = value;
-        if (callbacks().connector_size_tolerance_changed)
-            callbacks().connector_size_tolerance_changed(value);
+        if (callbacks().connector_transformations_changed)
+            callbacks().connector_transformations_changed();
     };
     m_connector_size_value->set_revert_button(revert_size_btn);
     m_connector_size_tolerance->set_revert_button(revert_size_btn);
 
-    Item* rotation_row = add_row(_u8L("Rotation"), m_connectors_input_panel, std::string("°"));
+    m_rotation_row = add_row(_u8L("Rotation"), m_connectors_input_panel, std::string("°"));
     LayoutButton* revert_rotation_btn =
-        add_revert_btn(rotation_row, _u8L("Revert connector Z rotation"));
+        add_revert_btn(m_rotation_row, _u8L("Revert connector Z rotation"));
 
-    m_connector_rotation                            = rotation_row->emplace_back<SliderWithInput>();
+    m_connector_rotation = m_rotation_row->emplace_back<SliderWithInput>();
     m_connector_rotation->callbacks().value_changed = [this](double value)
     {
         connector_angle = value;
-        if (callbacks().connector_angle_changed)
-            callbacks().connector_angle_changed(value);
+        if (callbacks().connector_transformations_changed)
+            callbacks().connector_transformations_changed();
     };
     m_connector_rotation->set_revert_button(revert_rotation_btn);
 
-    m_snap_bulge_row = add_row(_u8L("Bulge"), m_connectors_input_panel, std::string("°"));
+    m_snap_bulge_row = add_row(_u8L("Bulge"), m_connectors_input_panel, std::string("%"));
     LayoutButton* revert_snap_bulge_btn =
         add_revert_btn(m_snap_bulge_row, _u8L("Revert bulge proportion related to radius"));
 
@@ -596,12 +598,12 @@ void CutDialog::init_connectors_input_panel()
     m_snap_bulge_proportion->callbacks().value_changed = [this](double value)
     {
         snap_bulge_proportion = value;
-        if (callbacks().snap_proportions_changed)
-            callbacks().snap_proportions_changed();
+        if (callbacks().snap_settings_changed)
+            callbacks().snap_settings_changed();
     };
     m_snap_bulge_proportion->set_revert_button(revert_snap_bulge_btn);
 
-    m_snap_space_row = add_row(_u8L("Space"), m_connectors_input_panel, std::string("°"));
+    m_snap_space_row = add_row(_u8L("Space"), m_connectors_input_panel, std::string("%"));
     LayoutButton* revert_snap_space_btn =
         add_revert_btn(m_snap_space_row, _u8L("Revert space proportion related to radius"));
 
@@ -610,8 +612,8 @@ void CutDialog::init_connectors_input_panel()
     {
         snap_space_proportion = value;
         m_snap_bulge_proportion->set_end_value(snap_space_proportion);
-        if (callbacks().snap_proportions_changed)
-            callbacks().snap_proportions_changed();
+        if (callbacks().snap_settings_changed)
+            callbacks().snap_settings_changed();
     };
     m_snap_space_proportion->set_revert_button(revert_snap_space_btn);
 
@@ -766,8 +768,14 @@ void CutDialog::set_cut_z_position(double cut_z_position)
     m_cut_position->set_default(cut_z_position);
 }
 
-void CutDialog::set_current_connetor_type(Domain::CutConnectorType type)
+void CutDialog::set_connector_type(Domain::CutConnectorType type)
 {
+    if (type == Domain::CutConnectorType::Undef) {
+        m_dowel_btn->set_checked(false);
+        m_plug_btn->set_checked(false);
+        m_snap_btn->set_checked(false);
+        return;
+    }
     connector_type = type;
     switch (type) {
     case Domain::CutConnectorType::Dowel:
@@ -788,10 +796,21 @@ void CutDialog::set_current_connetor_type(Domain::CutConnectorType type)
     m_shape_row->set_enabled(!is_snap);
     m_snap_bulge_row->parent()->set_visible(is_snap);
     m_snap_space_row->parent()->set_visible(is_snap);
+
+    if (type == Domain::CutConnectorType::Dowel) {
+        m_prism_btn->set_checked(true);
+        connector_style = Domain::CutConnectorStyle::Prism;
+    }
+    m_frustum_btn->set_enabled(type != Domain::CutConnectorType::Dowel);
 }
 
-void CutDialog::set_current_connetor_style(Domain::CutConnectorStyle style)
+void CutDialog::set_connector_style(Domain::CutConnectorStyle style)
 {
+    if (style == Domain::CutConnectorStyle::Undef) {
+        m_frustum_btn->set_checked(false);
+        m_prism_btn->set_checked(false);
+        return;
+    }
     connector_style = style;
     switch (style) {
     case Domain::CutConnectorStyle::Frustum:
@@ -805,8 +824,15 @@ void CutDialog::set_current_connetor_style(Domain::CutConnectorStyle style)
     }
 }
 
-void CutDialog::set_current_connetor_shape(Domain::CutConnectorShape shape)
+void CutDialog::set_connector_shape(Domain::CutConnectorShape shape)
 {
+    if (shape == Domain::CutConnectorShape::Undef) {
+        m_triangle_btn->set_checked(false);
+        m_square_btn->set_checked(false);
+        m_hexagon_btn->set_checked(false);
+        m_circle_btn->set_checked(false);
+        return;
+    }
     connector_shape = shape;
     switch (shape) {
     case Domain::CutConnectorShape::Triangle:
@@ -901,32 +927,60 @@ void CutDialog::set_connector_values(double max_size)
     set_slider(m_connector_size_tolerance, 0., max_tolerance, 0.01, connector_size_tolerance, 0.);
     set_slider(m_connector_rotation, 0., 180., 1., connector_angle, 0.);
 
-    set_slider(m_snap_bulge_proportion, 5., double(int(snap_space_proportion*100)), 1., snap_bulge_proportion, 15.);
+    set_slider(
+        m_snap_bulge_proportion,
+        5.,
+        double(int(snap_space_proportion * 100)),
+        1.,
+        snap_bulge_proportion,
+        15.
+    );
     set_slider(m_snap_space_proportion, 10., 50., 1., snap_space_proportion, 30.);
 }
 
-void CutDialog::validate_connector_settings()
+void CutDialog::set_connector_values(
+    std::optional<double> depth,
+    std::optional<double> depth_tolerance,
+    std::optional<double> half_size,
+    std::optional<double> half_size_tolerance,
+    std::optional<double> angle
+)
 {
-    return;
+    if (depth) {
+        m_connector_depth_value->set_value(depth.value());
+    }
+    else {
+        m_connector_depth_value->set_undef_value();
+    }
 
-    // redundant ????
-    if (connector_depth < 0.)
-        connector_depth = 3.;
-    if (connector_depth_tolerance < 0.)
-        connector_depth_tolerance = 0.1;
-    if (connector_size < 0.)
-        connector_size = 2.5;
-    if (connector_size_tolerance < 0.)
-        connector_size_tolerance = 0.;
-    if (connector_angle < 0. || connector_angle > std::numbers::pi)
-        connector_angle = 0.;
+    if (depth_tolerance) {
+        m_connector_depth_tolerance->set_value(depth_tolerance.value());
+    }
+    else {
+        m_connector_depth_tolerance->set_undef_value();
+    }
 
-    if (connector_type == Domain::CutConnectorType::Undef)
-        connector_type = Domain::CutConnectorType::Plug;
-    if (connector_style == Domain::CutConnectorStyle::Undef)
-        connector_style = Domain::CutConnectorStyle::Prism;
-    if (connector_shape == Domain::CutConnectorShape::Undef)
-        connector_shape = Domain::CutConnectorShape::Circle;
+    if (half_size) {
+        m_connector_size_value->set_value(2. * half_size.value());
+    }
+    else {
+        m_connector_size_value->set_undef_value();
+    }
+
+    if (half_size_tolerance) {
+        m_connector_size_tolerance->set_value(2. * half_size_tolerance.value());
+    }
+    else {
+        m_connector_size_tolerance->set_undef_value();
+    }
+
+    if (angle) {
+        m_connector_rotation->set_value(rad2deg(angle.value()));
+    }
+    else {
+        m_connector_rotation->set_undef_value();
+    }
+
 }
 
 } // namespace Slic3r::App::Plater

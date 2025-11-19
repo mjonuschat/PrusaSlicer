@@ -175,4 +175,9 @@ void SliderWithInput::reset()
     m_input->reset();
 }
 
+void SliderWithInput::set_undef_value()
+{
+    // ToDo! set empty value and don't process the value_changed
+}
+
 } // namespace Slic3r::App::Yoga

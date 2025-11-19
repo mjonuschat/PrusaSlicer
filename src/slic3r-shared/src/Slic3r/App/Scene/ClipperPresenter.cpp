@@ -422,9 +422,9 @@ int ClipperPresenter::is_projection_inside_cut(const Domain::Vec3d& point_in) co
     return -1;
 }
 
-bool ClipperPresenter::unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos, Domain::Vec3d& pos_world, bool respect_contours)
+bool ClipperPresenter::unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos_world, bool respect_contours)
 {
-    return m_clipper->unproject_on_cut_plane(ray, pos, pos_world, respect_contours);
+    return m_clipper->unproject_on_cut_plane(ray, pos_world, respect_contours);
 }
 
 } // namespace Slic3r::App::Scene

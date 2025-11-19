@@ -57,18 +57,18 @@ struct CutConnector
 {
     Vec3d pos;
     Transform3d rotation_m;
-    float radius;
-    float height;
-    float radius_tolerance;// [0.f : 1.f]
-    float height_tolerance;// [0.f : 1.f]
-    float z_angle {0.f};
+    double radius;
+    double height;
+    double radius_tolerance;// [0. : 1.]
+    double height_tolerance;// [0. : 1.]
+    double z_angle {0.};
     CutConnectorAttributes attribs;
 
     CutConnector()
         : pos(Vec3d::Zero()), rotation_m(Transform3d::Identity()), radius(5.f), height(10.f), radius_tolerance(0.f), height_tolerance(0.1f), z_angle(0.f)
     {}
 
-    CutConnector(Vec3d p, Transform3d rot, float r, float h, float rt, float ht, float za, CutConnectorAttributes attributes)
+    CutConnector(Vec3d p, Transform3d rot, double r, double h, double rt, double ht, double za, CutConnectorAttributes attributes)
         : pos(p), rotation_m(rot), radius(r), height(h), radius_tolerance(rt), height_tolerance(ht), z_angle(za), attribs(attributes)
     {}
 

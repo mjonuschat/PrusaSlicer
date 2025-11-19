@@ -207,16 +207,13 @@ void Clipper::set_behavior(bool hide_clipped, bool fill_cut, double contour_widt
 
 // Unprojects the mouse position on the mesh and saves hit point and normal of the facet into pos_and_normal
 // Return false if no intersection was found, true otherwise.
-bool Clipper::unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos, Domain::Vec3d& pos_world, bool respect_contours)
+bool Clipper::unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos_world, bool respect_contours)
 {
-    const float sla_shift = 0.;// m_c->selection_info()->get_sla_shift();
-
     // Calculate intersection with the clipping plane.
     Vec3d point = ray.origin;
     Vec3d direction = ray.direction;
     Vec3d hit;
-    //    MeshRaycaster::line_from_mouse_pos(mouse_position, Transform3d::Identity(), camera, point, direction);
-    Vec3d normal = -m_clp->get_normal().cast<double>();;
+    Vec3d normal = -m_clp->get_normal().cast<double>();
     double den = normal.dot(direction);
     if (den != 0.) {
         double t = (-m_clp->get_offset() - normal.dot(point)) / den;
@@ -238,20 +235,7 @@ bool Clipper::unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos, Domain:
         //}
     }
 
-    const Transformation inst_trafo = m_selected_instance->get_transformation();
-    const Vec3d obj_origin_translation = m_selected_object->origin_translation;
-
-    Vec3d inst_offset = inst_trafo.get_offset();
-
-    // recalculate hit to object's local position
-    Vec3d hit_d = hit;
-    hit_d -= inst_offset;
-    hit_d[Z] -= sla_shift;
-
-    // Return both the point and the facet normal.
-    pos = hit_d;
     pos_world = hit;
-
     return true;
 }
 
