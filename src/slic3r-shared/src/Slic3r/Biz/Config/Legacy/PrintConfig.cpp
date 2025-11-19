@@ -2428,6 +2428,22 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionString(""));
 
+    def = this->add("custom_parameters_print", coString);
+    def->label = L("Custom print parameters");
+    const std::string custom_parameter_tooltip_templ =
+        L("JSON-encoded string defining extra parameters, which can later be expanded in Custom G-code macro language. "
+          "Each of the parameters is prepended by %1% prefix before it is passed into the parser. "
+          "For example, defining '{\"my_key\": \"my_value\"}' allows to use '%1%_my_key'.\n\n"
+          "The JSON must be single level (no arrays and objects). All value types are allowed, but nulls "
+          "will be rejected by the parser."
+    );
+    def->tooltip = (boost::format(custom_parameter_tooltip_templ) % "custom_parameter_print").str();
+    def->multiline = true;
+    def->full_width = true;
+    def->height = 13;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionString(""));
+
     def = this->add("nozzle_diameter", coFloats);
     def->label = L("Nozzle diameter");
     def->tooltip = L("This is the diameter of your extruder nozzle (for example: 0.5, 0.35 etc.)");
@@ -3116,6 +3132,15 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(true));
 
+    def = this->add("custom_parameters_printer", coString);
+    def->label = L("Custom printer parameters");
+    def->tooltip = (boost::format(custom_parameter_tooltip_templ) % "custom_parameter_printer").str();;
+    def->multiline = true;
+    def->full_width = true;
+    def->height = 12;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionString(""));
+
     def = this->add("start_gcode", coString);
     def->label = L("Start G-code");
     def->tooltip = L("This start procedure is inserted at the beginning, possibly prepended by "
@@ -3125,6 +3150,15 @@ void PrintConfigDef::init_fff_params()
     def->height = 12;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionString("G28 ; home all axes\nG1 Z5 F5000 ; lift nozzle\n"));
+
+    def = this->add("custom_parameters_filament", coStrings);
+    def->label = L("Custom filament parameters");
+    def->tooltip = (boost::format(custom_parameter_tooltip_templ) % "custom_parameter_filament").str();
+    def->multiline = true;
+    def->full_width = true;
+    def->height = 12;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionStrings { "" });
 
     def = this->add("start_filament_gcode", coStrings);
     def->label = L("Start G-code");

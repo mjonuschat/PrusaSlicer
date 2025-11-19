@@ -54,7 +54,7 @@ namespace {
                 "bridge_flow_ratio", "bridge_speed", "brim_separation", "brim_type", "brim_width", "chamber_minimal_temperature",
                 "chamber_temperature", "color_change_gcode", "colorprint_heights", "compatible_printers_condition_cummulative",
                 "complete_objects", "cooling", "cooling_perimeter_transition_distance", "cooling_slowdown_logic",
-                "cooling_tube_length", "cooling_tube_retraction", "default_acceleration",
+                "cooling_tube_length", "cooling_tube_retraction", "custom_parameters_print", "custom_parameters_printer", "custom_parameters_filament", "default_acceleration",
                 "default_filament_profile", "default_print_profile", "deretract_speed", "disable_fan_first_layers",
                 "dont_support_bridges", "draft_shield", "duplicate_distance", "elefant_foot_compensation",
                 "enable_dynamic_fan_speeds", "enable_dynamic_overhang_speeds", "end_filament_gcode", "end_gcode",
