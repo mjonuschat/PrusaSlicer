@@ -52,7 +52,6 @@ void GCodeWindowData::resize_range(Range& range, uint32_t lines_count, uint32_t 
 GCodeWindow::GCodeWindow(libvgcode::FdmViewer* viewer, GCodeWindowData* data) :
     Yoga::Window("gcode_window")
 {
-    set_min_size({ 330.f, 0.f });
     set_orientation(Yoga::Orientation::Vertical);
 
     emplace_back<Yoga::Text>(Biz::_u8L("G-code viewer"))

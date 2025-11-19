@@ -12,7 +12,7 @@ namespace Slic3r::App::Yoga {
 
 Window::Window(const std::string& window_name) : Item(), m_alpha(GImGui->Style.Alpha)
 {
-    set_item_name(window_name);
+    set_item_name(window_name.empty() ? "Window" : window_name);
     set_padding(10);
 }
 
@@ -69,7 +69,6 @@ void Window::render(Vec2f pos, Vec2f size)
         next_pos.y = std::clamp(next_pos.y, 0.f, std::max(0.f, max.y));
     }
 
-
     ImGui::SetNextWindowSize(sz);
     ImGui::SetNextWindowBgAlpha(m_alpha);
     ImGui::SetNextWindowPos(next_pos);
@@ -120,6 +119,11 @@ void Window::render(Vec2f pos, Vec2f size)
 }
 
 void Window::render_body(Vec2f pos, Vec2f size) {}
+
+bool Window::is_in_window() const
+{
+    return true;
+}
 
 void Window::process_events(Vec2f pos, Vec2f size)
 {

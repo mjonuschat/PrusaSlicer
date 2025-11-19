@@ -39,7 +39,7 @@ protected:
 
     void hovered_updated_internal() override;
 
-    void pressed_updated_internal() override;
+    void action_internal() override;
 
 private:
     Navigator& m_navigator;

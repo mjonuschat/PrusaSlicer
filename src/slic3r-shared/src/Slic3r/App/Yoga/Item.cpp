@@ -311,6 +311,11 @@ bool Item::is_node_dirty() const
     return YGNodeIsDirty(m_node);
 }
 
+bool Item::is_in_window() const
+{
+    return m_parent ? m_parent->is_in_window() : false;
+}
+
 bool Item::enabled()
 {
     Item* item = this;
@@ -847,7 +852,7 @@ void Item::set_item_name(const std::string& item_name)
     if (m_item_names.contains(item_name)) {
         m_item_name = item_name + "_" + std::to_string(++m_item_names[item_name]);
     } else {
-        m_item_name = item_name;
+        m_item_name = item_name + "_1";
         m_item_names.insert({item_name, 1});
     }
 }

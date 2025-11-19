@@ -25,6 +25,7 @@ namespace Yoga {
 class Toolbar;
 class ToolbarButton;
 class Dialog;
+class SplitLayout;
 } // namespace Yoga
 
 enum class ToolbarID
@@ -106,6 +107,9 @@ public:
 
     void set_sidebars_visible(bool visible);
 
+    void save_column_sizes();
+    void load_column_sizes();
+
 protected:
     virtual void init_left_column();
     virtual void init_middle_column();
@@ -120,10 +124,10 @@ private:
 
 protected:
     Yoga::RootItem m_layout_main;
-    Yoga::Item* m_layout_main_bottom  = nullptr;
-    Yoga::Item* m_layout_left_column  = nullptr;
-    Yoga::Item* m_layout_center_row   = nullptr;
-    Yoga::Item* m_layout_right_column = nullptr;
+    Yoga::SplitLayout* m_layout_main_bottom = nullptr;
+    Yoga::Item* m_layout_left_column        = nullptr;
+    Yoga::Item* m_layout_center_row         = nullptr;
+    Yoga::Item* m_layout_right_column       = nullptr;
 
     Yoga::Item* m_layout_left_toolbar_column = nullptr;
     Yoga::Item* m_layout_middle_column       = nullptr;

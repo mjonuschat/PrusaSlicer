@@ -280,8 +280,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/AbstractCameraGizmo.cpp
         include/Slic3r/App/Scene/GizmoManager.hpp
         src/Slic3r/App/Scene/GizmoManager.cpp
-		include/Slic3r/App/Scene/GizmoCommandRegistry.hpp
-		src/Slic3r/App/Scene/GizmoCommandRegistry.cpp
+        include/Slic3r/App/Scene/GizmoCommandRegistry.hpp
+        src/Slic3r/App/Scene/GizmoCommandRegistry.cpp
         include/Slic3r/App/Scene/MouseDragDetector.hpp
         src/Slic3r/App/Scene/MouseDragDetector.cpp
         include/Slic3r/App/Scene/GeometryDataFactory.hpp
@@ -456,6 +456,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/SegmentedControl.cpp
         include/Slic3r/App/Yoga/ContextPopup.hpp
         src/Slic3r/App/Yoga/ContextPopup.cpp
+        include/Slic3r/App/Yoga/SplitLayout.hpp
+        src/Slic3r/App/Yoga/SplitLayout.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
@@ -554,13 +556,13 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Scene/BedFactory.hpp
         src/Slic3r/Biz/Scene/BedFactory.cpp
 
-		include/Slic3r/Biz/Preset/IPresetChangedListener.hpp
+        include/Slic3r/Biz/Preset/IPresetChangedListener.hpp
         include/Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp
         include/Slic3r/Biz/Preset/IConfigInteractor.hpp
         src/Slic3r/Biz/Preset/PresetInteractor.cpp
         include/Slic3r/Biz/Preset/PresetInteractor.hpp
         include/Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp
-		src/Slic3r/Biz/Preset/PresetInteractorProjectContext.cpp
+        src/Slic3r/Biz/Preset/PresetInteractorProjectContext.cpp
         include/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp
         src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.cpp
         include/Slic3r/Biz/Preset/PresetSelectionCheck.hpp
@@ -570,8 +572,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Preset/IPresetDialogManager.hpp
         include/Slic3r/Biz/Preset/PresetHints.hpp
         src/Slic3r/Biz/Preset/PresetHints.cpp
-		include/Slic3r/Biz/Preset/ProjectPresetView.hpp
-		src/Slic3r/Biz/Preset/ProjectPresetView.cpp
+        include/Slic3r/Biz/Preset/ProjectPresetView.hpp
+        src/Slic3r/Biz/Preset/ProjectPresetView.cpp
         #include/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
         #src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
 
@@ -590,7 +592,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Yaml/Yaml.cpp
         src/Slic3r/Biz/Yaml/YamlAdapter.hpp
         src/Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp
-		src/Slic3r/Biz/Yaml/YamlSlic3rTypes.cpp
+        src/Slic3r/Biz/Yaml/YamlSlic3rTypes.cpp
 
         include/Slic3r/Biz/Preset/PresetEvaluator.hpp
         src/Slic3r/Biz/Preset/PresetEvaluator.cpp
@@ -743,19 +745,19 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Config/ConfigJson.hpp
         src/Slic3r/Biz/Config/ConfigJson.cpp
 
-		src/Slic3r/Biz/JsonValueJson.cpp
-		src/Slic3r/Biz/JsonValueJson.hpp
+        src/Slic3r/Biz/JsonValueJson.cpp
+        src/Slic3r/Biz/JsonValueJson.hpp
 
-		src/Slic3r/Biz/ProjectMetadataJson.hpp
-		src/Slic3r/Biz/ProjectMetadataJson.cpp
+        src/Slic3r/Biz/ProjectMetadataJson.hpp
+        src/Slic3r/Biz/ProjectMetadataJson.cpp
         src/Slic3r/Biz/Config/HwConfigJson.hpp
         src/Slic3r/Biz/Config/HwConfigJson.cpp
         src/Slic3r/Biz/Config/SelectedPresetJson.hpp
         src/Slic3r/Biz/Config/SelectedPresetJson.cpp
-		src/Slic3r/Biz/Config/GCodeMetadataJson.hpp
-		src/Slic3r/Biz/Config/GCodeMetadataJson.cpp
-		src/Slic3r/Biz/Config/FeatureStructurizer.cpp
-		src/Slic3r/Biz/Config/FeatureStructurizer.hpp
+        src/Slic3r/Biz/Config/GCodeMetadataJson.hpp
+        src/Slic3r/Biz/Config/GCodeMetadataJson.cpp
+        src/Slic3r/Biz/Config/FeatureStructurizer.cpp
+        src/Slic3r/Biz/Config/FeatureStructurizer.hpp
         include/Slic3r/Biz/Format/3mf.hpp
         include/Slic3r/Biz/Format/Metadata.hpp
         include/Slic3r/Biz/Format/ResultLoad3mf.hpp
@@ -997,6 +999,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/App/Yoga/ValidatorTests.cpp
         test/Slic3r/App/Yoga/TestRootItem.hpp
         test/Slic3r/App/Yoga/SegmentedControlTests.cpp
+        test/Slic3r/App/Yoga/SplitLayoutTests.cpp
 
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/ExportGcodeTests.cpp
@@ -1015,7 +1018,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
         test/Slic3r/Biz/Preset/ProjectPresetViewTests.cpp
-		test/Slic3r/Biz/Preset/PresetInteractorTests.cpp
+        test/Slic3r/Biz/Preset/PresetInteractorTests.cpp
 
         test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp

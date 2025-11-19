@@ -6,7 +6,10 @@
 #include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
 #include "Slic3r/App/Yoga/GizmoDialog.hpp"
-#include <Slic3r/App/AppServices.hpp>
+#include "Slic3r/App/Yoga/SplitLayout.hpp"
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/AppConfig.hpp"
+
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -22,6 +25,31 @@ Vec2f AbstractRenderLayout::win_padding() const
 Vec2f AbstractRenderLayout::frame_padding() const
 {
     return Vec2f(GImGui->Style.FramePadding.x, GImGui->Style.FramePadding.y);
+}
+
+void AbstractRenderLayout::save_column_sizes()
+{
+    AppServices::instance().app_config().set<double>(
+        "layout_main_left_column_width",
+        static_cast<double>(m_layout_left_column->width())
+    );
+    AppServices::instance().app_config().set<double>(
+        "layout_main_right_column_width",
+        static_cast<double>(m_layout_right_column->width())
+    );
+}
+
+void AbstractRenderLayout::load_column_sizes()
+{
+    if (m_layout_left_column && m_layout_right_column) {
+        m_layout_left_column->set_width(
+            AppServices::instance().app_config().get<double>("layout_main_left_column_width")
+        );
+        m_layout_right_column->set_width(
+            AppServices::instance().app_config().get<double>("layout_main_right_column_width")
+        );
+        m_layout_main_bottom->invalidate();
+    }
 }
 
 ToolbarButton* AbstractRenderLayout::add_toolbar_item(
@@ -142,15 +170,15 @@ void AbstractRenderLayout::update_toolbar_tooltip()
 
 void AbstractRenderLayout::update_sidebar_visibility()
 {
-    m_layout_right_column->set_visible(m_sidebars_visible);
+    m_layout_main_bottom->set_visible_child(m_layout_right_column, m_sidebars_visible);
 
-    bool left_sidebar_visible = m_sidebars_visible;
+    bool any_visible = false;
     for (auto& [button, panel] : m_sidebar_panels) {
         button->set_checked(panel.visible);
         panel.panel->set_visible(panel.visible);
-        left_sidebar_visible |= panel.visible;
+        any_visible |= panel.visible;
     }
-    m_layout_left_column->set_visible(left_sidebar_visible);
+    m_layout_main_bottom->set_visible_child(m_layout_left_column, any_visible);
 }
 
 void AbstractRenderLayout::set_bottom_toolbar_visible(bool visible)
@@ -201,8 +229,7 @@ void AbstractRenderLayout::init()
 
     m_layout_main.append(m_top_bar.release());
 
-    m_layout_main_bottom = m_layout_main.emplace_back<Item>();
-    m_layout_main_bottom->set_gap(5);
+    m_layout_main_bottom = m_layout_main.emplace_back<SplitLayout>();
     m_layout_main_bottom->set_orientation(Orientation::Horizontal);
     m_layout_main_bottom->set_padding(Paddings(5.f, 5.f));
     m_layout_main_bottom->set_flex_grow(1.0);
@@ -217,6 +244,10 @@ void AbstractRenderLayout::init()
 void AbstractRenderLayout::init_left_column()
 {
     m_layout_left_column = m_layout_main_bottom->emplace_back<Item>();
+    m_layout_left_column->set_min_size({200.f, 0.f});
+    m_layout_left_column->set_width(
+        AppServices::instance().app_config().get<double>("layout_main_left_column_width")
+    );
     m_layout_left_column->set_orientation(Orientation::Vertical);
     m_layout_left_column->set_gap(5);
 
@@ -227,9 +258,10 @@ void AbstractRenderLayout::init_left_column()
 void AbstractRenderLayout::init_middle_column()
 {
     m_layout_center_row = m_layout_main_bottom->emplace_back<Item>();
+    m_layout_center_row->set_min_size({340, YGUndefined});
     m_layout_center_row->set_orientation(Orientation::Horizontal);
     m_layout_center_row->set_gap(5);
-    m_layout_center_row->set_flex_grow(1.);
+    m_layout_main_bottom->set_flex_child(m_layout_center_row, true);
 
     init_toolbar_column();
 
@@ -272,7 +304,10 @@ void AbstractRenderLayout::init_right_column()
     m_layout_right_column = m_layout_main_bottom->emplace_back<Item>();
     m_layout_right_column->set_orientation(Orientation::Vertical);
     m_layout_right_column->set_gap(5);
-    m_layout_right_column->set_width(280);
+    m_layout_right_column->set_width(
+        AppServices::instance().app_config().get<double>("layout_main_right_column_width")
+    );
+    m_layout_right_column->set_min_size({240, YGUndefined});
 
     m_layout_right_column->append(m_sidebar_bed.release());
 
@@ -439,7 +474,10 @@ AbstractRenderLayout::AbstractRenderLayout(
     m_sidebar_object(std::move(sidebar_object))
 {}
 
-AbstractRenderLayout::~AbstractRenderLayout() {}
+AbstractRenderLayout::~AbstractRenderLayout()
+{
+    save_column_sizes();
+}
 
 void AbstractRenderLayout::render(Vec2f size)
 {

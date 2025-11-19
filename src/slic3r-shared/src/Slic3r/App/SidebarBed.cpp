@@ -27,7 +27,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     m_printer_add_dialog(m_navigator),
     m_material_selection_dialog(project_interactor, m_navigator)
 {
-    set_min_size({240, 60});
+    set_min_size({YGUndefined, 60});
     set_orientation(Orientation::Vertical);
     set_gap(10);
     set_flex_shrink(0);

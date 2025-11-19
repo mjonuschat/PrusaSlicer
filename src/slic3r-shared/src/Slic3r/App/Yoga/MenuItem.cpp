@@ -84,7 +84,7 @@ void MenuItem::clear_submenu()
     }
 }
 
-void MenuItem::pressed_updated_internal()
+void MenuItem::action_internal()
 {
     if (m_sub_menu) {
         m_sub_menu->open();

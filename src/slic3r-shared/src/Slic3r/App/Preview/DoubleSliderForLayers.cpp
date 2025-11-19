@@ -49,6 +49,7 @@ static constexpr float EPSILON = 0.0011f;
 DoubleSliderForLayers::DoubleSliderForLayers()
 : Slic3r::App::Imgui::DoubleSlider::Manager<float>(std::string("layers_slider"), L("Layers"), Yoga::Orientation::Vertical)
 {
+    set_flex_shrink(0);
     Yoga::Item* btns = emplace_back<Yoga::Item>();
     btns->set_gap(5);
     btns->set_justify_content(YGJustifyCenter);

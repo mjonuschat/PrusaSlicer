@@ -41,7 +41,7 @@ private:
         const std::string& shortcut = {},
         bool has_sub_menu           = false
     );
-    void pressed_updated_internal() override;
+    void action_internal() override;
 
     Icon* m_icon{nullptr};
     Text* m_label{nullptr};

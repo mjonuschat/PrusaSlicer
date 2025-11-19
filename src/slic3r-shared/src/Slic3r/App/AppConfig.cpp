@@ -61,6 +61,16 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->label = L("Enable Printables");
     def->tooltip = L("Enable Printables tab. Works only if allow_web_services is enabled.");
     def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("layout_main_left_column_width", typeid(double));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Domain::ConfigItemDef::Category::Hidden;
+    def->init_fn = []() { return Domain::ConfigValue(300.); };
+
+    def = defs.add("layout_main_right_column_width", typeid(double));
+    def->location = Domain::AppConfigLocation{};
+    def->category = Domain::ConfigItemDef::Category::Hidden;
+    def->init_fn = []() { return Domain::ConfigValue(280.); };
 }
  
 tl::expected<AppConfig, std::string> AppConfig::load_appconfig(const std::string& filename)

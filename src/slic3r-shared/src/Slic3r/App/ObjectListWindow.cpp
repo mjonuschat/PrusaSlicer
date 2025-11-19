@@ -31,7 +31,6 @@ ObjectListWindow::ObjectListWindow(Biz::ProjectInteractor* project_interactor, b
     m_project_interactor(project_interactor)
 {
     set_orientation(Orientation::Vertical);
-    set_min_size({330.f, 0.f});
     set_padding(0.f);
     set_gap(0.f);
 

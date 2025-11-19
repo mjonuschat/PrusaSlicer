@@ -25,7 +25,7 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_override_settings_dialog(m_project_interactor)
 {
     set_orientation(Orientation::Vertical);
-    set_min_size({240, 60});
+    set_min_size({YGUndefined, 60});
     set_flex_grow(1);
     set_padding(0);
 

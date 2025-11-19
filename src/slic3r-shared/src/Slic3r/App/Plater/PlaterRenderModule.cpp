@@ -871,12 +871,18 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
 
 void PlaterRenderModule::on_activated()
 {
-    if (m_scene_presenter != nullptr)
+    if (m_scene_presenter != nullptr) {
         m_scene_presenter->scene().set_lights(App::global_lighting());
+    }
 
-    if (m_object_list.get() != nullptr)
+    if (m_object_list.get() != nullptr) {
         // object list icons may have been updated while the preview was active
         m_object_list->set_bed_instance_icons(m_thumbnail_store->projects.selected().thumbnails);
+    }
+
+    if (m_layout) {
+        m_layout->load_column_sizes();
+    }
 }
 
 void PlaterRenderModule::on_deactivated()
@@ -887,6 +893,8 @@ void PlaterRenderModule::on_deactivated()
     m_scene_presenter->scene().camera().update_synch_data(data);
     m_scene_presenter->scene().camera_trackball().update_synch_data(data);
     m_scene_presenter->set_camera_synch_data(data);
+
+    m_layout->save_column_sizes();
 }
 
 void PlaterRenderModule::on_scene_selection_changed(

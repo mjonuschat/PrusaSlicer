@@ -35,6 +35,8 @@ public:
      */
     virtual void render_body(Vec2f pos, Vec2f size);
 
+    bool is_in_window() const override;
+
     void process_events(Vec2f pos, Vec2f size) override;
 
     bool position_by_yoga() const;

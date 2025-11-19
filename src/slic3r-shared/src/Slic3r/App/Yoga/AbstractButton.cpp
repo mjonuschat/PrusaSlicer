@@ -19,7 +19,7 @@ AbstractButton::AbstractButton(const std::string& tooltip, const std::string& na
     Item(),
     m_tooltip(this, tooltip, {})
 {
-    set_item_name(name);
+    set_item_name(name.empty() ? "Button" : name);
 }
 
 void AbstractButton::render(Vec2f pos, Vec2f size)
@@ -33,9 +33,9 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
         ImGui::SetNextItemAllowOverlap();
     }
 
-    bool pressed  = ImGui::InvisibleButton("##btn", to_im(size.cwiseMax(10)), m_flags);
-    bool hovered  = ImGui::IsItemHovered() && ImGui::IsItemVisible();
-    bool held     = ImGui::IsItemActive();
+    bool pressed = ImGui::InvisibleButton("##btn", to_im(size.cwiseMax(10)), m_flags);
+    bool hovered = ImGui::IsItemHovered() && ImGui::IsItemVisible();
+    bool held    = ImGui::IsItemActive();
 
     ImRect bb(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
 
@@ -46,6 +46,11 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
     if (enabled()) {
         set_hovered(hovered);
         set_pressed(held);
+
+        if (m_hovered || held) {
+            ImGui::SetMouseCursor(m_cursor);
+        }
+
         if (pressed) {
             if (m_checkable) {
                 set_checked(!m_checked);
@@ -53,7 +58,7 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
             if (m_callbacks.action) {
                 m_callbacks.action();
             }
-            pressed_updated_internal();
+            action_internal();
         }
     }
 
@@ -145,10 +150,21 @@ void AbstractButton::set_pressed(bool pressed)
 {
     if (m_pressed != pressed) {
         m_pressed = pressed;
+        pressed_updated_internal();
         if (m_callbacks.pressed_changed) {
             m_callbacks.pressed_changed(m_pressed);
         }
     }
+}
+
+ImGuiMouseCursor AbstractButton::cursor() const
+{
+    return m_cursor;
+}
+
+void AbstractButton::set_cursor(ImGuiMouseCursor cursor)
+{
+    m_cursor = cursor;
 }
 
 ImGuiButtonFlags AbstractButton::flags() const
@@ -171,6 +187,8 @@ void AbstractButton::checked_updated_internal() {}
 void AbstractButton::hovered_updated_internal() {}
 
 void AbstractButton::pressed_updated_internal() {}
+
+void AbstractButton::action_internal() {}
 
 void AbstractButton::enabled_updated_internal()
 {

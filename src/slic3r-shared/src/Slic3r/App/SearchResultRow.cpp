@@ -92,7 +92,7 @@ void SearchResultRow::hovered_updated_internal()
     }
 }
 
-void SearchResultRow::pressed_updated_internal()
+void SearchResultRow::action_internal()
 {
     m_navigator.navigate_to_item(m_state);
 }

@@ -110,6 +110,11 @@ public:
     YGWrap flex_wrap() const;
     bool is_node_dirty() const;
 
+    /**
+     * @return true if this Item is contained in Yoga::Window
+     */
+    virtual bool is_in_window() const;
+
     bool enabled();
     void set_enabled(bool enabled);
 
@@ -150,18 +155,18 @@ public:
     virtual void insert(ItemPtr child, size_t index);
 
     template<class T, class... Args>
-    T* emplace_back(Args&&... __args)
+    T* emplace_back(Args&&... args)
     {
-        std::unique_ptr<T> item = std::make_unique<T>(std::forward<Args>(__args)...);
+        std::unique_ptr<T> item = std::make_unique<T>(std::forward<Args>(args)...);
         T* item_raw = item.get();
         append(std::move(item));
         return item_raw;
     }
 
     template<class T, class... Args>
-    T* emplace(size_t index, Args&&... __args)
+    T* emplace(size_t index, Args&&... args)
     {
-        std::unique_ptr<T> item = std::make_unique<T>(std::forward<Args>(__args)...);
+        std::unique_ptr<T> item = std::make_unique<T>(std::forward<Args>(args)...);
         T* item_raw = item.get();
         insert(std::move(item), index);
         return item_raw;
@@ -291,6 +296,8 @@ protected:
     bool m_debug_border = false;
     float m_z = 0;
     bool m_visible = true;
+    float m_last_width  = 0;
+    float m_last_height = 0;
 
     Orientation m_orientation = Orientation::Horizontal;
     YGFlexDirection m_flex_direction = YGFlexDirectionRow;
@@ -305,8 +312,6 @@ protected:
 
 private:
     bool m_enabled      = true;
-    float m_last_width  = 0;
-    float m_last_height = 0;
 };
 
 /**

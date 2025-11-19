@@ -19,7 +19,6 @@ using namespace Slic3r::Biz;
 LegendWindow::LegendWindow(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapper)
     : Window("legend")
 {
-    set_min_size({ 330.f, 0.f });
     set_orientation(Orientation::Vertical);
     set_padding(0);
     set_gap(5.f);

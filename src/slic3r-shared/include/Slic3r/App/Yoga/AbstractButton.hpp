@@ -21,7 +21,7 @@ public:
         std::function<void(bool checked)> checked_changed{nullptr};
     };
 
-    AbstractButton(const std::string& tooltip = {}, const std::string& name = "Button");
+    AbstractButton(const std::string& tooltip = {}, const std::string& name = {});
 
     void render(Vec2f pos, Vec2f size) override;
 
@@ -51,10 +51,14 @@ public:
     bool allow_overlap() const;
     void set_allow_overlap(bool allow_overlap);
 
+    ImGuiMouseCursor cursor() const;
+    void set_cursor(ImGuiMouseCursor cursor);
+
 protected:
     virtual void checked_updated_internal();
     virtual void hovered_updated_internal();
     virtual void pressed_updated_internal();
+    virtual void action_internal();
 
     void enabled_updated_internal() override;
     void visible_updated_internal() override;
@@ -76,7 +80,8 @@ private:
 
     std::string m_shortcut;
     Callbacks m_callbacks;
-    ImGuiButtonFlags m_flags = ImGuiButtonFlags_MouseButtonLeft;
+    ImGuiButtonFlags m_flags  = ImGuiButtonFlags_MouseButtonLeft;
+    ImGuiMouseCursor m_cursor = ImGuiMouseCursor_Arrow;
 };
 
 } // namespace Slic3r::App::Yoga

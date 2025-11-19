@@ -417,6 +417,8 @@ void PreviewRenderModule::on_activated()
             m_project_interactor.selected_bed_slicing_id()
         );
     }
+
+    m_layout->load_column_sizes();
 }
 
 void PreviewRenderModule::on_deactivated()
@@ -431,6 +433,8 @@ void PreviewRenderModule::on_deactivated()
         m_scene_presenter->scene().camera_trackball().update_synch_data(data);
         m_scene_presenter->set_camera_synch_data(data);
     }
+
+    m_layout->save_column_sizes();
 }
 
 void PreviewRenderModule::on_screen_resized()
