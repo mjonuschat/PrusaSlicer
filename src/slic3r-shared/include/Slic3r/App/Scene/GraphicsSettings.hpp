@@ -68,8 +68,10 @@ struct AmbientOcclusion
     mutable std::optional<size_t> pending_noise_size;
     mutable std::shared_ptr<Render::Texture> noise_tex{nullptr};
 
+    mutable float intensity{DEFAULT_INTENSITY};
     mutable float radius{DEFAULT_RADIUS};
     mutable float bias{DEFAULT_BIAS};
+    mutable float z_threshold{DEFAULT_Z_THRESHOLD};
     mutable size_t blur_filter_size{DEFAULT_BLUR_FILTER_SIZE};
 
     static constexpr int LIGHT_POS_CLR_ATTR = 0;
@@ -83,10 +85,12 @@ struct AmbientOcclusion
     static constexpr int COLOR_TEX_UNIT = 12;
     static constexpr int AO_TEX_UNIT = 13;
 
+    static constexpr float DEFAULT_INTENSITY = 1.0f;
     static constexpr int DEFAULT_KERNEL_SIZE = 32;
     static constexpr int DEFAULT_NOISE_SIZE = 4;
     static constexpr float DEFAULT_RADIUS = 30.0f;
     static constexpr float DEFAULT_BIAS = 1.5f;
+    static constexpr float DEFAULT_Z_THRESHOLD = 5.0f;
     static constexpr size_t DEFAULT_BLUR_FILTER_SIZE = 5;
 };
 
@@ -112,10 +116,12 @@ public:
     const Eigen::AlignedBox3d& shadows_aabb() const { return m_shadows.aabb; }
 
     Domain::Index2 ao_framebuffer_size() const { return m_ao.framebuffer_size; }
+    float ao_intensity() const { return m_ao.intensity; }
     size_t ao_kernel_size() const { return m_ao.kernel.size(); }
     size_t ao_noise_size() const { return m_ao.noise_size; }
     float ao_radius() const { return m_ao.radius; }
     float ao_bias() const { return m_ao.bias; }
+    float ao_z_threshold() const { return m_ao.z_threshold; }
     size_t ao_blur_filter_size() const { return m_ao.blur_filter_size; }
 
     float pbr_intensity() const { return m_pbr.intensity; }
@@ -137,15 +143,20 @@ private:
     void set_shadows_intensity(float intensity) { m_shadows.intensity = intensity; }
     void set_shadows_aabb(const Eigen::AlignedBox3d& aabb) { m_shadows.aabb = aabb; }
 
+    void set_ao_intensity(float intensity) { m_ao.intensity = intensity; }
     void set_ao_kernel_size(size_t size) { m_ao.pending_kernel_size = size; }
     void set_ao_noise_size(size_t size) { m_ao.pending_noise_size = size; }
     void set_ao_radius(float radius) { m_ao.radius = radius; }
     void set_ao_bias(float bias) { m_ao.bias = bias; }
+    void set_ao_z_threshold(float z_threshold) { m_ao.z_threshold = z_threshold; }
     void set_ao_blur_filter_size(size_t size) { m_ao.blur_filter_size = size; }
+
+    void set_default_ao_intensity() { m_ao.intensity = AmbientOcclusion::DEFAULT_INTENSITY; }
     void set_default_ao_kernel_size() { m_ao.pending_kernel_size = AmbientOcclusion::DEFAULT_KERNEL_SIZE; }
     void set_default_ao_noise_size() { m_ao.pending_noise_size = AmbientOcclusion::DEFAULT_NOISE_SIZE; }
     void set_default_ao_radius() { m_ao.radius = AmbientOcclusion::DEFAULT_RADIUS; }
     void set_default_ao_bias() { m_ao.bias = AmbientOcclusion::DEFAULT_BIAS; }
+    void set_default_ao_z_threshold() { m_ao.z_threshold = AmbientOcclusion::DEFAULT_Z_THRESHOLD; }
     void set_default_ao_blur_filter_size() { m_ao.blur_filter_size = AmbientOcclusion::DEFAULT_BLUR_FILTER_SIZE; }
 
     void set_pbr_intensity(float intensity) { m_pbr.intensity = intensity; }

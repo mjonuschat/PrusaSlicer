@@ -85,12 +85,13 @@ vec4 lighting_phong()
     vec3 eye_position = evaluate_eye_position(gl_FragCoord.xy / viewport_size, texture(g_depth, tex_coord).r);
     vec4 light_position = texture(g_light_position, tex_coord);
     float ao = texture(ssao, tex_coord).r;
+    vec4 color = texture(g_color, tex_coord);
 
     float ambient = 0.0;
     float diffuse = 0.0;
     float specular = 0.0;
     for (int i = 0; i < num_lights; ++i) {
-        ambient += ao * lights[i].ambient;
+        ambient += lights[i].ambient;
         vec3 dir = light_direction(lights[i]);
         float NdotL = max(dot(eye_normal, dir), 0.0);
         float shadow = (apply_shadows && lights[i].shadows) ? shadow_pcf(light_position, NdotL) : 1.0;
@@ -98,8 +99,7 @@ vec4 lighting_phong()
         specular += shadow * lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-dir, eye_normal)), 0.0), lights[i].shininess);
     }
 
-    vec4 color = texture(g_color, tex_coord);
-    return vec4(color.rgb * (ambient + diffuse + specular), color.a);
+    return vec4(color.rgb * (ambient * ao + diffuse + specular), color.a);
 }
 
 float ior_to_f0(float ior)
@@ -168,6 +168,7 @@ vec4 lighting_pbr()
     vec4 n_m = texture(g_eye_normal, tex_coord);
     vec3 n = n_m.xyz;
     Material material = materials[int(n_m.w)];
+    float ao = texture(ssao, tex_coord).r;
 
     vec4 color = texture(g_color, tex_coord);
     color.xyz = pow(color.xyz, vec3(2.2));
@@ -180,8 +181,8 @@ vec4 lighting_pbr()
         lo += shadow * light_radiance(F0, v, n, dir, pbr_intensity * lights[i].diffuse, material, color.rgb);
     }
 
-    vec3 ambient = vec3(ambient_intensity) * color.rgb * texture(ssao, tex_coord).r;
-    vec3 pbr_color = ambient + lo;
+    vec3 ambient = vec3(ambient_intensity) * color.rgb;
+    vec3 pbr_color = (ambient + lo) * ao;
 
     // HDR tonemapping
     pbr_color = pbr_color / (pbr_color + vec3(1.0));

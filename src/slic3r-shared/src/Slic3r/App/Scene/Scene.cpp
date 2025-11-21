@@ -781,9 +781,11 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2&
     Render::Material material;
     material
         .set_shader(device.context().shader_manager().shader("ao_texture"))
+        .set_uniform("intensity", ao.intensity)
         .set_uniform("kernel_size", int(ao.kernel.size()))
         .set_uniform("radius", ao.radius)
         .set_uniform("bias", ao.bias)
+        .set_uniform("z_threshold", ao.z_threshold)
         .set_uniform("viewport_size", v_size)
         .set_uniform("projection_matrix", projection)
         .set_uniform("inverse_projection_matrix", inv_projection)

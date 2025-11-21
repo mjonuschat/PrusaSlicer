@@ -1,7 +1,9 @@
 #version 100
 
+uniform float intensity;
 uniform float radius;
 uniform float bias;
+uniform float z_threshold;
 uniform int kernel_size;
 uniform vec2 viewport_size;
 uniform mat4 projection_matrix;
@@ -50,10 +52,8 @@ void main()
         vec3 sample_eye_position = evaluate_eye_position(offset.xy, sample_depth);        
 
         // range check & accumulate
-        float range_check = smoothstep(0.0, 1.0, radius / abs(eye_position.z - sample_eye_position.z));
+        float range_check = smoothstep(0.0, 1.0, z_threshold / abs(eye_position.z - sample_eye_position.z));
         occlusion += (sample_eye_position.z >= sample_ref_pos.z + bias ? 1.0 : 0.0) * range_check;           
     }
-    occlusion = 1.0 - (occlusion / kernel_size);
-
-    gl_FragColor = occlusion;
+    gl_FragColor = pow(1.0 - (occlusion / kernel_size), intensity);
 }

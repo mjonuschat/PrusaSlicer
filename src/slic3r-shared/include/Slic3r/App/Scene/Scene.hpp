@@ -282,15 +282,20 @@ public:
      * @name Ambient occlusion-related methods
      * @{
      */
+    static void set_ao_intensity(float intensity) { s_graphics_settings.set_ao_intensity(intensity); }
     static void set_ao_kernel_size(size_t size) { s_graphics_settings.set_ao_kernel_size(size); }
     static void set_ao_noise_size(size_t size) { s_graphics_settings.set_ao_noise_size(size); }
     static void set_ao_radius(float radius) { s_graphics_settings.set_ao_radius(radius); }
     static void set_ao_bias(float bias) { s_graphics_settings.set_ao_bias(bias); }
+    static void set_ao_z_threshold(float z_threshold) { s_graphics_settings.set_ao_z_threshold(z_threshold); }
     static void set_ao_blur_filter_size(size_t size) { s_graphics_settings.set_ao_blur_filter_size(size); }
+
+    static void set_default_ao_intensity() { s_graphics_settings.set_default_ao_intensity(); }
     static void set_default_ao_kernel_size() { s_graphics_settings.set_default_ao_kernel_size(); }
     static void set_default_ao_noise_size() { s_graphics_settings.set_default_ao_noise_size(); }
     static void set_default_ao_radius() { s_graphics_settings.set_default_ao_radius(); }
     static void set_default_ao_bias() { s_graphics_settings.set_default_ao_bias(); }
+    static void set_default_ao_z_threshold() { s_graphics_settings.set_default_ao_z_threshold(); }
     static void set_default_ao_blur_filter_size() { s_graphics_settings.set_default_ao_blur_filter_size(); }
     /** @} */
 

@@ -215,6 +215,16 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                         ImGui::TableSetColumnIndex(1);
                         ImGui::Text("%dx%d", fb_size[0], fb_size[1]);
 
+                        float intensity = Scene::graphics_settings().ao_intensity();
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::Text("Intensity");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::SetNextItemWidth(items_width);
+                        if (ImGui::SliderFloat("##ao_intensity", &intensity, 0.1f, 5.0f, "%.1f", ImGuiSliderFlags_NoInput))
+                            Scene::set_ao_intensity(intensity);
+
                         size_t k_size = Scene::graphics_settings().ao_kernel_size();
                         if (k_size > 0) {
                             ImGui::TableNextRow();
@@ -331,6 +341,16 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                         if (ImGui::SliderFloat("##ao_bias", &bias, 0.001f, 10.0f, "%.3f", ImGuiSliderFlags_NoInput))
                             Scene::set_ao_bias(bias);
 
+                        float z_threshold = Scene::graphics_settings().ao_z_threshold();
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::Text("Z threshold");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::SetNextItemWidth(items_width);
+                        if (ImGui::SliderFloat("##ao_z_threshold", &z_threshold, 1.0f, 50.0f, "%.1f", ImGuiSliderFlags_NoInput))
+                            Scene::set_ao_z_threshold(z_threshold);
+
                         size_t bf_size = Scene::graphics_settings().ao_blur_filter_size();
                         if (bf_size > 0) {
                             ImGui::TableNextRow();
@@ -377,10 +397,12 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                     }
 
                     if (ImGui::Button("Default##ao")) {
+                        Scene::set_default_ao_intensity();
                         Scene::set_default_ao_kernel_size();
                         Scene::set_default_ao_noise_size();
                         Scene::set_default_ao_radius();
                         Scene::set_default_ao_bias();
+                        Scene::set_default_ao_z_threshold();
                         Scene::set_default_ao_blur_filter_size();
                     }
                 }
