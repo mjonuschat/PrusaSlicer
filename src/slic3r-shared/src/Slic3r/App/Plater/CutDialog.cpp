@@ -143,9 +143,7 @@ CutDialog::CutDialog() : GizmoDialog(_u8L("Cut"))
     init_connectors_input_panel();
     init_cut_plane_input_panel();
 
-    m_warnings_line = content()->emplace_back<Text>("There will be warning");
-
-    update_state();
+    init_warning_rows();
 }
 
 void CutDialog::init_cut_plane_input_panel()
@@ -161,23 +159,10 @@ void CutDialog::init_cut_plane_input_panel()
     m_mode_group.set_buttons({m_planar_mode_btn, dovetail_mode_btn});
     m_mode_group.callbacks().action = [this](AbstractButton* btn)
     {
-        is_planar_cut_mode = btn == m_planar_mode_btn;
-        update_panels_visibility();
+        set_planar_mode(btn == m_planar_mode_btn);
         if (callbacks().mode_changed) {
             callbacks().mode_changed();
         }
-
-        if (!is_planar_cut_mode) {
-            keep_as_parts = false;
-            m_cut_into_objects_btn->set_checked(true);
-            m_part_A->set_as_part(keep_as_parts);
-            m_part_B->set_as_part(keep_as_parts);
-        }
-
-        // disable buttons for dovetail mode
-        m_cut_into_objects_btn->set_enabled(is_planar_cut_mode);
-        m_cut_into_parts_btn->set_enabled(is_planar_cut_mode);
-        m_add_connectors_btn->set_visible(is_planar_cut_mode);
     };
 
     Item* buid_volume_row = add_row(_u8L("Build Volume"), m_cut_plane_input_panel);
@@ -254,6 +239,24 @@ void CutDialog::init_cut_plane_input_panel()
             callbacks().perform();
         }
     };
+}
+
+void CutDialog::init_warning_rows()
+{
+    auto add_warning_text = [this]() -> Text*
+    {
+        Item* row = content()->emplace_back<Item>();
+        row->set_flex_grow(1.);
+        row->emplace_back<Icon>(Render::Icon::WarningMarker)->set_width(30);
+        Text* warning_text = row->emplace_back<Text>("");
+        warning_text->set_flex_grow(1.);
+        return warning_text;
+    };
+
+    m_connectors_warning = add_warning_text();
+    m_keep_object_warning = add_warning_text();
+    m_cut_plane_warning = add_warning_text();
+    m_groove_warning = add_warning_text();
 }
 
 void CutDialog::add_cut_plane_help_panel()
@@ -430,13 +433,67 @@ void CutDialog::add_cut_settings()
     };
 }
 
-void CutDialog::update_state()
+void CutDialog::update_state(
+    size_t connectors_outside_cut_contour,
+    size_t connectors_outside_object,
+    bool connectors_overlap,
+    bool plane_outside_object,
+    bool invalid_groove
+)
 {
-    bool has_warning{false};
-    // check warning statet here
+    bool connectors_warnig =
+        connectors_outside_cut_contour > 0 || connectors_outside_object > 0 || connectors_overlap;
 
-    m_warnings_line->set_visible(has_warning);
-    m_perform_btn->set_visible(!has_warning);
+    bool has_warnings =
+        connectors_warnig || plane_outside_object || invalid_groove || (!keep_upper && !keep_lower);
+
+    m_perform_btn->set_visible(!has_warnings);
+
+    if (connectors_warnig) {
+        std::string out = _u8L("Invalid connectors detected") + ":";
+        if (connectors_outside_cut_contour > size_t(0)) {
+            out += "\n - "
+                + fmt::vformat(
+                       _L_PLURAL_u8(
+                           "{} connector is out of cut contour",
+                           "{} connectors are out of cut contour",
+                           connectors_outside_cut_contour
+                       ),
+                       fmt::make_format_args(connectors_outside_cut_contour)
+                );
+        }
+        if (connectors_outside_object > size_t(0)) {
+            out += "\n - "
+                + fmt::vformat(
+                       _L_PLURAL_u8(
+                           "{} connector is out of object",
+                           "{} connectors are out of object",
+                           connectors_outside_object
+                       ),
+                       fmt::make_format_args(connectors_outside_object)
+                );
+        }
+        if (connectors_overlap) {
+            out += "\n - " + _u8L("Some connectors are overlapped");
+        }
+        m_connectors_warning->set_text(out);
+    }
+    m_connectors_warning->parent()->set_visible(connectors_warnig);
+
+    if (!keep_upper && !keep_lower) {
+        m_keep_object_warning->set_text(_u8L("Select at least one object to keep after cutting."));
+    }
+    m_keep_object_warning->parent()->set_visible(!keep_upper && !keep_lower);
+
+    if (plane_outside_object) {
+        m_cut_plane_warning->set_text(_u8L("Cut plane is placed out of object"));
+    }
+    m_cut_plane_warning->parent()->set_visible(plane_outside_object);
+
+    if (invalid_groove) {
+        m_groove_warning->set_text(_u8L("Cut plane with groove is invalid"));
+    }
+    m_groove_warning->parent()->set_visible(invalid_groove);
 }
 
 void CutDialog::update_panels_visibility()
@@ -768,6 +825,26 @@ void CutDialog::set_cut_z_position(double cut_z_position)
     m_cut_position->set_default(cut_z_position);
 }
 
+void CutDialog::set_planar_mode(bool is_planar)
+{
+    is_planar_cut_mode = is_planar;
+    m_planar_mode_btn->set_checked(is_planar);
+
+    update_panels_visibility();
+
+    if (!is_planar_cut_mode) {
+        keep_as_parts = false;
+        m_cut_into_objects_btn->set_checked(true);
+        m_part_A->set_as_part(keep_as_parts);
+        m_part_B->set_as_part(keep_as_parts);
+    }
+
+    // disable buttons for dovetail mode
+    m_cut_into_objects_btn->set_enabled(is_planar_cut_mode);
+    m_cut_into_parts_btn->set_enabled(is_planar_cut_mode);
+    m_add_connectors_btn->set_visible(is_planar_cut_mode);
+}
+
 void CutDialog::set_connector_type(Domain::CutConnectorType type)
 {
     if (type == Domain::CutConnectorType::Undef) {
@@ -908,7 +985,7 @@ void CutDialog::set_groove_values(const Biz::Cut::Groove& m_groove, double max_e
     set_slider(m_groove_angle, 0., 15., 1., rad2deg(m_groove.angle), rad2deg(m_groove.angle_init));
 }
 
-void CutDialog::set_connector_values(double max_size)
+void CutDialog::set_connector_defaults(double max_size)
 {
     const double depth_min_value =
         connector_type == Domain::CutConnectorType::Snap ? connector_size : 1.;
@@ -936,6 +1013,11 @@ void CutDialog::set_connector_values(double max_size)
         15.
     );
     set_slider(m_snap_space_proportion, 10., 50., 1., snap_space_proportion, 30.);
+
+    // set attributes defaults
+    set_connector_shape(Domain::CutConnectorShape::Circle);
+    set_connector_style(Domain::CutConnectorStyle::Prism);
+    set_connector_type(Domain::CutConnectorType::Plug);
 }
 
 void CutDialog::set_connector_values(
@@ -948,39 +1030,33 @@ void CutDialog::set_connector_values(
 {
     if (depth) {
         m_connector_depth_value->set_value(depth.value());
-    }
-    else {
+    } else {
         m_connector_depth_value->set_undef_value();
     }
 
     if (depth_tolerance) {
         m_connector_depth_tolerance->set_value(depth_tolerance.value());
-    }
-    else {
+    } else {
         m_connector_depth_tolerance->set_undef_value();
     }
 
     if (half_size) {
         m_connector_size_value->set_value(2. * half_size.value());
-    }
-    else {
+    } else {
         m_connector_size_value->set_undef_value();
     }
 
     if (half_size_tolerance) {
         m_connector_size_tolerance->set_value(2. * half_size_tolerance.value());
-    }
-    else {
+    } else {
         m_connector_size_tolerance->set_undef_value();
     }
 
     if (angle) {
         m_connector_rotation->set_value(rad2deg(angle.value()));
-    }
-    else {
+    } else {
         m_connector_rotation->set_undef_value();
     }
-
 }
 
 } // namespace Slic3r::App::Plater

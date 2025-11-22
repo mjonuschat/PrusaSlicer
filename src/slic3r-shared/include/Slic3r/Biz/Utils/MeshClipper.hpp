@@ -161,7 +161,8 @@ public:
     void set_transformation(const Domain::Transformation& trafo);
 
     // Returns index of the contour which was clicked, -1 otherwise.
-    int is_projection_inside_cut(const Domain::Vec3d& point) const;
+    size_t get_contour_id_from_projection(const Domain::Vec3d& point) const;
+
     bool has_valid_contour() const;
 
     int get_number_of_contours() const

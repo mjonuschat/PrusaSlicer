@@ -96,17 +96,27 @@ public:
 
     void set_build_size(Domain::Vec3d tbb_size);
     void set_cut_z_position(double cut_z_position);
+    void set_planar_mode(bool is_planar);
     void set_connector_type(Domain::CutConnectorType type);
     void set_connector_style(Domain::CutConnectorStyle style);
     void set_connector_shape(Domain::CutConnectorShape shape);
     void set_groove_values(const Biz::Cut::Groove& groove, double max_elements_size);
-    void set_connector_values(double max_size);
+    void set_connector_defaults(double max_size);
     void set_connector_values(
         std::optional<double> depth,
         std::optional<double> depth_tolerance,
         std::optional<double> half_size,
         std::optional<double> half_size_tolerance,
         std::optional<double> angle
+    );
+
+    // check state of teh cut settings and show warning line or "Perform" button
+    void update_state(
+        size_t connectors_outside_cut_contour,
+        size_t connectors_outside_object,
+        bool connectors_overlap,
+        bool plane_outside_object,
+        bool invalid_groove
     );
 
 public:
@@ -135,13 +145,11 @@ public:
 private:
     void init_connectors_input_panel();
     void init_cut_plane_input_panel();
+    void init_warning_rows();
     void add_connectors_help_panel();
     void add_cut_plane_help_panel();
     void add_groove_input_panel();
     void add_cut_settings();
-
-    // check state of teh cut settings and show warning line or "Perform" button
-    void update_state();
     void update_panels_visibility();
 
     // return an Item(box) where some control can be placed
@@ -191,7 +199,11 @@ private:
     Yoga::PartProcessingRow* m_part_A{nullptr};
     Yoga::PartProcessingRow* m_part_B{nullptr};
 
-    Yoga::Text* m_warnings_line{nullptr};
+    Yoga::Text* m_connectors_warning{nullptr};
+    Yoga::Text* m_keep_object_warning{nullptr};
+    Yoga::Text* m_cut_plane_warning{nullptr};
+    Yoga::Text* m_groove_warning{nullptr};
+
     Yoga::LayoutButton* m_perform_btn{nullptr};
 
     Yoga::Item* m_type_row{nullptr};

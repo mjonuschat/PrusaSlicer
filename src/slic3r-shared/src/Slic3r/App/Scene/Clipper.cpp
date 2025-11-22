@@ -102,13 +102,13 @@ void Clipper::recalculate_object_clippers()
         return;
     const Transformation inst_trafo = m_selected_instance->get_transformation();
 
-    for (auto& clipper : object_clippers) {
-        Transformation trafo = inst_trafo * clipper.second;
+    for (const auto& [mesh_clipper, tr] : object_clippers) {
+        Transformation trafo = inst_trafo * tr;
         trafo.set_offset(trafo.get_offset() + Vec3d(0., 0., m_sla_shift));
-        clipper.first->set_plane(*m_clp);
-        clipper.first->set_transformation(trafo);
-        clipper.first->set_limiting_plane(Biz::ClippingPlane(Vec3d::UnitZ(), -SINKING_Z_THRESHOLD));
-        clipper.first->update_result();
+        mesh_clipper->set_plane(*m_clp);
+        mesh_clipper->set_transformation(trafo);
+        mesh_clipper->set_limiting_plane(Biz::ClippingPlane(Vec3d::UnitZ(), -SINKING_Z_THRESHOLD));
+        mesh_clipper->update_result();
     }
 }
 
@@ -126,17 +126,21 @@ int Clipper::get_number_of_contours() const
     return sum;
 }
 
-int Clipper::is_projection_inside_cut(const Vec3d& point) const
+MeshClipperContourId Clipper::get_mesh_clipper_contour_id_from_projection(
+    const Domain::Vec3d& point
+) const
 {
+    MeshClipperContourId id;
     if (m_clp_ratio == 0.)
-        return -1;
-    int idx_offset = 0;
-    for (const auto& [clipper, trafo] : object_clippers) {
-        if (int idx = clipper->is_projection_inside_cut(point); idx != -1)
-            return idx_offset + idx;
-        idx_offset += clipper->get_number_of_contours();
+        return id;
+
+    size_t volume_id = 0;
+    for (const auto& [mesh_clipper, trafo] : object_clippers) {
+        id = {volume_id++, mesh_clipper->get_contour_id_from_projection(point)};
+        if (id.is_valid())
+            break;
     }
-    return -1;
+    return id;
 }
 
 bool Clipper::has_valid_contour() const
@@ -149,16 +153,20 @@ bool Clipper::has_valid_contour() const
         );
 }
 
-std::vector<Vec3d> Clipper::point_per_contour() const
+std::map<MeshClipperContourId, Domain::Vec3d> Clipper::point_per_contour() const
 {
-    std::vector<Vec3d> pts;
+    std::map<MeshClipperContourId, Domain::Vec3d> map;
 
-    for (const auto& clipper : object_clippers) {
-        const std::vector<Vec3d> pts_clipper = clipper.first->point_per_contour();
-        pts.insert(pts.end(), pts_clipper.begin(), pts_clipper.end());
-        ;
+    size_t volume_id = 0;
+    for (const auto& [mesh_clipper, tr] : object_clippers) {
+        const std::vector<Vec3d> pts_clipper = mesh_clipper->point_per_contour();
+        for (size_t island_id = 0; island_id < pts_clipper.size(); island_id++) {
+            map[{volume_id, island_id}] = pts_clipper[island_id];
+        }
+        volume_id++;
     }
-    return pts;
+
+    return map;
 }
 
 void Clipper::set_position_by_ratio(double pos, bool keep_normal)
@@ -170,7 +178,7 @@ void Clipper::set_position_by_ratio(double pos, bool keep_normal)
         + Vec3d(0., 0., m_sla_shift);
 
     Vec3d normal = (keep_normal && m_clp) ? m_clp->get_normal() : -m_camera->forward();
-    double dist   = normal.dot(bb_center);
+    double dist  = normal.dot(bb_center);
 
     if (pos < 0.)
         pos = m_clp_ratio;
@@ -201,42 +209,36 @@ const Biz::ClippingPlane* Clipper::get_clipping_plane(bool ignore_hide_clipped) 
 void Clipper::set_behavior(bool hide_clipped, bool fill_cut, double contour_width)
 {
     m_hide_clipped = hide_clipped;
-    for (auto& clipper : object_clippers)
-        clipper.first->set_behaviour(fill_cut, contour_width);
+    for (auto& [mesh_clipper, tr] : object_clippers)
+        mesh_clipper->set_behaviour(fill_cut, contour_width);
+
+    recalculate_object_clippers();
 }
 
-// Unprojects the mouse position on the mesh and saves hit point and normal of the facet into pos_and_normal
+// Unprojects the mouse ray on the mesh and saves hit point and normal of the facet into pos_and_normal
 // Return false if no intersection was found, true otherwise.
-bool Clipper::unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos_world, bool respect_contours)
+bool Clipper::unproject_on_cut_plane(
+    const Ray& ray,
+    Domain::Vec3d& pos_world,
+    MeshClipperContourId& contour_id
+)
 {
     // Calculate intersection with the clipping plane.
-    Vec3d point = ray.origin;
+    Vec3d point     = ray.origin;
     Vec3d direction = ray.direction;
     Vec3d hit;
     Vec3d normal = -m_clp->get_normal().cast<double>();
-    double den = normal.dot(direction);
+    double den   = normal.dot(direction);
     if (den != 0.) {
         double t = (-m_clp->get_offset() - normal.dot(point)) / den;
-        hit = (point + t * direction);
-    }
-    else
+        hit      = (point + t * direction);
+    } else
         return false;
 
-    if (respect_contours)
-    {
-        // Do not react to clicks outside a contour (or inside a contour that is ignored)
-        int cont_id = is_projection_inside_cut(hit);
-        if (cont_id == -1)
-            return false;
-        //if (m_part_selection.valid()) {
-        //    const std::vector<size_t>& ign = *m_part_selection.get_ignored_contours_ptr();
-        //    if (std::find(ign.begin(), ign.end(), cont_id) != ign.end())
-        //        return false;
-        //}
-    }
+    pos_world  = hit;
+    contour_id = get_mesh_clipper_contour_id_from_projection(hit);
 
-    pos_world = hit;
-    return true;
+    return contour_id.is_valid();
 }
 
 } // namespace Slic3r::App::Scene

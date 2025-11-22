@@ -7,6 +7,33 @@
 
 namespace Slic3r::App::Scene {
 
+/// Identifier for a cut island within a clipped object.
+/**
+ * This struct is used to uniquely identify each cut island
+ * produced by the mesh clipper. The combination of `volume_id`
+ * and `island_id` forms a unique key within the clipped mesh.
+ */
+struct MeshClipperContourId
+{
+    size_t volume_id{size_t(-1)}; ///< ID of the source volume.
+    size_t island_id{size_t(-1)}; ///< ID of the island inside that volume.
+
+    bool operator==(const MeshClipperContourId& rhs) const
+    {
+        return volume_id == rhs.volume_id && island_id == rhs.island_id;
+    }
+
+    bool operator<(const MeshClipperContourId& rhs) const
+    {
+        return volume_id < rhs.volume_id
+            || (volume_id == rhs.volume_id && island_id < rhs.island_id);
+    }
+
+    bool is_valid() const {
+        return volume_id != size_t(-1) && island_id != size_t(-1);
+    }
+};
+
 enum class ClipperElementType : uint8_t
 {
     Undef = 0,

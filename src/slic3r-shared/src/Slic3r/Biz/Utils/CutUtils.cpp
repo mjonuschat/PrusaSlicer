@@ -652,6 +652,9 @@ const Domain::ModelObjectPtrs& Cut::perform_with_groove(const Groove& groove, co
                 upper->add_volume(*volume)->set_transformation(modifier_trafo);
         }
 
+        reset_instance_transformation(upper, m_instance, m_cut_matrix);
+        reset_instance_transformation(lower, m_instance, m_cut_matrix);
+
         cut_object_ptrs.push_back(upper);
 
         // add lower object to the cut_object_ptrs just to correct delete it from the Model destructor and avoid memory leaks

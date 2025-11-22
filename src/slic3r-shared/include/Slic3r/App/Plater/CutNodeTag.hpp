@@ -206,8 +206,7 @@ struct CutAuxiliaryElementId
     {
         Undef = 0,
         CutPlane,
-        UpperPart,
-        LowerPart,
+        CutPart,
     };
 
     Type type;

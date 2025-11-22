@@ -16,7 +16,6 @@ class Device;
 
 namespace Slic3r::App::Scene {
 
-class Clipper;
 class Scene;
 class Node;
 
@@ -37,12 +36,16 @@ public:
     );
     void deactivate(bool force_enabled_scene_nodes = true);
     void reset();
-    void show_clipper(bool show);
 
-    void set_position_by_ratio(double pos, bool keep_normal);
-    void set_range_and_pos(const Domain::Vec3d& cpl_normal, double cpl_offset, double pos);
     void set_behavior(bool hide_clipped, bool fill_cut, double contour_width);
-    int is_projection_inside_cut(const Domain::Vec3d& point_in) const;
+    void set_position_by_ratio(double pos, bool keep_normal);
+    void update_clipper(
+        const Domain::Vec3d& clp_normal,
+        double clp_offset,
+        double pos,
+        bool force_reset_ignored
+    );
+    bool is_outside_of_cut_contour(const Domain::Vec3d& point) const;
 
     void set_clickable_plane(bool clickable);
     void set_enable_mesh(bool enable);
@@ -53,9 +56,17 @@ public:
     void set_color_contour(Slic3r::Domain::ColorRGBA color);
 
     void reset_ignored();
-    void add_ignored(size_t volume_id, size_t island_id);
+    void set_ignored(const std::vector<MeshClipperContourId>& ids);
+    bool has_ignored() const;
+    bool has_valid_contour() const;
 
-    bool unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos_world, bool respect_contours = true);
+    bool
+    unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos_world, bool respect_contours = true);
+
+    const Clipper& clipper() const
+    {
+        return *m_clipper;
+    }
 
 private:
     void init_main_node();
@@ -79,18 +90,7 @@ private:
     ModelGeometryManager m_model_geometry_manager;
     ModelTriangleMeshManager m_model_triangle_mesh_manager;
 
-    struct ClipperId
-    {
-        size_t id;
-        size_t island_id;
-
-        bool operator==(const ClipperId& rhs) const
-        {
-            return id == rhs.id && island_id == rhs.island_id;
-        }
-    };
-
-    std::vector<ClipperId> m_ignored_ids;
+    std::vector<MeshClipperContourId> m_ignored_ids;
 
     Node* m_main_node{nullptr};
 
@@ -103,7 +103,6 @@ private:
     bool m_contour_enabled{true};
 
     Ray m_translation_ray;
-    double m_start_t{ 0 };
-
+    double m_start_t{0};
 };
 } // namespace Slic3r::App::Scene

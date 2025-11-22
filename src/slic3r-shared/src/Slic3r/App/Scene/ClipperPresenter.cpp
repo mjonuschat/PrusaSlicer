@@ -91,6 +91,7 @@ void ClipperPresenter::reset()
         m_model_geometry_manager.release_all();
         m_model_triangle_mesh_manager.release_all();
     }
+    m_contour_enabled = m_mesh_enabled = m_plane_enabled = true;
 }
 
 void ClipperPresenter::init_main_node()
@@ -263,7 +264,7 @@ void ClipperPresenter::update_nodes()
                 if (std::find(
                         m_ignored_ids.begin(),
                         m_ignored_ids.end(),
-                        ClipperId{clipper_id, island_id}
+                        MeshClipperContourId{clipper_id, island_id}
                     )
                     == m_ignored_ids.end())
                 {
@@ -380,28 +381,43 @@ void ClipperPresenter::reset_ignored()
     m_ignored_ids.clear();
 }
 
-void ClipperPresenter::add_ignored(size_t volume_id, size_t island_id)
+void ClipperPresenter::set_ignored(const std::vector<MeshClipperContourId>& ids)
 {
-    m_ignored_ids.emplace_back(ClipperId{volume_id, island_id});
+    m_ignored_ids = ids;
+    update_nodes();
 }
 
-void ClipperPresenter::show_clipper(bool show) {}
+bool ClipperPresenter::has_ignored() const
+{
+    return !m_ignored_ids.empty();
+}
+
+bool ClipperPresenter::has_valid_contour() const
+{
+    return m_clipper && m_clipper->has_valid_contour();
+}
 
 void ClipperPresenter::set_position_by_ratio(double pos, bool keep_normal)
 {
     if (m_clipper) {
         m_clipper->set_position_by_ratio(pos, keep_normal);
-        reset_ignored();
+        // reset_ignored();
         update_nodes();
     }
 }
 
-void
-ClipperPresenter::set_range_and_pos(const Domain::Vec3d& cpl_normal, double cpl_offset, double pos)
+void ClipperPresenter::update_clipper(
+    const Domain::Vec3d& clp_normal,
+    double clp_offset,
+    double pos,
+    bool force_reset_ignored
+)
 {
     if (m_clipper) {
-        m_clipper->set_range_and_pos(cpl_normal, cpl_offset, pos);
-        reset_ignored();
+        if (force_reset_ignored) {
+            reset_ignored();
+        }
+        m_clipper->set_range_and_pos(clp_normal, clp_offset, pos);
         update_nodes();
     }
 }
@@ -414,17 +430,37 @@ void ClipperPresenter::set_behavior(bool hide_clipped, bool fill_cut, double con
     }
 }
 
-int ClipperPresenter::is_projection_inside_cut(const Domain::Vec3d& point_in) const
+bool ClipperPresenter::is_outside_of_cut_contour(const Domain::Vec3d& point) const
 {
     if (m_clipper) {
-        return m_clipper->is_projection_inside_cut(point_in);
+        // get id of clipper contour possible contains a point
+        MeshClipperContourId id = m_clipper->get_mesh_clipper_contour_id_from_projection(point);
+        if (id.is_valid()) {
+            // check if point is inside the ignored contours
+            return std::find(m_ignored_ids.begin(), m_ignored_ids.end(), id) != m_ignored_ids.end();
+        }
+        return true;
     }
-    return -1;
+    return true;
 }
 
-bool ClipperPresenter::unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos_world, bool respect_contours)
+// Unprojects the mouse ray on the mesh and saves hit point and normal of the facet into pos_and_normal
+// Return false if no intersection was found, true otherwise.
+bool ClipperPresenter::unproject_on_cut_plane(
+    const Ray& ray,
+    Domain::Vec3d& pos_world,
+    bool respect_contours
+)
 {
-    return m_clipper->unproject_on_cut_plane(ray, pos_world, respect_contours);
+    MeshClipperContourId contour_id;
+    bool can_unproject = m_clipper->unproject_on_cut_plane(ray, pos_world, contour_id);
+    if (respect_contours && can_unproject) {
+        // Do not react to clicks outside a contour (or inside a contour that is ignored)
+        // check if point is inside the ignored contours
+        return std::find(m_ignored_ids.begin(), m_ignored_ids.end(), contour_id)
+            == m_ignored_ids.end();
+    }
+    return false;
 }
 
 } // namespace Slic3r::App::Scene

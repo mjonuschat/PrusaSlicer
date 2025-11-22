@@ -104,6 +104,8 @@ private:
     );
     void update_cut_plane_mesh();
     void update_cut_plane_trafo();
+    void update_parts_nodes_colors_from_selection();
+    void update_parts_nodes_enabled();
 
     void update_handles_nodes(Handle hovered_handle = Handle());
     void update_handles_material_and_enability(Handle hovered_handle);
@@ -115,10 +117,12 @@ private:
     void update_snap_nodes();
     Vec3d get_local_pos(Domain::Vec3d pos_world);
     Vec3d get_world_pos(Domain::Vec3d pos);
-    void update_dialog_on_selection_changed();
 
-    void update_nodes_enability(bool connectors_editing);
-    void update_clipper_presenter();
+    void update_dialog_on_selection_changed();
+    void update_dialog_state();
+
+    void update_nodes_on_mode_changed();
+    void update_clipper_presenter(bool force_reset_ignored=true);
 
     void build_cut_part_mesh(
         CutPartNodeTag::Type type,
@@ -138,15 +142,13 @@ private:
     void flip_cut_plane();
 
     bool can_perform_cut() const;
-    bool has_valid_groove() const;
+    bool is_valid_groove() const;
 
     void perform_cut();
+    void reset_preprocess_cut();
+    void preprocess_cut();
 
-    void reset_cut_by_contours();
     void put_connectors_on_cut_plane(const Vec3d& cp_normal, double cp_offset);
-
-    void process_contours();
-
     void apply_connectors_in_model(Domain::ModelObject* mo, int& dowels_count);
     void apply_cut_connectors(Domain::ModelObject* mo, const std::string& connector_name);
 
@@ -195,6 +197,18 @@ private:
 private:
     std::unique_ptr<CutDialog> m_dialog;
 
+    struct SolidAABBMesh {
+        std::shared_ptr<AABBMesh> aabb_mesh;
+        // Mesh transformation including tarnsformation of volume and instance
+        Domain::Transform3d trafo;
+        // Given a point and direction in world coords, returns whether the respective line
+        // intersects the mesh if it is transformed into world by trafo.
+        bool intersects_line(Domain::Vec3d point, Domain::Vec3d direction) const;
+    };
+    // solid object meshes used for groove validation
+    // contains just a solid volumes from the selected instance
+    std::vector<SolidAABBMesh> m_solid_meshes;
+
     ModelGeometryManager m_model_geometry_manager;
     ModelTriangleMeshManager m_model_triangle_mesh_manager;
     ConnectorGeometryManager m_connector_geometry_manager;
@@ -202,6 +216,7 @@ private:
 
     Scene::Node* m_main_node{nullptr};
     Scene::Node* m_handles_node{nullptr};
+    Scene::Node* m_plane_node{nullptr};
     Scene::Node* m_connectors_node{nullptr};
 
     Domain::Vec3d m_plane_center;
@@ -226,6 +241,11 @@ private:
     Vec3d m_btn_down_pos{Vec3d::Zero()};
 
     bool m_can_flip_plane{false}; // indicates if plane was just clicked without dragging
+    bool m_is_looking_forward_on_cut_plane{true};
+
+    // Used as a guard to suppress cut-plane recreation during dialog value
+    // initialization, which would otherwise trigger a recreation on each change.
+    bool m_is_cut_plane_recreation_suppressed{false};
 
     Domain::Transform3d m_rotation_m{Domain::Transform3d::Identity()};
     double m_snap_step{1.0};

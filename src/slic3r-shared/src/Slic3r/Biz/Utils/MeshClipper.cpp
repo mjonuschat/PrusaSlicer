@@ -80,19 +80,19 @@ void MeshClipper::set_transformation(const Transformation& trafo)
     }
 }
 
-int MeshClipper::is_projection_inside_cut(const Vec3d& point_in) const
+size_t MeshClipper::get_contour_id_from_projection(const Vec3d& point_in) const
 {
     if (!result || result->cut_islands.empty())
         return -1;
     Vec3d point = result->trafo.inverse() * point_in;
     Point pt_2d = Scaling::scaled(Vec2d(point.x(), point.y()));
 
-    for (int i = 0; i < int(result->cut_islands.size()); ++i) {
+    for (size_t i = 0; i < result->cut_islands.size(); ++i) {
         const CutIsland& isl = result->cut_islands[i];
         if (isl.expoly_bb.contains(pt_2d) && ExPolygon::contains(isl.expoly, pt_2d))
             return i; // TODO: handle intersecting contours
     }
-    return -1;
+    return size_t (- 1);
 }
 
 bool MeshClipper::has_valid_contour() const

@@ -1,9 +1,15 @@
 #pragma once
 
 #include "Slic3r/Biz/Utils/CutUtils.hpp"
+#include "libslic3r/AABBMesh.hpp"
+#include "Slic3r/App/Scene/ClipperPresenterHelper.hpp"
 
 namespace Slic3r::Domaon {
 class TriangleMesh;
+} // namespace Slic3r::Domaon
+
+namespace Slic3r::App::Scene {
+class ClipperPresenter;
 } // namespace Slic3r::Domaon
 
 namespace Slic3r::App::Plater {
@@ -17,7 +23,8 @@ public:
         const Domain::Transform3d& cut_matrix,
         int instance_idx,
         const Domain::Vec3d& center,
-        const Domain::Vec3d& normal /*, const CommonGizmosDataObjects::ObjectClipper& oc*/
+        const Domain::Vec3d& normal,
+        Scene::ClipperPresenter* clipper_presenter
     );
     CutPartSelection(const Domain::ModelObject* mo, int instance_idx_in);
 
@@ -28,18 +35,13 @@ public:
 
     struct Part
     {
-        // GLModel glmodel;
-        // MeshRaycaster raycaster;
         std::shared_ptr<const Domain::TriangleMesh> mesh;
+        std::shared_ptr<AABBMesh> aabb_mesh;
         // Part transformation including tarnsformation of volume and instance
         Domain::Transform3d trafo;
         bool selected;
         bool is_modifier;
     };
-
-    // void render(const Vec3d* normal, GLModel& sphere_model);
-    // void toggle_selection(const Domain::Vec2d& mouse_pos);
-    // void turn_over_selection();
 
     Domain::ModelObject* model_object()
     {
@@ -58,12 +60,16 @@ public:
         return m_parts;
     }
 
-    const std::vector<size_t>* get_ignored_contours_ptr() const
+    std::vector<Part>& parts()
     {
-        return (valid() ? &m_ignored_contours : nullptr);
+        return m_parts;
     }
 
     std::vector<Biz::Cut::Part> get_cut_parts();
+
+    // swith selected state for each part
+    void turn_over_selection();
+    void toggle_part(size_t id);
 
 private:
     void add_object(const Domain::ModelObject* object);
@@ -75,10 +81,10 @@ private:
     bool m_valid = false;
     std::vector<std::pair<std::vector<size_t>, std::vector<size_t>>>
         m_contour_to_parts; // for each contour, there is a vector of parts above and a vector of parts below
-    std::vector<size_t>
-        m_ignored_contours; // contour that should not be rendered (the parts on both sides will both be parts of the same object)
 
-    std::vector<Domain::Vec3d> m_contour_points; // Debugging
-    std::vector<std::vector<Domain::Vec3d>> m_debug_pts; // Debugging
+    std::map<Scene::MeshClipperContourId, std::pair<size_t, size_t>>
+        m_contours; // for each contour, there is a pair of part above and a part below
+
+    Scene::ClipperPresenter* m_clipper_presenter{nullptr};
 };
 } // namespace Slic3r::App::Plater

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Slic3r/Biz/Utils/MeshClipper.hpp"
+#include "Slic3r/App/Scene/ClipperPresenterHelper.hpp"
 
 namespace Slic3r::Domain {
 class ModelVolume;
@@ -14,7 +15,7 @@ class TriangleMesh;
 } // namespace Slic3r::Domain
 
 namespace Slic3r::App::Scene {
-    
+
 class Camera;
 struct Ray;
 
@@ -37,25 +38,32 @@ public:
     void set_behavior(bool hide_clipped, bool fill_cut, double contour_width);
 
     int get_number_of_contours() const;
-    std::vector<Domain::Vec3d> point_per_contour() const;
+    std::map<MeshClipperContourId, Domain::Vec3d> point_per_contour() const;
 
-    int is_projection_inside_cut(const Domain::Vec3d& point_in) const;
+    MeshClipperContourId get_mesh_clipper_contour_id_from_projection(
+        const Domain::Vec3d& point_in
+    ) const;
     bool has_valid_contour() const;
 
     void update(
         const Domain::ModelObject* selected_object,
         const Domain::ModelInstance* selected_instance,
-        double sla_shift = 0.,
+        double sla_shift                = 0.,
         bool force_clipper_regeneration = false
     );
     void release();
     void recalculate_object_clippers();
 
-    bool unproject_on_cut_plane(const Ray& ray, Domain::Vec3d& pos_world, bool respect_contours = true);
+    bool unproject_on_cut_plane(
+        const Ray& ray,
+        Domain::Vec3d& pos_world,
+        MeshClipperContourId& contour_id
+    );
 
     const std::vector<Domain::ModelVolume*>& volumes();
 
-    using MeshesWithTransform = std::vector<std::pair<std::unique_ptr<Biz::MeshClipper>, Domain::Transformation>>;
+    using MeshesWithTransform =
+        std::vector<std::pair<std::unique_ptr<Biz::MeshClipper>, Domain::Transformation>>;
     MeshesWithTransform object_clippers;
 
 private:
