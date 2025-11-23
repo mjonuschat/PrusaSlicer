@@ -345,33 +345,11 @@ void PlaterRenderModule::init_scene_layout()
         Render::Icon::CubeAdd,
         _u8L("Add..."),
         "Ctrl + I",
-        {.action = [this]()
-         {
-             IDialogManager::FileCallback callback =
-                 [this](bool success, const std::vector<boost::filesystem::path>& file_paths)
-             {
-                 if (success) {
-                     const auto& proj =
-                         m_workbench.project(m_project_interactor.selected_project_id());
-                     Domain::BedRef selected_bed = m_project_interactor.scene_interactor()
-                                                       .bed_selection()
-                                                       .last_selected_bed();
-                     const Domain::ConfigContainer* cc =
-                         proj.find_config_container(selected_bed.config_container_id);
-                     const Domain::BedInstance& inst =
-                         cc->find_bed_instance(selected_bed.instance_id);
-                     int nozzle_dmrs_cnt = cc->selected_preset().hw_config.tool_count;
-                     Biz::FileLoadingLogic::import_files_and_add_to_scene(
-                         file_paths,
-                         nozzle_dmrs_cnt,
-                         m_project_interactor.scene_interactor(),
-                         cc->bed().center()
-                             + Biz::Algorithms::Point::to_2d(inst.transformation.get_offset()),
-                         &App::AppServices::instance().dialog_manager()
-                     );
-
-                m_project_interactor.set_export_project_path(m_project_interactor.selected_project_id(), file_paths.front());
-
+        {.action = [this]() {
+        IDialogManager::FileCallback callback =
+            [this](bool success, const std::vector<boost::filesystem::path>& file_paths) {
+            if (success) {
+                m_project_interactor.load_models_to_project(file_paths);
                 m_scene_presenter->scene().log_nodes();
             }
         };

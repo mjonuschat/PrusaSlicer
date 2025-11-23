@@ -14,6 +14,7 @@
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 #include "Slic3r/Directories.hpp"
 
@@ -464,6 +465,24 @@ void ProjectInteractor::do_result_upload_connect(const Domain::SlicingId id, con
     do_result_export_inner(id, std::move(config), std::move(data));
 }
 
+void ProjectInteractor::on_model_downloaded(const std::vector<boost::filesystem::path>& paths, bool in_new_project)
+{
+    ASSERT(!paths.empty());
+    boost::filesystem::path file_path = paths.front();
+    std::string ext_str = file_path.extension().string();
+    // file path could have locale dependent characters, do not use tolower
+    bool load_as_single_project = paths.size() ==1 && (ext_str == ".3mf" || ext_str == ".3MF");
+    if (in_new_project && load_as_single_project) {
+        load_project(paths.front());
+        return;
+    }
+
+    if (in_new_project) {
+        new_project();
+    }
+    load_models_to_project(paths);
+}
+
 std::string ProjectInteractor::get_project_name(Domain::SelectionId project_id) const
 {
     auto it = m_workbench.projects().find(project_id);
@@ -519,7 +538,7 @@ void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::pa
         paths,
         nozzle_dmrs_cnt,
         scene_interactor(),
-        cc->bed().center(),
+        cc->bed().center() + Biz::Algorithms::Point::to_2d(inst.transformation.get_offset()),
         m_dialog_provider
     );
 

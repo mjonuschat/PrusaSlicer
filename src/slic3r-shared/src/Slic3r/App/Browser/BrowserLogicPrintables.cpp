@@ -237,7 +237,9 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_dow
     info.file_url = download_url;
     info.project_url = model_url;
     info.load_count = 0;
-    m_project_interactor.download_model_from_printables_tab(std::move(info));
+    Biz::FileDownloader::FileDownloaderMultiTicket sources;
+    sources.jobs.push_back(std::move(info));
+    m_project_interactor.download_model_from_printables_tab(std::move(sources));
     return {{BrowserLogicCommandType::SwitchToSlicing, {}}};;
 }
 
@@ -264,25 +266,25 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_sli
     info.file_url = download_url;
     info.project_url = model_url;
     info.load_count = 1;
-    m_project_interactor.download_model_from_printables_tab(std::move(info));
+    Biz::FileDownloader::FileDownloaderMultiTicket sources;
+    sources.jobs.push_back(std::move(info));
+    m_project_interactor.download_model_from_printables_tab(std::move(sources));
     return {{BrowserLogicCommandType::SwitchToSlicing, {}}};
 }
 
 std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_slice_files(const std::string& message_data)
 {
 
-    std::vector<Biz::FileDownloader::FileDownloaderJobInput> sources;
-
+    Biz::FileDownloader::FileDownloaderMultiTicket sources;
+     
     try {
         nlohmann::json j = nlohmann::json::parse(message_data);
-        bool new_project{false};
         if (j.contains("new_project") && j["new_project"].is_boolean()) {
-            new_project = j["new_project"].get<bool>();
+            sources.new_project = j["new_project"].get<bool>();
         }
         if (j.contains("objects") && j["objects"].is_array()) {
             for (const auto& obj : j["objects"]) {
                 Biz::FileDownloader::FileDownloaderJobInput info;
-                info.new_project = new_project;
                 if (obj.contains("name") && obj["name"].is_string()) {
                     info.file_name = obj["name"].get<std::string>();
                 }
@@ -304,7 +306,7 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_sli
                         info.image_url = source["imageUrl"].get<std::string>();
                     }
                 }
-                sources.emplace_back(std::move(info));
+                sources.jobs.emplace_back(std::move(info));
             }
         }
     } catch (const nlohmann::json::parse_error& e) {
@@ -312,10 +314,8 @@ std::vector<BrowserLogicCommand> BrowserLogicPrintables::on_printables_event_sli
         return {};
     }
 
-    DEBUG_ASSERT(!sources.empty(), "Faulty printables message.");
-    for (auto& info : sources) {
-        m_project_interactor.download_model_from_printables_tab(std::move(info));        
-    }
+    DEBUG_ASSERT(!sources.jobs.empty(), "Faulty printables message.");
+    m_project_interactor.download_model_from_printables_tab(std::move(sources));        
    
     return {{BrowserLogicCommandType::SwitchToSlicing, {}}};
 }
@@ -526,26 +526,21 @@ void BrowserLogicPrintables::emplace_define_css_commands(std::vector<BrowserLogi
     
         // Capture click on hypertext
         // Rewritten from mobileApp code
-        (function() {
+                (function() {
             const listenerKey = 'custom-click-listener';
             if (!document[listenerKey]) {
-                document.addEventListener( 'click', function(event) {
+                document.addEventListener('click', function(event) {
                     const target = event.target.closest('a[href]');
-                    if (!target) return; // Ignore clicks that are not on links
+                    if (!target) return; 
                     const url = target.href;
-                    // Allow empty iframe navigation
-                    if (url === 'about:blank') {
-                        return; // Let it proceed
-                    }
-                    // Debug log for navigation
+                    if (url === 'about:blank') return; 
                     console.log(`Printables:onNavigationRequest: ${url}`);
-                    // Handle all non-printables.com domains in an external browser
-                    if (!/printables\.com/.test(url)) {
+                    // Updated Regex to include testprusaverse.com
+                    if (!/printables\.com|prusaverse\.com/.test(url)) {
                         window.ExternalApp.postMessage(JSON.stringify({ event: 'openExternalUrl', url }))
                         event.preventDefault();
                     }
-                    // Default: Allow navigation to proceed
-                },true); // Capture the event during the capture phase
+                }, true);
                 document[listenerKey] = true;
             }
         })();

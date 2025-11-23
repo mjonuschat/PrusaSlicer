@@ -22,10 +22,13 @@ public:
     }
 
     void download_files_prusaslicer_url(const std::vector<std::string>& files_url);
-    void init_download_job(FileDownloaderJobInput input_data);
+
+    void init_multi_job(FileDownloaderMultiTicket ticket);
+
+   
 
 private:
-   
+    void init_download_job(FileDownloaderJobInput input_data);
 
     Platform::IMainThreadDispatcher& m_dispatcher;
 

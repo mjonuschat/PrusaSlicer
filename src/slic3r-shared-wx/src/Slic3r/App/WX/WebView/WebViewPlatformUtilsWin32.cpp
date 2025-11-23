@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/Format.hpp"
+#include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include "Slic3r/Log.hpp"
 
 #include <WebView2.h>
@@ -352,8 +353,9 @@ void load_request(wxWebView* web_view, const std::string& address, const std::st
     }
      wxCOMPtr<ICoreWebView2WebResourceRequest> webResourceRequest;
     
+    wxString printables_address = from_u8(Biz::Network::ServiceConfig::instance().printables_url());
     if (FAILED(webViewEnvironment2->CreateWebResourceRequest(
-        L"https://www.printables.com/", L"GET", NULL,
+        printables_address.wc_str(), L"GET", NULL,
         L"Content-Type: application/x-www-form-urlencoded", &webResourceRequest)))
     {
         SPDLOG_ERROR("load_request Failed: CreateWebResourceRequest failed.");

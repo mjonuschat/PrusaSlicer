@@ -397,22 +397,15 @@ public:
         m_file_downloader_interactor.download_files_prusaslicer_url(message);
     }
 
-    void download_model_from_printables_tab(FileDownloader::FileDownloaderJobInput data)
+    void download_model_from_printables_tab(FileDownloader::FileDownloaderMultiTicket data)
     {
-        if (data.new_project) {
-            new_project();
-        }
-        m_file_downloader_interactor.init_download_job(std::move(data));
+        m_file_downloader_interactor.init_multi_job(std::move(data));
     }
 
     /**
      * @brief Callback from FileDownloader.
      */
-
-    void on_model_downloaded(const boost::filesystem::path& path) override
-    {
-        load_models_to_project({path});
-    }
+    void on_model_downloaded(const std::vector<boost::filesystem::path>& paths, bool in_new_project) override;
 
     void open_downloaded_file(const boost::filesystem::path& path, bool in_new_project)
     {

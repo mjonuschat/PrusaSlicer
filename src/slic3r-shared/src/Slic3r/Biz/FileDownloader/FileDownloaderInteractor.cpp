@@ -66,7 +66,6 @@ void FileDownloaderInteractor::init_download_job(FileDownloaderJobInput input_da
 {
     
     std::string escaped_url = input_data.file_url;
-
     // https check
     constexpr std::string_view prefix = "https://";
     if (!escaped_url.starts_with(prefix)) {
@@ -98,6 +97,9 @@ void FileDownloaderInteractor::init_download_job(FileDownloaderJobInput input_da
         std::move(input_data),
         get_next_id(),
         std::move(dest_directory),
+        0.0, 
+        1.0,
+        1
     };
 
     Platform::JobManager::JobManager& job_manager =
@@ -109,13 +111,16 @@ void FileDownloaderInteractor::init_download_job(FileDownloaderJobInput input_da
                 if (!job_data.finished) {
                     return;
                 }
+
+                std::vector<boost::filesystem::path> paths;
                 for (size_t i = 0; i < job_data.input_data.load_count; i++) {
-                    boost::filesystem::path model_path = job_data.dest_folder / job_data.input_data.file_name;
+                    paths.emplace_back(job_data.dest_folder / job_data.input_data.file_name);
+                }
+                if (!paths.empty()) {
                     invoke_listeners<IFileDownloaderListener>(
-                        [model_path](auto* listener) { listener->on_model_downloaded(model_path); }
+                        [paths](auto* listener) { listener->on_model_downloaded(paths, false); }
                     );
                 }
-                
             }
         )
         .on_exception(
@@ -123,8 +128,8 @@ void FileDownloaderInteractor::init_download_job(FileDownloaderJobInput input_da
             {
                 try {
                     std::rethrow_exception(exception);
-                } catch (const FileDownloadFailed&) {
-                   // No action needed.
+                } catch (const FileDownloadFailed& e) {
+                   SPDLOG_WARN("File Download Failed exception thrown: {}", e.what());
                 } catch (...) {
                     if (debug) {
                         stacktrace.print();
@@ -137,4 +142,109 @@ void FileDownloaderInteractor::init_download_job(FileDownloaderJobInput input_da
         
 }
 
+void FileDownloaderInteractor::init_multi_job(FileDownloaderMultiTicket ticket)
+{
+    size_t id = get_next_id();
+    auto peform_job_wrapper = [id, ticket](
+                                  Biz::JThread::StopToken stop_token,
+                                  Biz::Platform::IMainThreadDispatcher& dis,
+                                  Biz::Platform::JobManager::ProgressTracker job_progress
+                              ) -> MultiFileDownloaderJobData
+    {
+        MultiFileDownloaderJobData results;
+        results.new_project = ticket.new_project;
+
+        for (size_t i = 0; i < ticket.jobs.size(); i++)
+        {
+            FileDownloaderJobInput input_data{ ticket.jobs[i]};
+            std::string escaped_url = input_data.file_url;
+
+            // https check
+            constexpr std::string_view prefix = "https://";
+            if (!escaped_url.starts_with(prefix)) {
+                std::string msg = fmt::format(
+                    "Download won't start. Download URL isn't secure (https) : {}",
+                    escaped_url
+                );
+                SPDLOG_ERROR("{}", msg);
+                return {};
+            }
+
+            // subdomain check
+            if (!is_any_subdomain(escaped_url, {"printables.com", "thingiverse.com", "cults3d.com"})) {
+                std::string msg = fmt::format(
+                    "Download won't start. Download URL doesn't point to allowed subdomains : {}",
+                    escaped_url
+                );
+                SPDLOG_ERROR("{}", msg);
+                // TODO: dispatch msg to notification
+                return {};
+            }
+
+            if (input_data.file_name.empty()) {
+                input_data.file_name = filename_from_url(escaped_url);
+            }
+
+            boost::filesystem::path dest_directory(system_downloads_dir());
+            double percent_chunk = 1.0 / ticket.jobs.size();
+            FileDownloaderJobData data{
+                std::move(input_data),
+                id,
+                std::move(dest_directory),
+                percent_chunk * i, 
+                percent_chunk *(i + 1),
+                ticket.jobs.size()
+            };
+
+            results.data.emplace_back(perform_job(stop_token, dis, job_progress, std::move(data)));
+        }
+        return results;
+    };
+
+    Platform::JobManager::JobManager& job_manager =
+        Platform::PlatformServices::instance().job_manager();
+    job_manager.create_job("file_download" + std::to_string(id), peform_job_wrapper)
+        .on_result(
+            [this](MultiFileDownloaderJobData job_data)
+            {
+                for (const auto& data : job_data.data) {
+                    if (!data.finished) {
+                        return;
+                    }
+                }
+                std::vector<boost::filesystem::path> paths;
+                for (const auto& data : job_data.data) {                    
+                    for (size_t i = 0; i < data.input_data.load_count; i++) {
+                        paths.emplace_back(data.dest_folder / data.input_data.file_name);
+                    }
+                }
+
+                if (!paths.empty()) {
+                    bool new_project = job_data.new_project;
+                    invoke_listeners<IFileDownloaderListener>(
+                        [paths, new_project](auto* listener)
+                        { listener->on_model_downloaded(paths, new_project); }
+                    );
+                }
+                
+                
+            }
+        )
+        .on_exception(
+            [](const std::exception_ptr& exception, const cpptrace::stacktrace& stacktrace)
+            {
+                try {
+                    std::rethrow_exception(exception);
+                } catch (const FileDownloadFailed& e) {
+                   SPDLOG_WARN("File Download Failed exception thrown: {}", e.what());
+                } catch (...) {
+                    if (debug) {
+                        stacktrace.print();
+                    }
+                    throw(exception);
+                }
+            }
+        )
+        .start();
+}
 } // namespace Slic3r::Biz::FileDownloader

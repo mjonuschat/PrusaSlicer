@@ -61,10 +61,10 @@ std::string job_status_to_string(const JobStatus& status, const std::string& job
     std::string status_text;
     switch (status) {
     case JobStatus::Finished:
-        status_text = _u8L("finished");
+        status_text = _u8L("has finished");
         break;
     case JobStatus::Failed:
-        status_text = _u8L("failed");
+        status_text = _u8L("has failed");
         break;
     case JobStatus::Started:
     case JobStatus::None:
@@ -194,6 +194,7 @@ void PopNotificationCenter::on_download_job_status_changed(
     boost::filesystem::path dest_path;
     std::string printables_url;
     bool is_loaded;
+    size_t total_files;
     if (const auto* payload =
             std::any_cast<FileDownloaderJobProgressPayload>(&progress.progress_detail.payload))
     {
@@ -202,12 +203,17 @@ void PopNotificationCenter::on_download_job_status_changed(
         dest_path   = payload->final_path;
         printables_url = payload->project_url;
         is_loaded = payload->load_count > 0;
+        total_files = payload->total_files;
     } else {
         // Ignore progress without payload
         return;
     }
 
-    std::string text = job_status_to_string(progress.status, fmt::format("Downloading {}", filename));
+    bool print_single_file_name = (total_files == 1 || progress.status == JobStatus::Started || progress.status == JobStatus::None);
+    std::string text_name = print_single_file_name ?
+        fmt::format("Downloading {}", filename) :
+        fmt::format("Downloading {} files", total_files);  
+    std::string text        = job_status_to_string(progress.status, text_name);
     PopNotificationLayout layout;
     PopNotificationLevel level = PopNotificationLevel::ProgressWithClose;
     if (progress.status == JobStatus::Finished) {

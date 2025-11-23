@@ -94,7 +94,7 @@ FileDownloaderJobData perform_job(
     );
 
     Domain::ProgressDetail detail;
-    FileDownloaderJobProgressPayload payload(job_data.id, job_data.input_data.file_name, job_data.input_data.project_url, job_data.input_data.load_count, dest_path);
+    FileDownloaderJobProgressPayload payload(job_data.id, job_data.input_data.file_name, job_data.input_data.project_url, job_data.input_data.load_count, dest_path, job_data.total_files);
     detail.payload = std::move(payload);
     job_progress.set_progress_detail(detail);
 
@@ -167,6 +167,9 @@ FileDownloaderJobData perform_job(
                     double percent_total = job_data.absolute_size == 0 ?
                         0.0 :
                         (written_previously + progress.dlnow) / job_data.absolute_size;
+                    double aux = percent_total;
+                    percent_total = job_data.percent_from + percent_total * (job_data.percent_to - job_data.percent_from);
+                    //SPDLOG_DEBUG("percent: {} ({} + {} * {})", percent_total, job_data.percent_from ,aux, (job_data.percent_to - job_data.percent_from));
                     job_progress.set({percent_total});
                 }
             }
@@ -209,7 +212,7 @@ FileDownloaderJobData perform_job(
                  dest_path  = job_data.dest_folder / job_data.input_data.file_name;
 
                  Domain::ProgressDetail detail;
-                 FileDownloaderJobProgressPayload payload(job_data.id, job_data.input_data.file_name, job_data.input_data.project_url, job_data.input_data.load_count, dest_path);
+                 FileDownloaderJobProgressPayload payload(job_data.id, job_data.input_data.file_name, job_data.input_data.project_url, job_data.input_data.load_count, dest_path, job_data.total_files);
                  detail.payload = std::move(payload);
                  job_progress.set_progress_detail(detail);
              }
@@ -238,7 +241,7 @@ FileDownloaderJobData perform_job(
                     SPDLOG_ERROR("File Download has failed due to exception at on_complete callback: {}",e.what());
                     return;
                 }
-                double percent_total = 1.0;
+                double percent_total = job_data.percent_to;
                 job_progress.set({percent_total});
                 job_data.finished = true;
                 success = true;
