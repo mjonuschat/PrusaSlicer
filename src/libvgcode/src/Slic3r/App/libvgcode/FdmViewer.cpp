@@ -706,6 +706,8 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data, const Scene::Transform& tr
     for (Scene::Node* gcode_node : nodes) {
         gcode_node->set_world_transform(transform);
     }
+
+    m_inverse_transform = transform.inverse();
 }
 
 void FdmViewer::update_enabled_entities()
@@ -865,7 +867,7 @@ void FdmViewer::render()
     if (m_settings.update_colors)
         update_colors();
 
-    render_segments(m_scene->camera().position().cast<float>());
+    render_segments((m_inverse_transform * m_scene->camera().position()).cast<float>());
     render_options();
 }
 

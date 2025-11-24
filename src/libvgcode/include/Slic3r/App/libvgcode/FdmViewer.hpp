@@ -397,6 +397,8 @@ private:
 
     Scene::Node* m_main_node{nullptr};
 
+    Scene::Transform m_inverse_transform{ Scene::Transform::Identity() };
+
     void update_view_full_range() override;
     void update_color_ranges();
     void update_heights_widths();
