@@ -1343,6 +1343,20 @@ static bool is_visible(const MoveVertex& v, const Settings& settings)
     }
 }
 
+void FdmViewer::set_tool_marker_enabled(bool enabled)
+{
+    m_tool_marker.set_enabled(enabled);
+
+    if (m_main_node == nullptr)
+        return;
+    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n) {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == GCodeElementType::ToolMarker;
+    }, true);
+    DEBUG_ASSERT(node != nullptr);
+    node->set_enabled(enabled);
+}
+
 BoundingBox3d FdmViewer::tool_marker_bounding_box() const
 {
     const Vec3f& position = current_vertex().position;
