@@ -491,7 +491,7 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"toolchange_gcode", steps({propagate(psGCodeExport)})},
     {"top_fill_pattern", steps({propagate(posInfill)})},
     {"top_infill_extrusion_width", steps({propagate(posInfill)})},
-    {"top_one_perimeter_type", steps({propagate(posInfill)})},
+    {"top_one_perimeter_type", steps({propagate(posPerimeters)})},
     {"top_solid_infill_acceleration", steps({propagate(psGCodeExport)})},
     {"top_solid_infill_speed", steps({propagate(psGCodeExport)})},
     {"top_solid_layers", steps({propagate(posPrepareInfill)})},
