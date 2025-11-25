@@ -1108,6 +1108,12 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
         update_viewer();
     }
 
+    if (m_viewer != &m_fdm_viewer) {
+        // Safety guard to avoid updating m_fdm_viewer when it is not the active viewer.
+        // This code path may be triggered only because of print result invalidations.
+        return;
+    }
+
     const std::optional<Biz::FDMResultRef> fdm_result{m_project_interactor.fdm_result_cache().get_result(id)};
     if (!fdm_result) {
         m_fdm_viewer.reset();
@@ -1156,6 +1162,12 @@ void PreviewRenderModule::update_sla_viewer_result_data(const Domain::SlicingId 
 
     if (m_viewer == &m_fdm_viewer) {
         update_viewer();
+    }
+
+    if (m_viewer != &m_sla_viewer) {
+        // Safety guard to avoid updating m_sla_viewer when it is not the active viewer.
+        // This code path may be triggered only because of print result invalidations.
+        return;
     }
 
     update_toolbar_visibility();
