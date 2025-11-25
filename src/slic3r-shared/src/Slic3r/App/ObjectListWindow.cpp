@@ -116,7 +116,7 @@ void ObjectListWindow::update_sliced_info()
 
     const std::optional<Biz::FDMResultRef> fdm_result{ m_project_interactor->fdm_result_cache().get_result(id) };
     if (fdm_result) {
-        const Biz::libpgcode::PrintEstimatedStatistics& print_statistics = fdm_result->get().print_statistics;
+        const Domain::BasicPrintStatistics& print_statistics = fdm_result->get().basic_print_statistics;
 
         float volume{ 0.f };
         for (const auto& [_, vol] : print_statistics.volumes_per_extruder)
@@ -140,7 +140,7 @@ void ObjectListWindow::update_sliced_info()
         const std::string first_layer_time = "? seconds";
         m_first_layer_time->set_text(first_layer_time);
 
-        const std::string estimated_time = Slic3r::get_time_dhms(print_statistics.modes[size_t(Biz::libpgcode::TimeMode::Normal)].time);
+        const std::string estimated_time = Slic3r::get_time_dhms(print_statistics.normal_mode_time.time);
         m_estimated_time->set_text(estimated_time);
 
         return;

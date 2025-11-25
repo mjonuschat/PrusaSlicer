@@ -6,6 +6,7 @@
 #define slic3r_GCode_PostProcessor_hpp_
 
 #include "libslic3r/ConfigViews.hpp"
+#include "libslic3r/Extruder.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/PrintBase.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
@@ -25,6 +26,7 @@ typedef std::function<void(Biz::Slicing::Warning)> WarningCallback;
 extern Slic3r::Biz::libpgcode::ProcessorResult post_process(
     const Slic3r::Biz::libpgcode::PostProcessorConfig& config,
     Slic3r::Biz::libpgcode::ProcessorResult&& result, 
+    const std::vector<Extruder>& extruders,
     WarningCallback active_step_add_warning_callback
 );
 

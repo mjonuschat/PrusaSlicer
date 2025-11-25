@@ -1,3 +1,4 @@
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/lexical_cast.hpp>
 #include <regex>
 #include <vector>
@@ -111,9 +112,137 @@ std::optional<std::string> are_extrusions_within_bounds(
 
     return std::nullopt;
 }
+
+std::optional<float> parse_float_option_from_gcode(
+    const std::string& key,
+    const std::string& gcode
+) {
+    std::regex re("; " + key + R"(.*= (\d+(\.\d+)?))");
+    std::smatch match;
+    if (!std::regex_search(gcode, match, re)) {
+        return std::nullopt;
+    }
+    return boost::lexical_cast<float>(match[1].str());
+}
+
+std::optional<std::vector<float>> parse_vector_option_from_gcode(
+    const std::string& key,
+    const std::string& gcode
+) {
+    std::regex re("; " + key + R"(.*= ([0-9.,\s]+))");
+    std::smatch match;
+    if (!std::regex_search(gcode, match, re)) {
+        return std::nullopt;
+    }
+
+    std::vector<float> result;
+    std::stringstream ss(match[1].str());
+    std::string token;
+    while (std::getline(ss, token, ',')) {
+        boost::algorithm::trim(token);
+        result.push_back(boost::lexical_cast<float>(token));
+    }
+
+    return result;
+}
+
+std::optional<int>
+parse_printing_time_seconds_from_gcode(const std::string& key, const std::string& gcode)
+{
+    std::regex re("; " + key + R"(.*=\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?)");
+    std::smatch match;
+
+    if (!std::regex_search(gcode, match, re))
+        return std::nullopt;
+
+    const auto to_int{[](const std::ssub_match& m)
+                      { return m.matched ? boost::lexical_cast<int>(m.str()) : 0; }};
+
+    int hours{to_int(match[1])};
+    int minutes{to_int(match[2])};
+    int seconds{to_int(match[3])};
+
+    return hours * 3600 + minutes * 60 + seconds;
+}
+
 }
 
 namespace Slic3r::Tests {
+
+std::optional<std::string> are_statistics_sane(const std::string& gcode)
+{
+    const auto filament_used_wipe_tower{
+        parse_float_option_from_gcode("total filament used for wipe tower", gcode)
+    };
+    if (!filament_used_wipe_tower) {
+        return "Unable to parse wipe tower filament used";
+    }
+
+    const bool multiple_extruders{filament_used_wipe_tower > 0};
+
+    for (const std::string& key :
+         {"filament used \\[mm\\]",
+          "filament used \\[cm3\\]",
+          "filament used \\[g\\]",
+          "filament cost"})
+    {
+        const auto stats{parse_vector_option_from_gcode(key, gcode)};
+        if (!stats) {
+            return "Unable to parse: " + key;
+        }
+        int nonzero_count{};
+        for (float value : *stats) {
+            if (value > 0) {
+                nonzero_count++;
+            }
+        }
+        if (multiple_extruders) {
+            if (nonzero_count <= 1) {
+                return "There are too many zeros in: " + key;
+            }
+        } else {
+            if (nonzero_count < 1) {
+                return "There must be at least one non zero stat: " + key;
+            }
+        }
+    }
+
+    for (const std::string& key : {"total filament used \\[g\\]", "total filament cost"}) {
+        const auto total_filament{
+            parse_float_option_from_gcode(key, gcode)
+        };
+        if (!total_filament) {
+            return "Unable to parse " + key;
+        }
+        if (total_filament <= 0) {
+            return key + " is 0 or less";
+        }
+    }
+
+    if (multiple_extruders) {
+        const auto total_toolchanges{parse_float_option_from_gcode("total toolchanges", gcode)};
+        if (!total_toolchanges) {
+            return "Unable to parse total toolchanges";
+        }
+        if (total_toolchanges <= 0) {
+            return "total toolchanges is 0 or less";
+        }
+    }
+
+    for (const std::string& key : {"estimated printing time \\(normal mode\\)", "estimated first layer printing time \\(normal mode\\)"}) {
+        const auto estimated_printing_time{
+            parse_printing_time_seconds_from_gcode(key, gcode)
+        };
+        if (!estimated_printing_time) {
+            return "Unable to parse " + key;
+        }
+        if (estimated_printing_time <= 0) {
+            return key + " is 0 or less";
+        }
+    }
+
+    return std::nullopt;
+}
 
 std::optional<std::string> is_gcode_sane(const std::string& gcode, const Domain::Model &model) {
     if (gcode.empty()) {
@@ -130,6 +259,9 @@ std::optional<std::string> is_gcode_sane(const std::string& gcode, const Domain:
         });
     }
 
+    if (auto error{are_statistics_sane(gcode)}) {
+        return error;
+    }
     return are_extrusions_within_bounds(extrusions, bounding_boxes);
 }
 

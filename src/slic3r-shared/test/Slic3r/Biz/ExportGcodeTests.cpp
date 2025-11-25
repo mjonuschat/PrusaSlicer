@@ -224,7 +224,7 @@ TEST_CASE("Export gcode")
     project_interactor.slicing_interactor().add_listener<Slic3r::Biz::Slicing::IStatusListener>(&slicing_listener);
 
     std::vector<CaseData> projects;
-    for (size_t i = 0; i < project_count; i++) {  
+    for (size_t i = 0; i < project_count; i++) {
 
         project_interactor.new_project();
         Slic3r::Tests::ModelOnBed new_model{Slic3r::Tests::get_cubes_model(1, 5)};
@@ -234,7 +234,10 @@ TEST_CASE("Export gcode")
             projects.back().paths.emplace_back(fs::path(Slic3r::data_dir()) / (std::string("test") + std::to_string(k) + extension));
             slicing_listener.add_export( projects.back().id,  projects.back().paths.back().path());
         }
-        
+
+        auto config{std::get<Slic3r::Domain::ConfigPackFDM>(projects.back().model_on_bed.config)};
+
+
         project_interactor.slicing_interactor().update_process(
             projects.back().model_on_bed.model,
             projects.back().model_on_bed.project_metadata,
@@ -260,6 +263,7 @@ TEST_CASE("Export gcode")
             REQUIRE(!gcode.empty());
             if (extension == ".gcode") {
                 const auto error{is_gcode_sane(gcode, projects[i].model_on_bed.model)};
+                INFO((error ? *error : ""));
                 REQUIRE(!error);
             }
         }

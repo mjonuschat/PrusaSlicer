@@ -481,40 +481,6 @@ std::vector<std::pair<double, GCodeGenerator::ObjectsLayerToPrint>> GCodeGenerat
 // free functions called by GCodeGenerator::do_export()
 namespace DoExport {
     using namespace Biz::libpgcode;
-    static void update_print_estimated_stats(const ProcessorResult& result, const std::vector<Extruder>& extruders,
-        bool stealth_time_estimator_enabled, PrintStatistics& print_statistics)
-    {
-        print_statistics.estimated_normal_print_time = get_time_dhms(result.print_statistics.modes[size_t(TimeMode::Normal)].time);
-        print_statistics.estimated_silent_print_time = stealth_time_estimator_enabled ?
-            get_time_dhms(result.print_statistics.modes[size_t(TimeMode::Stealth)].time) : "N/A";
-
-        // update filament statictics
-        float total_extruded_volume = 0.0f;
-        float total_used_filament   = 0.0f;
-        float total_weight          = 0.0f;
-        float total_cost            = 0.0f;
-        for (const auto& [id, volume] : result.print_statistics.volumes_per_extruder) {
-            total_extruded_volume += volume;
-            const uint8_t extruder_id = id;
-            auto extruder = std::find_if(extruders.begin(), extruders.end(),
-                [extruder_id](const Extruder& extr) { return extr.id() == extruder_id; });
-            if (extruder == extruders.end())
-                continue;
-
-            const float s    = result.filament_geometry(id).area_cross_section;
-            const float mass = volume * result.filament_densities[id] * 0.001f;
-            total_used_filament += volume / s;
-            total_weight        += mass;
-            total_cost          += mass * result.filament_costs[id] * 0.001f;
-        }
-
-        print_statistics.total_extruded_volume = total_extruded_volume;
-        print_statistics.total_used_filament   = total_used_filament;
-        print_statistics.total_weight          = total_weight;
-        print_statistics.total_cost            = total_cost;
-        print_statistics.filament_stats        = result.print_statistics.volumes_per_extruder;
-    }
-
     // if any reserved keyword is found, returns a std::vector containing the first MAX_COUNT keywords found
     // into pairs containing:
     // first: source
@@ -724,6 +690,7 @@ GCodeGenerator::GCodeGenerator(const Print* print) :
 {
 }
 
+
 Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
     Print* print,
     const Biz::Print::SerializedConfig& serialized_config
@@ -759,7 +726,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
     Processor processor(std::move(processor_config));
     GCodeOutputStream file(processor);
 
-    this->_do_export(*print, file, serialized_config);
+    const Domain::ExtraPrintStatistics extra_print_statistics{this->_do_export(*print, file, serialized_config)};
 
     if (! m_placeholder_parser_integration.failed_templates.empty()) {
         // G-code export proceeded, but some of the PlaceholderParser substitutions failed.
@@ -777,13 +744,15 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
 
     BOOST_LOG_TRIVIAL(debug) << "Start processing gcode, " << log_memory_info();
     ProcessorResult result{processor.finalize()};
+    result.extra_print_statistics = extra_print_statistics;
     PostProcessorConfig post_processor_config = processor.post_processor_config();
-    result = GCode::post_process(post_processor_config, std::move(result),
-        [print](Biz::Slicing::Warning warning) {
-            print->append_warning_callback(std::move(warning));
-        });
-    const bool stealth_time_estimator_enabled = (print->config().get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinLegacy || print->config().get<GCodeFlavor>("gcode_flavor") == GCodeFlavor::gcfMarlinFirmware) && print->config().get<bool>("silent_mode");
-    DoExport::update_print_estimated_stats(result, m_writer.extruders(), stealth_time_estimator_enabled, print->m_print_statistics);
+    result                                    = GCode::post_process(
+        post_processor_config,
+        std::move(result),
+        m_writer.extruders(),
+        [print](Biz::Slicing::Warning warning)
+        { print->append_warning_callback(std::move(warning)); }
+    );
     BOOST_LOG_TRIVIAL(debug) << "Finished processing gcode, " << log_memory_info();
 
     print->set_done(psGCodeExport);
@@ -856,84 +825,53 @@ namespace DoExport {
     static void init_ooze_prevention(const Print &print, OozePrevention &ooze_prevention)
 	{
 	    ooze_prevention.enable = print.config().get<bool>("ooze_prevention") && ! print.config().get<bool>("single_extruder_multi_material");
-	}
+    }
 
-	// Fill in print_statistics and return formatted string containing filament statistics to be inserted into G-code comment section.
-    static std::string update_print_stats_and_format_filament_stats(
-        const bool                   has_wipe_tower,
-        const WipeTowerData          &wipe_tower_data,
-        const PrintConfigView            &config,
-        const std::vector<Extruder>  &extruders,
-        unsigned int                 initial_extruder_id,
-        int                          total_toolchanges,
-        PrintStatistics              &print_statistics)
+    static Domain::ExtraPrintStatistics get_extra_print_statistics(
+        const bool has_wipe_tower,
+        const WipeTowerData& wipe_tower_data,
+        const PrintConfigView& config,
+        const std::vector<Extruder>& extruders,
+        unsigned int initial_extruder_id,
+        int total_toolchanges
+    )
     {
+        Domain::ExtraPrintStatistics print_statistics;
         std::string filament_stats_string_out;
 
-        print_statistics.clear();
-        print_statistics.total_toolchanges = total_toolchanges;
+        print_statistics.total_toolchanges   = total_toolchanges;
         print_statistics.initial_extruder_id = initial_extruder_id;
-        std::vector<std::string> filament_types;
-        if (! extruders.empty()) {
-            std::pair<std::string, unsigned int> out_filament_used_mm(PrintStatistics::FilamentUsedMmMask + " ", 0);
-            std::pair<std::string, unsigned int> out_filament_used_cm3(PrintStatistics::FilamentUsedCm3Mask + " ", 0);
-            std::pair<std::string, unsigned int> out_filament_used_g(PrintStatistics::FilamentUsedGMask + " ", 0);
-            std::pair<std::string, unsigned int> out_filament_cost(PrintStatistics::FilamentCostMask + " ", 0);
-            for (const Extruder &extruder : extruders) {
+        if (!extruders.empty()) {
+            for (const Extruder& extruder : extruders) {
                 print_statistics.printing_extruders.emplace_back(extruder.id());
-                filament_types.emplace_back(config.get<std::vector<std::string>>("filament_type").at(extruder.id()));
+                print_statistics.printing_filament_types.emplace_back(
+                    config.get<std::vector<std::string>>("filament_type").at(extruder.id())
+                );
 
-                double used_filament   = extruder.used_filament() + (has_wipe_tower ? wipe_tower_data.used_filament_until_layer.back().second[extruder.id()] : 0.f);
-                double extruded_volume = extruder.extruded_volume() + (has_wipe_tower ? wipe_tower_data.used_filament_until_layer.back().second[extruder.id()] * extruder.filament_crossection() : 0.f); // assumes 1.75mm filament diameter
-                double filament_weight = extruded_volume * extruder.filament_density() * 0.001;
-                double filament_cost   = filament_weight * extruder.filament_cost()    * 0.001;
-                auto append = [&extruder](std::pair<std::string, unsigned int> &dst, const char *tmpl, double value) {
-                    assert(is_decimal_separator_point());
-                    while (dst.second < extruder.id()) {
-                        // Fill in the non-printing extruders with zeros.
-                        dst.first += (dst.second > 0) ? ", 0" : "0";
-                        ++ dst.second;
-                    }
-                    if (dst.second > 0)
-                        dst.first += ", ";
-                    char buf[64];
-                    sprintf(buf, tmpl, value);
-                    dst.first += buf;
-                    ++ dst.second;
-                };
-                append(out_filament_used_mm,  "%.2lf", used_filament);
-                append(out_filament_used_cm3, "%.2lf", extruded_volume * 0.001);
-                if (filament_weight > 0.) {
-                    print_statistics.total_weight = print_statistics.total_weight + filament_weight;
-                    append(out_filament_used_g, "%.2lf", filament_weight);
-                    if (filament_cost > 0.) {
-                        print_statistics.total_cost = print_statistics.total_cost + filament_cost;
-                        append(out_filament_cost, "%.2lf", filament_cost);
-                    }
+                if (has_wipe_tower) {
+                    const double wipe_tower_filament{
+                        wipe_tower_data.used_filament_until_layer.back().second[extruder.id()]
+                    };
+
+                    print_statistics.total_wipe_tower_filament += wipe_tower_filament;
+
+                    const double wipe_tower_filament_weight{
+                        wipe_tower_filament
+                        * extruder.filament_crossection()
+                        * extruder.filament_density()
+                        * 0.001
+                    };
+                    print_statistics.total_wipe_tower_filament_weight += wipe_tower_filament_weight;
+                    print_statistics.total_wipe_tower_cost +=
+                        wipe_tower_filament_weight * extruder.filament_cost() * 0.001;
                 }
-                print_statistics.total_used_filament += used_filament;
-                print_statistics.total_extruded_volume += extruded_volume;
-                print_statistics.total_wipe_tower_filament += has_wipe_tower ? used_filament - extruder.used_filament() : 0.;
-                print_statistics.total_wipe_tower_filament_weight += has_wipe_tower ? (extruded_volume - extruder.extruded_volume()) * extruder.filament_density() * 0.001 : 0.;
-                print_statistics.total_wipe_tower_cost += has_wipe_tower ? (extruded_volume - extruder.extruded_volume())* extruder.filament_density() * 0.001 * extruder.filament_cost() * 0.001 : 0.;
             }
 
-            filament_stats_string_out += out_filament_used_mm.first;
-            filament_stats_string_out += "\n" + out_filament_used_cm3.first;
-            if (out_filament_used_g.second)
-                filament_stats_string_out += "\n" + out_filament_used_g.first;
-            if (out_filament_cost.second)
-                filament_stats_string_out += "\n" + out_filament_cost.first;
-            print_statistics.initial_filament_type = config.get<std::vector<std::string>>("filament_type").at(initial_extruder_id);
-            std::sort(filament_types.begin(), filament_types.end());
-            print_statistics.printing_filament_types = filament_types.front();
-            for (size_t i = 1; i < filament_types.size(); ++ i) {
-                print_statistics.printing_filament_types += ",";
-                print_statistics.printing_filament_types += filament_types[i];
-            }
+            print_statistics.initial_filament_type =
+                config.get<std::vector<std::string>>("filament_type").at(initial_extruder_id);
+            std::ranges::sort(print_statistics.printing_filament_types);
         }
-        filament_stats_string_out += "\n";
-        return filament_stats_string_out;
+        return print_statistics;
     }
 }
 
@@ -1022,7 +960,7 @@ static inline std::optional<std::string> find_M84(const std::string &gcode) {
     return std::nullopt;
 }
 
-void GCodeGenerator::_do_export(
+Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
     Print& print,
     GCodeOutputStream& file,
     const Biz::Print::SerializedConfig& serialized_config
@@ -1506,17 +1444,13 @@ void GCodeGenerator::_do_export(
 
     print.throw_if_canceled();
 
-    // Get filament stats.
-    const std::string filament_stats_string_out = DoExport::update_print_stats_and_format_filament_stats(
-        // Const inputs
+    const Domain::ExtraPrintStatistics extra_print_statistics{DoExport::get_extra_print_statistics(
         has_wipe_tower, print.wipe_tower_data(),
         print.config(),
         m_writer.extruders(),
         initial_extruder_id,
-        tool_ordering.toolchanges_count(),
-        // Modifies
-        print.m_print_statistics
-    );
+        tool_ordering.toolchanges_count()
+    )};
 
     // if exporting gcode in ascii format, config export in new format is done here
     // Append full config, delimited by two 'phony' configuration keys prusaslicer_config = begin and prusaslicer_config = end.
@@ -1528,16 +1462,7 @@ void GCodeGenerator::_do_export(
     }
 
     file.write_format("; objects_info = %s\n", m_label_objects.all_objects_header_singleline_json().c_str());
-    file.write(filament_stats_string_out);
-
-    // if exporting gcode in ascii format, statistics export is done here
-    file.write("\n");
-    file.write_format(PrintStatistics::TotalFilamentUsedGValueMask.c_str(), print.m_print_statistics.total_weight);
-    file.write_format(PrintStatistics::TotalFilamentCostValueMask.c_str(), print.m_print_statistics.total_cost);
-    file.write_format(PrintStatistics::TotalFilamentUsedWipeTowerValueMask.c_str(), print.m_print_statistics.total_wipe_tower_filament_weight);
-    if (print.m_print_statistics.total_toolchanges > 0)
-        file.write_format("; total toolchanges = %i\n", print.m_print_statistics.total_toolchanges);
-    file.write_format(";%s\n", reserved_tag(Tags::Estimated_Printing_Time_Placeholder).data());
+    file.write_format(";%s\n", reserved_tag(Tags::Print_Statistics_Placeholder).data());
 
     // if exporting gcode in ascii format, config export is done here
     // Append full config, delimited by two 'phony' configuration keys prusaslicer_config = begin and prusaslicer_config = end.
@@ -1554,6 +1479,7 @@ void GCodeGenerator::_do_export(
     }
 
     print.throw_if_canceled();
+    return extra_print_statistics;
 }
 
 // Fill in cache of smooth paths for perimeters, fills and supports of the given object layers.

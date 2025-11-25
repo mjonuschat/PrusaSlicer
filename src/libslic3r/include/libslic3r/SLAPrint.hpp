@@ -396,8 +396,6 @@ public:
     // Return sla tansformation for a given model_object
     Domain::Transform3d sla_trafo(const Domain::ModelObject &model_object) const;
 
-	std::string                 output_filename(const std::string &filename_base = std::string()) const override;
-
     std::string validate(std::vector<std::string>* warnings = nullptr) const;
 
     // An aggregation of SliceRecord-s from all the print objects for each

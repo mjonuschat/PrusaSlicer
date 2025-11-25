@@ -16,28 +16,6 @@ using namespace Slic3r;
 using Biz::GCodeReader::GCodeReader;
 using Test::TestConfig;
 
-TEST_CASE("Output file format", "[CustomGCode]")
-{
-    WHEN("output_file_format set") {
-        TestConfig config;
-
-        config.tool.at(0).items.opt("travel_speed").set(130.0);
-        config.print.items.opt("layer_height").set(0.4);
-
-        config.print.items.opt("output_filename_format").set("ts_[travel_speed]_lh_[layer_height].gcode");
-        config.printer.items.opt("start_gcode").set("TRAVEL:[travel_speed] HEIGHT:[layer_height]\n" );
-
-        Print print;
-        Domain::Model model;
-        Test::init_print({ Test::TestMesh::cube_2x20x10 }, print, model, config);
-
-        std::string output_file = print.output_filepath({}, {});
-        THEN("print config options are replaced in output filename") {
-            REQUIRE(output_file == "ts_130_lh_0.4.gcode");
-        }
-    }
-}
-
 TEST_CASE("Custom G-code", "[CustomGCode]")
 {
     WHEN("start_gcode and layer_gcode set") {

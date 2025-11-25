@@ -1020,18 +1020,6 @@ ParserConfig create_stats_placeholders()
 
 } // namespace
 
-// Generate a recommended output file name based on the format template, default extension, and template parameters
-// (timestamps, object placeholders derived from the model, current placeholder prameters and print statistics.
-// Use the final print statistics if available, or just keep the print statistics placeholders if not available yet (before the output is finalized).
-std::string SLAPrint::output_filename(const std::string &filename_base) const
-{
-    ParserConfig config = this->finished() ? to_config(m_print_statistics) : create_stats_placeholders();
-    std::string default_ext = ".sl1";
-
-    config.set("default_output_extension", default_ext);
-    return this->PrintBase::output_filename(m_print_config.get<std::string>("output_filename_format"), default_ext, filename_base, &config);
-}
-
 std::string SLAPrint::validate(std::vector<std::string>*) const
 {
 //    for(SLAPrintObject * po : m_objects) {
