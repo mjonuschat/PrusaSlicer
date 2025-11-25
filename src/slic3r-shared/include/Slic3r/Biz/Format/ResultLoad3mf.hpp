@@ -13,6 +13,7 @@
 #include "Slic3r/Domain/Preset/SelectedPreset.hpp"
 #include "Slic3r/Semver.hpp"
 #include "Slic3r/Domain/ProjectMetadata.hpp"
+#include "Slic3r/Domain/OnBeds.hpp"
 
 namespace Slic3r {
 
@@ -281,6 +282,7 @@ struct Loaded3MF {
         Domain::Preset::SelectedPresetMetadata preset;
         Domain::ConfigPack config_pack;
         std::vector<Domain::Vec2d> bed_offsets;
+        Domain::WipeTowersOnBeds wipe_towers;
     };
 
     Domain::ProjectMetadata metadata;

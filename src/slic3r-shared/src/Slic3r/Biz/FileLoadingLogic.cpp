@@ -393,10 +393,9 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
     Loaded3MF loaded_3mf;
     loaded_3mf.config_containers_data.emplace_back();
 
-    Domain::WipeTowersOnBeds wipe_towers;
     Domain::CustomGCodesOnBeds custom_gcodes;
 
-    auto& config_pack = loaded_3mf.config_containers_data.front().config_pack;
+    auto& config_pack = loaded_3mf.config_containers_data.back().config_pack;
     LegacyPresetMetadata hw_printer;
     if (!Slic3rLegacy::load_3mf_legacy(
             file_path.c_str(),
@@ -405,7 +404,7 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
             &loaded_3mf.model,
             false,
             loaded_3mf.version,
-            wipe_towers,
+            loaded_3mf.config_containers_data.back().wipe_towers,
             custom_gcodes
         ))
         throw Loaded3MFException(
@@ -448,7 +447,6 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
 Loaded3MF
 load_from_project(const boost::filesystem::path& project_file_path, OptionalPresetBundle bundle)
 {
-    Loaded3MF loaded_3mf;
     const std::string project_file_name = project_file_path.string();
     try {
         return load_3mf(project_file_name);
@@ -681,6 +679,7 @@ convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider* dialog_provid
             cc.bed_instances().back().get()->transformation.set_offset(
                 Domain::Vec3d(bed_offset.x(), bed_offset.y(), 0.)
             );
+            cc.bed_instances().back()->wipe_tower = cc_data.wipe_towers.at(bed_idx);
         }
     }
 
