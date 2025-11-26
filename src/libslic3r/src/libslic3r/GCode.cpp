@@ -101,6 +101,8 @@ using namespace std::literals::string_view_literals;
 
 #include <assert.h>
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r {
     using Biz::libpgcode::ProcessorResult;
     using Biz::GCodeReader::GCodeReader;
@@ -3810,6 +3812,7 @@ Polyline GCodeGenerator::generate_travel_xy_path(
         && avoid_crossing_perimeters
     ) {
         xy_path = this->m_avoid_crossing_perimeters.travel_to(*this, config, end_point, &could_be_wipe_disabled);
+        Algorithms::Polyline::simplify(xy_path, this->m_scaled_resolution);
     }
 
     return xy_path;
