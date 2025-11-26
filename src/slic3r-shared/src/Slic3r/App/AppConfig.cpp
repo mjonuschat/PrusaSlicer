@@ -32,34 +32,61 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
 {
     Domain::ConfigItemDef* def = nullptr;
 
+    using Category = Domain::ConfigItemDef::Category;
+    using GUIType = Domain::ConfigItemDef::GUIType;
+
     def = defs.add("show_splash_screen", typeid(bool));
     def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::checkbox;
     def->label = L("Show splashscreen");
     def->tooltip = L("Show splashscreen during application start.");
+    def->category = Category::PreferencesGeneral;
+    def->option_group = L("Application");
+    def->init_fn = []() { return Domain::ConfigValue(true); };
+
+    def = defs.add("restore_win_position", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::checkbox;
+    def->label = L("Restore window position on start");
+    def->tooltip = L("Restore window position on start.");
+    def->category = Category::Hidden;// PreferencesGeneral;
+    def->option_group = L("Application");
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
     def = defs.add("allow_web_services", typeid(bool));
     def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::checkbox;
     def->label = L("Allow Web Services");
     def->tooltip = L("Master switch for enabling services like Prusa Account, Prusa Connect, Printables.");
+    def->category = Category::Hidden;//Services;
+    def->option_group = L("Services setup");
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
     def = defs.add("enable_prusa_account", typeid(bool));
     def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::checkbox;
     def->label = L("Enable Prusa Account");
     def->tooltip = L("Enable logging to Prusa Account and sending files to Connect. Works only if allow_web_services is enabled.");
+    def->category = Category::Services;
+    def->option_group = L("Services setup");
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
     def = defs.add("enable_connect", typeid(bool));
     def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::checkbox;
     def->label = L("Enable Prusa Connect");
     def->tooltip = L("Enable Connect tab and uploading slicing results. Works only if allow_web_services and enable_prusa_account is enabled.");
+    def->category = Category::Services;
+    def->option_group = L("Services setup");
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
     def = defs.add("enable_printables", typeid(bool));
     def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::checkbox;
     def->label = L("Enable Printables");
     def->tooltip = L("Enable Printables tab. Works only if allow_web_services is enabled.");
+    def->category = Category::Services;
+    def->option_group = L("Services setup");
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
     def = defs.add("layout_main_left_column_width", typeid(double));

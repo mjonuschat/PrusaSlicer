@@ -12,6 +12,7 @@
 
 namespace Slic3r::Biz {
 class ConfigBoxInteractor;
+class IConfigBoxSetter;
 } // namespace Slic3r::Biz
 
 namespace Slic3r::App {
@@ -24,6 +25,12 @@ class ConfigSettingsDialog : public Yoga::AbstractSettingsDialog
 public:
     ConfigSettingsDialog(
         Biz::ProjectInteractor& project_interactor,
+        Navigator& navigator,
+        const std::string& name = {}
+    );
+
+    ConfigSettingsDialog(
+        Biz::IConfigBoxSetter& cbi_container,
         Navigator& navigator,
         const std::string& name = {}
     );
@@ -47,12 +54,21 @@ protected:
             size_t cbi_index
         );
 
+        ConfigTab(
+            Biz::ConfigBoxInteractor* cbi,
+            Tab* tab,
+            Biz::IConfigBoxSetter& cbi_container
+        );
+
+        void init();
+
         void navigate_to_item(const Domain::ConfigItem* config_item);
         void clear_navigation();
 
         Biz::ConfigBoxInteractor* cbi{nullptr};
         Tab* tab{nullptr};
-        Biz::ProjectInteractor& project_interactor;
+        Biz::ProjectInteractor* project_interactor{nullptr};
+        Biz::IConfigBoxSetter& cbi_container;
         size_t cbi_index{0};
         Biz::UnsharedPointer<ObservableCategorizer> observable_categorizer;
         Biz::UnsharedPointer<CategoryPageTransformer> category_page_transformer;
@@ -63,7 +79,8 @@ protected:
 
     ConfigTabs m_config_tabs;
 
-    Biz::ProjectInteractor& m_project_interactor;
+    Biz::ProjectInteractor* m_project_interactor{nullptr};
+    Biz::IConfigBoxSetter& m_cbi_container;
     Navigator& m_navigator;
 };
 

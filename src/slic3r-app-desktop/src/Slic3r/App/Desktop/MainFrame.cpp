@@ -8,6 +8,7 @@
 #include <Slic3r/Biz/Platform/Termination.hpp>
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/AppConfig.hpp"
+#include "Slic3r/App/AppConfigInteractor.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/StringConversions.hpp>
@@ -17,6 +18,7 @@
 #include <Slic3r/App/WX/WebView/WebViewFactory.hpp>
 
 #include <Slic3r/App/Localization.hpp>
+#include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/Browser/BrowserLogicPrintables.hpp"
 #include "Slic3r/App/Browser/BrowserLogicConnectPage.hpp"
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
@@ -145,9 +147,14 @@ static wxIcon main_frame_icon()
 #endif // _WIN32
 }
 
-MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor) :
+MainFrame::MainFrame(
+    Domain::Workbench& workbench,
+    Biz::ProjectInteractor& project_interactor,
+    Navigator& navigator
+) :
     wxFrame(nullptr, wxID_ANY, from_u8(::Slic3r::BUILD_ID)),
     m_workbench(workbench),
+    m_navigator(navigator),
     m_project_interactor(project_interactor),
     m_preset_interactor(project_interactor.preset_interactor())
 {
@@ -157,6 +164,8 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& proje
 
     // Load the icon either from the exe, or from the ico file.
     SetIcon(main_frame_icon());
+
+    AppServices::instance().app_config_intractor().add_listener<IAppConfigChangedListener>(this);
 
     localization().add_listener<ILanguageChangedListener>(this);
     auto em = w_config()->em_unit();
@@ -280,6 +289,11 @@ void MainFrame::on_language_changed()
     this->Refresh();
 }
 
+void MainFrame::on_app_config_changed()
+{
+    update_left_bar();
+}
+
 void MainFrame::on_close(wxCloseEvent& event)
 {
     Slic3r::Biz::Platform::close();
@@ -294,20 +308,44 @@ void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
     init_projects_page();
     init_slicing_page();
     init_printables_page(project_interactor);
+    init_preferences_button();
 
     //! experiments just for UI testing
     add_experimets_page(m_left_bar, this);
+}
 
-    // m_left_bar->message_button()->Bind(
-    //     wxEVT_BUTTON,
-    //     [](wxCommandEvent&)
-    //     { wxMessageBox(from_u8("Message Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION); }
-    // );
-    // m_left_bar->notifications_button()->Bind(
-    //     wxEVT_BUTTON,
-    //     [](wxCommandEvent&)
-    //     { wxMessageBox(from_u8("Notifications Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION); }
-    // );
+void MainFrame::init_preferences_button()
+{
+    m_left_bar->preferences_button()->Bind(
+        wxEVT_BUTTON,
+        [this](wxCommandEvent& event)
+        {
+            wxWindow* selected_page        = m_left_bar->GetCurrentPage();
+            const bool is_slicing_selected = selected_page
+                && selected_page->GetId() == static_cast<wxWindowID>(LeftBarTabs::Slicing);
+            if (m_left_bar->preferences_button()->is_selected() && !is_slicing_selected) {
+                // just switch to the Slicing page
+                switch_left_tab(LeftBarTabs::Slicing, std::string());
+                return;
+            }
+
+            const bool newly_selected = !m_left_bar->preferences_button()->is_selected();
+            if (newly_selected && !is_slicing_selected) {
+                switch_left_tab(LeftBarTabs::Slicing, std::string());
+            }
+            m_navigator.set_opened_preferences(newly_selected);
+        }
+    );
+
+    m_left_bar->preferences_button()->Bind(
+        wxEVT_UPDATE_UI,
+        [this](wxUpdateUIEvent& evt)
+        {
+            m_left_bar->preferences_button()->set_selected(
+                m_navigator.is_opened_preferences()
+            );
+        }
+    );
 }
 
 // !!! temporary function just for testing
@@ -375,32 +413,49 @@ void MainFrame::complete_and_bind_left_bar()
     m_left_bar->Bind(wxEVT_BOOKCTRL_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {});
 }
 
+static size_t get_tab_index_by_id(LeftBar* left_bar, LeftBarTabs page_id)
+{
+    for (size_t id = 0; id < left_bar->GetPageCount(); ++id) {
+        if (left_bar->GetPage(id)->GetId() == static_cast<wxWindowID>(page_id)) {
+            return id;
+        }
+    }
+    return size_t(-1);
+};
+
 void MainFrame::update_left_bar()
 {
-    assert(m_left_bar);
-    
-    if (m_printables_page_added && !AppServices::instance().app_config().is_printables_enabled()) {
-        // Expecting Printeables tab is always last
-        int printables_page_index = m_left_bar->GetPageCount() - 1;
-        if (m_left_bar->GetSelection() == printables_page_index) {
-            m_left_bar->SetSelection(printables_page_index == 0 ? 1 : 0);
+    ASSERT(m_left_bar);
+
+    auto remove_page = [this](LeftBarTabs page_id) -> void
+    {
+        wxWindow* selected_page = m_left_bar->GetCurrentPage();
+        if (selected_page && selected_page->GetId() == static_cast<wxWindowID>(page_id)) {
+            // If page for remove is selected, than Slicing page should be selected
+            switch_left_tab(LeftBarTabs::Slicing, std::string());
         }
-        m_left_bar->RemovePage(printables_page_index);
+        int page_index = get_tab_index_by_id(m_left_bar, page_id);
+        ASSERT(page_index != size_t(-1));
+
+        m_left_bar->RemovePage(page_index);
+    };
+
+    if (m_printables_page_added && !AppServices::instance().app_config().is_printables_enabled()) {
+        remove_page(LeftBarTabs::Printables);
         m_printables_page_added = false;
-    } else if (!m_printables_page_added && AppServices::instance().app_config().is_printables_enabled()) {
+    } else if (!m_printables_page_added
+               && AppServices::instance().app_config().is_printables_enabled())
+    {
         init_printables_page(m_project_interactor);
     }
 
     if (m_printers_page_added && !AppServices::instance().app_config().is_connect_enabled()) {
-        // Expecting Printers tab is always first
-        if (m_left_bar->GetSelection() == 0) {
-            m_left_bar->SetSelection(1);
-        }
-        m_left_bar->RemovePage(0);
+        remove_page(LeftBarTabs::Printers);
         m_printers_page_added = false;
-    } else if (!m_printers_page_added && AppServices::instance().app_config().is_connect_enabled()) {
+    } else if (!m_printers_page_added && AppServices::instance().app_config().is_connect_enabled())
+    {
         init_printer_page(m_project_interactor);
-    }  
+    }
 
     m_left_bar->ShowUserAccount(AppServices::instance().app_config().is_prusa_account_enabled());
 }
@@ -408,16 +463,16 @@ void MainFrame::update_left_bar()
 void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)
 {
     ASSERT(m_left_bar);
-    for (size_t i = 0; i < m_left_bar->GetPageCount(); ++i) {
-        if (m_left_bar->GetPage(i)->GetId() == static_cast<int>(id)) {
-            if (id == LeftBarTabs::Printables) {
-                 WebView::AbstractWebViewPanel* webview_panel = dynamic_cast<WebView::AbstractWebViewPanel*>(m_left_bar->GetPage(i));
-                 webview_panel->set_next_show_url(data);
-            }
-            m_left_bar->SetSelection(i);
-            return;
-        }
+
+    int page_index = get_tab_index_by_id(m_left_bar, id);
+    ASSERT(page_index != size_t(-1));
+
+    if (id == LeftBarTabs::Printables) {
+        WebView::AbstractWebViewPanel* webview_panel =
+            dynamic_cast<WebView::AbstractWebViewPanel*>(m_left_bar->GetPage(page_index));
+        webview_panel->set_next_show_url(data);
     }
+    m_left_bar->SetSelection(page_index);
 }
 
 void MainFrame::sys_color_changed()

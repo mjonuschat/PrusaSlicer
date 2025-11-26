@@ -44,7 +44,7 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
     {
         auto& dlg_manager = App::AppServices::instance().dialog_manager();
         dlg_manager.show_diff_dialog(
-            m_project_interactor.preset_interactor(),
+            m_project_interactor->preset_interactor(),
             Domain::Preset::PresetKind::FdmPrinter
         );
     };

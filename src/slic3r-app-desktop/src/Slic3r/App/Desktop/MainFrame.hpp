@@ -11,6 +11,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Desktop/TabsBarMenus.hpp"
 #include "Slic3r/App/LeftBarTabs.hpp"
+#include "Slic3r/App/IAppConfigChangedListener.hpp"
 
 namespace Slic3r::App::Desktop::Preset {
 class AbstractEditor;
@@ -20,6 +21,10 @@ namespace Slic3r::Biz {
 class ProjectInteractor;
 } // namespace Slic3r::Biz
 
+namespace Slic3r::App {
+class Navigator;
+} // namespace Slic3r::App
+
 namespace Slic3r::App::Desktop {
 
 #ifdef WIN32
@@ -28,10 +33,14 @@ constexpr int WM_USER_MEDIACHANGED{0x7FFF}; // WM_USER from 0x0400 to 0x7FFF, pi
 
 class LeftBar;
 
-class MainFrame : public wxFrame, public ILanguageChangedListener
+class MainFrame : public wxFrame, public ILanguageChangedListener, public IAppConfigChangedListener
 {
 public:
-    MainFrame(Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor);
+    MainFrame(
+        Domain::Workbench& workbench,
+        Biz::ProjectInteractor& project_interactor,
+        Navigator& navigator
+    );
     ~MainFrame();
 
     Platform::WX::WXRenderCanvas& get_render_canvas()
@@ -52,7 +61,7 @@ public:
 #endif // WIN32
 
     void update_left_bar();
-    
+
     void switch_left_tab(LeftBarTabs id, const std::string& data);
 
 private:
@@ -71,12 +80,14 @@ private:
     void init_projects_page();
     void init_slicing_page();
     void init_printables_page(Biz::ProjectInteractor& project_interactor);
+    void init_preferences_button();
     void complete_and_bind_left_bar();
 
     void init_top_bar();
     void complete_and_bind_top_bar();
 
     void on_language_changed() override;
+    void on_app_config_changed() override;
 
     void on_close(wxCloseEvent& event);
 
@@ -85,6 +96,7 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     Biz::Preset::PresetInteractor& m_preset_interactor;
     std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
+    Navigator& m_navigator;
 
 #ifdef OLD_CODE
     std::map<Slic3r::Preset::Type, Preset::AbstractEditor*> m_preset_editors;
@@ -100,7 +112,6 @@ private:
 
     bool m_printables_page_added {false};
     bool m_printers_page_added {false};
-
 };
 
 } // namespace Slic3r::App::Desktop

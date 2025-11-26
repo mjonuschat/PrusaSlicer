@@ -4,8 +4,7 @@
 ///|/
 #include "Slic3r/App/Config/ConfigItemTextField.hpp"
 
-#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
-
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <imgui_internal.h>
@@ -18,11 +17,11 @@ namespace Slic3r::App {
 ConfigItemTextField::ConfigItemTextField(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor,
+    Biz::IConfigBoxSetter& cbi_container,
     size_t cbi_index
 ) :
     ConfigItemControl(index, data),
-    m_preset_interactor(preset_interactor),
+    m_cbi_container(cbi_container),
     m_cbi_index(cbi_index)
 {
     if (data.def().multiline) {
@@ -57,15 +56,15 @@ ConfigItemTextField::ConfigItemTextField(
     callbacks().text_edited = [this]()
     {
         if (*m_state->def().type == typeid(std::string)) {
-            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{text()}, m_cbi_index);
+            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{text()}, m_cbi_index);
         } else if (*m_state->def().type == typeid(double)) {
-            m_preset_interactor.set_item_value(
+            m_cbi_container.set_item_value(
                 *m_state,
                 Domain::ConfigValue{m_double_validator->value()},
                 m_cbi_index
             );
         } else if (*m_state->def().type == typeid(Domain::Percentage)) {
-            m_preset_interactor.set_item_value(
+            m_cbi_container.set_item_value(
                 *m_state,
                 Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}},
                 m_cbi_index
@@ -73,7 +72,7 @@ ConfigItemTextField::ConfigItemTextField(
         } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
             const std::string value_text = text();
             if (m_percentage_validator->percentage_symbol()) {
-                m_preset_interactor.set_item_value(
+                m_cbi_container.set_item_value(
                     *m_state,
                     Domain::ConfigValue{Domain::FloatOrPercentage{
                         Domain::Percentage{m_percentage_validator->value()}
@@ -81,7 +80,7 @@ ConfigItemTextField::ConfigItemTextField(
                     m_cbi_index
                 );
             } else {
-                m_preset_interactor.set_item_value(
+                m_cbi_container.set_item_value(
                     *m_state,
                     Domain::ConfigValue{Domain::FloatOrPercentage{m_percentage_validator->value()}},
                     m_cbi_index
@@ -102,7 +101,7 @@ void ConfigItemTextField::on_data_update()
     set_override_label(std::string());
     set_font_type(Render::ImguiFontType::Regular);
     if (!overriden().value_or(true)) {
-        update_value(*m_preset_interactor.get_override_origin(*m_state, location_index()));
+        update_value(*m_cbi_container.get_override_original_value(*m_state, location_index()));
     } else {
         update_value(m_state->value());
     }

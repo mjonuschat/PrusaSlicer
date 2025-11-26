@@ -60,6 +60,9 @@ public:
 
     void request_search();
 
+    void set_opened_preferences(bool opened);
+    bool is_opened_preferences();
+
 private:
     void set_render_module_type(Render::ModuleType type);
 

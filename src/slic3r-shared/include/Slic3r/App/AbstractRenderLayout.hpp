@@ -10,6 +10,7 @@
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "Slic3r/App/PopNotification/PopNotificationListView.hpp"
 #include "Slic3r/App/SidebarObject.hpp"
+#include "Slic3r/App/PreferencesDialog.hpp"
 
 #include <map>
 
@@ -44,6 +45,7 @@ public:
 
     AbstractRenderLayout(
         std::unique_ptr<TopBar> top_bar,
+        std::unique_ptr<PreferencesDialog> preferences_dialog,
         std::unique_ptr<ObjectListWindow> object_list,
         std::unique_ptr<CubeView> cube_view,
         std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
@@ -155,6 +157,7 @@ protected:
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;
     Yoga::Passthrough<SidebarObject> m_sidebar_object;
+    Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
 };
 
 } // namespace Slic3r::App

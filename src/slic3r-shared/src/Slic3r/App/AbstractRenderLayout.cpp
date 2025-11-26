@@ -239,6 +239,8 @@ void AbstractRenderLayout::init()
     init_middle_column();
 
     init_right_column();
+
+    m_preferences_dialog->attach_to_center(&m_layout_main);
 }
 
 void AbstractRenderLayout::init_left_column()
@@ -458,6 +460,7 @@ private:
 
 AbstractRenderLayout::AbstractRenderLayout(
     std::unique_ptr<TopBar> top_bar,
+    std::unique_ptr<PreferencesDialog> preferences_dialog,
     std::unique_ptr<ObjectListWindow> object_list,
     std::unique_ptr<CubeView> cube_view,
     std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
@@ -466,6 +469,7 @@ AbstractRenderLayout::AbstractRenderLayout(
     std::unique_ptr<SidebarObject> sidebar_object
 ) :
     m_top_bar(std::move(top_bar)),
+    m_preferences_dialog(std::move(preferences_dialog)),
     m_object_list(std::move(object_list)),
     m_cube_view(std::move(cube_view)),
     m_pop_notification_list_view(std::move(pop_notification_list_view)),

@@ -99,6 +99,9 @@ public:
 
     void set_opened_dialog(Yoga::Dialog* opened_dialog);
 
+    void set_opened_preferences(bool opened);
+    bool is_opened_preferences();
+
 protected:
     /**
      * @name Implementation of Platform::AbstractRenderModule protected interface
@@ -143,6 +146,7 @@ private:
     Yoga::Passthrough<DoubleSliderForLayers> m_slider_layers;
     Yoga::Passthrough<DoubleSliderForLayers> m_sla_slider_layers;
     Yoga::Passthrough<SidebarAutoReslice> m_sidebar_auto_reslice;
+    Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
     // temporary variable to allow to switch yoga layout on/off
 
     Yoga::ToolbarButton* m_button_travels           = nullptr;

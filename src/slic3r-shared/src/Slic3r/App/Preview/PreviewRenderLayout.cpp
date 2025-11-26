@@ -13,6 +13,7 @@ namespace Slic3r::App::Preview {
 
 PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<TopBar> top_bar,
+    std::unique_ptr<PreferencesDialog> preferences_dialog,
     std::unique_ptr<ObjectListWindow> object_list,
     std::unique_ptr<CubeView> cube_view,
     std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,
@@ -29,6 +30,7 @@ PreviewRenderLayout::PreviewRenderLayout(
     )
     : AbstractRenderLayout(
         std::move(top_bar),
+        std::move(preferences_dialog),
         std::move(object_list),
         std::move(cube_view),
         std::move(pop_notification_list_view),

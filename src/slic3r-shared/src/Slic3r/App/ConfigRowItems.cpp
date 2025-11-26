@@ -13,12 +13,12 @@ namespace Slic3r::App {
 ConfigRowItems::ConfigRowItems(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor,
+    Biz::IConfigBoxSetter& cbi_container,
     Biz::ConfigBoxInteractor& cbi,
     size_t cbi_index
 ) :
     DataObserver<Domain::ConfigItem>(index, data),
-    m_preset_interactor(preset_interactor),
+    m_cbi_container(cbi_container),
     m_cbi(cbi),
     m_cbi_index(cbi_index)
 {
@@ -69,7 +69,7 @@ void ConfigRowItems::on_data_update()
                 m_single_item      = emplace_back<ConfigRowItem>(
                     m_index,
                     *m_state,
-                    m_preset_interactor,
+                    m_cbi_container,
                     m_cbi_index,
                     false
                 );
@@ -106,7 +106,7 @@ void ConfigRowItems::on_data_update()
                 m_row_items_filter->set_source_model(m_cbi.config_box_list());
 
                 m_row_group_list_view = emplace_back<ConfigRowListView>(
-                    ConfigRowListViewFactory{m_preset_interactor, m_cbi_index, true}
+                    ConfigRowListViewFactory{m_cbi_container, m_cbi_index, true}
                 );
                 m_row_group_list_view->set_align_items(YGAlignCenter);
                 m_row_group_list_view->set_gap(5);

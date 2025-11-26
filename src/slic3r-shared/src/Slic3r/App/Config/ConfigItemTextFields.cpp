@@ -6,7 +6,7 @@
 
 #include "Slic3r/App/Yoga/InputTextField.hpp"
 
-#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
 
 #include <fmt/format.h>
 
@@ -17,11 +17,11 @@ namespace Slic3r::App {
 ConfigItemTextFields::ConfigItemTextFields(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor,
+    Biz::IConfigBoxSetter& cbi_container,
     size_t cbi_index
 ) :
     ConfigItemControl(index, data),
-    m_preset_interactor(preset_interactor),
+    m_cbi_container(cbi_container),
     m_cbi_index(cbi_index)
 {
     set_orientation(Orientation::Horizontal);
@@ -82,7 +82,7 @@ void ConfigItemTextFields::send_data()
     for (size_t i = 0; i < values.size(); ++i) {
         values[i] = m_fields.at(i).double_validator->value();
     }
-    m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{values}, m_cbi_index);
+    m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{values}, m_cbi_index);
 }
 
 } // namespace Slic3r::App

@@ -7,9 +7,9 @@
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Yoga/InputTextWithSpin.hpp"
 
-namespace Slic3r::Biz::Preset {
-class PresetInteractor;
-} // namespace Slic3r::Biz::Preset
+namespace Slic3r::Biz {
+class IConfigBoxSetter;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App::Yoga {
 class IntValidator;
@@ -23,7 +23,7 @@ public:
     ConfigItemSpinBox(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::Preset::PresetInteractor& preset_interactor,
+        Biz::IConfigBoxSetter& cbi_container,
         size_t cbi_index
     );
 
@@ -35,7 +35,7 @@ protected:
     void update_value(const Domain::ConfigValue& value);
 
 private:
-    Biz::Preset::PresetInteractor& m_preset_interactor;
+    Biz::IConfigBoxSetter& m_cbi_container;
     size_t m_cbi_index{0};
 
     Yoga::IntValidator* m_value_validator{nullptr};

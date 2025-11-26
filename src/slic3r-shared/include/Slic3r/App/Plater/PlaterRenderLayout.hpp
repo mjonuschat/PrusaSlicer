@@ -15,6 +15,7 @@ class PlaterRenderLayout : public AbstractRenderLayout
 public:
     PlaterRenderLayout(
         std::unique_ptr<TopBar> top_bar,
+        std::unique_ptr<PreferencesDialog> preferences_dialog,
         std::unique_ptr<ObjectListWindow> object_list,
         std::unique_ptr<CubeView> cube_view,
         std::unique_ptr<PopNotification::PopNotificationListView> pop_notification_list_view,

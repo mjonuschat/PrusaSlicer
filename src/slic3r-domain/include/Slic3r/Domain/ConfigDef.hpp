@@ -96,7 +96,11 @@ struct ConfigItemDef
         Supports,
         Hollowing,
         Notes,
-        MaterialPrintingProfile
+        MaterialPrintingProfile,
+        PreferencesGeneral,
+        Appearance,
+        Camera,
+        Services,
     };
 
     static std::string translate_category(Category category, const PrinterTechnology pt);

@@ -88,4 +88,33 @@ void Navigator::request_search()
     m_plater_module->open_search();
 }
 
+void Navigator::set_opened_preferences(bool opened)
+{
+    ProjectContext& context = m_project_contexts->selected();
+    switch (context.type) {
+    case Render::ModuleType::Plater:
+        m_plater_module->set_opened_preferences(opened);
+        break;
+    case Render::ModuleType::Preview:
+        m_preview_module->set_opened_preferences(opened);
+        break;
+    case Render::ModuleType::Undef:
+        break;
+    }
+}
+
+bool Navigator::is_opened_preferences()
+{
+    ProjectContext& context = m_project_contexts->selected();
+    switch (context.type) {
+    case Render::ModuleType::Plater:
+        return m_plater_module->is_opened_preferences();
+    case Render::ModuleType::Preview:
+        return m_preview_module->is_opened_preferences();
+    case Render::ModuleType::Undef:
+        break;
+    }
+    return false;
+}
+
 } // namespace Slic3r::App

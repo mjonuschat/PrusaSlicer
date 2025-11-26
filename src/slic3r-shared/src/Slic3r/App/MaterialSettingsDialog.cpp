@@ -5,6 +5,7 @@
 #include "Slic3r/App/MaterialSettingsDialog.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include "Slic3r/App/Navigator.hpp"
@@ -27,7 +28,7 @@ MaterialSettingsDialog::MaterialSettingsDialog(
 ) :
     ConfigSettingsDialog(project_interactor, navigator, "MaterialSettingsDialog"),
     m_material_selection_dialog(material_selection_dialog),
-    m_material_cbi_list(m_project_interactor.preset_interactor().material_cbi_list())
+    m_material_cbi_list(m_project_interactor->preset_interactor().material_cbi_list())
 {
     m_material_cbi_list.add_listener<Biz::IListObserver<Biz::ConfigBoxInteractor>>(this);
 
@@ -39,7 +40,7 @@ MaterialSettingsDialog::MaterialSettingsDialog(
     {
         auto& dlg_manager = App::AppServices::instance().dialog_manager();
         dlg_manager.show_diff_dialog(
-            m_project_interactor.preset_interactor(),
+            m_project_interactor->preset_interactor(),
             Domain::Preset::PresetKind::FdmMaterial
         );
     };
@@ -77,14 +78,14 @@ void MaterialSettingsDialog::on_reset()
         Biz::ConfigBoxInteractor& cbi =
             const_cast<Biz::ConfigBoxInteractor&>(m_material_cbi_list.at(material_cbi_index));
 
-        std::string tab_name = m_project_interactor.selected_config_container().print_technology()
+        std::string tab_name = m_project_interactor->selected_config_container().print_technology()
                 == Domain::PrinterTechnology::FFF ?
             _u8L("Filament") :
             _u8L("Material");
 
         Tab* tab = append_tab(fmt::format("{} {}", tab_name, material_cbi_index + 1));
         m_config_tabs.emplace_back(
-            std::make_unique<ConfigTab>(&cbi, tab, m_project_interactor, material_cbi_index)
+            std::make_unique<ConfigTab>(&cbi, tab, *m_project_interactor, material_cbi_index)
         );
     }
 

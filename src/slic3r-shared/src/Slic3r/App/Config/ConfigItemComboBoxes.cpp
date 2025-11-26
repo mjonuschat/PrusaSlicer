@@ -4,7 +4,7 @@
 ///|/
 #include "Slic3r/App/Config/ConfigItemComboBoxes.hpp"
 
-#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -14,11 +14,11 @@ namespace Slic3r::App {
 ConfigItemComboBoxes::ConfigItemComboBoxes(
     size_t index,
     const Domain::ConfigItem& config_item,
-    Biz::Preset::PresetInteractor& preset_interactor,
+    Biz::IConfigBoxSetter& cbi_container,
     size_t cbi_index
 ) :
     ConfigItemControl(index, config_item),
-    m_preset_interactor(preset_interactor),
+    m_cbi_container(cbi_container),
     m_cbi_index(cbi_index)
 {
     set_width(150);
@@ -76,8 +76,7 @@ void ConfigItemComboBoxes::reconstruct_boxes()
 
             vector_wrapper.set_indexes(current_indexes);
 
-            m_preset_interactor
-                .set_item_value(*m_state, Domain::ConfigValue{vector_wrapper}, m_cbi_index);
+            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{vector_wrapper}, m_cbi_index);
         };
     }
 }

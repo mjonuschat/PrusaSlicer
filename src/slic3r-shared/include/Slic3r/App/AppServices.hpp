@@ -15,6 +15,7 @@ namespace Slic3r::App {
 
 class AppConfig;
 class IDialogManager;
+class AppConfigInteractor;
 
 class AppServices
 {
@@ -31,12 +32,14 @@ public:
     IDialogManager& dialog_manager() const;
     Platform::IFileExplorerHandler& file_explorer_handler() const;
     AppConfig& app_config() const;
+    AppConfigInteractor& app_config_intractor() const;
 
 private:
     std::unique_ptr<PopNotification::PopNotificationCenter> m_pop_notification_center;
     std::unique_ptr<IDialogManager> m_dialog_manager{};
     std::unique_ptr<Platform::IFileExplorerHandler> m_file_explorer_handler;
     std::unique_ptr<AppConfig> m_app_config;
+    std::unique_ptr<AppConfigInteractor> m_app_config_interactor;
 };
 
 } // namespace Slic3r::App

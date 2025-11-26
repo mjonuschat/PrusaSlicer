@@ -126,7 +126,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
     size_t child_index,
     size_t data_index,
     const Domain::ConfigItem& item,
-    Biz::Preset::PresetInteractor& preset_interactor,
+    Biz::IConfigBoxSetter& cbi_container,
     size_t cbi_index
 )
 {
@@ -138,7 +138,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            preset_interactor,
+            cbi_container,
             cbi_index
         );
         break;
@@ -147,7 +147,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            preset_interactor,
+            cbi_container,
             cbi_index
         );
         break;
@@ -156,7 +156,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            preset_interactor,
+            cbi_container,
             cbi_index
         );
         break;
@@ -165,7 +165,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            preset_interactor,
+            cbi_container,
             cbi_index
         );
         break;
@@ -177,7 +177,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            preset_interactor,
+            cbi_container,
             cbi_index
         );
         break;
@@ -186,7 +186,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            preset_interactor,
+            cbi_container,
             cbi_index
         );
         break;
@@ -195,7 +195,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            preset_interactor,
+            cbi_container,
             cbi_index
         );
         break;
@@ -207,7 +207,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            preset_interactor,
+            cbi_container,
             cbi_index
         );
         break;
@@ -216,7 +216,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            preset_interactor,
+            cbi_container,
             cbi_index
         );
         break;
@@ -225,7 +225,7 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
             child_index,
             data_index,
             item,
-            preset_interactor,
+            cbi_container,
             cbi_index
         );
         break;

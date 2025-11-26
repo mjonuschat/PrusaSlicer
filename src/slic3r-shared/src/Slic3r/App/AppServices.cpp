@@ -4,6 +4,7 @@
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/Platform/IFileExplorerHandler.hpp"
 #include "Slic3r/App/AppConfig.hpp"
+#include "Slic3r/App/AppConfigInteractor.hpp"
 
 namespace Slic3r::App {
 
@@ -33,6 +34,8 @@ void AppServices::set_file_explorer_handler(std::unique_ptr<Platform::IFileExplo
 void AppServices::set_app_config(std::unique_ptr<AppConfig>&& app_config)
 {
     m_app_config = std::move(app_config);
+    ASSERT(m_app_config != nullptr);
+    m_app_config_interactor = std::make_unique<AppConfigInteractor>(m_app_config->get_config_box_ptr());
 }
 
 PopNotification::PopNotificationCenter& AppServices::pop_notification_center() const
@@ -53,10 +56,16 @@ Platform::IFileExplorerHandler& AppServices::file_explorer_handler() const
     return *m_file_explorer_handler;
 }
 
-
 AppConfig& AppServices::app_config() const
 {
     ASSERT(m_app_config != nullptr);
     return *m_app_config;
 }
+
+AppConfigInteractor& AppServices::app_config_intractor() const
+{
+    ASSERT(m_app_config_interactor != nullptr);
+    return *m_app_config_interactor;
+}
+
 } // namespace Slic3r::App

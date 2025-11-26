@@ -14,10 +14,10 @@ namespace Slic3r::App {
 ObjectConfigItem::ObjectConfigItem(
     size_t index,
     const Biz::OverrideItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::IConfigBoxSetter& cbi_container
 ) :
     Biz::DataObserver<Biz::OverrideItem>(index, data),
-    m_preset_interactor(preset_interactor)
+    m_cbi_container(cbi_container)
 {
     set_gap(5);
 
@@ -44,7 +44,7 @@ void ObjectConfigItem::on_data_update()
             1,
             m_index,
             *m_state->config_item,
-            m_preset_interactor,
+            m_cbi_container,
 	    0 // Object and Volume are always index 0
         );
         m_control_item = dynamic_cast<Item*>(m_control);

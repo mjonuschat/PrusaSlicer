@@ -8,9 +8,9 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 
-namespace Slic3r::Biz::Preset {
-class PresetInteractor;
-} // namespace Slic3r::Biz::Preset
+namespace Slic3r::Biz {
+class IConfigBoxSetter;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App::Yoga {
 class InputTextField;
@@ -24,7 +24,7 @@ public:
     ConfigItemTextFields(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::Preset::PresetInteractor& preset_interactor,
+        Biz::IConfigBoxSetter& cbi_container,
         size_t cbi_index
     );
 
@@ -37,12 +37,13 @@ private:
     void send_data();
 
 private:
-    struct Field {
+    struct Field
+    {
         Yoga::InputTextField* textfield{nullptr};
         Yoga::Passthrough<Yoga::DoubleValidator> double_validator;
     };
 
-    Biz::Preset::PresetInteractor& m_preset_interactor;
+    Biz::IConfigBoxSetter& m_cbi_container;
     size_t m_cbi_index{0};
     std::vector<Field> m_fields;
 };

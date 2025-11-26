@@ -8,9 +8,9 @@
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 
-namespace Slic3r::Biz::Preset {
-class PresetInteractor;
-} // namespace Slic3r::Biz::Preset
+namespace Slic3r::Biz {
+class IConfigBoxSetter;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App {
 
@@ -20,7 +20,7 @@ public:
     ConfigItemComboBox(
         size_t index,
         const Domain::ConfigItem& config_item,
-        Biz::Preset::PresetInteractor& preset_interactor,
+        Biz::IConfigBoxSetter& cbi_container,
         size_t cbi_index
     );
 
@@ -30,7 +30,7 @@ protected:
     void initialize();
 
 private:
-    Biz::Preset::PresetInteractor& m_preset_interactor;
+    Biz::IConfigBoxSetter& m_cbi_container;
     size_t m_cbi_index = 0;
 
     Yoga::Passthrough<Yoga::IntValidator> m_int_validator;

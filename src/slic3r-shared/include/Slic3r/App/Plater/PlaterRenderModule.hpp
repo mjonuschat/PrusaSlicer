@@ -23,6 +23,7 @@ class SidebarObject;
 class SidebarPrint;
 class CubeView;
 class TopBar;
+class PreferencesDialog;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Yoga {
@@ -88,6 +89,8 @@ public:
     void navigate_to_item(const Domain::ConfigItem* config_item);
 
     void open_search();
+    void set_opened_preferences(bool opened);
+    bool is_opened_preferences();
 
 protected:
     void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
@@ -138,6 +141,7 @@ private:
     Yoga::Passthrough<SidebarObject> m_sidebar_object;
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<History> m_history;
+    Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
 
     Yoga::ToolbarButton* m_toolbar_add_volume        = nullptr;
     Yoga::ToolbarButton* m_toolbar_delete            = nullptr;

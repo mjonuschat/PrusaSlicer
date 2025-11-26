@@ -271,7 +271,7 @@ bool DesktopApp::OnInit()
 
     m_project_interactor->new_project();
 
-    m_main_frame = new MainFrame(m_workbench, *m_project_interactor);
+    m_main_frame = new MainFrame(m_workbench, *m_project_interactor, m_navigator);
     m_project_interactor->init_app_instance_message_handler(m_main_frame->GetHandle());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     m_gl_context                         = canvas.release_context();

@@ -48,6 +48,20 @@ void Window::set_alpha(float alpha)
 
 void Window::render(Vec2f pos, Vec2f size)
 {
+    // Process begin of popup modal if needed
+    bool popup_modal_open{true};
+    bool is_begin_popup_modal{false};
+    std::string popup_modal_wnd_name = m_item_name + "_popup_modal";
+    if (m_is_modal) {
+        ImGui::OpenPopup(popup_modal_wnd_name.c_str());
+        ImGui::SetNextWindowPos(Item::to_im(pos), ImGuiCond_Always);
+        is_begin_popup_modal =
+            ImGui::BeginPopupModal(popup_modal_wnd_name.c_str(), &popup_modal_open);
+        if (!is_begin_popup_modal) {
+            return;
+        }
+    }
+
     render_item_begin(pos, size);
 
     render_debug(pos, size);
@@ -116,6 +130,11 @@ void Window::render(Vec2f pos, Vec2f size)
     ImGui::End();
     // Revert current paddings and spacing
     ImGui::PopStyleVar(4);
+
+    // Process end of popup modal if needed
+    if (m_is_modal && is_begin_popup_modal) {
+        ImGui::EndPopup();
+    }
 }
 
 void Window::render_body(Vec2f pos, Vec2f size) {}
@@ -188,6 +207,16 @@ void Window::bring_to_front()
 bool Window::hovered() const
 {
     return m_hovered;
+}
+
+bool Window::is_modal() const
+{
+    return m_is_modal;
+}
+
+void Window::set_modal(bool is_modal)
+{
+    m_is_modal = is_modal;
 }
 
 } // namespace Slic3r::App::Yoga

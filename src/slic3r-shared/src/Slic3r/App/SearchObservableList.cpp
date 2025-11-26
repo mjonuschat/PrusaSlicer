@@ -3,6 +3,8 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/SearchObservableList.hpp"
+#include "Slic3r/App/AppServices.hpp"
+#include "Slic3r/App/AppConfigInteractor.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
@@ -143,6 +145,14 @@ void SearchObservableList::invalidate_source_items()
             extract_cbol(tool_cbi_list);
         }
     }
+
+    extract_cbol(
+        App::AppServices::instance()
+            .app_config_intractor()
+            .app_config_cbi()
+            .config_box_list()
+            .lock()
+    );
 
     refresh_search();
 }

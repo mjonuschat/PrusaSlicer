@@ -21,9 +21,9 @@ namespace Slic3r::Biz {
 class ConfigBoxInteractor;
 } // namespace Slic3r::Biz
 
-namespace Slic3r::Biz::Preset {
-class PresetInteractor;
-} // namespace Slic3r::Biz::Preset
+namespace Slic3r::Biz {
+class IConfigBoxSetter;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App {
 
@@ -32,7 +32,7 @@ class ConfigSubcategoryItem : public Biz::DataObserver<Domain::ConfigItem>, publ
     using ConfigRowListViewFactory = Yoga::ViewFactory<
         ConfigRowItems,
         Domain::ConfigItem,
-        Biz::Preset::PresetInteractor&,
+        Biz::IConfigBoxSetter&,
         Biz::ConfigBoxInteractor&,
         size_t>;
     using ConfigRowListView =
@@ -42,7 +42,7 @@ public:
     ConfigSubcategoryItem(
         size_t index,
         const Domain::ConfigItem& data,
-        Biz::Preset::PresetInteractor& preset_interactor,
+        Biz::IConfigBoxSetter& cbi_container,
         Biz::ConfigBoxInteractor& cbi,
         size_t cbi_index
     );
@@ -57,7 +57,7 @@ private:
 
 private:
     Biz::ConfigBoxInteractor& m_cbi;
-    Biz::Preset::PresetInteractor& m_preset_interactor;
+    Biz::IConfigBoxSetter& m_cbi_container;
     size_t m_cbi_index{0};
 
     ConfigRowListView* m_rows_list_view{nullptr};

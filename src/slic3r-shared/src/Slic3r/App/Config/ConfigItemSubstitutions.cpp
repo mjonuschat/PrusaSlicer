@@ -11,11 +11,11 @@ namespace Slic3r::App {
 ConfigItemSubstitutions::ConfigItemSubstitutions(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor,
+    Biz::IConfigBoxSetter& cbi_container,
     size_t cbi_index
 ) :
     ConfigItemControl(index, data),
-    m_preset_interactor(preset_interactor),
+    m_cbi_container(cbi_container),
     m_cbi_index(cbi_index)
 {}
 

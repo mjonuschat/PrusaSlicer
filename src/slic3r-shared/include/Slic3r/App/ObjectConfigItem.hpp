@@ -11,9 +11,9 @@
 
 #include "Slic3r/App/Yoga/Item.hpp"
 
-namespace Slic3r::Biz::Preset {
-class PresetInteractor;
-} // namespace Slic3r::Biz::Preset
+namespace Slic3r::Biz {
+class IConfigBoxSetter;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App::Yoga {
 class Text;
@@ -29,14 +29,14 @@ public:
     ObjectConfigItem(
         size_t index,
         const Biz::OverrideItem& data,
-        Biz::Preset::PresetInteractor& preset_interactor
+        Biz::IConfigBoxSetter& cbi_container
     );
 
 private:
     void on_data_update() override;
 
 private:
-    Biz::Preset::PresetInteractor& m_preset_interactor;
+    Biz::IConfigBoxSetter& m_cbi_container;
 
     ConfigItemControl* m_control{nullptr};
     Yoga::Item* m_control_item{nullptr};

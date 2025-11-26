@@ -20,6 +20,7 @@
 
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
 
 namespace Slic3r::Biz::Preset {
 
@@ -57,8 +58,8 @@ class PresetInteractor final :
     public WithListeners<
         IPresetChangedListener,
         IBedPresetSwitchedListener,
-        ISlicingInputChangedListener
-        >
+        ISlicingInputChangedListener>,
+    public IConfigBoxSetter
 {
 public:
     explicit PresetInteractor(Domain::Workbench& workbench, Scene::SceneInteractor& scene_interactor);
@@ -197,15 +198,15 @@ public:
     CBIObservableList& material_cbi_list();
     CBIObservableList& tool_cbi_list();
 
-    const Domain::ConfigValue* get_override_origin(const Domain::ConfigItem& item, size_t index = 0) const;
+    const Domain::ConfigValue* get_override_original_value(const Domain::ConfigItem& item, size_t index = 0) const override;
 
     void set_item_value(
         const Domain::ConfigItem& item,
         const Domain::ConfigValue& value,
         size_t index = 0
-    );
+    ) override;
 
-    void set_item_override(const Domain::ConfigItem& item, bool enable, size_t index = 0);
+    void set_item_override(const Domain::ConfigItem& item, bool enable, size_t index = 0) override;
 
     template <typename T>
     using ConstRefBoolPair = std::pair<std::reference_wrapper<const T>, bool>;

@@ -176,6 +176,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/SearchResultRow.cpp
         include/Slic3r/App/ConfigSettingsDialog.hpp
         src/Slic3r/App/ConfigSettingsDialog.cpp
+        include/Slic3r/App/PreferencesDialog.hpp
+        src/Slic3r/App/PreferencesDialog.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
@@ -556,6 +558,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Scene/BedFactory.hpp
         src/Slic3r/Biz/Scene/BedFactory.cpp
 
+        include/Slic3r/Biz/IConfigBoxSetter.hpp
+
         include/Slic3r/Biz/Preset/IPresetChangedListener.hpp
         include/Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp
         include/Slic3r/Biz/Preset/IConfigInteractor.hpp
@@ -807,6 +811,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PresetUpdaterUI.cpp
         include/Slic3r/App/AppConfig.hpp
         src/Slic3r/App/AppConfig.cpp
+        include/Slic3r/App/AppConfigInteractor.hpp
+        src/Slic3r/App/AppConfigInteractor.cpp
+        include/Slic3r/App/IAppConfigChangedListener.hpp
 
         include/Slic3r/Biz/RemovableDrive/RemovableDriveService.hpp
         include/Slic3r/Biz/RemovableDrive/IRemovableDriveMonitor.hpp

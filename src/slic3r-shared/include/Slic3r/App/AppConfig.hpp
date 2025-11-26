@@ -35,6 +35,7 @@ public:
     }
 
     const AppSettings& get_config_box() const { return m_app_settings; }
+    AppSettings* get_config_box_ptr() { return &m_app_settings; }
 
     bool is_printables_enabled() const;
     bool is_connect_enabled() const;

@@ -8,9 +8,9 @@
 
 #include "Slic3r/Biz/DataObserver.hpp"
 
-namespace Slic3r::Biz::Preset {
-class PresetInteractor;
-} // namespace Slic3r::Biz::Preset
+namespace Slic3r::Biz {
+class IConfigBoxSetter;
+} // namespace Slic3r::Biz
 
 namespace Slic3r::App::Yoga {
 class Item;
@@ -28,7 +28,7 @@ public:
         size_t child_index,
         size_t data_index,
         const Domain::ConfigItem& item,
-        Biz::Preset::PresetInteractor& preset_interactor,
+        Biz::IConfigBoxSetter& cbi_container,
         size_t cbi_index
     );
 

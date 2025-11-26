@@ -43,12 +43,8 @@ public:
         GetLeftBarCtrl()->ShowUserAccount(show);
     }
 
-    TabsBarCtrl::Button* message_button() {
-        return GetLeftBarCtrl()->message_btn;
-    }
-
-    TabsBarCtrl::Button* notifications_button() {
-        return GetLeftBarCtrl()->notifications_btn;
+    TabsBarCtrl::Button* preferences_button() {
+        return GetLeftBarCtrl()->preferences_btn;
     }
 
     LeftBarCtrl* GetLeftBarCtrl() const { return static_cast<LeftBarCtrl*>(m_bookctrl); }

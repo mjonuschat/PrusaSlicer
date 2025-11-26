@@ -3,9 +3,9 @@
 namespace Slic3r::App {
 
 enum class LeftBarTabs {
-    Printers = 0,
-    Projects = 1,
-    Slicing = 2,
-    Printables = 3
+    Printers = 1000,
+    Projects = 1001,
+    Slicing = 1002,
+    Printables = 1003
 };
 }

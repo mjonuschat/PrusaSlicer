@@ -44,7 +44,7 @@ PrintSettingsDialog::PrintSettingsDialog(
     {
         auto& dlg_manager = App::AppServices::instance().dialog_manager();
         dlg_manager.show_diff_dialog(
-            m_project_interactor.preset_interactor(),
+            m_project_interactor->preset_interactor(),
             Domain::Preset::PresetKind::FdmPrint
         );
     };
@@ -72,7 +72,7 @@ void PrintSettingsDialog::on_reset()
 
         Tab* tab = append_tab(fmt::format("Tool {}", tool_cbi_index + 1));
         m_config_tabs.emplace_back(
-            std::make_unique<ConfigTab>(&cbi, tab, m_project_interactor, tool_cbi_index)
+            std::make_unique<ConfigTab>(&cbi, tab, *m_project_interactor, tool_cbi_index)
         );
     }
 }

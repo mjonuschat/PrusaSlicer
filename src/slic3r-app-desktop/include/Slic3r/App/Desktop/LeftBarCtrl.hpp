@@ -19,8 +19,7 @@ public:
     void ShowUserAccount(bool show);
 
 public:
-    Button*     message_btn             { nullptr };
-    Button*     notifications_btn       { nullptr };
+    Button* preferences_btn{nullptr};
 
 private:
     ButtonWithPopup*    m_account_btn   { nullptr };

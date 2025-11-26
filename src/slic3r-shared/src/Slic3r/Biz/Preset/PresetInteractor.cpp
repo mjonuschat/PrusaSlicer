@@ -1224,7 +1224,7 @@ CBIObservableList& PresetInteractor::tool_cbi_list()
     return m_tool_cbi_list;
 }
 
-const Domain::ConfigValue* PresetInteractor::get_override_origin(
+const Domain::ConfigValue* PresetInteractor::get_override_original_value(
     const Domain::ConfigItem& item,
     size_t index
 ) const

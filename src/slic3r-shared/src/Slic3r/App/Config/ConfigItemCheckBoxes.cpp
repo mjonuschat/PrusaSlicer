@@ -4,7 +4,7 @@
 ///|/
 #include "Slic3r/App/Config/ConfigItemCheckBoxes.hpp"
 
-#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
 
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 
@@ -15,11 +15,11 @@ namespace Slic3r::App {
 ConfigItemCheckBoxes::ConfigItemCheckBoxes(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor,
+    Biz::IConfigBoxSetter& cbi_container,
     size_t cbi_index
 ) :
     ConfigItemControl(index, data),
-    m_preset_interactor(preset_interactor),
+    m_cbi_container(cbi_container),
     m_cbi_index(cbi_index)
 {
     on_data_update();
@@ -64,7 +64,7 @@ void ConfigItemCheckBoxes::reconstruct_buttons()
             bool checked           = button->checked();
             std::vector<bool> data = get_data();
             data[index]            = checked;
-            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{data}, m_cbi_index);
+            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{data}, m_cbi_index);
         };
     }
 

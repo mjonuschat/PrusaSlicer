@@ -61,6 +61,7 @@
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/RenderModuleHelper.hpp"
 #include "Slic3r/App/TopBar.hpp"
+#include "Slic3r/App/PreferencesDialog.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -111,6 +112,22 @@ void PlaterRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
     m_dialog_navigation.open_dialog(opened_dialog);
 }
 
+void PlaterRenderModule::set_opened_preferences(bool opened)
+{
+    if (opened) {
+        set_opened_dialog(m_preferences_dialog.get());
+        request_render();
+    } else {
+        m_preferences_dialog->close();
+    }
+    request_render();
+}
+
+bool PlaterRenderModule::is_opened_preferences()
+{
+    return m_preferences_dialog.get() && m_preferences_dialog.get()->opened();
+}
+
 void PlaterRenderModule::navigate_to_item(const Domain::ConfigItem* config_item)
 {
     m_sidebar_bed->logical_printer_settings_dialog()
@@ -119,6 +136,7 @@ void PlaterRenderModule::navigate_to_item(const Domain::ConfigItem* config_item)
     m_sidebar_print->print_settings_dialog().clear_navigation();
     m_sidebar_bed->material_selection_dialog().material_settings_dialog().clear_navigation();
     m_sidebar_print->print_settings_dialog().clear_navigation();
+    m_preferences_dialog.get()->clear_navigation();
 
     std::visit(
         [=, this](auto&& location)
@@ -162,6 +180,8 @@ void PlaterRenderModule::navigate_to_item(const Domain::ConfigItem* config_item)
                 default:
                     break;
                 }
+            } else if constexpr (std::is_same_v<T, Domain::AppConfigLocation>) {
+                dialog_to_open = m_preferences_dialog.get();
             }
 
             if (dialog_to_open) {
@@ -243,6 +263,12 @@ void PlaterRenderModule::register_commands()
 void PlaterRenderModule::init_scene_layout()
 {
     ASSERT(m_render_module_navigator);
+
+    m_preferences_dialog = std::make_unique<PreferencesDialog>(
+        AppServices::instance().app_config_intractor(),
+        *m_render_module_navigator
+    );
+
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(
         &m_project_interactor,
@@ -278,6 +304,7 @@ void PlaterRenderModule::init_scene_layout()
 
     m_layout.reset(new PlaterRenderLayout(
         m_top_bar.release(),
+        m_preferences_dialog.release(),
         m_object_list.release(),
         m_cube_view.release(),
         m_pop_notification_list_view.release(),
@@ -510,6 +537,7 @@ void PlaterRenderModule::init_dialog_navigation()
     );
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
+    m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
 
     // Init gizmos dialogs
     auto init_gizmo_dialog = [this](GizmoDialog* dialog) {

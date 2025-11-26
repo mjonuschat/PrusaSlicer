@@ -18,7 +18,14 @@ ConfigSettingsDialog::ConfigSettingsDialog(
     const std::string& name
 ) :
     AbstractSettingsDialog({}, name.empty() ? "ConfigSettingsDialog" : name),
-    m_project_interactor(project_interactor),
+    m_project_interactor(&project_interactor),
+    m_cbi_container(m_project_interactor->preset_interactor()),
+    m_navigator(navigator)
+{}
+
+ConfigSettingsDialog::ConfigSettingsDialog(Biz::IConfigBoxSetter& cbi_container, Navigator & navigator, const std::string & name) :
+    AbstractSettingsDialog({}, name.empty() ? "ConfigSettingsDialog" : name),
+    m_cbi_container(cbi_container),
     m_navigator(navigator)
 {}
 
@@ -51,19 +58,39 @@ ConfigSettingsDialog::ConfigTab::ConfigTab(
 ) :
     cbi(cbi),
     tab(tab),
-    project_interactor(project_interactor),
+    project_interactor(&project_interactor),
+    cbi_container(project_interactor.preset_interactor()),
     cbi_index(cbi_index),
     observable_categorizer(std::make_shared<ObservableCategorizer>()),
     category_page_transformer(std::make_shared<CategoryPageTransformer>())
 {
+    init();
+}
+
+ConfigSettingsDialog::ConfigTab::ConfigTab(
+    Biz::ConfigBoxInteractor* cbi,
+    Tab* tab,
+    Biz::IConfigBoxSetter& cbi_container
+) :
+    cbi(cbi),
+    tab(tab),
+    cbi_container(cbi_container),
+    observable_categorizer(std::make_shared<ObservableCategorizer>()),
+    category_page_transformer(std::make_shared<CategoryPageTransformer>())
+{
+    init();
+}
+
+void ConfigSettingsDialog::ConfigTab::init()
+{
     observable_categorizer->set_source_model(cbi->config_box_list());
-    category_page_transformer->set_project_interactor(&project_interactor);
+    category_page_transformer->set_project_interactor(project_interactor);
     category_page_transformer->set_source_model(observable_categorizer.get());
 
     using CategoryListViewFactory = ViewFactory<
         ConfigSubcategoryListView,
         Domain::ConfigItem,
-        Biz::Preset::PresetInteractor&,
+        Biz::IConfigBoxSetter&,
         Biz::ConfigBoxInteractor&,
 	size_t>;
     using CategoryListView = ListView<
@@ -73,7 +100,7 @@ ConfigSettingsDialog::ConfigTab::ConfigTab(
         StackLayout>;
 
     std::unique_ptr<CategoryListView> category_list_view = std::make_unique<CategoryListView>(
-        CategoryListViewFactory{project_interactor.preset_interactor(), *cbi, cbi_index}
+        CategoryListViewFactory{cbi_container, *cbi, cbi_index}
     );
 
     category_list_view->set_source_list(observable_categorizer.get());

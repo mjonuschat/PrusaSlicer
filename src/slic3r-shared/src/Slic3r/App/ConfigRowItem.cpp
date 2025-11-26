@@ -9,7 +9,7 @@
 #include "Slic3r/App/Config/ConfigItemControl.hpp"
 #include "Slic3r/App/Config/ConfigItemSpinBox.hpp"
 
-#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -18,12 +18,12 @@ namespace Slic3r::App {
 ConfigRowItem::ConfigRowItem(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor,
+    Biz::IConfigBoxSetter& cbi_container,
     size_t cbi_index,
     bool small
 ) :
     Biz::DataObserver<Domain::ConfigItem>(index, data),
-    m_preset_interactor(preset_interactor),
+    m_cbi_container(cbi_container),
     m_cbi_index(cbi_index),
     m_small(small)
 {
@@ -76,7 +76,7 @@ void ConfigRowItem::on_data_update()
             1,
             m_index,
             *m_state,
-            m_preset_interactor,
+            m_cbi_container,
             m_cbi_index
         );
 
@@ -119,7 +119,7 @@ void ConfigRowItem::on_data_update()
                     value = m_config_item_spin_box->value();
                 }
 
-                m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{value}, m_cbi_index);
+                m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{value}, m_cbi_index);
             };
         } else {
             if (m_toggle_enable) {

@@ -48,6 +48,9 @@ public:
 
     bool hovered() const;
 
+    bool is_modal() const;
+    void set_modal(bool is_modal);
+
 protected:
     void set_style_dirty() override;
     Vec2f get_item_size() override;
@@ -68,6 +71,8 @@ private:
     Vec2f m_last_pos;
     bool m_hovered = false;
     bool m_requested_bring_to_front = false;
+
+    bool m_is_modal{ false };
 };
 
 } // namespace Slic3r::App::Yoga

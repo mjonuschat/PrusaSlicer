@@ -4,7 +4,7 @@
 ///|/
 #include "Slic3r/App/ConfigSubcategoryListView.hpp"
 
-#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/ConfigBoxInteractor.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -14,7 +14,7 @@ namespace Slic3r::App {
 ConfigSubcategoryListView::ConfigSubcategoryListView(
     size_t index,
     const Domain::ConfigItem& data,
-    Biz::Preset::PresetInteractor& preset_interactor,
+    Biz::IConfigBoxSetter& cbi_container,
     Biz::ConfigBoxInteractor& cbi,
     size_t cbi_index
 ) :
@@ -22,9 +22,9 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
         ConfigSubcategoryItem,
         Domain::ConfigItem,
         ConfigSubcategoryListViewFactory,
-        ScrollArea>(ConfigSubcategoryListViewFactory{preset_interactor, cbi, cbi_index}),
+        ScrollArea>(ConfigSubcategoryListViewFactory{cbi_container, cbi, cbi_index}),
     Biz::DataObserver<Domain::ConfigItem>(index, data),
-    m_preset_interactor(preset_interactor),
+    m_cbi_container(cbi_container),
     m_cbi(cbi),
     m_cbi_index(cbi_index),
     m_category_filter(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())

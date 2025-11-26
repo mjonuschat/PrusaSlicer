@@ -4,7 +4,7 @@
 ///|/
 #include "Slic3r/App/Config/ConfigItemComboBox.hpp"
 
-#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/IConfigBoxSetter.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <fmt/format.h>
@@ -16,12 +16,12 @@ namespace Slic3r::App {
 ConfigItemComboBox::ConfigItemComboBox(
     size_t index,
     const Domain::ConfigItem& config_item,
-    Biz::Preset::PresetInteractor& preset_interactor,
+    Biz::IConfigBoxSetter& cbi_container,
     size_t cbi_index
 ) :
     ConfigItemControl(index, config_item),
     ComboBox("ConfigItemCombo"),
-    m_preset_interactor(preset_interactor),
+    m_cbi_container(cbi_container),
     m_cbi_index(cbi_index)
 {
     const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
@@ -46,7 +46,7 @@ ConfigItemComboBox::ConfigItemComboBox(
         const Domain::ConfigItemDef::GUIType gui_type = m_state->def().gui_type;
         if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
             if (*m_state->def().type == typeid(double)) {
-                m_preset_interactor.set_item_value(
+                m_cbi_container.set_item_value(
                     *m_state,
                     Domain::ConfigValue{
                         std::get<double>(m_state->def().choices.at(current_index()).first)
@@ -54,7 +54,7 @@ ConfigItemComboBox::ConfigItemComboBox(
                     m_cbi_index
                 );
             } else if (*m_state->def().type == typeid(Domain::Percentage)) {
-                m_preset_interactor.set_item_value(
+                m_cbi_container.set_item_value(
                     *m_state,
                     Domain::ConfigValue{Domain::Percentage{
                         std::get<double>(m_state->def().choices.at(current_index()).first)
@@ -63,7 +63,7 @@ ConfigItemComboBox::ConfigItemComboBox(
                 );
             } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
                 // Assume it is always Float :((
-                m_preset_interactor.set_item_value(
+                m_cbi_container.set_item_value(
                     *m_state,
                     Domain::ConfigValue{Domain::FloatOrPercentage{
                         std::get<double>(m_state->def().choices.at(current_index()).first)
@@ -72,7 +72,7 @@ ConfigItemComboBox::ConfigItemComboBox(
                 );
             }
         } else if (gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
-            m_preset_interactor.set_item_value(
+            m_cbi_container.set_item_value(
                 *m_state,
                 Domain::ConfigValue{
                     std::get<int>(m_state->def().choices.at(current_index()).first)
@@ -80,7 +80,7 @@ ConfigItemComboBox::ConfigItemComboBox(
                 m_cbi_index
             );
         } else if (gui_type == Domain::ConfigItemDef::GUIType::s_enum_open) {
-            m_preset_interactor.set_item_value(
+            m_cbi_container.set_item_value(
                 *m_state,
                 Domain::ConfigValue{
                     std::get<std::string>(m_state->def().choices.at(current_index()).first)
@@ -90,7 +90,7 @@ ConfigItemComboBox::ConfigItemComboBox(
         } else if (*m_state->def().type == typeid(Domain::EnumWrapper)) {
             Domain::EnumWrapper values = m_state->get<Domain::EnumWrapper>();
             values.set_string(values.def().at(static_cast<size_t>(selected)).str_serialized);
-            m_preset_interactor.set_item_value(*m_state, Domain::ConfigValue{values}, m_cbi_index);
+            m_cbi_container.set_item_value(*m_state, Domain::ConfigValue{values}, m_cbi_index);
         }
     };
 
@@ -100,20 +100,21 @@ ConfigItemComboBox::ConfigItemComboBox(
         // TODO: Unify this with ConfigItemTextField
         if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
             if (*m_state->def().type == typeid(double)) {
-                m_preset_interactor.set_item_value(
+                m_cbi_container
+                    .set_item_value(
                     *m_state,
                     Domain::ConfigValue{m_double_validator->value()},
                     m_cbi_index
                 );
             } else if (*m_state->def().type == typeid(Domain::Percentage)) {
-                m_preset_interactor.set_item_value(
+                m_cbi_container.set_item_value(
                     *m_state,
                     Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}},
                     m_cbi_index
                 );
             } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
                 if (m_percentage_validator->percentage_symbol()) {
-                    m_preset_interactor.set_item_value(
+                    m_cbi_container.set_item_value(
                         *m_state,
                         Domain::ConfigValue{Domain::FloatOrPercentage{
                             Domain::Percentage{m_percentage_validator->value()}
@@ -121,7 +122,7 @@ ConfigItemComboBox::ConfigItemComboBox(
                         m_cbi_index
                     );
                 } else {
-                    m_preset_interactor.set_item_value(
+                    m_cbi_container.set_item_value(
                         *m_state,
                         Domain::ConfigValue{
                             Domain::FloatOrPercentage{m_percentage_validator->value()}
@@ -131,13 +132,13 @@ ConfigItemComboBox::ConfigItemComboBox(
                 }
             }
         } else if (gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
-            m_preset_interactor.set_item_value(
+            m_cbi_container.set_item_value(
                 *m_state,
                 Domain::ConfigValue{m_int_validator->value()},
                 m_cbi_index
             );
         } else if (gui_type == Domain::ConfigItemDef::GUIType::s_enum_open) {
-            m_preset_interactor
+            m_cbi_container
                 .set_item_value(*m_state, Domain::ConfigValue{current_label()}, m_cbi_index);
         }
     };
@@ -155,7 +156,7 @@ void ConfigItemComboBox::on_data_update()
     set_override_label(std::string());
     set_label_font_type(Render::ImguiFontType::Regular);
     if (!overriden().value_or(true)) {
-        update_value(*m_preset_interactor.get_override_origin(*m_state, location_index()));
+        update_value(*m_cbi_container.get_override_original_value(*m_state, location_index()));
     } else {
         update_value(m_state->value());
     }

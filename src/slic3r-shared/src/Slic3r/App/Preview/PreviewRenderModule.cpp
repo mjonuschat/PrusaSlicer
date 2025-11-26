@@ -382,6 +382,22 @@ void PreviewRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
     m_dialog_navigation.open_dialog(opened_dialog);
 }
 
+void PreviewRenderModule::set_opened_preferences(bool opened)
+{
+    if (opened) {
+        m_dialog_navigation.open_dialog(m_preferences_dialog.get());
+        request_render();
+    } else {
+        m_preferences_dialog->close();
+    }
+    request_render();
+}
+
+bool PreviewRenderModule::is_opened_preferences()
+{
+    return m_preferences_dialog.get() && m_preferences_dialog.get()->opened();
+}
+
 void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
     AbstractRenderModule::on_init(device, imgui_render);
@@ -740,6 +756,12 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
 void PreviewRenderModule::init_scene_layout()
 {
     ASSERT(m_render_module_navigator);
+
+    m_preferences_dialog = std::make_unique<PreferencesDialog>(
+        AppServices::instance().app_config_intractor(),
+        *m_render_module_navigator
+    );
+
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this, *m_thumbnail_store, *m_render_module_navigator);
 
@@ -761,6 +783,7 @@ void PreviewRenderModule::init_scene_layout()
 
     m_layout.reset(new PreviewRenderLayout(
         m_top_bar.release(),
+        m_preferences_dialog.release(),
         m_object_list.release(),
         m_cube_view.release(),
         m_pop_notification_list_view.release(),
@@ -1093,6 +1116,7 @@ void PreviewRenderModule::init_dialog_navigation()
         );
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
+    m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
 }
 
 void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
