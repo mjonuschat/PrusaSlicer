@@ -63,6 +63,7 @@
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/RenderModuleHelper.hpp"
 #include "Slic3r/App/TopBar.hpp"
+#include "Slic3r/App/Wildcards.hpp"
 #include "Slic3r/App/PreferencesDialog.hpp"
 #include "Slic3r/App/SidebarStackLayout.hpp"
 
@@ -381,7 +382,7 @@ void PlaterRenderModule::init_scene_layout()
             _u8L("Import File"),
             m_project_interactor.export_project_path(m_project_interactor.selected_project_id()),
             "",
-            "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf",
+            Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl, Wildcards::TypeFlag::Stl),
             callback
         );
     }}
@@ -775,7 +776,7 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
         _u8L("Import File"),
         m_project_interactor.export_project_path(m_project_interactor.selected_project_id()),
         "",
-        "STL (*.stl)|*.stl|3MF (*.3mf)|*.3mf",
+        Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf | Wildcards::TypeFlag::Stl, Wildcards::TypeFlag::Stl),
         callback
     );
 }

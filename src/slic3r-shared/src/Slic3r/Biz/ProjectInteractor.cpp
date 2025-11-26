@@ -9,7 +9,8 @@
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
-
+#include "Slic3r/Biz/Units.hpp"
+#include "Slic3r/Biz/Parser/IO.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
@@ -385,19 +386,41 @@ void ProjectInteractor::rename_project(Domain::SelectionId project_id, const std
                                                { l->on_project_changed(project_id); });
 }
 
-void ProjectInteractor::do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
+void
+ProjectInteractor::do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
 {
-    const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
-    if (!fdm_result)
-        return;
-    set_export_result_path(selected_project_id(), dest_path);
-    PrintHost::PrintHostConfig config{Domain::PrintHostType::Local, ""};
-    PrintHost::PrintHostJobData data{
-        fdm_result.value().get().const_gcode(),
-        dest_path,
-        PrintHost::get_export_format_from_extension(dest_path.extension().string())
-    };
-    m_print_host_interactor.export_gcode(std::move(config), std::move(data));
+    // Find confing container with matching bed instance id.
+    const Domain::ConfigContainer* config_container = nullptr;
+    for (const auto& cc : m_workbench.project(id.project_id).config_containers()) {
+        for (const auto& bi : cc->bed_instances()) {
+            if (bi->id() == id.bed_instance_id) {
+                config_container = cc.get();
+                break;
+            }
+        }
+        if (config_container != nullptr) {
+            break;
+        }
+    }
+    ASSERT(config_container);
+    Domain::PrinterTechnology tech = config_container->selected_preset().hw_config.technology;
+    if (tech == Domain::PrinterTechnology::FFF) {
+        const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
+        ASSERT(fdm_result);
+        set_export_result_path(id.project_id, dest_path);
+        PrintHost::PrintHostConfig config{Domain::PrintHostType::Local, ""};
+        PrintHost::PrintHostJobData data{
+            fdm_result.value().get().const_gcode(),
+            dest_path,
+            PrintHost::get_export_format_from_extension(dest_path.extension().string())
+        };
+        m_print_host_interactor.export_gcode(std::move(config), std::move(data));
+    } else if (tech == Domain::PrinterTechnology::SLA) {
+        SPDLOG_ERROR("SLA EXPORT NOT IMPLEMENTED!");
+
+    } else {
+        ASSERT(false);
+    }
 }
 
 void ProjectInteractor::do_upload(const Domain::SlicingId id, const std::string& filename)

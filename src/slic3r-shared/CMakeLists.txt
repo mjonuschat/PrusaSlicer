@@ -112,8 +112,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/SidebarGraphicsSettings.cpp
         include/Slic3r/App/LightSetting.hpp
         src/Slic3r/App/LightSetting.cpp
-        include/Slic3r/App/ExportPathSelect.hpp
-        src/Slic3r/App/ExportPathSelect.cpp
         include/Slic3r/App/IDialogManager.hpp
         include/Slic3r/App/PrintSettingsDialog.hpp
         src/Slic3r/App/PrintSettingsDialog.cpp
@@ -332,6 +330,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Init.hpp
         include/Slic3r/App/AppServices.hpp
         src/Slic3r/App/AppServices.cpp
+        include/Slic3r/App/Wildcards.hpp
+        src/Slic3r/App/Wildcards.cpp
 
         include/Slic3r/Biz/IMessageDialogProvider.hpp
 
@@ -520,6 +520,11 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PopNotification/PopNotificationView.cpp
         src/Slic3r/App/PopNotification/PopNotificationObservableList.cpp
 
+        include/Slic3r/App/ResultExport/ExportPathSelect.hpp
+        src/Slic3r/App/ResultExport/ExportPathSelect.cpp
+        include/Slic3r/Biz/ResultExport/ExportNameParser.hpp
+        src/Slic3r/Biz/ResultExport/ExportNameParser.cpp
+        
         include/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
         include/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
@@ -545,6 +550,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/ObjectSettingsInteractor.cpp
         include/Slic3r/Biz/ObjectSettingsObservableList.hpp
         src/Slic3r/Biz/ObjectSettingsObservableList.cpp
+
         include/Slic3r/Biz/OverrideItem.hpp
         src/Slic3r/Biz/Utils/MeshClipper.cpp
         include/Slic3r/Biz/Utils/MeshClipper.hpp

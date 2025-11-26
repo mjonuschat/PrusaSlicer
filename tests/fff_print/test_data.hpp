@@ -1,7 +1,7 @@
 #ifndef SLIC3R_TEST_DATA_HPP
 #define SLIC3R_TEST_DATA_HPP
 
-#include "libslic3r/ConfigPackUtils.hpp"
+#include "Slic3r/Biz/Parser/IO.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
 #include "libslic3r/GCode/SeamPerimeters.hpp"
@@ -54,7 +54,7 @@ struct TestConfig : public Domain::ConfigPackFDM
 
     Biz::Parser::IO::Config get_parser_config() const {
         Domain::FullConfigFDMPtr config{*ASSERT_VAL(prepare_slicing_input(*this))};
-        return Biz::Slicing::get_parser_config(*config);
+        return Biz::Parser::IO::get_parser_config(*config);
     };
     Domain::FullConfigFDM get_full_config() const { return **ASSERT_VAL(prepare_slicing_input(*this)); };
     PrintConfigView get_view() const {

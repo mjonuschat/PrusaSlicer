@@ -373,7 +373,7 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"only_one_perimeter_first_layer", steps({propagate(posPerimeters)})},
     {"only_retract_when_crossing_perimeters", steps({propagate(psGCodeExport)})},
     {"ooze_prevention", steps({propagate(psSkirtBrim)})},
-    {"output_filename_format", steps({propagate(psGCodeExport)})},
+    {"output_filename_format", steps({})},
     {"over_bridge_speed", steps({propagate(psGCodeExport)})},
     {"overhangs", steps({propagate(posPerimeters), propagate(posSupportMaterial)})},
     {"parking_pos_retraction", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},

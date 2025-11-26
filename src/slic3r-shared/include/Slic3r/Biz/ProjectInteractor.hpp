@@ -270,7 +270,17 @@ public:
         return m_fdm_result_cache;
     }
 
+    const FDMResultCache& fdm_result_cache() const
+    {
+        return m_fdm_result_cache;
+    }
+
     SLAResultCache& sla_result_cache()
+    {
+        return m_sla_result_cache;
+    }
+
+    const SLAResultCache& sla_result_cache() const
     {
         return m_sla_result_cache;
     }
@@ -450,7 +460,6 @@ public:
     }
 
     std::string get_project_name(Domain::SelectionId project_id) const;
-
     
     /**
      * @brief Getter for default path when exporting 3mf file.

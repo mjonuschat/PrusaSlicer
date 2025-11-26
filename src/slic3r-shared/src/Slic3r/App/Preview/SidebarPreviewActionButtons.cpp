@@ -4,7 +4,7 @@
 #include "Slic3r/App/DisplayStrings.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/ExportPathSelect.hpp"
+#include "Slic3r/App/ResultExport/ExportPathSelect.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/Browser/BrowserLogicConnectSelect.hpp"
@@ -32,11 +32,10 @@ std::function<void()> get_export_action(Biz::ProjectInteractor* project_interact
     auto call_do_export{
         [=]()
         {
-            GCodeExportPathSelect export_path_select(true);
-            export_path_select.show_modal_dialog(
-                project_interactor->export_result_path(project_interactor->selected_project_id(), false),
-                project_interactor->get_project_name(project_interactor->selected_project_id()),
-                [&](bool result, const std::vector<boost::filesystem::path>& file_paths)
+            ExportPathSelect::show_modal_dialog(
+                project_interactor,
+                false,
+                [=](bool result, const std::vector<boost::filesystem::path>& file_paths)
                 {
                     if (result) {
                         project_interactor->do_export(
@@ -63,10 +62,9 @@ std::function<void()> get_export_flash_action(Biz::ProjectInteractor* project_in
     auto call_do_export{
         [=]()
         {
-            GCodeExportPathSelect export_path_select(true);
-            export_path_select.show_modal_dialog(
-                project_interactor->export_result_path(project_interactor->selected_project_id(), true),
-                project_interactor->get_project_name(project_interactor->selected_project_id()),
+            ExportPathSelect::show_modal_dialog(
+                project_interactor,
+                true,
                 [=](bool result, const std::vector<boost::filesystem::path>& file_paths)
                 {
                     if (result) {

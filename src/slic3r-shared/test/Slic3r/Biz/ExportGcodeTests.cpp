@@ -48,7 +48,16 @@ struct SlicingStatusListener : public Slic3r::Biz::Slicing::IStatusListener
             auto it = m_id_map.find(id);
             ASSERT(it != m_id_map.end());
             for (const auto& path : it->second) {
-                m_pi.do_export(id, path);
+                const std::optional<FDMResultRef> fdm_result{m_pi.fdm_result_cache().get_result(id)};
+                ASSERT(fdm_result);
+                m_pi.set_export_result_path(id.project_id, path);
+                PrintHost::PrintHostConfig config{Slic3r::Domain::PrintHostType::Local, ""};
+                PrintHost::PrintHostJobData data{
+                    fdm_result.value().get().const_gcode(),
+                    path,
+                    PrintHost::get_export_format_from_extension(path.extension().string())
+                };
+                m_pi.print_host_interactor().export_gcode(std::move(config), std::move(data));
             }
         }
     }

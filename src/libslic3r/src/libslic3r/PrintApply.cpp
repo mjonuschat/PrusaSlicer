@@ -32,7 +32,7 @@
 #include "libslic3r/SlicingInput.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/StepsInvalidation.hpp"
-#include "libslic3r/ConfigPackUtils.hpp"
+#include "Slic3r/Biz/Parser/IO.hpp"
 
 namespace Slic3r {
 
@@ -1343,7 +1343,7 @@ Biz::Print::ApplyStatus::Status Print::apply(
     m_config = new_print_config;
 
     m_placeholder_parser = init_placeholder_parser(
-        Biz::Slicing::get_parser_config(*new_full_config_ptr),
+        Biz::Parser::IO::get_parser_config(*new_full_config_ptr),
         wipe_tower
     );
 

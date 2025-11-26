@@ -102,8 +102,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/ClipperUtils.cpp
     src/libslic3r/ClipperUtils.hpp
     src/libslic3r/ClipperZUtils.hpp
-    src/libslic3r/ConfigPackUtils.cpp
-    src/libslic3r/ConfigPackUtils.hpp
     src/libslic3r/ConfigUtils.cpp
     src/libslic3r/CSGMesh/CSGMeshCopy.hpp
     src/libslic3r/CSGMesh/ModelToCSGMesh.hpp

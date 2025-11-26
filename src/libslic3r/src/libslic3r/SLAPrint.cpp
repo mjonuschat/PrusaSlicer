@@ -17,7 +17,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
 
-#include "libslic3r/ConfigPackUtils.hpp"
+#include "Slic3r/Biz/Parser/IO.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/ModelUtils.hpp"
 #include "libslic3r/Utils.hpp"
@@ -961,7 +961,7 @@ InvalidatedSteps SLAPrint::apply(
     // Grab the lock for the Print / PrintObject milestones.
     std::scoped_lock<std::mutex> lock(this->state_mutex());
 
-    m_placeholder_parser = PlaceholderParser{Biz::Slicing::get_parser_config(config_pack)};
+    m_placeholder_parser = PlaceholderParser{Biz::Parser::IO::get_parser_config(config_pack)};
 
     // It is also safe to change m_config now after this->invalidate_state_by_config_options() call.
     m_print_config = new_print_config;
