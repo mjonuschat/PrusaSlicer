@@ -462,16 +462,16 @@ void ToolOrdering::fill_wipe_tower_partitions(const Domain::ConfigView &config, 
                     if (std::abs(m_layer_tools[j].print_z - lt_new.print_z) < EPSILON) {
 						m_layer_tools[j].has_wipe_tower = true;
 					} else {
-						LayerTools &lt_extra = *m_layer_tools.insert(m_layer_tools.begin() + j, lt_new);
-                        //LayerTools &lt_prev  = m_layer_tools[j];
-                        LayerTools &lt_next  = m_layer_tools[j + 1];
-                        assert(! m_layer_tools[j - 1].extruders.empty() && ! lt_next.extruders.empty());
+						LayerTools       &lt_extra = *m_layer_tools.insert(m_layer_tools.begin() + j, lt_new);
+                        const LayerTools &lt_prev  = m_layer_tools[j - 1];
+                        const LayerTools &lt_next  = m_layer_tools[j + 1];
+                        assert(!lt_prev.extruders.empty() || !lt_next.extruders.empty());
                         // FIXME: Following assert tripped when running combine_infill.t. I decided to comment it out for now.
                         // If it is a bug, it's likely not critical, because this code is unchanged for a long time. It might
                         // still be worth looking into it more and decide if it is a bug or an obsolete assert.
                         //assert(lt_prev.extruders.back() == lt_next.extruders.front());
                         lt_extra.has_wipe_tower = true;
-                        lt_extra.extruders.push_back(lt_next.extruders.front());
+                        lt_extra.extruders.push_back(lt_next.extruders.empty() ? lt_prev.extruders.back() : lt_next.extruders.front());
                         lt_extra.wipe_tower_partitions = lt_next.wipe_tower_partitions;
                     }
                 }
