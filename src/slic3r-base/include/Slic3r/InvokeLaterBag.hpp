@@ -4,7 +4,7 @@
 #include <ranges>
 #include <map>
 
-namespace Slic3r::Biz {
+namespace Slic3r {
 
 /**
  * @brief Simple container of functions to be invoked when the container gets destroyed.
@@ -27,6 +27,7 @@ struct InvokeLaterBag final
     ~InvokeLaterBag();
 
     void add(Func&& func);
+    void invoke_now();
 
 private:
     using FuncList = std::list<Func>;

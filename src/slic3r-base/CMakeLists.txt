@@ -24,6 +24,8 @@ set(SLIC3R_BASE_FILES
 		src/Slic3r/Uuid.cpp
         include/Slic3r/Directories.hpp
         src/Slic3r/Directories.cpp
+		include/Slic3r/InvokeLaterBag.hpp
+		src/Slic3r/InvokeLaterBag.cpp
 )
 
 if (APPLE)
@@ -81,3 +83,16 @@ endif ()
 
 # Doxygen
 add_target_to_doxygen(slic3r-base)
+
+if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+	add_executable(slic3r-base-tests
+			test/Slic3r/InvokeLaterBagTests.cpp
+	)
+	target_include_directories(slic3r-base-tests PRIVATE test src)
+	target_link_libraries(slic3r-base-tests PRIVATE slic3r-base Catch2::Catch2WithMain)
+
+	add_test(NAME slic3r-base-tests
+			COMMAND slic3r-base-tests ${CATCH_ALL_ARGS}
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	)
+endif()

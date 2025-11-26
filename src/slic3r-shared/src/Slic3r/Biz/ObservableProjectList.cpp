@@ -26,7 +26,7 @@ const Domain::SelectionId& ObservableProjectList::at(size_t index) const
 
 size_t ObservableProjectList::size() const { return m_projects.size(); }
 
-void ObservableProjectList::on_project_added(Domain::SelectionId project_id)
+void ObservableProjectList::on_project_added_uninitialized(Domain::SelectionId project_id)
 {
     m_projects.emplace_back(std::make_unique<Domain::SelectionId>(project_id));
 

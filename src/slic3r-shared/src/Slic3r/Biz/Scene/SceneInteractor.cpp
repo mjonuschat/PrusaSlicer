@@ -198,17 +198,18 @@ SceneInteractor::SceneInteractor(Domain::Workbench& workbench) : m_workbench(wor
 
 void SceneInteractor::on_selected_project_changed(size_t index)
 {
-    BedSelection selection{};
-    selection.on_change = [this, index](const BedSelection& bed_selection)
-    {
-        invoke_listeners<ISelectedBedInstancesChangedListener>(
-            [&](auto* l) { l->on_selected_bed_instances_changed(index, bed_selection); }
-        );
-    };
 
     auto& project = m_workbench.project(index);
-    if (m_projects.count(index) == 0)
+    if (m_projects.count(index) == 0) {
+        BedSelection selection{};
+        selection.on_change = [this, index](const BedSelection& bed_selection)
+        {
+            invoke_listeners<ISelectedBedInstancesChangedListener>(
+                [&](auto* l) { l->on_selected_bed_instances_changed(index, bed_selection); }
+            );
+        };
         m_projects.emplace(index, SceneInteractorProjectContext{project, selection});
+    }
     m_selected_project_id = index;
 }
 

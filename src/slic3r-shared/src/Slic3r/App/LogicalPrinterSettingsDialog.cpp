@@ -101,7 +101,7 @@ void LogicalPrinterSettingsDialog::on_list_selection_changed(Domain::SelectionId
     update_settings_data();
 }
 
-void LogicalPrinterSettingsDialog::on_selected_project_changed(size_t index)
+void LogicalPrinterSettingsDialog::on_selected_project_changed_final(size_t index)
 {
     if (index == Domain::INVALID_ID) {
         return;

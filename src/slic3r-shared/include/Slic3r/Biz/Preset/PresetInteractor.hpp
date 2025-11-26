@@ -6,7 +6,7 @@
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
-#include "Slic3r/Biz/Platform/InvokeLaterBag.hpp"
+#include "Slic3r/InvokeLaterBag.hpp"
 #include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
@@ -189,7 +189,7 @@ public:
     void on_selected_project_changed(size_t index) override;
     void on_selected_config_container_changed(
         Domain::SelectionId project_id,
-        Domain::SelectionId bed_id
+        Domain::SelectionId container_id
     ) override;
 
     ConfigBoxInteractor& printer_cbi();

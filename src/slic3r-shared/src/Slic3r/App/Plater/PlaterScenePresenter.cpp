@@ -103,6 +103,8 @@ void PlaterScenePresenter::load_selected_project()
 {
     size_t project_id = m_project_interactor.selected_project_id();
     PlaterScenePresenter::on_selected_project_changed(project_id);
+    m_bed_render_updater.on_selected_project_changed(project_id);
+
     const auto& p = m_workbench.project(project_id);
     Domain::BedRefs updated_beds;
     Domain::ElementRefs updated_obj_instances;
@@ -491,7 +493,6 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
     m_selected_project_id = index;
     if (m_projects.count(m_selected_project_id) == 0) {
         m_projects.try_emplace(m_selected_project_id);
-        m_bed_render_updater.on_selected_project_changed(m_selected_project_id);
         // a new camera has been created, add the camera update listeners
         auto& camera = project_context().scene().camera();
         camera.add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);

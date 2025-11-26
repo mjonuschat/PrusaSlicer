@@ -68,7 +68,7 @@ public:
 protected:
     T factory() { return {}; }
 private:
-    void on_project_added(Domain::SelectionId project_id) override
+    void on_project_added_uninitialized(Domain::SelectionId project_id) override
     {
         m_projects.emplace(project_id, factory());
     }

@@ -153,7 +153,9 @@ const PresetInteractorConfigContainerContext& PresetInteractor::config_container
     Domain::SelectionId config_container_id
 ) const
 {
-    const auto& project_ctx = get_project_context(project_id)->second;
+    auto it = get_project_context(m_selected_project_id);
+    ASSERT(it != m_project_contexts.end());
+    const auto& project_ctx = it->second;
     const auto& cccs        = project_ctx.config_containers;
     return cccs.find(config_container_id)->second;
 }
@@ -161,9 +163,14 @@ const PresetInteractorConfigContainerContext& PresetInteractor::config_container
 const PresetInteractorConfigContainerContext&
 PresetInteractor::selected_config_container_context() const
 {
-    const auto& project_ctx = get_project_context(m_selected_project_id)->second;
+    auto it = get_project_context(m_selected_project_id);
+    ASSERT(it != m_project_contexts.end());
+    const auto& project_ctx = it->second;
     const auto& cccs        = project_ctx.config_containers;
-    return cccs.find(project_ctx.selected_config_container_id)->second;
+    ASSERT(project_ctx.selected_config_container_id != Domain::INVALID_ID);
+    auto cc_it = cccs.find(project_ctx.selected_config_container_id);
+    ASSERT(cc_it != cccs.end());
+    return cc_it->second;
 }
 
 PresetInteractorConfigContainerContext& PresetInteractor::initialize_config_container_context(

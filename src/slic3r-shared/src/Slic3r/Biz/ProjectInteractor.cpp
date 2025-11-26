@@ -56,18 +56,18 @@ Domain::SelectionId ProjectInteractor::new_project_with_modification(
 
     project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
     auto& config_container = *project.config_containers().front();
+    Domain::SelectionId project_id;
+    {
+        InvokeLaterBag bag;
+        project_id = add_project(std::move(project), bag);
+        m_preset_interactor.initialize_config_container_with_default(config_container);
 
-    Domain::SelectionId project_id = add_project(std::move(project));
+        Domain::Project& added_project{m_workbench.project(project_id)};
+        initialize_bed(config_container, added_project.bed_container());
 
-    Domain::Project& added_project{m_workbench.project(project_id)};
-
-    m_preset_interactor.initialize_config_container_with_default(config_container);
-    initialize_bed(config_container, added_project.bed_container());
-
-    modifier(added_project);
-
-    m_scene_interactor.prepare_added_project(added_project);
-
+        modifier(added_project);
+        m_scene_interactor.prepare_added_project(added_project);
+    }
     invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
         l->on_project_loaded(project_id);
     });
@@ -83,23 +83,27 @@ void ProjectInteractor::load_project(const boost::filesystem::path& file_path)
             if (project.config_containers().empty())
                 return;
 
-            const Domain::SelectionId project_id{add_project(std::move(project))};
-            Domain::Project& added_project{m_workbench.project(project_id)};
+            Domain::SelectionId project_id;
+            {
+                InvokeLaterBag bag;
+                project_id = add_project(std::move(project), bag);
+                Domain::Project& added_project{m_workbench.project(project_id)};
 
-            for (auto& config_container : added_project.config_containers()) {
-                m_preset_interactor.load_selected_preset_from_3mf(project_id, config_container->mutable_selected_preset());
+                for (auto& config_container : added_project.config_containers()) {
+                    m_preset_interactor.load_selected_preset_from_3mf(project_id, config_container->mutable_selected_preset());
+                }
+
+                if (added_project.config_containers().empty()) {
+                    added_project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
+                    m_preset_interactor.initialize_config_container_with_default(*added_project.config_containers().back());
+                    initialize_bed(*added_project.config_containers().back(), added_project.bed_container());
+                }
+                do_select_config_container(added_project.config_containers().front()->id().id);
+
+                m_scene_interactor.prepare_added_project(added_project);
+
+                set_export_project_path(project_id, file_path);
             }
-
-            if (added_project.config_containers().empty()) {
-                added_project.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
-                m_preset_interactor.initialize_config_container_with_default(*added_project.config_containers().back());
-                initialize_bed(*added_project.config_containers().back(), added_project.bed_container());
-            }
-            do_select_config_container(added_project.config_containers().front()->id().id);
-
-            m_scene_interactor.prepare_added_project(added_project);
-
-            set_export_project_path(project_id, file_path);
 
             invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
                 l->on_project_loaded(project_id);
@@ -165,7 +169,10 @@ void ProjectInteractor::save_project(const boost::filesystem::path& file_path, c
 void ProjectInteractor::select_project(Domain::SelectionId project_id)
 {
     if (project_id != m_selection.project_id) {
-        do_select_project(project_id);
+        {
+            InvokeLaterBag bag;
+            do_select_project(project_id, bag);
+        }
 
         if (m_selection.config_container_id() == Domain::INVALID_ID) {
             const auto& projects         = m_workbench.projects();
@@ -254,12 +261,21 @@ void ProjectInteractor::on_slicing_input_removed(const Domain::BedRef& bed_insta
     m_slicing_interactor.remove_bed(bed_instance.instance_id);
 }
 
-void ProjectInteractor::do_select_project(Domain::SelectionId project_id)
+void ProjectInteractor::do_select_project(Domain::SelectionId project_id, InvokeLaterBag& bag)
 {
     m_selection.project_id = project_id;
 
     invoke_listeners<ISelectedProjectChangedListener>(
         [project_id](auto* l) { l->on_selected_project_changed(project_id); }
+    );
+
+    bag.add(
+        [this, project_id]
+        {
+            invoke_listeners<ISelectedProjectChangedListener>(
+                [project_id](auto* l) { l->on_selected_project_changed_final(project_id); }
+            );
+        }
     );
 }
 
@@ -275,14 +291,20 @@ void ProjectInteractor::do_select_config_container(Domain::SelectionId container
 
 Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
 {
+    InvokeLaterBag bag;
+    return add_project(std::move(p), bag);
+}
+
+Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p, InvokeLaterBag& bag)
+{
     auto& projects                 = m_workbench.projects();
     Domain::SelectionId project_id = m_workbench.next_project_id();
     projects.emplace(project_id, std::move(p));
     invoke_listeners<IProjectsChangedListener>(
-        [project_id](auto* l) { l->on_project_added(project_id); }
+        [project_id](auto* l) { l->on_project_added_uninitialized(project_id); }
     );
     // select project
-    do_select_project(project_id);
+    do_select_project(project_id, bag);
     return project_id;
 }
 

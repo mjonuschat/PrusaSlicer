@@ -44,7 +44,7 @@ public:
 
     void on_list_selection_changed(Domain::SelectionId new_selection) override;
 
-    void on_selected_project_changed(size_t index) override;
+    void on_selected_project_changed_final(size_t index) override;
 
     PrinterAdvancedSettingsDialog& printer_advanced_settings_dialog();
 

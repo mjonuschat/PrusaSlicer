@@ -73,7 +73,7 @@ struct PresetInteractorProjectContext
     using ConfigContainerContexts = std::map<Domain::SelectionId, PresetInteractorConfigContainerContext>;
 
     Domain::SelectionId project_id;
-    Domain::SelectionId selected_config_container_id;
+    Domain::SelectionId selected_config_container_id{Domain::INVALID_ID};
     // TODO: Selected Object / Volume with ModelConfigObject
     RuntimePresets runtime_presets;
 

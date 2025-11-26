@@ -1,11 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 
-#include "Slic3r/Biz/Platform/InvokeLaterBag.hpp"
+#include "Slic3r/InvokeLaterBag.hpp"
 
 TEST_CASE("InvokeLaterBag", "[invoke later]")
 {
-    using namespace Slic3r::Biz;
+    using namespace Slic3r;
     std::vector<int> v;
 
     {
@@ -24,7 +24,7 @@ TEST_CASE("InvokeLaterBag", "[invoke later]")
 
 TEST_CASE("DecouplingInvokeLaterBag", "[invoke later]")
 {
-    using namespace Slic3r::Biz;
+    using namespace Slic3r;
     using LaterBag = DeduplicatingInvokeLaterBag<int, int>;
     std::vector<int> v;
 

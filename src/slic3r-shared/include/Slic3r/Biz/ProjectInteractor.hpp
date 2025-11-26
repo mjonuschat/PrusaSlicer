@@ -8,7 +8,7 @@
 #include "Slic3r/Biz/StatusCache.hpp"
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
-#include "Slic3r/Biz/Platform/ListenerList.hpp"
+#include "Slic3r/InvokeLaterBag.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
@@ -509,7 +509,8 @@ private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
 
-    void do_select_project(Domain::SelectionId project_id);
+    Domain::SelectionId add_project(Domain::Project&& p, InvokeLaterBag& bag);
+    void do_select_project(Domain::SelectionId project_id, InvokeLaterBag& bag);
     void do_select_config_container(Domain::SelectionId container_id);
 
 private:
