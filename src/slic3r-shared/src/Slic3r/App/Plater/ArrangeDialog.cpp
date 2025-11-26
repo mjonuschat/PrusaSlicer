@@ -128,11 +128,10 @@ ArrangeDialog::ArrangeDialog(
     OnModeSelected on_mode_selected,
     const Settings& settings
 ) :
-    Yoga::GizmoDialog{ Biz::_u8L("Arrange")},
+    Yoga::GizmoWindow{Biz::_u8L("Arrange"), Render::Icon::Layout},
     m_on_arrange{on_arrange},
     m_on_cancel{on_cancel}
 {
-    content_item()->set_width(325.f);
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(gap_size());
 
@@ -157,9 +156,9 @@ ArrangeDialog::ArrangeDialog(
         })
     };
     m_mode = mode.get();
-    GizmoDialog::add_new_row(_u8L("Mode"), std::move(mode));
+    GizmoWindow::add_new_row(_u8L("Mode"), std::move(mode));
 
-    Dialog::add_separator();
+    add_separator(content());
 
     auto offset_slider{std::make_unique<SliderWithInput>()};
     offset_slider->set_begin_value(0.0);
@@ -167,7 +166,7 @@ ArrangeDialog::ArrangeDialog(
     offset_slider->set_step(1.0);
 
     m_offset_slider = offset_slider.get();
-    GizmoDialog::add_new_row(_u8L("Spacing"), std::move(offset_slider));
+    GizmoWindow::add_new_row(_u8L("Spacing"), std::move(offset_slider));
     m_offset_slider->set_value(unscaled(static_cast<coord_t>(settings.scaled_offset)) * 2.0);
 
     auto bed_offset_slider{std::make_unique<SliderWithInput>()};
@@ -176,7 +175,7 @@ ArrangeDialog::ArrangeDialog(
     bed_offset_slider->set_step(1.0);
 
     m_bed_offset_slider = bed_offset_slider.get();
-    GizmoDialog::add_new_row(_u8L("Bed spacing"), std::move(bed_offset_slider));
+    GizmoWindow::add_new_row(_u8L("Bed spacing"), std::move(bed_offset_slider));
     m_bed_offset_slider->set_value(settings.unscaled_bed_offset);
 
     auto geometry_handling_control{std::make_unique<Item>()};
@@ -188,18 +187,18 @@ ArrangeDialog::ArrangeDialog(
     geometry_handling_control->emplace_back<Text>("accurate");
     add_new_row("Performance", std::move(geometry_handling_control));
 
-    Dialog::add_separator();
+    add_separator(content());
 
     auto pivot_picker{std::make_unique<PivotPicker>()};
     m_pivot_picker = pivot_picker.get();
     m_bed_segments_row = add_new_row("Alignment", std::move(pivot_picker), YGAlign::YGAlignFlexStart);
-    m_bed_segments_separator = Dialog::add_separator();
+    m_bed_segments_separator = add_separator(content());
     set_bed_segments(settings.bed_segments);
 
     m_enable_rotations_toggle = content()->emplace_back<ToggleButton>("Enable rotations");
     m_enable_rotations_toggle->set_checked(settings.allow_rotations);
 
-    Dialog::add_separator();
+    add_separator(content());
 
     m_arrange_button                     = content()->emplace_back<LayoutButton>(_u8L("Arrange"));
     m_arrange_button->callbacks().action = [this]() {

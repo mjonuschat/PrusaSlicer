@@ -9,10 +9,8 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/Yoga/Icon.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
-#include "libslic3r/format.hpp"
 
 #include <imgui_internal.h>
 
@@ -28,9 +26,8 @@ TextDialog::Callbacks& TextDialog::callbacks()
     return m_callbacks;
 }
 
-TextDialog::TextDialog() : GizmoDialog(_u8L("Text"))
+TextDialog::TextDialog() : GizmoWindow(_u8L("Text"), Render::Icon::Text)
 {
-    content_item()->set_width(375);
     content()->set_debug_border(set_debug);
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(gap_size());
@@ -91,7 +88,7 @@ TextDialog::TextDialog() : GizmoDialog(_u8L("Text"))
 
     add_advanced_panel();
 
-    Dialog::add_separator();
+    add_separator(content());
 
     m_preset = Passthrough{std::make_unique<ComboBox>("Font preset")};
     m_preset->callbacks().selection_changed = [this](int index) {
@@ -119,7 +116,7 @@ TextDialog::TextDialog() : GizmoDialog(_u8L("Text"))
     };
 
     m_rename_btn = buttons->emplace_back<LayoutButton>(
-        "",
+        std::string{},
         Render::Icon::SliderFloatEditBtnIcon,
         _u8L("Rename current preset.")
     );
@@ -129,7 +126,7 @@ TextDialog::TextDialog() : GizmoDialog(_u8L("Text"))
     };
 
     m_delete_btn = buttons->emplace_back<LayoutButton>(
-        "",
+        std::string{},
         Render::Icon::DeleteBtnIcon,
         _u8L("Remove preset")
     );
@@ -139,7 +136,7 @@ TextDialog::TextDialog() : GizmoDialog(_u8L("Text"))
     };
 
     // add_row("", std::move(buttons), nullptr, false);
-    add_row("", std::move(buttons), content());
+    add_row({}, std::move(buttons), content());
 
     for (LayoutButton* btn :
          {m_save_as_new_btn, m_save_btn, m_rename_btn, m_delete_btn, m_lock_offset_btn})

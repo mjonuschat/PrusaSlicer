@@ -129,6 +129,10 @@ bool AbstractButton::hovered() const
 
 void AbstractButton::set_hovered(bool hovered)
 {
+    if (!is_visible()) {
+        hovered = false; // force not hovered while invisible
+    }
+
     if (m_hovered != hovered) {
         m_hovered = hovered;
         hovered_updated_internal();

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/App/Yoga/Item.hpp"
 
 namespace Slic3r::App::Yoga {
 class Dialog;
@@ -23,7 +24,7 @@ public:
     void on_deactivated() override;
 
     Scene::ToolType type() const override;
-    Yoga::GizmoDialog* ui_dialog() override;
+    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
 
@@ -34,7 +35,7 @@ private:
     void activate_preset(/*preset*/);
 
 private:
-    std::unique_ptr<TextDialog> m_dialog;
+    Yoga::Passthrough<TextDialog> m_dialog;
 };
 
 } // namespace Slic3r::App::Plater

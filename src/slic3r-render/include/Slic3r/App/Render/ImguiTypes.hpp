@@ -152,23 +152,13 @@ enum class Icon : wchar_t
 
     // icons for toolbar
     ToolbarObjects,
-    ToolbarAdd,
-    ToolbarAddInstance,
-    ToolbarArrange,
     ToolbarHistory,
-    ToolbarEllipsis,
-    ToolbarGraph,
-    ToolbarMove,
-    ToolbarRotation,
     ToolbarGCode,
-    ToolbarPaintOnSupports,
-    ToolbarMeasure,
-    ToolbarText,
+    ToolbarGraph,
 
     // printer icons (PNGs)
     PrinterNEXT,
     CubeViewIcon,
-    BedThumbnail,
 
     // sidebar icons
     SavePrint,
@@ -226,7 +216,23 @@ enum class Icon : wchar_t
     ChevronLeft,
     Compare,
     Hollowing,
-    Pad
+    Pad,
+    Preview,
+    Move,
+    Scale,
+    Ellipsis,
+    Cube,
+    CubeAdd,
+    Layout,
+    LayersInspect,
+    PaintSupports,
+    Ruler,
+    Text,
+    Palette,
+    Scissors,
+    RectangleAdd,
+    Rotate,
+    Simplify
 };
 
 } // namespace Slic3r::App::Render

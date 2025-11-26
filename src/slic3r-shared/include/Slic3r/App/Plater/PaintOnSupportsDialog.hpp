@@ -4,12 +4,12 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoDialog.hpp"
+#include "Slic3r/App/Yoga/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 
 namespace Slic3r::App::Plater {
 
-class PaintOnSupportsDialog : public Yoga::GizmoDialog
+class PaintOnSupportsDialog : public Yoga::GizmoWindow
 {
 public:
     PaintOnSupportsDialog();

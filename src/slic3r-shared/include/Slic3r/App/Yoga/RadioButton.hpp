@@ -19,6 +19,7 @@ class RadioButton : public AbstractButton
 public:
     explicit RadioButton(const std::string& label, const std::string& tooltip = {});
 
+    Text* label() const;
     void set_label(const std::string& label);
     const std::string& get_label() const;
     void set_font_type(Render::ImguiFontType font_type);

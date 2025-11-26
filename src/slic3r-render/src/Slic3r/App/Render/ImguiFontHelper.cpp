@@ -139,11 +139,6 @@ static const std::unordered_set<Icon> FONT_ICONS_MEDIUM = {
     Icon::EditGCodeHovered ,
     Icon::RemoveTick       ,
     Icon::RemoveTickHovered,
-    // sidebar icons
-    Icon::SavePrint           ,
-    Icon::SavePrintToFlash    ,
-    Icon::SavePrintToLocal    ,
-    Icon::SavePrintAddBookmark,
 };
 
 static const std::unordered_set<Icon> FONT_ICONS_LARGE = {
@@ -184,25 +179,10 @@ static const std::unordered_set<Icon> FONT_ICONS_LARGE = {
     Icon::SlaViewOriginal         ,
     Icon::SlaViewProcessed        ,
 };
-
-static const std::unordered_set<Icon> FONT_ICONS_TOOLBAR = {
-    // toolbar icons
-    Icon::ToolbarObjects          ,
-    Icon::ToolbarAdd              ,
-    Icon::ToolbarArrange          ,
-    Icon::ToolbarHistory          ,
-    Icon::ToolbarEllipsis         ,
-    Icon::ToolbarGraph            ,
-    Icon::ToolbarMove             ,
-    Icon::ToolbarRotation         ,
-    Icon::ToolbarGCode            ,
-    Icon::ToolbarPaintOnSupports  ,
-};
  
 static const std::unordered_set<Icon> FONT_ICONS_PRINTER = {
     // printer icons
     Icon::PrinterNEXT             ,
-    Icon::BedThumbnail            ,
 };
  
 static const std::unordered_set<Icon> FONT_ICONS_EXTRA_LARGE = {
@@ -281,7 +261,6 @@ static void add_icons_rect_to_font_texture(const ImguiFontHelper& helper, ImguiL
     add_icons(helper.icon_medium_size(), FONT_ICONS_MEDIUM);
     add_icons(helper.icon_large_size(), FONT_ICONS_LARGE);
     add_icons(helper.icon_extra_large_size(), FONT_ICONS_EXTRA_LARGE);
-    add_icons(helper.icon_toolbar_size(), FONT_ICONS_TOOLBAR);
     add_icons(helper.icon_toolbar_size(), FONT_ICONS_PRINTER);
 }
 
@@ -339,7 +318,6 @@ static void load_icons_into_font_texture(const ImguiFontHelper& helper, int& rec
     load_icons(helper.icon_medium_size(), FONT_ICONS_MEDIUM);
     load_icons(helper.icon_large_size(), FONT_ICONS_LARGE);
     load_icons(helper.icon_extra_large_size(), FONT_ICONS_EXTRA_LARGE);
-    load_icons(helper.icon_toolbar_size(), FONT_ICONS_TOOLBAR);
     load_icons(helper.icon_toolbar_size(), FONT_ICONS_PRINTER);
 }
 

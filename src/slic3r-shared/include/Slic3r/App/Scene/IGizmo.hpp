@@ -7,7 +7,7 @@
 #include "Slic3r/Domain/PrinterTechnology.hpp"
 
 namespace Slic3r::App::Yoga {
-class GizmoDialog;
+class GizmoWindow;
 }
 
 namespace Slic3r::App::Scene {
@@ -179,7 +179,7 @@ public:
     virtual bool enabled() const;
     /**@}*/
 
-    virtual Yoga::GizmoDialog* ui_dialog();
+    virtual std::unique_ptr<Yoga::GizmoWindow> release_ui_window();
 };
 
 } // namespace Slic3r::App::Scene

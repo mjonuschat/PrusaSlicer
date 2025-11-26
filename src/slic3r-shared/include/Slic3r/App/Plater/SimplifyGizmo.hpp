@@ -12,6 +12,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp" // ISceneSelectionChangedListener
 #include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/App/Yoga/Item.hpp"
 
 namespace Slic3r::App::Yoga {
 class Dialog;
@@ -56,7 +57,8 @@ public:
      */
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
 
-    Yoga::GizmoDialog* ui_dialog() override;
+    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+
 private:
     struct Configuration
     {
@@ -139,7 +141,7 @@ private:
 
     std::vector<Scene::Node*> m_to_enable;
 
-    std::unique_ptr<SimplifyDialog> m_dialog;
+    Yoga::Passthrough<SimplifyDialog> m_dialog;
 };
 
 } // namespace Slic3r::App::Plater

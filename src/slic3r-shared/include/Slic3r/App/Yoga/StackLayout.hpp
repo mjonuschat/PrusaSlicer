@@ -23,6 +23,7 @@ public:
 
     size_t current_index() const;
     void set_current_index(size_t current_index);
+    void set_current_item(Item* item);
 
 private:
     size_t m_current_index = 0;

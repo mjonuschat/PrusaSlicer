@@ -26,17 +26,10 @@ SimplifyDialog::Callbacks& SimplifyDialog::callbacks()
     return m_callbacks;
 }
 
-SimplifyDialog::SimplifyDialog() : GizmoDialog(_u8L("Simplify"))
+SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::Simplify)
 {
-    content_item()->set_width(375);
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(2 * gap_size());
-
-    Popup::callbacks().closed = [this]() {
-        if (m_callbacks.close) {
-            m_callbacks.close();
-        }
-    };
 
     m_mesh_name = Passthrough{std::make_unique<Text>("")};
     add_text_row(_u8L("Mesh name") + ":", m_mesh_name.release());
@@ -44,7 +37,7 @@ SimplifyDialog::SimplifyDialog() : GizmoDialog(_u8L("Simplify"))
     m_triangles = Passthrough{std::make_unique<Text>("")};
     add_text_row(_u8L("Triangles") + ":", m_triangles.release());
 
-    Dialog::add_separator();
+    add_separator(content());
 
     m_detail_level_btn = Passthrough{std::make_unique<RadioButton>(_u8L("Level of detail"))};
     m_detail_level     = Passthrough{std::make_unique<ComboBox>("Detail level")};
@@ -174,6 +167,15 @@ void SimplifyDialog::set_enable_close_button(bool enable)
     close_button()->set_tooltip(
         enable ? "" : _u8L("Operation already cancelling. Please wait few seconds.")
     );
+    close_button()->callbacks().action = [this]
+    {
+        if (m_gizmo_callback.close_requested) {
+            m_gizmo_callback.close_requested();
+        }
+        if (m_callbacks.close) {
+            m_callbacks.close();
+        }
+    };
 }
 
 void SimplifyDialog::set_progress(int progress)
@@ -188,10 +190,10 @@ void SimplifyDialog::add_text_row(const std::string& title, std::unique_ptr<Yoga
     row->set_gap(2 * gap_size());
 
     Text* text = row->emplace_back<Text>(title);
-    text->set_width_percent(25);
-    text->set_self_align(YGAlignCenter);
+    text->set_width(80);
 
-    text_item->set_width_percent(65);
+    text_item->set_flex_grow(1);
+    text_item->set_wrap_mode(Text::WrapMode::WrapElide);
     text_item->set_text_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);
     row->append(std::move(text_item));
 }
@@ -205,11 +207,14 @@ void SimplifyDialog::add_radio_row(
     Item* row = content()->emplace_back<Item>();
     row->set_gap(2 * gap_size());
 
-    radio->set_width_percent(35);
+    radio->set_width(100);
+    radio->set_flex_shrink(0);
+    radio->label()->set_flex_grow(1);
+    radio->label()->set_wrap_mode(Yoga::Text::WrapMode::Wrap);
     row->append(std::move(radio));
 
     Item* box = row->emplace_back<Item>();
-    box->set_width_percent(65);
+    box->set_flex_grow(true);
     control->set_flex_grow(1.f);
     box->append(std::move(control));
 

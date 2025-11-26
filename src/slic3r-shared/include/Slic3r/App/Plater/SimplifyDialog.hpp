@@ -5,7 +5,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoDialog.hpp"
+#include "Slic3r/App/Yoga/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/RadioButton.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
@@ -20,7 +20,7 @@ class ProgressBar;
 
 namespace Slic3r::App::Plater {
 
-class SimplifyDialog : public Yoga::GizmoDialog
+class SimplifyDialog : public Yoga::GizmoWindow
 {
 public:
     SimplifyDialog();

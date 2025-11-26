@@ -79,9 +79,9 @@ Scene::ToolType PaintOnSupportsGizmo::type() const
     return Scene::ToolType::PaintOnSupportsGizmo;
 }
 
-Yoga::GizmoDialog* PaintOnSupportsGizmo::ui_dialog()
+Yoga::GizmoWindowPtr PaintOnSupportsGizmo::release_ui_window()
 {
-    return m_dialog.get();
+    return m_dialog.release();
 }
 
 void PaintOnSupportsGizmo::provide_clipper(Scene::Clipper& clipper)

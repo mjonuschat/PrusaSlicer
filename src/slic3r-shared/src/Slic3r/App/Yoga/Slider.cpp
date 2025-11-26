@@ -182,4 +182,9 @@ void Slider::set_step(double step)
 {
     m_step = std::max(step, 0.);
 }
+
+void Slider::on_resized()
+{
+    update_area_width();
+}
 } // namespace Slic3r::App::Yoga

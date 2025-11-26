@@ -288,9 +288,9 @@ void SimplifyGizmo::on_scene_selection_changed(Domain::SelectionId project_id, c
     on_selection_change(project, selection);
 }
 
-Yoga::GizmoDialog* SimplifyGizmo::ui_dialog()
+Yoga::GizmoWindowPtr SimplifyGizmo::release_ui_window()
 {
-    return m_dialog.get();
+    return m_dialog.release();
 }
 
 void SimplifyGizmo::deactivate() {

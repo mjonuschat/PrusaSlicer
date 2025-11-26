@@ -16,7 +16,7 @@ Toolbar::Toolbar(const std::string& name) : Window(name)
 {
     set_padding(4);
     // Button More is used for collapsible and should never be part of m_buttons
-    m_button_more = emplace_back<ToolbarButton>(Render::Icon::ToolbarEllipsis, "Show more");
+    m_button_more = emplace_back<ToolbarButton>(Render::Icon::Ellipsis, "Show more");
     m_button_more->set_item_name(name + "_show_more_button");
     m_button_more->set_visible(false);
 }
@@ -30,8 +30,8 @@ void Toolbar::render_body(Vec2f pos, Vec2f size)
 {
     ImRect button_bb(to_im(pos), to_im(pos) + to_im(size));
 
-    bool hovered = ImGui::IsWindowHovered()
-        && ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max, true);
+    bool hovered =
+        ImGui::IsWindowHovered() && ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max, true);
     if (m_hovered != hovered) {
         m_hovered = hovered;
         if (m_callbacks.hovered_changed) {
@@ -146,24 +146,6 @@ bool Toolbar::hovered() const
     return m_hovered;
 }
 
-bool Toolbar::show_tooltips() const
-{
-    return m_show_tooltips;
-}
-
-void Toolbar::set_show_tooltips(bool show_tooltips)
-{
-    m_show_tooltips = show_tooltips;
-}
-
-bool Toolbar::any_subtoolbar_opened() const
-{
-    return (m_button_more->get_subtoolbar() && m_button_more->get_subtoolbar()->is_visible())
-        || std::any_of(m_buttons.cbegin(), m_buttons.cend(), [](ToolbarButton* button) {
-        return button->get_subtoolbar() && button->get_subtoolbar()->is_visible();
-    });
-}
-
 bool Toolbar::collapsible() const
 {
     return m_collapsible;
@@ -188,23 +170,31 @@ void Toolbar::style_node()
 {
     // I absolutely understand this is hidous, I already spent > 0 hours debugging this,
     // I will someday clean this up, but today is not the day
-    if (m_collapsible && m_parent && !m_button_min_size.isZero() && width() > 0 && height() > 0) {
+    if (m_collapsible
+        && m_parent
+        && !m_button_min_size.isZero()
+        && is_visible()
+        && width() > 0
+        && height() > 0)
+    {
         // Compute available size
-        float available_size = 0;
-        available_size       = m_orientation == Orientation::Horizontal ? m_parent->width() :
-                                                                          m_parent->height();
+        float available_size =
+            m_orientation == Orientation::Horizontal ? m_parent->width() : m_parent->height();
         for (Item* node : m_parent->items()) {
             if (node != this) {
-                available_size -= m_orientation == Orientation::Horizontal ? node->width() :
-                                                                             node->height();
+                available_size -=
+                    m_orientation == Orientation::Horizontal ? node->width() : node->height();
             }
             if (node != *m_parent->items().rbegin()) {
                 available_size -= m_parent->gap();
             }
+            available_size -= m_orientation == Orientation::Horizontal ?
+                node->margin().horizontal() :
+                node->margin().vertical();
         }
-        available_size -= m_orientation == Orientation::Horizontal ?
-            (m_margin.left + m_margin.right) :
-            (m_margin.top + m_margin.bottom);
+
+        available_size -= m_orientation == Orientation::Horizontal ? m_padding.horizontal() :
+                                                                     m_padding.vertical();
 
         // Decide which buttons will be included
 
@@ -220,7 +210,7 @@ void Toolbar::style_node()
                 continue;
             }
 
-            if (!button->is_visible()) {
+            if (YGNodeStyleGetDisplay(button->node()) == YGDisplay::YGDisplayNone) {
                 included_buttons.push_back(button);
                 continue;
             }

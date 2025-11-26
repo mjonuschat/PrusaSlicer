@@ -141,20 +141,10 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::CubeViewIcon, "view_cube_test"}, // !tmp, remove after view cube implementation
     // toolbar icons
     {Icon::ToolbarObjects, "toolbar_objects"},
-    {Icon::ToolbarAdd, "toolbar_add"},
-    {Icon::ToolbarAddInstance, "toolbar_add_instance"},
-    {Icon::ToolbarArrange, "toolbar_arrange"},
     {Icon::ToolbarHistory, "toolbar_history"},
-    {Icon::ToolbarEllipsis, "toolbar_ellipsis"},
-    {Icon::ToolbarGraph, "toolbar_graph"},
-    {Icon::ToolbarMove, "toolbar_move"},
-    {Icon::ToolbarRotation, "toolbar_rotation"},
     {Icon::ToolbarGCode, "toolbar_gcode"},
-    {Icon::ToolbarPaintOnSupports, "toolbar_paint_on_supports"},
-    {Icon::ToolbarMeasure, "toolbar_measure"},
-    {Icon::ToolbarText, "toolbar_text"},
+    {Icon::ToolbarGraph, "toolbar_graph"},
     {Icon::PrinterNEXT, "printer_NEXT"},
-    {Icon::BedThumbnail, "bed_thumbnail"},
 
     {Icon::SettingsSet, "settings_set"},
     {Icon::TobBarLoad, "tb_load"},
@@ -209,9 +199,25 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Compare, "compare"},
     {Icon::Hollowing, "hollowing"},
     {Icon::Pad, "pad"},
+    {Icon::Preview, "preview"},
+    {Icon::Move, "move"},
+    {Icon::Scale, "scale"},
+    {Icon::Ellipsis, "elipsis"},
+    {Icon::Cube, "cube"},
+    {Icon::CubeAdd, "cube_add"},
+    {Icon::Layout, "layout"},
+    {Icon::LayersInspect, "layers_inspect"},
+    {Icon::PaintSupports, "paint_supports"},
+    {Icon::Ruler, "ruler"},
+    {Icon::Text, "text"},
+    {Icon::Palette, "palette"},
+    {Icon::Scissors, "scissors"},
+    {Icon::RectangleAdd, "rectangle_add"},
+    {Icon::Rotate, "rotate"},
+    {Icon::Simplify, "simplify"},
 };
 
-static const std::unordered_set<Icon> ICON_PNG = {Icon::BedThumbnail, Icon::PrinterNEXT};
+static const std::unordered_set<Icon> ICON_PNG = {Icon::PrinterNEXT};
 
 std::string ImguiIconHelper::icon_path(Icon icon)
 {

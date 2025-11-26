@@ -178,6 +178,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/ConfigSettingsDialog.cpp
         include/Slic3r/App/PreferencesDialog.hpp
         src/Slic3r/App/PreferencesDialog.cpp
+        include/Slic3r/App/SidebarStackLayout.hpp
+        src/Slic3r/App/SidebarStackLayout.cpp
 
         include/Slic3r/App/Config/ConfigItemTextField.hpp
         src/Slic3r/App/Config/ConfigItemTextField.cpp
@@ -377,8 +379,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Text.cpp
         include/Slic3r/App/Yoga/Dialog.hpp
         src/Slic3r/App/Yoga/Dialog.cpp
-        include/Slic3r/App/Yoga/GizmoDialog.hpp
-        src/Slic3r/App/Yoga/GizmoDialog.cpp
+        include/Slic3r/App/Yoga/GizmoWindow.hpp
+        src/Slic3r/App/Yoga/GizmoWindow.cpp
         include/Slic3r/App/Yoga/GizmoDialogHelp.hpp
         src/Slic3r/App/Yoga/GizmoDialogHelp.cpp
         src/Slic3r/App/Yoga/Separator.cpp

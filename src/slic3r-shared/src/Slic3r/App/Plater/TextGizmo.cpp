@@ -67,9 +67,9 @@ Scene::ToolType TextGizmo::type() const
     return Scene::ToolType::TextGizmo;
 }
 
-Yoga::GizmoDialog* TextGizmo::ui_dialog()
+Yoga::GizmoWindowPtr TextGizmo::release_ui_window()
 {
-    return m_dialog.get();
+    return m_dialog.release();
 }
 
 Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)

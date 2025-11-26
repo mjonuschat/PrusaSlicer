@@ -18,6 +18,8 @@
 
 namespace Slic3r::App {
 
+class SidebarStackLayout;
+
 namespace Scene {
 class IToolGizmo;
 } // namespace Scene
@@ -31,9 +33,9 @@ class SplitLayout;
 
 enum class ToolbarID
 {
-    Top = 0,
+    Left = 0,
     Middle,
-    Bottom
+    Right
 };
 
 class AbstractRenderLayout
@@ -96,16 +98,11 @@ public:
         Yoga::Item* panel
     );
 
-    Yoga::Toolbar* top_toolbar() const;
+    Yoga::Toolbar* left_toolbar() const;
     Yoga::Toolbar* middle_toolbar() const;
-    Yoga::Toolbar* bottom_toolbar() const;
+    Yoga::Toolbar* right_toolbar() const;
 
-    /**
-     * @brief The reason this method exists is because toolbars are justified in "Space around" mode
-     * hiding one would break this design and therefore we need to juggle around dummy items so
-     * Layout will stay the same
-     * */
-    void set_bottom_toolbar_visible(bool visible);
+    SidebarStackLayout* sidebar_stack_layout() const;
 
     void set_sidebars_visible(bool visible);
 
@@ -118,11 +115,10 @@ protected:
     virtual void init_right_column();
 
     Yoga::Toolbar* find_toolbar(ToolbarID id) const;
-    void update_toolbar_tooltip();
     void update_sidebar_visibility();
 
 private:
-    void init_toolbar_column();
+    void init_toolbar_row();
 
 protected:
     Yoga::RootItem m_layout_main;
@@ -131,13 +127,14 @@ protected:
     Yoga::Item* m_layout_center_row         = nullptr;
     Yoga::Item* m_layout_right_column       = nullptr;
 
-    Yoga::Item* m_layout_left_toolbar_column = nullptr;
-    Yoga::Item* m_layout_middle_column       = nullptr;
+    Yoga::Item* m_layout_middle_toolbar_row = nullptr;
+    Yoga::Item* m_layout_middle_column      = nullptr;
 
-    Yoga::Toolbar* m_top_toolbar       = nullptr;
-    Yoga::Toolbar* m_middle_toolbar    = nullptr;
-    Yoga::Toolbar* m_bottom_toolbar    = nullptr;
-    Yoga::Item* m_bottom_dummy_toolbar = nullptr;
+    SidebarStackLayout* m_layout_sidebar_stack_layout = nullptr;
+
+    Yoga::Toolbar* m_left_toolbar   = nullptr;
+    Yoga::Toolbar* m_middle_toolbar = nullptr;
+    Yoga::Toolbar* m_right_toolbar  = nullptr;
 
     struct SidebarPanel
     {

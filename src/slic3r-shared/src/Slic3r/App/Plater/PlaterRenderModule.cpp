@@ -58,10 +58,12 @@
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
 #include "Slic3r/App/Yoga/Menu.hpp"
 #include "Slic3r/App/Yoga/MenuItem.hpp"
+#include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/RenderModuleHelper.hpp"
 #include "Slic3r/App/TopBar.hpp"
 #include "Slic3r/App/PreferencesDialog.hpp"
+#include "Slic3r/App/SidebarStackLayout.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -230,6 +232,9 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_scene_presenter->force_bed_thumbnails_generation();
 
     m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
+
+    // force update on various UI elements
+    update_object_selection();
 }
 
 void PlaterRenderModule::register_commands()
@@ -280,26 +285,27 @@ void PlaterRenderModule::init_scene_layout()
     m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, true));
     m_object_list->on_config_container_added = [this]()
     {
-        m_render_module_navigator->set_opened_dialog(&m_sidebar_bed->logical_printer_settings_dialog());
+        m_render_module_navigator->set_opened_dialog(
+            &m_sidebar_bed->logical_printer_settings_dialog()
+        );
     };
 
-    m_cube_view   = Passthrough{std::make_unique<CubeView>()};
-    m_sidebar_bed = Passthrough(
-        std::make_unique<SidebarBed>(m_project_interactor, *m_render_module_navigator)
-    );
+    m_cube_view = Passthrough{std::make_unique<CubeView>()};
+    m_sidebar_bed =
+        Passthrough(std::make_unique<SidebarBed>(m_project_interactor, *m_render_module_navigator));
     m_sidebar_print = Passthrough(
         std::make_unique<SidebarPrint>(m_project_interactor, *m_render_module_navigator)
     );
     m_sidebar_object = Passthrough(std::make_unique<SidebarObject>(m_project_interactor));
-    m_pop_notification_list_view = Passthrough{std::make_unique<PopNotification::PopNotificationListView>(
-        AppServices::instance().pop_notification_center().observable_list()
-    )};
+    m_pop_notification_list_view =
+        Passthrough{std::make_unique<PopNotification::PopNotificationListView>(
+            AppServices::instance().pop_notification_center().observable_list()
+        )};
     m_history = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
 
-    m_sidebar_action_buttons = Passthrough{
-        std::make_unique<SidebarPlaterActionButtons>(m_render_module_navigator)
-    };
+    m_sidebar_action_buttons =
+        Passthrough{std::make_unique<SidebarPlaterActionButtons>(m_render_module_navigator)};
     m_sidebar_action_buttons->on_init(&m_project_interactor);
 
     m_layout.reset(new PlaterRenderLayout(
@@ -318,9 +324,9 @@ void PlaterRenderModule::init_scene_layout()
 
     // init toolbars
     m_layout->add_toolbar_item_panel(
-        ToolbarID::Top,
+        ToolbarID::Left,
         Render::Icon::ToolbarObjects,
-        "Object List",
+        _u8L("Object List"),
         "Ctrl + Alt + O",
         {},
         m_object_list.get()
@@ -336,31 +342,34 @@ void PlaterRenderModule::init_scene_layout()
     // );
 
     m_layout->add_toolbar_item(
-        ToolbarID::Middle,
-        Render::Icon::ToolbarAdd,
-        "Add...",
+        ToolbarID::Left,
+        Render::Icon::CubeAdd,
+        _u8L("Add..."),
         "Ctrl + I",
-        {.action = [this]() {
-        IDialogManager::FileCallback callback =
-            [this](bool success, const std::vector<boost::filesystem::path>& file_paths) {
-            if (success) {
-                const auto& proj = m_workbench.project(m_project_interactor.selected_project_id());
-                Domain::BedRef selected_bed = m_project_interactor.scene_interactor()
-                                                  .bed_selection()
-                                                  .last_selected_bed();
-                const Domain::ConfigContainer* cc = proj.find_config_container(
-                    selected_bed.config_container_id
-                );
-                const Domain::BedInstance& inst = cc->find_bed_instance(selected_bed.instance_id);
-                int nozzle_dmrs_cnt             = cc->selected_preset().hw_config.tool_count;
-                Biz::FileLoadingLogic::import_files_and_add_to_scene(
-                    file_paths,
-                    nozzle_dmrs_cnt,
-                    m_project_interactor.scene_interactor(),
-                    cc->bed().center()
-                        + Biz::Algorithms::Point::to_2d(inst.transformation.get_offset()),
-                    &App::AppServices::instance().dialog_manager()
-                );
+        {.action = [this]()
+         {
+             IDialogManager::FileCallback callback =
+                 [this](bool success, const std::vector<boost::filesystem::path>& file_paths)
+             {
+                 if (success) {
+                     const auto& proj =
+                         m_workbench.project(m_project_interactor.selected_project_id());
+                     Domain::BedRef selected_bed = m_project_interactor.scene_interactor()
+                                                       .bed_selection()
+                                                       .last_selected_bed();
+                     const Domain::ConfigContainer* cc =
+                         proj.find_config_container(selected_bed.config_container_id);
+                     const Domain::BedInstance& inst =
+                         cc->find_bed_instance(selected_bed.instance_id);
+                     int nozzle_dmrs_cnt = cc->selected_preset().hw_config.tool_count;
+                     Biz::FileLoadingLogic::import_files_and_add_to_scene(
+                         file_paths,
+                         nozzle_dmrs_cnt,
+                         m_project_interactor.scene_interactor(),
+                         cc->bed().center()
+                             + Biz::Algorithms::Point::to_2d(inst.transformation.get_offset()),
+                         &App::AppServices::instance().dialog_manager()
+                     );
 
                 m_project_interactor.set_export_project_path(m_project_interactor.selected_project_id(), file_paths.front());
 
@@ -383,24 +392,21 @@ void PlaterRenderModule::init_scene_layout()
     m_toolbar_add_volume = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::AddVolume,
-        "Add Volume",
+        _u8L("Add Volume"),
         "",
-        {.action = [this]() {
-        m_add_volumes_menu->open();
-    }}
+        {.action = [this]() { m_add_volumes_menu->open(); }}
     );
-    m_toolbar_add_volume->set_enabled(false);
     init_add_volume_menu(m_toolbar_add_volume);
 
     m_toolbar_delete = m_layout->add_toolbar_item(
         ToolbarID::Middle,
         Render::Icon::DeleteBtnIcon,
-        "Delete selection",
+        _u8L("Delete selection"),
         "",
         {.action = [this]()
          {
-             std::optional<std::string>
-                 last_solid_part_name = m_project_interactor.scene_interactor().delete_selected_elements();
+             std::optional<std::string> last_solid_part_name =
+                 m_project_interactor.scene_interactor().delete_selected_elements();
 
              if (last_solid_part_name) {
                  // Show warning dialog
@@ -418,102 +424,98 @@ void PlaterRenderModule::init_scene_layout()
              }
          }}
     );
-    m_toolbar_delete->set_enabled(false);
 
     m_toolbar_add_instance = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::ToolbarAddInstance,
-        "Add instance",
+        Render::Icon::RectangleAdd,
+        _u8L("Add instance"),
         "+",
-        {.action = [this]() {
-        m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
-        m_scene_presenter->scene().log_nodes();
-    }}
+        {.action = [this]()
+         {
+             m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
+             m_scene_presenter->scene().log_nodes();
+         }}
     );
-    m_toolbar_add_instance->set_enabled(false);
 
     m_toolbar_move = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
-        Render::Icon::ToolbarMove,
-        "Move",
+        Render::Icon::Move,
+        _u8L("Move"),
         "M",
-        {.action =
-             [this]() {
-        toggle_activate_tool(Scene::ToolType::Translation);
-    }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Translation); }},
         m_translation_gizmo
     );
-    m_toolbar_move->set_enabled(false);
     m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
-        Render::Icon::ToolbarRotation,
-        "Rotate",
+        Render::Icon::Rotate,
+        _u8L("Rotate"),
         "R",
-        {.action =
-             [this]() {
-        toggle_activate_tool(Scene::ToolType::Rotation);
-    }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }},
         m_rotation_gizmo
     );
-    m_toolbar_rotate->set_enabled(false);
     m_toolbar_arrange = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle,
-        Render::Icon::ToolbarArrange,
-        "Arrange",
+        ToolbarID::Left,
+        Render::Icon::Layout,
+        _u8L("Arrange"),
         "A",
-        {.action =
-             [this]() {
-        toggle_activate_tool(Scene::ToolType::ArrangeGizmo);
-    }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::ArrangeGizmo); }},
         m_arrange_gizmo
     );
     m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
-        Render::Icon::ToolbarGraph,
-        "Simplify",
+        Render::Icon::Simplify,
+        _u8L("Simplify"),
         "B",
-        {.action =
-             [this]() {
-        toggle_activate_tool(Scene::ToolType::Simplify);
-    }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Simplify); }},
         m_simplify_gizmo
     );
-    m_toolbar_simplify->set_enabled(false);
 
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
-        Render::Icon::ToolbarPaintOnSupports,
-        "Paint-on supports",
+        Render::Icon::PaintSupports,
+        _u8L("Paint-on supports"),
         "L",
-        {.action =
-             [this]() {
-        toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo);
-    }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); }},
         m_paint_on_supports_gizmo
     );
 
     m_toolbar_text = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
-        Render::Icon::ToolbarText,
-        "Text",
+        Render::Icon::Text,
+        _u8L("Text"),
         "T",
-        {.action =
-             [this]() {
-        toggle_activate_tool(Scene::ToolType::TextGizmo);
-    }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::TextGizmo); }},
         m_text_gizmo
     );
 
     m_toolbar_measure = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
-        Render::Icon::ToolbarMeasure,
-        "Measure",
+        Render::Icon::Ruler,
+        _u8L("Measure"),
         "U",
-        {.action =
-             [this]() {
-        toggle_activate_tool(Scene::ToolType::MeasureGizmo);
-    }},
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::MeasureGizmo); }},
         m_measure_gizmo
+    );
+
+    ToolbarButton* plater_button = m_layout->add_toolbar_item(
+        ToolbarID::Right,
+        Render::Icon::ObjectIcon,
+        "Plater view",
+        "Ctrl + 5",
+        {.action = []()
+         {
+             // Do absolutely nothing
+         }}
+    );
+    plater_button->set_checked(true);
+
+    m_layout->add_toolbar_item(
+        ToolbarID::Right,
+        Render::Icon::Preview,
+        "Preview view",
+        "Ctrl + 6",
+        {.action = [this]()
+         { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Preview); }}
     );
 }
 
@@ -537,38 +539,40 @@ void PlaterRenderModule::init_dialog_navigation()
     );
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
-    m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
 
     // Init gizmos dialogs
-    auto init_gizmo_dialog = [this](GizmoDialog* dialog) {
-        dialog->gizmo_callbacks().close_requested = [this] {
-            m_gizmo_manager->deactivate_current_tool();
-            m_render_module_navigator->set_opened_dialog(nullptr);
-        };
-        m_dialog_navigation.insert_dialog(dialog);
-        m_gizmo_dialogs.insert(dialog);
+    auto init_gizmo_dialog = [this](Scene::ToolType tool_type, GizmoWindowPtr dialog)
+    {
+        dialog->gizmo_callbacks().close_requested = [this]
+        { m_gizmo_manager->deactivate_current_tool(); };
+        m_layout->sidebar_stack_layout()->insert_gizmo(tool_type, std::move(dialog));
     };
 
-    init_gizmo_dialog(m_arrange_gizmo->ui_dialog());
-    init_gizmo_dialog(m_measure_gizmo->ui_dialog());
-    init_gizmo_dialog(m_paint_on_supports_gizmo->ui_dialog());
-    init_gizmo_dialog(m_simplify_gizmo->ui_dialog());
-    init_gizmo_dialog(m_text_gizmo->ui_dialog());
+    init_gizmo_dialog(Scene::ToolType::ArrangeGizmo, m_arrange_gizmo->release_ui_window());
+    init_gizmo_dialog(Scene::ToolType::MeasureGizmo, m_measure_gizmo->release_ui_window());
+    init_gizmo_dialog(
+        Scene::ToolType::PaintOnSupportsGizmo,
+        m_paint_on_supports_gizmo->release_ui_window()
+    );
+    init_gizmo_dialog(Scene::ToolType::Simplify, m_simplify_gizmo->release_ui_window());
+    init_gizmo_dialog(Scene::ToolType::TextGizmo, m_text_gizmo->release_ui_window());
 }
 
 void PlaterRenderModule::update_object_selection()
 {
-    const Biz::Scene::ObjectSelection& selection = m_project_interactor.scene_interactor().object_selection();
+    const Biz::Scene::ObjectSelection& selection =
+        m_project_interactor.scene_interactor().object_selection();
 
     const bool empty_selection = selection.empty();
-    m_toolbar_move->set_enabled(!empty_selection);
-    m_toolbar_rotate->set_enabled(!empty_selection);
-    m_toolbar_simplify->set_enabled(!empty_selection);
-    m_toolbar_delete->set_enabled(!empty_selection);
+    m_layout->middle_toolbar()->set_visible(!empty_selection);
 
-    m_text_gizmo->update_layout(
-        !empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume
+    if (empty_selection && m_gizmo_manager->current_tool_type() != Scene::ToolType::None) {
+        m_gizmo_manager->deactivate_current_tool();
+    } else {
+        m_text_gizmo->update_layout(
+            !empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume
         );
+    }
 
     bool can_add_instance = !empty_selection;
     if (can_add_instance) {
@@ -581,13 +585,32 @@ void PlaterRenderModule::update_object_selection()
             }
         }
     }
-    m_toolbar_add_instance->set_enabled(can_add_instance);
+    m_toolbar_add_instance->set_visible(can_add_instance);
 
-    m_toolbar_add_volume->set_enabled(can_add_instance);
+    m_toolbar_add_volume->set_visible(can_add_instance);
 
-    m_sidebar_bed->set_visible(empty_selection);
-    m_sidebar_print->set_visible(empty_selection);
-    m_sidebar_object->set_visible(!empty_selection);
+    update_current_right_sidebar();
+}
+
+void PlaterRenderModule::update_current_right_sidebar()
+{
+    const Biz::Scene::ObjectSelection& selection =
+        m_project_interactor.scene_interactor().object_selection();
+
+    const bool empty_selection = selection.empty();
+
+    const Scene::ToolType tool_type=  m_gizmo_manager->current_tool_type();
+    SidebarStackLayout* stack_layout = m_layout->sidebar_stack_layout();
+
+    if (tool_type != Scene::ToolType::None
+        && stack_layout->contains_gizmo(tool_type))
+    {
+        stack_layout->switch_to_gizmo(tool_type);
+    } else if (!empty_selection) {
+        stack_layout->switch_to_item(SidebarStackLayout::ItemType::Object);
+    } else {
+        stack_layout->switch_to_item(SidebarStackLayout::ItemType::Bed);
+    }
 }
 
 void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type)
@@ -601,33 +624,16 @@ void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type
     );
     m_toolbar_text->set_checked(current_tool_type == Scene::ToolType::TextGizmo);
     m_toolbar_measure->set_checked(current_tool_type == Scene::ToolType::MeasureGizmo);
+
+    update_current_right_sidebar();
 }
 
 void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
 {
-    m_gizmo_manager->toggle_activate_tool(tool_type, Domain::PrinterTechnology::FFF);
-
-    switch (m_gizmo_manager->current_tool_type()) {
-    case Scene::ToolType::Simplify:
-        m_render_module_navigator->set_opened_dialog(m_simplify_gizmo->ui_dialog());
-        break;
-    case Scene::ToolType::ArrangeGizmo:
-        m_render_module_navigator->set_opened_dialog(m_arrange_gizmo->ui_dialog());
-        break;
-    case Scene::ToolType::PaintOnSupportsGizmo:
-        m_render_module_navigator->set_opened_dialog(m_paint_on_supports_gizmo->ui_dialog());
-        break;
-    case Scene::ToolType::TextGizmo:
-        m_render_module_navigator->set_opened_dialog(m_text_gizmo->ui_dialog());
-        break;
-    case Scene::ToolType::MeasureGizmo:
-        m_render_module_navigator->set_opened_dialog(m_measure_gizmo->ui_dialog());
-        break;
-    case Scene::ToolType::None:
-        m_render_module_navigator->set_opened_dialog(nullptr);
-    default:
-        break;
-    }
+    m_gizmo_manager->toggle_activate_tool(
+        tool_type,
+        m_project_interactor.selected_config_container().print_technology()
+    );
 }
 
 void PlaterRenderModule::init_scene()
@@ -805,7 +811,11 @@ void PlaterRenderModule::set_camera_synch_data(const Platform::CameraSynchData& 
     if (m_scene_presenter == nullptr)
         return;
 
-    synchronize_camera(data, m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+    synchronize_camera(
+        data,
+        m_scene_presenter->scene().camera(),
+        m_scene_presenter->scene().camera_trackball()
+    );
     m_scene_presenter->set_camera_synch_data(data);
 }
 
@@ -831,12 +841,16 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         return;
 
     m_thumbnail_image_generator->handle_enqueued_requests();
-    m_thumbnail_store_updater->update(*m_device, [this](const BedThumbnailTextures& textures) {
-        m_object_list->set_bed_instance_icons(textures);
-    });
+    m_thumbnail_store_updater->update(
+        *m_device,
+        [this](const BedThumbnailTextures& textures)
+        { m_object_list->set_bed_instance_icons(textures); }
+    );
 
-
-    m_cube_view->set_camera_data(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+    m_cube_view->set_camera_data(
+        m_scene_presenter->scene().camera(),
+        m_scene_presenter->scene().camera_trackball()
+    );
 
     m_layout->render(Vec2f(m_screen_info.logical_width(), m_screen_info.logical_height()));
 
@@ -858,7 +872,12 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         m_scene_presenter->scene().camera_trackball()
     );
 #endif // ENABLED_DEBUG_CAMERA
-    Scene::render_imgui_graphics_settings_debug_window(m_project_interactor.selected_project(), *m_device, *m_scene_presenter, *m_imgui_render);
+    Scene::render_imgui_graphics_settings_debug_window(
+        m_project_interactor.selected_project(),
+        *m_device,
+        *m_scene_presenter,
+        *m_imgui_render
+    );
 }
 
 void PlaterRenderModule::render_object_hud(

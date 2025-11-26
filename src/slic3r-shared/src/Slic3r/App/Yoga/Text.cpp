@@ -8,7 +8,6 @@
 
 #include <imgui_internal.h>
 
-#include <map>
 #include <cmath>
 
 namespace Slic3r::App::Yoga {
@@ -16,6 +15,11 @@ namespace Slic3r::App::Yoga {
 class TextInternal : public Yoga::Item
 {
 public:
+
+    TextInternal() {
+        set_item_name("TextInternal");
+    }
+
     void render(Vec2f pos, Vec2f size) override
     {
         render_item_begin(pos, size);
@@ -113,7 +117,8 @@ protected:
 
     float available_height() const
     {
-        return parent()->height() - parent()->padding().vertical();
+        float avail_height = parent()->height() - parent()->padding().vertical();
+        return Domain::fuzzy_compare(0.f, avail_height) ? ImGui::GetFontSize() : avail_height;
     }
 
     Vec2f get_item_size() override

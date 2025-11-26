@@ -32,6 +32,9 @@ public:
      */
     void set_step(double step);
 
+protected:
+    void on_resized() override;
+
 private:
     void process_events(Vec2f pos, Vec2f size) override;
     void set_hovered(bool hovered);

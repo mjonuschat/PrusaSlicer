@@ -1,7 +1,5 @@
 #include "Slic3r/App/CubeView.hpp"
-#include "Slic3r/App/Imgui/ImguiExtension.hpp"
-#include "Slic3r/App/Render/MathUtils.hpp"
-#include "Slic3r/Domain/Transformation.hpp"
+
 #include "Slic3r/App/Imgui/NavigationCube.hpp"
 
 #include <imgui/imgui.h>
@@ -10,7 +8,7 @@ namespace Slic3r::App {
 
 static constexpr float SIZE = 80.0f;
 
-CubeView::CubeView() : Window("cube_view") {
+CubeView::CubeView() : Window("CubeView") {
     set_flags(flags() | ImGuiWindowFlags_NoBackground);
     set_min_size({SIZE, SIZE});
     set_max_size({SIZE, SIZE});

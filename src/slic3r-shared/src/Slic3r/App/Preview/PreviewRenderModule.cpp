@@ -945,7 +945,7 @@ void PreviewRenderModule::init_scene_layout()
     // init toolbars
 
     m_layout->add_toolbar_item_panel(
-        ToolbarID::Top,
+        ToolbarID::Left,
         Render::Icon::ToolbarObjects,
         "Object List",
         "Ctrl + Alt + O",
@@ -953,8 +953,29 @@ void PreviewRenderModule::init_scene_layout()
         m_object_list.get()
     );
 
+    m_layout->add_toolbar_item(
+        ToolbarID::Right,
+        Render::Icon::ObjectIcon,
+        "Plater view",
+        "Ctrl + 5",
+        {.action = [this]()
+         { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Plater); }}
+    );
+
+    ToolbarButton* preview_button = m_layout->add_toolbar_item(
+        ToolbarID::Right,
+        Render::Icon::Preview,
+        "Preview view",
+        "Ctrl + 6",
+        {.action = []()
+         {
+             // Do absolutely nothing
+         }}
+    );
+    preview_button->set_checked(true);
+
     m_button_legend = m_layout->add_toolbar_item_panel(
-        ToolbarID::Bottom,
+        ToolbarID::Right,
         Render::Icon::ToolbarGraph,
         "Legend",
         "",
@@ -965,7 +986,7 @@ void PreviewRenderModule::init_scene_layout()
     );
 
     m_button_gcode = m_layout->add_toolbar_item_panel(
-        ToolbarID::Bottom,
+        ToolbarID::Right,
         Render::Icon::ToolbarGCode,
         "G-code",
         "",
@@ -1074,26 +1095,26 @@ void PreviewRenderModule::update_toolbar_visibility()
     const bool fdm_has_gcode = m_fdm_viewer.has_data() && m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode;
 
     m_layout->middle_toolbar()->set_visible(fdm_has_gcode);
-    if (fdm_has_gcode) {
-        m_button_travels->set_visible(fdm_has_option(OptionType::Travels));
-        m_button_retractions->set_visible(fdm_has_option(OptionType::Retractions));
-        m_button_unretractions->set_visible(fdm_has_option(OptionType::Unretractions));
-        m_button_seams->set_visible(fdm_has_option(OptionType::Seams));
-        m_button_tool_changes->set_visible(fdm_has_option(OptionType::ToolChanges));
-        m_button_color_changes->set_visible(fdm_has_option(OptionType::ColorChanges));
-        m_button_pause_prints->set_visible(fdm_has_option(OptionType::PausePrints));
-        m_button_custom_gcodes->set_visible(fdm_has_option(OptionType::CustomGCodes));
-        m_button_center_of_gravity->set_visible(fdm_has_gcode);
-        m_button_tool_marker->set_visible(fdm_has_gcode);
-        m_button_shells->set_visible(fdm_has_gcode /*m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer*/);
-        m_button_wipes->set_visible(fdm_has_gcode);
+    m_button_travels->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Travels));
+    m_button_retractions->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Retractions));
+    m_button_unretractions->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Unretractions));
+    m_button_seams->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Seams));
+    m_button_tool_changes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::ToolChanges));
+    m_button_color_changes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::ColorChanges));
+    m_button_pause_prints->set_visible(fdm_has_gcode && fdm_has_option(OptionType::PausePrints));
+    m_button_custom_gcodes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::CustomGCodes));
+    m_button_center_of_gravity->set_visible(fdm_has_gcode);
+    m_button_tool_marker->set_visible(fdm_has_gcode);
+    m_button_shells
+        ->set_visible(fdm_has_gcode /*m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer*/);
+    m_button_wipes->set_visible(fdm_has_gcode);
 
-        m_button_legend->set_visible(m_fdm_viewer.has_data() && m_fdm_viewer.mode() == FdmViewerWrapperMode::EditorGCode);
-        m_button_gcode->set_visible(fdm_has_gcode);
-        m_layout->set_bottom_toolbar_visible(m_button_legend->is_visible() || m_button_gcode->is_visible());
-    } else {
-        m_layout->set_bottom_toolbar_visible(false);
-    }
+    m_button_legend->set_visible(
+        fdm_has_gcode
+        && m_fdm_viewer.has_data()
+        && m_fdm_viewer.mode() == FdmViewerWrapperMode::EditorGCode
+    );
+    m_button_gcode->set_visible(fdm_has_gcode);
 }
 
 void PreviewRenderModule::init_dialog_navigation()

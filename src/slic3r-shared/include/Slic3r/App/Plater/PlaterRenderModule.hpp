@@ -107,15 +107,17 @@ protected:
     /**@}*/
 
 private:
+    void active_tool_changed(Scene::IToolGizmo* active_tool) override;
+
     void init_scene();
     void init_scene_layout();
     void update_tool_selection(Scene::ToolType current_tool_type);
     void
     render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
     void toggle_activate_tool(Scene::ToolType tool_type);
-    void active_tool_changed(Scene::IToolGizmo* active_tool) override;
     void init_dialog_navigation();
     void update_object_selection();
+    void update_current_right_sidebar();
 
     void init_gizmos();
     void init_add_volume_menu(Yoga::Item* parent);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoDialog.hpp"
+#include "Slic3r/App/Yoga/GizmoWindow.hpp"
 #include "Slic3r/Biz/Arrange/Settings.hpp"
 
 namespace Slic3r::App::Yoga {
@@ -8,6 +8,7 @@ class SliderWithInput;
 class ToggleButton;
 class Slider;
 class SegmentedControl;
+class Separator;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::Plater {
@@ -20,7 +21,7 @@ enum class ArrangeTaskStatus
     Running
 };
 
-class ArrangeDialog final : public Yoga::GizmoDialog
+class ArrangeDialog final : public Yoga::GizmoWindow
 {
 public:
     using OnArrange      = std::function<void(Biz::Arrange::Settings)>;

@@ -42,29 +42,38 @@ std::optional<Bed::Segments> get_bed_segments(const Project& project, const BedS
 }
 } // namespace
 
-ArrangeGizmo::ArrangeGizmo(Biz::ArrangeInteractor& arrange_interactor, Render::Device& device, Scene::ISceneProvider& scene_provider, Scene::GeometryDataFactory& data_factory, Biz::ProjectInteractor& project_interactor, const Domain::Workbench& workbench) :
+ArrangeGizmo::ArrangeGizmo(
+    Biz::ArrangeInteractor& arrange_interactor,
+    Render::Device& device,
+    Scene::ISceneProvider& scene_provider,
+    Scene::GeometryDataFactory& data_factory,
+    Biz::ProjectInteractor& project_interactor,
+    const Domain::Workbench& workbench
+) :
     m_arrange_interactor{arrange_interactor},
     m_device{device},
     m_scene_provider{scene_provider},
     m_data_factory{data_factory},
     m_project_interactor{project_interactor},
     m_workbench{workbench},
-    m_dialog{
-        [this](const Settings& settings)
-        { m_arrange_interactor.arrange(m_project_interactor.selected_project_id(), settings); },
-        []() { PlatformServices::instance().job_manager().cancel_job("arrange"); },
-        [this](const Mode mode)
-        {
-            SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
-            BedSelection& selection{scene_interactor.bed_selection()};
-            if (mode == Mode::Local) {
-                selection.set_mode(BedSelectionMode::SingleBed);
-            } else if (mode == Mode::Global) {
-                selection.set_mode(BedSelectionMode::ConfigContainer);
-            }
-        },
-        default_settings()
-    }
+    m_dialog(
+        std::make_unique<ArrangeDialog>(
+            [this](const Settings& settings)
+            { m_arrange_interactor.arrange(m_project_interactor.selected_project_id(), settings); },
+            []() { PlatformServices::instance().job_manager().cancel_job("arrange"); },
+            [this](const Mode mode)
+            {
+                SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
+                BedSelection& selection{scene_interactor.bed_selection()};
+                if (mode == Mode::Local) {
+                    selection.set_mode(BedSelectionMode::SingleBed);
+                } else if (mode == Mode::Global) {
+                    selection.set_mode(BedSelectionMode::ConfigContainer);
+                }
+            },
+            default_settings()
+        )
+    )
 {
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(this);
 
@@ -86,29 +95,29 @@ void ArrangeGizmo::on_selected_bed_instances_changed(SelectionId project_id, con
 {
     const Project& project{m_workbench.project(project_id)};
     const std::optional<Bed::Segments> bed_segments{get_bed_segments(project, bed_selection)};
-    m_dialog.set_bed_segments(bed_segments);
+    m_dialog->set_bed_segments(bed_segments);
 };
 
 void ArrangeGizmo::on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status)
 {
     const auto it{status.find("arrange")};
     if (it == status.end()) {
-        m_dialog.update_status(ArrangeTaskStatus::Idle);
+        m_dialog->update_status(ArrangeTaskStatus::Idle);
         return;
     }
 
     const Progress progress{it->second};
     if (progress.status == JobStatus::Started) {
-        m_dialog.update_status(ArrangeTaskStatus::Running);
+        m_dialog->update_status(ArrangeTaskStatus::Running);
         return;
     }
-    m_dialog.update_status(ArrangeTaskStatus::Idle);
+    m_dialog->update_status(ArrangeTaskStatus::Idle);
 }
 
 void ArrangeGizmo::on_activated()
 {
     m_active = true;
-    if (m_dialog.get_arrange_mode() == Mode::Global) {
+    if (m_dialog->get_arrange_mode() == Mode::Global) {
         SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
         scene_interactor.bed_selection().set_mode(BedSelectionMode::ConfigContainer);
     }
@@ -126,9 +135,9 @@ Scene::ToolType ArrangeGizmo::type() const
     return Scene::ToolType::ArrangeGizmo;
 }
 
-Yoga::GizmoDialog* ArrangeGizmo::ui_dialog()
+Yoga::GizmoWindowPtr ArrangeGizmo::release_ui_window()
 {
-    return &m_dialog;
+    return m_dialog.release();
 }
 
 Settings ArrangeGizmo::default_settings() const

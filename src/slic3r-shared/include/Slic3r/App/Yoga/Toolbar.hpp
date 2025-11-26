@@ -15,8 +15,8 @@ class ToolbarButton;
 class Toolbar : public Window
 {
 public:
-
-    struct Callbacks {
+    struct Callbacks
+    {
         std::function<void()> hovered_changed{nullptr};
         std::function<void()> subtoolbar_opened{nullptr};
     };
@@ -52,11 +52,7 @@ public:
 
     void style_node() override;
 
-    bool show_tooltips() const;
-    void set_show_tooltips(bool show_tooltips);
-
     bool hovered() const;
-    bool any_subtoolbar_opened() const;
 
 private:
     // Hide these methods
@@ -70,12 +66,11 @@ private:
     std::vector<ToolbarButton*> m_buttons;
     ToolbarButton* m_button_more = nullptr;
     Vec2f m_button_min_size;
-    Vec2f m_button_max_size = {YGUndefined, YGUndefined};
+    Vec2f m_button_max_size     = {YGUndefined, YGUndefined};
     float m_button_aspect_ratio = 1.f;
-    float m_available_size = YGUndefined;
-    bool m_collapsible = false;
-    bool m_show_tooltips = false;
-    bool m_hovered = false;
+    float m_available_size      = YGUndefined;
+    bool m_collapsible          = false;
+    bool m_hovered              = false;
 };
 
 } // namespace Slic3r::App::Yoga

@@ -138,9 +138,9 @@ Scene::ToolType MeasureGizmo::type() const
     return Scene::ToolType::MeasureGizmo;
 }
 
-Yoga::GizmoDialog* MeasureGizmo::ui_dialog()
+Yoga::GizmoWindowPtr MeasureGizmo::release_ui_window()
 {
-    return m_dialog.get();
+    return m_dialog.release();
 }
 
 static std::optional<Domain::Vec3d> position_on_feature(

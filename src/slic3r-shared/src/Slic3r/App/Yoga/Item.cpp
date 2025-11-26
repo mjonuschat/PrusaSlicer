@@ -233,7 +233,7 @@ const Vec2f& Item::max_size() const
 
 bool Item::is_visible() const
 {
-    return YGNodeStyleGetDisplay(m_node) == YGDisplayFlex;
+    return is_node_visible(m_node);
 }
 
 bool Item::debug_border() const
@@ -354,7 +354,7 @@ void Item::set_visible(bool visible)
         m_visible = visible;
         YGNodeStyleSetDisplay(m_node, visible ? YGDisplayFlex : YGDisplayNone);
         set_style_dirty();
-        visible_updated_internal();
+        update_visible();
     }
 }
 
@@ -540,6 +540,14 @@ void Item::update_enabled()
     enabled_updated_internal();
     for (ItemPtr& child : m_children) {
         child->update_enabled();
+    }
+}
+
+void Item::update_visible()
+{
+    visible_updated_internal();
+    for (ItemPtr& child : m_children) {
+        child->update_visible();
     }
 }
 

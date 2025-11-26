@@ -20,24 +20,24 @@ PaintOnSupportsDialog::Callbacks& PaintOnSupportsDialog::callbacks()
     return m_callbacks;
 }
 
-PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports")
+PaintOnSupportsDialog::PaintOnSupportsDialog() :
+    GizmoWindow("Paint-on supports", Render::Icon::PaintSupports)
 {
     const Vec2f button_size{50.f, 50.f};
 
-    content_item()->set_width(325.f);
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(gap_size());
 
     std::unique_ptr<Item> tool_buttons = std::make_unique<Item>();
     tool_buttons->set_gap(gap_size());
     LayoutButton* brush_button =
-        tool_buttons->emplace_back<LayoutButton>("", Render::Icon::PaintBrush);
+        tool_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::PaintBrush);
     brush_button->set_checkable(true);
     brush_button->set_checked(true);
     brush_button->set_min_size(button_size);
     brush_button->set_content_padding(15);
     LayoutButton* magic_wand_button =
-        tool_buttons->emplace_back<LayoutButton>("", Render::Icon::WandMagicSparkles);
+        tool_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::WandMagicSparkles);
     magic_wand_button->set_checkable(true);
     magic_wand_button->set_min_size(button_size);
     magic_wand_button->set_content_padding(15);
@@ -47,18 +47,18 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
     std::unique_ptr<Item> brush_shape_buttons = std::make_unique<Item>();
     brush_shape_buttons->set_gap(gap_size());
     LayoutButton* sphere_button =
-        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::Sphere);
+        brush_shape_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::Sphere);
     sphere_button->set_checkable(true);
     sphere_button->set_checked(true);
     sphere_button->set_min_size(button_size);
     sphere_button->set_content_padding(15);
     LayoutButton* circle_button =
-        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::Circle);
+        brush_shape_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::Circle);
     circle_button->set_checkable(true);
     circle_button->set_min_size(button_size);
     circle_button->set_content_padding(15);
     LayoutButton* triangle_button =
-        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::Triangle);
+        brush_shape_buttons->emplace_back<LayoutButton>(std::string{}, Render::Icon::Triangle);
     triangle_button->set_checkable(true);
     triangle_button->set_min_size(button_size);
     triangle_button->set_content_padding(15);
@@ -75,7 +75,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
     brush_size->set_input_width(slider_text_size);
     add_new_row("Brush size", std::move(brush_size));
 
-    Dialog::add_separator();
+    add_separator(content());
 
     std::unique_ptr<SliderWithInput> clipping_of_view = std::make_unique<SliderWithInput>();
     clipping_of_view->set_begin_value(0.);
@@ -83,7 +83,8 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
     clipping_of_view->set_step(0.01);
     clipping_of_view->set_value(0.5);
     clipping_of_view->set_input_width(slider_text_size);
-    clipping_of_view->callbacks().value_changed = [this](double value) {
+    clipping_of_view->callbacks().value_changed = [this](double value)
+    {
         if (callbacks().clipping_view_ratio_changed) {
             callbacks().clipping_view_ratio_changed(value);
         }
@@ -97,12 +98,12 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
     show_overhangs->set_input_width(slider_text_size);
     add_new_row("Show overhangs", std::move(show_overhangs));
 
-    Dialog::add_separator();
+    add_separator(content());
 
     content()->emplace_back<ToggleButton>("Paint on overhangs only");
     content()->emplace_back<ToggleButton>("Split triangles");
 
-    Dialog::add_separator();
+    add_separator(content());
 
     Item* help_row = content()->emplace_back<Item>();
     help_row->set_min_size({0, 50});
@@ -110,6 +111,7 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : GizmoDialog("Paint-on supports"
     help_row->set_align_content(YGAlign::YGAlignCenter);
     help_row->set_padding(5);
     help_row->set_gap(15);
+    help_row->set_flex_wrap(YGWrapWrap);
 
     m_help.init(help_row);
     m_help.add_item({{Render::Icon::MouseLeft}}, "Paint");

@@ -4,7 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoDialog.hpp"
+#include "Slic3r/App/Yoga/GizmoWindow.hpp"
 #include "Slic3r/App/Plater/Measure.hpp"
 #include "Slic3r/App/Plater/MeasureGizmoHelper.hpp"
 
@@ -15,7 +15,7 @@ class LayoutButton;
 
 namespace Slic3r::App::Plater {
 
-class MeasureDialog : public Yoga::GizmoDialog
+class MeasureDialog : public Yoga::GizmoWindow
 {
 public:
     MeasureDialog();

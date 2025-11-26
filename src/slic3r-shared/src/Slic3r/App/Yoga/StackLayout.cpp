@@ -59,4 +59,12 @@ void StackLayout::set_current_index(size_t current_index)
     }
 }
 
+void StackLayout::set_current_item(Item* item)
+{
+    std::optional<size_t> index = index_of(item);
+    ASSERT(index.has_value());
+
+    set_current_index(index.value());
+}
+
 } // namespace Slic3r::App::Yoga

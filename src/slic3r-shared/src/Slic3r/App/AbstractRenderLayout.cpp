@@ -5,8 +5,9 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
-#include "Slic3r/App/Yoga/GizmoDialog.hpp"
+#include "Slic3r/App/Yoga/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/SplitLayout.hpp"
+#include "Slic3r/App/SidebarStackLayout.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/AppConfig.hpp"
 
@@ -25,6 +26,11 @@ Vec2f AbstractRenderLayout::win_padding() const
 Vec2f AbstractRenderLayout::frame_padding() const
 {
     return Vec2f(GImGui->Style.FramePadding.x, GImGui->Style.FramePadding.y);
+}
+
+SidebarStackLayout* AbstractRenderLayout::sidebar_stack_layout() const
+{
+    return m_layout_sidebar_stack_layout;
 }
 
 void AbstractRenderLayout::save_column_sizes()
@@ -64,9 +70,6 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item(
     ASSERT(toolbar);
 
     toolbar->set_visible(true);
-    if (toolbar == m_bottom_toolbar) {
-        m_bottom_dummy_toolbar->set_visible(false);
-    }
 
     Passthrough<ToolbarButton> button = Passthrough(std::make_unique<ToolbarButton>(icon, tooltip));
     toolbar->append(button.release());
@@ -106,11 +109,6 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
     ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
     ASSERT(button);
 
-    GizmoDialog* dialog = tool->ui_dialog();
-    if (dialog) {
-        dialog->attach_to_item(button, Position::Right);
-    }
-
     return button;
 }
 
@@ -145,27 +143,14 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_panel(
 Toolbar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
 {
     switch (id) {
-    case ToolbarID::Top:
-        return m_top_toolbar;
+    case ToolbarID::Left:
+        return m_left_toolbar;
     case ToolbarID::Middle:
         return m_middle_toolbar;
-    case ToolbarID::Bottom:
-        return m_bottom_toolbar;
+    case ToolbarID::Right:
+        return m_right_toolbar;
     }
     return nullptr;
-}
-
-void AbstractRenderLayout::update_toolbar_tooltip()
-{
-    // if any toolbar is hovered and also subtoolbar is now opened;
-    bool
-        show_tooltips = (m_top_toolbar->hovered() || m_middle_toolbar->hovered() || m_bottom_toolbar->hovered())
-        && !m_top_toolbar->any_subtoolbar_opened()
-        && !m_middle_toolbar->any_subtoolbar_opened()
-        && !m_bottom_toolbar->any_subtoolbar_opened();
-    m_top_toolbar->set_show_tooltips(show_tooltips);
-    m_middle_toolbar->set_show_tooltips(show_tooltips);
-    m_bottom_toolbar->set_show_tooltips(show_tooltips);
 }
 
 void AbstractRenderLayout::update_sidebar_visibility()
@@ -181,15 +166,9 @@ void AbstractRenderLayout::update_sidebar_visibility()
     m_layout_main_bottom->set_visible_child(m_layout_left_column, any_visible);
 }
 
-void AbstractRenderLayout::set_bottom_toolbar_visible(bool visible)
+Toolbar* AbstractRenderLayout::right_toolbar() const
 {
-    m_bottom_toolbar->set_visible(visible);
-    m_bottom_dummy_toolbar->set_visible(!visible);
-}
-
-Toolbar* AbstractRenderLayout::bottom_toolbar() const
-{
-    return m_bottom_toolbar;
+    return m_right_toolbar;
 }
 
 Toolbar* AbstractRenderLayout::middle_toolbar() const
@@ -197,9 +176,9 @@ Toolbar* AbstractRenderLayout::middle_toolbar() const
     return m_middle_toolbar;
 }
 
-Toolbar* AbstractRenderLayout::top_toolbar() const
+Toolbar* AbstractRenderLayout::left_toolbar() const
 {
-    return m_top_toolbar;
+    return m_left_toolbar;
 }
 
 void AbstractRenderLayout::set_sidebars_visible(bool visible)
@@ -265,40 +244,34 @@ void AbstractRenderLayout::init_middle_column()
     m_layout_center_row->set_gap(5);
     m_layout_main_bottom->set_flex_child(m_layout_center_row, true);
 
-    init_toolbar_column();
-
     m_layout_middle_column = m_layout_center_row->emplace_back<Item>();
     m_layout_middle_column->set_orientation(Orientation::Vertical);
     m_layout_middle_column->set_gap(5);
     m_layout_middle_column->set_flex_grow(1);
+    m_layout_middle_column->set_item_name("MiddleColumn");
 
-    // Column with cube view and notification view.
-    Yoga::Item* layout_middle_right_column = m_layout_middle_column->emplace_back<Item>();
-    layout_middle_right_column->set_orientation(Orientation::Vertical);
-    layout_middle_right_column->set_gap(5);
-    layout_middle_right_column->set_flex_grow(1);
-    layout_middle_right_column->append(m_cube_view.release());
+    init_toolbar_row();
+
+    // Row for CubeView (left) and Notification column (right)
+    Yoga::Item* notifications_wrap = m_layout_middle_column->emplace_back<Yoga::Item>();
+    notifications_wrap->set_orientation(Orientation::Horizontal);
+    notifications_wrap->set_flex_grow(1);
+
+    notifications_wrap->append(m_cube_view.release());
     m_cube_view->set_self_align(YGAlignFlexEnd);
 
-    // Originally, this spacer was added in PrewiewRenderLayout to divide gcode double slicer and cube view.
-    // Now it is added here to put notification view below it.
-    Yoga::Item* column_spacer = layout_middle_right_column->emplace_back<Yoga::Item>();
-    column_spacer->set_flex_grow(1);
-
-    Yoga::Item* notifications_wrap = layout_middle_right_column->emplace_back<Yoga::Item>();
-    notifications_wrap->set_orientation(Orientation::Horizontal);
-    notifications_wrap->set_justify_content(YGJustifyFlexEnd);
+    Item* spacer = notifications_wrap->emplace_back<Item>();
+    spacer->set_flex_grow(1);
 
     notifications_wrap->append(m_pop_notification_list_view.release());
     m_pop_notification_list_view->set_orientation(Orientation::Vertical);
+    m_pop_notification_list_view->set_max_size({400.f, YGUndefined});
     m_pop_notification_list_view->set_flex_grow(1);
-    m_pop_notification_list_view->set_max_size({ 400.f, YGUndefined });
     m_pop_notification_list_view->set_margin(10.);
     m_pop_notification_list_view->set_self_align(YGAlignFlexEnd);
-    m_pop_notification_list_view->set_source_list(&AppServices::instance().pop_notification_center().source_list());
-
-    //notifications_wrap->set_debug_border(true);
-    //m_pop_notification_list_view->set_debug_border(true);
+    m_pop_notification_list_view->set_source_list(
+        &AppServices::instance().pop_notification_center().source_list()
+    );
 }
 
 void AbstractRenderLayout::init_right_column()
@@ -311,56 +284,58 @@ void AbstractRenderLayout::init_right_column()
     );
     m_layout_right_column->set_min_size({240, YGUndefined});
 
-    m_layout_right_column->append(m_sidebar_bed.release());
+    m_layout_sidebar_stack_layout = m_layout_right_column->emplace_back<SidebarStackLayout>();
+    m_layout_sidebar_stack_layout->set_orientation(Orientation::Vertical);
+    m_layout_sidebar_stack_layout->set_flex_grow(1);
 
-    m_layout_right_column->append(m_sidebar_print.release());
+    ItemPtr sidebar_bed_print = std::make_unique<Item>();
+    sidebar_bed_print->set_orientation(Orientation::Vertical);
+    sidebar_bed_print->set_gap(5);
+    sidebar_bed_print->set_flex_grow(1);
+    sidebar_bed_print->append(m_sidebar_bed.release());
+    sidebar_bed_print->append(m_sidebar_print.release());
+    m_layout_sidebar_stack_layout->insert_item(
+        SidebarStackLayout::ItemType::Bed,
+        std::move(sidebar_bed_print)
+    );
 
-    m_layout_right_column->append(m_sidebar_object.release());
-    m_sidebar_object->set_visible(false);
+    m_layout_sidebar_stack_layout->insert_item(
+        SidebarStackLayout::ItemType::Object,
+        m_sidebar_object.release()
+    );
 }
 
-void AbstractRenderLayout::init_toolbar_column()
+void AbstractRenderLayout::init_toolbar_row()
 {
-    constexpr float min_tt_size = 46.f; //**/ 30.f;
-    constexpr float max_tt_size = 46.f;
+    constexpr float min_tt_size = 40.f;
+    constexpr float max_tt_size = 40.f;
 
-    m_layout_left_toolbar_column = m_layout_center_row->emplace_back<Item>();
-    m_layout_left_toolbar_column->set_orientation(Orientation::Vertical);
-    m_layout_left_toolbar_column->set_gap(5);
-    m_layout_left_toolbar_column->set_justify_content(YGJustify::YGJustifySpaceBetween);
-    m_layout_left_toolbar_column->set_z(1); // Increaze Z so toolbars can be on top of double sliders
+    m_layout_middle_toolbar_row = m_layout_middle_column->emplace_back<Item>();
+    m_layout_middle_toolbar_row->set_orientation(Orientation::Horizontal);
+    m_layout_middle_toolbar_row->set_gap(5);
+    m_layout_middle_toolbar_row->set_justify_content(YGJustify::YGJustifyCenter);
+    m_layout_middle_toolbar_row->set_z(1); // Increaze Z so toolbars can be on top of double sliders
 
-    m_top_toolbar = m_layout_left_toolbar_column->emplace_back<Toolbar>("top_toolbar");
-    m_top_toolbar->set_button_min_size({min_tt_size, min_tt_size});
-    m_top_toolbar->set_button_max_size({max_tt_size, max_tt_size});
-    m_top_toolbar->set_self_align(YGAlign::YGAlignFlexStart);
-    m_top_toolbar->set_orientation(Orientation::Vertical);
-    m_top_toolbar->set_visible(false);
+    m_left_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("top_toolbar");
+    m_left_toolbar->set_button_min_size({min_tt_size, min_tt_size});
+    m_left_toolbar->set_button_max_size({max_tt_size, max_tt_size});
+    m_left_toolbar->set_orientation(Orientation::Horizontal);
+    m_left_toolbar->set_flex_shrink(0);
+    m_left_toolbar->set_visible(false);
 
-    m_middle_toolbar = m_layout_left_toolbar_column->emplace_back<Toolbar>("middle_toolbar");
+    m_middle_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("middle_toolbar");
     m_middle_toolbar->set_button_min_size({min_tt_size, min_tt_size});
     m_middle_toolbar->set_button_max_size({max_tt_size, max_tt_size});
-    m_middle_toolbar->set_self_align(YGAlign::YGAlignCenter);
-    m_middle_toolbar->set_orientation(Orientation::Vertical);
+    m_middle_toolbar->set_orientation(Orientation::Horizontal);
     m_middle_toolbar->set_collapsible(true);
     m_middle_toolbar->set_visible(false);
 
-    m_bottom_toolbar = m_layout_left_toolbar_column->emplace_back<Toolbar>("bottom_toolbar");
-    m_bottom_toolbar->set_button_min_size({min_tt_size, min_tt_size});
-    m_bottom_toolbar->set_button_max_size({max_tt_size, max_tt_size});
-    m_bottom_toolbar->set_self_align(YGAlign::YGAlignFlexEnd);
-    m_bottom_toolbar->set_orientation(Orientation::Vertical);
-    m_bottom_toolbar->set_visible(false);
-
-    m_bottom_dummy_toolbar = m_layout_left_toolbar_column->emplace_back<Item>();
-    m_bottom_dummy_toolbar->set_visible(true);
-
-    m_top_toolbar->callbacks().hovered_changed      = [this]() { update_toolbar_tooltip(); };
-    m_middle_toolbar->callbacks().hovered_changed   = [this]() { update_toolbar_tooltip(); };
-    m_bottom_toolbar->callbacks().hovered_changed   = [this]() { update_toolbar_tooltip(); };
-    m_top_toolbar->callbacks().subtoolbar_opened    = [this]() { update_toolbar_tooltip(); };
-    m_middle_toolbar->callbacks().subtoolbar_opened = [this]() { update_toolbar_tooltip(); };
-    m_bottom_toolbar->callbacks().subtoolbar_opened = [this]() { update_toolbar_tooltip(); };
+    m_right_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("bottom_toolbar");
+    m_right_toolbar->set_button_min_size({min_tt_size, min_tt_size});
+    m_right_toolbar->set_button_max_size({max_tt_size, max_tt_size});
+    m_right_toolbar->set_orientation(Orientation::Horizontal);
+    m_right_toolbar->set_flex_shrink(0);
+    m_right_toolbar->set_visible(false);
 }
 
 void AbstractRenderLayout::set_our_style_colors()
@@ -370,20 +345,20 @@ void AbstractRenderLayout::set_our_style_colors()
 
     colors[ImGuiCol_Text]         = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-    colors[ImGuiCol_WindowBg] = ImVec4(0.106f, 0.106f, 0.106f, 1.00f);
-    colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-    colors[ImGuiCol_Border] = colors[ImGuiCol_WindowBg];// ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_FrameBg] = ImVec4(0.16f, 0.29f, 0.48f, 0.54f);
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
-    colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.16f, 0.29f, 0.48f, 1.00f);
-    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-    colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
+    colors[ImGuiCol_WindowBg]     = ImVec4(0.106f, 0.106f, 0.106f, 1.00f);
+    colors[ImGuiCol_ChildBg]      = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_PopupBg]      = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
+    colors[ImGuiCol_Border] = colors[ImGuiCol_WindowBg]; // ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
+    colors[ImGuiCol_BorderShadow]         = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_FrameBg]              = ImVec4(0.16f, 0.29f, 0.48f, 0.54f);
+    colors[ImGuiCol_FrameBgHovered]       = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
+    colors[ImGuiCol_FrameBgActive]        = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+    colors[ImGuiCol_TitleBg]              = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
+    colors[ImGuiCol_TitleBgActive]        = ImVec4(0.16f, 0.29f, 0.48f, 1.00f);
+    colors[ImGuiCol_TitleBgCollapsed]     = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+    colors[ImGuiCol_MenuBarBg]            = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+    colors[ImGuiCol_ScrollbarBg]          = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_ScrollbarGrab]        = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
     colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
     colors[ImGuiCol_ScrollbarGrabActive]  = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
     colors[ImGuiCol_CheckMark]            = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
@@ -403,18 +378,22 @@ void AbstractRenderLayout::set_our_style_colors()
     colors[ImGuiCol_ResizeGripActive]     = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
     colors[ImGuiCol_TabHovered]           = colors[ImGuiCol_HeaderHovered];
     colors[ImGuiCol_Tab] = ImLerp(colors[ImGuiCol_Header], colors[ImGuiCol_TitleBgActive], 0.80f);
-    colors[ImGuiCol_TabSelected] = ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
+    colors[ImGuiCol_TabSelected] =
+        ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
     colors[ImGuiCol_TabSelectedOverline] = colors[ImGuiCol_HeaderActive];
     colors[ImGuiCol_TabDimmed] = ImLerp(colors[ImGuiCol_Tab], colors[ImGuiCol_TitleBg], 0.80f);
-    colors[ImGuiCol_TabDimmedSelected] = ImLerp(colors[ImGuiCol_TabSelected], colors[ImGuiCol_TitleBg], 0.40f);
+    colors[ImGuiCol_TabDimmedSelected] =
+        ImLerp(colors[ImGuiCol_TabSelected], colors[ImGuiCol_TitleBg], 0.40f);
     colors[ImGuiCol_TabDimmedSelectedOverline] = ImVec4(0.50f, 0.50f, 0.50f, 0.00f);
     colors[ImGuiCol_PlotLines]                 = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
     colors[ImGuiCol_PlotLinesHovered]          = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
     colors[ImGuiCol_PlotHistogram]             = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
     colors[ImGuiCol_PlotHistogramHovered]      = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
     colors[ImGuiCol_TableHeaderBg]             = ImVec4(0.19f, 0.19f, 0.20f, 1.00f);
-    colors[ImGuiCol_TableBorderStrong] = ImVec4(0.31f, 0.31f, 0.35f, 1.00f); // Prefer using Alpha=1.0 here
-    colors[ImGuiCol_TableBorderLight] = ImVec4(0.23f, 0.23f, 0.25f, 1.00f); // Prefer using Alpha=1.0 here
+    colors[ImGuiCol_TableBorderStrong] =
+        ImVec4(0.31f, 0.31f, 0.35f, 1.00f); // Prefer using Alpha=1.0 here
+    colors[ImGuiCol_TableBorderLight] =
+        ImVec4(0.23f, 0.23f, 0.25f, 1.00f); // Prefer using Alpha=1.0 here
     colors[ImGuiCol_TableRowBg]            = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
     colors[ImGuiCol_TableRowBgAlt]         = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
     colors[ImGuiCol_TextLink]              = colors[ImGuiCol_HeaderActive];

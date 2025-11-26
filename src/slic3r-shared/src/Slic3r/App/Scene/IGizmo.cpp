@@ -4,6 +4,8 @@
 ///|/
 #include "Slic3r/App/Scene/IGizmo.hpp"
 
+#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+
 namespace Slic3r::App::Scene {
 
 bool IToolGizmo::supports_printer(Domain::PrinterTechnology pt) const
@@ -16,7 +18,7 @@ bool IToolGizmo::enabled() const
     return true;
 }
 
-Yoga::GizmoDialog* IToolGizmo::ui_dialog()
+std::unique_ptr<Yoga::GizmoWindow> IToolGizmo::release_ui_window()
 {
     return nullptr;
 }

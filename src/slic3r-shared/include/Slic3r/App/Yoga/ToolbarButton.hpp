@@ -20,16 +20,12 @@ public:
 
     void style_node() override;
 
-    void set_subtoolbar_buttons(std::vector<std::unique_ptr<ToolbarButton>> buttons);
-
     Toolbar* get_subtoolbar() const;
     Toolbar* get_or_create_subtoolbar();
     Dialog* dialog() const;
 
 private:
     Toolbar* m_subtoolbar = nullptr;
-
-    bool m_tooltip_open = false;
 };
 
 } // namespace Slic3r::App::Yoga

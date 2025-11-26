@@ -259,6 +259,7 @@ protected:
 
 private:
     void update_enabled();
+    void update_visible();
 
 protected:
     // I will burn in hell for this
@@ -273,35 +274,34 @@ protected:
     // There should be a registered C++ offender list and I should be on it.
     Biz::UnsharedPointer<int> m_heartbeat;
 
-    Vec2f m_min_size = {};
-    Vec2f m_max_size = {YGUndefined, YGUndefined};
-    Item* m_parent = nullptr;
+    Vec2f m_min_size      = {};
+    Vec2f m_max_size      = {YGUndefined, YGUndefined};
+    Item* m_parent        = nullptr;
     Popup* m_parent_popup = nullptr;
-    YGNodeRef m_node = nullptr;
+    YGNodeRef m_node      = nullptr;
     std::string m_item_name;
 
     bool m_min_size_calculated = false;
 
-    YGAlign m_self_align = YGAlign::YGAlignAuto;
-    YGAlign m_align_items = YGAlign::YGAlignStretch;
-    YGAlign m_align_content = YGAlign::YGAlignFlexStart;
+    YGAlign m_self_align        = YGAlign::YGAlignAuto;
+    YGAlign m_align_items       = YGAlign::YGAlignStretch;
+    YGAlign m_align_content     = YGAlign::YGAlignFlexStart;
     YGJustify m_justify_content = YGJustify::YGJustifyFlexStart;
     Margins m_margin;
     Paddings m_padding;
-    float m_flex_grow = 0;
-    float m_flex_shrink = 1;
-    float m_aspect_ratio = YGUndefined;
-    float m_gap = 0;
+    float m_flex_grow              = 0;
+    float m_flex_shrink            = 1;
+    float m_aspect_ratio           = YGUndefined;
+    float m_gap                    = 0;
     YGPositionType m_position_type = YGPositionType::YGPositionTypeRelative;
-    bool m_debug_border = false;
-    float m_z = 0;
-    bool m_visible = true;
-    float m_last_width  = 0;
-    float m_last_height = 0;
+    bool m_debug_border            = false;
+    float m_z                      = 0;
+    float m_last_width             = 0;
+    float m_last_height            = 0;
 
-    Orientation m_orientation = Orientation::Horizontal;
+    Orientation m_orientation        = Orientation::Horizontal;
     YGFlexDirection m_flex_direction = YGFlexDirectionRow;
-    YGDirection m_direction = YGDirectionLTR;
+    YGDirection m_direction          = YGDirectionLTR;
 
     std::vector<ItemPtr> m_children;
     std::vector<Item*> m_children_render_order;
@@ -311,7 +311,8 @@ protected:
 #endif
 
 private:
-    bool m_enabled      = true;
+    bool m_enabled = true;
+    bool m_visible = true;
 };
 
 /**

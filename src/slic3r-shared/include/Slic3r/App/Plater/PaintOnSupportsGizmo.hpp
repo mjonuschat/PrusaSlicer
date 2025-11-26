@@ -41,14 +41,14 @@ public:
     void on_project_deactivated(size_t old_project_id) override;
 
     Scene::ToolType type() const override;
-    Yoga::GizmoDialog* ui_dialog() override;
+    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
 
     void provide_clipper(Scene::Clipper& clipper) override;
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
 
 private:
-    std::unique_ptr<PaintOnSupportsDialog> m_dialog;
+    Yoga::Passthrough<PaintOnSupportsDialog> m_dialog;
 
     Render::Device& m_device;
     PlaterScenePresenter& m_scene_presenter;

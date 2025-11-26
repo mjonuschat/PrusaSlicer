@@ -4,7 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoDialog.hpp"
+#include "Slic3r/App/Yoga/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/ComboBox.hpp"
 #include "Slic3r/App/Yoga/SliderWithInput.hpp"
@@ -24,7 +24,7 @@ class InputTextField;
 
 namespace Slic3r::App::Plater {
 
-class TextDialog : public Yoga::GizmoDialog
+class TextDialog : public Yoga::GizmoWindow
 {
 public:
     TextDialog();

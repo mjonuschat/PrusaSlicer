@@ -12,8 +12,8 @@
 
 namespace Slic3r::App::Yoga {
 
-RadioButton::RadioButton(const std::string& label, const std::string& tooltip)
-    : AbstractButton(tooltip)
+RadioButton::RadioButton(const std::string& label, const std::string& tooltip) :
+    AbstractButton(tooltip)
 {
     set_orientation(Orientation::Horizontal);
     set_align_items(YGAlignCenter);
@@ -24,12 +24,17 @@ RadioButton::RadioButton(const std::string& label, const std::string& tooltip)
     m_knob = emplace_back<Circle>();
     m_knob->set_fill(GImGui->Style.Colors[ImGuiCol_WindowBg]);
     m_knob->set_border_width(1);
-    m_knob->set_min_size({ 12,12 });
+    m_knob->set_min_size({12, 12});
 
     m_label = emplace_back<Text>(label);
     m_label->set_visible(!label.empty());
 
     set_tooltip_position(Position::Bottom);
+}
+
+Text* RadioButton::label() const
+{
+    return m_label;
 }
 
 void RadioButton::set_label(const std::string& label)

@@ -30,11 +30,10 @@ static const ImColor FEATURE_2_COLOR = ImColor(191, 64, 191);
 
 using namespace Biz;
 
-MeasureDialog::MeasureDialog() : GizmoDialog(_u8L("Measure"))
+MeasureDialog::MeasureDialog() : GizmoWindow(_u8L("Measure"), Render::Icon::Ruler)
 {
     const Vec2f shortcut_button_size{30.f, 30.f};
 
-    content_item()->set_width(325);
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(gap_size());
 
@@ -75,6 +74,7 @@ MeasureDialog::MeasureDialog() : GizmoDialog(_u8L("Measure"))
     help_row->set_align_content(YGAlign::YGAlignCenter);
     help_row->set_padding(5);
     help_row->set_gap(15);
+    help_row->set_flex_wrap(YGWrapWrap);
 
     m_help.init(help_row);
     m_help.add_item({{Render::Icon::MouseLeft}}, _u8L("Select"), false);

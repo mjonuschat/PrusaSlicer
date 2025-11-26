@@ -53,7 +53,7 @@ public:
 
     Scene::ToolType type() const override;
 
-    Yoga::GizmoDialog* ui_dialog() override;
+    Yoga::GizmoWindowPtr release_ui_window() override;
 
 private:
     Biz::ArrangeInteractor& m_arrange_interactor;
@@ -62,7 +62,7 @@ private:
     Scene::GeometryDataFactory& m_data_factory;
     Biz::ProjectInteractor& m_project_interactor;
     const Domain::Workbench& m_workbench;
-    ArrangeDialog m_dialog;
+    Yoga::Passthrough<ArrangeDialog> m_dialog;
     bool m_active{false};
 
     Biz::Arrange::Settings default_settings() const;
