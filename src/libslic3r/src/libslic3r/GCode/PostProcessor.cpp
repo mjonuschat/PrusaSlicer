@@ -272,13 +272,6 @@ using namespace Biz::libpgcode;
 using Biz::GCodeReader::GCodeReader;
 using GCodeLine = GCodeReader::GCodeLine;
 
-struct AggregatedStatistics {
-    float total_extruded_volume{};
-    float total_used_filament{};
-    float total_weight{};
-    float total_cost{};
-};
-
 struct FilamentStatistics {
     FilamentStatistics(std::size_t extruders_count) :
         used_mm{std::vector<float>(extruders_count, 0.0)},
