@@ -2716,7 +2716,7 @@ void ProcessorImpl::calculate_time(size_t keep_last_n_blocks, float additional_t
 void ProcessorImpl::update_basic_statistics()
 {
     BasicPrintStatistics::TimeStatistics& normal_time =
-        m_result.basic_print_statistics.normal_mode_time;
+        m_result.print_statistics.basic.normal_mode_time;
     normal_time.time = float(m_time_processor.machines[size_t(TimeMode::Normal)].time);
     normal_time.first_layer_time = float(m_time_processor.machines[size_t(TimeMode::Normal)].first_layer_time);
     normal_time.custom_gcode_times = m_time_processor.custom_gcode_times(TimeMode::Normal, true);
@@ -2726,13 +2726,13 @@ void ProcessorImpl::update_basic_statistics()
         silent_mode_time.first_layer_time = float(m_time_processor.machines[size_t(TimeMode::Stealth)].first_layer_time);
         silent_mode_time.custom_gcode_times =
             m_time_processor.custom_gcode_times(TimeMode::Stealth, true);
-        m_result.basic_print_statistics.silent_mode_time = silent_mode_time;
+        m_result.print_statistics.basic.silent_mode_time = silent_mode_time;
     }
 
-    m_result.basic_print_statistics.volumes_per_color_change =
+    m_result.print_statistics.basic.volumes_per_color_change =
         m_used_filaments.volumes_per_color_change;
-    m_result.basic_print_statistics.volumes_per_extruder    = m_used_filaments.volumes_per_extruder;
-    m_result.basic_print_statistics.used_filaments_per_role = m_used_filaments.filaments_per_role;
+    m_result.print_statistics.basic.volumes_per_extruder    = m_used_filaments.volumes_per_extruder;
+    m_result.print_statistics.basic.used_filaments_per_role = m_used_filaments.filaments_per_role;
 }
 
 } // namespace Slic3r::Biz::libpgcode

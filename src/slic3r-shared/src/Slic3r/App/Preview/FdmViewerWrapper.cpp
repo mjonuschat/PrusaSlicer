@@ -189,13 +189,13 @@ static FdmViewerInputData extract_viewer_input_data_from_result(const ProcessorR
         ret.color_print_colors.emplace_back(color);
     }
 
-    for (const auto& [role, values] : result.basic_print_statistics.used_filaments_per_role) {
+    for (const auto& [role, values] : result.print_statistics.basic.used_filaments_per_role) {
         float length = values.first;
         float mass   = values.second;
         ret.used_filament_by_roles.insert({ role, { length, mass } });
     }
 
-    for (const auto& [extruder_id, volume] : result.basic_print_statistics.volumes_per_extruder) {
+    for (const auto& [extruder_id, volume] : result.print_statistics.basic.volumes_per_extruder) {
         float v = 0.001f * volume;
         float length = v / result.filament_geometry(extruder_id).area_cross_section;
         float mass = v * result.filament_densities[extruder_id];
@@ -210,7 +210,7 @@ static FdmViewerInputData extract_viewer_input_data_from_result(const ProcessorR
         std::array<float, TIME_MODES_COUNT> times = {};
         std::array<float, 2> used_filament = { 0.0f, 0.0f };
 
-        const Domain::BasicPrintStatistics::TimeStatistics& normal_mode = result.basic_print_statistics.normal_mode_time;
+        const Domain::BasicPrintStatistics::TimeStatistics& normal_mode = result.print_statistics.basic.normal_mode_time;
         auto it = std::find_if(normal_mode.custom_gcode_times.begin() + shifts[0], normal_mode.custom_gcode_times.end(),
             [&item](const std::pair<CustomGCode::Type, std::pair<float, float>>& gc_item) { return gc_item.first == item.type; });
         if (it != normal_mode.custom_gcode_times.end()) {
@@ -218,7 +218,7 @@ static FdmViewerInputData extract_viewer_input_data_from_result(const ProcessorR
             times[0] = it->second.first;
         }
 
-        const auto& silent_mode_opt = result.basic_print_statistics.silent_mode_time;
+        const auto& silent_mode_opt = result.print_statistics.basic.silent_mode_time;
         if (silent_mode_opt) {
             const Domain::BasicPrintStatistics::TimeStatistics& silent_mode = *silent_mode_opt;
             auto it = std::find_if(silent_mode.custom_gcode_times.begin() + shifts[1], silent_mode.custom_gcode_times.end(),
@@ -230,7 +230,7 @@ static FdmViewerInputData extract_viewer_input_data_from_result(const ProcessorR
         }
 
         if (item.type == CustomGCode::Type::ColorChange) {
-            float volume = 0.001f * result.basic_print_statistics.volumes_per_color_change[color_changes_count++];
+            float volume = 0.001f * result.print_statistics.basic.volumes_per_color_change[color_changes_count++];
             used_filament = { volume / result.filament_geometry(uint8_t(item.extruder - 1)).area_cross_section,
                               volume * result.filament_densities[item.extruder - 1] };
         }

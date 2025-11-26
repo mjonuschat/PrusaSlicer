@@ -744,7 +744,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
 
     BOOST_LOG_TRIVIAL(debug) << "Start processing gcode, " << log_memory_info();
     ProcessorResult result{processor.finalize()};
-    result.extra_print_statistics = extra_print_statistics;
+    result.print_statistics.extra = extra_print_statistics;
     PostProcessorConfig post_processor_config = processor.post_processor_config();
     result                                    = GCode::post_process(
         post_processor_config,

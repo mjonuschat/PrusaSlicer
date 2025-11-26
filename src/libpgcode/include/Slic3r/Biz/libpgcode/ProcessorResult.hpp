@@ -47,8 +47,7 @@ struct ProcessorResult
     std::vector<std::string> extruder_str_colors;
     std::vector<Domain::CustomGCode::Item> custom_gcode_per_print_z;
 
-    Domain::BasicPrintStatistics basic_print_statistics;
-    std::optional<Domain::ExtraPrintStatistics> extra_print_statistics;
+    Domain::PrintStatistics print_statistics;
 
     PrintSettings print_settings;
     std::optional<ConflictResult> conflict_result;

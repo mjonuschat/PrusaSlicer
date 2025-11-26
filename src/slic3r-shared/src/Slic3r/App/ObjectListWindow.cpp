@@ -116,7 +116,7 @@ void ObjectListWindow::update_sliced_info()
 
     const std::optional<Biz::FDMResultRef> fdm_result{ m_project_interactor->fdm_result_cache().get_result(id) };
     if (fdm_result) {
-        const Domain::BasicPrintStatistics& print_statistics = fdm_result->get().basic_print_statistics;
+        const Domain::BasicPrintStatistics& print_statistics = fdm_result->get().print_statistics.basic;
 
         float volume{ 0.f };
         for (const auto& [_, vol] : print_statistics.volumes_per_extruder)

@@ -40,4 +40,9 @@ struct ExtraPrintStatistics
     std::vector<std::string> printing_filament_types;
 };
 
+struct PrintStatistics {
+    BasicPrintStatistics basic;
+    std::optional<ExtraPrintStatistics> extra;
+};
+
 } // namespace Slic3r::Domain

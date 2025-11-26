@@ -279,20 +279,6 @@ struct AggregatedStatistics {
     float total_cost{};
 };
 
-static AggregatedStatistics get_aggregated_statistics(const ProcessorResult& result)
-{
-    AggregatedStatistics statistics;
-    for (const auto& [id, volume] : result.basic_print_statistics.volumes_per_extruder) {
-        statistics.total_extruded_volume += volume;
-        const float s    = result.filament_geometry(id).area_cross_section;
-        const float mass = volume * result.filament_densities[id] * 0.001f;
-        statistics.total_used_filament += volume / s;
-        statistics.total_weight += mass;
-        statistics.total_cost += mass * result.filament_costs[id] * 0.001f;
-    }
-    return statistics;
-}
-
 struct FilamentStatistics {
     FilamentStatistics(std::size_t extruders_count) :
         used_mm{std::vector<float>(extruders_count, 0.0)},
@@ -320,7 +306,10 @@ static FilamentStatistics get_filament_statistics(
         const auto it{extruded_volumes.find(extruder_id)};
         const float volume{it->second};
         const float weight{volume * static_cast<float>(extruder.filament_density()) * 0.001f};
-        result.used_mm.at(extruder_id) = volume / extruder.filament_crossection();
+        const double crossection{extruder.filament_crossection()};
+        if (crossection > 0) {
+            result.used_mm.at(extruder_id) = volume / crossection;
+        }
         result.used_cm3.at(extruder_id) = volume * 0.001;
         result.used_g.at(extruder_id) = weight;
         result.used_cost.at(extruder_id) = weight * extruder.filament_cost() * 0.001;
@@ -480,7 +469,7 @@ private:
             0.0f
         };
 
-        for (const auto& [id, volume] : m_result.basic_print_statistics.volumes_per_extruder) {
+        for (const auto& [id, volume] : m_result.print_statistics.basic.volumes_per_extruder) {
             m_filament_data.mm[id]   = volume / m_result.filament_geometry(id).area_cross_section;
             m_filament_data.cm3[id]  = volume * 0.001f;
             m_filament_data.g[id]    = m_filament_data.cm3[id] * m_result.filament_densities[id];
@@ -694,8 +683,8 @@ private:
                 }
             } else if (line == reserved_tag(Tags::Print_Statistics_Placeholder)) {
                 return format_statistics(
-                    m_result.basic_print_statistics,
-                    *ASSERT_VAL(m_result.extra_print_statistics),
+                    m_result.print_statistics.basic,
+                    *ASSERT_VAL(m_result.print_statistics.extra),
                     extruders,
                     m_result.extruders_count
                 );
