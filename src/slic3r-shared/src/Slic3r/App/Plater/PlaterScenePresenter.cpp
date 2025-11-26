@@ -848,6 +848,7 @@ void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_i
     update_beds();
     m_volume_materials_dirty = true;
     invoke_bed_visually_changed(project_id);
+    center_camera_on_selected_bed();
 }
 
 void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances)
