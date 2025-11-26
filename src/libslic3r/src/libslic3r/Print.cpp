@@ -740,20 +740,17 @@ DONE:;
             max_nozzle_diameter = std::max(max_nozzle_diameter, dmr);
         }
 
-        auto validate_extrusion_width = [/*min_nozzle_diameter,*/ max_nozzle_diameter](
+        auto validate_extrusion_width = [min_nozzle_diameter, max_nozzle_diameter](
                                             const Domain::ConfigView& config,
                                             const char* opt_key,
                                             double layer_height,
                                             Error& error
                                         ) -> bool
         {
-            // This may change in the future, if we switch to "extrusion width wrt. nozzle diameter"
-            // instead of currently used logic "extrusion width wrt. layer height", see GH issues #1923 #2829.
-            // 	double extrusion_width_min = config.get_abs_value(opt_key, min_nozzle_diameter);
-            // 	double extrusion_width_max = config.get_abs_value(opt_key, max_nozzle_diameter);
-            double extrusion_width_min =
-                config.get<Domain::FloatOrPercentage>(opt_key).get_abs_value(layer_height);
-            double extrusion_width_max = extrusion_width_min;
+            const double extrusion_width_min =
+                config.get<Domain::FloatOrPercentage>(opt_key).get_abs_value(min_nozzle_diameter);
+            const double extrusion_width_max =
+                config.get<Domain::FloatOrPercentage>(opt_key).get_abs_value(max_nozzle_diameter);
             if (extrusion_width_min == 0) {
                 // Default "auto-generated" extrusion width is always valid.
             } else if (extrusion_width_min <= layer_height) {

@@ -57,7 +57,7 @@ Flow Flow::new_from_config_width(FlowRole role, const Domain::FloatOrPercentage 
         w = auto_extrusion_width(role, nozzle_diameter);
     } else {
         // If user set a manual value, use it.
-        w = float(width.get_abs_value(height));
+        w = float(width.get_abs_value(nozzle_diameter));
     }
     
     return Flow(w, height, rounded_rectangle_extrusion_spacing(w, height), nozzle_diameter, false);
