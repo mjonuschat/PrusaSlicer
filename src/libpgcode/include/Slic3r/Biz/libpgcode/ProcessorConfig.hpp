@@ -41,6 +41,8 @@ struct MachineLimitsConfig
     std::vector<float> max_acceleration_retracting;
     std::vector<float> max_acceleration_travel;
 
+    std::vector<float> max_junction_deviation;
+
     std::vector<float> min_travel_rate;
     std::vector<float> min_extruding_rate;
 

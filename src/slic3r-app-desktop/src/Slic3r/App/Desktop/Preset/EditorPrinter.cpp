@@ -592,6 +592,9 @@ PageShp EditorPrinter::build_kinematics_page()
             append_option_line(optgroup, "machine_max_jerk_" + axis);
         }
 
+    optgroup = page->new_optgroup(_L("Junction deviation"));
+        append_option_line(optgroup, "machine_max_junction_deviation");
+
         if (m_supports_min_feedrates) {
             optgroup = page->new_optgroup(_L("Minimum feedrates"));
             append_option_line(optgroup, "machine_min_extruding_rate");

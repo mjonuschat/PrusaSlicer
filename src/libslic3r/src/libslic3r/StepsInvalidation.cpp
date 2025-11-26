@@ -336,6 +336,7 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"machine_max_jerk_y", steps({propagate(psGCodeExport)})},
     {"machine_max_jerk_z", steps({propagate(psGCodeExport)})},
     {"machine_max_jerk_e", steps({propagate(psGCodeExport)})},
+    {"machine_max_junction_deviation", steps({propagate(psGCodeExport)})},
     {"machine_min_extruding_rate", steps({propagate(psGCodeExport)})},
     {"machine_min_travel_rate", steps({propagate(psGCodeExport)})},
     {"max_fan_speed", steps({propagate(psGCodeExport)})},

@@ -600,6 +600,7 @@ namespace DoExport {
         ret.max_acceleration_extruding = double_to_float(config.get<std::vector<double>>("machine_max_acceleration_extruding"));
         ret.max_acceleration_retracting = double_to_float(config.get<std::vector<double>>("machine_max_acceleration_retracting"));
         ret.max_acceleration_travel = double_to_float(config.get<std::vector<double>>("machine_max_acceleration_travel"));
+        ret.max_junction_deviation = double_to_float(config.get<std::vector<double>>("machine_max_junction_deviation"));
         ret.min_travel_rate = double_to_float(config.get<std::vector<double>>("machine_min_travel_rate"));
         ret.min_extruding_rate = double_to_float(config.get<std::vector<double>>("machine_min_extruding_rate"));
         return ret;
@@ -769,7 +770,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
                 failed_config_keys,
                 {},
                 Biz::Slicing::PlaceholderParserErrorPayload{m_placeholder_parser_integration.failed_templates}
-        }}; 
+        }};
     }
 
     BOOST_LOG_TRIVIAL(debug) << "Start processing gcode, " << log_memory_info();
@@ -1069,6 +1070,7 @@ void GCodeGenerator::_do_export(
     print.throw_if_canceled();
 
     m_enable_cooling_markers = true;
+    m_writer.apply_print_config(print.config());
 
     m_volumetric_speed = DoExport::autospeed_volumetric_limit(print);
     print.throw_if_canceled();
@@ -1803,7 +1805,7 @@ std::string GCodeGenerator::placeholder_parser_process(
 
         return output;
     } 
-    catch (const std::runtime_error& err) 
+    catch (const std::runtime_error& err)
     {
         // Collect the names of failed template substitutions for error reporting.
         auto it = ppi.failed_templates.find(name);
@@ -1931,6 +1933,12 @@ void GCodeGenerator::print_machine_envelope(GCodeOutputStream &file, const Print
             print.config().get<std::vector<double>>("machine_max_jerk_y").front() * factor,
             print.config().get<std::vector<double>>("machine_max_jerk_z").front() * factor,
             print.config().get<std::vector<double>>("machine_max_jerk_e").front() * factor);
+
+        if (flavor == GCodeFlavor::gcfMarlinFirmware) {
+            // New Marlin uses M205 J[mm] for junction deviation (only apply if it is > 0)
+            file.write_format(writer().set_junction_deviation(print.config().get<std::vector<double>>("machine_max_junction_deviation").front()).c_str());
+        }
+
         if (flavor != GCodeFlavor::gcfRepRapFirmware)
             file.write_format("M205 S%d T%d ; sets the minimum extruding and travel feed rate, mm/sec\n",
                 int(print.config().get<std::vector<double>>("machine_min_extruding_rate").front() + 0.5),

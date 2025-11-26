@@ -77,6 +77,12 @@ float TimeProcessor::retract_acceleration(TimeMode mode) const
     return (id < machines.size()) ? machines[id].retract_acceleration : DEFAULT_RETRACT_ACCELERATION;
 }
 
+float TimeProcessor::junction_deviation(TimeMode mode) const
+{
+    size_t id = size_t(mode);
+    return (id < machine_limits.max_junction_deviation.size()) ? machine_limits.max_junction_deviation[id] : 0.f;
+}
+
 float TimeProcessor::axis_max_acceleration(TimeMode mode, Axis axis) const
 {
     switch (axis)
