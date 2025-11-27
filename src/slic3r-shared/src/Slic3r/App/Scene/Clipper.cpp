@@ -227,7 +227,7 @@ bool Clipper::unproject_on_cut_plane(
     Vec3d point     = ray.origin;
     Vec3d direction = ray.direction;
     Vec3d hit;
-    Vec3d normal = -m_clp->get_normal().cast<double>();
+    Vec3d normal = -m_clp->get_normal();
     double den   = normal.dot(direction);
     if (den != 0.) {
         double t = (-m_clp->get_offset() - normal.dot(point)) / den;

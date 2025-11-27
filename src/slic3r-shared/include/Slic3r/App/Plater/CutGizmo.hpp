@@ -95,6 +95,7 @@ private:
     void update_scene_nodes();
 
     void build_cut_plane_node(Scene::NodeBuilder& builder);
+    void build_cut_line_node(Scene::NodeBuilder& builder);
     void build_handles_nodes(Scene::NodeBuilder& builder);
     void build_connector_node(const CutConnector& connector);
     void get_connector_geometry(
@@ -122,7 +123,7 @@ private:
     void update_dialog_state();
 
     void update_nodes_on_mode_changed();
-    void update_clipper_presenter(bool force_reset_ignored=true);
+    void update_clipper_presenter(bool force_reset_ignored = true);
 
     void build_cut_part_mesh(
         CutPartNodeTag::Type type,
@@ -194,10 +195,17 @@ private:
     double snap_bulge_proportion() const;
     double snap_space_proportion() const;
 
+    bool cut_line_processing() const;
+    void discard_cut_line_processing();
+    Scene::GizmoActivationState
+        on_mouse_for_cut_line(Scene::GizmoEventContext& ctx, bool only_active);
+    void update_cut_line_trafo();
+
 private:
     std::unique_ptr<CutDialog> m_dialog;
 
-    struct SolidAABBMesh {
+    struct SolidAABBMesh
+    {
         std::shared_ptr<AABBMesh> aabb_mesh;
         // Mesh transformation including tarnsformation of volume and instance
         Domain::Transform3d trafo;
@@ -205,6 +213,7 @@ private:
         // intersects the mesh if it is transformed into world by trafo.
         bool intersects_line(Domain::Vec3d point, Domain::Vec3d direction) const;
     };
+
     // solid object meshes used for groove validation
     // contains just a solid volumes from the selected instance
     std::vector<SolidAABBMesh> m_solid_meshes;
@@ -218,6 +227,7 @@ private:
     Scene::Node* m_handles_node{nullptr};
     Scene::Node* m_plane_node{nullptr};
     Scene::Node* m_connectors_node{nullptr};
+    Scene::Node* m_cut_line_node{nullptr};
 
     Domain::Vec3d m_plane_center;
     Domain::Vec3d m_old_center;
@@ -238,6 +248,7 @@ private:
     bool m_is_plane_hovered{false};
     std::optional<size_t> m_hovered_connector_id{std::nullopt};
     bool m_is_connector_handled{false};
+    bool m_is_cut_line_processing{false};
     Vec3d m_btn_down_pos{Vec3d::Zero()};
 
     bool m_can_flip_plane{false}; // indicates if plane was just clicked without dragging
@@ -329,6 +340,16 @@ private:
 
     double m_snap_bulge_proportion{0.15};
     double m_snap_space_proportion{0.30};
+
+    Vec3d m_line_beg{Vec3d::Zero()};
+    Vec3d m_line_end{Vec3d::Zero()};
+
+    struct MousePos {
+        int x;
+        int y;
+    };
+    MousePos mouse_beg;
+    MousePos mouse_end;
 };
 
 } // namespace Slic3r::App::Plater

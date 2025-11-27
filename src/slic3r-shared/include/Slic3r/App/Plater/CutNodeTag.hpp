@@ -30,6 +30,14 @@ struct CutPlaneNodeTag : public CutNodeTag
 };
 
 /**
+ * @brief Node tag for CutGizmo used to represent the cutting line
+ */
+struct CutLineNodeTag : public CutNodeTag
+{
+    explicit CutLineNodeTag() : CutNodeTag() {}
+};
+
+/**
  * @brief Node tag for CutGizmo representing a part of the cut object.
  *
  * This tag identifies nodes that belong to a specific part of the

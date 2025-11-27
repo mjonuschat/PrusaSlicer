@@ -45,6 +45,7 @@ static const ColorRGBA LOWER_PART_COLOR    = ColorRGBA(1.0f, 0.0f, 1.0f, 1.0f);
 static const ColorRGBA DEF_PART_COLOR      = ColorRGBA(0.9f, 0.9f, 0.9f, 1.0f);
 static const ColorRGBA CUT_PLANE_DEF_COLOR = ColorRGBA(0.9f, 0.9f, 0.9f, 0.5f);
 static const ColorRGBA CUT_PLANE_ERR_COLOR = ColorRGBA(1.0f, 0.8f, 0.8f, 0.5f);
+static const ColorRGBA CUT_LINE_COLOR      = ColorRGBA::YELLOW();
 
 // connector colors
 static const ColorRGBA PLAG_COLOR           = ColorRGBA::YELLOW();
@@ -707,13 +708,17 @@ void CutGizmo::dragging_handle_rotation(const Domain::Line3d& mouse_ray)
     if (m_angle < 0.0)
         m_angle += two_pi;
 
+    if (is_planar_mode()) {
+        update_clipper_presenter();
+    }
     update_cut_plane_trafo();
 }
 
 Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
-    const auto event_type   = ctx.mouse_event().type();
-    const auto event_button = ctx.mouse_event().button();
+    const auto event_type          = ctx.mouse_event().type();
+    const auto event_key_modifiers = ctx.mouse_event().key_modifiers();
+    const auto event_button        = ctx.mouse_event().button();
     if (event_type != Platform::MouseEvent::Type::ButtonDown
         && event_type != Platform::MouseEvent::Type::Move
         && event_type != Platform::MouseEvent::Type::ButtonUp)
@@ -733,6 +738,10 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
 
     if (m_dialog->connectors_editing) {
         return on_mouse_for_connectors(ctx, only_active);
+    }
+
+    if (m_is_cut_line_processing) {
+        return on_mouse_for_cut_line(ctx, only_active);
     }
 
     const auto& pick_ray = ctx.pick_ray();
@@ -758,6 +767,14 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         {
             m_is_plane_hovered          = true;
             m_translation_ray.direction = m_rotation_m * Vec3d::UnitZ();
+        } else if (event_button == Platform::MouseButton::Left
+                   && event_key_modifiers & Platform::KeyModifiers(Platform::KeyModifier::Shift)
+                   && !m_is_cut_line_processing)
+        {
+            // #et_help
+            m_is_cut_line_processing    = true;       
+            m_line_beg = pick_ray.origin;     
+            return Scene::GizmoActivationState::Active;
         } else {
             on_stop_dragging();
             return Scene::GizmoActivationState::Inactive;
@@ -768,7 +785,9 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
     }
 
     double t;
-    if (!m_translation_ray.closest_point_from_ray(pick_ray, t) && !m_is_connector_handled) {
+    if (!m_translation_ray.closest_point_from_ray(pick_ray, t)
+        && !m_is_connector_handled)
+    {
         m_dragging = false;
         return Scene::GizmoActivationState::Inactive;
     }
@@ -783,6 +802,14 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         return Scene::GizmoActivationState::Active;
     }
 
+    if (event_type == Platform::MouseEvent::Type::ButtonDown
+        && m_is_cut_line_processing)
+    {
+        // #et_help to detect m_line_beg 
+        m_line_beg = pick_ray.origin;
+        return Scene::GizmoActivationState::Active;
+    }
+
     if (!m_dragging)
         return Scene::GizmoActivationState::Inactive;
 
@@ -791,6 +818,9 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
             Vec3d delta = m_translation_ray.point_at(t) - m_translation_ray.point_at(m_start_t);
             m_start_t   = t;
             set_plane_center(m_plane_center + delta, true);
+            if (is_planar_mode()) {
+                update_clipper_presenter();
+            }
             if (m_hovered_handle.is_move_x()) {
                 update_cut_plane_trafo();
             }
@@ -808,7 +838,7 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
         if (m_can_flip_plane) {
             flip_cut_plane();
         } else {
-            update_cut_plane_mesh();
+            preprocess_cut();
         }
 
         return Scene::GizmoActivationState::Done;
@@ -913,13 +943,10 @@ CutGizmo::on_mouse_for_connectors(Scene::GizmoEventContext& ctx, bool only_activ
         }
     }
 
-    if (event_type == Platform::MouseEvent::Type::ButtonUp) {
-        if (m_is_connector_handled) {
-            m_is_connector_handled = m_dragging = false;
-            m_btn_down_pos                      = Vec3d::Zero();
-            return Scene::GizmoActivationState::Done;
-        } else {
-        }
+    if (event_type == Platform::MouseEvent::Type::ButtonUp && m_is_connector_handled) {
+        m_is_connector_handled = m_dragging = false;
+        m_btn_down_pos                      = Vec3d::Zero();
+        return Scene::GizmoActivationState::Done;
     }
 
     return Scene::GizmoActivationState();
@@ -1254,6 +1281,28 @@ void CutGizmo::build_cut_plane_node(Scene::NodeBuilder& builder)
         .set_mesh(geom, material, int(0));
 }
 
+void CutGizmo::build_cut_line_node(Scene::NodeBuilder& builder)
+{
+    SPDLOG_DEBUG("Cut element type:Cut line");
+
+    // #et_help
+
+    auto material = Render::Material{}
+                        .set_shader(m_device.context().shader_manager().shader("flat"))
+                        .set_uniform("uniform_color", CUT_LINE_COLOR);
+
+    builder.set_debug_name("cut: cut lie:")
+        .set_tag(CutLineNodeTag())
+        .set_mesh(m_data_factory.geometry(Scene::GeometryDataId::Segment), material, int(0));
+}
+
+void CutGizmo::update_cut_line_trafo()
+{
+    // #et_help 
+
+//    m_cut_line_node->set_local_transform();
+}
+
 void CutGizmo::build_handles_nodes(Scene::NodeBuilder& builder)
 {
     SPDLOG_DEBUG("build_volume type:Cut plane handles");
@@ -1446,6 +1495,10 @@ void CutGizmo::update_cut_plane_mesh()
     if (is_planar_mode()) {
         update_clipper_presenter();
     }
+    ColorRGBA cp_clr          = can_perform_cut() ? CUT_PLANE_DEF_COLOR : CUT_PLANE_ERR_COLOR;
+    Render::Material material = m_plane_node->render_component()->material();
+    material.set_uniform("uniform_color", cp_clr).set_transparent(cp_clr.is_transparent());
+    m_plane_node->set_material_override(material);
 
     preprocess_cut();
 }
@@ -1457,9 +1510,11 @@ void CutGizmo::update_cut_plane_trafo()
     normal.normalize();
     m_cut_normal = normal;
 
+    // bool has_error            = !can_perform_cut()/* || !is_valid_groove()*/;
+    // ColorRGBA cp_clr          = has_error ? CUT_PLANE_ERR_COLOR : CUT_PLANE_DEF_COLOR;
+    ColorRGBA cp_clr = can_perform_cut() ? CUT_PLANE_DEF_COLOR : CUT_PLANE_ERR_COLOR;
+
     Render::Material material = m_plane_node->render_component()->material();
-    ColorRGBA cp_clr =
-        can_perform_cut() && is_valid_groove() ? CUT_PLANE_DEF_COLOR : CUT_PLANE_ERR_COLOR;
     material.set_uniform("uniform_color", cp_clr).set_transparent(cp_clr.is_transparent());
     m_plane_node->set_material_override(material);
 
@@ -1744,9 +1799,6 @@ void CutGizmo::update_clipper_presenter(bool force_reset_ignored)
     if (!is_planar_mode())
         return;
 
-    Vec3d normal = m_cut_normal;
-    m_clp_normal = normal;
-
     auto rotate_vec3d_around_plane_center = [&](Vec3d& vec) -> void
     {
         vec = Transformation(
@@ -1757,11 +1809,13 @@ void CutGizmo::update_clipper_presenter(bool force_reset_ignored)
                   .get_matrix()
             * vec;
     };
+
     // calculate normal and offset for clipping plane
     Vec3d beg = m_bb_center;
     beg[Z] -= m_radius;
     rotate_vec3d_around_plane_center(beg);
 
+    Vec3d normal  = m_cut_normal;
     double offset = normal.dot(m_plane_center);
     double dist   = normal.dot(beg);
 
@@ -1774,11 +1828,11 @@ void CutGizmo::update_clipper_presenter(bool force_reset_ignored)
         beg[Z] += m_radius;
         rotate_vec3d_around_plane_center(beg);
 
-        m_clp_normal = normal;
-        offset       = normal.dot(m_plane_center);
-        dist         = normal.dot(beg);
+        offset = normal.dot(m_plane_center);
+        dist   = normal.dot(beg);
     }
 
+    m_clp_normal = normal;
     m_clipper_presenter.update_clipper(m_clp_normal, offset, dist, force_reset_ignored);
 
     put_connectors_on_cut_plane(m_clp_normal, offset);
@@ -1822,6 +1876,7 @@ void CutGizmo::init_scene_nodes()
 
     builder.child([&](Scene::NodeBuilder& bldr) { build_cut_plane_node(bldr); });
     builder.child([&](Scene::NodeBuilder& bldr) { build_handles_nodes(bldr); });
+    builder.child([&](Scene::NodeBuilder& bldr) { build_cut_line_node(bldr); });
 
     scene.add_child(builder.build().release(), &scene.root());
     m_main_node    = scene.root().children().back().get();
@@ -1836,6 +1891,11 @@ void CutGizmo::init_scene_nodes()
 
     m_plane_node = m_main_node->query_first(
         [](const Scene::Node* n) -> bool { return n->tag_of_type<CutPlaneNodeTag>() != nullptr; },
+        true
+    );
+
+    m_cut_line_node = m_main_node->query_first(
+        [](const Scene::Node* n) -> bool { return n->tag_of_type<CutLineNodeTag>() != nullptr; },
         true
     );
 
@@ -1892,6 +1952,8 @@ bool CutGizmo::can_perform_cut() const
 {
     if (!m_invalid_connectors_idxs.empty() || m_dialog->connectors_editing)
         return false;
+
+    return is_planar_mode() ? m_clipper_presenter.has_valid_contour() : is_valid_groove();
 
     if (!is_planar_mode())
         return is_valid_groove();
@@ -2997,6 +3059,88 @@ double CutGizmo::connector_depth_tolerance() const
 double CutGizmo::connector_size_tolerance() const
 {
     return m_dialog->connector_size_tolerance;
+}
+
+bool CutGizmo::cut_line_processing() const
+{
+    return !m_line_beg.isApprox(Vec3d::Zero());
+}
+
+void CutGizmo::discard_cut_line_processing()
+{
+    m_line_beg = m_line_end = Vec3d::Zero();
+}
+
+Scene::GizmoActivationState
+CutGizmo::on_mouse_for_cut_line(Scene::GizmoEventContext& ctx, bool only_active)
+{
+    ASSERT(m_is_cut_line_processing);
+
+    const auto event_type   = ctx.mouse_event().type();
+    const auto event_button = ctx.mouse_event().button();
+
+    bool shift_down =
+        (ctx.mouse_event().key_modifiers() & Platform::KeyModifiers(Platform::KeyModifier::Shift))
+        != 0;
+
+    if (!shift_down) {
+        m_is_cut_line_processing = false;
+        return Scene::GizmoActivationState::Inactive;
+    }
+
+    const auto& pick_ray = ctx.pick_ray();
+    m_line_end = pick_ray.origin;
+
+    // #et_help to detect m_line_end
+
+    if (event_button == Platform::MouseButton::Left
+        && event_type == Platform::MouseEvent::Type::ButtonUp)
+    {
+        Vec3d line_dir = m_line_end - m_line_beg;
+        double len     = line_dir.norm();
+         if (len < 0.0) {
+         m_is_cut_line_processing = false;
+         return Scene::GizmoActivationState::Done;
+        }
+
+        Vec3d dir = m_scene_presenter.scene().camera().forward();
+        Vec3d cross_dir = line_dir.cross(dir).normalized();
+        Eigen::Quaterniond q;
+        Transform3d m = Transform3d::Identity();
+        m.matrix().block(0, 0, 3, 3) =
+            q.setFromTwoVectors(Vec3d::UnitZ(), cross_dir).toRotationMatrix();
+
+        const Vec3d new_plane_center = m_bb_center + cross_dir * cross_dir.dot(m_line_end - m_bb_center);
+        // update transformed bb
+        const auto new_tbb    = transformed_bounding_box(new_plane_center, m);
+        Vec3d instance_offset = m_selected_instance->get_offset();
+        instance_offset[Z] += 0.; // sla_shift_z();
+
+        const Vec3d trans_center_pos = m.inverse() * (new_plane_center - instance_offset)
+            + Algorithms::BoundingBox::center(new_tbb);
+        if (new_tbb.contains(trans_center_pos)) {
+            m_transformed_bounding_box = new_tbb;
+            set_plane_center(new_plane_center);
+            m_start_dragging_m = m_rotation_m = m;
+            update_cut_plane_mesh();
+            update_cut_plane_trafo();
+        }
+
+        m_is_cut_line_processing = false;
+
+        if (!is_planar_mode()) {
+            m_groove_editing = false;
+            reset_preprocess_cut();
+        }
+        return Scene::GizmoActivationState::Done;
+    }
+
+    Vec3d line_dir = m_line_end - m_line_beg;
+    if (line_dir.norm() > 3.0) {
+        update_cut_line_trafo();
+    }
+
+    return Scene::GizmoActivationState();
 }
 
 } // namespace Slic3r::App::Plater
