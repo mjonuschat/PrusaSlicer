@@ -122,22 +122,22 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
 
     auto add_btn = [this, buttons, btn_font](
                        ScalableButton** btn,
-                       int& btn_id,
                        const std::string& icon_name,
                        Biz::Preset::PresetDiffOperation close_act,
                        const wxString& label,
-                       bool process_enable = true
+                       bool process_enable      = true,
+                       std::function<void()> fn = nullptr
                    )
     {
         *btn = new ScalableButton(
             this,
-            btn_id = NewControlId(),
+            wxID_ANY,
             icon_name,
             label,
-            wxDefaultSize,
+            wxSize(wxDefaultCoord, 30),
             wxDefaultPosition,
-            wxBORDER_DEFAULT,
-            24
+            wxNO_BORDER,
+            20
         );
 
         buttons->Add(*btn, 1, wxLEFT, 5);
@@ -145,13 +145,25 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
 
         (*btn)->Bind(
             wxEVT_BUTTON,
-            [this, close_act](wxEvent&) { process_button_click(close_act); }
+            [this, close_act, fn](wxEvent&)
+            {
+                if (fn) {
+                    fn();
+                } else {
+                    process_button_click(close_act);
+                }
+            }
         );
-        if (process_enable)
-            (*btn)->Bind(
-                wxEVT_UPDATE_UI,
-                [this](wxUpdateUIEvent& evt) { evt.Enable(m_tree->has_selection()); }
-            );
+
+        (*btn)->Bind(
+            wxEVT_UPDATE_UI,
+            [this, process_enable](wxUpdateUIEvent& evt)
+            {
+                if (process_enable)
+                    evt.Enable(m_tree->has_selection());
+            }
+        );
+
         (*btn)->Bind(
             wxEVT_LEAVE_WINDOW,
             [this](wxMouseEvent& e)
@@ -171,97 +183,48 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
         );
     };
 
-    m_back_btn = new ScalableButton(
-        this,
-        wxID_ANY,
+    add_btn(
+        &m_back_btn,
         "chevron_left",
+        Biz::Preset::PresetDiffOperation::Undef,
         _L("Back"),
-        wxDefaultSize,
-        wxDefaultPosition,
-        wxBORDER_DEFAULT,
-        24
-    );
-    buttons->Add(m_back_btn, 1, wxLEFT, 5);
-    m_back_btn->SetFont(btn_font);
-    m_back_btn->Bind(
-        wxEVT_BUTTON,
-        [this](wxEvent&)
+        false,
+        [this]()
         {
             m_exit_queue++;
             show_current_diffs();
         }
     );
 
-    // "Transfer" / "Keep" button
-    // if (ActionButtons::TRANSFER & m_buttons)
     if (m_config_new) {
-        // const PresetCollection*
-        // switched_presets = type == Preset::TYPE_INVALID ? nullptr : wxGetApp().get_tab(type)->get_presets();
-        // if (dependent_presets
-        // && switched_presets
-        // && (type == dependent_presets->type() ?
-        // dependent_presets->get_edited_preset().printer_technology()
-        // == dependent_presets->find_preset(new_selected_preset)->printer_technology() :
-        // switched_presets->get_edited_preset().printer_technology()
-        // == switched_presets->find_preset(new_selected_preset)->printer_technology()))
         add_btn(
             &m_transfer_btn,
-            m_transfer_btn_id,
             "paste_menu",
             Biz::Preset::PresetDiffOperation::Transfer,
-            /*switched_presets->get_edited_preset().name == new_selected_preset ? _L("Keep") : */
             _L("Transfer")
         );
     }
-    // if (!m_transfer_btn && (ActionButtons::KEEP & m_buttons))
-    // add_btn(&m_transfer_btn, m_transfer_btn_id, "paste_menu", Biz::Preset::PresetDiffOperation::Transfer, _L("Keep"));
 
-    { // "Don't save" / "Discard" button
-        std::string btn_icon = /*(ActionButtons::DONT_SAVE & m_buttons) ?
-            "" :
-            (dependent_presets || (ActionButtons::KEEP & m_buttons)) ?
-            "switch_presets" :*/
-            "exit";
-        wxString btn_label =
-            /* (ActionButtons::DONT_SAVE & m_buttons) ? _L("Don't save") : */ _L("Discard");
-        add_btn(
-            &m_discard_btn,
-            m_continue_btn_id,
-            btn_icon,
-            Biz::Preset::PresetDiffOperation::Discard,
-            btn_label,
-            false
-        );
-    }
+    add_btn(
+        &m_discard_btn,
+        "exit",
+        Biz::Preset::PresetDiffOperation::Discard,
+        _L("Discard"),
+        false
+    );
 
     // "Save" button
-    // if (ActionButtons::SAVE & m_buttons)
     add_btn(
         &m_save_btn,
-        m_save_btn_id,
         "save",
         Biz::Preset::PresetDiffOperation::Save,
         _L("Save"),
         false // Temporary: until save functionality is implemented
     );
-    m_save_btn->Enable(false);// Temporary: until save functionality is implemented
+    m_save_btn->Enable(false); // Temporary: until save functionality is implemented
 
-    ScalableButton* cancel_btn = new ScalableButton(
-        this,
-        wxID_CANCEL,
-        "cross",
-        _L("Cancel"),
-        wxDefaultSize,
-        wxDefaultPosition,
-        wxBORDER_DEFAULT,
-        24
-    );
-    buttons->Add(cancel_btn, 1, wxLEFT | wxRIGHT, 5);
-    cancel_btn->SetFont(btn_font);
-    cancel_btn->Bind(
-        wxEVT_BUTTON,
-        [this](wxEvent&) { process_button_click(Biz::Preset::PresetDiffOperation::Undef); }
-    );
+    ScalableButton* cancel_btn;
+    add_btn(&cancel_btn, "cross", Biz::Preset::PresetDiffOperation::Undef, _L("Cancel"), false);
 }
 
 void UnsavedChangesDialog::compare()

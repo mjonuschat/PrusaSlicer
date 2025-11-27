@@ -126,8 +126,6 @@ void WidgetsConfig::init_ui_colours()
     m_color_window_default          = is_dark_mode ? wxColour(43, 43, 43)    : wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW);
 }
 
-#ifdef _WIN32
-
 void WidgetsConfig::force_colors_update(const bool is_dark, const std::vector<wxWindow*>& wins )
 {
     m_is_dark = is_dark;
@@ -166,7 +164,6 @@ void WidgetsConfig::force_menu_update(const bool is_sys_menu_enabled)
     NppDarkMode::SetSystemMenuForApp(is_sys_menu_enabled);
 }
 #endif //_MSW_DARK_MODE
-#endif //_WIN32
 
 unsigned WidgetsConfig::get_colour_approx_luma(const wxColour& colour)
 {
@@ -290,7 +287,6 @@ int WidgetsConfig::em_unit(wxWindow* win) const
 
 void WidgetsConfig::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, bool just_font/* = false*/)
 {
-#ifdef _WIN32
     bool is_focused_button = false;
     bool is_default_button = false;
     if (wxButton* btn = dynamic_cast<wxButton*>(window)) {
@@ -330,11 +326,14 @@ void WidgetsConfig::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, b
     else if (wxCheckListBox* list = dynamic_cast<wxCheckListBox*>(window)) {
         list->SetWindowStyle(list->GetWindowStyle() | wxBORDER_SIMPLE);
         list->SetBackgroundColour(highlited ? m_color_highlight_default : m_color_window_default);
+#ifdef _WIN32
+        // only Window has OwnerDrawn items
         for (size_t i = 0; i < list->GetCount(); i++)
             if (wxOwnerDrawn* item = list->GetItem(i)) {
                 item->SetBackgroundColour(highlited ? m_color_highlight_default : m_color_window_default);
                 item->SetTextColour(m_color_label_default);
             }
+#endif // _WIN32
         return;
     }
     else if (dynamic_cast<wxListBox*>(window))
@@ -344,11 +343,9 @@ void WidgetsConfig::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, b
         window->SetBackgroundColour(highlited ? m_color_highlight_default : m_color_window_default);
     if (!is_focused_button && !is_default_button)
         window->SetForegroundColour(m_color_label_default);
-#endif
 }
 
 // recursive function for scaling fonts for all controls in Window
-#ifdef _WIN32
 void WidgetsConfig::update_dark_children_ui(wxWindow* window, bool just_buttons_update/* = false*/)
 {
     bool is_btn = dynamic_cast<wxButton*>(window) != nullptr;
@@ -360,19 +357,15 @@ void WidgetsConfig::update_dark_children_ui(wxWindow* window, bool just_buttons_
         update_dark_children_ui(child);
     }
 }
-#endif
 
 // Note: Don't use this function for Dialog contains ScalableButtons
 void WidgetsConfig::UpdateDlgDarkUI(wxDialog* dlg, bool just_buttons_update/* = false*/)
 {
-#ifdef _WIN32
     update_dark_children_ui(dlg, just_buttons_update);
-#endif
 }
 
 void WidgetsConfig::UpdateDVCDarkUI(wxDataViewCtrl* dvc, bool highlited/* = false*/)
 {
-#ifdef _WIN32
     UpdateDarkUI(dvc, highlited ? dark_mode() : false);
 #ifdef _MSW_DARK_MODE
     if (!dvc->HasFlag(wxDV_NO_HEADER))
@@ -382,12 +375,10 @@ void WidgetsConfig::UpdateDVCDarkUI(wxDataViewCtrl* dvc, bool highlited/* = fals
         dvc->SetAlternateRowColour(m_color_highlight_default);
     if (dvc->GetBorder() != wxBORDER_SIMPLE)
         dvc->SetWindowStyle(dvc->GetWindowStyle() | wxBORDER_SIMPLE);
-#endif
 }
 
 void WidgetsConfig::UpdateAllStaticTextDarkUI(wxWindow* parent)
 {
-#ifdef _WIN32
     UpdateDarkUI(parent);
 
     auto children = parent->GetChildren();
@@ -395,7 +386,6 @@ void WidgetsConfig::UpdateAllStaticTextDarkUI(wxWindow* parent)
         if (dynamic_cast<wxStaticText*>(child))
             child->SetForegroundColour(m_color_label_default);
     }
-#endif
 }
 
 void WidgetsConfig::SetWindowVariantForButton(wxButton* btn)

@@ -71,10 +71,6 @@ private:
     ScalableButton* m_transfer_btn{nullptr};
     ScalableButton* m_discard_btn{nullptr};
 
-    int m_save_btn_id{wxID_ANY};
-    int m_transfer_btn_id{wxID_ANY};
-    int m_continue_btn_id{wxID_ANY};
-
     Biz::Preset::PresetSelectionNames m_preset_names;
     Biz::Preset::PresetSelectionNames m_preset_names_new;
     Domain::PrinterTechnology m_printer_technology{Domain::PrinterTechnology::FFF};

@@ -61,9 +61,7 @@ class WidgetsConfig {
 
 	static WidgetsConfig* m_wc_instancePtr;
 
-#ifdef _WIN32
     void update_dark_children_ui(wxWindow* window, bool just_buttons_update = false);
-#endif
 
 public:
 
@@ -89,13 +87,11 @@ public:
 	void            update_fonts(const wxFont& normal_font, const int em);
 	void            force_fonts_update(wxWindow* win, bool apply_for_children = false);
 
-#ifdef _WIN32
     void            force_colors_update(const bool is_dark, const std::vector<wxWindow*>& wins);
 #ifdef _MSW_DARK_MODE
     void            force_menu_update(const bool is_sys_menu_enabled);
     void            update_scrolls(wxWindow* window);
 #endif //_MSW_DARK_MODE
-#endif //_WIN32
 
     static unsigned get_colour_approx_luma(const wxColour &colour);
 

@@ -18,7 +18,9 @@ DiffViewCtrl::DiffViewCtrl(wxWindow* parent, wxSize size) :
         wxDefaultPosition,
         size,
         wxDV_VARIABLE_LINE_HEIGHT
+#ifndef __WXOSX__
             | wxDV_ROW_LINES
+#endif
 #ifdef _WIN32
             | wxBORDER_SIMPLE
 #endif

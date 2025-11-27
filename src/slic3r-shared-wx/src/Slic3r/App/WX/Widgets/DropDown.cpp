@@ -514,7 +514,7 @@ void DropDown::mouseDown(wxMouseEvent& event)
     slider_grabbed = rect.Contains(event.GetPosition());
 
     pressedDown = true;
-    CaptureMouse();
+//    CaptureMouse();
     dragStart   = event.GetPosition();
 }
 
@@ -524,8 +524,8 @@ void DropDown::mouseReleased(wxMouseEvent& event)
         dragStart = wxPoint();
         pressedDown = false;
         slider_grabbed = false;
-        if (HasCapture())
-            ReleaseMouse();
+        //if (HasCapture())
+        //    ReleaseMouse();
         if (hover_item >= 0) { // not moved
 #ifndef _WIN32
             // To avoid cases, when some dialog appears after item selection, but DropDown is still shown
