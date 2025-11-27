@@ -909,8 +909,17 @@ PrintAndObjectSteps get_model_invalidated_steps(
     PrintObjectSteps object_steps;
 
     if (supports_differ || model_custom_supports_data_changed(model_object, model_object_new)) {
-        // Invalidate just the supports step.
-        object_steps.insert(posSupportMaterial);
+        const std::vector<SlicingSync::Step> steps{SlicingSync::propagate(posSupportMaterial)};
+        for (const SlicingSync::Step& step : steps) {
+            std::visit(Domain::overloaded{
+                [&](const PrintObjectStep& step){
+                    object_steps.insert(step);
+                },
+                [&](const PrintStep& step){
+                    print_steps.insert(step);
+                },
+            }, step);
+        }
     }
     if (model_custom_seam_data_changed(model_object, model_object_new)) {
         print_steps.insert(psGCodeExport);

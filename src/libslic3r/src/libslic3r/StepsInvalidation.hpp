@@ -11,6 +11,10 @@ InvalidatedSteps merge(const InvalidatedSteps& a, const InvalidatedSteps& b);
 
 InvalidatedSteps merge(const std::vector<InvalidatedSteps>& invalidated_steps);
 
+using Step = std::variant<PrintStep, PrintObjectStep>;
+
+std::vector<Step> propagate(Step step);
+
 PrintAndObjectSteps get_invalidated_steps(
     const PrintObjectRegions& current_regions,
     const PrintObjectRegions& next_regions
