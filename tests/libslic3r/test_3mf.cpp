@@ -156,7 +156,7 @@ SCENARIO("2D convex hull of sinking object", "[3mf]") {
             Domain::Polygon hull_2d = convex_hull_2d(*object, instance->get_transformation().get_matrix());
 
             // verify result
-            Points result = {
+            Points expected = {
                 { -91501496, -15914144 },
                 { 91501496, -15914144 },
                 { 91501496, 4243 },
@@ -166,20 +166,15 @@ SCENARIO("2D convex hull of sinking object", "[3mf]") {
                 { -91501496, 4243 }
             };
 
-            // Allow 1um error due to floating point rounding.
-            bool res = hull_2d.points.size() == result.size();
-            if (res)
-                for (size_t i = 0; i < result.size(); ++ i) {
-                    const Point &p1 = result[i];
-                    const Point &p2 = hull_2d.points[i];
-                    if (std::abs(p1.x() - p2.x()) > 1 || std::abs(p1.y() - p2.y()) > 1) {
-                        res = false;
-                        break;
-                    }
-                }
-
             THEN("2D convex hull should match with reference") {
-                REQUIRE(res);
+                REQUIRE(hull_2d.points.size() == expected.size());
+                for (size_t i = 0; i < expected.size(); ++ i) {
+                    const Point &p1 = expected[i];
+                    const Point &p2 = hull_2d.points[i];
+                    // Allow 3um error due to floating point rounding.
+                    CHECK(std::abs(p1.x() - p2.x()) <= 3);
+                    CHECK(std::abs(p1.y() - p2.y()) <= 3);
+                }
             }
         }
     }

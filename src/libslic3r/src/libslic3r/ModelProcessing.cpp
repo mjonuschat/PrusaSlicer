@@ -306,7 +306,6 @@ size_t split(Domain::ModelVolume* volume, unsigned int max_extruders)
             Algorithms::ModelObject::insert_volume(object, (++ivolume), *volume, std::move(mesh));
 
         object->volumes[ivolume]->set_offset(Domain::Vec3d::Zero());
-        Algorithms::ModelVolume::center_geometry_after_creation(*object->volumes[ivolume]);
         Algorithms::ModelVolume::translate(*object->volumes[ivolume], offset);
         object->volumes[ivolume]->name = name + "_" + std::to_string(idx + 1);
         object->volumes[ivolume]->volume_settings.overrides.set("extruder", auto_extruder_id(max_extruders, extruder_counter));

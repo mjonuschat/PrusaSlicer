@@ -27,7 +27,6 @@ Domain::ModelVolume* construct_ptr(Domain::ModelObject*, const Domain::TriangleM
 Domain::ModelVolume* construct_ptr(Domain::ModelObject*, Domain::TriangleMesh&&, Domain::ModelVolumeType);
 Domain::ModelVolume* construct_ptr(Domain::ModelObject*, const Domain::ModelVolume&, Domain::TriangleMesh&&);
 bool is_splittable(const Domain::ModelVolume&);
-void center_geometry_after_creation(Domain::ModelVolume&, bool);
 void calculate_convex_hull(Domain::ModelVolume&);
 } // namespace Slic3r::Biz::Algorithms::ModelVolume
 
@@ -63,7 +62,14 @@ public:
         std::string input_file;
         int object_idx{ -1 };
         int volume_idx{ -1 };
+
+        // PrusaSlicer 2.x used to center all loaded volume meshes around origin and kept this extra offset
+        // so reload from disk can use it. This centering is now removed and volume meshes retain their original
+        // coordinate system. We keep this variable for now, it is read from & saved into a 3MF, but currently
+        // not used. We will either need to use it to implement reload from disk for legacy projects,
+        // or decide that we want to drop it.
         Vec3d mesh_offset{ Vec3d::Zero() };
+
         Transformation transform;
         bool is_converted_from_inches{ false };
         bool is_converted_from_meters{ false };
@@ -333,7 +339,6 @@ private:
 
     friend void Slic3r::Biz::Algorithms::ModelObject::bake_xy_rotation_into_meshes(Domain::ModelObject&, size_t);
     friend bool Slic3r::Biz::Algorithms::ModelVolume::is_splittable(const Domain::ModelVolume&);
-    friend void Slic3r::Biz::Algorithms::ModelVolume::center_geometry_after_creation(Domain::ModelVolume&, bool);
     friend void Slic3r::Biz::Algorithms::ModelVolume::calculate_convex_hull(Domain::ModelVolume&);
     friend Domain::ModelVolume* Slic3r::Biz::Algorithms::ModelVolume::construct_ptr(Domain::ModelObject*, const Domain::TriangleMesh&, Domain::ModelVolumeType);
     friend Domain::ModelVolume* Slic3r::Biz::Algorithms::ModelVolume::construct_ptr(Domain::ModelObject*, Domain::TriangleMesh&&, Domain::ModelVolumeType);

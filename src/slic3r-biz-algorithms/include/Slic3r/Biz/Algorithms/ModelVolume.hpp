@@ -31,12 +31,6 @@ void mirror(Domain::ModelVolume& model_volume, Domain::Axis axis);
 
 bool is_splittable(const Domain::ModelVolume& model_volume);
 
-/**
- * Translates the mesh and the convex hull so that the origin of their vertices is in the center of this volume's bounding box.
- * Attention! This method may only be called just after ModelVolume creation! It must not be called once the TriangleMesh of this ModelVolume is shared!
- */
-void center_geometry_after_creation(Domain::ModelVolume& model_volume, bool update_source_offset = true);
-
 void calculate_convex_hull(Domain::ModelVolume& model_volume);
 
 // Returns the bbox of the given ModelVolume transformed by the given transformation
