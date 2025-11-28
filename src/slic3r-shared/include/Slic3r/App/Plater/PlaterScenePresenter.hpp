@@ -16,6 +16,7 @@
 #include "Slic3r/App/Scene/IProjectSceneProvider.hpp"
 #include "Slic3r/App/Scene/BedRenderUpdater.hpp"
 #include "Slic3r/App/Plater/IBedVisuallyChangedListener.hpp"
+#include "Slic3r/App/Plater/ISelectionBoundingBoxChangedListener.hpp"
 #include "Slic3r/App/Scene/CameraFrustumUpdater.hpp"
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Scene/Camera.hpp"
@@ -36,7 +37,7 @@ class AnimationManager;
 namespace Slic3r::App::Plater {
 
 class PlaterScenePresenter :
-    public WithListeners<Plater::IBedVisuallyChangedListener>,
+    public WithListeners<Plater::IBedVisuallyChangedListener, ISelectionBoundingBoxChangedListener>,
     public Biz::ISelectedProjectChangedListener,
     public Biz::Scene::ISceneSelectionChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
@@ -72,7 +73,6 @@ public:
         return project_context().selection_scene_changes();
     }
 
-    Scene::Node& selection_root() override { return project_context().selection_root(); }
     using MeshManager = Scene::TriangleMeshManager<Scene::AuxiliaryElementId>;
     const MeshManager& model_trinagle_mesh_manager(Domain::SelectionId project_id = Domain::INVALID_ID) const {
         if (project_id == Domain::INVALID_ID)
@@ -82,6 +82,28 @@ public:
         return it->second.model_triangle_mesh_manager();
     }
 
+    Scene::Node& selection_root() override
+    {
+        return project_context().selection_root;
+    }
+
+    Scene::Node& plain_selection_root() override
+    {
+        return project_context().plain_selection_root;
+    }
+
+    std::optional<Scene::OrientedBoundingBox> selection_bounding_box()
+    {
+        return project_context().selection_bounding_box;
+    }
+
+    std::optional<Scene::OrientedBoundingBox> selection_bounding_box() const
+    {
+        return project_context().selection_bounding_box;
+    }
+
+    void clear_selection_root_children();
+
     void render_scene(Render::CommandBuffer& command_buffer);
     void render_imgui(const Render::ScreenInfo& screen_info);
 
@@ -89,10 +111,6 @@ public:
 
     void set_freeze_selection_center(bool freeze) { m_freeze_selection_center = freeze; }
     bool freeze_selection_center() const { return m_freeze_selection_center; }
-
-    double screen_space_sized_modifier() const {
-        return project_context().screen_space_sized_modifier();
-    }
 
     void center_camera_on_selected_bed(bool animated);
 
@@ -167,6 +185,7 @@ public:
     void update_sinking_contours_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
 
     using BedInstances = std::vector<std::reference_wrapper<const Domain::BedInstance>>;
+
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
 
@@ -188,6 +207,7 @@ private:
 
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
     void on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
+    void on_scene_selection_reference_frame_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection) override;
 
     void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection) override;
 
@@ -219,7 +239,27 @@ private:
     BedInstances selected_bed_instances() const;
 
     void invoke_bed_visually_changed(Domain::SelectionId project_id);
-    void update_selection_aabb(Domain::SelectionId project_id);
+
+
+    Scene::OrientedBoundingBox get_instance_obb(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    );
+
+    Scene::OrientedBoundingBox get_volume_obb(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    );
+
+    Scene::OrientedBoundingBox get_global_obb(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    );
+
+    void update_selection_obb(
+        Domain::SelectionId project_id,
+        const Biz::Scene::ObjectSelection& selection
+    );
 
     void remove_beds(Domain::SelectionId project_id, const Domain::BedRefs& instances);
     void update_volume_materials();

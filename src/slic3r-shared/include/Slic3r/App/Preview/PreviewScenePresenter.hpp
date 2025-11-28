@@ -49,7 +49,10 @@ public:
         return project_context().selection_scene_changes();
     }
     Scene::Node& selection_root() override {
-        return project_context().selection_root();
+        return project_context().selection_root;
+    }
+    Scene::Node& plain_selection_root() override {
+        return project_context().plain_selection_root;
     }
     /**@}*/
 

@@ -3,7 +3,7 @@
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
-#include "Slic3r/App/Scene/AABBNodeHelper.hpp"
+#include "Slic3r/App/Scene/OBBNodeHelper.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/Domain/BedRef.hpp"

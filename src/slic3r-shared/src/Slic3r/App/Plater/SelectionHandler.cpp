@@ -6,7 +6,7 @@
 
 namespace Slic3r::App::Plater {
 
-void SelectionHandler::mark_selected(Scene::Node& n, bool replace)
+void SelectionHandler::mark_selected(Scene::Node& n, bool replace, bool dragging)
 {
     const auto* tag = n.tag_of_type<SceneNodeTag>();
     if (tag == nullptr)
@@ -15,8 +15,13 @@ void SelectionHandler::mark_selected(Scene::Node& n, bool replace)
     Domain::ElementRef element = {tag->object_id, tag->instance_id, tag->volume_id};
 
     const Biz::Scene::ObjectSelection& object_selection = m_scene_interactor.object_selection();
-    if (object_selection.is_selected(element))
+    if (object_selection.is_selected(element)) {
+        if (element.has_volume() && replace && !dragging) {
+            Biz::Scene::ObjectSelection selection{Biz::Scene::SelectionMode::Volume, {element}};
+            m_scene_interactor.set_object_selection(selection);
+        }
         return;
+    }
 
     auto selection_mode = object_selection.mode;
 
@@ -48,7 +53,7 @@ void SelectionHandler::mark_unselected(Scene::Node& n)
 
 void SelectionHandler::clear_selection()
 {
-    m_scene_interactor.set_object_selection({Biz::Scene::SelectionMode::Volume});
+    m_scene_interactor.clear_object_selection();
 }
 
 } // namespace Slic3r::App::Plater

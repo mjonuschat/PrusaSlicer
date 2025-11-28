@@ -16,10 +16,24 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/BedSelectGizmo.cpp
         include/Slic3r/App/Plater/SelectionHandler.hpp
         src/Slic3r/App/Plater/SelectionHandler.cpp
+        include/Slic3r/App/Plater/PlaceOnBedButton.hpp
+        src/Slic3r/App/Plater/PlaceOnBedButton.cpp
+        include/Slic3r/App/Plater/TripleInput.hpp
+        src/Slic3r/App/Plater/TripleInput.cpp
         include/Slic3r/App/Plater/TranslationGizmo.hpp
         src/Slic3r/App/Plater/TranslationGizmo.cpp
+        include/Slic3r/App/Plater/ScaleGizmo.hpp
+        src/Slic3r/App/Plater/ScaleGizmo.cpp
+        include/Slic3r/App/Plater/ScaleDialog.hpp
+        src/Slic3r/App/Plater/ScaleDialog.cpp
+        include/Slic3r/App/Plater/TranslationDialog.hpp
+        src/Slic3r/App/Plater/TranslationDialog.cpp
+        include/Slic3r/App/Plater/ReferenceFramePicker.hpp
+        src/Slic3r/App/Plater/ReferenceFramePicker.cpp
         include/Slic3r/App/Plater/RotationGizmo.hpp
         src/Slic3r/App/Plater/RotationGizmo.cpp
+        include/Slic3r/App/Plater/RotationDialog.hpp
+        src/Slic3r/App/Plater/RotationDialog.cpp
         include/Slic3r/App/Plater/SimplifyGizmo.hpp
         src/Slic3r/App/Plater/SimplifyGizmo.cpp
         include/Slic3r/App/Plater/SimplifyDialog.hpp
@@ -306,8 +320,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/PrintVolumeData.cpp
         include/Slic3r/App/Scene/BedNodeBuilder.hpp
         src/Slic3r/App/Scene/BedNodeBuilder.cpp
-        include/Slic3r/App/Scene/AABBNodeHelper.hpp
-        src/Slic3r/App/Scene/AABBNodeHelper.cpp
+        include/Slic3r/App/Scene/OBBNodeHelper.hpp
+        src/Slic3r/App/Scene/OBBNodeHelper.cpp
         include/Slic3r/App/Scene/BedNodeTag.hpp
         include/Slic3r/App/Scene/BedMaterials.hpp
         src/Slic3r/App/Scene/BedMaterials.cpp
@@ -1083,7 +1097,6 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/PresetUpdater/PresetUpdaterStageTests.cpp
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.hpp
         test/Slic3r/Biz/PresetUpdater/TestPresetUpdaterListener.cpp
-
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 

@@ -4,6 +4,7 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Color.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/App/Scene/OrientedBoundingBox.hpp"
 
 #include <string>
 #include <optional>
@@ -26,13 +27,10 @@ struct AABBNodeTag
     uint8_t corner_id{ 0 };
 };
 
-void build_aabb_node(NodeBuilder& builder, ScenePresenterProjectContext& ctx, Render::Device& device, const std::string& debug_name,
+void build_obb_node(NodeBuilder& builder, ScenePresenterProjectContext& ctx, Render::Device& device, const std::string& debug_name,
     RenderLayerId layer_id, const Domain::ColorRGB& color = Domain::ColorRGB::WHITE());
 
-void update_aabb_node(Node& node, const Eigen::AlignedBox3d& aabb, double edge_coverage_percent = 1.0,
-    std::optional<Domain::ColorRGB> color = std::nullopt);
-
-void update_aabb_node(Node& node, const Domain::BoundingBox3d& aabb, double edge_coverage_percent = 1.0,
+void update_obb_node(Node& node, const OrientedBoundingBox& obb, double edge_coverage_percent = 1.0,
     std::optional<Domain::ColorRGB> color = std::nullopt);
 
 } // namespace Slic3r::App::Scene

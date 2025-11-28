@@ -13,6 +13,9 @@
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/App/Plater/RotationDialog.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/App/Plater/PlaterGizmosHelper.hpp"
 
 #include "Slic3r/Math.hpp"
 
@@ -33,7 +36,7 @@ namespace {
 
 constexpr double HALF_PI = 0.5 * std::numbers::pi;
 constexpr double TWO_PI = 2.0 * std::numbers::pi;
-constexpr double CIRCLE_RADIUS = 30.0;
+constexpr double CIRCLE_RADIUS = 70.0;
 constexpr double CIRCLE_DIAMETER = 2.0 * CIRCLE_RADIUS;
 static const Vec3d HANDLE_CUBE_SIZE = { 10.0, 10.0, 10.0 };
 static const Vec3d HANDLE_CONE_SIZE = { 10.0, 10.0, 15.0 };
@@ -101,213 +104,53 @@ static Vec3d extract_position(const App::Scene::Transform& xform)
     return xform.matrix().block<3, 1>(0, 3);
 }
 
-RotationGizmo::RotationGizmo(Render::Device& device, Scene::GeometryDataFactory& data_factory,
-    PlaterScenePresenter& scene_presenter, Biz::Scene::SceneInteractor& scene_interactor
+static void build_rotate_node(
+    AxisType axis,
+    Scene::NodeBuilder& builder,
+    Render::Device& device,
+    Scene::GeometryDataFactory& data_factory,
+    bool use_graded_circle
 )
-    : m_device(device)
-    , m_data_factory(data_factory)
-    , m_scene_presenter(scene_presenter)
-    , m_scene_interactor(scene_interactor)
-{
-    m_snap = {
-          { CIRCLE_RADIUS * Scene::CIRCLE_COARSE_GRADE_IN_RADIUS, CIRCLE_RADIUS * Scene::CIRCLE_COARSE_GRADE_OUT_RADIUS },
-          { CIRCLE_RADIUS, CIRCLE_RADIUS * Scene::CIRCLE_FINE_GRADE_PRIMARY_OUT_RADIUS }
-    };
-}
-
-Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
-{
-    const auto event_type = ctx.mouse_event().type();
-    if (event_type != Platform::MouseEvent::Type::ButtonDown &&
-        event_type != Platform::MouseEvent::Type::Move &&
-        event_type != Platform::MouseEvent::Type::ButtonUp) {
-        on_stop_dragging();
-        return Scene::GizmoActivationState::Inactive;
-    }
-
-    const auto& pick_ray = ctx.pick_ray();
-
-    Vec3d node_center;
-    if (event_type == Platform::MouseEvent::Type::ButtonDown) {
-        const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<RotationGizmoNodeTag>();
-        if (node == nullptr) {
-            on_stop_dragging();
-            return Scene::GizmoActivationState::Inactive;
-        }
-
-        const RotationGizmoNodeTag& tag = *node->tag_of_type<RotationGizmoNodeTag>();
-        m_translation_ray.origin = extract_position(m_scene_presenter.selection_root().world_transform());
-        m_translation_ray.direction = tag.primary_axis_dir();
-    }
-
-    double t;
-    if (!m_translation_ray.closest_point_from_ray(pick_ray, t)) {
-        on_stop_dragging();
-        return Scene::GizmoActivationState::Inactive;
-    }
-
-    if (event_type == Platform::MouseEvent::Type::ButtonDown) {
-        m_dragging = true;
-        m_pivot_world = extract_position(m_scene_presenter.selection_root().world_transform());
-        // const auto& selection = m_scene_interactor.object_selection();
-        // if (selection.mode == Biz::Scene::SelectionMode::Instance) {
-        //     m_pivot_local = m_pivot_world;
-        // } else {
-        //     auto first_element_ref = selection.elements.front();
-        //     auto parent_ref = Domain::ElementRef{first_element_ref.object_id, first_element_ref.instance_id, 0};
-        //
-        //     const Scene::Node *parent_node = ASSERT_VAL(
-        //         m_scene_presenter.scene().root().query_first([&](const auto& node) {
-        //             auto* node_tag = node->template tag_of_type<SceneNodeTag>();
-        //             return node_tag && node_tag->matches_element(parent_ref);
-        //         })
-        //     );
-        //
-        //     auto parent_world = parent_node->world_transform();
-        //     m_pivot_local = extract_position(
-        //         parent_world.inverse() * m_scene_presenter.selection_root().
-        //         world_transform());
-        // }
-        return Scene::GizmoActivationState::Active;
-    }
-
-    if (!m_dragging)
-        return Scene::GizmoActivationState::Inactive;
-
-    if (m_curr_axis != AxisType::None) {
-        Vec2d pos = to_2d(mouse_position_in_local_plane(m_curr_axis, Transform3d::Identity(), m_pivot_world,
-          Domain::Line3d(pick_ray.origin, pick_ray.point_at(10.0))));
-
-        Vec2d orig_dir = Vec2d::UnitX();
-        Vec2d new_dir = pos.normalized();
-
-        double theta = acos(std::clamp(new_dir.dot(orig_dir), -1.0, 1.0));
-        if (cross2(orig_dir, new_dir) < 0.0)
-            theta = TWO_PI - theta;
-
-        double len = pos.norm();
-
-        // take in account that the selection root is scaled to keep the gizmo with constant screen size
-        const App::Scene::INodeTransformModifier* modifier = m_scene_presenter.selection_root().transform_modifier();
-        if (modifier != nullptr) {
-            const App::Scene::Camera& camera = m_scene_presenter.scene().camera();
-            double scale = camera.cam_projection()
-                .constant_screen_space_size_scale(camera, (m_pivot_world - camera.position()).norm()) * m_scene_presenter.screen_space_sized_modifier();
-            len /= scale;
-        }
-
-        // snap to coarse snap region
-        if (m_snap.coarse.in <= len && len <= m_snap.coarse.out) {
-            double step = TWO_PI / Scene::CIRCLE_COARSE_GRADE_STEPS;
-            theta = step * std::round(theta / step);
-        }
-        else {
-            // snap to fine snap region
-            if (m_snap.fine.in <= len && len <= m_snap.fine.out) {
-                double step = TWO_PI / Scene::CIRCLE_FINE_GRADE_SECONDARY_STEPS;
-                theta = step * std::round(theta / step);
-            }
-        }
-
-        if (theta == TWO_PI)
-            theta = 0.0;
-
-        Transform3d xform = Transform3d::Identity();
-        xform.rotate(Eigen::AngleAxisd(theta, Vec3d::UnitZ()));
-        m_handles[size_t(m_curr_axis) - 1]->set_local_transform(xform);
-
-        xform = Transform3d::Identity();
-        xform.translate(m_pivot_world);
-        xform.rotate(Eigen::AngleAxisd(theta, axis_type_dir(m_curr_axis)));
-        xform.translate(-m_pivot_world);
-        m_scene_presenter.set_freeze_selection_center(true);
-        m_scene_interactor.transform_selection(xform.matrix(), m_xform_memento);
-        m_scene_presenter.set_freeze_selection_center(false);
-    }
-
-    if (event_type == Platform::MouseEvent::Type::ButtonUp) {
-        m_scene_interactor.finalize_transform_selection(m_xform_memento, false);
-        on_stop_dragging();
-        clear_highlight();
-        return Scene::GizmoActivationState::Done;
-    }
-
-    return Scene::GizmoActivationState::Active;
-}
-
-void RotationGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
-{
-    if (!m_activated || m_dragging)
-        return;
-
-    auto* n = ctx.pick_result_node_with_tag_of_type<RotationGizmoNodeTag>();
-    if (n == nullptr) {
-        clear_highlight();
-        m_curr_axis = AxisType::None;
-    } else {
-        // when hovering over a handle
-        // show only the correspondent axis
-        // replacing the circle with the graded circle
-        auto* p = n->parent();    // handle
-        auto* gp = p->parent();   // {} axis
-        auto* ggp = gp->parent(); // main
-        for (auto& child : ggp->children()){
-            child->set_enabled(child.get() == gp);
-        }
-        for (auto& child : gp->children()) {
-            const RotationGizmoNodeTag& tag = *child->tag_of_type<RotationGizmoNodeTag>();
-            child->set_enabled(tag.level >= 1);
-        }
-        m_highlighted = true;
-        m_curr_axis = p->tag_of_type<RotationGizmoNodeTag>()->primary_axis;
-    }
-}
-
-void RotationGizmo::on_cycle_prepare()
-{
-    m_dragging = false;
-}
-
-static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render::Device& device, Scene::GeometryDataFactory& data_factory)
 {
     ColorRGBA color = axis_color(axis);
 
     builder.set_debug_name(axis_string(axis));
     builder.set_tag(RotationGizmoNodeTag{ axis });
 
-    builder.child([&](Scene::NodeBuilder& bldr) {
-        Render::Material material = Render::Material{}
-            .set_shader(device.context().shader_manager().shader("flat"))
-            .set_uniform("uniform_color", color);
+    if (use_graded_circle) {
+        builder.child([&](Scene::NodeBuilder& bldr) {
+            Render::Material material = Render::Material{}
+                .set_shader(device.context().shader_manager().shader("flat"))
+                .set_uniform("uniform_color", ColorRGBA::WHITE());
 
-        bldr
-            .set_debug_name("circle")
-            .set_tag(RotationGizmoNodeTag{ axis })
-            .set_mesh(data_factory.geometry(Scene::GeometryDataId::Circle), material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
-            .transform([](Transform3d& xform) {
-                xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
-            });
-    });
+            bldr
+                .set_debug_name("graded circle")
+                .set_tag(RotationGizmoNodeTag{ axis })
+                .set_mesh(data_factory.geometry(Scene::GeometryDataId::GradedCircle), material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
+                .transform([](Transform3d& xform) {
+                    xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
+                });
+        });
+    } else {
+        builder.child([&](Scene::NodeBuilder& bldr) {
+            Render::Material material = Render::Material{}
+                .set_shader(device.context().shader_manager().shader("flat"))
+                .set_uniform("uniform_color", color);
 
-    builder.child([&](Scene::NodeBuilder& bldr) {
-        Render::Material material = Render::Material{}
-            .set_shader(device.context().shader_manager().shader("flat"))
-            .set_uniform("uniform_color", ColorRGBA::WHITE());
-
-        bldr
-            .set_debug_name("graded circle")
-            .set_tag(RotationGizmoNodeTag{ axis, AxisType::None, 2 })
-            .set_mesh(data_factory.geometry(Scene::GeometryDataId::GradedCircle), material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
-            .set_enabled(false)
-            .transform([](Transform3d& xform) {
-                xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
-            });
-    });
+            bldr
+                .set_debug_name("circle")
+                .set_tag(RotationGizmoNodeTag{ axis })
+                .set_mesh(data_factory.geometry(Scene::GeometryDataId::Circle), material, Scene::RenderLayerId(PlaterSceneLayer::GizmoHandles))
+                .transform([](Transform3d& xform) {
+                    xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
+                });
+        });
+    }
 
     builder.child([&](Scene::NodeBuilder& bldr) {
         bldr
             .set_debug_name("handle")
-            .set_tag(RotationGizmoNodeTag{ axis, AxisType::None, 1, true });
+            .set_tag(RotationGizmoNodeTag{ axis, true });
 
         bldr.child([&](Scene::NodeBuilder& child_bldr) {
             Render::Material material = Render::Material{}
@@ -388,93 +231,302 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
     });
 }
 
-void RotationGizmo::on_activated()
+static void build_main_node(
+    const std::string& debug_name,
+    bool use_graded_circle,
+    Scene::NodeBuilder& builder,
+    Render::Device& device,
+    Scene::GeometryDataFactory& data_factory
+)
 {
-    m_activated = true;
-
-    auto& scene = m_scene_presenter.scene();
-    auto& selection_root = m_scene_presenter.selection_root();
-
-    // builds the following hierarchy of elements:
-    // [main] - [X axis]
-    //        - [Y axis]
-    //        - [Z axis]
-    // each of the {} axis elements is composed by the elements:
-    // [{} axis] - [circle]
-    //           - [graded circle]
-    //           - [handle] - [stem]
-    //                      - [cube]
-    //                      - [cone ccw]
-    //                      - [cone cw]
-
-    // circle and graded circle are mutually exclusive:
-    // graded circle is shown in place of circle when the gizmo is highlighted.
-
-    Scene::NodeBuilder builder{ scene };
-    builder.set_debug_name("main");
+    builder.set_debug_name(debug_name);
     builder.set_tag(RotationGizmoNodeTag{ AxisType::None });
 
     builder.child([&](Scene::NodeBuilder& bldr) {
-        build_rotate_node(AxisType::XAxis, bldr, m_device, m_data_factory);
+        build_rotate_node(AxisType::XAxis, bldr, device, data_factory, use_graded_circle);
         bldr.transform([](Transform3d& xform) {
             xform = axis_transform(AxisType::XAxis) * xform;
         });
     });
 
     builder.child([&](Scene::NodeBuilder& bldr) {
-        build_rotate_node(AxisType::YAxis, bldr, m_device, m_data_factory);
+        build_rotate_node(AxisType::YAxis, bldr, device, data_factory, use_graded_circle);
         bldr.transform([](Transform3d& xform) {
             xform = axis_transform(AxisType::YAxis) * xform;
         });
     });
 
     builder.child([&](Scene::NodeBuilder& bldr) {
-        build_rotate_node(AxisType::ZAxis, bldr, m_device, m_data_factory);
+        build_rotate_node(AxisType::ZAxis, bldr, device, data_factory, use_graded_circle);
     });
+}
 
-    auto main_node = builder.build();
-    scene.add_child(main_node.release(), &selection_root);
 
-    m_handles.clear();
-    scene.root().query([](const Scene::Node* n)->bool {
-        const RotationGizmoNodeTag* tag = n->tag_of_type<RotationGizmoNodeTag>();
-        return (tag != nullptr && tag->is_handle);
-    }, m_handles);
+RotationGizmo::RotationGizmo(
+    Render::Device& device,
+    Scene::GeometryDataFactory& data_factory,
+    PlaterScenePresenter& scene_presenter,
+    Biz::ProjectInteractor& project_interactor
+) :
+    m_device(device),
+    m_data_factory(data_factory),
+    m_scene_presenter(scene_presenter),
+    m_project_interactor(project_interactor),
+    m_scene_interactor(project_interactor.scene_interactor())
+{
+    m_scene_presenter.add_listener<ISelectionBoundingBoxChangedListener>(this);
+    m_snap = {
+        {CIRCLE_RADIUS * Scene::CIRCLE_COARSE_GRADE_IN_RADIUS,
+         CIRCLE_RADIUS * Scene::CIRCLE_COARSE_GRADE_OUT_RADIUS},
+        {CIRCLE_RADIUS, CIRCLE_RADIUS * Scene::CIRCLE_FINE_GRADE_PRIMARY_OUT_RADIUS}
+    };
 
-    DEBUG_ASSERT(m_handles.size() == 3);
+}
+
+RotationGizmo::~RotationGizmo() {
+    m_scene_presenter.remove_listener<ISelectionBoundingBoxChangedListener>(this);
+}
+
+Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
+{
+    const auto event_type = ctx.mouse_event().type();
+    if (event_type != Platform::MouseEvent::Type::ButtonDown &&
+        event_type != Platform::MouseEvent::Type::Move &&
+        event_type != Platform::MouseEvent::Type::ButtonUp) {
+        on_stop_dragging();
+        return Scene::GizmoActivationState::Inactive;
+    }
+
+    const auto& pick_ray = ctx.pick_ray();
+
+    if (event_type == Platform::MouseEvent::Type::ButtonDown) {
+        const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<RotationGizmoNodeTag>();
+        if (node == nullptr) {
+            on_stop_dragging();
+            return Scene::GizmoActivationState::Inactive;
+        }
+
+        const RotationGizmoNodeTag& tag = *node->tag_of_type<RotationGizmoNodeTag>();
+        m_translation_ray.origin = extract_position(m_scene_presenter.selection_root().world_transform());
+        m_translation_ray.direction = tag.primary_axis_dir();
+    }
+
+    if (event_type == Platform::MouseEvent::Type::ButtonDown) {
+        const std::optional<Scene::OrientedBoundingBox> selection_bounding_box{
+            m_scene_presenter.selection_bounding_box()
+        };
+
+        if (!selection_bounding_box) {
+            on_stop_dragging();
+            return Scene::GizmoActivationState::Inactive;
+        }
+
+        m_dragging  = true;
+        m_start_obb = *selection_bounding_box;
+        m_was_floating = m_window->place_on_bed_button().is_floating;
+        Domain::Transform3d orient_matrix{Domain::Transform3d::Identity()};
+        orient_matrix.rotate(m_start_obb.rotation);
+        m_start_direction = to_2d(mouse_position_in_local_plane(
+                                      m_curr_axis,
+                                      orient_matrix,
+                                      m_start_obb.center,
+                                      Domain::Line3d(pick_ray.origin, pick_ray.point_at(10.0))
+                                  ))
+                                .normalized();
+
+        return Scene::GizmoActivationState::Active;
+    }
+
+    if (!m_dragging)
+        return Scene::GizmoActivationState::Inactive;
+
+    if (m_curr_axis != AxisType::None) {
+        Domain::Transform3d orient_matrix{Domain::Transform3d::Identity()};
+        orient_matrix.rotate(m_start_obb.rotation);
+        Vec2d pos = to_2d(mouse_position_in_local_plane(m_curr_axis, orient_matrix, m_start_obb.center,
+          Domain::Line3d(pick_ray.origin, pick_ray.point_at(10.0))));
+
+        Vec2d new_dir = pos.normalized();
+
+        double theta = acos(std::clamp(new_dir.dot(m_start_direction), -1.0, 1.0));
+        if (cross2(m_start_direction, new_dir) < 0.0)
+            theta = TWO_PI - theta;
+
+        double len = pos.norm();
+
+        // take in account that the selection root is scaled to keep the gizmo with constant screen size
+        const App::Scene::INodeTransformModifier* modifier = m_scene_presenter.selection_root().transform_modifier();
+        if (modifier != nullptr) {
+            const App::Scene::Camera& camera = m_scene_presenter.scene().camera();
+            double scale = camera.cam_projection()
+                .constant_screen_space_size_scale(camera, (m_start_obb.center - camera.position()).norm()) * Scene::SELECTION_ROOT_SCALE_MODIFIER;
+            len /= scale;
+        }
+
+        // snap to coarse snap region
+        if (m_snap.coarse.in <= len && len <= m_snap.coarse.out) {
+            double step = TWO_PI / Scene::CIRCLE_COARSE_GRADE_STEPS;
+            theta = step * std::round(theta / step);
+        }
+        else {
+            // snap to fine snap region
+            if (m_snap.fine.in <= len && len <= m_snap.fine.out) {
+                double step = TWO_PI / Scene::CIRCLE_FINE_GRADE_SECONDARY_STEPS;
+                theta = step * std::round(theta / step);
+            }
+        }
+
+        if (theta == TWO_PI)
+            theta = 0.0;
+
+        Domain::Vec3d rotation{Domain::Vec3d::Zero()};
+        const std::optional<int> axis_index{get_axis_index(m_curr_axis)};
+        ASSERT(axis_index);
+        rotation(*axis_index) = theta;
+        m_scene_interactor.transform_selection(
+            get_rotation_matrix(
+                m_start_obb.rotation,
+                m_start_obb.center,
+                rotation
+            ),
+            m_xform_memento
+        );
+
+        Transform3d local_rotation{Transform3d::Identity()};
+        local_rotation.rotate(Eigen::AngleAxisd(theta, Vec3d::UnitZ()));
+        m_handles[*axis_index]->set_local_transform(local_rotation);
+    }
+
+    if (event_type == Platform::MouseEvent::Type::ButtonUp) {
+        m_scene_interactor.finalize_transform_selection(m_xform_memento, false);
+        on_stop_dragging();
+        if (!m_was_floating) {
+            m_window->place_on_bed_button().trigger();
+        }
+        return Scene::GizmoActivationState::Done;
+    }
+
+    return Scene::GizmoActivationState::Active;
+}
+
+void RotationGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
+{
+    if (!m_activated || m_dragging) {
+        return;
+    }
+
+    const auto* node{ctx.pick_result_node_with_tag_of_type<RotationGizmoNodeTag>()};
+    if (node == nullptr) {
+        remove_highlight_node();
+    } else {
+        add_highlight_node(node->parent()->tag_of_type<RotationGizmoNodeTag>()->primary_axis);
+    }
+}
+
+void RotationGizmo::on_cycle_prepare()
+{
+    m_dragging = false;
+}
+
+void RotationGizmo::on_activated()
+{
+    m_activated = true;
+    m_window->on_activated(m_project_interactor.selected_project_id());
+
+    auto& scene{m_scene_presenter.scene()};
+
+    Scene::NodeBuilder builder{ scene };
+    build_main_node(
+        "main",
+        false,
+        builder,
+        m_device,
+        m_data_factory
+    );
+    scene.add_child(builder.build().release(), &m_scene_presenter.selection_root());
 }
 
 void RotationGizmo::on_deactivated()
 {
+    remove_highlight_node();
     m_activated = false;
-
-    m_scene_presenter.scene().remove_children([](const Scene::Node*) { return true; },
-        &m_scene_presenter.selection_root());
+    m_window->on_deactivated();
+    m_scene_presenter.clear_selection_root_children();
 }
 
-void RotationGizmo::clear_highlight()
-{
-    if (m_highlighted) {
-        // show all axes
-        // hide graded circle
-        visit(
-            m_scene_presenter.selection_root(), [](Scene::Node& node) {
-                const RotationGizmoNodeTag* tag = node.tag_of_type<RotationGizmoNodeTag>();
-                if (tag != nullptr)
-                    node.set_enabled(tag->level < 2);
-            },
-            true
-        );
-        m_highlighted = false;
+void RotationGizmo::on_scene_selection_bounding_box_changed(
+    Domain::SelectionId project_id,
+    const std::optional<Scene::OrientedBoundingBox>&
+) {
+    if (m_activated && m_dragging) {
+        m_scene_presenter.selection_root().set_enabled(false);
     }
+}
+
+std::unique_ptr<Yoga::GizmoWindow> RotationGizmo::release_ui_window() {
+    auto window{std::make_unique<RotationDialog>(m_scene_presenter, m_project_interactor)};
+    m_window = window.get();
+    return window;
 }
 
 void RotationGizmo::on_stop_dragging()
 {
-    std::for_each(m_handles.begin(), m_handles.end(), [](Scene::Node* n) {
-        n->set_local_transform(Transform3d::Identity());
-    });
+    remove_highlight_node();
     m_dragging = false;
+}
+
+void RotationGizmo::add_highlight_node(AxisType axis) {
+    if (m_highlight_node != nullptr) {
+        return;
+    }
+    const std::optional<Scene::OrientedBoundingBox> obb{m_scene_presenter.selection_bounding_box()};
+    if (!obb) {
+        return;
+    }
+
+    Scene::Scene& scene{m_scene_presenter.scene()};
+    Scene::NodeBuilder builder{scene};
+    builder.set_screen_space_sized_modifier(Scene::SELECTION_ROOT_SCALE_MODIFIER);
+    build_main_node(
+        "dragging",
+        true,
+        builder,
+        m_device,
+        m_data_factory
+    );
+    auto node{builder.build()};
+    m_highlight_node = node.get();
+    scene.add_child(node.release());
+
+    m_highlight_node->query([](const Scene::Node* n)->bool {
+        const RotationGizmoNodeTag* tag = n->tag_of_type<RotationGizmoNodeTag>();
+        return (tag != nullptr && tag->is_handle);
+    }, m_handles, true);
+
+    Transform3d world_transform{Domain::Transform3d::Identity()};
+    world_transform.translate(obb->center);
+    world_transform.rotate(obb->rotation);
+    m_highlight_node->set_world_transform(world_transform);
+    m_curr_axis = axis;
+    for (auto& child : m_highlight_node->children()){
+        auto tag{child->tag_of_type<RotationGizmoNodeTag>()};
+        ASSERT(tag != nullptr);
+        child->set_enabled(tag->primary_axis == m_curr_axis);
+    }
+    m_scene_presenter.selection_root().set_enabled(false);
+}
+
+void RotationGizmo::remove_highlight_node() {
+    if (m_highlight_node == nullptr) {
+        return;
+    }
+    m_scene_presenter.selection_root().set_enabled(true);
+    Scene::Scene& scene{m_scene_presenter.scene()};
+    const bool removed{scene.remove_child(m_highlight_node)};
+    ASSERT(removed);
+    m_handles = {};
+    m_curr_axis = AxisType::None;
+    m_highlight_node = nullptr;
 }
 
 } // namespace Slic3r::App::Plater

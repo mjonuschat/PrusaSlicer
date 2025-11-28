@@ -210,7 +210,7 @@ public:
     bool remove_child(Node* node);
 
     /**
-     * @brief Remove and destroy child node (or children nodes) satisfying @p predicate.
+     * @brief Remove and destroy **immediate** child node (or children nodes) satisfying @p predicate.
      *
      * @note Unlike detach_children() this method will destroy all children satisfying
      * @p predicate.

@@ -812,7 +812,7 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
             ASSERT(tag.type == CutHandleNodeTag::Type::Handle);
             m_hovered_handle            = Handle(tag.handle_type, tag.primary_axis);
             m_is_plane_hovered          = false;
-            m_translation_ray.direction = context().rotation_m * tag.primary_axis_dir();
+            m_translation_ray.direction = context().rotation_m * axis_type_dir(tag.primary_axis);
         } else if (const Scene::Node* node =
                        ctx.pick_result_node_with_tag_of_type<CutPlaneNodeTag>())
         {
@@ -1712,7 +1712,7 @@ void CutGizmo::update_handles_local_fransform(Handle hovered_handle)
             } else if (tag_h.is_move()) {
                 node.set_local_transform(
                     trafo
-                    * translation_transform(m_handle_connection_len * tag->primary_axis_dir())
+                    * translation_transform(m_handle_connection_len * axis_type_dir(tag->primary_axis))
                     * scale_transform(size)
                 );
             } else if (tag_h.is_rotation()) {

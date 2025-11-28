@@ -1,10 +1,41 @@
-#include <unordered_set>
 #include <algorithm>
 #include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Assert.hpp"
 
 namespace Slic3r::Biz::Scene {
+
+SelectionState ObjectSelection::state() const {
+    using Domain::ElementRef;
+
+    if (elements.empty()) {
+        return SelectionState::Empty;
+    }
+
+    const bool single_instance{std::ranges::all_of(
+        elements,
+        [&](const ElementRef& element)
+        {
+            if (!element.has_instance()) {
+                return false;
+            }
+            return element.instance_id == elements.front().instance_id;
+        }
+    )};
+
+    const bool single_volume{elements.size() == 1 && elements.front().has_volume()};
+
+    if (single_volume) {
+        return SelectionState::SingleVolume;
+    } else if (single_instance && mode == SelectionMode::Instance) {
+        return SelectionState::WholeInstance;
+    } else if (single_instance && mode == SelectionMode::Volume){
+        return SelectionState::MultipleVolumes;
+    } else {
+        ASSERT(!single_instance);
+        return SelectionState::MultipleInstances;
+    }
+}
 
 bool ObjectSelection::empty() const
 {

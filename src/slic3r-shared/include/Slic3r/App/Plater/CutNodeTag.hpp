@@ -169,7 +169,7 @@ struct Handle
  * of the CutGizmo. Each handle is associated with a primary axis and an optional
  * orientation (CW or CCW for rotation).
  */
-struct CutHandleNodeTag : public CutNodeTag, public GizmoNodeTag
+struct CutHandleNodeTag : public CutNodeTag
 {
     enum class Type
     {
@@ -179,11 +179,12 @@ struct CutHandleNodeTag : public CutNodeTag, public GizmoNodeTag
         Stem, ///< Used by both move and rotation handles as a connector line.
     };
 
-    const Type type{Type::Undef};
-    const Handle::Type handle_type{Handle::Type::Undef};
-    const std::optional<bool> is_cw;
+    AxisType primary_axis{AxisType::None};
+    Type type{Type::Undef};
+    Handle::Type handle_type{Handle::Type::Undef};
+    std::optional<bool> is_cw;
 
-    explicit CutHandleNodeTag() : GizmoNodeTag(AxisType::None) {}
+    explicit CutHandleNodeTag() {}
 
     explicit CutHandleNodeTag(
         Type type,
@@ -191,7 +192,7 @@ struct CutHandleNodeTag : public CutNodeTag, public GizmoNodeTag
         AxisType primary_axis     = AxisType::None,
         std::optional<bool> is_cw = std::nullopt
     ) :
-        GizmoNodeTag(primary_axis),
+        primary_axis(primary_axis),
         type(type),
         handle_type(handle_type),
         is_cw(is_cw)

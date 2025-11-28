@@ -34,6 +34,10 @@ public:
     virtual ~ISceneSelectionChangedListener() = default;
     virtual void on_scene_selection_changed(Domain::SelectionId project_id, const ObjectSelection& selection) = 0;
     virtual void on_scene_selection_transformed(Domain::SelectionId project_id, const ObjectSelection& selection) {};
+    virtual void on_scene_selection_reference_frame_changed(
+        Domain::SelectionId project_id,
+        const ObjectSelection& selection
+    ) {};
 };
 
 enum class TransformState
@@ -218,14 +222,26 @@ public:
      */
     const ObjectSelection& object_selection() const;
     void set_object_selection(const ObjectSelection& object_selection);
+
+    Domain::ElementRefs selected_volumes_with_shear() const;
+    std::set<SelectionReferenceFrame> object_selection_reference_frame_options() const;
+    SelectionReferenceFrame object_selection_reference_frame() const;
+    bool reload_object_selection_reference_frame(SelectionReferenceFrame preferred_frame);
     void clear_object_selection();
+
     void modify_selection(const std::function<void(ObjectSelection&)>& modifier);
+
     /** @} */
 
     const BedSelection& bed_selection() const;
     BedSelection& bed_selection();
     const BedSelection* bed_selection(const Domain::SelectionId project_id) const;
     BedSelection* bed_selection(const Domain::SelectionId project_id);
+
+    using ElementTransforms = std::map<Domain::ElementRef, Domain::SquareMatrix4d>;
+    void set_element_transforms(
+        const ElementTransforms& transforms
+    );
 
     /**
      * @name Transforming selection
@@ -291,7 +307,7 @@ private:
     void notify_listener_on_objects(const std::vector<Domain::ModelObject*>& objects);
     void notify_listener_on_objects(const Domain::Project& project);
 
-    BedTrackingChanges update_selection_instance_bed_placement(bool forced_volume_mode = false);
+    BedTrackingChanges update_elements_bed_placement(const Domain::ElementRefs& elements, bool volume_mode);
     void invoke_slicing_input_changed(const Domain::BedRef& bed_instance);
     void update_config_container_bed(
         Domain::Project& project,

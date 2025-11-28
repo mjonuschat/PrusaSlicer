@@ -28,19 +28,19 @@ public:
         return m_sinking_contours;
     }
 
-    void set_selection_aabb_node_as_dirty() { m_selection_aabb_node.dirty = true; }
-    void update_selection_aabb_node(Render::Device& device, const Biz::ProjectInteractor& project_interactor);
+    void set_selection_obb_node_as_dirty() { m_selection_obb_node.dirty = true; }
+    void update_selection_obb_node(Render::Device& device, const Biz::ProjectInteractor& project_interactor);
 
 private:
     SinkingContours m_sinking_contours;
 
-    struct SelectionAABBNode
+    struct SelectionOBBNode
     {
         Scene::Node* top_level_node{ nullptr };
         bool dirty{ true };
         Scene::Node* volume_nodes_parent{ nullptr };
     };
-    SelectionAABBNode m_selection_aabb_node;
+    SelectionOBBNode m_selection_obb_node;
 };
 
 } // namespace Slic3r::App::Plater

@@ -1,0 +1,254 @@
+#include "Slic3r/App/Plater/RotationDialog.hpp"
+#include "Slic3r/App/Plater/PlaceOnBedButton.hpp"
+#include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/App/Plater/TripleInput.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
+#include "Slic3r/App/Plater/PlaterGizmosHelper.hpp"
+#include "Slic3r/Math.hpp"
+
+namespace Slic3r::App::Plater {
+
+using Biz::_u8L;
+using Yoga::Orientation;
+using Yoga::Text;
+using Domain::BoundingBox3d;
+using Domain::SquareMatrix4d;
+using Domain::SquareMatrix3d;
+using Domain::Vec3d;
+
+RotationDialog::RotationDialog(
+    App::Plater::PlaterScenePresenter& scene_provider,
+    Biz::ProjectInteractor& project_interactor
+) :
+    Yoga::GizmoWindow{_u8L("Rotation"), Render::Icon::Rotate},
+    m_scene_provider{scene_provider},
+    m_project_interactor{project_interactor}
+{
+    m_scene_provider.add_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
+
+    content()->set_padding({20, 20});
+    content()->set_orientation(Orientation::Vertical);
+
+    const double gap{10.0};
+    content()->set_gap(gap);
+
+    auto revert_row{content()->emplace_back<Yoga::Item>()};
+    revert_row->set_justify_content(YGJustifyFlexEnd);
+    revert_row->set_height(0);
+    m_revert_button = revert_row->emplace_back<Yoga::LayoutButton>(
+        "",
+        Render::Icon::RevertButton,
+        "Revert rotation"
+    );
+    m_revert_button->set_min_size({25.0, 25.0});
+
+    m_revert_button->callbacks().action = [this]()
+    {
+        if (m_reset_rotation_candidates.empty()) {
+            return;
+        }
+        const bool was_floating{m_place_on_bed_button->is_floating};
+        m_project_interactor.scene_interactor().set_element_transforms(m_reset_rotation_candidates);
+        if (!was_floating) {
+            m_place_on_bed_button->trigger();
+        }
+    };
+
+    auto title = content()->emplace_back<Text>("Relative rotation");
+    title->set_font_type(Render::ImguiFontType::Bold);
+
+    m_relative_input = content()->emplace_back<TripleInput>(
+        _u8L("°"),
+        get_axis_header({"X", "Y", "Z"})
+    );
+    m_relative_input->on_change = [this](const Domain::Vec3d& value, int index)
+    { add_rotation(Vec3d{deg2rad(value(0)), deg2rad(value(1)), deg2rad(value(2))}); };
+
+    m_place_on_bed_button = content()->emplace_back<PlaceOnBedButton>(
+        m_scene_provider,
+        m_project_interactor.scene_interactor()
+    );
+
+    m_reference_frame_picker = content()->emplace_back<ReferenceFramePicker>(m_project_interactor);
+}
+
+RotationDialog::~RotationDialog()
+{
+    m_scene_provider.remove_listener<App::Plater::ISelectionBoundingBoxChangedListener>(this);
+}
+
+void RotationDialog::on_scene_selection_bounding_box_changed(
+    Domain::SelectionId project_id,
+    const std::optional<Scene::OrientedBoundingBox>&
+) {
+    reload(project_id);
+}
+
+void RotationDialog::on_activated(Domain::SelectionId project_id) {
+    m_activated = true;
+    m_reference_frame_picker->on_activated();
+    reload(project_id);
+}
+
+void RotationDialog::on_deactivated() {
+    m_reference_frame_picker->on_deactivated();
+    m_activated = false;
+}
+
+PlaceOnBedButton& RotationDialog::place_on_bed_button() {
+    return *m_place_on_bed_button;
+}
+
+void RotationDialog::reload(std::optional<Domain::SelectionId> project_id) {
+    if (!m_activated) {
+        return;
+    }
+    if (project_id && project_id != m_project_interactor.selected_project_id()) {
+        return;
+    }
+
+    m_relative_input->set_value({0, 0, 0});
+
+    m_reset_rotation_candidates = get_reset_rotation_candidates();
+
+    if (m_reset_rotation_candidates.empty()) {
+        m_revert_button->set_visible(false);
+    } else {
+        m_revert_button->set_visible(true);
+    }
+}
+
+void RotationDialog::add_rotation(Domain::Vec3d rotate_by_rads)
+{
+    const std::optional<Scene::OrientedBoundingBox>& bounding_box{
+        m_scene_provider.selection_bounding_box()
+    };
+    if (!bounding_box) {
+        return;
+    }
+
+    rotate_by_rads(1) = -rotate_by_rads(1);
+
+    const bool was_floating{m_place_on_bed_button->is_floating};
+    Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
+    scene_interactor.transform_selection(
+        get_rotation_matrix(
+            bounding_box->rotation,
+            bounding_box->center,
+            rotate_by_rads
+        )
+    );
+    if (!was_floating) {
+        m_place_on_bed_button->trigger();
+    }
+}
+
+Domain::SquareMatrix4d remove_rotation(
+    const Domain::Transform3d& matrix,
+    const Domain::Vec3d& center
+)
+{
+    Domain::SquareMatrix4d result{matrix.matrix()};
+    result.col(3).head<3>() -= center;
+
+    const SquareMatrix3d rotation{matrix.rotation()};
+    SquareMatrix4d inverse_rotation{SquareMatrix4d::Identity()};
+    inverse_rotation.block(0, 0, 3, 3) = rotation.transpose();
+    result = inverse_rotation * result;
+
+    result.col(3).head<3>() += center;
+
+    return result;
+}
+
+Domain::SquareMatrix4d remove_rotation(
+    const Domain::Transform3d& volume_trafo,
+    const Domain::Transform3d& instance_trafo,
+    const Domain::Vec3d& center
+)
+{
+    Domain::SquareMatrix3d linear_part{volume_trafo.rotation().transpose()};
+
+    Domain::SquareMatrix4d local{Domain::SquareMatrix4d::Identity()};
+    local.block<3, 3>(0, 0) = linear_part;
+    local.block<3, 1>(0, 3) = center - linear_part * center;
+
+    local = (instance_trafo.inverse() * local * instance_trafo).matrix();
+
+    return (local * volume_trafo).matrix();
+}
+
+Biz::Scene::SceneInteractor::ElementTransforms RotationDialog::get_reset_rotation_candidates() const
+{
+    Biz::Scene::SceneInteractor& scene_interactor{m_project_interactor.scene_interactor()};
+    Biz::Scene::SceneInteractor::ElementTransforms result;
+
+    using Biz::Scene::SelectionState;
+    const SelectionState state{scene_interactor.object_selection().state()};
+
+    if (state != SelectionState::SingleVolume
+        && state != SelectionState::MultipleVolumes
+        && state != SelectionState::WholeInstance)
+    {
+        return {};
+    }
+
+    std::optional<Scene::OrientedBoundingBox> bounding_box{
+        m_scene_provider.selection_bounding_box()
+    };
+    if (!bounding_box) {
+        return {};
+    }
+
+    for (const Domain::ElementRef& element : scene_interactor.object_selection().elements) {
+        ASSERT(element.has_instance());
+
+        const Domain::ModelInstance* instance{
+            m_project_interactor.workbench()
+                .project(m_project_interactor.selected_project_id())
+                .find_instance_by_id(element.object_id, element.instance_id)
+        };
+        const Domain::Transform3d instance_matrix{instance->get_matrix()};
+
+        if (element.has_volume()) {
+            const Domain::ElementRef ref{element.object_id, 0, element.volume_id};
+            const Domain::ModelVolume* volume{
+                m_project_interactor.workbench()
+                    .project(m_project_interactor.selected_project_id())
+                    .find_volume_by_id(element.object_id, element.volume_id)
+            };
+            const Domain::Transform3d volume_matrix{volume->get_matrix()};
+
+            const SquareMatrix4d no_rotation{
+                remove_rotation(volume_matrix, instance_matrix, bounding_box->center)
+            };
+            if (!volume_matrix.matrix().isApprox(no_rotation)) {
+                result.insert_or_assign(ref, no_rotation);
+            }
+        } else {
+            const Domain::ElementRef instance_ref{element.object_id, instance->id().id};
+            const SquareMatrix4d instance_no_rotation{
+                remove_rotation(instance_matrix, bounding_box->center)
+            };
+            if (!instance_matrix.matrix().isApprox(instance_no_rotation)) {
+                result.insert_or_assign(instance_ref, instance_no_rotation);
+            }
+
+            for (const Domain::ModelVolume* volume : instance->get_object()->volumes) {
+                const Domain::ElementRef volume_ref{element.object_id, 0, volume->id().id};
+                const Domain::Transform3d volume_matrix{volume->get_matrix()};
+                const SquareMatrix4d no_rotation{remove_rotation(
+                    volume_matrix,
+                    Domain::Transform3d{instance_no_rotation},
+                    bounding_box->center
+                )};
+                if (!volume_matrix.matrix().isApprox(no_rotation)) {
+                    result.insert_or_assign(volume_ref, no_rotation);
+                }
+            }
+        }
+    }
+
+    return result;
+}
+} // namespace Slic3r::App::Plater

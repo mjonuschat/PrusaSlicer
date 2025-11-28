@@ -8,8 +8,7 @@
 #include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
 #include "Slic3r/App/Scene/BedError.hpp"
 #include "Slic3r/App/Platform/CameraSynchData.hpp"
-
-#define ENABLE_DEBUG_RENDER_SCENE_AABB 0
+#include "Slic3r/App/Scene/OrientedBoundingBox.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -19,13 +18,7 @@ public:
     using ModelGeometryManager = Render::GeometryManager<AuxiliaryElementId>;
     using ModelTriangleMeshManager = TriangleMeshManager<AuxiliaryElementId>;
 
-    ScenePresenterProjectContext()
-    : m_scene(new Scene())
-    , m_selection_scene_change_session(*m_scene)
-    {
-        initialize_selection_root();
-        m_scene->add_child(m_selection_root);
-    }
+    ScenePresenterProjectContext();
 
     ScenePresenterProjectContext(const ScenePresenterProjectContext&) = delete;
     ScenePresenterProjectContext& operator=(const ScenePresenterProjectContext&) = delete;
@@ -35,18 +28,18 @@ public:
     Scene& scene() { return *m_scene; }
     const Scene& scene() const { return *m_scene; }
 
-    Node& selection_root() { return *m_selection_root; }
-    const Node& selection_root() const { return *m_selection_root; }
+private: // Intialization order matters, hence this out of order private.
+    std::unique_ptr<Scene> m_scene;
+    SceneChangeSession m_selection_scene_change_session;
+
+public:
+    Node& selection_root;
+    Node& plain_selection_root;
+    std::optional<OrientedBoundingBox> selection_bounding_box;
 
     SceneChangeSession& selection_scene_changes()
     {
         return m_selection_scene_change_session;
-    }
-
-    const Eigen::AlignedBox3f& selection_bounding_box() const { return m_selection_bounding_box; }
-    void set_selection_bounding_box(const Eigen::AlignedBox3f& bounding_box)
-    {
-        m_selection_bounding_box = bounding_box;
     }
 
     const BedError& bed_error() const { return m_bed_error; }
@@ -56,43 +49,17 @@ public:
     const ModelTriangleMeshManager& model_triangle_mesh_manager() const { return m_model_triangle_mesh_manager; }
     ModelTriangleMeshManager& model_triangle_mesh_manager() { return m_model_triangle_mesh_manager; }
 
+
     const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return m_camera_synch_data; }
     void set_camera_synch_data(const Platform::CameraSynchData& data) { m_camera_synch_data = data; }
 
-    double screen_space_sized_modifier() const { return 0.0075; }
 
-#if ENABLE_DEBUG_RENDER_SCENE_AABB
-    void set_scene_aabb_node_as_dirty() { m_scene_aabb_node.dirty = true; }
-    void update_scene_aabb_node(Render::Device& device, const Eigen::AlignedBox3d& aabb);
-#endif // ENABLE_DEBUG_RENDER_SCENE_AABB
 
 private:
-    void initialize_selection_root() {
-        NodeBuilder builder(*m_scene);
-        m_selection_root = builder
-            .set_debug_name("selection_root")
-            .set_screen_space_sized_modifier(screen_space_sized_modifier())
-            .build().release();
-        m_scene->add_child(m_selection_root);
-    }
-
-private:
-    std::unique_ptr<Scene> m_scene;
-    SceneChangeSession m_selection_scene_change_session;
     ModelGeometryManager m_model_geometry_manager;
     ModelTriangleMeshManager m_model_triangle_mesh_manager;
-    Node* m_selection_root{nullptr};
-    Eigen::AlignedBox3f m_selection_bounding_box;
     std::optional<Platform::CameraSynchData> m_camera_synch_data;
     BedError m_bed_error;
-#if ENABLE_DEBUG_RENDER_SCENE_AABB
-    struct SceneAABBNode
-    {
-        Node* node{ nullptr };
-        bool dirty{ true };
-    };
-    SceneAABBNode m_scene_aabb_node;
-#endif // ENABLE_DEBUG_RENDER_SCENE_AABB
 };
 
 } // namespace Slic3r::App::Scene

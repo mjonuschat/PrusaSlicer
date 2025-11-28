@@ -16,12 +16,29 @@ enum class SelectionMode
     Volume
 };
 
+enum class SelectionReferenceFrame {
+    Bed,
+    Instance,
+    Volume
+};
+
+enum class SelectionState
+{
+    Empty,
+    SingleVolume,
+    WholeInstance,
+    MultipleVolumes, // But not whole instance.
+    MultipleInstances,
+};
+
 struct ObjectSelection
 {
     using ElementRefs = std::vector<Domain::ElementRef>;
 
     SelectionMode mode{SelectionMode::Instance};
     ElementRefs elements;
+
+    [[nodiscard]] SelectionState state() const;
 
     [[nodiscard]] bool empty() const;
     [[nodiscard]] bool is_selected(const Domain::ElementRef& ref) const;

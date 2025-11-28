@@ -266,6 +266,126 @@ void SceneInteractor::set_object_selection(const ObjectSelection& raw_selection)
     );
 }
 
+static Domain::SquareMatrix3d reset_shear(const Domain::SquareMatrix3d& matrix)
+{
+    const Eigen::JacobiSVD<Domain::SquareMatrix3d> svd(
+        matrix,
+        Eigen::ComputeFullU | Eigen::ComputeFullV
+    );
+
+    const Domain::SquareMatrix3d rotation{svd.matrixU() * svd.matrixV().transpose()};
+    const Domain::SquareMatrix3d symetric_scale{
+        svd.matrixV() * svd.singularValues().asDiagonal() * svd.matrixV().transpose()
+    };
+
+    const Domain::SquareMatrix3d scale{symetric_scale.diagonal().asDiagonal()};
+
+    return rotation * scale;
+}
+
+static bool has_shear(const Domain::SquareMatrix4d& matrix)
+{
+    Domain::SquareMatrix4d no_shear{matrix};
+    no_shear.block(0, 0, 3, 3) = reset_shear(no_shear.block(0, 0, 3, 3));
+    return ((no_shear - matrix).cwiseAbs().array() > 1e-6 * Domain::SquareMatrix4d::Ones().array())
+        .any();
+}
+
+Domain::ElementRefs SceneInteractor::selected_volumes_with_shear() const
+{
+    ASSERT(m_selected_project_id != Domain::INVALID_ID);
+    const auto it = m_projects.find(m_selected_project_id);
+    ASSERT(it != m_projects.end());
+
+    const ObjectSelection& selection{it->second.object_selection};
+
+    Domain::ElementRefs result;
+    for (const Domain::ElementRef& element : selection.elements) {
+        const Domain::ModelInstance* instance{
+            m_workbench.project(m_selected_project_id)
+                .find_instance_by_id(element.object_id, element.instance_id)
+        };
+
+        if (element.has_volume()) {
+            const Domain::ElementRef ref{element.object_id, 0, element.volume_id};
+            const Domain::ModelVolume* volume{m_workbench.project(m_selected_project_id)
+                                                  .find_volume_by_id(ref.object_id, ref.volume_id)};
+            if (has_shear(volume->get_matrix().matrix())) {
+                result.push_back(ref);
+            }
+        } else {
+            ASSERT(element.has_instance());
+            for (const Domain::ModelVolume* volume : instance->get_object()->volumes) {
+                const Domain::ElementRef ref{element.object_id, 0, volume->id().id};
+                if (has_shear(volume->get_matrix().matrix())) {
+                    result.push_back(ref);
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+std::set<SelectionReferenceFrame> SceneInteractor::object_selection_reference_frame_options() const
+{
+    using SelectionReferenceFrame::Bed;
+    using SelectionReferenceFrame::Instance;
+    using SelectionReferenceFrame::Volume;
+
+    ASSERT(m_selected_project_id != Domain::INVALID_ID);
+    const auto it = m_projects.find(m_selected_project_id);
+    ASSERT(it != m_projects.end());
+
+    const ObjectSelection& selection{it->second.object_selection};
+
+    switch (selection.state()) {
+    case SelectionState::SingleVolume: {
+        if (!selected_volumes_with_shear().empty()) {
+            return {Bed, Instance};
+        }
+        return {Bed, Instance, Volume};
+    }
+    case SelectionState::WholeInstance: {
+        ASSERT(!selection.empty());
+        return {Bed, Instance};
+    }
+    default:
+        return {Bed};
+    }
+}
+
+SelectionReferenceFrame SceneInteractor::object_selection_reference_frame() const {
+    ASSERT(m_selected_project_id != Domain::INVALID_ID);
+    const auto it = m_projects.find(m_selected_project_id);
+    ASSERT(it != m_projects.end());
+
+    return it->second.object_selection_reference_frame;
+}
+
+bool SceneInteractor::reload_object_selection_reference_frame(SelectionReferenceFrame preferred_frame)
+{
+    ASSERT(m_selected_project_id != Domain::INVALID_ID);
+    const auto it = m_projects.find(m_selected_project_id);
+    ASSERT(it != m_projects.end());
+
+    const SelectionReferenceFrame previous{it->second.object_selection_reference_frame};
+    const std::set<SelectionReferenceFrame> options{object_selection_reference_frame_options()};
+    if (options.contains(preferred_frame)) {
+        it->second.object_selection_reference_frame = preferred_frame;
+    } else {
+        it->second.object_selection_reference_frame = SelectionReferenceFrame::Bed;
+    }
+
+    const bool changed{previous != it->second.object_selection_reference_frame};
+    if (changed) {
+        invoke_listeners<ISceneSelectionChangedListener>(
+            [&](auto* l) { l->on_scene_selection_reference_frame_changed(m_selected_project_id, it->second.object_selection); }
+        );
+    }
+    return changed;
+}
+
 void SceneInteractor::normalize_object_selection(ObjectSelection& selection) const
 {
     ASSERT(m_selected_project_id != Domain::INVALID_ID);
@@ -409,7 +529,7 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
     );
 
     set_object_selection({SelectionMode::Volume, updated});
-    update_selection_instance_bed_placement();
+    update_elements_bed_placement(sel.elements, sel.mode == SelectionMode::Volume);
 }
 
 void SceneInteractor::add_instance(const Vec2d& offset)
@@ -1094,6 +1214,55 @@ const BedContainer::BedList& SceneInteractor::selected_project_beds() const
     return project.bed_container().beds();
 }
 
+void SceneInteractor::set_element_transforms(const SceneInteractor::ElementTransforms& transforms)
+{
+    Domain::ElementRefs elements;
+
+    Project& project{m_workbench.project(m_selected_project_id)};
+
+    for (const auto& [element, transform] : transforms) {
+        elements.push_back(element);
+        if (element.has_volume()) {
+            ASSERT(element.has_volume());
+            ASSERT(!element.has_instance());
+            Domain::ModelVolume* volume{
+                project.find_volume_by_id(element.object_id, element.volume_id)
+            };
+            volume->set_transformation(Transformation{Transform3d{transform}});
+        } else {
+            ASSERT(!element.has_volume());
+            ASSERT(element.has_instance());
+            Domain::ModelInstance* instance{
+                project.find_instance_by_id(element.object_id, element.instance_id)
+            };
+            instance->set_transformation(Transformation{Transform3d{transform}});
+        }
+    }
+
+    const BedTrackingChanges changes = update_elements_bed_placement(elements, true);
+    invoke_listeners<ISceneChangedListener>(
+        [&](ISceneChangedListener* l)
+        {
+            l->on_volume_transformed(
+                m_selected_project_id,
+                elements,
+                TransformState::Completed,
+                changes
+            );
+            l->on_instance_transformed(
+                m_selected_project_id,
+                elements,
+                TransformState::Completed,
+                changes
+            );
+        }
+    );
+    invoke_listeners<ISceneSelectionChangedListener>(
+        [&](ISceneSelectionChangedListener* l)
+        { l->on_scene_selection_transformed(m_selected_project_id, object_selection()); }
+    );
+}
+
 void SceneInteractor::transform_selection(const Transform& relative_transform)
 {
     TransformMemento memento;
@@ -1118,7 +1287,10 @@ void SceneInteractor::transform_selection(const SquareMatrix4d& relative_transfo
         }
     } else
         transform_selection_volume_mode(proj, relative_transform, memento);
-    BedTrackingChanges changes = update_selection_instance_bed_placement(memento.forced_volume_mode);
+    const BedTrackingChanges changes = update_elements_bed_placement(
+        proj.object_selection.elements,
+        selection.mode == SelectionMode::Volume || memento.forced_volume_mode
+    );
     invoke_listeners<ISceneChangedListener>(
         [&](ISceneChangedListener* l)
         {
@@ -1193,7 +1365,7 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
             }
         }
 
-        changes = update_selection_instance_bed_placement(memento.forced_volume_mode);
+        changes = update_elements_bed_placement(proj.object_selection.elements, vol_mode);
     }
 
     invoke_listeners<ISceneChangedListener>(
@@ -1221,21 +1393,20 @@ void SceneInteractor::on_removed_config_container(Domain::Project& project)
     layout_after_project_load(project);
 }
 
-BedTrackingChanges SceneInteractor::update_selection_instance_bed_placement(bool forced_volume_mode)
+BedTrackingChanges SceneInteractor::update_elements_bed_placement(const Domain::ElementRefs& elements, bool volume_mode)
 {
     BedTrackingChanges changes;
     auto& proj          = m_projects.find(m_selected_project_id)->second;
-    const bool vol_mode = forced_volume_mode || proj.object_selection.mode == SelectionMode::Volume;
-    if (vol_mode) {
+    if (volume_mode) {
         std::set<size_t> object_ids;
-        for (const auto& e : proj.object_selection.elements)
+        for (const auto& e : elements)
             object_ids.insert(e.object_id);
         for (size_t obj_id : object_ids)
             changes.append(
                 m_bed_tracking.update_instances_bed_placement(proj.project, proj.project.find_object_by_id(obj_id)->instances)
             );
     } else {
-        changes = m_bed_tracking.update_instances_bed_placement(proj.project, proj.object_selection.elements);
+        changes = m_bed_tracking.update_instances_bed_placement(proj.project, elements);
     }
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);

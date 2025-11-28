@@ -193,7 +193,7 @@ bool Scene::remove_children(const Node::NodePredicate& predicate, Node* parent)
 
     return parent->remove_children([this, predicate](Node* n) {
         if (predicate(n)) {
-            remove_children(predicate, n);
+            remove_children([](const Node*){return true;}, n);
 
             invoke_listeners<ISceneChangedListener>([n](auto* listener) {
                 listener->on_node_removed(n);

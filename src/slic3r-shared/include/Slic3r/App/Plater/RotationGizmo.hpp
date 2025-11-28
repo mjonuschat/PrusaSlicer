@@ -4,6 +4,11 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/App/Plater/RotationDialog.hpp"
+
+namespace Slic3r::Biz {
+    class ProjectInteractor;
+}
 
 namespace Slic3r::App::Scene {
 class GeometryDataFactory;
@@ -13,29 +18,13 @@ namespace Slic3r::App::Plater {
 
 class PlaterScenePresenter;
 
-struct RotationGizmoNodeTag : public GizmoNodeTag
-{
-    uint8_t level{ 0 };
-    bool is_handle{ false };
-
-    explicit RotationGizmoNodeTag(
-        AxisType primary_axis,
-        AxisType secondary_axis = AxisType::None,
-        uint8_t level = 0,
-        bool is_handle = false
-    )
-        : GizmoNodeTag(primary_axis, secondary_axis)
-        , level(level)
-        , is_handle(is_handle)
-    {
-    }
-};
-
-class RotationGizmo : public Scene::IToolGizmo
+class RotationGizmo : public Scene::IToolGizmo, public ISelectionBoundingBoxChangedListener
 {
 public:
     RotationGizmo(Render::Device& device, Scene::GeometryDataFactory& data_factory,
-        PlaterScenePresenter& scene_presenter, Biz::Scene::SceneInteractor& scene_interactor);
+        PlaterScenePresenter& scene_presenter, Biz::ProjectInteractor& scene_interactor);
+
+    ~RotationGizmo();
 
     /**
      * @name Implementation of IGizmo interface
@@ -55,18 +44,26 @@ public:
     Scene::ToolType type() const override { return Scene::ToolType::Rotation; }
     /**@}*/
 
+    void on_scene_selection_bounding_box_changed(
+        Domain::SelectionId project_id,
+        const std::optional<Scene::OrientedBoundingBox>&
+    ) override;
+
+    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+
 private:
-    void clear_highlight();
     void on_stop_dragging();
+    void add_highlight_node(AxisType axis);
+    void remove_highlight_node();
 
 private:
     Render::Device& m_device;
     Scene::GeometryDataFactory& m_data_factory;
     PlaterScenePresenter& m_scene_presenter;
+    Biz::ProjectInteractor& m_project_interactor;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     bool m_activated{ false };
     bool m_dragging{ false };
-    bool m_highlighted{ false };
     AxisType m_curr_axis{ AxisType::None };
     Scene::Ray m_translation_ray;
     struct Snap
@@ -80,8 +77,12 @@ private:
         Radii fine;
     };
     Snap m_snap;
-    Domain::Vec3d m_pivot_world{ Domain::Vec3d::Zero()};
+    Domain::Vec2d m_start_direction{Domain::Vec2d::Zero()};
+    Scene::OrientedBoundingBox m_start_obb;
+    bool m_was_floating{false};
     Biz::Scene::TransformMemento m_xform_memento;
+    RotationDialog* m_window{nullptr};
+    Scene::Node* m_highlight_node{nullptr};
     Scene::Node::NodeList m_handles;
 };
 

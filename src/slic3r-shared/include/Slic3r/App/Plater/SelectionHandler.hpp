@@ -15,7 +15,7 @@ public:
         : m_scene_interactor(scene_interactor)
     {}
 
-    void mark_selected(Scene::Node& n, bool replace=true);
+    void mark_selected(Scene::Node& n, bool replace=true, bool dragging=false);
     void mark_unselected(Scene::Node& n);
     void clear_selection();
 

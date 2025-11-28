@@ -3,10 +3,10 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Render/Device.hpp"
+#include "Slic3r/App/Plater/TranslationDialog.hpp"
 
 namespace Slic3r::App::Scene {
 class GeometryDataFactory;
-class ISceneProvider;
 } // namespace Slic3r::App::Scene
 
 namespace Slic3r::App::Plater {
@@ -17,14 +17,9 @@ public:
     TranslationGizmo(
         Render::Device& device,
         Scene::GeometryDataFactory& data_factory,
-        Scene::ISceneProvider& scene_provider,
-        Biz::Scene::SceneInteractor& scene_interactor
-    )
-        : m_device(device)
-        , m_data_factory(data_factory)
-        , m_scene_provider(scene_provider)
-        , m_scene_interactor(scene_interactor)
-    {}
+        PlaterScenePresenter& scene_provider,
+        Biz::ProjectInteractor& project_interactor
+    );
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void clear_highlight();
@@ -34,17 +29,24 @@ public:
     void on_deactivated() override;
     Scene::ToolType type() const override { return Scene::ToolType::Translation; }
 
+    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
+
 private:
     Render::Device& m_device;
     Scene::GeometryDataFactory& m_data_factory;
-    Scene::ISceneProvider& m_scene_provider;
+    PlaterScenePresenter& m_scene_provider;
     Biz::Scene::SceneInteractor& m_scene_interactor;
+    Biz::ProjectInteractor& m_project_interactor;
     Biz::Scene::TransformMemento m_xform_memento;
     Scene::Ray m_translation_ray;
     double m_start_t{0};
     bool m_dragging{ false };
     bool m_activated{false};
     bool m_highlighted{false};
+    TranslationDialog* m_window{nullptr};
+
+    std::unique_ptr<Scene::Node> generate_handle_nodes() const;
+    Scene::Node* get_handle_nodes() const;
 };
 
 } // namespace Slic3r::App::Plater

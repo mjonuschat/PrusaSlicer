@@ -1,4 +1,4 @@
-#include "Slic3r/App/Scene/AABBNodeHelper.hpp"
+#include "Slic3r/App/Scene/OBBNodeHelper.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
@@ -111,22 +111,23 @@ static Domain::Vec3d corner_offset(CornerTag tag)
 {
     switch (tag)
     {
-    case CornerTag::LBF: { return Domain::Vec3d::Zero(); }
-    case CornerTag::RBF: { return Domain::Vec3d::UnitX(); }
-    case CornerTag::LTF: { return Domain::Vec3d::UnitY(); }
-    case CornerTag::RTF: { return Domain::Vec3d(1.0, 1.0, 0.0); }
-    case CornerTag::LBC: { return Domain::Vec3d::UnitZ(); }
-    case CornerTag::RBC: { return Domain::Vec3d(1.0, 0.0, 1.0); }
-    case CornerTag::LTC: { return Domain::Vec3d(0.0, 1.0, 1.0); }
-    case CornerTag::RTC: { return Domain::Vec3d::Ones(); }
-    default: {
+    case CornerTag::LBF: return Domain::Vec3d(-0.5, -0.5, -0.5);
+    case CornerTag::RBF: return Domain::Vec3d( 0.5, -0.5, -0.5);
+    case CornerTag::LTF: return Domain::Vec3d(-0.5,  0.5, -0.5);
+    case CornerTag::RTF: return Domain::Vec3d( 0.5,  0.5, -0.5);
+
+    case CornerTag::LBC: return Domain::Vec3d(-0.5, -0.5,  0.5);
+    case CornerTag::RBC: return Domain::Vec3d( 0.5, -0.5,  0.5);
+    case CornerTag::LTC: return Domain::Vec3d(-0.5,  0.5,  0.5);
+    case CornerTag::RTC: return Domain::Vec3d( 0.5,  0.5,  0.5);
+
+    default:
         PANIC("Invalid corner tag");
-        return Domain::Vec3d::Zero();
-    }
+        return Domain::Vec3d(-0.5, -0.5, -0.5);
     }
 }
 
-void build_aabb_node(NodeBuilder& builder, ScenePresenterProjectContext& ctx, Render::Device& device, const std::string& debug_name,
+void build_obb_node(NodeBuilder& builder, ScenePresenterProjectContext& ctx, Render::Device& device, const std::string& debug_name,
     RenderLayerId layer_id, const Domain::ColorRGB& color)
 {
     builder.set_debug_name(fmt::format("{} main", debug_name))
@@ -157,7 +158,7 @@ void build_aabb_node(NodeBuilder& builder, ScenePresenterProjectContext& ctx, Re
     }
 }
 
-void update_aabb_node(Node& node, const Eigen::AlignedBox3d& aabb, double edge_coverage_percent,
+void update_obb_node(Node& node, const OrientedBoundingBox& obb, double edge_coverage_percent,
     std::optional<Domain::ColorRGB> color)
 {
     AABBNodeTag* tag = node.tag_of_type<AABBNodeTag>();
@@ -168,15 +169,15 @@ void update_aabb_node(Node& node, const Eigen::AlignedBox3d& aabb, double edge_c
 
     edge_coverage_percent = std::clamp(edge_coverage_percent, 0.0, 1.0);
 
-    Domain::Vec3d size = aabb.sizes();
-    Domain::Vec3d origin = aabb.min();
+    Domain::Vec3d size = obb.dimensions;
+    Domain::Vec3d origin = obb.center;
 
-    auto aaa = size.array();
     bool enabled = std::all_of(size.array().begin(), size.array().end(), [](double comp) { return comp > 0.0; });
     node.set_enabled(enabled);
 
     Transform main_trafo = Transform::Identity();
     main_trafo.translate(origin);
+    main_trafo.rotate(obb.rotation);
     node.set_local_transform(main_trafo);
 
     if (color.has_value()) {
@@ -215,12 +216,6 @@ void update_aabb_node(Node& node, const Eigen::AlignedBox3d& aabb, double edge_c
         child_trafo.scale(edge_coverage_percent * size);
         child->set_local_transform(child_trafo);
     }
-}
-
-void update_aabb_node(Node& node, const Domain::BoundingBox3d& aabb, double edge_coverage_percent,
-    std::optional<Domain::ColorRGB> color)
-{
-    update_aabb_node(node, Eigen::AlignedBox3d(aabb.min, aabb.max), edge_coverage_percent, color);
 }
 
 } // namespace Slic3r::App::Scene

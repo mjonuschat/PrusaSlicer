@@ -1,27 +1,24 @@
 #include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
-#if ENABLE_DEBUG_RENDER_SCENE_AABB
-#include "Slic3r/App/Scene/AABBNodeHelper.hpp"
-#endif // ENABLE_DEBUG_RENDER_SCENE_AABB
 
 namespace Slic3r::App::Scene {
 
-#if ENABLE_DEBUG_RENDER_SCENE_AABB
-void ScenePresenterProjectContext::update_scene_aabb_node(Render::Device& device, const Eigen::AlignedBox3d& aabb)
+static Node& initialize_node(const std::string& debug_name, bool constant_screen_size, Scene& scene)
 {
-    if (!m_scene_aabb_node.dirty)
-        return;
-
-    if (m_scene_aabb_node.node == nullptr) {
-        NodeBuilder builder(*m_scene);
-        build_aabb_node(builder, *this, device, "scene_aabb", 0, Domain::ColorRGB::YELLOW());
-        m_scene_aabb_node.node = builder.build().release();
-        m_scene->add_child(m_scene_aabb_node.node);
+    NodeBuilder builder{scene};
+    builder.set_debug_name(debug_name);
+    if (constant_screen_size) {
+        builder.set_screen_space_sized_modifier(SELECTION_ROOT_SCALE_MODIFIER);
     }
-
-    DEBUG_ASSERT(m_scene_aabb_node.node != nullptr);
-    update_aabb_node(*m_scene_aabb_node.node, aabb);
-    m_scene_aabb_node.dirty = false;
+    Node* node{builder.build().release()};
+    scene.add_child(node);
+    return *node;
 }
-#endif // ENABLE_DEBUG_RENDER_SCENE_AABB
+
+ScenePresenterProjectContext::ScenePresenterProjectContext() :
+    m_scene{std::make_unique<Scene>()},
+    m_selection_scene_change_session{*m_scene},
+    selection_root{initialize_node("global_selection_root", true, *m_scene)},
+    plain_selection_root{initialize_node("scaling_global_selection_root", false, *m_scene)}
+{}
 
 } // namespace Slic3r::App::Scene

@@ -42,7 +42,7 @@ bool QuickDragGizmo::on_drag_start(const Scene::GizmoEventContext& ctx)
     if (!can_be_added_to_object_selection(*n->node, m_scene_interactor.object_selection()))
         return false;
 
-    m_selection_handler.mark_selected(*n->node);
+    m_selection_handler.mark_selected(*n->node, true, true);
     return true;
 }
 

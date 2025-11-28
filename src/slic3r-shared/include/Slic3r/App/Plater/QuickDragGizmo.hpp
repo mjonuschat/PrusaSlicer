@@ -4,6 +4,7 @@
 ///|/
 #pragma once
 
+#include "Slic3r/App/Plater/TranslationDialog.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
@@ -20,7 +21,10 @@ using MousePosition = std::array<int, 2>;
 class QuickDragGizmo : public Scene::IGizmo, public Scene::IMouseDrag
 {
 public:
-    QuickDragGizmo(Biz::Scene::SceneInteractor& scene_interactor, Scene::ISceneProvider& scene_provider);
+    QuickDragGizmo(
+        Biz::Scene::SceneInteractor& scene_interactor,
+        Scene::ISceneProvider& scene_provider
+    );
 
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
 

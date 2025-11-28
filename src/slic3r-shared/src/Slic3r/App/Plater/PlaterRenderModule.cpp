@@ -30,6 +30,7 @@
 #include "Slic3r/App/Plater/BedSelectGizmo.hpp"
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"
 #include "Slic3r/App/Plater/RotationGizmo.hpp"
+#include "Slic3r/App/Plater/ScaleGizmo.hpp"
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
@@ -432,6 +433,17 @@ void PlaterRenderModule::init_scene_layout()
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }},
         m_rotation_gizmo
     );
+    m_toolbar_scale = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle,
+        Render::Icon::Scale,
+        _u8L("Scale"),
+        "S",
+        {.action =
+             [this]() {
+        toggle_activate_tool(Scene::ToolType::Scale);
+    }},
+        m_scale_gizmo
+    );
     m_toolbar_arrange = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Left,
         Render::Icon::Layout,
@@ -541,6 +553,9 @@ void PlaterRenderModule::init_dialog_navigation()
         m_layout->sidebar_stack_layout()->insert_gizmo(tool_type, std::move(dialog));
     };
 
+    init_gizmo_dialog(Scene::ToolType::Translation, m_translation_gizmo->release_ui_window());
+    init_gizmo_dialog(Scene::ToolType::Scale, m_scale_gizmo->release_ui_window());
+    init_gizmo_dialog(Scene::ToolType::Rotation, m_rotation_gizmo->release_ui_window());
     init_gizmo_dialog(Scene::ToolType::ArrangeGizmo, m_arrange_gizmo->release_ui_window());
     init_gizmo_dialog(Scene::ToolType::MeasureGizmo, m_measure_gizmo->release_ui_window());
     init_gizmo_dialog(
@@ -612,6 +627,7 @@ void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type
 {
     m_toolbar_move->set_checked(current_tool_type == Scene::ToolType::Translation);
     m_toolbar_rotate->set_checked(current_tool_type == Scene::ToolType::Rotation);
+    m_toolbar_scale->set_checked(current_tool_type == Scene::ToolType::Scale);
     m_toolbar_simplify->set_checked(current_tool_type == Scene::ToolType::Simplify);
     m_toolbar_arrange->set_checked(current_tool_type == Scene::ToolType::ArrangeGizmo);
     m_toolbar_paint_on_supports->set_checked(
@@ -669,13 +685,19 @@ void PlaterRenderModule::init_gizmos()
         *m_device,
         m_gizmo_manager->data_factory(),
         *m_scene_presenter,
-        m_project_interactor.scene_interactor()
+        m_project_interactor
     );
     m_rotation_gizmo = &m_gizmo_manager->add_tool_gizmo<RotationGizmo>(
         *m_device,
         m_gizmo_manager->data_factory(),
         *m_scene_presenter,
-        m_project_interactor.scene_interactor()
+        m_project_interactor
+    );
+    m_scale_gizmo = &m_gizmo_manager->add_tool_gizmo<ScaleGizmo>(
+        *m_device,
+        m_gizmo_manager->data_factory(),
+        *m_scene_presenter,
+        m_project_interactor
     );
     m_arrange_gizmo = &m_gizmo_manager->add_tool_gizmo<ArrangeGizmo>(
         m_project_interactor.arrange_interactor(),

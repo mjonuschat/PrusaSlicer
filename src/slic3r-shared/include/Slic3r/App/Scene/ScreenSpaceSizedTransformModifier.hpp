@@ -5,6 +5,8 @@
 namespace Slic3r::App::Scene {
 class Node;
 
+constexpr double SELECTION_ROOT_SCALE_MODIFIER{0.0075};
+
 /**
  * @brief Modify node's world scale so it is constant in screenspace i.e. the size of node is same
  * independently of camera zoom/distance.

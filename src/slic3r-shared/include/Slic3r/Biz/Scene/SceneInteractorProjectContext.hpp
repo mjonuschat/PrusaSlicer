@@ -12,6 +12,7 @@ struct SceneInteractorProjectContext
     Domain::Project& project;
     BedSelection bed_selection;
     ObjectSelection object_selection;
+    SelectionReferenceFrame object_selection_reference_frame{SelectionReferenceFrame::Bed};
 };
 
 }
