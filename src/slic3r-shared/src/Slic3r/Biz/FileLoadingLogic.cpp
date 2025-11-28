@@ -135,8 +135,7 @@ static void convert_to_multipart_object(Model& model, unsigned int max_extruders
             {
                 assert(new_v != nullptr);
                 new_v->name = (counter > 1) ? o->name + "_" + std::to_string(counter++) : o->name;
-                // ! ysTODO: uncomment, when we will correct get a munber of extruders
-                // new_v->volume_settings.overrides.set("extruder", auto_extruder_id(max_extruders, extruder_counter));
+                new_v->volume_settings.overrides.set("extruder", auto_extruder_id(max_extruders, extruder_counter));
                 return new_v;
             };
             if (o->instances.empty()) {

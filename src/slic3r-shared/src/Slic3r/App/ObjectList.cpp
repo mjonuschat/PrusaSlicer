@@ -1193,7 +1193,7 @@ void ObjectList::render_volume_node(
         Imgui::tooltip(volume_icon_tooltip(volume));
 
     if (has_extruder_overrides)
-        render_extruder_marker(2, {"#40E740"});
+        render_extruder_marker(volume->volume_settings.overrides.get("extruder")->get<int>(), {"#707070"});
 }
 
 bool ObjectList::render_instances_node(const Domain::ModelObject* object, const Domain::BedInstance* bed /*= nullptr*/)
