@@ -17,7 +17,7 @@ Toolbar::Toolbar(const std::string& name) : Window(name)
     set_padding(4);
     // Button More is used for collapsible and should never be part of m_buttons
     m_button_more = emplace_back<ToolbarButton>(Render::Icon::Ellipsis, "Show more");
-    m_button_more->set_item_name(name + "_show_more_button");
+    m_button_more->set_item_name(name + "ShowMoreButton");
     m_button_more->set_visible(false);
 }
 
@@ -37,17 +37,6 @@ void Toolbar::render_body(Vec2f pos, Vec2f size)
         if (m_callbacks.hovered_changed) {
             m_callbacks.hovered_changed();
         }
-    }
-}
-
-void Toolbar::append(std::unique_ptr<ToolbarButton> button)
-{
-    if (!contains(button.get())) {
-        button->set_min_size(m_button_min_size);
-        button->set_max_size(m_button_max_size);
-        button->set_aspect_ratio(m_button_aspect_ratio);
-        m_buttons.push_back(button.get());
-        Item::insert(std::move(button), item_count() - 1);
     }
 }
 
@@ -133,7 +122,14 @@ void Toolbar::append(ItemPtr child)
 
 void Toolbar::insert(ItemPtr child, size_t index)
 {
-    Item::insert(std::move(child), index);
+    ToolbarButton* button = dynamic_cast<ToolbarButton*>(child.get());
+    ASSERT(button);
+
+    button->set_min_size(m_button_min_size);
+    button->set_max_size(m_button_max_size);
+    button->set_aspect_ratio(m_button_aspect_ratio);
+    m_buttons.push_back(button);
+    Item::insert(std::move(child), item_count() ? index - 1 : index);
 }
 
 ItemPtr Toolbar::remove(Item* child)

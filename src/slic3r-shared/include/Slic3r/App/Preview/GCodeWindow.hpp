@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Slic3r/Biz/libpgcode/LineView.hpp>
-#include "Slic3r/App/Yoga/Window.hpp"
+#include "Slic3r/App/Yoga/CollapsibleWindow.hpp"
 
 #include <string_view>
 #include <optional>
@@ -52,7 +52,7 @@ private:
     std::shared_ptr<const Biz::libpgcode::LineView> m_gcode;
 };
 
-class GCodeWindow : public Yoga::Window {
+class GCodeWindow : public Yoga::CollapsibleWindow {
 public:
     GCodeWindow(libvgcode::FdmViewer* viewer, GCodeWindowData* data);
 

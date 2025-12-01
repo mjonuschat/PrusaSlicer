@@ -19,7 +19,7 @@ using namespace Slic3r::App::Yoga;
 namespace Slic3r::App {
 
 SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& navigator) :
-    Window("sidebar_bed"),
+    Window("SidebarBed"),
     m_project_interactor(project_interactor),
     m_navigator(navigator),
     m_logical_printer_settings_dialog(project_interactor, &m_printer_add_dialog, m_navigator),

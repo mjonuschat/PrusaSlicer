@@ -17,25 +17,11 @@ using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
 
 LegendWindow::LegendWindow(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapper)
-    : Window("legend")
+    : CollapsibleWindow(_u8L("Legend"), "LegendWindow")
 {
-    set_orientation(Orientation::Vertical);
-    set_padding(0);
-    set_gap(5.f);
+    m_legend = content()->emplace_back<Legend>(viewer, wrapper);
 
-    Item* wrap = emplace_back<Item>();
-    wrap->set_orientation(Orientation::Vertical);
-    wrap->set_padding(Paddings(10, 15, 10, 0));
-    wrap->set_flex_grow(1.f);
-    wrap->set_gap(10.f);
-
-    wrap->emplace_back<Text>(_u8L("Legend"))
-        ->set_font_type(App::Render::ImguiFontType::Bold);
-
-    m_legend = wrap->emplace_back<Legend>(viewer, wrapper);
-    m_legend->set_flex_grow(1.f);
-
-    m_show_time_estimate = wrap->emplace_back<ToggleButton>(_u8L("Used filament"));
+    m_show_time_estimate = content()->emplace_back<ToggleButton>(_u8L("Used filament"));
     m_show_time_estimate->set_visible(false);
     m_show_time_estimate->set_checked(true);
     m_show_time_estimate->callbacks().checked_changed = [this](bool checked) { 
@@ -44,7 +30,7 @@ LegendWindow::LegendWindow(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapp
         m_show_time_estimate->set_tooltip(checked ? _u8L("Switch to show used filament").c_str() : _u8L("Switch to show time estimate"));
     };
 
-    m_settings = emplace_back<Rectangle>();
+    m_settings = content()->emplace_back<Rectangle>();
     m_settings->set_fill(ImColor(32, 32, 32));
     m_settings->set_flags(ImDrawFlags_RoundCornersBottom);
     m_settings->set_padding(15.f);

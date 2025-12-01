@@ -27,7 +27,6 @@ public:
 
     void render_body(Vec2f pos, Vec2f size) override;
 
-    void append(std::unique_ptr<ToolbarButton> button);
     std::unique_ptr<ToolbarButton> remove(ToolbarButton* button);
 
     ToolbarButton* button_at(int index) const;

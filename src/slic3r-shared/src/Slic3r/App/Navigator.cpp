@@ -74,7 +74,7 @@ void Navigator::set_opened_dialog(Yoga::Dialog* opened_dialog)
     }
 }
 
-void Navigator::navigate_to_item(const Domain::ConfigItem *config_item)
+void Navigator::navigate_to_item(const Domain::ConfigItem* config_item)
 {
     ASSERT(config_item);
 
@@ -115,6 +115,21 @@ bool Navigator::is_opened_preferences()
         break;
     }
     return false;
+}
+
+
+bool Navigator::object_list_collapsed() const
+{
+    return m_object_list_collapsed;
+}
+
+void Navigator::set_object_list_collapsed(bool collapsed)
+{
+    if (m_object_list_collapsed != collapsed) {
+        m_object_list_collapsed = collapsed;
+        m_plater_module->set_object_list_collapsed(collapsed);
+        m_preview_module->set_object_list_collapsed(collapsed);
+    }
 }
 
 } // namespace Slic3r::App

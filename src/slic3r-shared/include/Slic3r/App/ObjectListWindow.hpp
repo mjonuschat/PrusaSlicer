@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/Window.hpp"
+#include "Slic3r/App/Yoga/CollapsibleWindow.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include <functional>
 
@@ -24,8 +24,9 @@ class MenuItem;
 }
 
 class ObjectList;
+class Navigator;
 
-class ObjectListWindow : public Yoga::Window
+class ObjectListWindow : public Yoga::CollapsibleWindow
 {
 public:
 
@@ -40,11 +41,9 @@ private:
     void init_cc_context_menu();
 
 private:
-    Yoga::Text* m_label{ nullptr };
     Yoga::LayoutButton* m_add_container_button{ nullptr };
     ObjectList* m_object_list{ nullptr };
 
-    Yoga::Item* m_scene_map{ nullptr };
     Yoga::Rectangle* m_sliced_info{ nullptr };
 
     Yoga::Text* m_used_material{ nullptr };

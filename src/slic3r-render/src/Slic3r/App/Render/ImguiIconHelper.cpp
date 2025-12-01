@@ -190,6 +190,8 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::Output, "output"},
     {Icon::Notes, "notes"},
     {Icon::CaretLeft, "caret_left"},
+    {Icon::CaretUp, "caret_up"},
+    {Icon::CaretDown, "caret_down"},
     {Icon::Search, "search_gray"},
     {Icon::Fan, "cooling"},
     {Icon::AddVolume, "add_volume"},

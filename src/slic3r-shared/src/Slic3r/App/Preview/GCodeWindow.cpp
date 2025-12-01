@@ -1,7 +1,6 @@
 #include "Slic3r/App/Preview/GCodeWindow.hpp"
 
 #include "Slic3r/App/Preview/GCodeDisplay.hpp"
-#include "Slic3r/App/Yoga/Text.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
@@ -50,14 +49,11 @@ void GCodeWindowData::resize_range(Range& range, uint32_t lines_count, uint32_t 
 }
 
 GCodeWindow::GCodeWindow(libvgcode::FdmViewer* viewer, GCodeWindowData* data) :
-    Yoga::Window("gcode_window")
+    Yoga::CollapsibleWindow(Biz::_u8L("G-code viewer"), "GCodeWindow")
 {
-    set_orientation(Yoga::Orientation::Vertical);
-
-    emplace_back<Yoga::Text>(Biz::_u8L("G-code viewer"))
-        ->set_font_type(App::Render::ImguiFontType::Bold);
-
-    m_gcode = emplace_back<GCodeDisplay>(viewer, data);
+    set_flex_grow(1.);
+    content()->set_flex_grow(1);
+    m_gcode = content()->emplace_back<GCodeDisplay>(viewer, data);
     m_gcode->set_flex_grow(1);
 }
 

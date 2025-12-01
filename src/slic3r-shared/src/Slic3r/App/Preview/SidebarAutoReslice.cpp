@@ -10,7 +10,7 @@ using Biz::ProjectInteractor;
 using Biz::Slicing::SlicingInteractor;
 
 SidebarAutoReslice::SidebarAutoReslice(ProjectInteractor& project_interactor) :
-    Window("sidebar_auto_reslice")
+    Window("SidebarAutoReslice")
 {
     set_min_size({220, 0});
 

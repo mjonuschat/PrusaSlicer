@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/Window.hpp"
+#include "Slic3r/App/Yoga/CollapsibleWindow.hpp"
 #include "Slic3r/App/Preview/Legend.hpp"
 
 namespace Slic3r::App::Yoga {
@@ -11,7 +11,7 @@ class ComboBox;
 
 namespace Slic3r::App::Preview {
 
-class LegendWindow : public Yoga::Window
+class LegendWindow : public Yoga::CollapsibleWindow
 {
 public:
     LegendWindow(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapper);

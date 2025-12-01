@@ -208,6 +208,8 @@ enum class Icon : wchar_t
     Output,
     Notes,
     CaretLeft,
+    CaretUp,
+    CaretDown,
     Search,
     Fan,
     AddVolume,

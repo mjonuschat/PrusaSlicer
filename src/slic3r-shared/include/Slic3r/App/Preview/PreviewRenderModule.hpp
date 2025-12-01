@@ -102,6 +102,8 @@ public:
     void set_opened_preferences(bool opened);
     bool is_opened_preferences();
 
+    void set_object_list_collapsed(bool collapsed);
+
 protected:
     /**
      * @name Implementation of Platform::AbstractRenderModule protected interface
@@ -113,6 +115,8 @@ protected:
     void on_screen_resized() override;
     void register_commands() override;
     /**@}*/
+
+    void update_current_right_sidebar();
 
 private:
     const Domain::Workbench& m_workbench;
@@ -161,8 +165,8 @@ private:
     Yoga::ToolbarButton* m_button_center_of_gravity = nullptr;
     Yoga::ToolbarButton* m_button_tool_marker       = nullptr;
     Yoga::ToolbarButton* m_button_shells            = nullptr;
-    Yoga::ToolbarButton* m_button_legend            = nullptr;
-    Yoga::ToolbarButton* m_button_gcode             = nullptr;
+
+    Yoga::ToolbarButton* m_button_gcode_inspect = nullptr;
 
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;

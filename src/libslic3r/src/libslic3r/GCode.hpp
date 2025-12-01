@@ -456,6 +456,8 @@ private:
     float                               m_max_layer_z{ 0.0f };
     float                               m_last_width{ 0.0f };
 
+    bool m_window_collapsed{false};
+
     std::optional<Vec3d>                m_previous_layer_last_position;
     std::optional<Vec3d>                m_previous_layer_last_position_before_wipe;
     bool                                m_moved_to_first_layer_point{false};

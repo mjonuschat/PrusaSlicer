@@ -843,7 +843,10 @@ const std::string& Item::item_name() const
 
 void Item::set_item_name(const std::string& item_name)
 {
-    ASSERT(item_name.find('_'), "Yoga::Item name cannot contain underscore '_'");
+    ASSERT(
+        item_name.find('_') == std::string::npos,
+        "Yoga::Item name cannot contain underscore '_'"
+    );
 
     // Get item name without increment
     std::string old_name = m_item_name.substr(0, m_item_name.find('_'));

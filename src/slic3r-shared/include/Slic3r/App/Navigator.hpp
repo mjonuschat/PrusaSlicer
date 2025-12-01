@@ -63,6 +63,9 @@ public:
     void set_opened_preferences(bool opened);
     bool is_opened_preferences();
 
+    bool object_list_collapsed() const;
+    void set_object_list_collapsed(bool collapsed);
+
 private:
     void set_render_module_type(Render::ModuleType type);
 
@@ -81,6 +84,7 @@ private:
     Plater::PlaterRenderModule* m_plater_module{nullptr};
     Preview::PreviewRenderModule* m_preview_module{nullptr};
     Platform::AbstractRenderCanvas* m_canvas{nullptr};
+    bool m_object_list_collapsed{false};
 };
 
 } // namespace Slic3r::App

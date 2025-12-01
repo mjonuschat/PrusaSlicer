@@ -5,6 +5,7 @@
 namespace Slic3r::App::Plater {
 
 PlaterRenderLayout::PlaterRenderLayout(
+    Navigator& navigator,
     std::unique_ptr<TopBar> top_bar,
     std::unique_ptr<PreferencesDialog> preferences_dialog,
     std::unique_ptr<ObjectListWindow> object_list,
@@ -17,6 +18,7 @@ PlaterRenderLayout::PlaterRenderLayout(
     std::unique_ptr<History> history
 ) :
     AbstractRenderLayout(
+        navigator,
         std::move(top_bar),
         std::move(preferences_dialog),
         std::move(object_list),

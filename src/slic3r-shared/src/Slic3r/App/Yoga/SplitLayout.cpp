@@ -351,6 +351,11 @@ void SplitLayout::set_visible_child(Item* child, bool visible)
     on_resized();
 }
 
+void SplitLayout::set_separator_enable(size_t index, bool enable)
+{
+    m_separators.at(index).item()->set_enabled(enable);
+}
+
 void SplitLayout::invalidate()
 {
     m_last_height = 0;
@@ -391,7 +396,9 @@ void SplitLayout::on_resized()
     auto set_item_size = [this](Item* item, float size) -> void
     { m_orientation == Orientation::Horizontal ? item->set_width(size) : item->set_height(size); };
 
-    const float avail_size = m_orientation == Orientation::Horizontal ? width() - padding().horizontal() : height() - padding().vertical();
+    const float avail_size = m_orientation == Orientation::Horizontal ?
+        width() - padding().horizontal() :
+        height() - padding().vertical();
     float set_size         = std::accumulate(
         m_children.cbegin(),
         m_children.cend(),

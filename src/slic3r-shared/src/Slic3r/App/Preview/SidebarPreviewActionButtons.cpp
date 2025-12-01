@@ -210,7 +210,7 @@ std::unique_ptr<LayoutButton> SidebarPreviewActionButtons::get_primary_button()
 }
 
 SidebarPreviewActionButtons::SidebarPreviewActionButtons(Navigator* render_module_navigator) :
-    SidebarActionButtons("sidebar_preview_action_buttons", Render::ModuleType::Preview, render_module_navigator)
+    SidebarActionButtons("SidebarPreviewActionButtons", Render::ModuleType::Preview, render_module_navigator)
 {}
 
 SidebarPreviewActionButtons::~SidebarPreviewActionButtons()

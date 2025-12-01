@@ -5,11 +5,12 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
-#include "Slic3r/App/Yoga/GizmoWindow.hpp"
+#include "Slic3r/App/Yoga/ToolbarSwitchButton.hpp"
 #include "Slic3r/App/Yoga/SplitLayout.hpp"
 #include "Slic3r/App/SidebarStackLayout.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/AppConfig.hpp"
+#include "Slic3r/App/Navigator.hpp"
 
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
@@ -17,16 +18,6 @@
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
-
-Vec2f AbstractRenderLayout::win_padding() const
-{
-    return Vec2f(GImGui->Style.WindowPadding.x, GImGui->Style.WindowPadding.y);
-}
-
-Vec2f AbstractRenderLayout::frame_padding() const
-{
-    return Vec2f(GImGui->Style.FramePadding.x, GImGui->Style.FramePadding.y);
-}
 
 SidebarStackLayout* AbstractRenderLayout::sidebar_stack_layout() const
 {
@@ -58,6 +49,58 @@ void AbstractRenderLayout::load_column_sizes()
     }
 }
 
+void AbstractRenderLayout::update_cube_view_position()
+{
+    // When sidebars are visible and object list is collapsed
+    // move cube_view to left_column
+    // otherwise put it in the scene_row
+    enum class Location
+    {
+        LeftColumn,
+        SceneRow
+    };
+
+    const Location current_location = m_layout_scene_row->index_of(m_cube_view_wrapper).has_value() ?
+        Location::SceneRow :
+        Location::LeftColumn;
+    const Location target_location  = m_sidebars_visible && m_object_list->collapsed() ?
+         Location::LeftColumn :
+         Location::SceneRow;
+
+    if (current_location == target_location) {
+        return;
+    }
+
+    if (target_location == Location::LeftColumn) {
+        m_layout_left_column->append(m_layout_scene_row->remove(m_cube_view_wrapper));
+        m_cube_view_wrapper->set_self_align(YGAlign::YGAlignFlexStart);
+        m_cube_view_wrapper->set_flex_grow(1);
+    } else {
+        m_layout_scene_row->prepend(m_layout_left_column->remove(m_cube_view_wrapper));
+        m_cube_view_wrapper->set_self_align(YGAlign::YGAlignFlexEnd);
+        m_cube_view_wrapper->set_flex_grow(0);
+    }
+}
+
+void AbstractRenderLayout::update_left_separator_enable()
+{
+    // everytime a collapse state change in any of the CollapsibleWindow
+    // located in Left column is done we need to update
+    // SplitLayout left column separator enable
+
+    bool enabled = false;
+    for (size_t child_index = 0; child_index < m_layout_left_column->item_count(); ++child_index) {
+        CollapsibleWindow* window =
+            dynamic_cast<CollapsibleWindow*>(m_layout_left_column->get_item(child_index));
+        if (window && !window->collapsed()) {
+            enabled = true;
+            break;
+        }
+    }
+
+    m_layout_main_bottom->set_separator_enable(0, enabled);
+}
+
 ToolbarButton* AbstractRenderLayout::add_toolbar_item(
     ToolbarID id,
     Render::Icon icon,
@@ -71,12 +114,11 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item(
 
     toolbar->set_visible(true);
 
-    Passthrough<ToolbarButton> button = Passthrough(std::make_unique<ToolbarButton>(icon, tooltip));
-    toolbar->append(button.release());
+    ToolbarButton* button = toolbar->emplace_back<ToolbarButton>(icon, tooltip);
     button->set_shortcut(shortcut);
     button->callbacks() = callbacks;
 
-    return button.get();
+    return button;
 }
 
 ToolbarButton* AbstractRenderLayout::add_toolbar_item_checkable(
@@ -112,32 +154,26 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
     return button;
 }
 
-ToolbarButton* AbstractRenderLayout::add_toolbar_item_panel(
+ToolbarSwitchButton* AbstractRenderLayout::add_toolbar_item_switch(
     ToolbarID id,
     Render::Icon icon,
     const std::string& tooltip,
     const std::string& shortcut,
     Yoga::AbstractButton::Callbacks callbacks,
-    Yoga::Item* panel
+    ToolbarSwitchButton::SwitchPosition switch_position
 )
 {
-    ASSERT(panel);
+    Toolbar* toolbar = find_toolbar(id);
+    ASSERT(toolbar);
 
-    ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
-    ASSERT(button);
+    toolbar->set_visible(true);
 
-    button->set_checked(panel->is_visible());
+    ToolbarSwitchButton* switch_button =
+        toolbar->emplace_back<ToolbarSwitchButton>(switch_position, icon, tooltip);
+    switch_button->set_shortcut(shortcut);
+    switch_button->callbacks() = callbacks;
 
-    button->callbacks().action = [this, button]
-    {
-        SidebarPanel& sidebar = m_sidebar_panels[button];
-        sidebar.visible       = !sidebar.visible;
-        update_sidebar_visibility();
-    };
-
-    m_sidebar_panels[button] = {panel, panel->is_visible(), panel->is_visible()};
-
-    return button;
+    return switch_button;
 }
 
 Toolbar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
@@ -151,19 +187,6 @@ Toolbar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
         return m_right_toolbar;
     }
     return nullptr;
-}
-
-void AbstractRenderLayout::update_sidebar_visibility()
-{
-    m_layout_main_bottom->set_visible_child(m_layout_right_column, m_sidebars_visible);
-
-    bool any_visible = false;
-    for (auto& [button, panel] : m_sidebar_panels) {
-        button->set_checked(panel.visible);
-        panel.panel->set_visible(panel.visible);
-        any_visible |= panel.visible;
-    }
-    m_layout_main_bottom->set_visible_child(m_layout_left_column, any_visible);
 }
 
 Toolbar* AbstractRenderLayout::right_toolbar() const
@@ -186,17 +209,10 @@ void AbstractRenderLayout::set_sidebars_visible(bool visible)
     if (m_sidebars_visible != visible) {
         m_sidebars_visible = visible;
 
-        if (m_sidebars_visible) {
-            for (auto& [button, panel] : m_sidebar_panels) {
-                panel.visible = panel.visible || panel.last_visible;
-            }
-        } else {
-            for (auto& [button, panel] : m_sidebar_panels) {
-                panel.last_visible = panel.panel->is_visible();
-                panel.visible      = false;
-            }
-        }
-        update_sidebar_visibility();
+        m_layout_main_bottom->set_visible_child(m_layout_right_column, m_sidebars_visible);
+        m_layout_main_bottom->set_visible_child(m_layout_left_column, m_sidebars_visible);
+
+        update_cube_view_position();
     }
 }
 
@@ -226,13 +242,19 @@ void AbstractRenderLayout::init_left_column()
 {
     m_layout_left_column = m_layout_main_bottom->emplace_back<Item>();
     m_layout_left_column->set_min_size({200.f, 0.f});
+    m_layout_left_column->set_justify_content(YGJustifyFlexStart);
     m_layout_left_column->set_width(
         AppServices::instance().app_config().get<double>("layout_main_left_column_width")
     );
     m_layout_left_column->set_orientation(Orientation::Vertical);
     m_layout_left_column->set_gap(5);
 
-    m_object_list->set_flex_grow(1.);
+    m_object_list->collapsible_window_callbacks().collapsed_changed = [this](bool collapsed)
+    {
+        update_cube_view_position();
+        update_left_separator_enable();
+        m_navigator.set_object_list_collapsed(collapsed);
+    };
     m_layout_left_column->append(m_object_list.release());
 }
 
@@ -253,17 +275,21 @@ void AbstractRenderLayout::init_middle_column()
     init_toolbar_row();
 
     // Row for CubeView (left) and Notification column (right)
-    Yoga::Item* notifications_wrap = m_layout_middle_column->emplace_back<Yoga::Item>();
-    notifications_wrap->set_orientation(Orientation::Horizontal);
-    notifications_wrap->set_flex_grow(1);
+    m_layout_scene_row = m_layout_middle_column->emplace_back<Yoga::Item>();
+    m_layout_scene_row->set_orientation(Orientation::Horizontal);
+    m_layout_scene_row->set_flex_grow(1);
 
-    notifications_wrap->append(m_cube_view.release());
-    m_cube_view->set_self_align(YGAlignFlexEnd);
+    m_cube_view_wrapper = m_layout_scene_row->emplace_back<Item>();
+    m_cube_view_wrapper->set_self_align(YGAlignFlexEnd);
+    m_cube_view_wrapper->set_justify_content(YGJustifyFlexEnd);
+    m_cube_view_wrapper->set_align_items(YGAlignFlexStart);
+    m_cube_view_wrapper->set_orientation(Orientation::Vertical);
+    m_cube_view_wrapper->append(m_cube_view.release());
 
-    Item* spacer = notifications_wrap->emplace_back<Item>();
+    Item* spacer = m_layout_scene_row->emplace_back<Item>();
     spacer->set_flex_grow(1);
 
-    notifications_wrap->append(m_pop_notification_list_view.release());
+    m_layout_scene_row->append(m_pop_notification_list_view.release());
     m_pop_notification_list_view->set_orientation(Orientation::Vertical);
     m_pop_notification_list_view->set_max_size({400.f, YGUndefined});
     m_pop_notification_list_view->set_flex_grow(1);
@@ -316,21 +342,21 @@ void AbstractRenderLayout::init_toolbar_row()
     m_layout_middle_toolbar_row->set_justify_content(YGJustify::YGJustifyCenter);
     m_layout_middle_toolbar_row->set_z(1); // Increaze Z so toolbars can be on top of double sliders
 
-    m_left_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("top_toolbar");
+    m_left_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("TopToolbar");
     m_left_toolbar->set_button_min_size({min_tt_size, min_tt_size});
     m_left_toolbar->set_button_max_size({max_tt_size, max_tt_size});
     m_left_toolbar->set_orientation(Orientation::Horizontal);
     m_left_toolbar->set_flex_shrink(0);
     m_left_toolbar->set_visible(false);
 
-    m_middle_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("middle_toolbar");
+    m_middle_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("MiddleToolbar");
     m_middle_toolbar->set_button_min_size({min_tt_size, min_tt_size});
     m_middle_toolbar->set_button_max_size({max_tt_size, max_tt_size});
     m_middle_toolbar->set_orientation(Orientation::Horizontal);
     m_middle_toolbar->set_collapsible(true);
     m_middle_toolbar->set_visible(false);
 
-    m_right_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("bottom_toolbar");
+    m_right_toolbar = m_layout_middle_toolbar_row->emplace_back<Toolbar>("BottomToolbar");
     m_right_toolbar->set_button_min_size({min_tt_size, min_tt_size});
     m_right_toolbar->set_button_max_size({max_tt_size, max_tt_size});
     m_right_toolbar->set_orientation(Orientation::Horizontal);
@@ -438,6 +464,7 @@ private:
 };
 
 AbstractRenderLayout::AbstractRenderLayout(
+    Navigator& navigator,
     std::unique_ptr<TopBar> top_bar,
     std::unique_ptr<PreferencesDialog> preferences_dialog,
     std::unique_ptr<ObjectListWindow> object_list,
@@ -447,14 +474,15 @@ AbstractRenderLayout::AbstractRenderLayout(
     std::unique_ptr<SidebarPrint> sidebar_print,
     std::unique_ptr<SidebarObject> sidebar_object
 ) :
+    m_navigator(navigator),
     m_top_bar(std::move(top_bar)),
     m_object_list(std::move(object_list)),
-    m_preferences_dialog(std::move(preferences_dialog)),
     m_cube_view(std::move(cube_view)),
     m_pop_notification_list_view(std::move(pop_notification_list_view)),
     m_sidebar_bed(std::move(sidebar_bed)),
     m_sidebar_print(std::move(sidebar_print)),
-    m_sidebar_object(std::move(sidebar_object))
+    m_sidebar_object(std::move(sidebar_object)),
+    m_preferences_dialog(std::move(preferences_dialog))
 {}
 
 AbstractRenderLayout::~AbstractRenderLayout()

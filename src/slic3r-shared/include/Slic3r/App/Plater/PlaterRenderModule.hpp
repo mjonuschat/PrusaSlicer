@@ -92,6 +92,8 @@ public:
     void set_opened_preferences(bool opened);
     bool is_opened_preferences();
 
+    void set_object_list_collapsed(bool collapsed);
+
 protected:
     void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
     void on_activated() override;

@@ -124,6 +124,13 @@ bool PlaterRenderModule::is_opened_preferences()
     return m_preferences_dialog.get() && m_preferences_dialog.get()->opened();
 }
 
+void PlaterRenderModule::set_object_list_collapsed(bool collapsed)
+{
+    if (m_object_list.get()) {
+        m_object_list->set_collapsed(collapsed);
+    }
+}
+
 void PlaterRenderModule::navigate_to_item(const Domain::ConfigItem* config_item)
 {
     m_sidebar_bed->logical_printer_settings_dialog()
@@ -303,6 +310,7 @@ void PlaterRenderModule::init_scene_layout()
     m_sidebar_action_buttons->on_init(&m_project_interactor);
 
     m_layout.reset(new PlaterRenderLayout(
+        *m_render_module_navigator,
         m_top_bar.release(),
         m_preferences_dialog.release(),
         m_object_list.release(),
@@ -317,14 +325,6 @@ void PlaterRenderModule::init_scene_layout()
     m_layout->init();
 
     // init toolbars
-    m_layout->add_toolbar_item_panel(
-        ToolbarID::Left,
-        Render::Icon::ToolbarObjects,
-        _u8L("Object List"),
-        "Ctrl + Alt + O",
-        {},
-        m_object_list.get()
-    );
 
     // m_layout->add_toolbar_item_panel(
     //     ToolbarID::Bottom,
@@ -491,25 +491,28 @@ void PlaterRenderModule::init_scene_layout()
         m_measure_gizmo
     );
 
-    ToolbarButton* plater_button = m_layout->add_toolbar_item(
+    ToolbarButton* plater_button = m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
         Render::Icon::ObjectIcon,
-        "Plater view",
+        _u8L("Plater view"),
         "Ctrl + 5",
-        {.action = []()
+        {.action =
+             []()
          {
              // Do absolutely nothing
-         }}
+         }},
+        Yoga::ToolbarSwitchButton::SwitchPosition::Left
     );
     plater_button->set_checked(true);
 
-    m_layout->add_toolbar_item(
+    m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
         Render::Icon::Preview,
-        "Preview view",
+        _u8L("Preview view"),
         "Ctrl + 6",
         {.action = [this]()
-         { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Preview); }}
+         { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Preview); }},
+        Yoga::ToolbarSwitchButton::SwitchPosition::Right
     );
 }
 

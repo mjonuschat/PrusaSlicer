@@ -15,6 +15,7 @@ class PreviewRenderLayout : public AbstractRenderLayout
 {
 public:
     PreviewRenderLayout(
+        Navigator& navigator,
         std::unique_ptr<TopBar> top_bar,
         std::unique_ptr<PreferencesDialog> preferences_dialog,
         std::unique_ptr<ObjectListWindow> object_list,

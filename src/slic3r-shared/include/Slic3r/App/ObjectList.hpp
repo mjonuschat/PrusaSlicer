@@ -119,7 +119,6 @@ private:
         MultiSelections                 volumes_ms;
         size_t                          edited_node_id              { 0 };
         bool                            show_details                { false };
-        bool                            scene_map                   { false };
 
         bool                            is_dragging                 { false };
         std::set<Domain::ElementRef>    selected_items;  // Track selected item IDs

@@ -345,10 +345,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Navigator.cpp
         include/Slic3r/App/Navigator.hpp
 
-        src/Slic3r/App/Yoga/FlexSizer.cpp
-        include/Slic3r/App/Yoga/FlexSizer.hpp
-        src/Slic3r/App/Yoga/SplitterSizer.cpp
-        include/Slic3r/App/Yoga/SplitterSizer.hpp
         include/Slic3r/App/Yoga/Toolbar.hpp
         src/Slic3r/App/Yoga/Toolbar.cpp
         include/Slic3r/App/Yoga/Namespace.hpp
@@ -365,6 +361,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/AbstractButton.cpp
         include/Slic3r/App/Yoga/ToolbarButton.hpp
         src/Slic3r/App/Yoga/ToolbarButton.cpp
+        include/Slic3r/App/Yoga/ToolbarSwitchButton.hpp
+        src/Slic3r/App/Yoga/ToolbarSwitchButton.cpp
         include/Slic3r/App/Yoga/RectangleButton.hpp
         src/Slic3r/App/Yoga/RectangleButton.cpp
         include/Slic3r/App/Yoga/LayoutButton.hpp
@@ -462,6 +460,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/ContextPopup.cpp
         include/Slic3r/App/Yoga/SplitLayout.hpp
         src/Slic3r/App/Yoga/SplitLayout.cpp
+        include/Slic3r/App/Yoga/CollapsibleWindow.hpp
+        src/Slic3r/App/Yoga/CollapsibleWindow.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp

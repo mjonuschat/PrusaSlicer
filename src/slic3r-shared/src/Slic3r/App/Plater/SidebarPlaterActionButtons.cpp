@@ -20,7 +20,7 @@ using Domain::SelectionId;
 using Domain::SlicingId;
 
 SidebarPlaterActionButtons::SidebarPlaterActionButtons(Navigator* render_module_navigator) :
-    SidebarActionButtons("sidebar_plater_action_buttons", Render::ModuleType::Plater, render_module_navigator)
+    SidebarActionButtons("SidebarPlaterActionButtons", Render::ModuleType::Plater, render_module_navigator)
 {
     set_gap(5);
     auto navigation_button{get_navigation_button()};

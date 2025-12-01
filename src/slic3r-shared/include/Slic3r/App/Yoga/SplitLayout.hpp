@@ -26,6 +26,7 @@ public:
 
     void set_flex_child(Item* child, bool flex);
     void set_visible_child(Item* child, bool visible);
+    void set_separator_enable(size_t index, bool enable);
 
     void invalidate();
 

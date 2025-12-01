@@ -18,6 +18,7 @@
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/App/RenderModuleHelper.hpp"
+#include "Slic3r/App/SidebarStackLayout.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -35,7 +36,6 @@
 #include <boost/filesystem/operations.hpp>
 
 #define ENABLED_DEBUG_VIEWER 0
-#define ENABLED_DEBUG_LOAD_DATA 0
 #define ENABLED_DEBUG_VIEWER_MODE 0
 
 using namespace Slic3r::Biz;
@@ -118,45 +118,6 @@ static void render_imgui_debug_viewer(Wrapper& viewer)
 }
 #endif // ENABLED_DEBUG_VIEWER
 
-#if ENABLED_DEBUG_LOAD_DATA
-static void
-render_imgui_debug_load_data(Wrapper& viewer, Biz::ProjectInteractor& project_interactor, std::function<void(const std::string&)> cb)
-{
-    // currently the call to slice_all() works only the 1st time
-    static bool sliced = false;
-
-    ImGui::SetNextWindowPos({ImGui::GetMainViewport()->GetCenter().x, 2.5f * ImGui::GetTextLineHeight()}, ImGuiCond_Always, {0.5f, 0.0f});
-    if (ImGui::Begin("Load data", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoFocusOnAppearing))
-    {
-        bool disabled = sliced || viewer.mode() != FdmViewerWrapperMode::EditorGCode;
-        if (disabled)
-            ImGui::BeginDisabled();
-        ImGui::Spacing();
-        if (ImGui::Button("Slice all", {-1.0f, 0.0f})) {
-            viewer.reset();
-            project_interactor.slicing_interactor().slice_all();
-            sliced = true;
-        }
-        ImGui::Spacing();
-        if (disabled)
-            ImGui::EndDisabled();
-
-        ImGui::SeparatorText("Test files");
-
-        const char* files[] = {"test.gcode", "test.bgcode", "test_colors.bgcode", "test_v_slider.bgcode", "test_multimaterial.gcode", "test_sequential.gcode", "test_vase.gcode"};
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Select file");
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(200.0f);
-        static int current_file = 0;
-        ImGui::Combo("##modes", &current_file, files, IM_ARRAYSIZE(files));
-        if (ImGui::Button("Load", {-1.0f, 0.0f}))
-            cb(files[current_file]);
-    }
-    ImGui::End();
-}
-#endif // ENABLED_DEBUG_LOAD_DATA
-
 #if ENABLED_DEBUG_VIEWER_MODE
 static void render_imgui_debug_viewer_mode(Wrapper& viewer)
 {
@@ -220,12 +181,18 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 
     // temporary to allow to switch yoga layout on/off
     if (m_use_yoga_layout) {
+        Domain::PrinterTechnology printer_technology =
+            m_project_interactor.selected_config_container().print_technology();
         bool gcode_window_enabled = m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode
-            && m_fdm_viewer.has_data();
+            && m_fdm_viewer.has_data()
+            && printer_technology == Domain::PrinterTechnology::FFF;
 
         if (m_layout) {
-            m_legend->set_visible(gcode_window_enabled && m_button_legend->checked());
-            m_gcode_window->set_visible(gcode_window_enabled && m_button_gcode->checked());
+            m_button_gcode_inspect->set_visible(gcode_window_enabled);
+            if (m_button_gcode_inspect->checked() && !gcode_window_enabled) {
+                m_button_gcode_inspect->set_checked(false);
+            }
+            m_legend->set_visible(gcode_window_enabled);
             m_slider_layers->set_visible(m_fdm_viewer.has_data());
             m_sla_slider_layers->set_visible(m_sla_viewer.has_data());
             m_slider_gcode->set_visible(m_fdm_viewer.has_data());
@@ -262,18 +229,6 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 #if ENABLED_DEBUG_VIEWER
     render_imgui_debug_viewer(m_fdm_viewer);
 #endif // ENABLED_DEBUG_VIEWER
-#if ENABLED_DEBUG_LOAD_DATA
-    render_imgui_debug_load_data(
-        m_fdm_viewer,
-        m_project_interactor,
-        [this](const std::string& filename)
-        {
-            m_fdm_viewer.reset();
-            send_data_to_viewer_from_file(Slic3r::resources_dir() + "/test_data/" + filename);
-            m_layout->layout_toolbars_sizer();
-        }
-    );
-#endif // ENABLED_DEBUG_LOAD_DATA
 #if ENABLED_DEBUG_VIEWER_MODE
     render_imgui_debug_viewer_mode(m_fdm_viewer);
 #endif // ENABLED_DEBUG_VIEWER_MODE
@@ -398,6 +353,13 @@ bool PreviewRenderModule::is_opened_preferences()
     return m_preferences_dialog.get() && m_preferences_dialog.get()->opened();
 }
 
+void PreviewRenderModule::set_object_list_collapsed(bool collapsed)
+{
+    if (m_object_list.get()) {
+        m_object_list->set_collapsed(collapsed);
+    }
+}
+
 void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
     AbstractRenderModule::on_init(device, imgui_render);
@@ -462,24 +424,6 @@ void PreviewRenderModule::on_screen_resized()
 
 void PreviewRenderModule::register_commands()
 {
-    m_command_registry
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "toggle-legend-visibility",
-                [this]() { m_button_legend->callbacks().action(); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::L}
-            )
-        )
-        .register_command(
-            std::make_unique<Platform::FuncCommand>(
-                "toggle-gcodewindow-visibility",
-                [this]() { m_button_gcode->callbacks().action(); },
-                nullptr,
-                Platform::KeyboardShortcut{0, Platform::KeyCode::G}
-            )
-        );
-
     m_command_registry
         .register_command(
             std::make_unique<Platform::FuncCommand>(
@@ -666,6 +610,15 @@ void PreviewRenderModule::register_commands()
         );
 }
 
+void PreviewRenderModule::update_current_right_sidebar()
+{
+    if (m_button_gcode_inspect->checked()) {
+        m_layout->sidebar_stack_layout()->switch_to_item(SidebarStackLayout::ItemType::GCode);
+    } else {
+        m_layout->sidebar_stack_layout()->switch_to_item(SidebarStackLayout::ItemType::Bed);
+    }
+}
+
 void PreviewRenderModule::init_gizmos()
 {
     m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter, m_project_interactor, nullptr);
@@ -765,7 +718,10 @@ void PreviewRenderModule::init_scene_layout()
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this, *m_thumbnail_store, *m_render_module_navigator);
 
-    m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, false));
+    m_object_list = Passthrough(
+        std::make_unique<ObjectListWindow>(&m_project_interactor, false)
+    );
+    m_object_list->set_collapsed(m_render_module_navigator->object_list_collapsed());
 
     m_cube_view   = std::make_unique<CubeView>();
     m_sidebar_bed = std::make_unique<SidebarBed>(m_project_interactor, *m_render_module_navigator);
@@ -782,6 +738,7 @@ void PreviewRenderModule::init_scene_layout()
     m_sidebar_action_buttons->on_init(&m_project_interactor);
 
     m_layout.reset(new PreviewRenderLayout(
+        *m_render_module_navigator,
         m_top_bar.release(),
         m_preferences_dialog.release(),
         m_object_list.release(),
@@ -915,176 +872,43 @@ void PreviewRenderModule::init_scene_layout()
          }}
     );
 
-    // m_layout->set_layer_slider_render_fn([this](Vec2f size, Vec2f pos) {
-    // ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
-    // const std::string label = _u8L("Layers");
-    // float offset = size.x() - ImGui::CalcTextSize(label.c_str()).x;
-    // if (offset > 0.0f) {
-    // ImGui::Dummy({ 0.5f * offset, ImGui::GetTextLineHeight() });
-    // ImGui::SameLine(0.0f, 0.0f);
-    // }
-    // ImGui::Text("%s", label.c_str());
-    // ImGui::PopFont();
-    // m_viewer.render_layers_slider();
-    // });
-
-    // m_layout->set_gcode_slider_render_fn([this](Vec2f size, Vec2f pos) {
-    // ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
-    // ImGui::BeginGroup();
-    // const std::string label = _u8L("Steps");
-    // float offset = size.y() - ImGui::GetTextLineHeight();
-    // if (offset > 0.0f)
-    // ImGui::Dummy({ ImGui::CalcTextSize(label.c_str()).x, 0.5f * offset });
-    // ImGui::Text("%s", label.c_str());
-    // ImGui::PopFont();
-    // ImGui::EndGroup();
-    // ImGui::SameLine();
-    // m_viewer.render_gcode_slider();
-    // });
-
     // init toolbars
 
-    m_layout->add_toolbar_item_panel(
-        ToolbarID::Left,
-        Render::Icon::ToolbarObjects,
-        "Object List",
-        "Ctrl + Alt + O",
-        {},
-        m_object_list.get()
-    );
-
-    m_layout->add_toolbar_item(
+    m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
         Render::Icon::ObjectIcon,
-        "Plater view",
+        _u8L("Plater view"),
         "Ctrl + 5",
         {.action = [this]()
-         { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Plater); }}
+         { m_render_module_navigator->navigate_to_module_type(Render::ModuleType::Plater); }},
+        Yoga::ToolbarSwitchButton::SwitchPosition::Left
     );
 
-    ToolbarButton* preview_button = m_layout->add_toolbar_item(
+    ToolbarButton* preview_button = m_layout->add_toolbar_item_switch(
         ToolbarID::Right,
         Render::Icon::Preview,
-        "Preview view",
+        _u8L("Preview view"),
         "Ctrl + 6",
-        {.action = []()
+        {.action =
+             []()
          {
              // Do absolutely nothing
-         }}
+         }},
+        Yoga::ToolbarSwitchButton::SwitchPosition::Right
     );
     preview_button->set_checked(true);
 
-    m_button_legend = m_layout->add_toolbar_item_panel(
+    m_button_gcode_inspect = m_layout->add_toolbar_item_checkable(
         ToolbarID::Right,
-        Render::Icon::ToolbarGraph,
-        "Legend",
-        "",
-        {},
-        m_legend.get()
-        // .action = [this]() { m_viewer->toggle_legend_visible(); },
-        // .toggled    = [this]() { return m_viewer->has_data() && m_viewer->is_legend_shown(); }
-    );
-
-    m_button_gcode = m_layout->add_toolbar_item_panel(
-        ToolbarID::Right,
-        Render::Icon::ToolbarGCode,
-        "G-code",
-        "",
-        {},
-        m_gcode_window.get()
-        //.action     = [this]() { m_fdm_viewer.toggle_gcodewindow_visible(); },
-        // .toggled    = [this]() { return m_fdm_viewer.has_data() && !m_fdm_viewer.is_gcodewindow_visible(); }
+        Render::Icon::LayersInspect,
+        _u8L("G-code inspect"),
+        std::string{},
+        {.checked_changed = [this](bool checked) { update_current_right_sidebar(); }}
     );
 
     // Initialize toolbar buttons visibility
     update_toolbar_visibility();
     // <<
-}
-
-//
-// Temporary function for test
-//
-static std::pair<ProcessorConfig, std::string> extract_from_gcode(const std::string& filename)
-{
-    std::pair<ProcessorConfig, std::string> ret;
-
-    FILE* in = boost::nowide::fopen(filename.data(), "rb");
-    if (in != nullptr) {
-        fseek(in, 0, SEEK_END);
-        const long file_size = ftell(in);
-        rewind(in);
-
-        if (file_size == 0) {
-            fclose(in);
-            return ret;
-        }
-
-        ret.second.resize(file_size, '\0');
-        const std::size_t cnt_read = fread(ret.second.data(), 1, ret.second.size(), in);
-        if (cnt_read != ret.second.size()) {
-            fclose(in);
-            return ret;
-        }
-    } else {
-        fclose(in);
-        return ret;
-    }
-
-    fclose(in);
-
-    const GCodeProducer producer = detect_producer(ret.second);
-
-    switch (producer) {
-    case GCodeProducer::AnkerMakeStudio: {
-        ret.first = extract_processor_config_from_ankermakestudio_gcode(ret.second);
-        break;
-    }
-    case GCodeProducer::BambuStudio: {
-        ret.first = extract_processor_config_from_bambustudio_gcode(ret.second);
-        break;
-    }
-    case GCodeProducer::CraftWare: {
-        ret.first = extract_processor_config_from_craftware_gcode(ret.second);
-        break;
-    }
-    case GCodeProducer::Cura: {
-        ret.first = extract_processor_config_from_cura_gcode(ret.second);
-        break;
-    }
-    case GCodeProducer::KISSlicer: {
-        ret.first = extract_processor_config_from_kisslicer_gcode(ret.second);
-        break;
-    }
-    case GCodeProducer::ideaMaker: {
-        ret.first = extract_processor_config_from_ideamaker_gcode(ret.second);
-        break;
-    }
-    case GCodeProducer::OrcaSlicer: {
-        ret.first = extract_processor_config_from_orcaslicer_gcode(ret.second);
-        break;
-    }
-    case GCodeProducer::PrusaSlicer: {
-        ret.first = extract_processor_config_from_prusaslicer_gcode(ret.second);
-        break;
-    }
-    case GCodeProducer::Simplify3D: {
-        ret.first = extract_processor_config_from_simplify3d_gcode(ret.second);
-        break;
-    }
-    case GCodeProducer::SuperSlicer: {
-        ret.first = extract_processor_config_from_superslicer_gcode(ret.second);
-        break;
-    }
-    case GCodeProducer::XDesktop: {
-        ret.first = extract_processor_config_from_xdesktop_gcode(ret.second);
-        break;
-    }
-    default: {
-        break;
-    }
-    }
-
-    return ret;
 }
 
 void PreviewRenderModule::update_toolbar_visibility()
@@ -1109,12 +933,7 @@ void PreviewRenderModule::update_toolbar_visibility()
         ->set_visible(fdm_has_gcode /*m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer*/);
     m_button_wipes->set_visible(fdm_has_gcode);
 
-    m_button_legend->set_visible(
-        fdm_has_gcode
-        && m_fdm_viewer.has_data()
-        && m_fdm_viewer.mode() == FdmViewerWrapperMode::EditorGCode
-    );
-    m_button_gcode->set_visible(fdm_has_gcode);
+    //m_button_gcode_inspect
 }
 
 void PreviewRenderModule::init_dialog_navigation()

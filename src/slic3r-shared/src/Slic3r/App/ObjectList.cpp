@@ -392,6 +392,8 @@ ObjectList::Callbacks& ObjectList::callbacks()
 
 ObjectList::ObjectList(Biz::ProjectInteractor* project_interactor, ObjectList::Mode mode) : Item()
 {
+    set_item_name("ObjectList");
+    set_orientation(Yoga::Orientation::Vertical);
     init(project_interactor, mode);
 }
 
@@ -450,8 +452,6 @@ bool ObjectList::handle_selection(const Domain::ElementRef& id)
 void ObjectList::handle_dragging(const Domain::ElementRef& id)
 {
     auto& ctx = selected_project_context();
-    if (ctx.scene_map)
-        return;
 
     // Detect dragging on any selected node
     if (ctx.selected_items.count(id)
@@ -558,12 +558,7 @@ void ObjectList::update_selection_from_scene()
 
 bool ObjectList::render_list(Domain::Vec2f size)
 {
-    // ysFIXME delete after new layout apply!!!
-    // Temporary fix for the assert in Debug mode
-    if (GImGui->CurrentWindow && std::string(GImGui->CurrentWindow->Name) == "Debug##Default")
-        return false;
-
-    ImGui::BeginChild("ObjectList", ImVec2(-FLT_MIN, size.y()));
+    ImGui::BeginChild("ObjectListScroll", ImVec2(-FLT_MIN, size.y()));
 
     bool is_changed_selection = render_config_containers();
     is_changed_selection |= render_out_of_beds();

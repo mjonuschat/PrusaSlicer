@@ -19,6 +19,7 @@ public:
         Bed,
         Object,
         Gizmo,
+        GCode
     };
 
     void insert_item(ItemType type, Yoga::ItemPtr item);

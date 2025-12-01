@@ -28,7 +28,7 @@ TopBar::TopBar(
     ThumbnailStore& thumbnail_store,
     Navigator& navigator
 ) :
-    Window("top_bar"),
+    Window("TopBar"),
     m_selected_project_changed_listener_scope(*project_interactor, *this),
     m_project_interactor(project_interactor),
     m_render_module(render_module),

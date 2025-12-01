@@ -47,7 +47,7 @@ namespace CustomGCode = Domain::CustomGCode;
 static constexpr float EPSILON = 0.0011f;
 
 DoubleSliderForLayers::DoubleSliderForLayers()
-: Slic3r::App::Imgui::DoubleSlider::Manager<float>(std::string("layers_slider"), L("Layers"), Yoga::Orientation::Vertical)
+: Slic3r::App::Imgui::DoubleSlider::Manager<float>(std::string("LayersSlider"), L("Layers"), Yoga::Orientation::Vertical)
 {
     set_flex_shrink(0);
     Yoga::Item* btns = emplace_back<Yoga::Item>();

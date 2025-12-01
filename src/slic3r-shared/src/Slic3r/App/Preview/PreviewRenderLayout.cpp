@@ -6,12 +6,14 @@
 #include "Slic3r/App/Preview/DoubleSliderForGCode.hpp"
 #include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
+#include "Slic3r/App/SidebarStackLayout.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Preview {
 
 PreviewRenderLayout::PreviewRenderLayout(
+    Navigator& navigator,
     std::unique_ptr<TopBar> top_bar,
     std::unique_ptr<PreferencesDialog> preferences_dialog,
     std::unique_ptr<ObjectListWindow> object_list,
@@ -27,8 +29,9 @@ PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<DoubleSliderForLayers> sla_double_slider_layers,
     std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
     std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
-    )
-    : AbstractRenderLayout(
+) :
+    AbstractRenderLayout(
+        navigator,
         std::move(top_bar),
         std::move(preferences_dialog),
         std::move(object_list),
@@ -37,14 +40,14 @@ PreviewRenderLayout::PreviewRenderLayout(
         std::move(sidebar_bed),
         std::move(sidebar_print),
         std::move(sidebar_object)
-    )
-    , m_gcode_window(std::move(m_gcode_window))
-    , m_legend(std::move(legend))
-    , m_double_slider_layers(std::move(double_slider_layers))
-    , m_sla_double_slider_layers(std::move(sla_double_slider_layers))
-    , m_double_slider_gcode(std::move(double_slider_gcode))
-    , m_sidebar_auto_reslice(std::move(sidebar_auto_reslice))
-    , m_sidebar_action_buttons(std::move(sidebar_action_buttons))
+    ),
+    m_gcode_window(std::move(m_gcode_window)),
+    m_legend(std::move(legend)),
+    m_double_slider_layers(std::move(double_slider_layers)),
+    m_sla_double_slider_layers(std::move(sla_double_slider_layers)),
+    m_double_slider_gcode(std::move(double_slider_gcode)),
+    m_sidebar_auto_reslice(std::move(sidebar_auto_reslice)),
+    m_sidebar_action_buttons(std::move(sidebar_action_buttons))
 {}
 
 PreviewRenderLayout::~PreviewRenderLayout() = default;
@@ -55,10 +58,8 @@ void PreviewRenderLayout::init_left_column()
 
     m_layout_left_column->append(m_legend.release());
     m_legend->set_visible(false);
-
-    m_layout_left_column->append(m_gcode_window.release());
-    m_gcode_window->set_visible(false);
-    m_gcode_window->set_flex_grow(1);
+    m_legend->collapsible_window_callbacks().collapsed_changed = [this](bool collapsed)
+    { update_left_separator_enable(); };
 }
 
 void PreviewRenderLayout::init_middle_column()
@@ -77,6 +78,13 @@ void PreviewRenderLayout::init_middle_column()
 void PreviewRenderLayout::init_right_column()
 {
     AbstractRenderLayout::init_right_column();
+
+    m_layout_sidebar_stack_layout->insert_item(
+        SidebarStackLayout::ItemType::GCode,
+        m_gcode_window.release()
+    );
+    m_gcode_window->set_visible(false);
+    m_gcode_window->set_flex_grow(1);
 
     m_layout_right_column->append(m_sidebar_auto_reslice.release());
 

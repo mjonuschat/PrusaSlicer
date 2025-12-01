@@ -27,7 +27,9 @@ GCodeDisplay::GCodeDisplay(libvgcode::FdmViewer* viewer, GCodeWindowData* data) 
     Yoga::Item(),
     m_viewer(viewer),
     m_data(data)
-{}
+{
+    set_item_name("GCodeDisplay");
+}
 
 void GCodeDisplay::render(Yoga::Vec2f pos, Yoga::Vec2f size)
 {
