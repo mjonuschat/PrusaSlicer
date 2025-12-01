@@ -443,6 +443,24 @@ public:
         return num_layers_widened > 0 ? branch_radius + num_layers_widened * bp_radius_increase_per_layer : 0;
     }
 
+    [[nodiscard]] inline coord_t recommendedMinRadius(LayerIndex layer_idx, LayerIndex dtt) const
+    {
+        assert(dtt >= 0);
+        if (dtt <= 0 || layer_idx >= layer_start_bp_radius)
+            return 0;
+
+        // Height of the highest tip of this branch from the build plate along Z axis.
+        double h = (layer_idx + dtt) * this->layer_height;
+//        static constexpr const double recommended_base2height_ratio = 0.33;
+        static constexpr const double recommended_base2height_ratio = 0.5;
+        coord_t recommended_base_radius = coord_t(h * recommended_base2height_ratio + 0.5);
+        // Ideal base radius at the build plate.
+        coord_t r = std::min(recommended_base_radius, this->bp_radius);
+        // Reduce the ideal base radius to correspond to the radius at layer_idx
+        r -= layer_idx * bp_radius_increase_per_layer;
+        return std::max<coord_t>(r, 0);
+    }
+
 #if 0
     /*!
      * \brief Return on which z in microns the layer will be printed. Used only for support infill line generation.

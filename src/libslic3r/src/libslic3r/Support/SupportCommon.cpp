@@ -481,9 +481,23 @@ SupportGeneratorLayersPtr generate_raft_base(
             if (! interface_polygons.empty())
                 columns_base->polygons = diff(columns_base->polygons, interface_polygons);
         }
-        if (! brim.empty()) {
-            if (columns_base)
-                columns_base->polygons = diff(columns_base->polygons, brim);
+        if (!brim.empty()) {
+            if (columns_base) {
+                columns_base->polygons = opening(diff(columns_base->polygons, brim), static_cast<float>(support_params.first_layer_flow.scaled_width()));
+
+                // Filter out unnecessary support base islands.
+                if (base_layers.size() > 1) {
+                    Polygons filtered_polygons;
+                    for (Polygon& polygon : columns_base->polygons) {
+                        if (!intersection(polygon, base_layers[1]->polygons).empty()) {
+                            filtered_polygons.emplace_back(std::move(polygon));
+                        }
+                    }
+
+                    columns_base->polygons = std::move(filtered_polygons);
+                }
+            }
+
             if (contacts)
                 contacts->polygons = diff(contacts->polygons, brim);
             if (interfaces)
