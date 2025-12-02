@@ -653,11 +653,7 @@ void PreviewRenderModule::register_commands()
 void PreviewRenderModule::init_gizmos()
 {
     m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter, m_project_interactor, nullptr);
-    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(m_workbench, *m_scene_presenter);
-    // ensure camera gizmo is properly initialized
-    m_camera_gizmo->on_selected_bed_instances_changed(m_project_interactor.selected_project_id(),
-        m_project_interactor.scene_interactor().bed_selection());
-    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(m_camera_gizmo);
+    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(m_workbench, m_project_interactor , *m_scene_presenter);
 }
 
 void PreviewRenderModule::init_viewers(Render::Device& device)

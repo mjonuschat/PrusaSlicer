@@ -3,7 +3,6 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Render/DynamicGeometry.hpp"
-#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
@@ -12,10 +11,13 @@
 #define CAMERA_GIZMO_DEBUG 0
 #endif
 
+namespace Slic3r::Biz {
+class ProjectInteractor;
+} // namespace Slic3r::Biz
+
 namespace Slic3r::App::Scene {
 
-class AbstractCameraGizmo : public IGizmo,
-                            public Biz::ISelectedBedInstancesChangedListener
+class AbstractCameraGizmo : public IGizmo
 {
 public:
     enum class State : uint8_t {
@@ -24,8 +26,8 @@ public:
         Rotating
     };
 
-    AbstractCameraGizmo(const Domain::Workbench& workbench, ISceneProvider& scene_provider)
-      : m_workbench(workbench), m_scene_provider(scene_provider)
+    AbstractCameraGizmo(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor, ISceneProvider& scene_provider)
+      : m_workbench(workbench), m_project_interactor(project_interactor), m_scene_provider(scene_provider)
 #if CAMERA_GIZMO_DEBUG
         , m_dynamic_geometry(Render::Context::instance().device())
 #endif
@@ -39,13 +41,6 @@ public:
 #if CAMERA_GIZMO_DEBUG
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
 #endif
-
-    /**
-     * @name Implementation of Slic3r::Biz::ISelectedBedInstancesChangedListener public interface
-     * @{
-     */
-    void on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection) override;
-    /**@}*/
 
 private:
     void update_pan(const Domain::Vec3d& delta, bool synchronize_cam_pivot);
@@ -71,13 +66,12 @@ private:
 
 private:
     const Domain::Workbench& m_workbench;
-
+    Biz::ProjectInteractor& m_project_interactor;
     ISceneProvider& m_scene_provider;
+
     State m_state{State::Inactive};
     float m_last_x{0.0f};
     float m_last_y{0.0f};
-    Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
-    Domain::BedRef m_selected_bed{Domain::INVALID_ID, Domain::INVALID_ID};
 #if CAMERA_GIZMO_DEBUG
     Render::DynamicGeometry<Render::VertexP3> m_dynamic_geometry;
 #endif // CAMERA_GIZMO_DEBUG

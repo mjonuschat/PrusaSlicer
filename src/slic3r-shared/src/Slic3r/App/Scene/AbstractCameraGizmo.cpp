@@ -2,6 +2,7 @@
 #include "Slic3r/App/Scene/Plane.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 
 using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::Vec3f;
@@ -125,12 +126,6 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         );
 }
 
-void AbstractCameraGizmo::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
-{
-    m_selected_project_id = project_id;
-    m_selected_bed = selection.last_selected_bed();
-}
-
 // TODO: move these draw_* function into own module so they can be reused (+ add drawing-in-plane renderer utilizing x-axis and y-axis and origin on the plane)
 template <typename V>
 void draw_circle(Render::DynamicGeometry<V>& g, const Vec3f& position, const Vec3f& x_axis, const Vec3f& y_axis, float radius, size_t resolution = 32)
@@ -197,9 +192,9 @@ bool AbstractCameraGizmo::pick_plane(double mouse_x, double mouse_y, const Rende
 
 void AbstractCameraGizmo::center_camera_on_selected_bed()
 {
-    DEBUG_ASSERT(m_selected_project_id != Domain::INVALID_ID);
-    DEBUG_ASSERT(m_selected_bed.config_container_id != Domain::INVALID_ID && m_selected_bed.instance_id != Domain::INVALID_ID);
-    center_camera_on_bed(m_workbench.project(m_selected_project_id), m_selected_bed, m_scene_provider.scene().camera_trackball());
+    Domain::SelectionId selected_project_id = m_project_interactor.selected_project_id();
+    Domain::BedRef selected_bed = m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
+    center_camera_on_bed(m_workbench.project(selected_project_id), selected_bed, m_scene_provider.scene().camera_trackball());
 }
 
 GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)

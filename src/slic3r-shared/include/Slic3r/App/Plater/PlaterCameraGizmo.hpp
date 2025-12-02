@@ -7,8 +7,9 @@ namespace Slic3r::App::Plater {
 class PlaterCameraGizmo : public Scene::AbstractCameraGizmo
 {
 public:
-    PlaterCameraGizmo(const Domain::Workbench& workbench, Scene::ISceneProvider& scene_provider)
-        : Scene::AbstractCameraGizmo(workbench, scene_provider) {}
+    PlaterCameraGizmo(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
+        Scene::ISceneProvider& scene_provider)
+        : Scene::AbstractCameraGizmo(workbench, project_interactor, scene_provider) {}
 
 private:
     virtual bool any_draggable(Scene::GizmoEventContext& ctx) const override;

@@ -621,11 +621,7 @@ void PlaterRenderModule::init_gizmos()
         std::move(drag_detector)
     );
     m_gizmo_manager->add_listener<IGizmoActiveToolListener>(this);
-    m_camera_gizmo = &m_gizmo_manager
-                          ->add_base_gizmo<PlaterCameraGizmo>(m_workbench, *m_scene_presenter);
-    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
-        m_camera_gizmo
-    );
+    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(m_workbench, m_project_interactor, *m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(m_project_interactor, *m_scene_presenter);
     QuickSelectGizmo& quick_select_gizmo = m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(
         m_project_interactor.scene_interactor(),
