@@ -49,8 +49,8 @@ UnsavedChangesDialog::UnsavedChangesDialog(
         wxDefaultSize,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
     ),
-    m_config_selected(config_selected),
     m_config_original(config_original),
+    m_config_selected(config_selected),
     m_config_new(config_new_selected),
     m_preset_names(preset_names),
     m_preset_names_new(preset_names_new)

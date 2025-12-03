@@ -111,7 +111,7 @@ public:
     typedef std::function<void(GCodeReader&, const GCodeLine&)> callback_t;
     typedef std::function<void(GCodeReader&, const char*, const char*)> raw_line_callback_t;
     
-    GCodeReader() : m_verbose(false), m_extrusion_axis('E') { this->reset(); }
+    GCodeReader() : m_extrusion_axis('E'), m_verbose(false) { this->reset(); }
     void reset() { memset(m_position, 0, sizeof(m_position)); }
     void set_extrusion_axis(char extrusion_axis);
     void set_use_relative_e_distances(const bool use);

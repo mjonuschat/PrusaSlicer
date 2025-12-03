@@ -321,10 +321,10 @@ bool has_full_config_from_profiles(const InitParams& init_params)
     const InputParams& input = init_params.input;
 
     return !has_profile_sharing_action(init_params)
-        && (input.print_profile_preset.has_value() && !input.print_profile_preset->empty()
+        && ((input.print_profile_preset.has_value() && !input.print_profile_preset->empty())
             || !input.material_profile_presets.empty()
             || !input.tool_profile_presets.empty()
-            || input.printer_profile_preset.has_value() && !input.print_profile_preset->empty());
+            || (input.printer_profile_preset.has_value() && !input.print_profile_preset->empty()));
 }
 
 bool process_profiles_sharing(const InitParams& init_params)

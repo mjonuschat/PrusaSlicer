@@ -591,7 +591,7 @@ bool ObjectList::tree_node(
     // get initial cursor position
     ImVec2 pos_old = ImGui::GetCursorScreenPos();
     // render node as it is
-    bool is_open = ImGui::TreeNodeEx(str_id, flags, label.c_str());
+    bool is_open = ImGui::TreeNodeEx(str_id, flags, "%s", label.c_str());
 
     // for leaf node no need to redrow of arrows
     if ((flags & ImGuiTreeNodeFlags_Leaf) != 0)
@@ -687,7 +687,7 @@ static bool selectable(
 
     if (add_overrides_marker) {
         ImGui::SameLine(init_pos.x - style.ItemSpacing.x - style.CellPadding.x);
-        ImGui::Text(icon_str(Render::Icon::OverridesMarker).c_str());
+        ImGui::Text("%s", icon_str(Render::Icon::OverridesMarker).c_str());
         ImGui::SameLine();
     }
 
@@ -787,7 +787,7 @@ void ObjectList::render_group_name(const std::string& name)
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, m_inner_padding.y() * 0.25f));
     ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
     ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 0.25f * m_inner_padding.y()));
-    ImGui::Text(name.c_str());
+    ImGui::Text("%s", name.c_str());
     ImGui::PopStyleColor();
     ImGui::PopStyleVar();
 }

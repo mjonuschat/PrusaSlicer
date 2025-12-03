@@ -64,7 +64,12 @@ bool is_simplify_node(const Node* n){
 
 // cancel exception
 class SimplifyCanceledException : public std::exception {
-public: const char* what() const throw() { return _u8L("Model simplification has been canceled").c_str(); }};
+public:
+    SimplifyCanceledException() : m_message(_u8L("Model simplification has been canceled")) {}
+    const char* what() const noexcept { return m_message.c_str(); }
+private:
+    std::string m_message;
+};
 
 // to prevent freezing when move in gui
 // delay before process in [ms]

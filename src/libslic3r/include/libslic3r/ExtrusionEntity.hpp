@@ -155,11 +155,11 @@ struct ExtrusionAttributes : ExtrusionFlow
 {
     ExtrusionAttributes() = default;
     ExtrusionAttributes(ExtrusionRole role) : role{ role } {}
-    ExtrusionAttributes(ExtrusionRole role, const Flow &flow) : role{ role }, ExtrusionFlow{ flow } {}
-    ExtrusionAttributes(ExtrusionRole role, const ExtrusionFlow &flow) : role{ role }, ExtrusionFlow{ flow } {}
-    ExtrusionAttributes(ExtrusionRole role, const ExtrusionFlow &flow, const uint16_t perimeter_index) : role{ role }, ExtrusionFlow{ flow }, perimeter_index{ perimeter_index } {}
+    ExtrusionAttributes(ExtrusionRole role, const Flow &flow) : ExtrusionFlow{ flow }, role{ role } {}
+    ExtrusionAttributes(ExtrusionRole role, const ExtrusionFlow &flow) : ExtrusionFlow{ flow }, role{ role } {}
+    ExtrusionAttributes(ExtrusionRole role, const ExtrusionFlow &flow, const uint16_t perimeter_index) : ExtrusionFlow{ flow }, role{ role }, perimeter_index{ perimeter_index } {}
     ExtrusionAttributes(ExtrusionRole role, const ExtrusionFlow &flow, const bool maybe_self_crossing)
-        : role{role}, ExtrusionFlow{flow}, maybe_self_crossing(maybe_self_crossing) {}
+        : ExtrusionFlow{flow}, role{role}, maybe_self_crossing(maybe_self_crossing) {}
 
     // What is the role / purpose of this extrusion?
     ExtrusionRole   role{ ExtrusionRole::None };

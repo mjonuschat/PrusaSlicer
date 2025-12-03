@@ -24,8 +24,8 @@ ConfigRowItem::ConfigRowItem(
 ) :
     Biz::DataObserver<Domain::ConfigItem>(index, data),
     m_cbi_container(cbi_container),
-    m_cbi_index(cbi_index),
-    m_small(small)
+    m_small(small),
+    m_cbi_index(cbi_index)
 {
     set_flex_shrink(0);
     set_padding(5);

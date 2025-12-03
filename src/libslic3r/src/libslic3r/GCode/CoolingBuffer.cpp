@@ -148,8 +148,8 @@ struct CoolingLine
     CoolingLine(unsigned int type, size_t  line_start, size_t  line_end) :
         type(type), line_start(line_start), line_end(line_end),
         adjustable_length(0.f), non_adjustable_length(0.f), feedrate(0.f),
-        feedrate_original(0.f), adjustable_time(0.f), adjustable_time_max(0.f),
-        non_adjustable_time(0.f), slowdown(false) {}
+        feedrate_original(0.f), adjustable_time(0.f), non_adjustable_time(0.f),
+        adjustable_time_max(0.f), slowdown(false) {}
 
     bool adjustable(AdjustableFeatureType additional_slowdown_features) const {
         if (!(this->type & TYPE_ADJUSTABLE) || this->adjustable_length <= 0.f || this->adjustable_time >= this->adjustable_time_max) {

@@ -26,8 +26,8 @@ TabsBarCtrl::Button::Button(
 #else
 ,m_background_color(wxTransparentColor)
 #endif
-,m_foreground_color(m_parent->GetForegroundColour())
 ,m_appearance(appear)
+,m_foreground_color(m_parent->GetForegroundColour())
 {
     init_bitmaps();
     messure_min_size();
@@ -311,8 +311,8 @@ wxPoint TabsBarCtrl::ButtonWithPopup::get_popup_pos()
 
 TabsBarCtrl::TabsBarCtrl(wxWindow *parent, int orient, TabsBarMenus* menus/* = nullptr*/) :
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
-    ,m_menus(menus)
     ,m_orient(orient)
+    ,m_menus(menus)
 {
     w_config()->UpdateDarkUI(this);
 

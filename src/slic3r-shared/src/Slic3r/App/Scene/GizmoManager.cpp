@@ -47,7 +47,7 @@ GizmoManager::GizmoManager(
 namespace {
 std::vector<IGizmo*> get_gizmos(const std::vector<std::unique_ptr<IGizmo>> &base_gizmos, IGizmo* active_tool) {
     std::vector<IGizmo*> gizmos;
-    gizmos.reserve(base_gizmos.size() + (active_tool==nullptr)? 0:1);
+    gizmos.reserve(base_gizmos.size() + ((active_tool==nullptr)? 0:1));
     if (active_tool == nullptr) {
         gizmos.reserve(base_gizmos.size());
     } else {

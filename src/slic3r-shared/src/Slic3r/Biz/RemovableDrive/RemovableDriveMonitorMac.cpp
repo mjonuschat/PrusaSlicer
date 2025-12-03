@@ -104,7 +104,7 @@ size_t RemovableDriveMonitorMac::removable_drives_count() const
 
 void RemovableDriveMonitorMac::dispatch_status(const boost::filesystem::path& drive_path, RemovableDriveStatus status)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread(
+    m_dispatcher.dispatch_on_main_thread(
         [this, drive_path, status]() mutable
         {
             this->invoke_listeners<IRemovableDriveStatusListener>(

@@ -55,7 +55,7 @@ namespace FillLightning {
 class LayerExtrusionRange : public ExtrusionRange
 {
 public:
-    LayerExtrusionRange(uint32_t iregion, ExtrusionRange extrusion_range) : m_region(iregion), ExtrusionRange(extrusion_range) {}
+    LayerExtrusionRange(uint32_t iregion, ExtrusionRange extrusion_range) : ExtrusionRange(extrusion_range), m_region(iregion) {}
     LayerExtrusionRange() = default;
 
     // Index of LayerRegion in Layer.
@@ -241,10 +241,9 @@ protected:
     friend std::string fix_slicing_errors(LayerPtrs&, const std::function<void()>&);
 
     Layer(size_t id, PrintObject *object, double height, double print_z, double slice_z) :
-        upper_layer(nullptr), lower_layer(nullptr), 
+        upper_layer(nullptr), lower_layer(nullptr),
         //slicing_errors(false),
-        slice_z(slice_z), print_z(print_z), height(height),
-        m_id(id), m_object(object) {}
+        slice_z(slice_z), print_z(print_z), height(height), m_id(id), m_object(object) {}
     virtual ~Layer();
     // Clear fill extrusions, remove them from layer islands.
     void clear_fills();

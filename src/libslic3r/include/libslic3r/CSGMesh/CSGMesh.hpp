@@ -81,9 +81,9 @@ struct CSGPart {
             CSGType                            op  = CSGType::Union,
             const Domain::Transform3f         &tr  = Domain::Transform3f::Identity())
         : its_ptr{std::move(ptr)}
+        , trafo{tr}
         , operation{op}
         , stack_operation{CSGStackOp::Continue}
-        , trafo{tr}
     {}
 };
 

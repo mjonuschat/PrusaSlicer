@@ -44,10 +44,10 @@ Framebuffer::Framebuffer(Device& device, const FramebufferCreationData& data)
     if (self.num_samples > 1) {
         m_renderbuffers.reserve(tex_count);
         for (size_t i = 0; i < self.color_attachments_count; ++i) {
-            m_renderbuffers.emplace_back(std::move(device.create_render_buffer(data.color_attachments[i].format)));
+            m_renderbuffers.emplace_back(device.create_render_buffer(data.color_attachments[i].format));
         }
         if (data.depth || data.stencil)
-            m_renderbuffers.emplace_back(std::move(device.create_render_buffer(PixelFormat::DepthComponent)));
+            m_renderbuffers.emplace_back(device.create_render_buffer(PixelFormat::DepthComponent));
 
         for (size_t i = 0; i < self.color_attachments_count; ++i) {
             const FramebufferColorAttachment& info = data.color_attachments[i];

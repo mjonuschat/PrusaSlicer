@@ -91,7 +91,7 @@ struct CSGPartForStep : public csg::CSGPart
     mutable Biz::CGAL::Algorithms::MeshBoolean::cgal::CGALMeshPtr cgalcache;
 
     CSGPartForStep(SLAPrintObjectStep k, CSGPart &&p = {})
-        : key{k}, CSGPart{std::move(p)}
+        : CSGPart{std::move(p)}, key{k}
     {}
 
     CSGPartForStep &operator=(CSGPart &&part)

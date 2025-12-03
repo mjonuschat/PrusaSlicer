@@ -21,9 +21,9 @@ BeadingStrategy::BeadingStrategy(const BeadingStrategy &other)
     : optimal_width(other.optimal_width)
     , wall_split_middle_threshold(other.wall_split_middle_threshold)
     , wall_add_middle_threshold(other.wall_add_middle_threshold)
+    , name(other.name)
     , default_transition_length(other.default_transition_length)
     , transitioning_angle(other.transitioning_angle)
-    , name(other.name)
 {}
 
 coord_t BeadingStrategy::getTransitioningLength(coord_t lower_bead_count) const

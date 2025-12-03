@@ -35,7 +35,7 @@ namespace bb = Biz::Algorithms::BoundingBox;
 namespace expoly = Biz::Algorithms::ExPolygon;
 
 SVG::SVG(const std::string &filename):
-    arrows(false), fill("grey"), stroke("black"), filename(filename), flipY(false)
+    arrows(false), fill("grey"), stroke("black"), flipY(false), filename(filename)
 {
     this->f = boost::nowide::fopen(this->filename.c_str(), "w");
     if (f == NULL) {
@@ -61,9 +61,9 @@ SVG::SVG(
     arrows(false),
     fill("grey"),
     stroke("black"),
-    filename(filename),
     origin(bbox.min - Domain::Point(bbox_offset, bbox_offset)),
-    flipY(flipY)
+    flipY(flipY),
+    filename(filename)
 {
     this->f = boost::nowide::fopen(this->filename.c_str(), "w");
     if (f == NULL) {

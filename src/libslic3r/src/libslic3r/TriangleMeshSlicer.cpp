@@ -121,8 +121,8 @@ class IntersectionPoint : public Point, public IntersectionReference
 {
 public:
     IntersectionPoint() = default;
-    IntersectionPoint(int point_id, int edge_id, const Point &pt) : IntersectionReference(point_id, edge_id), Point(pt) {}
-    IntersectionPoint(const IntersectionReference &ir, const Point &pt) : IntersectionReference(ir), Point(pt) {}
+    IntersectionPoint(int point_id, int edge_id, const Point &pt) : Point(pt), IntersectionReference(point_id, edge_id) {}
+    IntersectionPoint(const IntersectionReference &ir, const Point &pt) : Point(pt), IntersectionReference(ir) {}
     // Inherits coord_t x, y
 };
 

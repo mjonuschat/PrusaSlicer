@@ -448,8 +448,8 @@ AbstractRenderLayout::AbstractRenderLayout(
     std::unique_ptr<SidebarObject> sidebar_object
 ) :
     m_top_bar(std::move(top_bar)),
-    m_preferences_dialog(std::move(preferences_dialog)),
     m_object_list(std::move(object_list)),
+    m_preferences_dialog(std::move(preferences_dialog)),
     m_cube_view(std::move(cube_view)),
     m_pop_notification_list_view(std::move(pop_notification_list_view)),
     m_sidebar_bed(std::move(sidebar_bed)),

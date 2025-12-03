@@ -159,8 +159,8 @@ struct ArrangeableWipeTowerBase: public Arrangeable
         SelectionPredicate selection_predicate = [](int){ return false; })
         : oid{objid},
           poly{std::move(shape)},
-          bed_index{bed_index},
-          selection_pred{std::move(selection_predicate)}
+          selection_pred{std::move(selection_predicate)},
+          bed_index{bed_index}
     {}
 
     Domain::ObjectID id() const override { return oid; }
@@ -545,8 +545,8 @@ class ArrangeableSLAPrint : public ArrangeableSlicerModel {
 
 public:
     explicit ArrangeableSLAPrint(const SLAPrint *slaprint, SceneBuilder &builder)
-        : m_slaprint{slaprint}
-        , ArrangeableSlicerModel{builder}
+        : ArrangeableSlicerModel{builder}
+        , m_slaprint{slaprint}
     {
         assert(slaprint != nullptr);
     }

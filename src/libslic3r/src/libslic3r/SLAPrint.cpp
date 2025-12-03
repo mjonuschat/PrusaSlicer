@@ -1309,9 +1309,7 @@ using Domain::TriangleMesh;
 namespace { // dummy empty static containers for return values in some methods
 const std::vector<ExPolygons> EMPTY_SLICES;
 const TriangleMesh EMPTY_MESH;
-const indexed_triangle_set EMPTY_TRIANGLE_SET;
 const ExPolygons EMPTY_SLICE;
-const std::vector<Domain::SLA::SupportPoint> EMPTY_SUPPORT_POINTS;
 }
 
 const SliceRecord SliceRecord::EMPTY(0, std::nanf(""), 0.f);
@@ -1397,7 +1395,7 @@ Domain::SLA::SupportPoints SLAPrintObject::transformed_support_points() const
 Domain::SLA::DrainHoles SLAPrintObject::transformed_drainhole_points() const
 {
     assert(model_object());
-    Domain::SLA::DrainHoles drainholes = drainholes; // Copy the drainholes
+    Domain::SLA::DrainHoles drainholes = model_object()->sla_drain_holes; // Copy the drainholes
     sla::transform_drainhole_points(drainholes, trafo());
     return drainholes;
 }

@@ -82,14 +82,14 @@ private:
     void dispatch_status(const boost::filesystem::path& drive_path, RemovableDriveStatus status)
     {
         invoke_listeners<IRemovableDriveStatusListener>(
-            [this, drive_path, status](auto* listener)
+            [drive_path, status](auto* listener)
             { listener->on_removable_drive_status_changed(drive_path, status); }
         );
     }
 
     void dispatch_status_on_main_thread(const boost::filesystem::path& drive_path, RemovableDriveStatus status)
     {
-        bool dispatched = m_dispatcher.dispatch_on_main_thread(
+        m_dispatcher.dispatch_on_main_thread(
             [this, drive_path, status]() mutable
             {
                 this->invoke_listeners<IRemovableDriveStatusListener>(

@@ -11,7 +11,7 @@ using Slic3r::Biz::CGAL::Algorithms::VoronoiGraph;
 using Slic3r::Biz::Algorithms::LineUtils;
 
 SupportIslandPoint::SupportIslandPoint(Slic3r::Point point, Type type)
-    : point(std::move(point)), type(type)
+    : type(type), point(std::move(point))
 {}
 
 bool SupportIslandPoint::can_move(const Type &type)
@@ -63,8 +63,8 @@ SupportCenterIslandPoint::SupportCenterIslandPoint(
     const SampleConfig *   configuration,
     Type                           type)
     : SupportIslandPoint(VoronoiGraphUtils::create_edge_point(position), type)
-    , configuration(configuration)
     , position(position)
+    , configuration(configuration)
 {}
 
 coord_t SupportCenterIslandPoint::move(const Point &destination)

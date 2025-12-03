@@ -38,8 +38,8 @@ public:
     KDTreeIndirect(CoordinateFn coordinate) : coordinate(coordinate) {}
     KDTreeIndirect(CoordinateFn coordinate, std::vector<size_t> indices) : coordinate(coordinate) { this->build(indices); }
     KDTreeIndirect(CoordinateFn coordinate, size_t num_indices) : coordinate(coordinate) { this->build(num_indices); }
-    KDTreeIndirect(KDTreeIndirect &&rhs) : m_nodes(std::move(rhs.m_nodes)), coordinate(std::move(rhs.coordinate)) {}
-    KDTreeIndirect& operator=(KDTreeIndirect &&rhs) { m_nodes = std::move(rhs.m_nodes); coordinate = std::move(rhs.coordinate); return *this; }
+    KDTreeIndirect(KDTreeIndirect &&rhs) : coordinate(std::move(rhs.coordinate)), m_nodes(std::move(rhs.m_nodes)) {}
+    KDTreeIndirect& operator=(KDTreeIndirect &&rhs) { coordinate = std::move(rhs.coordinate); m_nodes = std::move(rhs.m_nodes); return *this; }
     void clear() { m_nodes.clear(); }
     const std::vector<size_t> &get_nodes() const { return m_nodes; } 
     // NOTE: Copy constructor cause failing FDM tests but not each run only from time to time.

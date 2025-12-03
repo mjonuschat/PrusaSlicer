@@ -16,8 +16,8 @@ Slider::Slider(double begin, double end, double step) :
     Oval(),
     m_begin_value(begin),
     m_end_value(end),
-    m_value(m_begin_value),
-    m_step(step)
+    m_step(step),
+    m_value(m_begin_value)
 {
     set_fill(IM_COL32_BLACK_TRANS);
     set_border_color(GImGui->Style.Colors[ImGuiCol_TextDisabled]);

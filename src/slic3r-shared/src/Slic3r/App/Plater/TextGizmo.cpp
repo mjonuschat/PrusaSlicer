@@ -36,13 +36,13 @@ TextGizmo::TextGizmo()
         m_dialog->show_revert_buttons(false); // test
     };
 
-    m_dialog->callbacks().preset_selection_changed = [this](int id) {
+    m_dialog->callbacks().preset_selection_changed = [](int id) {
     };
-    m_dialog->callbacks().font_selection_changed = [this](int id) {
+    m_dialog->callbacks().font_selection_changed = [](int id) {
     };
-    m_dialog->callbacks().style_selection_changed = [this](int id) {
+    m_dialog->callbacks().style_selection_changed = [](int id) {
     };
-    m_dialog->callbacks().operation_selection_changed = [this](int id) {
+    m_dialog->callbacks().operation_selection_changed = [](int id) {
     };
 }
 

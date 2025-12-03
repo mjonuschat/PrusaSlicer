@@ -145,7 +145,7 @@ void PrintHostDataFinalizer::dispatch_success(PrintHostConfig config, PrintHostJ
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-        bool dispatched = m_dispatcher.dispatch_on_main_thread([this, config = std::move(config),  data = std::move(data)]() mutable {
+        m_dispatcher.dispatch_on_main_thread([this, config = std::move(config),  data = std::move(data)]() mutable {
             this->invoke_listeners<IPrintHostBinarizeListener>([&config, &data](auto* listener) mutable {
                 listener->on_print_host_binarize_success(std::move(config), std::move(data));
             }); 
@@ -157,7 +157,7 @@ void PrintHostDataFinalizer::dispatch_fail(const std::string& message)
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-        bool dispatched = m_dispatcher.dispatch_on_main_thread([this, message]() {
+        m_dispatcher.dispatch_on_main_thread([this, message]() {
             this->invoke_listeners<IPrintHostBinarizeListener>([message](auto* listener) {
                 listener->on_print_host_binarize_fail(message);
             });

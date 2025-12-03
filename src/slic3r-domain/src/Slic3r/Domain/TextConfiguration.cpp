@@ -9,7 +9,7 @@ bool is_approx(const std::optional<float> &value,
         (value.has_value() && test_value.has_value() && is_approx(*value, *test_value));
 }
 
-FontProp::FontProp(float line_height) : size_in_mm(line_height), per_glyph(false) {}
+FontProp::FontProp(float line_height) : per_glyph(false), size_in_mm(line_height) {}
 
 bool FontProp::operator==(const FontProp& other) const
 {

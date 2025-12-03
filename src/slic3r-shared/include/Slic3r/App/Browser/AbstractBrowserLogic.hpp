@@ -18,10 +18,10 @@ public:
         const std::string& title        = "title"
     ) :
         m_url(url),
-        m_script_message_handler_names(std::move(message_handler_names)),
         m_loading_html(loading_html),
         m_error_html(error_html),
-        m_component_title(title)
+        m_component_title(title),
+        m_script_message_handler_names(std::move(message_handler_names))
     {}
     virtual ~AbstractBrowserLogic() = default;
     

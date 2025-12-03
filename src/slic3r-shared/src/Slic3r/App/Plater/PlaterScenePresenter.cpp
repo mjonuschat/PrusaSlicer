@@ -388,7 +388,6 @@ void PlaterScenePresenter::update_volume_materials()
         {
             const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
             if (tag != nullptr && n.has_render_component()) {
-                const auto* obj = proj.find_object_by_id(tag->object_id);
                 const auto* inst = proj.find_instance_by_id(tag->object_id, tag->instance_id);
                 bool is_on_bed = std::find(instances.first.begin(), instances.first.end(), inst) != instances.first.end() ||
                     std::find(instances.second.begin(), instances.second.end(), inst) != instances.second.end();
@@ -477,11 +476,6 @@ void PlaterScenePresenter::center_camera_on_selected_bed()
 {
     center_camera_on_bed(m_workbench.project(m_project_interactor.selected_project_id()),
         m_project_interactor.scene_interactor().bed_selection().last_selected_bed(), scene().camera_trackball());
-}
-
-static std::string bed_instance_thumbnail_name(size_t config_container_id, size_t instance_id)
-{
-    return fmt::format("thumbnail_bed_{}_{}", config_container_id, instance_id);
 }
 
 void PlaterScenePresenter::on_selected_project_changed(size_t index)

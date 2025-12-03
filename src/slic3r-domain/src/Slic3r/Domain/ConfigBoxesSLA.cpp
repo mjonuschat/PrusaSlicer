@@ -1111,7 +1111,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     def->init_fn = init_with((std::vector<double>{ 0., 0. }));
 
-    for (const std::pair<std::string, std::string>& prefix : { std::make_pair("", L("Default")), std::make_pair("branching", L("Branching")) }) {
+    for (const std::pair<std::string, std::string> prefix : { std::make_pair("", L("Default")), std::make_pair("branching", L("Branching")) }) {
         def = defs.add(prefix.first + "support_head_front_diameter", typeid(double));
         def->label = prefix.second;
         def->location = Print;

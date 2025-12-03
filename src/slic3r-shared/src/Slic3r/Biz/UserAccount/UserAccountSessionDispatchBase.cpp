@@ -31,7 +31,7 @@ void UserAccountSessionDispatchBase::on_action_fail(ActionFailType fail_type, st
 
 void UserAccountSessionDispatchBase::dispatch_action_retry(const Network::IHttp::Retry& retry)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread(
+    m_dispatcher.dispatch_on_main_thread(
         [this, retry]()
         {
             this->invoke_listeners<IUserAccountSessionListener>(
@@ -43,7 +43,7 @@ void UserAccountSessionDispatchBase::dispatch_action_retry(const Network::IHttp:
 
 void UserAccountSessionDispatchBase::dispatch_action_success(ActionSuccessType success_type, std::string body)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread(
+    m_dispatcher.dispatch_on_main_thread(
         [this, success_type, body = std::move(body)]() mutable
         {
             this->invoke_listeners<IUserAccountSessionListener>(
@@ -56,7 +56,7 @@ void UserAccountSessionDispatchBase::dispatch_action_success(ActionSuccessType s
 
 void UserAccountSessionDispatchBase::dispatch_action_fail(ActionFailType fail_type, std::string body)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread(
+    m_dispatcher.dispatch_on_main_thread(
         [this, fail_type, body = std::move(body)]() mutable
         {
             this->invoke_listeners<IUserAccountSessionListener>(
@@ -69,7 +69,7 @@ void UserAccountSessionDispatchBase::dispatch_action_fail(ActionFailType fail_ty
 
 void UserAccountSessionDispatchBase::dispatch_enqueued_refresh()
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread(
+    m_dispatcher.dispatch_on_main_thread(
         [this]()
         {
             this->invoke_listeners<IUserAccountSessionListener>(
@@ -81,7 +81,7 @@ void UserAccountSessionDispatchBase::dispatch_enqueued_refresh()
 
 void UserAccountSessionDispatchBase::dispatch_new_refresh_time(long long exp)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread(
+    m_dispatcher.dispatch_on_main_thread(
         [this, exp]()
         {
             this->invoke_listeners<IUserAccountSessionListener>(
@@ -93,7 +93,7 @@ void UserAccountSessionDispatchBase::dispatch_new_refresh_time(long long exp)
 
 void UserAccountSessionDispatchBase::dispatch_race_lost(const std::string& body)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread(
+    m_dispatcher.dispatch_on_main_thread(
         [this, body]()
         {
             this->invoke_listeners<IUserAccountSessionListener>(
@@ -105,7 +105,7 @@ void UserAccountSessionDispatchBase::dispatch_race_lost(const std::string& body)
 
 void UserAccountSessionDispatchBase::dispatch_logged_out()
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread(
+    m_dispatcher.dispatch_on_main_thread(
         [this]()
         {
             this->invoke_listeners<IUserAccountSessionListener>(

@@ -73,8 +73,8 @@ struct QNode // Queue node. Keeps track of scores g, and h
           float               gval = std::numeric_limits<float>::infinity(),
           float               hval = 0.f)
         : node{std::move(n)}
-        , parent{p}
         , queue_id{InvalidQueueID}
+        , parent{p}
         , g{gval}
         , h{hval}
     {}

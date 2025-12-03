@@ -154,9 +154,9 @@ MainFrame::MainFrame(
 ) :
     wxFrame(nullptr, wxID_ANY, from_u8(::Slic3r::BUILD_ID)),
     m_workbench(workbench),
-    m_navigator(navigator),
     m_project_interactor(project_interactor),
-    m_preset_interactor(project_interactor.preset_interactor())
+    m_preset_interactor(project_interactor.preset_interactor()),
+    m_navigator(navigator)
 {
     // AppInstanceCheck on Windows expects "PrusaSlicer" in the title
     // (in AppInstanceMessageHandlerWin32.cpp). Better check it.
@@ -264,7 +264,7 @@ MainFrame::MainFrame(
 
     Bind(
         wxEVT_SIZE,
-        [this](wxSizeEvent& event)
+        [](wxSizeEvent& event)
         {
 #ifdef _WIN32
     // TODO
@@ -410,7 +410,7 @@ void MainFrame::complete_and_bind_left_bar()
     int slicing_page_id = m_left_bar->FindPage(m_canvas.get());
     m_left_bar->SetSelection(slicing_page_id);
 
-    m_left_bar->Bind(wxEVT_BOOKCTRL_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {});
+    m_left_bar->Bind(wxEVT_BOOKCTRL_PAGE_CHANGED, [](wxBookCtrlEvent& e) {});
 }
 
 static size_t get_tab_index_by_id(LeftBar* left_bar, LeftBarTabs page_id)

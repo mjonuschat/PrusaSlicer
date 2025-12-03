@@ -182,7 +182,7 @@ private:
     mutable bool            m_raw_mesh_bounding_box_valid { false };
 
     // This constructor assigns new ID to this ModelObject and its config.
-    explicit ModelObject(Model* model) : m_model(model), origin_translation(Vec3d::Zero())
+    explicit ModelObject(Model* model) : origin_translation(Vec3d::Zero()), m_model(model)
     {
         assert(this->id().valid());
         assert(this->layer_height_profile.id().valid());

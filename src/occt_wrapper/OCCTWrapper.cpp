@@ -149,13 +149,12 @@ try {
             for (Standard_Integer aNodeIter = 1; aNodeIter <= aTriangulation->NbNodes(); ++aNodeIter) {
                 gp_Pnt aPnt = aTriangulation->Node(aNodeIter);
                 aPnt.Transform(aTrsf);
-                vertices.emplace_back(std::move(Domain::Vec3f(float(aPnt.X()), float(aPnt.Y()), float(aPnt.Z()))));
+                vertices.emplace_back(Domain::Vec3f(float(aPnt.X()), float(aPnt.Y()), float(aPnt.Z())));
             }
 
             // Now copy the facets.
             const TopAbs_Orientation anOrientation = anExpSF.Current().Orientation();
             for (Standard_Integer aTriIter = 1; aTriIter <= aTriangulation->NbTriangles(); ++aTriIter) {
-                const int aTriangleOffet = int(facets.size());
                 Poly_Triangle aTri = aTriangulation->Triangle(aTriIter);
 
                 Standard_Integer anId[3];

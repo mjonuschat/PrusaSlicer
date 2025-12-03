@@ -32,8 +32,8 @@ public:
 
     // called from PresetUpdaterWrapper
     PresetUpdaterProcessStatus(JThread::StopToken& stop_token, StatusChangedFn status_fn) :
-        m_stop_token(stop_token),
-        m_dispatch_status_fn(status_fn)
+        m_dispatch_status_fn(status_fn),
+        m_stop_token(stop_token)
     {}
 
     PresetUpdaterProcessStatus(PresetUpdaterProcessStatus&&)                 = delete;

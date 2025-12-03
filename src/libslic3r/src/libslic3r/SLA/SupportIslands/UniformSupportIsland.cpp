@@ -397,7 +397,7 @@ void move_duplicit_positions(SupportIslandPoints &supports, const Points &prev_p
 
         // divide last move to half
         Point new_pos = prev_position[duplicit_index] / 2 + aligned[duplicit_index] / 2;
-        coord_t move_distance = supports[duplicit_index]->move(new_pos);
+        [[maybe_unused]] coord_t move_distance = supports[duplicit_index]->move(new_pos);
         assert(move_distance > 0); // It must move
         aligned[duplicit_index] = supports[duplicit_index]->point; // update aligned position
         // IMPROVE: Resort duplicit index use std::rotate 

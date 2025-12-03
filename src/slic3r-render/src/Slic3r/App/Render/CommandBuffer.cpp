@@ -17,7 +17,7 @@ void CommandBuffer::bind_material(const Material& material)
 {
     bind_shader(*material.shader());
 
-    for (const auto [slot, texture] : material.textures())
+    for (const auto& [slot, texture] : material.textures())
         bind_texture(slot, *texture);
 
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
@@ -31,7 +31,7 @@ void CommandBuffer::bind_material(const Material& material)
 
 void CommandBuffer::unbind_material(const Material& material)
 {
-    for (const auto [slot, texture] : material.textures())
+    for (const auto& [slot, texture] : material.textures())
         unbind_texture(slot, *texture);
 }
 

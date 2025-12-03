@@ -47,7 +47,7 @@ public:
     std::vector<uint8_t> m_buffer;
     EncodedRaster() = default;
     explicit EncodedRaster(std::vector<uint8_t> &&buf, std::string ext)
-        : m_buffer(std::move(buf)), m_ext(std::move(ext))
+        : m_ext(std::move(ext)), m_buffer(std::move(buf))
     {}
     
     size_t size() const { return m_buffer.size(); }

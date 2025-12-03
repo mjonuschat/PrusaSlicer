@@ -1041,7 +1041,7 @@ void Print::process()
 
     Biz::Print::Preview preview;
 
-    tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this, &preview](const tbb::blocked_range<size_t> &range) {
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this](const tbb::blocked_range<size_t> &range) {
         for (size_t idx = range.begin(); idx < range.end(); ++idx) {
             m_objects[idx]->make_perimeters();
             m_objects[idx]->infill();
@@ -1056,7 +1056,7 @@ void Print::process()
     // this also has to be done sequentially.
     alert_when_supports_needed();
 
-    tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this, &preview](const tbb::blocked_range<size_t> &range) {
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this](const tbb::blocked_range<size_t> &range) {
         for (size_t idx = range.begin(); idx < range.end(); ++idx) {
             PrintObject &obj = *m_objects[idx];
             obj.generate_support_material();

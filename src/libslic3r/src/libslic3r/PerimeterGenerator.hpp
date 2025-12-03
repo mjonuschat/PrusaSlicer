@@ -69,8 +69,8 @@ struct Parameters {
             perimeter_regions(perimeter_regions),
             spiral_vase(spiral_vase),
             scaled_resolution(scaled<double>(config.get<double>("gcode_resolution"))),
+            ext_mm3_per_mm(ext_perimeter_flow.mm3_per_mm()),
             mm3_per_mm(perimeter_flow.mm3_per_mm()),
-            ext_mm3_per_mm(ext_perimeter_flow.mm3_per_mm()), 
             mm3_per_mm_overhang(overhang_flow.mm3_per_mm())
         {
         }

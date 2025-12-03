@@ -26,7 +26,7 @@ struct PresetSwitchKindId
 
     bool operator==(const PresetSwitchKindId& other) const
     {
-        const bool equal_ids = id && other.id && id.value() == other.id.value() || !id && !other.id;
+        const bool equal_ids = (id && other.id && id.value() == other.id.value()) || (!id && !other.id);
         return kind == other.kind && equal_ids;
     }
 };

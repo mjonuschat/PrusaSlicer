@@ -19,8 +19,8 @@ END_EVENT_TABLE()
  */
 
 StaticBox::StaticBox()
-    : state_handler(this)
-    , radius(8)
+    : radius(8)
+    , state_handler(this)
 {
     border_color = StateColor(std::make_pair(clr_border_disabled,   (int) StateColor::Disabled),
 #ifndef __WXMSW__

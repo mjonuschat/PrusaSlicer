@@ -112,7 +112,7 @@ void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::strin
             std::string url(*it);
             {
                 std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-                bool dispatched = m_dispatcher.dispatch_on_main_thread([this,url](){
+                m_dispatcher.dispatch_on_main_thread([this,url](){
                     invoke_listeners<IAppInstanceMessageContentListener>([url](auto* listener){
                         listener->on_login_data(url);
                     });
@@ -123,7 +123,7 @@ void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::strin
 	if (! paths.empty()) {
         {
             std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-            bool dispatched = m_dispatcher.dispatch_on_main_thread([this, paths = std::move(paths)]() mutable {
+            m_dispatcher.dispatch_on_main_thread([this, paths = std::move(paths)]() mutable {
                invoke_listeners<IAppInstanceMessageContentListener>([paths = std::move(paths)](auto* listener) mutable {
                     listener->on_open_models(std::move(paths));
                 });
@@ -133,7 +133,7 @@ void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::strin
 	if (!downloads.empty()) {
         {
             std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-            bool dispatched = m_dispatcher.dispatch_on_main_thread([this, downloads = std::move(downloads)]() mutable {
+            m_dispatcher.dispatch_on_main_thread([this, downloads = std::move(downloads)]() mutable {
                 invoke_listeners<IAppInstanceMessageContentListener>([downloads = std::move(downloads)](auto* listener) mutable {
                     listener->on_download_models(std::move(downloads));
                 });
@@ -146,7 +146,7 @@ void AbstractAppInstanceMessageHandler::handle_message_type_store_read(const std
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-        bool dispatched = m_dispatcher.dispatch_on_main_thread([this](){
+        m_dispatcher.dispatch_on_main_thread([this](){
             invoke_listeners<IAppInstanceMessageContentListener>([](auto* listener){
                 listener->on_read_token_store_message();
             });
@@ -168,7 +168,7 @@ void AbstractAppInstanceMessageHandler::dispatch_go_to_front()
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-        bool dispatched = m_dispatcher.dispatch_on_main_thread([this](){
+        m_dispatcher.dispatch_on_main_thread([this](){
             invoke_listeners<IAppInstanceMessageContentListener>([](auto* listener){
                 listener->on_app_go_front();
             });

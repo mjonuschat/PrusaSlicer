@@ -2085,7 +2085,7 @@ double TriangleSelector::get_triangle_area(const Triangle &triangle) const {
 }
 
 TriangleSelector::Cursor::Cursor(const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_)
-    : source{source_}, trafo{trafo_.cast<float>()}, clipping_plane{clipping_plane_}
+    : trafo{trafo_.cast<float>()}, source{source_}, clipping_plane{clipping_plane_}
 {
     Vec3d sf = Transformation(trafo_).get_scaling_factor();
     if (is_approx(sf.x(), sf.y()) && is_approx(sf.y(), sf.z())) {
@@ -2107,7 +2107,7 @@ TriangleSelector::Cursor::Cursor(const Vec3f &source_, float radius_world, const
 }
 
 TriangleSelector::SinglePointCursor::SinglePointCursor(const Vec3f& center_, const Vec3f& source_, float radius_world, const Transform3d& trafo_, const ClippingPlane &clipping_plane_)
-    : center{center_}, Cursor(source_, radius_world, trafo_, clipping_plane_)
+    : Cursor(source_, radius_world, trafo_, clipping_plane_), center{center_}
 {
     // In case that the transformation is non-uniform, all checks whether
     // something is inside the cursor should be done in world coords.
@@ -2121,7 +2121,7 @@ TriangleSelector::SinglePointCursor::SinglePointCursor(const Vec3f& center_, con
 }
 
 TriangleSelector::DoublePointCursor::DoublePointCursor(const Vec3f &first_center_, const Vec3f &second_center_, const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_)
-    : first_center{first_center_}, second_center{second_center_}, Cursor(source_, radius_world, trafo_, clipping_plane_)
+    : Cursor(source_, radius_world, trafo_, clipping_plane_), first_center{first_center_}, second_center{second_center_}
 {
     if (use_world_coordinates) {
         first_center  = trafo * first_center_;

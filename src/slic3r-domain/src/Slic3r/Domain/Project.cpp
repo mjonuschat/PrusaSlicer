@@ -19,7 +19,7 @@ ConfigContainer* Project::find_config_container(size_t id)
 const ConfigContainer* Project::find_config_container_by_bed_instance_id(size_t id) const
 {
     for (const auto& cc : m_config_containers) {
-        if (auto* bed_inst = find_by_id(cc->bed_instances(), id))
+        if (find_by_id(cc->bed_instances(), id))
             return cc.get();
     }
     return nullptr;
@@ -28,7 +28,7 @@ const ConfigContainer* Project::find_config_container_by_bed_instance_id(size_t 
 ConfigContainer* Project::find_config_container_by_bed_instance_id(size_t id)
 {
     for (auto& cc : m_config_containers) {
-        if (auto* bed_inst = find_by_id(cc->bed_instances(), id))
+        if (find_by_id(cc->bed_instances(), id))
             return cc.get();
     }
     return nullptr;

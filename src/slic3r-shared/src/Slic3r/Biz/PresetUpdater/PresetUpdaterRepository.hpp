@@ -136,7 +136,7 @@ public:
         const boost::filesystem::path& target_path,
         const std::string& expected_hash_string,
         PresetUpdaterProcessStatus* process_status
-    ) const;
+    ) const override;
 
     /**
      * @brief Peforms GET from target_path.
@@ -146,7 +146,7 @@ public:
         const std::string& source_subpath,
         const boost::filesystem::path& target_path,
         PresetUpdaterProcessStatus* process_status
-    ) const;
+    ) const override;
 
 private:
     bool get_file_inner(
@@ -190,7 +190,7 @@ public:
         const boost::filesystem::path& target_path,
         const std::string& expected_hash_string,
         PresetUpdaterProcessStatus* process_status
-    ) const;
+    ) const override;
 
     /**
      * @brief Peforms GET from target_path.
@@ -200,7 +200,7 @@ public:
         const std::string& source_subpath,
         const boost::filesystem::path& target_path,
         PresetUpdaterProcessStatus* process_status
-    ) const;
+    ) const override;
 
     static bool extract_local_archive_repository(
         PresetUpdaterRepositoryDescriptor& manifest_data,

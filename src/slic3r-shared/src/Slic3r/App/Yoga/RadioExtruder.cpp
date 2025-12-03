@@ -8,8 +8,8 @@ namespace Slic3r::App::Yoga {
 
 RadioExtruder::RadioExtruder(size_t number, ImColor fill) :
     AbstractButton(),
-    m_number_text(number),
-    m_fill(fill)
+    m_fill(fill),
+    m_number_text(number)
 {
     set_aspect_ratio(1);
 

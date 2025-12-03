@@ -252,30 +252,29 @@ private:
 
     // Called from Slic3r::Biz::Algorithms::ModelVolume::construct().
     // It doesn't initialize m_convex_hull.
-    ModelVolume(ModelObject* object, const TriangleMesh& mesh, ModelVolumeType type = ModelVolumeType::MODEL_PART) : m_mesh(new TriangleMesh(mesh)), m_type(type), object(object)
+    ModelVolume(ModelObject* object, const TriangleMesh& mesh, ModelVolumeType type = ModelVolumeType::MODEL_PART) : object(object), m_mesh(new TriangleMesh(mesh)), m_type(type)
     {
         assert(check());
     }
 
     // Called from Slic3r::Biz::Algorithms::ModelVolume::construct().
     // It doesn't initialize m_convex_hull.
-    ModelVolume(ModelObject* object, TriangleMesh&& mesh, ModelVolumeType type = ModelVolumeType::MODEL_PART) : m_mesh(new TriangleMesh(std::move(mesh))), m_type(type), object(object)
+    ModelVolume(ModelObject* object, TriangleMesh&& mesh, ModelVolumeType type = ModelVolumeType::MODEL_PART) : object(object), m_mesh(new TriangleMesh(std::move(mesh))), m_type(type)
     {
         assert(check());
     }
 
     ModelVolume(ModelObject* object, TriangleMesh&& mesh, TriangleMesh&& convex_hull, ModelVolumeType type = ModelVolumeType::MODEL_PART)
-        : m_mesh(new TriangleMesh(std::move(mesh))), m_convex_hull(new TriangleMesh(std::move(convex_hull))), m_type(type), object(object)
+        : object(object), m_mesh(new TriangleMesh(std::move(mesh))), m_type(type), m_convex_hull(new TriangleMesh(std::move(convex_hull)))
     {
         assert(check());
     }
 
     // Copying an existing volume, therefore this volume will get a copy of the ID assigned.
     ModelVolume(ModelObject* object, const ModelVolume& other)
-        : ObjectBase(other), name(other.name), source(other.source), m_mesh(other.m_mesh), m_convex_hull(other.m_convex_hull), volume_settings(other.volume_settings)
-        , m_type(other.m_type), object(object), m_transformation(other.m_transformation), supported_facets(other.supported_facets), seam_facets(other.seam_facets)
-        , mm_segmentation_facets(other.mm_segmentation_facets), fuzzy_skin_facets(other.fuzzy_skin_facets), cut_info(other.cut_info), text_configuration(other.text_configuration)
-        , emboss_shape(other.emboss_shape)
+        : ObjectBase(other), name(other.name), source(other.source), cut_info(other.cut_info), volume_settings(other.volume_settings), supported_facets(other.supported_facets)
+        , seam_facets(other.seam_facets), mm_segmentation_facets(other.mm_segmentation_facets), fuzzy_skin_facets(other.fuzzy_skin_facets), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape)
+        , object(object), m_mesh(other.m_mesh), m_type(other.m_type), m_convex_hull(other.m_convex_hull), m_transformation(other.m_transformation)
     {
         assert(this->id().valid());
         assert(this->supported_facets.id().valid());
@@ -296,9 +295,8 @@ private:
     // Called from Slic3r::Biz::Algorithms::ModelVolume::construct().
     // It doesn't initialize m_convex_hull.
     ModelVolume(ModelObject* object, const ModelVolume& other, TriangleMesh&& mesh)
-        : name(other.name), source(other.source), volume_settings(other.volume_settings), object(object), m_mesh(new TriangleMesh(std::move(mesh)))
-        , m_type(other.m_type), m_transformation(other.m_transformation), cut_info(other.cut_info), text_configuration(other.text_configuration)
-        , emboss_shape(other.emboss_shape)
+        : name(other.name), source(other.source), cut_info(other.cut_info), volume_settings(other.volume_settings), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape)
+        , object(object), m_mesh(new TriangleMesh(std::move(mesh))), m_type(other.m_type), m_transformation(other.m_transformation)
     {
         assert(this->id().valid());
         assert(this->supported_facets.id().valid());

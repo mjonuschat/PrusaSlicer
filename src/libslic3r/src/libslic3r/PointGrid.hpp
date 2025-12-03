@@ -18,7 +18,7 @@ class PointGrid {
 
 public:
     explicit PointGrid(std::vector<LegacyVec<3, T>> data, const std::array<int, 3> &size)
-        : m_data(std::move(data)), m_size{size}, XY{m_size[0] * m_size[1]}
+        : m_size{size}, m_data(std::move(data)), XY{m_size[0] * m_size[1]}
     {}
 
     const LegacyVec<3, T> & get(size_t idx) const { return m_data[idx]; }

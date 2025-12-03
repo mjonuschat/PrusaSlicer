@@ -79,8 +79,8 @@ class SurfaceMesh
 {
 public:
     explicit SurfaceMesh(const indexed_triangle_set& its) :
-        m_its(its),
-        m_face_neighbors(Biz::Algorithms::TriangleMesh::its_face_neighbors_par(its))
+        m_face_neighbors(Biz::Algorithms::TriangleMesh::its_face_neighbors_par(its)),
+        m_its(its)
     {}
 
     SurfaceMesh(const SurfaceMesh&)            = delete;

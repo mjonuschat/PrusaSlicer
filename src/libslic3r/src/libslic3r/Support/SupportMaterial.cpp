@@ -544,7 +544,7 @@ public:
         const SupportGridParams &params) :
         m_style(params.style),
         m_support_polygons(support_polygons), m_trimming_polygons(trimming_polygons),
-        m_support_spacing(params.grid_resolution), m_support_angle(params.support_angle),
+        m_support_angle(params.support_angle), m_support_spacing(params.grid_resolution),
         m_extrusion_width(params.extrusion_width),
         m_support_material_closing_radius(params.support_material_closing_radius)
     {

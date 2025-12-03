@@ -36,9 +36,9 @@ class UserAccountActionGetWithEvent : public IUserAccountAction
 {
 public:
     UserAccountActionGetWithEvent(const std::string name, const std::string url, ActionSuccessType success_type, ActionFailType fail_type, bool requires_auth_token = true)
-        : m_success_type(success_type)
+        : IUserAccountAction(name, url, requires_auth_token)
+        , m_success_type(success_type)
         , m_fail_type(fail_type)
-        , IUserAccountAction(name, url, requires_auth_token)
     {}
     ~UserAccountActionGetWithEvent() {}
     void perform(IUserAccountActionCallbacks* callbacks, const std::string& access_token, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input, std::atomic_bool& global_cancel) const override;

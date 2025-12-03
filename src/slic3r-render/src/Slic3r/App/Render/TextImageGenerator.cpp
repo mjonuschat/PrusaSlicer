@@ -38,12 +38,12 @@ TextImageGenerator::TextImageGenerator(const std::string& font_filename, uint8_t
     m_atlas.packed_chars.resize(m_atlas.chars_count);
 
     stbtt_pack_context spc{};
-    int res = stbtt_PackBegin(&spc, packed_atlas.data(), m_atlas.width, m_atlas.height, 0, 1, nullptr);
+    (void)stbtt_PackBegin(&spc, packed_atlas.data(), m_atlas.width, m_atlas.height, 0, 1, nullptr);
 
     static constexpr float MAGIC_NUMBER = 16.0f / 9.0f;
     float font_size = MAGIC_NUMBER * float(font_height);
 
-    res = stbtt_PackFontRange(&spc, data.data(), 0, font_size, m_atlas.first_char, m_atlas.chars_count, m_atlas.packed_chars.data());
+    (void)stbtt_PackFontRange(&spc, data.data(), 0, font_size, m_atlas.first_char, m_atlas.chars_count, m_atlas.packed_chars.data());
     stbtt_PackEnd(&spc);
 
     // generate atlas bitmap

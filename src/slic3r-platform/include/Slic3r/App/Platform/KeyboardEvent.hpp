@@ -16,7 +16,7 @@ public:
     };
 
     KeyboardEvent(Type type, KeyCode code, KeyModifiers modifiers, bool repeat)
-        : m_type(type), m_code(code), m_key_modifiers(modifiers), m_repeat(repeat)
+        : m_type(type), m_key_modifiers(modifiers), m_code(code), m_repeat(repeat)
     {}
 
     Type type() const { return m_type; }

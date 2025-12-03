@@ -429,8 +429,8 @@ Perimeter::Perimeter(
     std::vector<AngleType> &&angle_types
 )
     : slice_z(slice_z)
-    , layer_index(layer_index)
     , is_hole(is_hole)
+    , layer_index(layer_index)
     , positions(std::move(positions))
     , angles(std::move(angles))
     , index_to_coord(IndexToCoord{tcb::span{this->positions}})

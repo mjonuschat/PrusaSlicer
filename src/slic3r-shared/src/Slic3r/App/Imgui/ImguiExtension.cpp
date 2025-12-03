@@ -354,7 +354,7 @@ void text_aligned(float align_x, const std::string& label)
     float avail_x = GetContentRegionAvail().x;
 
     const char* text, * text_end;
-    ImFormatStringToTempBuffer(&text, &text_end, label.c_str());
+    ImFormatStringToTempBuffer(&text, &text_end, "%s", label.c_str());
     const ImVec2 text_size = CalcTextSize(text, text_end);
 
     ImVec2 pos(window->DC.CursorPos.x, window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset);
@@ -388,7 +388,7 @@ void text_with_bg_aligned(float align_x, const std::string& label, ImVec4 bg_col
     const float avail_x = GetContentRegionAvail().x;
 
     const char* text, * text_end;
-    ImFormatStringToTempBuffer(&text, &text_end, label.c_str());
+    ImFormatStringToTempBuffer(&text, &text_end, "%s", label.c_str());
     const ImVec2 text_size = CalcTextSize(text, text_end);
 
     ImVec2 pos(window->DC.CursorPos.x, window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset);

@@ -255,7 +255,7 @@ void MeasureDialog::add_spot_row(const ImColor& marker_color, const std::string&
     Circle* marker = label_with_marker->emplace_back<Circle>();
     marker->set_height(16);
     marker->set_fill(marker_color);
-    Text* text = label_with_marker->emplace_back<Text>(title);
+    label_with_marker->emplace_back<Text>(title);
 
     controls->set_width_percent(65);
     row->append(std::move(controls));

@@ -303,7 +303,7 @@ void PresetUpdaterInteractor::remove_local_repository(const std::string& uuid)
 
 void PresetUpdaterInteractor::dispatch_error(const std::string& body)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, body]() {
+    m_dispatcher.dispatch_on_main_thread([this, body]() {
         this->invoke_listeners<IPresetUpdaterResultListener>([body](auto* listener) {
             listener->on_preset_updater_error(body);
         });
@@ -314,7 +314,7 @@ void PresetUpdaterInteractor::dispatch_reconfigurations_list(
     const PresetUpdaterReconfigurationList& reconfigurations
 )
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, reconfigurations]() {
+    m_dispatcher.dispatch_on_main_thread([this, reconfigurations]() {
         this->invoke_listeners<IPresetUpdaterResultListener>([reconfigurations](auto* listener) {
             listener->on_preset_updater_reconfigurations_list(reconfigurations);
         });
@@ -323,7 +323,7 @@ void PresetUpdaterInteractor::dispatch_reconfigurations_list(
 
 void PresetUpdaterInteractor::dispatch_reconfigurations_performed()
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread([this]() {
+    m_dispatcher.dispatch_on_main_thread([this]() {
         this->invoke_listeners<IPresetUpdaterResultListener>([](auto* listener) {
             listener->on_preset_updater_reconfigurations_perfomed();
         });
@@ -332,7 +332,7 @@ void PresetUpdaterInteractor::dispatch_reconfigurations_performed()
 
 void PresetUpdaterInteractor::dispatch_status(const std::string& target, int attempt, unsigned delay)
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, target, attempt, delay]() {
+    m_dispatcher.dispatch_on_main_thread([this, target, attempt, delay]() {
         this->invoke_listeners<IPresetUpdaterResultListener>([target, attempt, delay](auto* listener) {
             listener->on_preset_updater_status(target, attempt, delay);
         });
@@ -343,7 +343,7 @@ void PresetUpdaterInteractor::dispatch_repository_info_vector(
     const SharedPresetUpdaterRepositoryInfoVector& repos
 )
 {
-    bool dispatched = m_dispatcher.dispatch_on_main_thread([this, repos]() {
+    m_dispatcher.dispatch_on_main_thread([this, repos]() {
         this->invoke_listeners<IPresetUpdaterResultListener>([repos](auto* listener) {
             listener->on_preset_updater_repository_info_vector(repos);
         });

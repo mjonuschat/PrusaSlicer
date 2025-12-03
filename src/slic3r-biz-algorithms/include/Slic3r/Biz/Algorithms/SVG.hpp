@@ -111,9 +111,9 @@ public:
             color_fill      (color_fill),
             color_contour   (color_contour),
             color_holes     (color_holes),
+            color_points 	(color_points),
             outline_width   (outline_width),
             fill_opacity    (fill_opacity),
-            color_points 	(color_points),
             radius_points	(radius_points)
             {}
 
@@ -130,9 +130,9 @@ public:
             color_fill      (color_fill),
             color_contour   (color_contour),
             color_holes     (color_holes),
+            color_points    (color_points),
             outline_width   (outline_width),
             fill_opacity    (fill_opacity),
-            color_points    (color_points),
             radius_points   (radius_points)
             {}
 
