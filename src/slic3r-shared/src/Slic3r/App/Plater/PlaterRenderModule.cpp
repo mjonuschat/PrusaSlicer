@@ -469,7 +469,7 @@ void PlaterRenderModule::init_scene_layout()
 
     m_toolbar_cut = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
-        Render::Icon::ToolbarCut,
+        Render::Icon::Scissors,
         "Cut",
         "C",
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::CutGizmo); }},
@@ -549,7 +549,7 @@ void PlaterRenderModule::init_dialog_navigation()
     );
     init_gizmo_dialog(Scene::ToolType::Simplify, m_simplify_gizmo->release_ui_window());
     init_gizmo_dialog(Scene::ToolType::TextGizmo, m_text_gizmo->release_ui_window());
-    init_gizmo_dialog(m_cut_gizmo->ui_dialog());
+    init_gizmo_dialog(Scene::ToolType::CutGizmo, m_cut_gizmo->release_ui_window());
 }
 
 void PlaterRenderModule::update_object_selection()

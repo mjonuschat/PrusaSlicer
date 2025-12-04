@@ -12,8 +12,10 @@
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Plater/CutNodeTag.hpp"
 
+#include "Slic3r/App/Yoga/Item.hpp"
+
 namespace Slic3r::App::Yoga {
-class GizmoDialog;
+class GizmoWindow;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App::Render {
@@ -75,7 +77,7 @@ public:
     void on_activated() override;
     void on_deactivated() override;
     Scene::ToolType type() const override;
-    Yoga::GizmoDialog* ui_dialog() override;
+    std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
     /**@}*/
 
 private:
@@ -202,7 +204,7 @@ private:
     void update_cut_line_trafo();
 
 private:
-    std::unique_ptr<CutDialog> m_dialog;
+    Yoga::Passthrough<CutDialog> m_dialog;
 
     struct SolidAABBMesh
     {

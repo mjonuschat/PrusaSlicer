@@ -619,9 +619,9 @@ Scene::ToolType CutGizmo::type() const
     return Scene::ToolType::CutGizmo;
 }
 
-Yoga::GizmoDialog* CutGizmo::ui_dialog()
+Yoga::GizmoWindowPtr CutGizmo::release_ui_window()
 {
-    return m_dialog.get();
+    return m_dialog.release();
 }
 
 Vec3d CutGizmo::mouse_position_in_local_plane(AxisType axis, const Domain::Line3d& mouse_ray) const
@@ -2817,7 +2817,6 @@ bool CutGizmo::remove_selected_connectors()
             scene.remove_child(node);
         }
     }
-    check_and_update_connectors_state();
 
     ASSERT(connectors.size() == m_connectors_node->children().size());
 
@@ -2828,6 +2827,7 @@ bool CutGizmo::remove_selected_connectors()
         node.get()->tag_of_type<CutConnectorNodeTag>()->id = id++;
     }
 
+    check_and_update_connectors_state();
     return true;
 }
 

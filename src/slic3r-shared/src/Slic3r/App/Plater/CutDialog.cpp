@@ -5,7 +5,7 @@
 
 #include "Slic3r/App/Plater/CutDialog.hpp"
 
-#include "Slic3r/App/Yoga/GizmoDialog.hpp"
+#include "Slic3r/App/Yoga/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/InputTextField.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
@@ -134,9 +134,8 @@ static const ImColor build_volume_color{151, 187, 255};
 static const ImColor titles_color{121, 149, 203};
 static const ImColor buttons_color{76, 93, 127};
 
-CutDialog::CutDialog() : GizmoDialog(_u8L("Cut"))
+CutDialog::CutDialog() : GizmoWindow(_u8L("Cut"), Render::Icon::Scissors)
 {
-    content_item()->set_width(400);
     content()->set_orientation(Orientation::Vertical);
     content()->set_gap(gap_size());
 

@@ -4,7 +4,7 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/GizmoDialog.hpp"
+#include "Slic3r/App/Yoga/GizmoWindow.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 #include "Slic3r/Domain/CutConnector.hpp"
 #include "Slic3r/Biz/Utils/CutUtils.hpp"
@@ -64,7 +64,7 @@ private:
 
 namespace Slic3r::App::Plater {
 
-class CutDialog : public Yoga::GizmoDialog
+class CutDialog : public Yoga::GizmoWindow
 {
 public:
     CutDialog();
