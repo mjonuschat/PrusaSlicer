@@ -539,6 +539,7 @@ void PlaterRenderModule::init_dialog_navigation()
     );
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
+    m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
 
     // Init gizmos dialogs
     auto init_gizmo_dialog = [this](Scene::ToolType tool_type, GizmoWindowPtr dialog)
