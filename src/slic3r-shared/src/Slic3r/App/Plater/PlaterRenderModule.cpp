@@ -105,12 +105,6 @@ PlaterRenderModule::~PlaterRenderModule()
 
 void PlaterRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
 {
-    if (!m_gizmo_dialogs.contains(opened_dialog)
-        && m_gizmo_manager->current_tool_type() != Scene::ToolType::None)
-    {
-        m_gizmo_manager->deactivate_current_tool();
-    }
-
     m_dialog_navigation.open_dialog(opened_dialog);
 }
 
