@@ -71,6 +71,7 @@ UnsavedChangesDialog::UnsavedChangesDialog(
     wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
 
     create_tree();
+    compare();
 
     wxBoxSizer* buttons = new wxBoxSizer(wxHORIZONTAL);
     add_buttons(buttons);
@@ -88,8 +89,6 @@ UnsavedChangesDialog::UnsavedChangesDialog(
     w_config()->UpdateDlgDarkUI(this);
 
     this->Bind(wxEVT_DPI_CHANGED, [this](wxDPIChangedEvent& evt) { m_tree->model->Rescale(); });
-
-    compare();
 
     m_exit_queue = m_diffs_per_kind.size();
     show_current_diffs();
@@ -140,7 +139,7 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
             20
         );
 
-        buttons->Add(*btn, 1, wxLEFT, 5);
+        buttons->Add(*btn, 1, wxLEFT, buttons->IsEmpty() ? 0 : 5);
         (*btn)->SetFont(btn_font);
 
         (*btn)->Bind(
@@ -183,18 +182,20 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
         );
     };
 
-    add_btn(
-        &m_back_btn,
-        "chevron_left",
-        Biz::Preset::PresetDiffOperation::Undef,
-        _L("Back"),
-        false,
-        [this]()
-        {
-            m_exit_queue++;
-            show_current_diffs();
-        }
-    );
+    if (m_diffs_per_kind.size() > 1) {
+        add_btn(
+            &m_back_btn,
+            "chevron_left",
+            Biz::Preset::PresetDiffOperation::Undef,
+            _L("Back"),
+            false,
+            [this]()
+            {
+                m_exit_queue++;
+                show_current_diffs();
+            }
+        );
+    }
 
     if (m_config_new) {
         add_btn(
@@ -303,8 +304,9 @@ void UnsavedChangesDialog::show_current_diffs()
     size_t tool_id = 0;
     update_transfer_button(kind, tool_id);
 
-    m_back_btn->Show(diffs_cnt > 1);
-    m_back_btn->Enable(step > 1);
+    if (m_back_btn) {
+        m_back_btn->Enable(step > 1);
+    }
 
     show_info_line(PresetDiffOperation::Undef);
 }
