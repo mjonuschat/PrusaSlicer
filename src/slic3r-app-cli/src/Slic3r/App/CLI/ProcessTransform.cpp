@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Utils/CutUtils.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/ModelInstance.hpp"
@@ -11,12 +12,12 @@
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Math.hpp"
 
 #include "arrange-wrapper/ModelArrange.hpp"
 
 #include <spdlog/spdlog.h>
 
-#include "libslic3r/CutUtils.hpp"
 #include "libslic3r/ModelProcessing.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 
@@ -29,6 +30,7 @@ using Slic3r::Domain::Project;
 using Slic3r::Domain::translation_transform;
 using Slic3r::Domain::Vec2crd;
 using Slic3r::Domain::Vec3d;
+using Slic3r::Domain::Vec2d;
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
@@ -194,7 +196,7 @@ bool process_transform(
                 for (ModelInstance* model_instance : model_object->instances) {
                     model_instance->set_offset(
                         Domain::Z,
-                        model_instance->get_offset(Z) - bbox.min.z()
+                        model_instance->get_offset(Domain::Z) - bbox.min.z()
                     );
                 }
             }
@@ -273,9 +275,7 @@ bool process_transform(
                     mo,
                     0,
                     translation_transform(cut_center_offset),
-                    ModelObjectCutAttribute::KeepLower
-                        | ModelObjectCutAttribute::KeepUpper
-                        | ModelObjectCutAttribute::PlaceOnCutUpper
+                    {.keep_upper = true, .keep_lower = true, .place_on_cut_upper = true}
                 );
                 auto cut_objects = cut.perform_with_plane();
                 for (ModelObject* obj : cut_objects) {

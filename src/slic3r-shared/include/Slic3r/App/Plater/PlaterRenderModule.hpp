@@ -43,6 +43,7 @@ class SimplifyGizmo;
 class TextGizmo;
 class MeasureGizmo;
 class PlaterCameraGizmo;
+class CutGizmo;
 class ArrangeGizmo;
 class PlaterScenePresenter;
 class PlaterRenderLayout;
@@ -157,6 +158,7 @@ private:
     Yoga::ToolbarButton* m_toolbar_paint_on_supports = nullptr;
     Yoga::ToolbarButton* m_toolbar_text              = nullptr;
     Yoga::ToolbarButton* m_toolbar_measure           = nullptr;
+    Yoga::ToolbarButton* m_toolbar_cut               = nullptr;
 
     TranslationGizmo* m_translation_gizmo           = nullptr;
     RotationGizmo* m_rotation_gizmo                 = nullptr;
@@ -166,6 +168,7 @@ private:
     TextGizmo* m_text_gizmo                         = nullptr;
     MeasureGizmo* m_measure_gizmo                   = nullptr;
     PlaterCameraGizmo* m_camera_gizmo               = nullptr;
+    CutGizmo* m_cut_gizmo                         = nullptr;
 
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;

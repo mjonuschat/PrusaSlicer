@@ -138,6 +138,7 @@ void InputTextField::set_default(double default_value)
     } else {
         m_default_text = fmt::format("{:.10g}", default_value);
     }
+    set_text(m_default_text);
     update_revert_button();
 }
 

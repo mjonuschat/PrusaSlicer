@@ -43,6 +43,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/TextGizmo.cpp
         include/Slic3r/App/Plater/TextDialog.hpp
         src/Slic3r/App/Plater/TextDialog.cpp
+        include/Slic3r/App/Plater/CutGizmo.hpp
+        src/Slic3r/App/Plater/CutGizmo.cpp
+        include/Slic3r/App/Plater/CutDialog.hpp
+        src/Slic3r/App/Plater/CutDialog.cpp
+        src/Slic3r/App/Plater/CutUtils.hpp
+        src/Slic3r/App/Plater/CutUtils.cpp
         include/Slic3r/App/Plater/MeasureGizmo.hpp
         src/Slic3r/App/Plater/MeasureGizmo.cpp
         include/Slic3r/App/Plater/MeasureGizmoHelper.hpp

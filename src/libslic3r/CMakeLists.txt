@@ -110,8 +110,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/CSGMesh/TriangleMeshAdapter.hpp
     src/libslic3r/CustomGCode.cpp
     src/libslic3r/CustomParametersHandling.cpp
-    src/libslic3r/CutUtils.cpp
-    src/libslic3r/CutUtils.hpp
     src/libslic3r/EdgeGrid.cpp
     src/libslic3r/EdgeGrid.hpp
     src/libslic3r/ElephantFootCompensation.cpp

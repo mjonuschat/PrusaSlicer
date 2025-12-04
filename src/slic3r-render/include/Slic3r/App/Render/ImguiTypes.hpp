@@ -144,7 +144,11 @@ enum class Icon : wchar_t
     // icon for help
     MouseLeft,
     MouseRight,
+    MouseDrag,
     KeyShift,
+    KeyAlt,
+    KeyCtrl,
+    KeyCtrlA,
     KeyEsc,
     KeyDel,
     Calculator,
@@ -155,6 +159,7 @@ enum class Icon : wchar_t
     ToolbarHistory,
     ToolbarGCode,
     ToolbarGraph,
+    ToolbarCut,
 
     // printer icons (PNGs)
     PrinterNEXT,
@@ -176,9 +181,15 @@ enum class Icon : wchar_t
     // Gizmo Paint-on-Supports
     Triangle,
     Circle,
+    Square,
+    Hexagon,
     Sphere,
     WandMagicSparkles,
     PaintBrush,
+    Prism,
+    Frustum,
+    DividingLine,
+    Dove,
 
     // Gizmo Emboss
     NewBtnIcon,
@@ -234,7 +245,10 @@ enum class Icon : wchar_t
     Scissors,
     RectangleAdd,
     Rotate,
-    Simplify
+    Simplify,
+    Pin,
+    PlaceOnFace,
+    FlipVertically,
 };
 
 } // namespace Slic3r::App::Render

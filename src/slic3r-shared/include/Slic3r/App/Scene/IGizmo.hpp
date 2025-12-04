@@ -142,7 +142,8 @@ enum class ToolType : uint8_t
     PaintOnSupportsGizmo,
     TextGizmo,
     MeasureGizmo,
-    ArrangeGizmo
+    ArrangeGizmo,
+    CutGizmo,
     // add as needed, no printer type variants (use two distinct IToolGizmos with same type instead)
 };
 

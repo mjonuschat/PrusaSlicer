@@ -130,7 +130,11 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
 
     {Icon::MouseLeft, "mouse_left"},
     {Icon::MouseRight, "mouse_right"},
+    {Icon::MouseDrag, "mouse_drag"},
     {Icon::KeyShift, "key_shift"},
+    {Icon::KeyAlt, "key_alt"},
+    {Icon::KeyCtrl, "key_ctrl"},
+    {Icon::KeyCtrlA, "key_ctrl_a"},
     {Icon::KeyEsc, "key_esc"},
     {Icon::KeyDel, "key_del"},
 
@@ -144,6 +148,7 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::ToolbarHistory, "toolbar_history"},
     {Icon::ToolbarGCode, "toolbar_gcode"},
     {Icon::ToolbarGraph, "toolbar_graph"},
+    {Icon::ToolbarCut, "cut"},
     {Icon::PrinterNEXT, "printer_NEXT"},
 
     {Icon::SettingsSet, "settings_set"},
@@ -156,9 +161,15 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     // Gizmo Paint-On-Supports
     {Icon::Circle, "circle"},
     {Icon::Triangle, "triangle"},
+    {Icon::Square, "square"},
+    {Icon::Hexagon, "hexagon"},
     {Icon::Sphere, "sphere"},
     {Icon::PaintBrush, "paintbrush"},
     {Icon::WandMagicSparkles, "wand-magic-sparkles"},
+    {Icon::Prism, "prism"},
+    {Icon::Frustum, "frustum"},
+    {Icon::DividingLine, "dividing_line"},
+    {Icon::Dove, "dove"},
 
     {Icon::Calculator, "calculator"},
     {Icon::CopyForGizmo, "copy_for_gizmo"},
@@ -217,6 +228,9 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     {Icon::RectangleAdd, "rectangle_add"},
     {Icon::Rotate, "rotate"},
     {Icon::Simplify, "simplify"},
+    {Icon::Pin, "pin"},
+    {Icon::PlaceOnFace, "place"},
+    {Icon::FlipVertically, "flip_vertically"},
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {Icon::PrinterNEXT};

@@ -306,6 +306,10 @@ protected:
     std::vector<ItemPtr> m_children;
     std::vector<Item*> m_children_render_order;
 
+#ifndef DEBUG
+#define DEBUG
+#endif
+
 #ifdef DEBUG
     static Item* m_debug_item;
 #endif

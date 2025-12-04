@@ -41,6 +41,8 @@
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
+#include "Slic3r/App/Plater/CutGizmo.hpp"
+#include "Slic3r/App/Plater/CutDialog.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
@@ -465,6 +467,16 @@ void PlaterRenderModule::init_scene_layout()
         m_text_gizmo
     );
 
+    m_toolbar_cut = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle,
+        Render::Icon::ToolbarCut,
+        "Cut",
+        "C",
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::CutGizmo); }},
+        m_cut_gizmo
+    );
+    m_toolbar_cut->set_enabled(false);
+
     m_toolbar_measure = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Ruler,
@@ -537,6 +549,7 @@ void PlaterRenderModule::init_dialog_navigation()
     );
     init_gizmo_dialog(Scene::ToolType::Simplify, m_simplify_gizmo->release_ui_window());
     init_gizmo_dialog(Scene::ToolType::TextGizmo, m_text_gizmo->release_ui_window());
+    init_gizmo_dialog(m_cut_gizmo->ui_dialog());
 }
 
 void PlaterRenderModule::update_object_selection()
@@ -567,6 +580,7 @@ void PlaterRenderModule::update_object_selection()
         }
     }
     m_toolbar_add_instance->set_visible(can_add_instance);
+    m_toolbar_cut->set_enabled(can_add_instance && selection.mode == Slic3r::Biz::Scene::SelectionMode::Instance);
 
     m_toolbar_add_volume->set_visible(can_add_instance);
 
@@ -605,6 +619,7 @@ void PlaterRenderModule::update_tool_selection(Scene::ToolType current_tool_type
     );
     m_toolbar_text->set_checked(current_tool_type == Scene::ToolType::TextGizmo);
     m_toolbar_measure->set_checked(current_tool_type == Scene::ToolType::MeasureGizmo);
+    m_toolbar_cut->set_checked(current_tool_type == Scene::ToolType::CutGizmo);
 
     update_current_right_sidebar();
 }
@@ -671,8 +686,9 @@ void PlaterRenderModule::init_gizmos()
         m_workbench
     );
 
-    SimplifyGizmo::CloseFn close_fn = [mng = m_gizmo_manager.get()]() {
-        mng->deactivate_current_tool();
+    std::function<void()> close_fn = [this] {
+        m_gizmo_manager->deactivate_current_tool();
+        m_render_module_navigator->set_opened_dialog(nullptr);
     };
     m_simplify_gizmo = &m_gizmo_manager->add_tool_gizmo<SimplifyGizmo>(
         *m_device,
@@ -694,6 +710,9 @@ void PlaterRenderModule::init_gizmos()
     m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(
         m_measure_gizmo
     );
+    m_cut_gizmo               = &m_gizmo_manager->add_tool_gizmo<CutGizmo>(*m_device, *m_scene_presenter, m_project_interactor);
+
+    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(m_cut_gizmo);
 }
 
 void PlaterRenderModule::init_add_volume_menu(Yoga::Item* parent)
