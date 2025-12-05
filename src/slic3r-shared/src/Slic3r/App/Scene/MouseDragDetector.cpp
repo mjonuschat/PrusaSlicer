@@ -38,7 +38,6 @@ void MouseDragDetector::add_listener(IGizmo* gizmo)
 {
     if (gizmo == nullptr)
         return;
-
     IMouseDrag* drag = dynamic_cast<IMouseDrag*>(gizmo);
     if (drag == nullptr)
         return;
@@ -207,6 +206,8 @@ bool MouseDragDetector::mouse_event(const GizmoEventContext& ctx, GetActiveGizmo
     case Platform::MouseEvent::Type::Wheel:
         [[fallthrough]];
     case Platform::MouseEvent::Type::Leave:
+        [[fallthrough]];
+    case Platform::MouseEvent::Type::DoubleClick:
         cancel_drag_event();
         return false;
     default:
@@ -262,5 +263,4 @@ std::string MouseDragDetector::to_string(DragState state)
         return "undefined";
     }
 }
-
 } // namespace Slic3r::App::Scene

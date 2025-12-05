@@ -3,6 +3,8 @@
 #include "Slic3r/Domain/TextConfiguration.hpp" // FontList + FontDescriptor
 #include "Slic3r/Domain/FontFile.hpp"
 
+#include "tl/expected.hpp"
+
 namespace Slic3r::Biz::Emboss {
 /// <summary>
 /// Provide access to font
@@ -28,6 +30,19 @@ public:
     /// <param name="descriptor">Define font (glyph shapes) one from listed fonts</param>
     /// <returns>Opened file</returns>
     virtual std::unique_ptr<const Domain::FontFile> open(const Domain::FontDescriptor& descriptor) = 0;
+
+    enum class ConversionError {
+        AnotherOS,
+        NotOkWxFont
+    };
+    using Descriptor = tl::expected<Domain::FontDescriptor, ConversionError>;
+    /// <summary>
+    /// To convert descriptor to current OS, selected language, DPI and version of the slicer.
+    /// To be able compare descriptors by string to match font.
+    /// </summary>
+    /// <param name="descriptor">Any type of descriptors</param>
+    /// <returns>One from the enumerated descriptors(font list)</returns>
+    virtual Descriptor get_current_descriptor(const Domain::FontDescriptor& other_descriptor) = 0;
 
     /// <summary>
     /// Getter on current font descriptor type

@@ -60,6 +60,14 @@ using namespace Slic3r;
 #include "Slic3r/Biz/Algorithms/Projection.hpp"
 #include "Slic3r/Domain/ExPolygonsIndex.hpp"
 
+#ifdef DEBUG_OUTPUT_DIR
+#include <CGAL/IO/OFF.h>
+#include <boost/log/trivial.hpp>
+#include <filesystem>
+
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
+#endif // DEBUG_OUTPUT_DIR
+
 namespace BB               = Biz::Algorithms::BoundingBox;
 namespace AABBTreeLines    = Biz::Algorithms::AABBTreeLines;
 namespace AABBTreeIndirect = Biz::Algorithms::AABBTreeIndirect;
@@ -617,20 +625,13 @@ void store(const SurfaceCut& cut, const std::string& file, const std::string& co
 void store(const std::vector<indexed_triangle_set>& models, const std::string& obj_filename);
 void store(const std::vector<CutMesh>& models, const std::string& dir);
 void store(
-    const Emboss::IProjection& projection,
+    const Biz::Algorithms::IProjection & projection,
     const Point& point_to_project,
     float projection_ratio,
     const std::string& obj_filename
 );
 #endif // DEBUG_OUTPUT_DIR
 } // namespace priv
-
-#ifdef DEBUG_OUTPUT_DIR
-#include <boost/log/trivial.hpp>
-#include <filesystem>
-
-#include "Slic3r/Biz/Algorithms/SVG.hpp"
-#endif // DEBUG_OUTPUT_DIR
 
 using Domain::Index3;
 using Domain::TriangleMesh;
@@ -654,11 +655,11 @@ SurfaceCut cut_surface(
 #endif // DEBUG_OUTPUT_DIR
 
     // for filter out triangles out of bounding box
-    BoundingBox shapes_bb = Slic3r::Biz::Algorithms::ExPolygon::get_extents(shapes);
+    BoundingBox2crd shapes_bb = Slic3r::Biz::Algorithms::ExPolygon::get_extents(shapes);
 #ifdef DEBUG_OUTPUT_DIR
     priv::store(
         projection,
-        shapes_bb.center(),
+        BB::center(shapes_bb),
         projection_ratio,
         DEBUG_OUTPUT_DIR + "projection_center.obj"
     );
@@ -688,7 +689,7 @@ SurfaceCut cut_surface(
 
     priv::CutMesh cgal_shape = priv::to_cgal(shapes, projection);
 #ifdef DEBUG_OUTPUT_DIR
-    CGAL::IO::write_OFF(DEBUG_OUTPUT_DIR + "shape.off", cgal_shape); // only debug
+    ::CGAL::IO::write_OFF(DEBUG_OUTPUT_DIR + "shape.off", cgal_shape); // only debug
 #endif // DEBUG_OUTPUT_DIR
 
     // create tool for convert index to shape Point adress and vice versa
@@ -3722,7 +3723,7 @@ std::vector<bool> priv::select_patches(
         // not cutted area of expolygon
         ExPolygons rest = diff_ex(ExPolygons{shape}, fill, ApplySafetyOffset::Yes);
 #ifdef DEBUG_OUTPUT_DIR
-        BoundingBox shape_bb = get_extents(shape);
+        BoundingBox shape_bb = Biz::Algorithms::ExPolygon::get_extents(shape);
         Biz::Algorithms::SVG::SVG svg(
             store_dir + "shape_" + std::to_string(shape_index) + ".svg",
             shape_bb
@@ -3803,12 +3804,12 @@ std::vector<bool> priv::select_patches(
                 << gray_level
                 << gray_level;
             svg.draw(p.shape, color.str());
-            Point text_pos = get_extents(p.shape).center().cast<int>();
+            Point text_pos = BB::center(Biz::Algorithms::ExPolygon::get_extents(p.shape)).cast<int>();
             svg.draw_text(
                 text_pos,
                 std::to_string(i - 1).c_str(),
                 "orange",
-                std::ceil(shape_bb.size().x() / 20 * 0.000001)
+                std::ceil(BB::sizes(shape_bb).x() / 20 * 0.000001)
             );
             // svg.draw(p.intersection, color.str());
         }
@@ -4125,8 +4126,7 @@ void priv::store(const Vec3f& vertex, const Vec3f& normal, const std::string& fi
 
     its.vertices.push_back(vertex);
     its.vertices.push_back(vertex + up);
-    size_t max_i = static_cast<size_t>(flatten);
-    for (size_t i = 1; i < max_i; i++) {
+    for (int i = 1; i < flatten; i++) {
         float angle = i * 2 * M_PI / flatten;
         Vec3f v     = vertex + sin(angle) * side + cos(angle) * up;
         its.vertices.push_back(v);
@@ -4150,27 +4150,27 @@ void priv::store(const CutMesh& mesh, const FaceTypeMap& face_type_map, const st
     }
 
     CutMesh& mesh_   = const_cast<CutMesh&>(mesh);
-    auto face_colors = mesh_.add_property_map<priv::FI, CGAL::Color>("f:color").first;
+    auto face_colors = mesh_.add_property_map<priv::FI, ::CGAL::Color>("f:color").first;
     for (FI fi : mesh.faces()) {
         auto& color = face_colors[fi];
         switch (face_type_map[fi]) {
         case FaceType::inside:
-            color = CGAL::Color{100, 250, 100};
+            color = ::CGAL::Color{100, 250, 100};
             break; // light green
         case FaceType::inside_processed:
-            color = CGAL::Color{170, 0, 0};
+            color = ::CGAL::Color{170, 0, 0};
             break; // dark red
         case FaceType::outside:
-            color = CGAL::Color{100, 0, 100};
+            color = ::CGAL::Color{100, 0, 100};
             break; // purple
         case FaceType::not_constrained:
-            color = CGAL::Color{127, 127, 127};
+            color = ::CGAL::Color{127, 127, 127};
             break; // gray
         default:
-            color = CGAL::Color{0, 0, 255}; // blue
+            color = ::CGAL::Color{0, 0, 255}; // blue
         }
     }
-    CGAL::IO::write_OFF(off_file, mesh, CGAL::parameters::face_color_map(face_colors));
+    ::CGAL::IO::write_OFF(off_file, mesh, ::CGAL::parameters::face_color_map(face_colors));
     mesh_.remove_property_map(face_colors);
 }
 
@@ -4187,20 +4187,20 @@ void priv::store(const CutMesh& mesh, const ReductionMap& reduction_map, const s
     std::string off_file = dir + "model" + std::to_string(reduction_order++) + ".off";
 
     CutMesh& mesh_     = const_cast<CutMesh&>(mesh);
-    auto vertex_colors = mesh_.add_property_map<priv::VI, CGAL::Color>("v:color").first;
+    auto vertex_colors = mesh_.add_property_map<priv::VI, ::CGAL::Color>("v:color").first;
     // initialize to gray color
     for (VI vi : mesh.vertices())
-        vertex_colors[vi] = CGAL::Color{127, 127, 127};
+        vertex_colors[vi] = ::CGAL::Color{127, 127, 127};
 
     for (VI reduction_from : mesh.vertices()) {
         VI reduction_to = reduction_map[reduction_from];
         if (!reduction_to.is_valid())
             continue;
-        vertex_colors[reduction_from] = CGAL::Color{255, 0, 0};
-        vertex_colors[reduction_to]   = CGAL::Color{0, 0, 255};
+        vertex_colors[reduction_from] = ::CGAL::Color{255, 0, 0};
+        vertex_colors[reduction_to]   = ::CGAL::Color{0, 0, 255};
     }
 
-    CGAL::IO::write_OFF(off_file, mesh, CGAL::parameters::vertex_color_map(vertex_colors));
+    ::CGAL::IO::write_OFF(off_file, mesh, ::CGAL::parameters::vertex_color_map(vertex_colors));
     mesh_.remove_property_map(vertex_colors);
 }
 
@@ -4281,8 +4281,8 @@ void priv::store(const CutAOIs& aois, const CutMesh& mesh, const std::string& di
             size_t bi2 = its.vertices.size();
             its.vertices.push_back(b + dir);
 
-            its.indices.push_back(Index3(ai, ai2, bi));
-            its.indices.push_back(Index3(ai2, bi2, bi));
+            its.indices.push_back(Index3{ (int)ai, (int)ai2, (int)bi });
+            its.indices.push_back(Index3{ (int)ai2, (int)bi2, (int)bi });
         }
         return its;
     };
@@ -4310,7 +4310,7 @@ void priv::store(const SurfacePatches& patches, const std::string& dir)
         size_t index = &patch - &patches.front();
         if (patch.mesh.faces().empty())
             continue;
-        CGAL::IO::write_OFF(dir + "patch" + std::to_string(index) + ".off", patch.mesh);
+        ::CGAL::IO::write_OFF(dir + "patch" + std::to_string(index) + ".off", patch.mesh);
     }
 }
 
@@ -4368,8 +4368,8 @@ void priv::store(
     const std::string& file_svg
 )
 {
-    auto bb   = get_extents(shapes);
-    int width = get_extents(shapes.front()).size().x() / 70;
+    auto bb   = Biz::Algorithms::ExPolygon::get_extents(shapes);
+    int width = BB::sizes(Biz::Algorithms::ExPolygon::get_extents(shapes.front())).x() / 70;
 
     Biz::Algorithms::SVG::SVG svg(file_svg, bb);
     svg.draw(shapes);
@@ -4392,7 +4392,7 @@ void priv::store(
         }
         Point p1 = get_point(c.first);
         Point p2 = get_point(c.second);
-        svg.draw(Line(p1, p2), "red", width);
+        svg.draw(Domain::Line(p1, p2), "red", width);
     }
 
     for (size_t i = 0; i < s2i.get_count(); i++) {
@@ -4490,8 +4490,8 @@ indexed_triangle_set priv::create_contour_its(
         size_t bi2 = result.vertices.size();
         result.vertices.push_back(b + dir);
 
-        result.indices.push_back(Index3{ai, bi, ai2});
-        result.indices.push_back(Index3{ai2, bi, bi2});
+        result.indices.push_back(Index3{(int)ai, (int)bi, (int)ai2});
+        result.indices.push_back(Index3{(int)ai2, (int)bi, (int)bi2});
         prev_vi = vi;
     }
     return result;
@@ -4529,7 +4529,7 @@ void priv::store(const std::vector<indexed_triangle_set>& models, const std::str
 {
     indexed_triangle_set merged_model;
     for (const indexed_triangle_set& model : models)
-        its_merge(merged_model, model);
+        Domain::its_merge(merged_model, model);
     its_write_obj(merged_model, obj_filename.c_str());
 }
 
@@ -4539,19 +4539,19 @@ void priv::store(const std::vector<priv::CutMesh>& models, const std::string& di
     if (models.empty())
         return;
     if (models.size() == 1) {
-        CGAL::IO::write_OFF(dir + "model.off", models.front());
+        ::CGAL::IO::write_OFF(dir + "model.off", models.front());
         return;
     }
     size_t model_index = 0;
     for (const priv::CutMesh& model : models) {
         std::string filename = dir + "model" + std::to_string(model_index++) + ".off";
-        CGAL::IO::write_OFF(filename, model);
+        ::CGAL::IO::write_OFF(filename, model);
     }
 }
 
 // store projection center
 void priv::store(
-    const Emboss::IProjection& projection,
+    const Biz::Algorithms::IProjection& projection,
     const Point& point_to_project,
     float projection_ratio,
     const std::string& obj_filename

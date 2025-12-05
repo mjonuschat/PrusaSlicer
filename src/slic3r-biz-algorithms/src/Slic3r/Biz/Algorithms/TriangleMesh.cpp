@@ -761,6 +761,56 @@ Polygon its_convex_hull_2d_above(const indexed_triangle_set &its, const Transfor
     return its_convex_hull_2d_above(its, [t](const Vec3f &p){ return t * p; }, z);
 }
 
+indexed_triangle_set its_make_tetrahedron(float size) {
+    // --- Calculations for a "flat-base" regular tetrahedron ---
+    // 'size' is the edge length.
+
+    // 1. Calculate the circumradius 'r' of the base equilateral triangle
+    // This is the distance from the center of the base to its vertices.
+    const float sqrt_3 = static_cast<float>(std::sqrt(3.0));
+    const float sqrt_23 = static_cast<float>(std::sqrt(2/3.0));
+
+    const float r = size / sqrt_3;
+
+    // 2. Calculate the total height 'h' of the tetrahedron
+    const float h = size * sqrt_23;
+
+    // 3. Calculate the Y coordinates for the top and base
+    // The centroid (origin) is 1/4 of the way up from the base.
+    const float y_base = -h / 4.0f;
+    const float y_top = h * 3.0f / 4.0f;
+
+    // 4. Calculate the XZ coordinates for the 3 base vertices
+    const float v1x = 0.0f;
+    const float v1z = r;
+
+    const float v2x = r * sqrt_3 / 2.0f; // r * sin(120 deg)
+    const float v2z = -r / 2.0f;         // r * cos(120 deg)
+
+    const float v3x = -r * sqrt_3 / 2.0f; // r * sin(240 deg)
+    const float v3z = -r / 2.0f;          // r * cos(240 deg)
+
+    return {{  // indices
+        // Base face (facing -Y)
+        {3, 2, 1},
+        // Side face 1
+        {0, 1, 2},
+        // Side face 2
+        {0, 2, 3},
+        // Side face 3
+        {0, 3, 1}
+    }, { // vertices
+        // Vertex 0 (Top)
+        {0.0f, y_top,  0.0f},
+         // Vertex 1 (Base)
+        {v1x,  y_base, v1z},
+          // Vertex 2 (Base)
+        {v2x,  y_base, v2z},
+           // Vertex 3 (Base)
+        {v3x,  y_base, v3z}
+    }};
+}
+
 // Generate the vertex list for a cube solid of arbitrary size in X/Y/Z.
 indexed_triangle_set its_make_cube(double xd, double yd, double zd)
 {

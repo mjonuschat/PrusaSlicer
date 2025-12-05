@@ -289,6 +289,7 @@ inline Domain::Vec3f its_face_normal(const indexed_triangle_set& its, const int 
     return its_face_normal(its, its.indices[face_idx]);
 }
 
+indexed_triangle_set its_make_tetrahedron(float size = 1.f);
 indexed_triangle_set its_make_cube(double x, double y, double z);
 indexed_triangle_set its_make_prism(float width, float length, float height);
 indexed_triangle_set its_make_cylinder(double r, double h, double fa = (2 * std::numbers::pi / 360));

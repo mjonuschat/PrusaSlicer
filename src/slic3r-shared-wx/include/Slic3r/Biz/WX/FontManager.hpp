@@ -36,6 +36,13 @@ public:
     std::unique_ptr<const Domain::FontFile> open(const Domain::FontDescriptor& descriptor) override;
 
     /// <summary>
+    /// Create wxFont from the descriptor and than convert the wxFont back to the current used descriptor.
+    /// </summary>
+    /// <param name="descriptor">Input descriptor, different language operating system, size, ...</param>
+    /// <returns>One from the enumerated descriptors(font list)</returns>
+    Descriptor get_current_descriptor(const Domain::FontDescriptor& other_descriptor) override;
+
+    /// <summary>
     /// Retrieves the current font descriptor type.
     /// Distiquish Win/Lin/Mac
     /// </summary>

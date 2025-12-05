@@ -835,6 +835,15 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
     } else if (event_type == wxEVT_MIDDLE_UP) {
         platform_event_type = MouseEvent::Type::ButtonUp;
         button              = MouseButton::Middle;
+    } else if (event_type == wxEVT_LEFT_DCLICK) {
+        platform_event_type = MouseEvent::Type::DoubleClick;
+        button = MouseButton::Left;
+    } else if (event_type == wxEVT_RIGHT_DCLICK) {
+        platform_event_type = MouseEvent::Type::DoubleClick;
+        button = MouseButton::Right;
+    } else if (event_type == wxEVT_MIDDLE_DCLICK) {
+        platform_event_type = MouseEvent::Type::DoubleClick;
+        button = MouseButton::Middle;
     }
 
     float wheel_x = 0;

@@ -14,6 +14,7 @@
 #include "Slic3r/Domain/FontFile.hpp"
 #include "Slic3r/Biz/Emboss/Emboss.hpp"
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
+#include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
@@ -30,10 +31,12 @@ public:
     /// <param name="language_glyph_range">Character to load for imgui when initialize imgui font</param>
     /// <param name="cache_path">File path for store cache with current user Emboss presets.
     /// data_dir() + "/emboss_presets.cereal"</param>
+    /// <param name="project_interactor">For initialize ProjectScoped data</param>
     TextPresetManager(
         IFontManager& font_manager,
         const ImWchar* language_glyph_range,
-        const std::string& cache_path = ""
+        const std::string& cache_path,
+        Biz::ProjectInteractor& project_interactor
     );
 
     /**
@@ -56,14 +59,6 @@ public:
     void save_preset_as();
     void rename_preset();
     bool delete_preset();
-
-    /**
-    @brief Change order of preset item in m_presets.
-    Fix selected font index when (i1 || i2) == m_font_selected
-    @param i1 First index to m_presets
-    @param i2 Second index to m_presets
-    */
-    void swap(size_t i1, size_t i2);
 
     /**
     @brief Discard changes in current preset
@@ -101,17 +96,19 @@ public:
 
     const Preset& get_preset() const
     {
-        return m_preset_cache.preset;
+        return m_proj_preset_cache.selected().preset;
     }
 
     Preset& get_preset()
     {
-        return m_preset_cache.preset;
+        return m_proj_preset_cache.selected().preset;
     }
-
+    
+    // For fill select box in dialog, used together with get_preset_index() 
+    std::vector<std::string> get_presets_names() const;
     size_t get_preset_index() const
     {
-        return m_preset_cache.preset_index;
+        return m_proj_preset_cache.selected().preset_index;
     }
 
     const Domain::FontProp& get_font_prop() const
@@ -126,24 +123,26 @@ public:
 
     FontFileWithCache& get_font_file_with_cache()
     {
-        FontFileWithCache& ff = m_preset_cache.font_file;
+        PresetCache& cache = m_proj_preset_cache.selected();
+        FontFileWithCache& ff = cache.font_file;
         if (ff.has_value())
             return ff; // use cache
         // create new cache
-        ff = FontFileWithCache(m_font_manager.open(m_preset_cache.preset.emboss_style.descriptor));
+        ff = FontFileWithCache(m_font_manager.open(cache.preset.emboss_style.descriptor));
         return ff; 
     }
 
     bool has_collections() const
     {
-        return m_preset_cache.font_file.has_value()
-            && m_preset_cache.font_file.font_file->infos.size() > 1;
+        const FontFileWithCache& ff = m_proj_preset_cache.selected().font_file;
+        return ff.has_value()
+            && ff.font_file->infos.size() > 1;
     }
 
     // True when activ style has same name as some of stored style
     bool exist_stored_style() const
     {
-        return m_preset_cache.preset_index != std::numeric_limits<size_t>::max();
+        return m_proj_preset_cache.selected().preset_index != std::numeric_limits<size_t>::max();
     }
 
     /**
@@ -171,7 +170,6 @@ public:
     // access to all managed font styles
     const std::vector<Preset>& get_presets() const;
 
-    std::vector<std::string> get_presets_names() const;
 
     /**
     @brief Describe image in GPU to show settings of style
@@ -269,7 +267,9 @@ private:
 
         // index into m_presets
         size_t preset_index = std::numeric_limits<size_t>::max();
-    } m_preset_cache;
+    };
+
+    Biz::ProjectScoped<PresetCache> m_proj_preset_cache;
 
     // Privat member
     PresetsObj m_data;
@@ -313,6 +313,7 @@ private:
         double ppm;
     };
 
+    Biz::ProjectInteractor& m_project_interactor;
     std::shared_ptr<PresetImagesData::PresetImages> m_temp_style_images = nullptr;
     bool m_exist_style_images                                         = false;
 };

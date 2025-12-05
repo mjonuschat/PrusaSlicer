@@ -293,7 +293,8 @@ TextLinesModel::TextLinesModel(TextPresetManager& preset_manager,
     m_preset_manager(preset_manager),
     m_project_interactor(project_interactor),
     m_scene_presenter(scene_presenter),
-    m_device(device)
+    m_device(device),
+    m_proj_ctxs(project_interactor)
 {
     Domain::ColorRGBA gray_color = Domain::ColorRGBA::LIGHT_GRAY();
     gray_color.a(.7f);
@@ -301,6 +302,16 @@ TextLinesModel::TextLinesModel(TextPresetManager& preset_manager,
         .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", gray_color)
         .set_transparent(true);
+}
+
+const TextLines& TextLinesModel::get_lines()
+{
+    return m_proj_ctxs.selected().lines;
+}
+
+bool TextLinesModel::exist_lines() const
+{ 
+    return !m_proj_ctxs.selected().lines.empty();
 }
 
 void TextLinesModel::create_text_lines(unsigned count_lines, const Domain::Transform3d* text_tr)
@@ -364,23 +375,24 @@ void TextLinesModel::create_text_lines(unsigned count_lines, const Domain::Trans
     const Domain::FontProp& fp = m_preset_manager.get_font_prop();
 
     double line_height_mm;
-    m_lines = Emboss::create_text_lines(
+    ProjectContext& proj_ctx = m_proj_ctxs.selected();
+    proj_ctx.lines = Emboss::create_text_lines(
             *text_tr,
             volumes_to_slice,
             ff,
             fp,
             count_lines,
             &line_height_mm);
-    if (m_lines.empty())
+    if (proj_ctx.lines.empty())
         return;
 
     bool is_mirrored = has_reflection(*text_tr);
     float radius = static_cast<float>(line_height_mm / 20.);
     
     // create node and append into scene
-    indexed_triangle_set its = create_its(m_lines, radius);
+    indexed_triangle_set its = create_its(proj_ctx.lines, radius);
 
-    m_geometry = App::Render::geometry_from_triangle_mesh(m_device, its);
+    proj_ctx.geometry = App::Render::geometry_from_triangle_mesh(m_device, its);
 
     TextLineNodeTag tag{};
     int layer_index = int(App::Plater::PlaterSceneLayer::DocumentObjects);
@@ -389,17 +401,18 @@ void TextLinesModel::create_text_lines(unsigned count_lines, const Domain::Trans
         .set_debug_name("Text lines")
         .set_transform(*text_tr)
         .set_tag(tag)
-        .set_mesh(m_geometry.get(), m_material, layer_index);
+        .set_mesh(proj_ctx.geometry.get(), m_material, layer_index);
     scene.add_child(builder.build().release(), object_node);
 }
 
 void TextLinesModel::reset()
 {
-    if (m_lines.empty())
+    ProjectContext& proj_ctx = m_proj_ctxs.selected();
+    if (proj_ctx.lines.empty())
         return; // already reseted
 
-    m_lines.clear();
-    m_geometry.release();
+    proj_ctx.lines.clear();
+    proj_ctx.geometry.release();
 
     auto is_text_line = [](const App::Scene::Node* n) {
         return n->has_tag_of_type<TextLineNodeTag>();

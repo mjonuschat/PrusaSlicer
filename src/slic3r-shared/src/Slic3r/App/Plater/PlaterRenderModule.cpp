@@ -522,18 +522,6 @@ void PlaterRenderModule::init_scene_layout()
         _u8L("Add instance")
     );
 
-    m_toolbar_text = m_layout->add_toolbar_item_gizmo( // Move up for faster debugging
-        ToolbarID::Middle,
-        Render::Icon::ToolbarText,
-        "Text",
-        "T",
-        { .action =
-             [this]() {
-                 toggle_activate_tool(Scene::ToolType::Text);
-             } },
-        m_text_gizmo
-    );
-
     m_toolbar_move = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::Move,
@@ -705,12 +693,7 @@ void PlaterRenderModule::update_object_selection()
     const bool empty_selection = selection.empty();
     m_layout->middle_toolbar()->set_visible(!empty_selection);
 
-    if (!empty_selection || m_gizmo_manager->current_tool_type() == Scene::ToolType::None) {
-        m_text_gizmo->update_layout(
-            !empty_selection && selection.mode == Slic3r::Biz::Scene::SelectionMode::Volume
-        );
-    }
-
+    
     update_toolbar_visibility();
 
     update_current_right_sidebar();

@@ -562,11 +562,11 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::Selectio
     auto& obj     = *project.model().add_object();
     auto& vol     = *Algorithms::ModelObject::add_volume(&obj, std::move(mesh));
     auto& inst    = *obj.add_instance();
+    update_object(obj);
+
     const Domain::ElementRefs updated{{obj.id().id, inst.id().id}};
     // const Domain::ElementRefs updated_vols{{obj.id().id, inst.id().id, vol.id().id}};
     auto changes = m_bed_tracking.update_instances_bed_placement(project, updated);
-
-    update_object(obj);
     if (project.file_name().empty()) {
         const boost::filesystem::path filename_path(vol.name);
         const std::string stem_name = filename_path.stem().string();

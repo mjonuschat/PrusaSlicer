@@ -4,7 +4,7 @@
 ///|/
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
-#include "Slic3r/App/I18N/I18N.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
 #include <Slic3r/App/AppServices.hpp> // singleton for dialog
 
@@ -41,11 +41,14 @@ namespace Slic3r::Biz::Emboss {
 TextPresetManager::TextPresetManager(
     IFontManager& font_manager,
     const ImWchar* language_glyph_range,
-    const ::std::string& cache_path
+    const ::std::string& cache_path,
+    Biz::ProjectInteractor& project_interactor
 ) :
     m_font_manager(font_manager),
     m_imgui_init_glyph_range(language_glyph_range),
-    m_cache_path(cache_path)
+    m_cache_path(cache_path),
+    m_proj_preset_cache(project_interactor),
+    m_project_interactor(project_interactor)
 {}
 
 void TextPresetManager::init()
@@ -69,21 +72,22 @@ bool TextPresetManager::store_presets(bool use_modification, bool store_active_i
 {
     if (m_data.presets.empty())
         return false;
+    PresetCache& cache = m_proj_preset_cache.selected();
     if (use_modification) {
         if (exist_stored_style()) {
             // update stored item
-            m_data.presets[m_preset_cache.preset_index] = m_preset_cache.preset;
+            m_data.presets[cache.preset_index] = cache.preset;
         } else {
             // add new into stored list
-            Domain::EmbossStyle& style = m_preset_cache.preset.emboss_style;
+            Domain::EmbossStyle& style = cache.preset.emboss_style;
             ::make_unique_name(m_data.presets, style.descriptor.name);
-            m_preset_cache.truncated_name.clear();
-            m_preset_cache.preset_index = m_data.presets.size();
+            cache.truncated_name.clear();
+            cache.preset_index = m_data.presets.size();
             m_data.presets.push_back({style});
         }
     }
     if (store_active_index && exist_stored_style()) {
-        m_data.current_index = m_preset_cache.preset_index;
+        m_data.current_index = cache.preset_index;
     }
     store_styles_obj(m_cache_path, m_data);
     return true;
@@ -101,11 +105,12 @@ void TextPresetManager::save_preset_as() {
             dlg_manager.show_yesno_dialog(_u8L("Presset name is not unique"), _u8L("Presset already exist would you like to try new name?"), callback);
         }
         else {
-            Domain::EmbossStyle& style = m_preset_cache.preset.emboss_style;
+            PresetCache& cache = m_proj_preset_cache.selected();
+            Domain::EmbossStyle& style = cache.preset.emboss_style;
             style.descriptor.name = name;
             ::make_unique_name(m_data.presets, style.descriptor.name);
-            m_preset_cache.preset_index = m_data.presets.size();
-            m_preset_cache.truncated_name.clear();
+            cache.preset_index = m_data.presets.size();
+            cache.truncated_name.clear();
             m_data.presets.push_back({ style });
             store_presets();
         }
@@ -125,13 +130,22 @@ void TextPresetManager::rename_preset()
             return;
         if (!is_unique_style_name(name)) {
             dlg_manager.show_yesno_dialog(_u8L("Presset name is not unique"), _u8L("Presset already exist would you like to try new name?"), callback);
-        }
-        else {
-            m_preset_cache.preset.emboss_style.descriptor.name = name;
-            m_preset_cache.truncated_name.clear();
-            if (exist_stored_style()) {
-                Preset& it = m_data.presets[m_preset_cache.preset_index];
-                it.emboss_style.descriptor.name = name;
+        } else {
+            PresetCache& cache = m_proj_preset_cache.selected();
+            cache.preset.emboss_style.descriptor.name = name;
+            cache.truncated_name.clear();
+            if (!exist_stored_style())
+                return; 
+            
+            m_data.presets[cache.preset_index].emboss_style.descriptor.name = name;                
+            const auto& projs = m_project_interactor.workbench().projects();
+            for (const auto& [project_id, _] : projs) { 
+                // rename in all projects
+                PresetCache& cache_ = m_proj_preset_cache.project(project_id);
+                if (cache_.preset_index != cache.preset_index)
+                    continue;
+                cache_.preset.emboss_style.descriptor.name = name;
+                cache_.truncated_name.clear();
             }
             store_presets();
         }
@@ -151,9 +165,14 @@ bool TextPresetManager::delete_preset()
         if (index >= m_data.presets.size())
             return;
 
-        // fix selected index
-        if (exist_stored_style()) {
-            size_t& i = m_preset_cache.preset_index;
+        // fix selected index in all projects data        
+        const auto& projs = m_project_interactor.workbench().projects();
+        for (const auto& [project_id, _] : projs) {
+            PresetCache &cache = m_proj_preset_cache.project(project_id);
+            size_t& i = cache.preset_index;
+            if (i == std::numeric_limits<size_t>::max())
+                continue; // not selected
+
             if (index < i)
                 --i;
             else if (index == i)
@@ -206,25 +225,10 @@ bool TextPresetManager::delete_preset()
     return false;
 }
 
-void TextPresetManager::swap(size_t i1, size_t i2)
-{
-    if (i1 >= m_data.presets.size() || i2 >= m_data.presets.size())
-        return;
-    std::swap(m_data.presets[i1], m_data.presets[i2]);
-    // fix selected index
-    if (!exist_stored_style())
-        return;
-    if (m_preset_cache.preset_index == i1) {
-        m_preset_cache.preset_index = i2;
-    } else if (m_preset_cache.preset_index == i2) {
-        m_preset_cache.preset_index = i1;
-    }
-}
-
 void TextPresetManager::discard_preset_changes()
 {
     if (exist_stored_style()) {
-        if (load_preset(m_preset_cache.preset_index))
+        if (load_preset(m_proj_preset_cache.selected().preset_index))
             return; // correct reload style
     } else {
         if (load_preset(m_data.current_index))
@@ -270,29 +274,23 @@ bool TextPresetManager::load_preset(size_t style_index)
         return false;
     if (!load_preset(m_data.presets[style_index]))
         return false;
-    m_preset_cache.preset_index = style_index;
+    m_proj_preset_cache.selected().preset_index = style_index;
     m_data.current_index      = style_index;
     return true;
 }
 
 bool TextPresetManager::load_preset(const Preset& style)
 {
-    if (style.emboss_style.descriptor.type == Domain::FontDescriptor::Type::file_path) {
-        std::unique_ptr<Domain::FontFile> font_ptr = create_font_file(
-            style.emboss_style.descriptor.path.c_str()
-        );
-        if (font_ptr == nullptr)
-            return false;
-        m_preset_cache.font_file   = FontFileWithCache(std::move(font_ptr));
-        m_preset_cache.preset       = style; // copy
-        m_preset_cache.preset_index = std::numeric_limits<size_t>::max();
-        return true;
-    }
+    std::unique_ptr<const Domain::FontFile> font_ptr = 
+        m_font_manager.open(style.emboss_style.descriptor);
+    if (font_ptr == nullptr)
+        return false;
 
-    m_preset_cache.preset       = style; // copy
-    m_preset_cache.preset_index = std::numeric_limits<size_t>::max();
-    m_preset_cache.truncated_name.clear();
-
+    PresetCache& cache = m_proj_preset_cache.selected();
+    cache.font_file = FontFileWithCache(std::move(font_ptr));
+    cache.preset       = style; // copy
+    cache.preset_index = std::numeric_limits<size_t>::max();
+    cache.truncated_name.clear();
     return true;
 }
 
@@ -336,14 +334,15 @@ bool TextPresetManager::is_unique_style_name(const std::string& name) const
 
 const TextPresetManager::Preset* TextPresetManager::get_stored_preset() const
 {
-    if (m_preset_cache.preset_index >= m_data.presets.size())
+    size_t preset_index = m_proj_preset_cache.selected().preset_index;
+    if (preset_index >= m_data.presets.size())
         return nullptr;
-    return &m_data.presets[m_preset_cache.preset_index];
+    return &m_data.presets[preset_index];
 }
 
 void TextPresetManager::clear_glyphs_cache()
 {
-    FontFileWithCache& ff = m_preset_cache.font_file;
+    FontFileWithCache& ff = m_proj_preset_cache.selected().font_file;
     if (!ff.has_value())
         return;
     ff.cache = std::make_shared<Glyphs>();
@@ -351,13 +350,14 @@ void TextPresetManager::clear_glyphs_cache()
 
 void TextPresetManager::clear_imgui_font()
 {
-    m_preset_cache.atlas.Clear();
+    m_proj_preset_cache.selected().atlas.Clear();
 }
 
 void TextPresetManager::set_font(const Domain::FontDescriptor& font_descriptor)
 {
-    m_preset_cache.font_file.font_file = nullptr; // discard cache
-    Domain::FontDescriptor& cache_descriptor = m_preset_cache.preset.emboss_style.descriptor;
+    PresetCache& cache = m_proj_preset_cache.selected();
+    cache.font_file.font_file = nullptr; // discard cache
+    Domain::FontDescriptor& cache_descriptor = cache.preset.emboss_style.descriptor;
     if (cache_descriptor.type != font_descriptor.type) {
         // discard style name(FontDescriptor::name)
         cache_descriptor = font_descriptor;
@@ -368,7 +368,7 @@ void TextPresetManager::set_font(const Domain::FontDescriptor& font_descriptor)
 
 ImFont* TextPresetManager::get_imgui_font()
 {
-    ImVector<ImFont*>& fonts = m_preset_cache.atlas.Fonts;
+    ImVector<ImFont*>& fonts = m_proj_preset_cache.selected().atlas.Fonts;
     if (fonts.empty())
         return nullptr;
 
@@ -495,7 +495,8 @@ float TextPresetManager::get_imgui_font_size(
 ImFont* TextPresetManager::create_imgui_font(const std::string& text, double scale)
 {
     // inspiration inside of ImGuiWrapper::init_font
-    auto& ff = m_preset_cache.font_file;
+    PresetCache& cache = m_proj_preset_cache.selected();
+    auto& ff = cache.font_file;
     if (!ff.has_value())
         return nullptr;
     const Domain::FontFile& font_file = *ff.font_file;
@@ -505,14 +506,14 @@ ImFont* TextPresetManager::create_imgui_font(const std::string& text, double sca
     if (!text.empty())
         builder.AddText(text.c_str());
 
-    ImVector<ImWchar>& ranges = m_preset_cache.ranges;
+    ImVector<ImWchar>& ranges = cache.ranges;
     ranges.clear();
     builder.BuildRanges(&ranges);
 
-    m_preset_cache.atlas.Flags |= ImFontAtlasFlags_NoMouseCursors
+    cache.atlas.Flags |= ImFontAtlasFlags_NoMouseCursors
         | ImFontAtlasFlags_NoPowerOfTwoHeight;
 
-    const Domain::FontProp& font_prop = m_preset_cache.preset.emboss_style.prop;
+    const Domain::FontProp& font_prop = cache.preset.emboss_style.prop;
     float font_size                   = get_imgui_font_size(font_prop, font_file, scale);
     if (font_size < min_imgui_font_size)
         font_size = min_imgui_font_size;
@@ -532,17 +533,17 @@ ImFont* TextPresetManager::create_imgui_font(const std::string& text, double sca
     font_config.FontDataOwnedByAtlas = false;
 
     const std::vector<unsigned char>& buffer = *font_file.data;
-    ImFont* font                             = m_preset_cache.atlas.AddFontFromMemoryTTF(
+    ImFont* font                             = cache.atlas.AddFontFromMemoryTTF(
         (void*) buffer.data(),
         buffer.size(),
         font_size,
         &font_config,
-        m_preset_cache.ranges.Data
+        cache.ranges.Data
     );
 
     unsigned char* pixels;
     int width, height;
-    m_preset_cache.atlas.GetTexDataAsRGBA32(&pixels, &width, &height);
+    cache.atlas.GetTexDataAsRGBA32(&pixels, &width, &height);
 
     // Upload texture to graphics system
     GLint last_texture;
@@ -565,11 +566,11 @@ ImFont* TextPresetManager::create_imgui_font(const std::string& text, double sca
     // glsafe(::glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
 
     // Store our identifier
-    m_preset_cache.atlas.TexID = (ImTextureID) (intptr_t) font_texture;
-    assert(!m_preset_cache.atlas.Fonts.empty());
-    if (m_preset_cache.atlas.Fonts.empty())
+    cache.atlas.TexID = (ImTextureID) (intptr_t) font_texture;
+    assert(!cache.atlas.Fonts.empty());
+    if (cache.atlas.Fonts.empty())
         return nullptr;
-    assert(font == m_preset_cache.atlas.Fonts.back());
+    assert(font == cache.atlas.Fonts.back());
     if (!font->IsLoaded())
         return nullptr;
     assert(font->IsLoaded());

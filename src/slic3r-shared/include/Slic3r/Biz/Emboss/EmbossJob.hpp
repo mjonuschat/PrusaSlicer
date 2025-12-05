@@ -44,12 +44,12 @@ public:
     @brief Used only with text for embossing per glyph
            \note Only for new volume creation(without ui)
     @param tr Embossed volume final transformation in world
-    @param vols Volumes to be sliced to text lines
+    @param object Contain volumes to be sliced to text lines
     @return True on succes otherwise False(Per glyph shoud be disabled)
     */
     virtual void create_text_lines(
         const Domain::Transform3d& tr, 
-        const Domain::ModelVolumePtrs& vols) {}
+        const Domain::ModelObject& object) {}
 
     /**
     @brief Text extract glyphs from font file
@@ -82,19 +82,25 @@ protected:
 
 using ShapeProviderPtr = std::unique_ptr<ShapeProvider>;
 
+enum class JobIssue {
+    canceled, // canceled thread
+    no_shape, // Font doesn't have any shape for given text
+    no_surface, // There is no valid surface for text projection
+    default_volume // Create function created default shape (shape was not used)
+};
+
 struct BaseData
 {
     // Create shape
     ShapeProviderPtr shape_provider;
 
     // Add volume into project
+    // @janBartipan garanted it will be alive in the finalize part of the job.
+    // Job manager will not call finalize when Project interactor is not alive.
     Biz::ProjectInteractor& project_interactor;
 
-    // project of the object
+    // Project of the object
     Domain::SelectionId project_id;
-
-    // Define which gizmo open on the success(Text VS SVG)
-    App::Scene::ToolType gizmo;
 
     // Define projection move
     // True (raised) .. move outside from surface (MODEL_PART)
@@ -108,6 +114,10 @@ struct BaseData
 
     // new volume name
     std::string volume_name;
+
+    // function called on main thread when issue during proccess job appear
+    using IssueFn = std::function<void(JobIssue)>;
+    IssueFn issue_fn;
 };
 
 /**
@@ -152,9 +162,6 @@ struct UpdateVolumeParams
     // unique identifier of volume to change
     Domain::ObjectID volume_id;
 
-    // Transformation of volume after update volume shape
-    // NOTE: Add for style change, because it change rotation and distance from surface
-    std::optional<Domain::Transform3d> volume_trmat = std::nullopt;
     std::optional<Domain::ModelVolumeType> volume_type = std::nullopt;
 };
 
@@ -165,15 +172,6 @@ struct UpdateVolumeParams
 @return True when start job otherwise false
 */
 bool start_update_volume(UpdateVolumeParams&& data, const Domain::ModelVolume& volume);
-
-/**
- *  @brief  Find volume by id inside project without known object_id
- *  @note Move functionality into foundable place not only EmbossJob
- *  @param  project   - Project to search for volume_id
- *  @param  volume_id - Define volume(unique inside project)
- *  @retval           - Volume when found otherwise nullptr
- */
-Domain::ModelVolume* get_volume(const Domain::Project& project, const Domain::ObjectID& volume_id);
 
 } // namespace Slic3r::Biz::Emboss
 

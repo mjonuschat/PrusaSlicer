@@ -111,6 +111,9 @@ bool AlignmentButtons::is_changed_value() const
 void AlignmentButtons::reset()
 {
     set_align(m_default_align);
+    if (m_callbacks.align_changed) {
+        m_callbacks.align_changed(m_align);
+    }
 }
 
 } // namespace Slic3r::App::Yoga

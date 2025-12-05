@@ -8,6 +8,8 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Scene/MouseDragDetector.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
+#include "Slic3r/App/Yoga/Item.hpp" // Passthrough
+#include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
@@ -29,7 +31,7 @@ class TextDialog;
 class TextGizmo : 
     public Scene::IToolGizmo,
     public Biz::Scene::ISceneSelectionChangedListener,
-    public Scene::IMouseDrag
+    public Scene::IMouseDrag // surface dragging
 {
 public:
     TextGizmo(
@@ -62,7 +64,11 @@ public:
      */
     void on_activated() override;
     void on_deactivated() override;
-    Scene::ToolType type() const override { return Scene::ToolType::Text; }
+    void on_project_activated(size_t new_project_id) override;
+    void on_project_deactivated(size_t old_project_id) override;
+
+    Scene::ToolType type() const override;
+    bool activate_by_double_click(const Scene::GizmoEventContext& ctx) override;
 
     /**
      * @name Implementation of ISceneSelectionChangedListener interface
@@ -79,13 +85,8 @@ public:
     // Only debug 
     void render_imgui();
 private:
-    // Params to change inside of volume after create, which are not in preset manager
-    struct UpdateParams {
-        std::optional<Domain::Transform3d> volume_transformation;
-        std::optional<Domain::ModelVolumeType> volume_type;
-    };
     // Call every time when param of emboss change
-    bool update_volume(const UpdateParams& params = UpdateParams{});
+    bool update_volume(std::optional<Domain::ModelVolumeType> volume_type = {});
     void close();
     void rotate(double absolut_angle); // callback on_rotation_change
     bool init_create(Domain::ModelVolumeType volume_type);
@@ -99,29 +100,14 @@ private:
 
     Biz::Emboss::TextPresetManager m_preset_manager;
     Biz::Emboss::SurfaceDrag m_surface_drag;
-    Biz::Emboss::TextLinesModel m_text_lines;
+    Biz::Emboss::TextLinesModel m_text_lines; // per glyph feature
 
-    std::string m_text; // embossed text
-    std::optional<double> m_up_limit; // when it has value, than lock of the up vector is set
-    
+    struct ProjectContext; // forward declaration
+    // m_projects use pimpl to hide ProjectContext into cpp file
+    std::unique_ptr<Biz::ProjectScoped<ProjectContext>> m_proj_ctxs;
+
+    TextDialog& dialog() { return *m_dialog.get(); }
     Yoga::Passthrough<TextDialog> m_dialog;
-
-    struct Scale {
-        std::optional<float> width;
-        std::optional<float> height;
-        std::optional<float> depth;
-        double char_gap = 1.;
-        double line_gap = 1.;
-    };
-    Scale m_volume_scale;
-    bool calc_scale(const Domain::Project& project, const Domain::ElementRef& ref); // True when exist change in scale otherwise false
-
-    bool m_use_inch = false;
-    bool m_use_deg = true;
-    bool m_lock_up = true;
-
-    // only for check
-    Domain::ObjectID m_last_loaded_volume_id;
 };
 
 // TODO: move function to surface drag utility

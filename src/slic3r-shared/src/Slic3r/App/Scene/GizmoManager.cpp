@@ -101,7 +101,23 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
     if (m_mouse_drag_detector && 
         m_mouse_drag_detector->mouse_event(ctx, [this](){ return get_gizmos(m_base_gizmos, current_context().active_tool); }))
         return;
-        
+
+    // activation by double click
+    if (e.type() == Platform::MouseEvent::Type::DoubleClick &&
+        e.button() == Platform::MouseButton::Left)
+    {
+        auto it = std::find_if(m_tool_gizmos.begin(), m_tool_gizmos.end(),
+            [&ctx](const IToolGizmoPtr& tool) { return tool->activate_by_double_click(ctx); });
+        if (it != m_tool_gizmos.end()) {
+            ToolType tool_type = (*it)->type();
+            if (tool_type != current_tool_type()) {
+                auto technology = m_project_interactor.selected_config_container().selected_preset().hw_config.technology;
+                activate_tool(tool_type, technology);
+            }
+            return;
+        }
+    }
+
     const bool single_active = p.in_cycle_gizmos.size() == 1;
 #if DEBUG_GIZMO_MANAGER
     SPDLOG_INFO("process event {} ---in-cycle: {}", int(e.type()), p.in_cycle);

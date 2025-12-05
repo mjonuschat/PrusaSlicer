@@ -14,6 +14,7 @@
 #include <boost/bimap.hpp>
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
+#include <fmt/format.h>
 
 #include <imgui_internal.h>
 
@@ -532,8 +533,7 @@ static void set_double_spin(
     validator->set_to(to);
     spin->set_step(step);
     spin->set_step_fast(step_fast);
-    spin->set_text(fmt::format("{}", value));
-//    spin->set_text(std::to_string(value));
+    spin->set_text(fmt::format("{:.10g}", value));
     spin->set_default(default_value);
 }
 

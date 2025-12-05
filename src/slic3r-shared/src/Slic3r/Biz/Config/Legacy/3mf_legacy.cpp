@@ -4347,7 +4347,7 @@ EmbossShape TextConfigurationSerialization::read_old(const char **attributes, un
     EmbossShape es;
     std::string fix_tr_mat_str = get_attribute_value_string(attributes, num_attributes, TRANSFORM_ATTR);
     if (!fix_tr_mat_str.empty())
-        es.fix_3mf_tr = get_transform_from_3mf_specs_string(fix_tr_mat_str);
+        es.legacy_fix_3mf_tr = get_transform_from_3mf_specs_string(fix_tr_mat_str);
 
 
     if (get_attribute_value_int(attributes, num_attributes, USE_SURFACE_ATTR) == 1)
@@ -4441,7 +4441,7 @@ void to_xml(std::stringstream &stream, const EmbossShape &es, const Domain::Mode
         stream << USE_SURFACE_ATTR << "=\"" << 1 << "\" ";
     
     // FIX of baked transformation
-    Transform3d fix = create_fix(es.fix_3mf_tr, volume);
+    Transform3d fix = create_fix(es.legacy_fix_3mf_tr, volume);
     stream << TRANSFORM_ATTR << "=\"";
     _3MF_Exporter::add_transformation(stream, fix);
     stream << "\" ";

@@ -64,6 +64,14 @@ public:
         return project(m_project_interactor.selected_project_id());
     }
 
+    std::vector<size_t> get_project_ids() const
+    {
+        std::vector<size_t> ids;
+        ids.reserve(m_projects.size());
+        for (const auto& [id, _] : m_projects)
+            ids.push_back(id);
+        return ids;
+    }
 
 protected:
     T factory() { return {}; }

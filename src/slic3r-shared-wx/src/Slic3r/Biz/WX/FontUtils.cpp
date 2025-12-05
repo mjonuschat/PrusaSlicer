@@ -275,6 +275,17 @@ std::string get_human_readable_name(const wxFont& font)
 
 std::string store_wxFont(const wxFont& font)
 {
+    // Serialization function store also param "lfHeight" LOGFONT height,
+    // which is dependent on DPI, which is different for Device context -> monitor.
+    // To unify descriptors is used same point size
+    // Common values are decades occasionaly houdreds. For sure is set to higher value.
+    const int POINT_SIZE = 10000;
+    if (font.GetPointSize() != POINT_SIZE) {
+        wxFont wx_font = font;// copy
+        wx_font.SetPointSize(POINT_SIZE);
+        return store_wxFont(wx_font);
+    }
+
     // wxString os = wxPlatformInfo::Get().GetOperatingSystemIdName();
     wxString font_descriptor = font.GetNativeFontInfoDesc();
     BOOST_LOG_TRIVIAL(trace)

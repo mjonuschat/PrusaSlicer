@@ -625,7 +625,6 @@ TEST_CASE("UndoRedo EmbossShape serialization", "[Emboss]")
     emboss.scale                  = 2.;
     emboss.projection.depth       = 5.;
     emboss.projection.use_surface = true;
-    emboss.fix_3mf_tr             = Transform3d::Identity();
     emboss.svg_file               = EmbossShape::SvgFile{};
     emboss.svg_file->path =
         "Everything starts somewhere, though many physicists disagree.\

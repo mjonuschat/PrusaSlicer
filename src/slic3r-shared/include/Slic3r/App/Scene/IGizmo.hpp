@@ -175,6 +175,13 @@ public:
     /**@}*/
 
     /**
+     *  @brief  Opening tool by double clicking on volume(e.g. Text, SVG, CUT, ...)
+     *  @param  ctx - ray cast into scene under mouse
+     *  @retval     - True when tool wants to be acitvated
+     */
+    virtual bool activate_by_double_click(const GizmoEventContext& ctx) { return false; }
+
+    /**
      * @name Project activation and deactivation
      * @note Project deactivation of a tool gizmo happens when a project with active tool gizmo gets
      * switched from (i.e. project will disappear). And analogically project activation of a tool

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/Biz/Emboss/Emboss.hpp" // TextLines
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
@@ -40,21 +41,25 @@ class TextLinesModel {
     Biz::ProjectInteractor& m_project_interactor; // current selection
     App::Plater::PlaterScenePresenter& m_scene_presenter; // ability to append node with text lines preview
     App::Render::Device& m_device; // to create geometry from triangles
-
-    TextLines m_lines;
-    std::unique_ptr<App::Render::Geometry> m_geometry;
+    
     App::Render::Material m_material;
+
+    struct ProjectContext {
+        TextLines lines;
+        std::unique_ptr<App::Render::Geometry> geometry;
+    };
+    ProjectScoped<ProjectContext> m_proj_ctxs;
 public:
     TextLinesModel(TextPresetManager& preset_manager,
         Biz::ProjectInteractor& project_interactor,
         App::Plater::PlaterScenePresenter& scene_presenter,
         App::Render::Device& device);
-    const TextLines& get_lines() { return m_lines; }
+    const TextLines& get_lines();
+    bool exist_lines() const;
 
     // Create lines from current selected text volume for current cached preset inside scene
     // Text transformation(inside object not world) is set when no text volume exist for selected object
     void create_text_lines(unsigned count_lines = 1, const Domain::Transform3d* text_tr = nullptr);
-    bool exist_lines() const { return !m_lines.empty(); }
     void reset();
 };
 

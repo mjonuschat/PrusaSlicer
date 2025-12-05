@@ -229,19 +229,35 @@ Domain::FontDescriptor create_descriptor(
     const Domain::FontList& fonts
 )
 {
-    wxString face_name = wx_font.GetFaceName();
     for (const Domain::FontDescriptor& font : fonts) {
         wxFont wx_font_ = load_wxFont(font.path);
-        if (face_name == wx_font_.GetFaceName()) {
-            Domain::FontDescriptor result = font; // copy
-            result.name                   = name;
-            return result;
-        }
+        if (wx_font.GetFaceName() != wx_font_.GetFaceName() ||
+            wx_font.GetStyle()    != wx_font_.GetStyle()    ||
+            wx_font.GetWeight()   != wx_font_.GetWeight()   )
+            continue;
+        Domain::FontDescriptor result = font; // copy
+        result.name                   = name;
+        return result;
     }
-    // wxFontfamily is in not found in fonts
+    // wxFont is not found in fonts
     return {};
 }
 } // namespace
+
+FontManager::Descriptor FontManager::get_current_descriptor(const Domain::FontDescriptor& descriptor)
+{
+    if (descriptor.type == Domain::FontDescriptor::Type::file_path)
+        return descriptor;
+    if (descriptor.type != get_current_type())
+        return tl::unexpected{ ConversionError::AnotherOS };
+    wxFont wx_font = load_wxFont(descriptor.path);
+    if (!wx_font.IsOk())
+        return tl::unexpected{ ConversionError::NotOkWxFont };
+
+    if (m_openable.empty())
+        get_fonts(); // fill m_openable
+    return create_descriptor(wx_font, descriptor.name, m_openable);
+}
 
 Domain::FontList FontManager::create_favorit()
 {

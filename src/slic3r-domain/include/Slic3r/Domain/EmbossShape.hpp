@@ -75,12 +75,9 @@ struct EmbossShape
     // Define how to emboss shape
     EmbossProjection projection;
 
-    // !!! Volume stored in .3mf has transformed vertices.
-    // (baked transformation into vertices position)
-    // Only place for fill this is when load from .3mf
-    // This is correction for volume transformation
-    // Stored_Transform3d * fix_3mf_tr = Transform3d_before_store_to_3mf
-    std::optional<Transform3d> fix_3mf_tr;
+    // Used only to load legacy 3mf !
+    // Before PS 3.0 was used to fix baked volume into object
+    std::optional<Transform3d> legacy_fix_3mf_tr;
 
     struct SvgFile {
         // File(.svg) path on local computer 
@@ -118,16 +115,12 @@ struct EmbossShape
     std::optional<SvgFile> svg_file;
 
     // undo / redo stack recovery
-    template<class Archive> void save(Archive &ar) const
+    template<class Archive> void serialize(Archive &ar)
     {
         // final_shape is not neccessary to store - it is only cache
         ar(shapes_with_ids, final_shape, scale, projection, svg_file);
-        cereal::save(ar, fix_3mf_tr);
-    }
-    template<class Archive> void load(Archive &ar)
-    {
-        ar(shapes_with_ids, final_shape, scale, projection, svg_file);
-        cereal::load(ar, fix_3mf_tr);
+        // legacy_fix_3mf_tr SHOULD stay empty after finish load of the 3mf
+        assert(!legacy_fix_3mf_tr.has_value());
     }
 };
 } // namespace Slic3r

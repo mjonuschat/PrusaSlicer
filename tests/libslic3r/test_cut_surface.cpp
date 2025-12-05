@@ -155,7 +155,7 @@ TEST_CASE("CutSurface in 3mf", "[Emboss]")
     BoundingBoxf3 bb;
     for (auto &i : its) bb.merge(Slic3r::bounding_box(i));
 
-    Transform3d cut_projection_tr = mv_text->get_matrix() * tc.fix_3mf_tr->inverse();
+    Transform3d cut_projection_tr = mv_text->get_matrix() * tc.legacy_fix_3mf_tr->inverse();
     Transform3d emboss_tr = cut_projection_tr.inverse();
     BoundingBoxf3 mesh_bb_tr = bb.transformed(emboss_tr);
 

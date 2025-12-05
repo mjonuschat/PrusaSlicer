@@ -423,6 +423,38 @@ static void infer_bed_positions_and_create_beds(Loaded3MF& loaded_3mf)
 
 using OptionalPresetBundle = std::optional<std::reference_wrapper<const Domain::Preset::Bundle>>;
 
+namespace {
+void fix_volume_transformation(ModelVolume& volume) {
+    if (!volume.emboss_shape.has_value())
+        return;
+        
+    if (!volume.emboss_shape->legacy_fix_3mf_tr.has_value())
+        return; // version without storing fix matrix (can't help)
+    
+    const Transform3d& fix_tr = *volume.emboss_shape->legacy_fix_3mf_tr;
+    volume.set_transformation(volume.get_matrix() * fix_tr.inverse());
+    indexed_triangle_set its = volume.mesh_ptr()->its; // copy
+    its_transform(its, fix_tr);
+    TriangleMesh tm = TriangleMesh(std::move(its));
+    volume.set_mesh(std::move(tm));
+    // data for fix transformation is not useable anymore
+    volume.emboss_shape->legacy_fix_3mf_tr.reset();
+}
+
+// For legacy 3mf tranform triangles by fix tr mat
+void fix_svg_and_text_transformation(Loaded3MF& loaded_3mf) {
+    for (ModelObject* object_ptr : loaded_3mf.model.objects) {
+        if (object_ptr == nullptr)
+            continue; // should not appear but One never know
+        for (ModelVolume* volume_ptr: object_ptr->volumes) {
+            if (volume_ptr == nullptr)
+                continue; // should not appear but One never know
+            fix_volume_transformation(*volume_ptr);
+        }
+    }
+}
+}
+
 // The following function is used to load projects from PS 2.x.
 static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPresetBundle bundle)
 {
@@ -473,8 +505,13 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
     // This will provide enough info to create a complete Preset further down the road.
 
     // Old project did not store bed positions explicitly.
-    if (loaded_3mf.version && *loaded_3mf.version < Semver(3, 0, 0))
+    if (loaded_3mf.version && *loaded_3mf.version < Semver(3, 0, 0)) {
         infer_bed_positions_and_create_beds(loaded_3mf);
+    
+        // Old project contain baked tranformation matrix of the volumes.
+        fix_svg_and_text_transformation(loaded_3mf);
+    }
+
 
     loaded_3mf.filepath_3mf = file_path;
     return loaded_3mf;

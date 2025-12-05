@@ -27,6 +27,7 @@ public:
         Move = 0,
         ButtonDown,
         ButtonUp,
+        DoubleClick,
         Wheel,
         Enter,
         Leave

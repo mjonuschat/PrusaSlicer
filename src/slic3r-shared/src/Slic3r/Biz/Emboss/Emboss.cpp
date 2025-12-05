@@ -874,29 +874,11 @@ Domain::ExPolygonsWithIds text2vshapes(
 
 unsigned get_count_lines(const std::wstring& ws)
 {
-    if (ws.empty())
-        return 0;
-
     unsigned count = 1;
     for (wchar_t wc : ws)
         if (wc == '\n')
             ++count;
     return count;
-
-    // unsigned prev_count = 0;
-    // for (wchar_t wc : ws)
-    // if (wc == '\n')
-    // ++prev_count;
-    // else
-    // break;
-    //
-    // unsigned post_count = 0;
-    // for (wchar_t wc : boost::adaptors::reverse(ws))
-    // if (wc == '\n')
-    // ++post_count;
-    // else
-    // break;
-    // return count - prev_count - post_count;
 }
 
 unsigned get_count_lines(const std::string& text)

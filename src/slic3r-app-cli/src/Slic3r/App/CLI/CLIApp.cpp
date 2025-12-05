@@ -29,6 +29,13 @@ public:
     ) override
     {}
 
+    std::string show_input_dialog(
+        const std::string& title,
+        const std::string& text,
+        const std::string& default_value
+    ) override 
+    { return {}; }
+
     void show_webview_dialog(
         std::unique_ptr<Browser::AbstractBrowserLogic>&& logic,
         Biz::ProjectInteractor* project_interactor
