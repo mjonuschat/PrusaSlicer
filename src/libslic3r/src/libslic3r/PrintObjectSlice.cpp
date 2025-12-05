@@ -7,9 +7,7 @@
 #include <oneapi/tbb/parallel_for.h>
 #include <algorithm>
 #include <functional>
-#include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 #include <cassert>
 #include <cstddef>
@@ -38,6 +36,12 @@
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
+
+// DEBUGGING ONLY:
+#include <chrono>
+#include <fstream>
+#include "Slic3r/Log.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -273,6 +277,7 @@ static std::vector<std::vector<ExPolygons>> slices_to_regions(
     std::vector<std::vector<ExPolygons>> slices_by_region(print_object_regions.all_regions.size(), std::vector<ExPolygons>(zs.size(), ExPolygons()));
 
     // First shuffle slices into regions if there is no overlap with another region possible, collect zs of the complex cases.
+    // This is an optimization to avoid the expensive intersection operation in the parallel loop below.
     std::vector<std::pair<size_t, float>> zs_complex;
     {
         size_t z_idx = 0;
@@ -290,32 +295,33 @@ static std::vector<std::vector<ExPolygons>> slices_to_regions(
                 }
             } else {
                 zs_complex.reserve(zs.size());
+                std::vector<int> part_regions_idxs;
                 for (; z_idx < zs.size() && zs[z_idx] < layer_range.layer_height_range.second; ++ z_idx) {
-                    float z                          = zs[z_idx];
-                    int   idx_first_printable_region = -1;
-                    bool  complex                    = false;
-                    for (int idx_region = 0; idx_region < int(layer_range.volume_regions.size()); ++ idx_region) {
+                    float z = zs[z_idx];
+                    part_regions_idxs.clear();
+                    bool  complex = false;
+                    for (int idx_region = 0; idx_region < int(layer_range.volume_regions.size()) && ! complex; ++ idx_region) {
                         const PrintObjectRegions::VolumeRegion &region = layer_range.volume_regions[idx_region];
                         if (region.bbox->min().z() <= z && region.bbox->max().z() >= z) {
-                            if (idx_first_printable_region == -1 && region.model_volume->is_model_part())
-                                idx_first_printable_region = idx_region;
-                            else if (idx_first_printable_region != -1) {
-                                // Test for overlap with some other region.
-                                for (int idx_region2 = idx_first_printable_region; idx_region2 < idx_region; ++ idx_region2) {
-                                    const PrintObjectRegions::VolumeRegion &region2 = layer_range.volume_regions[idx_region2];
-                                    if (region2.bbox->min().z() <= z && region2.bbox->max().z() >= z && overlap_in_xy(*region.bbox, *region2.bbox)) {
-                                        complex = true;
-                                        break;
-                                    }
+                            // Test for overlap with already identified printable regions.
+                            for (int idx_region2 : part_regions_idxs) {
+                                const PrintObjectRegions::VolumeRegion &region2 = layer_range.volume_regions[idx_region2];
+                                if (overlap_in_xy(*region.bbox, *region2.bbox)) {
+                                    complex = true;
+                                    break;
                                 }
                             }
+                            if (! complex && region.model_volume->is_model_part())
+                                part_regions_idxs.emplace_back(idx_region);
                         }
                     }
                     if (complex)
                         zs_complex.push_back({ z_idx, z });
-                    else if (idx_first_printable_region >= 0) {
-                        const PrintObjectRegions::VolumeRegion &region = layer_range.volume_regions[idx_first_printable_region];
-                        slices_by_region[region.region->print_object_region_id()][z_idx] = std::move(volume_slices_find_by_id(volume_slices, region.model_volume->id()).slices[z_idx]);
+                    else {
+                        for (int region_idx : part_regions_idxs) {
+                            const PrintObjectRegions::VolumeRegion &region = layer_range.volume_regions[region_idx];
+                            slices_by_region[region.region->print_object_region_id()][z_idx] = std::move(volume_slices_find_by_id(volume_slices, region.model_volume->id()).slices[z_idx]);
+                        }
                     }
                 }
             }
@@ -323,7 +329,8 @@ static std::vector<std::vector<ExPolygons>> slices_to_regions(
         }
     }
 
-    // Second perform region clipping and assignment in parallel.
+    // Second perform region clipping and assignment in parallel. This is only done
+    // for layers which were identified as complex in the first step (regions overlap).
     if (! zs_complex.empty()) {
         std::vector<std::vector<VolumeSlices*>> layer_ranges_regions_to_slices(print_object_regions.layer_ranges.size(), std::vector<VolumeSlices*>());
         for (const PrintObjectRegions::LayerRangeRegions &layer_range : print_object_regions.layer_ranges) {
