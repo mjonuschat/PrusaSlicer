@@ -714,6 +714,15 @@ void CutGizmo::dragging_handle_rotation(const Domain::Line3d& mouse_ray)
     update_cut_plane_trafo();
 }
 
+static Vec3d ray_origin_on_near_z_plane(const Scene::Camera& camera, Scene::Ray pick_ray)
+{
+    Scene::Plane near_z_plane = Scene::Plane::from_point_and_normal(
+        camera.position() + camera.cam_projection().z_near() * camera.forward(), camera.forward());
+    double t = 0.0;
+    near_z_plane.intersects(pick_ray, t);
+    return pick_ray.point_at(t);
+}
+
 Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
     const auto event_type          = ctx.mouse_event().type();
@@ -771,9 +780,9 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
                    && event_key_modifiers & Platform::KeyModifiers(Platform::KeyModifier::Shift)
                    && !m_is_cut_line_processing)
         {
-            // #et_help
-            m_is_cut_line_processing    = true;       
-            m_line_beg = pick_ray.origin;     
+            m_is_cut_line_processing = true;
+            m_line_beg = ray_origin_on_near_z_plane(m_scene_presenter.scene().camera(), pick_ray);
+            m_line_end = m_line_beg;
             return Scene::GizmoActivationState::Active;
         } else {
             on_stop_dragging();
@@ -805,8 +814,6 @@ Scene::GizmoActivationState CutGizmo::on_mouse(Scene::GizmoEventContext& ctx, bo
     if (event_type == Platform::MouseEvent::Type::ButtonDown
         && m_is_cut_line_processing)
     {
-        // #et_help to detect m_line_beg 
-        m_line_beg = pick_ray.origin;
         return Scene::GizmoActivationState::Active;
     }
 
@@ -871,6 +878,11 @@ void CutGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
             m_hovered_connector_id = hovered_connector_id;
             update_connectors_nodes_colors();
         }
+    }
+
+    if (m_is_cut_line_processing) {
+        m_line_end = ray_origin_on_near_z_plane(m_scene_presenter.scene().camera(), ctx.pick_ray());
+        update_cut_line_node();
     }
 
     clear_highlight();
@@ -1285,22 +1297,33 @@ void CutGizmo::build_cut_line_node(Scene::NodeBuilder& builder)
 {
     SPDLOG_DEBUG("Cut element type:Cut line");
 
-    // #et_help
-
     auto material = Render::Material{}
                         .set_shader(m_device.context().shader_manager().shader("flat"))
                         .set_uniform("uniform_color", CUT_LINE_COLOR);
 
-    builder.set_debug_name("cut: cut lie:")
+    builder.set_debug_name("cut: cut line:")
         .set_tag(CutLineNodeTag())
         .set_mesh(m_data_factory.geometry(Scene::GeometryDataId::Segment), material, int(0));
 }
 
-void CutGizmo::update_cut_line_trafo()
+void CutGizmo::update_cut_line_node()
 {
-    // #et_help 
+    Vec3d line = m_line_end - m_line_beg;
+    double line_len = line.norm();
 
-//    m_cut_line_node->set_local_transform();
+    m_cut_line_node->set_enabled(line_len > 3.);
+
+    if (line_len < 3.)
+        return;
+
+    Eigen::Quaterniond q;
+    q.setFromTwoVectors(Vec3d::UnitX(), line);
+
+    Scene::Transform trafo = Scene::Transform::Identity();
+    trafo.translate(m_line_beg);
+    trafo.rotate(Eigen::AngleAxisd(q));
+    trafo.scale(line_len);
+    m_cut_line_node->set_local_transform(trafo);
 }
 
 void CutGizmo::build_handles_nodes(Scene::NodeBuilder& builder)
@@ -3088,42 +3111,33 @@ CutGizmo::on_mouse_for_cut_line(Scene::GizmoEventContext& ctx, bool only_active)
         return Scene::GizmoActivationState::Inactive;
     }
 
-    const auto& pick_ray = ctx.pick_ray();
-    m_line_end = pick_ray.origin;
-
-    // #et_help to detect m_line_end
-
+    Scene::Ray pick_ray = ctx.pick_ray();
     if (event_button == Platform::MouseButton::Left
         && event_type == Platform::MouseEvent::Type::ButtonUp)
     {
         Vec3d line_dir = m_line_end - m_line_beg;
-        double len     = line_dir.norm();
-         if (len < 0.0) {
-         m_is_cut_line_processing = false;
-         return Scene::GizmoActivationState::Done;
+        if (line_dir.norm() < 3.0) {
+            m_is_cut_line_processing = false;
+            return Scene::GizmoActivationState::Done;
         }
 
-        Vec3d dir = m_scene_presenter.scene().camera().forward();
+        Vec3d dir = pick_ray.direction;
+        Vec3d pt  = m_line_end + dir; // Move the pt along dir so it is not clipped.
+
         Vec3d cross_dir = line_dir.cross(dir).normalized();
         Eigen::Quaterniond q;
         Transform3d m = Transform3d::Identity();
         m.matrix().block(0, 0, 3, 3) =
             q.setFromTwoVectors(Vec3d::UnitZ(), cross_dir).toRotationMatrix();
 
-        const Vec3d new_plane_center = m_bb_center + cross_dir * cross_dir.dot(m_line_end - m_bb_center);
-        // update transformed bb
-        const auto new_tbb    = transformed_bounding_box(new_plane_center, m);
-        Vec3d instance_offset = m_selected_instance->get_offset();
-        instance_offset[Z] += 0.; // sla_shift_z();
+        const Vec3d new_plane_center = m_bb_center + cross_dir * cross_dir.dot(pt - m_bb_center);
 
-        const Vec3d trans_center_pos = m.inverse() * (new_plane_center - instance_offset)
-            + Algorithms::BoundingBox::center(new_tbb);
-        if (new_tbb.contains(trans_center_pos)) {
-            m_transformed_bounding_box = new_tbb;
+        if (m_bounding_box.contains(new_plane_center)) {
+            m_transformed_bounding_box = transformed_bounding_box(new_plane_center, m);
             set_plane_center(new_plane_center);
             m_start_dragging_m = m_rotation_m = m;
-            update_cut_plane_mesh();
             update_cut_plane_trafo();
+            update_cut_plane_mesh();
         }
 
         m_is_cut_line_processing = false;
@@ -3133,11 +3147,6 @@ CutGizmo::on_mouse_for_cut_line(Scene::GizmoEventContext& ctx, bool only_active)
             reset_preprocess_cut();
         }
         return Scene::GizmoActivationState::Done;
-    }
-
-    Vec3d line_dir = m_line_end - m_line_beg;
-    if (line_dir.norm() > 3.0) {
-        update_cut_line_trafo();
     }
 
     return Scene::GizmoActivationState();

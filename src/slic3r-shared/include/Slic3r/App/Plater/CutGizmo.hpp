@@ -201,7 +201,7 @@ private:
     void discard_cut_line_processing();
     Scene::GizmoActivationState
         on_mouse_for_cut_line(Scene::GizmoEventContext& ctx, bool only_active);
-    void update_cut_line_trafo();
+    void update_cut_line_node();
 
 private:
     Yoga::Passthrough<CutDialog> m_dialog;
