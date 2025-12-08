@@ -323,7 +323,7 @@ void WebViewDialog::on_set_custom_user_agent(wxCommandEvent& WXUNUSED(evt))
     if (!m_web_view)
         return;
 
-    wxString customUserAgent = L"Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.1 Mobile/15E148 Safari/604.1";
+    wxString customUserAgent;
     wxTextEntryDialog dialog(this, L"Enter the custom user agent string you would like to use.", from_u8(wxGetTextFromUserPromptStr), customUserAgent, wxOK | wxCANCEL | wxCENTRE);
     if (dialog.ShowModal() != wxID_OK)
         return;

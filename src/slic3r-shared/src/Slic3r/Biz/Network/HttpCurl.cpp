@@ -4,6 +4,7 @@
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Platform.hpp"
 
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r_version.h"
@@ -113,10 +114,12 @@ HttpCurl::HttpCurl(RequestMethod request_method, std::string&& url, RetryFn fn) 
         throw Slic3r::RuntimeError(std::string("Could not construct Curl object"));
     }
 
+    std::string user_agent = fmt::format("%1%/%2% (%3%)",SLIC3R_APP_NAME, SLIC3R_VERSION, platform_to_string(platform()));
+
     timeout_connection(DEFAULT_TIMEOUT_CONNECT);
     timeout_total(DEFAULT_TIMEOUT_MAX);
     ::curl_easy_setopt(m_curl.get(), CURLOPT_URL, m_url.c_str()); // curl makes a copy internally
-    ::curl_easy_setopt(m_curl.get(), CURLOPT_USERAGENT, SLIC3R_APP_NAME "/" SLIC3R_VERSION);
+    ::curl_easy_setopt(m_curl.get(), CURLOPT_USERAGENT, user_agent.c_str());
     ::curl_easy_setopt(m_curl.get(), CURLOPT_ERRORBUFFER, &m_error_buffer.front());
     ::curl_easy_setopt(m_curl.get(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 

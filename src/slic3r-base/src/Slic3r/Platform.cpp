@@ -119,7 +119,7 @@ PlatformFlavor platform_flavor()
 std::string platform_to_string(Platform platform)
 {
     switch (platform) {
-        case Platform::Uninitialized: return "Unitialized";
+        case Platform::Uninitialized: return "Uninitialized";
         case Platform::Unknown      : return "Unknown";
         case Platform::Windows      : return "Windows";
         case Platform::OSX          : return "OSX";
@@ -136,7 +136,7 @@ std::string platform_to_string(Platform platform)
 std::string platform_flavor_to_string(PlatformFlavor pf)
 {
     switch (pf) {
-        case PlatformFlavor::Uninitialized   : return "Unitialized";
+        case PlatformFlavor::Uninitialized   : return "Uninitialized";
         case PlatformFlavor::Unknown         : return "Unknown";
         case PlatformFlavor::Generic         : return "Generic";
         case PlatformFlavor::GenericLinux    : return "GenericLinux";
