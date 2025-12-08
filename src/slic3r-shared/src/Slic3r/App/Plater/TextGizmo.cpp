@@ -731,7 +731,7 @@ void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const
         return close(); // unselection text volume
 
     const Domain::ModelVolume& volume = *volume_ptr;
-    ProjectContext& proj_ctx = m_proj_ctxs->selected();
+    ProjectContext& proj_ctx = m_proj_ctxs->project(project_id);
     if (proj_ctx.last_loaded_volume_id == volume.id())
         return; // already loaded
     proj_ctx.last_loaded_volume_id = volume.id();

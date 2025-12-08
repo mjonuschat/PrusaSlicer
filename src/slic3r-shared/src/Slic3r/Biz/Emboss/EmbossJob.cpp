@@ -266,6 +266,7 @@ bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_
         return false; // bad input data
 
     const Domain::Project& project = input.base.project_interactor.selected_project();
+    const App::Scene::NodePickResult* bed_pick = nullptr;
     for (const App::Scene::NodePickResult& pick : picks) {
         if (pick.node->has_tag_of_type<App::Plater::SceneNodeTag>()) {
             auto* tag = pick.node->tag_of_type<App::Plater::SceneNodeTag>();
@@ -287,16 +288,24 @@ bool start_create_volume(CreateVolumeParams& input, const App::Scene::Ray& pick_
             const Domain::ModelObject& object = *volume->get_object();
             return ::start_create_volume_job(object, tr, input.base, input.volume_type);
         }
-        if (pick.node->has_tag_of_type<App::Scene::BedNodeTag>()) {
-            double d_z = pick_ray.direction.z();
-            if (fabs(d_z) - 1e-4 <= 0.) // parallel to Z axis
-                break; // no bed under mouse
-
-            Domain::Vec3d z0 = pick_ray.point_at(-pick_ray.origin.z() / d_z);
-            Domain::Vec2d bed_coor(z0.x(), z0.y());
-            return ::start_create_object_job(input, bed_coor);
+        if (bed_pick == nullptr && // use only first crossed bed
+            pick.node->has_tag_of_type<App::Scene::BedNodeTag>()) {
+            bed_pick = &pick;
         }
     }
+
+    // use first cross of the bed
+    if (double d_z = pick_ray.direction.z();
+        bed_pick != nullptr && 
+        fabs(d_z) - 1e-4 <= 0.  // almost parallel to Z axis solve as no bed under mouse
+        )
+    {
+        // prerequisity: bed is alligned -> parallel with Z plane AND Z = 0
+        Domain::Vec3d z0 = pick_ray.point_at(-pick_ray.origin.z() / d_z);
+        Domain::Vec2d bed_coor(z0.x(), z0.y());
+        return ::start_create_object_job(input, bed_coor);
+    }
+
     return ::start_create_object_job(input, Domain::Vec2d(0, 0)); // fall back, do not use pick ray
 }
 
