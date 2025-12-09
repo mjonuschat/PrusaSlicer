@@ -4,13 +4,9 @@
 #include "libslic3r/AABBMesh.hpp"
 #include "Slic3r/App/Scene/ClipperPresenterHelper.hpp"
 
-namespace Slic3r::Domaon {
-class TriangleMesh;
-} // namespace Slic3r::Domaon
-
 namespace Slic3r::App::Scene {
 class ClipperPresenter;
-} // namespace Slic3r::Domaon
+} // namespace Slic3r::App::Scene
 
 namespace Slic3r::App::Plater {
 

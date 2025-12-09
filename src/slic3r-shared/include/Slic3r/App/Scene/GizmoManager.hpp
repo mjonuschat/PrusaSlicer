@@ -14,6 +14,7 @@
 #include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/App/Scene/GizmoCommandRegistry.hpp"
 #include "Slic3r/App/Scene/Clipper.hpp"
+#include "Slic3r/App/Scene/IGizmoController.hpp"
 #include "Slic3r/Domain/PrinterTechnology.hpp"
 
 
@@ -31,7 +32,12 @@ public:
     virtual void active_tool_changed(IToolGizmo* active_tool) = 0;
 };
 
-class GizmoManager : public WithListeners<IGizmoActiveToolListener>, public Biz::ISelectedProjectChangedListener, public Biz::IProjectsChangedListener {
+class GizmoManager :
+    public WithListeners<IGizmoActiveToolListener>,
+    public Biz::ISelectedProjectChangedListener,
+    public Biz::IProjectsChangedListener,
+    public IGizmoController
+{
 public:
     GizmoManager(
         Render::Device& device,
@@ -64,13 +70,14 @@ public:
         m_mouse_drag_detector->add_listener(ptr.get());
         ptr->register_commands(m_command_registry);
         ptr->provide_clipper(m_clipper);
+        ptr->provide_gizmo_controller(*this);
         return *static_cast<G*>(ptr.get());
     }
 
     void render_scene(Render::CommandBuffer& cmd_buffer);
 
     void toggle_activate_tool(ToolType tool, Domain::PrinterTechnology pt);
-    void deactivate_current_tool();
+    void deactivate_current_tool() override;
     ToolType current_tool_type() const;
     bool is_tool_active_in_current_project(const IToolGizmo& tool) const;
 

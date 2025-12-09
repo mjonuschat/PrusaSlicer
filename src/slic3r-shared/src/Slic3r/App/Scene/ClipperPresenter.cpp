@@ -176,6 +176,11 @@ void ClipperPresenter::build_non_mesh_node(
     size_t island_id
 )
 {
+    if (its.empty()) {
+        // Skip render node creation for Clipper islands without a contour or plane.
+        return;
+    }
+
     ASSERT(type == ClipperElementType::Plane || type == ClipperElementType::Contour);
     ClipperElement id{type, clipper_id, island_id};
 
@@ -190,17 +195,17 @@ void ClipperPresenter::build_non_mesh_node(
         [&]() { return Render::geometry_from_triangle_mesh(*m_device, trimesh->triangles()); }
     );
 
-    const bool is_palne = type == ClipperElementType::Plane;
+    const bool is_plane = type == ClipperElementType::Plane;
     auto material =
         Render::Material{}
             .set_shader(m_device->context().shader_manager().shader(/*"gouraud_light"*/ "flat"))
-            .set_uniform("uniform_color", is_palne ? m_plane_color : m_contour_color);
+            .set_uniform("uniform_color", is_plane ? m_plane_color : m_contour_color);
 
     NodeBuilder bldr(*m_scene);
     bldr.set_debug_name(
             fmt::format(
                 "Clipped {}:id {}, island {}",
-                is_palne ? "plane" : "contour",
+                is_plane ? "plane" : "contour",
                 clipper_id,
                 island_id
             )
@@ -208,7 +213,7 @@ void ClipperPresenter::build_non_mesh_node(
         .set_tag(id)
         .set_mesh(geom, material, int(0));
 
-    if (is_palne) {
+    if (is_plane) {
         bldr.set_aabb(trimesh->aabb_mesh());
     }
 

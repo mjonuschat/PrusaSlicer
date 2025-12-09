@@ -688,7 +688,6 @@ void PlaterRenderModule::init_gizmos()
 
     std::function<void()> close_fn = [this] {
         m_gizmo_manager->deactivate_current_tool();
-        m_render_module_navigator->set_opened_dialog(nullptr);
     };
     m_simplify_gizmo = &m_gizmo_manager->add_tool_gizmo<SimplifyGizmo>(
         *m_device,
@@ -716,8 +715,9 @@ void PlaterRenderModule::init_gizmos()
         *m_scene_presenter,
         &m_project_interactor
     );
-    m_cut_gizmo->callbacks().force_deactivation = close_fn;
-
+    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(
+        m_cut_gizmo
+    );
 }
 
 void PlaterRenderModule::init_add_volume_menu(Yoga::Item* parent)

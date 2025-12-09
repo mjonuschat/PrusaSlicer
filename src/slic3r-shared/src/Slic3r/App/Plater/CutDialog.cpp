@@ -829,6 +829,9 @@ void CutDialog::set_planar_mode(bool is_planar)
     is_planar_cut_mode = is_planar;
     m_planar_mode_btn->set_checked(is_planar);
 
+    // disable connectors panel
+    connectors_editing = false;
+
     update_panels_visibility();
 
     if (!is_planar_cut_mode) {
@@ -842,6 +845,11 @@ void CutDialog::set_planar_mode(bool is_planar)
     m_cut_into_objects_btn->set_enabled(is_planar_cut_mode);
     m_cut_into_parts_btn->set_enabled(is_planar_cut_mode);
     m_add_connectors_btn->set_visible(is_planar_cut_mode);
+}
+
+void CutDialog::force_connectors_editing()
+{
+    m_add_connectors_btn->callbacks().action();
 }
 
 void CutDialog::set_connector_type(Domain::CutConnectorType type)

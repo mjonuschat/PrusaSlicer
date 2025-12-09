@@ -109,6 +109,7 @@ public:
         std::optional<double> half_size_tolerance,
         std::optional<double> angle
     );
+    void force_connectors_editing();
 
     // check state of teh cut settings and show warning line or "Perform" button
     void update_state(
