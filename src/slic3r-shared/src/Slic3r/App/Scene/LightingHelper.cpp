@@ -861,14 +861,12 @@ void render_imgui_graphics_settings_debug_window(const Domain::Project& project,
                         Scene& scene = scene_provider.scene();
                         visit(scene.root(), [&](Node& n) {
                                 BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
-                                if (tag != nullptr) {
-                                    if (tag->type == BedElementType::PlateTextured) {
-                                        const Domain::ConfigContainer* cc = project.find_config_container(tag->config_container_id);
-                                        const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
-                                        n.render_component()->replace_material(BedMaterials::plate_textured_material(device, inst.bed.get()));
-                                        if (n.has_material_override())
-                                            n.set_material_override(BedMaterials::plate_textured_override_material(n.render_component()->material()));
-                                    }
+                                if (tag != nullptr && tag->type == BedElementType::PlateTextured) {
+                                    const Domain::ConfigContainer* cc = project.find_config_container(tag->config_container_id);
+                                    const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
+                                    n.render_component()->replace_material(BedMaterials::plate_textured_material(device, inst.bed.get()));
+                                    if (n.has_material_override())
+                                        n.set_material_override(BedMaterials::plate_textured_transparent_material(n.render_component()->material()));
                                 }
                             }
                         );

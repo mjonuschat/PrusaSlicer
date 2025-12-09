@@ -154,7 +154,8 @@ public:
      * @name Rendering
      * @{
      */
-    void render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer = &ms_default_customizer) const;
+    void render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer = &ms_default_customizer,
+        Camera* camera_override = nullptr) const;
     void render_imgui(const Render::ScreenInfo& screen_info) const;
     /** @} */
 
@@ -241,6 +242,9 @@ public:
 
     bool background_enabled() const { return m_background_enabled; }
     void set_background_enabled(bool enabled) { m_background_enabled = enabled; }
+
+    bool use_background_error_color() const { return m_use_background_error_color; }
+    void set_use_background_error_color(bool use) { m_use_background_error_color = use; }
 
     /**
      * @name Graphics settings-related methods
@@ -342,24 +346,18 @@ private:
     void generate_ao_kernel(Render::Device& device) const;
     void generate_ao_noise(Render::Device& device) const;
 
-    void render_background(
-        Render::CommandBuffer& cmd_buffer, Render::Device& device, bool use_error_color
-    ) const;
-    void render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomizer* customizer) const;
-    void render_shadows_receivers_pass(
-        Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer
-    ) const;
-    void render_no_shadows_pass(
-        Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer
-    ) const;
-    void render_ao_gbuffer_pass(
-        Render::Device& device, ISceneRenderCustomizer* customizer, const Domain::Index2& viewport_size, PBRParamsList& pbr_params_list
-    ) const;
-    void render_ao_texture_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
-    void render_ao_texture_hblur_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
-    void render_ao_texture_vblur_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
-    void render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, const Domain::Index2& viewport_size, Render::Device& device,
-        const PBRParamsList& pbr_params_list) const;
+    void render_background(Render::Device& device, Render::CommandBuffer& cmd_buffer) const;
+    void render_shadowsmap_pass(Render::Device& device, const Camera& camera, ISceneRenderCustomizer* customizer) const;
+    void render_shadows_receivers_pass(Render::Device& device, const Camera& camera, Render::CommandBuffer& cmd_buffer,
+        ISceneRenderCustomizer* customizer) const;
+    void render_no_shadows_pass(const Camera& camera, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const;
+    void render_ao_gbuffer_pass(Render::Device& device, const Camera& camera, ISceneRenderCustomizer* customizer,
+        const Domain::Index2& viewport_size, PBRParamsList& pbr_params_list) const;
+    void render_ao_texture_pass(Render::Device& device, const Camera& camera, const Domain::Index2& viewport_size) const;
+    void render_ao_texture_hblur_pass(Render::Device& device, const Camera& camera, const Domain::Index2& viewport_size) const;
+    void render_ao_texture_vblur_pass(Render::Device& device, const Camera& camera, const Domain::Index2& viewport_size) const;
+    void render_ao_lighting_pass(Render::Device& device, const Camera& camera, Render::CommandBuffer& cmd_buffer,
+        const Domain::Index2& viewport_size, const PBRParamsList& pbr_params_list) const;
 
 private:
     using NodeIdLookUp = std::unordered_map<size_t, Node*>;
@@ -373,6 +371,7 @@ private:
 
     Lighting m_lighting;
     bool m_background_enabled{true};
+    bool m_use_background_error_color{false};
 
     mutable Render::Geometry* m_screen_quad{nullptr};
 

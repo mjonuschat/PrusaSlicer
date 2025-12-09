@@ -2,9 +2,6 @@
 
 #define MAX_LIGHTS 4
 
-const vec3 back_color_dark  = vec3(0.235, 0.235, 0.235);
-const vec3 back_color_light = vec3(0.365, 0.365, 0.365);
-
 struct Light
 {
     int system;
@@ -18,7 +15,8 @@ struct Light
 
 uniform float shadows_intensity;
 uniform bool transparent_background;
-uniform bool svg_source;
+uniform vec3 back_color_dark;
+uniform vec3 back_color_light;
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
 uniform mat4 view_matrix;
@@ -37,7 +35,7 @@ vec3 light_direction(Light light)
     return (light.system == 0) ? (view_matrix * vec4(-light.direction, 0.0)).xyz : -light.direction;
 }
 
-vec4 svg_color()
+vec4 gradient_color()
 {
     // takes foreground from texture
     vec4 fore_color = texture(in_texture, tex_coord);
@@ -47,13 +45,6 @@ vec4 svg_color()
 
     // blends foreground with background
     return vec4(mix(back_color, fore_color.rgb, fore_color.a), transparent_background ? fore_color.a : 1.0);
-}
-
-vec4 non_svg_color()
-{
-    // takes foreground from texture
-    vec4 color = texture(in_texture, tex_coord);
-    return vec4(color.rgb, transparent_background ? color.a * 0.25 : color.a);
 }
 
 float shadow_pcf(vec4 position, float NdotL)
@@ -95,7 +86,7 @@ vec4 lighting_phong()
         diffuse += shadow * lights[i].diffuse * NdotL;
         specular += shadow * lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-dir, normal)), 0.0), lights[i].shininess);
     }
-    vec4 color = svg_source ? svg_color() : non_svg_color();
+    vec4 color = gradient_color();
     color.a = transparent_background ? color.a * 0.5 : color.a;
     return vec4(color.rgb * (ambient + diffuse + specular), color.a);
 }

@@ -13,12 +13,16 @@ using Biz::Slicing::ThumbnailImageRequest;
 using Biz::Slicing::ThumbnailImageRequests;
 using Biz::Slicing::ThumbnailImageResults;
 
-void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const Domain::BedRefs& bed_refs)
+void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const Domain::BedRefs& bed_refs,
+    const Scene::BedError& bed_error)
 {
     static const Domain::Size SIZE = {256, 256};
 
-    if (m_thumbnail_results.valid())
+    if (m_thumbnail_results.valid()) {
+        // queue to process later
+        m_queue.push(QueueItem{project_id, bed_refs, bed_error});
         return;
+    }
 
     ThumbnailImageRequests requests;
     requests.reserve(bed_refs.size() + 1);
@@ -26,20 +30,22 @@ void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const
     // thumbnails for object list
     for (const auto& bed_ref : bed_refs) {
         ThumbnailImageRequest& request = requests.emplace_back(ThumbnailImageRequest());
-        request.type                        = Biz::ThumbnailType::SceneBed;
-        request.params.project_id           = project_id;
-        request.params.bed_instance_id      = bed_ref.instance_id;
-        request.params.pixel_format         = Domain::PixelFormat::RGBA8;
-        request.params.sizes                = {SIZE};
+        request.type                           = Biz::ThumbnailType::SceneBed;
+        request.params.project_id              = project_id;
+        request.params.bed_instance_id         = bed_ref.instance_id;
+        request.params.bed_instance_with_error = bed_error.contains(Domain::SlicingId{ project_id, bed_ref.instance_id });
+        request.params.pixel_format            = Domain::PixelFormat::RGBA8;
+        request.params.sizes                   = {SIZE};
     }
 
     // thumbnails for 3mf
     ThumbnailImageRequest& request = requests.emplace_back(ThumbnailImageRequest());
-    request.type                        = Biz::ThumbnailType::Scene;
-    request.params.project_id           = project_id;
-    request.params.bed_instance_id      = 0;
-    request.params.pixel_format         = Domain::PixelFormat::RGBA8;
-    request.params.sizes                = {SIZE};
+    request.type                           = Biz::ThumbnailType::Scene;
+    request.params.project_id              = project_id;
+    request.params.bed_instance_id         = 0;
+    request.params.bed_instance_with_error = false;
+    request.params.pixel_format            = Domain::PixelFormat::RGBA8;
+    request.params.sizes                   = {SIZE};
 
     m_thumbnail_results = m_thumbnail_image_generator.enqueue_thumbnail_requests(requests);
 }
@@ -97,6 +103,13 @@ void ThumbnailStoreUpdater::update(Render::Device& device, ThumbnailUpdateCallba
                     callback(textures);
             }
         }
+    }
+
+    if (!m_queue.empty()) {
+        // process queued items
+        const QueueItem& item = m_queue.front();
+        on_bed_changed(item.project_id, item.bed_refs, item.bed_error);
+        m_queue.pop();
     }
 }
 

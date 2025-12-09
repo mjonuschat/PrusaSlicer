@@ -169,7 +169,7 @@ private:
 
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;
-    std::shared_ptr<Plater::ThumbnailImageGenerator> m_thumbnail_image_generator;
+    std::shared_ptr<ThumbnailImageGenerator> m_thumbnail_image_generator;
 
     Navigator* m_render_module_navigator{nullptr};
 

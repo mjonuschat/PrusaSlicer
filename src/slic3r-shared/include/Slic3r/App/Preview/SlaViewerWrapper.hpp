@@ -43,11 +43,11 @@ public:
     //
     // Load data from the SLAResult structure.
     //
-    void load_from_result(const Biz::Slicing::SLAResult& result);
+    void load_from_result(const Biz::Slicing::SLAResult& result, const Scene::Transform& bed_transform);
     //
     // Load data from the sliced Object.
     //
-    void load_from_object(const Biz::Slicing::Sla::Object& object);
+    void load_from_object(const Biz::Slicing::Sla::Object& object, const Scene::Transform& bed_transform);
 
     void reset_result();
     void reset_object(const Domain::ObjectID& object_id);

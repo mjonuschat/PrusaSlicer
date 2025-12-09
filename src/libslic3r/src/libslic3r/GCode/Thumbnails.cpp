@@ -64,12 +64,12 @@ std::unique_ptr<CompressedImageBuffer> compress_thumbnail_jpg(const Domain::Imag
 {
     // This might be useless, but the C api takes non const ptrs, so better be safe.
     std::vector<unsigned char> rgba_pixels(thumbnail.pixels);
-    const unsigned int row_size = thumbnail.width() * 4;
+    const size_t row_size = thumbnail.width() * 4;
 
     // Store pointers to scanlines start for later use
     std::vector<unsigned char*> rows_ptrs;
     rows_ptrs.reserve(thumbnail.height());
-    for (unsigned int y = 0; y < thumbnail.height(); ++y) {
+    for (size_t y = 0; y < size_t(thumbnail.height()); ++y) {
         rows_ptrs.emplace_back(&rgba_pixels[y * row_size]);
     }
 

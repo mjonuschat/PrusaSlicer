@@ -24,7 +24,7 @@ using Domain::Image;
 using Domain::Images;
 using Biz::Algorithms::ImageUtils::flip_vertical;
 
-Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererParams& params)
+Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererParams& params, Scene::Camera& camera)
 {
     if (params.sizes.empty())
         PANIC("No thumbnail sizes specified");
@@ -37,19 +37,13 @@ Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererParams& par
     // we need to modify the camera viewport, which changes for every thumbnail to produce
     // we may also modify the camera zoom, if params.zoom_aabb is set
     Scene::Scene* scene = const_cast<Scene::Scene*>(&params.scene);
-
-    //
-    // store values that are going to be changed
-    //
-    Scene::Camera& camera = scene->camera();
-    Render::Rect viewport = camera.viewport();
-    double camera_zoom    = camera.zoom();
+    Scene::MinimalSceneRenderCustomizer render_customizer;
 
     for (const auto& size : params.sizes) {
         if (size.width * size.height > 0) {
             // set camera viewport
             Render::Rect viewport = {0, 0, size.width, size.height};
-            scene->camera().set_viewport(viewport);
+            camera.set_viewport(viewport);
             if (params.zoom_aabb.has_value())
                 zoom_to_box(camera, *params.zoom_aabb);
 
@@ -74,7 +68,7 @@ Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererParams& par
             cmd_buffer->set_viewport(viewport);
             cmd_buffer->clear_buffers(true, true);
 
-            scene->render(m_device, *cmd_buffer);
+            scene->render(m_device, *cmd_buffer, &render_customizer, &camera);
 
             if (fb_data.num_samples > 1) {
                 // resolve framebuffer if multisampling is enabled
@@ -123,12 +117,6 @@ Images ThumbnailRenderer::generate_thumbnails(const ThumbnailRendererParams& par
             PANIC("Found invalid thumbnail size");
     }
 
-    //
-    // restore values that were changed
-    //
-    camera.set_viewport(viewport);
-    camera.set_zoom(camera_zoom);
-
     return ret;
 }
 
@@ -136,6 +124,7 @@ Images ThumbnailRenderer::generate_bed_thumbnails(
     const ThumbnailRendererParams& params,
     const Domain::Project& project,
     Domain::SelectionId bed_instance_id,
+    bool bed_instance_with_error,
     Scene::CameraProjectionType camera_type
 )
 {
@@ -146,7 +135,7 @@ Images ThumbnailRenderer::generate_bed_thumbnails(
     }
 
     Scene::Scene& scene = *const_cast<Scene::Scene*>(&params.scene);
-    ScopedBedThumbnailSceneCustomizer customizer(scene, project, bed_instance_id, camera_type);
+    ScopedBedThumbnailSceneCustomizer customizer(scene, project, bed_instance_id, bed_instance_with_error, camera_type);
 
     // aabb for auto zoom
     Eigen::AlignedBox3d world_aabb;
@@ -160,7 +149,7 @@ Images ThumbnailRenderer::generate_bed_thumbnails(
     ThumbnailRendererParams mod_params = params;
     mod_params.zoom_aabb               = world_aabb;
 
-    return generate_thumbnails(mod_params);
+    return generate_thumbnails(mod_params, customizer.camera());
 }
 
 Images ThumbnailRenderer::generate_object_thumbnails(
@@ -241,7 +230,7 @@ Images ThumbnailRenderer::generate_object_thumbnails(
     };
 
     // generate thumbnails
-    return generate_thumbnails(params);
+    return generate_thumbnails(params, camera);
 }
 
 Images ThumbnailRenderer::generate_3mf_thumbnails(
@@ -268,7 +257,7 @@ Images ThumbnailRenderer::generate_3mf_thumbnails(
     ThumbnailRendererParams mod_params = params;
     mod_params.zoom_aabb               = world_aabb;
 
-    return generate_thumbnails(mod_params);
+    return generate_thumbnails(mod_params, customizer.camera());
 }
 
 Images ThumbnailRenderer::generate_gcode_thumbnails(
@@ -317,7 +306,7 @@ Images ThumbnailRenderer::generate_gcode_thumbnails(
     ThumbnailRendererParams mod_params = params;
     mod_params.zoom_aabb               = world_aabb;
 
-    return generate_thumbnails(mod_params);
+    return generate_thumbnails(mod_params, customizer.camera());
 }
 
 } // namespace Slic3r::App::Plater

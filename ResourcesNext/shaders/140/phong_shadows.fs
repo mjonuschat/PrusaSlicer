@@ -73,8 +73,9 @@ vec4 select_color()
     {
     case TYPE_INVALID:
     {
-        pv_check_min = vec3(-1.0);
-        pv_check_max = vec3(1.0);
+        // consider as inside
+        pv_check_min = vec3(1.0);
+        pv_check_max = vec3(-1.0);
         break;
     }
     case TYPE_RECTANGLE:

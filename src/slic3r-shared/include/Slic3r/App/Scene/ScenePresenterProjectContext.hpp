@@ -6,6 +6,7 @@
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
+#include "Slic3r/App/Scene/BedError.hpp"
 #include "Slic3r/App/Platform/CameraSynchData.hpp"
 
 #define ENABLE_DEBUG_RENDER_SCENE_AABB 0
@@ -48,6 +49,9 @@ public:
         m_selection_bounding_box = bounding_box;
     }
 
+    const BedError& bed_error() const { return m_bed_error; }
+    BedError& bed_error() { return m_bed_error; }
+
     ModelGeometryManager& model_geometry_manager() { return m_model_geometry_manager; }
     ModelTriangleMeshManager& model_triangle_mesh_manager() { return m_model_triangle_mesh_manager; }
 
@@ -79,6 +83,7 @@ private:
     Node* m_selection_root{nullptr};
     Eigen::AlignedBox3f m_selection_bounding_box;
     std::optional<Platform::CameraSynchData> m_camera_synch_data;
+    BedError m_bed_error;
 #if ENABLE_DEBUG_RENDER_SCENE_AABB
     struct SceneAABBNode
     {

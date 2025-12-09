@@ -14,7 +14,6 @@
 #include <Slic3r/App/Init.hpp>
 #include <Slic3r/App/Localization.hpp>
 #include <Slic3r/App/ResourceResolver.hpp>
-#include <Slic3r/App/SharedThumbnailImageGenerator.hpp>
 #include <Slic3r/App/ThumbnailStore.hpp>
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
 #include <Slic3r/App/PopNotification/PopNotificationCenter.hpp>
@@ -240,8 +239,6 @@ bool DesktopApp::OnInit()
     fs::path config_dir        = fs::path{data_dir()} / "configs";
     preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
 
-    std::shared_ptr<App::SharedThumbnailImageGenerator> shared_thumbnail_image_generator = std::make_shared<App::SharedThumbnailImageGenerator>(
-    );
     app_services.set_dialog_manager(std::make_unique<WX::DialogManager>());
     app_services.set_pop_notification_center(
         std::make_unique<PopNotification::PopNotificationCenter>(*m_project_interactor.get())

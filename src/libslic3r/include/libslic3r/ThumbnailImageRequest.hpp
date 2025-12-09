@@ -13,6 +13,7 @@ struct ThumbnailParams
 {
     Domain::SelectionId project_id;
     Domain::SelectionId bed_instance_id;
+    bool bed_instance_with_error;
     Domain::PixelFormat pixel_format{Domain::PixelFormat::RGBA8};
     Domain::Sizes sizes;
 
@@ -20,6 +21,7 @@ struct ThumbnailParams
     {
         return project_id == other.project_id
             && bed_instance_id == other.bed_instance_id
+            && bed_instance_with_error == other.bed_instance_with_error
             && pixel_format == other.pixel_format
             && sizes == other.sizes;
     }

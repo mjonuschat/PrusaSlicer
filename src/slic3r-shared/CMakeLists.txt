@@ -214,7 +214,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Config/ConfigItemSubstitutions.hpp
         src/Slic3r/App/Config/ConfigItemSubstitutions.cpp
 
-        include/Slic3r/App/SharedThumbnailImageGenerator.hpp
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp
         include/Slic3r/App/ThumbnailStoreUpdater.hpp
@@ -311,6 +310,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/BedRenderHelper.cpp
         include/Slic3r/App/Scene/BedRenderUpdater.hpp
         src/Slic3r/App/Scene/BedRenderUpdater.cpp
+        include/Slic3r/App/Scene/BedError.hpp
+        src/Slic3r/App/Scene/BedError.cpp
         include/Slic3r/App/Scene/AuxiliaryElementId.hpp
         include/Slic3r/App/Scene/ISceneChangedListener.hpp
         include/Slic3r/App/Scene/GraphicsSettings.hpp

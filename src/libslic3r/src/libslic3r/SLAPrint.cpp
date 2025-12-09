@@ -11,6 +11,7 @@
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Thread.hpp"
+#include "libslic3r/BuildVolume.hpp"
 
 #include <tbb/parallel_for.h>
 #include <boost/filesystem/path.hpp>
@@ -28,6 +29,7 @@
 #include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
 #include "Slic3r/Exception.hpp"
+#include "libslic3r/InstanceTransformations.hpp"
 
 #include "libslic3r/ModelUtils.hpp"
 
@@ -889,6 +891,15 @@ Biz::Print::ApplyStatus::Status SLAPrint::update(
 
     InvalidatedSteps invalidated_steps;
     Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
+        const InstanceTransformations original_transformations{
+            transform_instances(model, bed.transformation.get_matrix().inverse())
+        };
+        ScopeGuard guard{
+            [&]() {
+                restore_instance_transformations(model, original_transformations);
+            }
+        };
+
         invalidated_steps = this->apply(model, std::get<ConfigPackSLA>(config), serialized_config, hw_config);
     });
     const bool changed{!invalidated_steps.empty()};

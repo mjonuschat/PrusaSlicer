@@ -136,9 +136,8 @@ Image rescaled_with_preserved_ratio(const Image& image, const Size& target_size)
         );
         // Ensure transparent padding if using RGBA
         for (size_t x = 0; x < size.width; x++) {
-            if (pixel_stride == 4) {
-                result[((y + offset_y) * target_size.width + (x + offset_x)) * 4 + 3] = 255; // Set alpha to full opacity
-            }
+            if (pixel_stride == 4 && (x < offset_x || size.width - offset_x < x || y < offset_y || size.height - offset_y < y))
+                result[((y + offset_y) * target_size.width + (x + offset_x)) * 4 + 3] = 0; // Set alpha to full transparency
         }
     }
 

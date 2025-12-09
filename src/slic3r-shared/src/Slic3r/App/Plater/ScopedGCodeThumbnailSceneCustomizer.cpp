@@ -18,7 +18,6 @@ ScopedGCodeThumbnailSceneCustomizer::ScopedGCodeThumbnailSceneCustomizer(Scene::
     store_shading_type();
     store_background_enabled();
     store_shadows_aabb();
-    store_camera_synch_data();
 
     // hide geometry
     hide_gizmos();
@@ -40,9 +39,6 @@ ScopedGCodeThumbnailSceneCustomizer::ScopedGCodeThumbnailSceneCustomizer(Scene::
     // setup scene
     set_background_enabled(false);
     set_shading_type(Scene::ShadingType::PBR);
-
-    if (m_cache.camera_synch_data.type != uint8_t(m_camera_type))
-        switch_camera_projection_type();
 
     set_camera_trackball(world_aabb);
     zoom_to_box(world_aabb);

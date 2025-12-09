@@ -9,7 +9,7 @@ class ScopedBedThumbnailSceneCustomizer : public ScopedThumbnailSceneCustomizerB
 {
 public:
     ScopedBedThumbnailSceneCustomizer(Scene::Scene& scene, const Domain::Project& project, Domain::SelectionId bed_instance_id,
-        Scene::CameraProjectionType camera_type);
+        bool bed_instance_with_error, Scene::CameraProjectionType camera_type);
 };
 
 } // namespace Slic3r::App::Plater

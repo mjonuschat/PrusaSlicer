@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
+#include "Slic3r/App/Scene/BedError.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -33,9 +34,9 @@ public:
     /**
      * @brief Performs all updates
      */
-    void update_all(const Camera& cam)
+    void update_all(const Camera& cam, const BedError& bed_error)
     {
-        update_materials();
+        update_materials(bed_error);
         update_shadows(cam);
         update_positions();
         update_elements_state();
@@ -44,7 +45,7 @@ public:
     /**
       * @brief Updates beds' materials in dependence of the scene status
       */
-    void update_materials();
+    void update_materials(const BedError& bed_error);
 
     /**
       * @brief Updates beds' shadows data in dependence of the scene status
@@ -78,6 +79,7 @@ private:
     const Domain::Project* m_project{ nullptr };
     Domain::SelectionId m_project_id{Domain::INVALID_ID};
     const Biz::Scene::SceneInteractor& m_scene_interactor;
+    BedError m_bed_error;
 };
 
 } // namespace Slic3r::App::Scene

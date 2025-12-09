@@ -137,5 +137,9 @@ struct SLAResult
     // used for merge Result in Cache
     // Define the state of the result data
     Sla::ResultType type{Sla::ResultType::None}; // type of the result
+
+    // Whether or not the result of slicing is contained in the bed
+    bool contained_in_bed{ true };
 };
+
 } // namespace Slic3r::Biz::Slicing

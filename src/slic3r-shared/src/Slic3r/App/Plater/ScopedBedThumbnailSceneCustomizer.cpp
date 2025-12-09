@@ -5,7 +5,7 @@
 namespace Slic3r::App::Plater {
 
 ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(Scene::Scene& scene, const Domain::Project& project,
-    Domain::SelectionId bed_instance_id, Scene::CameraProjectionType camera_type)
+    Domain::SelectionId bed_instance_id, bool bed_instance_with_error, Scene::CameraProjectionType camera_type)
     : ScopedThumbnailSceneCustomizerBase(scene, project, camera_type)
 {
     const auto* cc = m_project.find_config_container_by_bed_instance_id(bed_instance_id);
@@ -15,9 +15,9 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(Scene::Scen
     Domain::BedRef bed_ref{cc->id().id, bed_instance_id};
 
     // store values that are going to be changed
+    store_use_background_error_color();
     store_shading_type();
     store_shadows_aabb();
-    store_camera_synch_data();
 
     // hide geometry
     hide_gizmos();
@@ -30,15 +30,14 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(Scene::Scen
     // set materials
     disable_bed_override_material();
     disable_volumes_override_material();
+    set_shadows();
 
     // set aabb for shadows
     set_shadows_aabb(bed_instance_aabb(*bed_instance));
 
     // setup scene
+    set_use_background_error_color(bed_instance_with_error);
     set_shading_type(Scene::ShadingType::PBR);
-
-    if (m_cache.camera_synch_data.type != uint8_t(m_camera_type))
-        switch_camera_projection_type();
 
     Eigen::AlignedBox3d world_aabb = scene_aabb();
     set_camera_trackball(world_aabb);

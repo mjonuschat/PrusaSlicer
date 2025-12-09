@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Slic3r/App/Platform/CameraSynchData.hpp"
 #include "Slic3r/App/Scene/GraphicsSettings.hpp"
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Scene/CameraFrustumUpdater.hpp"
@@ -23,8 +22,11 @@ class ScopedThumbnailSceneCustomizerBase
 {
 public:
     ScopedThumbnailSceneCustomizerBase(Scene::Scene& scene, const Domain::Project& project, Scene::CameraProjectionType camera_type)
-      : m_scene(scene), m_project(project), m_camera_type(camera_type)
-    {}
+        : m_project(project), m_scene(scene), m_camera_trackball(m_camera)
+    {
+        if (m_camera.cam_projection().type() != camera_type)
+            m_camera.switch_projection_type();
+    }
     virtual ~ScopedThumbnailSceneCustomizerBase();
 
     ScopedThumbnailSceneCustomizerBase(const ScopedThumbnailSceneCustomizerBase& other) = delete;
@@ -32,11 +34,14 @@ public:
     ScopedThumbnailSceneCustomizerBase& operator=(const ScopedThumbnailSceneCustomizerBase& other) = delete;
     ScopedThumbnailSceneCustomizerBase& operator=(ScopedThumbnailSceneCustomizerBase&& other) = delete;
 
+    Scene::Camera& camera() { return m_camera; }
+    const Scene::Camera& camera() const { return m_camera; }
+
 protected:
     void store_shading_type();
     void store_background_enabled();
+    void store_use_background_error_color();
     void store_shadows_aabb();
-    void store_camera_synch_data();
 
     void hide_gizmos();
     void hide_selection_aabb();
@@ -51,8 +56,8 @@ protected:
     void override_non_printable_volumes_material();
     void set_shadows();
 
-    void switch_camera_projection_type();
     void set_background_enabled(bool enabled);
+    void set_use_background_error_color(bool use);
     void set_shading_type(Scene::ShadingType type);
     void set_camera_trackball(const Eigen::AlignedBox3d& aabb);
     void set_shadows_aabb(const Eigen::AlignedBox3d& aabb);
@@ -64,9 +69,10 @@ protected:
     Eigen::AlignedBox3d bed_instance_aabb(const Domain::BedInstance& bed_instance) const;
 
 protected:
-    Scene::Scene& m_scene;
     const Domain::Project& m_project;
-    Scene::CameraProjectionType m_camera_type;
+    Scene::Scene& m_scene;
+    Scene::Camera m_camera;
+    Scene::CameraTrackballController m_camera_trackball;
     Scene::CameraFrustumUpdater m_camera_frustum_updater;
 
     struct Cache
@@ -75,9 +81,9 @@ protected:
         std::vector<std::pair<Scene::Node*, std::optional<Render::Material>>> materials;
         std::vector<std::pair<Scene::Node*, Render::Shadows>> shadows;
         bool background_enabled{ true };
+        bool use_background_error_color{ false };
         Scene::ShadingType shading_type{ Scene::ShadingType::Legacy };
         Eigen::AlignedBox3d shadows_aabb;
-        Platform::CameraSynchData camera_synch_data;
     };
 
     Cache m_cache;

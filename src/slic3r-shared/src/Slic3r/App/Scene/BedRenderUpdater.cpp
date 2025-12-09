@@ -17,8 +17,10 @@ namespace Slic3r::App::Scene {
 
 using Domain::BedRef;
 
-void BedRenderUpdater::update_materials()
+void BedRenderUpdater::update_materials(const BedError& bed_error)
 {
+    m_bed_error = bed_error;
+
     visit(m_scene_provider.scene().root(), [&](Node& n) {
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr && tag->type != BedElementType::Undefined) {
@@ -29,28 +31,60 @@ void BedRenderUpdater::update_materials()
             if (inst == nullptr)
                 return;
 
-            const BedRef bed_ref{cc->id().id, inst->id().id};
-            if (m_scene_interactor.bed_selection().is_selected(bed_ref)) {
-                n.remove_material_override();
-                if (tag->type == BedElementType::Label && m_scene_interactor.bed_selection().last_selected_bed() != bed_ref) {
+            bool has_error = m_bed_error.contains(Domain::SlicingId{m_project_id, tag->instance_id});
+
+            if (m_scene_interactor.bed_selection().is_selected(BedRef{tag->config_container_id, tag->instance_id})) {
+                std::optional<Render::Material> material;
+                if (has_error) {
+                    switch (tag->type)
+                    {
+                    case BedElementType::PlateDefault:  { material = BedMaterials::plate_default_error_material(n.render_component()->material()); break; }
+                    case BedElementType::PlateTextured: { material = BedMaterials::plate_textured_error_material(n.render_component()->material()); break; }
+                    case BedElementType::Model:         { material = BedMaterials::model_error_material(n.render_component()->material()); break; }
+                    default: { break; }
+                    }
+                }
+
+                if (material.has_value())
+                    n.set_material_override(*material);
+                else
+                    n.remove_material_override();
+
+                if (tag->type == BedElementType::Label && m_scene_interactor.bed_selection().last_selected_bed() != 
+                    BedRef{ tag->config_container_id, tag->instance_id }) {
                     n.set_material_override(
-                        BedMaterials::label_secondary_selection_material(m_device, inst->label())
+                        BedMaterials::label_secondary_selection_material(n.render_component()->material(), m_device, inst->label())
                     );
                 }
-            } else {
-                Render::Material material;
+            }
+            else {
+                std::optional<Render::Material> material;
                 switch (tag->type)
                 {
-                case BedElementType::PlateDefault:  { material = BedMaterials::plate_default_override_material(m_device); break; }
-                case BedElementType::PlateTextured: { material = BedMaterials::plate_textured_override_material(n.render_component()->material()); break; }
-                case BedElementType::Contour:       { material = BedMaterials::contour_override_material(m_device); break; }
-                case BedElementType::Grid:          { material = BedMaterials::grid_override_material(m_device); break; }
-                case BedElementType::PrintVolume:   { material = BedMaterials::print_volume_override_material(m_device); break; }
-                case BedElementType::Model:         { material = BedMaterials::model_override_material(m_device); break; }
-                case BedElementType::Label:         { material = BedMaterials::label_override_material(m_device, inst->label()); break; }
+                case BedElementType::PlateDefault:
+                {
+                    material = has_error ? 
+                        BedMaterials::plate_default_unselected_error_material(n.render_component()->material()) :
+                        BedMaterials::plate_default_unselected_material(n.render_component()->material());
+                    break;
+                }
+                case BedElementType::Model:
+                {
+                    material = has_error ?
+                        BedMaterials::model_unselected_error_material(n.render_component()->material()) :
+                        BedMaterials::model_unselected_material(n.render_component()->material());
+                    break;
+                }
+                case BedElementType::PlateTextured: { material = BedMaterials::plate_textured_transparent_material(n.render_component()->material()); break; }
+                case BedElementType::Contour:       { material = BedMaterials::contour_unselected_material(n.render_component()->material()); break; }
+                case BedElementType::Grid:          { material = BedMaterials::grid_unselected_material(n.render_component()->material()); break; }
+                case BedElementType::PrintVolume:   { material = BedMaterials::print_volume_unselected_material(n.render_component()->material()); break; }
+                case BedElementType::Label:         { material = BedMaterials::label_unselected_material(n.render_component()->material(), m_device, inst->label()); break; }
                 default:                            { break; }
                 }
-                n.set_material_override(material);
+
+                if (material.has_value())
+                    n.set_material_override(*material);
             }
         }
     }, true);
@@ -74,8 +108,8 @@ void BedRenderUpdater::update_shadows(const Camera& cam)
                 if (inst == nullptr)
                     return;
 
-                const bool is_active{m_scene_interactor.bed_selection().is_selected(BedRef{cc->id().id, inst->id().id})};
-                if (!cam_pointing_upward && is_active) {
+                if (!cam_pointing_upward &&
+                    m_scene_interactor.bed_selection().is_selected(BedRef{ tag->config_container_id, tag->instance_id })) {
                     if (tag->type == BedElementType::Model && Scene::Scene::graphics_settings().bed_model_cast_shadow())
                         n.render_component()->set_shadows(Render::Shadows{ true, true });
                     else
@@ -115,32 +149,25 @@ void BedRenderUpdater::update_elements_state()
         m_scene_provider.scene().root(),
         [&](Node& n) {
             BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
-            if (tag == nullptr) {
+            if (tag == nullptr)
                 return;
-            }
             if (tag->type == BedElementType::Undefined) {
                 ++bed_instances_count;
                 return;
             }
-            if (tag->type != BedElementType::Contour
-                && tag->type != BedElementType::PrintVolume
-                && tag->type != BedElementType::AxesMain)
-            {
+            if (tag->type != BedElementType::Contour &&
+                tag->type != BedElementType::PrintVolume &&
+                tag->type != BedElementType::AxesMain)
                 return;
-            }
 
             ASSERT(m_project != nullptr);
-            const Domain::ConfigContainer* cc = m_project->find_config_container(
-                tag->config_container_id
-            );
+            const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
             ASSERT(cc != nullptr);
             const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
-            if (inst == nullptr) {
+            if (inst == nullptr)
                 return;
-            }
 
-            const BedRef bed_ref{cc->id().id, inst->id().id};
-            const bool is_active{m_scene_interactor.bed_selection().is_selected(bed_ref)};
+            BedRef bed_ref{tag->config_container_id, tag->instance_id};
             // update elements' visibility
             switch (tag->type) {
             case BedElementType::Contour: {
@@ -152,7 +179,7 @@ void BedRenderUpdater::update_elements_state()
                 break;
             }
             case BedElementType::AxesMain: {
-                n.set_enabled(is_active);
+                n.set_enabled(m_scene_interactor.bed_selection().is_selected(bed_ref));
                 break;
             }
             default:
@@ -166,9 +193,8 @@ void BedRenderUpdater::update_elements_state()
         m_scene_provider.scene().root(),
         [&](Node& n) {
             BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
-            if (tag != nullptr && tag->type == BedElementType::Label) {
+            if (tag != nullptr && tag->type == BedElementType::Label)
                 n.set_enabled(bed_instances_count > 1);
-            }
         },
         true
     );
@@ -194,10 +220,12 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
                 if (inst == nullptr)
                     return;
 
-                const bool is_active{m_scene_interactor.bed_selection().is_selected(BedRef{cc->id().id, inst->id().id})};
-                if (is_active) {
-                    if (cam_pointing_upward)
-                        n.set_material_override(BedMaterials::plate_textured_override_material(n.render_component()->material()));
+                if (cam_pointing_upward ||
+                    !m_scene_interactor.bed_selection().is_selected(BedRef{ tag->config_container_id, tag->instance_id }))
+                    n.set_material_override(BedMaterials::plate_textured_transparent_material(n.render_component()->material()));
+                else {
+                    if (m_bed_error.contains(Domain::SlicingId{ m_project_id, tag->instance_id }))
+                        n.set_material_override(BedMaterials::plate_textured_error_material(n.render_component()->material()));
                     else
                         n.remove_material_override();
                 }
@@ -211,8 +239,7 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
                 if (inst == nullptr)
                     return;
 
-                const bool is_active{m_scene_interactor.bed_selection().is_selected(BedRef{cc->id().id, inst->id().id})};
-                if (is_active) {
+                if (m_scene_interactor.bed_selection().is_selected(BedRef{ tag->config_container_id, tag->instance_id })) {
                     Transform3d scale = Transform3d::Identity();
                     scale.scale(std::min(1.0, 1.0 / cam.zoom() * 10.0));
                     n.set_local_transform(scale);

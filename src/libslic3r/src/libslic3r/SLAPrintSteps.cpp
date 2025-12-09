@@ -41,6 +41,7 @@
 #include <libslic3r/ClipperUtils.hpp>
 #include <libslic3r/KDTreeIndirect.hpp>
 //#include <libslic3r/ShortEdgeCollapse.hpp>
+#include "libslic3r/BuildVolume.hpp"
 
 #include <boost/log/trivial.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -1330,6 +1331,23 @@ Sla::PrintStatistics create_stats(const LayersInfo& infos, bool is_prusa_print)
 
 } // namespace
 
+static bool is_contained_in_bed(const SLAPrintObject& object, const BuildVolume& build_volume)
+{
+    const Domain::TriangleMesh& support_mesh = object.support_mesh();
+    const Domain::TriangleMesh& pad_mesh = object.pad_mesh();
+    Domain::TriangleMesh mesh;
+    mesh.merge(support_mesh);
+    mesh.merge(pad_mesh);
+    Domain::TriangleMesh ch = Biz::Algorithms::TriangleMesh::convex_hull_3d(mesh);
+    bool ret = true;
+    for (const auto& [obj, xform] : get_instance_trafos(object)) {
+        ret &= build_volume.object_state(ch.its, xform.cast<float>(), false, false) == BuildVolume::ObjectState::Inside;
+        if (!ret)
+            break;            
+    }
+    return ret;
+}
+
 // Merging the slices from all the print objects into one slice grid and
 // calculating print statistics from the merge result.
 void SLAPrint::Steps::merge_slices_and_eval_stats() {
@@ -1509,6 +1527,14 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     bool hollowing_enable = std::any_of(objects.begin(), objects.end(),
         [](const SLAPrintObject *po) { return po->config().get<bool>("hollowing_enable"); });
 
+    const BuildVolume build_volume(
+        config.get<std::vector<Vec2d>>("bed_shape"),
+        config.get<double>("max_print_height")
+    );
+
+    bool contained_in_bed = std::all_of(objects.begin(), objects.end(),
+        [&](const SLAPrintObject *po) { return is_contained_in_bed(*po, build_volume); });
+
     print_statistics.hollowing_enable = hollowing_enable;
 
     // Send print statistics to frontend    
@@ -1528,7 +1554,8 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
         .print_statistics = print_statistics,
         .slices = std::move(slices),
         .heights = std::move(heights),
-        .type = Sla::ResultType::Slices
+        .type = Sla::ResultType::Slices,
+        .contained_in_bed = contained_in_bed
     });
 }
 

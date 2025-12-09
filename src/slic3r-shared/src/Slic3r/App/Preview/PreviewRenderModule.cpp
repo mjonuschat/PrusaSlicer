@@ -220,6 +220,8 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
         m_fdm_viewer.render_gui(layout);
     }
 
+    m_scene_presenter->render_imgui(m_screen_info);
+
 #if ENABLED_DEBUG_OUTLINE
     if (ImGui::Begin("Outline", nullptr))
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
@@ -961,12 +963,14 @@ void PreviewRenderModule::init_dialog_navigation()
 
 void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
 {
+    std::optional<Biz::FDMResultRef> fdm_result{m_project_interactor.fdm_result_cache().get_result(id)};
+    m_scene_presenter->update_bed_instance_error_state(id, fdm_result.has_value() && !fdm_result->get().contained_in_bed);
+
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
 
-    if (m_viewer == &m_sla_viewer) {
+    if (m_viewer == &m_sla_viewer)
         update_viewer();
-    }
 
     if (m_viewer != &m_fdm_viewer) {
         // Safety guard to avoid updating m_fdm_viewer when it is not the active viewer.
@@ -974,7 +978,6 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
         return;
     }
 
-    const std::optional<Biz::FDMResultRef> fdm_result{m_project_interactor.fdm_result_cache().get_result(id)};
     if (!fdm_result) {
         m_fdm_viewer.reset();
         return;
@@ -1017,6 +1020,9 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
 
 void PreviewRenderModule::update_sla_viewer_result_data(const Domain::SlicingId id)
 {
+    std::optional<Biz::SLAResultRef> sla_result{m_project_interactor.sla_result_cache().get_result(id)};
+    m_scene_presenter->update_bed_instance_error_state(id, sla_result.has_value() && !sla_result->get().contained_in_bed);
+
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
 
@@ -1032,11 +1038,13 @@ void PreviewRenderModule::update_sla_viewer_result_data(const Domain::SlicingId 
 
     update_toolbar_visibility();
 
-    const std::optional<Biz::SLAResultRef> sla_result{m_project_interactor.sla_result_cache().get_result(id)};
     if (!sla_result) {
         m_sla_viewer.reset_result();
     } else {
-        m_sla_viewer.load_from_result(sla_result->get());
+        const Domain::BedInstance* bed_instance =
+            m_project_interactor.workbench().project(id.project_id).find_bed_instance_by_id(id.bed_instance_id);
+        ASSERT(bed_instance != nullptr);
+        m_sla_viewer.load_from_result(sla_result->get(), bed_instance->transformation.get_matrix());
     }
 }
 
@@ -1046,8 +1054,12 @@ void PreviewRenderModule::update_sla_viewer_object_data(const Domain::SlicingId 
         return;
 
     const std::optional<Biz::SLAObjectRef> sla_object_result{m_project_interactor.sla_object_cache().get_instance({id, instance_id})};
-    if (sla_object_result)
-        m_sla_viewer.load_from_object(sla_object_result->get());
+    if (sla_object_result) {
+        const Domain::BedInstance* bed_instance =
+            m_project_interactor.workbench().project(id.project_id).find_bed_instance_by_id(id.bed_instance_id);
+        ASSERT(bed_instance != nullptr);
+        m_sla_viewer.load_from_object(sla_object_result->get(), bed_instance->transformation.get_matrix());
+    }
     else
         m_sla_viewer.reset_object(instance_id);
 }

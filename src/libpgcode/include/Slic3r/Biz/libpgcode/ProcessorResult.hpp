@@ -51,6 +51,7 @@ struct ProcessorResult
     PrintSettings print_settings;
     std::optional<ConflictResult> conflict_result;
     std::optional<std::pair<std::string, std::string>> sequential_collision_detected;
+    bool contained_in_bed{ true };
 
     uint32_t id() const;
     void set_new_id();

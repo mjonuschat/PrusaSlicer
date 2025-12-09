@@ -251,6 +251,8 @@ set(SLIC3R_SOURCES
     src/libslic3r/Geometry/MedialAxis.hpp
     src/libslic3r/InfillAboveBridges.cpp
     src/libslic3r/InfillAboveBridges.hpp
+    src/libslic3r/InstanceTransformations.cpp
+    src/libslic3r/InstanceTransformations.hpp
     src/libslic3r/JumpPointSearch.cpp
     src/libslic3r/JumpPointSearch.hpp
     src/libslic3r/KDTreeIndirect.hpp
@@ -451,6 +453,7 @@ set(SLIC3R_PUBLIC_HEADERS
     include/libslic3r/Slicing.hpp
     include/libslic3r/StaticMap.hpp
     include/libslic3r/SupportSpotsGenerator.hpp
+    include/libslic3r/ThumbnailImageRequest.hpp
     include/libslic3r/TriangleMeshSlicer.hpp
     include/libslic3r/Utils.hpp
     include/libslic3r/SlicingStatus.hpp

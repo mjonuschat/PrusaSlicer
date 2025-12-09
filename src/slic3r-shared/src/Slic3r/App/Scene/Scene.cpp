@@ -365,15 +365,15 @@ Scene::NodeMaterials Scene::collect_nodes_with_material(const Node::NodePredicat
     return ret;
 }
 
-void Scene::render_background(Render::CommandBuffer& cmd_buffer, Render::Device& device, bool use_error_color) const
+void Scene::render_background(Render::Device& device, Render::CommandBuffer& cmd_buffer) const
 {
-    static const ColorRGBA DEFAULT_BG_DARK_COLOR = {0.478f, 0.478f, 0.478f, 1.0f};
-    static const ColorRGBA DEFAULT_BG_LIGHT_COLOR = {0.753f, 0.753f, 0.753f, 1.0f};
-    static const ColorRGBA ERROR_BG_DARK_COLOR = {0.478f, 0.192f, 0.039f, 1.0f};
-    static const ColorRGBA ERROR_BG_LIGHT_COLOR = {0.753f, 0.192f, 0.039f, 1.0f};
+    static const ColorRGBA DEFAULT_BG_DARK_COLOR  = {0.45f, 0.45f, 0.45f, 1.0f};
+    static const ColorRGBA DEFAULT_BG_LIGHT_COLOR = {0.75f, 0.75f, 0.75f, 1.0f};
+    static const ColorRGBA ERROR_BG_DARK_COLOR    = {0.60f, 0.20f, 0.20f, 1.0f};
+    static const ColorRGBA ERROR_BG_LIGHT_COLOR   = {1.00f, 0.20f, 0.20f, 1.0f};
 
-    const ColorRGBA top_color = use_error_color ? ERROR_BG_LIGHT_COLOR : DEFAULT_BG_LIGHT_COLOR;
-    const ColorRGBA bottom_color = use_error_color ? ERROR_BG_DARK_COLOR : DEFAULT_BG_DARK_COLOR;
+    ColorRGBA top_color = m_use_background_error_color ? ERROR_BG_LIGHT_COLOR : DEFAULT_BG_LIGHT_COLOR;
+    ColorRGBA bottom_color = m_use_background_error_color ? ERROR_BG_DARK_COLOR : DEFAULT_BG_DARK_COLOR;
 
     Render::Material material;
     material
@@ -385,7 +385,7 @@ void Scene::render_background(Render::CommandBuffer& cmd_buffer, Render::Device&
     cmd_buffer.clear_buffers(false, true);
 }
 
-void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomizer* customizer) const
+void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera, ISceneRenderCustomizer* customizer) const
 {
     Shadows& shadows = s_graphics_settings.m_shadows;
 
@@ -433,7 +433,7 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
         DEBUG_ASSERT(it != m_lighting.lights.end());
 
         Vec3d world_light_dir = (it->system == LightReferenceSystem::Camera) ?
-            Vec3d(m_camera.model().matrix().block<3, 3>(0, 0) * it->direction.cast<double>()) :
+            Vec3d(camera.model().matrix().block<3, 3>(0, 0) * it->direction.cast<double>()) :
             it->direction.cast<double>();
         Vec3d world_light_pos = center - 1.0f * world_light_dir;
 
@@ -504,11 +504,12 @@ void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomize
     }
 
     // restore camera viewport
-    cmd_buffer->set_viewport(m_camera.viewport());
+    cmd_buffer->set_viewport(camera.viewport());
     cmd_buffer->unbind_framebuffer(*shadows.framebuffer);
 }
 
-void Scene::render_shadows_receivers_pass(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
+void Scene::render_shadows_receivers_pass(Render::Device& device, const Camera& camera, Render::CommandBuffer& cmd_buffer,
+    ISceneRenderCustomizer* customizer) const
 {
     NodeMaterials nodes = collect_nodes_with_material([](auto n) {
         return n->has_render_component() && n->render_component()->receive_shadows() && !resolve_material(*n).transparent();
@@ -559,7 +560,7 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
         }
 
         set_uniforms(m_lighting, mat);
-        n->render_component()->render(*n, m_camera, mat, cmd_buffer);
+        n->render_component()->render(*n, camera, mat, cmd_buffer);
     }
 
     if (customizer) {
@@ -569,7 +570,7 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
     }
 }
 
-void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
+void Scene::render_no_shadows_pass(const Camera& camera, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
 {
     NodeMaterials nodes = collect_nodes_with_material([this](auto n) {
         return n->has_render_component() && (!s_graphics_settings.shadows_enabled() || !n->render_component()->receive_shadows());
@@ -644,7 +645,7 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
         }
 
         set_uniforms(m_lighting, mat);
-        n->render_component()->render(*n, m_camera, mat, cmd_buffer);
+        n->render_component()->render(*n, camera, mat, cmd_buffer);
         was_opaque = is_opaque;
     }
 
@@ -658,8 +659,8 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
     }
 }
 
-void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomizer* customizer, const Domain::Index2& viewport_size,
-    PBRParamsList& pbr_params_list) const
+void Scene::render_ao_gbuffer_pass(Render::Device& device, const Camera& camera, ISceneRenderCustomizer* customizer,
+    const Domain::Index2& viewport_size, PBRParamsList& pbr_params_list) const
 {
     AmbientOcclusion& ao = s_graphics_settings.m_ao;
 
@@ -680,7 +681,7 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
     cmd_buffer->bind_framebuffer(*ao.gbuffer_fb);
     cmd_buffer->set_depth_test_enabled(true);
     cmd_buffer->set_cull_face_enabled(true);
-    cmd_buffer->set_viewport(m_camera.viewport());
+    cmd_buffer->set_viewport(camera.viewport());
     cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
     cmd_buffer->clear_buffers(true, true);
 
@@ -738,7 +739,7 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
             }
 
             set_uniforms(m_lighting, mat);
-            n->render_component()->render(*n, m_camera, mat, *cmd_buffer);
+            n->render_component()->render(*n, camera, mat, *cmd_buffer);
         }
 
         if (customizer) {
@@ -751,7 +752,7 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomize
     cmd_buffer->unbind_framebuffer(*ao.gbuffer_fb);
 }
 
-void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2& viewport_size) const
+void Scene::render_ao_texture_pass(Render::Device& device, const Camera& camera, const Domain::Index2& viewport_size) const
 {
     AmbientOcclusion& ao = s_graphics_settings.m_ao;
 
@@ -770,12 +771,12 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2&
 
     auto cmd_buffer = device.create_command_buffer();
     cmd_buffer->bind_framebuffer(*ao.ao_tex_fb);
-    cmd_buffer->set_viewport(m_camera.viewport());
+    cmd_buffer->set_viewport(camera.viewport());
     cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
     cmd_buffer->clear_buffers(true, false);
 
     Vec2f v_size = { float(viewport_size[0]), float(viewport_size[1]) };
-    SquareMatrix4f projection = m_camera.projection().cast<float>();
+    SquareMatrix4f projection = camera.projection().cast<float>();
     SquareMatrix4f inv_projection = projection.inverse();
 
     Render::Material material;
@@ -807,7 +808,7 @@ void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2&
     cmd_buffer->unbind_framebuffer(*ao.ao_tex_fb);
 }
 
-void Scene::render_ao_texture_hblur_pass(Render::Device& device, const Domain::Index2& viewport_size) const
+void Scene::render_ao_texture_hblur_pass(Render::Device& device, const Camera& camera, const Domain::Index2& viewport_size) const
 {
     AmbientOcclusion& ao = s_graphics_settings.m_ao;
 
@@ -826,7 +827,7 @@ void Scene::render_ao_texture_hblur_pass(Render::Device& device, const Domain::I
 
     auto cmd_buffer = device.create_command_buffer();
     cmd_buffer->bind_framebuffer(*ao.hblur_fb);
-    cmd_buffer->set_viewport(m_camera.viewport());
+    cmd_buffer->set_viewport(camera.viewport());
     cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
     cmd_buffer->clear_buffers(true, false);
 
@@ -842,7 +843,7 @@ void Scene::render_ao_texture_hblur_pass(Render::Device& device, const Domain::I
     cmd_buffer->unbind_framebuffer(*ao.hblur_fb);
 }
 
-void Scene::render_ao_texture_vblur_pass(Render::Device& device, const Domain::Index2& viewport_size) const
+void Scene::render_ao_texture_vblur_pass(Render::Device& device, const Camera& camera, const Domain::Index2& viewport_size) const
 {
     AmbientOcclusion& ao = s_graphics_settings.m_ao;
 
@@ -861,7 +862,7 @@ void Scene::render_ao_texture_vblur_pass(Render::Device& device, const Domain::I
 
     auto cmd_buffer = device.create_command_buffer();
     cmd_buffer->bind_framebuffer(*ao.vblur_fb);
-    cmd_buffer->set_viewport(m_camera.viewport());
+    cmd_buffer->set_viewport(camera.viewport());
     cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
     cmd_buffer->clear_buffers(true, false);
 
@@ -877,8 +878,8 @@ void Scene::render_ao_texture_vblur_pass(Render::Device& device, const Domain::I
     cmd_buffer->unbind_framebuffer(*ao.vblur_fb);
 }
 
-void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, const Domain::Index2& viewport_size, Render::Device& device,
-    const PBRParamsList& pbr_params_list) const
+void Scene::render_ao_lighting_pass(Render::Device& device, const Camera& camera, Render::CommandBuffer& cmd_buffer,
+    const Domain::Index2& viewport_size, const PBRParamsList& pbr_params_list) const
 {
     cmd_buffer.set_depth_test_enabled(false);
     cmd_buffer.set_depth_write_enabled(false);
@@ -887,8 +888,8 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, const Dom
     cmd_buffer.set_blending(blending);
 
     Vec2f v_size = { float(viewport_size[0]), float(viewport_size[1]) };
-    SquareMatrix4f view = camera().view().matrix().cast<float>();
-    SquareMatrix4f inv_projection = m_camera.projection().matrix().inverse().cast<float>();
+    SquareMatrix4f view = camera.view().matrix().cast<float>();
+    SquareMatrix4f inv_projection = camera.projection().matrix().inverse().cast<float>();
 
     const AmbientOcclusion& ao = s_graphics_settings.m_ao;
     const Shadows& shadows = s_graphics_settings.m_shadows;
@@ -927,39 +928,42 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, const Dom
     cmd_buffer.set_depth_test_enabled(true);
 }
 
-void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
+void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer,
+    Camera* override_camera) const
 {
     Render::ScopedDebugGroup event_scene_render("Scene", cmd_buffer);
+
+    const Camera& camera = (override_camera != nullptr) ? *override_camera : m_camera;
 
     if (m_screen_quad == nullptr)
         init_screen_quad(device);
 
     if (m_background_enabled)
-        render_background(cmd_buffer, device, false);
+        render_background(device, cmd_buffer);
 
     if (s_graphics_settings.shadows_enabled())
-        render_shadowsmap_pass(device, customizer);
+        render_shadowsmap_pass(device, camera, customizer);
 
     if (s_graphics_settings.ao_enabled()) {
-        const Render::Rect& viewport = m_camera.viewport();
+        const Render::Rect& viewport = camera.viewport();
         Domain::Index2 viewport_size = { viewport.width, viewport.height };
         PBRParamsList pbr_params_list;
-        render_ao_gbuffer_pass(device, customizer, viewport_size, pbr_params_list);
+        render_ao_gbuffer_pass(device, camera, customizer, viewport_size, pbr_params_list);
         generate_ao_kernel(device);
         generate_ao_noise(device);
-        render_ao_texture_pass(device, viewport_size);
-        render_ao_texture_hblur_pass(device, viewport_size);
-        render_ao_texture_vblur_pass(device, viewport_size);
-        render_ao_lighting_pass(cmd_buffer, viewport_size, device, pbr_params_list);
+        render_ao_texture_pass(device, camera, viewport_size);
+        render_ao_texture_hblur_pass(device, camera, viewport_size);
+        render_ao_texture_vblur_pass(device, camera, viewport_size);
+        render_ao_lighting_pass(device, camera, cmd_buffer, viewport_size, pbr_params_list);
         AmbientOcclusion& ao = s_graphics_settings.m_ao;
         cmd_buffer.blit_to_draw_framebuffer(*ao.gbuffer_fb, viewport.width, viewport.height,
             Render::BlitFramebufferMask::DepthBufferBit, Render::BlitFramebufferFilter::Nearest);
         ao.framebuffer_size = viewport_size;
     }
     else if (s_graphics_settings.shadows_enabled())
-        render_shadows_receivers_pass(device, cmd_buffer, customizer);
+        render_shadows_receivers_pass(device, camera, cmd_buffer, customizer);
 
-    render_no_shadows_pass(cmd_buffer, customizer);
+    render_no_shadows_pass(camera, cmd_buffer, customizer);
 }
 
 Eigen::AlignedBox<float, 2> resolve_bounding_box(const Node& node, const Camera& cam)
@@ -1109,4 +1113,4 @@ void Scene::log_nodes() const
     });
 }
 
-}
+} // namespace Slic3r::App::Scene

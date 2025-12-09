@@ -40,8 +40,12 @@ void PreviewScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 
 void PreviewScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
 {
-    if (!m_projects.empty())
+    if (!m_projects.empty()) {
+#if ENABLE_DEBUG_BED_ERROR
+        render_imgui_debug_bed_error(project_context().bed_error());
+#endif // ENABLE_DEBUG_BED_ERROR
         project_context().scene().render_imgui(screen_info);
+    }
 }
 
 void PreviewScenePresenter::screen_resized(const Render::Rect& viewport)
@@ -113,8 +117,8 @@ void PreviewScenePresenter::add_bed_instances(const Domain::BedRefs& instances)
 
 void PreviewScenePresenter::update_bed_instances()
 {
+    m_bed_render_updater.update_all(scene().camera(), project_context().bed_error());
     const auto& scene_interactor = m_project_interactor.scene_interactor();
-    m_bed_render_updater.update_all(scene().camera());
     const Biz::Scene::BedSelection selection{scene_interactor.bed_selection()};
 
     // update visibility of bed instances
@@ -140,6 +144,14 @@ void PreviewScenePresenter::update_bed_instances()
         },
         true
     );
+}
+
+bool PreviewScenePresenter::update_bed_instance_error_state(const Domain::SlicingId& id, bool error)
+{
+    bool ret = error ? project_context().bed_error().add_bed_instance(id) : project_context().bed_error().remove_bed_instance(id);
+    if (ret)
+        update_bed_instances();
+    return ret;
 }
 
 void PreviewScenePresenter::center_camera_on_selected_bed()

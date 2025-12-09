@@ -21,6 +21,8 @@
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Scene/ISceneChangedListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
+#include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/SLAResultCache.hpp"
 
 namespace Slic3r::App::Scene {
 class NodeBuilder;
@@ -42,6 +44,8 @@ class PlaterScenePresenter :
     public Scene::IProjectSceneProvider,
     public IHoverChangedListener,
     public Scene::ICameraUpdateListener,
+    public Biz::IFDMResultCacheChangedListener,
+    public Biz::ISLAResultCacheChangedListener,
     public Biz::IProjectsChangedListener
 {
 public:
@@ -123,6 +127,20 @@ public:
     void on_project_loaded(Domain::SelectionId project_id) override;
     /**@}*/
 
+    /**
+     * @name Implementation of Biz::IFDMResultCacheChangedListener public interface
+     * @{
+     */
+    void on_fdm_result_cache_changed(const Domain::SlicingId id) override;
+    /**@}*/
+
+    /**
+     * @name Implementation of Biz::ISLAResultCacheChangedListener public interface
+     * @{
+     */
+    void on_sla_result_cache_changed(const Domain::SlicingId& id) override;
+    /**@}*/
+
     const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return project_context().camera_synch_data(); }
     void set_camera_synch_data(const Platform::CameraSynchData& data) { project_context().set_camera_synch_data(data); }
 
@@ -131,13 +149,14 @@ public:
     // Call this function to force bed thumbnails generation after the listeners are registered, for example to ensure
     // that the object list is properly updated
     void force_bed_thumbnails_generation();
+    void update_bed_instances() { m_bed_render_updater.update_all(scene().camera(), project_context().bed_error()); }
+    bool update_bed_instance_error_state(const Domain::SlicingId& id, bool error);
 
     void update_sinking_contours_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
 
     using BedInstances = std::vector<std::reference_wrapper<const Domain::BedInstance>>;
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
-    void update_beds() { m_bed_render_updater.update_all(scene().camera()); }
 
     void set_scene_aabb_as_dirty() { m_camera_frustum_updater.set_scene_aabb_as_dirty(); }
 

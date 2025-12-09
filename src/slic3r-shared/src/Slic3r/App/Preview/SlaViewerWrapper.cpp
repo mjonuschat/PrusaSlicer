@@ -65,19 +65,19 @@ void SlaViewerWrapper::reset()
     m_viewer.reset();
 }
 
-void SlaViewerWrapper::load_from_result(const Biz::Slicing::SLAResult& result)
+void SlaViewerWrapper::load_from_result(const Biz::Slicing::SLAResult& result, const Scene::Transform& bed_transform)
 {
     m_loading = true;
 
-    m_viewer.load(result);
+    m_viewer.load(result, bed_transform);
     update_slider_layers();
 
     m_loading = false;
 }
 
-void SlaViewerWrapper::load_from_object(const Biz::Slicing::Sla::Object& object)
+void SlaViewerWrapper::load_from_object(const Biz::Slicing::Sla::Object& object, const Scene::Transform& bed_transform)
 {
-    m_viewer.load_object(object);
+    m_viewer.load_object(object, bed_transform);
 }
 
 void SlaViewerWrapper::reset_result()

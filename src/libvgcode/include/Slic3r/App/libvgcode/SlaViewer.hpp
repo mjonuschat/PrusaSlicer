@@ -12,6 +12,7 @@
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/App/Scene/Transform.hpp"
 
 namespace Slic3r::Domain {
 class TriangleMesh;
@@ -66,9 +67,9 @@ public:
     //
     void reset() override;
 
-    void load(const Biz::Slicing::SLAResult& result);
+    void load(const Biz::Slicing::SLAResult& result, const Scene::Transform& bed_transform);
     void load_layers(const std::vector<float>& layers_zs, const std::vector<double>& layers_times);
-    void load_object(const Biz::Slicing::Sla::Object& object);
+    void load_object(const Biz::Slicing::Sla::Object& object, const Scene::Transform& bed_transform);
 
     void reset_layers();
     void reset_object(const Domain::ObjectID object_id);
@@ -91,6 +92,7 @@ private:
 
     Scene::Node* m_main_node{nullptr};
     const Biz::Slicing::SLAResult* m_result{ nullptr };
+    Scene::Transform m_bed_instance_transform{Scene::Transform::Identity()};
 
 private:
 

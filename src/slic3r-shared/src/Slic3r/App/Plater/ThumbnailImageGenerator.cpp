@@ -88,6 +88,7 @@ void ThumbnailImageGenerator::handle_enqueued_requests()
                     params,
                     project,
                     request.params.bed_instance_id,
+                    request.params.bed_instance_with_error,
                     Scene::CameraProjectionType::Orthographic
                 );
                 break;

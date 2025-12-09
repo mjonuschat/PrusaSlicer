@@ -34,11 +34,12 @@ class ThumbnailRenderer
 public:
     explicit ThumbnailRenderer(Render::Device& device) : m_device(device) {}
 
-    [[nodiscard]] Domain::Images generate_thumbnails(const ThumbnailRendererParams& params);
+    [[nodiscard]] Domain::Images generate_thumbnails(const ThumbnailRendererParams& params, Scene::Camera& camera);
     [[nodiscard]] Domain::Images generate_bed_thumbnails(
         const ThumbnailRendererParams& params,
         const Domain::Project& project,
         Domain::SelectionId bed_instance_id,
+        bool bed_instance_with_error,
         Scene::CameraProjectionType camera_type
     );
     [[nodiscard]] Domain::Images generate_object_thumbnails(

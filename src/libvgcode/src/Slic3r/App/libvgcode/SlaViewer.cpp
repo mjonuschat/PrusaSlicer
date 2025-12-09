@@ -172,8 +172,9 @@ void SlaViewer::reset_object(const Domain::ObjectID object_id)
     }
 }
 
-void SlaViewer::load(const Biz::Slicing::SLAResult& result)
+void SlaViewer::load(const Biz::Slicing::SLAResult& result, const Scene::Transform& bed_transform)
 {
+    m_bed_instance_transform = bed_transform;
     if (result.print_statistics.has_value()) {
         load_layers(result.heights, result.print_statistics.value().layers_times_running_total);
         m_result = &result;
@@ -240,6 +241,10 @@ void SlaViewer::build_sla_object_mesh(
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
 
+    Scene::PrintVolumeData print_volume;
+    print_volume.type = Domain::BedType::Invalid;
+    set_uniforms(print_volume, material);
+
     builder
         .set_debug_name(Slic3r::format("sla_obj: %1%, inst: %2%, %3%", object_id, instance_id, type_str))
         .set_tag(SlaObjectNodeTag{ object_id, instance_id, type })
@@ -283,6 +288,10 @@ void SlaViewer::build_clipping_plane_node(SlaMeshType plane_type, Scene::NodeBui
         .set_shader(m_device->context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
+
+    Scene::PrintVolumeData print_volume;
+    print_volume.type = Domain::BedType::Invalid;
+    set_uniforms(print_volume, material);
 
     builder.set_debug_name(Slic3r::format("sla_obj: clipping plane: %1%", type_str))
         .set_tag(SlaObjectNodeTag{0, 0, plane_type})
@@ -340,9 +349,11 @@ void SlaViewer::build_instance_node(
     }
 }
 
-void SlaViewer::load_object(const Biz::Slicing::Sla::Object& sla_object)
+void SlaViewer::load_object(const Biz::Slicing::Sla::Object& sla_object, const Scene::Transform& bed_transform)
 {
     size_t object_id = sla_object.object_id.id;
+
+    m_bed_instance_transform = bed_transform;
 
     Scene::Node* object_node{ nullptr };
     for (auto& node : m_main_node->children()) {
@@ -390,7 +401,7 @@ void SlaViewer::load_object(const Biz::Slicing::Sla::Object& sla_object)
         ASSERT(inst_node);
 
         // add mesh node
-        build_instance_node(sla_object, instance_id, trafo, inst_node);
+        build_instance_node(sla_object, instance_id, m_bed_instance_transform * trafo, inst_node);
     }
 }
 
@@ -422,6 +433,7 @@ void SlaViewer::update_clipping_plane(SlaMeshType plane_type, indexed_triangle_s
                     });
 
                 static_cast<Scene::MeshRenderNodeComponent*>(n.render_component())->set_geometry(geom);
+                n.set_local_transform(m_bed_instance_transform);
             }
         }
     });

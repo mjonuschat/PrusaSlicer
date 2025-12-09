@@ -39,15 +39,13 @@ ScopedThumbnailSceneCustomizerBase::~ScopedThumbnailSceneCustomizerBase()
 
     // background
     m_scene.set_background_enabled(m_cache.background_enabled);
+    m_scene.set_use_background_error_color(m_cache.use_background_error_color);
 
     // shading
     Scene::Scene::set_shading_type(m_cache.shading_type);
 
     // shadows aabb
     Scene::Scene::set_shadows_aabb(m_cache.shadows_aabb);
-
-    // camera
-    synchronize_camera(m_cache.camera_synch_data, m_scene.camera(), m_scene.camera_trackball());
 }
 
 void ScopedThumbnailSceneCustomizerBase::store_shading_type()
@@ -60,24 +58,14 @@ void ScopedThumbnailSceneCustomizerBase::store_background_enabled()
     m_cache.background_enabled = m_scene.background_enabled();
 }
 
+void ScopedThumbnailSceneCustomizerBase::store_use_background_error_color()
+{
+    m_cache.use_background_error_color = m_scene.use_background_error_color();
+}
+
 void ScopedThumbnailSceneCustomizerBase::store_shadows_aabb()
 {
     m_cache.shadows_aabb = Scene::Scene::graphics_settings().shadows_aabb();
-}
-
-void ScopedThumbnailSceneCustomizerBase::store_camera_synch_data()
-{
-    Scene::Camera& camera                       = m_scene.camera();
-    Scene::CameraTrackballController& trackball = m_scene.camera_trackball();
-    m_cache.camera_synch_data.model             = camera.model();
-    m_cache.camera_synch_data.zoom              = camera.zoom();
-    m_cache.camera_synch_data.type              = uint8_t(camera.cam_projection().type());
-    m_cache.camera_synch_data.target            = trackball.target();
-    m_cache.camera_synch_data.pivot             = trackball.pivot();
-    m_cache.camera_synch_data.azimuth           = trackball.azimuth();
-    m_cache.camera_synch_data.zenith            = trackball.zenith();
-    m_cache.camera_synch_data.distance          = trackball.distance_to_target();
-    m_cache.camera_synch_data.view_rotation     = trackball.view_rotation();
 }
 
 void ScopedThumbnailSceneCustomizerBase::hide_gizmos()
@@ -243,7 +231,10 @@ void ScopedThumbnailSceneCustomizerBase::set_shadows()
                     rc->set_shadows(Render::Shadows{ true, true });
                 }
                 const Scene::BedNodeTag* bed_tag = n.tag_of_type<Scene::BedNodeTag>();
-                if (bed_tag != nullptr) {
+                if (bed_tag != nullptr && 
+                    (bed_tag->type == Scene::BedElementType::Model ||
+                     bed_tag->type == Scene::BedElementType::PlateDefault ||
+                     bed_tag->type == Scene::BedElementType::PlateTextured)) {
                     auto rc = n.render_component();
                     m_cache.shadows.push_back(std::make_pair(&n, Render::Shadows{ rc->cast_shadows(), rc->receive_shadows() }));
                     rc->set_shadows(Render::Shadows{ true, true });
@@ -253,14 +244,14 @@ void ScopedThumbnailSceneCustomizerBase::set_shadows()
     );
 }
 
-void ScopedThumbnailSceneCustomizerBase::switch_camera_projection_type()
-{
-    m_scene.camera().switch_projection_type();
-}
-
 void ScopedThumbnailSceneCustomizerBase::set_background_enabled(bool enabled)
 {
     m_scene.set_background_enabled(enabled);
+}
+
+void ScopedThumbnailSceneCustomizerBase::set_use_background_error_color(bool use)
+{
+    m_scene.set_use_background_error_color(use);
 }
 
 void ScopedThumbnailSceneCustomizerBase::set_shading_type(Scene::ShadingType type)
@@ -270,10 +261,9 @@ void ScopedThumbnailSceneCustomizerBase::set_shading_type(Scene::ShadingType typ
 
 void ScopedThumbnailSceneCustomizerBase::set_camera_trackball(const Eigen::AlignedBox3d& aabb)
 {
-    Scene::CameraTrackballController& trackball = m_scene.camera_trackball();
-    trackball.set_target(aabb.center());
-    trackball.set_distance_to_target(aabb.diagonal().norm());
-    trackball.set_azimuth_and_zenith(0.25 * std::numbers::pi, 0.75 * std::numbers::pi);
+    m_camera_trackball.set_target(aabb.center());
+    m_camera_trackball.set_distance_to_target(aabb.diagonal().norm());
+    m_camera_trackball.set_azimuth_and_zenith(0.25 * std::numbers::pi, 0.75 * std::numbers::pi);
 }
 
 void ScopedThumbnailSceneCustomizerBase::set_shadows_aabb(const Eigen::AlignedBox3d& aabb)
@@ -283,13 +273,13 @@ void ScopedThumbnailSceneCustomizerBase::set_shadows_aabb(const Eigen::AlignedBo
 
 void ScopedThumbnailSceneCustomizerBase::zoom_to_box(const Eigen::AlignedBox3d& aabb)
 {
-    Scene::zoom_to_box(m_scene.camera(), aabb);
+    Scene::zoom_to_box(m_camera, aabb);
 }
 
 void ScopedThumbnailSceneCustomizerBase::update_camera_frustum()
 {
     m_camera_frustum_updater.update_scene_aabb(m_scene);
-    m_camera_frustum_updater.update_camera_frustum(m_scene.camera());
+    m_camera_frustum_updater.update_camera_frustum(m_camera);
 }
 
 Eigen::AlignedBox3d ScopedThumbnailSceneCustomizerBase::scene_aabb() const

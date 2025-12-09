@@ -74,6 +74,7 @@ public:
     void remove_all_bed_instances();
     void add_bed_instances(const Domain::BedRefs& instances);
     void update_bed_instances();
+    bool update_bed_instance_error_state(const Domain::SlicingId& id, bool error);
 
     void center_camera_on_selected_bed();
 

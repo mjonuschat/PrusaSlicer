@@ -229,6 +229,9 @@ void PlaterScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
 #if ENABLE_DEBUG_HOVER
         render_imgui_debug_hover(m_hover_data);
 #endif // ENABLE_DEBUG_HOVER
+#if ENABLE_DEBUG_BED_ERROR
+        render_imgui_debug_bed_error(project_context().bed_error());
+#endif // ENABLE_DEBUG_BED_ERROR
         scene().render_imgui(screen_info);
     }
 }
@@ -266,6 +269,18 @@ void PlaterScenePresenter::on_node_changed(Scene::Node* node)
 void PlaterScenePresenter::on_project_loaded(Domain::SelectionId project_id)
 {
     center_camera_on_selected_bed();
+}
+
+void PlaterScenePresenter::on_fdm_result_cache_changed(const Domain::SlicingId id)
+{
+    std::optional<Biz::FDMResultRef> fdm_result{m_project_interactor.fdm_result_cache().get_result(id)};
+    update_bed_instance_error_state(id, fdm_result.has_value() && !fdm_result->get().contained_in_bed);
+}
+
+void PlaterScenePresenter::on_sla_result_cache_changed(const Domain::SlicingId& id)
+{
+    std::optional<Biz::SLAResultRef> sla_result{m_project_interactor.sla_result_cache().get_result(id)};
+    update_bed_instance_error_state(id, sla_result.has_value() && !sla_result->get().contained_in_bed);
 }
 
 void PlaterScenePresenter::force_bed_thumbnails_generation()
@@ -514,7 +529,7 @@ void PlaterScenePresenter::on_scene_selection_transformed(Domain::SelectionId pr
 
 void PlaterScenePresenter::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
 {
-    update_beds();
+    update_bed_instances();
 
     Eigen::AlignedBox3d bed_aabb;
     for (const auto& bed_instance : selected_bed_instances()) {
@@ -607,7 +622,7 @@ void PlaterScenePresenter::invoke_bed_visually_changed(Domain::SelectionId proje
 
     if (!bed_refs.empty()) {
         invoke_listeners<Plater::IBedVisuallyChangedListener>(
-            [&](Plater::IBedVisuallyChangedListener* l) { l->on_bed_changed(project_id, bed_refs); }
+            [&](Plater::IBedVisuallyChangedListener* l) { l->on_bed_changed(project_id, bed_refs, project_context().bed_error()); }
         );
     }
 }
@@ -657,6 +672,16 @@ void PlaterScenePresenter::update_selection_aabb(Domain::SelectionId project_id)
         proj.selection_root().set_world_transform(Scene::Transform{xform});
     }
     proj.set_selection_aabb_node_as_dirty();
+}
+
+bool PlaterScenePresenter::update_bed_instance_error_state(const Domain::SlicingId& id, bool error)
+{
+    bool ret = error ? project_context().bed_error().add_bed_instance(id) : project_context().bed_error().remove_bed_instance(id);
+    if (ret) {
+        update_bed_instances();
+        invoke_bed_visually_changed(m_selected_project_id);
+    }
+    return ret;
 }
 
 void PlaterScenePresenter::update_sinking_contours_visibility(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info)
@@ -839,20 +864,26 @@ void PlaterScenePresenter::on_bed_instance_updated(Domain::SelectionId project_i
         scn.add_child(builder.build().release());
     }
 
-    update_beds();
-    m_volume_materials_dirty = true;
+    update_bed_instances();
     invoke_bed_visually_changed(project_id);
-    center_camera_on_selected_bed();
+    m_volume_materials_dirty = true;
 }
 
 void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances)
 {
     remove_beds(project_id, instances);
 
-    update_beds();
+    bool res = false;
+    for (const auto& bed_ref : instances) {
+        res |= update_bed_instance_error_state(Domain::SlicingId{ project_id, bed_ref.instance_id }, false);
+    }
+    if (!res) {
+        // when res == true the update has been already performed inside update_bed_instance_error_state()
+        update_bed_instances();
+        invoke_bed_visually_changed(project_id);
+    }
 
     m_volume_materials_dirty = true;
-    invoke_bed_visually_changed(project_id);
 }
 
 void PlaterScenePresenter::on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances, Biz::Scene::TransformState state)

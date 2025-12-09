@@ -46,6 +46,7 @@
 #include "libslic3r/SlicingInput.hpp"
 #include "libslic3r/CustomParametersHandling.hpp"
 #include "libslic3r/ShrinkageCompensation.hpp"
+#include "libslic3r/InstanceTransformations.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <float.h>
@@ -99,35 +100,6 @@ void Print::clear()
 }
 
 using Domain::FullConfigFDMPtr;
-
-using InstanceTransformations = std::map<Domain::ModelInstance*, Domain::Transformation>;
-
-// Returns original transformations.
-static InstanceTransformations
-transform_instances(Domain::Model& model, const Domain::Transform3d& transform)
-{
-    InstanceTransformations result;
-    for (Domain::ModelObject* object : model.objects) {
-        for (Domain::ModelInstance* instance : object->instances) {
-            const Domain::Transformation& original_transformation{instance->get_transformation()};
-            result[instance] = original_transformation;
-            instance->set_transformation(
-                Domain::Transformation{transform * original_transformation.get_matrix()}
-            );
-        }
-    }
-    return result;
-}
-
-static void restore_instance_transformations(
-    Domain::Model& model,
-    const InstanceTransformations& original_transformations
-)
-{
-    for (auto& [instance, trafo] : original_transformations) {
-        instance->set_transformation(trafo);
-    }
-}
 
 // Extruders are indexed from 1.
 bool in_range(const Domain::ConfigItem& extruder_item, int min, int max)
@@ -1211,17 +1183,18 @@ Thumbnails request_thumbnails(
     Biz::Slicing::ThumbnailImageRequest request{
         ThumbnailType::SlicingBed,
         Biz::Slicing::ThumbnailParams{
-            .project_id      = slicing_id.project_id,
-            .bed_instance_id = slicing_id.bed_instance_id,
-            .pixel_format    = Domain::PixelFormat::RGBA8,
-            .sizes           = request_data->sizes
+            .project_id              = slicing_id.project_id,
+            .bed_instance_id         = slicing_id.bed_instance_id,
+            .bed_instance_with_error = false,
+            .pixel_format            = Domain::PixelFormat::RGBA8,
+            .sizes                   = request_data->sizes
         }
     };
 
     return {thumbnail_generator.enqueue_thumbnail_requests({request}), request_data->formats};
 }
 
-void check_result(
+bool check_result(
     const Biz::libpgcode::ProcessorResult& result,
     const PrintConfigView& config,
     std::function<void(Biz::Slicing::Warning)> append_warning_callback
@@ -1231,11 +1204,10 @@ void check_result(
         config.get<std::vector<Vec2d>>("bed_shape"),
         config.get<double>("max_print_height")
     );
-    if (!build_volume.all_paths_inside(*result.const_moves())) {
-        append_warning_callback(
-            Biz::Slicing::Warning{Biz::Slicing::WarningCode::ToolpathOutsideBuildVolume}
-        );
-    }
+    bool ret = build_volume.all_paths_inside(*result.const_moves());
+    if (!ret)
+        append_warning_callback(Biz::Slicing::Warning{ Biz::Slicing::WarningCode::ToolpathOutsideBuildVolume });
+    return ret;
 }
 
 } // namespace
@@ -1251,7 +1223,7 @@ void Print::slice(Domain::SlicingId slicing_id, Biz::Slicing::IThumbnailImageGen
     this->process();
     m_on_fdm_result(Biz::Print::get_result_preview(*this));
     Biz::libpgcode::ProcessorResult result{this->process_gcode()};
-    check_result(result, config(), append_warning_callback);
+    result.contained_in_bed = check_result(result, config(), append_warning_callback);
 
     m_on_fdm_result(std::move(result));
     this->finalize();

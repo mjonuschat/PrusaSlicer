@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Slic3r/Domain/Color.hpp"
-
+#include <string>
 #include <cstdint>
 
 namespace Slic3r::App::Render {
@@ -15,24 +14,9 @@ class Bed;
 
 namespace Slic3r::App::Scene {
 
-/**
-* @brief Bed colors
-*/
-static const Slic3r::Domain::ColorRGBA DEFAULT_BED_MODEL_COLOR  = { 0.235f, 0.235f, 0.235f, 1.0f };
-static const Slic3r::Domain::ColorRGBA DISABLED_BED_MODEL_COLOR = { 0.5f, 0.5f, 0.5f, 1.0f };
-static const Slic3r::Domain::ColorRGBA DEFAULT_BED_PLATE_COLOR  = { 0.225f, 0.225f, 0.225f, 1.0f };
-static const Slic3r::Domain::ColorRGBA DISABLED_BED_PLATE_COLOR = { 0.425f, 0.425f, 0.425f, 1.0f };
-static const Slic3r::Domain::ColorRGBA DEFAULT_BED_GRID_COLOR  = { 0.75f, 0.75f, 0.75f, 0.75f };
-static const Slic3r::Domain::ColorRGBA DISABLED_BED_GRID_COLOR = { 0.65f, 0.65f, 0.65f, 0.75f };
-static const Slic3r::Domain::ColorRGB ORANGE = Domain::ColorRGB::ORANGE();
-static const Slic3r::Domain::ColorRGBA DEFAULT_BED_CONTOUR_COLOR  = {ORANGE.r(), ORANGE.g(), ORANGE.b(), 1.0};
-static const Slic3r::Domain::ColorRGBA DISABLED_BED_CONTOUR_COLOR = { 0.75f, 0.75f, 0.75f, 1.0f };
-static const Slic3r::Domain::ColorRGBA DEFAULT_BED_X_AXIS_COLOR = { 0.75f, 0.0f, 0.0f, 1.0f };
-static const Slic3r::Domain::ColorRGBA DEFAULT_BED_Y_AXIS_COLOR = { 0.0f, 0.75f, 0.0f, 1.0f };
-static const Slic3r::Domain::ColorRGBA DEFAULT_BED_Z_AXIS_COLOR = { 0.0f, 0.0f, 0.75f, 1.0f };
-
 struct BedMaterials
 {
+    // materials for selected state
     static Render::Material plate_default_material(const Render::Device& device);
     static Render::Material plate_textured_material(const Render::Device& device, const Domain::Bed& bed);
     static Render::Material grid_material(const Render::Device& device);
@@ -42,14 +26,22 @@ struct BedMaterials
     static Render::Material axis_material(const Render::Device& device, uint8_t axis);
     static Render::Material label_material(const Render::Device& device, const std::string& label);
 
-    static Render::Material plate_default_override_material(const Render::Device& device);
-    static Render::Material plate_textured_override_material(const Render::Material& primary_material);
-    static Render::Material grid_override_material(const Render::Device& device);
-    static Render::Material contour_override_material(const Render::Device& device);
-    static Render::Material print_volume_override_material(const Render::Device& device);
-    static Render::Material model_override_material(const Render::Device& device);
-    static Render::Material label_override_material(const Render::Device& device, const std::string& label);
-    static Render::Material label_secondary_selection_material(const Render::Device& device, const std::string& label);
-};
+    // materials for other states
+    static Render::Material plate_default_unselected_material(const Render::Material& primary_material);
+    static Render::Material plate_default_error_material(const Render::Material& primary_material);
+    static Render::Material plate_default_unselected_error_material(const Render::Material& primary_material);
+    static Render::Material plate_textured_transparent_material(const Render::Material& primary_material);
+    static Render::Material plate_textured_error_material(const Render::Material& primary_material);
+    static Render::Material grid_unselected_material(const Render::Material& primary_material);
+    static Render::Material contour_unselected_material(const Render::Material& primary_material);
+    static Render::Material print_volume_unselected_material(const Render::Material& primary_material);
+    static Render::Material model_unselected_material(const Render::Material& primary_material);
+    static Render::Material model_error_material(const Render::Material& primary_material);
+    static Render::Material model_unselected_error_material(const Render::Material& primary_material);
+    static Render::Material label_unselected_material(const Render::Material& primary_material, const Render::Device& device,
+        const std::string& label);
+    static Render::Material label_secondary_selection_material(const Render::Material& primary_material, const Render::Device& device,
+        const std::string& label);
+ };
 
 } // namespace Slic3r::App::Scene

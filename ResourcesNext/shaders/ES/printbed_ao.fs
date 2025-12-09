@@ -1,12 +1,10 @@
 #version 100
 
-const vec3 back_color_dark  = vec3(0.235, 0.235, 0.235);
-const vec3 back_color_light = vec3(0.365, 0.365, 0.365);
-
 uniform sampler2D in_texture;
 uniform int material_id;
 uniform bool transparent_background;
-uniform bool svg_source;
+uniform vec3 back_color_dark;
+uniform vec3 back_color_light;
 
 varying vec4 light_position;
 varying vec3 eye_normal;
@@ -16,7 +14,7 @@ layout (location = 0) out vec4 g_light_position;
 layout (location = 1) out vec4 g_eye_normal;
 layout (location = 2) out vec4 g_color;
 
-vec4 svg_color()
+vec4 gradient_color()
 {
     // takes foreground from texture
     vec4 fore_color = texture(in_texture, tex_coord);
@@ -28,16 +26,9 @@ vec4 svg_color()
     return vec4(mix(back_color, fore_color.rgb, fore_color.a), transparent_background ? fore_color.a : 1.0);
 }
 
-vec4 non_svg_color()
-{
-    // takes foreground from texture
-    vec4 color = texture(in_texture, tex_coord);
-    return vec4(color.rgb, transparent_background ? color.a * 0.25 : color.a);
-}
-
 void main()
 {
-    vec4 color = svg_source ? svg_color() : non_svg_color();
+    vec4 color = gradient_color();
     color.a = transparent_background ? color.a * 0.5 : color.a;
 
     if (color.a == 0.0)
