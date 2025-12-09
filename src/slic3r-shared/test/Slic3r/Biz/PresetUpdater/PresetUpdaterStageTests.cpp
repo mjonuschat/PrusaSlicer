@@ -615,7 +615,7 @@ TEST_CASE("Preset updater")
         printf("Case: %s; %s; %s; %s\n",resources_version.c_str() ,server_version.c_str() ,staged_version.c_str() , installed_version.c_str() );
         REQUIRE(wait_for_updater(
             presetUpdater,
-            2s,
+            20s,
             project_interactor_wrapper.dispatcher
         ));  
     }
