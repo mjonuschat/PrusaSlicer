@@ -844,6 +844,7 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance, bool a
     ASSERT(cc != nullptr);
     auto* bed_inst = Domain::find_by_id(cc->bed_instances(), instance.instance_id);
 
+    // model instances to be removed toghether with the bed instance containing them
     auto insts = bed_inst->model_instances;
 
     auto& selection = bed_selection();
@@ -890,7 +891,7 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance, bool a
         [&](auto* l) { l->on_bed_instance_updated(m_selected_project_id, updated); }
     );
 
-    auto changes = m_bed_tracking.update_instances_bed_placement(project, insts);
+    auto changes = m_bed_tracking.update_instances_bed_placement(project, updated_instances);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
 
@@ -915,6 +916,27 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance, bool a
 
     if (!allow_to_remove_last_one && cc->bed_instances().empty()) {
         add_bed_instance(cc->id().id);
+    }
+
+    // temporary object selection containing model instances to be removed
+    ObjectSelection model_instances_to_remove;
+    model_instances_to_remove.elements.reserve(insts.size());
+    for (const auto inst : insts) {
+        model_instances_to_remove.elements.emplace_back(Domain::ElementRef{ inst->get_object()->id().id, inst->id().id });
+    }
+
+    if (!model_instances_to_remove.empty()) {
+        // removes the model instances from the current object selection
+        ObjectSelection curr_scene_selection = object_selection();
+        for (const auto& e : model_instances_to_remove.elements) {
+            curr_scene_selection.remove(e);
+        }
+
+        // delete the model instances from the project
+        set_object_selection(model_instances_to_remove);
+        delete_selected_elements();
+        // restore modified object selection
+        set_object_selection(curr_scene_selection);
     }
 }
 
