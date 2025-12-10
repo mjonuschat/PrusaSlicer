@@ -125,6 +125,7 @@ public:
     void on_keyboard(Scene::GizmoKeyEventContext& ctx) override;
 
     void on_cycle_prepare() override { m_processing = false; }
+    bool handles_object_selection() const override { return true; }
 
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
 

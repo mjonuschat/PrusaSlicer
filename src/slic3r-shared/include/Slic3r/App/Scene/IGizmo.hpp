@@ -108,6 +108,22 @@ public:
      */
     virtual void provide_clipper(Clipper& clipper) {}
     /**@}*/
+
+    /**
+     * @name object selection disabling
+     * @brief Returns whether the object selection should be ignored by this tool.
+     * @{
+     */
+    virtual bool disable_object_selection() const { return false; }
+    /**@}*/
+
+    /**
+     * @brief Indicates whether the gizmo handles object selection.
+     * This function will be overridden only in QuickSelectGizmo to return true.
+     * @{
+     */
+    virtual bool handles_object_selection() const { return false; }
+    /**@}*/
 };
 
 /**

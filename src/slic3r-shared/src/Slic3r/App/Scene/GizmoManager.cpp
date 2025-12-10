@@ -148,8 +148,11 @@ bool GizmoManager::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
         m_mouse_drag_detector->cancel_drag_event();
 
     GizmoKeyEventContext ctx{ e };
-    for (auto& g : m_base_gizmos)
-        g->on_keyboard(ctx);
+    for (auto& g : m_base_gizmos) {
+        if (!(current_context().object_selection_disabled && g->handles_object_selection())) {
+            g->on_keyboard(ctx);
+        }
+    }
     for (auto& g : m_tool_gizmos)
         g->on_keyboard(ctx);
 
@@ -177,6 +180,10 @@ void GizmoManager::prepare_cycle()
     if (p.active_tool)
         p.in_cycle_gizmos.push_back(p.active_tool);
     for (const auto& g : m_base_gizmos) {
+        if (p.object_selection_disabled && g->handles_object_selection()) {
+            // ignore this gizmo (QuickSelectGizmo)
+            continue;
+        }
         g->on_cycle_prepare();
         p.in_cycle_gizmos.push_back(g.get());
     }
@@ -216,19 +223,6 @@ void GizmoManager::render_imgui() {
 #endif
 }
 
-void GizmoManager::activate_tool(ToolType tool, Domain::PrinterTechnology pt)
-{
-    auto& p = current_context();
-    deactivate_current_tool();
-
-    p.active_tool = DEBUG_ASSERT_VAL(find_tool(tool, pt));
-
-    if (p.active_tool != nullptr) {
-        p.active_tool->on_activated();
-        invoke_listeners<IGizmoActiveToolListener>([p](auto* l) { l->active_tool_changed(p.active_tool); });
-    }
-}
-
 void GizmoManager::toggle_activate_tool(ToolType tool, Domain::PrinterTechnology pt)
 {
     auto& p = current_context();
@@ -241,6 +235,7 @@ void GizmoManager::toggle_activate_tool(ToolType tool, Domain::PrinterTechnology
         p.active_tool->on_activated();
         invoke_listeners<IGizmoActiveToolListener>([p](auto* l) { l->active_tool_changed(p.active_tool); });
     }
+    p.object_selection_disabled = p.active_tool ? p.active_tool->disable_object_selection() : false;
 }
 
 void GizmoManager::deactivate_current_tool()
@@ -251,6 +246,7 @@ void GizmoManager::deactivate_current_tool()
     p.active_tool->on_deactivated();
     p.active_tool = nullptr;
     invoke_listeners<IGizmoActiveToolListener>([p](auto* l) { l->active_tool_changed(p.active_tool); });
+    p.object_selection_disabled = false;
 }
 
 ToolType GizmoManager::current_tool_type() const

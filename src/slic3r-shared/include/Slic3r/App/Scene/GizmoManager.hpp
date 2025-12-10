@@ -70,7 +70,6 @@ public:
     void render_scene(Render::CommandBuffer& cmd_buffer);
 
     void toggle_activate_tool(ToolType tool, Domain::PrinterTechnology pt);
-    void activate_tool(ToolType tool, Domain::PrinterTechnology pt);
     void deactivate_current_tool();
     ToolType current_tool_type() const;
     bool is_tool_active_in_current_project(const IToolGizmo& tool) const;
@@ -111,6 +110,7 @@ private:
         IToolGizmo* active_tool{nullptr};
 
         bool in_cycle {false};
+        bool object_selection_disabled{ false };
         std::vector<IGizmo*> in_cycle_gizmos;
 
     };
