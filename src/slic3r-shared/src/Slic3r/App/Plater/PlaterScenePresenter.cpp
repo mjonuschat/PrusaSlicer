@@ -821,17 +821,22 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
     auto& scn        = scene();
     const auto& proj = m_workbench.project(project_id);
 
-    Scene::visit(scn.root(), [&](Scene::Node& n) {
-        const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
-        if (t == nullptr || t->volume_id == 0)
-            return;
-        for (const auto& e : elements) {
-            if (t->volume_id == e.volume_id) {
-                const auto* vol = proj.find_volume_by_id(e.object_id, e.volume_id);
-                n.set_local_transform(vol->get_matrix());
+    Scene::visit(
+        scn.root(),
+        [&](Scene::Node& n)
+        {
+            const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
+            if (t == nullptr || t->volume_id == 0)
+                return;
+            for (const auto& e : elements) {
+                if (t->volume_id == e.volume_id) {
+                    const auto* vol = proj.find_volume_by_id(e.object_id, e.volume_id);
+                    n.set_local_transform(vol->get_matrix());
+                }
             }
-        }
-    });
+        },
+        true
+    );
 
     if (state == Biz::Scene::TransformState::Completed || (!bed_tracking_changes.updated_beds.empty() && bed_tracking_changes.unplaced_instances_updated))
         m_volume_materials_dirty = true;
