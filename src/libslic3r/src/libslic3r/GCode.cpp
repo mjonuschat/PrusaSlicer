@@ -3207,7 +3207,14 @@ std::string GCodeGenerator::extrude_perimeters(
             speed = region.config()
                         .get<Domain::FloatOrPercentage>("small_perimeter_speed")
                         .get_abs_value(region.config().get<double>("perimeter_speed"));
-        gcode += this->extrude_smooth_path(perimeter.smooth_path, true, comment_perimeter, speed, region.config(), perimeter.wipe_offset);
+        gcode += this->extrude_smooth_path(
+            perimeter.smooth_path,
+            perimeter.extrusion_entity->is_loop(),
+            comment_perimeter,
+            speed,
+            region.config(),
+            perimeter.wipe_offset
+        );
         this->m_travel_obstacle_tracker.mark_extruded(
             perimeter.extrusion_entity, print_instance.object_layer_to_print_id, print_instance.instance_id
         );
