@@ -241,7 +241,7 @@ void AbstractRenderLayout::init()
 void AbstractRenderLayout::init_left_column()
 {
     m_layout_left_column = m_layout_main_bottom->emplace_back<Item>();
-    m_layout_left_column->set_min_size({200.f, 0.f});
+    m_layout_left_column->set_min_size({280.f, 0.f});
     m_layout_left_column->set_justify_content(YGJustifyFlexStart);
     m_layout_left_column->set_width(
         AppServices::instance().app_config().get<double>("layout_main_left_column_width")
