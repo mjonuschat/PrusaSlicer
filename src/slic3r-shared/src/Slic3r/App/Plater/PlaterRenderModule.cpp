@@ -700,7 +700,7 @@ void PlaterRenderModule::init_add_volume_menu(Yoga::Item* parent)
 {
     m_add_volumes_menu = parent->emplace_back<Yoga::Menu>(
         "add_volume_menu",
-        Yoga::Position::Right
+        Yoga::Position::Bottom
     );
 
     m_add_volumes_menu
