@@ -891,10 +891,14 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
                             slicing_params.trafo = volume_trafo;
                             Polygons bottom_slice = slice_mesh(painted, zs[0], slicing_params);
 
-                            top.erase(top.begin());
-                            bottom.erase(bottom.begin());
+                            if (!top.empty()) {
+                                top.erase(top.begin());
+                            }
 
-                            bottom[0] = union_(bottom[0], bottom_slice);
+                            if (!bottom.empty()) {
+                                bottom.erase(bottom.begin());
+                                bottom[0] = union_(bottom[0], bottom_slice);
+                            }
                         } else
                             slice_mesh_slabs(painted, zs, volume_trafo, max_top_layers > 0 ? &top : nullptr, max_bottom_layers > 0 ? &bottom : nullptr, throw_on_cancel_callback);
                         auto merge = [](std::vector<Polygons> &&src, std::vector<Polygons> &dst) {
