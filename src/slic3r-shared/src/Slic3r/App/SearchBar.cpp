@@ -8,6 +8,7 @@
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
+#include "Slic3r/App/SearchPopup.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -22,9 +23,15 @@ SearchBar::SearchBar(Biz::ProjectInteractor& project_interactor, Navigator& navi
     m_navigator(navigator),
     m_search_observable_list(
         std::make_shared<SearchObservableList>(project_interactor.preset_interactor())
-    ),
-    m_search_popup(m_project_interactor, m_navigator, m_search_observable_list.get())
+    )
 {
+    m_search_popup = emplace_back<SearchPopup>(
+        m_project_interactor,
+        m_navigator,
+        m_search_observable_list.get()
+    );
+    m_search_popup->attach_to_item(this, Position::Bottom, 15);
+
     set_gap(5);
     set_align_items(YGAlignCenter);
 
@@ -37,17 +44,17 @@ SearchBar::SearchBar(Biz::ProjectInteractor& project_interactor, Navigator& navi
     m_input_text->set_width(150);
     m_input_text->set_flags(ImGuiInputTextFlags_EscapeClearsAll);
 
-    m_input_text->callbacks().text_entered = [this] { m_search_popup.open_selected(); };
+    m_input_text->callbacks().text_entered = [this] { m_search_popup->open_selected(); };
     m_input_text->callbacks().text_changed = [this]
     {
         const std::string& text = m_input_text->text();
         m_search_observable_list->set_search_text(text);
         if (!text.empty()) {
-            m_search_popup.select_top();
-            m_search_popup.open();
-            m_search_popup.content_item()->bring_to_front();
+            m_search_popup->select_top();
+            m_search_popup->open();
+            m_search_popup->content_item()->bring_to_front();
         } else {
-            m_search_popup.close();
+            m_search_popup->close();
         }
     };
     m_input_text->callbacks().focus_lost   = [this] { update_open_popup(); };
@@ -55,12 +62,12 @@ SearchBar::SearchBar(Biz::ProjectInteractor& project_interactor, Navigator& navi
     {
         const std::string& text = m_input_text->text();
         if (!text.empty()) {
-            m_search_popup.select_top();
-            m_search_popup.open();
-            m_search_popup.content_item()->bring_to_front();
+            m_search_popup->select_top();
+            m_search_popup->open();
+            m_search_popup->content_item()->bring_to_front();
         }
     };
-    m_search_popup.content_item()->callbacks().hovered_changed = [this](bool)
+    m_search_popup->content_item()->callbacks().hovered_changed = [this](bool)
     { update_open_popup(); };
 
     Text* label = emplace_back<Text>(std::string{});
@@ -71,8 +78,6 @@ SearchBar::SearchBar(Biz::ProjectInteractor& project_interactor, Navigator& navi
 #endif
     label->set_margin(Margins(3, 0, 0, 0));
     label->set_font_type(Render::ImguiFontType::Italic);
-
-    m_search_popup.attach_to_item(this, Position::Bottom, 15);
 }
 
 void SearchBar::render(Yoga::Vec2f pos, Yoga::Vec2f size)
@@ -81,11 +86,11 @@ void SearchBar::render(Yoga::Vec2f pos, Yoga::Vec2f size)
 
     if (m_input_text->active()) {
         if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
-            m_search_popup.navigate_up();
+            m_search_popup->navigate_up();
         } else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-            m_search_popup.navigate_down();
+            m_search_popup->navigate_down();
         } else if (ImGui::IsKeyPressed(ImGuiKey_Enter)) {
-            m_search_popup.open_selected();
+            m_search_popup->open_selected();
         }
     }
 }
@@ -97,8 +102,8 @@ void SearchBar::focus_search()
 
 void SearchBar::update_open_popup()
 {
-    if (!m_search_popup.content_item()->hovered() && !m_input_text->has_focus()) {
-        m_search_popup.close();
+    if (!m_search_popup->content_item()->hovered() && !m_input_text->has_focus()) {
+        m_search_popup->close();
     }
 }
 

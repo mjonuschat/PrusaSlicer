@@ -89,13 +89,13 @@ void MenuItem::action_internal()
     if (m_sub_menu) {
         m_sub_menu->open();
     } else {
-        Item* parent = this->parent();
+        Item* parent = parent_item();
         while (parent) {
             Menu* parent_menu = dynamic_cast<Menu*>(parent);
             if (parent_menu) {
                 parent_menu->close();
             }
-            parent = parent->parent();
+            parent = parent->parent_item();
         }
     }
 }

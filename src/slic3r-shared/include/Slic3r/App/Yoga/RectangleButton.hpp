@@ -22,9 +22,9 @@ public:
 
     explicit RectangleButton(const std::string& tooltip = {});
 
-    virtual void append(ItemPtr child) override;
-    virtual void insert(ItemPtr child, size_t index) override;
-    virtual ItemPtr remove(Item* child) override;
+    virtual void append(ObjectPtr child) override;
+    virtual void insert(ObjectPtr child, size_t index) override;
+    virtual ObjectPtr remove(Object* child) override;
 
     const ImColor& background_color() const;
     void set_background_color(const ImColor& color);

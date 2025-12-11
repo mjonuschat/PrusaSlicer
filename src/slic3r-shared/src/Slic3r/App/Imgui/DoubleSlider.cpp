@@ -73,30 +73,27 @@ void Control::render(Domain::Vec2f pos, Domain::Vec2f size)
         processed_mouse_wheel =ImGui::GetIO().MouseWheel != 0.0f;
         if (temp_higher_pos != higher_pos) {
             m_higher_pos = higher_pos;
-            if (m_combine_thumbs)
+            if (m_combine_thumbs) {
                 m_lower_pos = m_higher_pos;
+            }
         }
-        if (temp_lower_pos != lower_pos)
+        if (temp_lower_pos != lower_pos) {
             m_lower_pos = lower_pos;
-        m_value_changed = true;
+        }
+        if (m_callbacks.value_changed) {
+            m_callbacks.value_changed();
+        }
     }
 
-    if (callbacks().extra_render)
+    if (callbacks().extra_render) {
         callbacks().extra_render();
+    }
 
-    if (processed_mouse_wheel && callbacks().request_extra_frame)
+    if (processed_mouse_wheel && callbacks().request_extra_frame) {
         callbacks().request_extra_frame();
+    }
 
     render_item_end(pos, size);
-}
-
-void Control::process_events(Domain::Vec2f pos, Domain::Vec2f size)
-{
-    if (m_value_changed) {
-        if (m_callbacks.value_changed)
-            m_callbacks.value_changed();
-        m_value_changed = false;
-    }
 }
 
 int Control::active_pos() const

@@ -392,7 +392,7 @@ ObjectList::Callbacks& ObjectList::callbacks()
 
 ObjectList::ObjectList(Biz::ProjectInteractor* project_interactor, ObjectList::Mode mode) : Item()
 {
-    set_item_name("ObjectList");
+    set_object_name("ObjectList");
     set_orientation(Yoga::Orientation::Vertical);
     init(project_interactor, mode);
 }

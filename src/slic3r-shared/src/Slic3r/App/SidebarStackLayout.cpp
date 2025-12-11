@@ -45,17 +45,17 @@ bool SidebarStackLayout::contains_gizmo(Scene::ToolType type) const
     return m_gizmo_map.find(type) != m_gizmo_map.cend();
 }
 
-void SidebarStackLayout::prepend(Yoga::ItemPtr child)
+void SidebarStackLayout::prepend(Yoga::ObjectPtr child)
 {
     StackLayout::prepend(std::move(child));
 }
 
-void SidebarStackLayout::append(Yoga::ItemPtr child)
+void SidebarStackLayout::append(Yoga::ObjectPtr child)
 {
     StackLayout::append(std::move(child));
 }
 
-void SidebarStackLayout::insert(Yoga::ItemPtr child, size_t index)
+void SidebarStackLayout::insert(Yoga::ObjectPtr child, size_t index)
 {
     StackLayout::insert(std::move(child), index);
 }

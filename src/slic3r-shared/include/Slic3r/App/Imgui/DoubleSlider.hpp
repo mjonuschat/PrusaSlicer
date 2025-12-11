@@ -42,7 +42,6 @@ public:
     ~Control() = default;
 
     void render(Domain::Vec2f pos, Domain::Vec2f size) override final;
-    void process_events(Domain::Vec2f pos, Domain::Vec2f size) override;
 
     Callbacks& callbacks() { return m_callbacks; }
 
@@ -184,7 +183,6 @@ private:
     DrawScrollLineCallback m_cb_draw_scroll_line { nullptr };
     ExtraDrawCallback m_cb_extra_draw{ nullptr };
 
-    bool m_value_changed{ false };
     Callbacks m_callbacks;
 };
 

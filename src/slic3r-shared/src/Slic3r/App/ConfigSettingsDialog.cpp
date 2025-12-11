@@ -131,7 +131,7 @@ void ConfigSettingsDialog::ConfigTab::navigate_to_item(const Domain::ConfigItem*
 
 void ConfigSettingsDialog::ConfigTab::clear_navigation()
 {
-    for (size_t index = 0; index < tab->pages_stack_layout->item_count(); ++index) {
+    for (size_t index = 0; index < tab->pages_stack_layout->object_count(); ++index) {
         dynamic_cast<ConfigSubcategoryListView*>(tab->pages_stack_layout->get_item(index))
             ->clear_navigation();
     }

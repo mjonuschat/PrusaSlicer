@@ -4,7 +4,6 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/SearchPopup.hpp"
 #include "Slic3r/App/SearchObservableList.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 
@@ -19,6 +18,7 @@ class InputText;
 namespace Slic3r::App {
 
 class Navigator;
+class SearchPopup;
 
 class SearchBar : public Yoga::Item
 {
@@ -37,7 +37,7 @@ private:
     Navigator& m_navigator;
 
     Biz::UnsharedPointer<SearchObservableList> m_search_observable_list;
-    SearchPopup m_search_popup;
+    SearchPopup* m_search_popup{nullptr};
 
     Yoga::InputText* m_input_text{nullptr};
 };

@@ -119,7 +119,6 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
 
     target_link_libraries(slic3r-biz-algorithms-tests PRIVATE slic3r-biz-algorithms Catch2::Catch2WithMain TBB::tbb)
 
-    set(_catch_args "exclude:[NotWorking] exclude:[Slow]")
     list(APPEND _catch_args "${CATCH_EXTRA_ARGS}")
     add_test(NAME slic3r-biz-algorithms-tests
         COMMAND slic3r-biz-algorithms-tests ${_catch_args}

@@ -8,31 +8,33 @@ namespace Slic3r::App::Yoga {
 
 StackLayout::StackLayout()
 {
-    set_item_name("StackLayout");
+    set_object_name("StackLayout");
 }
 
-void StackLayout::insert(ItemPtr child, size_t index)
+void StackLayout::insert(ObjectPtr child, size_t index)
 {
+    Item* item = dynamic_cast<Item*>(child.get());
+    ASSERT(item, "StackLayout only supports Items");
     if (!m_children.empty()) {
-        child->set_visible(false);
+        item->set_visible(false);
     }
 
     Item::insert(std::move(child), index);
 }
 
-ItemPtr StackLayout::remove(Item* child)
+ObjectPtr StackLayout::remove(Object* child)
 {
     std::optional<size_t> index = index_of(child);
     ASSERT(index.has_value());
 
-    ItemPtr item = Item::remove(child);
+    ObjectPtr item = Item::remove(child);
 
     if (m_current_index >= index.value()) {
         m_current_index--;
     }
-    m_current_index = std::clamp(m_current_index, size_t{0}, item_count() - 1);
+    m_current_index = std::clamp(m_current_index, size_t{0}, object_count() - 1);
     // It is valid that StackLayout has no children, therefore we have to check if any children exists
-    if (item_count()) {
+    if (object_count()) {
         get_item(m_current_index)->set_visible(true);
     }
 
@@ -50,11 +52,11 @@ void StackLayout::set_current_index(size_t current_index)
         return;
     }
 
-    ASSERT(current_index < item_count());
+    ASSERT(current_index < object_count());
 
     m_current_index = current_index;
 
-    for (size_t index = 0; index < item_count(); ++index) {
+    for (size_t index = 0; index < object_count(); ++index) {
         get_item(index)->set_visible(m_current_index == index);
     }
 }

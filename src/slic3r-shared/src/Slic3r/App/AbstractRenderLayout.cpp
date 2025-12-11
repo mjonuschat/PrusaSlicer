@@ -89,7 +89,7 @@ void AbstractRenderLayout::update_left_separator_enable()
     // SplitLayout left column separator enable
 
     bool enabled = false;
-    for (size_t child_index = 0; child_index < m_layout_left_column->item_count(); ++child_index) {
+    for (size_t child_index = 0; child_index < m_layout_left_column->object_count(); ++child_index) {
         CollapsibleWindow* window =
             dynamic_cast<CollapsibleWindow*>(m_layout_left_column->get_item(child_index));
         if (window && !window->collapsed()) {
@@ -235,7 +235,8 @@ void AbstractRenderLayout::init()
 
     init_right_column();
 
-    m_preferences_dialog->attach_to_center(&m_layout_main);
+    m_layout_main.append(m_preferences_dialog.release());
+    m_preferences_dialog->attach_to_center();
 }
 
 void AbstractRenderLayout::init_left_column()
@@ -270,7 +271,7 @@ void AbstractRenderLayout::init_middle_column()
     m_layout_middle_column->set_orientation(Orientation::Vertical);
     m_layout_middle_column->set_gap(5);
     m_layout_middle_column->set_flex_grow(1);
-    m_layout_middle_column->set_item_name("MiddleColumn");
+    m_layout_middle_column->set_object_name("MiddleColumn");
 
     init_toolbar_row();
 

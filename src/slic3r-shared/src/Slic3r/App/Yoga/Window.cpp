@@ -12,7 +12,7 @@ namespace Slic3r::App::Yoga {
 
 Window::Window(const std::string& window_name) : Item(), m_alpha(GImGui->Style.Alpha)
 {
-    set_item_name(window_name.empty() ? "Window" : window_name);
+    set_object_name(window_name.empty() ? "Window" : window_name);
     set_padding(10);
 }
 
@@ -21,9 +21,12 @@ float Window::rounding() const
     return m_rounding;
 }
 
-void Window::set_rounding(float newRounding)
+void Window::set_rounding(float new_rounding)
 {
-    m_rounding = newRounding;
+    if (!Domain::fuzzy_compare(m_rounding, new_rounding)) {
+        m_rounding = new_rounding;
+        set_style_dirty();
+    }
 }
 
 int Window::flags() const
@@ -33,7 +36,10 @@ int Window::flags() const
 
 void Window::set_flags(int flags)
 {
-    m_flags = flags;
+    if (m_flags != flags) {
+        m_flags = flags;
+        set_style_dirty();
+    }
 }
 
 float Window::alpha() const
@@ -43,16 +49,19 @@ float Window::alpha() const
 
 void Window::set_alpha(float alpha)
 {
-    m_alpha = alpha;
+    if (!Domain::fuzzy_compare(m_alpha, alpha)) {
+        m_alpha = alpha;
+        set_style_dirty();
+    }
 }
 
 void Window::render(Vec2f pos, Vec2f size)
 {
     // Process begin of popup modal if needed
-    bool popup_modal_open{true};
     bool is_begin_popup_modal{false};
-    std::string popup_modal_wnd_name = m_item_name + "_popup_modal";
     if (m_is_modal) {
+        bool popup_modal_open{true};
+        const std::string popup_modal_wnd_name = object_name() + "_popup_modal";
         ImGui::OpenPopup(popup_modal_wnd_name.c_str());
         ImGui::SetNextWindowPos(Item::to_im(pos), ImGuiCond_Always);
         is_begin_popup_modal =
@@ -63,8 +72,6 @@ void Window::render(Vec2f pos, Vec2f size)
     }
 
     render_item_begin(pos, size);
-
-    render_debug(pos, size);
 
     ImVec2 next_pos;
     if (m_position_by_yoga || !m_requested_position.has_value()) {
@@ -93,7 +100,7 @@ void Window::render(Vec2f pos, Vec2f size)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
 
-    ImGui::Begin(m_item_name.c_str(), nullptr, m_flags);
+    ImGui::Begin(object_name().c_str(), nullptr, m_flags);
 
     ImVec2 pos_to_render = ImGui::GetWindowPos();
 
@@ -110,9 +117,7 @@ void Window::render(Vec2f pos, Vec2f size)
 
     render_body(window_pos, size);
 
-    for (const ItemPtr& child : std::as_const(m_children)) {
-        render_node(window_pos, child.get());
-    }
+    render_item_end(window_pos, size);
 
     bool hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
     if (m_hovered != hovered) {
@@ -142,20 +147,6 @@ void Window::render_body(Vec2f pos, Vec2f size) {}
 bool Window::is_in_window() const
 {
     return true;
-}
-
-void Window::process_events(Vec2f pos, Vec2f size)
-{
-    Item::process_events(m_position_by_yoga ? pos : m_last_pos, size);
-}
-
-void Window::set_style_dirty()
-{
-    if (m_parent) {
-        m_parent->set_style_dirty();
-    } else if (m_callbacks.set_dirty_requested) {
-        m_callbacks.set_dirty_requested();
-    }
 }
 
 Vec2f Window::get_item_size()

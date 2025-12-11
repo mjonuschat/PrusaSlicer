@@ -17,8 +17,8 @@ enum class ActionButtonsLayoutType
 
 struct ActionButtonsLayout
 {
-    Yoga::ItemPtr layout;
-    Yoga::Item* layout_raw;
+    Yoga::ObjectPtr layout;
+    Yoga::Object* layout_raw;
     Yoga::LayoutButton* primary_button;
     std::vector<Yoga::LayoutButton*> secondary_buttons;
     Yoga::LayoutButton* navigation_button;

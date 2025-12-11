@@ -20,6 +20,11 @@
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/App/RenderModuleHelper.hpp"
 #include "Slic3r/App/SidebarStackLayout.hpp"
+#include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
+#include "Slic3r/App/PrinterAddDialog.hpp"
+#include "Slic3r/App/PrintSettingsDialog.hpp"
+#include "Slic3r/App/MaterialSelectionDialog.hpp"
+#include "Slic3r/App/MaterialSettingsDialog.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -73,7 +78,13 @@ void PreviewRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
 static void render_imgui_debug_viewer(Wrapper& viewer)
 {
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
-    if (ImGui::Begin("Preview debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoFocusOnAppearing))
+    if (ImGui::Begin(
+            "Preview debug",
+            nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize
+                | ImGuiWindowFlags_NoResize
+                | ImGuiWindowFlags_NoFocusOnAppearing
+        ))
     {
         if (ImGui::Button("COG marker scale factor", {-1.0f, 0.0f}))
             viewer.set_scale_factor_popup_type(Biz::libpgcode::OptionType::CenterOfGravity);
@@ -122,8 +133,20 @@ static void render_imgui_debug_viewer(Wrapper& viewer)
 #if ENABLED_DEBUG_VIEWER_MODE
 static void render_imgui_debug_viewer_mode(Wrapper& viewer)
 {
-    ImGui::SetNextWindowPos({ImGui::GetMainViewport()->GetCenter().x, 0.0f}, ImGuiCond_Always, {0.5f, 0.0f});
-    if (ImGui::Begin("Type debug", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBackground))
+    ImGui::SetNextWindowPos(
+        {ImGui::GetMainViewport()->GetCenter().x, 0.0f},
+        ImGuiCond_Always,
+        {0.5f, 0.0f}
+    );
+    if (ImGui::Begin(
+            "Type debug",
+            nullptr,
+            ImGuiWindowFlags_NoTitleBar
+                | ImGuiWindowFlags_AlwaysAutoResize
+                | ImGuiWindowFlags_NoResize
+                | ImGuiWindowFlags_NoFocusOnAppearing
+                | ImGuiWindowFlags_NoBackground
+        ))
     {
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Mode:");
@@ -134,7 +157,10 @@ static void render_imgui_debug_viewer_mode(Wrapper& viewer)
         ImGui::SetNextItemWidth(100.0f);
         if (ImGui::Combo("##modes", &item_current, items, IM_ARRAYSIZE(items))) {
             viewer.reset();
-            viewer.set_mode((item_current == 0) ? FdmViewerWrapperMode::EditorGCode : FdmViewerWrapperMode::GCodeViewer);
+            viewer.set_mode(
+                (item_current == 0) ? FdmViewerWrapperMode::EditorGCode :
+                                      FdmViewerWrapperMode::GCodeViewer
+            );
         }
 
         ImGui::SameLine();
@@ -199,7 +225,10 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
             m_slider_gcode->set_visible(m_fdm_viewer.has_data());
         }
 
-        m_cube_view->set_camera_data(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+        m_cube_view->set_camera_data(
+            m_scene_presenter->scene().camera(),
+            m_scene_presenter->scene().camera_trackball()
+        );
 
         m_layout->render({m_screen_info.logical_width(), m_screen_info.logical_height()});
 
@@ -213,8 +242,9 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     } else {
         const libvgcode::Interval& visible_range = m_fdm_viewer.view_visible_range();
         const libvgcode::Interval& enabled_range = m_fdm_viewer.view_enabled_range();
-        bool gcode_window_enabled =
-            m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode && m_fdm_viewer.has_data() && visible_range[1] != enabled_range[1];
+        bool gcode_window_enabled = m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode
+            && m_fdm_viewer.has_data()
+            && visible_range[1] != enabled_range[1];
         m_fdm_viewer.set_tool_marker_enabled(gcode_window_enabled);
         WrapperLayoutData layout;
         // TODO: setup layout if needed
@@ -236,9 +266,17 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     render_imgui_debug_viewer_mode(m_fdm_viewer);
 #endif // ENABLED_DEBUG_VIEWER_MODE
 #if ENABLED_DEBUG_CAMERA
-    render_imgui_debug_camera(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+    render_imgui_debug_camera(
+        m_scene_presenter->scene().camera(),
+        m_scene_presenter->scene().camera_trackball()
+    );
 #endif // ENABLED_DEBUG_CAMERA
-    Scene::render_imgui_graphics_settings_debug_window(m_project_interactor.selected_project(), *m_device, *m_scene_presenter, *m_imgui_render);
+    Scene::render_imgui_graphics_settings_debug_window(
+        m_project_interactor.selected_project(),
+        *m_device,
+        *m_scene_presenter,
+        *m_imgui_render
+    );
 }
 
 void PreviewRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
@@ -257,7 +295,10 @@ void PreviewRenderModule::set_navigator(Navigator* navigator)
     m_render_module_navigator = navigator;
 }
 
-void PreviewRenderModule::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
+void PreviewRenderModule::on_selected_bed_instances_changed(
+    Domain::SelectionId project_id,
+    const Biz::Scene::BedSelection& selection
+)
 {
     DEBUG_ASSERT(m_project_interactor.selected_project_id() == project_id);
 
@@ -336,7 +377,11 @@ void PreviewRenderModule::set_camera_synch_data(const Platform::CameraSynchData&
     if (m_scene_presenter == nullptr)
         return;
 
-    synchronize_camera(data, m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+    synchronize_camera(
+        data,
+        m_scene_presenter->scene().camera(),
+        m_scene_presenter->scene().camera_trackball()
+    );
     m_scene_presenter->set_camera_synch_data(data);
 }
 
@@ -371,10 +416,15 @@ void PreviewRenderModule::set_object_list_collapsed(bool collapsed)
 void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager)
 {
     AbstractRenderModule::on_init(device, imgui_render, animation_manager);
-    Yoga::Item::set_imgui_render(&imgui_render); // Todo: move this somewhere where it is invoked once
-    m_scene_presenter = std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device, *m_animation_manager);
+    Yoga::Item::set_imgui_render(
+        &imgui_render
+    ); // Todo: move this somewhere where it is invoked once
+    m_scene_presenter =
+        std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device, *m_animation_manager);
 
-    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(this);
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
+        this
+    );
     m_project_interactor.fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>(this);
     m_project_interactor.sla_result_cache().add_listener<Biz::ISLAResultCacheChangedListener>(this);
     m_project_interactor.sla_object_cache().add_listener<Biz::ISLAObjectCacheChangedListener>(this);
@@ -630,9 +680,18 @@ void PreviewRenderModule::update_current_right_sidebar()
 
 void PreviewRenderModule::init_gizmos()
 {
-    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter, m_project_interactor, nullptr);
-    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(m_workbench, m_project_interactor, *m_scene_presenter,
-        *m_animation_manager);
+    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(
+        *m_device,
+        *m_scene_presenter,
+        m_project_interactor,
+        nullptr
+    );
+    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(
+        m_workbench,
+        m_project_interactor,
+        *m_scene_presenter,
+        *m_animation_manager
+    );
 }
 
 void PreviewRenderModule::init_viewers(Render::Device& device)
@@ -651,8 +710,10 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     base_settings.slider_layers_show_ruler_bg        = show_ruler_bg_in_dbl_slider;
     base_settings.slider_layers_show_estimated_times = show_estimated_times_in_dbl_slider;
     // set layers slider callbacks
-    base_settings.cb_slider_layers_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
-    base_settings.cb_request_extra_frames = std::bind(&PreviewRenderModule::on_request_extra_frames, this, std::placeholders::_1);
+    base_settings.cb_slider_layers_on_thumb_move =
+        std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
+    base_settings.cb_request_extra_frames =
+        std::bind(&PreviewRenderModule::on_request_extra_frames, this, std::placeholders::_1);
 
     if (m_sla_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory())
         && m_sla_viewer.set_settings(base_settings))
@@ -676,30 +737,54 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     settings.seq_top_layer_only               = seq_top_layer_only;
     // set wrapper callbacks
     settings.cb_invalidate_slice = std::bind(&PreviewRenderModule::on_invalidate_slice, this);
-    settings.cb_update_layers_slider = std::bind(&PreviewRenderModule::on_update_layers_slider, this, std::placeholders::_1);
-    settings.cb_gcode_view_type_changed = std::bind(&PreviewRenderModule::on_gcode_view_type_changed, this);
+    settings.cb_update_layers_slider =
+        std::bind(&PreviewRenderModule::on_update_layers_slider, this, std::placeholders::_1);
+    settings.cb_gcode_view_type_changed =
+        std::bind(&PreviewRenderModule::on_gcode_view_type_changed, this);
     // set layers slider callbacks
-    settings.cb_slider_layers_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
-    settings.cb_slider_layers_ticks_changed = std::bind(&PreviewRenderModule::on_slider_layers_ticks_changed, this);
-    settings.cb_slider_layers_auto_color_change = std::bind(&PreviewRenderModule::on_slider_layers_auto_color_change, this);
-    settings.cb_slider_layers_notify_empty_auto_color_change = std::bind(&PreviewRenderModule::on_slider_layers_notify_empty_auto_color_change, this);
-    settings.cb_slider_layers_notify_empty_color_change_gcode = std::bind(&PreviewRenderModule::on_slider_layers_notify_empty_color_change_gcode, this);
-    settings.cb_slider_layers_get_extruders_sequence = std::bind(&PreviewRenderModule::on_slider_layers_get_extruders_sequence, this, std::placeholders::_1);
-    settings.cb_slider_layers_show_info_msg = std::
-        bind(&PreviewRenderModule::on_slider_layers_show_info_msg, this, std::placeholders::_1, std::placeholders::_2);
-    settings.cb_slider_layers_get_used_extruders_in_print = std::
-        bind(&PreviewRenderModule::on_slider_layers_get_used_extruders_in_print, this, std::placeholders::_1);
-    settings.cb_slider_layers_app_config_changed = std::
-        bind(&PreviewRenderModule::on_slider_layers_app_config_changed, this, std::placeholders::_1, std::placeholders::_2);
+    settings.cb_slider_layers_on_thumb_move =
+        std::bind(&PreviewRenderModule::on_slider_layers_on_thumb_move, this);
+    settings.cb_slider_layers_ticks_changed =
+        std::bind(&PreviewRenderModule::on_slider_layers_ticks_changed, this);
+    settings.cb_slider_layers_auto_color_change =
+        std::bind(&PreviewRenderModule::on_slider_layers_auto_color_change, this);
+    settings.cb_slider_layers_notify_empty_auto_color_change =
+        std::bind(&PreviewRenderModule::on_slider_layers_notify_empty_auto_color_change, this);
+    settings.cb_slider_layers_notify_empty_color_change_gcode =
+        std::bind(&PreviewRenderModule::on_slider_layers_notify_empty_color_change_gcode, this);
+    settings.cb_slider_layers_get_extruders_sequence = std::bind(
+        &PreviewRenderModule::on_slider_layers_get_extruders_sequence,
+        this,
+        std::placeholders::_1
+    );
+    settings.cb_slider_layers_show_info_msg = std::bind(
+        &PreviewRenderModule::on_slider_layers_show_info_msg,
+        this,
+        std::placeholders::_1,
+        std::placeholders::_2
+    );
+    settings.cb_slider_layers_get_used_extruders_in_print = std::bind(
+        &PreviewRenderModule::on_slider_layers_get_used_extruders_in_print,
+        this,
+        std::placeholders::_1
+    );
+    settings.cb_slider_layers_app_config_changed = std::bind(
+        &PreviewRenderModule::on_slider_layers_app_config_changed,
+        this,
+        std::placeholders::_1,
+        std::placeholders::_2
+    );
     // set gcode slider callbacks
-    settings.cb_slider_gcode_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_gcode_on_thumb_move, this);
+    settings.cb_slider_gcode_on_thumb_move =
+        std::bind(&PreviewRenderModule::on_slider_gcode_on_thumb_move, this);
 
     if (mode == FdmViewerWrapperMode::EditorGCode || mode == FdmViewerWrapperMode::EditorPreGCode) {
         // legend's custom options
         CustomOption& shells_option = settings.custom_options.emplace_back(CustomOption());
         shells_option.name          = _u8L("Shells");
         shells_option.icon          = Render::Icon::LegendShells;
-        shells_option.cb_action = std::bind(&PreviewRenderModule::on_legend_shells_action, this, std::placeholders::_1);
+        shells_option.cb_action =
+            std::bind(&PreviewRenderModule::on_legend_shells_action, this, std::placeholders::_1);
     }
 
     if (m_fdm_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory())
@@ -726,11 +811,14 @@ void PreviewRenderModule::init_scene_layout()
     );
 
     // >> This code is same for Plater/PreviewRenderModule
-    m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this, *m_thumbnail_store, *m_render_module_navigator);
-
-    m_object_list = Passthrough(
-        std::make_unique<ObjectListWindow>(&m_project_interactor, false)
+    m_top_bar = std::make_unique<TopBar>(
+        &m_project_interactor,
+        this,
+        *m_thumbnail_store,
+        *m_render_module_navigator
     );
+
+    m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, false));
     m_object_list->set_collapsed(m_render_module_navigator->object_list_collapsed());
 
     m_cube_view   = std::make_unique<CubeView>();
@@ -817,10 +905,12 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendToolChanges,
         to_string(OptionType::ToolChanges),
         "",
-        {.action = [this]() {
-            m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker);
-            update_scene_aabb();
-        }},
+        {.action =
+             [this]()
+         {
+             m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker);
+             update_scene_aabb();
+         }},
         m_fdm_viewer.is_option_visible(OptionType::ToolChanges)
     );
 
@@ -856,7 +946,8 @@ void PreviewRenderModule::init_scene_layout()
         Render::Icon::LegendCOG,
         to_string(OptionType::CenterOfGravity),
         "",
-        {.action = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CenterOfGravity); }},
+        {.action = [this]()
+         { m_fdm_viewer.toggle_option_visibility(OptionType::CenterOfGravity); }},
         m_fdm_viewer.is_option_visible(OptionType::CenterOfGravity)
     );
 
@@ -878,7 +969,8 @@ void PreviewRenderModule::init_scene_layout()
          .checked_changed =
              [this](bool checked)
          {
-             return m_viewer == &m_fdm_viewer && m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer;
+             return m_viewer == &m_fdm_viewer
+                 && m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer;
          }}
     );
 
@@ -926,7 +1018,8 @@ void PreviewRenderModule::update_toolbar_visibility()
     const OptionTypes& options = m_fdm_viewer.options();
     auto fdm_has_option        = [&](OptionType type)
     { return std::find(options.begin(), options.end(), type) != options.end(); };
-    const bool fdm_has_gcode = m_fdm_viewer.has_data() && m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode;
+    const bool fdm_has_gcode =
+        m_fdm_viewer.has_data() && m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode;
 
     m_layout->middle_toolbar()->set_visible(fdm_has_gcode);
     m_button_travels->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Travels));
@@ -943,7 +1036,7 @@ void PreviewRenderModule::update_toolbar_visibility()
         ->set_visible(fdm_has_gcode /*m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer*/);
     m_button_wipes->set_visible(fdm_has_gcode);
 
-    //m_button_gcode_inspect
+    // m_button_gcode_inspect
 }
 
 void PreviewRenderModule::init_dialog_navigation()
@@ -953,17 +1046,17 @@ void PreviewRenderModule::init_dialog_navigation()
     m_dialog_navigation.insert_dialog(
         &m_sidebar_bed->printer_add_dialog(),
         &m_sidebar_bed->logical_printer_settings_dialog()
-        );
+    );
     m_dialog_navigation.insert_dialog(
         &m_sidebar_bed->logical_printer_settings_dialog().printer_advanced_settings_dialog(),
         &m_sidebar_bed->logical_printer_settings_dialog()
-        );
+    );
 
     m_dialog_navigation.insert_dialog(&m_sidebar_bed->material_selection_dialog());
     m_dialog_navigation.insert_dialog(
         &m_sidebar_bed->material_selection_dialog().material_settings_dialog(),
         &m_sidebar_bed->material_selection_dialog()
-        );
+    );
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
     m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
@@ -971,14 +1064,20 @@ void PreviewRenderModule::init_dialog_navigation()
 
 void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
 {
-    std::optional<Biz::FDMResultRef> fdm_result{m_project_interactor.fdm_result_cache().get_result(id)};
-    m_scene_presenter->update_bed_instance_error_state(id, fdm_result.has_value() && !fdm_result->get().contained_in_bed);
+    std::optional<Biz::FDMResultRef> fdm_result{
+        m_project_interactor.fdm_result_cache().get_result(id)
+    };
+    m_scene_presenter->update_bed_instance_error_state(
+        id,
+        fdm_result.has_value() && !fdm_result->get().contained_in_bed
+    );
 
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
 
-    if (m_viewer == &m_sla_viewer)
+    if (m_viewer == &m_sla_viewer) {
         update_viewer();
+    }
 
     if (m_viewer != &m_fdm_viewer) {
         // Safety guard to avoid updating m_fdm_viewer when it is not the active viewer.
@@ -1012,11 +1111,9 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
 
     const GCodeEvents& gcode_events = m_fdm_viewer.gcode_events();
     m_fdm_viewer.set_view_type(
-        m_fdm_viewer.used_extruders_count() > 1 ?
-            ViewType::Tool :
-            gcode_events.empty() ?
-            ViewType::FeatureType :
-            ViewType::ColorPrint
+        m_fdm_viewer.used_extruders_count() > 1 ? ViewType::Tool :
+            gcode_events.empty()                ? ViewType::FeatureType :
+                                                  ViewType::ColorPrint
     );
 
     update_scene_aabb();
@@ -1028,8 +1125,13 @@ void PreviewRenderModule::update_fdm_viewer_data(const Domain::SlicingId id)
 
 void PreviewRenderModule::update_sla_viewer_result_data(const Domain::SlicingId id)
 {
-    std::optional<Biz::SLAResultRef> sla_result{m_project_interactor.sla_result_cache().get_result(id)};
-    m_scene_presenter->update_bed_instance_error_state(id, sla_result.has_value() && !sla_result->get().contained_in_bed);
+    std::optional<Biz::SLAResultRef> sla_result{
+        m_project_interactor.sla_result_cache().get_result(id)
+    };
+    m_scene_presenter->update_bed_instance_error_state(
+        id,
+        sla_result.has_value() && !sla_result->get().contained_in_bed
+    );
 
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
@@ -1049,24 +1151,34 @@ void PreviewRenderModule::update_sla_viewer_result_data(const Domain::SlicingId 
     if (!sla_result) {
         m_sla_viewer.reset_result();
     } else {
-        const Domain::BedInstance* bed_instance =
-            m_project_interactor.workbench().project(id.project_id).find_bed_instance_by_id(id.bed_instance_id);
+        const Domain::BedInstance* bed_instance = m_project_interactor.workbench()
+                                                      .project(id.project_id)
+                                                      .find_bed_instance_by_id(id.bed_instance_id);
         ASSERT(bed_instance != nullptr);
         m_sla_viewer.load_from_result(sla_result->get(), bed_instance->transformation.get_matrix());
     }
 }
 
-void PreviewRenderModule::update_sla_viewer_object_data(const Domain::SlicingId id, Domain::ObjectID instance_id)
+void PreviewRenderModule::update_sla_viewer_object_data(
+    const Domain::SlicingId id,
+    Domain::ObjectID instance_id
+)
 {
     if (m_project_interactor.selected_bed_slicing_id() != id)
         return;
 
-    const std::optional<Biz::SLAObjectRef> sla_object_result{m_project_interactor.sla_object_cache().get_instance({id, instance_id})};
+    const std::optional<Biz::SLAObjectRef> sla_object_result{
+        m_project_interactor.sla_object_cache().get_instance({id, instance_id})
+    };
     if (sla_object_result) {
-        const Domain::BedInstance* bed_instance =
-            m_project_interactor.workbench().project(id.project_id).find_bed_instance_by_id(id.bed_instance_id);
+        const Domain::BedInstance* bed_instance = m_project_interactor.workbench()
+                                                      .project(id.project_id)
+                                                      .find_bed_instance_by_id(id.bed_instance_id);
         ASSERT(bed_instance != nullptr);
-        m_sla_viewer.load_from_object(sla_object_result->get(), bed_instance->transformation.get_matrix());
+        m_sla_viewer.load_from_object(
+            sla_object_result->get(),
+            bed_instance->transformation.get_matrix()
+        );
     }
     else
         m_sla_viewer.reset_object(instance_id);
@@ -1080,7 +1192,8 @@ void PreviewRenderModule::update_sla_viewer_data(const Domain::SlicingId id)
     m_sla_viewer.reset();
     update_sla_viewer_result_data(id);
 
-    const std::vector<Slic3r::Domain::ObjectID> object_ids = m_project_interactor.sla_object_cache().get_object_ids(id);
+    const std::vector<Slic3r::Domain::ObjectID> object_ids =
+        m_project_interactor.sla_object_cache().get_object_ids(id);
 
     for (const Slic3r::Domain::ObjectID& obj_id : object_ids) {
         update_sla_viewer_object_data(id, obj_id);
@@ -1167,7 +1280,10 @@ std::set<int> PreviewRenderModule::on_slider_layers_get_used_extruders_in_print(
     return ret;
 }
 
-void PreviewRenderModule::on_slider_layers_app_config_changed(const std::string& key, const std::string& val)
+void PreviewRenderModule::on_slider_layers_app_config_changed(
+    const std::string& key,
+    const std::string& val
+)
 {
     if (key == "seq_top_layer_only") {
         bool active   = m_fdm_viewer.is_top_layer_only_view_range();
@@ -1195,13 +1311,15 @@ void PreviewRenderModule::on_legend_shells_action(bool visible)
 void PreviewRenderModule::update_bed_instances()
 {
     m_scene_presenter->remove_all_bed_instances();
-    const Plater::BedThumbnailTextures& store_thumbnails = m_thumbnail_store->projects.selected().thumbnails;
+    const Plater::BedThumbnailTextures& store_thumbnails =
+        m_thumbnail_store->projects.selected().thumbnails;
     Domain::BedRefs beds;
     beds.reserve(store_thumbnails.size());
     Plater::BedThumbnailTextures thumbnails;
     thumbnails.reserve(store_thumbnails.size());
     for (const auto& t : store_thumbnails) {
-        const auto cc = m_workbench.project(t.project_id).find_config_container_by_bed_instance_id(t.bed_instance_id);
+        const auto cc = m_workbench.project(t.project_id)
+                            .find_config_container_by_bed_instance_id(t.bed_instance_id);
         if (cc != nullptr) {
             beds.emplace_back(cc->id().id, t.bed_instance_id);
             thumbnails.emplace_back(t);
@@ -1250,15 +1368,18 @@ void PreviewRenderModule::update_scene_aabb()
 {
     if (m_viewer == &m_fdm_viewer) {
         Scene::Scene& scene = m_scene_presenter->scene();
-        Scene::Node* node = scene.root().query_first([](const Scene::Node* n) {
-            const libvgcode::GCodeNodeTag* tag = n->tag_of_type<libvgcode::GCodeNodeTag>();
-            return tag != nullptr && tag->type == libvgcode::GCodeElementType::ToolMarker;
-        }, true);
+        Scene::Node* node   = scene.root().query_first(
+            [](const Scene::Node* n)
+            {
+                const libvgcode::GCodeNodeTag* tag = n->tag_of_type<libvgcode::GCodeNodeTag>();
+                return tag != nullptr && tag->type == libvgcode::GCodeElementType::ToolMarker;
+            },
+            true
+        );
         DEBUG_ASSERT(node != nullptr);
 
-        bool enabled =
-            m_fdm_viewer.tool_marker_enabled() &&
-            m_fdm_viewer.is_option_visible(Biz::libpgcode::OptionType::ToolMarker);
+        bool enabled = m_fdm_viewer.tool_marker_enabled()
+            && m_fdm_viewer.is_option_visible(Biz::libpgcode::OptionType::ToolMarker);
         node->set_enabled(enabled);
         if (enabled && m_fdm_viewer.current_vertex_id() > 0) {
             Scene::Transform xtrafo = Scene::Transform::Identity();

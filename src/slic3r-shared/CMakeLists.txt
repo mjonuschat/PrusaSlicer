@@ -472,8 +472,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/InputTextWithSpin.cpp
         include/Slic3r/App/Yoga/Validator.hpp
         src/Slic3r/App/Yoga/Validator.cpp
-        include/Slic3r/App/Yoga/Scaler.hpp
-        src/Slic3r/App/Yoga/Scaler.cpp
         include/Slic3r/App/Yoga/ComboBox.hpp
         src/Slic3r/App/Yoga/ComboBox.cpp
         include/Slic3r/App/Yoga/ItemEvents.hpp
@@ -1001,7 +999,7 @@ target_link_libraries(slic3r-shared PUBLIC
         TBB::tbb
         TBB::tbbmalloc
         pugixml::pugixml
-		range-v3::range-v3
+        range-v3::range-v3
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)
@@ -1079,6 +1077,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/App/Yoga/TestRootItem.hpp
         test/Slic3r/App/Yoga/SegmentedControlTests.cpp
         test/Slic3r/App/Yoga/SplitLayoutTests.cpp
+        test/Slic3r/App/Yoga/ObjectTests.cpp
 
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/ExportGcodeTests.cpp

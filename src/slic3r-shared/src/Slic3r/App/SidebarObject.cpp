@@ -10,6 +10,7 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
+#include "Slic3r/App/OverrideSettingsDialog.hpp"
 
 #include <fmt/format.h>
 
@@ -21,9 +22,10 @@ namespace Slic3r::App {
 SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     Window("SidebarObject"),
     m_project_interactor(project_interactor),
-    m_scene_selection_changed_listener_scope(project_interactor.scene_interactor(), *this),
-    m_override_settings_dialog(m_project_interactor)
+    m_scene_selection_changed_listener_scope(project_interactor.scene_interactor(), *this)
 {
+    m_override_settings_dialog = emplace_back<OverrideSettingsDialog>(m_project_interactor);
+
     set_orientation(Orientation::Vertical);
     set_min_size({YGUndefined, 60});
     set_flex_grow(1);
@@ -64,10 +66,10 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     m_add_settings_button->set_self_align(YGAlignCenter);
     m_add_settings_button->callbacks().action = [this]
     {
-        if (m_override_settings_dialog.opened()) {
-            m_override_settings_dialog.close();
+        if (m_override_settings_dialog->opened()) {
+            m_override_settings_dialog->close();
         } else {
-            m_override_settings_dialog.open();
+            m_override_settings_dialog->open();
         }
     };
     m_add_settings_button->set_flex_shrink(0);
@@ -84,10 +86,10 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
 
     m_override_group_filter->set_source_model(object_settings_observable_list);
 
-    m_override_settings_dialog.attach_to_item(this, Position::Left);
-    m_override_settings_dialog.callbacks().opened = [this]
+    m_override_settings_dialog->attach_to_item(this, Position::Left);
+    m_override_settings_dialog->callbacks().opened = [this]
     { m_add_settings_button->set_checked(true); };
-    m_override_settings_dialog.callbacks().closed = [this]
+    m_override_settings_dialog->callbacks().closed = [this]
     { m_add_settings_button->set_checked(false); };
 }
 
@@ -112,7 +114,7 @@ void SidebarObject::on_scene_selection_changed(
 void SidebarObject::visible_updated_internal()
 {
     if (!is_visible()) {
-        m_override_settings_dialog.close();
+        m_override_settings_dialog->close();
     }
 }
 

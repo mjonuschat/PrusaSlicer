@@ -33,9 +33,9 @@ public:
 
 private:
     // Intentionally hidden
-    void prepend(Yoga::ItemPtr child) override;
-    void append(Yoga::ItemPtr child) override;
-    void insert(Yoga::ItemPtr child, size_t index) override;
+    void prepend(Yoga::ObjectPtr child) override;
+    void append(Yoga::ObjectPtr child) override;
+    void insert(Yoga::ObjectPtr child, size_t index) override;
 
 private:
     using GizmoMap = std::map<Scene::ToolType, Item*>;

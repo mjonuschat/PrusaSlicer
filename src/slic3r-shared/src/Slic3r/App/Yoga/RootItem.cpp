@@ -14,12 +14,20 @@ namespace Slic3r::App::Yoga {
 
 RootItem::RootItem() : m_loop_events(*this)
 {
-    set_item_name("RootItem");
+    set_object_name("RootItem");
+}
+
+RootItem::~RootItem()
+{
+    // Manually mark all popups as closed (RootItem is deleted first)
+    for (Popup* popup : std::as_const(m_popups)) {
+        popup->close();
+    }
 }
 
 void RootItem::render(Vec2f pos, Vec2f size)
 {
-    ASSERT(!m_parent);
+    ASSERT(!parent());
 
     if (size.isZero()) {
         return;
@@ -30,7 +38,6 @@ void RootItem::render(Vec2f pos, Vec2f size)
     style_node();
     m_style_dirty = false;
     resize(size);
-    process_events(pos, size);
     if (m_style_dirty) {
         style_node();
         resize(size);
@@ -40,12 +47,12 @@ void RootItem::render(Vec2f pos, Vec2f size)
 
     render_item_end(pos, size);
 
-    // Render can (and does) call open_popup which in turn calls m_popups.push_back()
-    // and so we are creating an immutable copy.
-    // TODO: a deffered popup insert/close should be implemented
+    // // Render can (and does) call open_popup which in turn calls m_popups.push_back()
+    // // and so we are creating an immutable copy.
+    // // TODO: a deffered popup insert/close should be implemented
     const Popups popups = m_popups;
     for (Popup* popup : popups) {
-        popup->render(size);
+        popup->render({}, size);
     }
 
     render_debug_overlay();
@@ -87,8 +94,8 @@ void RootItem::render_debug_overlay()
         draw_list->AddRect(rect.Min, rect.Max, IM_COL32(255, 0, 0, 128));
 
         std::string text;
-        if (!m_debug_item->item_name().empty()) {
-            text += m_debug_item->item_name() + " ";
+        if (!m_debug_item->object_name().empty()) {
+            text += m_debug_item->object_name() + " ";
         }
         text += fmt::format(
             "{}x{}px at pos [{}]:[{}]",
@@ -141,19 +148,6 @@ void RootItem::style_node()
 
     for (Popup* popup : std::as_const(m_popups)) {
         popup->style_node();
-    }
-}
-
-void RootItem::process_events(Vec2f pos, Vec2f size)
-{
-    Item::process_events(pos, size);
-
-    // Number of popups can be changed inside process events
-    // and so we are creating an immutable copy
-    // TODO: a deffered popup insert/close should be implemented
-    const Popups popups = m_popups;
-    for (Popup* popup : popups) {
-        popup->process_events(pos, size);
     }
 }
 

@@ -11,8 +11,9 @@
 
 namespace Slic3r::App::Yoga {
 
-InputTextField::InputTextField(const std::string& name) : m_tooltip(this, "", "")
+InputTextField::InputTextField(const std::string& name)
 {
+    m_tooltip = emplace_back<Tooltip>(this, "", "");
     set_padding(1);
     set_disabled_fill(ImColor(32, 32, 32));
     m_input_text = emplace_back<InputText>(name);
@@ -22,8 +23,8 @@ InputTextField::InputTextField(const std::string& name) : m_tooltip(this, "", ""
 
     m_input_text->callbacks().hovered_changed = [this](bool hovered)
     {
-        if (!m_tooltip.text().empty()) {
-            hovered ? m_tooltip.open() : m_tooltip.close();
+        if (!m_tooltip->text().empty()) {
+            hovered ? m_tooltip->open() : m_tooltip->close();
         }
         update_fill();
     };
@@ -93,12 +94,12 @@ void InputTextField::set_validator(std::unique_ptr<Validator> validator)
 
 void InputTextField::set_tooltip(const std::string& tooltip)
 {
-    m_tooltip.set_text(tooltip);
+    m_tooltip->set_text(tooltip);
 }
 
 void InputTextField::set_tooltip_position(Position position)
 {
-    m_tooltip.set_preferred_position(position);
+    m_tooltip->set_preferred_position(position);
 }
 
 Render::ImguiFontType InputTextField::font_type() const

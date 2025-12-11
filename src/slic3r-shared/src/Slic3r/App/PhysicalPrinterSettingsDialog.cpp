@@ -24,7 +24,8 @@ PhysicalPrinterSettingsDialog::PhysicalPrinterSettingsDialog(
 ) :
     Dialog({"Physical printer"}, "PhysicalPrinterSettingsDialog"),
     m_printer_add_dialog(printer_add_dialog),
-    m_navigator(navigator)
+    m_navigator(navigator),
+    m_list_physical_printers(std::make_shared<Biz::ObservableList<PhysicalPrinter>>())
 {
     content_item()->set_width(350);
 
@@ -39,11 +40,6 @@ PhysicalPrinterSettingsDialog::PhysicalPrinterSettingsDialog(
     create_page_settings();
 
     m_stack_layout->set_current_index(0);
-}
-
-PhysicalPrinterSettingsDialog::~PhysicalPrinterSettingsDialog()
-{
-    m_printer_list_view->set_source_list(nullptr);
 }
 
 void PhysicalPrinterSettingsDialog::close_action()
@@ -76,7 +72,7 @@ void PhysicalPrinterSettingsDialog::create_page_list()
     ScrollArea* scroll_area = m_page_list->emplace_back<ScrollArea>();
     scroll_area->set_max_size({YGUndefined, 300});
 
-    m_list_physical_printers.reset(
+    m_list_physical_printers->reset(
         {{"Mia", "Core one"},
          {"Isabella", "Core one"},
          {"Elsa", "Next"},
@@ -89,24 +85,29 @@ void PhysicalPrinterSettingsDialog::create_page_list()
     auto factory = Yoga::ViewFactory<
         PhysicalPrinterSettingsButton,
         PhysicalPrinter,
-        PhysicalPrinterSettingsButton::FnIndexClicked>([this](size_t index) {
-        m_stack_layout->set_current_index(1);
-        for (size_t button_index = 0; button_index < m_printer_list_view->item_count(); ++button_index)
+        PhysicalPrinterSettingsButton::FnIndexClicked>(
+        [this](size_t index)
         {
-            PhysicalPrinterSettingsButton* button = dynamic_cast<PhysicalPrinterSettingsButton*>(
-                m_printer_list_view->get_item(button_index)
-            );
-            ASSERT(button);
-            button->set_checked(index == button_index);
+            m_stack_layout->set_current_index(1);
+            for (size_t button_index = 0; button_index < m_printer_list_view->object_count();
+                 ++button_index)
+            {
+                PhysicalPrinterSettingsButton* button =
+                    dynamic_cast<PhysicalPrinterSettingsButton*>(
+                        m_printer_list_view->get_item(button_index)
+                    );
+                ASSERT(button);
+                button->set_checked(index == button_index);
+            }
         }
-    });
+    );
     m_printer_list_view = scroll_area->emplace_back<PrinterListView>(std::move(factory));
     m_printer_list_view->set_flex_grow(1);
     m_printer_list_view->set_padding(Paddings(0, 0, 10, 0));
     m_printer_list_view->set_margin(Margins(0, 0, -10, 0));
     m_printer_list_view->set_gap(8);
     m_printer_list_view->set_orientation(Orientation::Vertical);
-    m_printer_list_view->set_source_list(&m_list_physical_printers);
+    m_printer_list_view->set_source_list(m_list_physical_printers.get());
 
     m_page_list->emplace_back<Separator>(Orientation::Horizontal);
 
@@ -114,7 +115,6 @@ void PhysicalPrinterSettingsDialog::create_page_list()
     // add_printer_button->set_self_align(YGAlignFlexEnd);
     // add_printer_button->callbacks().action = [this] {
     // m_printer_add_dialog->attach_to_item(content_item(), Position::Left);
-    // m_printer_add_dialog->set_root_item(get_or_find_root_item());
     // m_printer_add_dialog->set_current_tab(1);
     // m_printer_add_dialog->open();
     // };
@@ -129,9 +129,7 @@ void PhysicalPrinterSettingsDialog::create_page_settings()
 
     Item* title_row           = m_page_settings->emplace_back<Item>();
     LayoutButton* back_button = title_row->emplace_back<LayoutButton>("", Render::Icon::CaretLeft);
-    back_button->callbacks().action = [this]() {
-        m_stack_layout->set_current_index(0);
-    };
+    back_button->callbacks().action = [this]() { m_stack_layout->set_current_index(0); };
     title_row->emplace_back<Text>("NEXT / Elsa");
 
     m_page_settings->emplace_back<Separator>(Orientation::Horizontal);

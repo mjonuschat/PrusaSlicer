@@ -17,7 +17,7 @@ Toolbar::Toolbar(const std::string& name) : Window(name)
     set_padding(4);
     // Button More is used for collapsible and should never be part of m_buttons
     m_button_more = emplace_back<ToolbarButton>(Render::Icon::Ellipsis, "Show more");
-    m_button_more->set_item_name(name + "ShowMoreButton");
+    m_button_more->set_object_name(name + "ShowMoreButton");
     m_button_more->set_visible(false);
 }
 
@@ -115,12 +115,12 @@ void Toolbar::set_button_aspect_ratio(float button_aspect_ratio)
     }
 }
 
-void Toolbar::append(ItemPtr child)
+void Toolbar::append(ObjectPtr child)
 {
     Item::append(std::move(child));
 }
 
-void Toolbar::insert(ItemPtr child, size_t index)
+void Toolbar::insert(ObjectPtr child, size_t index)
 {
     ToolbarButton* button = dynamic_cast<ToolbarButton*>(child.get());
     ASSERT(button);
@@ -129,10 +129,10 @@ void Toolbar::insert(ItemPtr child, size_t index)
     button->set_max_size(m_button_max_size);
     button->set_aspect_ratio(m_button_aspect_ratio);
     m_buttons.push_back(button);
-    Item::insert(std::move(child), item_count() ? index - 1 : index);
+    Item::insert(std::move(child), object_count() ? index - 1 : index);
 }
 
-ItemPtr Toolbar::remove(Item* child)
+ObjectPtr Toolbar::remove(Object* child)
 {
     return Item::remove(child);
 }
@@ -167,7 +167,7 @@ void Toolbar::style_node()
     // I absolutely understand this is hidous, I already spent > 0 hours debugging this,
     // I will someday clean this up, but today is not the day
     if (m_collapsible
-        && m_parent
+        && parent_item()
         && !m_button_min_size.isZero()
         && is_visible()
         && width() > 0
@@ -175,14 +175,14 @@ void Toolbar::style_node()
     {
         // Compute available size
         float available_size =
-            m_orientation == Orientation::Horizontal ? m_parent->width() : m_parent->height();
-        for (Item* node : m_parent->items()) {
+            m_orientation == Orientation::Horizontal ? parent_item()->width() : parent_item()->height();
+        for (Item* node : parent_item()->items()) {
             if (node != this) {
                 available_size -=
                     m_orientation == Orientation::Horizontal ? node->width() : node->height();
             }
-            if (node != *m_parent->items().rbegin()) {
-                available_size -= m_parent->gap();
+            if (node != *parent_item()->items().rbegin()) {
+                available_size -= parent_item()->gap();
             }
             available_size -= m_orientation == Orientation::Horizontal ?
                 node->margin().horizontal() :
@@ -243,7 +243,7 @@ void Toolbar::style_node()
             // Go through every included button and append it if they are missing
             for (ToolbarButton* included_button : std::as_const(included_buttons)) {
                 if (included_button->parent() == subtoolbar) {
-                    Item::insert(subtoolbar->remove(included_button), item_count() - 1);
+                    Item::insert(subtoolbar->remove(included_button), object_count() - 1);
                 }
             }
         }

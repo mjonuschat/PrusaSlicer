@@ -41,7 +41,48 @@ Slider::Slider() :
     Slider(std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max(), 1.f)
 {}
 
-void Slider::process_events(Vec2f pos, Vec2f size)
+void Slider::set_hovered(bool hovered)
+{
+    if (m_hovered != hovered) {
+        m_hovered = hovered;
+
+        // updated fill on hovering change
+        m_area->set_fill(
+            GImGui->Style.Colors[m_hovered ? ImGuiCol_ButtonHovered : ImGuiCol_TextDisabled]
+        );
+        m_thumb->set_padding(m_hovered ? 2.f : 4.f);
+    }
+}
+
+double Slider::clamp(double value)
+{
+    if (m_begin_value < m_end_value)
+        return std::clamp(value, m_begin_value, m_end_value);
+
+    return std::clamp(value, m_end_value, m_begin_value);
+}
+
+double Slider::snap_to_nearest(double value)
+{
+    double step = m_step;
+    if (m_begin_value > m_end_value)
+        step *= -1;
+
+    int pos = std::round((value - m_begin_value) / step);
+    return m_begin_value + pos * step;
+}
+
+void Slider::update_area_width()
+{
+    if (!Domain::fuzzy_compare(m_end_value, m_begin_value)) {
+        float ratio = static_cast<float>(
+            fabs(m_value - m_begin_value) / fabs(m_end_value - m_begin_value)
+        );
+        m_area->set_width(std::lerp(m_thumb->width(), width(), ratio));
+    }
+}
+
+void Slider::render(Vec2f pos, Vec2f size)
 {
     // Fix for thumb position after firts show
     if (!m_is_set_thumb_size && m_thumb->width() > 0) {
@@ -93,48 +134,7 @@ void Slider::process_events(Vec2f pos, Vec2f size)
         set_value(value);
     }
 
-    Oval::process_events(pos, size);
-}
-
-void Slider::set_hovered(bool hovered)
-{
-    if (m_hovered != hovered) {
-        m_hovered = hovered;
-
-        // updated fill on hovering change
-        m_area->set_fill(
-            GImGui->Style.Colors[m_hovered ? ImGuiCol_ButtonHovered : ImGuiCol_TextDisabled]
-        );
-        m_thumb->set_padding(m_hovered ? 2.f : 4.f);
-    }
-}
-
-double Slider::clamp(double value)
-{
-    if (m_begin_value < m_end_value)
-        return std::clamp(value, m_begin_value, m_end_value);
-
-    return std::clamp(value, m_end_value, m_begin_value);
-}
-
-double Slider::snap_to_nearest(double value)
-{
-    double step = m_step;
-    if (m_begin_value > m_end_value)
-        step *= -1;
-
-    int pos = std::round((value - m_begin_value) / step);
-    return m_begin_value + pos * step;
-}
-
-void Slider::update_area_width()
-{
-    if (!Domain::fuzzy_compare(m_end_value, m_begin_value)) {
-        float ratio = static_cast<float>(
-            fabs(m_value - m_begin_value) / fabs(m_end_value - m_begin_value)
-        );
-        m_area->set_width(std::lerp(m_thumb->width(), width(), ratio));
-    }
+    Oval::render(pos, size);
 }
 
 void Slider::set_value(double value)

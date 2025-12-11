@@ -13,7 +13,6 @@ class Window : public Item
 public:
     struct Callbacks
     {
-        std::function<void()> set_dirty_requested{nullptr};
         std::function<void(bool hovered)> hovered_changed{nullptr};
     };
 
@@ -37,8 +36,6 @@ public:
 
     bool is_in_window() const override;
 
-    void process_events(Vec2f pos, Vec2f size) override;
-
     bool position_by_yoga() const;
     void set_position_by_yoga(bool position_by_yoga);
     void request_position(Vec2f position);
@@ -52,7 +49,6 @@ public:
     void set_modal(bool is_modal);
 
 protected:
-    void set_style_dirty() override;
     Vec2f get_item_size() override;
 
 private:

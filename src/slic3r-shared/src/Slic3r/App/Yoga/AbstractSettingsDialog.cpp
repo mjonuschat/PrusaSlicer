@@ -44,12 +44,7 @@ AbstractSettingsDialog::AbstractSettingsDialog(
     }
 }
 
-AbstractSettingsDialog::~AbstractSettingsDialog()
-{
-    for (const std::unique_ptr<Tab>& tab : std::as_const(m_tabs)) {
-        tab->page_list_view->set_source_list(nullptr);
-    }
-}
+AbstractSettingsDialog::~AbstractSettingsDialog() {}
 
 void AbstractSettingsDialog::on_tab_selected(int current_index)
 {
@@ -92,7 +87,7 @@ AbstractSettingsDialog::Tab* AbstractSettingsDialog::append_tab(const std::strin
         {
             m_current_tab->pages_stack_layout->set_current_index(index);
             for (size_t button_index = 0;
-                 button_index < m_current_tab->page_list_view->item_count();
+                 button_index < m_current_tab->page_list_view->object_count();
                  ++button_index)
             {
                 PageEntryButton* button = dynamic_cast<PageEntryButton*>(
@@ -130,7 +125,7 @@ void AbstractSettingsDialog::Tab::replace_stack_layout(std::unique_ptr<StackLayo
 
     tab_item->remove(pages_stack_layout);
     pages_stack_layout = stack_layout.get();
-    tab_item->insert(std::move(stack_layout), tab_item->item_count());
+    tab_item->insert(std::move(stack_layout), tab_item->object_count());
 
     pages_stack_layout->set_orientation(Orientation::Vertical);
     pages_stack_layout->set_flex_grow(1);

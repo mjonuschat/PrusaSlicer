@@ -15,11 +15,10 @@ AbstractButton::Callbacks& AbstractButton::callbacks()
     return m_callbacks;
 }
 
-AbstractButton::AbstractButton(const std::string& tooltip, const std::string& name) :
-    Item(),
-    m_tooltip(this, tooltip, {})
+AbstractButton::AbstractButton(const std::string& tooltip, const std::string& name)
 {
-    set_item_name(name.empty() ? "Button" : name);
+    m_tooltip = emplace_back<Tooltip>(this, tooltip, std::string{});
+    set_object_name(name.empty() ? "Button" : name);
 }
 
 void AbstractButton::render(Vec2f pos, Vec2f size)
@@ -28,7 +27,7 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
 
     ImGui::SetCursorScreenPos(to_im(pos));
 
-    ImGui::PushID(m_item_name.c_str());
+    ImGui::PushID(object_name().c_str());
     if (m_allow_overlap) {
         ImGui::SetNextItemAllowOverlap();
     }
@@ -73,17 +72,17 @@ const std::string& AbstractButton::shortcut() const
 void AbstractButton::set_shortcut(const std::string& shortcut)
 {
     m_shortcut = shortcut;
-    m_tooltip.set_shortcut(m_shortcut);
+    m_tooltip->set_shortcut(m_shortcut);
 }
 
 void AbstractButton::set_tooltip(const std::string& tooltip)
 {
-    m_tooltip.set_text(tooltip);
+    m_tooltip->set_text(tooltip);
 }
 
 void AbstractButton::set_tooltip_position(Yoga::Position position)
 {
-    m_tooltip.set_preferred_position(position);
+    m_tooltip->set_preferred_position(position);
 }
 
 bool AbstractButton::has_arrow() const
@@ -136,8 +135,8 @@ void AbstractButton::set_hovered(bool hovered)
     if (m_hovered != hovered) {
         m_hovered = hovered;
         hovered_updated_internal();
-        if (!m_tooltip.text().empty()) {
-            m_hovered ? m_tooltip.open() : m_tooltip.close();
+        if (!m_tooltip->text().empty()) {
+            m_hovered ? m_tooltip->open() : m_tooltip->close();
         }
         if (m_callbacks.hovered_changed) {
             m_callbacks.hovered_changed(m_hovered);
@@ -197,14 +196,14 @@ void AbstractButton::action_internal() {}
 void AbstractButton::enabled_updated_internal()
 {
     if (!enabled()) {
-        m_tooltip.close();
+        m_tooltip->close();
     }
 }
 
 void AbstractButton::visible_updated_internal()
 {
     if (!is_visible()) {
-        m_tooltip.close();
+        m_tooltip->close();
     }
 }
 

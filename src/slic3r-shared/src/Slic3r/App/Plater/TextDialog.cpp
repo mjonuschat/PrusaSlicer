@@ -495,7 +495,7 @@ void TextDialog::set_rotation(double max_val, double step, double value, double 
 
 void TextDialog::set_enable_all_except_font(bool enable)
 {
-    Item* font_row = m_font->parent()->parent();
+    Item* font_row = m_font->parent_item()->parent_item();
     for (auto row : content()->items()) {
         if (row != font_row)
             row->set_enabled(enable);
@@ -504,7 +504,7 @@ void TextDialog::set_enable_all_except_font(bool enable)
 
 static void enable_row_with_control(Item* control, bool enable)
 {
-    control->parent()->parent()->set_enabled(enable);
+    control->parent_item()->parent_item()->set_enabled(enable);
 }
 
 void TextDialog::set_enable_use_surface(bool enable)

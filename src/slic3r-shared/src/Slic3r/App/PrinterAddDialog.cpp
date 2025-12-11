@@ -37,11 +37,8 @@ void emplace_family(Item* container, const std::string& name, const std::vector<
     printers_grid->set_flex_wrap(YGWrapWrap);
 
     for (const Printer& printer : printers) {
-        LayoutButton* button = printers_grid->emplace_back<LayoutButton>(
-            printer.name,
-            printer.icon,
-            printer.name
-        );
+        LayoutButton* button =
+            printers_grid->emplace_back<LayoutButton>(printer.name, printer.icon, printer.name);
         button->set_width(180);
         button->set_height(160);
         button->set_content_orientation(Orientation::Vertical);
@@ -52,7 +49,8 @@ void emplace_family(Item* container, const std::string& name, const std::vector<
 
 PrinterAddDialog::PrinterAddDialog(Navigator& navigator) :
     Dialog({"Add logical printer", "Add physical printer"}, "PrinterAddDialog"),
-    m_navigator(navigator)
+    m_navigator(navigator),
+    m_list_vendors(std::make_shared<Biz::ObservableList<PageEntry>>())
 {
     content_item()->set_width(600);
     content_item()->set_height(500);
@@ -64,11 +62,6 @@ PrinterAddDialog::PrinterAddDialog(Navigator& navigator) :
     create_add_logical_printer_page();
 
     create_add_physical_printer_page();
-}
-
-PrinterAddDialog::~PrinterAddDialog()
-{
-    m_page_list_view->set_source_list(nullptr);
 }
 
 void PrinterAddDialog::on_tab_selected(int current_index)
@@ -114,7 +107,7 @@ void PrinterAddDialog::create_add_logical_printer_page()
 
     Item* layout_logic_row = logical_printer_page->emplace_back<Item>();
 
-    m_list_vendors.reset({
+    m_list_vendors->reset({
         {"Prusa3D"},
         {"Prusa PRO"},
         {"AnkerMake"},
@@ -129,22 +122,23 @@ void PrinterAddDialog::create_add_logical_printer_page()
     });
 
     auto factory = Yoga::ViewFactory<PageEntryButton, PageEntry, PageEntryButton::FnIndexClicked>(
-        [this](size_t index) {
-        // m_pages_stack_layout->set_current_index(index);
-        for (size_t button_index = 0; button_index < m_page_list_view->item_count(); ++button_index)
+        [this](size_t index)
         {
-            PageEntryButton* button = dynamic_cast<PageEntryButton*>(
-                m_page_list_view->get_item(button_index)
-            );
-            ASSERT(button);
-            button->set_checked(index == button_index);
+            // m_pages_stack_layout->set_current_index(index);
+            for (size_t button_index = 0; button_index < m_page_list_view->object_count();
+                 ++button_index)
+            {
+                PageEntryButton* button =
+                    dynamic_cast<PageEntryButton*>(m_page_list_view->get_item(button_index));
+                ASSERT(button);
+                button->set_checked(index == button_index);
+            }
         }
-    }
     );
     m_page_list_view = layout_logic_row->emplace_back<PageListView>(std::move(factory));
     m_page_list_view->set_orientation(Orientation::Vertical);
     m_page_list_view->set_min_size({125, 0});
-    m_page_list_view->set_source_list(&m_list_vendors);
+    m_page_list_view->set_source_list(m_list_vendors.get());
     dynamic_cast<AbstractButton*>(m_page_list_view->get_item(0))->set_checked(true);
 
     layout_logic_row->emplace_back<Separator>(Orientation::Vertical);

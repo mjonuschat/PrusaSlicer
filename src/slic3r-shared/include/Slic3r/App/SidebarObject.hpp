@@ -12,7 +12,6 @@
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/ObjectConfigItem.hpp"
 #include "Slic3r/App/OverrideOptionGroup.hpp"
-#include "Slic3r/App/OverrideSettingsDialog.hpp"
 #include "Slic3r/App/Config/ObservableOverrideCategorizer.hpp"
 
 namespace Slic3r::Biz {
@@ -25,6 +24,8 @@ class LayoutButton;
 } // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
+
+class OverrideSettingsDialog;
 
 class SidebarObject : public Yoga::Window, public Biz::Scene::ISceneSelectionChangedListener
 {
@@ -73,7 +74,7 @@ private:
     Yoga::LayoutButton* m_add_settings_button{nullptr};
     Biz::Scene::ObjectSelection m_selection;
 
-    OverrideSettingsDialog m_override_settings_dialog;
+    OverrideSettingsDialog* m_override_settings_dialog{nullptr};
 };
 
 } // namespace Slic3r::App

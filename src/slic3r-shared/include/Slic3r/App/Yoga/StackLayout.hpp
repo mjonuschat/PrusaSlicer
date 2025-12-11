@@ -18,8 +18,8 @@ public:
 
     StackLayout();
 
-    void insert(ItemPtr child, size_t index) override;
-    ItemPtr remove(Item *child) override;
+    void insert(ObjectPtr child, size_t index) override;
+    ObjectPtr remove(Object *child) override;
 
     size_t current_index() const;
     void set_current_index(size_t current_index);

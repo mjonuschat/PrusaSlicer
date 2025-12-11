@@ -27,7 +27,7 @@ public:
     {
         std::unique_ptr<T> item = std::make_unique<T>(std::forward<Args>(args)...);
         T* item_raw             = item.get();
-        m_header_row->insert(std::move(item), m_header_row->item_count() - 1);
+        m_header_row->insert(std::move(item), m_header_row->object_count() - 1);
         return item_raw;
     }
 

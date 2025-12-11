@@ -59,18 +59,18 @@ void move_window_to_bounds(const Slic3r::Domain::Vec2f& available_size, ImRect& 
     switch (position) {
     case Slic3r::App::Yoga::Position::Left:
         rect.Min.x = target_rect.Min.x - offset - attachee_size.x;
-        rect.Min.y = target_rect.GetCenter().y - attachee_size.y * 0.5;
+        rect.Min.y = target_rect.GetCenter().y - attachee_size.y * 0.5f;
         break;
     case Slic3r::App::Yoga::Position::Right:
         rect.Min.x = target_rect.Max.x + offset;
-        rect.Min.y = target_rect.GetCenter().y - attachee_size.y * 0.5;
+        rect.Min.y = target_rect.GetCenter().y - attachee_size.y * 0.5f;
         break;
     case Slic3r::App::Yoga::Position::Top:
-        rect.Min.x = target_rect.GetCenter().x - attachee_size.x * 0.5;
+        rect.Min.x = target_rect.GetCenter().x - attachee_size.x * 0.5f;
         rect.Min.y = target_rect.Min.y - offset - attachee_size.y;
         break;
     case Slic3r::App::Yoga::Position::Bottom:
-        rect.Min.x = target_rect.GetCenter().x - attachee_size.x * 0.5;
+        rect.Min.x = target_rect.GetCenter().x - attachee_size.x * 0.5f;
         rect.Min.y = target_rect.Max.y + offset;
         break;
     }
@@ -87,13 +87,12 @@ namespace Slic3r::App::Yoga {
 Popup::Popup()
 {
     m_popup_node = YGNodeNew();
+    YGNodeStyleSetDisplay(m_popup_node, YGDisplayNone);
 }
 
 Popup::~Popup()
 {
-    if (m_root_item) {
-        close();
-    }
+    close();
 
     YGNodeFree(m_popup_node);
 }
@@ -108,29 +107,29 @@ void Popup::set_preferred_position(Position preferred_position)
     m_preferred_position = preferred_position;
 }
 
-RootItem* Popup::get_or_find_root_item()
-{
-    // We were never parented, that means we are not opened and we can be destroyed in silence
-    if (!m_parent) {
-        ASSERT(!m_opened);
-        return nullptr;
-    }
-
-    if (!m_root_item) {
-        find_root_item();
-    }
-
-    return m_root_item;
-}
-
-void Popup::set_root_item(RootItem* root_item)
-{
-    m_root_item = root_item;
-}
-
 void Popup::on_about_to_show() {}
 
 void Popup::on_about_to_close() {}
+
+void Popup::prepend(ObjectPtr child)
+{
+    Object::prepend(std::move(child));
+}
+
+void Popup::append(ObjectPtr child)
+{
+    Object::append(std::move(child));
+}
+
+void Popup::insert(ObjectPtr child, size_t index)
+{
+    Object::insert(std::move(child), index);
+}
+
+ObjectPtr Popup::remove(Object* child)
+{
+    return Object::remove(child);
+}
 
 Popup::Callbacks& Popup::callbacks()
 {
@@ -140,7 +139,6 @@ Popup::Callbacks& Popup::callbacks()
 void Popup::attach_to_item(Item* item, Position prefered_position, float offset)
 {
     ASSERT(item);
-    m_parent             = item;
     m_attached_type      = AttachedType::Item;
     m_attached_to        = item;
     m_preferred_position = prefered_position;
@@ -148,25 +146,14 @@ void Popup::attach_to_item(Item* item, Position prefered_position, float offset)
     m_content_item->set_position_by_yoga(true);
 }
 
-void Popup::attach_to_center(Item* item)
+void Popup::attach_to_center()
 {
-    ASSERT(item);
-    m_parent        = item;
     m_attached_type = AttachedType::Center;
     m_attached_to   = nullptr;
     m_content_item->set_position_by_yoga(true);
 
     YGNodeStyleSetJustifyContent(m_popup_node, YGJustifyCenter);
     YGNodeStyleSetAlignItems(m_popup_node, YGAlignCenter);
-}
-
-void Popup::detach(Item* item)
-{
-    ASSERT(item);
-    m_parent        = item;
-    m_attached_type = AttachedType::FreeStanding;
-    m_attached_to   = nullptr;
-    m_content_item->set_position_by_yoga(false);
 }
 
 bool Popup::opened() const
@@ -176,17 +163,17 @@ bool Popup::opened() const
 
 void Popup::open()
 {
-    ASSERT(m_content_item.get());
+    ASSERT(m_content_item);
 
-    if (!m_root_item) {
-        find_root_item();
-    }
+    ASSERT(root_item(), "Cannot open popup which is not inserted into complete tree");
 
-    if (m_root_item && !m_opened) {
+    if (!m_opened) {
         on_about_to_show();
 
-        m_root_item->open_popup(this);
+        RootItem* root = dynamic_cast<RootItem*>(root_item());
+        root->open_popup(this);
         m_opened = true;
+        YGNodeStyleSetDisplay(m_popup_node, YGDisplayFlex);
 
         if (m_callbacks.opened) {
             m_callbacks.opened();
@@ -196,19 +183,18 @@ void Popup::open()
 
 void Popup::close()
 {
-    ASSERT(m_content_item.get());
+    ASSERT(m_content_item);
     if (!m_opened) {
         return;
     }
 
-    if (!m_root_item) {
-        find_root_item();
-    }
-
-    if (m_root_item) {
+    RootItem* root = dynamic_cast<RootItem*>(root_item());
+    if (root) {
         on_about_to_close();
-        m_root_item->close_popup(this);
+
+        root->close_popup(this);
         m_opened = false;
+        YGNodeStyleSetDisplay(m_popup_node, YGDisplayNone);
 
         if (m_callbacks.closed) {
             m_callbacks.closed();
@@ -218,13 +204,18 @@ void Popup::close()
 
 Window* Popup::content_item() const
 {
-    return m_content_item.get();
+    return m_content_item;
 }
 
-void Popup::render(const Vec2f& size)
+void Popup::render(Vec2f pos, Vec2f size)
 {
-    if (!m_resized) {
-        style_node();
+    if (!m_opened || !m_content_item) {
+        return;
+    }
+
+    if (!Domain::fuzzy_compare(m_last_size.x(), size.x())
+        || !Domain::fuzzy_compare(m_last_size.y(), size.y()))
+    {
         resize(size);
     }
 
@@ -239,14 +230,9 @@ void Popup::check_resized()
     m_content_item->check_resized();
 }
 
-void Popup::style_node()
-{
-    m_content_item->style_node();
-}
-
 void Popup::resize(const Vec2f& size)
 {
-    m_resized = true;
+    m_last_size = size;
     YGNodeCalculateLayout(m_popup_node, size.x(), size.y(), YGDirectionLTR);
 
     // Free standing windows have all handling implemented in Window class
@@ -256,12 +242,12 @@ void Popup::resize(const Vec2f& size)
 
     ImRect popup_rect;
     if (m_attached_type == AttachedType::Item) {
-        const Vec2f attachee_global_pos = m_parent->get_global_pos();
+        const Vec2f attachee_global_pos = m_attached_to->get_global_pos();
         const ImRect size_rect(0, 0, size.x(), size.y());
         const ImVec2 target_pos{attachee_global_pos.x(), attachee_global_pos.y()};
         const ImRect target_rect{
             target_pos,
-            target_pos + ImVec2{m_parent->width(), m_parent->height()}
+            target_pos + ImVec2{m_attached_to->width(), m_attached_to->height()}
         };
         const ImVec2 attachee_size(m_content_item->width(), m_content_item->height());
 
@@ -290,16 +276,20 @@ void Popup::resize(const Vec2f& size)
         }
         popup_rect = placed.first ? placed.second : preferred_rect;
     } else if (m_attached_type == AttachedType::Center) {
-        popup_rect.Min.x = size.x() * 0.5 - m_content_item->width() * 0.5;
-        popup_rect.Min.y = size.y() * 0.5 - m_content_item->height() * 0.5;
+        popup_rect.Min.x = size.x() * 0.5f - m_content_item->width() * 0.5f;
+        popup_rect.Min.y = size.y() * 0.5f - m_content_item->height() * 0.5f;
         popup_rect.Max = popup_rect.Min + ImVec2(m_content_item->width(), m_content_item->height());
     }
 
     move_window_to_bounds(size, popup_rect);
 
     if (m_attached_type != AttachedType::FreeStanding) {
-        m_content_item->set_left(popup_rect.Min.x);
-        m_content_item->set_top(popup_rect.Min.y);
+        if (!Domain::fuzzy_compare(m_content_item->left(), popup_rect.Min.x)) {
+            m_content_item->set_left(popup_rect.Min.x);
+        }
+        if (!Domain::fuzzy_compare(m_content_item->top(), popup_rect.Min.y)) {
+            m_content_item->set_top(popup_rect.Min.y);
+        }
     }
 
     YGNodeCalculateLayout(m_popup_node, size.x(), size.y(), YGDirectionLTR);
@@ -307,63 +297,17 @@ void Popup::resize(const Vec2f& size)
     // resolve size change
 }
 
-void Popup::process_events(Vec2f pos, Vec2f size)
-{
-    m_content_item->process_events(
-        {m_content_item->x(), m_content_item->y()},
-        {m_content_item->width(), m_content_item->height()}
-    );
-}
-
 void Popup::set_content_item(WindowPtr content_item)
 {
     ASSERT(content_item.get());
-    YGNodeRemoveAllChildren(m_popup_node);
-    m_content_item = std::move(content_item);
     if (m_content_item) {
-        YGNodeInsertChild(m_popup_node, m_content_item.get()->node(), 0);
-        m_content_item->set_position_type(YGPositionTypeAbsolute);
-        m_content_item->set_parent_popup(this);
-
-        m_content_item->callbacks().set_dirty_requested = [this]
-        {
-            if (!m_root_item) {
-                find_root_item();
-            }
-
-            if (m_root_item) {
-                m_root_item->set_style_dirty();
-            }
-        };
+        YGNodeRemoveChild(m_popup_node, m_content_item->node());
+        remove(m_content_item);
     }
-}
-
-void Popup::find_root_item()
-{
-    if (m_root_item) {
-        return;
-    }
-
-    Item* parent = m_parent;
-    while (parent) {
-        // TODO: OOF, this won't work in the destructor, RootItem needs a more
-        // comprehensive handling!
-        RootItem* root_item = dynamic_cast<RootItem*>(parent);
-        if (root_item) {
-            m_root_item = root_item;
-            break;
-        }
-        if (parent->parent_popup()) {
-            m_root_item = parent->parent_popup()->get_or_find_root_item();
-            break;
-        }
-
-        parent = parent->parent();
-    }
-    if (!m_root_item) {
-        SPDLOG_WARN("RootItem was not found");
-    }
-    // ASSERT(m_root_item, "RootItem was not found");
+    m_content_item = content_item.get();
+    append(std::move(content_item));
+    YGNodeInsertChild(m_popup_node, m_content_item->node(), 0);
+    m_content_item->set_position_type(YGPositionTypeAbsolute);
 }
 
 float Popup::offset() const
@@ -381,7 +325,5 @@ void Popup::open_at(const Vec2f& pos)
     m_content_item->request_position(pos);
     open();
 }
-
-void Popup::open_at(Item* item, Position prefered_position, float offset) {}
 
 } // namespace Slic3r::App::Yoga

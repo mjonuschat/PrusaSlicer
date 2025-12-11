@@ -35,9 +35,9 @@ ConfigItemComboBox::ConfigItemComboBox(
 
     on_data_update();
 
-    m_tooltip.set_text(tooltip_text());
-    m_tooltip.content_item()->set_width(350);
-    m_tooltip.set_text_wrap(true);
+    m_tooltip->set_text(tooltip_text());
+    m_tooltip->content_item()->set_width(350);
+    m_tooltip->set_text_wrap(true);
 
     // TODO: The callbacks are disgusting, clean them up
 

@@ -55,9 +55,9 @@ public:
 
 private:
     // Hide these methods
-    void append(ItemPtr child) override;
-    void insert(ItemPtr child, size_t index) override;
-    ItemPtr remove(Item* child) override;
+    void append(ObjectPtr child) override;
+    void insert(ObjectPtr child, size_t index) override;
+    ObjectPtr remove(Object* child) override;
 
 private:
     Callbacks m_callbacks;

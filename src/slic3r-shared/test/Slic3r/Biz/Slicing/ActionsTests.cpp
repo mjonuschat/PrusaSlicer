@@ -70,7 +70,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update stops slicing", "[slicing][slicing-inte
     CHECK_THAT(status_listener.status_events, Equals(expected_events));
 }
 
-TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][slicing-interactor]") {
+TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][slicing-interactor][timeout]") {
     using namespace std::chrono_literals;
 
     ResultListener listener;

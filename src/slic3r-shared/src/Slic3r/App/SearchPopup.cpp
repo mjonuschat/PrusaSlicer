@@ -61,20 +61,20 @@ SearchPopup::SearchPopup(
 
 void SearchPopup::navigate_down()
 {
-    if (!m_results_list_view->item_count()) {
+    if (!m_results_list_view->object_count()) {
         return;
     }
 
     AbstractButton* checked     = m_button_group->checked_button();
     std::optional<size_t> index = m_results_list_view->index_of(checked);
     ASSERT(index.has_value());
-    m_results_list_view->item_at(++index.value() % m_results_list_view->item_count())
+    m_results_list_view->item_at(++index.value() % m_results_list_view->object_count())
         ->set_checked(true);
 }
 
 void SearchPopup::navigate_up()
 {
-    if (!m_results_list_view->item_count()) {
+    if (!m_results_list_view->object_count()) {
         return;
     }
 
@@ -83,7 +83,7 @@ void SearchPopup::navigate_up()
     ASSERT(index.has_value());
     m_results_list_view
         ->item_at(
-            static_cast<int>(index.value()) - 1 < 0 ? m_results_list_view->item_count() - 1 :
+            static_cast<int>(index.value()) - 1 < 0 ? m_results_list_view->object_count() - 1 :
                                                       index.value() - 1
         )
         ->set_checked(true);

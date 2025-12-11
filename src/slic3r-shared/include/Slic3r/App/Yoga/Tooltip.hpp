@@ -29,7 +29,7 @@ public:
     void set_shortcut(const std::string& shortcut);
 
 private:
-    Text* m_text = nullptr;
+    Text* m_text     = nullptr;
     Text* m_shortcut = nullptr;
 };
 

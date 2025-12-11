@@ -7,18 +7,17 @@
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 #include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/Yoga/Dialog.hpp"
-#include "Slic3r/Assert.hpp"
 
 #include <imgui_internal.h>
 
 namespace Slic3r::App::Yoga {
 
-ToolbarButton::ToolbarButton(Render::Icon icon, const std::string& tooltip)
-    : LayoutButton("", icon, tooltip)
+ToolbarButton::ToolbarButton(Render::Icon icon, const std::string& tooltip) :
+    LayoutButton("", icon, tooltip)
 {
     set_background_color(ImGui::GetColorU32(ImGuiCol_WindowBg));
     set_background_color_checked(ImColor(60, 60, 60));
-    m_tooltip.set_preferred_position(Position::Bottom);
+    m_tooltip->set_preferred_position(Position::Bottom);
 }
 
 void ToolbarButton::render(Vec2f pos, Vec2f size)
@@ -30,7 +29,7 @@ void ToolbarButton::render(Vec2f pos, Vec2f size)
         ImVec2 button_size = to_im(size);
 
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        const float arrow_h = draw_list->_Data->FontSize * 0.35f;
+        const float arrow_h   = draw_list->_Data->FontSize * 0.35f;
 
         ImVec2 arrow_size(arrow_h, arrow_h);
         ImVec2 arrow_pos = to_im(pos) + button_size - arrow_size;
@@ -42,7 +41,9 @@ void ToolbarButton::render(Vec2f pos, Vec2f size)
         // draw arrow
         ImVec2 corner_pos = arrow_bb.GetCenter() + ImVec2(1.f, 1.f) * 0.5f * arrow_h;
         draw_list->AddTriangleFilled(
-            corner_pos + ImVec2(0.f, -arrow_h), corner_pos, corner_pos + ImVec2(-arrow_h, 0.f),
+            corner_pos + ImVec2(0.f, -arrow_h),
+            corner_pos,
+            corner_pos + ImVec2(-arrow_h, 0.f),
             arrow_col
         );
     }
@@ -53,9 +54,9 @@ void ToolbarButton::style_node()
     constexpr float gap = 10;
 
     if (m_subtoolbar) {
-        ASSERT(m_parent);
-        if (m_parent->orientation() == Yoga::Orientation::Vertical) {
-            const float our_height = height();
+        ASSERT(parent_item());
+        if (parent_item()->orientation() == Yoga::Orientation::Vertical) {
+            const float our_height     = height();
             const float toolbar_height = m_subtoolbar->height();
 
             const float top = our_height * 0.5 - toolbar_height * 0.5;
@@ -63,7 +64,7 @@ void ToolbarButton::style_node()
             m_subtoolbar->set_right(-width() - gap);
             m_subtoolbar->set_top(top);
         } else {
-            const float our_width = width();
+            const float our_width     = width();
             const float toolbar_width = m_subtoolbar->width();
 
             const float left = our_width * 0.5 - toolbar_width * 0.5;
@@ -76,7 +77,10 @@ void ToolbarButton::style_node()
     AbstractButton::style_node();
 }
 
-Toolbar* ToolbarButton::get_subtoolbar() const { return m_subtoolbar; }
+Toolbar* ToolbarButton::get_subtoolbar() const
+{
+    return m_subtoolbar;
+}
 
 Toolbar* ToolbarButton::get_or_create_subtoolbar()
 {
@@ -89,11 +93,12 @@ Toolbar* ToolbarButton::get_or_create_subtoolbar()
         m_subtoolbar->set_button_max_size(m_max_size);
         m_subtoolbar->set_visible(false);
 
-        callbacks().action = [this] {
+        callbacks().action = [this]
+        {
             if (m_subtoolbar) {
                 m_subtoolbar->set_visible(!m_subtoolbar->is_visible());
 
-                Toolbar* parent_toolbar = dynamic_cast<Toolbar*>(m_parent);
+                Toolbar* parent_toolbar = dynamic_cast<Toolbar*>(parent_item());
                 if (parent_toolbar && parent_toolbar->callbacks().subtoolbar_opened) {
                     parent_toolbar->callbacks().subtoolbar_opened();
                 }

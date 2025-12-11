@@ -6,10 +6,10 @@
 
 #include "Slic3r/App/Yoga/Window.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
-#include "Slic3r/App/PrintSettingsDialog.hpp"
 #include "Slic3r/App/Yoga/ComboBoxListViewSelection.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/App/SidebarToolHeadRow.hpp"
+#include "Slic3r/App/Yoga/ListView.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -70,7 +70,7 @@ private:
     Yoga::ComboBoxListViewSelection<Biz::Preset::PresetItem>* m_combo_print{nullptr};
     ToolHeadListView* m_tool_head_list_view{nullptr};
 
-    PrintSettingsDialog m_print_settings_dialog;
+    PrintSettingsDialog* m_print_settings_dialog{nullptr};
 
     int m_last_selected_index{ -1 };
 };

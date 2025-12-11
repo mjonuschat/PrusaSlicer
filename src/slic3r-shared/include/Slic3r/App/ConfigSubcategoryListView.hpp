@@ -46,7 +46,6 @@ public:
         Biz::ConfigBoxInteractor& cbi,
         size_t cbi_index
     );
-    ~ConfigSubcategoryListView();
 
     void navigate_to_item(const Domain::ConfigItem* config_item);
     void clear_navigation();

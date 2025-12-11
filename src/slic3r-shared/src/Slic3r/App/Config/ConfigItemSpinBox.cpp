@@ -46,8 +46,8 @@ ConfigItemSpinBox::ConfigItemSpinBox(
     };
 
     set_tooltip(tooltip_text());
-    m_tooltip.set_text_wrap(true);
-    m_tooltip.content_item()->set_width(350);
+    m_tooltip->set_text_wrap(true);
+    m_tooltip->content_item()->set_width(350);
 
     on_data_update();
 }

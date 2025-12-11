@@ -68,7 +68,7 @@ private:
     void set_pressed(bool pressed);
 
 protected:
-    Tooltip m_tooltip;
+    Tooltip* m_tooltip = nullptr;
 
 private:
     bool m_has_arrow     = false;

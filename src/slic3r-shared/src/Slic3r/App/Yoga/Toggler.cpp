@@ -25,18 +25,6 @@ Toggler::Toggler()
     m_inner_oval->set_visible(false);
 }
 
-void Toggler::process_events(Vec2f pos, Vec2f size)
-{
-    Rectangle::process_events(pos, size);
-
-    AbstractButton* parent = static_cast<AbstractButton*>(this->parent());
-    set_fill(bg_color(parent->hovered()));
-
-    ImColor inner_color = knob_color();
-    m_knob->set_fill(inner_color);
-    m_inner_oval->set_fill(inner_color);
-}
-
 void Toggler::update_contents()
 {
     YGJustify justify;
@@ -67,6 +55,16 @@ ImColor Toggler::knob_color() const
 {
     return m_third_state || m_checked ? ImColor(0.31f, 0.51f, 0.97f, 1.0f) :
                                         ImColor(0.2f, 0.2f, 0.2f, 1.0f);
+}
+
+void Toggler::style_node()
+{
+    AbstractButton* parent = static_cast<AbstractButton*>(this->parent());
+    set_fill(bg_color(parent->hovered()));
+
+    ImColor inner_color = knob_color();
+    m_knob->set_fill(inner_color);
+    m_inner_oval->set_fill(inner_color);
 }
 
 bool Toggler::third_state() const

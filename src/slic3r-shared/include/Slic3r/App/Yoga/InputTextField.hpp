@@ -58,7 +58,7 @@ private:
     void update_fill();
 
 protected:
-    Tooltip m_tooltip;
+    Tooltip* m_tooltip = nullptr;
 
 private:
     InputText* m_input_text{nullptr};

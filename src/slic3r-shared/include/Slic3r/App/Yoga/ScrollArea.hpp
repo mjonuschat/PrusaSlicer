@@ -15,8 +15,6 @@ public:
 
     void render(Vec2f pos, Vec2f size) override;
 
-    void process_events(Vec2f pos, Vec2f size) override;
-
     ImGuiChildFlags child_flags() const;
     void set_child_flags(ImGuiChildFlags child_flags);
 

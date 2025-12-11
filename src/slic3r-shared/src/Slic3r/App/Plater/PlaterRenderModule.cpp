@@ -75,6 +75,12 @@
 #include "Slic3r/App/Wildcards.hpp"
 #include "Slic3r/App/PreferencesDialog.hpp"
 #include "Slic3r/App/SidebarStackLayout.hpp"
+#include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
+#include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
+#include "Slic3r/App/MaterialSelectionDialog.hpp"
+#include "Slic3r/App/MaterialSettingsDialog.hpp"
+#include "Slic3r/App/PrintSettingsDialog.hpp"
+#include "Slic3r/App/PrinterAddDialog.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>

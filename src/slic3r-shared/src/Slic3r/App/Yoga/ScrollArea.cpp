@@ -10,7 +10,7 @@ namespace Slic3r::App::Yoga {
 
 ScrollArea::ScrollArea(const std::string& name) : Item()
 {
-    set_item_name(name);
+    set_object_name(name);
 }
 
 void ScrollArea::render(Vec2f pos, Vec2f size)
@@ -21,7 +21,7 @@ void ScrollArea::render(Vec2f pos, Vec2f size)
 
     ImGui::SetNextWindowPos(to_im(pos));
     ImGui::SetNextWindowSize(to_im(size));
-    ImGui::BeginChild(item_name().c_str(), {size.x(), size.y()}, m_child_flags, m_window_flags);
+    ImGui::BeginChild(object_name().c_str(), {size.x(), size.y()}, m_child_flags, m_window_flags);
 
     // normally ImGui scrolls horizontally with SHIFT + Mouse Wheel, we want to use Mouse Wheel
     // only if m_remap_horizontal_scroll is true
@@ -66,14 +66,6 @@ void ScrollArea::render(Vec2f pos, Vec2f size)
     m_scroll_max = Vec2f{ImGui::GetScrollMaxX(), ImGui::GetScrollMaxY()};
 
     ImGui::EndChild();
-}
-
-void ScrollArea::process_events(Vec2f pos, Vec2f size)
-{
-    pos -= m_last_scroll;
-    for (Item* child : std::as_const(m_children_render_order)) {
-        process_events_node(pos, child);
-    }
 }
 
 ImGuiChildFlags ScrollArea::child_flags() const

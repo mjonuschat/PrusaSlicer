@@ -9,6 +9,7 @@
 #include "Slic3r/App/Yoga/Separator.hpp"
 #include "Slic3r/App/Search.hpp"
 #include "Slic3r/App/Navigator.hpp"
+#include "Slic3r/App/MaterialSettingsDialog.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
@@ -28,10 +29,13 @@ MaterialSelectionDialog::MaterialSelectionDialog(
     m_project_interactor(project_interactor),
     m_navigator(navigator),
     m_material_presets(m_project_interactor.preset_interactor().material_presets()),
-    m_material_filter(std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>()),
-    m_material_settings_dialog(project_interactor, m_navigator, this)
+    m_material_filter(std::make_shared<Biz::ObservableListSortFilter<Biz::Preset::PresetItem>>())
 {
-    m_material_presets.add_listener<Biz::IListObserver<Biz::Preset::PresetItemObservableList>>(this);
+    m_material_settings_dialog =
+        content_item()->emplace_back<MaterialSettingsDialog>(project_interactor, m_navigator, this);
+    m_material_presets.add_listener<Biz::IListObserver<Biz::Preset::PresetItemObservableList>>(
+        this
+    );
 
     content_item()->set_width(350);
 
@@ -46,18 +50,19 @@ MaterialSelectionDialog::MaterialSelectionDialog(
     m_input_text_search->set_hint(_u8L("Search..."));
     m_input_text_search->set_flex_grow(1);
 
-    m_material_filter->set_filter_fn([this](const Biz::Preset::PresetItem& data) -> bool {
-        const std::string& search_text = m_input_text_search->text();
-        if (search_text.empty()) {
-            return true;
+    m_material_filter->set_filter_fn(
+        [this](const Biz::Preset::PresetItem& data) -> bool
+        {
+            const std::string& search_text = m_input_text_search->text();
+            if (search_text.empty()) {
+                return true;
+            }
+
+            return find_locale_aware(data.name, search_text);
         }
+    );
 
-        return find_locale_aware(data.name, search_text);
-    });
-
-    m_input_text_search->callbacks().text_changed = [this]() {
-        m_material_filter->invalidate();
-    };
+    m_input_text_search->callbacks().text_changed = [this]() { m_material_filter->invalidate(); };
 
     content()->emplace_back<Separator>(Orientation::Horizontal);
 
@@ -78,30 +83,33 @@ MaterialSelectionDialog::MaterialSelectionDialog(
 
     m_advanced_button = content()->emplace_back<LayoutButton>(_u8L("Advanced settings"));
     m_advanced_button->set_checkable(true);
-    m_advanced_button->callbacks().action = [this] {
-        if (m_material_settings_dialog.opened()) {
+    m_advanced_button->callbacks().action = [this]
+    {
+        if (m_material_settings_dialog->opened()) {
             m_navigator.set_opened_dialog(this);
         } else {
-            m_navigator.set_opened_dialog(&m_material_settings_dialog);
+            m_navigator.set_opened_dialog(m_material_settings_dialog);
         }
     };
 
     // Material Settings Dialog setup
-    m_material_settings_dialog.attach_to_item(content_item(), Position::Left);
+    m_material_settings_dialog->attach_to_item(content_item(), Position::Left);
 
-    m_material_settings_dialog.dialog_callbacks().tab_selected = [this](size_t current_index) {
+    m_material_settings_dialog->dialog_callbacks().tab_selected = [this](size_t current_index)
+    {
         if (m_callbacks.advanced_settings_tab_opened) {
             m_callbacks.advanced_settings_tab_opened(current_index);
         }
     };
-    m_material_settings_dialog.callbacks().closed = [this]() {
-        m_advanced_button->set_checked(false);
-    };
+    m_material_settings_dialog->callbacks().closed = [this]()
+    { m_advanced_button->set_checked(false); };
 }
 
 MaterialSelectionDialog::~MaterialSelectionDialog()
 {
-    m_material_presets.remove_listener<Biz::IListObserver<Biz::Preset::PresetItemObservableList>>(this);
+    m_material_presets.remove_listener<Biz::IListObserver<Biz::Preset::PresetItemObservableList>>(
+        this
+    );
 }
 
 MaterialSelectionDialog::Callbacks& MaterialSelectionDialog::material_selection_callbacks()
@@ -123,9 +131,8 @@ void MaterialSelectionDialog::set_material_index(size_t material_index)
 void MaterialSelectionDialog::on_list_selection_changed(Domain::SelectionId new_selection)
 {
     for (size_t index = 0; index < m_material_filter->size(); ++index) {
-        AbstractButton* button = dynamic_cast<AbstractButton*>(
-            m_selection_row_list_view->item_at(index)
-        );
+        AbstractButton* button =
+            dynamic_cast<AbstractButton*>(m_selection_row_list_view->item_at(index));
         ASSERT(button);
         button->set_checked(index == new_selection);
     }
@@ -175,7 +182,7 @@ void MaterialSelectionDialog::update_preset_list()
 
 MaterialSettingsDialog& MaterialSelectionDialog::material_settings_dialog()
 {
-    return m_material_settings_dialog;
+    return *m_material_settings_dialog;
 }
 
 } // namespace Slic3r::App

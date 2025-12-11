@@ -135,9 +135,10 @@ static bool YGBeginCombo(
     // clang-format on
 }
 
-ComboBox::ComboBox(const std::string& name) : m_tooltip(this, "", "")
+ComboBox::ComboBox(const std::string& name)
 {
-    set_item_name(name.empty() ? "ComboBox" : name);
+    set_object_name(name.empty() ? "ComboBox" : name);
+    m_tooltip = emplace_back<Tooltip>(this, std::string{}, std::string{});
 }
 
 ComboBox::ComboBox(std::initializer_list<std::string> items, const std::string& name) :
@@ -167,7 +168,7 @@ void ComboBox::render(Vec2f pos, Vec2f size)
             ImGui::GetColorU32(enabled() ? ImGuiCol_Text : ImGuiCol_TextDisabled)
         );
 
-        const std::string id = "###" + m_item_name;
+        const std::string id = "###" + object_name();
         bool new_hovered     = false;
         if (YGBeginCombo(
                 id.c_str(),
@@ -207,8 +208,8 @@ void ComboBox::render(Vec2f pos, Vec2f size)
 
         if (m_hovered != new_hovered) {
             m_hovered = new_hovered;
-            if (!m_tooltip.text().empty()) {
-                m_hovered ? m_tooltip.open() : m_tooltip.close();
+            if (!m_tooltip->text().empty()) {
+                m_hovered ? m_tooltip->open() : m_tooltip->close();
             }
         }
     }
@@ -217,7 +218,7 @@ void ComboBox::render(Vec2f pos, Vec2f size)
 
 Tooltip& ComboBox::tooltip()
 {
-    return m_tooltip;
+    return *m_tooltip;
 }
 
 ComboBox::Callbacks& ComboBox::callbacks()

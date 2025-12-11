@@ -249,11 +249,11 @@ std::vector<Image> SvgReadCodec::load(
         if (opts.flip_y)
             flip_pixels_in_y(pixels, size.height, size.width * 4);
 
-        if (std::any_of(pixels.begin(), pixels.end(), [](auto x) { return x != 0; })) {
-            SPDLOG_INFO("Non empty image with size {}x{} added", size.width, size.height);
-        } else {
-            SPDLOG_INFO("Empty image with size {}x{} added", size.width, size.height);
-        }
+        // if (std::any_of(pixels.begin(), pixels.end(), [](auto x) { return x != 0; })) {
+        //     SPDLOG_INFO("Non empty image with size {}x{} added", size.width, size.height);
+        // } else {
+        //     SPDLOG_INFO("Empty image with size {}x{} added", size.width, size.height);
+        // }
 
         ret.emplace_back(PixelFormat::RGBA8, size.width, size.height, std::move(pixels));
 

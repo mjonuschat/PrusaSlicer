@@ -90,7 +90,7 @@ void compare_list_view(
     const ListView<DummyItem, DummyState>* view
 )
 {
-    REQUIRE(list.size() == view->item_count());
+    REQUIRE(list.size() == view->object_count());
     for (size_t i = 0; i < list.size(); ++i) {
         REQUIRE(dynamic_cast<DummyItem*>(view->get_item(i))->foo() == list.at(i).foo);
     }
@@ -149,15 +149,15 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::insert")
             tree.emplace_back<ListView<DummyItem, DummyState>>();
         view->set_source_list(&list);
 
-        REQUIRE(view->item_count() == 0);
+        REQUIRE(view->object_count() == 0);
 
         list.insert({0}, 0);
 
-        REQUIRE(view->item_count() == 1);
+        REQUIRE(view->object_count() == 1);
 
         list.insert({1}, 0);
 
-        REQUIRE(view->item_count() == 2);
+        REQUIRE(view->object_count() == 2);
 
         compare_list_view(list, view);
     }
@@ -175,13 +175,13 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove single")
 
         list.reset({{1}, {2}, {3}});
 
-        REQUIRE(view->item_count() == 3);
+        REQUIRE(view->object_count() == 3);
 
         list.remove({2});
 
         tree.process_loop_events();
 
-        REQUIRE(view->item_count() == 2);
+        REQUIRE(view->object_count() == 2);
 
         compare_list_view(list, view);
     }
@@ -199,14 +199,14 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove multiple")
 
         list.reset({{1}, {2}, {3}});
 
-        REQUIRE(view->item_count() == 3);
+        REQUIRE(view->object_count() == 3);
 
         list.remove({2});
         list.remove({0});
 
         tree.process_loop_events();
 
-        REQUIRE(view->item_count() == 1);
+        REQUIRE(view->object_count() == 1);
 
         compare_list_view(list, view);
     }
@@ -225,13 +225,13 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove range")
 
         list.reset({{1}, {2}, {3}});
 
-        REQUIRE(view->item_count() == 3);
+        REQUIRE(view->object_count() == 3);
 
         list.remove({1, 2});
 
         tree.process_loop_events();
 
-        REQUIRE(view->item_count() == 1);
+        REQUIRE(view->object_count() == 1);
 
         compare_list_view(list, view);
     }
@@ -249,13 +249,13 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::remove all")
 
         list.reset({{1}, {2}, {3}});
 
-        REQUIRE(view->item_count() == 3);
+        REQUIRE(view->object_count() == 3);
 
         list.remove({0, 2});
 
         tree.process_loop_events();
 
-        REQUIRE(view->item_count() == 0);
+        REQUIRE(view->object_count() == 0);
 
         compare_list_view(list, view);
     }
@@ -273,7 +273,7 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::move begin->end")
         view->set_source_list(&list);
         list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
 
-        REQUIRE(view->item_count() == 7);
+        REQUIRE(view->object_count() == 7);
 
         list.move(0, 6);
 
@@ -295,7 +295,7 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::move begin<-end")
 
         list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
 
-        REQUIRE(view->item_count() == 7);
+        REQUIRE(view->object_count() == 7);
 
         list.move(6, 0);
 
@@ -317,7 +317,7 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::move same index")
 
         list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
 
-        REQUIRE(view->item_count() == 7);
+        REQUIRE(view->object_count() == 7);
 
         list.move(3, 3);
 
@@ -338,7 +338,7 @@ TEST_CASE_METHOD(ImGuiFixture, "ListView ObservableList::update")
 
         list.reset({{1}, {2}, {3}, {4}, {5}, {6}, {7}});
 
-        REQUIRE(view->item_count() == 7);
+        REQUIRE(view->object_count() == 7);
         compare_list_view(list, view);
 
         list.set({9}, 3);

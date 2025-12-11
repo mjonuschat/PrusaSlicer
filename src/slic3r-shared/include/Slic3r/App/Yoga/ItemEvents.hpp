@@ -24,13 +24,13 @@ public:
             Inserted,
         };
         AffectedResult affected_result{AffectedResult::Removed};
-        Item* parent{nullptr};
+        Object* parent{nullptr};
         size_t new_index{0};
     };
 
     using ChangeList = std::list<Change>;
 
-    Event(Item* item);
+    Event(Object* item);
     virtual ~Event();
 
     virtual ChangeList process() = 0;
@@ -40,9 +40,9 @@ public:
     virtual bool is_valid() const;
 
 protected:
-    Item* m_item = nullptr;
-    ItemHeartBeat m_item_heartbeat;
-    ItemHeartBeat m_parent_heartbeat;
+    Object* m_item = nullptr;
+    ObjectHeartBeat m_object_heartbeat;
+    ObjectHeartBeat m_parent_heartbeat;
 };
 
 using EventPtr = std::unique_ptr<Event>;
@@ -58,15 +58,15 @@ public:
 class MoveEvent : public Event
 {
 public:
-    MoveEvent(Item* item, Item* new_parent, size_t new_index);
+    MoveEvent(Object* item, Object* new_parent, size_t new_index);
 
     ChangeList process() override;
 
     void affected(const ChangeList& change_list) override;
 
 private:
-    Item* m_new_parent = nullptr;
-    ItemHeartBeat m_new_parent_heartbeat;
+    Object* m_new_parent = nullptr;
+    ObjectHeartBeat m_new_parent_heartbeat;
     size_t m_new_index = 0;
 };
 

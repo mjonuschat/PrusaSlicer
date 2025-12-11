@@ -8,7 +8,6 @@ class Oval : public Rectangle {
 public:
     explicit Oval();
 
-private:
     void render(Vec2f pos, Vec2f size) override;
 };
 

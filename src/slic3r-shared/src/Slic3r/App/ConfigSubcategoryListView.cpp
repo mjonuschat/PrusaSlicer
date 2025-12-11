@@ -29,7 +29,7 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     m_cbi_index(cbi_index),
     m_category_filter(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())
 {
-    set_item_name("ConfigSubcategoryListView");
+    set_object_name("ConfigSubcategoryListView");
     set_orientation(Orientation::Vertical);
     set_flex_grow(1);
     set_gap(5);
@@ -55,11 +55,6 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     set_source_list(m_category_filter.get());
 
     on_data_update();
-}
-
-ConfigSubcategoryListView::~ConfigSubcategoryListView()
-{
-    set_source_list(nullptr);
 }
 
 void ConfigSubcategoryListView::navigate_to_item(const Domain::ConfigItem* config_item)

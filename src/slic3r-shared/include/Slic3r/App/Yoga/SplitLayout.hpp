@@ -18,9 +18,9 @@ class SplitLayout : public Item
 public:
     SplitLayout();
 
-    void insert(ItemPtr child, size_t index) override;
-    void append(ItemPtr child) override;
-    ItemPtr remove(Item* child) override;
+    void insert(ObjectPtr child, size_t index) override;
+    void append(ObjectPtr child) override;
+    ObjectPtr remove(Object* child) override;
 
     void set_orientation(Orientation orientation);
 

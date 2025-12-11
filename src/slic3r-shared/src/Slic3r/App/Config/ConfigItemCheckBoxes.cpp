@@ -48,7 +48,7 @@ std::vector<bool> ConfigItemCheckBoxes::get_data() const
 
 void ConfigItemCheckBoxes::reconstruct_buttons()
 {
-    for (size_t child_index = 0; child_index < item_count(); ++child_index) {
+    for (size_t child_index = 0; child_index < object_count(); ++child_index) {
         remove(get_item(0));
     }
     m_toggle_buttons.clear();

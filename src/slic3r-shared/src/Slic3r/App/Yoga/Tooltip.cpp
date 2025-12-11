@@ -11,16 +11,22 @@
 namespace Slic3r::App::Yoga {
 
 Tooltip::Tooltip(
-    Item* parent, const std::string& text, const std::string& shortcut, const std::string& window_name
+    Item* parent,
+    const std::string& text,
+    const std::string& shortcut,
+    const std::string& window_name
 )
 {
     WindowPtr window = std::make_unique<Window>(window_name);
 
     window->set_orientation(Orientation::Horizontal);
     window->set_flags(
-        ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
-        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing |
-        ImGuiWindowFlags_NoMove
+        ImGuiWindowFlags_Tooltip
+        | ImGuiWindowFlags_NoInputs
+        | ImGuiWindowFlags_NoTitleBar
+        | ImGuiWindowFlags_AlwaysAutoResize
+        | ImGuiWindowFlags_NoFocusOnAppearing
+        | ImGuiWindowFlags_NoMove
     );
 
     window->set_gap(5);
@@ -37,7 +43,10 @@ Tooltip::Tooltip(
     attach_to_item(parent);
 }
 
-const std::string& Tooltip::text() const { return m_text->text(); }
+const std::string& Tooltip::text() const
+{
+    return m_text->text();
+}
 
 void Tooltip::set_text(const std::string& text)
 {
@@ -51,7 +60,10 @@ void Tooltip::set_text_wrap(bool wrap)
     m_text->set_flex_grow(wrap ? 1 : 0);
 }
 
-const std::string& Tooltip::shortcut() const { return m_shortcut->text(); }
+const std::string& Tooltip::shortcut() const
+{
+    return m_shortcut->text();
+}
 
 void Tooltip::set_shortcut(const std::string& shortcut)
 {

@@ -140,27 +140,29 @@ private:
 
 SplitLayout::SplitLayout()
 {
-    set_item_name("SplitLayout");
+    set_object_name("SplitLayout");
 }
 
-void SplitLayout::insert(ItemPtr child, size_t index)
+void SplitLayout::insert(ObjectPtr child, size_t index)
 {
+    Item* item = dynamic_cast<Item*>(child.get());
+    ASSERT(item, "SplitLayout only supports Items");
     m_needs_windows = !is_in_window();
-    child->set_flex_shrink(0);
-    if (!item_count()) {
+    item->set_flex_shrink(0);
+    if (!object_count()) {
         Item::insert(std::move(child), index);
         return; // early exit we are not adding separator
     }
 
     // item_count > 0 => we are adding a separator
-    if (item_count() > 1) {
+    if (object_count() > 1) {
         index *= 2;
-        if (index > item_count()) {
+        if (index > object_count()) {
             index--;
         }
     }
 
-    size_t separator_index = index == item_count() ? index : index + 1;
+    size_t separator_index = index == object_count() ? index : index + 1;
 
     Item::insert(std::move(child), index);
 
@@ -182,7 +184,7 @@ void SplitLayout::insert(ItemPtr child, size_t index)
     // rebuild separator array
     m_separators.clear();
     m_content_items.clear();
-    for (ItemPtr& child : m_children) {
+    for (const ObjectPtr& child : std::as_const(m_children)) {
         bool is_separator = false;
         if (m_needs_windows) {
             SeparatorWindow* window = dynamic_cast<SeparatorWindow*>(child.get());
@@ -203,20 +205,20 @@ void SplitLayout::insert(ItemPtr child, size_t index)
         }
 
         if (!is_separator) {
-            m_content_items.push_back(child.get());
+            m_content_items.push_back(dynamic_cast<Item*>(child.get()));
         }
     }
 }
 
-void SplitLayout::append(ItemPtr child)
+void SplitLayout::append(ObjectPtr child)
 {
-    insert(std::move(child), item_count() - m_separators.size());
+    insert(std::move(child), object_count() - m_separators.size());
 }
 
-ItemPtr SplitLayout::remove(Item* child)
+ObjectPtr SplitLayout::remove(Object* child)
 {
     // check if we are removing separator
-    if (item_count() > 1) {
+    if (object_count() > 1) {
         std::vector<Item*>::const_iterator content_it = std::find_if(
             m_content_items.cbegin(),
             m_content_items.cend(),
@@ -251,7 +253,7 @@ void SplitLayout::set_orientation(Orientation orientation)
 void SplitLayout::on_separator_moved(SeparatorButton* button, float requested_pos)
 {
     // Resolve two items which we are resizing
-    Item* moving_item                = m_needs_windows ? button->parent() : button;
+    Item* moving_item                = m_needs_windows ? button->parent_item() : button;
     std::optional<size_t> item_index = index_of(moving_item);
     ASSERT(item_index.has_value());
     moving_item      = get_item(item_index.value() - 1);
@@ -343,7 +345,7 @@ void SplitLayout::set_visible_child(Item* child, bool visible)
 
     child->set_visible(visible);
 
-    if (item_count() > 1) {
+    if (object_count() > 1) {
         // also set their separator visible
         get_item(index.value() == 0 ? index.value() + 1 : index.value() - 1)->set_visible(visible);
     }
@@ -364,7 +366,7 @@ void SplitLayout::invalidate()
 
 void SplitLayout::on_resized()
 {
-    for (const ItemPtr& child : std::as_const(m_children)) {
+    for (Item* child : std::as_const(m_children_render_order)) {
         ASSERT(
             child->flex_grow() == 0,
             "SplitLayout children cannot have set flex explicitly, use SplitLayout::set_flex_child"
@@ -400,11 +402,10 @@ void SplitLayout::on_resized()
         width() - padding().horizontal() :
         height() - padding().vertical();
     float set_size         = std::accumulate(
-        m_children.cbegin(),
-        m_children.cend(),
+        m_children_render_order.cbegin(),
+        m_children_render_order.cend(),
         0.f,
-        [&](float sum_size, const ItemPtr& child) -> float
-        { return sum_size + item_size(child.get()); }
+        [&](float sum_size, Item* item) -> float { return sum_size + item_size(item); }
     );
 
     if (set_size > avail_size) {

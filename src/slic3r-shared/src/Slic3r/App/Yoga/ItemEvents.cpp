@@ -9,9 +9,9 @@
 
 namespace Slic3r::App::Yoga {
 
-Event::Event(Item* item) :
+Event::Event(Object* item) :
     m_item(item),
-    m_item_heartbeat(item->heartbeat()),
+    m_object_heartbeat(item->heartbeat()),
     m_parent_heartbeat(item->parent()->heartbeat())
 {
     ASSERT(item);
@@ -23,14 +23,14 @@ void Event::affected(const ChangeList& change_list) {}
 
 bool Event::is_valid() const
 {
-    return !m_item_heartbeat.expired() && !m_parent_heartbeat.expired();
+    return !m_object_heartbeat.expired() && !m_parent_heartbeat.expired();
 }
 
 RemoveEvent::RemoveEvent(Item* item) : Event(item) {}
 
 Event::ChangeList RemoveEvent::process()
 {
-    Item* parent = m_item->parent();
+    Object* parent = m_item->parent();
     ASSERT(parent);
     std::optional<size_t> index = parent->index_of(m_item);
     ASSERT(index.has_value());
@@ -40,7 +40,7 @@ Event::ChangeList RemoveEvent::process()
     return {{Change::AffectedResult::Removed, parent, index.value()}};
 }
 
-MoveEvent::MoveEvent(Item* item, Item* new_parent, size_t new_index) :
+MoveEvent::MoveEvent(Object* item, Object* new_parent, size_t new_index) :
     Event(item),
     m_new_parent(new_parent),
     m_new_parent_heartbeat(m_new_parent->heartbeat()),
@@ -49,7 +49,7 @@ MoveEvent::MoveEvent(Item* item, Item* new_parent, size_t new_index) :
 
 Event::ChangeList MoveEvent::process()
 {
-    Item* parent = m_item->parent();
+    Object* parent = m_item->parent();
     ASSERT(parent);
     std::optional<size_t> index = parent->index_of(m_item);
     ASSERT(index.has_value());

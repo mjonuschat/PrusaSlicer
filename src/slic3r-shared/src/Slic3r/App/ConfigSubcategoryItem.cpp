@@ -24,7 +24,7 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     m_cbi_index(cbi_index),
     m_rows_filter_list(std::make_shared<Biz::ObservableListSortFilter<Domain::ConfigItem>>())
 {
-    set_item_name("ConfigSubcategoryItem");
+    set_object_name("ConfigSubcategoryItem");
     set_orientation(Orientation::Vertical);
     set_flex_shrink(0);
     set_flags(ImDrawFlags_None);
@@ -82,7 +82,7 @@ void ConfigSubcategoryItem::navigate_to_item(const Domain::ConfigItem* config_it
 
 void ConfigSubcategoryItem::clear_navigation()
 {
-    for (size_t row_index = 0; row_index < m_rows_list_view->item_count(); ++row_index) {
+    for (size_t row_index = 0; row_index < m_rows_list_view->object_count(); ++row_index) {
         m_rows_list_view->item_at(row_index)->clear_navigation();
     }
 }

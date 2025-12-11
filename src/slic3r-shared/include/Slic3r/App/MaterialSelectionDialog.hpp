@@ -8,7 +8,6 @@
 #include "Slic3r/App/Yoga/ListView.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/MaterialSelectionRow.hpp"
-#include "Slic3r/App/MaterialSettingsDialog.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"
 
 #include "Slic3r/Biz/ObservableListSortFilter.hpp"
@@ -26,6 +25,7 @@ class LayoutButton;
 namespace Slic3r::App {
 
 class Navigator;
+class MaterialSettingsDialog;
 
 class MaterialSelectionDialog :
     public Yoga::Dialog,
@@ -63,7 +63,8 @@ private:
         Biz::Preset::PresetItem,
         size_t&,
         Biz::Preset::PresetInteractor&>;
-    using SelectionRowListView = Yoga::ListView<MaterialSelectionRow, Biz::Preset::PresetItem, SelectionRowListViewFactory>;
+    using SelectionRowListView =
+        Yoga::ListView<MaterialSelectionRow, Biz::Preset::PresetItem, SelectionRowListViewFactory>;
 
     Callbacks m_callbacks;
 
@@ -77,8 +78,7 @@ private:
     SelectionRowListView* m_selection_row_list_view      = nullptr;
     Yoga::LayoutButton* m_advanced_button                = nullptr;
     Biz::Preset::PresetItemObservableList* m_preset_list = nullptr;
-
-    MaterialSettingsDialog m_material_settings_dialog;
+    MaterialSettingsDialog* m_material_settings_dialog   = nullptr;
 };
 
 } // namespace Slic3r::App

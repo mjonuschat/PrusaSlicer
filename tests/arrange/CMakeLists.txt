@@ -12,6 +12,5 @@ if (WIN32)
     prusaslicer_copy_dlls(${_TEST_NAME}_tests)
 endif()
 
-set(_catch_args "exclude:[NotWorking] exclude:[Slow]")
 list(APPEND _catch_args "${CATCH_EXTRA_ARGS}")
 add_test(${_TEST_NAME}_tests ${_TEST_NAME}_tests ${_catch_args})

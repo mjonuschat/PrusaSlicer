@@ -15,6 +15,8 @@ public:
     explicit Slider(double begin, double end, double step = 1.f);
     explicit Slider();
 
+    void render(Vec2f pos, Vec2f size) override;
+
     Callbacks& callbacks();
 
     double value() const;
@@ -36,7 +38,6 @@ protected:
     void on_resized() override;
 
 private:
-    void process_events(Vec2f pos, Vec2f size) override;
     void set_hovered(bool hovered);
     double clamp(double value);
     double snap_to_nearest(double value);

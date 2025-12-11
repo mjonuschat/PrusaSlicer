@@ -17,7 +17,7 @@ class TextInternal : public Yoga::Item
 public:
 
     TextInternal() {
-        set_item_name("TextInternal");
+        set_object_name("TextInternal");
     }
 
     void render(Vec2f pos, Vec2f size) override
@@ -112,12 +112,12 @@ public:
 protected:
     float available_width() const
     {
-        return parent()->width() - parent()->padding().horizontal();
+        return parent_item()->width() - parent_item()->padding().horizontal();
     }
 
     float available_height() const
     {
-        float avail_height = parent()->height() - parent()->padding().vertical();
+        float avail_height = parent_item()->height() - parent_item()->padding().vertical();
         return Domain::fuzzy_compare(0.f, avail_height) ? ImGui::GetFontSize() : avail_height;
     }
 
@@ -201,7 +201,7 @@ private:
 
 Text::Text(const std::string& text, Render::ImguiFontType font_type)
 {
-    set_item_name("Text");
+    set_object_name("Text");
     m_content_item = emplace_back<TextInternal>();
     m_content_item->set_font_type(font_type);
     m_content_item->set_source_text(text);

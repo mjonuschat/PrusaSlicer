@@ -41,9 +41,14 @@ LogicalPrinterSettingsDialog::LogicalPrinterSettingsDialog(
     m_selected_project_changed_listener_scope(project_interactor, *this),
     m_project_interactor(project_interactor),
     m_navigator(navigator),
-    m_advanced_dialog(project_interactor, m_navigator, this),
     m_printer_add_dialog(printer_add_dialog)
 {
+    m_advanced_dialog = content_item()->emplace_back<PrinterAdvancedSettingsDialog>(
+        project_interactor,
+        m_navigator,
+        this
+    );
+
     content_item()->set_width(350);
 
     content()->set_padding(0);
@@ -78,7 +83,10 @@ void LogicalPrinterSettingsDialog::on_preset_selection_changed(
     }
 }
 
-void LogicalPrinterSettingsDialog::on_config_container_selection_changed(Domain::SelectionId project_id, Domain::SelectionId config_container_id)
+void LogicalPrinterSettingsDialog::on_config_container_selection_changed(
+    Domain::SelectionId project_id,
+    Domain::SelectionId config_container_id
+)
 {
     m_warning->set_visible(false);
 }
@@ -89,7 +97,7 @@ void LogicalPrinterSettingsDialog::on_list_selection_changed(Domain::SelectionId
         return;
     }
 
-    for (size_t button_index = 0; button_index < m_printer_list_view->item_count(); ++button_index)
+    for (size_t button_index = 0; button_index < m_printer_list_view->object_count(); ++button_index)
     {
         LogicalPrinterSettingsButton* button = dynamic_cast<LogicalPrinterSettingsButton*>(
             m_printer_list_view->get_item(button_index)
@@ -115,7 +123,7 @@ void LogicalPrinterSettingsDialog::on_selected_project_changed_final(size_t inde
 
 PrinterAdvancedSettingsDialog& LogicalPrinterSettingsDialog::printer_advanced_settings_dialog()
 {
-    return m_advanced_dialog;
+    return *m_advanced_dialog;
 }
 
 void LogicalPrinterSettingsDialog::create_page_list()
@@ -188,7 +196,6 @@ void LogicalPrinterSettingsDialog::create_page_list()
         //    add_printer_button->set_self_align(YGAlignFlexEnd);
         add_printer_button->callbacks().action = [this] {
             m_printer_add_dialog->attach_to_item(content_item(), Position::Left);
-            m_printer_add_dialog->set_root_item(get_or_find_root_item());
             m_printer_add_dialog->set_current_tab(0);
             m_printer_add_dialog->open();
         };*/
@@ -208,7 +215,7 @@ void LogicalPrinterSettingsDialog::create_page_settings()
         m_stack_layout->set_current_index(0);
         m_warning->set_visible(false);
     };
-    m_text_printer_name             = title_row->emplace_back<Text>("Unknown");
+    m_text_printer_name = title_row->emplace_back<Text>("Unknown");
 
     m_page_settings->emplace_back<Separator>(Orientation::Horizontal);
 
@@ -242,10 +249,7 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     Text* label = m_page_settings->emplace_back<Text>(_u8L("Nozzles"), Render::ImguiFontType::Bold);
     label->set_margin(Margins(0, 10, 0, 0));
 
-    auto validation_updated = [this](bool valid)
-    {
-        m_warning->set_visible(!valid);
-    };
+    auto validation_updated = [this](bool valid) { m_warning->set_visible(!valid); };
     m_nozzle_list_view =
         m_page_settings->emplace_back<NozzleListView>(NozzleListView::ViewFactoryType{
             m_project_interactor.preset_interactor(),
@@ -262,21 +266,21 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     m_warning->set_visible(false);
     m_warning->set_text_color({0.98f, 0.4f, 0.19f});
 
-    m_advanced_dialog.attach_to_item(content_item(), Position::Left);
+    m_advanced_dialog->attach_to_item(content_item(), Position::Left);
 
     LayoutButton* button_advanced_setting =
         m_page_settings->emplace_back<LayoutButton>(_u8L("Advanced settings"));
     button_advanced_setting->callbacks().action = [this]
     {
-        if (m_advanced_dialog.opened()) {
+        if (m_advanced_dialog->opened()) {
             m_navigator.set_opened_dialog(this);
         } else {
-            m_navigator.set_opened_dialog(&m_advanced_dialog);
+            m_navigator.set_opened_dialog(m_advanced_dialog);
         }
     };
-    m_advanced_dialog.callbacks().opened = [button_advanced_setting]
+    m_advanced_dialog->callbacks().opened = [button_advanced_setting]
     { button_advanced_setting->set_checked(true); };
-    m_advanced_dialog.callbacks().closed = [button_advanced_setting]
+    m_advanced_dialog->callbacks().closed = [button_advanced_setting]
     { button_advanced_setting->set_checked(false); };
 }
 

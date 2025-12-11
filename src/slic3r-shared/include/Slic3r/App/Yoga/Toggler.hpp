@@ -10,14 +10,15 @@ class Toggler : public Oval
 {
 public:
     Toggler();
+
+    void style_node() override;
+
     void set_checked(bool checked);
 
     bool third_state() const;
     void set_third_state(bool third_state);
 
 protected:
-    void process_events(Vec2f pos, Vec2f size) override;
-
     void update_contents();
 
     ImColor bg_color(bool hovered) const;

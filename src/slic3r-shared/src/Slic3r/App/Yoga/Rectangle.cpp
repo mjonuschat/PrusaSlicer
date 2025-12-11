@@ -11,7 +11,7 @@ namespace Slic3r::App::Yoga {
 
 Rectangle::Rectangle() : Item()
 {
-    set_item_name("Rectangle");
+    set_object_name("Rectangle");
 }
 
 void Rectangle::render(Vec2f pos, Vec2f size)

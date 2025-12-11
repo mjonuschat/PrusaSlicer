@@ -53,8 +53,8 @@ SearchResultRow::SearchResultRow(
     m_text_label->set_flex_shrink(0);
     m_text_label->set_wrap_mode(Text::WrapMode::WrapElide);
 
-    m_tooltip.content_item()->set_width(300);
-    m_tooltip.set_text_wrap(true);
+    m_tooltip->content_item()->set_width(300);
+    m_tooltip->set_text_wrap(true);
 
     m_button_group.lock()->insert_button(this);
 
@@ -81,7 +81,7 @@ void SearchResultRow::on_data_update()
 
     m_text_label->set_text(def.label);
 
-    m_tooltip.set_text(fmt::format("{}\n{}\n{}", def.label, m_text_category->text(), def.tooltip));
+    m_tooltip->set_text(fmt::format("{}\n{}\n{}", def.label, m_text_category->text(), def.tooltip));
 }
 
 void SearchResultRow::hovered_updated_internal()

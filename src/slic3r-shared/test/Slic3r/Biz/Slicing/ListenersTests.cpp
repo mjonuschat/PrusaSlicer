@@ -53,7 +53,7 @@ void translate_instances(Model& model, const Vec3d& translation) {
     }
 }
 
-TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]")
+TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor][timeout]")
 {
     ResultListener result_listener;
     slicing.set_listener<IFDMResultListener>(&result_listener);
@@ -138,7 +138,7 @@ struct WipeTowerGeometryListener : public IWipeTowerGeometryListener
     std::optional<WipeTowerGeometry> geometry;
 };
 
-TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geometry once available", "[slicing][slicing-callbacks]")
+TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geometry once available", "[slicing][slicing-callbacks][timeout]")
 {
     using namespace std::chrono_literals;
     ResultListener result_listener;

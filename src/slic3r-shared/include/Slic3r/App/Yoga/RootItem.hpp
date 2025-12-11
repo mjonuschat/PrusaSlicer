@@ -15,14 +15,13 @@ class RootItem : public Item
 {
 public:
     RootItem();
+    ~RootItem();
 
     void render(Vec2f pos, Vec2f size) override;
 
     void set_style_dirty() override;
 
     void style_node() override;
-
-    void process_events(Vec2f pos, Vec2f size) override;
 
     void open_popup(Popup* popup);
     void close_popup(Popup* popup);

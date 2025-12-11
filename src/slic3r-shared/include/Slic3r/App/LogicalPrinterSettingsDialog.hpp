@@ -108,7 +108,7 @@ private:
     Yoga::ComboBoxListViewSelection<Domain::Preset::HwSheetConfigDef>* m_combo_sheets;
     Yoga::Text* m_warning{nullptr};
     NozzleListView* m_nozzle_list_view{nullptr};
-    PrinterAdvancedSettingsDialog m_advanced_dialog;
+    PrinterAdvancedSettingsDialog* m_advanced_dialog{nullptr};
     PrinterAddDialog* m_printer_add_dialog{nullptr};
 };
 

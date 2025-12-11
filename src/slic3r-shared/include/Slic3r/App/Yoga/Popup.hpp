@@ -13,7 +13,7 @@ class Popup;
 using WindowPtr = std::unique_ptr<Window>;
 using PopupPtr = std::unique_ptr<Popup>;
 
-class Popup
+class Popup : public Object
 {
 public:
     struct Callbacks
@@ -23,9 +23,7 @@ public:
     };
 
     Popup();
-    virtual ~Popup();
-    Popup(const Popup& rhs) = delete;
-    Popup& operator=(Popup& rhs) = delete;
+    ~Popup();
 
     /**
      * @param item that the Popup is attached to
@@ -34,24 +32,17 @@ public:
     /**
      * @param item - any item from the tree, from which Popup will source RootItem
      */
-    void attach_to_center(Item* item);
-    /**
-     * @param item - any item from the tree, from which Popup will source RootItem
-     */
-    void detach(Item* item);
+    void attach_to_center();
 
     bool opened() const;
     void open();
     void open_at(const Vec2f& pos);
-    void open_at(Item* item, Position prefered_position = Position::Right, float offset = 10);
     void close();
 
     Window* content_item() const;
 
-    void render(const Vec2f& size);
-    void style_node();
+    void render(Vec2f pos, Vec2f size) override;
     void resize(const Vec2f& size);
-    void process_events(Vec2f pos, Vec2f size);
     void check_resized();
 
     float offset() const;
@@ -60,30 +51,27 @@ public:
     Position preferred_position() const;
     void set_preferred_position(Position preferred_position);
 
-    /**
-     * @warning may return null if Popup was never opened
-     */
-    RootItem* get_or_find_root_item();
-    void set_root_item(RootItem* root_item);
-
     Callbacks& callbacks();
 
 protected:
     void set_content_item(WindowPtr content_item);
 
 private:
-    void find_root_item();
-
     virtual void on_about_to_show();
     virtual void on_about_to_close();
+
+    // ------------ intentionally hidden ---------------
+    void prepend(ObjectPtr child) override;
+    void append(ObjectPtr child) override;
+    void insert(ObjectPtr child, size_t index) override;
+    ObjectPtr remove(Object* child) override;
+    // ------------ intentionally hidden ---------------
 
 private:
     Callbacks m_callbacks;
 
-    RootItem* m_root_item = nullptr; ///< Set & Cached on the fly
-    Item* m_parent = nullptr;
-    WindowPtr m_content_item;
     YGNodeRef m_popup_node = nullptr;
+    Window* m_content_item = nullptr;
 
     enum class AttachedType
     {
@@ -96,6 +84,7 @@ private:
     Item* m_attached_to = nullptr;
     Position m_preferred_position = Position::Right;
     float m_offset = 10;
+    Vec2f m_last_size;
 
     // hack
     bool m_resized = false;

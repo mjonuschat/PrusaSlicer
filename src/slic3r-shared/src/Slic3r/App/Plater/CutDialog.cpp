@@ -477,22 +477,22 @@ void CutDialog::update_state(
         }
         m_connectors_warning->set_text(out);
     }
-    m_connectors_warning->parent()->set_visible(connectors_warnig);
+    m_connectors_warning->parent_item()->set_visible(connectors_warnig);
 
     if (!keep_upper && !keep_lower) {
         m_keep_object_warning->set_text(_u8L("Select at least one object to keep after cutting."));
     }
-    m_keep_object_warning->parent()->set_visible(!keep_upper && !keep_lower);
+    m_keep_object_warning->parent_item()->set_visible(!keep_upper && !keep_lower);
 
     if (plane_outside_object) {
         m_cut_plane_warning->set_text(_u8L("Cut plane is placed out of object"));
     }
-    m_cut_plane_warning->parent()->set_visible(plane_outside_object);
+    m_cut_plane_warning->parent_item()->set_visible(plane_outside_object);
 
     if (invalid_groove) {
         m_groove_warning->set_text(_u8L("Cut plane with groove is invalid"));
     }
-    m_groove_warning->parent()->set_visible(invalid_groove);
+    m_groove_warning->parent_item()->set_visible(invalid_groove);
 }
 
 void CutDialog::update_panels_visibility()
@@ -878,8 +878,8 @@ void CutDialog::set_connector_type(Domain::CutConnectorType type)
     const bool is_snap = type == Domain::CutConnectorType::Snap;
     m_style_row->set_enabled(!is_snap);
     m_shape_row->set_enabled(!is_snap);
-    m_snap_bulge_row->parent()->set_visible(is_snap);
-    m_snap_space_row->parent()->set_visible(is_snap);
+    m_snap_bulge_row->parent_item()->set_visible(is_snap);
+    m_snap_space_row->parent_item()->set_visible(is_snap);
 
     if (type == Domain::CutConnectorType::Dowel) {
         m_prism_btn->set_checked(true);

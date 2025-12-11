@@ -30,7 +30,7 @@ TEST_CASE_METHOD(ImGuiFixture, "[Yoga::SplitLayout] one item")
     item.render({}, {100, 50});
 
     REQUIRE_THAT(left->width(), WithinRel(30, 0.0001));
-    REQUIRE(split->item_count() == 1);
+    REQUIRE(split->object_count() == 1);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "[Yoga::SplitLayout] two items")
@@ -48,7 +48,7 @@ TEST_CASE_METHOD(ImGuiFixture, "[Yoga::SplitLayout] two items")
     item.render({}, {100, 50});
     item.render({}, {100, 50});
 
-    REQUIRE(split->item_count() == 3);
+    REQUIRE(split->object_count() == 3);
 }
 
 TEST_CASE_METHOD(ImGuiFixture, "[Yoga::SplitLayout] dynamic")
@@ -59,17 +59,17 @@ TEST_CASE_METHOD(ImGuiFixture, "[Yoga::SplitLayout] dynamic")
 
     Item* left = split->emplace_back<Item>();
 
-    REQUIRE(split->item_count() == 1);
+    REQUIRE(split->object_count() == 1);
 
     Item* right = split->emplace_back<Item>();
 
-    REQUIRE(split->item_count() == 3);
+    REQUIRE(split->object_count() == 3);
 
     split->remove(left);
 
-    REQUIRE(split->item_count() == 1);
+    REQUIRE(split->object_count() == 1);
 
     split->remove(right);
 
-    REQUIRE(split->item_count() == 0);
+    REQUIRE(split->object_count() == 0);
 }

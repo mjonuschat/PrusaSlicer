@@ -76,7 +76,7 @@ static bool YInputText(
 
 InputText::InputText(const std::string& name)
 {
-    set_item_name(name.empty() ? "InputText" : name);
+    set_object_name(name.empty() ? "InputText" : name);
 }
 
 void InputText::render(Vec2f pos, Vec2f size)
@@ -86,7 +86,7 @@ void InputText::render(Vec2f pos, Vec2f size)
     {
         Imgui::ScopedStyleColors colors({{ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS}});
         ImGui::SetCursorScreenPos(to_im(pos));
-        const std::string id = "###" + m_item_name;
+        const std::string id = "###" + object_name();
 
         ImU32 text_color = ImGui::GetColorU32(enabled() ? ImGuiCol_Text : ImGuiCol_TextDisabled);
         ImGui::PushStyleColor(ImGuiCol_Text, text_color);

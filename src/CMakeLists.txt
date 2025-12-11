@@ -3,7 +3,9 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     slic3r_remap_configs("Catch2::Catch2" RelWithDebInfo Release)
 
     set(CATCH_EXTRA_ARGS "" CACHE STRING "Extra arguments for Catch2 test suites.")
-    set(CATCH_ALL_ARGS "exclude:[NotWorking]" "exclude:[Slow]")
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(CATCH_ALL_ARGS "~[timeout]")
+    endif()
     list(APPEND CATCH_ALL_ARGS ${CATCH_EXTRA_ARGS})
 endif()
 

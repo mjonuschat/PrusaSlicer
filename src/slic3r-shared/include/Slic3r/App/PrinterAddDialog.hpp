@@ -12,7 +12,7 @@
 
 namespace Slic3r::App::Yoga {
 class StackLayout;
-}
+} // namespace Slic3r::App::Yoga
 
 namespace Slic3r::App {
 
@@ -22,7 +22,6 @@ class PrinterAddDialog : public Yoga::Dialog
 {
 public:
     PrinterAddDialog(Navigator& navigator);
-    ~PrinterAddDialog();
 
 protected:
     void on_tab_selected(int current_index) override;
@@ -43,7 +42,7 @@ private:
         PageEntry,
         Yoga::ViewFactory<PageEntryButton, PageEntry, PageEntryButton::FnIndexClicked>>;
 
-    Biz::ObservableList<PageEntry> m_list_vendors;
+    Biz::UnsharedPointer<Biz::ObservableList<PageEntry>> m_list_vendors;
     PageListView* m_page_list_view = nullptr;
 };
 

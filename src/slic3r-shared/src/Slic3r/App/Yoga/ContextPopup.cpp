@@ -12,7 +12,7 @@ namespace Slic3r::App::Yoga {
 
 ContextPopup::ContextPopup(const std::string& name)
 {
-    set_item_name(name.empty() ? "ContextMenu" : name);
+    set_object_name(name.empty() ? "ContextMenu" : name);
     set_position_type(YGPositionType::YGPositionTypeAbsolute);
 }
 
@@ -22,26 +22,24 @@ void ContextPopup::style_node()
         switch (m_position) {
         case Position::Right:
             set_right(-(m_offset + width()));
-            set_top(m_parent->height() * 0.5f - height() * 0.5f);
+            set_top(parent_item()->height() * 0.5f - height() * 0.5f);
             break;
         case Position::Left:
             set_left(-(m_offset + width()));
-            set_top(m_parent->height() * 0.5f - height() * 0.5f);
+            set_top(parent_item()->height() * 0.5f - height() * 0.5f);
             break;
         case Position::Top:
             set_top(-(m_offset + height()));
-            set_left(m_parent->width() * 0.5f - width() * 0.5f);
+            set_left(parent_item()->width() * 0.5f - width() * 0.5f);
             break;
         case Position::Bottom:
             set_bottom(-(m_offset + height()));
-            set_left(m_parent->width() * 0.5f - width() * 0.5f);
+            set_left(parent_item()->width() * 0.5f - width() * 0.5f);
             break;
         }
     }
 
-    for (const ItemPtr& item : std::as_const(m_children)) {
-        item->style_node();
-    }
+    Item::style_node();
 }
 
 void ContextPopup::render(Vec2f pos, Vec2f size)
@@ -59,14 +57,14 @@ void ContextPopup::render(Vec2f pos, Vec2f size)
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
 
-    if (ImGui::BeginPopup(m_item_name.c_str(), m_flags)) {
+    if (ImGui::BeginPopup(object_name().c_str(), m_flags)) {
         if (m_request_close) {
             ImGui::CloseCurrentPopup();
             m_request_close = false;
         }
 
-        for (const ItemPtr& child : std::as_const(m_children)) {
-            render_node(pos, child.get());
+        for (Item* child : std::as_const(m_children_render_order)) {
+            render_node(pos, child);
         }
 
         ImGui::EndPopup();
@@ -77,8 +75,8 @@ void ContextPopup::render(Vec2f pos, Vec2f size)
         ImGui::OpenPopupOnItemClick(popup_id);
 
         if (ImGui::BeginPopup(popup_id, m_flags)) {
-            for (const ItemPtr& child : std::as_const(m_children)) {
-                render_node(pos, child.get());
+            for (Item* child : std::as_const(m_children_render_order)) {
+                render_node(pos, child);
             }
             ImGui::EndPopup();
 
@@ -137,9 +135,9 @@ void ContextPopup::set_rounding(float rounding)
 
 void ContextPopup::open()
 {
-    m_request_close = false;
-    m_id_on_right_click = m_item_name;
-    ImGui::OpenPopup(m_item_name.c_str());
+    m_request_close     = false;
+    m_id_on_right_click = object_name();
+    ImGui::OpenPopup(object_name().c_str());
     set_style_dirty();
 }
 
@@ -151,7 +149,7 @@ void ContextPopup::close()
 
 bool ContextPopup::opened() const
 {
-    return ImGui::IsPopupOpen(m_item_name.c_str());
+    return ImGui::IsPopupOpen(object_name().c_str());
 }
 
 } // namespace Slic3r::App::Yoga

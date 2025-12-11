@@ -24,7 +24,6 @@ class PhysicalPrinterSettingsDialog : public Yoga::Dialog
 {
 public:
     PhysicalPrinterSettingsDialog(PrinterAddDialog* printer_add_dialog, Navigator& navigator);
-    ~PhysicalPrinterSettingsDialog();
 
 protected:
     void close_action() override;
@@ -37,12 +36,15 @@ private:
     using PrinterListView = Yoga::ListView<
         PhysicalPrinterSettingsButton,
         PhysicalPrinter,
-        Yoga::ViewFactory<PhysicalPrinterSettingsButton, PhysicalPrinter, PhysicalPrinterSettingsButton::FnIndexClicked>>;
+        Yoga::ViewFactory<
+            PhysicalPrinterSettingsButton,
+            PhysicalPrinter,
+            PhysicalPrinterSettingsButton::FnIndexClicked>>;
 
     PrinterAddDialog* m_printer_add_dialog{nullptr};
     Navigator& m_navigator;
 
-    Biz::ObservableList<PhysicalPrinter> m_list_physical_printers;
+    Biz::UnsharedPointer<Biz::ObservableList<PhysicalPrinter>> m_list_physical_printers;
     PrinterListView* m_printer_list_view{nullptr};
     Yoga::StackLayout* m_stack_layout{nullptr};
     Yoga::Item* m_page_list{nullptr};

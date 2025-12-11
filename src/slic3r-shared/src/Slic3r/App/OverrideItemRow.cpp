@@ -27,7 +27,7 @@ OverrideItemRow::OverrideItemRow(
 {
     set_gap(5);
     set_flex_shrink(0);
-    set_item_name("OverrideItemRow");
+    set_object_name("OverrideItemRow");
     set_align_items(YGAlignCenter);
 
     m_label = emplace_back<Text>(std::string());

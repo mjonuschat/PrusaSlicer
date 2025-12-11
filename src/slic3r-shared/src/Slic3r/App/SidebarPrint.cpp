@@ -15,6 +15,7 @@
 #include "Slic3r/App/Yoga/RadioExtruder.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
 #include "Slic3r/App/Navigator.hpp"
+#include "Slic3r/App/PrintSettingsDialog.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
@@ -32,9 +33,10 @@ namespace Slic3r::App {
 SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator& navigator) :
     Window("SidebarPrint"),
     m_project_interactor(project_interactor),
-    m_navigator(navigator),
-    m_print_settings_dialog(project_interactor, m_navigator)
+    m_navigator(navigator)
 {
+    m_print_settings_dialog = emplace_back<PrintSettingsDialog>(project_interactor, m_navigator);
+
     set_orientation(Orientation::Vertical);
     set_gap(5);
 
@@ -50,18 +52,17 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     m_content_area->set_padding(Paddings(0, 0, 14, 0));
     m_content_area->set_gap(5);
 
-    m_print_settings_dialog.attach_to_item(this, Position::Left, 20);
-    m_print_settings_dialog.callbacks().opened = [this]() {
-        print_dialog_tab_selected(m_print_settings_dialog.current_tab_index());
-    };
-    m_print_settings_dialog.callbacks().closed = [this]() {
+    m_print_settings_dialog->attach_to_item(this, Position::Left, 20);
+    m_print_settings_dialog->callbacks().opened = [this]()
+    { print_dialog_tab_selected(m_print_settings_dialog->current_tab_index()); };
+    m_print_settings_dialog->callbacks().closed = [this]()
+    {
         for (AbstractButton* button : m_group_print_tools->buttons()) {
             button->set_checked(false);
         }
     };
-    m_print_settings_dialog.dialog_callbacks().tab_selected = [this](size_t tab_index) {
-        print_dialog_tab_selected(tab_index);
-    };
+    m_print_settings_dialog->dialog_callbacks().tab_selected = [this](size_t tab_index)
+    { print_dialog_tab_selected(tab_index); };
 
     Item* layer_height_row = m_content_area->emplace_back<Item>();
     layer_height_row->set_flex_shrink(0);
@@ -72,13 +73,18 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     text_rect->set_padding(Paddings(5, 0));
     text_rect->emplace_back<Text>("Print");
 
-    m_combo_print = layer_height_row
-                        ->emplace_back<ComboBoxListViewSelection<Biz::Preset::PresetItem>>();
-    m_combo_print->set_get_name_fn([](const Biz::Preset::PresetItem* item) -> std::string {
-        const std::string prefix{item->runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
-        return prefix + item->name;
-    });
-    m_combo_print->set_source_list(&m_project_interactor.preset_interactor().print_presets().items());
+    m_combo_print =
+        layer_height_row->emplace_back<ComboBoxListViewSelection<Biz::Preset::PresetItem>>();
+    m_combo_print->set_get_name_fn(
+        [](const Biz::Preset::PresetItem* item) -> std::string
+        {
+            const std::string prefix{item->runtime_only ? Biz::_u8L("(From 3mf) ") : ""};
+            return prefix + item->name;
+        }
+    );
+    m_combo_print->set_source_list(
+        &m_project_interactor.preset_interactor().print_presets().items()
+    );
     m_combo_print->set_flex_grow(1);
     m_combo_print->callbacks().selection_changed = [this](int print_index)
     {
@@ -118,23 +124,26 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     m_tool_head_list_view->set_orientation(Orientation::Vertical);
     m_tool_head_list_view->set_gap(5);
     m_tool_head_list_view->set_flex_shrink(0);
-    m_tool_head_list_view->set_source_list(&m_project_interactor.preset_interactor().tool_presets());
+    m_tool_head_list_view->set_source_list(
+        &m_project_interactor.preset_interactor().tool_presets()
+    );
 
-    m_group_print_tools->callbacks().action = [this](AbstractButton* action_button) {
-        m_navigator.set_opened_dialog(&m_print_settings_dialog);
+    m_group_print_tools->callbacks().action = [this](AbstractButton* action_button)
+    {
+        m_navigator.set_opened_dialog(m_print_settings_dialog);
 
         // This is really ugly, refactor this once we will settle on the final-ish design
         if (action_button == m_settings_set_btn) {
-            m_print_settings_dialog.set_current_tab(0);
+            m_print_settings_dialog->set_current_tab(0);
         } else {
-            for (size_t tool_index = 0; tool_index < m_tool_head_list_view->item_count(); ++tool_index)
+            for (size_t tool_index = 0; tool_index < m_tool_head_list_view->object_count();
+                 ++tool_index)
             {
-                AbstractButton* cog_button = dynamic_cast<SidebarToolHeadRow*>(
-                                                 m_tool_head_list_view->item_at(tool_index)
-                )
-                                                 ->cog_button();
+                AbstractButton* cog_button =
+                    dynamic_cast<SidebarToolHeadRow*>(m_tool_head_list_view->item_at(tool_index))
+                        ->cog_button();
                 if (cog_button == action_button) {
-                    m_print_settings_dialog.set_current_tab(1 + tool_index);
+                    m_print_settings_dialog->set_current_tab(1 + tool_index);
                     break;
                 }
             }
@@ -152,14 +161,16 @@ SidebarPrint::SidebarPrint(Biz::ProjectInteractor& project_interactor, Navigator
     extruders_selector->set_gap(gap_size);
 
     size_t extruer_id = 0;
-    for (const ImColor& color : std::initializer_list<ImColor>{
+    for (const ImColor& color :
+         std::initializer_list<ImColor>{
              ImColor{250, 100, 24},
              ImColor{189, 1, 60},
              ImColor{112, 193, 64},
              ImColor{225, 249, 104}
          })
     {
-        RadioExtruder* radio_btn = extruders_selector->emplace_back<RadioExtruder>(++extruer_id, color);
+        RadioExtruder* radio_btn =
+            extruders_selector->emplace_back<RadioExtruder>(++extruer_id, color);
         radio_btn->set_checkable(true);
         if (extruer_id == 1)
             radio_btn->set_checked(true);
@@ -243,7 +254,7 @@ void SidebarPrint::print_dialog_tab_selected(size_t tab_index)
 
 PrintSettingsDialog& SidebarPrint::print_settings_dialog()
 {
-    return m_print_settings_dialog;
+    return *m_print_settings_dialog;
 }
 
 } // namespace Slic3r::App

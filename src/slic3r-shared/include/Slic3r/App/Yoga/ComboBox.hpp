@@ -89,7 +89,7 @@ protected:
 protected:
     std::vector<std::string> m_items;
 
-    Tooltip m_tooltip;
+    Tooltip* m_tooltip = nullptr;
 
 private:
     Callbacks m_callbacks;

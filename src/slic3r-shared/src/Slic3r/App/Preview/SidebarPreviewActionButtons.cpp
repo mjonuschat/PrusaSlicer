@@ -292,9 +292,9 @@ void SidebarPreviewActionButtons::switch_layout(ActionButtonsLayoutType layout_t
             return;
         }
         if (!m_layout_with_connect.layout) {
-            m_layout_with_connect.layout = remove_child(m_layout_with_connect.layout_raw);
+            m_layout_with_connect.layout = remove(m_layout_with_connect.layout_raw);
         }
-        ASSERT(m_children.empty());
+        ASSERT(object_count() == 0);
         append(std::move(m_layout_without_connect.layout));
     } break;
     case ActionButtonsLayoutType::WithConnect: {
@@ -302,9 +302,9 @@ void SidebarPreviewActionButtons::switch_layout(ActionButtonsLayoutType layout_t
             return;
         }
         if (!m_layout_without_connect.layout) {
-            m_layout_without_connect.layout = remove_child(m_layout_without_connect.layout_raw);
+            m_layout_without_connect.layout = remove(m_layout_without_connect.layout_raw);
         }
-        ASSERT(m_children.empty());
+        ASSERT(object_count() == 0);
         append(std::move(m_layout_with_connect.layout));
     } break;
     default:

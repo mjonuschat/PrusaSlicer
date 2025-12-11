@@ -7,12 +7,11 @@
 #include "Slic3r/App/Yoga/Window.hpp"
 
 #include "Slic3r/App/Yoga/ListView.hpp"
-#include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
-#include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
-#include "Slic3r/App/PrinterAddDialog.hpp"
+
+#include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
-#include "Slic3r/App/MaterialSelectionDialog.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
 namespace Slic3r::Biz {
 class ProjectInteractor;
@@ -21,6 +20,11 @@ class ProjectInteractor;
 namespace Slic3r::App {
 
 class Navigator;
+class LogicalPrinterSettingsDialog;
+class PrinterAddDialog;
+class MaterialSelectionDialog;
+class PhysicalPrinterSettingsDialog;
+class MaterialListView;
 
 namespace Yoga {
 class Text;
@@ -68,10 +72,10 @@ private:
         MaterialListViewFactory>;
 
     MaterialListView* m_list_view{nullptr};
-    LogicalPrinterSettingsDialog m_logical_printer_settings_dialog;
-    PhysicalPrinterSettingsDialog m_physical_printer_settings_dialog;
-    PrinterAddDialog m_printer_add_dialog;
-    MaterialSelectionDialog m_material_selection_dialog;
+    LogicalPrinterSettingsDialog* m_logical_printer_settings_dialog{nullptr};
+    PhysicalPrinterSettingsDialog* m_physical_printer_settings_dialog{nullptr};
+    PrinterAddDialog* m_printer_add_dialog{nullptr};
+    MaterialSelectionDialog* m_material_selection_dialog{nullptr};
 };
 
 } // namespace Slic3r::App

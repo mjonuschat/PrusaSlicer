@@ -24,14 +24,14 @@ RectangleButton::RectangleButton(const std::string& tooltip) : AbstractButton(to
     update_fill();
 }
 
-void RectangleButton::append(ItemPtr child) { m_background->append(std::move(child)); }
+void RectangleButton::append(ObjectPtr child) { m_background->append(std::move(child)); }
 
-void RectangleButton::insert(ItemPtr child, size_t index)
+void RectangleButton::insert(ObjectPtr child, size_t index)
 {
     m_background->insert(std::move(child), index);
 }
 
-ItemPtr RectangleButton::remove(Item* child) { return m_background->remove(child); }
+ObjectPtr RectangleButton::remove(Object* child) { return m_background->remove(child); }
 
 const ImColor& RectangleButton::background_color() const { return m_background->fill(); }
 
