@@ -34,10 +34,10 @@ OverrideItemRow::OverrideItemRow(
     m_label->set_width(120);
     m_label->set_max_size({120, YGUndefined});
     m_label->set_wrap_mode(Text::WrapMode::Wrap);
-    m_label->set_flex_shrink(0);
 
     m_sidetext = emplace_back<Text>(std::string());
-    m_sidetext->set_flex_shrink(0);
+    m_sidetext->set_flex_grow(1);
+    m_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
 
     if (m_enable_remove) {
         Item* container = emplace_back<Item>();
@@ -48,6 +48,9 @@ OverrideItemRow::OverrideItemRow(
             Render::Icon::Minus,
             Biz::_u8L("Remove override")
         );
+        remove_button->set_width(16);
+        remove_button->set_height(16);
+        remove_button->set_content_padding(Paddings(2));
         remove_button->set_flex_shrink(0);
         remove_button->callbacks().action = [this] {
             m_preset_interactor.set_item_override(*m_state->config_item, false);

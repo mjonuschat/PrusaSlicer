@@ -37,6 +37,9 @@ OverrideOptionGroup::OverrideOptionGroup(
         Render::Icon::Minus,
         Biz::_u8L("Remove override group")
     );
+    remove_group_button->set_width(16);
+    remove_group_button->set_height(16);
+    remove_group_button->set_content_padding(Paddings(2));
     remove_group_button->callbacks().action = [this]
     {
         for (int index = m_override_config_filter->size() - 1; index >= 0; --index) {

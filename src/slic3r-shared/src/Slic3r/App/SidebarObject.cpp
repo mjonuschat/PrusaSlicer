@@ -34,7 +34,7 @@ SidebarObject::SidebarObject(Biz::ProjectInteractor& project_interactor) :
     ScrollArea* scroll_area = emplace_back<ScrollArea>();
     scroll_area->set_orientation(Orientation::Vertical);
     scroll_area->set_gap(5);
-    scroll_area->set_padding(Paddings(5, 5, 5, 5));
+    scroll_area->set_padding(Paddings(5, 5, 11, 5));
 
     m_text_object_name = scroll_area->emplace_back<Text>("Unkown");
     m_text_object_name->set_font_type(Render::ImguiFontType::Bold);

@@ -63,6 +63,9 @@ OverrideSettingsDialog::OverrideSettingsDialog(Biz::ProjectInteractor& project_i
     back_row->set_gap(5);
     back_row->set_flex_shrink(0);
     LayoutButton* back_button = back_row->emplace_back<LayoutButton>("", Render::Icon::ChevronLeft);
+    back_button->set_width(18);
+    back_button->set_height(18);
+    back_button->set_content_padding(Paddings(2));
     back_button->callbacks().action = [this]() {
         on_about_to_show();
     };
