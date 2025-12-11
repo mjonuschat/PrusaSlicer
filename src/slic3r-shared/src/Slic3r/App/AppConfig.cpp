@@ -53,29 +53,12 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->option_group = L("Application");
     def->init_fn = []() { return Domain::ConfigValue(true); };
 
-    def = defs.add("allow_web_services", typeid(bool));
-    def->location = Domain::AppConfigLocation{};
-    def->gui_type = GUIType::checkbox;
-    def->label = L("Allow Web Services");
-    def->tooltip = L("Master switch for enabling services like Prusa Account, Prusa Connect, Printables.");
-    def->category = Category::Hidden;//Services;
-    def->option_group = L("Services setup");
-    def->init_fn = []() { return Domain::ConfigValue(true); };
-
+#ifdef SLIC3R_HAS_WEBKIT
     def = defs.add("enable_prusa_account", typeid(bool));
     def->location = Domain::AppConfigLocation{};
     def->gui_type = GUIType::checkbox;
     def->label = L("Enable Prusa Account");
-    def->tooltip = L("Enable logging to Prusa Account and sending files to Connect. Works only if allow_web_services is enabled.");
-    def->category = Category::Services;
-    def->option_group = L("Services setup");
-    def->init_fn = []() { return Domain::ConfigValue(true); };
-
-    def = defs.add("enable_connect", typeid(bool));
-    def->location = Domain::AppConfigLocation{};
-    def->gui_type = GUIType::checkbox;
-    def->label = L("Enable Prusa Connect");
-    def->tooltip = L("Enable Connect tab and uploading slicing results. Works only if allow_web_services and enable_prusa_account is enabled.");
+    def->tooltip = L("Enable logging to Prusa Account, Connect tab and uploading files to Connect.");
     def->category = Category::Services;
     def->option_group = L("Services setup");
     def->init_fn = []() { return Domain::ConfigValue(true); };
@@ -84,10 +67,11 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->location = Domain::AppConfigLocation{};
     def->gui_type = GUIType::checkbox;
     def->label = L("Enable Printables");
-    def->tooltip = L("Enable Printables tab. Works only if allow_web_services is enabled.");
+    def->tooltip = L("Enable Printables tab.");
     def->category = Category::Services;
     def->option_group = L("Services setup");
     def->init_fn = []() { return Domain::ConfigValue(true); };
+#endif
 
     def = defs.add("layout_main_left_column_width", typeid(double));
     def->location = Domain::AppConfigLocation{};
@@ -156,18 +140,7 @@ bool AppConfig::is_printables_enabled() const
     return false;
 #endif // SLIC3R_HAS_WEBKIT
 
-    return get<bool>("allow_web_services") && get<bool>("enable_printables");
-}
-
-bool AppConfig::is_connect_enabled() const
-{
-#ifndef SLIC3R_HAS_WEBKIT
-    return false;
-#endif // SLIC3R_HAS_WEBKIT
-
-    return get<bool>("allow_web_services")
-        && get<bool>("enable_prusa_account")
-        && get<bool>("enable_connect");
+    return get<bool>("enable_printables");
 }
 
 bool AppConfig::is_prusa_account_enabled() const
@@ -176,7 +149,7 @@ bool AppConfig::is_prusa_account_enabled() const
     return false;
 #endif // SLIC3R_HAS_WEBKIT
 
-    return get<bool>("allow_web_services") && get<bool>("enable_prusa_account");
+    return get<bool>("enable_prusa_account");
 }
 
 } // namespace Slic3r::App

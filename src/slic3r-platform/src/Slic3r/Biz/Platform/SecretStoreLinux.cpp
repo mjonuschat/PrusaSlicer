@@ -65,7 +65,7 @@ bool concurrent_write_file(const std::string& secret_to_store, const boost::file
 
 bool SecretStoreLinux::save_secret(const std::string& opt, const std::string& usr, const std::string& psswd)
 {
-    boost::filesystem::path target(boost::filesystem::path(Slic3r::data_dir()) / (opt + ".dat"));
+    boost::filesystem::path target(boost::filesystem::path(Slic3r::data_dir()) / "shared_runtime" / (opt + ".dat"));
 	ASSERT(usr.find('\n') == std::string::npos);    
     std::string data = fmt::format("usr: {}\npsswd: {}", usr, psswd);
 
@@ -91,7 +91,7 @@ bool SecretStoreLinux::save_secret(const std::string& opt, const std::string& us
 
 bool SecretStoreLinux::load_secret(const std::string& opt, std::string& usr, std::string& psswd)
 {
-    boost::filesystem::path source(boost::filesystem::path(Slic3r::data_dir()) / "UserAccount.dat") ;
+    boost::filesystem::path source(boost::filesystem::path(Slic3r::data_dir()) / "shared_runtime" / (opt + ".dat"));
     boost::system::error_code ec;
     if (!boost::filesystem::exists(source, ec) || ec) {
         SPDLOG_ERROR("UserAccount: Failed to read token - no datafile found on path {}", source.string());

@@ -368,7 +368,7 @@ static wxPanel* tmp_panel(wxWindow* parent, int id, const wxString& info_text)
 
 void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
 {
-    if (!AppServices::instance().app_config().is_connect_enabled()) {
+    if (!AppServices::instance().app_config().is_prusa_account_enabled()) {
         return;
     }
     assert(!m_printers_page_added);
@@ -439,25 +439,26 @@ void MainFrame::update_left_bar()
 
         m_left_bar->RemovePage(page_index);
     };
-
-    if (m_printables_page_added && !AppServices::instance().app_config().is_printables_enabled()) {
+    bool prusa_account_enabled = AppServices::instance().app_config().is_prusa_account_enabled();
+    bool printables_enabled = AppServices::instance().app_config().is_printables_enabled();
+    if (m_printables_page_added && !printables_enabled) {
         remove_page(LeftBarTabs::Printables);
         m_printables_page_added = false;
-    } else if (!m_printables_page_added
-               && AppServices::instance().app_config().is_printables_enabled())
-    {
+    } else if (!m_printables_page_added && printables_enabled) {
         init_printables_page(m_project_interactor);
     }
 
-    if (m_printers_page_added && !AppServices::instance().app_config().is_connect_enabled()) {
+    if (m_printers_page_added && !prusa_account_enabled) {
         remove_page(LeftBarTabs::Printers);
         m_printers_page_added = false;
-    } else if (!m_printers_page_added && AppServices::instance().app_config().is_connect_enabled())
+    } else if (!m_printers_page_added && prusa_account_enabled)
     {
         init_printer_page(m_project_interactor);
     }
-
-    m_left_bar->ShowUserAccount(AppServices::instance().app_config().is_prusa_account_enabled());
+    m_left_bar->ShowUserAccount(prusa_account_enabled);
+    if (!prusa_account_enabled) {
+        m_project_interactor.user_account_interactor().do_log_out(true);
+    }
 }
 
 void MainFrame::switch_left_tab(LeftBarTabs id, const std::string& data)

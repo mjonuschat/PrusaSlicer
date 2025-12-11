@@ -38,7 +38,6 @@ public:
     AppSettings* get_config_box_ptr() { return &m_app_settings; }
 
     bool is_printables_enabled() const;
-    bool is_connect_enabled() const;
     bool is_prusa_account_enabled() const;
 
 private:

@@ -108,7 +108,7 @@ private:
     JThread::JThread m_thread;
     std::mutex m_thread_stop_mutex;
     std::condition_variable m_thread_stop_condition;
-    bool m_thread_wakeup{false};
+    bool m_thread_wakeup{true};
     bool m_window_is_active{true};
 
     std::string refresh_token_from_store;
