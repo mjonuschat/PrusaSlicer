@@ -19,7 +19,6 @@
 #include <boost/filesystem/path.hpp>
 
 namespace Slic3r::Biz {
-
 Domain::SelectionId ProjectInteractor::Selection::config_container_id() const
 {
     if (project_id == Domain::INVALID_ID)
@@ -33,6 +32,37 @@ Domain::SelectionId ProjectInteractor::Selection::config_container_id() const
 void ProjectInteractor::Selection::set_config_container_id(Domain::SelectionId container_id)
 {
     project_config_container[project_id] = container_id;
+}
+
+const Domain::Project& ProjectInteractor::selected_project() const
+{
+    DEBUG_ASSERT(m_selection.project_id != Domain::INVALID_ID);
+    return m_workbench.project(m_selection.project_id);
+}
+
+Domain::Project& ProjectInteractor::selected_project()
+{
+    DEBUG_ASSERT(m_selection.project_id != Domain::INVALID_ID);
+    return m_workbench.project(m_selection.project_id);
+}
+
+bool ProjectInteractor::project_exists(size_t project_id) const {
+    for (const auto& [id,_] : m_workbench.projects()) {
+        if (id == project_id)
+            return true;
+    }
+    return false;
+}
+
+const Domain::Project& ProjectInteractor::project(size_t project_id) const {
+    ASSERT(project_exists(project_id));
+    return m_workbench.project(project_id);
+}
+
+Domain::Project& ProjectInteractor::project(size_t project_id)
+{
+    ASSERT(project_exists(project_id));
+    return m_workbench.project(project_id);
 }
 
 void ProjectInteractor::initialize_bed(Domain::ConfigContainer& config_container, Domain::BedContainer& bed_container)

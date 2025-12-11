@@ -203,17 +203,12 @@ public:
      * @name Quick selection getters
      * @{
      */
-    const Domain::Project& selected_project() const
-    {
-        DEBUG_ASSERT(m_selection.project_id != Domain::INVALID_ID);
-        return m_workbench.project(m_selection.project_id);
-    }
+    const Domain::Project& selected_project() const;
+    Domain::Project& selected_project();
 
-    Domain::Project& selected_project()
-    {
-        DEBUG_ASSERT(m_selection.project_id != Domain::INVALID_ID);
-        return m_workbench.project(m_selection.project_id);
-    }
+    bool project_exists(size_t project_id) const;
+    const Domain::Project& project(size_t project_id) const;
+    Domain::Project& project(size_t project_id);
 
     const Domain::ConfigContainer& selected_config_container() const
     {

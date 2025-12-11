@@ -24,14 +24,14 @@ namespace Slic3r::Biz::Algorithms {
 /// <param name="max_error">Maximal Quadric for reduce.
 /// When nullptr then max float is used
 /// Output: Last used ErrorValue to collapse edge</param>
-/// <param name="throw_on_cancel">Could stop process of calculation.</param>
+/// <param name="is_stoped">Could stop process of calculation from outside.</param>
 /// <param name="statusfn">Give a feed back to user about progress. Values 1 - 100</param>
 void its_quadric_edge_collapse(
     indexed_triangle_set&     its,
     uint32_t                  triangle_count  = 0,
     float *                   max_error       = nullptr,
-    std::function<void(void)> throw_on_cancel = nullptr,
-    std::function<void(int)>  statusfn        = nullptr);
+    std::function<bool(void)> is_stoped = []() { return false; },
+    std::function<void(int)>  statusfn = [](int) {});
 
 } // namespace Slic3r::Biz::Algorithms
 #endif // slic3r_quadric_edge_collapse_hpp_

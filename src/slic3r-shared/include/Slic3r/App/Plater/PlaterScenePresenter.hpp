@@ -69,6 +69,14 @@ public:
     }
 
     Scene::Node& selection_root() override { return project_context().selection_root(); }
+    using MeshManager = Scene::TriangleMeshManager<Scene::AuxiliaryElementId>;
+    const MeshManager& model_trinagle_mesh_manager(Domain::SelectionId project_id = Domain::INVALID_ID) const {
+        if (project_id == Domain::INVALID_ID)
+            project_id = m_selected_project_id;
+        auto it = m_projects.find(project_id);
+        ASSERT(it != m_projects.end());
+        return it->second.model_triangle_mesh_manager();
+    }
 
     void render_scene(Render::CommandBuffer& command_buffer);
     void render_imgui(const Render::ScreenInfo& screen_info);

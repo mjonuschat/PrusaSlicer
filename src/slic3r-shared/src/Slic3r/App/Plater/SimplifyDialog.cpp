@@ -41,12 +41,12 @@ SimplifyDialog::SimplifyDialog() : GizmoWindow(_u8L("Simplify"), Render::Icon::S
 
     m_detail_level_btn = Passthrough{std::make_unique<RadioButton>(_u8L("Level of detail"))};
     m_detail_level     = Passthrough{std::make_unique<ComboBox>("Detail level")};
-    m_detail_level->set_items(
+    m_detail_level->set_items( // Order must match enum class Detail
         {_u8L("Extra high"), _u8L("High"), _u8L("Medium"), _u8L("Low"), _u8L("Extra low")}
     );
     m_detail_level->callbacks().selection_changed = [this](int index) {
         if (m_callbacks.detail_level_changed) {
-            m_callbacks.detail_level_changed(index);
+            m_callbacks.detail_level_changed(static_cast<SimplifyLevelDetail>(index));
         }
     };
     add_radio_row(m_detail_level_btn.release(), m_detail_level.release());
@@ -124,9 +124,9 @@ void SimplifyDialog::set_use_count(bool use_count)
     set_enabled_by_use_count(use_count);
 }
 
-void SimplifyDialog::set_detail_level(int index)
+void SimplifyDialog::set_detail_level(SimplifyLevelDetail detail)
 {
-    m_detail_level->set_current_index(index);
+    m_detail_level->set_current_index(static_cast<int>(detail));
 }
 
 void SimplifyDialog::set_decimate_ratio_step(double step)
@@ -176,6 +176,11 @@ void SimplifyDialog::set_enable_close_button(bool enable)
             m_callbacks.close();
         }
     };
+}
+
+void SimplifyDialog::set_multipart(bool is_multipart) {
+    // TODO: Show that will simplify mutltipart, 
+    // Multipart is possible to simplify only by Level of Detail!
 }
 
 void SimplifyDialog::set_progress(int progress)

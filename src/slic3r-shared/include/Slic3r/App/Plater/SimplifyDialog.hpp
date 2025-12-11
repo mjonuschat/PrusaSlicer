@@ -20,6 +20,7 @@ class ProgressBar;
 
 namespace Slic3r::App::Plater {
 
+enum class SimplifyLevelDetail;
 class SimplifyDialog : public Yoga::GizmoWindow
 {
 public:
@@ -27,7 +28,7 @@ public:
 
     struct Callbacks
     {
-        std::function<void(int index)> detail_level_changed{nullptr};
+        std::function<void(SimplifyLevelDetail detail)> detail_level_changed{nullptr};
         std::function<void(double value)> decimate_ratio_changed{nullptr};
         std::function<void(bool use_count)> use_count_changed{nullptr};
         std::function<void(bool checked)> show_wireframe_checked{nullptr};
@@ -40,7 +41,7 @@ public:
     void set_mesh_name(const std::string& name);
     void set_triangles(size_t triangles);
     void set_use_count(bool use_count);
-    void set_detail_level(int index);
+    void set_detail_level(SimplifyLevelDetail detail);
     void set_decimate_ratio_step(double step);
     void set_decimate_ratio(double ratio);
     void set_info_line(const int wanted_triangles);
@@ -49,6 +50,7 @@ public:
     void set_enabled_by_use_count(bool use_count);
     void set_enable_apply_button(bool enable);
     void set_enable_close_button(bool enable);
+    void set_multipart(bool is_multipart);
 
 private:
     void add_text_row(const std::string& title, std::unique_ptr<Yoga::Text> text);
@@ -74,6 +76,15 @@ private:
     Yoga::ProgressBar* m_progress        = nullptr;
 
     Callbacks m_callbacks;
+};
+
+enum class SimplifyLevelDetail : int {
+    // Order must match the registration m_detail_level->set_items(
+    ExtraHigh = 0,
+    High,
+    Medium,
+    Low,
+    ExtraLow
 };
 
 } // namespace Slic3r::App::Plater

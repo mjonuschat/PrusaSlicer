@@ -70,7 +70,7 @@ namespace QuadricEdgeCollapse {
     using Vertices = std::vector<stl_vertex>;
     using Triangle = stl_triangle_vertex_indices;
     using Indices = std::vector<stl_triangle_vertex_indices>;
-    using ThrowOnCancel = std::function<void(void)>;
+    using IsStopped = std::function<bool(void)>;
     using StatusFn = std::function<void(int)>;
     // smallest error caused by edges, identify smallest edge in triangle
     struct Error
@@ -133,7 +133,7 @@ namespace QuadricEdgeCollapse {
     double vertex_error(const SymMat &q, const Domain::Vec3d &vertex);
     SymMat create_quadric(const Triangle &t, const Domain::Vec3d& n, const Vertices &vertices);
     std::tuple<TriangleInfos, VertexInfos, EdgeInfos, Errors> 
-    init(const indexed_triangle_set &its, ThrowOnCancel& throw_on_cancel, StatusFn& status_fn);
+    init(const indexed_triangle_set &its, IsStopped& throw_on_cancel, StatusFn& status_fn);
     std::optional<uint32_t> find_triangle_index1(uint32_t vi, const VertexInfo& v_info,
         uint32_t ti, const EdgeInfos& e_infos, const Indices& indices);
     void reorder_edges(EdgeInfos &e_infos, const VertexInfo &v_info, uint32_t ti0, uint32_t ti1);
@@ -160,7 +160,7 @@ namespace QuadricEdgeCollapse {
 #endif /* EXPENSIVE_DEBUG_CHECKS */
 
     // constants --> may be move to config
-    const uint32_t check_cancel_period = 16; // how many edge to reduce before call throw_on_cancel
+    const uint32_t check_stop_period = 16; // how many edge to reduce before check: process is stopped
     const size_t max_triangle_count_for_one_vertex = 50;
     // change speed of progress bargraph
     const int status_init_size = 10; // in percents
@@ -178,14 +178,14 @@ void Slic3r::Biz::Algorithms::its_quadric_edge_collapse(
     indexed_triangle_set &    its,
     uint32_t                  triangle_count,
     float *                   max_error,
-    std::function<void(void)> throw_on_cancel,
+    std::function<bool(void)> is_stoped,
     std::function<void(int)>  status_fn)
 {
     // check input
     if (triangle_count >= its.indices.size()) return;
     float maximal_error = (max_error == nullptr)? std::numeric_limits<float>::max() : *max_error;
     if (maximal_error <= 0.f) return;
-    if (throw_on_cancel == nullptr) throw_on_cancel = []() {};
+    if (is_stoped == nullptr) is_stoped = []() { return false; };
     if (status_fn == nullptr) status_fn = [](int) {};
 
     StatusFn init_status_fn = [&](int percent) {
@@ -197,8 +197,9 @@ void Slic3r::Biz::Algorithms::its_quadric_edge_collapse(
     VertexInfos   v_infos;
     EdgeInfos     e_infos;
     Errors        errors;
-    std::tie(t_infos, v_infos, e_infos, errors) = init(its, throw_on_cancel, init_status_fn);
-    throw_on_cancel();
+    std::tie(t_infos, v_infos, e_infos, errors) = init(its, is_stoped, init_status_fn);
+    if (is_stoped())
+        return;
     status_fn(status_init_size);
 
     //its_store_triangle_to_obj(its, "triangle.obj", 1182);
@@ -238,7 +239,8 @@ void Slic3r::Biz::Algorithms::its_quadric_edge_collapse(
     while (actual_triangle_count > triangle_count && !mpq.empty()) {
         ++iteration_number;
         if (iteration_number % status_mod == 0) increase_status();
-        if (iteration_number % check_cancel_period == 0) throw_on_cancel();
+        if (iteration_number % check_stop_period == 0 && 
+            is_stoped()) return;
 
         // triangle index 0
         Error e = mpq.top(); // copy
@@ -452,7 +454,7 @@ SymMat QuadricEdgeCollapse::create_quadric(const Triangle& t, const Domain::Vec3
 }
 
 std::tuple<TriangleInfos, VertexInfos, EdgeInfos, Errors> 
-QuadricEdgeCollapse::init(const indexed_triangle_set &its, ThrowOnCancel& throw_on_cancel, StatusFn& status_fn)
+QuadricEdgeCollapse::init(const indexed_triangle_set &its, IsStopped& is_stopped, StatusFn& status_fn)
 {
     int status_offset = 0;
     TriangleInfos t_infos(its.indices.size());
@@ -469,7 +471,8 @@ QuadricEdgeCollapse::init(const indexed_triangle_set &its, ThrowOnCancel& throw_
                 t_info.n = normal.cast<float>();
                 triangle_quadrics[i] = create_quadric(t, normal, its.vertices);
                 if (i % 1000000 == 0) {
-                    throw_on_cancel();
+                    if (is_stopped())
+                        return;
                     status_fn(status_offset + (i * status_normal_size) / its.indices.size());
                 }
             }
@@ -486,7 +489,8 @@ QuadricEdgeCollapse::init(const indexed_triangle_set &its, ThrowOnCancel& throw_
                 ++v_info.count; // triangle count
             }
             if (i % 1000000 == 0) {
-                throw_on_cancel();
+                if (is_stopped())
+                    return {};
                 status_fn(status_offset + (i * status_sum_quadric) / its.indices.size());
             }
         }
@@ -504,7 +508,8 @@ QuadricEdgeCollapse::init(const indexed_triangle_set &its, ThrowOnCancel& throw_
     assert(its.indices.size() * 3 == triangle_start);
 
     status_offset += status_set_offsets;
-    throw_on_cancel();
+    if (is_stopped())
+        return {};
     status_fn(status_offset);
 
     // calc error
@@ -516,10 +521,10 @@ QuadricEdgeCollapse::init(const indexed_triangle_set &its, ThrowOnCancel& throw_
             TriangleInfo &  t_info = t_infos[i];
             errors[i] = calculate_error(i, t, its.vertices, v_infos, t_info.min_index);
             if (i % 1000000 == 0) {
-                throw_on_cancel();
+                if (is_stopped())
+                    return;
                 status_fn(status_offset + (i * status_calc_errors) / its.indices.size());
             }
-            if (i % 1000000 == 0) throw_on_cancel();
         }
     }); // END parallel for
 
@@ -539,12 +544,12 @@ QuadricEdgeCollapse::init(const indexed_triangle_set &its, ThrowOnCancel& throw_
             ++v_info.count;
         }
         if (i % 1000000 == 0) {
-            throw_on_cancel();
+            if (is_stopped())
+                return {};
             status_fn(status_offset + (i * status_create_refs) / its.indices.size());
         }
     }
 
-    throw_on_cancel();
     status_fn(100);
     return {t_infos, v_infos, e_infos, errors};
 }

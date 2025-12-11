@@ -53,6 +53,7 @@ public:
     BedError& bed_error() { return m_bed_error; }
 
     ModelGeometryManager& model_geometry_manager() { return m_model_geometry_manager; }
+    const ModelTriangleMeshManager& model_triangle_mesh_manager() const { return m_model_triangle_mesh_manager; }
     ModelTriangleMeshManager& model_triangle_mesh_manager() { return m_model_triangle_mesh_manager; }
 
     const std::optional<Platform::CameraSynchData>& camera_synch_data() const { return m_camera_synch_data; }
