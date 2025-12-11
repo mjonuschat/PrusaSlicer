@@ -227,9 +227,7 @@ bool DesktopApp::OnInit()
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench, platform_services.main_thread_dispatcher(), *thumbnail_image_generator);
 
-    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(*m_project_interactor
-    );
-
+    std::shared_ptr<App::ThumbnailStore> thumbnail_store = std::make_shared<App::ThumbnailStore>(*m_project_interactor);
     std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater = std::make_shared<App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
 
     auto& preset_interactor = m_project_interactor->preset_interactor();
@@ -252,12 +250,14 @@ bool DesktopApp::OnInit()
     if (scrn && is_editor)
         scrn->SetText(WX::_L("Preparing Plater") + dots);
 
-    m_plater_module = std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
+    m_plater_module = std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor, thumbnail_store,
+        thumbnail_store_updater, thumbnail_image_generator);
 
     if (scrn && is_editor)
         scrn->SetText(WX::_L("Preparing Preview") + dots);
 
-    m_preview_module = std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store, thumbnail_store_updater, thumbnail_image_generator);
+    m_preview_module = std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor, thumbnail_store,
+        thumbnail_store_updater, thumbnail_image_generator);
 
     m_project_interactor->removable_drive_service().add_status_listener(&app_services.pop_notification_center(
     ));

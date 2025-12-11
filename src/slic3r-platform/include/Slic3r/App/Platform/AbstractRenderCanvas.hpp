@@ -6,6 +6,7 @@
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+#include "Slic3r/App/Platform/AnimationManager.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 
@@ -116,8 +117,9 @@ private:
     std::optional<std::string> m_pending_language;
     std::optional<float> m_pending_font_size;
     std::optional<float> m_pending_font_global_scale;
+    AnimationManager m_animation_manager;
     double m_last_time{0};
     size_t m_render_request_count{0};
 };
 
-}
+} // namespace Slic3r::App::Platform

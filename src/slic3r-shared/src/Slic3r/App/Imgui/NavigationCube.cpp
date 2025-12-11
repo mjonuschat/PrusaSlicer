@@ -160,11 +160,6 @@ struct Context
 
 static Context gContext;
 
-static float smoothstep(float x)
-{
-    return x * x * (3.0f - 2.0f * x);
-}
-
 class Interpolation
 {
 public:

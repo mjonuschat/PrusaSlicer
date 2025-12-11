@@ -11,6 +11,10 @@ namespace Slic3r::App {
 class Navigator;
 } // namespace Slic3r::App
 
+namespace Slic3r::App::Platform {
+class AnimationManager;
+} // namespace Slic3r::App::Platform
+
 namespace Slic3r::App::Render {
 class Device;
 class CommandBuffer;
@@ -38,14 +42,7 @@ public:
     void deactivate();
 
     void set_screen_size(const Render::ScreenInfo& screen_info);
-    void ensure_initialized(Render::Device& device, Render::ImguiRender& imgui_render)
-    {
-        if (!m_initialized) {
-            on_init(device, imgui_render);
-            register_commands();
-            m_initialized = true;
-        }
-    }
+    void ensure_initialized(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager);
 
     virtual const std::optional<CameraSynchData>& camera_synch_data() const = 0;
     virtual void set_camera_synch_data(const CameraSynchData& data) = 0;
@@ -57,7 +54,7 @@ protected:
     /**
      * Initialize all Render objects here.
      */
-    virtual void on_init(Render::Device& device, Render::ImguiRender& imgui_render);
+    virtual void on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager);
 
     virtual void on_activated();
     virtual void on_deactivated();
@@ -73,6 +70,7 @@ protected:
     Render::Device* m_device{nullptr};
     CommandRegistry m_command_registry;
     Render::ImguiRender* m_imgui_render{nullptr};
+    Platform::AnimationManager* m_animation_manager{nullptr};
 
     Render::ScreenInfo m_screen_info{0, 0, 1};
     bool m_initialized{false};

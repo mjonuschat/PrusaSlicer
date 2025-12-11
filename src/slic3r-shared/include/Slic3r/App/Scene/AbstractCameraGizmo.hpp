@@ -15,6 +15,10 @@ namespace Slic3r::Biz {
 class ProjectInteractor;
 } // namespace Slic3r::Biz
 
+namespace Slic3r::App::Platform {
+class AnimationManager;
+} // namespace Slic3r::App::Platform
+
 namespace Slic3r::App::Scene {
 
 class AbstractCameraGizmo : public IGizmo
@@ -26,8 +30,10 @@ public:
         Rotating
     };
 
-    AbstractCameraGizmo(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor, ISceneProvider& scene_provider)
-      : m_workbench(workbench), m_project_interactor(project_interactor), m_scene_provider(scene_provider)
+    AbstractCameraGizmo(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor, ISceneProvider& scene_provider,
+        Platform::AnimationManager& animation_manager)
+        : m_workbench(workbench), m_project_interactor(project_interactor), m_scene_provider(scene_provider)
+        , m_animation_manager(animation_manager)
 #if CAMERA_GIZMO_DEBUG
         , m_dynamic_geometry(Render::Context::instance().device())
 #endif
@@ -59,7 +65,7 @@ private:
 
     bool pick_plane(double mouse_x, double mouse_y, const Render::ScreenInfo& screen_info, Domain::Vec3d& out_plane_point);
 
-    void center_camera_on_selected_bed();
+    void center_camera_on_selected_bed(bool animated);
 
 private:
     virtual bool any_draggable(GizmoEventContext& ctx) const = 0;
@@ -72,6 +78,7 @@ private:
     State m_state{State::Inactive};
     float m_last_x{0.0f};
     float m_last_y{0.0f};
+    Platform::AnimationManager& m_animation_manager;
 #if CAMERA_GIZMO_DEBUG
     Render::DynamicGeometry<Render::VertexP3> m_dynamic_geometry;
 #endif // CAMERA_GIZMO_DEBUG

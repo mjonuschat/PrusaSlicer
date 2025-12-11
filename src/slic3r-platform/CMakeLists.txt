@@ -18,6 +18,10 @@ set(SLIC3R_PLATFORM_FILES
     src/Slic3r/App/Platform/StdMainThreadDispatcher.cpp
     include/Slic3r/App/Platform/StdMainThreadDispatcher.hpp
     include/Slic3r/App/Platform/CameraSynchData.hpp
+    include/Slic3r/App/Platform/AnimationManager.hpp
+    src/Slic3r/App/Platform/AnimationManager.cpp
+    include/Slic3r/App/Platform/AbstractAnimation.hpp
+    src/Slic3r/App/Platform/AbstractAnimation.cpp
     src/Slic3r/Biz/Platform/PlatformServices.cpp
     include/Slic3r/Biz/Platform/PlatformServices.hpp
     include/Slic3r/Biz/Platform/ListenerList.hpp

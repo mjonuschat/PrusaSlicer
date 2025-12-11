@@ -29,6 +29,10 @@ class NodeBuilder;
 struct BedNodeTag;
 } // namespace Slic3r::App::Scene
 
+namespace Slic3r::App::Platform {
+class AnimationManager;
+} // namespace Slic3r::App::Platform
+
 namespace Slic3r::App::Plater {
 
 class PlaterScenePresenter :
@@ -55,9 +59,9 @@ public:
     PlaterScenePresenter(
         const Domain::Workbench& m_workbench,
         Biz::ProjectInteractor& project_interactor,
-        Render::Device& device
+        Render::Device& device,
+        Platform::AnimationManager& animation_manager
     );
-
 
     bool project_ready() const { return !m_projects.empty(); }
 
@@ -90,7 +94,7 @@ public:
         return project_context().screen_space_sized_modifier();
     }
 
-    void center_camera_on_selected_bed();
+    void center_camera_on_selected_bed(bool animated);
 
     /**
      * @name Implementation of Scene::IProjectSceneProvider public interface
@@ -231,6 +235,7 @@ private:
     Scene::BedRenderUpdater m_bed_render_updater;
     Scene::CameraFrustumUpdater m_camera_frustum_updater;
     HoverData m_hover_data;
+    Platform::AnimationManager& m_animation_manager;
 
     bool m_freeze_selection_center{ false };
     bool m_volume_materials_dirty{ true };

@@ -40,6 +40,16 @@ void AbstractRenderModule::set_screen_size(const Render::ScreenInfo& screen_info
     }
 }
 
+void AbstractRenderModule::ensure_initialized(Render::Device& device, Render::ImguiRender& imgui_render,
+    Platform::AnimationManager& animation_manager)
+{
+    if (!m_initialized) {
+        on_init(device, imgui_render, animation_manager);
+        register_commands();
+        m_initialized = true;
+    }
+}
+
 void AbstractRenderModule::set_imgui_render(Render::ImguiRender* imgui_render)
 {
     if (m_imgui_render != imgui_render) {
@@ -48,10 +58,12 @@ void AbstractRenderModule::set_imgui_render(Render::ImguiRender* imgui_render)
     }
 }
 
-void AbstractRenderModule::on_init(Render::Device &device, Render::ImguiRender &imgui_render)
+void AbstractRenderModule::on_init(Render::Device &device, Render::ImguiRender &imgui_render,
+    Platform::AnimationManager& animation_manager)
 {
     m_device = &device;
     m_imgui_render = &imgui_render;
+    m_animation_manager = &animation_manager;
 }
 
 } // namespace Slic3r::App::Platform

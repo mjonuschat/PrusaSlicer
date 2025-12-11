@@ -95,7 +95,7 @@ public:
     void set_object_list_collapsed(bool collapsed);
 
 protected:
-    void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
+    void on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager) override;
     void on_activated() override;
     void on_deactivated() override;
     void on_screen_resized() override;
@@ -169,7 +169,7 @@ private:
 
     std::shared_ptr<ThumbnailStore> m_thumbnail_store;
     std::shared_ptr<ThumbnailStoreUpdater> m_thumbnail_store_updater;
-    std::shared_ptr<ThumbnailImageGenerator> m_thumbnail_image_generator;
+    std::shared_ptr<Plater::ThumbnailImageGenerator> m_thumbnail_image_generator;
 
     Navigator* m_render_module_navigator{nullptr};
 

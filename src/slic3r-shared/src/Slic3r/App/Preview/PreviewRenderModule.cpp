@@ -15,6 +15,7 @@
 #include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/ThumbnailStore.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
+#include "Slic3r/App/Platform/AnimationManager.hpp"
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/App/RenderModuleHelper.hpp"
@@ -277,7 +278,7 @@ void PreviewRenderModule::on_selected_bed_instances_changed(Domain::SelectionId 
     }
 
     update_bed_instances();
-    m_scene_presenter->center_camera_on_selected_bed();
+    m_scene_presenter->center_camera_on_selected_bed(true);
 
     m_object_list->update_sliced_info();
 
@@ -362,11 +363,11 @@ void PreviewRenderModule::set_object_list_collapsed(bool collapsed)
     }
 }
 
-void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
+void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager)
 {
-    AbstractRenderModule::on_init(device, imgui_render);
+    AbstractRenderModule::on_init(device, imgui_render, animation_manager);
     Yoga::Item::set_imgui_render(&imgui_render); // Todo: move this somewhere where it is invoked once
-    m_scene_presenter = std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device);
+    m_scene_presenter = std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device, *m_animation_manager);
 
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(this);
     m_project_interactor.fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>(this);
@@ -624,7 +625,8 @@ void PreviewRenderModule::update_current_right_sidebar()
 void PreviewRenderModule::init_gizmos()
 {
     m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter, m_project_interactor, nullptr);
-    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(m_workbench, m_project_interactor , *m_scene_presenter);
+    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(m_workbench, m_project_interactor, *m_scene_presenter,
+        *m_animation_manager);
 }
 
 void PreviewRenderModule::init_viewers(Render::Device& device)

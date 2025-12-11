@@ -44,6 +44,7 @@
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
 #include "Slic3r/App/ThumbnailStoreUpdater.hpp"
+#include "Slic3r/App/Platform/AnimationManager.hpp"
 #include "Slic3r/App/Scene/CameraHelper.hpp"
 
 #include "Slic3r/App/AppServices.hpp"
@@ -201,14 +202,15 @@ void PlaterRenderModule::open_search()
     m_top_bar->focus_search();
 }
 
-void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
+void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager)
 {
-    AbstractRenderModule::on_init(device, imgui_render);
+    AbstractRenderModule::on_init(device, imgui_render, animation_manager);
     Yoga::Item::set_imgui_render(&imgui_render); // Todo: move this somewhere where it is invoked once
     m_scene_presenter = std::make_unique<PlaterScenePresenter>(
         m_workbench,
         m_project_interactor,
-        *m_device
+        *m_device,
+        *m_animation_manager
     );
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<ISceneSelectionChangedListener>(this);
@@ -655,7 +657,8 @@ void PlaterRenderModule::init_gizmos()
         std::move(drag_detector)
     );
     m_gizmo_manager->add_listener<IGizmoActiveToolListener>(this);
-    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(m_workbench, m_project_interactor, *m_scene_presenter);
+    m_camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(m_workbench, m_project_interactor, *m_scene_presenter,
+        *m_animation_manager);
     m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(m_project_interactor, *m_scene_presenter);
     QuickSelectGizmo& quick_select_gizmo = m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(
         m_project_interactor.scene_interactor(),
@@ -962,6 +965,7 @@ void PlaterRenderModule::on_selected_project_changed(size_t index)
 {
     update_object_selection();
     m_scene_presenter->update_bed_instances();
+    m_animation_manager->terminate_all();
 }
 
 } // namespace Slic3r::App::Plater

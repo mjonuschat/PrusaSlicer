@@ -21,7 +21,7 @@ public:
     void set_navigator(Navigator* n) override {};
 
 protected:
-    void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
+    void on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager) override;
     void on_screen_resized() override;
 
     virtual void register_commands() override;

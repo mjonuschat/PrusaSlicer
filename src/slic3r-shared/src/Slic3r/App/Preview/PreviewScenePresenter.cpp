@@ -9,11 +9,13 @@ namespace Slic3r::App::Preview {
 PreviewScenePresenter::PreviewScenePresenter(
     const Domain::Workbench& workbench,
     Biz::ProjectInteractor& project_interactor,
-    Render::Device& device
+    Render::Device& device,
+    Platform::AnimationManager& animation_manager
 ) :
     m_workbench(workbench),
     m_project_interactor(project_interactor),
     m_device(device),
+    m_animation_manager(animation_manager),
     m_bed_render_updater(*this, workbench, device, project_interactor.scene_interactor())
 {
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
@@ -154,10 +156,15 @@ bool PreviewScenePresenter::update_bed_instance_error_state(const Domain::Slicin
     return ret;
 }
 
-void PreviewScenePresenter::center_camera_on_selected_bed()
+void PreviewScenePresenter::center_camera_on_selected_bed(bool animated)
 {
-    center_camera_on_bed(m_workbench.project(m_project_interactor.selected_project_id()),
-        m_project_interactor.scene_interactor().bed_selection().last_selected_bed(), scene().camera_trackball());
+    if (animated)
+        animated_center_camera_on_bed(m_workbench.project(m_project_interactor.selected_project_id()),
+            m_project_interactor.scene_interactor().bed_selection().last_selected_bed(), scene().camera_trackball(),
+            m_animation_manager);
+    else
+        center_camera_on_bed(m_workbench.project(m_project_interactor.selected_project_id()),
+            m_project_interactor.scene_interactor().bed_selection().last_selected_bed(), scene().camera_trackball());
 }
 
 void PreviewScenePresenter::update_cameras(const std::function<void(Scene::Camera&)>& modifier)

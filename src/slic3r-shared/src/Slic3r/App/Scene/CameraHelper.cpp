@@ -8,6 +8,8 @@
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/App/Platform/AnimationManager.hpp"
+#include "Slic3r/App/Scene/CameraTargetAnimation.hpp"
 
 #if ENABLED_DEBUG_CAMERA
 #include <imgui/imgui.h>
@@ -75,6 +77,33 @@ void center_camera_on_bed(const Domain::Project& project, const Domain::BedRef& 
     Vec3d selected_bed_center = Biz::Algorithms::Point::to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset();
     trackball.set_target(selected_bed_center);
     trackball.synchronize_pivot_with_target();
+}
+
+void animated_center_camera_on_bed(const Domain::Project& project, const Domain::BedRef& bed_ref, CameraTrackballController& trackball,
+    Platform::AnimationManager& animation_manager, double duration_in_sec)
+{
+    // allow only one animation per trackball running at a time
+    static std::map<CameraTrackballController*, CameraTargetAnimation*> animation_cache;
+    auto it = animation_cache.find(&trackball);
+    if (it != animation_cache.end()) {
+        if (animation_manager.state(it->second) == Platform::AnimationState::Running)
+            it->second->stop();
+        animation_cache.erase(it);
+    }
+
+    // remove from the cache all expired animations
+    std::erase_if(animation_cache, [&](const auto& item) {
+        return animation_manager.state(item.second) == Platform::AnimationState::Undefined;
+    });
+
+    Domain::Vec3d start_position = trackball.target();
+    const Domain::ConfigContainer* cc = project.find_config_container(bed_ref.config_container_id);
+    DEBUG_ASSERT(cc != nullptr);
+    const Domain::BedInstance& inst = cc->find_bed_instance(bed_ref.instance_id);
+    Domain::Vec3d final_position = Biz::Algorithms::Point::to_3d(cc->bed().center(), 0.0) + inst.transformation.get_offset();
+    if (!final_position.isApprox(start_position))
+        animation_cache[&trackball] =
+            &animation_manager.add_animation<CameraTargetAnimation>(trackball, start_position, final_position, duration_in_sec);
 }
 
 #if ENABLED_DEBUG_CAMERA

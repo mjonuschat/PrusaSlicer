@@ -48,7 +48,7 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
             std::make_unique<Platform::FuncCommand>(
                 "look-at-active-bed",
                 [this]() {
-                    center_camera_on_selected_bed();
+                    center_camera_on_selected_bed(true);
                 },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::B}
@@ -190,11 +190,15 @@ bool AbstractCameraGizmo::pick_plane(double mouse_x, double mouse_y, const Rende
     return false;
 }
 
-void AbstractCameraGizmo::center_camera_on_selected_bed()
+void AbstractCameraGizmo::center_camera_on_selected_bed(bool animated)
 {
     Domain::SelectionId selected_project_id = m_project_interactor.selected_project_id();
     Domain::BedRef selected_bed = m_project_interactor.scene_interactor().bed_selection().last_selected_bed();
-    center_camera_on_bed(m_workbench.project(selected_project_id), selected_bed, m_scene_provider.scene().camera_trackball());
+    if (animated)
+        animated_center_camera_on_bed(m_workbench.project(selected_project_id), selected_bed,
+            m_scene_provider.scene().camera_trackball(), m_animation_manager);
+    else
+        center_camera_on_bed(m_workbench.project(selected_project_id), selected_bed, m_scene_provider.scene().camera_trackball());
 }
 
 GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)

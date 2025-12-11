@@ -8,8 +8,8 @@ class PreviewCameraGizmo : public Scene::AbstractCameraGizmo
 {
 public:
     PreviewCameraGizmo(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
-        Scene::ISceneProvider& scene_provider)
-        : Scene::AbstractCameraGizmo(workbench, project_interactor, scene_provider) {}
+        Scene::ISceneProvider& scene_provider, Platform::AnimationManager& animation_manager)
+        : Scene::AbstractCameraGizmo(workbench, project_interactor, scene_provider, animation_manager) {}
 
 private:
     virtual bool any_draggable(Scene::GizmoEventContext& ctx) const override { return false; }

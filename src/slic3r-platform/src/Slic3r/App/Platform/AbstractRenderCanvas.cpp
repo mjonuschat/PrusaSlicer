@@ -52,7 +52,7 @@ void AbstractRenderCanvas::set_next_render_module(AbstractRenderModule* render_m
      * Otherwise, for example, PreviewRenderModule::m_viewer wouldn't be initialized
      * and couldn't correctly handle send_data_to_viewer().
      * */
-    m_next_render_module->ensure_initialized(device(), imgui_render());
+    m_next_render_module->ensure_initialized(device(), imgui_render(), m_animation_manager);
 }
 
 void AbstractRenderCanvas::set_screen_size(const Render::ScreenInfo& screen_info)
@@ -67,7 +67,9 @@ void AbstractRenderCanvas::render()
     if (m_render_module == nullptr)
         return;
 
-    m_render_module->ensure_initialized(device(), imgui_render());
+    m_render_module->ensure_initialized(device(), imgui_render(), m_animation_manager);
+    if (m_animation_manager.update())
+        request_render();
 
     if (m_pending_language.has_value()
         || m_pending_font_size.has_value()

@@ -68,5 +68,9 @@ T sign(T val) {
     return T((T(0) < val) - (val < T(0)));
 }
 
+template <typename T>
+T smoothstep(T val) {
+    return val * val * (T(3) - T(2) * val);
+}
 
 } // namespace Slic3r

@@ -80,11 +80,13 @@ void remove_children(Scene::Scene& scn, const std::vector<RefT>& elements, const
 
 } // namespace
 
-PlaterScenePresenter::PlaterScenePresenter(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor, Render::Device& device) :
-    m_workbench(workbench),
-    m_project_interactor(project_interactor),
-    m_device(device),
-    m_bed_render_updater(*this, workbench, device, project_interactor.scene_interactor())
+PlaterScenePresenter::PlaterScenePresenter(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor,
+    Render::Device& device, Platform::AnimationManager& animation_manager)
+    : m_workbench(workbench)
+    , m_project_interactor(project_interactor)
+    , m_device(device)
+    , m_bed_render_updater(*this, workbench, device, project_interactor.scene_interactor())
+    , m_animation_manager(animation_manager)
 {
     load_selected_project();
 
@@ -125,7 +127,7 @@ void PlaterScenePresenter::load_selected_project()
         on_instance_added(project_id, updated_obj_instances);
     }
 
-    center_camera_on_selected_bed();
+    center_camera_on_selected_bed(false);
 }
 
 void PlaterScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
@@ -268,7 +270,7 @@ void PlaterScenePresenter::on_node_changed(Scene::Node* node)
 
 void PlaterScenePresenter::on_project_loaded(Domain::SelectionId project_id)
 {
-    center_camera_on_selected_bed();
+    center_camera_on_selected_bed(false);
 }
 
 void PlaterScenePresenter::on_fdm_result_cache_changed(const Domain::SlicingId id)
@@ -487,10 +489,15 @@ void PlaterScenePresenter::update_volume_materials()
     );
 }
 
-void PlaterScenePresenter::center_camera_on_selected_bed()
+void PlaterScenePresenter::center_camera_on_selected_bed(bool animated)
 {
-    center_camera_on_bed(m_workbench.project(m_project_interactor.selected_project_id()),
-        m_project_interactor.scene_interactor().bed_selection().last_selected_bed(), scene().camera_trackball());
+    if (animated)
+        animated_center_camera_on_bed(m_workbench.project(m_project_interactor.selected_project_id()),
+            m_project_interactor.scene_interactor().bed_selection().last_selected_bed(), scene().camera_trackball(),
+            m_animation_manager);
+    else
+        center_camera_on_bed(m_workbench.project(m_project_interactor.selected_project_id()),
+            m_project_interactor.scene_interactor().bed_selection().last_selected_bed(), scene().camera_trackball());
 }
 
 void PlaterScenePresenter::on_selected_project_changed(size_t index)
@@ -544,7 +551,7 @@ void PlaterScenePresenter::on_selected_bed_instances_changed(Domain::SelectionId
     Scene::Scene::set_shadows_aabb(bed_aabb);
     m_volume_materials_dirty = true;
     if (selection.camera_action_on_selection() == Biz::Scene::CameraActionOnBedSelection::CenterOnBed)
-        center_camera_on_selected_bed();
+        center_camera_on_selected_bed(true);
 }
 
 void

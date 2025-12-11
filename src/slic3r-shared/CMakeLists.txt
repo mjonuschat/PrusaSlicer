@@ -323,6 +323,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/ClipperPresenter.hpp
         include/Slic3r/App/Scene/ClipperPresenterHelper.hpp
         src/Slic3r/App/Scene/ClipperPresenter.cpp
+        include/Slic3r/App/Scene/CameraTargetAnimation.hpp
+        src/Slic3r/App/Scene/CameraTargetAnimation.cpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

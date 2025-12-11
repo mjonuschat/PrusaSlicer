@@ -109,7 +109,7 @@ protected:
      * @name Implementation of Platform::AbstractRenderModule protected interface
      * @{
      */
-    void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
+    void on_init(Render::Device& device, Render::ImguiRender& imgui_render, Platform::AnimationManager& animation_manager) override;
     void on_activated() override;
     void on_deactivated() override;
     void on_screen_resized() override;
