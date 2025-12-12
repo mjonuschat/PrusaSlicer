@@ -12,7 +12,7 @@ using namespace Slic3r::Biz;
 
 
 
-void collect_named_presets(NamedPresets& named_presets, PresetNodePath path) {
+void collect_named_presets(IdentifiedPresets& named_presets, PresetNodePath path) {
     const auto& node = *path.back();
     if (!node.id.empty())
         named_presets[node.id] = path;
@@ -26,7 +26,7 @@ void collect_named_presets(NamedPresets& named_presets, PresetNodePath path) {
 
 PresetCollectionEvaluator create_evaluator(const IO::PresetLoader& loader, PresetKind kind)
 {
-    static NamedPresets named_presets;
+    static IdentifiedPresets named_presets;
 
     named_presets.clear();
 

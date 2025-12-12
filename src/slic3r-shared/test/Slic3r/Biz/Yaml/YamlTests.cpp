@@ -17,11 +17,23 @@ struct Ver
     int major{0};
     int minor{0};
     std::optional<int> patch;
+
+    friend bool operator==(const Ver& lhs, const Ver& rhs)
+    {
+        return lhs.major == rhs.major && lhs.minor == rhs.minor && lhs.patch == rhs.patch;
+    }
+
+    friend bool operator!=(const Ver& lhs, const Ver& rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 struct Item
 {
     std::string id;
+
+    bool operator==(const Item& rhs) const { return id == rhs.id; }
 };
 
 struct MyData
@@ -33,6 +45,21 @@ struct MyData
     std::vector<Item> items;
     std::optional<int> opt_int;
     std::variant<float, int, std::string> param;
+
+    friend bool operator==(const MyData& lhs, const MyData& rhs)
+    {
+        return lhs.version == rhs.version
+            && lhs.a == rhs.a
+            && lhs.b == rhs.b
+            && lhs.items == rhs.items
+            && lhs.opt_int == rhs.opt_int
+            && lhs.param == rhs.param;
+    }
+
+    friend bool operator!=(const MyData& lhs, const MyData& rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 struct Condition
@@ -188,7 +215,6 @@ TEST_CASE("Slic3r Types", "[yaml]")
     using Slic3r::Domain::Preset::Bools;
     using Slic3r::Domain::Preset::Doubles;
     using Slic3r::Domain::Preset::FeatureValue;
-    using Slic3r::Domain::Preset::Percentages;
     using Slic3r::Domain::Preset::PresetValue;
     using Slic3r::Domain::Preset::Strings;
     SECTION("PresetValue and FeatureValue")
@@ -228,7 +254,7 @@ presets:
             REQUIRE(data.presets.find("strs")->second == PresetValue{Strings{"Hello", "world"}});
             REQUIRE(data.presets.find("mono")->second == PresetValue{std::monostate{}});
             REQUIRE(data.presets.find("percent")->second == PresetValue{Percentage{12}});
-            REQUIRE(data.presets.find("percents")->second == PresetValue{Percentages{Percentage{12}}});
+            REQUIRE(data.presets.find("percents")->second == PresetValue{Slic3r::Domain::Preset::FloatOrPercentages{Percentage{12}}});
 
         } catch (Yaml::ParseError& e) {
             std::cerr << e.what() << std::endl;
@@ -259,4 +285,40 @@ name: 'Abc'
             FAIL(e.what());
         }
     }
+}
+
+TEST_CASE("Minimal roundtrip", "[yaml]")
+{
+    using namespace Slic3r::Biz::Yaml;
+    using namespace Tests;
+    const Item orig_item{"aaa"};
+
+    SECTION("Node-level round trip")
+    {
+        auto node = Details::TypeTraits<Item>::serialize(orig_item);
+        auto parsed_item = parse_struct<Item>(node.value());
+
+        REQUIRE(parsed_item == orig_item);
+    }
+
+    SECTION("Verify output")
+    {
+        auto node = Details::TypeTraits<Item>::serialize(orig_item);
+        auto emitter = YamlAdapter::create_emitter(node.value());
+        auto yaml{YamlAdapter::emitter_output(emitter)};
+        auto expected = "id: aaa";
+        REQUIRE(yaml.find(expected) != std::string::npos);
+    }
+}
+
+TEST_CASE("Nested roundtrip", "[yaml]")
+{
+    using namespace Slic3r::Biz::Yaml;
+    using namespace Tests;
+    const MyData orig_data{.version = Ver{1, 2}, .items = {Item{"x1"}, Item{"x2"}}};
+
+    auto node = Details::TypeTraits<MyData>::serialize(orig_data);
+    auto parsed_data = parse_struct<MyData>(node.value());
+
+    REQUIRE(parsed_data == orig_data);
 }

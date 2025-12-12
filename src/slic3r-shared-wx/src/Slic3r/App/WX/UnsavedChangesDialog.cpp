@@ -213,8 +213,8 @@ void UnsavedChangesDialog::add_buttons(wxBoxSizer* buttons)
         &m_save_btn,
         "save",
         Biz::Preset::PresetDiffOperation::Save,
-        _L("Save") //,
-        // [this]() {return m_tree->has_selection(); }// Temporary: until save functionality is implemented
+        _L("Save"),
+        [this]() {return m_tree->has_selection(); }// Temporary: until save functionality is implemented
     );
     m_save_btn->Enable(false); // Temporary: until save functionality is implemented
 

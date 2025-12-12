@@ -243,8 +243,7 @@ TEST_CASE("Export gcode")
         );
 
     project_interactor.preset_interactor().load_preset_bundle(
-        preset_bundle_dir.string(),
-        config_dir.string()
+        Preset::IO::BundlePaths::make_test_runtime(Tests::get_datadir())
     );
 
     SlicingStatusListener slicing_listener{project_interactor, true};
@@ -328,9 +327,9 @@ TEST_CASE("Export sla")
         std::make_unique<Slic3r::Biz::Platform::JobManager::JobManager>(dispatcher)
     );
 
-    auto data_dir              = Tests::get_datadir();
-    fs::path preset_bundle_dir = data_dir / "presets";
-    fs::path config_dir        = data_dir / "configs";
+    auto data_dir     = Tests::get_datadir();
+    auto bundle_paths = Preset::IO::BundlePaths::make_test_runtime(data_dir);
+
 
     JobManagerStatusListener job_listener(Slic3r::Domain::JobStatus::Finished);
     Platform::PlatformServices::instance()
@@ -339,10 +338,7 @@ TEST_CASE("Export sla")
             &job_listener
         );
 
-    project_interactor.preset_interactor().load_preset_bundle(
-        preset_bundle_dir.string(),
-        config_dir.string()
-    );
+    project_interactor.preset_interactor().load_preset_bundle(bundle_paths);
 
     SlicingStatusListener slicing_listener{project_interactor, false};
     project_interactor.slicing_interactor().add_listener<Slic3r::Biz::Slicing::IStatusListener>(&slicing_listener);

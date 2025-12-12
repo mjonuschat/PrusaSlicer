@@ -89,6 +89,7 @@
 #include <Eigen/SVD>
 
 #define ENABLED_DEBUG_BEDS 0
+#define ENABLED_NODE_LOGGING 0
 
 using Slic3r::Domain::Transform3d;
 using Slic3r::Domain::Vec2d;
@@ -343,7 +344,9 @@ void PlaterRenderModule::register_commands()
     auto add_instance = [this]() -> void
     {
         m_project_interactor.scene_interactor().add_instance(Domain::Vec2d(10., 5.));
+#if ENABLED_NODE_LOGGING
         m_scene_presenter->scene().log_nodes();
+#endif
     };
 
     // Toolbar commands
@@ -916,7 +919,9 @@ void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
 
 void PlaterRenderModule::init_scene()
 {
+#if ENABLED_NODE_LOGGING
     m_scene_presenter->scene().log_nodes();
+#endif
 }
 
 void PlaterRenderModule::init_gizmos()
@@ -1070,8 +1075,9 @@ void PlaterRenderModule::add_volume(const Domain::ModelVolumeType& type)
                 m_project_interactor.scene_interactor(),
                 &AppServices::instance().dialog_manager()
             );
-
+#if ENABLED_NODE_LOGGING
             m_scene_presenter->scene().log_nodes();
+#endif
         }
     };
 

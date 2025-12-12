@@ -43,9 +43,7 @@ static bool load_preset_bundle_from_datadir(Slic3r::Domain::Preset::Bundle& pres
         Scene::SceneInteractor scene_interactor{workbench};
         Preset::PresetInteractor preset_interactor(workbench, scene_interactor);
 
-        fs::path preset_bundle_dir = fs::path{resources_dir()} / "presets";
-        fs::path config_dir        = fs::path{data_dir} / "configs";
-        preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
+        preset_interactor.load_preset_bundle(Preset::IO::BundlePaths::make_standard_runtime());
 
         preset_bundle = std::move(workbench.preset_bundle());
     } catch (const std::exception& ex) {

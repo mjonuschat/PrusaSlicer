@@ -14,7 +14,7 @@ void from_json(const nlohmann::ordered_json& j, ExprAst& v)
 
 void to_json(nlohmann::ordered_json& j, const ExprAst& v)
 {
-    j = Biz::Expr::to_string(v);
+    j = to_string(v);
 }
 
 } // namespace Slic3r::Domain::Expr

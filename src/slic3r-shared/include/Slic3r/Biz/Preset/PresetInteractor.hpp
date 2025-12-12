@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PresetEvaluator.hpp"
+#include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 
 #include <unordered_map>
 
@@ -21,6 +21,7 @@
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/Preset/ProjectPresetView.hpp"
 #include "Slic3r/Biz/IConfigBoxSetter.hpp"
+#include "Slic3r/Biz/Preset/IO/BundlePaths.hpp"
 
 namespace Slic3r::Biz::Preset {
 
@@ -35,6 +36,7 @@ struct PresetItem
     std::string name;
     std::string hw_printer_config_id;
     std::string hw_printer_config_name;
+    Domain::Preset::PresetOrigin origin;
     bool runtime_only;
 };
 
@@ -66,7 +68,8 @@ public:
 
     PresetInteractor(PresetInteractor&&) = default;
 
-    void load_preset_bundle(const std::string& preset_bundle_path, const std::string& config_path);
+    void load_preset_bundle(const IO::BundlePaths& paths);
+    void save_user_preset(Domain::Preset::PresetKind kind, size_t slot_index, std::string new_name={});
 
     const PresetInteractorConfigContainerContext& config_container_context(
         Domain::SelectionId project_id,
@@ -186,6 +189,11 @@ public:
         const std::string& name,
         ConfigItemModifyFn modify_fn
     );
+
+    Domain::Preset::PresetNames get_all_vendor_preset_names(
+        Domain::Preset::PresetKind kind,
+        const std::optional<std::string>& vendor_id = std::nullopt
+    ) const;
 
     void on_selected_project_changed(size_t index) override;
     void on_selected_config_container_changed(
@@ -597,7 +605,7 @@ private:
 
     PresetInteractorConfigContainerContext& mutable_selected_config_container_context();
 
-    Domain::Preset::SelectedPreset& mutable_selected_printer_presets();
+    Domain::Preset::SelectedPreset& mutable_selected_printer_preset();
 
     ProjectContexts::const_iterator get_project_context(Domain::SelectionId project_id) const
     {
@@ -648,18 +656,18 @@ private:
 
     void select_printer_preset_internal(
         const std::string& printer_hw_config_id,
-        const std::string& printer_preset_id,
+        const std::string printer_preset_id,
         ListenerInvokeLaterBag& bag
     );
-    void select_print_preset_internal(const std::string& id, ListenerInvokeLaterBag& bag);
+    void select_print_preset_internal(const std::string id, ListenerInvokeLaterBag& bag);
     void select_tool_print_preset_internal(
         size_t tool_index,
-        const std::string& id,
+        const std::string id,
         ListenerInvokeLaterBag& bag
     );
     void select_material_preset_internal(
         size_t material_index,
-        const std::string& id,
+        const std::string id,
         ListenerInvokeLaterBag& bag
     );
 
@@ -684,10 +692,13 @@ private:
         std::optional<size_t> tool_id = std::nullopt
     );
 
+    void delete_preset(Domain::Preset::PresetKind kind, const std::string& preset_ids);
+
 private:
     using SetAccessorMap = std::map<const ConfigBoxInteractor*, ConfigBoxInteractor::SetAccessor>;
 
     Domain::Workbench& m_workbench;
+    IO::BundlePaths m_bundle_paths;
 
     PresetItemObservableList m_printer_presets;
     PresetItemObservableList m_print_presets;

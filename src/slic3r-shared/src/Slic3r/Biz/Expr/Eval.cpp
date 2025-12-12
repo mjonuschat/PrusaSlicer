@@ -15,156 +15,6 @@ namespace {
 
 using namespace Domain::Expr;
 
-struct ValuePrinter : boost::static_visitor<std::ostream&>
-{
-    explicit ValuePrinter(std::ostream& os) : os(os) {}
-
-    std::ostream& operator()(bool val)
-    {
-        os << val;
-        return os;
-    }
-
-    std::ostream& operator()(double val)
-    {
-        os << val;
-        return os;
-    }
-
-    std::ostream& operator()(const std::string& val)
-    {
-        os << "\"" << val << "\"";
-        return os;
-    }
-
-    std::ostream& operator()(const RegEx& val)
-    {
-        os << "/" << val.source() << "/";
-        return os;
-    }
-
-protected:
-    std::ostream& os;
-};
-
-struct ExprPrinter : ValuePrinter
-{
-    explicit ExprPrinter(std::ostream& os) : ValuePrinter(os) {}
-
-    using ValuePrinter::operator();
-
-    std::ostream& operator()(const Binary& val)
-    {
-        std::string op_name;
-        switch (val.op) {
-        case BinaryOp::Add:
-            op_name = "+";
-            break;
-
-        case BinaryOp::Subtract:
-            op_name = "-";
-            break;
-
-        case BinaryOp::Multiply:
-            op_name = "*";
-            break;
-
-        case BinaryOp::Divide:
-            op_name = "/";
-            break;
-
-        case BinaryOp::Eq:
-            op_name = "==";
-            break;
-
-        case BinaryOp::NotEq:
-            op_name = "!=";
-            break;
-
-        case BinaryOp::RegExMatch:
-            op_name = "=~";
-            break;
-
-        case BinaryOp::Lt:
-            op_name = "<";
-            break;
-
-        case BinaryOp::LtEq:
-            op_name = "<=";
-            break;
-
-        case BinaryOp::Gt:
-            op_name = ">";
-            break;
-
-        case BinaryOp::GtEq:
-            op_name = ">=";
-            break;
-
-        case BinaryOp::And:
-            op_name = "and";
-            break;
-
-        case BinaryOp::Or:
-            op_name = "or";
-            break;
-        }
-
-        os << "(";
-        boost::apply_visitor(*this, val.left);
-        os << " " << op_name << " ";
-        boost::apply_visitor(*this, val.right);
-        os << ")";
-
-        return os;
-    }
-
-    std::ostream& operator()(const Unary& val)
-    {
-        std::string op_name;
-        switch (val.op) {
-        case UnaryOp::Not:
-            op_name = "not";
-            break;
-
-        case UnaryOp::Plus:
-            op_name = "+";
-            break;
-
-        case UnaryOp::Minus:
-            op_name = "-";
-            break;
-        }
-
-        os << op_name << " ";
-        boost::apply_visitor(*this, val.expr);
-
-        return os;
-    }
-
-    std::ostream& operator()(const FuncCall& val)
-    {
-        os << val.name << "(";
-        bool first = true;
-        for (const auto& arg : val.args) {
-            if (first)
-                first = false;
-            else
-                os << ", ";
-            boost::apply_visitor(*this, arg);
-        }
-
-        os << ")";
-        return os;
-    }
-
-    std::ostream& operator()(const VarRef& val)
-    {
-        os << val.name;
-        return os;
-    }
-};
-
 template <typename T>
 T safe_get(const Value& v, const char* op_name)
 {
@@ -298,13 +148,6 @@ private:
 
 std::ostream& operator<<(std::ostream& os, const Value& v)
 {
-    ValuePrinter printer(os);
-    boost::apply_visitor(printer, v);
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const ExprAst& v)
-{
     ExprPrinter printer(os);
     boost::apply_visitor(printer, v);
     return os;
@@ -315,18 +158,6 @@ std::string to_string(const Value& v)
     std::ostringstream os;
     os << v;
     return os.str();
-}
-
-std::string to_string(const ExprAst& v)
-{
-    std::ostringstream os;
-    os << v;
-    return os.str();
-}
-
-bool expr_string_equals(const ExprAst& lhs, const ExprAst& rhs)
-{
-    return to_string(lhs) == to_string(rhs);
 }
 
 Value Eval::eval(const Expr& expr, const ValueMap& extra_vars) const

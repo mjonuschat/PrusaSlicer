@@ -59,6 +59,11 @@ struct ConstIterator
     }
 };
 
+struct Emitter
+{
+    std::unique_ptr<YAML::Emitter> emitter;
+};
+
 } // namespace Details
 
 struct YamlAdapterYamlCpp
@@ -67,6 +72,7 @@ struct YamlAdapterYamlCpp
     using Document = Details::Document;
     using NodeRef = Details::NodeRef;
     using KeyValuePair = Details::KeyValuePair;
+    using Emitter = Details::Emitter;
 
 
     static Parser create_file_parser(const char* file_name);
@@ -89,6 +95,14 @@ struct YamlAdapterYamlCpp
 
     static Yaml::Details::Mark mark(const NodeRef& node);
 
+    static NodeRef create_scalar_node(std::string_view value);
+    static NodeRef create_null_node();
+    static NodeRef create_sequence_node();
+    static void sequence_append(NodeRef& node, const NodeRef& item);
+    static NodeRef create_mapping_node();
+    static void mapping_append(NodeRef& node, const NodeRef& key, const NodeRef& value);
+    static Emitter create_emitter(const NodeRef& node);
+    static std::string_view emitter_output(const Emitter& emitter);
 };
 
 static_assert(Yaml::Details::YamlAdapterInterface<YamlAdapterYamlCpp>);

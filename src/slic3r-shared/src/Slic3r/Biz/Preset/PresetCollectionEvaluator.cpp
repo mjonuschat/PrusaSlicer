@@ -49,7 +49,7 @@ namespace {
 
 PresetCollectionEvaluator::PresetCollectionEvaluator(
     const Domain::Preset::Presets& presets,
-    const PresetEvaluator::NamedPresets& named_presets,
+    const PresetEvaluator::IdentifiedPresets& named_presets,
     Expr::Eval eval,
     const Expr::ValueMap& overrides
 ) :
@@ -72,7 +72,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
 #if !HAS_RANGES_VIEWS
     PresetEvaluator::EvalPresetContexts ret;
     for (const auto& preset : m_presets) {
-        auto eval_presets = eval_preset(preset, preset.id, {{preset.id}}, overrides);
+        auto eval_presets = eval_preset(preset, preset.id, preset.origin, {{preset.id}}, overrides);
         auto it           = only_public ?
                       std::remove_if(
                 eval_presets.begin(),
@@ -93,7 +93,13 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
                 return eval_preset(
                            preset,
                            preset.id,
-                           {{preset.id}},
+                           preset.origin,
+                           preset.user_file,
+                           {{
+                             .origin    = preset.origin,
+                             .root_id   = preset.id,
+                             .user_file = preset.user_file
+                           }},
                            overrides.empty() ? ValueMaps{{}} : overrides,
                            expr_combine
                        )
@@ -121,6 +127,8 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
 PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     const Domain::Preset::PresetNode& node,
     const std::string& root_id,
+    PresetOrigin origin,
+    std::optional<std::string> user_file,
     const PresetEvaluator::EvalPresetContexts& parent_contexts,
     const ValueMaps& overrides,
     ExprCombine expr_combine,
@@ -148,6 +156,8 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
             ret = eval_preset(
                 *node_path.front(),
                 root_id,
+                origin,
+                user_file,
                 ret,
                 overrides,
                 expr_combine,
@@ -244,9 +254,16 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
         auto var_ctx = eval_preset(
             var,
             root_id,
-            {{.root_id    = root_id,
-              .match_mode = first_match_only ? Domain::Preset::ConditionMatchMode::FirstMatch :
-                                               Domain::Preset::ConditionMatchMode::AllMatches}},
+            origin,
+            user_file,
+            {
+                {.origin     = origin,
+                 .root_id    = root_id,
+                 .match_mode = first_match_only ? ConditionMatchMode::FirstMatch :
+                                                  ConditionMatchMode::AllMatches,
+                 .user_file  = user_file},
+
+            },
             overrides,
             expr_combine,
             true

@@ -5,9 +5,143 @@
 #include "Slic3r/TestUtils/TestData.hpp"
 
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+#include "Slic3r/Biz/ObservableList.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/Preset/PresetSelectionCheck.hpp"
 #include "Slic3r/Biz/Slicing/TestUtils.hpp"
+
+namespace fs = boost::filesystem;
+
+
+template <typename T>
+void update_diff(
+    Slic3r::Biz::Preset::PresetsSwitchStates& ret,
+    Slic3r::Biz::Preset::PresetDiffOperation operation,
+    std::optional<std::string> new_name,
+    const T& original,
+    const T& selected,
+    const std::function<const Slic3r::Domain::ConfigBox&(const T&)>& getter,
+    Slic3r::Domain::Preset::PresetKind kind,
+    std::optional<size_t> slot = std::nullopt
+)
+{
+    auto diff = getter(selected).diff_keys(getter(original));
+    for (const auto& key : diff) {
+        Slic3r::Biz::Preset::PresetSwitchState dest{
+            .operation       = operation,
+            .new_preset_name = new_name
+        };
+        const auto it = getter(selected).find(key);
+        (it.is_override ? dest.overrides : dest.items).insert({key, it.item->value()});
+        ret.emplace(Slic3r::Biz::Preset::PresetSwitchKindId{kind, slot}, std::move(dest));
+    }
+}
+
+class TestPresetDialogManager : Slic3r::Biz::Preset::IPresetDialogManager
+{
+public:
+    PresetsSwitchStates show_unsaved_changes_dialog(
+        const std::string& dialog_name,
+        const Slic3r::Domain::ConfigPack& config_original,
+        const Slic3r::Domain::ConfigPack& config_selected,
+        Slic3r::Domain::ConfigPack* config_new_selected,
+        const Slic3r::Biz::Preset::PresetSelectionNames& preset_names,
+        const Slic3r::Biz::Preset::PresetSelectionNames& preset_names_new
+    ) override
+    {
+        PresetsSwitchStates ret;
+        std::visit(
+            Slic3r::Domain::overloaded{
+                [&](const Slic3r::Domain::ConfigPackFDM& original)
+                {
+                    const auto& selected = std::get<Slic3r::Domain::ConfigPackFDM>(config_selected);
+                    update_diff<Slic3r::Domain::ConfigPackFDM>(
+                        ret,
+                        operation,
+                        new_name,
+                        original,
+                        selected,
+                        [](const auto& p) -> const Slic3r::Domain::ConfigBox& { return p.printer; },
+                        Slic3r::Domain::Preset::PresetKind::FdmPrinter
+                    );
+                    update_diff<Slic3r::Domain::ConfigPackFDM>(
+                        ret,
+                        operation,
+                        new_name,
+                        original,
+                        selected,
+                        [](const auto& p) -> const Slic3r::Domain::ConfigBox& { return p.print; },
+                        Slic3r::Domain::Preset::PresetKind::FdmPrint
+                    );
+                    for (size_t i = 0; i < original.tool.size(); i++) {
+                        update_diff<Slic3r::Domain::ConfigPackFDM>(
+                            ret,
+                            operation,
+                            new_name,
+                            original,
+                            selected,
+                            [&](const auto& p) -> const Slic3r::Domain::ConfigBox&
+                            { return p.tool[i]; },
+                            Slic3r::Domain::Preset::PresetKind::FdmToolPrint, i
+                        );
+                        update_diff<Slic3r::Domain::ConfigPackFDM>(
+                            ret,
+                            operation,
+                            new_name,
+                            original,
+                            selected,
+                            [&](const auto& p) -> const Slic3r::Domain::ConfigBox&
+                            { return p.filament[i]; },
+                            Slic3r::Domain::Preset::PresetKind::FdmMaterial, i
+                        );
+                    }
+                },
+                [&](const Slic3r::Domain::ConfigPackSLA& original)
+                {
+                    const auto& selected = std::get<Slic3r::Domain::ConfigPackSLA>(config_selected);
+                    update_diff<Slic3r::Domain::ConfigPackSLA>(
+                        ret,
+                        operation,
+                        new_name,
+                        original,
+                        selected,
+                        [](const auto& p) -> const Slic3r::Domain::ConfigBox&
+                        { return p.sla_printer_settings; },
+                        Slic3r::Domain::Preset::PresetKind::SlaPrinter
+                    );
+                    update_diff<Slic3r::Domain::ConfigPackSLA>(
+                        ret,
+                        operation,
+                        new_name,
+                        original,
+                        selected,
+                        [](const auto& p) -> const Slic3r::Domain::ConfigBox&
+                        { return p.sla_print_settings; },
+                        Slic3r::Domain::Preset::PresetKind::SlaPrint
+                    );
+                    update_diff<Slic3r::Domain::ConfigPackSLA>(
+                        ret,
+                        operation,
+                        new_name,
+                        original,
+                        selected,
+                        [](const auto& p) -> const Slic3r::Domain::ConfigBox&
+                        { return p.sla_material_settings; },
+                        Slic3r::Domain::Preset::PresetKind::SlaMaterial
+                    );
+                }
+            },
+            config_original
+        );
+        return ret;
+    }
+
+    Slic3r::Biz::Preset::PresetDiffOperation operation = Slic3r::Biz::Preset::PresetDiffOperation::Save;
+    std::string new_name{"test"};
+};
+
+
 
 struct BaseProjectInteractorFixture
 {
@@ -15,8 +149,9 @@ struct BaseProjectInteractorFixture
     Slic3r::App::Platform::StdMainThreadDispatcher main_thread_dispatcher;
     Slic3r::Tests::MockThumbnailImageGenerator thumbnail_image_generator;
     Slic3r::Biz::ProjectInteractor project_interactor{workbench, main_thread_dispatcher, thumbnail_image_generator};
+    TestPresetDialogManager preset_dialog_manager;
 
-    virtual  ~BaseProjectInteractorFixture()
+    virtual ~BaseProjectInteractorFixture()
     {
         main_thread_dispatcher.close();
     }
@@ -24,20 +159,30 @@ struct BaseProjectInteractorFixture
 
 struct LoadedProjectInteractorFixture : BaseProjectInteractorFixture
 {
+    const Slic3r::Biz::Preset::IO::BundlePaths bundle_paths{
+        Slic3r::Biz::Preset::IO::BundlePaths::make_test_runtime(Tests::get_datadir())
+    };
+
     LoadedProjectInteractorFixture()
     {
-        namespace fs = boost::filesystem;
-        auto data_dir              = Tests::get_datadir();
-        fs::path preset_bundle_dir = data_dir / "presets";
-        fs::path config_dir        = data_dir / "configs";
+        project_interactor.preset_interactor().load_preset_bundle(bundle_paths);
+    }
 
-        project_interactor.preset_interactor().load_preset_bundle(
-            preset_bundle_dir.string(),
-            config_dir.string()
-        );
-
+    ~LoadedProjectInteractorFixture() override
+    {
+        fs::remove_all(bundle_paths.user_bundle_path);
     }
 };
+
+template <typename T>
+const T* find_if(const Slic3r::Biz::IObservableList<T>& list, const std::function<bool(const T&)>& predicate)
+{
+    for (size_t i = 0, n = list.size(); i < n; ++i) {
+        if (predicate(list.at(i)))
+            return &list.at(i);
+    }
+    return nullptr;
+}
 
 TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[PresetInteractor]")
 {
@@ -91,6 +236,30 @@ TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[Pr
         const auto& print_presets = preset_interactor.print_presets();
         const auto print_preset_idx = print_presets.selected_index();
         REQUIRE(print_presets.items().at(print_preset_idx).id == "0.20mm");
+    }
+
+    {
+        auto user_preset = find_if<Slic3r::Biz::Preset::PresetItem>(preset_interactor.print_presets().items(), [](const auto& p) -> bool { return p.name == "test"; });
+        REQUIRE(user_preset == nullptr);
+
+        preset_interactor.set_preset_value(
+            Slic3r::Domain::FDMConfigLocation::Print,
+            0,
+            "brim_width",
+            [](auto& p) { p.set(2.0); }
+        );
+        bool can_select = Slic3r::Biz::Preset::PresetSelectionCheck::can_select_print_preset(preset_interactor, "0.20mm");
+        REQUIRE(can_select);
+        const auto& hw_config = preset_interactor.current_printer_config();
+        fs::path saved_preset_path = bundle_paths.user_preset_dir_path(hw_config.repo_id, hw_config.vendor_id) / ("print-" + preset_dialog_manager.new_name + ".yaml");
+        REQUIRE(fs::exists(saved_preset_path));
+
+        user_preset = find_if<Slic3r::Biz::Preset::PresetItem>(preset_interactor.print_presets().items(), [](const auto& p) -> bool { return p.name == "test"; });
+        REQUIRE(user_preset != nullptr);
+
+        preset_interactor.load_preset_bundle(bundle_paths);
+        user_preset = find_if<Slic3r::Biz::Preset::PresetItem>(preset_interactor.print_presets().items(), [](const auto& p) -> bool { return p.name == "test"; });
+        REQUIRE(user_preset != nullptr);
     }
 }
 

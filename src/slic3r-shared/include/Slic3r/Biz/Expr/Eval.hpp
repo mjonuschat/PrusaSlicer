@@ -95,10 +95,6 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& os, const Value& v);
-std::ostream& operator<<(std::ostream& os, const Domain::Expr::ExprAst& v);
-
 std::string to_string(const Value& v);
-std::string to_string(const Domain::Expr::ExprAst& v);
-bool expr_string_equals(const Domain::Expr::ExprAst& lhs, const Domain::Expr::ExprAst& rhs);
 
 } // namespace Slic3r::Biz::Expr

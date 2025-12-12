@@ -55,7 +55,7 @@ struct SceneInteractorFixture
         set_data_dir(Tests::get_datadir().string());
 
         project_interactor.preset_interactor()
-            .load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
+            .load_preset_bundle(Preset::IO::BundlePaths::make_test_runtime(Tests::get_datadir()));
 
         project_interactor.scene_interactor().add_listener<ISlicingInputChangedListener>(&slicing_input_changed_listener);
 
