@@ -112,7 +112,7 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
             ToolType tool_type = (*it)->type();
             if (tool_type != current_tool_type()) {
                 auto technology = m_project_interactor.selected_config_container().selected_preset().hw_config.technology;
-                activate_tool(tool_type, technology);
+                toggle_activate_tool(tool_type, technology);
             }
             return;
         }
