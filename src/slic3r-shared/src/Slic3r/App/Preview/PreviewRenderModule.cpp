@@ -1226,17 +1226,13 @@ void PreviewRenderModule::update_viewer()
     }
 
     if (cc->print_technology() == Domain::PrinterTechnology::SLA) {
-        if (m_fdm_viewer.has_data()) {
-            m_fdm_viewer.reset();
-            m_fdm_viewer.clear_scene();
-        }
+        m_fdm_viewer.reset();
+        m_fdm_viewer.clear_scene();
         if (m_viewer != &m_sla_viewer)
             m_viewer = &m_sla_viewer;
     } else {
-        if (m_sla_viewer.has_data()) {
-            m_sla_viewer.reset();
-            m_sla_viewer.clear_scene();
-        }
+        m_sla_viewer.reset();
+        m_sla_viewer.clear_scene();
         if (m_viewer != &m_fdm_viewer)
             m_viewer = &m_fdm_viewer;
     }

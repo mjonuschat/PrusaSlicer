@@ -417,7 +417,6 @@ FdmViewer::FdmViewer()
 void FdmViewer::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
 {
     AbstractViewer::init(device, scene, data_factory);
-    set_scene(scene);
 }
 
 void FdmViewer::set_scene(Scene::Scene& scene)
@@ -455,7 +454,7 @@ void FdmViewer::set_scene(Scene::Scene& scene)
 
 void FdmViewer::clear_scene()
 {
-    if (m_scene != nullptr) {
+    if (m_scene != nullptr && m_main_node != nullptr) {
         m_scene->remove_children([&](const Scene::Node* node) { return true; }, m_main_node);
         m_scene->remove_child(m_main_node);
         m_main_node = nullptr;

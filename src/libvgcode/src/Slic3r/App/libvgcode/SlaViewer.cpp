@@ -47,7 +47,6 @@ SlaViewer::SlaViewer() {}
 void SlaViewer::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
 {
     AbstractViewer::init(device, scene, data_factory);
-    set_scene(scene);
 
     /* Create a tree
      * -> "main_sla"             {SlaObjectNodeTag{ object_id = 0, instance_id = 0, SlaMeshType::Undefined }}
@@ -94,7 +93,7 @@ void SlaViewer::set_scene(Scene::Scene& scene)
 
 void SlaViewer::clear_scene()
 {
-    if (m_scene != nullptr) {
+    if (m_scene != nullptr && m_main_node != nullptr) {
         m_scene->remove_children([&](const Scene::Node* node) { return true; }, m_main_node);
         m_scene->remove_child(m_main_node);
         m_main_node = nullptr;
@@ -127,7 +126,9 @@ void SlaViewer::reset()
                 break;
             }
             }
-            geometry_ids.push_back(id);
+
+            if (node->has_render_component())
+                geometry_ids.push_back(id);
         }
         return ret;
     }, m_main_node);
@@ -143,6 +144,8 @@ void SlaViewer::reset_layers()
     AbstractViewer::reset();
 
     // reset clipping planes
+    if (m_main_node == nullptr)
+       return;
 
     // Make default mesh as small as possible.
     // Its geometry will be updated on layers move
@@ -224,7 +227,7 @@ void SlaViewer::build_sla_object_mesh(
 
     Scene::AuxiliaryElementId id{ aei_type, object_id};
     const auto& trimesh =
-        trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
+        trimesh_mgr.get_or_create(id, [&]() {
         return std::make_unique<Scene::TriangleMesh>(mesh);
             });
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
@@ -273,10 +276,10 @@ void SlaViewer::build_clipping_plane_node(SlaMeshType plane_type, Scene::NodeBui
         Scene::AuxiliaryElementId::Type::SlaTopClip : 
         Scene::AuxiliaryElementId::Type::SlaBottomClip;
 
-    Scene::AuxiliaryElementId id{ aei_type, 0};
+    Scene::AuxiliaryElementId id{ aei_type, 0 };
 
     const auto& trimesh =
-        trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
+        trimesh_mgr.get_or_create(id, [&]() {
         return std::make_unique<Scene::TriangleMesh>(std::move(mesh_its));
             });
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
@@ -411,30 +414,31 @@ void SlaViewer::render()
 
 void SlaViewer::update_clipping_plane(SlaMeshType plane_type, indexed_triangle_set& its)
 {
+    if (m_main_node == nullptr)
+        return;
+
     Scene::visit(*m_main_node, [&](Scene::Node& n) {
         SlaObjectNodeTag* tag = n.tag_of_type<SlaObjectNodeTag>();
-        if (tag != nullptr) {
-            if (tag->type == plane_type) {
-                Scene::AuxiliaryElementId::Type aei_type = plane_type == SlaMeshType::TopClip ?
-                    Scene::AuxiliaryElementId::Type::SlaTopClip :
-                    Scene::AuxiliaryElementId::Type::SlaBottomClip;
+        if (tag != nullptr && tag->type == plane_type) {
+            Scene::AuxiliaryElementId::Type aei_type = plane_type == SlaMeshType::TopClip ?
+                Scene::AuxiliaryElementId::Type::SlaTopClip :
+                Scene::AuxiliaryElementId::Type::SlaBottomClip;
 
-                Scene::AuxiliaryElementId id{ aei_type, tag->object_id };
+            Scene::AuxiliaryElementId id{ aei_type, 0 };
 
-                m_model_triangle_mesh_manager.release(id);
-                m_model_geometry_manager.release(id);
+            m_model_triangle_mesh_manager.release(id);
+            m_model_geometry_manager.release(id);
 
-                const auto& trimesh =
-                    m_model_triangle_mesh_manager.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
-                    return std::make_unique<Scene::TriangleMesh>(std::move(its));
-                        });
-                const auto* geom = m_model_geometry_manager.get_or_create(id, [&]() {
-                    return Render::geometry_from_triangle_mesh(*m_device, trimesh->triangles());
+            const auto& trimesh =
+                m_model_triangle_mesh_manager.get_or_create(id, [&]() {
+                return std::make_unique<Scene::TriangleMesh>(std::move(its));
                     });
+            const auto* geom = m_model_geometry_manager.get_or_create(id, [&]() {
+                return Render::geometry_from_triangle_mesh(*m_device, trimesh->triangles());
+                });
 
-                static_cast<Scene::MeshRenderNodeComponent*>(n.render_component())->set_geometry(geom);
-                n.set_local_transform(m_bed_instance_transform);
-            }
+            static_cast<Scene::MeshRenderNodeComponent*>(n.render_component())->set_geometry(geom);
+            n.set_local_transform(m_bed_instance_transform);
         }
     });
 }
