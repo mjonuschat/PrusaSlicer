@@ -92,7 +92,6 @@ Domain::ModelVolume* add_volume(Domain::ModelObject* model_object, const Domain:
 {
     Domain::ModelVolume* v = ModelVolume::construct_ptr(model_object, mesh);
     model_object->volumes.push_back(v);
-    ModelVolume::center_geometry_after_creation(*v);
     model_object->invalidate_bounding_box();
     return v;
 }
@@ -101,7 +100,6 @@ Domain::ModelVolume* add_volume(Domain::ModelObject* model_object, Domain::Trian
 {
     Domain::ModelVolume* v = ModelVolume::construct_ptr(model_object, std::move(mesh), type);
     model_object->volumes.push_back(v);
-    ModelVolume::center_geometry_after_creation(*v);
     model_object->invalidate_bounding_box();
     return v;
 }
@@ -110,7 +108,6 @@ Domain::ModelVolume* add_volume(Domain::ModelObject* model_object, const Domain:
 {
     Domain::ModelVolume* v = ModelVolume::construct_ptr(model_object, other, std::move(mesh));
     model_object->volumes.push_back(v);
-    ModelVolume::center_geometry_after_creation(*v);
     model_object->invalidate_bounding_box();
     return v;
 }
@@ -119,6 +116,7 @@ Domain::ModelVolume* insert_volume(Domain::ModelObject* model_object, const size
 {
     Domain::ModelVolume* v = ModelVolume::construct_ptr(model_object, other, std::move(mesh));
     model_object->volumes.insert(model_object->volumes.begin() + idx, v);
+    model_object->invalidate_bounding_box();
     return v;
 }
 

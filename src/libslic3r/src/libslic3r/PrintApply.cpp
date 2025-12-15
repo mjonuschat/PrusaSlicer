@@ -238,10 +238,9 @@ static inline bool model_volume_solid_or_modifier(const Domain::ModelVolume &mv)
 
 static inline Transform3f trafo_for_bbox(const Transform3d &object_trafo, const Transform3d &volume_trafo)
 {
-    Transform3d m = object_trafo * volume_trafo;
-    m.translation().x() = 0.;
-    m.translation().y() = 0.;
-    return m.cast<float>();
+    ASSERT(is_approx(object_trafo.translation().x(), 0.));
+    ASSERT(is_approx(object_trafo.translation().y(), 0.));
+    return (object_trafo * volume_trafo).cast<float>();
 }
 
 static PrintObjectRegions::BoundingBox transformed_its_bbox2d(const indexed_triangle_set &its, const Transform3f &m, float offset)

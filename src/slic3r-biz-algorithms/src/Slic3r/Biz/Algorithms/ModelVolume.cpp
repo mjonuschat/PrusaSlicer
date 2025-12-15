@@ -120,23 +120,6 @@ bool is_splittable(const Domain::ModelVolume& model_volume)
     return model_volume.m_is_splittable == 1;
 }
 
-void center_geometry_after_creation(Domain::ModelVolume& model_volume, const bool update_source_offset)
-{
-    Domain::Vec3d shift = BoundingBox::center(model_volume.mesh().bounding_box());
-    if (!shift.isApprox(Domain::Vec3d::Zero()))
-    {
-        if (model_volume.m_mesh)
-            const_cast<Domain::TriangleMesh*>(model_volume.m_mesh.get())->translate(Domain::Vec3f{-(float)shift.x(), -(float)shift.y(), -(float)shift.z()});
-        if (model_volume.m_convex_hull)
-            const_cast<Domain::TriangleMesh*>(model_volume.m_convex_hull.get())->translate(Domain::Vec3f{-(float)shift.x(), -(float)shift.y(), -(float)shift.z()});
-        ModelVolume::translate(model_volume, shift);
-    }
-
-    if (update_source_offset) {
-        model_volume.source.mesh_offset = shift;
-    }
-}
-
 void calculate_convex_hull(Domain::ModelVolume& model_volume)
 {
     model_volume.m_convex_hull = std::make_shared<Domain::TriangleMesh>(TriangleMesh::convex_hull_3d(model_volume.mesh()));
