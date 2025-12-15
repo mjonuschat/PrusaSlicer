@@ -725,7 +725,7 @@ bool calc_scales(Scale& volume_scale, const Domain::Project& project, const Doma
 
 void TextGizmo::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::ObjectSelection& selection)
 {
-    const Domain::Project& project = m_project_interactor.workbench().project(project_id);
+    const Domain::Project& project = m_project_interactor.project(project_id);
     const Domain::ModelVolume* volume_ptr = Biz::Emboss::get_selected_text_volume(project, selection);
     if (volume_ptr == nullptr)
         return close(); // unselection text volume
@@ -806,7 +806,7 @@ void TextGizmo::on_project_activated(size_t new_project_id)
     scene_interactor.add_listener<Biz::Scene::ISceneSelectionChangedListener>(this);
 
     // fill dialog with current data
-    const Domain::Project& project = m_project_interactor.workbench().project(new_project_id);
+    const Domain::Project& project = m_project_interactor.project(new_project_id);
     const Domain::ModelVolume* volume_ptr = 
         Biz::Emboss::get_selected_text_volume(project, scene_interactor.object_selection());
     ASSERT(volume_ptr != nullptr);

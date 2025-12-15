@@ -47,8 +47,7 @@ TextPresetManager::TextPresetManager(
     m_font_manager(font_manager),
     m_imgui_init_glyph_range(language_glyph_range),
     m_cache_path(cache_path),
-    m_proj_preset_cache(project_interactor),
-    m_project_interactor(project_interactor)
+    m_proj_preset_cache(project_interactor)
 {}
 
 void TextPresetManager::init()
@@ -137,10 +136,10 @@ void TextPresetManager::rename_preset()
             if (!exist_stored_style())
                 return; 
             
-            m_data.presets[cache.preset_index].emboss_style.descriptor.name = name;                
-            const auto& projs = m_project_interactor.workbench().projects();
-            for (const auto& [project_id, _] : projs) { 
-                // rename in all projects
+            m_data.presets[cache.preset_index].emboss_style.descriptor.name = name;
+
+            // rename in all projects
+            for (Domain::SelectionId project_id : m_proj_preset_cache.get_project_ids()) {
                 PresetCache& cache_ = m_proj_preset_cache.project(project_id);
                 if (cache_.preset_index != cache.preset_index)
                     continue;
@@ -166,8 +165,7 @@ bool TextPresetManager::delete_preset()
             return;
 
         // fix selected index in all projects data        
-        const auto& projs = m_project_interactor.workbench().projects();
-        for (const auto& [project_id, _] : projs) {
+        for (Domain::SelectionId project_id: m_proj_preset_cache.get_project_ids()) {
             PresetCache &cache = m_proj_preset_cache.project(project_id);
             size_t& i = cache.preset_index;
             if (i == std::numeric_limits<size_t>::max())

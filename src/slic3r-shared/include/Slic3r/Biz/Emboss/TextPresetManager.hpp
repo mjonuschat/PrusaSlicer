@@ -313,7 +313,6 @@ private:
         double ppm;
     };
 
-    Biz::ProjectInteractor& m_project_interactor;
     std::shared_ptr<PresetImagesData::PresetImages> m_temp_style_images = nullptr;
     bool m_exist_style_images                                         = false;
 };
