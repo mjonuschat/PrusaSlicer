@@ -13,6 +13,7 @@
 #include "libslic3r/GCode.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "test_data.hpp"
+#include <boost/lexical_cast.hpp>
 
 using namespace Slic3r;
 using namespace Test;
@@ -197,6 +198,18 @@ TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
     CHECK(temps == std::vector<double>{210, 200, 210, 200, 0});
 }
 
+std::optional<float> parse_option_from_gcode(
+    const std::string& key,
+    const std::string& gcode
+) {
+    std::regex re("; " + key + R"(.*= (\d+(\.\d+)?))");
+    std::smatch match;
+    if (!std::regex_search(gcode, match, re)) {
+        return std::nullopt;
+    }
+    return boost::lexical_cast<float>(match[1].str());
+}
+
 
 TEST_CASE("Used filament", "[GCode]") {
     TestConfig config1;
@@ -206,7 +219,7 @@ TEST_CASE("Used filament", "[GCode]") {
     Print print1;
     Domain::Model model1;
     Test::init_print({TestMesh::cube_20x20x20}, print1, model1, config1);
-    Test::gcode(print1);
+    std::string gcode1{Test::gcode(print1)};
 
     TestConfig config2;
     config2.tool.at(0).items.opt("retract_length").set(999.0);
@@ -215,10 +228,14 @@ TEST_CASE("Used filament", "[GCode]") {
     Print print2;
     Domain::Model model2;
     Test::init_print({TestMesh::cube_20x20x20}, print2, model2, config2);
-    Test::gcode(print2);
+    std::string gcode2{Test::gcode(print2)};
 
     INFO("Final retraction is not considered in total used filament");
-    CHECK(print1.print_statistics().total_used_filament == Approx(print2.print_statistics().total_used_filament));
+    const auto total_used_filament1{parse_option_from_gcode("total filament used \\[g\\]", gcode1)};
+    const auto total_used_filament2{parse_option_from_gcode("total filament used", gcode2)};
+    REQUIRE(total_used_filament1);
+    REQUIRE(total_used_filament2);
+    REQUIRE(total_used_filament1 == total_used_filament2);
 }
 
 void check_m73s(Print& print){

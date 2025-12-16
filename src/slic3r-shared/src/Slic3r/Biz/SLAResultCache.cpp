@@ -28,7 +28,7 @@ void SLAResultCache::on_sla_result_changed(const SlicingId& id, SLAResult&& resu
     case Sla::ResultType::Files: { // extend cache entry
         auto cache_it = m_results.find(id);
         ASSERT(cache_it != m_results.end(), "cache must be already filled");
-        cache_it->second.files = std::move(result.files);
+        cache_it->second.export_data->files = std::move(result.export_data->files);
         break;
     }
     default:

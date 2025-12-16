@@ -9,18 +9,8 @@
 #include <memory>
 
 #include "libslic3r/SLA/RasterBase.hpp" // ISlaRasterizer
-#include "libslic3r/SLA/SLAResult.hpp"
 
 namespace Slic3r {
-
-/// <summary>
-/// File writer for the '.sl1' file format, store slicing result into file
-/// NOTE: Throw exception in case can't write to file_path
-/// e.g. no space, no privilege, bad network, ...
-/// </summary>
-/// <param name="file_path">File path for store result</param>
-/// <param name="data">Already rasterized and encoded files with configurations and thumbnails</param>
-void store_sl1(const std::string& file_path, const Biz::Slicing::SLAResult& data);
 
 /// <summary>
 /// Factory for create file rasterizer for the '.sl1' file format

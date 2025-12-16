@@ -15,6 +15,7 @@
 #include "Slic3r/Biz/SecretStoreDummy.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/Utils/CopyFile.hpp"
+#include "Slic3r/Biz/ResultExport/ExportNameParser.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Domain/FullConfigFDM.hpp"
 #include "Slic3r/Domain/FullConfigSLA.hpp"
@@ -247,7 +248,7 @@ std::optional<std::string> slice_single_model_project(
         return future_slicing_status_update.get().second;
     }();
 
-    const std::string dest_path = output_filename_and_path(project, config_pack, output_path);
+    std::string dest_path = output_filename_and_path(project, config_pack, output_path);
 
     if (slicing_status_update.code == Biz::Slicing::StatusCode::Finished) {
         Biz::Platform::PlatformServices& platform_services =
@@ -258,7 +259,23 @@ std::optional<std::string> slice_single_model_project(
         ExportFinishedJobManagerStatusListener export_finished_listener;
         platform_services.job_manager().add_listener<Biz::Platform::JobManager::IJobManagerStatusChangedListener>(&export_finished_listener);
 
-        project_interactor.do_export(slicing_id, dest_path);
+        Biz::ExportNameParser::ExportNameData name_data;
+        try {
+           name_data = Biz::ExportNameParser::parse_export_name(project_interactor);
+        } catch (const Slic3r::PlaceholderParserError& e) {
+            SPDLOG_ERROR("Failed to parse output filename: {}", e.what());
+        }
+
+        boost::filesystem::path export_path;
+        if (name_data.filename.empty()) {
+            export_path = boost::filesystem::path(dest_path);
+        } else {
+            export_path = boost::filesystem::path(dest_path).parent_path() / name_data.filename;
+            // Store back to dest_path, it is used later.
+            dest_path = export_path.string();
+        }
+
+        project_interactor.do_result_export(slicing_id, export_path);
 
         std::optional<std::string> export_error = [&export_finished_listener, &dispatcher]()
         {

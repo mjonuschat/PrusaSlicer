@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Slic3r/Domain/FullConfigFDM.hpp"
+#include "Slic3r/Domain/FullConfigSLA.hpp"
+
 #include "Slic3r/Assert.hpp"
 #include <any>
 #include <map>
@@ -165,4 +168,8 @@ private:
     std::map<std::string, Value> m_values;
     std::vector<std::string> keys() const;
 };
+
+Config get_parser_config(const Domain::FullConfigFDM& config_pack);
+Config get_parser_config(const Domain::FullConfigSLA& config_pack);
+
 } // namespace Slic3r::Parser::IO

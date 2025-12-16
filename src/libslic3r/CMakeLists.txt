@@ -102,8 +102,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/ClipperUtils.cpp
     src/libslic3r/ClipperUtils.hpp
     src/libslic3r/ClipperZUtils.hpp
-    src/libslic3r/ConfigPackUtils.cpp
-    src/libslic3r/ConfigPackUtils.hpp
     src/libslic3r/ConfigUtils.cpp
     src/libslic3r/CSGMesh/CSGMeshCopy.hpp
     src/libslic3r/CSGMesh/ModelToCSGMesh.hpp
@@ -393,8 +391,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/utils.cpp
     src/libslic3r/Utils/JsonUtils.cpp
     src/libslic3r/Utils/JsonUtils.hpp
-    src/libslic3r/Zipper.cpp
-    src/libslic3r/Zipper.hpp
     src/libslic3r/SlicingStatus.cpp
     src/libslic3r/I18N_private.cpp
 

@@ -43,6 +43,7 @@ using Slic3r::Domain::Vec3d;
 using Slic3r::Domain::ModelInstance;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::Model;
+using Slic3r::Tests::are_statistics_sane;
 
 void translate_instances(Model& model, const Vec3d& translation) {
     for (ModelObject* object : model.objects) {
@@ -140,6 +141,8 @@ struct WipeTowerGeometryListener : public IWipeTowerGeometryListener
 TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geometry once available", "[slicing][slicing-callbacks]")
 {
     using namespace std::chrono_literals;
+    ResultListener result_listener;
+    slicing.set_listener<IFDMResultListener>(&result_listener);
 
     WipeTowerGeometryListener wipe_tower_geometry_listener;
     slicing.add_listener<IWipeTowerGeometryListener>(&wipe_tower_geometry_listener);
@@ -160,6 +163,12 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
     REQUIRE(wait_for_status(dispatcher, status_listener, 5s, [](const StatusEvents &events){
         return events.back().status_code == StatusCode::Finished;
     }));
+
+    const SelectionId bed_id{model_on_bed.bed_instance.id().id};
+    const auto& gcode{result_listener.gcodes.at(bed_id)->str()};
+    const auto error{are_statistics_sane(gcode)};
+    INFO((error ? *error : ""));
+    CHECK(!error);
 
     REQUIRE(wipe_tower_geometry_listener.geometry);
     const WipeTowerGeometry geometry{*wipe_tower_geometry_listener.geometry};
@@ -182,7 +191,7 @@ struct SLAResultListener : public ISLAResultListener {
         switch (result.type) {
         case ResultType::None: [[fallthrough]];
         case ResultType::Slices: this->result = std::move(result); break;
-        case ResultType::Files: this->result.files = std::move(result.files); break;}
+        case ResultType::Files: this->result.export_data->files = std::move(result.export_data->files); break;}
         this->result_recieved = true;
     }
     SLAResult result;
@@ -200,10 +209,6 @@ struct SLAObjectListener : public ISLAObjectListener{
 
 TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer technology differs", "[slicing][slicing-interactor]") {
     using namespace std::chrono_literals;
-
-    // Allow logging to be enabled in the test
-    //Slic3r::set_logging_level(spdlog::level::trace);
-    //Slic3r::init_logging();
 
     ModelOnBed model_on_bed{get_cubes_model(1, 5)};
 

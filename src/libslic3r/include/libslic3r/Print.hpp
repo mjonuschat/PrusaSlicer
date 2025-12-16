@@ -29,6 +29,7 @@
 
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
 
+#include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/ModelObject.hpp"
@@ -673,15 +674,10 @@ public:
     // It does NOT encompass MMU/MMU2 starting (wipe) areas.
     const Domain::Polygon&      first_layer_convex_hull() const { return m_first_layer_convex_hull; }
 
-    const PrintStatistics&      print_statistics() const { return m_print_statistics; }
-    PrintStatistics&            print_statistics() { return m_print_statistics; }
-
     // Wipe tower support.
     bool                        has_wipe_tower() const;
     const WipeTowerData&        wipe_tower_data(size_t extruders_cnt = 0) const;
     const ToolOrdering& 		tool_ordering() const { return m_tool_ordering; }
-
-	std::string                 output_filename(const std::string &filename_base = std::string()) const override;
 
     size_t                      num_print_regions() const throw() { return m_print_regions.size(); }
     const PrintRegion&          get_print_region(size_t idx) const  { return *m_print_regions[idx]; }
@@ -732,9 +728,6 @@ public:
     // Following section will be consumed by the GCodeGenerator.
     ToolOrdering 							m_tool_ordering;
     WipeTowerData                           m_wipe_tower_data {m_tool_ordering};
-
-    // Estimated print time, filament consumed.
-    PrintStatistics                         m_print_statistics;
 
     Thumbnails thumbnails;
 

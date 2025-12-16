@@ -28,7 +28,7 @@
 #include <Slic3r/Biz/Platform/JobManager/JobManager.hpp>
 #include <Slic3r/Biz/Platform/Termination.hpp>
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
-#include <Slic3r/Biz/PrintHost/PrintHostInteractor.hpp>
+#include <Slic3r/Biz/ResultExport/ResultExportInteractor.hpp>
 #include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
 
 #include "Slic3r/App/WX/DialogManager.hpp"

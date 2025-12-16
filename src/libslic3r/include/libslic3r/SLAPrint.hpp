@@ -396,8 +396,6 @@ public:
     // Return sla tansformation for a given model_object
     Domain::Transform3d sla_trafo(const Domain::ModelObject &model_object) const;
 
-	std::string                 output_filename(const std::string &filename_base = std::string()) const override;
-
     std::string validate(std::vector<std::string>* warnings = nullptr) const;
 
     // An aggregation of SliceRecord-s from all the print objects for each
@@ -478,22 +476,6 @@ public:
 
     friend SLAPrintObject;
 };
-
-/// <summary>
-/// Export result to file
-/// NOTE: move out of SLAPrint object
-/// </summary>
-/// <param name="fname">File name</param>
-/// <param name="data">Get it from SLAResultCache,
-/// till thumbnails are not generated on backend it must not be const</param>
-/// <param name="thumbnails">thumbnails files</param>
-/// <param name="projectname">project name</param>
-void export_print(
-    const std::string& fname,
-    Biz::Slicing::SLAResult& data,
-    const Domain::Images& thumbnails = {},
-    const std::string& projectname = ""
-);
 
 // Helper functions:
 

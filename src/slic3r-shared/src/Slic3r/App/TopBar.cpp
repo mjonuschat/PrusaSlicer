@@ -10,6 +10,7 @@
 #include <Slic3r/App/AppServices.hpp>
 #include "Slic3r/App/ThumbnailStore.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/App/Wildcards.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
@@ -122,7 +123,7 @@ void TopBar::add_load_project_btn(Item* parent)
             _u8L("Open Project"),
             m_project_interactor->export_project_path(m_project_interactor->selected_project_id()),
             "",
-            "*.3mf",
+            Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
             callback
         );
     };
@@ -182,7 +183,7 @@ void TopBar::add_save_project_btn(Item* parent)
                         _u8L("Save Project"),
                         m_project_interactor->export_project_path(m_project_interactor->selected_project_id()),
                         project_name,
-                        "*.3mf",
+                        Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
                         callback
                     );
                 } else {

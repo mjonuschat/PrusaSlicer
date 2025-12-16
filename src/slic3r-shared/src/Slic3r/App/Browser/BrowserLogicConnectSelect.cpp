@@ -36,7 +36,7 @@ std::vector<BrowserLogicCommand> BrowserLogicConnectSelect::on_connect_action_se
 
 std::vector<BrowserLogicCommand> BrowserLogicConnectSelect::on_connect_action_print(const std::string& message_data)
 {
-    m_project_interactor.do_upload_connect(m_project_interactor.selected_bed_slicing_id(), message_data);
+    m_project_interactor.do_result_upload_connect(m_project_interactor.selected_bed_slicing_id(), message_data);
     return {{BrowserLogicCommandType::EndModalOK, {}}};
 }
 

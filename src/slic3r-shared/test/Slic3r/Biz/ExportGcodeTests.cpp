@@ -10,6 +10,7 @@
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/SLAResultCache.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Domain/ModelVolume.hpp"
@@ -32,11 +33,14 @@ struct SlicingStatusListener : public Slic3r::Biz::Slicing::IStatusListener
 {
     Slic3r::Biz::ProjectInteractor& m_pi;
     std::map<Slic3r::Domain::SlicingId, std::vector<boost::filesystem::path>> m_id_map;
+    bool m_to_fdm;
 
     SlicingStatusListener(
-        Slic3r::Biz::ProjectInteractor& pi
+        Slic3r::Biz::ProjectInteractor& pi,
+        bool to_fdm
     ) :
-        m_pi(pi)
+        m_pi(pi),
+        m_to_fdm(to_fdm)
     {}
 
     virtual void on_status_changed(
@@ -48,7 +52,30 @@ struct SlicingStatusListener : public Slic3r::Biz::Slicing::IStatusListener
             auto it = m_id_map.find(id);
             ASSERT(it != m_id_map.end());
             for (const auto& path : it->second) {
-                m_pi.do_export(id, path);
+                if (m_to_fdm) {
+                    const std::optional<FDMResultRef> fdm_result{m_pi.fdm_result_cache().get_result(id)};
+                    ASSERT(fdm_result);
+                    m_pi.set_export_result_path(id.project_id, path);
+                    PrintHost::PrintHostConfig config{Slic3r::Domain::PrintHostType::Local, ""};
+                    PrintHost::PrintHostJobData data{
+                        fdm_result.value().get().const_gcode(),
+                        path,
+                        PrintHost::get_export_format_from_extension(path.extension().string())
+                    };
+                    m_pi.result_export_interactor().perform(std::move(config), std::move(data));
+                } else {
+                    const std::optional<SLAResultRef> sla_result{m_pi.sla_result_cache().get_result(id)};
+                    ASSERT(sla_result);
+                    m_pi.set_export_result_path(id.project_id, path);
+                    PrintHost::PrintHostConfig config{Slic3r::Domain::PrintHostType::Local, ""};
+                    PrintHost::PrintHostJobData data{
+                        sla_result.value().get().export_data,
+                        path,
+                        PrintHost::get_export_format_from_extension(path.extension().string())
+                    };
+                    m_pi.result_export_interactor().perform(std::move(config), std::move(data));
+                }
+                
             }
         }
     }
@@ -220,11 +247,11 @@ TEST_CASE("Export gcode")
         config_dir.string()
     );
 
-    SlicingStatusListener slicing_listener{project_interactor};
+    SlicingStatusListener slicing_listener{project_interactor, true};
     project_interactor.slicing_interactor().add_listener<Slic3r::Biz::Slicing::IStatusListener>(&slicing_listener);
 
     std::vector<CaseData> projects;
-    for (size_t i = 0; i < project_count; i++) {  
+    for (size_t i = 0; i < project_count; i++) {
 
         project_interactor.new_project();
         Slic3r::Tests::ModelOnBed new_model{Slic3r::Tests::get_cubes_model(1, 5)};
@@ -234,7 +261,9 @@ TEST_CASE("Export gcode")
             projects.back().paths.emplace_back(fs::path(Slic3r::data_dir()) / (std::string("test") + std::to_string(k) + extension));
             slicing_listener.add_export( projects.back().id,  projects.back().paths.back().path());
         }
-        
+
+        //auto config{std::get<Slic3r::Domain::ConfigPackFDM>(projects.back().model_on_bed.config)};
+
         project_interactor.slicing_interactor().update_process(
             projects.back().model_on_bed.model,
             projects.back().model_on_bed.project_metadata,
@@ -260,6 +289,102 @@ TEST_CASE("Export gcode")
             REQUIRE(!gcode.empty());
             if (extension == ".gcode") {
                 const auto error{is_gcode_sane(gcode, projects[i].model_on_bed.model)};
+                INFO((error ? *error : ""));
+                REQUIRE(!error);
+            }
+        }
+    }
+
+    // Queue must be clear before ProjectInteractor can be destroyed.
+    dispatcher.close();
+}
+
+TEST_CASE("Export sla")
+{
+    boost::nowide::nowide_filesystem();
+
+    auto [project_count, export_count, extension, seconds] =
+        GENERATE(
+            table<size_t, size_t, std::string, std::chrono::seconds>({
+                {1, 1, ".sl1", 30s},  // Export single sl1 file.
+                {1, 1, ".sl1s", 30s}, // Export single sl1s file. 
+                {3, 1, ".sl1", 50s},  // Export sl1 files of multiple projects. 
+                {1, 3, ".sl1", 50s},  // Export multiple sl1 files of 1 project.
+                {3, 3, ".sl1", 100s}  // Export a lot.
+            })
+        );
+
+    std::unique_ptr<SecretStoreDummy> store_dummy = std::make_unique<SecretStoreDummy>();
+    Platform::PlatformServices::instance().set_secret_store(std::move(store_dummy));
+
+    Slic3r::Domain::Workbench workbench;
+    Slic3r::set_data_dir(Tests::get_datadir().string());
+
+    Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
+    ThumbnailGenerator thumbnail_image_generator;
+    ProjectInteractor project_interactor{workbench, dispatcher, thumbnail_image_generator};
+
+    Platform::PlatformServices::instance().set_job_manager(
+        std::make_unique<Slic3r::Biz::Platform::JobManager::JobManager>(dispatcher)
+    );
+
+    auto data_dir              = Tests::get_datadir();
+    fs::path preset_bundle_dir = data_dir / "presets";
+    fs::path config_dir        = data_dir / "configs";
+
+    JobManagerStatusListener job_listener(Slic3r::Domain::JobStatus::Finished);
+    Platform::PlatformServices::instance()
+        .job_manager()
+        .add_listener<Slic3r::Biz::Platform::JobManager::IJobManagerStatusChangedListener>(
+            &job_listener
+        );
+
+    project_interactor.preset_interactor().load_preset_bundle(
+        preset_bundle_dir.string(),
+        config_dir.string()
+    );
+
+    SlicingStatusListener slicing_listener{project_interactor, false};
+    project_interactor.slicing_interactor().add_listener<Slic3r::Biz::Slicing::IStatusListener>(&slicing_listener);
+
+    std::vector<CaseData> projects;
+    for (size_t i = 0; i < project_count; i++) {
+
+        project_interactor.new_project();
+        Slic3r::Tests::ModelOnBed new_model {Slic3r::Tests::generate_cubes(1, 5), Slic3r::Domain::ConfigPackSLA{}};
+        Slic3r::Domain::SlicingId new_id{i, new_model.bed_instance.id().id};
+        projects.emplace_back(std::move(new_model), std::move(new_id));
+        for (size_t k = 0; k < export_count; k++) {
+            projects.back().paths.emplace_back(fs::path(Slic3r::data_dir()) / (std::string("test") + std::to_string(k) + extension));
+            slicing_listener.add_export( projects.back().id,  projects.back().paths.back().path());
+        }
+
+        project_interactor.slicing_interactor().update_process(
+            projects.back().model_on_bed.model,
+            projects.back().model_on_bed.project_metadata,
+            projects.back().model_on_bed.preset_metadata,
+            projects.back().model_on_bed.config,
+            projects.back().model_on_bed.bed_instance
+        );
+        project_interactor.slicing_interactor().slice_all();
+    }
+
+    REQUIRE(wait_for_status_count(
+        project_count * export_count,
+        job_listener.status_counter,
+        seconds,
+        dispatcher
+    ));
+
+    for (size_t i = 0; i < project_count; i++) {      
+        for (size_t k = 0; k < export_count; k++) {
+            REQUIRE(fs::exists(projects[i].paths[k].path()));
+            std::string gcode;
+            REQUIRE_NOTHROW(gcode = projects[i].paths[k].read_content());
+            REQUIRE(!gcode.empty());
+            if (extension == ".gcode") {
+                const auto error{is_gcode_sane(gcode, projects[i].model_on_bed.model)};
+                INFO((error ? *error : ""));
                 REQUIRE(!error);
             }
         }

@@ -9,7 +9,8 @@
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
-
+#include "Slic3r/Biz/Units.hpp"
+#include "Slic3r/Biz/Parser/IO.hpp"
 #include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
@@ -385,41 +386,66 @@ void ProjectInteractor::rename_project(Domain::SelectionId project_id, const std
                                                { l->on_project_changed(project_id); });
 }
 
-void ProjectInteractor::do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
+void ProjectInteractor::do_result_export_inner(const Domain::SlicingId id, PrintHost::PrintHostConfig&& print_host_config, PrintHost::PrintHostJobData&& job_data)
 {
-    const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
-    if (!fdm_result)
-        return;
-    set_export_result_path(selected_project_id(), dest_path);
+    // Find confing container with matching bed instance id.
+    const Domain::ConfigContainer* config_container = nullptr;
+    for (const auto& cc : m_workbench.project(id.project_id).config_containers()) {
+        for (const auto& bi : cc->bed_instances()) {
+            if (bi->id() == id.bed_instance_id) {
+                config_container = cc.get();
+                break;
+            }
+        }
+        if (config_container != nullptr) {
+            break;
+        }
+    }
+    ASSERT(config_container);
+    Domain::PrinterTechnology tech = config_container->selected_preset().hw_config.technology;
+    if (tech == Domain::PrinterTechnology::FFF) {
+        const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
+        ASSERT(fdm_result);
+        job_data.data_ptr = fdm_result.value().get().const_gcode();
+        m_result_export_interactor.perform(std::move(print_host_config), std::move(job_data));
+    } else if (tech == Domain::PrinterTechnology::SLA) {
+
+        const std::optional<SLAResultRef> sla_result{m_sla_result_cache.get_result(id)};
+        ASSERT(sla_result);
+        job_data.data_ptr = sla_result.value().get().export_data;
+        m_result_export_interactor.perform(std::move(print_host_config), std::move(job_data));
+
+    } else {
+        ASSERT(false);
+    }
+}
+
+void ProjectInteractor::do_result_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path)
+{
+    set_export_result_path(id.project_id, dest_path);
     PrintHost::PrintHostConfig config{Domain::PrintHostType::Local, ""};
     PrintHost::PrintHostJobData data{
-        fdm_result.value().get().const_gcode(),
+        std::monostate{},
         dest_path,
         PrintHost::get_export_format_from_extension(dest_path.extension().string())
     };
-    m_print_host_interactor.export_gcode(std::move(config), std::move(data));
+    do_result_export_inner(id, std::move(config), std::move(data));
 }
 
-void ProjectInteractor::do_upload(const Domain::SlicingId id, const std::string& filename)
+void ProjectInteractor::do_result_upload(const Domain::SlicingId id, const std::string& filename)
 {
-    const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
-    if (!fdm_result)
-        return;
     PrintHost::PrintHostConfig config{Domain::PrintHostType::OctoPrint, ""};
+    boost::filesystem::path dest_path(filename);
     PrintHost::PrintHostJobData data{
-        fdm_result.value().get().const_gcode(),
-        filename,
-        PrintHost::get_export_format_from_extension(boost::filesystem::path(filename).extension().string())
+        std::monostate{},
+        dest_path,
+        PrintHost::get_export_format_from_extension(dest_path.extension().string())
     };
-    m_print_host_interactor.upload_gcode(std::move(config), std::move(data));
+    do_result_export_inner(id, std::move(config), std::move(data));
 }
 
-void ProjectInteractor::do_upload_connect(const Domain::SlicingId id, const std::string& connect_msg)
+void ProjectInteractor::do_result_upload_connect(const Domain::SlicingId id, const std::string& connect_msg)
 {
-    const std::optional<FDMResultRef> fdm_result{m_fdm_result_cache.get_result(id)};
-    if (!fdm_result)
-        return;
-
     PrintHost::PrintHostConfig
         config{Domain::PrintHostType::PrusaConnect, Network::ServiceConfig::instance().connect_url()};
     config.access_token = m_user_account_interactor.access_token();
@@ -430,12 +456,12 @@ void ProjectInteractor::do_upload_connect(const Domain::SlicingId id, const std:
         return;
     }
     PrintHost::PrintHostJobData data{
-        fdm_result.value().get().const_gcode(),
+        std::monostate{},
         filename,
         PrintHost::get_export_format_from_extension(boost::filesystem::path(filename).extension().string())
     };
     data.request_body_json = std::move(body_json);
-    m_print_host_interactor.upload_gcode(std::move(config), std::move(data));
+    do_result_export_inner(id, std::move(config), std::move(data));
 }
 
 std::string ProjectInteractor::get_project_name(Domain::SelectionId project_id) const

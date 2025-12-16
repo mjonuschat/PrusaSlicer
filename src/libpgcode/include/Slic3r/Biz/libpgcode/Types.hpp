@@ -279,25 +279,6 @@ static const std::vector<Conversion> CONVERSIONS = {
     { UnitsType::Seconds,                  UnitsType::Minutes,                  [](float value){ return value * SECONDS_TO_MINUTES; } },
 };
 
-struct PrintEstimatedStatistics
-{
-    struct Mode
-    {
-        float time{ 0.0f };
-        std::vector<std::pair<Domain::CustomGCode::Type, std::pair<float, float>>> custom_gcode_times;
-
-        void reset();
-    };
-
-    std::array<Mode, TIME_MODES_COUNT> modes;
-    std::vector<float> volumes_per_color_change;
-    std::map<uint8_t, float> volumes_per_extruder;
-    std::map<uint8_t, float> cost_per_extruder;
-    std::map<Domain::GCodeExtrusionRole, std::pair<float, float>> used_filaments_per_role;
-
-    void reset();
-};
-
 struct PrintSettings
 {
     std::string print;
@@ -335,7 +316,7 @@ enum class Tags : uint8_t
     Custom_Code,
     First_Line_M73_Placeholder,
     Last_Line_M73_Placeholder,
-    Estimated_Printing_Time_Placeholder,
+    Print_Statistics_Placeholder,
     COUNT
 };
 
@@ -353,7 +334,7 @@ static const std::vector<std::string_view> RESERVED_TAGS = {
     "CUSTOM_GCODE"sv,
     "_GP_FIRST_LINE_M73_PLACEHOLDER"sv,
     "_GP_LAST_LINE_M73_PLACEHOLDER"sv,
-    "_GP_ESTIMATED_PRINTING_TIME_PLACEHOLDER"sv
+    "_GP_PRINT_STATISTICS_PLACEHOLDER"sv
 };
 
 } // namespace Slic3r::Biz::libpgcode

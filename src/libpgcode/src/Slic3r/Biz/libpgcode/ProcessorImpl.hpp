@@ -224,7 +224,7 @@ private:
     void simulate_st_synchronize(float additional_time = 0.0f);
     void store_move(MoveType type, bool internal_only = false);
     void calculate_time(size_t keep_last_n_blocks = 0, float additional_time = 0.0f);
-    void update_estimated_statistics();
+    void update_basic_statistics();
 };
 
 } // namespace Slic3r::Biz::libpgcode

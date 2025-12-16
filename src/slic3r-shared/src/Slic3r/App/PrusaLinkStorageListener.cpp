@@ -1,6 +1,6 @@
 #include "Slic3r/App/PrusaLinkStorageListener.hpp"
 
-#include "Slic3r/Biz/PrintHost/PrintHostInteractor.hpp"
+#include "Slic3r/Biz/ResultExport/ResultExportInteractor.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostJob.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -75,7 +75,7 @@ void PrusaLinkStorageListener::on_job_manager_status_changed(const Biz::Platform
             // TODO: here user should choose storage
             // for now we just use the first one
             std::string storage = storage_list[0].path;
-            m_project_interactor.print_host_interactor().on_storage_resolved(payload->id, storage);
+            m_project_interactor.result_export_interactor().on_storage_resolved(payload->id, storage);
         } else {
             // Ignore all progress without payload. It should be only first started status.
             ASSERT(progress.status == Domain::JobStatus::Started);

@@ -209,7 +209,7 @@ private:
         Biz::libpgcode::Processor& m_processor;
     };
 
-    void _do_export(
+    Domain::ExtraPrintStatistics _do_export(
         Print& print,
         GCodeOutputStream& file,
         const Biz::Print::SerializedConfig& serialized_config

@@ -53,6 +53,9 @@ Domain::Preset::SelectedPresetMetadata get_selected_preset_metadata()
 Domain::ConfigPack get_config() {
     Domain::ConfigPackFDM config;
     config.print.items.opt("skirts").set(0);
+    // Make print statitistics non-zero.
+    config.filament.at(0).items.opt("filament_density").set(1.0);
+    config.filament.at(0).items.opt("filament_cost").set(44.0);
     return config;
 }
 

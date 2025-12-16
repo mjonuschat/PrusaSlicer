@@ -32,7 +32,7 @@
 #include "libslic3r/SlicingInput.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/StepsInvalidation.hpp"
-#include "libslic3r/ConfigPackUtils.hpp"
+#include "Slic3r/Biz/Parser/IO.hpp"
 
 namespace Slic3r {
 
@@ -1343,7 +1343,7 @@ Biz::Print::ApplyStatus::Status Print::apply(
     m_config = new_print_config;
 
     m_placeholder_parser = init_placeholder_parser(
-        Biz::Slicing::get_parser_config(*new_full_config_ptr),
+        Biz::Parser::IO::get_parser_config(*new_full_config_ptr),
         wipe_tower
     );
 
@@ -1383,13 +1383,6 @@ Biz::Print::ApplyStatus::Status Print::apply(
         print_object->set_shared_regions(new_regions);
     }
 
-    // Update SlicingParameters for each object where the SlicingParameters is not valid.
-    // If it is not valid, then it is ensured that PrintObject.m_slicing_params is not in use
-    // (posSlicing and posSupportMaterial was invalidated).
-    for (PrintObject* object : m_objects) {
-        object->update_slicing_parameters();
-    }
-
     const InvalidatedSteps invalidated_steps{SlicingSync::merge(
         {wipe_tower_invalidated_steps,
          custom_gcode_invalidated_steps,
@@ -1400,6 +1393,13 @@ Biz::Print::ApplyStatus::Status Print::apply(
 
     const bool changed{!invalidated_steps.empty()};
     this->invalidate_object_steps(invalidated_steps);
+
+    // Update SlicingParameters for each object where the SlicingParameters is not valid.
+    // If it is not valid, then it is ensured that PrintObject.m_slicing_params is not in use
+    // (posSlicing and posSupportMaterial was invalidated).
+    for (PrintObject* object : m_objects) {
+        object->update_slicing_parameters();
+    }
 
     if (changed) {
         this->cleanup();

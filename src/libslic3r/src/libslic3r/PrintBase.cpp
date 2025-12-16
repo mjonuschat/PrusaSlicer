@@ -104,22 +104,6 @@ std::string PrintBase::output_filename(const std::string &format, const std::str
     }
 }
 
-std::string PrintBase::output_filepath(const std::string &path, const std::string &filename_base) const
-{
-    // if we were supplied no path, generate an automatic one based on our first object's input file
-    if (path.empty())
-        // get the first input file name
-        return (boost::filesystem::path(Algorithms::Model::propose_export_file_name_and_path(m_model)).parent_path() / this->output_filename(filename_base)).make_preferred().string();
-    
-    // if we were supplied a directory, use it and append our automatically generated filename
-    boost::filesystem::path p(path);
-    if (boost::filesystem::is_directory(p))
-        return (p / this->output_filename(filename_base)).make_preferred().string();
-    
-    // if we were supplied a file which is not a directory, use it
-    return path;
-}
-
 void PrintBase::status_update_warnings(int step, PrintStateBase::WarningLevel /* warning_level */, const std::string &message, const PrintObjectBase* print_object)
 {
     if (m_status_callback) {

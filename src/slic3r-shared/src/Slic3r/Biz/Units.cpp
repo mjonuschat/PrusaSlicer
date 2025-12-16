@@ -181,7 +181,7 @@ struct TimeHDMS
     static std::string seconds_mask() { return "%d" + format_units(UnitsType::Seconds); }
 
     static std::string d_h_m_s_mask() { return days_mask() + " " + hours_mask() + " " + minutes_mask() + " " + seconds_mask(); }
-    static std::string d_h_m_mask()   { return days_mask() + " " + hours_mask() + " %d" + minutes_mask(); }
+    static std::string d_h_m_mask()   { return days_mask() + " " + hours_mask() + " " + minutes_mask(); }
     static std::string h_m_s_mask()   { return hours_mask() + " " + minutes_mask() + " " + seconds_mask(); }
     static std::string h_m_mask()     { return hours_mask() + " " + minutes_mask(); }
     static std::string m_s_mask()     { return minutes_mask() + " " + seconds_mask(); }

@@ -11,7 +11,6 @@
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/Zipper.hpp"
 #include "libslic3r/libslic3r.h"
 
 //#define NANOSVG_IMPLEMENTATION // ysCommented - this is no need anymore, we are linking nanosvg library in libslic3r 

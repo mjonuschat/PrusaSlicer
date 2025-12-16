@@ -8,6 +8,7 @@
 #include "Slic3r/Biz/libpgcode/LineView.hpp"
 #include "Slic3r/Biz/libpgcode/Types.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Domain/PrintStatistics.hpp"
 
 #include <memory>
 
@@ -43,11 +44,11 @@ struct ProcessorResult
     std::vector<float> filament_costs;
     std::vector<Domain::Vec2f> bed_shape;
 
-   
-
     std::vector<std::string> extruder_str_colors;
     std::vector<Domain::CustomGCode::Item> custom_gcode_per_print_z;
-    PrintEstimatedStatistics print_statistics;
+
+    Domain::PrintStatistics print_statistics;
+
     PrintSettings print_settings;
     std::optional<ConflictResult> conflict_result;
     std::optional<std::pair<std::string, std::string>> sequential_collision_detected;

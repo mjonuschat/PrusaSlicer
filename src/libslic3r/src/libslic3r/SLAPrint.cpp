@@ -17,7 +17,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
 
-#include "libslic3r/ConfigPackUtils.hpp"
+#include "Slic3r/Biz/Parser/IO.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/ModelUtils.hpp"
 #include "libslic3r/Utils.hpp"
@@ -961,7 +961,7 @@ InvalidatedSteps SLAPrint::apply(
     // Grab the lock for the Print / PrintObject milestones.
     std::scoped_lock<std::mutex> lock(this->state_mutex());
 
-    m_placeholder_parser = PlaceholderParser{Biz::Slicing::get_parser_config(config_pack)};
+    m_placeholder_parser = PlaceholderParser{Biz::Parser::IO::get_parser_config(config_pack)};
 
     // It is also safe to change m_config now after this->invalidate_state_by_config_options() call.
     m_print_config = new_print_config;
@@ -1019,18 +1019,6 @@ ParserConfig create_stats_placeholders()
 }
 
 } // namespace
-
-// Generate a recommended output file name based on the format template, default extension, and template parameters
-// (timestamps, object placeholders derived from the model, current placeholder prameters and print statistics.
-// Use the final print statistics if available, or just keep the print statistics placeholders if not available yet (before the output is finalized).
-std::string SLAPrint::output_filename(const std::string &filename_base) const
-{
-    ParserConfig config = this->finished() ? to_config(m_print_statistics) : create_stats_placeholders();
-    std::string default_ext = ".sl1";
-
-    config.set("default_output_extension", default_ext);
-    return this->PrintBase::output_filename(m_print_config.get<std::string>("output_filename_format"), default_ext, filename_base, &config);
-}
 
 std::string SLAPrint::validate(std::vector<std::string>*) const
 {
@@ -1435,28 +1423,3 @@ MeshBoolean::cgal::CGALMeshPtr get_cgalmesh(const CSGPartForStep &part)
 } // namespace csg
 
 } // namespace Slic3r
-
-// TODO: move function out of SLAPrint
-// SLAResult result; // TODO: get it from SLAResultCache
-using namespace Slic3r::Biz::Slicing;
-void Slic3r::export_print(
-    const std::string& fname,
-    SLAResult& data,
-    const Domain::Images& thumbnails,
-    const std::string& projectname
-)
-{
-    if (data.files.data.empty())
-        throw ExportError(_u8L("No layer to export yet."));
-
-    data.thumbnails = thumbnails;
-    data.project_name = projectname; // ?? No idea why it is used
-
-    // select format by
-    switch (data.files.type) {
-    case Sla::FileDataType::sl1_svg: [[fallthrough]];
-    case Sla::FileDataType::sl1_png: store_sl1(fname, data); break;
-    default:
-        throw ExportError(_u8L("Unknown output file format"));
-    }
-}
