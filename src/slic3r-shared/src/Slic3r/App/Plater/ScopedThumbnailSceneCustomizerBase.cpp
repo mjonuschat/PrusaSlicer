@@ -43,9 +43,6 @@ ScopedThumbnailSceneCustomizerBase::~ScopedThumbnailSceneCustomizerBase()
 
     // shading
     Scene::Scene::set_shading_type(m_cache.shading_type);
-
-    // shadows aabb
-    Scene::Scene::set_shadows_aabb(m_cache.shadows_aabb);
 }
 
 void ScopedThumbnailSceneCustomizerBase::store_shading_type()
@@ -61,11 +58,6 @@ void ScopedThumbnailSceneCustomizerBase::store_background_enabled()
 void ScopedThumbnailSceneCustomizerBase::store_use_background_error_color()
 {
     m_cache.use_background_error_color = m_scene.use_background_error_color();
-}
-
-void ScopedThumbnailSceneCustomizerBase::store_shadows_aabb()
-{
-    m_cache.shadows_aabb = Scene::Scene::graphics_settings().shadows_aabb();
 }
 
 void ScopedThumbnailSceneCustomizerBase::hide_gizmos()
@@ -237,7 +229,7 @@ void ScopedThumbnailSceneCustomizerBase::set_shadows()
                      bed_tag->type == Scene::BedElementType::PlateTextured)) {
                     auto rc = n.render_component();
                     m_cache.shadows.push_back(std::make_pair(&n, Render::Shadows{ rc->cast_shadows(), rc->receive_shadows() }));
-                    rc->set_shadows(Render::Shadows{ true, true });
+                    rc->set_shadows(Render::Shadows{ false, true });
                 }
             }
         }
@@ -264,11 +256,6 @@ void ScopedThumbnailSceneCustomizerBase::set_camera_trackball(const Eigen::Align
     m_camera_trackball.set_target(aabb.center());
     m_camera_trackball.set_distance_to_target(aabb.diagonal().norm());
     m_camera_trackball.set_azimuth_and_zenith(0.25 * std::numbers::pi, 0.75 * std::numbers::pi);
-}
-
-void ScopedThumbnailSceneCustomizerBase::set_shadows_aabb(const Eigen::AlignedBox3d& aabb)
-{
-    Scene::Scene::set_shadows_aabb(aabb);
 }
 
 void ScopedThumbnailSceneCustomizerBase::zoom_to_box(const Eigen::AlignedBox3d& aabb)
@@ -306,17 +293,6 @@ Eigen::AlignedBox3d ScopedThumbnailSceneCustomizerBase::volume_parts_aabb() cons
             }
         }
     );
-    return ret;
-}
-
-Eigen::AlignedBox3d ScopedThumbnailSceneCustomizerBase::bed_instance_aabb(const Domain::BedInstance& bed_instance) const
-{
-    Eigen::AlignedBox3d ret;
-    std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed_instance.bed.get());
-    Domain::Vec3d bed_inst_offset = bed_instance.transformation.get_offset();
-    for (const auto& v : print_volume) {
-        ret.extend(bed_inst_offset + v.cast<double>());
-    }
     return ret;
 }
 

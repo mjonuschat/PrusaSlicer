@@ -17,7 +17,6 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(Scene::Scen
     // store values that are going to be changed
     store_use_background_error_color();
     store_shading_type();
-    store_shadows_aabb();
 
     // hide geometry
     hide_gizmos();
@@ -31,9 +30,6 @@ ScopedBedThumbnailSceneCustomizer::ScopedBedThumbnailSceneCustomizer(Scene::Scen
     disable_bed_override_material();
     disable_volumes_override_material();
     set_shadows();
-
-    // set aabb for shadows
-    set_shadows_aabb(bed_instance_aabb(*bed_instance));
 
     // setup scene
     set_use_background_error_color(bed_instance_with_error);

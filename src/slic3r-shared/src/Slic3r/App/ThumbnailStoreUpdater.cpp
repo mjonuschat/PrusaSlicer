@@ -16,8 +16,6 @@ using Biz::Slicing::ThumbnailImageResults;
 void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const Domain::BedRefs& bed_refs,
     const Scene::BedError& bed_error)
 {
-    static const Domain::Size SIZE = {256, 256};
-
     if (m_thumbnail_results.valid()) {
         // queue to process later
         m_queue.push(QueueItem{project_id, bed_refs, bed_error});
@@ -35,7 +33,7 @@ void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const
         request.params.bed_instance_id         = bed_ref.instance_id;
         request.params.bed_instance_with_error = bed_error.contains(Domain::SlicingId{ project_id, bed_ref.instance_id });
         request.params.pixel_format            = Domain::PixelFormat::RGBA8;
-        request.params.sizes                   = {SIZE};
+        request.params.sizes                   = {{128, 128}};
     }
 
     // thumbnails for 3mf
@@ -45,7 +43,7 @@ void ThumbnailStoreUpdater::on_bed_changed(Domain::SelectionId project_id, const
     request.params.bed_instance_id         = 0;
     request.params.bed_instance_with_error = false;
     request.params.pixel_format            = Domain::PixelFormat::RGBA8;
-    request.params.sizes                   = {SIZE};
+    request.params.sizes                   = {{256, 256}};
 
     m_thumbnail_results = m_thumbnail_image_generator.enqueue_thumbnail_requests(requests);
 }

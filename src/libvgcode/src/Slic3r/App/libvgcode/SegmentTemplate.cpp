@@ -69,7 +69,7 @@ void SegmentTemplate::init(Render::Device& device, Scene::NodeBuilder& builder)
             Scene::RenderLayerId(Preview::PreviewSceneLayer::Toolpaths)
         )
         .set_shadows(Render::Shadows{true, true})
-        .set_pbr(Scene::DEFAULT_GCODE_OPTIONS_PBRPARAMS);
+        .set_pbr(Scene::DEFAULT_GCODE_SEGMENTS_PBRPARAMS);
 }
 
 } // namespace Slic3r::App::libvgcode

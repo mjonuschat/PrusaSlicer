@@ -41,7 +41,6 @@ protected:
     void store_shading_type();
     void store_background_enabled();
     void store_use_background_error_color();
-    void store_shadows_aabb();
 
     void hide_gizmos();
     void hide_selection_aabb();
@@ -60,13 +59,11 @@ protected:
     void set_use_background_error_color(bool use);
     void set_shading_type(Scene::ShadingType type);
     void set_camera_trackball(const Eigen::AlignedBox3d& aabb);
-    void set_shadows_aabb(const Eigen::AlignedBox3d& aabb);
     void zoom_to_box(const Eigen::AlignedBox3d& aabb);
     void update_camera_frustum();
 
     Eigen::AlignedBox3d scene_aabb() const;
     Eigen::AlignedBox3d volume_parts_aabb() const;
-    Eigen::AlignedBox3d bed_instance_aabb(const Domain::BedInstance& bed_instance) const;
 
 protected:
     const Domain::Project& m_project;
@@ -83,7 +80,6 @@ protected:
         bool background_enabled{ true };
         bool use_background_error_color{ false };
         Scene::ShadingType shading_type{ Scene::ShadingType::Legacy };
-        Eigen::AlignedBox3d shadows_aabb;
     };
 
     Cache m_cache;

@@ -38,7 +38,7 @@ public:
 
 struct Shadows
 {
-    bool bed_model_cast_shadow{ true };
+    bool bed_model_cast_shadow{ false };
     Eigen::AlignedBox3d aabb;
 
     mutable float intensity{DEFAULT_INTENSITY};

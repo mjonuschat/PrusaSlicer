@@ -9,7 +9,6 @@ Scoped3mfThumbnailSceneCustomizer::Scoped3mfThumbnailSceneCustomizer(Scene::Scen
     // store values that are going to be changed
     store_shading_type();
     store_background_enabled();
-    store_shadows_aabb();
 
     // hide geometry
     hide_gizmos();
@@ -23,14 +22,11 @@ Scoped3mfThumbnailSceneCustomizer::Scoped3mfThumbnailSceneCustomizer(Scene::Scen
     override_non_printable_volumes_material();
     set_shadows();
 
-    // set aabb for shadows
-    Eigen::AlignedBox3d world_aabb = volume_parts_aabb();
-    set_shadows_aabb(world_aabb);
-
     // setup scene
     set_background_enabled(false);
     set_shading_type(Scene::ShadingType::PBR);
 
+    Eigen::AlignedBox3d world_aabb = volume_parts_aabb();
     set_camera_trackball(world_aabb);
     zoom_to_box(world_aabb);
     update_camera_frustum();

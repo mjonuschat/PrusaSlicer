@@ -56,7 +56,11 @@ float shadow_pcf(vec4 position, float NdotL)
     // transform to [0,1] range
     proj_coords = proj_coords * 0.5 + 0.5;
 
-    float bias = max(0.01 * (1.0 - NdotL), 0.001);
+    if (proj_coords.x < 0.0 || proj_coords.x > 1.0 || proj_coords.y < 0.0 || proj_coords.y > 1.0 || proj_coords.z > 1.0)
+        // Fully lit
+        return 1.0;
+
+    float bias = max(0.0025 * (1.0 - NdotL), 0.00025);
 
     // PCF
     float shadow = 0.0;
@@ -69,8 +73,7 @@ float shadow_pcf(vec4 position, float NdotL)
     }
     shadow /= 9.0;
     
-    // if outside the light frustum -> lit
-    return (proj_coords.z - bias > 1.0) ? 1.0 : 1.0 - shadows_intensity * shadow;
+    return 1.0 - shadows_intensity * shadow;
 }
 
 vec3 light_direction(Light light)

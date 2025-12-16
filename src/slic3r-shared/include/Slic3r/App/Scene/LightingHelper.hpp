@@ -35,10 +35,12 @@ struct PBRParams
 };
 
 static const PBRParams DEFAULT_VOLUME_PBRPARAMS = { 0.0f, 0.25f, 1.5f };
+static const PBRParams DEFAULT_SLA_SUPPORTS_PBRPARAMS = { 0.0f, 0.5f, 1.4f };
+static const PBRParams DEFAULT_SLA_PAD_PBRPARAMS = { 0.0f, 0.5f, 1.4f };
 static const PBRParams DEFAULT_BED_PLATE_PBRPARAMS = { 0.5f, 0.75f, 1.5f };
 static const PBRParams DEFAULT_BED_MODEL_PBRPARAMS = { 0.5f, 0.75f, 1.5f };
-static const PBRParams DEFAULT_GCODE_SEGMENTS_PBRPARAMS = { 0.0f, 0.25f, 1.5f };
-static const PBRParams DEFAULT_GCODE_OPTIONS_PBRPARAMS = { 0.0f, 0.25f, 1.5f };
+static const PBRParams DEFAULT_GCODE_SEGMENTS_PBRPARAMS = { 0.0f, 0.5f, 1.5f };
+static const PBRParams DEFAULT_GCODE_OPTIONS_PBRPARAMS = { 0.0f, 0.2f, 2.0f };
 
 using PBRParamsList = std::vector<PBRParams>;
 

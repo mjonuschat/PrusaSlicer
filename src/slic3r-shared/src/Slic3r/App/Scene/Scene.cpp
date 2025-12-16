@@ -10,6 +10,7 @@
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
+#include "Slic3r/App/Scene/CameraHelper.hpp"
 #include "Slic3r/App/LightSetting.hpp"
 
 #include "Slic3r/Domain/Color.hpp"
@@ -388,6 +389,8 @@ void Scene::render_background(Render::Device& device, Render::CommandBuffer& cmd
 void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera, ISceneRenderCustomizer* customizer) const
 {
     Shadows& shadows = s_graphics_settings.m_shadows;
+    if (shadows.light_cam.cam_projection().type() == CameraProjectionType::Perspective)
+        shadows.light_cam.switch_projection_type();
 
     if (shadows.framebuffer == nullptr)
         shadows.pending_framebuffer_size = shadows.DEFAULT_FRAMEBUFFER_SIZE;
@@ -418,6 +421,7 @@ void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera,
     });
 
     if (!nodes.empty()) {
+        // extend the bounding box to contain all shadow casters
         for (const auto& [node, material] : nodes) {
             if (node->has_raycast_component())
                 world_aabb.extend(node->raycast_component()->world_bounding_box(node->world_transform().matrix()).cast<double>());
@@ -435,10 +439,8 @@ void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera,
         Vec3d world_light_dir = (it->system == LightReferenceSystem::Camera) ?
             Vec3d(camera.model().matrix().block<3, 3>(0, 0) * it->direction.cast<double>()) :
             it->direction.cast<double>();
-        Vec3d world_light_pos = center - 1.0f * world_light_dir;
-
+        Vec3d world_light_pos = center - 1000.0f * world_light_dir;
         shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
-        shadows.light_cam.switch_projection_type();
 
         Eigen::AlignedBox3d light_aabb = world_aabb.transformed(Transform3d(shadows.light_cam.view()));
 
@@ -454,18 +456,22 @@ void Scene::render_shadowsmap_pass(Render::Device& device, const Camera& camera,
             eye_max.z() = std::max(eye_max.z(), -eye_c.z());
         }
 
-        double delta_z = eye_min.z() - 10.0;
-        world_light_pos += delta_z * world_light_dir;
-        eye_min.z() -= delta_z;
-        eye_max.z() -= delta_z;
-
-        shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
+        // ensure the bbox is in front of the light camera
+        if (eye_min.z() < 100.0) {
+            double delta_z = 100.0 - eye_min.z();
+            world_light_pos -= delta_z * world_light_dir;
+            eye_min.z() += delta_z;
+            eye_max.z() += delta_z;
+            shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
+        }
 
         double max_x = std::max(std::abs(eye_min.x()), std::abs(eye_max.x()));
         double max_y = std::max(std::abs(eye_min.y()), std::abs(eye_max.y()));
 
-        shadows.light_cam.set_projection(
-            Render::ortho(-max_x, max_x, -max_y, max_y, eye_min.z(), eye_max.z()));
+        double z_margin = 0.5 * (eye_max.z() - eye_min.z());
+        eye_min.z() -= z_margin;
+        eye_max.z() += z_margin;
+        shadows.light_cam.set_projection(Render::ortho(-max_x, max_x, -max_y, max_y, eye_min.z(), eye_max.z()));
 
         if (customizer)
             customizer->on_render_begin(*cmd_buffer);

@@ -248,6 +248,27 @@ void SlaViewer::build_sla_object_mesh(
     print_volume.type = Domain::BedType::Invalid;
     set_uniforms(print_volume, material);
 
+    Scene::PBRParams pbr_params;
+    switch (type)
+    {
+    default:
+    case SlaMeshType::Object:
+    {
+        pbr_params = Scene::DEFAULT_VOLUME_PBRPARAMS;
+        break;
+    }
+    case SlaMeshType::Supports:
+    {
+        pbr_params = Scene::DEFAULT_SLA_SUPPORTS_PBRPARAMS;
+        break;
+    }
+    case SlaMeshType::Pad:
+    {
+        pbr_params = Scene::DEFAULT_SLA_PAD_PBRPARAMS;
+        break;
+    }
+    }
+
     builder
         .set_debug_name(Slic3r::format("sla_obj: %1%, inst: %2%, %3%", object_id, instance_id, type_str))
         .set_tag(SlaObjectNodeTag{ object_id, instance_id, type })
@@ -255,7 +276,7 @@ void SlaViewer::build_sla_object_mesh(
         .transform([trafo](auto& xform) { xform = trafo; })
         .set_aabb(trimesh->aabb_mesh())
         .set_shadows(Render::Shadows{ true, true })
-        .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
+        .set_pbr(pbr_params);
 }
 
 void SlaViewer::build_clipping_plane_node(SlaMeshType plane_type, Scene::NodeBuilder& builder)

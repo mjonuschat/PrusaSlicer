@@ -545,18 +545,6 @@ void PlaterScenePresenter::on_scene_selection_reference_frame_changed(
 void PlaterScenePresenter::on_selected_bed_instances_changed(Domain::SelectionId project_id, const Biz::Scene::BedSelection& selection)
 {
     update_bed_instances();
-
-    Eigen::AlignedBox3d bed_aabb;
-    for (const auto& bed_instance : selected_bed_instances()) {
-        const Domain::Vec3d bed_inst_offset{bed_instance.get().transformation.get_offset()};
-        const std::vector<Domain::Vec3f> print_volume{
-            Biz::Scene::BedGeometry::print_volume(bed_instance.get().bed.get())
-        };
-        for (const auto& v : print_volume) {
-            bed_aabb.extend(bed_inst_offset + v.cast<double>());
-        }
-    }
-    Scene::Scene::set_shadows_aabb(bed_aabb);
     m_volume_materials_dirty = true;
     if (selection.camera_action_on_selection() == Biz::Scene::CameraActionOnBedSelection::CenterOnBed)
         center_camera_on_selected_bed(true);

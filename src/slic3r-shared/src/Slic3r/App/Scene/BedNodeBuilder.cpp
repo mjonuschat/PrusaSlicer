@@ -213,7 +213,7 @@ model_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilde
                 .set_mesh(geom, material, layer_id)
                 .transform([](Transform3d& xform)
                            { xform.translate(z_offset(BedElementType::Model) * Vec3d::UnitZ()); })
-                .set_shadows(Render::Shadows{true, true})
+                .set_shadows(Render::Shadows{false, true})
                 .set_pbr(DEFAULT_BED_MODEL_PBRPARAMS)
                 .set_aabb(trimesh->aabb_mesh());
         }
