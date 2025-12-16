@@ -9,7 +9,7 @@
 
 #include <vector>
 
-namespace Slic3r {
+namespace Slic3r::Biz {
 
 struct ModelObjectCutAttributes {
     bool keep_upper{ true };
@@ -31,16 +31,16 @@ public:
 
     struct Groove
     {
-        float depth{ 0.f };
-        float width{ 0.f };
-        float flaps_angle{ 0.f };
-        float angle{ 0.f };
-        float depth_init{ 0.f };
-        float width_init{ 0.f };
-        float flaps_angle_init{ 0.f };
-        float angle_init{ 0.f };
-        float depth_tolerance{ 0.1f };
-        float width_tolerance{ 0.1f };
+        double depth{ 0. };
+        double width{ 0. };
+        double flaps_angle{ 0. };// angle in radians
+        double angle{0.};        // angle in radians
+        double depth_init{ 0. };
+        double width_init{ 0. };
+        double flaps_angle_init{ 0. };// angle in radians
+        double angle_init{ 0. };      // angle in radians
+        double depth_tolerance{ 0.1 };
+        double width_tolerance{ 0.1 };
     };
 
     struct Part

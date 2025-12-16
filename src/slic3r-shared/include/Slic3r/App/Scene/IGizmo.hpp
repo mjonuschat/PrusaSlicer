@@ -5,6 +5,7 @@
 #include "Slic3r/App/Platform/CommandRegistry.hpp"
 
 #include "Slic3r/Domain/PrinterTechnology.hpp"
+#include <functional>
 
 namespace Slic3r::App::Yoga {
 class GizmoWindow;
@@ -197,6 +198,15 @@ public:
     /**@}*/
 
     virtual std::unique_ptr<Yoga::GizmoWindow> release_ui_window();
+
+    struct Callbacks
+    {
+        std::function<void()> force_deactivation{ nullptr };
+    };
+    Callbacks& callbacks();
+
+protected:
+    Callbacks m_callbacks;
 };
 
 } // namespace Slic3r::App::Scene

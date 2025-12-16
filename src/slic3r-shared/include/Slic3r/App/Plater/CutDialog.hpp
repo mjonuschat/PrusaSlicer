@@ -7,6 +7,7 @@
 #include "Slic3r/App/Yoga/GizmoDialog.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 #include "Slic3r/Domain/CutConnector.hpp"
+#include "Slic3r/Biz/Utils/CutUtils.hpp"
 
 namespace Slic3r::App::Yoga {
 class LayoutButton;
@@ -43,6 +44,7 @@ public:
     Callbacks& callbacks();
     void set_as_part(bool is_part);
     void set_enabled_buttons(bool enabled);
+    bool is_checked() const;
 
 private:
     Yoga::ToggleButton* m_part_checker{nullptr};
@@ -70,30 +72,17 @@ public:
     struct Callbacks
     {
         std::function<void(double value)> z_changed{nullptr};
-        std::function<void(bool set_as_part)> keep_as_part_changed{ nullptr };
-        /*         std::function<void(int index)> style_selection_changed{ nullptr };
-
-                 std::function<void(double value)> height_changed{ nullptr };
-                 std::function<void(double value)> depth_changed{ nullptr };
-
-                 std::function<void(bool checked)> use_surface_checked{ nullptr };
-                 std::function<void(bool checked)> per_glyph_checked{ nullptr };
-                 std::function<void(const Domain::TextAlign& align)> align_changed{ nullptr };
-                 std::function<void(double value)> char_gap_changed{ nullptr };
-                 std::function<void(double value)> line_gap_changed{ nullptr };
-                 std::function<void(double value)> boldness_changed{ nullptr };
-                 std::function<void(double value)> skew_ratio_changed{ nullptr };
-                 std::function<void(double value)> surface_distance_changed{ nullptr };
-                 std::function<void(double value)> rotation_changed{ nullptr };
-                 std::function<void(bool unlocked)> unlock_rotation{ nullptr };
-                 std::function<void()> set_on_face_camera{ nullptr };
-
-                 std::function<void(int index)> preset_selection_changed{ nullptr };
-                 std::function<void()> save_preset_as{ nullptr };
-                 std::function<void()> save_preset{ nullptr };*/
+        std::function<void()> mode_changed{nullptr};
         std::function<void()> reset_connectors{nullptr};
         std::function<void()> flip_cut_plane{nullptr};
         std::function<void()> perform{nullptr};
+
+        std::function<void(double value)> groove_depth_value_changed{nullptr};
+        std::function<void(double value)> groove_depth_tolerance_changed{nullptr};
+        std::function<void(double value)> groove_width_value_changed{nullptr};
+        std::function<void(double value)> groove_width_tolerance_changed{nullptr};
+        std::function<void(double value)> flap_angle_changed{nullptr};
+        std::function<void(double value)> groove_angle_changed{nullptr};
     };
 
     Callbacks& callbacks();
@@ -102,8 +91,18 @@ public:
     void set_current_connetor_type(Domain::CutConnectorType type);
     void set_current_connetor_style(Domain::CutConnectorStyle style);
     void set_current_connetor_shape(Domain::CutConnectorShape shape);
+    void set_groove_values(const Biz::Cut::Groove& m_groove, double m_max_elements_size);
 
-    bool is_planar_mode() const;
+public:
+
+    bool is_planar_cut_mode{ true };
+    bool keep_as_parts{ false };
+    bool keep_upper{ true };
+    bool keep_lower{ true };
+    bool place_on_cut_upper{ true };
+    bool place_on_cut_lower{ false };
+    bool flip_upper{ false };
+    bool flip_lower{ false };
 
 private:
     void init_connectors_input_panel();
@@ -171,7 +170,6 @@ private:
     std::vector<Yoga::Text*> m_units;
 
     bool m_imperial_units{false};
-    bool m_is_planar_cut_mode{true};
     bool m_connectors_editing{false};
 
     Domain::CutConnectorType m_current_connetor_type{Domain::CutConnectorType::Plug};

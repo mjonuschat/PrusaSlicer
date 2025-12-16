@@ -67,6 +67,7 @@ private:
     ImColor m_background_color_hover         = IM_COL32_WHITE;
     ImColor m_background_color_checked       = IM_COL32_WHITE;
     ImColor m_background_color_checked_hover = IM_COL32_WHITE;
+    ImColor m_background_color_checked_disabled = IM_COL32_WHITE;
 };
 
 } // namespace Slic3r::App::Yoga

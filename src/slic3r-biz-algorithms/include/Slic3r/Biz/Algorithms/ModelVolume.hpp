@@ -29,6 +29,11 @@ void rotate(Domain::ModelVolume& model_volume, double angle, const Domain::Vec3d
 
 void mirror(Domain::ModelVolume& model_volume, Domain::Axis axis);
 
+// Split this volume, append the result to the object owning this volume.
+// Return the number of volumes created from this one.
+// This is useful to assign different materials to different volumes of an object.
+size_t split(Domain::ModelVolume* volume, unsigned int max_extruders);
+
 bool is_splittable(const Domain::ModelVolume& model_volume);
 
 void calculate_convex_hull(Domain::ModelVolume& model_volume);

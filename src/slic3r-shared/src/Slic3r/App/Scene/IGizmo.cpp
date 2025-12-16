@@ -23,4 +23,6 @@ std::unique_ptr<Yoga::GizmoWindow> IToolGizmo::release_ui_window()
     return nullptr;
 }
 
+IToolGizmo::Callbacks& IToolGizmo::callbacks() { return m_callbacks; }
+
 } // namespace Slic3r::App::Scene

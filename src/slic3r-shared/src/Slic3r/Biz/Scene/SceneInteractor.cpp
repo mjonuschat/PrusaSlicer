@@ -747,6 +747,37 @@ std::optional<std::string> SceneInteractor::delete_selected_elements()
     return last_solid_part_name;
 }
 
+bool SceneInteractor::delete_object(Domain::ModelObject* object)
+{
+    // ToDo: Check if object cen be delete (for example if this object ia a part of cut set)
+    // return false if delete is impossible
+
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+    Domain::Model& model     = project.model();
+
+    ObjectSelection::ElementRefs to_remove;
+    BedTrackingChanges changes;
+
+    // Remove object instances from its object and scene
+    for (auto instance : object->instances) {
+        remove_instance_from_bed(project, instance, changes);
+        to_remove.push_back({ object->id().id, instance->id().id });
+    }
+    // Remove object from the model
+    model.delete_object(object);
+
+    // Notify listeners on changes
+
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto* l) { l->on_instance_removed(m_selected_project_id, to_remove); }
+    );
+
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
+
+    return true;
+}
+
 void SceneInteractor::prepare_added_project(Domain::Project& project)
 {
     m_bed_tracking.update_instances_bed_placement(project);

@@ -47,8 +47,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/CutGizmo.cpp
         include/Slic3r/App/Plater/CutDialog.hpp
         src/Slic3r/App/Plater/CutDialog.cpp
-        src/Slic3r/App/Plater/CutUtils.hpp
-        src/Slic3r/App/Plater/CutUtils.cpp
+        include/Slic3r/App/Plater/CutPartSelection.hpp
+        src/Slic3r/App/Plater/CutPartSelection.cpp
         include/Slic3r/App/Plater/MeasureGizmo.hpp
         src/Slic3r/App/Plater/MeasureGizmo.cpp
         include/Slic3r/App/Plater/MeasureGizmoHelper.hpp
@@ -560,6 +560,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/OverrideItem.hpp
         src/Slic3r/Biz/Utils/MeshClipper.cpp
         include/Slic3r/Biz/Utils/MeshClipper.hpp
+        src/Slic3r/Biz/Utils/CutUtils.cpp
+        include/Slic3r/Biz/Utils/CutUtils.hpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp

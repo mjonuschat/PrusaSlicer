@@ -1,4 +1,5 @@
 #include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
@@ -108,6 +109,99 @@ void mirror(Domain::ModelVolume& model_volume, const Domain::Axis axis)
         break;
     }
     model_volume.set_mirror(mirror);
+}
+
+/// <summary>
+/// Compare TriangleMeshes by Bounding boxes (mainly for sort)
+/// From Front(Z) Upper(Y) TopLeft(X) corner.
+/// 1. Seraparate group not overlaped i Z axis
+/// 2. Seraparate group not overlaped i Y axis
+/// 3. Start earlier in X (More on left side)
+/// </summary>
+/// <param name="triangle_mesh1">Compare from</param>
+/// <param name="triangle_mesh2">Compare to</param>
+/// <returns>True when triangle mesh 1 is closer, upper or lefter than triangle mesh 2 other wise false</returns>
+static bool is_front_up_left(const Domain::TriangleMesh& trinagle_mesh1, const Domain::TriangleMesh& triangle_mesh2)
+{
+    // stats form t1
+    const Domain::Vec3f& min1 = trinagle_mesh1.stats().min;
+    const Domain::Vec3f& max1 = trinagle_mesh1.stats().max;
+    // stats from t2
+    const Domain::Vec3f& min2 = triangle_mesh2.stats().min;
+    const Domain::Vec3f& max2 = triangle_mesh2.stats().max;
+    // priority Z, Y, X
+    for (int axe = 2; axe > 0; --axe) {
+        if (max1[axe] < min2[axe])
+            return true;
+        if (min1[axe] > max2[axe])
+            return false;
+    }
+    return min1.x() < min2.x();
+}
+
+// Split this volume, append the result to the object owning this volume.
+// Return the number of volumes created from this one.
+// This is useful to assign different materials to different volumes of an object.
+size_t split(Domain::ModelVolume* volume, unsigned int max_extruders)
+{
+    std::vector<Domain::TriangleMesh> meshes = TriangleMesh::split(volume->mesh());
+    if (meshes.size() <= 1)
+        return 1;
+
+    std::sort(meshes.begin(), meshes.end(), is_front_up_left);
+
+    // splited volume should not be text object
+    if (volume->text_configuration.has_value())
+        volume->text_configuration.reset();
+
+    Domain::ModelObject* object = volume->get_object();
+
+    size_t idx = 0;
+    size_t ivolume = std::find(object->volumes.begin(), object->volumes.end(), volume) - object->volumes.begin();
+    const std::string& name = volume->name;
+
+    int extruder_counter = 0;
+    const Domain::Vec3d offset = volume->get_offset();
+
+    for (Domain::TriangleMesh& mesh : meshes) {
+        if (mesh.empty() || mesh.has_zero_volume())
+            // Repair may have removed unconnected triangles, thus emptying the mesh.
+            continue;
+
+        if (idx == 0) {
+            volume->set_mesh(std::move(mesh));
+            Algorithms::ModelVolume::calculate_convex_hull(*volume);
+            // Assign a new unique ID, so that a new GLVolume will be generated.
+            volume->set_new_unique_id();
+            // reset the source to disable reload from disk
+            volume->source = Domain::ModelVolume::Source();
+        }
+        else
+            Algorithms::ModelObject::insert_volume(object, (++ivolume), *volume, std::move(mesh));
+
+        object->volumes[ivolume]->set_offset(Domain::Vec3d::Zero());
+        Algorithms::ModelVolume::translate(*object->volumes[ivolume], offset);
+        object->volumes[ivolume]->name = name + "_" + std::to_string(idx + 1);
+        object->volumes[ivolume]->volume_settings.overrides.set("extruder", extruder_counter++);
+        object->volumes[ivolume]->discard_splittable();
+        ++idx;
+        if (extruder_counter == max_extruders)
+            extruder_counter = 0;
+    }
+
+    // discard volumes for which the convex hull was not generated or is degenerate
+    size_t i = 0;
+    while (i < object->volumes.size()) {
+        const std::shared_ptr<const Domain::TriangleMesh>& hull = object->volumes[i]->get_convex_hull_shared_ptr();
+        if (hull == nullptr || hull->its.vertices.empty() || hull->its.indices.empty()) {
+            object->delete_volume(i);
+            --idx;
+            --i;
+        }
+        ++i;
+    }
+
+    return idx;
 }
 
 bool is_splittable(const Domain::ModelVolume& model_volume)

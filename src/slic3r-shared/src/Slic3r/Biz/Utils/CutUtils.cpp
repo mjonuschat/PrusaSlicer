@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include "CutUtils.hpp"
+#include "Slic3r/Biz/Utils/CutUtils.hpp"
 
 #include <boost/log/trivial.hpp>
 #include <cmath>
@@ -21,15 +21,13 @@
 
 #include "libslic3r/TriangleMeshSlicer.hpp" // cut_mesh
 
-using namespace Slic3r::Biz;
+namespace Slic3r::Biz {
 
-namespace Slic3r {
-
-using namespace Biz::Algorithms::Geometry;
+using namespace Algorithms::Geometry;
 using namespace Domain;
 
-namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
-namespace mv = Slic3r::Biz::Algorithms::ModelVolume;
+namespace tm = Algorithms::TriangleMesh;
+namespace mv = Algorithms::ModelVolume;
 using Domain::TriangleMesh;
 
 static void apply_tolerance(Domain::ModelVolume* vol)

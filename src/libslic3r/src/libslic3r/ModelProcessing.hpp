@@ -52,11 +52,6 @@ namespace ModelProcessing
     // Get count of errors in the mesh( or all object's meshes, if volume index isn't defined)
     int     get_repaired_errors_count(const Domain::ModelObject* object, const int vol_idx = -1);
 
-    // Split this volume, append the result to the object owning this volume.
-    // Return the number of volumes created from this one.
-    // This is useful to assign different materials to different volumes of an object.
-    size_t  split(Domain::ModelVolume* volume, unsigned int max_extruders);
-
     void    split(Domain::ModelObject* object, std::vector<Domain::ModelObject*>* new_objects);
     void    merge(Domain::ModelObject* object);
 }

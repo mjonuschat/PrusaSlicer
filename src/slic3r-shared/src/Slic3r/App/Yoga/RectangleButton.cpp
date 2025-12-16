@@ -41,7 +41,7 @@ void RectangleButton::set_background_color(const ImColor& color)
     if (color.Value.w == 0.f)
         m_background_color_hover = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
     else
-        m_background_color_hover = Imgui::adjust_brightness(m_background_color, 1.2);
+        m_background_color_hover = Imgui::adjust_brightness(m_background_color, 1.2f);
     update_fill();
 }
 
@@ -89,7 +89,8 @@ const ImColor& RectangleButton::background_color_checked() const
 void RectangleButton::set_background_color_checked(const ImColor& background_color_checked)
 {
     m_background_color_checked = background_color_checked;
-    m_background_color_checked_hover = Imgui::adjust_brightness(m_background_color_checked, 1.25);
+    m_background_color_checked_hover = Imgui::adjust_brightness(m_background_color_checked, 1.25f);
+    m_background_color_checked_disabled = Imgui::adjust_brightness(m_background_color_checked, 0.85f);
     update_fill();
 }
 
@@ -109,7 +110,13 @@ void RectangleButton::set_draw_flags(ImDrawFlags draw_flags)
     m_background->set_flags(draw_flags);
 }
 
-void RectangleButton::checked_updated_internal() { update_fill(); }
+void RectangleButton::checked_updated_internal()
+{
+    update_fill();
+    m_background->set_disabled_fill(
+        checked() ? m_background_color_checked_disabled : m_background_color
+    );
+}
 
 void RectangleButton::hovered_updated_internal() { update_fill(); }
 

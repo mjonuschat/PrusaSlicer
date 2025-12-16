@@ -180,6 +180,11 @@ public:
      */
     std::optional<std::string> delete_selected_elements();
 
+    /**
+     * Delete object from the scene and model.
+     */
+    bool delete_object(Domain::ModelObject* object);
+
     void prepare_added_project(Domain::Project& project);
 
     Domain::BedInstance& add_bed_instance(size_t config_container_id);
