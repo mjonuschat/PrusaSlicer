@@ -799,8 +799,8 @@ indexed_triangle_set cut2model(const SurfaceCut& cut, const Biz::Algorithms::IPr
         result.indices.emplace_back(
             Index3{
                 static_cast<int>(i[0] + back_offset),
-                static_cast<int>(i[1] + back_offset),
-                static_cast<int>(i[2] + back_offset)
+                static_cast<int>(i[2] + back_offset),
+                static_cast<int>(i[1] + back_offset)
             }
         );
     }
