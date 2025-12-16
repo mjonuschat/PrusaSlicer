@@ -314,6 +314,11 @@ void PreviewRenderModule::on_selected_project_changed(size_t project_id)
     }
 }
 
+void PreviewRenderModule::on_bed_instance_updated(Domain::SelectionId project_id, const Domain::BedRefs& instances)
+{
+    update_viewer();
+}
+
 void PreviewRenderModule::set_sidebars_visible(bool hide)
 {
     m_layout->set_sidebars_visible(hide);
@@ -375,6 +380,7 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
     m_project_interactor.sla_object_cache().add_listener<Biz::ISLAObjectCacheChangedListener>(this);
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
+    m_project_interactor.scene_interactor().add_listener<ISceneBedInstanceChangedListener>(this);
 
     init_gizmos();
     init_viewers(device);

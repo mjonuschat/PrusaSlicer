@@ -16,6 +16,7 @@
 #include <Slic3r/App/Preview/DoubleSliderForLayers.hpp>
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/App/DialogNavigation.hpp"
+#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 
 #include <memory>
 
@@ -38,7 +39,8 @@ class PreviewRenderModule final :
     public Biz::ISelectedProjectChangedListener,
     public Biz::ISLAResultCacheChangedListener,
     public Biz::ISLAObjectCacheChangedListener,
-    public Biz::IStatusCacheChangedListener
+    public Biz::IStatusCacheChangedListener,
+    public Biz::Scene::ISceneBedInstanceChangedListener
 {
 public:
     PreviewRenderModule(
@@ -90,6 +92,13 @@ public:
      * @{
      */
     void on_selected_project_changed(size_t index) override;
+    /**@}*/
+
+    /**
+     * @name Partial implementation of Biz::Scene::ISceneBedInstanceChangedListener public interface
+     * @{
+     */
+    void on_bed_instance_updated(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
     /**@}*/
 
     void set_sidebars_visible(bool hide) override;
