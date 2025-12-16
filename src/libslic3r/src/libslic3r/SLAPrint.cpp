@@ -1423,28 +1423,3 @@ MeshBoolean::cgal::CGALMeshPtr get_cgalmesh(const CSGPartForStep &part)
 } // namespace csg
 
 } // namespace Slic3r
-
-// TODO: move function out of SLAPrint
-// SLAResult result; // TODO: get it from SLAResultCache
-using namespace Slic3r::Biz::Slicing;
-void Slic3r::export_print(
-    const std::string& fname,
-    SLAResult& data,
-    const Domain::Images& thumbnails,
-    const std::string& projectname
-)
-{
-    if (data.files.data.empty())
-        throw ExportError(_u8L("No layer to export yet."));
-
-    data.thumbnails = thumbnails;
-    data.project_name = projectname; // ?? No idea why it is used
-
-    // select format by
-    switch (data.files.type) {
-    case Sla::FileDataType::sl1_svg: [[fallthrough]];
-    case Sla::FileDataType::sl1_png: store_sl1(fname, data); break;
-    default:
-        throw ExportError(_u8L("Unknown output file format"));
-    }
-}

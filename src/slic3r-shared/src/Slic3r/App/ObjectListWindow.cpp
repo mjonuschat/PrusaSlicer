@@ -147,10 +147,10 @@ void ObjectListWindow::update_sliced_info()
     }
 
     const std::optional<Biz::SLAResultRef> sla_result{ m_project_interactor->sla_result_cache().get_result(id) };
-    if (!sla_result || !sla_result->get().print_statistics)
+    if (!sla_result || !sla_result->get().export_data->print_statistics)
         return;
 
-    const Biz::Slicing::Sla::PrintStatistics& print_statistics = *sla_result->get().print_statistics;
+    const Biz::Slicing::Sla::PrintStatistics& print_statistics = *sla_result->get().export_data->print_statistics;
 
     float used_material_total = print_statistics.objects_used_material + print_statistics.support_used_material;
 

@@ -175,8 +175,8 @@ void SlaViewer::reset_object(const Domain::ObjectID object_id)
 void SlaViewer::load(const Biz::Slicing::SLAResult& result, const Scene::Transform& bed_transform)
 {
     m_bed_instance_transform = bed_transform;
-    if (result.print_statistics.has_value()) {
-        load_layers(result.heights, result.print_statistics.value().layers_times_running_total);
+    if (result.export_data->print_statistics.has_value()) {
+        load_layers(result.heights, result.export_data->print_statistics.value().layers_times_running_total);
         m_result = &result;
     }
 }

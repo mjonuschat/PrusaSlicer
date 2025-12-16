@@ -191,7 +191,7 @@ struct SLAResultListener : public ISLAResultListener {
         switch (result.type) {
         case ResultType::None: [[fallthrough]];
         case ResultType::Slices: this->result = std::move(result); break;
-        case ResultType::Files: this->result.files = std::move(result.files); break;}
+        case ResultType::Files: this->result.export_data->files = std::move(result.export_data->files); break;}
         this->result_recieved = true;
     }
     SLAResult result;

@@ -13,7 +13,7 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
-#include "Slic3r/Biz/PrintHost/PrintHostInteractor.hpp"
+#include "Slic3r/Biz/ResultExport/ResultExportInteractor.hpp"
 #include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 #include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
@@ -65,7 +65,7 @@ public:
         m_preset_interactor(workbench, m_scene_interactor),
         m_arrange_interactor(m_scene_interactor, workbench),
         m_slicing_interactor(dispatcher, thumbnail_image_generator),
-        m_print_host_interactor(dispatcher),
+        m_result_export_interactor(dispatcher),
         m_user_account_interactor(dispatcher),
         m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)),
         m_preset_updater_interactor(dispatcher),
@@ -312,24 +312,24 @@ public:
     /** @} */
 
     /**
-     * @brief Creates PrintHostConfig and PrintHostData and passes it to PrintHostInteractor to start export.
+     * @brief Creates PrintHostConfig and PrintHostData and passes it to ResultExportInteractor to start export.
      * PrintHostData copies gcode data from m_fdm_result_cache.
      * PrintHostConfig origin is yet to be decided.
      */
-    void do_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path);
+    void do_result_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path);
 
     /**
-     * @brief Creates PrintHostConfig and PrintHostData and passes it to PrintHostInteractor to start upload.
+     * @brief Creates PrintHostConfig and PrintHostData and passes it to ResultExportInteractor to start upload.
      * PrintHostData copies gcode data from m_fdm_result_cache.
      * PrintHostConfig origin is yet to be decided.
      */
-    void do_upload(const Domain::SlicingId id, const std::string& filename);
+    void do_result_upload(const Domain::SlicingId id, const std::string& filename);
 
     /**
-     * @brief Same as do_upload, but does parse connect_msg first.
+     * @brief Same as do_result_upload, but does parse connect_msg first.
      * Uploads to PrintHostType::PrusaConnect.
      */
-    void do_upload_connect(const Domain::SlicingId id, const std::string& connect_msg);
+    void do_result_upload_connect(const Domain::SlicingId id, const std::string& connect_msg);
 
     /**
      * @brief Called after Mainframe is created to set window handle for AppInstanceMessageHandler.
@@ -454,9 +454,9 @@ public:
     /**
      * @brief Getter for exporting / uploading logic.
      */
-    PrintHost::PrintHostInteractor& print_host_interactor()
+    ResultExport::ResultExportInteractor& result_export_interactor()
     {
-        return m_print_host_interactor;
+        return m_result_export_interactor;
     }
 
     std::string get_project_name(Domain::SelectionId project_id) const;
@@ -517,6 +517,12 @@ private:
     void do_select_project(Domain::SelectionId project_id, InvokeLaterBag& bag);
     void do_select_config_container(Domain::SelectionId container_id);
 
+    void do_result_export_inner(
+        const Domain::SlicingId id,
+        PrintHost::PrintHostConfig&& print_host_config,
+        PrintHost::PrintHostJobData&& job_data
+    );
+
 private:
     struct Selection
     {
@@ -538,7 +544,7 @@ private:
     SLAResultCache m_sla_result_cache;
     SLAObjectCache m_sla_object_cache;
     StatusCache m_status_cache;
-    PrintHost::PrintHostInteractor m_print_host_interactor;
+    ResultExport::ResultExportInteractor m_result_export_interactor;
     UserAccount::UserAccountInteractor m_user_account_interactor;
     std::unique_ptr<AppInstance::AbstractAppInstanceMessageHandler> m_app_instance_message_handler;
     PresetUpdater::PresetUpdaterInteractor m_preset_updater_interactor;

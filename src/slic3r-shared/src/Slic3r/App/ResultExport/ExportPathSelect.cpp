@@ -74,13 +74,13 @@ std::string gen_wildcards(const std::string& extension, Technology tech)
 }
 
 void show_modal_dialog(
-    const Biz::ProjectInteractor* project_interactor,
+    const Biz::ProjectInteractor& project_interactor,
     bool default_path_at_removable,
     const std::function<void(bool result, const std::vector<boost::filesystem::path>& file_paths)>& callback,
     const std::string& wildcards_overide /*= std::string()*/
 )
 {
-     boost::filesystem::path default_folder = project_interactor->export_result_path(project_interactor->selected_project_id(), default_path_at_removable);
+     boost::filesystem::path default_folder = project_interactor.export_result_path(project_interactor.selected_project_id(), default_path_at_removable);
 
      ExportNameData name_data;
      try {

@@ -261,7 +261,7 @@ std::optional<std::string> slice_single_model_project(
 
         Biz::ExportNameParser::ExportNameData name_data;
         try {
-           name_data = Biz::ExportNameParser::parse_export_name(&project_interactor);
+           name_data = Biz::ExportNameParser::parse_export_name(project_interactor);
         } catch (const Slic3r::PlaceholderParserError& e) {
             SPDLOG_ERROR("Failed to parse output filename: {}", e.what());
         }
@@ -275,7 +275,7 @@ std::optional<std::string> slice_single_model_project(
             dest_path = export_path.string();
         }
 
-        project_interactor.do_export(slicing_id, export_path);
+        project_interactor.do_result_export(slicing_id, export_path);
 
         std::optional<std::string> export_error = [&export_finished_listener, &dispatcher]()
         {

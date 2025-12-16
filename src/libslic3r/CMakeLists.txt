@@ -391,8 +391,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/utils.cpp
     src/libslic3r/Utils/JsonUtils.cpp
     src/libslic3r/Utils/JsonUtils.hpp
-    src/libslic3r/Zipper.cpp
-    src/libslic3r/Zipper.hpp
     src/libslic3r/SlicingStatus.cpp
     src/libslic3r/I18N_private.cpp
 

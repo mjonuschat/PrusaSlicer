@@ -1,14 +1,10 @@
-///|/ Copyright (c) Prusa Research 2019 - 2023 Oleksandra Iushchenko @YuSanka, David Kocík @kocikdav, Vojtěch Bubník @bubnikv, Tomáš Mészáros @tamasmeszaros, Vojtěch Král @vojtechkral
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
+#include "Slic3r/Biz/ResultExport/SLA/Zipper.hpp"
+
 #include <boost/log/trivial.hpp>
 #include <cstring>
 
 #include "Slic3r/Exception.hpp"
-#include "libslic3r/Zipper.hpp"
 #include "libslic3r/miniz_extension.hpp"
-#include "libslic3r/I18N_private.hpp"
 #include "miniz.h"
 
 #if defined(_MSC_VER) &&  _MSC_VER <= 1800 || __cplusplus < 201103L
@@ -17,7 +13,7 @@
     #define SLIC3R_NORETURN [[noreturn]]
 #endif
 
-namespace Slic3r {
+namespace Slic3r::Biz::PrintHost::Sla {
 
 class Zipper::Impl: public MZ_Archive {
 public:
@@ -25,7 +21,7 @@ public:
 
     std::string formatted_errorstr() const
     {
-        return _u8L("Error with ZIP archive") + " " + m_zipname + ": " +
+        return "Error with ZIP archive " + m_zipname + ": " +
                get_errorstr();
     }
 

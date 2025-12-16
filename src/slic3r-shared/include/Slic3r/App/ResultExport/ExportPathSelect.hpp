@@ -14,7 +14,7 @@ namespace Slic3r::App::ExportPathSelect {
  */
 void
 show_modal_dialog(
-    const Biz::ProjectInteractor* project_interactor,
+    const Biz::ProjectInteractor& project_interactor,
     bool default_path_at_removable,
     const std::function<void(bool result, const std::vector<boost::filesystem::path>& file_paths)>& callback,
     const std::string& wildcards_overide = std::string()

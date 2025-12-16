@@ -33,12 +33,12 @@ std::function<void()> get_export_action(Biz::ProjectInteractor* project_interact
         [=]()
         {
             ExportPathSelect::show_modal_dialog(
-                project_interactor,
+                *project_interactor,
                 false,
                 [=](bool result, const std::vector<boost::filesystem::path>& file_paths)
                 {
                     if (result) {
-                        project_interactor->do_export(
+                        project_interactor->do_result_export(
                             project_interactor->selected_bed_slicing_id(),
                             file_paths.front()
                         );
@@ -63,12 +63,12 @@ std::function<void()> get_export_flash_action(Biz::ProjectInteractor* project_in
         [=]()
         {
             ExportPathSelect::show_modal_dialog(
-                project_interactor,
+                *project_interactor,
                 true,
                 [=](bool result, const std::vector<boost::filesystem::path>& file_paths)
                 {
                     if (result) {
-                        project_interactor->do_export(
+                        project_interactor->do_result_export(
                             project_interactor->selected_bed_slicing_id(),
                             file_paths.front()
                         );

@@ -648,11 +648,19 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/StatusCache.hpp
         src/Slic3r/Biz/StatusCache.cpp
 
+        include/Slic3r/Biz/ResultExport/ResultExportInteractor.hpp
+        include/Slic3r/Biz/ResultExport/IResultExportBinarizeListener.hpp
+        include/Slic3r/Biz/ResultExport/ResultExportDataFinalizer.hpp
+        include/Slic3r/Biz/ResultExport/SLA/SL1.hpp
+        include/Slic3r/Biz/ResultExport/SLA/Zipper.hpp
+        src/Slic3r/Biz/ResultExport/ResultExportInteractor.cpp
+        src/Slic3r/Biz/ResultExport/ResultExportDataFinalizer.cpp
+        src/Slic3r/Biz/ResultExport/SLA/SL1.cpp
+        src/Slic3r/Biz/ResultExport/SLA/Zipper.cpp
+
         include/Slic3r/Biz/PrintHost/IPrintHost.hpp
-        include/Slic3r/Biz/PrintHost/IPrintHostBinarizeListener.hpp
         include/Slic3r/Biz/PrintHost/PrintHostJob.hpp
         include/Slic3r/Biz/PrintHost/PrintHostJobManager.hpp
-        include/Slic3r/Biz/PrintHost/PrintHostInteractor.hpp
         include/Slic3r/Biz/PrintHost/PrintHostConfig.hpp
         include/Slic3r/Biz/PrintHost/PrintHostFactory.hpp
         include/Slic3r/Biz/PrintHost/PrintHostLocal.hpp
@@ -667,10 +675,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/PrintHost/PrintHostAstroBox.hpp
         include/Slic3r/Biz/PrintHost/PrintHostRepetier.hpp
         include/Slic3r/Biz/PrintHost/PrintHostMKS.hpp
-        include/Slic3r/Biz/PrintHost/PrintHostDataFinalizer.hpp
         include/Slic3r/Biz/PrintHost/PrintHostJobInfoTag.hpp
         src/Slic3r/Biz/PrintHost/PrintHostJobManager.cpp
-        src/Slic3r/Biz/PrintHost/PrintHostInteractor.cpp
         src/Slic3r/Biz/PrintHost/PrintHostFactory.cpp
         src/Slic3r/Biz/PrintHost/PrintHostLocal.cpp
         src/Slic3r/Biz/PrintHost/PrintHostOctoPrint.cpp
@@ -684,7 +690,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PrintHost/PrintHostAstroBox.cpp
         src/Slic3r/Biz/PrintHost/PrintHostRepetier.cpp
         src/Slic3r/Biz/PrintHost/PrintHostMKS.cpp
-        src/Slic3r/Biz/PrintHost/PrintHostDataFinalizer.cpp
 
         include/Slic3r/Biz/Network/IHttp.hpp
         include/Slic3r/Biz/Network/HttpFactory.hpp

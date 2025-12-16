@@ -1549,14 +1549,15 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     }
 
     m_print->m_on_sla_result(Biz::Slicing::SLAResult{
+    .export_data = std::make_shared<SLAResultData>(SLAResultData{
         .serialized_config = m_print->serialized_config(),
-        .print_config = config,
-        .print_statistics = print_statistics,
-        .slices = std::move(slices),
-        .heights = std::move(heights),
-        .type = Sla::ResultType::Slices,
-        .contained_in_bed = contained_in_bed
-    });
+        .print_config      = config,
+        .print_statistics  = print_statistics,
+    }),
+    .slices  = std::move(slices),
+    .heights = std::move(heights),
+    .type    = Sla::ResultType::Slices
+});
 }
 
 namespace{
@@ -1645,9 +1646,12 @@ void SLAPrint::Steps::rasterize()
 
     // Send encoded files to frontend for export files for printer    
     m_print->m_on_sla_result(SLAResult{
-        .files = OutputFiles{
-            .data = std::move(files),
-            .type = output_type},
+        .export_data = std::make_shared<SLAResultData>(SLAResultData{
+            .files = OutputFiles{
+                .data = std::move(files),
+                .type = output_type
+            },
+        }),
         .type = Sla::ResultType::Files
     });
 }

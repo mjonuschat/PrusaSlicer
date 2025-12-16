@@ -1,6 +1,7 @@
-#include "Slic3r/Biz/PrintHost/PrintHostDataFinalizer.hpp"
+#include "Slic3r/Biz/ResultExport/ResultExportDataFinalizer.hpp"
 #include "Slic3r/Biz/libpgcode/LineView.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Biz/ResultExport/SLA/SL1.hpp"
 #include "Slic3r/Directories.hpp"
 
 #include <LibBGCode/convert/convert.hpp>
@@ -10,14 +11,14 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/system/error_code.hpp>
 
-namespace Slic3r::Biz::PrintHost {
+namespace Slic3r::Biz::ResultExport {
 
-PrintHostDataFinalizer::PrintHostDataFinalizer(Platform::IMainThreadDispatcher& dispatcher)
+ResultExportDataFinalizer::ResultExportDataFinalizer(Platform::IMainThreadDispatcher& dispatcher)
     : m_dispatcher{dispatcher}
 {
 }
 
-PrintHostDataFinalizer::~PrintHostDataFinalizer()
+ResultExportDataFinalizer::~ResultExportDataFinalizer()
 {
     ASSERT(
         m_dispatcher.is_closed(),
@@ -89,7 +90,7 @@ void write_lineview_to_path(const libpgcode::LineView& input, const boost::files
     }
 }
 
-void process_line_view(const libpgcode::LineView& input, const boost::filesystem::path& result_path, PrintHostExportFormat result_format)
+void process_line_view(const libpgcode::LineView& input, const boost::filesystem::path& result_path, PrintHost::PrintHostExportFormat result_format)
 {
     switch (result_format)
     {
@@ -105,6 +106,11 @@ void process_line_view(const libpgcode::LineView& input, const boost::filesystem
     }
 }
 
+void process_sla_result(const Slicing::SLAResultData& data, const boost::filesystem::path& result_path, PrintHost::PrintHostExportFormat result_format)
+{
+    PrintHost::Sla::store_sl1(result_path.string(), data);
+}
+
 boost::filesystem::path get_temporary_file_path(const std::string& extension)
 {
     boost::filesystem::path temp_path = Slic3r::temp_dir();
@@ -116,7 +122,7 @@ boost::filesystem::path get_temporary_file_path(const std::string& extension)
 } // namespace
 
 
-void PrintHostDataFinalizer::finalize(PrintHostConfig&& config, PrintHostJobData&& data)
+void ResultExportDataFinalizer::finalize(PrintHost::PrintHostConfig&& config, PrintHost::PrintHostJobData&& data)
 {
     JThread::JThread thread = JThread::JThread([this, config = std::move(config),  data = std::move(data)](JThread::StopToken stop_token) mutable {
         data.source_path = get_temporary_file_path(data.dest_path.extension().string());
@@ -127,6 +133,8 @@ void PrintHostDataFinalizer::finalize(PrintHostConfig&& config, PrintHostJobData
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, std::shared_ptr<const libpgcode::LineView>>) {
                     process_line_view(*arg, data.source_path, data.result_format);
+                } else if constexpr (std::is_same_v<T, std::shared_ptr<const Slicing::SLAResultData>>) {
+                    process_sla_result(*arg, data.source_path, data.result_format);
                 } else {
                     ASSERT(false, "non-exhaustive visitor!");
                 }
@@ -142,25 +150,25 @@ void PrintHostDataFinalizer::finalize(PrintHostConfig&& config, PrintHostJobData
     });
 }
 
-void PrintHostDataFinalizer::dispatch_success(PrintHostConfig config, PrintHostJobData data)
+void ResultExportDataFinalizer::dispatch_success(PrintHost::PrintHostConfig config, PrintHost::PrintHostJobData data)
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-        m_dispatcher.dispatch_on_main_thread([this, config = std::move(config),  data = std::move(data)]() mutable {
-            this->invoke_listeners<IPrintHostBinarizeListener>([&config, &data](auto* listener) mutable {
-                listener->on_print_host_binarize_success(std::move(config), std::move(data));
+        bool dispatched = m_dispatcher.dispatch_on_main_thread([this, config = std::move(config),  data = std::move(data)]() mutable {
+            this->invoke_listeners<IResultExportBinarizeListener>([&config, &data](auto* listener) mutable {
+                listener->on_result_export_binarize_success(std::move(config), std::move(data));
             }); 
         });
     }
 }
 
-void PrintHostDataFinalizer::dispatch_fail(const std::string& message)
+void ResultExportDataFinalizer::dispatch_fail(const std::string& message)
 {
     {
         std::lock_guard<std::mutex> lock(m_dispatcher_mutex);
-        m_dispatcher.dispatch_on_main_thread([this, message]() {
-            this->invoke_listeners<IPrintHostBinarizeListener>([message](auto* listener) {
-                listener->on_print_host_binarize_fail(message);
+        bool dispatched = m_dispatcher.dispatch_on_main_thread([this, message]() {
+            this->invoke_listeners<IResultExportBinarizeListener>([message](auto* listener) {
+                listener->on_result_export_binarize_fail(message);
             });
         });
     }

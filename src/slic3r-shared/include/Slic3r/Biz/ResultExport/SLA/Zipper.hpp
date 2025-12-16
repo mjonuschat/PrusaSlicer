@@ -1,10 +1,3 @@
-///|/ Copyright (c) Prusa Research 2019 - 2020 Tomáš Mészáros @tamasmeszaros
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
-#ifndef ZIPPER_HPP
-#define ZIPPER_HPP
-
 #include <stddef.h>
 #include <cstdint>
 #include <string>
@@ -13,7 +6,7 @@
 #include <utility>
 #include <cstddef>
 
-namespace Slic3r {
+namespace Slic3r::Biz::PrintHost::Sla {
 
 // Class for creating zip archives.
 class Zipper {
@@ -98,5 +91,3 @@ public:
 
 
 }
-
-#endif // ZIPPER_HPP

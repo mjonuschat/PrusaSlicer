@@ -25,13 +25,13 @@ struct ExportNameData
  * Generates export filename data based on the active printer technology.
  * @throw Slic3r::PlaceholderParserError If the output filename format string is invalid.
  */
-ExportNameData parse_export_name(const Biz::ProjectInteractor* project_interactor);
+ExportNameData parse_export_name(const Biz::ProjectInteractor& project_interactor);
 
 /**
  * Generates export filename data without parsing output filename format.
  * Used when parsing fails.
  */
-ExportNameData error_state_export_name(const Biz::ProjectInteractor* project_interactor);
+ExportNameData error_state_export_name(const Biz::ProjectInteractor& project_interactor);
 
 
 } // namespace Slic3r::Biz::ExportNameParser

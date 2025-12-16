@@ -13,9 +13,16 @@ namespace Slic3r::Biz::libpgcode {
 class LineView;
 } // namespace Slic3r::Biz::libpgcode
 
+namespace Slic3r::Biz::Slicing {
+struct SLAResultData;
+}
+
 namespace Slic3r::Biz::PrintHost {
 
-using DataPtrVariant = std::variant<std::shared_ptr<const libpgcode::LineView>>;
+using DataPtrVariant = std::variant<
+    std::monostate,
+    std::shared_ptr<const libpgcode::LineView>,
+    std::shared_ptr<const Slicing::SLAResultData>>;
 
 enum class PrintHostAfterUploadAction
 {
@@ -74,6 +81,8 @@ enum class PrintHostExportFormat
     Undefined,
     GCode,
     BGCode,
+    Sl1,
+    Sl1s,
 };
 
 inline PrintHostExportFormat get_export_format_from_extension(const std::string& extension)
@@ -83,6 +92,10 @@ inline PrintHostExportFormat get_export_format_from_extension(const std::string&
         return PrintHostExportFormat::GCode;
     if (extension == ".bgcode")
         return PrintHostExportFormat::BGCode;
+        if (extension == ".sl1")
+        return PrintHostExportFormat::Sl1;
+    if (extension == ".sl1s")
+        return PrintHostExportFormat::Sl1s;
     ASSERT(false, "Unknown data format. Add it to PrintHostResultFormat");
     return PrintHostExportFormat::Undefined;
 }

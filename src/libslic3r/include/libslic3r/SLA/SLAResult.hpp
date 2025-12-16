@@ -106,17 +106,25 @@ using Instances = std::vector<Object>;
 
 } // namespace Sla
 
+struct SLAResultData
+{
+    Print::SerializedConfig serialized_config;
+    SLAPrintConfigView print_config;
+    std::optional<Sla::PrintStatistics> print_statistics;
+    Sla::OutputFiles files; // count files == slices.size()
+    Domain::Images thumbnails;
+    std::string project_name; // upload_job.upload_data.upload_path.filename()
+};
+
 // Result of slicing steps
 // Input for exporting file for printer
 // + provide data during slicing process
 struct SLAResult
 {
-    Print::SerializedConfig serialized_config;
-    SLAPrintConfigView print_config;
-    // NOTE: previously from constructor of the archive
+    // New: shared pointer to the data used by store_sl1 and other result-dependent operations
+    std::shared_ptr<SLAResultData> export_data = std::make_shared<SLAResultData>();
 
     // It is filled after slicing
-    std::optional<Sla::PrintStatistics> print_statistics;
     // NOTE: SLAPrint::print_statistics();
 
     // m_print->m_printer_input[idx].transformed_slices()
@@ -124,15 +132,6 @@ struct SLAResult
     std::vector<float> heights; // heights of the slices
 
     // at the moment also instances and support structure - want to change it
-
-    // file per layer
-    // It is generated as the last operation of the slicing
-    Sla::OutputFiles files; // count files == slices.size()
-
-    Domain::Images thumbnails;
-
-    // upload_job.upload_data.upload_path.filename()
-    std::string project_name;
 
     // used for merge Result in Cache
     // Define the state of the result data

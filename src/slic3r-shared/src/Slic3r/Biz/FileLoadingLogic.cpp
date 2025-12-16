@@ -679,7 +679,10 @@ convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider* dialog_provid
             cc.bed_instances().back().get()->transformation.set_offset(
                 Domain::Vec3d(bed_offset.x(), bed_offset.y(), 0.)
             );
-            cc.bed_instances().back()->wipe_tower = cc_data.wipe_towers.at(bed_idx);
+            const auto wipe_tower_it{cc_data.wipe_towers.find(bed_idx)};
+            if (wipe_tower_it != cc_data.wipe_towers.end()) {
+                cc.bed_instances().back()->wipe_tower = cc_data.wipe_towers.at(bed_idx);
+            }
         }
     }
 

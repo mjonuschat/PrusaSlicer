@@ -477,22 +477,6 @@ public:
     friend SLAPrintObject;
 };
 
-/// <summary>
-/// Export result to file
-/// NOTE: move out of SLAPrint object
-/// </summary>
-/// <param name="fname">File name</param>
-/// <param name="data">Get it from SLAResultCache,
-/// till thumbnails are not generated on backend it must not be const</param>
-/// <param name="thumbnails">thumbnails files</param>
-/// <param name="projectname">project name</param>
-void export_print(
-    const std::string& fname,
-    Biz::Slicing::SLAResult& data,
-    const Domain::Images& thumbnails = {},
-    const std::string& projectname = ""
-);
-
 // Helper functions:
 
 bool is_zero_elevation(const SLAPrintObjectConfigView &c);

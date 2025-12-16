@@ -26,15 +26,15 @@ std::string remove_spaces(std::string s) {
 ExportNameData parse_fdm_export_name(
     const std::string& project_name,
     const std::string& output_filename_format,
-    Domain::ConfigPackFDM* fdm_config,
-    const Biz::ProjectInteractor* project_interactor 
+    Domain::ConfigPackFDM& fdm_config,
+    const Biz::ProjectInteractor& project_interactor 
 )
 {
     ExportNameData result {Technology::Fdm, project_name, resolve_preffered_extension(output_filename_format)};
-    Domain::FullConfigFDM full_config{*fdm_config};
+    Domain::FullConfigFDM full_config{fdm_config};
     Biz::Parser::IO::Config io_config = Biz::Parser::IO::get_parser_config(full_config);
     Biz::Parser::PlaceholderParser parser{io_config};
-    const std::optional<Biz::FDMResultRef> fdm_result_opt{project_interactor->fdm_result_cache().get_result(project_interactor->selected_bed_slicing_id())};
+    const std::optional<Biz::FDMResultRef> fdm_result_opt{project_interactor.fdm_result_cache().get_result(project_interactor.selected_bed_slicing_id())};
     if (!fdm_result_opt) {
          SPDLOG_ERROR("Failed to parse output filename: Failed to retrieve FDM slicing result.");
         return result;
@@ -98,9 +98,9 @@ ExportNameData parse_fdm_export_name(
     parser.set("total_toolchanges", (int) print_statistics.extra.value().total_toolchanges);
     
     // values from project interactor
-    Domain::SelectionId project_id = project_interactor->selected_bed_slicing_id().project_id;
-    const auto& project = project_interactor->workbench().project(project_id);
-    const auto& ccc     = project_interactor->preset_interactor().selected_config_container_context();
+    Domain::SelectionId project_id = project_interactor.selected_bed_slicing_id().project_id;
+    const auto& project = project_interactor.workbench().project(project_id);
+    const auto& ccc     = project_interactor.preset_interactor().selected_config_container_context();
     const auto* cc      = project.find_config_container(ccc.config_container_id);
     ASSERT(cc != nullptr);
     const auto& selected_preset = cc->selected_preset();
@@ -109,18 +109,18 @@ ExportNameData parse_fdm_export_name(
     const auto& materials      = selected_preset.materials;
     const auto& print_id = selected_preset.print.id;
 
-    std::string printer_name = remove_spaces(project_interactor->preset_interactor().get_printer_preset(hw_config_id, printer_id).first.get().name);
-    std::string print_name = remove_spaces(project_interactor->preset_interactor().get_print_preset(hw_config_id, printer_id, print_id).first.get().name);
+    std::string printer_name = remove_spaces(project_interactor.preset_interactor().get_printer_preset(hw_config_id, printer_id).first.get().name);
+    std::string print_name = remove_spaces(project_interactor.preset_interactor().get_print_preset(hw_config_id, printer_id, print_id).first.get().name);
     std::string filament_name;
     for (size_t i = 0; i < materials.size(); i++) {
         const auto& material_id      = materials[i].id;
-        filament_name += remove_spaces(project_interactor->preset_interactor().get_material_preset(hw_config_id, printer_id, print_id, i, material_id).first.get().name);
+        filament_name += remove_spaces(project_interactor.preset_interactor().get_material_preset(hw_config_id, printer_id, print_id, i, material_id).first.get().name);
         if (i != materials.size() - 1) {
             filament_name+=",";
         }
     }
 
-    const auto* bed_instance = project.find_bed_instance_by_id(project_interactor->selected_bed_slicing_id().bed_instance_id);
+    const auto* bed_instance = project.find_bed_instance_by_id(project_interactor.selected_bed_slicing_id().bed_instance_id);
     size_t model_instances_size = bed_instance->model_instances.size();
 
     std::vector<std::string> names;
@@ -151,15 +151,15 @@ ExportNameData parse_fdm_export_name(
 ExportNameData parse_sla_export_name(
     const std::string& project_name,
     const std::string& output_filename_format,
-    Domain::ConfigPackSLA* sla_config,
-    const Biz::ProjectInteractor* project_interactor
+    Domain::ConfigPackSLA& sla_config,
+    const Biz::ProjectInteractor& project_interactor
 )
 {
     ExportNameData result {Technology::Sla, project_name, resolve_preffered_extension(output_filename_format)};
-    Domain::FullConfigSLA full_config{*sla_config};
+    Domain::FullConfigSLA full_config{sla_config};
     Biz::Parser::IO::Config io_config = Biz::Parser::IO::get_parser_config(full_config);
     Biz::Parser::PlaceholderParser parser{io_config};
-    const Biz::SLAResultOptRef sla_result_opt{project_interactor->sla_result_cache().get_result(project_interactor->selected_bed_slicing_id())};
+    const Biz::SLAResultOptRef sla_result_opt{project_interactor.sla_result_cache().get_result(project_interactor.selected_bed_slicing_id())};
     if (!sla_result_opt) {
         SPDLOG_ERROR("Failed to parse output filename: Failed to retrieve SLA slicing result.");
         return result;
@@ -167,20 +167,20 @@ ExportNameData parse_sla_export_name(
     const Biz::SLAResultRef sla_result = sla_result_opt.value();
 
     parser.set("input_filename_base", project_name);
-    const std::optional<Biz::Slicing::Sla::PrintStatistics> print_statistics = sla_result.get().print_statistics;
+    const std::optional<Slicing::Sla::PrintStatistics> print_statistics = sla_result.get().export_data->print_statistics;
     if (!print_statistics) {
         SPDLOG_ERROR("Failed to parse output filename: Failed to retrieve SLA print statistics.");
         return result;
     }
-    parser.set("print_time", print_statistics.value().estimated_print_time);
+    parser.set("print_time", remove_spaces(Biz::format_time_dhms_short(print_statistics.value().estimated_print_time)));
     parser.set("total_cost", print_statistics.value().total_cost);
     parser.set("total_weight", print_statistics.value().total_weight);
     parser.set("objects_used_material", print_statistics.value().objects_used_material);
     parser.set("support_used_material", print_statistics.value().support_used_material);
     
-    Domain::SelectionId project_id = project_interactor->selected_bed_slicing_id().project_id;
-    const auto& project = project_interactor->workbench().project(project_id);
-    const auto* bed_instance = project.find_bed_instance_by_id(project_interactor->selected_bed_slicing_id().bed_instance_id);
+    Domain::SelectionId project_id = project_interactor.selected_bed_slicing_id().project_id;
+    const auto& project = project_interactor.workbench().project(project_id);
+    const auto* bed_instance = project.find_bed_instance_by_id(project_interactor.selected_bed_slicing_id().bed_instance_id);
 
     std::vector<std::string> names;
     names.reserve(bed_instance->model_instances.size());
@@ -201,12 +201,12 @@ ExportNameData parse_sla_export_name(
     return result;
 }
 
-ExportNameData parse_export_name(const Biz::ProjectInteractor* project_interactor)
+ExportNameData parse_export_name(const Biz::ProjectInteractor& project_interactor)
 {
-    Domain::SelectionId project_id = project_interactor->selected_project_id();
-    std::string project_name = project_interactor->get_project_name(project_id);
+    Domain::SelectionId project_id = project_interactor.selected_project_id();
+    std::string project_name = project_interactor.get_project_name(project_id);
     const Domain::ConfigItem*
-        item = project_interactor->preset_interactor().selected_printer_preset().print.config_box().items.find("output_filename_format");
+        item = project_interactor.preset_interactor().selected_printer_preset().print.config_box().items.find("output_filename_format");
     if (!item) {
         SPDLOG_ERROR("Failed to parse output filename: Failed to retrieve Config Item.");
         return {Technology::Fdm, project_name, {}};
@@ -214,30 +214,30 @@ ExportNameData parse_export_name(const Biz::ProjectInteractor* project_interacto
     // Create placeholder parser.
     // Feed it with selected presets and print statistics.
     std::string output_filename_format = item->get<std::string>();
-    Domain::ConfigPack config = project_interactor->preset_interactor().selected_printer_preset().config();
+    Domain::ConfigPack config = project_interactor.preset_interactor().selected_printer_preset().config();
 
     if (auto* fdm_config = std::get_if<Domain::ConfigPackFDM>(&config)) {        
-        return ExportNameParser::parse_fdm_export_name(project_name, output_filename_format, fdm_config, project_interactor);
+        return ExportNameParser::parse_fdm_export_name(project_name, output_filename_format, *fdm_config, project_interactor);
     } else if (auto* sla_config = std::get_if<Domain::ConfigPackSLA>(&config)) {
-        return ExportNameParser::parse_sla_export_name(project_name, output_filename_format, sla_config, project_interactor);
+        return ExportNameParser::parse_sla_export_name(project_name, output_filename_format, *sla_config, project_interactor);
     } else {
         SPDLOG_ERROR("Failed to parse output filename: Failed to retrieve a slicing result.");
     }
     return {Technology::Fdm, project_name, resolve_preffered_extension(output_filename_format)};
 }
 
-ExportNameData error_state_export_name(const Biz::ProjectInteractor* project_interactor)
+ExportNameData error_state_export_name(const Biz::ProjectInteractor& project_interactor)
 {
-       Domain::SelectionId project_id = project_interactor->selected_project_id();
-    std::string project_name = project_interactor->get_project_name(project_id);
+       Domain::SelectionId project_id = project_interactor.selected_project_id();
+    std::string project_name = project_interactor.get_project_name(project_id);
     const Domain::ConfigItem*
-        item = project_interactor->preset_interactor().selected_printer_preset().print.config_box().items.find("output_filename_format");
+        item = project_interactor.preset_interactor().selected_printer_preset().print.config_box().items.find("output_filename_format");
     if (!item) {
         SPDLOG_ERROR("Failed to parse output filename: Failed to retrieve Config Item.");
         return {Technology::Fdm, project_name, {}};
     }
     std::string output_filename_format = item->get<std::string>();
-    Domain::ConfigPack config = project_interactor->preset_interactor().selected_printer_preset().config();
+    Domain::ConfigPack config = project_interactor.preset_interactor().selected_printer_preset().config();
 
     if (std::get_if<Domain::ConfigPackFDM>(&config)) {        
         return {Technology::Fdm, project_name, resolve_preffered_extension(output_filename_format)};
